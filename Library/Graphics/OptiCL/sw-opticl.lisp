@@ -177,19 +177,33 @@
 
 (defun singleValued? (image)
   (let ((x (pixelType image)))
-    (ecase x
+    (ecase (car x)
+
       (:|Bit1|   t)
       (:|Bit2|   t)
       (:|Bit4|   t)
       (:|Bit8|   t)
       (:|Bit16|  t)
       (:|Bit32|  t)
-      (:|RGB4|   nil)
-      (:|RGB8|   nil)
-      (:|RGB16|  nil)
-      (:|RGBA4|  nil)
-      (:|RGBA8|  nil)
-      (:|RGBA16| nil))))
+
+      (:|SingleFloat| t)
+      (:|DoubleFloat| t)
+      (:|GraySingle|  t)
+      (:|GrayDouble|  t)
+
+      (:|RGB4|      nil)
+      (:|RGB8|      nil)
+      (:|RGB16|     nil)
+      (:|RGBSingle| nil)
+      (:|RGBDouble| nil)
+
+      (:|RGBA4|      nil)
+      (:|RGBA8|      nil)
+      (:|RGBA16|     nil)
+      (:|RGBASingle| nil)
+      (:|RGBADouble| nil)
+
+      )))
 
 (defun pixelType (image)
   (let ((image-type (type-of image)))
@@ -205,58 +219,51 @@
                                (>= (length dimensions) 3))
                           (case (third dimensions)
                             (1 (case elt-size
-                                 (1  :|Bit1|)
-                                 (2  :|Bit2|)
-                                 (4  :|Bit4|)
-                                 (8  :|Bit8|)
-                                 (16 :|Bit16|)
-                                 (32 :|Bit32|)))
+                                 (1  '(:|Bit1|))
+                                 (2  '(:|Bit2|))
+                                 (4  '(:|Bit4|))
+                                 (8  '(:|Bit8|))
+                                 (16 '(:|Bit16|))
+                                 (32 '(:|Bit32|))))
                             (3 (case elt-size
-                                 (4  :|RGB4|)
-                                 (8  :|RGB8|)
-                                 (16 :|RGB16|)))
+                                 (4  '(:|RGB4|))
+                                 (8  '(:|RGB8|))
+                                 (16 '(:|RGB16|))))
                             (4 (case elt-size
-                                 (4  :|RGBA4|)
-                                 (8  :|RGBA8|)
-                                 (16 :|RGBA16|)))))
+                                 (4  '(:|RGBA4|))
+                                 (8  '(:|RGBA8|))
+                                 (16 '(:|RGBA16|))))))
                          (t 
                           (case elt-size
-                            (1  :|Bit1|)
-                            (2  :|Bit2|)
-                            (4  :|Bit4|)
-                            (8  :|Bit8|)
-                            (16 :|Bit16|)
-                            (32 :|Bit32|)))))
+                            (1  '(:|Bit1|))
+                            (2  '(:|Bit2|))
+                            (4  '(:|Bit4|))
+                            (8  '(:|Bit8|))
+                            (16 '(:|Bit16|))
+                            (32 '(:|Bit32|))))))
                  nil)))
           (t nil))
         nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; op readImageFile (filename : FileName) : Image
-;;; op writeImageFile (filename : FileName) (image : Image) : ()
+;;; op [p] readImageFile  (pixeltype : PixelKind) (filename : FileName) : Image p               
+;;; op [p] writeImageFile (pixeltype : PixelKind) (filename : FileName) (image : Image p) : ()  
 
-(defun readImageFile-1-1 (kind filename)
-  (gc) ; gc seems to be necessary to avoid peculiar memory fault errors in foriegn code
-  (read-image-file filename))
+(defun readImageFile-1-1 (pixeltype filename)
+  (let ((image (read-image-file filename)))
+    (let ((pti (pixelType image)))
+      (unless (equal pixeltype pti)
+        (warn "~&Read an image of pixel type ~S with a routine expecting pixel type ~S~%"
+              pti pixeltype)))
+    image))
 
-(defun writeImageFile-1-1-1 (kind filename image)
+(defun writeImageFile-1-1-1 (pixeltype filename image)
+  (let ((pti (pixelType image)))
+    (unless (equal pixeltype pti)
+      (warn "~&Trying to write an image of pixel type ~S with a routine for pixel type ~S~%"
+            pti pixeltype)))
   (write-image-file filename image)
   ())
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; op imageType : Filename -> PixelKind
-
-(defun imageType (filename)
-  (case (pathname-type filename)
-    (:tiff :|Unknown|)
-    (:tif  :|Unknown|)
-    (:jpeg :|RGB8|)
-    (:jpg  :|RGB8|)
-    (:png  :|Unknown|)
-    (:pbm  :|Unknown|)
-    (:pgm  :|Unknown|)
-    (:ppm  :|Unknown|)
-    (:gif  :|Bit8|)
-    (t :|Unknown|)))
+                 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

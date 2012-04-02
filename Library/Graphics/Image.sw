@@ -13,7 +13,7 @@ op [p] height : Image p -> Row
 op [p] width  : Image p -> Column
 op [p] size   : Image p -> Coordinates
 
-op imageType : FileName -> PixelKind
+op [p] pixelType : Image p -> PixelKind  % result should correspond to p
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Polymorphic functions for processing all kinds of images.
@@ -49,7 +49,7 @@ op [a,p] foldri (f : p * a * Coordinates -> a) (base: a) (image: Image p) : a
 %%% functions passed to the higher-order functions above (map, foldl, etc.).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Avoid using these two functions directly:
+%%% Avoid using these functions directly:
 
 op [p] readImageFile  (pixeltype : PixelKind) (filename : FileName) : Image p               % pixeltype (an op) should correspond to p (a pixel type)
 op [p] writeImageFile (pixeltype : PixelKind) (filename : FileName) (image : Image p) : ()  % pixeltype (an op) should corrsepond to p (a pixel type)
