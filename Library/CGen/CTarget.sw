@@ -4098,8 +4098,2036 @@ end-proof
 (* not done yet... *)
 proof isa C__ucharOfUshort_bit
   apply(simp add: C__ucharOfUshort_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  sorry
 end-proof
 
+proof isa C__ucharOfUint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfUint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfUint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfUint_bit
+sorry
+end-proof
+
+proof isa C__ucharOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfUlong_bit
+sorry
+end-proof
+
+proof isa C__ucharOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfUllong_bit
+sorry
+end-proof
+
+proof isa C__ucharOfSshort_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfSshort_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfSshort_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfSshort_bit
+sorry
+end-proof
+
+proof isa C__ucharOfSint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfSint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfSint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfSint_bit
+sorry
+end-proof
+
+proof isa C__ucharOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfSlong_bit
+sorry
+end-proof
+
+proof isa C__ucharOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ucharOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ucharOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ucharOfSllong_bit
+sorry
+end-proof
+
+proof isa C__ushortOfUint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ushortOfUint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ushortOfUint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ushortOfUint_bit
+sorry
+end-proof
+
+proof isa C__ushortOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ushortOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ushortOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ushortOfUlong_bit
+sorry
+end-proof
+
+proof isa C__ushortOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ushortOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ushortOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ushortOfUllong_bit
+sorry
+end-proof
+
+proof isa C__ushortOfSint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ushortOfSint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ushortOfSint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ushortOfSint_bit
+sorry
+end-proof
+
+proof isa C__ushortOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ushortOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ushortOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ushortOfSlong_bit
+sorry
+end-proof
+
+proof isa C__ushortOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ushortOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ushortOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ushortOfSllong_bit
+sorry
+end-proof
+
+proof isa C__uintOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__uintOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__uintOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__uintOfUlong_bit
+sorry
+end-proof
+
+proof isa C__uintOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__uintOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__uintOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__uintOfUllong_bit
+sorry
+end-proof
+
+proof isa C__uintOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__uintOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__uintOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__uintOfSlong_bit
+sorry
+end-proof
+
+proof isa C__uintOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__uintOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__uintOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__uintOfSllong_bit
+sorry
+end-proof
+
+proof isa C__ulongOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ulongOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ulongOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ulongOfUllong_bit
+sorry
+end-proof
+
+proof isa C__ulongOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__ulongOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__ulongOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__ulongOfSllong_bit
+sorry
+end-proof
+
+proof isa C__scharOfUshort_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfUshort_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfUshort_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfUshort_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfUshort_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfUshort_bit
+sorry
+end-proof
+
+proof isa C__scharOfUint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfUint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfUint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfUint_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfUint_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfUint_bit
+sorry
+end-proof
+
+proof isa C__scharOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfUlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfUlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfUlong_bit
+sorry
+end-proof
+
+proof isa C__scharOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfUllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfUllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfUllong_bit
+sorry
+end-proof
+
+proof isa C__scharOfSshort_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfSshort_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfSshort_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfSshort_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfSshort_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfSshort_bit
+sorry
+end-proof
+
+proof isa C__scharOfSint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfSint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfSint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfSint_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfSint_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfSint_bit
+sorry
+end-proof
+
+proof isa C__scharOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfSlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfSlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfSlong_bit
+sorry
+end-proof
+
+proof isa C__scharOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__scharOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__scharOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__scharOfSllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__scharOfSllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__scharOfSllong_bit
+sorry
+end-proof
+
+proof isa C__sshortOfUint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sshortOfUint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sshortOfUint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sshortOfUint_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sshortOfUint_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sshortOfUint_bit
+sorry
+end-proof
+
+proof isa C__sshortOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sshortOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sshortOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sshortOfUlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sshortOfUlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sshortOfUlong_bit
+sorry
+end-proof
+
+proof isa C__sshortOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sshortOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sshortOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sshortOfUllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sshortOfUllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sshortOfUllong_bit
+sorry
+end-proof
+
+proof isa C__sshortOfSint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sshortOfSint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sshortOfSint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sshortOfSint_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sshortOfSint_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sshortOfSint_bit
+sorry
+end-proof
+
+proof isa C__sshortOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sshortOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sshortOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sshortOfSlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sshortOfSlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sshortOfSlong_bit
+sorry
+end-proof
+
+proof isa C__sshortOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sshortOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sshortOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sshortOfSllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sshortOfSllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sshortOfSllong_bit
+sorry
+end-proof
+
+proof isa C__sintOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sintOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sintOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sintOfUlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sintOfUlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sintOfUlong_bit
+sorry
+end-proof
+
+proof isa C__sintOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sintOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sintOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sintOfUllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sintOfUllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sintOfUllong_bit
+sorry
+end-proof
+
+proof isa C__sintOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sintOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sintOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sintOfSlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sintOfSlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sintOfSlong_bit
+sorry
+end-proof
+
+proof isa C__sintOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__sintOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__sintOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__sintOfSllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__sintOfSllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__sintOfSllong_bit
+sorry
+end-proof
+
+proof isa C__slongOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__slongOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__slongOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__slongOfUllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__slongOfUllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__slongOfUllong_bit
+sorry
+end-proof
+
+proof isa C__slongOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__slongOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__slongOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__slongOfSllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__slongOfSllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__slongOfSllong_bit
+sorry
+end-proof
+
+proof isa C__charOfUshort_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfUshort_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfUshort_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfUshort_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfUshort_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfUshort_bit
+sorry
+end-proof
+
+proof isa C__charOfUint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfUint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfUint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfUint_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfUint_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfUint_bit
+sorry
+end-proof
+
+proof isa C__charOfUlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfUlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfUlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfUlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfUlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfUlong_bit
+sorry
+end-proof
+
+proof isa C__charOfUllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfUllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfUllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfUllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfUllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfUllong_bit
+sorry
+end-proof
+
+proof isa C__charOfSshort_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfSshort_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfSshort_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfSshort_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfSshort_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfSshort_bit
+sorry
+end-proof
+
+proof isa C__charOfSint_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfSint_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfSint_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfSint_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfSint_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfSint_bit
+sorry
+end-proof
+
+proof isa C__charOfSlong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfSlong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfSlong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfSlong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfSlong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfSlong_bit
+sorry
+end-proof
+
+proof isa C__charOfSllong_bit_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__charOfSllong_bit_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__charOfSllong_bit_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__charOfSllong_bit_Obligation_subtype2
+sorry
+end-proof
+
+proof isa C__charOfSllong_bit_Obligation_subtype3
+sorry
+end-proof
+
+proof isa C__charOfSllong_bit
+sorry
+end-proof
+
+proof isa C__e_dsh_1_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_dsh_1_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_dsh_1_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_dsh_1_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_dsh_1_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_dsh_1_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_tld_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_tld_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_tld_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_tld_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_tld_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_tld_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_char_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_schar_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_uchar_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_sshort_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_ushort_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_excl_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applySint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applySlong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applySllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applyUint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applyUint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__applyUlong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applyUlong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__applyUllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__applyUllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_sint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_slong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_sllong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_uint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_ulong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sint_ullong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_sint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_slong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_sllong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_uint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_ulong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_slong_ullong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_sint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_slong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_sllong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_uint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_ulong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_sllong_ullong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_uint_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ulong_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_lt_lt_ullong_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sint_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_slong_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_sllong_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_uint_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ulong_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_sint_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_slong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_sllong_Obligation_subtype1
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_gt_gt_ullong_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__boolOfSint_sintOfBool
+sorry
+end-proof
+
+proof isa C__fixup_if_condition
+sorry
+end-proof
+
+proof isa C__sintOfBool__lt_eq
+sorry
+end-proof
+
+proof isa C__e_amp_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_amp_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_amp_sint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_amp_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_amp_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_amp_slong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_amp_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_amp_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_amp_sllong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_amp_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_amp_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_amp_uint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_amp_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_amp_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_amp_ulong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_amp_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_amp_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_amp_ullong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_crt_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_crt_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_crt_sint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_crt_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_crt_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_crt_slong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_crt_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_crt_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_crt_sllong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_crt_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_crt_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_crt_uint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_crt_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_crt_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_crt_ulong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_crt_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_crt_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_crt_ullong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_bar_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_bar_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_bar_sint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_bar_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_bar_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_bar_slong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_bar_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_bar_sllong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_bar_sllong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_bar_uint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_bar_uint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_bar_uint_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_bar_ulong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_bar_ulong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_bar_ulong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_bar_ullong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_bar_ullong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_bar_ullong_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa C__e_at_char_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_at_char_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_at_schar_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_at_schar_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_at_sshort_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_at_sshort_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_at_sint_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_at_sint_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_at_slong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_at_slong_Obligation_subtype0
+sorry
+end-proof
+
+proof isa C__e_at_sllong_Obligation_subtype
+sorry
+end-proof
+
+proof isa C__e_at_sllong_Obligation_subtype0
+sorry
+end-proof
 
 
 endspec
