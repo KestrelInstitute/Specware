@@ -13,6 +13,8 @@ op [p] height : Image p -> Row
 op [p] width  : Image p -> Column
 op [p] size   : Image p -> Coordinates
 
+op imageType : FileName -> PixelKind
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Polymorphic functions for processing all kinds of images.
 %%%  These can be used directly.

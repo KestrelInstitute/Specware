@@ -1,7 +1,38 @@
 ;;; Specware interface to opticl
 
-(defpackage :Image (:use :Common-Lisp :OptiCL))
+(require :OptiCL)
+
+(defpackage :RGB    (:use :Common-Lisp :OptiCL))
+(defpackage :RGBA   (:use :Common-Lisp :OptiCL))
+(defpackage :Image  (:use :Common-Lisp :OptiCL))
 (in-package :Image)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; type RGB  a 
+;;; type RGBA a 
+;;; 
+;;; op [a] RGB.red    (pixel : RGB  a) : a
+;;; op [a] RGB.green  (pixel : RGB  a) : a
+;;; op [a] RGB.blue   (pixel : RGB  a) : a
+;;; 
+;;; op [a] RGBA.red   (pixel : RGBA a) : a
+;;; op [a] RGBA.green (pixel : RGBA a) : a
+;;; op [a] RGBA.blue  (pixel : RGBA a) : a
+;;; op [a] RGBA.alpha (pixel : RGBA a) : a
+
+;;; probably could be macros...
+
+(defun RGB::red    (pixel) (first  pixel)) 
+(defun RGB::green  (pixel) (second pixel))
+(defun RGB::blue   (pixel) (third  pixel))
+(defun RGB::mkRGB-3 (red green blue) (list red green blue))
+
+(defun RGBA::red   (pixel) (first  pixel))
+(defun RGBA::green (pixel) (second pixel))
+(defun RGBA::blue  (pixel) (third  pixel))
+(defun RGBA::alpha (pixel) (fourth pixel))
+(defun RGBA::mkRGBA-4 (red green blue alpha) (list red green blue alpha))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -27,12 +58,10 @@
 
 (defun width (image) 
   (with-image-bounds (height width) image
-    (declare (ignore height))
     width))
 
 (defun height (image)
   (with-image-bounds (height width) image
-    (declare (ignore width))
     height))
 
 (defun size (image)
@@ -47,12 +76,20 @@
 (defun get-1-1 (image coordinates)
   (let ((y (coordinates-y coordinates))
         (x (coordinates-x coordinates)))
-    (pixel image y x)))
+    ;; pixel  returns multiple values
+    ;; pixel* returns a single list of those values
+    (if (singleValued? image)
+        (pixel image y x)
+        (pixel* image y x))))
 
 (defun put-1-1-1 (image coordinates pixel)
   (let ((y (coordinates-y coordinates))
         (x (coordinates-x coordinates)))
-    (setf (pixel image y x) pixel)))
+    ;; setf pixel  expects multiple arguments
+    ;; setf pixel* expects one arguments that is a list of values
+    (if (singlevalued? image)
+        (setf (pixel image y x) pixel)
+        (setf (pixel* image y x) pixel))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -67,7 +104,9 @@
   (let ((top   (+ bottom (height region)))
         (right (+ left   (width region))))
     (set-region-pixels (y x bottom left top right) image
-       (pixel region y x))))
+      ;; pixel returns multiple values
+      ;; set-region-pixels expects multiple values for each pixel
+      (pixel region y x))))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -76,18 +115,23 @@
 (defun copy-image (image)
   image)
 
-(defun map-1-1 (f old)
-  (let ((new (copy-image old)))
-    ;; (format t "~%before~%")
-    (set-pixels (y x) new
-      ;; (format t "~%y: ~S~%" y)
-      ;; (format t "~%x: ~S~%" x)
-      (let ((old-pixel (pixel* old y x)))
-        ;; (format t "~%old pixel: ~S~%" old-pixel)
-        (let ((new-pixel (funcall f old-pixel)))
-          ;; (format t "~%new pixel: ~S~%" new-pixel)
-          new-pixel)))
-    ;; (format t "~%after~%")
+(defun map-1-1 (f image)
+  (let ((new (copy-image image)))
+    (if (singleValued? image)
+
+        (set-pixels (y x) new
+          (let ((old-pixel (pixel image y x)))
+            ;; pixel returns the pixel as a single value
+            (let ((new-pixel (funcall f old-pixel)))
+              ;; set-pixels expects multiple values, but we have just one here
+              new-pixel)))
+
+        (set-pixels (y x) new
+          (let ((old-pixel (pixel* image y x)))
+            ;; pixel* returns the pixel as a list of values
+            (let ((new-pixel (funcall f old-pixel)))
+              ;; set-pixels expects multiple values, not a list of values
+              (values-list new-pixel)))))
     new))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,12 +141,16 @@
 
 (defun foldl-1-1-1 (f value image)
   (do-pixels (y x) image
-    (setf value (funcall f value (pixel image y x))))
+    ;; pixel  returns multiple values
+    ;; pixel* returns a single list of those values
+    (setf value (funcall f value (pixel* image y x))))
   value)
 
 (defun foldr-1-1-1 (f value image)
   (do-pixels (y x) image
-    (setf value (funcall f (pixel image y x) value)))
+    ;; pixel  returns multiple values
+    ;; pixel* returns a single list of those values
+    (setf value (funcall f (pixel* image y x) value)))
   value)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,14 +160,76 @@
 
 (defun foldli-1-1-1 (f value image)
   (do-pixels (y x) image
-    (setf value (funcall f value (pixel image y x) y x)))
+    ;; pixel  returns multiple values
+    ;; pixel* returns a single list of those values
+    (setf value (funcall f value (pixel* image y x) y x)))
   value)
 
 ;;; op [a] foldri : (f : Pixel * a * Coordinates -> a) (base: a) (bitMap: BitMap) : a
 (defun foldri-1-1-1 (f value image)
   (do-pixels (y x) image
-    (setf value (funcall f (pixel image y x) value y x)))
+    ;; pixel  returns multiple values
+    ;; pixel* returns a single list of those values
+    (setf value (funcall f (pixel* image y x) value y x)))
   value)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun singleValued? (image)
+  (let ((x (pixelType image)))
+    (ecase x
+      (:|Bit1|   t)
+      (:|Bit2|   t)
+      (:|Bit4|   t)
+      (:|Bit8|   t)
+      (:|Bit16|  t)
+      (:|Bit32|  t)
+      (:|RGB4|   nil)
+      (:|RGB8|   nil)
+      (:|RGB16|  nil)
+      (:|RGBA4|  nil)
+      (:|RGBA8|  nil)
+      (:|RGBA16| nil))))
+
+(defun pixelType (image)
+  (let ((image-type (type-of image)))
+    (if (consp image-type)
+        (case (first image-type)
+          (simple-array 
+           (let* ((elt-type   (second image-type))
+                  (dimensions (third  image-type)))
+             (if (and (consp elt-type)
+                      (equal (first elt-type) 'unsigned-byte))
+                 (let ((elt-size (second elt-type)))
+                   (cond ((and (consp dimensions) 
+                               (>= (length dimensions) 3))
+                          (case (third dimensions)
+                            (1 (case elt-size
+                                 (1  :|Bit1|)
+                                 (2  :|Bit2|)
+                                 (4  :|Bit4|)
+                                 (8  :|Bit8|)
+                                 (16 :|Bit16|)
+                                 (32 :|Bit32|)))
+                            (3 (case elt-size
+                                 (4  :|RGB4|)
+                                 (8  :|RGB8|)
+                                 (16 :|RGB16|)))
+                            (4 (case elt-size
+                                 (4  :|RGBA4|)
+                                 (8  :|RGBA8|)
+                                 (16 :|RGBA16|)))))
+                         (t 
+                          (case elt-size
+                            (1  :|Bit1|)
+                            (2  :|Bit2|)
+                            (4  :|Bit4|)
+                            (8  :|Bit8|)
+                            (16 :|Bit16|)
+                            (32 :|Bit32|)))))
+                 nil)))
+          (t nil))
+        nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,10 +237,26 @@
 ;;; op writeImageFile (filename : FileName) (image : Image) : ()
 
 (defun readImageFile-1-1 (kind filename)
+  (gc) ; gc seems to be necessary to avoid peculiar memory fault errors in foriegn code
   (read-image-file filename))
 
 (defun writeImageFile-1-1-1 (kind filename image)
   (write-image-file filename image)
   ())
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; op imageType : Filename -> PixelKind
+
+(defun imageType (filename)
+  (case (pathname-type filename)
+    (:tiff :|Unknown|)
+    (:tif  :|Unknown|)
+    (:jpeg :|RGB8|)
+    (:jpg  :|RGB8|)
+    (:png  :|Unknown|)
+    (:pbm  :|Unknown|)
+    (:pgm  :|Unknown|)
+    (:ppm  :|Unknown|)
+    (:gif  :|Bit8|)
+    (t :|Unknown|)))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

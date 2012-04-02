@@ -1,13 +1,28 @@
 Pixel qualifying spec
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Internal structure of Pixels (polymorphic over various numerical types)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+type RGB  a     % a could be Bit4, SingleFloat, etc.
+type RGBA a 
+
+op [a] RGB.red    (pixel : RGB  a) : a
+op [a] RGB.green  (pixel : RGB  a) : a
+op [a] RGB.blue   (pixel : RGB  a) : a
+op [a] RGB.mkRGB (red : a, green : a, blue : a) : RGB a
+
+op [a] RGBA.red   (pixel : RGBA a) : a
+op [a] RGBA.green (pixel : RGBA a) : a
+op [a] RGBA.blue  (pixel : RGBA a) : a
+op [a] RGBA.alpha (pixel : RGBA a) : a
+op [a] RBBA.mkRGBA (red : a, green : a, blue : a, alpha : a) : RGBA a
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% These are the 21 known (monomorphic) pixel types:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op mostPositiveFixnum : Nat                          % implementation dependent  (2**29 for SBCL)
-
-type RGB  a = a * a * a                              % in progress: there might not be a MetaSlang type that corresponds to the actual lisp structure
-type RGBA a = {red: a, green: a, blue: a, alpha : a} % in progress: there might not be a MetaSlang type that corresponds to the actual lisp structure
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% These are the 21 known pixel types:
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 type SingleFloat                                     % we should have an IEEE Float spec(!)
 type DoubleFloat
