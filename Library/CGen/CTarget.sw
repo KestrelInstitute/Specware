@@ -737,7 +737,7 @@ theorem slongOfMathInt_mathIntOfSlong is
 theorem sllongOfMathInt_mathIntOfSllong is
   fa(x:Sllong) sllongOfMathInt (mathIntOfSllong x) = x
 
-
+%%TODO add a refine def for schar
 refine def sshortOfMathInt (i:Int | i in? rangeOfSshort) : Sshort = sshort (tcNumber(i, short_bits))
 refine def sintOfMathInt   (i:Int | i in? rangeOfSint  ) : Sint   = sint   (tcNumber(i,   int_bits))
 refine def slongOfMathInt  (i:Int | i in? rangeOfSlong ) : Slong  = slong  (tcNumber(i,  long_bits))
@@ -1380,6 +1380,7 @@ theorem sllongOfUllong_bits is
 of higher rank amounts to zero-extending the bits. 
 *)
 
+refine def ucharOfMathInt  (i:Int | i in? rangeOfUchar) : Uchar = uchar (bits(i, CHAR_BIT))
 refine def ushortOfMathInt (i:Int | i in? rangeOfUshort) : Ushort = ushort (bits(i, short_bits))
 refine def uintOfMathInt   (i:Int | i in? rangeOfUint  ) : Uint   = uint   (bits(i,   int_bits))
 refine def ulongOfMathInt  (i:Int | i in? rangeOfUlong ) : Ulong  = ulong  (bits(i,  long_bits))
@@ -1691,7 +1692,7 @@ theorem sllongOfSlong_bits is
 (* Converting from a signed or unsigned integer type to a signed or unsigned
 integer type of lower rank amounts to truncating the most significant bits. *)
 
-refine def ucharOfMathInt (i:Int | i in? rangeOfUchar) : Uchar = uchar (bits(i, CHAR_BIT))
+
 
 theorem ucharOfUshort_bit is
   fa(bs:Bits) length bs = short_bits =>
@@ -3635,6 +3636,14 @@ proof isa C__ullongOfUlong_bits
   apply(rule toBits_toNat_extend, force, force)
 end-proof  
 
+
+proof isa C__ucharOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__ucharOfMathInt i)" and y="C__Uchar__uchar (toBits(nat i, C__CHAR_BIT))" in C__mathIntOfUchar_injective, force)
+  apply(simp add: Bits__bits_length)
+  apply(simp)
+  apply(simp del:C__mathIntOfUchar_injective add:C__mathIntOfUchar_ucharOfMathInt_2 C__ucharOfMathInt__1_def)
+end-proof
+
 proof isa C__ushortOfMathInt__1__obligation_refine_def
   apply(cut_tac x="(C__ushortOfMathInt i)" and y="C__Ushort__ushort (toBits(nat i, C__short_bits))" in C__mathIntOfUshort_injective, force)
   apply(simp add: Bits__bits_length)
@@ -4088,12 +4097,6 @@ proof isa C__sllongOfSlong_bits
   apply(simp add: TwosComplement__sign_extension_does_not_change_value TwosComplement__minForLength_def TwosComplement__maxForLength_def  del: TwosComplement__toInt_inject)
 end-proof
 
-proof isa C__ucharOfMathInt__1__obligation_refine_def
-  apply(cut_tac x="(C__ucharOfMathInt i)" and y="C__Uchar__uchar (toBits(nat i, C__CHAR_BIT))" in C__mathIntOfUchar_injective, force)
-  apply(simp add: Bits__bits_length)
-  apply(simp)
-  apply(simp del:C__mathIntOfUchar_injective add:C__mathIntOfUchar_ucharOfMathInt_2 C__ucharOfMathInt__1_def)
-end-proof
 
 (* not done yet... *)
 proof isa C__ucharOfUshort_bit
