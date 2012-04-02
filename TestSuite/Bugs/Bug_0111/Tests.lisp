@@ -13,14 +13,14 @@
 	    (:optional "")
 	    "op ww: Nat -> Nat"
 	    (:optional "")
-	    "op ff (xx0: Nat): Int = xx0 + xx"
+	    "op ff (xx0: Nat): Nat = xx0 + xx"
 	    (:optional "")
 	    "axiom foo is fa(xx0: Nat) xx0 = xx0 + xx"
 	    (:optional "")
-	    "op g (n: Nat): Int = let xx0 = n in "
+	    "op g (n: Nat): Nat = let xx0 = n in "
 	    "xx0 + xx"
 	    (:optional "")
-	    "op h (n: Nat): Int = let def ww0 (n: Nat): Nat = n"
+	    "op h (n: Nat): Nat = let def ww0 (n: Nat): Nat = n"
 	    "in"
 	    "ww0 n + ww n"
 	    (:optional "")
@@ -39,14 +39,14 @@
 	    (:optional "")
 	    "op bb: Nat -> Nat"
 	    (:optional "")
-	    "op ff (xx0: Nat): Int = xx0 + aa"
+	    "op ff (xx0: Nat): Nat = xx0 + aa"
 	    (:optional "")
 	    "axiom foo is fa(xx0: Nat) xx0 = xx0 + aa"
 	    (:optional "")
-	    "op g (n: Nat): Int = let xx0 = n in "
+	    "op g (n: Nat): Nat = let xx0 = n in "
 	    "xx0 + aa"
 	    (:optional "")
-            "op h (n: Nat): Int = let def ww0 (n: Nat): Nat = n"
+            "op h (n: Nat): Nat = let def ww0 (n: Nat): Nat = n"
 	    "in"
 	    "ww0 n + bb n"
 	    (:optional "")
