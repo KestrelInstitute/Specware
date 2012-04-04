@@ -175,9 +175,18 @@ theorem int_injective:
   apply auto
   done
 
+theorem int_injective_fw:
+  "(int n = int m) \<Longrightarrow> (m = n)"
+  apply auto
+  done
 
 theorem nat_injective:
   "\<lbrakk> n \<ge> 0 ; m \<ge> 0\<rbrakk> \<Longrightarrow> (nat n = nat m) = (m = n)"
+  apply auto
+  done
+
+theorem nat_injective_fw:
+  "\<lbrakk>nat n = nat m ; n \<ge> 0 ; m \<ge> 0\<rbrakk> \<Longrightarrow> (m = n)"
   apply auto
   done
 
