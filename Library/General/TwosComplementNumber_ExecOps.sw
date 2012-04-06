@@ -44,19 +44,36 @@ proof Isa minTCNumber__1__obligation_refine_def
 end-proof
 
 proof Isa tcNumber__1_Obligation_subtype
-  sorry   
-end-proof
-
-proof Isa tcNumber__1__obligation_refine_def
-  sorry   
+  by (simp add: TwosComplement__length_of_minTCNumber)
 end-proof
 
 proof isa tcNumber__1__obligation_refine_def_Obligation_subtype
+  (* something's wrong *)
 sorry
 end-proof
 
-proof isa TwosComplement__tcNumber__1__obligation_refine_def_Obligation_subtype0
-sorry
+proof isa tcNumber__1__obligation_refine_def_Obligation_subtype0
+  (*** equally wrong **)
+  by (erule 
+      TwosComplement__tcNumber__1__obligation_refine_def_Obligation_subtype)
+end-proof
+
+proof Isa tcNumber__1__obligation_refine_def
+  apply (simp add: TwosComplement__tcNumber__1_def)
+  apply (simp add: TwosComplement__signExtend_def)
+  apply (simp add: TwosComplement__sign_def)
+  apply (frule_tac 
+         TwosComplement__tcNumber__1__obligation_refine_def_Obligation_subtype,
+         simp)
+  apply (case_tac "x1 = length (TwosComplement__minTCNumber x0)")
+  apply simp
+  defer
+  apply (rule TwosComplement__tcN_TC_extend, simp_all)
+  apply (simp add: TwosComplement__minTCNumber_nonEmpty)
+  apply (frule TwosComplement__length_of_minTCNumber, simp, arith)
+  apply (simp add: TwosComplement__minTCNumber_toInt)
+  apply (subst TwosComplement__minTCNumber_toInt [symmetric],
+         simp add: TwosComplement__tcNumber_toInt_reduce)
 end-proof
 
 endspec

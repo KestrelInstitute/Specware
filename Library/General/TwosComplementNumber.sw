@@ -1000,6 +1000,17 @@ lemma TwosComplement_mod2:
   by (frule_tac TwosComplement_mod [symmetric], simp_all, drule sym, simp)
 
 
+lemma TwosComplement__minTCNumber_toInt:
+  "TwosComplement__toInt (TwosComplement__minTCNumber i) = i"
+  by (simp add: TwosComplement__minTCNumber_def LeastM_def,
+      rule someI2_ex, rule TwosComplement__minTCNumber_exists, simp)
+
+lemma TwosComplement__minTCNumber_nonEmpty:
+  "TwosComplement__minTCNumber i \<noteq> []"
+  by (simp add: TwosComplement__minTCNumber_def LeastM_def,
+      rule someI2_ex, rule TwosComplement__minTCNumber_exists,
+      simp add: TwosComplement__toInt_subtype_constr)
+
 (******************************************************************************)
 
 (******************************************************************************)

@@ -579,11 +579,11 @@ op jacobiSymbol (a:PosNat, n:PosNat | odd? n)
   %% The (1: Int) is to stop the type-checker from inferring Nat as the type of the foldl
   foldl ( * ) (1: Int) (map (fn f: (PrimeNat | odd?) -> legendreSymbol (a, f)) factors)
 
-proof Isa jacobiSymbol_Obligation_subtype
+proof Isa jacobiSymbol_Obligation_subtype_old
   by (frule Integer__primeFactorsOf_odd, auto)
 end-proof
 
-proof Isa jacobiSymbol_Obligation_subtype0
+proof Isa jacobiSymbol_Obligation_subtype
   apply (drule_tac a=a and factors="Integer__primeFactorsOf n" 
          in Integer__jacobiSymbol_Obligation_subtype0_aux)
   apply (simp add:  primes_iff, rule Integer__primeFactorsOf_primel, auto)

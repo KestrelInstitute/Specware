@@ -668,43 +668,43 @@ end-proof
 
 % ----------------------------------------
 
-proof Isa minNibbles_Obligation_subtype
+proof Isa minNibbles_Obligation_subtype_old
   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
-proof Isa minNibbles_Obligation_subtype0
+proof Isa minNibbles_Obligation_subtype
   by (simp add: Integer__toMinBigEndian_nonnil)
+end-proof
+
+proof Isa minBytes_Obligation_subtype_old
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
 proof Isa minBytes_Obligation_subtype
-  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
+  by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-proof Isa minBytes_Obligation_subtype0
-  by (simp add: Integer__toMinBigEndian_nonnil)
+proof Isa minWord16s_Obligation_subtype_old
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
 proof Isa minWord16s_Obligation_subtype
-  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
+  by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-proof Isa minWord16s_Obligation_subtype0
-  by (simp add: Integer__toMinBigEndian_nonnil)
+proof Isa minWord32s_Obligation_subtype_old
+  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
 proof Isa minWord32s_Obligation_subtype
-  by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
-end-proof
-
-proof Isa minWord32s_Obligation_subtype0
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-proof Isa minWord64s_Obligation_subtype
+proof Isa minWord64s_Obligation_subtype_old
   by (cut_tac Integer__toMinBigEndian_elements, auto simp add: list_all_iff)
 end-proof
 
-proof Isa minWord64s_Obligation_subtype0
+proof Isa minWord64s_Obligation_subtype
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
