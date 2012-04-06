@@ -750,12 +750,12 @@ def toAny     = Term `TranslationBasic.toAny`
      let srt   = mkArrow (alpha, any) in
      mkApply (mkOp (Qualified ("TranslationBuiltIn", "toAny"), srt), t)
 
- op  abstractName: LLEnv * String * FreeVars * MSPattern * MSType * MSType * MSTerm -> OpInfo
- def abstractName (env, name, freeVars, pattern, domain, range, body) =
+ op  abstractName: LLEnv * String * FreeVars * MSPattern * MSType * MSType * MSTerm * MSTerms -> OpInfo
+ def abstractName (env, name, freeVars, pattern, domain, range, body, extra_conds) =
    if ~simulateClosures? then
      let oldPatLst = patternToList pattern in
      let newPattern = mkTuplePat (oldPatLst ++ map mkVarPat freeVars) in
-     let domType = addSubtypeInfo(newPattern,pattern,domain,getSpecEnv env) in
+     let domType = addSubtypeInfo(newPattern,pattern,domain,extra_conds,getSpecEnv env) in
      let new_type = mkArrow (domType, range) in
      let pos = termAnn(body) in
      let new_term = withAnnT(mkLambda (newPattern, body), pos) in
@@ -807,14 +807,18 @@ def toAny     = Term `TranslationBasic.toAny`
       dfn    = TypedTerm (new_term, new_type, termAnn body),
       fullyQualified? = false}
 
- op addSubtypeInfo(new_pat: MSPattern ,old_pat: MSPattern, orig_ty: MSType, spc: Spec): MSType =
+ op addSubtypeInfo(new_pat: MSPattern, old_pat: MSPattern, orig_ty: MSType, extra_conds: MSTerms, spc: Spec): MSType =
    let ty = patternType new_pat in
+   let new_vars = patternVars new_pat in
+   let condns_to_add = filter (fn tm -> forall? (fn v -> inVars?(v, new_vars)) (freeVars tm)) extra_conds in
    case orig_ty of
      | Subtype(_,pred,a) ->
        (case patternToTerm old_pat of
           | Some old_var_tm ->
-            Subtype(ty, simplify spc (mkLambda(new_pat, mkApply(pred,old_var_tm))) ,a)
+            Subtype(ty, simplify spc (mkLambda(new_pat, mkSimpConj(mkApply(pred, old_var_tm) :: condns_to_add))), a)
+          | None | condns_to_add ~= [] -> Subtype(ty, simplify spc (mkLambda(new_pat, mkSimpConj(condns_to_add))), a)
           | _ -> ty)
+     | _ | condns_to_add ~= [] -> Subtype(ty, simplify spc (mkLambda(new_pat, mkSimpConj(condns_to_add))), typeAnn ty)
      | _ -> ty
 
  op  getSpecEnv: LLEnv -> Spec
@@ -846,14 +850,14 @@ def toAny     = Term `TranslationBasic.toAny`
 	opers     = emptyMap, 
 	usedNames = Ref empty} 
 
-     def insertOpers (opers, q, r_elts, r_ops) =
+     def insertOpers (opers, q, r_elts, r_ops, extra_conds) =
        case opers of
 	 | [] -> (r_elts, r_ops)
 	 | {name = id, ident, pattern, domain, range, freeVars, body, closure}::m_opers -> 
-	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, range, body) in
+	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, range, body, extra_conds) in
 	   % TODO: Real names
 	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, 0, noPos) in
-	   insertOpers (m_opers, q, r_elts, r_ops)
+	   insertOpers (m_opers, q, r_elts, r_ops, extra_conds)
 
      def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, a) = 
        % let _ = writeLine ("lambdaLift \""^id^"\"...") in
@@ -878,7 +882,8 @@ def toAny     = Term `TranslationBasic.toAny`
 							 dfn   = new_dfn},
 						r_elts, r_ops, decl?, refine_num, a)
 	     in
-	       insertOpers (reverse opers, q, r_elts, r_ops)
+             let (_, extra_conds, _) = patternToTermPlusExConds pat in
+             insertOpers (reverse opers, q, r_elts, r_ops, extra_conds)
 
 	   | _ ->
 	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
@@ -891,7 +896,7 @@ def toAny     = Term `TranslationBasic.toAny`
 							 dfn   = new_dfn},
 						r_elts, r_ops, decl?, refine_num, a)
 	     in
-	       insertOpers (reverse opers, q, r_elts, r_ops)
+	       insertOpers (reverse opers, q, r_elts, r_ops, [])
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla, pos), r_elts, r_ops) =
        let env = mkEnv (qname, name) in
@@ -901,7 +906,8 @@ def toAny     = Term `TranslationBasic.toAny`
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term, noPos) in
        let r_elts = Cons(Property newProp,r_elts) in
-       insertOpers (reverse opers, qname, r_elts, r_ops)
+       %% Could get extra_conds from context
+       insertOpers (reverse opers, qname, r_elts, r_ops, [])
 
      def liftElts(elts,result) =
        foldr
