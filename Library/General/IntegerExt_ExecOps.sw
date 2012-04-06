@@ -346,25 +346,11 @@ proof Isa fromLittleEndian__1__obligation_refine_def
                 Integer__bigEndian_p_def)
 end-proof
 
-proof Isa Integer__toMinBigEndian__1__loop_Obligation_subtype
-  (********* the information "base >= 2"  got lost **********)
-  sorry 
-end-proof
-
-proof Isa Integer__toMinBigEndian__1__loop_Obligation_subtype0
-  (********* the information "base >= 2"  got lost **********)
-  sorry 
-end-proof
-
-
 proof Isa toMinBigEndian__1__loop ()
- by (auto, case_tac a, auto)
+ by (case_tac x, auto)
 termination 
-  apply (relation "measure (\<lambda>(x, result, base). x)", 
-         auto simp add: Suc_eq_plus1,
-         rule div_less_dividend, auto)
-  (********* the information "base >= 2"  got lost **********)
-sorry
+  by (relation "measure (\<lambda>(x, result, base). x)", 
+      auto simp add: Suc_eq_plus1)
 end-proof
 
 proof Isa toMinBigEndian__1__obligation_refine_def
