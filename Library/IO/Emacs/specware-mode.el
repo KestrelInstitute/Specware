@@ -2077,7 +2077,7 @@ qualifier: }")
 				       (set-buffer sw:common-lisp-buffer-name)
 				       default-directory))))
     (unless (equal (buffer-file-name) full-file)
-      (find-file-other-window full-file))
+      (find-file-other-window-0 full-file))
     (goto-line line)
     (when (> col 0)
       (forward-chars-counting-x-symbols col))))
@@ -2297,7 +2297,7 @@ With an argument, it doesn't convert imports."
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
         (sw:add-specware-to-isabelle-path)
-        (find-file-other-window (to-cygwin-name thy-file))
+        (find-file-other-window-0 (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
 
@@ -2324,9 +2324,14 @@ With an argument, it doesn't convert imports."
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
         (sw:add-specware-to-isabelle-path)
-        (find-file-other-window (to-cygwin-name thy-file))
+        (find-file-other-window-0 (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
+
+;; Version of find-file-other-window that doesn't create new windows willy-nilly on Gnu Emacs
+(defun find-file-other-window-0 (filename)
+  (let ((value (find-file-noselect filename)))
+    (pop-to-buffer value t)))
 
 (defun sw:add-specware-to-isabelle-path ()
   (when (fboundp 'proof-shell-invisible-command)
@@ -2364,7 +2369,7 @@ With an argument, it doesn't convert imports."
         (error "Error processing spec %s" filename)
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
-        (find-file-other-window (to-cygwin-name thy-file))
+        (find-file-other-window-0 (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
 
