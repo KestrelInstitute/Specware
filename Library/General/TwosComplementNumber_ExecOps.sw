@@ -34,7 +34,6 @@ spec
 % -----------------  The proofs ------------------------------------------------
 % ------------------------------------------------------------------------------
 
-
 proof Isa minTCNumber__1_Obligation_subtype2
   sorry   
 end-proof
@@ -45,17 +44,6 @@ end-proof
 
 proof Isa tcNumber__1_Obligation_subtype
   by (simp add: TwosComplement__length_of_minTCNumber)
-end-proof
-
-proof isa tcNumber__1__obligation_refine_def_Obligation_subtype
-  (* something's wrong *)
-sorry
-end-proof
-
-proof isa tcNumber__1__obligation_refine_def_Obligation_subtype0
-  (*** equally wrong **)
-  by (erule 
-      TwosComplement__tcNumber__1__obligation_refine_def_Obligation_subtype)
 end-proof
 
 proof Isa tcNumber__1__obligation_refine_def
