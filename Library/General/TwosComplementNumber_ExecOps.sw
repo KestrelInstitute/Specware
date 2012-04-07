@@ -62,10 +62,7 @@ proof Isa tcNumber__1__obligation_refine_def
   apply (simp add: TwosComplement__tcNumber__1_def)
   apply (simp add: TwosComplement__signExtend_def)
   apply (simp add: TwosComplement__sign_def)
-  apply (frule_tac 
-         TwosComplement__tcNumber__1__obligation_refine_def_Obligation_subtype,
-         simp)
-  apply (case_tac "x1 = length (TwosComplement__minTCNumber x0)")
+  apply (case_tac "len = length (TwosComplement__minTCNumber i)")
   apply simp
   defer
   apply (rule TwosComplement__tcN_TC_extend, simp_all)
