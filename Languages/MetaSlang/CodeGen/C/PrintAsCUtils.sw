@@ -215,8 +215,10 @@ PrintAsC qualifying spec
   let 
     def aux elements =
       case elements of 
-        | (Import (term, spc, _, _)) :: tail ->
-          (refersToCTarget? term) || (aux tail)
+        | (Import (term, spc, imported_elements, _)) :: tail ->
+          (refersToCTarget? term) || 
+          (aux imported_elements) ||
+          (aux tail)
         | _ -> false
   in
   aux spc.elements
