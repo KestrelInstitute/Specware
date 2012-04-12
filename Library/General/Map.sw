@@ -212,6 +212,19 @@ proof Isa -> \/_m end-proof
 % ---------- Part 2: Theorems about properties of operations -------------------
 % ------------------------------------------------------------------------------
 
+theorem dom_update is [a,b]
+  fa(m:Map(a,b),x:a,y:b) domain (update m x y) = domain m <| x
+
+theorem at_update_same is [a,b]
+  fa(m:Map(a,b),x:a,y:b) (update m x y) @ x = y
+
+theorem at_update_diff is [a,b]
+  fa(m:Map(a,b), x1:a, x2:{x2:a | x2 in? domain m}, y:b) (x1 ~= x2) => ((update m x1 y) @ x2 = (m @ x2))
+
+theorem double_update is [a,b]
+  fa(m:Map(a,b), x:a, y:b, z:b) update (update m x y) x z  = update m x z
+
+%%TODO add a theorem about reordering the updates if the keys are different
 
 % ------------------------------------------------------------------------------
 % ---------- Part 3: Main theorems ---------------------------------------------
@@ -250,10 +263,6 @@ end-proof
 % ------------------------------------------------------------------------------
 
 % Some proofs can be removed, as the obligation isn't generated anymore 
-
-proof Isa range__def
- by (auto simp: ran_def)
-end-proof
 
 proof Isa range__def
  by (auto simp: ran_def)
@@ -649,12 +658,34 @@ lemma Map__singleton_element [simp]:
   by (simp add: Map__update_def)
 
 
-lemma Map__double_update [simp]: 
-  "Map__update (Map__update m x y) x z  = Map__update m x z"
-  by (rule ext, simp add: Map__update_def)
-
 
 end-proof
 % ------------------------------------------------------------------------------
+
+%% TODO This should be in [simp], but I am afraid of breaking things before we have the regression tests running. -EWS
+proof isa Map__dom_update
+  apply(auto simp: add Map__update_def)
+end-proof
+
+proof isa Map__at_update_same_Obligation_subtype
+  apply (simp add: Map__dom_update)
+end-proof
+
+%% TODO This should be in [simp], but I am afraid of breaking things before we have the regression tests running. -EWS
+proof isa Map__at_update_same
+  apply(simp add:Map__update_def e_at_m_def)
+end-proof
+
+proof isa Map__at_update_diff_Obligation_subtype
+  apply (simp add: Map__dom_update)
+end-proof
+
+proof isa Map__at_update_diff
+  apply(simp add:Map__update_def e_at_m_def)
+end-proof
+
+proof isa Map__double_update [simp]
+  by (rule ext, simp add: Map__update_def)
+end-proof
 
 endspec
