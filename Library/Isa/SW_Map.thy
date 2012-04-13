@@ -542,6 +542,38 @@ defs e_bsl_fsl_m_def:
           else 
             if x \<in> dom m2 then m2 x else None)"
 
+theorem Map__dom_update: 
+  "dom (Map__update m x y) = (insert x (dom m))"
+  apply(auto simp: add Map__update_def)
+  done
+
+theorem Map__at_update_same_Obligation_subtype: 
+  "x \<in> dom (Map__update m x y)"
+  apply (simp add: Map__dom_update)
+  done
+
+theorem Map__at_update_same: 
+  "Map__update m x y @_m x = y"
+  apply(simp add:Map__update_def e_at_m_def)
+  done
+
+theorem Map__at_update_diff_Obligation_subtype: 
+  "\<lbrakk>(x2::'a) \<in> dom m; x1 \<noteq> x2\<rbrakk> \<Longrightarrow> 
+   x2 \<in> dom (Map__update m x1 y)"
+  apply (simp add: Map__dom_update)
+  done
+
+theorem Map__at_update_diff: 
+  "\<lbrakk>(x2::'a) \<in> dom m; x1 \<noteq> x2\<rbrakk> \<Longrightarrow> 
+   Map__update m x1 y @_m x2 = m @_m x2"
+  apply(simp add:Map__update_def e_at_m_def)
+  done
+
+theorem Map__double_update [simp]: 
+  "Map__update (Map__update m x y) x z 
+     = Map__update m x z"
+  by (rule ext, simp add: Map__update_def)
+
 
 
 (******************************************************************************)
@@ -769,10 +801,6 @@ lemma Map__singleton_element [simp]:
   "Map__update Map.empty x y x = Some y"
   by (simp add: Map__update_def)
 
-
-lemma Map__double_update [simp]: 
-  "Map__update (Map__update m x y) x z  = Map__update m x z"
-  by (rule ext, simp add: Map__update_def)
 
 
 
