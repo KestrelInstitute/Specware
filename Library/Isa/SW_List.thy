@@ -1718,7 +1718,8 @@ theorem List__zip3_subtype_constr:
   by (auto simp add: list_all_length  List__zip3_alt)
 
 theorem List__unzip_Obligation_subtype: 
-  "Function__bijective_p__stp(\<lambda> (x,y). x equiLong y, TRUE)
+  "Function__bijective_p__stp
+     (\<lambda> ((l1::'a list), (l2::'b list)). l1 equiLong l2, TRUE)
       (\<lambda> ((x_1::'a list), (x_2::'b list)). zip x_1 x_2)"
   proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on (\<lambda>(x::'a list, y::'b list). zip x y)
@@ -1826,7 +1827,8 @@ qed
 consts List__unzip :: "('a \<times> 'b) list \<Rightarrow> 'a list \<times> 'b list"
 defs List__unzip_def: 
   "List__unzip
-     \<equiv> Function__inverse__stp (\<lambda> (x,y). x equiLong y)
+     \<equiv> Function__inverse__stp
+          (\<lambda> ((l1::'a list), (l2::'b list)). l1 equiLong l2)
           (\<lambda> ((x_1::'a list), (x_2::'b list)). zip x_1 x_2)"
 
 theorem List__unzip_subtype_constr: 
@@ -1876,9 +1878,9 @@ qed
 
 theorem List__unzip__stp_Obligation_subtype: 
   "Function__bijective_p__stp
-     (\<lambda> ((x_1::'a list), (x_2::'b list)). 
-        (list_all P__a x_1 \<and> list_all P__b x_2) 
-          \<and> x_1 equiLong x_2, 
+     (\<lambda> ((l1::'a list), (l2::'b list)). 
+        l1 equiLong l2 
+          \<and> (list_all P__a l1 \<and> list_all P__b l2), 
       list_all
          (\<lambda> ((x_1_1::'a), (x_2_1::'b)). P__a x_1_1 \<and> P__b x_2_1))
       (\<lambda> ((x_1::'a list), (x_2::'b list)). zip x_1 x_2)"
@@ -1896,9 +1898,9 @@ defs List__unzip__stp_def:
   "List__unzip__stp
      \<equiv> (\<lambda> ((P__a::'a \<Rightarrow> bool), (P__b::'b \<Rightarrow> bool)). 
           Function__inverse__stp
-             (\<lambda> ((x_1::'a list), (x_2::'b list)). 
-                (list_all P__a x_1 \<and> list_all P__b x_2) 
-                  \<and> x_1 equiLong x_2)
+             (\<lambda> ((l1::'a list), (l2::'b list)). 
+                l1 equiLong l2 
+                  \<and> (list_all P__a l1 \<and> list_all P__b l2))
              (\<lambda> ((x_1::'a list), (x_2::'b list)). zip x_1 x_2))"
 
 theorem List__unzip3_Obligation_subtype: 
@@ -3005,8 +3007,7 @@ theorem List__flatten__def:
   by (auto simp: concat_conv_foldl)
 
 theorem List__unflattenL_Obligation_the: 
-  "\<lbrakk>foldl' (\<lambda> ((x_1::nat), (x_2::nat)). x_1 + x_2) 0 lens 
-      = length l\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>foldl' (\<lambda> (x,y). x + y) 0 lens = length l\<rbrakk> \<Longrightarrow> 
    \<exists>!(ll::'a list list). 
      ll equiLong lens 
        \<and> (concat ll = l 
@@ -3097,8 +3098,7 @@ case (Cons len lens)
 qed
 
 theorem List__unflattenL_Obligation_subtype: 
-  "\<lbrakk>foldl' (\<lambda> ((x_1::nat), (x_2::nat)). x_1 + x_2) 0 lens 
-      = length (concat ll); 
+  "\<lbrakk>foldl' (\<lambda> (x,y). x + y) 0 lens = length (concat ll); 
     ll equiLong lens; 
     (i::nat) < length ll\<rbrakk> \<Longrightarrow> 
    i < length lens"
@@ -3117,8 +3117,7 @@ defs List__unflattenL_def:
 
 theorem List__unflattenL_subtype_constr: 
   "\<lbrakk>list_all P__a l; 
-    foldl' (\<lambda> ((x_1::nat), (x_2::nat)). x_1 + x_2) 0 lens 
-      = length l\<rbrakk> \<Longrightarrow> 
+    foldl' (\<lambda> (x,y). x + y) 0 lens = length l\<rbrakk> \<Longrightarrow> 
    list_all (list_all P__a) (List__unflattenL(l, lens))"
   apply (subgoal_tac "let ll = List__unflattenL (l, lens) 
                       in 
@@ -3136,8 +3135,7 @@ theorem List__unflattenL_subtype_constr:
 
 theorem List__unflatten_Obligation_subtype: 
   "\<lbrakk>n > 0; int n zdvd int (length l)\<rbrakk> \<Longrightarrow> 
-   foldl' (\<lambda> ((x_1::nat), (x_2::nat)). x_1 + x_2) 0
-      (replicate (length l div n) n) 
+   foldl' (\<lambda> (x,y). x + y) 0 (replicate (length l div n) n) 
      = length l"
   proof -
  have LEM: "\<And>m n. foldl' (\<lambda>(x,y). x + y) 0 (replicate m n) = m * n"

@@ -25,17 +25,8 @@ proof Isa -> ~in_strm? end-proof
 op [a] subFromLong (s: Stream a, i:Nat, n:Nat) : List a =
   list (fn j:Nat -> if j < n then Some (s (i + j)) else None)
 
-proof Isa subFromLong_Obligation_subtype
- by (auto simp: List__definedOnInitialSegmentOfLength_def)
-end-proof
-
 theorem length_subFromLong is [a]
   fa (s:Stream a, i:Nat, n:Nat) length (subFromLong (s, i, n)) = n
-proof Isa
-apply (simp add: Stream__subFromLong_def)
-(*  apply (rule List__length_is_SegmentLength )
-  apply (simp add: List__definedOnInitialSegmentOfLength_def) *)
-end-proof
 
 % sublist from index i (inclusive) to index j (exclusive):
 
@@ -48,9 +39,6 @@ op [a] subFromTo (s: Stream a, i:Nat, j:Nat | i <= j) : List a =
 op [a] prefix (s: Stream a, n:Nat) : List a =
   list (fn i:Nat -> if i < n then Some (s i) else None)
 
-proof Isa prefix_Obligation_subtype
- by (auto simp: List__definedOnInitialSegmentOfLength_def)
-end-proof
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
@@ -58,7 +46,7 @@ proof Isa -verbatim
 lemma Stream__prefix_alt_def:
   "Stream__prefix (s,i) = Stream__subFromLong (s,0,i)"
  apply (simp add: Stream__prefix_def Stream__subFromLong_def)
- apply (rule_tac f=List__list in arg_cong, simp add: expand_fun_eq)
+ apply (rule_tac f=List__list in arg_cong, simp add: ext)
 done
 
 lemma Stream__prefix_elements:
@@ -70,10 +58,7 @@ done
 
 lemma Stream__prefix_length [simp]:
   "length (Stream__prefix (s,i)) = i"
- apply (simp add: Stream__prefix_def)
- apply (rule_tac n=i in List__length_is_SegmentLength)
- apply (simp_all add: List__definedOnInitialSegmentOfLength_def)
-done
+ by (simp add: Stream__prefix_def)
 
 lemma Stream__prefix_conv:
   "Stream__prefix (s1,i) = Stream__prefix (s2,i) = (\<forall>j<i. s1 j = s2 j)"
@@ -144,14 +129,6 @@ op [a] filterF (p: a -> Bool, s: Stream a |
       l = list (fn i:Nat -> if i < length indicesP then Some (s (indicesP @ i))
                                                    else None)
 
-proof Isa filterF_Obligation_the
- sorry
-end-proof
-
-proof Isa filterF_Obligation_subtype
- by (auto simp: List__definedOnInitialSegmentOfLength_def)
-end-proof
-
 op [a] filterI (p: a -> Bool, s: Stream a |
                 % infinite number of elements satisfy p:
                 infinite? (fn i:Nat -> p (s i))) : Stream a =
@@ -164,10 +141,6 @@ op [a] filterI (p: a -> Bool, s: Stream a |
     % then we construct the stream from those indices:
       (fa(i:Nat) s' i = s (indicesP i))
 
-proof Isa filterI_Obligation_the
- sorry
-end-proof
-
 % convert between stream of tuples and tuple of streams:
 
 op [a,b] zip (s1: Stream a, s2: Stream b) : Stream (a * b) =
@@ -179,26 +152,9 @@ op [a,b,c] zip3 (s1: Stream a, s2: Stream b, s3: Stream c)
 
 op unzip : [a,b] Stream (a * b) -> (Stream a * Stream b) = inverse zip
 
-proof Isa unzip_Obligation_subtype
- apply (auto simp add: bij_def inj_on_def surj_def Stream__zip_def 
-                       mem_def expand_fun_eq)
- apply (rule_tac x="\<lambda>i. fst (y i)"  in exI,
-        rule_tac x="\<lambda>i. snd (y i)"  in exI,
-        auto)
-end-proof
-
 op unzip3 : [a,b,c] Stream (a * b * c) ->
                     (Stream a * Stream b * Stream c) = inverse zip3
 
-proof Isa unzip3_Obligation_subtype
- apply (cut_tac Stream__unzip_Obligation_subtype)
- apply (auto simp add: bij_def inj_on_def surj_def Stream__zip3_def 
-                       mem_def expand_fun_eq)
- apply (rule_tac x="\<lambda>i. fst (y i)"  in exI,
-        rule_tac x="\<lambda>i. fst (snd (y i))"  in exI,
-        rule_tac x="\<lambda>i. snd (snd (y i))"  in exI,
-        auto)
-end-proof
 
 % homomorphically apply function to all elements of stream(s):
 
@@ -220,30 +176,11 @@ op [a] removeNonesF (s: Stream (Option a) |
                      finite? (fn i:Nat -> s i ~= None)) : List a =
   the (l: List a) map (embed Some) l = filterF (embed? Some, s)
 
-proof Isa removeNonesF_Obligation_the
- sorry
-end-proof
-
-proof Isa removeNonesF_Obligation_subtype
- apply (rule_tac t="\<lambda>i_1. case s i_1 of None \<Rightarrow> False | Some x \<Rightarrow> True"
-             and s="\<lambda>i. s i \<noteq> None" in subst, 
-        auto simp add: mem_def)
- apply (case_tac "s x = None", auto)
-end-proof
 
 op [a] removeNonesI (s: Stream (Option a) |
                      infinite? (fn i:Nat -> s i ~= None)) : Stream a =
   the (s': Stream a) map (embed Some) s' = filterI (embed? Some, s)
 
-proof Isa removeNonesI_Obligation_the
- sorry
-end-proof
-
-proof Isa removeNonesI_Obligation_subtype
- apply (rule_tac t="\<lambda>i_1. case s i_1 of None \<Rightarrow> False | Some x \<Rightarrow> True"
-            and  s="\<lambda>i. s i \<noteq> None" in subst, simp_all)
- apply (auto simp add: expand_set_eq mem_def, case_tac "s x", auto)
-end-proof
 
 % true iff two streams of optional values have the same "shape"
 % (i.e. matching None and Some values at every position i):
@@ -267,27 +204,16 @@ op [a,b] mapPartialI (f: a -> Option b, s: Stream a |
                       infinite? (fn i:Nat -> f (s i) ~= None)) : Stream b =
   removeNonesI (map f s)
 
-proof Isa mapPartialI_Obligation_subtype
- by (simp add: Stream__map_def)
-end-proof
-
 op [a,b,c] mapPartial2F (f: a * b -> Option c, s1: Stream a, s2: Stream b |
                          finite? (fn i:Nat -> f (s1 i, s2 i) ~= None))
                         : List c =
   mapPartialF (f, zip (s1, s2))
-
-proof Isa mapPartial2F_Obligation_subtype
- by (simp add: Stream__zip_def)
-end-proof
 
 op [a,b,c] mapPartial2I (f: a * b -> Option c, s1: Stream a, s2: Stream b |
                          infinite? (fn i:Nat -> f (s1 i, s2 i) ~= None))
                         : Stream c =
   mapPartialI (f, zip (s1, s2))
 
-proof Isa mapPartial2I_Obligation_subtype
- by (simp add: Stream__zip_def)
-end-proof
 
 op [a,b,c,d] mapPartial3F
              (f: a * b * c -> Option d,
@@ -296,9 +222,6 @@ op [a,b,c,d] mapPartial3F
              : List d =
   mapPartialF (f, zip3 (s1, s2, s3))
 
-proof Isa mapPartial3F_Obligation_subtype
- by (simp add: Stream__zip3_def)
-end-proof
 
 op [a,b,c,d] mapPartial3I
              (f: a * b * c -> Option d,
@@ -307,9 +230,6 @@ op [a,b,c,d] mapPartial3I
              : Stream d =
   mapPartialI (f, zip3 (s1, s2, s3))
 
-proof Isa mapPartial3I_Obligation_subtype
- by (simp add: Stream__zip3_def)
-end-proof
 
 % stream of repeated elements:
 
@@ -338,20 +258,6 @@ op [a] flattenF (sl: Stream (List a) |
   % resulting list is obtained by flattening first lme lists:
   flatten (prefix (sl, lme))
 
-proof Isa flattenF_Obligation_subtype
-apply (simp add: Integer__hasMin_p_def Stream__forall_p_def mem_def
-                 Integer__isMinIn_def Stream__removePrefix_def empty_null [symmetric])
-(** argue that (\<lambda>i. sl i \<noteq> []) has a largest element and use rule ex_has_least_nat *)
- sorry
-end-proof
-
-proof Isa flattenF_Obligation_subtype0
- apply (drule Stream__flattenF_Obligation_subtype)
- apply (unfold Least_def, rule the1I2, 
-        auto simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
- apply (rotate_tac 3, drule_tac x=y in spec, drule_tac x=x in spec, auto)
-end-proof
-
 op [a] flattenI (sl: Stream (List a) |
                  % infinite number of non-empty lists; result is infinite:
                  infinite? (fn i:Nat -> nonEmpty? (sl i))) : Stream a =
@@ -365,19 +271,6 @@ op [a] flattenI (sl: Stream (List a) |
     in
     sl j @ (i - length (flatten (prefix (sl, j))))
 
-proof Isa flattenI_Obligation_the
- sorry
-end-proof
-
-proof Isa flattenI_Obligation_subtype0
- by (rule  the1I2, erule Stream__flattenI_Obligation_the, auto)
-end-proof
-
-proof Isa flattenI_Obligation_subtype1
- apply (rotate_tac 1, erule rev_mp, rule the1I2, 
-        erule Stream__flattenI_Obligation_the, auto simp add: zdiff_int)
- sorry
-end-proof
 
 % group list/stream elements into stream of lists of given lengths:
 
@@ -392,39 +285,16 @@ op [a] unflattenF (l: List a, lens: Stream Nat |
                   : Stream (List a) =
   the (sl: Stream (List a)) map length sl = lens && flattenF sl = l
 
-proof Isa unflattenF_Obligation_the
- sorry
-end-proof
-
-proof Isa unflattenF_Obligation_subtype
- apply (thin_tac "0 \<le> ?a", thin_tac "?P", thin_tac "?a = ?b")
- apply (rule_tac t="\<lambda>i_1. List__nonEmpty_p (sl i_1)" 
-        and s="\<lambda>i. lens i \<noteq> 0" in subst, 
-        auto simp add: Stream__map_def)
-end-proof
-
 op [a] unflattenI (s: Stream a, lens: Stream Nat |
                    infinite? (fn i:Nat -> lens i ~= 0)) : Stream (List a) =
   the (sl: Stream (List a)) map length sl = lens && flattenI sl = s
 
-proof Isa unflattenI_Obligation_the
- sorry
-end-proof
-
-proof Isa unflattenI_Obligation_subtype
- by (simp add: Stream__map_def List__nonEmpty_p_def)
-end-proof
 
 % specialization of previous op to lists of uniform length n > 0:
 
 op [a] unflattenU (s: Stream a, n:PosNat) : Stream (List a) =
   unflattenI (s, repeat n)
 
-proof Isa unflattenU_Obligation_subtype
- (** this should generate an assumption "n > (0::nat)", not just "n > 0" **)
-by (simp add: Stream__repeat_def Set__infinite_p_def 
-           fun_Compl_def bool_Compl_def univ_true infinite_UNIV_nat)
-end-proof
 
 % stream without repeated elements (i.e. injective function):
 
@@ -442,9 +312,6 @@ op [a] positionsSuchThatF (s: Stream a, p: a -> Bool |
     % POSs contains all and only indices of elements satisfying p:
     (fa(i:Nat) i in? POSs <=> p (s i))
 
-proof Isa positionsSuchThatF_Obligation_the
- sorry
-end-proof
 
 op [a] positionsSuchThatI (s: Stream a, p: a -> Bool |
                            infinite? (fn i:Nat -> p (s i))) : InjStream Nat =
@@ -454,29 +321,12 @@ op [a] positionsSuchThatI (s: Stream a, p: a -> Bool |
     % POSs contains all and only indices of elements satisfying p:
     (fa(i:Nat) i in? POSs <=> p (s i))
 
-proof Isa positionsSuchThatI_Obligation_the
- sorry
-end-proof
-
 % leftmost/rightmost position of element satisfying predicate (None if none):
 
 op [a] leftmostPositionSuchThat (s: Stream a, p: a -> Bool) : Option Nat =
   if exists? p s then Some (minIn (fn i:Int -> i >= 0 && p (s i)))
                  else None
 
-proof Isa leftmostPositionSuchThat_Obligation_subtype
- apply (auto simp add: Stream__exists_p_def Integer__hasMin_p_def 
-                       Integer__isMinIn_def mem_def)
- apply (drule_tac k="i" and m="\<lambda>x. x" in ex_has_least_nat, auto)
- apply (rule_tac x="int x" in exI, auto)
-end-proof
-
-proof Isa leftmostPositionSuchThat_Obligation_subtype0
- apply (unfold Least_def, rule the1I2, auto)
- apply (drule  Stream__leftmostPositionSuchThat_Obligation_subtype,
-        simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
- apply (drule_tac x=y in spec, drule_tac x=x in spec, auto)
-end-proof
 
 op [a] rightmostPositionSuchThat (s: Stream a, p: a -> Bool) : Option Nat =
   if      (ex(pos:Nat) p (s pos) &&
@@ -486,10 +336,6 @@ op [a] rightmostPositionSuchThat (s: Stream a, p: a -> Bool) : Option Nat =
                        (fa(pos':Nat) pos' > pos => ~ (p (s pos'))))
   else
     None
-
-proof Isa rightmostPositionSuchThat_Obligation_the
- by (auto, rule classical, auto simp add:  neq_iff)
-end-proof
 
 % ordered list/stream of positions of given element:
 
@@ -506,33 +352,6 @@ op [a] positionsOfI (s: Stream a, x:a |
 op [a] positionOf (s: InjStream a, x:a | x in? s) : Nat =
   theElement (positionsOfF (s, x))
 
-proof Isa positionOf_Obligation_subtype
- apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
- apply (rule_tac t="\<lambda>ia. s ia = s i" and s="{i}" in subst)
- apply (simp add: expand_set_eq inj_on_def, auto simp only: mem_def)
-end-proof
-
-proof Isa positionOf_Obligation_subtype0
- apply (simp (no_asm_simp) add: Stream__positionsOfF_def Stream__positionsSuchThatF_def)
- apply (rule the1I2)
- apply (rule Stream__positionsSuchThatF_Obligation_the,
-        erule Stream__positionOf_Obligation_subtype, simp)
- apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
- apply (subgoal_tac "\<forall>j. j mem x = (j = i)", 
-        thin_tac "\<forall>ia. ia mem x = (s ia = s i)",
-        thin_tac "distinct ?l", thin_tac "inj s")
- defer
- apply (simp add: inj_on_def, drule_tac x=i in spec, safe, 
-        thin_tac "\<forall>ia. ia mem x = (s ia = s i)",
-        thin_tac "distinct ?l", thin_tac "distinct ?l",
-        drule_tac x=j in spec, drule mp, simp, simp)
- apply (rule classical, simp add: neq_iff, auto)
- apply (simp add: mem_iff, simp add: List__increasingNats_p_def)
- apply (drule_tac x=0 in spec, auto) 
- apply (cut_tac x=0 and y=1 and z="length x" in less_trans, simp, simp)
- apply (drule_tac  nth_mem, drule_tac  nth_mem)
- apply (frule_tac x= "x!0" in spec, drule_tac x= "x!1" in spec, simp)
-end-proof
 
 % true iff sub occurs within sup at position i:
 
@@ -554,10 +373,6 @@ op [a] positionsOfSublistF (sub: List a, sup: Stream a |
     % POSs contains all and only indices of occurrences of sub in sup:
     (fa(i:Nat) i in? POSs <=> sublistAt? (sub, i, sup))
 
-proof Isa positionsOfSublistF_Obligation_the
- sorry
-end-proof
-
 op [a] positionsOfSublistI (sub: List a, sup: Stream a |
                             infinite? (fn i:Nat -> sublistAt?(sub,i,sup)))
                            : InjStream Nat =
@@ -566,10 +381,6 @@ op [a] positionsOfSublistI (sub: List a, sup: Stream a |
     increasingNats? POSs &&
     % POSs contains all and only indices of occurrences of sub in sup:
     (fa(i:Nat) i in? POSs <=> sublistAt? (sub, i, sup))
-
-proof Isa positionsOfSublistI_Obligation_the
- sorry
-end-proof
 
 % if sub is a sublist of sup, return starting position of leftmost/rightmost
 % occurrence of sub within sup (there could be more than one), as well as the
@@ -587,11 +398,6 @@ op [a] leftmostPositionOfSublistAndFollowing
     let POSs = positionsOfSublistI (sub, sup) in
     let i = head POSs in
     Some (i, removePrefix (sup, i + length sub))
-
-proof Isa leftmostPositionOfSublistAndFollowing_Obligation_subtype1
- by (simp add: Stream__sublistAt_p_def Set__infinite_p_def 
-               fun_Compl_def bool_Compl_def)
-end-proof
 
 op [a] rightmostPositionOfSublistAndPreceding
        (sub: List a, sup: Stream a) : Option (Nat * List a) =
@@ -634,9 +440,6 @@ op [a] findLeftmost (p: a -> Bool) (s: Stream a) : Option a =
     let sp = filterI (p, s) in
     Some (head sp)
 
-proof Isa findLeftmost_Obligation_subtype0
- by (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def)
-end-proof
 
 op [a] findRightmost (p: a -> Bool) (s: Stream a) : Option a =
   if finite? (fn i:Nat -> p (s i)) then
@@ -705,17 +508,6 @@ op [a] longestCommonPrefix (s1: Stream a, s2: Stream a | s1 ~= s2) : List a =
       len >= 0 && prefix (s1, len) = prefix (s2, len)) in
   prefix (s1, len)
 
-proof Isa longestCommonPrefix_Obligation_subtype
-  apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
- sorry
-end-proof
-
-proof Isa longestCommonPrefix_Obligation_subtype0
-  apply (unfold Greatest_def, unfold GreatestM_def, rule someI2_ex)
-  apply (drule Stream__longestCommonPrefix_Obligation_subtype,
-         simp only: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
-  apply (simp)
-end-proof
 
 % a permutation of a stream is represented by a bijection over Nat:
 
@@ -728,9 +520,6 @@ type Permutation = (Stream Nat | permutation?) % = Bijection(Nat,Nat)
 op [a] permute (s: Stream a, prm: Permutation) : Stream a =
   the (s': Stream a) (fa(i:Nat) s i = s' (prm i))
 
-proof Isa permute_Obligation_the
- sorry
-end-proof
 
 % true iff s2 is a permutation of s1 (and vice versa):
 
@@ -753,20 +542,282 @@ op [a] compare
     | Greater -> Greater
     | Equal   -> compare comp (tail s1, tail s2)
 
-proof Isa compare ()
- by auto
-termination
- sorry
-end-proof
 
 % lift isomorphism to streams, element-wise:
 
 op [a,b] isoStream : Bijection(a,b) -> Bijection (Stream a, Stream b) =
   fn iso_elem -> map iso_elem
 
+% ------------------------------------------------------------------------------
+% ------------------ The proofs ------------------------------------------------
+% ------------------------------------------------------------------------------
+% Note: for the time being we place Isabelle lemmas that are needed for a proof 
+%       and cannot be expressed in SpecWare as "verbatim" lemmas into the
+%       preceeding proofs 
+% ------------------------------------------------------------------------------
+
+proof Isa subFromLong_Obligation_subtype
+ by (auto simp: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+
+proof Isa length_subFromLong
+apply (simp add: Stream__subFromLong_def)
+(*  apply (rule List__length_is_SegmentLength )
+  apply (simp add: List__definedOnInitialSegmentOfLength_def) *)
+end-proof
+
+proof Isa prefix_Obligation_subtype
+ by (auto simp: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+proof Isa filterF_Obligation_the
+ sorry
+end-proof
+
+proof Isa filterF_Obligation_subtype
+ by (auto simp: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+proof Isa filterI_Obligation_the
+ sorry
+end-proof
+
+proof Isa unzip_Obligation_subtype
+ apply (auto simp add: bij_def inj_on_def surj_def Stream__zip_def) 
+ apply (simp_all add: fun_eq_iff)
+ apply (rule_tac x="\<lambda>i. fst (y i)"  in exI,
+        rule_tac x="\<lambda>i. snd (y i)"  in exI,
+        auto)
+end-proof
+
+proof Isa unzip3_Obligation_subtype
+ apply (cut_tac Stream__unzip_Obligation_subtype)
+ apply (auto simp add: bij_def inj_on_def surj_def Stream__zip3_def) 
+ apply (simp_all add: fun_eq_iff)
+ apply (rule_tac x="\<lambda>i. fst (y i)"  in exI,
+        rule_tac x="\<lambda>i. fst (snd (y i))"  in exI,
+        rule_tac x="\<lambda>i. snd (snd (y i))"  in exI,
+        auto)
+end-proof
+
+proof Isa removeNonesF_Obligation_the
+ sorry
+end-proof
+
+proof Isa removeNonesF_Obligation_subtype
+ apply (rule_tac t="\<lambda>i_1. case s i_1 of None \<Rightarrow> False | Some x \<Rightarrow> True"
+             and s="\<lambda>i. s i \<noteq> None" in subst, 
+        auto simp add: mem_def)
+ apply (case_tac "s x = None", auto)
+end-proof
+
+proof Isa removeNonesI_Obligation_the
+ sorry
+end-proof
+
+proof Isa removeNonesI_Obligation_subtype
+ apply (rule_tac t="\<lambda>i_1. case s i_1 of None \<Rightarrow> False | Some x \<Rightarrow> True"
+            and  s="\<lambda>i. s i \<noteq> None" in subst, simp_all)
+ apply (auto simp add: set_eq_iff mem_def, case_tac "s x", auto)
+end-proof
+
+proof Isa mapPartialI_Obligation_subtype
+ by (simp add: Stream__map_def)
+end-proof
+
+proof Isa mapPartial2F_Obligation_subtype
+ by (simp add: Stream__zip_def)
+end-proof
+
+proof Isa mapPartial2I_Obligation_subtype
+ by (simp add: Stream__zip_def)
+end-proof
+
+proof Isa mapPartial3F_Obligation_subtype
+ by (simp add: Stream__zip3_def)
+end-proof
+
+proof Isa mapPartial3I_Obligation_subtype
+ by (simp add: Stream__zip3_def)
+end-proof
+
+proof Isa flattenF_Obligation_subtype
+apply (simp add: Integer__hasMin_p_def Stream__forall_p_def mem_def
+                 Integer__isMinIn_def Stream__removePrefix_def)
+(** argue that (\<lambda>i. sl i \<noteq> []) has a largest element and use rule ex_has_least_nat *)
+ sorry
+end-proof
+
+proof Isa flattenF_Obligation_subtype0
+ apply (drule Stream__flattenF_Obligation_subtype)
+ apply (unfold Least_def, rule the1I2, 
+        auto simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
+ apply (rotate_tac 3, drule_tac x=y in spec, drule_tac x=x in spec, auto)
+end-proof
+
 proof Isa isoStream_Obligation_subtype
-  apply (auto simp add: bij_def inj_on_def surj_def Stream__map_def expand_fun_eq)
+  apply (simp add: bij_def inj_on_def surj_def  Stream__map_def,
+         auto simp add: fun_eq_iff)
   apply (drule choice, auto)
 end-proof
 
+proof Isa splitAtLeftmost_Obligation_subtype
+  apply (simp add: Stream__exists_p_def Integer__hasMin_p_def 
+                   Integer__isMinIn_def mem_def)
+ sorry
+end-proof
+
+proof Isa flattenI_Obligation_the
+ sorry
+end-proof
+
+proof Isa flattenI_Obligation_subtype
+ by (rule  the1I2, erule Stream__flattenI_Obligation_the, auto)
+end-proof
+
+proof Isa flattenI_Obligation_subtype0
+ apply (rotate_tac 1, erule rev_mp, rule the1I2, 
+        erule Stream__flattenI_Obligation_the, auto simp add: zdiff_int)
+ sorry
+end-proof
+
+proof Isa unflattenF_Obligation_the 
+ (** Typing problem - replace Integer__zero_p by
+     (\<lambda> (x::nat). Integer__zero_p (int x)) 
+  -- The previous translator got this right --
+  **)
+ sorry
+end-proof
+
+proof Isa unflattenF_Obligation_subtype
+ (** Typing problem - replace Integer__zero_p by
+     (\<lambda> (x::nat). Integer__zero_p (int x)) 
+  **)
+ by (rule_tac t="\<lambda>i_1. List__nonEmpty_p (sl i_1)" 
+        and s="\<lambda>i. lens i \<noteq> 0" in subst, 
+        auto simp add: Stream__map_def)
+end-proof
+
+proof Isa unflattenI_Obligation_the
+ sorry
+end-proof
+
+proof Isa unflattenI_Obligation_subtype
+ by (simp add: Stream__map_def List__nonEmpty_p_def)
+end-proof
+
+proof Isa unflattenU_Obligation_subtype
+ (** this should generate an assumption "n > (0::nat)", not just "n > 0" **)
+by (simp add: Stream__repeat_def Set__infinite_p_def 
+           fun_Compl_def bool_Compl_def univ_true infinite_UNIV_nat)
+end-proof
+
+proof Isa positionsSuchThatF_Obligation_the
+ sorry
+end-proof
+
+proof Isa positionsSuchThatI_Obligation_the
+ sorry
+end-proof
+
+proof Isa leftmostPositionSuchThat_Obligation_subtype
+ apply (auto simp add: Stream__exists_p_def Integer__hasMin_p_def 
+                       Integer__isMinIn_def mem_def)
+ apply (drule_tac k="i" and m="\<lambda>x. x" in ex_has_least_nat, auto)
+ apply (rule_tac x="int x" in exI, auto)
+end-proof
+
+proof Isa leftmostPositionSuchThat_Obligation_subtype0
+ apply (unfold Least_def, rule the1I2, auto)
+ apply (drule  Stream__leftmostPositionSuchThat_Obligation_subtype,
+        simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
+ apply (drule_tac x=y in spec, drule_tac x=x in spec, auto)
+end-proof
+
+proof Isa rightmostPositionSuchThat_Obligation_the
+ by (auto, rule classical, auto simp add:  neq_iff)
+end-proof
+
+proof Isa positionOf_Obligation_subtype
+ apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
+ apply (rule_tac t="\<lambda>ia. s ia = s i" and s="{i}" in subst)
+ apply (simp add: set_eq_iff inj_on_def, auto simp only: mem_def)
+end-proof
+
+proof Isa positionOf_Obligation_subtype0
+ apply (simp (no_asm_simp) add: Stream__positionsOfF_def Stream__positionsSuchThatF_def)
+ apply (rule the1I2)
+ apply (rule Stream__positionsSuchThatF_Obligation_the,
+        erule Stream__positionOf_Obligation_subtype, simp)
+ apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
+ apply (subgoal_tac "\<forall>j. j mem x = (j = i)", 
+        thin_tac "\<forall>ia. ia mem x = (s ia = s i)",
+        thin_tac "distinct ?l", thin_tac "inj s")
+ defer
+ apply (simp add: inj_on_def, drule_tac x=i in spec, safe, 
+        thin_tac "\<forall>ia. ia mem x = (s ia = s i)",
+        thin_tac "distinct ?l", thin_tac "distinct ?l",
+        drule_tac x=j in spec, drule mp, simp, simp)
+ apply (rule classical, simp add: neq_iff, auto)
+ apply (simp add: List__increasingNats_p_def)
+ apply (drule_tac x=0 in spec, auto) 
+ apply (cut_tac x=0 and y=1 and z="length x" in less_trans, simp, simp)
+ apply (drule_tac  nth_mem, drule_tac  nth_mem)
+ apply (frule_tac x= "x!0" in spec, drule_tac x= "x!1" in spec, simp)
+end-proof
+
+proof Isa positionsOfSublistF_Obligation_the
+ sorry
+end-proof
+
+proof Isa positionsOfSublistI_Obligation_the
+ sorry
+end-proof
+
+proof Isa leftmostPositionOfSublistAndFollowing_Obligation_subtype0
+ by (simp add: Stream__sublistAt_p_def Set__infinite_p_def 
+               fun_Compl_def bool_Compl_def)
+end-proof
+
+proof Isa findLeftmost_Obligation_subtype0
+ by (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def)
+end-proof
+
+proof Isa longestCommonPrefix_Obligation_subtype
+  apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
+ sorry
+end-proof
+
+proof Isa longestCommonPrefix_Obligation_subtype0
+  apply (unfold Greatest_def, unfold GreatestM_def, rule someI2_ex)
+  apply (drule Stream__longestCommonPrefix_Obligation_subtype,
+         simp only: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
+  apply (simp)
+end-proof
+
+proof Isa permute_Obligation_the
+ sorry
+end-proof
+
+proof Isa compare ()
+ by auto
+termination
+ sorry
+end-proof
+
+proof Isa splitAtLeftmost_Obligation_subtype0
+  apply (drule Stream__splitAtLeftmost_Obligation_subtype)
+  apply (simp add: Integer__minIn__def)
+  apply (rule the1I2, simp add: Integer__minIn_Obligation_the)
+  apply (simp add: Integer__isMinIn_def mem_def)
+end-proof
+
+proof Isa findLeftmostAndPreceding_Obligation_subtype
+  by (simp add: Stream__splitAtLeftmost_Obligation_subtype)
+end-proof
+
+proof Isa findLeftmostAndPreceding_Obligation_subtype0
+  by (simp add: Stream__splitAtLeftmost_Obligation_subtype0)
+end-proof
 endspec

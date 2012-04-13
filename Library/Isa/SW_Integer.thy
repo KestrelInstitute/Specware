@@ -253,6 +253,14 @@ theorem Integer__e_lt_eq_and__gt_eq_are_converses:
   "((i::int) \<le> (j::int)) = (j \<ge> i)"
   by auto
 
+theorem Nat__e_pls__def: 
+  "(x_1::nat) + (x_2::nat) = x_1 + x_2"
+  by auto
+
+theorem Nat__e_ast__def: 
+  "(x_1::nat) * (x_2::nat) = x_1 * x_2"
+  by auto
+
 theorem Integer__induction_naturals: 
   "\<lbrakk>(p::nat \<Rightarrow> bool) 0; \<forall>(n::nat). p n \<longrightarrow> p (n + 1)\<rbrakk> \<Longrightarrow> 
    p (n::nat)"

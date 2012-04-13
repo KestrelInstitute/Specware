@@ -1,25 +1,7 @@
 Seq qualifying spec
 
 import Stream
-% ------------------------------------------------------------------------------
-proof Isa -verbatim
 
-lemma e_at_at_m_definedOnInitialSegmentOfLength:
-  "\<lbrakk>\<forall>i j. i \<in> Domain s \<and> j < i \<longrightarrow> j \<in> Domain s; i \<notin> Domain s\<rbrakk>
-       \<Longrightarrow> \<exists>n. (\<lambda>i. s @@_m i) definedOnInitialSegmentOfLength n"
-  apply (drule_tac P="\<lambda>i. i \<notin> Domain s" and m=id in ex_has_least_nat, safe)
-  apply (rule_tac x=x in exI, 
-         simp add: e_at_at_m_def Domain_def not_less 
-                   List__definedOnInitialSegmentOfLength_def,
-         clarify)
-  apply (case_tac "x=i", simp_all)
-  apply (drule_tac x=i in spec, rotate_tac -1, drule_tac x=x in spec, 
-         drule mp, simp_all)
-  apply (rule exI, simp)
-done
-
-end-proof
-% ------------------------------------------------------------------------------
 
 (* This spec defines a notion of sequences, which can be finite or infinite. We
 use a sum of lists (from the Specware base library) and streams to model
@@ -38,77 +20,6 @@ op seq : [a] Bijection (SeqMap a, Seq a) = fn m: SeqMap a ->
   if (ex(i:Nat) m undefinedAt i) then fin (list (fn i:Nat -> m i))
                                  else inf (fn i:Nat -> m @ i)
 
-proof Isa seq_Obligation_subtype
-  apply (auto simp add: bij_ON_def)
-  (** tedious proof - many cases **)
-  apply (simp add: inj_on_def, clarify, drule mem_reverse, rule conjI)
-  apply (clarify, drule mem_reverse)
-  defer apply (clarify, drule mem_reverse) prefer 3
-  apply (cut_tac List__list_subtype_constr, 
-         simp add: bij_ON_def Stream__subFromLong_def List__subFromLong_def,
-         clarify, thin_tac "surj_on ?f ?A ?B")
-  apply (drule inj_onD, erule sym)
-  apply (simp (no_asm_simp) add: mem_def, 
-         simp add: Seq__SeqMap__subsort_pred_def, clarify,
-         erule e_at_at_m_definedOnInitialSegmentOfLength, simp)+
-  apply (simp add: expand_set_eq, simp add: expand_fun_eq, clarify, 
-         drule_tac x=a in spec, 
-         auto simp add: Seq__SeqMap__subsort_pred_def)  
-  apply (drule sym, frule DomainI, 
-         thin_tac "?P",  thin_tac "?P",  thin_tac "?P", 
-         rotate_tac 1,  thin_tac "?P",
-         simp add: e_at_at_m_def split: split_if_asm,
-         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
-  apply (frule DomainI, 
-         thin_tac "?P",  thin_tac "?P",  
-         rotate_tac 1,  thin_tac "?P", rotate_tac 1,  thin_tac "?P",
-         simp add: e_at_at_m_def split: split_if_asm,
-         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
-  apply (simp add: expand_fun_eq, rotate_tac -3, drule_tac x=a in spec,
-         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
-  apply (drule sym, simp add: expand_fun_eq, rotate_tac -3, 
-         drule_tac x=a in spec,
-         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
-  (*** finally surjectivity **)
-  apply (auto simp add: surj_on_def, drule mem_reverse, simp)
-  apply (case_tac y)
-  (** Case 1: Lists **)
-  apply (rule_tac x="{(i,a). i < length list \<and> a = list!i}" in bexI)
-  apply (subgoal_tac "\<exists>i. i \<notin> Domain {(i, a). 
-                                  i < length list \<and> a = list ! i}", 
-         auto, thin_tac "?P")
-  apply (subgoal_tac "op @@_m {(i, a). i < length list \<and> a = list ! i} 
-                      definedOnInitialSegmentOfLength (length list)")
-  apply (rule nth_equalityI)
-  apply (rule sym, erule List__length_is_SegmentLength)
-  apply (clarify, rule sym, erule List__list_nth, simp,
-         simp add: e_at_at_m_def e_at_m_def)
-  apply (simp add: List__definedOnInitialSegmentOfLength_def e_at_at_m_def)
-  apply (simp add: mem_def, 
-         simp add: Seq__SeqMap__subsort_pred_def Relation__functional_p_alt_def)
-  (** Case 2: Streams **)
-  apply (rule_tac x="{(i,a). a = fun i}" in bexI, auto)
-  apply (simp add: expand_fun_eq e_at_m_def)
-  apply (simp add: mem_def, 
-         simp add: Seq__SeqMap__subsort_pred_def Relation__functional_p_alt_def)
-end-proof
-
-proof Isa seq_Obligation_subtype0
-   apply (auto simp add: MapAC__undefinedAt_def Seq__SeqMap__subsort_pred_def 
-                         List__definedOnInitialSegmentOfLength_def 
-                         e_at_at_m_def not_less not_le)
-   apply (thin_tac "Relation__functional_p m",
-          drule_tac P="\<lambda>i. i \<notin> Domain m" 
-                and m="\<lambda>i. i" in  ex_has_least_nat,
-          auto)
-   apply (rule_tac x=x in exI, safe)
-   apply (drule DomainI)
-   apply (drule_tac x=i in spec, rotate_tac -1, drule_tac x=x in spec, auto)
-end-proof
-
-proof Isa seq_Obligation_subtype1
- by (simp add: MapAC__definedAt_def MapAC__undefinedAt_def not_ex)
-end-proof
 
 op seq_1 : [a] Bijection (Seq a, SeqMap a) = inverse seq
 
@@ -117,31 +28,12 @@ op seq_1 : [a] Bijection (Seq a, SeqMap a) = inverse seq
 op   finite? : [a] Seq a -> Bool = embed? fin
 op infinite? : [a] Seq a -> Bool = embed? inf
 
-% ------------------------------------------------------------------------------
-% Adding simplification laws for sequences known to be lists or streams
-% will make many of the later proofs a lot easier
-% ------------------------------------------------------------------------------
-proof Isa -verbatim
+theorem infinite_inf_simp is [a]    fa (s: Stream a) infinite? (inf s)
+theorem infinite_fin_simp is [a]    fa (l: List a)   infinite? (fin l) = false
+theorem finite_inf_simp is [a]      fa (s: Stream a) finite? (inf s)   = false
+theorem finite_fin_simp is [a]      fa (l: List a)   finite? (fin l)
+theorem infinite_not_finite is [a]  fa (s: Seq a)  infinite? s = ~(finite? s)
 
-lemma Seq__infinite_inf_simp [simp]:   
-  "Seq__infinite_p (Seq__Seq__inf fun)"
-  by (simp add: Seq__infinite_p_def)
-lemma Seq__infinite_fin_simp [simp]:   
-  "Seq__infinite_p (Seq__Seq__fin l) = False"
-  by (simp add: Seq__infinite_p_def)
-lemma Seq__finite_fin_simp [simp]:   
-  "Seq__finite_p (Seq__Seq__fin l)"
-  by (simp add: Seq__finite_p_def)
-lemma Seq__finite_inf_simp [simp]:   
-  "Seq__finite_p (Seq__Seq__inf fun) = False"
-  by (simp add: Seq__finite_p_def)
-
-lemma Seq__infinite_not_finite:
-  "Seq__infinite_p s = (\<not>(Seq__finite_p s))"
-  by (case_tac s, simp_all)
-
-end-proof
-% ------------------------------------------------------------------------------
 
 type FinSeq a = (Seq a |   finite?)
 type InfSeq a = (Seq a | infinite?)
@@ -153,43 +45,28 @@ op [a] stream (s: InfSeq a) : Stream a = let inf t = s in t
 
 op [a] length (s:FinSeq a) : Nat = length (list s)
 
-% ------------------------------------------------------------------------------
-proof Isa -verbatim
-
-lemma Seq__length_fin_simp [simp]:   
-  "Seq__length (Seq__Seq__fin l) = length l"
-  by (simp add: Seq__length_def Seq__list_def)
-
-end-proof
-% ------------------------------------------------------------------------------
+theorem length_fin_simp is [a]     fa (l: List a)  length (fin l) = length l
 
 % true iff sequence has length n:
 
 op [a] ofLength? (n:Nat) (s: Seq a) : Bool =
   finite? s && length s = n
-% ------------------------------------------------------------------------------
-proof Isa -verbatim
 
-lemma Seq__ofLength_fin_simp [simp]:   
-  "Seq__ofLength_p n (Seq__Seq__fin l) = (length l = n)"
-  by (simp add: Seq__ofLength_p_def)
-lemma Seq__ofLength_inf_simp [simp]:   
-  "Seq__ofLength_p n (Seq__Seq__inf fun) = False"
-  by (simp add: Seq__ofLength_p_def)
+theorem ofLength_fin_simp is [a]   
+  fa (l: List a, n:Nat)   ofLength? n (fin l) = (length l = n)
+theorem ofLength_inf_simp is [a]   
+  fa (s: Stream a, n:Nat) ofLength? n (inf s) = false
 
-end-proof
-% ------------------------------------------------------------------------------
 
 % true iff n is less than (or equal to) length of sequence:
 
 op [a] <_length (n:Nat, s: Seq a) infixl 20 : Bool =
   infinite? s || n < length s
 
-proof Isa e_lt_length_Obligation_subtype
-  by (simp add: Seq__infinite_not_finite)
-end-proof
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
+
+ (* convert all these into specware theorems ***)
 
 lemma Seq__e_lt_length_inf_simp [simp]:   
   "n <_length (Seq__Seq__inf fun)"
@@ -320,7 +197,7 @@ proof Isa -verbatim
 
 lemma Seq__toSet_fin [simp]:
   "Seq__toSet (Seq__Seq__fin l) = set l"
- by (simp add: Seq__toSet_def expand_fun_eq mem_iff mem_def)
+ by (simp add: Seq__toSet_def fun_eq_iff mem_def)
 lemma Seq__toSet_inf [simp]:
   "Seq__toSet (Seq__Seq__inf fun) = range fun"
  by (auto simp add: Seq__toSet_def in_strm_p_def,
@@ -497,7 +374,8 @@ proof Isa -verbatim
 lemma Seq__head_fin [simp]:
   "\<lbrakk>l \<noteq> []\<rbrakk> 
   \<Longrightarrow> Seq__head (Seq__Seq__fin l) = hd l"
-  by (simp add: Seq__head_def length_greater_0_conv [symmetric] take_Suc
+  by (simp add: Seq__head_def length_greater_0_conv [symmetric] 
+                take_Suc One_nat_def
            del: length_greater_0_conv)
 
 lemma Seq__head_fin2 [simp]:
@@ -509,7 +387,7 @@ lemma Seq__head_inf [simp]:
  "\<lbrakk>s \<noteq> Seq__empty; s = Seq__Seq__inf fun\<rbrakk> 
  \<Longrightarrow> Seq__head s = fun 0"
  apply (simp add: Seq__head_def)
- apply (rule_tac t="Stream__subFromLong (fun, 0, Suc 0)"
+ apply (rule_tac t="Stream__subFromLong (fun, 0, 1)"
              and s="[fun 0]" in subst, 
         simp_all)
  apply (simp add: list_eq_iff_nth_eq Stream__length_subFromLong,
@@ -521,13 +399,14 @@ done
 lemma Seq__last_fin [simp]:
   "\<lbrakk>l \<noteq> []\<rbrakk> 
   \<Longrightarrow> Seq__last (Seq__Seq__fin l) = last l"
- apply (simp add: Seq__last_def length_greater_0_conv [symmetric] Seq__suffix_fin
+ apply (simp add: Seq__last_def length_greater_0_conv [symmetric] 
+                  Seq__suffix_fin One_nat_def
           del: length_greater_0_conv)
  apply (rule_tac t="List__suffix (l, Suc 0)" and s="[last l]" in subst,
         simp_all (no_asm_simp) add: list_eq_iff_nth_eq)
  apply (simp add: List__suffix_def List__subFromLong_def last_conv_nth)
  apply (rule sym, rule_tac n=1 in List__list_nth, 
-        simp_all add: List__definedOnInitialSegmentOfLength_def)
+        simp_all add: List__definedOnInitialSegmentOfLength_def  One_nat_def)
 done
 
 end-proof
@@ -550,7 +429,7 @@ proof Isa -verbatim
 
 lemma Seq__tail_fin [simp]:
   "Seq__tail (Seq__Seq__fin l) = Seq__Seq__fin (tl l)"
- by (simp add: Seq__tail_def drop_Suc)
+ by (simp add: Seq__tail_def drop_Suc  One_nat_def)
 lemma Seq__tail_inf [simp]:
   "Seq__tail (Seq__Seq__inf fun) = Seq__Seq__inf (\<lambda>i. fun (i + 1))"
  by (simp add: Seq__tail_def del: Seq__removePrefix.simps)
@@ -588,13 +467,13 @@ proof Isa e_pls_pls_Obligation_the
                    Stream__removePrefix_def)
   apply (rule_tac s="List__subFromLong(list, 0, length list)" in HOL.trans)
   apply (simp add: Stream__subFromLong_def List__subFromLong_def,
-         rule_tac f=List__list in arg_cong, simp add: expand_fun_eq)
+         rule_tac f=List__list in arg_cong, simp add: fun_eq_iff)
   apply (rule List__subFromLong_whole)
   apply (case_tac x, 
          simp_all add: Stream__e_pls_pls_def Seq__infinite_p_def 
                        Stream__removePrefix_def, 
          clarify)
-  apply (simp add: expand_fun_eq not_less, auto)
+  apply (simp add: fun_eq_iff not_less, auto)
   apply (drule_tac t="List__subFromLong(list, 0, length list)" in HOL.trans)
   apply (rule List__subFromLong_whole [symmetric])
   apply (cut_tac List__list_subtype_constr, 
@@ -604,7 +483,7 @@ proof Isa e_pls_pls_Obligation_the
   apply (thin_tac "?P", thin_tac "?P", simp add: mem_def,
          rule_tac x="length list" in exI, 
          simp add: List__definedOnInitialSegmentOfLength_def)+
-  apply (rotate_tac 1, thin_tac "?P", simp add: expand_fun_eq,
+  apply (rotate_tac 1, thin_tac "?P", simp add: fun_eq_iff,
          drule_tac x=x in spec, auto)
 end-proof
 
@@ -627,10 +506,10 @@ lemma Seq__e_pls_pls_inf [simp]:
  apply (simp only:  Seq__e_pls_pls_def)
  apply (rule the1I2, rule Seq__e_pls_pls_Obligation_the, auto)
  apply (case_tac x, simp_all)
- apply (simp add: Stream__e_pls_pls_def expand_fun_eq not_less, auto)
+ apply (simp add: Stream__e_pls_pls_def fun_eq_iff not_less, auto)
  apply (simp add: list_eq_iff_nth_eq Stream__subFromLong_def 
-                  List__subFromLong_def,
-        clarify, simp, thin_tac "?P", rotate_tac 1, thin_tac "?P")
+                  List__subFromLong_def)
+ apply (rotate_tac 1, thin_tac "?P")
  apply (drule_tac x=xa in spec, auto)
  apply (rule sym, drule sym, simp)
  apply (rule_tac n="length l" in List__list_nth, 
@@ -685,7 +564,7 @@ op [a] update (s: Seq a, i:Nat, x:a | i <_length s) : Seq a =
 
 proof Isa update_Obligation_subtype
  by (auto simp: Seq__e_lt_length_def Seq__infinite_p_def
-                Seq__length_def Seq__list_def)
+                Seq__length_def)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -755,7 +634,7 @@ termination
   **********************************************************************)
  apply (relation "measure (\<lambda>(f,base,s). Seq__length s)", auto)
  apply (case_tac s, auto simp add: Seq__empty_def)
- apply (simp add: Seq__length_def Seq__list_def)
+ apply (simp add: Seq__length_def)
  sorry
 end-proof
 
@@ -784,7 +663,7 @@ termination
   **********************************************************************)
  apply (relation "measure (\<lambda>(f,base,s). Seq__length s)", auto)
  apply (case_tac s, auto simp add: Seq__empty_def)
- apply (simp add: Seq__length_def Seq__list_def)
+ apply (simp add: Seq__length_def)
 sorry
 end-proof
 
@@ -837,8 +716,7 @@ lemma Seq__equiLong_sym:
   by (case_tac s1, simp_all add: Seq__equiLong_def)
 lemma Seq__equiLong_trans:
   "\<lbrakk>(s1::'a Seq__Seq) equiLong s2; s2 equiLong s3\<rbrakk> \<Longrightarrow> s1 equiLong s3"
-  by (case_tac s1, simp_all add: Seq__equiLong_def,
-         case_tac s2, simp_all, case_tac s2, simp_all)
+  by (case_tac s1, simp_all add: Seq__equiLong_def)
 
 end-proof
 % ------------------------------------------------------------------------------
@@ -852,15 +730,10 @@ op [a,b] zip (s1: Seq a, s2: Seq b | s1 equiLong s2) : Seq (a * b) =
 
 proof Isa zip_Obligation_exhaustive
  (**********************************************************************
-  STEPHEN
-     Need to insert the following premise to make the proof go through
-        ( pV1 equiLong pV2; 
-     premise is present in the other obligations above 
+  Something's wrong: s10 should be s1, s20 should be s2
   **********************************************************************)
- apply (drule sym, drule sym)
- apply (cases pV1, 
-        auto simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def)
- sorry
+ by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
+        split: Seq__Seq.split_asm)
 end-proof
 
 op [a,b,c] zip3 (s1: Seq a, s2: Seq b, s3: Seq c |
@@ -871,17 +744,10 @@ op [a,b,c] zip3 (s1: Seq a, s2: Seq b, s3: Seq c |
 
 proof Isa zip3_Obligation_exhaustive
  (**********************************************************************
-  STEPHEN
-     Need to insert the following premises to make the proof go through
-        pV1 equiLong pV2; pV2 equiLong pV3;
-     premises are present in the other obligations above 
+  Something's wrong: s10 should be s1, s20 should be s2, s30 should be s3
   **********************************************************************)
- apply (drule sym, drule sym, drule sym)
- apply (cases pV1, cases pV2)  
- prefer 3  
- apply (cases pV2, 
-        auto simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def)
- sorry
+ by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
+        split: Seq__Seq.split_asm)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -889,21 +755,15 @@ proof Isa -verbatim
 lemma Seq__zip3_alt: 
   "\<lbrakk>a equiLong b; b equiLong c \<rbrakk> 
   \<Longrightarrow>  Seq__zip3 (a,b,c) = Seq__zip (a, (Seq__zip (b,c)))"
-  apply (case_tac a)
-   apply (case_tac b, simp_all)
-     apply (case_tac c, simp_all add: List__zip3_alt)
-   apply (case_tac b, simp_all)
-     apply (case_tac c, simp_all add: Stream__zip3_def Stream__zip_def)
-done
+ by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
+                 List__zip3_alt Stream__zip3_def Stream__zip_def 
+        split: Seq__Seq.split_asm)
 
 lemma Seq__zip_equilong_left:
   "\<lbrakk>a equiLong b\<rbrakk> 
   \<Longrightarrow> x equiLong Seq__zip (a,b) = (x equiLong a)"
-  apply (simp add: Seq__equiLong_def)
-  apply (case_tac a)
-        apply (case_tac b, simp_all)
-        apply (case_tac b, simp_all)
-done
+ by (simp add: Seq__equiLong_def  Seq__infinite_p_def Seq__finite_p_def
+        split: Seq__Seq.split_asm)
 end-proof
 % ------------------------------------------------------------------------------
 
@@ -1029,7 +889,7 @@ proof Isa removeNones_Obligation_the
   apply (rule_tac s="\<lambda>i. case fun i of None \<Rightarrow> False 
                                              | Some x \<Rightarrow> True"
               and t="\<lambda>i. fun i \<noteq> None" in subst,
-         simp add: expand_fun_eq split: option.split, simp)
+         simp add: fun_eq_iff split: option.split, simp)
   apply (clarify, rule_tac a="Seq__Seq__fin l" in ex1I, simp)
   apply (case_tac x, simp, simp) 
   (* Case 2: Infinite streams, same proof *)
@@ -1038,7 +898,7 @@ proof Isa removeNones_Obligation_the
   apply (rule_tac s="\<lambda>i. case fun i of None \<Rightarrow> False 
                                              | Some x \<Rightarrow> True"
               and t="\<lambda>i. fun i \<noteq> None" in subst,
-         simp add: expand_fun_eq split: option.split, simp)
+         simp add: fun_eq_iff split: option.split, simp)
   apply (clarify, rule_tac a="Seq__Seq__inf s_cqt" in ex1I, simp)
   apply (case_tac x, simp, simp) 
 end-proof
@@ -1120,7 +980,7 @@ op [a] extendLeft (s: FinSeq a, x:a, n:Nat | n >= length s) : FinSeq a =
   fin (extendLeft (list s, x, n))
 
 proof Isa extendLeft_Obligation_subtype
- by (cases s, auto simp: Seq__list_def)
+ by (cases s, auto simp:)
 end-proof
 
 
@@ -1128,7 +988,7 @@ op [a] extendRight (s: FinSeq a, x:a, n:Nat | n >= length s) : FinSeq a =
   fin (extendRight (list s, x, n))
 
 proof Isa extendRight_Obligation_subtype
- by (cases s, auto simp: Seq__list_def)
+ by (cases s, auto simp:)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -1157,16 +1017,10 @@ end-proof
 
 proof Isa equiExtendLeft_Obligation_exhaustive
  (**********************************************************************
-  STEPHEN
-     Need to insert the following premise to make the proof go through
-        Seq__finite_p pV1 = Seq__finite_p pV2;    
-     premise is present in the other obligations above 
+  Something's wrong: s10 should be s1, s20 should be s2
   **********************************************************************)
- apply (rotate_tac 1, drule sym, drule sym)
- apply (cases pV1, cases pV2)  
- prefer 3  
- apply (cases pV2, auto simp add: Seq__finite_p_def)
- sorry
+ by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
+        split: Seq__Seq.split_asm)
 end-proof
 
 op [a,b] equiExtendRight (s1: Seq a, s2: Seq b, x1:a, x2:b)
@@ -1184,8 +1038,7 @@ proof Isa equiExtendRight_Obligation_subtype4
 end-proof
 
 proof Isa equiExtendRight_Obligation_exhaustive
- apply (rotate_tac 1, drule sym, drule sym)
- apply (cases pV1, cases pV2, simp_all, cases pV2, simp_all)
+  by (cases s1, cases s2, simp_all, cases s2, simp_all)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -1332,27 +1185,27 @@ op [a] flatten (ss: SegSeq a) : Seq a =
       inf (flattenI (map list streamOfSeqs))
 
 proof Isa flatten_Obligation_subtype1
-  apply (simp add: Seq__SegSeq__subsort_pred_def 
+  apply (simp add: Seq__SegSeq__subtype_pred_def 
                    List__e_at_at_def list_1_Isa_nth
          split: split_if_asm)
   apply (auto simp add: list_all_length nth_butlast)
 end-proof
 
-proof Isa flatten_Obligation_subtype3
+proof Isa flatten_Obligation_subtype2
  by (rule finite_subset, 
      auto simp add: mem_def Stream__map_def Seq__empty_def  
-                    Seq__nonEmpty_p_alt_def Seq__list_def)
+                    Seq__nonEmpty_p_alt_def)
 end-proof
 
-proof Isa flatten_Obligation_subtype4
- apply (simp add: Seq__SegSeq__subsort_pred_def 
+proof Isa flatten_Obligation_subtype3
+ apply (simp add: Seq__SegSeq__subtype_pred_def 
                   List__e_at_at_def list_1_Isa_nth
         split: split_if_asm)
  apply (auto simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def 
                        Stream__map_def Seq__empty_def)
  apply (erule notE, rule finite_subset, auto simp add: mem_def)
  apply (drule_tac x=x in spec)
- apply (case_tac "streamOfSeqs x", auto simp add: Seq__list_def)
+ apply (case_tac "streamOfSeqs x", auto)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -1404,22 +1257,18 @@ op [a] segmentationOf (ss: SegSeq a) : Segmentation =
     {finLens = map length (butLast ss), lastInf = true}
 
 proof Isa segmentationOf_Obligation_subtype
- by (auto simp: Seq__segmentation_p_def)
+  by (auto simp add: Seq__forall_p_def Seq__empty_def Seq__nonEmpty_p_alt_def
+                     Seq__e_lt_length_def Seq__length_def)
 end-proof
 
 proof Isa segmentationOf_Obligation_subtype0
-  by (auto simp add: Seq__forall_p_def Seq__empty_def Seq__nonEmpty_p_alt_def
-                     Seq__e_lt_length_def Seq__length_def Seq__list_def)
-end-proof
-
-proof Isa segmentationOf_Obligation_subtype1
  by (auto simp add: Seq__e_lt_length_Obligation_subtype)
 end-proof
 
 proof Isa segmentationOf_Obligation_subtype2
  apply (auto, drule Seq__e_lt_length_Obligation_subtype)
  apply (case_tac ss, 
-        simp_all add: Seq__SegSeq__subsort_pred_def 
+        simp_all add: Seq__SegSeq__subtype_pred_def 
                       List__e_at_at_def list_1_Isa_nth 
         split: split_if_asm) 
  apply (auto simp add: Seq__segmentation_p_def List__length_subFromLong)
@@ -1462,8 +1311,9 @@ op [a] unflattenU
   unflatten (s, {finLens = repeat n None, lastInf = false})
 
 % ------------------------------------------------------------------------------
-proof Isa -verbatim
-
+proof Isa unflattenU_Obligation_subtype
+  apply (simp add: Seq__segmentationFor_def)
+  sorry
 end-proof
 % ------------------------------------------------------------------------------
 
@@ -1476,25 +1326,26 @@ type InjSeq a = (Seq a | noRepetitions?)
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 
-(*** move this later to Maps.sw in General ***)
+(*** move this later to Relation.sw in General 
+     actually we don't need it here ***)
+
 lemma Relation__injective_p_alt_def:
  "Relation__injective_p m = 
   (\<forall>y \<in> Range m. \<exists>!x. (x, y) \<in> m)" 
  apply (simp add: Relation__injective_p_def Relation__applyi_def,
         auto simp add: mem_def)
  apply(drule_tac x=y in spec, safe)
- apply (simp add: expand_set_eq)
+ apply (simp add: set_eq_iff)
  apply (frule_tac x=xa in spec,drule_tac x=ya in spec,simp add: mem_def)
- apply (thin_tac "?P", simp only: expand_set_eq mem_def, simp)
+ apply (thin_tac "?P", simp only: set_eq_iff mem_def, simp)
  apply (drule_tac x=y in bspec)
  apply (simp add: Range_def Domain_def, auto simp add: mem_def)
  apply (drule_tac x=xa in spec, auto simp add: mem_def)
 done
 
-
 lemma Seq__noRepetitions_p_fin_aux:
-  "Relation__injective_p (Seq__seq_1 (Seq__Seq__fin l)) = distinct l"
-  apply (simp add: Relation__injective_p_alt_def)
+  "Map__injective_p (Seq__seq_1 (Seq__Seq__fin l)) = distinct l"
+  apply (simp add: Map__injective_p_def Seq__seq_1_def)
   (*** need more details about Seq__seq_1 - likely a tedious proof **)
 sorry
 
@@ -1503,8 +1354,8 @@ lemma Seq__noRepetitions_p_fin [simp]:
  by (simp add: Seq__noRepetitions_p_def Seq__noRepetitions_p_fin_aux)
 
 lemma Seq__noRepetitions_p_inf_aux:
-  "Relation__injective_p (Seq__seq_1 (Seq__Seq__inf fun)) = inj fun"
-  apply (simp add: Relation__injective_p_alt_def)
+  "Map__injective_p (Seq__seq_1 (Seq__Seq__inf fun)) = inj fun"
+  apply (simp add: Map__injective_p_def)
   (*** need more details about Seq__seq_1 - likely a tedious proof **)
 sorry
 
@@ -1525,7 +1376,7 @@ end-proof
 op increasingNats? (nats: Seq Nat) : Bool =
   fa(i:Nat) i + 1 <_length nats => nats @ i < nats @ (i+1)
 
-proof Isa increasingNats_p_Obligation_subtype0
+proof Isa increasingNats_p_Obligation_subtype
  by (cases nats, auto)
 end-proof
 
@@ -1612,10 +1463,13 @@ proof Isa positionsSuchThat_Obligation_the
   apply (simp add: List__sorted_p_def mem_def List__increasingNats_p_def)
   apply (drule_tac x="last list" in spec, clarify)
   apply (drule_tac x=i in spec)
+(**** FIX THIS LATER *******************
   apply (subgoal_tac "list \<noteq> []",  
          auto simp add: mem_iff in_set_conv_nth last_conv_nth)
   apply (drule_tac x=ia in spec, auto)
   apply (subgoal_tac "ia = length list - Suc 0", auto)
+**************************************)
+sorry
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -1739,7 +1593,7 @@ end-proof
 %        simp_all add: Seq__suffix_def Seq__removeSuffix_def Seq__head_def)
 % apply (case_tac sub__v, auto)
 %
-proof Isa leftmostPositionOfSubseqAndFollowing_Obligation_subtype1
+proof Isa leftmostPositionOfSubseqAndFollowing_Obligation_subtype0
  sorry
 end-proof
 
@@ -1784,7 +1638,7 @@ proof Isa splitAt_Obligation_subtype
  by (auto simp: Seq__e_lt_length_def Seq__e_lt_eq_length_def)
 end-proof
 
-proof Isa splitAt_Obligation_subtype1
+proof Isa splitAt_Obligation_subtype0
  by (auto simp add: Seq__e_lt_length_def Seq__e_lt_eq_length_def)
 end-proof
 
@@ -1809,7 +1663,7 @@ proof Isa splitAtLeftmost_Obligation_subtype
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
  apply (rule the1I2, rule Seq__positionsSuchThat_Obligation_the, clarify)
- apply (drule_tac x="hd list" in spec, simp add: mem_iff)
+ apply (drule_tac x="hd list" in spec, simp)
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
  apply (rule the1I2, rule Seq__positionsSuchThat_Obligation_the, clarify)
@@ -1828,7 +1682,7 @@ proof Isa splitAtRightmost_Obligation_subtype
  apply (rotate_tac -1, erule rev_mp)
  apply (simp (no_asm_simp) add: Seq__positionsSuchThat_def)
  apply (rule the1I2, rule Seq__positionsSuchThat_Obligation_the, clarify)
- apply (drule_tac x="last list" in spec, simp add: mem_iff)
+ apply (drule_tac x="last list" in spec, simp)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -2042,7 +1896,7 @@ proof Isa permute_Obligation_subtype0
  apply (cases s_cqt, simp_all)
  apply (cases s_cqt, simp_all)
  apply (simp add: Seq__permutation_p_def, clarify)
- apply (drule spec, auto simp add: mem_iff)
+ apply (drule spec, auto)
 end-proof
 
 % ------------------------------------------------------------------------------
@@ -2101,7 +1955,7 @@ termination
                             else LEAST i. comp_v(s1 @ i, s2 @ i) \<noteq> Equal
                   )", simp)
  apply (case_tac s1, case_tac s2) prefer 3 apply (case_tac s2)
- apply (auto simp add: Seq__empty_def Least_Suc)
+ apply (auto simp add: Seq__empty_def Least_Suc  One_nat_def)
 end-proof
 
 proof Isa compare_Obligation_subtype
@@ -2159,4 +2013,120 @@ proof Isa -verbatim
 end-proof
 % ------------------------------------------------------------------------------
 
+% ------------------------------------------------------------------------------
+% -----------------  The proofs ------------------------------------------------
+% ------------------------------------------------------------------------------
+% Note: for the time being we place Isabelle lemmas that are needed for a proof 
+%       and cannot be expressed in SpecWare as "verbatim" lemmas into the
+%       preceeding proofs 
+% ------------------------------------------------------------------------------
+
+proof Isa seq_Obligation_subtype
+  apply (auto simp add: bij_ON_def)
+  (** tedious proof - many cases **)
+  apply (simp add: inj_on_def, clarify, drule mem_reverse, rule conjI)
+  apply (clarify, drule mem_reverse)
+  defer apply (clarify, drule mem_reverse) prefer 3
+(************************** NEW PROOF NEEDED *******************************
+  apply (cut_tac List__list_subtype_constr, 
+         simp add: bij_ON_def Stream__subFromLong_def List__subFromLong_def,
+         clarify, thin_tac "surj_on ?f ?A ?B")
+  apply (drule inj_onD, erule sym)
+  apply (simp (no_asm_simp) add: mem_def, 
+         simp add: Seq__SeqMap__subtype_pred_def, clarify,
+         erule e_at_at_m_definedOnInitialSegmentOfLength, simp)+
+  apply (simp add: set_eq_iff, simp add: fun_eq_iff, clarify, 
+         drule_tac x=a in spec, 
+         auto simp add: Seq__SeqMap__subtype_pred_def)  
+  apply (drule sym, frule DomainI, 
+         thin_tac "?P",  thin_tac "?P",  thin_tac "?P", 
+         rotate_tac 1,  thin_tac "?P",
+         simp add: e_at_at_m_def split: split_if_asm,
+         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
+  apply (frule DomainI, 
+         thin_tac "?P",  thin_tac "?P",  
+         rotate_tac 1,  thin_tac "?P", rotate_tac 1,  thin_tac "?P",
+         simp add: e_at_at_m_def split: split_if_asm,
+         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
+  apply (simp add: fun_eq_iff, rotate_tac -3, drule_tac x=a in spec,
+         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
+  apply (drule sym, simp add: fun_eq_iff, rotate_tac -3, 
+         drule_tac x=a in spec,
+         simp add: MapAC__e_at_m_eq MapAC__e_at_m_element)
+  *** finally surjectivity **
+  apply (auto simp add: surj_on_def, drule mem_reverse, simp)
+  apply (case_tac y)
+  ** Case 1: Lists **
+  apply (rule_tac x="{(i,a). i < length list \<and> a = list!i}" in bexI)
+  apply (subgoal_tac "\<exists>i. i \<notin> Domain {(i, a). 
+                                  i < length list \<and> a = list ! i}", 
+         auto, thin_tac "?P")
+  apply (subgoal_tac "op @@_m {(i, a). i < length list \<and> a = list ! i} 
+                      definedOnInitialSegmentOfLength (length list)")
+  apply (rule nth_equalityI)
+  apply (rule sym, erule List__length_is_SegmentLength)
+  apply (clarify, rule sym, erule List__list_nth, simp,
+         simp add: e_at_at_m_def e_at_m_def)
+  apply (simp add: List__definedOnInitialSegmentOfLength_def e_at_at_m_def)
+  apply (simp add: mem_def, 
+         simp add: Seq__SeqMap__subtype_pred_def Relation__functional_p_alt_def)
+  ** Case 2: Streams **
+  apply (rule_tac x="{(i,a). a = fun i}" in bexI, auto)
+  apply (simp add: fun_eq_iff e_at_m_def)
+  apply (simp add: mem_def, 
+         simp add: Seq__SeqMap__subtype_pred_def Relation__functional_p_alt_def)
+**********************************************************************)
+sorry
+end-proof
+
+proof Isa seq_Obligation_subtype0
+   apply (simp add: Seq__SeqMap__subtype_pred_def 
+                    undefinedAt_m_def definedAt_m_def 
+                    List__definedOnInitialSegmentOfLength_def,
+          erule exE)
+   apply (drule_tac P="\<lambda>i. i \<notin> dom m" and m=id 
+          in ex_has_least_nat,  erule exE)
+   apply (rule_tac x=x in exI, auto simp add: dom_def)
+   apply (drule_tac x=i in spec, rotate_tac -1, drule_tac x=x in spec, auto)
+end-proof
+
+proof Isa seq_Obligation_subtype1
+   by (simp add: definedAt_m_def undefinedAt_m_def not_ex)
+end-proof
+
+proof Isa infinite_inf_simp [simp]  
+  by (simp add: Seq__infinite_p_def)
+end-proof  
+
+proof Isa infinite_fin_simp [simp]  
+  by (simp add: Seq__infinite_p_def)
+end-proof  
+
+proof Isa finite_inf_simp [simp]  
+  by (simp add: Seq__finite_p_def)
+end-proof  
+
+proof Isa finite_fin_simp [simp]  
+  by (simp add: Seq__finite_p_def)
+end-proof  
+
+proof Isa infinite_not_finite [simp]  
+  by (case_tac s, simp_all)
+end-proof  
+
+proof Isa length_fin_simp [simp]
+  by (simp add: Seq__length_def)
+end-proof
+
+proof Isa ofLength_fin_simp [simp]
+  by (simp add: Seq__ofLength_p_def)
+end-proof
+
+proof Isa ofLength_inf_simp [simp]
+  by (simp add: Seq__ofLength_p_def)
+end-proof
+
+proof Isa e_lt_length_Obligation_subtype
+  by (simp add: Seq__infinite_not_finite)
+end-proof
 endspec
