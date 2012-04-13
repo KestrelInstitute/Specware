@@ -193,4 +193,25 @@ op allGreaterEq (rng1:Range, rng2:Range) infixl 20 : Bool =
 
 op length (rng:Range) : Ratio = sup rng - inf rng
 
+% ------------------------------------------------------------------------------
+% ----------------- The proofs ------------------------------------------------
+% ------------------------------------------------------------------------------
+% Note: for the time being we place Isabelle lemmas that are needed for a proof 
+%       and cannot be expressed in SpecWare as "verbatim" lemmas into the
+%       preceeding proofs 
+% ------------------------------------------------------------------------------
+
+proof Isa sameRatio_p_transitive
+  by (auto simp add: Ratio__sameRatio_p_def)
+end-proof
+
+proof Isa sameRatio_p_symmetric
+  by (auto simp add: Ratio__sameRatio_p_def)
+end-proof
+
+
+proof Isa sameRatio_p_reflexive
+  by (auto simp add: Ratio__sameRatio_p_def)
+end-proof
+
 endspec
