@@ -66,7 +66,7 @@ AnnSpecPrinter qualifying spec
 %op printPattern                 : [a] APattern    a -> String
  op printTypeScheme              : [a] ATypeScheme a -> String 
  op printTermScheme              : [a] ATermScheme a -> String 
- op printTermWithTypes           : [a] ATerm       a -> String
+% op printTermWithTypes: [a] ATerm       a -> String
  op printSpec                    : [a] ASpec       a -> String
  op latexSpec                    : [a] ASpec       a -> String
 
@@ -1013,7 +1013,7 @@ AnnSpecPrinter qualifying spec
 			                       ([], false, false) 
 					       pat))
 
- def printTermWithTypes term = 
+ def AnnSpecPrinter.printTermWithTypes term = 
    PrettyPrint.toString (format (90, ppTerm (initialize (asciiPrinter, true))
 			                    ([], Top)
 					    term))
