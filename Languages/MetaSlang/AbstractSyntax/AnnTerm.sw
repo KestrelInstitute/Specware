@@ -1887,5 +1887,24 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 	  | _ ->  None)
      | _ -> None
 
-
-endspec
+op [a] printTermType(t: ATerm a): String =
+  case t of
+    | Apply _ -> "Apply"
+    | ApplyN _ -> "ApplyN"
+    | Record _ -> "Record"
+    | Bind _ -> "Bind"
+    | The _ -> "The"
+    | Let _ -> "Let"
+    | LetRec _ -> "LetRec"
+    | Var _ -> "Var"
+    | Fun _ -> "Fun"
+    | Lambda _ -> "Lambda"
+    | IfThenElse _ -> "IfThenElse"
+    | Seq _ -> "Seq"
+    | TypedTerm _ -> "TypedTerm"
+    | Transform _ -> "Transform"
+    | Pi _ -> "Pi"
+    | And _ -> "And"
+    | Any _ -> "Any"
+ 
+end-spec
