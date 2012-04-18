@@ -14,45 +14,22 @@ import /Library/General/OptionExt
 
 theorem expt_monotone_helper is
   fa(n:Nat,k:Nat) (2:Nat) *** (n + k) >= 2 *** n
-proof isa
-  apply(induct "k")
-  apply(simp_all (no_asm_simp))
-end-proof
 
 theorem expt_monotone is
   fa(m:Nat, n:Nat) (m <= n) => (2 *** m <= 2 *** n)
-proof isa
-  apply(rule impE [of "m<= n" "2 ^ m \<le> (2::nat) ^ n"  "2 ^ m \<le> (2::nat) ^ n"]) (* turn \<Longrightarrow> into \<longrightarrow> so we can induct on the whole implication*)
-  defer 1
-  apply(simp, simp)
-  apply(thin_tac "m <= n")
-  apply(cut_tac n=m and k="n-m" in expt_monotone_helper)
-  apply(auto)
-end-proof
 
 %TODO generalize
 theorem toNat_bound_rule is
  fa(bs:Bits1) length bs <= 8 => toNat bs <= 255
-proof isa
-  apply(cut_tac Bits__toNat_bound [of "bs"])
-  defer 1
-  apply(simp)
-  apply(cut_tac m="length bs" and n="8" in expt_monotone)
-  apply(simp)
-  apply(simp del: Bits__toNat_bound)
-end-proof
+
 
 %%TODO generialize these lemmas (way to recognize the constant?):
-
-
 %%TODO does the simp del below also apply to files that import this file?
 proof isa -verbatim
 
-(* are these the same? *)
+(* TODO are these the same? *)
 declare Nat__digitToString_injective [simp del]
 declare SW_String.Nat__digitToString_injective [simp del]
-
-
 
 theorem nat_less256 [simp]:
   "((nat i) < (256::nat)) = (i < 256)"
@@ -134,6 +111,10 @@ theorem int_lesseq340282366920938463463374607431768211455 [simp]:
 
 
 
+theorem int_lesseq127 [simp]:
+  "((int n) <= (127::int)) = (n <= nat 127)"
+  apply(auto)
+  done
 
 theorem int_lesseq32767 [simp]:
   "((int n) <= (32767::int)) = (n <= nat 32767)"
@@ -156,10 +137,6 @@ theorem int_lesseq170141183460469231731687303715884105727 [simp]:
   done
 
 
-theorem int_lesseq127 [simp]:
-  "((int n) <= (127::int)) = (n <= nat 127)"
-  apply(auto)
-  done
 
 
 
@@ -190,6 +167,13 @@ theorem nat_injective_fw:
   apply auto
   done
 
+theorem int_monotone:
+  "(int m <= int n) = (m <= n)"
+  by auto
+
+theorem int_monotone2:
+  "(int m <= int n) \<Longrightarrow> (m <= n)"
+  by auto
 
 
 
@@ -229,13 +213,6 @@ theorem toint_upper_bound_chained_leq [simp]:
 
 
 
-theorem int_monotone:
-  "(int m <= int n) = (m <= n)"
-  by auto
-
-theorem int_monotone2:
-  "(int m <= int n) \<Longrightarrow> (m <= n)"
-  by auto
 
 theorem toNat_bound_chained [simp]: 
   "\<lbrakk>bs \<noteq> [] ; k \<ge> (2 ^ (length bs)) \<rbrakk> \<Longrightarrow> toNat bs < k"
@@ -273,6 +250,20 @@ theorem mod_upper_bound_chained:
   apply(force)
   apply(simp del: Divides.pos_mod_bound)
   done
+
+
+theorem mod_lt_chained:
+ "\<lbrakk> (n::int) > 0 ; k \<ge> n \<rbrakk> \<Longrightarrow> (m::int) mod n < k"
+  apply(cut_tac a=m and b=n in Divides.pos_mod_bound)
+  apply(force)
+  apply(simp del: Divides.pos_mod_bound)
+  done
+
+
+theorem int_expt:
+  "int (2 ^ n) = 2 ^ n"
+  by (rule IntegerExt.power2_int [symmetric])
+
 
 theorem mod_lower_bound_chained:
  "\<lbrakk> (n::int) > 0 ; k \<le> 0\<rbrakk> \<Longrightarrow> k \<le> (m::int) mod n"
@@ -527,6 +518,29 @@ proof isa TwosComplement__tcNumber__1__obligation_refine_def
   apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
   apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+end-proof
+
+proof isa expt_monotone
+  apply(rule impE [of "m<= n" "2 ^ m \<le> (2::nat) ^ n"  "2 ^ m \<le> (2::nat) ^ n"]) (* turn \<Longrightarrow> into \<longrightarrow> so we can induct on the whole implication*)
+  defer 1
+  apply(simp, simp)
+  apply(thin_tac "m <= n")
+  apply(cut_tac n=m and k="n-m" in expt_monotone_helper)
+  apply(auto)
+end-proof
+
+proof isa expt_monotone_helper
+  apply(induct "k")
+  apply(simp_all (no_asm_simp))
+end-proof
+
+proof isa toNat_bound_rule
+  apply(cut_tac Bits__toNat_bound [of "bs"])
+  defer 1
+  apply(simp)
+  apply(cut_tac m="length bs" and n="8" in expt_monotone)
+  apply(simp)
+  apply(simp del: Bits__toNat_bound)
 end-proof
 
 

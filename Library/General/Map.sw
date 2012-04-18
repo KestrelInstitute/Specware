@@ -219,7 +219,7 @@ theorem at_update_same is [a,b]
   fa(m:Map(a,b),x:a,y:b) (update m x y) @ x = y
 
 theorem at_update_diff is [a,b]
-  fa(m:Map(a,b), x1:a, x2:{x2:a | x2 in? domain m}, y:b) (x1 ~= x2) => ((update m x1 y) @ x2 = (m @ x2))
+  fa(m:Map(a,b), x1:a, x2:a, y:b) (x1 ~= x2) && x2 in? domain m => ((update m x1 y) @ x2 = (m @ x2))
 
 theorem double_update is [a,b]
   fa(m:Map(a,b), x:a, y:b, z:b) update (update m x y) x z  = update m x z

@@ -1274,8 +1274,10 @@ op charOfSchar (x:Schar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfSchar x)
   else charOfMathInt (mathIntOfSchar x modF (1 + UCHAR_MAX))
 
+%%just use by auto?
 proof isa charOfSchar_Obligation_subtype 
-sorry
+  apply(case_tac "x", simp)
+  done
 end-proof
 
 proof isa charOfSchar_Obligation_subtype1
@@ -1288,14 +1290,6 @@ op charOfSshort (x:Sshort |
   if plainCharsAreSigned then charOfMathInt (mathIntOfSshort x)
   else charOfMathInt (mathIntOfSshort x modF (1 + UCHAR_MAX))
 
-proof isa C__charOfSshort_Obligation_subtype0
-sorry end-proof
-proof isa C__charOfSint_Obligation_subtype0
-sorry end-proof
-proof isa C__charOfSlong_Obligation_subtype0
-sorry end-proof
-proof isa C__charOfSllong_Obligation_subtype0
-sorry end-proof
 
 op charOfSint (x:Sint |
    plainCharsAreSigned => mathIntOfSint x in? rangeOfChar) : Char =
