@@ -1329,7 +1329,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                      let _ = if debugUnify? then writeLine "Looking for dominating term..." else () in
                      (case findSuperTypeDominatingTerm env consistent_terms of
                         | Some(dominating_term, gen_ty) ->
-                          let _ = if debugUnify? then writeLine("Dominating term: "^printTerm dominating_term) else () in
+                          let _ = if debugUnify? then writeLine("Dominating term: "^printTerm dominating_term^"\n"^printType gen_ty) else () in
                           let _ = unifyTypes env Ignore gen_ty rtype in
                           let _ = if debugUnify? then writeLine("Generalized type: "^printType gen_ty) else () in
                           let consistent_terms_with_exactly_matching_subtypes = 

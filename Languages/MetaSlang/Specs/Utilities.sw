@@ -1515,20 +1515,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        | _ -> false
       )
 
- op substType : [a] List (Id * AType a) * AType a -> AType a
- def substType (S, srt) =
-  let def find (name, S, a) =  
-       case S 
-         of []            -> TyVar(name,a)
-          | (id, srt) ::S -> if name = id then srt else find (name, S, a) 
-  in 
-  let def subst1 srt =  
-       case srt of
-          | TyVar (name, a) -> find (name, S, a)
-          | _ -> srt
-  in 
-  mapType (id, subst1, id) srt
- 
+
  op unfoldBase  : Spec * MSType -> MSType 
  def unfoldBase (sp, srt) =
    unfoldBaseV (sp, srt, true)
@@ -1553,26 +1540,6 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	     srt)
     | _ -> srt
 
- op  unfoldBaseOne : Spec * MSType -> MSType 
- def unfoldBaseOne (sp, srt) = 
-  case srt of
-    | Base (qid, srts, a) ->
-      (case findTheType (sp, qid) of
-	 | None -> srt
-	 | Some info ->
-	   if definedTypeInfo? info then
-	     let (tvs, srt) = unpackFirstTypeDef info in
-	     let ssrt = substType (zip (tvs, srts), srt) in
-	     ssrt
-	   else
-	     srt)
-    | _ -> srt
-
-  op tryUnfoldBase (spc: Spec) (ty: MSType): Option MSType =
-    let exp_ty = unfoldBaseOne(spc, ty) in
-    if embed? CoProduct exp_ty || embed? Quotient exp_ty || equalType?(exp_ty, ty)
-      then None
-      else Some exp_ty
 
   op unfoldBase0 (spc: Spec) (ty: MSType): MSType =
     let exp_ty = unfoldBaseOne(spc, ty) in
@@ -1717,27 +1684,6 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | Subtype(t1,_,_) -> subtypeOf(t1,qid,spc)
       | _ -> None
 
-  op  subtypeOf?: MSType * QualifiedId * Spec -> Bool
-  def subtypeOf? (ty,qid,spc) =
-    % let _ = toScreen(printQualifiedId qid^" <:? "^printType ty^"\n") in
-    let result =
-    case ty of
-      | Base(qid1,srts,_) ->
-        qid1 = qid
-	 || (case findTheType (spc, qid1) of
-	      | None -> false
-	      | Some info ->
-		if definedTypeInfo? info then
-		  let (tvs, srt) = unpackFirstTypeDef info in
-		  let ssrt = substType (zip (tvs, srts), srt) in
-		  subtypeOf?(ssrt,qid,spc)
-		else
-		  false)
-      | Subtype(t1,_,_) -> subtypeOf?(t1,qid,spc)
-      | _ -> false
-    in
-    % let _ = writeLine("= "^ (if result then "true" else "false")) in
-    result
 
    op subtypePreds(tys: List MSType): MSTerms =
      mapPartial (fn ty ->
@@ -1767,47 +1713,6 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                       false)
              | Subtype(t1, _, _) -> possiblySubtypeOf?(t1, ty2, spc)
              | _ -> false)
-
-   op commonSuperType(ty1: MSType, ty2: MSType, spc: Spec): MSType =
-     %% Experimental version
-     let def cst(rty1, rty2, ty1, ty2) =
-       if equalType?(rty1, rty2) then ty1
-       else
-       case (rty1, rty2) of  %raiseSubtypes(rty1, rty2, spc) of
-         | (rrty1, rrty2) ->
-       % let _ = writeLine("cst: "^printType rrty1^"\n"^printType rrty2) in
-       case (rrty1, rrty2) of
-         | (Subtype(sty1, p1, _), Subtype(sty2, p2, _)) ->
-           if equalTerm?(p1, p2) then ty1
-             else cst(sty1, sty2, sty1, sty2)
-         | (Subtype(sty1, p1, _), rty2) -> cst(sty1, rty2, sty1, ty2)
-         | (rty1, Subtype(sty2, p2, _)) -> cst(rty1, sty2, ty1, sty2)
-         | (Arrow(d1, r1, a), Arrow(d2, r2, _)) ->
-           Arrow(cst(d1, d2, d1, d2), cst(r1, r2, r1, r2), a)
-         | (Base(qid1, args1, a), Base(qid2, args2, _)) | qid1 = qid2 ->
-           let comm_args = map (fn (tya1, tya2) -> cst(tya1, tya2, tya1, tya2)) (zip(args1, args2)) in
-           Base(qid1, comm_args, a)
-         | (Base(qid1, _, a), ty2) | subtypeOf?(ty2, qid1, spc) -> ty1
-         | (ty1, Base(qid2, _, a)) | subtypeOf?(ty1, qid2, spc) -> ty2
-         | (Base(Qualified(_,id),_,_), _) ->
-           (case tryUnfoldBase spc rrty1 of
-            | Some uf_ty1 -> cst(uf_ty1, rrty2, ty1, ty2)
-            | None -> rrty1)
-         | (_, Base(Qualified(_,id),_,_)) ->
-           (case tryUnfoldBase spc rrty2 of
-            | Some uf_ty2 -> cst(rrty1, uf_ty2, ty1, ty2)
-            | None -> rrty2)
-         | (Product(flds1, a), Product(flds2, _)) ->
-           if length flds1 ~= length flds2 then ty1 % Shouldn't happen
-             else let new_flds = map (fn ((id, t1), (_, t2)) -> (id, cst(t1, t2, t1, t2)))
-                                   (zip(flds1, flds2))
-                  in
-                  Product(new_flds, a)
-         | _ -> ty1
-     in
-     let result = cst(ty1, ty2, ty1, ty2) in
-     % let _ = writeLine("cst: "^printType ty1^" <?> "^printType ty2^"\n"^printType result) in
-     result
 
    op etaReduce(tm: MSTerm): MSTerm =
      case tm of
