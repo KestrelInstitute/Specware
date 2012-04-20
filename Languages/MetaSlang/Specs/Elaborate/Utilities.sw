@@ -655,6 +655,11 @@ Utilities qualifying spec
             | _ ->
           case (s1, s2) of
             | (Subtype (ss1, p1, _), Subtype (ss2, p2, _)) ->
+              let _ = if debugUnify?
+                       then writeLine("unifyTerm?: "^printTermWithTypes p1
+                                        ^(if equalTerm? (p1, p2) then " = " else " ~= ")
+                                        ^printTermWithTypes p2)
+                       else () in
               if subtype_mode = Ignore || unifyTerm? env.internal (p1, p2) then 
                 unify (env, ss1, ss2, pairs, subtype_mode, dom_count)
               else
@@ -702,7 +707,7 @@ Utilities qualifying spec
      | _ -> false
 *)
 
- op tyVarInstantiationNames: List String = ["metafy", "parser-poly"]
+ op tyVarInstantiationNames: List String = ["metafy", "parser-poly", "gen"]
 
  op fromTyVar?(ty: MSType): Bool =
    case ty of
@@ -835,4 +840,78 @@ Utilities qualifying spec
      let result = aux x in
      let _ = if debugUnify? then writeLine(show result) else () in
      result
-endspec
+
+op leastGeneral(t1: MSType, t2: MSType): MSType =
+  let def generalize(t1: MSType, t2: MSType, unifieds: List(MSType * MSType * MSType)) =
+        let _ = if debugUnify? then writeLine("gen: "^printType t1^" and "^printType t2) else () in
+        if equalType?(t1, t2) then (t1, unifieds)
+        else
+        case (t1, t2) of
+          | (Arrow(x1, y1,  a), Arrow(x2, y2,  _)) ->
+            let (x, unifieds) = generalize (x1, x2, unifieds) in
+            let (y, unifieds) = generalize (y1, y2, unifieds) in
+            (Arrow(x, y,  a), unifieds)
+          | (Product(xs1, a), Product(xs2, _)) ->
+            let (xs, unifieds) = foldr (fn (((l1, x1), (l2, x2)), (xs, unifieds)) ->
+                                          if l1 = l2
+                                            then let (x, unifieds) = generalize (x1, x2, unifieds) in
+                                                 ((l1,x)::xs, unifieds)
+                                            else ([], []))
+                                   ([], unifieds) (zip(xs1, xs2))
+            in
+            (Product(xs, a), unifieds)
+          | (CoProduct (xs1, a), CoProduct (xs2, _)) ->
+            let (xs, unifieds) = foldr (fn (((l1, ox1), (l2, ox2)), (xs, unifieds)) ->
+                                          if l1 = l2
+                                            then let (ox, unifieds) =
+                                                     case (ox1, ox2) of
+                                                       | (Some x1, Some x2) ->
+                                                         let (x, unifieds) = generalize (x1, x2, unifieds) in
+                                                         (Some x, unifieds)
+                                                       | _ -> (None, unifieds)
+                                                 in
+                                                 ((l1,ox)::xs, unifieds)
+                                            else ([], []))
+                                   ([], unifieds) (zip(xs1, xs2))
+            in
+            (CoProduct(xs, a), unifieds)
+          | (Quotient(x1, t1, a), Quotient  (x2, t2, _)) | equalTerm? (t1, t2) ->
+            let (x, unifieds) = generalize (x1, x2, unifieds) in
+            (Quotient(x, t1, a), unifieds)
+          | (Subtype(x1, Lambda([(VarPat((v1, v_ty1), a1), c, bod)], _), a), Subtype(x2, Lambda([(VarPat((v2, v_ty2), _), _, _)], _), _)) | v1 = v2 ->
+            let (x, unifieds) = generalize (x1, x2, unifieds) in
+            let (v_ty, unifieds) = generalize (v_ty1, v_ty2, unifieds) in
+            (Subtype(x, Lambda([(VarPat((v1, v_ty1), a1), c, bod)], a), a), unifieds)
+          | (Subtype(x1, t1, a), Subtype(x2, t2, _)) -> %| equalTerm? (t1, t2) ->
+            let (x, unifieds) = generalize (x1, x2, unifieds) in
+            (Subtype(x, t1, a), unifieds)
+          | (Base(q1, xs1, a), Base(q2, xs2, _)) | q1 = q2 ->
+            let (xs, unifieds) = foldr (fn ((x1, x2), (xs, unifieds)) ->
+                                          let  (x, unifieds) = generalize (x1, x2, unifieds) in
+                                          (x::xs, unifieds))
+                                   ([], unifieds) (zip(xs1, xs2))
+            in
+            (Base(q1, xs, a), unifieds)
+          | (Boolean _, Boolean _) -> (t1, unifieds)
+          | (TyVar(v1, _), TyVar(v2, _)) | v1 = v2 -> (t1, unifieds)
+          | (MetaTyVar (mtv1, _), _) | some?((! mtv1).link) ->
+            let ({link=Some ls1, uniqueId=id1, name}) = ! mtv1 in
+            generalize (ls1, t2, unifieds)
+          | ( _, MetaTyVar (mtv2, _)) | some?((! mtv2).link)  ->
+            let ({link=Some ls2, uniqueId=id2, name}) = ! mtv2 in
+            generalize (t1, ls2, unifieds)
+          | (Pi(tvs1, s1, a), Pi(tvs2, s2, _)) | tvs1 = tvs2 ->
+            let (s, unifieds) = generalize (s1, s2, unifieds) in
+            (Pi(tvs1, s, a), unifieds)
+          | _ ->
+            let _ = if debugUnify? then writeLine("differ") else () in
+            case findLeftmost(fn (s1, s2, _) -> equalType?(t1, s1) && equalType?(t2, s2)) unifieds of
+              | Some(_, _, mtv) -> (mtv, unifieds)
+              | None  ->
+                let mtv = freshMetaTyVar("gen", typeAnn t1) in
+                (mtv, (t1, t2, mtv) :: unifieds)
+  in
+  let (generalized_ty, unifieds) = generalize(t1, t2, []) in
+  generalized_ty
+
+end-spec
