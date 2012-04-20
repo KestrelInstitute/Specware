@@ -17,7 +17,30 @@ spec
   op lifterFuns: List(QualifiedId * QualifiedId) =
     [(Qualified("List", "List"), Qualified("List", "map")),
      (Qualified("Option", "Option"), Qualified("Option", "mapOption")),
-     (Qualified("Set", "Set"), Qualified("Set", "map"))]
+     (Qualified("Set", "Set"), Qualified("Set", "map")),
+     (Qualified("Stream", "Stream"), Qualified("Stream", "map"))]
+
+ op unfoldBeforeCoProductOrArrow(sp: Spec, srt: MSType): MSType =
+   case srt of
+     | Base (qid, srts, a) ->
+      (case findTheType (sp, qid) of
+	 | None -> srt
+	 | Some info ->
+	   if definedTypeInfo? info then
+	     let (tvs, fsrt) = unpackFirstTypeDef info in
+	     case fsrt of
+	       | CoProduct _ -> srt
+               | Arrow _ -> srt
+	       | _ ->
+                 if length tvs ~= length srts
+                   then % let _ = writeLine("Ill-formed type: "^printType srt) in
+                        srt
+                 else
+                 let ssrt = substType (zip (tvs, srts), fsrt) in
+		 unfoldBeforeCoProduct (sp, ssrt)
+	   else
+	     srt)
+    | _ -> srt
     
   op needsCoercion?(ctxt_ty: MSType, gen_ty: MSType, coercions: TypeCoercionTable, tm: MSTerm, spc: Spec)
      : Option(Bool * TypeCoercionInfo * List(QualifiedId * QualifiedId)) =
@@ -34,9 +57,9 @@ spec
                                && ~(subtypeOf?(gen_ty, tb.subtype, spc))) coercions of
             | Some tb -> Some(false, tb, [])
             | None ->
-          case unfoldBeforeCoProduct(spc, ctxt_ty) of
+          case unfoldBeforeCoProductOrArrow(spc, ctxt_ty) of
             | Base(ctxt_qid, [ctxt_ty_a], _) ->
-              (case unfoldBeforeCoProduct(spc, gen_ty) of
+              (case unfoldBeforeCoProductOrArrow(spc, gen_ty) of
                  | Base(gen_qid, [gen_ty_a], _) | ctxt_qid = gen_qid ->
                    (case needsCoercion?(ctxt_ty_a, gen_ty_a, coercions, tm, spc) of
                     | None -> None
