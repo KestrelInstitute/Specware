@@ -947,6 +947,10 @@ proof Isa divT_Obligation_the
  apply (auto)
 end-proof
 
+proof Isa divT_Obligation_subtype
+ by (simp add: sign_def)
+end-proof
+
 proof Isa divT__def1
 apply(rule the1_equality [symmetric])
 apply(rule Integer__divT_Obligation_the, simp_all)
