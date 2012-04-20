@@ -655,10 +655,7 @@ elements (if the last segment is finite) or an infinite number of elements (if
 the last segment is infinite). *)
 
 type SegSeq a = {ss: Seq (Seq a) |
-                 fa(i:Nat) (i+1) <_length ss =>
-                           % writing "finite? (s @ i)" here gives a type
-                           % checking error, for some unknown reason:
-                           (let Some x = ss @@ i in finite? x)}
+                 fa(i:Nat) (i+1) <_length ss => finite? (ss @ i)}
 
 
 % segmented sequences with no empty segments ("proper" segmentation):
