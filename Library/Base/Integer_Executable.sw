@@ -16,7 +16,7 @@ refine def modE (i:Int, j:Int0): Int =
   i modF abs j
 
 refine def divT (i:Int, j:Int0): Int =
-  (abs i) divF (abs j) * sign i
+  ((abs i) divF (abs j)) * sign i
 
 proof isa Integer__divides__1__obligation_refine_def
 sorry
