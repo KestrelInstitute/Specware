@@ -700,7 +700,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                               | [] -> undeclared2 (env, trm, id1, id2, term_type, pos)
                               | (field_id, field_type) :: row -> 
                                 if id2 = field_id then
-                                  let field_type = checkType0 (env, field_type) in
+                                  let field_type = checkType (env, field_type) in
                                   let projector = Fun (Project id2, Arrow (big_type, field_type, pos), pos) in
                                   let projection = ApplyN ([projector, big_term], pos) in
                                   let _ = elaborateTypeForTerm (env, projection, field_type, term_type) in
@@ -1265,13 +1265,15 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
 
   % ========================================================================
-  op findSuperTypeDominatingTerm (env: LocalEnv) (tms: MSTerms): Option MSTerm =
+  op findSuperTypeDominatingTerm (env: LocalEnv) (tms: MSTerms): Option (MSTerm * MSType) =
     case filter (fn ti -> forall? (fn tj -> consistentTypes?(env, termType ti, termType tj, Ignore2)) tms) tms of
-      | [dominating_term] -> Some dominating_term
+      | [dominating_term] ->
+        let _ = if debug? then writeLine("Generalized type: "^printType(leastGeneral(termType(tms@0), termType(tms@1)))) else () in
+        Some(dominating_term, leastGeneral(termType(tms@0), termType(tms@1)))
       | _ -> None
 
   op selectTermWithConsistentType (env: LocalEnv, id: Id, pos: Position, terms: MSTerms, ty: MSType): Option MSTerm =
-    %% calls consistentTypeOp?, which calls unifyTypes 
+    %% calls consistentTypeOp?, which calls unifyTypes
     case terms of
       | [term] -> Some term
       | _ ->
@@ -1310,59 +1312,76 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 			  pos);
 		   None))
 	  | rtype ->
+            let _ = if debug? then
+                      (writeLine("stwct: "^printType rtype);
+                       app (fn t -> writeLine(printTerm t)) terms)
+                     else ()
+            in
 	    let tyPos = typeAnn ty in
-	    (case filter (consistentTypeOp? (env, withAnnS (rtype, tyPos),Ignore)) terms of
-	       | [] -> (error (env,
-			       "No matches for op " ^ id ^ " of " ^ (printMaybeAndType ty),
-			       pos);
-			None)
-	       | [term] -> Some term
-	       | consistent_terms ->
-                 (case findSuperTypeDominatingTerm env consistent_terms of
-                    | Some dominating_term ->
-                      let _ = if debugUnify? then writeLine("Dominating term: "^printTerm dominating_term) else () in
-                      let consistent_terms_with_exactly_matching_subtypes = 
-                          filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), DontIgnore)) 
+            let result = 
+	        (case filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), Ignore)) terms of
+                   | [] -> (error (env,
+                                   "No matches for op " ^ id ^ " of " ^ (printMaybeAndType ty),
+                                   pos);
+                            None)
+                   | [term] -> Some term
+                   | consistent_terms ->
+                     let _ = if debugUnify? then writeLine "Looking for dominating term..." else () in
+                     (case findSuperTypeDominatingTerm env consistent_terms of
+                        | Some(dominating_term, gen_ty) ->
+                          let _ = if debugUnify? then writeLine("Dominating term: "^printTerm dominating_term) else () in
+                          let _ = unifyTypes env Ignore gen_ty rtype in
+                          let _ = if debugUnify? then writeLine("Generalized type: "^printType gen_ty) else () in
+                          let consistent_terms_with_exactly_matching_subtypes = 
+                          filter (consistentTypeOp? (env, withAnnS (gen_ty, tyPos), DontIgnore)) 
                             consistent_terms
-                      in
-                      (case consistent_terms_with_exactly_matching_subtypes of
-                         %% If only one term matches including subtypes, choose it
-                         | [term] ->
-                           let _ = if debugUnify? then writeLine("Only plausible term: "^printTerm term) else () in
-                           Some term
-                         | _ :: _ | env.firstPass? -> None
-                         | _ -> Some dominating_term)
-                    | None ->
-                      if env.firstPass? then
-                        None
-                      else
-                      let consistent_terms_with_exactly_matching_subtypes = 
-                          filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), DontIgnore)) 
-                            consistent_terms
-                      in
-                      case consistent_terms_with_exactly_matching_subtypes of
-                         %% If only one term matches including subtypes, choose it
-                         | [term] -> Some term
-                         | _ ->
-                      case findUnqualified consistent_terms of
-                        | Some term -> Some term
+                          in
+                          (case consistent_terms_with_exactly_matching_subtypes of
+                             %% If only one term matches including subtypes, choose it
+                             | [term] ->
+                               let _ = if debugUnify? then writeLine("Only plausible term: "^printTerm term) else () in
+                               Some term
+                             | _ :: _ | env.firstPass? -> None
+                             | _ -> Some dominating_term)
                         | None ->
-                          %% Specware just reports an error here
-                          %% Accord looks to see if there is a unique most-precise term,
-                          %% preferring f : A|p -> B to f : A -> B
-                          (error (env,
-                                  "Several matches for overloaded op " ^ id ^ " of " ^
-                                    (printMaybeAndType ty) ^
-                                    (foldl (fn (str, tm) -> str ^
-                                              (case tm of
-                                                 | Fun (OneName  (     id2, _), _, _) -> " "^id2
-                                                 | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2
-                                                 | Fun(_, ty, _) -> " "^printTerm tm^": "^printType ty
-                                                 | _ -> " "^printTerm tm))
-                                       " : "
-                                       consistent_terms),
-                                  pos);
-                           None)))
+                          if env.firstPass? then
+                            None
+                          else
+                            let consistent_terms_with_exactly_matching_subtypes = 
+                            filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), DontIgnore)) 
+                            consistent_terms
+                            in
+                            case consistent_terms_with_exactly_matching_subtypes of
+                              %% If only one term matches including subtypes, choose it
+                              | [term] -> Some term
+                              | _ ->
+                                case findUnqualified consistent_terms of
+                                  | Some term -> Some term
+                                  | None ->
+                                    %% Specware just reports an error here
+                                    %% Accord looks to see if there is a unique most-precise term,
+                                    %% preferring f : A|p -> B to f : A -> B
+                                    (error (env,
+                                            "Several matches for overloaded op " ^ id ^ " of " ^
+                                              (printMaybeAndType ty) ^
+                                              (foldl (fn (str, tm) -> str ^
+                                                        (case tm of
+                                                           | Fun (OneName  (     id2, _), _, _) -> " "^id2
+                                                           | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2
+                                                           | Fun(_, ty, _) -> " "^printTerm tm^": "^printType ty
+                                                           | _ -> " "^printTerm tm))
+                                                 " : "
+                                                 consistent_terms),
+                                            pos);
+                                     None)))
+            in
+            let _ = if debug? then
+                      (case result of
+                       | Some term -> writeLine(printTermWithTypes term)
+                       | None -> writeLine("No term chosen!"))
+                     else ()
+            in
+            result
 
   def printMaybeAndType ty =
     case ty of
@@ -1388,7 +1407,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op elaborateCheckTypeForOpRef (env: LocalEnv, term: MSTerm, givenType: MSType, expectedType: MSType): MSType =
     if allowDependentSubTypes? && ~env.firstPass?
-      then elaborateTypeForTerm(env, term, checkType(env, givenType), expectedType)
+      then elaborateTypeForTerm(env, term, checkType0(env, givenType), expectedType)
       else elaborateCheckTypeForTerm(env, term, givenType, expectedType)
 
   def elaborateTypeForTerm (env, term, givenType, expectedType) = 
@@ -1472,7 +1491,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		  if id = found_id then
 		    Some (case entry of
 			    | None   -> None
-			    | Some s -> Some (checkType0 (env, s)))
+			    | Some s -> Some (checkType (env, s)))
 		  else 
 		    lookup row
 	in
@@ -1492,7 +1511,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	        if id = constructor_id then
 		    %let _ = writeLine ("ty:  "^printType ty) in
 		    %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
-		  let constructor_dom_type = checkType0 (env, constructor_dom_type) in
+		  let constructor_dom_type = checkType (env, constructor_dom_type) in
                   let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
 		  let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
                   let _ = elaborateType(env, constr_ty, ty) in
@@ -1558,7 +1577,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                    | _ -> v_ty
     in
     (case mkEmbed0 (env, id_ty, id) of
-       | Some id -> Some (Fun (Embed (id, false), checkType0 (env, id_ty), pos))
+       | Some id -> Some (Fun (Embed (id, false), checkType (env, id_ty), pos))
        | None -> mkEmbed1 (env, id_ty, trm, id, pos))
 
   %% If id is the unique name of a constructor, use that constructor
@@ -1665,7 +1684,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op  elaboratePatternRec: LocalEnv * MSPattern * MSType * List Id -> MSPattern * LocalEnv *  List Id 
   def elaboratePatternRec (env, p, type1, seenVars) =
-    let type1 = checkType0 (env, type1) in
+    let type1 = checkType (env, type1) in
     let 
       def addSeenVar(id, seenVars, env, pos) =
 	if id in? seenVars then
