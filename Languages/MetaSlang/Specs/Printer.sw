@@ -50,6 +50,7 @@ AnnSpecPrinter qualifying spec
  type PrContext = {
                    pp                 : ATermPrinter,
                    printType          : Bool,
+                   topPrintType       : Bool,
                    markSubterm        : Bool,
                    markNumber         : Ref Nat,
                    markTable          : Ref (NatMap.Map (List Nat)),
@@ -128,6 +129,7 @@ AnnSpecPrinter qualifying spec
  def initialize (pp, printType?) : PrContext = 
    {pp                 = pp,
     printType          = printType?,
+    topPrintType       = printType?,
     markSubterm        = false,
     markNumber         = Ref 0,
     markTable          = Ref NatMap.empty,
@@ -137,6 +139,7 @@ AnnSpecPrinter qualifying spec
  def initializeMark (pp, indicesToDisable, sosIndicesToEnable) : PrContext = 
    {pp                 = pp,
     printType          = false,
+    topPrintType       = false,
     markSubterm        = true, 
     markNumber         = (Ref 0),
     markTable          = Ref NatMap.empty,
@@ -737,7 +740,7 @@ AnnSpecPrinter qualifying spec
 				     right])])
 
     | Subtype (s, Lambda ([(pat, Fun (Bool true, _, _), t)], _), _) ->
-      let context = context << {printType = false} in
+      let context = context << {printType = context.topPrintType} in
       prettysNone [pp.LCurly,
                    blockFill (0, 
                               [(0, ppPattern context ([0, 0, 1] ++ path, true, false) pat), 
@@ -747,7 +750,7 @@ AnnSpecPrinter qualifying spec
                                (0, ppTerm    context ([2, 0, 1] ++ path, Top) t)]),
                    pp.RCurly]
     | Subtype (s, t, _) -> 
-      let context = context << {printType = false} in
+      let context = context << {printType = context.topPrintType} in
       blockFill (0, 
 		 [(0, pp.LP), 
 		  (0, ppType context ([0] ++ path, Subtype) s), 
@@ -755,7 +758,7 @@ AnnSpecPrinter qualifying spec
 		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
     | Quotient (s, t, _) -> 
-      let context = context << {printType = false} in
+      let context = context << {printType = context.topPrintType} in
       blockFill (0, 
 		 [(0, pp.LP), 
 		  (0, ppType context ([0] ++ path, Top) s), 
@@ -907,7 +910,7 @@ AnnSpecPrinter qualifying spec
      | AliasPat (pat1, pat2, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
-			   [(0, let context = context << {printType = false} in
+			   [(0, let context = context << {printType = context.topPrintType} in
                                 ppPattern context ([0]++ path, true, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, true, false) pat2)]))
@@ -920,7 +923,7 @@ AnnSpecPrinter qualifying spec
        enclose (true, pp,
                 blockFill(0, [(0, ppPattern context ([0]++ path, false, false) pat),
                               (2, prettysNone [pp.Bar,
-                                               let context = context << {printType = false} in
+                                               let context = context << {printType = context.topPrintType} in
                                                ppTerm context ([1]++ path, Top) p_bod])]))
 
      | RestrictedPat (pat, term, _) ->
@@ -956,7 +959,7 @@ AnnSpecPrinter qualifying spec
 				 [(0, ppPattern context ([0]++ path, false, false) pat), 
 				  (1, blockNone (0, [(0, pp.Bar), 
                                                      (0,
-                                                      let context = context << {printType = false} in
+                                                      let context = context << {printType = context.topPrintType} in
                                                       ppTerm context ([1]++ path, Top) term)]))])) %)
 
      | _ -> System.fail "Uncovered2 case for pattern"
