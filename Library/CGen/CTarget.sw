@@ -6,10 +6,15 @@ C qualifying spec
 
 import CTargetParameters
 import Library
+import Library3
 
+%%todo why not simp add below?
 proof isa -verbatim
 declare List__ofLength_p_def [simp]
 declare List__nonEmpty_p_def [simp]
+
+declare List.length_map [simp add]
+
 end-proof
 
 %section (* Introduction *)
@@ -171,6 +176,11 @@ theorem C__Uchar__subtype_pred_ucharOfMathInt [simp]:
   apply(cut_tac i=i in C__ucharOfMathInt_Obligation_the)
   apply(auto)
   done
+end-proof
+
+%%TODO fixme
+proof isa -verbatim
+declare mem_def [simp del]
 end-proof
 
 theorem ucharOfMathInt_mathIntOfUchar is
@@ -457,6 +467,7 @@ theorem C__mathIntOfUshort_ushortOfMathInt_2:
   apply(auto simp del:C__mathIntOfUshort_ushortOfMathInt)
   done
 
+(*TODO add to [simp] *)
 theorem C__mathIntOfUint_uintOfMathInt_2: 
   "\<lbrakk>i \<in> C__rangeOfUint\<rbrakk> \<Longrightarrow> 
    (C__mathIntOfUint (C__uintOfMathInt i)) = nat i"
@@ -614,11 +625,15 @@ proof isa -verbatim
 
 (* use a refine def? *)
 
+theorem rangeOfSchar_alt_def:
+  "C__rangeOfSchar = TwosComplement__rangeForLength C__CHAR_BIT"
+  apply(simp add: C__rangeOfSchar_def TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
+  done
+
 theorem rangeOfSshort_alt_def:
   "C__rangeOfSshort = TwosComplement__rangeForLength C__short_bits"
   apply(simp add: C__rangeOfSshort_def TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
   done
-
 
 theorem rangeOfSint_alt_def:
   "C__rangeOfSint = TwosComplement__rangeForLength C__int_bits"
@@ -629,7 +644,6 @@ theorem rangeOfSlong_alt_def:
   "C__rangeOfSlong = TwosComplement__rangeForLength C__long_bits"
   apply(simp add: C__rangeOfSlong_def TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
   done
-
 
 theorem rangeOfSllong_alt_def:
   "C__rangeOfSllong = TwosComplement__rangeForLength C__llong_bits"
@@ -737,7 +751,7 @@ theorem slongOfMathInt_mathIntOfSlong is
 theorem sllongOfMathInt_mathIntOfSllong is
   fa(x:Sllong) sllongOfMathInt (mathIntOfSllong x) = x
 
-%%TODO add a refine def for schar
+refine def scharOfMathInt (i:Int | i in? rangeOfSchar) : Schar = schar (tcNumber(i, CHAR_BIT))
 refine def sshortOfMathInt (i:Int | i in? rangeOfSshort) : Sshort = sshort (tcNumber(i, short_bits))
 refine def sintOfMathInt   (i:Int | i in? rangeOfSint  ) : Sint   = sint   (tcNumber(i,   int_bits))
 refine def slongOfMathInt  (i:Int | i in? rangeOfSlong ) : Slong  = slong  (tcNumber(i,  long_bits))
@@ -1722,51 +1736,91 @@ theorem ucharOfSllong_bit is
 
 theorem ushortOfUint_bit is
   fa(bs:Bits) length bs = int_bits =>
-    ushortOfUint (uint bs) = ushort (suffix (bs, CHAR_BIT))
+    ushortOfUint (uint bs) = ushort (suffix (bs, short_bits))
 
 theorem ushortOfUlong_bit is
   fa(bs:Bits) length bs = long_bits =>
-    ushortOfUlong (ulong bs) = ushort (suffix (bs, CHAR_BIT))
+    ushortOfUlong (ulong bs) = ushort (suffix (bs, short_bits))
 
 theorem ushortOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
-    ushortOfUllong (ullong bs) = ushort (suffix (bs, CHAR_BIT))
+    ushortOfUllong (ullong bs) = ushort (suffix (bs, short_bits))
+
+
+proof isa -verbatim
+(* TODO add more *)
+lemmas Conversions2 =
+  C__ushortOfSint_def
+  C__ushortOfSlong_def
+  C__ushortOfSllong_def
+  C__uintOfUlong_def
+  C__uintOfUllong_def
+  C__ulongOfUllong_def
+  C__uintOfSlong_def
+  C__uintOfSllong_def
+  C__ulongOfSllong_def
+  C__scharOfUshort_def
+  C__scharOfUint_def
+  C__scharOfUlong_def
+  C__scharOfUllong_def
+  C__ucharOfMathInt__1__obligation_refine_def
+  C__ucharOfMathInt__1_def
+  C__ushortOfMathInt__1__obligation_refine_def
+  C__ushortOfMathInt__1_def
+  C__uintOfMathInt__1__obligation_refine_def
+  C__uintOfMathInt__1_def
+  C__ulongOfMathInt__1__obligation_refine_def
+  C__ulongOfMathInt__1_def
+  C__ullongOfMathInt__1__obligation_refine_def
+  C__ullongOfMathInt__1_def
+  C__scharOfMathInt__1__obligation_refine_def
+  C__scharOfMathInt__1_def
+  C__sshortOfMathInt__1__obligation_refine_def
+  C__sshortOfMathInt__1_def
+  C__sintOfMathInt__1__obligation_refine_def
+  C__sintOfMathInt__1_def
+  C__slongOfMathInt__1__obligation_refine_def
+  C__slongOfMathInt__1_def
+  C__sllongOfMathInt__1__obligation_refine_def
+  C__sllongOfMathInt__1_def
+end-proof
+
 
 theorem ushortOfSint_bit is
   fa(bs:Bits) length bs = int_bits =>
-    ushortOfSint (sint bs) = ushort (suffix (bs, CHAR_BIT))
+    ushortOfSint (sint bs) = ushort (suffix (bs, short_bits))
 
 theorem ushortOfSlong_bit is
   fa(bs:Bits) length bs = long_bits =>
-    ushortOfSlong (slong bs) = ushort (suffix (bs, CHAR_BIT))
+    ushortOfSlong (slong bs) = ushort (suffix (bs, short_bits))
 
 theorem ushortOfSllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
-    ushortOfSllong (sllong bs) = ushort (suffix (bs, CHAR_BIT))
+    ushortOfSllong (sllong bs) = ushort (suffix (bs, short_bits))
 
 theorem uintOfUlong_bit is
   fa(bs:Bits) length bs = long_bits =>
-    uintOfUlong (ulong bs) = uint (suffix (bs, CHAR_BIT))
+    uintOfUlong (ulong bs) = uint (suffix (bs, int_bits))
 
 theorem uintOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
-    uintOfUllong (ullong bs) = uint (suffix (bs, CHAR_BIT))
+    uintOfUllong (ullong bs) = uint (suffix (bs, int_bits))
 
 theorem uintOfSlong_bit is
   fa(bs:Bits) length bs = long_bits =>
-    uintOfSlong (slong bs) = uint (suffix (bs, CHAR_BIT))
+    uintOfSlong (slong bs) = uint (suffix (bs, int_bits))
 
 theorem uintOfSllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
-    uintOfSllong (sllong bs) = uint (suffix (bs, CHAR_BIT))
+    uintOfSllong (sllong bs) = uint (suffix (bs, int_bits))
 
 theorem ulongOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
-    ulongOfUllong (ullong bs) = ulong (suffix (bs, CHAR_BIT))
+    ulongOfUllong (ullong bs) = ulong (suffix (bs, long_bits))
 
 theorem ulongOfSllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
-    ulongOfSllong (sllong bs) = ulong (suffix (bs, CHAR_BIT))
+    ulongOfSllong (sllong bs) = ulong (suffix (bs, long_bits))
 
 theorem scharOfUshort_bit is
   fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSchar =>
@@ -1783,6 +1837,21 @@ theorem scharOfUlong_bit is
 theorem scharOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSchar =>
     scharOfUllong (ullong bs) = schar (suffix (bs, CHAR_BIT))
+
+proof isa -verbatim
+(* TODO combine with Conversions2 *)
+lemmas Conversions3 =
+  C__scharOfSshort_def
+  C__scharOfSint_def
+  C__scharOfSlong_def
+  C__scharOfSllong_def
+  C__sshortOfUint_def
+  C__sshortOfUlong_def
+  C__sshortOfUllong_def
+  C__sintOfUlong_def
+  C__sintOfUllong_def
+  C__slongOfUllong_def
+end-proof
 
 theorem scharOfSshort_bit is
   fa(bs:Bits) length bs = short_bits && toInt bs in? rangeOfSchar =>
@@ -1802,51 +1871,51 @@ theorem scharOfSllong_bit is
 
 theorem sshortOfUint_bit is
   fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSshort =>
-    sshortOfUint (uint bs) = sshort (suffix (bs, CHAR_BIT))
+    sshortOfUint (uint bs) = sshort (suffix (bs, short_bits))
 
 theorem sshortOfUlong_bit is
   fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSshort =>
-    sshortOfUlong (ulong bs) = sshort (suffix (bs, CHAR_BIT))
+    sshortOfUlong (ulong bs) = sshort (suffix (bs, short_bits))
 
 theorem sshortOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSshort =>
-    sshortOfUllong (ullong bs) = sshort (suffix (bs, CHAR_BIT))
+    sshortOfUllong (ullong bs) = sshort (suffix (bs, short_bits))
 
 theorem sshortOfSint_bit is
   fa(bs:Bits) length bs = int_bits && toInt bs in? rangeOfSshort =>
-    sshortOfSint (sint bs) = sshort (suffix (bs, CHAR_BIT))
+    sshortOfSint (sint bs) = sshort (suffix (bs, short_bits))
 
 theorem sshortOfSlong_bit is
   fa(bs:Bits) length bs = long_bits && toInt bs in? rangeOfSshort =>
-    sshortOfSlong (slong bs) = sshort (suffix (bs, CHAR_BIT))
+    sshortOfSlong (slong bs) = sshort (suffix (bs, short_bits))
 
 theorem sshortOfSllong_bit is
   fa(bs:Bits) length bs = llong_bits && toInt bs in? rangeOfSshort =>
-    sshortOfSllong (sllong bs) = sshort (suffix (bs, CHAR_BIT))
+    sshortOfSllong (sllong bs) = sshort (suffix (bs, short_bits))
 
 theorem sintOfUlong_bit is
   fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSint =>
-    sintOfUlong (ulong bs) = sint (suffix (bs, CHAR_BIT))
+    sintOfUlong (ulong bs) = sint (suffix (bs, int_bits))
 
 theorem sintOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSint =>
-    sintOfUllong (ullong bs) = sint (suffix (bs, CHAR_BIT))
+    sintOfUllong (ullong bs) = sint (suffix (bs, int_bits))
 
 theorem sintOfSlong_bit is
   fa(bs:Bits) length bs = long_bits && toInt bs in? rangeOfSint =>
-    sintOfSlong (slong bs) = sint (suffix (bs, CHAR_BIT))
+    sintOfSlong (slong bs) = sint (suffix (bs, int_bits))
 
 theorem sintOfSllong_bit is
   fa(bs:Bits) length bs = llong_bits && toInt bs in? rangeOfSint =>
-    sintOfSllong (sllong bs) = sint (suffix (bs, CHAR_BIT))
+    sintOfSllong (sllong bs) = sint (suffix (bs, int_bits))
 
 theorem slongOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSlong =>
-    slongOfUllong (ullong bs) = slong (suffix (bs, CHAR_BIT))
+    slongOfUllong (ullong bs) = slong (suffix (bs, long_bits))
 
 theorem slongOfSllong_bit is
   fa(bs:Bits) length bs = llong_bits && toInt bs in? rangeOfSlong =>
-    slongOfSllong (sllong bs) = slong (suffix (bs, CHAR_BIT))
+    slongOfSllong (sllong bs) = slong (suffix (bs, long_bits))
 
 theorem charOfUshort_bit is
   fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfChar =>
@@ -1998,6 +2067,12 @@ op fitsSlong? (aop:ArithOp, x:Slong, y:Slong) : Bool =
 op fitsSllong? (aop:ArithOp, x:Sllong, y:Sllong) : Bool =
   let (x',y') = (mathIntOfSllong x, mathIntOfSllong y) in
   aop (x', y') in? rangeOfSllong
+
+proof isa -verbatim
+declare C__fitsSint_p_def [simp add]
+declare C__fitsSlong_p_def [simp add]
+declare C__fitsSllong_p_def [simp add]
+end-proof
 
 op applySint
    (aop:ArithOp, x:Sint, y:Sint | fitsSint? (aop, x, y)) : Sint =
@@ -2160,6 +2235,43 @@ op -_ulong (x:Ulong, y:Ulong) infixl 110 : Ulong =
 
 op -_ullong (x:Ullong, y:Ullong) infixl 110 : Ullong =
   applyUllong ((-), x, y)
+
+proof isa -verbatim
+(* TODO more like this *)
+theorem mathIntOfSint_le [simp]:
+  "\<lbrakk> C__Sint__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfSint x \<le> 2147483647"
+  apply(case_tac x, simp)
+  done
+
+
+theorem mathIntOfSlong_le [simp]:
+  "\<lbrakk> C__Slong__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfSlong x \<le> 9223372036854775807"
+  apply(case_tac x, simp)
+  done
+
+theorem mathIntOfSllong_le [simp]:
+  "\<lbrakk> C__Sllong__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfSllong x \<le> 170141183460469231731687303715884105727"
+  apply(case_tac x, simp)
+  done
+
+
+theorem mathIntOfUint_le [simp]:
+  "\<lbrakk> C__Uint__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfUint x \<le> 4294967295"
+  apply(case_tac x, simp)
+  done
+
+theorem mathIntOfUlong_le [simp]:
+  "\<lbrakk> C__Ulong__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfUlong x \<le> 18446744073709551615"
+  apply(case_tac x, simp)
+  done
+
+theorem mathIntOfUllong_le [simp]:
+  "\<lbrakk> C__Ullong__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfUllong x \<le> 340282366920938463463374607431768211455"
+  apply(case_tac x, simp)
+  done
+
+end-proof
+
 
 (* The binary << operator requires integer operands [ISO 6.5.7/2], promotes
 them, and left-shifts the first operand E1 by the number of positions E2
@@ -2640,6 +2752,21 @@ op >>_ullong_ullong
 op boolOfSint (x:Sint) : Bool = (x ~= sint0) 
 op sintOfBool (x:Bool) : Sint = if x then sint1 else sint0
 
+proof isa -verbatim
+
+theorem sint1_not_sint0 [simp]:
+  "\<not> C__sint1 = C__sint0"
+apply(simp add: C__sintOfBool_def C__boolOfSint_def C__sint1_def C__sint0_def)
+  apply(auto)
+  apply(cut_tac x="C__sintOfMathInt (1\<Colon>int)" and y="C__sintOfMathInt (0\<Colon>int)" in C__mathIntOfSint_injective)
+  apply(force)
+  apply(force)
+  apply(cut_tac i=1 in C__mathIntOfSint_sintOfMathInt, force)
+  apply(cut_tac i=0 in C__mathIntOfSint_sintOfMathInt, force)
+  apply(simp)
+  done
+end-proof
+
 theorem boolOfSint_sintOfBool is
   fa(x:Bool) boolOfSint (sintOfBool x) = x
 
@@ -2925,10 +3052,6 @@ proof isa ucharOfMathInt_mathIntOfUchar_Obligation_subtype
   apply (cut_tac x=x in C__uchar_range, force, force)
 end-proof
 
-proof isa scharOfMathInt_mathIntOfSchar_Obligation_subtype
-  by (rule C__schar_range)
-end-proof
-
 proof isa sshortOfMathInt_mathIntOfSshort_Obligation_subtype
   apply (cut_tac x=x in C__sshort_range, force, force)
 end-proof
@@ -3062,8 +3185,6 @@ proof isa ucharOfMathInt_Obligation_the
   apply(auto)
   apply(rule exI [of _ "C__Uchar__uchar (toBits ((nat i), C__CHAR_BIT))"])
   apply(simp add:C__rangeOfUchar_def)
-  apply(cut_tac n="nat i" and len="C__CHAR_BIT" in Bits__inverse_toNat_bits)
-  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
 end-proof
 
 proof isa ushortOfMathInt_Obligation_the
@@ -3102,55 +3223,30 @@ proof isa scharOfMathInt_Obligation_the
   apply (auto)
   apply (rule exI [of _ "C__Schar__schar (TwosComplement__tcNumber (i, C__CHAR_BIT))"])
   apply (simp add:C__rangeOfSchar_def)
-  apply (cut_tac len="C__CHAR_BIT" and n="(nat i)" in Bits__inverse_toNat_bits)
-  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
-  apply(rule TwosComplement__toInt_tcNumber_reduce)
-  apply(simp)
-  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
 end-proof
 
-proof isa sshortOfMathInt_Obligation_the 
+proof isa C__sshortOfMathInt_Obligation_the 
   apply (auto)
   apply (rule exI [of _ "C__Sshort__sshort (TwosComplement__tcNumber (i, C__short_bits))"])
   apply (simp add:C__rangeOfSshort_def)
-  apply (cut_tac len="C__short_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
-  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
-  apply(rule TwosComplement__toInt_tcNumber_reduce)
-  apply(simp)
-  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
 end-proof
 
-proof isa sintOfMathInt_Obligation_the 
+proof isa C__sintOfMathInt_Obligation_the 
   apply (auto)
   apply (rule exI [of _ "C__Sint__sint (TwosComplement__tcNumber (i, C__int_bits))"])
   apply (simp add:C__rangeOfSint_def)
-  apply (cut_tac len="C__int_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
-  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
-  apply(rule TwosComplement__toInt_tcNumber_reduce)
-  apply(simp)
-  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
 end-proof
 
 proof isa slongOfMathInt_Obligation_the 
   apply (auto)
   apply (rule exI [of _ "C__Slong__slong (TwosComplement__tcNumber (i, C__long_bits))"])
   apply (simp add:C__rangeOfSlong_def)
-  apply (cut_tac len="C__long_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
-  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
-  apply(rule TwosComplement__toInt_tcNumber_reduce)
-  apply(simp)
-  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
 end-proof
 
 proof isa sllongOfMathInt_Obligation_the 
   apply (auto)
   apply (rule exI [of _ "C__Sllong__sllong (TwosComplement__tcNumber (i, C__llong_bits))"])
   apply (simp add:C__rangeOfSllong_def)
-  apply (cut_tac len="C__llong_bits" and n="(nat i)" in Bits__inverse_toNat_bits)
-  apply (auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
-  apply(rule TwosComplement__toInt_tcNumber_reduce)
-  apply(simp)
-  apply(simp add: mem_def  TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def)
 end-proof
 
 proof isa charOfMathInt_Obligation_the 
@@ -3421,14 +3517,11 @@ end-proof
 
 
 
-proof isa ucharOfSchar_bits
+proof isa C__ucharOfSchar_bits
   apply(simp add: C__ucharOfSchar_def)
   apply(rule C__mathIntOfUchar_injective_fw)
   apply(force, force)
   apply(simp add:TwosComplement__toInt_def)
-  apply(cut_tac a="int (toNat bs)" and b = 256 in Divides.mod_pos_pos_trivial)
-  apply(force, force)
-  apply(simp del: mod_does_nothing_rewrite)
 end-proof
 
 proof isa ucharOfChar_bits
@@ -3443,9 +3536,6 @@ proof isa ucharOfChar_bits
   apply(rule C__mathIntOfUchar_injective_fw)
   apply(force, force)
   apply(simp add:TwosComplement__toInt_def)
-  apply(cut_tac a="int (toNat bs)" and b = 256 in Divides.mod_pos_pos_trivial)
-  apply(force, force)
-  apply(simp del: mod_does_nothing_rewrite)
 end-proof
 
 proof isa mathIntOfUshort_injective [simp]
@@ -3506,7 +3596,6 @@ proof isa C__charOfSchar_bits
   apply(simp)
   apply(rule C__mathIntOfChar_injective_fw, force, force)
   apply(simp del:C__mathIntOfChar_injective)
-  apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
   end-proof
 
 proof isa C__ushortOfSshort_bits 
@@ -3842,6 +3931,26 @@ proof isa ullongOfChar_bits
   apply(simp add: toBits_toNat_extend Divides.mod_pos_pos_trivial)
 end-proof
 
+
+proof isa C__scharOfMathInt__1_Obligation_subtype0
+  apply(simp only: List__ofLength_p_def C__short_bits_def C__sizeof_short_def C__CHAR_BIT_def)
+  apply(rule TwosComplement__tcNumber_length)
+  apply(simp only:)
+  apply(simp add: rangeOfSchar_alt_def)
+end-proof
+
+proof isa C__scharOfMathInt__1_Obligation_subtype
+  apply(auto simp add: rangeOfSchar_alt_def)
+end-proof
+
+proof isa C__scharOfMathInt__1__obligation_refine_def
+  apply(cut_tac x="(C__scharOfMathInt i)" and y="C__Schar__schar (TwosComplement__tcNumber(i, C__CHAR_BIT))" in C__mathIntOfSchar_injective)
+  apply(simp add: Bits__bits_length)
+  apply(simp add: rangeOfSchar_alt_def)
+  apply(simp del:C__mathIntOfSchar_injective add:C__mathIntOfSchar_scharOfMathInt C__scharOfMathInt__1_def rangeOfSchar_alt_def)
+end-proof
+
+
 (* was quite slow without the uses of only: *)
 proof isa sshortOfMathInt__1_Obligation_subtype0
   apply(simp only: List__ofLength_p_def C__short_bits_def C__sizeof_short_def C__CHAR_BIT_def)
@@ -4091,478 +4200,171 @@ proof isa C__sllongOfSlong_bits
   apply(simp add: TwosComplement__sign_extension_does_not_change_value TwosComplement__minForLength_def TwosComplement__maxForLength_def  del: TwosComplement__toInt_inject)
 end-proof
 
-
-(* not done yet... *)
 proof isa C__ucharOfUshort_bit
-  apply(simp add: C__ucharOfUshort_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
-  sorry
-end-proof
-
-proof isa C__ucharOfUint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfUint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfUint_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfUshort_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def toNat_mod)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ucharOfUint_bit
-sorry
-end-proof
-
-proof isa C__ucharOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfUlong_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfUint_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def toNat_mod)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ucharOfUlong_bit
-sorry
-end-proof
-
-proof isa C__ucharOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfUllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfUlong_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ucharOfUllong_bit
-sorry
-end-proof
-
-proof isa C__ucharOfSshort_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfSshort_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfSshort_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfUllong_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ucharOfSshort_bit
-sorry
-end-proof
-
-proof isa C__ucharOfSint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfSint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfSint_bit_Obligation_subtype1
-sorry
-end-proof
+  apply(simp add: C__ucharOfSshort_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
+  end-proof
 
 proof isa C__ucharOfSint_bit
-sorry
-end-proof
-
-proof isa C__ucharOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfSlong_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfSint_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ucharOfSlong_bit
-sorry
-end-proof
-
-proof isa C__ucharOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ucharOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ucharOfSllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfSlong_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ucharOfSllong_bit
-sorry
-end-proof
-
-proof isa C__ushortOfUint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ushortOfUint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ushortOfUint_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ucharOfSllong_def C__ucharOfMathInt__1__obligation_refine_def C__ucharOfMathInt__1_def)
+  apply(cut_tac n=8 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ushortOfUint_bit
-sorry
-end-proof
-
-proof isa C__ushortOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ushortOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ushortOfUlong_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ushortOfUint_def C__ushortOfMathInt__1__obligation_refine_def C__ushortOfMathInt__1_def)
+  apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ushortOfUlong_bit
-sorry
-end-proof
-
-proof isa C__ushortOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ushortOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ushortOfUllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: C__ushortOfUlong_def C__ushortOfMathInt__1__obligation_refine_def C__ushortOfMathInt__1_def)
+  apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ushortOfUllong_bit
-sorry
+  apply(simp add: C__ushortOfUllong_def C__ushortOfMathInt__1__obligation_refine_def C__ushortOfMathInt__1_def)
+  apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
-proof isa C__ushortOfSint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ushortOfSint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ushortOfSint_bit_Obligation_subtype1
-sorry
-end-proof
 
 proof isa C__ushortOfSint_bit
-sorry
-end-proof
-
-proof isa C__ushortOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ushortOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ushortOfSlong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ushortOfSlong_bit
-sorry
-end-proof
-
-proof isa C__ushortOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ushortOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ushortOfSllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ushortOfSllong_bit
-sorry
-end-proof
-
-proof isa C__uintOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__uintOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__uintOfUlong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__uintOfUlong_bit
-sorry
-end-proof
-
-proof isa C__uintOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__uintOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__uintOfUllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=32 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__uintOfUllong_bit
-sorry
-end-proof
-
-proof isa C__uintOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__uintOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__uintOfSlong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=32 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__uintOfSlong_bit
-sorry
-end-proof
-
-proof isa C__uintOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__uintOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__uintOfSllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=32 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__uintOfSllong_bit
-sorry
-end-proof
-
-proof isa C__ulongOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ulongOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ulongOfUllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=32 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ulongOfUllong_bit
-sorry
-end-proof
-
-proof isa C__ulongOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__ulongOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__ulongOfSllong_bit_Obligation_subtype1
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=64 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__ulongOfSllong_bit
-sorry
-end-proof
-
-proof isa C__scharOfUshort_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfUshort_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfUshort_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfUshort_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfUshort_bit_Obligation_subtype3
-sorry
+  apply(simp add: Conversions2)
+  apply(cut_tac n=64 and bs=bs in toBits_mod_toNat)
+  apply(simp_all)
 end-proof
 
 proof isa C__scharOfUshort_bit
-sorry
-end-proof
-
-proof isa C__scharOfUint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfUint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfUint_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfUint_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfUint_bit_Obligation_subtype3
-sorry
+  apply(simp add: Conversions2)
+  apply(rule TwosComplement__toInt_inject_rule)
+  apply(simp_all add: TwosComplement__toInt_tcNumber_reduce)
+  apply(simp add: TwosComplement__toInt_def TC_lemmas toNat_suffix)
 end-proof
 
 proof isa C__scharOfUint_bit
-sorry
-end-proof
-
-proof isa C__scharOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfUlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfUlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfUlong_bit_Obligation_subtype3
-sorry
+  apply(simp add: Conversions2)
+  apply(rule TwosComplement__toInt_inject_rule)
+  apply(simp_all add: TwosComplement__toInt_tcNumber_reduce)
+  apply(simp add: TwosComplement__toInt_def TC_lemmas toNat_suffix)
 end-proof
 
 proof isa C__scharOfUlong_bit
-sorry
-end-proof
-
-proof isa C__scharOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfUllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfUllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfUllong_bit_Obligation_subtype3
-sorry
+  apply(simp add: Conversions2)
+  apply(rule TwosComplement__toInt_inject_rule)
+  apply(simp_all add: TwosComplement__toInt_tcNumber_reduce)
+  apply(simp add: TwosComplement__toInt_def TC_lemmas toNat_suffix)
 end-proof
 
 proof isa C__scharOfUllong_bit
-sorry
+  apply(simp add: Conversions2)
+  apply(rule TwosComplement__toInt_inject_rule)
+  apply(simp_all add: TwosComplement__toInt_tcNumber_reduce)
+  apply(simp add: TwosComplement__toInt_def TC_lemmas toNat_suffix)
 end-proof
 
-proof isa C__scharOfSshort_bit_Obligation_subtype
-sorry
-end-proof
 
-proof isa C__scharOfSshort_bit_Obligation_subtype0
-sorry
-end-proof
 
-proof isa C__scharOfSshort_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfSshort_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfSshort_bit_Obligation_subtype3
-sorry
-end-proof
 
 proof isa C__scharOfSshort_bit
-sorry
-end-proof
-
-proof isa C__scharOfSint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfSint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfSint_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfSint_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfSint_bit_Obligation_subtype3
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(cut_tac bs=bs and n=8 in toInt_suffix)
+  apply(force)
+  apply(force)
+  apply(force)
+  apply(force)
+  apply(force)
+  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" in TwosComplement__tcNumber_toInt_reduce)
+  apply(auto)
 end-proof
 
 proof isa C__scharOfSint_bit
-sorry
-end-proof
-
-proof isa C__scharOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfSlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfSlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfSlong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4570,47 +4372,7 @@ proof isa C__scharOfSlong_bit
 sorry
 end-proof
 
-proof isa C__scharOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__scharOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__scharOfSllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__scharOfSllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__scharOfSllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__scharOfSllong_bit
-sorry
-end-proof
-
-proof isa C__sshortOfUint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sshortOfUint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sshortOfUint_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sshortOfUint_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sshortOfUint_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4618,47 +4380,7 @@ proof isa C__sshortOfUint_bit
 sorry
 end-proof
 
-proof isa C__sshortOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sshortOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sshortOfUlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sshortOfUlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sshortOfUlong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__sshortOfUlong_bit
-sorry
-end-proof
-
-proof isa C__sshortOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sshortOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sshortOfUllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sshortOfUllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sshortOfUllong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4666,47 +4388,7 @@ proof isa C__sshortOfUllong_bit
 sorry
 end-proof
 
-proof isa C__sshortOfSint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sshortOfSint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sshortOfSint_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sshortOfSint_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sshortOfSint_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__sshortOfSint_bit
-sorry
-end-proof
-
-proof isa C__sshortOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sshortOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sshortOfSlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sshortOfSlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sshortOfSlong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4714,47 +4396,7 @@ proof isa C__sshortOfSlong_bit
 sorry
 end-proof
 
-proof isa C__sshortOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sshortOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sshortOfSllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sshortOfSllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sshortOfSllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__sshortOfSllong_bit
-sorry
-end-proof
-
-proof isa C__sintOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sintOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sintOfUlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sintOfUlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sintOfUlong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4762,47 +4404,7 @@ proof isa C__sintOfUlong_bit
 sorry
 end-proof
 
-proof isa C__sintOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sintOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sintOfUllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sintOfUllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sintOfUllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__sintOfUllong_bit
-sorry
-end-proof
-
-proof isa C__sintOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sintOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sintOfSlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sintOfSlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sintOfSlong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4810,47 +4412,7 @@ proof isa C__sintOfSlong_bit
 sorry
 end-proof
 
-proof isa C__sintOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__sintOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__sintOfSllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__sintOfSllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__sintOfSllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__sintOfSllong_bit
-sorry
-end-proof
-
-proof isa C__slongOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__slongOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__slongOfUllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__slongOfUllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__slongOfUllong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4858,47 +4420,7 @@ proof isa C__slongOfUllong_bit
 sorry
 end-proof
 
-proof isa C__slongOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__slongOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__slongOfSllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__slongOfSllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__slongOfSllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__slongOfSllong_bit
-sorry
-end-proof
-
-proof isa C__charOfUshort_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfUshort_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfUshort_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfUshort_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfUshort_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4906,47 +4428,7 @@ proof isa C__charOfUshort_bit
 sorry
 end-proof
 
-proof isa C__charOfUint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfUint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfUint_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfUint_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfUint_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__charOfUint_bit
-sorry
-end-proof
-
-proof isa C__charOfUlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfUlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfUlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfUlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfUlong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -4954,47 +4436,7 @@ proof isa C__charOfUlong_bit
 sorry
 end-proof
 
-proof isa C__charOfUllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfUllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfUllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfUllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfUllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__charOfUllong_bit
-sorry
-end-proof
-
-proof isa C__charOfSshort_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfSshort_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfSshort_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfSshort_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfSshort_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -5002,47 +4444,7 @@ proof isa C__charOfSshort_bit
 sorry
 end-proof
 
-proof isa C__charOfSint_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfSint_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfSint_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfSint_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfSint_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__charOfSint_bit
-sorry
-end-proof
-
-proof isa C__charOfSlong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfSlong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfSlong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfSlong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfSlong_bit_Obligation_subtype3
 sorry
 end-proof
 
@@ -5050,1081 +4452,440 @@ proof isa C__charOfSlong_bit
 sorry
 end-proof
 
-proof isa C__charOfSllong_bit_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__charOfSllong_bit_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__charOfSllong_bit_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__charOfSllong_bit_Obligation_subtype2
-sorry
-end-proof
-
-proof isa C__charOfSllong_bit_Obligation_subtype3
-sorry
-end-proof
-
 proof isa C__charOfSllong_bit
 sorry
 end-proof
 
-proof isa C__e_dsh_1_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_dsh_1_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_dsh_1_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_dsh_1_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_dsh_1_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_dsh_1_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_tld_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_tld_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_tld_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_tld_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_tld_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_tld_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_char_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_schar_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_uchar_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_sshort_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_ushort_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_excl_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applySint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applySlong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applySllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applyUint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applyUint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__applyUlong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applyUlong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__applyUllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__applyUllong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_sint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_slong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_sllong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_uint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_ulong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sint_ullong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_sint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_slong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_sllong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_uint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_ulong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_slong_ullong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_sint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_slong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_sllong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_uint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_ulong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_sllong_ullong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_sint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_slong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_sllong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_uint_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_sint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_slong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_sllong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ulong_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_sint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_slong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_sllong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_lt_lt_ullong_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_sint_Obligation_subtype0
-sorry
-end-proof
-
 proof isa C__e_gt_gt_sint_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_slong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sint_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_sllong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sint_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_uint_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sint_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_ulong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sint_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sint_ullong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sint_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_sint_Obligation_subtype0
-sorry
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_slong_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_slong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_slong_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_sllong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_slong_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_uint_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_slong_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_ulong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_slong_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_slong_ullong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_slong_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_sint_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sllong_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_slong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sllong_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_sllong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sllong_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_uint_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sllong_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_ulong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sllong_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_sllong_ullong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_sllong_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_sint_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_uint_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_slong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_uint_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_sllong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_uint_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_uint_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_uint_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_ulong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_uint_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_uint_ullong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_uint_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_sint_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ulong_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_slong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ulong_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_sllong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ulong_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_uint_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ulong_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_ulong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ulong_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ulong_ullong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ulong_ullong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_sint_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ullong_sint_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_slong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ullong_slong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_sllong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ullong_sllong_Obligation_subtype1
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_uint_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ullong_uint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_ulong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ullong_ulong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_gt_gt_ullong_ullong_Obligation_subtype
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__e_gt_gt_ullong_ullong_Obligation_subtype0
-sorry
+  apply(auto)
+  apply(case_tac y, simp)
+  apply(case_tac x, simp)
+  apply(auto simp add:divT_pos)
+  apply(rule zdiv_le_dividend_rule, simp_all)
 end-proof
 
 proof isa C__boolOfSint_sintOfBool
-sorry
+  apply(simp add: C__sintOfBool_def C__boolOfSint_def C__sint1_def C__sint0_def)
+  apply(auto)
+  apply(cut_tac x="C__sintOfMathInt (1\<Colon>int)" and y="C__sintOfMathInt (0\<Colon>int)" in C__mathIntOfSint_injective)
+  apply(force)
+  apply(force)
+  apply(cut_tac i=1 in C__mathIntOfSint_sintOfMathInt, force)
+  apply(cut_tac i=0 in C__mathIntOfSint_sintOfMathInt, force)
+  apply(simp)
 end-proof
 
 proof isa C__fixup_if_condition
-sorry
+  apply(simp add: C__sintOfBool_def C__test_def C__boolOfSint_def)
 end-proof
 
 proof isa C__sintOfBool__lt_eq
-sorry
-end-proof
-
-proof isa C__e_amp_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_amp_sint_Obligation_subtype0
-sorry
+  apply(auto simp add: C__sintOfBool_def C__e_lt_eq_uint_def C__compUint_def C__mathIntOfUint_uintOfMathInt_2)
 end-proof
 
 proof isa C__e_amp_sint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_amp_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_amp_slong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_amp_slong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_amp_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_amp_sllong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_amp_sllong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_amp_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_amp_uint_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_amp_uint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_amp_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_amp_ulong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_amp_ulong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_amp_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_amp_ullong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_amp_ullong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_crt_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_crt_sint_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_crt_sint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_crt_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_crt_slong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_crt_slong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_crt_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_crt_sllong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_crt_sllong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_crt_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_crt_uint_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_crt_uint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_crt_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_crt_ulong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_crt_ulong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_crt_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_crt_ullong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_crt_ullong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_bar_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_bar_sint_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_bar_sint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_bar_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_bar_slong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_bar_slong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_bar_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_bar_sllong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_bar_sllong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_bar_uint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_bar_uint_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_bar_uint_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_bar_ulong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_bar_ulong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_bar_ulong_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__e_bar_ullong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_bar_ullong_Obligation_subtype0
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
 
 proof isa C__e_bar_ullong_Obligation_exhaustive
-sorry
+  apply(simp)
+  apply(case_tac x_1)
+  apply(case_tac x_2)
+  apply(auto)
 end-proof
-
-proof isa C__e_at_char_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_at_char_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_at_schar_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_at_schar_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_at_sshort_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_at_sshort_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_at_sint_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_at_sint_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_at_slong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_at_slong_Obligation_subtype0
-sorry
-end-proof
-
-proof isa C__e_at_sllong_Obligation_subtype
-sorry
-end-proof
-
-proof isa C__e_at_sllong_Obligation_subtype0
-sorry
-end-proof
-
 
 endspec

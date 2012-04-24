@@ -11,6 +11,7 @@ spec
 import /Library/General/TwosComplementNumber
 import /Library/General/FunctionExt
 import /Library/General/OptionExt
+import /Library/Base/List_Executable
 
 theorem expt_monotone_helper is
   fa(n:Nat,k:Nat) (2:Nat) *** (n + k) >= 2 *** n
@@ -23,6 +24,7 @@ theorem toNat_bound_rule is
  fa(bs:Bits1) length bs <= 8 => toNat bs <= 255
 
 
+(***********************************************************************************************************)
 %%TODO generialize these lemmas (way to recognize the constant?):
 %%TODO does the simp del below also apply to files that import this file?
 proof isa -verbatim
@@ -497,10 +499,42 @@ theorem int_move_le:
 
 
 end-proof %%end large verbatim block
+(*******************************************************************************************************)
+
+
+
+
 
 refine def tcNumber (i:Int, len:PosNat | i in? rangeForLength len) : TCNumber =
   bits(i mod 2 ** len, len)
 
+proof isa -verbatim
+declare List.length_map [simp add]
+end-proof
+
+
+theorem suffix_0 is [a]
+  fa(l:List a) suffix(l,0) = []
+
+%% theorem suffix_plus_one is [a]
+%%   fa(l:List a, n:Nat)
+%%     n < length l =>
+%%     suffix(l, n+1) = (l@((length l) - 1 - n)) :: suffix(l,n)
+
+
+theorem map_drop is [a, b]
+  fa(f: a -> b, l: List a, n:Nat) (n <= length l) => ((map f (removePrefix(l,n))) = removePrefix((map f l), n))
+
+theorem map_suffix is [a, b]
+  fa(f: a -> b, l: List a, n:Nat) (n <= length l) => ((map f (suffix(l,n))) = suffix((map f l), n))
+  
+  
+
+
+
+
+
+(******************************************************************************************)
 proof isa TwosComplement__tcNumber__1__obligation_refine_def
   apply(simp add: TwosComplement__tcNumber__1_def)
   apply(case_tac "i \<ge> 0")
@@ -543,5 +577,16 @@ proof isa toNat_bound_rule
   apply(simp del: Bits__toNat_bound)
 end-proof
 
+proof isa suffix_0 [simp]
+  apply(simp add: List__suffix__1__obligation_refine_def List__suffix__1_def)
+end-proof
+
+proof isa map_suffix
+  apply (auto simp add: List__suffix__1__obligation_refine_def List__suffix__1_def List.drop_map)
+end-proof
+
+proof isa map_drop
+  apply(simp add: List.drop_map)
+end-proof
 
 endspec

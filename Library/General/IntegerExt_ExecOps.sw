@@ -329,8 +329,9 @@ proof Isa littleEndian_p__1__obligation_refine_def
   sorry 
 end-proof
 
+(* fromBigEndian_alt might help to prove this *)
 proof Isa fromBigEndian__1__obligation_refine_def
-  sorry 
+  sorry
 end-proof
 
 proof Isa fromLittleEndian__1__obligation_refine_def 
