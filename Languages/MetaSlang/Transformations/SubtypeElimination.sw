@@ -457,12 +457,17 @@ SpecNorm qualifying spec
                  constrs
               then
                 let (bare_constrs, cases) =
-                    List.foldl (fn ((bare_constrs, cases), (constr_id, opt_tyi)) ->
+                    foldl (fn ((bare_constrs, cases), (constr_id, opt_tyi)) ->
                              case opt_tyi of
                                | Some(Subtype(t,p,_)) ->
-                                 let v = ("x_"^constr_id, t)  in
-                                 (bare_constrs ++ [(constr_id, Some t)],
-                                  cases ++ [(EmbedPat(constr_id, Some(mkVarPat v), ty, a), trueTerm, simplifiedApply(p, mkVar v, spc))])
+                                 (case p of
+                                    | Lambda([(pat, _, bod)], _) ->
+                                      (bare_constrs ++ [(constr_id, Some t)],
+                                       cases ++ [(EmbedPat(constr_id, Some(pat), ty, a), trueTerm, bod)])
+                                    | _ ->
+                                      let v = ("y_"^constr_id, t)  in
+                                      (bare_constrs ++ [(constr_id, Some t)],
+                                       cases ++ [(EmbedPat(constr_id, Some(mkVarPat v), ty, a), trueTerm, simplifiedApply(p, mkVar v, spc))]))
                                | Some tyi -> (bare_constrs ++ [(constr_id, opt_tyi)],
                                               cases ++ [(EmbedPat(constr_id, Some(mkWildPat tyi), ty, a), trueTerm, trueTerm)])
                                | _ -> (bare_constrs ++ [(constr_id, opt_tyi)],
