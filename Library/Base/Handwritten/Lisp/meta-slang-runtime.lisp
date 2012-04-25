@@ -121,36 +121,36 @@
 
 ;;; This is twice as fast as the version above...
 (defun slang-term-equals-2 (t1 t2)
-  #+sbcl(declare (optimize speed))
+  #+sbcl (declare (optimize speed))
   (or (eq t1 t2)
       (typecase t1
         (array (typecase t1
                  (string    (string= t1 t2))
                  (vector    (cond ((and   
-                           ;; (quotient? t1) 
-                           ;; (quotient? t2)
-                           (eq (svref t1 0) quotient-tag)
-                           (vectorp t2)
-                           (eq (svref t2 0) quotient-tag)
-                           )
-                          ;; Determine equality by calling the quotient 
-                          ;; operator in the second position 
-                          (funcall (svref t1 1) ; (quotient-relation t1)
-                                   (cons (svref t1 2) ; (quotient-element t1) 
-                                         (svref t2 2) ; (quotient-element t2)
-                                         )))
-                         (t
-                          (and
-                           ;; Two vectors (corresponding to tuple types)
-                           ;; are equal if all their elements are equal.
-                           (vectorp t2)
-                           (let ((dim1 (array-dimension t1 0))
-                                 (dim2 (array-dimension t2 0)))
-                             (and (eql dim1 dim2)
-                                  (do ((i 0 (+ i 1))
-                                       (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
-                                      ((or (= i dim1) (not v-equal)) v-equal)
-                                    (declare (fixnum i)))))))))
+                                    ;; (quotient? t1) 
+                                    ;; (quotient? t2)
+                                    (eq (svref t1 0) quotient-tag)
+                                    (vectorp t2)
+                                    (eq (svref t2 0) quotient-tag)
+                                    )
+                                   ;; Determine equality by calling the quotient 
+                                   ;; operator in the second position 
+                                   (funcall (svref t1 1) ; (quotient-relation t1)
+                                            (cons (svref t1 2) ; (quotient-element t1) 
+                                                  (svref t2 2) ; (quotient-element t2)
+                                                  )))
+                                  (t
+                                   (and
+                                    ;; Two vectors (corresponding to tuple types)
+                                    ;; are equal if all their elements are equal.
+                                    (vectorp t2)
+                                    (let ((dim1 (array-dimension t1 0))
+                                          (dim2 (array-dimension t2 0)))
+                                      (and (eql dim1 dim2)
+                                           (do ((i 0 (+ i 1))
+                                                (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
+                                               ((or (= i dim1) (not v-equal)) v-equal)
+                                             (declare (fixnum i)))))))))
                  (t (equalp t1 t2))
                  ))
         ;(null      (null    t2))
@@ -210,6 +210,22 @@
 
 (defun slang-term-not-equals-2 (x y) 
   (not (slang-term-equals-2 x y)))
+
+(defun eq-testable-expr (form)
+  (or (characterp form)
+      (eq form t)
+      (eq form nil)
+      (and (listp form) (eq (first form) 'quote) (symbolp (second form)))
+      (typecase form (fixnum t) (t nil))
+      ))
+
+(define-compiler-macro slang-term-equals-2 (&whole form t1 t2)
+  ;(format t "~a~%~a~%~a~a" form t1 t2)
+  (if (or (eq-testable-expr t1) (eq-testable-expr t2))
+      `(eq ,t1 ,t2)
+      (if (or (stringp t1) (stringp t2))
+          `(string= ,t1 ,t2)
+          form)))
 
 ;;; swxhash: Hash function for slang-term-equals (based on sbcl psxhash for equalp)
 (eval-when (compile load)
@@ -454,6 +470,12 @@
 
 (define-compiler-macro List-Spec::++-2 (l1 l2)
  `(append ,l1 ,l2))
+
+(define-compiler-macro List-Spec::head (l)
+  `(car ,l))
+
+(define-compiler-macro List-Spec::tail (l)
+  `(cdr ,l))
 
 ;; assert is in Library/General/Assert
 ;; If optimization property speed is 3 and safety is less than 3 then this is compiled away.
