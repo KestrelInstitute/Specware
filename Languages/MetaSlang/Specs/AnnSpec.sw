@@ -1155,4 +1155,15 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                        emptyAQualifierMap
                        xMap
 
-endspec
+op [a] showQ(el: ASpecElement a): String =
+  case el of
+    | Import _ -> "import ..."
+    | Type(qid, _) -> "type "^show qid
+    | TypeDef(qid, _) -> "type "^show qid^" = .."
+    | Op(qid, def?, _) -> "op "^show qid^(if def? then " = .." else ": ...")
+    | OpDef(qid, refine_num, _) -> (if refine_num > 0 then "refine " else "")^"def "^show qid^" = .."
+    | Property _ -> "theorem ..."
+    | Comment  _ -> "comment ..."
+    | Pragma   _ -> "pragma ..."
+
+end-spec
