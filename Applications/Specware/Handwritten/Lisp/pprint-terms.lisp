@@ -6,6 +6,8 @@
 ;(list-all-packages)
 ;(setq *print-pprint-dispatch* (copy-pprint-dispatch nil))
 
+;;; Terms
+
 (defun print_term (strm term)
   (let ((*standard-output* strm)
 	(AnnSpecPrinter::useXSymbols? nil))
@@ -26,6 +28,8 @@
 
 (set-pprint-dispatch '(cons term_symbol) #'print_term)
 
+;;; Types
+
 (defun print_type (strm type)
   (let ((*standard-output* strm))
     (if (and (consp type))
@@ -43,12 +47,33 @@
 (set-pprint-dispatch '(cons type_symbol) #'print_type)
 
 
+;;; Elements
+
+(defun print_element (strm el)
+  (let ((*standard-output* strm))
+    (if (and (consp el))
+	(princ (AnnSpec::showQ el))
+      (print_dotted_pair strm el))))
+
+(defun element_symbol? (s)
+  (and *print-constructors?*
+       (member s '(:|Import| :|Type| :|TypeDef| :|Op| :|OpDef| :|Property| :|Comment|
+		   :|Pragma|))))
+
+(deftype element_symbol ()
+  `(and symbol (satisfies element_symbol?)))
+
+(set-pprint-dispatch '(cons element_symbol) #'print_element)
+
+;;; Dotted pairs
+
 (defun print_dotted_pair (strm l)
   (format strm "~@:<~W ~_. ~W~:>" (car l) (cdr l)))
 
 (defun type_or_term? (x)
   (or (term_symbol? (car x))
-      (type_symbol? (car x))))
+      (type_symbol? (car x))
+      (element_symbol? (car x))))
 
 (set-pprint-dispatch '(cons T (and cons (satisfies type_or_term?)))
 		     #'print_dotted_pair)
