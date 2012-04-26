@@ -21,7 +21,7 @@ spec
       | Apply(_,_,p) -> p
       | ApplyOptions(_,_,p) -> p
 
-  def SpecCalc.evaluateTransform (spec_tm, transfm_steps) pos =
+  def SpecCalc.evaluateTransform (spec_tm, transfm_steps, pragmas) pos =
     {
      unitId <- getCurrentUID;
      print (";;; Elaborating transform at " ^ (uidToString unitId) ^ "\n");
@@ -32,10 +32,15 @@ spec
          {
           (steps, sub_steps) <- makeScript transfm_steps;
           tr_spc1 <- interpret(spc, Steps(sub_steps ++ steps));
-	  return (Spec tr_spc1, spec_timestamp, spec_dep_UIDs)
+          tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
+	  return (Spec tr_spc2, spec_timestamp, spec_dep_UIDs)
 	  }
        | _  -> raise (TypeCheck (positionOf spec_tm, "Transform attempted on a non-spec"))
      }
+
+  op SMPragmaToElement(((prefix, body, postfix), pos): SM_Pragma): SpecElement =
+    Pragma(prefix, body, postfix, pos)
+    
 
   op extractQId(itm: TransformExpr): SpecCalc.Env QualifiedId =
     case itm of

@@ -107,7 +107,7 @@ spec
 
  op SCParser.mkSubstitute       (spec_term : SCTerm, sm_term    : SCTerm,         left : LCB, right : LCB) : SCTerm = SpecCalc.mkSubst     (spec_term, sm_term,    mkRegion left right)
  op SCParser.mkOpRefine 	(spec_term : SCTerm, elements   : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
- op SCParser.mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm = SpecCalc.mkTransform (spec_term, transforms, mkRegion left right)
+ op SCParser.mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm = SpecCalc.mkTransform (spec_term, transforms, [], mkRegion left right)
 
  op SCParser.mkTransformName	     (name  : Id,                                       left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformName         (name,                   mkRegion left right)
  op SCParser.mkTransformNumber	     (num   : Nat,                                      left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformNumber       (num,                    mkRegion left right)

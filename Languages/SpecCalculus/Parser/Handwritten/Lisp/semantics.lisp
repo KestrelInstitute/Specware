@@ -1139,8 +1139,8 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 ;;;  SC-OP-TRANSFORM
 ;;; ========================================================================
-(defun make-sc-transform (spec-term transforms l r)
-  (SpecCalc::mkTransform-3 spec-term transforms (make-pos l r)))
+(defun make-sc-transform (spec-term transforms pragmas l r)
+  (SpecCalc::mkTransform-4 spec-term transforms pragmas (make-pos l r)))
 
 (defun make-transform-name (name l r)
   (SpecCalc::mkTransformName-2 name (make-pos l r)))

@@ -500,13 +500,14 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Spec transformation. Takes a spec and a transformation script.
 
- type TransformTerm = SCTerm * TransformExprs
+ type TransformTerm = SCTerm * TransformExprs * SM_Pragmas
 
  op mkTransform (spec_term  : SCTerm, 
                  transforms : TransformExprs,
+                 pragmas    : SM_Pragmas, 
                  pos        : Position) 
   : SCTerm = 
-  (Transform (spec_term, transforms), pos)
+  (Transform (spec_term, transforms, pragmas), pos)
 
  %% --------------------
 
