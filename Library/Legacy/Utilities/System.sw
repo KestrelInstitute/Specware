@@ -12,6 +12,7 @@ System qualifying spec
 
   %% Renamed from toString to avoid ambiguity with monomorphic toStrings
   op anyToString : [a] a -> String
+  op anyToPrettyString : [a] a -> String
   op print    : [a] a -> a
   op toScreen (s:String) : ()
   op writeLine (s:String) : ()
