@@ -90,7 +90,7 @@ IsaTermPrinter qualifying spec
    let device? = deviceString? (head path) in
    let main_name = last path in
    let path_dir = butLast path in 
-   let mainPath = flatten (foldr (\_lambda (elem, result) -> "/"::elem::result)
+   let mainPath = flatten (foldr (fn (elem, result) -> "/"::elem::result)
 			        ["/Isa/", thyName main_name]
 				(if device? then tail path_dir else path_dir))
    in if device?
@@ -130,7 +130,7 @@ IsaTermPrinter qualifying spec
 	let _ = ensureFileDeleted fil_nm in
 	case val of
 	  | Spec spc ->
-	    app (\_lambda elem -> case elem of
+	    app (fn elem -> case elem of
 		              | Import(sc_tm, im_sp, _, _) ->
 		                deleteThyFilesForVal (Spec im_sp)
 			      | _ -> ())
@@ -373,7 +373,7 @@ IsaTermPrinter qualifying spec
                                 | _ -> el::elts)
                         [] spc.elements
     in
-    spc \_guillemotleft {elements = newelements}
+    spc << {elements = newelements}
 
   op renameRefinedDef(names: List QualifiedId, dfn: MSTerm, refine_num: Nat)
      : List QualifiedId * MSTerm =
@@ -400,8 +400,9 @@ IsaTermPrinter qualifying spec
 
   op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, spc: Spec): MSTerm =
     let def mk_equality(ty, t1, t2, preds, v_names) =
+          % let _ = writeLine("mk_equality: "^printType ty^"\n"^printTerm t1^" = "^printTerm t2) in
           case arrowOpt(spc, ty) of
-            | Some(dom, rng) | v_names ~= [] ->
+            | Some(dom, rng) | v_names ~= [] && none?(subtypeOf(ty, Qualified("Set", "Set"), spc)) ->
               let v_name :: v_names = v_names in
               let (vs, new_preds) = getArgVarsAndConstraints(spc, dom, v_name) in
               % let arg_tys = productTypes(spc, dom) in
@@ -579,9 +580,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = printSpecWithTypesToTerminal spc in
     let spc = addRefineObligations spc in
     let spc = normalizeNewTypes(spc, false) in
-    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
+    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = raiseNamedTypes spc in
     % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
@@ -659,7 +660,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 
   op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
   def makeCoercionTable(trans_info, spc) =
-    foldi (\_lambda (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
+    foldi (fn (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
            case opt_coerc of
              | None -> val
              | Some(toSuper, toSub) ->
@@ -681,7 +682,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
   def ppImports c elems =
     let imports_from_thy_morphism = thyMorphismImports c in
     let explicit_imports =
-        mapPartial (\_lambda el ->
+        mapPartial (fn el ->
 		     case el of
 		       | Import(imp_sc_tm, im_sp, _, _) -> Some (ppImport c imp_sc_tm im_sp)
 		       | _ -> None)
@@ -1038,7 +1039,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                   case ty of
                                     | Product(fields as ("1",_)::_,_) ->	% Treat as curried
                                       prConcat(addSeparator prSpace
-                                                 (map (\_lambda (_,c_ty) -> ppType c CoProduct false c_ty) fields))
+                                                 (map (fn (_,c_ty) -> ppType c CoProduct false c_ty) fields))
                                     | _ -> ppType c CoProduct false ty]
               in
               prBreakCat 2
@@ -1098,7 +1099,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                               in
                               case removeEmpty(splitStringAt(line1, " ")) of
                                 | [pragma_kind, "-typedef"]
-                                    | (pragma_kind = "Isa" \_or pragma_kind = "isa") ->
+                                    | (pragma_kind = "Isa" || pragma_kind = "isa") ->
                                   if type_qid = dummy_qid
                                     then (warn("Can't find type for typedef pragma.");
                                           (tct, type_qid))
@@ -1128,7 +1129,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                 [] spc.types
     in
     let spc = spc << {types = mapTypeInfos
-                                (fn info \_rightarrow
+                                (fn info ->
                                  let qid = primaryTypeName info in
                                  if opaqueTypeQId? coercions qid && embed? Subtype (unpackFirstTypeDef info).2
                                    then info << {dfn = And([],noPos)}
@@ -1139,7 +1140,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 
   op addTypeDefs (spc: Spec) (opaque_type_map: List(QualifiedId * MSType)): Spec =
    let spc  = spc << {types = mapTypeInfos
-                                (fn info \_rightarrow
+                                (fn info ->
                                  let qid = primaryTypeName info in
                                  case findLeftmost (fn (opaque_qid, _) -> opaque_qid = qid) opaque_type_map of
                                    |  Some(_, opaque_dfn) -> info << {dfn = opaque_dfn}
@@ -1293,7 +1294,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                   in
                   case removeEmpty(splitStringAt(line1, " ")) of
                     | pragma_kind::thm_nm::r
-                      | (pragma_kind = "Isa" \_or pragma_kind = "isa") && thm_nm = nm ->
+                      | (pragma_kind = "Isa" || pragma_kind = "isa") && thm_nm = nm ->
                       Some p_bod
                     | _ -> findPragmaNamed1(rst, nm))
                | _ -> findPragmaNamed1(rst, nm))
@@ -1370,7 +1371,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
    let aliases = [mainId] in
    let (tvs, ty) = unpackType dfn in
    % let _ = writeLine("type "^printQualifiedId mainId^" = "^printType ty^"\n"^anyToString opt_prag) in
-   if full? \_and ~(embed? Any ty)
+   if full? && ~(embed? Any ty)
      then case ty of
 	   | CoProduct(taggedTypes,_) ->
              (let def ppTaggedType (id,optTy) =
@@ -1381,7 +1382,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                               case ty of
                                 | Product(fields as ("1",_)::_,_) ->	% Treat as curried
                                   prConcat(addSeparator prSpace
-                                             (map (\_lambda (_,c_ty) -> ppType c CoProduct false c_ty) fields))
+                                             (map (fn (_,c_ty) -> ppType c CoProduct false c_ty) fields))
                                 | _ -> ppType c CoProduct false ty]
               in
               prBreakCat 2
@@ -1395,7 +1396,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
 		  ppTyVars tvs,
 		  ppIdInfo aliases,
 		  prString " = "]] ++
-		(map (\_lambda (fldname, fldty) ->
+		(map (fn (fldname, fldty) ->
 		      [ppToplevelName (mkNamedRecordFieldName c (mainId, fldname)),
                        prString " :: ", ppType c Top false fldty])
 		 fields))
@@ -1442,7 +1443,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
      | [tv] -> prConcat [prString "'", prString tv, prSpace]
      | _ -> prConcat [prString " (",
 		      prPostSep 0 blockFill (prString ",")
-		        (map (\_lambda tv -> prConcat[prString "'", prString tv]) tvs),
+		        (map (fn tv -> prConcat[prString "'", prString tv]) tvs),
 		      prString ")"]
 
  op convertPrecNum(sw_prec_num: Nat): Nat =
@@ -1481,8 +1482,8 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
          | Apply(Lambda(match,  _), arg, _) | charMatch? match ->
            aux(hd, caseToIf(c, match, arg))
          | Apply (Lambda (pats,_), Var(v,_), _) ->
-           if exists? (\_lambda v1 -> v = v1) (freeVars hd)
-            then foldl (\_lambda (cases, (pati, _, bodi)) ->
+           if exists? (fn v1 -> v = v1) (freeVars hd)
+            then foldl (fn (cases, (pati, _, bodi)) ->
                         case patToTerm(pati, "",  c) of
                           | Some pati_tm ->
                             let pati_tm = mapTerm (expandNatToSucc, id, id) pati_tm in
@@ -1543,7 +1544,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                                     ("2",zro as Fun(Nat 0,_,_))],_),
                             _),
                       then_cl, else_cl, _)
-             | natType? s \_and inVars?(v, freeVars hd) ->
+             | natType? s && inVars?(v, freeVars hd) ->
            let cases1 = aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)])) in
            let cases2 = aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
                                                             mkArrow(natType, natType)),
@@ -1569,9 +1570,9 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
               | None -> (hd,bod))
          | _ ->
        let fvs = freeVars hd ++ freeVars bod in
-       let rename_fvs = filter (\_lambda (nm,_) -> nm in? disallowedVarNames) fvs in
+       let rename_fvs = filter (fn (nm,_) -> nm in? disallowedVarNames) fvs in
        if rename_fvs = [] then (hd,bod)
-         else let sb = map (\_lambda (v as (nm,ty)) -> (v,mkVar(nm^"_v",ty))) rename_fvs in
+         else let sb = map (fn (v as (nm,ty)) -> (v,mkVar(nm^"_v",ty))) rename_fvs in
               let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
               (substitute(hd,sb), substitute(bod,bod_sb))
    in
@@ -1786,7 +1787,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                           prString "\"",
                           ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
                           prString "\""]
-         else if recursive? % || tuple? % \_and ~(simpleHead? lhs))
+         else if recursive? % || tuple? % && ~(simpleHead? lhs))
              then
                let (lhs, rhs) = ensureNotCurried(lhs, rhs) in
                prLinesCat 2 [[prString "recdef ", ppQualifiedId op_nm, prSpace,
@@ -1817,7 +1818,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                                          prString "\""]]]]
      | (cases,false) ->
        prBreak 2 [prString "primrec ",
-                  prLinesCat 0 (map (\_lambda(lhs,rhs) ->
+                  prLinesCat 0 (map (fn(lhs,rhs) ->
                                      let (lhs,rhs) = addExplicitTyping2(c,lhs,rhs) in
                                       [prString "\"",
                                        ppTerm c Top (mkEquality(Any noPos,lhs,rhs)),
@@ -1830,7 +1831,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                         | None -> prConcat [prString (if recursive?
                                                         then "\"measure size\""
                                                         else "\"{}\"")]],
-                     [prLinesCat 0 (map (\_lambda(lhs,rhs) ->
+                     [prLinesCat 0 (map (fn(lhs,rhs) ->
                                          let (lhs, rhs) = ensureNotCurried(lhs, rhs) in
                                          let (lhs, rhs) = addExplicitTyping2(c, lhs, rhs) in
                                           [prString "\"",
@@ -1946,11 +1947,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      def aux(hd, bod, tuple?) =
        % let _ = writeLine("aux("^printTerm bod^", "^show tuple?^")") in
        case bod of
-         | Lambda ([(VarPat (v as (nm,ty),v_pos),_,term)],a) | \_not tuple? ->
+         | Lambda ([(VarPat (v as (nm,ty),v_pos),_,term)],a) | ~ tuple? ->
            if patternLambda?(v_pos,a)
              then aux(Apply(hd,mkVar v,a), term, tuple?)
              else ([(hd,bod)], recursiveCallsNotPrimitive?(hd,bod))
-         | Lambda ([(pattern,_,term)],a) | \_not tuple? ->
+         | Lambda ([(pattern,_,term)],a) | ~ tuple? ->
            (case patToTerm (pattern,"", c) of
               | Some pat_tm | primitiveArg? pat_tm ->
                 aux (Apply(hd,pat_tm,a), term, tuple? || embed? Record pat_tm)
@@ -1958,8 +1959,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          | Apply(Lambda(match, _),arg,_) | ~targetFunctionDefs? && nonCaseMatch? match ->
            aux(hd, caseToIf(c, match, arg), tuple?)
          | Apply (Lambda (pats,_), Var(v,_), _) ->
-           if exists? (\_lambda v1 -> v = v1) (freeVars hd)
-            then foldl (\_lambda ((cases,not_prim), (pati,_,bodi)) ->
+           if exists? (fn v1 -> v = v1) (freeVars hd)
+            then foldl (fn ((cases,not_prim), (pati,_,bodi)) ->
                         case patToTerm(pati,"", c) of
                           | Some pati_tm ->
                             let (new_cases,n_p) = aux_case(substitute(hd,[(v,pati_tm)]), bodi, tuple?) in
@@ -2004,7 +2005,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
            if length cases = length pats
              then (cases, true)
              else ([(hd,bod)], true)
-         | Let([(pat,Var(v,_))],bod,a) | tuple? \_and v in? freeVars hd ->
+         | Let([(pat,Var(v,_))],bod,a) | tuple? && v in? freeVars hd ->
            (case patToTerm(pat,"", c) of
               | Some pat_tm ->
                 let s_bod = if hasVarNameConflict?(pat_tm, [v]) then bod
@@ -2019,7 +2020,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                     ("2",zro as Fun(Nat 0,_,_))],_),
                             _),
                       then_cl, else_cl, _)
-             | natType? s \_and inVars?(v, freeVars hd) ->
+             | natType? s && inVars?(v, freeVars hd) ->
            let (cases1,n_p1) = aux(substitute(hd, [(v,zro)]), substitute(then_cl, [(v,zro)]), tuple?) in
            let (cases2,n_p2) = aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
                                                                    mkArrow(natType, natType)),
@@ -2037,9 +2038,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        if tuple? then aux(hd,bod,tuple?) else ([(hd,bod)], tuple? || recursiveCallsNotPrimitive?(hd,bod))
      def fix_vars(hd,bod) =
        let fvs = freeVars hd ++ freeVars bod in
-       let rename_fvs = filter (\_lambda (nm,_) -> nm in? disallowedVarNames) fvs in
+       let rename_fvs = filter (fn (nm,_) -> nm in? disallowedVarNames) fvs in
        if rename_fvs = [] then (hd,bod)
-         else let sb = map (\_lambda (v as (nm,ty)) -> (v,mkVar(nm^"_v",ty))) rename_fvs in
+         else let sb = map (fn (v as (nm,ty)) -> (v,mkVar(nm^"_v",ty))) rename_fvs in
               let bod_sb = filter (fn (v,tm) -> ~(hasVarNameConflict?(tm, [v]))) sb in
               (substitute(hd,sb), substitute(bod,bod_sb))
    in
@@ -2053,7 +2054,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                | varOrTuplePattern? recd ->
              let Some arg = patToTerm(recd,"", c) in
              let (cases,n_p) = aux(Apply(op_tm, arg, a), tm, true) in
-             (cases, n_p && \_not infix?)
+             (cases, n_p && ~ infix?)
            | _ -> aux(op_tm, bod, false) in
    %let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases, tuple?)
@@ -2078,16 +2079,16 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 
  op addExplicitTyping_n1(c: Context, lhs: List MSTerm, rhs: MSTerm): List MSTerm * MSTerm =
    if addExplicitTyping? then
-     let fvs = removeDuplicateVars(foldl (\_lambda (vs,t) -> freeVars t ++ vs)
+     let fvs = removeDuplicateVars(foldl (fn (vs,t) -> freeVars t ++ vs)
                                      (freeVars rhs) lhs)
      in
      % let _ = toScreen("fvs: "^anyToString (map (fn (x,_) -> x) fvs)^"\n\n") in
-     let vs = foldl (\_lambda (vs,t) -> filterConstrainedVars(c,t,vs)) fvs lhs in
+     let vs = foldl (fn (vs,t) -> filterConstrainedVars(c,t,vs)) fvs lhs in
      % let _ = toScreen("inter vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n\n") in
      let vs = filterConstrainedVars(c,rhs,vs) in
      % let _ = toScreen("remaining vs: "^anyToString (map (fn (x,_) -> x) vs)^"\n\n\n") in
 
-     let (lhs,vs) = foldl (\_lambda ((lhs,vs),st) ->
+     let (lhs,vs) = foldl (fn ((lhs,vs),st) ->
                             let (st,vs) = addExplicitTypingForVars(st,vs) in
                             (lhs ++ [st], vs))
                        ([],vs) lhs
@@ -2103,7 +2104,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let def removeArgs(vs: Vars, args: MSTerms, bound_vars: Vars): Vars =
          % let _ = writeLine("removeArgs: "^anyToString (map (fn (x,_) -> x) bound_vars)) in
          % let _ = app (fn t -> writeLine (printTerm t)) args in
-         let v_args = mapPartial (\_lambda t ->
+         let v_args = mapPartial (fn t ->
                                     case t of
                                       | Var (v,_) | inVars?(v, vs)
                                                    && ~(hasVarNameConflict?(t, bound_vars)) ->
@@ -2113,13 +2114,13 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          in deleteVars(v_args, vs)
        def filterKnown(vs: Vars, id: String, f: MSTerm, args: MSTerms, bound_vs: Vars): Vars =
          % let _ = writeLine("fk "^id^": "^ anyToString (map (fn (x,_) -> x) vs)) in
-         if id = "natural?" \_or id in? isabelleOverloadedOps 
-            \_or exists? (\_lambda ci -> id in? ci.overloadedOps)
+         if id = "natural?" || id in? isabelleOverloadedOps 
+            || exists? (fn ci -> id in? ci.overloadedOps)
                 c.coercions
           then vs
          else
-         if (termFixity f = Nonfix \_and \_not (overloadedIsabelleOp? c f))
-            \_or (length(wildFindUnQualified((getSpec c).ops, id)) = 1
+         if (termFixity f = Nonfix && ~ (overloadedIsabelleOp? c f))
+            || (length(wildFindUnQualified((getSpec c).ops, id)) = 1
                   %% The following is only necessary for base specs
                   && length(wildFindUnQualified((getBaseSpec()).ops, id)) <= 1)
            then removeArgs(vs,args,bound_vs)
@@ -2186,13 +2187,13 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let def addExpl(t: MSTerm, vs: Vars, bound_vs: Vars): MSTerm * Vars =
          case t of
            | Var(v1 as (_,ty),pos) | inVars?(v1, vs) && ~(hasVarNameConflict?(t, bound_vs)) ->
-             (TypedTerm(t,ty,pos), filter (\_lambda v2 -> \_not (equalVar?(v1, v2))) vs)
+             (TypedTerm(t,ty,pos), filter (fn v2 -> ~ (equalVar?(v1, v2))) vs)
            | Apply(t1,t2,a) ->
              let (t1,vs) = addExpl(t1,vs,bound_vs) in
              let (t2,vs) = addExpl(t2,vs,bound_vs) in
              (Apply(t1,t2,a),vs)
            | Record(prs,a) ->
-             let (prs,vs) = foldl (\_lambda ((prs,vs),(id,st)) ->
+             let (prs,vs) = foldl (fn ((prs,vs),(id,st)) ->
                                   let (st,vs) = addExpl(st,vs,bound_vs) in
                                   (Cons((id,st),prs), vs))
                              ([],vs) prs
@@ -2253,7 +2254,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          | _ ->
            let comm = stripOuterSpaces comm in
            let len = length comm in
-           if len > 13 \_and subFromTo(comm,0,14) = "Simplification"
+           if len > 13 && subFromTo(comm,0,14) = "Simplification"
              then prString " [simp]"
              else prEmpty
    in
@@ -2318,15 +2319,15 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op prfEndsWithTerminator?(prf: String): Bool =
    let len = length prf in
    endsIn?(prf,"done")
-  \_or endsIn?(prf,"sorry")
-  \_or endsIn?(prf,"oops")
-  \_or endsIn?(prf,"qed")
-  \_or lastLineEnds prf
+  || endsIn?(prf,"sorry")
+  || endsIn?(prf,"oops")
+  || endsIn?(prf,"qed")
+  || lastLineEnds prf
 
  op  stripExcessWhiteSpace: String -> String
  def stripExcessWhiteSpace s =
    let len = length s in
-   if len > 0 \_and s@(len-1) in? [#\s,#\n]
+   if len > 0 && s@(len-1) in? [#\s,#\n]
      then stripExcessWhiteSpace(subFromTo(s,0,len-1))
      else if len > 2 && s@0 = #\s && s@1 = #\s
            then subFromTo(s,2,len)
@@ -2388,7 +2389,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Some (_,prag_str,_,_) ->
    let end_pos = endOfFirstLine prag_str in
    case findStringBetween(prag_str, "\"", "\"", 0, end_pos) of
-     | Some str -> Some(replaceString(str, "\\_lambda", "\\<lambda>"))
+     | Some str -> Some(replaceString(str, "\fn", "\\<lambda>"))
      | None -> None
 
 
@@ -2512,7 +2513,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | (Lambda (match, _),_) ->
           if nonCaseMatch? match
             then ppTerm c parentTerm (caseToIf(c, match, term2))
-            else enclose?(parentTerm \_noteq Top,
+            else enclose?(parentTerm ~= Top,
                           prBreakCat 0 [[prString "case ",
                                          ppTerm c Top term2],
                                         [prString " of ",
@@ -2655,7 +2656,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
            | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) ->
              if p1 = p2
-               then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 \_noteq a2
+               then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 ~= a2
                              a1=a2, t1, pr_op, t2)
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) ->
@@ -2736,9 +2737,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Var (v,_) -> ppVarWithoutType v
      | Fun (fun,ty,_) -> ppFun c parentTerm fun ty
 %      | Lambda ([(_, Fun (Bool true,  _, _), Fun (Bool true,  _, _))], _) ->
-%        prString "TRUE"                 % \_lambdax. True
+%        prString "TRUE"                 % fnx. True
      | Lambda ([(pattern,_,term)],_) ->
-       enclose?(parentTerm \_noteq Top,
+       enclose?(parentTerm ~= Top,
                 prBreakCat 2 [[lengthString(2, "\\<lambda> "),
                                let c = c << {printTypes? = true} in
                                  ppPattern c pattern (Some ""),
@@ -2822,7 +2823,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              prString ":",
              ppType c Top true ty]
 
- %%% Top-level theorems use implicit quantification meta-level -> and lhs \_and
+ %%% Top-level theorems use implicit quantification meta-level -> and lhs &&
  op  ppPropertyTerm : Context -> List String -> MSTerm -> Pretty
  def ppPropertyTerm c explicit_universals term =
    let (assmpts, concl) = parsePropertyTerm c explicit_universals term in
@@ -2839,13 +2840,13 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  def parsePropertyTerm c explicit_universals term =
    case term of
      | Bind (Forall, vars, bod, a) ->
-       let expl_vars = filter (\_lambda (vn,_) -> vn in? explicit_universals) vars in
-       let renameImplicits = filter (\_lambda (vn,_) -> vn nin? explicit_universals
-                                                 \_and vn in? disallowedVarNames)
+       let expl_vars = filter (fn (vn,_) -> vn in? explicit_universals) vars in
+       let renameImplicits = filter (fn (vn,_) -> vn nin? explicit_universals
+                                                 && vn in? disallowedVarNames)
                                vars
        in
        let bod = if renameImplicits = [] then bod
-                  else substitute(bod, map (\_lambda (v as (s, ty)) -> (v, mkVar(s^"__v", ty)))
+                  else substitute(bod, map (fn (v as (s, ty)) -> (v, mkVar(s^"__v", ty)))
                                         renameImplicits)
        in
        if expl_vars = []
@@ -2886,11 +2887,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                     | RecordPat(("1",_)::_,_) | multiArgConstructor?(constr, ty, getSpec c) ->
                       prBreak 2 [prSpace,
                                  prPostSep 2 blockFill prSpace
-                                   (map (\_lambda p -> enclose?(case p of
-                                                        | EmbedPat(_, Some _, _, _)-> true
-                                                        | AliasPat _ -> true
-                                                        | _ -> false,
-                                                        ppPattern c p wildstr))
+                                   (map (fn p -> enclose?(case p of
+                                                            | EmbedPat(_, Some _, _, _)-> true
+                                                            | AliasPat _ -> true
+                                                            | _ -> false,
+                                                          ppPattern c p wildstr))
                                     (patternToList pat))]
                     | WildPat (pty,_) | multiArgConstructor?(constr, ty, getSpec c) ->
                       let tys = productTypes(getSpec c, pty) in
@@ -2973,7 +2974,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         case coproductOpt(spc,base_ty) of
           | None -> false
           | Some fields ->
-            exists? (\_lambda (id,opt_arg_ty) ->
+            exists? (fn (id,opt_arg_ty) ->
                        case opt_arg_ty of
                          | Some(Product(("1",_)::_, _)) -> id = constrId
                          | _ -> false)
@@ -3077,7 +3078,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  def omittedQualifiers = [toIsaQual]  % "IntegerAux" "Option" ...?
 
  op qidToIsaString(Qualified (qualifier,id): QualifiedId): String =
-   if qualifier = UnQualified \_or qualifier in? omittedQualifiers then
+   if qualifier = UnQualified || qualifier in? omittedQualifiers then
      if id in? disallowedVarNames then id ^ "__c"
        else ppIdStr id
    else
@@ -3160,7 +3161,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
 %                     case ty of
 %                       | Product(fields as ("1",_)::_,_) ->	% Treat as curried
 %                         prConcat(addSeparator prSpace
-%                                    (map (\_lambda (_,c_ty) -> ppType c CoProduct in_quotes? c_ty) fields))
+%                                    (map (fn (_,c_ty) -> ppType c CoProduct in_quotes? c_ty) fields))
 %                       | _ -> ppType c CoProduct in_quotes? ty]
 %       in
 %         enclose?(case parent of
@@ -3280,7 +3281,7 @@ def enclose?(encl? ,pp) =
     else pp
 
 op ppTermEncloseComplex? (c: Context) (parentTerm: ParentTerm) (term: MSTerm): Pretty =
-  let encl? = \_not(isSimpleTerm? term) in
+  let encl? = ~(isSimpleTerm? term) in
   enclose?(encl?, ppTerm c (if encl? then Top else parentTerm) term)
 
 def prSpace = prString " "
@@ -3290,7 +3291,7 @@ def ppInfixId(Qualified(_,main_id)) = prString (infixId main_id)
 
 op infixId(id: String): String =
   let idarray = explode(id) in
-  let id = foldr (\_lambda(#\\,id) -> "\\\\"^id   % backslashes must be escaped
+  let id = foldr (fn(#\\,id) -> "\\\\"^id   % backslashes must be escaped
                   | (c,id) -> show(c)^id) "" idarray
   in id
 
@@ -3299,7 +3300,7 @@ def ppInfixDefId(Qualified(_,main_id)) = prString (infixDefId main_id)
 
 op infixDefId(id: String): String =
   let idarray = explode(id) in
-  let id = foldr (\_lambda(#\\,id) -> "\\\\"^id   % backslashes must be escaped
+  let id = foldr (fn(#\\,id) -> "\\\\"^id   % backslashes must be escaped
                   | (#/,id) -> "'/"^id
                   | (#(,id) -> "'("^id
                   | (#),id) -> "')"^id
@@ -3313,7 +3314,7 @@ def ppIdStr id =
   let def att(id, s) =
         (if id = "" then "e" else id) ^ s
   in
-  let id = foldl (\_lambda(id,#?) -> att(id, "_p")
+  let id = foldl (fn(id,#?) -> att(id, "_p")
                   | (id,#=) -> att(id, "_eq")
                   | (id,#<) -> att(id, "_lt")
                   | (id,#>) -> att(id, "_gt")
@@ -3361,7 +3362,7 @@ def isSimplePattern? trm =
    case p of
      | VarPat _ -> true
      | RecordPat(prs,_) | tupleFields? prs ->
-       forall? (\_lambda (_,p) -> varOrTuplePattern? p) prs
+       forall? (fn (_,p) -> varOrTuplePattern? p) prs
      | RestrictedPat(pat,cond,_) -> varOrTuplePattern? pat
      | WildPat _ -> true
      | _ -> false
@@ -3371,7 +3372,7 @@ def isSimplePattern? trm =
    case p of
      | VarPat _ -> true
      | RecordPat(prs,_) ->
-       forall? (\_lambda (_,p) -> varOrRecordPattern? p) prs
+       forall? (fn (_,p) -> varOrRecordPattern? p) prs
      | RestrictedPat(pat,cond,_) -> varOrRecordPattern? pat
      | WildPat _ -> true
      | _ -> false
@@ -3387,15 +3388,15 @@ def isSimplePattern? trm =
    case p of
      | Var _ -> true
      | Record(prs as (("1",_)::_),_) ->
-       forall? (\_lambda (_,p) -> varOrTupleTerm? p) prs
+       forall? (fn (_,p) -> varOrTupleTerm? p) prs
      | _ -> false
 
  op overloadedConstructors(spc: Spec): List String =
    (foldTypeInfos
-      (\_lambda (info, result as (found,overloaded)) ->
+      (fn (info, result as (found,overloaded)) ->
          case typeInnerType(info.dfn) of
            | CoProduct(prs,_) ->
-             foldl (\_lambda ((found,overloaded),(id,_)) ->
+             foldl (fn ((found,overloaded),(id,_)) ->
                       if id in? found
                         then (  found, id::overloaded)
                       else (id::found,     overloaded))
