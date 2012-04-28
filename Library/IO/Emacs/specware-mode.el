@@ -2296,7 +2296,7 @@ With an argument, it doesn't convert imports."
         (error "Error processing spec %s" filename)
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
-        (sw:add-specware-to-isabelle-path)
+        ;(sw:add-specware-to-isabelle-path)
         (find-file-other-window-0 (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
@@ -2323,7 +2323,7 @@ With an argument, it doesn't convert imports."
         (error "Error processing spec %s" filename)
       (let ((buf (find-file-noselect thy-file t)))
         (kill-buffer buf)		; Because of x-symbol problems if it already exists
-        (sw:add-specware-to-isabelle-path)
+        ;(sw:add-specware-to-isabelle-path)
         (find-file-other-window-0 (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
@@ -2341,7 +2341,7 @@ With an argument, it doesn't convert imports."
      (format "ML_val  {* ThyLoad.add_path \"%s/Library/Isa/\" *}"
 	     (getenv "SPECWARE4")))))
 
-(sw:add-specware-to-isabelle-path)
+;(sw:add-specware-to-isabelle-path)
 
 ;;; Haskell generation
 (defun sw:convert-top-spec-to-haskell (non-recursive?)
@@ -2459,3 +2459,4 @@ With an argument, it doesn't convert imports."
 (run-hooks 'sw:specware-load-hook)
 
 ;;; specware-mode.el has just finished.
+
