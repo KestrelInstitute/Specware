@@ -255,7 +255,7 @@ If NEWLINE is true then add a newline at the end of the input."
   (set (make-local-variable 'scroll-conservatively) 20)
   (set (make-local-variable 'scroll-margin) 0)
   (slime-repl-safe-load-history)
-  (make-local-hook 'kill-buffer-hook)
+  ; (make-local-hook 'kill-buffer-hook)
   (add-hook 'kill-buffer-hook 'slime-repl-safe-save-merged-history nil t)
   (add-hook 'kill-emacs-hook 'slime-repl-save-all-histories)
   (slime-setup-command-hooks)
