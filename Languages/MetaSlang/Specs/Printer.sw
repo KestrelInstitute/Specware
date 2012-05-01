@@ -1430,7 +1430,7 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[1]: " ^ printQualifiedId qid ^ "\n") in
 		result)
-	 | OpDef (qid,refine_num,_) ->
+	 | OpDef (qid,refine_num,_,_) ->
            % let _ = writeLine("printing def "^show qid^" "^show refine_num) in
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
@@ -1473,7 +1473,7 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?,a)) :: (r1_els as (OpDef (qid2,0,_)) :: r2_els) ->
+	   | (Op (qid1,def?,a)) :: (r1_els as (OpDef (qid2,0,_,_)) :: r2_els) ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
@@ -1554,7 +1554,7 @@ AnnSpecPrinter qualifying spec
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[4]: " ^ printQualifiedId qid ^ "\n") in
 		(4, [(0, string("op "^show qid))]))
-	 | OpDef (qid, refine_num, _) ->
+	 | OpDef (qid, refine_num, _, _) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
 	      | _ -> 
@@ -1596,7 +1596,7 @@ AnnSpecPrinter qualifying spec
      def aux(elements,afterOp?,result) =
          case elements of
 	   | [] -> result
-	   | (Op (qid1,def?,a)) :: (OpDef (qid2,0,_)) :: r_els ->
+	   | (Op (qid1,def?,a)) :: (OpDef (qid2,0,hist,_)) :: r_els ->
 	     (case findTheOp(spc,qid1) of
 	      | Some opinfo ->
 		if qid1 = qid2 then
@@ -1604,7 +1604,7 @@ AnnSpecPrinter qualifying spec
 		else if def? then
                   ppOpDeclWithDef context (opinfo,aux(r_els, false, result)) % TODO: discriminate decl-with-def from decl-then-def
                 else
-                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,0,a),r_els), true, result))
+                  ppOpDecl context afterOp? (opinfo,aux(Cons(OpDef (qid2,0,hist,a),r_els), true, result))
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[6]: " ^ printQualifiedId qid1 ^ "\n") in
 		result)

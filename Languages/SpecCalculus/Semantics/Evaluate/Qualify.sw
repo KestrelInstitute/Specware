@@ -187,7 +187,7 @@ SpecCalc qualifying spec
 		  sp,
 		  qualifySpecElements new_q immune_ids els, a)
       | Op      (qid,def?,a) -> Op      (qualifyOpId   new_q immune_ids qid, def?,a)
-      | OpDef   (qid,refine?,a) -> OpDef   (qualifyOpId   new_q immune_ids qid, refine?,a)
+      | OpDef   (qid, refine?, hist, a) -> OpDef   (qualifyOpId   new_q immune_ids qid, refine?, hist, a)
       | Type    (qid,a)      -> Type    (qualifyTypeId new_q qid,a)
       | TypeDef (qid,a)      -> TypeDef (qualifyTypeId new_q qid,a)
       | Property (pt, qid, tvs, fmla, a) ->

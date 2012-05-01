@@ -5,6 +5,8 @@ import ../Specs/Utilities
 type Path = List Nat
 type APathTerm a = ATerm a * Path
 
+ op [a] topTerm(ptm: APathTerm a): ATerm a = ptm.1
+
  op [a] infixFn?(f: AFun a): Bool =
     case f of
       | Op(Qualified(_, s), Infix _) -> true

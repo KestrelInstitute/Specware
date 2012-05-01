@@ -368,8 +368,8 @@ IsaTermPrinter qualifying spec
     in
     let newelements = foldr (fn (el, elts) ->
                               case el of
-                                | Op(qid, true, _) -> maybeAddTheoremForDef(qid, el) ++ elts
-                                | OpDef(qid, 0, _) -> maybeAddTheoremForDef(qid, el) ++ elts
+                                | Op(qid, true, _)    -> maybeAddTheoremForDef(qid, el) ++ elts
+                                | OpDef(qid, 0, _, _) -> maybeAddTheoremForDef(qid, el) ++ elts
                                 | _ -> el::elts)
                         [] spc.elements
     in
@@ -420,7 +420,7 @@ IsaTermPrinter qualifying spec
     let (newelements, ops) =
         foldr (fn (el, (elts, ops)) ->
                  case el of
-                   | OpDef(qid as Qualified(q,id), refine_num, _) | refine_num > 0 ->
+                   | OpDef(qid as Qualified(q,id), refine_num, hist, _) | refine_num > 0 ->
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
@@ -1057,7 +1057,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
   op normalizeSpecElements (elts: SpecElements): SpecElements =
     case elts of
       | [] -> []
-      | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _)) :: rst | qid1 = qid2 ->
+      | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
         Cons(Op(qid1, true, a), normalizeSpecElements rst)
       | x::rst -> x :: normalizeSpecElements rst
 
@@ -1163,7 +1163,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | OpDef(qid as Qualified(_,nm), refine_num, _) ->
+      | OpDef(qid as Qualified(_,nm), refine_num, hist, _) ->
 	(case findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} ->
              let names = map (refinedQID refine_num) names in

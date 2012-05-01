@@ -677,7 +677,7 @@ spec
 	 if exists? (fn e ->
                       case (e, el) of
                         | (Op  (qid1,d1,_), Op  (qid2,d2,_)) -> qid1 = qid2 && d1 = d2
-                        | (OpDef(qid1,refine1?,_), OpDef  (qid2,refine2?,_)) -> qid1 = qid2 && refine1? = refine2?
+                        | (OpDef(qid1,refine1?,_,_), OpDef  (qid2,refine2?,_,_)) -> qid1 = qid2 && refine1? = refine2?
                         | (Type   (qid1,_), Type   (qid2,_)) -> qid1 = qid2
                         | (TypeDef(qid1,_), TypeDef(qid2,_)) -> qid1 = qid2
                         | _ -> false)
@@ -689,7 +689,7 @@ spec
    let newElts = foldl (fn (newElts,el) ->
 			case el of
 			  | Op      (qid,def?,a) -> addIfNew (Op      (canonOp   qid, def?,a), newElts)
-			  | OpDef   (qid, refine?,a) -> addIfNew (OpDef(canonOp  qid, refine?,a),newElts)
+			  | OpDef   (qid, refine?, hist,a) -> addIfNew (OpDef(canonOp  qid, refine?, hist,a),newElts)
 			  | Type    (qid,a)      -> addIfNew (Type    (canonType qid,a),       newElts)
 			  | TypeDef (qid,a)      -> addIfNew (TypeDef (canonType qid,a),       newElts)
 			  | _ -> Cons(el,newElts))

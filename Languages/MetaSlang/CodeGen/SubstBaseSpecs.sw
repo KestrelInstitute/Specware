@@ -31,7 +31,7 @@ SubstBaseSpecs qualifying spec
                             (case findAQualifierMap (exec_spc.ops, q, id) of
                                | Some _ ->  (qid :: ops, types)
                                | _ -> (ops, types))
-                          | OpDef(qid as Qualified(q,id), _, _) ->
+                          | OpDef(qid as Qualified(q,id), _, _, _) ->
                             (case findAQualifierMap (exec_spc.ops, q, id) of
                                | Some _ ->  (qid :: ops, types)
                                | _ -> (ops, types))
@@ -68,7 +68,7 @@ SubstBaseSpecs qualifying spec
                                               elements ++ [el]
                                          else elements)
                                     | _ -> (op_map, elements))
-                               | OpDef(qid as Qualified(q,id), _, a) ->
+                               | OpDef(qid as Qualified(q,id), _, _, a) ->
                                  (case findAQualifierMap(exec_spc.ops, q, id) of
                                     | Some info | some?(AnnSpec.findTheOp(spc, qid)) ->
                                       (insertAQualifierMap(op_map, q, id, trimOldDefs info),

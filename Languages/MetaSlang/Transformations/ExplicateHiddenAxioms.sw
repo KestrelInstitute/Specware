@@ -34,7 +34,7 @@ Prover qualifying spec
                                           axiomFromOpSrtTop(spc,qid,opinfo) 
                                             ++ (if def? then axiomFromOpDefTop(spc,qid,opinfo) else [])
                                             ++ r_elts))
-	      | OpDef (qid, _, _) ->
+	      | OpDef (qid, _, _, _) ->
 	        (case AnnSpec.findTheOp(spc,qid) of
 		   | Some opinfo -> Cons(el,
                                          axiomFromOpDefTop(spc,qid,opinfo) 

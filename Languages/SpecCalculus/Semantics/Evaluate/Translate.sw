@@ -722,7 +722,7 @@ SpecCalc qualifying spec
       | Type    (qid, a)       -> Type    (translateQualifiedId translators.types qid, a) 
       | TypeDef (qid, a)       -> TypeDef (translateQualifiedId translators.types qid, a)
       | Op      (qid, def?, a) -> Op      (translateQualifiedId translators.ops   qid, def?, a)
-      | OpDef   (qid, refine?, a) -> OpDef(translateQualifiedId translators.ops   qid, refine?, a)
+      | OpDef   (qid, refine?, hist, a) -> OpDef(translateQualifiedId translators.ops   qid, refine?, hist, a)
       | Property (pt, nm, tvs, term, a) ->
         Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
       | Import (sp_tm, spc, els, a) ->  

@@ -83,7 +83,7 @@ RemoveCurrying qualifying spec
 		   in
 		   let new_qid = Qualified (q, new_id) in
 		   (Cons (Op (new_qid, false, pos), % false means def is not printed as part of decl
-                          Cons (OpDef (new_qid, 0, noPos),
+                          Cons (OpDef (new_qid, 0, [], noPos),
                                 r_elts)),
                     new_ops)
 		 | None -> (Cons(old_el,r_elts),r_ops))
@@ -102,7 +102,7 @@ RemoveCurrying qualifying spec
 		   | _ -> 
                      let _ = writeLine (q ^ "." ^ id ^ " is an Op element not in the qualifier map") in
                      (Cons (el,r_elts), r_ops))
-	      | OpDef(Qualified(q,id),_,a) ->
+	      | OpDef(Qualified(q,id),_,_,a) ->
 		(case findAQualifierMap(r_ops,q,id) of
 		   | Some info ->  doOp(el,q,id,info,r_elts,r_ops)
 		   | _ -> 

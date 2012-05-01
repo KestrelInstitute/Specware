@@ -156,9 +156,11 @@ MetaSlangRewriter qualifying spec
                   then standardSimplify spc (term,subst,boundVars,demod)
                   else Nil)
 
+(*
  op substRule : RewriteRule = 
      { 
 	name     = "Subst",
+        rule_spec = 
 	freeVars = [],
 	tyVars = [],
 	condition = None,
@@ -166,11 +168,12 @@ MetaSlangRewriter qualifying spec
 	rhs   = mkVar(2,TyVar("''a",noPos)),
         trans_fn = None
      } 
-
+*)
 
  op evalRule : RewriteRule = 
      { 
 	name     = "Eval",
+        rule_spec = Eval,
 	freeVars = [],
 	tyVars = [],
 	condition = None,

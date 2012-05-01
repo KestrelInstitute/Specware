@@ -1070,7 +1070,7 @@ spec
    let names = foldl (fn (ns, el) ->
 		      case el of
 			| Op    (qid, def?, _) -> insertQID(qid, ns)
-			| OpDef (qid, _, _)    -> insertQID(qid, ns)
+			| OpDef (qid, _, _, _)    -> insertQID(qid, ns)
 			| _ -> ns)
                      (empty()) 
 		     spc.elements
@@ -1134,7 +1134,7 @@ spec
                            then let prag::tccs = tccs  in
                                 (indep_new_tccs ++ [el, prag] ++ op_ref_new_tccs ++ tccs, claimNames)
                            else (indep_new_tccs ++ [el]       ++ op_ref_new_tccs ++ tccs, claimNames))
-                 | OpDef (qid as Qualified(q, id), refine_num, _) ->
+                 | OpDef (qid as Qualified(q, id), refine_num, _, _) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo | ~(ignoreOpFn?(q, id)) ->
                         foldr (fn (dfn, tcc) ->

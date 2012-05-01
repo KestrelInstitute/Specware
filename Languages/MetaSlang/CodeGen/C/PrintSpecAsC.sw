@@ -268,7 +268,7 @@ PrintAsC qualifying spec
                   | _ ->
                     %% Something is messed up with spec...
                     (infos, reportConfusion ("No op info for " ^ show qid, status)))
-             | OpDef   (qid, _, _) -> 
+             | OpDef   (qid, _, _, _) -> 
                (case findTheOp (spc, qid) of
                   | Some info ->
                     (infos ++ [Op (qid, info)], status)

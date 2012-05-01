@@ -274,8 +274,8 @@ SpecCalc qualifying spec
 
     sp <- return (setOps (old_spec, new_ops));
     let el = case old_infos of
-               | old_info::_ | refine? -> OpDef (primaryName, length(opDefInnerTerms old_info), pos)
-               | _::_ | addOnly? -> OpDef (primaryName, 0, pos)
+               | old_info::_ | refine? -> OpDef (primaryName, length(opDefInnerTerms old_info), [], pos)
+               | _::_ | addOnly? -> OpDef (primaryName, 0, [], pos)
                | _ -> Op (primaryName, definedTerm? new_dfn, pos)
     in
     let sp = if exists? (fn eli -> equalSpecElement?(el, eli)) sp.elements then sp
@@ -283,7 +283,7 @@ SpecCalc qualifying spec
                      then addElementBeforeOrAtEnd(sp, el, opt_next_el)
               else let elts = foldr (fn (eli, elts) ->
                                        case eli of
-                                         | OpDef(qid,_,_) | qid = primaryName -> elts
+                                         | OpDef(qid,_,_,_) | qid = primaryName -> elts
                                          | Op(qid, _, _)  | qid = primaryName -> el::elts
                                          | _                                  -> eli::elts)
                                  [] sp.elements
@@ -426,14 +426,16 @@ SpecCalc qualifying spec
                spc.elements
     def body_refs op_id =
       case findTheOp(spc, op_id) of
-        | Some info -> refsToElements(opsInTerm info.dfn, typesInTerm info.dfn)
+        | Some info -> let refs = refsToElements(opsInTerm info.dfn, typesInTerm info.dfn) in
+                       % let _ = writeLine("refs of "^show op_id^": "^anyToString refs) in
+                       refs
         | None -> (writeLine("Warning! Missing op in adjustElementOrder: "
                                ^printQualifiedId op_id);
                    [])
     def element_refs el =
       case el of
         | Op(op_id, _, _)    -> body_refs op_id
-        | OpDef(op_id, _, _) -> body_refs op_id
+        | OpDef(op_id, _, _, _) -> body_refs op_id
         | Property(_, p_nm, _, body, _) -> refsToElements(opsInTerm body, typesInTerm body)
         | TypeDef(ty_id, _) ->
           (case findTheType(spc, ty_id) of
@@ -447,7 +449,7 @@ SpecCalc qualifying spec
           
         | _ -> []
   in
-  topSort (EQUAL, element_refs, elements)
+  topSort (EQUAL, element_refs, elements) % robustTopSort
 
  (* Adjust order of top-level ops to avoid forward references except for mutual recursion *)
  op adjustElementOrder(spc: Spec): Spec =
@@ -477,7 +479,7 @@ SpecCalc qualifying spec
 %       def maybeMoveElt(el, result as (seen_ops, spc)) =
 %         case el of
 %           | Op(op_id, true, _) -> moveOpDef?(op_id, el, seen_ops, spc)
-%           | OpDef(op_id, _) -> moveOpDef?(op_id, el, seen_ops, spc)
+%           | OpDef(op_id, _,_) -> moveOpDef?(op_id, el, seen_ops, spc)
 %           | Op(op_id, false, _) ->
 %             (case findTheOp(spc, op_id) of
 %                | Some info ->

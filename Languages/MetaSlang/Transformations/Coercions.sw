@@ -276,7 +276,7 @@ spec
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = mapTermTop (info, 0)})
                                    | None -> ops)
-                               | OpDef (qid as Qualified(q, id), refine_num, _) ->
+                               | OpDef (qid as Qualified(q, id), refine_num, _, _) ->
                                  (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
@@ -515,7 +515,7 @@ spec
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = mapTermTop (info, 0)})
                                    | None -> ops)
-                               | OpDef (qid as Qualified(q, id), refine_num, _) ->
+                               | OpDef (qid as Qualified(q, id), refine_num, _, _) ->
                                  (case findAQualifierMap(ops, q, id) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,

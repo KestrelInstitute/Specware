@@ -58,7 +58,7 @@ SliceSpec qualifying spec
             | Type     (qid,              _) -> qid in? type_set
             | TypeDef  (qid,              _) -> qid in? type_set
             | Op       (qid, _,           _) -> qid in? op_set && numRefinedDefs spc qid = 1
-            | OpDef    (qid, refine_num,  _) -> qid in? op_set && numRefinedDefs spc qid = refine_num + 1
+            | OpDef    (qid, refine_num,_,_) -> qid in? op_set && numRefinedDefs spc qid = refine_num + 1
             | Property (_, _, _, formula, _) ->
               forall? (fn qid -> qid in? op_set) (opsInTerm formula)
               && 

@@ -48,7 +48,7 @@ SpecCalc qualifying spec
                             (ListUtilities.insert (info, ambiguous_types),
                              bad_fixity_ops, ambiguous_ops))
                 | Op(qid, _, _) -> check_op(spc, qid, result)
-                | OpDef(qid, _, _) -> check_op(spc, qid, result)
+                | OpDef(qid, _, _, _) -> check_op(spc, qid, result)
                 | _ -> result)
          ([], [], [])
          spc.elements

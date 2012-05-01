@@ -55,7 +55,7 @@ AnnSpec qualifying spec
    | Type     QualifiedId * b
    | TypeDef  QualifiedId * b
    | Op       QualifiedId * Bool * b  % if boolean is true, def was supplied as part of decl
-   | OpDef    QualifiedId * Nat  * b  % Nat is number of redefinitions
+   | OpDef    QualifiedId * Nat  * TransformHistory * b  % Nat is number of redefinitions
    | Property (AProperty b)
    | Comment  String * b
    | Pragma   String * String * String * b
@@ -82,6 +82,26 @@ AnnSpec qualifying spec
  def primaryTypeName info = head info.names
  def primaryOpName   info = head info.names
  def propertyName    p    = p.2
+
+ type RuleSpec =
+   | Unfold      QualifiedId
+   | Fold        QualifiedId
+   | Rewrite     QualifiedId
+   | LeftToRight QualifiedId
+   | RightToLeft QualifiedId
+   | MetaRule    QualifiedId
+   | RLeibniz    QualifiedId
+   | Weaken      QualifiedId
+   | MetaRule    QualifiedId
+   | SimpStandard
+   | AbstractCommonExpressions
+   | Eval
+   | Context
+   | AllDefs
+
+ type RuleSpecs = List RuleSpec
+
+ type TransformHistory = List(MSTerm * RuleSpec)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -320,11 +340,14 @@ op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   info << {dfn = new_dfn}
 
 op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MSTerm): Spec =
+  addRefinedDefH(spc, info, new_dfn, [])
+
+op addRefinedDefH(spc: Spec, info: OpInfo, new_dfn: MSTerm, hist: TransformHistory): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
   % let _ = writeLine(show(numTerms new_opinfo.dfn)) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), hist, noPos)]}
 
 op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
@@ -339,10 +362,13 @@ op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType): OpInfo =
   info << {dfn = new_full_dfn}
 
 op addRefinedType(spc: Spec, info: OpInfo, new_ty: MSType): Spec =
+  addRefinedTypeH(spc, info, new_ty, [])
+
+op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, hist: TransformHistory): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), hist, noPos)]}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -405,7 +431,7 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
   spc << {ops = foldl (fn (ops, el) ->
                        case el of
                          | Op(qid, true, _) -> mapOpDef(qid, 0, ops)
-                         | OpDef(qid, refine_num, _) -> mapOpDef(qid, refine_num, ops)
+                         | OpDef(qid, refine_num, _, _) -> mapOpDef(qid, refine_num, ops)
                          | _ -> ops)
                   spc.ops spc.elements}
 
@@ -436,7 +462,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  foldl (fn (spc, el) ->
           case el of
             | Op(qid, true, _) -> mapOpDef(qid, 0, spc)
-            | OpDef(qid, refine_num, _) -> mapOpDef(qid, refine_num, spc)
+            | OpDef(qid, refine_num, _, _) -> mapOpDef(qid, refine_num, spc)
             | TypeDef(qid, _) -> mapTypeDef(qid, spc)
             | _ -> spc)
    spc spc.elements
@@ -910,7 +936,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      | (Type(qid1, _), Type(qid2, _)) -> qid1 = qid2
      | (TypeDef(qid1, _), TypeDef(qid2, _)) -> qid1 = qid2
      | (Op(qid1, def1?,_), Op(qid2, def2?, _)) -> qid1 = qid2 && def1? = def2?
-     | (OpDef(qid1, refine1?, _), OpDef(qid2, refine2?, _)) -> qid1 = qid2 && refine1? = refine2?
+     | (OpDef(qid1, refine1?, _, _), OpDef(qid2, refine2?, _, _)) -> qid1 = qid2 && refine1? = refine2?
      | (Property(pty1, qid1, tvs1, bod1, _), Property(pty2, qid2,tvs2, bod2, _)) ->
        pty1 = pty2 && qid1 = qid2 && tvs1 = tvs2 && equalTerm?(bod1, bod2)
      | (Comment(str1, _), Comment(str2, _)) -> str1 = str2
@@ -972,14 +998,14 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
    exists? (fn el ->
               case el of
                 | Op    (qid,_,_) -> qid in? aliases
-                | OpDef (qid,_,_) -> qid in? aliases
+                | OpDef (qid,_,_,_) -> qid in? aliases
                 | _ -> false)
           spc.elements
 
  def getQIdIfOp el =
    case el of
      | Op    (qid,_,_) -> Some qid
-     | OpDef (qid,_,_) -> Some qid
+     | OpDef (qid,_,_,_) -> Some qid
      | _ -> None
 
  def localType? (qid, spc) = 
@@ -994,7 +1020,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
    exists? (fn el ->
               case el of
                 | Op    (qid1,_,_) -> qid = qid1
-                | OpDef (qid1,_,_) -> qid = qid1
+                | OpDef (qid1,_,_,_) -> qid = qid1
                 | _ -> false)
           spc.elements
 
@@ -1018,7 +1044,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
    removeDuplicates (mapPartial (fn el ->
 				 case el of
 				   | Op    (qid,_,_) -> Some qid
-				   | OpDef (qid,_,_) -> Some qid
+				   | OpDef (qid,_,_,_) -> Some qid
 				   | _ -> None)
 		                spc.elements)
 
@@ -1161,7 +1187,7 @@ op [a] showQ(el: ASpecElement a): String =
     | Type(qid, _) -> "type "^show qid
     | TypeDef(qid, _) -> "type "^show qid^" = .."
     | Op(qid, def?, _) -> "op "^show qid^(if def? then " = .." else ": ...")
-    | OpDef(qid, refine_num, _) -> (if refine_num > 0 then "refine " else "")^"def "^show qid^" = .."
+    | OpDef(qid, refine_num, _, _) -> (if refine_num > 0 then "refine " else "")^"def "^show qid^" = .."
     | Property _ -> "theorem ..."
     | Comment  _ -> "comment ..."
     | Pragma   _ -> "pragma ..."

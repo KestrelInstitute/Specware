@@ -706,7 +706,7 @@ Haskell qualifying spec
         (case specialOpInfo c qid of
            | Some (_, _, _, _, no_def?) -> ~no_def?
            | _ -> neededOp? c qid)
-      | OpDef (qid, _, _) ->
+      | OpDef (qid, _, _, _) ->
         (case specialOpInfo c qid of
            | Some (_, _, _, _, no_def?) -> ~no_def?
            | _ -> neededOp? c qid)
@@ -839,7 +839,7 @@ Haskell qualifying spec
   def normalizeSpecElements elts =
     case elts of
       | [] -> []
-      | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _)) :: rst | qid1 = qid2 ->
+      | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
         Cons(Op(qid1, true, a), normalizeSpecElements rst)
       | x::rst -> x :: normalizeSpecElements rst
 
@@ -1003,7 +1003,7 @@ Haskell qualifying spec
 	     let _  = toScreen("\nInternal error: Missing op: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Op>")
-      | OpDef(qid as Qualified(_, nm), refine_num, _) | neededOp? c qid ->
+      | OpDef(qid as Qualified(_, nm), refine_num, _, _) | neededOp? c qid ->
 	(case AnnSpec.findTheOp(spc, qid) of
 	   | Some {names, fixity, dfn, fullyQualified?=_} ->
 	     ppOpInfo c (refine_num > 0) true elems opt_prag names fixity refine_num dfn

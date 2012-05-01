@@ -55,7 +55,7 @@ op simplifyProofScript (thm_names: List String): String =
 op addRefinedOpinfo(spc: Spec, (info: OpInfo, refine_num: Nat)): Spec =
   let name as Qualified (q, id) = primaryOpName info in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, info),
-          elements = spc.elements ++ [OpDef (name, refine_num, noPos)]}
+          elements = spc.elements ++ [OpDef (name, refine_num, [], noPos)]}
 
 op oldNewTheoremName(Qualified(qid, nm): QualifiedId): QualifiedId =
   Qualified(qid, nm^"_correctness")

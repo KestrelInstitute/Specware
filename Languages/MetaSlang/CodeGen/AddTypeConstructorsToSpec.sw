@@ -134,7 +134,7 @@ def addProductTypeConstructorsFromType (spc, qid, info) =
 	 in
 	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 	 let opnames = [opqid] in
-	 (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, noPos),
+	 (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, [], noPos),
                            TypeDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
       | _ -> (spc, [])
 
@@ -186,7 +186,7 @@ def addProductAccessorsFromType (spc, qid, info) =
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = Cons (opqid, opnames) in
-		     (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, noPos), TypeDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
+		     (addElementAfter (setOps (spc, newops), OpDef (opqid, 0, [], noPos), TypeDef (qid,noPos)), opnames))  % TODO: maybe change "OpDef opqid" to "OpDecl (opqid, true)"
 	            (spc, [])
 		    fields)
       | _ -> (spc, [])

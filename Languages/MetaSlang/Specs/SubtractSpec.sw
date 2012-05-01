@@ -115,11 +115,11 @@ AnnSpec qualifying spec
      | Op (qid1, _, _) ->
        (case e2 of
           | Op    (qid2, _, _) -> qid1 = qid2
-          | OpDef (qid2, _, _) -> qid1 = qid2
+          | OpDef (qid2, _, _, _) -> qid1 = qid2
           | _ -> false)
-     | OpDef (qid1, _, _) ->
+     | OpDef (qid1, _, _, _) ->
        (case e2 of
-          | OpDef (qid2, _, _) -> 
+          | OpDef (qid2, _, _, _) -> 
             (qid1 = qid2) &&
             (case (findTheOp (s1, qid1), findTheOp (s2, qid2)) of
                | (Some info1, Some info2) ->

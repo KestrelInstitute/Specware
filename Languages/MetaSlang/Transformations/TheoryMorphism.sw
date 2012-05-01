@@ -39,10 +39,10 @@ op findQIDForName(prag_nm: String, elts: SpecElements): Option(QualifiedId * Boo
                if some? result then result
                else
                case el of
-                 | OpDef (qid, _, _) | qidMatch?(prag_nm, qid) -> Some(qid, false)
-                 | Op    (qid, _, _) | qidMatch?(prag_nm, qid) -> Some(qid, false)
-                 | TypeDef (qid, _)  | qidMatch?(prag_nm, qid) -> Some(qid, true)
-                 | Type (qid, _)     | qidMatch?(prag_nm, qid) -> Some(qid, true)
+                 | OpDef (qid, _, _, _) | qidMatch?(prag_nm, qid) -> Some(qid, false)
+                 | Op    (qid, _, _)    | qidMatch?(prag_nm, qid) -> Some(qid, false)
+                 | TypeDef (qid, _)     | qidMatch?(prag_nm, qid) -> Some(qid, true)
+                 | Type (qid, _)        | qidMatch?(prag_nm, qid) -> Some(qid, true)
                  | _ -> None)
         None elts
   in
@@ -89,11 +89,11 @@ op thyMorphismMaps (spc: Spec) (kind: String) (convertPrecNum: Int -> Int): Tran
                                  let import_strings = if el in? spc.elements then import_strings else [] in
                                  let result = result << {thy_imports = removeDuplicates(import_strings ++ result.thy_imports)} in
                                  (parseMorphMap(trans_string, result, kind, pos), None))
-                  | OpDef (qid,_,_) -> (result,Some(qid, false))
-                  | Op    (qid,_,_) -> (result,Some(qid, false))
-                  | TypeDef(qid,_)  -> (result,Some(qid, true))
-                  | Type  (qid,_)   -> (result,Some(qid, true))
-                  | _               -> (result,None))
+                  | OpDef (qid,_,_,_) -> (result,Some(qid, false))
+                  | Op    (qid,_,_)   -> (result,Some(qid, false))
+                  | TypeDef(qid,_)    -> (result,Some(qid, true))
+                  | Type  (qid,_)     -> (result,Some(qid, true))
+                  | _                 -> (result,None))
        accum
        elts
    in

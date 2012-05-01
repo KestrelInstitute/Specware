@@ -21,7 +21,7 @@ SpecCalc qualifying spec
                   | Type     (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
                   | TypeDef  (qid,          _) -> (if qid in? types then types else types ++ [qid], ops, props)
                   | Op       (qid,_,        _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
-                  | OpDef    (qid,_,        _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
+                  | OpDef    (qid,_,_,      _) -> (types, if qid in? ops then ops else ops ++ [qid],     props)
                   | Property (_, qid, _, _, _) -> (types, ops, if qid in? props then props else props ++ [qid])
                   | Import   (_,_,elts,     _) -> aux (elts, types, props, ops)
                   | _ -> (types, ops, props))

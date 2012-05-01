@@ -112,7 +112,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		       let infos = findAllOps (spc, qid) in
                        % let _ = writeLine ("Cannot find " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s,info) -> s ^ " " ^ printAliases info.names) "" infos) ^ "\nin spec\n" ^ printSpec spc) in
                        (r_elts, minfo, ops, srts))
-		 | OpDef (qid,_,_) ->
+		 | OpDef (qid,_,_,_) ->
                    (case findTheOp(spc,qid) of
                       | Some opinfo ->
                         let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
@@ -551,7 +551,7 @@ def incorporateMinfo(elts,el_s,
         if new_ops = old_ops then []
 	  else let opinfo :: r_ops = new_ops in
 	       let qid = primaryOpName opinfo in
-               Cons(OpDef (qid, 0, noPos), 
+               Cons(OpDef (qid, 0, [], noPos), 
                     Cons(Op (qid,false,noPos), % false means don't print def as part of decl
                          newOps r_ops))
   in

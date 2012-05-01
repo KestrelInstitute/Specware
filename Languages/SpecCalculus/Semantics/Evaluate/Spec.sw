@@ -155,7 +155,7 @@ such time as the current one can made monadic.
   op applyOpRefinements(spc: Spec): SpecCalc.Env Spec =
     foldM (fn spc -> fn elem ->
               case elem of
-                | OpDef(qid, refine_num, _) | refine_num > 0 ->
+                | OpDef(qid, refine_num, _, _) | refine_num > 0 ->
                   % let _ = writeLine("aor0: "^printQualifiedId qid^show refine_num) in
                   (case findTheOp(spc, qid) of
                    | None -> return spc
@@ -168,7 +168,7 @@ such time as the current one can made monadic.
                         let prev_tm = refinedTerm(full_tm, refine_num - 1) in
                         {(_, steps) <- makeScript refine_steps;
                          % print("aor: "^scriptToString(Steps steps)^scriptToString(Steps steps1)^"\n");
-                         (tr_term, _) <- interpretTerm(spc, Steps steps, prev_tm, ty, qid, false);
+                         (tr_term, _, hist) <- interpretTerm(spc, Steps steps, prev_tm, ty, qid, false, []);
                          new_dfn <- return (maybePiTerm(tvs, TypedTerm (replaceNthTerm(full_tm, refine_num, tr_term),
                                                                          ty, termAnn opinfo.dfn)));
                          return (setOpInfo(spc,qid,opinfo << {dfn = new_dfn}))})

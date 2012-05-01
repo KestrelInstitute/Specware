@@ -1356,7 +1356,7 @@ spec
                      let spc = setOpInfo(spc,qid,opinfo) in
                      if qid = qid_pr
                        then   % Transformed
-                       let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, noPos)) in
+                       let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, [], noPos)) in
                        spc
                      else
                      let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
@@ -1447,7 +1447,7 @@ spec
 %                 };
                 (tvs, ty, dfn) <- return (unpackFirstTerm opinfo.dfn);
                 (qid as Qualified(q, id)) <- return (head opinfo.names);
-                (simp_dfn,_) <-
+                (simp_dfn, _, hist) <-
                   if simplifyIsomorphism? then
                    { % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
                     b <- existsSubTerm (fn t ->
@@ -1463,13 +1463,13 @@ spec
                       interpretTerm(spc, if qid in? transformQIds
                                           then main_script
                                           else opaqueSimplifyScript,
-                                    dfn, ty, qid, false)
+                                    dfn, ty, qid, false, [])
                     }
                     else
-                      return (dfn, false)
+                      return (dfn, false, [])
                   }
                   else
-                    return (dfn, false);
+                    return (dfn, false, []);
                 if equalTerm?(dfn, simp_dfn) then
                   return opinfo
                 else {

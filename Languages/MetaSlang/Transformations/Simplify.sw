@@ -643,7 +643,7 @@ spec
                     let Some info = findTheOp(spc, qid) in
                     (elt :: elts,
                      insertAQualifierMap(ops, q, id, info << {dfn = simplify spc info.dfn}))
-                  | OpDef(qid as Qualified(q,id), refine_num, _) ->
+                  | OpDef(qid as Qualified(q,id), refine_num, _, _) ->
                     (case findTheOp(spc, qid) of
                        | None -> fail("Can't find def of op "^printQualifiedId qid)
                        | Some info ->

@@ -856,14 +856,14 @@ def toAny     = Term `TranslationBasic.toAny`
 	 | {name = id, ident, pattern, domain, range, freeVars, body, closure}::m_opers -> 
 	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, range, body, extra_conds) in
 	   % TODO: Real names
-	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, 0, noPos) in
+	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, 0, [], noPos) in
 	   insertOpers (m_opers, q, r_elts, r_ops, extra_conds)
 
-     def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, a) = 
+     def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, hist, a) = 
        % let _ = writeLine ("lambdaLift \""^id^"\"...") in
        if ~ (definedOpInfo? info)
 	 then addNewOpAux (info << {names = [Qualified (q, id)]},
-			   r_elts, r_ops, decl?, refine_num, a)
+			   r_elts, r_ops, decl?, refine_num, hist, a)
        else
 	 let (tvs, srt, full_term) = unpackTerm(info.dfn) in
          let term = refinedTerm(full_term, refine_num) in
@@ -880,7 +880,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let new_dfn = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
-						r_elts, r_ops, decl?, refine_num, a)
+						r_elts, r_ops, decl?, refine_num, hist, a)
 	     in
              let (_, extra_conds, _) = patternToTermPlusExConds pat in
              insertOpers (reverse opers, q, r_elts, r_ops, extra_conds)
@@ -894,7 +894,7 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let new_dfn = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
 	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
 							 dfn   = new_dfn},
-						r_elts, r_ops, decl?, refine_num, a)
+						r_elts, r_ops, decl?, refine_num, hist, a)
 	     in
 	       insertOpers (reverse opers, q, r_elts, r_ops, [])
 
@@ -919,13 +919,13 @@ def toAny     = Term `TranslationBasic.toAny`
 	      newOps)
 	   | Op (Qualified(q,id), true, a) -> % true means decl includes def
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,0,a)
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,0,[],a)
                | _ ->
                  let _ = writeLine ("LambdaLift saw Op element not in qmap : " ^ q ^ "." ^ id) in
                  (Cons (el,r_elts), r_ops))
-	   | OpDef(Qualified(q,id), refine_num, a) ->
+	   | OpDef(Qualified(q,id), refine_num, hist, a) ->
 	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,refine_num,a)
+	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,refine_num,hist,a)
                | _ ->
                  let _ = writeLine ("LambdaLift saw OpDef element not in qmap : " ^ q ^ "." ^ id ^ " [refinement number " ^ anyToString refine_num ^ "]") in
                  (Cons (el,r_elts), r_ops))
@@ -951,11 +951,11 @@ def toAny     = Term `TranslationBasic.toAny`
 %   in
 %     addNewOpAux (info, spc)
 
- op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Bool * Nat * a -> ASpecElements a * AOpMap a
- def addNewOpAux (info, elts, ops, decl?, refine_num, a) =
+ op  addNewOpAux : [a] AOpInfo a * ASpecElements a * AOpMap a * Bool * Nat * TransformHistory * a -> ASpecElements a * AOpMap a
+ def addNewOpAux (info, elts, ops, decl?, refine_num, hist, a) =
    let name as Qualified (q, id) = primaryOpName info in
    let new_ops = insertAQualifierMap (ops, q, id, info) in
-   ((if decl? then Op (name,true, a) else OpDef (name, refine_num, a))::elts, new_ops)
+   ((if decl? then Op (name,true, a) else OpDef (name, refine_num, hist, a))::elts, new_ops)
 
 endspec
 

@@ -328,8 +328,8 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
    in
    let dfn = replaceBody(top_dfn, makeDef post_condn) in
    let unfold_tuple_fns = map Unfold stored_qids in
-   let (uf_dfn, _) = rewriteWithRules(spc, unfold_tuple_fns, op_qid, toPathTerm dfn) in
-   uf_dfn
+   let (new_dfn_ptm, hist) = rewriteWithRules(spc, unfold_tuple_fns, op_qid, toPathTerm dfn, []) in
+   fromPathTerm new_dfn_ptm
 
 op makeDefinitionsForUpdatingCoType
      (spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType)): Spec =

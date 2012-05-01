@@ -1251,7 +1251,7 @@ Globalize qualifying spec
                    (case findAQualifierMap (new_ops, q, id) of
                       | Some _ -> new_elts ++ [elt]
                       | _ -> new_elts)
-                 | OpDef (Qualified(q,id), _, _) ->
+                 | OpDef (Qualified(q,id), _, _, _) ->
                    (case findAQualifierMap (new_ops, q, id) of
                       | Some _ -> new_elts ++ [elt]
                       | _ -> new_elts)

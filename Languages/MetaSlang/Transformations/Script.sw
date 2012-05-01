@@ -16,19 +16,6 @@ spec
   type Location =
     | Def QualifiedId
 
-  type RuleSpec =
-    | Unfold      QualifiedId
-    | Fold        QualifiedId
-    | Rewrite     QualifiedId
-    | LeftToRight QualifiedId
-    | RightToLeft QualifiedId
-    | MetaRule    QualifiedId
-    | RLeibniz    QualifiedId           % Hack. Will be handled in more general way in the future
-    | Weaken      QualifiedId
-    | AllDefs
-
-  type RuleSpecs = List RuleSpec
-
   type Movement =
     | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String | Post
 
@@ -78,7 +65,7 @@ spec
    case loc of
      | Def qid -> ppQid qid
 
- op ppRuleSpec(rl: RuleSpec): WLPretty =
+op ppRuleSpec(rl: RuleSpec): WLPretty =
    case rl of
      | Unfold  qid -> ppConcat   [ppString "unfold ", ppQid qid]
      | Fold    qid -> ppConcat   [ppString "fold ", ppQid qid]
@@ -88,9 +75,9 @@ spec
      | MetaRule    qid -> ppConcat[ppString "apply ", ppQid qid]
      | RLeibniz    qid -> ppConcat[ppString "rev-leibniz ", ppQid qid]
      | Weaken      qid -> ppConcat[ppString "weaken ", ppQid qid]
-     | AllDefs -> ppString "alldefs"
+     | _ -> ppString (showRuleSpec rl)
 
- op moveString(m: Movement): String =
+  op moveString(m: Movement): String =
    case m of
      | First -> "f"
      | Last -> "l"
@@ -285,7 +272,7 @@ spec
    else cq = pq && cid = pid
 
   op matchingTheorems? (spc: Spec, qid: QualifiedId): Bool =
-    exists? (\_lambda r -> claimNameMatch(qid, r.2))
+    exists? (fn r -> claimNameMatch(qid, r.2))
       (allProperties spc)
 
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
@@ -323,7 +310,7 @@ spec
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
     if trivialMatchTerm? rl.rhs
       then None
-      else Some(rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
+      else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec})
 
   op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
   op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
@@ -332,6 +319,7 @@ spec
 
   op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
     {name     = show qid,
+     rule_spec = MetaRule qid,
      freeVars = [],
      tyVars = [],
      condition = None,
@@ -380,14 +368,14 @@ spec
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
                                    flatten (map (fn (Qualified(q, nm)) ->
-                                                   defRule(context, q, nm, info, true))
+                                                   defRule(context, q, nm, rule, info, true))
                                               info.names))
                               (findMatchingOps(spc, qid))))
       | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
                                    flatten (map (fn (Qualified(q, nm)) ->
-                                                   defRule(context, q, nm, info, false))
+                                                   defRule(context, q, nm, rule, info, false))
                                               info.names))
                               (findMatchingOps(spc, qid))))
       | Fold(qid) ->
@@ -395,17 +383,17 @@ spec
           (makeRule(context, spc, Unfold(qid)))
       | LeftToRight(qid) ->
         warnIfNone(qid, "Rule-shaped theorem ",
-                   foldr (\_lambda (p, r) ->
+                   foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
                               then (axiomRules context p) ++ r
                             else r)
                      [] (allProperties spc))
       | RightToLeft(qid) ->
-        map (\_lambda rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
+        map (fn rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
           (makeRule(context, spc, LeftToRight(qid)))
       | Weaken   qid ->
         warnIfNone(qid, "Implication theorem ",
-                   foldr (\_lambda (p, r) ->
+                   foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
                               then (weakenRules context p) ++ r
                             else r)
@@ -414,8 +402,8 @@ spec
       | RLeibniz qid -> makeRevLeibnizRule context spc qid
       | AllDefs ->
         foldriAQualifierMap
-          (\_lambda (q, id, opinfo, val) ->
-             (defRule (context, q, id, opinfo, false)) ++ val)
+          (fn (q, id, opinfo, val) ->
+             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false)) ++ val)
           [] spc.ops
 
   op addSubtypeRules?: Bool = true
@@ -551,7 +539,8 @@ spec
   op rewriteDebug?: Bool = false
 
   op rewriteDepth: Nat = 6
-  op rewrite(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule, maxDepth: Nat): MSTerm =
+  op rewrite(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule, maxDepth: Nat)
+       : MSTerm * TransformHistory =
     (context.traceDepth := 0;
      let term = fromPathTerm path_term in
      let _ = if rewriteDebug? then
@@ -564,27 +553,27 @@ spec
      let rules = rules ++ contextRulesFromPath(path_term, qid, context) in
      let rules = rules ++ subtypeRules(term, context) in
      let rules = splitConditionalRules rules in
-     let def doTerm (count, trm) =
+     let def doTerm (count: Nat, trm: MSTerm, hist: TransformHistory): MSTerm * TransformHistory =
            %let _ = writeLine("doTerm "^show count) in
            let lazy = rewriteRecursive (context, freeVars trm, rules, trm, maxDepth) in
            case lazy of
-             | Nil -> trm
-             | Cons([], tl) -> trm
+             | Nil -> (trm, hist)
+             | Cons([], tl) -> (trm, hist)
              | Cons((rule, trm, subst)::_, tl) ->
                if count > 0 then 
-                 doTerm (count - 1, trm)
+                 doTerm (count - 1, trm, hist ++ [(trm, rule.rule_spec)])
                else
-                 trm
+                 (trm, hist)
      in
      let result = % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
                   % else
-                  doTerm(rewriteDepth, term)
+                  doTerm(rewriteDepth, term, [])
      in
-     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result) else () in
+     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result.1) else () in
      result)
 
   op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
-    foldr (\_lambda (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
+    foldr (fn (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
 
 
   op [a] funString(f: AFun a): Option String =
@@ -655,72 +644,91 @@ spec
 
   op maxRewrites: Nat = 900
 
-  op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm): PathTerm =
+  op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, hist: TransformHistory)
+       : PathTerm * TransformHistory =
     let context = makeContext spc in
     let rules = makeRules (context, spc, rules) in
-    replaceSubTerm(rewrite(path_term, context, qid, rules, maxRewrites), path_term)
+    replaceSubTermH(rewrite(path_term, context, qid, rules, maxRewrites), path_term, hist)
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
-  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool)
-     : SpecCalc.Env (PathTerm * Bool) =
+  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool, hist: TransformHistory)
+     : SpecCalc.Env (PathTerm * Bool * TransformHistory) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
     case script of
       | Steps steps ->
-          foldM (\_lambda (path_term, tracing?) -> fn s ->
-               interpretPathTerm (spc, s, path_term, qid, tracing?))
-            (path_term, tracing?) steps
+          foldM (fn (path_term, tracing?, hist) -> fn s ->
+               interpretPathTerm (spc, s, path_term, qid, tracing?, hist))
+            (path_term, tracing?, hist) steps
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");
-          return (path_term, tracing?)
+          return (path_term, tracing?, hist)
         }
       | Trace on_or_off -> {
           when (on_or_off && ~tracing?)
             (print ("-- Tracing on\n" ^ printTerm(fromPathTerm path_term) ^ "\n"));
           when (~on_or_off && tracing?)
             (print "-- Tracing off\n");
-          return (path_term, on_or_off)
+          return (path_term, on_or_off, hist)
         }
       | _ -> {
           when tracing?
             (print ("--" ^ scriptToString script ^ "\n"));
-          path_term <- return
+          (path_term, hist) <-
+             return
               (case script of
                 | Move mvmts -> (case makeMoves(path_term, mvmts) of
                                    | Some new_path_term -> new_path_term
-                                   | None -> path_term)
-                | SimpStandard -> replaceSubTerm(simplify spc (fromPathTerm path_term), path_term)
+                                   | None -> path_term,
+                                 hist)
+                | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, hist)
                 | PartialEval ->
-                  replaceSubTerm(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term)
+                  replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, hist)
                 | AbstractCommonExpressions ->
-                  replaceSubTerm(abstractCommonSubExpressions(fromPathTerm path_term, spc), path_term)
-                | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term)
+                  replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
+                                   path_term, AbstractCommonExpressions, hist)
+                | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term, hist)
                 | Simplify1(rules) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  replaceSubTerm(rewrite(path_term, context, qid, rules, 1), path_term)
+                  replaceSubTermH(rewrite(path_term, context, qid, rules, 1), path_term, hist)
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
                    | TypedTerm(tm, ty, a) ->
-                     (TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
+                     ((TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                                  ty, a),
-                      [0])
-                   | tm -> (addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
-                            [])));
+                      [0]),
+                      hist)             % Need to update hist
+                   | tm -> ((addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
+                             []),
+                            hist)));    % Need to update hist
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
-          return (path_term, tracing?)
+          return (path_term, tracing?, hist)
         }
 
-  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool)
-    : SpecCalc.Env (MSTerm * Bool) =
+  op liftHistory(hist: TransformHistory, ptm: PathTerm): TransformHistory =
+    map (fn (tm, rsp) -> (topTerm(replaceSubTerm(tm, ptm)), rsp)) hist
+
+  op replaceSubTermH((new_tm: MSTerm, new_hist: TransformHistory), old_ptm: PathTerm, hist: TransformHistory): PathTerm * TransformHistory =
+    let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
+    let lifted_hist = liftHistory(new_hist, old_ptm) in
+    (new_path_tm, hist ++ lifted_hist)
+
+  op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, hist: TransformHistory): PathTerm * TransformHistory =
+    let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
+    (new_path_tm, hist ++ [(new_tm, rl_spec)])
+
+  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool, hist: TransformHistory)
+    : SpecCalc.Env (MSTerm * Bool * TransformHistory) =
     {typed_path_term <- return(typedPathTerm(def_term, top_ty));
-     ((new_typed_term, _), tracing?) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?);
-     return(new_typed_term, tracing?)}
+     ((new_typed_term, _), tracing?, hist) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, hist);
+     return(new_typed_term, tracing?, hist)}
 
   op interpretTerm0(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
-    run(interpretTerm(spc, script, def_term, top_ty, qid, tracing?))
+    run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?, []);
+        return (tm, trace?)}
 
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheOp(spc, qid) of
@@ -760,7 +768,7 @@ spec
   op interpretSpec(spc: Spec, script: Script, tracing?: Bool): SpecCalc.Env (Spec * Bool) =
     case script of
       | Steps steps ->
-          foldM (\_lambda (spc, tracing?) -> fn stp ->
+          foldM (fn (spc, tracing?) -> fn stp ->
                interpretSpec(spc, stp, tracing?))
             (spc, tracing?) steps
       | At (locs, scr) -> {
@@ -774,20 +782,21 @@ spec
                      }
                    | opinfos ->
                      foldM  (fn (spc, tracing?) -> fn opinfo ->  {
-                             (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
-                             % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
-                             when tracing? 
-                               (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
-                             if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
-                               then let _ = writeLine(show qid^" not modified.") in
-                                    return (spc, tracing?)
-                             else {
-                             new_spc <- return(addRefinedDef(spc, opinfo, new_tm));
-                             return (new_spc, tracing?)
-                             }})
-                       (spc, tracing?) opinfos)
-            (spc, tracing?) locs }
+                              (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
+                              % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
+                              when tracing? 
+                                (print ((printTerm tm) ^ "\n")); 
+                              (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, ty, qid, tracing?, []);
+                              if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
+                                then let _ = writeLine(show qid^" not modified.") in
+                                     return (spc, tracing?)
+                              else {
+                              _ <- return(printTransformHistory hist);
+                              new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, hist));
+                              return (new_spc, tracing?)
+                              }})
+                          (spc, tracing?) opinfos)
+            (spc, tracing?) locs}
       | AtTheorem (locs, scr) -> {
           when tracing? 
             (print ("-- { at-theorem"^flatten(map (fn (Def qid) -> " "^show qid) locs) ^" }\n"));
@@ -801,7 +810,7 @@ spec
                      foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  {
                              when tracing? 
                                (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?); 
+                             (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?, []); 
                              new_spc <- return(setElements(spc, mapSpecElements (fn el ->
                                                                                  case el of
                                                                                    | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->

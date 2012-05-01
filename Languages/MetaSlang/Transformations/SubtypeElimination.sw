@@ -897,7 +897,7 @@ SpecNorm qualifying spec
                                      insertAQualifierMap (ops, q, id,
                                                           info << {dfn = regTermTop(info, ho_eqfns, 0, spc)})
                                    | None -> ops)
-                               | OpDef (qid as Qualified(q,id), refine_num, _) ->
+                               | OpDef (qid as Qualified(q,id), refine_num, _, _) ->
                                  (case AnnSpec.findTheOp(spc,qid) of
                                    | Some info ->
                                      insertAQualifierMap (ops, q, id,
