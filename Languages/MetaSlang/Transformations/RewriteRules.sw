@@ -50,6 +50,8 @@ RewriteRules qualifying spec
      | RLeibniz    qid -> "rev-leibniz " ^ show qid
      | Weaken      qid -> "weaken " ^ show qid
      | MetaRule      qid -> "meta-rule " ^ show qid
+     | SimpStandard -> "simplify"
+     | AbstractCommonExpressions -> "abstractCommonExpressions"
      | Eval -> "eval"
      | Context -> "context"
      | AllDefs -> "alldefs"
