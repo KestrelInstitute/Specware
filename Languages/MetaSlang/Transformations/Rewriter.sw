@@ -292,13 +292,13 @@ MetaSlangRewriter qualifying spec
                in
                let condn = simplifiedApply(pred, mkVar v, context.spc) in
                let condn = reduceSubTerms (condn,context.spc) in
-               addDemodRules(assertRules(context, condn, "Subtype", false),rules))
+               addDemodRules(assertRules(context, condn, "Subtype", Context, false),rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
        foldl (fn (rules, (_,p)) -> addPatternRestriction(context, p, rules)) rules fields
      | RestrictedPat(p,condn,_) ->
        addPatternRestriction(context, p,
-                             addDemodRules(assertRules(context,condn,"Restriction",false), rules))
+                             addDemodRules(assertRules(context,condn,"Restriction",Context,false), rules))
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
      | QuotientPat(p, _, _) -> addPatternRestriction(context, p, rules)
@@ -530,7 +530,7 @@ MetaSlangRewriter qualifying spec
                              (substitute (M, sbst), rules, sbst)
                            | _ ->
                              let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                             (M, addDemodRules(assertRules(context, equal_term, "case", false), rules), [])
+                             (M, addDemodRules(assertRules(context, equal_term, "case", Context, false), rules), [])
                      in
                      rewriteTerm(solvers,(boundVars ++ patternVars pat), M, rules)
                      >>= (fn (M,a) ->
@@ -554,7 +554,7 @@ MetaSlangRewriter qualifying spec
                                                         [v_tm,set_term])
                                in
                                addDemodRules(assertRules(context, memb_assert,
-                                                         "mapFrom function", false),
+                                                         "mapFrom function", Context, false),
                                              rules))))
           | _ ->
         LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
@@ -619,12 +619,12 @@ MetaSlangRewriter qualifying spec
        LazyList.map 
             (fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,N,
-                         addDemodRules(assertRules(context,M,"if then",false),rules)))) @@
+                         addDemodRules(assertRules(context,M,"if then", Context, false),rules)))) @@
        (fn () -> 
        LazyList.map 
             (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,P,
-                         addDemodRules(assertRules(context,negate M,"if else",false),rules))))
+                         addDemodRules(assertRules(context,negate M,"if else", Context, false),rules))))
      | TypedTerm(M,s,b) ->
        LazyList.map (fn (M,a) -> (TypedTerm(M,s,b),a))
             (rewriteTerm(solvers,boundVars,M,rules))

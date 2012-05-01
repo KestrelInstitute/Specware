@@ -309,6 +309,9 @@ MetaSlang qualifying spec
  def equalVar? ((id1,s1), (id2,s2)) = 
    id1 = id2 && equalType? (s1, s2)
 
+ op [a] equalVars?(vs1: List(AVar a), vs2: List(AVar a)): Bool =
+   equalList?(vs1, vs2, equalVar?)
+
   op equalTyVar?: TyVar * TyVar -> Bool
  def equalTyVar? (tyVar1, tyVar2) = 
    tyVar1 = tyVar2

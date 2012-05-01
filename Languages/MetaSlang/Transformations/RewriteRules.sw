@@ -15,6 +15,7 @@ skolemization.
 
 RewriteRules qualifying spec 
  import HigherOrderMatching
+ % import ../AbstractSyntax/PathTerm
 
  type Context = HigherOrderMatching.Context
 
@@ -66,9 +67,16 @@ RewriteRules qualifying spec
    if hist = [] then ()
    else
    (writeLine("Transformation History:");
-    app (fn (tm, rs) -> (writeLine(showRuleSpec rs);
+    % let changed_terms = tabulate(length hist - 1,
+    %                              fn i -> let (t1, t2) = ((hist@i).1, (hist@(i+1)).1) in
+    %                                      let (_, path) = changedPathTerm(t1, t2) in
+    %                                      (fromPathTerm(t1, path), fromPathTerm(t2, path)))
+    % in
+    (app (fn (tm, rs) -> (writeLine(showRuleSpec rs);
                          writeLine(printTerm tm)))
-      hist)
+      hist
+    %; app (fn (t1, t2) -> writeLine(printTerm t1^" --> "^printTerm t2)) changed_terms
+     ))
 
 %%
 %% Replace this by discrimination tree based rewrite rule application.
@@ -431,11 +439,11 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | Apply(Fun(Project _,_,_),a1,_) -> simpleRwTerm? a1
      | _ -> false
 
- op assertRules (context: Context, term: MSTerm, desc: String, lr?: Bool): List RewriteRule =
+ op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, lr?: Bool): List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   assertRulesRec(context, term, desc, lr?, [], [], None)
+   assertRulesRec(context, term, desc, rsp, lr?, [], [], None)
 
- op assertRulesRec (context: Context, term: MSTerm, desc: String, lr?: Bool, freeVars: List (Nat * MSType), 
+ op assertRulesRec (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, lr?: Bool, freeVars: List (Nat * MSType), 
                     subst: VarSubst, condition: Option MSTerm)
     : List RewriteRule =
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
@@ -459,29 +467,29 @@ op simpleRwTerm?(t: MSTerm): Bool =
        if falseTerm? p then []
 	else
         [freshRule(context,
-		   {name      = desc,   condition = condition, rule_spec = Context,
+		   {name      = desc,   condition = condition, rule_spec = rsp,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | lr? || constantTerm? e2 ->
        [freshRule(context,
-                  {name      = desc,   condition = condition, rule_spec = Context,
+                  {name      = desc,   condition = condition, rule_spec = rsp,
                    lhs       = substitute(e1,subst),     rhs       = substitute(e2,subst),
                    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
        [freshRule(context,
-                  {name      = desc,   condition = condition, rule_spec = Context,
+                  {name      = desc,   condition = condition, rule_spec = rsp,
                    lhs       = substitute(e2,subst),     rhs       = substitute(e1,subst),
                    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRulesRec(context,e1,desc^"-1",lr?,freeVars,subst,condition)
-         ++ assertRulesRec(context,e2,desc^"-2",lr?,freeVars,subst,condition)
+       assertRulesRec(context,e1,desc^"-1",rsp,lr?,freeVars,subst,condition)
+         ++ assertRulesRec(context,e2,desc^"-2",rsp,lr?,freeVars,subst,condition)
      | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRulesRec(context,substitute(body,[(v,val)]),desc,lr?,freeVars,subst,condition)
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,lr?,freeVars,subst,condition)
      | _ ->
        if trueTerm? fml then []
        else
          [freshRule(context,
-                    {name      = desc,   condition = condition, rule_spec = Context,
+                    {name      = desc,   condition = condition, rule_spec = rsp,
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
@@ -489,7 +497,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 %      case pt
 %        of Conjecture -> []
 %  	| _ ->
-   assertRules(context, formula, printQualifiedId desc, true)
+   assertRules(context, formula, printQualifiedId desc, LeftToRight desc, true)
 
 %  op axiomRule (context: Context) ((pt,desc,tyVars,formula,a): Property): Option RewriteRule = 
 % %      case pt

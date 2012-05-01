@@ -228,6 +228,10 @@ MS qualifying spec
       1 fields)
    > 0
 
+ op [a] sameFieldNames?(flds1: List (Id * a), flds2: List (Id * a)): Bool =
+   length flds1 = length flds2
+     && forall? (fn ((f1, _), (f2, _)) -> f1 = f2) (zip(flds1, flds2))
+
  op  findField: [a] Id * List(Id * a) -> a
  def findField(id,fields) = 
    case fields

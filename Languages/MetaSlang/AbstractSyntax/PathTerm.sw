@@ -206,4 +206,76 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
        -> getConjuncts p ++ getSisterConjuncts(q, r_path)
      | _ -> []
 
-endspec
+ op [a] changedPathTerm(tm1: ATerm a, tm2: ATerm a): APathTerm a =
+    let def choose2(po1, po2, path) =
+          case (po1, po2) of
+            | (None, None) -> None
+            | (Some _, None) -> po1
+            | (None, Some _) -> po2
+            | _ -> Some path
+        def chooseL(pos, path) =
+          case filter some? pos of
+            | [] -> None
+            | [poi] -> poi
+            | _ -> Some path
+        def compare(stm1, stm2, path) =
+          %% Returns path to first difference or else None if they are equal
+          % let _ = writeLine("rst: "^anyToString path^"\n"^printTerm tm) in
+          if equalTerm?(stm1, stm2) then None
+          else
+          case (stm1, stm2) of
+            | (Apply(infix_fn1 as Fun(f, _, _), Record([("1", x1), ("2", y1)], _), _),
+               Apply(infix_fn2, Record([("1", x2), ("2", y2)], _), _))
+                | infixFn? f & equalTerm?(infix_fn1, infix_fn2) ->
+              choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
+            | (Apply(x1, y1, _), Apply(x2, y2, _)) ->
+              choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
+            | (Record(l1, _), Record(l2, _)) | sameFieldNames?(l1, l2) ->
+              chooseL(tabulate(length l1,  fn i -> compare((l1@i).2, (l2@i).2, i :: path)), path)
+            | (Bind(bdr1, vs1, x1, _), Bind(bdr2, vs2, x2, _)) | bdr1 = bdr2 && equalVars?(vs1, vs2) ->
+              compare(x1, x2, 0 :: path)
+            | (The(v1, x1, _), The(v2, x2, _)) | equalVar?(v1, v2) ->
+              compare(x1, x2, 0 :: path)
+            | (Let (l1, b1, _), Let (l2, b2, _)) | length l1 = length l2 ->
+              let len = length l1 in
+              chooseL(compare(b1, b2, len :: path)
+                        :: tabulate(len, fn i -> let ((p1, e1), (p2, e2)) = (l1@i, l2@i) in
+                                           if equalPattern?(p1, p2)
+                                             then compare(e1, e2, i :: path)
+                                             else Some path),
+                      path)
+            | (LetRec (l1, b1, _), LetRec (l2, b2, _)) | length l1 = length l2 ->
+              let len = length l1 in
+              chooseL(compare(b1, b2, len :: path)
+                        :: tabulate(len, fn i -> let ((v1, e1), (v2, e2)) = (l1@i, l2@i) in
+                                           if equalVar?(v1, v2)
+                                             then compare(e1, e2, i :: path)
+                                             else Some path),
+                      path)
+            | (Lambda (l1, _), Lambda (l2, _)) | length l1 = length l2  ->
+              chooseL (tabulate(length l1, fn i -> let ((p1, c1, e1), (p2, c2, e2)) = (l1@i, l2@i) in
+                                                   if equalPattern?(p1, p2) && equalTerm?(c1, c2)
+                                                     then compare(e1, e2, i :: path)
+                                                     else Some path),
+                       path)
+            | (IfThenElse(x1, y1, z1, _), IfThenElse(x2, y2, z2, _)) ->
+              chooseL([compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), compare(z1, z2, 2 :: path)],
+                      path)
+            | (Seq(l1, _), Seq(l2, _)) | length l1 = length l2 ->
+              chooseL(tabulate(length l1,  fn i -> compare(l1@i, l2@i, i :: path)), path)
+            | (TypedTerm(x1, t1, _), TypedTerm(x2, t2, _)) ->
+              (case (postCondn? t1, postCondn? t2) of
+                 | (Some pc1, Some pc2) ->
+                   choose2(compare(x1, x2, 0 :: path), compare(pc1, pc2, 1 :: path), path)
+                 | _ ->
+                   if equalType?(t1, t2) then compare(x1, x2, 0 :: path)
+                     else Some path)
+            | (And(l1, _), And(l2, _)) | length l1 = length l2 ->    % Not sure if this is meaningful
+              chooseL (tabulate(length l1, fn i -> compare(l1@i, l2@i, i :: path)), path)
+            | _ -> Some path
+    in
+    case compare(tm1, tm2, []) of
+      | None -> (tm1, [])
+      | Some path -> (tm1, path)
+
+end-spec

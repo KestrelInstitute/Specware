@@ -347,7 +347,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                               mkApply(mkVar f, mkApply(qf, mkVar v2))),
                                    mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
-    assertRules(context, thm, "Reverse Leibniz "^show qid, true)
+    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, true)
 
   op weakenRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule =
     case formula of
@@ -389,7 +389,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                             else r)
                      [] (allProperties spc))
       | RightToLeft(qid) ->
-        map (fn rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs})
+        map (fn rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs, rule_spec = rule})
           (makeRule(context, spc, LeftToRight(qid)))
       | Weaken   qid ->
         warnIfNone(qid, "Implication theorem ",
@@ -427,7 +427,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
               let v = ("x", ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
               %% let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
-              assertRules(context, fml, "Subtype1", false))
+              assertRules(context, fml, "Subtype1", Context, false))
         subtypes)
 
   op mkApplyTermFromLambdas (hd: MSTerm, f: MSTerm): MSTerm =
@@ -451,7 +451,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _=writeLine("Context Rule: "^ruleName cj) in
-             assertRules(context, cj, ruleName cj, true) ++ rules)
+             assertRules(context, cj, ruleName cj, Context, true) ++ rules)
       [] tms
 
   op varProjections (ty: MSType, spc: Spec): Option(MSTerm * List(Var * Option Id)) =
@@ -500,9 +500,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
           let rls =
               case tm of
                 | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRules(context, p, "if then", false)
+                  assertRules(context, p, "if then", Context, false)
                 | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRules(context,negate p,"if else", false)
+                  assertRules(context,negate p,"if else", Context, false)
                 | Apply(Fun(And,_,_), _,_) | i = 1 ->
                   let def getSisterConjuncts(pred, path) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
