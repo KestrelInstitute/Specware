@@ -2073,6 +2073,135 @@ abbreviation
   equivcl :: "('a \<times> 'a) set => ('a \<times> 'a) set"  ("(_^\<equiv>)" [1000] 999) where
   "r^\<equiv> == (r^s)^*"
 
+
+
+
+(******************************************************************************
+* 
+*  Extensions to Quotient Type constructions
+*
+*  Isabelle uses the typedef mechanism to convert quotient sets into types.
+*  The declaration
+*
+*     quotient_type Q = "T" / eqT
+*
+*  requires eqT to be proven a curried equivalence relation ("equivp eqT")
+*  and introduces an implicit type_def
+*
+*     type_def Q = "{q. \<exists>x. q = eqT x}"
+*
+*  That is, the elements of Q are equivalence classes, i.e. sets of elements
+*  of T that are equivalent to some x.
+*  The conversions between elements of the abstract quotient type Q and those
+*  of the type T thus proceed in two steps
+*  
+*  T \<rightarrow> Q: construction of the equivalence class followed by abstraction
+*  Q \<rightarrow> T: explicit representation followed by choosing an element of the class
+*
+*  The quotient type declaration already declares the corresponding conversions
+*
+*     abs_Q x \<equiv> Abs_Q (eqT x)
+*     rep_Q q \<equiv> (SOME x. x \<in> Rep_Q q)
+*
+*  and implicitly introduces the theorems
+*
+*     Quotient_Q: "Quotient eqT abs_Q rep_Q" 
+*     Q_equivp:   "equivp eqT"
+*
+*  While this declaration comes with a series of lemmas about Abs_Q and Rep_Q
+*  there are virtually no generic lemmas that support reasoning about
+*  properties of abs_Q, rep_Q, and eqT. Since these show up in every 
+*  application of quotient types we'll provide them here, 
+*
+*  We introduce a locale "quotient" that assumes the above two theorems to
+*  be true and prove a series of lemmas just from these two facts. 
+*
+*  To link the quotient type to this locale we only have to state
+*
+*    interpretation Q : quotient "eqQ" "abs_Q" "rep_Q"
+*       by (simp add: quotient_def Quotient_Q Q_equivp)
+*
+*  Then all the conclusions of the locale quotient will become available 
+*  immediately, where names are prefixed by the qualifier "Q".
+*  They will be added to the simplifier if declared so in the locale.
+* 
+******************************************************************************) 
+
+
+locale quotient =
+  fixes eq   :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
+  and   abs  :: "'a \<Rightarrow> 'b"
+  and   rep  :: "'b \<Rightarrow> 'a"
+  assumes quot: "Quotient eq abs rep"
+  assumes eqv : "equivp eq"
+
+begin
+
+lemma eq_equiv:     "equivp eq"                   by (rule eqv)
+lemma eq_refl:      "reflp eq"                    by (metis eqv equivpE)
+lemma eq_sym:       "symp eq"                     by (metis eqv equivpE)
+lemma eq_trans:     "transp eq"                   by (metis eqv equivpE)
+
+lemma eq_refl_raw:  "eq x x"                      by (metis eqv equivp_reflp)
+lemma eq_sym_raw:   "eq x y \<Longrightarrow> eq y x "           by (metis eqv equivp_symp)
+lemma eq_trans_raw: "eq x y \<Longrightarrow> eq y z \<Longrightarrow> eq x z" by (metis eqv equivp_transp)
+
+lemma eq_ex:        "\<exists>y. eq x y"                  by (metis eq_refl_raw)
+lemma eq_ex2:       "\<exists>y. y \<in> eq x"                by (metis mem_def eq_ex) 
+
+lemma eq_class_eq:  "(eq x = eq y) = eq x y"      by (metis eqv equivp_def)
+
+
+(*** Some explicit lemmas about the quotient type *******************)
+
+lemma abs_inv:  "eq (rep (abs x)) x" 
+   by (metis quot eq_refl_raw Quotient_rep_abs)
+lemma abs_inv1: "eq x (rep (abs x))"           by (metis abs_inv eq_sym_raw)
+lemma abs_inv2: "rep (abs x) \<in> eq x"           by (metis mem_def abs_inv1)
+
+lemma abs_inj:  "(abs x = abs y) = eq x y" 
+   by (metis quot eq_refl_raw Quotient_rel)
+lemma abs_inj2: "(abs x = abs y) = (y \<in> eq x)" by (metis abs_inj mem_def)
+
+
+lemma rep_inv:  "abs (rep q) = q"              by (metis quot Quotient_abs_rep)
+lemma rep_inj:  "(rep q = rep p) = (q = p)"    by (metis rep_inv arg_cong)
+lemma rep_inj2: "eq (rep q) (rep p) = (q = p)" by (metis quot Quotient_rel_rep)
+
+lemma rep_to_abs: "eq x (rep q) = (q = abs x)"
+  by (metis abs_inj [symmetric] rep_inv)
+lemma rep_to_abs2: "rep q \<in> eq x = (q = abs x)" by (metis mem_def rep_to_abs)
+
+lemma rep_total:   "\<exists>q. eq x (rep q)"          by (metis abs_inv1)
+lemma rep_total2:  "\<exists>q. rep q \<in> eq x"          by (metis mem_def rep_total)
+lemma rep_type:    "\<exists>x. eq x (rep q)"          by (metis eq_refl_raw)
+lemma rep_type2:   "\<exists>x. rep q \<in> eq x"          by (metis mem_def rep_type)
+
+lemma abs_surj:    "\<exists>x. q = abs x"             by (metis rep_inv)
+
+
+lemma abs_simp:     "\<lbrakk>\<And>x. P (abs x)\<rbrakk> \<Longrightarrow> P q"    by (metis rep_inv)
+lemma rep_simp:     "\<lbrakk>\<And>x. P x\<rbrakk> \<Longrightarrow> P (rep q)"    by (metis rep_inv)
+lemma abs_rep_simp: "\<lbrakk>P q\<rbrakk> \<Longrightarrow> P (abs (rep q))"  by (metis rep_inv)
+lemma rep_abs_simp: "\<lbrakk>\<And>z. eq x z \<Longrightarrow> P z\<rbrakk>
+                      \<Longrightarrow> P (rep (abs x))"       by (metis abs_inv1)
+lemma rep_abs_simp2:"\<lbrakk>\<And>z. z \<in> eq x \<Longrightarrow> P z\<rbrakk>
+                      \<Longrightarrow> P (rep (abs x))"       by (metis abs_inv2)
+
+(* Helpful, but probably subsumed by the above  **)
+
+lemma quotE:      "\<exists>z. eq x z   \<and> rep (abs x) = z"  by (metis abs_inv1)
+lemma quotE2:     "\<exists>z. z \<in> eq x \<and> rep (abs x) = z"  by (metis abs_inv2)
+
+
+declare abs_inj [simp]  
+        rep_inj [simp]  
+        rep_inj2 [simp] 
+end
+
+(******************************************************************************)
+(******************************************************************************)
+
 end-proof
 
 endspec

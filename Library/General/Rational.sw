@@ -5,15 +5,20 @@ import IntegerExt
 % usual construction as equivalence classes of fractions:
 
 type PreRatio = Int (*numerator*) * PosNat (*denominator*)
+proof Isa -> preQ end-proof
 
-op sameRatio? ((num1,den1):PreRatio, (num2,den2):PreRatio) : Bool =
+op sameRatio? ((num1,den1):PreRatio, (num2,den2):PreRatio) infixl 20 : Bool =
   num1 * den2 = num2 * den1
+proof Isa -> eqQ end-proof
+
 
 type Ratio = PreRatio / sameRatio?
+proof Isa -> Q end-proof
 
 % return rational number with given numerator and denominator:
 
 op ratio : Int * PosNat -> Ratio = quotient[Ratio]
+proof Isa [simp] end-proof
 
 % embedding of integer numbers into rational numbers:
 
@@ -22,6 +27,7 @@ op intRatio (i:Int) : Ratio = ratio (i, 1)
 op int? (x:Ratio) : Bool = (ex(i:Int) x = intRatio i)
 
 type IntRatio = (Ratio | int?)
+proof Isa -> IntQ end-proof
 
 op toInt (x:IntRatio) : Int = the(i:Int) x = intRatio i
 
@@ -192,6 +198,10 @@ op allGreaterEq (rng1:Range, rng2:Range) infixl 20 : Bool =
 % length (i.e. size) of range:
 
 op length (rng:Range) : Ratio = sup rng - inf rng
+
+% ------------------------------------------------------------------------------
+% ---------- Mapping to Isabelle -----------------------------------------------
+% ------------------------------------------------------------------------------
 
 % ------------------------------------------------------------------------------
 % ----------------- The proofs ------------------------------------------------
