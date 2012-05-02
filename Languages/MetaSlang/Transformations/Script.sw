@@ -559,11 +559,11 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
            case lazy of
              | Nil -> (trm, hist)
              | Cons([], tl) -> (trm, hist)
-             | Cons((rule, trm, subst)::_, tl) ->
+             | Cons(transforms as ((rule, trm, subst)::_), tl) ->
                if count > 0 then 
-                 doTerm (count - 1, trm, hist ++ [(trm, rule.rule_spec)])
+                 doTerm (count - 1, trm, hist ++ map (fn (rule, trm, _) -> (trm, rule.rule_spec)) (reverse transforms))
                else
-                 (trm, hist)
+                 (trm, hist ++ map (fn (rule, trm, _) -> (trm, rule.rule_spec)) (reverse transforms))
      in
      let result = % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
                   % else
