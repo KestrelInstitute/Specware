@@ -1280,6 +1280,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        of Var _ -> true
 	| Record(fields,_) -> forall? (fn(_,t)-> sideEffectFree t) fields
 	| Apply(Fun(f,_,_),t,_) -> knownSideEffectFreeFn? f && sideEffectFree t
+        | Fun(Op(Qualified("Global", _), _),_,_) -> false
 	| Fun _ -> true
 	| IfThenElse(t1,t2,t3,_) -> 
 		(sideEffectFree t1) 

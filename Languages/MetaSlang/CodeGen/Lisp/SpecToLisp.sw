@@ -1005,6 +1005,7 @@ op addList(S: StringSet, l: List String): StringSet =
  def simpleTerm (term : LispTerm) = 
    case term of
      | Var   _ -> true
+     | Const (Parameter nm) -> ~(testSubseqEqual?("Global::", nm, 0, 0))
      | Const _ -> true
      | Op    _ -> true
      | _ -> false
@@ -1013,6 +1014,7 @@ op addList(S: StringSet, l: List String): StringSet =
  def pure (term : LispTerm) = 
    case term of
      | Var    _ -> true
+     | Const (Parameter nm) -> ~(testSubseqEqual?("Global::", nm, 0, 0))
      | Const  _ -> true
      | Op     _ -> true
      | Lambda _ -> true
