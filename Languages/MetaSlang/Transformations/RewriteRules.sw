@@ -36,7 +36,7 @@ RewriteRules qualifying spec
 	tyVars    : List String,
 	freeVars  : List (Nat * MSType),
 	condition : Option MSTerm,
-        trans_fn   : Option(MSTerm -> Option MSTerm)
+        trans_fn  : Option(MSTerm -> Option MSTerm)
    } 
 
  op showRuleSpec(rs: RuleSpec): String =
@@ -46,7 +46,6 @@ RewriteRules qualifying spec
      | Rewrite qid -> "rewrite " ^ show qid
      | LeftToRight qid -> "lr " ^ show qid
      | RightToLeft qid -> "rl " ^ show qid
-     | MetaRule    qid -> "apply " ^ show qid
      | RLeibniz    qid -> "rev-leibniz " ^ show qid
      | Weaken      qid -> "weaken " ^ show qid
      | MetaRule      qid -> "meta-rule " ^ show qid

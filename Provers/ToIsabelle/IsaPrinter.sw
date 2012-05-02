@@ -17,6 +17,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
+ import /Languages/MetaSlang/AbstractSyntax/PathTerm
 % import /Languages/MetaSlang/Transformations/ArityNormalize
 
  op addObligations?: Bool = true
@@ -320,7 +321,7 @@ IsaTermPrinter qualifying spec
                                typeNameInfo = []}
 			value
     in
-    format(80, main_pp_val)
+    format(100, main_pp_val)
 
 
   op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
@@ -385,37 +386,48 @@ IsaTermPrinter qualifying spec
               id, id)
        dfn)
 
-  op getArgVarsAndConstraints(spc: Spec, ty: MSType, v_name: Id): MSTerm * MSTerms =
+  op getArgVarsAndConstraints(spc: Spec, ty: MSType, o_dfn_tm: Option MSTerm, v_name: Id): MSTerm * MSTerms * Option MSTerm =
+    case o_dfn_tm of
+      | Some(Lambda([(pat, _, bod)], _)) ->
+        let (pat_tm, conds, _) = patternToTermPlusExConds pat in
+        (pat_tm, conds, Some bod)
+      | _ ->
     case ty of
       | Subtype(s_ty, Lambda ([(pat, _, pred)], _), _) ->
         let (tm, conds, _) = patternToTermPlusExConds pat in
-        (tm, conds ++ getConjuncts pred)
+        (tm, conds ++ getConjuncts pred, None)
       | Subtype(s_ty, pred, _) ->
-        let (tm, preds) = getArgVarsAndConstraints(spc, s_ty, v_name) in
-        (tm, mkApply(pred, tm) :: preds)
+        let (tm, preds, _) = getArgVarsAndConstraints(spc, s_ty, None, v_name) in
+        (tm, mkApply(pred, tm) :: preds, None)
       | _ ->
         let arg_tys = productTypes(spc, ty) in
         let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
-        (mkTuple vs, [])
+        (mkTuple vs, [], None)
 
-  op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, spc: Spec): MSTerm =
-    let def mk_equality(ty, t1, t2, preds, v_names) =
+  op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, dfn: MSTerm, spc: Spec): MSTerm =
+    let def mk_equality(o_dfn_tm, ty, t1, t2, preds, v_names) =
           % let _ = writeLine("mk_equality: "^printType ty^"\n"^printTerm t1^" = "^printTerm t2) in
           case arrowOpt(spc, ty) of
             | Some(dom, rng) | v_names ~= [] && none?(subtypeOf(ty, Qualified("Set", "Set"), spc)) ->
               let v_name :: v_names = v_names in
-              let (vs, new_preds) = getArgVarsAndConstraints(spc, dom, v_name) in
+              let (vs, new_preds, o_dfn_tm) = getArgVarsAndConstraints(spc, dom, o_dfn_tm, v_name) in
               % let arg_tys = productTypes(spc, dom) in
               % let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
-              mk_equality(rng, mkApply(t1, vs), mkApply(t2, vs), preds ++ new_preds, v_names)
+              mk_equality(o_dfn_tm, rng, mkApply(t1, vs), mkApply(t2, vs), preds ++ new_preds, v_names)
             | _ -> mkSimpImplies(mkSimpConj preds, mkEquality(ty, t1, t2))
     in
-    let equality = mk_equality(ty, t1, t2, [], ["x", "y", "z"]) in
+    let equality = mk_equality(Some dfn, ty, t1, t2, [], ["x", "y", "z"]) in
     case freeVars equality of
       | [] -> equality
       | fvs -> mkBind(Forall, fvs, equality)
+  
+  op equalityArgs(eq_tm: MSTerm): MSTerm * MSTerm =
+    case eq_tm of
+      | Apply(Fun(Implies, _, _), Record([("1", lhs), ("2", rhs)], _), _) -> equalityArgs rhs
+      | Bind(_, _, bod, _) -> equalityArgs bod
+      | Apply(_, Record([("1", lhs), ("2", rhs)], _), _) -> (lhs, rhs)
 
-  op addRefineObligations(spc: Spec): Spec =
+  op addRefineObligations (c: Context) (spc: Spec): Spec =
     %% Add equality obligations for refined ops
     let (newelements, ops) =
         foldr (fn (el, (elts, ops)) ->
@@ -435,15 +447,143 @@ IsaTermPrinter qualifying spec
                      in
                      let ops = insertAQualifierMap (ops, q, id, new_opinfo) in
                      %% Make equality obligations
-                     let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), spc) in
+                     let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), dfn, spc) in
                      let thm_name = nm^"__"^"obligation_refine_def" in
                      let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
-                     (el::eq_oblig::elts, ops)
+                     let prf_str = generateProofForRefineObligation(c, eq_tm, refinedTerm(full_dfn, refine_num - 1), hist, spc) in
+                     let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
+                     % let _ = writeLine("Proof string:\n"^prf_str) in
+                     (el::eq_oblig::prf_el::elts, ops)
                    | _ -> (el::elts, ops))
            ([], spc.ops) spc.elements
     in
     spc << {elements = newelements,
-           ops      = ops}
+            ops      = ops}
+
+  op fnQidOfTerm(tm: MSTerm): QualifiedId =
+    case tm of
+      | Fun(Op(qid, _), _, _) -> qid
+      | Apply(f, _, _) -> fnQidOfTerm f
+
+  op isaDefString(tm: MSTerm): String =
+    let fn_qid = fnQidOfTerm tm in
+    qidToIsaString fn_qid ^ "_def"
+
+  op foldFn(tm: MSTerm): String =
+    let def_str = isaDefString tm in
+    "fold "^def_str^", rule HOL.refl"
+
+  op unfoldFn(tm: MSTerm): String =
+    let def_str = isaDefString tm in
+    "unfold "^def_str^", rule HOL.refl"
+
+  op pathWithinDef(lhs: MSTerm): PathTerm.Path =
+    case lhs of
+      | Apply(f, _, _) -> 0 :: pathWithinDef f
+      | _ -> []
+
+ op ruleToIsaRule(rl_spc: RuleSpec): String =
+   case rl_spc of
+     | Unfold  qid -> "unfold "^qidToIsaString qid^"_def, rule HOL.refl"
+     | Fold    qid -> "fold "^qidToIsaString qid^"_def, rule HOL.refl"
+     | Rewrite qid -> "unfold "^qidToIsaString qid^", rule HOL.refl"
+     | LeftToRight qid -> "rule "^qidToIsaString qid
+     | RightToLeft qid -> "rule "^qidToIsaString qid^"[symmetric]"
+     | _ -> "auto"
+     % | RLeibniz    qid -> 
+     % | Weaken      qid -> "weaken " ^ show qid
+     % | SimpStandard -> "simplify"
+     % | AbstractCommonExpressions -> "abstractCommonExpressions"
+     % | Eval -> "eval"
+     % | Context -> "context"
+     % | AllDefs -> "alldefs"
+
+ op anyType: MSType = Any noPos
+
+ op schemaFrom(tm: MSTerm, path: PathTerm.Path): MSTerm =
+   let arg_cong_v = ("xxx", anyType) in
+   let def pick(i: Nat, tms: MSTerms, r_path: PathTerm.Path, j: Nat): MSTerms =
+         let len = length tms in
+         tabulate(len, fn k -> if i = k
+                                then schematize(tms@i, r_path, j+len)
+                                else mkVar("?z_"^show(j+k), anyType))
+       def schematize(tm, path, j) =
+         case path of
+           | [] -> mkVar arg_cong_v
+           | i :: r_path ->
+         case tm of
+          | Apply(ft as Fun(f, _, _), Record([("1", x), ("2", y)], a1), a2) | infixFn? f ->
+            let [x, y] = pick(i, [x, y], r_path, j) in
+            Apply(ft, Record([("1", x), ("2", y)], a1), a2)
+          | Apply(x, y, a) ->
+            if embed? Lambda x
+              then let [y, x] = pick(i, [y, x], r_path, j) in
+                   Apply(x, y, a)
+            else let [x, y] = pick(i, [x, y], r_path, j) in
+                 Apply(x, y, a)
+          | Record(l, a) ->
+            let new_tms = pick(i, map (fn (_, t) -> t) l, r_path, j) in
+            Record(tabulate(length l, fn k -> let (id, _) = l@k in (id, new_tms@k)), a)
+          | Bind(bdr, vs, x, a) -> Bind(bdr, vs, schematize(x, r_path, j), a)
+          | The(v, x, a) -> The(v, schematize(x, r_path, j), a)
+          | Let (l, b, a) ->
+            let new_tms = pick(i, (map (fn (_, t) -> t) l) ++ [b], r_path, j) in
+            Let (tabulate(length l, fn k -> let (pat, _) = l@k in (pat, new_tms@k)),
+                 last new_tms, a)
+          | LetRec (l, b, a) ->
+            let new_tms = pick(i, (map (fn (_, t) -> t) l) ++ [b], r_path, j) in
+            LetRec (tabulate(length l, fn k -> let (v, _) = l@k in (v, new_tms@k)),
+                    last new_tms, a)
+          | Lambda (l, a) ->
+            let new_tms = map (fn (_, _, t) -> t) l in
+            Lambda(tabulate(length l, fn k -> let (pat, condn, _) = l@k in (pat, condn, new_tms@k)), a)
+          | IfThenElse(x, y, z, a) ->
+            let [x, y, z] = pick(i, [x, y, z], r_path, j) in
+            IfThenElse(x, y, z, a)
+          | Seq(l, a) -> Seq(pick(i, l, r_path, j), a)
+          | TypedTerm(x, ty, a) ->
+            (case postCondn? ty of
+               | None -> TypedTerm(schematize(x, r_path, j), ty, a)
+               | Some post -> let [x,post] = pick(i, [x,post], r_path, j) in
+                              %% Need to incorporate updated post
+                              TypedTerm(x, ty, a))
+          | And(l, a) -> And(pick(i, l, r_path, j), a)
+          | _ -> tm
+   in
+   let schema_tm = schematize(tm, path, 0) in
+   % let _ = writeLine("schemaFrom"^anyToString path^"\n"^printTerm schema_tm) in
+   mkLambda(mkVarPat arg_cong_v, schema_tm)
+
+ op ppTermStrFix (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
+   replaceString(ppTermStr c parentTerm term, "e_pz", "?z")
+
+ op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec): String =
+   let (_, path) = changedPathTerm(before, after) in
+   ppTermStr c Top after^"\"  by ("
+     ^(if path = [] then ""
+       else let schema_term = schemaFrom(before, path) in
+            "rule_tac f = \""^(ppTermStrFix c Top schema_term)^"\" in arg_cong, ")
+     ^ruleToIsaRule rl_spc^")\n"
+
+  op generateProofForRefineObligation(c: Context, eq_tm, init_dfn: MSTerm, hist: TransformHistory, spc: Spec): String =
+    let (lhs, rhs) = equalityArgs eq_tm in
+    let path = pathWithinDef lhs in
+    let init_dfn = fromPathTerm(init_dfn, path) in
+    let f_path = 0 :: path in
+      "proof -\n"
+    ^ "  have \"           "^(ppTermStr c Top lhs)^"\n"
+    ^ "                 = "^(ppTermStr c Top init_dfn)^"\"  by ("^unfoldFn lhs^")\n"
+    ^ flatten(tabulate(length hist,
+                       fn i ->
+                         let (tr_tm, rl_spc) = hist@i in
+                         let tr_tm = fromPathTerm(tr_tm, f_path) in
+                         "  also have \"... = "
+                         ^ transformedTermPlusProof(c, if i = 0 then init_dfn
+                                                       else fromPathTerm((hist@(i-1)).1, f_path),
+                                                    tr_tm, rl_spc)))
+    ^ "  also have \"... = "^(ppTermStr c Top rhs)^"\"  by ("^foldFn rhs^")\n"
+    ^ "  finally show ?thesis by assumption\n"
+    ^ "qed"
 
   op makeSubstFromRecPats(pats: List(Id * MSPattern), rec_tm: MSTerm, spc: Spec): List (MSPattern * MSTerm) =
     mapPartial (fn (fld, pat) -> if embed? WildPat pat then None
@@ -578,7 +718,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                   overloadedConstructors = overloadedConstructors spc}
     in
     % let _ = printSpecWithTypesToTerminal spc in
-    let spc = addRefineObligations spc in
+    let spc = addRefineObligations c spc in
     let spc = normalizeNewTypes(spc, false) in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
@@ -2477,6 +2617,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let Some(_,opt_ty) = findLeftmost (fn (id1,_) -> id = id1) (coproduct(spc, ty)) in
    mkEmbedPat(id,mapOption mkWildPat opt_ty,ty)
 
+ op  ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
+   toString(format(80, ppTerm c parentTerm term))
+
  op  ppTerm : Context -> ParentTerm -> MSTerm -> Pretty
  def ppTerm c parentTerm term =
    %let _ = writeLine(printTerm term^": "^anyToString parentTerm) in
@@ -2875,7 +3018,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        prBreak 0 [ppPattern c pat1 wildstr,
                   prString " as ",
                   ppPattern c pat2 wildstr]
-     | VarPat (v, _) -> if c.printTypes? then ppVarWithType c v
+     | VarPat (v, _) -> if c.printTypes? && ~(embed? Any v.2) then ppVarWithType c v
                         else ppVarWithoutType v
      | EmbedPat (constr, pat, ty, _) ->
        prBreak 0 [ppConstructorTyped(c, constr, ty, getSpec c),
