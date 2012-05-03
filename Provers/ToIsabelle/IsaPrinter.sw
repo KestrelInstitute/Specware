@@ -450,10 +450,12 @@ IsaTermPrinter qualifying spec
                      let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), dfn, spc) in
                      let thm_name = nm^"__"^"obligation_refine_def" in
                      let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
-                     let prf_str = generateProofForRefineObligation(c, eq_tm, refinedTerm(full_dfn, refine_num - 1), hist, spc) in
-                     let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
-                     % let _ = writeLine("Proof string:\n"^prf_str) in
-                     (el::eq_oblig::prf_el::elts, ops)
+                     if hist = []
+                       then (el::eq_oblig::elts, ops)
+                       else let prf_str = generateProofForRefineObligation(c, eq_tm, refinedTerm(full_dfn, refine_num - 1), hist, spc) in
+                            let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
+                            % let _ = writeLine("Proof string:\n"^prf_str) in
+                            (el::eq_oblig::prf_el::elts, ops)
                    | _ -> (el::elts, ops))
            ([], spc.ops) spc.elements
     in
@@ -557,9 +559,11 @@ IsaTermPrinter qualifying spec
  op ppTermStrFix (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
    replaceString(ppTermStr c parentTerm term, "e_pz", "?z")
 
+ op equalityContext: ParentTerm = Infix (Left, 50)
+
  op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec): String =
    let (_, path) = changedPathTerm(before, after) in
-   ppTermStr c Top after^"\"  by ("
+   ppTermStr c equalityContext after^"\"  by ("
      ^(if path = [] then ""
        else let schema_term = schemaFrom(before, path) in
             "rule_tac f = \""^(ppTermStrFix c Top schema_term)^"\" in arg_cong, ")
@@ -571,8 +575,8 @@ IsaTermPrinter qualifying spec
     let init_dfn = fromPathTerm(init_dfn, path) in
     let f_path = 0 :: path in
       "proof -\n"
-    ^ "  have \"           "^(ppTermStr c Top lhs)^"\n"
-    ^ "                 = "^(ppTermStr c Top init_dfn)^"\"  by ("^unfoldFn lhs^")\n"
+    ^ "  have \"           "^(ppTermStr c equalityContext lhs)^"\n"
+    ^ "                 = "^(ppTermStr c equalityContext init_dfn)^"\"  by ("^unfoldFn lhs^")\n"
     ^ flatten(tabulate(length hist,
                        fn i ->
                          let (tr_tm, rl_spc) = hist@i in
@@ -581,7 +585,7 @@ IsaTermPrinter qualifying spec
                          ^ transformedTermPlusProof(c, if i = 0 then init_dfn
                                                        else fromPathTerm((hist@(i-1)).1, f_path),
                                                     tr_tm, rl_spc)))
-    ^ "  also have \"... = "^(ppTermStr c Top rhs)^"\"  by ("^foldFn rhs^")\n"
+    ^ "  also have \"... = "^(ppTermStr c equalityContext rhs)^"\"  by ("^unfoldFn rhs^")\n"
     ^ "  finally show ?thesis by assumption\n"
     ^ "qed"
 
