@@ -1802,11 +1802,9 @@ proof Isa rotateRight_Obligation_subtype4
  by (case_tac s, auto simp add: Seq__suffix_def)
 end-proof
 
-proof Isa SegSeq__subsort_pred_Obligation_subtype
-  (** STEPHEN **)
-  (** goal must be typed: (i::nat) + 1 \<ge> 0" **)
- apply auto
- sorry
+
+proof Isa _SegSeq__subtype_pred_Obligation_subtype
+  by (cases ss, simp_all)
 end-proof
 
 proof Isa flatten_Obligation_subtype1
@@ -1870,16 +1868,26 @@ proof Isa unflatten_Obligation_the
 end-proof
 
 proof Isa unflattenU_Obligation_subtype
+  by (simp add: Stream__Stream_P_def Stream__repeat_def)
+end-proof
+
+proof Isa unflattenU_Obligation_subtype0
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__Seq__inf  
                       (\<lambda>i. Seq__Seq__fin 
                            (Stream__unflattenU (fun, n) i))" in exI,
-         auto simp add: Seq__SegSeq__subtype_pred_def Stream__map_def)
+         auto simp add: Seq__SegSeq__subtype_pred_def 
+                        Stream__map_def Stream__repeat_def)
 end-proof
 
 
-proof Isa unflattenU_Obligation_subtype1
+proof Isa unflattenU_Obligation_subtype2
+  by (simp add: list_all_iff)
+end-proof
+
+
+proof Isa unflattenU_Obligation_subtype3
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__Seq__fin  
