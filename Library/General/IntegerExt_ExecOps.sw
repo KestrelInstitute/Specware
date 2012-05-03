@@ -157,7 +157,7 @@ end-proof
 
 
 proof Isa e_ast_ast__1__obligation_refine_def
-  apply (subgoal_tac "x0 **__1 0 = 1", rule nat_induct,
+  apply (subgoal_tac "base **__1 0 = 1", rule nat_induct,
          simp_all (no_asm_simp) only: Integer__e_ast_ast__1.simps,
          simp_all del: Integer__e_ast_ast__1.simps)
   apply (rule conjI, clarify)
@@ -182,7 +182,7 @@ proof Isa isqrt__1__obligation_refine_def
   apply (rule Integer__isqrt_Obligation_the)
   (* Correctness *)
   apply (simp add: Integer__isqrt__1_def del: Integer__isqrt__1__loop.simps)
-  apply (rule_tac n=x0 in nat_induct, simp, clarify)
+  apply (rule_tac n=n in nat_induct, simp, clarify)
   (* that doesn't work - need induction on the output - see proof in Nuprl *)
   apply (subst Integer__isqrt__1__loop.simps)
   apply (simp del: Integer__isqrt__1__loop.simps)
@@ -218,7 +218,7 @@ proof Isa isqrt__2__obligation_refine_def
          simp add: Integer__isqrt_def, rule the1_equality)
   apply (rule Integer__isqrt_Obligation_the)
   (* Correctness *)
-  apply (rule_tac n=x0 in nat_bin_induct, 
+  apply (rule_tac n=n in nat_bin_induct, 
          simp add: Integer__isqrt__2_def, clarify)
   apply (case_tac "n + 1 < (2 * Integer__isqrt__2 ((n+1) div 4) + 1)
                          * (2 * Integer__isqrt__2 ((n+1) div 4) + 1)")
@@ -246,7 +246,7 @@ proof Isa primesLessThan__1__obligation_refine_def
   apply (simp add: Integer__primesLessThan_def, rule the1_equality)
   apply (rule Integer__primesLessThan_Obligation_the)
   apply (simp only: Integer__primesLessThan__1_def)
-  apply (case_tac "x0 \<le> 2", 
+  apply (case_tac "limit \<le> 2", 
          simp_all del: Integer__primesLessThan__1__loop.simps)
   (* The trivial case *)
   apply (simp add: List__sorted_p_def List__in_p__stp_def, clarsimp)
@@ -279,7 +279,7 @@ end-proof
 
 proof Isa coprime_p__1__obligation_refine_def
   apply (auto simp add: igcd_def Integer__coprime_p__1_def)
-  apply (case_tac x1, simp_all)+
+  apply (case_tac n2, simp_all)+
 end-proof
 
 proof Isa primeFactorsOf__1__loop_Obligation_subtype1
@@ -306,7 +306,7 @@ end-proof
 proof Isa totient__1__obligation_refine_def
   apply (simp add: Integer__totient_def Set__size__stp_def 
                    Integer__totient__1_def)
-  apply (rule_tac x="(\<lambda>m. m \<le> x0 \<and> coprime m x0)" in fun_cong)
+  apply (rule_tac x="(\<lambda>m. m \<le> n \<and> coprime m n)" in fun_cong)
   apply (rule the1_equality)
   (** this should follow by simplification - the current thm is a hack *)
   (** apply (erule ex1E, rule_tac a=size__v in ex1I) *)

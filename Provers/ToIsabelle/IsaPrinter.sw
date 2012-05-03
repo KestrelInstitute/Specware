@@ -406,7 +406,7 @@ IsaTermPrinter qualifying spec
 
   op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, dfn: MSTerm, spc: Spec): MSTerm =
     let def mk_equality(o_dfn_tm, ty, t1, t2, preds, v_names) =
-          % let _ = writeLine("mk_equality: "^printType ty^"\n"^printTerm t1^" = "^printTerm t2) in
+          % let _ = writeLine("mk_equality: "^printType ty^"\n"^printTerm t1^" = "^printTerm t2^"\n"^printTerm dfn) in
           case arrowOpt(spc, ty) of
             | Some(dom, rng) | v_names ~= [] && none?(subtypeOf(ty, Qualified("Set", "Set"), spc)) ->
               let v_name :: v_names = v_names in
@@ -447,7 +447,8 @@ IsaTermPrinter qualifying spec
                      in
                      let ops = insertAQualifierMap (ops, q, id, new_opinfo) in
                      %% Make equality obligations
-                     let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), dfn, spc) in
+                     let orig_dfn = refinedTerm(full_dfn, 0) in   % Original definition has all restrictions (?)
+                     let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), orig_dfn, spc) in
                      let thm_name = nm^"__"^"obligation_refine_def" in
                      let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
                      if hist = []
