@@ -38,13 +38,15 @@ import FunctionExt
 import Bit
 import BitList
 
-%% these do not contain proofs yet:
+%% these do not contain proofs yet and contain a quotient, 
+%% which the Isabelle translator does not currently handle. -CK
 %% import Rational
 %% import Real
 
 %% Proofs for these three do not currently work:
-%% import Stream
-%% import Sequence
+import Stream
+import Sequence
+%% This depends on Real:
 %% import TimedTrace
 
 endspec

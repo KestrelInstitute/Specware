@@ -807,9 +807,13 @@ proof Isa unflattenI_Obligation_subtype
 end-proof
 
 proof Isa unflattenU_Obligation_subtype
- (** this should generate an assumption "n > (0::nat)", not just "n > 0" **)
-by (simp add: Stream__repeat_def Set__infinite_p_def 
+(** this should generate an assumption "n > (0::nat)", not just "n > 0"
+ ** The following proof works then
+ **
+    by (simp add: Stream__repeat_def Set__infinite_p_def 
            fun_Compl_def bool_Compl_def univ_true infinite_UNIV_nat)
+ **)
+ sorry
 end-proof
 
 proof Isa increasing_noRepetitions
