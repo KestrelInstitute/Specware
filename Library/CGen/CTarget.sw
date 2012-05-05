@@ -604,7 +604,6 @@ theorem mathIntOfSlong_injective is
 theorem mathIntOfSllong_injective is
   fa(x:Sllong, y:Sllong) (mathIntOfSllong x = mathIntOfSllong y) = (x = y)
 
-
 theorem mathIntOfSshort_injective_fw is
   fa(x:Sshort, y:Sshort) (mathIntOfSshort x = mathIntOfSshort y) => (x = y)
 theorem mathIntOfSint_injective_fw is
