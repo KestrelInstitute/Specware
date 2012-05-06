@@ -71,16 +71,22 @@ PrintAsC qualifying spec
                        _)
               -> 
               let outer_limit_lines = [(0, string "["), (0, string (show n)), (0, string "]")] in
-              let (base_type, inner_limit_lines, status) = split_apart_limits (element_type, limits) in
-              let status = if n = 0 then reportError ("array size = 0", status) else status in
-              (base_type, outer_limit_lines ++ inner_limit_lines, status)
+              (case split_apart_limits (element_type, limits) of
+                 | Some (base_type, inner_limit_lines, status) ->
+                   let status = if n = 0 then reportError ("array size = 0", status) else status in
+                   Some (base_type, outer_limit_lines ++ inner_limit_lines, status)
+                 | _ ->
+                   Some (typ, outer_limit_lines, status))
             | _ ->
-              (typ, limits, status)
+              None
       in
-      let (typ, limits, status) = split_apart_limits (typ, []) in
-      let (pretty, _, status) = getPartsForCType (status, typ) in
-      (pretty, limits, status)
-
+      (case split_apart_limits (typ, []) of
+         | Some (typ, limits, status) ->
+           let (pretty, _, status) = getPartsForCType (status, typ) in
+           (pretty, limits, status)
+         | _ ->
+           (string "confusion", [], status))
+          
     | _ -> 
       %% Some kind of type not handled (yet?):
       (string "", [], reportError ("unrecognized kind of type: " ^ printType typ, status))
