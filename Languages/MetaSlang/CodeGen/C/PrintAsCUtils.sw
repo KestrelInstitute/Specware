@@ -207,8 +207,17 @@ PrintAsC qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op refersToCTarget? (term : SCTerm) : Bool =
+  %% TODO: Perhaps determine that this is the CTarget in the base library,
+  %%       as opposed to a CTarget.sw in some random directory.
   case term.1 of
-    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> true
+    | UnitId (SpecPath_Relative {hashSuffix = _, path = ["Library", "CGen", "CTarget"]}) -> 
+      true
+
+    | UnitId (UnitId_Relative unit_id) ->
+      (case reverse unit_id.path of
+         | "CTarget" :: _ -> true
+         | _ -> false)
+
     | _ -> false
 
  op importsCTarget? (spc : Spec) : Bool =
