@@ -7,6 +7,7 @@ spec
   import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
 
   import /Provers/ToIsabelle/IsaPrinter
+  import /Languages/SpecCalculus/AbstractSyntax/ASW_Printer
 
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists
   import                    /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
@@ -29,4 +30,4 @@ spec
   import Sketch   qualifying /Library/Structures/Data/Maps/Monomorphic/AsLists
   import NatTrans qualifying /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
 
-endspec
+end-spec
