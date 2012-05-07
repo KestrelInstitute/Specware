@@ -61,8 +61,9 @@ PrintAsC qualifying spec
       %%         C: 'typedef int Matrix_2_4[2][4];'
       %% 
       let 
-        def split_apart_limits (typ, limits) =          
-          %% Because C typedef scatters information around
+        def split_apart_array_type_info (typ, pretty_bounds) =          
+          %% Get various pieces of type information, because C typedef scatters information around.
+          %% Return element type (e.g. the type XXX), suffix (e.g. string "[2][4]"), and status.
           case typ of
             | Subtype (Base (Qualified ("C", "Array"), [element_type], _), 
                        Apply (Fun (Op (Qualified ("C", "ofLength?"), _), _, _),
@@ -70,22 +71,24 @@ PrintAsC qualifying spec
                               _),
                        _)
               -> 
-              let outer_limit_lines = [(0, string "["), (0, string (show n)), (0, string "]")] in
-              (case split_apart_limits (element_type, limits) of
-                 | Some (base_type, inner_limit_lines, status) ->
-                   let status = if n = 0 then reportError ("array size = 0", status) else status in
-                   Some (base_type, outer_limit_lines ++ inner_limit_lines, status)
-                 | _ ->
-                   Some (typ, outer_limit_lines, status))
+              %% Special case for fixed length subtypes of C.Array.
+              let major_pretty_bound = [(0, string "["), (0, string (show n)), (0, string "]")] in
+              let (innermost_element_type, minor_pretty_bounds, status) = 
+                  split_apart_array_type_info (element_type, pretty_bounds)
+              in
+              let status = if n = 0 then reportError ("array size = 0", status) else status in
+              (innermost_element_type, major_pretty_bound ++ minor_pretty_bounds, status)
+
+            | Subtype (parent_type, _, _) ->
+              %% All other subtype predicates are ignored.
+              (parent_type, [], status)
+
             | _ ->
-              None
+              (typ, pretty_bounds, status)
       in
-      (case split_apart_limits (typ, []) of
-         | Some (typ, limits, status) ->
-           let (pretty, _, status) = getPartsForCType (status, typ) in
-           (pretty, limits, status)
-         | _ ->
-           (string "confusion", [], status))
+      let (innermost_element_type, pretty_bounds, status) = split_apart_array_type_info (typ, []) in
+      let (pretty_element_type, _, status) = getPartsForCType (status, innermost_element_type) in
+      (pretty_element_type, pretty_bounds, status)
           
     | _ -> 
       %% Some kind of type not handled (yet?):
