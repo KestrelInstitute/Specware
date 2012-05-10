@@ -11,7 +11,7 @@ import ToJavaSpecial
 import /Languages/Java/JavaPrint
 import /Languages/MetaSlang/Transformations/LambdaLift
 import /Languages/MetaSlang/Transformations/Simplify
-import /Languages/MetaSlang/Transformations/RecordMerge
+%import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
 import /Languages/MetaSlang/Specs/SubtractSpec
 

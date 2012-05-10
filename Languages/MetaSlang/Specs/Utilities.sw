@@ -1180,6 +1180,14 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | Some info -> typesInType info.dfn
       | None -> []
 
+  op opsInSubTerms(tm: MSTerm): QualifiedIds =
+    foldSubTerms (fn (t, opids) ->
+                    case t of
+                      | Fun(Op(qid,_),_,_) | qid nin? opids ->
+                        qid :: opids
+                      | _ -> opids)
+      [] tm
+
 
   op  lambda?: [a] ATerm a -> Bool
   def lambda? t =
@@ -1287,6 +1295,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	      && (sideEffectFree t2) 
 	      && (sideEffectFree t3)
 	| _ -> false)
+
+ op hasSideEffect?(term: MSTerm): Bool =
+   existsSubTerm (fn s_tm ->
+                    case s_tm of
+                      | Fun(Op(Qualified("System", _), _), _, _) -> true
+                      | _ -> false)
+     term
 
  op  evalBinary: [a] (a * a -> Fun) * (List(Id * MSTerm) -> List a)
                       * List(Id * MSTerm) * MSType
@@ -1420,6 +1435,69 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        Some(mkSimpConj(map (fn ((_,xi), (_,yi)) -> mkEquality(inferType(spc, xi), xi, yi)) (zip(xs, ys))))
      | _ -> None
 
+  op  fieldAcessTerm: MSTerm * String * Spec -> MSTerm
+  def fieldAcessTerm(t,field,spc) =
+    case t of
+      | Record(fields,_) ->
+	(case getField(fields,field) of
+	  | Some fld -> fld
+	  | _ -> mkProjection(field,t,spc))	% Shouldn't happen
+      | _ -> mkProjection(field,t,spc)
+
+  op  mkProjection  : Id * MSTerm * Spec -> MSTerm
+  def mkProjection (id, term, spc) = 
+    let super_type = termType(term) in
+    case productOpt(spc,super_type) of
+     | Some (fields) -> 
+       (case findLeftmost (fn (id2, _) -> id = id2) fields of
+	 | Some (_,sub_type) -> 
+	   mkApply (mkProject (id, super_type, sub_type),term)
+	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
+                             ^(foldl (fn (res,(id2, _)) -> res^id2^" ") "" fields)
+                             ^"at "^print(termAnn term)))
+     | _ -> System.fail("Product type expected for mkProjectTerm: "^printTermWithTypes term)
+
+ op  translateRecordMergeInSpec : Spec -> Spec
+ def translateRecordMergeInSpec spc =
+   mapSpec (fn t -> translateRecordMerge(t,spc),id,id) spc
+
+  op  maybeIntroduceVarsForTerms: MSTerm * List MSTerm * Spec -> MSTerm
+  def maybeIntroduceVarsForTerms(mainTerm,vterms,spc) =
+  %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
+    case filter(fn t -> ~(simpleTerm t) && (existsSubTerm (fn st -> st = t) mainTerm)) vterms of
+      | [] -> mainTerm
+      | rvterms ->
+	let (_,vbinds) =
+	      foldl (fn ((i,result),t) -> (i+1,result ++ [(t,"tv--"^show i,inferType(spc,t))]))
+	        (0,[]) rvterms
+	in
+	mkLet(map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds,
+	      mapTerm ((fn t -> case findLeftmost (fn (tm,_,_) -> t = tm) vbinds of
+				| Some(_,v,s) -> mkVar(v,s)
+				| None -> t),
+			id,id)
+		 mainTerm)
+
+ op  translateRecordMerge : MSTerm * Spec -> MSTerm
+ def translateRecordMerge (t,spc) =
+   case t of
+     | Apply(Fun(RecordMerge,s,_),Record([("1",t1),("2",t2)],_),a) ->
+      (case arrowOpt(spc,s) of
+         | Some(dom,rng) ->
+           (case (productOpt(spc,rng),productOpt(spc,inferType(spc,t2))) of
+              | (Some resultFields,Some t2Fields) ->
+                let rawResult = Record(map (fn (field,_) ->
+                                            (field,if exists? (fn (f,_) -> f=field) t2Fields
+                                                     then fieldAcessTerm(t2,field,spc)
+                                                   else fieldAcessTerm(t1,field,spc)))
+                                       resultFields,
+                                       a)
+                in
+                maybeIntroduceVarsForTerms(rawResult,[t1,t2],spc)
+              | _ -> t)
+         | _ -> t)
+     | _ -> t
+
  op  tryEvalOne: Spec -> MSTerm -> Option MSTerm
  def tryEvalOne spc term =
    case term
@@ -1480,6 +1558,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
         (case getField(m,i) of
            | Some fld -> Some fld
            | None -> tryEvalOne spc (mkApply(proj_fn, r1)))
+      | Apply(Fun(RecordMerge,s,_),Record([("1", Record _),("2", Record _)],_),_) ->
+        Some (translateRecordMerge(term, spc))
       | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intType))
       | _ -> None
 

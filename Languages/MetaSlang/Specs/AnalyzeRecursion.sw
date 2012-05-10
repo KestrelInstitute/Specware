@@ -48,7 +48,7 @@ op iterateRefMap(cm: RefMap, count: Nat): RefMap =
     else cm
 
 op opUsesOpsMap(spc: Spec): RefMap =
-  mapAQualifierMap (fn (opinfo) -> opsInTerm opinfo.dfn)
+  mapAQualifierMap (fn (opinfo) -> opsInSubTerms opinfo.dfn)
     spc.ops
 
 op opUsesTypesMap(spc: Spec): RefMap =

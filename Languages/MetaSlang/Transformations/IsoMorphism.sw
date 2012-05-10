@@ -431,7 +431,8 @@ spec
            | The  (var,  bod, _) -> cto?(bod, boolType)
            | Let (decls, bdy, _) ->
              cto?(bdy, d_ty)
-               && forall? (fn (pat, trm) -> cto?(trm, patternType pat) && ~(nonOpaquePattern? pat))
+               && forall? (fn (pat, trm) -> let trm_ty = inferType(spc, trm) in
+                                            cto?(trm, trm_ty) && cpo?(pat, trm_ty))
                     decls
            | LetRec (decls, bdy, _) ->
              cto?(bdy, d_ty)
@@ -441,7 +442,7 @@ spec
              let (dom, ran) = arrow(spc, d_ty) in
              forall? (fn (pat, condn, bod) ->
                         opacityPreserved?(dom, patternType pat)
-                         && ~(nonOpaquePattern? pat)
+                         && cpo?(pat, dom)
                          && cto?(condn, boolType) && cto?(bod, ran))
                match
            | IfThenElse (t1, t2, t3, _) ->
@@ -453,6 +454,31 @@ spec
                && forall? (fn trm -> cto?(trm, mkProduct [])) pre_trms
            | TypedTerm (trm, srt, _) -> cto?(trm, srt)
            | _ -> true)
+      def typeOfInterest? ty =
+        case ty of
+          | Base(qid, _, _) -> qid in? base_src_QIds
+          | _ -> false
+      def cpo?(pat, d_ty) =
+        let u_ty = patternType pat in
+          opacityPreserved?(d_ty, u_ty)
+            &&
+          (case pat of
+             | AliasPat     (_,p2,_) -> cpo?(p2, d_ty)
+             | EmbedPat     (_,pats,ty,_) -> ~(typeOfInterest? ty)
+             | RecordPat    (fields, _) ->
+               let Some d_ty_flds = productOpt(spc, d_ty) in
+               forall? (fn (id, s_pat) ->
+                          let Some(_, d_s_ty) = findLeftmost (fn (id1, _) -> id1 = id) d_ty_flds in
+                          cpo?(s_pat, d_s_ty))
+                 fields               
+             | QuotientPat  (p, qid, _) -> ~(typeOfInterest? ty)
+               %% WARNING:
+               %% The result for QuotientPat is missing potential tyvars (it simply uses []),
+               %% so users of that result must be prepared to handle that discrepency between 
+               %% this result and the actual type referenced.
+             | RestrictedPat(p1, _, _) -> cpo?(p1, d_ty)
+             | TypedPat     (p1, _, _) -> cpo?(p1, d_ty) 
+             | _ -> true)
       def nonOpaquePattern? pat =
         existsPattern? (fn EmbedPat _ -> true
                            | QuotientPat _ -> true
@@ -1391,7 +1417,7 @@ spec
     % let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
     let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
                                     if iso_qid in? recursive_ops then None
-                                      else Some(Unfold iso_qid))
+                                      else Some(Rewrite iso_qid))
                         iso_info
     in
     % let _ = writeLine("iso: "^anyToString iso_unfolds) in
@@ -1401,7 +1427,7 @@ spec
                        Unfold(mkQualifiedId("Option","mapOption"))]
     in
     let main_script =
-      Steps([% SimpStandard,
+      Steps([%Trace true,% SimpStandard,
              mkSimplify (gen_unfolds
                            % ++ iso_osi_rewrites
                            % ++ osi_unfolds

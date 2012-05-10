@@ -469,45 +469,6 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
 
 
 
-  op  maybeIntroduceVarsForTerms: MSTerm * List MSTerm * Spec -> MSTerm
-  def maybeIntroduceVarsForTerms(mainTerm,vterms,spc) =
-  %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
-    case filter(fn t -> ~(simpleTerm t) && (existsSubTerm (fn st -> st = t) mainTerm)) vterms of
-      | [] -> mainTerm
-      | rvterms ->
-	let (_,vbinds) =
-	      foldl (fn ((i,result),t) -> (i+1,result ++ [(t,"tv--"^show i,inferType(spc,t))]))
-	        (0,[]) rvterms
-	in
-	mkLet(map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds,
-	      mapTerm ((fn t -> case findLeftmost (fn (tm,_,_) -> t = tm) vbinds of
-				| Some(_,v,s) -> mkVar(v,s)
-				| None -> t),
-			id,id)
-		 mainTerm)
-
-  op  fieldAcessTerm: MSTerm * String * Spec -> MSTerm
-  def fieldAcessTerm(t,field,spc) =
-    case t of
-      | Record(fields,_) ->
-	(case getField(fields,field) of
-	  | Some fld -> fld
-	  | _ -> mkProjection(field,t,spc))	% Shouldn't happen
-      | _ -> mkProjection(field,t,spc)
-
-  op  mkProjection  : Id * MSTerm * Spec -> MSTerm
-  def mkProjection (id, term, spc) = 
-    let super_type = termType(term) in
-    case productOpt(spc,super_type) of
-     | Some (fields) -> 
-       (case findLeftmost (fn (id2, _) -> id = id2) fields of
-	 | Some (_,sub_type) -> 
-	   mkApply (mkProject (id, super_type, sub_type),term)
-	 | _ -> System.fail ("Projection index "^id^" not found in product with fields "
-                             ^(foldl (fn (res,(id2, _)) -> res^id2^" ") "" fields)
-                             ^"at "^print(termAnn term)))
-     | _ -> System.fail("Product type expected for mkProjectTerm: "^printTermWithTypes term)
-
 
  op productLength(sp: Spec, srt:MSType): Nat = 
    case productOpt(sp,srt)

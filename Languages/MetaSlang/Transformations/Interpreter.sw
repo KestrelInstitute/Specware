@@ -1008,7 +1008,8 @@ spec
 
  op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
    if ~(constantTerm? term) && freeVarsRec term = []
-     && (~assumeNoSideEffects? => sideEffectFree term)
+     && (if assumeNoSideEffects? then ~(hasSideEffect? term)
+           else sideEffectFree term)
      then let v = eval(term,spc) in
        if fullyReduced? v
          then valueToTerm v

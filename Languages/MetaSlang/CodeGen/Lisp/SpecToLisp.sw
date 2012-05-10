@@ -5,7 +5,7 @@ SpecToLisp qualifying spec
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/Transformations/LambdaLift
  import /Languages/MetaSlang/Transformations/RemoveCurrying
- import /Languages/MetaSlang/Transformations/RecordMerge
+% import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/SliceSpec
 %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs

@@ -1,5 +1,5 @@
 CG qualifying spec
-{
+
  import /Languages/MetaSlang/Transformations/PatternMatch
  import /Languages/MetaSlang/Transformations/SliceSpec
 
@@ -14,8 +14,8 @@ CG qualifying spec
  
  import /Languages/MetaSlang/Transformations/RemoveCurrying
  import /Languages/MetaSlang/Transformations/LambdaLift
- import /Languages/MetaSlang/Transformations/InstantiateHOFns
- import /Languages/MetaSlang/Transformations/RecordMerge
+ import /Languages/MetaSlang/Transformations/InstantiateHOFns%
+% import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/TheoryMorphism
  
  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
@@ -314,4 +314,4 @@ CG qualifying spec
   else
     let cspec = generateCSpec app_name spc in 
     printToFile (app_name, cspec, opt_filename)
-}
+end-spec
