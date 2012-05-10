@@ -5125,6 +5125,479 @@ theorem List__e_at_at__stp_nth:
 
 declare List__list.simps [simp del]
 
+
+(**************************************************************************)
+(* Extensions to SW_List                                                  *)
+(**************************************************************************)
+
+(******************************************************************************
+ These are some of the many lemmas about generic list properties that we may 
+ need. They should eventually go into List.thy in the base libraries or a 
+ separate file ListProps.sw
+******************************************************************************) 
+
+lemma List__list_nth_if: 
+   "\<lbrakk>i < len\<rbrakk> \<Longrightarrow>  List__list (\<lambda>n. if n<len then Some (f n) else None) ! i = (f i)"
+by (rule  List__list_nth, 
+    auto simp add: List__definedOnInitialSegmentOfLength_def)
+
+lemma List__list_length_if [simp]:
+   "length (List__list (\<lambda>n. if n<len then Some (f n) else None)) = len"
+by (rule  List__length_is_SegmentLength,
+    simp add: List__definedOnInitialSegmentOfLength_def)
+
+lemma List__list_map: 
+   "map g (List__list (\<lambda>n. if n<len then Some (f n) else None))
+    = (List__list (\<lambda>n. if n<len then Some (g (f n)) else None))"
+by (simp add: list_eq_iff_nth_eq  List__list_nth_if)
+
+
+lemma List__list_Suc:
+   "List__list (\<lambda>n. if n < (Suc len) then Some (f n) else None)
+    = (List__list (\<lambda>n. if n < len then Some (f n) else None) @ [f len])"
+by (simp add: list_eq_iff_nth_eq  List__list_nth_if nth_append,
+    simp add: less_Suc_eq_le)
+
+lemma concat_nth:
+  "\<lbrakk>0 < n; \<forall>j < length L. length (L!j) = n; i < n * length L\<rbrakk> 
+    \<Longrightarrow> concat L ! i = L ! (i div n) ! (i mod n)"
+  apply (induct L arbitrary: i, auto)
+  apply (subgoal_tac "(length a = n) \<and> (\<forall>j<length L. length (L ! j) = n)", 
+         safe, thin_tac ?P)
+  defer 
+  apply (drule_tac x=0 in spec, simp,
+         drule_tac x="Suc j" in spec, simp)
+  apply (auto simp add: nth_append not_less le_div_geq le_mod_geq)
+done
+
+
+lemma List__length_concat:
+  "\<lbrakk>0 <n; \<forall>i<length l. length (l ! i) = n\<rbrakk>
+   \<Longrightarrow> length (concat l) = n * length l "
+  apply (induct l, auto)
+  apply (subgoal_tac "(\<forall>i<length l. length (l ! i) = n) \<and> length a = n", 
+         safe, simp_all)
+  apply (drule_tac x="Suc i" in spec, simp)
+  apply (drule_tac x="0" in spec, simp)
+done
+
+lemma List__list_concat_nth: 
+   "\<lbrakk>\<forall>i<len. length (f i) = k; j < k*len\<rbrakk> \<Longrightarrow>  
+     concat (List__list (\<lambda>n. if n<len then Some (f n) else None)) ! j = 
+    (f (j div k) ! (j mod k))"
+apply (case_tac "0<k", simp_all add: not_less) 
+apply (subst concat_nth, 
+       auto simp add:  List__list_nth_if div_gt_pos_nat2)
+done
+
+lemma List__list_concat_length: 
+   "\<lbrakk>\<forall>i<len. length (f i) = k\<rbrakk> \<Longrightarrow>  
+     length (concat (List__list (\<lambda>n. if n<len then Some (f n) else None))) = k*len"
+by (induct len, simp_all add:  List__list_Suc)
+
+
+lemma List__unflatten_size: 
+  "\<lbrakk>n > 0; n dvd (length (l::nat list))\<rbrakk>
+   \<Longrightarrow> \<forall>x\<in>set (List__unflatten (l, n)). length x = n"
+  apply (simp add: List__unflatten_def) 
+  apply (simp add: List__unflattenL_def) 
+  apply (rule the1I2)
+  apply (cut_tac l=l and lens = "replicate (length l div n) n" 
+         in List__unflattenL_Obligation_the, 
+         auto simp add: all_set_conv_all_nth)
+  apply (cut_tac List__unflatten_Obligation_subtype, auto simp add: zdvd_int)
+done
+
+
+lemma List__unflatten_length:
+  "\<lbrakk>0 < n; n dvd length l\<rbrakk> 
+  \<Longrightarrow> length (List__unflatten (l,n)) = length l div n"
+  apply (simp add: List__unflatten_def List__unflattenL_def)
+  apply (rule the1I2, simp_all)
+  apply (drule_tac l=l in List__unflatten_Obligation_subtype, 
+         simp add: zdvd_int)
+  apply (drule List__unflattenL_Obligation_the, simp)
+done
+
+lemma List__unflatten_concat:
+  "\<lbrakk>0 < n; n dvd length l\<rbrakk>  \<Longrightarrow> l = concat (List__unflatten (l,n))"
+  apply (simp add: List__unflatten_def List__unflattenL_def)
+  apply (rule the1I2, simp_all)
+  apply (drule_tac l=l in List__unflatten_Obligation_subtype, 
+         simp add: zdvd_int)
+  apply (drule List__unflattenL_Obligation_the, simp)
+done
+
+lemma List__unflatten_sublength:
+  "\<lbrakk>0 < n; n dvd length l\<rbrakk>  \<Longrightarrow> \<forall>i < length l div n. length (List__unflatten (l,n) ! i) = n"
+  apply (simp add: List__unflatten_def List__unflattenL_def, clarify)
+  apply (rule the1I2, simp_all)
+  apply (drule_tac l=l in List__unflatten_Obligation_subtype, 
+         simp add: zdvd_int)
+  apply (drule List__unflattenL_Obligation_the, simp)
+done
+
+lemma List__unflatten_nth:
+  "\<lbrakk>0 < n; n dvd length l; i < length l\<rbrakk> 
+  \<Longrightarrow> l ! i = List__unflatten (l,n) ! (i div n) ! (i mod n)"
+  apply (rule_tac t="l!i" and s="concat (List__unflatten (l, n))!i" in subst)
+  apply (drule_tac l=l in List__unflatten_concat, simp_all)
+  apply (rule concat_nth, 
+         auto simp add:  List__unflatten_length  List__unflatten_sublength dvd_def)
+done
+
+lemma List__unflatten_prop: 
+  "\<lbrakk>n > 0; n dvd (length (l::nat list)); list_all P l\<rbrakk>
+   \<Longrightarrow> list_all (list_all P) (List__unflatten (l, n))"
+ by (auto simp add: List__unflatten_subtype_constr zdvd_int)
+
+lemma List__concat_unflatten:
+  "\<lbrakk>0 <n; \<forall>i<length l. length (l ! i) = n\<rbrakk>
+   \<Longrightarrow> List__unflatten (concat l, n) = l"
+  apply (simp add: List__unflatten_def List__unflattenL_def)
+  apply (frule List__length_concat, simp)
+  apply (rule the1I2)
+  apply (drule_tac l="concat l" in List__unflatten_Obligation_subtype, 
+         simp add: zdvd_int [symmetric])
+  apply (drule List__unflattenL_Obligation_the, auto)
+  apply (simp add: list_eq_iff_nth_eq, auto)
+  apply (subgoal_tac "n * i + ia < length (concat x)")
+  defer
+  apply (simp add: less_eq_Suc_le, drule_tac k=n in mult_le_mono2, simp)
+  apply (rotate_tac -4, drule_tac x="n * i + ia" in spec, simp)
+  apply (rotate_tac -1, erule rev_mp, subst concat_nth)
+  defer defer apply simp
+  apply (subst concat_nth, auto)
+  apply (simp only: nat_add_commute, simp)
+done
+
+
+lemma List__tabulate_alt:
+   "List__tabulate (n, f) = map f [0..<n]" 
+by (rule nth_equalityI,
+    auto simp add: List__length_tabulate List__element_of_tabulate)
+
+lemma List__in_p__stp_finite:
+  "\<lbrakk>list_all P l\<rbrakk>
+   \<Longrightarrow>  finite {x. List__in_p__stp P (x, l)}"
+  apply (auto simp add: List__in_p__stp_def)
+  apply (rule_tac t="{x. \<exists>i.  List__e_at_at__stp P (l, i) = Some x}"
+              and s="{the (List__e_at_at__stp P (l, i)) |
+                        i. \<exists>x.  List__e_at_at__stp P (l, i) = Some x}" in subst)
+  apply (auto simp add: set_eq_iff, rule exI, auto)
+  apply (rule finite_image_set)
+  apply (rule_tac B="{i. i < length l}" in finite_subset, auto)
+  apply (rule classical, auto simp add: not_less List__e_at_at__stp_nth2)
+done
+
+lemma List__length_rotateRight2 [simp]: 
+  "\<lbrakk>length l > 0\<rbrakk> \<Longrightarrow> length (List__rotateRight(l, n)) = length l"
+by simp
+
+lemma List__length_rotateLeft2 [simp]: 
+  "\<lbrakk>length l > 0\<rbrakk> \<Longrightarrow> length (List__rotateLeft(l, n)) = length l"
+by simp
+
+lemma List__subFromLong_length [simp]: 
+  "\<lbrakk>i + n \<le> length x\<rbrakk> \<Longrightarrow> 
+   length (List__subFromLong(x, i, n)) = n"
+by (simp add: List__length_subFromLong)
+
+lemma take_length [simp]:
+ "\<lbrakk>n \<le> length x\<rbrakk> \<Longrightarrow> length (take n x) = n"
+by simp
+
+
+lemma List__suffix_alt:
+  "\<lbrakk>n \<le> length l\<rbrakk> \<Longrightarrow>   List__suffix (l,n) =  drop (length l - n) l"
+  by (simp add: List__removePrefix__def)
+
+lemma List__suffix_full [simp]:
+  "\<lbrakk>n = length l\<rbrakk> \<Longrightarrow>   List__suffix (l,n) =  l"
+  by (simp add:  List__suffix_alt)
+
+lemma List__suffix_none [simp]:
+  "\<lbrakk>n = length l\<rbrakk> \<Longrightarrow>   List__extendLeft (l,x,n) =  l"
+  by (simp add: List__extendLeft_def)
+
+lemma List__suffix_at_length [simp]:  "List__suffix (l,length l) =  l"
+  by (simp add:  List__suffix_alt)
+
+lemma List__suffix_extendL_1: 
+  "\<lbrakk>m \<le> length l\<rbrakk>
+    \<Longrightarrow> List__suffix (List__extendLeft (l,x,n), m) = List__suffix (l,m)"
+  by (simp add:  List__suffix_alt List__extendLeft_def)
+
+lemma List__suffix_extendL_2: 
+  "\<lbrakk>m \<le> n; m \<ge> length l\<rbrakk>
+   \<Longrightarrow> List__suffix (List__extendLeft (l,x,n), m) = List__extendLeft (l,x,m)"
+  by (simp add:  List__suffix_alt List__extendLeft_def)
+
+lemma List__suffix_extendL_3 [simp]: 
+  "\<lbrakk>m = length l\<rbrakk> \<Longrightarrow> List__suffix (List__extendLeft (l,x,n), m) = l"
+  by (simp add:  List__suffix_extendL_1)
+
+
+(******* ZIP  ********)
+
+lemma List__unzip_zip_inv [simp]:
+  "\<lbrakk>l1 equiLong l2\<rbrakk> \<Longrightarrow> List__unzip (zip l1 l2) = (l1,l2)"
+  apply (simp add: List__unzip_def del: List__equiLong_def)
+  apply (rule_tac t="zip l1 l2"
+              and s="(\<lambda>(x_1, x_2). zip x_1 x_2)(l1,l2)" in subst, simp)
+  apply (cut_tac List__unzip_Obligation_subtype,
+         simp only: TRUE_def Function__bijective_p__stp_univ)
+  apply (subst Function__inverse__stp_simp, simp)
+  apply (subst inv_on_f_f, simp_all add: bij_on_def mem_def)
+done
+
+lemma List__unzip_as_zip [simp]:
+  "\<lbrakk>List__unzip l = (l1,l2)\<rbrakk> \<Longrightarrow>  l = (zip l1 l2)"
+  apply (simp add: List__unzip_def del: List__equiLong_def)
+  apply (rule_tac t="zip l1 l2" and s="split zip (l1,l2)" in subst, simp)
+  apply (drule sym, erule ssubst)
+  apply (cut_tac List__unzip_Obligation_subtype,
+         simp only: TRUE_def Function__bijective_p__stp_univ)
+  apply (subst Function__inverse__stp_simp, auto)
+  apply (cut_tac y=l and f="split zip" and A="\<lambda>(x, y). x equiLong y" 
+             and B=UNIV in surj_on_f_inv_on_f)
+  apply (simp_all add: bij_on_def del: List__equiLong_def)
+done
+
+lemma List__unzip_zip_conv:
+  "\<lbrakk>l1 equiLong l2\<rbrakk> \<Longrightarrow> (List__unzip l = (l1,l2)) = (l = (zip l1 l2))"
+  by auto
+
+lemma List__unzip_empty [simp]:
+  "List__unzip [] = ([],[])"
+  by (simp add:  List__unzip_zip_conv)
+
+lemma List__unzip_singleton [simp]:
+  "List__unzip [(x,y)] = ([x],[y])"
+  by (simp add:  List__unzip_zip_conv)
+
+lemma List__unzip_cons [simp]:
+  "\<lbrakk>List__unzip l = (l1,l2)\<rbrakk> \<Longrightarrow> List__unzip ((x,y) # l) = (x#l1,y#l2)"
+  by (cut_tac d__x=l in List__unzip_subtype_constr,
+      simp add: List__unzip_zip_conv)
+
+lemma List__unzip_append [simp]:
+  "\<lbrakk>List__unzip l = (l1,l2); List__unzip l' = (l1',l2')\<rbrakk>
+   \<Longrightarrow> List__unzip (l @ l') = (l1@l1', l2@l2')"
+  by (cut_tac d__x=l in List__unzip_subtype_constr,
+      cut_tac d__x="l'" in List__unzip_subtype_constr,
+      simp add: List__unzip_zip_conv)
+
+lemma List__unzip_snoc [simp]:
+  "\<lbrakk>List__unzip l = (l1,l2)\<rbrakk>
+   \<Longrightarrow> List__unzip (l @ [(x,y)]) = (l1@[x], l2@[y])"
+  by simp
+
+lemma List__unzip_double [simp]:
+  "List__unzip [(x,y),(u,v)] = ([x,u],[y,v])"
+  by simp
+
+(******* Increasing ********)
+
+
+lemma List__increasingNats_p_nil [simp]:
+   "List__increasingNats_p []"
+  by (simp add: List__increasingNats_p_def)
+
+lemma List__increasingNats_p_snoc [simp]:
+   "List__increasingNats_p (l @ [i]) = 
+        (List__increasingNats_p l \<and> (\<forall>j \<in> set l. j < i))"
+  by (auto simp add: List__increasingNats_p_def 
+                     nth_append not_less set_conv_nth,
+      induct_tac ia rule: strict_inc_induct, auto)
+
+lemma List__increasingNats_p_singleton [simp]:
+   "List__increasingNats_p [i]" 
+  by (simp add: List__increasingNats_p_def)
+
+lemma  List__increasingNats_p_is_sorted [simp]:
+  "\<lbrakk>List__increasingNats_p l\<rbrakk> \<Longrightarrow> sorted l"
+  apply (auto simp add: List__increasingNats_p_def sorted_equals_nth_mono2)
+  apply (rotate_tac -1, erule rev_mp, rule_tac n="i" in nat_induct, auto)
+  apply (drule_tac x="j+n" in spec, auto simp only: int_1 [symmetric] zdiff_int)
+done
+
+(****** Positions *********)
+
+lemma List__positionsSuchThat_distinct [simp]: 
+  "distinct (List__positionsSuchThat(l, p))"
+  by (simp add: List__positionsSuchThat_subtype_constr)
+
+lemma List__positionsSuchThat_increasing [simp]: 
+  "List__increasingNats_p (List__positionsSuchThat(l, p))"
+  by (simp add: List__positionsSuchThat_def,
+      rule the1I2, 
+      simp_all add: List__positionsSuchThat_Obligation_the)
+
+lemma List__positionsSuchThat_membership [simp]: 
+  "i mem  List__positionsSuchThat(l, p) = (i < length l \<and> p (l ! i))"
+  by (simp add: List__positionsSuchThat_def,
+      rule the1I2, 
+      simp_all add: List__positionsSuchThat_Obligation_the)
+
+lemma List__positionsSuchThat_membership2 [simp]: 
+  "i \<in> set (List__positionsSuchThat(l, p)) = (i < length l \<and> p (l ! i))"
+  by simp
+
+lemma List__positionsSuchThat_nil [simp]:
+  "List__positionsSuchThat ([], p) = []"
+  by (simp add: List__positionsSuchThat_def member_def,
+      rule the_equality, auto)
+
+lemma List__positionsSuchThat_snoc1 [simp]:
+  "\<lbrakk>p x\<rbrakk> \<Longrightarrow> 
+   List__positionsSuchThat (l@[x], p) = List__positionsSuchThat (l, p) @ [length l]"
+  apply (subst List__positionsSuchThat_def, simp)
+  apply (rule the_equality, simp add: member_def nth_append, safe, simp_all)
+  apply (simp add: List__positionsSuchThat_def)
+  apply (rule the1I2, simp add: List__positionsSuchThat_Obligation_the)
+  apply (rule sorted_distinct_set_unique, 
+         auto simp add: set_eq_iff less_Suc_eq nth_append)
+done
+
+lemma List__positionsSuchThat_snoc2 [simp]:
+  "\<lbrakk>\<not> (p x)\<rbrakk> \<Longrightarrow> 
+   List__positionsSuchThat (l@[x], p) = List__positionsSuchThat (l, p)"
+  apply (subst List__positionsSuchThat_def, simp)
+  apply (rule the_equality, simp add: member_def nth_append, safe)
+  apply (simp add: List__positionsSuchThat_def)
+  apply (rule the1I2, simp add: List__positionsSuchThat_Obligation_the)
+  apply (rule sorted_distinct_set_unique, 
+         auto simp add: set_eq_iff less_Suc_eq nth_append)
+done
+
+lemma List__positionsOf_nil [simp]:
+  "List__positionsOf ([], x) = []"
+  by (simp add: List__positionsOf_def)
+
+lemma List__positionsOf_snoc1 [simp]:
+  "List__positionsOf (l@[x], x) = List__positionsOf (l, x) @ [length l]"
+  by (simp add: List__positionsOf_def)
+
+lemma List__positionsOf_snoc2 [simp]:
+  "\<lbrakk>a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf (l @ [a], x) = List__positionsOf (l, x)"
+  by (simp add: List__positionsOf_def)
+
+lemma List__positionsOf_singleton [simp]:
+  "List__positionsOf ([x], x) = [0]"
+  by (rule_tac t="[x]" and s="[]@[x]" in subst, simp,
+      simp only: List__positionsOf_snoc1, simp)
+
+lemma List__positionsOf_not_found [simp]:
+  "\<lbrakk>\<forall>a\<in>set l. a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf (l, x) = []"
+  by (induct l rule: rev_induct, simp_all)
+
+lemma List__positionsOf_not_found_later [simp]:
+  "\<lbrakk>\<forall>a\<in>set l'. a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf (l@l', x) =  List__positionsOf (l, x)"
+  by (induct l' rule: rev_induct, 
+      simp_all add: append_assoc [symmetric] del: append_assoc)
+
+lemma List__positionsOf_last [simp]:
+  "\<lbrakk>\<forall>a\<in>set l. a \<noteq> x\<rbrakk>
+   \<Longrightarrow> List__positionsOf (l@[x], x) = [length l]"
+  by simp
+
+lemma List__positionsOf_only_one [simp]:
+  "\<lbrakk>\<forall>a\<in>set l. a \<noteq> x; \<forall>a\<in>set l'. a \<noteq> x\<rbrakk>
+   \<Longrightarrow> List__positionsOf (l@[x]@l', x) = [length l]"
+  by (simp only: append_assoc [symmetric], simp del: append_assoc)
+
+lemma List__positionsOf_2 [simp]:
+  "\<lbrakk>a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf ([a,x], x) = [1]"
+ by (rule_tac t="[a,x]" and s="[a]@[x]" in subst, simp,
+     subst List__positionsOf_last, auto)
+
+lemma List__theElement_singleton [simp]:
+  "List__theElement [x] = x"
+  by (simp add: List__theElement_def)
+
+lemma List__positionOf_singleton [simp]:
+  "List__positionOf ([x], x) = 0"
+  by (simp add:  List__positionOf_def)
+
+lemma List__positionOf_2 [simp]:
+  "\<lbrakk>a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionOf ([a,x], x) = 1"
+  by (simp add:  List__positionOf_def)
+
+(*********************************)
+
+(************************************************************************)
+
+lemma List__list_1_apply_List__list:
+ "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n\<rbrakk>
+   \<Longrightarrow> List__list_1 (List__list f) = f"
+  apply (cut_tac List__list_subtype_constr)
+  apply (simp add: List__list_1_def)
+  apply (rule Function__inverse_f_apply__stp, auto simp del: not_ex)
+  apply (subst List__list.simps, auto simp del: not_ex)
+done
+
+lemma List__list_apply_List__list_1:  "List__list (List__list_1 l) = l"
+  apply (cut_tac List__list_subtype_constr)
+  apply (simp add: List__list_1_def)
+  apply (rule_tac f=List__list in Function__f_inverse_apply__stp, 
+         auto simp del: not_ex)
+  apply (subst List__list.simps, auto simp del: not_ex)
+done
+
+
+theorem List__increasing_strict_mono: 
+  "\<lbrakk>List__increasingNats_p l; i < j; j < length l\<rbrakk> \<Longrightarrow> l ! i < l ! j"
+  apply (subgoal_tac "\<forall>i j. j\<noteq>0 \<longrightarrow> j < length l - i \<longrightarrow> l ! i < l ! (i + j)", auto)
+  apply (drule_tac x=i in spec, drule_tac x="j-i" in spec, auto)
+  apply (simp add: List__increasingNats_p_def)
+  apply (rotate_tac -2, erule rev_mp, erule rev_mp, induct_tac ja rule: nat_induct, 
+         auto simp add: One_nat_def)
+  apply (drule_tac x="ia+n" in spec, auto)
+done
+
+theorem List__increasing_strict_mono2: 
+  "\<lbrakk>List__increasingNats_p l; i \<le> j; j < length l\<rbrakk> \<Longrightarrow> l ! i \<le> l ! j"
+  by (case_tac "i=j", auto simp add: nat_neq_iff,
+      drule List__increasing_strict_mono, auto)
+
+lemma List__increasingNats_p_max:
+  "\<lbrakk>l \<noteq> []; List__increasingNats_p l\<rbrakk> \<Longrightarrow> \<forall>j. j \<in> set l \<longrightarrow> j \<le> last l"
+  by (auto simp add: in_set_conv_nth last_conv_nth List__increasing_strict_mono2)
+
+
+lemma List__increasing_noRepetitions: 
+  "List__increasingNats_p list \<Longrightarrow> distinct list"
+  by (auto simp add: distinct_conv_nth nat_neq_iff List__increasing_strict_mono)
+
+lemma List__list_1_definedOnInitialSegmentOfLength:
+  "\<exists>n. List__list_1 l definedOnInitialSegmentOfLength n"
+  by (cut_tac List__list_1_subtype_constr1, auto)
+
+lemma List__list_eq_list [simp]:
+  "List__list (\<lambda>i. if i < length l then Some (l ! i) else None) = l"
+  by (auto simp add: list_eq_iff_nth_eq,
+      subst List__list_nth, 
+      auto simp add:  List__definedOnInitialSegmentOfLength_def not_le)
+
+
+lemma List__definedOnInitialSegmentOfLength1:
+   "\<lbrakk>f i = None; \<forall>i j. i \<in> dom f \<and> j < i \<longrightarrow> j \<in> dom f\<rbrakk>
+    \<Longrightarrow> \<exists>n. f definedOnInitialSegmentOfLength n"
+  apply (auto simp add: List__definedOnInitialSegmentOfLength_def dom_def)
+  apply (drule_tac k="i" and m=id in ex_has_least_nat, auto)
+  apply (rule_tac x=x in exI, auto)
+  apply (rule classical, auto)
+  apply (drule_tac x=i in spec, rotate_tac -1, drule_tac x=x in spec, auto)
+done
+
+lemma List__definedOnInitialSegmentOfLength1_iff:
+   "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n\<rbrakk>
+    \<Longrightarrow> (\<exists>i. i \<notin> dom f) \<and> (\<forall>i j. i \<in> dom f \<and> j < i \<longrightarrow> j \<in> dom f)"
+  apply (auto simp add: List__definedOnInitialSegmentOfLength_def )
+  apply (drule_tac x=j in spec, auto)
+done
+
 end-proof
 % ------------------------------------------------------------------------------
 

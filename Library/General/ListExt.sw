@@ -176,16 +176,6 @@ end-proof
 
 proof Isa -verbatim
 
-(**********************************************************************)
-lemma last_singleton [simp]:
-  "last [x] = x"
-  by simp
-
-lemma butlast_singleton [simp]:
-  "butlast [x] = []"
-  by simp
-
-
 
 (******* SORTED ********)
 

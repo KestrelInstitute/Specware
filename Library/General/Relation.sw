@@ -135,4 +135,189 @@ proof Isa Thy_Morphism
 %%  Relation.bijectiveOn? -> 
 end-proof
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+(**************************************************************************)
+(* Extensions to SW_Relation                                              *)
+(**************************************************************************)
+
+lemma Relation__functional_p__stp_alt_def:
+  "Relation__functional_p__stp (P,Q) m = 
+  (   (\<forall>x \<in> P \<inter> Domain m. \<exists>!y. (x, y) \<in> m)
+   \<and> (\<forall>y \<in> Relation__range__stp P m. y \<in> Q))"
+ apply (simp add: Relation__functional_p__stp_def Relation__apply_def Bex_def Ball_def
+                  Relation__domain__def Relation__range__stp_def,
+        simp add: mem_def Set__single_p__stp_def,
+        auto simp add: mem_def)
+ apply (drule_tac x=x in spec, simp, erule disjE, clarify)
+ apply (simp add: set_eq_iff, simp add: mem_def,
+        simp only: set_eq_iff, simp add: mem_def)
+ apply (drule_tac x=xa in spec, simp, erule disjE, clarify)
+ apply (simp add: set_eq_iff, simp add: mem_def,
+        simp only: set_eq_iff, simp add: mem_def)
+ apply (drule_tac x=x in spec, simp, drule mp, rule exI, simp)
+ apply (simp add: set_eq_iff, simp add: mem_def)
+ apply (erule ex1E, auto)
+done
+
+lemma Relation__functional_p__stp_alt2_def:
+    "Relation__functional_p__stp (P,Q) m = 
+     ((\<forall>x \<in> P \<inter> Domain m. \<exists>!y. (x, y) \<in> m) \<and> (\<forall>y. (\<exists>x \<in> P. (x, y) \<in> m) \<longrightarrow> y \<in> Q))"
+by (simp add: Relation__functional_p__stp_alt_def
+              Relation__range__stp_def Ball_def Bex_def mem_def)
+
+
+lemma Relation__injective_p__stp_alt_def:
+    "Relation__injective_p__stp (P,Q) m = 
+     ((\<forall>y \<in> Q \<inter> Range m. \<exists>!x. (x, y) \<in> m) \<and> (\<forall>x \<in> Relation__domain__stp Q m. x \<in> P))"
+ apply (simp add: Relation__injective_p__stp_def Relation__applyi_def Bex_def Ball_def
+                  Relation__range__def Relation__domain__stp_def,
+        simp add: mem_def Set__single_p__stp_def,
+        auto simp add: mem_def)
+ apply (drule_tac x=x in spec, simp, erule disjE, clarify)
+ apply (simp add: set_eq_iff, simp add: mem_def,
+        simp only: set_eq_iff, simp add: mem_def)
+ apply (drule_tac x=y in spec, simp, erule disjE, clarify)
+ apply (simp add: set_eq_iff, simp add: mem_def,
+        simp only: set_eq_iff, simp add: mem_def)
+ apply (drule_tac x=y in spec, simp, drule mp, rule exI, simp)
+ apply (simp add: set_eq_iff, simp add: mem_def)
+ apply (erule ex1E, auto)
+done
+
+
+
+lemma Relation__injective_p__stp_alt2_def:
+    "Relation__injective_p__stp (P,Q) m = 
+     ((\<forall>y \<in> Q \<inter> Range m. \<exists>!x. (x, y) \<in> m) \<and> (\<forall>x. (\<exists>y \<in> Q. (x, y) \<in> m) \<longrightarrow> x \<in> P))"
+by (simp add: Relation__injective_p__stp_alt_def
+              Relation__domain__stp_def Ball_def Bex_def mem_def)
+
+lemma Relation__total_p__stp_alt_def:
+    "Relation__total_p__stp (P,Q) m = (\<forall>x \<in> P. x \<in> Relation__domain__stp Q m)"
+by (simp add: Relation__total_p__stp_def Collect_def Ball_def set_eq_iff mem_def, auto)
+
+lemma Relation__total_p__stp_alt2_def:
+    "Relation__total_p__stp (P,Q) m = (\<forall>x \<in> P. \<exists>y \<in> Q. (x, y) \<in> m)"
+by (simp add: Relation__total_p__stp_alt_def
+              Relation__domain__stp_def Bex_def mem_def)
+
+lemma Relation__surjective_p__stp_alt_def:
+    "Relation__surjective_p__stp (P,Q) m = (\<forall>y \<in> Q. y \<in> Relation__range__stp P m)"
+by (simp add: Relation__surjective_p__stp_def Collect_def Ball_def set_eq_iff mem_def, auto)
+
+lemma Relation__surjective_p__stp_alt2_def:
+    "Relation__surjective_p__stp (P,Q) m = (\<forall>y \<in> Q. \<exists>x \<in> P. (x, y) \<in> m)"
+by (simp add: Relation__surjective_p__stp_alt_def
+              Relation__range__stp_def Bex_def mem_def)
+
+lemma Relation__domain__stp_sub_Domain [simp]:
+  "\<lbrakk>x \<in> Relation__domain__stp Q m\<rbrakk> \<Longrightarrow> x \<in> Domain m"
+by (auto simp add: Relation__domain__def Relation__domain__stp_def, 
+    auto simp add: mem_def)
+
+lemma Relation__domain__stp_sub_Domain2 [simp]:
+  "Relation__domain__stp Q m \<subseteq> Domain m"
+by auto
+
+lemma Relation__range__stp_sub_Range [simp]:
+  "\<lbrakk>y \<in> Relation__range__stp P m\<rbrakk> \<Longrightarrow>  y \<in> Range m"
+by (auto simp add: Relation__range__def Relation__range__stp_def,
+    auto simp add: mem_def)
+
+lemma Relation__range__stp_sub_Range2 [simp]:
+  "Relation__range__stp P m \<subseteq> Range m"
+by auto
+
+lemma Relation__bijective_p__stp_alt_def:
+    "Relation__bijective_p__stp (P,Q) m = 
+       (Relation__domain__stp Q m = P \<and> Relation__range__stp P m = Q
+       \<and> (\<forall>x \<in> P. \<exists>!y. (x, y) \<in> m) \<and> (\<forall>y \<in> Q. \<exists>!x. (x, y) \<in> m))"
+ apply (auto simp add: Relation__bijective_p__stp_def,  (* this is faster *)
+        simp_all add:  Relation__injective_p__stp_alt_def
+                       Relation__surjective_p__stp_alt_def
+                       Relation__total_p__stp_alt_def
+                       Relation__functional_p__stp_alt_def,
+       safe)
+ apply (drule bspec, simp, rotate_tac 2, 
+        drule_tac x=x in bspec, simp, safe, rule exI, simp)
+ apply (rotate_tac 5, drule_tac x=x in bspec, simp,
+        rule_tac Q=Q in  Relation__domain__stp_sub_Domain, simp, clarsimp )
+ apply (rotate_tac 1, drule bspec, simp, rotate_tac 3, 
+        drule_tac x=y in bspec, simp, safe, rule exI, simp)
+ apply (rotate_tac -2, drule_tac x=y in bspec, auto)
+done
+
+lemma Relation__totalOn_p__stp_alt_def:
+    "Relation__totalOn_p__stp (P,Q) A m = (P \<inter> Relation__domain__stp Q m = A)"
+by (simp add: Relation__totalOn_p__stp_def set_eq_iff, simp add: mem_def)
+
+lemma Relation__surjectiveOn_p__stp_alt_def:
+    "Relation__surjectiveOn_p__stp (P,Q) B m = (Q \<inter> Relation__range__stp P m = B)"
+by (simp add: Relation__surjectiveOn_p__stp_def set_eq_iff, simp add: mem_def)
+
+lemma Relation__bijectiveOn_p__stp_alt_aux:
+    "m \<in> Relation__bijectiveOn_p__stp (P,Q) A B = 
+       ((Relation__domain__stp Q m = A) \<and> ( Relation__range__stp P m = B)
+       \<and> A \<subseteq> P \<and> B \<subseteq> Q 
+       \<and> (\<forall>x \<in> P \<inter> Domain m. \<exists>!y. (x, y) \<in> m) \<and> (\<forall>y \<in> Q \<inter> Range m. \<exists>!x. (x, y) \<in> m))"
+by (simp add: Relation__bijectiveOn_p__stp_def,
+    simp add: mem_def
+              Relation__surjectiveOn_p__stp_alt_def
+              Relation__totalOn_p__stp_alt_def mem_def
+              Relation__functional_p__stp_alt_def
+              Relation__injective_p__stp_alt_def,
+    auto simp add: subset_eq mem_def)
+ 
+lemma Relation__bijectiveOn_p__stp_alt_def:
+    "Relation__bijectiveOn_p__stp (P,Q) A B m = 
+       ((Relation__domain__stp Q m = A) \<and> ( Relation__range__stp P m = B)
+       \<and> A \<subseteq> P \<and> B \<subseteq> Q 
+       \<and> (\<forall>x \<in> P \<inter> Domain m. \<exists>!y. (x, y) \<in> m) \<and> (\<forall>y \<in> Q \<inter> Range m. \<exists>!x. (x, y) \<in> m))"
+by (simp add:  Relation__bijectiveOn_p__stp_alt_aux [symmetric], simp add: mem_def )
+
+(****************************************************************)
+
+lemma Relation__functional_p_alt_def: 
+  "Relation__functional_p s = (\<forall>a b c. (a,b) \<in> s \<and> (a,c) \<in> s \<longrightarrow> b=c)"
+  apply (auto, simp_all add: Relation__functional_p_def Relation__apply_def,
+               simp_all add: mem_def unique_singleton)
+  apply (drule_tac x=a in spec, erule disjE)
+  apply (erule ex1E, auto simp add: set_eq_iff mem_def)
+done
+
+lemma Relation__functional_p_empty [simp]:
+  "Relation__functional_p {}"
+  by (auto simp add: Relation__functional_p_alt_def)
+
+lemma Relation__functional_p_less:
+  "Relation__functional_p s \<Longrightarrow> Relation__functional_p (s less (a, b))"
+  by (auto simp add: Relation__functional_p_alt_def)
+
+lemma Relation__functional_p_insert:
+  "Relation__functional_p (insert (a, b) s) \<Longrightarrow> Relation__functional_p s"
+  by (auto simp add: Relation__functional_p_alt_def)
+
+lemma Relation__functional_p_insert_new:
+  "\<lbrakk>Relation__functional_p (insert (a, b) s); b \<noteq> c\<rbrakk>  \<Longrightarrow> (a, c) \<notin> s"
+  by (auto simp add: Relation__functional_p_alt_def)
+
+(****************************************************************)
+lemma Relation__injective_p_alt_def:
+ "Relation__injective_p m = 
+  (\<forall>y \<in> Range m. \<exists>!x. (x, y) \<in> m)" 
+ apply (simp add: Relation__injective_p_def Relation__applyi_def,
+        auto simp add: mem_def)
+ apply(drule_tac x=y in spec, safe)
+ apply (simp add: set_eq_iff)
+ apply (frule_tac x=xa in spec,drule_tac x=ya in spec,simp add: mem_def)
+ apply (thin_tac "?P", simp only: set_eq_iff mem_def, simp)
+ apply (drule_tac x=y in bspec)
+ apply (simp add: Range_def Domain_def, auto simp add: mem_def)
+ apply (drule_tac x=xa in spec, auto simp add: mem_def)
+done
+
+end-proof
+
 endspec

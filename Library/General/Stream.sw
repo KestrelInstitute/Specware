@@ -961,4 +961,71 @@ termination
  sorry
 end-proof
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+
+
+lemma Stream__unflattenI_lens:
+   "\<lbrakk>Set__infinite_p (\<lambda>i. lens i \<noteq> 0)\<rbrakk> \<Longrightarrow> 
+    Stream__map length (Stream__unflattenI (s, lens)) = lens"
+  apply (drule_tac s=s in Stream__unflattenI_Obligation_the)
+  apply (simp add: Stream__unflattenI_def)
+  apply (erule the1I2, simp)
+done
+
+lemma Stream__unflattenI_flatten:
+   "\<lbrakk>Set__infinite_p (\<lambda>i. lens i \<noteq> 0)\<rbrakk> \<Longrightarrow> 
+     Stream__flattenI (Stream__unflattenI (s, lens)) = s"
+  apply (drule_tac s=s in Stream__unflattenI_Obligation_the)
+  apply (simp add: Stream__unflattenI_def)
+  apply (erule the1I2, simp)
+done
+
+lemma Stream__unflattenU_lens [simp]:
+   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> Stream__map length (Stream__unflattenU (s, n)) = Stream__repeat n"
+  apply (simp add: Stream__unflattenU_def)
+  apply (rule Stream__unflattenI_lens, erule Stream__unflattenU_Obligation_subtype)
+done
+
+lemma Stream__unflattenU_lens2 [simp]:
+   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> (\<lambda>i. length (Stream__unflattenU (s, n) i)) = Stream__repeat n"
+  apply (frule_tac s=s in Stream__unflattenU_lens)
+  apply (simp add: Stream__map_def Stream__repeat_def fun_eq_iff)
+done
+
+lemma Stream__unflattenU_flatten [simp]:
+   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow>  Stream__flattenI (Stream__unflattenU (s, n)) = s"
+  apply (simp add: Stream__unflattenU_def)
+  apply (rule Stream__unflattenI_flatten, 
+         erule Stream__unflattenU_Obligation_subtype)
+done
+
+lemma Stream__unflattenU_infinite [simp]:
+  "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> \<not> finite (\<lambda>i. Stream__unflattenU (s, n) i \<noteq> [])"
+  apply (clarify)
+  apply (drule_tac A="UNIV" in rev_finite_subset, auto simp add: mem_def)
+  apply (frule_tac s=s in Stream__unflattenU_lens)
+  apply (simp only: Stream__map_def Stream__repeat_def fun_eq_iff)
+  apply (drule_tac x=x in spec, auto)
+done
+   
+lemma Stream__increasingNats_p_inf_growth:
+  "\<lbrakk>Stream__increasingNats_p fun\<rbrakk>
+    \<Longrightarrow> \<forall>j. \<exists>i. fun i > j"
+ apply (auto simp add: Stream__increasingNats_p_def)
+ apply (induct_tac j)
+ apply (rule_tac x=1 in exI, drule_tac x=0 in spec, auto)
+ apply (rule_tac x="i + 1" in exI, drule_tac x=i in spec, auto)
+done
+
+lemma Stream__noRepetitions_p_finite_args:
+  "Stream__noRepetitions_p s \<Longrightarrow> finite (\<lambda>i. s i = a)"
+  apply (cut_tac F="{a}" and h=s in finite_vimageI)
+  apply (auto simp add: vimage_def Collect_def Stream__noRepetitions_p_def)
+done
+
+
+end-proof
+
 endspec

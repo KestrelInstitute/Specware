@@ -391,54 +391,6 @@ lemmas TwosComplement_tcN =
                    TwosComplement__maxForLength_def
 
 (******************************************************************************)
-(** Binary logarithm on integers. Actually, the minimal length of TC numbers **)
-
-consts zld :: "int \<Rightarrow> nat"
-defs zld_def: "zld i \<equiv> if i \<ge> 0 then ld (nat i, 2) else ld (nat (-(i+1)), 2)"
-
-lemma ld_zero [simp]:   "\<lbrakk>2 \<le> base\<rbrakk> \<Longrightarrow> ld (0,base) = 0"
-  apply (simp add: ld_def, simp only: Least_def, rule the1_equality, auto)
-  apply (drule spec, drule spec, auto simp add: le_trans)
-done
-
-
-lemma zld_zero [simp]:   "zld 0 = 0"
-  by (simp add: zld_def)
-lemma zld_neg1 [simp]:   "zld (-1) = 0"
-  by (simp add: zld_def)
-
-lemma zld_pos1:          "\<lbrakk>0 < i\<rbrakk> \<Longrightarrow> 0 < zld i"
-  by (auto simp add:  zld_def ld_positive)
-lemma zld_pos2:          "\<lbrakk>i < -1\<rbrakk> \<Longrightarrow> 0 < zld i"
-  by (auto simp add:  zld_def ld_positive)
-
-lemma zld_positive:  "\<lbrakk>0 \<noteq> i;-1\<noteq>i\<rbrakk> \<Longrightarrow> 0 < zld i"
-  by (auto simp add:  zld_def ld_positive)
-
-lemma zld_power_pos [simp]: "0 < (2::int) ^ zld i"
-  by (auto simp add:  zld_def ld_positive)
-
-lemma zld_upper:    "i < 2 ^ zld i"
-  by (cases "i \<ge> 0", auto simp add:  not_le less_trans,
-      cut_tac x="nat i" and base=2 in ld_mono, simp, simp add: zld_def)
-
-lemma zld_at_least_pos:   "\<lbrakk>0 < i\<rbrakk> \<Longrightarrow> i \<ge> 2 ^ (zld i - 1)"
-  by (cut_tac x="nat i" and base=2 in ld_mono2, auto simp add: zld_def,
-      simp only: convert_to_nat_2 zpower_int)
-
-lemma zld_lower:   "i \<ge> - (2 ^ zld i)"
-  by (cases "i \<ge> 0", rule zle_trans, auto,
-      cut_tac x="nat (-(i+1))" and base=2 in ld_mono, simp, simp add: zld_def)
-
-lemma zld_at_most_neg:   "\<lbrakk>i < -1\<rbrakk> \<Longrightarrow> i < -(2 ^ (zld i - 1))"
-  by (cut_tac x="nat (-(i+1))" and base=2 in ld_mono2, auto simp add: zld_def,
-      simp only: convert_to_nat_2 zpower_int)
-          
-lemmas zld_props = zld_positive zld_power_pos
-                   zld_upper zld_at_least_pos
-                   zld_lower zld_at_most_neg
-
-(******************************************************************************)
 
 lemma TwosComplement__toInt_length:
  (*************************************************************

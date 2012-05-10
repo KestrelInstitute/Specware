@@ -362,4 +362,88 @@ end-proof
   String.subFromTo  -> list__subFromTo
 #end
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+lemma String__compare_equal_aux: 
+  "\<forall>y. String__compare (x, y) = Equal \<longrightarrow> x = y"
+ apply (simp add: String__compare_def)
+ apply (induct_tac x)
+ apply (rule allI, induct_tac y, simp_all)
+ apply (rule allI, induct_tac y, simp_all)
+ apply (case_tac "Char__compare (a, aa)", simp_all) 
+done
+
+lemma String__compare_equal [simp]: 
+  "\<lbrakk>String__compare (x, y) = Equal\<rbrakk> \<Longrightarrow> x = y"
+ by (auto simp add: String__compare_equal_aux)
+ 
+lemma String__compare_eq_simp [simp]: 
+  "String__compare (x, x) = Equal"
+ by (induct x, simp_all add: String__compare_def )
+
+lemma String__compare_equal_simp: 
+  "(String__compare (x, y) = Equal) = (x = y)"
+ by auto
+
+
+lemma String__compare_antisym_aux: 
+ "\<forall>y. String__compare (x, y) = Less \<and> String__compare (y, x) = Less \<longrightarrow> x = y"
+ apply (simp add: String__compare_def)
+ apply (induct_tac x)
+ apply (rule allI, induct_tac y, simp_all)
+ apply (rule allI, induct_tac y, simp_all)
+ apply (case_tac "Char__compare (a, aa)", simp_all add: Char__compare_equal_simp)
+ apply (case_tac "Char__compare (aa, a)", simp_all add: Char__compare_equal_simp)
+ apply (drule Char__compare_antisym, simp_all)
+done 
+
+lemma String__compare_antisym: 
+ "\<lbrakk>String__compare (x, y) = Less; String__compare (y, x) = Less\<rbrakk> \<Longrightarrow> x = y"
+ by (auto simp add: String__compare_antisym_aux)
+
+lemma String__compare_linear_aux: 
+ "\<forall>y. String__compare (x, y)  \<noteq> Less \<and>  y \<noteq> x \<longrightarrow> String__compare (y, x) = Less"
+ apply (simp add: String__compare_def)
+ apply (induct_tac x)
+ apply (rule allI, induct_tac y, simp_all)
+ apply (rule allI, induct_tac y, simp_all)
+ apply (case_tac "Char__compare (a, aa)", 
+        simp_all add: Char__compare_equal_simp Char__compare_greater2less)
+done
+
+
+lemma String__compare_linear: 
+ "\<lbrakk>String__compare (x, y) \<noteq> Less; y \<noteq> x\<rbrakk> \<Longrightarrow> String__compare (y, x) = Less"
+ by (cut_tac x=x in String__compare_linear_aux, simp)
+
+lemma String__compare_trans_aux: 
+ "\<forall>y z. String__compare (x, y) = Less \<and>  String__compare (y, z) = Less
+  \<longrightarrow> String__compare (x, z) = Less"
+ apply (simp add: String__compare_def del: all_simps)
+ apply (induct_tac x)
+ apply (rule allI, induct_tac y, simp_all del: all_simps)
+ apply (rule allI, induct_tac z, simp_all del: all_simps)
+ apply (rule allI, induct_tac y, simp_all del: all_simps)
+ apply (rule allI, induct_tac z, simp_all del: all_simps)
+ apply (case_tac "Char__compare (a, aa)", 
+        simp_all add: Char__compare_equal_simp del: all_simps)
+ apply (case_tac "Char__compare (aa, ab)", 
+        simp_all add: Char__compare_equal_simp del: all_simps)
+ apply (drule_tac x=lista in spec, rotate_tac -1,
+        drule_tac x=listb in spec, rotate_tac -1, simp)
+ apply (case_tac "Char__compare (aa, ab)", 
+        simp_all add: Char__compare_equal_simp del: all_simps)
+ apply (frule Char__compare_trans, simp, clarsimp)
+done
+
+
+lemma String__compare_trans: 
+ "\<lbrakk>String__compare (x, y) = Less; String__compare (y, z) = Less\<rbrakk>
+  \<Longrightarrow> String__compare (x, z) = Less"
+ by (cut_tac x=x in String__compare_trans_aux, auto)
+
+
+end-proof
+
 endspec

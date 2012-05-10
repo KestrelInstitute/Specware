@@ -244,19 +244,6 @@ y:b such that y = f x for some x:a. *)
 
 op [a,b] setGeneratedBy (f: a -> b) : Set b = map f full
 
-% *** Isabelle finite set lemmas ***
-
-proof Isa -verbatim
-lemma finite_nat_seg:
-  "finite (s::'a set) \_Longrightarrow (\_exists(f::nat \_Rightarrow 'a) (n::nat). 
-        \_forall(x::'a). (x \_in s) = (\_exists(i::nat). i < n \_and f i = x))"
-  by(auto simp add: finite_conv_nat_seg_image)
-lemma nat_seq_finite:
-  "(\_exists(f::nat \_Rightarrow 'a) (n::nat). 
-      \_forall(x::'a). (x \_in (s::'a set)) = (\_exists(i::nat). i < n \_and f i = x)) 
-   \_Longrightarrow finite s"
-  by(elim exE, rule nat_seg_image_imp_finite, auto)
-end-proof
 
 % finite sets:
 
@@ -891,12 +878,11 @@ qed
 end-proof
 
 proof Isa size_Obligation_the
- apply (rule_tac a="RFun finite card" in ex1I, auto)
- apply (frule_tac x=x in card_insert_if, auto,
-        drule_tac x=x in card_Suc_Diff1, auto)
- apply (rule ext, auto) 
- apply (thin_tac "\<forall>xa. \<not> finite xa \<longrightarrow> x xa = regular_val",
-        induct_tac xa rule: finite_induct)
+ apply (rule_tac a="RFun finite card" in ex1I, simp_all, safe)
+ apply (frule_tac x=x in card_insert_if, clarsimp,
+        drule_tac x=x in card_Suc_Diff1, simp_all)
+ apply (rule ext, clarsimp) 
+ apply (thin_tac ?P, induct_tac xa rule: finite_induct)
  apply (simp, simp only: card_empty) 
  apply (drule_tac x=F in spec, drule mp, simp)
  apply (drule_tac x=xb in spec, simp)
@@ -954,6 +940,33 @@ proof Isa  Set__max__def
   apply (rule_tac P = "\<lambda>s. s isMaxIn_s ss" in the1I2)
   apply (erule Set__max_Obligation_the)
   apply (auto simp add: isMaxIn_s_def)
+end-proof
+
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+
+(**************************************************************************)
+(* Extensions to SW_Set                                                   *)
+(**************************************************************************)
+
+
+lemma Set_P__stp_unfold_aux:
+ "Set__Set_P__stp P Q A = (\<forall>x\<in>A\<inter>P. Q x)"
+by (auto simp add: Set__Set_P__stp_def mem_def)
+
+lemma Set_P__stp_unfold:
+ "Set__Set_P__stp P Q A = (\<forall>x. (A x \<and> P x) \<longrightarrow> Q x)"
+by (auto simp add: Set__Set_P__stp_def mem_def)
+
+
+lemma Set__infinite_nat_growth:
+  "\<lbrakk>Set__infinite_p (\<lambda>(i::nat). p i)\<rbrakk>  \<Longrightarrow> \<forall>j. \<exists>i>j. p i"
+  apply (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def) 
+  apply (auto simp add: finite_nat_set_iff_bounded Bex_def mem_def not_less)
+  apply (drule_tac x="Suc j" in spec, clarify, rule_tac x=x in exI, auto )
+done
+
 end-proof
 
 

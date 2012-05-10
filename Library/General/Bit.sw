@@ -183,14 +183,17 @@ proof Isa xor_cancel [simp]
 end-proof
 
 proof Isa toNat2_Obligation_subtype
- by (auto simp add: bij_ON_def inj_on_def surj_on_def split: Bit__Bit.split,
-     auto simp add: mem_def)
+  apply (auto simp add: bij_ON_def inj_on_def surj_on_def  mem_def Bex_def)
+  apply (case_tac x, case_tac y, simp_all, case_tac y, simp_all)
+  apply (rule_tac x="B0" in  exI, auto)
+  apply (rule_tac x="B1" in  exI, auto)
 end-proof
 
 proof Isa fromNat2_Obligation_subtype
-  apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def
-                   split: bool.split_asm)
-  apply (case_tac y, auto)
+  apply (simp, 
+         simp only: bij_ON_def inj_on_def surj_on_def mem_def Ball_def Bex_def,
+         safe, simp_all)
+  apply (case_tac x, auto)
 end-proof
 
 proof Isa toNat2_0 [simp]

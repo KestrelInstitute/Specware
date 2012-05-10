@@ -133,4 +133,50 @@ end-proof
   Char.compare \_rightarrow compare curried
 #end
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+(**************************************************************************)
+(* Extensions to SW_String                                                *)
+(**************************************************************************)
+
+lemma Char__compare_trans: 
+ "\<lbrakk>Char__compare (x, y) = Less; Char__compare (y, z) = Less\<rbrakk>
+  \<Longrightarrow> Char__compare (x, z) = Less"
+ by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+
+lemma Char__compare_linear: 
+ "\<lbrakk>Char__compare (x, y) \<noteq> Less; y \<noteq> x\<rbrakk> \<Longrightarrow> Char__compare (y, x) = Less"
+ apply (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+ apply (drule_tac f="char_of_nat" in arg_cong, simp add: char_of_nat_of_char)
+done
+
+lemma Char__compare_greater2less_rule: 
+ "\<lbrakk>Char__compare (x, y) = Greater\<rbrakk> \<Longrightarrow> Char__compare (y, x) = Less"
+  by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+
+lemma Char__compare_greater2less: 
+ "(Char__compare (x, y) = Greater) =  (Char__compare (y, x) = Less)"
+  by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+
+lemma Char__compare_antisym: 
+ "\<lbrakk>Char__compare (x, y) = Less; Char__compare (y, x) = Less\<rbrakk> \<Longrightarrow> x = y"
+ by (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+
+lemma Char__compare_equal [simp]: 
+  "\<lbrakk>Char__compare (x, y) = Equal\<rbrakk> \<Longrightarrow> x = y"
+ apply (simp add: Char__compare_def Integer__compare_def split: split_if_asm)
+ apply (drule_tac f="char_of_nat" in arg_cong, simp add: char_of_nat_of_char)
+done
+ 
+lemma Char__compare_eq_simp [simp]: 
+  "Char__compare (x, x) = Equal"
+ by (simp add: Char__compare_def Integer__compare_def)
+ 
+lemma Char__compare_equal_simp: 
+  "(Char__compare (x, y) = Equal) = (x = y)"
+ by auto
+ 
+end-proof
+
 endspec

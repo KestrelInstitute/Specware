@@ -24,51 +24,6 @@ op fromFMap : [a,b] FMap(a,b) -> FiniteMap(a,b) = inverse toFMap
 proof Isa -verbatim
 (******************************************************************************)
 
-(** move to IsabelleExtensions ***)
-
-lemma unique_singleton1:   "(\<exists>!x. P = {x}) = (\<exists>!x. P x)"
-  by (simp add: unique_singleton [symmetric],
-      auto simp add: set_eq_iff singleton_iff mem_def)
-
-lemma unique_singleton2:   "(\<exists>!x. P = {x}) = (\<exists>!x. x \<in> P)"
-  by (simp add: mem_def unique_singleton1)
-
-lemma list_singleton_set:  "\<lbrakk>distinct l; l = [x] \<rbrakk> \<Longrightarrow> x \<in> set l"
-   by auto
-
-lemma singleton_list_to_set: "\<lbrakk>distinct l \<rbrakk> \<Longrightarrow> (l = [x]) = (set l ={x})"
-  apply (auto, simp add: list_eq_iff_nth_eq, 
-         subst conj_imp [symmetric], safe, clarsimp)
-  apply (simp add: set_eq_iff, drule_tac x=x in spec, simp add: in_set_conv_nth)
-  apply (simp add: distinct_card [symmetric])
-done
-
-lemma non_empty_simp:     "P \<noteq> {} = (\<exists>x. x \<in> P)"
-  by (simp add: set_eq_iff mem_def)
-
-lemma mem_lambda_pair:    "(a,b) \<in> (\<lambda>x. P x) = P (a,b)"
- by (simp add: mem_def)  
-
-lemma lambda_set:         "(\<lambda>x. P x) = {x. x \<in> P}"
- by (simp add: Collect_def)  
-
-(**************************)
-
-lemma finite_dom_ran:
-  "\<lbrakk>finite (dom m)\<rbrakk>   \<Longrightarrow> finite (ran m)"
-  apply (simp add: dom_def ran_def)      
-  apply (subgoal_tac "{b. \<exists>a. m a = Some b}
-                    = {m @_m x |x. \<exists>y. m x = Some y}",
-         auto simp add: e_at_m_def,
-         rule exI, auto)
-done
-
-lemma ran_empty1:
-  "ran m = {} \<Longrightarrow> m = Map.empty"
-  by (rule ext, simp add: ran_def not_Some_eq [symmetric])
-
-(****************************************************************)
-
 lemma FMap__fromFMap_f_f:  "FMap__fromFMap (FMap__toFMap m) = m"
    by (simp add: FMap__fromFMap_def  inv_f_f 
                  FMap__toFMap_subtype_constr bij_is_inj)
@@ -76,32 +31,6 @@ lemma FMap__fromFMap_f_f:  "FMap__fromFMap (FMap__toFMap m) = m"
 lemma FMap__toFMap_f_f:    "FMap__toFMap (FMap__fromFMap m) = m"
    by (simp add: FMap__fromFMap_def FMap__toFMap_subtype_constr
                  Function__f_inverse_apply)
-
-(****************************************************************)
-
-lemma Relation__functional_p_alt_def: 
-  "Relation__functional_p s = (\<forall>a b c. (a,b) \<in> s \<and> (a,c) \<in> s \<longrightarrow> b=c)"
-  apply (auto, simp_all add: Relation__functional_p_def Relation__apply_def,
-               simp_all add: mem_def unique_singleton)
-  apply (drule_tac x=a in spec, erule disjE)
-  apply (erule ex1E, auto simp add: set_eq_iff mem_def)
-done
-
-lemma Relation__functional_p_empty [simp]:
-  "Relation__functional_p {}"
-  by (auto simp add: Relation__functional_p_alt_def)
-
-lemma Relation__functional_p_less:
-  "Relation__functional_p s \<Longrightarrow> Relation__functional_p (s less (a, b))"
-  by (auto simp add: Relation__functional_p_alt_def)
-
-lemma Relation__functional_p_insert:
-  "Relation__functional_p (insert (a, b) s) \<Longrightarrow> Relation__functional_p s"
-  by (auto simp add: Relation__functional_p_alt_def)
-
-lemma Relation__functional_p_insert_new:
-  "\<lbrakk>Relation__functional_p (insert (a, b) s); b \<noteq> c\<rbrakk>  \<Longrightarrow> (a, c) \<notin> s"
-  by (auto simp add: Relation__functional_p_alt_def)
 
 (******************************************************************************)
 

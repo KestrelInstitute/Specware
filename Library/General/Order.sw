@@ -114,5 +114,28 @@ proof Isa unstrictify_Obligation_subtype
   apply (auto simp add: irrefl_def)
 end-proof
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+
+  
+(**************************************************************************)
+(* Extensions to Order                                                    *)
+(**************************************************************************)
+
+theorem Order__linearOrder_p_le_s [simp]: 
+  "Order__linearOrder_p (\<lambda> (x,y). x <=_s y)"
+  apply (auto simp add: Order__linearOrder_p_def Order__partialOrder_p_def 
+                        Order__preOrder_p_def 
+                        antisym_def trans_def refl_on_def mem_def
+                        e_lt_eq_s_def e_lt_s_def
+                       )
+  by (erule String__compare_trans, simp,
+      erule String__compare_antisym, simp,
+      erule String__compare_linear, simp)
+
+
+end-proof
+
 
 endspec

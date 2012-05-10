@@ -377,5 +377,48 @@ end-proof
   Function.:>          -> . Right 9 reversed
 #end
 
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
 
+(************************************************************ 
+    this is similar to  Function__fxy_implies_inverse__stp
+    but drops the superfluous  assumption Fun_PD P__a f
+ ** The proof is the same as before
+************************************************************)
+    
+theorem Function__fxy_implies_inverse__stp2: 
+  "\<lbrakk>Function__bijective_p__stp(P__a, P__b) f; 
+    Fun_P(P__a, P__b) f; 
+    P__a x; 
+    P__b y; 
+    f x = y\<rbrakk> \<Longrightarrow> 
+   x = Function__inverse__stp P__a f y"
+  proof -
+ assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
+ assume PF: "Fun_P(P__a, P__b) f"
+ assume PX: "P__a (x::'a)"
+ assume PY: "P__b (y::'b)"
+ assume FXY: "f x = y"
+ have INV_THE:
+      "Function__inverse__stp P__a f y = (THE x. P__a x \<and> f x = y)"
+  by (auto simp add: Function__inverse__stp_def)
+ from PX FXY have X: "P__a x \<and> f x = y" by auto
+ have "\<And>x'. P__a x' \<and> f x' = y \<Longrightarrow> x' = x"
+ proof -
+  fix x'
+  assume "P__a x' \<and> f x' = y"
+  hence PX': "P__a x'" and FXY': "f x' = y" by auto
+  from FXY FXY' have FXFX': "f x = f x'" by auto
+  from BIJ have "inj_on f P__a"
+   by (auto simp add: Function__bijective_p__stp_def)
+  with PX PX' have "f x = f x' \<Longrightarrow> x = x'"
+   by (auto simp add: inj_on_def mem_def)
+  with FXFX' show "x' = x" by auto
+ qed
+ with X have "(THE x. P__a x \<and> f x = y) = x" by (rule the_equality)
+ with INV_THE show ?thesis by auto
+qed
+
+end-proof
+% ------------------------------------------------------------------------------
 endspec
