@@ -508,12 +508,13 @@ spec
    case simplify spc disj_tm of
      | Fun(Bool true, _, _) -> tcc
      | trm -> if generateExhaustivityConditions?
-                then % let _ = writeLine("exh1?: "^printTerm trm) in
-                  let frm = case optArg of
-                              | Some(Var (v,_)) -> trm
-                              | _ -> mkBind(Forall, vs, trm)
-                  in
-                  addCondition(tcc, gamma, frm, "_exhaustive")
+                 then % let _ = writeLine("exh1?: "^printTerm trm) in
+                % This doesn't seem necessary as quantification is put in by addCondition
+                %   let frm = case optArg of
+                %               | Some(Var (v,_)) -> trm
+                %               | _ -> mkBind(Forall, vs, trm)
+                %   in
+                  addCondition(tcc, gamma, trm, "_exhaustive")
               else tcc
 
 
