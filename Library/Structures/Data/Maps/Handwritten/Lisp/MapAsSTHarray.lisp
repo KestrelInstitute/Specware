@@ -18,7 +18,7 @@
 (in-package :MapSTHashtable)
 
 (eval-when (compile)
-  (proclaim '(optimize (space 1) (speed 3)(debug 3))))
+  (proclaim '(optimize (space 1) (speed 3) (debug 1))))
 
 
 (defun make-map-as-undo-harray (harray undo-list)
@@ -38,11 +38,24 @@
   (Specware::make-sw-hash-table :size *map-as-undo-harray--initial-harray-size*
                                 :rehash-size *map-as-undo-harray--rehash-size*))
 
+(defmacro map-as-undo-harray--set-harray-list (m table)
+   `(setf (svref ,m 0) ,table))
+
 (defmacro map-as-undo-harray--set-undo-list (m undo-list)
    `(setf (svref ,m 2) ,undo-list))
 
+(defmacro map-as-undo-harray--mark-current (m current)
+   `(setf (svref ,m 1) ,current))
+
 (defmacro map-as-undo-harray--mark-non-current (m)
    `(setf (svref ,m 1) nil))
+
+(defmacro update-map-as-undo-harray (m harray current undo-list)
+  `(let ((m ,m))
+     (map-as-undo-harray--set-harray-list m ,harray)
+     (map-as-undo-harray--mark-current m ,current)
+     (map-as-undo-harray--set-undo-list m ,undo-list)
+     m))
 
 (defun make-hash-table-same-size (table)
   (Specware::make-sw-hash-table :size (hash-table-count table)
@@ -101,7 +114,8 @@
                        (setf (gethash dom new-table) ran)))
 	;; Two nreverses leave things unchanged
           (nreverse undo-list))
-	(make-map-as-undo-harray new-table nil)))))
+        (update-map-as-undo-harray m new-table t nil)
+        ))))
 
 (defparameter STH_empty_map (make-map-as-undo-harray (Specware::make-sw-hash-table :size 0) nil))
 
