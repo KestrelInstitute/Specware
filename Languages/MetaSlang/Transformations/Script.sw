@@ -791,7 +791,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                 then let _ = writeLine(show qid^" not modified.") in
                                      return (spc, tracing?)
                               else {
-                              _ <- return(printTransformHistory hist);
+                              % _ <- return(printTransformHistory hist);
                               new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, hist));
                               return (new_spc, tracing?)
                               }})
