@@ -13,19 +13,20 @@
 
 Isomorphism qualifying
 spec
-  import Script
-  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+import Script
+import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
 %  import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
-  op orderElements?: Bool = true
+op orderElements?: Bool = true
+op unfoldIsos?: Bool = true
 
- op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool = {
-   b <- left;
-   if b then
-     right
-   else
-     return false
- }
+op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool = {
+  b <- left;
+  if b then
+    right
+  else
+    return false
+}
 
  op [a] exists (f : a -> SpecCalc.Env Bool) (l : List a) : SpecCalc.Env Bool =
   case l of
@@ -1417,7 +1418,9 @@ spec
     % let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
     let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
                                     if iso_qid in? recursive_ops then None
-                                      else Some(Rewrite iso_qid))
+                                      else Some(if unfoldIsos?
+                                                  then Unfold iso_qid
+                                                  else Rewrite iso_qid))
                         iso_info
     in
     % let _ = writeLine("iso: "^anyToString iso_unfolds) in
