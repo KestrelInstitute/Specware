@@ -719,16 +719,23 @@ Globalize qualifying spec
                      | Some new_tm -> (true, new_tm)
                      | _ -> (revised?, old_tm)
                in
-               if globalType? context (termType old_tm) then
-                 (true, 
-                  new_fields,
-                  case new_tm of
-                    | Var _ -> opt_prefix % no need for prefix if just a variable
-                    | _     -> Some new_tm)
-               else
-                 (revised?, 
-                  new_fields ++ [(id, new_tm)], 
-                  opt_prefix))
+               case maybeTermType old_tm of
+                 | Some tt ->
+                   if globalType? context tt then
+                     (true, 
+                      new_fields,
+                      case new_tm of
+                        | Var _ -> opt_prefix % no need for prefix if just a variable
+                        | _     -> Some new_tm)
+                   else
+                     (revised?, 
+                      new_fields ++ [(id, new_tm)], 
+                      opt_prefix)
+                 %% if we can't determine type, assume it is not global
+                 | _ ->
+                   (revised?, 
+                    new_fields ++ [(id, new_tm)], 
+                    opt_prefix))
             (false, [], None)
             fields 
   in
