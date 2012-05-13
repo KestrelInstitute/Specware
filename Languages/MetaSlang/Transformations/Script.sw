@@ -275,6 +275,11 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     exists? (fn r -> claimNameMatch(qid, r.2))
       (allProperties spc)
 
+ op findMatchingTheorems (spc: Spec, qid: QualifiedId): Properties =
+    filter (fn r -> claimNameMatch(qid, r.2))
+      (allProperties spc)
+
+
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
     if rls = []
       then (warn(kind ^ show qid ^ " not found!");
