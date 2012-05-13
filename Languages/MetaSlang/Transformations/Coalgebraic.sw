@@ -57,13 +57,44 @@ op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var 
               | _ -> None)
     | _ -> None
 
+op equalitySpecToLambda(lhs: MSTerm, rhs: MSTerm, fn_qid: QualifiedId): Option MSTerm =
+  case lhs of
+    | Fun(Op(qid, _), _, _) | qid = fn_qid -> Some rhs
+    | Apply(n_lhs, arg, _) ->
+      (case termToPattern arg of
+         | None -> None
+         | Some arg_pat ->
+           equalitySpecToLambda(n_lhs, mkLambda(arg_pat, rhs), fn_qid))
+    | _ -> None
+
+op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): MSTerm =
+  case findMatchingTheorems(spc, thm_qid) of
+    | (_, _, tvs, bod, _)::_ ->
+      (case bod of
+       | Bind(Forall, _, Apply(Fun(Equals,_,_),
+                               Record([(_,lhs),(_,rhs)], _),_),_) ->
+         (case equalitySpecToLambda(lhs, rhs, intro_qid) of
+            | Some dfn -> dfn
+            | None -> error("theorem "^printTerm bod^" doesn't define "^show intro_qid))
+       | Bind(Forall, _, Apply(Fun(Implies,_,_),
+                               Record([_,(_,Apply(Fun(Equals,_,_),
+                                                  Record([(_,lhs),(_,rhs)], _),_))], _),_),_) ->
+         (case equalitySpecToLambda(lhs, rhs, intro_qid) of
+            | Some dfn -> dfn
+            | None -> error("theorem "^printTerm bod^" doesn't define "^show intro_qid)))
+    | _ -> error("No theorem matching "^show thm_qid)
+
 def Coalgebraic.maintainOpsCoalgebraically
       (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
-  let intro_qid as Qualified(intro_q, intro_id)= head qids in
+  let intro_qid as Qualified(intro_q, intro_id) = head qids in
   {info <- findTheOp spc intro_qid;
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
    let intro_fn = mkOp(intro_qid, intro_ty) in
    let state_ty = domain(spc, intro_ty) in
+   let intro_fn_def = if length qids > 1
+                       then getDefFromTheorem(qids@1, intro_qid, spc)
+                       else intro_fn_def
+   in
    let _ = writeLine("\nMaintain "^show intro_qid^": "^printType intro_ty^"\n"^printTerm intro_fn_def) in
    let def addToDef(info, result as (spc, qids)) =
          let qid = primaryOpName info in
@@ -193,8 +224,10 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
                                     case cj of
                                       | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
                                         (case lhs of
-                                           | Apply(Fun(Op(qid,_), _, _), Var(v, _), _) | qid nin? stored_qids && equalVar?(v, state_var) ->
-                                             let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
+                                           | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
+                                               | qid nin? stored_qids && equalVar?(v, state_var)
+                                                    && ~(definedOp?(spc, qid)) ->
+                                             % let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
                                              Some qid
                                            | _ -> None)
                                       | _ -> None)
@@ -204,12 +237,23 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
   
     [] spc.ops
 
+op scrubSubtypes(ty: MSType): MSType =
+  %% This is necessary because of lack of proper representation of dependent types
+  let def scrub1 ty =
+        case ty of
+          | Subtype(s_ty, pred, _) | freeVars pred ~= [] ->
+            scrub1 s_ty
+          | _ -> ty
+  in
+  mapType (id, scrub1, id) ty
+           
+
 op qualifiedIdToField(Qualified(_, id): QualifiedId): Id = id
 
 op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
   map (fn qid ->
          let Some info = findTheOp(spc, qid) in
-         (qualifiedIdToField qid, range(spc, inferType(spc, info.dfn))))
+         (qualifiedIdToField qid, scrubSubtypes(range(spc, inferType(spc, info.dfn)))))
     qids  
 
 op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
