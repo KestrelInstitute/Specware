@@ -125,16 +125,16 @@ def Coalgebraic.maintainOpsCoalgebraically
            | _ -> result
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
-   let script = Steps[%Trace true,
+   let script = Steps[Trace true,
                       At(map Def (reverse qids),
                          Steps [%Trace true,
                                 Move [Search intro_id, Next], % Go to postcondition just added and simplify
                                 Simplify1(rules),
-                                mkSimplify(Fold intro_qid ::
+                                mkSimplify((if length qids > 1 then RightToLeft(qids@1) else Fold intro_qid) ::
                                              rules),
                                 Move [Search intro_id, Next],
                                 Simplify1(rules),
-                                mkSimplify(Fold intro_qid ::
+                                mkSimplify((if length qids > 1 then RightToLeft(qids@1) else Fold intro_qid) ::
                                              rules)])]
    in
    {print "rewriting ... \n";
