@@ -102,6 +102,31 @@ Utilities qualifying spec
    in
    patToTPV pat
 
+ op termToPattern(tm: MSTerm): Option MSPattern =
+   case tm of
+     | Var v -> Some(VarPat v)
+     | Record(fields,a) ->
+       (case foldr (fn ((id, tm), o_flds) ->
+                     case o_flds of
+                       | None -> None
+                       | Some flds ->
+                     case termToPattern tm of
+                       | Some p -> Some((id, p) :: flds)
+                       | None -> None)
+             (Some []) fields
+        of None -> None
+         | Some p_fields -> Some(RecordPat(p_fields, a)))
+     | Fun(Embed(con,false),srt,a) -> Some(EmbedPat(con,None,srt,a))
+     | Apply(Fun(Embed(con,true), Arrow(_,srt,_),_),trm,a) ->
+       (case termToPattern trm of
+        | None -> None
+        | Some p -> Some(EmbedPat(con,Some p,srt,a)))
+     | Fun(Nat n, _, a) -> Some(NatPat(n, a))
+     | Fun(Bool b, _, a) -> Some(BoolPat(b, a))
+     | Fun(String s, _, a) -> Some(StringPat(s, a))
+     | Fun(Char c, _, a) -> Some(CharPat(c, a))
+     | _ -> None
+
  op isFree : Var * MSTerm -> Bool
  def isFree (v, term) = 
    case term of
