@@ -69,7 +69,9 @@ op equalitySpecToLambda(lhs: MSTerm, rhs: MSTerm, fn_qid: QualifiedId): Option M
 
 op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): MSTerm =
   case findMatchingTheorems(spc, thm_qid) of
-    | (_, _, tvs, bod, _)::_ ->
+    | [] -> error("No theorem matching "^show thm_qid)
+    | matching_thms ->
+      let (_, _, tvs, bod, _) = last matching_thms in
       (case bod of
        | Bind(Forall, _, Apply(Fun(Equals,_,_),
                                Record([(_,lhs),(_,rhs)], _),_),_) ->
@@ -82,7 +84,6 @@ op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): M
          (case equalitySpecToLambda(lhs, rhs, intro_qid) of
             | Some dfn -> dfn
             | None -> error("theorem "^printTerm bod^" doesn't define "^show intro_qid)))
-    | _ -> error("No theorem matching "^show thm_qid)
 
 def Coalgebraic.maintainOpsCoalgebraically
       (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
@@ -91,9 +92,9 @@ def Coalgebraic.maintainOpsCoalgebraically
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
    let intro_fn = mkOp(intro_qid, intro_ty) in
    let state_ty = domain(spc, intro_ty) in
-   let intro_fn_def = if length qids > 1
-                       then getDefFromTheorem(qids@1, intro_qid, spc)
-                       else intro_fn_def
+   let (intro_fn_def, fold_rl) = if length qids > 1
+                                  then (getDefFromTheorem(qids@1, intro_qid, spc), RightToLeft(qids@1))
+                                 else (intro_fn_def, Fold intro_qid)
    in
    let _ = writeLine("\nMaintain "^show intro_qid^": "^printType intro_ty^"\n"^printTerm intro_fn_def) in
    let def addToDef(info, result as (spc, qids)) =
@@ -130,12 +131,10 @@ def Coalgebraic.maintainOpsCoalgebraically
                          Steps [%Trace true,
                                 Move [Search intro_id, Next], % Go to postcondition just added and simplify
                                 Simplify1(rules),
-                                mkSimplify((if length qids > 1 then RightToLeft(qids@1) else Fold intro_qid) ::
-                                             rules),
+                                mkSimplify(fold_rl :: rules),
                                 Move [Search intro_id, Next],
                                 Simplify1(rules),
-                                mkSimplify((if length qids > 1 then RightToLeft(qids@1) else Fold intro_qid) ::
-                                             rules)])]
+                                mkSimplify(fold_rl :: rules)])]
    in
    {print "rewriting ... \n";
     print (scriptToString script^"\n"); 

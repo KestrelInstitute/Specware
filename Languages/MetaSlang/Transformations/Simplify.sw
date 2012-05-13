@@ -600,7 +600,7 @@ spec
 
   def simplifiedApply(t1,t2,spc) =
     % let _ = writeLine("simp apply: "^printTerm t1^" ("^printTerm t2^")") in
-    let result = simplifyOne spc (mkApply(t1,t2)) in
+    let result = renameShadowedVars(simplifyOne spc (mkApply(t1,t2))) in
     % let _ = writeLine(" --> "^printTerm result) in
     result
 
