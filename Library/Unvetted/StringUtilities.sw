@@ -96,6 +96,21 @@ String qualifying spec
     in 
       loop 0
 
+  op subseqEqual? (s1: String, s2: String, i1: Int, j1: Int, i2: Int): Bool =
+    let sz1 = length s1 in
+    if i1 < 0 || j1 < 0 || i2 < 0 || j1 > sz1 || j1 - i1 > length s2 - i2 then false
+    else
+    let 
+      def loop i =
+	if i1 + i >= j1 then 
+	  true
+	else 
+	  s1@(i1 + i) = s2@(i2 + i) 
+	  && 
+	  loop (i + 1)
+    in 
+      loop 0
+
   op endsIn?(s: String, pat: String): Bool =
     let len_pat = length pat in
     let len_s   = length   s in
