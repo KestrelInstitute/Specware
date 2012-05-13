@@ -2659,6 +2659,40 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | None -> Qualified (qual, id ^ "'")
       | Some newQual -> Qualified (makeQualifierFromPat(qual, newQual),id)
 
+ op idPatternMatch(qual: Id, pattern: String): Option String =
+   let qual_len = length qual in
+   let pat_len =  length pattern in
+   case search("_*_", pattern) of       % foo_*_fum foofiefum  i=3
+     | Some i ->
+       if subseqEqual?(pattern, qual, 0, i, 0) && subseqEqual?(pattern, qual, i+3, pat_len, qual_len - (pat_len - (i + 3)))
+         then let final = qual_len - (pat_len - (i + 3)) in
+              Some(if i = final then UnQualified else subFromTo(qual, i, final))
+         else None
+     | None ->
+   case search("_*", pattern) of        % foo_* foofie   i=3
+     | Some i ->
+       if subseqEqual?(pattern, qual, 0, i, 0)
+         then Some(if i = qual_len then UnQualified else subFromTo(qual, i, qual_len))
+         else None
+     | None ->
+   case search("*_", pattern) of        % *_foo fiefoo   i=0
+     | Some i ->
+       if testSubseqEqual?(pattern, qual, i+2, qual_len - (pat_len - 2))
+         then let final = qual_len - (pat_len - (i + 2)) in
+              Some(if final = 0 then UnQualified else subFromTo(qual, 0, final))
+         else None
+     | None -> if qual = pattern then Some "" else None
+
+ op derivedQId?(Qualified (qual,id): QualifiedId, newOptQual: Option String, spc: Spec): Bool =
+   case newOptQual of
+     | None ->
+       let len = length id in
+       id@len = #' && some?(findTheOp(spc, Qualified (qual, subFromTo(id, 0, len - 1))))
+     | Some newQual ->
+   case idPatternMatch(qual, newQual) of
+     | None -> false
+     | Some(old_qual) -> old_qual = ""    % Don't know what old qualifier was
+                       || some?(findTheOp(spc, Qualified(old_qual, id)))
 
  op varSubstFromTerms(old_tm: MSTerm, new_tm: MSTerm): VarSubst =
    let def match(old_tm, new_tm, sbst) =

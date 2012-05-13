@@ -556,10 +556,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                                    newOptQual : Option String, extra_rules: List RuleSpec)
       : SpecCalc.Env Spec =
     let
-      def derivedQId? (Qualified (qual,id)) =
-         case newOptQual of
-          | None -> none?(findTheOp(spc, Qualified (qual, id ^ "'")))
-          | Some newQual -> newQual = qual
+      def newQId? qid = derivedQId?(qid, newOptQual, spc)
 
       def makeFreshQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
         let newQId = makeDerivedQId spc qid newOptQual in
@@ -1484,7 +1481,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                                           {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
                                            return (equalType?(ty, isoTy))})
                            dfn;
-                    if (simplifyUnPrimed? || (derivedQId? qid && some?(findAQualifierMap(qidPr_Set, q, id)))
+                    if (simplifyUnPrimed? || (newQId? qid && some?(findAQualifierMap(qidPr_Set, q, id)))
                           || findAQualifierMap(qidPrMap, q, id) = Some(Qualified(q, id)))
                       then {
                       when traceIsomorphismGenerator? 
