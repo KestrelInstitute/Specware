@@ -269,6 +269,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
         let compose_fn = mkInfixOp(Qualified("Function","o"), Infix(Left,24), compose_ty) in
         mkAppl(compose_fn, [f1,f2])
 
+  op makePrimedVar(n: Id): Id = n
+
   op createPrimeDef(spc: Spec, old_dfn: MSTerm, op_ty: MSType, src_ty: MSType, trg_ty: MSType,
                     iso_ref: MSTerm, osi_ref: MSTerm)
      : MSTerm =
@@ -277,13 +279,13 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
         case p of
           | VarPat(v as (vn,v_ty),a) ->
             if equalType?(v_ty,src_ty)
-              then let v_pr = (vn^"'",trg_ty) in
+              then let v_pr = (makePrimedVar vn,trg_ty) in
                    (VarPat(v_pr,a),
                     Cons((v, mkApply(osi_ref,Var(v_pr,a))), sb))
               else
                (case v_ty of
                  | Base(Qualified("List","List"),[el_ty],a1) | equalType?(el_ty, src_ty) ->
-                   let v_pr = (vn^"'",Base(Qualified("List","List"),[trg_ty],a1)) in
+                   let v_pr = (makePrimedVar vn,Base(Qualified("List","List"),[trg_ty],a1)) in
                    (VarPat(v_pr,a),
                     Cons((v, mkMapApply(osi_ref, Var(v_pr,a), trg_ty, src_ty, spc)), sb))
                  | _ -> (p, sb))
@@ -587,7 +589,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                   if equalType?(v_ty,v_ty') then
                     return (p, body, sb)
                   else {
-                    v' <- return (vn^"'",v_ty'); 
+                    v' <- return (makePrimedVar vn,v_ty'); 
                     osi <- osiTerm (spc, iso_info, iso_fn_info) (v_ty') (Var(v',a));
                     return (VarPat(v',a), body, Cons((v, osi), sb))
                   }
