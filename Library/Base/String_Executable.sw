@@ -61,4 +61,12 @@ proof isa String__implode__1__obligation_refine_def
 sorry
 end-proof
 
+proof isa Integer__stringToInt__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa Nat__stringToNat__1_Obligation_exhaustive
+sorry
+end-proof
+
 endspec
