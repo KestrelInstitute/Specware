@@ -61,4 +61,8 @@ proof Isa tcNumber__1__obligation_refine_def
          simp add: TwosComplement__tcNumber_toInt_reduce)
 end-proof
 
+proof isa TwosComplement__tcNumber__1_Obligation_exhaustive
+sorry
+end-proof
+
 endspec
