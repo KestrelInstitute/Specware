@@ -5219,6 +5219,36 @@ lemma List__unflatten_length:
   apply (drule List__unflattenL_Obligation_the, simp)
 done
 
+lemma List__unflatten_nil:
+  "\<lbrakk>0 < n\<rbrakk> \<Longrightarrow> List__unflatten ([], n) = []"
+   by (drule_tac l="[]" in List__unflatten_length, auto)  
+
+lemma List__unflatten_cons:
+  "\<lbrakk>0 < n; n dvd length l; length x = n\<rbrakk> 
+  \<Longrightarrow> List__unflatten (x @ l, n) = x #  List__unflatten (l, n) "
+  apply (subst List__unflatten_def, simp add: List__unflattenL_def,
+         rule the1I2, frule_tac l="x@l" in List__unflatten_Obligation_subtype,
+         simp add: zdvd_int, drule List__unflattenL_Obligation_the, simp)
+  apply (subst List__unflatten_def, simp add: List__unflattenL_def,
+         rule the1I2, frule_tac l=l in List__unflatten_Obligation_subtype,
+         simp add: zdvd_int, drule List__unflattenL_Obligation_the, simp)
+  apply (erule conjE)+
+  apply (subgoal_tac "\<forall>i<length xa. length (xa ! i) = n")
+  defer
+  apply (rule allI, rule impI, drule_tac x=i in spec, case_tac i, simp_all)
+  apply (thin_tac "\<forall>i. ?P i", simp (no_asm_simp) add: list_eq_iff_nth_eq)
+  apply (rule allI, rule impI,  case_tac i, simp_all)
+  apply (rule allI, rule impI,
+         frule_tac n=n and L=xa and i="n * 0 + ia" in concat_nth, 
+         simp_all add: nth_append)
+  apply (rule allI, rule impI,
+         frule_tac n=n and L=xa and i="n * (Suc nat) + ia" in concat_nth, 
+         simp_all add: nth_append mult_add_mono)
+  apply (cut_tac n=n and L=xaa and i="n * nat + ia" in concat_nth, 
+         simp_all add: nth_append mult_add_mono)
+  apply (simp add: mult_Suc_right [symmetric] del: mult_Suc_right)
+done
+
 lemma List__unflatten_concat:
   "\<lbrakk>0 < n; n dvd length l\<rbrakk>  \<Longrightarrow> l = concat (List__unflatten (l,n))"
   apply (simp add: List__unflatten_def List__unflattenL_def)
@@ -5268,7 +5298,6 @@ lemma List__concat_unflatten:
   apply (rotate_tac -1, erule rev_mp, subst concat_nth)
   defer defer apply simp
   apply (subst concat_nth, auto)
-  apply (simp only: nat_add_commute, simp)
 done
 
 
@@ -5415,6 +5444,14 @@ lemma List__increasingNats_p_singleton [simp]:
    "List__increasingNats_p [i]" 
   by (simp add: List__increasingNats_p_def)
 
+lemma List__increasingNats_p_cons [simp]:
+   "\<lbrakk>l \<noteq> []\<rbrakk>
+     \<Longrightarrow> List__increasingNats_p (i # l) = 
+        (List__increasingNats_p l \<and> i < hd l)"
+  by (auto simp add: List__increasingNats_p_def hd_conv_nth,
+      drule_tac x="Suc ia" in spec, auto,
+      case_tac ia, auto)
+
 lemma  List__increasingNats_p_is_sorted [simp]:
   "\<lbrakk>List__increasingNats_p l\<rbrakk> \<Longrightarrow> sorted l"
   apply (auto simp add: List__increasingNats_p_def sorted_equals_nth_mono2)
@@ -5439,6 +5476,40 @@ lemma List__positionsSuchThat_membership [simp]:
   by (simp add: List__positionsSuchThat_def,
       rule the1I2, 
       simp_all add: List__positionsSuchThat_Obligation_the)
+
+lemma List__positionsSuchThat_cons1 [simp]:
+  "\<lbrakk>p x\<rbrakk> \<Longrightarrow>  List__positionsSuchThat (x # l, p)
+           = 0 # map Suc (List__positionsSuchThat (l, p))"
+  apply (subst List__positionsSuchThat_def, simp)
+  apply (rule the1I2, 
+         cut_tac l="x#l" and p=p in List__positionsSuchThat_Obligation_the, 
+         simp, clarsimp)
+  apply (subst List__positionsSuchThat_def, simp)
+  apply (rule the1I2, 
+         cut_tac l="l" and p=p in List__positionsSuchThat_Obligation_the, 
+         simp, clarsimp simp add: member_def nth_Cons)
+  apply (rule sorted_distinct_set_unique, 
+         simp_all add: sorted_Cons distinct_map image_iff)
+  apply (simp add: List__increasingNats_p_def)
+  apply (clarsimp simp add: set_eq_iff image_iff, case_tac xb, simp_all)
+done
+
+lemma List__positionsSuchThat_cons2 [simp]:
+  "\<lbrakk>\<not> (p x)\<rbrakk> \<Longrightarrow> List__positionsSuchThat (x # l, p)
+              = map Suc (List__positionsSuchThat (l, p))"
+  apply (subst List__positionsSuchThat_def, simp)
+  apply (rule the1I2, 
+         cut_tac l="x#l" and p=p in List__positionsSuchThat_Obligation_the, 
+         simp, clarsimp)
+  apply (subst List__positionsSuchThat_def, simp)
+  apply (rule the1I2, 
+         cut_tac l="l" and p=p in List__positionsSuchThat_Obligation_the, 
+         simp, clarsimp simp add: member_def nth_Cons)
+  apply (rule sorted_distinct_set_unique, 
+         simp_all add: sorted_Cons distinct_map image_iff)
+  apply (simp add: List__increasingNats_p_def)
+  apply (clarsimp simp add: set_eq_iff image_iff, case_tac xb, simp_all)
+done
 
 lemma List__positionsSuchThat_membership2 [simp]: 
   "i \<in> set (List__positionsSuchThat(l, p)) = (i < length l \<and> p (l ! i))"
@@ -5488,6 +5559,14 @@ lemma List__positionsOf_singleton [simp]:
   by (rule_tac t="[x]" and s="[]@[x]" in subst, simp,
       simp only: List__positionsOf_snoc1, simp)
 
+lemma List__positionsOf_cons1 [simp]:
+  "List__positionsOf (x # l, x) = 0 # map Suc (List__positionsOf (l, x))"
+  by (simp add: List__positionsOf_def)
+
+lemma List__positionsOf_cons2 [simp]:
+  "\<lbrakk>a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf (a # l, x) = map Suc (List__positionsOf (l, x))"
+  by (simp add: List__positionsOf_def)
+
 lemma List__positionsOf_not_found [simp]:
   "\<lbrakk>\<forall>a\<in>set l. a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf (l, x) = []"
   by (induct l rule: rev_induct, simp_all)
@@ -5496,6 +5575,10 @@ lemma List__positionsOf_not_found_later [simp]:
   "\<lbrakk>\<forall>a\<in>set l'. a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionsOf (l@l', x) =  List__positionsOf (l, x)"
   by (induct l' rule: rev_induct, 
       simp_all add: append_assoc [symmetric] del: append_assoc)
+
+lemma List__positionsOf_not_in [simp]:
+  "\<lbrakk>x \<notin> set l\<rbrakk> \<Longrightarrow> List__positionsOf (l, x) = []"
+  by (induct l, auto)
 
 lemma List__positionsOf_last [simp]:
   "\<lbrakk>\<forall>a\<in>set l. a \<noteq> x\<rbrakk>

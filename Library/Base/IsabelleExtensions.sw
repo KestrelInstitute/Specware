@@ -2806,6 +2806,24 @@ lemma finite_nat_set_has_max:
   by (simp add: finite_nat_set_iff_bounded )
 
 
+(***********************************************************************
+ * NEW LEMMAS -- 
+ ***********************************************************************)
+
+
+lemma mult_add_mono:  
+ "\<lbrakk> (i::nat) < k; j < n \<rbrakk> \<Longrightarrow> n * i + j < n * k"
+  apply (simp only: Suc_le_eq [symmetric])
+  apply (drule_tac k=n in mult_le_mono2, simp)
+done
+
+lemma mod_mult_self5 [simp]: "(n * k + m) mod n = m mod (n::nat)"
+by (simp add: mult_ac add_ac)
+
+lemma div_mult_self5 [simp]: 
+   "m < (n::nat) \<Longrightarrow> (n * k + m) div n = k"
+by (simp add: mult_ac add_ac)
+
 
 (******************************************************************************)
 (******************************************************************************)
