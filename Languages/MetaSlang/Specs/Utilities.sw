@@ -1523,6 +1523,30 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
          | _ -> t)
      | _ -> t
 
+ op makeRecordMerge (spc: Spec) (tm: MSTerm): MSTerm =
+   case tm of
+     | Record(fields as (id0, _) :: _, a) | id0 ~= "1" ->
+       let rec_ty = termType tm in
+       let (src_tms, new_fields) =
+           foldr (fn ((id1, t), (src_tms, new_fields)) ->
+                    case t of
+                      | Apply(Fun(Project id2, _, _), src_tm, _) | id1 = id2 && equivType? spc(termType src_tm, rec_ty) ->
+                        (if termIn?(src_tm, src_tms) then src_tms else src_tm :: src_tms,
+                         new_fields)
+                      | _ -> (src_tms, (id1, t):: new_fields))
+             ([], []) fields
+       in
+       (case src_tms of
+        | [src_tm] ->
+          if new_fields = [] then src_tm
+            else mkRecordMerge(src_tm, mkRecord new_fields)
+        | _ -> tm)
+     | _ -> tm
+
+ %% Interface function suitable for use as a spec transformation
+ op SpecTransform.introduceRecordMerges(spc: Spec, ignore: QualifiedIds): Spec =
+   mapSpec (makeRecordMerge spc, id, id) spc
+
  op  tryEvalOne: Spec -> MSTerm -> Option MSTerm
  def tryEvalOne spc term =
    case term
