@@ -1069,18 +1069,19 @@ end-proof
 
 proof isa List__unflattenL__1_Obligation_subtype1
   apply (simp, drule sym, simp, thin_tac ?P, thin_tac ?P)
-  apply (subgoal_tac "\<forall>k. foldl op + k lens_1
-                         = foldl op + (len + k) lens_1 - len",
+  apply (subgoal_tac "\<forall>k. foldl op + k lens0
+                         = foldl op + (len + k) lens0 - len",
          drule_tac x=0 in spec, simp)
-  apply (induct lens_1, simp, clarify)
+  apply (induct lens0, simp, clarify)
   apply (drule_tac x="k+a" in spec, simp add: algebra_simps)
+  done
 end-proof
 
 proof isa List__unflattenL__1_Obligation_subtype0 
   apply (simp, drule sym, simp, thin_tac ?P)
-  apply (subgoal_tac "\<forall>k. len \<le> foldl op + (len + k) lens_1", 
+  apply (subgoal_tac "\<forall>k. len \<le> foldl op + (len + k) lens0", 
          drule_tac x=0 in spec, simp)
-  apply (induct lens_1, auto)
+  apply (induct lens0, auto)
   apply (drule_tac x="k+a" in spec, simp add: algebra_simps)
 end-proof
 
@@ -1317,6 +1318,79 @@ end-proof
 proof isa List__permutationOf__1__obligation_refine_def 
 sorry
 end-proof
+
+proof isa List__e_at__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__theElement__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__subFromLong__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__prefix__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__suffix__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__removePrefix__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__update__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__zip__1_Obligation_exhaustive0
+sorry
+end-proof
+
+proof isa List__zip3__1_Obligation_exhaustive0
+sorry
+end-proof
+
+proof isa List__map2__1_Obligation_exhaustive0
+sorry
+end-proof
+
+proof isa List__map3__1_Obligation_exhaustive0
+sorry
+end-proof
+
+proof isa List__mapPartial2__1_Obligation_exhaustive0
+sorry
+end-proof
+
+proof isa List__mapPartial3__1_Obligation_exhaustive0
+sorry
+end-proof
+
+proof isa List__extendLeft__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__unflattenL__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__unflatten__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__positionOf__1_Obligation_exhaustive
+sorry
+end-proof
+
+proof isa List__permute__1_Obligation_exhaustive
+sorry
+end-proof
+
 
 
 endspec
