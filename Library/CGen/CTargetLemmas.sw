@@ -50,6 +50,12 @@ theorem Uint__subtype_pred_uintOfMathInt_plus1 [simp]:
   done
 end-proof
 
+%% TODO How to restrict this to only apply only when n is a constant?
+%% TODO Do we need the hypothesis?
+theorem introduce_uintConstant   is fa(i:Int) (i in? rangeOfUint  ) => (  uintOfMathInt i) = (  uintConstant i dec)
+theorem introduce_ulongConstant  is fa(i:Int) (i in? rangeOfUlong ) => ( ulongOfMathInt i) = ( ulongConstant i dec)
+theorem introduce_ullongConstant is fa(i:Int) (i in? rangeOfUllong) => (ullongOfMathInt i) = (ullongConstant i dec)
+
 
 
 (******************************** The Proofs ********************************)
@@ -72,36 +78,16 @@ end-proof
 
 proof isa mathIntOfUint_minus
   apply(simp add:  C__e_dsh_uint_def C__applyUint_def)
-  apply(case_tac "x")
-  apply(case_tac "y")
-  apply(simp add: C__mathIntOfUint_uintOfMathInt_2)
 end-proof
 
 proof isa mathIntOfUint_plus
   apply(simp add:  C__e_pls_uint_def C__applyUint_def)
-  apply(case_tac "x")
-  apply(case_tac "y")
-  apply(simp add: C__mathIntOfUint_uintOfMathInt_2 Int.nat_add_distrib Divides.nat_mod_distrib)
 end-proof
 
 proof isa mathIntOfUint_times
   apply(simp add:  C__e_ast_uint_def C__applyUint_def)
-  apply(case_tac "x")
-  apply(case_tac "y")
-  apply(simp add: C__mathIntOfUint_uintOfMathInt_2 Int.nat_mult_distrib Divides.nat_mod_distrib Nat_Transfer.transfer_nat_int_function_closures(2))
 end-proof
 
-proof isa uintOfMathInt_inject [simp]
-  apply(cut_tac x="C__uintOfMathInt x" and y="C__uintOfMathInt y" in C__mathIntOfUint_injective, force, force)
-  apply(simp del: C__mathIntOfUint_injective add: C__mathIntOfUint_uintOfMathInt_2 nat_injective)
-  apply(auto)
-end-proof
-
-proof isa ulongOfMathInt_inject [simp]
-  apply(cut_tac x="C__ulongOfMathInt x" and y="C__ulongOfMathInt y" in C__mathIntOfUlong_injective, force, force)
-  apply(simp del: C__mathIntOfUlong_injective add: C__mathIntOfUlong_ulongOfMathInt_2 nat_injective)
-  apply(auto)
-end-proof
 
 
 proof isa ucharOfMathInt_inject [simp]
@@ -110,19 +96,38 @@ proof isa ucharOfMathInt_inject [simp]
   apply(auto)
 end-proof
 
+proof isa ushortOfMathInt_inject [simp]
+  apply(cut_tac x="C__ushortOfMathInt x" and y="C__ushortOfMathInt y" in C__mathIntOfUshort_injective, force, force)
+  apply(simp del: C__mathIntOfUshort_injective add: C__mathIntOfUshort_ushortOfMathInt_2 nat_injective)
+end-proof
+
+proof isa uintOfMathInt_inject [simp]
+  apply(cut_tac x="C__uintOfMathInt x" and y="C__uintOfMathInt y" in C__mathIntOfUint_injective, force, force)
+  apply(simp del: C__mathIntOfUint_injective add: C__mathIntOfUint_uintOfMathInt_2 nat_injective)
+end-proof
+
+proof isa ulongOfMathInt_inject [simp]
+  apply(cut_tac x="C__ulongOfMathInt x" and y="C__ulongOfMathInt y" in C__mathIntOfUlong_injective, force, force)
+  apply(simp del: C__mathIntOfUlong_injective add: C__mathIntOfUlong_ulongOfMathInt_2 nat_injective)
+end-proof
 
 proof isa ullongOfMathInt_inject [simp]
   apply(cut_tac x="C__ullongOfMathInt x" and y="C__ullongOfMathInt y" in C__mathIntOfUllong_injective, force, force)
   apply(simp del: C__mathIntOfUllong_injective add: C__mathIntOfUllong_ullongOfMathInt_2 nat_injective)
-  apply(auto)
 end-proof
 
-
-proof isa ushortOfMathInt_inject [simp]
-  apply(cut_tac x="C__ushortOfMathInt x" and y="C__ushortOfMathInt y" in C__mathIntOfUshort_injective, force, force)
-  apply(simp del: C__mathIntOfUshort_injective add: C__mathIntOfUshort_ushortOfMathInt_2 nat_injective)
-  apply(auto)
+proof isa introduce_uintConstant
+  apply(simp add: C__uintConstant_def)
 end-proof
+
+proof isa introduce_ulongConstant
+  apply(simp add: C__ulongConstant_def)
+end-proof
+
+proof isa introduce_ullongConstant
+  apply(simp add: C__ullongConstant_def)
+end-proof
+
 
 
 end-spec
