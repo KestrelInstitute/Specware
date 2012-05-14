@@ -75,6 +75,9 @@ spec
   op  traceEval?: Bool
   def traceEval? = false
 
+  op doneTraceOps: Ids = []
+  op dontTraceQualifiers: Ids = []
+
   op  traceable?: MSTerm -> Bool
   def traceable? t =
     case t of
@@ -84,6 +87,8 @@ spec
       | Record (("1", _)::_,_) -> false
       | Apply(Lambda _, _, _) -> false
       | Apply(Fun(Embed(nm,_),_,_), _, _) -> false
+      | Apply(Fun(Op(qid as Qualified(q, id), _), _, _), _, _) ->
+        ~(id in? doneTraceOps || q in? dontTraceQualifiers)
       | _ -> true
 
   op  preTrace: MSTerm * Nat * Bool -> ()
@@ -119,13 +124,14 @@ spec
     else ()
 
   op traceWithinFns: List String = []
-  op noTraceWithinFns: List String = []
+  op noTraceWithinFns: List String = ["length", "in?", "**", "***", "reverse"]
   
   op fnMember?(f: MSTerm, fns: List String): Bool =
     fns ~= [] &&
     (case f of
       | Fun(Op(qid as Qualified(spName,opName),_),_,_) ->
         opName in? fns || printQualifiedId qid in? fns
+      | Apply(f, _, _) -> fnMember?(f, fns)
       | _ -> false)
 
   op  evalRec: MSTerm * Subst * Spec * Nat * Bool -> MSIValue
@@ -147,7 +153,9 @@ spec
                 let trace_fn? = if trace? then ~(fnMember?(x, noTraceWithinFns))
                                  else fnMember?(x, traceWithinFns)
                 in
-                evalApply(evalRec(x,sb,spc,depth+1,trace?),evalRec(y,sb,spc,depth+1,trace?),sb,spc,depth,trace_fn?)
+                evalApply(evalRec(x,sb,spc,depth+1,trace?),
+                          evalRec(y,sb,spc,depth+1,trace?),
+                          sb,spc,depth,trace_fn?)
 	  | Record(fields,a) ->
 	    RecordVal(map (fn(lbl,e) -> (lbl,evalRec(e,sb,spc,depth+1,trace?))) fields)
 	  | IfThenElse(P,M,N,a) ->
@@ -1004,13 +1012,27 @@ spec
       | Fun (Embed (id,b),srt,pos) -> Constant(id,srt)
       | _ -> Unevaluated term
 
+ op dontReduceQualifiers: Ids = ["C", "New"]
+ op dontReduceQIds: QualifiedIds = [mkUnQualifiedId "uintOfMathInt2"]
+
+ op dontReduceTerm?(tm: MSTerm): Bool =
+   case tm of
+     | Apply(f, x, _) -> dontReduceTerm? f || dontReduceTerm? x
+     | Fun(Op(qid as Qualified(q,id),_), _, _) ->
+       q in? dontReduceQualifiers
+         || qid in? dontReduceQIds
+     | _ -> false
+
  op assumeNoSideEffects?: Bool = true
 
  op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
    if ~(constantTerm? term) && freeVarsRec term = []
      && (if assumeNoSideEffects? then ~(hasSideEffect? term)
            else sideEffectFree term)
-     then let v = eval(term,spc) in
+     && ~(dontReduceTerm? term)
+     then
+       % let _ = writeLine("reduceTerm: "^printTerm term) in
+       let v = eval(term,spc) in
        if fullyReduced? v
          then valueToTerm v
          else term
