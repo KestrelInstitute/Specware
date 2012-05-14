@@ -329,8 +329,18 @@ proof Isa littleEndian_p__1__obligation_refine_def
   sorry 
 end-proof
 
+proof Isa fromBigEndian__1_Obligation_exhaustive
+  (** TRANSLATION ISSUE: unspecified variable D **)
+  sorry
+end-proof
+
 (* fromBigEndian_alt might help to prove this *)
 proof Isa fromBigEndian__1__obligation_refine_def
+  sorry
+end-proof
+
+proof Isa fromLittleEndian__1_Obligation_exhaustive
+  (** TRANSLATION ISSUE: unspecified variable D **)
   sorry
 end-proof
 
@@ -354,8 +364,20 @@ termination
       auto simp add: Suc_eq_plus1)
 end-proof
 
+
+proof Isa toMinBigEndian__1_Obligation_exhaustive
+  (** TRANSLATION ISSUE: unspecified variable D **)
+  sorry
+end-proof
+
 proof Isa toMinBigEndian__1__obligation_refine_def
   sorry 
+end-proof
+
+
+proof Isa toMinLittleEndian__1_Obligation_exhaustive
+  (** TRANSLATION ISSUE: unspecified variable D **)
+  sorry
 end-proof
 
 proof Isa toMinLittleEndian__1_Obligation_subtype
@@ -382,6 +404,11 @@ proof Isa toMinLittleEndian__1__obligation_refine_def
   apply (rotate_tac 5, 
          drule_tac x="rev xaa" in spec, simp,
          drule_tac x="rev xa" in spec,  simp)
+end-proof
+
+proof Isa toBigEndian__1_Obligation_exhaustive
+  (** TRANSLATION ISSUE: unspecified variable D **)
+  sorry
 end-proof
 
 proof isa toBigEndian__1_Obligation_subtype1
@@ -423,6 +450,11 @@ proof Isa toBigEndian__1__obligation_refine_def
   apply (subst List__length_extendLeft)
   (** Later **)
   sorry 
+end-proof
+
+proof Isa toLittleEndian__1_Obligation_exhaustive
+  (** TRANSLATION ISSUE: unspecified variable D **)
+  sorry
 end-proof
 
 proof isa toLittleEndian__1_Obligation_subtype1
