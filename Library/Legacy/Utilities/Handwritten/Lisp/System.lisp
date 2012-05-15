@@ -99,39 +99,8 @@
 
 ;;; op anyToPrettyString : [a] a -> String
 (defun anyToPrettyString (x) 
-  (let ((common-lisp::*print-pretty* t)) 
-    (if (null *spec-print-mode*)
-        (format nil "~S" x)
-        (flet ((aux (x)
-                 (typecase x 
-                   (cons 
-                    (let ((strs '("(")))
-                      (do ((x x (cdr x)))
-                          ((atom x)
-                           (pop strs)
-                           (unless (null x)
-                             (push " . " strs)
-                             (push (anyToString x) strs))
-                           (push ")" strs))
-                        (push (anyToString (car x)) strs)
-                        (push " " strs))
-                      (pop strs)
-                      (push ")" strs)
-                      (apply 'concatenate 'string (reverse strs))))
-                   (simple-vector 
-                    (if (printSpecSpecial? x)
-                        (specialSpecToString x)
-                        (let ((strs '("#(")))
-                          (when (> (length x) 0)
-                            (dotimes (i (length x))
-                              (push (anyToString (svref x i)) strs)
-                              (push " " strs))
-                            (pop strs))
-                          (push ")" strs)
-                          (apply 'concatenate 'string (reverse strs)))))
-                   (t
-                    (format nil "~S" x)))))
-          (aux x)))))
+  (let ((common-lisp::*print-pretty* t))
+    (format nil "~S" x)))
 
 
 ;;; op print    : fa(a) a -> a
