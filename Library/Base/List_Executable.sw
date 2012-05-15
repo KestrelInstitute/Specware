@@ -824,11 +824,7 @@ proof isa List__filter__1__obligation_refine_def
 end-proof
 
 proof isa List__zip__1_Obligation_exhaustive 
-  (** Translation issue: l10 must be l1, l20 must be l2 
-   ** proof is 
   by (induct l1, auto, induct l2, auto)
-  *********************************************************)
-sorry
 end-proof
 
 proof isa List__zip__1__obligation_refine_def_Obligation_subtype 
@@ -844,11 +840,7 @@ proof isa List__zip__1__obligation_refine_def
 end-proof
 
 proof isa List__zip3__1_Obligation_exhaustive 
-  (** Translation issue: l10 must be l1, l20 must be l2, l30 must be l3 
-   ** proof is 
   by (induct l1, auto, case_tac l2, simp_all, case_tac l3, simp_all)
-  ********************************************************************)
-sorry
 end-proof
 
 proof isa List__zip3__1__obligation_refine_def_Obligation_subtype 
@@ -874,11 +866,7 @@ sorry
 end-proof
 
 proof isa List__unzip__1__obligation_refine_def 
-  (*** I need to move the lemmas about List__unzip from Map.sw to List.sw 
-   *** to make the proof go through. It is then 
   by (induct x0, auto, case_tac "List__unzip__1 x0", auto)
-  ********************************************************************)       
-sorry
 end-proof
 
 proof isa List__unzip3__1_Obligation_subtype 
@@ -911,11 +899,7 @@ proof isa List__map__1__obligation_refine_def
 end-proof
 
 proof isa List__map2__1_Obligation_exhaustive 
-  (** Translation issue: l10 must be l1, l20 must be l2 
-   ** proof is 
   by (induct l1, auto, induct l2, auto)
-  *********************************************************)
-sorry
 end-proof
 
 proof isa List__map2__1__obligation_refine_def_Obligation_subtype 
@@ -932,11 +916,7 @@ proof isa List__map2__1__obligation_refine_def
 end-proof
 
 proof isa List__map3__1_Obligation_exhaustive 
-  (** Translation issue: l10 must be l1, l20 must be l2, l30 must be l3 
-   ** proof is 
   by (induct l1, auto, case_tac l2, simp_all, case_tac l3, simp_all)
-  ********************************************************************)
-sorry
 end-proof
 
 proof isa List__map3__1__obligation_refine_def_Obligation_subtype 
@@ -992,11 +972,7 @@ proof isa List__mapPartial__1__obligation_refine_def
 end-proof
 
 proof isa List__mapPartial2__1_Obligation_exhaustive 
-  (** Translation issue: l10 must be l1, l20 must be l2 
-   ** proof is 
   by (induct l1, auto, induct l2, auto)
-  *********************************************************)
-sorry
 end-proof
 
 proof isa List__mapPartial2__1__obligation_refine_def_Obligation_subtype 
@@ -1014,11 +990,7 @@ proof isa List__mapPartial2__1__obligation_refine_def
 end-proof
 
 proof isa List__mapPartial3__1_Obligation_exhaustive
-  (** Translation issue: l10 must be l1, l20 must be l2, l30 must be l3 
-   ** proof is 
   by (induct l1, auto, case_tac l2, simp_all, case_tac l3, simp_all)
-  ********************************************************************) 
-sorry
 end-proof
 
 proof isa List__mapPartial3__1__obligation_refine_def_Obligation_subtype 
@@ -1068,7 +1040,7 @@ proof isa List__extendLeft__1__obligation_refine_def
 end-proof
 
 proof isa List__unflattenL__1_Obligation_subtype1
-  apply (simp, drule sym, simp, thin_tac ?P, thin_tac ?P)
+  apply (simp, drule sym, simp, thin_tac ?P)
   apply (subgoal_tac "\<forall>k. foldl op + k lens0
                          = foldl op + (len + k) lens0 - len",
          drule_tac x=0 in spec, simp)
@@ -1319,78 +1291,4 @@ proof isa List__permutationOf__1__obligation_refine_def
 sorry
 end-proof
 
-proof isa List__e_at__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__theElement__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__subFromLong__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__prefix__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__suffix__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__removePrefix__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__update__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__zip__1_Obligation_exhaustive0
-sorry
-end-proof
-
-proof isa List__zip3__1_Obligation_exhaustive0
-sorry
-end-proof
-
-proof isa List__map2__1_Obligation_exhaustive0
-sorry
-end-proof
-
-proof isa List__map3__1_Obligation_exhaustive0
-sorry
-end-proof
-
-proof isa List__mapPartial2__1_Obligation_exhaustive0
-sorry
-end-proof
-
-proof isa List__mapPartial3__1_Obligation_exhaustive0
-sorry
-end-proof
-
-proof isa List__extendLeft__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__unflattenL__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__unflatten__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__positionOf__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa List__permute__1_Obligation_exhaustive
-sorry
-end-proof
-
-
-
-endspec
+end-spec
