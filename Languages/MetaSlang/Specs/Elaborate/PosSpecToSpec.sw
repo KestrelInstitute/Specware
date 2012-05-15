@@ -84,6 +84,11 @@ PosSpecToSpec qualifying spec
 	       (case link
 		  of None -> TyVar (findTyVar(context,uniqueId),pos)
 		   | Some sty -> convertPType sty)
+             %% This is to clean-up refine def when there is duplication of subtype predicates
+             %% that cannot be detected until after elaboration
+             | Subtype(sty, Lambda ([(pat, c, condn as Apply(Fun(And,_,_),_,_))], a1), a2) ->
+               let conjs = getConjuncts condn in
+               Subtype(sty, Lambda ([(pat, c, mkSimpConj conjs)], a1), a2)
 	     | _ -> ty
      def convertPFun (f) = 
            case f of
