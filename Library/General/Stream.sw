@@ -282,8 +282,8 @@ op [a] unflattenF (l: List a, lens: Stream Nat |
                    % finite number of non-empty lists:
                    finite? (fn i:Nat -> lens i ~= 0) &&
                    % find leftmost empty list:
-                   (let lm0:Nat = minIn (fn lm0:Int ->
-                        lm0 >= 0 && forall? zero? (removePrefix(lens,lm0))) in
+                   (let lm0: Nat = minIn (fn lm0 ->
+                        forall? (fn i -> i = 0) (removePrefix(lens,lm0))) in
                    % total length of non-empty lists must equal l's length:
                    foldl (+) 0 (prefix (lens, lm0)) = length l))
                   : Stream (List a) =

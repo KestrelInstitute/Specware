@@ -1389,25 +1389,13 @@ proof Isa foldr_Obligation_subtype1
 end-proof
 
 proof Isa zip_Obligation_exhaustive
- (**********************************************************************
-  Something's wrong: s10 should be s1, s20 should be s2
-
  by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
         split: Seq__Seq.split_asm)
-
-  **********************************************************************)
- sorry
 end-proof
 
 proof Isa zip3_Obligation_exhaustive
- (**********************************************************************
-  Something's wrong: s10 should be s1, s20 should be s2, s30 should be s3
-
  by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
         split: Seq__Seq.split_asm)
-
-  **********************************************************************)
- sorry
 end-proof
 
 proof Isa unzip_Obligation_subtype
@@ -1523,13 +1511,8 @@ proof Isa equiExtendLeft_Obligation_subtype0
 end-proof
 
 proof Isa equiExtendLeft_Obligation_exhaustive
- (**********************************************************************
-  Something's wrong: s10 should be s1, s20 should be s2
-
  by (simp add: Seq__equiLong_def Seq__infinite_p_def Seq__finite_p_def
         split: Seq__Seq.split_asm)
-  **********************************************************************)
- sorry
 end-proof
 
 op [a,b] equiExtendRight (s1: Seq a, s2: Seq b, x1:a, x2:b)

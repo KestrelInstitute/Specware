@@ -4,27 +4,6 @@ Integer qualifying spec
 
 import ListExt
 
-% exponentiation:
-
-
-
-(* Moved to Base
-op ** (base:Int, exp:Nat) infixl 30 : Int =
-  if exp = 0 then 1 else base * (base ** (exp - 1))
-
-% the current translator adds a superfluous "nat" here
-
-op *** (base:Nat, exp:Nat) infixl 30 : Nat = base ** exp
-*)
-
-proof Isa e_ast_ast__def1
- by (cases exp__v, auto)
-end-proof
-
-proof Isa e_ast_ast_ast__def
-  by (simp add: zpower_int)
-end-proof
-
 % primality:
 
 op prime? (n:Nat) : Bool =
@@ -590,6 +569,8 @@ op hasMin? (s: Set Int) : Bool = (ex(i) i isMinIn s)
 
 % min integer in set:
 op minIn (s: Set Int | hasMin? s) : Int = the(i) i isMinIn s
+op Nat.minIn (s: Set Nat | hasMin? s) : Nat = minIn s
+
 
 % integer is maximum in set:
 op isMaxIn (i:Int, s: Set Int) infixl 20 : Bool =
@@ -1132,6 +1113,7 @@ proof Isa Thy_Morphism Power Parity
  Integer.even?     -> even
  Integer.odd?      -> odd
  Integer.minIn     -> Least
+ Nat.minIn         -> Least
  Integer.maxIn     -> Greatest
  Integer.minimizer -> LeastM    curried
  Integer.maximizer -> GreatestM curried
@@ -1424,13 +1406,5 @@ done
 
 end-proof
 % ------------------------------------------------------------------------------
-
-
-(* Haskell translation -- incomplete *)
-
-#translate Haskell -morphism
- Integer.**       -> ^     Left  8
- Integer.***      -> ^     Left  8
-#end
 
 endspec

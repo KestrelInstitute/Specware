@@ -968,9 +968,4 @@ lemma TwosComplement__minTCNumber_nonEmpty:
 (******************************************************************************)
 end-proof
 
-proof isa TwosComplement__tcNumber__1_Obligation_exhaustive
-sorry
-end-proof
-
-
 endspec
