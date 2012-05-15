@@ -1347,8 +1347,11 @@ Globalize qualifying spec
                                       | _ -> empty)
                                  | _ -> []);
 
+   %% hack to fix problem where 'global_var << {..}' was becoming just '{...}'
+   spc_with_restored_record_merges <- return (SpecTransform.introduceRecordMerges (spc, []));
+
    %% This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
-   spec_with_gset   <- addOp [setqQid] Nonfix false setqDef spc noPos;
+   spec_with_gset   <- addOp [setqQid] Nonfix false setqDef spc_with_restored_record_merges noPos;
 
    %% Add global vars for the fields before running replaceLocalsWithGlobalRefs,
    %% to avoid complaints about unknown ops.
