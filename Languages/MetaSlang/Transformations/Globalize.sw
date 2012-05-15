@@ -58,6 +58,9 @@ Globalize qualifying spec
                  global_init_name : QualifiedId,
                  tracing?         : Bool}
                    
+ type Globalized a = | Changed a
+                     | Unchanged
+
  %% ================================================================================
 
  op globalRefsInApply (context         : Context) 
@@ -481,26 +484,26 @@ Globalize qualifying spec
  op globalizeAliasPat (context                       : Context)
                       (vars_to_remove                : MSVarNames) % vars of global type, remove on sight
                       (pat as AliasPat (p1, p2, pos) : MSPattern)
-  : Ids * Option MSPattern = 
+  : Ids * Globalized MSPattern = 
   let (ids1, opt_new_p1) = globalizePattern context vars_to_remove p1 in
   let (ids2, opt_new_p2) = globalizePattern context vars_to_remove p2 in
   (ids1 ++ ids2,
    case (opt_new_p1, opt_new_p2) of
-     | (Some new_p1, Some new_p2) -> Some (AliasPat (new_p1, new_p2, noPos))
-     | (None, None)               -> None
+     | (Changed new_p1, Changed new_p2) -> Changed (AliasPat (new_p1, new_p2, noPos))
+     | (Unchanged,      Unchanged)      -> Unchanged
      | _ -> fail ("inconsistent globalization of alias patterns"))
 
  op globalizeEmbedPat (context                                 : Context)
                       (vars_to_remove                          : MSVarNames) % vars of global type, remove on sight
                       (pat as EmbedPat (id, opt_pat, typ, pos) : MSPattern)
-  : Ids * Option MSPattern = 
+  : Ids * Globalized MSPattern = 
   % let _ = writeLine("??? globalize ignoring EmbedPat: " ^ anyToString pat) in
-  ([], Some pat)
+  ([], Changed pat)
 
  op globalizeRecordPat (context                 : Context)
                        (vars_to_remove          : MSVarNames) % vars of global type, remove on sight
                        (RecordPat (fields, pos) : MSPattern)
-  : Ids * Option MSPattern = 
+  : Ids * Globalized MSPattern = 
   let
     def aux (vars_to_remove, new_fields, old_fields) =
       case old_fields of
@@ -510,27 +513,27 @@ Globalize qualifying spec
           let new_vars_to_remove = vars_to_remove ++ ids in
           let new_fields =
               case opt_pat of
-                | Some new_pat -> new_fields ++ [(id, new_pat)]
+                | Changed new_pat -> new_fields ++ [(id, new_pat)]
                 | _ -> new_fields
           in
           aux (new_vars_to_remove, new_fields, ptail)
   in
   let (vars_to_remove, new_fields) = aux ([], [], fields) in
   (vars_to_remove,
-   Some (case new_fields of
+   Changed (case new_fields of
            | [(id, pat)] | natConvertible id -> pat
            | _ -> RecordPat (renumber new_fields, noPos)))
 
  op globalizeQuotientPat (context                                  : Context)
                          (vars_to_remove                           : MSVarNames) % vars of global type, remove on sight
                          (pat as (QuotientPat (p1, typename, pos)) : MSPattern)
-  : Ids * Option MSPattern = 
+  : Ids * Globalized MSPattern = 
   globalizePattern context vars_to_remove p1
 
  op globalizeRestrictedPat (context                              : Context)
                            (vars_to_remove                       : MSVarNames) % vars of global type, remove on sight
                            (pat as (RestrictedPat (p1, tm, pos)) : MSPattern)
-  : Ids * Option MSPattern = 
+  : Ids * Globalized MSPattern = 
   globalizePattern context vars_to_remove p1
 
  op globalType? (context : Context) (typ : MSType) : Bool =
@@ -543,23 +546,23 @@ Globalize qualifying spec
  op globalizeVarPat (context                          : Context)
                     (vars_to_remove                   : MSVarNames) % vars of global type, remove on sight
                     (pat as (VarPat ((id, typ), pos)) : MSPattern)
-  : Ids * Option MSPattern =
+  : Ids * Globalized MSPattern =
   if globalType? context typ then
-    ([id], None)
+    ([id], Unchanged)
   else
-    ([], Some pat)
+    ([], Changed pat)
 
  op globalizeTypedPat (context                          : Context)
                       (vars_to_remove                   : MSVarNames) % vars of global type, remove on sight
                       (pat as (TypedPat (p1, typ, pos)) : MSPattern)
-  : Ids * Option MSPattern =
+  : Ids * Globalized MSPattern =
   let _ = writeLine("??? Globalize doesn't know how to globalize type pattern: " ^ printPattern pat) in
-  ([], Some pat)
+  ([], Changed pat)
 
  op globalizePattern (context        : Context)
                      (vars_to_remove : MSVarNames)  % vars of global type, remove on sight
                      (pat            : MSPattern) 
-  : Ids * Option MSPattern = 
+  : Ids * Globalized MSPattern = 
   case pat of
     | AliasPat      _ -> globalizeAliasPat      context vars_to_remove pat
     | EmbedPat      _ -> globalizeEmbedPat      context vars_to_remove pat
@@ -573,7 +576,7 @@ Globalize qualifying spec
    %| NatPat        
    %| StringPat     
    %| CharPat       
-    | _ -> ([], None)
+    | _ -> ([], Unchanged)
 
 
  %% ================================================================================
@@ -597,7 +600,7 @@ Globalize qualifying spec
       map (fn (id, value) ->
               let Some (_, global_var_op) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
               let new_value = case globalizeTerm context vars_to_remove substitutions value of
-                                | Some new_value -> new_value
+                                | Changed new_value -> new_value
                                 | _ -> value
               in
               Apply (setqRef, Record ([("1", global_var_op), ("2", new_value)], noPos), noPos))
@@ -619,13 +622,13 @@ Globalize qualifying spec
                    (vars_to_remove              : MSVarNames)      % vars of global type, remove on sight
                    (substitutions               : MSSubstitutions) % tm -> varname
                    (tm as (Apply (t1, t2, pos)) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let
     def dom_type typ =
       case typ of
-        | Arrow   (t1, _, _) -> Some t1
-        | Subtype (typ, _, _) -> dom_type typ
-        | _ -> None
+        | Arrow   (t1, _, _) -> Changed t1
+        | Subtype (t1, _, _) -> dom_type t1
+        | _ -> Unchanged
 
     def retype_fun (tm, typ) =
       case tm of
@@ -642,68 +645,68 @@ Globalize qualifying spec
       %%       =>
       %%     global_update (global_var, {...})
       let new_t3 = case globalizeTerm context vars_to_remove  substitutions t3 of
-                     | Some new_t3 -> new_t3
+                     | Changed new_t3 -> new_t3
                      | _ -> t3
       in
       let new_tm = makeGlobalFieldUpdates context vars_to_remove substitutions t1 new_t3 in
-      Some new_tm
+      Changed new_tm
    | _ ->
      let opt_new_t1 = globalizeTerm context vars_to_remove substitutions t1 in
      let opt_new_t2 = globalizeTerm context vars_to_remove substitutions t2 in
      %% Vars to be removed will have been removed from inside t1 and t2, but not if t1 or t2 itself is global.
      let (changed1?, new_t1) =
          case opt_new_t1 of
-           | Some new_t1 -> (true,  new_t1)
-           | _           -> (false, t1)
+           | Changed new_t1 -> (true,  new_t1)
+           | _              -> (false, t1)
      in
      let (changed2?, new_t2) =
          case opt_new_t2 of
-           | Some new_t2 -> (true,  new_t2)
-           | _           -> (false, t2)
+           | Changed new_t2 -> (true,  new_t2)
+           | _              -> (false, t2)
      in
      case new_t2 of
        | Var ((id, _), _) | id in? vars_to_remove ->
          %% f x ...  where x has global type
          let head_type = applyHeadType (t1, context) in
          let head_type = unfoldToArrow (context.spc, head_type) in
-         Some (case dom_type head_type of
-                 | Some dtype ->  
-                   if globalType? context dtype then
-                     case t1 of
-                       | Fun (Project field_name, _, _) ->
-                         %%  special case for global access:  
-                         %%    (local_var_to_be_globalized.xxx)
-                         %%      =>
-                         %%    (global_var.xxx)
-                         makeGlobalAccess context field_name (termType tm)
-                       | _ ->
-                         case head_type of
-                           | Arrow (_, Arrow _, _) ->
-                             %% (f x y ...)  where x has global type, and domain of f is global type
-                             %%   =>
-                             %% (f y ...)
-                             let range_type = termType tm in
-                             retype_fun (t1, range_type)
-                           | _ ->
-                             %% (f x) where x has global type, and domain of f is global type
-                             %%   =>
-                             %% (f ())
-                             Apply (new_t1, nullTerm, pos)
-                   else
-                     %% (f x y ...)  where x has global type, but domain of f is NOT global type (presumably is polymorphic)
-                     %%   =>
-                     %% (f gvar y ...)
-                     Apply (new_t1, context.global_var, pos)
-                 | _ ->
-                   %% (f(x))  where x has global type, domain of f is global type
-                   %%   =>
-                   %% (f())
-                   Apply (new_t1, nullTerm, pos))
+         Changed (case dom_type head_type of
+                    | Changed dtype ->  
+                      if globalType? context dtype then
+                        case t1 of
+                          | Fun (Project field_name, _, _) ->
+                            %%  special case for global access:  
+                            %%    (local_var_to_be_globalized.xxx)
+                            %%      =>
+                            %%    (global_var.xxx)
+                            makeGlobalAccess context field_name (termType tm)
+                          | _ ->
+                            case head_type of
+                              | Arrow (_, Arrow _, _) ->
+                                %% (f x y ...)  where x has global type, and domain of f is global type
+                                %%   =>
+                                %% (f y ...)
+                                let range_type = termType tm in
+                                retype_fun (t1, range_type)
+                              | _ ->
+                                %% (f x) where x has global type, and domain of f is global type
+                                %%   =>
+                                %% (f ())
+                                Apply (new_t1, nullTerm, pos)
+                      else
+                        %% (f x y ...)  where x has global type, but domain of f is NOT global type (presumably is polymorphic)
+                        %%   =>
+                        %% (f gvar y ...)
+                        Apply (new_t1, context.global_var, pos)
+                              | _ ->
+                                %% (f(x))  where x has global type, domain of f is global type
+                                %%   =>
+                                %% (f())
+                                Apply (new_t1, nullTerm, pos))
        | _ ->
          if changed1? || changed2? then
-           Some (Apply (new_t1, new_t2, pos))
+           Changed (Apply (new_t1, new_t2, pos))
          else
-           None
+           Unchanged
       
  %% ================================================================================
 
@@ -711,13 +714,13 @@ Globalize qualifying spec
                     (vars_to_remove       : MSVarNames)      % vars of global type, remove on sight
                     (substitutions        : MSSubstitutions) % tm -> varname
                     (Record (fields, pos) : MSTerm)
-  : Option MSTerm = 
-  let (revised?, new_fields, opt_prefix) = 
-      foldl (fn ((revised?, new_fields, opt_prefix), (id, old_tm)) -> 
-               let (revised?, new_tm) = 
+  : Globalized MSTerm = 
+  let (changed?, new_fields, opt_prefix) = 
+      foldl (fn ((changed?, new_fields, opt_prefix), (id, old_tm)) -> 
+               let (changed?, new_tm) = 
                    case globalizeTerm context vars_to_remove substitutions old_tm of
-                     | Some new_tm -> (true, new_tm)
-                     | _ -> (revised?, old_tm)
+                     | Changed new_tm -> (true, new_tm)
+                     | _ -> (changed?, old_tm)
                in
                case maybeTermType old_tm of
                  | Some tt ->
@@ -726,20 +729,20 @@ Globalize qualifying spec
                       new_fields,
                       case new_tm of
                         | Var _ -> opt_prefix % no need for prefix if just a variable
-                        | _     -> Some new_tm)
+                        | _     -> Changed new_tm)
                    else
-                     (revised?, 
+                     (changed?, 
                       new_fields ++ [(id, new_tm)], 
                       opt_prefix)
                  %% if we can't determine type, assume it is not global
                  | _ ->
-                   (revised?, 
+                   (changed?, 
                     new_fields ++ [(id, new_tm)], 
                     opt_prefix))
-            (false, [], None)
+            (false, [], Unchanged)
             fields 
   in
-  if revised? then
+  if changed? then
     let new_result =
         case new_fields of
           | [(lbl, tm)] | natConvertible lbl -> 
@@ -750,12 +753,11 @@ Globalize qualifying spec
             tm  
           | _ -> Record (renumber new_fields, pos)
     in
-    Some (case opt_prefix of
-            | Some prefix -> Seq ([prefix, new_result], noPos)
+    Changed (case opt_prefix of
+            | Changed prefix -> Seq ([prefix, new_result], noPos)
             | _ -> new_result)
   else 
-    % term is unchanged
-    None
+    Unchanged
 
  %% ================================================================================
  %% Given global type, find argument variables of that type and remove them
@@ -765,19 +767,19 @@ Globalize qualifying spec
                  (outer_vars_to_remove      : MSVarNames)      % vars of global type, remove on sight
                  (substitutions             : MSSubstitutions) % tm -> varname
                  (tm as Let (bindings, body, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let (new_bindings, all_vars_to_remove, local_vars_to_remove, changed_bindings?) = 
       %% since Let's in practice are always 1 element lists, this is a bit of overkill:
       foldl (fn ((bindings, all_vars_to_remove, local_vars_to_remove, changed_binding?), (pat, tm)) -> 
                let (changed_tm?, new_tm) =
                    case globalizeTerm context outer_vars_to_remove substitutions tm of
-                     | Some new_tm -> (true, new_tm)
+                     | Changed new_tm -> (true, new_tm)
                      | _ -> (false, tm)
                in
                let (new_vars_to_remove, opt_new_pat) = globalizePattern context outer_vars_to_remove pat in
                let new_pat =
                    case opt_new_pat of
-                     | Some new_pat -> new_pat
+                     | Changed new_pat -> new_pat
                      | _ -> nullPat
                in
                let new_bindings = bindings ++ [(new_pat, new_tm)] in
@@ -797,7 +799,7 @@ Globalize qualifying spec
   let opt_new_body  = globalizeTerm context all_vars_to_remove substitutions body in
   let (changed_body?, new_body) = 
       case opt_new_body of
-        | Some new_body -> 
+        | Changed new_body -> 
           (true,  new_body)
         | _ ->             
           case body of
@@ -807,9 +809,9 @@ Globalize qualifying spec
               (false, body)
   in
   if changed_bindings? || changed_body? then
-    Some (Let (new_bindings, new_body, pos))
+    Changed (Let (new_bindings, new_body, pos))
   else
-    None
+    Unchanged
 
  %% ================================================================================
 
@@ -817,15 +819,15 @@ Globalize qualifying spec
                     (vars_to_remove               : MSVarNames)  % vars of global type, remove on sight
                     (substitutions                : MSSubstitutions) % tm -> varname
                     (LetRec (bindings, body, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   %% (old_bindings   : List (MSVar * MSTerm))  (old_body       : MSTerm) 
-  None
+  Unchanged
 
  op globalizeLambda (context             : Context)
                     (vars_to_remove      : MSVarNames)      % vars of global type, remove on sight
                     (substitutions       : MSSubstitutions) % tm -> varname
                     (tm as Lambda (rules, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let 
     def globalizeRule (rule as (pat, cond, body)) =
       let (new_vars_to_remove, opt_new_pat) = globalizePattern context vars_to_remove pat in
@@ -833,36 +835,42 @@ Globalize qualifying spec
       let substitutions = [] in
       let opt_new_body =
           case globalizeTerm context vars_to_remove substitutions body of
-            | Some (Var ((id, _), _)) | id in? vars_to_remove -> 
-              Some context.global_var
+            | Changed (Var ((id, _), _)) | id in? vars_to_remove -> 
+              Changed context.global_var
             | opt_new_body -> opt_new_body
       in
       case new_vars_to_remove of
         | [] ->
           (case opt_new_body of
-             | None -> None %% no changes...
-             | Some new_body ->
+             | Unchanged -> Unchanged %% no changes...
+             | Changed new_body ->
                %% fn pat -> body
                %%  =>
                %% fn new_pat -> new_body
                let new_pat =
                    case opt_new_pat of
-                     | Some new_pat -> new_pat
+                     | Changed new_pat -> new_pat
                      | _ -> pat
                in
-               Some (new_pat, myTrue, new_body))
+               Changed (new_pat, myTrue, new_body))
         | _ ->
           let new_body =
               case opt_new_body of
-                | Some new_body -> new_body
-                | _ -> Record ([], noPos)
+                | Changed new_body -> new_body
+                | _ -> 
+                  %% let _ = writeLine("== Pat:  " ^ printPattern pat) in
+                  %% let _ = writeLine("== vars to remove: " ^ anyToString vars_to_remove) in
+                  %% let _ = writeLine("== new vars to remove: " ^ anyToString new_vars_to_remove) in
+                  %% let _ = writeLine("== Body: " ^ printTerm body) in
+                  %% let _ = writeLine("== Opt New Body is Unchanged") in
+                  Record ([], noPos)
           in
           case opt_new_pat of
-            | Some new_pat ->
+            | Changed new_pat ->
               %% fn (x:Global, y:Foo) -> body
               %%   =>
               %% fn (y:Foo) -> new_body
-              Some (new_pat, myTrue, new_body)
+              Changed (new_pat, myTrue, new_body)
             | _ ->
               %% fn (x:Global) -> body
               (case new_body of
@@ -870,26 +878,25 @@ Globalize qualifying spec
                    %% fn (x:Global) -> fn (new_pat) -> inner_body
                    %%  =>
                    %%                  fn (new_pat) -> inner_body
-                   Some (inner_pat, myTrue, inner_body)
+                   Changed (inner_pat, myTrue, inner_body)
                  | _ ->
                    %% fn (x:Global) -> body
                    %%  =>
                    %% fn () -> new_body
                    let null_pat = WildPat (TyVar ("wild", noPos),noPos) in
-                   Some (null_pat, myTrue, new_body))
+                   Changed (null_pat, myTrue, new_body))
   in
   let opt_new_rules = map globalizeRule rules in
-  if exists? (fn opt_rule -> case opt_rule of | Some _ -> true | _ -> false) opt_new_rules then
+  if exists? (fn opt_rule -> case opt_rule of | Changed _ -> true | _ -> false) opt_new_rules then
     let new_rules = map2 (fn (rule, opt_new_rule) -> 
                             case opt_new_rule of
-                              | Some new_rule -> new_rule
+                              | Changed new_rule -> new_rule
                               | _ -> rule)
                          (rules, opt_new_rules)
     in
-    Some (Lambda (new_rules, pos))
+    Changed (Lambda (new_rules, pos))
   else
-    % None indicates no change
-    None
+    Unchanged
 
  %% ================================================================================
 
@@ -897,21 +904,20 @@ Globalize qualifying spec
                         (vars_to_remove               : MSVarNames)  % vars of global type, remove on sight
                         (substitutions                : MSSubstitutions) % tm -> varname
                         (IfThenElse (t1, t2, t3, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let opt_new_t1 = globalizeTerm context vars_to_remove substitutions t1 in
   let opt_new_t2 = globalizeTerm context vars_to_remove substitutions t2 in
   let opt_new_t3 = globalizeTerm context vars_to_remove substitutions t3 in
   case (opt_new_t1, opt_new_t2, opt_new_t3) of
-    | (None, None, None) -> 
-      % Term is unchanged
-      None 
+    | (Unchanged, Unchanged, Unchanged) -> 
+      Unchanged 
     | _ -> 
       let new_t1 = case opt_new_t1 of
-                     | Some new_t1 -> new_t1
+                     | Changed new_t1 -> new_t1
                      | _ -> t1
       in
       let new_t2 = case opt_new_t2 of
-                     | Some new_t2 -> new_t2
+                     | Changed new_t2 -> new_t2
                      | _ -> t2
       in
       let new_t2 = case new_t2 of
@@ -919,14 +925,14 @@ Globalize qualifying spec
                      | _ -> new_t2
       in
       let new_t3 = case opt_new_t3 of
-                     | Some new_t3 -> new_t3
+                     | Changed new_t3 -> new_t3
                      | _ -> t3
       in
       let new_t3 = case new_t3 of
                      | Var ((id, _), _) | id in? vars_to_remove -> nullTerm
                      | _ -> new_t3
       in
-      Some (IfThenElse (new_t1, new_t2, new_t3, pos))
+      Changed (IfThenElse (new_t1, new_t2, new_t3, pos))
 
 
  %% ================================================================================
@@ -935,18 +941,18 @@ Globalize qualifying spec
                  (vars_to_remove : MSVarNames)      % vars of global type, remove on sight
                  (substitutions  : MSSubstitutions) % tm -> varname
                  (Seq (tms, pos) : MSTerm) 
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let opt_new_tms = map (fn tm -> globalizeTerm context vars_to_remove substitutions tm) tms in
-  if exists? (fn opt_tm -> case opt_tm of | Some _ -> true | _ -> false) opt_new_tms then  
+  if exists? (fn opt_tm -> case opt_tm of | Changed _ -> true | _ -> false) opt_new_tms then  
     let new_tms = map2 (fn (tm, opt_new_tm) ->
                          case opt_new_tm of 
-                           | Some new_tm -> new_tm
+                           | Changed new_tm -> new_tm
                            | _ -> tm)
                        (tms, opt_new_tms)
     in
-    Some (Seq (new_tms, pos))
+    Changed (Seq (new_tms, pos))
   else
-    None
+    Unchanged
 
  %% ================================================================================
 
@@ -954,7 +960,7 @@ Globalize qualifying spec
                        (vars_to_remove           : MSVarNames)      % vars of global type, remove on sight
                        (substitutions            : MSSubstitutions) % tm -> varname
                        (TypedTerm (tm, typ, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let
    def nullify_global typ =
      if globalType? context typ then
@@ -1003,7 +1009,7 @@ Globalize qualifying spec
            let new_typ = nullify_global typ in
            let new_tm = 
                case globalizeTerm context vars_to_remove substitutions tm of
-                 | Some new_tm -> new_tm
+                 | Changed new_tm -> new_tm
                  | _ -> tm
            in
            Quotient (new_typ, new_tm, pos)
@@ -1018,11 +1024,11 @@ Globalize qualifying spec
 
   in
   case globalizeTerm context vars_to_remove substitutions tm of
-    | Some new_tm ->
+    | Changed new_tm ->
       let new_typ = nullify_global typ in 
-      Some (TypedTerm (new_tm, new_typ, pos))
+      Changed (TypedTerm (new_tm, new_typ, pos))
     | _ ->
-      None
+      Unchanged
 
  %% ================================================================================
 
@@ -1030,12 +1036,12 @@ Globalize qualifying spec
                 (vars_to_remove       : MSVarNames)      % vars of global type, remove on sight
                 (substitutions        : MSSubstitutions) % tm -> varname
                 (Pi (tyvars, tm, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   case globalizeTerm context vars_to_remove substitutions tm of
-    | Some new_tm ->
-      Some (Pi (tyvars, new_tm, pos)) % TODO: remove unused tyvars
+    | Changed new_tm ->
+      Changed (Pi (tyvars, new_tm, pos)) % TODO: remove unused tyvars
     | _ ->
-      None
+      Unchanged
 
  %% ================================================================================
 
@@ -1043,10 +1049,10 @@ Globalize qualifying spec
                  (vars_to_remove : MSVarNames)      % vars of global type, remove on sight
                  (substitutions  : MSSubstitutions) % tm -> varname
                  (And (tms, pos) : MSTerm)
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   case tms of
     | tm :: _ -> globalizeTerm context vars_to_remove substitutions tm 
-    | [] -> None
+    | [] -> Unchanged
 
  %% ================================================================================
 
@@ -1080,7 +1086,7 @@ Globalize qualifying spec
                   (vars_to_remove : MSVarNames)  % vars of global type, remove on sight
                   (substitutions  : MSSubstitutions) % tm -> varname
                   (term           : MSTerm) 
-  : Option MSTerm = 
+  : Globalized MSTerm = 
   let
     def add_bindings substs body =
       case substs of
@@ -1122,20 +1128,20 @@ Globalize qualifying spec
         | Pi         _ -> globalizePi         context vars_to_remove substitutions term
         | And        _ -> globalizeAnd        context vars_to_remove substitutions term
           
-       %| ApplyN     _ -> None % not present after elaborateSpec is called
-       %| Bind       _ -> None % should not be globalizing inside quantified terms
-       %| The        _ -> None % should not be globalizing inside 'the' term
-       %| Var        _ -> None % vars to be globalized should be removed from parent before we get to this level
-       %| Fun        _ -> None % primitive terms are never global
-       %| Transform  _ -> None % doesn't make sense to globalize this
-       %| Any        _ -> None % can appear within typed term, for example
+       %| ApplyN     _ -> Unchanged % not present after elaborateSpec is called
+       %| Bind       _ -> Unchanged % should not be globalizing inside quantified terms
+       %| The        _ -> Unchanged % should not be globalizing inside 'the' term
+       %| Var        _ -> Unchanged % vars to be globalized should be removed from parent before we get to this level
+       %| Fun        _ -> Unchanged % primitive terms are never global
+       %| Transform  _ -> Unchanged % doesn't make sense to globalize this
+       %| Any        _ -> Unchanged % can appear within typed term, for example
           
-        | _ -> None
+        | _ -> Unchanged
   in
   case (opt_term, conflicts) of
-    | (Some term, _) -> opt_term
-    | (None, []) -> None
-    | _  -> Some term
+    | (Changed term, _) -> opt_term
+    | (Unchanged, []) -> Unchanged
+    | _  -> Changed term
       
  %% ================================================================================
 
@@ -1151,7 +1157,7 @@ Globalize qualifying spec
                     | tm -> tm 
     in
     case globalizeTerm context [] [] old_dfn of
-      | Some new_dfn -> 
+      | Changed new_dfn -> 
         let new_info = old_info << {dfn = new_dfn} in
         let _ = if context.tracing? then
                   let _ = writeLine ""                          in
