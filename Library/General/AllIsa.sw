@@ -42,11 +42,10 @@ import BitList
 %% which the Isabelle translator does not currently handle. -CK
 %% import Rational
 %% import Real
-
-%% Proofs for these three do not currently work:
-import Stream
-import Sequence
 %% This depends on Real:
 %% import TimedTrace
+
+import Stream
+import Sequence
 
 endspec
