@@ -90,8 +90,10 @@ Utilities qualifying spec
               let gen_var = ("zz__" ^ show(!wild_num), srt) in
               (wild_num := !wild_num + 1;
                (mkVar gen_var, [], [gen_var]))
-            | QuotientPat(pat, qid, _)  -> 
-              let (t, conds, vs) = patToTPV pat in
+            | QuotientPat(qpat, qid, _)  -> 
+              let (t, conds, vs) = patToTPV qpat in
+              % let _ = writeLine("pttpec: "^printPattern pat^": "^printType(patternType pat)^"\n"^printTermWithTypes t) in
+              % let _ = writeLine(printType(termType(mkQuotient(t, qid, termType t)))) in
               (mkQuotient(t, qid, termType t), conds, vs)
             | RestrictedPat(pat, cond, _)  ->
               let (p, conds, vs) = patToTPV pat in (p, cond::conds, vs)
@@ -1530,7 +1532,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        let (src_tms, new_fields) =
            foldr (fn ((id1, t), (src_tms, new_fields)) ->
                     case t of
-                      | Apply(Fun(Project id2, _, _), src_tm, _) | id1 = id2 && equivType? spc(termType src_tm, rec_ty) ->
+                      | Apply(Fun(Project id2, _, _), src_tm, _)
+                          | id1 = id2 && equivTypeSubType? spc (termType src_tm, rec_ty) true->
                         (if termIn?(src_tm, src_tms) then src_tms else src_tm :: src_tms,
                          new_fields)
                       | _ -> (src_tms, (id1, t):: new_fields))
@@ -2059,7 +2062,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
   %% Bring subtypes to the top-level
     let uf1? = ~(uf1? => typeIn?(ty1, real_as1)) in
     let uf2? = ~(uf2? => typeIn?(ty2, real_as2)) in
-    % let _ = writeLine("rts< ("^toString uf1?^","^toString uf2?^") "^printType ty1^" <> "^printType ty2) in
+    % let _ = writeLine("rts< ("^show uf1?^","^show uf2?^") "^printType ty1^" <> "^printType ty2) in
     let def existsSubtypeArg?(args, uf?, real_as) =
           exists? (fn ty -> embed? Subtype ty && (uf? => typeIn?(ty, real_as))) args
         def tryRaiseFromArgs(ty, qid, args, uf?, real_as, a) =
@@ -2276,7 +2279,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                in
                let (bare_args, arg_preds) = unzip arg_comps in
                let bare_ty = Base(qid, bare_args, a) in
-               let arg_preds_lst =  decomposeListConjPred arg_preds in
+               let arg_preds_lst = decomposeListConjPred arg_preds in
                let preds = map (fn arg_preds ->
                                   mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolType)) bare_args),
                                                                 mkArrow(bare_ty, boolType))),
