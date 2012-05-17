@@ -175,7 +175,13 @@ MS qualifying spec
  def mkRelax    (srt, pred)   = mkFun (Relax, mkArrow (mkSubtype (srt, pred), srt))
  def mkRestrict (srt, pred)   = mkFun (Restrict, mkArrow (srt, mkSubtype (srt, pred)))
 % def mkChoose   (srt, equiv) = let q = mkQuotientType (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
- def mkQuotient (a,qid,srt)   = mkApply(mkFun (Quotient qid, mkArrow(srt,Base(qid,[],noPos))), a)
+ def mkQuotient (a,qid,ty) =
+   let ty_args = case ty of
+                   | Base(_, ty_args, _) -> ty_args
+                   | _ -> []
+   in
+   %% Could well need a better way of getting ty_args
+   mkApply(mkFun (Quotient qid, mkArrow(ty,Base(qid,ty_args,noPos))), a)
 
  def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
  def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
