@@ -5607,6 +5607,71 @@ lemma List__positionOf_2 [simp]:
   "\<lbrakk>a \<noteq> x\<rbrakk> \<Longrightarrow> List__positionOf ([a,x], x) = 1"
   by (simp add:  List__positionOf_def)
 
+
+lemma List__positionsSuchThat_length:
+  "i \<in> set (List__positionsSuchThat(l, p)) \<Longrightarrow> i < length l"
+  by simp  
+
+lemma List__positionsSuchThat_p:
+  "i \<in> set (List__positionsSuchThat(l, p)) \<Longrightarrow> p (l ! i)"
+  by simp  
+
+
+lemma List__positionsOf_props:
+  "i \<in> set (List__positionsOf (l, x)) = (i < length l \<and> l ! i = x)"
+ by (simp add:  List__positionsOf_def)
+
+
+lemma List__positionsOf_length:
+  "i \<in> set (List__positionsOf (l, x)) \<Longrightarrow> i < length l"
+ by (simp add:  List__positionsOf_def)
+
+lemma List__positionsOf_val:
+  "i \<in> set (List__positionsOf (l, x)) \<Longrightarrow> l ! i = x"
+ by (simp add:  List__positionsOf_def)
+
+
+lemma List__positionsSuchThat_singleton:
+  "\<lbrakk>\<exists>!i. i < length l \<and> p (l!i)\<rbrakk>
+    \<Longrightarrow> \<exists>i< length l. List__positionsSuchThat(l, p) = [i]"
+  apply (erule ex1E, rule_tac x=i in exI)
+  apply (simp (no_asm) add: List__positionsSuchThat_def)
+  apply (rule the1I2, rule List__positionsSuchThat_Obligation_the)
+  apply (clarify, rule sorted_distinct_set_unique, auto)
+done
+
+lemma List__positionOf_exists:
+  "\<lbrakk>\<exists>!i. i < length l  \<and> l!i = x\<rbrakk>
+    \<Longrightarrow> \<exists>i < length l. List__positionsOf (l, x) = [i]"
+ by (simp add: List__positionsOf_def List__positionsSuchThat_singleton)
+  
+lemma List__positionOf_exists2:
+  "\<lbrakk>distinct l; x \<in> set l\<rbrakk>
+    \<Longrightarrow> \<exists>i < length l. List__positionsOf (l, x) = [i]"
+  apply (rule List__positionOf_exists, simp add: in_set_conv_nth, erule exE)
+  apply (rule_tac a=i in ex1I, auto simp add: nth_eq_iff_index_eq)
+done
+  
+
+lemma List__positionOf_length:
+  "\<lbrakk>\<exists>!i. i < length l  \<and> l!i = x\<rbrakk> \<Longrightarrow> List__positionOf (l, x) < length l"
+ by (drule List__positionOf_exists, auto simp add:  List__positionOf_def)
+
+lemma List__positionOf_length2:
+  "\<lbrakk>distinct l; x \<in> set l\<rbrakk> \<Longrightarrow> List__positionOf (l, x) < length l"
+ by (drule List__positionOf_exists2, auto simp add:  List__positionOf_def)
+
+lemma List__positionOf_val:
+  "\<lbrakk>\<exists>!i. i < length l  \<and> l!i = x\<rbrakk> \<Longrightarrow> l ! List__positionOf (l, x) = x"
+  by (drule List__positionOf_exists, 
+      auto simp add: List__positionOf_def List__positionsOf_val)
+
+lemma List__positionOf_val2:
+  "\<lbrakk>distinct l; x \<in> set l\<rbrakk> \<Longrightarrow> l ! List__positionOf (l, x) = x"
+  by (drule List__positionOf_exists2, 
+      auto simp add: List__positionOf_def List__positionsOf_val)
+
+
 (*********************************)
 
 (************************************************************************)
@@ -5681,6 +5746,129 @@ lemma List__definedOnInitialSegmentOfLength1_iff:
   apply (drule_tac x=j in spec, auto)
 done
 
+(***************** sublistAt ****************)
+
+lemma List__sublistAt_p_nil1 [simp]:
+  "\<lbrakk>subl=[]\<rbrakk> \<Longrightarrow> List__sublistAt_p(subl, i, []) = (i=0)"
+  by (simp add: List__sublistAt_p_def)
+
+lemma List__sublistAt_p_nil2 [simp]:
+  "\<lbrakk>subl\<noteq>[]\<rbrakk> \<Longrightarrow> List__sublistAt_p(subl, i, []) = False"
+  by (simp add: List__sublistAt_p_def)
+
+lemma List__sublistAt_p_cons1:
+  "\<lbrakk>subl @ post = a # l\<rbrakk> \<Longrightarrow> 
+  List__sublistAt_p(subl, i, a#l) = (i=0 \<or> List__sublistAt_p(subl, i - 1, l))"
+  apply (case_tac i, auto simp add: List__sublistAt_p_def)
+  apply (case_tac pre, simp_all)
+  apply (rule_tac x="list" in exI, auto)
+  apply (rule_tac x="a # pre" in exI, auto)
+done
+
+lemma List__sublistAt_p_cons2:
+  "\<lbrakk>\<forall>post. subl @ post \<noteq> a # l\<rbrakk> \<Longrightarrow> 
+  List__sublistAt_p(subl, i, a#l) = (i>0 \<and> List__sublistAt_p(subl, i - 1, l))"
+  apply (case_tac i, auto simp add: List__sublistAt_p_def)
+  apply (case_tac pre, simp_all)
+  apply (rule_tac x="list" in exI, auto)
+  apply (rule_tac x="a # pre" in exI, auto)
+done
+
+lemma List__sublistAt_p_nil1_set [simp]:
+  "\<lbrakk>subl=[]\<rbrakk> \<Longrightarrow> {i. List__sublistAt_p(subl, i, [])} = {0}"
+  by (simp add: set_eq_iff)
+
+lemma List__sublistAt_p_nil2_set [simp]:
+  "\<lbrakk>subl\<noteq>[]\<rbrakk> \<Longrightarrow> {i. List__sublistAt_p(subl, i, [])} = {}"
+  by (simp add: set_eq_iff)
+
+lemma List__sublistAt_p_cons1_set:
+  "\<lbrakk>subl @ post = a # l\<rbrakk>
+   \<Longrightarrow>  {i. List__sublistAt_p(subl, i, a#l)} 
+      = insert 0 {i. List__sublistAt_p(subl, i - 1, l)}"
+  by (auto simp add: set_eq_iff List__sublistAt_p_cons1)
+
+lemma List__sublistAt_p_cons2_set:
+  "\<lbrakk>\<forall>post. subl @ post \<noteq> a # l\<rbrakk>
+    \<Longrightarrow> 
+        {i. List__sublistAt_p(subl, i, a#l)}
+      = {i. i>0 \<and> List__sublistAt_p(subl, i - 1, l)}"
+  by (simp add: set_eq_iff List__sublistAt_p_cons2)
+
+(*********************************************************************)
+
+lemma distinct_hd_tl:   "\<lbrakk>distinct l; l \<noteq> []\<rbrakk> \<Longrightarrow> hd l \<notin> set (tl l)" 
+  by (auto simp add: distinct_conv_nth hd_conv_nth in_set_conv_nth nth_tl)
+
+(*********************************************************************)
+
+lemma List__permutation_distinct:
+  "List__permutation_p prm  \<Longrightarrow> distinct prm"
+  by (simp add: List__permutation_p_def)
+
+lemma List__permutation_bounded:
+  "List__permutation_p prm  \<Longrightarrow> \<forall>i \<in> set prm.  i < length prm"
+  by (simp add: List__permutation_p_def)
+
+lemma List__permutation_bounded2:
+  "List__permutation_p prm  \<Longrightarrow> \<forall>i \<in> set prm. prm ! i < length prm"
+  by (simp add: List__permutation_p_def)
+
+lemma List__permutation_bounded3:
+  "List__permutation_p prm  \<Longrightarrow> \<forall>i \<in> set prm. prm ! i \<in> set prm"
+  by (simp add: List__permutation_p_def)
+
+lemma List__permutation_mem:
+  "\<lbrakk>List__permutation_p prm; l equiLong prm; i < length l\<rbrakk> \<Longrightarrow> i \<in> set prm"
+  by (auto simp add: List__permutation_p_def
+                     distinct_card [symmetric] Ball_def [symmetric],
+      drule permutation_set, simp)
+
+
+
+lemma List__permute_length:
+  "\<lbrakk>List__permutation_p prm; l equiLong prm\<rbrakk>
+    \<Longrightarrow> List__permute (l, prm) equiLong l"
+  by (simp add: List__permute_def, rule the1I2,
+      drule_tac l=l in List__permute_Obligation_the, simp_all)
+
+lemma List__permute_nth:
+  "\<lbrakk>List__permutation_p prm; l equiLong prm\<rbrakk>
+    \<Longrightarrow> \<forall>i < length l. l ! i = List__permute (l, prm) ! (prm ! i)"
+  by (simp add: List__permute_def, rule the1I2,
+      drule_tac l=l in List__permute_Obligation_the, simp_all)
+
+lemma List__permute_iff:
+  "\<lbrakk>List__permutation_p prm; l equiLong prm; l1 equiLong l; 
+    \<forall>i < length l. l ! i =  l1 ! (prm ! i) \<rbrakk>
+    \<Longrightarrow> l1 = List__permute (l, prm)"
+  apply (simp add: List__permute_def, rule the1I2,
+         drule_tac l=l in List__permute_Obligation_the,
+         auto simp add: list_eq_iff_nth_eq)
+  apply (drule List__permutation_mem, auto simp add: in_set_conv_nth)
+done
+
+lemma List__permute_eq_iff:
+  "\<lbrakk>List__permutation_p prm; l equiLong prm\<rbrakk>
+    \<Longrightarrow> (List__permute (l, prm) = l1)
+      = (l1 equiLong l \<and>  (\<forall>i < length l. l ! i =  l1 ! (prm ! i)))"
+  by (metis List__permute_length List__permute_nth List__permute_iff)
+
+
+
+lemma List__permutationOf_nil:   "[] permutationOf l2 = (l2 = [])"
+  by (auto simp add: List__permutationOf_def List__permutation_p_def 
+                     List__permute_def)
+(******************************************************************************
+
+The following lemma is true but quite difficult to prove
+
+lemma List__permutationOf_cons:
+   "a # l1 permutationOf l2 = (a mem l2 \<and> l1 permutationOf (remove1 a l2))"
+
+******************************************************************************)
+
+(******************************************************************************)
 end-proof
 % ------------------------------------------------------------------------------
 

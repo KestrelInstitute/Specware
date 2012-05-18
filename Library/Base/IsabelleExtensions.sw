@@ -2825,6 +2825,18 @@ lemma div_mult_self5 [simp]:
 by (simp add: mult_ac add_ac)
 
 
+lemma set_eq_iff_p:  "(\<forall>i. (i \<in> A) = P i) = (A = {i. P i})"
+  by (simp add: set_eq_iff Collect_def mem_def)
+
+lemma suc_set: "{i. i>0 \<and> P (i - 1)} = Suc ` {i. P i}"
+  apply (auto simp add: set_eq_iff, simp add: Collect_def image_iff)
+  apply (rule bexI, auto simp add: mem_def)
+done
+
+lemma suc_set2: "{i. i=0 \<or> P (i - 1)} = insert 0 (Suc ` {i. P i})"
+  apply (auto simp add: set_eq_iff, simp add: Collect_def image_iff)
+  apply (case_tac x, simp, drule bspec, auto simp add: mem_def)
+done
 (******************************************************************************)
 (******************************************************************************)
 
