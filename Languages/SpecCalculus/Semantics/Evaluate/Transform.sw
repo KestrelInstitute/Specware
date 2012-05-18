@@ -124,6 +124,7 @@ spec
      | _ -> raise (TypeCheck (posOf se, "Illegal search string"))
 
  op makeMove(mv_tm: TransformExpr): SpecCalc.Env Movement =
+    % let _ = writeLine("move: "^anyToString mv_tm) in
     case mv_tm of
       | Name(prim_mv,pos) ->
         (case prim_mv of
@@ -145,9 +146,10 @@ spec
 
   op commands: List String =
     ["simplify", "Simplify", "simpStandard", "SimpStandard", "eval", "partial-eval", "AbstractCommonExprs",
-     "AbstractCommonSubExprs", "print"]
+     "AbstractCommonSubExprs", "print", "move"]
 
   op makeScript1(trans: TransformExpr): SpecCalc.Env Script =
+    % let _ = writeLine("MS1: "^anyToString trans) in
     case trans of
       | Apply(Name("simplify",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
@@ -301,6 +303,7 @@ spec
 
   op makeScript(trans_steps: TransformExprs): SpecCalc.Env (Scripts * Scripts) =
     foldrM (fn (top_result, sub_result) -> fn te ->
+             % let _ = writeLine("MS: "^anyToString te) in
              case te of
                | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
