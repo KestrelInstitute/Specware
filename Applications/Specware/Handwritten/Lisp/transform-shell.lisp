@@ -82,6 +82,18 @@
 		 (AnnSpecPrinter::printTerm (PathTerm::fromPathTerm *transform-term*)))))
   (values))
 
+;;; Some functions for debugging
+(defun cl-user::current-term ()
+  (PathTerm::fromPathTerm *transform-term*))
+
+(defun cl-user::current-spec ()
+  *transform-spec*)
+
+(defun cl-user::op-def (id &optional q)
+  (let ((qid (if q (MetaSlang::mkQualifiedId-2 q id)
+                 (MetaSlang::mkUnQualifiedId id))))
+    (AnnSpec::findTheOp-2 *transform-spec* qid)))
+
 (defun undo-command (argstr quiet?)
   (if (null *undo-stack*)
       (format t "Nothing to undo!")
