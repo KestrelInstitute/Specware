@@ -185,7 +185,7 @@ spec
         else n_tm
 
       def mapSubTerms(tm, ty) =
-        % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printMSType ty) in
+        % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printType ty) in
 	case tm of
 	  | Apply (t1, t2, a) ->
 	    let fn_ty = inferType(spc, t1) in
