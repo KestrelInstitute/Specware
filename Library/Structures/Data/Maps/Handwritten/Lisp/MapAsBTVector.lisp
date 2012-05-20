@@ -294,6 +294,16 @@
 		 (push val items))))
     items))
 
+(defun BTV_rangeToList (m) 
+  (let ((m (map-as-undo-vector-assure-current m))
+	(items nil)
+	(vec (map-as-undo-vector--vector m)))
+    (loop for x from 0 to (- (length vec) 1)
+	  do (let ((val (svref vec x)))
+	       (when (defined? val)
+		 (push val items))))
+    items))
+
 (defun BTV_mapToList (m)
   (let ((m (map-as-undo-vector-assure-current m))
 	(items nil)
