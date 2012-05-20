@@ -776,9 +776,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
           foldM (fn (spc, tracing?) -> fn stp ->
                interpretSpec(spc, stp, tracing?))
             (spc, tracing?) steps
-      | At (locs, scr) -> {
-          when tracing? 
-            (print ("-- { at"^flatten(map (fn (Def qid) -> " "^show qid) locs) ^" }\n"));
+      | At (locs, scr) -> 
+          %when tracing? 
+          %  (print ("-- { at"^flatten(map (fn (Def qid) -> " "^show qid) locs) ^" }\n"));
           foldM (fn (spc, tracing?) -> fn Def qid ->
                  case findMatchingOps(spc, qid) of
                    | [] -> {
@@ -787,6 +787,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                      }
                    | opinfos ->
                      foldM  (fn (spc, tracing?) -> fn opinfo ->  {
+                              when tracing? 
+                                (print ("-- { at "^show qid^" }\n"));
+                              print(printTerm opinfo.dfn);
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
                               when tracing? 
@@ -801,7 +804,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                               return (new_spc, tracing?)
                               }})
                           (spc, tracing?) opinfos)
-            (spc, tracing?) locs}
+            (spc, tracing?) locs
       | AtTheorem (locs, scr) -> {
           when tracing? 
             (print ("-- { at-theorem"^flatten(map (fn (Def qid) -> " "^show qid) locs) ^" }\n"));
