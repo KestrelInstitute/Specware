@@ -4,6 +4,8 @@ Coalgebraic qualifying
 spec
 import Script
 
+op finalizeExcludesDefinedOps?: Bool = false
+
 (*
 WS st =  (roots st \/ allSucs st (black st)) -- black st
 
@@ -225,7 +227,7 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
                                         (case lhs of
                                            | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
                                                | qid nin? stored_qids && equalVar?(v, state_var)
-                                                    && ~(definedOp?(spc, qid)) ->
+                                                    && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
                                              % let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
                                              Some qid
                                            | _ -> None)
