@@ -2739,7 +2739,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    case newOptQual of
      | None ->
        let len = length id in
-       id@len = #' && some?(findTheOp(spc, Qualified (qual, subFromTo(id, 0, len - 1))))
+       id@(len - 1) = #' && some?(findTheOp(spc, Qualified (qual, subFromTo(id, 0, len - 1))))
      | Some newQual ->
    case idPatternMatch(qual, newQual) of
      | None -> false
