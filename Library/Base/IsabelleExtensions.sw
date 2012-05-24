@@ -2805,6 +2805,30 @@ lemma finite_nat_set_has_max:
   "\<lbrakk>finite {i::nat. p i}\<rbrakk>  \<Longrightarrow> \<exists>n. \<forall>i. (p i \<longrightarrow> i < n)"
   by (simp add: finite_nat_set_iff_bounded )
 
+(***********************************************************************
+ * NEW LEMMAS -- MOVED FROM IntegerExt_Exec_Ops
+ ***********************************************************************)
+
+
+lemma nat_bin_induct: 
+  "\<lbrakk>P 0; \<And>n. P ((n+1) div 4) \<Longrightarrow> P (Suc n)\<rbrakk> \<Longrightarrow> P n"
+  by (rule nat_less_induct, case_tac n, auto)
+
+lemma square_mono:
+  "\<lbrakk>i \<le> j; (0::int) \<le> i\<rbrakk> \<Longrightarrow> i*i \<le> j*j"
+ by (frule mult_left_mono, simp,
+     cut_tac a=i and b=j and c=j in mult_right_mono, auto)
+
+lemma div_square: 
+  "\<lbrakk>0 < j; 0 \<le> i\<rbrakk> \<Longrightarrow> ((i::int) div j) * (i div j) \<le> (i*i) div (j*j)"
+   apply (subst div_le_pos, cut_tac i=1 and j=j in square_mono,
+          simp_all (no_asm_simp) add: add1_zle_eq [symmetric])
+   apply (frule_tac i=i in div_pos_up_bound, rotate_tac -1, drule square_mono)
+   apply (frule_tac div_pos_pos_le, simp,
+          cut_tac a=0 and b="i div j" and c=j in mult_right_mono, simp_all,
+          simp add: algebra_simps)
+done
+
 
 (***********************************************************************
  * NEW LEMMAS -- 
