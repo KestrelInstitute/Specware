@@ -31,7 +31,7 @@ spec
    if n = 0 then
       0
    else 
-      let r = loop (n / 4) in
+      let r = loop (n div 4) in
       if n < (2 * r + 1) *   (2 * r + 1) then
          2 * r
       else 
