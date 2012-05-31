@@ -55,7 +55,8 @@ op thyMorphismMaps (spc: Spec) (kind: String) (convertPrecNum: Int -> Int): Tran
                 case el of
                   | Import(s_tm, i_sp, im_elts, _) ->
                     foldElts accum im_elts
-                  | Pragma(prag as (begp, prag_str, endp, pos)) |  translatePragmaBrackets?(begp, endp) ->
+                  | Pragma(prag as (begp, prag_str, endp, pos)) | isPragmaKind(prag_str, kind)
+                                                                 && translatePragmaBrackets?(begp, endp) ->
                     (case thyMorphismPragma prag_str kind pos of
                        | None ->
                          let def addRenaming(qid, type?, trans_id, fix, curried?, reversed?) =
@@ -157,12 +158,12 @@ op processRhsOp (rhs: String) (kind: String) (pos: Position): String * Option(As
 
  op findRenaming(prag_str: String) (kind: String) (pos: Position)
     : Option (String * Option(Associativity * Nat) * Bool * Bool) =
-   let end_pos = case searchPred(prag_str, fn c -> c in? [#\n, #", #[]) of   % #]
+   let end_pos = case searchPredFirstAfter(prag_str, fn c -> c in? [ #\n, #", #[ ], 0) of   % #]
                    | Some n -> n
                    | None -> length prag_str
    in
    case searchBetween("->", prag_str, 0, end_pos) of
-     | Some n -> Some(processRhsOp (subFromTo(prag_str, n+2,end_pos)) kind pos)
+     | Some n -> Some(processRhsOp (subFromTo(prag_str, n+2, end_pos)) kind pos)
      | _ -> None
 
 op parseQualifiedId(s: String): QualifiedId =

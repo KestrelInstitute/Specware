@@ -60,4 +60,18 @@ op namedPragma?(p: Pragma): Bool =
      | Some(name?, rl2) | validName? name? -> Some(name?, rl2)
      | _ -> None
 
-endspec
+op isPragmaKind(s: String, kind: String): Bool =
+  case searchPredFirstAfter(s, fn c -> ~(whiteSpaceChar? c), 0) of
+    | Some firstNonSpace ->
+       (if isUpperCase(kind@0) && isLowerCase(s@firstNonSpace)
+          then case searchPredFirstAfter(s, whiteSpaceChar?, firstNonSpace + 1) of
+                 | Some end_kind ->
+                   kind = capitalize(subFromTo(s, firstNonSpace, end_kind))
+                 | None -> false
+          else testSubseqEqual?(kind, s, 0, firstNonSpace))
+    | None -> false
+
+op isOneOfPragmaKinds(s: String, kinds: List String): Bool =
+  exists? (fn kind -> isPragmaKind(s, kind)) kinds
+
+end-spec
