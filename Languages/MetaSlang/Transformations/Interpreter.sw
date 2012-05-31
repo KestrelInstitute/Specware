@@ -1029,7 +1029,7 @@ spec
    if ~(constantTerm? term) && freeVarsRec term = []
      && (if assumeNoSideEffects? then ~(hasSideEffect? term)
            else sideEffectFree term)
-     && ~(dontReduceTerm? term)
+     && ~(existsSubTerm dontReduceTerm? term)
      then
        % let _ = writeLine("reduceTerm: "^printTerm term) in
        let v = eval(term,spc) in
