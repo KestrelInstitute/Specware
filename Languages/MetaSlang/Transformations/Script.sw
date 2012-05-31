@@ -789,7 +789,6 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                      foldM  (fn (spc, tracing?) -> fn opinfo ->  {
                               when tracing? 
                                 (print ("-- { at "^show qid^" }\n"));
-                              print(printTerm opinfo.dfn);
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
                               when tracing? 
