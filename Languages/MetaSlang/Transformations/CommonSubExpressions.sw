@@ -20,6 +20,14 @@ spec
   op maybeAbstract(t: MSTerm, cse: List MSTerm, names: List String, bindable?: Bool,
                    single_tms: List MSTerm, poss_tms: List MSTerm, spc: Spec)
     : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
+    % let _ = (writeLine("maybeAbstract "^show bindable?^":\n"^printTerm t^"\ncse:");
+    %          app (fn t -> writeLine(printTerm t)) cse;
+    %          writeLine("single_tms: ");
+    %          app (fn t -> writeLine(printTerm t)) single_tms;
+    %          writeLine("Poss_tms: ");
+    %          app (fn t -> writeLine(printTerm t)) poss_tms;
+    %          writeLine "")
+    % in
     let bvs = boundVars t in
     let cse = removeLocal(cse,bvs) in
     case cse of
@@ -54,55 +62,55 @@ spec
     case getCurryArgs t of
       | Some(f,c_args) ->
         %% Don't wan't to abstract partial applications
-        let (new_c_args,names,ces,single_tms,poss_tms) =
-            foldr (fn (st,(new_c_args,names,ces,single_tms,poss_tms)) ->
-                      let (st1, ces1, tms1, ptms1, names) = recAbstractCSE(st, names, false, spc) in
-                      let (new_ces, single_tms, poss_tms) = newCSEs(ces1, ces, tms1, single_tms,
+        let (new_c_args,names,cse,single_tms,poss_tms) =
+            foldr (fn (st,(new_c_args,names,cse,single_tms,poss_tms)) ->
+                      let (st1, cse1, tms1, ptms1, names) = recAbstractCSE(st, names, false, spc) in
+                      let (new_cse, single_tms, poss_tms) = newCSEs(cse1, cse, tms1, single_tms,
                                                                     ptms1, poss_tms)
                       in
                       (Cons(st1, new_c_args),
-                       names, new_ces, single_tms, poss_tms))
+                       names, new_cse, single_tms, poss_tms))
                ([],names,[],[],[])
                c_args
         in
         let new_t = mkCurriedApply(f, new_c_args) in
-        maybeAbstract(new_t, ces, names, bindable?, single_tms, poss_tms, spc)
+        maybeAbstract(new_t, cse, names, bindable?, single_tms, poss_tms, spc)
 
       | None ->
     case t of
       | Apply(x,y,a) ->
         %% Careful about abstracting fns
-        let (x1, ces1, tms1, ptms1, names) = recAbstractCSE(x, names, false, spc) in
+        let (x1, cse1, tms1, ptms1, names) = recAbstractCSE(x, names, false, spc) in
         let tms1 = case tms1 of
                      | (Lambda _)::r_tms1 -> r_tms1
                      | _ -> tms1
         in
-        let (y1, ces2, tms2, ptms2, names) = recAbstractCSE(y, names, false, spc) in
+        let (y1, cse2, tms2, ptms2, names) = recAbstractCSE(y, names, false, spc) in
         let tms2 = case tms2 of
                      | (Record _)::r_tms2 -> r_tms2
                      | _ -> tms2
         in
-        let (new_ces, single_tms, poss_tms) = newCSEs(ces1, ces2, tms1, tms2, ptms1, ptms2) in
+        let (new_cse, single_tms, poss_tms) = newCSEs(cse1, cse2, tms1, tms2, ptms1, ptms2) in
         let new_t = Apply(x1,y1,a) in
-        maybeAbstract(new_t, new_ces, names, bindable?, single_tms, poss_tms, spc)
+        maybeAbstract(new_t, new_cse, names, bindable?, single_tms, poss_tms, spc)
 
       | Record(fields,a) ->
-        let (new_fields,names,b_ces,b_single_tms,b_poss_tms)
-           = foldr (fn ((pid,st),(new_binds,names,b_ces,b_single_tms,b_poss_tms)) ->
-                      let (st1, ces1, tms1, ptms1, names) = recAbstractCSE(st, names, false, spc) in
-                      let (new_ces, single_tms, poss_tms) = newCSEs(ces1, b_ces, tms1, b_single_tms,
+        let (new_fields,names,b_cse,b_single_tms,b_poss_tms)
+           = foldr (fn ((pid,st),(new_binds,names,b_cse,b_single_tms,b_poss_tms)) ->
+                      let (st1, cse1, tms1, ptms1, names) = recAbstractCSE(st, names, false, spc) in
+                      let (new_cse, single_tms, poss_tms) = newCSEs(cse1, b_cse, tms1, b_single_tms,
                                                                     ptms1, b_poss_tms)
                       in
                       (Cons((pid, st1), new_binds),
-                       names, new_ces, single_tms, poss_tms))
+                       names, new_cse, single_tms, poss_tms))
                ([],names,[],[],[])
                fields
         in
         let new_t = Record(new_fields,a) in
-        maybeAbstract(new_t, b_ces, names, bindable?, b_single_tms, b_poss_tms, spc)
+        maybeAbstract(new_t, b_cse, names, bindable?, b_single_tms, b_poss_tms, spc)
 
       | IfThenElse(x,y,z,a) ->
-        let (x1, cesx, tmsx, ptmsx, names) = recAbstractCSE(x, names, false, spc) in
+        let (x1, csex, tmsx, ptmsx, names) = recAbstractCSE(x, names, false, spc) in
         %% Don't want expressions only appearing in y or z lifted
         let (y1, csey, tmsy, ptmsy, names) = recAbstractCSE(y, names, true, spc) in
         let (z1, csez, tmsz, ptmsz, names) = recAbstractCSE(z, names, true, spc) in
@@ -110,54 +118,55 @@ spec
                        termsUnion(tmsz,
                        termsUnion(ptmsy, ptmsz)))
         in
-        let ces = termsUnion(termsIntersect(tmsx, poss_tms),
-                             termsIntersect(tmsy, tmsz))
+        let cse = termsUnion(csex,
+                  termsUnion(termsIntersect(tmsx, poss_tms),
+                             termsIntersect(tmsy, tmsz)))
         in
-        let tms = termsDiff(tmsx, ces) in
-        let poss_tms = termsDiff(poss_tms, ces) in
+        let tms = termsDiff(tmsx, cse) in
+        let poss_tms = termsDiff(poss_tms, cse) in
         let new_t = IfThenElse(x1,y1,z1,a) in
-        maybeAbstract(new_t, ces, names, bindable?, tms, poss_tms, spc)
+        maybeAbstract(new_t, cse, names, bindable?, tms, poss_tms, spc)
         
       | Let(binds,body,a) ->
-        let (new_binds,names,b_ces,b_single_tms,b_poss_tms)
-           = foldr (fn ((p,st),(new_binds,names,b_ces,b_single_tms,b_poss_tms)) ->
-                      let (st1, ces1, tms1, ptms1, names) = recAbstractCSE(st, names, false, spc) in
-                      let (new_ces, single_tms, poss_tms) = newCSEs(ces1, b_ces, tms1, b_single_tms,
+        let (new_binds,names,b_cse,b_single_tms,b_poss_tms)
+           = foldr (fn ((p,st),(new_binds,names,b_cse,b_single_tms,b_poss_tms)) ->
+                      let (st1, cse1, tms1, ptms1, names) = recAbstractCSE(st, names, false, spc) in
+                      let (new_cse, single_tms, poss_tms) = newCSEs(cse1, b_cse, tms1, b_single_tms,
                                                                     ptms1, b_poss_tms)
                       in
                       (Cons((p,st1), new_binds),
-                       names, new_ces, single_tms, poss_tms))
+                       names, new_cse, single_tms, poss_tms))
                ([],names,[],[],[])
                binds
         in
         let bvs = boundVars t in
         let (body2, [], tms2, ptms2, names) = recAbstractCSE(body, names, true, spc) in
-        let (body3, ces3, tms3, ptms3, names) = (body2, [], tms2, ptms2, names)
-%             (case filter (fn ct -> hasRefTo?(ct,bvs)) ces2 of
-%                | [] -> (body2, ces2, tms2, ptms2, names)
+        let (body3, cse3, tms3, ptms3, names) = (body2, [], tms2, ptms2, names)
+%             (case filter (fn ct -> hasRefTo?(ct,bvs)) cse2 of
+%                | [] -> (body2, cse2, tms2, ptms2, names)
 %                | cse2a -> maybeAbstract(body2,cse2a,names,true,tms2, ptms2, spc))
         in
-        let (new_ces, single_tms, poss_tms) = newCSEs(b_ces, ces3, b_single_tms, tms3,
+        let (new_cse, single_tms, poss_tms) = newCSEs(b_cse, cse3, b_single_tms, tms3,
                                                       b_poss_tms, ptms3)
         in
         let new_t = Let(new_binds,body3,a) in
-        maybeAbstract(new_t, new_ces, names, bindable?, single_tms, poss_tms, spc)
+        maybeAbstract(new_t, new_cse, names, bindable?, single_tms, poss_tms, spc)
 
       | Lambda((p0,c0,b0)::r_matches,a) ->
         let (b0, _, tms0, ptms0, names) = recAbstractCSE(b0, names, true, spc) in
         let bvs0 = patternVars p0 in
         let tms0  = removeLocal( tms0,bvs0) in
         let ptms0 = removeLocal(ptms0,bvs0) in
-        let (new_binds,names,b_ces,b_single_tms,b_poss_tms)
+        let (new_binds,names,b_cse,b_single_tms,b_poss_tms)
            = if r_matches = [] then ([(p0,c0,b0)],names,[],tms0,ptms0)
              else
-             foldl (fn ((new_binds,names,b_ces,_,b_poss_tms),(p1,c1,b1)) ->
+             foldl (fn ((new_binds,names,b_cse,_,b_poss_tms),(p1,c1,b1)) ->
                       let (b1, _, tms1, ptms1, names) = recAbstractCSE(b1, names, true, spc) in
                       let bvs1 = patternVars p1 in
                       let tms1  = filter (fn ct -> ~(hasRefTo?(ct,bvs1)))  tms1 in
                       let ptms1 = filter (fn ct -> ~(hasRefTo?(ct,bvs1))) ptms1 in
                       (Cons((p1,c1,b1), new_binds),
-                       names, termsIntersect(b_ces, tms1),
+                       names, termsIntersect(b_cse, tms1),
                        [], termsUnion(b_poss_tms,
                                       termsUnion(tms1,ptms1)))
                       )
@@ -165,7 +174,7 @@ spec
                r_matches
         in
         let new_t = Lambda(reverse new_binds,a) in
-        maybeAbstract(new_t, b_ces, names, bindable?,
+        maybeAbstract(new_t, b_cse, names, bindable?,
                       %% When do you want to abstract lambdas?
                       %% Cons(new_t, b_single_tms)
                       b_single_tms, b_poss_tms, spc)
