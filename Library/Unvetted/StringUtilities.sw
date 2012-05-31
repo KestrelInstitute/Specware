@@ -117,8 +117,7 @@ String qualifying spec
     len_s >= len_pat
       && testSubseqEqual?(pat, s, 0, len_s - len_pat)
 
-  op  searchPred : String * (Char -> Bool) -> Option Nat
-  def searchPred (s, pred) =
+  op searchPredFirstAfter (s: String, pred: Char -> Bool, j: Nat): Option Nat =
     let sz = length s in
     let 
       def loop i =
@@ -129,9 +128,23 @@ String qualifying spec
 	else 
 	  loop (i + 1)
     in 
-      loop 0
+      loop j
 
-  %% Generalized version
+ op searchPredLastBefore(s: String, pred: Char -> Bool, j: Nat): Option Nat =
+    let 
+      def loop i =
+	if i = 0 then 
+	  None
+	else
+        let i = i - 1 in
+        if pred (s@i) then
+	  Some i
+	else 
+	  loop i
+    in 
+      loop j
+
+  %% Generalized version of split
   op  splitStringAt: String * String -> List String
   def splitStringAt(s,sep) =
    let len_s = length s in
@@ -176,22 +189,26 @@ op splitAtStr(s: String, pat: String): Option(String * String) =
 
   op  removeInitialWhiteSpace: String -> String
   def removeInitialWhiteSpace s =
-    case searchPred(s,fn c -> ~(whiteSpaceChar? c)) of
+    case searchPredFirstAfter(s,fn c -> ~(whiteSpaceChar? c), 0) of
       | Some i -> subFromTo(s,i,length s)
       | None -> s
 
   op  whiteSpaceChar?: Char -> Bool
   def whiteSpaceChar? c = c in? [#\s,#\t,#\n]
 
-
 op  stripOuterSpaces(s: String): String =
   let len = length s in
-  case findLeftmost (fn i -> s@i \_noteq #  ) (tabulate(len, fn i -> i)) of
+  case searchPredFirstAfter(s,fn c -> ~(whiteSpaceChar? c), 0) of
     | Some firstNonSpace -> 
-      (case findLeftmost (fn i -> s@i \_noteq #  ) (tabulate(len, fn i -> len-i-1)) of
+      (case searchPredLastBefore(s,fn c -> ~(whiteSpaceChar? c), length s) of
         | Some lastNonSpace ->
           subFromTo(s, firstNonSpace, lastNonSpace+1)
         | _ -> s)
     | _ -> s
 
-endspec
+op capitalize(s: String): String =
+  let sz = length s in
+  if sz = 0 then s
+    else show(toUpperCase(s@0)) ^ map toLowerCase (subFromTo(s, 1, sz))
+
+end-spec
