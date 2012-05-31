@@ -6,12 +6,9 @@ SpecNorm qualifying spec
   op regularizeBoolToFalse?: Bool = false    % Can do this effectively in IsabelleExtensions
   op removeExcessAssumptions?: Bool = false
 
+  op isaPragmaKinds: List String = ["Isa", "isa", "All", "Simplification"]
   op  isaPragma?(s: String): Bool =
-    let s = stripOuterSpaces s in
-    let len = length s in
-    len > 2 \_and (let pr_type = subFromTo(s, 0, 3) in
-	       pr_type = "Isa" \_or pr_type = "isa" \_or pr_type = "All")
-    \_or (len > 13 \_and subFromTo(s, 0, 14) = "Simplification")
+    isOneOfPragmaKinds(s, isaPragmaKinds)
 
   op makeSubtypeConstrTheoremsString: String   =    "-subtype_constrs"
   op noMakeSubtypeConstrTheoremsString: String = "-no-subtype_constrs"
