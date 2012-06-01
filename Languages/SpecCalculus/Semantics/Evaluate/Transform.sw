@@ -97,6 +97,13 @@ spec
                | _ -> raise (TypeCheck (posOf itm, "Morphism expected."))})
       itms
 
+  op extractBindPair(pr: TransformExpr): SpecCalc.Env(Id * Id) =
+    case pr of
+      | Tuple([n1, n2], _) -> {id1 <- extractName n1;
+                               id2 <- extractName n2;
+                               return(id1, id2)}
+      | _ -> raise (TypeCheck (posOf pr, "Binding Pair expected."))
+
   op makeRuleRef(trans: TransformExpr): SpecCalc.Env RuleSpec =
     case trans of
       | Item("lr",thm,_) -> {qid <- extractQId thm;
@@ -146,7 +153,7 @@ spec
 
   op commands: List String =
     ["simplify", "Simplify", "simpStandard", "SimpStandard", "eval", "partial-eval", "AbstractCommonExprs",
-     "AbstractCommonSubExprs", "print", "move"]
+     "AbstractCommonSubExprs", "print", "move", "rename"]
 
   op makeScript1(trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
@@ -183,6 +190,9 @@ spec
                                    return (Move [move])}
       | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
                                              return (Move moves)}
+      | ApplyOptions(Name(rename, pos), binds, _) ->
+        {binds <- mapM extractBindPair binds;
+         return (mkRenameVars(binds))}
       | Item("trace", Name(on_or_off,_), pos) ->
         {on? <- case on_or_off of
                   | "on"  -> return true
@@ -190,7 +200,6 @@ spec
                   | _ -> raise(TypeCheck (pos, "Trace on or off?"));
          return(Trace on?)}
       | Name("print",_) -> return Print
-
       | Slice (root_ops, root_types, cut_op?, cut_type?, _) -> 
         return (Slice (root_ops, root_types, cut_op?, cut_type?))
 
