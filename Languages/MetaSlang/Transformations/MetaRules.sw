@@ -82,4 +82,10 @@ op caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
         else None
     | _ -> None
 
+op unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
+  case tm of
+    | Let([(VarPat (v,_),e)],body,_) ->
+      Some(substitute(body,[(v,e)]))
+    | _ -> None
+
 end-spec

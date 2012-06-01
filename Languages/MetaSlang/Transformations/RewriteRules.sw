@@ -48,7 +48,9 @@ RewriteRules qualifying spec
      | RightToLeft qid -> "rl " ^ show qid
      | RLeibniz    qid -> "rev-leibniz " ^ show qid
      | Weaken      qid -> "weaken " ^ show qid
-     | MetaRule      qid -> "meta-rule " ^ show qid
+     | MetaRule    qid -> "meta-rule " ^ show qid
+     | RenameVars binds -> "rename [" ^ (foldr (fn ((id1, id2), r) -> "("^id1^", "^id2^")"^(if r = "" then r else ", "^r)) "" binds)
+                                 ^ "]"
      | SimpStandard -> "simplify"
      | AbstractCommonExpressions -> "abstractCommonExpressions"
      | Eval -> "eval"

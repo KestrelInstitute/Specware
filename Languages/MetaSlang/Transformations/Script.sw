@@ -28,6 +28,7 @@ spec
     | Simplify (RuleSpecs * Nat)
     | Simplify1 (RuleSpecs)
     | SimpStandard
+    | RenameVars (List(Id * Id))
     | PartialEval
     | AbstractCommonExpressions
     | SpecTransform(QualifiedId * RuleSpecs)
@@ -131,6 +132,12 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       | Simplify1 rules ->
         ppConcat [ppString "apply (", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString ")"]
       | SimpStandard -> ppString "SimpStandard"
+      | RenameVars binds -> ppConcat [ppString "rename [",
+                                      ppSep(ppString ", ")
+                                        (map (fn (id1, id2) ->
+                                                ppConcat[ppString"(", ppString id1, ppString ", ", ppString id2, ppString ")"])
+                                           binds),
+                                      ppString "]"]
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
       | SpecTransform(qid as Qualified(q,id), rls) ->
@@ -226,6 +233,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
  op mkSimplify(steps: RuleSpecs): Script = Simplify(steps, maxRewrites)
  op mkSimplify1(rules: RuleSpecs): Script = Simplify1 rules
  op mkSimpStandard(): Script = SimpStandard
+ op mkRenameVars (binds: List(Id * Id)): Script = RenameVars binds
  op mkPartialEval (): Script = PartialEval
  op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
  op mkMove(l: List Movement): Script = Move l
@@ -647,6 +655,26 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       | None -> (warn("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
                  None)
 
+  op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
+    let def renameId nm =
+          findLeftmost (fn (old_n, _) -> old_n = nm) binds
+        def renameVar t =
+          case t of
+            | Var((n,  ty), a) ->
+              (case renameId n of
+                 | Some(_, new_n) -> Var((new_n,  ty), a)
+                 | None -> t)
+            | _ -> t
+        def renameVarPat t =
+          case t of
+            | VarPat((n,  ty), a) ->
+              (case renameId n of
+                 | Some(_, new_n) -> VarPat((new_n,  ty), a)
+                 | None -> t)
+            | _ -> t
+    in    
+    mapTerm (renameVar, id, renameVarPat) tm
+
   op maxRewrites: Nat = 900
 
   op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, hist: TransformHistory)
@@ -686,6 +714,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                    | None -> path_term,
                                  hist)
                 | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, hist)
+                | RenameVars binds -> replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, hist)
                 | PartialEval ->
                   replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, hist)
                 | AbstractCommonExpressions ->

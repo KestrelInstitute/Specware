@@ -94,6 +94,7 @@ AnnSpec qualifying spec
    | Weaken      QualifiedId
    | MetaRule    QualifiedId
    | SimpStandard
+   | RenameVars  (List(Id * Id))
    | AbstractCommonExpressions
    | Eval
    | Context
