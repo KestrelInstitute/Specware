@@ -21,13 +21,14 @@
 				   ("lr" . "[thm] Applies theorem as a rewrite in left-to-right direction")
 				   ("rl" . "[thm] Applies theorem as a rewrite in right-to-left direction")
 				   ("weaken" . "[thm] Applies implication theorem as a weakening rewrite")
-                                   ("apply" . "[meta-rule] Applies meta-rule")
+                                   ("apply" . "[meta-rule] Applies meta-rule: dropLet, caseMerge, caseToIf, unfoldLet")
 				   ("simp-standard" . "Applies standard simplifier")
 				   ("ss" . "Applies standard simplifier")
 				   ("partial-eval" . "Evaluate closed sub-expressions")
 				   ("pe" . "Evaluate closed sub-expressions")
 				   ("abstract-cse" . "Abstract Common Sub-Expressions")
 				   ("cse" . "Abstract Common Sub-Expressions")
+                                   ("rename" . "[old-name new-name ...] Renames variable(s)")
 				   ("pc"   . "Print current expression")
 				   ("proc" . "[unit-term] Restart transformation on processed spec")
 				   ("p" . "[unit-term] Restart transformation on processed spec")
@@ -353,6 +354,17 @@
         (progn (warn "Illegal rewrite rules spec") (values))
       (interpret-command (Script::mkSimplify rules)))))
 
+(defun renamevars-command (argstr)
+  (let* ((words (and argstr
+		     (String-Spec::removeEmpty (String-Spec::splitStringAt-2 argstr " "))))
+	 (pairs (loop for tl on words by #'cddr
+		      collect (if (null (cdr tl))
+                                  nil
+                                  (cons (first tl) (second tl))))))
+    (if (member nil pairs)
+        (progn (warn "Uneven number of names") (values))
+      (interpret-command (Script::mkRenameVars pairs)))))
+
 (defun finish-transform-session ()
   (finish-previous-multi-command)
   (setq *redos* (reverse (loop for el in *undo-stack* collect (fourth el))))
@@ -380,6 +392,7 @@
              first last next prev widen all search reverse-search)
                                (move-command (cons (string-downcase (string command))
 						   (String-Spec::split argstr))))
+           ((rename renamevars) (renamevars-command argstr))
 	   ((simplify simp)    (simplify-command argstr))
 	   (apply              (apply-command argstr 'Script::mkMetaRule 'fn))
 	   ((applyToSpec a-s)  (apply-spec-command argstr 'Script::mkSpecTransform 'fn))
