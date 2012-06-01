@@ -1,6 +1,6 @@
 CSE qualifying
 spec
-  import /Languages/MetaSlang/Specs/Utilities, CurryUtils
+  import Simplify, CurryUtils
 
   op newCSEs(cse1: List MSTerm, cse2: List MSTerm, tms1: List MSTerm, tms2: List MSTerm,
              poss_tms1: List MSTerm, poss_tms2: List MSTerm)
@@ -184,9 +184,20 @@ spec
 
       | _ -> (t,[],[],[],names)
 
+  op cseVar?(vn: Id): Bool =
+    testSubseqEqual?("cse", vn, 0, 0)
 
   op abstractCommonSubExpressions(t: MSTerm, spc: Spec): MSTerm =
     let all_names = map (fn (nm,_) ->  nm) (boundVarsIn t) in
-    (recAbstractCSE(t, all_names, true, spc)).1
+    let result = (recAbstractCSE(t, all_names, true, spc)).1 in
+    let result = mapTerm (fn t ->
+                            case t of
+                              | Let([(VarPat (v,_),e)],body,_) | cseVar? v.1 && countVarRefs(body, v) = 1 ->
+                                substitute(body,[(v,e)])
+                              | _ -> t,
+                          id, id)
+                   result
+    in
+    result
 
-endspec
+end-spec
