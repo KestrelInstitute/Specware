@@ -1180,6 +1180,9 @@ If we want the precedence to be optional:
                     (cons :|Some| optInitOp))))
     (SpecCalc::mkTransformGlobalize-5 rootOpRefs typeRef globalVar initOp (make-pos l r))))
 
+(defun make-transform-repeat (transforms l r)
+  (SpecCalc::mkTransformRepeat-2 transforms (make-pos l r)))
+
 (defun make-transform-apply (trans1 transforms l r)
   (SpecCalc::mkTransformApply-3 trans1 transforms (make-pos l r)))
 

@@ -158,6 +158,7 @@ MetaSlang qualifying spec
       % which is initialized by the optional named op, or by a unique source op 
       % if the initializer is left unspecified.
 
+    | Repeat       List (ATransformExpr a)                    * a
     | Tuple        List (ATransformExpr a)                    * a
     | Record       List(String * ATransformExpr a)            * a
     | ApplyOptions ATransformExpr a * List (ATransformExpr a) * a

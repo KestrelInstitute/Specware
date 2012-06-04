@@ -207,7 +207,7 @@
       (let* ((result (Script::interpretPathTerm-6 *transform-spec* command
                                                   *transform-term*
                                                   *current-qid*
-                                                  nil nil))
+                                                  nil nil nil))
              (result (funcall result nil))
              (new-term (svref (cdar result) 0)))
 	(if (MetaSlang::equalTerm?-2 (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))

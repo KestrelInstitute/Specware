@@ -16,6 +16,7 @@ spec
       | SCTerm(_,p)-> p
       | Item(_,_,p) -> p
       | Globalize(_,_,_,_,p) -> p
+      | Repeat(_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
       | Apply(_,_,p) -> p
@@ -46,14 +47,14 @@ spec
     case itm of
       | Qual(q,n,_) -> return (Qualified(q,n))
       | Name(n,_)   -> return (mkUnQualifiedId(n))
-      | _ -> raise (TypeCheck (posOf itm, "Name expected."))
+      | _ -> raise (TypeCheck (posOf itm, "Id expected."))
 
   op extractQIds(itm: TransformExpr): SpecCalc.Env QualifiedIds =
     case itm of
       | Qual(q,n,_) -> return [Qualified(q,n)]
       | Name(n,_)   -> return [mkUnQualifiedId(n)]
       | Tuple(nms, _) -> mapM extractQId nms
-      | _ -> raise (TypeCheck (posOf itm, "Names expected."))
+      | _ -> raise (TypeCheck (posOf itm, "Ids expected."))
 
   op extractQIdPair(itm: TransformExpr): SpecCalc.Env(QualifiedId * QualifiedId) =
     case itm of
@@ -152,12 +153,15 @@ spec
       | _ -> raise (TypeCheck (posOf mv_tm, "Unrecognized move command."))
 
   op commands: List String =
-    ["simplify", "Simplify", "simpStandard", "SimpStandard", "eval", "partial-eval", "AbstractCommonExprs",
-     "AbstractCommonSubExprs", "print", "move", "rename"]
+    ["simplify", "Simplify", "simplify1", "Simplify1", "simpStandard", "SimpStandard", "eval", "repeat",
+     "partial-eval", "AbstractCommonExprs", "AbstractCommonSubExprs", "print", "move", "rename"]
 
   op makeScript1(trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
     case trans of
+      | Repeat(transforms, _) ->
+        {transfms <- mapM makeScript1 transforms;
+         return (Repeat transfms)}
       | Apply(Name("simplify",_), rls,_) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify(srls, maxRewrites))}

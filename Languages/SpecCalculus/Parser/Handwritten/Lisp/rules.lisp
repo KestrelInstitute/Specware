@@ -94,6 +94,7 @@
    ((:tuple "*")            "*")
    ((:tuple "\\_times")     "\\_times")
    ((:tuple "UID")          "UID")
+   ((:tuple "repeat")       "repeat")
   ;((:tuple "slice")        "slice")
   ;((:tuple "globalize")    "globalize")
    ((:tuple (1 :SYMBOL))    (common-lisp::symbol-name (quote 1)))
@@ -1689,6 +1690,9 @@ If we want the precedence to be optional:
                             (:optional (:tuple "," (4 :QUALIFIABLE-OP-NAME))) ; possibly named initializer
                         ")")
     (make-transform-globalize 1 2 3 4 ':left-lcb ':right-lcb))
+
+   ((:tuple "repeat" "{" (1 (:repeat* :TRANSFORM-EXPR ",")) "}")
+    (make-transform-repeat 1 ':left-lcb ':right-lcb))
 
    ((:tuple (1 :TRANSFORM-EXPR)
 	    "(" (2 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")

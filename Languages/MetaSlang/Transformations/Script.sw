@@ -24,7 +24,8 @@ spec
     | At (List Location * Script)
     | AtTheorem (List Location * Script)
     | Move (List Movement)
-    | Steps List Script
+    | Steps Scripts
+    | Repeat Scripts
     | Simplify (RuleSpecs * Nat)
     | Simplify1 (RuleSpecs)
     | SimpStandard
@@ -112,8 +113,11 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     case scr of
       | Steps steps ->
         ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)
+      | Repeat steps ->
+        ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)),
+                 ppString "}"]
       | At(locs, scr) ->
-        ppIndent(ppConcat [ppString "at(", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString "), ",
+        ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString "), ",
                            ppNewline,
                            ppScript scr])
       | AtTheorem(locs, scr) ->
@@ -130,7 +134,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                       ppNest 1 (ppConcat [ppString "(", ppSep commaBreak (map ppRuleSpec rules), ppString ")"])]
       | Simplify1 [rl] -> ppRuleSpec rl
       | Simplify1 rules ->
-        ppConcat [ppString "apply (", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString ")"]
+        ppConcat [ppString "simplify1 (", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString ")"]
       | SimpStandard -> ppString "SimpStandard"
       | RenameVars binds -> ppConcat [ppString "rename [",
                                       ppSep(ppString ", ")
@@ -227,9 +231,10 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
  op printScript(scr: Script): () =
    writeLine(scriptToString scr)
 
- op mkAt(qid: QualifiedId, steps: List Script): Script = At([Def qid], mkSteps steps)
- op mkAtTheorem(qid: QualifiedId, steps: List Script): Script = AtTheorem([Def qid], mkSteps steps)
- op mkSteps(steps: List Script): Script = if length steps = 1 then head steps else Steps steps
+ op mkAt(qid: QualifiedId, steps: Scripts): Script = At([Def qid], mkSteps steps)
+ op mkAtTheorem(qid: QualifiedId, steps: Scripts): Script = AtTheorem([Def qid], mkSteps steps)
+ op mkSteps(steps: Scripts): Script = if length steps = 1 then head steps else Steps steps
+ op mkRepeat(steps: Scripts): Script = Repeat steps
  op mkSimplify(steps: RuleSpecs): Script = Simplify(steps, maxRewrites)
  op mkSimplify1(rules: RuleSpecs): Script = Simplify1 rules
  op mkSimpStandard(): Script = SimpStandard
@@ -646,13 +651,14 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                  | _ -> None)
           
 
-  op makeMoves(path_term: PathTerm, mvs: List Movement):  Option PathTerm =
+  op makeMoves(path_term: PathTerm, mvs: List Movement, allowFail?: Bool):  Option PathTerm =
     case mvs of
       | [] -> Some path_term
       | mv :: rem_mvs ->
     case makeMove(path_term,  mv) of
-      | Some new_path_term -> makeMoves(new_path_term, rem_mvs)
-      | None -> (warn("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
+      | Some new_path_term -> makeMoves(new_path_term, rem_mvs, allowFail?)
+      | None -> (if allowFail? then ()
+                   else warn("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
                  None)
 
   op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
@@ -684,14 +690,20 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     replaceSubTermH(rewrite(path_term, context, qid, rules, maxRewrites), path_term, hist)
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
-  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool, hist: TransformHistory)
+  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
+                       allowFail?: Bool, hist: TransformHistory)
      : SpecCalc.Env (PathTerm * Bool * TransformHistory) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
     case script of
       | Steps steps ->
           foldM (fn (path_term, tracing?, hist) -> fn s ->
-               interpretPathTerm (spc, s, path_term, qid, tracing?, hist))
+               interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, hist))
             (path_term, tracing?, hist) steps
+      | Repeat steps ->
+          {(new_path_term, tracing?, hist) <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, hist);
+           if equalTerm?(topTerm new_path_term, topTerm path_term)
+             then return (new_path_term, tracing?, hist)
+             else interpretPathTerm(spc, Repeat steps, new_path_term, qid, tracing?, allowFail?, hist)}
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");
           return (path_term, tracing?, hist)
@@ -709,7 +721,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
           (path_term, hist) <-
              return
               (case script of
-                | Move mvmts -> (case makeMoves(path_term, mvmts) of
+                | Move mvmts -> (case makeMoves(path_term, mvmts, allowFail?) of
                                    | Some new_path_term -> new_path_term
                                    | None -> path_term,
                                  hist)
@@ -757,7 +769,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool, hist: TransformHistory)
     : SpecCalc.Env (MSTerm * Bool * TransformHistory) =
     {typed_path_term <- return(typedPathTerm(def_term, top_ty));
-     ((new_typed_term, _), tracing?, hist) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, hist);
+     when tracing? 
+       (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
+     ((new_typed_term, _), tracing?, hist) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false, hist);
      return(new_typed_term, tracing?, hist)}
 
   op interpretTerm0(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
@@ -820,8 +834,6 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                 (print ("-- { at "^show qid^" }\n"));
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
-                              when tracing? 
-                                (print ((printTerm tm) ^ "\n")); 
                               (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, ty, qid, tracing?, []);
                               if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
                                 then let _ = writeLine(show qid^" not modified.") in
