@@ -20,14 +20,14 @@ spec
   op maybeAbstract(t: MSTerm, cse: List MSTerm, names: List String, bindable?: Bool,
                    single_tms: List MSTerm, poss_tms: List MSTerm, spc: Spec)
     : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
-    % let _ = (writeLine("maybeAbstract "^show bindable?^":\n"^printTerm t^"\ncse:");
-    %          app (fn t -> writeLine(printTerm t)) cse;
-    %          writeLine("single_tms: ");
-    %          app (fn t -> writeLine(printTerm t)) single_tms;
-    %          writeLine("Poss_tms: ");
-    %          app (fn t -> writeLine(printTerm t)) poss_tms;
-    %          writeLine "")
-    % in
+     % let _ = (writeLine("maybeAbstract "^show bindable?^":\n"^printTerm t^"\ncse:");
+     %          app (fn t -> writeLine(printTerm t)) cse;
+     %          writeLine("single_tms: ");
+     %          app (fn t -> writeLine(printTerm t)) single_tms;
+     %          writeLine("Poss_tms: ");
+     %          app (fn t -> writeLine(printTerm t)) poss_tms;
+     %          writeLine "")
+     % in
     let bvs = boundVars t in
     let cse = removeLocal(cse,bvs) in
     case cse of
@@ -178,10 +178,20 @@ spec
                       %% When do you want to abstract lambdas?
                       %% Cons(new_t, b_single_tms)
                       b_single_tms, b_poss_tms, spc)
+
+      | Seq(act1 :: r_acts, a) ->
+        let (nr_acts, names) = foldr (fn (act_i, (nr_acts, names)) ->
+                                       let (n_act_i, _, _, _, names) = recAbstractCSE(act_i, names, true, spc) in
+                                       (n_act_i :: nr_acts, names))
+                                 ([], names) r_acts
+        in
+        let (n_act1, new_cse, single_tms, poss_tms, names) = recAbstractCSE(act1, names, false, spc) in
+        let new_t = Seq(n_act1 :: nr_acts, a) in
+        maybeAbstract(new_t, new_cse, names, bindable?, single_tms, poss_tms, spc)
       
       %% To add!
       %% | Bind(b,vs,bod) ->
-
+      
       | _ -> (t,[],[],[],names)
 
   op cseVar?(vn: Id): Bool =
