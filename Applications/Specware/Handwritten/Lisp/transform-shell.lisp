@@ -204,7 +204,7 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let* ((result (Script::interpretPathTerm-6 *transform-spec* command
+      (let* ((result (Script::interpretPathTerm-7 *transform-spec* command
                                                   *transform-term*
                                                   *current-qid*
                                                   nil nil nil))
