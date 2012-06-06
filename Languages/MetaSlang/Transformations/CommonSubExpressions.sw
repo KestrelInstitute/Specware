@@ -51,9 +51,9 @@ spec
       | _ ->
         let single_tms = removeLocal(single_tms,bvs) in
         let poss_tms = removeLocal(poss_tms,bvs) in
-        let single_tms = case t of
-                           | Lambda _ -> single_tms
-                           | _ -> Cons(t, single_tms)
+        let single_tms = if dontAbstract? t
+                          then single_tms
+                          else t :: single_tms
         in
         (t, cse, single_tms, poss_tms, names)
 
@@ -196,6 +196,12 @@ spec
 
   op cseVar?(vn: Id): Bool =
     testSubseqEqual?("cse", vn, 0, 0)
+
+  op dontAbstract?(tm: MSTerm): Bool =
+    case tm of
+      | Lambda _ -> true
+      | Apply(Fun(Project _, _, _), _, _) -> true
+      | _ -> false
 
   op abstractCommonSubExpressions(t: MSTerm, spc: Spec): MSTerm =
     let all_names = map (fn (nm,_) ->  nm) (boundVarsIn t) in
