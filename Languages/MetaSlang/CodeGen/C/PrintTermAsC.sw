@@ -233,6 +233,7 @@ PrintAsC qualifying spec
 
     %%  +  (plus)                
 
+    | "+_1_sint"   -> Unary "+"
     | "+_1_slong"  -> Unary "+"
     | "+_1_sllong" -> Unary "+"
     | "+_1_uint"   -> Unary "+"
@@ -250,24 +251,26 @@ PrintAsC qualifying spec
                 
     %%  ~  (bitwise complement) 
 
-    | "~_1_sint"   -> Unary "~"
-    | "~_1_slong"  -> Unary "~"
-    | "~_1_sllong" -> Unary "~"
-    | "~_1_uint"   -> Unary "~"
-    | "~_1_ulong"  -> Unary "~"
-    | "~_1_ullong" -> Unary "~"
+    | "~_sint"   -> Unary "~"
+    | "~_slong"  -> Unary "~"
+    | "~_sllong" -> Unary "~"
+    | "~_uint"   -> Unary "~"
+    | "~_ulong"  -> Unary "~"
+    | "~_ullong" -> Unary "~"
       
     %%  !  (logical negation)   
 
-    | "!_1_char"   -> Unary "!"
-    | "!_1_schar"  -> Unary "!"
-    | "!_1_uchar"  -> Unary "!"
-    | "!_1_sint"   -> Unary "!"
-    | "!_1_uint"   -> Unary "!"
-    | "!_1_slong"  -> Unary "!"
-    | "!_1_ulong"  -> Unary "!"
-    | "!_1_sllong" -> Unary "!"
-    | "!_1_ullong" -> Unary "!"
+    | "!_char"   -> Unary "!"
+    | "!_schar"  -> Unary "!"
+    | "!_uchar"  -> Unary "!"
+    | "!_sshort" -> Unary "!"
+    | "!_ushort" -> Unary "!"
+    | "!_sint"   -> Unary "!"
+    | "!_uint"   -> Unary "!"
+    | "!_slong"  -> Unary "!"
+    | "!_ulong"  -> Unary "!"
+    | "!_sllong" -> Unary "!"
+    | "!_ullong" -> Unary "!"
       
     %% ------------------------------------------------------------
     %%  [C99 6.5.3.5  "The sizeof operator"]
