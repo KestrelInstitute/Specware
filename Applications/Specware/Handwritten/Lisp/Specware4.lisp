@@ -80,7 +80,7 @@
 		(require :sb-introspect)
 		(require :sb-posix)
                 (require :sb-cltl2)
-		;(require :sb-sprof)
+		; (require :sb-sprof)
                 (require :asdf)
                 (require :sb-grovel)
                 ))
@@ -137,6 +137,7 @@
    (declare (ignore condition))
    (muffle-warning))
 
+#||
 (let ((*readtable* (copy-readtable nil)))
   (handler-bind ((warning #'ignore-warning))
     (load (make-pathname
@@ -149,6 +150,7 @@
   (format t "~%Finished loading Snark.")
   (finish-output t)
   )
+||#
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
@@ -193,6 +195,7 @@
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTHarray.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTVector.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsVector.lisp"
     ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
@@ -427,8 +430,8 @@
   ;#+sbcl (setf (sb-ext:bytes-consed-between-gcs) (* 4 (sb-ext:bytes-consed-between-gcs)))
   (let ((cl:*print-pretty* nil)
         (val (and (cl-user::sw "/Applications/Specware/Specware4")
-                  (progn (format t "Full garbage collection...")
-                         (system-spec::garbageCollect t)
+                  (progn ;(format t "Full garbage collection...")
+                         ;(system-spec::garbageCollect t)
                          (terpri t)
                          (cl-user::swl "/Applications/Specware/Specware4")))))
     (unless val
@@ -438,4 +441,4 @@
                "(delete-continuation)"))
     val))
 ;(trace load)
-(declaim (optimize (speed 2) (debug 3) (safety 2)))
+(declaim (optimize (speed 1) (debug 3) (safety 3)))

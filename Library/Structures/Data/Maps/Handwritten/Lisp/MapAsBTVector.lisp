@@ -17,8 +17,8 @@
   (proclaim '(optimize (space 1) (speed 3)(debug 3))))
 
 
-(defun make-map-as-undo-vector (vec next)
-  (vector vec next nil nil))
+(defmacro make-map-as-undo-vector (vec next)
+  `(vector ,vec ,next nil nil))
 
 (defmacro map-as-undo-vector--vector (x) `(svref ,x 0))
 (defmacro map-as-undo-vector--next (x) `(svref ,x 1))
@@ -29,9 +29,9 @@
 (defmacro map-as-undo-vector--set-next (m next)
    `(setf (svref ,m 1) ,next))
 
-(defun set-undo-info (v domain-value old-range-value)
-  (setf (svref v 2) domain-value)
-  (setf (svref v 3) old-range-value))
+(defmacro set-undo-info (v domain-value old-range-value)
+  `(progn (setf (svref ,v 2) ,domain-value)
+          (setf (svref ,v 3) ,old-range-value)))
 
 (defvar *undefined* '(:|None|))
 (defun defined? (val) 
@@ -40,12 +40,12 @@
 (defun mkSome (val)
   (cons ':|Some| val))
 
-(defparameter *map-as-undo-vector--initial-vector-size* 100)
+(defparameter *map-as-undo-vector--initial-vector-size* 250)
 (defparameter *map-as-undo-vector--max-vector-size* 100000)
 (defparameter *map-as-undo-vector-resize-factor* 2.0)
 
-(defun map-as-undo-vector--initial-vector ()
-  (make-array *map-as-undo-vector--initial-vector-size*
+(defmacro map-as-undo-vector--initial-vector ()
+  `(make-array *map-as-undo-vector--initial-vector-size*
 	      :initial-element *undefined*))
 
 (defun make-vector-same-size (table)
@@ -63,6 +63,7 @@
     (make-map-as-undo-vector new-vec nil)))
     
 
+(defparameter *map-as-undo-vector-miss-count* 0)
 (defparameter *map-as-undo-vector-undo-count* 0)
 (defparameter *map-as-undo-vector-copy-count* 0)
 (defparameter *map-as-undo-vector-ref-count* 0)
@@ -72,10 +73,13 @@
 
 (defparameter BTV_empty_map (make-map-as-undo-vector (map-as-undo-vector--initial-vector) nil))
 
-(defun map-as-undo-vector-assure-current (m)
-  (if (map-as-undo-vector-current? m)
-      m
-      (let* ((vec (map-as-undo-vector--vector m))
+(defmacro map-as-undo-vector-assure-current (m)
+  `(if (map-as-undo-vector-current? ,m)
+      ,m
+      (map-as-undo-vector-make-current ,m)))
+	     
+(defun map-as-undo-vector-make-current (m)
+  (let* ((vec (map-as-undo-vector--vector m))
 	     ;; Follow links to curr reversing as you go
 	     (live (do ((curr m next)
 			(next (prog1 (map-as-undo-vector--next m)
@@ -84,25 +88,27 @@
 				(map-as-undo-vector--set-next next curr))))
 		       ((null next) curr)
 		     ())))   ; empty body because action in prog1
+        ;(break "Nnot current: ~a" m)
+        ;(incf *map-as-undo-vector-miss-count*)
 	;; Follow links back to m undoing as we go and storing redo info
 	(do ((curr live next)
 	     (next (map-as-undo-vector--next live)
 		   (map-as-undo-vector--next next)))
 	    ((null next) ())
 	  (let ((dom-elt (map-as-undo-vector--dom-elt next)))
+            ;(incf *map-as-undo-vector-undo-count*)
 	    ;(format t "Current: ~a~%~a -> ~a~%" curr dom-elt (svref vec dom-elt)
 	    (set-undo-info curr dom-elt (svref vec dom-elt))
 	    (let ((old-val (map-as-undo-vector--saved-val next)))
 	      (setf (svref vec dom-elt) old-val))))
-	m)))
-	     
+	m))
 
 (defun map-as-undo-vector--update (m x y)
   (declare (fixnum x))
   (when (eq m BTV_empty_map)
     (setq m (make-map-as-undo-vector (map-as-undo-vector--initial-vector) nil)))
   (let ((m (map-as-undo-vector-assure-current m)))
-    ;;(incf *map-as-undo-vector-set-count*)
+    ; (incf *map-as-undo-vector-set-count*)
     (let ((vec (map-as-undo-vector--vector m)))
       (if  (>= x (length vec))
 	   (let* ((new-m (grow-map-vector vec x))
@@ -120,7 +126,7 @@
 		     new-m))))))))
 
 (defun print-map (m)
-  (map-as-undo-vector-assure-current m)
+  (setq m (map-as-undo-vector-assure-current m))
   (let ((vec (map-as-undo-vector--vector m))
 	(line-items 0))
     (loop for x from 0 to (- (length vec) 1)
@@ -141,7 +147,7 @@
 (defun BTV_apply-2 (m x)
   (declare (fixnum x))
   ;(incf *map-as-undo-vector-ref-count*)
-  (map-as-undo-vector-assure-current m)
+  (setq m (map-as-undo-vector-assure-current m))
   (let ((vec (map-as-undo-vector--vector m)))
     (if (>= x (length vec))
 	*undefined*
@@ -159,7 +165,7 @@
 (defun BTV_eval-2 (m x)
   (declare (fixnum x))
   ;(incf *map-as-undo-vector-ref-count*)
-  (map-as-undo-vector-assure-current m)
+  (setq m (map-as-undo-vector-assure-current m))
   (let ((vec (map-as-undo-vector--vector m)))
     (if (>= x (length vec))
 	(eval-error m x)
@@ -207,19 +213,16 @@
 (defun BTV_mapiPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-vector-assure-current m))
-	 (vec (map-as-undo-vector--vector curr-m))
-	 (result (map-as-undo-vector--initial-vector)))
-    (let* ((curr-m (map-as-undo-vector-assure-current m))
-	 (vec (map-as-undo-vector--vector curr-m))
-	 (result (make-vector-same-size vec)))
+         (vec (map-as-undo-vector--vector curr-m))
+         (result (make-vector-same-size vec)))
     (loop for x from 0 to (- (length vec) 1)
-	  do (let ((val (svref vec x)))
-	       (when (defined? val)
-		 (let ((val (funcall f (cons x val))))
-		   (unless (equal val *undefined*) ; Note equal not eq
-		     ;; (:|Some| . realval)
-		     (setf (svref result x) (cdr val)))))))
-    (make-map-as-undo-vector result nil))))
+       do (let ((val (svref vec x)))
+            (when (defined? val)
+              (let ((val (funcall f (cons x val))))
+                (unless (equal val *undefined*) ; Note equal not eq
+                  ;; (:|Some| . realval)
+                  (setf (svref result x) (cdr val)))))))
+    (make-map-as-undo-vector result nil)))
 
 (defun BTV_mapPartial-2 (f m)
   (declare (dynamic-extent f))
@@ -276,7 +279,7 @@
 	 (vec (map-as-undo-vector--vector m))
 	 (*foldi-vector* (vector nil nil nil)))
     (loop for x from 0 to (- (length vec) 1)
-	  do (map-as-undo-vector-assure-current m) ; In case fn is modifying m
+	  do (setq m (map-as-undo-vector-assure-current m)) ; In case fn is modifying m
 	     (let ((val (svref vec x)))
 	       (when (defined? val)
 		 (let ((args (foldi-vector x val result)))
