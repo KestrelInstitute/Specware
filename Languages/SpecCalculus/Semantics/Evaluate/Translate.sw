@@ -811,7 +811,7 @@ op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
               % print ("evalTerm:\n"^(case val of Spec spc -> printSpecFlat (subtractSpec spc (getBaseSpec())) | _ -> "")^"\n" );
               return (Some val)} 
   in
-    runSpecCommand (catch prog handler)
+    run (catch prog handler)
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
