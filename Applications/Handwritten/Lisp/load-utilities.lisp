@@ -575,3 +575,30 @@
     (format t "Exiting ~a~%" (funcall e-in-e '(length (slime-rex-continuations))))
     (funcall e-in-e '(slime-quit-specware))))
 
+(defmacro with-unique-names ((&rest bindings) &body body)
+  "Evaluate BODY with BINDINGS bound to fresh unique symbols.
+
+Syntax: WITH-UNIQUE-NAMES ( [ var | (var x) ]* ) declaration* form*
+
+Executes a series of forms with each VAR bound to a fresh,
+uninterned symbol. The uninterned symbol is as if returned by a call
+to GENSYM with the string denoted by X - or, if X is not supplied, the
+string denoted by VAR - as argument.
+
+The variable bindings created are lexical unless special declarations
+are specified. The scopes of the name bindings and declarations do not
+include the Xs.
+
+The forms are evaluated in order, and the values of all but the last
+are discarded \(that is, the body is an implicit PROGN)."
+  ;; reference implementation posted to comp.lang.lisp as
+  ;; <cy3bshuf30f.fsf@ljosa.com> by Vebjorn Ljosa - see also
+  ;; <http://www.cliki.net/Common%20Lisp%20Utilities>
+  `(let ,(mapcar (lambda (binding)
+                   (check-type binding (or cons symbol))
+                   (destructuring-bind (var &optional (prefix (symbol-name var)))
+                       (if (consp binding) binding (list binding))
+                     (check-type var symbol)
+                     `(,var (gensym ,(concatenate 'string prefix "-")))))
+                 bindings)
+     ,@body))

@@ -477,6 +477,30 @@
 (define-compiler-macro List-Spec::tail (l)
   `(cdr ,l))
 
+(defun explicit-list-forms (fm)
+  (if (null fm) nil
+      (if (consp fm)
+          (if (eq (car fm) 'list)
+              (cdr fm)
+              (if (eq (car fm) 'cons)
+                  (let ((rec-result (explicit-list-forms (third fm))))
+                    (if (eq rec-result :not-list)
+                        :not-list
+                        (cons (second fm) rec-result)))
+                  :not-list))
+          :not-list)))
+
+(defvar *opt_count* 0)
+
+(define-compiler-macro List-Spec::in?-2 (&whole form x l)
+  (let ((list-elt-forms (explicit-list-forms l)))
+    (if (eq list-elt-forms :not-list) form
+        (specware::with-unique-names (x-v)
+          ;; (incf *opt_count*)
+          `(let ((,x-v ,x))
+             (or ,@(map 'list #'(lambda (fm) `(slang-term-equals-2 ,x-v ,fm))
+                        list-elt-forms)))))))
+
 ;; assert is in Library/General/Assert
 ;; If optimization property speed is 3 and safety is less than 3 then this is compiled away.
 ;; Otherwise it tests condition and gives a run-time error if it is false
