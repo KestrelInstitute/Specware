@@ -38,14 +38,6 @@ PrintAsC qualifying spec
  import PrintAsCUtils
 
  %% ========================================================================
- %%  CLevel controls the printing of IfThenElse as statement vs. expression.
- %%  It is also used to control printing of 'return' before expressions.
- %% ========================================================================
-
- type CLevel = | Statement
-               | Expression
-
- %% ========================================================================
  %%  We wrap parens around a sub-term if its precedence is less than the 
  %%  expected precedence,  Two extreme values are included for clarity.
  %% ========================================================================
@@ -793,12 +785,12 @@ PrintAsC qualifying spec
  op printPrimitiveAsC (status : CGenStatus, fun : MSFun) : Pretty * CGenStatus =
   %% 'Fun' means primitive here, and is not short for 'function'
   case fun of
-    | Nat     n  -> (string (show n), status)
-    | Char    c  -> (string (show c), status)
-    | String  s  -> (string s,        status)
+%    | Nat     n  -> (string (show n), status)
+%    | Char    c  -> (string (show c), status)
+%    | String  s  -> (string s,        status)
 
     | Op (qid as Qualified (q, id), _) -> 
-      if q = "C" then
+      if q = "C" then % TODO Think about this check.
         (string "??", reportError ("Op not in legal subset for translation to C: C." ^ id, status))
       else if legal_C_Id? id then
         (string id, status)
@@ -880,7 +872,7 @@ PrintAsC qualifying spec
       (CPrecedence_PRIMARY, string "??", reportError ("no Nat value for " ^ printTerm tm, status))
 
  %% ========================================================================
- %% Main print routine for terms.
+ %% Main print routine for terms. (This comment is somewhat out-of-date. -EWS)
  %%
  %%  For vars, prints name (if legal)
  %%
@@ -907,12 +899,13 @@ PrintAsC qualifying spec
  %%
  %% ========================================================================
 
-
+%TODO Can we do this in Metaslang before calling the C generator?
  op uncurry (t1 : MSTerm, args : MSTerms) : CFunCall =
   case t1 of
     | Apply (t2, t3, _) -> uncurry (t2, [t3] ++ args)
     | _ -> {f = t1, args = args}
 
+%TODO Can we do this in Metaslang before calling the C generator?
  op flattenRecordArgs (args : MSTerms) : MSTerms =
   foldl (fn (args, arg) ->
            case arg of
@@ -926,19 +919,17 @@ PrintAsC qualifying spec
  op wrapReturn (pretty : Pretty) : Pretty = 
   blockNone (0, [(0, string "return "), (0, pretty), (0, string "; ")])
 
- op printTermAsCExp (status : CGenStatus, tm : MSTerm, expected : CPrecedence) 
-  : Pretty * CGenStatus = 
-  let (p, _, status) = printTermAsC (status, tm, expected, Expression) in
-  (p, status)
+ op wrapBraces (pretty : Pretty) : Pretty = 
+  blockNone (0, [(0, string "{"), (0, pretty), (0, string "}")])
 
- op printTermsAsCList (status       : CGenStatus, 
+ op printTermsAsCExpressions (status       : CGenStatus, 
                        pretty_open  : Line,
                        terms        : MSTerms,
                        pretty_close : Line)
   : Lines * CGenStatus =
   let (lines, _, status) =
       foldl (fn ((lines, first?, status), tm) ->
-               let (block, status) = printTermAsCExp (status, tm, CPrecedence_NO_PARENS) in 
+               let (block, status) = printTermAsCExpression (status, tm, CPrecedence_NO_PARENS) in 
                let line = (0, block) in
                let lines = lines ++ (if first? then [line] else [L0_comma_space, line]) in
                (lines, false, status))
@@ -947,71 +938,43 @@ PrintAsC qualifying spec
   in
   (lines ++ [pretty_close], status)
 
- op printTermAsC (status   : CGenStatus,
-                  tm       : MSTerm, 
-                  expected : CPrecedence, 
-                  level    : CLevel) 
-  : Pretty * CLevel * CGenStatus = 
-  %% If precedence of term is less than expected precedence, wrap parens.
+%% Pretty-print a C expression (not a statement).
+%% If precedence of tm is less than expected precedence, wrap parens.
+%% This does not put in the 'return'; the caller must do that.
+ op printTermAsCExpression (status   : CGenStatus, %%this seems to be threaded through
+                  	    tm       : MSTerm,
+                  	    expected : CPrecedence
+                  	    )
+  : Pretty * CGenStatus = 
+
   case tm of
 
     | Var ((id, _), _) -> 
       if legal_C_Id? id then
-        (string id, Expression, status)
+        (string id, status)
       else
-        (string "", Expression, reportError ("illegal C variable name: " ^ id, status))
+        (string "", reportError ("illegal C variable name: " ^ id, status))
 
     | Fun (fun, _, _) -> 
       let (pretty, status) = printPrimitiveAsC  (status, fun) in
-      (pretty, Expression, status)
+      (pretty, status)
 
     | TypedTerm  (t1, _, _) -> 
-      printTermAsC (status, t1, expected, level)
-
-    | Pi (_, t1, _) -> 
-      printTermAsC (status, t1, expected, level)
-
-    | And (t1 :: _, _) -> 
-      printTermAsC (status, t1, expected, level)
+      printTermAsCExpression (status, t1, expected)
 
     | IfThenElse (t1, t2, t3, _) -> 
 
-      if level = Statement then
-
         %% ==============================================================================
-        %% [C99 6.8.4.1 "The if statement"]
+        %% [C99 6.5.15 "Conditional operator"] aka the ?: operator
         %% ==============================================================================
 
-        let (p1, _,      status) = printTermAsC (status, t1, CPrecedence_REQUIRE_PARENS, Expression) in
-        let (p2, level2, status) = printTermAsC (status, t2, CPrecedence_NO_PARENS,      Statement)  in
-        let (p3, level3, status) = printTermAsC (status, t3, CPrecedence_NO_PARENS,      Statement)  in
+        let (p1, status) = printTermAsCExpression (status, t1, CPrecedence_LOR) in  
+        let (p2, status) = printTermAsCExpression (status, t2, CPrecedence_EXPR) in  
+        let (p3, status) = printTermAsCExpression (status, t3, CPrecedence_COND) in  
 
-        %% For now, all the leaf statements in an 'if' statmement must be returns.
-        %% But avoid return of a statement, which will already have a return.
-
-        let p2 = if level2 = Statement then p2 else wrapReturn p2 in
-        let p3 = if level3 = Statement then p3 else wrapReturn p3 in
-        (blockAll (0, [(0, blockNone (0, [L0_if, (0, p1), L0_space])),
-                       (2, p2), 
-                       L0_else,
-                       (2, p3)]),
-         Statement, 
-         status)
-
-      else
-
-        %% ==============================================================================
-        %% [C99 6.5.15 "Conditional operator"]
-        %% ==============================================================================
-
-        let (p1, _,            status) = printTermAsC (status, t1, CPrecedence_LOR,  Expression) in  
-        let (p2, p2hasreturn?, status) = printTermAsC (status, t2, CPrecedence_EXPR, Expression) in  
-        let (p3, p3hasreturn?, status) = printTermAsC (status, t3, CPrecedence_COND, Expression) in  
-
-        (blockLinear (0, [(0, p1), 
+        (blockLinear (0, [(0, p1),
                           (2, blockNone (0, [L0_expr_then, (0, p2)])), 
                           (2, blockNone (0, [L0_expr_else, (0, p3)]))]),
-         Expression,   % we have not yet included any returns
          status)
 
     | Apply (t1, t2, _) -> 
@@ -1027,8 +990,8 @@ PrintAsC qualifying spec
               %% [C99 6.5.2 "Postfix operators"]
               %% ==============================================================================
 
-              let (pretty_fn, status) = printTermAsCExp (status, f, CPrecedence_POST)          in % [C99 6.5.2]
-              let (lines,     status) = printTermsAsCList (status, L0_lparen, args, L0_rparen) in
+              let (pretty_fn, status) = printTermAsCExpression (status, f, CPrecedence_POST)          in % [C99 6.5.2]
+              let (lines,     status) = printTermsAsCExpressions (status, L0_lparen, args, L0_rparen) in
               let lines = [(0, pretty_fn)] ++ lines in
               (CPrecedence_CALL, blockNone (0, lines), status)
               
@@ -1038,7 +1001,7 @@ PrintAsC qualifying spec
               %% [C99 6.5.3 "Unary operators"]
               %% ==============================================================================
 
-              let (p1, status) = printTermAsCExp (status, arg, CPrecedence_UNARY) in
+              let (p1, status) = printTermAsCExpression (status, arg, CPrecedence_UNARY) in
               let lines = [(0, string c_str), (0, p1)] in
               (CPrecedence_UNARY, blockNone (0, lines), status)
               
@@ -1048,7 +1011,7 @@ PrintAsC qualifying spec
               %% [C99 6.5.2 "Postfix operators"]
               %% ==============================================================================
 
-              let (p1, status) = printTermAsCExp (status, arg, CPrecedence_POST) in
+              let (p1, status) = printTermAsCExpression (status, arg, CPrecedence_POST) in
               let lines = [(0, p1), (0, string c_str)] in
               (CPrecedence_POST, blockNone (0, lines), status)
               
@@ -1058,7 +1021,7 @@ PrintAsC qualifying spec
               %% [C99 6.5.2 "Postfix operators"]
               %% ==============================================================================
 
-              let (p1, status) = printTermAsCExp (status, arg, CPrecedence_CAST) in
+              let (p1, status) = printTermAsCExpression (status, arg, CPrecedence_CAST) in
               let lines = [(0, string c_str), (0, p1)] in
               (CPrecedence_CAST, blockNone (0, lines), status)
               
@@ -1068,8 +1031,8 @@ PrintAsC qualifying spec
               %% [C99 ... misc sections]
               %% ==============================================================================
 
-              let (p1, status) = printTermAsCExp (status, arg1, fixity.left)  in
-              let (p2, status) = printTermAsCExp (status, arg2, fixity.right) in
+              let (p1, status) = printTermAsCExpression (status, arg1, fixity.left)  in
+              let (p2, status) = printTermAsCExpression (status, arg2, fixity.right) in
               let lines = [(0, p1),
                            (0, blockNone (0, [L0_space, (0, string fixity.operator), L0_space])),
                            (0, p2)]
@@ -1094,8 +1057,8 @@ PrintAsC qualifying spec
               %% [C99 6.5.2 "Postfix operators"]
               %% ==============================================================================
 
-              let (pretty_array_name, status) = printTermAsCExp (status, array, CPrecedence_POST) in % [C99 6.5.2]
-              let (lines, status) = printTermsAsCList (status, L0_lsquare, reverse indices, L0_rsquare) in
+              let (pretty_array_name, status) = printTermAsCExpression (status, array, CPrecedence_POST) in % [C99 6.5.2]
+              let (lines, status) = printTermsAsCExpressions (status, L0_lsquare, reverse indices, L0_rsquare) in
               let lines = [(0, pretty_array_name)] ++ lines in
               (CPrecedence_SUBSCRIPT, blockNone (0, lines), status)
               
@@ -1106,7 +1069,7 @@ PrintAsC qualifying spec
               %% need to add more now.
               %% ==============================================================================
 
-              let (p1, status) = printTermAsCExp (status, t1, expected) in
+              let (p1, status) = printTermAsCExpression (status, t1, expected) in
               (CPrecedence_HAVE_PARENS, p1, status) 
               
             | (Illegal error_msg, _) ->
@@ -1122,10 +1085,89 @@ PrintAsC qualifying spec
           else
             pretty
       in
-      (pretty, Expression, status)
+      (pretty, status)
 
+    | Let (bindings, body, _) -> 
+      (string "??", reportError ("We do not allow let terms inside expressions (they must be at the statement level): " ^ printTerm tm, status))
+
+    %% Some kind of term not handled (yet?):
     | _ -> 
-      %% Some kind of term not handled (yet?):
-      (string "??", Expression, reportError ("unrecognized term: " ^ printTerm tm, status))
+      (string "??", reportError ("unrecognized term: " ^ printTerm tm, status))
+
+
+%% each entry is a pair of a local variable name and its type.
+type LocalVarInfo = List (Id * Id)
+
+ %% Translate the body of an op to C.  In general, we expect an op's body to be
+ %% a nest of IfThenElses and Lets, with expressions at the leaves.
+
+ op printTermAsCStatement (status   : CGenStatus, %%this seems to be threaded through
+                           tm       : MSTerm
+                           )
+  : Pretty
+    * Boolean  %% flag for whether it is a compound statement
+    * CGenStatus 
+    * LocalVarInfo %% names and types of local variables (from Lets)
+= 
+
+  case tm of
+
+    | TypedTerm  (t1, _, _) -> 
+      printTermAsCStatement (status, t1)
+
+    | Pi (_, t1, _) -> 
+      printTermAsCStatement (status, t1)
+
+    | And (t1 :: _, _) -> 
+      printTermAsCStatement (status, t1)
+
+    | IfThenElse (t1, t2, t3, _) -> 
+
+      %% ==============================================================================
+      %% [C99 6.8.4.1 "The if statement"]
+      %% ==============================================================================
+
+      let (p1,            status) = printTermAsCExpression (status, t1, CPrecedence_REQUIRE_PARENS) in
+      let (p2, compound2, status, vars2) = printTermAsCStatement (status, t2)  in
+      let (p3, compound3, status, vars3) = printTermAsCStatement (status, t3)  in
+
+      let p2 = if compound2 then wrapBraces p2 else p2 in
+      let p3 = if compound3 then wrapBraces p3 else p3 in
+      (blockAll (0, [(0, blockNone (0, [L0_if, (0, p1), L0_space])),
+                     (2, p2), 
+                     L0_else,
+                     (2, p3)]),
+       false,  %%not compound
+       status,
+       vars2++vars3)
+
+    | Let (bindings, body, _) -> 
+        (case bindings of
+         | [] -> (string "??", false, reportError ("We do not handle let terms with no bindings: " ^ printTerm tm, status), [])
+	 | (pattern, term)::[] ->
+           (case pattern of
+           | VarPat ((id, ty), _) ->
+             (case ty of 
+             | Base (typeqid, [], _) ->  %FIXME What is this list following the qid?  It usually seems to be empty.
+                (case getCTypeName(typeqid, status) of
+                 | None -> 
+                   (string "??", false, reportError ("Could not translate the type of a let variable to a C type: " ^ printTerm tm, status), [])
+                 | Some typeid ->
+                   (let (prettyletbody, level, status, vars) = printTermAsCStatement (status, body) in %FIXME think about parens
+                   (let (prettyterm, status) = printTermAsCExpression (status, term, CPrecedence_NO_PARENS) in
+                     (blockAll (0, [(0, blockNone(0, [(0, string id), (0, string " = "), (0, prettyterm),  (0, string ";")])), (0, prettyletbody)]),
+                               true, % the local variable assignment makes this a compound statement
+                               status,
+		               (id, typeid)::vars
+			       ))))
+             | _ -> (string "??", false, reportError ("We do not handle let terms where the type of the bound variable is not a base type: " ^ printTerm tm, status), []))
+	   | _ -> (string "??", false, reportError ("We do not handle let terms where the pattern is not a variable: " ^ printTerm tm, status), []))
+	 | _ -> (string "??", false, reportError ("We do not handle let terms with more than one binding: " ^ printTerm tm, status), []))
+
+    %% It is not an IfThenElse or a Let, so it must be an expression.  We will translate it and wrap it in a return.
+    %% All of the leaves of the IfThenElse / Let nest will be expressions.
+    | _ -> let (pretty, status) = printTermAsCExpression (status, tm, CPrecedence_NO_PARENS) in
+           (wrapReturn pretty, false, status, [])
+
 
 endspec

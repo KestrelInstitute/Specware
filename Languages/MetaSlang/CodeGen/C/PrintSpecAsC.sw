@@ -161,7 +161,8 @@ PrintAsC qualifying spec
     | Op   (qid, info) -> ppOpInfoToH   (status, qid, info)
 
  op ppInfosToH (status : CGenStatus, basename : FileName, infos : CInfos) : CGenStatus =
-  let hdr = "/* " ^ basename ^ ".h by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */" in
+  let hdr = "/* " ^ basename ^ ".h by " ^ userName() ^ " */" %% ^ " at " ^ currentTimeAndDate() ^ " */"  %%Removing this to prevent spurious diffs in the regression suite. -EWS
+in
   let status = ppToH (status, string hdr) in
   let status = ppToH (status, string "") in
   foldl ppInfoToH status infos
@@ -173,6 +174,12 @@ PrintAsC qualifying spec
   status
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op ppLocalVarInfoToC (info: LocalVarInfo) : List (Nat * Pretty) =
+  case info of
+  | [] -> []
+  | (varid, typeid)::tl -> 
+    [(2, string (typeid ^ " " ^ varid ^ ";"))] ++ ppLocalVarInfoToC(tl)
 
  op ppOpInfoToC (status : CGenStatus, qid : QualifiedId, info : OpInfo) 
   : CGenStatus =
@@ -205,9 +212,11 @@ PrintAsC qualifying spec
           | Some body ->
             (case inner body of
                | Some body ->
-                 let (pretty_body, inner_level, status) = printTermAsC (status, body, CPrecedence_NO_PARENS, Statement) in
-                 let pretty_body = if inner_level = Expression then wrapReturn pretty_body else pretty_body in
-                 let lines = [(0, sig_pretty), (0, string " { "), (2, pretty_body), (1, string "}")] in
+                 let (pretty_body, compoundflag, status, localvarinfo) = printTermAsCStatement (status, body) in
+		 %%TODO check conditions on the local vars (e.g., distinct from each other and from all params)
+                 let localvarlines = ppLocalVarInfoToC localvarinfo in
+                 let pretty_body = if compoundflag then wrapBraces pretty_body else pretty_body in
+                 let lines = [(0, sig_pretty), (0, string " { ")] ++ localvarlines ++ [(2, pretty_body), (1, string "}")] in
                  ppToC (status, blockLinear (0, lines))
                | _ ->
                  status)
@@ -216,7 +225,7 @@ PrintAsC qualifying spec
       else 
         (case inner info.dfn of
            | Some tm ->
-             let (pretty_value, _, status) = printTermAsC (status, tm, CPrecedence_NO_PARENS, Statement) in
+             let (pretty_value, status) = printTermAsCExpression (status, tm, CPrecedence_NO_PARENS) in  %%TODO consider when tm contains a Let or refers to another "constant"
              let lines = [(0, sig_pretty), L0_space_equal_space, (0, pretty_value), L0_semicolon] in
              ppToC (status, blockNone (0, lines))
            | _ ->
@@ -231,7 +240,8 @@ PrintAsC qualifying spec
     | Op   (qid, info) -> ppOpInfoToC   (status, qid, info)
 
  op ppInfosToC (status : CGenStatus, basename : FileName, infos : CInfos) : CGenStatus =
-  let hdr_msg     = "/* " ^ basename ^ ".c by " ^ userName() ^ " at " ^ currentTimeAndDate() ^ " */" in
+  let hdr_msg     = "/* " ^ basename ^ ".c by " ^ userName() ^ " */"     %% ^ " at " ^ currentTimeAndDate() %%Removing this to prevent spurious diffs in the regression suite. -EWS
+  in
   let include_msg = "#include \"" ^ basename ^ ".h\"" in
   let status = ppToC (status, string hdr_msg) in
   let status = ppToC (status, string include_msg) in
