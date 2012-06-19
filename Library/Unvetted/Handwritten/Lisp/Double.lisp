@@ -264,7 +264,7 @@
 (defun String-Spec::toDouble (str)
   (let ((*read-default-float-format* 'double-float))
     (let ((dbl (read-from-string str)))
-      (the-double dbl))))
+      (the-double (coerce dbl 'double-float)))))
 
 (defun Integer-Spec::toDouble (x)
   (declare (integer x))
