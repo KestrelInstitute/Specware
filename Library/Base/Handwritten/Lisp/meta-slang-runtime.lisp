@@ -126,6 +126,7 @@
       (typecase t1
         (array (typecase t1
                  (string    (string= t1 t2))
+                 (simple-bit-vector (equal t1 t2))
                  (vector    (cond ((and   
                                     ;; (quotient? t1) 
                                     ;; (quotient? t2)

@@ -126,6 +126,8 @@
 			;;   Cons cells are equal if their elements are equal too.
 			(slang-term-equals-2 (car t1) (car t2))
 			(slang-term-equals-2 (cdr t1) (cdr t2))))
+        (simple-bit-vector
+         (equal t1 t2))
         (vector    (cond ((and   
 			   ;; (quotient? t1) 
 			   ;; (quotient? t2)
