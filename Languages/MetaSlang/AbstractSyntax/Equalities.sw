@@ -45,231 +45,241 @@ MetaSlang qualifying spec
  op traceEqualTerm?: Bool = false
 
  def equalTerm? (t1, t2) =
-   let _ = if traceEqualTerm? then writeLine(printTerm t1^" =?= "^printTerm t2) else () in
-   case (t1, t2) of
+   let result = 
+       case (t1, t2) of
 
-     | (Apply      (x1, y1,      _),
-        Apply      (x2, y2,      _)) -> equalTerm? (x1, x2) && equalTerm? (y1, y2)
+         | (Apply      (x1, y1,      _),
+            Apply      (x2, y2,      _)) -> equalTerm? (x1, x2) && equalTerm? (y1, y2)
 
-     | (ApplyN     (xs1,         _),
-        ApplyN     (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
+         | (ApplyN     (xs1,         _),
+            ApplyN     (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
 
-     | (Record     (xs1,         _),
-        Record     (xs2,         _)) -> equalList? (xs1, xs2,
-                                                    fn ((label1, x1), (label2, x2)) ->
-                                                       label1 = label2 &&
-                                                       equalTerm? (x1, x2))
+         | (Record     (xs1,         _),
+            Record     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                        fn ((label1, x1), (label2, x2)) ->
+                                                           label1 = label2 &&
+                                                           equalTerm? (x1, x2))
 
-     | (Bind       (b1, vs1, x1, _),
-        Bind       (b2, vs2, x2, _)) -> b1 = b2 &&
-                                        %% Could check modulo alpha conversion...
-                                        equalList? (vs1, vs2, equalVar?) &&
-                                        equalTerm? (x1,  x2)
+         | (Bind       (b1, vs1, x1, _),
+            Bind       (b2, vs2, x2, _)) -> b1 = b2 &&
+                                            %% Could check modulo alpha conversion...
+                                            equalList? (vs1, vs2, equalVar?) &&
+                                            equalTerm? (x1,  x2)
 
-     | (The       (v1, x1, _),
-        The       (v2, x2, _)) -> %% Could check modulo alpha conversion...
-                                    equalVar? (v1, v2) &&
-                                    equalTerm? (x1, x2)
+         | (The       (v1, x1, _),
+            The       (v2, x2, _)) -> %% Could check modulo alpha conversion...
+                                        equalVar? (v1, v2) &&
+                                        equalTerm? (x1, x2)
 
-     | (Let        (pts1, b1,    _),
-        Let        (pts2, b2,    _)) -> equalTerm? (b1, b2) &&
-                                        equalList? (pts1, pts2,
-                                                    fn ((p1, t1), (p2, t2)) ->
-                                                      equalPattern? (p1, p2) &&
-                                                      equalTerm?    (t1, t2))
+         | (Let        (pts1, b1,    _),
+            Let        (pts2, b2,    _)) -> equalTerm? (b1, b2) &&
+                                            equalList? (pts1, pts2,
+                                                        fn ((p1, t1), (p2, t2)) ->
+                                                          equalPattern? (p1, p2) &&
+                                                          equalTerm?    (t1, t2))
 
-     | (LetRec     (vts1, b1,    _),
-        LetRec     (vts2, b2,    _)) -> equalTerm? (b1, b2) &&
-                                        equalList? (vts1, vts2,
-                                                    fn ((v1, t1), (v2, t2)) ->
-                                                     equalVar?  (v1, v2) &&
-                                                     equalTerm? (t1, t2))
+         | (LetRec     (vts1, b1,    _),
+            LetRec     (vts2, b2,    _)) -> equalTerm? (b1, b2) &&
+                                            equalList? (vts1, vts2,
+                                                        fn ((v1, t1), (v2, t2)) ->
+                                                         equalVar?  (v1, v2) &&
+                                                         equalTerm? (t1, t2))
 
-     | (Var        (v1,          _),
-        Var        (v2,          _)) -> equalVar? (v1, v2)
+         | (Var        (v1,          _),
+            Var        (v2,          _)) -> equalVar? (v1, v2)
 
-     | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equalFun? (f1, f2) && equalType? (s1, s2)
+         | (Fun        (f1, s1,      _),       %% If the ops are the same, don't need to check type
+            Fun        (f2, s2,      _)) -> equalFun? (f1, f2) && (embed? Op f1 || equalType? (s1, s2))
 
-     | (Lambda     (xs1,         _),
-        Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
-                                                    fn ((p1, c1, b1), (p2, c2, b2)) ->
-                                                      equalPattern?  (p1, p2) &&
-                                                      equalTerm?     (c1, c2) &&
-                                                      equalTerm?     (b1, b2))
+         | (Lambda     (xs1,         _),
+            Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                        fn ((p1, c1, b1), (p2, c2, b2)) ->
+                                                          equalPattern?  (p1, p2) &&
+                                                          equalTerm?     (c1, c2) &&
+                                                          equalTerm?     (b1, b2))
 
-     | (IfThenElse (c1, x1, y1,  _),
-        IfThenElse (c2, x2, y2,  _)) -> equalTerm? (c1, c2) &&
-                                        equalTerm? (x1, x2) &&
-                                        equalTerm? (y1, y2)
+         | (IfThenElse (c1, x1, y1,  _),
+            IfThenElse (c2, x2, y2,  _)) -> equalTerm? (c1, c2) &&
+                                            equalTerm? (x1, x2) &&
+                                            equalTerm? (y1, y2)
 
-     | (Seq        (xs1,         _),
-        Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
+         | (Seq        (xs1,         _),
+            Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
 
-     | (TypedTerm  (x1, s1,      _),
-        TypedTerm  (x2, s2,      _)) -> equalTerm? (x1, x2) && equalType? (s1, s2)
+         | (TypedTerm  (x1, s1,      _),
+            TypedTerm  (x2, s2,      _)) -> equalTerm? (x1, x2) && equalType? (s1, s2)
 
-     | (Transform  (t1s,         _),
-        Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
+         | (Transform  (t1s,         _),
+            Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
 
-     | (Pi         (tvs1, tm1,   _), 
-        Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
+         | (Pi         (tvs1, tm1,   _), 
+            Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
 
-     | (And        (tms1,        _), 
-        And        (tms2,        _)) -> foldl (fn (eq?, t1, t2) -> eq? && equalTerm? (t1, t2))
-					      true
-					      (tms1, tms2)
+         | (And        (tms1,        _), 
+            And        (tms2,        _)) -> foldl (fn (eq?, t1, t2) -> eq? && equalTerm? (t1, t2))
+                                                  true
+                                                  (tms1, tms2)
 
-     | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
+         | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
-     | _ -> false
+         | _ -> false
+   in
+   let _ = if traceEqualTerm? && ~result then writeLine(printTerm t1^" ~=t "^printTerm t2^"\n"
+                                                        ^printTermType t1^" ~=tt "^printTermType t2) else () in
+   result
 
  def equalType? (s1, s2) =
    equalTypeSubtype?(s1, s2, false)
  
  op [a, b] equalTypeSubtype?(s1: AType a, s2: AType b, ignore_subtypes?: Bool): Bool =
    let def equalType?(s1, s2) =
-         let _ = if traceEqualTerm? then writeLine(printType s1^" =?= "^printType s2) else () in
-         case (s1,s2) of
+         let result =
+             case (s1,s2) of
 
-           | (Arrow     (x1, y1,  _),
-              Arrow     (x2, y2,  _)) -> equalType? (x1, x2) && equalType? (y1, y2)
+               | (Arrow     (x1, y1,  _),
+                  Arrow     (x2, y2,  _)) -> equalType? (x1, x2) && equalType? (y1, y2)
 
-           | (Product   (xs1,     _),
-              Product   (xs2,     _)) -> equalList? (xs1, xs2,
-                                                     fn ((l1, x1), (l2, x2)) ->
-                                                     l1 = l2 &&
-                                                     equalType? (x1, x2))
+               | (Product   (xs1,     _),
+                  Product   (xs2,     _)) -> equalList? (xs1, xs2,
+                                                         fn ((l1, x1), (l2, x2)) ->
+                                                         l1 = l2 &&
+                                                         equalType? (x1, x2))
 
-           | (CoProduct (xs1,     _),
-              CoProduct (xs2,     _)) -> equalList? (xs1, xs2,
-                                                     fn ((l1, x1), (l2, x2)) ->
-                                                     l1 = l2 &&
-                                                     equalOpt? (x1, x2, equalType?))
+               | (CoProduct (xs1,     _),
+                  CoProduct (xs2,     _)) -> equalList? (xs1, xs2,
+                                                         fn ((l1, x1), (l2, x2)) ->
+                                                         l1 = l2 &&
+                                                         equalOpt? (x1, x2, equalType?))
 
-           | (Quotient  (x1, t1,  _),
-              Quotient  (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
-             
-           | (Subtype   (x1, t1,  _), _) | ignore_subtypes? -> equalType?(x1, s2) 
+               | (Quotient  (x1, t1,  _),
+                  Quotient  (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
-           | (_,   Subtype (x2, t2,  _)) | ignore_subtypes? -> equalType?(s1, x2) 
+               | (Subtype   (x1, t1,  _), _) | ignore_subtypes? -> equalType?(x1, s2) 
 
-           | (Subtype   (x1, t1,  _),
-              Subtype   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
+               | (_,   Subtype (x2, t2,  _)) | ignore_subtypes? -> equalType?(s1, x2) 
 
-           | (Base      (q1, xs1, _),
-              Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
+               | (Subtype   (x1, t1,  _),
+                  Subtype   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
-           | (Boolean _, Boolean _)   -> true
+               | (Base      (q1, xs1, _),
+                  Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
 
-           | (TyVar     (v1,      _),
-              TyVar     (v2,      _)) -> v1 = v2
+               | (Boolean _, Boolean _)   -> true
 
-           | (MetaTyVar (mtv1,    _),
-              MetaTyVar (mtv2,    _)) ->
-             let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
-             let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
-             id1 = id2 ||
-             (case (link1,link2) of
-                %% This case handles the situation where an
-                %%  unlinked MetaTyVar is compared against itself.
-                | (Some ls1, Some ls2) -> equalType? (ls1, ls2)
-                %% The following two cases handle situations where
-                %%  MetaTyVar X is linked to unlinked MetaTyVar Y
-                %%  and we are comparing X with Y (or Y with X).
-                | (Some ls1, _)        -> equalType? (ls1, s2)
-                | (_,        Some ls2) -> equalType? (s1,  ls2)
-                | _ -> false)
+               | (TyVar     (v1,      _),
+                  TyVar     (v2,      _)) -> v1 = v2
 
-           | (MetaTyVar (mtv1, _), _) ->
-             let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
-             (case link1 of
-                | Some ls1 -> equalType? (ls1, s2)
-                | _ -> false)
+               | (MetaTyVar (mtv1,    _),
+                  MetaTyVar (mtv2,    _)) ->
+                 let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
+                 let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
+                 id1 = id2 ||
+                 (case (link1,link2) of
+                    %% This case handles the situation where an
+                    %%  unlinked MetaTyVar is compared against itself.
+                    | (Some ls1, Some ls2) -> equalType? (ls1, ls2)
+                    %% The following two cases handle situations where
+                    %%  MetaTyVar X is linked to unlinked MetaTyVar Y
+                    %%  and we are comparing X with Y (or Y with X).
+                    | (Some ls1, _)        -> equalType? (ls1, s2)
+                    | (_,        Some ls2) -> equalType? (s1,  ls2)
+                    | _ -> false)
 
-           | (_, MetaTyVar (mtv2, _)) ->
-             let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
-             (case link2 of
-                | Some ls2 -> equalType? (s1, ls2)
-                | _ -> false)
+               | (MetaTyVar (mtv1, _), _) ->
+                 let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
+                 (case link1 of
+                    | Some ls1 -> equalType? (ls1, s2)
+                    | _ -> false)
 
-           | (Pi         (tvs1, s1,    _), 
-              Pi         (tvs2, s2,    _)) -> tvs1 = tvs2 && 
-                                              equalType? (s1, s2) % TODO: handle alpha equivalence
+               | (_, MetaTyVar (mtv2, _)) ->
+                 let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
+                 (case link2 of
+                    | Some ls2 -> equalType? (s1, ls2)
+                    | _ -> false)
 
-           | (And        (srts1,       _),  
-              And        (srts2,       _)) -> %% TODO: Handle reordering?
-                                              foldl (fn (eq?, s1, s2) ->  
-                                                     eq? && equalType? (s1, s2))
-                                                    true
-                                                    (srts1, srts2)
+               | (Pi         (tvs1, s1,    _), 
+                  Pi         (tvs2, s2,    _)) -> tvs1 = tvs2 && 
+                                                  equalType? (s1, s2) % TODO: handle alpha equivalence
 
-           %% The following two cases handle comparisons of "X" with "And (X, Y)"
-           %%  where X and Y are equivalent, but not equal, types.
-           %%
-           %% This can happen for the type of the dfn field of an opinfo
-           %%  for some op that had both a decl and a def, which gave it two
-           %%  types that are equivalent, but not equal.
-           %%
-           %% This was noticed as a problem for subsitution, which calls subtractSpec and 
-           %% then complains if any types and ops from the dom spec of the morphism have
-           %% failed to find a match in the spec that morphism is being applied to.
+               | (And        (srts1,       _),  
+                  And        (srts2,       _)) -> %% TODO: Handle reordering?
+                                                  foldl (fn (eq?, s1, s2) ->  
+                                                         eq? && equalType? (s1, s2))
+                                                        true
+                                                        (srts1, srts2)
 
-           | (And (srts1, _),  _) -> foldl (fn (eq?, s1) -> eq? || equalType? (s1, s2)) false srts1
-           | (_,  And (srts2, _)) -> foldl (fn (eq?, s2) -> eq? || equalType? (s1, s2)) false srts2
+               %% The following two cases handle comparisons of "X" with "And (X, Y)"
+               %%  where X and Y are equivalent, but not equal, types.
+               %%
+               %% This can happen for the type of the dfn field of an opinfo
+               %%  for some op that had both a decl and a def, which gave it two
+               %%  types that are equivalent, but not equal.
+               %%
+               %% This was noticed as a problem for subsitution, which calls subtractSpec and 
+               %% then complains if any types and ops from the dom spec of the morphism have
+               %% failed to find a match in the spec that morphism is being applied to.
 
-           | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
+               | (And (srts1, _),  _) -> foldl (fn (eq?, s1) -> eq? || equalType? (s1, s2)) false srts1
+               | (_,  And (srts2, _)) -> foldl (fn (eq?, s2) -> eq? || equalType? (s1, s2)) false srts2
 
-           | _ -> false
+               | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
+
+               | _ -> false
+         in
+         let _ = if traceEqualTerm? && ~result then writeLine(printType s1^" ~=s "^printType s2) else () in
+         result
    in
    equalType?(s1, s2)
 
  def equalPattern? (p1, p2) =
-   let _ = if traceEqualTerm? then writeLine(printPattern p1^" =?= "^printPattern p2) else () in
-   case (p1, p2) of
+   let result =
+        case (p1, p2) of
 
-     | (AliasPat    (x1, y1,      _),
-        AliasPat    (x2, y2,      _)) -> equalPattern? (x1, x2) && equalPattern? (y1, y2)
+      | (AliasPat    (x1, y1,      _),
+         AliasPat    (x2, y2,      _)) -> equalPattern? (x1, x2) && equalPattern? (y1, y2)
 
-     | (VarPat      (v1,          _),
-        VarPat      (v2,          _)) -> equalVar? (v1, v2)
+      | (VarPat      (v1,          _),
+         VarPat      (v2,          _)) -> equalVar? (v1, v2)
 
-     | (EmbedPat    (i1, op1, s1, _),
-        EmbedPat    (i2, op2, s2, _)) -> i1 = i2 &&
-                                         equalType? (s1,  s2) &&
-                                         equalOpt?  (op1, op2, equalPattern?)
+      | (EmbedPat    (i1, op1, s1, _),
+         EmbedPat    (i2, op2, s2, _)) -> i1 = i2 &&
+                                          equalType? (s1,  s2) &&
+                                          equalOpt?  (op1, op2, equalPattern?)
 
-     | (RecordPat   (xs1,         _),
-        RecordPat   (xs2,         _)) -> equalList? (xs1, xs2,
-                                                     fn ((label1, x1), (label2, x2)) ->
-                                                        label1 = label2 &&
-                                                        equalPattern? (x1, x2))
+      | (RecordPat   (xs1,         _),
+         RecordPat   (xs2,         _)) -> equalList? (xs1, xs2,
+                                                      fn ((label1, x1), (label2, x2)) ->
+                                                         label1 = label2 &&
+                                                         equalPattern? (x1, x2))
 
-     | (WildPat      (s1,          _),
-        WildPat      (s2,          _)) -> equalType? (s1, s2)
+      | (WildPat      (s1,          _),
+         WildPat      (s2,          _)) -> equalType? (s1, s2)
 
-     | (BoolPat      (x1,          _),
-        BoolPat      (x2,          _)) -> x1 = x2
+      | (BoolPat      (x1,          _),
+         BoolPat      (x2,          _)) -> x1 = x2
 
-     | (NatPat       (x1,          _),
-        NatPat       (x2,          _)) -> x1 = x2
+      | (NatPat       (x1,          _),
+         NatPat       (x2,          _)) -> x1 = x2
 
-     | (StringPat    (x1,          _),
-        StringPat    (x2,          _)) -> x1 = x2
+      | (StringPat    (x1,          _),
+         StringPat    (x2,          _)) -> x1 = x2
 
-     | (CharPat      (x1,          _),
-        CharPat      (x2,          _)) -> x1 = x2
+      | (CharPat      (x1,          _),
+         CharPat      (x2,          _)) -> x1 = x2
 
-     | (QuotientPat  (x1, qid1,    _),
-        QuotientPat  (x2, qid2,    _)) -> equalPattern? (x1, x2) && qid1 = qid2
+      | (QuotientPat  (x1, qid1,    _),
+         QuotientPat  (x2, qid2,    _)) -> equalPattern? (x1, x2) && qid1 = qid2
 
-     | (RestrictedPat(x1, t1,      _),
-        RestrictedPat(x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
+      | (RestrictedPat(x1, t1,      _),
+         RestrictedPat(x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
 
-     | (TypedPat     (x1, t1,      _),
-        TypedPat     (x2, t2,      _)) -> equalPattern? (x1, x2) && equalType? (t1, t2)
+      | (TypedPat     (x1, t1,      _),
+         TypedPat     (x2, t2,      _)) -> equalPattern? (x1, x2) && equalType? (t1, t2)
 
-     | _ -> false
+      | _ -> false
+    in
+    let _ = if traceEqualTerm? && ~ result then writeLine(printPattern p1^" ~=p "^printPattern p2) else () in
+    result
 
  def equalFun? (f1, f2) =
    case (f1, f2) of
