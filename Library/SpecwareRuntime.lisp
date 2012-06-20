@@ -1,7 +1,5 @@
-#+sbcl (require "SBCL_PATCH" "/Users/mcdonald/Work/Generic/Specware4/Applications/Handwritten/Lisp/sbcl-patch")
-(defpackage :Specware)
+(defpackage :Specware (:use :cl))
 (in-package :Specware)
-;(in-package :cl-user) -- *specware4*, *fasl-type*, etc. are in Specware package!
 
 (unless (boundp '*fasl-type*)
   (defvar *fasl-type*
@@ -27,6 +25,8 @@
 (defvar *specware4* 
   #-windows (getenv "SPECWARE4")
   #+windows (substitute #\/ #\\ (convert-pathname-from-cygwin (getenv "SPECWARE4"))))
+
+#+sbcl (require "SBCL_PATCH" (format nil "~a/Applications/Handwritten/Lisp/sbcl-patch" *specware4*))
 
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an app/usr/lib/sbcl/arent Allegro bug in generate-application
