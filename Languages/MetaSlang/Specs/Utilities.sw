@@ -504,6 +504,9 @@ Utilities qualifying spec
    in
    subst(srt) 
 
+ op printVarSubst(sb: VarSubst): () =
+   app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sb
+
  def substitute(M,sub) = 
    if empty? sub then M else
    let M_names = StringSet.fromList(varNames(freeVars M)) in

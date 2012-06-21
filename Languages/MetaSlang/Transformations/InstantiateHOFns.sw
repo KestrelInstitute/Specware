@@ -473,7 +473,8 @@ op dontUnfoldQualifiers: Ids = ["String"]
                     && length (termList arg) > foldr max 0 fnIndices
 		    && exists? (fn i -> exploitableTerm? (getTupleArg (arg, i), unfold_map))
                                fnIndices
-                   then 
+                   then
+                     % let _ = writeLine("maybeUnfoldTerm:\n"^printTerm f) in
                      makeUnfoldedTerm (outer_qid, 
                                        tm, 
                                        f, 
@@ -571,10 +572,10 @@ op dontUnfoldQualifiers: Ids = ["String"]
                       curried?     : Bool,
                       spc          : Spec)
    : MSTerm =
-   let _ = if outer_qid = Qualified("SomeQual","SomeId") then
-             writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm^
-                       "\nargs: "^foldr (fn (x,y) ->x^"  "^y) "" (map printTerm args))
-            else () in
+   % let _ = if outer_qid = Qualified(UnQualified,"f") then
+   %           writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm^
+   %                     "\ndef_body: "^printTerm def_body)
+   %          else () in
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
    in
@@ -613,9 +614,10 @@ op dontUnfoldQualifiers: Ids = ["String"]
          adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body)
      in
      let new_body             = simplifyTerm def_body                                           in
-     let (new_let, new_subst) = makeLet (remaining_params, remaining_args, new_body)            in
-     let new_let              = substitute (new_let, p_subst ++ new_subst)                      in
- 
+     let (new_let_binds, new_subst) = makeLetBinds (remaining_params, remaining_args)           in
+     let new_body              = substitute (new_body, p_subst ++ new_subst)                     in
+     let new_let = foldl (fn (bod, let_bind) -> mkLet([let_bind], bod)) new_body new_let_binds in
+
      %% The substitutions in p_subst only make sense in the body of the definition.
      %% Once they are done there, do not propagate them into makeLet.
      %%
@@ -708,7 +710,10 @@ op dontUnfoldQualifiers: Ids = ["String"]
 
   let new_params  = map (mapPattern (id, instantiateTyVars, id)) remaining_params in
   let new_lambda  = mkLambda (mkTuplePat new_params, local_def_body) in
+  % let _ = if outer_qid = Qualified(UnQualified,"f") then writeLine("new_lambda: "^printTerm new_lambda) else () in
   let local_def   = substitute (new_lambda, param_subst) in
+  % let _ = if outer_qid = Qualified(UnQualified,"f") then writeLine("local_def: "^printTerm local_def) else () in
+  
 
   %% Need to repeat as substitution may have introduced new opportunities
   let local_def   = unfoldInTerm (outer_qid, simplifyTerm local_def, unfold_map, simplifyTerm, spc) in
@@ -831,21 +836,15 @@ op dontUnfoldQualifiers: Ids = ["String"]
 
  op avoid_bindings? : Bool = false % not clear if this helps or hurts
 
- op makeLet (params : MSPatterns, args : MSTerms, body : MSTerm) 
-   : MSTerm * VarSubst =
+ op makeLetBinds (params : MSPatterns, args : MSTerms) 
+   : List (MSPattern * MSTerm) * VarSubst =
    let
-     def aux (params, args, body, sbst) =
+     def aux (params, args, binds, sbst) =
        case (params, args) of
-
-         | (param :: params, arg :: args) ->
-           let (newbod, sbst) = aux (params, args, body, sbst) in
-           (case (param, arg) of
-              | (VarPat (v,_), Var _) | avoid_bindings? -> (newbod, (v, arg)::sbst) % TODO: figure out which is best
-              | _ -> (mkLet ([(param, arg)], newbod), sbst))
-
-         | _ -> (body, sbst)
+         | (param :: params, arg :: args) -> aux (params, args, (param, arg) :: binds, sbst)
+         | _ -> (binds, sbst)
    in
-   aux (params, args, body, [])
+   aux (params, args, [], [])
 
  %% ================================================================================
  %% simplify
