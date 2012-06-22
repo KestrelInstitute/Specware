@@ -318,20 +318,34 @@ spec
     foldrM (fn (top_result, sub_result) -> fn te ->
              % let _ = writeLine("MS: "^anyToString te) in
              case te of
-               | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->
+                 %% isomorphism((iso, osi), ...)
+               | Apply(Name("isomorphism",_), iso_tms,_) ->     
+                 {iso_prs <- extractIsos iso_tms;
+                  return (IsoMorphism(iso_prs, [], None) :: sub_result ++ top_result, [])}
+                 %% isomorphism((iso, osi), ...)(rls)
+               | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->  
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
                   return (IsoMorphism(iso_prs, srls, None) :: sub_result ++ top_result, [])}
+                 %% isomorphism((iso, osi), ...)[rls]
+               | ApplyOptions(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->  
+                 {iso_prs <- extractIsos iso_tms;
+                  srls <- mapM makeRuleRef rls;
+                  return (IsoMorphism(iso_prs, srls, None) :: sub_result ++ top_result, [])}
+                 %% isomorphism[New_*]((iso, osi), ...)
+               | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
+                 {iso_prs <- extractIsos iso_tms;
+                  return (IsoMorphism(iso_prs, [], Some qual) :: sub_result ++ top_result, [])}
+                 %% isomorphism[New_*]((iso, osi), ...)(rls)
                | Apply(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
                   srls <- mapM makeRuleRef rls;
                   return (IsoMorphism(iso_prs, srls, Some qual) :: sub_result ++ top_result, [])}
-               | Apply(Name("isomorphism",_), iso_tms,_) ->
+                 %% isomorphism[New_*]((iso, osi), ...)[rls]
+               | ApplyOptions(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
                  {iso_prs <- extractIsos iso_tms;
-                  return (IsoMorphism(iso_prs, [], None) :: sub_result ++ top_result, [])}
-               | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
-                 {iso_prs <- extractIsos iso_tms;
-                  return (IsoMorphism(iso_prs, [], Some qual) :: sub_result ++ top_result, [])}
+                  srls <- mapM makeRuleRef rls;
+                  return (IsoMorphism(iso_prs, srls, Some qual) :: sub_result ++ top_result, [])}
 
                | Apply(Apply(Name("maintain",_), i_ops,_), rls, _) ->
                  {op_qids <- mapM extractQId i_ops;
