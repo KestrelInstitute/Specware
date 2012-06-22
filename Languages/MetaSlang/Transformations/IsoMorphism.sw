@@ -251,7 +251,9 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                        | _ -> false)
        def_ty
 
-  op identityFn(ty: MSType): MSTerm = mkInfixOp(Qualified("Function","id"),Unspecified,mkArrow(ty,ty))
+  op idQId: QualifiedId = Qualified("Function", "id")
+
+  op identityFn(ty: MSType): MSTerm = mkInfixOp(idQId,Unspecified,mkArrow(ty,ty))
   op identityFn?(tm: MSTerm): Bool =
     case tm of
       | Fun(Op(Qualified("Function","id"),_),_,_) -> true
@@ -499,7 +501,10 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
              | Fun(Op(qid as Qualified(q,idn), fx), ty, a) ->
                let nqid = case findAQualifierMap(qidPrMap, q, idn) of
                             | Some nqid -> nqid
-                            | None      ->  qid
+                            | None      ->
+                          if exists? (fn (_, (Fun(Op(osi_qid,_),_,_),_,_,_)) -> qid = osi_qid ) iso_info
+                            then idQId
+                            else qid
                in
                Fun(Op(nqid, fx), ty, a)
              | _ -> t,
@@ -551,7 +556,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   op simplifyIsomorphism?: Bool = true
   %% Temporary until we have slicing
   op simplifyUnPrimed?: Bool = false
-  op opaqueSimplifyScript: Script = mkSimplify[]
+  op opaqueSimplifyScript: Script = mkSimplify[Rewrite idQId]
 
 
   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
@@ -1422,6 +1427,17 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                                                   else Rewrite iso_qid))
                         iso_info
     in
+    %% We want to delay unfolding iso, osi until after the iso/osi elimination rules have had a chance
+    let non_iso_extra_rules = filter (fn r ->
+                                        case r of
+                                          | Unfold qid ->
+                                            ~(List.exists? (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),
+                                                                (Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                                         qid = iso_qid || qid = osi_qid)
+                                                iso_info)
+                                          | _ -> true)
+                                extra_rules
+    in
     % let _ = writeLine("iso: "^anyToString iso_unfolds) in
     let complex_iso_fn_unfolds = map (fn (_,qid) -> Rewrite qid) iso_fn_info in
     let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
@@ -1436,7 +1452,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                            ++ complex_iso_fn_unfolds
                            ++ rewrite_old
                            ++ iso_osi_rewrites
-                           ++ extra_rules)
+                           ++ non_iso_extra_rules
+                           )
             ] ++
             [mkSimplify (gen_unfolds
                            ++ complex_iso_fn_unfolds
