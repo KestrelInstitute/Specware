@@ -444,7 +444,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       (map (fn ty -> let Some(sty, p) = subtypeComps (context.spc, ty) in
               let v = ("x", ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
-              %% let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
+              % let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
               assertRules(context, fml, "Subtype1", Context, false))
         subtypes)
 
@@ -662,8 +662,17 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                  None)
 
   op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
+    let fvs = freeVars tm in
+    let bad_binds = filter (fn (old_n, _) -> exists? (fn (fv_n, _) -> fv_n = old_n)  fvs) binds in
+    let good_binds = filter (fn pr -> pr nin? bad_binds) binds in
+    let _ = if bad_binds ~= [] then warn("Trying to rename free variables: "
+                                           ^anyToString(map (fn (old_n, _) -> old_n) bad_binds))
+            else ()
+    in
+    if good_binds = [] then tm
+    else
     let def renameId nm =
-          findLeftmost (fn (old_n, _) -> old_n = nm) binds
+          findLeftmost (fn (old_n, _) -> old_n = nm) good_binds
         def renameVar t =
           case t of
             | Var((n,  ty), a) ->
@@ -678,7 +687,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                  | Some(_, new_n) -> VarPat((new_n,  ty), a)
                  | None -> t)
             | _ -> t
-    in    
+    in
     mapTerm (renameVar, id, renameVarPat) tm
 
   op maxRewrites: Nat = 900
