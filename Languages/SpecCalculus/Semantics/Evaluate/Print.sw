@@ -78,26 +78,28 @@ SpecCalc qualifying spec {
  %% Spec
  %% ======================================================================
 
+  op printWidth: Nat = 110
+
   %The following loses too much information
   def printSpec base_spec _(*reverse_context*) spc =
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     %% TODO: use reverse_context ?
-    PrettyPrint.toString (format(100, 
- 				ppSpecHidingImportedStuff
- 				  (initialize(asciiPrinter,false))
-				  base_spec
-				  spc))
+    PrettyPrint.toString (format(printWidth, 
+                                 ppSpecHidingImportedStuff
+                                   (initialize(asciiPrinter,false))
+                                   base_spec
+                                   spc))
 
   def printSpecXSymbol base_spec _(*reverse_context*) spc =
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     %% TODO: use reverse_context ?
-    PrettyPrint.toString (format(100, 
- 				ppSpecHidingImportedStuff
- 				  (initialize(XSymbolPrinter,false))
-				  base_spec
-				  spc))
+    PrettyPrint.toString (format(printWidth, 
+                                 ppSpecHidingImportedStuff
+                                   (initialize(XSymbolPrinter,false))
+                                   base_spec
+                                   spc))
 
 
  % from show, showx:

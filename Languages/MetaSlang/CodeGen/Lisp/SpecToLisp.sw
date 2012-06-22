@@ -605,7 +605,8 @@ op addList(S: StringSet, l: List String): StringSet =
  def typeOfOp (sp, qid) =
    case AnnSpec.findTheOp (sp, qid) of
      | Some info -> 
-       firstOpDefInnerType info 
+       firstOpDefInnerType info
+     | None -> System.fail("Undefined op: "^show qid)
 
  op  fullCurriedApplication : AnnSpec.Spec * String * StringSet * MSTerm -> Option LispTerm
  def fullCurriedApplication (sp, dpn, vars, term) =
@@ -615,7 +616,9 @@ op addList(S: StringSet, l: List String): StringSet =
        case term of
 
 	 | Fun (Op (id, _), srt, _) ->
-	   if i > 1 && i = curryShapeNum (sp, typeOfOp (sp, id)) then
+	   if i > 1 && i = curryShapeNum (sp, srt   % Was typeOfOp (sp, id) -- Don't know why srt was ignored
+                                          )
+             then
 	     Some (mkLApply (mkLOp (unCurryName (id, i, dpn)), 
 			     List.map (fn t -> mkLTerm (sp, dpn, vars, t)) args))
 	   else 
@@ -1512,7 +1515,7 @@ op addList(S: StringSet, l: List String): StringSet =
  def toLispText spc =
    let lSpc = toLispEnv (spc, true, false) in
    let p = ppSpec lSpc in
-   format (80, p)
+   format (120, p)
       
  %% Just generates code for the local defs
  def localDefsToLispFile (spc, file, preamble) =

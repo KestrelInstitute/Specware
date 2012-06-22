@@ -973,8 +973,10 @@ AnnSpecPrinter qualifying spec
  def useXSymbols? = false
  def uiPrinter() = if useXSymbols? then XSymbolPrinter else asciiPrinter
 
+ op printWidth: Nat = 105
+
  def AnnSpecPrinter.printTerm term = 
-   PrettyPrint.toString (format (90, ppTerm (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (printWidth, ppTerm (initialize (asciiPrinter, false))
 				            ([], Top) 
 					    term))
 
@@ -982,42 +984,42 @@ AnnSpecPrinter qualifying spec
    ppTerm (initialize (asciiPrinter, false)) ([], Top) term
 
  def printTermToTerminal term =
-   toTerminal (format (90, ppTerm (initialize (uiPrinter(), false)) 
+   toTerminal (format (printWidth, ppTerm (initialize (uiPrinter(), false)) 
 		                  ([], Top) 
 				  term))
  
  def AnnSpecPrinter.printType srt = 
-    PrettyPrint.toString (format (90, ppType (initialize (asciiPrinter, false))
+    PrettyPrint.toString (format (printWidth, ppType (initialize (asciiPrinter, false))
 				             ([], Top : ParentType) 
 					     srt))
 
  op [a] printTypeWithTypes(srt: AType a): String =
-   toString (format (90, ppType (initialize (asciiPrinter, true))
+   toString (format (printWidth, ppType (initialize (asciiPrinter, true))
                            ([], Top : ParentType) 
                            srt))
 
  def printTypeToTerminal srt = 
-   toTerminal (format (90, ppType (initialize (uiPrinter(), false))
+   toTerminal (format (printWidth, ppType (initialize (uiPrinter(), false))
 		                  ([], Top : ParentType) 
 				  srt))
  
  def printTypeScheme scheme = 
-   PrettyPrint.toString (format (90, ppTypeScheme (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (printWidth, ppTypeScheme (initialize (asciiPrinter, false))
 				                  ([], Top)
 						  scheme))
 
  def printTermScheme scheme = 
-   PrettyPrint.toString (format (90, ppTermScheme (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (printWidth, ppTermScheme (initialize (asciiPrinter, false))
 				                  ([], Top) 
 						  scheme))
 
  def AnnSpecPrinter.printPattern pat = 
-   PrettyPrint.toString (format (90, ppPattern (initialize (asciiPrinter, false))
+   PrettyPrint.toString (format (printWidth, ppPattern (initialize (asciiPrinter, false))
 			                       ([], false, false) 
 					       pat))
 
  def AnnSpecPrinter.printTermWithTypes term = 
-   PrettyPrint.toString (format (90, ppTerm (initialize (asciiPrinter, true))
+   PrettyPrint.toString (format (printWidth, ppTerm (initialize (asciiPrinter, true))
 			                    ([], Top)
 					    term))
 
@@ -1647,50 +1649,50 @@ AnnSpecPrinter qualifying spec
    ppSpecR (initialize (asciiPrinter, false)) spc
    
  def printSpec spc =
-   PrettyPrint.toString (format (90, specToPretty spc))
+   PrettyPrint.toString (format (printWidth, specToPretty spc))
 
  def printSpecXSymbol spc =
-   PrettyPrint.toString (format (90, specToPrettyXSymbol spc))
+   PrettyPrint.toString (format (printWidth, specToPrettyXSymbol spc))
    
  def printSpecVerbose spc =
-   PrettyPrint.toString (format (90, specToPrettyVerbose spc))
+   PrettyPrint.toString (format (printWidth, specToPrettyVerbose spc))
 
  def printSpecVerboseXSymbol spc =
-   PrettyPrint.toString (format (90, specToPrettyVerboseXSymbol spc))
+   PrettyPrint.toString (format (printWidth, specToPrettyVerboseXSymbol spc))
 
  def printSpecFlat spc =
-   PrettyPrint.toString (format (90, specToPrettyFlat spc))
+   PrettyPrint.toString (format (printWidth, specToPrettyFlat spc))
 
  op printSpecExpanded: Spec -> Spec -> String
 
  def printSpecFlatToTerminal spc =
-   (toTerminal (format (90, specToPrettyFlat spc)); 
+   (toTerminal (format (printWidth, specToPrettyFlat spc)); 
     writeLine "")
    
  def printSpecToTerminal spc =
-   (toTerminal (format (90, specToPretty spc)); 
+   (toTerminal (format (printWidth, specToPretty spc)); 
     writeLine "")
    
  def printSpecToFile (fileName, spc) = 
-   toFile (fileName, format (90, specToPretty spc))
+   toFile (fileName, format (printWidth, specToPretty spc))
 
  def printFlatSpecToFile (fileName, spc) = 
-   toFile (fileName, format (90, specToPrettyFlat spc))
+   toFile (fileName, format (printWidth, specToPrettyFlat spc))
    
  def printMarkedSpecToFile (fileName, pathFileName, indicesToDisable, sosIndicesToEnable, spc) = 
    let context = initializeMark (asciiPrinter, indicesToDisable, sosIndicesToEnable) in
    let specToPretty = ppSpec context in
-   (PrettyPrint.toPathFiles (fileName, pathFileName, format (90, specToPretty spc));
+   (PrettyPrint.toPathFiles (fileName, pathFileName, format (printWidth, specToPretty spc));
     State.! context.markTable)
 
  def printMarkedSpecToString (indicesToDisable, sosIndicesToEnable, spc) = 
    let context = initializeMark (asciiPrinter, indicesToDisable, sosIndicesToEnable) in
    let specToPretty = ppSpec context in
-   let spcAndMarking = PrettyPrint.toStringWithPathIndexing (format (90, specToPretty spc)) in
+   let spcAndMarking = PrettyPrint.toStringWithPathIndexing (format (printWidth, specToPretty spc)) in
    (spcAndMarking, State.! context.markTable)
 
  def printSpecWithTypesToTerminal spc =
-   toTerminal (format (90, ppSpec (initialize (asciiPrinter, true)) spc))
+   toTerminal (format (printWidth, ppSpec (initialize (asciiPrinter, true)) spc))
    
  def latexSpecToPretty spc = 
    let pSpec = ppSpec (initialize (latexPrinter, false)) spc in
@@ -1703,10 +1705,10 @@ AnnSpecPrinter qualifying spec
 	     (0, string "}")]) 
    
  def latexSpec spc = 
-   PrettyPrint.toLatexString (format (90, latexSpecToPretty spc))
+   PrettyPrint.toLatexString (format (printWidth, latexSpecToPretty spc))
    
  def latexSpecToFile (fileName, spc) = 
-   PrettyPrint.toLatexFile (fileName, format (90, latexSpecToPretty spc))
+   PrettyPrint.toLatexFile (fileName, format (printWidth, latexSpecToPretty spc))
    
  def htmlSpecToPretty spc = 
    let pSpec = ppSpec (initialize (htmlPrinter (), false)) spc in
@@ -1716,7 +1718,7 @@ AnnSpecPrinter qualifying spec
     string "</pre></body></html>"]      
 
  def htmlSpecToFile (fileName, spc) = 
-   PrettyPrint.toFile (fileName, format (90, htmlSpecToPretty spc))
+   PrettyPrint.toFile (fileName, format (printWidth, htmlSpecToPretty spc))
    
  def boolToNat b = if b then 1 else 0
  def positive? n = if n > 0 then 1 else 0
@@ -1815,7 +1817,7 @@ AnnSpecPrinter qualifying spec
 		string "\\pdfthread num 1"]
 	       ++
 	       (map (fn s -> 
-		     string (PrettyPrint.toLatexString (format (90, makeSpecListing s)))) 
+		     string (PrettyPrint.toLatexString (format (printWidth, makeSpecListing s)))) 
 		    specs)
 	       ++
 	       [string "\\pdfendthread"]
@@ -1826,7 +1828,7 @@ AnnSpecPrinter qualifying spec
 		string "\\end{document}"])        
                         
  def [a] pdfSpecsToFile (fileName, spcs : List (ASpec a)) = 
-   PrettyPrint.toFile (fileName, format (90, pdfSpecsToPretty spcs))
+   PrettyPrint.toFile (fileName, format (printWidth, pdfSpecsToPretty spcs))
 
  % Separate output in three portions:
  % 1. pretty print the prelude erasing older versions
@@ -1840,7 +1842,7 @@ AnnSpecPrinter qualifying spec
    in
    PrettyPrint.toFile 
      (fileName, 
-      format (90, 
+      format (printWidth, 
 	      prettysAll
 	      ([string "\\documentclass{article}", 
 		string ("\\input{" ^ sw2000 ^ "/doc/pdf-sources/megamacros}"), 
@@ -1851,13 +1853,13 @@ AnnSpecPrinter qualifying spec
    let spc1 = ppSpec (initialize (pdfPrinter (counter, "???"), false)) spc         in
    let menu = pdfMenu spc                                                         in
    (PrettyPrint.appendFile(fileName, 
-			   format (90, string "\\newpage"));
-    PrettyPrint.appendLatexFile (fileName, PrettyPrint.format (90, makeSpecListing spc1));
+			   format (100, string "\\newpage"));
+    PrettyPrint.appendLatexFile (fileName, PrettyPrint.format (printWidth, makeSpecListing spc1));
     menu)
 
  def pdfPostLudeToFile (fileName, menues) = 
    PrettyPrint.appendFile (fileName, 
-     PrettyPrint.format (90, 
+     PrettyPrint.format (100, 
        prettysAll
        ([string "\\pdfendthread"]
          ++ menues

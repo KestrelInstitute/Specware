@@ -870,7 +870,7 @@ spec
 
   op  printMSIValue: MSIValue * Bool -> ()
   def printMSIValue (v,useXSymbol?) =
-    PrettyPrint.toTerminal(format(80,ppValue (initialize(if useXSymbol?
+    PrettyPrint.toTerminal(format(100,ppValue (initialize(if useXSymbol?
 							   then XSymbolPrinter
 							   else asciiPrinter,
 							 false))
@@ -878,10 +878,10 @@ spec
 
   op  stringValue: MSIValue -> String
   def stringValue v =
-    PrettyPrint.toString(format(80,ppValue (initialize(asciiPrinter,false)) v))
+    PrettyPrint.toString(format(100,ppValue (initialize(asciiPrinter,false)) v))
 
   op printSubst (sb: Subst): String =
-     PrettyPrint.toString(format(80,ppSubst (initialize(asciiPrinter,false)) sb))
+     PrettyPrint.toString(format(100,ppSubst (initialize(asciiPrinter,false)) sb))
 
   op printSubsts?: Bool = true
 

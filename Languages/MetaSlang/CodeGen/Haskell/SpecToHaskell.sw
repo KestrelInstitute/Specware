@@ -412,7 +412,7 @@ Haskell qualifying spec
                                polyEqualityFunInfo = emptyAQualifierMap}
 			value
     in
-    format(80, main_pp_val)
+    format(120, main_pp_val)
 
 
   op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
