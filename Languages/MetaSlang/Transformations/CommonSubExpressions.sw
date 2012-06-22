@@ -20,14 +20,14 @@ spec
   op maybeAbstract(t: MSTerm, cse: List MSTerm, names: List String, bindable?: Bool,
                    single_tms: List MSTerm, poss_tms: List MSTerm, spc: Spec)
     : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
-     % let _ = (writeLine("maybeAbstract "^show bindable?^":\n"^printTerm t^"\ncse:");
-     %          app (fn t -> writeLine(printTerm t)) cse;
-     %          writeLine("single_tms: ");
-     %          app (fn t -> writeLine(printTerm t)) single_tms;
-     %          writeLine("Poss_tms: ");
-     %          app (fn t -> writeLine(printTerm t)) poss_tms;
-     %          writeLine "")
-     % in
+      % let _ = (writeLine("maybeAbstract "^show bindable?^":\n"^printTerm t^"\ncse:");
+      %          app (fn t -> writeLine(printTerm t)) cse;
+      %          writeLine("single_tms: ");
+      %          app (fn t -> writeLine(printTerm t)) single_tms;
+      %          writeLine("Poss_tms: ");
+      %          app (fn t -> writeLine(printTerm t)) poss_tms;
+      %          writeLine "")
+      % in
     let bvs = boundVars t in
     let cse = removeLocal(cse,bvs) in
     case cse of
@@ -114,9 +114,10 @@ spec
         %% Don't want expressions only appearing in y or z lifted
         let (y1, csey, tmsy, ptmsy, names) = recAbstractCSE(y, names, true, spc) in
         let (z1, csez, tmsz, ptmsz, names) = recAbstractCSE(z, names, true, spc) in
-        let poss_tms = termsUnion(tmsy,
+        let poss_tms = termsUnion(ptmsx,
+                       termsUnion(tmsy,
                        termsUnion(tmsz,
-                       termsUnion(ptmsy, ptmsz)))
+                       termsUnion(ptmsy, ptmsz))))
         in
         let cse = termsUnion(csex,
                   termsUnion(termsIntersect(tmsx, poss_tms),

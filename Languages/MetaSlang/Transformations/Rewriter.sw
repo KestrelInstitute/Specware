@@ -33,7 +33,7 @@ MetaSlangRewriter qualifying spec
  op applyRewrite(context: Context, rule: RewriteRule, subst: SubstC, term: MSTerm): List SubstC = 
    let lhs = rule.lhs in
    filter (fn subst -> completeMatch(lhs,subst))
-     (matchPairsTop(context,subst,stackFromList [(lhs,term)]))
+     (matchPairsTop(context,subst,stackFromList [(lhs,term,None)])) % !! Fix None
 
  def applyRewrites(context,rules,subst) (boundVars,term) = 
      let context = setBound(context,boundVars) in
@@ -643,7 +643,7 @@ MetaSlangRewriter qualifying spec
      let argument = ([],Top) in
      let termPP   = ppTerm context argument term in
      let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent,termPP] in
-     PrettyPrint.toString(PrettyPrint.format(60,termPP))
+     PrettyPrint.toString(PrettyPrint.format(100,termPP))
 
  op traceTerm : Context * MSTerm * SubstC -> ()
  def traceTerm(context,term,(* subst *)_) = 
