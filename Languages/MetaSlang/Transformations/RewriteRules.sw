@@ -224,9 +224,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
                             if includeAll? then new_rule::old else old,
                             includeAll?) 
             | Apply(Lambda(matches, _), case_tm, _)    % As above with implicit eta
-                | equalToSomeArg?(case_tm, rule.lhs) && disjointMatches matches ->
-              % let Apply(hd, _, _) = rule.lhs in
-              % let rule = rule << {lhs = hd} in
+                | equalToSomeArg?(case_tm, rule.lhs) && disjointMatches matches
+                    && ~(exists? (fn (_,_,rhs) -> existsSubTerm (fn s_tm -> equalTerm?(s_tm, case_tm)) rhs) matches)->
               let new_rule = freshRule(context, rule) in
               deleteMatches(context, matches, Some case_tm, rule, rules,
                             if includeAll? then new_rule::old else old,

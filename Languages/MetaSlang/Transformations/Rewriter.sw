@@ -52,7 +52,8 @@ MetaSlangRewriter qualifying spec
        rules
 
  op orderRules(rls: List RewriteRule): List RewriteRule =
-   if length rls < 2 then rls
+   if true   % length rls < 2
+     then rls
    else
    let (simpleRules, condRules) =
        %% foldl is arbitrary

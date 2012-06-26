@@ -568,8 +568,8 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
      in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
-     let rules = rules ++ contextRulesFromPath(path_term, qid, context) in
-     let rules = rules ++ subtypeRules(term, context) in
+     let rules = contextRulesFromPath(path_term, qid, context) ++ rules in
+     let rules = subtypeRules(term, context) ++ rules in
      let rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, hist: TransformHistory): MSTerm * TransformHistory =
            %let _ = writeLine("doTerm "^show count) in

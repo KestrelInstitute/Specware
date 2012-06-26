@@ -416,7 +416,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
              let fn_ty = inferType(spc, t1) in
              (case arrowOpt(spc, fn_ty) of
               | None -> false
-              | Some(dom, _) ->
+              | Some(dom, ran) ->
                 cto?(t1, mkArrow(dom, d_ty)) && cto?(t2, dom)
                   && (case t1 of
                       | Fun (RecordMerge, _, _) ->
@@ -427,6 +427,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                               | _ -> false)
                       | Fun (Project _, _, _) ->
                         embed? Product (inferType(spc, t2))
+                      | Fun (Embed(_, false), Base(ty_qid, _, _), _) -> ty_qid nin? base_src_QIds
+                      | Fun (Embed(_, true), Arrow(_, Base(ty_qid, _, _), _), _) -> ty_qid nin? base_src_QIds
                       | _ -> true))
            | Record (row, _) ->
              let srts = map (project 2) (product (spc, d_ty)) in
@@ -1447,29 +1449,30 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
     let main_script =
       Steps([%Trace true,% SimpStandard,
              mkSimplify (gen_unfolds
+                           ++ non_iso_extra_rules
                            % ++ iso_osi_rewrites
                            % ++ osi_unfolds
                            ++ complex_iso_fn_unfolds
-                           ++ rewrite_old
                            ++ iso_osi_rewrites
-                           ++ non_iso_extra_rules
-                           )
-            ] ++
-            [mkSimplify (gen_unfolds
+                           ++ rewrite_old
+                           ),            
+             mkSimplify (gen_unfolds
                            ++ complex_iso_fn_unfolds
                            ++ iso_intro_unfolds
-                           ++ rewrite_old
                            ++ iso_osi_rewrites
                            ++ osi_unfolds
-                           ++ extra_rules)
+                           ++ extra_rules
+                           ++ rewrite_old
+                           ),
                % AbstractCommonExpressions
-             ] ++
-             [mkSimplify (gen_unfolds
+             
+             mkSimplify (gen_unfolds
                             ++ unfold_old
                             ++ iso_osi_rewrites
                             ++ osi_unfolds
                             ++ iso_unfolds
-                            ++ extra_rules)
+                            ++ extra_rules),
+             SimpStandard
                % AbstractCommonExpressions
              ])
     in {
