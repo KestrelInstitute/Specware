@@ -100,12 +100,12 @@ ASW_Printer_SExp qualifying spec
        ppConcat [ppString "unit ", ppRelativeUID unitId]
 
      | Spec specElems -> 
-       ppConcat [ppString "spec",
+       ppConcat [ppString "(spec",
 		 ppNewline,
 		 ppString "  ",
 		 ppNest 2 (ppSpecElems c specElems),
 		 ppNewline,
-		 ppString "end spec"]
+		 ppString "endspec)"]
 
       | Qualify (term, qualifier) ->
         ppConcat [ppString "qualifying ",
@@ -719,7 +719,7 @@ ASW_Printer_SExp qualifying spec
   op  ppSpec: Context -> Spec -> Option SCTerm -> WLPretty
   def ppSpec c spc optTm =
     let norm_spc =  normalizeTypes(spc, false) in
-    ppGr2Concat [ppString "spec ",
+    ppGr2Concat [ppString "(spec ",
 		 ppNewline,
                  case optTm of
                    | Some def_tm -> ppSpecOrigin c def_tm
@@ -728,9 +728,11 @@ ASW_Printer_SExp qualifying spec
 		   | None -> ppString "elements"
 		   | Some def_tm -> ppSpecOrigin c def_tm,
 		 ppNewline,
+		 ppString "(",
 		 ppSpecElements c norm_spc norm_spc.elements,
+		 ppString ")",
 		 ppNewline,
-		 ppString "end spec"]
+		 ppString "endspec)"]
 
   op  ppSpecOrigin: Context -> SCTerm -> WLPretty
   def ppSpecOrigin c (def_tm,_) =
@@ -838,8 +840,9 @@ ASW_Printer_SExp qualifying spec
         ppConcat [if c.printPositionInfo?
 		    then ppPosition c pos
 		  else ppNil,
-		  ppString "import ",
-		  ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name "]
+		  ppString "(import ",
+		  ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
+		  ppString ")"]
       | Op (qid,d?,pos) ->
 	(case findTheOp(spc,qid) of
 	   | Some {names,fixity,dfn,fullyQualified?=_} ->
