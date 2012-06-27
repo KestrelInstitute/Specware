@@ -1657,9 +1657,13 @@ If we want the precedence to be optional:
 ;;;  SC-OP-TRANSFORM
 ;;; ========================================================================
 (define-sw-parser-rule :SC-OP-TRANSFORM ()
-  (:tuple "transform" (1 :SC-TERM) "by" "{"
-	  (2 (:repeat* :TRANSFORM-EXPR ",")) "}"
-          (3 (:repeat* :SM-PRAGMA)))
+  (:anyof
+   (:tuple "transform" (1 :SC-TERM) "by" "{"
+           (2 (:repeat* :TRANSFORM-EXPR ",")) "}"
+           (3 (:repeat* :SM-PRAGMA)))
+   (:tuple (1 :SC-TERM) "{"
+           (2 (:repeat* :TRANSFORM-EXPR ",")) "}"
+           (3 (:repeat* :SM-PRAGMA))))
   (make-sc-transform 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-EXPR ()
