@@ -300,8 +300,11 @@ Utilities qualifying spec
    let vars = freeVarsRec(M) in
    removeDuplicateVars vars
 
-  op inVars?(v: Var, vs: List Var): Bool =
+  op inVars?(v: Var, vs: Vars): Bool =
     exists? (fn v1 -> equalVar?(v,v1)) vs
+
+  op disjointVars?(vs1: Vars, vs2: Vars): Bool =
+     ~(exists? (fn v -> inVars?(v, vs1)) vs2)
 
   op hasRefTo?(t: MSTerm, vs: List Var): Bool =
     existsSubTerm (fn t -> case t of
@@ -1616,6 +1619,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | Apply(Fun(RecordMerge,s,_),Record([("1", Record _),("2", Record _)],_),_) ->
         Some (translateRecordMerge(term, spc))
       | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intType))
+        %% let pat = e in bod --> bod  if variables in pat don't occur in bod
+      | Let([(pat, tm)], bod, _) | sideEffectFree tm && disjointVars?(patternVars pat, freeVars bod) ->
+        Some bod
       | _ -> None
 
  op  disjointMatches: Match -> Bool
