@@ -55,6 +55,65 @@ SpecCalc qualifying spec
 
  def SpecCalc.showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
 
+ %% Pretty print a list of ATransformExprs, separated by commas.
+ op [a] ppATransformExprs (transformexprs: List(ATransformExpr a)): Doc =
+   ppSep (ppString ", ") (map ppATransformExpr transformexprs)
+
+ op [a] ppRecordTransformPairs (pair: (String * ATransformExpr a)): Doc =
+  ppConcat[ppString pair.1,
+           ppString "=",
+           ppATransformExpr pair.2]
+
+%% I am not sure what all of these options are, so I am not sure how to print them.
+%% TODO: flesh out the Slice case.
+%% (See also: ppTransformExpr and type ATransformExpr.)
+op [a] ppATransformExpr (tre: ATransformExpr a): Doc =
+case tre of
+  | Name         (str, _) -> ppString str
+  | Number       (num, _) -> ppString (show num)
+  | Str          (str, _) -> ppString str
+  | Qual         (str1, str2, _) -> ppConcat [ppString str1, ppString ".", ppString str2]
+  | SCTerm       (term, _) -> ppSCTerm term
+  | Item         (str, transformexpr, _) ->    % e.g. unfold map
+    ppConcat [ppString str,
+              ppString " ",
+              ppATransformExpr transformexpr]
+  | Slice        (opnames, typenames, f1, f2, _) -> ppString "(... slice term elided ...)"
+  | Globalize    (opnames, typename, id, optionalopname, _) ->
+    ppConcat [ppString "globalize (",
+              %% opname is either a single QualifiedId (just print it) or several (print them in braces and comma-separated)
+              (if length opnames = 1 then
+                 ppString (printQualifiedId (head opnames))
+               else
+                 ppConcat[ppString "{",
+                          (ppSep (ppString ", ") (map ppString (map printQualifiedId opnames))), 
+                          ppString "}"]),
+              ppString ", ",
+              ppString (printQualifiedId typename),
+              ppString ", ",
+              ppString id,
+              (case optionalopname of
+                 | Some qid -> ppConcat [ppString ", ", ppString (printQualifiedId qid)]
+                 | None -> ppString ""),
+              ppString ")"]
+  | Repeat       (transformexprs, _) -> ppConcat [ppString "repeat {",
+                                                  ppATransformExprs transformexprs,
+                                                  ppString "}"]
+  | Tuple        (transformexprs, _) -> ppConcat [ppString "(",
+                                                  ppATransformExprs transformexprs,
+                                                  ppString ")"]
+  | Record       (name_expr_pairs, _) -> ppSep (ppString ", ") (map ppRecordTransformPairs name_expr_pairs) 
+  | ApplyOptions (transformexpr, transformexprs, _) -> ppConcat [ppATransformExpr transformexpr,
+                                                                 ppString "[",
+                                                                 ppATransformExprs transformexprs,
+                                                                 ppString "]"]
+  | Apply        (transformexpr, transformexprs, _) -> ppConcat [ppATransformExpr transformexpr,
+                                                                 ppString "(",
+                                                                 ppATransformExprs transformexprs,
+                                                                 ppString ")"]
+
+
+
  %% From Specware, called only for printing import SC terms !!
  %% From Forges, called for printing inline and specialize SC terms
   op ppSCTerm : SCTerm -> Doc
@@ -86,6 +145,15 @@ SpecCalc qualifying spec
                     else ppConcat[ppString "(", ppSCTerm term, ppString ")"],
 		  ppString " by ",
 		  ppRenaming renaming]
+
+      | Transform (term, transformexprs, pragmas) ->
+        %% What are the pragmas?
+        ppConcat [ppString "transform ",
+		  ppSCTerm term,
+		  ppString " by {",
+		  ppATransformExprs transformexprs,
+		  ppString "}"
+		  ]
 
       | Let (decls, term) ->
         ppConcat [ppString "let",
