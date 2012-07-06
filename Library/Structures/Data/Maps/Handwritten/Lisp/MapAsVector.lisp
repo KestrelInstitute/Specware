@@ -22,7 +22,7 @@
   (cons ':|Some| val))
 
 (defparameter *map-as-vector--initial-vector-size* 10)
-(defparameter *map-as-vector--max-vector-size* 100000)
+(defparameter *map-as-vector--max-vector-size* 1000000)
 (defparameter *map-as-vector-resize-factor* 1.1)
 
 (defmacro map-as-vector--initial-vector ()
