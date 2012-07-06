@@ -224,7 +224,6 @@ spec
             
             %% would like to remove tvs ~= [] condition but currently causes problem in Snark translation
             let snark_problem? = if snark_hack? then tvs = [] else false in
-            
             if ~ snark_problem? && q nin? dontUnfoldQualifiers
                 && HOFnType? (typ, spc) && unfoldable? tm then
               
@@ -262,22 +261,41 @@ op dontUnfoldQualifiers: Ids = ["String"]
      | _ -> false
 
  op HOType? (typ : MSType, spc : Spec) : Bool =
-   case stripSubtypesAndBaseDefs spc typ of
+   case stripSubtypes(spc, typ) of
      | Arrow _ -> true
-
      | Product (fields, _) ->
        exists? (fn (_, s) -> HOType? (s, spc)) fields
-
      | _ -> false
 
- op unfoldSizeThreshold   : Nat = 40
- op unfoldHOSizeThreshold : Nat = 80
+ op unfoldCostThreshold   : Nat = 30
+ op unfoldHOCostThreshold : Nat = 60
   
  op unfoldable? (dfn : MSTerm) : Bool =
-   sizeTerm dfn < unfoldHOSizeThreshold
+   termCost dfn < unfoldHOCostThreshold
 
  op sizeTerm (tm : MSTerm) : Nat = 
    foldSubTerms (fn (_, sum) -> sum + 1) 0 tm
+
+ op curryFnTerm?(tm: MSTerm): Bool =
+   case tm of
+     | Fun _ -> true
+     | Apply(fn_tm, _, _) -> curryFnTerm? fn_tm
+     | _ -> false
+
+%% Could be made arbitrarily more sophisticated, but want it to be fast
+ op termCost (tm : MSTerm) : Nat = 
+   foldSubTerms (fn (tm, sum) ->
+                   case tm of
+                     | Var _ -> sum
+                     | Let _ -> sum
+                     | IfThenElse _ -> sum
+                     | Fun(Op(Qualified(_,monadBind), _), _, _) -> sum + 3
+                     | Apply(Lambda _, _, _) -> sum   % With default means case is 1
+                     %% No penalty for fully applied curry fn -- would prefer penalty for partially applied fn
+                     | Apply(Apply(fn_tm, _, _), _, _) | curryFnTerm? fn_tm -> sum
+                     | _ -> sum + 1)
+     0 tm
+
 
  op analyzeCurriedDefn (qid          : QualifiedId,
                         dfn          : MSTerm,
@@ -448,7 +466,11 @@ op dontUnfoldQualifiers: Ids = ["String"]
    mapOpInfos (fn info -> 
                  let inner_tsp = (make_op_map (primaryOpName info), typ_map, pat_map) in
                  %% now the the tsp knows the name of the op
-                 info << {dfn = mapTerm inner_tsp info.dfn})
+                 let new_dfn = mapTerm inner_tsp info.dfn in
+                 % let _ = if (primaryOpName info) = Qualified("Size","doTestForSize")
+                 %          then writeLine("Orig def:\n"^printTerm info.dfn^"\nNew def:\n"^printTerm new_dfn) else ()
+                 % in
+                 info << {dfn = new_dfn})
               ops
 
  %% ================================================================================
@@ -501,10 +523,8 @@ op dontUnfoldQualifiers: Ids = ["String"]
 	    (case getCurryArgs tm of
 	       | Some(f, args) ->
 		 (case f of
-
 		    | Fun (Op (qid as Qualified (q, id), _), typ, _) ->
 		      (case findAQualifierMap(unfold_map, q, id) of
-
 			 | Some (vs, defn, deftyp, fnIndices, curried?, recursive?) ->
                            % let _ = writeLine("maybeUnfoldTerm:\n"^printTerm f) in
 			   if curried? 
@@ -542,7 +562,11 @@ op dontUnfoldQualifiers: Ids = ["String"]
      | _ -> (if i = 0 then tm else fail("Illegal getTupleArg call"))
 
  op exploitableTerm? (tm : MSTerm, unfoldMap : AQualifierMap DefInfo) : Bool =
-   ~(embed? Var tm)
+   case tm of
+     | Var _ -> false
+     | Apply(Fun(Project _, _, _), _, _) -> false
+     %% Add other cases?
+     | _ -> true
 
  op termToList (tm : MSTerm) : MSTerms =
    case tm of
@@ -572,10 +596,8 @@ op dontUnfoldQualifiers: Ids = ["String"]
                       curried?     : Bool,
                       spc          : Spec)
    : MSTerm =
-   % let _ = if outer_qid = Qualified(UnQualified,"f") then
-   %           writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm^
-   %                     "\ndef_body: "^printTerm def_body)
-   %          else () in
+   % let trace? = outer_qid = Qualified("Size","doTestForSize--") in  % Qualified(UnQualified,"f") in
+   % let _ = if trace? then writeLine("makeUnfoldedTerm:\n"^printTerm orig_tm^ "\ndef_body: "^printTerm def_body) else () in
    let replacement_indices = filter (fn i -> constantTerm? (args @ i) && i in? fn_indices)
                                     (indices_for args)
    in
@@ -606,17 +628,21 @@ op dontUnfoldQualifiers: Ids = ["String"]
                             simplifyTerm, 
                             spc)
    else
-     let def_body             = instantiateTyVarsInTerm (def_body, tv_subst)                    in
+     let def_body             = instantiateTyVarsInTerm (def_body, tv_subst) in
      let remaining_params     = map (fn p -> instantiateTyVarsInPattern(p, tv_subst))
                                     remaining_params
      in
      let (remaining_params, remaining_args) = 
          adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body)
      in
-     let new_body             = simplifyTerm def_body                                           in
-     let (new_let_binds, new_subst) = makeLetBinds (remaining_params, remaining_args)           in
-     let new_body              = substitute (new_body, p_subst ++ new_subst)                     in
-     let new_let = foldl (fn (bod, let_bind) -> mkLet([let_bind], bod)) new_body new_let_binds in
+     let new_body = simplifyTerm def_body in
+     % let _ = if trace? then writeLine("new_body: "^printTerm new_body) else () in
+     let (new_let_binds, new_subst) = makeLetBinds (remaining_params, remaining_args) in
+     let new_fn = mkLambda(mkTuplePat(map (project 1) new_let_binds), new_body) in
+     let new_args = mkTuple(map (project 2) new_let_binds) in
+     % let _ = if trace? then writeLine("new_args: "^printTerm new_args) else () in
+     let new_fn = substitute (new_fn, p_subst ++ new_subst)                     in
+     % let _ = if trace? then writeLine("new_fn: "^printTerm new_fn) else () in
 
      %% The substitutions in p_subst only make sense in the body of the definition.
      %% Once they are done there, do not propagate them into makeLet.
@@ -624,15 +650,18 @@ op dontUnfoldQualifiers: Ids = ["String"]
      %% Instead, makeLet may create an entirely new set of substitutions to be applied to the body.
      %% Alternatively, it might just add the corrseponding let bindings.
 
-     let new_tm               = simplifyTerm new_let                                            in
+     let new_tm               = simplifyTerm(mkApply(new_fn, new_args))                                            in
+     % let _ = if trace? then writeLine("new_tm: "^printTerm new_tm) else () in
      let trans_new_tm         = unfoldInTerm (outer_qid, new_tm, unfold_map, simplifyTerm, spc) in
+     % let _ = if trace? then writeLine("orig_tm: "^printTerm orig_tm) else () in
 
+     % let _ = if trace? then writeLine("cost new_tm: "^show(termCost new_tm)^" "^show(termCost orig_tm))else () in
      %% TODO: The following test is just weird.  Explain it.
      %% Note that if avoid_bindings? (used by makeLet) is true, the resulting form looks the 
      %% same but the freeVars test gives a different result (huh?), changing the sense of the test.
 
-     if (trans_new_tm = new_let
-           && sizeTerm new_let > sizeTerm orig_tm
+     if (trans_new_tm = new_tm
+           && termCost new_tm > termCost orig_tm
            && ~(exists? (fn (_,t) -> embed? Apply t || freeVars t ~= []) new_subst))
        then 
          orig_tm
@@ -712,7 +741,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
   let new_lambda  = mkLambda (mkTuplePat new_params, local_def_body) in
   % let _ = if outer_qid = Qualified(UnQualified,"f") then writeLine("new_lambda: "^printTerm new_lambda) else () in
   let local_def   = substitute (new_lambda, param_subst) in
-  % let _ = if outer_qid = Qualified(UnQualified,"f") then writeLine("local_def: "^printTerm local_def) else () in
+  % let _ = if outer_qid = Qualified("Size","doTestForSize") then writeLine("local_def: "^printTerm local_def) else () in
   
 
   %% Need to repeat as substitution may have introduced new opportunities
@@ -890,7 +919,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
             %% Uncurried case
             (case findTheOp (spc, qid) of
 
-               | Some opinfo | sizeTerm opinfo.dfn <= unfoldSizeThreshold ->
+               | Some opinfo | termCost opinfo.dfn <= unfoldCostThreshold ->
                  let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
                  (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
 
@@ -910,7 +939,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
 		    | Fun (Op (qid, _), fun_type, _) ->
 		      (case findTheOp (spc, qid) of
 
-                         | Some opinfo | sizeTerm opinfo.dfn <= unfoldSizeThreshold ->
+                         | Some opinfo | termCost opinfo.dfn <= unfoldCostThreshold ->
                            let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
                            (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
 
@@ -1028,4 +1057,4 @@ op dontUnfoldQualifiers: Ids = ["String"]
  %%	  | _ -> (q, id, def1))
  %%      | _ -> (q, id, def1)
 
-endspec
+end-spec

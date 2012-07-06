@@ -79,7 +79,7 @@ spec
 
  op  removeUnnecessaryVariable: Spec -> MSTerm -> MSTerm
  def removeUnnecessaryVariable spc term =
-      let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
+     let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
        of Let([(VarPat (v,_),e)],body,_) ->
 	  let noSideEffects = sideEffectFree(e) || embed? Lambda e in
@@ -212,8 +212,8 @@ spec
              simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(Cons(decl2,decls),body))))
            %% let (x,y) = (w,z) in f(x,y) -> f(w,z)
            | Let([(pat as RecordPat(pflds, _), tm as Record(tflds, _))], body, pos)
-               | varRecordPattern? pat && varRecordTerm? tm ->
-             let new_decls = map (fn ((_,p), (_,t)) -> (p,t)) (zip(pflds, tflds)) in
+               | varCompatiblePatternTerm?(pat, tm) ->
+             let new_decls = flattenCompatiblePatternTerm(pat, tm) in
              simplifyOne spc (Let(new_decls, body, pos))
            %% let y = x in f y  --> f x
            | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
@@ -547,15 +547,16 @@ spec
   def simplifyExists1(vs, cjs) =
     mkSimpBind(Exists1, vs, mkSimpConj cjs)    
 
-  op simplifyRecordBind(spc: Spec, pats: List (Id * MSPattern), acts: List (Id * MSTerm), body: MSTerm)
+  op simplifyRecordBind(spc: Spec, pat: MSPattern, tm: MSTerm, body: MSTerm)
      : Option MSTerm =
-    if forall? (fn(_,VarPat _) -> true | (_,WildPat _) -> true | _ -> false) pats 
-      then (if forall? (fn(_,Var _) -> true | _ -> false) acts
-              then Some(substitute(body,makeSubstFromRecord(pats,acts)))
+    let pairs = flattenCompatiblePatternTerm(pat, tm) in
+    if List.forall? (fn(VarPat _, _) -> true | (WildPat _,_) -> true | _ -> false) pairs 
+      then (if forall? (fn(_,Var _) -> true | _ -> false) pairs
+              then Some(substitute(body,makeSubstFromBindPairs pairs))
               else
               %% Sequentializing binds: rename to avoid variable capture
               let (binds,sbst,_)
-                 = foldr (fn (((_,vp as VarPat(v,a)),(_,val)),(binds,sbst,fvs)) ->
+                 = foldr (fn ((vp as VarPat(v,a),val),(binds,sbst,fvs)) ->
                             let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
                             if v.1 in? fvs
                               then let nv = (v.1 ^ "__" ^ (Nat.show (length binds)),v.2) in
@@ -563,12 +564,12 @@ spec
                                  Cons((v,Var(nv,a)),sbst),
                                  new_fvs)
                             else (Cons((vp,val),binds),sbst,new_fvs)
-                          | (((_,vp as WildPat _),(_,val)),(binds,sbst,fvs)) ->
+                          | ((vp as WildPat _,val),(binds,sbst,fvs)) ->
                             if sideEffectFree val then (binds,sbst,fvs)
                             else
                             let new_fvs = (map (fn (vn,_) -> vn) (freeVars val)) ++ fvs in
                             (Cons((vp,val),binds),sbst,new_fvs))
-                     ([],[],[]) (zip(pats,acts))
+                     ([],[],[]) pairs
               in
               let body = substitute(body,sbst) in
               Some(foldr (fn ((v,val),body) ->
@@ -579,24 +580,24 @@ spec
   op simplifyCase (spc: Spec) (term: MSTerm): Option MSTerm =
     case term of
       %% case (a,b,c) of (x,y,z) -> g(x,y,z) --> g(a,b,c)
-      | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->
-        simplifyRecordBind(spc, pats, acts, body)
+      | Apply(Lambda([(pat as RecordPat _,_,body)],_),tm as Record _,_) ->
+        simplifyRecordBind(spc, pat, tm, body)
       %% let (x,y,z) = (a,b,c) in g(x,y,z) --> g(a,b,c)
-      | Let ([(RecordPat(pats,_), Record(acts,_))], body, _) ->
-        simplifyRecordBind(spc, pats, acts, body)
+      | Let ([(pat as RecordPat _, tm as Record _)], body, _) ->
+        let (pats, acts) = unzip(flattenCompatiblePatternTerm(pat, tm)) in
+        simplifyRecordBind(spc, pat, tm, body)
       %% case v of (x,y) -> ... --> let x = v.1 and y = v.2 in ...
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),v as Var(vr,_),_) ->
         Some (simplifyOne spc
                 (mkLet(map (fn (id,p) -> (p, mkProjection(id, v, spc))) pats, body)))
       | _ -> None
 
-  op  makeSubstFromRecord: List(Id * MSPattern) * List(Id * MSTerm) -> List(Var * MSTerm)
-  def makeSubstFromRecord(pats,acts) =
-    foldl (fn (result,(id,VarPat(v,_)))
-             -> Cons((v,findField(id,acts)),result)
-             | (result,_) -> result)
+  op  makeSubstFromBindPairs: List(MSPattern * MSTerm) -> List(Var * MSTerm)
+  def makeSubstFromBindPairs(pairs) =
+    foldl (fn (result,(VarPat(v,_), tm)) -> (v,tm) :: result
+            | (result,_) -> result)
       []
-      pats
+      pairs
 
   def simplifiedApply(t1,t2,spc) =
     % let _ = writeLine("simp apply: "^printTerm t1^" ("^printTerm t2^")") in

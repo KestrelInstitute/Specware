@@ -406,7 +406,7 @@ MS qualifying spec
   op  termList: MSTerm -> MSTerms
   def termList t =
     case t of
-      | Record(fields, _ ) -> foldr (fn ((_, st), r) -> st::r) [] fields
+      | Record(fields as ("1", _) :: _, _ ) -> foldr (fn ((_, st), r) -> st::r) [] fields
       | _ -> [t]
 
 endspec

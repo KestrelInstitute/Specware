@@ -1879,6 +1879,21 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
          forall? (fn (_, fld_pat) -> varRecordPattern? fld_pat) fields
        | _ -> false
 
+   op varCompatiblePatternTerm?(pat: MSPattern, tm: MSTerm): Bool =
+     case (pat, tm) of
+       | (VarPat _, Var _) -> true
+       | (RecordPat(pat_fields, _), Record(tm_fields, _)) ->
+         forall? (fn ((_, fld_pat), (_, fld_tm)) -> varCompatiblePatternTerm?(fld_pat, fld_tm))
+           (zip(pat_fields, tm_fields))
+       | _ -> false
+
+   op flattenCompatiblePatternTerm(pat: MSPattern, tm: MSTerm): List(MSPattern * MSTerm) =
+     case (pat, tm) of
+       | (RecordPat(pat_fields, _), Record(tm_fields, _)) ->
+         List.foldr (fn (((_, fld_pat), (_, fld_tm)), pairs) -> flattenCompatiblePatternTerm(fld_pat, fld_tm) ++ pairs)
+           [] (zip(pat_fields, tm_fields))
+       | _ -> [(pat, tm)]
+
    op simpleLambda?(tm: MSTerm): Bool =
      %% One case, true pred & variable of product of variable pattern
      case tm of
