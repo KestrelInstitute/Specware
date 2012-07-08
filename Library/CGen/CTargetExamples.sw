@@ -102,8 +102,11 @@ import /Library/CGen/CTarget
 op f (x:Sshort) : Slong = slongOfSint (-_1_sint (sintOfSshort x))
 % long f(short x) { return (-x); }
 
-endspec
+proof isa E8__f_Obligation_subtype
+  sorry
+end-proof
 
+endspec
 
 
 Example9 = E9 qualifying spec
@@ -113,6 +116,10 @@ import Example4 % curves, lines, points
 
 op g (cal:CurveAndLine) : Sllong = (cal.curve @_sint (sintConstant 4 hex)).z
 % long long g(CurveAndLine cal) { return cal.curve[0x4].z; }
+
+proof E9__g_Obligation_subtype0
+  sorry
+end-proof
 
 endspec
 
