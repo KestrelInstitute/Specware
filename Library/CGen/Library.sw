@@ -1,8 +1,3 @@
-%% NOTE: The following files should be kept in sync:
-%% Specware/Library/CGen/Library.sw
-%% vTPM/Library.sw
-
-
 spec
 
 %% This file contains lemmas that could eventually be pushed into a library somewhere.

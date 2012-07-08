@@ -1,7 +1,3 @@
-%% NOTE: The following files should be kept in sync:
-%% Specware/Library/CGen/CTargetParameters.sw
-%% vTPM/CTargetParameters.sw
-
 C qualifying spec
 
 %% import /Library/General/TwosComplementNumber

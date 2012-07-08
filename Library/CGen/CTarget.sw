@@ -1,7 +1,3 @@
-%% NOTE: The following files should be kept in sync:
-%% Specware/Library/CGen/CTarget.sw
-%% vTPM/CTarget.sw
-
 C qualifying spec
 
 import CTargetParameters
