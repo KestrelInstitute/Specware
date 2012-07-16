@@ -1,4 +1,24 @@
- %%% Top level function printUIDtoFile 
+%% This is a pretty-printer for specs that produces output in a Lisp-like
+%% s-expression-based format.  Having sub-terms printed within balanced
+%% parentheses makes it easy to navigate around the printed representation of a
+%% spec (e.g., using Emacs keys to skip over a large balanced-parentheses
+%% expression.
+
+%% This file is a modification of ASW_Printer.sw, and it is not yet finished.  I
+%% am changing the prining of constructs to use s-expressions on an as-needed
+%% basis.
+
+%% The top level function to call is printUIDtoFile.
+%%Example use:
+%%   gen-lisp /Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp.sw
+%%   cl ~/Dropbox/Specware/Languages/SpecCalculus/AbstractSyntax/lisp/ASW_Printer_SExp.lisp
+%%   (ASW_PRINTER_SEXP::PRINTUIDTOFILE-3  "/usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp" nil t)
+%% Note that this last step takes advantage of the ability of the Specware shell
+%% to execute Lisp commands (only works when Specware is invoked via certain
+%% scripts, such as Specware-gnu).
+
+%% TODO: Print to the screen instead of a file?
+%% TODO: Make this command available directly in the Specware shell (how?).
 
 ASW_Printer_SExp qualifying spec 
 
@@ -37,6 +57,7 @@ ASW_Printer_SExp qualifying spec
  % def ppGrConcat x = ppGroup (ppConcat x)
 
  def ppGrConcat x = ppNest 0 (ppConcat x)
+ def ppGr1Concat x = ppNest 1 (ppConcat x)
  def ppGr2Concat x = ppNest 2 (ppConcat x)
  def ppGbConcat x = ppNest 0 (ppConcat x)
  op  ppNum: Integer -> WLPretty
@@ -77,7 +98,7 @@ ASW_Printer_SExp qualifying spec
        let def pp path =
              case path of
 	       | [] -> []
-	       | [x] -> [ppID(x ^ "#" ^ suffix)]
+	       | [x] -> [ppID(x ^ numberSignString ^ suffix)]
 	       | x::rp -> Cons(ppID x, pp rp)
        in
        ppSep (ppString "/") (pp path)
@@ -97,15 +118,14 @@ ASW_Printer_SExp qualifying spec
 		 ppSCTerm c t]
 
      | UnitId unitId -> 
-       ppConcat [ppString "unit ", ppRelativeUID unitId]
+       ppConcat [ppString "(unitId ", ppRelativeUID unitId, ppString ")"]
 
      | Spec specElems -> 
-       ppConcat [ppString "(spec",
+       ppConcat [ppString "(SCspec",
 		 ppNewline,
-		 ppString "  ",
 		 ppNest 2 (ppSpecElems c specElems),
 		 ppNewline,
-		 ppString "endspec)"]
+		 ppString "endSCspec)"]
 
       | Qualify (term, qualifier) ->
         ppConcat [ppString "qualifying ",
@@ -364,7 +384,7 @@ ASW_Printer_SExp qualifying spec
  def ppTyVars tvs =
    case tvs of
      | [] -> ppNil
-     | _  -> ppSep (ppString ", ") (map ppID tvs)
+     | _  -> ppSep (ppString " ") (map ppID tvs)
 
  op  ppOpInfo :  Context -> Boolean -> Boolean -> Aliases * Fixity * MSTerm -> Position -> WLPretty
  def ppOpInfo c decl? def? (aliases, fixity, dfn) pos =
@@ -409,14 +429,15 @@ ASW_Printer_SExp qualifying spec
       ppGr2Concat [if c.printPositionInfo?
 		    then ppPosition c pos
                     else ppNil,
-		   ppString "claim ",
+		   ppString "(claim ",
 		   ppPropertyType propType,
 		   ppString " ",
 		   ppQualifiedId name,
 		   ppBrTyVars tyVars,
 		   ppString " is ",
 		   ppBreak,
-		   ppTerm c term]
+		   ppTerm c term,
+                   ppString ")"]
  
   op  ppPropertyType : PropertyType -> WLPretty
    def ppPropertyType propType =
@@ -561,6 +582,9 @@ ASW_Printer_SExp qualifying spec
       | None -> None
       | Some(uid,filnm,hash) -> Some(uid,filnm ^ hash)
 
+  %% Used because the use of "#" causes problems with syntax coloring.
+  op numberSignString : String = implode [##]
+
   op  uidStringPairForValue: Value -> Option (UnitId * String * String)
   def uidStringPairForValue val =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
@@ -572,7 +596,7 @@ ASW_Printer_SExp qualifying spec
         Some (uid,
 	      uidToAswName uid,
 	      case uid.hashSuffix of
-		| Some loc_nm -> "#" ^ loc_nm
+		| Some loc_nm -> numberSignString ^ loc_nm
 		| _ -> "")
 
   op  SpecCalc.findUnitIdforUnitInCache: Value -> Option UnitId
@@ -716,24 +740,84 @@ ASW_Printer_SExp qualifying spec
 %						 recursive? = false}
 %					   spc))
 
-  op  ppSpec: Context -> Spec -> Option SCTerm -> WLPretty
-  def ppSpec c spc optTm =
-    let norm_spc =  normalizeTypes(spc, false) in
+op ppWrapParens (pp : WLPretty) : WLPretty =
+ ppConcat [ppString "(",
+           pp,
+           ppString ")"]
+             
+           
+
+op ppAOpInfo (c : Context, aopinfo : AOpInfo StandardAnnotation) : WLPretty = 
+  let {names, fixity, dfn, fullyQualified?} = aopinfo in
+  ppGr2Concat [ppString "(opinfo ",
+               ppBreak,
+               ppWrapParens (ppSep (ppString ", ") (map ppQualifiedId names)), %%when can there be more than one name?
+               ppString " ",
+               ppBreak,
+               ppFixity fixity,
+               %ppString " ",
+               ppNewline, %ppBreak,
+               ppTerm c dfn,
+               ppString " ",
+               ppBreak,
+               ppBoolean fullyQualified?,
+               ppString ")",
+               ppNewline]
+
+
+op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo StandardAnnotation))) : List WLPretty =
+   foldi
+   (fn (key, val, prettys) -> 
+      ((ppConcat [ppString "(",
+                  ppString key,
+                  ppNewline,
+                  ppAOpInfo (c, val),
+                  ppString ")",
+                  ppBreak
+                  ])
+         ::prettys))
+   []
+   m
+   
+%% Each val in the map is itself a map.
+  op ppAOpMapEntry (c : Context) (key : String, val : (MapL.Map(String, (AOpInfo StandardAnnotation))), pps: List WLPretty) : List WLPretty =
+  (ppGr2Concat [ppString "(",
+                ppString key,
+                ppString " ",
+                ppBreak,
+                ppGr2Concat [ppString "(",
+                             ppSep (ppConcat [ppNewline, ppString " "]) (ppMapLMapFromStringsToAOpInfos c val),
+                             ppString ")"],
+                ppString ")"])::
+  pps
+              
+  %% This is a map from op names to (maps from qualifiers to opinfos).
+  op ppAOpMap (c : Context, m:(AOpMap StandardAnnotation)) : WLPretty =
+    ppGr2Concat [ppString "(ops ",
+                 ppNewline,
+                 ppSep ppNewline (MapSTHashtable.STH_foldi (ppAOpMapEntry c, [], m)),
+                 ppString ")",
+                 ppNewline]
+
+   op ppSpec (c: Context) (spc:Spec) (optTm: Option SCTerm) : WLPretty =
+    let norm_spc =  spc in %%normalizeTypes(spc, false) in
+%%FIXME also print the ops, types, etc.
     ppGr2Concat [ppString "(spec ",
 		 ppNewline,
-                 case optTm of
-                   | Some def_tm -> ppSpecOrigin c def_tm
-                   | None ->
-		 case findTermForUnitInCache(Spec spc) of
-		   | None -> ppString "elements"
-		   | Some def_tm -> ppSpecOrigin c def_tm,
-		 ppNewline,
-		 ppString "(",
-		 ppSpecElements c norm_spc norm_spc.elements,
-		 ppString ")",
-		 ppNewline,
-		 ppString "endspec)"]
-
+                 % case optTm of
+                 %   | Some def_tm -> ppSpecOrigin c def_tm
+                 %   | None ->
+                 %     case findTermForUnitInCache(Spec spc) of
+                 %       | None -> ppString "elements"
+                 %       | Some def_tm -> ppSpecOrigin c def_tm,
+		 %%ppNewline,
+		 (ppSpecElements c norm_spc norm_spc.elements),
+                 ppNewline,
+                 ppAOpMap (c, spc.ops),
+                 ppString "(...types elided FIXME...)",
+                 ppString ")"
+                 ]
+    
   op  ppSpecOrigin: Context -> SCTerm -> WLPretty
   def ppSpecOrigin c (def_tm,_) =
     case def_tm of
@@ -798,8 +882,7 @@ ASW_Printer_SExp qualifying spec
 	  | Some val -> ppValue c val (Some tm)
 	  | _ -> ppString "<<Shouldn't happen!>>"
 	 
-  op  ppUIDorFull: Context -> Value -> Option SCTerm -> String -> WLPretty
-  def ppUIDorFull c val opt_val_tm name_str =
+  op ppUIDorFull (c:Context) (val:Value) (opt_val_tm: Option SCTerm) (name_str: String) : WLPretty =
     case findUnitIdforUnitInCache val of
       | Some uid ->
         let _ = if c.recursive? && uid nin? c.uidsSeen
@@ -809,18 +892,21 @@ ASW_Printer_SExp qualifying spec
 	  ppConcat [ppString name_str, ppUID uid]
       | None -> ppValue c val opt_val_tm
 
-  op  ppSpecElements: Context -> Spec -> SpecElements -> WLPretty
-  def ppSpecElements c spc elems = ppSep (ppConcat [ppString ";",ppNewline])
-                                     (filter (fn pp -> pp ~= ppNil)
-				        (ppSpecElementsAux c spc elems))
-
+  op ppSpecElements (c:Context) (spc: Spec) (elems:SpecElements) : WLPretty = 
+  ppNest 1 (ppConcat [ppString "(elements",
+                      ppNewline,
+                      (ppSep ppNewline
+                         (filter (fn pp -> pp ~= ppNil)  %% why the filter?
+                            (ppSpecElementsAux c spc elems))),
+                      ppString ")"])
+    
   op  ppSpecElementsAux: Context -> Spec -> SpecElements -> List WLPretty
   def ppSpecElementsAux c spc elems =
     case elems of
       | [] -> []
-      | (Op (qid1,false,pos)) :: (OpDef (qid2,0,hist,_)) :: rst | qid1 = qid2 ->
-        Cons(ppSpecElement c spc (Op (qid1,true,pos)) true,
-	     ppSpecElementsAux c spc rst)
+      % | (Op (qid1,false,pos)) :: (OpDef (qid2,0,hist,_)) :: rst | qid1 = qid2 ->
+      %   Cons(ppSpecElement c spc (Op (qid1,true,pos)) true,
+      %        ppSpecElementsAux c spc rst)
       | el :: rst ->
 	Cons(ppSpecElement c spc el false,
 	     ppSpecElementsAux c spc rst)
@@ -833,52 +919,87 @@ ASW_Printer_SExp qualifying spec
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst -> Cons(x,normalizeSpecElements rst)
 
-  op  ppSpecElement: Context -> Spec -> SpecElement -> Boolean -> WLPretty
-  def ppSpecElement c spc elem op_with_def? =
+op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean) : WLPretty  =
     case elem of
-      | Import (im_sc_tm,im_sp,im_elements,pos) ->
+      | Import (im_sc_tm, im_sp, im_elements,pos) ->
         ppConcat [if c.printPositionInfo?
 		    then ppPosition c pos
 		  else ppNil,
-		  ppString "(import ",
-		  ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
-		  ppString ")"]
+                  ppGr1Concat[ppString "(import ",
+                              ppSCTerm c im_sc_tm,
+                              ppNewline,
+                              %%ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
+                              ppString "(",
+                              %%ppSpec c im_sp None,
+                              ppString "...imported spec elided...",
+                              ppString ")",
+                              ppNewline,
+                              %%ppString "(...imported elements elided...)",
+                              ppSpecElements c im_sp im_elements, %%TODO is im_sp the right spec to pass in here? maybe ppSpecElements should not take a spec...
+                              ppString ")"]
+                  ]
       | Op (qid,d?,pos) ->
-	(case findTheOp(spc,qid) of
-	   | Some {names,fixity,dfn,fullyQualified?=_} ->
-             ppOpInfo c true (d? \_or op_with_def?) (names,fixity,dfn) pos
-	   | _ -> 
-	     let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
-	     ppString "<Undefined Op>")
+        ppConcat[ppString "(Op ",
+                 ppQualifiedId qid,
+                 ppString " ",
+                 if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
+                 ppString ")"]
+                             
+	% (case findTheOp(spc,qid) of
+	%    | Some {names,fixity,dfn,fullyQualified?=_} ->
+        %      ppOpInfo c true (d? \_or op_with_def?) (names,fixity,dfn) pos
+	%    | _ -> 
+	%      let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+	%      ppString "<Undefined Op>")
       | OpDef (qid,refine_num,hist,pos) ->    % !!!
-	(case findTheOp(spc,qid) of
-	   | Some {names,fixity,dfn,fullyQualified?=_} -> ppOpInfo c false true (names,fixity,dfn) pos
-	   | _ -> 
-	     let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
-	     ppString "<Undefined Op>")
+        ppConcat[ppString "(OpDef ",
+                 ppQualifiedId qid,
+                 ppString " ",
+                 ppString (show refine_num),
+                 ppString " ",
+                 ppString "(...transform history (if any) elided...)",
+                 ppString ")"]
+	% (case findTheOp(spc,qid) of
+	%    | Some {names,fixity,dfn,fullyQualified?=_} -> ppOpInfo c false true (names,fixity,dfn) pos
+	%    | _ -> 
+	%      let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
+	%      ppString "<Undefined Op>")
       | Type (qid,pos) ->
-	(case findTheType(spc,qid) of
-	   | Some {names,dfn} -> ppTypeInfo c false (names,dfn) pos
-	   | _ -> 
-	     let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
-	     ppString "<Undefined Type>")
+        ppConcat[ppString "(Type ",
+                 ppQualifiedId qid,
+                 ppString ")"]
+	% (case findTheType(spc,qid) of
+	%    | Some {names,dfn} -> ppTypeInfo c false (names,dfn) pos
+	%    | _ -> 
+	%      let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+	%      ppString "<Undefined Type>")
       | TypeDef (qid,pos) ->
-	(case findTheType(spc,qid) of
-	   | Some {names,dfn} -> ppTypeInfo c true (names,dfn) pos
-	   | _ -> 
-	     let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
-	     ppString "<Undefined Type>")
+        ppConcat[ppString "(TypeDef ",
+                 ppQualifiedId qid,
+                 ppString ")"]
+	% (case findTheType(spc,qid) of
+	%    | Some {names,dfn} -> ppTypeInfo c true (names,dfn) pos
+	%    | _ -> 
+	%      let _  = toScreen("\nInternal error: Missing type: " ^ printQualifiedId qid ^ "\n") in
+	%      ppString "<Undefined Type>")
       | Property prop -> ppProperty c prop
       | Pragma(beg_str,mid_str,end_str,pos) ->
 	ppConcat [if c.printPositionInfo?
 		    then ppPosition c pos
 		  else ppNil,
-		  ppString "proof ",
+		  ppString "(Pragma ",
+                  ppString "\"",
 		  ppLitString beg_str,
+                  ppString "\"",
 		  ppString " ",
-		  ppLitString mid_str,
+                  ppString "\"",
+                  ppString "...middle string elided...", %%ppLitString mid_str,
+                  ppString "\"",
 		  ppString " ",
-		  ppLitString end_str]
+                  ppString "\"",
+		  ppLitString end_str,
+                  ppString "\"",
+                  ppString ")"]
 	   
       | Comment (str,pos) ->
 	ppConcat [if c.printPositionInfo?
@@ -933,10 +1054,9 @@ ASW_Printer_SExp qualifying spec
 	  | [] -> ppString "(tuple)"
 	  | ("1",_) :: _ ->
 	    let def ppField (_,y) = ppTerm c y in
-	    ppConcat [ppString "(tuple ",
-		      ppGrConcat[ppSep (ppAppend (ppString " ") ppBreak)
-                       (map ppField fields),
-				 ppString ")"]]
+	    ppGr1Concat [ppString "(tuple ",
+                         ppSep (ppAppend (ppString " ") ppBreak) (map ppField fields),
+                         ppString ")"]
 	  | _ ->
 	    let def ppField (x,y) =
 		      ppConcat [ppID x,
@@ -953,13 +1073,15 @@ ASW_Printer_SExp qualifying spec
 		    ppString " . ",
 		    ppTerm c term]
       | Bind (binder,vars,term,_) ->
-	ppGr2Concat [ppString "bind ",
+	ppGr2Concat [ppString "(bind ",
 		     ppBinder binder,
-		     ppString " ",
-		     ppSep (ppString ", ") (map (ppVar c) vars),
-		     ppString ". ",
+		     ppString " (",
+		     ppNest 0 (ppSep (ppConcat [(ppString " "), (ppBreak)]) (map (ppVar c) vars)),
+		     ppString ") ",
 		     ppBreak,
-		     ppTerm c term]
+		     ppTerm c term,
+                     ppString ")"
+                     ]
       | Let (decls,term,_) ->
 	  let def ppDecl (pattern: MSPattern, term: MSTerm) =
 	        ppConcat [ppString "(",
@@ -999,14 +1121,16 @@ ASW_Printer_SExp qualifying spec
       | Fun (fun,ty,_) ->
 	if c.printTypes?
 	  then ppGr2Concat [ppString "(fun ",
-                           ppFun fun,
-                           ppString " ", 
-                           ppBreak,
-                           ppType c ty,
-			   ppString ")"]
-	  else ppGrConcat [ppString "(fun ",
-	       		   ppFun fun,
-			   ppString ")"]
+                            ppFun fun,
+                            ppString " ", 
+                            ppBreak,
+                            ppType c ty,
+                            ppString ")",
+                            ppBreak]
+        else ppGrConcat [ppString "(fun ",
+                         ppFun fun,
+                         ppString "),",
+                         ppBreak]
 %      | Lambda ([(pattern,_,term)],_) ->
 %	  ppGrConcat [
 %	    ppString "lambda ",
@@ -1020,9 +1144,9 @@ ASW_Printer_SExp qualifying spec
       | Lambda (match,_) ->
 	  ppIndent(ppGr2Concat [ppString "(lambda ",
 				ppBreak,
-				ppString "(",
-				ppGrConcat [ppMatch c match,
-					    ppString ")"],
+				ppNest 1 (ppGrConcat [ppString "(",
+                                                      ppMatch c match,
+                                                      ppString ")"]),
                                 ppString ")"
                                 ])
       | IfThenElse (pred,term1,term2,_) -> 
@@ -1047,10 +1171,10 @@ ASW_Printer_SExp qualifying spec
       | Pi(tvs,term1,_) ->
 	% if tvs = [] then ppTerm c term1
 	%   else 
-        ppGr2Concat [ppString "(pi (",
+        ppGr2Concat [ppString "(Pi (",
 		     ppTyVars tvs,
                      ppString ")",
-		     ppString " . ",
+		     ppString " ",
 		     ppBreak,
 		     ppTerm c term1,
                      ppString ")"]
@@ -1062,10 +1186,16 @@ ASW_Printer_SExp qualifying spec
 %		    ppString "]"
 		    ppString ")"
                     ]
-      | Any(_) -> ppString "(any)"
+      | Any(_) -> ppString "Any"
 
-      | TypedTerm (tm,srt,_) ->
-	  ppGr2Concat [ppString "(TypedTerm ",ppBreak,ppTerm c tm, ppString ": ",ppBreak,ppType c srt, ppString ")"]
+      | TypedTerm (tm,ty,_) ->
+	  ppGr2Concat [ppString "(TypedTerm ",
+                       ppBreak,
+                       ppTerm c tm,
+                       ppString " ", %% ppString ": ",
+                       ppBreak,
+                       ppType c ty, 
+                       ppString ")"]
       | mystery -> fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
   op  ppBinder : Binder -> WLPretty
@@ -1090,19 +1220,22 @@ ASW_Printer_SExp qualifying spec
   op  ppMatch : Context -> Match -> WLPretty
   def ppMatch c cases =
     let def ppCase (pattern,guard,term) =
-	  ppGrConcat [ppString "(",
-                      ppPattern c pattern,
-%%		      ppString " | ",
-                      ppString " ",
-		      ppTerm c guard,	% wrong?
-		      ppBreak,
-%%		      ppString " -> ",
-%%                      ppString " ",
-		      ppTerm c term,
-                      ppString ")"]
+    ppNest 1 (ppGrConcat [ppString "(",
+                          ppPattern c pattern,
+                          %%		      ppString " | ",
+                          ppString " ",
+                          ppBreak,
+                          ppTerm c guard,	% wrong?
+                          %ppBreak,
+                          %%		      ppString " -> ",
+                          %%                      ppString " ",
+                          ppTerm c term,
+                          ppString ")"])
     in
-      ppGroup (ppSep (ppAppend (ppString ", ") ppBreak) (map ppCase cases))
-
+    (ppSep 
+       ppBreak %(ppAppend (ppString ", ") ppBreak)
+       (map ppCase cases))
+    
  %% Placeholder for patAnn which was missing a case
  op  patAnn1: [a] APattern a -> a
  def patAnn1 pat =
@@ -1148,41 +1281,50 @@ ASW_Printer_SExp qualifying spec
 		      ppString " with ",
 		      ppPattern c pat2
 		     ]
-      | VarPat (v,_) -> ppVar c v
-      | EmbedPat (constr,pat,srt,_) ->
-	ppGrConcat ([ppString "embed ",
-		    ppID constr,
-		    case pat of
-		      | None -> ppNil
-		      | Some pat -> ppAppend (ppString " ") (ppPattern c pat)]
-		++ (if c.printTypes?
-		     then [ppString " in ",
-			   ppType c srt]
-		     else []))
+      | VarPat (v,_) -> ppConcat [ppString "(VarPat ", ppVar c v, ppString ")"]
+      | EmbedPat (constr,pat,ty,_) ->
+	ppGrConcat ([ppString "(EmbedPat ",
+                     ppID constr,
+                     ppString " ",
+                     case pat of
+                       | None -> ppString "no-arg" %ppNil
+                       | Some pat -> (ppPattern c pat),
+                     ppBreak]
+                      ++ (if c.printTypes?
+                            then [ppString " in ",
+                                  ppType c ty]
+                          else [])
+                      ++ [ppString ")"])
 
       | RecordPat (fields,_) ->
 	(case fields of
-	  | [] -> ppString "(tuple)"
+	  | [] -> ppString "(RecordPat)"
+            %% If a record has 1 as its first field name, it's really a tuple
+            %% ("1" is not a legal record field name because it starts with a
+            %% number).
 	  | ("1",_)::_ ->
 	    let def ppField (_,pat) = ppPattern c pat in
-	    ppConcat [ppString "(tuple ",
-		      ppGrConcat[ppSep  (ppAppend (ppString " ") ppBreak) %(ppString ", ")
-                                   (map ppField fields),
-				 ppString ")"]]
+	    ppNest 1 (ppConcat [ppString "(record-pat-for-tuple ",
+                                (ppGrConcat [ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
+                                               (map ppField fields),
+                                             ppString ")"])])
 	  | _ ->
 	    let def ppField (x,pat) =
-		  ppConcat [ppID x,
+		  ppConcat [ppString "(",
+                            ppID x,
 			    ppString ": ",    %% " = "  ?? 
-			    ppPattern c pat]
+			    ppPattern c pat,
+                            ppString ")"]
 	    in
-	    ppConcat [ppString "record{",
-		      ppSep (ppString ", ") (map ppField fields),
-		      ppString "}"])
-      | WildPat (srt,_) -> ppConcat[ppString "wild ",
-				    ppType c srt]
+	    ppConcat [ppString "(RecordPat ",
+		      ppSep (ppString " ") (map ppField fields),
+		      ppString ")"])
+      | WildPat (ty,_) -> ppConcat[ppString "(Wild ",
+                                   ppType c ty,
+                                   ppString ")"]
       | StringPat (str,_) -> ppString ("\"" ^ str ^ "\"")
       | BoolPat (b,_) -> ppBoolean b
-      | CharPat (chr,_) -> ppConcat[ppString "#", ppString (show chr)]
+      | CharPat (chr,_) -> ppConcat[ppString numberSignString, ppString (show chr)]
       | NatPat (int,_) -> ppString (show int)      
 %      | RelaxPat (pat,term,_) ->   
 %        ppGrConcat [ppString "relax ",
@@ -1271,10 +1413,10 @@ ASW_Printer_SExp qualifying spec
       | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBoolean b, ppString ")"]
       | Embedded id  -> ppConcat [ppString "embedded ", ppID id]
       | Select id -> ppConcat [ppString "select ", ppID id]
-      | Nat n -> ppString (show n)
-      | Char chr -> ppConcat[ppString "#", ppString (show chr)]
+      | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
+      | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
       | String str -> ppString ("\"" ^ str ^ "\"")
-      | Bool b -> ppBoolean b
+      | Bool b -> ppConcat [ppString "(bool ", ppBoolean b, ppString ")"]
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
       | mystery -> fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
@@ -1289,7 +1431,7 @@ ASW_Printer_SExp qualifying spec
 					 | Right -> ppString "right ",
 				       ppString (show n)]
       | Nonfix           -> ppString "nonfix"
-      | Unspecified      -> ppString "unspecified"
+      | Unspecified      -> ppString "unspecified-fixity"
       | Error fixities   -> ppConcat [
 				      ppString "error [",
 				      ppSep (ppString ", ") (map ppFixity fixities),
@@ -1335,15 +1477,14 @@ ASW_Printer_SExp qualifying spec
                     ppString ")"]
       | Product (fields,_) ->
 	(case fields of
-	    [] -> ppString "(tuple)"
+	    [] -> ppString "(product-type)"
 	  | ("1",_)::_ ->
 	    let def ppField (_,y) = ppType c y in
-	    ppGrConcat [
-	      ppString "(tuple ",
-	      ppSep  (ppAppend (ppString " ") ppBreak) %(ppString ", ")
-                        (map ppField fields),
-	      ppString ")"
-	    ]
+	    ppGr2Concat [ppString "(product-type ",
+                         ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
+                           (map ppField fields),
+                         ppString ")"
+                         ]
 	  | _ ->
 	    let def ppField (x,y) =
 	      ppGrConcat [
@@ -1390,20 +1531,28 @@ ASW_Printer_SExp qualifying spec
 	]
 %      | Base (qid,[],_) -> ppGrConcat [ppString "(Base ", ppQualifiedId qid, ppString ")"]
       | Base (qid,tys,_) ->
-	 ppGrConcat [ppString "(Base ",
-	   ppQualifiedId qid,
-	   ppString " (",
-	   ppSep (ppString " ") (map (ppType c) tys),
-	   ppString "))"
-	 ]
-      | Boolean _ -> ppString "bool"  
-      | TyVar (tyVar,_) -> ppConcat [ppString "tyvar ",ppID tyVar]
+        ppGrConcat [ppString "(BaseType ",
+                    ppQualifiedId qid,
+                    %% what are these types?  They appear to be type vars for polymorphic types...
+                    %% But why don't we use a Pi type for that?
+                    ppString " (",
+                    ppSep (ppString " ") (map (ppType c) tys),
+                    ppString "))"
+                    ]
+      | Boolean _ -> ppString "BoolType"  
+      | TyVar (tyVar,_) -> ppConcat [ppString "(tyvar ",
+                                     ppID tyVar,
+                                     ppString ")"]
       | Pi(tvs,ty,_) ->
-	if tvs = [] then ppType c ty
-	  else ppGrConcat [ppString "pi ",
-			   ppTyVars tvs,
-			   ppString " . ",
-			   ppType c ty]
+	% if tvs = [] then ppType c ty
+	%   else 
+        ppGrConcat [ppString "(PiType ",
+                    ppTyVars tvs,
+                    ppString " ",
+                    %%ppString " . ",
+                    ppType c ty,
+                    ppString ")"
+                    ]
       | And(types,_) ->
 	ppGrConcat[ppString "and ",
 		   ppString "[",
