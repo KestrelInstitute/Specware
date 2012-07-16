@@ -215,9 +215,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %% . Product types
  %% . CoProduct types
  %%
- %% is that the fields are always typeed in alphabetical order
+ %% is that the fields are always sorted in alphabetical order
  %% according to their labels (Id).
- %% For example, a tuple with 10 fields is typeed internally:
+ %% For example, a tuple with 10 fields is sorted internally:
  %% {1,10,2,3,4,5,6,7,8,9}
  %%
  %% This invariant is established by the parser and must be
