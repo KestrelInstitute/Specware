@@ -522,19 +522,19 @@ ASW_Printer_SExp qualifying spec
     in
     run (catch prog handler)
 
-  op  printUIDtoFile: String * Boolean * Boolean -> String
-  def printUIDtoFile (uid_str, printPositionInfo?, recursive?) =
-    case evaluateUnitId uid_str of
-      | Some val ->
-        (case uidStringForValue val of
-	  | None -> "Error: Can't get UID string from value"
-	  | Some (uid,uidstr) ->
-	    let fil_nm = uidstr ^ ".asw" in
-	    let _ = ensureDirectoriesExist fil_nm in
-	    let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),fil_nm) in
-	    fil_nm)
-      | _ -> "Error: Unknown UID " ^ uid_str
-
+  op printUIDtoFile (uid_str : String, printPositionInfo? : Boolean, recursive? : Boolean) : String =
+  let _ = writeLine "Printing spec to file." in
+  case evaluateUnitId uid_str of
+    | Some val ->
+      (case uidStringForValue val of
+         | None -> "Error: Can't get UID string from value"
+         | Some (uid,uidstr) ->
+           let fil_nm = uidstr ^ ".asw" in
+           let _ = ensureDirectoriesExist fil_nm in
+           let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),fil_nm) in
+           fil_nm)
+    | _ -> "Error: Unknown UID " ^ uid_str
+      
   op  deleteASWFilesForUID: String -> ()
   def deleteASWFilesForUID uidstr =
     case evaluateUnitId uidstr of
@@ -630,8 +630,7 @@ ASW_Printer_SExp qualifying spec
 		recursive? = recursive?}
       value
 
-  op  printValue : Context -> Value -> String
-  def printValue c value =
+  op printValue (c:Context) (value:Value) : String =
     let file_nm = case fileNameOfValue value of
                     | Some str -> str
                     | _ -> ""
