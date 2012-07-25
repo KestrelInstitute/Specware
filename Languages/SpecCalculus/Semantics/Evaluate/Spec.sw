@@ -161,7 +161,7 @@ such time as the current one can made monadic.
                    | None -> return spc
                    | Some opinfo ->
                    let (tvs, ty, full_tm) = unpackTerm(opinfo.dfn) in
-                   let dfn = refinedTerm(full_tm, refine_num - 1) in
+                   let dfn = refinedTerm(full_tm, refine_num) in
                    (case transformSteps? dfn of
                       | None -> return spc
                       | Some refine_steps ->
