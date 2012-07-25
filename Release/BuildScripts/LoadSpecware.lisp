@@ -30,7 +30,7 @@
 
 (defvar SpecToLisp::SuppressGeneratedDefuns nil) ;; note: defvar does not redefine if var already has a value
 
-(declaim (optimize (speed 3) (debug #+sbcl 2 #-sbcl 2) (safety 1) #+cmu(c::brevity 3)))
+(declaim (optimize (speed 3) (debug #+sbcl 2 #-sbcl 3) (safety 1) #+cmu(c::brevity 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -74,6 +74,7 @@
 		(require :sb-posix)
                 (require :sb-cltl2)
 		; (require :sb-sprof)
+                (require :asdf)
                 (require :sb-grovel)
                 ))
 
@@ -201,6 +202,7 @@
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTHarray.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTVector.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsVector.lisp"
     ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
@@ -407,8 +409,8 @@
   ;#+sbcl (setf (sb-ext:bytes-consed-between-gcs) (* 4 (sb-ext:bytes-consed-between-gcs)))
   (let ((cl:*print-pretty* nil)
         (val (and (cl-user::sw "/Applications/Specware/Specware4")
-                  (progn (format t "Full garbage collection...")
-                         (system-spec::garbageCollect t)
+                  (progn ;(format t "Full garbage collection...")
+                         ;(system-spec::garbageCollect t)
                          (terpri t)
                          (cl-user::swl "/Applications/Specware/Specware4")))))
     (unless val
