@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 
 # intended to be included from Prepare_Bootstrap_Image_XXX, where XXX = ACL, CMUCL, SBCL, etc.
 
@@ -131,7 +131,7 @@ echo " "
 # tabs are removed.  Thus the tabs that follow are significant. If you
 # change them to spaces, the end of the "here-document" is not recognized
 # (the XXXX).
-   
+
 $BATCH_LISP <<-XXXX
 	(progn
 	 (format t "~%--------------------------------------------------------------------------------~%")
