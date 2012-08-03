@@ -107,6 +107,9 @@
             (eval-error m x)
             val))))
 
+(defsetf V_eval-2 (v i) (val)
+  `(setf (,v ,i) ,val))
+
 (defun V_eval (pr)
   (V_eval-2 (car pr) (cdr pr)))
 
