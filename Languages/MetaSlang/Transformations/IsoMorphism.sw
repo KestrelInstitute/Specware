@@ -1454,7 +1454,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                            % ++ osi_unfolds
                            ++ complex_iso_fn_unfolds
                            ++ iso_osi_rewrites
-                           ++ rewrite_old
+                           %++ rewrite_old
                            ),            
              mkSimplify (gen_unfolds
                            ++ complex_iso_fn_unfolds
