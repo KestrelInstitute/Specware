@@ -1,38 +1,38 @@
-%%% Functions for use with editing specs from XEmacs
+%%% Functions for use with editing specs from Emacs
 EditFn qualifying
 spec
   import ../Specs/Environment, /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
   op findMatchesFromTopSpecs
-       (pred: MSTerm * Spec \_rightarrow Bool, uidStr: String, optGlobalContext: Option GlobalContext)
+       (pred: MSTerm * Spec -> Bool, uidStr: String, optGlobalContext: Option GlobalContext)
        : List (String * (Nat * Nat)) =
     case optGlobalContext of
       | None -> []
       | Some globalContext ->
     let unitId = normalizeUID(pathStringToCanonicalUID(uidStr,false)) in
     let topUnitIds = findTopLevelImporters(unitId,globalContext) in
-    foldl (\_lambda (result,unitId) \_rightarrow
+    foldl (fn (result,unitId) ->
            case evalPartial globalContext unitId of
              | Some(Spec spc,_,_,_) ->
                foldriAQualifierMap
-                 (fn (_, _, info, result) \_rightarrow
-                  foldl (fn (result,dfn) \_rightarrow
+                 (fn (_, _, info, result) ->
+                  foldl (fn (result,dfn) ->
                          foldSubTerms
-                           (fn (t,result) \_rightarrow
+                           (fn (t,result) ->
                             if pred(t,spc)
                               then
                                 case termAnn t of 
-                                  | File(file_nm,(line,col,byte),_) \_rightarrow
+                                  | File(file_nm,(line,col,byte),_) ->
                                     let loc = (file_nm,(line,col)) in
                                     if loc in? result then result
                                       else loc::result
-                                  | _ \_rightarrow result
+                                  | _ -> result
                               else result
-                              | _ \_rightarrow result)
+                              | _ -> result)
                            result dfn)
                      result (opInfoDefs info))
                  result spc.ops
-             | _ \_rightarrow [])
+             | _ -> [])
        [] topUnitIds
 
   op findCaseDispatchesOnType(qual1: String, id1: String, uidStr: String, optGlobalContext: Option GlobalContext)
@@ -40,20 +40,20 @@ spec
     let target_type = mkBase(Qualified(qual1,id1),[]) in
     let def matchType? (ty,spc) =
           (equivType? spc (target_type, ty))
-           \_or (case ty of
-               | Base(qid2 as Qualified(qual2,id2),_,_) \_rightarrow
-                 (id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified))
-                 \_or (case AnnSpec.findTheType(spc,qid2) of
-                     | Some {names,dfn} \_rightarrow matchType?(dfn,spc)
-                     | None \_rightarrow false)
-               | Pi(_,s_ty,_)      \_rightarrow matchType?(s_ty,spc)
-               | Subtype(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
-               | _ \_rightarrow false)
+           || (case ty of
+               | Base(qid2 as Qualified(qual2,id2),_,_) ->
+                 (id1 = id2 && (qual1 = qual2 || qual1 = UnQualified))
+                 || (case AnnSpec.findTheType(spc,qid2) of
+                     | Some {names,dfn} -> matchType?(dfn,spc)
+                     | None -> false)
+               | Pi(_,s_ty,_)      -> matchType?(s_ty,spc)
+               | Subtype(s_ty,_,_) -> matchType?(s_ty,spc)
+               | _ -> false)
         def match_case_dispatch (t,spc) =
           case t of
-            | Apply(Lambda _,case_tm, File(file_nm,(line,col,byte),_)) \_rightarrow
+            | Apply(Lambda _,case_tm, File(file_nm,(line,col,byte),_)) ->
               matchType?(termTypeEnv(spc,case_tm),spc)
-            | _ \_rightarrow false
+            | _ -> false
     in
     findMatchesFromTopSpecs(match_case_dispatch, uidStr, optGlobalContext)
 
@@ -71,15 +71,15 @@ spec
     let target_type = mkBase(Qualified(qual1,id1),[]) in
     let def matchType? (ty,spc) =
           (equivType? spc (target_type, ty))
-           \_or (case ty of
-               | Base(qid2 as Qualified(qual2,id2),_,_) \_rightarrow
-                 (id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified))
-                 \_or (case AnnSpec.findTheType(spc,qid2) of
-                     | Some {names,dfn} \_rightarrow matchType?(dfn,spc)
-                     | None \_rightarrow false)
-               | Pi(_,s_ty,_)      \_rightarrow matchType?(s_ty,spc)
-               | Subtype(s_ty,_,_) \_rightarrow matchType?(s_ty,spc)
-               | _ \_rightarrow false)
+           || (case ty of
+               | Base(qid2 as Qualified(qual2,id2),_,_) ->
+                 (id1 = id2 && (qual1 = qual2 || qual1 = UnQualified))
+                 || (case AnnSpec.findTheType(spc,qid2) of
+                     | Some {names,dfn} -> matchType?(dfn,spc)
+                     | None -> false)
+               | Pi(_,s_ty,_)      -> matchType?(s_ty,spc)
+               | Subtype(s_ty,_,_) -> matchType?(s_ty,spc)
+               | _ -> false)
         def match_term_type? (t,spc) =
           case t of
             | Let _ -> false
@@ -93,9 +93,9 @@ spec
        : List (String * (Nat * Nat)) =
     let def match_op_ref(t,spc) =
           case t of
-            | Fun(Op(Qualified(qual2,id2),_),_, _) \_rightarrow
-              id1 = id2 \_and (qual1 = qual2 \_or qual1 = UnQualified)
-            | _ \_rightarrow false
+            | Fun(Op(Qualified(qual2,id2),_),_, _) ->
+              id1 = id2 && (qual1 = qual2 || qual1 = UnQualified)
+            | _ -> false
     in
     findMatchesFromTopSpecs(match_op_ref, uidStr, optGlobalContext)
 
@@ -104,10 +104,10 @@ spec
           if current = [] then top
           else
           let (next,top) =
-              foldl (\_lambda ((next,top),u1) \_rightarrow
+              foldl (fn ((next,top),u1) ->
                      let importers =
-                         foldMap (fn importers -> fn u_par -> fn (val,_,depUIDs,_) \_rightarrow
-                                  if u1 in? depUIDs \_and (case val of Spec _ \_rightarrow true | _ \_rightarrow false)
+                         foldMap (fn importers -> fn u_par -> fn (val,_,depUIDs,_) ->
+                                  if u1 in? depUIDs && (case val of Spec _ -> true | _ -> false)
                                     then u_par::importers
                                     else importers)
                            [] globalContext
@@ -115,7 +115,7 @@ spec
                      if importers = []
                        then (next,u1::top)
                        else
-                       let new_importers = filter (\_lambda u \_rightarrow u nin? seen) importers in
+                       let new_importers = filter (fn u -> u nin? seen) importers in
                        (new_importers++next,top))
                 ([],top) current
           in searchUp(next,next++seen,top)
@@ -132,23 +132,23 @@ spec
              %let _ = toScreen(anyToString depUIDs ^ "\n") in
 	     if unitId1 in? depUIDs
                then case val of
-                      | Spec spc \_rightarrow
-                        (let result1 = foldl (fn (result,el) \_rightarrow
+                      | Spec spc ->
+                        (let result1 = foldl (fn (result,el) ->
                                                case result of
-                                                 | Some _ \_rightarrow result
-                                                 | None \_rightarrow
+                                                 | Some _ -> result
+                                                 | None ->
                                                case el of
-                                                 | Import((_,pos),_,_,_) \_rightarrow
+                                                 | Import((_,pos),_,_,_) ->
                                                    Some pos
-                                                 | _ \_rightarrow result)
+                                                 | _ -> result)
                                         None spc.elements
                         in
                         % let _ = toScreen(anyToString(result1)^"\n\n") in
                         case result1 of
-                          | Some( File(file_nm,(line,col,byte),_)) \_rightarrow
+                          | Some( File(file_nm,(line,col,byte),_)) ->
                             Cons((file_nm,(line,0)), result)
-                          | _ \_rightarrow result)
-                      | _ \_rightarrow result
+                          | _ -> result)
+                      | _ -> result
                else result)
         []
         globalContext
