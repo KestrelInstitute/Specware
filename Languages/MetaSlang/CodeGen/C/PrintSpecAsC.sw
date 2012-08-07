@@ -3,6 +3,7 @@ PrintAsC qualifying spec
  import PrintAsCUtils
  import PrintTypeAsC
  import PrintTermAsC
+ import /Languages/MetaSlang/Transformations/SliceSpec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% Code to find slice of elements that are both at-or-below top-level spec 
@@ -331,5 +332,47 @@ op ppLocalVarInfoToC (info: LocalVarInfo) : List (Nat * Pretty) =
       ()
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+type QIDorAll = 
+  | QID QualifiedId
+  | All
+                                              
+
+ %%FIXME use the return value of false to signal failure
+    op evaluateGenCThinHelper (opqid : QIDorAll, spc : Spec) : Bool = 
+    let _ = writeLine("Calling evaluateGenCThinHelper.") in
+    let _ =
+    (case opqid of
+       | QID opqid ->
+         %    let _ = ASW_Printer_SExp.printUIDtoFile (uid_str, false, true) in 
+         (let _ = writeLine ("opqid"^anyToString(opqid)) in
+          % FIXME check that opqid is a valid op in the spec?
+          let(op_set, type_set) = sliceSpecInfo(spc, 
+                                                [opqid], 
+                                                [],
+                                                %% ops at which to stop slicing:
+                                                fn x -> x in? [mkQualifiedId("C","test"),
+                                                               mkQualifiedId("C","==_uint"),
+                                                               mkQualifiedId("C","uintConstant"), 
+                                                               mkQualifiedId("C","*_uint"),
+                                                               mkQualifiedId("C","-_uint")
+                                                               ], %%fixme add all the CTarget ops
+                                                %% types at which to stop slicing:
+                                                fn x -> x in? [mkQualifiedId("C","Uint")
+                                                               ], %% fixme add all the CTarget ops
+                                                false, %false, %chase_terms_in_types?
+                                                false, %chase_theorems?
+                                                true % firstDefsOnly?
+                                                )  in
+          let _ = MapSTHashtable.STH_mapi ((fn (key %(qualifier,basename)
+                                                  ,bool) -> writeLine %(qualifier^"."^basename)
+                                              key %FIXME why isn't the key a pair of strings?
+                                              ), op_set) in ())
+       | All -> ()) in  %FIXME actuall use the opqid
+    let _ = printSpecAsCToFile("foobar.c", spc) in
+    true
+    
+
+
 
 endspec

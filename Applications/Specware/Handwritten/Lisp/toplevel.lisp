@@ -225,9 +225,11 @@
 
 (defvar *force-reprocess-of-unit* nil)
 
+;This is the function invoked by the proc command in the Specware shell.
 (defun sw (&optional x)
   (setq x (norm-unitid-str x))
   (when *force-reprocess-of-unit*
+    ;; TODO: The use of touch here may cause Emacs to give annoying messages about buffers having been changed on disk.
     (run-cmd "touch" (list (unit-to-file-name x))))
   (flet ((sw-int (x)
 	   (let ((val (if x
@@ -349,6 +351,7 @@
 
 (defvar *last-swl-args* nil)
 
+;This is the function invoked by the Specware shell command 'gen-lisp'.
 (defun swl (&optional args)
   ;; scripts depend upon this returning true iff successful
   (let ((r-args (if (not (null args))
@@ -402,6 +405,7 @@
 	      (Emacs::*goto-file-position-stored* nil))
 	  (swll1 x lisp-file-name))))))
 
+;This is the function invoked by the Specware shell command 'lgen-lisp'.
 (defun swll (&optional args)
   ;; scripts depend upon this returning true iff successful
   (let ((r-args (if (not (null args))
@@ -842,6 +846,7 @@
      (maybe-restore-swpath)
      (values)))
 
+;This is the function invoked by the Specware shell command 'gen-c'.
 (defun swc (&optional args)
   (let ((r-args (if (not (null args))
 		    (extract-final-file-name args)
@@ -860,7 +865,24 @@
 	      (funcall 'swc-internal unitid cfilename)
 	      )
 	    ))
-      (format t "No previous unit evaluated~%"))))
+      (format t "No previous unit processed for C generation.~%"))))
+
+;produces a value of an Option type, either None if val is nil, or Some val
+(defun wrap-option (val)
+  (if val
+      (cons :|Some| val)
+      '(:|None|)))
+  
+;This is the function invoked by the Specware shell command 'gen-c-thin'.
+(defun gen-c-thin (&optional argstring)
+  (let ((val (Specware::evaluateGenCThin-2 (wrap-option argstring)
+                                           (wrap-option *last-unit-Id-_loaded*))))
+    ;;evaluateGenCThin returns an optional string to store in *last-unit-Id-_loaded*
+    (if (equal val '(:|None|))
+        nil ;does this return value matter?
+        ;; strip the :|Some| to get the string
+        (setq *last-unit-Id-_loaded* (cdr val)))))
+
 
 #+allegro
 (top-level:alias ("swc" :case-sensitive :string) (&optional args)

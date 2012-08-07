@@ -19,6 +19,7 @@
 
 %% TODO: Print to the screen instead of a file?
 %% TODO: Make this command available directly in the Specware shell (how?).
+%% TODO print things like this: /\  with vertical bars (or in some other way that doesn't confuse emacs)
 
 ASW_Printer_SExp qualifying spec 
 

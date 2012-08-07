@@ -18,6 +18,7 @@ candidates for each canonical unitId). We then walk down the list. We load
 successive files and then check to see if the UnitId is then defined.
 If we get to the end of the list then we have failed.
 *)
+% See also Specware.evaluateUnitId.
   def SpecCalc.evaluateUID position unitId = {
       (value,_) <- evaluateReturnUID position unitId;
       return value

@@ -97,25 +97,29 @@ SliceSpec qualifying spec
     def cut_op?   (qid : QualifiedId) : Bool = false
     def cut_type? (qid : QualifiedId) : Bool = false
   in
-  sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?)
+  sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?, false)
 
- op [a] foldJustTerms (f : a -> MSTerm -> a) (acc: a) (term : MSTerm) : a =
+ op [a] foldJustTerms (f : a -> MSTerm -> a) (acc: a) (term : MSTerm) (firstDefsOnly? : Bool) : a =
   %% foldTerm recurs into term within types and patterns: subtypes, quotients, etc.
   let foldOfChildren = 
      case term of
-       | Let        (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm) acc decls) bdy
-       | LetRec     (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm) acc decls) bdy
-       | Record     (row,        _) -> foldl (fn (acc, (id,tm)) -> foldJustTerms f acc tm) acc row
-       | IfThenElse (t1, t2, t3, _) -> foldJustTerms f (foldJustTerms f (foldJustTerms f acc t1) t2) t3
-       | Lambda     (match,      _) -> foldl (fn (acc,(_,cond,tm)) -> foldJustTerms f (foldJustTerms f acc cond) tm) acc match
-       | Bind       (_, _, tm,   _) -> foldJustTerms f acc tm
-       | The        (_, tm,      _) -> foldJustTerms f acc tm
-       | Apply      (t1, t2,     _) -> foldJustTerms f (foldJustTerms f acc t1) t2
-       | Seq        (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm) acc tms
-       | ApplyN     (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm) acc tms
-       | TypedTerm  (tm, _,      _) -> foldJustTerms f acc tm
-       | Pi         (_, tm,      _) -> foldJustTerms f acc tm
-       | And        (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm) acc tms
+       | Let        (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm firstDefsOnly?) acc decls) bdy firstDefsOnly?
+       | LetRec     (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm firstDefsOnly?) acc decls) bdy firstDefsOnly?
+       | Record     (row,        _) -> foldl (fn (acc, (id,tm)) -> foldJustTerms f acc tm firstDefsOnly?) acc row
+       | IfThenElse (t1, t2, t3, _) -> foldJustTerms f (foldJustTerms f (foldJustTerms f acc t1 firstDefsOnly?) t2 firstDefsOnly?) t3 firstDefsOnly?
+       | Lambda     (match,      _) -> foldl (fn (acc,(_,cond,tm)) -> foldJustTerms f (foldJustTerms f acc cond firstDefsOnly?) tm firstDefsOnly?) acc match
+       | Bind       (_, _, tm,   _) -> foldJustTerms f acc tm firstDefsOnly?
+       | The        (_, tm,      _) -> foldJustTerms f acc tm firstDefsOnly?
+       | Apply      (t1, t2,     _) -> foldJustTerms f (foldJustTerms f acc t1 firstDefsOnly?) t2 firstDefsOnly?
+       | Seq        (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm firstDefsOnly?) acc tms
+       | ApplyN     (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm firstDefsOnly?) acc tms
+       | TypedTerm  (tm, _,      _) -> foldJustTerms f acc tm firstDefsOnly?
+       | Pi         (_, tm,      _) -> foldJustTerms f acc tm firstDefsOnly?
+       | And        (tms,        _) -> (if firstDefsOnly? then
+                                          foldJustTerms f acc (head tms) firstDefsOnly?
+                                        else
+                                          foldl (fn (acc, tm) -> foldJustTerms f acc tm firstDefsOnly?) acc tms
+                                          )
        | _ -> acc
   in
   f foldOfChildren term
@@ -126,7 +130,9 @@ SliceSpec qualifying spec
                    cut_op?               : QualifiedId -> Bool, % stop recursion at these, and do not include them
                    cut_type?             : QualifiedId -> Bool, % stop recursion at these, and do not include them
                    chase_terms_in_types? : Bool, 
-                   chase_theorems?       : Bool)
+                   chase_theorems?       : Bool,
+                   firstDefsOnly?        : Bool  %%governs handling of And terms
+                   )
   : QualifierSet * QualifierSet =
   let 
     def eq_op_qid (Qualified (q, id)) = Qualified (q, "eq_" ^ id)
@@ -141,8 +147,9 @@ SliceSpec qualifying spec
                []
                typ
 
-    def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
+    def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet, firstDefsOnly? : Bool) : QualifiedIds =
       if chase_terms_in_types? then
+        %% FIXME pass firstDefsOnly? to foldTerm?
         foldTerm (fn opids -> fn tm ->
                     case tm of
                       | Fun (Op (qid,_), funtype, _) ->
@@ -201,6 +208,7 @@ SliceSpec qualifying spec
                            | _ -> opids)
                       newopids 
                       tm
+                      firstDefsOnly?
 
     def newOpsInType (ty : MSType, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
       if chase_terms_in_types? then
@@ -265,7 +273,7 @@ SliceSpec qualifying spec
                newtypeids 
                ty
       
-    def iterateDeps (new_ops, new_types, op_set, type_set, n) =
+    def iterateDeps (new_ops, new_types, op_set, type_set, n, firstDefsOnly?) =
       % let _ = writeLine ("================================================================================") in
       % let _ = writeLine ("Round " ^ show n) in
       if new_ops = [] && new_types = [] then 
@@ -287,7 +295,7 @@ SliceSpec qualifying spec
                          | Some opinfo -> 
                            % let _ = writeLine("Scanning ops in op: " ^ show (primaryOpName opinfo)) in
                            % let _ = writeLine("               dfn: " ^ printTerm opinfo.dfn) in
-                           newOpsInTerm (opinfo.dfn, newopids, op_set)
+                           newOpsInTerm (opinfo.dfn, newopids, op_set, firstDefsOnly?)
                          | None -> newopids)
                   [] 
                   new_ops
@@ -337,9 +345,9 @@ SliceSpec qualifying spec
                   new_types_in_ops
                   new_types
         in
-        iterateDeps (new_ops_in_ops_or_types, new_types_in_ops_or_types, op_set, type_set, n + 1)
+        iterateDeps (new_ops_in_ops_or_types, new_types_in_ops_or_types, op_set, type_set, n + 1, firstDefsOnly?)
   in
-  let (op_set, type_set) = iterateDeps (root_ops, root_types, emptySet, emptySet, 0) in
+  let (op_set, type_set) = iterateDeps (root_ops, root_types, emptySet, emptySet, 0, firstDefsOnly?) in
   (op_set, type_set)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -352,7 +360,7 @@ SliceSpec qualifying spec
                chase_terms_in_types? : Bool,                % recur through subtype predicates and quotient relations
                chase_theorems?       : Bool)                % recur through axioms and theorems that mention included types and ops
   : Spec =
-  let (op_set, type_set) = sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?) in
+  let (op_set, type_set) = sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?, false) in
   let sliced_spc         = scrubSpec     (spc, op_set,   type_set)                                                         in
   sliced_spc
 

@@ -61,6 +61,8 @@
                         With no argument uses last processed unit.")
     ("gen-c"     . "[spec-term [filename]] Generates C code for unit in filename.
                         With no argument uses last processed unit.")
+    ("gen-c-thin" . "[unit-identifier [filename]] Generates C code for unit in filename.
+                        With no argument uses last processed unit.")
     ("make"      . "[spec-term] Generate C code with makefile and call make on it.")
     ("ld"        . "[filename] Load Lisp file filename.")
     ("cf"        . "[filename] Compile Lisp file filename.")
@@ -350,6 +352,7 @@
 	   ((gen-lisp-top gen-lt)  (let ((cl-user::*slicing-lisp?* t)) (cl-user::swl argstr)) (values))
 	   (lgen-lisp (cl-user::swll   argstr) (values))
 	   (gen-c     (cl-user::swc    argstr) (values))
+	   (gen-c-thin (cl-user::gen-c-thin    argstr) (values))
 	   (make      (if (null argstr) (cl-user::make) (cl-user::make argstr)))
 	   (gen-java  (cl-user::swj    argstr) (values))
 	   ((obligations oblig obligs)

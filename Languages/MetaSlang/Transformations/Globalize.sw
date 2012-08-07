@@ -1248,7 +1248,8 @@ Globalize qualifying spec
                      root_ops, root_types,  % start searching from these, and include them
                      baseOp?, baseType?,    % stop searching at these, and do not include them
                      chase_terms_in_types?, 
-                     chase_theorems?)
+                     chase_theorems?,
+                     false)
   in
   let new_ops =
       foldriAQualifierMap (fn (q, id, x, pending_ops) ->

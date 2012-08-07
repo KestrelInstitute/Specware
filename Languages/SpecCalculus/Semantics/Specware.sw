@@ -13,6 +13,7 @@ Specware qualifying spec
  %import /Languages/SpecCalculus/AbstractSyntax/Printer      % for showUI
   import /Languages/XML/XML                                  % for XML I/O
   import /Languages/MetaSlang/Transformations/EditFunctions  % Functions called from XEmacs
+  import /Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Java
@@ -124,7 +125,88 @@ Specware qualifying spec
     } in
     runSpecCommand (catch prog toplevelHandler)
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%% C ("thin" version)
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  %% Something like this must already exist somwhere.
+  op splitStringAtChar (string : String, char : Char) : List String =
+  let chars = explode string in
+  let charlists = (splitAtChar char chars) in
+  let strings = map implode charlists in
+  strings
+  
+  %% This is the top level Metaslang function for the "thin" C generator.  It
+  %% is called by the hand-written Lisp function gen-c-thin in toplevel.lisp.
+  
+  %% argstring is the (optional) entire argument string passed to gen-c-thin (or None)
+  %% FIXME add more parsing of the arguments:
+  %% handle .. (seems to work)? handle ~ for home directory (or not?)?
+  %% example call: gen-c-thin ../Examples/FactorialChoppedAuto#FacChopFinal facchop
+  %% FIXME If the given spec imports other specs, should all the code go into one .c file?
+  %%   probably the structure of the C code files should mirror the structure of the units...
+  %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
+  %% FIXME can the previous unit loaded by something unexpected, like a spec transform term?
+  op evaluateGenCThin (argstring : Option String, lastUnitIdLoaded : Option String) : Option String = 
+  let _ = writeLine "Calling evaluateGenCThin." in
+  let _ = writeLine ("arg string: "^(case argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
+      %FIXME handle the case when this is a qid?
+  let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
+  %% Determine the unit and the opname to process:
+  let (opt_uid_str, opt_opname_str) =
+  (case argstring of
+     %% No arguments given at all, so use the last unit loaded, if there is one.
+     | None -> (case lastUnitIdLoaded of
+                  | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in (None, None)
+                  | Some uid_str -> (lastUnitIdLoaded, None)) %% TODO should we also store the last opname given to gen-c-thin?
+     | Some argstring ->
+       %% Parse and process the arguments:
+       let args = splitStringAtChar(argstring, #\s) in % split into substrings separated by spaces
+       if (length args = 0) then
+         let _ = writeLine("ERROR: No unit given and no previous unit loaded (argument is all spaces).") in (None, None)
+       else if (length args = 1) then
+         %% If a single arg is given it must be a unit ID:
+         (Some (head args), None)
+       else if (length args = 2) then
+         %% If two args are given, they must be a unit ID and an opname:
+         (Some (head args), Some (head (tail args)))
+            else
+              let _ = writeLine("ERROR: More than two args given to gen-c-thin.") in (None, None)
+              ) in
+  (case opt_uid_str of
+     | None -> None %% fail and don't change *last-unit-Id-_loaded*
+     | Some uid_str ->
+       %% Attempt to evaluate the spec:
+       let spc = evaluateUnitId uid_str in
+       case spc of
+         | None -> let _ = writeLine "ERROR: Processing the unit failed to return anything." in None
+         | Some (Spec spc) ->
+           (case opt_opname_str of
+              %% no opname given, so process all ops in the spec
+              | None -> let resultokay? = PrintAsC.evaluateGenCThinHelper(All, spc) in
+                (if resultokay? then
+                   Some uid_str % set *last-unit-Id-_loaded*
+                 else
+                   None)
+              | Some opname_str -> %FIXME pull out this parsing of a possible qid
+                (let strings = splitStringAtChar(opname_str, #.) in
+                 if ((length strings) > 2) || ((length strings) < 1) then
+                   let _ = writeLine "ERROR: Invalid opname." in None
+                 else
+                   let opqid = (case strings of 
+                                  | [string] -> (mkUnQualifiedId (head strings))
+                                  | [string1, string2] -> mkQualifiedId(string1, string2)) in
+                   let resultokay? = PrintAsC.evaluateGenCThinHelper(QID opqid, spc) in
+                   (if resultokay? then
+                      Some uid_str % set *last-unit-Id-_loaded*
+                    else
+                      None)))
+         | _ -> let _ = writeLine "ERROR: Processing the unit returned something other than a spec." in None)
+  
+  
+       
+  
+                  
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Interpreter
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
