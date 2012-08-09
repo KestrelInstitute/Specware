@@ -204,7 +204,7 @@ UnitId_Dependency.
   op setGlobalContext : GlobalContext -> Env ()
   def setGlobalContext globalContext = writeGlobalVar ("GlobalContext",globalContext)
 
-  op getGlobalContect : Env GlobalContext
+  op getGlobalContext : Env GlobalContext
   def getGlobalContext = readGlobalVar "GlobalContext"
 
   op bindInGlobalContext : UnitId -> ValueTermInfo -> Env ()
