@@ -114,8 +114,8 @@ MetaSlang qualifying spec
   | Op             QualifiedId * Fixity
   | Project        Id
   | RecordMerge             % <<
-  | Embed          Id * Bool
-  | Embedded       Id
+  | Embed          Id * Bool  % represents a call of a co-product constructor (perhaps the bool indicates whether the constructor takes arguments?)
+  | Embedded       Id  %represents a call to embed?, takes a constructor
   | Select         Id
   | Nat            Nat
   | Char           Char

@@ -14,6 +14,7 @@ Specware qualifying spec
   import /Languages/XML/XML                                  % for XML I/O
   import /Languages/MetaSlang/Transformations/EditFunctions  % Functions called from XEmacs
   import /Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp
+  import /Languages/SpecCalculus/AbstractSyntax/PrintDeps
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Java

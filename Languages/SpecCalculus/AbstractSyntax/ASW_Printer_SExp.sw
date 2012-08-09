@@ -2,24 +2,23 @@
 %% s-expression-based format.  Having sub-terms printed within balanced
 %% parentheses makes it easy to navigate around the printed representation of a
 %% spec (e.g., using Emacs keys to skip over a large balanced-parentheses
-%% expression.
+%% expression).
 
 %% This file is a modification of ASW_Printer.sw, and it is not yet finished.  I
 %% am changing the prining of constructs to use s-expressions on an as-needed
-%% basis.
+%% basis. -EWS
 
 %% The top level function to call is printUIDtoFile.
-%%Example use:
+%%Example use (at the Specware shell):
 %%   gen-lisp /Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp.sw
 %%   cl ~/Dropbox/Specware/Languages/SpecCalculus/AbstractSyntax/lisp/ASW_Printer_SExp.lisp
-%%   (ASW_PRINTER_SEXP::PRINTUIDTOFILE-3  "/usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp" nil t)
+%%   lisp (ASW_PRINTER_SEXP::PRINTUIDTOFILE-3  "/usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp" nil t)
 %% Note that this last step takes advantage of the ability of the Specware shell
-%% to execute Lisp commands (only works when Specware is invoked via certain
-%% scripts, such as Specware-gnu).
+%% to execute Lisp commands.
 
 %% TODO: Print to the screen instead of a file?
 %% TODO: Make this command available directly in the Specware shell (how?).
-%% TODO print things like this: /\  with vertical bars (or in some other way that doesn't confuse emacs)
+%% TODO: Print things like this: /\ with vertical bars (or in some other way that doesn't confuse emacs)
 
 ASW_Printer_SExp qualifying spec 
 
@@ -333,8 +332,8 @@ ASW_Printer_SExp qualifying spec
    in
      ppSep ppNewline (map ppDecl decls)
 
- op  ppSpecElems : Context -> List (SpecElem) -> WLPretty
- def ppSpecElems c elems = ppSep ppNewline (map (ppSpecElem c) elems)
+ op ppSpecElems (c: Context) (elems : List SpecElem) : WLPretty =
+   ppSep ppNewline (map (ppSpecElem c) elems)
 
  op  ppSpecElem : Context -> SpecElem -> WLPretty
  def ppSpecElem c (elem, pos) = 
@@ -522,19 +521,6 @@ ASW_Printer_SExp qualifying spec
 		return (Some val)}
     in
     run (catch prog handler)
-
-  op printUIDtoFile (uid_str : String, printPositionInfo? : Boolean, recursive? : Boolean) : String =
-  let _ = writeLine "Printing spec to file." in
-  case evaluateUnitId uid_str of
-    | Some val ->
-      (case uidStringForValue val of
-         | None -> "Error: Can't get UID string from value"
-         | Some (uid,uidstr) ->
-           let fil_nm = uidstr ^ ".asw" in
-           let _ = ensureDirectoriesExist fil_nm in
-           let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),fil_nm) in
-           fil_nm)
-    | _ -> "Error: Unknown UID " ^ uid_str
       
   op  deleteASWFilesForUID: String -> ()
   def deleteASWFilesForUID uidstr =
@@ -621,16 +607,6 @@ ASW_Printer_SExp qualifying spec
 %	| Some val -> printValue (val,printPositionInfo?,recursive?)
 %	| _ -> "<Unknown UID>")
 
-  op  printValueTop : Value * UnitId * Boolean * Boolean -> String
-  def printValueTop (value,uid,printPositionInfo?,recursive?) =
-    printValue {printTypes? = true, %false, %true,
-		printPositionInfo? = printPositionInfo?,
-		fileName = "",
-		currentUID = uid,
-		uidsSeen = [uid],
-		recursive? = recursive?}
-      value
-
   op printValue (c:Context) (value:Value) : String =
     let file_nm = case fileNameOfValue value of
                     | Some str -> str
@@ -705,9 +681,8 @@ ASW_Printer_SExp qualifying spec
 
   %% --------------------------------------------------------------------------------
 
-  op  ppValue : Context -> Value -> Option SCTerm -> WLPretty
 % ???
-  def ppValue c value opt_val_tm =
+  op ppValue (c: Context) (value:Value) (opt_val_tm : Option SCTerm) : WLPretty =
     case value of
       | Spec        spc           -> ppSpec c spc opt_val_tm
       | Morph       spec_morphism -> ppMorphism c  spec_morphism
@@ -799,6 +774,55 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
                  ppString ")",
                  ppNewline]
 
+op ppATypeInfo (c : Context, atypeinfo : ATypeInfo StandardAnnotation) : WLPretty = 
+  let {names, dfn} = atypeinfo in
+  ppGr2Concat [ppString "(typeinfo ",
+               ppBreak,
+               ppWrapParens (ppSep (ppString ", ") (map ppQualifiedId names)), %%when can there be more than one name?
+               ppString " ",
+               ppNewline, %ppBreak,
+               ppType c dfn,
+               ppString ")",
+               ppNewline]
+
+op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo StandardAnnotation))) : List WLPretty =
+   foldi
+   (fn (key, val, prettys) -> 
+      ((ppConcat [ppString "(",
+                  ppString key,
+                  ppNewline,
+                  ppATypeInfo (c, val),
+                  ppString ")",
+                  ppBreak
+                  ])
+         ::prettys))
+   []
+   m
+
+
+%% Each val in the map is itself a map.
+  op ppATypeMapEntry (c : Context) (key : String, val : (MapL.Map(String, (ATypeInfo StandardAnnotation))), pps: List WLPretty) : List WLPretty =
+  (ppGr2Concat [ppString "(",
+                ppString key,
+                ppString " ",
+                ppBreak,
+                ppGr2Concat [ppString "(",
+                             ppSep (ppConcat [ppNewline, ppString " "]) (ppMapLMapFromStringsToATypeInfos c val),
+                             ppString ")"],
+                ppString ")"])::
+  pps
+
+  %% This is a map from type names to (maps from qualifiers to typeinfos).
+  op ppATypeMap (c : Context, m:(ATypeMap StandardAnnotation)) : WLPretty =
+    ppGr2Concat [ppString "(types ",
+                 ppNewline,
+                 ppSep ppNewline (MapSTHashtable.STH_foldi (ppATypeMapEntry c, [], m)),
+                 ppString ")",
+                 ppNewline]
+
+
+    % what is optTm?
+    %fixme print the qualifier
    op ppSpec (c: Context) (spc:Spec) (optTm: Option SCTerm) : WLPretty =
     let norm_spc =  spc in %%normalizeTypes(spc, false) in
 %%FIXME also print the ops, types, etc.
@@ -813,8 +837,9 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
 		 %%ppNewline,
 		 (ppSpecElements c norm_spc norm_spc.elements),
                  ppNewline,
-                 ppAOpMap (c, spc.ops),
-                 ppString "(...types elided FIXME...)",
+                 ppAOpMap(c, spc.ops),
+                 ppNewline,
+                 ppATypeMap(c, spc.types),
                  ppString ")"
                  ]
     
@@ -1120,14 +1145,14 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
       | Var (v,_) -> ppVar c v
       | Fun (fun,ty,_) ->
 	if c.printTypes?
-	  then ppGr2Concat [ppString "(fun ",
+	  then ppGr2Concat [ppString "(Fun ",
                             ppFun fun,
                             ppString " ", 
                             ppBreak,
                             ppType c ty,
                             ppString ")",
                             ppBreak]
-        else ppGrConcat [ppString "(fun ",
+        else ppGrConcat [ppString "(Fun ",
                          ppFun fun,
                          ppString "),",
                          ppBreak]
@@ -1390,29 +1415,47 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
   op  ppFun : Fun -> WLPretty
   def ppFun fun =
     case fun of
-      | Not       -> ppString "not"
-      | And       -> ppString "and"
-      | Or        -> ppString "or"
-      | Implies   -> ppString "implies"
-      | Iff       -> ppString "iff"
-      | Equals    -> ppString "equals"
-      | NotEquals -> ppString "notequals"
-      | Quotient _  -> ppString "quotient"
-      | PQuotient _ -> ppString "quotient"
-      | Choose _ -> ppString "choose"
-      | PChoose _ -> ppString "choose"
-      | Restrict -> ppString "restrict"
-      %| PRestrict _ -> ppString "restrict"
-      | Relax -> ppString "relax"
-      %| PRelax _ -> ppString "relax"
-      | Op (qid,fix) -> ppConcat[ppString "(op ", ppQualifiedId qid, % ppString " ", ppFixity fix, 
+      | Not       -> ppString "Not"
+      | And       -> ppString "And"
+      | Or        -> ppString "Or"
+      | Implies   -> ppString "Implies"
+      | Iff       -> ppString "Iff"
+      | Equals    -> ppString "Equals"
+      | NotEquals -> ppString "NotEquals"
+      | Quotient typename  -> ppGr2Concat [ppString "(Quotient",
+                                           ppString " ", 
+                                           ppBreak,
+                                           ppQualifiedId typename,
+                                           ppString ")",
+                                           ppBreak]
+      | PQuotient typename  -> ppGr2Concat [ppString "(PQuotient",
+                                            ppString " ", 
+                                            ppBreak,
+                                            ppQualifiedId typename,
+                                            ppString ")",
+                                            ppBreak]
+      | Choose typename  -> ppGr2Concat [ppString "(Choose",
+                                         ppString " ", 
+                                         ppBreak,
+                                         ppQualifiedId typename,
+                                         ppString ")",
+                                         ppBreak]
+      | PChoose typename  -> ppGr2Concat [ppString "(PChoose",
+                                          ppString " ", 
+                                          ppBreak,
+                                          ppQualifiedId typename,
+                                          ppString ")",
+                                          ppBreak]
+      | Restrict -> ppString "Restrict"
+      | Relax -> ppString "Relax"
+      | Op (qid,fix) -> ppConcat[ppString "(Op ", ppQualifiedId qid, % ppString " ", ppFixity fix, 
                                  ppString ")"]
       | Project id ->
-          ppConcat [ppString "(project ", ppID id, ppString ")"]
-      | RecordMerge -> ppString "merge"
+          ppConcat [ppString "(Project ", ppID id, ppString ")"]
+      | RecordMerge -> ppString "RecordMerge"
       | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBoolean b, ppString ")"]
       | Embedded id  -> ppConcat [ppString "embedded ", ppID id]
-      | Select id -> ppConcat [ppString "select ", ppID id]
+      | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppID id, ppString ") ", ppBreak]
       | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
       | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
       | String str -> ppString ("\"" ^ str ^ "\"")
@@ -1421,9 +1464,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
       | mystery -> fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
 
-
-  op  ppFixity : Fixity -> WLPretty
-  def ppFixity fix =
+  op ppFixity (fix: Fixity) : WLPretty =
     case fix of
       | Infix (assoc,  n) -> ppConcat [ppString "infix ",
 				       case assoc of
@@ -1446,8 +1487,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
       | Boolean _ -> true
       | _ -> false
 
-  op  ppType : Context -> MSType -> WLPretty
-  def ppType c ty =
+  op ppType (c: Context) (ty:MSType) : WLPretty =
     if c.printPositionInfo?
       then case typeAnn ty of
 	     | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
@@ -1594,5 +1634,28 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
      (ppSep (ppAppend (ppString ", ") ppBreak)
 	(map (fn (d,r) -> ppConcat [ppQualifiedId d, ppString " -> ",ppQualifiedId r])
 	   (mapToList idMap)))
+
+  def printValueTop (value : Value, uid : UnitId, printPositionInfo? : Boolean, recursive? : Boolean) : String =
+    printValue {printTypes? = true, %false, %true,
+		printPositionInfo? = printPositionInfo?,
+		fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
+		currentUID = uid,
+		uidsSeen = [uid],
+		recursive? = recursive?}
+      value
+
+  %% Evaluate the given unit and print it.
+  op printUIDtoFile (uid_str : String, printPositionInfo? : Boolean, recursive? : Boolean) : String =
+  let _ = writeLine "Printing spec to file." in
+  case evaluateUnitId uid_str of
+    | Some val ->
+      (case uidStringForValue val of
+         | None -> "Error: Can't get UID string from value"
+         | Some (uid,uidstr) ->
+           let fil_nm = uidstr ^ ".asw" in
+           let _ = ensureDirectoriesExist fil_nm in
+           let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),fil_nm) in
+           fil_nm)
+    | _ -> "Error: Unknown UID " ^ uid_str
 
 endspec
