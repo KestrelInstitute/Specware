@@ -1,3 +1,5 @@
+%% TODO: Maybe this file should be called ShowDeps.sw since showdeps is the command to invoke it.
+
 %% This file contains a utility to print the "dependencies" in a spec.  For each
 %% type or op, it prints the list of types and ops it refers to.  The output
 %% goes to a file in the deps/ subdirectory of the directory that contains the
@@ -27,8 +29,8 @@ import /Languages/SpecCalculus/Semantics/Value
 import /Languages/SpecCalculus/Semantics/Monad
 
 % prints <unqualified> is no qualifier
- op printQualifiedIdFull (Qualified (q, id) : QualifiedId) : String =
-    q ^ "." ^ id
+op printQualifiedIdFull (Qualified (q, id) : QualifiedId) : String =
+  q ^ "." ^ id
 
 type QIDSet = List QualifiedId %FIXME which set library should I use?
 
@@ -67,8 +69,7 @@ type SpecElem = SpecElemTerm
   %op  SpecCalc.uidToFullPath: UnitId -> String
   op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
 
-  op  uidToAswName : UnitId -> String
-  def uidToAswName {path,hashSuffix=_} =
+  op uidToDepsName ({path,hashSuffix=_}: UnitId) : String =
    let device? = deviceString? (head path) in
    let main_name = last path in
    let path_dir = butLast path in 
@@ -79,17 +80,10 @@ type SpecElem = SpecElemTerm
 	then (head path) ^ mainPath
 	else mainPath
 
-  op  uidStringForValue: Value -> Option (UnitId * String)
-  def uidStringForValue val =
-    case uidStringPairForValue val of
-      | None -> None
-      | Some(uid,filnm,hash) -> Some(uid,filnm ^ hash)
-
   %% Used because the use of "#" causes problems with syntax coloring.
   op numberSignString : String = implode [##]
 
-  op  uidStringPairForValue: Value -> Option (UnitId * String * String)
-  def uidStringPairForValue val =
+  op uidStringPairForValue (val: Value) : Option (UnitId * String * String) =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None -> None
       | Some global_context ->
@@ -97,13 +91,18 @@ type SpecElem = SpecElemTerm
       | None -> None
       | Some uid ->
         Some (uid,
-	      uidToAswName uid,
+	      uidToDepsName uid,
 	      case uid.hashSuffix of
 		| Some loc_nm -> numberSignString ^ loc_nm
 		| _ -> "")
 
+  op uidStringForValue (val:Value) : Option String =
+    case uidStringPairForValue val of
+      | None -> None
+      | Some(_,filnm,hash) -> Some(filnm ^ hash)
+
 %% Extend deps to indicate that name depends on all the things in ty.
-def addDepsForType (name : QualifiedId) (deps: Deps) (ty: MSType): Deps =
+op addDepsForType (name : QualifiedId) (deps: Deps) (ty: MSType): Deps =
      case ty of
        | Arrow (ty1,ty2,_) -> (addDepsForType name (addDepsForType name deps ty1) ty2)
        | Product (fields,_) -> (foldl (fn (deps, (_, ty)) -> addDepsForType name deps ty) deps fields)
@@ -131,7 +130,7 @@ def addDepsForType (name : QualifiedId) (deps: Deps) (ty: MSType): Deps =
        | Any(_) -> deps
        | mystery -> fail ("No match in addDepsForType with: '" ^ (anyToString mystery) ^ "'")
 
-  def addDepsForFun (name : QualifiedId) (fun:Fun) (deps:Deps) : Deps =
+  op addDepsForFun (name : QualifiedId) (fun:Fun) (deps:Deps) : Deps =
     case fun of
       | Not       -> deps
       | And       -> deps
@@ -229,7 +228,7 @@ op addDepsForMapLMapFromStringsToATypeInfos (m:MapL.Map(String, (ATypeInfo Stand
     MapSTHashtable.STH_foldi(addDepsForATypeMapEntry, deps, m)
 
   %% First we build a map that captures the dependency information.  Then we turn the map into a string for printing.
-  def getDepsForSpec (value : Value, uid : UnitId) : String =
+  op getDepsForSpec (value : Value) : String =
     case value of
       | Spec spc -> (let deps = MapSTHashtable.STH_empty_map in
                     let deps = addDepsForAOpMap(spc.ops, deps) in 
@@ -239,18 +238,21 @@ op addDepsForMapLMapFromStringsToATypeInfos (m:MapL.Map(String, (ATypeInfo Stand
       | _        -> "Unrecognized value.  It should be a spec."
 
   %% Evaluate the given unit and print its deps.
-  op printDepsForSpec (uid_str : String) : String =
+  %% Returns a flag indicating whether the operation succeeded (failure may happen if the spec fails to be processed).
+  op printDepsForSpec (uid_str : String) : Bool =
   let _ = writeLine ("Printing deps for spec: "^uid_str) in
   case evaluateUnitId uid_str of
     | Some val ->
       (case uidStringForValue val of
-         | None -> "Error: Can't get UID string from value"
-         | Some (uid,uidstr) ->
-           let fil_nm = uidstr ^ ".deps" in
-           let _ = ensureDirectoriesExist fil_nm in
-           let deps = getDepsForSpec(val,uid) in
-           let _ = writeStringToFile(deps,fil_nm) in
-           fil_nm)
-    | _ -> "Error: Unknown UID " ^ uid_str
+         | None -> let _ = writeLine "Error: Can't get UID string from value" in false
+         | Some uidstr ->
+           let file_name = uidstr ^ ".deps" in
+           let _ = ensureDirectoriesExist file_name in
+           let deps = getDepsForSpec(val) in
+	   let _ = writeLine("Writing deps to to: "^file_name^"\n") in
+           let _ = writeStringToFile(deps,file_name) in
+           true
+           )
+    | _ -> let _ = writeLine ("Error: Could not evaluate UID: " ^ uid_str) in false
 
 endspec

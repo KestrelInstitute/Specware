@@ -28,6 +28,7 @@
     ("cinit"     . "Clears Spec unit cache.")    
     ("show"      . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx"     . "[unit-term] Like `show' but shows all types and ops including imports.")
+    ("showdeps"  . "[unit-identifier] Print dependencies in unit.  With no argument, uses last processed unit.")
     ("obligations" . "[unit-term] Abbreviation for show obligations ...")
     ("oblig"     . "[unit-term] Abbreviation for show obligations ...")
     ("gen-obligations" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
@@ -61,7 +62,7 @@
                         With no argument uses last processed unit.")
     ("gen-c"     . "[spec-term [filename]] Generates C code for unit in filename.
                         With no argument uses last processed unit.")
-    ("gen-c-thin" . "[unit-identifier [filename]] Generates C code for unit in filename.
+    ("gen-c-thin" . "[unit-identifier [filename]] Generates C code for unit.  Writes to filename.
                         With no argument uses last processed unit.")
     ("make"      . "[spec-term] Generate C code with makefile and call make on it.")
     ("ld"        . "[filename] Load Lisp file filename.")
@@ -345,8 +346,9 @@
 	   (path      (cl-user::swpath argstr))
 	   ((proc p)  (cl-user::sw     argstr) (values))
 	   ((reproc rp)  (let ((cl-user::*force-reprocess-of-unit* t)) (cl-user::sw     argstr)) (values))
-	   (show      (cl-user::show   argstr) (values))
-	   (showx     (cl-user::showx  argstr) (values))
+	   (show      (cl-user::show     argstr) (values))
+	   (showx     (cl-user::showx    argstr) (values))
+	   (showdeps  (cl-user::showdeps argstr) (values))
 	   (cinit     (cl-user::sw-init))
 	   ((gen-lisp gen-l)  (cl-user::swl argstr) (values))
 	   ((gen-lisp-top gen-lt)  (let ((cl-user::*slicing-lisp?* t)) (cl-user::swl argstr)) (values))

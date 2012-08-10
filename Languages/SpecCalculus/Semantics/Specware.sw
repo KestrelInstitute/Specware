@@ -137,17 +137,47 @@ Specware qualifying spec
   let strings = map implode charlists in
   strings
   
+  %% This is the top level Metaslang function for the 'showdeps' command.  It
+  %% is called by the hand-written Lisp function showdeps in toplevel.lisp.
+  %% The optional_argstring is the entire argument string passed to showdeps, or None.
+  %% FIXME add more parsing of the argument:
+  %%   handle ".." (seems to work already)?
+  %    handle ~ for home directory (or not?)?
+  %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
+  %% FIXME can the previous unit loaded be something unexpected, like a spec transform term?
+  op evaluateShowDeps (optional_argstring : Option String, lastUnitIdLoaded : Option String) : Option String = 
+  let _ = writeLine "Calling evaluateShowDeps." in
+  let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
+  %FIXME handle the case when this is a qid?
+  let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
+  %% Get the unit ID to process:
+  let opt_uid_str =
+    (case optional_argstring of
+       %% No arguments given at all, so use the last unit loaded, if there is one.
+       | None -> (case lastUnitIdLoaded of
+                    | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in None
+                    | Some uid_str -> lastUnitIdLoaded)
+       | Some argstring ->
+         %% Otherwise, the argument string is the unit ID to process:
+         optional_argstring) in
+  (case opt_uid_str of
+     | None -> None %% fail and don't change *last-unit-Id-_loaded*
+     | Some uid_str -> 
+       %% Print the deps to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded.
+       let success? = printDepsForSpec uid_str in
+       if success? then Some uid_str else None)
+
+
   %% This is the top level Metaslang function for the "thin" C generator.  It
   %% is called by the hand-written Lisp function gen-c-thin in toplevel.lisp.
-  
-  %% argstring is the (optional) entire argument string passed to gen-c-thin (or None)
+    %% argstring is the (optional) entire argument string passed to gen-c-thin (or None)
   %% FIXME add more parsing of the arguments:
   %% handle .. (seems to work)? handle ~ for home directory (or not?)?
   %% example call: gen-c-thin ../Examples/FactorialChoppedAuto#FacChopFinal facchop
   %% FIXME If the given spec imports other specs, should all the code go into one .c file?
   %%   probably the structure of the C code files should mirror the structure of the units...
   %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
-  %% FIXME can the previous unit loaded by something unexpected, like a spec transform term?
+  %% FIXME can the previous unit loaded be something unexpected, like a spec transform term?
   op evaluateGenCThin (argstring : Option String, lastUnitIdLoaded : Option String) : Option String = 
   let _ = writeLine "Calling evaluateGenCThin." in
   let _ = writeLine ("arg string: "^(case argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in

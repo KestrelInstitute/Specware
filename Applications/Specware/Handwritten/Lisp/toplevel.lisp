@@ -873,8 +873,12 @@
       (cons :|Some| val)
       '(:|None|)))
   
-;This is the function invoked by the Specware shell command 'gen-c-thin'.
+; This is the function invoked by the Specware shell command 'gen-c-thin'.
+; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
 (defun gen-c-thin (&optional argstring)
+  ;; This calls the Lisp translation of op evaluateGenCThin (from Languages/SpecCalculus/Semantics/Specware.sw).
+  ;; The "-2" in the Lisp function name is added during the translation to Lisp.
+  ;; My approach is to have the Metaslang code do all of the argument parsing.
   (let ((val (Specware::evaluateGenCThin-2 (wrap-option argstring)
                                            (wrap-option *last-unit-Id-_loaded*))))
     ;;evaluateGenCThin returns an optional string to store in *last-unit-Id-_loaded*
@@ -882,6 +886,21 @@
         nil ;does this return value matter?
         ;; strip the :|Some| to get the string
         (setq *last-unit-Id-_loaded* (cdr val)))))
+
+; This is the function invoked by the Specware shell command 'showdeps'.
+; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
+(defun showdeps (&optional argstring)
+  ;; This calls the Lisp translation of op evaluateShowDeps (from Languages/SpecCalculus/Semantics/Specware.sw).
+  ;; The "-2" in the Lisp function name is added during the translation to Lisp.
+  ;; My approach is to have the Metaslang code do all of the argument parsing.
+  (let ((val (Specware::evaluateShowDeps-2 (wrap-option argstring)
+                                           (wrap-option *last-unit-Id-_loaded*))))
+    ;;evaluateShowDeps returns an optional string to store in *last-unit-Id-_loaded*
+    (if (equal val '(:|None|))
+        nil ;does this return value matter?
+        ;; strip the :|Some| to get the string
+        (setq *last-unit-Id-_loaded* (cdr val)))))
+
 
 
 #+allegro
