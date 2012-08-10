@@ -353,20 +353,24 @@ Full documentation will be available after autoloading the function."
       (setq i (1+ i))))
 
   ;; Now we change the characters that are meaningful to us.
-  (modify-syntax-entry ?\(      "()5"   specware-mode-syntax-table)
-  (modify-syntax-entry ?\)      ")(8"   specware-mode-syntax-table)
+  (modify-syntax-entry ?\(      "() 1"   specware-mode-syntax-table)
+  (modify-syntax-entry ?\)      ")( 4"   specware-mode-syntax-table)
   (modify-syntax-entry ?\[      "(]"    specware-mode-syntax-table)
   (modify-syntax-entry ?\]      ")["    specware-mode-syntax-table)
   (modify-syntax-entry ?{       "(}"    specware-mode-syntax-table)
   (modify-syntax-entry ?}       "){"    specware-mode-syntax-table)
-  (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table)
+;;;  (modify-syntax-entry ?\*      ". 67"  specware-mode-syntax-table) ;; commented out by MB
+  (modify-syntax-entry ?*      ". 23"  specware-mode-syntax-table) ;; added by MB
+  
   (modify-syntax-entry ?\"      "\"    " specware-mode-syntax-table)
   (modify-syntax-entry ?\\      "\\   " specware-mode-syntax-table)
   (modify-syntax-entry ?\#      "/"     specware-mode-syntax-table)
   (modify-syntax-entry ?        " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\t      " "     specware-mode-syntax-table)
-  (modify-syntax-entry ?\%      "<   "  specware-mode-syntax-table)
-  (modify-syntax-entry ?\n      ">   "  specware-mode-syntax-table)
+  ;(modify-syntax-entry ?\%      "<   "  specware-mode-syntax-table) ;; commented out by MB
+  (modify-syntax-entry ?\%      "< b"  specware-mode-syntax-table) ;; added by MB
+  ;(modify-syntax-entry ?\n      ">   "  specware-mode-syntax-table)
+  (modify-syntax-entry ?\n      "> b"  specware-mode-syntax-table) ;; added by MB
   (modify-syntax-entry ?\f      " "     specware-mode-syntax-table)
   (modify-syntax-entry ?\'      "w"     specware-mode-syntax-table)
   (modify-syntax-entry ?\_      "w"     specware-mode-syntax-table)
