@@ -11,7 +11,7 @@
 %% The top level function to call is showdepsForSpec.  Example call (from the Specware shell):
 %%   showdeps /usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp
 
-Showdeps qualifying spec 
+ShowDeps qualifying spec 
 
 import Types
 import /Languages/MetaSlang/AbstractSyntax/AnnTerm
@@ -247,15 +247,22 @@ op showDepsForSpec (uid_str : String) : Bool =
   %% This is the top level Metaslang function for the 'showdeps' command.  It
   %% is called by the hand-written Lisp function showdeps in toplevel.lisp.
   %% The optional_argstring is the entire argument string passed to showdeps, or None.
-  %% FIXME add more parsing of the argument:
+  %% FIXME add more processing of the argument string:
   %%   strip leading spaces
-  %%   handle ".." (seems to work already)?
-  %    handle ~ for home directory (or not?)?
+  %%   handle Windows path names (driver letter plus colon, backslashes instead of slashes).
+  %% Then get rid of the awkward call to uidStringForValue?
   %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
   %% FIXME can the previous unit loaded be something unexpected, like a spec transform term?
 
-  op evaluateShowDeps (optional_argstring : Option String, lastUnitIdLoaded : Option String) : Option String = 
+  %% Replace leading ~/ (if present) with user's home dir.
+  op substHomeDir (path : String, homedir : String) : String =
+    case (explode path) of
+    | #~ :: #/ :: rest -> homedir ^ "/" ^ (implode rest)
+    | _ -> path
+
+  op evaluateShowDeps (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
   let _ = writeLine "Calling evaluateShowDeps." in
+  let _ = writeLine ("Home dir: "^homedir) in
   let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
   %FIXME handle the case when this is a qid?
   let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
@@ -272,6 +279,7 @@ op showDepsForSpec (uid_str : String) : Bool =
   (case opt_uid_str of
      | None -> None %% fail and don't change *last-unit-Id-_loaded*
      | Some uid_str -> 
+       let uid_str = substHomeDir(uid_str, homedir) in
        %% Print the deps to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded.
        let success? = showDepsForSpec uid_str in
        if success? then Some uid_str else None)

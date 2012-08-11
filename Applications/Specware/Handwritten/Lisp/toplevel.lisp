@@ -893,8 +893,9 @@
   ;; This calls the Lisp translation of op evaluateShowDeps (from Languages/SpecCalculus/AbstractSyntax/ShowDeps.sw).
   ;; The "-2" in the Lisp function name is added during the translation to Lisp.
   ;; My approach is to have the Metaslang code do all of the argument parsing.
-  (let ((val (Specware::evaluateShowDeps-2 (wrap-option argstring)
-                                           (wrap-option *last-unit-Id-_loaded*))))
+  (let ((val (ShowDeps::evaluateShowDeps-3 (wrap-option argstring)
+                                           (wrap-option *last-unit-Id-_loaded*)
+                                           (home-dir))))
     ;;evaluateShowDeps returns an optional string to store in *last-unit-Id-_loaded*
     (if (equal val '(:|None|))
         nil ;does this return value matter?
