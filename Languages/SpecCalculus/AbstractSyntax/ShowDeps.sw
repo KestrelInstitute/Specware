@@ -8,14 +8,10 @@
 
 %% This file might be similar to some of the operations done by Languages/MetaSlang/Transformations/SliceSpec.sw
 
-%% The top level function to call is printDepsForSpec.  To call this:
-%%   gen-lisp /Languages/SpecCalculus/AbstractSyntax/PrintDeps.sw
-%%   cl ~/Dropbox/Specware/Languages/SpecCalculus/AbstractSyntax/lisp/PrintDeps.lisp
-%%   lisp (PRINTDEPS::printDepsForSpec "/usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp")
-%% Note that this last step takes advantage of the ability of the Specware shell
-%% to execute Lisp commands.
+%% The top level function to call is showdepsForSpec.  Example call (from the Specware shell):
+%%   showdeps /usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp
 
-PrintDeps qualifying spec 
+Showdeps qualifying spec 
 
 import Types
 import /Languages/MetaSlang/AbstractSyntax/AnnTerm
@@ -228,7 +224,7 @@ op getDepsForSpec (spc : Spec) : String =
 
 %% Evaluate the given unit and print its deps.
 %% Returns a flag indicating whether the operation succeeded (failure may happen if the spec fails to be processed).
-op printDepsForSpec (uid_str : String) : Bool =
+op showDepsForSpec (uid_str : String) : Bool =
   let _ = writeLine ("Printing deps for unit: "^uid_str) in
     %% Evaluate the unit (if necessary):
     case evaluateUnitId uid_str of
@@ -246,5 +242,38 @@ op printDepsForSpec (uid_str : String) : Bool =
             let _ = writeStringToFile(deps,file_name) in
               true)
        | _ -> let _ = writeLine "ERROR: The unit evaluated to something other than a spec." in false)
+
+  
+  %% This is the top level Metaslang function for the 'showdeps' command.  It
+  %% is called by the hand-written Lisp function showdeps in toplevel.lisp.
+  %% The optional_argstring is the entire argument string passed to showdeps, or None.
+  %% FIXME add more parsing of the argument:
+  %%   strip leading spaces
+  %%   handle ".." (seems to work already)?
+  %    handle ~ for home directory (or not?)?
+  %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
+  %% FIXME can the previous unit loaded be something unexpected, like a spec transform term?
+
+  op evaluateShowDeps (optional_argstring : Option String, lastUnitIdLoaded : Option String) : Option String = 
+  let _ = writeLine "Calling evaluateShowDeps." in
+  let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
+  %FIXME handle the case when this is a qid?
+  let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
+  %% Get the unit ID to process:
+  let opt_uid_str =
+    (case optional_argstring of
+       %% No arguments given at all, so use the last unit loaded, if there is one.
+       | None -> (case lastUnitIdLoaded of
+                    | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in None
+                    | Some uid_str -> lastUnitIdLoaded)
+       | Some argstring ->
+         %% Otherwise, the argument string is the unit ID to process:
+         optional_argstring) in
+  (case opt_uid_str of
+     | None -> None %% fail and don't change *last-unit-Id-_loaded*
+     | Some uid_str -> 
+       %% Print the deps to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded.
+       let success? = showDepsForSpec uid_str in
+       if success? then Some uid_str else None)
 
 end-spec

@@ -890,7 +890,7 @@
 ; This is the function invoked by the Specware shell command 'showdeps'.
 ; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
 (defun showdeps (&optional argstring)
-  ;; This calls the Lisp translation of op evaluateShowDeps (from Languages/SpecCalculus/Semantics/Specware.sw).
+  ;; This calls the Lisp translation of op evaluateShowDeps (from Languages/SpecCalculus/AbstractSyntax/ShowDeps.sw).
   ;; The "-2" in the Lisp function name is added during the translation to Lisp.
   ;; My approach is to have the Metaslang code do all of the argument parsing.
   (let ((val (Specware::evaluateShowDeps-2 (wrap-option argstring)
