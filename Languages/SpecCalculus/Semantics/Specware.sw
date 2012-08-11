@@ -130,7 +130,7 @@ Specware qualifying spec
   %%% C ("thin" version)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  %% Something like this must already exist somwhere.
+  %% Something like this must already exist somewhere.
   op splitStringAtChar (string : String, char : Char) : List String =
   let chars = explode string in
   let charlists = (splitAtChar char chars) in
@@ -141,6 +141,7 @@ Specware qualifying spec
   %% is called by the hand-written Lisp function showdeps in toplevel.lisp.
   %% The optional_argstring is the entire argument string passed to showdeps, or None.
   %% FIXME add more parsing of the argument:
+  %%   strip leading spaces
   %%   handle ".." (seems to work already)?
   %    handle ~ for home directory (or not?)?
   %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.

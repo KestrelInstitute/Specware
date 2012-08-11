@@ -225,7 +225,7 @@
 
 (defvar *force-reprocess-of-unit* nil)
 
-;This is the function invoked by the proc command in the Specware shell.
+;This is the function invoked by the 'proc' command in the Specware shell.
 (defun sw (&optional x)
   (setq x (norm-unitid-str x))
   (when *force-reprocess-of-unit*
