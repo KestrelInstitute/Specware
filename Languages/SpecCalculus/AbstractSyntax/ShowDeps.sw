@@ -153,7 +153,7 @@ op addDepsForMatchCase (name : QualifiedId) (deps : Deps, triple : (APattern Pos
 op addDepsForMatch (name : QualifiedId) (cases:Match) (deps:Deps) : Deps =
   List.foldl (addDepsForMatchCase name) deps cases
 
-  % Walk through term and, for each thing mentioned, record the fact that name depends on that thing.
+% Walk through term and, for each thing mentioned, record the fact that name depends on that thing.
 op addDepsForTerm (name : QualifiedId) (deps: Deps) (term: MSTerm): Deps =
   case term of
   | Apply (term1, term2, _) -> (addDepsForTerm name (addDepsForTerm name deps term1) term2)
@@ -185,11 +185,11 @@ op addDepsForMapLMapFromStringsToAOpInfos (m:MapL.Map(String, (AOpInfo StandardA
         deps
         m
    
-   %% Each val in the map is itself a map.
+%% Each val in the map is itself a map.
 op addDepsForAOpMapEntry (key : String, val : (MapL.Map(String, (AOpInfo StandardAnnotation))), deps: Deps) : Deps =
   addDepsForMapLMapFromStringsToAOpInfos val deps
               
-  %% This is a map from op names to (maps from qualifiers to opinfos).
+%% This is a map from op names to (maps from qualifiers to opinfos).
 op addDepsForAOpMap (m:(AOpMap StandardAnnotation), deps : Deps) : Deps =
   MapSTHashtable.STH_foldi(addDepsForAOpMapEntry, deps, m)
 
@@ -200,23 +200,42 @@ op addDepsForATypeInfo (atypeinfo : ATypeInfo StandardAnnotation) (deps:Deps) : 
     addDepsForType name deps dfn
 
 op addDepsForMapLMapFromStringsToATypeInfos (m:MapL.Map(String, (ATypeInfo StandardAnnotation))) (deps:Deps) : Deps =
-   foldi (fn (key, val, deps) -> (addDepsForATypeInfo val deps))
-         deps
-         m
+  foldi (fn (key, val, deps) -> (addDepsForATypeInfo val deps))
+        deps
+        m
    
- %% Each val in the map is itself a map.
+%% Each val in the map is itself a map.
 op addDepsForATypeMapEntry (key : String, val : (MapL.Map(String, (ATypeInfo StandardAnnotation))), deps: Deps) : Deps =
   addDepsForMapLMapFromStringsToATypeInfos val deps
               
 %% This is a map from type names to (maps from qualifiers to typeinfos).
-  op addDepsForATypeMap (m:(ATypeMap StandardAnnotation), deps : Deps) : Deps =
-    MapSTHashtable.STH_foldi(addDepsForATypeMapEntry, deps, m)
+op addDepsForATypeMap (m:(ATypeMap StandardAnnotation), deps : Deps) : Deps =
+  MapSTHashtable.STH_foldi(addDepsForATypeMapEntry, deps, m)
+
+%FIXME fill this in!
+op addDepsForSpecElement (elem : SpecElement, deps : Deps) : Deps =
+  case elem of
+  %% Skipping the scterm for now.  Skipping spc because we have specelems
+  | Import (scterm, spc, specelems, _) -> addDepsForSpecElements(specelems, deps)
+  | Type (_,_) -> deps % nothing really to do here
+  | TypeDef (_,_) -> deps % nothing really to do here
+  | Op (_,_,_) -> deps % nothing really to do here
+  | OpDef (_,_,_,_) -> deps % nothing really to do here %TODO use the transform history?
+  | Property (proptype, propname, tyvars, term, _) -> addDepsForTerm propname deps term
+  | Comment (str, _) -> deps
+  | Pragma (_, _, _, _) -> deps %anything to do here?
+
+op addDepsForSpecElements (elems : SpecElements, deps : Deps) : Deps =
+  case elems of
+  | [] -> deps
+  | elem :: rest -> addDepsForSpecElements(rest, addDepsForSpecElement(elem, deps))
 
 %% First we build a map that captures the dependency information.  Then we turn the map into a string for printing.
 op getDepsForSpec (spc : Spec) : String =
   let deps = MapSTHashtable.STH_empty_map in
   let deps = addDepsForAOpMap(spc.ops, deps) in 
   let deps = addDepsForATypeMap(spc.types, deps) in
+  let deps = addDepsForSpecElements(spc.elements, deps) in
     %%FIXME count mentions in theorems (claims).  what else?
      MapSTHashtable.STH_foldi ((fn (key, val, string) -> ((printQualifiedIdFull key)^":"^(printQIDSet val)^"\n"^string)), 
                                "", 
@@ -243,26 +262,25 @@ op showDepsForSpec (uid_str : String) : Bool =
               true)
        | _ -> let _ = writeLine "ERROR: The unit evaluated to something other than a spec." in false)
 
-  
-  %% This is the top level Metaslang function for the 'showdeps' command.  It
-  %% is called by the hand-written Lisp function showdeps in toplevel.lisp.
-  %% The optional_argstring is the entire argument string passed to showdeps, or None.
-  %% FIXME add more processing of the argument string:
-  %%   strip leading spaces
-  %%   handle Windows path names (driver letter plus colon, backslashes instead of slashes).
-  %% Then get rid of the awkward call to uidStringForValue?
-  %% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
-  %% FIXME can the previous unit loaded be something unexpected, like a spec transform term?
+%% Replace leading ~/ (if present) with the user's home dir.
+op substHomeDir (path : String, homedir : String) : String =
+  case (explode path) of
+  | #~ :: #/ :: rest -> homedir ^ "/" ^ (implode rest)
+  | _ -> path
 
-  %% Replace leading ~/ (if present) with user's home dir.
-  op substHomeDir (path : String, homedir : String) : String =
-    case (explode path) of
-    | #~ :: #/ :: rest -> homedir ^ "/" ^ (implode rest)
-    | _ -> path
+%% This is the top level Metaslang function for the 'showdeps' command.  It
+%% is called by the hand-written Lisp function showdeps in toplevel.lisp.
+%% The optional_argstring is the entire argument string passed to showdeps, or None.
+%% FIXME add more processing of the argument string:
+%%   strip leading spaces
+%%   handle Windows path names (driver letter plus colon, backslashes instead of slashes).
+%% Then get rid of the awkward call to uidStringForValue?
+%% The return value is an optional string to make the new value of *last-unit-Id-_loaded*.
+%% FIXME can the previous unit loaded be something unexpected, like a spec transform term?
 
-  op evaluateShowDeps (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
+op evaluateShowDeps (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
   let _ = writeLine "Calling evaluateShowDeps." in
-  let _ = writeLine ("Home dir: "^homedir) in
+  let _ = writeLine ("The user's home directory: "^homedir) in
   let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
   %FIXME handle the case when this is a qid?
   let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
@@ -270,13 +288,12 @@ op showDepsForSpec (uid_str : String) : Bool =
   let opt_uid_str =
     (case optional_argstring of
        %% No arguments given at all, so use the last unit loaded, if there is one.
-       | None -> (case lastUnitIdLoaded of
-                    | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in None
-                    | Some uid_str -> lastUnitIdLoaded)
-       | Some argstring ->
-         %% Otherwise, the argument string is the unit ID to process:
-         optional_argstring) in
-  (case opt_uid_str of
+     | None -> (case lastUnitIdLoaded of
+                | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in None
+                | Some uid_str -> lastUnitIdLoaded)
+       %% Otherwise, the argument string is the unit ID to process:
+     | Some argstring -> optional_argstring) in
+    (case opt_uid_str of
      | None -> None %% fail and don't change *last-unit-Id-_loaded*
      | Some uid_str -> 
        let uid_str = substHomeDir(uid_str, homedir) in
