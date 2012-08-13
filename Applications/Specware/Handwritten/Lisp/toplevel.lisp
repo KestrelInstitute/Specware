@@ -10,6 +10,7 @@
 (defpackage :SWShell)
 (defpackage :swank)
 (defpackage :AnnSpecPrinter)
+(defpackage :ShowDeps)
 
 ;; Toplevel Lisp aliases for Specware
 
