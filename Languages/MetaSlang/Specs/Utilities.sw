@@ -939,17 +939,27 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    if sb = [] then tm
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
 
- def mkIfThenElse(t1,t2:MSTerm,t3:MSTerm):MSTerm =
+ op negate (term: MSTerm): MSTerm =
+   case term of
+     | Fun (Bool b,_,aa) -> mkBool (~ b)
+     | Apply (Fun(Not,_,_), p,                        _) -> p
+     | Apply (Fun(Or,_,_),  Record([(_,M),(_,N)], _), _) ->
+       mkAnd(negate M,negate N)
+     | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+       Apply(Fun(Equals,ty,a1),args,a2)
+     | _ -> mkNot term
+
+ op mkIfThenElse(t1,t2:MSTerm,t3:MSTerm):MSTerm =
    case t1 of
      | Fun(Bool true,_,_)  -> t2
      | Fun(Bool false,_,_) -> t3
      | _ ->
    case t2 of
      | Fun(Bool true,_,_)  -> mkOr(t1,t3)
-     | Fun(Bool false,_,_) -> mkAnd(mkNot t1,t3)
+     | Fun(Bool false,_,_) -> mkAnd(negate t1,t3)
      | _ ->
    case t3 of
-     | Fun(Bool true,_,_)  -> mkOr(mkNot t1,t2)
+     | Fun(Bool true,_,_)  -> mkOr(negate t1,t2)
      | Fun(Bool false,_,_) -> mkAnd(t1,t2)
      | _ ->
    if equalTerm?(t2, t3) && sideEffectFree t1 then t2
@@ -1009,7 +1019,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
         % We can't optimize (x => true) to true, as one might expect from logic.
         % The semantics for => dictates that we need to eval t1 (e.g., for side-effects) before looking at t2.  
          | Fun(Bool true,_,_) | sideEffectFree t1 -> mkTrue() 
-	 | Fun(Bool false,_,_) -> mkNot t1
+	 | Fun(Bool false,_,_) -> negate t1
          | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
            mkSimpImplies(mkAnd(t1,p1), q1)
 	 | _ -> mkImplies (t1,t2)
@@ -1594,9 +1604,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
            else
              None)
         else reduceEqual(N1,N2,false,spc)
-      | Apply(Fun(Not,  _,_),arg,                       _) -> 
+      | Apply(Fun(Not,  _,_),arg,_) -> 
 	(case arg of
            | Fun (Bool b,_,aa) -> Some(mkBool (~ b))
+           | Apply (Fun(Not,_,_), p,_) -> Some p
            | Apply(Fun(NotEquals,ty,a1),args,a2) ->
              Some(Apply(Fun(Equals,ty,a1),args,a2))
            | _ -> None)
@@ -1831,6 +1842,26 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | Subtype(t1,_,_) -> subtypeOf(t1,qid,spc)
       | _ -> None
 
+op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
+  if equalType?(ty, sup_ty) then Some(mkTruePred ty)
+    else
+    case ty of
+      | Base(qid1,srts,_) ->
+        (case findTheType (spc, qid1) of
+           | None -> None
+           | Some info ->
+             if definedTypeInfo? info then
+               let (tvs, srt) = unpackFirstTypeDef info in
+               let ssrt = substType (zip (tvs, srts), srt) in
+               subtypePred(ssrt,sup_ty,spc)
+             else
+               None)
+      | Subtype(t1,pred,_) ->
+        (case subtypePred(t1,sup_ty,spc) of
+           | Some pred1 -> Some(composeConjPreds([pred, pred1], spc))
+           | None -> None) 
+      | _ -> None
+
 
    op subtypePreds(tys: List MSType): MSTerms =
      mapPartial (fn ty ->
@@ -2033,7 +2064,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | _ -> Subtype(ty, pr1, a)
 
   op raiseBase (spc: Spec) (ty: MSType): MSType =
-    % let _ = writeLine("rb: "^printType ty) in
+     let _ = writeLine("rb: "^printType(unfoldBase0 spc ty)) in
     case unfoldBase0 spc ty of
       | Subtype(_, pred, a) -> Subtype(ty, pred, a)
       | _ -> ty          
