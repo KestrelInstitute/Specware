@@ -251,6 +251,7 @@ accepted in lieu of prompting."
   (define-key map "\C-c\C-m" 'sw:insert-form)
   (define-key map "\M-|"     'sw:electric-pipe)
   (define-key map "\;"       'sw:electric-semi)
+  (define-key map "\C-ci"    'sw:insert-in)
   (define-key map "\M-\t"    'sw:back-to-outer-indent)
   (define-key map "\C-j"     'newline-and-indent)
   ;(define-key map "\177"     'backward-delete-char-untabify)
@@ -700,6 +701,14 @@ a newline, and indent."
   (insert "\;")
   (if sw:electric-semi-mode
       (reindent-then-newline-and-indent)))
+
+(defun sw:insert-in ()
+  "Inserts in on a new line and indents, then inserts another new line and indents"
+  (interactive)
+  (delete-horizontal-space t)
+  (newline)
+  (insert "in")
+  (reindent-then-newline-and-indent))
 
 ;;; INDENTATION !!!
 
