@@ -295,7 +295,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
 
   op warnIfNone(qid: QualifiedId, kind: String, rls: List RewriteRule): List RewriteRule =
     if rls = []
-      then (warn(kind ^ show qid ^ " not found!");
+      then (warn(kind ^ show qid ^ " unable to extract any rules!");
             [])
       else rls
 
@@ -358,14 +358,13 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     let v2 = ("y", dom_ty) in
     let equal_ty = mkTyVar "a" in
     let f = ("f", mkArrow(ran_ty, equal_ty)) in
-    let thm = 
-                 mkBind(Forall, [f, v1, v2],
-                        mkEquality(boolType,
-                                   mkEquality(equal_ty, mkApply(mkVar f, mkApply(qf, mkVar v1)),
-                                              mkApply(mkVar f, mkApply(qf, mkVar v2))),
-                                   mkEquality(dom_ty, mkVar v1, mkVar v2)))
+    let thm = mkBind(Forall, [f, v1, v2],
+                     mkEquality(boolType,
+                                mkEquality(equal_ty, mkApply(mkVar f, mkApply(qf, mkVar v1)),
+                                           mkApply(mkVar f, mkApply(qf, mkVar v2))),
+                                mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
-    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, true)
+    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, LeftToRight)
 
   op weakenRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule =
     case formula of
@@ -375,10 +374,10 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                            ("2", Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _))], _), _),
              _) ->
         let not_thm = mkBind(Forall, vs, mkImplies(p1, mkEquality(boolType, t2, t1))) in
-        axiomRules context (pt,desc,tyVars,not_thm,a)
+        axiomRules context (pt,desc,tyVars,not_thm,a) LeftToRight
       | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _), _) ->
         let not_thm = mkBind(Forall, vs, mkEquality(boolType, t2, t1)) in
-        axiomRules context (pt,desc,tyVars,not_thm,a)
+        axiomRules context (pt,desc,tyVars,not_thm,a) LeftToRight
 
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
@@ -403,12 +402,16 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
         warnIfNone(qid, "Rule-shaped theorem ",
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
-                              then (axiomRules context p) ++ r
+                              then (axiomRules context p LeftToRight) ++ r
                             else r)
                      [] (allProperties spc))
       | RightToLeft(qid) ->
-        map (fn rl -> rl \_guillemotleft {lhs = rl.rhs, rhs = rl.lhs, rule_spec = rule})
-          (makeRule(context, spc, LeftToRight(qid)))
+        warnIfNone(qid, "Rule-shaped theorem ",
+                   foldr (fn (p, r) ->
+                            if claimNameMatch(qid, p.2)
+                              then (axiomRules context p RightToLeft) ++ r
+                            else r)
+                     [] (allProperties spc))
       | Weaken   qid ->
         warnIfNone(qid, "Implication theorem ",
                    foldr (fn (p, r) ->
@@ -445,7 +448,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
               let v = ("x", ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
               % let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
-              assertRules(context, fml, "Subtype1", Context, false))
+              assertRules(context, fml, "Subtype1", Context, Either))
         subtypes)
 
   op mkApplyTermFromLambdas (hd: MSTerm, f: MSTerm): MSTerm =
@@ -469,7 +472,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _=writeLine("Context Rule: "^ruleName cj) in
-             assertRules(context, cj, ruleName cj, Context, true) ++ rules)
+             assertRules(context, cj, ruleName cj, Context, Either) ++ rules)
       [] tms
 
   op varProjections (ty: MSType, spc: Spec): Option(MSTerm * List(Var * Option Id)) =
@@ -518,9 +521,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
           let rls =
               case tm of
                 | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRules(context, p, "if then", Context, false)
+                  assertRules(context, p, "if then", Context, Either)
                 | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRules(context,negate p,"if else", Context, false)
+                  assertRules(context,negate p,"if else", Context, Either)
                 | Apply(Fun(And,_,_), _,_) | i = 1 ->
                   let def getSisterConjuncts(pred, path) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in

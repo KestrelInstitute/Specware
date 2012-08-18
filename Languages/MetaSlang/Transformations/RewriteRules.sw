@@ -99,9 +99,9 @@ RewriteRules qualifying spec
 %% freshRule is only relevant when matching against non-ground terms.
 %%
 
-op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * MSType))
+op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * MSType), name: Id)
    : (MSTerm -> MSTerm) * (MSType -> MSType) * NatMap.Map(Nat * MSType) * StringMap.Map TyVar = 
-% tyVMap = {| name -> a | name in tyVars ... |}
+     %% tyVMap = {| name -> a | name in tyVars ... |}
      let tyVMap = foldr (fn (name,tyVMap) -> 
                            let num = ! context.counter in
                            let a = "'a%"^Nat.show num in
@@ -121,7 +121,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	 def freshType srt = 
 	     mapType((fn M -> M),doType,fn p -> p) srt
      in
-% varMap = {| num -> (num1,srt) | (num,srt) in freeVars & num1 = ... |}
+     %% varMap = {| num -> (num1,srt) | (num,srt) in freeVars & num1 = ... |}
      let varMap = 
 	 foldr (fn ((num,srt), varMap) -> 
                   let num1 = ! context.counter in
@@ -135,17 +135,18 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
 		     of Some x -> mkVar x
-		      | None -> System.fail (show n^" not found"))
+		      | None -> System.fail ("freshRule: "^show n^" not found in "^name))
 		| None -> term
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doType, id) trm
      in
 	(freshTerm, freshType, varMap, tyVMap)
 
- def freshRule(context: Context, {name,rule_spec,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
-     : RewriteRule = 
+ op freshRule(context: Context, rule as {name,rule_spec,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
+     : RewriteRule =
+     % let _ = (writeLine("freshRule: "); printRule rule) in
      let (freshTerm,freshType,varMap,tyVMap) = 
-	 freshRuleElements(context,tyVars,freeVars) in
+	 freshRuleElements(context,tyVars,freeVars,name) in
      {  name = name,
         rule_spec = rule_spec,
 	lhs  = freshTerm lhs,
@@ -216,7 +217,6 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      : List RewriteRule * List RewriteRule -> List RewriteRule = 
      fn ([], old) -> old
       | (rule::rules, old) ->
-        % let _ = writeLine("del_lam: "^printTerm rule.rhs) in
         (case rule.rhs
            of Lambda(matches, _) | disjointMatches matches ->
               let new_rule = freshRule(context, rule) in
@@ -315,8 +315,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 %%% Extract rewrite rules from a specification.
 
  op specRules (context: Context) (spc: Spec): RewriteRules = 
-     let spc      = normalizeSpec spc            in
-     let axmRules = flatten (map (axiomRules context) (allProperties spc)) in
+     let spc      = normalizeSpec spc in
+     let axmRules = flatten (map (fn p -> axiomRules context p Either) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
 		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false)) ++ val)
@@ -441,13 +441,34 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | Apply(Fun(Project _,_,_),a1,_) -> simpleRwTerm? a1
      | _ -> false
 
- op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, lr?: Bool): List RewriteRule =
-   %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   assertRulesRec(context, term, desc, rsp, lr?, [], [], None)
+ op hasUnboundVars?(new_term: MSTerm, match_term: MSTerm, opt_condn: Option MSTerm): Bool =
+   let boundVars = freeVars match_term in
+   let boundVars =  case opt_condn of
+                      | None -> boundVars
+                      | Some condn -> freeVars condn ++ boundVars
+   in
+   exists? (fn v -> ~(inVars?(v, boundVars))) (freeVars new_term)
 
- op assertRulesRec (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, lr?: Bool, freeVars: List (Nat * MSType), 
+ op expandIfThenElse?: Bool = false
+
+ type Direction = | LeftToRight | RightToLeft | Either
+
+ op compatibleDirection?(e1: MSTerm, e2: MSTerm, condition: Option MSTerm, lr?: Bool, dirn: Direction): Bool =
+   case dirn of
+     | LeftToRight ->  lr? && ~(hasUnboundVars?(e2, e1, condition))
+     | RightToLeft -> ~lr? && ~(hasUnboundVars?(e1, e2, condition))
+     | Either -> if lr? then    % constantTerm? e2 &&
+                           ~(hasUnboundVars?(e2, e1, condition))
+                  else simpleRwTerm? e1 && ~(varTerm? e2) && ~(hasUnboundVars?(e1, e2, condition))
+
+ op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction): List RewriteRule =
+   %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
+   assertRulesRec(context, term, desc, rsp, dirn, [], [], None)
+
+ op assertRulesRec (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, freeVars: List (Nat * MSType), 
                     subst: VarSubst, condition: Option MSTerm)
     : List RewriteRule =
+   % let _ = writeLine("assertRules "^show dirn^": "^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let freeVars = fvs ++ freeVars in
    let subst = S ++ subst in
@@ -464,6 +485,36 @@ op simpleRwTerm?(t: MSTerm): Bool =
                      | None -> condition
                      | Some c2 -> Some(Utilities.mkAnd (c1,c2))
    in
+   let def equalityRules(e1: MSTerm, e2: MSTerm, lr?: Bool): List RewriteRule =
+         let (lhs, rhs) = if lr? then (e1, e2) else (e2, e1) in
+         let s_lhs = substitute(lhs,subst) in
+         let s_rhs = substitute(rhs,subst) in
+         let main_rule = freshRule(context,
+                                   {name      = desc,   condition = condition, rule_spec = rsp,
+                                    lhs       = s_lhs,  rhs       = s_rhs,
+                                    tyVars    = [],     freeVars  = freeVars, trans_fn = None})
+         in
+         case e2 of
+           | IfThenElse(p, q, r, _) | expandIfThenElse? ->
+             (if lr? || ~(hasUnboundVars?(q, e1, condition))
+                then [freshRule(context, {name      = desc,   condition = addCondn p, rule_spec = rsp,
+                                          lhs       = if lr? then s_lhs else substitute(q,subst),
+                                          rhs       = if lr? then substitute(q,subst) else s_rhs,
+                                          tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
+                else [])
+             ++ (if lr? || ~(hasUnboundVars?(r, e1, condition))
+                then [freshRule(context, {name      = desc,   condition = addCondn(negate p), rule_spec = rsp,
+                                          lhs       = if lr? then s_lhs else substitute(r,subst),
+                                          rhs       = if lr? then substitute(r,subst) else s_rhs,
+                                          tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
+                else [])
+             ++ [main_rule]
+           | _ -> [main_rule]
+       def addCondn(p: MSTerm): Option MSTerm =
+         case condition of
+           | None -> Some p
+           | Some c1 -> Some(Utilities.mkAnd(c1, p))
+   in
    case fml of
      | Apply(Fun(Not, _,_), p,_) ->
        if falseTerm? p then []
@@ -472,21 +523,15 @@ op simpleRwTerm?(t: MSTerm): Bool =
 		   {name      = desc,   condition = condition, rule_spec = rsp,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | lr? || constantTerm? e2 ->
-       [freshRule(context,
-                  {name      = desc,   condition = condition, rule_spec = rsp,
-                   lhs       = substitute(e1,subst),     rhs       = substitute(e2,subst),
-                   tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
-     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | simpleRwTerm? e1 && ~(varTerm? e2)->
-       [freshRule(context,
-                  {name      = desc,   condition = condition, rule_spec = rsp,
-                   lhs       = substitute(e2,subst),     rhs       = substitute(e1,subst),
-                   tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, true, dirn) ->
+       equalityRules(e1, e2, true)
+     | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, false, dirn) ->
+       equalityRules(e1, e2, false)
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRulesRec(context,e1,desc^"-1",rsp,lr?,freeVars,subst,condition)
-         ++ assertRulesRec(context,e2,desc^"-2",rsp,lr?,freeVars,subst,condition)
+       assertRulesRec(context,e1,desc^"-1",rsp,dirn,freeVars,subst,condition)
+         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,freeVars,subst,condition)
      | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,lr?,freeVars,subst,condition)
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,freeVars,subst,condition)
      | _ ->
        if trueTerm? fml then []
        else
@@ -495,11 +540,13 @@ op simpleRwTerm?(t: MSTerm): Bool =
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
- op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule = 
+ op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction): List RewriteRule = 
 %      case pt
 %        of Conjecture -> []
 %  	| _ ->
-   assertRules(context, formula, printQualifiedId desc, LeftToRight desc, true)
+   assertRules(context, formula, printQualifiedId desc,
+               case dirn of RightToLeft -> RightToLeft desc | _ -> LeftToRight desc,
+               dirn)
 
 %  op axiomRule (context: Context) ((pt,desc,tyVars,formula,a): Property): Option RewriteRule = 
 % %      case pt
@@ -590,13 +637,15 @@ op simpleRwTerm?(t: MSTerm): Bool =
 		  (case axiomRules context
 		         (Axiom,
 			  mkUnQualifiedId("Context-condition: "^printTerm c),tvs,c,noPos)
+                         Either
 		     of new_rules as (_::_) -> new_rules ++ rules
 		      | [] ->
 		   let rules
 		        = (axiomRules context
 				(Axiom:PropertyType,
 				 mkUnQualifiedId("Context-condition: " ^printTerm c),
-				 tvs, mkEquality(boolType,c,trueTerm),noPos))
+				 tvs, mkEquality(boolType,c,trueTerm),noPos)
+                                Either)
 			    ++ rules
 		   in 
 		   case c of
@@ -605,7 +654,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
 			  (Axiom,
 			   mkUnQualifiedId("Context-condition: " ^printTerm nc
 			   ^" = false"),
-			   tvs, mkEquality(boolType,nc,falseTerm),noPos))
+			   tvs, mkEquality(boolType,nc,falseTerm),noPos)
+                          Either)
 			++ rules
 		     | _ -> rules)
 		| _ -> rules
