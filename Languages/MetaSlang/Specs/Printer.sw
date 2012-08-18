@@ -1018,6 +1018,11 @@ AnnSpecPrinter qualifying spec
 			                       ([], false, false) 
 					       pat))
 
+ op AnnSpecPrinter.printPatternWithTypes (pat: MSPattern): String = 
+   PrettyPrint.toString (format (printWidth, ppPattern (initialize (asciiPrinter, true))
+			                       ([], false, false) 
+					       pat))
+
  def AnnSpecPrinter.printTermWithTypes term = 
    PrettyPrint.toString (format (printWidth, ppTerm (initialize (asciiPrinter, true))
 			                    ([], Top)
