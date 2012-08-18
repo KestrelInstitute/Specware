@@ -44,7 +44,7 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
 op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Option(Id * List(Id * MSPattern)) * MSTerm) =
   case range_*(spc, ty, false) of
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) ->
-      (if equalTypeSubtype?(result_ty, state_ty, true)
+      (if equivTypeSubType? spc (result_ty, state_ty) true
        then case pat of
               | VarPat(result_var,_) -> Some(result_var, None, condn)
               | _ -> None
@@ -59,34 +59,97 @@ op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var 
               | _ -> None)
     | _ -> None
 
-op equalitySpecToLambda(lhs: MSTerm, rhs: MSTerm, fn_qid: QualifiedId): Option MSTerm =
+op equalitySpecToLambda(lhs: MSTerm, rhs: MSTerm, lam_pats: List MSPattern, fn_qid: QualifiedId): Option(List MSPattern * MSTerm) =
   case lhs of
-    | Fun(Op(qid, _), _, _) | qid = fn_qid -> Some rhs
+    | Fun(Op(qid, _), _, _) | qid = fn_qid -> Some (lam_pats, rhs)
     | Apply(n_lhs, arg, _) ->
       (case termToPattern arg of
          | None -> None
-         | Some arg_pat ->
-           equalitySpecToLambda(n_lhs, mkLambda(arg_pat, rhs), fn_qid))
+         | Some arg_pat -> equalitySpecToLambda(n_lhs, rhs, lam_pats ++ [arg_pat], fn_qid))
     | _ -> None
+
+op commonPattern(p1: MSPattern, p2: MSPattern, spc: Spec): MSPattern =
+  case (p1, p2) of
+    | (VarPat((v, ty1), a), VarPat((_, ty2), _)) -> VarPat((v, commonSuperType(ty1, ty2, spc)), a)
+    | (RecordPat(prs1, a), RecordPat(prs2, _)) ->
+      RecordPat(map (fn ((id, pat1), (_, pat2)) -> (id, commonPattern(pat1, pat2, spc))) (zip(prs1, prs2)), a)
+    | _ -> p1                           % Shouldn't happen?
+
+op subtypeCondition(p1: MSPattern, p2: MSPattern, spc: Spec): MSTerm =
+  let _ = writeLine("subtypeCondition: "^printPatternWithTypes p1^" < "^printPatternWithTypes p2) in
+  case (p1, p2) of
+    | (VarPat((_, ty1), a), VarPat((v, ty2), _)) ->
+      (case subtypePred(ty1, ty2, spc) of
+         | Some pred ->
+           simplifiedApply(pred, mkVar(v, ty2), spc)
+         | None -> trueTerm)
+    | (RecordPat(prs1, a), RecordPat(prs2, _)) ->
+      foldl (fn (condn, ((_, pat1), (_, pat2))) -> Utilities.mkAnd(condn, subtypeCondition(pat1, pat2, spc)))
+        trueTerm (zip(prs1, prs2))
+    | _ -> trueTerm
+
+op makeSubstFromPatLists(pats1: List MSPattern, pats2: List MSPattern): VarSubst =
+  flatten (map (fn (p1, p2) -> let Some sbst = matchPatterns(p1, p2) in sbst) (zip(pats1, pats2)))
 
 op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): MSTerm =
   case findMatchingTheorems(spc, thm_qid) of
     | [] -> error("No theorem matching "^show thm_qid)
     | matching_thms ->
       let (_, _, tvs, bod, _) = last matching_thms in
-      (case bod of
-       | Bind(Forall, _, Apply(Fun(Equals,_,_),
-                               Record([(_,lhs),(_,rhs)], _),_),_) ->
-         (case equalitySpecToLambda(lhs, rhs, intro_qid) of
-            | Some dfn -> dfn
-            | None -> error("theorem "^printTerm bod^" doesn't define "^show intro_qid))
-       | Bind(Forall, _, Apply(Fun(Implies,_,_),
-                               Record([_,(_,Apply(Fun(Equals,_,_),
-                                                  Record([(_,lhs),(_,rhs)], _),_))], _),_),_) ->
-         (case equalitySpecToLambda(lhs, rhs, intro_qid) of
-            | Some dfn -> dfn
-            | None -> error("theorem "^printTerm bod^" doesn't define "^show intro_qid)))
-
+      let def extractDefComps(bod: MSTerm): List(List MSPattern * MSTerm * MSTerm) =
+           case bod of
+              | Bind(Forall, _, Apply(Fun(Equals,_,_),
+                                      Record([(_,lhs),(_,rhs)], _),_),_) ->
+                (case equalitySpecToLambda(lhs, rhs, [], intro_qid) of
+                   | Some(lam_pats, dfn) -> [(lam_pats, trueTerm, dfn)]
+                   | None -> (warn("theorem "^printTerm bod^" doesn't define "^show intro_qid);
+                              []))                 
+              | Bind(Forall, _, Apply(Fun(Implies,_,_),
+                                      Record([(_, condn),(_,Apply(Fun(Equals,_,_),
+                                                                  Record([(_,lhs),(_,rhs)], _),_))], _),_),_) ->
+                (case equalitySpecToLambda(lhs, rhs, [], intro_qid) of
+                   | Some(lam_pats, dfn) -> [(lam_pats, condn, dfn)]
+                   | None -> (warn("theorem "^printTerm bod^" doesn't define "^show intro_qid);
+                              []))
+              | _ ->
+                case getConjuncts bod of
+                  | [_] -> []
+                  | tms -> flatten(map extractDefComps tms)
+      in
+      let cases = extractDefComps bod in
+      let _ = (writeLine("getDefFromTheorem");
+               app (fn (pats, c, bod) ->
+                      (app (fn p -> writeLine(printPatternWithTypes p)) pats;
+                       writeLine(printTerm bod)))
+                 cases)
+      in                      
+      case cases of
+        | [] -> error("Can't extract definition from "^show thm_qid)
+        | [(lam_pats, _, bod)] ->
+          foldr (fn (pat, bod) -> mkLambda(pat, bod)) bod lam_pats
+        | (pats1, cond1, bod1) :: r_cases ->
+          let lam_pats = foldl (fn (lam_pats, (lam_patsi, _, _)) ->
+                                  if length lam_pats = length lam_patsi
+                                    then map (fn (pat, pati) -> commonPattern(pat, pati, spc)) (zip(lam_pats, lam_patsi))
+                                    else lam_pats) % Shouldn't happen
+                           pats1 r_cases
+          in
+          let _ = (writeLine "lam_pats"; app (fn p -> writeLine(printPatternWithTypes p)) lam_pats) in
+          let (p1, bod1) :: r_cases2 =
+              map (fn (pats, cond, bod) ->
+                     let sbst = makeSubstFromPatLists(lam_pats, pats) in
+                     let newCond = foldl (fn (c, (pi, lam_p)) -> Utilities.mkAnd(c, subtypeCondition(pi, lam_p, spc)))
+                                     trueTerm (zip(pats, lam_pats)) in
+                     (Utilities.mkAnd(newCond, cond), substitute(bod, sbst)))
+                cases
+          in
+          let bod = foldl (fn (bod, (pi, bodi)) ->
+                             Utilities.mkIfThenElse(pi, bodi, bod))
+                      bod1 r_cases2
+          in
+          mkCurriedLambda(lam_pats, bod)
+          
+      
 def Coalgebraic.maintainOpsCoalgebraically
       (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let intro_qid as Qualified(intro_q, intro_id) = head qids in
@@ -128,9 +191,10 @@ def Coalgebraic.maintainOpsCoalgebraically
            | _ -> result
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
-   let script = Steps[%Trace true,
+   let script = Steps[Trace true,
                       At(map Def (reverse qids),
                          Repeat [Move [Search intro_id, Next], % Go to postcondition just added and simplify
+                                 mkSimplify [],
                                  Simplify1(rules),
                                  mkSimplify(fold_rl :: rules)])]
    in
