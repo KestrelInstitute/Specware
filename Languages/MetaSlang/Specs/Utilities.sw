@@ -2064,7 +2064,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | _ -> Subtype(ty, pr1, a)
 
   op raiseBase (spc: Spec) (ty: MSType): MSType =
-     let _ = writeLine("rb: "^printType(unfoldBase0 spc ty)) in
+     %let _ = writeLine("rb: "^printType(unfoldBase0 spc ty)) in
     case unfoldBase0 spc ty of
       | Subtype(_, pred, a) -> Subtype(ty, pred, a)
       | _ -> ty          
