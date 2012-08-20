@@ -134,14 +134,14 @@ In order to use Java methods and classes inside a MetaSlang spec, the following
 conventions are used by the Java code generator:
 
 - Java Classes:
-  In order to use Java classes as sorts inside MetaSlang, you have to declare the sort without
+  In order to use Java classes as types inside MetaSlang, you have to declare the type without
   a definition term and add corresponding Java import statements using the option-spec (see above).
 
   Example: use of the Java class "java.util.Vector"
 
      In the spec:
                       ...
-                      sort Vector
+                      type Vector
                       ...
                       op myvectorop: Vector -> Nat
                       def myvectorop(v) = ...
@@ -152,7 +152,7 @@ conventions are used by the Java code generator:
                       def imports = [ ..., "java.util.*", ... ]
                       ...
 
-  The code generator interprets all sorts without a definition as base types,
+  The code generator interprets all types without a definition as base types,
   so that in this case the op myvectorop would become a static method in the
   generated "Primitive" class.
 
@@ -161,16 +161,16 @@ conventions are used by the Java code generator:
   the following convention:
 
   Assume, we want to use the instance method "foo(args)" defined in Java class Bar.
-  First, the class must be known to MetaSlang by providing a sort declaration
+  First, the class must be known to MetaSlang by providing a type declaration
   for the class. Then, an op "foo" must be declared with a signature that corresponds
-  to the method's signature with an additional parameter preceeding the others. The sort
+  to the method's signature with an additional parameter preceeding the others. The type
   of the parameter must be the class type:
 
-           sort Bar
+           type Bar
 	   op foo: Bar * T1 * ... * Tn -> T
 
   where T1 * ... * Tn -> T is the original signature of foo without the additional parameter.
-  The T's are the translated MetaSlang sorts that correspond to the Java types occuring in
+  The T's are the translated MetaSlang types that correspond to the Java types occuring in
   foo's signature; see the table below concerning the type conversion. In the MetaSlang code,
   a call to the instance method is created by the Java code generator whenever foo is called.
 
@@ -188,7 +188,7 @@ conventions are used by the Java code generator:
   The access to Java class methods is very similar to instance methods with the difference
   that instead of the type of the first argument, the qualifier of the op declaration is
   used to determine the class name. Therefore, in general, it is not necessary to declare
-  the class as a sort. Assume we want to access to class method "Math.abs()" from the Java
+  the class as a type. Assume we want to access to class method "Math.abs()" from the Java
   library. We therefore declare the "abs" operator in MetaSlang as follows:
 
            op Math.abs: Integer -> Nat
@@ -208,7 +208,7 @@ conventions are used by the Java code generator:
   class "Vector" declares a constructor with no arguments.  If we want to use that in
   MetaSlang, we have to provide the following declarations:
 
-             sort Vector
+             type Vector
 	     op Vector.new: () -> Vector
 
   Whenever "Vector.new()" is used as a term in the MetaSlang spec, a call to the
@@ -223,7 +223,7 @@ be accessed in the MetaSlang spec, it is a good idea to structure them using the
 "qualifying spec" features of MetaSlang. For instance:
 
    Vector qualifying spec 
-         sort Vector
+         type Vector
          op new: () -> Vector
          op add: fa(a) Vector * a -> Vector
          op size: Vector -> Nat
@@ -257,8 +257,8 @@ short                                  |
 float                                  |
 double                                 |
 ---------------------------------------+-------------------------------------------
-Any Java class name                    | MetaSlang sort with the same name
-                                       | (sort must be declared in the spec)
+Any Java class name                    | MetaSlang type with the same name
+                                       | (type must be declared in the spec)
 ---------------------------------------+-------------------------------------------
 
 
