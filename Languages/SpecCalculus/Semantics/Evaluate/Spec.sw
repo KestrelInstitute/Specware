@@ -39,9 +39,9 @@ and then qualify the resulting spec if the spec was given a name.
 	  else importOfSpec(optBaseUnitId,baseSpec)))
 	spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
-    compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
+%    compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
 %    print(printSpec compressed_spec);
-    transformed_spec <- applyOpRefinements compressed_spec;
+    transformed_spec <- applyOpRefinements elaborated_spec;  % compressed_spec;
     return (Spec (removeDuplicateImports transformed_spec),TS,depUIDs)
   }
 (*
