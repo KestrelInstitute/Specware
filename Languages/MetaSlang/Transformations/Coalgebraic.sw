@@ -37,7 +37,7 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
             Bind(Exists, vs, replaceInTerm bod, a)
           | Let(binds, bod, a) ->
             Let(binds, replaceInTerm bod, a)
-          | _ ->  MS.mkAnd(tm, post_condn)
+          | _ ->  Utilities.mkAnd(tm, post_condn)
   in
   replaceInRange ty
 
@@ -125,8 +125,7 @@ op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): M
       in                      
       case cases of
         | [] -> error("Can't extract definition from "^show thm_qid)
-        | [(lam_pats, _, bod)] ->
-          foldr (fn (pat, bod) -> mkLambda(pat, bod)) bod lam_pats
+        | [(lam_pats, _, bod)] -> mkCurriedLambda(lam_pats, bod)
         | (pats1, cond1, bod1) :: r_cases ->
           let lam_pats = foldl (fn (lam_pats, (lam_patsi, _, _)) ->
                                   if length lam_pats = length lam_patsi
@@ -483,5 +482,54 @@ op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleS
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
    new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
+
+op MetaRule.mergePostConditions (spc: Spec) (tm: MSTerm): Option MSTerm =
+  % let _ = writeLine("mergePostConditions:\n"^printTerm tm) in
+  case tm of
+    | TypedTerm(orig_tm, orig_ty, a) ->
+      (case getPostCondn(orig_ty, spc) of
+         | None -> (warn("mergePostConditions: No postcondition.");
+                    None)
+         | Some(orig_pc_pat, orig_pc) ->
+       let (params, bod) = curriedParamsBody orig_tm in
+       case getFnArgs bod of
+         | Some(Fun(Op(qid, _), _, _), args) ->
+           (case findTheOp(spc, qid) of
+             | None -> None
+             | Some info ->
+            let (_, ty, sub_dfn) = unpackFirstOpDef info in
+            case getPostCondn(ty, spc) of
+              | None -> (warn("mergePostConditions: No postcondition.");
+                         None)
+              | Some(sub_pat, sub_pc) ->
+            case matchPatterns(orig_pc_pat, sub_pat) of
+              | None -> (warn("mergePostConditions: Incompatible postconditions.");
+                         None)
+              | Some pc_sbst ->
+            % let _ = printVarSubst pc_sbst in
+            let (sub_params, _) = curriedParamsBody sub_dfn in
+            if length args ~= length sub_params
+              then (warn("mergePostConditions: Mismatch in number of args and parameters.");
+                         None)
+            else
+            case foldl (fn (o_sbst, (param, arg)) ->
+                          case o_sbst of
+                            | None -> None
+                            | Some sbst ->
+                          case patternMatch(param, arg, sbst) of
+                            | Match sbst -> Some sbst
+                            | _ -> None)
+                   (Some pc_sbst) (zip(sub_params, args)) of
+                | None -> (warn("mergePostConditions: Can't unfold body -- mismatch with parameters.");
+                           None)
+                | Some sbst ->
+             % let _ = printVarSubst sbst in
+             let new_ty = addPostCondition(substitute(sub_pc, sbst), orig_ty) in
+             let new_tm = mkCurriedLambda(params, Any noPos) in
+             Some(TypedTerm(new_tm, new_ty, a)))
+         | None -> (warn("mergePostConditions: Body not a function application.");
+                    None))
+    | _ -> (warn("mergePostConditions: Must be applied to typed term.");
+            None)
 
 end-spec
