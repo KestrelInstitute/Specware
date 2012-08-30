@@ -1705,6 +1705,12 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       then ty
       else exp_ty
 
+ op range_*(spc: Spec, ty: MSType, ign_subtypes?: Bool): MSType =
+   case unfoldBase (spc, ty)
+    of Arrow(_, rng, _) -> range_*(spc, rng, ign_subtypes?)
+     | Subtype(st, _, _) | ign_subtypes? -> range_*(spc, st, ign_subtypes?)
+     | _ -> ty
+
  op existsInFullType? (spc: Spec) (pred?: MSType -> Bool) (ty: MSType): Bool =
    pred? ty ||
    (case ty of
@@ -2863,7 +2869,13 @@ op substVarNames(old_tm: MSTerm, new_tm: MSTerm): MSTerm =
    in
    subst(old_tm, new_tm, []) 
 
+op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
+  case range_*(spc, ty, false) of
+    | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) -> Some(pat, condn)
+    | _ -> None
+
+
 %% This should be improved
 op nonExecutableTerm?(tm: MSTerm): Bool =
   existsSubTerm (embed? Bind) tm
-endspec
+end-spec

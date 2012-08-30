@@ -76,8 +76,11 @@ MS qualifying spec
  def stringType  = mkBase (Qualified("String",  "String"), [])
  op voidType : MSType = mkProduct[]
 
- op listCharType     : MSType = mkBase(Qualified("List",  "List"),  [charType])
- op optionStringType : MSType = mkBase(Qualified("Option","Option"),[stringType])
+ op mkListType  (ty: MSType): MSType = mkBase(Qualified("List",  "List"),   [ty])
+ op mkOptionType(ty: MSType): MSType = mkBase(Qualified("Option","Option"), [ty])
+
+ op listCharType     : MSType = mkListType charType
+ op optionStringType : MSType = mkOptionType stringType
 
 
  def unaryBoolType  = mkArrow (boolType, boolType)
@@ -370,6 +373,12 @@ MS qualifying spec
  def mkQuotientPat   (p, qid)     = QuotientPat   (p, qid,        noPos)
  def mkRestrictedPat (p, tm)      = RestrictedPat (p, tm,         noPos)
  def mkTypedPat      (p, typ)     = TypedPat      (p, typ,        noPos)
+
+ op mkConsPat(p1: MSPattern, p2: MSPattern): MSPattern = mkEmbedPat("Cons", Some(mkTuplePat[p1, p2]), patternType p2)
+ op mkNilPat(ty: MSType): MSPattern = mkEmbedPat("Nil", None, ty)
+ op mkListPat(pats: MSPatterns | pats ~= []): MSPattern =
+   let el_ty = patternType(pats@0) in
+   foldr mkConsPat (mkNilPat(mkListType el_ty)) pats
 
  def patternToList t =
     case t of

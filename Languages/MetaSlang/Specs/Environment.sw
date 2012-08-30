@@ -70,9 +70,7 @@ op stripSubtypesAndBaseDefs (spc : Spec) (typ : MSType) : MSType =
   let 
     def strip typ =
       case typ of
-
         | Subtype (typ, _, _) -> strip typ
-
         | Base (qid, typs, a) ->
           (case findTheType (spc, qid) of
              | Some info ->
@@ -203,13 +201,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
     of Arrow _ -> true
      | _ -> false
 
- op range_*(spc: Spec, ty: MSType, ign_subtypes?: Bool): MSType =
-   case unfoldBase (spc, ty)
-    of Arrow(_, rng, _) -> range_*(spc, rng, ign_subtypes?)
-     | Subtype(st, _, _) | ign_subtypes? -> range_*(spc, st, ign_subtypes?)
-     | _ -> ty
-
- %- def arrowOpt(sp:Spec,srt:Type) = 
+  %- def arrowOpt(sp:Spec,srt:Type) = 
  %-   let res = arrowOpt_(sp,srt) in
  %-   let _ = writeLine("arrowOpt("^printType(srt)^")="^
  %-                       (case res
