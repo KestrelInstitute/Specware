@@ -11,6 +11,7 @@
 (defpackage :swank)
 (defpackage :AnnSpecPrinter)
 (defpackage :ShowDeps)
+(defpackage :ShowImports)
 
 ;; Toplevel Lisp aliases for Specware
 
@@ -902,6 +903,24 @@
         nil ;does this return value matter?
         ;; strip the :|Some| to get the string
         (setq *last-unit-Id-_loaded* (cdr val)))))
+
+;;; This is the function invoked by the Specware shell command 'showimports'.
+;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
+(defun showimports (&optional argstring)
+  ;; This calls the Lisp translation of op evaluateShowImports (from
+  ;; Languages/SpecCalculus/AbstractSyntax/ShowImports.sw).  The "-3" in
+  ;; the Lisp function name is added during the translation to Lisp.
+  ;; My approach is to have the Metaslang code do all of the argument
+  ;; parsing.
+  (let ((val (ShowImports::evaluateShowImports-3 (wrap-option argstring)
+                                           (wrap-option *last-unit-Id-_loaded*)
+                                           (home-dir))))
+    ;;evaluateShowImports returns an optional string to store in *last-unit-Id-_loaded*
+    (if (equal val '(:|None|))
+        nil ;does this return value matter?
+        ;; strip the :|Some| to get the string
+        (setq *last-unit-Id-_loaded* (cdr val)))))
+
 
 
 
