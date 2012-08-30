@@ -3,19 +3,19 @@ CurryUtils qualifying spec
   import ../Specs/Environment
 
   op  curriedType?: Spec * MSType -> Bool
-  def curriedType?(sp,srt) = curryShapeNum(sp,srt) > 1
+  def curriedType?(sp,ty) = curryShapeNum(sp,ty) > 1
 
   op  curryShapeNum: Spec * MSType -> Nat
-  def curryShapeNum(sp,srt) =
-    let srt = typeInnerType srt in % might not be needed, but ...
-    case arrowOpt(sp,srt)
+  def curryShapeNum(sp,ty) =
+    let ty = typeInnerType ty in % might not be needed, but ...
+    case arrowOpt(sp,ty)
       of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
        | _ -> 0
 
   op  curryArgTypes: Spec * MSType -> MSTypes
-  def curryArgTypes(sp,srt) =
-    let srt = typeInnerType srt in % might not be needed, but ...
-    case arrowOpt(sp,srt)
+  def curryArgTypes(sp,ty) =
+    let ty = typeInnerType ty in % might not be needed, but ...
+    case arrowOpt(sp,ty)
       of Some (dom,rng) -> Cons(stripSubtypes(sp,dom),curryArgTypes(sp,rng))
        | _ -> []
 
@@ -37,7 +37,7 @@ CurryUtils qualifying spec
   def getCurryArgs t =
     let def aux(term, i, args) =
         case term
-          of Fun(_, srt, _) ->
+          of Fun(_, ty, _) ->
              if i > 1
                then Some(term, args)
               else None
@@ -53,10 +53,16 @@ CurryUtils qualifying spec
       | Apply(_, a1, _) -> termToList a1
       | _ -> []
 
-  op mkCurriedLambda(params, body): MSTerm =
-    case params of
-      | [] -> body
-      | p::r -> mkLambda(p, mkCurriedLambda(r, body))
+  def getFnArgs(t: MSTerm): Option (MSTerm * MSTerms) =
+    let def aux(term, args) =
+        case term
+          of Fun(_, ty, _) -> Some(term, args)
+           | Apply(t1, t2, _) -> aux(t1, t2::args)
+           | _ -> None
+  in aux(t, [])
+
+  op mkCurriedLambda(lam_pats: MSPatterns, bod: MSTerm): MSTerm =
+    foldr (fn (pat, bod) -> mkLambda(pat, bod)) bod lam_pats
 
   op  curriedParams: MSTerm -> MSPatterns * MSTerm
   def curriedParams defn =
@@ -95,8 +101,8 @@ CurryUtils qualifying spec
  
 
   op  noncurryArgTypes: Spec * MSType -> MSTypes
-  def noncurryArgTypes(sp,srt) =
-    case arrowOpt(sp,srt)
+  def noncurryArgTypes(sp,ty) =
+    case arrowOpt(sp,ty)
       of Some (dom,_) ->
 	 (case productOpt(sp,dom) of
 	   | Some fields -> map (fn(_,s) -> s) fields
