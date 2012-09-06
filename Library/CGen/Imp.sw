@@ -156,5 +156,9 @@ theorem rec_aux_to_loop1 is [A,B]
        ;  return r
        } 
 
+proof isa e_cqt_Obligation_subtype 
+  sorry
+end-proof
+
 
 endspec
