@@ -31,19 +31,19 @@ theorem update_at_neq is [a]
 op Array.+ (x: Array Int, y: Array Int | length x = length y) infixl 25
             : Array Int
    = the (z: Array Int)  length z = length x &&
-             (fa (i) i < length x => z @ i = x @ i + y @ i)
+             (fa (i:Nat) i < length x => z @ i = x @ i + y @ i)
 
 op Array.- (x: Array Int, y: Array Int | length x = length y) infixl 25
             : Array Int
    = the (z: Array Int)  length z = length x &&
-             (fa (i) i < length x => z @ i = x @ i - y @ i)
+             (fa (i:Nat) i < length x => z @ i = x @ i - y @ i)
 
 op Array.* (x: Array Int, y: Array Int | length x = length y) infixl 27
             : Array Int
    = the (z: Array Int)  length z = length x &&
-             (fa (i) i < length x => z @ i = x @ i * y @ i)
+             (fa (i:Nat) i < length x => z @ i = x @ i * y @ i)
 
-op array_sum (array elems : Array Int) : Int =  foldl (+) 0 elems
+op array_sum (array elems : Array Int) : Int =  foldl (+) (0:Int) elems
 
 op mult (x: Array Int, y: Array Int | length x = length y) infixl 27
             : Int
@@ -51,6 +51,44 @@ op mult (x: Array Int, y: Array Int | length x = length y) infixl 27
 
 op [a] sortt (ord:LinearOrder a) (array elems : Array a) : Array a 
     = array (List.sortt ord elems)
+
+proof isa update_length
+  apply(case_tac arr)
+  apply(auto)
+end-proof
+
+proof isa update_at_same_Obligation_subtype0 
+  apply(case_tac arr)
+  apply(auto)
+end-proof
+
+proof isa update_at_same
+  apply(case_tac arr)
+  apply(auto)
+end-proof
+
+proof isa update_at_neq_Obligation_subtype0
+  apply(case_tac arr)
+  apply(auto)
+end-proof
+
+proof isa update_at_neq
+  apply(case_tac arr)
+  apply(auto)
+end-proof
+
+proof isa Array__e_pls_Obligation_the
+  sorry
+end-proof
+
+proof isa Array__e_dsh_Obligation_the
+  sorry
+end-proof
+
+proof isa Array__e_ast_Obligation_the
+  sorry
+end-proof
+
 
 endspec
 
