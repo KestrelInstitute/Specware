@@ -128,12 +128,13 @@ ASW_Printer_SExp qualifying spec
 		 ppString "endSCspec)"]
 
       | Qualify (term, qualifier) ->
-        ppConcat [ppString "qualifying ",
+        ppConcat [ppString "(Qualify ",
+		  ppSCTerm c term,
+		  ppString " ",
+		  ppBreak,
 		  ppID qualifier,
-		  ppString " in ",
-		  ppNewline,
-		  ppSCTerm c term]
-
+		  ppString ")",
+		  ppBreak]
       | Translate (term, renaming) ->
 	ppConcat [ppString "translate ",
 		  ppSCTerm c term,
@@ -946,7 +947,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 
 op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean) : WLPretty  =
     case elem of
-      | Import (im_sc_tm, im_sp, im_elements,pos) ->
+      | Import (im_sc_tm, im_sp, im_elements, pos) ->
         ppConcat [if c.printPositionInfo?
 		    then ppPosition c pos
 		  else ppNil,
