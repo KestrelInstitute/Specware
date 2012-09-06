@@ -108,8 +108,8 @@ MetaSlang qualifying spec
   | Restrict
   | Relax
 
-  | PQuotient      TypeName
-  | PChoose        TypeName
+  | PQuotient      TypeName % Before elaborateSpec
+  | PChoose        TypeName % Before elaborateSpec
 
   | Op             QualifiedId * Fixity
   | Project        Id
