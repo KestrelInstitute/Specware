@@ -4,7 +4,7 @@
 
 Array = spec 
 
-import /Library/CGen/CTarget
+import CTarget
 
 op [a] @ (array elems : Array a, i:Nat | i < length elems) infixl 30 : a =
   elems @ i
