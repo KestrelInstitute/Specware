@@ -49,8 +49,9 @@ op mult (x: Array Int, y: Array Int | length x = length y) infixl 27
             : Int
    = array_sum (x * y)
 
-op [a] sortt (ord:LinearOrder a) (array elems : Array a) : Array a 
-    = array (List.sortt ord elems)
+%% Currently, the translation of this is rejected by Isabelle.
+% op [a] sortt (ord:LinearOrder a) (array elems : Array a) : Array a 
+%     = array (List.sortt ord elems)
 
 proof isa update_length
   apply(case_tac arr)
@@ -100,7 +101,7 @@ Array1 = spec
   import Array
 
 refine def array_sum (arr : Array Int) : Int  
- = let def aux (n:Int | n < length arr): Int
+ = let def aux (n:Nat | n <= length arr): Int
             = if n = 0 then 0 else aux (n-1) + arr @ (n-1)
    in aux (length arr)
 
@@ -112,7 +113,7 @@ theorem isucc_is_add_1 is    fa (x:Int) isucc x = x + 1
 
 theorem ipred_is_sub_1 is    fa (x:Int) ipred x = x - 1
 
-op abs_add (arr: Array Int) (n:Int, r: Int | n < length arr) : Int 
+op abs_add (arr: Array Int) (n:Nat, r: Int | n < length arr) : Int 
    =  r + arr @ n
 
 endspec
