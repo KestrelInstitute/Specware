@@ -45,6 +45,13 @@ CurryUtils qualifying spec
            | _ -> None
   in aux(t, 0, [])
 
+  op numCurryArgs(t: MSTerm): Nat =
+    let def aux(term, i) =
+          case term of
+           | Apply(t1, _, _) -> aux(t1, i+1)
+           | _ -> i
+    in aux(t, 0)
+
   op getArgs(term: MSTerm): MSTerms =
     case getCurryArgs term of
       | Some(_, args) -> args

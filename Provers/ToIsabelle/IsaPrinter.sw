@@ -734,7 +734,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = writeLine("4:\n"^printSpec spc) in
     % let _ = printSpecWithTypesToTerminal spc in
     let spc = exploitOverloading coercions false spc in
-    % let _ = writeLine("10:\n"^printSpec spc) in
+    % let _ = writeLine("5:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
                                                 if generateObligsForSTPFuns? spc
@@ -1613,6 +1613,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
 
  op  defToFunCases: Context -> MSTerm -> MSTerm -> List (MSTerm * MSTerm)
  def defToFunCases c op_tm bod =
+   let spc = getSpec c in
    let
      def aux(hd, bod) =
        % let _ = writeLine("dtfc: "^printTerm hd^" = "^printTerm bod) in
@@ -1694,7 +1695,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
            let cases2 = aux(substitute(hd, [(v,mkApply(mkOp(Qualified("Nat","succ"),
                                                             mkArrow(natType, natType)),
                                                        vr))]),
-                            simpSubstitute(getSpec c, else_cl,
+                            simpSubstitute(spc, else_cl,
                                            [(v,mkApply(mkOp(Qualified("Integer","+"),
                                                             mkArrow(mkProduct [natType, natType],
                                                                     natType)),
@@ -1707,7 +1708,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
      def fix_vars(hd,bod) =
        case hd of
          | Fun(_, ty, _) ->
-           (case arrowOpt(getSpec c, ty) of
+           (case arrowOpt(spc, ty) of
               | Some(dom,_) ->
                 let new_v = mkVar("x__a", dom) in
                 (mkApply(hd, new_v), mkApply(bod, new_v))
@@ -1734,8 +1735,25 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
              cases
            | _ -> aux(op_tm, bod)
    in
+   let def normalize_args cases =
+         %% Make sure all cases have the same number of args
+         let (max_args, min_args) = foldl (fn ((mx,mn), (x,_)) ->
+                                             let nc_args = numCurryArgs x in
+                                             (max(mx, nc_args), min(mn, nc_args)))
+                                      (0, 100) cases
+         in
+         if max_args = min_args then cases
+           else normalize_args(map (fn (x,y) ->
+                                      let num_args = numCurryArgs x in
+                                      if num_args = max_args then (x,y)
+                                      else
+                                        let v = mkVar("xx__"^show num_args, range(spc, inferType(spc, x))) in
+                                        (mkApply(x, v), mkApply(y, v)))
+                                 cases)
+   in
+   let cases = normalize_args cases in
    % let _ = app (fn (x,y) -> writeLine(printTerm x^" -> "^printTerm y)) cases in
-   %let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
+   % let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases)
 
  op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Bool =
@@ -2280,7 +2298,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
       def fCV(st, vs: Vars, bound_vs: Vars): Vars =
         % let _ = writeLine("fCV: "^printTerm st^"\n"^anyToString (map (fn (x,_) -> x) vs)) in
         let vs = case st of
-                   | Apply(f as Fun(Op(Qualified(q,id),_),_,_),arg,_) ->
+                   | Apply(f as Fun(Op(qid as Qualified(q,id),_),_,_),arg,_) % !!!| ~(polymorphic? (getSpec c) qid)
+                     ->
                      filterKnown(vs, id, f, termList arg, bound_vs)
                    | Apply(Fun(Embed(id,_),_,_),arg,_) ->
                      if id in? c.overloadedConstructors
@@ -2290,7 +2309,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                      removeArgs(vs, termList arg, bound_vs)
                    | _ ->
                  case CurryUtils.getCurryArgs st of
-                   | Some(f as Fun(Op(Qualified(q,id),_),_,_),args) ->
+                   | Some(f as Fun(Op(qid as Qualified(q,id),_),_,_),args) % !!!!| ~(polymorphic? (getSpec c) qid)
+                     ->
                      filterKnown(vs, id, f, args, bound_vs)
                    | _ -> vs
         in
@@ -2868,7 +2888,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                                       (map ppDecl decls)),
                                         prSpace],
                                prString "in "],
-                            ppTerm c parentTerm term])
+                            %% For some reason Isabelle always wants a lambda in a let to be parenthesized
+                            %% in all cases. This is conservative, but not too bad.
+                            ppTerm c (if parentTerm = Top then Nonfix else parentTerm) term])
      | LetRec (decls,term,_) ->
        let def ppDecl (v,term) =
              prBreak 0 [%prString "def ",
