@@ -1,7 +1,6 @@
 (*   wrapper for calling the C generator *)
 
 SpecCalc qualifying spec
-{
   import UnitId
   import /Languages/MetaSlang/CodeGen/C/CG
 
@@ -13,4 +12,5 @@ SpecCalc qualifying spec
     return (generateCCode (app_name, spc, opt_filename));
     return value_info
     }
-}
+end-spec
+

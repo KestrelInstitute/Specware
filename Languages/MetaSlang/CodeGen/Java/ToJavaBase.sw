@@ -345,7 +345,7 @@ def JVoid = (Basic Void,0)
 
 %op typeId: MSType -> String 
 %def CodeGenTransforms.typeId(srt) = (project 1)(srtId srt)
-def Java.typeId(srt) = 
+op Java.typeId(srt: MSType): Id = 
   case srtIdM srt initialState of
     | (Ok id,_) -> id
     | _ -> fail("fail in CodeGenTransforms.typeId("^(printType srt)^")")

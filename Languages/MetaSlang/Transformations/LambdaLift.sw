@@ -15,7 +15,7 @@
 
 LambdaLift qualifying spec
  import ArityNormalize
- import Map qualifying /Library/Structures/Data/Maps/Simple
+ %import Map qualifying /Library/Structures/Data/Maps/Simple
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
  import Simplify
 

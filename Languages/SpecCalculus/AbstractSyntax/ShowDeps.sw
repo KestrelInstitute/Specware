@@ -51,7 +51,7 @@ type SpecElem = SpecElemTerm
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
 
-type GlobalContext
+type SpecCalc.GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
 op  Specware.evaluateUnitId: String -> Option Value
 op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
