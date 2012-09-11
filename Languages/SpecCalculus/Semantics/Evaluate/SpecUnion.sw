@@ -42,7 +42,7 @@ SpecUnion qualifying spec
    in
    let new_spec = removeDuplicateImports new_spec in
    let new_spec = removeVarOpCaptures    new_spec in
-   let new_spec = compressDefs           new_spec in
+   % let new_spec = compressDefs           new_spec in
    new_spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

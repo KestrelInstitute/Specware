@@ -14,7 +14,7 @@ SpecCalc qualifying spec
          {
 	  pos_spec <- evaluateSpecEltElems spc op_elts;
 	  elaborated_spec <- elaborateSpecM pos_spec;
-	  compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) pos;
+	  compressed_spec <- complainIfAmbiguous elaborated_spec pos; % (compressDefs elaborated_spec) pos;
           ordered_spec <- return(adjustElementOrder compressed_spec);
 	  return (Spec ordered_spec, spec_timestamp, spec_dep_UIDs)
 	  }

@@ -25,7 +25,7 @@ SpecCalc qualifying spec
         let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
         {
          new_spec   <- applySpecMorphismSubstitution sm spc subst_tm term_pos;
-         compressed <- complainIfAmbiguous (compressDefs new_spec)   term_pos;
+         compressed <- complainIfAmbiguous new_spec term_pos;  %(compressDefs new_spec)   term_pos;
          return (Spec compressed, timeStamp, dep_UIDs)
          }
 
@@ -34,7 +34,7 @@ SpecCalc qualifying spec
         let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
         {
          new_spec   <- applySpecPrismSubstitution prsm spc subst_tm term_pos;
-         compressed <- complainIfAmbiguous (compressDefs new_spec)   term_pos;
+         compressed <- complainIfAmbiguous new_spec term_pos;  %(compressDefs new_spec)   term_pos;
          return (Spec compressed, timeStamp, dep_UIDs)
          }
 

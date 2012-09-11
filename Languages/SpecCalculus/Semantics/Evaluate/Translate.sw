@@ -679,7 +679,7 @@ SpecCalc qualifying spec
      %% So we do alpha conversions if a bound var has an op of the same
      %% name under its scope:
      new_spec     <- return (removeVarOpCaptures new_spec);
-     new_spec     <- return (compressDefs        new_spec);
+     % new_spec     <- return (compressDefs        new_spec);
      return new_spec
     }
 
