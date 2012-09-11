@@ -10,8 +10,7 @@
                        slime-editing-commands
                        slime-fancy-inspector
                        slime-fuzzy
-                       ;; sjw
-                       ;; slime-presentations
+                       slime-presentations
                        slime-scratch
                        slime-references
                        slime-package-fu
@@ -23,8 +22,7 @@
    (slime-editing-commands-init)
    (slime-fancy-inspector-init)
    (slime-fuzzy-init)
-   ;; sjw
-   ;; (slime-presentations-init)
+   (slime-presentations-init)
    (slime-scratch-init)
    (slime-references-init)
    (slime-package-fu-init)
