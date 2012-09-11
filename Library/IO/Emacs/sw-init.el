@@ -796,6 +796,7 @@ sLisp Heap Image File: ")
     (setq *specware-build-buffer* (current-buffer)))
 
   (set-buffer *specware-build-buffer-name*)
+  (add-hook 'comint-output-filter-functions 'run-specware-after-saving-lisp-image nil t)
   (install-bridge)
   (setq bridge-handlers '(("(" . emacs-eval-handler))))
 
@@ -877,7 +878,7 @@ sLisp Heap Image File: ")
             (file-newer-than-file-p specware4-base-lisp specware-executable))
         (specware-build in-current-dir? nil 'boot)
       (progn (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*) 
-             (sit-for 1)
+             (sit-for 0.5)
              (specware-build-command "(progn (cl:time (cl-user::boot)) %s (cl-user::finish-output t) (cl-user::quit))"
                                      (specware-build-eval-emacs-str "(specware-build %s nil t)"
                                                                     in-current-dir?))))))
@@ -910,7 +911,7 @@ sLisp Heap Image File: ")
     (prepare-specware-build-buffer *specware-build-buffer-name* build-dir)
 
     (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
-    (sit-for 1)
+    (sit-for 0.5)
     (specware-build-command "(cl:load %S)"
                             (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors"))
     (if (and (file-exists-p specware4-lisp-binary)
@@ -925,7 +926,8 @@ sLisp Heap Image File: ")
                                                                      in-current-dir?)
                                       specware-executable)
             (specware-build-command "(progn (cl:load %S) (force-output t) (sb-ext:save-lisp-and-die %S :executable t))"
-                                    specware4-loader specware-executable)))
+                                    specware4-loader
+                                    specware-executable)))
       (if secondTime?
           (message "Failed to build Specware!")
         (specware-build-command "(progn (cl:load %S) %s (cl-user::finish-output t) (cl-user::quit))"
@@ -933,6 +935,14 @@ sLisp Heap Image File: ")
                                 (specware-build-eval-emacs-str "(specware-build %s t '%s)"
                                                                in-current-dir?
                                                                (or continuation? t)))))))
+
+(defvar saving-lisp-image-regexp "\\[saving current Lisp image into ")
+
+(defun run-specware-after-saving-lisp-image (output)
+  (when (string-match saving-lisp-image-regexp output)
+    (sit-for 1)
+    (run-specware4))
+  output)
 
 (defun bootstrap-specware4-and-then-exit (&optional in-current-dir?)
   (interactive "P")

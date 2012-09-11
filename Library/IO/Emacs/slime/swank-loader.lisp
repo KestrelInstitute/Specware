@@ -10,13 +10,12 @@
 
 ;; If you want customize the source- or fasl-directory you can set
 ;; swank-loader:*source-directory* resp. swank-loader:*fasl-directory*
-;; before loading this files. (you also need to create the
-;; swank-loader package.)
+;; before loading this files. 
 ;; E.g.:
 ;;
-;;   (make-package :swank-loader)
-;;   (defparameter swank-loader::*fasl-directory* "/tmp/fasl/")
 ;;   (load ".../swank-loader.lisp")
+;;   (setq swank-loader::*fasl-directory* "/tmp/fasl/")
+;;   (swank-loader:init)
 
 (cl:defpackage :swank-loader
   (:use :cl)
@@ -74,7 +73,11 @@
 (defun lisp-version-string ()
   #+(or clozure cmu) (substitute-if #\_ (lambda (x) (find x " /"))
                                     (lisp-implementation-version))
-  #+(or cormanlisp scl sbcl) (lisp-implementation-version)
+  #+(or cormanlisp scl) (lisp-implementation-version)
+  #+sbcl (format nil "~a~:[~;-no-threads~]"
+                 (lisp-implementation-version)
+                 #+sb-thread nil
+                 #-sb-thread t)
   #+lispworks (lisp-implementation-version)
   #+allegro   (format nil "~A~A~A~A"
                       excl::*common-lisp-version-number*
@@ -148,9 +151,7 @@ Return nil if nothing appropriate is available."
             "~%Error while ~A ~A:~%  ~A~%Aborting.~%"
             context pathname condition))
   (when (equal (directory-namestring pathname)
-               ;; Without the following test, this may delete the source file if the binary doesn't exist!
-               (and (not (equal (pathname-name pathname) "lisp")) ;; good grief -- did anyone think about this??? 
-                    (directory-namestring *fasl-directory*)))
+               (directory-namestring *fasl-directory*))
     (ignore-errors (delete-file pathname)))
   (abort))
 
@@ -216,16 +217,15 @@ If LOAD is true, load the fasl file."
   `(swank-backend ,@*sysdep-files* swank-match swank-rpc swank))
 
 (defvar *contribs*
-  '(swank-c-p-c swank-arglists swank-fuzzy
-    ;; These plant time bombs that make sbcl choke during subsequent builds,
-    ;; by chaning the number of slots in a class structure.
-    ;; Evil. Evil. Evil.
-    ;; swank-fancy-inspector
-    ;; swank-presentations swank-presentation-streams
+  '(swank-util swank-repl
+    swank-c-p-c swank-arglists swank-fuzzy
+    swank-fancy-inspector
+    swank-presentations swank-presentation-streams
     #+(or asdf sbcl ecl) swank-asdf
     swank-package-fu
     swank-hyperdoc
     #+sbcl swank-sbcl-exts
+    swank-mrepl
     )
   "List of names for contrib modules.")
 
@@ -245,11 +245,24 @@ If LOAD is true, load the fasl file."
            (list (contrib-dir fasl-dir)
                  (contrib-dir src-dir))))
 
+(defun delete-stale-contrib-fasl-files (swank-files contrib-files fasl-dir)
+  (let ((newest (reduce #'max (mapcar #'file-write-date swank-files))))
+    (dolist (src contrib-files)
+      (let ((fasl (binary-pathname src fasl-dir)))
+        (when (and (probe-file fasl)
+                   (<= (file-write-date fasl) newest))
+          (delete-file fasl))))))
+
 (defun compile-contribs (&key (src-dir (contrib-dir *source-directory*))
-                         (fasl-dir (contrib-dir *fasl-directory*))
-                         load)
-  (compile-files (src-files *contribs* src-dir) fasl-dir load))
-  
+                           (fasl-dir (contrib-dir *fasl-directory*))
+                           (swank-src-dir *source-directory*)
+                           load)
+  (let* ((swank-src-files (src-files *swank-files* swank-src-dir))
+         (contrib-src-files (src-files *contribs* src-dir)))
+    (delete-stale-contrib-fasl-files swank-src-files contrib-src-files 
+                                     fasl-dir)
+    (compile-files contrib-src-files fasl-dir load)))
+
 (defun loadup ()
   (load-swank)
   (compile-contribs :load t))
@@ -274,9 +287,8 @@ global variabes in SWANK."
     (mapc #'delete-package '(:swank :swank-io-package :swank-backend)))
   (cond ((or (not (find-package :swank)) reload)
          (load-swank))
-        (t
-         ;; sjw  warn --> format t
-         (format t "Not reloading SWANK.  Package already exists.")))
+        (t 
+         (warn "Not reloading SWANK.  Package already exists.")))
   (when load-contribs
     (compile-contribs :load t))
   (when setup

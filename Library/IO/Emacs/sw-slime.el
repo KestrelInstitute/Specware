@@ -66,8 +66,7 @@
   "Return a string to initialize Lisp."
   (let ((loader (if (file-name-absolute-p slime-backend)
                     slime-backend
-                  (concat slime-path slime-backend)))
-        (encoding (slime-coding-system-cl-name coding-system)))
+                  (concat slime-path slime-backend))))
     (setq *sw-slime-prompt* "* ")
     (format "(progn %S\n%S\n%S\n%S\n%S)\n\n"
             `(unless (and (find-package "SWANK") 
@@ -82,8 +81,7 @@
             `(funcall (read-from-string "swank:start-server")
                         ,(sw::normalize-filename ; slime-to-lisp-filename
                           (if cygwin? (concat "/cygwin" port-filename)
-                            port-filename))
-                        :coding-system ,encoding))))
+                            port-filename))))))
 
 ;;; based on slime-repl-return
 (defun sw-return (&optional end-of-input)
@@ -275,6 +273,23 @@ If NEWLINE is true then add a newline at the end of the input."
                           (buffer "*inferior-lisp*")
                           init-function
                           env)
+  "Start a Lisp process and connect to it.
+This function is intended for programmatic use if `slime' is not
+flexible enough.
+
+PROGRAM and PROGRAM-ARGS are the filename and argument strings
+  for the subprocess.
+INIT is a function that should return a string to load and start
+  Swank. The function will be called with the PORT-FILENAME and ENCODING as
+  arguments.  INIT defaults to `slime-init-command'. 
+CODING-SYSTEM a symbol for the coding system. The default is 
+  slime-net-coding-system
+ENV environment variables for the subprocess (see `process-environment').
+INIT-FUNCTION function to call right after the connection is established.
+BUFFER the name of the buffer to use for the subprocess.
+NAME a symbol to describe the Lisp implementation
+DIRECTORY change to this directory before starting the process.
+"
   (setq sw:license-displayed-p nil)
   (if (and (eq *specware-lisp* 'allegro) *windows-system-p*)
       (slime-allegro-windows program program-args)
@@ -305,26 +320,31 @@ If NEWLINE is true then add a newline at the end of the input."
       (sleep-for 0.2))
     (slime-eval-async '(setq Specware::*using-slime-interface?* t))))
 
-(defun slime-connect (host port &optional coding-system)
-  "Connect to a running Swank server. Return the connection."
-  (interactive (list (read-from-minibuffer "Host: " slime-lisp-host)
-                     (read-from-minibuffer "Port: " (format "%d" slime-port)
-                                           nil t)))
-  (when (and (interactive-p) slime-net-processes
-             (y-or-n-p "Close old connections first? "))
-    (slime-disconnect-all))
-  (message "Connecting to Swank on port %S.." port)
-  (let ((coding-system (or coding-system slime-net-coding-system)))
-    (slime-check-coding-system coding-system)
-    (message "Connecting to Swank on port %S.." port)
-    (let* ((port 
-            ;; deal with apparent bug in some xemacs versions
-            ;; that seem unprepared for ports as numbers
-            ;; e.g. 21.4.15
-            (if (or *windows-system-p* cygwin?) port (format "%S" port)))
-           (process (slime-net-connect host port coding-system))
-           (slime-dispatching-connection process))
-      (slime-setup-connection process))))
+;; (defun slime-connect (host port &optional coding-system interactive-p)
+;;   "Connect to a running Swank server. Return the connection."
+;;   (interactive (list (read-from-minibuffer
+;;                       "Host: " (first slime-connect-host-history)
+;;                       nil nil '(slime-connect-host-history . 1))
+;;                      (string-to-number
+;;                       (read-from-minibuffer
+;;                        "Port: " (first slime-connect-port-history)
+;;                        nil nil '(slime-connect-port-history . 1)))
+;;                      nil t))
+;;   (when (and (interactive-p) slime-net-processes
+;;              (y-or-n-p "Close old connections first? "))
+;;     (slime-disconnect-all))
+;;   (message "Connecting to Swank on port %S.." port)
+;;   (let ((coding-system (or coding-system slime-net-coding-system)))
+;;     (slime-check-coding-system coding-system)
+;;     (message "Connecting to Swank on port %S.." port)
+;;     (let* ((port 
+;;             ;; deal with apparent bug in some xemacs versions
+;;             ;; that seem unprepared for ports as numbers
+;;             ;; e.g. 21.4.15
+;;             (if (or *windows-system-p* cygwin?) port (format "%S" port)))
+;;            (process (slime-net-connect host port coding-system))
+;;            (slime-dispatching-connection process))
+;;       (slime-setup-connection process))))
 
 (defvar specware-listener-p nil)
 
@@ -367,24 +387,25 @@ to end end."
       (funcall old-slime-repl-insert-prompt)  
     (progn
       (goto-char slime-repl-input-start-mark)
+      (unless slime-repl-suppress-prompt
       (slime-save-marker slime-output-start
-        (slime-save-marker slime-output-end
-          (unless (bolp) (insert-before-markers "\n"))
-          (let ((prompt-start (point)))
-            (slime-propertize-region
-                '(face slime-repl-prompt-face read-only t intangible t
-                       slime-repl-prompt t
-                       ;; emacs stuff
-                       rear-nonsticky (slime-repl-prompt read-only face intangible)
-                       ;; xemacs stuff
-                       start-open t end-open t)
-              (insert-before-markers *sw-slime-prompt*))
-            (set-marker slime-repl-prompt-start-mark prompt-start)
-            (unless sw:license-displayed-p
-              (when (equal sw:system-name "Specware")
-                (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
-              (setq sw:license-displayed-p t))
-            prompt-start))))))
+      (slime-save-marker slime-output-end
+        (unless (bolp) (insert-before-markers "\n"))
+        (let ((prompt-start (point)))
+          (slime-propertize-region
+              '(face slime-repl-prompt-face read-only t intangible t
+                     slime-repl-prompt t
+                     ;; emacs stuff
+                     rear-nonsticky (slime-repl-prompt read-only face intangible)
+                     ;; xemacs stuff
+                     start-open t end-open t)
+            (insert-before-markers *sw-slime-prompt*))
+          (set-marker slime-repl-prompt-start-mark prompt-start)
+          (unless sw:license-displayed-p
+            (when (equal sw:system-name "Specware")
+              (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
+            (setq sw:license-displayed-p t))
+          prompt-start)))))))
 
 (defun slime-repl-show-maximum-output ()
   "Put the end of the buffer at the bottom of the window."

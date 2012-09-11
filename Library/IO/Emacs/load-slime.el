@@ -66,7 +66,7 @@
       (byte-compile-file el-file))
     (load elc-file)))
 
-(custom-set-variables '(slime-repl-enable-presentations nil)
+(custom-set-variables '(slime-repl-enable-presentations t)
                       '(indent-tabs-mode nil))
 
 ;;; prep for loading slime.el...
@@ -96,7 +96,7 @@
   (slime-recompile-bytecode)
   (load-library "slime")))
 
-(slime-setup '(slime-repl slime-fuzzy))
+(slime-setup '(slime-repl slime-fuzzy slime-sprof slime-presentations))
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
