@@ -2,6 +2,18 @@ CSE qualifying
 spec
   import Simplify, CurryUtils
 
+(*
+Look for common terms bottom up. 
+Introduce lets for common terms as high up as possible within an unconditional context.
+Key to variables:
+  cse#: hold terms that have been found to be common but haven't been let bound.
+  single_tms#: terms that have occurred once
+  poss_tms#: terms that have occurred once, but within a conditional
+For common expressions involving multiple levels, the lower levels may be recognized first
+there is a final clean-up phase to get rid of introduced variables that are only used once 
+(in the more complex common expression)
+*)
+
   op newCSEs(cse1: List MSTerm, cse2: List MSTerm, tms1: List MSTerm, tms2: List MSTerm,
              poss_tms1: List MSTerm, poss_tms2: List MSTerm)
     : List MSTerm * List MSTerm * List MSTerm =
@@ -78,6 +90,24 @@ spec
 
       | None ->
     case t of
+      | Apply(setf_fn as Fun(Op(Qualified("System", "setf"), _), _, _),
+              Record([("1", term_to_modify as Apply _), ("2", val_term)], a1), a0) ->
+        let (new_val_term, cse2, tms2, ptms2, names) = recAbstractCSE(val_term, names, false, spc) in
+        let args = getArgs term_to_modify in
+        let (new_args, namses, cse_args, single_tms_args, poss_tms_args) =
+            foldr (fn (arg, (new_args, names, cse_args, single_tms_args, poss_tms_args)) ->
+                     let (arg1, cse1, tms1, ptms1, names) = recAbstractCSE(arg, names, false, spc) in
+                     let (new_cse, single_tms, poss_tms) = newCSEs(cse1, cse_args, tms1, single_tms_args, ptms1, poss_tms_args) in
+                     (arg1::new_args, names, new_cse, single_tms, poss_tms))
+              ([],names,[],[],[])
+              args
+        in
+        let (new_cse, single_tms, poss_tms) = newCSEs(cse2, cse_args, tms2, single_tms_args, ptms2, poss_tms_args) in
+        let sbst = filter (fn (x,y) -> ~(equalTerm?(x,y))) (zip(args, new_args)) in   % likely empty
+        let new_term_to_modify = replace(term_to_modify, sbst) in
+        let new_t = Apply(setf_fn, Record([("1", new_term_to_modify), ("2", new_val_term)], a1), a0) in
+        maybeAbstract(new_t, new_cse, names, bindable?, single_tms, poss_tms, spc)                     
+        
       | Apply(x,y,a) ->
         %% Careful about abstracting fns
         let (x1, cse1, tms1, ptms1, names) = recAbstractCSE(x, names, false, spc) in
@@ -101,8 +131,7 @@ spec
                       let (new_cse, single_tms, poss_tms) = newCSEs(cse1, b_cse, tms1, b_single_tms,
                                                                     ptms1, b_poss_tms)
                       in
-                      (Cons((pid, st1), new_binds),
-                       names, new_cse, single_tms, poss_tms))
+                      ((pid, st1) :: new_binds, names, new_cse, single_tms, poss_tms))
                ([],names,[],[],[])
                fields
         in
@@ -207,10 +236,20 @@ spec
   op abstractCommonSubExpressions(t: MSTerm, spc: Spec): MSTerm =
     let all_names = map (fn (nm,_) ->  nm) (boundVarsIn t) in
     let result = (recAbstractCSE(t, all_names, true, spc)).1 in
+    let cseVarSubst = foldSubTerms (fn (t, sb) ->
+                                      case  t of
+                                        | Let([(VarPat (v,_),e)],_,_) | cseVar? v.1 ->
+                                          (v,e) :: sb
+                                        | _ -> sb)
+                        [] result
+    in
     let result = mapTerm (fn t ->
                             case t of
                               | Let([(VarPat (v,_),e)],body,_) | cseVar? v.1 && countVarRefs(body, v) = 1 ->
                                 substitute(body,[(v,e)])
+                              | Apply(setf_fn as Fun(Op(Qualified("System", "setf"), _), _, _),
+                                      Record([("1", term_to_modify as Var(v,_)), ("2", val_term)], a1), a0) | cseVar? v.1 ->
+                                Apply(setf_fn, Record([("1", substitute(term_to_modify, cseVarSubst)), ("2", val_term)], a1), a0)
                               | _ -> t,
                           id, id)
                    result
