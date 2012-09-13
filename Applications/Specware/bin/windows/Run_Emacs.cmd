@@ -18,9 +18,9 @@ if not exist "%SPECWARE4%/Applications/Specware/lisp/Specware4.lisp" (
 
 rem  Start Emacs or XEmacs, loading various files and performing the action given as argument (i.e. '%1'):
 
-echo start "ignore, do not kill" %MAYBE_WAIT% "%EMACS_EXECUTABLE%" %EMACS_INIT% -f '%1'
+echo start "ignore, do not kill" %MAYBE_WAIT% "%EMACS_EXECUTABLE%" %EMACS_INIT% -f %1
 
-start "ignore, do not kill" %MAYBE_WAIT% "%EMACS_EXECUTABLE%" %EMACS_INIT% -f '%1'
+start "ignore, do not kill" %MAYBE_WAIT% "%EMACS_EXECUTABLE%" %EMACS_INIT% -f %1
 
 
 
