@@ -11,7 +11,8 @@
 
 #-asdf
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require :asdf))
+    (let ((sb-fasl:*fasl-file-type* "fasl")) ; sjw
+      (require :asdf)))
 
 (defun find-operation (operation)
   (or (find-symbol (symbol-name operation) :asdf)

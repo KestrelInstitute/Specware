@@ -9,7 +9,8 @@
 
 #+sbcl
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require :sb-sprof))
+  (let ((sb-fasl:*fasl-file-type* "fasl")) ; sjw
+    (require :sb-sprof)))
 
 #+sbcl(progn
 
