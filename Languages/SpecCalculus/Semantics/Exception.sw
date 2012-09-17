@@ -64,12 +64,12 @@ SpecCalc qualifying spec
   op decodeException : Exception -> (Option (Position * Bool)) * String 
   def decodeException except =
     case except of
-      | Fail str                       -> (None,              "Fail: " ^ str)
-      | FileNotFound        (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
-      | UIDNotFound         (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
+      | Fail str                       -> (None,              "ERROR: Fail: " ^ str)
+      | FileNotFound        (pos, uid) -> (Some (pos, true),  "ERROR: Unknown unit " ^ (showRelativeUID uid))
+      | UIDNotFound         (pos, uid) -> (Some (pos, true),  "ERROR: Unknown unit " ^ (showRelativeUID uid))
       | TypeCheck           (pos, msg) -> (Some (pos, false), "Type error: "              ^ msg)
       | TypeCheckErrors     pairs      -> (None,              printTypeErrors pairs)
-      | Unsupported         (pos, msg) -> (Some (pos, false), "Unsupported operation: "   ^ msg)
+      | Unsupported         (pos, msg) -> (Some (pos, false), "ERROR: Unsupported operation: "   ^ msg)
       | SyntaxError         msg        -> (None,              "Syntax error: "            ^ msg)
       | ParserError         fileName   -> (None,              "Syntax error in file "     ^ fileName)
       | DiagError           (pos, msg) -> (Some (pos, false), "Diagram error: "           ^ msg)
@@ -79,11 +79,11 @@ SpecCalc qualifying spec
       | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: "    ^ msg)
       | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: "      ^ msg)
       | SubstError          (pos, msg) -> (Some (pos, false), "\nError in substitution: " ^ msg)
-      | CircularDefinition  uid        -> (None,              "Circular definition: "     ^ showUnitId uid)
+      | CircularDefinition  uid        -> (None,              "ERROR: Circular definition: "     ^ showUnitId uid)
       | Proof               (pos, msg) -> (Some (pos, false), "Proof error: "             ^ msg)
-      | UndefinedGlobalVar  name       -> (None,              "Undefined global var: "    ^ name)
+      | UndefinedGlobalVar  name       -> (None,              "ERROR: Undefined global var: "    ^ name)
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
-      | mystery                        -> (None,              "Unknown exception: " ^ (anyToString mystery))
+      | mystery                        -> (None,              "ERROR: Unknown exception: " ^ (anyToString mystery))
 
    op printException : Exception -> String
   def printException except =
