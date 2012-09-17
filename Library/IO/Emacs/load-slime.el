@@ -96,7 +96,7 @@
   (slime-recompile-bytecode)
   (load-library "slime")))
 
-(slime-setup '(slime-repl slime-fuzzy slime-sprof slime-presentations))
+(slime-setup '(slime-repl slime-fuzzy slime-presentations))
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
