@@ -8,19 +8,14 @@
 %% am changing the prining of constructs to use s-expressions on an as-needed
 %% basis. -EWS
 
-%% The top level function to call is printUIDtoFile.
-%%Example use (at the Specware shell):
-%%   gen-lisp /Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp.sw
-%%   cl ~/Dropbox/Specware/Languages/SpecCalculus/AbstractSyntax/lisp/ASW_Printer_SExp.lisp
-%%   lisp (ASW_PRINTER_SEXP::PRINTUIDTOFILE-3  "/usr/home/kestrel/ewsmith/Dropbox/vTPM/vTPM/Examples/Arrays_1#Imp" nil t)
-%% Note that this last step takes advantage of the ability of the Specware shell
-%% to execute Lisp commands.
+%% The top level function to call is evaluateShowData.
 
 %% TODO: Print to the screen instead of a file?
 %% TODO: Make this command available directly in the Specware shell (how?).
 %% TODO: Print things like this: /\ with vertical bars (or in some other way that doesn't confuse emacs)
+%% TODO: rename this file to ShowData.sw
 
-ASW_Printer_SExp qualifying spec 
+ShowData qualifying spec 
 
  import Types
  import /Languages/MetaSlang/AbstractSyntax/AnnTerm
@@ -501,7 +496,7 @@ ASW_Printer_SExp qualifying spec
    let main_name = last path in
    let path_dir = butLast path in 
    let mainPath = flatten (List.foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
-                             ["/asw/",main_name]
+                             ["/data/",main_name]
                              (if device? then tail path_dir else path_dir))
    in if device?
 	then (head path) ^ mainPath
@@ -1071,7 +1066,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		     ppBreak,
                      ppTerm c term1,
 		     ppIndent(ppString " "),
-		     ppBreak,
+		     ppNewline,
 %		     ppIndent(ppString "to "),
 		     ppTerm c term2,
                      ppString ")"]
@@ -1516,6 +1511,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		    ppString " ",
 		    ppType c ty2,
                     ppString ")"]
+        %% TODO remove special printing for records here?
       | Product (fields,_) ->
 	(case fields of
 	    [] -> ppString "(product-type)"
@@ -1534,9 +1530,9 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		ppType c y
 	      ] in
 	    ppIndent (ppGrConcat [
-	      ppString "record{",
-	      ppSep (ppAppend (ppString ", ") ppBreak) (map ppField fields),
-	      ppString "}"
+	      ppString "(Product-for-record",
+	      ppSep (ppAppend (ppString " ") ppBreak) (map ppField fields),
+	      ppString ")"
 	    ]))
       | CoProduct (taggedTypes,_) -> 
 	let def ppTaggedType (id,optTy) =
@@ -1561,12 +1557,11 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 	  ppTerm c term
 	]
       | Subtype (ty,term,_) ->
-	ppConcat [
-	  ppString "(restrict ",
+	ppGr1Concat [
+	  ppString "(Subtype ",
 	  ppType c ty,
-%%	  ppString " | ",
 	  ppString " ",
-          ppBreak,
+          ppNewline,
 	  ppTerm c term,
           ppString ")"
 	]
@@ -1646,17 +1641,48 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
       value
 
   %% Evaluate the given unit and print it.
-  op printUIDtoFile (uid_str : String, printPositionInfo? : Boolean, recursive? : Boolean) : String =
+  op showData (uid_str : String, printPositionInfo? : Boolean, recursive? : Boolean) : Boolean =
   let _ = writeLine "Printing spec to file." in
   case evaluateUnitId uid_str of
     | Some val ->
       (case uidStringForValue val of
-         | None -> "Error: Can't get UID string from value"
+         | None -> let _ = writeLine "Error: Can't get UID string from value" in false
          | Some (uid,uidstr) ->
-           let fil_nm = uidstr ^ ".asw" in
+           let fil_nm = uidstr ^ ".data" in
            let _ = ensureDirectoriesExist fil_nm in
+           let _ = writeLine("Writing data to: "^fil_nm^"\n") in
            let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),fil_nm) in
-           fil_nm)
-    | _ -> "Error: Unknown UID " ^ uid_str
+           true)
+    | _ -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
+
+%%TODO duplicate
+%% Replace leading ~/ (if present) with the user's home dir.
+op substHomeDir (path : String, homedir : String) : String =
+  case (explode path) of
+  | #~ :: #/ :: rest -> homedir ^ "/" ^ (implode rest)
+  | _ -> path
+
+op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
+  let _ = writeLine "Calling evaluateShowData." in
+  let _ = writeLine ("The user's home directory: "^homedir) in
+  let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
+  %FIXME handle the case when this is a qid?
+  let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
+  %% Get the unit ID to process:
+  let opt_uid_str =
+    (case optional_argstring of
+       %% No arguments given at all, so use the last unit loaded, if there is one.
+     | None -> (case lastUnitIdLoaded of
+                | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in None
+                | Some uid_str -> lastUnitIdLoaded)
+       %% Otherwise, the argument string is the unit ID to process:
+     | Some argstring -> optional_argstring) in
+    (case opt_uid_str of
+     | None -> None %% fail and don't change *last-unit-Id-_loaded*
+     | Some uid_str -> 
+       let uid_str = substHomeDir(uid_str, homedir) in
+       %% Print the data to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded.
+       let success? = showData(uid_str, false, true) in
+       if success? then Some uid_str else None)
 
 endspec

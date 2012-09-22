@@ -16,6 +16,7 @@ Specware qualifying spec
   import /Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp
   import /Languages/SpecCalculus/AbstractSyntax/ShowDeps
   import /Languages/SpecCalculus/AbstractSyntax/ShowImports
+  import /Languages/MetaSlang/CodeGen/C/PrintSpecAsC
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Java
@@ -131,7 +132,7 @@ Specware qualifying spec
   %%% C ("thin" version)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  %% Something like this must already exist somewhere.
+  %% TODO Something like this must already exist somewhere.
   op splitStringAtChar (string : String, char : Char) : List String =
   let chars = explode string in
   let charlists = (splitAtChar char chars) in
@@ -140,7 +141,7 @@ Specware qualifying spec
 
   %% This is the top level Metaslang function for the "thin" C generator.  It
   %% is called by the hand-written Lisp function gen-c-thin in toplevel.lisp.
-    %% argstring is the (optional) entire argument string passed to gen-c-thin (or None)
+  %% argstring is the (optional) entire argument string passed to gen-c-thin (or None)
   %% FIXME add more parsing of the arguments:
   %% handle .. (seems to work)? handle ~ for home directory (or not?)?
   %% example call: gen-c-thin ../Examples/FactorialChoppedAuto#FacChopFinal facchop
@@ -151,7 +152,6 @@ Specware qualifying spec
   op evaluateGenCThin (argstring : Option String, lastUnitIdLoaded : Option String) : Option String = 
   let _ = writeLine "Calling evaluateGenCThin." in
   let _ = writeLine ("arg string: "^(case argstring of Some str -> ("\""^str^"\"") | None -> "No arg string supplied.")) in
-      %FIXME handle the case when this is a qid?
   let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
   %% Determine the unit and the opname to process:
   let (opt_uid_str, opt_opname_str) =
@@ -170,10 +170,11 @@ Specware qualifying spec
          (Some (head args), None)
        else if (length args = 2) then
          %% If two args are given, they must be a unit ID and an opname:
+         %TODO handle the case when this is a qid?
          (Some (head args), Some (head (tail args)))
-            else
-              let _ = writeLine("ERROR: More than two args given to gen-c-thin.") in (None, None)
-              ) in
+       else
+         let _ = writeLine("ERROR: More than two args given to gen-c-thin.") in (None, None)
+       ) in
   (case opt_uid_str of
      | None -> None %% fail and don't change *last-unit-Id-_loaded*
      | Some uid_str ->
@@ -184,7 +185,7 @@ Specware qualifying spec
          | Some (Spec spc) ->
            (case opt_opname_str of
               %% no opname given, so process all ops in the spec
-              | None -> let resultokay? = PrintAsC.evaluateGenCThinHelper(All, spc) in
+              | None -> let resultokay? = PrintAsC.evaluateGenCThinHelper(All, uid_str, spc) in
                 (if resultokay? then
                    Some uid_str % set *last-unit-Id-_loaded*
                  else
@@ -197,7 +198,7 @@ Specware qualifying spec
                    let opqid = (case strings of 
                                   | [string] -> (mkUnQualifiedId (head strings))
                                   | [string1, string2] -> mkQualifiedId(string1, string2)) in
-                   let resultokay? = PrintAsC.evaluateGenCThinHelper(QID opqid, spc) in
+                   let resultokay? = PrintAsC.evaluateGenCThinHelper(QID opqid, uid_str, spc) in
                    (if resultokay? then
                       Some uid_str % set *last-unit-Id-_loaded*
                     else
