@@ -1,20 +1,16 @@
-(* The following specs contain some examples that should be handled by the C
-code generator that is based on spec CTarget.
+(* The following specs contain some examples that should be handled by gen-c-thin.
 
 The user should tell the C code generator which type(s) and op(s) code should be
 generated from, and the C code generator should generate code for them, along
 with those that they depend on (recursively), but ignore all other types and
 ops. 
 
-These examples import the file /Library/CGen/CTarget.sw, which indicates to
-Specware that the new-style C generator should be used.
-
 *)
 
 
 
 Example1 = E1 qualifying spec
-import /Library/CGen/CTarget
+import /Library/CGen/CTarget %TODO change the imports to just be to CTarget
 
 type Matrix_2_4 = (Array (Array Sint | ofLength? 4) | ofLength? 2)
 % typedef int Matrix_2_4[2][4];
@@ -22,7 +18,7 @@ type Matrix_2_4 = (Array (Array Sint | ofLength? 4) | ofLength? 2)
 endspec
 
 
-
+%TODO change gen-c-thin to preserve the order of these in the generated file
 Example2 = E2 qualifying spec
 import /Library/CGen/CTarget
 
@@ -223,6 +219,13 @@ endspec
 
 %%TODO The C generator should not translate bar as a constant.
 Example18 = E18 qualifying spec
-import /Library/CGen/CTarget
-op bar : Uint = let x = (uintConstant 0 dec) in x +_uint x
+  import /Library/CGen/CTarget
+  op bar : Uint = let x = (uintConstant 0 dec) in x +_uint x
+endspec
+
+%Example with one function calling another
+Example19 = E19 qualifying spec
+  import /Library/CGen/CTarget
+  op f (x:Uint) : Uint = x +_uint (uintConstant 0 dec)
+  op g (x:Uint) : Uint = f x
 endspec
