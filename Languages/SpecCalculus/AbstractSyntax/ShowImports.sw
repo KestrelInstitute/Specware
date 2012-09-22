@@ -202,7 +202,7 @@ op showImportsForSpec (uid_str : String) : Bool =
             let uid = pathStringToCanonicalUID (uid_str, true) in
             let start_list = [(uid, spc)] in
             let gr = work (start_list, emptyMap) in
-	    % let _ = writeLine("Writing deps to to: "^file_name^"\n") in
+	    % let _ = writeLine("Writing deps to: "^file_name^"\n") in
             let _ = writeStringToFile(showGraph gr,file_name) in
               true)
        | _ -> let _ = writeLine "ERROR: The unit evaluated to something other than a spec." in false)

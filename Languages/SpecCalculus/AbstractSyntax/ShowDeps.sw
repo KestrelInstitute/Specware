@@ -257,7 +257,7 @@ op showDepsForSpec (uid_str : String) : Bool =
             let file_name = uidstr ^ ".deps" in
             let _ = ensureDirectoriesExist file_name in
             let deps = getDepsForSpec(spc) in
-	    let _ = writeLine("Writing deps to to: "^file_name^"\n") in
+	    let _ = writeLine("Writing deps to: "^file_name^"\n") in
             let _ = writeStringToFile(deps,file_name) in
               true)
        | _ -> let _ = writeLine "ERROR: The unit evaluated to something other than a spec." in false)
