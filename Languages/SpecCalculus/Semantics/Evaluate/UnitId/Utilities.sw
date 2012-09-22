@@ -108,8 +108,8 @@ is not valid. A path without an element preceeding the '#' is invalid.
          | _ -> raise (SyntaxError "Unit identifier contains two or more # symbols"))
     }
 (*
-The following is used to normalize a canonical unitId by removing
-occurrences of ``.'' and ``..''. The function needs to be iterated until
+Normalizes a canonical unitId by removing
+occurrences of ``.'' and ``..''. The function iterates until
 a fixpoint is reached since there may be sequences of "..".
 *)
   op  normalizeUID : UnitId -> UnitId
@@ -139,7 +139,7 @@ a fixpoint is reached since there may be sequences of "..".
     if msWindowsSystem?
       then (if ~(path = []) && deviceString? (head path)
 	     then path
-	     else Cons("C:",path))
+	     else Cons("C:",path))  %Don't like the hard-coded C: here.
       else path
 (*
 This converts a canonical UnitId to a filesystem path name. It will
@@ -625,8 +625,8 @@ emacs interface functions.
       []
       globalContext
 
-  op  absolutePath?: UIDPath -> Bool
-  def absolutePath? path =
+  %% TODO: This seems correct only for Windows.
+  op absolutePath? (path : UIDPath) : Bool =
     case path of
       | [] -> false
       | s :: _ -> deviceString? s

@@ -593,7 +593,8 @@ SpecCalc qualifying spec
     | SpecPath_Relative({path,hashSuffix=Some _}) -> true
     | _ -> false
 
- op deviceString? (s : String) : Bool =
+%% Tests whether s is anything followed by a colon.
+op deviceString? (s : String) : Bool =
   let len = length s in
   len > 1 && s@(len - 1) = #:
 

@@ -174,8 +174,7 @@ The inner case in the function below is temporary. It is there to make
 it easy to experiment with different UnitId path resolution strategies..
 *)
 
-  op  generateUIDList : RelativeUID -> Env (List UnitId)
-  def generateUIDList uid =
+  op generateUIDList (uid : RelativeUID) : Env (List UnitId) =
     case uid of
       | SpecPath_Relative {path, hashSuffix} ->
         if absolutePath? path
@@ -258,11 +257,9 @@ it easy to experiment with different UnitId path resolution strategies..
   %% this is set by user when creating a shadow version 
   %% It allows files on other directory trees to shadow 
   %% corresponding files in a base tree.
-  op  shadowingPaths : Shadowings
-  def shadowingPaths = []
+  op shadowingPaths : Shadowings = []
 
-  op  pathShadows : UIDPath -> Shadowing
-  def pathShadows uid_path =
+  op pathShadows (uid_path : UIDPath) : Shadowing =
     let
       def expand shadow =
 	%% shadow is a list of UID paths

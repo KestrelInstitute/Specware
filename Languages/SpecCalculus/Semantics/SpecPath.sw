@@ -8,7 +8,7 @@ SpecCalc qualifying spec
 The SWPATH environment variable holds a ":" separated list
 of path names. Names may be relative or absolute. An absolute path
 begins with "/". A relative path does not. A relative path is taken
-with respect to the directory in which \Specware\ was inoked.
+with respect to the directory in which \Specware\ was invoked.
 
 We attempt to construct a canonical form for each UnitId. This is to avoid
 the situation where there may be distinct relative unitId names to the
@@ -31,40 +31,39 @@ Changed my mind. To be consistent, the \Specware\ starting directory is
 This means that if the user adds the current path to the environment
 variable, then it will appear twice is the list of UnitId's we generate.
 *)
-  op SpecCalc.getSpecPath0(): List UnitId =
-    let specware4Dirs = case getEnv "SPECWARE4" of
-                         | Some d -> [d]
-                         | None -> []
-    in
-    %% 8/9/04 sjw: Core decided that it did not make sense to have . implicitly in specPath
-    %let currDir = getCurrentDirectory () in
-    let strings =
-      case getEnv "SWPATH" of
-        | Some str ->
-          let paths = splitStringAt(str, specPathSeparator) in
-          paths
-            ++ (if specware4Dirs = [] || head specware4Dirs in? paths
-                 then [] else specware4Dirs)
-        | _ -> ["/"] ++ specware4Dirs
-    in
-      map (fn str -> pathStringToCanonicalUID(str,true)) strings
 
+%% Seems odd to use unitIDs here, since there will never be a hash suffix (the elements of SWPATH are directories).
+op SpecCalc.getSpecPath0(): List UnitId =
+  let specware4Dirs = case getEnv "SPECWARE4" of
+                        | Some d -> [d]
+                        | None -> []
+  in
+  %% 8/9/04 sjw: Core decided that it did not make sense to have . implicitly in specPath
+  %let currDir = getCurrentDirectory () in
+  let strings =
+    case getEnv "SWPATH" of
+      | Some str ->
+        let paths = splitStringAt(str, specPathSeparator) in
+        paths
+          ++ (if specware4Dirs = [] || head specware4Dirs in? paths
+               then [] else specware4Dirs)
+      | _ -> ["/"] ++ specware4Dirs
+  in
+    map (fn str -> pathStringToCanonicalUID(str,true)) strings
 
-  op getSpecPath : Env (List UnitId)
-  def getSpecPath =
-    return(getSpecPath0())
+op getSpecPath : Env (List UnitId) =
+  return(getSpecPath0())
 
- op specPathSeparator: String = (if msWindowsSystem? then ";" else ":")
+op specPathSeparator: String = (if msWindowsSystem? then ";" else ":")
 
- op checkSpecPathsExistence?: Bool = true
+op checkSpecPathsExistence? : Bool = true
 
- op checkSpecPathsExistence: String -> Bool
- def checkSpecPathsExistence str =
-   if checkSpecPathsExistence?
-     then forall? (fn dir -> if fileExists? dir
-                               then true
-                             else (warn("Directory does not exist: " ^ dir); false))
-            (splitStringAt(str, specPathSeparator))
-     else true
+op checkSpecPathsExistence (str : String) : Bool =
+  if checkSpecPathsExistence?
+    then forall? (fn dir -> if fileExists? dir
+                              then true
+                            else (warn("Directory does not exist: " ^ dir); false))
+           (splitStringAt(str, specPathSeparator))
+    else true
 
 endspec
