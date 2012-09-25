@@ -52,7 +52,7 @@ op filterSpecElements (elements : SpecElements, p : SpecElement -> Bool) : SpecE
   % CTarget.  Usually this will bring in things that we can't generate C for,
   % but this works well for small examples.
   % TODO what about the base libraries?  Are they explicitly imported?
-  % TODO what about things that are declared by not defined?
+  % TODO what about things that are declared but not defined?
   % The first return value is the op names; the second is the type names.
   op nonCTargetOpsAndTypes (opnames : List QualifiedId, typenames : List QualifiedId, elements : SpecElements) : (List QualifiedId) * (List QualifiedId)  =
   case elements of
@@ -84,6 +84,7 @@ op filterSpecElements (elements : SpecElements, p : SpecElement -> Bool) : SpecE
       case tm1 of
         | Lambda ([(pat,_,_)], _) -> (Some pat, status)
         | TypedTerm (tm2, _,   _) -> aux tm2
+        | And (tm::rest, _) -> aux tm
         | _ -> 
           (None,
            reportError ("definition for " ^ show qid ^ " is not a lambda: " ^ printTerm tm, 
@@ -293,61 +294,61 @@ op ppLocalVarInfoToC (info: LocalVarInfo) : List (Nat * Pretty) =
 
 
 
- % We translate all the elements in spc whose names are in the corresponding set (op_set or type_set).
- op collectCInfos (op_set : QualifierSet,
-                   type_set : QualifierSet,
-                   status : CGenStatus, 
-                   spc : Spec
-                   ) : CInfos * CGenStatus =
-  %% TODO: what about Type followed by TypeDef ?                
-  %% TODO: what about Op followed by opDef ?                
-  %% TODO: what about multiple opDefs (refinements) ?                
-%  let elements = findCSliceFrom spc in
-  let allelements = spc.elements in
-  % let _ = writeLine(anyToString op_set) in
-  let elements_to_translate = filterSpecElements (allelements, (fn el -> case el of
-                                                                           | Type    (qid,_) -> qid in? type_set
-                                                                           | TypeDef (qid,_) -> qid in? type_set
-                                                                           | Op      (qid,_,_) -> qid in? op_set
-                                                                           | OpDef   (qid,_,_,_) -> qid in? op_set
-                                                                           | _ -> false)) in
-  %FFIXME why doesn't the topological sort work?
-  %let elements_to_translate = topSortElements (spc, elements_to_translate) in  %What if there is no sorted order (because of mutual recursion)?
-  let elements_to_translate = reverse elements_to_translate in
-  let _ = writeLine("sorted elements to translate:"^flatten(intersperse(" ", map showQ elements_to_translate))) in
-  foldl (fn ((infos, status), element) ->
-           case element of
-             | Type    (qid,    _) -> 
-               (case findTheType (spc, qid) of
-                  | Some info ->
-                    (infos ++ [Type (qid, info)], status)
-                  | _ ->
-                    %% Something is messed up with spec...
-                    (infos, reportConfusion ("ERROR: No type info for " ^ show qid, status)))
-             | TypeDef (qid,    _) -> 
-               (case findTheType (spc, qid) of
-                  | Some info ->
-                    (infos ++ [Type (qid, info)], status)
-                  | _ ->
-                    %% Something is messed up with spec...
-                    (infos, reportConfusion ("ERROR: No type info for " ^ show qid, status)))
-             | Op      (qid, _, _) -> 
-               (case findTheOp (spc, qid) of
-                  | Some info ->
-                    (infos ++ [Op (qid, info)], status)
-                  | _ ->
-                    %% Something is messed up with spec...
-                    (infos, reportConfusion ("ERROR: No op info for " ^ show qid, status)))
-             | OpDef   (qid, _, _, _) -> 
-               (case findTheOp (spc, qid) of
-                  | Some info ->
-                    (infos ++ [Op (qid, info)], status)
-                  | _ ->
-                    %% Something is messed up with spec...
-                    (infos, reportConfusion ("ERROR: No op info for " ^ show qid, status)))
-             | _ -> (infos, status))
-        ([], status)
-        elements_to_translate
+%  % We translate all the elements in spc whose names are in the corresponding set (op_set or type_set).
+%  op collectCInfos (op_set : QualifierSet,
+%                    type_set : QualifierSet,
+%                    status : CGenStatus, 
+%                    spc : Spec
+%                    ) : CInfos * CGenStatus =
+%   %% TODO: what about Type followed by TypeDef ?                
+%   %% TODO: what about Op followed by opDef ?                
+%   %% TODO: what about multiple opDefs (refinements) ?                
+% %  let elements = findCSliceFrom spc in
+%   let allelements = spc.elements in
+%   % let _ = writeLine(anyToString op_set) in
+%   let elements_to_translate = filterSpecElements (allelements, (fn el -> case el of
+%                                                                            | Type    (qid,_) -> qid in? type_set
+%                                                                            | TypeDef (qid,_) -> qid in? type_set
+%                                                                            | Op      (qid,_,_) -> qid in? op_set
+%                                                                            | OpDef   (qid,_,_,_) -> qid in? op_set
+%                                                                            | _ -> false)) in
+%   %why doesn't the topological sort work?
+%   %let elements_to_translate = topSortElements (spc, elements_to_translate) in  %What if there is no sorted order (because of mutual recursion)?
+%   let elements_to_translate = reverse elements_to_translate in
+%   let _ = writeLine("sorted elements to translate:"^flatten(intersperse(" ", map showQ elements_to_translate))) in
+%   foldl (fn ((infos, status), element) ->
+%            case element of
+%              | Type    (qid,    _) -> 
+%                (case findTheType (spc, qid) of
+%                   | Some info ->
+%                     (infos ++ [Type (qid, info)], status)
+%                   | _ ->
+%                     %% Something is messed up with spec...
+%                     (infos, reportConfusion ("ERROR: No type info for " ^ show qid, status)))
+%              | TypeDef (qid,    _) -> 
+%                (case findTheType (spc, qid) of
+%                   | Some info ->
+%                     (infos ++ [Type (qid, info)], status)
+%                   | _ ->
+%                     %% Something is messed up with spec...
+%                     (infos, reportConfusion ("ERROR: No type info for " ^ show qid, status)))
+%              | Op      (qid, _, _) -> 
+%                (case findTheOp (spc, qid) of
+%                   | Some info ->
+%                     (infos ++ [Op (qid, info)], status)
+%                   | _ ->
+%                     %% Something is messed up with spec...
+%                     (infos, reportConfusion ("ERROR: No op info for " ^ show qid, status)))
+%              | OpDef   (qid, _, _, _) -> 
+%                (case findTheOp (spc, qid) of
+%                   | Some info ->
+%                     (infos ++ [Op (qid, info)], status)
+%                   | _ ->
+%                     %% Something is messed up with spec...
+%                     (infos, reportConfusion ("ERROR: No op info for " ^ show qid, status)))
+%              | _ -> (infos, status))
+%         ([], status)
+%         elements_to_translate
   
 op printSpecAsCToFile (op_set : QualifierSet,
                        type_set : QualifierSet,
@@ -357,7 +358,12 @@ op printSpecAsCToFile (op_set : QualifierSet,
                        spc : Spec) : () = 
   case init_cgen_status spc of  % options and status
     | Some status ->
-      let (cinfos, status) = collectCInfos (op_set, type_set, status, spc) in
+      %let (cinfos, status) = collectCInfos (op_set, type_set, status, spc) in
+      let infosfortypes = foldriAQualifierMap (fn (qualifier,id,info,list:CInfos) -> if (mkQualifiedId(qualifier,id) in? type_set) then (Type(mkQualifiedId(qualifier,id),info))::list else list) [] spc.types in
+      let infosforops = foldriAQualifierMap (fn (qualifier,id,info,list:CInfos) -> if (mkQualifiedId(qualifier,id) in? op_set) then (Op(mkQualifiedId(qualifier,id), info))::list else list) [] spc.ops  in
+      % TODO Add a topological sort on infos?  Or should the sorting be done by the user, as a transformation?
+      let cinfos = infosfortypes++infosforops in
+
       %% TODO: Is this the right decision?
       %% Do all of the H prototypes first, to make all of them available when printing terms for the C file.
       %% (As opposed to printing the H and C forms in parallel for each info.)
@@ -393,7 +399,7 @@ type QIDorAll =
   | All
 
 %TODO make a general purpose remove suffix routine.
-% %FIXME this is a duplicate                                              
+% %this is a duplicate                                              
 %   op  removeSWsuffix : String -> String
 %   def removeSWsuffix path =
 %     case (reverse (explode path)) of
