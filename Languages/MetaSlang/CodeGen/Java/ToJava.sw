@@ -900,7 +900,7 @@ def builtinTypeOp(qid) =
     | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<", "<=", ">", ">=", "toString", "intToString", 
                               "show", "stringToInt", "positive?", "one", "zero", "isucc", "positive?", "negative?"]
     | "IntegerAux" -> id in? ["-"]  % unary minus
-    | "Boolean"    -> id in? ["Bool", "true", "false", "~", "&", "or", "=>", "<=>", "~="]
+    | "Boolean"    -> id in? ["Bool", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
     | "Char"       -> id in? ["Char", "chr", "ord", 
                               "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
                               "toUpperCase", "toLowerCase", "toString"]
