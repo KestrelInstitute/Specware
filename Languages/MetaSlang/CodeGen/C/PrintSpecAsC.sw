@@ -620,7 +620,7 @@ type QIDorAll =
       let path = uid.path in
       let hashSuffix = uid.hashSuffix in
       let dirs = butLast path in
-      let basename = last path ^ (case hashSuffix of | None -> "" | Some str -> "__"^str) in
+      let basename = last path ^ (case hashSuffix of | None -> "" | Some str -> "_"^str) in
       let dirString = insertBeforeAll(pathSeparator, dirs) in  %%TODO handle Windows drive letters.  Are they part of the path stored in the unitID?  Don't put a slash in front of the drive letter!
       %% Everything goes in the C/ subdirectory:
       let pathForFilesNoExtention = flatten (dirString ++ [pathSeparator] ++ ["C"] ++ [pathSeparator] ++ [basename]) in
