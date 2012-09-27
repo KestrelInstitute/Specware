@@ -14,7 +14,7 @@
   (error s))
 
  ;;; op fail     : fa(a) String -> a
-(defun fail (s) (break "~a" s))
+(defun fail (s) (break "ERROR: ~a" s))
 
 ;;; op debug     : fa(a) String -> a
 (defun |!debug| (s) (when specwareDebug? (break "~a" s)))
@@ -126,7 +126,12 @@
  (force-output *standard-output*))
 
 ;;; op warn     : fa(a) String -> a
-(defun |!warn| (s) (warn "~a" s))
+(defun |!warn| (s) (format *error-output* "~&WARNING: ~a~%" s)
+ ;; The problem with this is that it sometimes puts a newline after the
+ ;; "WARNING:" (if the string S is long), making grep find only the word
+ ;; "WARNING:" on a line by itself:
+  ;(warn "~a" s)
+  )
 
 ;;; op time     : fa(a) a -> a
 (defmacro |!time| (x) (time x))
