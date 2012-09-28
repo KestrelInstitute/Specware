@@ -48,6 +48,11 @@ Globalize qualifying spec
 
  type MSSubstitutions = List MSSubstitution
 
+ type GetterSetter = {getter : OpName,
+                      setter : OpName}
+
+ type GetterSetters = List GetterSetter
+
  type Context = {spc              : Spec, 
                  root_ops         : OpNames,
                  global_var_name  : OpName,
@@ -56,6 +61,7 @@ Globalize qualifying spec
                  global_var       : MSTerm,                 % if global type is not a product
                  global_var_map   : List (String * MSTerm), % if global type has product fields
                  global_init_name : QualifiedId,
+                 getter_setters   : GetterSetters,
                  tracing?         : Bool}
                    
  type GlobalizedRule =    | Changed MSRule
@@ -1428,18 +1434,13 @@ Globalize qualifying spec
     | _ ->
       None
 
- op extractGetSetPair (fm : MSTerm) : Option (OpName * OpName) =
+ op extractGetterSetter (fm : MSTerm) : Option GetterSetter =
   case fm of
-    | Pi   (_, fm,    _) -> extractGetSetPair fm
-    | And  (fm :: _,  _) -> extractGetSetPair fm
-    | Bind (_, _, fm, _) -> extractGetSetPair fm
+    | Pi   (_, fm,    _) -> extractGetterSetter fm
+    | And  (fm :: _,  _) -> extractGetterSetter fm
+    | Bind (_, _, fm, _) -> extractGetterSetter fm
 
-    | Apply (Fun (Equals, _, _),
-             Record ([(_, lhs),
-                      (_, IfThenElse (pred, then_tm, else_tm, _))],
-                     _),
-             _)
-      ->
+    | Apply (Fun (Equals, _, _), Record ([(_, lhs), (_, IfThenElse (pred, then_tm, else_tm, _))], _), _) ->
       (case termsCompared pred of
          | Some (lterms, rterms) ->
            (case opAndArgs lhs of
@@ -1455,7 +1456,7 @@ Globalize qualifying spec
                                let set_indices = butLast (tail set_args) in
                                let value       = last set_args in
                                if semanticsOfGetSet? (getter, get_indices, container, set_indices, value, lterms, rterms, then_tm, else_tm) then
-                                 Some (getter, setter)
+                                 Some {getter = getter, setter = setter}
                                else
                                  None
                              | _ -> None)
@@ -1466,15 +1467,15 @@ Globalize qualifying spec
 
     | _ -> None
 
- op findGettersSetters (spc  : Spec) : List (OpName * OpName) =
-  foldrSpecElements (fn (elt, pairs) ->
+ op findGetterSetters (spc  : Spec) : GetterSetters =
+  foldrSpecElements (fn (elt, getter_setters) ->
                        case elt of
                          |  Property (typ, _, _, fm, _) | typ = Axiom || typ = Theorem -> 
-                            (case extractGetSetPair fm of
-                               | Some pair -> pair :: pairs
-                               | _ -> pairs)
+                            (case extractGetterSetter fm of
+                               | Some getter_setter -> getter_setter :: getter_setters
+                               | _ -> getter_setters)
                          | _ ->
-                           pairs)
+                           getter_setters)
                     []
                     spc.elements
 
@@ -1486,11 +1487,20 @@ Globalize qualifying spec
                                  tracing?         : Bool)
   : SpecCalc.Env (Spec * Bool) =
   let global_var_name = Qualified ("Global", global_var_id) in
-  let gs_pairs = findGettersSetters spc in
-  let _ = writeLine("==================") in
-  let _ = writeLine("Getters -- Setters") in
-  let _ = map (fn (getter, setter) -> writeLine (printQualifiedId getter ^ " -- " ^ printQualifiedId setter)) gs_pairs in
-  let _ = writeLine("==================") in
+
+  %% getter_setter pairs are used to create dsstructive updates into complex left-hand-sides
+  let getter_setters = findGetterSetters spc in
+  let _ = 
+      if tracing? then
+        let _ = writeLine("===================") in
+        let _ = writeLine("Getters -- Setters") in
+        let _ = map (fn {getter, setter} -> writeLine (printQualifiedId getter ^ " -- " ^ printQualifiedId setter)) getter_setters in
+        let _ = writeLine("===================") in
+        ()
+      else
+        ()
+  in
+
   {
    global_type_name <- checkGlobalType (spc, global_type_name);
    global_var_name  <- checkGlobalVar  (spc, global_var_name, global_type_name);
@@ -1512,6 +1522,7 @@ Globalize qualifying spec
                                             pairs
                                       | _ -> empty)
                                  | _ -> []);
+
 
    %% This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
    spec_with_gset   <- addOp [setqQid] Nonfix false setqDef spc noPos;
@@ -1557,6 +1568,7 @@ Globalize qualifying spec
                                                  global_var       = global_var,     % if global type does not have fields
                                                  global_init_name = global_init_name,
                                                  global_var_map   = global_var_map, % if global type has fields
+                                                 getter_setters   = getter_setters,
                                                  tracing?         = tracing?}
                                   in
                                   replaceLocalsWithGlobalRefs context;
