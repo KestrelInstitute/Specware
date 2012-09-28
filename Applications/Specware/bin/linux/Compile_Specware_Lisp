@@ -114,9 +114,9 @@ ls -sltra ./Provers/DP/Handwritten/Lisp/*.lisp \
           ./Provers/DP/Handwritten/Lisp/*.$FASL_EXTENSION 
 echo " "
 
-ls -sltra ./Provers/Snark/Handwritten/Lisp/*.lisp \
-          ./Provers/Snark/Handwritten/Lisp/*.$FASL_EXTENSION
-echo " "
+# ls -sltra ./Provers/Snark/Handwritten/Lisp/*.lisp \
+#           ./Provers/Snark/Handwritten/Lisp/*.$FASL_EXTENSION
+# echo " "
 
 ls -sltra ./Languages/SpecCalculus/Parser/Handwritten/Lisp/*.lisp \
           ./Languages/SpecCalculus/Parser/Handwritten/Lisp/*.$FASL_EXTENSION 
