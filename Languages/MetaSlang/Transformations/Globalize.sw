@@ -1318,6 +1318,166 @@ Globalize qualifying spec
   in
   return (new_spec, context.tracing?)
 
+ %%%   get (set (m, i, x), j) = if i = j then x else get (m, j)
+ %%%   get (set m i x, j)      = if i = j then x else get (m, j)
+ %%%   get (set (m, i, x))  j = if i = j then x else get (m, j)
+ %%%   get (set m i x) j      = if i = j then x else get (m, j)
+
+ op opAndArgs (tm : MSTerm) : Option (OpName * MSTerms) =
+  case tm of
+    |  Fun (Op (opname, _), _, _) -> Some (opname, [])
+       
+    |  Apply (f, arg, _) ->
+       (case opAndArgs f of
+          | Some (opname, f_args) ->  
+            Some (opname,
+                  f_args ++ (case arg of
+                               | Record (pairs, _) -> map (fn (_, arg) -> arg)  pairs
+                               | _  ->  [arg]))
+          | _ -> None)
+       
+    | _ -> None
+      
+ op printTerms (tms : MSTerms) : String =
+  foldl (fn (s, tm) -> s ^ " " ^ printTerm tm) "" tms
+
+ op getTerms (tm : MSTerm) : MSTerms =
+  case tm of
+    | Record (fields, _) -> map (fn (_, tm) -> tm) fields
+    | _ -> [tm]
+
+ op equalTerms? (tms1 : MSTerms, tms2 : MSTerms) : Bool =
+  case (tms1, tms2) of
+    | ([], []) -> true
+    | (tm1 :: tms1, tm2 :: tms2) -> 
+      equalTerm? (tm1,tm2) && equalTerms? (tms1, tms2)
+    | _ ->
+      false
+
+ op semanticsOfGetSet? (getter      : OpName,
+                        get_indices : MSTerms,
+                        container   : MSTerm,
+                        set_indices : MSTerms,
+                        value       : MSTerm,
+                        lterms      : MSTerms,
+                        rterms      : MSTerms,
+                        then_tm     : MSTerm,
+                        else_tm     : MSTerm)
+  : Bool =
+
+  % let _ = writeLine ("Getter      = " ^ anyToString getter)      in
+  % let _ = writeLine ("Container   = " ^ printTerm   container)   in
+  % let _ = writeLine ("Value       = " ^ printTerm   value)       in
+  % let _ = writeLine ("Get_indices ="  ^ printTerms  get_indices) in
+  % let _ = writeLine ("lterms      ="  ^ printTerms  lterms)      in
+  % let _ = writeLine ("Set Indices ="  ^ printTerms  set_indices) in
+  % let _ = writeLine ("rterms      ="  ^ printTerms  rterms)      in
+  % let _ = writeLine ("then_tm     = " ^ printTerm   then_tm)     in
+  % let _ = writeLine ("else_tm     = " ^ printTerm   else_tm)     in
+
+  % let eq_lhs_tms = getTerms eq_lhs in
+  % let eq_rhs_tms = getTerms eq_rhs in
+
+  % let _ = writeLine ("set   = " ^ anyToString set_indices) in
+  % let _ = writeLine ("get   = " ^ anyToString get_indices) in
+  % let _ = writeLine ("left  = " ^ anyToString lterms) in 
+  % let _ = writeLine ("right = " ^ anyToString rterms) in
+
+  % let _ = writeLine ("set v. left  = " ^ anyToString (equalTerms? (set_indices, lterms))) in
+  % let _ = writeLine ("set v. right = " ^ anyToString (equalTerms? (set_indices, rterms))) in
+  % let _ = writeLine ("get v. left  = " ^ anyToString (equalTerms? (get_indices, lterms))) in
+  % let _ = writeLine ("get v. right = " ^ anyToString (equalTerms? (get_indices, rterms))) in
+
+  if (equalTerms? (set_indices, lterms) && equalTerms? (get_indices, rterms)) ||
+     (equalTerms? (set_indices, rterms) && equalTerms? (get_indices, lterms)) 
+    then
+      case opAndArgs else_tm of
+        | Some (getter2, get2_args) ->
+          % let _ = writeLine ("Getter2   = " ^ anyToString getter2) in
+          % let _ = writeLine ("Get2_args ="  ^ printTerms get2_args) in
+          (case get2_args of
+             | container2 :: get2_indices ->
+               equalTerm? (container, container2) && equalTerms? (get_indices, get2_indices)
+             | _ -> 
+               false)
+        | _ -> 
+          false
+  else
+    false
+
+ op termsCompared (tm : MSTerm) : Option (MSTerms * MSTerms) =
+  let
+    def flatten tm =
+      case tm of
+        | Record (pairs, _) ->
+          foldl (fn (tms, (_, tm)) -> tms ++ flatten tm) [] pairs
+        | _ ->
+          [tm]
+
+  in
+  case tm of
+    | Apply (Fun (Equals, _, _),
+             Record ([(_, eq_lhs), (_, eq_rhs)], _),
+             _)
+      ->
+      Some (flatten eq_lhs, flatten eq_rhs)
+    | Apply (Fun (And, _, _), Record ([(_, t1), (_, t2)], _), _) ->
+      (case (termsCompared t1, termsCompared t2) of
+         | (Some (t1, t2), Some (t3, t4)) -> Some (t1 ++ t3, t2 ++ t4)
+         | _ -> None)
+    | _ ->
+      None
+
+ op extractGetSetPair (fm : MSTerm) : Option (OpName * OpName) =
+  case fm of
+    | Pi   (_, fm,    _) -> extractGetSetPair fm
+    | And  (fm :: _,  _) -> extractGetSetPair fm
+    | Bind (_, _, fm, _) -> extractGetSetPair fm
+
+    | Apply (Fun (Equals, _, _),
+             Record ([(_, lhs),
+                      (_, IfThenElse (pred, then_tm, else_tm, _))],
+                     _),
+             _)
+      ->
+      (case termsCompared pred of
+         | Some (lterms, rterms) ->
+           (case opAndArgs lhs of
+              | Some (getter, get_args) -> 
+                (case get_args of
+                   | [_] -> None
+                   | update :: get_indices ->
+                     (case opAndArgs update of
+                        | Some (setter, set_args) ->
+                          (case set_args of
+                             | _ :: _ :: _ :: _ ->
+                               let container   = head set_args in
+                               let set_indices = butLast (tail set_args) in
+                               let value       = last set_args in
+                               if semanticsOfGetSet? (getter, get_indices, container, set_indices, value, lterms, rterms, then_tm, else_tm) then
+                                 Some (getter, setter)
+                               else
+                                 None
+                             | _ -> None)
+                        | _ -> None)
+                   | _ -> None)
+              | _ -> None)
+         | _ -> None)
+
+    | _ -> None
+
+ op findGettersSetters (spc  : Spec) : List (OpName * OpName) =
+  foldrSpecElements (fn (elt, pairs) ->
+                       case elt of
+                         |  Property (typ, _, _, fm, _) | typ = Axiom || typ = Theorem -> 
+                            (case extractGetSetPair fm of
+                               | Some pair -> pair :: pairs
+                               | _ -> pairs)
+                         | _ ->
+                           pairs)
+                    []
+                    spc.elements
+
  op globalizeSingleThreadedType (spc              : Spec, 
                                  root_ops         : OpNames,
                                  global_type_name : TypeName, 
@@ -1326,6 +1486,11 @@ Globalize qualifying spec
                                  tracing?         : Bool)
   : SpecCalc.Env (Spec * Bool) =
   let global_var_name = Qualified ("Global", global_var_id) in
+  let gs_pairs = findGettersSetters spc in
+  let _ = writeLine("==================") in
+  let _ = writeLine("Getters -- Setters") in
+  let _ = map (fn (getter, setter) -> writeLine (printQualifiedId getter ^ " -- " ^ printQualifiedId setter)) gs_pairs in
+  let _ = writeLine("==================") in
   {
    global_type_name <- checkGlobalType (spc, global_type_name);
    global_var_name  <- checkGlobalVar  (spc, global_var_name, global_type_name);
