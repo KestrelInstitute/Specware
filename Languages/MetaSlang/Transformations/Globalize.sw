@@ -48,10 +48,13 @@ Globalize qualifying spec
 
  type MSSubstitutions = List MSSubstitution
 
- type GetterSetter = {getter : OpName,
-                      setter : OpName}
+ type GetterSetter = {getter : OpName, setter : OpName}
 
  type GetterSetters = List GetterSetter
+
+ type LetBinding = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
+
+ type LetBindings = List LetBinding
 
  type Context = {spc              : Spec, 
                  root_ops         : OpNames,
@@ -62,6 +65,7 @@ Globalize qualifying spec
                  global_var_map   : List (String * MSTerm), % if global type has product fields
                  global_init_name : QualifiedId,
                  getter_setters   : GetterSetters,
+                 let_bindings     : LetBindings,
                  tracing?         : Bool}
                    
  type GlobalizedRule =    | Changed MSRule
@@ -77,6 +81,31 @@ Globalize qualifying spec
  type GlobalizedPattern = | Changed MSPattern
                           | Unchanged
                           | GlobalVarPat % for clarity (as opposed to Changed global_var_pat)
+
+ %% ================================================================================
+
+ op expandBindings (tm : MSTerm, bindings : LetBindings) : MSTerm =
+  case bindings of
+    | [] -> tm
+    | _ ->
+      let
+        def expandTerm tm =
+          case tm of
+            | Var ((nm, _), _) -> 
+              (case (findLeftmost (fn (pattern, value) ->
+                                     case pattern of
+                                       | VarPat ((vname, _), _) -> vname = nm
+                                       | _ -> false)
+                                  bindings)
+                of
+                 | Some (_, value) ->
+                   %% Recur to expand outer let bindings in body of substituted term
+                   expandBindings (value, tail bindings)
+                 | _ -> tm)
+            | _ -> tm
+      in
+      let ttp = (expandTerm, fn t -> t, fn p -> p) in
+      mapTerm ttp tm
 
  %% ================================================================================
 
@@ -267,6 +296,8 @@ Globalize qualifying spec
 
  op myTrue : MSTerm = Fun (Bool true, Boolean noPos, noPos)
 
+ %% Setq
+
  op setqQid  : QualifiedId = Qualified ("System", "setq")
  op setqType : MSType      = Arrow (Product ([("1", TyVar ("A", noPos)), 
                                               ("2", TyVar ("A", noPos))], 
@@ -276,6 +307,18 @@ Globalize qualifying spec
 
  op setqDef : MSTerm       = TypedTerm (Any noPos, setqType, noPos) 
  op setqRef : MSTerm       = Fun (Op (setqQid, Nonfix), setqType, noPos)
+
+ %% Setf
+
+ op setfQid  : QualifiedId = Qualified ("System", "setf")
+ op setfType : MSType      = Arrow (Product ([("1", TyVar ("A", noPos)), 
+                                              ("2", TyVar ("A", noPos))], 
+                                             noPos), 
+                                    Product ([], noPos),
+                                    noPos)
+
+ op setfDef : MSTerm       = TypedTerm (Any noPos, setfType, noPos) 
+ op setfRef : MSTerm       = Fun (Op (setfQid, Nonfix), setfType, noPos)
 
  %% ================================================================================
  %% Verify that the suggested global type actually exists
@@ -525,27 +568,31 @@ Globalize qualifying spec
                        (RecordPat (fields, pos) : MSPattern)
   : Ids * GlobalizedPattern = 
   let
-    def aux (vars_to_remove, new_fields, old_fields, changed?) =
+    def aux (vars_to_remove, new_fields, old_fields, changed?, shortened?) =
       case old_fields of
-        | [] -> (vars_to_remove, new_fields, changed?)
+        | [] -> (vars_to_remove, new_fields, changed?, shortened?)
         | (id, pat) :: ptail ->
           let (ids, opt_pat) = globalizePattern context vars_to_remove pat in
           let new_vars_to_remove = vars_to_remove ++ ids in
-          let (new_fields, changed?) =
+          let (new_fields, changed?, shortened?) =
               case opt_pat of
-                | Changed new_pat -> (new_fields ++ [(id, new_pat)], true)
-                | Unchanged       -> (new_fields ++ [(id, pat)], changed?)
-                | GlobalVarPat    -> (new_fields, true)
+                | Changed new_pat -> (new_fields ++ [(id, new_pat)], true, shortened?)
+                | Unchanged       -> (new_fields ++ [(id, pat)], changed?, shortened?)
+                | GlobalVarPat    -> (new_fields, true, true)
           in
-          aux (new_vars_to_remove, new_fields, ptail, changed?)
+          aux (new_vars_to_remove, new_fields, ptail, changed?, shortened?)
   in
-  let (vars_to_remove, new_fields, changed?) = aux ([], [], fields, false) in
+  let (vars_to_remove, new_fields, changed?, shortened?) = aux ([], [], fields, false, false) in
   %% can't reduce to a single global var pat, as that would be removed by aux
   (vars_to_remove,
    if changed? then
      Changed (case new_fields of
                 | [(id, pat)] | natConvertible id -> pat
-                | _ -> RecordPat (renumber new_fields, noPos))
+                | _ -> 
+                  if shortened? then
+                    RecordPat (renumber new_fields, noPos)
+                  else
+                    RecordPat (new_fields, noPos))
    else
      Unchanged)
 
@@ -615,6 +662,84 @@ Globalize qualifying spec
   case findLeftmost (fn (id, _) -> id = field_name) context.global_var_map of
     | Some (_, var) -> var
 
+ op makeSetf (lhs : MSTerm, rhs : MSTerm) : MSTerm =
+  Apply (setfRef, Record ([("1", lhs), ("2", rhs)], noPos), noPos)
+
+
+ op reviseUpdate (context : Context, lhs : MSTerm, rhs : MSTerm) : MSTerm =
+  case rhs of
+    | Apply (Apply (Apply (Fun (Op (Qualified ("MapsAsVectors", "update"), _), _, _),
+                           set_container,
+                           _),
+                    set_index,
+                    _),
+             new_value,
+             _)
+      ->
+      (case new_value of
+         | Apply (Fun (RecordMerge, _, _), 
+                  Record ([("1", loc as Apply (Fun (Op (Qualified ("MapsAsVectors", "TMApply"), _), _, _),
+                                               Record ([("1", get_container), ("2", get_index)], _),
+                                               _)),
+                           ("2", value as Record (pairs, _))],
+                          _),
+                  _)
+           ->
+           % let _ = writeLine ("Cont1   = " ^ anyToString (equalTerm? (lhs, set_container))) in
+           % let _ = writeLine ("Cont2   = " ^ anyToString (equalTerm? (set_container, get_container))) in
+           % let _ = writeLine ("Indices = " ^ anyToString (equalTerm? (set_index, get_index))) in
+           % let _ = writeLine ("Nums    = " ^ anyToString (forall? (fn (index,_) -> natConvertible index) pairs)) in
+           if equalTerm? (lhs, set_container) && equalTerm? (set_container, get_container) && equalTerm? (set_index, get_index) && forall? (fn (index,_) -> natConvertible index) pairs then
+             let dom_type = termType loc in
+             let updates = 
+                 map (fn (index, value) ->
+                        let new_type = Arrow (dom_type, termType value, noPos) in
+                        let field = Apply (Fun (Project index, new_type, noPos), loc, noPos) in
+                        makeUpdate context field value)
+                     pairs
+             in
+             case updates of
+               | [update] -> update
+               | _ -> Seq (updates, noPos)
+           else
+             % let _ = writeLine("yet no match") in
+             makeSetf (lhs, rhs)
+         | _ -> 
+           % let _ = writeLine ("not a merge") in
+           let getter = Op (Qualified ("MapsAsVectors", "TMApply"), Nonfix) in
+           let args = Record ([("1", set_container), ("2", set_index)], noPos) in
+           let new_type = Arrow (termType args, termType new_value, noPos) in
+           let new_lhs = Apply (Fun (getter, new_type, noPos), args, noPos) in
+           makeUpdate context new_lhs new_value)
+    | _ ->
+      % let _ = writeLine("no match") in
+      makeSetf (lhs, rhs)
+
+ op makeUpdate (context : Context)
+               (lhs     : MSTerm)
+               (rhs     : MSTerm)
+   : MSTerm =
+   % let _ = writeLine (" lhs: " ^ printTerm lhs) in
+   % let _ = writeLine (" rhs: " ^ printTerm rhs) in
+   % let _ = writeLine ("let bindings:\n") in
+   % let _ = map (fn (pattern, value) -> writeLine (printPattern pattern ^ " = " ^ printTerm value)) context.let_bindings in
+   case rhs of
+     | Record (pairs, _) | forall? (fn (index,_) -> natConvertible index) pairs ->
+       (let dom_type = termType lhs in
+        let updates = 
+            map (fn (index, value) ->
+                   let new_type = Arrow (dom_type, termType value, noPos) in
+                   let new_lhs = Apply (Fun (Project index, new_type, noPos), lhs, noPos) in
+                   makeSetf (new_lhs, value))
+                pairs
+        in
+        case updates of
+          | [update] -> update
+          | _ -> Seq (updates, noPos))
+
+     | _ ->
+       reviseUpdate (context, lhs, rhs)
+
  op makeGlobalFieldUpdates (context           : Context)
                            (vars_to_remove    : MSVarNames)      % vars of global type, remove on sight
                            (substitutions     : MSSubstitutions) % tm -> var
@@ -622,16 +747,17 @@ Globalize qualifying spec
                            (Record (fields,_) : MSTerm)          % record of fields to update
   : MSTerm =
   let assignments =
-      map (fn (id, value) ->
+      map (fn (id, old_value) ->
               let Some (_, global_var_op) = findLeftmost (fn (x, _) -> x = id) context.global_var_map in
-              let new_value = case globalizeTerm context vars_to_remove substitutions value of
+              let new_value = case globalizeTerm context vars_to_remove substitutions old_value of
                                 | Changed new_value -> new_value
                                 | GlobalVar -> 
                                   let _ = writeLine("Warning: Updating a single global field with the entire master global value.") in
                                   context.global_var
-                                | _ -> value
+                                | _ -> old_value
               in
-              Apply (setqRef, Record ([("1", global_var_op), ("2", new_value)], noPos), noPos))
+              let expanded_value = expandBindings (new_value, context.let_bindings) in
+              makeUpdate context global_var_op expanded_value)
           fields
   in
   Seq (assignments, noPos)
@@ -746,8 +872,8 @@ Globalize qualifying spec
                     (substitutions        : MSSubstitutions) % tm -> varname
                     (Record (fields, pos) : MSTerm)
   : GlobalizedTerm = 
-  let (changed?, new_fields, opt_prefix) = 
-      foldl (fn ((changed?, new_fields, opt_prefix), (id, old_tm)) -> 
+  let (changed?, shortened?, new_fields, opt_prefix) = 
+      foldl (fn ((changed?, shortened?, new_fields, opt_prefix), (id, old_tm)) -> 
                let (changed?, new_tm) = 
                    case globalizeTerm context vars_to_remove substitutions old_tm of
                      | Changed new_tm -> (true, new_tm)
@@ -758,6 +884,7 @@ Globalize qualifying spec
                if globalType? context tt then
                  % evaluate term of global type before evaluating tuple, and don't include that result in tuple
                  (true, 
+                  true,
                   new_fields,
                   % but no need to evaluate term of global type if it is just a variable
                   case new_tm of
@@ -765,9 +892,10 @@ Globalize qualifying spec
                     | _     -> Changed new_tm)
                else
                  (changed?, 
+                  shortened?,
                   new_fields ++ [(id, new_tm)], 
                   opt_prefix))
-            (false, [], Unchanged)
+            (false, false, [], Unchanged)
             fields 
   in
   if changed? then
@@ -779,7 +907,9 @@ Globalize qualifying spec
             % But don't simplify a 1-element record with an explicitly named 
             %  field such as {a = x}
             tm  
-          | _ -> Record (renumber new_fields, pos)
+          | _ -> 
+            Record (if shortened? then renumber new_fields else new_fields,
+                    pos)
     in
     Changed (case opt_prefix of
                | Changed prefix -> Seq ([prefix, new_result], noPos)
@@ -828,6 +958,19 @@ Globalize qualifying spec
             bindings 
   in
   let substitutions = [] in
+
+  let tame_bindings =
+      foldl (fn (tame_bindings, new_binding) ->
+               case new_binding of
+                 | (WildPat _, _) -> tame_bindings
+                 | (pat, tm) -> 
+                   % let _ = writeLine ("tame binding: " ^ printPattern pat ^ " = " ^ printTerm tm ^ "\n") in
+                   tame_bindings ++ [(pat, tm)])
+            []
+            new_bindings
+  in
+  let context = context << {let_bindings = tame_bindings ++ context.let_bindings} in
+  
   let opt_new_body  = globalizeTerm context all_vars_to_remove substitutions body in
   let (changed_body?, new_body) = 
       case opt_new_body of
@@ -1523,7 +1666,6 @@ Globalize qualifying spec
                                       | _ -> empty)
                                  | _ -> []);
 
-
    %% This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
    spec_with_gset   <- addOp [setqQid] Nonfix false setqDef spc noPos;
 
@@ -1569,6 +1711,7 @@ Globalize qualifying spec
                                                  global_init_name = global_init_name,
                                                  global_var_map   = global_var_map, % if global type has fields
                                                  getter_setters   = getter_setters,
+                                                 let_bindings     = [],
                                                  tracing?         = tracing?}
                                   in
                                   replaceLocalsWithGlobalRefs context;
