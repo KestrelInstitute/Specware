@@ -836,10 +836,10 @@ to C types, e.g. floating types [ISO 6.2.5/10]. *)
 %subsection (* Integer constants *)
 
 (* An integer constant [ISO 6.4.4.1] denotes a natural number, in decimal,
-hexadecimal, or octal notation. Since Metaslang does not support octal constants
-and it internally translates decimal and hexadecimal constants to the same
-representation, we introduce an enumeration that is used in subsequent ops to
-indicate the desired base of constants. *)
+hexadecimal, or octal notation. Since Metaslang internally translates decimal,
+binary, octal and hexadecimal constants to the same representation, we introduce
+an enumeration that is used in subsequent ops to indicate the desired base of 
+constants. *)
 
 type IntConstBase = | dec | hex | oct
 
