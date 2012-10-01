@@ -121,40 +121,7 @@ rem  SET EMACS VARS
 rem  ============================================================
 echo.
 
-rem Pick a version of emacs or xemacs to use:
-
-if "%EMACS_DIR%" == "" (
-
-  echo Environment variable EMACS_DIR not set.
-  echo.
-  echo EMACS_DIR should be be set to the root of the shared emacs or xemacs directory.
-  echo.
-
-  if "%USING_CYGWIN%" == "TRUE" (
-
-    echo Using Cygwin...
-    echo set "EMACS_DIR=C:/cygwin/usr/share/xemacs"
-         set "EMACS_DIR=C:/cygwin/usr/share/xemacs"
-
-  ) else (
-
-    echo Not using Cygwin...
-    echo set "EMACS_DIR=C:\Progra~1\xemacs\xemacs-21.4.18"
-         set "EMACS_DIR=C:\Progra~1\xemacs\xemacs-21.4.18"
-
-  )
-)
-
-if not exist "%EMACS_DIR%" (
-  echo.
-  echo  Set_Environment_Vars.cmd could not find an emacs or xemacs directory
-  echo  at %EMACS_DIR%
-  echo.
-  pause
-  exit 1
-)
-
-rem --------------------------------------------------------------------------------
+rem Pick a version of emacs to use:
 
 if "%EMACS_EXECUTABLE%" == "" (
   echo.
@@ -166,18 +133,32 @@ if "%EMACS_EXECUTABLE%" == "" (
     echo Using Cygwin...
     echo Set EMACS_EXECUTABLE to point at a cygwin emacs executable, but 
     echo in a format that can be interpreted by a native windows cmd script.
-    echo (I.e., not as /usr/bin/xemacs)
+    echo "(I.e., not as /usr/bin/emacs)"
     echo.
-    echo set "EMACS_EXECUTABLE=C:/cygwin/bin/xemacs-21.4.22.exe"
-         set "EMACS_EXECUTABLE=C:/cygwin/bin/xemacs-21.4.22.exe"
+    echo set "EMACS_EXECUTABLE=C:/cygwin/bin/emacs"
+         set "EMACS_EXECUTABLE=C:/cygwin/bin/emacs"
 
   ) else (
+
+    if "%EMACS_DIR%" == "" (
+      echo "EMACS_EXECUTABLE=%EMACS_EXECUTABLE%"
+
+      echo Not using Cygwin...
+      echo.
+      echo Environment variable EMACS_EXECUTABLE not set.
+      echo.
+      echo Either set EMACS_DIR to the root of the shared emacs directory
+      echo or set EMACS_EXECUTABLE to a native emacs executable
+      echo.
+      pause
+      exit 1
+    )
 
     echo Not using Cygwin...
     echo Set EMACS_EXECUTABLE to point at a native emacs executable,
     echo.
-    echo set "EMACS_EXECUTABLE=%EMACS_DIR%\i586-pc-win32\xemacs.exe"
-         set "EMACS_EXECUTABLE=%EMACS_DIR%\i586-pc-win32\xemacs.exe"
+    echo set "EMACS_EXECUTABLE=%EMACS_DIR%\bin\emacs.exe"
+         set "EMACS_EXECUTABLE=%EMACS_DIR%\bin\emacs.exe"
 
   )
   echo.
@@ -185,7 +166,7 @@ if "%EMACS_EXECUTABLE%" == "" (
 
 if not exist "%EMACS_EXECUTABLE%" (
   echo.
-  echo  Set_Environment_Vars.cmd could not find an emacs or xemacs executable
+  echo  Set_Environment_Vars.cmd could not find an emacs executable
   echo  at %EMACS_EXECUTABLE%
   echo.
   pause

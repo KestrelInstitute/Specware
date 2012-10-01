@@ -1,11 +1,24 @@
 This directory contains the following top-level scripts:
 
-Specware4.cmd      -- start XEmacs and Specware within XEmacs
-Specware-shell.cmd -- start Specware (without XEmacs)
-bootstrap.cmd      -- start XEmacs and bootstrap Specware within XEmacs
-build.cmd          -- start XEmacs and build Specware within XEmacs
+. run scripts
+
+    specware.cmd               -- run Specware within Gnu Emacs
+    specware-shell.cmd         -- run Specware without Gnu Emacs
+
+. build scripts
+
+    bootstrap-specware.cmd     -- bootstrap Specware within Gnu Emacs
+                                  (generate Specware Lisp, compile Specware Lisp, build Specware executable, and run Specware within Gnu Emacs)
+    build-specware.cmd         -- build Specware within Gnu Emacs
+                                  (compile Specware Lisp, build Specware executable, and run Specware within Gnu Emacs)
+
+. single-step scripts might be useful during debugging
+
+    generate-specware-lisp.cmd -- just generate Specware Lisp within Gnu Emacs
+    compile-specware-lisp.cmd  -- just compile Specware Lisp withing Gnu Emacs
+
 
 The following scripts are used by the top-level ones and should not be called directly:
 
-check-and-set-environment.cmd
-start-in-xemacs.cmd
+    Set_Environment_Vars.cmd
+    Run_Emacs.cmd
