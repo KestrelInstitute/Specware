@@ -1,4 +1,0 @@
-CFBundleName = "Isabelle_Specware";
-CFBundleShortVersionString = "4.2.5";
-CFBundleGetInfoString = "Isabelle_Specware version 4.2.5 Copyright 2008 Kestrel Institute";
-NSHumanReadableCopyright = "Copyright 2008 Kestrel Institute.";

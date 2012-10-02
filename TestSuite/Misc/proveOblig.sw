@@ -1,1 +1,0 @@
-prove computeFibH in obligFib 

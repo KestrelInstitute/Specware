@@ -1,6 +1,0 @@
-debugging facility for eval, e.g. tracing, breakpoints
-
-commands for proof management
-
-proc may be omitted, providing just a unit-term; escape (e.g. "\") for other
-commands (e.g. to avoid conflict with unit called "dir")
