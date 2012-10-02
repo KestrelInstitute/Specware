@@ -1,0 +1,19 @@
+(162
+ :name      "C code generation should print newlines within strings as '\n'"
+ :owner     "JM"
+ :reporter  "JM"
+ :reported  "06/23/05"
+ :status    :closed
+ :severity  :high
+ :impact    :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

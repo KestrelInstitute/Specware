@@ -1,0 +1,61 @@
+#!/bin/bash --noprofile
+
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to prepare a bootstrapping image based on ACL"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Prepare_Bootstrap_Image_ACL
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure preparing bootstrap image, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to generate Specware4.lisp from Specware4.sw, using ACL Specware image"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Generate_Specware_Lisp_ACL
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure generating Specware4.lisp from Specware4.sw, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to compile Specware4.lisp and various handwritten lisp files, using ACL"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Compile_Specware_Lisp_ACL
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure compiling Specware4.lisp, return code = $RC"
+   exit $RC
+fi
+
+echo " "
+echo "--------------------------------------------------------------------------------"
+echo "bootstrap: About to prepare an ACL development image of Specware"
+echo "--------------------------------------------------------------------------------"
+echo " "
+
+$SCRIPT_DIR/Build_Specware_Dev_ACL
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure building Specware.dxl, return code = $RC"
+   exit $RC
+fi
+
+exit 0
+

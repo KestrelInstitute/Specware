@@ -1,0 +1,29 @@
+
+This is the LISP grammar for the Procedural Specification Language (PSL). This
+desparately needs a new name.
+
+The ONLY differences between this file and that for the spec
+calculus is that production rules for psl specs are added:
+Thus in addition to:
+
+spec {
+  ....
+}
+
+there is:
+
+psl {
+ ....
+}
+
+With a psl "spec", there are all the normal things one would find
+in a spec plus:
+  i) variables (same as ops but with a different keyword)
+  ii) procedures.
+
+The tokenizer here is identical to that for Specware4b. Note
+that the tokenizer for Specware4b already has single quote as a
+"word-symbol-continue-chars".
+
+All references to the package PARSER4 have been changed to PSL-PARSER.
+All references to specware4 have been replaced by psl

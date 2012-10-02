@@ -1,0 +1,19 @@
+(91
+ :name       "Redundant declarations when showing obligations"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "06/07/04"
+ :status     :closed   
+ :severity   :medium
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

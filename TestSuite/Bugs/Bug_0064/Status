@@ -1,0 +1,21 @@
+(64
+ :name       "Sort unification fails when it shouldn't"
+ :owner      "SW"
+ :reporter   "LM"
+ :reported   "09/08/03"
+ :status     :closed   
+ :severity   :medium
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

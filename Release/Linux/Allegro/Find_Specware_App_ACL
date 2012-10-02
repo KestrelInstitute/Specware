@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Note: $0 may refer to a Specware or SpecwareShell script invoking this...
+
+INVOKED_HERE=`dirname $0`
+cd $INVOKED_HERE
+HERE=`pwd`
+
+#########################################################################
+
+LISP_EXECUTABLE=$LISP
+LISP_HEAP_IMAGE="$SPECWARE4/Specware4.dxl"
+LISP_DIRECTORY="$SPECWARE4/"   # The directory the lisp image will connect to
+
+export LISP_EXECUTABLE
+export LISP_HEAP_IMAGE
+export LISP_DIRECTORY
+
+#########################################################################
+
+echo ""
+echo "final LISP_EXECUTABLE = $LISP_EXECUTABLE"
+echo "final LISP_HEAP_IMAGE = $LISP_HEAP_IMAGE"
+echo "final LISP_DIRECTORY  = $LISP_DIRECTORY"
+echo ""
+
+cd "$LISP_DIRECTORY"
+

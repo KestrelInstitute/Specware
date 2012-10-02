@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Created by becker on August 26, 2002, 10:38 AM -->
+<!DOCTYPE MIME-resolver PUBLIC
+          "-//NetBeans//DTD MIME Resolver 1.0//EN"
+          "http://www.netbeans.org/dtds/mime-resolver-1_0.dtd">
+<MIME-resolver>
+    <file>
+        <ext name="sw"/>
+        <resolver mime="text/x-meta-slang"/>
+    </file>
+</MIME-resolver>

@@ -1,0 +1,114 @@
+So we are back to asking the question, what is an id and what is a reference.
+Perhaps a reference should be an abstract thing that uniquely resolves to
+an opInfo, sortInfo etc. In the same way that we would argue that a term
+usually makes no sense except in a context, the same holds for ops and sorts.
+
+But we also must be careful to avoid non-well-founded structures. In particular,
+we want to avoid a spec containing an Op.Ref where an Op.Ref is a
+pair consisting of a Spec and an OpInfo.
+
+Perhaps we should use subsorting to ensure that those functions that
+are applied to ops, sorts etc in a spec, are applied only when the op
+or sort is in the spec.
+
+Also, if we give something an identity .. is it with respect to the
+spec or is it global. In particular, is a ref into one spec a valid ref
+into another. This is important if we consider an op of one identity is
+the same as that in another. When are we referring to the same op.
+
+Is it invariant under renaming of sorts?
+
+The identity of an op is its name and its type within a spec.
+
+If we rename a sort so that f:X becomes identified with f:Y, then what happens
+to the reference ids? and do we need to walk through the term and rename the variables?
+Or just bind one variable to another.
+
+But now suppose I rewrite the term bound to an op. Do I rewrite
+all occurrences of it? This would apply to all the shared instances
+of the term or subterm (if I was just rewriting a subterm).
+The latter suggests that terms should be local to a spec. Or the map
+from term reference to term is local.
+
+What is the cost of merging two specs?
+
+If the id's are unique, we still need to merge the infos
+But how do we express when much of the information in two specs is the same?
+Could use the "parent spec" idea as proposed for scoping.
+
+If there is an ref id for each (name,type) pair, this is not preserved
+as types may be identified whereas infos would be identified only by linking.
+
+what is to ensure that the map in each spec that binds a id to an opinfo is
+binding the id to the same opinfo everywhere?
+
+Presumably we wouldn't want the opinfo to change after type checking and yet
+in some specs, the opinfos would get identified.
+
+It doesn't make sense that when you make an op, that you also create a new id.
+The id should be created or supplied when the op is added or merged
+with the existing spec. Or after type checking. 
+
+Depends on the model we are using. If we say that things aren't added
+until we know that they are correct then there is no id. If we say that
+we add things and then reduce then it might make sense. In the latter
+case, then we need to keep dereferencing.
+
+On the other hand, when I make an op, I may not even know that it refers
+to an existing up until it is typechecked. This is the case if we have
+full overloading. I declare f : A -> B and C -> D and then I write
+an definition for f. Where does it go?
+
+It might be none of the above. In the current scheme, f need not be
+preceeded by an op declaration.
+
+But unless we typecheck a collection of declarations against the spec
+before we deposit things in the spec, we won't know how to resolve references.
+
+It really looks like we need to typecheck a list of declarations before! we
+deposit them in the spec. That way, when we see a name, we need to look
+up in the spec what the name is? On the the other hand, we may need to
+look it up in the declarations.
+
+On the other hand, perhaps when we refer to a name, and there are many
+matches, we introduce a new name in the spec and then bind it to the
+disjunction of the references. But that doesn't make sense since the
+connectives we have been talking about require the terms to have the
+same type.
+
+Does equality in a spec mean the same as binding? When we write that
+def f = g, does the user really want us to bind them. It is as if
+we had equated them by a pushout.
+
+So perhaps we define a protospec that containes a hybrid of
+the values and the terms.
+
+Also raises the issue of whether there should be a makeOp at all.
+Should it be separated from depositing the op in the spec?
+
+If we start off with names for things, how do we learn
+what references get assigned to them?
+
+When we typecheck with overloading, then if there is an op f declared and we define
+an op that has a different type, then should we get a new op? presumably not.
+Perhaps only if you provide the typing information explicitly.
+
+But what happens inside the scope of a let? If we take the view that we are just
+exhibiting a refinement from the outer spec, then if we define an f, we might actually
+be refining something declared at the outer scope .. and will be. There seems
+to be no way of just saying I want a private place to create new ops and be assured
+that there is no interference with the enclosing scope.
+
+Perhaps there should be a "new" operation that introduces a new scope (like a let)
+but where the names .. even when they have the same sort, do not refine operators
+in the enclosing scope!
+
+This is what happens in a lambda. There is no way that an x:T introduced in a lambda
+should have anything to do with an x:T declared and possibly constrained by
+an enclosing scope! But, again, unless you give the type, there is no way to distinguish
+them! That is, there may be no way to resolve a reference.
+
+This is independent of nesting of scopes. If I have an x in a term and there is a lambda bound x,
+then with full overloading, you might not get the x you expected.
+
+Perhaps the new x should hide all x's of all types in the enclosing scope!

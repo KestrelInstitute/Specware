@@ -1,0 +1,18 @@
+(110
+ :name      "[] read as bogus Nil"
+ :owner     "JM"
+ :reporter  "JM"
+ :reported  "09/12/04"
+ :status    :closed   
+ :severity  :low
+ :impact    :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

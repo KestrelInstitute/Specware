@@ -1,0 +1,17 @@
+(106 
+ :name       "Names not disambiguated when printing"
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "09/08/04"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

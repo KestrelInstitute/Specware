@@ -1,0 +1,5 @@
+What is a reference?
+
+Not clear I have a clear rationale anymore. The idea was that it be
+a unique identifier for an op or sort and that it might just reduce to
+a Id. Might it be something else? An integer id?

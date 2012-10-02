@@ -1,0 +1,21 @@
+(51
+ :name      "Lisp loading crashes on unary sub"
+ :owner     "LM"
+ :reporter  "LM"
+ :reported  "08/13/03"
+ :status    :closed   
+ :severity  :crash
+ :impact    :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

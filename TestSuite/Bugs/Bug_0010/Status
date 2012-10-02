@@ -1,0 +1,22 @@
+(10
+ :name       "Resolve ambiguities in parsing of where"
+ :reporter   "LE"
+ :reported   "11/01/02"
+ :owner      "LE"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+ :archived-as 22
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

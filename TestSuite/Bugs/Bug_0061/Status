@@ -1,0 +1,20 @@
+(61
+ :name       "In the language manual, the rule for embed-pattern should have an optional closed-pattern"
+ :owner      "LM"
+ :reporter 
+ :reported 
+ :status   
+ :severity 
+ :impact   
+ :closed     "09/06/03"
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+/fs/3/jakarta-tomcat-3.2.3/webapps/ROOT/sparrow_2.0/bugs/Details_45.html

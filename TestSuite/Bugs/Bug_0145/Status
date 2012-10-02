@@ -1,0 +1,17 @@
+(145
+ :name      "Unambiguous < in subtype becomes ambiguous by commenting out def"
+ :owner     "SW"
+ :reporter  "AC"
+ :reported  "11/19/04"
+ :status    :closed   
+ :severity  :high
+ :impact    :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

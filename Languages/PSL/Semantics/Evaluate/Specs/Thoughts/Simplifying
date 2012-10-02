@@ -1,0 +1,17 @@
+What is the correct way to do the simplifications?
+
+Do we want to run through the names and simplify all of them?
+So we can't really do a map cause the spec changes for each claim that we update.
+So map is applicable when the change to the claim is independent of the other claims and the spec.
+
+We want to use map because we don't want to rebuild the spec every time.
+
+One could imagine applying:
+mapClaim modeSpec (fn claim -> claim withTerm (simplifyTerm (specOf modeSpec) (termOf claim)))
+
+but there is something funny about having to give both the term and the spec as
+arguments. It only makes sense to talk about a term in context. Hence there should
+be only one identifier passed. We want to avoid simplifying a term in an inappropriate context.
+
+Also the names passed should be references and not id's.
+

@@ -1,0 +1,71 @@
+#!/bin/bash --noprofile
+
+DIST_DIR=$1
+
+# ================================================================================
+#  Move previous version to backup
+# ================================================================================
+
+if [ -d ${DIST_DIR} ]; then
+    if [ ! -d ${DIST_DIR}-backup ]; then
+	mkdir ${DIST_DIR}-backup
+    fi
+    if [ ! -s ${DIST_DIR}/ ]; then
+      /bin/mv -f ${DIST_DIR}/* ${DIST_DIR}-backup/ -f
+    fi
+else
+    mkdir -p ${DIST_DIR}
+fi
+
+# ================================================================================
+#  Emacs
+# ================================================================================
+
+mkdir -p ${DIST_DIR}/Library
+mkdir -p ${DIST_DIR}/Library/IO
+mkdir -p ${DIST_DIR}/Library/IO/Emacs/
+mkdir -p ${DIST_DIR}/Library/IO/Emacs/ilisp/
+
+# TODO: move all ilisp-20020831 files to the ilisp directory in CVS
+# mv ${DIST_DIR}/Library/IO/Emacs/ilisp-20020831/ ${DIST_DIR}/Library/IO/Emacs/ilisp/
+
+# ================================================================================
+#  Examples
+# ================================================================================
+
+mkdir -p ${DIST_DIR}/Examples
+mkdir -p ${DIST_DIR}/Examples/Matching
+
+# cp "$APP_DIR"/UserDoc/tutorial/example/* ${DIST_DIR}/Examples/Matching
+# cp "$APP_DIR"/UserDoc/examples/*         ${DIST_DIR}/Examples -r
+
+/bin/rm  -f ${DIST_DIR}/Examples/simple1/test.lisp
+/bin/rm  -f ${DIST_DIR}/Examples/simple2/test.lisp
+/bin/rm  -f ${DIST_DIR}/Examples/simple3/test.lisp
+
+# ================================================================================
+#  Documentation
+# ================================================================================
+
+mkdir -p ${DIST_DIR}/Documentation
+
+# cp "$APP_DIR"/UserDoc/language-manual/SpecwareLanguageManual.pdf  ${DIST_DIR}/Documentation
+# cp "$APP_DIR"/UserDoc/tutorial/SpecwareTutorial.pdf               ${DIST_DIR}/Documentation
+# cp "$APP_DIR"/UserDoc/user-manual/SpecwareUserManual.pdf          ${DIST_DIR}/Documentation
+# cp "$APP_DIR"/UserDoc/cheat-sheet/Specware-405-QuickReference.pdf ${DIST_DIR}/Documentation
+
+# ================================================================================
+#  Patches
+# ================================================================================
+
+mkdir -p ${DIST_DIR}/Patches
+
+# cp "$APP_DIR"/Generated/JFlaws."$EXECUTABLE_EXTENSION" ${DIST_DIR}
+
+# ================================================================================
+#  Delete CVS stuff
+# ================================================================================
+
+cd ${DIST_DIR}
+find . -name "CVS" -exec /bin/rm -rf '{}' \;
+

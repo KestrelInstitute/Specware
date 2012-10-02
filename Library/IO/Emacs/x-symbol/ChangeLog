@@ -1,0 +1,160 @@
+2004-02-16  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.10 released.
+
+	* Makefile (MAINTAINER): The package maintainer has changed.
+
+2003-12-09  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.09 released.
+
+2003-12-09  Steve Youngs  <sryoungs@bigpond.net.au>
+
+	* man/x-symbol.texi: Update to latest edition.
+
+2003-12-06  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.08 released.
+
+2003-12-06  Steve Youngs  <sryoungs@bigpond.net.au>
+
+	* man/x-symbol.texi: Remove URI to ProofGeneral page, it has
+	become a porn site.
+
+2003-10-26  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.07 released.
+
+2003-10-21  Adrian Aichner  <adrian@xemacs.org>
+
+	* man/x-symbol.texi (Wishlist Fonts): Fix broken listdevel usage
+	in uref.
+
+2003-10-10  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.06 released.
+
+2003-10-09  Steve Youngs  <sryoungs@bigpond.net.au>
+
+	* Makefile (MAINTAINER): Update my email address.
+
+2003-06-01  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.05 released.
+
+2003-06-01  Steve Youngs  <youngs@xemacs.org>
+
+	* Sync to upstream version 4.5.1.
+
+	* Makefile (AUTHOR_VERSION): Bump.
+
+2003-05-31  Steve Youngs  <youngs@xemacs.org>
+
+	* man/x-symbol.texi (FAQ Additional Spaces): Fix xref.
+
+	* Makefile (DATA_4_FILES): Remove.
+	(DATA_4_DEST): Remove.
+	(EXTRA_DOC_FILES): New, use instead of DATA_4_*.
+	Fixes problem of some tar programs barfing on '../' in the
+	tarball. 
+
+2003-04-22  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.04 released.
+
+2003-04-14  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (ELCS): Unbelievable, but true... Add missing
+	x-symbol.elc. 
+
+2003-04-02  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.03 released.
+
+2003-04-02  Steve Youngs  <youngs@xemacs.org>
+
+	* Sync to upstream version 4.5
+
+	* man/x-symbol.texi (FAQ News and Mail): Don't use '@ac', it's
+	useless with all caps and doesn't give the correct capitalisation
+	anyway. 
+
+	* Makefile (DATA_4_FILES): Remove a couple of unnecessary files
+	'x-symbol.texi-exp' 'x-symbol.texi2'
+	(AUTHOR_VERSION): Bump.
+
+2003-03-27  Norbert Koch  <viteno@xemacs.org>
+
+	* Makefile (VERSION): XEmacs package 1.02 released.
+
+2003-03-27  Steve Youngs  <youngs@xemacs.org>
+
+	* Sync to upstream 4.4.5.
+
+	* package-info.in (provides): Update.
+
+	* Makefile (AUTHOR_VERSION): Bump to 4.4.5
+	(ELCS): Add new .elc's.
+	(DATA_4_FILES): Hack to include extra doc sources in the
+	'man/$(PACKAGE)/' directory.
+	(DATA_4_DEST): Ditto.
+
+	* man/x-symbol.texi (File Coding): Remove parens around xref to
+	avoid a makeinfo warning.
+	(FAQ Additional Spaces): Add a comma after xref to avoid a
+	makeinfo warning.
+
+2003-03-09  Ben Wing  <ben@xemacs.org>
+
+	* Makefile:
+	* Makefile (EXTRA_HTML_FILES): New.
+	Delete explicit compile:: and binkit: rules.
+	Don't add custom-load.elc to the list of generated elc's.
+	Include Local.rules.inc at the beginning for access to
+	BUILD_WITHOUT_MULE, and put the include of XEmacs.rules at the
+	end.
+	Use EXPLICIT_DOCS instead of explicitly giving the targets
+	and dependencies.
+	Use EXTRA_HTML_FILES.
+	Delete recursive clean/distclean targets.
+	Move stuff up from man/Makefile.  Conditionalize on TEXI2HTML_1_56K.
+	
+	* fonts/Makefile (mkdirs):
+	* fonts/Makefile (gens):
+	Don't forcibly remove .pcf files each build -- not needed in
+	a world with `make'!!
+
+	* man/Makefile: Deleted.
+
+2003-03-02  Norbert Koch  <nk@viteno.net>
+
+	* Makefile (VERSION): XEmacs package 1.01 released.
+
+	* Makefile (VERSION): XEmacs package 1.00 released.
+
+2003-02-07  Ben Wing  <ben@xemacs.org>
+
+	* lisp/x-symbol.el (x-symbol-xsymb0-cset):
+	* lisp/x-symbol.el (x-symbol-xsymb1-cset):
+	* lisp/x-symbol.el (x-symbol-latin1-table):
+	Use the highest possible user finals to avoid conflicts with
+	existing charsets.
+
+2003-02-07  Ben Wing  <ben@xemacs.org>
+
+	* fonts/Makefile (gens):
+	* fonts/Makefile (clean):
+	Don't require `xset' to succeed.
+
+2003-02-05  Steve Youngs  <youngs@xemacs.org>
+
+	* Makefile (DATA_1_FILES): Be more specific so the 'CVS' directory
+	isn't included.
+	(DATA_2_FILES): Ditto.
+	(compile): Build the fonts as well.
+	(fonts): New target.
+
+2003-02-02  Steve Youngs  <youngs@xemacs.org>
+
+	* Package created.
+

@@ -1,0 +1,18 @@
+(100
+ :name       "Missing import from obligations spec from the base"
+ :reporter   "AC"
+ :reported   "07/01/04"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

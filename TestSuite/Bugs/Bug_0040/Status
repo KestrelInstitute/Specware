@@ -1,0 +1,21 @@
+(40
+ :name       "natToString(stringToNat(\"hellooo!\")) gives no error"
+ :owner      "JM"
+ :reporter   "LM"
+ :reported   "07/29/03"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

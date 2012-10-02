@@ -1,0 +1,21 @@
+(31
+ :name      "Error messages can be so huge (>1000 lines) that the original message gets lost, because it exceeds the terminal's line history."
+ :owner      "??"
+ :reporter   "MA"
+ :reported   "05/02/03"
+ :status     :closed   
+ :severity   :low
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

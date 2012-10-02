@@ -1,0 +1,21 @@
+(49
+ :name       "The code generator dies on & (id (true , true)) with message Nonexhaustive match failure in mkLTermOp"
+ :owner      "LM" 
+ :reporter   "LM"
+ :reported   "08/12/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

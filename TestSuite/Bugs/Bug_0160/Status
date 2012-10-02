@@ -1,0 +1,21 @@
+(160
+ :name     "Merging of disparate sorts should not be allowed"
+ :reporter "JM"
+ :reported "06/15/05"
+ :owner    "JM"
+ :status   :closed
+ :severity :crash  	
+ :impact   :high  	
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

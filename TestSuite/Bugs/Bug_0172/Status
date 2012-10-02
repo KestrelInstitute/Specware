@@ -1,0 +1,18 @@
+(172
+ :name       "Printer crashes on spec importing qualification of spec-form"
+ :reporter   "LM"
+ :reported   "08/07/05"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

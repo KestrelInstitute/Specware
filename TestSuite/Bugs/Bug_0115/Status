@@ -1,0 +1,18 @@
+(115
+ :name       "Specware intermittantly goes into an infinite loop after emacs sw-shell commands are invoked"
+ :owner      "SW"
+ :reporter   "DC"
+ :reported   "10/01/04"
+ :status     :closed   
+ :severity   :high
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

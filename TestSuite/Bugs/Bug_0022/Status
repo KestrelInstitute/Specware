@@ -1,0 +1,26 @@
+(22
+ :name       "Refined ops processed without giving error message"
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "12/13/02"
+ :status     :closed
+ :severity   :medium
+ :impact     :low
+ :closed     "??"
+ :fixed-in   "??"
+ :archived-as 33
+)
+
+--description--
+
+The following spec is erroneously processed without complaints:
+spec
+ op f : Boolean
+ def f = true
+ op f : String
+endspec
+
+--solution--
+
+--commentary--
+

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  NetBeans OpenAPI Tutorial Chapter 5 Ant build file   -->
+<project basedir="." default="package" name="xgraph">
+<target name="init">
+  <property name="moduledir" value="."/> 
+</target>
+<target depends="init" name="compile">
+  <javac debug="true"
+         deprecation="true"
+         destdir="."
+         srcdir=".">
+    <classpath>
+     <!-- <pathelement location="${moduledir}/jlinker.jar"/> -->
+     <!-- <pathelement location="${moduledir}/jgraph.jar"/> -->
+     <!-- <pathelement location="${moduledir}/antlr.jar"/> -->
+     <pathelement path="${netbeans.library.path}"/>
+     <pathelement path="${netbeans.filesystems.path}"/>   
+    </classpath>
+    </javac>
+</target>
+
+  <target depends="init, compile" name="package">
+    <delete file="xgraph.jar"/> 
+    <jar jarfile="xgraph.jar"> 
+    <!-- manifest="${moduledir}/manifest.mf"> -->
+        <fileset dir="${basedir}">
+            <patternset>
+                <include name="edu/**/*.class"/> 
+                <include name="edu/**/*.gif"/> 
+                <include name="edu/**/*.xml"/>
+                <include name="edu/**/*.html"/>
+                <include name="edu/**/*.template"/>
+                <include name="edu/**/*.properties"/>  
+                <include name="edu/**/*.settings"/>                             
+            </patternset>
+        </fileset>
+    </jar>
+ </target>
+ 
+<!-- <target depends="init, compile, package" name="install">
+    <nbinstaller action="reinstall" module="xgrpah.jar"/> 
+</target>
+-->
+
+<target name="clean">
+  <delete file="xgraph.jar"/> 
+  <delete> 
+  <fileset dir="." includes="edu/**/*.class"/>
+  <fileset dir="." includes="edu/**/*.java~"/>
+  </delete>
+  </target>
+
+</project>

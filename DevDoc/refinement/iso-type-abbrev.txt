@@ -1,0 +1,307 @@
+This document describes a mechanism to refine a spec by refining one of its
+type abbreviations (the notion of "type abbreviation" is defined in Section
+2.4.3 of the Specware language manual) into an isomorphic (and supposedly
+lower-level) type abbreviation. The user provides the refined type along with
+an isomorphism between the old and the new type. A new spec is automatically
+calculated that has, for each type or op that depends (directly or indirectly)
+on the old type, an isomorphic type or op that depends on the new type.
+Subsequent refinements of the obtained spec are then carried out to re-phrase
+the newly introduced isomorphic ops entirely in terms of the new types and
+ops. Finally, the old types and ops are sliced away.
+
+As an example, consider the JCRE specs, which include the type abbreviation
+
+  type Byte = {x : TCNumber | length x =  8}
+
+where TCNumber is a type from the library for two's complement numbers, which
+are defined as non-empty sequences of bits. The JCRE specs also include, among
+others
+
+  type Value =
+    | boolean Boolean
+    | byte    Byte
+    | short   Short
+    | int     Int
+    | retAddr ReturnAddress
+    | objRef  ObjectRef
+    | nullRef % null reference
+
+  op  byteValue : {x:Integer | -128 <= x && x <= 127} -> Byte
+  def byteValue x = signExtend (fromInteger x, 8)
+
+  op  byteToBoolean : Byte -> Boolean
+  def byteToBoolean x = toBoolean (last x)
+
+and eventually the top-level constant
+
+  op behavior : Set Trace = ...
+
+that specifies the observable behavior of the JCRE (in terms of all the
+intermediate types and ops such as types Byte and Value and ops byteValue and
+byteToBoolean).
+
+The representation of bytes (and other Java Card numeric values) in terms of
+bit sequences is fine from a specification perspective but very space-costly
+for an implementation such as the JCRE simulator, where each byte becomes a
+list of bits, and where each bit becomes an integer (0 or 1). So we want to
+refine the type into
+
+  type Byte' = {x : Integer | -128 <= x && x <= 127}
+
+where each byte is now represented as an integer (between -128 and +127). The
+isomorphism from the old to the new type is
+
+  op iso : Bijection (Byte, Byte') = fn (x:Byte) -> toInteger x
+
+where type Bijection is defined in the base spec Functions and op toInteger is
+defined in the library spec for two's complement numbers. Given Byte' and iso
+(supplied by the user), we mechanically calculate isomorphic counterparts to
+all the types and ops that depend, directly or indirectly, on type Byte
+
+  type Value' =
+    | boolean Boolean
+    | byte    Byte'  % note Byte' instead of Byte
+    | short   Short
+    | int     Int
+    | retAddr ReturnAddress
+    | objRef  ObjectRef
+    | nullRef % null reference
+
+  op byteValue' (x:Integer | -128 <= x && x <= 127) : Byte' = iso (byteValue x)
+
+  op byteToBoolean' (x:Byte') : Boolean = byteToBoolean (inverse iso x)
+
+  ...
+
+  op behavior' : Set Trace' = iso_Set_Trace behavior
+
+where op inverse is defined in the base spec Functions and op iso_Set_Trace is
+the isomorphism from Set Trace to Set Trace', which is automatically
+calculated (see below, where the general mechanism is defined).
+
+The new spec includes the old types and ops as well as their primed
+counterparts. The primed ops (such as byteValue') reference the unprimed ones;
+we refine them to remove any references to the unprimed ones, e.g.
+
+  op byteValue' (x:Integer | -128 <= x && x <= 127) : Byte'
+    = iso (byteValue x)
+    = toInteger (signExtend (fromInteger x, 8))
+    = x
+
+  op byteToBoolean' (x:Byte') : Boolean
+    = byteToBoolean (inverse iso x)
+    = toBoolean (last (inverse toInteger x))
+    = if x rem 2 = 0 then toBoolean (last (inverse toInteger x))
+                     else toBoolean (last (inverse toInteger x))
+    = if x rem 2 = 0 then false
+                     else true
+    = (x rem 2 ~= 0)
+
+  ...
+
+  op behavior' : Set Trace' = ...  % no longer referencing unprimed ops
+
+It is not quite possible, in current Specware, to perform the derivations
+calculationally as shown above, but it is possible to apply individual op
+refinements ("refine <spec> by { ... }", already used in the refinements for
+the JCRE simulator) and then discharge the proof obligations.
+
+Now we can transform the resulting spec by removing type Byte and all the
+types and ops that depend, directly or indirectly, on Byte. We can then do a
+translation to remove the primes ' from the primed type and op names and
+voila', we have refined the JCRE specs by refining bytes as desired.
+
+With the intuition of the above example in mind, we now define the general
+mechanism.
+
+The starting spec has the form
+
+  sp = sp1
+       type N = ...
+       sp2
+
+where N is defined as a (monomorphic, for now) type abbreviation (not a sum or
+quotient, which can be instead refined without introducing isomorphic types
+and ops); in the example above, N is Byte. We require that N has not been
+previously declared in sp1, and that sp contains no forward references
+(i.e. it is built bottom-up), as formalized in the Metaslang logic. In
+particular, this implies that sp1 is completely independent from N and that
+the mechanism only applies to types and ops in sp2. Further, we require the
+absence of recursive types for now; there is no fundamental problem with
+recursive sum types provided that we put suitable and reasonable restrictions
+on the form of sum types accepted by Specware (which currently accepts
+problematic forms like type T = | c (T -> T)), because the needed isomorphisms
+for arbitrary recursive types cannot be easily defined. The only recursive
+type in the JCRE specs is List, which can be dealt with in a special (and
+simple) way. Finally, for ease of exposition we require the absence of
+uninterpreted types in sp (i.e. types that are declared but not defined as
+abbreviations or as sums or quotients); after we have defined the mechanism,
+we will see how to deal with uninterpreted types (which is not hard).
+
+The user must supply a refined type abbreviation
+
+  type N' = ...
+
+and an isomorphism
+
+  op iso : Bijection (N, N') = ...
+
+From this user-supplied information, for each type T Specware can
+automatically calculate an isomorphic (sometimes equal) type I(T):
+
+  I(Boolean)         = Boolean
+  I(a)               = a
+  I(M(T1...Tm))      = M(I(T1)...I(Tm))    where M defined in sp1
+  I(N)               = N'
+  I(M(T1...Tm))      = M'(I(T1)...I(Tm))   where M defined in sp2
+  I(T1->T2)          = I(T1)->I(T2)
+  I({f1:T1...fm:Tm}) = {f1:I(T1)...fm:I(Tm)}
+  I(T|r)             = I(T) | iso[T->Boolean] r
+
+Product types can be viewed as a particular case of record types and so are
+covered by the definition. Note that the names M of types defined in sp1 are
+unchanged because, as required earlier, they do not depend on N; on the other
+hand, both N and all the M's defined in sp2 are primed. It is actually only
+necessary to prime those that depend, directly or indirectly, on N; however,
+for simplicity in this document we prime all of them (those that do not depend
+on N will be equal to their primed counterparts, not just isomorphic).
+Isomorphic subtypes make use of the isomorphism iso[T->Boolean] that is also
+automatically calculated for each type T. For each type T, Specware can
+calculate an isomorphism iso[T] : Bijection (T, I(T)):
+
+  iso[Boolean]         = id : Boolean -> Boolean
+  iso[a]               = id : a -> a
+  iso[M(T1...Tm)]      = iso[T[b1/T1...bm/Tm]]
+                         where type M(b1...bm) = T abbreviation in sp1 or sp2
+  iso[M(T1...Tm)]      = fn(x:M(T1...Tm)) ->
+                           case x of
+                           | c1 x1 -> c1 (iso[S1[b1/T1...bm/Tm]] x1)
+                           ...
+                           | cp xp -> cp (iso[Sp[b1/T1...bm/Tm]] xp)
+                         where type M(b1...bm) = | c1 S1 ... | cp Sp in sp1
+  iso[M(T1...Tm)]      = fn(x:M(T1...Tm)) ->
+                           choose[M]
+                             (fn(y:T[b1/T1...bm/Tm]) ->
+                               quotient[M] (iso[T[b1/T1...bm/Tm]] y))
+                             x
+                         where type M(b1...bm) = T / eq in sp1
+  iso[N)               = iso  % supplied by user
+  iso[M(T1...Tm)]      = fn(x:M) ->
+                           case x of
+                           | c1' x1 -> c1 (iso[S1[b1/T1...bm/Tm]] x1)
+                           ...
+                           | cp' xp -> cp (iso[Sp[b1/T1...bm/Tm]] xp)
+                         where type M = | c1 S1 ... | cp Sp in sp2
+  iso[M(T1...Tm)]      = fn(x:M(T1...Tm)) ->
+                           choose[M]
+                             (fn(y:T[b1/T1...bm/Tm]) ->
+                               quotient[M'] (iso[T[b1/T1...bm/Tm]] y))
+                             x
+                         where type M(b1...bm) = T / eq in sp2
+  iso[T1->T2]          = fn(f:T1->T2) ->
+                           fn(x:I(T1)) -> iso[T2] (f (inverse iso[T1] x))
+  iso[{f1:T1...fm:Tm}] = fn(x:{f1:T1...fm:Tm}) ->
+                           {f1 = iso[T1] x.f1 ... fm = iso[Tm] x.fm}
+  iso[T|r]             = fn(x:T|r) -> iso[T] x
+
+where T[b1/T1...bm/Tm] denotes simultaneous substitution of each bi with Ti in
+T, as usual. The primed constructors ci' are those of the primed sum types
+(defined below).
+
+We automatically calculate isomorphic primed definitions for the types and ops
+declared in sp2
+
+- for every type abbreviation
+
+    type M(b1...bm) = T
+
+  an isomorphic type abbreviation
+
+    type M'(b1...bm) = I(T)
+
+- for every sum type in sp2
+
+    type M(b1...bm) = | c1 T1 ... | cp Tp
+
+  an isomorphic sum type
+
+    type M'(b1...bm) = | c1' I(T1) ... | cp' I(Tp)
+
+- for every quotient type in sp2
+
+    type M(b1...bm) = T / eq
+
+  an isomorphic quotient type
+
+    type M'(b1...bm) = I(T) / iso[T*T->Boolean] eq
+
+- for every op in sp2
+
+    op o : [a1...an] T
+
+  an isomorphic op
+
+    op o' : [a1...an] I(T) = iso[T] o
+
+It is not strictly necessary to use primed constructors in the definition of
+sum types M'(b1...bm), because constructors are overloaded; however, we use
+primed constructors for greater clarity in the definition of iso[M(T1...Tm)]
+earlier. These isomorphic type and op declarations can be put at the end of
+sp, in the same order that their unprimed counterparts appear in sp2, thus
+guaranteeing the absence of forward references
+
+  sp1
+  type N = ...
+  sp2
+  type N' = ...
+  op iso : Bijection (N, N') = ...
+  sp2'  % isomorphic primed counterparts of the types and ops in sp2
+
+At this point the user must refine the ops in sp2' to remove all references to
+the unprimed ops and to the isomorphisms (as shown above for the byte
+example).  Various techniques can be used for this, largely orthogonal to the
+mechanism described in this document. Once all the references are removed, a
+further refinement step can slice away type N, op iso, and all of sp2, leaving
+
+  sp1
+  type N' = ...
+  sp2''  % double prime because it is a refined version of sp2' above
+
+A final translation can eliminate the primes ' from the type and op names in
+sp2''.
+
+Let us now lift the requirement of no uninterpreted types in sp. Monomorphic
+uninterpreted types cause no problem because they do not depend on any other
+type, in particular they do not depend on N; so they can be left alone and
+there is no need to introduce isomorphic counterparts to them. However, for
+polymorphic uninterpreted types such as FSeq a, because the type has no
+definition (as either an abbreviation or a sum or quotient), there is no easy
+way to calculate, for instance, the isomorphism from FSeq Byte to FSeq Byte'.
+Type FSeq a is constrained to be isomorphic to the type of finite functions
+from the first n natural numbers to a (see library spec for finite sequences),
+so perhaps this existing isomorphism could be exploited to calculate the
+isomorphism from FSeq Byte to FSeq Byte', but in general we can just have the
+user supply an appropriate parameterized isomorphism. For each uninterpreted
+
+  type M(b1...bm)
+
+declared in sp (with m ~= 0), the user supplies a parameterized isomorphism
+
+  op iso_M : [b1...bm,b1'...bm']
+             Bijection(b1,b1') -> ... -> Bijection(bm,bm') ->
+             Bijection (M(b1...bm), M(b1'...bm')) = ...
+
+In the case of FSeq, the user would supply
+
+  op iso_FSeq : [a,a'] Bijection(a,a') -> Bijection (FSeq a, FSeq a') =
+    fn (isoElem : Bijection(a,a')) -> map isoElem
+
+In the general case, we extend I(T) and iso[T] as follows
+
+  I(M(T1...Tm)) = M(I(T1)...I(Tm))    where M uninterpreted in sp
+
+  iso[M(T1...Tm)] = iso_M iso[T1] ... iso[Tm]
+                    where type M(b1...bm) uninterpreted in sp
+
+Because M is uninterpreted and therefore does not depend on N, there is no
+need to declare an isomorphic M'.

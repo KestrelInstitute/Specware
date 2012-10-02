@@ -1,0 +1,17 @@
+(131
+ :name       "Attempting to prove simple Option obligation breaks into Lisp"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "10/11/04"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

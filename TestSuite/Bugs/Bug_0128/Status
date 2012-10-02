@@ -1,0 +1,17 @@
+(128
+ :name       "Cannot translate unqualified <="
+ :owner      "JM"
+ :reporter   "AC"
+ :reported   "10/10/04"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

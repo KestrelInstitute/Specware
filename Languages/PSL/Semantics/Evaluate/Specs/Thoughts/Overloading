@@ -1,0 +1,35 @@
+Subst/AsOpInfo needs to qualify pp in (pp "[")
+
+This highlights a problem with the current typechecking. The String
+qualifier on pp is needed because by the time we get here, ClaimRef
+has been refined to String in which case there are two pp : String ->
+Doc printers. The intention of the use is clear. The error message that
+results is incorrect and it gives all known pp functions as candidates
+.. even those that are not of type String -> Doc.
+
+In this case, there is no problem because the pp functions are the same
+and the type checker can check this. In other instances, it makes
+sense for there to be ambiguity as there is no reason to expect that
+a pair of functions with the same name defined on different sorts
+should become the same function when the sorts get equated.
+
+This is another case illustrating the two views of composing specs.
+In ACs view, one aggressively identifies all things possible and the
+user has the responsibility to name things apart .. in the other
+view everything is separate and the user has the job of identifying
+names when necessary.
+
+How does full overloading work with qualifiers? I guess the point
+is that one can have two operators with exactly the same names
+but different types and then distinguish the operators on their
+sorts alone.
+
+Going back to the problem at hand: how do we check that the two
+operators are the same. Is it the case that the two candidate
+functions will have been typechecked when we get here?
+
+When checking for equivalence of functions, how far do we go?
+There is a theory for equivalence of terms.
+Is equality built in to the theory? Not often done in
+calculi. Associated with sorts? A definable op?
+

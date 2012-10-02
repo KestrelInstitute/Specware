@@ -1,0 +1,15 @@
+The implementation of functors should be changed.
+
+Right now Sketches imports two copies of Mono Sets. One for the set
+of vertices and the other for the set of edges.
+
+Functors imports Sketch. It then imports polymorphic maps
+and uses two such maps to label the vertices and edges of the
+sketch. It would be better define a spec for maps where, at least,
+the domain of the maps were monomorphic and then import two copies of
+those maps .. one for labelling edges and the other for labelling vertices.
+
+Hopefully this will come later.
+
+Lindsay
+

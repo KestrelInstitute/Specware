@@ -1,0 +1,30 @@
+#!/bin/bash --noprofile
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+act='launch Specware in SBCL, using slime interface to Emacs'
+
+########################################################################
+
+OLD_PATH=$PATH
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:/usr/local/Isabelle/bin:${PATH}
+
+########################################################################
+
+INVOKED_HERE=`dirname $0`
+cd $INVOKED_HERE
+HERE=`pwd`
+PATH=$OLD_PATH
+
+########################################################################
+
+. $HERE/Find_SPECWARE4
+#. $HERE/Find_SBCL
+. $HERE/Update_Path
+. $HERE/Update_SWPATH
+. $HERE/Find_Specware_App_SBCL
+
+EMACS_SPECWARE="$HERE"/Emacs_Specware
+
+isabelle emacs -p $EMACS_SPECWARE $* 

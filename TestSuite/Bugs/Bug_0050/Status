@@ -1,0 +1,21 @@
+(50
+ :name       "Code generator chokes on unary tabulate"
+ :owner      "SW"
+ :reporter   "LM" 
+ :reported   "08/13/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

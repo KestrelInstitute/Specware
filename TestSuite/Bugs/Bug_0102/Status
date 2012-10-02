@@ -1,0 +1,19 @@
+(102 
+ :name       "Extra variable in generated proof obligation"
+ :reporter   "AC"
+ :reported   "07/01/04"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

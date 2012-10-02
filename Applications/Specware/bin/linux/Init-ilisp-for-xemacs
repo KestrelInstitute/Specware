@@ -1,0 +1,14 @@
+#!/bin/sh
+
+HERE=`dirname $0`
+$HERE/Init-ilisp-for-xemacs-cmucl
+RC1=$?
+
+$HERE/Init-ilisp-for-xemacs-acl
+RC2=$?
+
+if [ $RC1 = 0 ]; then
+  exit $RC2
+else
+  exit $RC1
+fi

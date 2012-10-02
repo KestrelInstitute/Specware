@@ -1,0 +1,147 @@
+#!/bin/sh
+
+# intended to be included from Prepare_Bootstrap_Image_XXX, where XXX = ACL, CMUCL, SBCL, etc.
+
+BOOTSTRAP_IMAGE="$BIN_DIR"/Bootstrap.$IMAGE_EXTENSION
+SPECWARE4_IMAGE="$BIN_DIR"/Specware4.$IMAGE_EXTENSION
+SPECWARE_BASE_LISP="$SPECWARE4"/Applications/Specware/Specware4-base.lisp
+SPECWARE_LISP="$SPECWARE4"/Applications/Specware/lisp/Specware4.lisp
+
+# --------------------------------------------------------------------------------
+# If pre-existing Bootrap.$IMAGE_EXTENSION exists and is current, use it.
+# --------------------------------------------------------------------------------
+
+if [ -f "$BOOTSTRAP_IMAGE" \
+     -a \( \( ! -f "$SPECWARE4_IMAGE"    \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE4_IMAGE"    \) \
+     -a \( \( ! -f "$SPECWARE_BASE_LISP" \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE_BASE_LISP" \) \
+     -a \( \( ! -f "$SPECWARE_LISP"      \) -o "$BOOTSTRAP_IMAGE" -nt "$SPECWARE_LISP"      \) ]; then
+
+  echo "Using current $BOOTSTRAP_IMAGE"
+  echo " " 
+  cd "$BIN_DIR"
+  ls -sltra *.$IMAGE_EXTENSION
+  echo " " 
+  exit 0
+fi
+
+# --------------------------------------------------------------------------------
+# If pre-existing Specware4.$IMAGE_EXTENSION exists and is current, use it.
+# --------------------------------------------------------------------------------
+
+if [ -f "$SPECWARE4_IMAGE" \
+     -a \( \( ! -f "$SPECWARE_BASE_LISP" \) -o "$SPECWARE4_IMAGE" -nt "$SPECWARE_BASE_LISP" \) \
+     -a \( \( ! -f "$SPECWARE_LISP"      \) -o "$SPECWARE4_IMAGE" -nt "$SPECWARE_LISP"      \) ]; then
+   
+   #----------------- Use Specware4.dxl ------------------#
+   
+   # Specware.$IMAGE_EXTENSION exists and neither Specware4-base.lisp nor Specware4.lisp is newer
+   echo " "
+   echo "  Bootstrapping from existing Specware image: bin/linux/Specware4.$IMAGE_EXTENSION"
+   echo " "
+   cd "$BIN_DIR"
+   /bin/rm -f Bootstrap.$IMAGE_EXTENSION
+   ln -s Specware4.$IMAGE_EXTENSION Bootstrap.$IMAGE_EXTENSION
+   echo " " 
+   ls -sltra *.$IMAGE_EXTENSION
+   echo " " 
+   exit 0
+fi
+
+echo cd -P "$SPECWARE4"/Applications/Specware
+cd -P "$SPECWARE4"/Applications/Specware
+
+# --------------------------------------------------------------------------------
+# If necessary, copy Specware4-base.lisp to lisp/Specware4.lisp
+# --------------------------------------------------------------------------------
+
+if [ -f "$SPECWARE_BASE_LISP" \
+     -a \(  \( ! -f "$SPECWARE_LISP" \) -o "$SPECWARE_BASE_LISP" -nt "$SPECWARE_LISP" \) ]; then
+ 
+   if [ -f "$SPECWARE_LISP" ]; then
+      echo " " 
+      echo "  CVS saved lisp, Specware4-base.lisp, is newer than Bootstrap.$IMAGE_EXTENSION, Specware4.$IMAGE_EXTENSION, and lisp/Specware4.lisp (or they don't even exist)"
+      echo " " 
+   fi
+   
+   if [ ! -d lisp ]; then
+      echo "mkdir lisp"
+      mkdir lisp
+   fi
+   
+   echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+   cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+   echo " "
+   
+else
+   echo " "
+   echo "Bootstrapping from previously generated lisp: lisp/Specware4.lisp"
+   echo " "
+fi
+   
+
+# --------------------------------------------------------------------------------
+# Build new Bootstrap.$IMAGE_EXTENSION from lisp/Specware4.lisp
+# --------------------------------------------------------------------------------
+
+if [ ! -f lisp/Specware4.lisp ]; then
+   echo "Cannot find Bootstrap.$IMAGE_EXTENSION, Specware4.$IMAGE_EXTENSION, Specware-base.lisp, or lisp/Specware.lisp"
+   echo "Giving up."
+   exit 1
+fi
+
+if [ -f bin/linux/Specware4.$IMAGE_EXTENSION ]; then
+   echo "  lisp/Specware4.lisp is newer than bin/linux/Specware4.$IMAGE_EXTENSION"
+fi
+if [ -f bin/linux/Bootstrap.$IMAGE_EXTENSION ]; then
+   echo "  lisp/Specware4.lisp is newer than bin/linux/Bootstrap.$IMAGE_EXTENSION"
+fi
+      
+echo " "
+cd Handwritten/Lisp
+export SWPATH=/:.
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
+echo "\$SWPATH=$SWPATH"
+   
+echo " "
+echo "Removing old Bootstrap.$IMAGE_EXTENSION, then creating new one."
+echo " "
+   
+/bin/rm -f "$BOOTSTRAP_IMAGE"
+   
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+   
+"$LISP" -batch <<-XXXX
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$MEMORY_MANAGEMENT") 
+	 (load "$EXIT_ON_ERRORS")
+	 (load "$SAVE_IMAGE") 
+	 (enlarge-stack)
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   (load "Specware4.lisp"))
+	 ;; We have two separate exiting-on-errors forms because we must
+	 ;; finish evaluating the load of Specware4.lisp to create the 
+	 ;; Specware package before the reader sees a reference to it.
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (format t "~%Building $BOOTSTRAP_IMAGE~%")
+	 (save-image :name "$BOOTSTRAP_IMAGE"))
+	XXXX
+RC=$?
+      
+if [ $RC -ne 0 ]; then
+   echo " "
+   echo "Prepare_Bootstrap_Image_ACL failed with code $RC, exiting ..."
+   echo " "
+   exit $RC
+fi
+
+echo " " 
+cd "$BIN_DIR"
+ls -sltra *.$IMAGE_EXTENSION
+echo " " 

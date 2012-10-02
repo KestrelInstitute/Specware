@@ -1,0 +1,21 @@
+(43
+ :name       "Snark doesn't like Booleans"
+ :owner      "DC"
+ :reporter   "LM"
+ :reported   "07/30/03"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

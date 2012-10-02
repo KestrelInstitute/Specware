@@ -1,0 +1,119 @@
+#!/bin/sh
+
+# Basic
+PATH=/bin:/usr/local/bin:/usr/bin:/sbin:/usr/sbin:$HOME/bin:${PATH}
+# fink, darwinports
+PATH=/sw/bin:/opt/local/bin:/opt/local/sbin:${PATH}
+
+
+function choosefrom ()
+{
+  local RESULT=""
+  local FILE=""
+
+  for FILE in "$@"
+  do
+    [ -z "$RESULT" -a -e "$FILE" ] && RESULT="$FILE"
+  done
+
+  [ -z "$RESULT" ] && RESULT="$FILE"
+  echo "$RESULT"
+}
+
+emacs="$(choosefrom \
+  "/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
+  "$HOME/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
+  /Applications/Emacs.app/Contents/MacOS/Emacs \
+  "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" \
+  "")"
+
+defaultemacs=/Applications/Emacs.app/Contents/MacOS/Emacs
+if [ -z "$emacs" ]; then
+  if [ -x $defaultemacs ]; then
+      emacs=$defaultemacs
+  fi
+fi
+
+if [ -z "$emacs" ]; then
+    emacs=`which emacs`
+    if [ -z "$emacs" ]; then
+	echo Cannot find Emacs
+    fi
+fi
+
+declare -a EMACS_OPTIONS=()
+if [ -n "$emacs" ]; then
+  EMACS_OPTIONS=(-p "$emacs")
+fi
+
+act='launch Specware'
+
+# Use the directory of this file as the value of SPECWARE4
+cd `dirname $0`
+SPECWARE4=`pwd`
+export SPECWARE4
+
+# Test whether SPECWARE4 has been set
+
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE4="`pwd`/$SPECWARE4";;
+esac
+
+#echo "\$SPECWARE4=$SPECWARE4"
+
+# Test whether SPECWARE4 has been set
+
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE";;
+esac
+
+SPECWARE_BIN=$SPECWARE4
+
+# Ensure SWPATH is set
+
+if [ -z "$SWPATH" ]; then
+  SWPATH="/"
+  export SWPATH
+fi
+
+LISP_EXECUTABLE="$SPECWARE_BIN"/Specware4.sbclexe
+LISP_HEAP_IMAGE=NONE
+LISP_DIRECTORY="$SPECWARE4"/
+SPECWARE_INIT_FORM=NIL
+export LISP_EXECUTABLE
+export LISP_HEAP_IMAGE
+export LISP_DIRECTORY
+export SPECWARE_INIT_FORM
+
+$emacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
+       -f run-specware4 &

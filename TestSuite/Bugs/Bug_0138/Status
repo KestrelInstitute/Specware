@@ -1,0 +1,22 @@
+(138
+ :name       "Constructor called 'sub' causes type error unless preceded by 'embed'"
+ :reporter   "AC"
+ :reported   "10/25/04"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+
+

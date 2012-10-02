@@ -1,0 +1,26 @@
+<chapter id="iso">
+<title>Isomorphic type refinement</title>
+
+<para>
+The following transformation is not available through the &XShell; but
+only through the ``spec calculus'' of &Metaslang;.
+One of the alternatives for a `transformation-step is an
+`isomorphic-type-refinement, which takes the form
+[[
+||  isomorphism($f$, $g$)
+]]
+It operates on a whole spec.
+The parameters $f$ and $g$ must be ops that constitute the witnesses of
+an isomorphism between two types, say $T$ and $T'$, so that
+[[
+||  $f$ : $T$  -> $T'$
+]]
+and
+[[
+||  $g$ : $T'$ -> $T$
+]]
+are each other's inverse (and therefore bijections).
+The effect is that for each `op-declaration and `op-definition in the spec for an op having some type $F$($T$) involving $T$, a modified copy is added for an op having type $F$($T$[[']]).
+</para>
+
+</chapter>

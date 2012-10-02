@@ -1,0 +1,18 @@
+(83
+ :name       "Ambiguous op not detected"
+ :reporter   "LM"
+ :reported   "03/17/04"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :high
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

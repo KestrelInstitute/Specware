@@ -1,0 +1,18 @@
+(101
+ :name       "Redundant obligations for if-then-else"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "07/01/04"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

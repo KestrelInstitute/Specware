@@ -1,0 +1,451 @@
+%%% TEXT
+
+\newcommand{\MS}{Metaslang}
+\newcommand{\SW}{Specware}
+
+\newcommand{\secref}[1]{\S\ref{#1}}
+
+
+%%% MATH
+
+\include{mathmacros}
+
+\newenvironment{abblist}
+ {\begin{array}{rcl}}
+ {\end{array}}
+\newcommand{\abbitem}[2]{#1&\longrightarrow&#2\\}
+\newcommand{\abbiteM}[3]{#1&\longrightarrow&#2\\&&\mbox{where }#3\\}
+
+\newcommand{\abbvert}[2]
+ {\begin{array}{l}#1\\\hspace*{2em}\longrightarrow\\#2\end{array}}
+
+\newtheorem{theorem}{Theorem}[section]
+\newenvironment{proof}{\noindent\textbf{Proof:}}{$\Box$}
+\newcommand{\thmref}[1]{Theorem \ref{#1}}
+
+\newenvironment{derivation}{\begin{enumerate}}{\end{enumerate}}
+\newenvironment{derivatioN}[1]
+ {\begin{enumerate}\setcounter{enumi}{#1}}{\end{enumerate}}
+\newenvironment{derivationO}{\begin{quote}}{\end{quote}}
+%\newcommand{\step}[3]{\item\label{#3}$#1$\hfill[#2]}
+\newcommand{\step}[2]{\item$#1$\hfill[#2]}
+\newcommand{\steP}[1]{\item$#1$}
+\newcommand{\stepO}[2]{\item[]$#1$\hfill[#2]}
+\newcommand{\stePO}[1]{\item[]$#1$}
+\newcommand{\StepO}[2]{\begin{derivation}\stepO{#1}{#2}\end{derivation}}
+\newcommand{\StePO}[1]{\begin{derivation}\stePO{#1}\end{derivation}}
+\newcommand{\stepL}[2]{\item$#1$\\\hspace*{1em}\hfill[#2]}
+\newcommand{\stepOL}[2]{\item[]$#1$\\\hspace*{1em}\hfill[#2]}
+\newcommand{\StepOL}[2]{\begin{derivation}\stepOL{#1}{#2}\end{derivation}}
+
+\newenvironment{bycase}{\begin{itemize}}{\end{itemize}}
+\newcommand{\Case}[1]{\item[]\hspace{-2em}#1)\ }
+
+\newcommand{\link}[2]{\\\hspace*{1em}#1\ [\mbox{#2}]\\}
+\newcommand{\linK}[1]{\\\hspace*{1em}#1\\}
+
+\newenvironment{links}{\begin{quote}}{\end{quote}}
+
+\newcommand{\hyp}{hypothesis}
+\newcommand{\asm}{assumption}
+\newcommand{\indhyp}{induction hypothesis}
+\newcommand{\indhypthm}[1]{induction hypothesis (\thmref{#1})}
+\newcommand{\defof}[1]{definition of $#1$}
+\newcommand{\premof}[1]{premise of #1}
+\newcommand{\premofrule}{premise of rule}
+%\newcommand{\setth}{set theory}
+\newcommand{\restrules}{all other rules}
+\newcommand{\restrulesbut}[1]{all other rules except {#1}}
+\newcommand{\restrulesbutII}[2]{all other rules except {#1} and {#2}}
+\newcommand{\restrulesbutIII}[3]{all other rules except {#1}, {#2}, and {#3}}
+\newcommand{\restkinds}{all other kinds}
+\newcommand{\abb}{abbreviation}
+%\newcommand{\restcases}{all other cases}
+
+
+%%% SYNTAX
+
+\newcommand{\Nam}{\mathcal{N}}
+
+\newcommand{\Typ}{\mathit{Type}}
+\newcommand{\typ}{T}
+\newcommand{\typS}{\seq{\typ}}
+\newcommand{\typI}{S}
+\newcommand{\typIS}{\seq{\typI}}
+
+\newcommand{\bool}{\mathsf{Bool}}
+
+\newcommand{\tnam}{\tau}
+
+\newcommand{\tvar}{\beta}
+\newcommand{\tvarS}{\seq{\beta}}
+\newcommand{\tvarI}{\alpha}
+\newcommand{\tvarIS}{\seq{\tvarI}}
+
+\newcommand{\tinst}[2]{#1[#2]}
+\newcommand{\tinstO}{\tinst{\tnam}{\typS}}
+
+\newcommand{\tarr}[2]{#1\to#2}
+\newcommand{\tarrO}{\tarr{\typ_1}{\typ_2}}
+
+\newcommand{\trecFT}[4]{#1\;#2\times\cdots\times#3\;#4}
+\newcommand{\trecFTO}{\trecFT{\fnam_1}{\typ_1}{\fnam_n}{\typ_n}}
+\newcommand{\trec}[3]{\prod_{#1}#2\;#3}
+\newcommand{\trecO}{\trec{i}{\fnam_i}{\typ_i}}
+\newcommand{\trecII}[2]{#1\times#2}
+\newcommand{\trecIII}[3]{#1\times#2\times#3}
+%\newcommand{\trecFIT}[6]
+%           {#1\;#2\times\cdots\times#3\;#4\times\cdots\times#5\;#6}
+%\newcommand{\trecTF}[2]{\cdots\times#1\;#2\times\cdots}
+\newcommand{\fnam}{f}
+\newcommand{\fnamS}{\seq{f}}
+\newcommand{\trecmt}{\prod\epsilon}
+
+\newcommand{\projnam}[1]{\pi_{#1}}
+\newcommand{\tprod}[2]{\prod_{#1}{#2}}
+\newcommand{\tprodO}{\tprod{i}{\typ_i}}
+\newcommand{\tprodII}[2]{#1\times#2}
+
+\newcommand{\tsub}[2]{#1|#2}
+\newcommand{\tsubO}{\tsub{\typ}{\tspred}}
+\newcommand{\tspred}{r}
+
+\newcommand{\Expr}{\mathit{Exp}}
+\newcommand{\expr}{e} % avoid conflict with \exp
+\newcommand{\exprS}{\seq{\expr}}
+\newcommand{\exprI}{d}
+\newcommand{\exprIS}{\seq{\exprI}}
+
+\newcommand{\var}{v}
+\newcommand{\varS}{\seq{\var}}
+\newcommand{\varI}{u}
+\newcommand{\varIS}{\seq{\varI}}
+\newcommand{\varII}{w}
+\newcommand{\vaR}{\widetilde{\var}}
+
+\newcommand{\op}[2]{#1[#2]}
+\newcommand{\opO}{\op{\onam}{\typS}}
+\newcommand{\onam}{o}
+
+\newcommand{\app}[2]{#1\;#2}
+\newcommand{\appO}{\app{\expr_1}{\expr_2}}
+
+\newcommand{\bnd}[2]{#1\!:\!#2}
+\newcommand{\bndO}{\bnd{\var}{\typ}}
+
+\newcommand{\abs}[3]{\lambda\bnd{#1}{#2}.\;#3}
+\newcommand{\absO}{\abs{\var}{\typ}{\expr}}
+\newcommand{\absS}[2]{\lambda#1.\;#2}
+
+\newcommand{\eqY}{\equiv}
+\newcommand{\eqop}[1]{\eqY_{#1}}
+\newcommand{\eqopO}{\eqY_{\typ}}
+\newcommand{\eqt}[3]{#2\eqY_{#1}#3}
+\newcommand{\eqtO}{\eqt{\typ}{\expr_1}{\expr_2}}
+\newcommand{\eq}[2]{#1\eqY#2}
+\newcommand{\eqO}{\eq{\expr_1}{\expr_2}}
+
+\newcommand{\iifop}[1]{\mathsf{if}_{#1}}
+\newcommand{\iifopO}{\iifop{\typ}}
+\newcommand{\iif}[3]{\mathsf{if}\;#1\;#2\;#3} % avoid conflict with \if
+\newcommand{\iifO}{\iif{\expr_0}{\expr_1}{\expr_2}}
+\newcommand{\iifL}[3]
+ {\mathsf{if}\;\!\!\!\begin{array}[t]{l}#1\\#2\\#3\end{array}}
+
+\newcommand{\descop}[1]{\iota_{#1}}
+\newcommand{\descopO}{\descop{\typ}}
+\newcommand{\desc}[3]{\iota\bnd{#1}{#2}.#3}
+\newcommand{\descO}{\desc{\var}{\typ}{\expr}}
+
+\newcommand{\projop}[2]{\mathsf{proj}_{#1}\;{#2}}
+\newcommand{\projopO}{\projop{\trecO}{\fnam_j}}
+\newcommand{\pjop}[1]{\mathsf{proj}\;{#1}}
+\newcommand{\pjopO}{\pjop{\fnam_j}}
+\newcommand{\proj}[2]{#1.#2}
+\newcommand{\projO}{\proj{\expr}{\fnam}}
+
+\newcommand{\varfx}{\gamma}
+\newcommand{\varfxI}[1]{\varfx_{#1}}
+\newcommand{\varfxpred}{\psi}
+\newcommand{\varfxfun}{\phi}
+\newcommand{\varFX}{\widetilde{\varfx}}
+\newcommand{\varFXpred}{\widetilde{\varfxpred}}
+\newcommand{\varFXfun}{\widetilde{\varfxfun}}
+
+\newcommand{\true}{\mathsf{true}}
+\newcommand{\false}{\mathsf{false}}
+
+\newcommand{\negaop}{\lnot}
+\newcommand{\nega}[1]{\lnot\;#1}
+\newcommand{\negaO}{\nega{\expr}}
+
+\newcommand{\conjY}{\land}
+\newcommand{\conj}[2]{#1\conjY#2}
+\newcommand{\conjO}{\conj{\expr_1}{\expr_2}}
+\newcommand{\conjI}[2]{\bigwedge_{#1}#2}
+
+\newcommand{\disjY}{\lor}
+\newcommand{\disj}[2]{#1\disjY#2}
+\newcommand{\disjO}{\disj{\expr_1}{\expr_2}}
+\newcommand{\disjI}[2]{\bigvee_{#1}#2}
+
+\newcommand{\impl}[2]{#1\Rightarrow#2}
+\newcommand{\implO}{\impl{\expr_1}{\expr_2}}
+
+\newcommand{\iiffop}{\Leftrightarrow}
+\newcommand{\iiff}[2]{#1\Leftrightarrow#2} % avoid conflict with \iff
+\newcommand{\iiffO}{\iiff{\expr_1}{\expr_2}}
+
+\newcommand{\neeq}[2]{#1\not\eqY#2} % avoid conflict with \neq
+\newcommand{\neeqO}{\neeq{\expr_1}{\expr_2}}
+
+\newcommand{\faop}[1]{\forall_{#1}}
+\newcommand{\faopO}{\faop{\typ}}
+\newcommand{\fa}[3]{\forall\bnd{#1}{#2}.\;#3}
+\newcommand{\faO}{\fa{\var}{\typ}{\expr}}
+\newcommand{\faS}[2]{\forall#1.\;#2}
+
+\newcommand{\exop}[1]{\exists_{#1}}
+\newcommand{\exopO}{\exop{\typ}}
+\newcommand{\ex}[3]{\exists\bnd{#1}{#2}.\;#3}
+\newcommand{\exO}{\ex{\var}{\typ}{\expr}}
+\newcommand{\exS}[2]{\exists#1.\;#2}
+
+\newcommand{\exIop}[1]{\exists!_{#1}}
+\newcommand{\exIopO}{\exIop{\typ}}
+\newcommand{\exI}[3]{\exists!\,\bnd{#1}{#2}.\;#3}
+\newcommand{\exIO}{\exI{\var}{\typ}{\expr}}
+\newcommand{\exIS}[2]{\exists!\,#1.\;#2}
+
+\newcommand{\efvarY}{\mathcal{FV}}%{\mathcal{F}\!\mathcal{V}}
+\newcommand{\efvar}[1]{\efvarY(#1)}
+\newcommand{\efvarO}{\efvar{\expr}}
+
+\newcommand{\Cxel}{\mathit{CxElem}}
+\newcommand{\cxel}{\mathit{cxel}}
+
+\newcommand{\tdec}[2]{\mathsf{ty}\ #1\!:\!#2}
+\newcommand{\tdecO}{\tdec{\tnam}{n}}
+
+\newcommand{\tdef}[3]{\mathsf{def}\ #1[#2]=#3}
+\newcommand{\tdefO}{\tdef{\tnam}{\tvarS}{\typ}}
+\newcommand{\tdefdots}[1]{\mathsf{def}\ #1\ldots}
+
+\newcommand{\odec}[3]{\mathsf{op}\ #1\!:\!\{#2\}\;#3}
+\newcommand{\odecO}{\odec{\onam}{\tvarS}{\typ}}
+
+\newcommand{\ax}[2]{\mathsf{ax}\ \{#1\}\ #2}
+\newcommand{\axO}{\ax{\tvarS}{\expr}}
+\newcommand{\axM}[1]{\mathsf{ax}\ #1}
+\newcommand{\axLdisjIV}[5]
+ {\!\!\!\begin{array}{r@{\ }l}
+  \mathsf{ax}\ \{#1\} & #2 \\ \disjY & #3 \\ \disjY & #4 \\ \disjY & #5
+  \end{array}}
+\newcommand{\axLconjIV}[5]
+ {\!\!\!\begin{array}{r@{\ }l}
+  \mathsf{ax}\ \{#1\} & #2 \\ \conjY & #3 \\ \conjY & #4 \\ \conjY & #5
+  \end{array}}
+
+\newcommand{\lem}[2]{\mathsf{lem}\ \{#1\}\ #2}
+\newcommand{\lemO}{\lem{\tvarS}{\expr}}
+\newcommand{\lemM}[1]{\mathsf{lem}\ #1}
+
+\newcommand{\tvdec}[1]{\mathsf{tvar}\ #1}
+\newcommand{\tvdecO}{\tvdec{\tvar}}
+
+\newcommand{\vdec}[2]{\mathsf{var}\ \bnd{#1}{#2}}
+\newcommand{\vdecO}{\vdec{\var}{\typ}}
+\newcommand{\vdecS}[1]{\mathsf{var}\ #1}
+
+\newcommand{\Cx}{\mathit{Cx}}
+\newcommand{\cx}{\mathit{cx}}
+\newcommand{\mtcx}{\seqO}
+
+\newcommand{\cxv}{\cx_1,\vdec{\varI}{\typI},\cx_2}
+\newcommand{\cxvI}{\cx_1,\vdec{\varI'}{\typI},\esbsren{\cx_2}}
+
+\newcommand{\cxtnamY}{\mathcal{TN}}
+\newcommand{\cxtnam}[1]{\cxtnamY(#1)}
+\newcommand{\cxtnamO}{\cxtnam{\cx}}
+
+\newcommand{\cxonamY}{\mathcal{ON}}
+\newcommand{\cxonam}[1]{\cxonamY(#1)}
+\newcommand{\cxonamO}{\cxonam{\cx}}
+
+\newcommand{\cxtvarY}{\mathcal{TV}}
+\newcommand{\cxtvar}[1]{\cxtvarY(#1)}
+\newcommand{\cxtvarO}{\cxtvar{\cx}}
+
+\newcommand{\cxvarY}{\mathcal{V}}
+\newcommand{\cxvar}[1]{\cxvarY(#1)}
+\newcommand{\cxvarO}{\cxvar{\cx}}
+
+\newcommand{\opsinY}{\mathcal{ON}}%{\mathcal{O}\!\mathcal{N}}
+\newcommand{\opsin}[1]{\opsinY(#1)}
+
+\newcommand{\ftvarY}{\mathcal{FTV}}
+\newcommand{\ftvar}[1]{\ftvarY(#1)}
+
+\newcommand{\tsbsY}{\tsbs{\_}{\_}}
+\newcommand{\tsbs}[2]{#1[#2]}
+\newcommand{\tsbsmap}{\sigma}
+\newcommand{\tsbsO}[1]{\tsbs{#1}{\tsbsmap}}
+
+\newcommand{\tsbslashY}{\tsbslash{\_}{\_}{\_}}
+\newcommand{\tsbslash}[3]{#1[#2/#3]}
+\newcommand{\tsbsOlash}[1]{\tsbslash{#1}{\tvarS}{\typIS}}
+
+\newcommand{\tOe}{x}
+\newcommand{\tep}{x}
+\newcommand{\tOeOc}{x}
+
+\newcommand{\istsbsatY}{\istsbsat{\_}{\_}{\_}{\_}{\_}}
+\newcommand{\istsbsat}[5]{#1[#2/#3@#4]\leadsto#5}
+\newcommand{\istsbsatO}[3]{\istsbsat{#1}{\typI}{\typI'}{#2}{#3}}
+
+\newcommand{\esbsY}{\esbs{\_}{\_}{\_}}
+\newcommand{\esbs}[3]{#1[#2/#3]}
+\newcommand{\esbsO}[1]{\esbs{#1}{\varI}{\exprI}}
+\newcommand{\esbsFT}[5]{#1[#2/#3]\cdots[#4/#5]}
+\newcommand{\esbsren}[1]{\esbs{#1}{\varI}{\varI'}}
+
+\newcommand{\esbsokY}{\mathit{OKsbs}}
+\newcommand{\esbsok}[3]{\esbsokY(#1,#2,#3)}
+\newcommand{\esbsokO}[1]{\esbsok{#1}{\varI}{\exprI}}
+
+\newcommand{\cvarvY}{\mathcal{CV}}%{\mathcal{C}\!\mathcal{V}}
+\newcommand{\cvarv}[2]{\cvarvY(#1,#2)}
+\newcommand{\cvarvO}[1]{\cvarv{#1}{\varI}}
+
+\newcommand{\ctvarY}{\mathcal{CTV}}
+\newcommand{\ctvar}[2]{\ctvarY(#1,#2)}
+\newcommand{\ctvarO}[1]{\ctvar{#1}{\tvarI}}
+
+\newcommand{\tsbsokY}{\mathit{OKsbs}}
+\newcommand{\tsbsok}[2]{\tsbsokY(#1,#2)}
+\newcommand{\tsbsokO}[1]{\tsbsok{#1}{\tsbsmap}}
+
+\newcommand{\tsbslashok}[3]{\tsbsokY(#1,#2,#3)}
+\newcommand{\tsbslashokO}[1]{\tsbslashok{#1}{\tvarS}{\typS}}
+
+\newcommand{\fresh}[1]{#1\mbox{ fresh}}
+
+
+%%% PROOF THEORY
+
+\newcommand{\cxwfY}{\cxwf{\_}}
+\newcommand{\cxwf}[1]{\vdash#1:\textsc{context}}
+\newcommand{\cxwfO}{\cxwf{\cx}}
+
+\newcommand{\Rcxmt}   {\textsc{cxMT}}
+\newcommand{\Rcxtdec} {\textsc{cxTdec}}
+\newcommand{\Rcxodec} {\textsc{cxOdec}}
+\newcommand{\Rcxax}   {\textsc{cxAx}}
+\newcommand{\Rcxtvdec}{\textsc{cxTVdec}}
+\newcommand{\Rcxvdec} {\textsc{cxVdec}}
+
+\newcommand{\istyY}{\isty{\_}{\_}}
+\newcommand{\isty}[2]{#1\vdash#2:\textsc{type}}
+\newcommand{\istyO}[1]{\isty{\cx}{#1}}
+
+\newcommand{\Rtbool}{\textsc{tyBool}}
+\newcommand{\Rtvar} {\textsc{tyVar}}
+\newcommand{\Rtinst}{\textsc{tyInst}}
+\newcommand{\Rtarr} {\textsc{tyArr}}
+\newcommand{\Rtrec} {\textsc{tyRec}}
+\newcommand{\Rtsub} {\textsc{tyRestr}}
+
+\newcommand{\teqY}{\teq{\_}{\_}{\_}}
+\newcommand{\teq}[3]{#1\vdash#2\approx#3}
+\newcommand{\teqO}[2]{\teq{\cx}{#1}{#2}}
+
+\newcommand{\issubY}{\issub{\_}{\_}{\_}{\_}}
+\newcommand{\issub}[4]{#1\vdash#2\prec_{#3}#4}
+\newcommand{\issubO}[3]{\issub{\cx}{#1}{#2}{#3}}
+
+\newcommand{\Rstsub} {\textsc{stRestr}}
+\newcommand{\Rstrefl}{\textsc{stRefl}}
+\newcommand{\Rstarr} {\textsc{stArr}}
+\newcommand{\Rstrec} {\textsc{stRec}}
+
+\newcommand{\perm}{P}
+
+\newcommand{\hastyY}{\hasty{\_}{\_}{\_}}
+\newcommand{\hasty}[3]{#1\vdash#2:#3}
+\newcommand{\hastyO}[2]{\hasty{\cx}{#1}{#2}}
+\newcommand{\hastyany}[2]{\hasty{#1}{#2}{\ldots}}
+\newcommand{\hastyOany}[1]{\hastyO{#1}{\ldots}}
+
+\newcommand{\Reop}{\textsc{exOp}}
+\newcommand{\Revar}{\textsc{exVar}}
+\newcommand{\Reapp}{\textsc{exApp}}
+\newcommand{\Reabs}{\textsc{exAbs}}
+\newcommand{\Reeq}{\textsc{exEq}}
+\newcommand{\Reif}{\textsc{exIf}}
+\newcommand{\Redesc}{\textsc{exThe}}
+\newcommand{\Reproj}{\textsc{exProj}}
+\newcommand{\Resuper}{\textsc{exSuper}}
+\newcommand{\Resub}{\textsc{exSub}}
+\newcommand{\Reabsalpha}{\textsc{exAbsAlpha}}
+
+\newcommand{\theoY}{\theo{\_}{\_}}
+\newcommand{\theo}[2]{#1\vdash#2}
+\newcommand{\theoO}[1]{\theo{\cx}{#1}}
+
+\newcommand{\Rthax}     {\textsc{thAx}}
+\newcommand{\Rthrefl}   {\textsc{thRefl}}
+\newcommand{\Rthsymm}   {\textsc{thSymm}}
+\newcommand{\Rthtrans}  {\textsc{thTrans}}
+\newcommand{\Rthappsbs} {\textsc{thAppSubst}}
+\newcommand{\Rtheqsbs}  {\textsc{thEqSubst}}
+\newcommand{\Rthifsbs}  {\textsc{thIfSubst}}
+\newcommand{\Rthsbs}    {\textsc{thSubst}}
+\newcommand{\Rthbool}   {\textsc{thBool}}
+\newcommand{\Rthext}    {\textsc{thExt}}
+\newcommand{\Rthabs}    {\textsc{thAbs}}
+\newcommand{\Rthif}     {\textsc{thIf}}
+\newcommand{\Rthdesc}   {\textsc{thThe}}
+\newcommand{\Rthrec}    {\textsc{thRec}}
+\newcommand{\Rthprojsub}{\textsc{thProjSub}}
+\newcommand{\Rthsub}    {\textsc{thSub}}
+
+\newcommand{\jcxdots}[1]{#1\vdash\ldots}
+
+%derived:
+\newcommand{\Rcxprefix}{\textsc{cxPre}}
+\newcommand{\Rcxwf}{\textsc{cxWF}}
+\newcommand{\RcxvdecI}{\textsc{cxVdec'}}
+\newcommand{\Rcxvdecbool}{\textsc{cxVdecBool}}
+\newcommand{\Rcxaxmono}{\textsc{cxAx0}}
+\newcommand{\RtarrI}{\textsc{tyArr'}}
+\newcommand{\Reabsbool}{\textsc{exAbsBool}}
+\newcommand{\Reid}{\textsc{exId}}
+\newcommand{\Reidbool}{\textsc{exIdBool}}
+\newcommand{\Retrue}{\textsc{exTrue}}
+\newcommand{\Reconsttrue}{\textsc{exConstTrue}}
+\newcommand{\Refalse}{\textsc{exFalse}}
+\newcommand{\Renot}{\textsc{exNot}}
+\newcommand{\Renega}{\textsc{exNeg}}
+\newcommand{\Reconj}{\textsc{exConj}}
+\newcommand{\ReconjO}{\textsc{exConj0}}
+\newcommand{\Redisj}{\textsc{exDisj}}
+\newcommand{\RedisjO}{\textsc{exDisj0}}
+\newcommand{\Reimpl}{\textsc{exImpl}}
+\newcommand{\ReimplO}{\textsc{exImpl0}}
+\newcommand{\Reiff}{\textsc{exIff}}
+\newcommand{\Recoimpl}{\textsc{exCoImpl}}
+\newcommand{\Reneq}{\textsc{exNeq}}
+\newcommand{\Refaop}{\textsc{exFA}}
+\newcommand{\Refa}{\textsc{exForAll}}
+\newcommand{\Reexop}{\textsc{exEX}}
+\newcommand{\Reex}{\textsc{exExists}}
+\newcommand{\ReexIop}{\textsc{exEX1}}
+\newcommand{\ReexI}{\textsc{exExists1}}
+\newcommand{\RefaalphaO}{\textsc{exForAllAlpha}}
+\newcommand{\RedotO}{\textsc{exDotProj0}}
+\newcommand{\Reteq}{\textsc{exTE}}
+\newcommand{\Redot}{\textsc{exDotProj}}
+\newcommand{\Rthtrue}{\textsc{thTrue}}
+\newcommand{\Rtheqtrue}{\textsc{thEqTrue}}
+\newcommand{\RthfaelimO}{\textsc{thForAllElim}}
+\newcommand{\RtmpI}{$\ast$}

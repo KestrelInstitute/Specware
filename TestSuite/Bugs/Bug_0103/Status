@@ -1,0 +1,18 @@
+(103
+ :name       "WFO obligation not generated"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "07/01/04"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+

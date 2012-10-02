@@ -1,0 +1,21 @@
+(70
+  :name     "Quotient sorts are not checked"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "09/25/03"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

@@ -1,0 +1,21 @@
+(150
+ :name       "Spec /Library/General/FiniteSequencesAsLists doesn't type-check any more (it used to)"
+ :owner      "SW"
+ :reporter   "AC"
+ :reported   "02/24/05"
+ :status     :closed   
+ :severity   :high
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

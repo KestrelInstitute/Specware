@@ -1,0 +1,17 @@
+(78
+ :name       "Terminologically incorrect progress message when processing morphisms"
+ :reporter   "AC"
+ :reported   "11/18/03"
+ :owner      "??"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

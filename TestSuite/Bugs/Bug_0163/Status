@@ -1,0 +1,19 @@
+(163
+ :name       "C code generation needs all (or at least more) fn decls in .h file"
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "06/23/05"
+ :status     :closed
+ :severity   :high
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+

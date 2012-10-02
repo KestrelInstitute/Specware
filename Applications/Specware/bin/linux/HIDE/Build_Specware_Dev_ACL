@@ -1,0 +1,149 @@
+#!/bin/bash --noprofile
+
+# This script builds Specware4.dxl
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# Misc notes: If we build and load in one image, the generated dxl file is almost 4 times larger.
+# Adding a gc between the load and the dumplisp, adds 10K to the dxl file.
+# People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* in their lisp init.
+
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
+
+act='Generate Specware4.Lisp from Specware4.sw'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+. $SCRIPT_DIR/Verify_Specware_Variables
+. $SPECWARE4/Scripts/unix/Verify_ACL
+
+export SWPATH=/:.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+echo "\$SWPATH=$SWPATH"
+
+# --------------------------------------------------------------------------------
+# Make sure Specware4.fasl is up-to-date
+# --------------------------------------------------------------------------------
+
+cd "$GEN_DIR"
+if [ -f Specware4.fasl -a -f Specware4.lisp -a Specware4.fasl -nt Specware4.lisp ]; then
+    echo " "
+else
+    echo " "
+    echo "--------------------------------------------------------------------------------"
+    echo "Specware4.fasl is not newer than Specware4.lisp, so first attempt to recompile."
+    echo "--------------------------------------------------------------------------------"
+    echo " "
+    "$SCRIPT_DIR"/Compile_Specware_Lisp_ACL
+    RC=$?
+    if [ $RC -ne 0 ]; then
+       echo " "
+       echo "--------------------------------------------------------------------------------"
+       echo "Recompilation failed, exiting with code $RC"
+       echo "--------------------------------------------------------------------------------"
+       echo " "
+       exit $RC
+    fi
+    echo " "
+    echo "--------------------------------------------------------------------------------"
+    echo "Done recompiling, back to building..."
+    echo "--------------------------------------------------------------------------------"
+    echo " "
+fi
+
+# --------------------------------------------------------------------------------
+# Save old image, if any
+# --------------------------------------------------------------------------------
+
+echo cd "$BIN_DIR"
+cd "$BIN_DIR"
+
+echo " "
+if [ -f Specware4.dxl ]; then
+  echo "Saving previous specware image ..."
+  echo "cp -p -f Specware4.dxl Specware4-save.dxl"
+  cp -p -f Specware4.dxl Specware4-save.dxl
+else
+  echo "Note: No previous specware image."
+fi
+echo " "
+
+# --------------------------------------------------------------------------------
+# Start by building big-alisp with expanded heap
+# --------------------------------------------------------------------------------
+
+NOW=`/bin/date +"%y%m%d-%H%M%S"`
+export BIG_ALISP="$SPECWARE4"/Applications/Specware/bin/linux/big-alisp.dxl
+# big-alisp.dxl will have a larger lisp heap than the default alisp image.
+# Rebuild it each time.  A bit redundant, but ensures compatibility with 6.1/6.2/etc.
+echo "Building big-alisp, see /tmp/build-big-alisp-$NOW.log for details."
+"$LISP" -batch <<-XXXX>> /tmp/build-big-alisp-$NOW.log
+	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x100)
+	XXXX
+
+# --------------------------------------------------------------------------------
+# Then load Specware fasl files into big-alisp, and save as Specware4.dxl
+# --------------------------------------------------------------------------------
+
+echo " "
+echo "Creating Specware4.dxl from Specware4.fasl and misc support files."
+echo " "
+
+cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+
+$LISP -I "$BIG_ALISP" -batch <<-XXXX
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$EXIT_ON_ERRORS")
+	 (load "$MEMORY_MANAGEMENT") 
+	 (compact-memory nil 0 32000000)   ; not verbose
+	 (set-gc-parameters-for-build nil) ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   ;; Note:
+	   ;;   The file being loaded here is
+	   ;;    $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp,
+	   ;;   which is essentially a handwritten script used to load
+	   ;;   the (presumably recently) generated file named
+	   ;;    $SPECWARE4/Applications/Specware/lisp/Specware4.fasl
+	   ;;    along with some other files (handwritten library file, etc.).
+	   ;;   Do not be confused by the similarity of their names.
+	   ;;   (sigh)
+	   (load "Specware4.lisp"))
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (compact-memory nil -1 0)         ; not verbose
+	 (set-gc-parameters-for-use nil)   ; not verbose
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (values))
+	(excl::dumplisp :name "$BIN_DIR/Specware4.dxl")
+XXXX
+RC=$?
+
+echo " "
+
+# --------------------------------------------------------------------------------
+# Report results
+# --------------------------------------------------------------------------------
+
+echo cd "$BIN_DIR"
+cd "$BIN_DIR"
+
+echo " "
+ls -sltr "*.dxl"
+echo " "
+
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+   echo ""
+   echo "Second load failed with code $RC, exiting ..."
+   exit $RC
+fi
+

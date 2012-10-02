@@ -1,0 +1,58 @@
+#!/bin/bash --noprofile
+
+# This script prepares a bootstrap image suitable for processing Specware4.sw to produce Specware4.lisp
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
+
+act='Prepare bootstrap image suitable for generating Specware4.Lisp from Specware4.sw'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P "$SCRIPT_DIR"
+SCRIPT_DIR=`pwd`
+
+. "$SCRIPT_DIR"/Verify_Specware_Variables
+. "$SPECWARE4"/Scripts/unix/Verify_SBCL
+. "$SCRIPT_DIR"/Prepare_Bootstrap_Image_Generic
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+   
+"$LISP" -batch <<-XXXX
+	(progn
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (load "$EXIT_ON_ERRORS")
+	 (load "$MEMORY_MANAGEMENT") 
+	 (enlarge-stack)
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (exiting-on-errors 
+	   (load "Specware4.lisp"))
+	 ;; We have two separate exiting-on-errors forms because we must
+	 ;; finish evaluating the load of Specware4.lisp to create the 
+	 ;; Specware package before the reader sees a reference to it.
+	 (format t "~%--------------------------------------------------------------------------------~%")
+	 (format t "~%Building $BOOTSTRAP_DXL~%")
+	 (excl::dumplisp :name "$BOOTSTRAP_DXL"))
+	XXXX
+RC=$?
+      
+if [ $RC -ne 0 ]; then
+   echo " "
+   echo "Prepare_Bootstrap_Image_SBCL failed with code $RC, exiting ..."
+   echo " "
+   exit $RC
+fi
+
+echo " " 
+cd "$BIN_DIR"
+ls -sltra *.$IMAGE_EXTENSION
+echo " " 
+

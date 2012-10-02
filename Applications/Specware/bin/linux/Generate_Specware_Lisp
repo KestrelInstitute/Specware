@@ -1,0 +1,120 @@
+#!/bin/bash --noprofile
+
+# This script processes Specware4.sw to produce Specware4.lisp
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See "man bash" for details. 
+
+LISP_MODE=$1
+
+# --------------------------------------------------------------------------------
+# First ensure that various shell variables have reasonable values
+# --------------------------------------------------------------------------------
+
+act='Generate Specware4.Lisp from Specware4.sw'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+. $SCRIPT_DIR/Verify_Specware_Variables
+. $SPECWARE4/Scripts/unix/Verify_$LISP_MODE
+
+BOOTSTRAP_IMAGE="$BIN_DIR"/Bootstrap.$IMAGE_EXTENSION
+SPECWARE4_IMAGE="$BIN_DIR"/Specware4.$IMAGE_EXTENSION
+SPECWARE_LISP="$SPECWARE4"/Applications/Specware/lisp/Specware4.lisp
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+
+# --------------------------------------------------------------------------------
+# Make sure Bootrap.$IMAGE_EXTENSION exists 
+# --------------------------------------------------------------------------------
+
+if [ ! -f "$BOOTSTRAP_IMAGE" ]; then
+  echo "Could not find $BOOTSTRAP_IMAGE,"
+  echo " so creating it..."
+  "$SCRIPT_DIR"/Prepare_Bootstrap_Image $LISP_MODE
+fi
+
+if [ ! -f "$BOOTSTRAP_IMAGE" ]; then
+  echo "Could not find or create $BOOTSTRAP_IMAGE"
+  exit 1
+fi
+
+# --------------------------------------------------------------------------------
+# Save the old Specware4.lisp 
+# --------------------------------------------------------------------------------
+
+cd "$SPECWARE4"/Applications/Specware/lisp
+echo " "
+if [ -f "Specware4.lisp" ]; then
+  echo "Saving previous specware lisp files ..."
+  # -p means preserve properties, -f means force write even if that means deleting a pre-existing target file
+  if [ -f Specware4-save.lisp ]; then
+    /bin/rm -f Specware4-save.lisp
+  fi
+  echo "cat Specware4.lisp Specware4--*.lisp > Specware4-save.lisp"
+  cat Specware4.lisp Specware4--*.lisp > Specware4-save.lisp
+else
+  echo "Note: No previous specware lisp file."
+fi
+echo " "
+
+# --------------------------------------------------------------------------------
+# Use bootstrap image to process Specware4.sw
+# --------------------------------------------------------------------------------
+
+export SWPATH=/:.
+echo "\$SWPATH=$SWPATH"
+
+# Note the use of the <<-XXXX in the following. The - means that preceeding
+# tabs are removed.  Thus the tabs that follow are significant. If you
+# change them to spaces, the end of the "here-document" is not recognized
+# (the XXXX).
+
+# Is there a way to inhibit all the warnings (eg unused variable)
+# when Lisp loads?
+
+cd "$SPECWARE4"/Applications/Specware
+
+$BATCH_BOOTSTRAP <<-XXXX
+	(progn
+	 (load "$EXIT_ON_ERRORS")
+	 (exiting-on-errors
+	   (if (and (sw "/Applications/Specware/Specware4")
+                    (progn (system-spec::garbageCollect t)
+                           (swl "/Applications/Specware/Specware4")))
+	     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
+	     (exit-from-lisp 0)
+	     (exit-from-lisp 1))))
+XXXX
+RC=$?
+
+# --------------------------------------------------------------------------------
+# Check result
+# --------------------------------------------------------------------------------
+
+# If the bootstrap failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Generate_Specware_Lisp failed with code $RC, exiting ..."
+  exit $RC
+fi
+
+cd "$GEN_DIR"
+
+if [ -f Specware4-new-save.lisp ]; then
+   /bin/rm -f Specware4-new-save.lisp
+fi
+
+echo "cat Specware4.lisp Specware4--*.lisp > Specware4-new-save.lisp"
+cat Specware4.lisp Specware4--*.lisp > Specware4-new-save.lisp
+
+if cmp -s Specware4-new-save.lisp Specware4-save.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
+fi
+
+/bin/mv -f Specware4-new-save.lisp Specware4-save.lisp
+

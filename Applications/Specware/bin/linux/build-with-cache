@@ -1,0 +1,13 @@
+#!/bin/bash --noprofile
+
+# Depreceated script, kept awhile for backwards compatibility
+
+echo " "
+echo "About to build ACL image with cache..."
+echo " "
+echo "THIS SCRIPT IS DEPRECRATED, AND WILL DISAPPEAR AT SOME POINT"
+sleep 4
+echo " "
+
+$SPECWARE4/Applications/Specware/bin/linux/Build_Specware_Dev_With_Cache SBCL
+

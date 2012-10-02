@@ -1,0 +1,17 @@
+(113
+ :name       "Translate should be monic"
+ :owner      "JM"
+ :reporter   "JM"
+ :reported   "09/20/04"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

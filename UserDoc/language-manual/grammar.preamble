@@ -1,0 +1,10 @@
+<appendix id="grammar"><title>&Metaslang; Grammar</title>
+<!-- ***************************************************************** -->
+<para>
+This appendix lists the grammar rules of the &Metaslang; specification language.
+These rules are identical to those of the <link linkend="metaslang">Chapter
+on <emphasis>&Metaslang;</emphasis></link>.
+They are brought together here, without additional text, for
+easy reference.
+</para>
+<!-- ***************************************************************** -->

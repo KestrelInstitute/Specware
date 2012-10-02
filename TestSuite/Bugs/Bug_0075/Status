@@ -1,0 +1,21 @@
+(75
+  :name     "According to the grammar in the language manual, 2*n+1 is not an expression."
+ :owner      "LM"
+ :reporter   "LM"
+ :reported   "10/11/03"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

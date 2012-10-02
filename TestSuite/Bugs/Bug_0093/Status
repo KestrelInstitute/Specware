@@ -1,0 +1,17 @@
+(93
+ :name       "No check on clashing defs in colimit"
+ :reporter   "TWK"
+ :reported   "06/22/04"
+ :owner      "JM"
+ :status     :closed   
+ :severity   :high
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--

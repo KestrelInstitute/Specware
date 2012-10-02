@@ -1,0 +1,21 @@
+(28
+ :name      "A few sort names such as Filename are mysteriously problematic."
+ :owner     "SW"
+ :reporter  "JM"
+ :reported  "04/30/03"
+ :status    :closed   
+ :severity  :crash
+ :impact    :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

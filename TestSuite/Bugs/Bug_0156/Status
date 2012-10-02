@@ -1,0 +1,21 @@
+(156
+ :name       "non-exhaustive match failure in lambdaLift"
+ :reporter   "MA
+ :reported   "03/31/05"
+ :owner      "SW"
+ :status     :closed   
+ :severity   :crash
+ :impact     :medium
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+
+
+

@@ -1,0 +1,15 @@
+#!/bin/bash --noprofile
+
+SCRIPT_DIR=`/usr/bin/dirname $0`
+cd -P $SCRIPT_DIR
+SCRIPT_DIR=`pwd`
+
+$SCRIPT_DIR/Bootstrap_Specware ACL
+RC=$?
+if [ $RC -ne 0 ]; then
+   echo "Failure preparing bootstrap image, return code = $RC"
+   exit $RC
+fi
+
+exit 0
+

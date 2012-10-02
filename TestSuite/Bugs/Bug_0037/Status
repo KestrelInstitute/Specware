@@ -1,0 +1,20 @@
+(37
+  :name     "Discrepancy between language manual and parser for reserved non-word-symbols (e.g. / and ->)"
+ :owner      "WP"
+ :reporter   "LM"
+ :reported   "06/17/03"
+ :status     :closed   
+ :severity   :low
+ :impact     :low
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
+resolved except for SpecBeans parser
+

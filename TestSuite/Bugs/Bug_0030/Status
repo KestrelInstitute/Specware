@@ -1,0 +1,18 @@
+(30
+ :name      "system crashes with seg. fault when compiling the following specs"
+ :owner      "??"
+ :reporter   "MA"
+ :reported   "05/02/03"
+ :status     :closed   
+ :severity   :crash
+ :impact     :high
+ :closed   
+ :fixed-in 
+)
+
+--description--
+
+--solution--
+
+--commentary--
+
