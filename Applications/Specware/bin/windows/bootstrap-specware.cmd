@@ -1,3 +1,3 @@
 @echo off
 
-call Run_Emacs generate-compile-build-specware4
+call Run_Emacs bootstrap-specware4
