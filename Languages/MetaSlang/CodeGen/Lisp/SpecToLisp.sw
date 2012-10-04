@@ -29,7 +29,7 @@ SpecToLisp qualifying spec
 	"SUBSTITUTE", "COUNT", "ENCLOSE", "EVAL", "ERROR", "FIRST", "LAST", 
 	"SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", 
 	"SEVENTH", "EIGHTH", "NINTH", "TENTH", 
-	"UNION", "INTERSECTION", "SET", "SETQ", "SOME", 
+	"UNION", "INTERSECTION", "SET", "SETQ", "SETF", "SOME", 
 	"ARRAY", "POP", "PUSH", "TOP", "REMOVE", "GET", 
 	"REPLACE", "PI", "DELETE", "IDENTITY", "REM", 
 	"NTH", "EQ", "EQL", "EQUAL", "ZEROP", "ODDP", "EVENP", 
@@ -1407,11 +1407,12 @@ op addList(S: StringSet, l: List String): StringSet =
    in
      let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
      let _    = warn_about_non_constructive_defs defs   in
-     {name          = defPkgName, 
-      extraPackages = extraPackages, 
-      ops           = List.map (fn (n, _) -> n) defs, 
-      axioms        = [], 
-      opDefns       = defs
+     {name           = defPkgName, 
+      extraPackages  = extraPackages, 
+      getter_setters = [],
+      ops            = List.map (fn (n, _) -> n) defs, 
+      axioms         = [], 
+      opDefns        = defs
      } : LispSpec
       
  op  warn_about_non_constructive_defs : List(String * ListADT.LispTerm) -> ()

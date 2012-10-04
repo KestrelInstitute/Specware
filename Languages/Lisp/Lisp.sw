@@ -12,11 +12,12 @@ ListADT qualifying spec
 
   type LispSpec =
     { 
-      name	    : String,
-      extraPackages : Strings,
-      ops           : Strings,
-      axioms        : LispTerms,
-      opDefns       : Definitions }
+      name	     : String,
+      extraPackages  : Strings,
+      getter_setters : List (String * String),
+      ops            : Strings,
+      axioms         : LispTerms,
+      opDefns        : Definitions }
 
   type Definition = String * LispTerm
 
@@ -103,7 +104,8 @@ ListADT qualifying spec
 
   def emptySpec =
     { name    = "BASESPECS",
-      extraPackages = [],
+      extraPackages  = [],
+      getter_setters = [],
       ops     = [],
       axioms  = [],
       opDefns = [] }
@@ -326,7 +328,12 @@ ListADT qualifying spec
 	streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
 
 	streamWriter(stream,";;; Definitions\n\n");
-        streamWriter(stream,"(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n");
+
+        %% streamWriter(stream,"(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n");
+        let getter_setters = [] in
+        app (fn (getter, setter) -> streamWriter (stream, "(defsetf" ^ getter ^ " " ^ setter ^ ")\n"))
+            spc.getter_setters;
+
         if length defs < maxDefsPerFile
           then app (fn ldef -> ppDefToStream(ldef,stream)) defs
         else
@@ -455,6 +462,7 @@ def addDefinition(modulename,defn,lspc) =
   {
    name = lspc.name,
    extraPackages = lspc.extraPackages,
+   getter_setters = [],
    ops = lspc.ops,
    axioms = lspc.axioms,
    opDefns = defn::lspc.opDefns
