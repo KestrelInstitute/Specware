@@ -290,6 +290,14 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
                                              % let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
                                              Some qid
                                            | _ -> None)
+                                      | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)    % Bool
+                                          | qid nin? stored_qids && equalVar?(v, state_var)
+                                            && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
+                                        Some qid
+                                      | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_), _, _), Var(v, _), _), _)    % Bool
+                                          | qid nin? stored_qids && equalVar?(v, state_var)
+                                            && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
+                                        Some qid
                                       | _ -> None)
                      (getConjoinedEqualities post_condn))
                    ++ stored_qids
@@ -323,6 +331,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                             spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
                             field_pairs: List(Id * MSType), result_ty: MSType)
      : MSTerm =
+   % let _ = writeLine("mdfuct: "^state_var.1^"\n"^printTerm post_condn) in
    let params = case top_dfn of
                   | Lambda([(binds, p, o_bod)], a) ->
                     patVars binds
@@ -379,6 +388,12 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
              let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
+           | Apply(Fun(Op(qid,_),_,_), Var(v,_), _) | qid in? stored_qids && equalVar?(state_var, v) ->   % Bool true
+             ((qualifiedIdToField qid, trueTerm) :: state_itms, result_itms)
+           | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_),_,_), Var(v,_), _), _)                             % Bool false
+               | qid in? stored_qids && equalVar?(state_var, v) ->
+             ((qualifiedIdToField qid, falseTerm) :: state_itms, result_itms)
+           | IfThenElse _ -> (state_itms, result_itms)       % Check that this is doing the right thing
            | _ -> (writeLine("Ignoring conjunct\n"^printTerm cj);
                    (state_itms, result_itms))
        def tryIncrementalize(rec_prs: List(Id * MSTerm)): Option MSTerm * List(Id * MSTerm) =
@@ -476,7 +491,7 @@ op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleS
     | Some type_info ->
   {new_spc <- return spc;
    stored_qids <- return(reverse(findStoredOps(spc, state_qid)));
-   print("stored_qids: "^anyToString (map show stored_qids));
+   print("stored_qids: "^anyToString (map show stored_qids)^"\n");
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
    new_spc <- return(addTypeDef(new_spc, state_qid, mkCanonRecordType(field_pairs)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
