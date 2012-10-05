@@ -133,7 +133,7 @@ getstr(string s) {
 	s[p]= '\0';
 }
 
-#define FINI "finitalastoria!"
+#define FINI "FinitaLaStoria!"
 
 fillrw() {
 	rwi= 0;
