@@ -29,6 +29,7 @@ main() {
 	printf("||\n");
 	nonwords();
 	printf("]]\n");
+	exit(0);
 }
 
 int mingw, gw;

@@ -34,6 +34,7 @@ main() {
 		getstr(line);
 	}
 	close();
+	exit(0);
 }
 
 sstring title; string post_title;
