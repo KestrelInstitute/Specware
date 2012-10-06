@@ -9,7 +9,7 @@ esac
 
 STYLESHEET=`pwd`/../docbook/cygnus-both.dsl
 
-NAME=`/bin/echo $1 | /bin/sed 's/\.sgml$//;s/\.sgm$//;s/\.dbk$//'`
+NAME=`echo $1 | sed 's/\.sgml$//;s/\.sgm$//;s/\.dbk$//'`
 
 if [ $# -gt 2 ]
 then
