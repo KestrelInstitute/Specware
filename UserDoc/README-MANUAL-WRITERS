@@ -53,9 +53,7 @@ Where glm?
 ==========
 
 The converter C sources can be found in UserDoc/src/ ,
-while executables exist in UserDoc/bin/ARCH/ , for
-ARCH ::= sparc | i586.  The sparc files run under Solaris,
-the i586 files under Linux on i*86 boxes.
+while executables are created in UserDoc/bin/ when 'make' runs.
 
 What glm?
 =========
