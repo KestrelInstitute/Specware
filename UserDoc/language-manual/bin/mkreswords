@@ -1,4 +1,4 @@
 #!/bin/sh
 # this is bin/mkreswords
 
-(/bin/cat "$@"; /bin/echo FinitaLaStoria!) | bin/reswords
+(cat "$@"; echo FinitaLaStoria!) | bin/reswords.o

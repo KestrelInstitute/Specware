@@ -177,13 +177,13 @@ grammar.glm: Makefile metaslang.glm grammar.preamble $(MKGRAMMAR) bin-glmgrammar
 	$(MKGRAMMAR)
 
 bin-reswords: Makefile 
-	gcc -lm src/reswords.c -o bin/reswords
+	gcc -lm src/reswords.c -o bin/reswords.o
 
 bin-glmgrammar: Makefile 
-	gcc -lm src/glmgrammar.c -o bin/glmgrammar
+	gcc -lm src/glmgrammar.c -o bin/glmgrammar.o
 
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \
-	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords bin/glmgrammar
+	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords.o bin/glmgrammar.o
 
 pristine: clean
