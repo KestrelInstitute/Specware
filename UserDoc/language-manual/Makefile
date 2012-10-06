@@ -11,8 +11,7 @@ htm-zip: htm
 	rm -f $(HTMDIR).zip
 	zip -r $(HTMDIR).zip $(HTMDIR)
 
-ARCH= i586
-BIN= ../bin/$(ARCH)
+BIN= ../bin
 GLM2DBK= $(BIN)/glm2dbk
 GLM2DBKMS= $(GLM2DBK) -metaslang
 GLM2DBKGR= $(GLM2DBK) -grammar
@@ -182,6 +181,7 @@ bin-reswords: Makefile
 bin-glmgrammar: Makefile 
 	gcc -lm src/glmgrammar.c -o bin/glmgrammar.o
 
+#Maybe this should remove SpecwareLanguageManual.pdf and SpecwareLanguageManual.htm-dir and SpecwareLanguageManual.htm-dir.zip.
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \
 	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords.o bin/glmgrammar.o

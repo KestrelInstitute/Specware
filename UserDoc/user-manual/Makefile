@@ -2,8 +2,7 @@ all: pdf htm-zip
 
 SUM= SpecwareUserManual
 
-ARCH= i586
-BIN= ../bin/$(ARCH)
+BIN= ../bin
 GLM2DBK= $(BIN)/glm2dbk
 SRC= ../src
 GLM2DBKSRC= $(SRC)/glm2dbk.c
