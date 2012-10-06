@@ -19,7 +19,7 @@ PDFDBK= concepts.dbk usage.dbk
 
 $(SUM).pdf: Makefile $(SUM).dbk $(PDFDBK)
 	@if test -r $(SUM).pdf; \
-	 then /bin/mv -f $(SUM).pdf $(SUM).pdf.old; \
+	 then mv -f $(SUM).pdf $(SUM).pdf.old; \
 	 fi
 	($(DB2PDF) $(SUM).dbk 2>&1) | grep -v 'is not a function name' | tee jade.log
 
@@ -28,13 +28,13 @@ $(SUM).dbk: Makefile $(GLM2DBK) manual.dbk
 
 concepts.dbk: Makefile $(GLM2DBK) concepts.glm
 	@if test -r concepts.dbk; \
-	 then /bin/mv -f concepts.dbk concepts.dbk.old; \
+	 then mv -f concepts.dbk concepts.dbk.old; \
 	 fi
 	$(GLM2DBK) -pdf concepts.glm > concepts.dbk
 
 usage.dbk: Makefile $(GLM2DBK) usage.glm
 	@if test -r usage.dbk; \
-	 then /bin/mv -f usage.dbk usage.dbk.old; \
+	 then mv -f usage.dbk usage.dbk.old; \
 	 fi
 	$(GLM2DBK) -pdf usage.glm > usage.dbk
 
@@ -55,30 +55,30 @@ HTMDBK= concepts-htm.dbk  usage-htm.dbk
 
 $(HTMDIR): Makefile $(SUM)-htm.dbk $(HTMDBK) $(ADJUSTFONTHTML)
 	($(DB2HTML) $(SUM)-htm.dbk 2>&1) | grep -v 'is not a function name'
-	/usr/bin/find db2html-dir -name '*.html' \
+	find db2html-dir -name '*.html' \
 		-exec $(ADJUSTFONTHTML) {} \;
-	/bin/mv db2html-dir/book1.html db2html-dir/$(SUM).html
-	@/bin/rm -rf $(HTMDIR).old
+	mv db2html-dir/book1.html db2html-dir/$(SUM).html
+	@rm -rf $(HTMDIR).old
 	@if test -r $(HTMDIR); \
-	 then /bin/mv -f $(HTMDIR) $(HTMDIR).old; \
+	 then mv -f $(HTMDIR) $(HTMDIR).old; \
 	 fi
-	/bin/mv db2html-dir $(HTMDIR)
+	mv db2html-dir $(HTMDIR)
 
 $(SUM)-htm.dbk: Makefile $(GLM2DBK) $(SUM).dbk
 	@if test -r $(SUM)-htm.dbk; \
-	 then /bin/mv -f $(SUM)-htm.dbk $(SUM)-htm.dbk.old; \
+	 then mv -f $(SUM)-htm.dbk $(SUM)-htm.dbk.old; \
 	 fi
 	sed 's/.dbk/-htm.dbk/g' $(SUM).dbk > $(SUM)-htm.dbk
 
 concepts-htm.dbk: Makefile $(GLM2DBK) concepts.glm
 	@if test -r concepts-htm.dbk; \
-	 then /bin/mv -f concepts-htm.dbk concepts-htm.dbk.old; \
+	 then mv -f concepts-htm.dbk concepts-htm.dbk.old; \
 	 fi
 	$(GLM2DBK) -htm concepts.glm > concepts-htm.dbk
 
 usage-htm.dbk: Makefile $(GLM2DBK) usage.glm
 	@if test -r usage-htm.dbk; \
-	 then /bin/mv -f usage-htm.dbk usage-htm.dbk.old; \
+	 then mv -f usage-htm.dbk usage-htm.dbk.old; \
 	 fi
 	$(GLM2DBK) -htm usage.glm > usage-htm.dbk
 

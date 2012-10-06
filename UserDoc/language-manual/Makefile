@@ -64,7 +64,7 @@ $(HTMDIR): Makefile $(SLM)-htm.dbk $(HTMDBK) \
 		-exec $(ANCHORHTML) {} \;
 	$(REANCHORGRAMMARHTML) db2html-dir/grammar.html
 	mv db2html-dir/book1.html db2html-dir/$(SLM).html
-	@/bin/rm -rf $(HTMDIR).old
+	@rm -rf $(HTMDIR).old
 	@if test -r $(HTMDIR); \
 	 then mv -f $(HTMDIR) $(HTMDIR).old; \
 	 fi
