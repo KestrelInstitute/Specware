@@ -14,12 +14,14 @@ Required programs include:
 
 +what else?
 
+
 There are five main documents that get built, each with its own directory:
  language-manual
  user-manual
  tutorial
  xform-manual
  isabelle-interface
+
 
 Tools used to build these documents are in src/, with compiled code
 put into bin/.  More details:
@@ -29,6 +31,7 @@ originally wrote in his ABC language, a predecessor of Python)
 
 src/dbk2glm.c - converts in the other direction, useful for sanity
 checking (C version of a tool Lambert originally wrote in ABC)
+
 
 The individual documents also have their own bin/ directories, of which
 language-manual/bin/ is the most interesting.  It contains a couple of
@@ -44,6 +47,11 @@ language-manual/bin/mkreswords.
 language-manual/src/glmgrammar.c - Tool that extracts all grammar
 rules from language manual. Gets compiled to
 language-manual/bin/glmgrammar.o and is called by language-manual/bin/mkgrammar.
+
+
+Note: While most of the .dbk files involved in the build are generated
+from .glm files, the main .dbk of each document is *not* generated.
+
 
 To build the documentation, type 'make'.
 
