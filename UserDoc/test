@@ -3,15 +3,19 @@
 # Test script for building the documentation.
 
 
+echo "Testing documentation build process."
+
+# change to this directory
+cd `dirname $0`
 
 # Delete the generated files:
-make clean
+make clean &> clean.log
 
 # Build everything:
-make
+make &> make.log
 
 # Just to make sure it builds (not really used?):
-make dbk2glm
+make dbk2glm &> dbk2glm.log
 
 # Now, make sure the expected files have been generated:
 
