@@ -26,7 +26,7 @@ echo adjusting "$F"
 ed - "$F" <<!r0tAn1mReT
 g|CLASS="PARAMETER"|+s|<I\>|<FONT FACE="Arial, Helvetica, sans-serif"|
 g|CLASS="PARAMETER"|++s|<.I\>|</FONT|
-g|HREF="book1.html"|s|HREF="book1.html"|HREF="SpecwareTutorial.html"|
+g|HREF="book1.html"|s|HREF="book1.html"|HREF="SpecwareUserManual.html"|
 w
 q
 !r0tAn1mReT
