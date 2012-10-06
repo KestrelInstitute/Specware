@@ -26,11 +26,10 @@ There are five main documents that get built, each with its own directory:
 Tools used to build these documents are in src/, with compiled code
 put into bin/.  More details:
 
-src/glm2dbk.c - converts glm to docbook (C version of a tool Lambert
-originally wrote in his ABC language, a predecessor of Python)
+src/glm2dbk.c - converts glm to docbook
 
 src/dbk2glm.c - converts in the other direction, useful for sanity
-checking (C version of a tool Lambert originally wrote in ABC)
+checking
 
 
 The individual documents also have their own bin/ directories, of which
@@ -40,13 +39,15 @@ and the appendix containing all the grammar rules (which are extracted
 from the rest of the document sources).  More details:
 
 language-manual/src/reswords.c - Tool that takes a list of reserved
-words and builds a glm file with columns. Get compiled to
-language-manual/bin/reswords.o and is called by
-language-manual/bin/mkreswords.
+words and builds a glm file with columns.  (C version of a tool Lambert
+originally wrote in his ABC language, a predecessor of Python.)  Gets
+compiled to language-manual/bin/reswords.o and is called by language-
+manual/bin/mkreswords.
 
-language-manual/src/glmgrammar.c - Tool that extracts all grammar
-rules from language manual. Gets compiled to
-language-manual/bin/glmgrammar.o and is called by language-manual/bin/mkgrammar.
+language-manual/src/glmgrammar.c - Tool that extracts all grammar rules
+from language manual.  (C version of a tool Lambert originally wrote in
+ABC.)  Gets compiled to language-manual/bin/glmgrammar.o and is called by
+language-manual/bin/mkgrammar.
 
 
 Note: While most of the .dbk files involved in the build are generated
