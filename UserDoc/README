@@ -50,4 +50,4 @@ To build the documentation, type 'make'.
 For a slightly fuller test, type './test'.
 
 This file was written by Eric Smith, based on information from Lambert
-Meertens.
+Meertens.  For more information, see README-MANUAL-WRITERS.
