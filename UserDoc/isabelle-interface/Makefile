@@ -49,7 +49,7 @@ htm-zip: htm
 
 DB2HTML= ../bin/db2html -E9999
 
-ADJUSTFONTHTML= ../bin/adjustFontHTML
+ADJUSTFONTHTML= bin/adjustFontHTML
 
 HTMDBK= concepts-htm.dbk  usage-htm.dbk
 
