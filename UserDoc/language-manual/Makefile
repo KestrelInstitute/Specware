@@ -184,6 +184,6 @@ bin-glmgrammar: Makefile
 
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \
-	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm reswords.glm bin/reswords bin/glmgrammar
+	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords bin/glmgrammar
 
 pristine: clean
