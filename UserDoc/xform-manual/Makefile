@@ -95,7 +95,7 @@ iso-htm.dbk: Makefile $(GLM2DBK) iso.glm
 clean:
 	rm -rf $(SXM).tex $(SXM).aux $(SXM).log $(SXM).out \
 	$(PDFDBK) $(HTMDBK) $(HTMDIR) *.old \
-	$(SXM).dbk $(SXM)-htm.dbk jade.log
+	$(SXM).dbk $(SXM)-htm.dbk jade.log $(HTMDIR).zip $(SXM).pdf
 
 pristine: clean
 

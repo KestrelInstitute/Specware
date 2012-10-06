@@ -1,5 +1,6 @@
 all: pdf htm-zip
 
+# Really, this should be called SII:
 SUM= SpecwareIsabelleInterface
 
 BIN= ../bin
@@ -84,7 +85,7 @@ usage-htm.dbk: Makefile $(GLM2DBK) usage.glm
 clean:
 	rm -rf $(SUM).tex $(SUM).aux $(SUM).log $(SUM).out \
 	$(PDFDBK) $(HTMDBK) $(HTMDIR) *.old \
-	$(SUM).dbk $(SUM)-htm.dbk jade.log
+	$(SUM).dbk $(SUM)-htm.dbk jade.log $(HTMDIR).zip $(SUM).pdf
 
 pristine: clean
 

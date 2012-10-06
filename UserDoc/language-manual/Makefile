@@ -181,9 +181,8 @@ bin-reswords: Makefile
 bin-glmgrammar: Makefile 
 	gcc -lm src/glmgrammar.c -o bin/glmgrammar.o
 
-#Maybe this should remove SpecwareLanguageManual.pdf and SpecwareLanguageManual.htm-dir and SpecwareLanguageManual.htm-dir.zip.
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \
-	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords.o bin/glmgrammar.o
+	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords.o bin/glmgrammar.o  $(HTMDIR).zip $(SLM).pdf
 
 pristine: clean

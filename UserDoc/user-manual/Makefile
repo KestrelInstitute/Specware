@@ -207,7 +207,7 @@ haskellcodegen-htm.dbk: Makefile $(GLM2DBK) haskellcodegen.glm
 clean:
 	rm -rf $(SUM).tex $(SUM).aux $(SUM).log $(SUM).out \
 	$(PDFDBK) $(HTMDBK) $(HTMDIR) *.old \
-	$(SUM).dbk $(SUM)-htm.dbk jade.log
+	$(SUM).dbk $(SUM)-htm.dbk jade.log  $(HTMDIR).zip $(SUM).pdf
 
 pristine: clean
 

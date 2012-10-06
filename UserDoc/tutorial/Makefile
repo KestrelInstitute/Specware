@@ -83,6 +83,6 @@ example-htm.dbk: Makefile $(GLM2DBK) example.glm
 clean:
 	rm -rf $(ST).tex $(ST).aux $(ST).log $(ST).out \
 	$(PDFDBK) $(HTMDBK) $(HTMDIR) *.old \
-	$(ST).dbk $(ST)-htm.dbk jade.log \
+	$(ST).dbk $(ST)-htm.dbk jade.log $(HTMDIR).zip $(ST).pdf
 
 pristine: clean
