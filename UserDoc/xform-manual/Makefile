@@ -3,12 +3,12 @@ all: pdf htm-zip
 SXM= SpecwareXformManual
 
 BIN= ../bin
-GLM2DBK= $(BIN)/glm2dbk
+GLM2DBK= $(BIN)/glm2dbk.o
 SRC= ../src
 GLM2DBKSRC= $(SRC)/glm2dbk.c
 
 $(GLM2DBK): $(GLM2DBKSRC)
-	cc -O $(GLM2DBKSRC) -o $(GLM2DBK)
+	gcc $(GLM2DBKSRC) -o $(GLM2DBK)
 
 pdf: $(SXM).pdf
 

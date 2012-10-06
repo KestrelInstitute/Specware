@@ -12,14 +12,14 @@ htm-zip: htm
 	zip -r $(HTMDIR).zip $(HTMDIR)
 
 BIN= ../bin
-GLM2DBK= $(BIN)/glm2dbk
+GLM2DBK= $(BIN)/glm2dbk.o
 GLM2DBKMS= $(GLM2DBK) -metaslang
 GLM2DBKGR= $(GLM2DBK) -grammar
 SRC= ../src
 GLM2DBKSRC= $(SRC)/glm2dbk.c
 
 $(GLM2DBK): $(GLM2DBKSRC)
-	cc -O $(GLM2DBKSRC) -o $(GLM2DBK)
+	gcc $(GLM2DBKSRC) -o $(GLM2DBK)
 
 MKRESWORDS= bin/mkreswords
 MKGRAMMAR= bin/mkgrammar

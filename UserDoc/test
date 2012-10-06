@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Test script for building the documentation.
+
+
+
+# Delete the generated files:
+make clean
+
+# Build everything:
+make
+
+# Just to make sure it builds (not really used?):
+make dbk2glm
+
+# Now, make sure the expected files have been generated:
+
+ls -l bin/dbk2glm.o
+ls -l bin/glm2dbk.o
+
+ls -l language-manual/SpecwareLanguageManual.pdf
+ls -l language-manual/SpecwareLanguageManual.htm-dir.zip
+
+ls -l user-manual/SpecwareUserManual.pdf
+ls -l user-manual/SpecwareUserManual.htm-dir.zip
+
+ls -l xform-manual/SpecwareXformManual.pdf
+ls -l xform-manual/SpecwareXformManual.htm-dir.zip
+
+ls -l tutorial/SpecwareTutorial.pdf
+ls -l tutorial/SpecwareTutorial.htm-dir.zip
+
+ls -l isabelle-interface/SpecwareIsabelleInterface.pdf
+ls -l isabelle-interface/SpecwareIsabelleInterface.htm-dir.zip
