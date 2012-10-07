@@ -5,8 +5,6 @@ Globalize qualifying spec
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
- %% TODO: need to emit (defsetf MAPSASVECTORS::TMAPPLY-2 MapsAsVectors::update-1-1-1)
-
  op compressWhiteSpace (s : String) : String =
   let 
     def whitespace? char = 
@@ -50,12 +48,14 @@ Globalize qualifying spec
 
  type MSSubstitutions = List MSSubstitution
 
- type SetfEntry = {accesser_name   : OpName, 
-                   updater_name    : OpName, 
-                   accesser        : MSTerm, 
-                   updater         : MSTerm, 
-                   update_template : MSTerm,
-                   setf_template   : MSTerm}
+ type SetfEntry = {accesser_name       : OpName, 
+                   updater_name        : OpName, 
+                   accesser_arg_counts : List Nat,  % used to create names such as foo-1-1 in code generation
+                   updater_arg_counts  : List Nat,
+                   accesser            : MSTerm, 
+                   updater             : MSTerm, 
+                   update_template     : MSTerm,
+                   setf_template       : MSTerm}
 
  type SetfEntries = List SetfEntry
 
@@ -1783,12 +1783,22 @@ Globalize qualifying spec
                                 % let _ = writeLine ("extractSetfEntry: update_template = " ^ printTerm update_template ) in
                                 % let _ = writeLine ("extractSetfEntry: setf_template   = " ^ printTerm setf_template   ) in
                                 % let _ = writeLine ("--------------------") in
-                                Some {accesser_name   = accesser_name, 
-                                      updater_name    = updater_name, 
-                                      accesser        = accesser,
-                                      updater         = updater,
-                                      update_template = update_template,
-                                      setf_template   = setf_template}
+                                let 
+                                  def arg_counts args =
+                                    map (fn arg ->
+                                           case arg of
+                                             | Record (fields, _) -> length fields
+                                             | _ -> 1)
+                                        args
+                                in
+                                Some {accesser_name       = accesser_name, 
+                                      updater_name        = updater_name, 
+                                      accesser_arg_counts = arg_counts get_args,
+                                      updater_arg_counts  = arg_counts set_args,
+                                      accesser            = accesser,
+                                      updater             = updater,
+                                      update_template     = update_template,
+                                      setf_template       = setf_template}
                               | _ -> 
                                 None
                           else

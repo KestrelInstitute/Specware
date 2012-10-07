@@ -7,6 +7,7 @@ SpecToLisp qualifying spec
  import /Languages/MetaSlang/Transformations/RemoveCurrying
 % import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/Transformations/Globalize
 %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
  import /Languages/Lisp/Lisp
@@ -1407,9 +1408,27 @@ op addList(S: StringSet, l: List String): StringSet =
    in
      let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
      let _    = warn_about_non_constructive_defs defs   in
+     let 
+       def uncurried_name (Qualified (q, id), arg_counts) =
+         let new_id = foldl (fn (id, n) -> id ^ "-" ^ show n) id arg_counts in
+         printPackageId (Qualified (q, new_id), defPkgName)
+     in
+     %% TODO: The relevant axioms and theorems are get sliced away before this point,
+     %%       so setf_entries is empty.  (Sigh)
+     let setf_entries = findSetfEntries spc in
+     let getter_setters = 
+         map (fn entry ->
+                (uncurried_name (entry.accesser_name, entry.accesser_arg_counts),
+                 uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
+             setf_entries
+     in
+     % let _ = writeLine ("====") in
+     % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
+     % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
+     % let _ = writeLine ("====") in
      {name           = defPkgName, 
       extraPackages  = extraPackages, 
-      getter_setters = [],
+      getter_setters = getter_setters,
       ops            = List.map (fn (n, _) -> n) defs, 
       axioms         = [], 
       opDefns        = defs

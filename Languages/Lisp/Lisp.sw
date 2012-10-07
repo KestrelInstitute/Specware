@@ -330,7 +330,6 @@ ListADT qualifying spec
 	streamWriter(stream,";;; Definitions\n\n");
 
         %% streamWriter(stream,"(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n");
-        let getter_setters = [] in
         app (fn (getter, setter) -> streamWriter (stream, "(defsetf" ^ getter ^ " " ^ setter ^ ")\n"))
             spc.getter_setters;
 
