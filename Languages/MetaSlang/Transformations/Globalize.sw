@@ -5,6 +5,8 @@ Globalize qualifying spec
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
+ %% TODO: need to emit (defsetf MAPSASVECTORS::TMAPPLY-2 MapsAsVectors::update-1-1-1)
+
  op compressWhiteSpace (s : String) : String =
   let 
     def whitespace? char = 
@@ -48,14 +50,14 @@ Globalize qualifying spec
 
  type MSSubstitutions = List MSSubstitution
 
- type GetterSetter = {getter_name : OpName, 
-                      setter_name : OpName, 
-                      getter      : MSTerm, 
-                      setter      : MSTerm, 
-                      get_args    : MSTerms, 
-                      set_args    : MSTerms}
+ type SetfEntry = {accesser_name   : OpName, 
+                   updater_name    : OpName, 
+                   accesser        : MSTerm, 
+                   updater         : MSTerm, 
+                   update_template : MSTerm,
+                   setf_template   : MSTerm}
 
- type GetterSetters = List GetterSetter
+ type SetfEntries = List SetfEntry
 
  type LetBinding = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
 
@@ -69,7 +71,7 @@ Globalize qualifying spec
                  global_var       : MSTerm,                 % if global type is not a product
                  global_var_map   : List (String * MSTerm), % if global type has product fields
                  global_init_name : QualifiedId,
-                 getter_setters   : GetterSetters,
+                 setf_entries     : SetfEntries,
                  let_bindings     : LetBindings,
                  tracing?         : Bool}
                    
@@ -671,42 +673,55 @@ Globalize qualifying spec
        
     | _ -> None
       
- op setterAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerm * MSTerms * MSTerm) = 
+ op updateAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerm * MSTerms * MSTerm) = 
    case opAndArgs tm of
-     | Some (opname, setter, args) ->
+     | Some (opname, update, args) ->
        (case flattenArgs args of
           | container :: indices_and_value ->
             (case reverse indices_and_value of
                | [_] -> None
-               | new_value :: rev_indices -> Some (opname, setter, container, reverse rev_indices, new_value)
+               | new_value :: rev_indices -> Some (opname, update, container, reverse rev_indices, new_value)
                | _ -> None)
           | _ -> None)
      | _ -> None
 
- op getterAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerm * MSTerms) = 
+ op accessAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerm * MSTerms) = 
    case opAndArgs tm of
-     | Some (opname, getter, args) ->
+     | Some (opname, access, args) ->
        (case flattenArgs args of
           | container :: indices ->
-            Some (opname, getter, container, indices)
+            Some (opname, access, container, indices)
           | _ -> None)
      | _ -> None
 
 
+ op reviseTemplate (template : MSTerm, bindings : List (MSTerm * MSTerm)) : MSTerm =
+  let 
+    def subst tm =
+      case findLeftmost (fn (x, y) -> equalTerm? (x, tm)) bindings of
+        | Some (_, y) -> y
+        | _ ->
+          case tm of
+            | Apply (x, y, _) -> Apply (subst x, subst y, noPos)
+            | Record (fields, _) -> Record (map (fn (x, y) -> (x, subst y)) fields, noPos)
+            | _ -> tm
+  in
+  subst template
+
  op reviseUpdate (context : Context, lhs : MSTerm, rhs : MSTerm) : MSTerm =
-  case setterAndArgs rhs of
-    | Some (setter_op, setter, set_container, set_indices, new_value) ->
+  case updateAndArgs rhs of
+    | Some (update_op_name, update, set_container, set_indices, new_value) ->
       (case new_value of
          | Apply (Fun (RecordMerge, _, _), 
-                  Record ([("1", getter_tm),
+                  Record ([("1", access_tm),
                            ("2", value as Record (new_value_pairs, _))],
                           _),
                   _)
            ->
-           (case getterAndArgs getter_tm of
-              | Some (getter_op, getter, get_container, get_indices) ->
-                % let _ = writeLine ("setter        = " ^ anyToString setter) in
-                % let _ = writeLine ("getter        = " ^ anyToString getter) in
+           (case accessAndArgs access_tm of
+              | Some (access_op_name, access, get_container, get_indices) ->
+                % let _ = writeLine ("update        = " ^ anyToString update) in
+                % let _ = writeLine ("access        = " ^ anyToString access) in
                 % let _ = writeLine ("lhs           = " ^ printTerm lhs)           in
                 % let _ = writeLine ("get_container = " ^ printTerm get_container) in
                 % let _ = writeLine ("set_container = " ^ printTerm set_container) in
@@ -715,16 +730,16 @@ Globalize qualifying spec
                 if equalTerm?  (lhs,           set_container) && 
                    equalTerm?  (set_container, get_container) && 
                    equalTerms? (set_indices,   get_indices)   && 
-                   forall? (fn (index,_) -> natConvertible index) new_value_pairs &&
-                   setter_op = Qualified ("MapsAsVectors", "update") &&
-                   getter_op = Qualified ("MapsAsVectors", "TMApply")
+                   forall? (fn (index,_) -> natConvertible index) new_value_pairs 
+                   % && update_op = Qualified ("MapsAsVectors", "update")
+                   % && access_op = Qualified ("MapsAsVectors", "TMApply")
                   then
                     % let _ = writeLine ("MATCH!") in
-                    let dom_type = termType getter_tm in
+                    let dom_type = termType access_tm in
                     let updates = 
                         map (fn (index, value) ->
                                let new_type = Arrow (dom_type, termType value, noPos) in
-                               let field = Apply (Fun (Project index, new_type, noPos), getter_tm, noPos) in
+                               let field = Apply (Fun (Project index, new_type, noPos), access_tm, noPos) in
                                makeUpdate context field value)
                              new_value_pairs
                     in
@@ -737,51 +752,78 @@ Globalize qualifying spec
               | _ -> 
                 makeSetf (lhs, rhs))
          | _ -> 
-           case findLeftmost (fn gs -> setter_op = gs.setter_name) context.getter_setters of
-             | Some gs ->
-               % let _ = writeLine ("not a merge") in
-               let getter = Qualified ("MapsAsVectors", "TMApply") in
-               let getter = Op (getter, Nonfix) in
-
-               % let _ = writeLine ("setter        = " ^ anyToString setter) in
-               % let _ = writeLine ("getter        = " ^ anyToString getter) in
-               % let _ = writeLine ("lhs           = " ^ printTerm lhs)           in
-               % let _ = writeLine ("set_container = " ^ printTerm set_container) in
-               % let _ = writeLine ("set_indices   ="  ^ printTerms set_indices)   in
-               let _ = writeLine ("reviseUpdate: set_args = " ^ printTerms gs.set_args) in
-               let _ = writeLine ("reviseUpdate: get_args = " ^ printTerms gs.get_args) in
-               (case makeVarBindings (gs.set_args, set_indices) of
-                  | Some set_bindings ->
-                    let get_form     = substVarBindings (set_bindings, gs.getter, gs.get_args) in
-                    let new_type     = Arrow (termType get_form, termType new_value, noPos) in
-                    let new_lhs      = Apply (Fun (getter, new_type, noPos), get_form, noPos) in
-                    makeUpdate context new_lhs new_value
+           case findLeftmost (fn (entry : SetfEntry) -> update_op_name = entry.updater_name) context.setf_entries of
+             | Some setf_pair ->
+               % let _ = writeLine ("reviseUpdate: not a merge") in
+               % let _ = writeLine ("reviseUpdate: lhs = " ^ printTerm lhs) in
+               % let _ = writeLine ("reviseUpdate: rhs = " ^ printTerm rhs) in
+               % let _ = writeLine ("reviseUpdate: update template = " ^ printTerm setf_pair.update_template) in
+               (case makeVarBindings (setf_pair.update_template, rhs) of
+                  | Some bindings ->
+                    % let _ = app (fn (x, y)->  writeLine ("reviseUpdate: pair = " ^ printTerm x ^ " -- " ^ printTerm y)) bindings in
+                    % let _ = writeLine ("reviseUpdate: setf template = " ^ printTerm setf_pair.setf_template) in
+                    let setf_term = reviseTemplate (setf_pair.setf_template, bindings) in
+                    % let _ = writeLine ("reviseUpdate: setf term     = " ^ printTerm setf_term) in
+                    setf_term
                   | _ ->
+                    % let _ = writeLine ("reviseUpdate: no match") in
                     makeSetf (lhs, rhs))
              | _ ->
                makeSetf (lhs, rhs))
     | _ -> 
      makeSetf (lhs, rhs)
 
- op makeVarBindings (set_vars : MSTerms, set_indices : MSTerms) : Option (List (MSTerm * MSTerm)) =
-  let _ = writeLine("makeVarBindings: set_vars    = " ^ printTerms set_vars) in
-  let _ = writeLine("makeVarBindings: set_indices = " ^ printTerms set_indices) in
-  Some (zip (set_vars, set_indices))
-
- op substVarBindings (set_bindings : List (MSTerm * MSTerm), getter : MSTerm, get_args : MSTerms) : MSTerm =
-  let _ = app (fn (x,y) ->
-                 writeLine("substVarBindings: set_binding = " ^ printTerm x ^ " -- " ^ printTerm y))
-              set_bindings
-  in
-  let _ = writeLine("substVarBindings: getter   = " ^ printTerm  getter) in
-  let _ = writeLine("substVarBindings: get_args = " ^ printTerms get_args) in
+ op makeVarBindings (template : MSTerm, tm : MSTerm) : Option (List (MSTerm * MSTerm)) =
+  % let _ = writeLine("makeVarBindings: template = " ^ printTerm template) in
+  % let _ = writeLine("makeVarBindings: term     = " ^ printTerm tm) in
   let
-    def foo (tm, args) =
+    def match (xfields, yfields) =
+      case (xfields, yfields) of
+        | ([], []) -> Some []
+        | ((_, x) :: xfields, (_, y) :: yfields) ->
+          (case match (xfields, yfields) of
+             | Some pairs -> Some ((x, y) :: pairs)
+             | _  -> None)
+        | _ -> None
+  in
+  case template of
+    | Var _ -> Some [(template, tm)]
+    | Apply (f, x, _) ->
+      (case tm of
+         | Apply (g, y, _) ->
+           (case (makeVarBindings (f, g), makeVarBindings (x, y)) of
+              | (Some aa, Some bb) -> Some (aa ++ bb)
+              | _ -> None)
+         | _ ->
+           None)
+    | Record (xfields, _) ->
+      (case tm of
+         | Record (yfields, _) ->
+           match (xfields, yfields)
+         | _ ->
+           None)
+    | _ ->
+      if equalTerm? (template, tm) then
+        Some []
+      else
+        None
+
+
+ op substVarBindings (set_indices_bindings : List (MSTerm * MSTerm), get_indices : MSTerms, access : MSTerm) : MSTerm =
+  % let _ = app (fn (x,y) -> writeLine("substVarBindings: set_binding = " ^ printTerm x ^ " -- " ^ printTerm y)) set_indices_bindings in
+  % let _ = app (fn (x) -> writeLine("substVarBindings: get_index = " ^ printTerm x)) get_indices in
+  let
+    def aux (tm, args) =
       case args of
         | [] -> tm
-        | arg :: args -> foo (Apply (tm, arg, noPos), args)
+        | arg :: args -> 
+          let new_tm = Apply (tm, arg, noPos) in
+          % let _ = writeLine ("substVarBindings : tm     = " ^ printTerm tm) in
+          % let _ = writeLine ("substVarBindings : arg    = " ^ printTerm arg) in
+          % let _ = writeLine ("substVarBindings : new_tm = " ^ printTerm new_tm) in
+          aux (new_tm, args)
   in
-  foo (getter, get_args)
+  aux (access, get_indices)
 
  op makeUpdate (context : Context)
                (lhs     : MSTerm)
@@ -1538,7 +1580,7 @@ Globalize qualifying spec
  op printTerms (tms : MSTerms) : String =
   foldl (fn (s, tm) -> s ^ " " ^ printTerm tm) "" tms
 
- op getTerms (tm : MSTerm) : MSTerms =
+ op accessms (tm : MSTerm) : MSTerms =
   case tm of
     | Record (fields, _) -> map (fn (_, tm) -> tm) fields
     | _ -> [tm]
@@ -1551,76 +1593,75 @@ Globalize qualifying spec
     | _ ->
       false
 
- op semanticsOfGetSet? (get_args : MSTerms,
-                        set_args : MSTerms,
-                        lterms   : MSTerms,
-                        rterms   : MSTerms,
-                        then_tm  : MSTerm,
-                        else_tm  : MSTerm)
+ op semanticsOfGetSet? (get_args  : MSTerms,
+                        set_args  : MSTerms,
+                        var_pairs : List (MSTerm * MSTerm),
+                        then_tm   : MSTerm,
+                        else_tm   : MSTerm)
   : Bool =
 
+  let 
+    def similar? (set_indices, get_indices) =
+      case (set_indices, get_indices) of
+        | ([], []) -> true
+        | (x :: set_indices, y :: get_indices) ->
+          (exists? (fn (a, b) -> 
+                      (equalTerm? (x, a) && equalTerm? (y, b)) || 
+                      (equalTerm? (x, b) && equalTerm? (y, a)))
+                   var_pairs)
+          &&
+          similar? (set_indices, get_indices)
+        | _ -> false
+  in
   let flattened_get_args = flattenArgs get_args in
   let flattened_set_args = flattenArgs set_args in
   let updated_container  = head flattened_set_args in
   let get_indices        = tail flattened_get_args in
   let set_indices        = reverse (tail (reverse (tail flattened_set_args))) in
+  %% corresponding get and set indices should be equal
+  similar? (get_indices, set_indices) 
+  &&
+  %% the get in lhs should use same indices as the get in the else term
+  (case opAndArgs else_tm of
+     | Some (_, _, get2_args) ->
+       let get2_args = flattenArgs get2_args in
+       (case get2_args of
+          | accessed_container :: get2_indices ->
+            equalTerm? (updated_container, accessed_container) && equalTerms? (get_indices, get2_indices)
+          | _ -> 
+            false)
+     | _ -> 
+       false)
 
-  % let _ = writeLine ("get_args  ="  ^ printTerms  get_args) in
-  % let _ = writeLine ("set argss ="  ^ printTerms  set_args) in
-  % let _ = writeLine ("lterms    ="  ^ printTerms  lterms)      in
-  % let _ = writeLine ("rterms    ="  ^ printTerms  rterms)      in
-  % let _ = writeLine ("then_tm   = " ^ printTerm   then_tm)     in
-  % let _ = writeLine ("else_tm   = " ^ printTerm   else_tm)     in
-
-  % let _ = writeLine ("set v. left  = " ^ anyToString (equalTerms? (set_indices, lterms))) in
-  % let _ = writeLine ("set v. right = " ^ anyToString (equalTerms? (set_indices, rterms))) in
-  % let _ = writeLine ("get v. left  = " ^ anyToString (equalTerms? (get_indices, lterms))) in
-  % let _ = writeLine ("get v. right = " ^ anyToString (equalTerms? (get_indices, rterms))) in
-
-  if (equalTerms? (set_indices, lterms) && equalTerms? (get_indices, rterms)) ||
-     (equalTerms? (set_indices, rterms) && equalTerms? (get_indices, lterms)) 
-    then
-      case opAndArgs else_tm of
-        | Some (_, _, get2_args) ->
-          let get2_args = flattenArgs get2_args in
-          % let _ = writeLine ("Getter2   = " ^ anyToString getter2) in
-          % let _ = writeLine ("Get2_args ="  ^ printTerms get2_args) in
-          (case get2_args of
-             | accessed_container :: get2_indices ->
-               % let _ = writeLine ("updated_container  = " ^ printTerm updated_container) in
-               % let _ = writeLine ("accessed_container = " ^ printTerm accessed_container) in
-               % let _ = writeLine ("update v. access   = " ^ anyToString (equalTerm? (updated_container, accessed_container))) in
-               % let _ = writeLine ("get_indices  = " ^ printTerms get_indices) in
-               % let _ = writeLine ("get2_indices = " ^ printTerms get2_indices) in
-               % let _ = writeLine ("equal?       = " ^ anyToString (equalTerms? (get_indices, get2_indices))) in
-
-               equalTerm? (updated_container, accessed_container) && equalTerms? (get_indices, get2_indices)
-             | _ -> 
-               false)
-        | _ -> 
-          false
-  else
-    false
-
- op termsCompared (tm : MSTerm) : Option (MSTerms * MSTerms) =
+ op varsCompared (tm : MSTerm) : Option (List (MSTerm * MSTerm)) =
   let
-    def flatten tm =
-      case tm of
-        | Record (pairs, _) ->
-          foldl (fn (tms, (_, tm)) -> tms ++ flatten tm) [] pairs
+    def pair_up_vars_in_fields (lfields, rfields) =
+      case (lfields, rfields) of
+        | ([],[]) -> Some []
+        | ((_, lhs) :: lfields, (_, rhs) :: rfields) ->
+          (case pair_up_vars_in_terms (lhs, rhs) of 
+             | Some pairs ->
+               (case pair_up_vars_in_fields (lfields, rfields) of
+                  | Some more_pairs -> Some (pairs ++ more_pairs)
+                  | _ -> None)
+             | _ -> None)
+        | _ -> None
+           
+    def pair_up_vars_in_terms (lhs, rhs) =
+      case (lhs, rhs) of
+        | (Var  _, Var _) ->
+          Some [(lhs, rhs)]
+        | (Record (lpairs, _), Record (rpairs, _)) -> 
+          pair_up_vars_in_fields (lpairs, rpairs)
         | _ ->
-          [tm]
-
+          None
   in
   case tm of
-    | Apply (Fun (Equals, _, _),
-             Record ([(_, eq_lhs), (_, eq_rhs)], _),
-             _)
-      ->
-      Some (flatten eq_lhs, flatten eq_rhs)
+    | Apply (Fun (Equals, _, _), Record ([(_, lhs), (_, rhs)], _), _) ->
+      pair_up_vars_in_terms (lhs, rhs)
     | Apply (Fun (And, _, _), Record ([(_, t1), (_, t2)], _), _) ->
-      (case (termsCompared t1, termsCompared t2) of
-         | (Some (t1, t2), Some (t3, t4)) -> Some (t1 ++ t3, t2 ++ t4)
+      (case (varsCompared t1, varsCompared t2) of
+         | (Some x, Some y) -> Some (x ++ y)
          | _ -> None)
     | _ ->
       None
@@ -1639,46 +1680,135 @@ Globalize qualifying spec
         []
         args
                                
- op extractGetterSetter (fm : MSTerm) : Option GetterSetter =
+ op makeSetfTemplate (tm : MSTerm, vpairs : List (MSTerm * MSTerm), value : MSTerm) : Option MSTerm =
+   % let _ = List.app (fn (x,y) -> writeLine ("makeSetfTemplate: subst_pair: " ^ printTerm x ^ " -- " ^ printTerm y)) vpairs in
+   let
+     def first_arg_of tm = 
+       case tm of
+         | Apply (f, arg, _) ->
+           (case f of
+              | Apply _ ->
+                first_arg_of f
+              | _ ->
+                case arg of
+                  | Var _ -> Some arg
+                  | Record ((_, arg) :: _, _) -> Some arg
+                  | _ -> None)
+         | _ -> None
+
+     def subst_vars arg =
+       let new_arg =
+       case arg of
+         | Var _ -> 
+           (case findLeftmost (fn (x, y) -> equalTerm? (x, arg)) vpairs of
+              | Some (_, y) -> y
+              | _ ->
+                case findLeftmost (fn (x, y) -> equalTerm? (y, arg)) vpairs of
+                  | Some (x, _) -> x
+                  | _ ->
+                    arg)
+         | Record (fields, _) ->
+           Record (map (fn (index, arg) -> (index, subst_vars arg)) fields, noPos)
+         | _ ->
+           arg
+       in
+       % let _ = writeLine ("makeSetfTemplate: old arg = " ^ anyToString arg) in
+       % let _ = writeLine ("makeSetfTemplate: new arg = " ^ anyToString new_arg) in
+       new_arg
+
+     def revise tm =
+       case tm of 
+         | Apply (f, arg, _) ->
+           (case f of
+              | Apply _ ->
+                (case revise f of
+                   | Some new_f ->
+                     Some (Apply (new_f, subst_vars arg, noPos))
+                   | _ ->
+                     None)
+              | _ ->
+                case (arg : MSTerm) of
+                  | Record ((x, update) :: fields, _) ->
+                    (case first_arg_of update of
+                       | Some container ->
+                         let new_fields = map (fn (x, arg) -> (x, subst_vars arg)) fields in
+                         Some (Apply (f, Record ((x, container) :: new_fields, noPos), noPos))
+                       | _ ->
+                         None)
+                  | _ ->
+                    case first_arg_of arg of
+                      | Some container ->
+                        Some (Apply (f, container, noPos))
+                      | _ ->
+                        None)
+         | _ ->
+           None
+   in
+   case revise tm of
+     | Some tm ->
+       Some (Apply (setfRef, Record ([("1", tm), ("2", value)], noPos), noPos))
+     | _ ->
+       % let _ = writeLine ("makeSetfTemplate: Failure") in
+       None
+
+ op extractSetfEntry (fm : MSTerm) : Option SetfEntry =
   case fm of
-    | Pi   (_, fm,    _) -> extractGetterSetter fm
-    | And  (fm :: _,  _) -> extractGetterSetter fm
-    | Bind (_, _, fm, _) -> extractGetterSetter fm
+    | Pi   (_, fm,    _) -> extractSetfEntry fm
+    | And  (fm :: _,  _) -> extractSetfEntry fm
+    | Bind (_, _, fm, _) -> extractSetfEntry fm
 
     | Apply (Fun (Equals, _, _), Record ([(_, lhs), (_, IfThenElse (pred, then_tm, else_tm, _))], _), _) ->
-      (case termsCompared pred of
-         | Some (lterms, rterms) ->
+      % let _ = writeLine ("--------------------") in
+      % let _ = writeLine ("extractSetfEntry: have Apply") in
+      (case varsCompared pred of
+         | Some vpairs ->
+           % let _ = writeLine ("extractSetfEntry: have Compared") in
            (case opAndArgs lhs of
-              | Some (getter_name, getter, get_args) -> 
+              | Some (accesser_name, accesser, get_args) -> 
+                % let _ = writeLine ("extractSetfEntry: have opAndArgs for lhs") in
                 (case flattenArgs get_args of
-                   | update :: _ :: _ ->
-                     (case opAndArgs update of
-                        | Some (setter_name, setter, set_args) ->
-                          if semanticsOfGetSet? (get_args, set_args, lterms, rterms, then_tm, else_tm) then
-                            Some {getter_name = getter_name, 
-                                  setter_name = setter_name, 
-                                  getter      = getter,
-                                  setter      = setter,
-                                  get_args    = get_args, 
-                                  set_args    = set_args}
+                   | update_template :: _ :: _ ->
+                     % let _ = writeLine ("extractSetfEntry: have flattened") in
+                     (case opAndArgs update_template of
+                        | Some (updater_name, updater, set_args) ->
+                          % let _ = writeLine ("extractSetfEntry: have opAndArgs for update") in
+                          if semanticsOfGetSet? (get_args, set_args, vpairs, then_tm, else_tm) then
+                            % let _ = writeLine ("extractSetfEntry: have semantics") in
+                            case makeSetfTemplate (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
+                              | Some setf_template ->
+                                % let _ = writeLine ("extractSetfEntry: accesser_name   = " ^ anyToString accesser_name   ) in
+                                % let _ = writeLine ("extractSetfEntry: updater_name    = " ^ anyToString updater_name    ) in
+                                % let _ = writeLine ("extractSetfEntry: accesser        = " ^ printTerm accesser        ) in
+                                % let _ = writeLine ("extractSetfEntry: updater         = " ^ printTerm updater         ) in
+                                % let _ = writeLine ("extractSetfEntry: update_template = " ^ printTerm update_template ) in
+                                % let _ = writeLine ("extractSetfEntry: setf_template   = " ^ printTerm setf_template   ) in
+                                % let _ = writeLine ("--------------------") in
+                                Some {accesser_name   = accesser_name, 
+                                      updater_name    = updater_name, 
+                                      accesser        = accesser,
+                                      updater         = updater,
+                                      update_template = update_template,
+                                      setf_template   = setf_template}
+                              | _ -> 
+                                None
                           else
                             None
                         | _ -> None)
                    | _ -> None)
               | _ -> None)
          | _ -> None)
-
     | _ -> None
 
- op findGetterSetters (spc  : Spec) : GetterSetters =
-  foldrSpecElements (fn (elt, getter_setters) ->
+ op findSetfEntries (spc  : Spec) : SetfEntries =
+  foldrSpecElements (fn (elt, access_updates) ->
                        case elt of
-                         |  Property (typ, _, _, fm, _) | typ = Axiom || typ = Theorem -> 
-                            (case extractGetterSetter fm of
-                               | Some getter_setter -> getter_setter :: getter_setters
-                               | _ -> getter_setters)
+                         |  Property (typ, name, _, fm, _) | typ = Axiom || typ = Theorem -> 
+                            % let _ = writeLine ("find gs: " ^ anyToString typ ^ " -- " ^ anyToString name) in
+                            (case extractSetfEntry fm of
+                               | Some access_update -> access_update :: access_updates
+                               | _ -> access_updates)
                          | _ ->
-                           getter_setters)
+                           access_updates)
                     []
                     spc.elements
 
@@ -1693,14 +1823,14 @@ Globalize qualifying spec
   : SpecCalc.Env (Spec * Bool) =
   let global_var_name = Qualified ("Global", global_var_id) in
 
-  %% getter_setter pairs are used to create dsstructive updates into complex left-hand-sides
-  let getter_setters = findGetterSetters spc in
+  %% access_update pairs are used to create dsstructive updates into complex left-hand-sides
+  let setf_entries = findSetfEntries spc in
   let _ = 
       if tracing? then
         let _ = writeLine("===================") in
-        let _ = writeLine("Getters -- Setters") in
-        let _ = map (fn gs -> writeLine (printQualifiedId gs.getter_name ^ " -- " ^ printQualifiedId gs.setter_name)) 
-                    getter_setters 
+        let _ = writeLine("Accesss -- Updates") in
+        let _ = map (fn setf_entry -> writeLine (printQualifiedId setf_entry.accesser_name ^ " -- " ^ printQualifiedId setf_entry.updater_name)) 
+                    setf_entries
         in
         let _ = writeLine("===================") in
         ()
@@ -1774,7 +1904,7 @@ Globalize qualifying spec
                                                  global_var       = global_var,     % if global type does not have fields
                                                  global_init_name = global_init_name,
                                                  global_var_map   = global_var_map, % if global type has fields
-                                                 getter_setters   = getter_setters,
+                                                 setf_entries     = setf_entries,
                                                  let_bindings     = [],
                                                  tracing?         = tracing?}
                                   in
