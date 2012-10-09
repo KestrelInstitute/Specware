@@ -27,8 +27,8 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
         in                                             
         let arg_tm = mkTuple [arg, pred, fix_or_complain_fn] in
         [simplifiedApply(mkOp(assure_fn_qid, mkArrow(inferType(spc, arg_tm), ty)),
-                        simplify spc arg_tm,
-                        spc)]
+                         simplify spc arg_tm,
+                         spc)]
   in
   case curryTypes(top_ty, spc) of
     | ([], _) -> tm
@@ -109,7 +109,8 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
                   | RecordPat(pat_prs, _) ->
                     (case unfoldBase(spc, param_ty) of
                        | Subtype(s_param_ty, pred, _) ->
-                         mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty) ++ checkArg(s_param_ty, param_pat, param_tm)
+                         mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty)
+                           ++ checkArg(s_param_ty, param_pat, param_tm)
                        | Product(ty_prs, _) ->
                          let Record(trm_prs, _) = param_tm in
                          foldl (fn (binds, ((_, tyi), (_, pati), (_, tmi))) -> binds ++ checkArg(tyi, pati, tmi))
@@ -124,31 +125,32 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
   mkCurriedLambda(param_pats, body_2)
 
 
-op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool, recovery_fns: List(QualifiedId * QualifiedId)): Spec =
+op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
+                     recovery_fns: List(QualifiedId * QualifiedId)): Spec =
   let base_spc = getBaseSpec() in
   let result_spc =
-      setOps(spc,
-             mapOpInfos
-               (fn opinfo ->
-                let qid = head opinfo.names in
-                if some?(findTheOp(base_spc, qid))
-                  then opinfo
-                  else
-                  let (tvs, ty, dfns) = unpackTerm opinfo.dfn in
-                  case dfns of
-                    | Any _ -> opinfo
-                    | _ ->
-                  case arrowOpt(spc, ty) of
-                    | None -> opinfo
-                    | Some(dom, rng) ->
-                  % let _ = writeLine("astcs: "^show qid^": "^printType dom) in
-                  let last_index = length(innerTerms dfns) - 1 in
-                  let dfn = refinedTerm(dfns, last_index) in
-                  let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns) in
-                  let new_dfns = replaceNthTerm(dfns, last_index, new_dfn) in
-                  let new_full_dfn = maybePiTypedTerm(tvs, Some ty, new_dfns) in
-                  opinfo << {dfn = new_full_dfn})               
-               spc.ops)
+      foldOpInfos (fn (opinfo, spc) ->
+                   let qid = head opinfo.names in
+                   if some?(findTheOp(base_spc, qid))
+                     then spc
+                     else
+                     let (tvs, ty, dfns) = unpackTerm opinfo.dfn in
+                     if anyTerm? dfns then spc
+                     else
+                     case arrowOpt(spc, ty) of
+                       | None -> spc
+                       | Some(dom, rng) ->
+                     % let _ = writeLine("astcs: "^show qid^": "^printType dom) in
+                     let last_index = length(innerTerms dfns) - 1 in
+                     let dfn = refinedTerm(dfns, last_index) in
+                     let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?,
+                                                            checkResult?, checkRefine?, recovery_fns) in
+                     if equalTerm?(new_dfn, dfn) then spc
+                     else
+                     let new_full_dfn = maybePiTypedTerm(tvs, Some ty, new_dfn) in
+                     % let _ = if qid = Qualified("Point", "+") then writeLine(printTerm new_dfn) else () in
+                     addRefinedDef(spc, opinfo, new_dfn))
+        spc spc.ops
   in
   % let _ = writeLine(printSpec result_spc) in
   result_spc
