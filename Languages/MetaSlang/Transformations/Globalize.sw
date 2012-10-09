@@ -604,11 +604,7 @@ Globalize qualifying spec
   globalizePattern context vars_to_remove p1
 
  op globalType? (context : Context) (typ : MSType) : Bool =
-  case typ of
-    | Base     (nm, [], _) -> nm = context.global_type_name
-    | Subtype  (typ, _, _) -> globalType? context typ
-    | Quotient (typ, _, _) -> globalType? context typ  %% TODO??
-    | _ -> false
+   equalTypeSubtype? (typ, context.global_type, true) % compare, ignoring subtype restrictions
 
  op globalizeVarPat (context                          : Context)
                     (vars_to_remove                   : MSVarNames) % vars of global type, remove on sight
