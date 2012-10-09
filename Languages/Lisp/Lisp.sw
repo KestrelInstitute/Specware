@@ -310,7 +310,7 @@ ListADT qualifying spec
 
   op ppSpecToFile : LispSpec * String * String -> ()
   
-  op maxDefsPerFile: Int = 1000
+  op maxDefsPerFile: Int = 2500         % Not sure this really matters
 
   def ppSpecToFile (spc, file, preamble) =
     %% Rewritten to not use ppSpec which requires a lot of space for large specs
