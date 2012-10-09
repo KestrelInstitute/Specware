@@ -267,7 +267,12 @@ AnnSpec qualifying spec
  def equivType? spc (x, y) =
     equivTypeSubType? spc (x, y) false
 
+ op debugEquivType?: Bool = false
+
  op equivTypeSubType? (spc: Spec) (x: MSType, y: MSType) (ignore_subtypes?: Bool): Bool =
+   let _ = if debugEquivType?
+            then writeLine(printType x^" =?= "^printType y) else ()
+   in
    let 
      def aux x y prior_diffs =
        (equalTypeSubtype? (x, y, ignore_subtypes?))
@@ -291,12 +296,16 @@ AnnSpec qualifying spec
                                       | _ -> false)
                          prior_diffs
                          then
-                           %% let _ = toScreen("\nOccurence check for " ^ anyToString (x, y) ^ "\n") in
+                           %% let _ = toScreen("\nOccurrence check for " ^ anyToString (x, y) ^ "\n") in
                            %% let _ = toScreen("\namong " ^ anyToString prior_diffs ^ "\n") in
                            false
                        else if equalTypeSubtype? (x, y, ignore_subtypes?) then 
                          true
                             else
+                              let (x,y) = if ignore_subtypes?
+                                           then (removeSubtypes x, removeSubtypes y)
+                                           else (x,y)
+                              in
                               let x2 = expandType (env, x) in
                               let y2 = expandType (env, y) in
                               %% treat A and A|p as non-equivalent
@@ -309,7 +318,11 @@ AnnSpec qualifying spec
                                       | _ -> false)
              diffs)
    in
-     aux x y []
+   let result = aux x y [] in
+   let _ = if debugEquivType?
+            then writeLine(printType x^(if result then " = " else " ~= ")^printType y) else ()
+   in
+   result
 
    %% op  old_equivType? : Spec -> MS.Type * MS.Type -> Bool
    %% def old_equivType? spc (s1, s2) =
@@ -326,6 +339,11 @@ AnnSpec qualifying spec
    (let env = initialEnv (spc, "internal") in
     %% treat A and A|p as similar
     unifyTypes env Ignore s1 s2)
+
+ op removeSubtypes (ty: MSType): MSType = 
+  case ty
+    of Subtype (s_ty, _, _) -> removeSubtypes s_ty
+     | _ -> ty
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
