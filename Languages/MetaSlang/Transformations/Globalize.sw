@@ -604,7 +604,7 @@ Globalize qualifying spec
   globalizePattern context vars_to_remove p1
 
  op globalType? (context : Context) (typ : MSType) : Bool =
-   equalTypeSubtype? (typ, context.global_type, true) % compare, ignoring subtype restrictions
+  possiblySubtypeOf? (typ, context.global_type, context.spc)
 
  op globalizeVarPat (context                          : Context)
                     (vars_to_remove                   : MSVarNames) % vars of global type, remove on sight
@@ -628,17 +628,17 @@ Globalize qualifying spec
   : Ids * GlobalizedPattern = 
   case pat of
     | AliasPat      _ -> globalizeAliasPat      context vars_to_remove pat
+    | VarPat        _ -> globalizeVarPat        context vars_to_remove pat
     | EmbedPat      _ -> globalizeEmbedPat      context vars_to_remove pat
     | RecordPat     _ -> globalizeRecordPat     context vars_to_remove pat
-    | QuotientPat   _ -> globalizeQuotientPat   context vars_to_remove pat
-    | RestrictedPat _ -> globalizeRestrictedPat context vars_to_remove pat
-    | VarPat        _ -> globalizeVarPat        context vars_to_remove pat
-    | TypedPat      _ -> globalizeTypedPat      context vars_to_remove pat
    %| WildPat       
    %| BoolPat       
    %| NatPat        
    %| StringPat     
    %| CharPat       
+    | QuotientPat   _ -> globalizeQuotientPat   context vars_to_remove pat
+    | RestrictedPat _ -> globalizeRestrictedPat context vars_to_remove pat
+    | TypedPat      _ -> globalizeTypedPat      context vars_to_remove pat
     | _ -> ([], Unchanged)
 
 
@@ -1484,6 +1484,11 @@ Globalize qualifying spec
         new_info
 
       | Unchanged -> 
+        let _ = if context.tracing? then
+                  writeLine("Globalizing: no change to " ^ show qid)
+                else
+                  ()
+        in
         old_info
 
  op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) =
