@@ -29,6 +29,11 @@ op [a] checkPredicateComplain(val_to_check: a, pred:a -> Bool, err_msg_fn: a -> 
    else (warn(err_msg_fn val_to_check^"\n"^anyToString val_to_check);
          val_to_check)
 
+op [a] checkPredicateFail(val_to_check: a, pred:a -> Bool, err_msg_fn: a -> String): a =
+   if randomlyCheckPred(val_to_check, pred) then val_to_check
+   else (warn("failed: val=" ^ anyToString val_to_check ^ "\n" ^ " pref=" ^ anyToString pred ^ "\n");
+         throwToRestart(err_msg_fn val_to_check^"\n"^anyToString val_to_check^"\n"^anyToString pred^"\n"))
+
 op restartCount: Nat = 0
 
 op [a] catchAndRestart: a -> a
