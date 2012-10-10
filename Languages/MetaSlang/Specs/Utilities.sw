@@ -2874,8 +2874,13 @@ op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) -> Some(pat, condn)
     | _ -> None
 
-
 %% This should be improved
 op nonExecutableTerm?(tm: MSTerm): Bool =
-  existsSubTerm (embed? Bind) tm
+  existsSubTerm (fn t ->
+                   case t of
+                     | Bind _ -> true
+                     | Fun(Op(Qualified("Functions", _), _), _, _) -> true
+                     | _ -> false)
+  
+    tm
 end-spec
