@@ -89,7 +89,6 @@ AnnSpec qualifying spec
    | Rewrite     QualifiedId
    | LeftToRight QualifiedId
    | RightToLeft QualifiedId
-   | MetaRule    QualifiedId
    | RLeibniz    QualifiedId
    | Weaken      QualifiedId
    | MetaRule    QualifiedId
@@ -129,7 +128,8 @@ AnnSpec qualifying spec
      | Lambda     ([(_,_,body)],  _) -> definedTerm? body   % e.g., "op foo (n : Nat) : Nat" will see internal "fn n -> any" as undefined
      | TypedTerm  (tm, _,         _) -> definedTerm? tm
      | Pi         (_, tm,         _) -> definedTerm? tm
-     | And        (tms,           _) -> exists? definedTerm? tms
+     | And        ([],            _) -> false
+     | And        (tm1 :: _,      _) -> definedTerm? tm1
      | _                             -> true
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
