@@ -130,8 +130,11 @@
                  (vector    (cond ((and   
                                     ;; (quotient? t1) 
                                     ;; (quotient? t2)
+                                    
+                                    (> (array-dimension t1 0) 1)
                                     (eq (svref t1 0) quotient-tag)
                                     (vectorp t2)
+                                    (> (array-dimension t2 0) 1)
                                     (eq (svref t2 0) quotient-tag)
                                     )
                                    ;; Determine equality by calling the quotient 
