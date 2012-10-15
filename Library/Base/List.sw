@@ -204,7 +204,7 @@ theorem empty?_length is [a] fa (l: List a) empty? l = (length l = 0)
 % non-empty lists (i.e. with at least one element):
 
 op [a] nonEmpty? (l: List a) : Bool = (l ~= empty)
-proof Isa [simp] end-proof    
+proof Isa [simp] end-proof
 
 type List.List1 a = (List a | nonEmpty?)
      % qualifier required for internal parsing reasons

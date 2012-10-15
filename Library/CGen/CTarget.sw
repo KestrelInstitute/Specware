@@ -3567,7 +3567,7 @@ proof isa C__scharOfChar_bits
   apply(rule C__mathIntOfSchar_injective_fw, force, force)
   apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
   apply(cut_tac bs=bs in not_negative_from_bound, force, force, force)
-end-proof     
+end-proof
 
 proof isa C__charOfUchar_bits 
   apply(simp add: C__charOfUchar_def)
@@ -3579,7 +3579,7 @@ proof isa C__charOfUchar_bits
   apply(simp)
   apply(rule C__mathIntOfChar_injective_fw, force, force)
   apply(simp del:C__mathIntOfSchar_injective add: TwosComplement__toInt_def)
-end-proof  
+end-proof
 
 proof isa C__charOfSchar_bits 
   apply(simp add: C__charOfSchar_def)
@@ -3596,7 +3596,7 @@ proof isa C__ushortOfSshort_bits
   apply(simp add: C__ushortOfSshort_def)
   apply(rule C__mathIntOfUshort_injective_fw, force, force)
   apply(simp del:C__mathIntOfChar_injective)
-end-proof  
+end-proof
 
 proof isa C__sshortOfUshort_bits 
   apply(simp add: C__sshortOfUshort_def)
@@ -3604,13 +3604,13 @@ proof isa C__sshortOfUshort_bits
   apply(force, force)
   apply(simp add:TwosComplement__toInt_def)
   apply(rule not_negative_from_bound_gen, force, force)
-end-proof  
+end-proof
 
 proof isa C__uintOfSint_bits 
   apply(simp add: C__uintOfSint_def)
   apply(rule C__mathIntOfUint_injective_fw, force, force)
   apply(simp del:C__mathIntOfChar_injective)
-end-proof  
+end-proof
 
 proof isa C__sintOfUint_bits 
   apply(simp add: C__sintOfUint_def)
@@ -3618,13 +3618,13 @@ proof isa C__sintOfUint_bits
   apply(force, force)
   apply(simp add:TwosComplement__toInt_def)
   apply(rule not_negative_from_bound_gen, force, force)
-end-proof  
+end-proof
 
 proof isa C__ulongOfSlong_bits 
   apply(simp add: C__ulongOfSlong_def)
   apply(rule C__mathIntOfUlong_injective_fw, force, force)
   apply(simp del:C__mathIntOfChar_injective)
-end-proof  
+end-proof
 
 proof isa C__slongOfUlong_bits 
   apply(simp add: C__slongOfUlong_def)
@@ -3632,13 +3632,13 @@ proof isa C__slongOfUlong_bits
   apply(force, force)
   apply(simp add:TwosComplement__toInt_def)
   apply(rule not_negative_from_bound_gen, force, force)
-end-proof  
+end-proof
 
 proof isa C__ullongOfSllong_bits 
   apply(simp add: C__ullongOfSllong_def)
   apply(rule C__mathIntOfUllong_injective_fw, force, force)
   apply(simp del:C__mathIntOfChar_injective)
-end-proof  
+end-proof
 
 proof isa C__sllongOfUllong_bits 
   apply(simp add: C__sllongOfUllong_def)
@@ -3646,60 +3646,60 @@ proof isa C__sllongOfUllong_bits
   apply(force, force)
   apply(simp add:TwosComplement__toInt_def)
   apply(rule not_negative_from_bound_gen, force, force)
-end-proof  
+end-proof
 
 
 proof isa C__ushortOfUchar_bits 
   apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt__1__obligation_refine_def C__ushortOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__uintOfUchar_bits 
   apply(simp add: C__uintOfUchar_def C__uintOfMathInt__1__obligation_refine_def C__uintOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__ulongOfUchar_bits 
   apply(simp add: C__ulongOfUchar_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__ullongOfUchar_bits 
   apply(simp add: C__ullongOfUchar_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 
 proof isa C__uintOfUshort_bits 
   apply(simp add: C__uintOfUshort_def C__uintOfMathInt__1__obligation_refine_def C__uintOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__ulongOfUshort_bits 
   apply(simp add: C__ulongOfUshort_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__ullongOfUshort_bits 
   apply(simp add: C__ullongOfUshort_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 
 proof isa C__ulongOfUint_bits 
   apply(simp add: C__ulongOfUint_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__ullongOfUint_bits 
   apply(simp add: C__ullongOfUint_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 proof isa C__ullongOfUlong_bits 
   apply(simp add: C__ullongOfUlong_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
-end-proof  
+end-proof
 
 
 proof isa C__ucharOfMathInt__1__obligation_refine_def

@@ -620,7 +620,7 @@ end-proof
           
 proof Isa minBits_Obligation_subtype0
    by (simp add: Integer__toMinBigEndian_nonnil)
-end-proof          
+end-proof
 
 
 % ----------------------------------------

@@ -1125,23 +1125,23 @@ end-proof
 
 proof Isa infinite_inf_simp [simp]  
   by (simp add: Seq__infinite_p_def)
-end-proof  
+end-proof
 
 proof Isa infinite_fin_simp [simp]  
   by (simp add: Seq__infinite_p_def)
-end-proof  
+end-proof
 
 proof Isa finite_inf_simp [simp]  
   by (simp add: Seq__finite_p_def)
-end-proof  
+end-proof
 
 proof Isa finite_fin_simp [simp]  
   by (simp add: Seq__finite_p_def)
-end-proof  
+end-proof
 
 proof Isa infinite_not_finite [simp]  
   by (case_tac s, simp_all)
-end-proof  
+end-proof
 
 proof Isa length_fin_simp [simp]
   by (simp add: Seq__length_def)
