@@ -9,6 +9,7 @@ spec
   op MapVec.V_numItems  : [a,key] Map (key,a) -> Nat
 
   op MapVec.V_apply : [key,a] Map(key,a) * key -> Option a
+ %TODO require that the key is present in the map?
   op MapVec.V_eval  : [key,a] Map(key,a) * key -> a
 
   op MapVec.V_update      : [key,a] Map (key,a) * key * a -> Map (key,a)
@@ -23,6 +24,7 @@ spec
   op MapVec.V_app   : [key,a] (a -> ()) * Map (key,a) -> ()
   op MapVec.V_appi  : [key,a] (key * a -> ()) * Map (key,a) -> ()
 
+  %TODO change the type vars of this for consistency?
   op MapVec.V_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
 
   op MapVec.V_imageToList  : [key,a] Map (key,a) -> List a
