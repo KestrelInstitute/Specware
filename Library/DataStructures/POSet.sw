@@ -52,4 +52,4 @@ spec
     op succs
 *)
 
-endspec
+end-spec

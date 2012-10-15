@@ -169,5 +169,5 @@ spec
        then As=empty_coll  %empty?(As)
        else As subcoll Bs
 
-endspec
+end-spec
 

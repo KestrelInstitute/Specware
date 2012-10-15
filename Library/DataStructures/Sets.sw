@@ -609,6 +609,6 @@ proof isa Set__set_intersection_idempotence_right
 end-proof
 
 
-endspec
+end-spec
 
 %Sets = spec import A end-spec

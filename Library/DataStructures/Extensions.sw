@@ -69,4 +69,4 @@ def [a] List.prec? xs x1 x2  =
                      (x2, rest)
     | (x::rest) -> (List.prec? rest x1 x2)
 
-endspec
+end-spec

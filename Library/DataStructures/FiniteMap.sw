@@ -70,4 +70,4 @@ spec
   axiom totalmap_equality is [a,b]
         fa(m1:Map(a,b),m2:Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
 
-endspec
+end-spec

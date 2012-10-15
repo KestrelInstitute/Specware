@@ -58,4 +58,4 @@ proof isa bool_case_id
   apply(case_tac b, auto)
 end-proof
 
-endspec
+end-spec

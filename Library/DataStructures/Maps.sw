@@ -185,7 +185,7 @@ proof isa Map__domain_update
 end-proof
 
 
-endspec
+end-spec
 
 
 
