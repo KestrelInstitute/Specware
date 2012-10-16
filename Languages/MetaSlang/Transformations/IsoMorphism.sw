@@ -1251,7 +1251,10 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
             | Record (pairs, pos) -> {
                 types <- return (recordTypes(spc,ctxtType));
                 when (length types ~= length pairs)
-                  (print("zip3err:\n"^printTerm trm^ " :\n"^ printType ctxtType));
+                  {print("zip3err: "^show(length types)^" ~= "^show(length pairs)^"\n"^printTerm trm^ " :\n"^ printType ctxtType);
+                   
+                   _ <- mapM (fn (id, tyi) -> print (id^" ")) pairs;
+                   print "\n"};
                 triples <- 
                   let
                     def zip3 trms typs =
@@ -1542,4 +1545,4 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   (fn 
     | Escape -> return spc
     | except -> raise except)
-endspec
+end-spec
