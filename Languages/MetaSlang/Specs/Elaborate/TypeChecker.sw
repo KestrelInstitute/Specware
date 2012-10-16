@@ -256,13 +256,24 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
  
   %%% Preliminary resolution
   op resolveTypeNames(spc: Spec): Spec =
-    mapSpecLocals (id, fn ty ->
-                        case ty of
-                          | Base(qid as Qualified(Unqualified, id), ty_args, pos) ->
-                            (case findAllTypes(spc, qid) of
-                             | [type_info] -> Base(primaryTypeName type_info, ty_args, pos)
-                             | _ -> ty)
-                          | _ -> ty,
+    mapSpecLocals (fn tm ->
+                     case tm of
+                       | Fun (PChoose(qid as Qualified(qual, id)), ty, pos) | qual = UnQualified ->
+                         (case findAllTypes(spc, qid) of
+                            | [type_info] -> Fun (PChoose(primaryTypeName type_info), ty, pos)
+                            | _ ->  Fun (PChoose(Qualified(defaultQualifier spc, id)), ty, pos))
+                       | Fun (PQuotient(qid as Qualified(qual, id)), ty, pos) | qual = UnQualified ->
+                         (case findAllTypes(spc, qid) of
+                            | [type_info] -> Fun (PQuotient(primaryTypeName type_info), ty, pos)
+                            | _ ->  Fun (PQuotient(Qualified(defaultQualifier spc, id)), ty, pos))
+                       | _ -> tm,
+                   fn ty ->
+                     case ty of
+                       | Base(qid as Qualified(qual, id), ty_args, pos) | qual = UnQualified ->
+                         (case findAllTypes(spc, qid) of
+                            | [type_info] -> Base(primaryTypeName type_info, ty_args, pos)
+                            | _ -> Base(Qualified(defaultQualifier spc, id), ty_args, pos))
+                       | _ -> ty,
                    id)
       spc
 
@@ -274,6 +285,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op checkType1(env: LocalEnv, ty: MSType, checkTerms?: Bool): MSType =
     %% checkType calls single_pass_elaborate_term, which calls checkType
+    % let _ = if debug? then writeLine("checkType: "^printType ty) else () in
     case ty of
 
       | TyVar _ -> ty
@@ -1230,30 +1242,30 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
     [ %% input
 
       ("XML" ,          "readXMLFile"),
-      ("<unqualified>", "readXMLFile"),
+      (UnQualified, "readXMLFile"),
 
       ("XML" ,          "parseXML"),
-      ("<unqualified>", "parseXML"),
+      (UnQualified, "parseXML"),
 
       ("XML" ,          "parseUnicodeXML"),
-      ("<unqualified>", "parseUnicodeXML"),
+      (UnQualified, "parseUnicodeXML"),
 
       ("XML",           "internalize_Document"), 
-      ("<unqualified>", "internalize_Document"), 
+      (UnQualified, "internalize_Document"), 
 
       ("XML",           "internalize_Element"), 
-      ("<unqualified>", "internalize_Element"), 
+      (UnQualified, "internalize_Element"), 
 
       %% output
 
       ("XML" ,          "writeXMLFile"),
-      ("<unqualified>", "writeXMLFile"),
+      (UnQualified, "writeXMLFile"),
 
       ("XML" ,          "printXML"),
-      ("<unqualified>", "printXML"),
+      (UnQualified, "printXML"),
 
       ("XML" ,          "printUnicodeXML"),
-      ("<unqualified>", "printUnicodeXML")
+      (UnQualified, "printUnicodeXML")
 
      ]
 
@@ -1272,6 +1284,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
         Some(dominating_term, leastGeneral(termType(tms@0), termType(tms@1)))
       | _ -> None
 
+   op defaultQualifier?(q: Id, env: LocalEnv): Bool =
+    q = defaultQualifier(env.internal)
+
   op selectTermWithConsistentType (env: LocalEnv, id: Id, pos: Position, terms: MSTerms, ty: MSType): Option MSTerm =
     %% calls consistentTypeOp?, which calls unifyTypes
     case terms of
@@ -1284,7 +1299,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		  (case tm of
 		     | Fun (OneName  (     _,_), _, _) -> Some tm
 		     | Fun (TwoNames (id1, _,_), _, _) ->
-		       if id1 = UnQualified then
+		       if defaultQualifier?(id1, env) then
 			 Some tm
 		       else
 			 findUnqualified rtms

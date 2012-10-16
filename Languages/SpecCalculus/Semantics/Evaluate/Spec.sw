@@ -14,7 +14,7 @@ SpecCalc qualifying spec
   import Spec/AddSpecElements
   import Spec/MergeSpecs
   import Spec/ComplainIfAmbiguous
-  import Transform
+  import Transform, Qualify
 
 (*
 To evaluate a spec we deposit the declarations in a new spec
@@ -25,7 +25,7 @@ and then qualify the resulting spec if the spec was given a name.
  op  noElaboratingMessageFiles: List String
  def noElaboratingMessageFiles = []
 
- def SpecCalc.evaluateSpec spec_elements position = {
+ def SpecCalc.evaluateSpec spec_elements defaultQual position = {
     unitId <- getCurrentUID;
     unitStr <- return (uidToString unitId);
     when (unitStr nin? noElaboratingMessageFiles)
@@ -33,10 +33,11 @@ and then qualify the resulting spec if the spec was given a name.
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <-
       evaluateSpecElems
-	(markUnQualified % even the empty spec!
-	 (if anyImports? spec_elements
-	    then emptySpec % some import will include baseSpec
-	  else importOfSpec(optBaseUnitId,baseSpec)))
+	(markQualified % even the empty spec!
+	   (if anyImports? spec_elements
+              then emptySpec % some import will include baseSpec
+            else importOfSpec(optBaseUnitId,baseSpec))
+           defaultQual)
 	spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     elaborated_spec <- complainIfAmbiguous elaborated_spec position;
@@ -91,7 +92,13 @@ axioms, etc.
 	       {
 		(value,_,_) <- evaluateTermInfo term;
 		(case coerceToSpec value of
-		   | Spec impSpec -> mergeImport term impSpec spc position
+		   | Spec impSpec ->
+                     {impSpec <-
+                         if none?(impSpec.qualifier) && some?(spc.qualifier)
+                           then let Some qual = spc.qualifier in
+                                qualifySpec impSpec qual [] position
+                         else return impSpec;
+                      mergeImport term impSpec spc position}
 		   %% Already checked
 		   | _ -> raise (Fail ("Shouldn't happen!")))
 		  })
@@ -177,4 +184,4 @@ such time as the current one can made monadic.
                 | _ -> return spc)
        spc spc.elements
      
-endspec
+end-spec

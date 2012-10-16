@@ -1,7 +1,6 @@
-\subsection{Interpreter for Spec Calculus}
+(* Interpreter for Spec Calculus *)
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
  % import Signature          
  import UnitId          
  import Spec         
@@ -30,11 +29,9 @@ SpecCalc qualifying spec {
  import Make   % we don't yet have SpecCalc term to dispatch to this,
                % but it can in principle be accessed from toplevel.lisp
 	       % via hooks in Specware.sw (Prism actually does this)
-\end{spec}
 
-This is a monadic interpreter for the Spec Calculus.
+(* This is a monadic interpreter for the Spec Calculus. *)
 
-\begin{spec}
  def SpecCalc.evaluateTerm term =
    {(value,_,_) <- SpecCalc.evaluateTermInfo term;
     return value}
@@ -44,7 +41,7 @@ This is a monadic interpreter for the Spec Calculus.
    case (valueOf term) of
     | Print       term     -> SpecCalc.evaluatePrint       (term,false)
     | UnitId      unitId   -> SpecCalc.evaluateUID         pos unitId
-    | Spec        elems    -> SpecCalc.evaluateSpec        elems     pos
+    | Spec        elems    -> SpecCalc.evaluateSpec        elems UnQualified pos
     | SpecMorph   fields   -> SpecCalc.evaluateSpecMorph   fields    pos
     | SpecInterp  fields   -> SpecCalc.evaluateSpecInterp  fields    pos % tenatitve
     | SpecPrism   fields   -> SpecCalc.evaluateSpecPrism   fields    pos % tenatitve
@@ -56,6 +53,7 @@ This is a monadic interpreter for the Spec Calculus.
     | Transform   args     -> SpecCalc.evaluateTransform   args      pos
     | DiagMorph   fields   -> SpecCalc.evaluateDiagMorph   fields
 
+    | Qualify  ((Spec elems, pos1), qualifier) -> SpecCalc.evaluateSpec elems qualifier pos1
     | Qualify  (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier
     | Let      (decls, sub_term)     -> SpecCalc.evaluateLet     decls sub_term
     | Where    (decls, sub_term)     -> SpecCalc.evaluateLet     decls sub_term
@@ -80,5 +78,4 @@ This is a monadic interpreter for the Spec Calculus.
     | Reduce      (msTerm,scTerm) -> SpecCalc.reduce              msTerm scTerm pos
     | Other       args            -> SpecCalc.evaluateOther       args pos  % used for extensions to Specware
     | Quote       value_info      -> return value_info
-}
-\end{spec}
+end-spec

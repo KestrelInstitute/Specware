@@ -267,6 +267,13 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
       | None -> UnQualified
       | Some qual -> qual
 
+ op addQualifier (spc: Spec) (qid as Qualified(q,id): QualifiedId): QualifiedId =
+   if q = UnQualified
+     then case spc.qualifier of
+            | Some qual -> Qualified(qual,id)
+            | None -> qid
+     else qid
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  components of primary op def
  %%%  Any uses of these simply ignore any definitions after the

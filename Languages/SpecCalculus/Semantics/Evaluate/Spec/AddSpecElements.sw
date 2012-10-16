@@ -20,6 +20,7 @@ SpecCalc qualifying spec
   %%% some of which may be identical
   %%% Collect the info's for such references
   let new_names = reverse (removeDuplicates new_names) in % don't let duplicate names get into a typeinfo!
+  let new_names = map (addQualifier old_spec) new_names in
   let primaryName = head new_names in
   let new_info = {names = new_names, 
 		  dfn   = new_dfn}
@@ -136,6 +137,7 @@ SpecCalc qualifying spec
   %%% some of which may be identical
   %%% Collect the info's for such references
   let new_names = reverse (removeDuplicates new_names) in % don't let duplicate names get into an opinfo!
+  let new_names = map (addQualifier old_spec) new_names in
   let primaryName = head new_names in
   let new_info = {names  = new_names, 
 		  fixity = new_fixity, 
@@ -242,7 +244,7 @@ SpecCalc qualifying spec
                   % let _ = if refine? then writeLine("refine "^(printAliases new_names)^": "^printType combined_srt^" =\n"^printTerm new_tm) else () in
 		  let combined_dfn = if false && refine? && ~old_defined? then
                                        let triples = unpackTypedTerms old_info.dfn in
-                                       maybePiAndTypedTerm (([], combined_srt, new_tm) :: triples)
+                                       maybePiAndTypedTerm ((old_tvs, combined_srt, new_tm) :: triples)
                                      else 
                                        maybePiTerm (old_tvs, 
                                                     TypedTerm (new_tm, combined_srt, termAnn new_tm))

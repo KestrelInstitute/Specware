@@ -217,7 +217,7 @@ spec
                                               Fun (String s, string_type, noPos)),
                                           noPos)
     in
-    SpecCalc.evaluateSpec [public_element, package_element] noPos 
+    SpecCalc.evaluateSpec [public_element, package_element] UnQualified noPos 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
