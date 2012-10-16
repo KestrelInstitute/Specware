@@ -460,7 +460,7 @@ to end end."
   (slime-move-point (point-max))
   (let* ((banner (format "%s %s on %s %s"
                          sw:system-name
-			 (sw:eval-in-lisp "(if (boundp '*Specware-Version*) *Specware-Version* \"\")")
+			 (sw:eval-in-lisp "(if (boundp 'cl-user::*Specware-Version*) cl-user::*Specware-Version* \"\")")
                          (slime-lisp-implementation-type)
 			 (slime-lisp-implementation-version)
                          ;(slime-connection-port (slime-connection))
