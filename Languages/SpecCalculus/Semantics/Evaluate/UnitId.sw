@@ -20,14 +20,14 @@ If we get to the end of the list then we have failed.
 *)
 % See also Specware.evaluateUnitId.
   def SpecCalc.evaluateUID position unitId = {
-      (value,_) <- evaluateReturnUID position unitId;
+      (value,_) <- evaluateReturnUID position unitId false;
       return value
     }
 (*
 evaluateReturnUID is the same as evaluateUID except it also returns
 the canonical UnitId found.
 *)
-  def SpecCalc.evaluateReturnUID position unitId = {
+  def SpecCalc.evaluateReturnUID position unitId notFromCache? = {
     % let dscr = showRelativeUID unitId in 
     % print ("evaluateUID: " ^ dscr ^ "\n");
     optValue <- lookupInLocalContext unitId;
@@ -36,6 +36,8 @@ the canonical UnitId found.
       | Some valueInfo -> return (valueInfo,currentUID)
       | None -> {
           uidList <- generateUIDList unitId;
+          when notFromCache?
+            (removeUIDsFromCache uidList);
           optValue <- searchContextForUID uidList;
           (case optValue of      
              | Some value -> return value
@@ -51,7 +53,7 @@ the canonical UnitId found.
         }
     }
 (*
-These are called only from evaluateUID.
+These are called only from evaluateReturnUID
 *)
   op  searchContextForUID : List UnitId -> Env (Option (ValueInfo * UnitId))
   def searchContextForUID uids =
@@ -311,7 +313,7 @@ Given a term find a canonical UnitId for it.
   op  SpecCalc.getUID : SCTerm -> Env UnitId
   def SpecCalc.getUID term =
     case (valueOf term) of
-      | UnitId unitId -> {(_,r_uid) <- evaluateReturnUID (positionOf term) unitId;
+      | UnitId unitId -> {(_,r_uid) <- evaluateReturnUID (positionOf term) unitId false;
                           return r_uid}
       | _ -> getCurrentUID                % Not sure what to do here
 (*
@@ -425,4 +427,16 @@ aren't are removed from the environment.
     let fileName = (uidToFullPath unitId) ^ ".sw" in
     let writeTime = fileWriteTime fileName in
     writeTime <= timeStamp || writeTime = nullFileWriteTime
-endspec
+
+  op removeUIDfromCache (unitId: RelativeUID): Env () =
+    {uidList <- generateUIDList unitId;
+     removeUIDsFromCache uidList}
+
+  op removeUIDsFromCache (uids: List UnitId): Env () =
+    case uids of
+      | [] -> return ()
+      | unitId::rest ->
+        {removeFromGlobalContext unitId;
+         removeUIDsFromCache rest}
+    
+end-spec

@@ -13,7 +13,7 @@ SpecCalc qualifying spec {
 
   %% Specific kinds of terms:
 
-  op evaluateReturnUID        : Position -> RelativeUID                                          -> SpecCalc.Env (ValueInfo * UnitId)
+  op evaluateReturnUID        : Position -> RelativeUID -> Bool                                  -> SpecCalc.Env (ValueInfo * UnitId)
   op evaluateUID              : Position -> RelativeUID                                          -> SpecCalc.Env ValueInfo
   op evaluateSpec             : ExplicitSpecTerm -> Id                               -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph        : SpecMorphismTerm                                     -> Position -> SpecCalc.Env ValueInfo

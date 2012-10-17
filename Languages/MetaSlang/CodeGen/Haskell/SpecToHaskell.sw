@@ -341,7 +341,7 @@ Haskell qualifying spec
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
                 % print("evalRelUID: "^anyToString currentUID^"\n");
-		((val, _, _), uid)  <- evaluateReturnUID pos rel_uid;
+		((val, _, _), uid)  <- evaluateReturnUID pos rel_uid false;
 		return (Some(val, uid))} 
     in
       runSpecCommand (catch prog handler)

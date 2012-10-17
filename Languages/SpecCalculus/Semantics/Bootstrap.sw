@@ -151,8 +151,8 @@ Specware qualifying spec
   %% The first just evaluates a UnitId. The second evaluates a UnitId and then
   %% compiles the resulting specification to lisp.
 
-  op  evaluateUID_fromLisp : String -> Bool
-  def evaluateUID_fromLisp path = 
+  op  evaluateUID_fromLisp : String -> Bool -> Bool
+  def evaluateUID_fromLisp path notFromCache? = 
     let prog = {
 		cleanEnv;
 		currentUID <- pathToCanonicalUID ".";
@@ -162,7 +162,7 @@ Specware qualifying spec
 		position   <- return (String (path, 
 					      startLineColumnByte, 
 					      endLineColumnByte path_body));
-		catch { evaluateUID position unitId; return () } 
+		catch { evaluateReturnUID position unitId notFromCache?; return () } 
 		      (fileNameHandler unitId);
 		return true
 	       } 

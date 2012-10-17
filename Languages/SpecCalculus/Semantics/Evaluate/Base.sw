@@ -33,7 +33,7 @@ SpecCalc qualifying spec
         def prog () = {
             setBase (None,initialSpecInCat); % ?? emptySpec ??
 	    clearBaseNames;
-            val <- evaluateReturnUID internalPosition relative_uid;
+            val <- evaluateReturnUID internalPosition relative_uid false;
             case val of
                 | ((Spec spc,_,_),unitId) -> {
                      print ("\nSetting base to " ^ (uidToString unitId) ^ "\n\n");

@@ -264,7 +264,7 @@ IsaTermPrinter qualifying spec
     in
     let prog = {cleanEnv;
 		setCurrentUID currentUID;
-		((val, _, _), uid)  <- evaluateReturnUID pos rel_uid;
+		((val, _, _), uid)  <- evaluateReturnUID pos rel_uid false;
 		return (Some(val, uid))} 
     in
       runSpecCommand (catch prog handler)

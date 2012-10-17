@@ -199,7 +199,7 @@
   (let ((f (intern (Specware::fixCase id) (Specware::fixCase (if (eq q MetaSlang::unQualified) "MetaRule" q)))))
     (if (fboundp f) f
         (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
-               #'(lambda (x) x)))))
+               #'(lambda (spc) #'(lambda (tm) '(:|None|)))))))
 
 (defun interpret-command (command)
   (if (null *transform-term*)
