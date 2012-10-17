@@ -109,7 +109,7 @@ export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
 $emacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
-       -f run-specware4
+       -f run-specware4 &
 #       -name "Specware" \
 #       -title "Specware" \
 #       -geometry =150x60+20+20 \
