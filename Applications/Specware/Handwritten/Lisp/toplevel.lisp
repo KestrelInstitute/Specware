@@ -231,14 +231,11 @@
 ;This is the function invoked by the 'proc' command in the Specware shell.
 (defun sw (&optional x)
   (setq x (norm-unitid-str x))
-  (when *force-reprocess-of-unit*
-    ;; TODO: The use of touch here may cause Emacs to give annoying messages about buffers having been changed on disk.
-    (run-cmd "touch" (list (unit-to-file-name x))))
   (flet ((sw-int (x)
 	   (let ((val (if x
-			  (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
+			  (Specware::evaluateUID_fromLisp-1-1 (setq *last-unit-Id-_loaded* x) *force-reprocess-of-unit*)
 			(if *last-unit-Id-_loaded*
-			    (Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
+			    (Specware::evaluateUID_fromLisp-1-1 *last-unit-Id-_loaded* *force-reprocess-of-unit*)
 			  (format t "No previous unit evaluated~%")))))
 	     (show-error-position Emacs::*goto-file-position-stored* 1)
 	     (maybe-restore-swpath)
