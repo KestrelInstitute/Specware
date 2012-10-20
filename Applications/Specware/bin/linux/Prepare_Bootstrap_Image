@@ -86,7 +86,7 @@ if [ -f "$SPECWARE_LISP_FILES_TGZ" \
    fi
    
    echo "tar -xvzf SpecwareLispFiles.tgz"
-   tar -xvzf SpecwareLispFiles.tgz
+   tar -xvzf SpecwareLispFiles.tgz -C lisp
    echo " "
    
 else
