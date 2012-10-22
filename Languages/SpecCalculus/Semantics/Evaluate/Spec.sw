@@ -107,9 +107,9 @@ axioms, etc.
       | Type    (names,       dfn)               -> addType names      dfn spc position
       | Op      (names, fxty, refine?, dfn)      -> addOp   names fxty refine? dfn spc position
 
-      | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((name,tyVars,term,position), spc)) 
-      | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((name,tyVars,term,position), spc))
-      | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((name,tyVars,term,position), spc))
+      | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((addQualifier spc name,tyVars,term,position), spc)) 
+      | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((addQualifier spc name,tyVars,term,position), spc))
+      | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((addQualifier spc name,tyVars,term,position), spc))
       | Claim   _                                -> SpecCalc.error "evaluateSpecElem: unsupported claim type"
 
       | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, position), spc))
