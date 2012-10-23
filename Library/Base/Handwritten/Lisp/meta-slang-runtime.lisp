@@ -470,7 +470,7 @@
 
 ;; Optimization
 (define-compiler-macro List-Spec::|!length| (l)
-  `(length ,l))
+  `(length (the list ,l)))
 
 (define-compiler-macro List-Spec::++-2 (l1 l2)
  `(append ,l1 ,l2))
