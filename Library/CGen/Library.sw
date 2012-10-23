@@ -1,4 +1,4 @@
-spec
+Library qualifying spec
 
 %% This file contains lemmas that could eventually be pushed into a library somewhere.
 %%TODO rephrase as specware lemmas when possible.
@@ -498,7 +498,7 @@ end-proof %%end large verbatim block
 
 
 
-refine def tcNumber (i:Int, len:PosNat | i in? rangeForLength len) : TCNumber =
+refine def TwosComplement.tcNumber (i:Int, len:PosNat | i in? rangeForLength len) : TCNumber =
   bits(i mod 2 ** len, len)
 
 proof isa -verbatim
@@ -569,15 +569,15 @@ theorem fromBigEndian_intro is
 
 proof isa -verbatim
 declare List.length_map [simp add]
-declare fromBigEndian_rec.simps [simp del] (* for speed *)
+declare Library__fromBigEndian_rec.simps [simp del] (* for speed *)
 end-proof
 
 proof isa -verbatim
-theorem fromBigEndian_rec_app:
-  "fromBigEndian_rec (x @ y, base) = fromBigEndian_rec(x,base) * base ^ (length y) + fromBigEndian_rec(y,base)"
+theorem Library__fromBigEndian_rec_app:
+  "Library__fromBigEndian_rec (x @ y, base) = Library__fromBigEndian_rec(x,base) * base ^ (length y) + Library__fromBigEndian_rec(y,base)"
   apply(induct_tac x)
-  apply(simp add: fromBigEndian_rec.simps)
-  apply(simp add: fromBigEndian_rec.simps Nat.add_mult_distrib Power.monoid_mult_class.power_add)
+  apply(simp add: Library__fromBigEndian_rec.simps)
+  apply(simp add: Library__fromBigEndian_rec.simps Nat.add_mult_distrib Power.monoid_mult_class.power_add)
   done
 
 theorem Library__mod_does_nothing_fw:
@@ -640,72 +640,72 @@ theorem narithhack4:
   apply(arith)
   done
 
-lemma fromBigEndian_rec_bound [simp]:
-  "\<lbrakk>base\<ge>2; all_less base digits\<rbrakk> 
-     \<Longrightarrow> fromBigEndian_rec (digits,base) < base ^ (length digits)"
-  apply(induct digits, simp_all add:fromBigEndian_rec.simps)
+lemma Library__fromBigEndian_rec_bound [simp]:
+  "\<lbrakk>base\<ge>2; Library__all_less base digits\<rbrakk> 
+     \<Longrightarrow> Library__fromBigEndian_rec (digits,base) < base ^ (length digits)"
+  apply(induct digits, simp_all add:Library__fromBigEndian_rec.simps)
   apply(auto)
   apply(rule narithhack4, force, force, force)
   done
 
-theorem fromBigEndian_rec_app_mod:
-  "\<lbrakk> all_less base digits ; base\<ge>2\<rbrakk> \<Longrightarrow> fromBigEndian_rec (moredigits @ digits, base) mod (base^(length digits)) = fromBigEndian_rec(digits,base)"
-  apply(simp add: fromBigEndian_rec_app)
+theorem Library__fromBigEndian_rec_app_mod:
+  "\<lbrakk> Library__all_less base digits ; base\<ge>2\<rbrakk> \<Longrightarrow> Library__fromBigEndian_rec (moredigits @ digits, base) mod (base^(length digits)) = Library__fromBigEndian_rec(digits,base)"
+  apply(simp add: Library__fromBigEndian_rec_app)
   done
 
 theorem all_less_tl [simp]:
-  "\<lbrakk> 0 < length lst ;all_less val lst \<rbrakk> \<Longrightarrow> all_less val (tl lst)"
+  "\<lbrakk> 0 < length lst ;Library__all_less val lst \<rbrakk> \<Longrightarrow> Library__all_less val (tl lst)"
   apply(case_tac lst, auto)
 done
 
 
 theorem all_less_drop [simp]:
-  "\<lbrakk> n <= length lst ; all_less val lst \<rbrakk> \<Longrightarrow> all_less val (drop n lst)"
+  "\<lbrakk> n <= length lst ; Library__all_less val lst \<rbrakk> \<Longrightarrow> Library__all_less val (drop n lst)"
   apply(induct n)
   apply(force)
   apply(auto simp add: List.drop_Suc List.drop_tl)
 done
 
 
-theorem fromBigEndian_rec_drop:
-  "\<lbrakk> n \<le> length digits ; all_less base digits ; base \<ge> 2\<rbrakk> \<Longrightarrow>
-     fromBigEndian_rec (drop n digits, base) =
-     fromBigEndian_rec (digits, base) mod base ^ (length digits - n)"
-  apply(cut_tac base="base" and moredigits="take n digits" and digits="drop n digits" in fromBigEndian_rec_app_mod)
+theorem Library__fromBigEndian_rec_drop:
+  "\<lbrakk> n \<le> length digits ; Library__all_less base digits ; base \<ge> 2\<rbrakk> \<Longrightarrow>
+     Library__fromBigEndian_rec (drop n digits, base) =
+     Library__fromBigEndian_rec (digits, base) mod base ^ (length digits - n)"
+  apply(cut_tac base="base" and moredigits="take n digits" and digits="drop n digits" in Library__fromBigEndian_rec_app_mod)
   apply(force, force)
 apply(simp add: List.append_take_drop_id)
 done
 
 
-theorem fromBigEndian_rec_mod:
- "\<lbrakk>n <= length digits ; all_less base digits ; base \<ge> 2\<rbrakk> \<Longrightarrow> 
-  fromBigEndian_rec (digits, base) mod base^(n::nat) = fromBigEndian_rec (List__suffix (digits, n), base)"
-  apply(simp add: SW_List.List__suffix_alt fromBigEndian_rec_drop)
+theorem Library__fromBigEndian_rec_mod:
+ "\<lbrakk>n <= length digits ; Library__all_less base digits ; base \<ge> 2\<rbrakk> \<Longrightarrow> 
+  Library__fromBigEndian_rec (digits, base) mod base^(n::nat) = Library__fromBigEndian_rec (List__suffix (digits, n), base)"
+  apply(simp add: SW_List.List__suffix_alt Library__fromBigEndian_rec_drop)
 done
 
 
 theorem fromBigEndian_mod:
- "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; all_less 2 digits\<rbrakk> \<Longrightarrow> 
+ "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; Library__all_less 2 digits\<rbrakk> \<Longrightarrow> 
   Integer__fromBigEndian (digits, 2) mod 2^(n::nat) = Integer__fromBigEndian (List__suffix (digits, n), 2)"
-  apply(cut_tac base=2 and digits=digits in fromBigEndian_becomes2)
+  apply(cut_tac base=2 and digits=digits in Library__fromBigEndian_becomes2)
   apply(force, force, force)
-  apply(simp add: fromBigEndian_becomes2 SW_List.List__suffix_alt)
-  apply(cut_tac base=2 and digits="drop (length digits - n) digits" in fromBigEndian_becomes2)
+  apply(simp add: Library__fromBigEndian_becomes2 SW_List.List__suffix_alt)
+  apply(cut_tac base=2 and digits="drop (length digits - n) digits" in Library__fromBigEndian_becomes2)
   apply(force, force, force)
-  apply(cut_tac base=2 and digits=digits and n="length digits - n" in fromBigEndian_rec_drop)
+  apply(cut_tac base=2 and digits=digits and n="length digits - n" in Library__fromBigEndian_rec_drop)
   apply(auto)
   done
 
 (* This may match better when n is a constant (because the 2^n will get computed) *)
 theorem fromBigEndian_suffix:
- "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; all_less 2 digits\<rbrakk> \<Longrightarrow> 
+ "\<lbrakk>length digits > 0 ; n <= length digits ; n > 0 ; Library__all_less 2 digits\<rbrakk> \<Longrightarrow> 
   Integer__fromBigEndian (List__suffix (digits, n), 2) = Integer__fromBigEndian (digits, 2) mod 2^(n::nat)"
   apply(cut_tac n=n and digits=digits in fromBigEndian_mod)
   apply(auto)
   done
 
 theorem all_less_map_toNat2 [simp]:
-  "all_less (2\<Colon>nat) (map toNat2 bs)"
+  "Library__all_less (2\<Colon>nat) (map toNat2 bs)"
   apply(induct bs)
   apply(auto)
 done
@@ -780,7 +780,7 @@ theorem toNat_suffix:
   "\<lbrakk>n > 0 ; n \<le> length bs\<rbrakk> \<Longrightarrow> toNat (List__suffix (bs, n\<Colon>nat)) = toNat bs mod 2 ^ n"
   apply(case_tac "n=0")
   apply(simp)
-  apply(simp add: toNat_def map_suffix Library.map_suffix fromBigEndian_suffix)
+  apply(simp add: toNat_def Library__map_suffix fromBigEndian_suffix)
 done
 
 theorem toNat_mod:
@@ -850,12 +850,12 @@ theorem hd_suffix:
   done
 
 theorem all_less_empty [simp]:
-  "all_less val []"
+  "Library__all_less val []"
   apply(simp)
   done
 
 theorem all_less_app [simp]:
-  "all_less val (x @ y) = ((all_less val x) \<and> (all_less val y))"
+  "Library__all_less val (x @ y) = ((Library__all_less val x) \<and> (Library__all_less val y))"
   apply(induct_tac x)
   apply(simp only: all_less_empty List.append.append_Nil HOL.simp_thms(22))
   defer 1
@@ -864,7 +864,7 @@ done
 
 theorem toNat_app:
   "\<lbrakk> x \<noteq> [] ; y \<noteq> [] \<rbrakk> \<Longrightarrow> toNat (x @ y) = toNat(x) * 2 ^ (length y) + toNat(y)"
-  apply(simp add: toNat_def fromBigEndian_becomes2 fromBigEndian_rec_app)
+  apply(simp add: toNat_def Library__fromBigEndian_becomes2 Library__fromBigEndian_rec_app)
   done
 
 theorem take_one [simp]:
@@ -904,10 +904,10 @@ theorem expt_lower_bound:
 
 theorem toNat_bound_when_one:
   "\<lbrakk> hd bs = B1 ; bs \<noteq> []\<rbrakk> \<Longrightarrow> toNat bs \<ge> 1"
-  apply(simp add: toNat_def fromBigEndian_becomes2 fromBigEndian_rec_app)
+  apply(simp add: toNat_def Library__fromBigEndian_becomes2 Library__fromBigEndian_rec_app)
   apply(case_tac bs)
   apply(force)
-  apply(simp add: fromBigEndian_rec.simps)
+  apply(simp add: Library__fromBigEndian_rec.simps)
   apply(auto)
   apply(cut_tac n="length list" in expt_lower_bound)
   apply(arith)
@@ -928,10 +928,10 @@ theorem hd_take [simp]:
 (* TODO kill the other one? *)
 theorem toNat_bound_when_one_better:
   "\<lbrakk> hd bs = B1 ; bs \<noteq> []\<rbrakk> \<Longrightarrow> toNat bs \<ge> 2 ^ ((length bs) - 1)"
-  apply(simp add: toNat_def fromBigEndian_becomes2 fromBigEndian_rec_app)
+  apply(simp add: toNat_def Library__fromBigEndian_becomes2 Library__fromBigEndian_rec_app)
   apply(case_tac bs)
   apply(force)
-  apply(simp add: fromBigEndian_rec.simps)
+  apply(simp add: Library__fromBigEndian_rec.simps)
 done
 
 theorem toNat_bound2:
@@ -1133,7 +1133,7 @@ end-proof
 (***************** Proofs start here ******************)
 
 proof isa fromBigEndian_becomes_Obligation_subtype
-  by (auto simp add: all_less_becomes)
+  by (auto simp add: Library__all_less_becomes)
 end-proof
 
 proof isa all_less_intro
@@ -1142,8 +1142,8 @@ proof isa all_less_intro
   apply(auto)
 end-proof
 
-proof isa all_less_becomes
-  apply (cut_tac val=val and lst=lst in all_less_intro, simp)
+proof isa Library__all_less_becomes
+  apply (cut_tac val=val and lst=lst in Library__all_less_intro, simp)
 end-proof
 
 proof isa fromBigEndian_becomes
@@ -1151,10 +1151,10 @@ proof isa fromBigEndian_becomes
   apply(force)
   apply(simp)
   apply(case_tac "digits=[]")
-  apply(simp add: Integer__fromBigEndian_base all_less_becomes)
+  apply(simp add: Integer__fromBigEndian_base Library__all_less_becomes)
   apply(cut_tac base=base and digits=digits and a=a in Integer__fromBigEndian_induct)
   apply(force, force)
-  apply(simp add: Integer__fromBigEndian_base all_less_becomes)
+  apply(simp add: Integer__fromBigEndian_base Library__all_less_becomes)
   apply(force)
   apply(case_tac digits)
   apply(simp)
@@ -1162,20 +1162,20 @@ proof isa fromBigEndian_becomes
 end-proof
 
 proof isa fromBigEndian_intro_Obligation_subtype
-  by (auto simp add: all_less_becomes)
+  by (auto simp add: Library__all_less_becomes)
 end-proof
 
 proof isa fromBigEndian_becomes2_Obligation_subtype
-  by (auto simp add: all_less_becomes)
+  by (auto simp add: Library__all_less_becomes)
 end-proof
 
 proof isa fromBigEndian_becomes2
-  apply(simp add: fromBigEndian_becomes all_less_becomes)
+  apply(simp add: Library__fromBigEndian_becomes Library__all_less_becomes)
 end-proof
 
 proof isa fromBigEndian_intro
-  apply(cut_tac base=base and digits=digits in fromBigEndian_becomes, force)
-  apply(simp add: all_less_becomes, auto)
+  apply(cut_tac base=base and digits=digits in Library__fromBigEndian_becomes, force)
+  apply(simp add: Library__all_less_becomes, auto)
 end-proof
 
 proof isa TwosComplement__tcNumber__1__obligation_refine_def
@@ -1190,11 +1190,11 @@ proof isa TwosComplement__tcNumber__1__obligation_refine_def
   apply(cut_tac x=i and m="2 ^ len" and y = "i + 2 ^ len" in mod_known)
   apply(auto)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
-  apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in Library__expt_monotone, force, force)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
-  apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in Library__expt_monotone, force, force)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
-  apply(cut_tac m="len - Suc 0" and n = len in expt_monotone, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in Library__expt_monotone, force, force)
 end-proof
 
 proof isa expt_monotone
@@ -1202,7 +1202,7 @@ proof isa expt_monotone
   defer 1
   apply(simp, simp)
   apply(thin_tac "m <= n")
-  apply(cut_tac n=m and k="n-m" in expt_monotone_helper)
+  apply(cut_tac n=m and k="n-m" in Library__expt_monotone_helper)
   apply(auto)
 end-proof
 
@@ -1215,7 +1215,7 @@ proof isa toNat_bound_rule
   apply(cut_tac Bits__toNat_bound [of "bs"])
   defer 1
   apply(simp)
-  apply(cut_tac m="length bs" and n="8" in expt_monotone)
+  apply(cut_tac m="length bs" and n="8" in Library__expt_monotone)
   apply(simp)
   apply(simp del: Bits__toNat_bound)
 end-proof
