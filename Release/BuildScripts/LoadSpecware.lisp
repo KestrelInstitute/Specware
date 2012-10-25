@@ -36,58 +36,58 @@
 (setq *compile-verbose* nil)		; or lisp compilation
 
 #+allegro (progn
-	    (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
-	    (setq excl:*record-source-file-info* nil)                   ; workaround for annoying bug
-	    ;; make sure various modules are loaded for swank:
-	    (require :scm)                                              ; ???
-	    ;; "efmacs" seems to stand for something like "external format macros"
-	    ;; its used by xml, mime, etc.
-	    (cl-user::eol-convention *standard-output*)                 ; loads efmacs.fasl
-	    (require :inspect)
-	    (require :streama)
-	    )
+            (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+            (setq excl:*record-source-file-info* nil)                   ; workaround for annoying bug
+            ;; make sure various modules are loaded for swank:
+            (require :scm)                                              ; ???
+            ;; "efmacs" seems to stand for something like "external format macros"
+            ;; its used by xml, mime, etc.
+            (cl-user::eol-convention *standard-output*)                 ; loads efmacs.fasl
+            (require :inspect)
+            (require :streama)
+            )
 
 #+cmu     (progn
-	    (setq ext:*gc-verbose* nil)
-	    (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
-	    (setq extensions:*efficiency-note-cost-threshold* 30)
-	    (setq c::*compile-print* nil)
-	    )
+            (setq ext:*gc-verbose* nil)
+            (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
+            (setq extensions:*efficiency-note-cost-threshold* 30)
+            (setq c::*compile-print* nil)
+            )
 
 #+sbcl    (progn
-	    ;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
-	    (setq sb-ext:*efficiency-note-cost-threshold* 30)
-	    (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
-					       sb-int:simple-style-warning
-					       sb-int:package-at-variance))
+            ;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
+            (setq sb-ext:*efficiency-note-cost-threshold* 30)
+            (declaim (sb-ext:muffle-conditions sb-ext:compiler-note
+                                               sb-int:simple-style-warning
+                                               sb-int:package-at-variance))
             (setq sb-ext:*muffled-warnings* 'sb-int:package-at-variance)
-	    (setq sb-ext::*compile-print* nil)
-	    (declaim (optimize (sb-ext:inhibit-warnings 3)))
-	    (setq sb-fasl:*fasl-file-type* "sfsl")	                ; Default is "fasl" which conflicts with allegro
-	    (setq sb-debug:*debug-beginner-help-p* nil)
+            (setq sb-ext::*compile-print* nil)
+            (declaim (optimize (sb-ext:inhibit-warnings 3)))
+            (setq sb-fasl:*fasl-file-type* "sfsl")                      ; Default is "fasl" which conflicts with allegro
+            (setq sb-debug:*debug-beginner-help-p* nil)
 
-	    ;; Preload for efficiency and flexibility
-	    (eval-when (:compile-toplevel :load-toplevel :execute)
-	      (let ((sb-fasl:*fasl-file-type* "fasl"))
-		(require :sb-bsd-sockets)
-		(require :sb-introspect)
-		(require :sb-posix)
+            ;; Preload for efficiency and flexibility
+            (eval-when (:compile-toplevel :load-toplevel :execute)
+              (let ((sb-fasl:*fasl-file-type* "fasl"))
+                (require :sb-bsd-sockets)
+                (require :sb-introspect)
+                (require :sb-posix)
                 (require :sb-cltl2)
-		; (require :sb-sprof)
+                ; (require :sb-sprof)
                 (require :asdf)
                 (require :sb-grovel)
                 ))
 
-	    (setq sb-debug:*debug-beginner-help-p* nil)
-	    ;; Temporary because of race condition bug with slime
+            (setq sb-debug:*debug-beginner-help-p* nil)
+            ;; Temporary because of race condition bug with slime
             ;; (setq *features* (remove :sb-thread *features*))
             )
 
 #+mcl     (progn
-	    (ccl:egc nil)		                                ; Turn off ephemeral gc as it is inefficient
-	    (ccl:gc-retain-pages t)	                                ; Don't give up pages after gc as likely to need them soon
-	    (ccl::set-lisp-heap-gc-threshold (* 16777216 3))            ; Increase free space after a gc
-	    )
+            (ccl:egc nil)                                               ; Turn off ephemeral gc as it is inefficient
+            (ccl:gc-retain-pages t)                                     ; Don't give up pages after gc as likely to need them soon
+            (ccl::set-lisp-heap-gc-threshold (* 16777216 3))            ; Increase free space after a gc
+            )
 
 ;; The following defines functions such as:
 ;;;   Specware::getenv
@@ -98,16 +98,16 @@
 ;;    current-directory
 
 (flet ((my-getenv (varname)
-	 #+allegro   (si::getenv varname)
-	 #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
-			 (ccl::getenv varname))
-	 #+lispworks (hcl::getenv varname) ;?
-	 #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-	 #+sbcl      (sb-ext:posix-getenv  varname)
-	 #+gcl       (si:getenv varname)
-	 #+clisp     (ext:getenv varname)
-	 ))
-  (let ((utils (format nil "~A/Lisp_Utilities/LoadUtilities.lisp" (my-getenv "DISTRIBUTION"))))
+         #+allegro   (si::getenv varname)
+         #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+                         (ccl::getenv varname))
+         #+lispworks (hcl::getenv varname) ;?
+         #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+         #+sbcl      (sb-ext:posix-getenv  varname)
+         #+gcl       (si:getenv varname)
+         #+clisp     (ext:getenv varname)
+         ))
+  (let ((utils (format nil "~A/LispUtilities/LoadUtilities.lisp" (my-getenv "DISTRIBUTION"))))
     (load utils)
     (compile-and-load-lisp-file utils)))
 
@@ -120,8 +120,8 @@
 (defparameter *Specware-dir*
     (let ((dir (substitute #\/ #\\ Specware4)))
       (if (eq (schar dir (1- (length dir))) #\/)
-	  dir
-	(concatenate 'string dir "/"))))
+          dir
+        (concatenate 'string dir "/"))))
 
 (defun in-specware-dir (file) (concatenate 'string *Specware-dir* file))
 
@@ -168,9 +168,9 @@
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
 (make-system (in-specware-dir "Applications/Specware/UI/Emacs/Handwritten/Lisp"))
 
-;; We need to preload the (artificial to Allegro) :emacs-mule external 
+;; We need to preload the (artificial to Allegro) :emacs-mule external
 ;; character format.
-;; Otherwise, Specware distribution images created by generate-application 
+;; Otherwise, Specware distribution images created by generate-application
 ;; (see BuildDistribution_ACL.lisp) will complain at startup that :emacs-mule
 ;; cannot be found.
 #+Allegro (excl::find-external-format :emacs-mule)
@@ -235,7 +235,7 @@
        (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        (setf (get 'ANNSPEC::foldriAQualifierMap-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
-	     '(t nil nil))
+             '(t nil nil))
        (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
 ||#
 
@@ -258,7 +258,7 @@
     ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
     "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
 
-    ;; Preface.lisp defines misc things called by Specware4.lisp code, 
+    ;; Preface.lisp defines misc things called by Specware4.lisp code,
     ;; so that compiling Specware4.lisp won't genereate compiler warnings.
     "Applications/Specware/Handwritten/Lisp/Preface.lisp"
 
@@ -270,7 +270,7 @@
     ;; maybe interface would be a better name
     "Languages/XML/Handwritten/Lisp/Support.lisp"
 
-    ;; Toplevel commands 
+    ;; Toplevel commands
     "Applications/Specware/Handwritten/Lisp/toplevel"
 
     ;; Debugging utilities
@@ -298,7 +298,7 @@
 
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
-		 (compile-and-load-lisp-file (in-specware-dir file)))
+                 (compile-and-load-lisp-file (in-specware-dir file)))
        SpecwareRuntime
        );)
 
@@ -314,7 +314,7 @@
 (defun start-java-connection? ()
   (format t "Checking  command-line arguments: ~a~%" (user-command-line-arguments))
   (when (member "socket" (user-command-line-arguments)
-		:test 'equal)
+                :test 'equal)
     (load (in-specware-dir "Gui/src/Lisp/specware-socket-init"))))
 
 #+allegro
@@ -325,14 +325,14 @@
   (setf (readtable-case *readtable*) :invert))
 
 #+case-sensitive
-(push  'set-readtable-invert 
+(push  'set-readtable-invert
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
        #+sbcl    sb-ext:*init-hooks*)
 
 ;;; Load base in correct location at startup
-(push  'Specware::initializeSpecware-0 
+(push  'Specware::initializeSpecware-0
        #+allegro cl-user::*restart-actions*
        #+cmu     ext:*after-save-initializations*
        #+mcl     ccl:*lisp-startup-functions*
@@ -344,13 +344,13 @@
 (defvar *sbcl-home* (Specware::getenv "SBCL_HOME"))
 #+sbcl
 (push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
-	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
-		    (Specware::setenv "SBCL_HOME" *sbcl-home*)
-		    )
+                    (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+                    (Specware::setenv "SBCL_HOME" *sbcl-home*)
+                    )
        sb-ext:*init-hooks*)
 
 ;;; Set temporaryDirectory at startup
-(push 'setTemporaryDirectory 
+(push 'setTemporaryDirectory
       #+allegro cl-user::*restart-actions*
       #+cmu     ext:*after-save-initializations*
       #+mcl     ccl:*lisp-startup-functions*
@@ -377,12 +377,12 @@
 
   ;; per instructions in swank-loader.lisp
   (cl:defpackage :swank-loader
-		 (:use :cl)
-		 (:export :load-swank 
-			  :*source-directory*
-			  :*fasl-directory*))
+                 (:use :cl)
+                 (:export :load-swank
+                          :*source-directory*
+                          :*fasl-directory*))
   )
-;; Repeat the when test so the defparameter below can 
+;; Repeat the when test so the defparameter below can
 ;; be read after the defpackage above has been evaluted.
 (when *using-slime-interface?*
   (eval
