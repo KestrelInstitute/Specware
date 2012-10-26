@@ -2874,13 +2874,34 @@ op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) -> Some(pat, condn)
     | _ -> None
 
-%% This should be improved
-op nonExecutableTerm?(tm: MSTerm): Bool =
-  existsSubTerm (fn t ->
-                   case t of
-                     | Bind _ -> true
-                     | Fun(Op(Qualified("Functions", _), _), _, _) -> true
-                     | _ -> false)
-  
-    tm
+ def evalQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Boolean"]
+
+%% Initialized by initializeInterpreterBaseAux in toplevel.lisp
+op MSInterpreter.interpreterBaseSpec: Spec
+
+op findTheOpInterp(spc: Spec, qid: QualifiedId): Option OpInfo =
+  case findTheOp (interpreterBaseSpec, qid) of
+    | None -> findTheOp (spc, qid)
+    | v -> v
+
+op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
+  let def nonEx?(t: MSTerm, seen: QualifiedIds): Bool =
+        % let _ = writeLine(printTerm t) in
+        existsSubTerm (fn t ->
+                         case t of
+                           | Bind _ -> true
+                           | Fun(Op(qid as Qualified(qual, _), _), _, _)
+                               | qual in? evalQualifiers && some?(findTheOp(getBaseSpec(), qid)) -> false
+                           | Fun(Op(qid, _), _, _) ->
+                             if qid in? seen then false
+                               else (case findTheOpInterp(spc, qid) of
+                                       | Some info -> nonEx?(info.dfn, qid::seen)
+                                       | None -> false    % Assume defined in Lisp?
+                                         )
+                           | _ -> false)
+          t
+  in
+  let result = nonEx?(tm, []) in
+  % let _ = writeLine("Term is "^(if result then "not " else "")^"executable.\n"^printTerm tm) in
+  result
 end-spec

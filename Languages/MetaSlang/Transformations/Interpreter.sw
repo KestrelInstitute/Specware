@@ -206,14 +206,7 @@ spec
     let _ = postTrace(t,val,depth,trace?) in
     val
 
-  %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
-  op interpreterBaseSpec: Spec
-
-  op findTheOpInterp(spc: Spec, qid: QualifiedId): Option OpInfo =
-    case findTheOp (interpreterBaseSpec, qid) of
-      | None -> findTheOp (spc, qid)
-      | v -> v
-  
+ 
   op  evalFun: Fun * MSTerm * MSType * Subst * Spec * Nat * Bool -> MSIValue
   def evalFun(fun,t,ty,sb,spc,depth,trace?) =
     case fun of
@@ -593,7 +586,7 @@ spec
        | Constructor(_, v1, _) -> evalConstant? v1
        | _ -> true
 
-  %% Only have to include those that have a definition you don't want to use (and doesn't include "the")
+%% Only have to include those that have a definition you don't want to use (and doesn't include "the")
   op builtInQids: List QualifiedId =
     [Qualified("String","explode"),
      Qualified("String","implode"),
@@ -619,7 +612,8 @@ spec
      Qualified("Char","isAlpha"),
      Qualified("Char","isAscii")
      ]
-  op avoidExpanding? (qid : QualifiedId) : Bool =
+
+   op avoidExpanding? (qid : QualifiedId) : Bool =
     qid in? builtInQids
 
   op  valConstant?: MSIValue -> Bool
