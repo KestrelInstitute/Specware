@@ -15,7 +15,7 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
                             checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
                             recovery_fns: List(QualifiedId * QualifiedId)): MSTerm =
   let def mkAssureForm(arg, pred, complain_fn, ty) =
-        if nonExecutableTerm? pred then []
+        if nonExecutableTerm? spc pred then []
         else
         let (assure_fn_qid, fix_or_complain_fn) =
             case ty of
@@ -116,6 +116,8 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
                          foldl (fn (binds, ((_, tyi), (_, pati), (_, tmi))) -> binds ++ checkArg(tyi, pati, tmi))
                            [] (zip3(ty_prs, pat_prs, trm_prs))
                        | _ -> [])
+                  | RestrictedPat(pat, pred, _) ->
+                    checkArg(param_ty, pat, param_tm)
                   %% Other cases not handled
                   | _ -> []
           in
