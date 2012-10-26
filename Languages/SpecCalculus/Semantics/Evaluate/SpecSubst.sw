@@ -124,7 +124,7 @@ SpecCalc qualifying spec
                                                             Import(cod_spec_term, cod_spec, cod_spec.elements, noPos))});
       new_spec <- return (removeDuplicateImports new_spec);
       new_spec <- return (removeVarOpCaptures    new_spec);
-      new_spec <- return (compressDefs           new_spec);
+      %% new_spec <- return (compressDefs           new_spec);
       new_spec <- complainIfAmbiguous new_spec pos;
       return new_spec
       }
