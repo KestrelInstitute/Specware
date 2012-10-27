@@ -46,7 +46,6 @@ import StacksAsVectors#StacksAsVectors
 import StacksAsVectors#S %TODO call this morphism M for consistency?
 
 import POSet
-import FiniteMap
 import Extensions
 import Collections
 import Base
