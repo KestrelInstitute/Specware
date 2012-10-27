@@ -38,7 +38,7 @@ AnnSpec qualifying spec
  type AOpMap    b = AQualifierMap (AOpInfo   b) % i.e., Qualifier -> Id -> info
 
  type ATypeInfo b = {
-		     names : TypeNames,
+		     names : TypeNames, %When can there be more than one name?
 		     dfn   : AType b
 		    }
 

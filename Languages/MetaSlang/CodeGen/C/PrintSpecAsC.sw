@@ -349,7 +349,76 @@ op ppLocalVarInfoToC (info: LocalVarInfo) : List (Nat * Pretty) =
 %              | _ -> (infos, status))
 %         ([], status)
 %         elements_to_translate
-  
+
+% Checks whether item depends on anything in items
+op [a] dependsOnAny?(item : a, items : List a, dependsOn? : a * a -> Bool) : Bool =
+  case items of 
+    | Nil -> false
+    | hd::tl -> 
+      if dependsOn?(item, hd) then
+        true
+      else dependsOnAny?(item, tl, dependsOn?)
+
+% Look for an items that doesn't depend on any other items (it can go first).
+op [a] findNextItem (items : List a, dependsOn? : a * a -> Bool) : Option a =
+ let def findNextItem_aux (items : List a, allItems : List a) =
+    case items of
+      | Nil -> None
+      | hd::tl -> 
+        if dependsOnAny?(hd, allItems, dependsOn?) then
+          findNextItem_aux (tl, allItems)
+        else % hd depends on nothing and so can go first
+          Some hd
+ in findNextItem_aux(items, items)
+
+%TODO: Pull this out into a library somewhere?
+%not very efficient!
+%example call: topSort([1,3,2,4], fn (x,y) -> x > y)
+op [a] topSort (items : List a, dependsOn? : a * a -> Bool) : List a =
+  case items of
+    | Nil -> Nil
+    | _ -> 
+      % find an item that does not depend directly on any item in the set.
+      case findNextItem(items, dependsOn?) of
+        | Some item -> Cons(item, topSort(delete item items, dependsOn?))
+        | None -> let _ = writeLine "Error: No topological sort is possible (because of a cycle?)." in Nil
+
+op [b] stripTypes (pairs : List (Id * AType b)) : List (AType b) =
+  map (fn x -> x.2) pairs
+
+op [b] stripTypesOptionVersion (pairs : List (Id * Option (AType b))) : List (AType b) =
+  case pairs of
+    | [] -> []
+    | hd::tl ->
+      case hd of 
+        | (_, Some ty) -> ty::stripTypesOptionVersion(tl)
+        | _ -> stripTypesOptionVersion(tl)
+
+op anyTypeMentions? (x : List (AType StandardAnnotation), y : QualifiedId) : Bool = 
+  case x of
+    | Nil -> false
+    | hd::tl -> typeMentions?(hd, y) || anyTypeMentions?(tl, y)
+
+% Check whether type x mentions y
+ op typeMentions? (x : AType StandardAnnotation, y : QualifiedId) : Bool = 
+   case x of
+     | Arrow(ty1, ty2,_) -> typeMentions?(ty1, y) || typeMentions?(ty2, y)
+     | Product(pairs, _) -> anyTypeMentions?(stripTypes(pairs), y)
+     | CoProduct(pairs, _) -> anyTypeMentions?(stripTypesOptionVersion(pairs), y)
+     | Quotient(ty,tm, _) -> typeMentions?(ty, y) %TODO use tm?
+     | Subtype(ty,tm, _) -> typeMentions?(ty, y) %TODO use tm?
+     | Base(qid,tys, _) -> qid = y || anyTypeMentions?(tys, y)
+     | Boolean _ -> false
+     | TyVar(_, _) -> false
+%     | (MetaTyVar _, _) -> false   % Before elaborateSpec
+     | Pi(vars,ty, _) -> typeMentions?(ty, y)
+     | And(tys, _) -> anyTypeMentions?(tys, y)
+     | Any _ -> false
+
+% The CInfos should be TypeInfos
+op typeInfoDependsOnTypeInfo? (Type(qidx, infox) : CInfo, Type(qidy, infoy) : CInfo) : Bool = 
+  typeMentions?(infox.dfn, qidy) %TODO what about the names field in the typeinfo?
+
 op printSpecAsCToFile (op_set : QualifierSet,
                        type_set : QualifierSet,
                        c_file : FileName, % an absolute path
@@ -361,6 +430,9 @@ op printSpecAsCToFile (op_set : QualifierSet,
       %let (cinfos, status) = collectCInfos (op_set, type_set, status, spc) in
       let infosfortypes = foldriAQualifierMap (fn (qualifier,id,info,list:CInfos) -> if (mkQualifiedId(qualifier,id) in? type_set) then (Type(mkQualifiedId(qualifier,id),info))::list else list) [] spc.types in
       let infosforops = foldriAQualifierMap (fn (qualifier,id,info,list:CInfos) -> if (mkQualifiedId(qualifier,id) in? op_set) then (Op(mkQualifiedId(qualifier,id), info))::list else list) [] spc.ops  in
+      % types must appear in sorted order in the .h file:
+      let infosfortypes = topSort(infosfortypes, typeInfoDependsOnTypeInfo?) in
+      let _ = writeLine("Sorted types:" ^ (showQIDs (map (fn x -> case x of | Type(qid, _) -> qid | Op(qid, _) -> qid) infosfortypes))) in
       % TODO Add a topological sort on infos?  Or should the sorting be done by the user, as a transformation?
       let cinfos = infosfortypes++infosforops in
 
