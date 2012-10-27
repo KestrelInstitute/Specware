@@ -22,7 +22,8 @@ PrintAsC qualifying spec
       (case getCTypeName (qid, status) of
          | Some c_type_name -> (string c_type_name, [], status)
          | _ ->
-           (string id, [], reportError ("no C type for: " ^ show qid, status)))
+           (string id, [], status    % trying with this commented out: reportError ("no C type for: " ^ show qid, status)
+           ))
 
     | Product ([], _) -> 
       (string "{}", [], status)

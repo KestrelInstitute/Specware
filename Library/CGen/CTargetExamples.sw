@@ -196,7 +196,7 @@ import /Library/CGen/CTarget
 op bar (x:Sint) : Sint = sint0
 endspec
 %% The C generator should give an error, because sint0 is a function that is not
-%% in the subset we are going to translate.
+%% in the subset we are going to translate. TODO if the C generator hits an op from C target that we do not plan to translate, perhaps it should stop its slicing?
 
 
 
@@ -218,6 +218,7 @@ endspec
 %% Example showing that making bar2 a constant can cause problems, because it refers to bar.
 
 %%TODO The C generator should not translate bar as a constant.
+%% TODO: currently, we get: CGen error: We do not allow let terms inside expressions (they must be at the statement level)
 Example18 = E18 qualifying spec
   import /Library/CGen/CTarget
   op bar : Uint = let x = (uintConstant 0 dec) in x +_uint x
