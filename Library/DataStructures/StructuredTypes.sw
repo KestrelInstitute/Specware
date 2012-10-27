@@ -10,6 +10,7 @@
 spec
   import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using C:\Specware4\Library\Base\List)
 
+ %%TODO won't type-check.  Seems like a hack.
   op abort(n:Nat): Nat = n div 0
 
   op upto(i:Nat,j:Nat):Set Nat = upto_loop(i, j, empty_set)
@@ -40,6 +41,7 @@ spec
           xs
 
 % use this only under careful control
+%TTODO seems completely wrong.
   theorem commutativity_of_++ is [E]
     fa(x:List E,y: List E)( x ++ y = y ++ x )
 

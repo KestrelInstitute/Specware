@@ -1,9 +1,11 @@
 %Stacks qualifying 
 spec
 
-(* currently we can't refine a sum type to a product, so these constructors
+(* currently we can't refine a sum type to a product (TODO what about isomorphic type refinement?), so these constructors
    must become ops, and we must use destructors instead of inductive/cases defs.
 *)
+
+%TODO can we prove that all stacks can be made from a finite number of applications of push, starting with the empty stack?
 
   type Stack a         % = | empty_stack | push (a*Stack a)
   op [a] empty_stack : Stack a
@@ -17,7 +19,7 @@ spec
   op [a] top (stk:Stack a | stk ~= empty_stack):  a 
 %      = case stk of | push (elt,_) -> elt
 
-% This pushes a list onto the stack (in reserver order)
+% This pushes a list onto the stack (in reserver order). TODO clarify this comment.
   op [a] pushl (lst:List a, stk:Stack a): Stack a = 
       push_aux(reverse(lst),stk)
 

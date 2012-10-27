@@ -1,3 +1,5 @@
+%TODO Is this stuff used?
+
 (*  
 
     Collections -- This spec serves as precursor to 
@@ -14,7 +16,7 @@
 
      - can't actually refine to Lists, which have sum-type
      constructors because of Specware restrictions on type refinement,
-     and can't refine an initial model anayway...
+     and can't refine an initial model anyway...
 
      - should coll_select take an extra (underspecified argument)?
      which refines to the priority fn for PQ's, the linear value
@@ -41,15 +43,16 @@ spec
 %  op [a] coll_rest   : Collection a -> Collection a                   % define this over State, not here
 
   op [a] subcoll infixl 20    : Collection a * Collection a -> Boolean
+  %Non-trivial sub-collection?:
   op [a] nt_subcoll infixl 24 : Collection a * Collection a -> Boolean
   op [a] \/ infixl 24 : Collection a * Collection a -> Collection a
   op [a] /\ infixl 25 : Collection a * Collection a -> Collection a
-  op [a] -- infixl 25 : Collection a * Collection a -> Collection a    % delete all occs of 2nd arg elts
+  op [a] -- infixl 25 : Collection a * Collection a -> Collection a    % delete all occs of 2nd arg elts (TODO not true for bags?)
   op [a] coll_filter  : (a->Boolean) -> Collection a -> Collection a
-  op [a,b] coll_fold   : (b*a->b) -> b -> Collection a -> b
+  op [a,b] coll_fold   : (b*a->b) -> b -> Collection a -> b %TODO not always defined? see the restrictions on set_fold.
 
 %  op [a] size: Collection a -> Nat
-  op [a,b] coll_map: (a -> b) -> Collection a -> Collection b
+  op [a,b] coll_map: (a -> b) -> Collection a -> Collection b %TODO not always defined (set to list)? see the restrictions on set_fold.
 
 % see StructuredTypes:
 %  op coll_to_set: [a] Collection a -> Set a
@@ -66,8 +69,10 @@ spec
 %           | Some x -> coll_rest c = coll_delete(x,c)
 %           | None   -> coll_rest c = empty_coll)
 
+ %TODO not really right for bags
   axiom subcoll is [a]
       fa(s1,s2) s1 subcoll s2 <=> (fa(x: a) x in? s1 => x in? s2)
+
 
   axiom coll_union is [a]
         fa(s1,s2,x: a) x in? s1 \/ s2 <=> x in? s1 || x in? s2
@@ -90,8 +95,10 @@ spec
         ( A \/ (B \/ C) = (A \/ B) \/ C )
 
 % Note that collection difference subtracts ALL occs of all members of s2 from s1
+%TODO not really right for bags?
   axiom coll_difference is [a]
       fa(s1,s2,y: a) (y in? s1 -- s2 <=> (y in? s1 && ~(y in? s2)))
+
 
   axiom coll_diff_right_unit is [a]
       fa(c:Collection a)(c -- empty_coll = c)

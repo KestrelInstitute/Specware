@@ -21,13 +21,13 @@ Maps = Map qualifying spec
 
   op [a,b] apply : Map(a,b) -> a -> Option b
   axiom map_equality is [a,b]
-        fa(m1: Map(a,b),m2) (fa(x) apply m1 x = apply m2 x) => m1 = m2
+        fa(m1:Map(a,b), m2:Map(a,b)) (fa(x) apply m1 x = apply m2 x) => m1 = m2
 
   % the empty map is undefined over all elements of type a
 
   op [a,b] empty_map :  Map(a,b)
   axiom empty_map is [a,b]
-        fa(x) apply (empty_map: Map(a,b)) x = None
+        fa(x:a) apply (empty_map: Map(a,b)) x = None
 
  % TODO map_apply is not a good name for this (maybe apply_present or apply_default?)
  % TODO just make this a definition?
@@ -113,7 +113,7 @@ Maps = Map qualifying spec
 
  %TODO doesn't seem to type check (what if x is not in the domain of m1 and/or m2?)
   axiom totalmap_equality is [a,b]
-        fa(m1: Map(a,b),m2) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
+        fa(m1: Map(a,b),m2: Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
 
  %TODO doesn't seem to type check in the else branch
   theorem TMApply_over_update is [a,b]

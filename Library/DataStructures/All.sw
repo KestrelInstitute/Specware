@@ -5,7 +5,12 @@ spec
 %% I added refinements for those ops but haven't tested them. -Eric,
 %% 10/11/12
 
-import Sets
+import AllIsa
+% These are in AllIsa:
+%import Sets
+%import Maps#Maps
+%import Maps#Maps_extended
+
 import SetsAsLists#SetsAsLists
 import SetsAsLists#M
 import SetsAsMaps#SetsAsMaps
@@ -18,8 +23,6 @@ import SetsAsBags#SetsAsBags
 import SetsAsBags#M
 import SetsAsBagsRef
 
-import Maps#Maps
-import Maps#Maps_extended
 import MapsAsVectors#MapsAsVectors
 import MapsAsVectors#M
 import MapsAsSTHTables#MapsAsSTHTables
