@@ -2874,7 +2874,7 @@ op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) -> Some(pat, condn)
     | _ -> None
 
- def evalQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Boolean"]
+ def evaluableQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Boolean"]
 
 %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
 op MSInterpreter.interpreterBaseSpec: Spec
@@ -2891,7 +2891,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
                          case t of
                            | Bind _ -> true
                            | Fun(Op(qid as Qualified(qual, _), _), _, _)
-                               | qual in? evalQualifiers && some?(findTheOp(getBaseSpec(), qid)) -> false
+                               | qual in? evaluableQualifiers && some?(findTheOp(getBaseSpec(), qid)) -> false
                            | Fun(Op(qid, _), _, _) ->
                              if qid in? seen then false
                                else (case findTheOpInterp(spc, qid) of
