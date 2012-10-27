@@ -88,4 +88,40 @@ op unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
       Some(substitute(body,[(v,e)]))
     | _ -> None
 
+op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
+  let def transfm tm =
+        case tm of
+          | Bind(Exists, vs, bod, a) ->
+            (if vs = [] then Some bod
+             else
+             let cjs = getConjuncts bod in
+             let lift_cjs = filter (fn cj -> ~(hasRefTo?(cj, vs))) cjs in
+             if lift_cjs ~= []
+               then let rem_cjs = filter (fn cj -> ~(termIn?(cj, lift_cjs))) cjs in
+                    Some(mkSimpConj(lift_cjs ++ [transBind(vs, mkSimpConj rem_cjs, a)]))
+             else
+             case findLeftmost (fn cj -> some?(bindEquality (cj, vs))) cjs of
+               | Some cj -> 
+                 (case bindEquality(cj,vs) of
+                    | Some (sv as (_, sv_ty), s_tm) ->
+                      let new_vs = filter (fn v -> ~(equalVar?(v, sv))) vs in
+                      let new_bod = mkSimpConj(delete cj cjs) in
+                      Some(MS.mkLet([(mkVarPat sv, s_tm)], transBind(new_vs, new_bod, a)))
+                    | None -> None)
+              | None -> None)
+          | _ -> None
+      def transBind(vs, bod, a) =
+        let new_bnd = Bind(Exists, vs, bod, a) in
+        case transfm new_bnd of
+          | None -> new_bnd
+          | Some bnd -> bnd
+      def repeat tm =
+        case transfm tm of
+          | None -> None
+          | Some new_tm ->
+        case repeat new_tm of
+          | None -> Some new_tm
+          | Some new_tm1 -> Some new_tm1
+  in
+  transfm tm
 end-spec
