@@ -76,9 +76,11 @@ spec
   op [a] bag_size(b: Bag a): Nat =
     foldi (fn (x,y,sum) -> sum + y) 0 b
 
+
+   %% Changed to match the change in Bags.sw. -Eric
    op [a] nt_subbag(As:Bag a, Bs:Bag a):Boolean =
-     if Bs = empty_bag
-       then As = empty_bag  %empty?(As)
+     if As = empty_bag
+       then Bs = empty_bag  %empty?(As)
        else As subbag Bs
 
 % TODO don't copy this all over:

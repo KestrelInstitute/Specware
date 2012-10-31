@@ -172,9 +172,16 @@ spec
 
 (* a subcollection As of collection Bs is nontrivial if it is empty iff Bs is empty *)
    def [a] nt_subcollection(As:Collection a, Bs:Collection a):Boolean =
-     if Bs = empty_coll
-       then As=empty_coll  %empty?(As)
+     if As = empty_coll
+       then Bs=empty_coll  %empty?(As)
        else As subcoll Bs
+%Old definition.  This didn't seem to match the description.  In fact, it
+%seemed equal to the standard subcoll operator.  So I changed the
+%definition. -Eric
+     % if Bs = empty_coll
+     %   then As=empty_coll  %empty?(As)
+     %   else As subcoll Bs
+
 
 end-spec
 

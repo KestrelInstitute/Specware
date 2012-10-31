@@ -84,9 +84,10 @@ spec
     foldi (fn (x,_,result) -> set_insert(f x, result))
        empty_set s
 
+  % Changed to match the change in Sets.sw -Eric
   op [a] nt_subset(As:Set a, Bs:Set a): Bool =
-    if Bs = empty_set
-       then As=empty_set  %empty?(As)
+    if As = empty_set
+       then Bs=empty_set  %empty?(As)
        else As subset Bs
 
 end-spec

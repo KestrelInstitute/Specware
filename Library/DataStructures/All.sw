@@ -10,6 +10,7 @@ import AllIsa
 %import Sets
 %import Maps#Maps
 %import Maps#Maps_extended
+%import Bags
 
 import SetsAsLists#SetsAsLists
 import SetsAsLists#M
@@ -34,7 +35,6 @@ import MapsAsListsRef
 import MapsAsBTVectors#MapsAsBTVectors
 import MapsAsBTVectors#M
 
-import Bags
 import BagsAsMaps
 import BagsAsMaps#M
 import BagsAsLists#BagsAsLists

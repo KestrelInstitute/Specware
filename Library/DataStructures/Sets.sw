@@ -204,12 +204,17 @@ theorem size_map_injective is [a,b]
 theorem in?_size is [a]
   fa(s: Set a, x: a) x in? s => size s >= 1
 
-%TTODO this doesn't seem right (in the case where Bs is not empty).  Currently, this seems completely equal to plain old subset.
-(* a subset As of set Bs is nontrivial if it is empty iff Bs is empty *)
+   % A subset As of set Bs is nontrivial if it is empty iff Bs is empty.
    op [a] nt_subset(As:Set a, Bs:Set a):Boolean =
-     if Bs = empty_set
-       then As=empty_set  %empty?(As)
+     if As = empty_set
+       then Bs = empty_set  %empty?(As)
        else As subset Bs
+%Old definition.  This didn't seem to match the description.  In fact, it
+%seemed equal to the standard subset operator.  So I changed the
+%definition. -Eric
+     % if Bs = empty_set
+     %   then As=empty_set  %empty?(As)
+     %   else As subset Bs
 
 %------------------------------------------------------------------
 % Extra Lemmas to support calculations
@@ -561,6 +566,13 @@ proof isa Set__set_intersection_idempotence_right
   apply(rule Set__membership)
   apply(auto simp add: Set__set_intersection)
 end-proof
+
+proof Isa Set__distribute_set_diff_over_right_insert_new
+  apply(rule Set__membership)
+  apply(simp add: Set__set_difference Set__empty_set Set__set_insertion Set__set_deletion Set__set_insert_new_def)
+  apply(auto)
+end-proof
+
 
 end-spec
 

@@ -58,6 +58,10 @@ spec
   theorem commutativity_of_bag_union is [E]
     fa(x:Bag E,y: Bag E)( x \/ y = y \/ x )
 
+%TODO rename to have union in the name (same for other mentions of join)
+  theorem associative_bag_join is [a]
+      fa(A:Bag a,B:Bag a,C:Bag a)
+        ( A \/ (B \/ C) = (A \/ B) \/ C )
 
 %TODO add this?
 %TODO add an axiom about occs and make bag_intersection a theorem?
@@ -65,6 +69,12 @@ spec
   op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
   axiom bag_intersection is [a]
       fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
+
+  theorem bag_intersection_right_zero is [a]
+      fa(c:Bag a)(c /\ empty_bag = empty_bag)
+  theorem bag_intersection_left_zero is [a]
+      fa(c:Bag a)(empty_bag /\ c = empty_bag)
+
 *)
 
  %TODO give a meaning to this (maybe in terms of fold?)
@@ -130,12 +140,17 @@ spec
 %TODO assign meaning to this
   op [a] bag_size: Bag a -> Nat
 
-%TTODO the definition doesn't seem to match the text.  It seems equal to the standard subbag operator.
-(* a subbag As of bag Bs is nontrivial if it is empty iff Bs is empty *)
+   % A subbag As of bag Bs is nontrivial if it is empty iff Bs is empty.
    op [a] nt_subbag(As:Bag a, Bs:Bag a):Boolean =
-     if Bs = empty_bag
-       then As = empty_bag  %empty?(As)
+     if As = empty_bag
+       then Bs = empty_bag
        else As subbag Bs
+%Old definition.  This didn't seem to match the description.  In fact, it
+%seemed equal to the standard subbag operator.  So I changed the
+%definition. -Eric
+     % if Bs = empty_bag
+     %   then As = empty_bag  %empty?(As)
+     %   else As subbag Bs
  
 %------------------------------------------------------------------
 % Extra Lemmas to support calculations
@@ -148,51 +163,44 @@ spec
       fa(c:Bag a,d:Bag a,y:a)
         (bag_insert(y,c) \/ d = bag_insert(y, c \/ d))
 
- %%TTODO this doesn't seem right.  Consider c={y}, d={y}.
   theorem distribute_bag_diff_over_left_insert is [a]
       fa(c:Bag a,d:Bag a,y:a)
-        (bag_insert(y,c) -- d 
-           = (if y bagin? d 
-               then c -- d
-             else bag_insert(y,c -- d)))
+        (bag_insert(y,c) -- d
+        = (if (occs(y,c) >= occs(y,d)) then (bag_insert(y,c -- d)) else (c -- d)))
+ % This seemed wrong (consider c={y}, d={y}):
+ %           = (if y bagin? d 
+ %               then c -- d
+ %             else bag_insert(y,c -- d)))
 
- %%TTODO this seems wrong.  Consider when y is not in d but is in c.
+ % This formerly said "(c \/ bag_delete(y,d) = bag_delete(y, c \/ d))", which seemed wrong.  Consider when y is not in d but is in c.
   theorem distribute_bagunion_over_right_delete is [a]
       fa(c:Bag a,d:Bag a,y:a)
-        (c \/ bag_delete(y,d) = bag_delete(y, c \/ d))
+        (c \/ bag_delete(y,d)) = (if (y bagin? d) then (bag_delete(y, c \/ d)) else (c \/ bag_delete(y,d)))
 
- %TTODO this seems wrong. Consider c={y,y}, d={y}
   theorem distribute_bag_diff_over_left_delete is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (bag_delete(y,c) -- d 
-           = (if y bagin? d 
-               then c -- d
-             else bag_delete(y,c -- d)))
+    fa(c:Bag a,d:Bag a,y:a)
+      (bag_delete(y,c) -- d = bag_delete(y,c -- d))
+ % This seems wrong. Consider c={y,y}, d={y}:
+ %        (bag_delete(y,c) -- d 
+ %           = (if y bagin? d 
+ %               then c -- d
+ %             else bag_delete(y,c -- d)))
 
   theorem distribute_bag_diff_over_right_insert is [a]
       fa(c:Bag a,d:Bag a,y:a)
         (c -- bag_insert(y,d) = bag_delete(y, c -- d) )
-
-%  theorem bag_intersection_right_zero is [a]
-%      fa(c:Bag a)(c /\ empty_bag = empty_bag)
-%  theorem bag_intersection_left_zero is [a]
-%      fa(c:Bag a)(empty_bag /\ c = empty_bag)
 
   theorem bag_union_right_unit is [a]
       fa(c:Bag a)(c \/ empty_bag = c)
   theorem bag_union_left_unit is [a]
       fa(c:Bag a)(empty_bag \/ c = c)
 
-%TODO rename to have union in the name (same for other mentions of join)
-  theorem associative_bag_join is [a]
-      fa(A:Bag a,B:Bag a,C:Bag a)
-        ( A \/ (B \/ C) = (A \/ B) \/ C )
 
-%TTODO does not seem true.  Consider A={x}, B={x}, C={x}
+%TTODO does not seem true.  Consider A={x}, B={x}, C={x}.  Note sure how to fix it.  We could prove the special case where nothing in C is in A (or nothing in C is in B).
 %TODO  Minor quibble: I am not sure about the name of this one.  It seems that this is really distributing the difference over the join, not vice versa.
-  theorem distribute_bag_join_over_diff is [a]
-      fa(A:Bag a,B:Bag a,C:Bag a)
-        ((A \/ B) -- C = (A -- C) \/ (B -- C))
+  % theorem distribute_bag_join_over_diff is [a]
+  %     fa(A:Bag a,B:Bag a,C:Bag a)
+  %       ((A \/ B) -- C = (A -- C) \/ (B -- C))
 
 (*  theorem fodder  
 
@@ -275,13 +283,86 @@ spec
 (******************************** The Proofs ********************************)
 
 proof isa Bag__bag_insertion_commutativity
-  sorry
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_insertion)
 end-proof
 
 proof isa Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype
   sorry
 end-proof
 
+proof Isa Bag__in_bag_union
+  apply(auto simp add: Bag__occs_bag_union Bag__bagin_p_def)
+end-proof
+
+proof Isa Bag__commutativity_of_bag_union
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__occs_bag_union)
+end-proof
+
+proof Isa Bag__associative_bag_join
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__occs_bag_union)
+end-proof
+
+proof Isa Bag__distribute_bagunion_over_right_insert
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__occs_bag_union Bag__bag_insertion)
+end-proof
+
+proof Isa Bag__distribute_bagunion_over_left_insert
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__occs_bag_union Bag__bag_insertion)
+end-proof
+
+proof Isa Bag__distribute_bagunion_over_right_delete
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__occs_bag_union Bag__bag_deletion Bag__bagin_p_def Bag__natMinus_def)
+end-proof
+
+proof Isa Bag__distribute_bag_diff_over_right_insert
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Bag__natMinus_def)
+end-proof
+
+proof Isa Bag__bag_union_right_unit
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__empty_bag Bag__occs_bag_union)
+end-proof
+
+proof Isa Bag__bag_union_left_unit
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__empty_bag Bag__occs_bag_union)
+end-proof
+
+proof Isa bag_intersection_right_zero
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__empty_bag Bag__bag_intersection)
+end-proof
+
+proof Isa bag_intersection_left_zero
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__empty_bag Bag__bag_intersection)
+end-proof
+
+
+proof Isa Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype
+  apply(cut_tac A=x and B=y and C=z in Bag__associative_bag_join)
+  apply(cut_tac A=x and B=z and C=y in Bag__associative_bag_join)
+  apply(cut_tac x=z and y=y in Bag__commutativity_of_bag_union)
+  apply(auto)
+end-proof
+
+
+proof Isa Bag__distribute_bag_diff_over_left_insert
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_difference Bag__bag_insertion Bag__bagin_p_def Bag__natMinus_def)
+end-proof
+
+proof Isa Bag__distribute_bag_diff_over_left_delete
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_difference Bag__bag_deletion Bag__natMinus_def)
+end-proof
 
 
 end-spec

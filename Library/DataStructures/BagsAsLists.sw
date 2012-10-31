@@ -173,9 +173,10 @@ spec
     choose[Bag.Bag] (fn l -> length l)
 
 (* a subbag As of bag Bs is nontrivial if it is empty iff Bs is empty *)
+   %% Changed to match the change in Bags.sw. -Eric
    def [a] nt_subbag(As:Bag a, Bs:Bag a):Boolean =
-     if Bs = empty_bag
-       then As=empty_bag  %empty?(As)
+     if As = empty_bag
+       then Bs=empty_bag  %empty?(As)
        else As subbag Bs
 
 end-spec
