@@ -291,6 +291,7 @@ accepted in lieu of prompting."
   (define-key map "\C-ch"    'sw:convert-spec-to-haskell)
   (define-key map "\C-cH"    'sw:convert-top-spec-to-haskell)
 
+  (define-key map [C-S-down-mouse-3] 'sw:show-containing-object)
 					          ; Franz binding
 ;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
 ;  (define-key map "\C-c`"    'insert-open-quote)
@@ -2021,6 +2022,68 @@ STRING should be given if the last search was by `string-match' on STRING."
 	    (error "Can't find any imports of %s." spec-name)
 	  (goto-specware-search-result spec-name (sw:sort-search-results results)))))
 
+;;; Object tracking
+
+(defface sw:current-object-face
+  '((((class color) (min-colors 88) (background light))
+     :background "LightBlue1")
+    (((class color) (min-colors 88) (background dark))
+     :background "Blue4")
+    (((class color) (min-colors 16) (background light))
+     :background "yellow")
+    (((class color) (min-colors 16) (background dark))
+     :background "paleblue")
+    (((class color) (min-colors 8))
+     :background "cyan" :foreground "black")
+    (t :inverse-video t))
+  "Face used highlighting current object in Specware buffers."
+  :group 'specware)
+
+(defconst sw:current-object-overlay
+  (let ((ol (make-overlay (point-min) (point-min))))
+    (delete-overlay ol)
+    (overlay-put ol 'face 'sw:current-object-face)
+    ol)
+  "An overlay which records the current secondary selection.
+It is deleted when there is no secondary selection.")
+
+(defun sw:show-object-at (spec-name pos)
+  (let ((result (sw:eval-in-lisp (format "(EditFn::findObjectAtPosition-2 %S %s)"
+                                         spec-name pos))))
+    (delete-overlay sw:current-object-overlay)
+    (when (and (consp result)
+               (eq (car result) ':|Some|))
+      (move-overlay sw:current-object-overlay (cadr result) (cddr result)))))
+
+(defun sw:show-containing-object (start-event)
+  (interactive "e")
+  (let* ((event-info (event-start start-event))
+         (curr-pos (posn-point event-info))
+         (window (posn-window event-info))
+         (event-buffer (window-buffer window))
+         (spec-name (with-current-buffer event-buffer
+                      (goto-char curr-pos)
+                      (sw:containing-specware-unit-id nil)))
+         (done nil)
+         event mouse)
+    (with-selected-window window
+      (sw:show-object-at spec-name curr-pos)
+      (track-mouse
+        (while (not done)
+          (setq event (read-event))
+          (setq mouse (mouse-position))
+          (cond
+           ((not (consp event))
+            (delete-overlay sw:current-object-overlay)
+            (setq done t))
+           ((memq (car event) '(mouse-movement drag-mouse-3))
+            (let* ((new_pos (posn-point (event-start event))))
+              (unless (eq new_pos curr-pos)
+                (setq curr-pos new_pos)
+                (sw:show-object-at spec-name curr-pos))))
+           (t (delete-overlay sw:current-object-overlay)
+              (setq done t))))))))
+
 ;;;; Prompt regexp for specware shell
 (defvar *lisp-prompt-regexp*)		; make buffer local?
 
@@ -2180,16 +2243,16 @@ qualifier: }")
 	 ;; We don't do everything that widget-button-click does -- i.e.
 	 ;; we don't change the link color on button down -- but that's
 	 ;; not important.
-	 (add-local-hook
-	  'mouse-track-click-hook
-	  #'(lambda (event count)
-	      (cond
-	       ((widget-event-point event)
-		(let* ((pos (widget-event-point event))
-		       (button (get-char-property pos 'button)))
-		  (when button
-		    (widget-apply-action button event)
-		    t))))))
+	 ;; (add-local-hook
+	 ;;  'mouse-track-click-hook
+	 ;;  #'(lambda (event count)
+	 ;;      (cond
+	 ;;       ((widget-event-point event)
+	 ;;        (let* ((pos (widget-event-point event))
+	 ;;               (button (get-char-property pos 'button)))
+	 ;;          (when button
+	 ;;            (widget-apply-action button event)
+	 ;;            t))))))
 	 (set-specifier left-margin-width about-left-margin (current-buffer))
 	 (set (make-local-variable 'widget-button-face) 'about-specware-link-face)
 	 nil)))
