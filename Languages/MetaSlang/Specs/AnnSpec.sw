@@ -75,6 +75,18 @@ AnnSpec qualifying spec
  type Property       = AProperty   StandardAnnotation
  type Properties     = AProperties StandardAnnotation
 
+ op [b] elementAnn(el: ASpecElement b): b =
+   case el of
+     | Import(_,_,_,a) -> a
+     | Type(_,a) -> a
+     | TypeDef(_,a) -> a
+     | Op(_,_,a) -> a
+     | OpDef(_,_,_,a) -> a
+     | Property(_,_,_,_,a) -> a
+     | Comment(_,a) -> a
+     | Pragma(_,_,_,a) -> a
+
+
  op  primaryTypeName : [b] ATypeInfo b -> TypeName
  op  primaryOpName   : [b] AOpInfo   b -> OpName
  op  propertyName    : [b] AProperty b -> PropertyName
