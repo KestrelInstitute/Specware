@@ -11,6 +11,7 @@ import AllIsa
 %import Maps#Maps
 %import Maps#Maps_extended
 %import Bags
+%import Stacks
 
 import SetsAsLists#SetsAsLists
 import SetsAsLists#M
@@ -39,9 +40,7 @@ import BagsAsMaps
 import BagsAsMaps#M
 import BagsAsLists#BagsAsLists
 import BagsAsLists#M
-import BagsAsListsRef
 
-import Stacks
 import StacksAsVectors#StacksAsVectors
 import StacksAsVectors#S %TODO call this morphism M for consistency?
 

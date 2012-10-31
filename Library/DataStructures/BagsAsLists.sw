@@ -181,6 +181,15 @@ spec
 
 end-spec
 
-%TODO compare to BagsAsListsRef
+
+
+% the following morphism witnesses (once its proof obligations are
+% discharged) that BagsAsLists is indeed a refinement of Bags
+
+%Same as BagsAsListsRef, which has been deleted (actually, that one also had "Bag +-> Bag" -- why?).
 M = morphism Bags -> BagsAsLists {\/  +-> bag_union,
                                   --  +-> bag_difference}
+
+% proof obligations:
+% the axioms characterizing the operations in Bags are satisfied
+% by the definitions of those operations in BagsAsLists

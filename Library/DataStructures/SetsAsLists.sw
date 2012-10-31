@@ -8,7 +8,7 @@
 SetsAsLists = SetsAsBags[BagsAsLists#M] 
 
 % the validity of this morphism follows by compositionality from the
-% validity of SetsAsBagsRef and BagsAsListsRef
+% validity of SetsAsBagsRef and BagsAsLists#M
 
 % The same as SetsAsListsRef (now removed).
 M = morphism Sets -> SetsAsLists {}
