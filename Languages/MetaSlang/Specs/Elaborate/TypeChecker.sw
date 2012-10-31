@@ -22,6 +22,7 @@ TypeChecker qualifying spec
   import Infix
   import Utilities
   import PosSpecToSpec
+  import /Languages/MetaSlang/Transformations/CurryUtils
   import TypeToTerm    % XML hacks
 
   %% ========================================================================
@@ -1350,10 +1351,28 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	    let tyPos = typeAnn ty in
             let result = 
 	        (case filter (consistentTypeOp? (env, withAnnS (rtype, tyPos), Ignore)) terms of
-                   | [] -> (error (env,
-                                   "No matches for op " ^ id ^ " of " ^ (printMaybeAndType ty),
+                   | [] -> let spc = env.internal in
+                           let nc_rtype = curryShapeNum(spc, rtype) in
+                           let nc_term_args = foldl (fn (nc, Fun (_, ty2, _)) ->
+                                                       max(nc, curryShapeNum(spc, ty2)))
+                                               0 terms
+                           in
+                           (error (env,
+                                   if nc_rtype > 1 && nc_rtype > nc_term_args
+                                    then
+                                      let min_n = foldl (fn (nc, Fun (_, ty2, _)) ->
+                                                           min(nc, curryShapeNum(spc, ty2)))
+                                                   10000 terms
+                                      in
+                                      let nm_msg = if nc_term_args = min_n then ""
+                                                    else "no more than "
+                                      in                                              
+                                      show nc_rtype^" arguments given when "^nm_msg^show nc_term_args^" expected for "^id
+                                    else
+                                      "No matches for op " ^ id ^ " of " ^ (printMaybeAndType ty),
                                    pos);
                             None)
+                   
                    | [term] -> Some term
                    | consistent_terms ->
                      let _ = if debugUnify? then writeLine "Looking for dominating term..." else () in
@@ -1449,12 +1468,35 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       else
 	let pos        = termAnn   term in
 	let termString = printTerm term in
-	let tsLength   = length termString in
-	let fillerA    = blankString (10 - tsLength) in
-	let fillerB    = blankString (tsLength - 10) in
-	let msg        = newLines ["Could not match type constraint", 
-				   fillerA ^ termString ^ " of " ^ (printMaybeAndType givenType), 
-				   fillerB ^ "with expected " ^ (printMaybeAndType expectedType)]
+	let tsLen      = length termString in
+        let termTyStr  = printType givenType in
+        let termTyStrLen = length termTyStr in
+        let expectTyStr = printType expectedType in
+        let expectTyStrLen = length expectTyStr in
+        let argMismatchStr = argMismatchMsg(givenType, expectedType, env.internal) in
+        let mainMsg = if argMismatchStr = ""
+                       then "Could not match type constraint for "
+                       else argMismatchStr
+        in
+        let msg =
+            (if tsLen < 60
+              then
+                (if termTyStrLen < 80 && expectTyStrLen < 80
+                  then newLines2[mainMsg^termString^":", 
+                                 "         " ^ termTyStr,
+                                 "context: " ^ expectTyStr]
+                  else newLines2[mainMsg^termString^":", 
+                                 termTyStr,
+                                 "  context:", expectTyStr])
+            else
+              (if termTyStrLen < 80 && expectTyStrLen < 80
+                then newLines2[mainMsg, 
+                               termString ^ ": ",
+                               "         " ^ termTyStr,
+                               "context: " ^ expectTyStr]
+              else newLines2[mainMsg, termString^":", 
+                             termTyStr,
+                             "  context:", expectTyStr]))
 	in
           % let _ = fail msg in
 	  error (env, msg, pos));
@@ -1476,6 +1518,15 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
    %  reversed for some obscure reason, but they seem ok now here.
    %  If there are problems, fix them elsewhere, and don't mangle 
    %  this code!
+
+  op argMismatchMsg(ty1: MSType, ty2: MSType, spc: Spec): String =
+    let nc1 = curryShapeNum(spc, ty1) in
+    if nc1 > 1
+      then let nc2 = curryShapeNum(spc, ty2) in
+           if nc2 > nc1
+             then show nc2^" arguments given when "^show nc1^" expected for "
+             else ""
+    else ""
 
   op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
     let givenTypeChecked = checkType (env, givenType) in
@@ -1886,6 +1937,13 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | [line] -> line
       | line :: lines -> 
         line ^ Char.show (Char.chr 10) ^ "          " ^ (newLines lines)
+     
+  op newLines2(lines: List String): String = 
+    case lines of
+      | [] -> ""
+      | [line] -> line
+      | line :: lines -> 
+        line ^ "\n" ^ (newLines2 lines)
      
   %% ---- called inside OPS : PASS 2  -----
 
