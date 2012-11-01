@@ -1,7 +1,15 @@
-refine FiniteMap by {
+spec 
+
+import Map, Relation, FiniteSet
 
   % maps as (functional) sets of pairs:
   type FMap.FMap(a,b) = (FSet (a * b) | (functional? o fromFSet))
+
+  %% these three are copied from FiniteMap.sw:
+  type SingletonFMap(a,b) = (FMap(a,b) | single?)
+  type NonEmptyFMap(a,b) = (FMap(a,b) | nonEmpty?)
+  type InjectiveFMap(a,b) = (FMap(a,b) | injective?)
+
 
   op FMap.toFMap : [a,b] Bijection (FiniteMap(a,b), FMap(a,b)) =
     fn finiteMap: FiniteMap(a,b) -> toFMap finiteMap  % not executable
@@ -66,6 +74,8 @@ refine FiniteMap by {
   op [a,b] FMap.nonEmpty? (m: FMap(a,b)) : Bool = FSet.nonEmpty? m
 
 
+
+
   op [a,b] FMap.forall? (p: a * b -> Bool) (m: FMap(a,b)) : Bool =
     FSet.forall? p m
 
@@ -108,7 +118,6 @@ refine FiniteMap by {
 
   op [a,b] FMap.single? (m: FMap(a,b)) : Bool = FSet.single? m
 
-
   op [a,b] FMap.thePair (m: SingletonFMap(a,b)) : a * b = theMember m
 
   op [a,b] FMap.size (m: FMap(a,b)) : Nat = FSet.size m
@@ -146,4 +155,4 @@ refine FiniteMap by {
            (domList: InjList a, rngList: List b | domList equiLong rngList)
            : FMap(a,b) = toSet (zip (domList, rngList))
 
-}
+end-spec
