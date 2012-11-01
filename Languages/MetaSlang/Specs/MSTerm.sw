@@ -194,6 +194,7 @@ MS qualifying spec
  def mkEquals (srt) = mkFun (Equals, srt)
  def mkNotEquals (srt) = mkFun (NotEquals, srt)
 
+ % Is the Nonfix here always correct?
  def mkOp (qid, srt) = mkFun (Op (qid, Nonfix), srt)
  def mkInfixOp (qid, fixity, srt) = mkFun (Op (qid, fixity), srt)
 

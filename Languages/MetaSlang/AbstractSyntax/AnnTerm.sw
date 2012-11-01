@@ -69,7 +69,7 @@ MetaSlang qualifying spec
   | CoProduct    List (Id * Option (AType b))        * b
   | Quotient     AType b * ATerm b                   * b
   | Subtype      AType b * ATerm b                   * b
-  | Base         QualifiedId * List (AType b)        * b  % Typechecker verifies that QualifiedId refers to some typeInfo
+  | Base         QualifiedId * List (AType b)        * b  % Typechecker verifies that QualifiedId refers to some typeInfo.  The items in the list are the actuals of this type instantiation (if any).
   | Boolean                                            b
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
@@ -114,7 +114,7 @@ MetaSlang qualifying spec
   | Op             QualifiedId * Fixity
   | Project        Id
   | RecordMerge             % <<
-  | Embed          Id * Bool  % represents a call of a co-product constructor (perhaps the bool indicates whether the constructor takes arguments?)
+  | Embed          Id * Bool  % represents a call of a co-product constructor (the bool indicates whether the constructor takes arguments)
   | Embedded       Id  %represents a call to embed?, takes a constructor
   | Select         Id
   | Nat            Nat

@@ -1673,17 +1673,20 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        | _ -> false
       )
 
+ % Open up the definition of a named type (wrapped in a call of Base),
+ % and repeat, if that is also a named type, etc.
+ op unfoldBase (sp : Spec, ty : MSType) : MSType =
+   unfoldBaseV (sp, ty, true)
 
- op unfoldBase  : Spec * MSType -> MSType 
- def unfoldBase (sp, srt) =
-   unfoldBaseV (sp, srt, true)
-
- op unfoldBaseV : Spec * MSType * Bool -> MSType 
- def unfoldBaseV (sp, srt, verbose) = 
+ % Open up the definition of a named type (wrapped in a call of Base),
+ % and repeat, if that is also a named type, etc.
+ %V for verbose?
+ % verbose parameter does not seem to be used.
+ op unfoldBaseV (sp : Spec, srt : MSType, verbose : Bool) : MSType = 
   case srt of
     | Base (qid, srts, a) ->
       (case findTheType (sp, qid) of
-	 | None -> srt
+	 | None -> srt %Should this be an error?
 	 | Some info ->
 	   if definedTypeInfo? info then
 	     let (tvs, srt_def) = unpackFirstTypeDef info in
@@ -1694,7 +1697,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
              else
 	     let ssrt = substType (zip (tvs, srts), srt_def) in
 	     unfoldBaseV (sp, ssrt, verbose)
-	   else
+	   else %Should this be an error?
 	     srt)
     | _ -> srt
 
@@ -1730,12 +1733,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | And(tys,_) -> exists? (existsInFullType? spc pred?) tys
       | _ -> false)
 
- op stripSubtypes (sp: Spec, srt: MSType): MSType = 
-  let X = unfoldBase (sp, srt) in
+ op stripSubtypes (sp: Spec, ty: MSType): MSType = 
+  let X = unfoldBase (sp, ty) in
   case X 
-    of Subtype (srt, _, _) -> stripSubtypes (sp, srt)
-     | srt -> srt
+    of Subtype (ty, _, _) -> stripSubtypes (sp, ty)
+     | ty -> ty
 
+ % might we need to alternate repeatedly between unfolding base types and stripping off subtypes?
  op arrowOpt (sp : Spec, srt : MSType): Option (MSType * MSType) = 
   case stripSubtypes (sp, unfoldBase (sp,srt))
     of Arrow (dom, rng, _) -> Some (dom, rng)
