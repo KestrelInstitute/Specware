@@ -29,17 +29,13 @@ Maps = Map qualifying spec
   axiom empty_map is [a,b]
         fa(x:a) apply (empty_map: Map(a,b)) x = None
 
- % TODO map_apply is not a good name for this (maybe apply_present or apply_default?)
- % TODO just make this a definition?
-  op [a,b] map_apply (m: Map(a,b))(null_elt:b)(x: a): b
-  axiom map_apply_def is [a,b]
-    fa(m: Map(a,b),x:a,null_elt:b, y:b,z:b)
-      (map_apply m null_elt x = z
-       =>
-       (case apply m x of
-           | Some y -> z=y
-           | None   -> z=null_elt))
-
+ % This one is like apply but does not return an option.  Instead, it returns the given default element to indicate no match.
+ % TODO map_apply is not a good name for this (maybe apply_present or apply_default?).
+ % This op previously was given meaning by the axiom map_apply_def.  I changed it to just be a definition. -Eric
+  op [a,b] map_apply (m: Map(a,b)) (null_elt:b) (x:a) : b =
+    case (apply m x) of
+    | Some y -> y
+    | None   -> null_elt
 
   % update is used to define the map to return a certain element of
   % type b when applied over a certain element of type a; if the map
@@ -84,8 +80,8 @@ Maps = Map qualifying spec
   axiom map_range is
      [a,b] fa(m:Map(a,b), z:b)( z in? range(m) = (ex(x:a)(apply m x = Some z)))
 
-% TODO could use a definedOn? helper predicate
-  op [a,b] total? (s:Set(a), m:Map(a,b)):Boolean =
+% TODO could use a definedOn? helper predicate.  Or just check whether s is a subset of the domain of the map?
+  op [a,b] total? (s:Set a, m:Map(a,b)):Boolean =
     fa(x:a) (x in? s => (ex(z:b) apply m x = Some z))
 
 %TODO I guess we don't say how the elements in the list are sorted.
@@ -101,14 +97,13 @@ Maps = Map qualifying spec
      [a,b] fa(m:Map(a,b), z:b) (z in? range(m)) = (z in? rangeToList m)
 
 % who added this?
-  op [a,b] size: Map(a,b) -> Nat
-  axiom map_size is
-     [a,b] fa(m:Map(a,b)) size m = size(domain m)
+ % This op previously was given meaning by the axiom map_size.  I changed it to just be a definition. -Eric
+  op [a,b] size (m:Map(a,b)) : Nat = size(domain m)
 
 %  type TotalMap(a, b) = (Set(a) * Map(a,b) | total?)
 
   % Strips off the Some constructor.  Only works if the key is known to be in the domain of the map.
-  op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b =
+  op [a,b] TMApply(m:Map(a,b), x:a | x in? domain(m)): b =
     the(z:b)( apply m x = Some z)
 
  %TODO doesn't seem to type check (what if x is not in the domain of m1 and/or m2?)
@@ -143,6 +138,7 @@ Maps = Map qualifying spec
 
 % who added this?
 %TODO This may need commutativity and idempotence restrictions, like those for set_fold?
+%TODO rename the type variables here, for consistency with the rest of this file.
   op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a
 
 
@@ -235,7 +231,7 @@ Maps_extended = spec
     set_fold empty_map (fn (m, bval) -> update_map_prepend(m,lst1,bval,f)) lst2
   
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
-     set_fold m (fn  (m, x) -> update m x (f x)) s
+     set_fold m (fn (m, x) -> update m x (f x)) s
 
 (*--------  Special ops and axioms for isomorphism between Map(a,b)* Map(a,c) and Map(a,b*c) ---*)
 

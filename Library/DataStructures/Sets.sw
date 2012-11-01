@@ -122,7 +122,7 @@ axiom induction is [a]
 % set_insert with f and empty_set with c in
 % set_insert(x,set_insert(x,empty_set)) and in set_insert(x,empty_set)
 % yields the same result f(x,f(x,c)) = f(x,c)
-%TODO do we really need the idempotence?
+%TODO do we really need the idempotence (could restrict axiom set_fold2 below to the case where x is not already in s, or remove x from s in the RHS of that axiom)?
 %TODO Library/General/Set only requires the commutativity property on the elements of the set being folded over.
 %     I guess that would require dependent type (or product type) and would conflict with currying here...
 
@@ -324,6 +324,7 @@ theorem in?_size is [a]
         (set_insert(y,set_delete(y,c)) = set_insert(y, c))
 
   %% This was wrong.  It just said "(set_delete(y,set_insert(y,c)) = c)".  Only true if y is not in c.  -Eric
+  %% Or maybe it should be about insert_new?
   theorem distribute_set_delete_over_set_insert is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_delete(y,set_insert(y,c)) = set_delete(y,c))
