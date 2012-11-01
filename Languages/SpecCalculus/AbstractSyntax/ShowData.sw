@@ -1089,10 +1089,11 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 			ppSep (ppString ", ") (map ppField fields),
 			ppString "}"])
       | The (var,term,_) ->
-	ppGrConcat [ppString "the ",
+	ppGrConcat [ppString "(The ",
 		    ppVar c var,
-		    ppString " . ",
-		    ppTerm c term]
+		    ppString " ",
+		    ppTerm c term,
+		    ppString ")"]
       | Bind (binder,vars,term,_) ->
 	ppGr2Concat [ppString "(bind ",
 		     ppBinder binder,
@@ -1308,38 +1309,37 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
                      ppID constr,
                      ppString " ",
                      case pat of
-                       | None -> ppString "no-arg" %ppNil
+                       | None -> ppString "None" %ppNil
                        | Some pat -> (ppPattern c pat),
                      ppBreak]
                       ++ (if c.printTypes?
-                            then [ppString " in ",
-                                  ppType c ty]
+                            then [ppType c ty]
                           else [])
                       ++ [ppString ")"])
 
       | RecordPat (fields,_) ->
-	(case fields of
-	  | [] -> ppString "(RecordPat)"
-            %% If a record has 1 as its first field name, it's really a tuple
-            %% ("1" is not a legal record field name because it starts with a
-            %% number).
-	  | ("1",_)::_ ->
-	    let def ppField (_,pat) = ppPattern c pat in
-	    ppNest 1 (ppConcat [ppString "(record-pat-for-tuple ",
-                                (ppGrConcat [ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
-                                               (map ppField fields),
-                                             ppString ")"])])
-	  | _ ->
+	% (case fields of
+	%   | [] -> ppString "(RecordPat)"
+        %     %% If a record has 1 as its first field name, it's really a tuple
+        %     %% ("1" is not a legal record field name because it starts with a
+        %     %% number).
+	%   | ("1",_)::_ ->
+	%     let def ppField (_,pat) = ppPattern c pat in
+	%     ppNest 1 (ppConcat [ppString "(record-pat-for-tuple ",
+        %                         (ppGrConcat [ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
+        %                                        (map ppField fields),
+        %                                      ppString ")"])])
+	%   | _ ->
 	    let def ppField (x,pat) =
 		  ppConcat [ppString "(",
                             ppID x,
-			    ppString ": ",    %% " = "  ?? 
+			    ppString " ",
 			    ppPattern c pat,
                             ppString ")"]
 	    in
 	    ppConcat [ppString "(RecordPat ",
 		      ppSep (ppString " ") (map ppField fields),
-		      ppString ")"])
+		      ppString ")"] %)
       | WildPat (ty,_) -> ppConcat[ppString "(Wild ",
                                    ppType c ty,
                                    ppString ")"]
