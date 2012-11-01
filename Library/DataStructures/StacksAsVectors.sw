@@ -23,8 +23,7 @@ spec
           (stk.2 = 0)
 
   op [a] push (elt:a, stk:VStack a): VStack a =
-      let m:Map(Nat,a) = MapVec.V_update( stk.1, stk.2, elt) in
-     (m, stk.2 + 1)
+    (MapVec.V_update(stk.1, stk.2, elt), stk.2 + 1)
 
   %TODO precondition about the stack being non-empty?
   op [a] top (stk:VStack a): a =
