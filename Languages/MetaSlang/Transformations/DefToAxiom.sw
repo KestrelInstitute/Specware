@@ -11,6 +11,67 @@ Prover qualifying spec
 
   op unCurryType: MSType * Nat -> MSType
 
+% This stuff is in progress. --Eric
+%   %Extracts the range of an arrow type.  Skips over subtypes, and
+%   %looked up named types (wrapped in Base) as necessary.  Gives an
+%   %error if the type is not an arrow type.  Ex: x -> y becomes just y.
+%   op rangeOfArrowType (ty : MSType, spc : Spec) : MSType =
+%     case ty of
+%     | Arrow(dom, ran, _) -> ran
+%     | Subtype(ty, tm, _) -> rangeOfArrowType(ty, spc) %just ignore the subtype
+%     | Base(_, _, _) -> rangeOfArrowType(unfoldBase(spc, ty), spc) %pass the whole type into unfoldBase (will substitute the actuals in the type instantiation for the formals).
+%     | _ -> let _ = writeLine "ERROR: rangeOfArrowType called on a non-arrow type." in ty %what should we return here?
+
+%   % better way to handle this?
+%   op errorTerm : MSTerm = Fun(String("ERROR"), Base(mkQualifiedId("String","String"),[], noPos), noPos)
+
+%   % Added by Eric (10/31/2012).  Based on mkUncurryEqualityRec, which
+%   % seemed to not treat currying correctly and was causing crashes
+%   % later in the process of generating Isabelle obligationss.  This op
+%   % makes an equality of a function call and its body (this equality
+%   % is essentially the axiom represented by the op definition). TODO
+%   % handle other cases (e.g., other patterns in the lambdas).  tm is
+%   % the body of the op.  ty is the type of the op.  topFun is a Fun
+%   % term corresponding to the op (suitable to be applied to argument
+%   % terms).  paramsFound is in reverse order from the order
+%   % of the params in the call. Each param is a variable or tuple.
+%   op equateFunCallToBody_aux (tm:MSTerm, ty:MSType, topFun : MSTerm, topTy : MSType, spc:Spec, paramsFound : List MSTerm) : MSTerm =
+%     case tm of
+%       %% TODO Should we preserve the type somehow?
+%       | TypedTerm(tm,_,_) -> equateFunCallToBody_aux(tm, ty, topFun, topTy, spc, paramsFound)
+%         %% I am leaving the Pi, because that's what mkUncurryEqualityRec does.
+%       | Pi(tyvars,tm,_) -> Pi(tyvars, equateFunCallToBody_aux(tm, ty, topFun, topTy, spc, paramsFound), noPos)
+%       % TODO handle a lambda with more than one branch in its match.
+%       | Lambda([(pat, _, lambdabody)], _) -> 
+%         (case pat of
+%            | VarPat(var, _) -> equateFunCallToBody_aux(lambdabody, rangeOfArrowType(ty, spc), topFun, topTy, spc, Var(var, noPos)::paramsFound)
+%            | RecordPat(pairs, _) ->
+%              (if (forall? (fn (x,y) -> (case y of | VarPat(var, _) -> true | _ -> false)) pairs) then  %TTODO check that the field names are 1,2,3,... or maybe the handling of true (non-tuple) records here is okay.
+%                 let tuplecomponents = (map (fn (x,VarPat(var, ann)) -> (x,Var(var, ann))) pairs) in
+%                 let newparam = Record(tuplecomponents, noPos) in
+%                 equateFunCallToBody_aux(lambdabody, rangeOfArrowType(ty, spc), topFun, topTy, spc, newparam::paramsFound)
+%               else
+%                 let _ = writeLine "ERROR: In equateFunCallToBody_aux, we don't yet handle tuples containing anything other than variables." in errorTerm)
+%              % Trying the idea of stopping when we hit this.  The old version also added the type, like in this example:
+% % conjecture Map.TMApply_def is 
+% %   Map.TMApply 
+% %    = fn (m: Map.Map(a, b), x: a | x in? Map.domain m) -> the (z: b) Map.apply m x = Some z
+% %      : {(m, x): (Map.Map(a, b) * a) | x in? Map.domain m} -> b
+%            | RestrictedPat(_, _, _) -> mkEquality(ty,mkCurriedApply(topFun, reverse (paramsFound)),tm)
+%            | _ -> let _ = writeLine "ERROR: In equateFunCallToBody_aux, we don't yet handle this kind of pattern." in errorTerm)
+%       % It's not a lambda, so we've stripped off all the lambdas and can now form the function call:
+%       | _ -> mkEquality(ty,mkCurriedApply(topFun, reverse (paramsFound)),tm)
+                                   
+  op equateFunCallToBody (tm:MSTerm, ty:MSType, opqid: QualifiedId, spc:Spec) : MSTerm =
+    %% Commenting out this new version for now, because I am not sure it is right:
+    %%equateFunCallToBody_aux(tm, ty, mkOp(opqid, ty), ty, spc, [])
+    %% Very simple version (does not attempt to gather function parameters and quantify over them):
+    mkEquality(ty, mkOp(opqid, ty), tm)
+
+
+
+
+  % Is this still called in one place?  Should we replace that use with equateFunCallToBody also?
   op mkUncurryEquality: Spec * MSType * QualifiedId * MSTerm -> MSTerm
 
   def mkUncurryEquality (sp, srt, qid, trm) =
@@ -21,6 +82,9 @@ Prover qualifying spec
                            MSType * MSTerm * List MSTerm -> MSTerm
 
   def mkUncurryEqualityRec (sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
+    %let _ = writeLine("mkUncurryEqualityRec: "^printTerm trm) in
+    %let _ = writeLine("mkUncurryEqualityRec srt: "^printType srt) in
+    %let _ = writeLine("mkUncurryEqualityRec unfolded srt: "^printType (unfoldBase(sp,srt))) in
     case trm of
       | TypedTerm(t,_,_) ->
         mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, t, prevArgs)
@@ -127,8 +191,9 @@ Prover qualifying spec
   op unLambdaDef: Spec * MSType * QualifiedId * MSTerm -> List MSTerm
 
   def unLambdaDef (spc, srt, name, term) =
-    let new_equality = mkUncurryEquality (spc, srt, name, term) in
-%    let _ = writeLine("new_eq: "^printTerm new_equality) in
+    % let _ = writeLine("unLambdaDef: "^printTerm term) in
+    let new_equality = equateFunCallToBody(term, srt, name, spc) in %% mkUncurryEquality (spc, srt, name, term) in
+    % let _ = writeLine("new_eq: "^printTerm new_equality) in
     let (srt_vars,new_equality,piPos) =
         case new_equality of
 	  | Pi tp -> tp
