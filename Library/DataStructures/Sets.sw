@@ -27,6 +27,7 @@ op [a] empty_set : Set a
 axiom empty_set is [a]
       fa(x: a) ~(x in? empty_set)
 
+%TODO add this back?
 %op [a] empty? (s : Set a) : Boolean = (s = empty_set)
 
 % the result of inserting an element into a set is characterized by

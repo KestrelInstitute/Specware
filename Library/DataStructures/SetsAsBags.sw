@@ -22,13 +22,13 @@ spec
   % and for each element of the bag the boolean remains true if the element
   % occurs exactly once in the bag, and becomes false otherwise
 
-  op no_rep? : [a] Bag a -> Boolean
-  def no_rep? b = bag_fold true
-                           (fn (no_rep_found, x) ->
-                               if no_rep_found = false
-                               then false
-                               else occs(x,b) = 1)
-                           b
+  op [a] no_rep? (b : Bag a) : Boolean =
+    bag_fold true
+             (fn (no_rep_found, x) -> if no_rep_found = false then 
+                                        false
+                                      else
+                                        occs(x,b) = 1)
+             b
 
   % we (re-)define the operations on sets to operate on the
   % repetition-free bags just defined and to be constructive
@@ -38,61 +38,52 @@ spec
   % occurrence)
 
 % This is imported via Set in Bag theory.  No it isn't?
-  op in? infixl 20 : [a] a * Set a -> Boolean
-  def in?(x,s) = bagin?(x,s)
+  op [a] in? (x : a, s : Set a) infixl 20 : Boolean = bagin?(x,s)
 
   % set containment just amounts to bag containment, because there are no
   % repeated elements
 
-  op subset infixl 200 : [a] Set a * Set a -> Boolean
-  def subset(s1,s2) = subbag(s1,s2)
+  op [a] subset(s1 : Set a, s2 : Set a) infixl 200 : Boolean = subbag(s1,s2)
 
   % the empty set is represented by the empty bag
 
-  op empty_set : [a] Set a
-  def empty_set = empty_bag
+  op [a] empty_set : Set a = empty_bag
 
-%  op empty? : [a] Bag a -> Boolean
-%  def empty_set = empty_bag
+%TODO add this back?
+%  op [a] empty? (x : Set a) : Boolean = (x = empty_set)
 
   % to insert an element into a repetition-free bag representing a set,
   % we have to first check whether the element occurs in the bag: if yes,
   % the bag is unchanged; if not, the element is inserted into the bag
 
-  op set_insert : [a] a * Set a -> Set a
-  def set_insert(x,s) = if x in? s
-                        then s
-                        else bag_insert(x,s)
+  op [a] set_insert (x : a, s : Set a) : Set a =
+    if x in? s then s else bag_insert(x,s)
 
-  op set_insert_new: [a] a * Set a -> Set a
-  def set_insert_new(x,s) = bag_insert(x,s)
+  op [a] set_insert_new (x:a,s:Set a) : Set a = bag_insert(x,s)
 
   % to take the union of two sets, again we need to ensure that the resulting
   % bag is repetition-free; we use a bag_fold, starting with the first bag,
   % to go through the second bag and insert its elements into the first if
   % they are not present in the first already (using set_insert just defined)
 
-  op \/ infixl 300 : [a] Set a * Set a -> Set a
-  def \/(s1,s2) = bag_fold s1
-                           (fn(result,x) -> set_insert(x,result))
-                           s2
+  op [a] \/ (s1 : Set a, s2 : Set a) infixl 300 : Set a =
+    bag_fold s1
+             (fn(result,x) -> set_insert(x,result))
+             s2
 
-  op /\ infixl 300 : [a] Set a * Set a -> Set a
-  def /\(s1,s2) = bag_fold empty_set
-                           (fn(result,x) -> if x in? s1 
-                                              then set_insert(x,result)
-                                              else result)
-                                  s2
+  op [a] /\ (s1 : Set a, s2 : Set a) infixl 300 : Set a = 
+    bag_fold empty_set
+             (fn(result,x) -> if x in? s1 then set_insert(x,result) else result)
+             s2
 
   % finally, set_fold amounts to bag_fold on the representing bag
 
-  op set_fold : [a,b] b ->
-                        {f : b * a -> b |
+  op [a,b] set_fold (c:b)
+                    (f : b * a -> b |
                          (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
-                         (fa(x,y)   f(f(x,y), y) = f(x,y))} ->
-                        Set a ->
-                        b
-  def set_fold c f s = bag_fold c f s
+                         (fa(x,y)   f(f(x,y), y) = f(x,y)))
+                    (s: Set a) : b = 
+    bag_fold c f s
 
   op [a] //\\ (ss:Set (Set a)) : Set a =
     set_fold empty_set (/\) ss
@@ -100,25 +91,21 @@ spec
   op [a] \\// (ss:Set (Set a)) : Set a =
     set_fold empty_set (\/) ss
 
-  op set_delete : [a] a * Set a -> Set a
-  def set_delete(x,s) = if x in? s
-                        then bag_delete(x,s)
-                        else s
+
+  op[a] set_delete(x : a, s : Set a) : Set a = 
+    if x in? s then bag_delete(x,s) else s
 
 %Commenting out, since set_delete_new is commented out in Sets.sw (see the comment there).
-  % op set_delete_new: [a] a * Set a -> Set a
-  % def set_delete_new(x,s) = bag_delete(x,s)
+  % op [a] set_delete_new(x:a,s:Set a) : Set a = bag_delete(x,s)
 
-  op [a] -- infixl 25 : Set a * Set a -> Set a
-  def --(s1,s2) = (s1 -- s2)
+  op [a] -- (s1 : Set a, s2 : Set a) infixl 25 : Set a = (s1 -- s2)
 
-  % op [a] set_difference: Set a * Set a -> Set a
-  % def set_difference(s1,s2) = (s1 -- s2)
+  % op [a] set_difference(s1: Set a,s2: Set a) : Set a = (s1 -- s2)
 
-  op [a] size(s: Set a): Nat = bag_size s
+  op [a] size (s: Set a): Nat = bag_size s
 
-  op [a] filter(p: a -> Boolean) (s: Set a): Set a = bag_filter p s
-  op [a,b] map(p: a -> b) (s: Set a): Set b = bag_map p s
+  op [a] filter (p: a -> Boolean) (s: Set a): Set a = bag_filter p s
+  op [a,b] map (p: a -> b) (s: Set a): Set b = bag_map p s
 
   op [a] nt_subset(As:Set a, Bs:Set a):Boolean = nt_subbag(As,Bs)
 
