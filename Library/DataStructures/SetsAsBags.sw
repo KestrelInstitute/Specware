@@ -98,7 +98,7 @@ spec
 %Commenting out, since set_delete_new is commented out in Sets.sw (see the comment there).
   % op [a] set_delete_new(x:a,s:Set a) : Set a = bag_delete(x,s)
 
-  op [a] -- (s1 : Set a, s2 : Set a) infixl 25 : Set a = (s1 -- s2)
+  op [a] -- (s1 : Set a, s2 : Set a) infixl 25 : Set a = (s1 Bag.-- s2)
 
   % op [a] set_difference(s1: Set a,s2: Set a) : Set a = (s1 -- s2)
 
