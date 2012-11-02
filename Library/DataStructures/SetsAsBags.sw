@@ -37,7 +37,7 @@ spec
   % means, since the bags have no repeated elements, that there is one
   % occurrence)
 
-% This is imported via Set in Bag theory
+% This is imported via Set in Bag theory.  No it isn't?
   op in? infixl 20 : [a] a * Set a -> Boolean
   def in?(x,s) = bagin?(x,s)
 
@@ -105,14 +105,15 @@ spec
                         then bag_delete(x,s)
                         else s
 
-  op set_delete_new: [a] a * Set a -> Set a
-  def set_delete_new(x,s) = bag_delete(x,s)
+%Commenting out, since set_delete_new is commented out in Sets.sw (see the comment there).
+  % op set_delete_new: [a] a * Set a -> Set a
+  % def set_delete_new(x,s) = bag_delete(x,s)
 
   op [a] -- infixl 25 : Set a * Set a -> Set a
-  def --(s1,s2) = (s1 -- s2)  % bag_difference(s1,s2)
+  def --(s1,s2) = (s1 -- s2)
 
-  op [a] set_difference: Set a * Set a -> Set a
-  def set_difference(s1,s2) = (s1 -- s2)  % bag_difference(s1,s2)
+  % op [a] set_difference: Set a * Set a -> Set a
+  % def set_difference(s1,s2) = (s1 -- s2)
 
   op [a] size(s: Set a): Nat = bag_size s
 

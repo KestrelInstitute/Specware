@@ -115,7 +115,7 @@ spec
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (\/) bs
 
-
+  %TODO Where do we give this meaning?
   op [a] bag_filter: (a -> Boolean) -> Bag a -> Bag a
 
 %TODO does this exist elsewhere too?
