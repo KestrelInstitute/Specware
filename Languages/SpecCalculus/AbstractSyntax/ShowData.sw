@@ -475,8 +475,8 @@ ShowData qualifying spec
 		ppSep (ppString ", ") (map ppRenamingRule rules),
 		ppString "]"]
 
- op  ppOtherTerm         : OtherTerm -> WLPretty % Used for extensions to Specware
- op  ppOtherRenamingRule : OtherRenamingRule -> WLPretty % Used for extensions to Specware
+ op  ppOtherTerm         : OtherTerm Position -> WLPretty % Used for extensions to Specware
+ op  ppOtherRenamingRule : OtherRenamingRule  -> WLPretty % Used for extensions to Specware
 
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them

@@ -89,7 +89,7 @@ SpecCalc qualifying spec
    | Obligations  ObligationsTerm     
    | Expand       ExpandTerm          
    | Reduce       ReduceTerm           
-   | Other        OtherTerm             % A hook for for creating applications that are extensions to Specware.
+   | Other        (OtherTerm Position)  % A hook for for creating applications that are extensions to Specware.
                                         % If more than one new term is needed, OtherTerm can be a coproduct of desired terms.
    | Quote        ValueInfo             % Used to capture an internally created value and turn it into a Term when needed.
 
@@ -574,9 +574,9 @@ SpecCalc qualifying spec
  %% In a basic Specware image, OtherTerm is unspecified, but in an extension such as PSL or
  %% Planware, it might be refined to an application-specific erm, or a coproduct of such terms.
 
- type OtherTerm % hook for extensions
+ type OtherTerm a % hook for extensions
 
- op mkOther (other : OtherTerm, pos : Position) 
+ op mkOther (other : OtherTerm Position, pos : Position) 
   : SCTerm = 
   (Other other, pos)
 

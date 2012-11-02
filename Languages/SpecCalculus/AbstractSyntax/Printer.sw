@@ -519,8 +519,8 @@ case tre of
 		ppNestG 1 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppRenamingRule rules)),
 		ppString "}"]
 
-  op ppOtherTerm         : OtherTerm         -> Doc % Used for extensions to Specware
-  op ppOtherRenamingRule : OtherRenamingRule -> Doc % Used for extensions to Specware
+  op ppOtherTerm         : OtherTerm Position -> Doc % Used for extensions to Specware
+  op ppOtherRenamingRule : OtherRenamingRule  -> Doc % Used for extensions to Specware
 
   %% --------------------------------------------------------------------------------
 

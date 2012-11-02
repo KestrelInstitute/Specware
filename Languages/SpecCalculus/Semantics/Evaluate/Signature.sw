@@ -40,7 +40,7 @@ SpecCalc qualifying spec {
 
   %% Hooks for extensions to specware:
 
-  op evaluateOther              : OtherTerm                                          -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOther              : OtherTerm Position                                 -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherQualify       : SCTerm -> ValueInfo -> Qualifier                   -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherTranslate     : SCTerm -> ValueInfo -> Renaming                    -> Position -> SpecCalc.Env ValueInfo
   op evaluateOtherObligations   : OtherValue                                         -> Position -> SpecCalc.Env ValueInfo
