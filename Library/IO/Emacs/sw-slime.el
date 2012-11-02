@@ -67,7 +67,7 @@
   (let ((loader (if (file-name-absolute-p slime-backend)
                     slime-backend
                   (concat slime-path slime-backend))))
-    (setq *sw-slime-prompt* "* ")
+    (setq *sw-slime-prompt* "*")
     (format "(progn %S\n%S\n%S\n%S\n%S)\n\n"
             `(unless (and (find-package "SWANK") 
 			  (fboundp (intern "START-SERVER" "SWANK")))
@@ -375,7 +375,7 @@ DIRECTORY change to this directory before starting the process.
 (defvar old-slime-repl-insert-prompt (symbol-function 'slime-repl-insert-prompt))
 
 (defvar *sw-after-prompt-forms* nil)
-(defvar *sw-slime-prompt* "* ")
+(defvar *sw-slime-prompt* "*")
 
 (defvar sw:license-displayed-p nil)
 
@@ -388,24 +388,27 @@ to end end."
     (progn
       (goto-char slime-repl-input-start-mark)
       (unless slime-repl-suppress-prompt
-      (slime-save-marker slime-output-start
-      (slime-save-marker slime-output-end
-        (unless (bolp) (insert-before-markers "\n"))
-        (let ((prompt-start (point)))
-          (slime-propertize-region
-              '(face slime-repl-prompt-face read-only t intangible t
-                     slime-repl-prompt t
-                     ;; emacs stuff
-                     rear-nonsticky (slime-repl-prompt read-only face intangible)
-                     ;; xemacs stuff
-                     start-open t end-open t)
-            (insert-before-markers *sw-slime-prompt*))
-          (set-marker slime-repl-prompt-start-mark prompt-start)
-          (unless sw:license-displayed-p
-            (when (equal sw:system-name "Specware")
-              (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
-            (setq sw:license-displayed-p t))
-          prompt-start)))))))
+        (slime-save-marker slime-output-start
+          (slime-save-marker slime-output-end
+            (unless (bolp) (insert-before-markers "\n"))
+            (let ((prompt-start (point)))
+              (slime-propertize-region
+                  '(face slime-repl-prompt-face read-only t intangible t
+                         slime-repl-prompt t
+                         ;; emacs stuff
+                         rear-nonsticky (slime-repl-prompt read-only face intangible)
+                         ;; xemacs stuff
+                         start-open t end-open t)
+                (insert-before-markers *sw-slime-prompt*))
+              ;; sjw: By making the space not be read-only we get around a bug in delete-and-extract-region
+              ;; whereby deleting a prior " in the file makes the insertion point read-only!
+              (insert-before-markers " ")
+              (set-marker slime-repl-prompt-start-mark prompt-start)
+              (unless sw:license-displayed-p
+                (when (equal sw:system-name "Specware")
+                  (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
+                (setq sw:license-displayed-p t))
+              prompt-start)))))))
 
 (defun slime-repl-show-maximum-output ()
   "Put the end of the buffer at the bottom of the window."
