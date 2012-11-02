@@ -17,6 +17,7 @@ Specware qualifying spec
   import /Languages/SpecCalculus/AbstractSyntax/ShowDeps
   import /Languages/SpecCalculus/AbstractSyntax/ShowImports
   import /Languages/MetaSlang/CodeGen/C/PrintSpecAsC
+  import /Languages/MetaSlang/Transformations/ReorderArgs    % Transform of args
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%% Java
