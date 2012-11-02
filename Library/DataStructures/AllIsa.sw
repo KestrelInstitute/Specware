@@ -5,4 +5,5 @@ spec
   import Maps#Maps_extended
   import Stacks
   import MapsAsSets
+  import SetsAsBags#SetsAsBags
 end-spec

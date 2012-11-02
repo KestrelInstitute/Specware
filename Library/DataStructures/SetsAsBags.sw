@@ -70,11 +70,19 @@ spec
     bag_fold s1
              (fn(result,x) -> set_insert(x,result))
              s2
+  %% TODO Try to remove this "proof Isa" line (and similar things
+  %% elsewhere).  This is a workaround for an Isabelle translation
+  %% issue. (We have two infix operators called \/, one in Bags.sw and
+  %% one in this file, and Isabelle can't tell which one we mean when
+  %% we call one of them.):
+  proof Isa -> SetsAsBags_union end-proof
 
   op [a] /\ (s1 : Set a, s2 : Set a) infixl 300 : Set a = 
     bag_fold empty_set
              (fn(result,x) -> if x in? s1 then set_insert(x,result) else result)
              s2
+  %% TODO Try to remove this (see comment above for \/):
+  proof Isa -> SetsAsBags_intersect end-proof
 
   % finally, set_fold amounts to bag_fold on the representing bag
 
@@ -99,6 +107,8 @@ spec
   % op [a] set_delete_new(x:a,s:Set a) : Set a = bag_delete(x,s)
 
   op [a] -- (s1 : Set a, s2 : Set a) infixl 25 : Set a = (s1 Bag.-- s2)
+  %% TODO Try to remove this (see comment above for \/):
+  proof Isa -> SetsAsBags_diff end-proof
 
   % op [a] set_difference(s1: Set a,s2: Set a) : Set a = (s1 -- s2)
 
@@ -112,23 +122,49 @@ spec
 
 (******************************** The Proofs ********************************)
 
-proof isa SetsAsBags__empty_set_Obligation_subtype
+proof Isa empty_set_Obligation_subtype
   sorry
 end-proof
 
-proof isa SetsAsBags__set_insert_Obligation_subtype
+proof Isa set_insert_Obligation_subtype
   sorry
 end-proof
 
-proof isa SetsAsBags__set_insert_new_Obligation_subtype
+proof Isa set_insert_new_Obligation_subtype
   sorry
 end-proof
 
-proof isa SetsAsBags__e_bsl_fsl_Obligation_subtype
+proof Isa e_bsl_fsl_Obligation_subtype
   sorry
 end-proof
 
+proof Isa e_fsl_bsl_Obligation_subtype
+  sorry
+end-proof
 
+proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa e_bsl_bsl_fsl_fsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa set_delete_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa e_dsh_dsh_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa filter_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa map_Obligation_subtype
+  sorry
+end-proof
 
 end-spec
 

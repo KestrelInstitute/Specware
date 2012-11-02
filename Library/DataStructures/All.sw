@@ -13,6 +13,7 @@ import AllIsa
 %import Bags
 %import Stacks
 %import MapsAsSets
+%import SetsAsBags#SetsAsBags
 
 import SetsAsLists#SetsAsLists
 import SetsAsLists#M
@@ -22,7 +23,6 @@ import SetsAsSTHTables0#SetsAsSTHTables0
 import SetsAsSTHTables0#M
 import SetsAsBagMaps#SetsAsBagMaps
 import SetsAsBagMaps#M
-import SetsAsBags#SetsAsBags
 import SetsAsBags#M
 import SetsAsBagsRef
 
