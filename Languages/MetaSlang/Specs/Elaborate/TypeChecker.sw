@@ -1362,7 +1362,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                                     then
                                       let min_n = foldl (fn (nc, Fun (_, ty2, _)) ->
                                                            min(nc, curryShapeNum(spc, ty2)))
-                                                   10000 terms
+                                                   10000 terms 
                                       in
                                       let nm_msg = if nc_term_args = min_n then ""
                                                     else "no more than "
@@ -1481,22 +1481,28 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
         let msg =
             (if tsLen < 60
               then
-                (if termTyStrLen < 80 && expectTyStrLen < 80
-                  then newLines2[mainMsg^termString^":", 
-                                 "         " ^ termTyStr,
-                                 "context: " ^ expectTyStr]
+                (if termTyStrLen < 100 && expectTyStrLen < 100
+                  then (if tsLen <= 18
+                          then let prefix_len = max(tsLen+2, length "in context: ") in
+                               newLines2[mainMsg, 
+                                         blankString(prefix_len - tsLen - 2)^termString^": "^ termTyStr,
+                                         blankString(prefix_len - length "in context: ")
+                                           ^"in context: " ^ expectTyStr]
+                          else newLines2[mainMsg^termString^":", 
+                                         "            " ^ termTyStr,
+                                         "in context: " ^ expectTyStr])
                   else newLines2[mainMsg^termString^":", 
                                  termTyStr,
-                                 "  context:", expectTyStr])
+                                 "  in context:", expectTyStr])
             else
-              (if termTyStrLen < 80 && expectTyStrLen < 80
+              (if termTyStrLen < 100 && expectTyStrLen < 100
                 then newLines2[mainMsg, 
                                termString ^ ": ",
-                               "         " ^ termTyStr,
-                               "context: " ^ expectTyStr]
+                               "            " ^ termTyStr,
+                               "in context: " ^ expectTyStr]
               else newLines2[mainMsg, termString^":", 
                              termTyStr,
-                             "  context:", expectTyStr]))
+                             "  in context:", expectTyStr]))
 	in
           % let _ = fail msg in
 	  error (env, msg, pos));

@@ -818,9 +818,9 @@ AnnSpecPrinter qualifying spec
  def [a] TyVarString (mtv: AMetaTyVar a) : String =
    let {link, uniqueId, name} = State.! mtv in
    case link of
-    | None -> "mtv%"^name^"%"^ (Nat.show uniqueId)
+    | None -> "mtv%"^(if showBoundMetaTyvarInfo? then name^"%" else "")^ show uniqueId
     | Some srt -> (if showBoundMetaTyvarInfo?
-                     then "mtv%"^name^"%"^ (Nat.show uniqueId)^": "
+                     then "mtv%"^name^"%"^ show uniqueId ^": "
                      else "")
                  ^ printType srt
 
