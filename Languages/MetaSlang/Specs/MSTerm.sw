@@ -109,8 +109,12 @@ MS qualifying spec
  def mkLet        (decls, term)   = Let        (decls, term,             termAnn(term))
  def mkLetRec     (decls, term)   = LetRec     (decls, term,             termAnn(term))
  def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], termAnn(term))
- def mkThe        (var, term)     = The        (var, term,              termAnn(term))
+ def mkThe        (var, term)     = The        (var, term,               termAnn(term))
  def mkBind       (b, vars, term) = Bind       (b, vars, term,           termAnn(term))
+ op mkCaseExpr(c_tm: MSTerm, cases: List(MSPattern * MSTerm)): MSTerm =
+    let trp_cases = map (fn (p, b) -> (p, trueTerm, b)) cases in
+    mkApply(Lambda(trp_cases, noPos), c_tm)
+
 
  def mkVar        v               = Var        (v,                       noPos)
  def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 

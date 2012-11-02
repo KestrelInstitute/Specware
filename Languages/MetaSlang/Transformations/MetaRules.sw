@@ -88,6 +88,26 @@ op unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
       Some(substitute(body,[(v,e)]))
     | _ -> None
 
+op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * MSTerm) =
+  let def checkConstrBind(e1, e2) =
+        case e1 of
+          | Apply(Fun(Embed(constr_id, true), ty, _), v_tm, _) ->
+            let p_vs = freeVars v_tm in
+            if forall? (fn v -> inVars?(v, vs) && ~(isFree(v, e2))) p_vs
+              then
+                case termToPattern v_tm of
+                  | Some v_pat -> Some(p_vs, constr_id, ty, v_pat, e2)
+                  | None -> None
+            else None
+          | _ -> None
+  in
+  case t of
+    | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
+      (case checkConstrBind(e1, e2) of
+         | None -> checkConstrBind(e2, e1)
+         | Some b -> Some b)
+    | _ -> None
+
 op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
   let def transfm tm =
         case tm of
@@ -107,6 +127,17 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
                       let new_vs = filter (fn v -> ~(equalVar?(v, sv))) vs in
                       let new_bod = mkSimpConj(delete cj cjs) in
                       Some(MS.mkLet([(mkVarPat sv, s_tm)], transBind(new_vs, new_bod, a)))
+                    | None -> None)
+              | None ->
+             case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
+               | Some cj -> 
+                 (case caseEquality(cj,vs) of
+                    | Some (p_vs, constr_id, f_ty, v_pat, s_tm) ->
+                      let new_vs = filter (fn v -> ~(inVars?(v, p_vs))) vs in
+                      let new_bod = mkSimpConj(delete cj cjs) in
+                      let constr_ty = range(spc, f_ty) in
+                      Some(mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty), transBind(new_vs, new_bod, a)),
+                                             (mkWildPat constr_ty, falseTerm)]))
                     | None -> None)
               | None -> None)
           | _ -> None

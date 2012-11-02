@@ -197,9 +197,6 @@ op mkNumCondn(ps: MSTerms, i: Nat): MSTerm =
     | [] -> mkNat i
     | p :: r_ps -> MS.mkIfThenElse(p, mkNat i, mkNumCondn(r_ps, i+1))
 
-op mkCaseExpr(c_tm: MSTerm, cases: Match): MSTerm=
-  mkApply(Lambda(cases, noPos), c_tm)
-
 op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: MSType, ty_targets: MSTypes, pos: Position,
                      opt_qual: Option Qualifier, ops_map: QIdMap(QualifiedIds), spc: Spec, new_spc: Spec)
   : Env(QualifiedId * MSTerm) =
@@ -244,7 +241,7 @@ op mkTestFixFunction(primary_ty_qid: QualifiedId, primary_ty: MSType, ty_targets
                       fn i ->
                         let i_cases =
                             tabulate(num_args,
-                                     fn j -> (mkNatPat j, trueTerm,
+                                     fn j -> (mkNatPat j,
                                               if i = j then arg_var_tms@i
                                                 else let conv_tm = mkConverterFromIdFun(j, i, arg_var_tms@j, primary_ty_qid, ident_param,
                                                                                         ident_exp, primary_ty, ty_targets, ops_map, spc)
