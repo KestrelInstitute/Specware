@@ -21,10 +21,9 @@ spec
       | Some y -> y
       | None   -> 0
 
-  op subbag infixl 200 : [a] Bag a * Bag a -> Boolean
-  def subbag(b1,b2) =
-    size b1 <= size b2
-       && foldi (fn (x,y,r) -> r && y < occs(x, b2)) true b1
+  op [a] subbag (b1:Bag a, b2: Bag a) infixl 200 : Boolean =
+    %% size b1 <= size b2 &&   % seems wrong (map b1 may have many keys bound to 0 and still represent a subbag of b2)
+    foldi (fn (x,y,r) -> r && y <= occs(x, b2)) true b1
   
   op empty_bag : [a] Bag a
   def empty_bag = empty_map
