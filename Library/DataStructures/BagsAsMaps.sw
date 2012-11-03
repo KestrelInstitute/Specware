@@ -30,9 +30,8 @@ spec
   op [a] bag_insert(x:a, b:Bag a) : Bag a = update b x (occs(x, b) + 1)
 
   %op bag_union infixl 300 : [a] Bag a * Bag a -> Bag a
-  %% TTODO seems wrong: What about elements in b2 but not in b1?
   op [a] \/ (b1:Bag a, b2:Bag a) infixl 24 : Bag a =
-    foldi (fn (x,y,b) -> update b x (occs(x, b2) + y)) b1 b1
+    foldi (fn (x,y,b) -> update b x (occs(x, b2) + y)) b2 b1
 
   % finally, bag_fold amounts to list_fold on a representing list
 
