@@ -16,7 +16,6 @@ spec
   op [a] bagin? (x:a, s : Bag a) infixl 100 : Boolean = ~(occs(x,s) = 0)
 
   % a subbag is characterized by same or fewer occurrences of each element
-
   % I made the axiom subbag into this definition. -Eric
   op [a] subbag (b1: Bag a, b2 : Bag a) infixl 200 : Boolean = (fa(x) occs(x,b1) <= occs(x,b2))
 
@@ -137,7 +136,7 @@ spec
   axiom bag_difference is [a]
      fa(b1:Bag a,b2:Bag a,y: a) occs(y,(b1 -- b2)) = natMinus(occs(y,b1),occs(y,b2))
 
-%TODO assign meaning to this
+%TODO assign meaning to this.  This should be the total of the occurrence counts of all elements in the bag?
   op [a] bag_size: Bag a -> Nat
 
    % A subbag As of bag Bs is nontrivial if it is empty iff Bs is empty.
