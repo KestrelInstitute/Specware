@@ -21,7 +21,6 @@ import SetsAsSTHTables0#M
 import SetsAsBagMaps#SetsAsBagMaps
 import SetsAsBagMaps#M
 import SetsAsBags#M
-import SetsAsBagsRef
 
 import MapsAsVectors#MapsAsVectors
 import MapsAsVectors#M

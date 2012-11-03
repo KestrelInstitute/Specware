@@ -168,5 +168,95 @@ end-proof
 
 end-spec
 
-%TODO compare to SetsAsBagsRef
-M = morphism Sets -> SetsAsBags {Set._ +-> SetsAsBags._}
+
+
+
+
+% the following morphism witnesses (once its proof obligations are
+% discharged) that SetsAsBags is indeed a refinement of Sets
+
+M = morphism Sets -> SetsAsBags {}
+%Could also say this, but the more concise form is better style:
+%M = morphism Sets -> SetsAsBags {Set._ +-> SetsAsBags._}
+
+% proof obligations:
+% the axioms characterizing the operations in Sets are satisfied
+% by the definitions of those operations in SetsAsBags
+
+proof Isa Set__membership
+  sorry
+end-proof
+
+proof Isa Set__subset
+  sorry
+end-proof
+
+proof Isa Set__empty_set
+  sorry
+end-proof
+
+proof Isa Set__set_insertion
+  sorry
+end-proof
+
+proof Isa Set__set_union
+  sorry
+end-proof
+
+proof Isa Set__set_intersection
+  sorry
+end-proof
+
+proof Isa Set__induction
+  sorry
+end-proof
+
+proof Isa Set__set_fold1
+  sorry
+end-proof
+
+proof Isa Set__set_fold2
+  sorry
+end-proof
+
+proof Isa Set__set_deletion
+  sorry
+end-proof
+
+proof Isa Set__set_difference
+  sorry
+end-proof
+
+proof Isa Set__filter_def
+  sorry
+end-proof
+
+proof Isa Set__map_def
+  sorry
+end-proof
+
+proof Isa Set__nt_subset_def
+  sorry
+end-proof
+
+proof Isa Set__e_bsl_bsl_fsl_fsl_def_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Set__e_bsl_bsl_fsl_fsl_def
+  sorry
+end-proof
+
+proof Isa Set__e_fsl_fsl_bsl_bsl_def_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Set__e_fsl_fsl_bsl_bsl_def
+  sorry
+end-proof
+
+proof Isa Set__set_insert_new_def
+  sorry
+end-proof
+
+
