@@ -97,7 +97,60 @@ proof Isa SetsAsMap__e_bsl_bsl_fsl_fsl_Obligation_subtype
   sorry
 end-proof
 
-
 end-spec
 
+
+
 M = morphism Sets -> SetsAsMaps {Set._ +-> SetsAsMap._}
+
+proof Isa Set__membership
+  sorry
+end-proof
+
+proof Isa Set__subset
+  sorry
+end-proof
+
+proof Isa Set__empty_set
+  sorry
+end-proof
+
+proof Isa Set__set_insertion
+  sorry
+end-proof
+
+proof Isa Set__set_union
+  sorry
+end-proof
+
+proof Isa Set__set_intersection
+  sorry
+end-proof
+
+proof Isa Set__induction
+  sorry
+end-proof
+
+proof Isa Set__set_fold1
+  sorry
+end-proof
+
+proof Isa Set__set_fold2
+  sorry
+end-proof
+
+proof Isa Set__set_deletion
+  sorry
+end-proof
+
+proof Isa Set__set_difference
+  sorry
+end-proof
+
+proof Isa Set__filter_def
+  sorry
+end-proof
+
+proof Isa Set__map_def
+  sorry
+end-proof
