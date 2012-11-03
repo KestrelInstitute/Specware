@@ -13,4 +13,5 @@ spec
   import MapsAsSets#MapsAsSets
   import SetsAsBags#SetsAsBags
   import Base
+  import BagsAsMaps#BagsAsMaps
 end-spec

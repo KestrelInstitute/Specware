@@ -21,9 +21,10 @@ spec
       | Some y -> y
       | None   -> 0
 
+  %TODO without the Nat annotation on y, the Isabelle obligation is illegal.
   op [a] subbag (b1:Bag a, b2: Bag a) infixl 200 : Boolean =
     %% size b1 <= size b2 &&   % seems wrong (map b1 may have many keys bound to 0 and still represent a subbag of b2)
-    foldi (fn (x,y,r) -> r && y <= occs(x, b2)) true b1
+    foldi (fn (x,y:Nat,r) -> r && y <= occs(x, b2)) true b1
   
   op [a] empty_bag : Bag a = empty_map
 
@@ -57,9 +58,10 @@ spec
     else if old_n = 1 then remove b x
     else update b x (old_n - 1)
 
+% I had to add some type annotations here to avoid illegal Isabelle obligations.
 %%  op [a] bag_difference: Bag a * Bag a -> Bag a
   op [a] -- (b1: Bag a, b2: Bag a) infixl 25 : Bag a =
-    foldi (fn (x,y,b) ->
+    foldi (fn (x,y:Nat,b:Bag a) ->
             let n2 = occs(x, b2) in
             if n2 >= y then
               remove b x
@@ -89,6 +91,10 @@ spec
     if n<m
     then m - n
     else 0
+
+proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
+  sorry
+end-proof
 
 end-spec
 

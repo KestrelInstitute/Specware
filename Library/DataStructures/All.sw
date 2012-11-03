@@ -32,7 +32,6 @@ import MapsAsListsRef
 import MapsAsBTVectors#MapsAsBTVectors
 import MapsAsBTVectors#M
 
-import BagsAsMaps
 import BagsAsMaps#M
 import BagsAsLists#BagsAsLists
 import BagsAsLists#M
