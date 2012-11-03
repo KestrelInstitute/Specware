@@ -32,7 +32,7 @@ import MapsAsListsRef
 import MapsAsBTVectors#MapsAsBTVectors
 import MapsAsBTVectors#M
 
-import BagsAsMaps#M
+import BagsAsMaps#M % Isabelle obligations are not right (and give errors).
 import BagsAsLists#BagsAsLists
 import BagsAsLists#M
 
