@@ -72,9 +72,8 @@ spec
   op [a] bag_filter (f: a -> Boolean) (b: Bag a): Bag a =
     foldi (fn (x,y,b) -> if f x then b else remove b x) b b
 
-  %TTODO what if two of the keys in bg map to the same value under f?
   op [a,b] bag_map (f: a -> b) (bg: Bag a) : Bag b =
-    foldi (fn (x,y,b) -> update b (f x) y) empty_map bg
+    foldi (fn (x,y,b) -> update b (f x) (y + occs(f x, b))) empty_map bg
 
   op [a] bag_size (b: Bag a) : Nat =
     foldi (fn (x,y,sum) -> sum + y) 0 b
