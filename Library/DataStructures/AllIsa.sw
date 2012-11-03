@@ -10,8 +10,9 @@ spec
   import Bags
   import Maps#Maps_extended
   import Stacks
+  import Base
   import MapsAsSets#MapsAsSets
   import SetsAsBags#SetsAsBags
-  import Base
+  import SetsAsMaps#SetsAsMaps
   import BagsAsMaps#BagsAsMaps
 end-spec

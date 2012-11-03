@@ -89,6 +89,15 @@ spec
        then Bs = empty_set  %empty?(Bs)
        else As subset Bs
 
+proof Isa SetsAsMap__e_fsl_fsl_bsl_bsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa SetsAsMap__e_bsl_bsl_fsl_fsl_Obligation_subtype
+  sorry
+end-proof
+
+
 end-spec
 
 M = morphism Sets -> SetsAsMaps {Set._ +-> SetsAsMap._}
