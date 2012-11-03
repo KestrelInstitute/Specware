@@ -1,6 +1,7 @@
 spec
 
-%% Note: This spec imports all specs in this library for which we can generate Isabelle files.
+%% Note: This spec imports all specs in this library for which we can
+%% generate Isabelle files.
 
 import Order
 import FiniteMap
