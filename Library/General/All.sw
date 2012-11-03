@@ -13,14 +13,17 @@ spec
 
 import AllIsa
 
-import FiniteSetAsList
-import FiniteSetAsListMorphism
-import FiniteMapAsList
-import FiniteMapAsListMorphism
-import FiniteMapAsFiniteSet
-import FiniteMapAsFiniteSetMorphism
+% For each of these, I've added a comment about why we can't get its
+% obligations through Isabelle:
+import FiniteSetAsList % contains a quotient
+import FiniteSetAsListMorphism % imports FiniteSetAsList, which contains a quotient
+import FiniteMapAsList % ultimately depends on FiniteSetAsList, which contains a quotient
+import FiniteMapAsListMorphism % ultimately depends on FiniteSetAsList, which contains a quotient
 
-import Rational
-import Real
-import TimedTrace
-endspec
+import FiniteMapAsFiniteSetMorphism %error in Isabelle obligations
+
+import Rational % contains a quotient
+import Real % imports Rational, which contains a quotient
+import TimedTrace % ultimately depends on Rational, which contains a quotient
+
+end-spec

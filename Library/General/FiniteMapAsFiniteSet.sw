@@ -5,7 +5,10 @@ import Map, Relation, FiniteSet
   % maps as (functional) sets of pairs:
   type FMap.FMap(a,b) = (FSet (a * b) | (functional? o fromFSet))
 
-  %% these three are copied from FiniteMap.sw:
+  %% These three are copied from FiniteMap.sw. TODO These cause a
+  %% problem with the Isabelle obligations for the morphism (why?).
+  %% Maybe these should have the FMap qualifier (??), but the Isabelle
+  %% obligations should not cause Isabelle errors in any case.
   type SingletonFMap(a,b) = (FMap(a,b) | single?)
   type NonEmptyFMap(a,b) = (FMap(a,b) | nonEmpty?)
   type InjectiveFMap(a,b) = (FMap(a,b) | injective?)
@@ -90,9 +93,17 @@ import Map, Relation, FiniteSet
 
   op [a,b] FMap./\ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 25
               : FMap(a,b) = m1 FSet./\ m2
+  %% TODO Try to remove this "proof Isa" line (and similar things
+  %% elsewhere).  This is a workaround for an Isabelle translation
+  %% issue. (We have two infix operators called /\, one in FiniteSet.sw and
+  %% one in this file, and Isabelle can't tell which one we mean when
+  %% we call one of them.):
+  proof Isa -> FMap_intersection end-proof
 
   op [a,b] FMap.\/ (m1: FMap(a,b), m2: FMap(a,b) | agree?(m1,m2)) infixr 24
               : FMap(a,b) = m1 FSet.\/ m2
+  %% TODO Remove this eventually. See comment above.
+  proof Isa -> FMap_union end-proof
 
   op [a,b] FMap.filter (p: a * b -> Bool) (m: FMap(a,b)) : FMap(a,b) =
     FSet.filter p m
@@ -109,8 +120,11 @@ import Map, Relation, FiniteSet
   op [a,b] FMap.update (m: FMap(a,b)) (x:a) (y:b) : FMap(a,b) =
     single (x,y) FSet.\/ (m restrictDomain (fn z -> z ~= x))
 
+% remove domain value(s) from map:
   op [a,b] FMap.-- (m: FMap(a,b), xS: FSet a) infixl 25 : FMap(a,b) =
     m restrictDomain (fn x -> x nin? xS)
+  %% TODO Remove this eventually. See comment above.
+  proof Isa -> FMap_remove_set end-proof
 
   op [a,b] FMap.- (m: FMap(a,b), x:a) infixl 25 : FMap(a,b) = m -- single x
 
@@ -154,5 +168,104 @@ import Map, Relation, FiniteSet
   op [a,b] FMap.fromLists
            (domList: InjList a, rngList: List b | domList equiLong rngList)
            : FMap(a,b) = toSet (zip (domList, rngList))
+
+proof isa FMap__toFMap ()
+  by (pat_completeness, auto)
+  termination
+  sorry
+end-proof
+
+proof isa FMap__fromFMap ()
+  by (pat_completeness, auto)
+  termination
+  sorry
+end-proof
+
+proof Isa FMap__toFMap_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_at_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__id_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_cl_gt__foldingFunction_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_cl_gt_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_cl_gt_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa FMap__empty_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_fsl_bsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_bsl_fsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__filter_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_lt_lt_lt_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__update_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__single_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__thePair_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__fold_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__inverse_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__inverse_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa FMap__map_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__mapWithDomain_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__e_fsl_fsl_bsl_bsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa FMap__fromLists_Obligation_subtype
+  sorry
+end-proof
+
+
+
 
 end-spec

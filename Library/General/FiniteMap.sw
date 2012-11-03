@@ -119,6 +119,7 @@ proof Isa -> <<<_fm end-proof
 op [a,b] update (m: FMap(a,b)) (x:a) (y:b) : FMap(a,b) =
   toFMap (update (fromFMap m) x y)
 
+% remove domain value(s) from map:
 op [a,b] -- (m: FMap(a,b), xS: FSet a) infixl 25 : FMap(a,b) =
   toFMap (fromFMap m -- fromFSet xS)
 proof Isa -> --_fm end-proof
