@@ -107,6 +107,7 @@ spec
   axiom bag_fold2 is
         fa(c,f,x,b) bag_fold c f (bag_insert(x,b)) = f (bag_fold c f b, x)
 
+%TODO: Won't this definition always return the empty bag?
 %  op [a] //\\ (bs:Bag (Bag a)) : Bag a =
 %    bag_fold empty_bag (/\) bs
 

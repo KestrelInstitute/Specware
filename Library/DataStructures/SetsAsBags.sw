@@ -93,6 +93,12 @@ spec
                     (s: Set a) : b = 
     bag_fold c f s
 
+  %% TTODO This seems wrong.  This starts with the empty set and
+  %% intersects more sets into it.  The result will always be empty!
+  %% Also, it's not clear what this should return if called on the
+  %% empty set (in some sense, the intersection of no sets is the set
+  %% containing everything, but these are finite sets). Probably this
+  %% should require its argument to be a non-empty set of sets.
   op [a] //\\ (ss:Set (Set a)) : Set a =
     set_fold empty_set (/\) ss
 
