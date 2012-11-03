@@ -43,6 +43,5 @@ import StacksAsVectors#S %TODO call this morphism M for consistency?
 import POSet
 import Extensions
 import Collections
-import Base
 import StructuredTypes
 end-spec

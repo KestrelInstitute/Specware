@@ -12,4 +12,5 @@ spec
   import Stacks
   import MapsAsSets#MapsAsSets
   import SetsAsBags#SetsAsBags
+  import Base
 end-spec

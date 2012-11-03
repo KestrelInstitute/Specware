@@ -3,12 +3,13 @@
 
 spec
 
- %TODO f will need to be a bijection
- theorem inverse_apply is [a,b]
-   fa(f: a -> b, f': b -> a, x: a)
-   inverse f = f' => f'(f x) = x
+ % %TODO f will need to be a bijection
+ % theorem inverse_apply is [a,b]
+ %   fa(f: a -> b, f': b -> a, x: a)
+ %   inverse f = f' => f'(f x) = x
 
 %TODO seems awkward
+%mentioned in one CRASH derivation, but that mention is commented out
   theorem case_map is [a,b,c]
     fa(f: a -> b, l: List a, e: c, g: b * List b -> c)
     (case map f l of
@@ -39,17 +40,17 @@ spec
 %TODO what are the types?
   theorem minus_>= is fa(x, y, z) (x - y >= z) = (x >= z + y)
 
-%TODO what about non-termination?  Do we need this?
-  op [a] iterate (x : a) (f : (a -> a)) : a =
-     let fx:a = f(x) in
-     if x = fx then x else iterate fx f
+% %TODO what about non-termination?  Do we need this?
+%   op [a] iterate (x : a) (f : (a -> a)) : a =
+%      let fx:a = f(x) in
+%      if x = fx then x else iterate fx f
 
-%TODO g' will need to be a bijection. Do we need this?
-  theorem inv_iterate is [a,s,s']
-    fa(g: s -> s', g': s' -> s, st': s', f: s -> s)
-    g = inverse g'
-   =>  g(iterate (g' st') f)
-      = (iterate st' (fn ist -> g(f (g' ist))))
+% %TODO g' will need to be a bijection. Do we need this?
+%   theorem inv_iterate is [a,s,s']
+%     fa(g: s -> s', g': s' -> s, st': s', f: s -> s)
+%     g = inverse g'
+%    =>  g(iterate (g' st') f)
+%       = (iterate st' (fn ist -> g(f (g' ist))))
 
 %TODO Delete?
 % theorem iterate_osi is [a]
@@ -64,5 +65,14 @@ spec
 proof isa bool_case_id
   apply(case_tac b, auto)
 end-proof
+
+proof Isa case_map
+  sorry
+end-proof
+
+% %TODO not provable!
+% proof Isa inverse_apply_Obligation_subtype
+%   sorry
+% end-proof
 
 end-spec
