@@ -9,6 +9,7 @@ spec
   type Set a = Map(a, Bool)  %TODO enforce the constraint that all the Bools are true?
 
 % This is imported via Set in Map theory
+%TODO The analogue of axiom membership is not provable without the constraint that all Bools are true.
   op [a] in? (x:a, s:Set a) infixl 20 : Bool = (apply s x = Some true)
 
   % set containment just amounts to map containment, because there are no
@@ -112,11 +113,11 @@ proof Isa Set__subset
 end-proof
 
 proof Isa Set__empty_set
-  sorry
+  apply(simp add: SetsAsMap__empty_set_def SetsAsMap__in_p_def Map__empty_map)
 end-proof
 
 proof Isa Set__set_insertion
-  sorry
+  apply(simp add: SetsAsMap__set_insert_def SetsAsMap__in_p_def Map__update)
 end-proof
 
 proof Isa Set__set_union
