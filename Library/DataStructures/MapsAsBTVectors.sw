@@ -19,18 +19,26 @@ spec
 
   op [a,b] apply : Map(a,b) -> a -> Option b =
     fn x -> fn y -> MapBTV.BTV_apply(x,y)
+
   op [a,b] empty_map :  Map(a,b) = MapBTV.BTV_empty_map
+
   op [a,b] update : Map(a,b) -> a -> b -> Map(a,b) =
     fn m -> fn x -> fn y -> MapBTV.BTV_update(m,x,y)
+
   op [a,b] singletonMap : a -> b -> Map(a,b) =
     fn x -> fn y -> MapBTV.BTV_update(MapBTV.BTV_empty_map,x,y)
+
   %% Inefficient but best we can do with abstract sets
   op [a,b] domain(m: Map(a,b)): Set a =
     BTV_foldi (fn (x,_,s) -> set_insert_new(x,s), empty_set, m)
+
   op [a,b] range (m: Map(a,b)): Set b =
     foldl (fn (s,x) -> set_insert(x,s)) empty_set (MapBTV.BTV_imageToList m)  % was rangeToList
+
   op [a,b] domainToList(m: Map(a,b)): List a = BTV_domainToList m
+
   op [a,b] rangeToList (m: Map(a,b)): List b = BTV_imageToList m
+
   op [a,b] total? (s: Set(a), m: Map(a,b)):Boolean =
     set_fold true (fn (val,x) -> val && some?(MapBTV.BTV_apply(m,x))) s
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapBTV.BTV_eval(m,x)
@@ -52,8 +60,6 @@ spec
 
   %Added by Eric:
   op [a,b] size: Map(a,b) -> Nat = fn m -> size (domain m)
-
-
 
 end-spec
 

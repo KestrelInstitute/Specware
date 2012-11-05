@@ -1,3 +1,8 @@
+% TODO Does the code for the MapVec functions come from
+% Specware/Library/Structures/Data/Maps/Handwritten/Lisp/MapAsVector.lisp?
+
+%TODO What does implementing stacks as vectors have to do with maps?
+
 StacksAsVectors =
 StacksAsVectors qualifying
 spec

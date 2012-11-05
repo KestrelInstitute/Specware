@@ -1,6 +1,7 @@
 (*
                     Specification of Partially Ordered Set (poset)
 
+%%TODO This comments seems misplaced:
     empty_map and update could be constructors,
     but we want implementations that do destructive update
     to keep the size linear in the domain.

@@ -40,8 +40,9 @@ op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(ele
 
 %TODO make this a definition or prove it from the def just below.
 %could also define as filtering the set and seeing if the result is equal to the original set
+%TTODO The axiom seems contradictory.  I can use it to prove false (just call sledgehammer).
 op [a] Set.forallIn : Set a -> (a -> Boolean) -> Boolean
-  axiom Set.forAllIn is fa(x,s,p) Set.forallIn s p <=> (x in? s => p(x))
+%   axiom Set.forAllIn is fa(x,s,p) Set.forallIn s p <=> (x in? s => p(x))
   
 def Set.forallIn s p =
     set_fold true (&&) (Set.map p s)
