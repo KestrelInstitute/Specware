@@ -216,6 +216,7 @@
 		 (push val items))))
     items))
 
+; TODO Same as V_imageToList?  Deprecate one?
 (defun V_rangeToList (m)
   (declare (simple-vector m))
   (let ((items nil))

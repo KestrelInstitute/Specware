@@ -2,6 +2,7 @@
 A stripped down version of Polymorphic.
 *)
 
+% TODO Does this need to be a separate spec?  I guess it is refered to in a morphism in SimpleAsAList.
 Map =
 spec
   type Map (key,a)
@@ -68,4 +69,5 @@ meaningless unless an implementation is assumed.
 
   op allMap : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
   op existsMap : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
+
 endspec

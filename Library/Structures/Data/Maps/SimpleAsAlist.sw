@@ -8,8 +8,8 @@ endspec
 SimpleAsAlist =
 MapL qualifying
 spec
-  import Simple[morphism Simple#Map -> MapList {}]
-  import /Library/Legacy/Utilities/System
+  import Simple[morphism Simple#Map -> MapList {}] %TODO This anonymous morphism might give problems.  Separate it out?
+  import /Library/Legacy/Utilities/System  %allows the call to fail below... TODO get rid of that and this import?
 
   % op emptyMap : [key,a] Map (key,a)
   def emptyMap = Nil

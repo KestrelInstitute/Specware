@@ -1,3 +1,5 @@
+%%TODO Does this only work for maps whose domain is Nat?
+
 SimpleAsBTVector = BTVMap qualifying
 spec
   import Simple

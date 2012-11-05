@@ -1,6 +1,6 @@
 \section{Domain of a Monomorphic Map}
 
-This spec is the ``parameter'' to mononmorphic maps defining the type
+This spec is the ``parameter'' to monomorphic maps defining the type
 of the domain of the maps.
 
 \begin{spec}
