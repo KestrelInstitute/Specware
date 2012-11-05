@@ -12,29 +12,39 @@ spec
 %% separately):
 import AllIsa
 
+% These get through Isabelle (modulo sorrys).  However, I am keeping
+%  them separate, because of the issue with obligations of imported
+%  morphism not being imported:
+import MapsAsSets#M
+import SetsAsMaps#M
+import SetsAsBagMaps#M
+
+% These ultimately depend on quotient, which prevents getting them through Isabelle:
 import SetsAsLists#SetsAsLists
 import SetsAsLists#M
-import SetsAsMaps#SetsAsMaps
-import SetsAsMaps#M
+import MapsAsLists
+import MapsAsListsRef
+import BagsAsLists#BagsAsLists  %% includes a quotient
+import BagsAsLists#M
+
+%These have incorrect Isabelle obligations (which give errors):
+import SetsAsBags#M
+import BagsAsMaps#M
+
+
+%These still need to be triaged:
+
 import SetsAsSTHTables0#SetsAsSTHTables0
 import SetsAsSTHTables0#M
-import SetsAsBagMaps#SetsAsBagMaps
-import SetsAsBagMaps#M
-import SetsAsBags#M
 
 import MapsAsVectors#MapsAsVectors
 import MapsAsVectors#M
+
 import MapsAsSTHTables#MapsAsSTHTables
 import MapsAsSTHTables#M
-import MapsAsSets#M
-import MapsAsLists
-import MapsAsListsRef
+
 import MapsAsBTVectors#MapsAsBTVectors
 import MapsAsBTVectors#M
-
-import BagsAsMaps#M % Isabelle obligations are not right (and give errors).
-import BagsAsLists#BagsAsLists
-import BagsAsLists#M
 
 import StacksAsVectors#StacksAsVectors
 import StacksAsVectors#S %TODO call this morphism M for consistency?
