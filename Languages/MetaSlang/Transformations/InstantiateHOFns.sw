@@ -633,7 +633,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                                     remaining_params
      in
      let (remaining_params, remaining_args) = 
-         adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body)
+         adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body, spc)
      in
      let new_body = simplifyTerm def_body in
      % let _ = if trace? then writeLine("new_body: "^printTerm new_body) else () in
@@ -708,7 +708,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                                                 mkTuple (def_body :: remaining_args))
   in
   let combined_arg         = mkTuple remaining_args                       in
-  let instantiated_fn_type = mkArrow (termType combined_arg, result_type) in
+  let instantiated_fn_type = mkArrow (inferType(spc, combined_arg), result_type) in
   let local_fn             = (local_fn_name, instantiated_fn_type)        in
   let 
     def foldRecursiveCall tm =
@@ -782,7 +782,8 @@ op dontUnfoldQualifiers: Ids = ["String"]
  op adjustBindingsToAvoidCapture (remaining_params : MSPatterns, 
                                   remaining_args   : MSTerms,
                                   args             : MSTerms,
-                                  defbody          : MSTerm)
+                                  defbody          : MSTerm,
+                                  spc              : Spec)
    : (MSPatterns * MSTerms) =
 
    %% If a parameter var could capture a free var in an arg, introduce temp vars to 
@@ -852,7 +853,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
      let (_, temp_vars) = 
          foldl (fn ((index, new_vars), arg) ->
                   let (index, new_id) = find_unused_id index in
-                  let new_var = ((new_id, termType arg), noPos) in
+                  let new_var = ((new_id, inferType(spc, arg)), noPos) in
                   (index,  new_vars ++ [new_var]))
                (0, [])
                remaining_args
