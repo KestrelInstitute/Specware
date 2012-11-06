@@ -254,7 +254,7 @@ creatures can't exist: the type ``Empty`` is uninhabited.
 That by itself is no problem, but precludes a type-respecting
 assignment of an inhabitant of ``Empty`` to :token:`op` ``IdoNotExist``.
 So the :token:`spec`, while type-correct, is actually inconsistent.
-See further under :ref:`*Type-definitions* <Type-definitions>`.
+See further under :ref:`Type-definitions <Type-definitions>`.
 
 .. COMMENT:  ================================================================= 
 
@@ -285,7 +285,7 @@ If no complete and unambiguous type-assignment can be made,
 the :token:`spec` is not accepted by the |Specware| system.
 Type-ambiguous :token:`expressions` can be disambiguated by using a
 :token:`type_annotation`, as described under 
-:ref:`*Annotated-expressions* <Annotated-expressions>`.
+:ref:`Annotated-expressions <Annotated-expressions>`.
 In the example, the :token:`definition` of ``whatAmI`` can be disambiguated in either
 of the following ways:
 
@@ -306,8 +306,8 @@ Also, if the :token:`spec` elsewhere contains something along the lines of:
 that is sufficient to establish that ``whatAmI`` has type ``Sign``
 and thereby disambiguate the use of ``Positive``.
 See further under
-:ref:`*Op-definitions* <Op-definitions>`
-and :ref:`*Structors* <Structors>`.
+:ref:`Op-definitions <Op-definitions>`
+and :ref:`Structors <Structors>`.
 
 .. COMMENT:  ================================================================= 
 
@@ -380,7 +380,7 @@ none is required in the :token:`expression` ``n+1``.
 Inside :token:`literals` (constant-denotations) whitespace is also
 disallowed, except for ":token:`significant_whitespace`" as described
 under
-:ref:`*String-literals* <String-literals>`.
+:ref:`String-literals <String-literals>`.
 
 .. COMMENT:  ================================================================= 
 
@@ -2078,7 +2078,7 @@ and that *O2* has
 (or *takes priority over*)
 *O1*.
 For the role of the :token:`associativity` and :token:`priority`, see further at
-:ref:`*Infix-applications* <metaslang-infix-application>`.
+`Applications`_.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -2134,7 +2134,7 @@ As for :token:`op_declarations`, the placement of any
 :token:`type_variable_binder` is of no significance.
 
 Restriction. See the restriction under
-:ref:`*Op-declarations* <Op-declarations>`
+:ref:`Op-declarations <Op-declarations>`
 on redeclaring/redefining :token:`ops`.
 
 .. COMMENT:  ================================================================= 
@@ -2598,7 +2598,7 @@ each :token:`type_summand`. In the discussion, we omit the optional
 ``embed`` keyword of the :token:`embedders`. The :token:`embedders`
 are similar to :token:`ops`, and are explained as if they were
 :token:`ops`, but note the Restriction specified under
-:ref:`*Structors* <Structors>`.
+:ref:`Structors <Structors>`.
 
 .. COMMENT:  ================================================================= 
 
@@ -2625,7 +2625,7 @@ the pseudo-:token:`op` introduced is typed as follows:
 
 It denotes the tagged value
 (*C*, ()), in which () is the
-inhabitant of the unit type (see under :ref:`*Type-records* <Type-records>`).
+inhabitant of the unit type (see under :ref:`Type-records <Type-records>`).
 
 .. COMMENT:  ================================================================= 
 
@@ -2696,7 +2696,7 @@ different, entirely unrelated, values. (Note that ``Unique`` is
 :token:`type_restriction`, for instance as in
 ``(Peano | embed? Zero)``.)
 For recursively defined :token:`type_sums`, see also the discussion
-under :ref:`*Type-definitions* <Type-definitions>`.
+under :ref:`Type-definitions <Type-definitions>`.
 
 .. COMMENT:  ***************************************************************** 
 
@@ -2798,7 +2798,7 @@ Sample :token:`type_instantiation`:
 
 Restriction. The :token:`type_name` must have been declared or defined
 as a parameterized type (see
-:ref:`*Type-declarations* <Type-declarations>`), and
+:ref:`Type-declarations <Type-declarations>`), and
 the number of :token:`type_descriptors` in the :token:`actual_type_parameters` must match
 the number of :token:`local_type_variables` in the
 :token:`formal_type_parameters` of the :token:`type_declaration` and/or :token:`type_definition`.
@@ -3182,7 +3182,7 @@ in which a synonymous :token:`local_variable` is introduced, and then
 it identifies the textually most recent introduction. Otherwise, the
 :token:`simple_name` is an :token:`op_name` or an :token:`embedder`;
 for the disambiguation between the latter two, see
-:ref:`*Embedders* <Embedders>`.
+:ref:`Embedders <Embedders>`.
 
 .. COMMENT:  ================================================================= 
 
@@ -3222,7 +3222,7 @@ the function *f* mapping each inhabitant *x* of *S* to a value *y* of
 type *T*, where *y* is the return value of *x* for the :token:`match`
 of the :token:`lambda_form`. If the :token:`match` accepts each *x* of
 type *S* (for acceptance and return value, see the section on
-:ref:`*Matches* <Matches>`) function
+:ref:`Matches <Matches>`) function
 *f* is total; otherwise it is
 partial, and undefined for those values
 *x* rejected.
@@ -3542,7 +3542,7 @@ signals the start of a :token:`comment`.
 Restriction. An :token:`op_name` can be used as an
 :token:`infix_operator` only if it has been declared as such in an
 :token:`op_declaration` (see under
-:ref:`*Op-declarations* <Op-declarations>`).
+:ref:`Op-declarations <Op-declarations>`).
 
 .. COMMENT:  ================================================================= 
 
@@ -4628,7 +4628,7 @@ Sample :token:`chooser`:
    
 
 Restriction. In a :token:`chooser` ``choose[`` *Q* ``]``, *Q* must be
-defined as a :ref:`*quotient type* <Type-quotients>`.
+defined as a :ref:`quotient type <Type-quotients>`.
 
 .. COMMENT: ====================================================================
 

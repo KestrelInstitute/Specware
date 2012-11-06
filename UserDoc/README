@@ -1,18 +1,15 @@
 This directory contains the sources and tools needed to build the
 Specware documentation.  The build process currently (Oct. 5, 2012)
-works on Linux.  It may be close to working on Mac.
+works on Linux and Mac OSX. 
 
 Required programs include:
 
-+gcc
++python
 
-+various Linux command line utilities (e.g., sed)
+Additionally, the python 'sphinx' and 'docutils' packages are
+required. Assuming that you have a working python installation, it should be possible to install these two packages with the command:
 
-+pdfjadetex - Jade converts docbook to html or tex.  Openjade seems to
-  work.  Note that on some systems pdfjadetex is just a link to
-  pdfetex, but it seems that you still need pdfjadetex.
-
-+what else?
+sudo easy_install sphinx
 
 
 There are five main documents that get built, each with its own directory:
@@ -23,40 +20,12 @@ There are five main documents that get built, each with its own directory:
  isabelle-interface
 
 
-Tools used to build these documents are in src/, with compiled code
-put into bin/.  More details:
-
-src/glm2dbk.c - converts glm to docbook
-
-src/dbk2glm.c - converts in the other direction, useful for sanity
-checking
-
-
-The individual documents also have their own bin/ directories, of which
-language-manual/bin/ is the most interesting.  It contains a couple of
-tools for generating parts of the document: the list of reserved words,
-and the appendix containing all the grammar rules (which are extracted
-from the rest of the document sources).  More details:
-
-language-manual/src/reswords.c - Tool that takes a list of reserved
-words and builds a glm file with columns.  (C version of a tool Lambert
-originally wrote in his ABC language, a predecessor of Python.)  Gets
-compiled to language-manual/bin/reswords.o and is called by language-
-manual/bin/mkreswords.
-
-language-manual/src/glmgrammar.c - Tool that extracts all grammar rules
-from language manual.  (C version of a tool Lambert originally wrote in
-ABC.)  Gets compiled to language-manual/bin/glmgrammar.o and is called by
-language-manual/bin/mkgrammar.
-
-
-Note: While most of the .dbk files involved in the build are generated
-from .glm files, the main .dbk of each document is *not* generated.
-
-
-To build the documentation, type 'make'.
-
-For a slightly fuller test, type './test'.
+To build the documentation, type 'make'. This will build a pdf version
+of each manual. To build an HTML version, execute 'make html'. See the
+manual writers guide for more information on the various makefile
+targets.
 
 This file was written by Eric Smith, based on information from Lambert
-Meertens.  For more information, see README-MANUAL-WRITERS.
+Meertens, and modified by Garrin Kimmell to reflect updates of the
+manual format to restructuredtext. For more information, see
+README-MANUAL-WRITERS.

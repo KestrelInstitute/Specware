@@ -1,7 +1,0 @@
-#!/bin/sh
-# this is bin/mkgrammar
-
-(cat metaslang.glm; echo ZeEnd) | bin/glmgrammar.o > grammar.glm.body
-cat grammar.preamble >> grammar.glm
-cat grammar.glm.body >> grammar.glm
-cat grammar.postamble >> grammar.glm

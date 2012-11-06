@@ -44,7 +44,7 @@ spec, called the (transformation) "focus". The focussing command
 
    at <op>
    
-puts the focus on the defining :token:`expression` for an op.
+puts the focus on the defining ``expression`` for an op.
 
 It is possible to navigate by moving the focus around by issuing a
 move command
@@ -93,9 +93,9 @@ the subsequent effect of these navigation commands is as follows:
    
 
 So ``first`` focusses on the first child of the
-*current*  focus that is an :token:`expression`, ``last`` focusses on the last child,
+*current*  focus that is an ``expression``, ``last`` focusses on the last child,
 ``previous`` and ``next`` on the previous and next sibling, while ``widen``
-widens the focus to the encompassing :token:`expression`.
+widens the focus to the encompassing ``expression``.
 The effect of ``search`` and ``reverse-search`` should be obvious.
 Finally, ``all`` widens the focus to the original one.
 
@@ -104,8 +104,8 @@ Rewrite, unfold, fold
 
 In the following two |XShell| commands, ``<claim>`` is the name of an
 axiom or theorem occurring in the spec, including any imported specs,
-whose :token:`expression` is a possibly universally quantified
-equation. For example, the :token:`expression` can be
+whose ``expression`` is a possibly universally quantified
+equation. For example, the ``expression`` can be
 
 .. code-block:: specware
 
@@ -161,7 +161,7 @@ definition can occur as an :token:`op_definition`, as in
    
 
 or in the form of an :token:`op_declaration` containing a defining
-:token:`expression`, as in
+``expression``, as in
 
 .. code-block:: specware
 
@@ -179,7 +179,7 @@ The unfold command
    
 
 "unfolds" one or more occurrences of :token:`op_name` ``<op>`` in the
-focus, replacing them by the :token:`expression` defining ``<op>``. So the
+focus, replacing them by the ``expression`` defining ``<op>``. So the
 definition is used very much as if it was an axiom used by an ``lr``
 rewrite command. For example, in the context of a definition for op
 ``twice`` as above, ``unfold twice`` applied to the focus 

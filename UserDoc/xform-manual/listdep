@@ -1,5 +1,0 @@
-BOOK=xmanual.dbk
-echo Makefile
-echo $BOOK
-grep 'ENTITY.*\.dbk"' $BOOK | sed 's/.*"\(.*\)\.dbk".*/\1.glm/'
-

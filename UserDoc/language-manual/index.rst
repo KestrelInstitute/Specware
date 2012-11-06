@@ -15,23 +15,16 @@ Welcome to Specware's documentation!
    intro
    metaslang
 
-.. todo::
+.. raw:: latex
 
-   Figure out how to get these to appear as indices in the latex.
-
-Appendices
-==========
+  \appendix
 
 .. toctree::
-   :maxdepth: 2
-
+   :titlesonly:
 
    grammar
    libraries
 
-
-Indices and tables
-==================
 
 
 

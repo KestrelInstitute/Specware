@@ -4,13 +4,12 @@
 |Metaslang| Grammar
 ===================
 
+
 .. COMMENT:  ***************************************************************** 
 
 This appendix lists the grammar rules of the |Metaslang| specification
 language. These rules are identical to those of the
-:ref:`Chapter
-on *|Metaslang|* <metaslang>`.
-They are brought together here, without additional text, for
+Chapter on `Metaslang`_. They are brought together here, without additional text, for
 easy reference.
 
 .. COMMENT:  ***************************************************************** 
@@ -25,10 +24,15 @@ The Grammar Description Formalism
 .. productionlist:: 
    piffle: 1 | M { `piffle` }*
 
-.. COMMENT:  ***************************************************************** 
+.. COMMENT:
+.. ***************************************************************** 
+
+The Grammar
+###########
+
 
 Models
-######
+======
 
 .. productionlist::
   op: `op_name`
@@ -38,7 +42,7 @@ Models
 .. COMMENT:  ***************************************************************** 
 
 Symbols and Names
-#################
+=================
 
 .. productionlist::
   symbol: `simple_name` | 
@@ -76,7 +80,7 @@ Symbols and Names
 .. COMMENT:  ***************************************************************** 
 
 Comments
-########
+========
 
 .. productionlist::
   comment: `line_end_comment` | 
@@ -89,7 +93,7 @@ Comments
 .. COMMENT:  ***************************************************************** 
 
 Units
-#####
+=====
 
 .. productionlist::
   unit_definition: `unit_identifier` = `unit_term`
@@ -103,7 +107,7 @@ Units
 .. COMMENT:  ***************************************************************** 
 
 Unit Identifiers
-################
+================
 
 .. productionlist::
   unit_identifier: `swpath_based_path` | 
@@ -117,7 +121,7 @@ Unit Identifiers
 .. COMMENT:  ***************************************************************** 
 
 Specs
-#####
+=====
 
 .. productionlist::
   spec_term: `unit_identifier` | 
@@ -131,7 +135,8 @@ Specs
 .. COMMENT:  ***************************************************************** 
 
 Spec Forms
-##########
+==========
+
 
 .. productionlist::
   spec_form: spec { `declaration` }* endspec
@@ -139,7 +144,8 @@ Spec Forms
 .. COMMENT:  ***************************************************************** 
 
 Qualifications
-##############
+==============
+
 
 .. productionlist::
   spec_qualification: `qualifier` qualifying `spec_term`
@@ -151,7 +157,8 @@ Qualifications
 .. COMMENT:  ***************************************************************** 
 
 Translations
-############
+============
+
 
 .. productionlist::
   spec_translation: translate `spec_term` by `name_map`
@@ -172,7 +179,8 @@ Translations
 .. COMMENT:  ***************************************************************** 
 
 Substitutions
-#############
+=============
+
 
 .. productionlist::
   spec_substitution: `spec_term` "[" `morphism_term` "]"
@@ -180,7 +188,8 @@ Substitutions
 .. COMMENT:  ***************************************************************** 
 
 Diagram Colimits
-################
+================
+
 
 .. productionlist::
   diagram_colimit: colimit `diagram_term`
@@ -188,7 +197,8 @@ Diagram Colimits
 .. COMMENT:  ***************************************************************** 
 
 Obligators
-##########
+==========
+
 
 .. productionlist::
   obligator: obligations `unit_term`
@@ -196,7 +206,7 @@ Obligators
 .. COMMENT:  ***************************************************************** 
 
 Morphisms
-#########
+=========
 
 .. productionlist::
   morphism_term: `unit_identifier` | 
@@ -206,7 +216,7 @@ Morphisms
 .. COMMENT:  ***************************************************************** 
 
 Diagrams
-########
+========
 
 .. productionlist::
   diagram_term: `unit_identifier` | 
@@ -220,7 +230,7 @@ Diagrams
 .. COMMENT:  ***************************************************************** 
 
 Target Code Terms
-#################
+=================
 
 .. productionlist::
   target_code_term: generate `target_language_name` `spec_term` [ `generate_option` ]
@@ -233,7 +243,7 @@ Target Code Terms
 .. COMMENT:  ***************************************************************** 
 
 Proof Terms
-###########
+===========
 
 .. productionlist::
   proof_term: prove `claim_name` in `spec_term`
@@ -247,7 +257,7 @@ Proof Terms
 .. COMMENT:  ***************************************************************** 
 
 Declarations
-############
+============
 
 .. productionlist::
   declaration: `import_declaration` | `type_declaration` | 
@@ -259,7 +269,7 @@ Declarations
 .. COMMENT:  ***************************************************************** 
 
 Import-declarations
-###################
+===================
 
 .. productionlist::
   import_declaration: import `spec_term` { , `spec_term` }*
@@ -267,7 +277,7 @@ Import-declarations
 .. COMMENT:  ***************************************************************** 
 
 Type-declarations
-#################
+=================
 
 .. productionlist::
   type_declaration: type `type_name` [ `formal_type_parameters` ] 
@@ -282,7 +292,7 @@ Type-declarations
 .. COMMENT:  ***************************************************************** 
 
 Type-definitions
-################
+================
 
 .. productionlist::
   type_definition: `type_abbreviation` | 
@@ -295,7 +305,7 @@ Type-definitions
 .. COMMENT:  ***************************************************************** 
 
 Op-declarations
-###############
+===============
 
 .. productionlist::
   op_declaration: op [ `type_variable_binder` ] `formal_expression` 
@@ -319,7 +329,7 @@ Op-declarations
 .. COMMENT:  ***************************************************************** 
 
 Op-definitions
-##############
+==============
 
 .. productionlist::
   op_definition: def [ op ] [ `type_variable_binder` ] `formal_expression` 
@@ -329,7 +339,7 @@ Op-definitions
 .. COMMENT:  ***************************************************************** 
 
 Claim-declarations
-##################
+==================
 
 .. productionlist::
   claim_declaration: `claim_kind` `claim_name` is `claim` [ `proof_script` ]
@@ -340,7 +350,7 @@ Claim-declarations
 .. COMMENT:  ***************************************************************** 
 
 Type-descriptors
-################
+================
 
 .. productionlist::
   type_descriptor: `type_arrow` | `slack_type_descriptor`
@@ -355,7 +365,7 @@ Type-descriptors
 .. COMMENT:  ***************************************************************** 
 
 Type-sums
-#########
+=========
 
 .. productionlist::
   type_sum: `type_summand` { `type_summand` }*
@@ -365,7 +375,7 @@ Type-sums
 .. COMMENT:  ***************************************************************** 
 
 Type-arrows
-###########
+===========
 
 .. productionlist::
   type_arrow: `arrow_source` -> `type_descriptor`
@@ -375,7 +385,7 @@ Type-arrows
 .. COMMENT:  ***************************************************************** 
 
 Type-products
-#############
+=============
 
 .. productionlist::
   type_product: `tight_type_descriptor` * `tight_type_descriptor`
@@ -384,7 +394,7 @@ Type-products
 .. COMMENT:  ***************************************************************** 
 
 Type-instantiations
-###################
+===================
 
 .. productionlist::
   type_instantiation: `type_name` `actual_type_parameters`
@@ -395,7 +405,7 @@ Type-instantiations
 .. COMMENT:  ***************************************************************** 
 
 Type-names
-##########
+==========
 
 .. productionlist::
   type_name: `name`
@@ -403,7 +413,7 @@ Type-names
 .. COMMENT:  ***************************************************************** 
 
 Type-records
-############
+============
 
 .. productionlist::
   type_record: "{" [ `field_typer_list` ] "}" | 
@@ -415,7 +425,7 @@ Type-records
 .. COMMENT:  ***************************************************************** 
 
 Type-restrictions
-#################
+=================
 
 .. productionlist::
   type_restriction: ( `slack_type_descriptor` "|" `expression` )
@@ -423,7 +433,7 @@ Type-restrictions
 .. COMMENT:  ***************************************************************** 
 
 Type-comprehensions
-###################
+===================
 
 .. productionlist::
   type_comprehension: "{" `annotated_pattern` "|" `expression` "}"
@@ -431,7 +441,7 @@ Type-comprehensions
 .. COMMENT:  ***************************************************************** 
 
 Type-quotients
-##############
+==============
 
 .. productionlist::
   type_quotient: `closed_type_descriptor` / `closed_expression`
@@ -439,7 +449,7 @@ Type-quotients
 .. COMMENT:  ***************************************************************** 
 
 Expressions
-###########
+===========
 
 .. productionlist::
   expression: `lambda_form` | `case_expression` | `let_expression` | 
@@ -464,7 +474,7 @@ Expressions
 .. COMMENT:  ***************************************************************** 
 
 Lambda-forms
-############
+============
 
 .. productionlist::
   lambda_form: fn `match`
@@ -472,7 +482,7 @@ Lambda-forms
 .. COMMENT:  ***************************************************************** 
 
 Case-expressions
-################
+================
 
 .. productionlist::
   case_expression: case `expression` of `match`
@@ -480,7 +490,7 @@ Case-expressions
 .. COMMENT:  ***************************************************************** 
 
 Let-expressions
-###############
+===============
 
 .. productionlist::
   let_expression: let `let_bindings` in `expression`
@@ -495,7 +505,7 @@ Let-expressions
 .. COMMENT:  ***************************************************************** 
 
 If-expressions
-##############
+==============
 
 .. productionlist::
   if_expression: if `expression` then `expression` else `expression`
@@ -503,7 +513,7 @@ If-expressions
 .. COMMENT:  ***************************************************************** 
 
 Quantifications
-###############
+===============
 
 .. productionlist::
   quantification: `quantifier` ( `local_variable_list` ) `expression`
@@ -515,7 +525,7 @@ Quantifications
 .. COMMENT:  ***************************************************************** 
 
 Unique-solutions
-################
+================
 
 .. productionlist::
   unique_solution: the ( `local_variable_list` ) `expression`
@@ -523,7 +533,7 @@ Unique-solutions
 .. COMMENT:  ***************************************************************** 
 
 Annotated-expressions
-#####################
+=====================
 
 .. productionlist::
   annotated_expression: `tight_expression` `type_annotation`
@@ -531,7 +541,7 @@ Annotated-expressions
 .. COMMENT:  ***************************************************************** 
 
 Applications
-############
+============
 
 .. productionlist::
   application: `prefix_application` | 
@@ -546,7 +556,7 @@ Applications
 .. COMMENT:  ***************************************************************** 
 
 Op-names
-########
+========
 
 .. productionlist::
   op_name: `name`
@@ -554,7 +564,7 @@ Op-names
 .. COMMENT:  ***************************************************************** 
 
 Literals
-########
+========
 
 .. productionlist::
   literal: `boolean_literal` | `nat_literal` | `char_literal` | `string_literal`
@@ -562,7 +572,7 @@ Literals
 .. COMMENT:  ***************************************************************** 
 
 Boolean-literals
-################
+================
 
 .. productionlist::
   boolean_literal: true | false
@@ -570,7 +580,7 @@ Boolean-literals
 .. COMMENT:  ***************************************************************** 
 
 Nat-literals
-############
+============
 
 .. productionlist::
   nat_literal: `decimal_digit`     { `decimal_digit` }* | 
@@ -589,7 +599,7 @@ Nat-literals
 .. COMMENT:  ***************************************************************** 
 
 Char-literals
-#############
+=============
 
 .. productionlist::
   char_literal: #`char_literal_glyph`
@@ -608,7 +618,7 @@ Char-literals
 .. COMMENT:  ***************************************************************** 
 
 String-literals
-###############
+===============
 
 .. productionlist::
   string_literal: " `string_body` "
@@ -620,7 +630,7 @@ String-literals
 .. COMMENT:  ***************************************************************** 
 
 Field-selections
-################
+================
 
 .. productionlist::
   field_selection: `closed_expression` . `field_selector`
@@ -630,7 +640,7 @@ Field-selections
 .. COMMENT:  ***************************************************************** 
 
 Tuple-displays
-##############
+==============
 
 .. productionlist::
   tuple_display: ( `tuple_display_body` )
@@ -639,7 +649,7 @@ Tuple-displays
 .. COMMENT:  ***************************************************************** 
 
 Record-displays
-###############
+===============
 
 .. productionlist::
   record_display: "{" `record_display_body` "}"
@@ -649,7 +659,7 @@ Record-displays
 .. COMMENT:  ***************************************************************** 
 
 Sequential-expressions
-######################
+======================
 
 .. productionlist::
   sequential_expression: ( `open_sequential_expression` )
@@ -660,7 +670,7 @@ Sequential-expressions
 .. COMMENT:  ***************************************************************** 
 
 List-displays
-#############
+=============
 
 .. productionlist::
   list_display: "[" `list_display_body` "]"
@@ -669,7 +679,7 @@ List-displays
 .. COMMENT:  ***************************************************************** 
 
 Monadic-expressions
-###################
+===================
 
 .. productionlist::
   monadic_expression: "{" `open_monadic_expression` "}"
@@ -683,7 +693,7 @@ Monadic-expressions
 .. COMMENT:  ***************************************************************** 
 
 Structors
-#########
+=========
 
 .. productionlist::
   structor: `projector` | `quotienter` | `chooser` | `embedder` | `embedding_test`
@@ -703,7 +713,7 @@ Structors
 .. COMMENT:  ***************************************************************** 
 
 Matches
-#######
+=======
 
 .. productionlist::
   match: [ "|" ] `branch` { "|" `branch` }*
@@ -713,7 +723,7 @@ Matches
 .. COMMENT:  ***************************************************************** 
 
 Patterns
-########
+========
 
 .. productionlist::
   pattern: `annotated_pattern` | 

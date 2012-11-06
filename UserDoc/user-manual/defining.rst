@@ -82,7 +82,7 @@ The mapping of the conceptual unit tree to the file system is defined
 by the environment variable |swpath|. Similarly to the ``PATH``
 environment variable in operating systems, |swpath| is a string
 consisting of a semicolon-separated list of absolute directory paths
-in the file system. See :ref:`swpath`
+in the file system. 
 
 Roughly speaking, the unit tree consists of all the units defined in
 ``.sw`` files under the directories listed in |swpath|. The identifier

@@ -24,18 +24,4 @@ Welcome to Specware User Manual's documentation!
    emacs
 
 
-Indices and tables
-==================
-
-
-=====================
-Manual TODOs
-=====================
-
-.. todolist::
-
-
-.. * :ref:`genindex`
-.. * :ref:`modindex`
-.. * :ref:`search`
 

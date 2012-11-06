@@ -301,4 +301,4 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 
 # Turn on todo printing
-todo_include_todos = True
+todo_include_todos = False

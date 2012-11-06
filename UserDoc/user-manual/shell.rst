@@ -523,7 +523,7 @@ The elaboration of some unit terms may have side effects: code
 generation; prover invocation. This is only done if no error was
 encountered. Code can also be generated directly from the |SShell|
 using the :command:`gen-`\ *Language*\ commands. For proving properties in
-specs, see :ref:`proving`.
+specs, see `Proving Properties in Specs`_.
 
 Without argument, the :command:`proc` command re-processes the last unit term
 given. It is an error if no unit term was given before.
@@ -818,17 +818,10 @@ qualifier. To avoid this problem, qualification can be added to the
 spec.
 
 
-.. include:: javacodegen.rst
-
-.. COMMENT:  section on Java code generation 
-
-.. include:: ccodegen.rst
-
-.. COMMENT:  section on C code generation 
-
-.. include:: haskellcodegen.rst
-
-.. COMMENT:  section on Haskell code generation 
+.. toctree::
+   javacodegen
+   ccodegen
+   haskellcodegen
 
 .. _auxlisp:
 

@@ -45,5 +45,4 @@
 
 .. |swpath| replace:: ``SWPATH``
 
-
 .. |Haskell| replace:: Haskell
