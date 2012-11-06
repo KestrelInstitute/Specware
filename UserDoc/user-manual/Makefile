@@ -1,213 +1,153 @@
-all: pdf htm-zip
+# Makefile for Sphinx documentation
+#
 
-SUM= SpecwareUserManual
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         =
+BUILDDIR      = _build
 
-BIN= ../bin
-GLM2DBK= $(BIN)/glm2dbk.o
-SRC= ../src
-GLM2DBKSRC= $(SRC)/glm2dbk.c
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+# the i18n builder cannot share the environment and doctrees with the others
+I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-$(GLM2DBK): $(GLM2DBKSRC)
-	gcc $(GLM2DBKSRC) -o $(GLM2DBK)
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
 
-pdf: $(SUM).pdf
-
-DB2PDF= ../bin/db2pdf -E9999
-
-PDFDBK= debug.dbk defining.dbk emacs.dbk generatedlisp.dbk \
-  install.dbk model.dbk shell.dbk prove.dbk start.dbk \
-  javacodegen.dbk ccodegen.dbk haskellcodegen.dbk
-
-$(SUM).pdf: Makefile $(SUM).dbk $(PDFDBK)
-	@if test -r $(SUM).pdf; \
-	 then mv -f $(SUM).pdf $(SUM).pdf.old; \
-	 fi
-	($(DB2PDF) $(SUM).dbk 2>&1) | grep -v 'is not a function name' | tee jade.log
-
-$(SUM).dbk: Makefile $(GLM2DBK) manual.dbk
-	cp manual.dbk $(SUM).dbk
-
-debug.dbk: Makefile $(GLM2DBK) debug.glm
-	@if test -r debug.dbk; \
-	 then mv -f debug.dbk debug.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf debug.glm > debug.dbk
-
-defining.dbk: Makefile $(GLM2DBK) defining.glm
-	@if test -r defining.dbk; \
-	 then mv -f defining.dbk defining.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf defining.glm > defining.dbk
-
-emacs.dbk: Makefile $(GLM2DBK) emacs.glm
-	@if test -r emacs.dbk; \
-	 then mv -f emacs.dbk emacs.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf emacs.glm > emacs.dbk
-
-generatedlisp.dbk: Makefile $(GLM2DBK) generatedlisp.glm
-	@if test -r generatedlisp.dbk; \
-	 then mv -f generatedlisp.dbk generatedlisp.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf generatedlisp.glm > generatedlisp.dbk
-
-install.dbk: Makefile $(GLM2DBK) install.glm
-	@if test -r install.dbk; \
-	 then mv -f install.dbk install.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf install.glm > install.dbk
-
-model.dbk: Makefile $(GLM2DBK) model.glm
-	@if test -r model.dbk; \
-	 then mv -f model.dbk model.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf model.glm > model.dbk
-
-shell.dbk: Makefile $(GLM2DBK) shell.glm
-	@if test -r shell.dbk; \
-	 then mv -f shell.dbk shell.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf shell.glm > shell.dbk
-
-prove.dbk: Makefile $(GLM2DBK) prove.glm
-	@if test -r prove.dbk; \
-	 then mv -f prove.dbk prove.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf prove.glm > prove.dbk
-
-start.dbk: Makefile $(GLM2DBK) start.glm
-	@if test -r start.dbk; \
-	 then mv -f start.dbk start.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf start.glm > start.dbk
-
-javacodegen.dbk: Makefile $(GLM2DBK) javacodegen.glm
-	@if test -r javacodegen.dbk; \
-	 then mv -f javacodegen.dbk javacodegen.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf javacodegen.glm > javacodegen.dbk
-
-ccodegen.dbk: Makefile $(GLM2DBK) ccodegen.glm
-	@if test -r ccodegen.dbk; \
-	 then mv -f ccodegen.dbk ccodegen.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf ccodegen.glm > ccodegen.dbk
-
-haskellcodegen.dbk: Makefile $(GLM2DBK) haskellcodegen.glm
-	@if test -r haskellcodegen.dbk; \
-	 then mv -f haskellcodegen.dbk haskellcodegen.dbk.old; \
-	 fi
-	$(GLM2DBK) -pdf haskellcodegen.glm > haskellcodegen.dbk
-
-HTMDIR= $(SUM).htm-dir
-
-htm: $(HTMDIR)
-
-htm-zip: htm
-	rm -f $(HTMDIR).zip
-	zip -r $(HTMDIR).zip $(HTMDIR)
-
-DB2HTML= ../bin/db2html -E9999
-
-ADJUSTFONTHTML= bin/adjustFontHTML
-
-HTMDBK= debug-htm.dbk defining-htm.dbk emacs-htm.dbk generatedlisp-htm.dbk \
-  install-htm.dbk model-htm.dbk shell-htm.dbk prove-htm.dbk start-htm.dbk \
-  javacodegen-htm.dbk ccodegen-htm.dbk haskellcodegen-htm.dbk
-
-$(HTMDIR): Makefile $(SUM)-htm.dbk $(HTMDBK) $(ADJUSTFONTHTML)
-	($(DB2HTML) $(SUM)-htm.dbk 2>&1) | grep -v 'is not a function name'
-	find db2html-dir -name '*.html' \
-		-exec $(ADJUSTFONTHTML) {} \;
-	mv db2html-dir/book1.html db2html-dir/$(SUM).html
-	@rm -rf $(HTMDIR).old
-	@if test -r $(HTMDIR); \
-	 then mv -f $(HTMDIR) $(HTMDIR).old; \
-	 fi
-	mv db2html-dir $(HTMDIR)
-
-$(SUM)-htm.dbk: Makefile $(GLM2DBK) $(SUM).dbk
-	@if test -r $(SUM)-htm.dbk; \
-	 then mv -f $(SUM)-htm.dbk $(SUM)-htm.dbk.old; \
-	 fi
-	sed 's/.dbk/-htm.dbk/g' $(SUM).dbk > $(SUM)-htm.dbk
-
-debug-htm.dbk: Makefile $(GLM2DBK) debug.glm
-	@if test -r debug-htm.dbk; \
-	 then mv -f debug-htm.dbk debug-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm debug.glm > debug-htm.dbk
-
-defining-htm.dbk: Makefile $(GLM2DBK) defining.glm
-	@if test -r defining-htm.dbk; \
-	 then mv -f defining-htm.dbk defining-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm defining.glm > defining-htm.dbk
-
-emacs-htm.dbk: Makefile $(GLM2DBK) emacs.glm
-	@if test -r emacs-htm.dbk; \
-	 then mv -f emacs-htm.dbk emacs-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm emacs.glm > emacs-htm.dbk
-
-generatedlisp-htm.dbk: Makefile $(GLM2DBK) generatedlisp.glm
-	@if test -r generatedlisp-htm.dbk; \
-	 then mv -f generatedlisp-htm.dbk generatedlisp-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm generatedlisp.glm > generatedlisp-htm.dbk
-
-install-htm.dbk: Makefile $(GLM2DBK) install.glm
-	@if test -r install-htm.dbk; \
-	 then mv -f install-htm.dbk install-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm install.glm > install-htm.dbk
-
-model-htm.dbk: Makefile $(GLM2DBK) model.glm
-	@if test -r model-htm.dbk; \
-	 then mv -f model-htm.dbk model-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm model.glm > model-htm.dbk
-
-shell-htm.dbk: Makefile $(GLM2DBK) shell.glm
-	@if test -r shell-htm.dbk; \
-	 then mv -f shell-htm.dbk shell-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm shell.glm > shell-htm.dbk
-
-prove-htm.dbk: Makefile $(GLM2DBK) prove.glm
-	@if test -r prove-htm.dbk; \
-	 then mv -f prove-htm.dbk prove-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm prove.glm > prove-htm.dbk
-
-start-htm.dbk: Makefile $(GLM2DBK) start.glm
-	@if test -r start-htm.dbk; \
-	 then mv -f start-htm.dbk start-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm start.glm > start-htm.dbk
-
-javacodegen-htm.dbk: Makefile $(GLM2DBK) javacodegen.glm
-	@if test -r javacodegen-htm.dbk; \
-	 then mv -f javacodegen-htm.dbk javacodegen-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm javacodegen.glm > javacodegen-htm.dbk
-
-ccodegen-htm.dbk: Makefile $(GLM2DBK) ccodegen.glm
-	@if test -r ccodegen-htm.dbk; \
-	 then mv -f ccodegen-htm.dbk ccodegen-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm ccodegen.glm > ccodegen-htm.dbk
-
-haskellcodegen-htm.dbk: Makefile $(GLM2DBK) haskellcodegen.glm
-	@if test -r haskellcodegen-htm.dbk; \
-	 then mv -f haskellcodegen-htm.dbk haskellcodegen-htm.dbk.old; \
-	 fi
-	$(GLM2DBK) -htm haskellcodegen.glm > haskellcodegen-htm.dbk
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  html       to make standalone HTML files"
+	@echo "  dirhtml    to make HTML files named index.html in directories"
+	@echo "  singlehtml to make a single large HTML file"
+	@echo "  pickle     to make pickle files"
+	@echo "  json       to make JSON files"
+	@echo "  htmlhelp   to make HTML files and a HTML help project"
+	@echo "  qthelp     to make HTML files and a qthelp project"
+	@echo "  devhelp    to make HTML files and a Devhelp project"
+	@echo "  epub       to make an epub"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
+	@echo "  text       to make text files"
+	@echo "  man        to make manual pages"
+	@echo "  texinfo    to make Texinfo files"
+	@echo "  info       to make Texinfo files and run them through makeinfo"
+	@echo "  gettext    to make PO message catalogs"
+	@echo "  changes    to make an overview of all changed/added/deprecated items"
+	@echo "  linkcheck  to check all external links for integrity"
+	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 clean:
-	rm -rf $(SUM).tex $(SUM).aux $(SUM).log $(SUM).out \
-	$(PDFDBK) $(HTMDBK) $(HTMDIR) *.old \
-	$(SUM).dbk $(SUM)-htm.dbk jade.log  $(HTMDIR).zip $(SUM).pdf
+	-rm -rf $(BUILDDIR)/*
 
-pristine: clean
+html:
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
+dirhtml:
+	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
+
+singlehtml:
+	$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
+	@echo
+	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
+
+pickle:
+	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) $(BUILDDIR)/pickle
+	@echo
+	@echo "Build finished; now you can process the pickle files."
+
+json:
+	$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $(BUILDDIR)/json
+	@echo
+	@echo "Build finished; now you can process the JSON files."
+
+htmlhelp:
+	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) $(BUILDDIR)/htmlhelp
+	@echo
+	@echo "Build finished; now you can run HTML Help Workshop with the" \
+	      ".hhp project file in $(BUILDDIR)/htmlhelp."
+
+qthelp:
+	$(SPHINXBUILD) -b qthelp $(ALLSPHINXOPTS) $(BUILDDIR)/qthelp
+	@echo
+	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
+	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/SpecwareUserManual.qhcp"
+	@echo "To view the help file:"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/SpecwareUserManual.qhc"
+
+devhelp:
+	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
+	@echo
+	@echo "Build finished."
+	@echo "To view the help file:"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/SpecwareUserManual"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/SpecwareUserManual"
+	@echo "# devhelp"
+
+epub:
+	$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $(BUILDDIR)/epub
+	@echo
+	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
+
+latex:
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
+	@echo
+	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex."
+	@echo "Run \`make' in that directory to run these through (pdf)latex" \
+	      "(use \`make latexpdf' here to do that automatically)."
+
+latexpdf:
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
+	@echo "Running LaTeX files through pdflatex..."
+	$(MAKE) -C $(BUILDDIR)/latex all-pdf
+	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
+
+text:
+	$(SPHINXBUILD) -b text $(ALLSPHINXOPTS) $(BUILDDIR)/text
+	@echo
+	@echo "Build finished. The text files are in $(BUILDDIR)/text."
+
+man:
+	$(SPHINXBUILD) -b man $(ALLSPHINXOPTS) $(BUILDDIR)/man
+	@echo
+	@echo "Build finished. The manual pages are in $(BUILDDIR)/man."
+
+texinfo:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/texinfo
+	@echo
+	@echo "Build finished. The Texinfo files are in $(BUILDDIR)/texinfo."
+	@echo "Run \`make' in that directory to run these through makeinfo" \
+	      "(use \`make info' here to do that automatically)."
+
+info:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/texinfo
+	@echo "Running Texinfo files through makeinfo..."
+	make -C $(BUILDDIR)/texinfo info
+	@echo "makeinfo finished; the Info files are in $(BUILDDIR)/texinfo."
+
+gettext:
+	$(SPHINXBUILD) -b gettext $(I18NSPHINXOPTS) $(BUILDDIR)/locale
+	@echo
+	@echo "Build finished. The message catalogs are in $(BUILDDIR)/locale."
+
+changes:
+	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $(BUILDDIR)/changes
+	@echo
+	@echo "The overview file is in $(BUILDDIR)/changes."
+
+linkcheck:
+	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
+	@echo
+	@echo "Link check complete; look for any errors in the above output " \
+	      "or in $(BUILDDIR)/linkcheck/output.txt."
+
+doctest:
+	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
+	@echo "Testing of doctests in the sources finished, look at the " \
+	      "results in $(BUILDDIR)/doctest/output.txt."

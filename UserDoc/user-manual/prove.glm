@@ -38,7 +38,7 @@ and [[f_defn]], using the options in the [[options]] list.
 As of this release claim names are qualified.  If the user does not
 explicitly use a qualifier then all properties that have that name
 will be used, regardless of their qualification.  Note also that
-&Specware does not require property names to be unique.  If there are
+&Specware; does not require property names to be unique.  If there are
 more than one property that has the same name as a claim in the
 [[using]] clause then they will all be sent to Snark.
 </para>
@@ -71,13 +71,13 @@ failure of the Snark proof.  </para>
 
 <para>
 
-&Metaslang [[type]] and [[op]] declarations as well as [[op]]
+&Metaslang; [[type]] and [[op]] declarations as well as [[op]]
 definitions give rise to implicit axioms that need to be sent to
 Snark.  In the case of [[type]] and [[op]] declarations, these axioms
-correspond to the semantics of the &Metaslang type system as described
+correspond to the semantics of the &Metaslang; type system as described
 in the language manual.  In the case of an [[op]] definition, these
 axioms correspond to lifting embedded conditionals from the body of
-the definition as well as translating &Metaslang's pattern matching to
+the definition as well as translating &Metaslang;'s pattern matching to
 first-order logic.  Note that a single definition can give rise to
 multiple axioms.  If the [[using]] clause of the proof unit is
 omitted then these axioms will automatically be sent to Snark.

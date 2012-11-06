@@ -109,8 +109,8 @@ it invokes the [[gen-c]] command on the given spec term and uses the name
 
   <informaltable>
    <tgroup cols="2">
-    <colspec colname="one" colnum="1" colwidth="80" rowsep="1">
-    <colspec colname="two" colnum="2" colwidth="220" rowsep="1">
+    <colspec colname="one" colnum="1" colwidth="80" rowsep="1"></colspec>
+    <colspec colname="two" colnum="2" colwidth="220" rowsep="1"></colspec>
     <tbody>
     <row>
      <entry colname="one"><"CFLAGS">:</entry>

@@ -152,12 +152,13 @@ by ``/''.</para></listitem>
 path elements preceded by ``/'', resulting from the previous step, are
 turned into ``\''; in addition, <".sw"> is appended at the
 end.
+The result of this second step is a
+(partial) path in the file system.</para></listitem>
 <!--
 %%Otherwise, the ``/'' signs are left unchanged and <".sw"> is
 %%appended at the end. Either way, the
 -->
-The result of this second step is a
-(partial) path in the file system.</para></listitem>
+
 
 <listitem><para>The path resulting from the previous step is appended
 after the first directory of &swpath;. If the resulting absolute path
@@ -271,13 +272,14 @@ removal takes place. Either way, the result of this first step is a
 <listitem><para>The ``/'' signs of the ``/''-separated sequence of
 path elements, resulting from the previous step, are turned into
 ``\''; in addition, <".sw"> is appended at the end.
+The result of this second step is a (partial) path in
+the file system.</para></listitem>
 <!--
 %%Otherwise, the
 %%``/'' signs are left unchanged and <".sw"> is appended at the
 %%end. Either way, the
 -->
-The result of this second step is a (partial) path in
-the file system.</para></listitem>
+
 
 <listitem><para>The path resulting from the previous step is appended
 after the absolute path of the directory of the file containing the
@@ -345,13 +347,13 @@ removal takes place. Either way, the result of this first step is a
 <listitem><para>The ``/'' signs of the ``/''-separated sequence of
 path elements, resulting from the previous step, are turned into
 ``\''; in addition, <".sw"> is appended at the end.
+The result of this second step is a (partial) path in
+the file system.</para></listitem>
 <!--
 %%Otherwise, the
 %%``/'' signs are left unchanged and <".sw"> is appended at the
 %%end. Either way, the
 -->
-The result of this second step is a (partial) path in
-the file system.</para></listitem>
 
 <listitem><para>The path resulting from the previous step is appended
 after the absolute path of the directory of the file containing the
@@ -419,7 +421,7 @@ Optional arguments are given between square brackets [[[]] and [[]]].
 
 <para>
 Unit identifiers occurring in a unit term used as a command argument are
-resolved as described in <xref linkend="resolveUID">, where relative
+resolved as described in <xref linkend="resolveUID"/>, where relative
 unit identifiers are resolved as they would be if the unit term was a
 single-unit file in the current directory.
 </para>
@@ -522,7 +524,7 @@ diagram colimit, a proof term, and so on.
 
 <para>If the argument is not a syntactically valid unit term,
 or some unit identifier in the term fails to resolve
-as explained in <xref linkend="swpathuid">,
+as explained in <xref linkend="swpathuid"/>,
 an error is signaled by &Specware;.</para>
 
 <para>Otherwise &Specware; parses and elaborates
@@ -548,7 +550,7 @@ generation; prover invocation.  This is only done if no error was
 encountered.
 Code can also be generated directly from the &SShell; using the
 [[gen-$Language$]] commands.
-For proving properties in specs, see <xref linkend="proving">.
+For proving properties in specs, see <xref linkend="proving"/>.
 </para>
 
 <para>
@@ -743,13 +745,13 @@ The command [[eval]] may be abbreviated to [[e]].
 
 <para>
 Instead of using the built-in &Metaslang; interpreter, it is also
-possible to evaluate &Metaslang; expressions from the &SShell command
+possible to evaluate &Metaslang; expressions from the &SShell; command
 line as translated into Lisp.
 Unless no user-defined types and ops are used (as in the expression
 [[2+2]]),
 this requires that Lisp code has already been generated for the context spec
-(see <xref linkend="genlisp">) and that the Lisp file has been loaded
-(see <xref linkend="auxlisp">).
+(see <xref linkend="genlisp"/>) and that the Lisp file has been loaded
+(see <xref linkend="auxlisp"/>).
 The command is:
 [[
 ||    eval-lisp [$expression$]
@@ -845,13 +847,14 @@ added to the spec.
 
 </section>
 
+
 &javacodegen; <!-- section on Java code generation -->
 
 &ccodegen; <!-- section on C code generation -->
 
 &haskellcodegen; <!-- section on Haskell code generation -->
 
-<section id=auxlisp>
+<section id="auxlisp">
 <title>Auxiliary Commands for Lisp</title>
 
 <para>

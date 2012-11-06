@@ -335,14 +335,14 @@ semi-automatically from the sorting specification as a solution
 to a sorting problem, if you describe exactly how the problem
 is a sorting problem.</para></listitem> </itemizedlist>
 
-<!-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+<!-- 
 <para>Different provers can provide different functionality.
 Additional provers have been integrated with &Specware;,
 including Stanford Research Institute's SNARK, which may be
 obtained by sending email to Dr. Richard Waldinger
 (<email>waldinge@ai.research.sri.com</email>). In the future,
 additional provers will be provided or enabled.</para>
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -->
+-->
 
 </section>
 

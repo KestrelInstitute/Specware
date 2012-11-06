@@ -118,7 +118,7 @@ translates to
 
 [[
 ||  theorem Simplify_valif_normif [simp]: 
-||    "\<quote>\\</quote><forall>t e. valif (normif b t e) env = valif (IF b t e) env"
+||    "\<quote>\\</quote>&lt;forall&gt; t e. valif (normif b t e) env = valif (IF b t e) env"
 ||      apply(induct_tac b)
 ||      apply(auto)
 ||    done
@@ -126,7 +126,7 @@ translates to
 </para>
 
 <para>
-The [[\<quote>\\</quote><forall>]] will be displayed as a universal quantification
+The [[\<quote>\\</quote>&lt;forall&gt;\]] will be displayed as a universal quantification
     symbol using X-Symbol mode in &Isabelle;. Note that instead of
     [[fa]] in the [[proof Isa]] line the user may use the X-Symbol for
     universal quantification.
@@ -138,7 +138,7 @@ function specified on the [[proof Isa]] line, by including it between double-quo
 For example:
 
 [[
-||proof Isa "measure (\<quote>\\</quote><lambda>(wrd,sym). length wrd)" end-proof
+||proof Isa "measure (\<quote>\\</quote>&lt;lambda&gt;(wrd,sym). length wrd)" end-proof
 ]]
 </para> 
 
@@ -160,7 +160,7 @@ A translation table for &Specware; types and ops is introduced by a
 ||  proof Isa Thy_Morphism Presburger
 ||    type Integer.Int -> int
 ||    type Integer.Integer -> int
-||    type Nat.Nat     -> nat (int,nat) [+,*,div,rem,mod,<=,<,>=,>,abs,min,max]
+||    type Nat.Nat     -> nat (int,nat) [+,*,div,rem,mod,<=,&lt;,>=,&gt;,abs,min,max]
 ||    Integer.zero     -> 0
 ||    Integer.one      -> 1
 ||    Integer.ipred    -> pred
@@ -169,9 +169,9 @@ A translation table for &Specware; types and ops is introduced by a
 ||    Integer.+        -> +     Left 65
 ||    Integer.-        -> -     Left 65
 ||    Integer.*        -> *     Left 70
-||    Integer.<=       -> \<le> Left 50
-||    Integer.<        -> <     Left 50
-||    Integer.>=       -> \<ge> Left 50
+||    Integer.<=       -> \&lt;le&gt; Left 50
+||    Integer.&lt;        -> &lt;     Left 50
+||    Integer.>=       -> \&lt;ge&gt; Left 50
 ||    Integer.>        -> >     Left 50
 ||    Integer.sign     -> sign
 ||    Integer./        -> div   Left 70

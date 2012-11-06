@@ -1,188 +1,153 @@
-all: pdf htm-zip
+# Makefile for Sphinx documentation
+#
 
-SLM= SpecwareLanguageManual
-HTMDIR= $(SLM).htm-dir
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+PAPER         =
+BUILDDIR      = _build
 
-pdf: $(SLM).pdf
+# Internal variables.
+PAPEROPT_a4     = -D latex_paper_size=a4
+PAPEROPT_letter = -D latex_paper_size=letter
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+# the i18n builder cannot share the environment and doctrees with the others
+I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-htm: $(HTMDIR)
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
 
-htm-zip: htm
-	rm -f $(HTMDIR).zip
-	zip -r $(HTMDIR).zip $(HTMDIR)
-
-BIN= ../bin
-GLM2DBK= $(BIN)/glm2dbk.o
-GLM2DBKMS= $(GLM2DBK) -metaslang
-GLM2DBKGR= $(GLM2DBK) -grammar
-SRC= ../src
-GLM2DBKSRC= $(SRC)/glm2dbk.c
-
-$(GLM2DBK): $(GLM2DBKSRC)
-	gcc $(GLM2DBKSRC) -o $(GLM2DBK)
-
-MKRESWORDS= bin/mkreswords
-MKGRAMMAR= bin/mkgrammar
-
-DB2PDF= ../bin/db2pdf -E9999
-
-DB2HTML= ../bin/db2html -E9999
-
-ADJUSTFONTHTML= bin/adjustFontHTML
-ANCHORHTML= bin/anchorHTML
-REANCHORGRAMMARHTML= bin/reAnchorGrammarHTML
-NAVLINKHTML= bin/navLinkHTML
-
-PDFDBK= bookinfo.dbk \
-        disclaimer.dbk \
-        intro.dbk \
-        metaslang.dbk \
-        reswords.dbk \
-        grammar.dbk \
-        libraries.dbk
-
-$(SLM).pdf: Makefile $(SLM).dbk $(PDFDBK)
-	@if test -r $(SLM).pdf; \
-	 then mv -f $(SLM).pdf $(SLM).pdf.old; \
-	 fi
-	($(DB2PDF) $(SLM).dbk 2>&1) | grep -v 'is not a function name'
-
-HTMDBK= bookinfo-htm.dbk \
-        disclaimer-htm.dbk \
-        intro-htm.dbk \
-        metaslang-htm.dbk \
-        reswords-htm.dbk \
-        grammar-htm.dbk \
-        libraries-htm.dbk
-
-$(HTMDIR): Makefile $(SLM)-htm.dbk $(HTMDBK) \
-    $(ADJUSTFONTHTML) $(ANCHORHTML) $(NAVLINKHTML) $(REANCHORGRAMMARHTML)
-	($(DB2HTML) $(SLM)-htm.dbk 2>&1) | grep -v 'is not a function name'
-	find db2html-dir -name '*.html' \
-		-exec $(ADJUSTFONTHTML) {} \;
-	find db2html-dir -name '*.html' \
-		-exec $(ANCHORHTML) {} \;
-	$(REANCHORGRAMMARHTML) db2html-dir/grammar.html
-	mv db2html-dir/book1.html db2html-dir/$(SLM).html
-	@rm -rf $(HTMDIR).old
-	@if test -r $(HTMDIR); \
-	 then mv -f $(HTMDIR) $(HTMDIR).old; \
-	 fi
-	mv db2html-dir $(HTMDIR)
-
-$(SLM).dbk:
-
-$(SLM)-htm.dbk: Makefile $(SLM).dbk
-	@if test -r $(SLM)-htm.dbk; \
-	 then mv -f $(SLM)-htm.dbk $(SLM)-htm.dbk.old; \
-	 fi
-	sed 's/.dbk/-htm.dbk/g' $(SLM).dbk > $(SLM)-htm.dbk
-
-bookinfo.dbk: Makefile $(GLM2DBK) bookinfo.glm
-	@if test -r bookinfo.dbk; \
-	 then mv -f bookinfo.dbk bookinfo.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf bookinfo.glm > bookinfo.dbk
-
-disclaimer.dbk: Makefile $(GLM2DBK) disclaimer.glm
-	@if test -r disclaimer.dbk; \
-	 then mv -f disclaimer.dbk disclaimer.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf disclaimer.glm > disclaimer.dbk
-
-intro.dbk: Makefile $(GLM2DBK) intro.glm
-	@if test -r intro.dbk; \
-	 then mv -f intro.dbk intro.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf intro.glm > intro.dbk
-
-metaslang.dbk: Makefile $(GLM2DBK) metaslang.glm
-	@if test -r metaslang.dbk; \
-	 then mv -f metaslang.dbk metaslang.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf metaslang.glm > metaslang.dbk
-
-reswords.dbk: Makefile $(GLM2DBK) reswords.glm
-	@if test -r reswords.dbk; \
-	 then mv -f reswords.dbk reswords.dbk.old; \
-	 fi
-	$(GLM2DBKGR) -pdf reswords.glm > reswords.dbk
-
-grammar.dbk: Makefile $(GLM2DBK) grammar.glm
-	@if test -r grammar.dbk; \
-	 then mv -f grammar.dbk grammar.dbk.old; \
-	 fi
-	$(GLM2DBKGR) -pdf grammar.glm > grammar.dbk
-
-libraries.dbk: Makefile $(GLM2DBK) libraries.glm
-	@if test -r libraries.dbk; \
-	 then mv -f libraries.dbk libraries.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -pdf libraries.glm > libraries.dbk
-
-
-bookinfo-htm.dbk: Makefile $(GLM2DBK) bookinfo.glm
-	@if test -r bookinfo-htm.dbk; \
-	 then mv -f bookinfo-htm.dbk bookinfo-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm bookinfo.glm > bookinfo-htm.dbk
-
-disclaimer-htm.dbk: Makefile $(GLM2DBK) disclaimer.glm
-	@if test -r disclaimer-htm.dbk; \
-	 then mv -f disclaimer-htm.dbk disclaimer-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm disclaimer.glm > disclaimer-htm.dbk
-
-intro-htm.dbk: Makefile $(GLM2DBK) intro.glm
-	@if test -r intro-htm.dbk; \
-	 then mv -f intro-htm.dbk intro-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm intro.glm > intro-htm.dbk
-
-metaslang-htm.dbk: Makefile $(GLM2DBK) metaslang.glm
-	@if test -r metaslang-htm.dbk; \
-	 then mv -f metaslang-htm.dbk metaslang-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm metaslang.glm > metaslang-htm.dbk
-
-reswords-htm.dbk: Makefile $(GLM2DBK) reswords.glm
-	@if test -r reswords-htm.dbk; \
-	 then mv -f reswords-htm.dbk reswords-htm.dbk.old; \
-	 fi
-	$(GLM2DBKGR) -pdf reswords.glm > reswords-htm.dbk
-
-grammar-htm.dbk: Makefile $(GLM2DBK) grammar.glm
-	@if test -r grammar-htm.dbk; \
-	 then mv -f grammar-htm.dbk grammar-htm.dbk.old; \
-	 fi
-	$(GLM2DBKGR) -htm grammar.glm > grammar-htm.dbk
-
-libraries-htm.dbk: Makefile $(GLM2DBK) libraries.glm
-	@if test -r libraries-htm.dbk; \
-	 then mv -f libraries-htm.dbk libraries-htm.dbk.old; \
-	 fi
-	$(GLM2DBKMS) -htm libraries.glm > libraries-htm.dbk
-
-reswords.glm: Makefile reswords-list.txt $(MKRESWORDS) bin-reswords
-	@if test -r reswords.glm; \
-	 then mv -f reswords.glm reswords.glm.old; \
-	 fi
-	$(MKRESWORDS) reswords-list.txt > reswords.glm
-
-grammar.glm: Makefile metaslang.glm grammar.preamble $(MKGRAMMAR) bin-glmgrammar
-	@if test -r grammar.glm; \
-	 then mv -f grammar.glm grammar.glm.old; \
-	 fi
-	$(MKGRAMMAR)
-
-bin-reswords: Makefile 
-	gcc -lm src/reswords.c -o bin/reswords.o
-
-bin-glmgrammar: Makefile 
-	gcc -lm src/glmgrammar.c -o bin/glmgrammar.o
+help:
+	@echo "Please use \`make <target>' where <target> is one of"
+	@echo "  html       to make standalone HTML files"
+	@echo "  dirhtml    to make HTML files named index.html in directories"
+	@echo "  singlehtml to make a single large HTML file"
+	@echo "  pickle     to make pickle files"
+	@echo "  json       to make JSON files"
+	@echo "  htmlhelp   to make HTML files and a HTML help project"
+	@echo "  qthelp     to make HTML files and a qthelp project"
+	@echo "  devhelp    to make HTML files and a Devhelp project"
+	@echo "  epub       to make an epub"
+	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
+	@echo "  text       to make text files"
+	@echo "  man        to make manual pages"
+	@echo "  texinfo    to make Texinfo files"
+	@echo "  info       to make Texinfo files and run them through makeinfo"
+	@echo "  gettext    to make PO message catalogs"
+	@echo "  changes    to make an overview of all changed/added/deprecated items"
+	@echo "  linkcheck  to check all external links for integrity"
+	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 clean:
-	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \
-	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old grammar.glm.body grammar.glm reswords.glm bin/reswords.o bin/glmgrammar.o  $(HTMDIR).zip $(SLM).pdf
+	-rm -rf $(BUILDDIR)/*
 
-pristine: clean
+html:
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+dirhtml:
+	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/dirhtml."
+
+singlehtml:
+	$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $(BUILDDIR)/singlehtml
+	@echo
+	@echo "Build finished. The HTML page is in $(BUILDDIR)/singlehtml."
+
+pickle:
+	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) $(BUILDDIR)/pickle
+	@echo
+	@echo "Build finished; now you can process the pickle files."
+
+json:
+	$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $(BUILDDIR)/json
+	@echo
+	@echo "Build finished; now you can process the JSON files."
+
+htmlhelp:
+	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) $(BUILDDIR)/htmlhelp
+	@echo
+	@echo "Build finished; now you can run HTML Help Workshop with the" \
+	      ".hhp project file in $(BUILDDIR)/htmlhelp."
+
+qthelp:
+	$(SPHINXBUILD) -b qthelp $(ALLSPHINXOPTS) $(BUILDDIR)/qthelp
+	@echo
+	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
+	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/Specware.qhcp"
+	@echo "To view the help file:"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/Specware.qhc"
+
+devhelp:
+	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
+	@echo
+	@echo "Build finished."
+	@echo "To view the help file:"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/Specware"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/Specware"
+	@echo "# devhelp"
+
+epub:
+	$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $(BUILDDIR)/epub
+	@echo
+	@echo "Build finished. The epub file is in $(BUILDDIR)/epub."
+
+latex:
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
+	@echo
+	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex."
+	@echo "Run \`make' in that directory to run these through (pdf)latex" \
+	      "(use \`make latexpdf' here to do that automatically)."
+
+latexpdf:
+	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
+	@echo "Running LaTeX files through pdflatex..."
+	$(MAKE) -C $(BUILDDIR)/latex all-pdf
+	@echo "pdflatex finished; the PDF files are in $(BUILDDIR)/latex."
+
+text:
+	$(SPHINXBUILD) -b text $(ALLSPHINXOPTS) $(BUILDDIR)/text
+	@echo
+	@echo "Build finished. The text files are in $(BUILDDIR)/text."
+
+man:
+	$(SPHINXBUILD) -b man $(ALLSPHINXOPTS) $(BUILDDIR)/man
+	@echo
+	@echo "Build finished. The manual pages are in $(BUILDDIR)/man."
+
+texinfo:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/texinfo
+	@echo
+	@echo "Build finished. The Texinfo files are in $(BUILDDIR)/texinfo."
+	@echo "Run \`make' in that directory to run these through makeinfo" \
+	      "(use \`make info' here to do that automatically)."
+
+info:
+	$(SPHINXBUILD) -b texinfo $(ALLSPHINXOPTS) $(BUILDDIR)/texinfo
+	@echo "Running Texinfo files through makeinfo..."
+	make -C $(BUILDDIR)/texinfo info
+	@echo "makeinfo finished; the Info files are in $(BUILDDIR)/texinfo."
+
+gettext:
+	$(SPHINXBUILD) -b gettext $(I18NSPHINXOPTS) $(BUILDDIR)/locale
+	@echo
+	@echo "Build finished. The message catalogs are in $(BUILDDIR)/locale."
+
+changes:
+	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $(BUILDDIR)/changes
+	@echo
+	@echo "The overview file is in $(BUILDDIR)/changes."
+
+linkcheck:
+	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
+	@echo
+	@echo "Link check complete; look for any errors in the above output " \
+	      "or in $(BUILDDIR)/linkcheck/output.txt."
+
+doctest:
+	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
+	@echo "Testing of doctests in the sources finished, look at the " \
+	      "results in $(BUILDDIR)/doctest/output.txt."

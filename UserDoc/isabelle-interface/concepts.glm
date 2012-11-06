@@ -8,7 +8,7 @@ This document describes a &Specware; interface
      specifications. The interface is essentially just a Specware
      Shell command and an Emacs
      command that converts a &Specware; spec to an &Isabelle; theory,
-     along with extensions in the &Specware syntax to allow &Isabelle;
+     along with extensions in the &Specware; syntax to allow &Isabelle;
      proof scripts to be embedded in &Specware; specs, and to allow
      the user to specify translation of &Specware; ops and types to
      existing &Isabelle; constants and types. The translation

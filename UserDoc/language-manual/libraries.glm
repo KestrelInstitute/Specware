@@ -15,7 +15,7 @@ information.
 <appendix><title>Inbuilts</title>
 <!-- <appendix><title>Inbuilts and Base Libraries</title> -->
 
-<para> This appendix provides a brief description of the ``inbuilt'' types and
+<para>This appendix provides a brief description of the ``inbuilt'' types and
 operators. </para>
 <!--
 <para>
@@ -59,10 +59,10 @@ with the &Specware; distribution, for details (e.g. axioms).
      <para>
         <informaltable frame="sides" colsep="1">
          <tgroup cols="4">
-          <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
-          <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
-          <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
+          <colspec colname="name" colnum="1" colwidth="65"  rowsep="1"/>
+          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1"/>
+          <colspec colname="type" colnum="3" colwidth="150" rowsep="1"/>
+          <colspec colname="desc" colnum="4" colwidth="160" rowsep="1"/>
           <thead>
        <row>
         <entry colname="name">&nbsp; Name</entry>
@@ -91,7 +91,7 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="desc">&nbsp; logical negation</entry>
        </row>
        <row>
-        <entry colname="name">&nbsp; [[&&]]</entry>
+       <entry colname="name">&nbsp; [[&&]]</entry>
         <entry colname="fxty">&nbsp; [[R 15]]</entry>
         <entry colname="type">&nbsp; [[Boolean * Boolean -> Boolean]]</entry>
         <entry colname="desc">&nbsp; non-strict logical and</entry>

@@ -1,210 +1,209 @@
 <chapter id="emacs">
 
-<title>Emacs Usage in &Specware</title>
+<title>Emacs Usage in &Specware;</title>
 
 <para>
-There are a number of emacs commands for &Specware usage. We also list
-some useful general-purpose commands. There is a &Specware mode for
+There are a number of emacs commands for &Specware; usage. We also list
+some useful general-purpose commands. There is a &Specware; mode for
 editing &Specware; files.
 </para>
 
 <section>
-<title>&Specware Mode Commands</title>
+<title>&Specware; Mode Commands</title>
 
 <para>
 These are the commands available when editing [[.sw]] files. Some of
-them are available in the &Specware menu in the menubar.
+them are available in the &Specware; menu in the menubar.
 </para>
 
 <informaltable frame="sides" colsep="1">
-  <tgroup cols="3">
-    <colspec colname="key"      colnum="1" colwidth="65"  rowsep="1">
-    <colspec colname="name"     colnum="2" colwidth="140" rowsep="1">
-    <colspec colname="descr"    colnum="3" colwidth="210" rowsep="1">
-    <thead>
-      <row>
-	<entry colname="key">&nbsp; Key</entry>
-	<entry colname="name">&nbsp; Name</entry>
-	<entry colname="descr">&nbsp; Description</entry>
-      </row>
-    </thead>
-    <tbody>
-      <row>
-	<entry colname="key">&nbsp; [[tab]]</entry>
-        <entry colname="name">&nbsp; [[indent-line]]</entry>
-	<entry colname="descr">&nbsp; Indents line based on context.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[linefeed]]</entry>
-        <entry colname="name">&nbsp; [[newline-and-indent]]</entry>
-	<entry colname="descr">&nbsp; Same as return followed by tab.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-tab]]</entry>
-        <entry colname="name">&nbsp; [[back-to-outer-indent]]</entry>
-	<entry colname="descr">&nbsp; Indents line for outer expression.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-C-q]]</entry>
-        <entry colname="name">&nbsp; [[indent-sexp]]</entry>
-	<entry colname="descr">&nbsp; Indents parenthesized expression
-	  following point.
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-C-\]]</entry>
-        <entry colname="name">&nbsp; [[indent-region]]</entry>
-	<entry colname="descr">&nbsp; Indents region.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-*]]</entry>
-        <entry colname="name">&nbsp; [[switch-to-lisp]]</entry>
-	<entry colname="descr">&nbsp; Switch to *Specware Shell* buffer.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-.]]</entry>
-        <entry colname="name">&nbsp; [[meta-point]]</entry>
-	<entry colname="descr">&nbsp; 
-	  Prompts for op or type name (with default based on symbol at
-	  point), and goes to its definition. Searches only the units
-	  that have been loaded. First searches for definitions
-	  visible from the current unit.
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-,]]</entry>
-        <entry colname="name">&nbsp; [[continue-meta-point]]</entry>
-	<entry colname="descr">&nbsp; If previous meta-point command
-	  returned more than one definition, go to the next definition.
-	  Can be repeated.
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-|]]</entry>
-        <entry colname="name">&nbsp; [[electric-pipe]]</entry>
-	<entry colname="descr">&nbsp; Adds the skeleton of a new
-	  case to a case statement, properly indented.
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c ;]]</entry>
-        <entry colname="name">&nbsp; [[comment-region]]</entry>
-	<entry colname="descr">&nbsp; Comment out the region. With 
-	  a negative argument uncomments the region.
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c p]]</entry>
-        <entry colname="name">&nbsp; [[process-current-file]]</entry>
-	<entry colname="descr">&nbsp; Does [[proc]] on current file. 
-	  Also available in dired where it applies to the file on the
-	  current line. (This command will only work properly if the
-	  top-level directory for the file is in SWPATH).
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
-        <entry colname="name">&nbsp; [[process-unit]]</entry>
-	<entry colname="descr">&nbsp; Prompts for unitId to process.
-	  Defaults to unitId for the current file. </entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c g]]</entry>
-        <entry colname="name">&nbsp; [[generate-lisp]]</entry>
-	<entry colname="descr">&nbsp; Does [[gen-lisp]] on current file. With
-          an argument compiles and loads the generated lisp.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c C-l]]</entry>
-        <entry colname="name">&nbsp; [[generate-lisp]]</entry>
-	<entry colname="descr">&nbsp; Does [[:swll]] on current file
-          (generates lisp for local definitions of current file and
-           compiles and loads them).</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c h]]</entry>
-        <entry colname="name">&nbsp; [[sw:convert-spec-to- haskell]]</entry>
-	<entry colname="descr">&nbsp; Generates Haskell code for
-            current spec.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c H]]</entry>
-        <entry colname="name">&nbsp; [[sw:convert-top-spec- to-haskell]]</entry>
-	<entry colname="descr">&nbsp; Generates Haskell code for
-            current spec as the top level.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[C-c !]]</entry>
-        <entry colname="name">&nbsp; [[cd-current-directory]]</entry>
-	<entry colname="descr">&nbsp; Does a :cd in the *Specware Shell* 
-	  buffer to the directory of the current file.
-	  Also available in dired.
-	</entry>
-      </row>
-    </tbody>
-  </tgroup>
+    <tgroup cols="3">
+        <colspec colname="key"      colnum="1" colwidth="65"  rowsep="1"></colspec>
+        <colspec colname="name"     colnum="2" colwidth="140" rowsep="1"></colspec>
+        <colspec colname="descr"    colnum="3" colwidth="210" rowsep="1"></colspec>
+        <thead>
+            <row>
+	        <entry colname="key">&nbsp; Key</entry>
+	        <entry colname="name">&nbsp; Name</entry>
+	        <entry colname="descr">&nbsp; Description</entry>
+            </row>
+        </thead>
+        <tbody>
+            <row>
+	        <entry colname="key">&nbsp; [[tab]]</entry>
+                <entry colname="name">&nbsp; [[indent-line]]</entry>
+	        <entry colname="descr">&nbsp; Indents line based on context.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[linefeed]]</entry>
+                <entry colname="name">&nbsp; [[newline-and-indent]]</entry>
+	        <entry colname="descr">&nbsp; Same as return followed by tab.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-tab]]</entry>
+                <entry colname="name">&nbsp; [[back-to-outer-indent]]</entry>
+	        <entry colname="descr">&nbsp; Indents line for outer expression.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-C-q]]</entry>
+                <entry colname="name">&nbsp; [[indent-sexp]]</entry>
+	        <entry colname="descr">&nbsp; Indents parenthesized expression
+	        following point.
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-C-\]]</entry>
+                <entry colname="name">&nbsp; [[indent-region]]</entry>
+	        <entry colname="descr">&nbsp; Indents region.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-*]]</entry>
+                <entry colname="name">&nbsp; [[switch-to-lisp]]</entry>
+	        <entry colname="descr">&nbsp; Switch to *Specware Shell* buffer.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-.]]</entry>
+                <entry colname="name">&nbsp; [[meta-point]]</entry>
+	        <entry colname="descr">&nbsp; 
+	        Prompts for op or type name (with default based on symbol at
+	        point), and goes to its definition. Searches only the units
+	        that have been loaded. First searches for definitions
+	        visible from the current unit.
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-,]]</entry>
+                <entry colname="name">&nbsp; [[continue-meta-point]]</entry>
+	        <entry colname="descr">&nbsp; If previous meta-point command
+	        returned more than one definition, go to the next definition.
+	        Can be repeated.
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-|]]</entry>
+                <entry colname="name">&nbsp; [[electric-pipe]]</entry>
+	        <entry colname="descr">&nbsp; Adds the skeleton of a new
+	        case to a case statement, properly indented.
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c ;]]</entry>
+                <entry colname="name">&nbsp; [[comment-region]]</entry>
+	        <entry colname="descr">&nbsp; Comment out the region. With 
+	        a negative argument uncomments the region.
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c p]]</entry>
+                <entry colname="name">&nbsp; [[process-current-file]]</entry>
+	        <entry colname="descr">&nbsp; Does [[proc]] on current file. 
+	        Also available in dired where it applies to the file on the
+	        current line. (This command will only work properly if the
+	        top-level directory for the file is in SWPATH).
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c C-p]]</entry>
+                <entry colname="name">&nbsp; [[process-unit]]</entry>
+	        <entry colname="descr">&nbsp; Prompts for unitId to process.
+	        Defaults to unitId for the current file. </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c g]]</entry>
+                <entry colname="name">&nbsp; [[generate-lisp]]</entry>
+	        <entry colname="descr">&nbsp; Does [[gen-lisp]] on current file. With
+                an argument compiles and loads the generated lisp.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c C-l]]</entry>
+                <entry colname="name">&nbsp; [[generate-lisp]]</entry>
+	        <entry colname="descr">&nbsp; Does [[:swll]] on current file
+                (generates lisp for local definitions of current file and
+                compiles and loads them).</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c h]]</entry>
+                <entry colname="name">&nbsp; [[sw:convert-spec-to- haskell]]</entry>
+	        <entry colname="descr">&nbsp; Generates Haskell code for
+                current spec.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c H]]</entry>
+                <entry colname="name">&nbsp; [[sw:convert-top-spec- to-haskell]]</entry>
+	        <entry colname="descr">&nbsp; Generates Haskell code for
+                current spec as the top level.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[C-c !]]</entry>
+                <entry colname="name">&nbsp; [[cd-current-directory]]</entry>
+	        <entry colname="descr">&nbsp; Does a :cd in the *Specware Shell* 
+	        buffer to the directory of the current file.
+	        Also available in dired.
+	        </entry>
+            </row>
+        </tbody>
+    </tgroup>
 </informaltable>
 
 </section>
-
 <section>
-<title>&Specware Interaction Commands</title>
+<title>&Specware; Interaction Commands</title>
 
 <para>
 These are the commands available in the [[*Specware Shell*]] buffer.
 </para>
 
-<informaltable frame="sides" colsep="1">
-  <tgroup cols="3">
-    <colspec colname="key"      colnum="1" colwidth="35"  rowsep="1">
-    <colspec colname="name"     colnum="2" colwidth="155" rowsep="1">
-    <colspec colname="descr"    colnum="3" colwidth="225" rowsep="1">
-    <thead>
-      <row>
-	<entry colname="key">&nbsp; Key</entry>
-	<entry colname="name">&nbsp; Name</entry>
-	<entry colname="descr">&nbsp; Description</entry>
-      </row>
-    </thead>
-    <tbody>
-<!--
-      <row>
-	<entry colname="key">&nbsp; [[M-*]]</entry>
-        <entry colname="name">&nbsp; [[switch-to-lisp]]</entry>
-	<entry colname="descr">&nbsp; When already in the
-	  *Specware Shell* buffer, goes to the previous
-	  source file buffer. 
-	</entry>
-      </row>
--->
-      <row>
-	<entry colname="key">&nbsp; [[M-.]]</entry>
-        <entry colname="name">&nbsp; [[meta-point]]</entry>
-	<entry colname="descr">&nbsp; 
-	  Prompts for op or type name (with default based on symbol at
-	  point), and goes to its definition. Searches only the units
-	  that have been loaded.
-	</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-p]]</entry>
-        <entry colname="name">&nbsp; [[previous-input]]</entry>
-	<entry colname="descr">&nbsp; Gets previous input.</entry>
-      </row>
-      <row>
-	<entry colname="key">&nbsp; [[M-r]]</entry>
-        <entry colname="name">&nbsp; [[previous-matching-input]]</entry>
-	<entry colname="descr">&nbsp; Gets previous input matching
-          regular expression (prompted for). Typically you can get
-          a previous input by typing in a small substring. Repeating
-          the command without changing the expression will find
-	  earlier matches.
-	</entry>
-      </row>
-    </tbody>
-  </tgroup>
-</informaltable>
 
+<informaltable frame="sides" colsep="1">
+    <tgroup cols="3">
+        <colspec colname="key"      colnum="1" colwidth="35"  rowsep="1"></colspec>
+        <colspec colname="name"     colnum="2" colwidth="155" rowsep="1"></colspec>
+        <colspec colname="descr"    colnum="3" colwidth="225" rowsep="1"></colspec>
+        <thead>
+            <row>
+	        <entry colname="key">&nbsp; Key</entry>
+	        <entry colname="name">&nbsp; Name</entry>
+	        <entry colname="descr">&nbsp; Description</entry>
+            </row>
+        </thead>
+        <tbody>
+            <!--
+                <row>
+	        <entry colname="key">&nbsp; [[M-*]]</entry>
+                <entry colname="name">&nbsp; [[switch-to-lisp]]</entry>
+	        <entry colname="descr">&nbsp; When already in the
+	        *Specware Shell* buffer, goes to the previous
+	        source file buffer. 
+	        </entry>
+                </row>
+            -->
+            <row>
+	        <entry colname="key">&nbsp; [[M-.]]</entry>
+                <entry colname="name">&nbsp; [[meta-point]]</entry>
+	        <entry colname="descr">&nbsp; 
+	        Prompts for op or type name (with default based on symbol at
+	        point), and goes to its definition. Searches only the units
+	        that have been loaded.
+	        </entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-p]]</entry>
+                <entry colname="name">&nbsp; [[previous-input]]</entry>
+	        <entry colname="descr">&nbsp; Gets previous input.</entry>
+            </row>
+            <row>
+	        <entry colname="key">&nbsp; [[M-r]]</entry>
+                <entry colname="name">&nbsp; [[previous-matching-input]]</entry>
+	        <entry colname="descr">&nbsp; Gets previous input matching
+                regular expression (prompted for). Typically you can get
+                a previous input by typing in a small substring. Repeating
+                the command without changing the expression will find
+	        earlier matches.
+	        </entry>
+            </row>
+        </tbody>
+    </tgroup>
+</informaltable>
 </section>
 
 <section>
@@ -222,9 +221,9 @@ in most Word Processing Programs), mouse [[Options]], [[Editing]],
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="1" colwidth="60"  rowsep="1">
-    <colspec colname="name"     colnum="2" colwidth="125"  rowsep="1">
-    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1">
+    <colspec colname="key"      colnum="1" colwidth="60"  rowsep="1"></colspec>
+    <colspec colname="name"     colnum="2" colwidth="125"  rowsep="1"></colspec>
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"></colspec>
     <thead>
       <row>
 	<entry colname="key">&nbsp; Key</entry>
@@ -322,7 +321,7 @@ non-ascii symbols, such as mathematical operators and greek characters
 in file buffers. The non-ascii symbols have ascii representations that
 are stored in files, but converted to the non-ascii characters when
 the files are read into an emacs buffer with X-Symbol mode turned
-on. For example, the &Specware symbol [[\_forall]] is displayed as
+on. For example, the &Specware; symbol [[\_forall]] is displayed as
 &forall; and [[\_or]] is displayed as &or;. All the ascii
 	 representations begin with "[[\_]]". X-Symbol mode can be
 	 turned on and off by Toggling [[X-Symbol]] under [[Options]] in the

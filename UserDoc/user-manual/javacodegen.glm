@@ -7,7 +7,7 @@ generator can either be called from the &SShell; or using the
 [[generate]] construct inside a <".sw"> file. In both cases, an
 additional ``option'' spec can be supplied, which is used to specify
 certain parameters that govern aspects of code generation.
-For the format of the option spec, see <xref linkend="optionspec">.
+For the format of the option spec, see <xref linkend="optionspec"/>.
 </para>
 
 <para>The command has the form:
@@ -60,9 +60,9 @@ Java code generator:</para>
 
 <informaltable frame="sides" colsep="1">
  <tgroup cols="3">
-  <colspec colname="op"      colnum="1" colwidth="143" rowsep="1">
-  <colspec colname="used"    colnum="2" colwidth="145" rowsep="1">
-  <colspec colname="default" colnum="3" colwidth="135" rowsep="1">
+  <colspec colname="op"      colnum="1" colwidth="143" rowsep="1"/>
+  <colspec colname="used"    colnum="2" colwidth="145" rowsep="1"/>
+  <colspec colname="default" colnum="3" colwidth="135" rowsep="1"/>
   <thead>
    <row>
      <entry colname="op">Op name &amp; type</entry>
@@ -140,8 +140,8 @@ values are used for all option parameters.
 
 <informaltable frame="sides" colsep="1">
  <tgroup cols="2">
-  <colspec colname="mtsl" colnum="1" colwidth="200" rowsep="1">
-  <colspec colname="java" colnum="2" colwidth="200" rowsep="1">
+  <colspec colname="mtsl" colnum="1" colwidth="200" rowsep="1"/>
+  <colspec colname="java" colnum="2" colwidth="200" rowsep="1"/>
   <thead>
    <row>
      <entry colname="mtsl">&Metaslang;</entry>
@@ -383,8 +383,8 @@ when accessing Java methods from &Metaslang;</para>
 
 <informaltable frame="sides" colsep="1">
  <tgroup cols="2">
-  <colspec colname="java" colnum="1" colwidth="200" rowsep="1">
-  <colspec colname="mtsl" colnum="2" colwidth="200" rowsep="1">
+  <colspec colname="java" colnum="1" colwidth="200" rowsep="1"/>
+  <colspec colname="mtsl" colnum="2" colwidth="200" rowsep="1"/>
   <thead>
    <row>
      <entry colname="java">Java</entry>

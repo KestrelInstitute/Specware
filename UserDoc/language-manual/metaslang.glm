@@ -40,7 +40,6 @@ in the example rule above.
 In the grammar rules terminal symbols appear in a bold font.
 Some of the terminal symbols used, like [[|]] and [[{]], are
 very similar to the grammar signs like <<|>> and <<{>> as
-<!-- }} for balance -->
 described above.
 They can hopefully be distinguished by their bold appearance.
 </para>
@@ -328,14 +327,6 @@ the equality test on the quotient type is just the predicate
 $Q$ applied to pairs of members of the
 $Q$-equivalence classes.)
 </para>
-<!-- A hack to pad to end of page -->
-<para>
-[[
-||
-||
-||
-]]
-</para>
 </section>
 </section>
 <!-- ***************************************************************** -->
@@ -418,17 +409,17 @@ presentations of the same `spec are entirely equivalent:
 ||`non-word-syllable ::= `non-word-mark { `non-word-mark }*
 ||
 ||`non-word-mark ::=
-||    ` | ~ | ! | @ | $ | ^ | & | * | -
-||  | = | + | \ | '| | : | < | > | / | '' | ?
+||    ` | ~ | ! | @ | $ | ^ | &amp; | * | -
+||  | = | + | \ | '| | : | &lt; | &gt; | / | '' | ?
 ||
 ||`special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
 >>
 Sample `simple-names:
 [[
 ||    Date                    $$$$            ?!
-||    yymmdd2date             <*>           :=:
+||    yymmdd2date             &lt;*&gt;           :=:
 ||    well_ordered?           ~==           x'
-||    c_<+>                   /_47a
+||    c_&lt;+&gt;                   /_47a
 ]]
 For convenience, here are the 13 printing ASCII marks that,
 next to `letters and `decimal-digits,
@@ -451,7 +442,23 @@ Restriction.
 In general, `simple-names can be chosen freely.
 However, the following <emphasis>reserved symbols</emphasis> have a
 special meaning and must not be used for `simple-names:
-&reswords;
+
+<!-- Moved this inline, instead of in a separate file -->
+
+[[
+||    as           embed     from       let           quotient
+||    axiom        embed?    generate   morphism      spec
+||    by           endspec   if         obligations   the
+||    case         ex        import     of            then
+||    choose       ex1       in         op            theorem
+||    conjecture   fa        infixl     project       true
+||    def          false     infixr     prove         type
+||    else         fn        is         qualifying    where
+||
+||    :        ||       |       =        <=>       <-       <<
+||    ::       &&       ~       ~=       =>        ->       +->
+]]
+
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved symbol. Symbols beginning with [[\_]]
 are reserved for use with X-Symbol, as described in the following section.
@@ -484,7 +491,7 @@ recommended.
 <!-- ***************************************************************** -->
 <section id="X-Symbol"><title>X-Symbol</title>
 <para>
-X-Symbol is an &xemacs package that allows ASCII strings to encode non-ASCII
+X-Symbol is an &xemacs; package that allows ASCII strings to encode non-ASCII
 symbols. &Specware; files contain the ASCII strings, but when displayed
 in an XEmacs window with X-Symbol mode, the special symbol is shown. For example, the
 &Specware; symbol [[\_forall]] is displayed as &forall; and [[\_or]] is
@@ -534,9 +541,8 @@ processed as formal text.
 A `block-comment can not contain a `line-end-comment and
 vice versa: whichever starts first has ``the right of
 way''.
-For example, [[(* 100 % or more! *)]] is a `block-comment
-with `block-comment-body 
-[[ 100 % or more! ]].
+For example, [[ (* 100 % or more! *) ]] is a `block-comment
+with `block-comment-body [[ 100 % or more! ]].
 The [[%]] here is a mark like any
 other; it does not introduce a `line-end-comment.
 Conversely, in the `line-end-comment [[% op <*> stands for (*)]]
@@ -684,7 +690,7 @@ and the `unit-definition it contributes to the project is
 ||
 ||`path-mark ::=
 ||    `letter | `decimal-digit
-||  | ! | $ | & | '' | + | -
+||  | ! | $ | &amp; | '' | + | -
 ||  | = | @ | ^ | ` | ~ | .
 >>
 `Unit-identifiers are used to identify `unit-terms,
@@ -1586,7 +1592,7 @@ Sample `import-declaration:
 </para>
 <!-- ================================================================= -->
 <para>
-An `import-declaration of the form [[import ]]$S$<subscript>1</subscript>[[, ]]...[[, ]]$S<subscript>n</subscript>$, where $n$ > 1, is equivalent to the
+An `import-declaration of the form [[import ]]$S$<subscript>1</subscript> [[, ]] ... [[, ]] $S$<subscript>n</subscript>, where [[$n$ > 1]], is equivalent to the
 sequence of `import-declarations
 [[
 ||    import $S<subscript>1</subscript>$
@@ -1868,7 +1874,7 @@ Sample `op-declarations:
 ||  op [a,b,c] o infixl 24 :         (b -> c) * (a -> b) -> a -> c
 ||  op         o infixl 24 : [a,b,c] (b -> c) * (a -> b) -> a -> c
 ||
-||  op f (s : String) ((i, j) : Nat * Nat | i < j) (c : Char) : String = 
+||  op f (s : String) ((i, j) : Nat * Nat | i &lt; j) (c : Char) : String = 
 ||    substring (s, i, j) ^ toString c
 ]]
 The placement of a `type-variable-binder, if present, is of no
@@ -1886,10 +1892,10 @@ the `formal-parameter [[(($P$):{($P$):$T$|$E$})]], in which $T$ is a
 If no such `type-descriptor exists, or its type cannot be unambiguously
 be determined, the `formal-parameter is type-incorrect.
 For example, in the `declaration for [[f]] above, the `formal-parameter
-[[((i, j) : Nat * Nat | i < j)]] is a shorthand notation for
-[[(((i, j) : Nat * Nat) : {(((i, j) : Nat * Nat) : Nat * Nat | i < j)})]],
+[[((i, j) : Nat * Nat | i&lt;j)]] is a shorthand notation for
+[[(((i, j) : Nat * Nat) : {(((i, j) : Nat * Nat) : Nat * Nat | i&lt;j)})]],
 which can be simplified to
-[[((i, j) : {((i, j) : Nat * Nat | i < j)})]].
+[[((i, j) : {((i, j) : Nat * Nat | i&lt;j)})]].
 </para >
 <para>
 Restriction.  
@@ -1920,7 +1926,7 @@ are further irrelevant for its type.
 For example, the `op-declaration of [[f]] above is equivalent
 to the following:
 [[
-||  op  f : String -> {(i, j) : Nat * Nat | i < j} -> Char -> String 
+||  op  f : String -> {(i, j) : Nat * Nat | i&lt;j} -> Char -> String 
 ||  def f s (i, j) c = substring (s, i, j) ^ toString c
 ]]
 in which the `type-annotations in the `op-definition have been omitted
@@ -2334,7 +2340,7 @@ Sample `claim-declarations:
 ||
 ||    conjecture pivot_hold is
 ||      let p = pivot hold in
-||        fa (n : {n : Nat | n < p}) ~(hold n = hold p)
+||        fa (n : {n : Nat | n&lt;p}) ~(hold n = hold p)
 ]]
 `Proof-scripts are currently only available for use with Isabelle, and
 are not described here. For further details, see the
@@ -3114,7 +3120,7 @@ three inhabitants.
 ||
 ||`inbuilt-prefix-op ::=  ~
 ||
-||`inbuilt-infix-op ::=  <=>  |  =>  |  '|'|  |  &&  |  =  |  ~=  |  <<
+||`inbuilt-infix-op ::=  <=>  |  =>  |  '|'|  |  &amp;  |  =  |  ~=  |  <<
 >>
 (The distinctions `tight- and `closed- for `expressions lack
 semantic significance, and merely serve the purpose of avoiding
@@ -3128,7 +3134,7 @@ Sample `expressions:
 ||    case z of {re = x, im = y} -> {re = x, im = -y}
 ||    let x = x + 1 in f(x, x)
 ||    if x <= y then x else y
-||    fa(x,y) (x <= y)  <=>  ((x < y) or (x = y))
+||    fa(x,y) (x <= y)  <=>  ((x&lt;y) or (x = y))
 ||    f(x, x)
 ||    [] : List Arg
 ||    abs(x-y)
@@ -3368,7 +3374,7 @@ The value of an `if-expression
 Sample `quantifications:
 [[
 ||    fa(x) norm (norm x) = norm x
-||    ex(e : M) fa(x : M) x <*> e = x & e <*> x = x
+||    ex(e : M) fa(x : M) x <*> e = x &amp; e <*> x = x
 ]]
 Restriction.
 Each `local-variable of the `local-variable-list must
@@ -3603,7 +3609,7 @@ pseudo-`op-declarations:
 ||op <=> infixr 12 : Boolean * Boolean -> Boolean 
 ||op =>  infixr 13 : Boolean * Boolean -> Boolean 
 ||op ||  infixr 14 : Boolean * Boolean -> Boolean 
-||op &&  infixr 15 : Boolean * Boolean -> Boolean 
+||op &amp;&amp;  infixr 15 : Boolean * Boolean -> Boolean 
 ||op =   infixr 20 : [a]   a * a       -> Boolean 
 ||op ~=  infixr 20 : [a]   a * a       -> Boolean 
 ||op <<  infixl 25 : {$x$:$A$, ... , $y$:$B$, ...} * {$x$:$A$, ... , $z$:$C$, ...}
@@ -3651,7 +3657,7 @@ The meaning of `infix-application [[$P$ || $Q$]], in which $P$ and $Q$ are
 `if-expression [[if $P$ then true else $Q$]].
 </para>
 <para>
-The meaning of `infix-application [[$P$ && $Q$]], in which $P$ and $Q$ are
+The meaning of `infix-application [[$P$ &amp;&amp; $Q$]], in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then $Q$ else false]].
 </para>
@@ -3748,7 +3754,7 @@ take precedence over the left-hand side when present in both.
 %%%[[restrict posNat? (n+1)]] has type
 %%%[[PosNat]].
 %%%The proof obligation here is that, in the context,
-%%%[[(n+1) > 0]].
+%%%[[(n+1)&gt;0]].
 %%%</para>
   %%====================================================================%%
 %%%<para>
@@ -3869,7 +3875,7 @@ The value of a `literal is independent of the environment.
 For nonnegative integers, a `nat-literal can be used.
 For negative integers, apply the unary base-library `op [[-]], which
 negates an integer:
-[[-1]] denote the negative integer [[-]]1.)
+[[-1]] denote the negative integer [[-]] 1.)
 </para>
 <!-- ***************************************************************** -->
 <section id="Boolean-literals"><title>Boolean-literals</title>
@@ -3889,11 +3895,6 @@ the values of [[true]] and [[false]].
 <para>
 Note that [[true]] and [[false]] are not `constructors.
 So [[embed true]] is ungrammatical.
-</para>
-<para>
-[[
-||
-]]
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3975,8 +3976,8 @@ the &Specware; Shell command [[show Ned]] will print as
 ||  | `other-char-glyph
 ||
 ||`other-char-glyph ::=
-||    ! | : | @ | # | $ | % | ^ | & | * | ( | ) | _ | - | + | =
-||  | '| | ~ | ` | . | , | < | > | ? | / | ; | '' | '[ | '] | '{ | '}
+||    ! | : | @ | # | $ | % | ^ | &amp; | * | ( | ) | _ | - | + | =
+||  | '| | ~ | ` | . | , |&lt;|&gt;| ? | / | ; | '' | '[ | '] | '{ | '}
 ||  | \\ | \"
 ||  | \a | \b | \t | \n | \v | \f | \r | \s
 ||  | \x `hexadecimal-digit `hexadecimal-digit
@@ -4036,14 +4037,14 @@ the actual effect may depend on the operating environment:
 <tbody>
 <row><entry>[[    ]]</entry><entry>glyph</entry><entry>decimal</entry><entry>`name</entry></row>
 <row><entry>[[]]</entry><entry>[[]]</entry><entry>[[]]</entry><entry>[[]]</entry></row>
-<row><entry>[[]]</entry><entry>[[ \a]]</entry><entry>&nbsp;&nbsp;&nbsp;7</entry><entry>bell</entry></row>
-<row><entry>[[]]</entry><entry>[[ \b]]</entry><entry>&nbsp;&nbsp;&nbsp;8</entry><entry>backspace</entry></row>
-<row><entry>[[]]</entry><entry>[[ \t]]</entry><entry>&nbsp;&nbsp;&nbsp;9</entry><entry>horizontal tab</entry></row>
-<row><entry>[[]]</entry><entry>[[ \n]]</entry><entry>&nbsp;&nbsp;10</entry><entry>newline</entry></row>
-<row><entry>[[]]</entry><entry>[[ \v]]</entry><entry>&nbsp;&nbsp;11</entry><entry>vertical tab</entry></row>
-<row><entry>[[]]</entry><entry>[[ \f]]</entry><entry>&nbsp;&nbsp;12</entry><entry>form feed</entry></row>
-<row><entry>[[]]</entry><entry>[[ \r]]</entry><entry>&nbsp;&nbsp;13</entry><entry>return</entry></row>
-<row><entry>[[]]</entry><entry>[[ \s]]</entry><entry>&nbsp;&nbsp;32</entry><entry>space</entry></row>
+<row><entry>[[]]</entry><entry>[[ \a]]</entry><entry> &nbsp; &nbsp; &nbsp; 7</entry><entry>bell</entry></row>
+<row><entry>[[]]</entry><entry>[[ \b]]</entry><entry> &nbsp; &nbsp; &nbsp; 8</entry><entry>backspace</entry></row>
+<row><entry>[[]]</entry><entry>[[ \t]]</entry><entry> &nbsp; &nbsp; &nbsp; 9</entry><entry>horizontal tab</entry></row>
+<row><entry>[[]]</entry><entry>[[ \n]]</entry><entry> &nbsp; &nbsp; 10</entry><entry>newline</entry></row>
+<row><entry>[[]]</entry><entry>[[ \v]]</entry><entry> &nbsp; &nbsp; 11</entry><entry>vertical tab</entry></row>
+<row><entry>[[]]</entry><entry>[[ \f]]</entry><entry> &nbsp; &nbsp; 12</entry><entry>form feed</entry></row>
+<row><entry>[[]]</entry><entry>[[ \r]]</entry><entry> &nbsp; &nbsp; 13</entry><entry>return</entry></row>
+<row><entry>[[]]</entry><entry>[[ \s]]</entry><entry> &nbsp; &nbsp; 32</entry><entry>space</entry></row>
 </tbody>
 </tgroup>
 </informaltable>
@@ -5035,7 +5036,7 @@ Each `local-variable in a `pattern must be a different
 `simple-name, disregarding any `local-variables introduced in
 `expressions or `type-descriptors contained in the `pattern.
 (For example, [[Line (z, z)]] is not a lawful `pattern,
-since [[z]] is repeated; but [[n : {n : Nat | n < p}]]
+since [[z]] is repeated; but [[n : {n : Nat | n&lt;p}]]
 is lawful: the second [[n]] is ``shielded'' by
 the `type-comprehension in which it occurs.)
 </para>
@@ -5107,10 +5108,13 @@ any `simple-name that does not already occur in the `spec, directly or
 indirectly through an import.
 For example, assuming that the `simple-name [[v7944]]
 is fresh, a tame variant of
+
 [[
 ||    s0 as _ :: s1 as (Push {top, pop = rest}) :: ss
 ]]
+
 is
+
 [[
 ||    s0 as v7944 :: s1 as (Push {top = top, pop = rest}) :: ss
 ]]
@@ -5238,7 +5242,7 @@ Test constructs used
 
 At Semantics: transformational semantics.
 
-Relationship choose & quotient?
+Relationship choose &amp; quotient?
 
 **********************************************************************
 

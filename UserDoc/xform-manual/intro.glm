@@ -23,7 +23,7 @@ the operation of the &XShell;.
 
 <para>
 &SpecwareV; has a new construct in its ``spec calculus'' fragment of
-&Metaslang, not yet documented in the language manual.
+&Metaslang;, not yet documented in the language manual.
 To the productions of `spec-term, add a new construct `spec-transformation, with grammar
 rule:
 <<
