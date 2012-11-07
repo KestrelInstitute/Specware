@@ -30,7 +30,10 @@ consistency with specs StateMonads and ExceptionMonads.
 
 StateExceptionMonad qualifying spec
 
-  import /Library/General
+% These don't seem needed:
+%  import /Library/General/Order
+%  import /Library/General/FiniteMap
+%  import /Library/General/Assert
 
   type Result (exc, a) =
     | RETURN a
