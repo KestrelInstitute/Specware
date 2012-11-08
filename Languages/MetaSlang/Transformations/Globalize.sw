@@ -489,7 +489,7 @@ Globalize qualifying spec
           let new_dfn = Lambda (new_rules, noPos) in
           let _ = if tracing? then
                     let _ = writeLine ""                          in
-                    let _ = writeLine ("Globalizing init fn " ^ show global_init_name) in
+                    let _ = writeLine ("Globalize:  changing init fn " ^ show global_init_name) in
                     let _ = writeLine (printTerm old_dfn)         in
                     let _ = writeLine "  => "                     in
                     let _ = writeLine (printTerm new_dfn)         in
@@ -704,7 +704,49 @@ Globalize qualifying spec
   in
   subst template
 
+ op reviseProjectionUpdates (lhs : MSTerm, rhs : MSTerm) : MSTerm =
+  % let _ = writeLine("  Maybe projection update: " ^ printTerm lhs ^ " = " ^ printTerm rhs) in
+  let 
+    def makeProjectionUpdate (x, field_id, v) =
+      let proj_type = Arrow (termType x, termType v, noPos) in
+      let new_lhs   = Apply (Fun (Project field_id, proj_type, noPos), lhs, noPos) in
+      % let _ = writeLine("Revised projection update: " ^ printTerm new_lhs ^ " = " ^ printTerm v) in
+      makeSetf (new_lhs, v)
+  in
+  case rhs of
+    | Apply (Fun (RecordMerge, _, _), 
+             Record ([("1", access_tm),
+                      ("2", value as Record (new_value_pairs, _))],
+                     _),
+             _)
+      | equalTerm? (lhs, access_tm)
+      ->
+      (case new_value_pairs of
+         | [(x, v)] -> 
+           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+           %% setf (foo, foo << {x = v})
+           %%  =>
+           %% setf (foo.x, v)
+           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+           makeProjectionUpdate (access_tm, x, v)
+         | _ -> 
+           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+           %% setf (foo, foo << {x = v, y = w})
+           %%  =>
+           %% seq (setf (foo.x, v), setf(foo.y, w))
+           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+           Seq (map (fn (x, v) -> 
+                       makeProjectionUpdate (access_tm, x, v)) 
+                  new_value_pairs, 
+                noPos))
+    | _ ->
+      % let _ = writeLine("not a projection update") in
+      makeSetf (lhs, rhs)
+
  op reviseUpdate (context : Context, lhs : MSTerm, rhs : MSTerm) : MSTerm =
+  % first check to see if this update matches some setter/getter pair
+  % let _ = writeLine ("") in
+  % let _ = writeLine ("         revise update: " ^ printTerm lhs ^ " = " ^ printTerm rhs) in
   case updateAndArgs rhs of
     | Some (update_op_name, update, set_container, set_indices, new_value) ->
       (case new_value of
@@ -756,6 +798,11 @@ Globalize qualifying spec
                % let _ = writeLine ("reviseUpdate: update template = " ^ printTerm setf_pair.update_template) in
                (case makeVarBindings (setf_pair.update_template, rhs) of
                   | Some bindings ->
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    %% setf (container, update(container,index,v))
+                    %%  =>
+                    %% setf (access(container, index), v)
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % let _ = app (fn (x, y)->  writeLine ("reviseUpdate: pair = " ^ printTerm x ^ " -- " ^ printTerm y)) bindings in
                     % let _ = writeLine ("reviseUpdate: setf template = " ^ printTerm setf_pair.setf_template) in
                     let setf_term = reviseTemplate (setf_pair.setf_template, bindings) in
@@ -767,7 +814,12 @@ Globalize qualifying spec
              | _ ->
                makeSetf (lhs, rhs))
     | _ -> 
-     makeSetf (lhs, rhs)
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      %% setf (foo, foo << {foo,x = v})
+      %%  =>
+      %% setf (foo.x, v)
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      reviseProjectionUpdates (lhs, rhs)
 
  op makeVarBindings (template : MSTerm, tm : MSTerm) : Option (List (MSTerm * MSTerm)) =
   % let _ = writeLine("makeVarBindings: template = " ^ printTerm template) in
@@ -1454,12 +1506,12 @@ Globalize qualifying spec
       | Changed new_dfn -> 
         let new_info = old_info << {dfn = new_dfn} in
         let _ = if context.tracing? then
-                  let _ = writeLine ""                          in
-                  let _ = writeLine ("Globalizing " ^ show qid) in
-                  let _ = writeLine (printTerm old_dfn)         in
-                  let _ = writeLine "  => "                     in
-                  let _ = writeLine (printTerm new_dfn)         in
-                  let _ = writeLine ""                          in
+                  let _ = writeLine ""                                    in
+                  let _ = writeLine ("Globalize: changing " ^ show qid) in
+                  let _ = writeLine (printTerm old_dfn)                   in
+                  let _ = writeLine "  => "                               in
+                  let _ = writeLine (printTerm new_dfn)                   in
+                  let _ = writeLine ""                                    in
                   ()
                 else
                   ()
@@ -1471,12 +1523,12 @@ Globalize qualifying spec
         let new_dfn  = context.global_var in
         let new_info = old_info << {dfn = new_dfn} in
         let _ = if context.tracing? then
-                  let _ = writeLine ""                          in
-                  let _ = writeLine ("Globalizing " ^ show qid) in
-                  let _ = writeLine (printTerm old_dfn)         in
-                  let _ = writeLine "  => "                     in
-                  let _ = writeLine (printTerm new_dfn)         in
-                  let _ = writeLine ""                          in
+                  let _ = writeLine ""                                    in
+                  let _ = writeLine ("Globalize: changing " ^ show qid) in
+                  let _ = writeLine (printTerm old_dfn)                   in
+                  let _ = writeLine "  => "                               in
+                  let _ = writeLine (printTerm new_dfn)                   in
+                  let _ = writeLine ""                                    in
                   ()
                 else
                   ()
@@ -1485,7 +1537,7 @@ Globalize qualifying spec
 
       | Unchanged -> 
         let _ = if context.tracing? then
-                  writeLine("Globalizing: no change to " ^ show qid)
+                  writeLine("Globalize: no change to " ^ show qid)
                 else
                   ()
         in
