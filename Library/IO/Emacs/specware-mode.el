@@ -1480,7 +1480,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 		 (lisp-or-specware-command
 		  ":swpath " "path "
 		  (if (member oldpath '(nil NIL)) "" oldpath)
-		  (if (or (eq window-system 'mswindows) cygwin?) ";" ":")
+		  (if (or (eq window-system 'mswindows) (eq window-system 'w32) cygwin?) ";" ":")
 		  (car head-dir-uid))
 		 (sleep-for 0.1)	; Just to avoid confusing output
 		 (return (cdr head-dir-uid))))))
