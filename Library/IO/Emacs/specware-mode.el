@@ -1419,7 +1419,7 @@ STRING should be given if the last search was by `string-match' on STRING."
 
 (defun get-swpath ()
   (let ((rawpath (or (sw:eval-in-lisp "(cl-user::get-swpath)") ""))
-	(delim (if (or (eq window-system 'mswindows) cygwin?) ?\; ?:))
+	(delim (if (or (eq window-system 'mswindows) (eq window-system 'w32) cygwin?) ?\; ?:))
 	(result ())
 	(specware4 (sw:eval-in-lisp "(Specware::getenv \"SPECWARE4\")"))
 	pos)
@@ -2449,7 +2449,8 @@ With an argument, it doesn't convert imports."
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
 
-(let ((path (format (if (eq window-system 'mswindows) "\"-i.;%s/Library/Haskell\"" "-i.:%s/Library/Haskell")
+(let ((path (format (if (or (eq window-system 'mswindows) (eq window-system 'w32))
+                        "\"-i.;%s/Library/Haskell\"" "-i.:%s/Library/Haskell")
                     (replace-in-string (getenv "SPECWARE4") "\\\\" "/"))))
   (unless (boundp 'haskell-ghci-program-args)
     (setq haskell-ghci-program-args nil))
