@@ -166,9 +166,9 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
           then let rem_cjs = filter (fn cj -> ~(termIn?(cj, lift_cjs))) cjs in
                Some(mkSimpConj(lift_cjs ++ [transEx1(vs, rem_cjs, a)]))
         else
-        case findLeftmost (fn cj -> some?(bindEquality (cj, vs))) cjs of
+        case findLeftmost (fn cj -> some?(bindEquality(cj, vs, true))) cjs of
           | Some cj -> 
-            (case bindEquality(cj, vs) of
+            (case bindEquality(cj, vs, true) of
                | Some (svs, v_tm, s_tm) ->
                  let new_vs = filter (fn v -> ~(inVars?(v, svs))) vs in
                  let Some v_pat = termToPattern v_tm in

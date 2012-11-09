@@ -395,7 +395,7 @@ spec
         simplifyForall spc (new_vs ++ vs, eq_tm :: let_body :: new_conds ++ delete cj cjs , bod)
       | _ ->
     case findLeftmost (fn cj ->
-                         case bindEquality (cj,vs) of
+                         case bindEquality (cj,vs,false) of
                            | None -> false
                            | Some([v],_,e) ->
                              simpleOrConstrTerm? e
@@ -408,7 +408,7 @@ spec
                            | _ -> false)
            cjs
       of Some cj ->
-	 (case bindEquality (cj,vs) of
+	 (case bindEquality (cj,vs,false) of
 	    | Some (([sv as (_, sv_ty)], _, s_tm)) ->
 	      let sbst = [(sv, s_tm)] in
               % let sv_ty = raiseSubtypeFn(sv_ty, spc) in
@@ -425,9 +425,9 @@ spec
 		 simpSubstitute(spc,bod,sbst)))
        | _ ->
         %% x = f y && p(f y) => q(f y) --> x = f y && p x => q x
-        let bind_cjs = filter (fn cj -> case bindEquality(cj,vs) of Some([_], _, _) -> true | _ -> false) cjs in
+        let bind_cjs = filter (fn cj -> case bindEquality(cj,vs,false) of Some([_], _, _) -> true | _ -> false) cjs in
         let (cjs, bod) = List.foldl (fn ((cjs, bod), cj) ->
-                                  let Some ([v], _, e) = bindEquality (cj,vs) in
+                                  let Some ([v], _, e) = bindEquality (cj,vs,false) in
                                   let sb = [(v, e)] in
                                   (map (fn cji -> if cj = cji then cji
                                                    else invertSubst(cji, sb))
@@ -525,8 +525,9 @@ spec
     % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
     result
 
-  op  bindEquality: MSTerm * Vars -> Option(Vars * MSTerm * MSTerm)
-  def bindEquality (t, vs) =
+  op  bindEquality: MSTerm * Vars * Bool -> Option(Vars * MSTerm * MSTerm)
+  def bindEquality (t, vs, rhs_free?: Bool) =
+    %% rhs_free? means that we require the expression that the variables is equal to not have any refs to other vs
     let def exprOfVs(e: MSTerm): Option Vars =
           case e of
             | Var(v, _) | inVars?(v, vs) -> Some [v]
@@ -544,10 +545,10 @@ spec
     case t of
       | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
         (case exprOfVs e1 of
-           | Some bvs | disjointVars?(vs, freeVars e2) -> Some(bvs, e1, e2)
+           | Some bvs | disjointVars?(if rhs_free? then vs else bvs, freeVars e2) -> Some(bvs, e1, e2)
            | _ ->
          case exprOfVs e2 of
-           | Some bvs | disjointVars?(vs, freeVars e1) -> Some(bvs, e2, e1)
+           | Some bvs | disjointVars?(if rhs_free? then vs else bvs, freeVars e1) -> Some(bvs, e2, e1)
            | _ -> None)
       | _ -> None
 
