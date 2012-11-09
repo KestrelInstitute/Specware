@@ -404,7 +404,8 @@ spec
                                in
                                  num_refs - 1 = 1 % This one and the one we want to replace
                                                                || embed? Record e
-                                                                  && num_refs - 1 = countDeReferencesIn(v, Cons(bod, cjs))))
+                                                                  && num_refs - 1 = countDeReferencesIn(v, Cons(bod, cjs)))
+                           | _ -> false)
            cjs
       of Some cj ->
 	 (case bindEquality (cj,vs) of
