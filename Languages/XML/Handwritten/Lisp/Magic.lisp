@@ -66,15 +66,19 @@
 
 ;;; Misc Casts
 
-(defun magicCastToBoolean (x) x)
-(defun magicCastToInteger (x) x)
+;(defun magicCastToBoolean (x) x)
+(defun magicCastToBool (x) x)
+;(defun magicCastToInteger (x) x)
+(defun magicCastToInt (x) x)
 (defun magicCastToString  (x) x)
 (defun magicCastToChar    (x) x)
 (defun magicCastToList    (x) x)
 (defun magicCastToOption  (x) x)
 
-(defun magicCastFromBoolean (x) x)
-(defun magicCastFromInteger (x) x)
+;(defun magicCastFromBoolean (x) x)
+(defun magicCastFromBool (x) x)
+;(defun magicCastFromInteger (x) x)
+(defun magicCastFromInt (x) x)
 (defun magicCastFromString  (x) x)
 (defun magicCastFromChar    (x) x)
 (defun magicCastFromList    (x) x)
