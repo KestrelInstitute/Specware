@@ -397,7 +397,7 @@ spec
     case findLeftmost (fn cj ->
                          case bindEquality (cj,vs) of
                            | None -> false
-                           | Some(v,e) ->
+                           | Some([v],_,e) ->
                              simpleOrConstrTerm? e
                            || (let num_refs = foldl (fn (r,cji) -> r + countVarRefs(cji,v))
                                  (countVarRefs(bod,v)) cjs
@@ -408,8 +408,8 @@ spec
            cjs
       of Some cj ->
 	 (case bindEquality (cj,vs) of
-	    | Some (pr as (sv as (_, sv_ty), s_tm)) ->
-	      let sbst = [pr] in
+	    | Some (([sv as (_, sv_ty)], _, s_tm)) ->
+	      let sbst = [(sv, s_tm)] in
               % let sv_ty = raiseSubtypeFn(sv_ty, spc) in
               let pred_tm = case subtypeComps(spc, sv_ty) of
                               | Some(_, pred) -> simplifiedApply(pred, s_tm, spc)
@@ -424,13 +424,14 @@ spec
 		 simpSubstitute(spc,bod,sbst)))
        | _ ->
         %% x = f y && p(f y) => q(f y) --> x = f y && p x => q x
-        let bind_cjs = filter (fn cj -> some?(bindEquality(cj,vs))) cjs in
-        let (cjs, bod) = foldl (fn ((cjs, bod), cj) ->
-                                  let Some bnd = bindEquality (cj,vs) in
+        let bind_cjs = filter (fn cj -> case bindEquality(cj,vs) of Some([_], _, _) -> true | _ -> false) cjs in
+        let (cjs, bod) = List.foldl (fn ((cjs, bod), cj) ->
+                                  let Some ([v], _, e) = bindEquality (cj,vs) in
+                                  let sb = [(v, e)] in
                                   (map (fn cji -> if cj = cji then cji
-                                                   else invertSubst(cji, [bnd]))
+                                                   else invertSubst(cji, sb))
                                      cjs,
-                                   invertSubst(bod, [bnd])))
+                                   invertSubst(bod, sb)))
                            (cjs, bod) bind_cjs
         in
         let cjs = simplifyConjuncts cjs in
@@ -523,16 +524,30 @@ spec
     % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
     result
 
-  op  bindEquality: MSTerm * List Var -> Option(Var * MSTerm)
+  op  bindEquality: MSTerm * Vars -> Option(Vars * MSTerm * MSTerm)
   def bindEquality (t, vs) =
+    let def exprOfVs(e: MSTerm): Option Vars =
+          case e of
+            | Var(v, _) | inVars?(v, vs) -> Some [v]
+            | Record((_, t1) :: r_binds, _) ->
+              foldl (fn (result, (_, s_tm)) ->
+                       case result of
+                         | None -> None
+                         | Some vs1 ->
+                       case exprOfVs s_tm of
+                         | Some vs2 | disjointVars?(vs1, vs2) -> Some (vs1 ++ vs2)
+                         | _ -> None)
+                (exprOfVs t1) r_binds
+            | _ -> None
+    in
     case t of
       | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
-        (case e1 of
-	  | Var(v, _) | inVars?(v, vs) && ~(isFree(v, e2)) -> Some(v, e2)
-	  | _ ->
-	 case e2 of
-	  | Var(v, _) | inVars?(v, vs) && ~(isFree(v, e1)) -> Some(v, e1)
-	  | _ -> None)
+        (case exprOfVs e1 of
+           | Some bvs | disjointVars?(vs, freeVars e2) -> Some(bvs, e1, e2)
+           | _ ->
+         case exprOfVs e2 of
+           | Some bvs | disjointVars?(vs, freeVars e1) -> Some(bvs, e2, e1)
+           | _ -> None)
       | _ -> None
 
   op  simplifyExists: Spec -> List Var * List MSTerm -> MSTerm
