@@ -600,12 +600,22 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   op [a] funString(f: AFun a): Option String =
     case f of
       | Op(Qualified(_, s), _) -> Some s
+      | Not -> Some "~"
       | And -> Some "&&"
       | Or -> Some "||"
       | Implies -> Some "=>"
       | Iff -> Some "<=>"
       | Equals -> Some "="
       | NotEquals -> Some "~="
+      | Quotient _ -> Some "quotient"
+      | Choose _ -> Some "choose"
+      | Restrict -> Some "restrict"
+      | Relax -> Some "relax"
+      | Project fld_nm -> Some fld_nm
+      | RecordMerge -> Some "<<"
+      | Embed _ -> Some "embed"
+      | Embedded _ -> Some "embedded"
+      | Select _ -> Some "select"
       | _ -> None
 
    op [a] searchPred(s: String): ATerm a -> Bool =
