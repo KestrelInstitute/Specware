@@ -437,6 +437,10 @@ aren't are removed from the environment.
       | [] -> return ()
       | unitId::rest ->
         {removeFromGlobalContext unitId;
-         removeUIDsFromCache rest}
-    
+         case unitId of
+           | {path = path as _::_, hashSuffix = None} ->
+	     %% Consider .../foo could be abbreviation for .../foo#foo
+	     removeUIDsFromCache({path = path, hashSuffix = lastElt path} :: rest)
+           | _ -> removeUIDsFromCache rest}
+
 end-spec
