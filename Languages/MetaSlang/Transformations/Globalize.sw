@@ -299,8 +299,8 @@ Globalize qualifying spec
         | _ -> 
           (0, [])
   in
-  conflictingGlobalRefs all_refs
- 
+  conflictingGlobalRefs all_refs 
+      
  %% ================================================================================
 
  op nullTerm : MSTerm    = Record  ([], noPos)
@@ -1439,6 +1439,93 @@ Globalize qualifying spec
   in
   field_type
 
+ op deconflict (context     : Context, 
+                global_vars : MSVarNames, 
+                conflicts   : ConflictingRefs, 
+                term        : MSTerm) 
+  : MSTerm =
+  let
+    def aux (n, tm) =
+      let grefs = globalRefsIn context global_vars tm in
+      if (exists? (fn (var, field) -> 
+                     exists? (fn (mode, v, f) -> 
+                                mode = Access && v = var && f = field) 
+                             grefs)
+                  conflicts)
+         &&
+         ~ (exists? (fn (var, field) -> 
+                       exists? (fn (mode, v, f) -> 
+                                  mode = Update && v = var && f = field) 
+                               grefs)
+                    conflicts)
+        then
+          let new_vname = "deconflict_" ^ show n in
+          let new_vtype = termType tm in
+          let new_var   = (new_vname, new_vtype) in
+          Some (VarPat (new_var, noPos),
+                Var    (new_var, noPos))
+      else
+        None
+  in
+  case term of
+    | Apply (Fun (RecordMerge, _, _), _, _) ->
+      term
+
+    | Apply (x, y, _) -> 
+      let (xbindings, x) = case aux (0, x) of
+                             | Some (pat, var) -> ([(pat, x)], var)
+                             | _ ->               ([],         x)
+      in
+      let (ybindings, y) = case aux (1, y) of
+                             | Some (pat, var) -> ([(pat, y)], var)
+                             | _ ->               ([],         y)
+      in
+      let bindings = xbindings ++ ybindings in
+      (case bindings of
+         | [] -> term
+         | _ ->
+           Let (bindings, Apply (x, y, noPos), noPos))
+
+    | Record (fields, _) -> 
+      let (n, bindings, fields) = 
+          foldl (fn ((n, bindings, fields), field as (id, tm)) ->
+                   case aux (n, tm) of
+                     | Some (pat, var) ->
+                       (n+1,
+                        bindings ++ [(pat, tm)],
+                        fields   ++ [(id, var)])
+                     | _ ->
+                       (n, bindings, fields  ++ [field]))
+                (0, [], [])
+                fields
+      in
+      (case bindings of
+         | [] -> term
+         | _ ->
+           Let (bindings, Record (fields, noPos), noPos))
+
+    | Seq (tms, _) -> 
+      let _ = writeLine("Seq Term = " ^ printTerm term) in
+      let (_, bindings, tms) =
+          foldl (fn ((n, bindings, tms), tm) -> 
+                   case aux (n, tm) of
+                     | Some (pat, var) ->
+                       (n + 1,
+                        bindings ++ [(pat, tm)],
+                        tms      ++ [var])
+                     | _ ->
+                       (n, bindings, tms ++ [tm]))
+                (0, [], [])
+                tms
+      in
+      (case bindings of
+         | [] -> term
+         | _ ->
+           Let (bindings, Seq (tms, noPos), noPos))
+      
+     | _ -> 
+       term
+
  op globalizeTerm (context        : Context)
                   (vars_to_remove : MSVarNames)  % vars of global type, remove on sight
                   (substitutions  : MSSubstitutions) % tm -> varname
@@ -1465,12 +1552,14 @@ Globalize qualifying spec
   let (term, conflicts) = case conflicts of
                             | [] -> (term, [])
                             | _ ->
-                              let _ = writeLine("Before: " ^ printTerm term) in
-                              let _ = writeLine("        " ^ anyToString conflicts) in
-                              let term      = abstractCommonSubExpressions (term, context.spc) in
-                              let conflicts = conflictingGlobalRefsIn context vars_to_remove term in
-                              let _ = writeLine("After: " ^ printTerm term) in
-                              let _ = writeLine("       " ^ anyToString conflicts) in
+                              %% introduce lets to linearize accesses before updates in parallel terms
+                              let term      = deconflict (context, vars_to_remove, conflicts, term) in
+                              % let _ = writeLine("Before: " ^ printTerm term) in
+                              % let _ = writeLine("        " ^ anyToString conflicts) in
+                              let term      = abstractCommonSubExpressions (term, context.spc)      in
+                              let conflicts = conflictingGlobalRefsIn context vars_to_remove term   in
+                              % let _ = writeLine("After: " ^ printTerm term) in
+                              % let _ = writeLine("       " ^ anyToString conflicts) in
                               (term, conflicts)
   in
   let substitutions = map (fn (var_id, field_id) ->
