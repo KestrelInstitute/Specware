@@ -210,36 +210,38 @@ Globalize qualifying spec
  
  %% ================================================================================
 
- op conflictingGlobalRefs (all_refs : List (Nat * GlobalRefs)) 
-  : ConflictingRefs =
-  foldl (fn (pairs, (i, xrefs)) ->
-           foldl (fn (pairs, (r1, v1, f1)) ->
+ op conflictingGlobalRefs (global_refs : List (Nat * GlobalRefs)) : ConflictingRefs =
+  foldl (fn (result, (n1, grefs1)) ->
+           foldl (fn (result, (mode1, var1, field1)) ->
                     % for a conflict, at least one ref must be an update
-                    if r1 = Update then 
-                      foldl (fn (pairs, (j, yrefs)) ->
-                               if i = j then
-                                 pairs
+                    if mode1 = Update then 
+                      foldl (fn (result, (n2, grefs2)) ->
+                               if n1 = n2 then 
+                                 % refs in the same context don't conflict
+                                 result
                                else
-                                 foldl (fn (pairs, (_, v2, f2)) ->
-                                          % the matching ref can be access or update
-                                          if v2 = v1 && f2 = f1 then 
-                                            let new_pair = (v1, f1) in
-                                            if new_pair in? pairs then
-                                              pairs
+                                 % refs in parallel contexts conflict,
+                                 % whether access or update 
+                                 foldl (fn (result, (_, var2, field2)) ->
+                                          if var1 = var2 && field1 = field2 then 
+                                            let conflicting_ref = (var1, field1) in
+                                            % ignore duplicate conflicts
+                                            if conflicting_ref in? result then
+                                              result
                                             else
-                                              pairs ++ [new_pair]
+                                              result ++ [conflicting_ref]
                                           else
-                                            pairs)
-                                       pairs
-                                       yrefs)
-                            pairs
-                            all_refs
+                                            result)
+                                       result
+                                       grefs2)
+                            result
+                            global_refs
                     else
-                      pairs)
-                 pairs
-                 xrefs)
+                      result)
+                 result
+                 grefs1)
         []
-        all_refs
+        global_refs
 
  %% ================================================================================
 
@@ -247,6 +249,18 @@ Globalize qualifying spec
                             (global_vars : MSVarNames)
                             (term        : MSTerm) 
   : ConflictingRefs =
+
+  % The numbers used here indicate branching or parallel contexts.
+  % Specware does not specify an evaluation order, so evaluation of anything in one 
+  % context could preceed or follow evaluation of anything else in another context.
+  % Thus to avoid indeterminate results, we must avoid an update to a global field 
+  % in one context and a reference (either update or access) in some other context.
+
+  % This code is invoked by globalizeTerm, which is invoked on every term, including
+  % the subterms of this term.  Thus we only need to deconflict contexts created at 
+  % the top level of this term, as each subterm will be separately deconflicted when
+  % globalTerm is called on it.
+
   let (_, all_refs) =
       case term of
         | Apply (Fun (RecordMerge, _, _), 
