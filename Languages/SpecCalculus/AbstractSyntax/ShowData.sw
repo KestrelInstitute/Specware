@@ -1208,7 +1208,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 %		    ppString "]"
 		    ppString ")"
                     ]
-      | Any(_) -> ppString "Any"
+      | Any(_) -> ppString "AnyTerm"
 
       | TypedTerm (tm,ty,_) ->
 	  ppGr2Concat [ppString "(TypedTerm ",
@@ -1582,9 +1582,9 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
       | Pi(tvs,ty,_) ->
 	% if tvs = [] then ppType c ty
 	%   else 
-        ppGrConcat [ppString "(PiType ",
+        ppGrConcat [ppString "(PiType (",
                     ppTyVars tvs,
-                    ppString " ",
+                    ppString ") ",
                     %%ppString " . ",
                     ppType c ty,
                     ppString ")"
@@ -1595,7 +1595,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		   ppSep (ppBreak) %(ppString ", ")
                          (map (ppType c) types),
 		   ppString "]"]
-      | Any(_) -> ppString "any"
+      | Any(_) -> ppString "AnyType"
       | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
   op  ppMorphism: Context -> Morphism -> WLPretty
