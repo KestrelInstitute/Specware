@@ -2,6 +2,7 @@ Globalize qualifying spec
 {
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/Transformations/CommonSubExpressions
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
@@ -1447,6 +1448,17 @@ Globalize qualifying spec
           body
   in
   let conflicts = conflictingGlobalRefsIn context vars_to_remove term in
+  let (term, conflicts) = case conflicts of
+                            | [] -> (term, [])
+                            | _ ->
+                              let _ = writeLine("Before: " ^ printTerm term) in
+                              let _ = writeLine("        " ^ anyToString conflicts) in
+                              let term      = abstractCommonSubExpressions (term, context.spc) in
+                              let conflicts = conflictingGlobalRefsIn context vars_to_remove term in
+                              let _ = writeLine("After: " ^ printTerm term) in
+                              let _ = writeLine("       " ^ anyToString conflicts) in
+                              (term, conflicts)
+  in
   let substitutions = map (fn (var_id, field_id) ->
                              let temp_id   = "temp_" ^ var_id ^ "_" ^ field_id in
                              let temp_type = globalFieldType context field_id in
