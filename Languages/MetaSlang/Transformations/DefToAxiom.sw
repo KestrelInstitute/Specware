@@ -65,7 +65,10 @@ Prover qualifying spec
   op equateFunCallToBody (tm:MSTerm, ty:MSType, opqid: QualifiedId, spc:Spec) : MSTerm =
     %% Commenting out this new version for now, because I am not sure it is right:
     %%equateFunCallToBody_aux(tm, ty, mkOp(opqid, ty), ty, spc, [])
-    %% Very simple version (does not attempt to gather function parameters and quantify over them):
+    %% Very simple version (does not attempt to gather function parameters and quantify over them).
+    %% TODO: This may not result in nice rewrite rules.  One
+    %% strategy could be to use this simple translation and then prove
+    %% any desired rewrite rules from it.
     mkEquality(ty, mkOp(opqid, ty), tm)
 
 
@@ -188,9 +191,7 @@ Prover qualifying spec
      | _ -> None
 *)
 
-  op unLambdaDef: Spec * MSType * QualifiedId * MSTerm -> List MSTerm
-
-  def unLambdaDef (spc, srt, name, term) =
+  op unLambdaDef (spc:Spec, srt:MSType, name:QualifiedId, term:MSTerm) : List MSTerm =
     % let _ = writeLine("unLambdaDef: "^printTerm term) in
     let new_equality = equateFunCallToBody(term, srt, name, spc) in %% mkUncurryEquality (spc, srt, name, term) in
     % let _ = writeLine("new_eq: "^printTerm new_equality) in
