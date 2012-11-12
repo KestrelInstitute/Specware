@@ -67,7 +67,7 @@ declare One_nat_def [simp del]
  doesn't carry over from Specware to Isabelle we have to provide them 
  as axiom stating that a TCNumber is never empty.
  ********************************************************************)
-
+%TODO Do we still need this axiom?
 axiomatization where TwosComplement__toInt_subtype_constr:
   "TwosComplement__toInt x = i \<Longrightarrow> x \<noteq> []"
 

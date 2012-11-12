@@ -2,7 +2,7 @@ Function qualifying spec
 
 (* This spec is an extension of the base spec for functions. *)
 
-import /Library/General/Set
+import Set
 
 % inversion of an injective function (totalized using Option):
 
