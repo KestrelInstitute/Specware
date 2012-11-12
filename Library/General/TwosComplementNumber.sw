@@ -56,6 +56,7 @@ op toInt (x:TCNumber) : Int = if nonNegative? x then toNat x
 % has the same effect but is more complicated to compute and reason about.
 % -----------------------------------------------------------------------------
 
+%TODO Do we still need the axiom below?
 proof Isa -verbatim  
 
 (************ important insights that we need over and over again*********)
@@ -67,7 +68,7 @@ declare One_nat_def [simp del]
  doesn't carry over from Specware to Isabelle we have to provide them 
  as axiom stating that a TCNumber is never empty.
  ********************************************************************)
-%TODO Do we still need this axiom?
+
 axiomatization where TwosComplement__toInt_subtype_constr:
   "TwosComplement__toInt x = i \<Longrightarrow> x \<noteq> []"
 
