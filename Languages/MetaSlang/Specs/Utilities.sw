@@ -1503,7 +1503,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
  op  translateRecordMergeInSpec : Spec -> Spec
  def translateRecordMergeInSpec spc =
-   mapSpec (fn t -> translateRecordMerge(t,spc),id,id) spc
+   mapSpec (translateRecordMerge spc,id,id) spc
 
   op  maybeIntroduceVarsForTerms: MSTerm * List MSTerm * Spec -> MSTerm
   def maybeIntroduceVarsForTerms(mainTerm,vterms,spc) =
@@ -1522,8 +1522,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 			id,id)
 		 mainTerm)
 
- op  translateRecordMerge : MSTerm * Spec -> MSTerm
- def translateRecordMerge (t,spc) =
+ op translateRecordMerge (spc: Spec) (t: MSTerm): MSTerm =
    case t of
      | Apply(Fun(RecordMerge,s,_),Record([("1",t1),("2",t2)],_),a) ->
       (case arrowOpt(spc,s) of
@@ -1633,7 +1632,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
            | Some fld -> Some fld
            | None -> tryEvalOne spc (mkApply(proj_fn, r1)))
       | Apply(Fun(RecordMerge,s,_),Record([("1", Record _),("2", Record _)],_),_) ->
-        Some (translateRecordMerge(term, spc))
+        Some (translateRecordMerge spc term)
       | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intType))
         %% let pat = e in bod --> bod  if variables in pat don't occur in bod
       | Let([(pat, tm)], bod, _) | sideEffectFree tm && disjointVars?(patternVars pat, freeVars bod) ->

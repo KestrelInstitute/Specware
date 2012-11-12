@@ -88,6 +88,11 @@ op unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
       Some(substitute(body,[(v,e)]))
     | _ -> None
 
+op expandRecordMerge (spc: Spec) (t: MSTerm): Option MSTerm =
+   let nt = translateRecordMerge spc t in
+   if equalTerm?(t, nt) then None else Some nt
+
+
 op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * MSTerm) =
   let def checkConstrBind(e1, e2) =
         if ~(disjointVars?(freeVars e2, vs)) then None
