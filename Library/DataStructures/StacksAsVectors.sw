@@ -32,7 +32,7 @@ spec
 
   %TODO precondition about the stack being non-empty?
   op [a] top (stk:VStack a): a =
-     MapVec.V_eval(stk.1, stk.2 - 1)
+     MapVec.V_eval(stk.1, (stk.2 - 1):Nat) %TODO, without the Nat here, Specware assumes Int, which seems wrong and leads to an Isabelle error
 
   %TODO precondition about the stack being non-empty?  
   % This does not remove the element from the map.  It just adjusts the stack
@@ -48,10 +48,13 @@ spec
       | [] -> stk
       | elt::y -> push_aux(y, push(elt, stk))
 
+  %TODO Does not seem true (empty_stack is not the only stack whose
+  % second component is 0, unless we add an invariant to that effect).
   theorem empty_stack is [a]
     fa(stk:VStack a)((stk = empty_stack) = (stk.2 = 0))
 
 end-spec
 
 
-S = morphism Stacks -> StacksAsVectors {Stack +-> VStack}
+%% This morphism was previously called "S"
+M = morphism Stacks -> StacksAsVectors {Stack +-> VStack}

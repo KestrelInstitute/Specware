@@ -31,7 +31,6 @@ import BagsAsLists#M
 import SetsAsBags#M
 import BagsAsMaps#M
 
-
 %These still need to be triaged:
 
 import SetsAsSTHTables0#SetsAsSTHTables0
@@ -47,7 +46,7 @@ import MapsAsBTVectors#MapsAsBTVectors
 import MapsAsBTVectors#M
 
 import StacksAsVectors#StacksAsVectors
-import StacksAsVectors#S %TODO call this morphism M for consistency?
+import StacksAsVectors#M
 
 import POSet
 import Extensions

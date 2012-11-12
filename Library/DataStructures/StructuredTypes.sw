@@ -8,7 +8,7 @@
 
 %RecTypes qualifying
 spec
-  import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using C:\Specware4\Library\Base\List)
+  import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
 
  %%TODO won't type-check.  Seems like a hack.
   op abort(n:Nat): Nat = n div 0
