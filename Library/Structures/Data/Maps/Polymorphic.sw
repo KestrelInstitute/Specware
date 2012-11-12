@@ -1,5 +1,5 @@
 \section{Polymorphic Maps}
-This to be deprecated in favour of Maps/Polymorphic/Finite.sw
+This to be deprecated in favour of Maps/Polymorphic/Finite.sw %TODO That file doesn't exist?
 
 A rather inflated signature for maps. These are maps that are polymorphic
 in both their domain and codomain.

@@ -2,7 +2,10 @@
 A stripped down version of Polymorphic.
 *)
 
-% TODO Does this need to be a separate spec?  I guess it is refered to in a morphism in SimpleAsAList.
+%% TODO Where do we give semantics to the operations in this file?
+
+
+%% TODO Does this need to be a separate spec?  I guess it is refered to in a morphism in SimpleAsAList.
 Map =
 spec
   type Map (key,a)
@@ -12,16 +15,16 @@ Simple =
 spec
   import Map
 
-  op emptyMap : [key,a] Map (key,a)
+  op [key,a] emptyMap : Map (key,a)
 
-  op apply : [key,a] Map(key,a) * key -> Option a
-  op eval  : [key,a] Map(key,a) * key -> a
+  op [key,a] apply : Map(key,a) * key -> Option a
+  op [key,a] eval  : Map(key,a) * key -> a
 
-  op update : [key,a] Map (key,a) * key * a -> Map (key,a)
-  op remove : [a,key] Map (key,a) * key -> Map (key,a)
+  op [key,a] update : Map (key,a) * key * a -> Map (key,a)
+  op [a,key] remove : Map (key,a) * key -> Map (key,a)
 
-  op inDomain? : [key,a] Map (key,a) * key -> Bool
-  op numItems : [a,key] Map (key,a) -> Nat
+  op [key,a] inDomain? : Map (key,a) * key -> Bool
+  op [a,key] numItems : Map (key,a) -> Nat
 
 (* The functions that follow come in two varieties. All take functions
 that operate on elements in the tree. For those with an `i' suffix, the

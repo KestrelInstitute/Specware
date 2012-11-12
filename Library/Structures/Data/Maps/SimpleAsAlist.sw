@@ -1,4 +1,6 @@
 (* Simple Polymorphic Maps as Lists *)
+%TODO Do simple maps have the property that two maps are equal if they agree on every key?
+%TODO Do the Alists have that property?  What about the order of entries in the alist?
 
 MapList =
 spec
@@ -9,10 +11,14 @@ SimpleAsAlist =
 MapL qualifying
 spec
   import Simple[morphism Simple#Map -> MapList {}] %TODO This anonymous morphism might give problems.  Separate it out?
-  import /Library/Legacy/Utilities/System  %allows the call to fail below... TODO get rid of that and this import?
+  %TODO Is this the same as just importing Simple#Map and then defining the type Map?
+
+  import /Library/Legacy/Utilities/System  %allows the call to 'fail' below... TODO get rid of that and this import?
+
+  % Here we give definitions to the ops declared in Simple.sw:
 
   % op emptyMap : [key,a] Map (key,a)
-  def emptyMap = Nil
+  def [key,a] emptyMap : Map (key,a) = Nil
 
   % The following function will disappear when the library is restructured
   % with separate directories for total and partial maps.

@@ -4,6 +4,7 @@
 %% TODO Where is the expression of the requirement that the domain of the map is Nat?
 %% TODO Does the code for the MapVec functions come from Handwritten/Lisp/MapAsVector.lisp?
 %% TODO Where is the semantics given on the MapVec operations?  Just in the hand-written Lisp code?
+%% TODO This leaves the type Map undefined, unlike SimpleAsAlist.
 
 SimpleAsVector = VMap qualifying
 spec
