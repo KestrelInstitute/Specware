@@ -7,18 +7,19 @@ Required programs include:
 +python
 
 Additionally, the python 'sphinx' and 'docutils' packages are
-required. Assuming that you have a working python installation, it should be possible to install these two packages with the command:
+required. Assuming that you have a working python installation, it
+should be possible to install these two packages with the command:
 
 sudo easy_install sphinx
 
 
-There are five main documents that get built, each with its own directory under sources:
+There are six main documents that get built, each with its own directory under sources:
  language-manual
  user-manual
  tutorial
  xform-manual
  isabelle-interface
-
+ quick-reference
 
 To build the documentation, cd to 'sources' and type 'make'. This will
 build a pdf version of each manual and copy it to this directory. To
