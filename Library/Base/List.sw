@@ -400,8 +400,9 @@ op [a,b,c,d] map3 (f: a * b * c -> d)
 % remove all None elements from a list of optional values, and also remove the
 % Some wrappers:
 
-op [a] removeNones (l: List (Option a)) : List a = the (l': List a)
-  map (embed Some) l' = filter (embed? Some) l
+op [a] removeNones (l: List (Option a)) : List a =
+  the (l': List a)
+    map (embed Some) l' = filter (embed? Some) l
 
 % true iff two lists of optional values have the same "shape" (i.e. same
 % length and matching None and Some values at every position i):
