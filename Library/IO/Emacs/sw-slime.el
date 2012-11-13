@@ -134,6 +134,17 @@ balanced."
                   (slime-repl-newline-and-indent)
                   (message "[input not complete]"))))))
 
+(defun slime-repl-find-prompt (&optional backward)
+  (let ((origin (point))
+        (prop 'slime-repl-prompt))
+    (while (progn 
+             (slime-search-property-change prop backward)
+             (or (= (1+ (point)) origin)
+                 (not (or (slime-end-of-proprange-p prop) (bobp) (eobp))))))
+    (if (slime-end-of-proprange-p prop)
+        (forward-char 1)
+      (goto-char origin))))
+
 (defcustom sw:input-read-only nil
   "If non-nil then make input read-only"
   :type 'boolean
