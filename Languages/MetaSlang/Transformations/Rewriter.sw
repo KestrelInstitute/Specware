@@ -619,6 +619,12 @@ MetaSlangRewriter qualifying spec
             (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,P,
                          addDemodRules(assertRules(context,negate M,"if else", Context, Either), rules))))
+     | Seq(tms, b) ->
+       mapEach 
+         (fn (first,M,rest) -> 
+            rewriteTerm(solvers,boundVars,M,rules) >>= 
+            (fn (M,a) -> unit(Seq(first ++ [M] ++ rest,b),a)))
+         tms
      | TypedTerm(M,s,b) ->
        LazyList.map (fn (M,a) -> (TypedTerm(M,s,b),a))
             (rewriteTerm(solvers,boundVars,M,rules))
