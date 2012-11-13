@@ -113,7 +113,7 @@ import Example4 % curves, lines, points
 op g (cal:CurveAndLine) : Sllong = (cal.curve @_sint (sintConstant 4 hex)).z
 % long long g(CurveAndLine cal) { return cal.curve[0x4].z; }
 
-proof E9__g_Obligation_subtype0
+proof Isa E9__g_Obligation_subtype0
   sorry
 end-proof
 
