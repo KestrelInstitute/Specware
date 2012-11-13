@@ -117,7 +117,21 @@ op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * M
 
 op existVarId: String = "ev__"
 
+op findMaxExistVarId(tms: MSTerms): Nat =
+  foldl (fn (n, tm) ->
+           foldSubTerms (fn (t, n) ->
+                         case t of
+                           | Var((nm, _), _) | testSubseqEqual?(existVarId, nm, 0, 0) ->
+                             let num_str = subFromTo(nm, length existVarId, length nm) in
+                             if natConvertible num_str
+                               then max(n, 1 + stringToNat num_str)
+                               else n
+                           | _ -> n)
+             n tm)
+    0 tms    
+
 op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
+  let existVarIndex = findMaxExistVarId cjs in
   let def varIntroTerm? tm =
         case tm of
           | Record _ -> true
@@ -204,5 +218,12 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
           | Some ex_tm -> ex_tm
           | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)
   in
-  transfm tm
+  case transfm tm of
+    | Some n_tm ->
+      let n_tm1 = simplify spc n_tm in
+      if equalTerm?(n_tm1, tm) then None
+      else
+      let _ = writeLine("structureEx:\n"^printTerm tm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1) in
+      Some n_tm1
+    | None -> None
 end-spec
