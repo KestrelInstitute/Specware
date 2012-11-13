@@ -4,7 +4,7 @@
 
 # Some machines require the dynamic space size to be smaller (e.g. 800)
 # On those, preset SBCL_SIZE before invoking this script.
-export SBCL_SIZE="${SBCL_SIZE:=1200}"
+export SBCL_SIZE="${SBCL_SIZE:=2400}"
 
 SCRIPTDIR=`/usr/bin/dirname $0`
 
