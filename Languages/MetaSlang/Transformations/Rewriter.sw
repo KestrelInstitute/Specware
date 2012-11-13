@@ -267,6 +267,7 @@ MetaSlangRewriter qualifying spec
  %% Whether a function can be pushed inside Let, If, Case
  op pushable?(f: MSTerm): Bool =
    case f of
+     | Fun(And, _, _) -> false
      | Fun _ -> true
      | Var _ -> true
      | Apply _ -> true
