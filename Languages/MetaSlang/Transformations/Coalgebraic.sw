@@ -379,7 +379,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
            | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term in "^show op_qid^"\n"
                           ^printTerm tm);
                    mkVar("Unrecognized_term", result_ty))
-       def recordItemVal((state_itms, result_itms), cj) =
+       def recordItemVal((state_itms, result_itms), cj): List(Id * MSTerm) * List(Id * MSTerm) =
          case cj of
            | Apply(Fun(Equals,_,_),Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
                | qid in? stored_qids && equalVar?(state_var, v) ->
@@ -393,9 +393,28 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
            | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_),_,_), Var(v,_), _), _)                             % Bool false
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, falseTerm) :: state_itms, result_itms)
-           | IfThenElse _ -> (state_itms, result_itms)       % Check that this is doing the right thing
-           | _ -> (writeLine("Ignoring conjunct\n"^printTerm cj);
+           | IfThenElse(c, p, q, a) ->
+             let (p_state_itms, p_result_itms) = recordItemVal(([], []), p) in
+             let (q_state_itms, q_result_itms) = recordItemVal(([], []), q) in
+             % let _ = (writeLine(printTerm cj);
+             %          writeLine("p: "^anyToPrettyString p_state_itms^"\n"^anyToPrettyString p_result_itms);
+             %          writeLine("q: "^anyToPrettyString q_state_itms^"\n"^anyToPrettyString q_result_itms);
+             %          writeLine("sofar: "^anyToPrettyString state_itms^"\n"^anyToPrettyString result_itms)) in
+             if p_result_itms = [] && q_result_itms = []
+                 && compatibleItmLists?(p_state_itms, q_state_itms)
+               then
+                 let merged_state_items = map (fn ((idi, pi), (_, qi)) -> (idi, IfThenElse(c, pi, qi, a)))
+                                            (zip(p_state_itms, q_state_itms))
+                 in
+                 (merged_state_items ++ state_itms, result_itms)
+             else  % Not sure what to do here
+             (writeLine("For "^show op_qid^"\nIgnoring conditional conjunct\n"^printTerm cj);
+              (state_itms, result_itms)) 
+           | _ -> (writeLine("For "^show op_qid^"\nIgnoring conjunct\n"^printTerm cj);
                    (state_itms, result_itms))
+       def compatibleItmLists?(p_state_itms, q_state_itms) =
+         length p_state_itms = length q_state_itms
+           && forall? (fn ((idp, _), (idq, _)) -> idp = idq) (zip(p_state_itms, q_state_itms))
        def tryIncrementalize(rec_prs: List(Id * MSTerm)): Option MSTerm * List(Id * MSTerm) =
          let (opt_src_tm, result_prs) =
              foldl (fn ((opt_src_tm, result_prs), (id, tm)) ->
