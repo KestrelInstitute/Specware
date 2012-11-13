@@ -5,14 +5,14 @@
 ;;; Implements a Map with domain Nat as a vector.
 ;;; Only works if access is single-threaded!
 
+(defpackage :MapsAsVectors)
 (defpackage :MapVec)
 (in-package :MapVec)
 
 (eval-when (compile)
-  (proclaim '(optimize (space 1) (speed 3) (debug 1) (safety 0))))
+  (proclaim '(optimize (space 1) (speed 3) (debug 3) (safety 0))))
 
-(declaim (inline map-as-vector--update V_update-3 V_eval-2 defined? % update-1-1-1 tmApply-2
-                 ))
+(declaim (inline map-as-vector--update V_update-3 V_eval-2 defined? MapsAsVectors::update-1-1-1 MapsAsVectors::tmApply-2))
 
 (defvar *undefined* '(:|None|))
 (defun defined? (val) 
@@ -94,8 +94,8 @@
   (V_apply-2 (car pr) (cdr pr)))
 
 (defun eval-error (m x)
-  (print-map m)
-  (error "V_eval: out-of-domain reference: ~a" x))
+  ;(print-map m)
+  (error "V_eval: out-of-domain reference: ~a length: ~a" x (length m)))
 
 (defun V_eval-2 (m x)
   (declare (fixnum x) (simple-vector m))
