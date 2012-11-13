@@ -225,8 +225,23 @@ refine def [a] reverse (l: List a) : List a =
   in
   loop (l, Nil)
 
+%% Non-tail recursive version:
 refine def [a] repeat (x:a) (n:Nat) : List a =
   if n = 0 then Nil else Cons (x, repeat x (n-1))
+
+%% Tail-recursive version.  Uses a tail-recursive helper function
+%% with an accumulator: I am making the helper a separate function
+%% because I want to prove lemmas about it.
+
+op [a] repeat_aux (x:a, n:Nat, acc: List a) : List a =
+  if n = 0 then acc else repeat_aux(x, n - 1, x::acc)
+
+theorem repeat_aux_lemma is [a]
+  fa(x:a, n:Nat, acc: List a)
+    repeat_aux(x, n, acc) = (repeat x n) ++ acc
+
+refine def [a] repeat (x:a) (n:Nat) : List a =
+  repeat_aux(x, n, [])
 
 refine def allEqualElements? : [a] List a -> Bool = fn
   | []     -> true
@@ -919,7 +934,17 @@ proof isa List__reverse__1__obligation_refine_def
 end-proof
 
 proof isa List__repeat__1__obligation_refine_def
- by (induct n, auto)
+  by (induct n, auto)
+end-proof
+
+proof Isa repeat_aux_lemma
+  apply(induct n arbitrary: acc__v)
+  apply(simp)
+  by (metis append_Cons repeat_aux.simps(2) replicate_Suc replicate_app_Cons_same)
+end-proof
+
+proof isa List__repeat__2__obligation_refine_def
+  apply(simp add: List__repeat__2_def repeat_aux.simps repeat_aux_lemma)
 end-proof
 
 proof isa List__allEqualElements_p__1__obligation_refine_def 
