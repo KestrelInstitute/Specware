@@ -235,7 +235,7 @@ theorem length_subFromLong is [a]
     length (subFromLong (l, i, n)) = n
 
 theorem subFromLong_whole is [a]
- fa (l: List a) subFromLong (l, 0, length l) = l
+  fa (l: List a) subFromLong (l, 0, length l) = l
 
 % sublist from index i (inclusive) to index j (exclusive); if i = j then we
 % could have i = j = length l, even though those are not valid indices:
@@ -294,7 +294,7 @@ theorem length_butLast is [a]
 theorem length_butLast_order is [a]
   fa (l: List1 a) length (butLast l) < length l
 
-% concatenation:
+% concatenation / append:
 
 op [a] ++ (l1: List a, l2: List a) infixl 25 : List a = the (l: List a)
   length l = length l1 + length l2 &&
@@ -689,14 +689,14 @@ op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
   | None   -> None
   | Some i -> Some (l @ i, removePrefix (l, i))
 
-% delete all occurrences of element from list:
+% delete/remove all occurrences of element from list:
 
 op [a] delete (x:a) (l: List a) : List a =
   filter (fn y:a -> y ~= x) l
 #translate Haskell -> delete_all #end
 
-% remove from l1 (all occurrences of) all the elements that occur in
-% l2 (i.e. list difference):
+% delete/remove from l1 (all occurrences of) all the elements that
+% occur in l2 (i.e. list difference):
 
 op [a] diff (l1: List a, l2: List a) : List a =
   filter (fn x:a -> x nin? l2) l1
