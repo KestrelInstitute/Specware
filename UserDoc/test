@@ -1,0 +1,14 @@
+THISSCRIPTDIR=`dirname $0`
+
+#TODO Test other documentation formats besides PDF?
+
+pushd ${THISSCRIPTDIR}/sources > /dev/null
+make clean &> /dev/null
+make &> /dev/null
+popd > /dev/null
+ls -l ${THISSCRIPTDIR}/SpecwareUserManual.pdf
+ls -l ${THISSCRIPTDIR}/SpecwareTutorial.pdf
+ls -l ${THISSCRIPTDIR}/SpecwareTransformationManual.pdf
+ls -l ${THISSCRIPTDIR}/SpecwareQuickReference.pdf
+ls -l ${THISSCRIPTDIR}/SpecwareLanguageManual.pdf
+ls -l ${THISSCRIPTDIR}/SpecwareIsabelleInterface.pdf
