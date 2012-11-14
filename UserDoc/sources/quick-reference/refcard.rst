@@ -10,39 +10,39 @@
 
    - * Command
      * Result
-   - * ``help [command]``
+   - * **help** [ *command* ]
      * Print help for shell commands
-   - * ``cd [folder-name]``
+   - * **cd** [ *folder-name* ]
      * Change or print current folder
-   - * ``dir | dirr``
+   - * **dir** | **dirr**
      * List .sw files in folder (current or recursively)
-   - * ``path [path;...;path]``
+   - * **path** [ *path* ;...; *path* ]
      * Set or print SWPATH environment variable
-   - * ``p[roc] [unit]``
+   - * **p**\ [**roc**] [ *unit* ]
      * Process unit(s)``
-   - * ``cinit``
+   - * **cinit**
      * Clear unit cache
-   - * ``show`` | ``showx [unit]``
+   - * **show** | **showx** [ *unit* ]
      * Process and print unit (normal or extended form)
-   - * ``oblig[ations] [unit]``
+   - * **oblig**\ [**ations**] [*unit*]
      * Print the proof obligations of the unit
-   - * ``punits`` | ``lpunits [unit [target-file]]``
+   - * **punits** | **lpunits** [*unit* [*target-file*]]
      * Generate proof-units for unit (global or local)
-   - * ``ctext [spec]``
+   - * **ctext** [*spec*]
      * Sets context for evaluation
-   - * ``e[val]`` | ``eval-lisp [expression]``
+   - * **e**\ [*val*] | **eval-lisp** [*expression*]
      * Evaluate and print expression (directly or in Lisp)
-   - * ``gen-lisp | lgen-lisp [spec [target-file]]``
+   - * **gen-lisp** | **lgen-lisp** [*spec* [*target-file*]]``
      * Generate Lisp from spec (global or local)
-   - * ``gen-java [spec [options-spec]]``
+   - * **gen-java** [*spec* [*options-spec*]]
      * Generate Java from spec
-   - * ``gen-c [spec [target-file]]``
+   - * **gen-c** [*spec* [*target-file*]]
      * Generate C from spec
-   - * ``make [spec]``
+   - * **make** [*spec*]
      * Generate C with makefile and call “make” on it
-   - * ``ld`` | ``cf`` | ``cl [lisp-file]``
+   - * **ld** | **cf** | **cl** [*lisp-file*]
      * Load, compile, or load+compile Lisp file
-   - * ``exit`` | ``quit``
+   - * **exit** | **quit**
      * Terminate shell
 
 ==========================================
@@ -56,38 +56,38 @@ Units (specs, morphisms, diagrams, ...)
 
    - * Syntax
      * Construct
-   - * ``[[/]name/.../name][#name]``
+   - * [[/]\ *name*/.../*name*][#\ *name*\ ]
      * Unit-identifier
-   - * ``unit-id = unit-term``
+   - * *unit-id* ``=`` *unit-term*
      * Unit-definition
-   - * ``spec declaration ... endspec``
+   - * **spec** *declaration* ... **endspec**
      * Returns spec-form
-   - * ``qualifier qualifying spec``
+   - * *qualifier* **qualifying** *spec*
      * Qualifies unqualified type- and op-names
-   - * ``translate spec by``
-       ``{[type | op] name +-> name, ...}``
+   - * **translate** *spec* **by**
+       {[ *type* | *op* ] *name* +-> *name* , ...}
      * Spec-translation: replaces lhs names in spec by rhs names
-   - * ``spec [morphism]``
+   - * *spec* [ *morphism* ]
      * Spec-substitution: replaces source spec of morphism by target spec in the given spec
-   - * ``colimit diagram``
+   - * **colimit** *diagram*
      * Returns spec at apex of colimit cocone
-   - * ``obligations spec-or-morphism``
+   - * **obligations** *spec-or-morphism*
      * Returns spec containing proof obligations
-   - * ``morphism spec -> spec``
-       ``{[type | op] name +-> name, ...}``
+   - * **morphism** *spec* -> *spec*
+       {[**type** | **op**] *name* ``+->`` *name*, ...}
      * Returns spec-morphism
-   - * ``diagram {diagram-node-or-edge, ...}``
+   - * **diagram** { *diagram-node-or-edge* , ...}
      * Returns diagram
-   - * ``name +-> spec``
+   - * *name* +-> *spec*
      * Diagram-node
-   - * ``name : name -> name +-> morphism``
+   - * *name* : *name* -> *name* +-> *morphism*
      * Diagram-edge
-   - * ``generate [c | java | lisp] spec``
-       ``[in ”filename” | with options-spec]``
+   - * **generate** [**c** | **java** | **lisp**] *spec*
+        [**in** *filename* | **with** *options-spec*]
      * Generates C, Java, or Lisp code prove claim in spec
-   - * ``prove <claim> in <spec>``
-       ``[with snark] [using {claim, ... }]``
-       ``[option <proveroptions>]``
+   - * **prove** *claim* **in** *spec*
+       [**with** **snark**] [**using** {*claim*, ... }]
+       [**option** *proveroptions*]
      * Proof-term
 
 =======
@@ -102,11 +102,11 @@ Names
 
    - * Syntax
      * Construct
-   - * ``[qualifier.] name``
+   - * [*qualifier*.] *name*
      * Type-name, op-name
-   - * word-symbol
+   - * *word-symbol*
      * Qualifier
-   - * word-symbol | non-word-symbol
+   - * *word-symbol* | *non-word-symbol*
      * Name, constructor, field-name, (type-)var
    - * ``A3`` | ``posNat?`` | ``z-k``
      * Examples of word-symbols
@@ -116,9 +116,9 @@ Names
      * Boolean-literal
    - * ``0`` | ``1`` | ...
      * Nat-literal
-   - * ``#char-glyph`` | ``#"``
+   - * #\ *char-glyph* | ``#"``
      * Char-literal
-   - * "char-glyph..."
+   - * "*char-glyph*..."
      * String-literal
    - * ``A`` | ... | ``Z`` |
        ``a`` | ... | ``z`` |
@@ -141,20 +141,21 @@ Declarations and Definitions
 
    - * Syntax
      * Construct
-   - * ``import <spec>``
+   - * **import** *spec*
      * Import-declaration
-   - * ``type <type-name>``
+   - * **type** *type-name*
      * Type-declaration
-   - * ``type <type-name> <type-var>``
-       ``type <type-name> (<type-var>, ...)``
+   - * **type** *type-name* *type-var*
+       
+       **type** *type-name* (*type-var*, ...)
      * Polymorphic type-declaration
-   - * ``type type-name [type-var | (type-vars)] = type``
+   - * **type** *type-name* [*type-var* | (*type-vars*)] = *type*
      * Type-definition
-   - * ``op op-name [infixl | infixr prio] : [[type-var, ...]] type``
+   - * **op** *op-name* [**infixl** | **infixr** *prio*] : [[*type-var*, ...]] *type*
      * Op-declaration; optional infix assoc/prio; optional polymorphic type parameters
-   - * ``def [[type-var, ...]] op-name [pattern ...] [: type ] = expr``
+   - * **def** [[*type-var*, ...]] *op-name* [*pattern* ...] [: *type* ] = *expr*
      * Op-definition; optional polymorphic type parameters; optional formal parameters
-   - * ``axiom`` | ``theorem`` | ``conjecture name is [[type-var, ...]] expr``
+   - * **axiom** | **theorem** | **conjecture** *name* **is** [[*type-var*, ...]] *expr*
      * Claim-definition; optional polymorphic type parameters
 
 ========
@@ -169,59 +170,68 @@ Types
 
    - * Syntax
      * Construct
-   - * ``| constructor [type] | ... | constructor [type]``
+   - * ``| `` *constructor* [ *type* ] ``|`` ... ``|`` *constructor* [ *type* ]
      * Sum type
-   - * ``type -> type``
+   - * *type* ``->`` *type*
      * Function type
-   - * ``type*...*type``
+   - * *type* ``*`` ... ``*`` *type*
      * Product type
-   - * ``{field-name : type, ...}``
+   - * ``{`` *field-name* : *type*, ... ``}``
      * Record type
-   - * ``(type | expr)``
+   - * (*type* | *expr*) 
      * Subtype (Type-restriction) 
-   - * ``{pattern : type | expr}``
+   - * ``{`` *pattern* : *type* ``|`` *expr* ``}``
      * Subtype (Type-comprehension)
-   - * ``type / expr``
+   - * *type* / *expr*
      * Quotient type
-   - * ``type type1 type(type1, ...)``
+   - * *type* *type1* *type*\(*type1*, ...)
      * Type-instantiation
-   - * fn [|] pattern -> expr | ...
+
+
+=============
+ Expressions
+=============
+
+.. tabularcolumns:: |p{200pt}|p{200pt}|
+
+.. list-table::
+   :widths: 65 210
+   :header-rows: 1
+
+   - * **fn** [|] *pattern* -> *expr* | ...
      * Lambda-form
-   - * ``case expr of [|] pattern -> expr | ...``
+   - * **case** *expr* **of** [|] *pattern* -> *expr* | ...
      * Case-expression
-   - * ``letpattern = expr in expr``
-       ``let rec-let-binding ... in expr``
+   - * *letpattern* = *expr* **in** *expr*\
+       
+       **let** *rec-let-binding* ... **in** *expr*
      * Let-expression
-   - * ``def name [pattern ...][: type ] = expr``
+   - * **def** *name* [*pattern* ...][: *type* ] = *expr*
      * Rec-let-binding; optional formal parameters
-   - * ``if expr then expr else expr``
+   - * **if** *expr* **then** *expr* **else** *expr*
      * If-expression
-   - * ``fa | ex (var, ...) expr``
+   - * **fa** | **ex** (*var*, ...) *expr*
      * Quantification (non-constructive)
-   - * ``expr expr1 ...`` | ``expr1 op-name expr2``
+   - * *expr* *expr1* ... | *expr1* *op-name* *expr2*
      * Application (prefix- or infix-application)
-   - * ``expr : type``
+   - * *expr* : *type*
      * Annotated-expression
-   - * ``expr.N``
+   - * *expr*\ ``.``\ *N*
      * Field-selection, product type (N = 1|2|3| ...) 
-   - * ``expr . field-name``
+   - * *expr*\ ``.`` *field-name*
      * Field-selection, record type
-   - * ``(expr, expr, ...)``
+   - * (*expr*, *expr*, ...)
      * Tuple-display (has product type)
-   - * ``{field-name = expr, ...}``
+   - * ``{`` *field-name* = *expr*, ...``}``
      * Record-display (has record type)
-   - * ``[expr, ...]``
+   - * ``[`` *expr*, ... ``]``
      * List-display
-   - * **project** | **quotient** | **choose** ``<expr>``
+   - * **project** | **quotient** | **choose** *expr*
      * Various structors
-   - * ``[embed] constructor``
+   - * [**embed**] *constructor*
      * Embedder
-   - * ``embed? constructor``
+   - * **embed?** *constructor*
      * Embedding-test
-   - * ``op-name``
-     * Op-name
-   - * ``var``
-     * Local-variable
 
 ==========
 Patterns
@@ -235,25 +245,25 @@ Patterns
 
    - * Syntax
      * Construct
-   - * ``<pattern> : <type>``
+   - * *pattern* : *type*
      * Annotated-pattern
-   - * ``<var> as pattern``
+   - * *var* **as** *pattern*
      * Aliased-pattern
-   - * ``<patternhd> :: <patterntl>``
+   - * *patternhd* ``::`` *patterntl*
      * Cons-pattern
-   - * ``constructor [pattern]``
+   - * *constructor* [*pattern*]
      * Embed-pattern
-   - * ``(pattern, pattern, ...)``
+   - * ``(`` *pattern* , *pattern*, ... ``)``
      * Tuple-pattern
-   - * ``{field-name = pattern, ...}``
+   - * ``{`` *field-name* = *pattern* , ... ``}``
      * Record-pattern
-   - * ``[pattern, ...]``
+   - * ``[`` *pattern* ``,`` ... ``]``
      * List-pattern
-   - * ``<pattern>`` | ``<expr>``
+   - * *pattern* | *expr*
      * Guarded-pattern
    - * ``_``
      * Wildcard-pattern
-   - * ``<var>``
+   - * *var*
      * Variable-pattern
-   - * ``<literal>``
+   - * *literal*
      * Literal-pattern
