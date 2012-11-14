@@ -689,13 +689,14 @@ op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
   | None   -> None
   | Some i -> Some (l @ i, removePrefix (l, i))
 
-% delete element from list:
+% delete all occurrences of element from list:
 
 op [a] delete (x:a) (l: List a) : List a =
   filter (fn y:a -> y ~= x) l
 #translate Haskell -> delete_all #end
 
-% remove from l1 all the elements that occur in l2 (i.e. list difference):
+% remove from l1 (all occurrences of) all the elements that occur in
+% l2 (i.e. list difference):
 
 op [a] diff (l1: List a, l2: List a) : List a =
   filter (fn x:a -> x nin? l2) l1
