@@ -9,7 +9,7 @@
 
 This appendix lists the grammar rules of the |Metaslang| specification
 language. These rules are identical to those of the
-Chapter on `Metaslang`_. They are brought together here, without additional text, for
+Chapter on `Metaslang`. They are brought together here, without additional text, for
 easy reference.
 
 .. COMMENT:  ***************************************************************** 
