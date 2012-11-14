@@ -50,7 +50,8 @@
     (sbcl    "sfsl")
     (gcl     "o")))
 
-(defvar *sbcl-size* (if *windows-system-p* 1200 2400) "Size of --dynamic-space-size for sbcl")
+(defvar *macos-p* (= (shell-command "ls /mach_kernel") 0))  ; or any other test that tells us we're on a Mac
+(defvar *sbcl-size* (if *windows-system-p* 1200 (if *macos-p* 2000 2400)) "Size of --dynamic-space-size for sbcl")
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
