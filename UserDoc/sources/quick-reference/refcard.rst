@@ -123,8 +123,8 @@ Names
    - * ``A`` | ... | ``Z`` |
        ``a`` | ... | ``z`` |
        ``0`` | ... | ``9`` |
-       ``!`` | ``:`` | ``#`` | ... | ``\\\`` | ``\"`` | 
-       ``\a`` |``\b`` | ``\t`` | ``\n`` | ``\v`` | ``\f`` | ``\r`` |
+       ``!`` | ``:`` | ``#`` | ... | ``\\`` | ``\"`` | 
+       ``\a`` | ``\b`` | ``\t`` | ``\n`` | ``\v`` | ``\f`` | ``\r`` |
        ``\s`` | ``\x00`` | ... | ``\xff``
      * Char-glyph
 
@@ -177,9 +177,9 @@ Types
      * Product type
    - * ``{field-name : type, ...}``
      * Record type
-   - * ``(type | expr) 
+   - * ``(type | expr)``
      * Subtype (Type-restriction) 
-   - * {pattern : type | expr}``
+   - * ``{pattern : type | expr}``
      * Subtype (Type-comprehension)
    - * ``type / expr``
      * Quotient type
