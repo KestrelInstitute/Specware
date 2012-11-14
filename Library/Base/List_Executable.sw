@@ -96,11 +96,22 @@ refine def [a] last (l: List1 a) : a =
 refine def [a] tail (l: List1 a) : List a =
   let _::tl = l in tl
 
-refine def [a] butLast (l: List1 a) : List a =
+%% This isn't tail-recursive, so making this a refine def of butLast
+%% will prevent butLast from executing on long lists (stack overflow).
+%% Sticking with the original definition of butLast, which calls
+%% removeSuffix, allows it to execute on long lists.  We could just
+%% delete butLast_alt, but it might be handy to have this
+%% recharacterization of butLast when we do proofs:
+
+op [a] butLast_alt (l: List1 a) : List a =
   case l of
   | [hd]   -> Nil
-  | hd::tl -> Cons (hd, butLast tl)
+  | hd::tl -> Cons (hd, butLast_alt tl)
 
+theorem butLast_alt_lemma is [a]
+  fa(l: List1 a) butLast_alt l = butLast l
+
+%% This seems to execute without causing a stack overflow, even on very long lists.
 refine def [a] ++  (l1: List a, l2: List a) : List a =
   case l1 of
   | [] -> l2
@@ -109,11 +120,22 @@ refine def [a] ++  (l1: List a, l2: List a) : List a =
 refine def [a] |> (x:a, l: List a) : List1 a =
   Cons (x, l)
 
-refine def [a] <| (l: List a, x:a) : List1 a =
+%% This isn't tail-recursive, so making this a refine def of <| will
+%% prevent <| from executing on long lists (stack overflow).  Sticking
+%% with the original definition of <|, which calls ++, allows it to
+%% execute on very long lists.  We could just delete <|_alt, but it
+%% might be handy to have this recharacterization of <| when we do
+%% proofs:
+
+op [a] <|_alt (l: List a, x:a) infixl 25 : List1 a =
   case l of
   | []     -> [x]
-  | hd::tl -> Cons (hd, tl <| x)
+  | hd::tl -> Cons (hd, tl <|_alt x)
 
+theorem <|_alt_lemma is [a]
+  fa(l: List a, x:a) l <|_alt x = l <| x
+
+%%TODO Not tail recursive.
 refine def [a] update (l: List a, i:Nat, x:a | i < length l) : List a =
   let hd::tl = l in  % non-empty because length > i >= 0
   if i = 0 then Cons (x, tl) else Cons (hd, update (tl, i-1, x))
@@ -141,11 +163,13 @@ refine def [a] foralli? (p: Nat * a -> Bool) (l: List a) : Bool =
 refine def [a] filter (p: a -> Bool) (l: List a): List a =
   reverse (foldl (fn (result, x) -> if p x then x::result else result) [] l)
 
+%%TODO Not tail recursive.
 refine def [a,b] zip (l1: List a, l2: List b | l1 equiLong l2) : List (a * b) =
   case (l1,l2) of
   | ([],       [])       -> Nil
   | (hd1::tl1, hd2::tl2) -> Cons ((hd1,hd2), zip (tl1,tl2))
 
+%%TODO Not tail recursive.
 refine def [a,b,c] zip3 (l1: List a, l2: List b, l3: List c |
                  l1 equiLong l2 && l2 equiLong l3) : List (a * b * c) =
   case (l1,l2,l3) of
@@ -365,10 +389,12 @@ refine def [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
   in
   loop (l, None)
 
+%%TODO Not tail recursive.
 refine def [a] delete (x:a) : List a -> List a = fn
   | []     -> Nil
   | hd::tl -> if x = hd then delete x tl else Cons (hd, delete x tl)
 
+%%TODO Not tail recursive.
 refine def [a] diff (l1: List a, l2: List a) : List a =
   if l2 = [] then l1
   else
@@ -714,11 +740,11 @@ proof isa List__tail__1__obligation_refine_def
   by (induct l, auto)
 end-proof
 
-proof isa List__butLast__1_Obligation_exhaustive 
+proof isa butLast_alt_Obligation_exhaustive 
   by (induct l, auto)
 end-proof
 
-proof isa List__butLast__1__obligation_refine_def 
+proof isa butLast_alt_lemma
   by (induct l, simp, case_tac l, auto)
 end-proof
 
@@ -730,7 +756,7 @@ proof isa List__e_bar_gt__1__obligation_refine_def
   by (simp add: List__e_bar_gt__1_def)
 end-proof
 
-proof isa List__e_lt_bar__1__obligation_refine_def 
+proof isa e_lt_bar_alt_lemma
   by (simp add: List__e_lt_bar_def, induct l, auto)
 end-proof
 
@@ -1132,11 +1158,7 @@ proof isa List__findRightmost__1__obligation_refine_def
 end-proof
 
 proof isa List__delete__1__obligation_refine_def 
- (** TRANSLATION ISSUE: "delete_all" should be "List__delete" 
-  ** proof is
   by (induct l, auto simp add: List__delete_def)
-  **)
-sorry
 end-proof
 
 proof isa List__diff__1__obligation_refine_def 
