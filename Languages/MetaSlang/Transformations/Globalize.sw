@@ -669,8 +669,10 @@ Globalize qualifying spec
     | Some (_, var) -> var
 
  op makeSetf (lhs : MSTerm, rhs : MSTerm) : MSTerm =
-  Apply (setfRef, Record ([("1", lhs), ("2", rhs)], noPos), noPos)
-
+  if equalTerm? (lhs, rhs) then
+    Record ([], noPos) % no-op
+  else
+    Apply (setfRef, Record ([("1", lhs), ("2", rhs)], noPos), noPos)
 
  op opAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerms) =
   case tm of
@@ -684,28 +686,6 @@ Globalize qualifying spec
        
     | _ -> None
       
- op updateAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerm * MSTerms * MSTerm) = 
-   case opAndArgs tm of
-     | Some (opname, update, args) ->
-       (case flattenArgs args of
-          | container :: indices_and_value ->
-            (case reverse indices_and_value of
-               | [_] -> None
-               | new_value :: rev_indices -> Some (opname, update, container, reverse rev_indices, new_value)
-               | _ -> None)
-          | _ -> None)
-     | _ -> None
-
- op accessAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerm * MSTerms) = 
-   case opAndArgs tm of
-     | Some (opname, access, args) ->
-       (case flattenArgs args of
-          | container :: indices ->
-            Some (opname, access, container, indices)
-          | _ -> None)
-     | _ -> None
-
-
  op reviseTemplate (template : MSTerm, bindings : List (MSTerm * MSTerm)) : MSTerm =
   let 
     def subst tm =
@@ -762,6 +742,28 @@ Globalize qualifying spec
   % first check to see if this update matches some setter/getter pair
   % let _ = writeLine ("") in
   % let _ = writeLine ("         revise update: " ^ printTerm lhs ^ " = " ^ printTerm rhs) in
+  let
+    def updateAndArgs tm =
+     case opAndArgs tm of
+       | Some (opname, update, args) ->
+         (case flattenArgs args of
+            | container :: indices_and_value ->
+              (case reverse indices_and_value of
+                 | [_] -> None
+                 | new_value :: rev_indices -> Some (opname, update, container, reverse rev_indices, new_value)
+                 | _ -> None)
+            | _ -> None)
+       | _ -> None
+         
+    def accessAndArgs tm =
+      case opAndArgs tm of
+        | Some (opname, access, args) ->
+          (case flattenArgs args of
+             | container :: indices ->
+               Some (opname, access, container, indices)
+             | _ -> None)
+        | _ -> None
+  in
   case updateAndArgs rhs of
     | Some (update_op_name, update, set_container, set_indices, new_value) ->
       (case new_value of
@@ -771,6 +773,9 @@ Globalize qualifying spec
                           _),
                   _)
            ->
+           % let _ = writeLine ("         revise update 1: " ^ printTerm lhs ^ " = " ^ printTerm rhs) in
+           % let _ = writeLine ("        update_op_name 1: " ^ anyToString update_op_name) in
+           % let _ = writeLine ("       new value pairs 1: " ^ anyToString new_value_pairs) in
            (case accessAndArgs access_tm of
               | Some (access_op_name, access, get_container, get_indices) ->
                 % let _ = writeLine ("update        = " ^ anyToString update) in
@@ -778,8 +783,8 @@ Globalize qualifying spec
                 % let _ = writeLine ("lhs           = " ^ printTerm lhs)           in
                 % let _ = writeLine ("get_container = " ^ printTerm get_container) in
                 % let _ = writeLine ("set_container = " ^ printTerm set_container) in
-                % let _ = writeLine ("set_indices   ="  ^ printTerms set_indices)   in
-                % let _ = writeLine ("get_indices   ="  ^ printTerms get_indices)   in
+                % let _ = writeLine ("set_indices   ="  ^ printTerms set_indices)  in
+                % let _ = writeLine ("get_indices   ="  ^ printTerms get_indices)  in
                 if equalTerm?  (lhs,           set_container) && 
                    equalTerm?  (set_container, get_container) && 
                    equalTerms? (set_indices,   get_indices)   && 
@@ -805,6 +810,8 @@ Globalize qualifying spec
               | _ -> 
                 makeSetf (lhs, rhs))
          | _ -> 
+           % let _ = writeLine ("         revise update 2: " ^ printTerm lhs ^ " = " ^ printTerm rhs) in
+           % let _ = writeLine ("        update_op_name 2: " ^ anyToString update_op_name) in
            case findLeftmost (fn (entry : SetfEntry) -> update_op_name = entry.updater_name) context.setf_entries of
              | Some setf_pair ->
                % let _ = writeLine ("reviseUpdate: not a merge") in
@@ -892,18 +899,24 @@ Globalize qualifying spec
                (lhs     : MSTerm)
                (rhs     : MSTerm)
    : MSTerm =
+   % let _ = writeLine ("-----------") in
+   % let _ = writeLine ("makeUpdate") in
    % let _ = writeLine (" lhs: " ^ printTerm lhs) in
    % let _ = writeLine (" rhs: " ^ printTerm rhs) in
    % let _ = writeLine ("let bindings:\n") in
-   % let _ = map (fn (pattern, value) -> writeLine (printPattern pattern ^ " = " ^ printTerm value)) context.let_bindings in
+   let _ = map (fn (pattern, value) -> writeLine (printPattern pattern ^ " = " ^ printTerm value)) context.let_bindings in
+   % let result = 
    case rhs of
+     | IfThenElse (p, tm1, tm2, _) ->
+       IfThenElse (p, makeUpdate context lhs tm1, makeUpdate context lhs tm2, noPos)
+
      | Record (pairs, _) | forall? (fn (index,_) -> natConvertible index) pairs ->
        (let dom_type = termType lhs in
         let updates = 
             map (fn (index, value) ->
                    let new_type = Arrow (dom_type, termType value, noPos) in
                    let new_lhs = Apply (Fun (Project index, new_type, noPos), lhs, noPos) in
-                   makeSetf (new_lhs, value))
+                   makeUpdate context new_lhs value)
                 pairs
         in
         case updates of
@@ -912,6 +925,10 @@ Globalize qualifying spec
 
      | _ ->
        reviseUpdate (context, lhs, rhs)
+   % in
+   % let _ = writeLine ("   => " ^ printTerm result) in
+   % let _ = writeLine ("-----------") in
+   % result
 
  op makeGlobalFieldUpdates (context           : Context)
                            (vars_to_remove    : MSVarNames)      % vars of global type, remove on sight
@@ -1505,7 +1522,7 @@ Globalize qualifying spec
            Let (bindings, Record (fields, noPos), noPos))
 
     | Seq (tms, _) -> 
-      let _ = writeLine("Seq Term = " ^ printTerm term) in
+      % let _ = writeLine("Seq Term = " ^ printTerm term) in
       let (_, bindings, tms) =
           foldl (fn ((n, bindings, tms), tm) -> 
                    case aux (n, tm) of
