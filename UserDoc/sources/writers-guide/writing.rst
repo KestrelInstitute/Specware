@@ -1,8 +1,8 @@
+.. _`Writing Documentation with reStructuredText`:
 
-===================================
-Writing Docs using reStructuredText
-===================================
-
+=============================================
+ Writing Documentation with reStructuredText
+=============================================
 
 
 Sectioning Commands
@@ -46,7 +46,7 @@ Sub-sections
 
 
 References
----------
+----------
 
 To refer to a section, simply put the title of the section in
 single-backtick quotes, followed by an underscore. This will create a
@@ -55,6 +55,20 @@ link to the section. For example::
   `Sectioning Commands`_
 
 Creates a link to (this) `Sectioning Commands`_ section.
+
+
+This appears to only work within a single ``.rst`` file. To allow
+cross-references between rst files within a single document, you can
+give an explicit label::
+
+  .. _`SecLabel`:
+  
+  -----------------
+  This is a section 
+  -----------------
+
+Then, when you want to refer to this label, just write
+``:ref:`SecLabel```.
 
 
 To refer to an external link, use the same syntax for the
@@ -241,7 +255,7 @@ To insert a term into the index, use the ``.. index`` directive::
 This will insert a pair of index entries, one for ``shell-command``,
 with sub-term ``command-name``, and one
 ``command-name, shell-command``.
- The resulting index entries can be found at the end
+The resulting index entries can be found at the end
 of this document. For complete usage information for the index
 directive, check the `Sphinx Index Docs`_.
 
@@ -295,5 +309,5 @@ Important points:
    the first line.
 
 #. In the body of a document, you can make a hyperlinked reference to
- a non-terminal with the syntax: ``:token:`name```, where ``name``
- is the name of the non-terminal.
+   a non-terminal with the syntax: ``:token:`name```, where ``name``
+   is the name of the non-terminal.

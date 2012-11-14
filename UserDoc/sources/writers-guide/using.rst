@@ -1,5 +1,3 @@
-
-
 ===============================
  Using the documentation tools
 ===============================
@@ -17,7 +15,6 @@ that includes the ``setuptools`` package (which it probably does), you
 can install ``sphinx`` with::
     
     sudo easy_install sphinx
-
 
 
 Building Documentation
@@ -57,10 +54,8 @@ The directory contains two important files that dictate the structure
 of the manual. First, ``index.rst`` defines the files that will be
 included in the manual. Second ``conf.py`` defines configuration
 variables for the documentation. Editing the ``index.rst`` file is
-described in `Writing Docs using reStructuredText`_, while
+described in :ref:`Writing Documentation with reStructuredText`, while
 documentation for editing the ``conf.py`` file is available on the
 `Sphinx website`_.
 
 .. _`Sphinx website`: http://sphinx.pocoo.org/contents.html
-
-
