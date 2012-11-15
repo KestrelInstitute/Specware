@@ -9,7 +9,7 @@ A stripped down version of Polymorphic.
 Map =
 spec
   type Map (key,a)
-endspec
+end-spec
 
 Simple =
 spec
@@ -73,4 +73,4 @@ meaningless unless an implementation is assumed.
   op allMap : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
   op existsMap : [a,b] (a * b -> Bool) -> Map (a,b) -> Bool
 
-endspec
+end-spec
