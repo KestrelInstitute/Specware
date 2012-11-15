@@ -223,7 +223,7 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
       let n_tm1 = simplify spc n_tm in
       if equalTerm?(n_tm1, tm) then None
       else
-      let _ = writeLine("structureEx:\n"^printTerm tm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1) in
+      % let _ = writeLine("structureEx:\n"^printTerm tm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1) in
       Some n_tm1
     | None -> None
 end-spec
