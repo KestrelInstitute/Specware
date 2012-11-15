@@ -150,7 +150,6 @@ Languages/MetaSlang/CodeGen/C/Examples/Makefile
 Languages/MetaSlang/CodeGen/C/Examples/QuickSortWithMain.sw
 Languages/MetaSlang/CodeGen/C/Examples/QuickSort.sw
 Languages/MetaSlang/CodeGen/C/Examples/main.c
-Languages/MetaSlang/CodeGen/C/Examples/queens.sw
 Languages/MetaSlang/CodeGen/C/Examples/BitString.sw
 Languages/MetaSlang/CodeGen/C/README.CCodeGen
 

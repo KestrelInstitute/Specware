@@ -16,7 +16,7 @@
 ;;;
 ;;; In particular, we have
 ;;;   one of:   Linux, Mac, MSWindows
-;;;   one of:   SBCL, Allegro, CMU, OpenMCL
+;;;   one of:   SBCL, Allegro, CMU, OpenMCL (TODO: We now only support SBCL?)
 ;;;
 ;;; Current candidates being used are:
 ;;;   Linux     SBCL      [was Linux Allegro, then Linux CMU]
@@ -190,8 +190,9 @@
     (copy-dist-directory (extend-directory source-dir    "General")
                          (extend-directory component-dir "General"))
 
-    (copy-dist-file      (merge-pathnames source-dir    "General.sw")
-                         (merge-pathnames component-dir "General.sw"))
+    ;; This file no longer exists:
+    ;; (copy-dist-file      (merge-pathnames source-dir    "General.sw")
+    ;;                      (merge-pathnames component-dir "General.sw"))
 
     (copy-dist-file      (merge-pathnames (ensure-subdirs-exist source-dir "Structures" "Data")
                                           "Monad.sw")
@@ -770,16 +771,20 @@
           (target-doc-dir (ensure-subdirs-exist target-dir "Documentation")))
       ;; (format t "~&;;;~%")
       (format t "~&;;;   Getting Documentation ...~%")
-      (copy-dist-file  (make-pathname :name "SpecwareLanguageManual"    :type "pdf" :defaults (extend-directory source-doc-dir "language-manual"))
+      ;; TODO: Before calling this, we need to build the documentation (using make in UserDoc/sources).
+      (copy-dist-file  (make-pathname :name "SpecwareLanguageManual"    :type "pdf" :defaults source-doc-dir)
                        (make-pathname :name "SpecwareLanguageManual"    :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file  (make-pathname :name "SpecwareTutorial"          :type "pdf" :defaults (extend-directory source-doc-dir "tutorial"))
+      (copy-dist-file  (make-pathname :name "SpecwareTutorial"          :type "pdf" :defaults source-doc-dir)
                        (make-pathname :name "SpecwareTutorial"          :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file  (make-pathname :name "SpecwareUserManual"        :type "pdf" :defaults (extend-directory source-doc-dir "user-manual"))
+      (copy-dist-file  (make-pathname :name "SpecwareUserManual"        :type "pdf" :defaults source-doc-dir)
                        (make-pathname :name "SpecwareUserManual"        :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file  (make-pathname :name "QuickReference"            :type "pdf" :defaults (extend-directory source-doc-dir "cheat-sheet"))
-                       (make-pathname :name "Specware-QuickReference"   :type "pdf" :defaults target-doc-dir))
-      (copy-dist-file  (make-pathname :name "SpecwareIsabelleInterface" :type "pdf" :defaults (extend-directory source-doc-dir "isabelle-interface"))
+      (copy-dist-file  (make-pathname :name "SpecwareQuickReference"    :type "pdf" :defaults source-doc-dir)
+                       (make-pathname :name "SpecwareQuickReference"    :type "pdf" :defaults target-doc-dir))
+      (copy-dist-file  (make-pathname :name "SpecwareIsabelleInterface" :type "pdf" :defaults source-doc-dir)
                        (make-pathname :name "SpecwareIsabelleInterface" :type "pdf" :defaults target-doc-dir))
+      ;; not currently distributed:
+      ;; (copy-dist-file  (make-pathname :name "SpecwareTransformationManual" :type "pdf" :defaults source-doc-dir)
+      ;;                  (make-pathname :name "SpecwareTransformationManual" :type "pdf" :defaults target-doc-dir))
 
       (let ((notes-file (make-pathname :name "ReleaseNotes" :type "txt" :defaults source-doc-dir)))
         (when (probe-file notes-file)
@@ -792,7 +797,7 @@
       ;; (format t "~&;;;~%")
       (format t "~&;;;   Getting Examples ...~%")
 
-      (copy-dist-directory (extend-directory source-dir   "UserDoc" "tutorial" "example")
+      (copy-dist-directory (extend-directory source-dir   "UserDoc" "sources" "tutorial" "example")
                            (extend-directory examples-dir "Matching"))
 
       (let ((matching (extend-directory examples-dir "Matching")))
@@ -802,7 +807,7 @@
       (copy-dist-directory (extend-directory source-dir "UserDoc" "examples")
                            (extend-directory target-dir "Examples"))
 
-      (copy-dist-directory (extend-directory source-dir "UserDoc" "isabelle-interface" "example")
+      (copy-dist-directory (extend-directory source-dir "UserDoc"  "sources" "isabelle-interface" "example")
                            (extend-directory target-dir "Examples" "IsabelleInterface"))
 
       ;; (let ((snark-dir (extend-directory examples-dir "Matching" "Snark"))
