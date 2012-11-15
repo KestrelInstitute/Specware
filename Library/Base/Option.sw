@@ -26,6 +26,9 @@ op [a] compare (comp: a * a -> Comparison) (o1: Option a, o2: Option a): Compari
     | (None,  None)   -> Equal
 
 % lift function to also map extra element:
+%% This map function is given special treatment in
+%% Languages/MetaSlang/Transformations/Coercions.sw (see op
+%% lifterFuns).
 
 op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
   | None   -> None

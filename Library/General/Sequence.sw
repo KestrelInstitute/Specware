@@ -533,6 +533,10 @@ op unzip3 : [a,b,c] Seq (a * b * c) ->
 
 % homomorphically apply function to all elements of sequence(s):
 
+%% This map function is given special treatment in
+%% Languages/MetaSlang/Transformations/Coercions.sw (see op
+%% lifterFuns).
+
 op [a,b] map (f: a -> b) (s: Seq a) : Seq b =
   case s of
   | fin l -> fin (map f l)

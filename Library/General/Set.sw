@@ -228,6 +228,9 @@ lemma Set_Fun_PD_less:
 end-proof
 
 % map (partial) function over set:
+%% This map function is given special treatment in
+%% Languages/MetaSlang/Transformations/Coercions.sw (see op
+%% lifterFuns).
 
 op [a,b] map (f: a -> b) (s:Set a) : Set b =
   fn y:b -> (ex(x:a) x in? s && y = f x)

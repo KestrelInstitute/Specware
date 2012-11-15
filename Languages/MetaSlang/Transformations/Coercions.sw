@@ -18,7 +18,8 @@ spec
     [(Qualified("List", "List"), Qualified("List", "map")),
      (Qualified("Option", "Option"), Qualified("Option", "mapOption")),
      (Qualified("Set", "Set"), Qualified("Set", "map")),
-     (Qualified("Stream", "Stream"), Qualified("Stream", "map"))]
+     (Qualified("Stream", "Stream"), Qualified("Stream", "map")),
+     (Qualified("Seq", "Seq"), Qualified("Seq", "map"))]
 
  op unfoldBeforeCoProductOrArrow(sp: Spec, srt: MSType): MSType =
    case srt of

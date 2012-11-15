@@ -166,6 +166,10 @@ op unzip3 : [a,b,c] Stream (a * b * c) ->
 
 % homomorphically apply function to all elements of stream(s):
 
+%% This map function is given special treatment in
+%% Languages/MetaSlang/Transformations/Coercions.sw (see op
+%% lifterFuns).
+
 op [a,b] map (f: a -> b) (s: Stream a) : Stream b =
   fn i:Nat -> f (s i)
 
