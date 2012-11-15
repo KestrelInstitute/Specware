@@ -345,7 +345,53 @@ MetaSlangRewriter qualifying spec
                 binds,
               M1, b)
 
-  op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
+ op maybePushIfBack(tr_if: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
+   case tr_if of
+     | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
+       let qn = termToList q in
+       let rn = termToList r in
+       if equalTerm?(f, f1)
+          && equalTerm?(f, f2)
+          && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)
+                                        && equalTerm?(Ns@j, rn@j)))
+               (tabulate(length Ns, id))
+         then mkAppl(f, replaceNth(i, Ns, IfThenElse(p, qn@i, rn@i, pos)))
+         else tr_if
+     | _ -> tr_if
+
+op maybePushLetBack(tr_let: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
+   case tr_let of
+     | Let(bds, Apply(f1, q, a), pos) ->
+       let qn = termToList q in
+       if equalTerm?(f, f1)
+          && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)))
+               (tabulate(length Ns, id))
+         then mkAppl(f, replaceNth(i, Ns, Let(bds, qn@i, pos)))
+         else tr_let
+     | _ -> tr_let
+
+op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
+   case tr_case of
+     | Apply(Lambda(binds,b3), case_tm, b2) ->
+       if forall? (fn (p,c,bod) ->
+                     case bod of
+                       | Apply(f1, q, a) ->
+                         let qn = termToList q in
+                         equalTerm?(f, f1)
+                         && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)))
+                              (tabulate(length Ns, id))
+                       | _ -> false)
+            binds
+         then mkAppl(f, replaceNth(i, Ns,
+                                   Apply(Lambda(map (fn (p,c,Apply(f1, q, a)) ->
+                                                       let qn = termToList q in
+                                                       (p,c,qn@i))
+                                                  binds, b3),
+                                         case_tm, b2)))
+         else tr_case
+     | _ -> tr_case
+
+ op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
  op persistentFlexVar?(t: MSTerm): Bool =
    case isFlexVar? t of
      | Some n -> n >= persistentFlexVarStartNum
@@ -484,13 +530,18 @@ MetaSlangRewriter qualifying spec
              let r_tm = IfThenElse(p,
                                    mkAppl(M,replaceNth(i, Ns, q)),
                                    mkAppl(M,replaceNth(i, Ns, r)), b)
-             in rewriteTerm(solvers,boundVars,r_tm,rules))
+             in
+             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
+             LazyList.map (fn (tr_tm, a) -> (maybePushIfBack(tr_tm, M, Ns, i), a))
+               tr_tms)
           | _ ->
         case findIndex (embed? Let) Ns  of
           | Some (i,let_tm) | pushFunctionsIn? && pushable? M ->
             (let Let(bds,lt_body,a2) = let_tm in
              let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
-             rewriteTerm(solvers,boundVars,r_tm,rules))
+             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
+             LazyList.map (fn (tr_tm, a) -> (maybePushLetBack(tr_tm, M, Ns, i), a))
+               tr_tms)
           | _ ->
         case findIndex caseExpr? Ns  of
           | Some (i,case_tm) | pushFunctionsIn? && pushable? M ->
@@ -499,7 +550,10 @@ MetaSlangRewriter qualifying spec
                                             (p,c,mkAppl(M,replaceNth(i, Ns, bod))))
                                        binds, b3),
                               case_tm, b2)
-             in rewriteTerm(solvers,boundVars,r_tm,rules))
+             in
+             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
+             LazyList.map (fn (tr_tm, a) -> (maybePushCaseBack(tr_tm, M, Ns, i), a))
+               tr_tms)
           | _ ->
         case M of
           | Lambda(lrules,b1) ->
