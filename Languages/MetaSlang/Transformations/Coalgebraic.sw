@@ -267,42 +267,45 @@ op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
 
 op getConjoinedEqualities(t: MSTerm): MSTerms =
   case t of
-    | IfThenElse(_, t1, t2, _) -> getConjoinedEqualities t1 ++ getConjoinedEqualities t2
-    | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) -> getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+    | IfThenElse(_, t1, t2, _) ->
+      getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+    | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) ->
+      getConjoinedEqualities t1 ++ getConjoinedEqualities t2
     | _ -> [t]
 
 op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
   let state_ty = mkBase(state_qid, []) in
-  foldOpInfos (fn (info, stored_qids) ->
-               let  (tvs, ty, tm) = unpackFirstTerm info.dfn in
-               if ~(anyTerm? tm) then stored_qids
-               else
-               case getStateVarAndPostCondn(ty, state_ty, spc) of
-                 | Some(state_var, deref?, post_condn) ->
-                   removeDuplicates
-                     (mapPartial (fn cj ->
-                                    case cj of
-                                      | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
-                                        (case lhs of
-                                           | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
-                                               | qid nin? stored_qids && equalVar?(v, state_var)
-                                                    && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
-                                             % let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
-                                             Some qid
-                                           | _ -> None)
-                                      | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)    % Bool
-                                          | qid nin? stored_qids && equalVar?(v, state_var)
-                                            && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
-                                        Some qid
-                                      | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_), _, _), Var(v, _), _), _)    % Bool
-                                          | qid nin? stored_qids && equalVar?(v, state_var)
-                                            && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
-                                        Some qid
-                                      | _ -> None)
-                     (getConjoinedEqualities post_condn))
-                   ++ stored_qids
-                 | None -> stored_qids)
-  
+  foldOpInfos
+    (fn (info, stored_qids) ->
+      let  (tvs, ty, tm) = unpackFirstTerm info.dfn in
+      if ~(anyTerm? tm) then stored_qids
+      else
+      case getStateVarAndPostCondn(ty, state_ty, spc) of
+        | Some(state_var, deref?, post_condn) ->
+          removeDuplicates
+            (mapPartial
+               (fn cj ->
+                  case cj of
+                    | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
+                      (case lhs of
+                         | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
+                             | qid nin? stored_qids && equalVar?(v, state_var)
+                                  && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
+                           % let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
+                           Some qid
+                         | _ -> None)
+                    | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)    % Bool
+                        | qid nin? stored_qids && equalVar?(v, state_var)
+                          && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
+                      Some qid
+                    | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_), _, _), Var(v, _), _), _)    % Bool
+                        | qid nin? stored_qids && equalVar?(v, state_var)
+                          && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
+                      Some qid
+                    | _ -> None)
+            (getConjoinedEqualities post_condn))
+          ++ stored_qids
+        | None -> stored_qids)  
     [] spc.ops
 
 op scrubSubtypes(ty: MSType): MSType =
@@ -381,14 +384,17 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                    mkVar("Unrecognized_term", result_ty))
        def recordItemVal((state_itms, result_itms), cj): List(Id * MSTerm) * List(Id * MSTerm) =
          case cj of
-           | Apply(Fun(Equals,_,_),Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
+           | Apply(Fun(Equals,_,_),
+                   Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, rhs) :: state_itms, result_itms)
            | Apply(Fun(Equals,_,_),Record([(_, lhs), (_, rhs)], _), _)
                | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
-             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info in
+             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
+                                 result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
-           | Apply(Fun(Op(qid,_),_,_), Var(v,_), _) | qid in? stored_qids && equalVar?(state_var, v) ->   % Bool true
+           | Apply(Fun(Op(qid,_),_,_), Var(v,_), _)
+               | qid in? stored_qids && equalVar?(state_var, v) ->   % Bool true
              ((qualifiedIdToField qid, trueTerm) :: state_itms, result_itms)
            | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_),_,_), Var(v,_), _), _)                             % Bool false
                | qid in? stored_qids && equalVar?(state_var, v) ->
@@ -428,36 +434,37 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                (None, [])
                rec_prs
          in
-         if some? opt_src_tm || length result_prs = length field_pairs then (opt_src_tm, result_prs)
-           else
-             % let _ = writeLine("Incrementalizing "^show op_qid) in
-             let opt_src_tm =
-                 foldl (fn (result, (id, tm)) ->
-                          if some? result then result
+         if some? opt_src_tm || length result_prs = length field_pairs
+           then (opt_src_tm, result_prs)
+         else
+         % let _ = writeLine("Incrementalizing "^show op_qid) in
+         let opt_src_tm =
+             foldl (fn (result, (id, tm)) ->
+                      if some? result then result
+                      else
+                        % let _ = writeLine(id^": "^printTerm tm) in
+                        foldSubTerms
+                          (fn (s_tm, result) ->
+                             if some? result then result
+                             else case s_tm of
+                                    | Apply(Fun(Project idi, _, _), v as Var _, _) | idi = id ->
+                                      Some v
+                                    | Apply(Fun(Op(qidi,_), _, _), v as Var _, _)
+                                        | qualifiedIdToField qidi = id ->
+                                      Some v
+                                    | _ -> None)
+                          result tm)
+               None result_prs
+         in
+         let opt_src_tm = if some? opt_src_tm then opt_src_tm
                           else
-                            % let _ = writeLine(id^": "^printTerm tm) in
-                            foldSubTerms
-                              (fn (s_tm, result) ->
-                                 if some? result then result
-                                 else case s_tm of
-                                        | Apply(Fun(Project idi, _, _), v as Var _, _) | idi = id ->
-                                          Some v
-                                        | Apply(Fun(Op(qidi,_), _, _), v as Var _, _)
-                                            | qualifiedIdToField qidi = id ->
-                                          Some v
-                                        | _ -> None)
-                              result tm)
-                   None result_prs
-             in
-             let opt_src_tm = if some? opt_src_tm then opt_src_tm
-                              else
-                                 % let _ = writeLine("tryInc: "^ printType state_ty^"\n"^foldl (fn (r, (v, ty)) -> r^", "^v^": "^printType ty) "" params) in
-                                 case findLeftmost (fn (_, ty) -> equalType?(ty, state_ty)) params of
-                                     | Some v -> Some(mkVar v)
-                                     | None -> None
-             in
+                             % let _ = writeLine("tryInc: "^ printType state_ty^"\n"^foldl (fn (r, (v, ty)) -> r^", "^v^": "^printType ty) "" params) in
+                             case findLeftmost (fn (_, ty) -> equalType?(ty, state_ty)) params of
+                                 | Some v -> Some(mkVar v)
+                                 | None -> None
+         in
              % let _ = writeLine(case opt_src_tm of Some tm -> printTerm tm | None -> "None") in
-             (opt_src_tm, result_prs)
+                       (opt_src_tm, result_prs)
        def replaceBody(dfn, bod) =
          case dfn of
            | Lambda([(binds, p, o_bod)], a) ->
