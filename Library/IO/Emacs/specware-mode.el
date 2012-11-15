@@ -291,7 +291,7 @@ accepted in lieu of prompting."
   (define-key map "\C-ch"    'sw:convert-spec-to-haskell)
   (define-key map "\C-cH"    'sw:convert-top-spec-to-haskell)
 
-  (define-key map [C-S-down-mouse-3] 'sw:show-containing-object)
+  (define-key map [M-S-down-mouse-1] 'sw:show-containing-object)
 					          ; Franz binding
 ;  (define-key map "\C-cs"    'insert-circle-s)    ; Process to debug
 ;  (define-key map "\C-c`"    'insert-open-quote)
@@ -2053,7 +2053,7 @@ It is deleted when there is no secondary selection.")
     (delete-overlay sw:current-object-overlay)
     (when (and (consp result)
                (eq (car result) ':|Some|))
-      (move-overlay sw:current-object-overlay (cadr result) (cddr result)))))
+      (move-overlay sw:current-object-overlay (cadr result) (1+ (cddr result))))))
 
 (defun sw:show-containing-object (start-event)
   (interactive "e")
