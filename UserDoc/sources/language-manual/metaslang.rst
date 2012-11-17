@@ -1655,14 +1655,14 @@ Sample :token:`type_declarations`:
    type Map(a, b)
    
 
-A :token:`type_declaration` of the form ``type``\ *T*\ ``=``\ *D*\ is
-equivalent to the :token:`type_declaration` ``type``\ *T*\ followed by
-the :token:`type_definition` ``def type``\ *T*\ ``=``\ *D*\ \ .
+A :token:`type_declaration` of the form ``type`` *T* ``=`` *D* is
+equivalent to the :token:`type_declaration` ``type`` *T* followed by
+the :token:`type_definition` ``def type`` *T* ``=`` *D* .
 
 .. COMMENT:  ================================================================= 
 
 Every :token:`type_name` used in a :token:`spec` must be declared (in
-the same :token:`spec` or in an imported :token:`spec`, included the
+the same :token:`spec` or in an imported :token:`spec`, including the
 "base-library" :token:`specs` that are always implicitly imported) in
 a :token:`type_declaration` or :token:`type_definition`. A
 :token:`type_name` may have
@@ -1881,7 +1881,7 @@ The meaning of a :token:`formal_parameter` ``(``\ *P*\ ``|``\ *E*\
 ``)`` is the same as that of the :token:`formal_parameter` ``((``\
 *P*\ ``):{(``\ *P*\ ``):``\ *T*\ ``|``\ *E*\ ``})``, in which *T* is
 a :token:`type_descriptor` such that in the context the
-:token:`annotated_pattern` ``(``\ *P*\ ``):``\ *T*\ is type-correct.
+:token:`annotated_pattern` ``(``\ *P*\ ``):``\ *T* is type-correct.
 If no such :token:`type_descriptor` exists, or its type cannot be
 unambiguously be determined, the :token:`formal_parameter` is type-
 incorrect. For example, in the :token:`declaration` for ``f`` above,
@@ -1895,8 +1895,8 @@ bar in a formal-parameter must not refer to local variables introduced
 by preceding :token:`formal_parameters`. (To do so would effectively
 create dependent types, which are currently not supported.)
 
-An :token:`op_declaration` of the form ``op``\ *B*\ \ *F*\ \ *X*\ \
-*A*\ ``=``\ *E*\ \ , in which *B* is an optional
+An :token:`op_declaration` of the form ``op`` *B* *F*  *X* \
+*A* ``=`` *E*, in which *B* is an optional
 :token:`type_variable_binder`, *F* is a :token:`formal_expression`,
 *X* is an optional :token:`fixity`, *A* is a :token:`type_annotation`
 and *E* is an :token:`expression`, is equivalent to the

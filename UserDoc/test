@@ -4,7 +4,7 @@ THISSCRIPTDIR=`dirname $0`
 
 pushd ${THISSCRIPTDIR}/sources > /dev/null
 make clean &> /dev/null
-make &> /dev/null
+make &> test.log
 popd > /dev/null
 ls -l ${THISSCRIPTDIR}/SpecwareUserManual.pdf
 ls -l ${THISSCRIPTDIR}/SpecwareTutorial.pdf
