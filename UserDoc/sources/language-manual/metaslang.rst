@@ -1905,11 +1905,11 @@ the :token:`op_definition` ``def op``\ *B*\ \ *F*\ ``=``\ *E*\ \ .
 
 .. COMMENT:  ================================================================= 
 
-In an :token:`op_declaration` of the form ``op``\ *N*\ ``:``\ *T*\ \ ,
+In an :token:`op_declaration` of the form ``op`` *N*\ ``:``\ *T*\ \ ,
 in which *N* is an :token:`op_name`, *N* is declared to have type *T*.
-An :token:`op_declaration` of the form ``op``\ *H*\ ``(``\ *P*\ ``:``\
+An :token:`op_declaration` of the form ``op`` *H*\ ``(``\ *P*\ ``:``\
 *S*\ ``) :``\ *T*\ \ , in which *P* is a :token:`pattern` whose type
-is given by :token:`type_descriptor` *T*, is equivalent to ``op``\
+is given by :token:`type_descriptor` *T*, is equivalent to ``op``
 *H*\ ``:``\ *S*\ ``->``\ *T*\ \ . So the :token:`simple_names` used as
 :token:`local_variables` in each :token:`formal_parameter` are only
 bound to that :token:`formal_parameter`, and are further irrelevant
