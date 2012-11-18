@@ -134,9 +134,7 @@ spec
    let spc = normalizeCurriedDefinitions spc             in
    let spc = simplifySpec                spc             in
    let mp  = makeUnfoldMap               spc snark_hack? in
-   % let _ = writeLine("Instantiate HO fns before:\n"^printSpec spc) in
    let result = unFoldTerms (spc, mp) in
-   % let _ = writeLine("Instantiate HO fns after:\n"^printSpec result) in
    result
 
  %% ================================================================================
@@ -432,20 +430,27 @@ op dontUnfoldQualifiers: Ids = ["String"]
 
  op unFoldTerms (spc : Spec, info_map : AQualifierMap DefInfo) : Spec =
    let 
-     def simplifyTerm tm =
+     def aux n tm =
        let result1 = simplify           spc tm      in
        let result2 = simplifyUnfoldCase spc result1 in
-       if equalTerm?(tm, result2)
-         then result2
-         else simplifyTerm result2      % Overkill, but doesn't seem too expensive
-    in
-    let gtsp = (fn outer_qid -> 
-                  fn tm -> 
-                    maybeUnfoldTerm (outer_qid, tm, info_map, simplifyTerm, spc),
-                id,
-                id)
-    in
-    mapSpecNotingOpNames gtsp spc
+       if equalTerm? (tm, result2)
+         then tm
+       else if n < 20 then      % avoid accidental infinite recursions
+         aux (n+1) result2      % Overkill, but doesn't seem too expensive
+       else
+         let _ = writeLine("unFoldTerms: apparent infinite recursion aborted") in
+         let _ = writeLine("tm = " ^ printTerm tm) in
+         result2
+     def simplifyTerm tm =
+       aux 0 tm 
+   in
+   let gtsp = (fn outer_qid -> 
+                 fn tm -> 
+                   maybeUnfoldTerm (outer_qid, tm, info_map, simplifyTerm, spc),
+               id,
+               id)
+   in
+   mapSpecNotingOpNames gtsp spc
 
  %% mapSpecNotingOpNames is a variant of mapSpec that allows us to use the name
  %% of an op in the tranformations being done on terms within it.
