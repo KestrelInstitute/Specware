@@ -115,8 +115,8 @@ MetaSlang qualifying spec
   | Project        Id
   | RecordMerge             % <<
   | Embed          Id * Bool  % represents a call of a co-product constructor (the bool indicates whether the constructor takes arguments)
-  | Embedded       Id  %represents a call to embed?, takes a constructor
-  | Select         Id
+  | Embedded       Id         % represents a call to embed?, takes a constructor
+  | Select         Id         % specific case extraction -- generated only by pattern match compiler and type obligation generator (deprecate?)
   | Nat            Nat
   | Char           Char
   | String         String
