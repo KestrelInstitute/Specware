@@ -10,6 +10,7 @@ SpecToLisp qualifying spec
  import /Languages/MetaSlang/Transformations/Globalize
 %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
+ import /Languages/MetaSlang/CodeGen/DebuggingSupport
  import /Languages/Lisp/Lisp
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
@@ -1462,81 +1463,129 @@ op addList(S: StringSet, l: List String): StringSet =
    in
      aux tm
 
- op toLisp        : Spec -> LispSpec
- op toLispEnv     : Spec * Bool * Bool -> LispSpec
- op toLispFile    : Spec * String * String * Bool * Bool -> ()
- op toLispFileEnv : Spec * String * String * Bool * Bool -> ()
-
- def toLisp spc = toLispEnv (spc, true, false)
-
- op  instantiateHOFns? : Bool
- def instantiateHOFns? = true
-
- op  lambdaLift? : Bool
- def lambdaLift? = false
-
- op  removeCurrying? : Bool
- def removeCurrying? = false
-
- op substBaseSpecs? : Bool = true
-
- op cg.showSpc (msg : String) (spc : Spec) : () 
+ op removeTheorems (spc : Spec) : Spec = 
+  %% theorems are irrelevant for code generation
+  let
+    def filter el =
+      case el of
+        | Property _ -> None
+        | _ -> Some el
+  in
+  setElements (spc, mapPartialSpecElements filter spc.elements)
 
  op builtInLispType? (qid : QualifiedId) : Bool = false
  op builtInLispOp?   (qid : QualifiedId) : Bool = false
 
- op removeUnusedOps (slicing? : Bool) (spc : Spec) : Spec =
-  if slicing? then 
-    sliceSpecForCode (spc, topLevelOps spc, topLevelTypes spc, builtInLispOp?, builtInLispType?)
+ op maybeRemoveUnusedOps (slice? : Bool) (spc : Spec) : Spec =
+  if slice? then 
+    sliceSpecForCode (spc, 
+                      topLevelOps   spc, 
+                      topLevelTypes spc, 
+                      builtInLispOp?, 
+                      builtInLispType?)
   else 
     spc 
 
- def toLispEnv (spc, complete?, slicing?) =
-   % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
-   %% theorems are irrelevant for code generation
-   let spc = setElements(spc,mapPartialSpecElements 
-			       (fn el ->
-				case el of
-			         | Property _ -> None
-			         | _ -> Some el)
-			       spc.elements)
+ op maybeSubstBaseSpecs (substBaseSpecs? : Bool) (spc : Spec) : Spec =
+  if substBaseSpecs? then 
+    substBaseSpecs spc
+  else 
+    spc 
+
+ op  removeCurrying? : Bool
+ def removeCurrying? = false
+
+ op maybeRemoveCurrying (spc : Spec) : Spec =
+  if removeCurrying? then  % false by default
+    removeCurrying spc 
+  else
+    spc
+
+ op  instantiateHOFns? : Bool
+ def instantiateHOFns? = true
+
+ op maybeInstantiateHOFns (spc : Spec) : Spec =
+  if instantiateHOFns? then % true by default
+    instantiateHOFns spc
+  else 
+    spc
+
+ op  lambdaLift? : Bool
+ def lambdaLift? = false
+
+ op maybeLambdaLift (spc : Spec) : Spec =
+  if lambdaLift? then       % false by default
+    lambdaLift (spc, true) 
+  else 
+    spc
+
+ def transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) : Spec =
+   let _ = showIfVerbose ["------------------------------------------",
+                          "transforming spec for Lisp code generation...",
+                          "------------------------------------------"]
    in
-   let spc = if complete? && substBaseSpecs? then substBaseSpecs spc else spc in
-   let _   = showSpc "substBaseSpecs"             spc in
-   let spc = removeUnusedOps slicing?             spc in
-   let _   = showSpc "sliceSpec"                  spc in
-   let spc = if removeCurrying? then removeCurrying spc else spc in
-   let _   = showSpc "removeCurrying"             spc in
-   let spc = normalizeTopLevelLambdas             spc in
-   let _ = showSpc "normalizeTopLevelLambdas"     spc in
-   let spc = if instantiateHOFns? then instantiateHOFns spc else spc in
-   let _   = showSpc "instantiateHOFns"           spc in
-   let spc = if lambdaLift? then lambdaLift (spc, true) else spc in
-   let _   = showSpc "lambdaLift"                 spc in
-   let spc = translateMatch                       spc in
-   let _   = showSpc "translateMatch"             spc in
-   let spc = translateRecordMergeInSpec           spc in
-   let _   = showSpc "translateRecordMergeInSpec" spc in
-   let spc = arityNormalize                       spc in
-   let _   = showSpc "arityNormalize"             spc in
-   %let _ = toScreen(printSpec spc) in
-   let lisp_spec = lisp spc in
-   lisp_spec 
+   let _   = showSpecIfVerbose "Original"                   spc in %  (0)
 
- def toLispFile (spc, file, preamble, complete?, slicing?) =  
-   toLispFileEnv (spc, file, preamble, complete?, slicing?) 
+   let spc = maybeSubstBaseSpecs substBaseSpecs?            spc in
+   let _   = showSpecIfVerbose "substBaseSpecs"             spc in
 
- def toLispFileEnv (spc, file, preamble, complete?, slicing?) =
-   % let _ = writeLine ("Writing Lisp file " ^ file) in
-   let spc = toLispEnv (spc, complete?, slicing?) in
-   ppSpecToFile (spc, file, preamble)
+   let spc = removeTheorems                                 spc in
+   let _   = showSpecIfVerbose "removeTheorems"             spc in
 
- op  toLispText : Spec -> Text
- def toLispText spc =
-   let lSpc = toLispEnv (spc, true, false) in
-   let p = ppSpec lSpc in
-   format (120, p)
-      
+   let spc = maybeRemoveUnusedOps slice?                    spc in
+   let _   = showSpecIfVerbose "maybeRemoveUnusedOps"       spc in
+
+   let spc = maybeRemoveCurrying                            spc in
+   let _   = showSpecIfVerbose "removeCurrying"             spc in
+
+   let spc = normalizeTopLevelLambdas                       spc in
+   let _   = showSpecIfVerbose "normalizeTopLevelLambdas"   spc in
+
+   let spc = maybeInstantiateHOFns                          spc in
+   let _   = showSpecIfVerbose "instantiateHOFns"           spc in
+
+   let spc = maybeLambdaLift                                spc in
+   let _   = showSpecIfVerbose "maybeLambdaLift"            spc in
+
+   %% Currently, translateMatch introduces Select's and parallel Let bindings,
+   %% which would confuse other transforms.  So until that is changed, 
+   %% translateMatch should be done late in the transformation sequence.
+   %%
+   %% We also might wish to convert matches to case or typecase expressions,
+   %% in which case not all matches would be transformed to if statements.
+
+   let spc = translateMatch                                 spc in
+   let _   = showSpecIfVerbose "translateMatch"             spc in
+
+   let spc = translateRecordMergeInSpec                     spc in
+   let _   = showSpecIfVerbose "translateRecordMergeInSpec" spc in
+
+   let spc = arityNormalize                                 spc in
+   let _   = showSpecIfVerbose "arityNormalize"             spc in
+
+   spc
+
+ op toLispSpec (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) 
+  : LispSpec =
+  let spc       = transformSpecForLispGen substBaseSpecs? slice? spc in
+  let lisp_spec = lisp spc in
+  lisp_spec               
+
+ op toLispFile (spc             : Spec, 
+                file            : String, 
+                preamble        : String, 
+                substBaseSpecs? : Bool, 
+                slice?          : Bool) 
+  : () =  
+  let lisp_spec = toLispSpec substBaseSpecs? slice? spc in
+  ppSpecToFile (lisp_spec, file, preamble)
+
+ op toLispText (spc : Spec) : Text =
+  let lisp_spec = toLispSpec true false spc in
+  let pretty    = ppSpec lisp_spec          in
+  let text      = format (120, pretty)      in
+  text
+
  %% Just generates code for the local defs
  def localDefsToLispFile (spc, file, preamble) =
    %let localOps = spc.importInfo.localOps in
@@ -1551,15 +1600,15 @@ op addList(S: StringSet, l: List String): StringSet =
 			  info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, srt, pos))})
 		       spc.ops)
    in
-   let spc = setElements(spc,mapPartialSpecElements 
-			       (fn el ->
-				case el of
+   let spc = setElements (spc,mapPartialSpecElements 
+                            (fn el ->
+                               case el of
 			         | Op    (_, true, _) -> Some el
-			         | OpDef _         -> Some el
+			         | OpDef _            -> Some el
 			         | _ -> None)
-			       spc.elements)
+                            spc.elements)
    in 
-     toLispFile (spc, file, preamble, false, false)
+   toLispFile (spc, file, preamble, false, false)  % don't substitue base spec, don't slice
      
 
 (*

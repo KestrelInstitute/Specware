@@ -11,9 +11,11 @@ import CodeGenUtilities
  * def List_nil () = embed nil
  *)
 
-op addTypeConstructorsToSpec : Spec -> Spec * QualifiedIds
+op addTypeConstructorsToSpec : Spec -> Spec
 def addTypeConstructorsToSpec spc =
-  addTypeConstructorsToSpecInternal (spc, false)
+  let (spc, _) = addTypeConstructorsToSpecInternal (spc, false) in 
+  % ignore names of constrOps
+  spc
 
 op addTypeConstructorsToSpecForSnark : Spec -> Spec * QualifiedIds
 def addTypeConstructorsToSpecForSnark spc =

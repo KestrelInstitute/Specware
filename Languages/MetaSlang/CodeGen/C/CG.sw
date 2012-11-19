@@ -11,42 +11,18 @@ CG qualifying spec
  import /Languages/MetaSlang/CodeGen/ConformOpDecls
  import /Languages/MetaSlang/CodeGen/AdjustAppl
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
+ import /Languages/MetaSlang/CodeGen/DebuggingSupport
  
  import /Languages/MetaSlang/Transformations/RemoveCurrying
  import /Languages/MetaSlang/Transformations/LambdaLift
  import /Languages/MetaSlang/Transformations/InstantiateHOFns%
-% import /Languages/MetaSlang/Transformations/RecordMerge
+%import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/TheoryMorphism
  
  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
  import /Languages/I2L/CodeGen/C/I2LToC              % I2L       =codegen=> C
 
 % import /Languages/MetaSlang/CodeGen/C/PrintSpecAsC
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% Debugging support...
-
- op verbosity : Nat = 0
-
- op showInternals (spc : Spec) : () =
-  appSpec ((fn tm  -> writeLine (printTermWithTypes tm)), 
-           (fn typ -> writeLine (printType          typ)),
-           (fn pat -> writeLine (printPattern       pat)))
-          spc
-
- op showSpc (msg : String) (spc : Spec) : () =
-  % let n = internalRunTime() in
-  % let _ = writeLine("CG: " ^ show n ^ " " ^ msg) in
-  if verbosity > 0 then 
-    let _ = writeLine "--------------------" in
-    let _ = writeLine ("### " ^ msg)         in
-    let _ = writeLine (printSpec spc)        in
-    let _ = writeLine "----"                 in
-    let _ = if (verbosity > 1) then showInternals spc else () in
-    let _ = writeLine "--------------------" in
-    ()
-  else
-    ()
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% If these predicates are true, don't include the indicated op or type when 
@@ -125,90 +101,86 @@ CG qualifying spec
   in
   strip typ
 
+ op removeUnusedOps (top_ops : QualifiedIds) (top_types : QualifiedIds) (spc : Spec) : Spec =
+  sliceSpecForCode (spc, top_ops, top_types, builtinCOp?, builtinCType?)
+
+ op removeNonNatSubtypesAndBaseDefs (spc : Spec) : Spec =
+  let stripper = stripNonNatSubtypesAndBaseDefs spc in
+  mapSpec (fn t -> t, stripper, fn p -> p) spc
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Transform MetaSlang spec in preparation for C code generation. 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op transformSpecForCodeGen (spc : Spec) : Spec =
-  let _ = if verbosity > 0 then 
-            let _ = showSpc "Starting" spc                                                  in
-            let _ = writeLine ";;; generating C code..."                                    in
-            let _ = writeLine "-----------------------------------------------------------" in
-            let _ = writeLine "transforming spec for C code generation..."                  in
-            let _ = writeLine "-----------------------------------------------------------" in
-            ()
-          else
-            ()
+ op transformSpecForCGen (spc : Spec) : Spec =
+  let _ = showIfVerbose ["------------------------------------------",
+                         "transforming spec for C code generation...",
+                         "------------------------------------------"]
   in
-
-  let 
-
-   def removeUnusedOps top_ops top_types spc =
-     sliceSpecForCode (spc, top_ops, top_types, builtinCOp?, builtinCType?)
-
-   def specStripNonNatSubtypesAndBaseDefs spc =
-     let stripper = stripNonNatSubtypesAndBaseDefs spc in
-     mapSpec (fn t -> t, stripper, fn p -> p) spc
-
-  in
-
   let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in % fetch early, to avoid including anything accidentally added at toplevel by transforms
-  let _ = writeLine "----" in
-  let _ = writeLine (anyToString top_ops) in
-  let _ = writeLine "----" in
+  let _ = showIfVerbose ["toplevel ops: ", 
+                         anyToString top_ops, 
+                         "------------------------------------------"]
+  in
+  let _ = showSpecIfVerbose "Original"                        spc in %  (0)
+  
+  let spc = substBaseSpecs                                    spc in %  (1) adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
+  let _ = showSpecIfVerbose "substBaseSpecs"                  spc in
+  
+  let spc = removeUnusedOps top_ops top_types                 spc in %  (2) do this early to minimize wasted motion (and again later to filter incidental cruft)
+  let _ = showSpecIfVerbose "removeUnusedOps[1]"              spc in 
+  
+  let spc = removeCurrying                                    spc in %  (3) op f: A -> B -> C  ==>  op f_1_1: A * B -> C, etc.
+  let _ = showSpecIfVerbose "removeCurrying"                  spc in
+  
+  let spc = normalizeTopLevelLambdas                          spc in %  (4) convert patterned lambdas into case expressions
+  let _ = showSpecIfVerbose "normalizeTopLevelLambdas"        spc in
+  
+  let spc = instantiateHOFns                                  spc in %  (5) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
+  let _ = showSpecIfVerbose "instantiateHOFns"                spc in
+  
+  let spc = lambdaLiftWithImports                             spc in %  (6) as good a time as any
+  let _ = showSpecIfVerbose "lambdaLiftWithImports"           spc in
+  
+   %% Currently, translateMatch introduces Select's and parallel Let bindings,
+   %% which would confuse other transforms.  So until that is changed, 
+   %% translateMatch should be done late in the transformation sequence.
+   %%
+   %% We also might wish to convert matches to case or typecase expressions,
+   %% in which case not all matches would be transformed to if statements.
 
-  let _ = showSpc "Original"                      spc in %  (0)
+  let spc = translateMatch                                    spc in %  (7) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
+  let _ = showSpecIfVerbose "translateMatch"                  spc in
   
-  let spc = substBaseSpecs                        spc in %  (1) adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
-  let _ = showSpc "substBaseSpecs"                spc in
+  let spc = letWildPatToSeq                                   spc in %  (8) transforms "let _ = t1 in t2" into "(t1;t2)"
+  let _ = showSpecIfVerbose "letWildPatToSeq"                 spc in
   
-  let spc = removeUnusedOps top_ops top_types     spc in %  (2) do this early to minimize wasted motion (and again later to filter incidental cruft)
-  let _ = showSpc "sliceSpec[1]"                  spc in 
+  let spc = removeNonNatSubtypesAndBaseDefs                   spc in %  (9) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+  let _ = showSpecIfVerbose "removeNonNatSubtypesAndBaseDefs" spc in
   
-  let spc = removeCurrying                        spc in %  (3) op f: A -> B -> C  ==>  op f_1_1: A * B -> C, etc.
-  let _ = showSpc "removeCurrying"                spc in
+  let spc = poly2monoAndDropPoly                              spc in % (10) After this is called, we can no longer reason about polymorphic types such as List(a)
+  let _ = showSpecIfVerbose "poly2monoAndDropPoly"            spc in
   
-  let spc = normalizeTopLevelLambdas              spc in %  (4) convert patterned lambdas into case expressions
-  let _ = showSpc "normalizeTopLevelLambdas"      spc in
+  let spc = translateRecordMergeInSpec                        spc in % (11) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
+  let _ = showSpecIfVerbose "translateRecordMergeInSpec"      spc in
   
-  let spc = instantiateHOFns                      spc in %  (5) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
-  let _ = showSpc "instantiateHOFns"              spc in
+  let spc = simplifySpec                                      spc in % (12) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
+  let _ = showSpecIfVerbose "simplifySpec"                    spc in
   
-  let spc = lambdaLiftWithImports                 spc in %  (6) as good a time as any
-  let _ = showSpc "lambdaLift"                    spc in
+  let spc = addEqOpsToSpec                                    spc in % (13) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
+  let _ = showSpecIfVerbose "addEqOpsToSpec"                  spc in
   
-  let spc = translateMatch                        spc in %  (7) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
-  let _ = showSpc "translateMatch"                spc in
+  let spc = removeUnusedOps top_ops top_types                 spc in % (14) remove newly introduced but unused ops (mainly eq ops) 
+  let _ = showSpecIfVerbose "removeUnusedOps[2]"              spc in 
   
-  let spc = letWildPatToSeq                       spc in %  (8) transforms "let _ = t1 in t2" into "(t1;t2)"
-  let _ = showSpc "letWildPatToSeq"               spc in
+  let spc = addTypeConstructorsToSpec                         spc in % (15) these ops won't survive slicing, so this must follow removeUnusedOps
+  let _ = showSpecIfVerbose "addTypeConstructorsToSpec"       spc in
   
-  let spc = specStripNonNatSubtypesAndBaseDefs    spc in %  (9) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
-  let _ = showSpc "strip subtypes"                spc in
+  let spc = conformOpDecls                                    spc in % (16) change def with multiple args to decompose single arg when decl has one (product) arg
+  let _ = showSpecIfVerbose "conformOpDecls"                  spc in
   
-  let spc = poly2monoAndDropPoly                  spc in % (10) After this is called, we can no longer reason about polymorphic types such as List(a)
-  let _ = showSpc "poly2mono"                     spc in
-  
-  let spc = translateRecordMergeInSpec            spc in % (11) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
-  let _ = showSpc "translateRecordMergeInSpec"    spc in
-  
-  let spc = simplifySpec                          spc in % (12) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
-  let _ = showSpc "simplifySpec"                  spc in
-  
-  let spc = addEqOpsToSpec                        spc in % (13) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
-  let _ = showSpc "addEqOpsToSpec"                spc in
-  
-  let spc = removeUnusedOps top_ops top_types     spc in % (14) remove newly introduced but unused ops (mainly eq ops) 
-  let _ = showSpc "sliceSpec[2]"                  spc in 
-  
-  let (spc,constrOps) = addTypeConstructorsToSpec spc in % (15) these ops won't survive slicing, so this must follow removeUnusedOps
-  let _ = showSpc "addTypeConstructorsToSpec"     spc in
-  
-  let spc = conformOpDecls                        spc in % (16) change def with multiple args to decompose single arg when decl has one (product) arg
-  let _ = showSpc "conformOpDecls"                spc in
-  
-  let spc = adjustAppl                            spc in % (17) change call with multiple args to compose single arg when decl has one (product) arg
-  let _ = showSpc "adjustAppl"                    spc in
+  let spc = adjustAppl                                        spc in % (17) change call with multiple args to compose single arg when decl has one (product) arg
+  let _ = showSpecIfVerbose "adjustAppl"                      spc in
   
   spc
 
@@ -217,7 +189,7 @@ CG qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op generateCSpec (app_name : String) (spc : Spec) : C_Spec =
-  let spc  = transformSpecForCodeGen spc in
+  let spc  = transformSpecForCGen spc in
   generateCSpecFromTransformedSpec app_name spc 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -304,6 +276,7 @@ CG qualifying spec
                    spc          : Spec, 
                    opt_filename : Option String)
   : () =
+  % for generation using CTarget, see evaluateGenCThin in Languages/SpecCalculus/Semantics/Specware.sw
   % if importsCTarget? spc then
   %   let _ = writeLine("Spec refers to CTarget, will use new C generator.") in
   %   let filename = case opt_filename of 
@@ -312,6 +285,6 @@ CG qualifying spec
   %   in
   %   printSpecAsCToFile (filename, spc)
   % else
-    let cspec = generateCSpec app_name spc in 
-    printToFile (app_name, cspec, opt_filename)
+  let cspec = generateCSpec app_name spc in 
+  printToFile (app_name, cspec, opt_filename)
 end-spec
