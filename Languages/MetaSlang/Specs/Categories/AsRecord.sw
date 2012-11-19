@@ -1,26 +1,25 @@
-\section{Category of Specs}
+% Category of Specs
 
-This will likely move to a new home. This needs to be abstracted factored!
+% This will likely move to a new home. This needs to be abstracted factored!
 
-This is a naive representation of the category of specs. Note that in
-this case we are using a concrete record type for categories. Categories
-are data.  A category can be passed as an argument to a function.
+% This is a naive representation of the category of specs. Note that in
+% this case we are using a concrete record type for categories. Categories
+% are data.  A category can be passed as an argument to a function.
 
-There are many many options with respect to representing categories
-including monomorphic variants and where there is no explicit type
-for categories.
+% There are many many options with respect to representing categories
+% including monomorphic variants and where there is no explicit type
+% for categories.
 
-It might be better to factor Morphism into a separate spec.
-But it seems harder than expected to get this via refinement.
+% It might be better to factor Morphism into a separate spec.
+% But it seems harder than expected to get this via refinement.
 
-Much thought needs to go into the question of qualifiers.
+% Much thought needs to go into the question of qualifiers.
 
-Stephen has raised the question as to whether the maps might be implicitly
-completed such that the maps only give the points where the morphism
-differs from the identity.
+% Stephen has raised the question as to whether the maps might be implicitly
+% completed such that the maps only give the points where the morphism
+% differs from the identity.
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/AnnSpec
  import /Languages/MetaSlang/Specs/SimplePrinter
  import /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
@@ -167,5 +166,4 @@ SpecCalc qualifying spec {
 	      ppNewline,
 	      ppDiagram (diagram cocone)]
 
-}
-\end{spec}
+end-spec
