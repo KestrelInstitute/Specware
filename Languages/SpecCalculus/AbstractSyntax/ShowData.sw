@@ -14,17 +14,23 @@
 %% TODO: Make this command available directly in the Specware shell (how?).
 %% TODO: Print things like this: /\ with vertical bars (or in some other way that doesn't confuse emacs)
 %% TODO: rename this file to ShowData.sw
+%% TODO look for and eliminate duplicate functionality between this file and other files in this dir.
 
 ShowData qualifying spec 
 
  import Types
  import /Languages/MetaSlang/AbstractSyntax/AnnTerm
- import /Languages/MetaSlang/Transformations/NormalizeTypes
- % op  NormTypes.normalizeTypes: Spec -> Spec
  import /Library/PrettyPrinter/WadlerLindig
-  import /Languages/MetaSlang/Specs/Printer
- import /Languages/SpecCalculus/Semantics/Value
- import /Languages/SpecCalculus/Semantics/Monad
+ import /Languages/MetaSlang/Specs/Printer
+ %import /Languages/SpecCalculus/Semantics/Value
+ %import /Languages/SpecCalculus/Semantics/Monad
+
+%Additional pretty-printer routines:
+ op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
+ op ppGr1Concat (x:List WLPretty) : WLPretty = ppNest 1 (ppConcat x)
+ op ppGr2Concat (x:List WLPretty) : WLPretty = ppNest 2 (ppConcat x)
+ op ppNum (n:Integer) : WLPretty = ppString(show n)
+
   % type SpecCalc.Exception
   % type SpecCalc.Result a =
   %   | Ok a
@@ -41,23 +47,9 @@ ShowData qualifying spec
  type Context = {printTypes?: Boolean,
 		 printPositionInfo?: Boolean,
 		 fileName: String,
-		 currentUID: UnitId,
-		 uidsSeen: List UnitId,	% Used to avoid infinite recursion because of circularity
+		 %currentUID: UnitId,
+		 %uidsSeen: List UnitId,	% Used to avoid infinite recursion because of circularity
 		 recursive?: Boolean}
- %type SpecTerm = SpecCalc.SpecTerm
- %type Term = SCTerm
- type SpecElem = SpecElemTerm
- %type Decl = SCDecl
-
- % def ppGrConcat x = ppGroup (ppConcat x)
-
- def ppGrConcat x = ppNest 0 (ppConcat x)
- def ppGr1Concat x = ppNest 1 (ppConcat x)
- def ppGr2Concat x = ppNest 2 (ppConcat x)
- def ppGbConcat x = ppNest 0 (ppConcat x)
- op  ppNum: Integer -> WLPretty
- def ppNum n = ppString(show n)
-
 
 % op  showTerm : SCTerm -> String
 % def showTerm term = ppFormat (ppSCTerm {printTypes? = true,
@@ -67,16 +59,14 @@ ShowData qualifying spec
 %					 recursive? = false}
 %			         term)
 
- op  ppLitString: String -> WLPretty
+
 % def ppLitString id = ppString(IO.formatString1("~S",id))
- def ppLitString id = ppString(IO.formatString1("~A",id))
+ op ppLitString (id:String) : WLPretty = ppString(IO.formatString1("~A",id))
 
  %%% Identifiers have string quotes around them
- op  ppID: String -> WLPretty
- def ppID id = ppLitString id
+ op ppID (id: String) : WLPretty = ppLitString id
 
- op  ppUID : UnitId -> WLPretty
- def ppUID unitId =
+ op ppUID (unitId:UnitId) : WLPretty =
    let ppLocal = ppUIDlocal unitId in
    case unitId of
      | {path=h::_,hashSuffix=_} ->
@@ -85,8 +75,7 @@ ShowData qualifying spec
 	 else ppAppend (ppString "/") ppLocal
      | _ -> ppLocal			% Shouldn't happen
 
- op  ppUIDlocal : UnitId -> WLPretty
- def ppUIDlocal {path, hashSuffix} =
+ op ppUIDlocal ({path, hashSuffix}: UnitId) : WLPretty =
    case hashSuffix of
      | None -> ppSep (ppString "/") (map ppID path)
      | Some suffix ->
@@ -98,30 +87,24 @@ ShowData qualifying spec
        in
        ppSep (ppString "/") (pp path)
 
- op  ppRelativeUID : RelativeUID -> WLPretty
- def ppRelativeUID relUID =
+ op ppRelativeUID (relUID : RelativeUID) : WLPretty=
    case relUID of
      | SpecPath_Relative unitId -> ppAppend (ppString "/") (ppUIDlocal unitId)
      | UnitId_Relative   unitId -> ppUIDlocal unitId
 
-
- op  ppSCTerm : Context -> SCTerm -> WLPretty
- def ppSCTerm c (term, pos) =
+ op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
    case term of
      | Print t ->
        ppConcat [ppString "print ",
 		 ppSCTerm c t]
-
      | UnitId unitId -> 
        ppConcat [ppString "(unitId ", ppRelativeUID unitId, ppString ")"]
-
      | Spec specElems -> 
        ppConcat [ppString "(SCspec",
 		 ppNewline,
-		 ppNest 2 (ppSpecElems c specElems),
+		 ppNest 2 (ppSpecElemTerms c specElems),
 		 ppNewline,
 		 ppString "endSCspec)"]
-
       | Qualify (term, qualifier) ->
         ppConcat [ppString "(Qualify ",
 		  ppSCTerm c term,
@@ -135,7 +118,6 @@ ShowData qualifying spec
 		  ppSCTerm c term,
 		  ppString " by ",
 		  ppRenaming renaming]
-
       | Let (decls, term) ->
         ppConcat [ppString "let",
 		  ppNewline,
@@ -145,7 +127,6 @@ ShowData qualifying spec
 		  ppString "in",
 		  ppNewline,
 		  ppNest 2 (ppSCTerm c term)]
-
       | Where (decls, term) ->
 	ppConcat [ppString "where",
 		  ppNewline,
@@ -155,7 +136,6 @@ ShowData qualifying spec
 		  ppString "in",
 		  ppNewline,
 		  ppNest 2 (ppSCTerm c term)]
-
       | Diag elems ->
         ppConcat [ppString "diag {",    % with apologies to stephen
          	  ppNewline,
@@ -163,17 +143,14 @@ ShowData qualifying spec
          	  ppNest 2 (ppSep ppNewline (map (ppDiagElem c) elems)),
          	  ppNewline,
          	  ppString "}"]
-
       | Colimit term ->
 	ppConcat [ppString "colim ",
 		  ppSCTerm c term]
-
       | Subst (specTerm,morphTerm) ->
 	ppConcat [ppSCTerm c specTerm,
 		  ppString " [",
 		  ppSCTerm c morphTerm,
 		  ppString "]"]
-
       | SpecMorph (dom, cod, elems, pragmas) ->
 	let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 
@@ -183,13 +160,11 @@ ShowData qualifying spec
 			  ppQualifiedId left_qid,
 			  ppString " +-> ",
 			  ppQualifiedId right_qid]
-	       
 	      | Op ((left_qid, _), (right_qid, _)) ->
 		ppConcat [ppString " op ",
 			  ppQualifiedId left_qid,
 			  ppString " +-> ",
 			  ppQualifiedId right_qid]
-
 	      | Ambiguous (left_qid, right_qid) ->
 		ppConcat [ppQualifiedId left_qid,
 			  ppString " +-> ",
@@ -204,7 +179,6 @@ ShowData qualifying spec
 		    ppIndent (ppSep ppNewline (map ppSpecMorphRule elems)),
 		    ppNewline,
 		    ppString "} : "]
-
       | Hide (nameExprs, term) ->
         let 
 	  def ppNameExpr expr = 
@@ -212,23 +186,18 @@ ShowData qualifying spec
 	      | Type qid ->
 	        ppConcat [ppString "type ",
 			  ppQualifiedId qid]
-
 	      | Op (qid, optType) ->
 		ppConcat [ppString "op ",
 			  ppQualifiedId qid]
-
 	      | Axiom qid ->
 		ppConcat [ppString "axiom ",
 			  ppQualifiedId qid]
-
 	      | Theorem qid ->
 		ppConcat [ppString "theorem ",
 			  ppQualifiedId qid]
-
 	      | Conjecture qid ->
 		ppConcat [ppString "conjecture ",
 			  ppQualifiedId qid]
-
 	      | Ambiguous qid ->
 		ppQualifiedId qid
 	in
@@ -241,20 +210,17 @@ ShowData qualifying spec
     %             ppSep (ppString ",") (map ppIdInfo nameExpr),
     %             ppString "} from",
     %             ppSCTerm term]
-
       | Generate (target, term, optFileNm) ->
         ppConcat [ppString ("generate " ^ target ^ " "),
 		  ppSCTerm c term,
 		  (case optFileNm of
 		     | Some filNm -> ppString (" in " ^ filNm)
 		     | _ -> ppNil)]
-
       | Reduce (msTerm, scTerm) ->
 	ppConcat [ppString "reduce ",
 		  ppTerm c msTerm,
 		  ppString " in ",
 		  ppSCTerm c scTerm]
-
       | Prove (claimName, term, proverName, assertions, proverOptions, proverBaseOptions, answer_var) ->
 	  ppConcat [
 	    ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
@@ -275,31 +241,24 @@ ShowData qualifying spec
 						    ppString " options ",
 						    ppString (printQualifiedId(prover_option_name)) ])
 		    ]
-
       | Expand term ->
 	ppConcat [ppString "expand ",
 		  ppSCTerm c term]
-
       | Obligations term ->
 	ppConcat [ppString "obligations ",
 		  ppSCTerm c term]
-
       | Quote (value,_,_) -> 
 	ppValue c value None
-
       | Other other_term -> ppString "<<Other>>"
 	%ppOtherTerm other_term
 
- op  ppQualifiedId : QualifiedId -> WLPretty
- def ppQualifiedId (Qualified (q, id))  =
+ op ppQualifiedId (Qualified (q, id) : QualifiedId) : WLPretty =
    if q = UnQualified then 
      ppID id
    else 
      ppConcat [ppID q, ppString ".", ppID id]
 
-
-  op  ppDiagElem :  Context -> DiagElem -> WLPretty
-  def ppDiagElem c (elem, _ (* position *)) =
+  op ppDiagElem (c:Context) ((elem, _ (* position *)) : DiagElem) : WLPretty =
     case elem of
       | Node (nodeId, term) ->
           ppConcat [
@@ -318,8 +277,7 @@ ShowData qualifying spec
             ppSCTerm c term
           ]
 
- op  ppDecls : Context -> List (SCDecl) -> WLPretty
- def ppDecls c decls =
+ op ppDecls (c:Context) (decls: List SCDecl) : WLPretty =
    let 
      def ppDecl (name, term) =
        ppConcat [ppID name,
@@ -328,11 +286,10 @@ ShowData qualifying spec
    in
      ppSep ppNewline (map ppDecl decls)
 
- op ppSpecElems (c: Context) (elems : List SpecElem) : WLPretty =
-   ppSep ppNewline (map (ppSpecElem c) elems)
+ op ppSpecElemTerms (c: Context) (elems : List SpecElemTerm) : WLPretty =
+   ppSep ppNewline (map (ppSpecElemTerm c) elems)
 
- op  ppSpecElem : Context -> SpecElem -> WLPretty
- def ppSpecElem c (elem, pos) = 
+ op ppSpecElemTerm (c:Context) ((elem, pos):SpecElemTerm) : WLPretty = 
    case elem of
      | Import  term                   -> ppConcat [ppString "import [",
 						   ppSep (ppString ", ") (map (ppSCTerm c) term),
@@ -347,8 +304,7 @@ ShowData qualifying spec
 					 else
 					   ppString (" %% " ^ str)
 
- op  ppIdInfo : List QualifiedId -> WLPretty
- def ppIdInfo qids = ppSep (ppString ", ") (map ppQualifiedId qids)
+ op ppIdInfo (qids: List QualifiedId) : WLPretty = ppSep (ppString ", ") (map ppQualifiedId qids)
    
  op ppTypeInfo (c:Context) (full?:Boolean) (aliases: List QualifiedId, dfn: MSType) (pos:Position) : WLPretty =
    let (tvs, srt) = unpackType dfn in
@@ -368,22 +324,19 @@ ShowData qualifying spec
 	      ppIdInfo aliases,
 	      ppBrTyVars tvs]))
 
- op  ppBrTyVars : TyVars -> WLPretty
- def ppBrTyVars tvs =
+ op ppBrTyVars (tvs:TyVars) : WLPretty =
    if tvs = [] then ppString " "
      else ppConcat [ppString " [",
 		    ppTyVars tvs,
 		    ppString "] "]
 
- op  ppTyVars : TyVars -> WLPretty
- def ppTyVars tvs =
+ op ppTyVars (tvs: TyVars) : WLPretty =
    case tvs of
      | [] -> ppNil
      | _  -> ppSep (ppString " ") (map ppID tvs)
 
- op  ppOpInfo :  Context -> Boolean -> Boolean -> Aliases * Fixity * MSTerm -> Position -> WLPretty
- def ppOpInfo c decl? def? (aliases, fixity, dfn) pos =
-   let (tvs, srt, term) = unpackTerm dfn in
+ op ppOpInfo (c:Context) (decl?:Boolean) (def?:Boolean) (aliases:Aliases, fixity:Fixity, dfn:MSTerm) (pos:Position) : WLPretty =
+   let (tvs, srt, term) = unpackTerm dfn in %TODO think about this
    ppGr2Concat
      ((if c.printPositionInfo?
         then [ppPosition c pos]
@@ -419,9 +372,9 @@ ShowData qualifying spec
                ppString " = ",
                ppBreak,
                ppIndent(ppTerm c term)]))
-  op  ppProperty : Context -> Property -> WLPretty
-    def ppProperty c (propType, name, tyVars, term, pos) =
-      ppGr2Concat [if c.printPositionInfo?
+
+  op ppProperty (c:Context) ((propType, name, tyVars, term, pos):Property) : WLPretty =
+    ppGr2Concat [if c.printPositionInfo?
 		    then ppPosition c pos
                     else ppNil,
 		   ppString "(claim ",
@@ -434,22 +387,20 @@ ShowData qualifying spec
 		   ppTerm c term,
                    ppString ")"]
  
-  op  ppPropertyType : PropertyType -> WLPretty
-   def ppPropertyType propType =
-     case propType of
-       | Axiom -> ppString "axiom"
-       | Theorem -> ppString "theorem"
-       | Conjecture -> ppString "conjecture"
-       | any ->
-            fail ("No match in ppPropertyType with: '"
-               ^ (anyToString any)
-               ^ "'")
+  op ppPropertyType (propType:PropertyType) : WLPretty =
+    case propType of
+      | Axiom -> ppString "axiom"
+      | Theorem -> ppString "theorem"
+      | Conjecture -> ppString "conjecture"
+      | any ->
+           fail ("No match in ppPropertyType with: '"
+              ^ (anyToString any)
+              ^ "'")
 
- op   ppRenaming : Renaming -> WLPretty
-  def ppRenaming (rules, _) =
-    let 
-      def ppRenamingRule (rule, _(* position *)) = 
-	case rule of          
+ op ppRenaming ((rules, _): Renaming) : WLPretty =
+   let 
+     def ppRenamingRule (rule, _(* position *)) = 
+      case rule of          
 	  | Type (left_qid, right_qid, aliases) ->
 	    ppConcat [ppString " type ",
 		      ppQualifiedId left_qid,
@@ -484,13 +435,13 @@ ShowData qualifying spec
   %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
   op  Specware.evaluateUnitId: String -> Option Value
   op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
-  op  SpecCalc.findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
+%  op  SpecCalc.findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
   %op  SpecCalc.uidToFullPath: UnitId -> String
   op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
   %op  SpecCalc.setCurrentUID : UnitId -> SpecCalc.Env ()
 
-  op  uidToAswName : UnitId -> String
-  def uidToAswName {path,hashSuffix=_} =
+ %TODO remove mentions of "asw" here and elsewhere
+  op uidToAswName ({path,hashSuffix=_} : UnitId) : String =
    let device? = deviceString? (head path) in
    let main_name = last path in
    let path_dir = butLast path in 
@@ -508,58 +459,56 @@ ShowData qualifying spec
   %type SpecCalc.Exception
   %op  SpecCalc.catch : fa (a) Env a -> (Exception -> Env a) -> Env a
 
-  op  evalSCTerm: Context -> SCTerm -> Option Value
-  def evalSCTerm c term =
-    let def handler _ = return None in
-    let prog = {setCurrentUID(c.currentUID);
-		(val,_,_) <- evaluateTermInfo term;
-		return (Some val)}
-    in
-    run (catch prog handler)
+  %% op evalSCTerm (c:Context) (term:SCTerm) : Option Value =
+  %%   let def handler _ = return None in
+  %%   let prog = {setCurrentUID(c.currentUID);
+  %%       	(val,_,_) <- evaluateTermInfo term;
+  %%       	return (Some val)}
+  %%   in
+  %%   run (catch prog handler)
       
-  op  deleteASWFilesForUID: String -> ()
-  def deleteASWFilesForUID uidstr =
-    case evaluateUnitId uidstr of
-      | Some val ->
-        deleteASWFilesForVal val
-      | _ -> ()
+  %% op  deleteASWFilesForUID: String -> ()
+  %% def deleteASWFilesForUID uidstr =
+  %%   case evaluateUnitId uidstr of
+  %%     | Some val ->
+  %%       deleteASWFilesForVal val
+  %%     | _ -> ()
 
-  op  deleteASWFilesForVal: Value -> ()
-  def deleteASWFilesForVal val =
-    case uidStringForValue val of
-      | None -> ()
-      | Some (_,uidstr) ->
-        let fil_nm = uidstr ^ ".asw" in
-	let _ = ensureFileDeleted fil_nm in
-	case val of
-	  | Spec spc ->
-	    app (fn elem -> case elem of
-		              | Import(_,im_sp,_,_) ->
-		                deleteASWFilesForVal (Spec im_sp)
-			      | _ -> ())
-	      spc.elements
-	  | _ -> ()
+  %% op  deleteASWFilesForVal: Value -> ()
+  %% def deleteASWFilesForVal val =
+  %%   case uidStringForValue val of
+  %%     | None -> ()
+  %%     | Some (_,uidstr) ->
+  %%       let fil_nm = uidstr ^ ".asw" in
+  %%       let _ = ensureFileDeleted fil_nm in
+  %%       case val of
+  %%         | Spec spc ->
+  %%           app (fn elem -> case elem of
+  %%       	              | Import(_,im_sp,_,_) ->
+  %%       	                deleteASWFilesForVal (Spec im_sp)
+  %%       		      | _ -> ())
+  %%             spc.elements
+  %%         | _ -> ()
 
-  op  ensureFileDeleted: String -> ()
-  def ensureFileDeleted fil_nm =
-    if fileExists? fil_nm
-      then deleteFile fil_nm
-      else ()
+  %% op  ensureFileDeleted: String -> ()
+  %% def ensureFileDeleted fil_nm =
+  %%   if fileExists? fil_nm
+  %%     then deleteFile fil_nm
+  %%     else ()
 
-  op  ensureValuePrinted: Context -> Value -> ()
-  def ensureValuePrinted c val =
-    case uidStringPairForValue val of
-      | None -> ()
-      | Some (uid,fil_nm, hash_ext) ->
-        let asw_fil_nm = fil_nm ^ hash_ext ^ ".asw" in
-	let sw_fil_nm = fil_nm ^ ".sw" in
-	if fileOlder?(sw_fil_nm,asw_fil_nm)
-	  then ()
-	  else let c = c << {currentUID = uid} in
-	       writeStringToFile(printValue c val,asw_fil_nm)
+  % op  ensureValuePrinted: Context -> Value -> ()
+  % def ensureValuePrinted c val =
+  %   case uidStringPairForValue val of
+  %     | None -> ()
+  %     | Some (uid,fil_nm, hash_ext) ->
+  %       let asw_fil_nm = fil_nm ^ hash_ext ^ ".asw" in
+  %       let sw_fil_nm = fil_nm ^ ".sw" in
+  %       if fileOlder?(sw_fil_nm,asw_fil_nm)
+  %         then ()
+  %         else let c = c << {currentUID = uid} in
+  %              writeStringToFile(printValue c val,asw_fil_nm)
 
-  op  uidStringForValue: Value -> Option (UnitId * String)
-  def uidStringForValue val =
+  op uidStringForValue (val:Value) : Option (UnitId * String) =
     case uidStringPairForValue val of
       | None -> None
       | Some(uid,filnm,hash) -> Some(uid,filnm ^ hash)
@@ -567,8 +516,7 @@ ShowData qualifying spec
   %% Used because the use of "#" causes problems with syntax coloring.
   op numberSignString : String = implode [##]
 
-  op  uidStringPairForValue: Value -> Option (UnitId * String * String)
-  def uidStringPairForValue val =
+  op uidStringPairForValue (val:Value) : Option (UnitId * String * String) =
     case MonadicStateInternal.readGlobalVar "GlobalContext" of
       | None -> None
       | Some global_context ->
@@ -581,19 +529,19 @@ ShowData qualifying spec
 		| Some loc_nm -> numberSignString ^ loc_nm
 		| _ -> "")
 
-  op  SpecCalc.findUnitIdforUnitInCache: Value -> Option UnitId
-  def findUnitIdforUnitInCache val =
-    case readGlobalVar "GlobalContext" of
-      | None -> None
-      | Some global_context ->
-        findUnitIdForUnit(val,global_context)
+  % op  SpecCalc.findUnitIdforUnitInCache: Value -> Option UnitId
+  % def findUnitIdforUnitInCache val =
+  %   case readGlobalVar "GlobalContext" of
+  %     | None -> None
+  %     | Some global_context ->
+  %       findUnitIdForUnit(val,global_context)
 
-  op  SpecCalc.findTermForUnitInCache: Value -> Option SCTerm
-  def findTermForUnitInCache val =
-    case readGlobalVar "GlobalContext" of
-      | None -> None
-      | Some global_context ->
-        findDefiningTermForUnit(val,global_context)
+  % op  SpecCalc.findTermForUnitInCache: Value -> Option SCTerm
+  % def findTermForUnitInCache val =
+  %   case readGlobalVar "GlobalContext" of
+  %     | None -> None
+  %     | Some global_context ->
+  %       findDefiningTermForUnit(val,global_context)
     
 %  op  printUID : String * Boolean * Boolean -> ()
 %  def printUID (uid, printPositionInfo?, recursive?) =
@@ -614,8 +562,7 @@ ShowData qualifying spec
     in
     ppFormat pp_val
 
-  op  fileNameOfValue: Value -> Option String
-  def fileNameOfValue value =
+  op fileNameOfValue (value:Value) : Option String =
     case value of
       | Spec        spc           -> fileNameOfSpec spc
 %      | Morph       spec_morphism -> ppMorphism c  spec_morphism
@@ -628,14 +575,12 @@ ShowData qualifying spec
 %      | UnEvaluated _             -> ppString "some unevaluated term"
       | _                         -> None
 
-  op  fileNameOfSpec: Spec -> Option String
-  def fileNameOfSpec spc =
+  op fileNameOfSpec (spc:Spec) : Option String =
     case findLeftmost (fn el -> some?(fileNameOfSpecElement(el,spc))) spc.elements of
       | Some el -> fileNameOfSpecElement (el,spc)
       | None -> None
 
-  op  fileNameOfSpecElement: SpecElement * Spec -> Option String
-  def fileNameOfSpecElement (el,spc) =
+  op fileNameOfSpecElement (el:SpecElement,spc:Spec) : Option String =
     case el of
     | Op (qid,_,_)    -> fileNameOfOpId(qid,spc)
     | OpDef (qid,_,_,_) -> fileNameOfOpId(qid,spc)
@@ -644,20 +589,17 @@ ShowData qualifying spec
     | Property(_, _, _, term, _) -> fileNameOfTerm term
     | _ -> None
 
-  op  fileNameOfOpId: QualifiedId * Spec -> Option String
-  def fileNameOfOpId(qid,spc) =
+  op fileNameOfOpId(qid:QualifiedId, spc:Spec) : Option String =
     case findTheOp(spc,qid) of
       | Some {names=_,fixity=_,dfn,fullyQualified?=_} -> fileNameOfTerm dfn
       | _ -> None
 
-  op  fileNameOfTypeId: QualifiedId * Spec -> Option String
-  def fileNameOfTypeId(qid,spc) =
+  op fileNameOfTypeId(qid:QualifiedId,spc:Spec) : Option String =
     case findTheType(spc,qid) of
       | Some {names=_,dfn} -> fileNameOfType dfn
       | _ -> None
 
-  op  fileNameOfTerm: MSTerm -> Option String
-  def fileNameOfTerm tm =
+  op fileNameOfTerm (tm:MSTerm) : Option String =
     foldSubTerms (fn (t,val) ->
 		  case val of
 		    | Some _ -> val
@@ -667,8 +609,7 @@ ShowData qualifying spec
 		    | _ -> None)
       None tm
 
-  op  fileNameOfType: MSType -> Option String
-  def fileNameOfType s =
+  op fileNameOfType (s:MSType) : Option String =
     case typeAnn s of
       | File(nm,_,_) -> Some nm
       | _ -> None
@@ -692,11 +633,11 @@ ShowData qualifying spec
 
 
   (* tentative *)
-  def ppPrism {dom=_, sms=_, pmode=_, tm=_} =
+  op ppPrism ({dom=_, sms=_, pmode=_, tm=_}:SpecPrism) : WLPretty =
     ppString "<some prism>"
 
   (* tentative *)
-  def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
+  op ppInterp ({dom=_, med=_, cod=_, d2m=_, c2m=_}:SpecInterp) : WLPretty =
     ppString "<some interp>"
 
   %% --------------------------------------------------------------------------------
@@ -838,90 +779,87 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                  ppString ")"
                  ]
     
-  op  ppSpecOrigin: Context -> SCTerm -> WLPretty
-  def ppSpecOrigin c (def_tm,_) =
-    case def_tm of
-      | Subst(spec_tm,morph_tm) ->
-        ppGr2Concat [ppString "substitution ",
-		     ppSCTermVal c spec_tm "name ",
-		     ppNewline,
-		     ppString "[",
-		     ppSCTermVal c morph_tm " name morphism ",
-		     ppString "]"]
-        
-      | Translate(spec_tm,renaming) ->
-	ppGr2Concat[ppString "translate ",
-		    ppSCTermVal c spec_tm "name ",
-		    ppString " by ",
-		    ppRenaming renaming]
-      | Qualify(spec_tm,nm) ->
-	if baseUnitId?(c.currentUID)
-	  then ppGrConcat [ppString "qualify base ",
-			   ppID nm]
-	else
-	ppGr2Concat[ppString "qualify ",
-		    ppID nm,
-		    ppString " ",
-		    ppSCTermVal c spec_tm "name "]
-      | Obligations spec_or_morph_tm ->
-	let oblig_keywords = if morphismTerm? c spec_or_morph_tm
-			       then "morphism obligations "
-			       else "obligations "
-	in
-	ppGr2Concat[ppString oblig_keywords,
-		    ppSCTermVal c spec_or_morph_tm "name "]
-         
-      | _ -> ppString "elements"
+  %% op  ppSpecOrigin: Context -> SCTerm -> WLPretty
+  %% def ppSpecOrigin c (def_tm,_) =
+  %%   case def_tm of
+  %%     | Subst(spec_tm,morph_tm) ->
+  %%       ppGr2Concat [ppString "substitution ",
+  %%       	     ppSCTermVal c spec_tm "name ",
+  %%       	     ppNewline,
+  %%       	     ppString "[",
+  %%       	     ppSCTermVal c morph_tm " name morphism ",
+  %%       	     ppString "]"]
+  %%     | Translate(spec_tm,renaming) ->
+  %%       ppGr2Concat[ppString "translate ",
+  %%       	    ppSCTermVal c spec_tm "name ",
+  %%       	    ppString " by ",
+  %%       	    ppRenaming renaming]
+  %%     | Qualify(spec_tm,nm) ->
+  %%       if baseUnitId?(c.currentUID)
+  %%         then ppGrConcat [ppString "qualify base ",
+  %%       		   ppID nm]
+  %%       else
+  %%       ppGr2Concat[ppString "qualify ",
+  %%       	    ppID nm,
+  %%       	    ppString " ",
+  %%       	    ppSCTermVal c spec_tm "name "]
+  %%     | Obligations spec_or_morph_tm ->
+  %%       let oblig_keywords = if morphismTerm? c spec_or_morph_tm
+  %%       		       then "morphism obligations "
+  %%       		       else "obligations "
+  %%       in
+  %%       ppGr2Concat[ppString oblig_keywords,
+  %%       	    ppSCTermVal c spec_or_morph_tm "name "]
+  %%     | _ -> ppString "elements"
 
-  op  morphismTerm?: Context -> SCTerm -> Boolean
-  def morphismTerm? c tm =
-    case tm of
-      | (SpecMorph _,_) -> true
-      | (UnitId _,_) ->
-        (case evalSCTerm c tm of
-	  | Some (Morph _) -> true
-	  | _ -> false)
-      | _ -> false
+  %% op  morphismTerm?: Context -> SCTerm -> Boolean
+  %% def morphismTerm? c tm =
+  %%   case tm of
+  %%     | (SpecMorph _,_) -> true
+  %%     | (UnitId _,_) ->
+  %%       (case evalSCTerm c tm of
+  %%         | Some (Morph _) -> true
+  %%         | _ -> false)
+  %%     | _ -> false
 
-  op  baseUnitId?: UnitId -> Boolean
-  def baseUnitId? uid =
-    let len = length uid.path in
-    case subFromTo(uid.path,len-3,len-1) of
-      | ["Library","Base"] -> true
-      | _ -> false
+  %% op  baseUnitId?: UnitId -> Boolean
+  %% def baseUnitId? uid =
+  %%   let len = length uid.path in
+  %%   case subFromTo(uid.path,len-3,len-1) of
+  %%     | ["Library","Base"] -> true
+  %%     | _ -> false
 
-  op  ppSCTermVal: Context -> SCTerm -> String -> WLPretty
-  def ppSCTermVal c tm name_str=
-    case tm of
-      | (UnitId _,_) ->
-        (case evalSCTerm c tm of
-	  | Some val -> ppUIDorFull c val (Some tm) name_str
-	  | _ -> ppString "<<Shouldn't happen!>>")
-      | _ ->
-	case evalSCTerm c tm of
-	  | Some val -> ppValue c val (Some tm)
-	  | _ -> ppString "<<Shouldn't happen!>>"
+  %% op  ppSCTermVal: Context -> SCTerm -> String -> WLPretty
+  %% def ppSCTermVal c tm name_str=
+  %%   case tm of
+  %%     | (UnitId _,_) ->
+  %%       (case evalSCTerm c tm of
+  %%         | Some val -> ppUIDorFull c val (Some tm) name_str
+  %%         | _ -> ppString "<<Shouldn't happen!>>")
+  %%     | _ ->
+  %%       case evalSCTerm c tm of
+  %%         | Some val -> ppValue c val (Some tm)
+  %%         | _ -> ppString "<<Shouldn't happen!>>"
 	 
-  op ppUIDorFull (c:Context) (val:Value) (opt_val_tm: Option SCTerm) (name_str: String) : WLPretty =
-    case findUnitIdforUnitInCache val of
-      | Some uid ->
-        let _ = if c.recursive? && uid nin? c.uidsSeen
-		  then ensureValuePrinted (c << {uidsSeen = Cons(uid,c.uidsSeen)}) val
-		else ()
-	in
-	  ppConcat [ppString name_str, ppUID uid]
-      | None -> ppValue c val opt_val_tm
+  % op ppUIDorFull (c:Context) (val:Value) (opt_val_tm: Option SCTerm) (name_str: String) : WLPretty =
+  %   case findUnitIdforUnitInCache val of
+  %     | Some uid ->
+  %       let _ = if c.recursive? && uid nin? c.uidsSeen
+  %       	  then ensureValuePrinted (c << {uidsSeen = Cons(uid,c.uidsSeen)}) val
+  %       	else ()
+  %       in
+  %         ppConcat [ppString name_str, ppUID uid]
+  %     | None -> ppValue c val opt_val_tm
 
   op ppSpecElements (c:Context) (spc: Spec) (elems:SpecElements) : WLPretty = 
-  ppNest 1 (ppConcat [ppString "(elements",
+    ppNest 1 (ppConcat [ppString "(elements",
                       ppNewline,
                       (ppSep ppNewline
                          (filter (fn pp -> pp ~= ppNil)  %% why the filter?
                             (ppSpecElementsAux c spc elems))),
                       ppString ")"])
     
-  op  ppSpecElementsAux: Context -> Spec -> SpecElements -> List WLPretty
-  def ppSpecElementsAux c spc elems =
+  op ppSpecElementsAux (c:Context) (spc:Spec) (elems:SpecElements) : List WLPretty =
     case elems of
       | [] -> []
       % | (Op (qid1,false,pos)) :: (OpDef (qid2,0,hist,_)) :: rst | qid1 = qid2 ->
@@ -939,7 +877,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst -> Cons(x,normalizeSpecElements rst)
 
-op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean) : WLPretty  =
+ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean) : WLPretty  =
     case elem of
       | Import (im_sc_tm, im_sp, im_elements, pos) ->
         ppConcat [if c.printPositionInfo?
@@ -964,7 +902,6 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
                  ppString " ",
                  if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
                  ppString ")"]
-                             
 	% (case findTheOp(spc,qid) of
 	%    | Some {names,fixity,dfn,fullyQualified?=_} ->
         %      ppOpInfo c true (d? \_or op_with_def?) (names,fixity,dfn) pos
@@ -1020,7 +957,6 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		  ppLitString end_str,
                   ppString "\"",
                   ppString ")"]
-	   
       | Comment (str,pos) ->
 	ppConcat [if c.printPositionInfo?
 		    then ppPosition c pos
@@ -1029,8 +965,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		  ppString str,
 		  ppString " *) "]
 
-  op  ppPosition : Context -> Position -> WLPretty
-  def ppPosition c pos =
+  op ppPosition (c:Context) (pos:Position) : WLPretty =
     case pos of
       | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
         ppConcat ([ppString "at "]
@@ -1048,16 +983,14 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
   %% The term language
   %% --------------------------------------------------------------------------------
 
-  op  ppTerm : Context -> MSTerm -> WLPretty
-  def ppTerm c term =
+  op ppTerm (c:Context) (term:MSTerm) : WLPretty =
     if c.printPositionInfo?
       then ppConcat [ppPosition c (termAnn term),
 		     ppBreak,
 		     ppTerm1 c term]
       else ppTerm1 c term
 
-  op  ppTerm1 : Context -> MSTerm -> WLPretty
-  def ppTerm1 c term =
+  op ppTerm1 (c:Context) (term:MSTerm) : WLPretty=
     case term of
       | Apply (term1, term2, _)
 	 ->
@@ -1208,7 +1141,6 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		    ppString ")"
                     ]
       | Any(_) -> ppString "AnyTerm"
-
       | TypedTerm (tm,ty,_) ->
 	  ppGr2Concat [ppString "(TypedTerm ",
                        ppBreak,
@@ -1219,27 +1151,24 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
                        ppString ")"]
       | mystery -> fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
-  op  ppBinder : Binder -> WLPretty
-  def ppBinder binder =
+  op ppBinder (binder:Binder) : WLPretty =
     case binder of
       | Forall -> ppString "forall"
       | Exists -> ppString "exists"
       | Exists1 -> ppString "exists1"
 
-  op  ppVar : Context -> Var -> WLPretty
-  def ppVar c (id,srt) =
+  op ppVar (c:Context) ((id,ty):Var) : WLPretty =
     if c.printTypes?
       then ppConcat [ppString "(var ",
 		     ppID id,
 		     ppString " ",
-		     ppType c srt,
+		     ppType c ty,
 		     ppString ")"]
       else ppConcat [ppString "(var ",
 		     ppID id,
 		     ppString ")"]
 
-  op  ppMatch : Context -> Match -> WLPretty
-  def ppMatch c cases =
+  op ppMatch (c:Context) (cases:Match) : WLPretty =
     let def ppCase (pattern,guard,term) =
     ppNest 1 (ppGrConcat [ppString "(",
                           ppPattern c pattern,
@@ -1258,8 +1187,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
        (map ppCase cases))
     
  %% Placeholder for patAnn which was missing a case
- op  patAnn1: [a] APattern a -> a
- def patAnn1 pat =
+ op [a] patAnn1 (pat: APattern a) : a =
    case pat of
      | AliasPat     (_,_,   a) -> a
      | VarPat       (_,     a) -> a
@@ -1275,8 +1203,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
      | RestrictedPat(_,_,   a) -> a
      | TypedPat    (_,_,   a) -> a
 
-  op  ppPattern : Context -> MSPattern -> WLPretty
-  def ppPattern c pattern =
+  op ppPattern (c:Context) (pattern:MSPattern) : WLPretty =
      if c.printPositionInfo?
       then case patAnn1 pattern of
 	     | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
@@ -1293,8 +1220,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 	     | _ -> ppConcat [ppString "@ ", ppPattern1 c pattern]
       else ppPattern1 c pattern
 
-  op  ppPattern1 : Context -> MSPattern -> WLPretty
-  def ppPattern1 c pattern = 
+  op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty = 
     case pattern of
       | AliasPat (pat1,pat2,_) -> 
           ppGrConcat [ppString "alias ",
@@ -1315,7 +1241,6 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
                             then [ppType c ty]
                           else [])
                       ++ [ppString ")"])
-
       | RecordPat (fields,_) ->
 	% (case fields of
 	%   | [] -> ppString "(RecordPat)"
@@ -1400,15 +1325,12 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 		      ppType c srt]
       | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
-
-  op  ppBoolean : Boolean -> WLPretty
-  def ppBoolean b =
+  op ppBoolean (b: Boolean) : WLPretty =
     case b of
       | true -> ppString "true"
       | false -> ppString "false"
 
-  op  ppFun : Fun -> WLPretty
-  def ppFun fun =
+  op ppFun (fun:Fun) : WLPretty =
     case fun of
       | Not       -> ppString "Not"
       | And       -> ppString "And"
@@ -1475,12 +1397,11 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 				     ]
       | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
-  op  isSimpleType? : MSType -> Boolean
-  def isSimpleType? srt =
-    case srt of
-      | Base _ -> true
-      | Boolean _ -> true
-      | _ -> false
+  % op isSimpleType? (ty:MSType) : Boolean =
+  %   case ty of
+  %     | Base _ -> true
+  %     | Boolean _ -> true
+  %     | _ -> false
 
   op ppType (c: Context) (ty:MSType) : WLPretty =
     if c.printPositionInfo?
@@ -1540,7 +1461,6 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
                                 ppString " ",
                                 ppString "None",
                                 ppString ")"]
-
 	    | Some ty ->
 		ppConcat [ppString "(",
                           ppID id,
@@ -1604,13 +1524,16 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
       | Any(_) -> ppString "AnyType"
       | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
-  op  ppMorphism: Context -> Morphism -> WLPretty
-  def ppMorphism c {dom,cod,typeMap,opMap,pragmas,sm_tm} =
+  op ppMorphism (c:Context) ({dom,cod,typeMap,opMap,pragmas,sm_tm}:Morphism) : WLPretty =
     ppGrConcat [ppString "morphism ",
-		ppUIDorFull c (Spec dom) None "name ",
+                ppString "(",
+                ppString "...domain spec elided...",  %ppUIDorFull c (Spec dom) None "name ",
+                ppString ")",
 		ppBreak,
 		ppString " to ",
-		ppUIDorFull c (Spec cod) None "name ",
+                ppString "(",
+                ppString "...codomain spec elided...",  %ppUIDorFull c (Spec cod) None "name ",
+                ppString ")",
 		ppBreak,
 		ppString " types ",
 		ppIdMap typeMap,
@@ -1630,19 +1553,18 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 
  %op  PolyMap.mapToList : QualifiedIdMap -> List (QualifiedId * QualifiedId)
 
- op  ppIdMap: QualifiedIdMap -> WLPretty
- def ppIdMap idMap =
+ op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
    ppNest 0
      (ppSep (ppAppend (ppString ", ") ppBreak)
 	(map (fn (d,r) -> ppConcat [ppQualifiedId d, ppString " -> ",ppQualifiedId r])
 	   (mapToList idMap)))
 
-  def printValueTop (value : Value, uid : UnitId, printPositionInfo? : Boolean, recursive? : Boolean) : String =
+  op printValueTop (value : Value, uid : UnitId, printPositionInfo? : Boolean, recursive? : Boolean) : String =
     printValue {printTypes? = true, %false, %true,
 		printPositionInfo? = printPositionInfo?,
 		fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
-		currentUID = uid,
-		uidsSeen = [uid],
+		%currentUID = uid,
+		%uidsSeen = [uid],
 		recursive? = recursive?}
       value
 
@@ -1651,13 +1573,13 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
   let _ = writeLine "Printing spec to file." in
   case evaluateUnitId uid_str of
     | Some val ->
-      (case uidStringForValue val of
+      (case uidStringForValue val of  %TODO Awkward to extract the string here, since we should already have it?
          | None -> let _ = writeLine "Error: Can't get UID string from value" in false
          | Some (uid,uidstr) ->
-           let fil_nm = uidstr ^ ".data" in
-           let _ = ensureDirectoriesExist fil_nm in
-           let _ = writeLine("Writing data to: "^fil_nm^"\n") in
-           let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),fil_nm) in
+           let filename = uidstr ^ ".data" in
+           let _ = ensureDirectoriesExist filename in
+           let _ = writeLine("Writing data to: "^filename^"\n") in
+           let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),filename) in
            true)
     | _ -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
 
@@ -1691,4 +1613,4 @@ op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Opti
        let success? = showData(uid_str, false, true) in
        if success? then Some uid_str else None)
 
-endspec
+end-spec
