@@ -350,8 +350,7 @@ ShowData qualifying spec
  op  ppIdInfo : List QualifiedId -> WLPretty
  def ppIdInfo qids = ppSep (ppString ", ") (map ppQualifiedId qids)
    
- op  ppTypeInfo : Context -> Boolean -> List QualifiedId * MSType -> Position -> WLPretty
- def ppTypeInfo c full? (aliases, dfn) pos =
+ op ppTypeInfo (c:Context) (full?:Boolean) (aliases: List QualifiedId, dfn: MSType) (pos:Position) : WLPretty =
    let (tvs, srt) = unpackType dfn in
    ppGr2Concat
      ((if c.printPositionInfo?
@@ -772,9 +771,9 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
 
 op ppATypeInfo (c : Context, atypeinfo : ATypeInfo StandardAnnotation) : WLPretty = 
   let {names, dfn} = atypeinfo in
-  ppGr2Concat [ppString "(typeinfo ",
+  ppGr2Concat [ppString "(ATypeInfo ",
                ppBreak,
-               ppWrapParens (ppSep (ppString ", ") (map ppQualifiedId names)), %%when can there be more than one name?
+               ppWrapParens (ppSep (ppString " ") (map ppQualifiedId names)), %%when can there be more than one name?
                ppString " ",
                ppNewline, %ppBreak,
                ppType c dfn,
@@ -986,7 +985,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 	%      let _  = toScreen("\nInternal error: Missing op: " ^ printQualifiedId qid ^ "\n") in
 	%      ppString "<Undefined Op>")
       | Type (qid,pos) ->
-        ppConcat[ppString "(Type ",
+        ppConcat[ppString "(TypeDecl ",
                  ppQualifiedId qid,
                  ppString ")"]
 	% (case findTheType(spc,qid) of
@@ -1500,8 +1499,7 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 	     | _ -> ppConcat [ppString "@ ", ppType1 c ty]
       else ppType1 c ty
 
-  op  ppType1 : Context -> MSType -> WLPretty
-  def ppType1 c ty =
+  op ppType1 (c:Context) (ty:MSType) : WLPretty =
     case ty of
       | Arrow (ty1,ty2,_) ->
 	ppGrConcat [ppString "(arrow ",
@@ -1536,25 +1534,34 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
 	    ]))
       | CoProduct (taggedTypes,_) -> 
 	let def ppTaggedType (id,optTy) =
-	  case optTy of
-	    | None -> ppID id
+	  case optTy of %TODO combine these two cases:
+	    | None -> ppConcat [ppString "(",
+                                ppID (id),
+                                ppString " ",
+                                ppString "None",
+                                ppString ")"]
+
 	    | Some ty ->
-		ppConcat [ppID (id),
-			  ppString ": ",
-			  ppType c ty]
+		ppConcat [ppString "(",
+                          ppID id,
+			  ppString " ",
+			  ppType c ty,
+                          ppString ")"]
 	in ppGrConcat [
-	  ppString "sum(",
+	  ppString "(CoProduct (",
 	  ppGrConcat [
-	    ppSep (ppAppend (ppString ", ") ppBreak) (map ppTaggedType taggedTypes)
+	    ppSep (ppAppend (ppString " ") ppBreak) (map ppTaggedType taggedTypes)
 	  ],
-	  ppString ")"
+	  ppString "))"
 	]
       | Quotient (ty,term,_) ->
 	ppGrConcat [
-	  ppString "quotient ",
+	  ppString "(Quotient ",
 	  ppType c ty,
-	  ppString " / ",
-	  ppTerm c term
+	  ppString " ",
+          ppNewline,
+	  ppTerm c term,
+	  ppString ")"
 	]
       | Subtype (ty,term,_) ->
 	ppGr1Concat [
@@ -1590,11 +1597,10 @@ op ppSpecElement (c:Context) (spc:Spec) (elem:SpecElement) (op_with_def?:Boolean
                     ppString ")"
                     ]
       | And(types,_) ->
-	ppGrConcat[ppString "and ",
-		   ppString "[",
-		   ppSep (ppBreak) %(ppString ", ")
+	ppGrConcat[ppString "(AndType (",
+		   ppSep (ppAppend (ppString " ") ppBreak)
                          (map (ppType c) types),
-		   ppString "]"]
+		   ppString "))"]
       | Any(_) -> ppString "AnyType"
       | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
