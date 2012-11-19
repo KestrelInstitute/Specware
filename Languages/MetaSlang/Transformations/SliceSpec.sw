@@ -32,6 +32,17 @@ SliceSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ %% maybe move removeTheorems into scubSpec under a boolean flag...
+ op removeTheorems (spc : Spec) : Spec = 
+  %% theorems are irrelevant for code generation
+  let
+    def filter el =
+      case el of
+        | Property _ -> None
+        | _ -> Some el
+  in
+  setElements (spc, mapPartialSpecElements filter spc.elements)
+
 
  op scrubSpec (spc : Spec, op_set : QualifierSet, type_set : QualifierSet) : Spec =
   let new_types =
@@ -361,7 +372,7 @@ SliceSpec qualifying spec
                chase_theorems?       : Bool)                % recur through axioms and theorems that mention included types and ops
   : Spec =
   let (op_set, type_set) = sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?, false) in
-  let sliced_spc         = scrubSpec     (spc, op_set,   type_set)                                                         in
+  let sliced_spc         = scrubSpec     (spc, op_set,   type_set)                                                                      in
   sliced_spc
 
  op sliceSpecForCode (spc        : Spec, 

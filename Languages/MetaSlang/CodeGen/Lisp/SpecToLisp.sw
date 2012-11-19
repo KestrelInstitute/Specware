@@ -1492,8 +1492,7 @@ op addList(S: StringSet, l: List String): StringSet =
   else 
     spc 
 
- op  removeCurrying? : Bool
- def removeCurrying? = false
+ op removeCurrying? : Bool = false
 
  op maybeRemoveCurrying (spc : Spec) : Spec =
   if removeCurrying? then  % false by default
@@ -1501,8 +1500,7 @@ op addList(S: StringSet, l: List String): StringSet =
   else
     spc
 
- op  instantiateHOFns? : Bool
- def instantiateHOFns? = true
+ op instantiateHOFns? : Bool = true
 
  op maybeInstantiateHOFns (spc : Spec) : Spec =
   if instantiateHOFns? then % true by default
@@ -1510,8 +1508,7 @@ op addList(S: StringSet, l: List String): StringSet =
   else 
     spc
 
- op  lambdaLift? : Bool
- def lambdaLift? = false
+ op lambdaLift? : Bool = false
 
  op maybeLambdaLift (spc : Spec) : Spec =
   if lambdaLift? then       % false by default
@@ -1526,25 +1523,25 @@ op addList(S: StringSet, l: List String): StringSet =
    in
    let _   = showSpecIfVerbose "Original"                   spc in %  (0)
 
-   let spc = maybeSubstBaseSpecs substBaseSpecs?            spc in
+   let spc = maybeSubstBaseSpecs substBaseSpecs?            spc in %  (1) via gen-lisp, substBaseSpecs? is true 
    let _   = showSpecIfVerbose "substBaseSpecs"             spc in
 
-   let spc = removeTheorems                                 spc in
+   let spc = removeTheorems                                 spc in %  (2)
    let _   = showSpecIfVerbose "removeTheorems"             spc in
 
-   let spc = maybeRemoveUnusedOps slice?                    spc in
+   let spc = maybeRemoveUnusedOps slice?                    spc in %  (3) via gen-lisp, slice? is false
    let _   = showSpecIfVerbose "maybeRemoveUnusedOps"       spc in
 
-   let spc = maybeRemoveCurrying                            spc in
+   let spc = maybeRemoveCurrying                            spc in %  (4) no-op by default
    let _   = showSpecIfVerbose "removeCurrying"             spc in
 
-   let spc = normalizeTopLevelLambdas                       spc in
+   let spc = normalizeTopLevelLambdas                       spc in %  (5)
    let _   = showSpecIfVerbose "normalizeTopLevelLambdas"   spc in
 
-   let spc = maybeInstantiateHOFns                          spc in
+   let spc = maybeInstantiateHOFns                          spc in %  (6)
    let _   = showSpecIfVerbose "instantiateHOFns"           spc in
 
-   let spc = maybeLambdaLift                                spc in
+   let spc = maybeLambdaLift                                spc in %  (7) no-op by default
    let _   = showSpecIfVerbose "maybeLambdaLift"            spc in
 
    %% Currently, translateMatch introduces Select's and parallel Let bindings,
@@ -1554,13 +1551,13 @@ op addList(S: StringSet, l: List String): StringSet =
    %% We also might wish to convert matches to case or typecase expressions,
    %% in which case not all matches would be transformed to if statements.
 
-   let spc = translateMatch                                 spc in
+   let spc = translateMatch                                 spc in %  (8)
    let _   = showSpecIfVerbose "translateMatch"             spc in
 
-   let spc = translateRecordMergeInSpec                     spc in
+   let spc = translateRecordMergeInSpec                     spc in %  (9)
    let _   = showSpecIfVerbose "translateRecordMergeInSpec" spc in
 
-   let spc = arityNormalize                                 spc in
+   let spc = arityNormalize                                 spc in % (10)
    let _   = showSpecIfVerbose "arityNormalize"             spc in
 
    spc

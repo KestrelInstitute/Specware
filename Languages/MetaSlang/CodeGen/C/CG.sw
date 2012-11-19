@@ -122,25 +122,31 @@ CG qualifying spec
                          anyToString top_ops, 
                          "------------------------------------------"]
   in
-  let _ = showSpecIfVerbose "Original"                        spc in %  (0)
+  let _ = showSpecIfVerbose "Original"                          spc in %  (0)
   
-  let spc = substBaseSpecs                                    spc in %  (1) adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
-  let _ = showSpecIfVerbose "substBaseSpecs"                  spc in
+  let spc = substBaseSpecs                                      spc in %  (1) adds misc ops (possibly unused) from List_Executable.sw, String_Executable.sw, etc.
+  let _   = showSpecIfVerbose "substBaseSpecs"                  spc in 
+
+  % substBaseSpecs should preceed other transforms, 
+  % so those other transforms can apply to substituted definitions
   
-  let spc = removeUnusedOps top_ops top_types                 spc in %  (2) do this early to minimize wasted motion (and again later to filter incidental cruft)
-  let _ = showSpecIfVerbose "removeUnusedOps[1]"              spc in 
+  let spc = removeTheorems                                      spc in %  (2) do early to minimize wasted motion 
+  let _   = showSpecIfVerbose "removeTheorems"                  spc in 
+
+  let spc = removeUnusedOps top_ops top_types                   spc in %  (3) do early to minimize wasted motion 
+  let _ = showSpecIfVerbose "removeUnusedOps[1]"                spc in 
   
-  let spc = removeCurrying                                    spc in %  (3) op f: A -> B -> C  ==>  op f_1_1: A * B -> C, etc.
-  let _ = showSpecIfVerbose "removeCurrying"                  spc in
+  let spc = removeCurrying                                      spc in %  (4) op f: A -> B -> C  ==>  op f_1_1: A * B -> C, etc.
+  let _   = showSpecIfVerbose "removeCurrying"                  spc in
   
-  let spc = normalizeTopLevelLambdas                          spc in %  (4) convert patterned lambdas into case expressions
-  let _ = showSpecIfVerbose "normalizeTopLevelLambdas"        spc in
+  let spc = normalizeTopLevelLambdas                            spc in %  (5) convert patterned lambdas into case expressions
+  let _   = showSpecIfVerbose "normalizeTopLevelLambdas"        spc in
   
-  let spc = instantiateHOFns                                  spc in %  (5) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
-  let _ = showSpecIfVerbose "instantiateHOFns"                spc in
+  let spc = instantiateHOFns                                    spc in %  (6) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
+  let _   = showSpecIfVerbose "instantiateHOFns"                spc in
   
-  let spc = lambdaLiftWithImports                             spc in %  (6) as good a time as any
-  let _ = showSpecIfVerbose "lambdaLiftWithImports"           spc in
+  let spc = lambdaLiftWithImports                               spc in %  (7) as good a time as any
+  let _   = showSpecIfVerbose "lambdaLiftWithImports"           spc in
   
    %% Currently, translateMatch introduces Select's and parallel Let bindings,
    %% which would confuse other transforms.  So until that is changed, 
@@ -149,38 +155,38 @@ CG qualifying spec
    %% We also might wish to convert matches to case or typecase expressions,
    %% in which case not all matches would be transformed to if statements.
 
-  let spc = translateMatch                                    spc in %  (7) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
-  let _ = showSpecIfVerbose "translateMatch"                  spc in
+  let spc = translateMatch                                      spc in %  (8) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
+  let _   = showSpecIfVerbose "translateMatch"                  spc in
   
-  let spc = letWildPatToSeq                                   spc in %  (8) transforms "let _ = t1 in t2" into "(t1;t2)"
-  let _ = showSpecIfVerbose "letWildPatToSeq"                 spc in
+  let spc = translateRecordMergeInSpec                          spc in %  (9) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
+  let _   = showSpecIfVerbose "translateRecordMergeInSpec"      spc in
   
-  let spc = removeNonNatSubtypesAndBaseDefs                   spc in %  (9) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
-  let _ = showSpecIfVerbose "removeNonNatSubtypesAndBaseDefs" spc in
+  let spc = letWildPatToSeq                                     spc in % (10) transforms "let _ = t1 in t2" into "(t1;t2)"
+  let _   = showSpecIfVerbose "letWildPatToSeq"                 spc in
   
-  let spc = poly2monoAndDropPoly                              spc in % (10) After this is called, we can no longer reason about polymorphic types such as List(a)
-  let _ = showSpecIfVerbose "poly2monoAndDropPoly"            spc in
+  let spc = removeNonNatSubtypesAndBaseDefs                     spc in % (11) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+  let _   = showSpecIfVerbose "removeNonNatSubtypesAndBaseDefs" spc in
   
-  let spc = translateRecordMergeInSpec                        spc in % (11) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
-  let _ = showSpecIfVerbose "translateRecordMergeInSpec"      spc in
+  let spc = poly2monoAndDropPoly                                spc in % (12) After this is called, we can no longer reason about polymorphic types such as List(a)
+  let _   = showSpecIfVerbose "poly2monoAndDropPoly"            spc in
   
-  let spc = simplifySpec                                      spc in % (12) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
-  let _ = showSpecIfVerbose "simplifySpec"                    spc in
+  let spc = simplifySpec                                        spc in % (13) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
+  let _   = showSpecIfVerbose "simplifySpec"                    spc in
   
-  let spc = addEqOpsToSpec                                    spc in % (13) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
-  let _ = showSpecIfVerbose "addEqOpsToSpec"                  spc in
+  let spc = addEqOpsToSpec                                      spc in % (14) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
+  let _   = showSpecIfVerbose "addEqOpsToSpec"                  spc in
   
-  let spc = removeUnusedOps top_ops top_types                 spc in % (14) remove newly introduced but unused ops (mainly eq ops) 
-  let _ = showSpecIfVerbose "removeUnusedOps[2]"              spc in 
+  let spc = removeUnusedOps top_ops top_types                   spc in % (15) remove newly introduced but unused ops (mainly eq ops) 
+  let _   = showSpecIfVerbose "removeUnusedOps[2]"              spc in 
   
-  let spc = addTypeConstructorsToSpec                         spc in % (15) these ops won't survive slicing, so this must follow removeUnusedOps
-  let _ = showSpecIfVerbose "addTypeConstructorsToSpec"       spc in
+  let spc = addTypeConstructorsToSpec                           spc in % (16) these ops won't survive slicing, so this must follow removeUnusedOps
+  let _   = showSpecIfVerbose "addTypeConstructorsToSpec"       spc in
   
-  let spc = conformOpDecls                                    spc in % (16) change def with multiple args to decompose single arg when decl has one (product) arg
-  let _ = showSpecIfVerbose "conformOpDecls"                  spc in
+  let spc = conformOpDecls                                      spc in % (17) change def with multiple args to decompose single arg when decl has one (product) arg
+  let _   = showSpecIfVerbose "conformOpDecls"                  spc in
   
-  let spc = adjustAppl                                        spc in % (17) change call with multiple args to compose single arg when decl has one (product) arg
-  let _ = showSpecIfVerbose "adjustAppl"                      spc in
+  let spc = adjustAppl                                          spc in % (18) change call with multiple args to compose single arg when decl has one (product) arg
+  let _   = showSpecIfVerbose "adjustAppl"                      spc in
   
   spc
 
