@@ -6,6 +6,7 @@ A stripped down version of Polymorphic.
 
 
 %% TODO Does this need to be a separate spec?  I guess it is refered to in a morphism in SimpleAsAList.
+%% TODO Should this have a qualifier, so it doesn't get qualified differently in different uses of this?
 Map =
 spec
   type Map (key,a)
