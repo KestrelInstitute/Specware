@@ -1,4 +1,4 @@
-spec
+Debug qualifying spec
 
  import /Languages/MetaSlang/Specs/Printer % printSpec
 
@@ -21,9 +21,12 @@ spec
   if verbosity > 0 then 
     let _ = writeLine "--------------------" in
     let _ = writeLine ("### " ^ msg)         in
-    let _ = writeLine (printSpec spc)        in
+    let _ = writeLine (if verbosity = 1 then
+                         printSpec spc
+                       else
+                         printSpecFlat spc)  in
     let _ = writeLine "----"                 in
-    let _ = if (verbosity > 1) then showInternals spc else () in
+    % let _ = if (verbosity > 2) then showInternals spc else () in
     let _ = writeLine "--------------------" in
     ()
   else
