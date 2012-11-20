@@ -659,8 +659,8 @@ SpecsToI2L qualifying spec
     case typ of 
       | I_FunOrMap (types, rtype) ->
         if definedOpInfo? info then
-          let tm = firstOpDefInnerTerm info          in
-          let tm = liftUnsupportedPattern (tm, spc)  in
+          let tm = firstOpDefInnerTerm info           in
+          % let tm = liftUnsupportedPattern (tm, spc) in  % must do this in prior pass before pattern match compilation
           let (pnames,body) = getParamNames(ctxt,tm) in
           let types = alignTypes pnames types in
           let decl = {name       = id,
@@ -691,26 +691,6 @@ SpecsToI2L qualifying spec
               None
         in
         OpDecl (id, typ, opt_exp)
-
-  op liftUnsupportedPattern (tm : MSTerm, spc : Spec) : MSTerm =
-    let b = termAnn tm in
-    case tm of
-      | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
-        (case pat of
-           | VarPat _ -> tm
-           | RecordPat (plist, _) -> 
-             if forall? (fn | (_, VarPat _) -> true | _ -> false) plist then 
-               tm
-             else
-               %let _ = writeLine("lifting unsupported pattern in operator definition: "^(printPattern pat)) in
-               let typ = inferType (spc, tm) in
-               let varx    = Var    (("x", typ),                  b) in
-               let appl    = Apply  (tm, varx,                    b) in
-               let varpatx = VarPat (("x", typ),                  b) in
-               let tm      = Lambda ([(varpatx, mkTrue(), appl)], b) in
-               tm
-           | _ -> tm)
-      | _ -> tm
 
   % --------------------------------------------------------------------------------
 
