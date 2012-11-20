@@ -168,6 +168,9 @@ CG qualifying spec
   let spc = removeNonNatSubtypesAndBaseDefs                     spc in % (11) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
   let _   = showSpecIfVerbose "removeNonNatSubtypesAndBaseDefs" spc in
   
+  let spc = liftUnsupportedPatterns                             spc in % (20) turn bodies of lambda's with restricted var types into case expressions 
+  let _   = showSpecIfVerbose "liftUnsupportedPatterns"         spc in
+
   let spc = poly2monoAndDropPoly                                spc in % (12) After this is called, we can no longer reason about polymorphic types such as List(a)
   let _   = showSpecIfVerbose "poly2monoAndDropPoly"            spc in
   
@@ -191,9 +194,6 @@ CG qualifying spec
   
   let spc = lambdaLiftWithImports                               spc in % (19) as good a time as any
   let _   = showSpecIfVerbose "lambdaLiftWithImports[2]"        spc in
-
-  let spc = liftUnsupportedPatterns                             spc in % (20) turn bodies of lambda's with restricted var types into case expressions 
-  let _   = showSpecIfVerbose "liftUnsupportedPatterns"         spc in
 
   let spc = translateMatch                                      spc in % (21) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
   let _   = showSpecIfVerbose "translateMatch[2]"               spc in
@@ -271,13 +271,13 @@ CG qualifying spec
   let (h_spec, c_spec) = splitCSpec c_spec  in  
 
   let id_dfn           = ("Patched_PrismId", C_String, C_Const (C_Str basename)) in
+  let h_spec           = addHeader    (h_spec, app_name)   in
+  let h_spec           = addTrailer   (h_spec, app_name)   in
+  let h_spec           = addConstDefn (h_spec, id_dfn)     in  
 
-  let c_spec           = addConstDefn (c_spec, id_dfn)   in  
-  let c_spec           = addHeader  (c_spec, app_name)   in
-  let c_spec           = addTrailer (c_spec, app_name)   in
-  let h_spec           = addHeader  (h_spec, app_name)   in
-  let h_spec           = addTrailer (h_spec, app_name)   in
-  let c_spec           = addInclude (c_spec, h_filename) in
+  let c_spec           = addHeader    (c_spec, app_name)   in
+  let c_spec           = addTrailer   (c_spec, app_name)   in
+  let c_spec           = addInclude   (c_spec, h_filename) in
 
   let _ = printCSpecToFile (h_spec, h_filename) in
   let _ = printCSpecToFile (c_spec, c_filename) in

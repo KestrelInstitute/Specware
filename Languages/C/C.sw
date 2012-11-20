@@ -5,18 +5,23 @@ C qualifying spec
 
   type C_Spec =
     {
+     %% these are used for both .c and .h files:
      name                 : String,
-     headers              : Strings,
-     includes             : Strings,
+     headers              : Strings,         % e.g. copyright notices
+     trailers             : Strings,
+
+     %% these go into .h file:
+     includes             : Strings,         % the .c file will merely include the .h file, which includes all other files
      defines	          : Strings,
      constDefns           : C_VarDefns,      % constant expressions defined by #define's
      vars                 : C_VarDecls,
      fns                  : C_FnDecls,
-     axioms               : C_Exps,
      structUnionTypeDefns : C_StructUnionTypeDefns,
+
+     %% these go into .c file:
+     axioms               : C_Exps,          % ??
      varDefns             : C_VarDefns,      % constant expressions computable at compile-time
-     fnDefns              : C_FnDefns,
-     trailers             : Strings
+     fnDefns              : C_FnDefns
     }
 
   type C_StructUnionTypeDefn = | C_Struct   C_StructDefn

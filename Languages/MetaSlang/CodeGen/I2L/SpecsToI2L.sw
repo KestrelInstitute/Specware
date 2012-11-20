@@ -954,7 +954,9 @@ SpecsToI2L qualifying spec
           fail (mkInOpStr ctxt ^ "not handled as projection: " ^ anyToString id ^ " given projections " ^ anyToString projections)
 
       | _ ->
-        fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun)
+       let msg = mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun in
+       let _ = writeLine msg in
+       I_Str msg
 
   op term2expression_let (pat : MSPattern, deftm : MSTerm, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
     % let's can only contain one pattern/term entry (see parser)
