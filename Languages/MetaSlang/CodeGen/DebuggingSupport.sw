@@ -1,4 +1,4 @@
-Debug qualifying spec
+Debugging qualifying spec
 
  import /Languages/MetaSlang/Specs/Printer % printSpec
 
@@ -31,7 +31,5 @@ Debug qualifying spec
     ()
   else
     ()
-
-
 
 end-spec
