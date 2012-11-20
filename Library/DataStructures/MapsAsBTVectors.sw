@@ -17,6 +17,13 @@ spec
   op MapBTV.BTV_foldi : [key, a, b] (key * a * b -> b) * b * Map(key,a) -> b
   op MapBTV.BTV_remove      : fa (a,key) Map (key,a) * key -> Map (key,a)
 
+  % This was added by Jim to the version of this file in the CRASH
+  % library.  I am copying it here as well. -Eric, 11/15/12
+  axiom btv_update is [key,a]
+    fa(m:Map(key,a),x:key,y:a,z:key)
+      BTV_apply (BTV_update (m, x, y), z) =
+      (if z = x then Some y else BTV_apply (m, z))
+
   op [a,b] apply : Map(a,b) -> a -> Option b =
     fn x -> fn y -> MapBTV.BTV_apply(x,y)
 

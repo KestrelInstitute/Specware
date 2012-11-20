@@ -15,6 +15,13 @@ spec
   op MapSTHashtable.STH_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
   op MapSTHashtable.STH_size : [key,a] Map(key,a) -> Nat
 
+  % This was added by Jim to the version of this file in the CRASH
+  % library.  I am copying it here as well. -Eric, 11/15/12
+  axiom sth_update is [key,a]
+    fa(m:Map(key,a),x:key,y:a,z:key)
+      STH_apply (STH_update (m, x, y), z) =
+      (if z = x then Some y else STH_apply (m, z))
+
   op [a,b] apply : Map(a,b) -> a -> Option b =
     fn x -> fn y -> MapSTHashtable.STH_apply(x,y)
   op [a,b] empty_map :  Map(a,b) = MapSTHashtable.STH_empty_map

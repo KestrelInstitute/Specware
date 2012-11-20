@@ -21,6 +21,13 @@ spec
   %% Added by Eric:
   op MapVec.V_remove      : [a,key] Map (key,a) * key -> Map (key,a)
 
+  % This was added by Jim to the version of this file in the CRASH
+  % library.  I am copying it here as well. -Eric, 11/15/12
+  axiom v_update is [key,a]
+    fa(m:Map(key,a),x:key,y:a,z:key)
+      V_apply (V_update (m, x, y), z) =
+      (if z = x then Some y else V_apply (m, z))
+
   op [a,b] apply : Map(a,b) -> a -> Option b =
     fn x -> fn y -> MapVec.V_apply(x,y)
 
