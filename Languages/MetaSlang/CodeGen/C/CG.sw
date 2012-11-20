@@ -12,6 +12,7 @@ CG qualifying spec
  import /Languages/MetaSlang/CodeGen/AdjustAppl
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
  import /Languages/MetaSlang/CodeGen/DebuggingSupport
+ import /Languages/MetaSlang/CodeGen/LiftUnsupportedPatterns
  
  import /Languages/MetaSlang/Transformations/RemoveCurrying
  import /Languages/MetaSlang/Transformations/LambdaLift
@@ -188,6 +189,15 @@ CG qualifying spec
   let spc = adjustAppl                                          spc in % (18) change call with multiple args to compose single arg when decl has one (product) arg
   let _   = showSpecIfVerbose "adjustAppl"                      spc in
   
+  let spc = lambdaLiftWithImports                               spc in % (19) as good a time as any
+  let _   = showSpecIfVerbose "lambdaLiftWithImports[2]"        spc in
+
+  let spc = liftUnsupportedPatterns                             spc in % (20) turn bodies of lambda's with restricted var types into case expressions 
+  let _   = showSpecIfVerbose "liftUnsupportedPatterns"         spc in
+
+  let spc = translateMatch                                      spc in % (21) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
+  let _   = showSpecIfVerbose "translateMatch[2]"               spc in
+
   spc
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
