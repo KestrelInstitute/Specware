@@ -873,6 +873,12 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 	Cons(ppSpecElement c el,
 	     ppSpecElementsAux c rst)
 
+ op ppTransformHistory (c:Context) (hist:TransformHistory) : WLPretty =
+  ppSep ppSpaceBreak (map (fn (tm:MSTerm, rulespec:RuleSpec) -> ppGr2Concat[ppString "(",
+                                                                            ppTerm c tm,
+                                                                            ppString " ...rulespec (if any )elided...)"])
+                        hist)
+
  op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
     case elem of
       | Import (im_sc_tm, im_sp, im_elements, pos) ->
@@ -893,7 +899,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                               ppString ")"]
                   ]
       | Op (qid,d?,pos) ->
-        ppConcat[ppString "(OpDecl",
+        ppConcat[ppString "(OpDecl ",
                  ppQualifiedId qid,
                  ppString " ",
                  if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
@@ -904,9 +910,9 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                  ppQualifiedId qid,
                  ppString " ",
                  ppString (show refine_num),
-                 ppString " ",
-                 ppString "(...transform history (if any) elided...)",
-                 ppString ")"]
+                 ppString " (",
+                 ppTransformHistory c hist,
+                 ppString "))"]
       | Type (qid,pos) ->
         ppConcat[ppString "(TypeDecl ",
                  ppQualifiedId qid,
