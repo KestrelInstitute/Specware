@@ -91,7 +91,6 @@ MS qualifying spec
  %% Primitive term constructors:
 
  op mkRecord      : List (Id * MSTerm)                 -> MSTerm
- op mkLet         : List (MSPattern * MSTerm) * MSTerm -> MSTerm
  op mkLetRec      : List (Var       * MSTerm) * MSTerm -> MSTerm
  op mkLambda      : MSPattern * MSTerm                 -> MSTerm
  op mkThe         : Var * MSTerm                       -> MSTerm
@@ -106,8 +105,16 @@ MS qualifying spec
  def mkRecord     fields          = Record     (fields,                  noPos)
  op mkCanonRecord(fields: List(Id * MSTerm)): MSTerm =
    mkRecord(sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) fields)
- def mkLet        (decls, term)   = Let        (decls, term,             termAnn(term))
- def mkLetRec     (decls, term)   = LetRec     (decls, term,             termAnn(term))
+
+ op mkLet1 (pat : MSPattern, val : MSTerm, body : MSTerm) : MSTerm = 
+  Let ([(pat,val)], body, termAnn body)
+
+ op mkLet  (bindings : List (MSPattern * MSTerm), body : MSTerm) : MSTerm =
+  case bindings of
+    | [] -> body
+    | (pat, val) :: bindings -> mkLet1 (pat, val, mkLet (bindings, body))
+   
+ def mkLetRec     (decls, term)   = LetRec     (decls,  term,            termAnn(term))
  def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], termAnn(term))
  def mkThe        (var, term)     = The        (var, term,               termAnn(term))
  def mkBind       (b, vars, term) = Bind       (b, vars, term,           termAnn(term))
