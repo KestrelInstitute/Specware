@@ -174,6 +174,16 @@ ListADT qualifying spec
        | Ignore names -> prettysLinearDelim ("(declare (ignore ", " ", ")) ")
                                             (List.map string names)
 
+ op allSelfQuoting?(tms: LispTerms): Bool =
+   forall? (fn tm -> case tm of
+                       | Const(Nat _) -> true
+                       | Const(Char _) -> true
+                       | Const(String _) -> true
+                       | Const(Boolean _) -> true
+                       | _ -> false)
+     tms
+
+
   def ppTerm (t : LispTerm) : PrettyPrint.Pretty =
     case t
 
@@ -203,6 +213,9 @@ ListADT qualifying spec
                     (List.map string ss)),
 	      (3, prettysAll ((List.map ppDecl decls) ++ 
 			      [prettysNone [ppTerm t, string ")"]]))])
+       | Apply (Op "list", params) | allSelfQuoting? params ->
+         prettysFillDelim ("'(", " ",")")
+           (map ppTerm params)
        | Apply (Op "list", [Const(Parameter v)]) ->
 	 % (list :foo) -> '(:foo)   optimization for nullary constructors
 	 if v@0 = #:
