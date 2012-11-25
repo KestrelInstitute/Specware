@@ -1136,7 +1136,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
                          | (true, (Some p)) -> Infix (term, p)
                          | (true, _)      -> Nonfix term
                          | _ ->
-                           (error (env, "Inconsistent infix information for overloaded op: " ^ id,
+                           (error (env, "ERROR: Inconsistent infix information for overloaded op: " ^ id,
                                    pos);
                             Nonfix term))
                     | Fun (TwoNames (_ , _, Nonfix),  _, pos) -> Nonfix term
@@ -1475,7 +1475,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
         let expectTyStrLen = length expectTyStr in
         let argMismatchStr = argMismatchMsg(givenType, expectedType, env.internal) in
         let mainMsg = if argMismatchStr = ""
-                       then "Could not match type constraint for "
+                       then "ERROR: Could not match type constraint for "
                        else argMismatchStr
         in
         let msg =
