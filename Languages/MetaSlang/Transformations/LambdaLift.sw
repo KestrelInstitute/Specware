@@ -819,21 +819,21 @@ def patternVars (pat:MSPattern): List Var =
                   extra_conds : MSTerms)
   : OpInfo =
   if ~env.simulateClosures? then
-    let oldPatLst = patternToList pattern in
+    let oldPatLst  = patternToList pattern in
     let newPattern = mkTuplePat (oldPatLst ++ map mkVarPat freeVars) in
-    let domType = addSubtypeInfo(newPattern,pattern,domain,extra_conds,getSpecEnv env) in
-    let new_type = mkArrow (domType, range) in
-    let pos = termAnn(body) in
-    let new_term = withAnnT(mkLambda (newPattern, body), pos) in
-    let tvs = freeTyVars new_type in
-    {names  = names,
-     fixity = Nonfix, 
-     dfn    = maybePiTerm(tvs, TypedTerm (new_term, new_type, termAnn body)),
+    let domType    = addSubtypeInfo(newPattern,pattern,domain,extra_conds,getSpecEnv env) in
+    let new_type   = mkArrow (domType, range) in
+    let pos        = termAnn(body) in
+    let new_term   = withAnnT(mkLambda (newPattern, body), pos) in
+    let tvs        = freeTyVars new_type in
+    {names           = names,
+     fixity          = Nonfix, 
+     dfn             = maybePiTerm(tvs, TypedTerm (new_term, new_type, termAnn body)),
      fullyQualified? = false}
   else
-    let varType = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
-    let closureVar = ("closure-var", mkAny (env, varType)) in
-    let closureArg = mkApply (fromAny env, mkVar closureVar) in
+    let varType       = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
+    let closureVar    = ("closure-var", mkAny (env, varType)) in
+    let closureArg    = mkApply (fromAny env, mkVar closureVar) in
     let closureVarPat = mkVarPat (closureVar) in
     let newPattern =
         if empty? freeVars then
@@ -846,24 +846,24 @@ def patternVars (pat:MSPattern): List Var =
                             [(Nat.show (1+ (length fields)), closureVarPat)], noPos))
     in	
     let 
-     def mkProject ((id, srt), n) = 
-       (mkVarPat ((id, srt)), 
-        mkApply ((Fun (Project (Nat.show n), mkArrow (varType, srt), noPos)), 
-                 closureArg))
+      def mkProject ((id, srt), n) = 
+        (mkVarPat ((id, srt)), 
+         mkApply ((Fun (Project (Nat.show n), mkArrow (varType, srt), noPos)), 
+                  closureArg))
     in
     let newBody = 
-    case freeVars of
-      | [] -> body
-      | [v] -> mkLet ([(mkVarPat v, closureArg)], body)
-      | _ -> 
-        let (decls, n) = 
-            foldl (fn ((decls, n), v) ->
-                     (mkProject (v, n) :: decls, 
-                      n + 1))
-                  ([], 1) 
-                  freeVars
-        in
-        mkLet (decls, body)
+        case freeVars of
+          | [] -> body
+          | [v] -> mkLet ([(mkVarPat v, closureArg)], body)
+          | _ -> 
+            let (decls, n) = 
+                foldl (fn ((decls, n), v) ->
+                         (mkProject (v, n) :: decls, 
+                          n + 1))
+                      ([], 1) 
+                      freeVars
+            in
+            mkLet (decls, body)
     in
     let new_type = mkArrow (patternType newPattern, range) in
     let new_term = withAnnT(mkLambda (newPattern, newBody), termAnn body) in
@@ -878,17 +878,28 @@ def patternVars (pat:MSPattern): List Var =
                     extra_conds : MSTerms, 
                     spc         : Spec)
   : MSType =
-  let ty = patternType new_pat in
-  let new_vars = patternVars new_pat in
+  let ty            = patternType new_pat in
+  let new_vars      = patternVars new_pat in
   let condns_to_add = filter (fn tm -> forall? (fn v -> inVars?(v, new_vars)) (freeVars tm)) extra_conds in
   case orig_ty of
-    | Subtype(_,pred,a) ->
+    | Subtype (_, pred, a) ->
       (case patternToTerm old_pat of
+
          | Some old_var_tm ->
-           Subtype(ty, simplify spc (mkLambda(new_pat, mkSimpConj(mkApply(pred, old_var_tm) :: condns_to_add))), a)
-         | None | condns_to_add ~= [] -> Subtype(ty, simplify spc (mkLambda(new_pat, mkSimpConj(condns_to_add))), a)
+           let condns_to_add = mkApply(pred, old_var_tm) :: condns_to_add in
+           let conds = mkSimpConj condns_to_add in
+           Subtype(ty, simplify spc (mkLambda (new_pat, conds)), a)
+
+         | None | condns_to_add ~= [] -> 
+           let conds = mkSimpConj condns_to_add in
+           Subtype(ty, simplify spc (mkLambda (new_pat, conds)), a)
+
          | _ -> ty)
-    | _ | condns_to_add ~= [] -> Subtype(ty, simplify spc (mkLambda(new_pat, mkSimpConj(condns_to_add))), typeAnn ty)
+
+    | _ | condns_to_add ~= [] -> 
+      let conds = mkSimpConj condns_to_add in
+      Subtype(ty, simplify spc (mkLambda (new_pat, conds)), typeAnn ty)
+
     | _ -> ty
 
  op getSpecEnv (env : LLEnv) : Spec =
@@ -921,92 +932,93 @@ def patternVars (pat:MSPattern): List Var =
        usedNames         = Ref empty,
        simulateClosures? = simulateClosures?} 
 
-    def insertOpers (opers, q, r_elts, r_ops, extra_conds) =
+    def insertOpers (opers, q, result, extra_conds) =
       case opers of
-	 | [] -> (r_elts, r_ops)
+	 | [] -> (result)
 	 | {name = id, ident, pattern, domain, range, freeVars, body, closure}::m_opers -> 
-           let names = [Qualified (q, id)] in	 
-	   let info = abstractName (mkEnv (q, id), names, id, freeVars, pattern, domain, range, body, extra_conds) in
-	   let (r_elts, r_ops) = addNewOpAux (info, r_elts, r_ops, true, 0, [], noPos) in
-	   insertOpers (m_opers, q, r_elts, r_ops, extra_conds)
+           let names  = [Qualified (q, id)] in	 
+	   let info   = abstractName (mkEnv (q, id), names, id, freeVars, pattern, domain, range, body, extra_conds) in
+	   let result = addNewOpAux (info, result, true, 0, [], noPos) in
+	   insertOpers (m_opers, q, result, extra_conds)
 
-     def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, hist, a) = 
+     def doOp (q, id, info, result, decl?, refine_num, hist, a) = 
        % let _ = writeLine ("lambdaLift \""^id^"\"...") in
-       if ~ (definedOpInfo? info)
-	 then addNewOpAux (info << {names = [Qualified (q, id)]},
-			   r_elts, r_ops, decl?, refine_num, hist, a)
+       if ~ (definedOpInfo? info) then
+         let info = info << {names = [Qualified (q, id)]} in
+         addNewOpAux (info, result, decl?, refine_num, hist, a)
        else
-	 let (tvs, srt, full_term) = unpackTerm(info.dfn) in
-         let term = refinedTerm(full_term, refine_num) in
-         % let _ = writeLine(printTerm term) in
+	 let (tvs, srt, full_term) = unpackTerm info.dfn                                        in
+         let term                  = refinedTerm (full_term, refine_num)                        in
+         let new_id                = if refine_num = 0 then id else id ^ "__" ^ show refine_num in
+         let env                   = mkEnv (q, new_id)                                          in
 	 case term of 
-	   | Lambda ([(pat, cond, term)], a) ->
-	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
-	     let term = makeVarTerm term in
-	     let (opers, term) = lambdaLiftTerm (env, term) in
-	     let term = Lambda ([(pat, cond, term)], a) in
-             % let _ = writeLine(" -->\n"^printTerm term) in
-	     % let _ = writeLine ("addop "^id^":"^printType srt) in
-             let full_term = replaceNthTerm(full_term, refine_num, term) in
-	     let new_dfn = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
-	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
-							 dfn   = new_dfn},
-						r_elts, r_ops, decl?, refine_num, hist, a)
-	     in
-             let (_, extra_conds, _) = patternToTermPlusExConds pat in
-             insertOpers (reverse opers, q, r_elts, r_ops, extra_conds)
+	   | Lambda ([(pat, cond, body)], a) ->
+	     let body                = makeVarTerm body                                            in
+	     let (opers, body)       = lambdaLiftTerm (env, body)                                  in
+	     let term                = Lambda ([(pat, cond, body)], a)                             in
+             let full_term           = replaceNthTerm (full_term, refine_num, term)                in
+	     let new_dfn             = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
+             let new_info            = info << {names = [Qualified (q, id)], dfn   = new_dfn}      in
+	     let result              = addNewOpAux (new_info, result, decl?, refine_num, hist, a)  in
+             let (_, extra_conds, _) = patternToTermPlusExConds pat                                in % restrictions
+             insertOpers (reverse opers, q, result, extra_conds)
 
 	   | _ ->
-	     let env = mkEnv (q, if refine_num = 0 then id else id^"__"^show refine_num) in
-	     let term = makeVarTerm term in
-	     let (opers, term) = lambdaLiftTerm (env, term) in
-	     % let _ = writeLine ("addop "^id^":"^printType srt) in
-             let full_term = replaceNthTerm(full_term, refine_num, term) in
-	     let new_dfn = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
-	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
-							 dfn   = new_dfn},
-						r_elts, r_ops, decl?, refine_num, hist, a)
-	     in
-	       insertOpers (reverse opers, q, r_elts, r_ops, [])
+	     let term          = makeVarTerm term                                            in
+	     let (opers, term) = lambdaLiftTerm (env, term)                                  in
+             let full_term     = replaceNthTerm (full_term, refine_num, term)                in
+	     let new_dfn       = maybePiTerm (tvs, TypedTerm (full_term, srt, termAnn term)) in
+             let new_info      = info << {names = [Qualified (q, id)], dfn   = new_dfn}      in
+	     let result        = addNewOpAux (new_info, result, decl?, refine_num, hist, a)  in
+             insertOpers (reverse opers, q, result, [])
 
-     def doProp ((pt, pn as Qualified (qname, name), tvs, fmla, pos), r_elts, r_ops) =
+     def doProp ((pt, pn as Qualified (qname, name), tvs, fmla, pos), (r_elts, r_ops)) =
        let env           = mkEnv (qname, name)                in
        let pos           = termAnn fmla                       in
        let fmla          = withAnnT (termInnerTerm fmla, pos) in
        let term          = makeVarTerm fmla                   in
        let (opers, term) = lambdaLiftTerm (env, term)         in
        let newProp       = (pt, pn, tvs, term, noPos)         in
-       let r_elts        = (Property newProp) :: r_elts       in
+       let new_elts      = (Property newProp) :: r_elts       in
+       let result        = (new_elts, r_ops)                  in
        %% Could get extra_conds from context
-       insertOpers (reverse opers, qname, r_elts, r_ops, [])
+       insertOpers (reverse opers, qname, result, [])
 
      def liftElts (elts, result) =
-       foldr
-         (fn (el,(r_elts,r_ops)) ->
-	  case el of
-	   | Import (s_tm,i_sp,s_elts,a) | imports? ->
-	     let (newElts,newOps) = liftElts(s_elts,([],r_ops)) in
-	     (Cons(Import(s_tm,i_sp,newElts,a),r_elts),
-	      newOps)
-	   | Op (Qualified(q,id), true, a) -> % true means decl includes def
-	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,true,0,[],a)
-               | _ ->
-                 let _ = writeLine ("LambdaLift saw Op element not in qmap : " ^ q ^ "." ^ id) in
-                 (Cons (el,r_elts), r_ops))
-	   | OpDef(Qualified(q,id), refine_num, hist, a) ->
-	     (case findAQualifierMap(r_ops,q,id) of
-	       | Some info -> doOp(q,id,info,r_elts,r_ops,false,refine_num,hist,a)
-               | _ ->
-                 let _ = writeLine ("LambdaLift saw OpDef element not in qmap : " ^ 
-                                      q ^ "." ^ id ^ 
-                                      " [refinement number " ^ anyToString refine_num ^ "]") 
-                 in
-                 (Cons (el,r_elts), r_ops))
-	   | Property p -> doProp(p,r_elts,r_ops)
-	   | _ -> (Cons(el,r_elts),r_ops))
-	 result
-	 elts
+       foldr (fn (el, result as (r_elts, r_ops)) ->
+                case el of
+                  | Import (s_tm,i_sp,s_elts,a) | imports? ->
+                    let (new_elts, new_ops) = liftElts (s_elts, ([], r_ops)) in
+                    let new_elt  = Import (s_tm, i_sp, new_elts, a) in
+                    let new_elts = new_elt :: r_elts in
+                    (new_elts, new_ops)
+
+                  | Op (Qualified(q,id), true, a) -> % true means decl includes def
+                    (case findAQualifierMap(r_ops,q,id) of
+                       | Some info -> doOp (q, id, info, result, true, 0, [], a)
+                       | _ ->
+                         let _ = writeLine ("LambdaLift saw Op element not in qmap : " ^ q ^ "." ^ id) in
+                         let new_elts = el :: r_elts in
+                         (new_elts, r_ops))
+
+                  | OpDef (Qualified(q,id), refine_num, hist, a) ->
+                    (case findAQualifierMap (r_ops, q, id) of
+                       | Some info -> doOp (q, id, info, result, false, refine_num, hist, a)
+                       | _ ->
+                         let _ = writeLine ("LambdaLift saw OpDef element not in qmap : " ^ 
+                                              q ^ "." ^ id ^ 
+                                              " [refinement number " ^ anyToString refine_num ^ "]") 
+                         in
+                         let new_elts = el :: r_elts in
+                         (new_elts, r_ops))
+
+                  | Property p -> doProp (p, result)
+
+                  | _ -> 
+                    let new_elts = el :: r_elts in
+                    (new_elts, r_ops))
+             result
+             elts
    in 
    % let _ = printSpecFlatToTerminal spc in
    let (newElts,newOps) = liftElts(spc.elements, ([],spc.ops)) in
@@ -1026,20 +1038,22 @@ def patternVars (pat:MSPattern): List Var =
  %     addNewOpAux (info, spc)
 
  op addNewOpAux (info       : OpInfo, 
-                 elts       : SpecElements, 
-                 ops        : OpMap, 
+                 (elts : SpecElements, 
+                  ops  : OpMap), 
                  decl?      : Bool, 
                  refine_num : Nat, 
                  hist       : TransformHistory, 
                  pos        : Position) 
   : SpecElements * OpMap =
   let name as Qualified (q, id) = primaryOpName info in
-  let new_ops = insertAQualifierMap (ops, q, id, info) in
-  ((if decl? then 
-      Op (name, true, pos) 
-    else 
-      OpDef (name, refine_num, hist, pos)) :: elts, 
-   new_ops)
+  let new_elt = if decl? then 
+                  Op (name, true, pos) 
+                else 
+                  OpDef (name, refine_num, hist, pos)
+  in
+  let new_elts = new_elt :: elts in
+  let new_ops  = insertAQualifierMap (ops, q, id, info) in
+  (new_elts, new_ops)
 
 endspec
 
