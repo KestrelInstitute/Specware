@@ -988,31 +988,34 @@ I2LToC qualifying spec
   op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr : I_TypedExpr) 
     : Option (C_Spec * C_Block * C_Exp) =
     let 
-      def c4e e = 
-        c4Expression (ctxt, cspc, block, e) 
+      %% def c4e e = 
+      %%   Some (c4Expression (ctxt, cspc, block, e))
+
+      def c41e f e1 =
+	let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
+	Some (cspc, block, f ce1)
 
       def c42e f e1 e2 = 
 	let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
 	let (cspc, block, ce2) = c4Expression (ctxt, cspc, block, e2) in
 	Some (cspc, block, f (ce1, ce2))
 
-      def c41e f e1 =
-	let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
-	Some (cspc, block, f (ce1))
     in
     if ~bitStringSpecial? then 
       None
     else 
       case typed_expr.expr of
-	| I_Var     (_, "Zero")                       -> Some (cspc, block, C_Const (C_Int (true, 0)))
-	| I_Var     (_, "One")                        -> Some (cspc, block, C_Const (C_Int (true, 1)))
-	| I_FunCall ((_, "leftShift"),  [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftLeft,  c1, c2)) e1 e2
-	| I_FunCall ((_, "rightShift"), [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftRight, c1, c2)) e1 e2
-	| I_FunCall ((_, "andBits"),    [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitAnd,     c1, c2)) e1 e2
-	| I_FunCall ((_, "orBits"),     [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitOr,      c1, c2)) e1 e2
-	| I_FunCall ((_, "xorBits"),    [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitXor,     c1, c2)) e1 e2
-	| I_FunCall ((_, "complement"), [], [e])      -> c41e (fn ce -> C_Unary (C_BitNot, ce)) e
-	| I_FunCall ((_, "notZero"),    [], [e])      -> Some (c4e e)
+	| I_Var     (_, "Zero")                        -> Some (cspc, block, C_Const (C_Int (true, 0)))
+	| I_Var     (_, "One")                         -> Some (cspc, block, C_Const (C_Int (true, 1)))
+	| I_FunCall ((_, "leftShift"),   [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftLeft,  c1, c2)) e1 e2
+	| I_FunCall ((_, "rightShift"),  [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftRight, c1, c2)) e1 e2
+	| I_FunCall ((_, "andBits"),     [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitAnd,     c1, c2)) e1 e2
+	| I_FunCall ((_, "orBits"),      [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitOr,      c1, c2)) e1 e2
+	| I_FunCall ((_, "xorBits"),     [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitXor,     c1, c2)) e1 e2
+	| I_FunCall ((_, "complement"),  [], [e1])     -> c41e (fn  c1      -> C_Unary  (C_BitNot,     c1))     e1
+	| I_FunCall ((_, "notZero"),     [], [e1])     -> c41e (fn  c1      -> c1)                              e1
+	| I_FunCall (("System", "setf"), [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_Set,        c1, c2)) e1 e2
+
 	| _ -> None
 
   % --------------------------------------------------------------------------------
