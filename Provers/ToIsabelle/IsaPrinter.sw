@@ -707,7 +707,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = addSubtypePredicateLifters spc in
     let spc = normalizeTopLevelLambdas spc in
     let spc = if lambdaLift?
-               then lambdaLift(spc, false)
+               then lambdaLift(spc, false, false) % ignore imports, don't simulate closures
 	       else spc
     in
     let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in

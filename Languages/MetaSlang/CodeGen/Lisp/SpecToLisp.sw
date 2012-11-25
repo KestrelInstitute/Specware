@@ -131,21 +131,7 @@ SpecToLisp qualifying spec
 	  | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
 	  | None -> None)
      | _ -> None
-
- op listTerm(tm: MSTerm, sp: Spec): Option(List MSTerm) =
-   case tm of
-     | Apply(Fun(Op(Qualified("TranslationBuiltIn", "mkTuple"), _), _, _),
-             Record([(_, x), (_, y)], _), _) ->
-       (case y of
-          | Fun(Embed (id, false), ty, _) | some?(isConsDataType(sp, ty)) ->
-            Some [x]
-          | Apply(Fun(Embed (id, true), ty, _), cdr_arg, _) | some?(isConsDataType(sp, range (sp, ty))) ->
-            (case listTerm(cdr_arg, sp) of
-               | Some r_list_args -> Some(x :: r_list_args)
-               | None -> None)
-          | _ -> None)       
-     | _ -> None
-
+    
  def patternName (pattern : MSPattern) = 
    case pattern of
      | VarPat ((id, _), _) -> id 
@@ -499,19 +485,14 @@ op addList(S: StringSet, l: List String): StringSet =
 	  | Some _ ->
 	    (case optArgs of
 	       | None -> mkLLambda (["!x"], [], mkLVar "!x")
-	       | Some term ->
-             case listTerm(term, sp) of
-               | Some list_args ->
-                 let l_list_args = map (fn t -> mkLTerm (sp, dpn, vars, t)) list_args in
-                 mkLApply(mkLOp "list", l_list_args)
-               | None -> mkLTerm (sp, dpn, vars, term))
+	       | Some term -> mkLTerm (sp, dpn, vars, term))
 	  | None -> 
 	    let id = mkLIntern id in
 	    (case optArgs of
 	       | None -> mkLLambda (["!x"], [], 
 				   mkLApply (mkLOp "cons", 
 					    [id, mkLVar "!x"]))
-	       | Some term ->
+	       | Some term -> 
 	         mkLApply (mkLOp "cons", [id, mkLTerm (sp, dpn, vars, term)])))
 
      | (Embed (id, false), srt, _) -> 
@@ -1528,10 +1509,14 @@ op addList(S: StringSet, l: List String): StringSet =
     spc
 
  op lambdaLift? : Bool = false
+ op LambdaLift.simulateClosures? : Bool = false % If false just use lambdas with free vars (deprecated as global option)
 
  op maybeLambdaLift (spc : Spec) : Spec =
-  if lambdaLift? then       % false by default
-    lambdaLift (spc, true) 
+  if lambdaLift? then          % false by default
+    if simulateClosures? then
+      lambdaLiftWithImportsSimulatingClosures spc
+    else
+      lambdaLiftWithImports spc
   else 
     spc
 

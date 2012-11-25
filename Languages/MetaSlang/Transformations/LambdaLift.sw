@@ -56,15 +56,16 @@ where possible and lifts local functions to global functions. The latter could b
 made optional as well. It seems the allegro compiler handles global functions more 
 efficiently, but cmulisp may do better with local functions.
 **)
- op simulateClosures? : Bool = false	% If false just use lambdas with free vars
+%% op simulateClosures? : Bool = false	% If false just use lambdas with free vars -- moved to SpecToLisp.sw and deprecated
 
  type Ops   = MapL.Map (String, LiftInfo)
- type LLEnv = {spc 	 : Spec, 
-	       opers     : Ops, 
-	       opName    : String, 
-	       qName     : String, 
-	       counter	 : Ref Nat, 
-	       usedNames : Ref StringSet.Set}
+ type LLEnv = {spc 	         : Spec, 
+	       opers             : Ops, 
+	       opName            : String, 
+	       qName             : String, 
+	       counter	         : Ref Nat, 
+	       usedNames         : Ref StringSet.Set,
+               simulateClosures? : Bool}
 
  type FreeVars = List Var 
 
@@ -260,7 +261,7 @@ def patternVars (pat:MSPattern): List Var =
   %let dom = patternType pat in
   if freeVars = [] then  
     mkOp (qualname, mkArrow (dom, rng))
-  else if ~simulateClosures? then
+  else if ~env.simulateClosures? then
     let pats  = patternToList pat in
     let oVars = foldl (fn (result, p) ->
                          let newV = case p of
@@ -348,8 +349,8 @@ def patternVars (pat:MSPattern): List Var =
       removeBound (removeOne variableList, bvs)
 
  % ensure that the term is a closure
- op ensureClosure (term : MSTerm) : MSTerm =
-   if ~ simulateClosures? then 
+ op ensureClosure (env : LLEnv, term : MSTerm) : MSTerm =
+   if ~ env.simulateClosures? then 
      term
    else
      let closureOp     = makeClosureOp     () in
@@ -412,7 +413,7 @@ def patternVars (pat:MSPattern): List Var =
       let tm = 
           case nt1 of
             | Fun f ->
-              if ~simulateClosures? then
+              if ~env.simulateClosures? then
                 (case vterm1 of
                    | (Var (id, srt), _, _) ->
                      (case apply (env.opers, id) of
@@ -428,10 +429,10 @@ def patternVars (pat:MSPattern): List Var =
                 mkApply (nt1, nt2)
 
             | _ ->
-              if ~simulateClosures? then
+              if ~env.simulateClosures? then
                 simplifiedApply (nt1, nt2, getSpecEnv env)
               else 
-                let argument = mkTuple [nt1, toAny (nt2)] in
+                let argument = mkTuple [nt1, toAny (env, nt2)] in
                 let alpha    = mkTyVar "alpha" in
                 let beta     = mkTyVar "beta" in
                 let fnSrt    = mkArrow (alpha, beta) in
@@ -449,7 +450,7 @@ def patternVars (pat:MSPattern): List Var =
   case match of
     | [(pat, cond, body)] -> 
        let (opers, body) = lambdaLiftTerm (env, body) in
-       if ~simulateClosures? then
+       if ~env.simulateClosures? then
 	 (opers, 
 	  Lambda ([(pat, cond, body)], pos))
        else
@@ -469,7 +470,7 @@ def patternVars (pat:MSPattern): List Var =
          in
 
 	 % MA: make sure that liftInfo.closure is really a closure
-	 let liftInfoClosure = ensureClosure (liftInfo.closure) in
+	 let liftInfoClosure = ensureClosure (env, liftInfo.closure) in
 	 (liftInfo::opers, 
 	  liftInfoClosure)
 
@@ -657,7 +658,7 @@ def patternVars (pat:MSPattern): List Var =
   : List LiftInfo * MSTerm =
   case apply (env.opers, id) of
     | Some liftInfo -> 
-      let liftInfoClosure = ensureClosure liftInfo.closure in
+      let liftInfoClosure = ensureClosure (env, liftInfo.closure) in
       ([], liftInfoClosure)
       %of Some (liftInfo:LiftInfo) -> ([], mkApply (makeUnitClosureOp (), liftInfo.closure))
     | _ ->
@@ -673,7 +674,7 @@ def patternVars (pat:MSPattern): List Var =
   % return a closure version of it.
   let tm = mkFun (f, typ) in
   let tm =
-      if ~simulateClosures? then 
+      if ~env.simulateClosures? then 
         tm
       else
         let typ = unfoldToArrow (getSpecEnv env, typ) in
@@ -786,28 +787,29 @@ def patternVars (pat:MSPattern): List Var =
 
  % How it looks like without quoting:
 
- op mkAny (typ : MSType) : MSType = 
-  if simulateClosures? then
+ op mkAny (env : LLEnv, typ : MSType) : MSType = 
+  if env.simulateClosures? then
     mkBase (Qualified ("TranslationBuiltIn", "Any"), [typ])
   else 
     typ
 
- op fromAny () : MSTerm = 
+ op fromAny (env : LLEnv) : MSTerm = 
   let alpha = mkTyVar "alpha" in
-  let any   = mkAny alpha in
+  let any   = mkAny (env, alpha) in
   let typ   = mkArrow (any, alpha) in
   mkOp (Qualified ("TranslationBuiltIn", "fromAny"), typ)
 
- op toAny (tm : MSTerm) : MSTerm =
-  if ~simulateClosures? then 
+ op toAny (env : LLEnv, tm : MSTerm) : MSTerm =
+  if ~env.simulateClosures? then 
     tm
   else
     let alpha = mkTyVar "alpha" in 
-    let any   = mkAny alpha in
+    let any   = mkAny (env, alpha) in
     let typ   = mkArrow (alpha, any) in
     mkApply (mkOp (Qualified ("TranslationBuiltIn", "toAny"), typ), tm)
 
  op abstractName (env         : LLEnv,
+                  names       : QualifiedIds,
                   name        : String,
                   freeVars    : FreeVars,
                   pattern     : MSPattern,
@@ -816,7 +818,7 @@ def patternVars (pat:MSPattern): List Var =
                   body        : MSTerm,
                   extra_conds : MSTerms)
   : OpInfo =
-  if ~simulateClosures? then
+  if ~env.simulateClosures? then
     let oldPatLst = patternToList pattern in
     let newPattern = mkTuplePat (oldPatLst ++ map mkVarPat freeVars) in
     let domType = addSubtypeInfo(newPattern,pattern,domain,extra_conds,getSpecEnv env) in
@@ -824,14 +826,14 @@ def patternVars (pat:MSPattern): List Var =
     let pos = termAnn(body) in
     let new_term = withAnnT(mkLambda (newPattern, body), pos) in
     let tvs = freeTyVars new_type in
-    {names  = [], % TODO: Real names
+    {names  = names,
      fixity = Nonfix, 
      dfn    = maybePiTerm(tvs, TypedTerm (new_term, new_type, termAnn body)),
      fullyQualified? = false}
   else
     let varType = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
-    let closureVar = ("closure-var", mkAny varType) in
-    let closureArg = mkApply (fromAny (), mkVar closureVar) in
+    let closureVar = ("closure-var", mkAny (env, varType)) in
+    let closureArg = mkApply (fromAny env, mkVar closureVar) in
     let closureVarPat = mkVarPat (closureVar) in
     let newPattern =
         if empty? freeVars then
@@ -865,7 +867,7 @@ def patternVars (pat:MSPattern): List Var =
     in
     let new_type = mkArrow (patternType newPattern, range) in
     let new_term = withAnnT(mkLambda (newPattern, newBody), termAnn body) in
-    {names           = [], % TODO: Real names
+    {names           = names,
      fixity          = Nonfix, 
      dfn             = TypedTerm (new_term, new_type, termAnn body),
      fullyQualified? = false}
@@ -901,27 +903,31 @@ def patternVars (pat:MSPattern): List Var =
   ^ "]"
 
  op lambdaLiftWithImports (spc : Spec) : Spec =
-  lambdaLift (spc, true)
+  lambdaLift (spc, true, false)
 
- op lambdaLift (spc : Spec, imports? : Bool) : Spec =
+ op lambdaLiftWithImportsSimulatingClosures (spc : Spec) : Spec =
+  lambdaLift (spc, true, true)
+
+ op lambdaLift (spc : Spec, imports? : Bool, simulateClosures? : Bool) : Spec =
   % let _ = toScreen(printSpec spc^"\n\n") in
   let counter = Ref 1 : Ref Nat in
   let 
     def mkEnv (qname, name) =
-      {opName    = name, 
-       qName     = qname, 
-       spc       = spc, 
-       counter   = counter, 
-       opers     = emptyMap, 
-       usedNames = Ref empty} 
+      {opName            = name, 
+       qName             = qname, 
+       spc               = spc, 
+       counter           = counter, 
+       opers             = emptyMap, 
+       usedNames         = Ref empty,
+       simulateClosures? = simulateClosures?} 
 
     def insertOpers (opers, q, r_elts, r_ops, extra_conds) =
       case opers of
 	 | [] -> (r_elts, r_ops)
 	 | {name = id, ident, pattern, domain, range, freeVars, body, closure}::m_opers -> 
-	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, domain, range, body, extra_conds) in
-	   % TODO: Real names
-	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops, true, 0, [], noPos) in
+           let names = [Qualified (q, id)] in	 
+	   let info = abstractName (mkEnv (q, id), names, id, freeVars, pattern, domain, range, body, extra_conds) in
+	   let (r_elts, r_ops) = addNewOpAux (info, r_elts, r_ops, true, 0, [], noPos) in
 	   insertOpers (m_opers, q, r_elts, r_ops, extra_conds)
 
      def doOp (q, id, info, r_elts, r_ops, decl?, refine_num, hist, a) = 
