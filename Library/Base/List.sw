@@ -699,6 +699,20 @@ op [a] delete (x:a) (l: List a) : List a =
   filter (fn y:a -> y ~= x) l
 #translate Haskell -> delete_all #end
 
+% delete/remove first occurrence of element from list:
+
+% not using fold because of early termination possibility
+op [a] delete1(x:a,lst:List a): List a =
+  case lst of
+    | Nil -> Nil
+    | hd::tl -> (if hd=x then tl else Cons(hd,delete1(x,tl)))
+
+theorem delete1_head is [a]
+  fa(x: a, lst: List a)
+  ~(lst = []) => delete1(head lst, lst) = tail lst
+
+
+
 % delete/remove from l1 (all occurrences of) all the elements that
 % occur in l2 (i.e. list difference):
 
@@ -5878,6 +5892,28 @@ lemma List__permutationOf_cons:
 end-proof
 % ------------------------------------------------------------------------------
 
+proof Isa delete1_subtype_constr
+  apply(induct lst)
+  apply(simp_all add: List__delete1.simps)
+end-proof
+
+proof Isa List__delete1_head
+  apply(case_tac lst)
+  apply(simp_all add: List__delete1.simps)
+end-proof
+
+proof Isa List__delete1_head__stp
+  apply(case_tac lst)
+  apply (simp_all add: List__delete1.simps)
+end-proof
+
+proof Isa List__length_of_delete1
+  apply(induct lst)
+  apply(simp_all add: List__delete1.simps)
+  apply(case_tac "n=a")
+  apply(simp_all)
+end-proof
+
 
 % mapping to Isabelle:
 
@@ -5953,5 +5989,29 @@ end-proof
   List.positionsSuchThat -> findIndices  curried  reversed
   List.positionsOf  -> elemIndices  curried  reverse
 #end
+
+%% TODO: This should be moved up (leaving only proofs at the bottom of
+%% this file, but it depends on some things proved above and so can't
+%% be moved too far up.
+
+theorem length_of_delete1 is [a]
+  fa(n:a, lst:List a) (n in? lst) => length(delete1(n,lst)) = (length(lst) - 1)
+
+proof Isa List__length_of_delete1__stp
+  apply(induct lst)
+  apply(simp add: List__in_p__stp_def List__e_at_at__stp_nth2)
+  apply(auto simp add: List__in_p__stp_def List__delete1.simps)
+  apply(case_tac "n=a")
+  apply(simp)
+  apply(simp add: List__e_at_at__stp_nth)
+  apply(case_tac "i < Suc (length lst)")
+  apply(simp_all)
+  apply(auto simp add: List.nth.nth_Cons)
+  apply(case_tac "i")
+  apply(simp)
+  apply(simp)
+  by (metis diff_add_cancel int_Suc int_int_eq zadd_commute)
+end-proof
+  
 
 end-spec

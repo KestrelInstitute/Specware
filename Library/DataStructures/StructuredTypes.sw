@@ -24,7 +24,8 @@ spec
   theorem length_of_uptoL is
     fa(i,j)( length(uptoL(i,j)) = j - i )
 
-% -----   extension of C:\Specware4\Library\Base\List.sw ---------
+% -----   extension of /Library/Base/List.sw ---------
+%TODO use the new List.delete1
   op [a] delete1(x:a,lst:List a): List a =
     case lst of  % not using fold because of early termination possibility
       | Nil -> Nil
@@ -48,8 +49,9 @@ spec
   theorem length_of_cons is [E]
     fa(n:E,lst:List E)( length( n:: lst) = (1 + length lst) )
 
+  % TODO: Why is the "List." needed here?:
   theorem length_of_delete1 is [E]
-    fa(n:E,lst:List E)( n in? lst => (length(delete1(n,lst)) = (length(lst) - 1)))
+    fa(n:E,lst:List E)( n in? lst => (List.length(delete1(n,lst)) = (length(lst) - 1)))
 
 % ----------------------------------------------------------------
 
