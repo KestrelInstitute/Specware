@@ -8,7 +8,9 @@ op addSubtypeChecksOnArgs?: Bool = true
 op addSubtypeChecks(spc: Spec): Spec =
   addSemanticChecks(spc, true, true, false, [])
   
-op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateFail")
+op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateComplain")
+%op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateFail")
+
 op assurePredicateQId: QualifiedId = Qualified("SemanticError", "assurePredicate")
 
 op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc: Spec,
