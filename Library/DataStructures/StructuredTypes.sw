@@ -25,15 +25,8 @@ spec
     fa(i,j)( length(uptoL(i,j)) = j - i )
 
 % -----   extension of /Library/Base/List.sw ---------
-%TODO use the new List.delete1
-  op [a] delete1(x:a,lst:List a): List a =
-    case lst of  % not using fold because of early termination possibility
-      | Nil -> Nil
-      | u::v -> (if u=x then v else Cons(u,delete1(x,v)))
 
-  theorem delete1_head is [a]
-    fa(x: a, lst: List a)
-    ~(lst = []) => delete1(head lst, lst) = tail lst
+%% Note: delete1 and its theorems have been moved to /Library/Base/List.sw (so use List.delete1).
 
 % delete an occurrence of each element of xs in lst
   op [a] diff1(xs:List a, lst:List a): List a =
@@ -48,10 +41,6 @@ spec
 
   theorem length_of_cons is [E]
     fa(n:E,lst:List E)( length( n:: lst) = (1 + length lst) )
-
-  % TODO: Why is the "List." needed here?:
-  theorem length_of_delete1 is [E]
-    fa(n:E,lst:List E)( n in? lst => (List.length(delete1(n,lst)) = (length(lst) - 1)))
 
 % ----------------------------------------------------------------
 
