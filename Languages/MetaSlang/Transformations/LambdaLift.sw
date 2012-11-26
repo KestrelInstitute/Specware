@@ -91,6 +91,50 @@ efficiently, but cmulisp may do better with local functions.
  type VarMatch = List (MSPattern * MSTerm * VarTerm)
  op makeVarTerm: MSTerm -> VarTerm
 
+ %% for debugging purposes...
+ op undoVarTerm (vt : VarTerm) : MSTerm =
+  let 
+    def undo (body, _, pos) =
+      case body of
+        | Apply        (     vt1,      vt2) -> 
+          Apply        (undo vt1, undo vt2, pos)
+
+        | Record       pairs ->
+          Record       (map (fn (id, vt) -> (id, undo vt)) pairs, pos)
+
+        | Bind         (binder, vars,      vt) ->
+          Bind         (binder, vars, undo vt, pos)
+
+        | The          (var,      vt) ->
+          The          (var, undo vt, pos)
+
+        | Let	       (bindings, vt) ->
+          Let	       (map (fn (pat, vt) -> (pat, undo vt)) bindings, undo vt, pos)
+
+        | LetRec       (bindings, vt) ->
+          LetRec       (map (fn (var, vt) -> (var, undo vt)) bindings, undo vt, pos)
+
+        | Var          var ->
+          Var          (var, pos)
+
+        | Fun          (fun, typ) ->
+          Fun          (fun, typ, pos)
+
+        | Lambda       vmatch ->
+          Lambda       (map (fn (pat, tm, vt) -> (pat, tm, undo vt)) vmatch, pos)
+
+        | IfThenElse   (     vt1,      vt2,      vt3) ->
+          IfThenElse   (undo vt1, undo vt2, undo vt3, pos)
+
+        | Seq          vts ->
+          Seq          (map undo vts, pos)
+  in
+  undo vt
+
+ %% for debugging purposes...
+ op printVarTerm (vt : VarTerm) : String = 
+  printTerm (undoVarTerm vt)
+
 (**
  op applyClosure : (A, B) Closure(A, B) * A -> B
  
@@ -283,9 +327,17 @@ def patternVars (pat:MSPattern): List Var =
   else
     case freeVars of
       | [(id, varSrt)] ->
+        let new_dom = 
+            case dom of
+              | Product (pairs, pos) -> 
+                let next_index = Nat.show (1 + length pairs) in
+                Product (pairs ++ [(next_index, varSrt)], pos)
+              | _ ->
+                Product ([("1", dom), ("2", varSrt)], noPos)
+        in
         mkApply (makeClosureOp (), 
                  mkTuple [mkOp (Qualified (env.qName, name), 
-                                mkArrow (mkProduct [varSrt, dom], rng)), 
+                                mkArrow (new_dom, rng)), 
                           mkVar (id, varSrt)])
       | _ ->
         let prod = mkTuple (map mkVar freeVars) in
