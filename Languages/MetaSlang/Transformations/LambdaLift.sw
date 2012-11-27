@@ -273,7 +273,7 @@ def patternVars (pat:MSPattern): List Var =
    let gamma = mkTyVar "gamma" in
    let srt1  = mkArrow (mkProduct [alpha, beta], gamma) in
    let srt2  = mkArrow (mkProduct [srt1, alpha], mkArrow (beta, gamma)) in
-     
+   %           ((a * b) -> c) * a  ->  (b -> c)     
    %
    % Later change this to:
    % mkArrow (mkProduct [srt1, alpha], 
@@ -325,26 +325,17 @@ def patternVars (pat:MSPattern): List Var =
                                      rng)), 
                       map mkVar (oVars ++ freeVars)))
   else
-    case freeVars of
-      | [(id, varSrt)] ->
-        let new_dom = 
-            case dom of
-              | Product (pairs, pos) -> 
-                let next_index = Nat.show (1 + length pairs) in
-                Product (pairs ++ [(next_index, varSrt)], pos)
-              | _ ->
-                Product ([("1", dom), ("2", varSrt)], noPos)
-        in
-        mkApply (makeClosureOp (), 
-                 mkTuple [mkOp (Qualified (env.qName, name), 
-                                mkArrow (new_dom, rng)), 
-                          mkVar (id, varSrt)])
-      | _ ->
-        let prod = mkTuple (map mkVar freeVars) in
-        let srt1 = termTypeEnv (getSpecEnv env, prod) in
-        let oper = mkOp (qualname, mkArrow (mkProduct [srt1, dom], rng)) in
-        mkApply (makeClosureOp (), 
-                 mkTuple[oper, ArityNormalize.mkArityTuple (getSpecEnv env, prod)])	
+    let farg =
+        case freeVars of
+          | [fv] -> mkVar fv 
+          | _ -> ArityNormalize.mkArityTuple (getSpecEnv env, 
+                                              mkTuple (map mkVar freeVars))
+    in
+    let ftype = termTypeEnv (getSpecEnv env, farg) in
+    let oper  = mkOp (qualname, mkArrow (mkProduct [ftype, dom], rng)) in
+    mkApply (makeClosureOp (), 
+             mkTuple[oper, farg])
+    
 
  op makeLiftInfo (env  : LLEnv, 
                   id   : String, 
@@ -484,11 +475,19 @@ def patternVars (pat:MSPattern): List Var =
               if ~env.simulateClosures? then
                 simplifiedApply (nt1, nt2, getSpecEnv env)
               else 
-                let argument = mkTuple [nt1, toAny (env, nt2)] in
+                %% closure has type ('a * 'b -> 'c) * 'a -> ('b -> 'c)
+                %% so we need (('a * 'b -> 'c) * 'a -> ('b -> 'c)) * a -> (b -> c)
+                let argument = mkTuple [nt1, nt2] in
                 let alpha    = mkTyVar "alpha" in
                 let beta     = mkTyVar "beta" in
-                let fnSrt    = mkArrow (alpha, beta) in
-                let srt      = mkArrow (mkProduct [fnSrt, alpha], beta) in
+                let gamma    = mkTyVar "gamma" in
+                let srt      = mkArrow (mkProduct [mkArrow (mkProduct [mkArrow (mkProduct [alpha, beta],
+                                                                                gamma),
+                                                                       alpha],
+                                                            mkArrow (beta, gamma)),
+                                                   alpha], 
+                                        mkArrow (beta, gamma))
+                in
                 let fnOp     = mkOp (Qualified ("TranslationBuiltIn", "applyClosure"), srt) in
                 mkApply (fnOp, argument)
       in
@@ -813,53 +812,6 @@ def patternVars (pat:MSPattern): List Var =
     | [vt] -> vt
     | _ -> (Record (tagTuple vts), [], noPos)
 
- (*
-  *  spec TranslationBuiltIn = 
-  *
-  *    type Any[T] = T
-  *
-  *  end-spec
-  *)
-
- (*
-  *  To take care of castings we introduce:
-  * 
-  *  type Any[T] = | Any  T
-  *  op fromAny : [T] Any[T] -> T
-  *  op toAny   : [T] T -> Any[T]
-  * 
-  *  % How it would look like with quoting:
-  * 
-  *  def mkAny srt = Type `Any[^ srt]`
-  *  def fromAny   = Term `TranslationBasic.fromAny`
-  *  def toAny     = Term `TranslationBasic.toAny` 
-  * 
-  * 
-  *)
-
- % How it looks like without quoting:
-
- op mkAny (env : LLEnv, typ : MSType) : MSType = 
-  if env.simulateClosures? then
-    mkBase (Qualified ("TranslationBuiltIn", "Any"), [typ])
-  else 
-    typ
-
- op fromAny (env : LLEnv) : MSTerm = 
-  let alpha = mkTyVar "alpha" in
-  let any   = mkAny (env, alpha) in
-  let typ   = mkArrow (any, alpha) in
-  mkOp (Qualified ("TranslationBuiltIn", "fromAny"), typ)
-
- op toAny (env : LLEnv, tm : MSTerm) : MSTerm =
-  if ~env.simulateClosures? then 
-    tm
-  else
-    let alpha = mkTyVar "alpha" in 
-    let any   = mkAny (env, alpha) in
-    let typ   = mkArrow (alpha, any) in
-    mkApply (mkOp (Qualified ("TranslationBuiltIn", "toAny"), typ), tm)
-
  op abstractName (env         : LLEnv,
                   names       : QualifiedIds,
                   name        : String,
@@ -884,18 +836,14 @@ def patternVars (pat:MSPattern): List Var =
      fullyQualified? = false}
   else
     let varType       = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
-    let closureVar    = ("closure-var", mkAny (env, varType)) in
-    let closureArg    = mkApply (fromAny env, mkVar closureVar) in
-    let closureVarPat = mkVarPat (closureVar) in
+    let closureVar    = ("closure-var", varType) in
+    let closureArg    = mkVar    closureVar in
+    let closureVarPat = mkVarPat closureVar in
     let newPattern =
         if empty? freeVars then
           pattern
         else 
-          case pattern of
-            | (VarPat _) -> (RecordPat ([("1", pattern), ("2", closureVarPat)], noPos))
-            | (RecordPat (fields, _)) -> 
-              (RecordPat (fields ++ 
-                            [(Nat.show (1+ (length fields)), closureVarPat)], noPos))
+          RecordPat ([("1", closureVarPat), ("2", pattern)], noPos)
     in	
     let 
       def mkProject ((id, srt), n) = 

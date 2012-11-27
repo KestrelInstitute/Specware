@@ -61,11 +61,11 @@ Poly2Mono qualifying spec
      %let _ = writeLine (case old_defs of | dfn :: _ -> "old dfn: " ^ printTerm dfn | _ -> "no dfn") in
       let (new_decls_and_defs, minfo) =
           foldl (fn ((defs, minfo), def0) ->
- 		   let (tvs, typ, trm) = unpackFirstTerm def0                                  in
- 		   let (typ, minfo)    = p2mType (spc, modifyConstructors?, typ, minfo)        in
- 		   let (trm, minfo)    = p2mTerm (spc, modifyConstructors?, trm, minfo)        in
- 		   let ndef            = maybePiTerm (tvs, TypedTerm (trm, typ, termAnn def0)) in
- 		   let defs            = defs ++ [ndef]                                        in
+ 		   let (tvs, old_typ, old_trm) = unpackFirstTerm def0                                  in
+ 		   let (new_typ, minfo)        = p2mType (spc, modifyConstructors?, old_typ, minfo)    in
+ 		   let (new_trm, minfo)        = p2mTerm (spc, modifyConstructors?, old_trm, minfo)    in
+ 		   let ndef                    = maybePiTerm (tvs, TypedTerm (new_trm, new_typ, termAnn def0)) in
+ 		   let defs                    = defs ++ [ndef]                                        in
                    (defs, minfo)) 
  		([], minfo) 
  		(old_decls ++ old_defs)
@@ -118,7 +118,7 @@ Poly2Mono qualifying spec
                         in
                         incorporateMinfo (r_elts, el_s, new_minfo, minfo, ops, types)
                       | _ ->
-                        let infos = findAllOps (spc, qid) in
+                        % let infos = findAllOps (spc, qid) in
                         % let _ = writeLine ("Cannot find " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos) ^ "\nin spec\n" ^ printSpec spc) in
                         (r_elts, minfo, ops, types))
  		 | OpDef (qid, _, _, _) ->
@@ -132,7 +132,7 @@ Poly2Mono qualifying spec
                         in
                         incorporateMinfo (r_elts, el_s, new_minfo, minfo, ops, types)
                       | _ ->
-                        let infos = findAllOps (spc, qid) in
+                        % let infos = findAllOps (spc, qid) in
                         % let _ = writeLine ("Cannot find " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos) ^ "\nin spec\n" ^ printSpec spc) in
                         (r_elts, minfo, ops, types))
 
