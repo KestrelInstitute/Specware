@@ -153,4 +153,146 @@ spec
         []
         globalContext
 
-endspec
+op inPosition?(pos: Nat, full_pos: Position, uidStr: String): Bool =
+  case full_pos of
+    | File(fl_nm1, (_,_,begp), (_,_,endp)) ->
+      begp <= pos && pos <= endp %&& fl_nm = fl_nm1
+    | _ -> false
+
+op findSmallestObjContaining(spc: Spec, pos: Nat, uidStr: String): Option(Nat * Nat) =
+  case findLeftmost (fn el -> inPosition?(pos, elementAnn el, uidStr))
+         spc.elements of
+    | None -> None
+    | Some found_el ->
+  let reg_in =
+        case found_el of
+          | Op(qid, def?, _) ->
+            (case findTheOp(spc, qid) of
+               | Some info -> findSmallestObjInTerm(info.dfn, pos, uidStr)
+               | None -> None)
+          | OpDef(qid, refine_num, _, _) -> None
+          | _ -> None
+  in
+  case reg_in of
+    | Some _ -> reg_in
+    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = elementAnn(found_el) in
+              Some(begp, endp)
+
+op findSmallestObjInTerm(tm: MSTerm, pos: Nat, uidStr: String): Option(Nat * Nat) =
+  if ~(inPosition?(pos, termAnn tm, uidStr)) then None
+  else
+  let reg_in =
+        case tm of
+          | Apply(Lambda(matches, _), t2, _) ->      % case
+            (case findSmallestObjInTerm(t2, pos, uidStr) of
+               | None ->
+                 foldl (fn (res, (pati, _, tmi)) ->
+                   if some? res then res
+                   else case findSmallestObjInPattern(pati, pos, uidStr) of
+                          | None -> findSmallestObjInTerm(tmi, pos, uidStr)
+                          | val -> val)
+                   None matches
+               | val -> val)
+          | Apply(t1, t2, _) ->
+            (case findSmallestObjInTerm(t1, pos, uidStr) of
+               | None -> findSmallestObjInTerm(t2, pos, uidStr)
+               | val -> val)
+          | Record(flds, _) ->
+            foldl (fn (res, (_, tmi)) ->
+                   if some? res then res else findSmallestObjInTerm(tmi, pos, uidStr))
+              None flds
+          | Bind(_, vs, bod, _) ->
+            (case foldl (fn (res, (_, tyi)) ->
+                           if some? res then res else findSmallestObjInType(tyi, pos, uidStr))
+                     None vs of
+               | None -> findSmallestObjInTerm(bod, pos, uidStr)
+               | val -> val)
+          | The((_, ty), bod, _) ->
+            (case findSmallestObjInType(ty, pos, uidStr) of
+               | None -> findSmallestObjInTerm(bod, pos, uidStr)
+               | val -> val)
+          | Let(binds, bod, _) ->
+            (case foldl (fn (res, (pati, tmi)) ->
+                         if some? res then res
+                           else case findSmallestObjInPattern(pati, pos, uidStr) of
+                                  | None -> findSmallestObjInTerm(tmi, pos, uidStr)
+                                  | val -> val)
+                     None binds of
+               | None -> findSmallestObjInTerm(bod, pos, uidStr)
+               | val -> val)
+          | LetRec(binds, bod, _) ->
+            (case foldl (fn (res, ((_,v_tyi), tmi)) ->
+                           if some? res then res
+                           else case findSmallestObjInType(v_tyi, pos, uidStr) of
+                                  | None -> findSmallestObjInTerm(tmi, pos, uidStr)
+                                  | val -> val)
+                     None binds of
+               | None -> findSmallestObjInTerm(bod, pos, uidStr)
+               | val -> val)
+          | Lambda(matches, _) ->
+            foldl (fn (res, (pati, _, tmi)) ->
+                   if some? res then res
+                   else case findSmallestObjInPattern(pati, pos, uidStr) of
+                          | None -> findSmallestObjInTerm(tmi, pos, uidStr)
+                          | val -> val)
+              None matches
+          | IfThenElse(t1, t2, t3, _)  ->
+            (case findSmallestObjInTerm(t1, pos, uidStr) of
+               | None -> (case findSmallestObjInTerm(t2, pos, uidStr) of
+                            | None -> findSmallestObjInTerm(t3, pos, uidStr)
+                            | val -> val)
+               | val -> val)
+          | Seq(tms, _) ->
+            foldl (fn (res, tmi) ->
+                   if some? res then res else findSmallestObjInTerm(tmi, pos, uidStr))
+              None tms
+          | TypedTerm(t1, ty, _) ->
+            (case findSmallestObjInTerm(t1, pos, uidStr) of
+               | None -> findSmallestObjInType(ty, pos, uidStr)
+               | val -> val)
+          | Pi(_, t1, _) -> findSmallestObjInTerm(t1, pos, uidStr)
+          | And(tms, _) ->
+            foldl (fn (res, tmi) ->
+                     if some? res then res else findSmallestObjInTerm(tmi, pos, uidStr))
+              None tms
+          | _ -> None 
+  in
+  case reg_in of
+    | Some _ -> reg_in
+    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = termAnn tm in
+              Some(begp, endp)
+
+op findSmallestObjInType(ty: MSType, pos: Nat, uidStr: String): Option(Nat * Nat) =
+  if ~(inPosition? (pos, typeAnn ty, uidStr)) then None
+  else
+  let reg_in =
+        case ty of
+          | _ -> None
+  in
+  case reg_in of
+    | Some _ -> reg_in
+    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = typeAnn ty in
+              Some(begp, endp)
+
+op findSmallestObjInPattern(pat: MSPattern, pos: Nat, uidStr: String): Option(Nat * Nat) =
+  if ~(inPosition?(pos, patAnn pat, uidStr)) then None
+  else
+  let reg_in =
+        case pat of
+          | _ -> None
+  in
+  case reg_in of
+    | Some _ -> reg_in
+    | None -> let File(fl_nm1, (_,_,begp), (_,_,endp)) = patAnn pat in
+              Some(begp, endp)
+
+
+op Specware.evaluateUnitId: String -> Option Value
+
+op findObjectAtPosition(uidStr: String, pos: Nat): Option(Nat * Nat) =
+  case evaluateUnitId uidStr of
+    | Some(Spec spc) ->
+      findSmallestObjContaining(spc, pos, uidStr)
+    | _ -> None
+
+end-spec
