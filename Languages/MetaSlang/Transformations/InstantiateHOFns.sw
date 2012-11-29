@@ -342,7 +342,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                  typ      : MSType,
                  ref_map  : RefMap)
    : Option DefInfo =
-   if anyTerm? body then None
+   if anyTerm? body || nonExecutableTerm1? body then None
    else
    if recursiveCallsPreserveHOParameters? (body, qid, params, HOArgs?, curried?) then
      let patinds = indices_for params in

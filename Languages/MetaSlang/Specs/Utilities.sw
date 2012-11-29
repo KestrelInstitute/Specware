@@ -2887,12 +2887,21 @@ op findTheOpInterp(spc: Spec, qid: QualifiedId): Option OpInfo =
     | None -> findTheOp (spc, qid)
     | v -> v
 
+op nonExecutableTerm1? (tm: MSTerm): Bool =
+  existsSubTerm  (fn t ->
+                    case t of
+                      | Bind _ -> true
+                      | The _ -> true
+                      | _ -> false)
+    tm
+
 op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
   let def nonEx?(t: MSTerm, seen: QualifiedIds): Bool =
         % let _ = writeLine(printTerm t) in
         existsSubTerm (fn t ->
                          case t of
                            | Bind _ -> true
+                           | The _ -> true
                            | Fun(Op(qid as Qualified(qual, _), _), _, _)
                                | qual in? evaluableQualifiers && some?(findTheOp(getBaseSpec(), qid)) -> false
                            | Fun(Op(qid, _), _, _) ->
