@@ -187,6 +187,7 @@ ArityNormalize qualifying spec
         | RecordPat(fields,_) -> 
           foldr (fn ((_,p),result) -> insertPattern(p,result)) 
 	    result fields
+        | RestrictedPat(p, _, _) -> insertPattern(p,result)
 
  def insertVars(vars,(usedNames,gamma)) =
      foldr (fn (v as (id,srt),(usedNames,gamma)) -> 

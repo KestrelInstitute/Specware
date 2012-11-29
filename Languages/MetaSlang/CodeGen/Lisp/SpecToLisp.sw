@@ -134,7 +134,8 @@ SpecToLisp qualifying spec
     
  def patternName (pattern : MSPattern) = 
    case pattern of
-     | VarPat ((id, _), _) -> id 
+     | VarPat ((id, _), _) -> id
+     | RestrictedPat(p, _, _) -> patternName p
      | _ -> 
        System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
 
