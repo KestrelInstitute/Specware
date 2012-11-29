@@ -271,6 +271,10 @@ op getConjoinedEqualities(t: MSTerm): MSTerms =
       getConjoinedEqualities t1 ++ getConjoinedEqualities t2
     | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) ->
       getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+    %% case
+    | Apply(Lambda(matches, _), _, _) ->
+      foldl (fn (eqs, (_, _, bod)) -> eqs ++ getConjoinedEqualities bod) [] matches
+    | Let(_, bod, _) -> getConjoinedEqualities bod
     | _ -> [t]
 
 op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
@@ -290,8 +294,9 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
                       (case lhs of
                          | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
                              | qid nin? stored_qids && equalVar?(v, state_var)
-                                  && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
-                           % let _ = if show qid = "WS" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
+                                  && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid))
+                                  ->
+                           % let _ = if show qid = "deliver_in_udp_opt2" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
                            Some qid
                          | _ -> None)
                     | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)    % Bool
@@ -350,13 +355,25 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                    (id, tm))
               id_pat_prs)
    in
-   let def makeDef(tm) =
+   let def makeDef(tm, inh_cjs) =
          case tm of
            | IfThenElse(p, q, r, a) ->
-             IfThenElse(p, makeDef q, makeDef r, a)
-           | Let(binds, bod, a) -> Let(binds, makeDef bod, a)
+             IfThenElse(p, makeDef(q, inh_cjs), makeDef(r, inh_cjs), a)
+           | Let(binds, bod, a) -> Let(binds, makeDef(bod, inh_cjs), a)
+           | Apply(Lambda(matches, a1), e, a2) ->
+             let n_matches = map (fn (p, c, bod) -> (p, c, makeDef(bod, inh_cjs))) matches in
+             Apply(Lambda(n_matches, a1), e, a2) 
            | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),a) ->
              (let cjs = getConjuncts tm in
+              let cjs = inh_cjs ++ cjs in
+              case findLeftmost (fn cj -> case cj of
+                                            | Let _ -> true
+                                            | IfThenElse _ -> true
+                                            | Apply(Lambda _, _, _) -> true
+                                            | _ -> false)
+                     cjs of
+                | Some complex_cj -> makeDef(complex_cj, delete(complex_cj, cjs))
+                | None -> 
               let (state_rec_prs, opt_rec_prs) = foldl recordItemVal ([], []) cjs in
               let state_res = case tryIncrementalize(state_rec_prs) of
                                 | (Some src_tm, inc_rec_prs) ->
@@ -367,7 +384,12 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
               % let _ = writeLine("makeDef: "^printTerm state_res) in
               if result_tuple_info = []
                 then state_res
-                else mkCanonRecord((state_id, state_res) :: opt_rec_prs))             
+                else mkCanonRecord((state_id, state_res) :: opt_rec_prs))
+           | _ ->
+         if inh_cjs ~= []
+           then makeDef(mkConj(inh_cjs ++ [tm]), [])
+         else
+         case tm of
            | Apply(Fun(Equals,_,_), _, _) ->
              (case recordItemVal (([], []), tm) of
                 | (state_rec_prs, []) ->
@@ -399,6 +421,11 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
            | Apply(Fun(Not, _, _), Apply(Fun(Op(qid,_),_,_), Var(v,_), _), _)                             % Bool false
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, falseTerm) :: state_itms, result_itms)
+           | Let(binds, bod, _) ->
+             let (bod_state_itms, bod_result_itms) = recordItemVal(([], []), bod) in
+             let n_state_itms  = map (fn (id, b) -> (id, mkLet(binds, b))) bod_state_itms in
+             let n_result_itms = map (fn (id, b) -> (id, mkLet(binds, b))) bod_result_itms in
+             (n_state_itms ++ state_itms, n_result_itms ++ result_itms)
            | IfThenElse(c, p, q, a) ->
              let (p_state_itms, p_result_itms) = recordItemVal(([], []), p) in
              let (q_state_itms, q_result_itms) = recordItemVal(([], []), q) in
@@ -471,7 +498,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
              Lambda([(binds, p, replaceBody(o_bod, bod))], a)
            | _ -> bod
    in
-   let dfn = replaceBody(top_dfn, makeDef post_condn) in
+   let dfn = replaceBody(top_dfn, makeDef(post_condn, [])) in
    let unfold_tuple_fns = map Unfold stored_qids in
    let (new_dfn_ptm, hist) = rewriteWithRules(spc, unfold_tuple_fns, op_qid, toPathTerm dfn, []) in
    fromPathTerm new_dfn_ptm
