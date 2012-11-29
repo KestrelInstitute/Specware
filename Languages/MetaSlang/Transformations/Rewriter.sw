@@ -8,8 +8,7 @@ MetaSlangRewriter qualifying spec
 
  type TermPredicate = MSTerm * MSTerm -> Bool
 
- op traceRewriting : Nat 
- def traceRewriting = 0
+ op traceRewriting : Nat = 0
 
  def mkVar = HigherOrderMatching.mkVar     
 
