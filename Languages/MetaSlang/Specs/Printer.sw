@@ -1236,7 +1236,7 @@ AnnSpecPrinter qualifying spec
                                             then [(0, ppForallTyVars pp tvs),
                                                   (0, string " ")]
                                           else [])
-                                      ++ [(0, ppOpName (primaryOpName info))]
+                                      ++ [(0, ppOpName (primaryOpName info)), (0, string " ")]
 				     ))]
                       ++ prettys))
    in
