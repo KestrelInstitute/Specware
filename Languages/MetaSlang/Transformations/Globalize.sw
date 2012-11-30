@@ -787,10 +787,7 @@ Globalize qualifying spec
                 % let _ = writeLine ("get_indices   ="  ^ printTerms get_indices)  in
                 if equalTerm?  (lhs,           set_container) && 
                    equalTerm?  (set_container, get_container) && 
-                   equalTerms? (set_indices,   get_indices)   && 
-                   forall? (fn (index,_) -> natConvertible index) new_value_pairs 
-                   % && update_op = Qualified ("MapsAsVectors", "update")
-                   % && access_op = Qualified ("MapsAsVectors", "TMApply")
+                   equalTerms? (set_indices,   get_indices)   
                   then
                     % let _ = writeLine ("MATCH!") in
                     let dom_type = termType access_tm in
