@@ -112,7 +112,7 @@ end-proof
 % char_of_nat but have to use the regularized version Char__chr, which is 
 % defined in IsabelleExtensions (obsolete? sjw- 1/3/12)
 
-proof Isa Thy_Morphism Char_nat
+proof Isa Thy_Morphism  "~~/src/HOL/Library/Char_nat"
   type Char.Char -> char
   Char.chr       -> char_of_nat
   Char.ord       -> nat_of_char
