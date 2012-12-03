@@ -279,8 +279,8 @@ CG qualifying spec
   let c_spec           = addTrailer   (c_spec, app_name)   in
   let c_spec           = addInclude   (c_spec, h_filename) in
 
-  let _ = printCSpecToFile (h_spec, h_filename) in
-  let _ = printCSpecToFile (c_spec, c_filename) in
+  let _ = printCSpecAsHeaderToFile (h_spec, h_filename) in
+  let _ = printCSpecToFile         (c_spec, c_filename) in
   ()
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

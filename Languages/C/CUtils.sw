@@ -282,8 +282,8 @@ CUtils qualifying spec
  op printCSpecToString (cspc : C_Spec) : String = 
   printCSpecToX (cspc, "", false, String)
 
- op printCSpecAsHeaderToFile (cspc : C_Spec) : () = 
-  let fname = getHeaderFilename (cspc.name) in
+ op printCSpecAsHeaderToFile (cspc : C_Spec, fname : String) : () = 
+  % let xfname = getHeaderFilename (cspc.name) in
   let _ = printCSpecToX (cspc, fname, true, File) in
   ()
 
