@@ -2892,6 +2892,10 @@ op nonExecutableTerm1? (tm: MSTerm): Bool =
                     case t of
                       | Bind _ -> true
                       | The _ -> true
+                      %% This case really should be generalized (see below) but needs spc argument
+                      | Fun(f, Arrow(Product([("1", Arrow _), _], _), _, _), _)
+                          | embed? Equals f || embed? NotEquals f ->
+                        true
                       | _ -> false)
     tm
 
@@ -2902,6 +2906,11 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
                          case t of
                            | Bind _ -> true
                            | The _ -> true
+                           | Fun(f, ty, _) | embed? Equals f || embed? NotEquals f ->
+                             (case arrowOpt(spc, ty) of
+                                | Some(Product([("1", e_ty), _], _), _) ->
+                                  some?(arrowOpt(spc, e_ty))
+                                | _ -> false)
                            | Fun(Op(qid as Qualified(qual, _), _), _, _)
                                | qual in? evaluableQualifiers && some?(findTheOp(getBaseSpec(), qid)) -> false
                            | Fun(Op(qid, _), _, _) ->
