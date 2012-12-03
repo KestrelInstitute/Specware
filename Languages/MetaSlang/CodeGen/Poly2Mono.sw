@@ -36,7 +36,7 @@ Poly2Mono qualifying spec
   : Spec =
   let 
     def processTypeinfo (Qualified (q, id), info, typemap, minfo) =
-      let pos = typeAnn info.dfn in
+      let pos                   = typeAnn info.dfn          in
       let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
       let (new_defs, minfo) =
           foldl (fn ((defs, minfo), def0) ->
@@ -54,18 +54,16 @@ Poly2Mono qualifying spec
       (tmap, minfo)
  
     def processOpinfo (Qualified (q, id), info, opmap, minfo) =
-     %let _ = writeLine ("processOpinfo: " ^ q ^ "." ^ id) in
-      let pos = termAnn info.dfn in
-      let (tvs, typ, _) = unpackFirstOpDef info in
+      let pos                   = termAnn info.dfn        in
+      let (tvs, typ, _)         = unpackFirstOpDef info   in
       let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-     %let _ = writeLine (case old_defs of | dfn :: _ -> "old dfn: " ^ printTerm dfn | _ -> "no dfn") in
       let (new_decls_and_defs, minfo) =
           foldl (fn ((defs, minfo), def0) ->
- 		   let (tvs, old_typ, old_trm) = unpackFirstTerm def0                                  in
- 		   let (new_typ, minfo)        = p2mType (spc, modifyConstructors?, old_typ, minfo)    in
- 		   let (new_trm, minfo)        = p2mTerm (spc, modifyConstructors?, old_trm, minfo)    in
+ 		   let (tvs, old_typ, old_trm) = unpackFirstTerm def0                                          in
+ 		   let (new_typ, minfo)        = p2mType (spc, modifyConstructors?, old_typ, minfo)            in
+ 		   let (new_trm, minfo)        = p2mTerm (spc, modifyConstructors?, old_trm, minfo)            in
  		   let ndef                    = maybePiTerm (tvs, TypedTerm (new_trm, new_typ, termAnn def0)) in
- 		   let defs                    = defs ++ [ndef]                                        in
+ 		   let defs                    = defs ++ [ndef]                                                in
                    (defs, minfo)) 
  		([], minfo) 
  		(old_decls ++ old_defs)
@@ -76,97 +74,90 @@ Poly2Mono qualifying spec
       (omap, minfo)
 
     def modElts (elts, minfo, ops, types) =
-      foldl (fn ((r_elts, minfo, ops, types), el) ->
+      foldl (fn ((rev_elts, minfo, ops, types), el) ->
                case el of
  		 | Type (qid, _) ->
                    (case findTheType (spc, qid) of
                       | Some typeinfo ->
                         let (types, new_minfo) = processTypeinfo (qid, typeinfo, types, minfo) in
-                        let el_s = if keepPolyMorphic? || firstTypeDefTyVars typeinfo = [] then
-                                     [el]
-                                   else 
-                                     []
+                        let el_s               = if keepPolyMorphic? || firstTypeDefTyVars typeinfo = [] then 
+                                                   [el] 
+                                                 else 
+                                                   [] 
                         in
-                        incorporateMinfo (r_elts, el_s, new_minfo, minfo, ops, types)
+                        incorporateMinfo (rev_elts, el_s, new_minfo, minfo, ops, types)
                       | _ ->
-                        % let infos = findAllTypes (spc, qid) in
-                        % let _ = writeLine ("Cannot find type " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos)) in
-                        (r_elts, minfo, ops, types))
+                        (rev_elts, minfo, ops, types))
  		 | TypeDef (qid, _) ->
                    (case findTheType (spc, qid) of
                       | Some typeinfo ->
                         let (types, new_minfo) = processTypeinfo (qid, typeinfo, types, minfo) in
-                        let el_s = if keepPolyMorphic? || firstTypeDefTyVars typeinfo = [] then 
-                                     [el] 
-                                   else 
-                                     []
+                        let el_s               = if keepPolyMorphic? || firstTypeDefTyVars typeinfo = [] then 
+                                                   [el] 
+                                                 else 
+                                                   [] 
                         in
-                        incorporateMinfo (r_elts, el_s, new_minfo, minfo, ops, types)
+                        incorporateMinfo (rev_elts, el_s, new_minfo, minfo, ops, types)
                       | _ ->
-                        % let infos = findAllTypes (spc, qid) in
-                        % let _ = writeLine ("Cannot find type " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos)) in
-                        (r_elts, minfo, ops, types))
+                        (rev_elts, minfo, ops, types))
  
  		 | Op (qid, def?, _) ->
  		   (case findTheOp (spc, qid) of
                       | Some opinfo ->
                         let (ops, new_minfo) = processOpinfo (qid, opinfo, ops, minfo) in
-                        let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = [] then
- 				     [el] 
-                                   else 
-                                     []
+                        let el_s             = if keepPolyMorphic? || firstOpDefTyVars opinfo = [] then 
+                                                 [el] 
+                                               else 
+                                                 [] 
                         in
-                        incorporateMinfo (r_elts, el_s, new_minfo, minfo, ops, types)
+                        incorporateMinfo (rev_elts, el_s, new_minfo, minfo, ops, types)
                       | _ ->
-                        % let infos = findAllOps (spc, qid) in
-                        % let _ = writeLine ("Cannot find " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos) ^ "\nin spec\n" ^ printSpec spc) in
-                        (r_elts, minfo, ops, types))
+                        (rev_elts, minfo, ops, types))
  		 | OpDef (qid, _, _, _) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo ->
                         let (ops, new_minfo) = processOpinfo (qid, opinfo, ops, minfo) in
-                        let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = [] then
-                                     [el] 
-                                   else 
-                                     []
+                        let el_s             = if keepPolyMorphic? || firstOpDefTyVars opinfo = [] then
+                                                 [el] 
+                                               else 
+                                                 []
                         in
-                        incorporateMinfo (r_elts, el_s, new_minfo, minfo, ops, types)
+                        incorporateMinfo (rev_elts, el_s, new_minfo, minfo, ops, types)
                       | _ ->
-                        % let infos = findAllOps (spc, qid) in
-                        % let _ = writeLine ("Cannot find " ^ printQualifiedId qid ^ ", but could find " ^ (foldl (fn (s, info) -> s ^ " " ^ printAliases info.names) "" infos) ^ "\nin spec\n" ^ printSpec spc) in
-                        (r_elts, minfo, ops, types))
+                        (rev_elts, minfo, ops, types))
 
  		 | Property (ptype, pname, tv, t, pos) ->
  		   let (trm, new_minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
  		   let nprop            = Property (ptype, pname, tv, trm, pos)        in
- 		   incorporateMinfo (r_elts, [nprop], new_minfo, minfo, ops, types)
+ 		   incorporateMinfo (rev_elts, [nprop], new_minfo, minfo, ops, types)
 
  		 | Import (s_tm, i_sp, elts, pos) ->
- 		   let (i_elts, minfo, ops, types) = modElts (elts, minfo, ops, types) in
-                   let new_elt  = Import (s_tm, i_sp, reverse i_elts, pos) in
-                   let new_elts = new_elt :: r_elts                        in
+ 		   let (rev_imported_elts, minfo, ops, types) = modElts (elts, minfo, ops, types)                   in
+                   let new_elt                                = Import (s_tm, i_sp, reverse rev_imported_elts, pos) in
+                   let new_elts                               = new_elt :: rev_elts                                 in
  		   (new_elts, minfo, ops, types)
 
  		 | _ -> 
-                   (el :: r_elts, minfo, ops, types))
+                   (el :: rev_elts, minfo, ops, types))
 
             ([], minfo, ops, types) 
             elts
   in
-  let (elts, minfo, ops, types) = modElts (spc.elements, emptyMonoInfo, spc.ops, spc.types) in
-  let elts = reverse elts in
+  let (rev_elts, minfo, ops, types) = modElts (spc.elements, emptyMonoInfo, spc.ops, spc.types) in
+  let elts  = reverse rev_elts in
   let types = foldl (fn (map, info) -> 
-                      let Qualified (q, id) = primaryTypeName info in
-                      insertAQualifierMap (map, q, id, info))
+                       let Qualified (q, id) = primaryTypeName info in
+                       insertAQualifierMap (map, q, id, info))
                     types 
                     minfo.types
   in
-  let ops = foldl (fn (map, info) -> 
-                     let Qualified (q, id) = primaryOpName info in
-                     insertAQualifierMap (map, q, id, info))
-                  ops 
- 		  minfo.ops
+  let ops   = foldl (fn (map, info) -> 
+                       let Qualified (q, id) = primaryOpName info in
+                       insertAQualifierMap (map, q, id, info))
+                    ops 
+                    minfo.ops
   in
+
   % remove polymorphic type/op defs (disabled)
   let types = 
       if keepPolyMorphic? then 
@@ -205,13 +196,13 @@ Poly2Mono qualifying spec
   : MSType * TypeOpInfos =
   case typ of
     | Base (qid0 as Qualified (q, id), insttv as _::_, pos) ->
-      %% We are trying to simplify instances of polymorphic types where
-      %% all the type vars have been instantitated.
+      % We are trying to simplify instances of polymorphic types where
+      % all the type vars have been instantitated.
       if q = "Accord" && (id = "ProcType" || id = "Update") then 
- 	%% Process the args to ProcType or Update, but leave the
- 	%% main type as ProcType or Update.  These types control
- 	%% later Accord processing and are eliminated by Accord
- 	%% once their usefulness is over.
+ 	% Process the args to ProcType or Update, but leave the
+ 	% main type as ProcType or Update.  These types control
+ 	% later Accord processing and are eliminated by Accord
+ 	% once their usefulness is over.
  	let (new_args, minfo) = 
             foldl (fn ((new_args, minfo), typ) -> 
                      let (typ, minfo) = p2mType (spc, modifyConstructors?, typ, minfo) in
@@ -224,19 +215,19 @@ Poly2Mono qualifying spec
       else
         if exists? (fn (TyVar _) -> true | s -> false) insttv then (typ, minfo) else
           let suffix = getTypeNameSuffix insttv in
-          let qid = Qualified (q, id^suffix) in
-          %let _ = writeLine ("instantiated Type: "^printQualifiedId qid) in
+          let qid    = Qualified (q, id^suffix) in
+          % let _    = writeLine ("instantiated Type: "^printQualifiedId qid) in
           let minfo = 
               if monoInfosContainType? (qid, minfo) then 
                 minfo
               else
                 case findTheType (spc, qid0) of
                   | Some info ->
-                    let names = info.names in
+                    let names         = info.names              in
                     let (tvs, typdef) = unpackFirstTypeDef info in
                     (case (tvs, typdef) of
                        | (_::_, Any _) ->
-                         %DAC:  Added this case for uninterpreted types.  After looking at the
+                         % DAC:  Added this case for uninterpreted types.  After looking at the
                          % code below for the interpreted case I am not sure this is the right
                          % thing to do for code-generation, because in the above code, care is
                          % to exchange the typ definition types for the original types.
@@ -244,37 +235,29 @@ Poly2Mono qualifying spec
                          % that the resulting spec is a valid metaslang spec.
                          if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
                            let tvsubst = zip (tvs, insttv) in
-                          %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-                           let names = qid :: filter (fn qid1 -> qid1 ~= qid0) names in 
-                           let sinfo = {names = names, 
-                                        dfn   = Any noPos} 
+                           let names   = qid :: filter (fn qid1 -> qid1 ~= qid0) names in 
+                           let sinfo   = {names = names, 
+                                          dfn   = Any noPos} 
                            in
-                           let minfo = addTypeInfo2TypeOpInfos (qid, sinfo, minfo) in
+                           let minfo   = addTypeInfo2TypeOpInfos (qid, sinfo, minfo) in
                            minfo
                          else 
                            minfo
                        | (_::_, _) ->
-                         let tvsubst = zip (tvs, insttv) in
-                        %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-                         let names = qid :: filter (fn qid1 -> qid1 ~= qid0) names in 
-                         let typdef = applyTyVarSubst2Type (typdef, tvsubst) in
-                         let typdef = if modifyConstructors? then
-                                        addTypeSuffixToConstructors (typdef, suffix)
-                                      else 
-                                        typdef
+                         let tvsubst         = zip (tvs, insttv)                                 in
+                         let names           = qid :: filter (fn qid1 -> qid1 ~= qid0) names     in 
+                         let typdef          = applyTyVarSubst2Type (typdef, tvsubst)            in
+                         let typdef          = if modifyConstructors? then
+                                                 addTypeSuffixToConstructors (typdef, suffix)
+                                               else 
+                                                 typdef
                          in
-                        %let _ = writeLine ("after applyTyVarSubst2Type: "^printType typdef) in
-                        % add it first to prevent infinite loop:
-                         let tmp_sinfo = {names = names, 
-                                          dfn   = typdef}
-                         in
-                         let minfo = addTypeInfo2TypeOpInfos (qid, tmp_sinfo, minfo) in
+                         % add it first to prevent infinite loop:
+                         let tmp_sinfo       = {names = names, dfn = typdef}                     in
+                         let minfo           = addTypeInfo2TypeOpInfos (qid, tmp_sinfo, minfo)   in
                          let (typdef, minfo) = p2mType (spc, modifyConstructors?, typdef, minfo) in
-                         %let _ = writeLine ("after p2mType: "^printType typdef) in
-                         let sinfo = {names = names, 
-                                      dfn   = typdef}
-                         in
-                         let minfo = exchangeTypeInfoInTypeOpInfos (qid, sinfo, minfo) in
+                         let sinfo           = {names = names, dfn = typdef}                     in
+                         let minfo           = exchangeTypeInfoInTypeOpInfos (qid, sinfo, minfo) in
                          minfo
                        | _ -> minfo)
                   | _ -> minfo
@@ -433,25 +416,24 @@ Poly2Mono qualifying spec
   case pat of
 
     | EmbedPat (id, opt_pat, typ, pos) ->
-      %% Given "| Foo List (Nat)", we might convert to "| Foo_Nat List_Nat"
+      % Given "| Foo List (Nat)", we might convert to "| Foo_Nat List_Nat"
       let id = 
           case typ of
             | Base (_, insttv as _::_, _) ->
-              if exists? (fn (TyVar _) -> true | s -> false) insttv then 
-                id 
-              else if modifyConstructors? then 
-                id ^ (getTypeNameSuffix insttv)
-              else 
+              if ~ modifyConstructors? || (exists? (fn (TyVar _) -> true | s -> false) insttv) then 
                 id
-           %| Boolean is same as default case
+              else 
+                id ^ (getTypeNameSuffix insttv)
+            % Boolean is same as default 
             | _ -> id
       in
       let (opt_pat, minfo) = 
           case opt_pat of
-            | None -> (None, minfo)
             | Some pat ->
               let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
               (Some pat, minfo)
+            | _ -> 
+              (None, minfo)
       in
       let (typ, minfo) = p2mType (spc, modifyConstructors?, typ, minfo) in
       (EmbedPat (id, opt_pat, typ, pos), minfo)
@@ -505,7 +487,6 @@ Poly2Mono qualifying spec
   case fun of
 
     | Embed (id, b?) ->
-      %let _ = writeLine ("constructor " ^ id ^ " found.") in
       let cptyp = case typ of
                     | Arrow (_, typ, _) -> typ
                     | _ -> typ
@@ -513,35 +494,34 @@ Poly2Mono qualifying spec
       let cptyp = unfoldBeforeCoProduct (spc, cptyp) in
       (case cptyp of
          | Base (sqid, insttv as _::_, _) ->
-           %% constructor Cons could become Cons_Nat for List (Nat), etc.
-           if exists? (fn (TyVar _) -> true | s -> false) insttv then 
-             (fun, typ1, minfo) 
-           else
-             let id2 = id ^ (getTypeNameSuffix insttv) in
-             let fun = Embed (if modifyConstructors? then id2 else id, b?) in
-             (fun, typ1, minfo)
-        %| Boolean is same as default case
+           let fun = 
+               if ~modifyConstructors? || (exists? (fn (TyVar _) -> true | s -> false) insttv) then 
+                 fun
+               else
+                 % constructor Cons could become Cons_Nat for List (Nat), etc.
+                 Embed (id ^ (getTypeNameSuffix insttv), b?)
+           in
+           (fun, typ1, minfo)
+         % Boolean is same as default
          | _ -> (fun, typ1, minfo))
  
     | Embedded id ->
-     %let _ = writeLine ("constructor pred " ^ id ^ " found.") in
       let cptyp = case typ of
                     | Arrow (typ, _, _) -> typ
                     | _ -> typ
       in
       let cptyp = unfoldBeforeCoProduct (spc, cptyp) in
-     %let _ = writeLine("Constuctor pred type: " ^ printType cptyp) in
       (case cptyp of
          | Base (sqid, insttv as _::_, _) ->
-           %% constructor Cons could become Cons_Nat for List (Nat), etc.
-           if exists? (fn (TyVar _) -> true | s -> false) insttv then 
-             (fun, typ1, minfo) 
-           else
-             let id2 = id ^ (getTypeNameSuffix insttv) in
-             let fun = Embedded (if modifyConstructors? then id2 else id) in
-            %let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id2, typ1))) in
-             (fun, typ1, minfo)
-        %| Boolean is same as default case
+           let fun = 
+               if ~modifyConstructors? || (exists? (fn (TyVar _) -> true | s -> false) insttv) then 
+                 fun
+               else
+                 % constructor Cons could become Cons_Nat for List (Nat), etc.
+                 Embedded (id ^ (getTypeNameSuffix insttv))
+           in
+           (fun, typ1, minfo)
+         % Boolean is same as default
          | _ -> (fun, typ1, minfo))
  
     | Op (qid as Qualified (q, id), fix) ->
@@ -550,8 +530,7 @@ Poly2Mono qualifying spec
  	 | Some info ->
  	   let (mtvs, atyp, term) = unpackFirstOpDef info in
  	   if definedOpInfo? info then
- 	    %let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
-             let tvsubst0 = typeMatch (atyp, typ, spc) in
+             let tvsubst0 = typeMatch (atyp, typ, spc)                              in
              let tvsubst  = filter (fn (id, TyVar _) -> false | _ -> true) tvsubst0 in
              if tvsubst = [] then 
                (fun, typ1, minfo) 
@@ -562,8 +541,6 @@ Poly2Mono qualifying spec
                in
                let nqid  = Qualified (q, id ^ getTypeNameFromTyVarSubst tvsubst) in
                let names = nqid :: filter (fn qid0 -> qid0 ~= qid) info.names    in
-              %let _ = writeLine ("  New op name:"^ (printQualifiedId nqid))     in
-              %let _ = writeLine ("  "^ (printTyVarSubst tvsubst))               in
                let nfun  = Op (nqid, fix)                                        in
                let minfo = 
                    if monoInfosContainOp? (nqid, minfo) then 
@@ -571,33 +548,26 @@ Poly2Mono qualifying spec
                    else
                      % construct the new opinfo
                      let term          = applyTyVarSubst2Term (term, tvsubst)                     in
- 		    %let _ = writeLine ("substituted op term[1]: "^printTerm term)                in
                      let dfn           = maybePiTerm (mtvs, TypedTerm (Any noPos, typ1, noPos))   in
                      let tmp_opinfo    = info << {names = names, dfn = dfn}                       in
                      let tmp_minfo     = addOpInfo2TypeOpInfos (nqid, tmp_opinfo, minfo)          in
                      let (term, minfo) = p2mTerm (spc, modifyConstructors?, term, tmp_minfo)      in
- 		    %let _ = writeLine ("substituted op term[2]: " ^ printTerm term)              in
                      let dfn           = maybePiTerm (ntvs, TypedTerm (term, typ1, termAnn term)) in
                      let nopinfo       = info << {names = names, dfn = dfn}                       in
- 		    %let _ = writeLine ("adding new opinfo for "^id^" with " ^ natToString (length ntvs) ^ " tyvars...") in
-                     let minfo = exchangeOpInfoInTypeOpInfos (nqid, nopinfo, minfo)               in
-                    %let _ = writeLine (printTypeOpInfos minfo)                                   in
+                     let minfo         = exchangeOpInfoInTypeOpInfos (nqid, nopinfo, minfo)       in
                      minfo
                in
                (nfun, typ1, minfo)
            else if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
-            %let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
              let tvsubst0 = typeMatch (atyp, typ, spc)                              in
              let tvsubst  = filter (fn (id, TyVar _) -> false | _ -> true) tvsubst0 in
              if tvsubst = [] then 
                (fun, typ1, minfo)
              else
                let ntvs  = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
-               let nqid  = Qualified (q, id ^ getTypeNameFromTyVarSubst tvsubst) in
-               let names = nqid :: filter (fn qid0 -> qid0 ~= qid) info.names    in
-              %let _ = writeLine ("  New op name:"^ (printQualifiedId nqid)) in
-              %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-               let nfun = Op (nqid, fix) in
+               let nqid  = Qualified (q, id ^ getTypeNameFromTyVarSubst tvsubst)                            in
+               let names = nqid :: filter (fn qid0 -> qid0 ~= qid) info.names                               in
+               let nfun  = Op (nqid, fix)                                                                   in
                let minfo = 
                    if monoInfosContainOp? (nqid, minfo) then 
                      minfo
@@ -606,16 +576,16 @@ Poly2Mono qualifying spec
                      let dfn        = maybePiTerm (mtvs, TypedTerm (Any noPos, typ1, noPos)) in
                      let tmp_opinfo = info << {names = names, dfn = dfn}                     in
                      let minfo      = addOpInfo2TypeOpInfos (nqid, tmp_opinfo, minfo)        in
-                    %let nopinfo = info << {typ = (ntvs, typ1)} in
-                    %let _ = if id = "empty_seq" then writeLine ("adding new opinfo for "^id^" with "^natToString (length (ntvs))^" tyvars...") else () in
-                    %let _ = if id = "empty_seq" then writeLine (printTypeOpInfos minfo) else () in
+                     % let nopinfo = info << {typ = (ntvs, typ1)} in
+                     % let _ = if id = "empty_seq" then writeLine ("adding new opinfo for "^id^" with "^natToString (length (ntvs))^" tyvars...") else () in
+                     % let _ = if id = "empty_seq" then writeLine (printTypeOpInfos minfo) else () in
                      minfo
                in
                (nfun, typ1, minfo)
            else 
              (fun, typ1, minfo))
 
-   %| Not/And/Or/Implies/Equals/NotEquals are all same as default
+    % Not/And/Or/Implies/Equals/NotEquals are all same as default
 
     | _ -> (fun, typ1, minfo)
  
@@ -626,7 +596,7 @@ Poly2Mono qualifying spec
                       ops                                             : OpMap, 
                       types                                           : TypeMap)
   : SpecElements * TypeOpInfos * OpMap * TypeMap =
-  %% Add newly added ops and types to elts before el (note elts are in reverse of their final order)
+  % Add newly added ops and types to elts before el (note elts are in reverse of their final order)
   let 
 
     def newTypes new_types =
@@ -642,8 +612,8 @@ Poly2Mono qualifying spec
       if new_ops = old_ops then 
         []
       else 
-        let opinfo :: r_ops = new_ops              in
-        let qid             = primaryOpName opinfo in
+        let opinfo :: r_ops = new_ops                   in
+        let qid             = primaryOpName opinfo      in
         let new_elt1        = OpDef (qid, 0, [], noPos) in
         let new_elt2        = Op    (qid, false, noPos) in
         % false means don't print def as part of decl
