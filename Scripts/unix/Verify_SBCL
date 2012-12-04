@@ -17,7 +17,7 @@ echo "  ------------------------------------------------------------------------
 echo "  Verify_SBCL:  Ensure that SBCL executable exists:"
 echo " "
 
-for L in /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp /usr/bin/sbcl; do
+for L in /opt/local/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp /usr/bin/sbcl; do
   if [ -x "$L" ]; then
     export LISP="$L"; break
   fi
