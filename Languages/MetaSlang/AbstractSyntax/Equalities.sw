@@ -45,8 +45,6 @@ MetaSlang qualifying spec
  op traceEqualTerm?: Bool = false
 
  def equalTerm? (t1, t2) =
-   %% note: addOrRefineOp calls this expecting literal mactch, with no test for alpha equivalence.
-   %%       So if we generalize this to allow alpha equivalence, do so with flag.
    let result = 
        case (t1, t2) of
 
@@ -115,7 +113,7 @@ MetaSlang qualifying spec
             Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
 
          | (Pi         (tvs1, tm1,   _), 
-            Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence [but see note above]
+            Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
 
          | (And        (tms1,        _), 
             And        (tms2,        _)) -> foldl (fn (eq?, t1, t2) -> eq? && equalTerm? (t1, t2))
@@ -307,7 +305,7 @@ MetaSlang qualifying spec
      | (RecordMerge,  RecordMerge ) -> true
      | (Embed     x1, Embed     x2) -> x1 = x2
      | (Embedded  x1, Embedded  x2) -> x1 = x2
-     | (Select    x1, Select    x2) -> x1 = x2 % generated only by pattern match compiler and type obligation generator (deprecate?)
+    %| (Select    x1, Select    x2) -> x1 = x2
      | (Nat       x1, Nat       x2) -> x1 = x2
      | (Char      x1, Char      x2) -> x1 = x2
      | (String    x1, String    x2) -> x1 = x2
@@ -343,12 +341,15 @@ MetaSlang qualifying spec
      | (Number(n1, _), Number(n2, _)) -> n1 = n2
      | (Str(s1, _), Str(s2, _)) -> s1 = s2
      | (Qual(s1, t1, _), Qual(s2, t2, _)) -> s1 = s2 && t1 = t2
+     % | (SCTerm (sct1,_), SCTerm (sct2)) -> sameSCTerm?(sct1, sct2)
      | (Item(s1, t1, _), Item(s2, t2, _)) -> s1 = s2 && equalTransform?(t1, t2)
+     | (Repeat(l1, _), Repeat(l2, _)) -> equalTransformList?(l1, l2)
      | (Tuple(l1, _), Tuple(l2, _)) -> equalTransformList?(l1, l2)
-     | (ApplyOptions(t1, l1, _), ApplyOptions(t2, l2, _)) ->
-       equalTransform?(t1, t2) && equalTransformList?(l1, l2) 
-     | (Apply(t1, l1, _), Apply(t2, l2, _)) ->
-       equalTransform?(t1, t2) && equalTransformList?(l1, l2)
+     | (Record(l1, _), Record(l2, _)) ->
+       length l1 = length l1 && forall? (fn ((l1i,t1i),(l2i, t2i)) -> l1i = l2i && equalTransform?(t1i, t2i)) (zip(l1, l1))
+     | (Options(l1, _), Options(l2, _)) -> equalTransformList?(l1, l2) 
+     | (At(qids1, comms1, _), At(qids2, comms2, _)) -> qids1 = qids2 && equalTransformList?(comms1, comms2)
+     | (Command(t1, l1, _), Command(t2, l2, _)) -> t1 = t2 && equalTransformList?(l1, l2)
      | _ -> false
 
  op [a,b] equalTransformList?(t1s: List(ATransformExpr a) , t2s: List(ATransformExpr b)): Bool =
@@ -457,7 +458,7 @@ MetaSlang qualifying spec
      | (RecordMerge,          RecordMerge)          -> true
      | (Embed     x1,         Embed     x2)         -> x1 = x2
      | (Embedded  x1,         Embedded  x2)         -> x1 = x2
-     | (Select    x1,         Select    x2)         -> x1 = x2 % generated only by pattern match compiler and type obligation generator (deprecate?)
+    %| (Select    x1,         Select    x2)         -> x1 = x2
      | (Nat       x1,         Nat       x2)         -> x1 = x2
      | (Char      x1,         Char      x2)         -> x1 = x2
      | (String    x1,         String    x2)         -> x1 = x2
