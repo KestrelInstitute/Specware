@@ -174,7 +174,7 @@ such time as the current one can made monadic.
                       | None -> return spc
                       | Some refine_steps ->
                         let prev_tm = refinedTerm(full_tm, refine_num - 1) in
-                        {(_, steps) <- makeScript refine_steps;
+                        {steps <- mapM makeScript refine_steps;
                          % print("aor: "^scriptToString(Steps steps)^scriptToString(Steps steps1)^"\n");
                          (tr_term, _, hist) <- interpretTerm(spc, Steps steps, prev_tm, ty, qid, false, []);
                          new_dfn <- return (maybePiTerm(tvs, TypedTerm (replaceNthTerm(full_tm, refine_num, tr_term),

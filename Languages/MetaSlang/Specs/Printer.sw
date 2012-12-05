@@ -1871,6 +1871,9 @@ AnnSpecPrinter qualifying spec
          ++ [string "\\pdfcatalog{ /PageMode /UseOutlines }", 
              string "\\end{document}"])))
 
+ op [a] TransformExpr.show (tre: ATransformExpr a): String = 
+   PrettyPrint.toString (format (printWidth, ppTransformExpr asciiPrinter tre))
+
  op [a] ppTransformExprs (pp: ATermPrinter) (tres: List(ATransformExpr a)): Pretty =
   ppList (ppTransformExpr pp) ("{", ", ", "}") tres
 
@@ -1880,11 +1883,14 @@ AnnSpecPrinter qualifying spec
     | Number(i, _) -> pp.fromString (show i)
     | Str(str, _) -> pp.fromString ("\""^str^"\"")
     | Qual(q, id, _) -> pp.ppOpId(Qualified(q, id))
+    | SCTerm(sct, _) -> string (showSCTerm sct)
     | Item(nm, tre1, _) -> prettysNone[pp.ppOp nm, string " ", ppTransformExpr pp tre1]
+    | Repeat(tres, _) -> prettysNone[string "repeat",  ppList (ppTransformExpr pp) ("{", ", ", "}") tres]
     | Tuple(tres, _) -> ppList (ppTransformExpr pp) ("(", ", ", ")") tres
-    | ApplyOptions(tre1, tres, _) -> prettysNone[ppTransformExpr pp tre1,
-                                                 ppList (ppTransformExpr pp) ("[", ", ", "]") tres]
-    | Apply(tre1, tres, _) -> prettysNone[ppTransformExpr pp tre1,
-                                          ppList (ppTransformExpr pp) ("(", ", ", ")") tres]
+    % | Record(prs, _) -> ppList (ppTransformExpr pp) ("{", ", ", "}") tres
+    | Options(tres, _) -> ppList (ppTransformExpr pp) ("[", ", ", "]") tres
+    % | At(qids, tres, _) -> 
+    | Command(tre1, tres, _) -> prettysNone[string tre1, string " ",
+                                            ppList (ppTransformExpr pp) ("", " ", "") tres]
 
 endspec

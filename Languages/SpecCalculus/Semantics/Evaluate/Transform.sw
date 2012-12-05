@@ -12,15 +12,18 @@ spec
     case tr of
       | Name(_,p)-> p
       | Number(_,p)-> p
+      | Str(_,p)-> p
       | Qual(_,_,p) -> p
       | SCTerm(_,p)-> p
       | Item(_,_,p) -> p
+      | Slice(_,_,_,_,p) -> p
       | Globalize(_,_,_,_,p) -> p
       | Repeat(_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
-      | Apply(_,_,p) -> p
-      | ApplyOptions(_,_,p) -> p
+      | Options(_,p) -> p
+      | At(_,_,p) -> p
+      | Command(_,_,p) -> p
 
   def SpecCalc.evaluateTransform (spec_tm, transfm_steps, pragmas) pos =
     {
@@ -31,8 +34,8 @@ spec
      case coercedSpecValue of
        | Spec spc ->
          {
-          (steps, sub_steps) <- makeScript transfm_steps;
-          tr_spc1 <- interpret(spc, Steps(sub_steps ++ steps));
+          steps <- mapM makeScript transfm_steps;
+          tr_spc1 <- interpret(spc, Steps(steps));
           tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
 	  return (Spec tr_spc2, spec_timestamp, spec_dep_UIDs)
 	  }
@@ -150,11 +153,12 @@ spec
            | "s" -> return(Search target_str)
            | "r" -> return(ReverseSearch target_str)
            | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^search_type))}
-      | _ -> raise (TypeCheck (posOf mv_tm, "Unrecognized move command."))
+      | _ -> raise (TypeCheck (posOf mv_tm, "Unrecognized move command: "^show mv_tm))
 
   op commands: List String =
     ["simplify", "Simplify", "simplify1", "Simplify1", "simpStandard", "SimpStandard", "eval", "repeat",
-     "partial-eval", "AbstractCommonExprs", "AbstractCommonSubExprs", "print", "move", "rename"]
+     "partial-eval", "AbstractCommonExprs", "AbstractCommonSubExprs", "print", "move", "rename", "trace",
+     "lr", "rl", "weaken", "fold", "unfold", "rewrite", "apply"]
 
   op makeScript1(trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
@@ -162,56 +166,58 @@ spec
       | Repeat(transforms, _) ->
         {transfms <- mapM makeScript1 transforms;
          return (Repeat transfms)}
-      | Apply(Name("simplify",_), rls,_) ->
+      | Command("simplify", [Tuple(rls, _)], _) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify(srls, maxRewrites))}
-      | Apply(Name("simplify1",_), rls,_) ->
+      | Command("simplify1", [Tuple(rls, _)],_) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify1 srls)}
-      | Name("simplify",_) -> return (mkSimplify [])
-      | Name("Simplify",_) -> return (mkSimplify [])
-      | Name("simpStandard",_) -> return SimpStandard
-      | Name("SimpStandard",_) -> return SimpStandard
-      | Name("eval",_) -> return PartialEval
-      | Name("partial-eval",_) -> return PartialEval
-      | Name("AbstractCommonExprs",_) -> return AbstractCommonExpressions
-      | Name("AbstractCommonSubExprs",_) -> return AbstractCommonExpressions
-      | Item("lr",thm,_) -> {qid <- extractQId thm;
+      | Command("simplify", [], _) -> return (mkSimplify [])
+      | Command("Simplify",[],_) -> return (mkSimplify [])
+      | Command("simpStandard",[],_) -> return SimpStandard
+      | Command("SimpStandard",[],_) -> return SimpStandard
+      | Command("eval",[],_) -> return PartialEval
+      | Command("partial-eval",[],_) -> return PartialEval
+      | Command("AbstractCommonExprs",[],_) -> return AbstractCommonExpressions
+      | Command("AbstractCommonSubExprs",[],_) -> return AbstractCommonExpressions
+      | Command("lr", [thm],_) -> {qid <- extractQId thm;
                              return (Simplify1([LeftToRight qid]))}
-      | Item("rl",thm,_) -> {qid <- extractQId thm;
+      | Command("rl", [thm],_) -> {qid <- extractQId thm;
                              return (Simplify1([RightToLeft qid]))}
-      | Item("weaken",thm,_) -> {qid <- extractQId thm;
+      | Command("weaken", [thm],_) -> {qid <- extractQId thm;
                                  return (Simplify1([Weaken qid]))}
-      | Item("fold",opid,_) -> {qid <- extractQId opid;
-                                return (Simplify1([Fold qid]))}
-      | Item("unfold",opid,_) -> {qid <- extractQId opid;
-                                  return (Simplify1([Unfold qid]))}
-      | Item("rewrite",opid,_) -> {qid <- extractQId opid;
+      | Command("fold", [opid],_) -> {qid <- extractQId opid;
+                                      return (Simplify1([Fold qid]))}
+      | Command("unfold", [opid],_) -> {qid <- extractQId opid;
+                                        return (Simplify1([Unfold qid]))}
+      | Command("rewrite", [opid],_) -> {qid <- extractQId opid;
                                    return (Simplify1([Rewrite qid]))}
-      | Item("apply",opid,_) -> {qid <- extractQId opid;
-                                 return (Simplify1([MetaRule qid]))}
-      | Item("move", move1, _) -> {move <- makeMove move1;
-                                   return (Move [move])}
-      | Apply(Name("move",_), rmoves, _) -> {moves <- mapM makeMove rmoves;
-                                             return (Move moves)}
-      | ApplyOptions(Name(rename, pos), binds, _) ->
+      | Command("apply", [opid],_) -> {qid <- extractQId opid;
+                                       return (Simplify1([MetaRule qid]))}
+      | Command("move", [Tuple(mvs, _)], _) -> {moves <- mapM makeMove mvs;
+                                                return (Move moves)}
+      | Command("move", [move1], _) -> {move <- makeMove move1;
+                                        return (Move [move])}
+      | Command("move", rmoves, _) -> {moves <- mapM makeMove rmoves;
+                                       return (Move moves)}
+      | Command("rename", [Options(binds, _)], _) ->
         {binds <- mapM extractBindPair binds;
          return (mkRenameVars(binds))}
-      | Item("trace", Name(on_or_off,_), pos) ->
+      | Command("trace", [Name(on_or_off,_)], pos) ->
         {on? <- case on_or_off of
                   | "on"  -> return true
                   | "off" -> return false
                   | _ -> raise(TypeCheck (pos, "Trace on or off?"));
          return(Trace on?)}
-      | Name("print",_) -> return Print
+      | Command("print", [], _) -> return Print
       | Slice (root_ops, root_types, cut_op?, cut_type?, _) -> 
         return (Slice (root_ops, root_types, cut_op?, cut_type?))
 
       | Globalize (roots, typ, gvar, opt_init, _) -> return (Globalize (roots, typ, gvar, opt_init))
 
       | _ -> 
-        let _ = writeLine ("oops: " ^ anyToString trans) in
-        raise (TypeCheck (posOf trans, "Unrecognized transform"^anyToString trans))
+         let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
+        raise (TypeCheck (posOf trans, "Unrecognized transform: "^show trans))
         
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of
@@ -314,128 +320,112 @@ spec
      recovery_fns <- findQidPairs("recoveryFns", val_prs, pos);
      return(checkArgs, checkResult, checkRefine, recovery_fns)}
 
-  op makeScript(trans_steps: TransformExprs): SpecCalc.Env (Scripts * Scripts) =
-    foldrM (fn (top_result, sub_result) -> fn te ->
-             % let _ = writeLine("MS: "^anyToString te) in
-             case te of
-                 %% isomorphism((iso, osi), ...)
-               | Apply(Name("isomorphism",_), iso_tms,_) ->     
-                 {iso_prs <- extractIsos iso_tms;
-                  return (IsoMorphism(iso_prs, [], None) :: sub_result ++ top_result, [])}
-                 %% isomorphism((iso, osi), ...)(rls)
-               | Apply(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->  
-                 {iso_prs <- extractIsos iso_tms;
-                  srls <- mapM makeRuleRef rls;
-                  return (IsoMorphism(iso_prs, srls, None) :: sub_result ++ top_result, [])}
-                 %% isomorphism((iso, osi), ...)[rls]
-               | ApplyOptions(Apply(Name("isomorphism",_), iso_tms,_), rls, _) ->  
-                 {iso_prs <- extractIsos iso_tms;
-                  srls <- mapM makeRuleRef rls;
-                  return (IsoMorphism(iso_prs, srls, None) :: sub_result ++ top_result, [])}
-                 %% isomorphism[New_*]((iso, osi), ...)
-               | Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_) ->
-                 {iso_prs <- extractIsos iso_tms;
-                  return (IsoMorphism(iso_prs, [], Some qual) :: sub_result ++ top_result, [])}
-                 %% isomorphism[New_*]((iso, osi), ...)(rls)
-               | Apply(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
-                 {iso_prs <- extractIsos iso_tms;
-                  srls <- mapM makeRuleRef rls;
-                  return (IsoMorphism(iso_prs, srls, Some qual) :: sub_result ++ top_result, [])}
-                 %% isomorphism[New_*]((iso, osi), ...)[rls]
-               | ApplyOptions(Apply(ApplyOptions(Name("isomorphism",_), [Name (qual, _)],_), iso_tms,_), rls, _) ->
-                 {iso_prs <- extractIsos iso_tms;
-                  srls <- mapM makeRuleRef rls;
-                  return (IsoMorphism(iso_prs, srls, Some qual) :: sub_result ++ top_result, [])}
+  op makeScript(trans_step: TransformExpr): SpecCalc.Env Script =
+    % let _ = writeLine("MS: "^anyToString trans_step) in
+    case trans_step of
+      | Command("isomorphism", args, _) ->
+        (case args of
+           | [Tuple(iso_tms, _)] ->  % isomorphism((iso, osi), ...)
+             {iso_prs <- extractIsos iso_tms;
+              return (IsoMorphism(iso_prs, [], None)) }
+           | [Tuple(iso_tms, _), Tuple(rls, _)] ->  % isomorphism((iso, osi), ...)(rls)
+             {iso_prs <- extractIsos iso_tms;
+              srls <- mapM makeRuleRef rls;
+              return (IsoMorphism(iso_prs, srls, None))}
+           | [Tuple(iso_tms, _), Options(rls, _)] -> % isomorphism((iso, osi), ...)[rls]
+             {iso_prs <- extractIsos iso_tms;
+              srls <- mapM makeRuleRef rls;
+              return (IsoMorphism(iso_prs, srls, None))}
+           | [Options([Name (qual, _)], _), Tuple(iso_tms, _)]-> % isomorphism[New_*]((iso, osi), ...)
+             {iso_prs <- extractIsos iso_tms;
+              return (IsoMorphism(iso_prs, [], Some qual))}
+           | [Options([Name (qual, _)], _), Tuple(iso_tms, _), Tuple(rls, _)] -> % isomorphism[New_*]((iso, osi), ...)(rls)
+             {iso_prs <- extractIsos iso_tms;
+              srls <- mapM makeRuleRef rls;
+              return (IsoMorphism(iso_prs, srls, Some qual))}
+           | [Options([Name (qual, _)], _), Tuple(iso_tms, _), Options(rls, _)] ->  % isomorphism[New_*]((iso, osi), ...)[rls]
+             {iso_prs <- extractIsos iso_tms;
+              srls <- mapM makeRuleRef rls;
+              return (IsoMorphism(iso_prs, srls, Some qual))})
 
-               | Apply(Apply(Name("maintain",_), i_ops,_), rls, _) ->
-                 {op_qids <- mapM extractQId i_ops;
-                  srls <- mapM makeRuleRef rls;
-                  return (Maintain(op_qids, srls) :: sub_result ++ top_result, [])}
-               | Apply(Name("maintain",_), i_ops,_) ->
-                  {op_qids <- mapM extractQId i_ops;
-                   return (Maintain(op_qids, []) :: sub_result ++ top_result, [])}
+      | Command("maintain", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
+        {op_qids <- mapM extractQId i_ops;
+         srls <- mapM makeRuleRef rls;
+         return (Maintain(op_qids, srls))}
+      | Command("maintain", [Tuple(i_ops, _)], _) ->
+        {op_qids <- mapM extractQId i_ops;
+         return (Maintain(op_qids, []))}
 
-               | Apply(Apply(Name("implement",_), i_ops,_), rls, _) ->
-                 {op_qids <- mapM extractQId i_ops;
-                  srls <- mapM makeRuleRef rls;
-                  return (Implement(op_qids, srls) :: sub_result ++ top_result, [])}
-               | Apply(Name("implement",_), i_ops,_) ->
-                  {op_qids <- mapM extractQId i_ops;
-                   return (Implement(op_qids, []) :: sub_result ++ top_result, [])}
+      | Command("implement", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
+        {op_qids <- mapM extractQId i_ops;
+         srls <- mapM makeRuleRef rls;
+         return (Implement(op_qids, srls))}
+      | Command("implement", [Tuple(i_ops, _)], _) ->
+         {op_qids <- mapM extractQId i_ops;
+          return (Implement(op_qids, []))}
 
-               | Apply(Name("addParameter",_), [Record rec_val_prs], _) ->
-                 {fields <- getAddParameterFields rec_val_prs;
-                  return(AddParameter fields :: sub_result ++ top_result, [])}
-               | Apply(Name("addSemanticChecks",_), [Record rec_val_prs], _) ->
-                 {fields <- getAddSemanticFields rec_val_prs;
-                  return(top_result, AddSemanticChecks fields :: sub_result)}
+      | Command("addParameter", [Record rec_val_prs], _) ->
+        {fields <- getAddParameterFields rec_val_prs;
+         return(AddParameter fields)}
+      | Command("addSemanticChecks", [Record rec_val_prs], _) ->
+        {fields <- getAddSemanticFields rec_val_prs;
+         return(AddSemanticChecks fields)}
 
-               | Apply(Name("redundantErrorCorrecting",_), uids, _) ->
-                 {morphs <- extractMorphs uids;
-                  return(top_result, RedundantErrorCorrecting(morphs, None, false) :: sub_result)}
-               | Apply(ApplyOptions(Name("redundantErrorCorrecting",_),  [Name (qual, _)],_), uids, _) ->
-                 {morphs <- extractMorphs uids;
-                  return(top_result, RedundantErrorCorrecting(morphs, Some qual, false) :: sub_result)}
+      | Command("redundantErrorCorrecting", [Tuple(uids, _)], _) ->
+        {morphs <- extractMorphs uids;
+         return(RedundantErrorCorrecting(morphs, None, false))}
+      | Command("redundantErrorCorrecting", [Options([Name (qual, _)], _), Tuple(uids, _)], _) ->
+        {morphs <- extractMorphs uids;
+         return(RedundantErrorCorrecting(morphs, Some qual, false))}
 
-               | Apply(Name("redundantErrorCorrectingRestart",_), uids, _) ->
-                 {morphs <- extractMorphs uids;
-                  return(top_result, RedundantErrorCorrecting(morphs, None, true) :: sub_result)}
-               | Apply(ApplyOptions(Name("redundantErrorCorrectingRestart",_),  [Name (qual, _)],_), uids, _) ->
-                 {morphs <- extractMorphs uids;
-                  return(top_result, RedundantErrorCorrecting(morphs, Some qual, true) :: sub_result)}
+      | Command("redundantErrorCorrectingRestart", [Tuple(uids, _)], _) ->
+        {morphs <- extractMorphs uids;
+         return(RedundantErrorCorrecting(morphs, None, true))}
+      | Command("redundantErrorCorrectingRestart", [Options([Name (qual, _)], _), Tuple(uids, _)], _) ->
+        {morphs <- extractMorphs uids;
+         return(RedundantErrorCorrecting(morphs, Some qual, true))}
 
-               | Item("at", loc, _) ->
-                 {qid <-  extractQId loc;
-                  return (At([Def qid], Steps sub_result) :: top_result,
-                          [])}
-               | Apply(Name("at",_), locs,_) ->
-                 {qids <- mapM extractQId locs;
-                  return (At(map Def qids, Steps sub_result) :: top_result,
-                          [])}
+      | At(qids, comms, _) ->
+        {commands <- mapM makeScript comms;
+         return (At(map Def qids, Steps commands))}
 
-               | Item("atTheorem", loc, _) ->
-                 {qid <-  extractQId loc;
-                  return (AtTheorem([Def qid], Steps sub_result) :: top_result,
-                          [])}
-               | Apply(Name("atTheorem",_), locs,_) ->
-                 {qids <- mapM extractQId locs;
-                  return (AtTheorem(map Def qids, Steps sub_result) :: top_result,
-                          [])}
- 
-               | Item("trace", Str(on_or_off,_), pos) ->
-                 {on? <- case on_or_off of
-                           | "on" -> return true
-                           | "off" -> return false
-                           | _ -> raise(TypeCheck (pos, "Trace on or off?"));
-                  return(if sub_result = []
-                          then (Trace on? :: top_result, sub_result)
-                          else (top_result, Trace on? :: sub_result))}
-               | Str("print",_) ->
-                 return (top_result, Print :: sub_result)
-               | Item("applyToSpec",opid,_) ->
-                 {qid <- extractQId opid;
-                  return (mkSpecTransform(qid, []) :: sub_result ++ top_result, [])}
-               | Name(nm, pos) | nm nin? commands ->
-                 {qid <- extractQId te;
-                  return (mkSpecTransform(qid, []) :: sub_result ++ top_result, [])}
-               | ApplyOptions(fn_nm as Name(nm, pos), rl_tms, _) | nm nin? commands ->
-                 {qid <- extractQId fn_nm;
-                  rls <- mapM makeRuleRef rl_tms;
-                  return (mkSpecTransform(qid, rls) :: sub_result ++ top_result, [])}
-               | Apply(fn_nm as Name(nm, pos), qid_tms, _) | nm nin? commands ->
-                 {qid <- extractQId fn_nm;
-                  qids <- mapM extractQId qid_tms;
-                  return (mkSpecQIdTransform(qid, qids, []) :: sub_result ++ top_result, [])}
-               | Apply(Apply(fn_nm as Name(nm, pos), qid_tms, _), rl_tms, _) | nm nin? commands ->
-                 {qid <- extractQId fn_nm;
-                  qids <- mapM extractQId qid_tms;
-                  rls <- mapM makeRuleRef rl_tms;
-                  return (mkSpecQIdTransform(qid, qids, rls) :: sub_result ++ top_result, [])}
-               | Qual _ -> {qid <- extractQId te;
-                            return (mkSpecTransform(qid, []) :: sub_result ++ top_result, [])}
-               | _ ->
-                 {sstep <- makeScript1 te;
-                  return (top_result, sstep :: sub_result)})
-      ([], []) trans_steps
+      % | Item("atTheorem", [loc], _) ->
+      %   {qid <-  extractQId loc;
+      %    return (AtTheorem([Def qid], Steps sub_result) :: top_result)}
+      % | Command("atTheorem", [Tuple(locs, _)],_) ->
+      %   {qids <- mapM extractQId locs;
+      %    return (AtTheorem(map Def qids, Steps sub_result) :: top_result)}
+
+      | Command("trace", [Str(on_or_off,_)], pos) ->
+        {on? <- case on_or_off of
+                  | "on" -> return true
+                  | "off" -> return false
+                  | _ -> raise(TypeCheck (pos, "Trace on or off?"));
+         return(Trace on?)}
+      | Command("print",[],_) ->
+        return Print
+      | Command("applyToSpec", [opid],_) ->
+        {qid <- extractQId opid;
+         return (mkSpecTransform(qid, []))}
+      | Command(nm, [], pos) | nm nin? commands ->
+        {qid <- extractQId trans_step;
+         return (mkSpecTransform(qid, []))}
+      % | Command(fn_nm as Name(nm, pos), rl_tms, _) | nm nin? commands ->
+      %   {qid <- extractQId fn_nm;
+      %    rls <- mapM makeRuleRef rl_tms;
+      %    return (mkSpecTransform(qid, rls))}
+      | Command(fn_nm, [Tuple(qid_tms,_)], _) | fn_nm nin? commands ->
+        {qids <- mapM extractQId qid_tms;
+         return (mkSpecQIdTransform(Qualified("SpecTransform", fn_nm), qids, []))}
+      % | Command(Command(fn_nm as Name(nm, pos), qid_tms, _), rl_tms, _) | nm nin? commands ->
+      %   {qid <- extractQId fn_nm;
+      %    qids <- mapM extractQId qid_tms;
+      %    rls <- mapM makeRuleRef rl_tms;
+      %    return (mkSpecQIdTransform(qid, qids, rls))}
+      | Qual _ -> {qid <- extractQId trans_step;
+                   return (mkSpecTransform(qid, []))}
+      | _ ->
+        {sstep <- makeScript1 trans_step;
+         return sstep}
              
-endspec
+end-spec

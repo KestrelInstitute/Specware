@@ -294,19 +294,14 @@
 	  ;;
 	  (names   (remove-duplicates qualifiable-type-names :test 'equal :from-end t))
           ;; use of nat-type below is a hack -- conversion by abstractType will be ignored
-          (tvs-and-types
-           (if (new-version? 0)
-               (StandardSpec::abstractType-3 #'namedTypeVar tvs nat-type)
-               (StandardSpec::abstractSort-3 #'namedTypeVar tvs nat-type)))
+          (tvs-and-types (StandardSpec::abstractType-3 #'namedTypeVar tvs nat-type))
 	  ;; Since namedTypeVar is the identity function,
 	  ;;  (car tvs-and-type) will just be a copy of typeVars1,
 	  ;;  (cdr tvs-and-type) will be ignored. 
           (tvs     (car tvs-and-types))
 	  (defs    '())
 	  (pos     (make-pos l r)))
-    (if (new-version? 1)
-        (SpecCalc::mkTypeSpecElem-4 names tvs defs pos)
-        (SpecCalc::mkSortSpecElem-4 names tvs defs pos))
+    (SpecCalc::mkTypeSpecElem-4 names tvs defs pos)
     ))
 
 ;;; ------------------------------------------------------------------------
@@ -317,18 +312,14 @@
   (let* ((tvs      (if (eq :unspecified optional-tvs) nil optional-tvs))
 	 (names    (remove-duplicates qualifiable-type-names :test 'equal :from-end t))
          (tvs-and-types
-           (if (new-version? 2)
-               (StandardSpec::abstractType-3 #'namedTypeVar tvs type) 
-               (StandardSpec::abstractSort-3 #'namedTypeVar tvs type)))
+           (StandardSpec::abstractType-3 #'namedTypeVar tvs type))
 	 ;; Since namedTypeVar is the identity function,
 	 ;;  (car tvs-and-types) will just be a copy of typeVars1,
 	 ;;  (cdr tvs-and-types) will be a copy of type with (Base qid) replaced by (TyVar id) where appropriate.
          (tvs      (car tvs-and-types))
          (defs     (list (cdr tvs-and-types)))
 	 (pos      (make-pos l r))) 
-    (if (new-version? 3)
-        (SpecCalc::mkTypeSpecElem-4 names tvs defs pos) 
-        (SpecCalc::mkSortSpecElem-4 names tvs defs pos))
+    (SpecCalc::mkTypeSpecElem-4 names tvs defs pos)
     ))
 
 
@@ -365,9 +356,7 @@
 	 (typ    (if (equal  optional-type :unspecified) 
 		     (freshMetaTypeVar l r)
 		     (cdr 
-                      (if (new-version? 4)
-                          (StandardSpec::abstractType-3 #'namedTypeVar tvs optional-type)
-                          (StandardSpec::abstractSort-3 #'namedTypeVar tvs optional-type)))
+                      (StandardSpec::abstractType-3 #'namedTypeVar tvs optional-type))
                      ))
 	 ;; ---------------------------------------------------------------
 	 (refine?            (not (eq optional-refine :unspecified)))
@@ -534,7 +523,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-type-restriction (slack-type expression l r)
-  (cons (if (new-version? 5) :|Subtype| :|Subsort|)
+  (cons :|Subtype|
         (vector slack-type expression
                 (make-pos l r))))
 
@@ -548,7 +537,7 @@ If we want the precedence to be optional:
   (let* ((v (cdr annotated-pattern))
          (pattern (svref v 0))
          (type    (svref v 1)))
-    (cons (if (new-version? 6) :|Subtype| :|Subsort|)
+    (cons :|Subtype|
           (vector type
                   (make-lambda-form (list (make-branch pattern expression l r))
                                     l r)
@@ -569,9 +558,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-bool-fun (op l r)
-  (make-fun op 
-            (if (new-version? 15) MS::binaryBoolType MS::binaryBoolSort)
-            l r))
+  (make-fun op MS::binaryBoolType l r))
 
 ;;; ------------------------------------------------------------------------
 ;;;   UNQUALIFIED-OP-REF
@@ -581,9 +568,7 @@ If we want the precedence to be optional:
   (cond ((or (equal name "~") (equal name "\\_not"))   
 	 ;; "~" is treated specially:
 	 ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator...
-	 (make-fun '(:|Not|)
-                   (if (new-version? 7) MS::unaryBoolType MS::unaryBoolSort)
-		   l r))
+	 (make-fun '(:|Not|) MS::unaryBoolType l r))
 	((equal name "=")
 	 ;; "=" is treated specially:
 	 ;; "=" can refer to the built-in Equals, but can also be syntax for defs, etc.
@@ -703,7 +688,7 @@ If we want the precedence to be optional:
   (make-typed-term tight-expression type l r))
 
 (defun make-typed-term (tight-expression type l r)
-  (cons (if (new-version? 8) :|TypedTerm| :|SortedTerm|)
+  (cons :|TypedTerm|
         (vector tight-expression type
                 (make-pos l r))))
 
@@ -829,16 +814,12 @@ If we want the precedence to be optional:
 			   (l (svref pos 1))
 			   (r (svref pos 2)))
 		      (cond ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
-                             (if (new-version? 9)
-                                 (MS::mkBinaryFn-5 f MS::boolType MS::boolType MS::boolType pos0)
-                                 (MS::mkBinaryFn-5 f MS::boolSort MS::boolSort MS::boolSort pos0)))
+                             (MS::mkBinaryFn-5 f MS::boolType MS::boolType MS::boolType pos0))
 			    ((eq (car f) :|Not|)
 			     (MS::mkUnaryBooleanFn-2 f pos0))
 			    ((member (car f) '(:|Equals| :|NotEquals|))
 			     (let ((a1 (freshMetaTypeVar l r)))
-			       (if (new-version? 10)
-                                   (MS::mkBinaryFn-5 f a1 a1 MS::boolType pos0)
-                                   (MS::mkBinaryFn-5 f a1 a1 MS::boolSort pos0))))
+			       (MS::mkBinaryFn-5 f a1 a1 MS::boolType pos0)))
 			    ((eq (car f) :|RecordMerge|)
 			     (MS::mkBinaryFn-5 f 
                                                (freshMetaTypeVar l r) 
@@ -936,8 +917,7 @@ If we want the precedence to be optional:
 (defun make-annotated-pattern  (pattern type     l r)
   (when (eq (car pattern) ':|VarPat|)	; Optimize common case, and ensure that variable gets correct type
     (setf (cdadr pattern) type))
-  (cons (if (new-version? 11) :|TypedPat| :|SortedPat|)
-        (vector pattern type (make-pos l r))))
+  (cons :|TypedPat| (vector pattern type (make-pos l r))))
 
 (defun make-aliased-pattern    (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
 (defun make-embed-pattern      (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
@@ -1001,7 +981,7 @@ If we want the precedence to be optional:
 
 (defun make-sc-type-ref      (type-ref             l r)  
   (declare (ignore l r))
-  (cons (if (new-version? 12) :|Type| :|Sort|) type-ref))
+  (cons :|Type|      type-ref))
 
 (defun make-sc-op-ref        (op-ref               l r)  
   (declare (ignore l r))
@@ -1052,8 +1032,7 @@ If we want the precedence to be optional:
 ;;;        (make-pos l r)))
 
 (defun make-sc-type-rule (left-type-ref right-type-ref l r)
-  (cons (cons (if (new-version? 13) :|Type| :|Sort|)
-              (vector left-type-ref right-type-ref (list right-type-ref)))
+  (cons (cons :|Type| (vector left-type-ref right-type-ref (list right-type-ref)))
         (make-pos l r)))
 
 (defun make-sc-op-rule (left-op-ref right-op-ref l r)
@@ -1083,7 +1062,7 @@ If we want the precedence to be optional:
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
 
 (defun make-sm-type-rule (left-type-ref right-type-ref l r)
-  (cons (cons (if (new-version? 14) :|Type| :|Sort|)
+  (cons (cons :|Type|
               (cons left-type-ref right-type-ref))
 		(make-pos l r)))
 
@@ -1180,21 +1159,26 @@ If we want the precedence to be optional:
                     (cons :|Some| optInitOp))))
     (SpecCalc::mkTransformGlobalize-5 rootOpRefs typeRef globalVar initOp (make-pos l r))))
 
+(defun make-transform-at (qids transforms l r)
+  (SpecCalc::mkTransformAt-3 qids (if (listp transforms) transforms (list transforms))
+                             (make-pos l r)))
+(defun make-transform-at-1 (qids transform l r)
+  (SpecCalc::mkTransformAt-3 qids (list transform) (make-pos l r)))
+
 (defun make-transform-repeat (transforms l r)
   (SpecCalc::mkTransformRepeat-2 transforms (make-pos l r)))
 
-(defun make-transform-apply (trans1 transforms l r)
-  (SpecCalc::mkTransformApply-3 trans1 transforms (make-pos l r)))
+(defun make-transform-command (name args l r)
+  (SpecCalc::mkTransformCommand-3 name args (make-pos l r)))
 
-(defun make-transform-apply-options (trans1 options l r)
-  (SpecCalc::mkTransformApplyOptions-3 trans1 options (make-pos l r)))
+(defun make-transform-options (options l r)
+  (SpecCalc::mkTransformOptions-2 options (make-pos l r)))
 
 (defun make-transform-tuple (transforms l r)
   (SpecCalc::mkTransformTuple-2 transforms (make-pos l r)))
 
-(defun make-transform-apply-record (trans1 record-pairs l r)
-  (let ((pos (make-pos l r)))
-    (SpecCalc::mkTransformApply-3 trans1 (list (SpecCalc::mkRecord-2 record-pairs pos)) pos)))
+(defun make-transform-record (record-pairs l r)
+  (SpecCalc::mkTransformRecord-2 record-pairs (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH

@@ -107,21 +107,27 @@ spec
 
  op SCParser.mkSubstitute       (spec_term : SCTerm, sm_term    : SCTerm,         left : LCB, right : LCB) : SCTerm = SpecCalc.mkSubst     (spec_term, sm_term,    mkRegion left right)
  op SCParser.mkOpRefine 	(spec_term : SCTerm, elements   : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
- op SCParser.mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm = SpecCalc.mkTransform (spec_term, transforms, [], mkRegion left right)
+ op SCParser.mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm =
+    SpecCalc.mkTransform (spec_term, transforms, [], mkRegion left right)
 
- op SCParser.mkTransformName	     (name  : Id,                                       left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformName         (name,                   mkRegion left right)
- op SCParser.mkTransformNumber	     (num   : Nat,                                      left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformNumber       (num,                    mkRegion left right)
- op SCParser.mkTransformString	     (str   : String,                                   left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformString       (str,                    mkRegion left right)
-%op SCParser.mkTransformBool 	     (b     : Bool,                                     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformBool         (b,                      mkRegion left right)
- op SCParser.mkTransformSCTerm	     (uid   : SCTerm,                                   left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformSCTerm       (uid,                    mkRegion left right)
- op SCParser.mkTransformQual	     (q     : Qualifier,     id       : Id,             left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual         (q, id,                  mkRegion left right)
- op SCParser.mkTransformItem         (mod   : String,        expr     : TransformExpr,  left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformItem         (mod,  expr,             mkRegion left right)
- op SCParser.mkTransformGlobalize    (roots : OpNames, typ : TypeName, gvar : Id, init : Option OpName,   
-                                                                                        left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformGlobalize    (roots, typ, gvar, init, mkRegion left right)
- op SCParser.mkTransformApply        (head  : TransformExpr, args     : TransformExprs, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformApply        (head, args,             mkRegion left right)
- op SCParser.mkTransformApplyRecord  (head  : TransformExpr, recpairs : TransformExprs, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformApply        (head, recpairs,         mkRegion left right)
- op SCParser.mkTransformApplyOptions (head  : TransformExpr, args     : TransformExprs, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformApplyOptions (head, args,             mkRegion left right)
- op SCParser.mkTransformTuple        (items : TransformExprs,                           left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformTuple        (items,                  mkRegion left right)
+ op SCParser.mkTransformName   (name  : Id,         left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformName(name,  mkRegion left right)
+ op SCParser.mkTransformNumber (num   : Nat,        left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformNumber(num, mkRegion left right)
+ op SCParser.mkTransformString (str   : String,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformString(str, mkRegion left right)
+%op SCParser.mkTransformBool   (b     : Bool,       left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformBool(b, mkRegion left right)
+ op SCParser.mkTransformSCTerm (uid   : SCTerm,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformSCTerm(uid, mkRegion left right)
+ op SCParser.mkTransformQual (q: Qualifier, id: Id, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual(q, id, mkRegion left right)
+ op SCParser.mkTransformItem(mod: String, expr: TransformExpr, left : LCB, right : LCB) : TransformExpr =
+    SpecCalc.mkTransformItem(mod,  expr, mkRegion left right)
+ op SCParser.mkTransformGlobalize(roots : OpNames, typ : TypeName, gvar : Id, init : Option OpName, left : LCB, right : LCB) : TransformExpr =
+    SpecCalc.mkTransformGlobalize (roots, typ, gvar, init, mkRegion left right)
+ op SCParser.mkTransformRecord  (recpairs: List (String * TransformExpr), left : LCB, right : LCB) : TransformExpr =
+    SpecCalc.mkTransformRecord  (recpairs, mkRegion left right)
+ op SCParser.mkTransformOptions (args : TransformExprs,  left : LCB, right : LCB) : TransformExpr =
+    SpecCalc.mkTransformOptions (args, mkRegion left right)
+ op SCParser.mkTransformTuple   (items : TransformExprs, left : LCB, right : LCB) : TransformExpr =
+    SpecCalc.mkTransformTuple   (items, mkRegion left right)
+ op SCParser.mkTransformCommand (head: String, args: TransformExprs, left : LCB, right : LCB) : TransformExpr =
+    SpecCalc.mkTransformCommand (head, args, mkRegion left right)
 
  op SCParser.mkObligations 	     (term  : SCTerm,                                   left : LCB, right : LCB) : SCTerm        = SpecCalc.mkObligations (term, mkRegion left right)
 

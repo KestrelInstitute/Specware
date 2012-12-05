@@ -83,7 +83,7 @@
    ((:tuple "export")       "export")
    ((:tuple "extendMorph")  "extendMorph")
    ((:tuple "hide")         "hide")
-  ;((:tuple "is")           "is")
+   ((:tuple "is")           "is")
    ((:tuple "options")      "options")
    ((:tuple "print")        "print")
    ((:tuple "reduce")       "reduce")
@@ -94,9 +94,10 @@
    ((:tuple "*")            "*")
    ((:tuple "\\_times")     "\\_times")
    ((:tuple "UID")          "UID")
+   ((:tuple "at")           "at")
    ((:tuple "repeat")       "repeat")
-  ;((:tuple "slice")        "slice")
-  ;((:tuple "globalize")    "globalize")
+   ((:tuple "slice")        "slice")
+   ((:tuple "globalize")    "globalize")
    ((:tuple (1 :SYMBOL))    (common-lisp::symbol-name (quote 1)))
    ))
 
@@ -468,7 +469,7 @@ If we want the precedence to be optional:
           (:optional
            (:anyof
             (:tuple "=" (7 :EXPRESSION))
-            (:tuple "by" "{" (9 (:repeat* :TRANSFORM-EXPR ",")) "}"))))
+            (:tuple "by" "{" (9 (:repeat* :TRANSFORM-STMT ";")) "}"))))
   ;; args to make-op-elem are: 
   ;;  1 qualifiable-op-names 
   ;;  2 optional-fixity 
@@ -1040,6 +1041,11 @@ If we want the precedence to be optional:
 	    (2 (:repeat+ :QUALIFIABLE-OP-NAME ","))
 	    "}")
     2)))
+
+(define-sw-parser-rule :QUALIFIABLE-OP-NAMES-PARENS ()
+  (:anyof 
+   ((:tuple (1 :QUALIFIABLE-OP-NAME)) (list 1))
+   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) ")") 2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   APPLICATION
@@ -1663,14 +1669,14 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-OP-TRANSFORM ()
   (:anyof
    (:tuple "transform" (1 :SC-TERM) "by" "{"
-           (2 (:repeat* :TRANSFORM-EXPR ",")) "}"
+           (2 (:repeat* :TRANSFORM-STMT ";")) "}"
            (3 (:repeat* :SM-PRAGMA)))
    (:tuple (1 :SC-TERM) "{"
-           (2 (:repeat* :TRANSFORM-EXPR ",")) "}"
+           (2 (:repeat+ :TRANSFORM-STMT ";")) "}"
            (3 (:repeat* :SM-PRAGMA))))
   (make-sc-transform 1 2 3 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :TRANSFORM-EXPR ()
+(define-sw-parser-rule :TRANSFORM-TERM ()
   (:anyof
    ((:tuple (1 :NUMBER))                     (make-transform-number    1   ':left-lcb ':right-lcb))
    ((:tuple (1 :STRING))                     (make-transform-string    1   ':left-lcb ':right-lcb))
@@ -1679,8 +1685,15 @@ If we want the precedence to be optional:
    ((:tuple "false")                         (make-transform-boolean   nil ':left-lcb ':right-lcb))
    ((:tuple "UID" (1 :SC-UNIT-ID))           (make-transform-scterm    1   ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
-   ((:tuple (1 :NAME) (2 :TRANSFORM-EXPR))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
 
+   ((:tuple "(" (1 (:repeat+ :TRANSFORM-TERM ",")) ")") (make-transform-tuple 1 ':left-lcb ':right-lcb))
+   ((:tuple "[" (1 (:repeat+ :TRANSFORM-TERM ",")) "]") (make-transform-options 1 ':left-lcb ':right-lcb))
+   ((:tuple "{" (1 (:repeat+ :TRANSFORM-RECORD-PAIR ",")) "}") (make-transform-record 1 ':left-lcb ':right-lcb))
+   ))
+
+(define-sw-parser-rule :TRANSFORM-STMT ()
+  (:anyof
    ;; slice (spec, ops, types)
    ((:tuple "slice" 
             (:optional (:tuple "from"
@@ -1699,27 +1712,28 @@ If we want the precedence to be optional:
                         ")")
     (make-transform-globalize 1 2 3 4 ':left-lcb ':right-lcb))
 
-   ((:tuple "repeat" "{" (1 (:repeat* :TRANSFORM-EXPR ",")) "}")
+   ((:tuple "at" (1 :QUALIFIABLE-OP-NAMES-PARENS)
+            "{" (2 (:repeat+ :TRANSFORM-STMT ";")) "}")
+    (make-transform-at 1 2 ':left-lcb ':right-lcb))
+
+   ((:tuple "at" (1 :QUALIFIABLE-OP-NAMES-PARENS)
+                 (2 :TRANSFORM-STMT))
+    (make-transform-at-1 1 2 ':left-lcb ':right-lcb))
+
+   ((:tuple "repeat" "{" (1 (:repeat+ :TRANSFORM-STMT ";")) "}")
     (make-transform-repeat 1 ':left-lcb ':right-lcb))
 
-   ((:tuple (1 :TRANSFORM-EXPR)
-	    "(" (2 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")
-    (make-transform-apply 1 2 ':left-lcb ':right-lcb))
-   ((:tuple (1 :TRANSFORM-EXPR)
-	    "[" (2 (:repeat* :TRANSFORM-EXPR-ARG ",")) "]")
-    (make-transform-apply-options 1 2 ':left-lcb ':right-lcb))
-   ((:tuple (1 :TRANSFORM-EXPR)
-	    "{" (2 (:repeat* :TRANSFORM-RECORD-PAIR ",")) "}")
-    (make-transform-apply-record 1 2 ':left-lcb ':right-lcb))))
+   ((:tuple (1 :SYMBOL) (2 (:repeat* :TRANSFORM-TERM)))
+    (make-transform-command (common-lisp::symbol-name (quote 1)) 2 ':left-lcb ':right-lcb))))
 
-(define-sw-parser-rule :TRANSFORM-EXPR-ARG ()
-  (:anyof
-   ((:tuple (1 :TRANSFORM-EXPR)) 1)
-   ((:tuple "(" (1 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")
-    (make-transform-tuple 1 ':left-lcb ':right-lcb))))
+;; (define-sw-parser-rule :TRANSFORM-EXPR-ARG ()
+;;   (:anyof
+;;    ((:tuple (1 :TRANSFORM-EXPR)) 1)
+;;    ((:tuple "(" (1 (:repeat* :TRANSFORM-EXPR-ARG ",")) ")")
+;;     (make-transform-tuple 1 ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :TRANSFORM-RECORD-PAIR ()
-  (:tuple (1 :NAME) ":" (2 :TRANSFORM-EXPR-ARG))
+  (:tuple (1 :NAME) ":" (2 :TRANSFORM-TERM))
   (cons 1 2))
 
 ;;; ========================================================================

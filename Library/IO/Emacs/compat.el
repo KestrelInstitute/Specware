@@ -401,4 +401,63 @@
 )
   ;(add-hook 'slime-repl-mode-hook 'specware-listener-mode-hook t)
 
+(defun replace-all (str1 str2)
+  (goto-char (point-min))
+  (while (search-forward str1 nil t)
+    (replace-match str2 nil t)))
+
+(defun in-comment-or-string-p ()
+  (let ((face (or (get-char-property (point) 'read-face-name)
+                  (get-char-property (point) 'face))))
+    (member face '(font-lock-comment-face font-lock-string-face))))
+
+(defun convert-transforms ()
+  (interactive)
+ ; (goto-char (point-min))
+  (save-excursion (replace-all "trace on," "trace on;"))
+  (while (sw:re-search-forward "[ {]at[ (]")
+    (unless (in-comment-or-string-p)
+      (forward-char -1)
+      (when (save-excursion (condition-case nil
+                                (progn (up-list -1)
+                                       (looking-at "{"))
+                              (error nil)))
+        ;; convert preceding , to ;
+        (save-excursion (forward-sexp -1)
+                        (skip-syntax-backward " >")
+                        (forward-char -1)
+                        (when (looking-at ",")
+                          (delete-char 1)
+                          (insert ";")))
+        (forward-sexp 1)
+        (sw:re-search-forward ",")
+        (delete-backward-char 1)        ; delete , after at qids
+        (insert " ")
+        ;; Convert body of at
+        (skip-syntax-forward " >")      ; (char-syntax ?\n)
+        (insert " {")
+        (while (condition-case nil
+                   (progn (skip-syntax-forward " >")
+                          (if (or (looking-at "at[ (]")
+                                  (looking-at "finalizeCoType[ (]"))
+                              nil
+                            (progn (forward-sexp 1) t)))
+                 (error nil))
+          (skip-syntax-forward " >")
+          (when (looking-at ",")
+            (delete-char 1)
+            (insert ";")))
+        (skip-syntax-backward " >")
+        (forward-char -1)
+        (unless (looking-at ";")        ; before a new at
+          (forward-char 1))
+        (insert "}")
+        (save-excursion (forward-sexp -1)
+                        (sw:indent-line)
+                        (sw:indent-sexp 1)
+                        ;; Remove {}s if only only one symbol
+                        (forward-char 1)
+                        (forward-sexp 1)
+                        (when (looking-at "}")
+                          (insert-braces -1)))))))
 

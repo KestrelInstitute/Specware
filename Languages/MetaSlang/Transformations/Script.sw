@@ -112,18 +112,18 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
  op ppScript(scr: Script): WLPretty =
     case scr of
       | Steps steps ->
-        ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)
+        ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)
       | Repeat steps ->
-        ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppScript steps)),
+        ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
                  ppString "}"]
       | At(locs, scr) ->
-        ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString "), ",
+        ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
                            ppNewline,
-                           ppScript scr])
+                           ppString "{", ppNest 0 (ppScript scr), ppString "}"])
       | AtTheorem(locs, scr) ->
-        ppIndent(ppConcat [ppString "at-theorem ", ppSep (ppString ", ") (map ppLoc locs), ppString ", ",
+        ppIndent(ppConcat [ppString "at-theorem (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
                            ppNewline,
-                           ppScript scr])
+                           ppString "{", ppNest 0 (ppScript scr), ppString "}"])
       | Move mvmts -> ppConcat [ppString "move (",
                                 ppSep (ppString ", ") (map (fn m -> ppString(moveString m)) mvmts),
                                 ppString ")"]
@@ -715,7 +715,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
                        allowFail?: Bool, hist: TransformHistory)
      : SpecCalc.Env (PathTerm * Bool * TransformHistory) =
-    % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm term) in
+    % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm(fromPathTerm path_term)) in
     case script of
       | Steps steps ->
           foldM (fn (path_term, tracing?, hist) -> fn s ->

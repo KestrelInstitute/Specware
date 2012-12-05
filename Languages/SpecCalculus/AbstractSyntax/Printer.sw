@@ -96,21 +96,24 @@ case tre of
                  | Some qid -> ppConcat [ppString ", ", ppString (printQualifiedId qid)]
                  | None -> ppString ""),
               ppString ")"]
-  | Repeat       (transformexprs, _) -> ppConcat [ppString "repeat {",
-                                                  ppATransformExprs transformexprs,
-                                                  ppString "}"]
-  | Tuple        (transformexprs, _) -> ppConcat [ppString "(",
-                                                  ppATransformExprs transformexprs,
-                                                  ppString ")"]
-  | Record       (name_expr_pairs, _) -> ppSep (ppString ", ") (map ppRecordTransformPairs name_expr_pairs) 
-  | ApplyOptions (transformexpr, transformexprs, _) -> ppConcat [ppATransformExpr transformexpr,
-                                                                 ppString "[",
-                                                                 ppATransformExprs transformexprs,
-                                                                 ppString "]"]
-  | Apply        (transformexpr, transformexprs, _) -> ppConcat [ppATransformExpr transformexpr,
-                                                                 ppString "(",
-                                                                 ppATransformExprs transformexprs,
-                                                                 ppString ")"]
+  | Repeat  (transformexprs, _) -> ppConcat [ppString "repeat {",
+                                             ppATransformExprs transformexprs,
+                                             ppString "}"]
+  | Tuple   (transformexprs, _) -> ppConcat [ppString "(",
+                                             ppATransformExprs transformexprs,
+                                             ppString ")"]
+  | Record  (name_expr_pairs, _) -> ppSep (ppString ", ") (map ppRecordTransformPairs name_expr_pairs) 
+  | Options (transformexprs, _) -> ppConcat [ppString "[",
+                                             ppATransformExprs transformexprs,
+                                             ppString "]"]
+  | At(qids, transformexprs, _) -> ppConcat [ppString "at (",
+                                             ppSep (ppString ", ") (map ppQualifier qids),
+                                             ppString ")",
+                                             ppString "{",
+                                             ppATransformExprs transformexprs,
+                                             ppString "}"]
+  | Command(command_name, transformexprs, _) -> ppConcat [ppString command_name,
+                                                          ppATransformExprs transformexprs]
 
 
 
@@ -555,4 +558,4 @@ case tre of
     ppString "<some interp>"
 
   %% --------------------------------------------------------------------------------
-endspec
+end-spec

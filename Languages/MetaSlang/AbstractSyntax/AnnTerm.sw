@@ -145,24 +145,25 @@ MetaSlang qualifying spec
  type AMetaTypeScheme b = AMetaTyVars b * AType b
 
  type ATransformExpr a =
-    | Name         String                                     * a
-    | Number       Nat                                        * a
-    | Str          String                                     * a
-    | Qual         String * String                            * a
-    | SCTerm       SCTerm                                     * a
-    | Item         String * ATransformExpr a                  * a  % e.g. unfold map
+    | Name      String                           * a
+    | Number    Nat                              * a
+    | Str       String                           * a
+    | Qual      String * String                  * a
+    | SCTerm    SCTerm                           * a
+    | Item      String * ATransformExpr a        * a  % e.g. unfold map
 
-    | Slice        OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
-    | Globalize    OpNames * TypeName  * Id * Option OpName   * a  % name of global var will be Global.<id> 
+    | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
+    | Globalize OpNames * TypeName  * Id * Option OpName   * a  % name of global var will be Global.<id> 
       % Change all local vars of given type into references to named global var, 
       % which is initialized by the optional named op, or by a unique source op 
       % if the initializer is left unspecified.
 
-    | Repeat       List (ATransformExpr a)                    * a
-    | Tuple        List (ATransformExpr a)                    * a
-    | Record       List(String * ATransformExpr a)            * a
-    | ApplyOptions ATransformExpr a * List (ATransformExpr a) * a
-    | Apply        ATransformExpr a * List (ATransformExpr a) * a
+    | Repeat    List (ATransformExpr a)          * a
+    | Tuple     List (ATransformExpr a)          * a    % (..., ...)
+    | Record    List (String * ATransformExpr a) * a    % {..., attr: val, ...}
+    | Options   List (ATransformExpr a)          * a    % [..., ...]
+    | At        QualifiedIds * List (ATransformExpr a) * a
+    | Command   String * List (ATransformExpr a) * a
 
  %%% Predicates
  op product?: [a] AType a -> Bool
@@ -605,6 +606,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
            foldl (fn (result, (tvs, typ, sstm)) -> result ++ [(pi_tvs ++ tvs, typ, sstm)])
              [] 
              (unpackTm(stm, ty))
+         | And ([], pos) -> [([], ty, Any pos)]
          | And (tms, _) -> foldl (fn (result, stm) -> result ++ unpackTm(stm, ty)) [] tms
          | TypedTerm (stm, ty, _) -> unpackTm(stm, ty)
          | _ -> [([], ty, tm)]
