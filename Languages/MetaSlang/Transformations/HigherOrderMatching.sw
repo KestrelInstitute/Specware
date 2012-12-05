@@ -529,6 +529,16 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                  matchPairs (context,subst,insert(M,N,None,stack))
                   ++ r)
           [] (unifyTypes(context,subst,ty1,ty2,Some(mkVar(id2,ty2))))
+      | (LetRec(dfns1, bod1, _), LetRec(dfns2, bod2, _)) ->
+        if length dfns1 = length dfns2
+             && forall? (fn (((id1, ty1), _), ((id2, ty2), _)) -> id1 = id2 && unifyTypes(context,subst,ty1,ty2,None) ~= [])
+                  (zip(dfns1, dfns2))
+          then matchPairs(context, subst,
+                          foldl (fn (stack, ((_,M),(_,N))) -> insert(M,N,None,stack))
+                            (insert(bod1,bod2,None,stack))
+                            (zip(dfns1, dfns2)))
+          else []
+                           
       | (M,_) -> 
  	%   let _ = writeLine "matchPair" in
  	%   let _ = writeLine(printTerm M) in
