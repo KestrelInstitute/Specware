@@ -413,8 +413,10 @@
   ;;  5 optional-type 
   ;;  6 optional-params 
   ;;  7 optional-def 
-  ;;  8 l 
-  ;;  9 r
+  ;;  8 optional-refine?
+  ;;  9 optional-transform-expr
+  ;; 10 l 
+  ;; 11 r
   (make-op-elem 1 2 3 4 5 6 7 :unspecified :unspecified ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
@@ -475,8 +477,10 @@ If we want the precedence to be optional:
   ;;  5 optional-type 
   ;;  6 optional-params 
   ;;  7 optional-def 
-  ;;  8 l 
-  ;;  9 r
+  ;;  8 optional-refine?
+  ;;  9 optional-transform-expr
+  ;; 10 l 
+  ;; 11 r
   (make-op-elem 1 :unspecified 3 4 5 6 7 8 9 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
