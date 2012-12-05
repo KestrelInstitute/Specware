@@ -45,6 +45,8 @@ MetaSlang qualifying spec
  op traceEqualTerm?: Bool = false
 
  def equalTerm? (t1, t2) =
+   %% note: addOrRefineOp calls this expecting literal mactch, with no test for alpha equivalence.
+   %%       So if we generalize this to allow alpha equivalence, do so with flag.
    let result = 
        case (t1, t2) of
 
@@ -113,7 +115,7 @@ MetaSlang qualifying spec
             Transform  (t2s,         _)) -> equalTransformList?(t1s, t2s)
 
          | (Pi         (tvs1, tm1,   _), 
-            Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
+            Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence [but see note above]
 
          | (And        (tms1,        _), 
             And        (tms2,        _)) -> foldl (fn (eq?, t1, t2) -> eq? && equalTerm? (t1, t2))
