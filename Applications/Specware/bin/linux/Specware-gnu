@@ -108,6 +108,11 @@ export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
+# echo "Specware-gnu:  LISP_EXECUTABLE    = [$LISP_EXECUTABLE]"
+# echo "Specware-gnu:  LISP_HEAP_IMAGE    = [$LISP_HEAP_IMAGE]"
+# echo "Specware-gnu:  LISP_DIRECTORY     = [$LISP_DIRECTORY]"
+# echo "Specware-gnu:  SPECWARE_INIT_FORM = [$SPECWARE_INIT_FORM]"
+
 $emacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
        -f run-specware4 &
 #       -name "Specware" \
