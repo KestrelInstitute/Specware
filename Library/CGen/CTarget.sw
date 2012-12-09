@@ -12,6 +12,7 @@ declare List.length_map [simp add]
 
 end-proof
 
+
 %section (* Introduction *)
 
 (* We formalize types and ops that may be useful to target C from Metaslang.
@@ -21,18 +22,16 @@ generator. This spec can be viewed as a shallow embedding of (a subset of) C
 into Metaslang.
 
 Our formalization is based on the ANSI C99 standard, ISO/IEC 9899, "Programming
-languages - C", Second edition (1999-12-01). Note that the Second edition of
+languages - C", Third edition (2011-12-15). Note that the Second edition of
 Brian Kernighan and Dennis Ritchie's "The C Programming Language", published in
 1988, refers to an earlier version of the standard.
 
 In the comments in this spec, we reference the ISO standard as "[ISO]", possibly
 including (dotted) (sub)section numbers (e.g. "[ISO 6.5.9]") and paragraph
-numbers separated by "/" (e.g. "[ISO 6.5.9/2]"). We also reference the ISO 9899
-Corrigenda 1, 2, and 3 as "[ISO C1]", "[ISO C2]", and "[ISO C3]", possibly
-including the numeric indices of the corrections separated by "." (e.g. "[ISO
-C2.32]"). We use "," to indicate multiple sub-references (e.g. "[ISO 6.5.4/3,
-5.2.1]") and we use "-" to indicate ranges of contiguous sub-references (e.g.
-"[ISO 6.5.4-6.5.6]" is the same as "[ISO 6.5.4, 6.5.5, 6.5.6]").
+numbers separated by "/" (e.g. "[ISO 6.5.9/2]"). We use "," to indicate multiple
+sub-references (e.g. "[ISO 6.5.4/3, 5.2.1]") and we use "-" to indicate ranges
+of contiguous sub-references (e.g.  "[ISO 6.5.4-6.5.6]" is the same as "[ISO
+6.5.4, 6.5.5, 6.5.6]").
 
 The comments in this spec are structured into sections and subsections,
 following a literate programming style. Even though there are currently no tools
@@ -41,23 +40,30 @@ structuring is valuable per se. The following formats are used for the
 structured comments:
 
 - each (sub)section starts with "%section", "%subsection", "%subsubsection",
-etc. (recall that "%" starts a line comment) in column 0, followed by a title
-between the Metaslang symbols for block comments (which we do not repeat here
-otherwise we would be closing this comment!);
+  etc. (recall that "%" starts a line comment) in column 0, followed by a title
+  between the Metaslang symbols for block comments (which we do not repeat here
+  otherwise we would be closing this comment!);
 
-- each paragraph of comments is a single block comment in Metaslang, with each
-line starting at column 0 and the opening and closing symbols of the block
-comments in line with the text (i.e. not in separate lines);
+- each paragraph of comments is part of a block comment in Metaslang, with each
+  line starting at column 0 and the opening and closing symbols of the block
+  comments in line with the text (i.e. not in separate lines);
+
+- paragraphs and bullets are separeted by single blank lines;
 
 - no comment line exceeds 80 columns;
 
-- each new (sub)section is preceded by exactly two blank lines.
+- each new (sub)section is preceded by exactly two blank lines, unless it
+  follows a higher (sub)section title (e.g. a section title immediately followed
+  by a subsection title, with no text in the section and before the subsection),
+  in which case it is preceded by exactly one blank line.
 
 Formal Metaslang text (i.e. not comments) always starts at column 0 and never
-exceeds 80 columns. This and the previous comment formats should be followed by
-anybody editing this file, to ensure uniformity, ease of text search, no line
-wrapping if the spec is printed, and support for several side-by-side editors
-without line wrapping. *)
+exceeds 80 columns. Metaslang declarations are usually separated by single blank
+lines (like paragraphs), or occasionally by no blank lines if they are closely
+related and only one line long each. This and the previous comment formats
+should be followed by anybody editing this file, to ensure uniformity, ease of
+text search, no line wrapping if the spec is printed, and support for several
+side-by-side editors without line wrapping. *)
 
 
 %section (* Parameterization *)
@@ -95,7 +101,7 @@ is refined to use the types defined here, the code generator can map the types
 used by the refined spec to the corresponding C types. *)
 
 
-%subsection (* The unsigned char type *)
+%subsection (* The Unsigned Char Type *)
 
 (* The number of bits that comprise a byte [ISO 3.6] is expressed by CHAR_BIT
 [ISO 5.2.4.2.1/1], which must be at least 8. (Note that the notion of byte in C
@@ -118,10 +124,12 @@ end-proof
 op UCHAR_MAX : Nat = 2 ** CHAR_BIT - 1
 proof isa [simp] end-proof
 
-(* [ISO 6.2.6.1/3] constrains unsigned char objects to be represented using a
-pure binary notation, i.e. to range from 0 to 2^CHAR_BIT-1. Thus, unsigned char
-objects are always bytes in C, and every object (of any type) consists of one or
-more bytes [ISO 6.2.6.1/4]. This leads to the following type definition. We
+theorem min_UCHAR_MAX is UCHAR_MAX >= 255
+
+(* [ISO 6.2.6.1/3] constrains unsigned chars to be represented using a pure
+binary notation, i.e. to range from 0 to 2^CHAR_BIT-1. Thus, unsigned chars are
+always bytes in C, and every non-bit-field value (of any type) consists of one
+or more bytes [ISO 6.2.6.1/4]. This leads to the following type definition. We
 "interpose" the uchar constructor between the list of CHAR_BIT bits and the
 corresponding value of type Uchar in order to keep all the C types separate
 (i.e. with no values in common) -- we use such constructors for the other C
@@ -183,22 +191,23 @@ theorem ucharOfMathInt_mathIntOfUchar is
   fa(x:Uchar) ucharOfMathInt (mathIntOfUchar x) = x
 
 
-%subsection (* The signed char type *)
+%subsection (* The Signed Char Type *)
 
 (* The sizeof operator [ISO 6.5.3.4], which returns the size in bytes of its
 operand [ISO 6.5.3.4/2], must return 1 when applied to a char, unsigned char, or
-signed char object. This implies that signed char objects consist of 1 byte,
-like unsigned char objects. *)
+signed char [ISO 6.5.3.4/4]. This implies that signed chars consist of 1 byte,
+like unsigned chars. *)
 
 type Schar = | schar (Bits | ofLength? CHAR_BIT)
 
-(* [ISO 6.2.6.2/2] says that a signed char object must include a sign bit and
-that the other bits are divided among value and padding bits. We assume that
-there are no padding bits and that signed chars are represented as two's
-complement (vs. one's complement or sign & magnitude) -- these are two examples
-of parameters of the C language that are implicitly defined by our
-formalization. As with unsigned chars, we choose a big endian interpretation for
-signed chars. *)
+(* [ISO 6.2.6.2/2] says that a signed char must consist of a sign bit and value
+bits. We assume that signed chars are represented as two's complement (vs. one's
+complement, or sign & magnitude) -- these are two examples of parameters of the
+C language that are implicitly defined by our formalization. As with unsigned
+chars, we choose a big endian interpretation for signed chars.
+
+The choice of a two's complement representation determines the value of
+SCHAR_MIN and SCHAR_MAX [ISO 5.2.4.2.1/1] as a function of CHAR_BIT. *)
 
 op mathIntOfSchar (schar bs : Schar) : Int = toInt bs
 
@@ -213,6 +222,10 @@ proof isa [simp] end-proof
 
 op SCHAR_MAX : Nat = 2 ** (CHAR_BIT - 1) - 1
 proof isa [simp] end-proof
+
+theorem max_SCHAR_MIN is SCHAR_MIN <= -127
+
+theorem min_SCHAR_MAX is SCHAR_MAX >= 127
 
 op rangeOfSchar : FiniteSet Int = fn i:Int -> SCHAR_MIN <= i && i <= SCHAR_MAX
 
@@ -240,17 +253,13 @@ theorem scharOfMathInt_mathIntOfSchar is
   fa(x:Schar) scharOfMathInt (mathIntOfSchar x) = x
 
 
-(* The constraint that SCHAR_MAX is at least +127 [ISO 5.2.4.2.1/1] is
-satisfied. *)
+%subsection (* The Plain Char Type *)
 
-theorem min_SCHAR_MAX is SCHAR_MAX >= 127
-
-
-%subsection (* The plain char type *)
-
-(* Plain char objects have the same range and representation as either signed
-char objects or unsigned char objects [ISO 6.2.5/15]. Either way, plain chars
-consist of CHAR_BIT bits. However, their range of value differs. *)
+(* Plain chars have the same range and representation as either signed chars or
+unsigned chars [ISO 6.2.5/15]. Either way, plain chars consist of CHAR_BIT
+bits. However, their range of value differs. CHAR_MIN and CHAR_MAX [ISO
+5.2.4.2.1/1] are determined by CHAR_BIT and by the choice of whether plain chars
+are signed or unsigned. *)
 
 % In spec CTargetParameters:
 %
@@ -260,6 +269,7 @@ op plainCharsAreUnsigned : Bool = ~ plainCharsAreSigned
 
 op CHAR_MIN : Int = if plainCharsAreSigned then SCHAR_MIN else 0
 proof isa [simp] end-proof
+
 op CHAR_MAX : Nat = if plainCharsAreSigned then SCHAR_MAX else UCHAR_MAX
 proof isa [simp] end-proof
 
@@ -308,20 +318,19 @@ theorem charOfMathInt_mathIntOfChar is
   fa(x:Char) charOfMathInt (mathIntOfChar x) = x
 
 
-%subsection (* The other integer types *)
+%subsection (* The Other Integer Types *)
 
 (* The representation of an unsigned integer type other than unsigned char, must
 consist of N value bits plus 0 or more padding bits, yielding a range of values
 between 0 and 2^N-1 [ISO 6.2.6.2/1]. This constrains the U..._MAX value of each
-unsigned integer type to be 2^N-1. We assume that no padding bits are used, so
-that the representation consists of exactly N (value) bits. Since every object
-(including integers) has a size in bytes [ISO 6.5.3.4/2, 6.2.6.1/4], N must be a
-multiple of CHAR_BIT.
+unsigned integer type [ISO 5.2.4.2.1/1] to be 2^N-1. We assume that no padding
+bits are used, so that the representation consists of exactly N (value)
+bits. Since every value (including integers) has a size in bytes [ISO 6.5.3.4/2,
+6.2.6.1/4], N must be a multiple of CHAR_BIT.
 
 The sizeof_... constants express the size, in bytes, of each unsigned integer
-type other than unsigned char (which we have covered earlier). So, for each
-unsigned integer type, the number of bits N is CHAR_BIT times the
-sizeof_... constants. For convenience, we also define ..._bit constants that
+type. So, for each unsigned integer type, the number of bits N is CHAR_BIT times
+the sizeof_... constants. For convenience, we also define ..._bit constants that
 express the size in bits of the types.
 
 The minimum magnitude constraints on the U..._MAX values given in [ISO
@@ -379,7 +388,7 @@ declare C__ULONG_MAX_def [simp]
 declare C__ULLONG_MAX_def [simp]
 end-proof
 
-theorem min_USHORT_MAX  is  USHORT_MAX  >= 2 ** 16 - 1
+theorem min_USHORT_MAX is  USHORT_MAX >= 2 ** 16 - 1
 theorem min_UINT_MAX   is  UINT_MAX   >= 2 ** 16 - 1
 theorem min_ULONG_MAX  is  ULONG_MAX  >= 2 ** 32 - 1
 theorem min_ULLONG_MAX is  ULLONG_MAX >= 2 ** 64 - 1
@@ -403,14 +412,14 @@ type  Ulong = | ulong  (Bits | ofLength?  long_bits)
 type Ullong = | ullong (Bits | ofLength? llong_bits)
 
 op mathIntOfUshort (ushort bs : Ushort) : IntUshort = toNat bs
-op mathIntOfUint   (uint   bs : Uint)   : IntUint = toNat bs
-op mathIntOfUlong  (ulong  bs : Ulong)  : IntUlong = toNat bs
+op mathIntOfUint   (uint   bs : Uint)   : IntUint   = toNat bs
+op mathIntOfUlong  (ulong  bs : Ulong)  : IntUlong  = toNat bs
 op mathIntOfUllong (ullong bs : Ullong) : IntUllong = toNat bs
 
-theorem mathIntOfUshort_non_neg   is fa(x:Ushort) 0 <= mathIntOfUshort x
-theorem mathIntOfUint_non_neg     is fa(x:Uint  ) 0 <= mathIntOfUint   x
-theorem mathIntOfUlong_non_neg    is fa(x:Ulong ) 0 <= mathIntOfUlong  x
-theorem mathIntOfUllong_non_neg   is fa(x:Ullong) 0 <= mathIntOfUllong x
+theorem mathIntOfUshort_non_neg is fa(x:Ushort) 0 <= mathIntOfUshort x
+theorem mathIntOfUint_non_neg   is fa(x:Uint  ) 0 <= mathIntOfUint   x
+theorem mathIntOfUlong_non_neg  is fa(x:Ulong ) 0 <= mathIntOfUlong  x
+theorem mathIntOfUllong_non_neg is fa(x:Ullong) 0 <= mathIntOfUllong x
 
 theorem mathIntOfUshort_injective is
   fa(x:Ushort, y:Ushort) (mathIntOfUshort x = mathIntOfUshort y) = (x = y)
@@ -423,7 +432,6 @@ theorem mathIntOfUlong_injective is
 
 theorem mathIntOfUllong_injective is
   fa(x:Ullong, y:Ullong) (mathIntOfUllong x = mathIntOfUllong y) = (x = y)
-
 
 theorem mathIntOfUshort_injective_fw is
   fa(x:Ushort, y:Ushort) (mathIntOfUshort x = mathIntOfUshort y) => (x = y)
@@ -446,7 +454,6 @@ op ushortOfMathInt (i:IntUshort) : Ushort = the(x:Ushort) mathIntOfUshort x = i
 op   uintOfMathInt (i:IntUint  ) : Uint   = the(x:Uint  ) mathIntOfUint   x = i
 op  ulongOfMathInt (i:IntUlong ) : Ulong  = the(x:Ulong ) mathIntOfUlong  x = i
 op ullongOfMathInt (i:IntUllong) : Ullong = the(x:Ullong) mathIntOfUllong x = i
-
 
 theorem mathIntOfUshort_ushortOfMathInt is
   fa(i:Int) i in? rangeOfUshort => mathIntOfUshort (ushortOfMathInt i) = i
@@ -490,7 +497,6 @@ theorem C__mathIntOfUllong_ullongOfMathInt_2:
   apply (cut_tac i=i in C__mathIntOfUllong_ullongOfMathInt)
   apply(auto simp del:C__mathIntOfUllong_ullongOfMathInt)
   done
-
 
 theorem C__Ushort__subtype_pred_ushortOfMathInt [simp]:
   "\<lbrakk>(i::int) \<in> C__rangeOfUshort\<rbrakk> \<Longrightarrow>
@@ -551,9 +557,9 @@ also apply to the signed integer types, not only the unsigned ones -- note that
 the names of those constants make no reference to (un)signedness.
 
 Similarly to the signed char type, we assume that the other signed integer types
-use a two's complement representation with no padding bits. Thus, the
-sizeof_... constants determine the values below for the ..._MIN and ..._MAX
-limits of the signed integer types [ISO 5.2.4.2.1/1]. *)
+use a two's complement representation with no padding bits [ISO 6.2.6.2/2].
+Thus, the sizeof_... constants determine the values below for the ..._MIN and
+..._MAX limits of the signed integer types [ISO 5.2.4.2.1/1]. *)
 
 op SSHORT_MIN : Int = - (2 ** (short_bits - 1))
 op   SINT_MIN : Int = - (2 ** (  int_bits - 1))
@@ -577,12 +583,12 @@ declare C__SLONG_MAX_def [simp]
 declare C__SLLONG_MAX_def [simp]
 end-proof
 
-theorem min_SSHORT_MIN  is   SSHORT_MIN <= - (2 ** 15)
+theorem min_SSHORT_MIN is  SSHORT_MIN <= - (2 ** 15)
 theorem min_SINT_MIN   is    SINT_MIN <= - (2 ** 15)
 theorem min_SLONG_MIN  is   SLONG_MIN <= - (2 ** 31)
 theorem min_SLLONG_MIN is  SLLONG_MIN <= - (2 ** 63)
 
-theorem min_SSHORT_MAX  is   SSHORT_MAX >=    2 ** 15 - 1
+theorem min_SSHORT_MAX is  SSHORT_MAX >=    2 ** 15 - 1
 theorem min_SINT_MAX   is    SINT_MAX >=    2 ** 15 - 1
 theorem min_SLONG_MAX  is   SLONG_MAX >=    2 ** 31 - 1
 theorem min_SLLONG_MAX is  SLLONG_MAX >=    2 ** 63 - 1
@@ -615,11 +621,17 @@ theorem mathIntOfSlong_injective_fw is
 theorem mathIntOfSllong_injective_fw is
   fa(x:Sllong, y:Sllong) (mathIntOfSllong x = mathIntOfSllong y) => (x = y)
 
-op rangeOfSshort : FiniteSet Int = fn i:Int ->  SSHORT_MIN <= i && i <=  SSHORT_MAX
-op rangeOfSint   : FiniteSet Int = fn i:Int ->   SINT_MIN <= i && i <=   SINT_MAX
-op rangeOfSlong  : FiniteSet Int = fn i:Int ->  SLONG_MIN <= i && i <=  SLONG_MAX
-op rangeOfSllong : FiniteSet Int = fn i:Int -> SLLONG_MIN <= i && i <= SLLONG_MAX
+op rangeOfSshort : FiniteSet Int =
+ fn i:Int -> SSHORT_MIN <= i && i <= SSHORT_MAX
 
+op rangeOfSint   : FiniteSet Int =
+ fn i:Int -> SINT_MIN <= i && i <= SINT_MAX
+
+op rangeOfSlong  : FiniteSet Int =
+ fn i:Int -> SLONG_MIN <= i && i <= SLONG_MAX
+
+op rangeOfSllong : FiniteSet Int =
+ fn i:Int -> SLLONG_MIN <= i && i <= SLLONG_MAX
 
 %%clean this: up
 proof isa -verbatim
@@ -653,7 +665,6 @@ theorem rangeOfSllong_alt_def:
 
 end-proof
 
-
 theorem sshort_range is fa(x:Sshort) mathIntOfSshort x in? rangeOfSshort
 theorem   sint_range is fa(x:Sint)   mathIntOfSint   x in? rangeOfSint
 theorem  slong_range is fa(x:Slong)  mathIntOfSlong  x in? rangeOfSlong
@@ -677,7 +688,6 @@ declare TwosComplement__minForLength_def [simp]
 declare TwosComplement__maxForLength_def [simp]
 end-proof
 
-
 theorem mathIntOfSshort_sshortOfMathInt is
   fa(i:Int) i in? rangeOfSshort => mathIntOfSshort (sshortOfMathInt i) = i
 
@@ -689,7 +699,6 @@ theorem mathIntOfSlong_slongOfMathInt is
 
 theorem mathIntOfSllong_sllongOfMathInt is
   fa(i:Int) i in? rangeOfSllong => mathIntOfSllong (sllongOfMathInt i) = i
-
 
 proof isa -verbatim
 theorem C__Sshort__subtype_pred_sshortOfMathInt [simp]:
@@ -739,7 +748,6 @@ theorem C__Sllong__subtype_pred_sllongOfMathInt [simp]:
   done
 end-proof
 
-
 theorem sshortOfMathInt_mathIntOfSshort is
   fa(x:Sshort) sshortOfMathInt (mathIntOfSshort x) = x
 
@@ -752,11 +760,20 @@ theorem slongOfMathInt_mathIntOfSlong is
 theorem sllongOfMathInt_mathIntOfSllong is
   fa(x:Sllong) sllongOfMathInt (mathIntOfSllong x) = x
 
-refine def scharOfMathInt  (i:Int | i in? rangeOfSchar ) : Schar  = schar  (tcNumber(i,   CHAR_BIT))
-refine def sshortOfMathInt (i:Int | i in? rangeOfSshort) : Sshort = sshort (tcNumber(i, short_bits))
-refine def sintOfMathInt   (i:Int | i in? rangeOfSint  ) : Sint   = sint   (tcNumber(i,   int_bits))
-refine def slongOfMathInt  (i:Int | i in? rangeOfSlong ) : Slong  = slong  (tcNumber(i,  long_bits))
-refine def sllongOfMathInt (i:Int | i in? rangeOfSllong) : Sllong = sllong (tcNumber(i, llong_bits))
+refine def scharOfMathInt  (i:Int | i in? rangeOfSchar) : Schar  =
+ schar (tcNumber(i, CHAR_BIT))
+
+refine def sshortOfMathInt (i:Int | i in? rangeOfSshort) : Sshort =
+ sshort (tcNumber(i, short_bits))
+
+refine def sintOfMathInt   (i:Int | i in? rangeOfSint) : Sint   =
+ sint (tcNumber(i, int_bits))
+
+refine def slongOfMathInt  (i:Int | i in? rangeOfSlong) : Slong  =
+ slong (tcNumber(i, long_bits))
+
+refine def sllongOfMathInt (i:Int | i in? rangeOfSllong) : Sllong =
+ sllong (tcNumber(i, llong_bits))
 
 (* There are inclusion constraints among the ranges of the integer types [ISO
 6.2.5/8], determined by the integer conversion ranks [ISO 6.3.1.1/1]. Given our
@@ -793,8 +810,10 @@ op [a] ofLength? (n:Nat) (arr:Array a) : Bool =
 (* The predicate ofLength? just defined can be used to construct array types of
 given lengths (an array type includes the number of elements [ISO 6.2.5/20]),
 e.g.
+
  (Array Sint | ofLength? 5)                         for   int[5]
  (Array (Array Char | ofLength? 4) | ofLength? 2)   for   char[2][4]
+
 *)
 
 
@@ -810,19 +829,23 @@ work around this mismatch by having the code generator map Metaslang fields like
 
 In order to represent a C structure type, a Metaslang record type must have only
 fields whose Metaslang types correspond to C types, e.g.
+
  {x:Sint, y:Sint}   for   struct {int x, int y}
+
 *)
 
 
-%subsection (* Type definitions *)
+%subsection (* Type Definitions *)
 
-(* A type definition [ISO 6.7.7] assigns a synonym to an existing type. This
+(* A type definition [ISO 6.7.8] assigns a synonym to an existing type. This
 corresponds to Metaslang type definitions, e.g.
+
  type T = Uint   for   typedef unsigned int T
+
 *)
 
 
-%subsection (* Other types *)
+%subsection (* Other Types *)
 
 (* We may extend this formalization with other Metaslang types that correspond
 to C types, e.g. floating types [ISO 6.2.5/10]. *)
@@ -833,7 +856,7 @@ to C types, e.g. floating types [ISO 6.2.5/10]. *)
 (* We define Metaslang ops that correspond to C constants. *)
 
 
-%subsection (* Integer constants *)
+%subsection (* Integer Constants *)
 
 (* An integer constant [ISO 6.4.4.1] denotes a natural number, in decimal,
 hexadecimal, or octal notation. Since Metaslang internally translates decimal,
@@ -868,7 +891,7 @@ op ullongConstant (n:IntUllong) (base:IntConstBase) : Ullong =
   ullongOfMathInt n
 
 
-%subsection (* Other constants *)
+%subsection (* Other Constants *)
 
 (* We may extend this formalization with other Metaslang types that correspond
 to C constants, e.g. floating constants [ISO 6.4.4.2]. *)
@@ -881,7 +904,7 @@ Metaslang spec is refined to use such Metaslang operators, the code generator
 can map them to the corresponding C operators. *)
 
 
-%subsection (* Integer conversions *)
+%subsection (* Integer Conversions *)
 
 (* An integer value can be converted into (a value of) an(other) integer type
 [ISO 6.3.1.3].
@@ -891,7 +914,7 @@ If the new type can represent it, the (mathematical) value is unchanged [ISO
 6.3.1.3/1].
 
 Otherwise, the outcome depends on whether the new type is unsigned or not. Note
-that the new type could be char, which is classified as neither a signed nor an
+that the new type could be char, which is classified as neither a signed or an
 unsigned integer type [ISO 6.2.5/4, 6.2.5/6]. But according to [ISO 6.2.5/15]
 the char type has the same behavior as either signed or unsigned char, and this
 choice is captured by ops plainCharsAreSigned and plainCharsAreUnsigned,
@@ -909,9 +932,11 @@ and well-defined; in other words, we disallow conversions when the outcome is
 non-standard.
 
 There are 11 integer types:
+
  uchar ushort uint ulong ullong
  schar sshort sint slong sllong
  char
+
 Thus, there are 11 * 11 - 11 = 110 conversion ops. *)
 
 proof isa -verbatim
@@ -1298,7 +1323,6 @@ op charOfSshort (x:Sshort |
   if plainCharsAreSigned then charOfMathInt (mathIntOfSshort x)
   else charOfMathInt (mathIntOfSshort x modF (1 + UCHAR_MAX))
 
-
 op charOfSint (x:Sint |
    plainCharsAreSigned => mathIntOfSint x in? rangeOfChar) : Char =
   if plainCharsAreSigned then charOfMathInt (mathIntOfSint x)
@@ -1378,9 +1402,8 @@ theorem sllongOfUllong_bits is
   fa(bs:Bits) length bs = llong_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUllong (ullong bs) = sllong bs
 
-(* Converting from an unsigned integer type to an unsigned integer type
-of higher rank amounts to zero-extending the bits. 
-*)
+(* Converting from an unsigned integer type to an unsigned integer type of
+higher rank amounts to zero-extending the bits. *)
 
 refine def ucharOfMathInt  (i:Int | i in? rangeOfUchar) : Uchar = uchar (bits(i, CHAR_BIT))
 refine def ushortOfMathInt (i:Int | i in? rangeOfUshort) : Ushort = ushort (bits(i, short_bits))
@@ -1441,11 +1464,8 @@ theorem ullongOfUlong_bits is
   fa(bs:Bits) length bs = long_bits =>
     ullongOfUlong (ulong bs) = ullong (zeroExtend (bs, llong_bits))
 
-(*
-Converting from a signed integer type to an unsigned integer type
-of higher rank amounts to sign-extending the bits. 
-*)
-
+(* Converting from a signed integer type to an unsigned integer type of higher
+rank amounts to sign-extending the bits. *)
 
 %% conversions of Schar
 
@@ -1497,7 +1517,7 @@ theorem ullongOfSlong_bits is
 
 (* Converting from a Char to an unsigned integer type of higher rank amounts to
 either sign-extending or zero-extending the bits, depending on whether
-plainCharsAreSigned.  *)
+plainCharsAreSigned. *)
 
 theorem ushortOfChar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
@@ -1519,7 +1539,6 @@ theorem ulongOfChar_bits is
     ulong (if plainCharsAreSigned then 
                (signExtend (bs, long_bits)) else 
                (zeroExtend (bs, long_bits)))
-
 
 theorem ullongOfChar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
@@ -1547,7 +1566,6 @@ theorem sllongOfUchar_bits is
   fa(bs:Bits) length bs = CHAR_BIT =>
     sllongOfUchar (uchar bs) = sllong (zeroExtend (bs, llong_bits))
 
-
 theorem sintOfUshort_bits is
   fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSint =>
     sintOfUshort (ushort bs) = sint (zeroExtend (bs, int_bits))
@@ -1560,7 +1578,6 @@ theorem sllongOfUshort_bits is
   fa(bs:Bits) length bs = short_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUshort (ushort bs) = sllong (zeroExtend (bs, llong_bits))
 
-
 theorem slongOfUint_bits is
   fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSlong =>
     slongOfUint (uint bs) = slong (zeroExtend (bs, long_bits))
@@ -1569,11 +1586,9 @@ theorem sllongOfUint_bits is
   fa(bs:Bits) length bs = int_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUint (uint bs) = sllong (zeroExtend (bs, llong_bits))
 
-
 theorem sllongOfUlong_bits is
   fa(bs:Bits) length bs = long_bits && ((toNat bs):Int) in? rangeOfSllong =>
     sllongOfUlong (ulong bs) = sllong (zeroExtend (bs, llong_bits))
-
 
 %% TODO add comment
 
@@ -1596,7 +1611,6 @@ theorem sllongOfChar_bits_unsigned is
   plainCharsAreUnsigned =>
   (fa(bs:Bits) length bs = CHAR_BIT =>
      sllongOfChar (char bs) = sllong (zeroExtend (bs, llong_bits)))
-
 
 (* Converting from a signed integer type to a signed integer type of higher rank
 amounts to sign-extending the bits. *)
@@ -1694,8 +1708,6 @@ theorem sllongOfSlong_bits is
 (* Converting from a signed or unsigned integer type to a signed or unsigned
 integer type of lower rank amounts to truncating the most significant bits. *)
 
-
-
 theorem ucharOfUshort_bit is
   fa(bs:Bits) length bs = short_bits =>
     ucharOfUshort (ushort bs) = uchar (suffix (bs, CHAR_BIT))
@@ -1740,7 +1752,6 @@ theorem ushortOfUllong_bit is
   fa(bs:Bits) length bs = llong_bits =>
     ushortOfUllong (ullong bs) = ushort (suffix (bs, short_bits))
 
-
 proof isa -verbatim
 (* TODO add more *)
 lemmas Conversions2 =
@@ -1778,7 +1789,6 @@ lemmas Conversions2 =
   C__sllongOfMathInt__1__obligation_refine_def
   C__sllongOfMathInt__1_def
 end-proof
-
 
 theorem ushortOfSint_bit is
   fa(bs:Bits) length bs = int_bits =>
@@ -1944,15 +1954,15 @@ theorem charOfSllong_bit is
     charOfSllong (sllong bs) = char (suffix (bs, CHAR_BIT))
 
 
-%subsection (* Integer operators *)
+%subsection (* Integer Operators *)
 
-(* The unary operator + [ISO 6.5.3.3/2] promotes [ISO 6.3.1.1/2] [ISO C2.10] its
-integer operand and leaves it unchanged. Because promotion turns every integer
-of integer conversion rank [ISO 6.3.1.1/1] lower than sint/uint into sint or
-uint, we only need to define versions of unary + for sint/uint and types of
-higher rank. The C code generator should not generate casts for conversion ops
-that carry out the needed promotions. The "_1" part of the name of the following
-ops serves to distinguish them from those for binary +, defined later. *)
+(* The unary operator + [ISO 6.5.3.3/2] promotes [ISO 6.3.1.1/2] its integer
+operand and leaves it unchanged. Because promotion turns every integer of
+integer conversion rank [ISO 6.3.1.1/1] lower than sint/uint into sint or uint,
+we only need to define versions of unary + for sint/uint and types of higher
+rank. The C code generator should not generate casts for conversion ops that
+carry out the needed promotions. The "_1" part of the name of the following ops
+serves to distinguish them from those for binary +, defined later. *)
 
 op +_1_sint   (x:Sint  ) : Sint   = x
 op +_1_slong  (x:Slong ) : Slong  = x
@@ -1970,19 +1980,23 @@ maximum of the type of the operand [ISO 6.2.5/9]. If the operand is signed, the
 ops are defined only if the negative of the operand can be represented in the
 type, because otherwise the behavior is undefined [ISO 6.5/5]. *)
 
-op -_1_sint   (x:Sint   | - mathIntOfSint   x in? rangeOfSint  ) : Sint   =
-    sintOfMathInt (- mathIntOfSint   x)
-op -_1_slong  (x:Slong  | - mathIntOfSlong  x in? rangeOfSlong ) : Slong  =
-   slongOfMathInt (- mathIntOfSlong  x)
-op -_1_sllong (x:Sllong | - mathIntOfSllong x in? rangeOfSllong) : Sllong =
-  sllongOfMathInt (- mathIntOfSllong x)
+op -_1_sint (x:Sint | - mathIntOfSint x in? rangeOfSint) : Sint =
+ sintOfMathInt (- mathIntOfSint x)
 
-op -_1_uint   (x:Uint  ) : Uint   =
-    uintOfMathInt ((- mathIntOfUint   x) modF (1 +   UINT_MAX))
-op -_1_ulong  (x:Ulong ) : Ulong  =
-   ulongOfMathInt ((- mathIntOfUlong  x) modF (1 +  ULONG_MAX))
+op -_1_slong (x:Slong | - mathIntOfSlong  x in? rangeOfSlong) : Slong =
+ slongOfMathInt (- mathIntOfSlong x)
+
+op -_1_sllong (x:Sllong | - mathIntOfSllong x in? rangeOfSllong) : Sllong =
+ sllongOfMathInt (- mathIntOfSllong x)
+
+op -_1_uint (x:Uint) : Uint =
+ uintOfMathInt ((- mathIntOfUint x) modF (1 + UINT_MAX))
+
+op -_1_ulong (x:Ulong ) : Ulong =
+ ulongOfMathInt ((- mathIntOfUlong x) modF (1 + ULONG_MAX))
+
 op -_1_ullong (x:Ullong) : Ullong =
-  ullongOfMathInt ((- mathIntOfUllong x) modF (1 + ULLONG_MAX))
+ ullongOfMathInt ((- mathIntOfUllong x) modF (1 + ULLONG_MAX))
 
 (* The ~ operator [ISO 6.5.3.3/4] promotes its operand and returns its bitwise
 complement. Analogously to unary + and -, we only define ops for sint/uint and
@@ -2025,9 +2039,8 @@ casts for conversion ops that carry out the needed usual arithmetic conversions.
 
 If the operands are unsigned, we follow the laws of arithmetic modulo one plus
 the maximum of the type of the operands [ISO 6.2.5/9]. If the operands are
-signed, the ops are defined only if the product of the operands can be
-represented in the type, because otherwise the behavior is undefined [ISO
-6.5/5].
+signed, the ops are defined only if the result can be represented in the type,
+because otherwise the behavior is undefined [ISO 6.5/5].
 
 There are 30 ops (5 operators times 6 integer types). We factor commonalities of
 (subsets of) the 30 ops into a few parameterized ops that are suitably
@@ -2231,12 +2244,12 @@ op -_ullong (x:Ullong, y:Ullong) infixl 110 : Ullong =
   applyUllong ((-), x, y)
 
 proof isa -verbatim
+
 (* TODO more like this *)
 theorem mathIntOfSint_le [simp]:
   "\<lbrakk> C__Sint__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfSint x \<le> 2147483647"
   apply(case_tac x, simp)
   done
-
 
 theorem mathIntOfSlong_le [simp]:
   "\<lbrakk> C__Slong__subtype_pred x\<rbrakk> \<Longrightarrow> C__mathIntOfSlong x \<le> 9223372036854775807"
@@ -2265,7 +2278,6 @@ theorem mathIntOfUllong_le [simp]:
   done
 
 end-proof
-
 
 (* The binary << operator requires integer operands [ISO 6.5.7/2], promotes
 them, and left-shifts the first operand E1 by the number of positions E2
@@ -2741,7 +2753,8 @@ op >>_ullong_ullong
    (x:Ullong, y:Ullong | mathIntOfUllong y < llong_bits) infixl 109 : Ullong =
   ullongOfMathInt (mathIntOfUllong x divT 2**(mathIntOfUllong y))
 
-(* Conversions between Bool and Sint *)
+(* In order to define relational and equality operators, we introduce
+conversions between Bool and Sint. *)
 
 op boolOfSint (x:Sint) : Bool = (x ~= sint0) 
 op sintOfBool (x:Bool) : Sint = if x then sint1 else sint0
@@ -2779,8 +2792,6 @@ theorem sintOfBool_<= is
   fa(i:Int, j:Int) (i in? rangeOfUint && j in? rangeOfUint) => 
     (sintOfBool (i <= j)) = 
     ((uintOfMathInt i) <=_uint (uintOfMathInt j))
-
-  
 
 (* The binary <, >, <=, >=, ==, and != operators perform the usual arithmetic
 conversions [ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether
@@ -2940,7 +2951,7 @@ first one is not sufficient to determine the result. Thus, these two operators
 correspond to Metaslang's built-in && and || constructs. *)
 
 
-%subsection (* Array operators *)
+%subsection (* Array Operators *)
 
 (* The array subscript operator in C [ISO 6.5.2.1] takes any integer value as
 the subscript argument. We define an op for each integer type. These ops are
@@ -3002,18 +3013,18 @@ op [a] @_ullong (array elems : Array a, i:Ullong |
   elems @ mathIntOfUllong i
 
 
-%subsection (* Structure operators *)
+%subsection (* Structure Operators *)
 
 (* Given the correspondence between Metaslang records and C structures described
 earlier, field selections in Metaslang correspond exactly to structure member
-expressions (i.e. "." operator) in C. *)
+expressions (i.e. "." operator) in C [ISO 6.5.2.3]. *)
 
 
-%section (* Function definitions *)
+%section (* Function Definitions *)
 
 (* A Metaslang function of type T1 * ... * Tn -> T, where n >= 0 and the Ti's
 and T are all Metaslang types that correspond to C types, corresponds to a C
-function [ISO 6.7.5.3, 6.9.1] with the corresponding argument and result
+function [ISO 6.7.6.3, 6.9.1] with the corresponding argument and result
 types. The Metaslang function must have explicit argument names and its body
 must only use Metaslang operators (defined above) that correspond to C
 operators. The body of the corresponding C function consists of a "return"
@@ -3035,6 +3046,7 @@ the return type of the function (a long) as if by assignment [ISO 6.8.6.4/3].
 Generating the cast would be correct, but makes the code less readable. *)
 
 
+%section (* Proofs *)
 
 (*************************************************************************)
 
@@ -3065,7 +3077,6 @@ end-proof
 proof isa charOfMathInt_mathIntOfChar_Obligation_subtype 
   by (rule C__char_range)
 end-proof
-
 
 proof isa C__mathIntOfUchar_injective [simp]
   apply(case_tac x, case_tac y, simp)
@@ -3111,7 +3122,6 @@ proof isa C__mathIntOfChar_injective [simp]
   apply(case_tac y)
   apply(auto simp add: C__mathIntOfChar.simps)
 end-proof
-
 
 proof isa C__uchar_range [simp]
    apply(simp add: C__rangeOfUchar_def mem_def)
@@ -3168,12 +3178,9 @@ proof isa char_range [simp]
    apply(case_tac "x", simp)
 end-proof
 
-
 proof isa C__mathIntOfUchar_Obligation_subtype
   apply (auto simp add: List__ofLength_p_def List__nonEmpty_p_def C__CHAR_BIT_def) 
 end-proof
-
-
 
 proof isa C__ucharOfMathInt_Obligation_the
   apply(auto)
@@ -3250,7 +3257,6 @@ proof isa charOfMathInt_Obligation_the
   apply (simp add:C__rangeOfChar_def TwosComplement__tcNumber_length TwosComplement__rangeForLength_def mem_def TwosComplement__toInt_tcNumber_reduce TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def mem_def)
   apply (simp add:C__rangeOfChar_def mem_def TwosComplement__toInt_tcNumber_reduce mem_def)
 end-proof
-
 
 proof isa C__mathIntOfUchar_ucharOfMathInt [simp]
   apply (auto simp add:C__ucharOfMathInt_def)
@@ -3331,7 +3337,6 @@ proof isa C__mathIntOfSllong_sllongOfMathInt [simp]
   apply(cut_tac P="\<lambda> (x::C__Sllong) . (C__Sllong__subtype_pred x \<and> (C__mathIntOfSllong x) = i)" in theI')
   apply(auto)
 end-proof
-
 
 proof isa C__ucharOfMathInt_mathIntOfUchar [simp]
   apply(cut_tac x = "C__ucharOfMathInt (int (C__mathIntOfUchar x))" and y = x in C__mathIntOfUchar_injective)
@@ -3492,7 +3497,6 @@ proof isa C__sllongOfSint_Obligation_subtype
   apply(case_tac "x", simp)
 end-proof
 
-
 proof isa C__sllongOfSlong_Obligation_subtype 
   apply(case_tac "x", simp)
 end-proof
@@ -3508,8 +3512,6 @@ end-proof
 proof isa charOfSchar_Obligation_subtype
   apply(case_tac "x", auto)
 end-proof
-
-
 
 proof isa C__ucharOfSchar_bits
   apply(simp add: C__ucharOfSchar_def)
@@ -3648,7 +3650,6 @@ proof isa C__sllongOfUllong_bits
   apply(rule not_negative_from_bound_gen, force, force)
 end-proof
 
-
 proof isa C__ushortOfUchar_bits 
   apply(simp add: C__ushortOfUchar_def C__ushortOfMathInt__1__obligation_refine_def C__ushortOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
@@ -3669,7 +3670,6 @@ proof isa C__ullongOfUchar_bits
   apply(rule toBits_toNat_extend, force, force)
 end-proof
 
-
 proof isa C__uintOfUshort_bits 
   apply(simp add: C__uintOfUshort_def C__uintOfMathInt__1__obligation_refine_def C__uintOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
@@ -3685,7 +3685,6 @@ proof isa C__ullongOfUshort_bits
   apply(rule toBits_toNat_extend, force, force)
 end-proof
 
-
 proof isa C__ulongOfUint_bits 
   apply(simp add: C__ulongOfUint_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
@@ -3700,7 +3699,6 @@ proof isa C__ullongOfUlong_bits
   apply(simp add: C__ullongOfUlong_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def)
   apply(rule toBits_toNat_extend, force, force)
 end-proof
-
 
 proof isa C__ucharOfMathInt__1__obligation_refine_def
   apply(cut_tac x="(C__ucharOfMathInt i)" and y="C__Uchar__uchar (toBits(nat i, C__CHAR_BIT))" in C__mathIntOfUchar_injective, force)
@@ -3814,7 +3812,6 @@ proof isa C__ullongOfSshort_bits
   apply(simp)
 end-proof
 
-
 proof isa C__ulongOfSint_bits
   apply(simp add: C__ulongOfSint_def C__ulongOfMathInt__1__obligation_refine_def C__ulongOfMathInt__1_def TwosComplement__toInt_def)
   apply(case_tac "TwosComplement__nonNegative_p bs", simp_all)
@@ -3825,7 +3822,6 @@ proof isa C__ulongOfSint_bits
   apply(rule mod_same_lemma)
   apply(simp)
   end-proof
-
 
 proof isa C__ullongOfSint_bits
   apply(simp add: C__ullongOfSint_def C__ullongOfMathInt__1__obligation_refine_def C__ullongOfMathInt__1_def TwosComplement__toInt_def)
@@ -3931,7 +3927,6 @@ proof isa C__scharOfMathInt__1__obligation_refine_def
   apply(simp del:C__mathIntOfSchar_injective add:C__mathIntOfSchar_scharOfMathInt C__scharOfMathInt__1_def rangeOfSchar_alt_def)
 end-proof
 
-
 (* was quite slow without the uses of only: *)
 proof isa C__sshortOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__short_bits_def C__sizeof_short_def C__CHAR_BIT_def)
@@ -3951,7 +3946,6 @@ proof isa C__sshortOfMathInt__1__obligation_refine_def
   apply(simp del:C__mathIntOfSshort_injective add:C__mathIntOfSshort_sshortOfMathInt C__sshortOfMathInt__1_def rangeOfSshort_alt_def)
 end-proof
 
-
 proof isa C__sintOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__int_bits_def C__sizeof_int_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
@@ -3970,8 +3964,6 @@ proof isa C__sintOfMathInt__1__obligation_refine_def
   apply(simp del:C__mathIntOfSint_injective add:C__mathIntOfSint_sintOfMathInt C__sintOfMathInt__1_def rangeOfSint_alt_def)
 end-proof
 
-
-
 proof isa C__slongOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__long_bits_def C__sizeof_long_def C__CHAR_BIT_def)
   apply(rule TwosComplement__tcNumber_length)
@@ -3989,7 +3981,6 @@ proof isa C__slongOfMathInt__1__obligation_refine_def
   apply(simp add: rangeOfSlong_alt_def)
   apply(simp del:C__mathIntOfSlong_injective add:C__mathIntOfSlong_slongOfMathInt C__slongOfMathInt__1_def rangeOfSlong_alt_def)
 end-proof
-
 
 proof isa C__sllongOfMathInt__1_Obligation_subtype1
   apply(simp only: List__ofLength_p_def C__llong_bits_def C__sizeof_llong_def C__CHAR_BIT_def)
@@ -4024,7 +4015,6 @@ end-proof
 proof isa C__sllongOfUchar_bits
   apply(simp add:C__sllongOfUchar_def C__sllongOfMathInt__1__obligation_refine_def C__sllongOfMathInt__1_def TwosComplement__tcNumber__1__obligation_refine_def TwosComplement__tcNumber__1_def Divides.mod_pos_pos_trivial toBits_toNat_extend)
 end-proof
-
 
 proof isa C__sintOfUshort_bits
   apply(simp add:C__sintOfUshort_def C__sintOfMathInt__1__obligation_refine_def C__sintOfMathInt__1_def TwosComplement__tcNumber__1__obligation_refine_def TwosComplement__tcNumber__1_def Divides.mod_pos_pos_trivial toBits_toNat_extend)
@@ -4114,7 +4104,6 @@ proof isa C__slongOfSchar_bits
   apply(simp add: TwosComplement__sign_extension_does_not_change_value TwosComplement__minForLength_def TwosComplement__maxForLength_def  del: TwosComplement__toInt_inject)
 end-proof
 
-
 proof isa C__slongOfChar_bits_signed
   apply(auto simp add: Conversions)
   apply(rule TwosComplement__toInt_inject_rule)
@@ -4122,7 +4111,6 @@ proof isa C__slongOfChar_bits_signed
   apply(force, force)
   apply(simp add: TwosComplement__sign_extension_does_not_change_value TwosComplement__minForLength_def TwosComplement__maxForLength_def  del: TwosComplement__toInt_inject)
 end-proof
-
 
 proof isa C__slongOfSshort_bits
   apply(auto simp add: Conversions)
@@ -4155,7 +4143,6 @@ proof isa C__sllongOfChar_bits_signed
   apply(force, force)
   apply(simp add: TwosComplement__sign_extension_does_not_change_value TwosComplement__minForLength_def TwosComplement__maxForLength_def  del: TwosComplement__toInt_inject)
 end-proof
-
 
 proof isa C__sllongOfSshort_bits
   apply(auto simp add: Conversions)
@@ -4247,7 +4234,6 @@ proof isa C__ushortOfUllong_bit
   apply(simp add: Divides.nat_mod_distrib)
 end-proof
 
-
 proof isa C__ushortOfSint_bit
   apply(simp add: Conversions2)
   apply(cut_tac n=16 and bs=bs in toBits_mod_toNat)
@@ -4329,9 +4315,6 @@ proof isa C__scharOfUllong_bit
   apply(simp_all add: TwosComplement__toInt_tcNumber_reduce)
   apply(simp add: TwosComplement__toInt_def TC_lemmas toNat_suffix)
 end-proof
-
-
-
 
 proof isa C__scharOfSshort_bit
   apply(simp add: Conversions2 Conversions3)
@@ -4918,7 +4901,6 @@ proof isa C__mathIntOfUllong_Obligation_subtype0
   apply(auto simp add: mem_def C__rangeOfUllong_def)
 end-proof
 
-
 proof isa C__e_at_ushort_Obligation_subtype0
   apply( auto simp add: Int.nat_less_iff)
 end-proof
@@ -4931,7 +4913,6 @@ end-proof
 proof isa C__e_at_ullong_Obligation_subtype0
   apply( auto simp add: Int.nat_less_iff)
 end-proof
-
 
 proof isa mathIntOfUshort_non_neg [simp]
   apply(case_tac x, simp)
@@ -5065,7 +5046,6 @@ end-proof
 proof isa C__e_lt_lt_sllong_ullong_Obligation_exhaustive
 sorry
 end-proof
-
 
 
 endspec
