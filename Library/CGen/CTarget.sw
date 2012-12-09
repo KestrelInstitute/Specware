@@ -26,12 +26,12 @@ languages - C", Third edition (2011-12-15). Note that the Second edition of
 Brian Kernighan and Dennis Ritchie's "The C Programming Language", published in
 1988, refers to an earlier version of the standard.
 
-In the comments in this spec, we reference the ISO standard as "[ISO]", possibly
-including (dotted) (sub)section numbers (e.g. "[ISO 6.5.9]") and paragraph
-numbers separated by "/" (e.g. "[ISO 6.5.9/2]"). We use "," to indicate multiple
-sub-references (e.g. "[ISO 6.5.4/3, 5.2.1]") and we use "-" to indicate ranges
-of contiguous sub-references (e.g.  "[ISO 6.5.4-6.5.6]" is the same as "[ISO
-6.5.4, 6.5.5, 6.5.6]").
+In the comments in this spec, we reference the ISO standard as '[ISO]', possibly
+including (dotted) (sub)section numbers (e.g. '[ISO 6.5.9]') and paragraph
+numbers separated by '/' (e.g. '[ISO 6.5.9/2]'). We use ',' to indicate multiple
+sub-references (e.g. '[ISO 6.5.4/3, 5.2.1]') and we use '-' to indicate ranges
+of contiguous sub-references (e.g.  '[ISO 6.5.4-6.5.6]' is the same as '[ISO
+6.5.4, 6.5.5, 6.5.6]').
 
 The comments in this spec are structured into sections and subsections,
 following a literate programming style. Even though there are currently no tools
@@ -39,8 +39,8 @@ to process these structured comments (e.g. to produce PDF documents), the
 structuring is valuable per se. The following formats are used for the
 structured comments:
 
-- each (sub)section starts with "%section", "%subsection", "%subsubsection",
-  etc. (recall that "%" starts a line comment) in column 0, followed by a title
+- each (sub)section starts with '%section', '%subsection', '%subsubsection',
+  etc. (recall that '%' starts a line comment) in column 0, followed by a title
   between the Metaslang symbols for block comments (which we do not repeat here
   otherwise we would be closing this comment!);
 
@@ -824,15 +824,24 @@ e.g.
 that in Metaslang record fields are ordered alphabetically, while in a C
 structure members are ordered as declared by the program. It may be possible to
 work around this mismatch by having the code generator map Metaslang fields like
-"_a_first", "_b_second", "_c_third", "_d_fourth", etc. to C fields like "first",
-"second", "third", "fourth", etc.
+'_a_first', '_b_second', '_c_third', '_d_fourth', etc. to C fields like 'first',
+'second', 'third', 'fourth', etc.
 
 In order to represent a C structure type, a Metaslang record type must have only
 fields whose Metaslang types correspond to C types, e.g.
 
  {x:Sint, y:Sint}   for   struct {int x, int y}
 
-*)
+Given a named Metaslang record type
+
+ type R = {f1:T1, ..., fn:Tn}
+
+where all the Ti's are Metaslang types that correspond to C types, the C code
+generator should generate a structure declaration [ISO 6.7, 6.7.2.1]
+
+ struct R {U1 f1; ... Un fn;};
+
+where each Ui is the C type that corresponds to the Metaslang type Ti. *)
 
 
 %subsection (* Type Definitions *)
@@ -1961,7 +1970,7 @@ operand and leaves it unchanged. Because promotion turns every integer of
 integer conversion rank [ISO 6.3.1.1/1] lower than sint/uint into sint or uint,
 we only need to define versions of unary + for sint/uint and types of higher
 rank. The C code generator should not generate casts for conversion ops that
-carry out the needed promotions. The "_1" part of the name of the following ops
+carry out the needed promotions. The '_1' part of the name of the following ops
 serves to distinguish them from those for binary +, defined later. *)
 
 op +_1_sint   (x:Sint  ) : Sint   = x
@@ -2113,8 +2122,8 @@ operators for each of the 6 integer types. Note that the ops for / and % include
 the condition that the second operand is not 0. Thus, the 0 result that ops
 divT0 and modT0 return in that case is never used, as mentioned earlier.
 
-Note that we cannot use "%" in an op name because "%" starts an end-of-line
-comment in Metaslang. So we use "//" instead. *)
+Note that we cannot use '%' in an op name because '%' starts an end-of-line
+comment in Metaslang. So we use '//' instead. *)
 
 % operator *
 
@@ -3017,19 +3026,99 @@ op [a] @_ullong (array elems : Array a, i:Ullong |
 
 (* Given the correspondence between Metaslang records and C structures described
 earlier, field selections in Metaslang correspond exactly to structure member
-expressions (i.e. "." operator) in C [ISO 6.5.2.3]. *)
+expressions (i.e. .' operator) in C [ISO 6.5.2.3]. *)
+
+
+%section (* State *)
+
+%subsection (* Global Variables *)
+
+(* Global variables are represented as fields of a Metaslang record type called
+'Global' -- this name distinguishes this Metaslang record type from other
+Metaslang record types that represent C structures.
+
+For each field in type Global, the C code generator should generate a global
+variable declaration [ISO 6.7] that includes an initializer that sets the
+variable to a default value, as follows:
+
+- if the variable has integer type, it is initialized to 0;
+
+- if the variable has an array type, its elements are initialized to the default
+  value for the array element type;
+
+- if the variable has a structure type, each field is initialized to the deafult
+  value for the field's type.
+
+The Metaslang functions that correspond to C functions, as explained later, will
+have a value of type Global single-threaded through them. This value gives
+access to the global variables.
+
+The Metaslang dotted field notation, applied to the value of type Global,
+corresponds to a read access to the global variable. The C code generator will
+perform this translation. *)
+
+
+%subsection (* Local Variables *)
+
+(* Metaslang 'let' expressions correspond to local variable declarations [ISO
+6.7]. The pattern of the 'let' must be a single variable, and the expression
+assigned to the variable becomes the initializer of the local variable. *)
+
+
+%subsection (* State Monad *)
+
+(* To facilitate the single threading of the record of global variables through
+the functions, a state monad can be used. The following type is parameterized
+over a type variable for the state. *)
+
+type StateMonad(s,a) = s -> s * a
+
+op [s,a] stateMonadReturn (x:a) : StateMonad(s,a) = fn s:s -> (s,x)
+
+op [s,a,b]
+ stateMonadBind (m:StateMonad(s,a), f: a -> StateMonad(s,b)) : StateMonad(s,b) =
+  fn s:s -> let (s',x) = m s in f x s'
+
+(* Given a specific record type Global (which varies for different C programs),
+a monad type with return and bind operators should be defined as follows:
+
+ type M a = StateMonad (Global, a)
+
+ op [a] return (x:a) : M a = stateMonadReturn x
+
+ op [a,b] monadBind (m:M a, f: a -> M b) : M b = stateMonadBind (m, f)
+
+The choice of the name 'M' is motivated by brevity. The choice of the name
+'monadBind' makes Metaslang's specialized monadic syntax available.
+
+The C code generator should translate monadic assignments '... <- ...' into
+local variables with initializers, similarly to the treatment of 'let'. *)
+
+
+%subsection (* Assignments *)
+
+(* Assignments to global variables are represented via Metaslang's record update
+notation 'rec << {x = ...}'. Only one field at a time can be updated.
+
+Monadic functions can be defined and used, e.g.
+
+ op get_x : M T = fn s:Global -> (s, s.x)
+ op set_x (x':T) : M () = fn s:Global -> (s << {x = x'}, ())
+*)
 
 
 %section (* Function Definitions *)
 
+%subsection (* Functions without Side Effects *)
+
 (* A Metaslang function of type T1 * ... * Tn -> T, where n >= 0 and the Ti's
-and T are all Metaslang types that correspond to C types, corresponds to a C
-function [ISO 6.7.6.3, 6.9.1] with the corresponding argument and result
-types. The Metaslang function must have explicit argument names and its body
-must only use Metaslang operators (defined above) that correspond to C
-operators. The body of the corresponding C function consists of a "return"
-followed by the C expression that corresponds to the Metaslang function's body
-expression.
+and T are all Metaslang types that correspond to C types, corresponds to a
+side-effect-free C function [ISO 6.7.6.3, 6.9.1] with the corresponding argument
+and result types. The Metaslang function must have explicit argument names and
+its body must only use Metaslang operators that correspond to C operators, as
+described above. The C code generator should create a C function whose body
+consists of a 'return' followed by the C expression that corresponds to the
+Metaslang expression.
 
 For example, the Metaslang function
 
@@ -3044,6 +3133,40 @@ conversion ops because the short is automatically promoted to an int by virtue
 of the unary - operation, and the resulting int is automatically converted to
 the return type of the function (a long) as if by assignment [ISO 6.8.6.4/3].
 Generating the cast would be correct, but makes the code less readable. *)
+
+
+%subsection (* Functions with Side Effects *)
+
+(* A Metaslang function of type Global * T1 * ... * Tn -> Global * T, where the
+Ti's and T are as above, represents a function that may have side effects.  In
+this case, the result type T is allowed to be (), which represents 'void'.
+
+The Global value must be single-threaded. The function must have a form like
+
+ let s = s << {x = a} in
+ let s = s << {y = s.x +_sint (sintConstant 3 dec)} in
+ (s, (sintConstant 2 dec) *_sint s.y)
+
+The function can use the monadic type T1 * ... * Tn -> M T, which is isomorphic
+to the type given above. The function must use monadic constructs (which ensure
+single-threadedness) like
+
+ {set_x a;
+  x <- get_x;
+  set_y (x +_sint (sintConstant 3 dec));
+  y <- get_y;
+  return ((sintConstant 2 dec) *_sint y)}
+
+The C code generator could optimize away 'x <- get_x' and 'y <- get_y' (whose
+only purpose is to extract the value of global variables from the state). The
+non-monadic and monadic examples above are equivalent, and the C code generator
+should translate both to something like
+
+ x = a;
+ y = x + 3;
+ return 2 * y;
+
+*)
 
 
 %section (* Proofs *)
