@@ -114,17 +114,15 @@ spec
     (mkRecordPat pats, mkRecord tms)
 
   op  addCoercions (coercions: TypeCoercionTable) (spc: Spec): Spec =
-    let def mapTermTop (info, refine_num) =
-	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
-        let tm = refinedTerm(full_term, refine_num) in
-        % let _ = writeLine("addCoercions\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
-        let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
-        let ty = MetaSlang.mapType(id, mapType, id) ty in
-	let result = mapTerm(tm1, ty) in
-        let full_term =  if equalTerm?(result, tm) then full_term
-                           else replaceNthTerm(full_term, refine_num, result)
-        in
-        maybePiTerm(tvs, TypedTerm(full_term, ty, termAnn full_term)) 
+    let def mapTermTop (opinfo, refine_num) =
+          let trps = unpackTypedTerms (opinfo.dfn) in
+          let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
+          % let _ = writeLine("addCoercions\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
+          let tm1 = if anyTerm? tm then tm else MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
+          let new_ty = MetaSlang.mapType(id, mapType, id) ty in
+          let result = if anyTerm? tm then tm else mapTerm(tm1, new_ty) in
+          if equalTerm?(result, tm) then opinfo.dfn
+            else maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, new_ty, result)))
 
       def mapType ty =
         case ty of
@@ -358,18 +356,17 @@ spec
       | _ -> false
 
   op exploitOverloading  (coercions: TypeCoercionTable) (doMinus?: Bool) (spc: Spec): Spec =
-    let def mapTermTop (info, refine_num) =
-	let (tvs, ty, full_term) = unpackTerm (info.dfn) in
-        let tm = if embed? Any full_term then full_term else refinedTerm(full_term, refine_num) in
-        % let _ = writeLine("exploitOverloading\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
-        let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
-        let new_ty = MetaSlang.mapType(id, mapType, id) ty in
-	let result = mapTerm(tm1, ty) in
-        let full_term =  if equalTerm?(result, tm) then full_term
-                           else replaceNthTerm(full_term, refine_num, result)
-        in
-        % let _ = writeLine("\nresult:\n"^printTerm(TypedTerm(full_term, new_ty, termAnn full_term))) in
-        maybePiTerm(tvs, TypedTerm(full_term, new_ty, termAnn full_term)) 
+    let def mapTermTop (opinfo, refine_num) =
+          let trps = unpackTypedTerms (opinfo.dfn) in
+          let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
+          % let _ = writeLine("exploitOverloading\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
+          let tm1 = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
+          let new_ty = MetaSlang.mapType(id, mapType, id) ty in
+          let result = mapTerm(tm1, ty) in
+          if equalTerm?(result, tm) then opinfo.dfn
+            else
+              % let _ = writeLine("\nresult:\n"^printTerm(TypedTerm(full_term, new_ty, termAnn full_term))) in
+              maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, new_ty, result)))
 
       def mapType ty =
         case ty of

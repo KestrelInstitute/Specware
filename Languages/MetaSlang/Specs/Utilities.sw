@@ -7,6 +7,7 @@ Utilities qualifying spec
  import Elaborate/Utilities
  import Equivalences
  import ../AbstractSyntax/Fold
+ import /Languages/Lisp/Suppress
 
  type Vars = List Var
  type VarSubst = List (Var * MSTerm)
@@ -25,14 +26,14 @@ Utilities qualifying spec
 
  def patternToTerm(pat) = 
      case pat
-       of EmbedPat(con,None,srt,a) -> 
-          Some(Fun(Embed(con,false),srt,a))
-        | EmbedPat(con,Some p,srt,a) -> 
+       of EmbedPat(con,None,ty,a) -> 
+          Some(Fun(Embed(con,false),ty,a))
+        | EmbedPat(con,Some p,ty,a) -> 
           (case patternToTerm(p)
              of None -> None
 	      | Some (trm) -> 
-		let srt1 = patternType p in
-		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)))
+		let ty1 = patternType p in
+		Some (Apply(Fun(Embed(con,true),Arrow(ty1,ty,a),a),trm,a)))
         | RecordPat(fields,a) -> 
 	  let
 	     def loop(new,old) = 
@@ -49,8 +50,8 @@ Utilities qualifying spec
         | BoolPat(b, _) -> Some(mkBool b)
         | StringPat(s, _) -> Some(mkString s)
         | CharPat(c, _) -> Some(mkChar c)
-        | VarPat((v,srt), a) -> Some(Var((v,srt), a))
-        | WildPat(srt,_) -> None
+        | VarPat((v,ty), a) -> Some(Var((v,ty), a))
+        | WildPat(ty,_) -> None
         | QuotientPat(pat,cond,_)  -> None %% Not implemented
         | RestrictedPat(pat,cond,_)  ->
 	  patternToTerm pat		% cond ??
@@ -65,12 +66,12 @@ Utilities qualifying spec
    let wild_num = Ref 0 in
    let def patToTPV pat =
          case pat
-           of EmbedPat(con, None, srt, a) -> 
-              (Fun(Embed(con, false), srt, a), [], [])
-            | EmbedPat(con, Some p, srt, a) -> 
+           of EmbedPat(con, None, ty, a) -> 
+              (Fun(Embed(con, false), ty, a), [], [])
+            | EmbedPat(con, Some p, ty, a) -> 
               let (trm, conds, vs) = patToTPV p in
-              let srt1 = patternType p in
-              (Apply(Fun(Embed(con, true), Arrow(srt1, srt, a), a), trm, a), conds, vs)
+              let ty1 = patternType p in
+              (Apply(Fun(Embed(con, true), Arrow(ty1, ty, a), a), trm, a), conds, vs)
             | RecordPat(fields, a) -> 
               let
                  def loop(new, old, old_conds, old_vs) = 
@@ -86,8 +87,8 @@ Utilities qualifying spec
             | StringPat(s, _) -> (mkString s, [], [])
             | CharPat(c, _) -> (mkChar c, [], [])
             | VarPat(v, a) -> (Var(v, a), [], [v])
-            | WildPat(srt, _) ->
-              let gen_var = ("zz__" ^ show(!wild_num), srt) in
+            | WildPat(ty, _) ->
+              let gen_var = ("zz__" ^ show(!wild_num), ty) in
               (wild_num := !wild_num + 1;
                (mkVar gen_var, [], [gen_var]))
             | QuotientPat(qpat, qid, _)  -> 
@@ -118,11 +119,11 @@ Utilities qualifying spec
              (Some []) fields
         of None -> None
          | Some p_fields -> Some(RecordPat(p_fields, a)))
-     | Fun(Embed(con,false),srt,a) -> Some(EmbedPat(con,None,srt,a))
-     | Apply(Fun(Embed(con,true), Arrow(_,srt,_),_),trm,a) ->
+     | Fun(Embed(con,false),ty,a) -> Some(EmbedPat(con,None,ty,a))
+     | Apply(Fun(Embed(con,true), Arrow(_,ty,_),_),trm,a) ->
        (case termToPattern trm of
         | None -> None
-        | Some p -> Some(EmbedPat(con,Some p,srt,a)))
+        | Some p -> Some(EmbedPat(con,Some p,ty,a)))
      | Fun(Nat n, _, a) -> Some(NatPat(n, a))
      | Fun(Bool b, _, a) -> Some(BoolPat(b, a))
      | Fun(String s, _, a) -> Some(StringPat(s, a))
@@ -278,10 +279,10 @@ Utilities qualifying spec
 	          ([],sub,freeNames) fields
 	in
 	  (RecordPat(fields,a),sub,freeNames)
-      | EmbedPat(oper,Some pat,srt,a) -> 
+      | EmbedPat(oper,Some pat,ty,a) -> 
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
-	(EmbedPat(oper,Some pat,srt,a),sub,freeNames)
-      | EmbedPat(oper,None,srt,_) -> 
+	(EmbedPat(oper,Some pat,ty,a),sub,freeNames)
+      | EmbedPat(oper,None,ty,_) -> 
 	(pat,sub,freeNames)
       | AliasPat(p1,p2,a) ->
 	let (p1,sub,freeNames) = repPattern(p1,sub,freeNames) in
@@ -430,20 +431,34 @@ Utilities qualifying spec
     | (key,value) :: alist_tail -> 
       if desired_key?(key) then Some value else lookup(desired_key?, alist_tail)
 
-
- op  freeTyVars: MSType -> TyVars
- def freeTyVars(srt) = 
+ op tyVarsInTerm(tm: MSTerm): TyVars =
    let vars = Ref [] in
-   let def vr(srt) = 
-         case srt of
+   let def vr(ty) = 
+         case ty of
 	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
 	   | MetaTyVar(tv,pos) -> 
-	     (case unlinkType srt of
+	     (case unlinkType ty of
 	       | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
 	       | _ -> ())
 	   | _ -> ()
    in
-   let _ = appType(fn _ -> (),vr,fn _ -> ()) srt in
+   let _ = appTerm(fn _ -> (),vr,fn _ -> ()) tm in
+   ! vars
+
+
+ op  freeTyVars: MSType -> TyVars
+ def freeTyVars(ty) = 
+   let vars = Ref [] in
+   let def vr(ty) = 
+         case ty of
+	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
+	   | MetaTyVar(tv,pos) -> 
+	     (case unlinkType ty of
+	       | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
+	       | _ -> ())
+	   | _ -> ()
+   in
+   let _ = appType(fn _ -> (),vr,fn _ -> ()) ty in
    ! vars
 
  op boundVars(t: MSTerm): List Var =
@@ -467,7 +482,7 @@ Utilities qualifying spec
  % which is a reasonable assumption given how Specware types
  % are handled.
 
- def substituteType(srt,S) = 
+ def substituteType(ty,S) = 
    let freeNames = foldr (fn ((v,trm),vs) -> 
                             StringSet.union (StringSet.fromList
 						(List.map (fn (n,_) -> n)
@@ -475,14 +490,14 @@ Utilities qualifying spec
 						vs))
                      StringSet.empty S
    in 
-   substituteType2(srt,S,freeNames) 
+   substituteType2(ty,S,freeNames) 
 
- def substituteType2(srt,S,freeNames) = 
+ def substituteType2(ty,S,freeNames) = 
    let def subst(s:MSType):MSType = 
 	   case s
-	     of Base(id,srts,a) -> 
+	     of Base(id,tys,a) -> 
 	        Base(id,
-		     List.map subst srts,
+		     List.map subst tys,
 		     a)
 	      | Arrow(d,r,a) -> 
 		Arrow(subst d,
@@ -505,7 +520,7 @@ Utilities qualifying spec
 	      | TyVar(v,a) -> 
 		TyVar(v,a)
    in
-   subst(srt) 
+   subst(ty) 
 
  op printVarSubst(sb: VarSubst): () =
    app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sb
@@ -578,8 +593,8 @@ Utilities qualifying spec
 	    | Seq(terms,a) -> 
 	      Seq(List.map subst terms,
 		  a)
-	    | TypedTerm(term, srt, a) ->
-	      TypedTerm(subst(term), srt, a)
+	    | TypedTerm(term, ty, a) ->
+	      TypedTerm(subst(term), ty, a)
             | _ -> M
 
 	def substRule (pat,cond,term) = 
@@ -637,10 +652,10 @@ Utilities qualifying spec
 	      ([],sub,freeNames) fields
 	in
 	(RecordPat(fields,a),sub,freeNames)
-      | EmbedPat(oper,Some pat,srt,a) -> 
+      | EmbedPat(oper,Some pat,ty,a) -> 
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	(EmbedPat(oper,Some pat,srt,a),sub,freeNames)
-      | EmbedPat(oper,None,srt,_) -> 
+	(EmbedPat(oper,Some pat,ty,a),sub,freeNames)
+      | EmbedPat(oper,None,ty,_) -> 
 	(pat,sub,freeNames)
       | AliasPat(p1,p2,a) ->
 	let (p1,sub,freeNames) = substPattern(p1,sub,freeNames) in
@@ -667,9 +682,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                            N))
       | RecordPat(fields,a) -> 
 	RecordPat(map (fn (id, p) -> (id, substPat(p,sub))) fields, a)
-      | EmbedPat(oper,Some pat,srt,a) -> 
+      | EmbedPat(oper,Some pat,ty,a) -> 
 	let pat = substPat(pat,sub) in
-	EmbedPat(oper,Some pat,srt,a)
+	EmbedPat(oper,Some pat,ty,a)
       | AliasPat(p1,p2,a) ->
 	let p1 = substPat(p1,sub) in
 	let p2 = substPat(p2,sub) in
@@ -748,8 +763,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  %- ----------------------------------------------------------------
 
  op letRecToLetTermType: MSType -> MSType
- def letRecToLetTermType srt =
-   case srt
+ def letRecToLetTermType ty =
+   case ty
      of Arrow(s1,s2,a)  -> 
         Arrow(letRecToLetTermType(s1),
 	      letRecToLetTermType(s2),
@@ -758,26 +773,26 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	Product(List.map (fn(id,s) -> (id, letRecToLetTermType(s))) fields,
 		a)
       | CoProduct(fields,a) -> 
-	CoProduct(List.map (fn (id,optsrt) ->
-			    (id, case optsrt
+	CoProduct(List.map (fn (id,optty) ->
+			    (id, case optty
 				   of Some s -> Some(letRecToLetTermType(s))
 				    | None  -> None)) 
 		           fields,
 		  a)
-      | Quotient(srt,term,a) ->
-	Quotient(letRecToLetTermType(srt),
+      | Quotient(ty,term,a) ->
+	Quotient(letRecToLetTermType(ty),
 		 letRecToLetTermTerm(term),
 		 a)
-      | Subtype(srt,term,a) ->
-	Subtype(letRecToLetTermType(srt),
+      | Subtype(ty,term,a) ->
+	Subtype(letRecToLetTermType(ty),
 		letRecToLetTermTerm(term),
 		a)
-      | Base(qid,srts,a) -> 
+      | Base(qid,tys,a) -> 
 	Base(qid,
-	     List.map (fn(s) -> letRecToLetTermType(s)) srts,
+	     List.map (fn(s) -> letRecToLetTermType(s)) tys,
 	     a)
      %| Boolean is the same as default case
-      | _ -> srt
+      | _ -> ty
 
  op letRecToLetTermTerm: MSTerm -> MSTerm
  def letRecToLetTermTerm term =
@@ -848,7 +863,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | _  -> term
 
  op letRecToLetTermVar: Var -> Var
- def letRecToLetTermVar ((id, srt)) = (id, letRecToLetTermType srt)
+ def letRecToLetTermVar ((id, ty)) = (id, letRecToLetTermType ty)
 
  op letRecToLetTermPattern: MSPattern -> MSPattern
  def letRecToLetTermPattern pat = 
@@ -860,18 +875,18 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | VarPat(v,a) -> 
 	VarPat(letRecToLetTermVar(v),
 	       a)
-      | EmbedPat(id,optpat,srt,a) -> 
+      | EmbedPat(id,optpat,ty,a) -> 
 	EmbedPat(id,
 		 case optpat
 		   of  None   -> None
 		    | Some p -> Some(letRecToLetTermPattern(p)),
-		 letRecToLetTermType(srt),
+		 letRecToLetTermType(ty),
 		 a)
       | RecordPat(fields,a) -> 
 	RecordPat(List.map (fn(id,p) -> (id,letRecToLetTermPattern(p))) fields,
 		  a)
-      | WildPat(srt,a) -> 
-	WildPat(letRecToLetTermType(srt),
+      | WildPat(ty,a) -> 
+	WildPat(letRecToLetTermType(ty),
 		a)
       | QuotientPat (p,                        qid, a) -> 
 	QuotientPat (letRecToLetTermPattern p, qid, a)
@@ -891,10 +906,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        let pos = typeAnn info.dfn in
        let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
        let new_defs = 
-           map (fn srt ->
-		let pos = typeAnn srt in
-		let (tvs, srt) = unpackType srt in
-		Pi (tvs, letRecToLetTermType srt, pos))
+           map (fn ty ->
+		let pos = typeAnn ty in
+		let (tvs, ty) = unpackType ty in
+		Pi (tvs, letRecToLetTermType ty, pos))
 	       old_defs
        in
 	 info << {dfn = maybeAndType (old_decls ++ new_defs, pos)}
@@ -905,8 +920,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        let new_defs = 
            map (fn tm ->
 		let pos = termAnn tm in
-		let (tvs, srt, tm) = unpackFirstTerm tm in
-		Pi (tvs, TypedTerm (tm, letRecToLetTermType srt, pos), pos))
+		let (tvs, ty, tm) = unpackFirstTerm tm in
+		Pi (tvs, TypedTerm (tm, letRecToLetTermType ty, pos), pos))
 	       old_defs
        in
 	 info << {dfn = maybeAndTerm (old_decls ++ new_defs, pos)}
@@ -1350,19 +1365,19 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  op  evalBinary: [a] (a * a -> Fun) * (List(Id * MSTerm) -> List a)
                       * List(Id * MSTerm) * MSType
                      -> Option MSTerm
- def evalBinary(f, fVals, fields, srt) =
+ def evalBinary(f, fVals, fields, ty) =
    case fVals fields
-     of [i,j] -> Some(Fun(f(i,j),srt,noPos))
+     of [i,j] -> Some(Fun(f(i,j),ty,noPos))
       | _ -> None
 
  op  evalBinaryNotZero: (Nat * Nat -> Fun) * (List(Id * MSTerm) -> List Nat)
                       * List(Id * MSTerm) * MSType
                      -> Option MSTerm
- def evalBinaryNotZero(f, fVals, fields, srt) =
+ def evalBinaryNotZero(f, fVals, fields, ty) =
    case fVals fields
      of [i,j] ->
         if j=0 then None
-	  else Some(Fun(f(i,j),srt,noPos))
+	  else Some(Fun(f(i,j),ty,noPos))
       | _ -> None
 
  op nat:  [a] (a -> Nat)    -> a -> Fun
@@ -1681,24 +1696,24 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  % and repeat, if that is also a named type, etc.
  %V for verbose?
  % verbose parameter does not seem to be used.
- op unfoldBaseV (sp : Spec, srt : MSType, verbose : Bool) : MSType = 
-  case srt of
-    | Base (qid, srts, a) ->
+ op unfoldBaseV (sp : Spec, ty : MSType, verbose : Bool) : MSType = 
+  case ty of
+    | Base (qid, tys, a) ->
       (case findTheType (sp, qid) of
-	 | None -> srt %Should this be an error?
+	 | None -> ty %Should this be an error?
 	 | Some info ->
 	   if definedTypeInfo? info then
-	     let (tvs, srt_def) = unpackFirstTypeDef info in
-             if length tvs ~= length srts
-               then (% writeLine("Type arg# mismatch: "^printType srt);
+	     let (tvs, ty_def) = unpackFirstTypeDef info in
+             if length tvs ~= length tys
+               then (% writeLine("Type arg# mismatch: "^printType ty);
                      %% This can arise because of inadequacy of patternType on QuotientPat
-                     srt_def)
+                     ty_def)
              else
-	     let ssrt = substType (zip (tvs, srts), srt_def) in
-	     unfoldBaseV (sp, ssrt, verbose)
+	     let sty = substType (zip (tvs, tys), ty_def) in
+	     unfoldBaseV (sp, sty, verbose)
 	   else %Should this be an error?
-	     srt)
-    | _ -> srt
+	     ty)
+    | _ -> ty
 
 
   op unfoldBase0 (spc: Spec) (ty: MSType): MSType =
@@ -1739,42 +1754,42 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | ty -> ty
 
  % might we need to alternate repeatedly between unfolding base types and stripping off subtypes?
- op arrowOpt (sp : Spec, srt : MSType): Option (MSType * MSType) = 
-  case stripSubtypes (sp, unfoldBase (sp,srt))
+ op arrowOpt (sp : Spec, ty : MSType): Option (MSType * MSType) = 
+  case stripSubtypes (sp, unfoldBase (sp,ty))
     of Arrow (dom, rng, _) -> Some (dom, rng)
      | _ -> None
 
- op ProcTypeOpt (sp : Spec, srt : MSType): Option (MSType * MSType) = 
-  case stripSubtypes (sp, srt) of
+ op ProcTypeOpt (sp : Spec, ty : MSType): Option (MSType * MSType) = 
+  case stripSubtypes (sp, ty) of
     | Base (Qualified ("Accord", "ProcType"), [dom, rng, _], _) ->
       Some (dom, rng)
     | _ -> None
 
- op rangeOpt (sp: Spec, srt: MSType): Option MSType = 
-  case arrowOpt (sp, srt) of
+ op rangeOpt (sp: Spec, ty: MSType): Option MSType = 
+  case arrowOpt (sp, ty) of
     | None ->
-      (case ProcTypeOpt (sp, srt) of 
+      (case ProcTypeOpt (sp, ty) of 
 	 | Some (_, rng) -> Some rng
 	 | _ -> None)
     | Some (_, rng) -> Some rng
 
- op productOpt (sp : Spec, srt : MSType): Option (List (Id * MSType)) = 
-  case stripSubtypes (sp, unfoldBase (sp,srt))
+ op productOpt (sp : Spec, ty : MSType): Option (List (Id * MSType)) = 
+  case stripSubtypes (sp, unfoldBase (sp,ty))
     of Product (fields, _) -> Some fields
      | _ -> None
 
- op fieldTypes (sp : Spec, srt : MSType): List MSType =
-   case stripSubtypes (sp, unfoldBase (sp,srt))
+ op fieldTypes (sp : Spec, ty : MSType): List MSType =
+   case stripSubtypes (sp, unfoldBase (sp,ty))
     of Product (fields, _) -> map (fn (_, ty) -> ty) fields
-     | _ -> [srt]
+     | _ -> [ty]
 
- op tupleType? (sp : Spec, srt : MSType): Bool =
-   case productOpt(sp, srt) of
+ op tupleType? (sp : Spec, ty : MSType): Bool =
+   case productOpt(sp, ty) of
      | Some(("1",_)::_) -> true
      | _ -> false
 
- op coproductOpt (sp : Spec, srt : MSType): Option (List (Id * Option MSType)) = 
-  case stripSubtypes (sp, unfoldBase (sp,srt))
+ op coproductOpt (sp : Spec, ty : MSType): Option (List (Id * Option MSType)) = 
+  case stripSubtypes (sp, unfoldBase (sp,ty))
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
@@ -1785,7 +1800,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                                   | Some rng -> rng
 						  | None ->
                                                     let _ = case t1_ty of
-                                                              | Base (qid, srts, a) ->
+                                                              | Base (qid, tys, a) ->
                                                                 (case findTheType (sp, qid) of
                                                                    | None -> writeLine(show qid^" not defined ")
                                                                    | Some info -> writeLine(show qid^" defined"^"\n"^printType info.dfn))
@@ -1802,29 +1817,29 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                                        a)
      | Let        (_, term,              _) -> inferType (sp, term)
      | LetRec     (_, term,              _) -> inferType (sp, term)
-     | Var        ((_,srt),              _) -> srt
-     | Fun        (_, srt,               _) -> srt
+     | Var        ((_,ty),              _) -> ty
+     | Fun        (_, ty,               _) -> ty
      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternType pat,
                                                        inferType (sp, body))
      | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
-     | The        ((_,srt), _,           _) -> srt
+     | The        ((_,ty), _,           _) -> ty
      | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
      | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
-     | TypedTerm  (_, srt,               _) -> srt
+     | TypedTerm  (_, ty,               _) -> ty
      | Any a                                -> Any a
      | And        (t1::_,                _) -> inferType (sp, t1)
      | Pi         (_, t,                 _) -> inferType (sp, t)
      | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
- op subtype?(sp: Spec, srt: MSType): Bool =
-   case srt of
+ op subtype?(sp: Spec, ty: MSType): Bool =
+   case ty of
      | Subtype _ -> true
      | _ ->
-       let exp_srt =  unfoldBase (sp, srt) in
-       if srt = exp_srt then false
-         else subtype?(sp, exp_srt)
+       let exp_ty =  unfoldBase (sp, ty) in
+       if ty = exp_ty then false
+         else subtype?(sp, exp_ty)
 
  op subtypeComps(sp: Spec, ty: MSType): Option (MSType * MSTerm) =
    case ty of
@@ -1836,16 +1851,16 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
  op subtypeOf (ty: MSType, qid: QualifiedId, spc: Spec): Option MSType =
     case ty of
-      | Base(qid1,srts,_) ->
+      | Base(qid1,tys,_) ->
         if qid1 = qid then Some ty
           else
 	 (case findTheType (spc, qid1) of
             | None -> None
             | Some info ->
               if definedTypeInfo? info then
-                let (tvs, srt) = unpackFirstTypeDef info in
-                let ssrt = substType (zip (tvs, srts), srt) in
-                subtypeOf(ssrt,qid,spc)
+                let (tvs, ty) = unpackFirstTypeDef info in
+                let sty = substType (zip (tvs, tys), ty) in
+                subtypeOf(sty,qid,spc)
               else
                 None)
       | Subtype(t1,_,_) -> subtypeOf(t1,qid,spc)
@@ -1855,14 +1870,14 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
   if equalType?(ty, sup_ty) then Some(mkTruePred ty)
     else
     case ty of
-      | Base(qid1,srts,_) ->
+      | Base(qid1,tys,_) ->
         (case findTheType (spc, qid1) of
            | None -> None
            | Some info ->
              if definedTypeInfo? info then
-               let (tvs, srt) = unpackFirstTypeDef info in
-               let ssrt = substType (zip (tvs, srts), srt) in
-               subtypePred(ssrt,sup_ty,spc)
+               let (tvs, ty) = unpackFirstTypeDef info in
+               let sty = substType (zip (tvs, tys), ty) in
+               subtypePred(sty,sup_ty,spc)
              else
                None)
       | Subtype(t1,pred,_) ->
@@ -1888,14 +1903,14 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
      % let _ = writeLine(printType ty1^" <=? "^printType ty2) in
      equalType?(ty1, ty2)
        || (case ty1 of
-             | Base(qid1, srts, _) ->
+             | Base(qid1, tys, _) ->
                (case findTheType (spc, qid1) of
                   | None -> false
                   | Some info ->
                     if definedTypeInfo? info then
-                      let (tvs, srt) = unpackFirstTypeDef info in
-                      let ssrt = substType (zip (tvs, srts), srt) in
-                      possiblySubtypeOf?(ssrt, ty2, spc)
+                      let (tvs, ty) = unpackFirstTypeDef info in
+                      let sty = substType (zip (tvs, tys), ty) in
+                      possiblySubtypeOf?(sty, ty2, spc)
                     else
                       false)
              | Subtype(t1, _, _) -> possiblySubtypeOf?(t1, ty2, spc)
@@ -2432,18 +2447,18 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 
   op  typeMatch: MSType * MSType * Spec * Bool -> Option TyVarSubst
   def typeMatch(s1,s2,spc,ign_subtypes?) =
-   let def match(srt1: MSType, srt2: MSType, pairs: TyVarSubst): Option TyVarSubst =
-        % let _ = writeLine(printType srt1^" =?= "^ printType srt2) in
+   let def match(ty1: MSType, ty2: MSType, pairs: TyVarSubst): Option TyVarSubst =
+        % let _ = writeLine(printType ty1^" =?= "^ printType ty2) in
         let result =
-            case (srt1,srt2) of
-              | (TyVar(id1,_), srt2) -> 
+            case (ty1,ty2) of
+              | (TyVar(id1,_), ty2) -> 
                 (case (findLeftmost (fn (id,_) -> id = id1) pairs) of
-                   | Some(_,msrt1) -> if equalType?(msrt1,srt2) then Some pairs else None  % TODO: should equalType? be equivType? ??
-                   | None -> Some(Cons((id1,srt2),pairs)))
+                   | Some(_,mty1) -> if equalType?(mty1,ty2) then Some pairs else None  % TODO: should equalType? be equivType? ??
+                   | None -> Some(Cons((id1,ty2),pairs)))
               | _ ->
-            if equalType? (srt1,srt2) then Some pairs  % equivType? spc
+            if equalType? (ty1,ty2) then Some pairs  % equivType? spc
             else
-            case (srt1,srt2) of
+            case (ty1,ty2) of
               | (Arrow(t1,t2,_),Arrow(s1,s2,_)) ->
                 (case match(t1,s1,pairs) of
                    | Some pairs -> match(t2,s2,pairs)
@@ -2476,19 +2491,19 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                 if id = id2
                   then typeMatchL(ts,ts2,pairs,match)
                 else
-                  (case tryUnfoldBase spc srt2 of
-                   | Some exp_ty2 -> match(srt1, exp_ty2, pairs)
+                  (case tryUnfoldBase spc ty2 of
+                   | Some exp_ty2 -> match(ty1, exp_ty2, pairs)
                    | None ->
-                     (case tryUnfoldBase spc srt1 of
-                      | Some exp_ty1 -> match(exp_ty1, srt2, pairs)
+                     (case tryUnfoldBase spc ty1 of
+                      | Some exp_ty1 -> match(exp_ty1, ty2, pairs)
                       | None -> None))
               | (_,Base _) ->
-                (case tryUnfoldBase spc srt2 of
-                 | Some exp_ty2 -> match(srt1, exp_ty2, pairs)
+                (case tryUnfoldBase spc ty2 of
+                 | Some exp_ty2 -> match(ty1, exp_ty2, pairs)
                  | None -> None)
               | (Base _,_) ->
-                (case tryUnfoldBase spc srt1 of
-                 | Some exp_ty1 -> match(exp_ty1, srt2, pairs)
+                (case tryUnfoldBase spc ty1 of
+                 | Some exp_ty1 -> match(exp_ty1, ty2, pairs)
                  | None -> None)
               | (Boolean _, Boolean _) -> Some pairs
               | _ -> None
@@ -2598,7 +2613,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 	| WildPat _ -> Match S
 	| RecordPat(fields, _) -> 
 	  let fields2 = map (fn (l,p) -> (l,patternType p,p)) fields in
-	  let srt = Product(map (fn (l,s,_) -> (l,s)) fields2,noPos) in
+	  let ty = Product(map (fn (l,s,_) -> (l,s)) fields2,noPos) in
 	  let 
 	      def loop(fields,S) : MatchResult = 
 	          case fields
@@ -2606,19 +2621,19 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 			let N =
 			    (case N
 			       of Record(NFields,_) -> findField(l,NFields)
-		                | _ -> Apply(Fun(Project l,Arrow(srt,s,noPos),noPos),N,noPos)) in
+		                | _ -> Apply(Fun(Project l,Arrow(ty,s,noPos),noPos),N,noPos)) in
 		        (case patternMatch(p,N,S)
 			   of Match S -> loop(fields,S)
 			    | r -> r)
 		     | [] -> Match S
 	  in
 	  loop(fields2,S)
-	| EmbedPat(lbl,None,srt,_) -> 
+	| EmbedPat(lbl,None,ty,_) -> 
 	  (case N
 	     of Fun(Embed(lbl2,_),_,_) -> if lbl = lbl2 then Match S else NoMatch
 	      | Apply(Fun(Embed(_,true),_,_),_,_) -> NoMatch
 	      | _ -> DontKnow)
-	| EmbedPat(lbl,Some p,srt,_) -> 
+	| EmbedPat(lbl,Some p,ty,_) -> 
 	  (case N
 	     of Fun(Embed(lbl2,_),_,_) -> NoMatch
 	      | Apply(Fun(Embed(lbl2,true),_,_),N2,_) -> 
@@ -2841,7 +2856,8 @@ op combineSubTypes(old_ty: MSType, new_ty: MSType, old_tm: MSTerm, new_tm: MSTer
            | (Subtype(old_sup, old_p, _), Subtype(new_sup, new_p, a)) ->
              Subtype(new_sup, combinePreds(old_p, new_p), a)
            | (Subtype _, _) -> old_ty
-           | _ -> new_ty
+           | _ -> if existsInType? (embed? MetaTyVar) new_ty
+                    then old_ty else new_ty
        def combinePreds(old_p, new_p) =
          case (old_p, new_p) of
            | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, c, new_ptm)], a)) ->
@@ -2892,6 +2908,7 @@ op nonExecutableTerm1? (tm: MSTerm): Bool =
                     case t of
                       | Bind _ -> true
                       | The _ -> true
+                      | Any _ -> true
                       %% This case really should be generalized (see below) but needs spc argument
                       | Fun(f, Arrow(Product([("1", Arrow _), _], _), _, _), _)
                           | embed? Equals f || embed? NotEquals f ->
@@ -2906,6 +2923,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
                          case t of
                            | Bind _ -> true
                            | The _ -> true
+                           | Any _ -> true
                            | Fun(f, ty, _) | embed? Equals f || embed? NotEquals f ->
                              (case arrowOpt(spc, ty) of
                                 | Some(Product([("1", e_ty), _], _), _) ->
@@ -2916,7 +2934,10 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
                            | Fun(Op(qid, _), _, _) ->
                              if qid in? seen then false
                                else (case findTheOpInterp(spc, qid) of
-                                       | Some info -> nonEx?(info.dfn, qid::seen)
+                                       | Some info ->
+                                         let (_, _, d_tm) = unpackFirstTerm info.dfn in
+                                         nonEx?(d_tm, qid::seen)
+                                           && printPackageId(qid, "") nin? SuppressGeneratedDefuns
                                        | None -> false    % Assume defined in Lisp?
                                          )
                            | _ -> false)

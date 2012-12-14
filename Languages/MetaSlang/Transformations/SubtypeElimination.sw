@@ -725,11 +725,11 @@ SpecNorm qualifying spec
     in
     checkLambdas(dfn, [])
 
-  op regTermTop (info: OpInfo, ho_eqfns: List QualifiedId, refine_num: Nat, spc: Spec): MSTerm =
-    let (tvs,ty,full_term) = unpackTerm info.dfn in
-    let tm = refinedTerm(full_term, refine_num) in
+  op regTermTop (opinfo: OpInfo, ho_eqfns: List QualifiedId, refine_num: Nat, spc: Spec): MSTerm =
+    let trps = unpackTypedTerms (opinfo.dfn) in
+    let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
     let def reg1 tm =
-         let qid = primaryOpName info in
+         let qid = primaryOpName opinfo in
          let recursive? = containsRefToOp?(tm, qid) in
          let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
          let result = if recursive? && ~(simpleRecursion?(tm, qid))
@@ -741,11 +741,10 @@ SpecNorm qualifying spec
     in
     let result = reg1 tm in
     if equalTerm?(result, tm)
-      then info.dfn 
+      then opinfo.dfn 
     else
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
-    let full_result_tm = replaceNthTerm(full_term, refine_num, result) in
-    maybePiTerm(tvs, TypedTerm(full_result_tm,ty,termAnn tm)) 
+    maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, result)))
 
   op regularizeIfPFun(tm: MSTerm, ty: MSType, rm_ty: MSType, spc: Spec): MSTerm =
     % ty is expected type, rm_ty is provided types

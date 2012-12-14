@@ -321,6 +321,10 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
             | Some info -> [info]
             | None      -> []
 
+  op findMatchingOpsEx (spc: Spec, qid: QualifiedId): List OpInfo =
+    %% findMatchingOps(interpreterBaseSpec, qid) ++   % problematic
+    findMatchingOps(spc, qid)
+
   op trivialMatchTerm?(tm: MSTerm): Bool =
     %% Not certain about hasFlexHead?
     some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
@@ -387,14 +391,14 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                    flatten (map (fn (Qualified(q, nm)) ->
                                                    defRule(context, q, nm, rule, info, true))
                                               info.names))
-                              (findMatchingOps(spc, qid))))
+                              (findMatchingOpsEx(spc, qid))))
       | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
                                    flatten (map (fn (Qualified(q, nm)) ->
                                                    defRule(context, q, nm, rule, info, false))
                                               info.names))
-                              (findMatchingOps(spc, qid))))
+                              (findMatchingOpsEx(spc, qid))))
       | Fold(qid) ->
         mapPartial reverseRuleIfNonTrivial
           (makeRule(context, spc, Unfold(qid)))
@@ -835,6 +839,11 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     let Qualified(q, id) = qid in
     spc << {ops = insertAQualifierMap(spc.ops, q, id, opinfo)}
 
+  op removeTypeWrapper(tm: MSTerm): MSTerm =
+    case tm of
+      | TypedTerm(s_tm, _, _) -> s_tm
+      | _ -> tm
+
   op interpretSpec(spc: Spec, script: Script, tracing?: Bool): SpecCalc.Env (Spec * Bool) =
     case script of
       | Steps steps ->
@@ -877,18 +886,23 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                        return (spc, tracing?)
                      }
                    | props ->
-                     foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  {
-                             when tracing? 
-                               (print ((printTerm tm) ^ "\n")); 
-                             (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?, []); 
-                             new_spc <- return(setElements(spc, mapSpecElements (fn el ->
-                                                                                 case el of
-                                                                                   | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->
-                                                                                     Property (kind, qid1, tvs, new_tm, pos)
-                                                                                   | el -> el)
-                                                                  spc.elements));
-                             return (new_spc, tracing?)
-                             })
+                     foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  
+                             {when tracing? 
+                                (print ((printTerm tm) ^ "\n")); 
+                              (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?, []);
+                              new_tm <- return(removeTypeWrapper new_tm);
+                              new_spc <-
+                                if equalTerm?(tm, new_tm) then return spc
+                                  else
+                                    return(setElements(spc, mapSpecElements
+                                                              (fn el ->
+                                                                 case el of
+                                                                   | Property (pt, nm, tvs, term, a) | nm = qid1 && a = pos ->
+                                                                     Property (kind, qid1, tvs, new_tm, pos)
+                                                                   | el -> el)
+                                                              spc.elements));
+                              return (new_spc, tracing?)
+                              })
                        (spc, tracing?) props)
             (spc, tracing?) locs }
       | IsoMorphism(iso_osi_prs, rls, opt_qual) -> {

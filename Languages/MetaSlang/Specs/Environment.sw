@@ -555,22 +555,18 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
 
  op normalizeTopLevelLambdas(spc: Spec): Spec =
    setOps (spc, 
-           mapOpInfos (fn info -> 
-                         let pos = termAnn info.dfn in
-                         let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-                         let new_defs =
-                             map (fn dfn ->
-                                    let pos = termAnn dfn in
-                                    let (tvs, srt, term) = unpackTerm dfn in
-                                    case arrowOpt(spc, srt) of
-                                      | None -> dfn
-                                      | Some(dom, ran) ->
-                                    let tm = normalizeLambda(term, dom, ran, empty, spc) in
-                                    maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
-                               old_defs
-                         in
-                           let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
-                           info << {dfn = new_dfn})
+           mapOpInfos (fn opinfo -> 
+                         let pos = termAnn opinfo.dfn in
+                         let trps = unpackTypedTerms (opinfo.dfn) in
+                         case unpackTypedTerms (opinfo.dfn) of
+                           | [] -> opinfo
+                           | (tvs, ty, term) :: trps ->
+                         case arrowOpt(spc, ty) of
+                           | None -> opinfo
+                           | Some(dom, ran) ->
+                         let tm = normalizeLambda(term, dom, ran, empty, spc) in
+                         let new_dfn = maybePiAndTypedTerm((tvs, ty, tm) :: trps) in
+                         opinfo << {dfn = new_dfn})
            spc.ops)
 
-endspec
+end-spec

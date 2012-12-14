@@ -88,28 +88,31 @@ TypeChecker qualifying spec
         = given_spec
     in
     let 
-
       def elaborate_local_op_types (ops, env) =
         let _ = if debug? then writeLine "**elaborate_local_op_types" else () in
-	mapOpInfos (fn info ->
-		    if someOpAliasIsLocal? (info.names, given_spec) then
-		      let def elaborate_ty dfn =
-		            let pos = termAnn dfn in
-			    let (tvs, ty, tm) = unpackTerm dfn in
-			    let _ = checkTyVars (env, tvs, pos) in
-                            let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-			    let ty1 = checkType (env_s, ty) in
-                            let _ = if debug? then writeLine("elos "^show(head info.names)^": "^printType ty^"\n -->\n"^printType ty1) else () in
-                            % let _ = writeLine(printTermWithTypes tm^"\n") in
-			    maybePiTerm (tvs, TypedTerm (tm, ty1, pos))
-		      in
-			let new_defs = map elaborate_ty (opInfoAllDefs info) in
-			let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
-			let new_info = info << {dfn = new_dfn} in
-			new_info
-		    else
-		      info)
-	  ops
+        let def elabOpType(qid as Qualified(q, id), refine_num, ops) =
+              case findAQualifierMap (ops, q, id) of
+                | Some opinfo ->
+                  let trps = unpackTypedTerms (opinfo.dfn) in
+                  let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
+                  let _ = checkTyVars (env, tvs, termAnn tm) in
+                  let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
+                  let ty1 = checkType (env_s, ty) in
+                  let _ = if debug? then writeLine("\nelos "^show refine_num^" "^show(head opinfo.names)
+                                                     ^": "^printType ty^"\n -->\n"^printType ty1)
+                          else () in
+                  let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty1, tm))) in
+                  % let _ = writeLine(printTermWithTypes tm^"\n") in
+                  insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})                                       
+                | _ -> ops
+        in
+        foldl (fn (ops, el) ->
+                 case el of
+                   | Op(qid, _, _) -> elabOpType(qid, 0, ops)
+                   | OpDef(qid, refine_num, _, _) -> elabOpType(qid, refine_num, ops)
+                   | _ -> ops)
+          ops
+          given_spec.elements
 
       def elaborate_local_types (types, env) =
         let _ = if debug? then writeLine "**elaborate_local_types" else () in
@@ -133,33 +136,31 @@ TypeChecker qualifying spec
 
       def elaborate_local_ops (ops, env, poly?) =
         let _ = if debug? then writeLine "\n\n**** elaborate_local_ops ****\n\n" else () in
-	foldl (fn (ops,el) ->
-	       case getQIdIfOp el of
-		 | None -> ops
-		 | Some(Qualified(q,id)) ->
-	       case findAQualifierMap(ops,q,id) of
-		 | Some info ->
-		   let def elaborate_dfn dfn =
-			 let pos = termAnn dfn in
-			 let (tvs, ty, tm) = unpackTerm dfn in
-			 if poly? = (tvs ~= []) then
-                           let _ = if debug? then writeLine("elaborate_local_ops:\n"^printTerm dfn) else () in
-			   let _ = checkTyVars (env, tvs, pos) in
-                           let _ = if debug? then writeLine("1: "^show(head info.names)) else () in
-                           let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-                           let _ = if debug? then writeLine("2: "^show(head info.names)) else () in
-                           let ty1 = checkType (env_s, ty) in
-                           let _ = if debug? then writeLine("elo "^show(head info.names)^": "^printType ty^"\n -->\n"^printType ty1) else () in
-			   let xx = single_pass_elaborate_term_top (env, tm, ty1) in
-			   maybePiTerm (tvs, TypedTerm (xx, ty1, pos))
-			 else 
-			   dfn
-		   in
-		   let new_defs = map elaborate_dfn (opInfoAllDefs info) in
-		   let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
-		   let new_info = info << {dfn = new_dfn} in
-		   insertAQualifierMap(ops,q,id,new_info))
-	   ops given_spec.elements
+        let def elabOpDef(qid as Qualified(q, id), refine_num, ops) =
+              case findAQualifierMap (ops, q, id) of
+                | Some opinfo ->
+                  let trps = unpackTypedTerms (opinfo.dfn) in
+                  let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
+                  if poly? = (tvs ~= []) then
+                    let _ = checkTyVars (env, tvs, termAnn tm) in
+                    let _ = if debug? then writeLine("1: "^show(head opinfo.names)) else () in
+                    let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
+                    let _ = if debug? then writeLine("2: "^show(head opinfo.names)) else () in
+                    let ty1 = checkType (env_s, ty) in
+                    let _ = if debug? then writeLine("elo "^show(head opinfo.names)^": "^printType ty^"\n -->\n"^printType ty1) else () in
+                    let tm1 = single_pass_elaborate_term_top (env, tm, ty1) in
+                    let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty1, tm1))) in
+                    insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})
+                   else ops
+                | _ -> ops
+        in
+        foldl (fn (ops, el) ->
+                 case el of
+                   | Op(qid, _, _) -> elabOpDef(qid, 0, ops)
+                   | OpDef(qid, refine_num, _, _) -> elabOpDef(qid, refine_num, ops)
+                   | _ -> ops)
+          ops
+          given_spec.elements
 
       def elaborate_local_props (elts, env, last_time?) =
         let _ = if debug? then writeLine "**elaborate_local_props" else () in
@@ -520,10 +521,10 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
   op checkOp (info: OpInfo, decl?: Bool, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
    % let _ = if info.names = [Qualified(UnQualified, "do")] then writeLine(printTerm (info.dfn)) else () in
-   let (tvs, ty, full_term) = unpackTerm (info.dfn) in
-   let def_tm = refinedTerm(full_term, refine_num) in
+   let trps = unpackTypedTerms (info.dfn) in
+   let (tvs, ty0, def_tm) = nthRefinement(trps, refine_num) in
    let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, def_tm) else env in
-   let ty = if decl? then checkType(env_s, ty) else ty in
+   let ty = if decl? then checkType(env_s, ty0) else ty0 in
    let elaborated_def_tm = if def? && ~(anyTerm? def_tm)
                              then single_pass_elaborate_term_top (env, def_tm, ty)
                              else def_tm
@@ -541,8 +542,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		 termAnn def_tm);
 	  tvs)
    in
-   let new_full_term = replaceNthTerm(full_term, refine_num, elaborated_def_tm) in
-   let new_dfn = maybePiTerm (new_tvs, TypedTerm (new_full_term, ty, termAnn info.dfn)) in
+   let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (new_tvs, ty, elaborated_def_tm))) in
    info << {dfn = new_dfn}
 
  op allowDependentSubTypes?: Bool = true
@@ -557,35 +557,6 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
      | Pi(_, tm1, _) -> addLambdaVarsToEnv(env, tm1)
      | And(tm1::_, _) -> addLambdaVarsToEnv(env, tm1)
      | _ -> env
-
-(*
- def checkOpDef (dfn, info, env) =
-    let _ = if info.names = [Qualified(UnQualified, "do")] then writeLine("checkOpDef:\n"^printTermWithTypes dfn) else () in
-   let pos = termAnn dfn in
-   let (tvs, ty, tm) = unpackTerm dfn in
-   let _ = checkTyVars (env, tvs, pos) in
-   let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-   let ty = checkType (env_s, ty) in
-   let elaborated_tm = single_pass_elaborate_term_top (env, tm, ty) in
-   %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
-   let tvs_used = if decl? then collectUsedTyVars(ty, info, dfn, env) else tvs in
-   let _ = if false % allowDependentSubTypes?
-             then writeLine("chk: "^printTerm elaborated_tm^"\n"^printTypeWithTypes ty) else ()
-   in
-   let new_tvs =
-       if empty? tvs then
-	 tvs_used
-       else if equalTyVarSets?(tvs_used, tvs) then
-	 tvs  (* Probably correct ;-*)
-       else 
-	 (error (env, 
-		 "mismatch between bound vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs) ^ "]"
-		 ^            " and free vars [" ^ (foldl (fn (s, tv) -> s ^ " " ^ tv) "" tvs_used) ^ "]",
-		 termAnn dfn);
-	  tvs)
-   in
-     maybePiTerm (new_tvs, TypedTerm (elaborated_tm, ty, pos))
-*)
 
  %%% Bound to false in swe in toplevel.lisp because not a problem with the interpreter
  op complainAboutImplicitPolymorphicOps?: Bool = true

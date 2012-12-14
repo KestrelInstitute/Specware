@@ -217,7 +217,8 @@ SpecCalc qualifying spec
          let old_dfn                    = old_info.dfn                          in
          let combined_names             = listUnion (old_info.names, new_names) in
          let combined_names             = removeDuplicates combined_names       in % redundant?
-         let (old_tvs, old_typ, old_tm) = unpackFirstOpDef old_info             in
+         let old_triples                = unpackTypedTerms(old_info.dfn)        in
+         let (old_tvs, old_typ, old_tm) = head old_triples                      in
          let (new_tvs, new_typ, new_tm) = unpackFirstOpDef new_info             in
          let old_defined?               = definedTerm? old_dfn                  in
          let new_defined?               = definedTerm? new_dfn                  in
@@ -274,19 +275,20 @@ SpecCalc qualifying spec
                                          | _ | refine?                -> combineSubTypes(old_typ, new_typ, old_tm, new_tm)
                                          | _                          -> old_typ  % TODO:  maybeAndType ([old_typ, new_typ], typeAnn new_typ)
                     in
-                    let new_tm        = if refine? && old_defined? then
+                    let new_tm        = if false && refine? && old_defined? then
                                           % Reverse order so most refined term first
                                           And (new_tm :: opDefInnerTerms old_info, termAnn new_tm)
                                         else 
                                           new_tm
                     in
-                    let combined_dfn  = if false && refine? && ~old_defined? then
-                                          let triples = unpackTypedTerms old_info.dfn in
-                                          maybePiAndTypedTerm ((old_tvs, combined_typ, new_tm) :: triples)
+                    let combined_dfn  = if refine? then
+                                          maybePiAndTypedTerm ((old_tvs, combined_typ, new_tm) :: old_triples)
                                         else 
                                           maybePiTerm (old_tvs, 
                                                        TypedTerm (new_tm, combined_typ, termAnn new_tm))
                     in
+                     % let _ = if show primaryName = "f" then writeLine("addop: "^show primaryName^"\n"^printTerm old_info.dfn^"\n-->\n"
+                     %                                                    ^printTerm combined_dfn) else () in
                     let combined_info = old_info << {names           = combined_names, 
                                                      dfn             = combined_dfn,
                                                      fullyQualified? = false} 

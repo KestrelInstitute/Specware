@@ -1095,8 +1095,8 @@ spec
                       | Some opinfo ->
                         let (new_tccs, claimNames) = 
                             foldr (fn (dfn, tcc) ->
-                                   let (tvs, tau, term) = unpackTerm dfn in
-                                   let term = refinedTerm(term, 0) in
+                                   let trps = unpackTypedTerms (opinfo.dfn) in
+                                   let (tvs, tau, term) = nthRefinement(trps, 0) in
                                    let usedNames = addLocalVars (term, StringSet.empty) in
                                    %let term = etaExpand (spc, usedNames, tau, term) in
                                    let term = renameTerm (emptyContext ()) term in 
@@ -1142,8 +1142,8 @@ spec
                    (case findTheOp(spc, qid) of
                       | Some opinfo | ~(ignoreOpFn?(q, id)) ->
                         foldr (fn (dfn, tcc) ->
-                               let (tvs, tau, term) = unpackTerm dfn in
-                               let term = refinedTerm(term, refine_num) in
+                               let trps = unpackTypedTerms (opinfo.dfn) in
+                               let (tvs, tau, term) = nthRefinement(trps, refine_num) in
                                let usedNames = addLocalVars (term, StringSet.empty) in
                                %let term = etaExpand (spc, usedNames, tau, term) in
                                let term = renameTerm (emptyContext ()) term in 

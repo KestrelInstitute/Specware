@@ -16,6 +16,8 @@ op assurePredicateQId: QualifiedId = Qualified("SemanticError", "assurePredicate
 op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc: Spec,
                             checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
                             recovery_fns: List(QualifiedId * QualifiedId)): MSTerm =
+  if nonExecutableTerm? spc tm then tm
+  else
   let def mkAssureForm(arg, pred, complain_fn, ty) =
         if nonExecutableTerm? spc pred then []
         else
@@ -62,11 +64,11 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
               case findTheOp(spc, fn_qid) of
                 | None -> []
                 | Some opinfo ->
-              let (tvs, ty, dfn) = unpackTerm opinfo.dfn in
-              let dfns = innerTerms dfn in
-              if length dfns < 2 then []
+              let trps = unpackTypedTerms (opinfo.dfn) in
+              let num_refinements = length trps in
+              if num_refinements < 2 then []
               else
-              let prev_dfn = dfns@1 in
+              let (_,_,prev_dfn) = nthRefinement(trps, num_refinements - 2) in
               let warn_fn = mkLambda(mkWildPat(mkProduct(doms ++ [rng])),
                                      mkString("Result does not match spec for "^show fn_qid))
               in
@@ -138,20 +140,20 @@ op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefin
                    if some?(findTheOp(base_spc, qid))
                      then spc
                      else
-                     let (tvs, ty, dfns) = unpackTerm opinfo.dfn in
-                     if anyTerm? dfns then spc
+                     let trps = unpackTypedTerms (opinfo.dfn) in
+                     let last_index = length(trps) - 1 in
+                     let (tvs, ty, dfn) = nthRefinement(trps, last_index) in
+                     if anyTerm? dfn then spc
                      else
                      case arrowOpt(spc, ty) of
                        | None -> spc
                        | Some(dom, rng) ->
                      % let _ = writeLine("astcs: "^show qid^": "^printType dom) in
-                     let last_index = length(innerTerms dfns) - 1 in
-                     let dfn = refinedTerm(dfns, last_index) in
                      let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?,
                                                             checkResult?, checkRefine?, recovery_fns) in
                      if equalTerm?(new_dfn, dfn) then spc
                      else
-                     let new_full_dfn = maybePiTypedTerm(tvs, Some ty, new_dfn) in
+                     % let new_full_dfn = maybePiTypedTerm(tvs, Some ty, new_dfn) in
                      % let _ = if qid = Qualified("Point", "+") then writeLine(printTerm new_dfn) else () in
                      addRefinedDef(spc, opinfo, new_dfn))
         spc spc.ops

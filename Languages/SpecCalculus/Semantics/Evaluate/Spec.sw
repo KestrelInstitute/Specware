@@ -168,17 +168,16 @@ such time as the current one can made monadic.
                   (case findTheOp(spc, qid) of
                    | None -> return spc
                    | Some opinfo ->
-                   let (tvs, ty, full_tm) = unpackTerm(opinfo.dfn) in
-                   let dfn = refinedTerm(full_tm, refine_num) in
+                   let trps = unpackTypedTerms (opinfo.dfn) in
+                   let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
                    (case transformSteps? dfn of
                       | None -> return spc
                       | Some refine_steps ->
-                        let prev_tm = refinedTerm(full_tm, refine_num - 1) in
+                        let (_, _, prev_tm) = nthRefinement(trps, refine_num - 1) in
                         {steps <- mapM makeScript refine_steps;
                          % print("aor: "^scriptToString(Steps steps)^scriptToString(Steps steps1)^"\n");
                          (tr_term, _, hist) <- interpretTerm(spc, Steps steps, prev_tm, ty, qid, false, []);
-                         new_dfn <- return (maybePiTerm(tvs, TypedTerm (replaceNthTerm(full_tm, refine_num, tr_term),
-                                                                         ty, termAnn opinfo.dfn)));
+                         new_dfn <- return (maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, tr_term))));
                          return (setOpInfo(spc,qid,opinfo << {dfn = new_dfn}))})
                    | _ -> return spc)
                 | _ -> return spc)

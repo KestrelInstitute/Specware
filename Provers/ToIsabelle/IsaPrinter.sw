@@ -427,6 +427,40 @@ IsaTermPrinter qualifying spec
       | Bind(_, _, bod, _) -> equalityArgs bod
       | Apply(_, Record([("1", lhs), ("2", rhs)], _), _) -> (lhs, rhs)
 
+  op makeTheorem(qid: QualifiedId, fml: MSTerm): SpecElement =
+    let uvs = freeVars fml in
+    let fml = mkSimpBind(Forall, uvs, fml) in
+    Property(Theorem, qid, tyVarsInTerm fml, fml, termAnn fml)
+
+  op makeNonTrivTheorem(q: Id, nm: Id, fml: MSTerm, spc: Spec): SpecElements =
+    let fml = simplify spc fml in
+    if equalTerm?(fml, trueTerm) then []
+      else [makeTheorem(Qualified(q, nm), fml)]
+
+  op getResultExptAndPostCondn(ty: MSType, spc: Spec): Option(MSTerm * MSTerms) =
+    case range_*(spc, ty, false) of
+      | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) ->
+        let (result_tm, pat_conds, ign_vs) = patternToTermPlusExConds pat in
+        Some(result_tm, pat_conds ++ getConjuncts condn)
+      | _ -> None
+
+ op extractLambdaVars(tm: MSTerm, f_tm: MSTerm): MSTerm * MSTerms =
+   case tm of
+     | Lambda([(pat, _, bod)], _) ->
+       let (pat_tm, pat_conds, ign_vs) = patternToTermPlusExConds pat in
+       let (res_tm, conds) = extractLambdaVars(bod, mkApply(f_tm, pat_tm)) in
+       (res_tm, pat_conds ++ conds)
+     | _ -> (f_tm, [])
+
+ op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec): MSTerm =
+   let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
+   case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
+     | (Some(new_result_tm, new_post_condns), Some(old_result_tm, old_post_condns)) ->
+       let f_tm = mkOp(qid, new_ty) in
+       let (val_tm, param_conds) = extractLambdaVars(new_dfn, f_tm) in
+       mkSimpImplies(mkConj(param_conds ++ new_post_condns), mkConj(old_post_condns))
+     | _ -> trueTerm
+
   op addRefineObligations (c: Context) (spc: Spec): Spec =
     %% Add equality obligations for refined ops
     let (newelements, ops) =
@@ -436,27 +470,43 @@ IsaTermPrinter qualifying spec
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
-                     let (tvs, ty, full_dfn) = unpackTerm opinfo.dfn in
-                     % let _ = writeLine("addRefineObligations: "^show mainId^": "^printType ty^"\n"^printTerm full_dfn) in
-                     let dfn = refinedTerm(full_dfn, refine_num) in
-                     let (new_names, new_dfn) = renameRefinedDef(opinfo.names, dfn, refine_num) in
-                     let full_dfn = replaceNthTerm(full_dfn, refine_num, new_dfn) in
-                     let new_dfn = maybePiTerm (tvs, TypedTerm (full_dfn, ty, termAnn dfn)) in
-                     let new_opinfo = opinfo << {%names = new_names,
-                                                 dfn   = new_dfn}
+                     let trps = unpackTypedTerms (opinfo.dfn) in
+                     let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
+                     % let _ = writeLine("addRefineObligations: "^show mainId^" "^show refine_num^": "^printType ty^"\n"^printTerm dfn
+                     %                     ^"\n"^printTerm opinfo.dfn^"\n") in
+                     let (_, prev_ty, prev_dfn) = nthRefinement(trps, refine_num - 1) in
+                     let ops =
+                         if anyTerm? dfn || anyTerm? prev_dfn then ops
+                           else
+                             let (new_names, new_dfn) = renameRefinedDef(opinfo.names, dfn, refine_num) in
+                             let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, new_dfn))) in
+                             let new_opinfo = opinfo << {%names = new_names,
+                                                           dfn   = new_dfn}
+                             in
+                             insertAQualifierMap (ops, q, id, new_opinfo)
                      in
-                     let ops = insertAQualifierMap (ops, q, id, new_opinfo) in
-                     %% Make equality obligations
-                     let orig_dfn = refinedTerm(full_dfn, 0) in   % Original definition has all restrictions (?)
-                     let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), orig_dfn, spc) in
-                     let thm_name = nm^"__"^"obligation_refine_def" in
-                     let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
-                     if hist = []
-                       then (el::eq_oblig::elts, ops)
-                       else let prf_str = generateProofForRefineObligation(c, eq_tm, refinedTerm(full_dfn, refine_num - 1), hist, spc) in
-                            let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
-                            % let _ = writeLine("Proof string:\n"^prf_str) in
-                            (el::eq_oblig::prf_el::elts, ops)
+                     %% Make refinement obligation obligations
+                     let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def" in
+                     if anyTerm? dfn
+                       then
+                         if anyTerm? prev_dfn
+                           then    % Post-condition refinement
+                             let oblig_elts = makeNonTrivTheorem(q, thm_name, mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc), spc) in
+                             (el::oblig_elts++elts, ops)
+                           else (el::elts, ops)   % Not sure if this is meaningful
+                       else
+                         if anyTerm? prev_dfn
+                           then (el::elts, ops)    % !!! place holder
+                           else
+                             let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), prev_dfn, spc) in
+                             let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
+                             if hist = []
+                               then (el::eq_oblig::elts, ops)
+                             else
+                               let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
+                               let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
+                               % let _ = writeLine("Proof string:\n"^prf_str) in
+                               (el::eq_oblig::prf_el::elts, ops)
                    | _ -> (el::elts, ops))
            ([], spc.ops) spc.elements
     in
@@ -711,7 +761,6 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	       else spc
     in
     let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in
-    % let _ = writeLine("4:\n"^printSpec spc) in
     let spc = if simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
@@ -727,7 +776,6 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = normalizeNewTypes(spc, false) in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
-    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = raiseNamedTypes spc in
     % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
@@ -1853,7 +1901,8 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            case infix? of
              | Some pr -> Infix pr
              | None -> fixity)
-        | _ -> (false, mainId, convertFixity fixity)
+        | _ -> (refine_num > 0 && anyTerm?(unpackNthTerm(dfn, refine_num)).3,
+                mainId, convertFixity fixity)
   in
   if no_def?
     then prEmpty

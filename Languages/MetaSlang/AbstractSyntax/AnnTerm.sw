@@ -635,6 +635,15 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | TypedTerm (tm, ty, _) -> ([], ty, tm)
      | _                      -> ([], Any(termAnn tm), tm)
 
+ op [a] nthRefinement(l: List a, n: Nat | l ~= []): a =
+   let len = length l in
+   l @ (max (len - n - 1, 0))
+
+ op [a] replaceNthRefinement(l: List a, n: Nat, el: a | l ~= []): List a =
+   let len = length l in
+   let j   = min (n, len - 1) in  % silently restrict to latest value if index would exceed available entries
+   let (pref, _, post) = splitAt(l, len - j - 1) in
+   pref ++ (el :: post)
 
  op [a] unpackNthTerm (tm : ATerm a, n: Nat): TyVars * AType a * ATerm a =
    % let _ = writeLine(printTerm tm) in
@@ -649,10 +658,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
  op [a] replaceNthTerm(full_tm: ATerm a, i: Nat, new_tm: ATerm a): ATerm a =
    let tms = innerTerms full_tm in
-   let len = length tms         in
-   let j   = min (i, len - 1)   in  % silently restrict to latest value if index would exceed available entries
-   let (pref, _, post) = splitAt(tms, len - j - 1) in
-   maybeMkAndTerm (pref ++ (new_tm :: post), termAnn full_tm)
+   maybeMkAndTerm (replaceNthRefinement(tms, i, new_tm), termAnn full_tm)
 
  op [a] andTerms (tms: List(ATerm a)): List(ATerm a) =
    foldr (fn (tm, result) ->

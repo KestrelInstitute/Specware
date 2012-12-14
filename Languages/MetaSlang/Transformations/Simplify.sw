@@ -664,14 +664,13 @@ spec
                   | OpDef(qid as Qualified(q,id), refine_num, _, _) ->
                     (case findTheOp(spc, qid) of
                        | None -> fail("Can't find def of op "^printQualifiedId qid)
-                       | Some info ->
+                       | Some opinfo ->
                      (elt :: elts,
-                      let (tvs, ty, full_dfn) = unpackTerm info.dfn in
-                      let dfn = refinedTerm(full_dfn, refine_num) in
+                      let trps = unpackTypedTerms (opinfo.dfn) in
+                      let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
                       let simp_dfn = simplify spc dfn in
-                      let full_dfn = replaceNthTerm(full_dfn, refine_num, simp_dfn) in
-                      let new_dfn = maybePiTerm (tvs, TypedTerm (full_dfn, ty, termAnn dfn)) in
-                      insertAQualifierMap(ops, q, id, info << {dfn = new_dfn})))
+                      let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, simp_dfn))) in
+                      insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})))
                   | _ -> (elt :: elts, ops))
          ([], spc.ops) spc.elements
    in

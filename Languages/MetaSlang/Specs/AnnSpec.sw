@@ -333,9 +333,9 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
    case findTheOp(spc, qid) of
      | None -> 0
      | Some opinfo ->
-   let (_, _, full_dfns) = unpackTerm opinfo.dfn in
+   %let (_, _, full_dfns) = unpackTerm opinfo.dfn in
    %% full_dfns will omit terms such as (fn x -> <any>) if alternatives such as (fn x -> f x) exist
-   length (innerTerms full_dfns)
+   length (unpackTypedTerms opinfo.dfn)
 
 op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
   case findTheOp(spc, qid) of
@@ -345,8 +345,7 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
 op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   let old_triples = unpackTypedTerms info.dfn in
   let qid as Qualified(q, id) = primaryOpName info in
-   %let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
-  % let curr_dfns = innerTerms old_tm in
+  % let _ = writeLine("addRefinedDefToOpinfo: "^show qid^"\nOld:\n" ^printTerm info.dfn^"\nNew:\n"^printTerm new_dfn) in
   let new_triple = case new_dfn of
                      | TypedTerm (new_tm, new_ty, _) -> ([], new_ty, new_tm)
                      | _ -> 
@@ -443,13 +442,12 @@ op [a] mapSpecLocalOps (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
   let def mapOpDef(qid as Qualified(q, id), refine_num, ops) =
         case findTheOp(spc, qid) of
           | Some opinfo | primaryOpName?(q, id, opinfo) ->
-            let (tvs, ty, full_term) = unpackTerm (opinfo.dfn) in
-            let tm = refinedTerm(full_term, refine_num) in
+            let trps = unpackTypedTerms (opinfo.dfn) in
+            let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
             let new_tm = MetaSlang.mapTerm tsp tm in
             if equalTerm?(tm, new_tm) then ops
             else
-              let full_term = replaceNthTerm(full_term, refine_num, new_tm) in
-              let new_dfn = maybePiTerm(tvs, TypedTerm(full_term, ty, termAnn full_term)) in
+              let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, new_tm))) in
               insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})                                       
           | _ -> ops
   in
@@ -464,14 +462,13 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
   let def mapOpDef(qid as Qualified(q, id), refine_num, spc) =
         case findTheOp(spc, qid) of
           | Some opinfo | primaryOpName?(q, id, opinfo) ->
-            let (tvs, ty, full_term) = unpackTerm (opinfo.dfn) in
+            let trps = unpackTypedTerms (opinfo.dfn) in
+            let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
             let new_ty =  MetaSlang.mapType tsp ty in
-            let tm = refinedTerm(full_term, refine_num) in
             let new_tm = MetaSlang.mapTerm tsp tm in
             if equalTerm?(tm, new_tm) && equalType?(ty, new_ty) then spc
             else
-              let full_term = replaceNthTerm(full_term, refine_num, new_tm) in
-              let new_dfn = maybePiTerm(tvs, TypedTerm(full_term, new_ty, termAnn full_term)) in
+              let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, new_ty, new_tm))) in
               spc << {ops = insertAQualifierMap(spc.ops, q, id, opinfo << {dfn = new_dfn})}                                       
           | _ -> spc
       def mapTypeDef(qid as Qualified(q, id), spc) =
