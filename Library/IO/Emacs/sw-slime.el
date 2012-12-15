@@ -498,4 +498,17 @@ Return nil iff if point is not at filename."
       t)
     nil))
 
+(defun sw:slime-inferior-lisp-detect-ldb (output-str)
+  (when (string-match "Welcome to LDB" output-str)
+    (if (yes-or-no-p "Low-level lisp debugger entered! Restart Specware? ")
+        (slime-restart-inferior-lisp)
+      (switch-to-buffer "*inferior-lisp*")))
+  output-str)
+
+(defun sw:inferior-lisp-init ()
+  (make-local-variable 'comint-output-filter-functions)
+  (add-hook 'comint-output-filter-functions 'sw:slime-inferior-lisp-detect-ldb))
+
+(add-hook 'slime-inferior-process-start-hook 'sw:inferior-lisp-init)
+
 (provide 'sw-slime)
