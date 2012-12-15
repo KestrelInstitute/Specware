@@ -22,7 +22,7 @@ spec
  refine def stringToNat (s:String | natConvertible s) : Nat =
    explodedStringToNat(explode s)
 
- def explode (s:String) : List Char =
+ refine def explode (s:String) : List Char =
    tabulate (length s, fn i -> s@i)
 
  def implode(char_list: List Char): String =
