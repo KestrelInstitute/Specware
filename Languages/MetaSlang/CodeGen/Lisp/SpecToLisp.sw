@@ -75,13 +75,13 @@ SpecToLisp qualifying spec
        else 
 	 ith (n + 1, id, ids)
 
- def projectionIndex (sp, id, srt) = 
-   let (dom, _) = arrow (sp, srt) in
+ def projectionIndex (sp, id, ty) = 
+   let (dom, _) = arrow (sp, ty) in
    let row = product (sp, dom) in
    ith (0, id, row)
 
- def isSpecialProjection (sp, srt, id) : Option String = 
-   case stripSubtypes (sp, srt) of
+ def isSpecialProjection (sp, ty, id) : Option String = 
+   case stripSubtypes (sp, ty) of
      | Arrow (dom, _, _) -> 
        (case stripSubtypes (sp, dom) of
 	  | Product ([(id1, _), (id2, _)], _) -> 
@@ -92,14 +92,14 @@ SpecToLisp qualifying spec
      | _ -> None
 
  op  isConsDataType : Spec * MSType -> Option (Id * Id)
- def isConsDataType (sp, srt) : Option (Id * Id) = 
+ def isConsDataType (sp, ty) : Option (Id * Id) = 
    let
-     def isTwoTuple (srt : MSType) = 
-       case stripSubtypes (sp, srt) of
+     def isTwoTuple (ty : MSType) = 
+       case stripSubtypes (sp, ty) of
 	 | Product ([_, _], _) -> true 
 	 | _ -> false
    in
-     case stripSubtypes (sp, srt) of
+     case stripSubtypes (sp, ty) of
        | CoProduct ([("None", None), ("Some", Some _)], _) -> None 
 
        % Options never get to be cons types.
@@ -111,21 +111,21 @@ SpecToLisp qualifying spec
        | _ -> None
     
 
- def hasConsEmbed (sp, srt) = 
-   case stripSubtypes (sp, srt) of
+ def hasConsEmbed (sp, ty) = 
+   case stripSubtypes (sp, ty) of
      | Arrow (_, rng, _) -> 
        (case isConsDataType (sp, rng) of
 	  | Some _ -> true
 	  | None   -> false)
      | _ -> false
 
- def isConsIdentifier (sp, id, srt) : Option String = 
-   case isConsDataType (sp, srt) of
+ def isConsIdentifier (sp, id, ty) : Option String = 
+   case isConsDataType (sp, ty) of
      | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
      | None -> None
 
- def hasConsDomain (sp, id, srt) : Option String = 
-   case stripSubtypes (sp, srt) of
+ def hasConsDomain (sp, id, ty) : Option String = 
+   case stripSubtypes (sp, ty) of
      | Arrow (dom, _, _) -> 
        (case isConsDataType (sp, dom) of
 	  | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
@@ -237,8 +237,8 @@ op addList(S: StringSet, l: List String): StringSet =
        else
 	 (pkg ^ "::" ^ specId (id, pkg))
       
- def opArity (sp, idf, srt) =
-   case typeArity (sp, srt) of
+ def opArity (sp, idf, ty) =
+   case typeArity (sp, ty) of
      | None -> None
      | arity ->
        if polymorphicDomainOp? (sp, idf) then
@@ -291,8 +291,8 @@ op addList(S: StringSet, l: List String): StringSet =
  %
  % Ad hoc optimization of the equality operation.
  %
- def mkLEqualityOp (sp, srt) = 
-   case stripSubtypes (sp, srt) of
+ def mkLEqualityOp (sp, ty) = 
+   case stripSubtypes (sp, ty) of
      | Arrow (dom, _, _) -> 
        (case stripSubtypes (sp, dom) of
 	  | Product ([(_, s), _], _) -> 
@@ -312,8 +312,8 @@ op addList(S: StringSet, l: List String): StringSet =
  %
  % Ad hoc optimization of the inequality operation.
  %
- def mkLInEqualityOp (sp, srt) = 
-   case stripSubtypes (sp, srt) of  
+ def mkLInEqualityOp (sp, ty) = 
+   case stripSubtypes (sp, ty) of  
      | Arrow (dom, _, _) -> 
        (case stripSubtypes (sp, dom) of
 	  | Product ([(_, s), _], _) -> 
@@ -333,8 +333,8 @@ op addList(S: StringSet, l: List String): StringSet =
  op  mkLTermOp : [a] Spec * String * StringSet * (Fun * MSType * a) * Option (MSTerm) -> LispTerm
  def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
    case termOp of
-     | (Project id, srt, _) -> 
-       (case (isSpecialProjection (sp, srt, id), optArgs) of
+     | (Project id, ty, _) -> 
+       (case (isSpecialProjection (sp, ty, id), optArgs) of
 	  | (Some proj, None) -> 
 	    mkLLambda (["!x"], [], 
 		       mkLApply (mkLOp proj, 
@@ -349,25 +349,25 @@ op addList(S: StringSet, l: List String): StringSet =
 			[lTrm])
 
 	  | (None, Some trm) -> 
-	    let id = projectionIndex (sp, id, srt)  in
+	    let id = projectionIndex (sp, id, ty)  in
 	    mkLApply (mkLOp "svref", 
 		      [mkLTerm (sp, dpn, vars, trm), 
 		       mkLNat id])
 
 	  | (None, None) -> 
-	    let id = projectionIndex (sp, id, srt) in
+	    let id = projectionIndex (sp, id, ty) in
 	    mkLLambda (["!x"], [], 
 		       mkLApply (mkLOp "svref", 
 				 [mkLVar "!x", 
 				  mkLNat id]))
 	   )
-     | (Not, srt, _ ) ->
+     | (Not, ty, _ ) ->
        let oper = mkLOp "cl:not" in
        (case optArgs of
 	 %| None -> oper  
 	  | Some arg -> mkLApply (oper, mkLTermList (sp, dpn, vars, arg)))
 
-     | (And, srt, _ ) ->
+     | (And, ty, _ ) ->
        % Note: And ("&&") is non-strict -- it might not evalute the second arg.
        %       This means it is not commutative wrt termination.
        let oper = mkLOp ("cl:and") in  % lisp AND is also non-strict
@@ -375,7 +375,7 @@ op addList(S: StringSet, l: List String): StringSet =
          %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
 	  | Some arg -> mkLApply (oper, mkLTermList (sp, dpn, vars, arg)))
 
-     | (Or, srt, _ ) ->
+     | (Or, ty, _ ) ->
        % Note: Or ("||") is non-strict -- it might not evalute the second arg
        %       This means it is not commutative wrt termination.
        let oper = mkLOp ("cl:or") in  % lisp OR is also non-strict
@@ -383,7 +383,7 @@ op addList(S: StringSet, l: List String): StringSet =
          %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
 	  | Some arg -> mkLApply (oper, mkLTermList (sp, dpn, vars, arg)))
 
-     | (Implies, srt, _ ) ->
+     | (Implies, ty, _ ) ->
        % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
        %       This means it is not commutative (to the contrapositive) wrt termination.
        (case optArgs of
@@ -395,7 +395,7 @@ op addList(S: StringSet, l: List String): StringSet =
 				[mkLTerm (sp, dpn, vars, x)]), 
 		       mkLTerm (sp, dpn, vars, y)]))
 
-     | (Iff, srt, _ ) ->
+     | (Iff, ty, _ ) ->
        % Note: Iff ("<=>") is strict, becasue the second arg must be evaluated, no matter what the value of the first arg is.
        %       This means it is commmuative wrt termination.
        (case optArgs of
@@ -407,27 +407,27 @@ op addList(S: StringSet, l: List String): StringSet =
 		   mkLApply (mkLOp "cl:not", 
 			     [mkLTerm (sp, dpn, vars, y)])))
 
-     | (Equals, srt, _) ->
-       let oper = mkLOp (mkLEqualityOp (sp, srt)) in
+     | (Equals, ty, _) ->
+       let oper = mkLOp (mkLEqualityOp (sp, ty)) in
        (case optArgs of
 	 %| None -> oper
 	  | Some arg -> mkLApply (oper, 
 				  mkLTermList (sp, dpn, vars, arg)))
 
-     | (NotEquals, srt, _) ->
+     | (NotEquals, ty, _) ->
        (case optArgs of
-	 %| None -> mkLOp (mkLInEqualityOp (sp, srt))
+	 %| None -> mkLOp (mkLInEqualityOp (sp, ty))
           | Some arg -> 
 	    %% for efficiency, open-code the call to not
-	    %% let ineq_op = mkLOp (mkLInEqualityOp (sp, srt)) in
+	    %% let ineq_op = mkLOp (mkLInEqualityOp (sp, ty)) in
             %% mkLApply (ineq_op, mkLTermList (sp, dpn, vars, arg)))
-	    let eq_oper = mkLOp (mkLEqualityOp (sp, srt)) in
+	    let eq_oper = mkLOp (mkLEqualityOp (sp, ty)) in
 	    mkLApply (mkLOp "cl:not", 
 		     [mkLApply (eq_oper, 
 				mkLTermList (sp, dpn, vars, arg))]))
 
-     | (Select id, srt, _) -> 
-       (case (hasConsDomain (sp, id, srt), optArgs) of
+     | (Select id, ty, _) -> 
+       (case (hasConsDomain (sp, id, ty), optArgs) of
 	  | (Some queryOp, None)      -> mkLLambda (["!x"], [], mkLVar "!x")
 
 	  | (Some queryOp, Some term) -> mkLTerm (sp, dpn, vars, term)
@@ -437,8 +437,8 @@ op addList(S: StringSet, l: List String): StringSet =
 	  | (None,         Some term) -> mkLApply (mkLOp "cdr", 
 						   [mkLTerm (sp, dpn, vars, term)]))
 
-     | (Embedded id, srt, _) -> 
-       let dom = domain (sp, srt) in
+     | (Embedded id, ty, _) -> 
+       let dom = domain (sp, ty) in
        (case (isConsIdentifier (sp, id, dom), optArgs) of
 	  | (Some queryOp, None)      -> mkLLambda (["!x"], [], 
 						    mkLApply (mkLOp queryOp, 
@@ -458,21 +458,21 @@ op addList(S: StringSet, l: List String): StringSet =
 							      [mkLTerm (sp, dpn, vars, term)]), 
 						    mkLIntern id])
 	   )
-     | (Nat    n, srt, _) -> mkLInt    n
-     | (String s, srt, _) -> mkLString s
-     | (Bool   b, srt, _) -> mkLBool   b
-     | (Char   c, srt, _) -> mkLChar   c
+     | (Nat    n, ty, _) -> mkLInt    n
+     | (String s, ty, _) -> mkLString s
+     | (Bool   b, ty, _) -> mkLBool   b
+     | (Char   c, ty, _) -> mkLChar   c
 
-     | (Op (id, _), srt, _) ->
+     | (Op (id, _), ty, _) ->
        (case id of
 	  | Qualified ("TranslationBuiltIn", "mkFail") ->
 	    mkLApply(mkLOp "error",case optArgs of Some term -> mkLTermList(sp, dpn, vars, term))
 	  | _ ->
-	let arity = opArity (sp, id, srt) in
+	let arity = opArity (sp, id, ty) in
 	(case optArgs of
 	   | None ->
 	     let pid = printPackageId (id, dpn) in
-	     if functionType? (sp, srt) then
+	     if functionType? (sp, ty) then
 	       mkLUnaryFnRef (pid, arity, vars)
 	     else 
 	       Const (Parameter pid)
@@ -480,8 +480,8 @@ op addList(S: StringSet, l: List String): StringSet =
 	     mkLApplyArity (id, dpn, arity, vars, 
 			    mkLTermList (sp, dpn, vars, term))))
 
-     | (Embed (id, true), srt, _) ->
-       let rng = range (sp, srt) in
+     | (Embed (id, true), ty, _) ->
+       let rng = range (sp, ty) in
        (case isConsDataType (sp, rng) of
 	  | Some _ ->
 	    (case optArgs of
@@ -496,14 +496,14 @@ op addList(S: StringSet, l: List String): StringSet =
 	       | Some term -> 
 	         mkLApply (mkLOp "cons", [id, mkLTerm (sp, dpn, vars, term)])))
 
-     | (Embed (id, false), srt, _) -> 
-       (case isConsDataType (sp, srt) of
+     | (Embed (id, false), ty, _) -> 
+       (case isConsDataType (sp, ty) of
 	  | Some _ -> mkLBool false
 	  | None   -> mkLApply (mkLOp "list", [mkLIntern id]))
 
-     | (Quotient qid, srt, pos) -> 
+     | (Quotient qid, ty, pos) -> 
        % let _ = toScreen("\nQuotient qid     = " ^  anyToString qid     ^ "\n") in
-       % let _ = toScreen("\nQuotient srt     = " ^  anyToString srt     ^ "\n") in
+       % let _ = toScreen("\nQuotient ty     = " ^  anyToString ty     ^ "\n") in
        % let _ = toScreen("\nQuotient vars    = " ^  anyToString vars    ^ "\n") in
        % let _ = toScreen("\nQuotient termOp  = " ^  anyToString termOp  ^ "\n") in
        % let _ = toScreen("\nQuotient optArgs = " ^  anyToString optArgs ^ "\n") in
@@ -522,7 +522,7 @@ op addList(S: StringSet, l: List String): StringSet =
                                               [equiv, mkLTerm (sp, dpn, vars, term)]))
                 | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
           | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
-     | (Choose qid, srt, _) ->  
+     | (Choose qid, ty, _) ->  
        (case findAllTypes (sp, qid) of
           | [info] ->
             (case unpackFirstTypeDef info of
@@ -539,12 +539,12 @@ op addList(S: StringSet, l: List String): StringSet =
       *  Restrict and relax are implemented as identities
       *)
 
-     | (Restrict, srt, _) -> 
+     | (Restrict, ty, _) -> 
        (case optArgs of
 	  | None -> mkLLambda (["!x"], [], mkLVar "!x")
 	  | Some term -> mkLTerm (sp, dpn, vars, term))
 
-     | (Relax, srt, _) -> 
+     | (Relax, ty, _) -> 
        (case optArgs of
 	  | None -> mkLLambda (["!x"], [], mkLVar "!x")
 	  | Some term -> mkLTerm (sp, dpn, vars, term))
@@ -618,9 +618,9 @@ op addList(S: StringSet, l: List String): StringSet =
      def aux (term, i, args) =
        case term of
 
-	 | Fun (Op (id, _), srt, _) ->
-	   if i > 1 && i = curryShapeNum (sp, srt   % Was typeOfOp (sp, id) -- Don't know why srt was ignored
-                                          )
+	 | Fun (Op (id, _), ty, _) ->
+           %% Note that we use typeOfOp(sp, id) instead of ty because may be polymorphic with instantiation to a fn type
+	   if i > 1 && i = curryShapeNum (sp, typeOfOp(sp, id)) 
              then
 	     Some (mkLApply (mkLOp (unCurryName (id, i, dpn)), 
 			     List.map (fn t -> mkLTerm (sp, dpn, vars, t)) args))
@@ -668,7 +668,7 @@ op addList(S: StringSet, l: List String): StringSet =
 
 	 | Fun termOp -> mkLTermOp (sp, dpn, vars, termOp, None)
 
-	 | Var ((id, srt), _) -> 
+	 | Var ((id, ty), _) -> 
 	   let id = specId (id, "") in
 	   if member (vars, id) then
 	     Var id 
@@ -749,7 +749,7 @@ op addList(S: StringSet, l: List String): StringSet =
 	      | Fun termOp -> 
 	        mkLTermOp (sp, dpn, vars, termOp, Some term2)
 
-	      | Var ((id, srt), _) ->
+	      | Var ((id, ty), _) ->
 		let id = specId (id, "") in
 		if member (vars, id) then
 		  mkLApply (mkLTerm (sp, dpn, vars, term1), 
@@ -1172,8 +1172,8 @@ op addList(S: StringSet, l: List String): StringSet =
  def lispTerm (sp, dpn, term) = 
    reduceTerm (mkLTerm (sp, dpn, emptyMap, term))
 
- def functionType? (sp, srt) = 
-   case unfoldBase (sp, srt) of
+ def functionType? (sp, ty) = 
+   case unfoldBase (sp, ty) of
      | Arrow _ -> true
      | Subtype (s, _, _) -> functionType? (sp, s)
      | _ -> false
@@ -1315,14 +1315,14 @@ op addList(S: StringSet, l: List String): StringSet =
    let
      def mkLOpDef (q, id, info, defs) = 
        foldl (fn (defs, dfn) -> 
-	      let (tvs, srt, term) = unpackFirstTerm dfn in
+	      let (tvs, ty, term) = unpackFirstTerm dfn in
               % let _ = writeLine("lopdef: "^id^"\n"^printTerm term^"\n"^printTerm dfn) in
 	      let term = lispTerm (spc, defPkgName, term) in
 	      let qid = Qualified (q, id) in
 	      let uName = unaryName (printPackageId (qid, defPkgName)) in
 	      let new_defs =
-	          if functionType? (spc, srt) then
-		     (case (curryShapeNum (spc, srt), typeArity (spc, srt)) of
+	          if functionType? (spc, ty) then
+		     (case (curryShapeNum (spc, ty), typeArity (spc, ty)) of
 			| (1, None) ->
 			  (case term of
 			     | Lambda (formals, _, _) -> [(uName, term)]
@@ -1598,8 +1598,8 @@ op addList(S: StringSet, l: List String): StringSet =
 			  info
 			else 
 			  let pos = termAnn info.dfn in
-			  let (tvs, srt, _) = unpackFirstOpDef info in
-			  info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, srt, pos))})
+			  let (tvs, ty, _) = unpackFirstOpDef info in
+			  info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, ty, pos))})
 		       spc.ops)
    in
    let spc = setElements (spc,mapPartialSpecElements 
