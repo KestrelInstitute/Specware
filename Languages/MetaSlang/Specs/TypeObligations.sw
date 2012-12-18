@@ -1093,37 +1093,34 @@ spec
                      | ~(ignoreOpFn?(q, id)) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo ->
-                        let (new_tccs, claimNames) = 
-                            foldr (fn (dfn, tcc) ->
-                                   let trps = unpackTypedTerms (opinfo.dfn) in
-                                   let (tvs, tau, term) = nthRefinement(trps, 0) in
-                                   let usedNames = addLocalVars (term, StringSet.empty) in
-                                   %let term = etaExpand (spc, usedNames, tau, term) in
-                                   let term = renameTerm (emptyContext ()) term in 
-                                   let taus = case tau of
-                                                | And (srts, _) -> srts
-                                                | _ -> [tau]
+                        let trps = unpackTypedTerms (opinfo.dfn) in
+                        let (tvs, tau, term) = nthRefinement(trps, 0) in
+                        let usedNames = addLocalVars (term, StringSet.empty) in
+                        %let term = etaExpand (spc, usedNames, tau, term) in
+                        let term = renameTerm (emptyContext ()) term in 
+                        let taus = case tau of
+                                     | And (srts, _) -> srts
+                                     | _ -> [tau]
+                        in
+                        let taus = if omitDefSubtypeConstrs?
+                                     then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
+                                   else taus
+                        in
+                        let (new_tccs, claimNames) =
+                            foldr (fn (tau, tcc) ->
+                                   let gamma = gamma0 tvs
+                                               %% Was unfoldStripType but that cause infinite recursion.
+                                               %% Is stripSubtypes sufficient (or necessary)?
+                                                 (Some (stripSubtypes(spc, tau)))
+                                                 (Some (qid, (curriedParams term).1))
+                                                 (Qualified (q, id ^ "_Obligation"))
                                    in
-                                   let taus = if omitDefSubtypeConstrs?
-                                               then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
-                                               else taus
+                                   let tcc = if generateTerminationConditions?
+                                                then addUniqueExistenceCondition(tcc, gamma, term)
+                                                else tcc
                                    in
-                                   foldr (fn (tau, tcc) ->
-                                          let gamma = gamma0 tvs
-                                                      %% Was unfoldStripType but that cause infinite recursion.
-                                                      %% Is stripSubtypes sufficient (or necessary)?
-                                                        (Some (stripSubtypes(spc, tau)))
-                                                        (Some (qid, (curriedParams term).1))
-                                                        (Qualified (q, id ^ "_Obligation"))
-                                          in
-                                          let tcc = if generateTerminationConditions?
-                                                       then addUniqueExistenceCondition(tcc, gamma, term)
-                                                       else tcc
-                                          in
-                                          (tcc, gamma) |- term ?? tau)
-                                     tcc taus)
-                              ([], claimNames) 
-                              (opInfoDefs opinfo)
+                                   (tcc, gamma) |- term ?? tau)
+                              tcc taus
                          in
                          if new_tccs = [] then (el::tccs, claimNames)
                          else
@@ -1141,37 +1138,34 @@ spec
                  | OpDef (qid as Qualified(q, id), refine_num, _, _) ->
                    (case findTheOp(spc, qid) of
                       | Some opinfo | ~(ignoreOpFn?(q, id)) ->
-                        foldr (fn (dfn, tcc) ->
-                               let trps = unpackTypedTerms (opinfo.dfn) in
-                               let (tvs, tau, term) = nthRefinement(trps, refine_num) in
-                               let usedNames = addLocalVars (term, StringSet.empty) in
-                               %let term = etaExpand (spc, usedNames, tau, term) in
-                               let term = renameTerm (emptyContext ()) term in 
-                               let taus = case tau of
-                                            | And (srts, _) -> srts
-                                            | _ -> [tau]
-                               in
-                               let taus = if omitDefSubtypeConstrs?
-                                           then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
-                                           else taus
-                               in
-                               let Qualified(q, id) = refinedQID refine_num qid in
-                               foldr (fn (tau, tcc) ->
-                                      let gamma = gamma0 tvs
-                                                      %% Was unfoldStripType but that cause infinite recursion.
-                                                      %% Is stripSubtypes sufficient (or necessary)?
-                                                        (Some (stripSubtypes(spc, tau)))
-                                                        (Some (qid, (curriedParams term).1))
-                                                        (Qualified (q, id ^ "_Obligation"))
-                                      in
-                                      let tcc = if generateTerminationConditions?
-                                                   then addUniqueExistenceCondition(tcc, gamma, term)
-                                                   else tcc
-                                      in
-                                      (tcc, gamma) |- term ?? tau)
-                                   tcc taus)
-                          (el::tccs, claimNames) 
-                          (opInfoDefs opinfo))
+                        let trps = unpackTypedTerms (opinfo.dfn) in
+                        let (tvs, tau, term) = nthRefinement(trps, refine_num) in
+                        let usedNames = addLocalVars (term, StringSet.empty) in
+                        %let term = etaExpand (spc, usedNames, tau, term) in
+                        let term = renameTerm (emptyContext ()) term in 
+                        let taus = case tau of
+                                     | And (srts, _) -> srts
+                                     | _ -> [tau]
+                        in
+                        let taus = if omitDefSubtypeConstrs?
+                                     then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
+                                   else taus
+                        in
+                        let Qualified(q, id) = refinedQID refine_num qid in
+                        foldr (fn (tau, tcc) ->
+                                 let gamma = gamma0 tvs
+                                 %% Was unfoldStripType but that cause infinite recursion.
+                                 %% Is stripSubtypes sufficient (or necessary)?
+                                 (Some (stripSubtypes(spc, tau)))
+                                 (Some (qid, (curriedParams term).1))
+                                 (Qualified (q, id ^ "_Obligation"))
+                                 in
+                                 let tcc = if generateTerminationConditions?
+                                             then addUniqueExistenceCondition(tcc, gamma, term)
+                                           else tcc
+                                 in
+                                 (tcc, gamma) |- term ?? tau)
+                             (el::tccs, claimNames) taus)
                  | TypeDef (qid as Qualified(q, id), _) ->
                    (let tcc = (el::tccs, claimNames) in
                     case findTheType(spc, qid) of
