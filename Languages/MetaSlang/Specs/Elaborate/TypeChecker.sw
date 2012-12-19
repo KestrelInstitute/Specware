@@ -96,8 +96,7 @@ TypeChecker qualifying spec
                   let trps = unpackTypedTerms (opinfo.dfn) in
                   let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
                   let _ = checkTyVars (env, tvs, termAnn tm) in
-                  let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-                  let ty1 = checkType (env_s, ty) in
+                  let ty1 = checkType1 (env, ty, if allowDependentSubTypes? then Some tm else None, true) in
                   let _ = if debug? then writeLine("\nelos "^show refine_num^" "^show(head opinfo.names)
                                                      ^": "^printType ty^"\n -->\n"^printType ty1)
                           else () in
@@ -144,9 +143,7 @@ TypeChecker qualifying spec
                   if poly? = (tvs ~= []) then
                     let _ = checkTyVars (env, tvs, termAnn tm) in
                     let _ = if debug? then writeLine("1: "^show(head opinfo.names)) else () in
-                    let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, tm) else env in
-                    let _ = if debug? then writeLine("2: "^show(head opinfo.names)) else () in
-                    let ty1 = checkType (env_s, ty) in
+                    let ty1 = checkType1 (env, ty, if allowDependentSubTypes? then Some tm else None, true) in
                     let _ = if debug? then writeLine("elo "^show(head opinfo.names)^": "^printType ty^"\n -->\n"^printType ty1) else () in
                     let tm1 = single_pass_elaborate_term_top (env, tm, ty1) in
                     let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty1, tm1))) in
@@ -272,12 +269,12 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       spc
 
   def TypeChecker.checkType (env, ty) =
-    checkType1(env, ty, true)
+    checkType1(env, ty, None, true)
 
   op checkType0(env: LocalEnv, ty: MSType): MSType =
-    checkType1(env, ty, true)
+    checkType1(env, ty, None, true)
 
-  op checkType1(env: LocalEnv, ty: MSType, checkTerms?: Bool): MSType =
+  op checkType1(env: LocalEnv, ty: MSType, o_tm: Option MSTerm, checkTerms?: Bool): MSType =
     %% checkType calls single_pass_elaborate_term, which calls checkType
     % let _ = if debug? then writeLine("checkType: "^printType ty) else () in
     case ty of
@@ -286,7 +283,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
       | MetaTyVar (v, _) ->
         (case ! v of
-	   | {link = Some other_type, uniqueId, name} -> checkType1 (env, other_type, checkTerms?)
+	   | {link = Some other_type, uniqueId, name} -> checkType1 (env, other_type, o_tm, checkTerms?)
 	   | _ -> ty)
 
       | Boolean _ -> ty
@@ -352,7 +349,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	       in
 	       let new_type_qid = primaryTypeName info in
 	       let new_instance_types = 
-	           map (fn instance_type -> checkType1 (env, instance_type, checkTerms?))
+	           map (fn instance_type -> checkType1 (env, instance_type, o_tm, checkTerms?))
 		       instance_types
 	       in
 		 if given_type_qid = new_type_qid && instance_types = new_instance_types then 
@@ -362,7 +359,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 		
       | CoProduct (fields, pos) ->
 	let nfields = map (fn (id, None)   -> (id, None) 
-                            | (id, Some s) -> (id, Some (checkType1 (env, s, checkTerms?))))
+                            | (id, Some s) -> (id, Some (checkType1 (env, s, None, checkTerms?))))
                        fields
 	in
 	if nfields = fields then 
@@ -371,14 +368,14 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	  CoProduct (nfields, pos)
 
       | Product (fields, pos) ->
-	let nfields = map (fn (id, s) -> (id, checkType1 (env, s, checkTerms?))) fields in
+	let nfields = map (fn (id, s) -> (id, checkType1 (env, s, None, checkTerms?))) fields in
         if nfields = fields then 
 	  ty
 	else 
 	  Product (nfields, pos)
 
       | Quotient (given_base_type, given_relation, pos) ->
-        let new_base_type = checkType1 (env, given_base_type, checkTerms?) in
+        let new_base_type = checkType1 (env, given_base_type, None, checkTerms?) in
         let new_rel_type = Arrow (Product ([("1", new_base_type), 
                                             ("2", new_base_type)], 
                                            pos), 
@@ -395,7 +392,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	  Quotient (new_base_type, new_relation, pos)
 
       | Subtype (given_super_type, given_predicate, pos) -> 
-        let new_super_type = checkType1 (env, given_super_type, checkTerms?) in
+        let new_super_type = checkType1 (env, given_super_type, o_tm, checkTerms?) in
         let new_pred_type  = Arrow (new_super_type, type_bool, pos) in
         let new_predicate  = if checkTerms?
                               then single_pass_elaborate_term (env, given_predicate, new_pred_type)
@@ -407,8 +404,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 	  Subtype (new_super_type, new_predicate, pos)
 
       | Arrow (t1, t2, pos) ->
-	let nt1 = checkType1 (env, t1, checkTerms?) in
-	let nt2 = checkType1 (env, t2, checkTerms?) in
+	let nt1 = checkType1 (env, t1, None, checkTerms?) in
+        let (dep_env, n_o_tm) = augmentDepEnv(env, o_tm) in
+	let nt2 = checkType1 (dep_env, t2, n_o_tm, checkTerms?) in
 	if t1 = nt1 && t2 = nt2 then 
 	  ty
 	else 
@@ -417,7 +415,7 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
       | And (tys, pos) ->
 	let (new_tys, changed?) =  
             foldl (fn ((new_tys, changed?), ty) ->
-		   let new_ty = checkType1 (env, ty, checkTerms?) in
+		   let new_ty = checkType1 (env, ty, o_tm, checkTerms?) in
 		   (new_tys ++ [new_ty],
 		    changed? || (new_ty ~= ty)))
 	          ([], false)
@@ -523,8 +521,9 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
    % let _ = if info.names = [Qualified(UnQualified, "do")] then writeLine(printTerm (info.dfn)) else () in
    let trps = unpackTypedTerms (info.dfn) in
    let (tvs, ty0, def_tm) = nthRefinement(trps, refine_num) in
-   let env_s = if allowDependentSubTypes? then addLambdaVarsToEnv(env, def_tm) else env in
-   let ty = if decl? then checkType(env_s, ty0) else ty0 in
+   let ty = if decl?
+              then checkType1 (env, ty0, if allowDependentSubTypes? then Some def_tm else None, true)
+             else ty0 in
    let elaborated_def_tm = if def? && ~(anyTerm? def_tm)
                              then single_pass_elaborate_term_top (env, def_tm, ty)
                              else def_tm
@@ -547,16 +546,16 @@ op printIncr(ops: AOpMap StandardAnnotation): () =
 
  op allowDependentSubTypes?: Bool = true
 
- op addLambdaVarsToEnv(env: LocalEnv, tm: MSTerm): LocalEnv =
-   % let _ = writeLine("alvte: "^printTerm tm^"\n"^anyToString env.vars) in
-   case tm of
-     | Lambda([(pat, _, bod)], pos) ->
+ op augmentDepEnv(env: LocalEnv, o_tm: Option MSTerm): LocalEnv * Option MSTerm =
+   %% For handling dependent types in definition
+   case o_tm of
+     | Some(Lambda([(pat, _, bod)], pos)) ->
        let alpha = freshMetaTyVar ("Lambda_0", pos) in
        let (_, env) = elaboratePattern (env, pat, alpha) in
-       addLambdaVarsToEnv(env, bod)
-     | Pi(_, tm1, _) -> addLambdaVarsToEnv(env, tm1)
-     | And(tm1::_, _) -> addLambdaVarsToEnv(env, tm1)
-     | _ -> env
+       (env, Some bod)
+     | Some(Pi(_, tm1, _)) -> augmentDepEnv(env, Some tm1)
+     | Some(And(tm1::_, _)) -> augmentDepEnv(env, Some tm1)
+     | _ -> (env, None)
 
  %%% Bound to false in swe in toplevel.lisp because not a problem with the interpreter
  op complainAboutImplicitPolymorphicOps?: Bool = true
