@@ -532,7 +532,7 @@ op [a] flatten (ll: List (List a)) : List a = foldl (++) [] ll
 % empty sublists, but we require the total sum of the lengths to equal the
 % length of the starting list):
 
-op [a] unflattenL (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
+op [a] unflattenL (l: List a, lens: List Nat | foldl (Nat.+) 0 lens = length l)
                   : List (List a) =
   the (ll: List (List a))
      ll equiLong lens &&

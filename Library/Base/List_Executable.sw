@@ -276,7 +276,7 @@ refine def [a] extendLeft (l: List a, x:a, n:Nat | n >= length l) : List a =
   if n <= len then l else Cons (x, extendLeft (l, x, n-1))
 
 refine def [a] unflattenL
-       (l: List a, lens: List Nat | foldl (+) 0 lens = length l)
+       (l: List a, lens: List Nat | foldl (Nat.+) 0 lens = length l)
                        : List (List a) =
   case lens of
   | [] -> []
