@@ -243,7 +243,7 @@ proof Isa fold_Obligation_subtype
  by (simp add: FSet__foldable_p_def)
 end-proof
 
-proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype0  
+proof Isa FSet__e_fsl_fsl_bsl_bsl_Obligation_subtype
   by (rule finite_Inter, 
       auto simp add: Set__nonEmpty_p_def ex_in_conv [symmetric] 
                      FSet__fromFSet_finite)
@@ -261,7 +261,7 @@ proof Isa List__toSet_Obligation_subtype
  by (simp add: member_def mem_def finite_set)
 end-proof
 
-proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
+proof Isa List__e_fsl_fsl_bsl_bsl_Obligation_subtype
   apply (simp add:FSet__nonEmpty_p_def List__toSet_def Set__nonEmpty_p_def
                   member_def mem_def FSet__fromFSet_def)
   apply (cut_tac FSet__toFSet_subtype_constr, simp add: univ_true)
