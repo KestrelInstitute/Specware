@@ -11,13 +11,13 @@ ListADT qualifying spec
   import Suppress
 
   type LispSpec =
-    { 
-      name	     : String,
+    { name	     : String,
       extraPackages  : Strings,
       getter_setters : List (String * String),
       ops            : Strings,
       axioms         : LispTerms,
-      opDefns        : Definitions }
+      opDefns        : Definitions,
+      forms          : LispTerms }
 
   type Definition = String * LispTerm
 
@@ -108,7 +108,8 @@ ListADT qualifying spec
       getter_setters = [],
       ops     = [],
       axioms  = [],
-      opDefns = [] }
+      opDefns = [],
+      forms   = [] }
 
   op  ops: LispTerm * Set.Set String -> Set.Set String
   def ops(term:LispTerm,names) =
@@ -138,11 +139,11 @@ ListADT qualifying spec
   def typeDefs(defs) = 
       let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 <= nm1) defs in
       let defMap = 
-	  List.foldl (fn(map, (name,term))-> STHMap.update(map,name,(name,term)))
+	  foldl (fn(map, (name,term))-> STHMap.update(map,name,(name,term)))
 	  STHMap.emptyMap defs
       in
       let map = 
-	  List.foldl
+	  foldl
 	    (fn(map, (name,term)) -> 
 		let opers = ops(term,Set.empty) in
 		let opers = Set.toList opers in
@@ -314,11 +315,10 @@ ListADT qualifying spec
   op ppDefToStream: Definition * Stream -> ()
   def ppDefToStream(ldef,stream) =
     let p = ppOpDefn ldef in
-    let t = format (80, p) in
+    let t = format (120, p) in
     (toStreamT (t,
-	       fn ((_,string), ()) -> streamWriter(stream,string),
-	       (),
-	       fn (n,()) -> streamWriter(stream,newlineAndBlanks n));
+                fn (_,string) -> streamWriter(stream,string),
+                fn (n) -> streamWriter(stream,newlineAndBlanks n));
      streamWriter(stream,"\n"))
 
   op ppSpecToFile : LispSpec * String * String -> ()
@@ -370,7 +370,16 @@ ListADT qualifying spec
 (load (make-pathname :name (concatenate 'string (pathname-name *load-pathname*) \"" ^ post_fix ^ "\")
                      :defaults *load-pathname*))\n");
                writeSubFiles(subFromTo(rem_defs, min(maxDefsPerFile, num_remaining), num_remaining), i + 1))
-         in writeSubFiles(defs, 1)))
+         in 
+         writeSubFiles(defs, 1);
+         
+         app (fn fm -> let t = format (120, ppTerm fm) in
+                       (toStreamT (t,
+                                   fn (_,string) -> streamWriter(stream,string),
+                                   fn (n) -> streamWriter(stream,newlineAndBlanks n));
+                        streamWriter(stream,"\n")))
+           spc.forms
+         ))
       
 
   def ppSpec (s : LispSpec) : PrettyPrint.Pretty =
@@ -471,14 +480,8 @@ def addDefinition(modulename,defn,lspc) =
   let mname = String.map Char.toUpperCase modulename in
   let sname = String.map Char.toUpperCase lspc.name in
   if mname = sname then
-  {
-   name = lspc.name,
-   extraPackages = lspc.extraPackages,
-   getter_setters = [],
-   ops = lspc.ops,
-   axioms = lspc.axioms,
-   opDefns = defn::lspc.opDefns
-  }
+    lspc << {getter_setters = [],
+             opDefns = defn::lspc.opDefns}
   else lspc
 
 % addDefinitions to LispSpec
