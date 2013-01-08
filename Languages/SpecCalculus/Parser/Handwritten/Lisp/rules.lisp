@@ -1687,9 +1687,9 @@ If we want the precedence to be optional:
    ((:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
    ((:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
 
-   ((:tuple "(" (1 (:repeat+ :TRANSFORM-TERM ",")) ")") (make-transform-tuple 1 ':left-lcb ':right-lcb))
-   ((:tuple "[" (1 (:repeat+ :TRANSFORM-TERM ",")) "]") (make-transform-options 1 ':left-lcb ':right-lcb))
-   ((:tuple "{" (1 (:repeat+ :TRANSFORM-RECORD-PAIR ",")) "}") (make-transform-record 1 ':left-lcb ':right-lcb))
+   ((:tuple "(" (1 (:repeat* :TRANSFORM-TERM ",")) ")") (make-transform-tuple 1 ':left-lcb ':right-lcb))
+   ((:tuple "[" (1 (:repeat* :TRANSFORM-TERM ",")) "]") (make-transform-options 1 ':left-lcb ':right-lcb))
+   ((:tuple "{" (1 (:repeat* :TRANSFORM-RECORD-PAIR ",")) "}") (make-transform-record 1 ':left-lcb ':right-lcb))
    ))
 
 (define-sw-parser-rule :TRANSFORM-STMT ()

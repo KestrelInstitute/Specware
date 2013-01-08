@@ -8,21 +8,20 @@ SpecToLisp qualifying spec
 % import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/SliceSpec
  import /Languages/MetaSlang/Transformations/Globalize
+ import /Languages/MetaSlang/Transformations/MetaTransform
 %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
  import /Languages/MetaSlang/CodeGen/DebuggingSupport
  import /Languages/Lisp/Lisp
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
- op lisp : Spec -> LispSpec
-
- def generateCaseSensitiveLisp? = true
+ op generateCaseSensitiveLisp?: Bool = true
  
- def lispPackages = ["LISP", "COMMON-LISP", 
-		     %% Added because of Xanalys packages, but prudent anyway
-		     "SYSTEM", "SI", "IO", "BOOTSTRAP",
-		     %% Added for cmulisp compatibility
-		     "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
+ op lispPackages: Strings = ["LISP", "COMMON-LISP", 
+                             %% Added because of Xanalys packages, but prudent anyway
+                             "SYSTEM", "SI", "IO", "BOOTSTRAP",
+                             %% Added for cmulisp compatibility
+                             "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
 
  op lispStrings: StringSet =
     foldl add emptyMap 
@@ -46,10 +45,10 @@ SpecToLisp qualifying spec
 	"BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN"]
        ++ lispPackages)
 
- def notReallyLispStrings =
+ op notReallyLispStrings: Strings =
    ["C", "D", "I", "M", "N", "P", "S", "V", "X", "Y", "Z", "KEY", "NAME", "VALUE", "PATTERN"]
 
- def isLispString id = 
+ op isLispString(id: Id): Bool = 
    member (lispStrings, id) 
    ||
    %% The above is only necessary for packages. They should be done differently in next release.
@@ -57,8 +56,7 @@ SpecToLisp qualifying spec
     && 
     id nin? notReallyLispStrings)
 
- op  lispPackage? : String -> Bool
- def lispPackage? id =
+ op lispPackage?(id: Id): Bool =
    let pkg = Lisp.apply (Lisp.symbol ("CL", "FIND-PACKAGE"), [Lisp.string id]) in
    Lisp.uncell pkg
    && 
@@ -75,12 +73,12 @@ SpecToLisp qualifying spec
        else 
 	 ith (n + 1, id, ids)
 
- def projectionIndex (sp, id, ty) = 
+ op projectionIndex (sp: Spec, id: Id, ty: MSType): Nat = 
    let (dom, _) = arrow (sp, ty) in
    let row = product (sp, dom) in
    ith (0, id, row)
 
- def isSpecialProjection (sp, ty, id) : Option String = 
+ op isSpecialProjection (sp: Spec, ty: MSType, id: Id) : Option String = 
    case stripSubtypes (sp, ty) of
      | Arrow (dom, _, _) -> 
        (case stripSubtypes (sp, dom) of
@@ -111,7 +109,7 @@ SpecToLisp qualifying spec
        | _ -> None
     
 
- def hasConsEmbed (sp, ty) = 
+ op hasConsEmbed (sp: Spec, ty: MSType): Bool = 
    case stripSubtypes (sp, ty) of
      | Arrow (_, rng, _) -> 
        (case isConsDataType (sp, rng) of
@@ -119,12 +117,12 @@ SpecToLisp qualifying spec
 	  | None   -> false)
      | _ -> false
 
- def isConsIdentifier (sp, id, ty) : Option String = 
+ op isConsIdentifier (sp: Spec, id: Id, ty: MSType) : Option String = 
    case isConsDataType (sp, ty) of
      | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
      | None -> None
 
- def hasConsDomain (sp, id, ty) : Option String = 
+ op hasConsDomain (sp: Spec, id: Id, ty: MSType) : Option String = 
    case stripSubtypes (sp, ty) of
      | Arrow (dom, _, _) -> 
        (case isConsDataType (sp, dom) of
@@ -132,14 +130,14 @@ SpecToLisp qualifying spec
 	  | None -> None)
      | _ -> None
     
- def patternName (pattern : MSPattern) = 
+ op patternName (pattern : MSPattern): Id = 
    case pattern of
      | VarPat ((id, _), _) -> id
      | RestrictedPat(p, _, _) -> patternName p
      | _ -> 
        System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
 
- def patternNames (pattern : MSPattern) = 
+ op patternNames (pattern : MSPattern): List1 Id = 
    case pattern of
      | VarPat    ((id, _), _) -> [id] 
      | RecordPat (fields,  _) -> List.map (fn (_, p) -> patternName p) fields
@@ -1303,7 +1301,21 @@ op addList(S: StringSet, l: List String): StringSet =
 	 None
      | _ -> None
 
- def lisp spc =
+ op indexTransforms?: Bool = true
+
+ op formsFromSpec(spc: Spec): LispTerms =
+   if ~indexTransforms? then []
+   else
+   let tr_infos = generateAddTransformUpdates spc in
+   map (fn (Qualified(_, nm), (ty_info, fn_tm)) ->
+        let q_ty_info = Const(Cell(cell ty_info)) in
+        let fn_tm = translateMatchInTerm spc "addTransformInfo" fn_tm in
+        let fn_ltm = lispTerm(spc, defaultSpecwarePackage, fn_tm) in  
+        Set("MetaTransform::transformInfoMap",
+            mkLApply(mkLOp "MetaTransform::addTransformInfo-3", [mkLString nm, q_ty_info, fn_ltm])))
+     tr_infos
+
+ op lisp(spc: Spec): LispSpec =
   %let _ = printSpecToTerminal spc in
    let _ = initializeSpecId () in
    let packages = map mkLPackageId (qualifiers spc.ops) in
@@ -1316,6 +1328,8 @@ op addList(S: StringSet, l: List String): StringSet =
      def mkLOpDef (q, id, info, defs) = 
        foldl (fn (defs, dfn) -> 
 	      let (tvs, ty, term) = unpackFirstTerm dfn in
+              if anyTerm? term then defs     % Maybe should give a warning
+              else
               % let _ = writeLine("lopdef: "^id^"\n"^printTerm term^"\n"^printTerm dfn) in
 	      let term = lispTerm (spc, defPkgName, term) in
 	      let qid = Qualified (q, id) in
@@ -1428,12 +1442,14 @@ op addList(S: StringSet, l: List String): StringSet =
      % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
      % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
      % let _ = writeLine ("====") in
+     let forms = formsFromSpec spc in
      {name           = defPkgName, 
       extraPackages  = extraPackages, 
       getter_setters = getter_setters,
       ops            = List.map (fn (n, _) -> n) defs, 
       axioms         = [], 
-      opDefns        = defs
+      opDefns        = defs,
+      forms          = forms
      } : LispSpec
       
  op  warn_about_non_constructive_defs : List(String * ListADT.LispTerm) -> ()
@@ -1521,7 +1537,7 @@ op addList(S: StringSet, l: List String): StringSet =
   else 
     spc
 
- def transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) : Spec =
+ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) : Spec =
    let _ = showIfVerbose ["------------------------------------------",
                           "transforming spec for Lisp code generation...",
                           "------------------------------------------"]

@@ -1,7 +1,7 @@
 Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
-         RedundantErrorCorrecting, Globalize, SliceSpec
+         RedundantErrorCorrecting, Globalize, SliceSpec, MetaTransform
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -32,6 +32,8 @@ spec
     | RenameVars (List(Id * Id))
     | PartialEval
     | AbstractCommonExpressions
+    | SpecMetaTransform(String * TypedFun * AnnTypeValue)
+    | SpecTransformInMonad(String * TypedFun * AnnTypeValue)
     | SpecTransform(QualifiedId * RuleSpecs)
     | SpecQIdTransform(QualifiedId * QualifiedIds * RuleSpecs)
     | IsoMorphism(List(QualifiedId * QualifiedId) * RuleSpecs * Option Qualifier)
@@ -144,6 +146,8 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                       ppString "]"]
       | PartialEval -> ppString "eval"
       | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
+      | SpecMetaTransform(transfn, _, atv) -> ppConcat[ppString transfn, ppAnnTypeValue atv]
+      | SpecTransformInMonad(transfn, _, atv) -> ppConcat[ppString transfn, ppAnnTypeValue atv]
       | SpecTransform(qid as Qualified(q,id), rls) ->
         ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
                  ppOptionRls rls]
@@ -914,6 +918,23 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       | Implement(qids, rls) -> {
         result <- implementOpsCoalgebraically(spc, qids, rls);
         return (result, tracing?)}
+      | SpecMetaTransform(tr_name, tr_fn, arg) ->
+        let _ = if tracing? then writeLine tr_name else () in
+        let arg_with_spc = replaceSpecArg(arg, spc) in
+        let result = apply(tr_fn, arg_with_spc) in
+        % let _ = writeLine(anyToString result) in
+        let TVal(SpecV new_spc) = result in
+        % let _ = writeLine(printSpec new_spc) in
+        return(new_spc, tracing?)
+      | SpecTransformInMonad(tr_name, tr_fn, arg) ->
+        let _ = if tracing? then writeLine tr_name else () in
+        let arg_with_spc = replaceSpecArg(arg, spc) in
+        {%result <- applyM(tr_fn, arg_with_spc);
+         % let _ = writeLine(anyToString result) in
+         TVal(MonadV m_spc) <- return(apply(tr_fn, arg_with_spc));
+         % let _ = writeLine(printSpec new_spc) in
+         SpecV new_spc <- m_spc;
+         return(new_spc, tracing?)}
       | SpecTransform(Qualified(q, id), rls) ->
         {trans_fn <- return(specTransformFunction(q, id));
          % print (scriptToString script^"\n "^anyToString trans_fn^"\n");

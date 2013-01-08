@@ -314,6 +314,7 @@ PatternMatch qualifying spec
       | ((AliasPat      (p1,  p2,        _))::_, _, _) -> Alias      (p1,  p2)
       | ((QuotientPat   (pat, qid,       _))::_, _, _) -> Quotient   (pat, qid)
       | ((RestrictedPat (pat, bool_expr, _))::_, _, _) -> Restricted (pat, bool_expr)
+      | _ -> (printRule q; fail "Unrecognized ruleType!")
 
   op [a] printRule (pats : List (APattern a), cond : ATerm a, body : ATerm a) : () =
     let _ = toScreen "Pattern : " in
@@ -766,7 +767,7 @@ PatternMatch qualifying spec
 
  op alwaysCheckRestrictedPatInLambda?: Bool = false
 
- def eliminateTerm context term = 
+ def eliminateTerm context term =
    case term of
      | Lambda(rules,_) ->
        let rules = normalizeSimpleAlias rules in
@@ -1023,18 +1024,22 @@ PatternMatch qualifying spec
   *  term)
   *)
 
+ op mkSpcContext (spc: Spec) (funName: String): Context =
+   {counter    = Ref 0,
+    spc        = spc,
+    funName    = funName, % used when constructing error messages
+    errorIndex = Ref 0,   % used to distinguish error messages
+    term       = None}
+
+ op translateMatchInTerm (spc: Spec) (funName: String) (tm: MSTerm): MSTerm =
+   simpLamBody(eliminateTerm (mkSpcContext spc funName) tm)
+
  def translateMatch spc = 
-   % sjw: Moved (Ref 0) in-line so it is reexecuted for each call so the counter is reinitialized for each
-   % call. (This was presumably what was intended as otherwise there would be no need for mkContext
+   % sjw: Moved (Ref 0) in-line in mkSpcContext so it is reexecuted for each call so the counter is reinitialized
+   % for each call. (This was presumably what was intended as otherwise there would be no need for mkContext
    % to be a function). This means that compiled functions will have the same generated variables
    % independent of the rest of the file.
-   let 
-     def mkContext funName =
-       {counter    = Ref 0,
-	spc        = spc,
-	funName    = funName, % used when constructing error messages
-	errorIndex = Ref 0,   % used to distinguish error messages
-	term       = None} 
+   let def mkContext funName = mkSpcContext spc funName 
    in
      spc << {
              types = mapTypeInfos (fn info ->
@@ -1056,6 +1061,8 @@ PatternMatch qualifying spec
                                let new_defs = 
                                    map (fn dfn ->
 					let (tvs, srt, term) = unpackFirstTerm dfn in
+                                        if anyTerm? term then dfn
+                                        else
 					let new_srt = eliminateType (mkContext id) srt in
 					let new_tm  = eliminateTerm (mkContext id) term in
 					let new_tm = simpLamBody new_tm in

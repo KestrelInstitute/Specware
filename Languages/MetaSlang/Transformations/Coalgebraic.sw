@@ -533,7 +533,7 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
           addRefinedDef(spc, info, maybePiTerm(tvs, TypedTerm(new_def, ty, termAnn tm)))
         | _ -> spc
 
-op SpecTransform.finalizeCoType(spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List RuleSpec): Env Spec =
   let _ = writeLine("finalizeCoType") in
   case qids of
     | [] -> raise(Fail("No type to realize!"))

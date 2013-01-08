@@ -253,6 +253,8 @@ ArityNormalize qualifying spec
 
  def normalizeArityTopLevel(sp,gamma,usedNames,term:MSTerm):MSTerm =
      % let _ = writeLine("n_arity:\n"^printTerm term) in
+     if anyTerm? term then term
+     else
      case term
        of Lambda(rules,a) -> 
           Lambda 

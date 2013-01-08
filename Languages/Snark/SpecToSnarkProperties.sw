@@ -536,9 +536,7 @@ snark qualifying spec
 %  def lispFmla(spc, dpn, fmla) =
 %    reduceTerm(mkLFmla(spc, dpn, StringSet.empty, fmla))
 
-  op snarkSubsortProperties: Context * Spec -> List LispCell
-
-  def snarkSubsortProperties(context, spc) =
+  op snarkSubsortProperties(context: Context, spc: Spec): List LispCell =
     let types = typesAsList(spc) in
     let snarkSubsortProps = mapPartial(fn (qual, id, info) ->
 				       typeInfoToSnarkSubsortProp(context, spc, id, info))

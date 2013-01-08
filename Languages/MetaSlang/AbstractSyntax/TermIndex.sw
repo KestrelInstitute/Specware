@@ -210,5 +210,4 @@ spec
 	in
         IntSet.listItems(get([],term))
 	
-end-spec (* structure TermIndex *)
-
+end-spec

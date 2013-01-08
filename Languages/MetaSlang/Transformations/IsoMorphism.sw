@@ -561,7 +561,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   op opaqueSimplifyScript: Script = mkSimplify[Rewrite idQId]
 
    def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
-                                   newOptQual : Option String, extra_rules: List RuleSpec)
+                                    newOptQual : Option String, extra_rules: List RuleSpec)
       : SpecCalc.Env Spec =
     let
       def newQId? qid = derivedQId?(qid, newOptQual, spc)
@@ -1545,7 +1545,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
     | Escape -> return spc
     | except -> raise except)
 
- op SpecTransform.isomorphism (spc: Spec) (newOptQual : Option String) (iso_qid_prs: List(QualifiedId * QualifiedId))
+ op SpecTransform.isomorphism (spc: Spec) (newOptQual : Option String)
+                               (iso_qid_prs: List(QualifiedId * QualifiedId))
                                (extra_rules: List RuleSpec):  SpecCalc.Env Spec =
     makeIsoMorphism(spc, iso_qid_prs, newOptQual, extra_rules)
 

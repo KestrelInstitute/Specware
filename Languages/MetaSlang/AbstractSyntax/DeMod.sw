@@ -40,7 +40,7 @@ spec
 	    demod rules
 
    def getRules ({idMap,index},term) = 
-       let cands = TermIndex.generalizations (index,term) in
+       let cands = generalizations (index,term) in
        mapPartial (fn i -> NatMap.find(idMap,i)) cands
 
    def numRules{index = _,idMap} = NatMap.numItems idMap

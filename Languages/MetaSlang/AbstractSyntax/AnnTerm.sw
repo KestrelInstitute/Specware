@@ -406,6 +406,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | TypedTerm(tm, _, _)   -> anyTerm? tm
      | And(tms, _)           -> forall? anyTerm? tms
      | Lambda([(_,_,tm)], _) -> anyTerm? tm     % Arguments given but no body
+     | Apply(f, _, _)        -> anyTerm? f
      | _ -> false
 
  op [a] transformSteps?(t: ATerm a): Option(List(ATransformExpr a)) =

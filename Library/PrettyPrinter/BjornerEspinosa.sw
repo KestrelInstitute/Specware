@@ -305,30 +305,29 @@ PrettyPrint qualifying spec
   %% A tail recursive version of toStream that processes text in the reverse order
   %% Shouldn't need two versions, but some calls would need to be rewritten to
   %% to handle the order reversal
-  def toStreamT (text, cont, base, newlineIndent) = 
+  op toStreamT (text: Text, cont: Nat * String -> (), newlineIndent: Nat -> ()): () = 
       case reverse text
-	of [] -> base
+	of [] -> ()
 	 | (_, strings) :: rest ->	% Indentation of first line ignored!
-	   let _ = foldr cont () strings in
+	   let _ = foldr (fn (x,_) -> cont x) () strings in
 	   let _ = app (fn textel ->
 			case textel of 
 			  | (_, [(0,_)]) -> 
 			    %% Empty line so ignore indent
-			    newlineIndent(0,())
+			    newlineIndent(0)
 			  | (indent2, strings) -> 
-			  let _ = newlineIndent(indent2,()) in
-			  foldr cont () strings)
+			  let _ = newlineIndent(indent2) in
+			  foldr (fn (x,_) -> cont x) () strings)
 		      rest
-	   in cont ((0,blanks 0), base)
+	   in cont (0,blanks 0)
 
    op toString (text : Text) : String =
        IO.withOutputToString
          (fn stream ->
             toStreamT (text,
-		       fn ((_,string), ()) -> streamWriter(stream,string),
-		       (),
-		       fn (n,()) -> (streamWriter(stream,newlineString());
-		                     streamWriter(stream,blanks n))))
+		       fn (_,string) -> streamWriter(stream,string),
+		       fn (n) -> (streamWriter(stream,newlineString());
+                                  streamWriter(stream,blanks n))))
 %% This is much less efficient (n**2 instead of n) 
 %       toStream (text, 
 %                 fn ((_,s1),s2) -> s2 ^ s1, 
@@ -339,9 +338,8 @@ PrettyPrint qualifying spec
        IO.withOutputToString
          (fn stream ->
             toStreamT (text,
-		       fn ((_,string), ()) -> streamWriter(stream,string),
-		       (),
-		       fn (n,()) -> streamWriter(stream,latexNewlineAndBlanks n)))
+		       fn (_,string) -> streamWriter(stream,string),
+		       fn (n) -> streamWriter(stream,latexNewlineAndBlanks n)))
 %% This is much less efficient (n**2 instead of n)
 %       toStream (text, 
 %                 fn ((_,s1),s2) -> s2 ^ s1,
@@ -350,10 +348,9 @@ PrettyPrint qualifying spec
 
    op toTerminal (text : Text) : () = 
        toStreamT (text, 
-		  fn ((_,s), ()) -> toScreen s, 
-		  (),
-		  fn (n,()) -> (toScreen (newlineString());
-				toScreen (blanks n)))
+		  fn (_,s) -> toScreen s, 
+		  fn (n) -> (toScreen (newlineString());
+                             toScreen (blanks n)))
 
    def streamWriter (stream, string) =
      IO.format1 (stream, "~A", string)
@@ -365,9 +362,8 @@ PrettyPrint qualifying spec
        (fileName,
         fn stream ->
             toStreamT (text,
-		       fn ((_,string), ()) -> streamWriter(stream,string),
-		       (),
-		       fn (n,()) -> streamWriter(stream,newlineIndent n)))
+		       fn (_,string) -> streamWriter(stream,string),
+		       fn (n) -> streamWriter(stream,newlineIndent n)))
 
 %
 % Pretty printer for accumulating path indexing.
@@ -581,9 +577,8 @@ PrettyPrint qualifying spec
    op appendFileWithNewline (fileName : String, text : Text, newlineIndent : Nat -> String) : () =
        let def writeFun stream =
             toStreamT (text,
-		       fn ((_,string), ()) -> streamWriter(stream,string),
-		       (),
-		       fn (n,()) -> streamWriter(stream,newlineIndent n)) in
+		       fn (_,string) -> streamWriter(stream,string),
+		       fn (n) -> streamWriter(stream,newlineIndent n)) in
        let _ = IO.withOpenFileForAppend (fileName, writeFun) in
        ()
 

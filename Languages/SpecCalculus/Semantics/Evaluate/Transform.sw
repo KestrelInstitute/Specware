@@ -1,5 +1,5 @@
-
 (* Implements transform command *)
+
 SpecCalc qualifying
 spec
   import Signature % including SCTerm
@@ -7,6 +7,7 @@ spec
   import /Languages/MetaSlang/Transformations/IsoMorphism
   import /Languages/MetaSlang/Transformations/Coalgebraic
   import /Languages/MetaSlang/Transformations/PartialEval
+  import /Languages/MetaSlang/Transformations/MetaTransform
 
   def posOf(tr: TransformExpr): Position =
     case tr of
@@ -320,9 +321,163 @@ spec
      recovery_fns <- findQidPairs("recoveryFns", val_prs, pos);
      return(checkArgs, checkResult, checkRefine, recovery_fns)}
 
+  op transformExprToQualifiedId(te: TransformExpr): Option QualifiedId =
+    case te of
+      | Name(n,_)   -> Some(mkUnQualifiedId n)
+      | Qual(q,n,_) -> Some(Qualified(q,n))
+      | _ -> None
+
+  op reservedWords: List String =
+    ["true", "false"] ++ commands
+
+  op transformExprToAnnTypeValue(te: TransformExpr, ty_info: MTypeInfo): Option AnnTypeValue =
+    case (te, ty_info) of
+      | (Str(s, _),  Str) | s nin? reservedWords -> Some(StrV s)
+      | (Name(s, _), Str) | s nin? reservedWords -> Some(StrV s)
+      | (Number(n,_), Num) -> Some(NumV n)
+      | (Name("true",_),  Bool) -> Some(BoolV true)
+      | (Name("false",_), Bool) -> Some(BoolV false)
+      | (_, OpName) -> mapOption OpNameV (transformExprToQualifiedId te)
+      | (Item("lr", thm, _),      Rule) -> mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm)
+      | (Item("rl", thm, _),      Rule) -> mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm)
+      | (Item("weaken", thm, _),  Rule) -> mapOption (fn qid -> RuleV(Weaken qid))      (transformExprToQualifiedId thm)
+      | (Item("fold", thm, _),    Rule) -> mapOption (fn qid -> RuleV(Fold qid))        (transformExprToQualifiedId thm)
+      | (Item("unfold", thm, _),  Rule) -> mapOption (fn qid -> RuleV(Unfold qid))      (transformExprToQualifiedId thm)
+      | (Item("rewrite", thm, _), Rule) -> mapOption (fn qid -> RuleV(Rewrite qid))     (transformExprToQualifiedId thm)
+      | (Item("apply", thm, _),   Rule) -> mapOption (fn qid -> RuleV(MetaRule qid))    (transformExprToQualifiedId thm)
+      | (Item("rev-leibniz", thm, _), Rule) -> mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm)
+      | (Tuple(flds, _), Tuple tp_mtis) | length flds = length tp_mtis ->
+        (let o_flds = foldr (fn ((fldi, tpi_mti), result) ->
+                               case result of
+                                 | None -> None
+                                 | Some r_flds ->
+                               case transformExprToAnnTypeValue(fldi, tpi_mti) of
+                                 | None -> None
+                                 | Some fld -> Some(fld::r_flds))
+                        (Some []) (zip(flds, tp_mtis))
+         in
+         case o_flds of
+           | None -> None
+           | Some flds -> Some(TupleV flds))
+      | _ -> None
+
+  op transformExprsToAnnTypeValues(tes: TransformExprs, ty_infos: List MTypeInfo, pos: Position): Env(List AnnTypeValue) =
+    % let _ = writeLine("tetatv:\n"^anyToString tes^"\n"^show ty_infos) in
+    case (tes, ty_infos) of
+      | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                                  return(SpecV emptySpec :: r_atvs)}   % emptySpec is a place holder
+      | (_, Term :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                                  return(TermV(Any noPos) :: r_atvs)}  % Any noPos is a place holder
+      | (_, (Tuple tp_mtis) :: ty_i_rst) | exists? (embed? Spec) tp_mtis ->
+        (let expl_mtis = filter (fn mti -> ~(embed? Spec mti)) tp_mtis in
+         case expl_mtis of
+           | [mti1] -> {atv1 :: r_atvs <- transformExprsToAnnTypeValues(tes, mti1 :: ty_i_rst, pos);
+                        return((TupleV(map (fn mti -> case mti of
+                                                        | Spec -> SpecV emptySpec
+                                                        | _ -> atv1)
+                                         tp_mtis))
+                                 :: r_atvs)}
+           | _ -> {(TupleV atvs) :: r_atvs <- transformExprsToAnnTypeValues(tes, Tuple expl_mtis :: ty_i_rst, pos);
+                   Some spec_pos  <- return(leftmostPositionSuchThat (tp_mtis, embed? Spec));
+                   return((TupleV(subFromTo(atvs, 0, spec_pos)
+                                  ++ [SpecV emptySpec]
+                                  ++ subFromTo(atvs, spec_pos, length atvs)))
+                            :: r_atvs)})
+
+      | ([],          (Opt _)    ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                                                 return((OptV None)::r_atvs)}
+      | ((Options([te1], pos))::te_rst, (Opt ty_i1)::ty_i_rst) ->
+        (case transformExprToAnnTypeValue(te1, ty_i1) of
+           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                      return((OptV None)::r_atvs)}
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                           return(OptV(Some atv1)::r_atvs)})
+      | ((Options(tes as (_ :: _ :: _), pos))::te_rst, (Opt ty_i1)::ty_i_rst) ->
+        transformExprsToAnnTypeValues((Tuple(tes, pos)) :: te_rst, ty_i1::ty_i_rst, pos)
+      | (te1::te_rst, (Opt ty_i1)::ty_i_rst) ->
+        (case transformExprToAnnTypeValue(te1, ty_i1) of
+           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                      return((OptV None)::r_atvs)}
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                           return(OptV(Some atv1)::r_atvs)})
+
+      | ([],          (List _)   ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                                                 return((ListV [])::r_atvs)}
+      | ((te1 as Tuple(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) ->
+        (let atvs = mapPartial (fn tei -> transformExprToAnnTypeValue(tei, ty_i1)) l_tes in
+         if length atvs = length l_tes
+           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                 return(ListV atvs::r_atvs)}
+           else
+           case transformExprToAnnTypeValue(te1, ty_i1) of
+             | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                        return((ListV [])::r_atvs)}
+             | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                             return(ListV [atv1]::r_atvs)})
+      | ([Options(tes as (_ :: _ :: _), pos)], [List ty_i1]) ->
+        transformExprsToAnnTypeValues(([Tuple(tes, pos)]), [List ty_i1], pos)
+      | (te1::te_rst, (List ty_i1)::ty_i_rst) ->     % Not sure if want to allow this case -- could confuse with ambiguity
+        (case transformExprToAnnTypeValue(te1, ty_i1) of
+           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                      return((ListV [])::r_atvs)}
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                           return(ListV[atv1]::r_atvs)})
+
+      | ((Tuple(l_tes, pos))::te_rst, (Tuple ty_is)::ty_i_rst) ->
+        {atvs <- transformExprsToAnnTypeValues(l_tes, ty_is, pos);
+         if length atvs = length l_tes
+          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                return((TupleV atvs)::r_atvs)}
+          else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                return((TupleV [])::r_atvs)}}
+ 
+      | ((Record(rec_tes, pos))::te_rst, (Rec fld_tyis)::ty_i_rst) ->
+        let tagged_atvs =
+            mapPartial (fn (tag, mtyi) ->
+                          case findLeftmost (fn (nm, _) -> tag = nm) rec_tes of
+                            | Some(_, te) ->
+                              (case transformExprToAnnTypeValue(te, mtyi) of
+                                 | None -> None
+                                 | Some atv -> Some(tag, atv))
+                            | None ->
+                          case defaultAnnTypeValue mtyi of
+                            | Some atv -> Some(tag, atv)
+                            | None -> None)
+              fld_tyis
+        in
+        if length fld_tyis = length tagged_atvs
+          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                return(RecV tagged_atvs::r_atvs)}
+          else raise (TypeCheck (pos, "Missing or illegal field(s)"))
+
+      | ([], []) -> return []
+      | ([], ty_i1::ty_i_rst) ->
+        (case defaultAnnTypeValue ty_i1 of
+           | None -> raise (TypeCheck (pos, "Missing field"))
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues([], ty_i_rst, pos);
+                           return(atv1::r_atvs)})
+      | (te1::_, []) -> raise(TypeCheck(pos, "Unexpected Transform Expr"))
+      | (te1::te_rst, ty_i1::ty_i_rst) ->
+        (case transformExprToAnnTypeValue(te1, ty_i1) of
+           | None -> transformExprsToAnnTypeValues(tes, ty_i_rst, pos)
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                           return(atv1::r_atvs)})
+
   op makeScript(trans_step: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS: "^anyToString trans_step) in
     case trans_step of
+      | Command(cmd_name, args, pos) | transformInfoCommand? cmd_name ->
+        let Some(ty_info, tr_fn) = lookupTransformInfo cmd_name in
+        (case ty_info of
+           | Arrows(mtis, Spec) -> 
+             {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
+              % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+              return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))}
+           | Arrows(mtis, Monad Spec) -> 
+             {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
+              % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+              return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))}
+           | _ -> raise (TypeCheck (pos, cmd_name^" not a Spec returning function")))
       | Command("isomorphism", args, _) ->
         (case args of
            | [Tuple(iso_tms, _)] ->  % isomorphism((iso, osi), ...)
