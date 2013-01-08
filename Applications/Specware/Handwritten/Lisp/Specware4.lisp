@@ -272,6 +272,7 @@
     ;; Specware Shell
     "Applications/Specware/Handwritten/Lisp/transform-shell" ; creates    MetaSlangRewriter package
     "Applications/Specware/Handwritten/Lisp/sw-shell"        ; references MetaSlangRewriter package
+    "Applications/Specware/Handwritten/Lisp/pprint-terms"
 
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"
