@@ -113,7 +113,7 @@ op applyN(tf: TypedFun, args: List AnnTypeValue): TypedFun =
     | [] -> tf
     | arg :: r_args -> applyN(apply(tf, arg), r_args)
 
-op applyM(f as TFn tf: TypedFun, arg: AnnTypeValue): Env TypedFun%  =
+%op applyM(f as TFn tf: TypedFun, arg: AnnTypeValue): Env TypedFun%  =
   % case arg of
   %   | ArrowsV args -> applyNM(f, args)
   %   | _ -> tf arg
