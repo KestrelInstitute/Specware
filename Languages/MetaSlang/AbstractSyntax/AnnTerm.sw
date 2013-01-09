@@ -165,6 +165,24 @@ MetaSlang qualifying spec
     | At        QualifiedIds * List (ATransformExpr a) * a
     | Command   String * List (ATransformExpr a) * a
 
+ op [a] posOf(tr: ATransformExpr a): a =
+   case tr of
+     | Name(_, a) -> a
+     | Number(_, a) -> a
+     | Str(_, a) -> a
+     | Qual(_, _, a) -> a
+     | SCTerm(_, a) -> a
+     | Item( _, _, a) -> a
+     | Slice(_, _, _, _, a) -> a
+     | Globalize(_, _, _, _, a) -> a
+     | Repeat(_, a) -> a
+     | Tuple(_, a) -> a
+     | Record(_, a) -> a
+     | Options(_, a) -> a
+     | At(_, _, a) -> a
+     | Command(_, _, a) -> a
+
+
  %%% Predicates
  op product?: [a] AType a -> Bool
  def product? s =

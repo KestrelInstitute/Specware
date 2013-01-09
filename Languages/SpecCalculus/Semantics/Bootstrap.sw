@@ -423,6 +423,7 @@ Specware qualifying spec
       | TranslationError (_,position) -> Some position
       | TypeCheck        (position,_) -> Some position
       | Proof            (position,_) -> Some position
+      | TransformError   (position,_) -> Some position
       | TypeCheckErrors  errs         -> getFirstRealPosition errs
       | _ -> None
 

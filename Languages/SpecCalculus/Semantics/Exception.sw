@@ -56,6 +56,7 @@ SpecCalc qualifying spec
     | SubstError          Position * String
     | CircularDefinition  UnitId
     | Proof               Position * String
+    | TransformError      Position * String
     | UndefinedGlobalVar  String
     | CollectedExceptions List Monad.Exception
     | Warning             Position * String
@@ -79,8 +80,9 @@ SpecCalc qualifying spec
       | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: "    ^ msg)
       | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: "      ^ msg)
       | SubstError          (pos, msg) -> (Some (pos, false), "\nError in substitution: " ^ msg)
-      | CircularDefinition  uid        -> (None,              "ERROR: Circular definition: "     ^ showUnitId uid)
+      | CircularDefinition  uid        -> (None,              "ERROR: Circular definition: " ^ showUnitId uid)
       | Proof               (pos, msg) -> (Some (pos, false), "Proof error: "             ^ msg)
+      | TransformError      (pos, msg) -> (Some (pos, false), "Error in transform: "      ^ msg)
       | UndefinedGlobalVar  name       -> (None,              "ERROR: Undefined global var: "    ^ name)
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
       | mystery                        -> (None,              "ERROR: Unknown exception: " ^ (anyToString mystery))

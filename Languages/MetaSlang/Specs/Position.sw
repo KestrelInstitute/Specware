@@ -1,4 +1,4 @@
-Position qualifying spec {
+Position qualifying spec 
 
  % first char is at line 1, column 0, byte 0
 
@@ -61,6 +61,16 @@ Position qualifying spec {
     | String (string, _, _) -> string
     | File (filename, _, _) -> filename
 
+ op endPosition(pos: Position): Position =
+   case pos of
+    | Internal msg -> pos
+    | String (string, _, (l, c, b)) ->
+      let after_end = (l, c+1, b+1) in
+      String (string, after_end, after_end)
+    | File (filename, _, (l, c, b)) ->
+      let after_end = (l, c+1, b+1) in
+      File (filename, after_end, after_end)
+      
 
  % ------------------------------------------------------------------------
 
@@ -111,4 +121,4 @@ Position qualifying spec {
 			 | c     -> c)
             | c     -> c)
 	)
-}
+end-spec

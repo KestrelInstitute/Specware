@@ -40,7 +40,7 @@ spec
           tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
 	  return (Spec tr_spc2, spec_timestamp, spec_dep_UIDs)
 	  }
-       | _  -> raise (TypeCheck (positionOf spec_tm, "Transform attempted on a non-spec"))
+       | _  -> raise (TransformError (positionOf spec_tm, "Transform attempted on a non-spec"))
      }
 
   op SMPragmaToElement(((prefix, body, postfix), pos): SM_Pragma): SpecElement =
@@ -51,14 +51,14 @@ spec
     case itm of
       | Qual(q,n,_) -> return (Qualified(q,n))
       | Name(n,_)   -> return (mkUnQualifiedId(n))
-      | _ -> raise (TypeCheck (posOf itm, "Id expected."))
+      | _ -> raise (TransformError (posOf itm, "Id expected."))
 
   op extractQIds(itm: TransformExpr): SpecCalc.Env QualifiedIds =
     case itm of
       | Qual(q,n,_) -> return [Qualified(q,n)]
       | Name(n,_)   -> return [mkUnQualifiedId(n)]
       | Tuple(nms, _) -> mapM extractQId nms
-      | _ -> raise (TypeCheck (posOf itm, "Ids expected."))
+      | _ -> raise (TransformError (posOf itm, "Ids expected."))
 
   op extractQIdPair(itm: TransformExpr): SpecCalc.Env(QualifiedId * QualifiedId) =
     case itm of
@@ -66,23 +66,23 @@ spec
         {qid1 <- extractQId q1;
          qid2 <- extractQId q2;
          return (qid1, qid2)}
-      | _ -> raise (TypeCheck(posOf itm, "Pair of names expected"))
+      | _ -> raise (TransformError(posOf itm, "Pair of names expected"))
 
   op extractNat(itm: TransformExpr): SpecCalc.Env Nat =
     case itm of
       | Number(n,_) -> return n
-      | _ -> raise (TypeCheck (posOf itm, "Number expected."))
+      | _ -> raise (TransformError (posOf itm, "Number expected."))
 
   op extractName(itm: TransformExpr): SpecCalc.Env String =
     case itm of
       | Name(n,_) -> return n
-      | _ -> raise (TypeCheck (posOf itm, "Name expected."))
+      | _ -> raise (TransformError (posOf itm, "Name expected."))
 
   op extractBool(itm: TransformExpr): SpecCalc.Env Bool =
      case itm of
        | Name("true",_)  -> return true
        | Name("false",_) -> return false
-       | _ -> raise (TypeCheck (posOf itm, "Boolean expected."))
+       | _ -> raise (TransformError (posOf itm, "Boolean expected."))
 
   op extractUID(itm: TransformExpr): SpecCalc.Env(SCTerm * SpecCalc.Value) =
     case itm of
@@ -92,14 +92,14 @@ spec
          (val, _, _) <- evaluateTermInfo sc_tm;
          setCurrentUID saveUID;
          return(sc_tm, val)}
-      | _ -> raise (TypeCheck (posOf itm, "UnitId expected."))
+      | _ -> raise (TransformError (posOf itm, "UnitId expected."))
 
   op extractMorphs(itms: TransformExprs): SpecCalc.Env(List(SCTerm * Morphism)) =
     mapM (fn itm ->
             {(uid, val) <- extractUID itm;
              case val of
                | Morph m -> return(uid, m)
-               | _ -> raise (TypeCheck (posOf itm, "Morphism expected."))})
+               | _ -> raise (TransformError (posOf itm, "Morphism expected."))})
       itms
 
   op extractBindPair(pr: TransformExpr): SpecCalc.Env(Id * Id) =
@@ -107,7 +107,7 @@ spec
       | Tuple([n1, n2], _) -> {id1 <- extractName n1;
                                id2 <- extractName n2;
                                return(id1, id2)}
-      | _ -> raise (TypeCheck (posOf pr, "Binding Pair expected."))
+      | _ -> raise (TransformError (posOf pr, "Binding Pair expected."))
 
   op makeRuleRef(trans: TransformExpr): SpecCalc.Env RuleSpec =
     case trans of
@@ -127,13 +127,13 @@ spec
                                  return (MetaRule qid)}
       | Item("rev-leibniz",opid,_) -> {qid <- extractQId opid;
                                        return (RLeibniz qid)}
-      | _ -> raise (TypeCheck (posOf trans, "Unrecognized rule reference"))
+      | _ -> raise (TransformError (posOf trans, "Unrecognized rule reference"))
 
  op getSearchString(se: TransformExpr): SpecCalc.Env String =
    case se of
      | Str(target_str, _)  -> return target_str
      | Name(target_str, _) -> return target_str
-     | _ -> raise (TypeCheck (posOf se, "Illegal search string"))
+     | _ -> raise (TransformError (posOf se, "Illegal search string"))
 
  op makeMove(mv_tm: TransformExpr): SpecCalc.Env Movement =
     % let _ = writeLine("move: "^anyToString mv_tm) in
@@ -147,14 +147,14 @@ spec
            | "w" -> return Widen
            | "a" -> return All
            | "post" -> return Post
-           | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^prim_mv)))
+           | _ -> raise (TransformError (pos, "Unrecognized move command: "^prim_mv)))
       | Item(search_type, se, pos) ->
         {target_str <- getSearchString se;
          case search_type of
            | "s" -> return(Search target_str)
            | "r" -> return(ReverseSearch target_str)
-           | _ -> raise (TypeCheck (pos, "Unrecognized move command: "^search_type))}
-      | _ -> raise (TypeCheck (posOf mv_tm, "Unrecognized move command: "^show mv_tm))
+           | _ -> raise (TransformError (pos, "Unrecognized move command: "^search_type))}
+      | _ -> raise (TransformError (posOf mv_tm, "Unrecognized move command: "^show mv_tm))
 
   op commands: List String =
     ["simplify", "Simplify", "simplify1", "Simplify1", "simpStandard", "SimpStandard", "eval", "repeat",
@@ -208,7 +208,7 @@ spec
         {on? <- case on_or_off of
                   | "on"  -> return true
                   | "off" -> return false
-                  | _ -> raise(TypeCheck (pos, "Trace on or off?"));
+                  | _ -> raise(TransformError (pos, "Trace on or off?"));
          return(Trace on?)}
       | Command("print", [], _) -> return Print
       | Slice (root_ops, root_types, cut_op?, cut_type?, _) -> 
@@ -218,7 +218,7 @@ spec
 
       | _ -> 
          let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
-        raise (TypeCheck (posOf trans, "Unrecognized transform: "^show trans))
+        raise (TransformError (posOf trans, "Unrecognized transform: "^show trans))
         
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of
@@ -226,7 +226,7 @@ spec
         {iso_qid <- extractQId iso;
          osi_qid <- extractQId osi;
          return (iso_qid, osi_qid)}
-      | _ -> raise (TypeCheck (posOf iso_tm, "Parenthesis expected"))
+      | _ -> raise (TransformError (posOf iso_tm, "Parenthesis expected"))
  
   op extractIsos(iso_tms: TransformExprs): SpecCalc.Env (List(QualifiedId * QualifiedId)) =
     case iso_tms of
@@ -237,17 +237,17 @@ spec
         {iso_qid <- extractQId iso;
          osi_qid <- extractQId osi;
          return [(iso_qid, osi_qid)]}
-      | tm :: _ -> raise (TypeCheck (posOf tm, "Illegal isomorphism reference."))
+      | tm :: _ -> raise (TransformError (posOf tm, "Illegal isomorphism reference."))
 
   op checkForNonAttributes(val_prs: List(String * TransformExpr), fld_names: List String, pos: Position): SpecCalc.Env () =
     case findLeftmost(fn (nm, _) -> nm nin? fld_names) val_prs of
       | None -> return()
-      | Some(nm,_) -> raise (TypeCheck (pos, "Unexpected field: "^nm))
+      | Some(nm,_) -> raise (TransformError (pos, "Unexpected field: "^nm))
 
   op findField(fld_name: String, val_prs: List(String * TransformExpr), pos: Position): SpecCalc.Env TransformExpr =
     case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
       | Some(_, val) -> return val
-      | None -> raise (TypeCheck (pos, "Missing field in addParameter: "^fld_name))
+      | None -> raise (TransformError (pos, "Missing field in addParameter: "^fld_name))
 
   op findQId(fld_name: String, (val_prs: List(String * TransformExpr), pos: Position)): SpecCalc.Env QualifiedId =
     {fld_val <- findField(fld_name, val_prs, pos);
@@ -335,8 +335,8 @@ spec
       | (Str(s, _),  Str) | s nin? reservedWords -> Some(StrV s)
       | (Name(s, _), Str) | s nin? reservedWords -> Some(StrV s)
       | (Number(n,_), Num) -> Some(NumV n)
-      | (Name("true",_),  Bool) -> Some(BoolV true)
-      | (Name("false",_), Bool) -> Some(BoolV false)
+      | (Name("true",_),  ty_info) -> if ty_info = Bool then Some(BoolV  true) else None
+      | (Name("false",_), ty_info) -> if ty_info = Bool then Some(BoolV false) else None
       | (_, OpName) -> mapOption OpNameV (transformExprToQualifiedId te)
       | (Item("lr", thm, _),      Rule) -> mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm)
       | (Item("rl", thm, _),      Rule) -> mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm)
@@ -362,6 +362,16 @@ spec
       | _ -> None
 
   op transformExprsToAnnTypeValues(tes: TransformExprs, ty_infos: List MTypeInfo, pos: Position): Env(List AnnTypeValue) =
+    let len_tes = length tes in
+    let len_ty_infos = length ty_infos in
+    if len_tes > len_ty_infos
+      then raise(TransformError(pos, "Too many arguments to transform"))
+    else
+    let no_optionals? = (len_tes = len_ty_infos) in
+    let pos = case tes of
+                | [] -> pos
+                | te1 :: _ -> posOf te1
+    in
     % let _ = writeLine("tetatv:\n"^anyToString tes^"\n"^show ty_infos) in
     case (tes, ty_infos) of
       | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
@@ -396,8 +406,10 @@ spec
         transformExprsToAnnTypeValues((Tuple(tes, pos)) :: te_rst, ty_i1::ty_i_rst, pos)
       | (te1::te_rst, (Opt ty_i1)::ty_i_rst) ->
         (case transformExprToAnnTypeValue(te1, ty_i1) of
-           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
-                      return((OptV None)::r_atvs)}
+           | None -> if no_optionals?
+                      then raise(TransformError(pos, "Expected argument: "^show ty_i1))
+                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                            return((OptV None)::r_atvs)}
            | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
                            return(OptV(Some atv1)::r_atvs)})
 
@@ -410,16 +422,20 @@ spec
                  return(ListV atvs::r_atvs)}
            else
            case transformExprToAnnTypeValue(te1, ty_i1) of
-             | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
-                        return((ListV [])::r_atvs)}
+             | None -> if no_optionals?
+                      then raise(TransformError(pos, "Expected argument: "^show(List ty_i1)))
+                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                            return((ListV [])::r_atvs)}
              | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
                              return(ListV [atv1]::r_atvs)})
       | ([Options(tes as (_ :: _ :: _), pos)], [List ty_i1]) ->
         transformExprsToAnnTypeValues(([Tuple(tes, pos)]), [List ty_i1], pos)
       | (te1::te_rst, (List ty_i1)::ty_i_rst) ->     % Not sure if want to allow this case -- could confuse with ambiguity
         (case transformExprToAnnTypeValue(te1, ty_i1) of
-           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
-                      return((ListV [])::r_atvs)}
+           | None -> if no_optionals?
+                      then raise(TransformError(pos, "Expected argument: "^show (List ty_i1)))
+                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
+                            return((ListV [])::r_atvs)}
            | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
                            return(ListV[atv1]::r_atvs)})
 
@@ -428,8 +444,7 @@ spec
          if length atvs = length l_tes
           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
                 return((TupleV atvs)::r_atvs)}
-          else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
-                return((TupleV [])::r_atvs)}}
+          else raise(TransformError(pos, "Expected argument: "^show (Tuple ty_is)))}
  
       | ((Record(rec_tes, pos))::te_rst, (Rec fld_tyis)::ty_i_rst) ->
         let tagged_atvs =
@@ -448,18 +463,20 @@ spec
         if length fld_tyis = length tagged_atvs
           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
                 return(RecV tagged_atvs::r_atvs)}
-          else raise (TypeCheck (pos, "Missing or illegal field(s)"))
+          else raise (TransformError (pos, "Missing or illegal field(s)"))
 
       | ([], []) -> return []
       | ([], ty_i1::ty_i_rst) ->
         (case defaultAnnTypeValue ty_i1 of
-           | None -> raise (TypeCheck (pos, "Missing field"))
+           | None -> raise (TransformError (endPosition pos, "Missing field: "^show ty_i1))
            | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues([], ty_i_rst, pos);
                            return(atv1::r_atvs)})
-      | (te1::_, []) -> raise(TypeCheck(pos, "Unexpected Transform Expr"))
+      | (te1::_, []) -> raise(TransformError(pos, "Unexpected Transform Expr"))
       | (te1::te_rst, ty_i1::ty_i_rst) ->
         (case transformExprToAnnTypeValue(te1, ty_i1) of
-           | None -> transformExprsToAnnTypeValues(tes, ty_i_rst, pos)
+           | None -> if no_optionals?
+                      then raise(TransformError(pos, "Expected argument: "^show ty_i1))
+                      else transformExprsToAnnTypeValues(tes, ty_i_rst, pos)
            | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
                            return(atv1::r_atvs)})
 
@@ -477,7 +494,7 @@ spec
              {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
               % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
               return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))}
-           | _ -> raise (TypeCheck (pos, cmd_name^" not a Spec returning function")))
+           | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
       | Command("isomorphism", args, _) ->
         (case args of
            | [Tuple(iso_tms, _)] ->  % isomorphism((iso, osi), ...)
@@ -555,7 +572,7 @@ spec
         {on? <- case on_or_off of
                   | "on" -> return true
                   | "off" -> return false
-                  | _ -> raise(TypeCheck (pos, "Trace on or off?"));
+                  | _ -> raise(TransformError (pos, "Trace on or off?"));
          return(Trace on?)}
       | Command("print",[],_) ->
         return Print

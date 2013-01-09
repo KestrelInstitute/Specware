@@ -83,6 +83,8 @@ Specware qualifying spec
         reportErrorAtPosToJava(position,"Type error: " ^ msg)
       | Proof        (position,msg) ->
         reportErrorAtPosToJava(position,"Proof error: " ^ msg)
+      | TransformError(position,msg) ->
+        reportErrorAtPosToJava(position,"Transformation error: " ^ msg)
       | TypeCheckErrors errs      -> reportTypeErrorsToJava errs
       | _ -> reportErrorToJava("",0,0,printException except)
 
