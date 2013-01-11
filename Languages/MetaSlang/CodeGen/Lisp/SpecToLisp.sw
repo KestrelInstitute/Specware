@@ -1304,7 +1304,7 @@ op addList(S: StringSet, l: List String): StringSet =
  op indexTransforms?: Bool = true
 
  op formsFromSpec(spc: Spec): LispTerms =
-   if ~indexTransforms? then []
+   if ~indexTransforms? || none?(findTheType(spc, Qualified("MetaTransform", "AnnTypeValue"))) then []
    else
    let tr_infos = generateAddTransformUpdates spc in
    map (fn (Qualified(_, nm), (ty_info, fn_tm)) ->
