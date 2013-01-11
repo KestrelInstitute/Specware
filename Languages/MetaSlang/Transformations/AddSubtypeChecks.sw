@@ -1,4 +1,4 @@
-SpecTransform qualifying
+AddChecks qualifying
 spec
 import Simplify, SubtypeElimination, RuntimeSemanticError, CurryUtils
 
@@ -129,7 +129,6 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
         else body_1
   in
   mkCurriedLambda(param_pats, body_2)
-
 
 op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
                      recovery_fns: List(QualifiedId * QualifiedId)): Spec =
