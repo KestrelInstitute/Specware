@@ -466,6 +466,7 @@ spec
         let tcc   = (tcc, gamma) |- M ?? sigma			in
         let tcc   = (tcc, gamma) |- Seq(Ms, noPos) ?? tau	in
         tcc
+      | Any _ -> tcc
 
  op  nonStrictAppl: MSTerm * MSTerm -> Option (MSTerm * MSTerm * Bool)
  def nonStrictAppl(rator, args) =
