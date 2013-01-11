@@ -453,7 +453,7 @@ IsaTermPrinter qualifying spec
      | _ -> (f_tm, [])
 
  op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec): MSTerm =
-   let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
+   % let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
    case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
      | (Some(new_result_tm, new_post_condns), Some(old_result_tm, old_post_condns)) ->
        let f_tm = mkOp(qid, new_ty) in
