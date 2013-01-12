@@ -43,7 +43,7 @@
 (defun ord (ch)
   (char-code ch))
 
-;;; lower-case-p, upper-case-p etc. only guaranteed for Standard ASCII (First 96 characters)
+;;; lower-case-p, upper-case-p, etc. are only guaranteed for Standard ASCII (First 96 characters)
 (defun isUpperCase (char)
   (declare (character char))
   (let ((ch-num (char-code char)))
