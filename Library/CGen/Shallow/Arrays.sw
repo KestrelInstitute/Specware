@@ -124,8 +124,8 @@ endspec
 
 Array1a = transform Array1 by
   { at (array_sum)
-  , simplify (rl ipred_is_sub_1)
-  , fold abs_add
+       {simplify (rl ipred_is_sub_1)
+        ; fold abs_add}
   }
 
 % ------------------------------------------------------------------------------
@@ -161,13 +161,13 @@ endspec
 % ------------------------------------------------------------------------------
 
 Array2a = transform Array2 by
-  { at (array_sum)
-  , simplify (lr rec_aux_to_loop)
-  , unfold floop 
-  , simplify (rl isucc_inv_ipred)
-  , simplify (lr isucc_is_add_1)
-  % , unfold abs_add 
-  }
+  {at (array_sum)
+      {simplify (lr rec_aux_to_loop)
+      ;unfold floop
+      ;simplify (rl isucc_inv_ipred)
+      ;simplify (lr isucc_is_add_1)
+      % ; unfold abs_add 
+      }}
 
 (******************************************************************************
 RESULT:
