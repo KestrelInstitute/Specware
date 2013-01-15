@@ -10,7 +10,7 @@ ops.
 
 
 Example1 = E1 qualifying spec
-import /Library/CGen/CTarget %TODO change the imports to just be to CTarget
+import CTarget
 
 type Matrix_2_4 = (Array (Array Sint | ofLength? 4) | ofLength? 2)
 % typedef int Matrix_2_4[2][4];
@@ -20,7 +20,7 @@ endspec
 
 %TODO change gen-c-thin to preserve the order of these in the generated file
 Example2 = E2 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 type Point2D = {x:Slong, y:Slong}
 % typedef struct {long x; long y;} Point2D;
@@ -33,7 +33,7 @@ endspec
 
 
 Example3 = E3 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 type Vector_0 = (Array Uint | ofLength? 0)
 % reject
@@ -43,7 +43,7 @@ endspec
 
 
 Example4 = E4 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 import Example2 % points 2D and 3D
 
@@ -61,7 +61,7 @@ endspec
 
 
 Example5 = E5 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 type T? = Uint
 % reject
@@ -71,7 +71,7 @@ endspec
 
 
 Example6 = E6 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 import Example1 % matrix 2x4
 
@@ -83,7 +83,7 @@ endspec
 
 
 Example7 = E7 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 type T = Byte
 % reject -- Byte not defined in terms of C types
@@ -93,7 +93,7 @@ endspec
 
 
 Example8 = E8 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 op f (x:Sshort) : Slong = slongOfSint (-_1_sint (sintOfSshort x))
 % long f(short x) { return (-x); }
@@ -106,7 +106,7 @@ endspec
 
 
 Example9 = E9 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 import Example4 % curves, lines, points
 
@@ -122,7 +122,7 @@ endspec
 
 
 Example10 = E10 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 op h () : Ushort = ushortOfUint (uintConstant 0 dec)
 % unsigned short h (void) { return 0; }  % TODO, do we want to explicitly cast the 0 to unsigned short?  The current C generator does so.
@@ -132,7 +132,7 @@ endspec
 
 
 Example11 = E11 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 op k () : Ullong = ullongConstant 7 dec
 % unsigned long long k(void) { return 7ULL; }
@@ -142,7 +142,7 @@ endspec
 
 
 Example12 = E12 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 op k12 (i : Uint, j : Uint) : Ullong = 
   if test ((uintConstant 10 oct) <_uint i) && test (i <_uint j) && test (j <_uint (uintConstant 100 hex)) then
@@ -155,7 +155,7 @@ endspec
 
 
 Example13 = E13 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 
 op k13 (i : Uint, j : Uint) : Uint = 
   if test (i ==_uint (uintConstant 0 dec)) then
@@ -180,7 +180,7 @@ endspec
 
 
 Example14 = E14 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 op foo (x:Uint) : Uint
 endspec
 %% The C generator should generate a declaration in the .h file for the
@@ -192,7 +192,7 @@ endspec
 
 
 Example15 = E15 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 op bar (x:Sint) : Sint = sint0
 endspec
 %% The C generator should give an error, because sint0 is a function that is not
@@ -201,7 +201,7 @@ endspec
 
 
 Example16 = E16 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 op bar : Uint = (uintConstant 0 dec)
 endspec
 % TODO Should this be translated as a constant or a 0-ary function?
@@ -211,7 +211,7 @@ endspec
 
 
 Example17 = E17 qualifying spec
-import /Library/CGen/CTarget
+import CTarget
 op bar : Uint = (uintConstant 0 dec)
 op bar2 : Uint = (uintConstant 0 dec) +_uint bar
 endspec
@@ -220,13 +220,13 @@ endspec
 %%TODO The C generator should not translate bar as a constant.
 %% TODO: currently, we get: CGen error: We do not allow let terms inside expressions (they must be at the statement level)
 Example18 = E18 qualifying spec
-  import /Library/CGen/CTarget
+  import CTarget
   op bar : Uint = let x = (uintConstant 0 dec) in x +_uint x
 endspec
 
 %Example with one function calling another
 Example19 = E19 qualifying spec
-  import /Library/CGen/CTarget
+  import CTarget
   op f (x:Uint) : Uint = x +_uint (uintConstant 0 dec)
   op g (x:Uint) : Uint = f x
 endspec
