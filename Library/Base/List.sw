@@ -78,6 +78,9 @@ op [a] length (l: List a) : Nat =
 theorem length_is_length_of_list_function is [a]
   fa (f: ListFunction a) lengthOfListFunction f = length (list f)
 
+theorem length_of_cons is [a]
+  fa(x:a, lst:List a) length(x::lst) = (1 + length lst)
+
 % length of tabulate equals argument n:
 
 theorem length_tabulate is [a]

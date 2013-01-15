@@ -39,8 +39,8 @@ spec
 %   theorem commutativity_of_++ is [E]
 %     fa(x:List E,y: List E)( x ++ y = y ++ x )
 
-  theorem length_of_cons is [E]
-    fa(n:E,lst:List E)( length( n:: lst) = (1 + length lst) )
+% Note: theorem length_of_cons has been moved to
+% /Library/Base/List.sw (so use List.length_of_cons).
 
 % ----------------------------------------------------------------
 
