@@ -240,7 +240,7 @@ def patternVars (pat:MSPattern): List Var =
        let (t, vars, _) = makeVarTerm t in
        (t, vars, a)
 
-     | _ -> System.fail "makeVarTerm"
+     | _ -> System.fail("makeVarTerm can't handle "^printTerm term)
 
    %in
    %let (_, vars) = res in
@@ -949,6 +949,10 @@ def patternVars (pat:MSPattern): List Var =
        else
          let trps            = unpackTypedTerms (opinfo.dfn) in
          let (tvs, ty, term) = nthRefinement(trps, refine_num) in
+         if anyTerm? term then
+           let opinfo = opinfo << {names = [Qualified (q, id)]} in
+           addNewOpAux (opinfo, result, decl?, refine_num, hist, a)
+         else
          let new_id          = if refine_num = 0 then id else id ^ "__" ^ show refine_num in
          let env             = mkEnv (q, new_id)                                          in
 	 case term of 
