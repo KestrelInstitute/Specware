@@ -856,7 +856,7 @@ AnnSpecPrinter qualifying spec
        else 
 	 pp.fromString id
      | EmbedPat  ("Nil", None, ty, _) | listType?(ty) -> string "[]"
-     | EmbedPat  (id, None, _(* srt *), _) -> pp.fromString id
+     | EmbedPat  (id, None, _, _) -> pp.fromString id
      | RecordPat (row, _) ->
        if isShortTuple (1, row) then
 	 AnnTermPrinter.ppListPath path 
@@ -872,12 +872,12 @@ AnnSpecPrinter qualifying spec
 			 (2, 
 			  prettysFill [ppPattern context (path, false, false) pat])])
 	 in
-	   AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
+	   ppListPath path ppEntry (pp.LCurly, pp.Comma, pp.RCurly) row
      | EmbedPat ("Cons", 
 		 Some (RecordPat ([("1", p1), ("2", p2)], _)), 
 		 Base (_, [_], _), _) ->
        (case isFiniteListPat pattern of
-          | Some pats -> ppListPath path (fn (path, term) -> ppPattern context (path, false, false) term)
+          | Some pats -> ppListPath path (fn (path, term) -> ppPattern context (path, true, false) term)
                            (pp.LBrack, pp.Comma, pp.RBrack) pats
           | None ->
             enclose (enclose?, pp, 
