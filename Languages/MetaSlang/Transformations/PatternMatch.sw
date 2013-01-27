@@ -111,8 +111,6 @@ PatternMatch qualifying spec
       t1 
     else 
       if isSuccess t1 then 
-        let _ = mysay (printTerm t1) in
-        let _ = mysay (printTerm t2) in
         let _ = warnUnreachable context in
         t1
       else
@@ -478,39 +476,19 @@ PatternMatch qualifying spec
     in
     Lambda ([(pat, trueTerm, tm)], noPos)
 
-  op flag? : Bool = false
-  op mysay (msg : String) : () =
-   if flag? then
-     writeLine msg
-   else
-     ()
-     
   def match (context, vars, rules, default, break) = 
-    let _ = mysay ("match: vars    = " ^ anyToString vars ^ " #rules = " ^ anyToString (length rules)) in
-    let _ = mysay ("       default = " ^ printTerm default) in
-    let _ = mysay ("       break   = " ^ printTerm break)   in
     case vars of
-      | [] -> 
-        let _ = mysay "       AAA" in
-        let result =
-        foldr (fn ((_,cond,body),default) -> 
-                 failWith context (Utilities.mkIfThenElse (cond, body, break))
-                 default)
-              default
-              rules
-        in
-        let _ = mysay "       AAAA" in
-        result
-      | _ -> 
-        let _ = mysay "       BBB" in
+      | [] -> foldr (fn ((_,cond,body),default) -> 
+                       failWith context 
+                                (Utilities.mkIfThenElse (cond, body, break))
+                                default)
+                    default
+                    rules
+      | Cons _ -> 
         let rules = (partition ruleType rules) in
-        let result =
         foldr (matchRules (context, break, vars)) 
               default 
               rules
-        in
-        let _ = mysay "       BBBB" in
-        result
   
   def matchRules (context, break, vars) (rules, default) = 
     case ruleType (head rules) of
@@ -1103,3 +1081,4 @@ PatternMatch qualifying spec
              }
 
 end-spec
+
