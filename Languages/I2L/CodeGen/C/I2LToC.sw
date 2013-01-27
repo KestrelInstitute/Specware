@@ -142,7 +142,10 @@ I2LToC qualifying spec
     let condexp    = C_Binary   (C_Eq,  C_Var(valuevname, ctype), null_value) in
     let setexp     = C_Binary   (C_Set, C_Var(valuevname, ctype), cexpr)      in
     let new_ifthen = C_IfThen   (condexp, C_Exp setexp)                       in
-    let new_return = C_Return   (C_Var (valuevname, ctype))                   in
+    let new_return = if ctype = C_Void then
+                       C_ReturnVoid
+                     else
+                       C_Return   (C_Var (valuevname, ctype))                 in
     let body       = C_Block    (decls, stmts ++ [new_ifthen, new_return])    in
     let fndefn     = (initfname, [], ctype, body)                             in
     let cspc       = addFnDefn  (cspc, fndefn)                                in
@@ -160,6 +163,12 @@ I2LToC qualifying spec
     let (cspc, ctypes) = c4Types (ctxt, cspc, paramtypes)       in
     let (cspc, rtype)  = c4Type  (ctxt, cspc, fdecl.returntype) in
     (cspc, fname, ctypes, rtype)
+
+  op convertExprToStmt (rtype : C_Type) (e : C_Exp) : C_Stmt =
+   if rtype = C_Void then
+     C_Block ([], [C_Exp e, C_ReturnVoid])
+   else
+     C_Return e
 
   op c4FunDefn (ctxt : I2C_Context, cspc : C_Spec, fdefn : I_FunDefinition) : C_Spec =
     let fdecl                        = fdefn.decl                             in
@@ -189,7 +198,7 @@ I2LToC qualifying spec
 	let ctxt                                   = setCurrentFunParams (ctxt, vardecls)      in
         let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, ([], []), expr) in
 	let (stmts1, cexpr1)                       = commaExprToStmts (ctxt, cexpr)            in
-	let stmts2                                 = conditionalExprToStmts (ctxt, cexpr1, (fn e -> C_Return e)) in
+	let stmts2                                 = conditionalExprToStmts (ctxt, cexpr1, convertExprToStmt rtype) in
 	let block                                  = (decls, stmts++stmts1++stmts2)            in
 	let block                                  = findBlockForDecls block                   in
 	let stmt                                   = C_Block block                             in
@@ -331,6 +340,8 @@ I2LToC qualifying spec
           | I_Primitive p -> (cspc, c4PrimitiveType p)
 
           | I_Base tname  -> (cspc, C_Base (qname2id tname))
+
+          | I_Struct [] -> (cspc, C_Void)
 
           | I_Struct fields -> 
             let (cspc, sfields)    = structUnionFields (cspc, fields)                                             in

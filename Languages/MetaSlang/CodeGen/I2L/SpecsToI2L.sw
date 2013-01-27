@@ -960,18 +960,20 @@ SpecsToI2L qualifying spec
 
   op term2expression_let (pat : MSPattern, deftm : MSTerm, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
     % let's can only contain one pattern/term entry (see parser)
+    let defexp = term2expression (deftm, ctxt, spc) in
+    let exp    = term2expression (tm,    ctxt, spc) in
+
     case pat of
 
-      | VarPat ((id, typ), _) ->
-        let defexp = term2expression (deftm, ctxt, spc)            in
-        let exp    = term2expression (tm,    ctxt, spc)            in
-        let typ    = type2itype ([], typ, unsetToplevel ctxt, spc) in
-        I_Let (id, typ, defexp, exp)
-
       | WildPat _ ->
-        let defexp = term2expression (deftm, ctxt, spc) in
-        let exp    = term2expression (tm,    ctxt, spc) in
         I_Comma [defexp, exp]
+
+      | VarPat ((_, Product ([],_)), _) ->
+        I_Comma [defexp, exp]
+
+      | VarPat ((id, typ), _) ->
+        let typ = type2itype ([], typ, unsetToplevel ctxt, spc) in
+        I_Let (id, typ, defexp, exp)
 
       | _ -> 
         fail (mkInOpStr ctxt ^ "unsupported feature: this form of pattern cannot be used in a let:\n" ^ printPattern pat)

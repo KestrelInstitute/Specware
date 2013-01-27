@@ -303,9 +303,10 @@ Globalize qualifying spec
       
  %% ================================================================================
 
- op nullTerm : MSTerm    = Record  ([], noPos)
- op nullType : MSType    = Product ([], noPos)
- op nullPat  : MSPattern = WildPat (nullType, noPos)
+ op nullTerm : MSTerm    = Record    ([], noPos)
+ op nullType : MSType    = Product   ([], noPos)
+ op nullPat  : MSPattern = RecordPat ([], noPos)
+ op wildPat (typ : MSType) : MSPattern = WildPat (typ, noPos)
 
  op showTypeName (info : TypeInfo) : String = printQualifiedId (primaryTypeName info)
  op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
@@ -1147,7 +1148,7 @@ Globalize qualifying spec
                    case opt_new_pat of
                      | Unchanged       -> pat
                      | Changed new_pat -> new_pat
-                     | GlobalVarPat    -> nullPat
+                     | GlobalVarPat    -> wildPat (termType new_tm)
                in
                let new_bindings = bindings ++ [(new_pat, new_tm)] in
                case new_vars_to_remove of
@@ -1240,8 +1241,7 @@ Globalize qualifying spec
                %% fn (x:Global) -> body
                %%  =>
                %% fn () -> new_body
-               let null_pat = WildPat (TyVar ("wild", noPos),noPos) in
-               Changed (null_pat, myTrue, new_body))
+               Changed (nullPat, myTrue, new_body))
 
   in
   let opt_new_rules = map globalizeRule rules in
@@ -1557,7 +1557,8 @@ Globalize qualifying spec
                                        Var ((global_var_id, context.global_type), noPos),
                                        noPos)
           in
-          let new_term        = Let ([(pat, tm)], body, noPos) in
+          let new_term        = 
+          Let ([(pat, tm)], body, noPos) in
           add_bindings substs new_term
         | _ ->
           body

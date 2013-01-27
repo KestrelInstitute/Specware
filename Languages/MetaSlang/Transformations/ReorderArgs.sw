@@ -5,6 +5,10 @@ ReviseOps qualifying spec
 
  import /Library/Unvetted/Random
 
+ import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
+ import /Languages/MetaSlang/CodeGen/C/CG
+ import /Languages/MetaSlang/CodeGen/Java/ToJava
+
  type Probability   = Nat * Nat   %  test is '(random x) <= y'
  type Probabilities = List Probability
 
@@ -14,6 +18,11 @@ ReviseOps qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% utilities
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op builtInOp? (qid : QualifiedId) : Bool =
+  SpecToLisp.builtInLispOp? qid ||
+  CG.builtinCOp?            qid ||
+  JGen.builtinTypeOp        qid
 
  op randomReorderings (n : Nat) : Reorderings =
   let
@@ -147,7 +156,11 @@ ReviseOps qualifying spec
  op maybeReorderOpArgs (probs : Probabilities) (spc: Spec) (info : OpInfo) 
   : Augmentations Reordering =
   let (x, y) = head probs in
-  if (random y) <= x then
+  if builtInOp? (primaryOpName info) then
+    % Don't change the argument pattern for a natively defined op,
+    % since we can't alter corresponding body of the definition.
+    []
+  else if (random y) <= x then
     reorderOpArgs (spc, info)
   else
     []
