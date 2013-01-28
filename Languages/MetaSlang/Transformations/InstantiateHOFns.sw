@@ -886,30 +886,44 @@ op dontUnfoldQualifiers: Ids = ["String"]
  %% ================================================================================
 
  op simplifyUnfoldCase (spc: Spec) (tm: MSTerm): MSTerm =
-   case tm of
+   case MetaRule.simplifyUnfoldCase spc tm of
+     | Some s_tm -> s_tm
+     | None -> tm
 
+ op MetaRule.simplifyUnfoldCase (spc: Spec) (tm: MSTerm): Option MSTerm =
+   case tm of
      | Apply (Lambda (rules, _), arg, _) | length rules > 1 ->
        %% Unfold if function constructs term that matches one case
-       (let uf_tm = case tryUnfold (spc, arg) of
-                      | Some uf_tm -> uf_tm
-                      | _ -> arg
+       (let uf_arg = case tryUnfold (spc, arg) of
+                      | Some uf_arg -> uf_arg
+                      | None -> arg
         in
-          case simplify spc uf_tm of
-
-            | Let (binds, let_body, pos) ->
-              (case patternMatchRulesToLet (rules, let_body, spc) of
-                 | Some exp_tm -> Let (binds, exp_tm, pos)
-                 | _ -> tm)
-
-            | simp_uf_tm ->
-              (case patternMatchRulesToLet (rules, simp_uf_tm, spc) of
-                 | Some exp_tm -> exp_tm
-                 | _ -> tm))
-
+        case simplify spc uf_arg of
+          | Let (binds, let_body, pos) ->
+            (case patternMatchRulesToLet (rules, let_body, spc) of
+               | Some exp_tm -> Some(Let (binds, exp_tm, pos))
+               | None -> None)
+          | Apply (Lambda (arg_rules, a1), arg1, a2) ->
+            let s_arg_rule_tms = map (fn (_, _, rule_tm) ->
+                                        patternMatchRulesToLet(rules, rule_tm, spc))
+                                   arg_rules
+            in
+            if forall? some? s_arg_rule_tms
+              then let n_arg_rules = map (fn ((pati, predi, _), Some bodi) ->
+                                            (pati, predi, bodi))
+                                       (zip(arg_rules, s_arg_rule_tms))
+                   in
+                   let _ = writeLine("suf:\n"^printTerm tm) in
+                   Some(Apply (Lambda (n_arg_rules, a1), arg1, a2))
+              else None
+          | simp_uf_arg ->
+            patternMatchRulesToLet (rules, simp_uf_arg, spc))
      | Let (binds, bod, pos) ->
-       simplifyOne spc (Let (binds, simplifyUnfoldCase spc bod, pos))
-
-     | _ -> tm
+       (case MetaRule.simplifyUnfoldCase spc bod of
+         | None -> None
+         | Some s_bod ->
+           Some(simplifyOne spc (Let (binds, s_bod, pos))))
+     | _ -> None
 
  %% ================================================================================
  %% unfold one term
