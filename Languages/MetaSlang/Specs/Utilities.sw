@@ -2946,4 +2946,32 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
   let result = nonEx?(tm, []) in
   % let _ = writeLine("Term is "^(if result then "not " else "")^"executable.\n"^printTerm tm) in
   result
+
+(* Support for /Languages/MetaSlang/Transformations/MetaTransform: These are needed for dumping info about transform fns *)
+ type MetaTransform.AnnTypeValue =
+    | SpecV Spec
+    | TermV MSTerm
+    | ArrowsV (List AnnTypeValue)
+    | StrV String
+    | NumV Int
+    | BoolV Bool
+    | OpNameV QualifiedId
+    | RuleV RuleSpec
+    | OptV (Option AnnTypeValue)
+    | ListV (List AnnTypeValue)
+    | TupleV (List AnnTypeValue)
+    | RecV List(String * AnnTypeValue)
+    | MonadV (Env AnnTypeValue)
+
+ op MetaTransform.extractSpec(SpecV x: AnnTypeValue): Spec = x
+ op MetaTransform.extractTerm(TermV x: AnnTypeValue): MSTerm = x
+ op MetaTransform.extractStr(StrV x: AnnTypeValue): String = x
+ op MetaTransform.extractNum(NumV x: AnnTypeValue): Int = x
+ op MetaTransform.extractBool(BoolV x: AnnTypeValue): Bool = x
+ op MetaTransform.extractOpName(OpNameV x: AnnTypeValue): QualifiedId = x
+ op MetaTransform.extractRule(RuleV x: AnnTypeValue): RuleSpec = x
+ op [a] MetaTransform.extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
+ op [a] MetaTransform.extractList(extr_val: AnnTypeValue -> a) (ListV x: AnnTypeValue): List a = map extr_val x
+ %op [a] extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
+
 end-spec

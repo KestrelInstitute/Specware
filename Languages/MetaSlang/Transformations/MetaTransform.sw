@@ -2,21 +2,6 @@ MetaTransform qualifying
 spec
 import CurryUtils
 
-type MetaTransform.AnnTypeValue =
-   | SpecV Spec
-   | TermV MSTerm
-   | ArrowsV (List AnnTypeValue)
-   | StrV String
-   | NumV Int
-   | BoolV Bool
-   | OpNameV QualifiedId
-   | RuleV RuleSpec
-   | OptV (Option AnnTypeValue)
-   | ListV (List AnnTypeValue)
-   | TupleV (List AnnTypeValue)
-   | RecV List(String * AnnTypeValue)
-   | MonadV (Env AnnTypeValue)
-
 type MetaTransform.TypedFun =
    | TFn (AnnTypeValue -> TypedFun)
    | TVal AnnTypeValue
@@ -35,16 +20,6 @@ type MTypeInfo = | Spec
                  | Rec List(String * MTypeInfo)
                  | Monad MTypeInfo
 
-op extractSpec(SpecV x: AnnTypeValue): Spec = x
-op extractTerm(TermV x: AnnTypeValue): MSTerm = x
-op extractStr(StrV x: AnnTypeValue): String = x
-op extractNum(NumV x: AnnTypeValue): Int = x
-op extractBool(BoolV x: AnnTypeValue): Bool = x
-op extractOpName(OpNameV x: AnnTypeValue): QualifiedId = x
-op extractRule(RuleV x: AnnTypeValue): RuleSpec = x
-op [a] extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
-op [a] extractList(extr_val: AnnTypeValue -> a) (ListV x: AnnTypeValue): List a = map extr_val x
-%op [a] extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
 
 op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
   case mty of
@@ -266,10 +241,16 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
       let el_extr_fns = map mkExtractFn el_tyis in
       let el_tys = map (fn extr_fn -> let Arrow(_, ran, _) = termType extr_fn in ran) el_extr_fns in
       let el_vs = tabulate(length el_tys, fn i -> ("x_"^show i, el_tys@i)) in
-      mkLambda(mkEmbedPat("TupleV", Some(mkListPat(List.map mkVarPat el_vs)), annTypeValueType),
+      mkLambda(mkEmbedPat("TupleV", Some(mkListPat(map mkVarPat el_vs)), annTypeValueType),
                mkTuple(map (fn (v, extr_fn) -> mkApply(extr_fn, mkVar v)) (zip(el_vs, el_extr_fns))))
       
-    % | Rec ((fld,i)::l) -> 
+    | Rec (flds) ->
+      let extr_fns = map (fn (id, el) -> (id, mkExtractFn el)) flds in
+      let el_tys = map (fn (id, extr_fn) -> let Arrow(_, ran, _) = termType extr_fn in ran) extr_fns in
+      let el_vs = tabulate(length el_tys, fn i -> ("x_"^show i, el_tys@i)) in
+      mkLambda(mkEmbedPat("RecV", Some(mkListPat(map (fn el_v -> mkTuplePat[mkWildPat stringType, mkVarPat el_v]) el_vs)),
+                          annTypeValueType),
+               mkRecord(map (fn (v, (id, extr_fn)) -> (id, mkApply(extr_fn, mkVar v))) (zip(el_vs, extr_fns))))
     % | Monad m -> "Monad "^show m
 
 
