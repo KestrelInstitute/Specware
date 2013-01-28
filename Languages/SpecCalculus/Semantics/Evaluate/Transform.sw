@@ -447,23 +447,24 @@ spec
           else raise(TransformError(pos, "Expected argument: "^show (Tuple ty_is)))}
  
       | ((Record(rec_tes, pos))::te_rst, (Rec fld_tyis)::ty_i_rst) ->
-        let tagged_atvs =
-            mapPartial (fn (tag, mtyi) ->
-                          case findLeftmost (fn (nm, _) -> tag = nm) rec_tes of
-                            | Some(_, te) ->
-                              (case transformExprToAnnTypeValue(te, mtyi) of
-                                 | None -> None
-                                 | Some atv -> Some(tag, atv))
-                            | None ->
-                          case defaultAnnTypeValue mtyi of
-                            | Some atv -> Some(tag, atv)
-                            | None -> None)
-              fld_tyis
-        in
-        if length fld_tyis = length tagged_atvs
-          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
-                return(RecV tagged_atvs::r_atvs)}
-          else raise (TransformError (pos, "Missing or illegal field(s)"))
+        {checkForNonAttributes(rec_tes, map (project 1) fld_tyis, pos);
+         let tagged_atvs =
+             mapPartial (fn (tag, mtyi) ->
+                           case findLeftmost (fn (nm, _) -> tag = nm) rec_tes of
+                             | Some(_, te) ->
+                               (case transformExprToAnnTypeValue(te, mtyi) of
+                                  | None -> None
+                                  | Some atv -> Some(tag, atv))
+                             | None ->
+                           case defaultAnnTypeValue mtyi of
+                             | Some atv -> Some(tag, atv)
+                             | None -> None)
+               fld_tyis
+         in
+         if length fld_tyis = length tagged_atvs
+           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
+                 return(RecV tagged_atvs::r_atvs)}
+           else raise (TransformError (pos, "Missing or illegal field(s)"))}
 
       | ([], []) -> return []
       | ([], ty_i1::ty_i_rst) ->
