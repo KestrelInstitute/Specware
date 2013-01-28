@@ -913,7 +913,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                                             (pati, predi, bodi))
                                        (zip(arg_rules, s_arg_rule_tms))
                    in
-                   let _ = writeLine("suf:\n"^printTerm tm) in
+                   % let _ = writeLine("suf:\n"^printTerm tm) in
                    Some(Apply (Lambda (n_arg_rules, a1), arg1, a2))
               else None
           | simp_uf_arg ->

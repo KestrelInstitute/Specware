@@ -1,5 +1,4 @@
 CurryUtils qualifying spec
-  import ../Specs/Utilities
   import ../Specs/Environment
 
   op  curriedType?: Spec * MSType -> Bool
