@@ -13,10 +13,12 @@ spec
  %%TODO won't type-check.  Seems like a hack.
   op abort(n:Nat): Nat = n div 0
 
+  % Returns the set containing the natural numbers in the interval [i,j).
   op upto(i:Nat,j:Nat):Set Nat = upto_loop(i, j, empty_set)
   op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
       (if i>=j then ns else upto_loop(succ(i),j, set_insert_new(i,ns)))
 
+  % Returns the list containing the natural numbers in the interval [i,j), in order.
   op uptoL(i:Nat,j:Nat):List Nat = uptoL_loop(i,j, [])
   op uptoL_loop (i:Nat,j:Nat,ns:List Nat):List Nat = 
       (if j<=i then ns else uptoL_loop(i,pred(j),Cons(pred(j),ns)))
@@ -130,7 +132,7 @@ spec
 
 %------------------ Operators over Bags and Sets -----------------------
 
-  def [a] B2S(b:Bag a): Set a =    % homomorphism from Bag to Set
+  op [a] B2S(b:Bag a): Set a =    % homomorphism from Bag to Set
     (bag_fold empty_set
               (fn(s,a)-> set_insert(a,s))
               b)
@@ -149,6 +151,7 @@ spec
   theorem empty_bag_bs_diff is [a]
       fa(s:Set a) empty_bag --- s = empty_bag
 
+  % TODO Does not seem right. Consider c={y} (i.e., singleton bag containing y) and d={y}.
   axiom distribute_bs_diff_over_left_insert is [a]
       fa(c:Bag a,d:Set a,y:a)
         (bag_insert(y,c) --- d 
@@ -156,10 +159,12 @@ spec
                then c --- d
              else bag_insert(y,c --- d)))
 
+  % TODO Does not seem right.  Consider y already in d.  More specifically, conside c={y,y} and d={y}.
   axiom distribute_bs_diff_over_right_insert is [a]
       fa(c:Bag a,d:Set a,y:a)
         (c --- set_insert(y,d) = bag_delete(y, c --- d) )  % bag_delete_all
 
+  % TODO Does not seem right.  Consider c={y,y} and d={y}.
   axiom distribute_bs_diff_over_left_delete is [a]
       fa(c:Bag a,d:Set a,y:a)
         (bag_delete(y,c) --- d    % or simply just = bag_delete(y,c --- d)
@@ -167,6 +172,7 @@ spec
                then c --- d
              else bag_delete(y,c --- d)))
 
+  % TODO Does not seem right.  Consider c={y} and d=empty.
   axiom distribute_bs_diff_over_right_delete is [a]
       fa(c:Bag a,d:Set a,y:a)
         (c --- set_delete(y,d) = bag_delete(y, c --- d) )  % bag_delete_all
@@ -179,11 +185,13 @@ spec
 
 %------- Pair2S: homomorphism from Pair of Nats to Set -----------------------
 
-  def Pair2S(lb:Nat,ub:Nat): Set Nat = upto(lb,ub)
+  op Pair2S(lb:Nat,ub:Nat): Set Nat = upto(lb,ub)
 
+  % TODO seems wrong for i=j
   theorem Pair2S_empty is
     fa(i:Nat,j:Nat) (i>j) = (Pair2S(i,j) = (empty_set:Set Nat))
 
+  % TODO Seems wrong for the case when i=j
   theorem Pair2S_insert is
     fa(i:Nat,j:Nat) (i<=j) = (Pair2S(i,j) = set_insert(i, Pair2S(i+1,j)))
 
@@ -192,7 +200,7 @@ spec
 % algebraic stack
 %  type Stack a = | empty_stack | push (a*Stack a)
 
-  def [a] Stack2L(stk:Stack a): List a =
+  op [a] Stack2L(stk:Stack a): List a =
     if stk = empty_stack then Nil
     else Cons(top stk, Stack2L(pop stk))
 
@@ -210,10 +218,12 @@ spec
   theorem Stack2L_concat is [a]
     fa(elts:List a,stk:Stack a) ( Stack2L(pushl(elts,stk)) = elts ++ Stack2L(stk))
 
+% TODO We need the non-emptiness condition:
 % (~stk = empty_stack) => 
   theorem Stack2L_tail is [a]
     fa(stk:Stack a) (Stack2L(pop(stk)) = tail(Stack2L(stk)))
 
+% TODO Add the non-emptiness condition:
   theorem Stack2L_head is [a]
     fa(stk:Stack a) (top(stk) = head(Stack2L(stk)))
 
@@ -226,7 +236,7 @@ spec
 
 %------- L2S: homomorphism from List to Set -----------------------
 
-  def [a] L2S(lst:List a): Set a =
+  op [a] L2S(lst:List a): Set a =
     (foldl (fn(c,a)-> set_insert(a,c))
           empty_set
           lst)
@@ -243,18 +253,23 @@ spec
 %  theorem L2S_delete is [a]
 %    fa(y:a,lst:List a) ( L2S(delete(y,lst)) = set_delete(y, L2S lst) )
 
+  % TODO: Doesn't seem right.  Consider when lst contains more than one y.
   theorem L2S_delete1 is [a]
     fa(y:a,lst:List a) ( L2S(delete1(y,lst)) = set_delete(y, L2S lst) )
+
   theorem L2S_member is [a]
     fa(y:a,lst:List a) ( (y in? lst) = (y in? L2S lst) )
 
   theorem L2S_head is [a]
     fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) in? L2S(lst) )
+
+ % TODO Needs condition that lst is not empty.
   theorem L2S_tail is [a]
     fa(y:a,lst:List a) ( L2S(tail(lst)) subset (L2S lst) )
 
   theorem L2S_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2S (lst1 ++ lst2) = (L2S lst1 \/ L2S lst2) )
+
   theorem L2S_diff is [a]
     fa(lst:List a,sub:List a) ( L2S (diff(lst,sub)) = (L2S lst -- L2S sub) )
 
@@ -283,7 +298,7 @@ spec
 
 %------- L2B: homomorphism from List to Bag -----------------------
 
-  def [a] L2B(lst:List a): Bag a =
+  op [a] L2B(lst:List a): Bag a =
     (foldl (fn(c,a)-> bag_insert(a,c))
           empty_bag
           lst)
@@ -293,18 +308,26 @@ spec
 
   theorem L2B_Cons is [a]
     fa(y:a,lst:List a) ( L2B(Cons(y,lst)) = bag_insert(y, L2B lst) )
+
   theorem L2B_delete1 is [a]
     fa(y:a,lst:List a) ( L2B(delete1(y,lst)) = bag_delete(y, L2B lst) )
+
   theorem L2B_member is [a]
     fa(y:a,lst:List a) ( (y in? lst) = (y bagin? L2B lst) )
 
   theorem L2B_head is [a]
     fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) bagin? L2B(lst) )
+
+  % TODO Add the non-emptiness condition.
+  % TODO: Is the "= true" here necessary (e.g., to make this an equality, so that it can be used as a rewrite rule)?  If so, do we need it other places too?
   theorem L2B_tail is [a]
     fa(y:a,lst:List a) ( (L2B(tail(lst)) subbag (L2B lst)) = true )
 
   theorem L2B_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2B (lst1 ++ lst2) = (L2B lst1 \/ L2B lst2) )
+
+  % TODO Doesn't seem right.  Note that diff removes all occurrences, whereas -- does not.
+  % So consider lst=[1,1] and sub=[1]
   theorem L2B_diff is [a]
     fa(lst:List a,sub:List a) ( L2B (diff(lst,sub)) = (L2B lst -- L2B sub) )
 
@@ -337,7 +360,7 @@ spec
 
 (* ------- L2C: homomorphism from List to Collection -----------------------
 
-  def [a] L2C(lst:List a): Collection a =
+  op [a] L2C(lst:List a): Collection a =
     (foldl (fn(c,a)-> coll_insert(a,c))
           empty_coll
           lst)
@@ -383,10 +406,10 @@ spec
 
 (* ------- M2F: homomorphism from Map to Function --------------- *)
 
-  def [a,b] M2F(m:Map(a,b), bdefault:b):(a->b) =
+  op [a,b] M2F(m:Map(a,b), bdefault:b):(a->b) =
     (fn (x:a)-> (map_apply m bdefault x))
 
-  def [a,b] F2M(S:Set a)(f:{x:a|x in? S}->b): Map(a,b) =
+  op [a,b] F2M(S:Set a)(f:{x:a|x in? S}->b): Map(a,b) =
     set_fold empty_map
              (fn(amap:Map(a,b),domelt:a) -> (update amap domelt (f domelt)))
              S
@@ -407,7 +430,7 @@ spec
 
 (* ------- MM2F: homomorphism from Map-of-Map to Function-to-Set --------------- *)
 
-  def [a,b,i] MM2F (mm:Map(a,Map(i,b))):(a->Set b) =
+  op [a,b,i] MM2F (mm:Map(a,Map(i,b))):(a->Set b) =
     (fn (x:a)-> range (map_apply mm empty_map x))
 
   theorem MM2F_empty_map is [a,i,b]
@@ -421,11 +444,11 @@ spec
 
 (* ------- MM2FAN: homomorphism from Map-of-Map to Function --------------- *)
 
-%  def [A,B,I] MM2FAN (mm:Map(A,Map(I,B))):(A*I->B) =
+%  op [A,B,I] MM2FAN (mm:Map(A,Map(I,B))):(A*I->B) =
 %      fn ((a,i):A*I)-> (TMApply(TMApply(mm,a),i))
 
 % how to make this polymorphic on p too?
-%  def [A,B,I] MM2FAN (mm:(Map(A,Map(I,B))|p)):((A*I|p)->B) =
+%  op [A,B,I] MM2FAN (mm:(Map(A,Map(I,B))|p)):((A*I|p)->B) =
 %      fn ((a,i):(A*I|p))-> (TMApply(TMApply(mm,a),i))
 
 %  theorem MM2FAN_empty_map is [A,I,B]
@@ -434,7 +457,7 @@ spec
 
 (* ------- MM2FB: homomorphism from Map-of-Map to Function-to-Bag --------------- *)
 
-  def [a,b,i] MM2FB (mm:Map(a,Map(i,b))):(a->Bag b) =
+  op [a,b,i] MM2FB (mm:Map(a,Map(i,b))):(a->Bag b) =
     (fn (x:a)-> L2B (rangeToList (map_apply mm empty_map x)))
 
   theorem MM2FB_empty_map is [a,i,b]
@@ -443,7 +466,7 @@ spec
 
 (* ------- MM2FL: homomorphism from Map-of-Map to Function-to-List --------------- *)
 
-  def [a,b,i] MM2FL (mm:Map(a,Map(i,b))):(a->List b) =
+  op [a,b,i] MM2FL (mm:Map(a,Map(i,b))):(a->List b) =
     (fn (x:a)-> rangeToList (map_apply mm empty_map x))
 
   theorem MM2FL_empty_map is [a,i,b]
@@ -451,12 +474,12 @@ spec
 
 (* ------- FL2FB: homomorphism from Function-to-List to Function-to-Bag --------------- *)
 
-  def [a,b] FL2FB (f:a-> List b):(a->Bag b) = (fn (x:a)-> L2B (f x))
+  op [a,b] FL2FB (f:a-> List b):(a->Bag b) = (fn (x:a)-> L2B (f x))
 
 
 (* ------- IM2F: homomorphism from Map-of-Map to Function-to-Set --------------- *)
 
-  def [a,b,i] IM2F(fm:a->Map(i,b)):(a->Set b) =
+  op [a,b,i] IM2F(fm:a->Map(i,b)):(a->Set b) =
     (fn (x:a)-> range (fm x))
 
   theorem IM2F_empty_map is [a,i,b]
@@ -465,7 +488,7 @@ spec
 
 (*------- S2C: homomorphism from Set to Collection ---------------
 
-  def [a] S2C(s:Set a):Collection a =  
+  op [a] S2C(s:Set a):Collection a =  
     set_fold empty_coll
              (fn(c,selt) -> coll_insert(selt, c))
              s
@@ -473,7 +496,8 @@ spec
 
 %------- M2S: homomorphism from Map to Set ---------------
 
-  def [a,b] M2S(m:Map(a,b)):Set b =  (range m)
+% TODO think about this.
+  op [a,b] M2S(m:Map(a,b)):Set b =  (range m)
 %    set_fold empty_set
 %             (fn(c:Set b,domelt:a) -> set_insert(TMApply(m,domelt), c))
 %             (domain m)
@@ -498,14 +522,14 @@ with characteristic maps there are several choices:
 
 
 % the starting point (domain m) is already a set, so the set_insert op is unnecessary
-  def [a] CM2S(m:Map(a,Boolean)):Set a =  
+  op [a] CM2S(m:Map(a,Boolean)):Set a =  
     set_fold empty_set
              (fn(sa:Set a,domelt:a) -> if TMApply(m,domelt) 
                                        then set_insert_new(domelt, sa)
                                        else sa)
              (domain m)
 
-  def [a] S2CM(S:Set a):Map(a,Boolean) =  
+  op [a] S2CM(S:Set a):Map(a,Boolean) =  
     set_fold empty_map
              (fn(amap:Map(a,Boolean),domelt:a) -> (update amap domelt (true)))
              S
@@ -540,7 +564,7 @@ with characteristic maps there are several choices:
 
 (* ------- M2C: homomorphism from Map to Collection ---------------
 
-  def [a,b] M2C(m:Map(a,b)):Collection b =  % essentially, take the range of the map
+  op [a,b] M2C(m:Map(a,b)):Collection b =  % essentially, take the range of the map
     coll_fold (fn(c:Collection b,domelt:a) -> coll_insert(TMApply(m,domelt), c))
               empty_coll
               (S2C (domain m))
@@ -562,5 +586,9 @@ with characteristic maps there are several choices:
       fa(m:Map(a,b), y:List b) 
         (L2C (map2List m) = M2C m)
 *)
+
+proof Isa exist_list_first
+ by (metis hd_in_set)
+end-proof
      
 end-spec

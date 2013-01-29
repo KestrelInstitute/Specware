@@ -17,6 +17,7 @@ spec
 
   % a subbag is characterized by same or fewer occurrences of each element
   % I made the axiom subbag into this definition. -Eric
+  % TODO The name subbag should probably have a ? added to the end, since it returns a Boolean.
   op [a] subbag (b1: Bag a, b2 : Bag a) infixl 200 : Boolean = (fa(x) occs(x,b1) <= occs(x,b2))
 
   % the empty bag is characterized by zero occurrences of each element
