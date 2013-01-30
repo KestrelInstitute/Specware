@@ -8,7 +8,8 @@ if [ -z "$SPECWARE4" ]; then
     export SPECWARE4="$HOME"/Specware
 fi
 
-export EMACS=/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs
+export EMACS=/Applications/Emacs.app/Contents/MacOS/Emacs
+#export EMACS=/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs
 EMACS_SPECWARE="$SPECWARE4"/Applications/Specware/bin/linux/Emacs_Specware
 cd "$SPECWARE4"
 
