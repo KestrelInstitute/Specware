@@ -13,6 +13,11 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:${PATH}
 # Test whether SPECWARE4 has been set
 
 if [ -z "$SPECWARE4" ]; then
+    echo "SPECWARE4 environment variable not set -- using default value." 2>&1
+    export SPECWARE4="$HOME"/Specware
+fi
+
+if [ -z "$SPECWARE4" ]; then
     echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
     exit 1
 fi
