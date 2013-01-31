@@ -11,12 +11,15 @@ spec
   import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
 
  %%TODO won't type-check.  Seems like a hack.
-  op abort(n:Nat): Nat = n div 0
+  %op abort(n:Nat): Nat = n div 0
 
   % Returns the set containing the natural numbers in the interval [i,j).
   op upto(i:Nat,j:Nat):Set Nat = upto_loop(i, j, empty_set)
+
+  %Previously this used set_insert_new, but that would require a
+  %precondition on ns ensuring that i is not already present.
   op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
-      (if i>=j then ns else upto_loop(succ(i),j, set_insert_new(i,ns)))
+      (if i>=j then ns else upto_loop(succ(i),j, set_insert(i,ns)))
 
   % Returns the list containing the natural numbers in the interval [i,j), in order.
   op uptoL(i:Nat,j:Nat):List Nat = uptoL_loop(i,j, [])
@@ -87,6 +90,7 @@ spec
     | None -> empty_bag
 *)
 
+  % TODO Can't prove the subtype obligations, due to the (probably overly-restrictive) idempotency condition on set_fold.
   op [a,b] bag_fold_set (f: a -> (Bag b))(ss: Set a) : Bag b =
      set_fold empty_bag 
               (fn (bs:Bag b,ssa:a) -> bs \/ f(ssa))               %bag_union(f(ssa), bs))
@@ -589,6 +593,45 @@ with characteristic maps there are several choices:
 
 proof Isa exist_list_first
  by (metis hd_in_set)
+end-proof
+
+
+proof isa upto_loop ()
+by (pat_completeness, auto)
+termination
+  apply (relation "measure (\<lambda>(i,j,ns). j - i)")
+  apply (auto)
+end-proof
+
+proof isa uptoL_loop ()
+by (pat_completeness, auto)
+termination
+  apply (relation "measure (\<lambda>(i,j,ns). j - i)")
+  apply (auto simp add: Nat__pred_def)
+end-proof
+
+proof isa length_of_uptoL
+  sorry
+end-proof
+
+proof isa bag_fold_set_Obligation_subtype
+  apply(auto)
+  apply (metis Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype) 
+  sorry
+end-proof
+
+proof isa B2S_Obligation_subtype
+  apply(simp add: Set__set_insertion_commutativity)
+end-proof
+
+proof isa bs_diff_of_emptyset
+  apply(rule Bag__occurrences)
+  apply(simp add:bag_set_difference Set__empty_set)
+end-proof
+
+proof isa empty_bag_bs_diff
+  apply(rule Bag__occurrences)
+  apply(simp add:bag_set_difference Bag__empty_bag Bag__natMinus_def)
 end-proof
      
 end-spec
