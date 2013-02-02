@@ -160,8 +160,13 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      | mystery ->
        % let _ = writeLine(printSpecFlat sp) in
        System.fail ("Could not extract arrow type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
-     
- def product (sp : Spec, srt : MSType) = 
+
+ op product? (sp : Spec, srt : MSType): Bool =
+   case stripSubtypes (sp, srt) of
+     | Product _ -> true
+     | _ -> false
+
+ def product (sp : Spec, srt : MSType): List (Id * MSType) = 
    let srt = unfoldBase(sp,srt) in
    case stripSubtypes (sp, srt) of
      | Product (fields, _) -> fields
@@ -184,7 +189,12 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
        map (fn (_,x) -> x) fields
      | _ -> [ty1]
 
- def coproduct (sp : Spec, srt : MSType) = 
+ op coproduct? (sp : Spec, srt : MSType): Bool =
+    case stripSubtypes (sp, srt) of
+      | CoProduct _ -> true
+      | _ -> false
+
+ op coproduct (sp : Spec, srt : MSType): List (Id * Option MSType) = 
   case stripSubtypes (sp, srt) of
     | CoProduct (fields, _) -> fields
     | mystery -> System.fail ("Could not extract co-product type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
