@@ -426,16 +426,17 @@ IsaTermPrinter qualifying spec
       | Apply(Fun(Implies, _, _), Record([("1", lhs), ("2", rhs)], _), _) -> equalityArgs rhs
       | Bind(_, _, bod, _) -> equalityArgs bod
       | Apply(_, Record([("1", lhs), ("2", rhs)], _), _) -> (lhs, rhs)
+      | _ -> (eq_tm, trueTerm) 
 
   op makeTheorem(qid: QualifiedId, fml: MSTerm): SpecElement =
     let uvs = freeVars fml in
     let fml = mkSimpBind(Forall, uvs, fml) in
     Property(Theorem, qid, tyVarsInTerm fml, fml, termAnn fml)
 
-  op makeNonTrivTheorem(q: Id, nm: Id, fml: MSTerm, spc: Spec): SpecElements =
+  op makeNonTrivTheorem(q: Id, nm: Id, fml: MSTerm, spc: Spec): Option SpecElement =
     let fml = simplify spc fml in
-    if equalTerm?(fml, trueTerm) then []
-      else [makeTheorem(Qualified(q, nm), fml)]
+    if equalTerm?(fml, trueTerm) then None
+      else Some(makeTheorem(Qualified(q, nm), fml))
 
   op getResultExptAndPostCondn(ty: MSType, spc: Spec): Option(MSTerm * MSTerms) =
     case range_*(spc, ty, false) of
@@ -452,17 +453,20 @@ IsaTermPrinter qualifying spec
        (res_tm, pat_conds ++ conds)
      | _ -> (f_tm, [])
 
- op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec): MSTerm =
+ op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
+      : MSTerm * MSTerm * MSTerm * MSTerm=
    % let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
    case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
      | (Some(new_result_tm, new_post_condns), Some(old_result_tm, old_post_condns)) ->
        let f_tm = mkOp(qid, new_ty) in
        let (val_tm, param_conds) = extractLambdaVars(new_dfn, f_tm) in
-       mkSimpImplies(mkConj(param_conds ++ new_post_condns), mkConj(old_post_condns))
-     | _ -> trueTerm
+       let rhs = mkConj(old_post_condns) in
+       let condn = mkConj(param_conds ++ new_post_condns) in
+       (mkSimpImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
+     | _ -> (trueTerm, trueTerm, trueTerm, trueTerm)
 
   op addRefineObligations (c: Context) (spc: Spec): Spec =
-    %% Add equality obligations for refined ops
+    %% Add equality or implication obligations for refined ops
     let (newelements, ops) =
         foldr (fn (el, (elts, ops)) ->
                  case el of
@@ -491,8 +495,17 @@ IsaTermPrinter qualifying spec
                        then
                          if anyTerm? prev_dfn
                            then    % Post-condition refinement
-                             let oblig_elts = makeNonTrivTheorem(q, thm_name, mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc), spc) in
-                             (el::oblig_elts++elts, ops)
+                             let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                             % let _ = writeLine("oblig: "^printTerm oblig) in
+                             case makeNonTrivTheorem(q, thm_name, oblig, spc) of
+                               | None -> (el::elts, ops)
+                               | Some new_el ->
+                                 if hist = []
+                                   then (el::new_el::elts, ops)
+                                   else let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
+                                        let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
+                                        % let _ = writeLine("Proof string:\n"^prf_str) in
+                                        (el::new_el::prf_el::elts, ops)
                            else (el::elts, ops)   % Not sure if this is meaningful
                        else
                          if anyTerm? prev_dfn
@@ -502,11 +515,10 @@ IsaTermPrinter qualifying spec
                              let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
                              if hist = []
                                then (el::eq_oblig::elts, ops)
-                             else
-                               let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
-                               let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
-                               % let _ = writeLine("Proof string:\n"^prf_str) in
-                               (el::eq_oblig::prf_el::elts, ops)
+                             else let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
+                                  let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
+                                  % let _ = writeLine("Proof string:\n"^prf_str) in
+                                  (el::eq_oblig::prf_el::elts, ops)
                    | _ -> (el::elts, ops))
            ([], spc.ops) spc.elements
     in
@@ -537,9 +549,9 @@ IsaTermPrinter qualifying spec
 
  op ruleToIsaRule(rl_spc: RuleSpec): String =
    case rl_spc of
-     | Unfold  qid -> "unfold "^qidToIsaString qid^"_def, rule HOL.refl"
+     | Unfold  qid -> "simp add: "^qidToIsaString qid^"_def"
      | Fold    qid -> "fold "^qidToIsaString qid^"_def, rule HOL.refl"
-     | Rewrite qid -> "unfold "^qidToIsaString qid^", rule HOL.refl"
+     | Rewrite qid -> "simp add: "^qidToIsaString qid^"_def"
      | LeftToRight qid -> "rule "^qidToIsaString qid
      | RightToLeft qid -> "rule "^qidToIsaString qid^"[symmetric]"
      | _ -> "auto"
@@ -603,7 +615,7 @@ IsaTermPrinter qualifying spec
           | And(l, a) -> And(pick(i, l, r_path, j), a)
           | _ -> tm
    in
-   let schema_tm = schematize(tm, path, 0) in
+   let schema_tm = schematize(tm, reverse path, 0) in
    % let _ = writeLine("schemaFrom"^anyToString path^"\n"^printTerm schema_tm) in
    mkLambda(mkVarPat arg_cong_v, schema_tm)
 
@@ -620,7 +632,7 @@ IsaTermPrinter qualifying spec
             "rule_tac f = \""^(ppTermStrFix c Top schema_term)^"\" in arg_cong, ")
      ^ruleToIsaRule rl_spc^")\n"
 
-  op generateProofForRefineObligation(c: Context, eq_tm, init_dfn: MSTerm, hist: TransformHistory, spc: Spec): String =
+  op generateProofForRefineObligation(c: Context, eq_tm: MSTerm, init_dfn: MSTerm, hist: TransformHistory, spc: Spec): String =
     let (lhs, rhs) = equalityArgs eq_tm in
     let path = pathWithinDef lhs in
     let init_dfn = fromPathTerm(init_dfn, path) in
@@ -639,6 +651,31 @@ IsaTermPrinter qualifying spec
     ^ "  also have \"... = "^(ppTermStr c equalityContext rhs)^"\"  by ("^unfoldFn rhs^")\n"
     ^ "  finally show ?thesis by assumption\n"
     ^ "qed"
+
+  op generateProofForRefinedPostConditionObligation
+       (c: Context, new_pcond: MSTerm, prev_pcond: MSTerm, conds: MSTerm, hist: TransformHistory): String =
+    %if true then "" else
+    %let path = pathWithinDef lhs in
+    %let init_dfn = fromPathTerm(init_dfn, path) in
+    let f_path = 1 :: [] in %path in
+      "proof -\n"
+    ^ "  have \"           "^(ppTermStr c equalityContext prev_pcond)^"\n"
+    ^ flatten(tabulate(length hist,
+                       fn i ->
+                         let (tr_tm, rl_spc) = hist@i in
+                         let tr_tm = fromPathTerm(tr_tm, f_path) in
+                         let i_tm_prf = transformedTermPlusProof(c, if i = 0 then prev_pcond
+                                                                    else fromPathTerm((hist@(i-1)).1, f_path),
+                                                                 tr_tm, rl_spc)
+                         in
+                         if i = 0
+                           then "                 = " ^i_tm_prf
+                           else "  also have \"... = "^i_tm_prf))
+    ^ "  moreover\n"
+    ^ "  assume \""^(ppTermStr c Top new_pcond)^"\"\n"
+    ^ "  ultimately show ?thesis ..\n"
+    ^ "qed"
+
 
   op makeSubstFromRecPats(pats: List(Id * MSPattern), rec_tm: MSTerm, spc: Spec): List (MSPattern * MSTerm) =
     mapPartial (fn (fld, pat) -> if embed? WildPat pat then None
