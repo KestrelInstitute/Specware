@@ -21,7 +21,7 @@ refinements and (2) can be mapped to corresponding C code by a suitable code
 generator. This spec can be viewed as a shallow embedding of (a subset of) C
 into Metaslang.
 
-Our formalization is based on the ANSI C99 standard, ISO/IEC 9899, "Programming
+Our formalization is based on the ANSI C11 standard, ISO/IEC 9899, "Programming
 languages - C", Third edition (2011-12-15). Note that the Second edition of
 Brian Kernighan and Dennis Ritchie's "The C Programming Language", published in
 1988, refers to an earlier version of the standard.
@@ -819,6 +819,10 @@ e.g.
 
 %subsection (* Structures *)
 
+
+(* TODO: "deepen" the structs, as maps from names to values *)
+
+
 (* A structure is a sequence of named objects, not necessarily of the same type
 [ISO 6.2.5./20]. This corresponds to a Metaslang record almost perfectly, except
 that in Metaslang record fields are ordered alphabetically, while in a C
@@ -858,6 +862,27 @@ corresponds to Metaslang type definitions, e.g.
 
 (* We may extend this formalization with other Metaslang types that correspond
 to C types, e.g. floating types [ISO 6.2.5/10]. *)
+
+
+%section (* Values *)
+
+(* We define a type that includes all the C values of the types that we have
+defined above....... *)
+
+type Value =
+  | Uchar Uchar
+  % ... add all others
+
+(*
+
+introduce object designators (from deep embedding)
+
+*)
+
+
+
+
+
 
 
 %section (* Constants *)
