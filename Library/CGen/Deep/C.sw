@@ -863,11 +863,7 @@ type TranslationUnit = List ExternalDeclaration
 (* Even though [ISO] does not seem to define the notion of program precisely,
 normally a C program consists of a set of translation units, as suggested by the
 wording in [ISO 5.1.1.1/1]. In our C subset, we limit the number of translation
-units to one, i.e. a program is a single translation unit.
-
-Note that, even if a program in our C subset may include multiple functions, the
-expressions and statements in our C subset do not include function calls. We
-will soon extend our C subset to allow function calls. *)
+units to one, i.e. a program is a single translation unit. *)
 
 type Program = TranslationUnit
 
@@ -1331,7 +1327,7 @@ op checkArrayType (ty:Type) : Option (Type * Nat) =
 
 (* Each expression has a compile-time type. Furthermore, some expressions denote
 objects [ISO 3.14], while others denote values; the former can be used as left
-operand of an assignment (lvalues [ISO 6.3.2.1/1], while the latter cannot. We
+operand of an assignment (lvalues [ISO 6.3.2.1/1]), while the latter cannot. We
 introduce the notion of an expression type as a type accompanied by a flag that
 says whether the expression denotes an object (vs. just a value). *)
 
@@ -1352,7 +1348,7 @@ denote objects because in that case the value stored in the object is used.
 A variable denotes an object. Its type is the declared type of the variable,
 which is stored in the symbol table.
 
-A constant denotes a value. Its type is formalized earlier.
+A constant denotes a value. Its type is formalized above.
 
 The unary + and - operators require an arithmetic operand [ISO 6.5.3.3/1] and
 their result has the promoted type of the operand [ISO 6.5.3.3/2, 6.5.3.3/3].
@@ -3533,8 +3529,8 @@ op typeOfExpressionResult
   {val <- expressionValue (state, res);
    ok {typE = typeOfValue val, object = embed? object res}}
 
-(* We formalize expression evaluation via an op that, given a state, returns a
-value outcome.
+(* We formalize expression evaluation via an op that, given a state, returns an
+expression result outcome.
 
 A variable [ISO 6.5.1/2] evaluates to the object designator that the variable
 references.
