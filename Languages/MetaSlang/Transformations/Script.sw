@@ -860,7 +860,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
           foldM (fn (spc, tracing?) -> fn Def qid ->
                  case findMatchingOps(spc, qid) of
                    | [] -> {
-                       print ("Can't find op " ^ show qid ^ "\n");
+                       print ("In transform, At referenced unknown op: " ^ show qid ^ "\n");
                        return (spc, tracing?)
                      }
                    | opinfos ->
