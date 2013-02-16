@@ -87,6 +87,7 @@ AnnSpec qualifying spec
      | Pragma(_,_,_,a) -> a
 
 
+
  op  primaryTypeName : [b] ATypeInfo b -> TypeName
  op  primaryOpName   : [b] AOpInfo   b -> OpName
  op  propertyName    : [b] AProperty b -> PropertyName
@@ -1223,4 +1224,111 @@ op [a] showQ(el: ASpecElement a): String =
     | Comment  _ -> "comment ..."
     | Pragma   _ -> "pragma ..."
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%                Testing
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op testSpec (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
+  %% For every type info in the hash table, verify that there is a corresponding
+  %% Type and/or TypeDef spec element.
+  let bad_type_infos =
+      foldTypeInfos (fn (info, failures) ->
+                       let qid = primaryTypeName info in
+                       let found? = 
+                           foldlSpecElements (fn (found?, elt) ->
+                                                found? || 
+                                                (case elt of
+                                                   | Type    (qid2, _) -> qid = qid2
+                                                   | TypeDef (qid2, _) -> qid = qid2
+                                                   | _ -> false))
+                                             false
+                                             s.elements
+                       in
+                       if found? then
+                         failures
+                       else
+                         failures ++ [info])
+                    []
+                    s.types
+  in
+  %% For every op info in the hash table, verify that there is a corresponding
+  %% Op and/or OpDef spec element.
+  let bad_op_infos =
+      foldOpInfos (fn (info, failures) ->
+                     let qid = primaryOpName info in
+                     let found? = 
+                         foldlSpecElements (fn (found?, elt) ->
+                                              found? || 
+                                              (case elt of
+                                                 | Op    (qid2, _,    _) -> qid = qid2
+                                                 | OpDef (qid2, _, _, _) -> qid = qid2
+                                                 | _ -> false))
+                                           false
+                                           s.elements
+                     in
+                     if found? then
+                       failures
+                     else
+                       failures ++ [info])
+                  []
+                  s.ops
+  in
+  %% For every op info in the hash table, verify that every op-reference 
+  %% has a corresponding entry.
+  %% TODO: types, op-refs withing types, etc.
+  let
+    def bad_ref? tm =
+      case tm of
+        | Fun (Op (qid, _), _, _) ->
+          (case findTheOp (s, qid) of
+             | Some _ -> false
+             | _ -> true)
+        | _ -> false
+  in 
+  let bad_op_infos2 =
+      foldOpInfos (fn (info, failures) ->
+                     if existsSubTerm bad_ref? info.dfn then
+                       failures ++ [info]
+                     else
+                       failures)
+                  []
+                  s.ops
+  in
+  %% For every Type, TypeDef, Op, or OpDef in spec elements,
+  %% verify that it refers to an entry in the appropriate hash table.
+  let bad_elements =
+      foldlSpecElements (fn (failures, elt) ->
+                           case elt of
+                             | Type    (qid, _) ->
+                               (case findTheType (s, qid) of
+                                  | Some _ -> failures
+                                  | _ -> failures ++ [elt])
+                             | TypeDef (qid, _) ->
+                               (case findTheType (s, qid) of
+                                  | Some _ -> failures
+                                  | _ -> failures ++ [elt])
+                             | Op      (qid, _, _) ->
+                               (case findTheOp (s, qid) of
+                                  | Some _ -> failures
+                                  | _ -> failures ++ [elt])
+                             | OpDef   (qid, _, _, _) ->
+                               (case findTheOp (s, qid) of
+                                  | Some _ -> failures
+                                  | _ -> failures ++ [elt])
+                             | _ -> failures)
+                        []
+                        s.elements
+  in
+  case (bad_type_infos, bad_op_infos, bad_elements) of
+    | ([], [], []) -> 
+      let _ = writeLine success_msg in
+      false
+    | _ ->
+      let _ = writeLine (failure_msg) in
+      let _ = app (fn info -> writeLine(" Type "       ^ printQualifiedId (primaryTypeName info))) bad_type_infos in
+      let _ = app (fn info -> writeLine(" Op   "       ^ printQualifiedId (primaryOpName   info))) bad_op_infos   in
+      let _ = app (fn info -> writeLine(" Op refs in " ^ printQualifiedId (primaryOpName   info))) bad_op_infos2  in
+      let _ = app (fn elt  -> writeLine(" Elt  "      ^ anyToString elt))                         bad_elements    in
+      true
+      
 end-spec
