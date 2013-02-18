@@ -853,8 +853,15 @@ Utilities qualifying spec
 	 | None -> srt
 	 | Some info ->
 	   if definedTypeInfo? info then
-	     let (tvs, srt) = unpackFirstTypeDef info in
-	     let ssrt = substType (zip (tvs, srts), srt) in
+	     let (tvs, srt1) = unpackFirstTypeDef info in
+             let _ = if length tvs ~= length srts
+                       then (writeLine("Zip error: "^show(length tvs)^" ~= "^show(length srts));
+                             writeLine(printType srt);
+                             writeLine(printType srt1^"  "^printTyVars tvs);
+                             writeLine(print a))
+                       else ()
+             in
+	     let ssrt = substType (zip (tvs, srts), srt1) in
 	     ssrt
 	   else
 	     srt)
