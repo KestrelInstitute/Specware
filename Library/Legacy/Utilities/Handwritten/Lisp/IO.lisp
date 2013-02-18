@@ -145,7 +145,7 @@
 
 ;; op defined in /Library/PrettyPrinter/BjornerEspinosa
 (defun PrettyPrint::blanks (n)
-  (if (= n 0) ""
+  (if (<= n 0) ""
     (if (<= n *blanks-array-size*) (svref *blanks-array* (- n 1))
       (format nil "~vT" n))))
 
