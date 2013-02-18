@@ -900,6 +900,8 @@ sLisp Heap Image File: ")
          (specware4-lisp-binary (concat lisp-dir "/Specware4." *fasl-extension*))
 	 (specware4-base-lisp (concat *specware4-dir
                                       "/Applications/Specware/Specware4-base.lisp"))
+         (specware-tgz (concat *specware4-dir
+                               "/Applications/Specware/SpecwareLispFiles.tgz"))
          (specware4-loader (concat build-dir "/Specware4.lisp")))
     (when (and (file-exists-p specware4-base-lisp)
 	       (or (not (file-exists-p specware4-lisp))
@@ -909,8 +911,14 @@ sLisp Heap Image File: ")
       (copy-file specware4-base-lisp specware4-lisp t))
 
     (prepare-specware-build-buffer *specware-build-buffer-name* build-dir)
+    
+    (when (or (not (file-exists-p specware4-lisp))
+              (and (file-exists-p specware-tgz)
+                   (file-newer-than-file-p specware-tgz specware4-lisp)))
+      (specware-build-command "tar -xvzf %S -C %S" specware-tgz lisp-dir))
 
-    (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*) ; Generalize later
+    (specware-build-command "sbcl --dynamic-space-size %S")
+
     (sit-for 0.5)
     (specware-build-command "(cl:load %S)"
                             (concat *specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors"))
@@ -934,7 +942,8 @@ sLisp Heap Image File: ")
                                 specware4-loader
                                 (specware-build-eval-emacs-str "(specware-build %s t '%s)"
                                                                in-current-dir?
-                                                               (or continuation? t)))))))
+                                                               (or continuation? t))))))
+    )
 
 (defvar saving-lisp-image-regexp "\\[saving current Lisp image into ")
 
