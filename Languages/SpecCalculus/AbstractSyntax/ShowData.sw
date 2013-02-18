@@ -29,6 +29,18 @@ ShowData qualifying spec
  import /Languages/SpecCalculus/Semantics/Value
  import /Languages/SpecCalculus/Semantics/Environment
  %import /Languages/SpecCalculus/Semantics/Monad
+ import ShowUtils
+
+  %% --------------------------------------------------------------------------------
+  %% Give the signature of utilities so we don't have to import them
+
+  %type GlobalContext
+  %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
+%  op  Specware.evaluateUnitId: String -> Option Value
+%  op  SpecCalc.findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
+  %op  SpecCalc.uidToFullPath: UnitId -> String
+%  op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
+  %op  SpecCalc.setCurrentUID : UnitId -> SpecCalc.Env ()
 
 %Additional pretty-printer routines:
  op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
@@ -37,6 +49,12 @@ ShowData qualifying spec
  op ppNum (n:Integer) : WLPretty = ppString(show n)
  op ppSpace : WLPretty = ppString " "
  op ppSpaceBreak : WLPretty = ppConcat[ppSpace, ppBreak]
+
+%TODO: use this more
+op ppWrapParens (pp : WLPretty) : WLPretty =
+ ppConcat [ppString "(",
+           pp,
+           ppString ")"]
 
   % type SpecCalc.Exception
   % type SpecCalc.Result a =
@@ -255,7 +273,7 @@ ShowData qualifying spec
 	ppConcat [ppString "obligations ",
 		  ppSCTerm c term]
       | Quote (value,_,_) -> 
-	ppValue c value None
+	ppValue c value
       | Other other_term -> ppString "<<Other>>"
 	%ppOtherTerm other_term
 
@@ -434,30 +452,18 @@ ShowData qualifying spec
  op  ppOtherTerm         : OtherTerm Position -> WLPretty % Used for extensions to Specware
  op  ppOtherRenamingRule : OtherRenamingRule  -> WLPretty % Used for extensions to Specware
 
-  %% --------------------------------------------------------------------------------
-  %% Give the signature of utilities so we don't have to import them
-
-  %type GlobalContext
-  %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
-  op  Specware.evaluateUnitId: String -> Option Value
-  op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
-%  op  SpecCalc.findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
-  %op  SpecCalc.uidToFullPath: UnitId -> String
-  op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
-  %op  SpecCalc.setCurrentUID : UnitId -> SpecCalc.Env ()
-
- %TODO remove mentions of "asw" here and elsewhere
-  op uidToAswName ({path,hashSuffix=_} : UnitId) : String =
-   let device? = deviceString? (head path) in
-   let main_name = last path in
-   let path_dir = butLast path in 
-   let mainPath = flatten (List.foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
-                             ["/data/",main_name]
-                             (if device? then tail path_dir else path_dir))
-   in if device?
-	then (head path) ^ mainPath
-	else mainPath
-
+ % %TODO remove mentions of "asw" here and elsewhere
+ %  op uidToAswName ({path,hashSuffix=_} : UnitId) : String =
+ %   let device? = deviceString? (head path) in
+ %   let main_name = last path in
+ %   let path_dir = butLast path in 
+ %   let mainPath = flatten (List.foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
+ %                             ["/data/",main_name]
+ %                             (if device? then tail path_dir else path_dir))
+ %   in if device?
+ %        then (head path) ^ mainPath
+ %        else mainPath
+    
 
   %type SpecCalc.State
   %type SpecCalc.Env a = State -> (Result a) * State
@@ -514,26 +520,10 @@ ShowData qualifying spec
   %         else let c = c << {currentUID = uid} in
   %              writeStringToFile(printValue c val,asw_fil_nm)
 
-  op uidStringForValue (val:Value) : Option (UnitId * String) =
-    case uidStringPairForValue val of
-      | None -> None
-      | Some(uid,filnm,hash) -> Some(uid,filnm ^ hash)
-
-  %% Used because the use of "#" causes problems with syntax coloring.
-  op numberSignString : String = implode [##]
-
-  op uidStringPairForValue (val:Value) : Option (UnitId * String * String) =
-    case MonadicStateInternal.readGlobalVar "GlobalContext" of
-      | None -> None
-      | Some global_context ->
-    case findUnitIdForUnit(val,global_context) of
-      | None -> None
-      | Some uid ->
-        Some (uid,
-	      uidToAswName uid,
-	      case uid.hashSuffix of
-		| Some loc_nm -> numberSignString ^ loc_nm
-		| _ -> "")
+  % op uidStringForValue (val:Value) : Option (UnitId * String) =
+  %   case uidStringPairForValue val of
+  %     | None -> None
+  %     | Some(uid,filnm,hash) -> Some(uid,filnm ^ hash)
 
   % op  SpecCalc.findUnitIdforUnitInCache: Value -> Option UnitId
   % def findUnitIdforUnitInCache val =
@@ -561,7 +551,7 @@ ShowData qualifying spec
                     | Some str -> str
                     | _ -> ""
     in
-    let main_pp_val = ppValue (c << {fileName = file_nm}) value None in
+    let main_pp_val = ppValue (c << {fileName = file_nm}) value in
     let pp_val = if c.printPositionInfo?
                   then ppConcat [ppString "infile ", ppID file_nm, ppBreak, main_pp_val]
 		  else main_pp_val
@@ -624,7 +614,7 @@ ShowData qualifying spec
   %% --------------------------------------------------------------------------------
 
 % ???
-  op ppValue (c: Context) (value:Value) (opt_val_tm : Option SCTerm) : WLPretty =
+  op ppValue (c: Context) (value:Value) : WLPretty =
     case value of
       | Spec        spc           -> ppSpec c spc %opt_val_tm
       | Morph       spec_morphism -> ppMorphism c  spec_morphism
@@ -656,12 +646,6 @@ ShowData qualifying spec
 %						 fileName = "",
 %						 recursive? = false}
 %					   spc))
-
-%TODO: use this more
-op ppWrapParens (pp : WLPretty) : WLPretty =
- ppConcat [ppString "(",
-           pp,
-           ppString ")"]
              
            
 
@@ -1522,69 +1506,54 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 		ppBreak,
 	        ppString "end morphism"]
 
- %op  PolyMap.mapToList : QualifiedIdMap -> List (QualifiedId * QualifiedId)
-
  op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
    ppNest 0
      (ppSep (ppAppend (ppString ", ") ppBreak)
 	(map (fn (d,r) -> ppConcat [ppQualifiedId d, ppString " -> ",ppQualifiedId r])
 	   (mapToList idMap)))
 
-  op printValueTop (value : Value, uid : UnitId, printPositionInfo? : Boolean, recursive? : Boolean) : String =
+  op printValueTop (value : Value, uid : UnitId) : String =
     printValue {printTypes? = true, %false, %true,
-		printPositionInfo? = printPositionInfo?,
+		printPositionInfo? = false,
 		fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
 		%currentUID = uid,
 		%uidsSeen = [uid],
-		recursive? = recursive?}
+		recursive? = true}
       value
 
-  %% Evaluate the given unit and print it.
-  op showData (uid_str : String, printPositionInfo? : Boolean, recursive? : Boolean) : Boolean =
+  op showDataCore (val : Value) : Boolean =
+    %TODO Awkward to extract the UID here and the uid string below?; just do whatever evaluateUnitId does to turn it into an absolute path?
+    case uidForValue val of 
+    | None -> let _ = writeLine "Error: Can't get UID string from value" in false
+    | Some uid ->
+      let uidstr = fileNameInSubDir(uid, "data") in
+      let filename = uidstr ^ ".data" in
+      let _ = ensureDirectoriesExist filename in
+      let _ = writeLine("Writing data to: "^filename^"\n") in
+      let _ = writeStringToFile(printValueTop(val,uid),filename) in
+        true
+
+  %% Evaluate the given unit and print it to a file.
+  %% Returns a success flag.
+  op showData (uid_str : String) : Boolean =
   let _ = writeLine "Printing spec to file." in
   let _ = writeLine ("uid_str:"^uid_str) in
   case evaluateUnitId uid_str of
-    | Some val ->
-      (case uidStringForValue val of  %TODO Awkward to extract the string here; just do whatever evaluateUnitId does to turn it into an absolute path?
-         | None -> let _ = writeLine "Error: Can't get UID string from value" in false
-         | Some (uid,uidstr) ->
-           let filename = uidstr ^ ".data" in
-           let _ = ensureDirectoriesExist filename in
-           let _ = writeLine("Writing data to: "^filename^"\n") in
-           let _ = writeStringToFile(printValueTop(val,uid,printPositionInfo?,recursive?),filename) in
-           true)
-    | _ -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
+    | None -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
+    | Some val -> showDataCore val
 
-%%TODO duplicate
-%% Replace leading ~/ (if present) with the user's home dir.
-op substHomeDir (path : String, homedir : String) : String =
-  case (explode path) of
-  | #~ :: #/ :: rest -> homedir ^ "/" ^ (implode rest)
-  | _ -> path
-
-op enquote (str:String) : String = ("\""^str^"\"")
-
+% This is the top-level function for the showdata command.
+% TODO abstract out this pattern for use in other commands?
 op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
   let _ = writeLine "Calling evaluateShowData." in
   let _ = writeLine ("The user's home directory: "^homedir) in
   let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> enquote str | None -> "No arg string supplied.")) in
-  %FIXME handle the case when this is a qid?
   let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
-  %% Get the unit ID to process:
-  let opt_uid_str =
-    (case optional_argstring of
-       %% No arguments given at all, so use the last unit loaded, if there is one.
-     | None -> (case lastUnitIdLoaded of
-                | None -> let _ = writeLine("ERROR: No unit given and no previous unit loaded.") in None
-                | Some uid_str -> lastUnitIdLoaded)
-       %% Otherwise, the argument string is the unit ID to process:
-     | Some argstring -> optional_argstring) in
-    (case opt_uid_str of
-     | None -> None %% fail and don't change *last-unit-Id-_loaded*
-     | Some uid_str -> 
-       let uid_str = substHomeDir(uid_str, homedir) in
-       %% Print the data to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded.
-       let success? = showData(uid_str, false, true) in
-       if success? then Some uid_str else None)
+  case UIDStringFromArgString(optional_argstring, lastUnitIdLoaded, homedir) of
+  | None -> None % fail and don't change *last-unit-Id-_loaded*
+  | Some uid_str ->
+    %% Print the data to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded:
+    let success? = showData uid_str in
+    if success? then Some uid_str else None
 
 end-spec

@@ -13,6 +13,7 @@ Specware qualifying spec
  %import /Languages/SpecCalculus/AbstractSyntax/Printer      % for showUI
   import /Languages/XML/XML                                  % for XML I/O
   import /Languages/MetaSlang/Transformations/EditFunctions  % Functions called from XEmacs
+  import /Languages/SpecCalculus/AbstractSyntax/TestSpec
   import /Languages/SpecCalculus/AbstractSyntax/ShowData
   import /Languages/SpecCalculus/AbstractSyntax/ShowDeps
   import /Languages/SpecCalculus/AbstractSyntax/ShowImports

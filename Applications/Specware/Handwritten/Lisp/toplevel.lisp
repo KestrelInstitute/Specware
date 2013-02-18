@@ -13,6 +13,7 @@
 (defpackage :ShowDeps)
 (defpackage :ShowImports)
 (defpackage :ShowData)
+(defpackage :TestSpec)
 
 ;; Toplevel Lisp aliases for Specware
 
@@ -936,6 +937,24 @@
         nil ;does this return value matter?
         ;; strip the :|Some| to get the string
         (setq *last-unit-Id-_loaded* (cdr val)))))
+
+;;; This is the function invoked by the Specware shell command 'testspec'.
+;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
+(defun testspec (&optional argstring)
+  ;; This calls the Lisp translation of op testSpec (from
+  ;; Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp.sw).  The "-3" in
+  ;; the Lisp function name is added during the translation to Lisp.
+  ;; My approach is to have the Metaslang code do all of the argument
+  ;; parsing.
+  (let ((val (TestSpec::evaluateTestSpec-3 (wrap-option argstring)
+                                           (wrap-option *last-unit-Id-_loaded*)
+                                           (home-dir))))
+    ;;evaluateTestSpec returns an optional string to store in *last-unit-Id-_loaded*
+    (if (equal val '(:|None|))
+        nil ;does this return value matter?
+        ;; strip the :|Some| to get the string
+        (setq *last-unit-Id-_loaded* (cdr val)))))
+
 
 #+allegro
 (top-level:alias ("swc" :case-sensitive :string) (&optional args)

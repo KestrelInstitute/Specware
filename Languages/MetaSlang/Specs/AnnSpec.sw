@@ -1228,7 +1228,7 @@ op [a] showQ(el: ASpecElement a): String =
  %%%                Testing
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op testSpec (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
+ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
   %% For every type info in the hash table, verify that there is a corresponding
   %% Type and/or TypeDef spec element.
   let bad_type_infos =

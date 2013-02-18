@@ -14,6 +14,7 @@
 ShowDeps qualifying spec 
 
 import Types
+import ShowUtils
 import /Languages/MetaSlang/AbstractSyntax/AnnTerm
 import /Languages/SpecCalculus/Semantics/Value
 import /Languages/SpecCalculus/Semantics/Monad
@@ -51,45 +52,42 @@ type SpecElem = SpecElemTerm
   %% --------------------------------------------------------------------------------
   %% Give the signature of utilities so we don't have to import them
 
-type SpecCalc.GlobalContext
+% type SpecCalc.GlobalContext
   %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
-op  Specware.evaluateUnitId: String -> Option Value
-op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
+%op  Specware.evaluateUnitId: String -> Option Value
+
 
   %op  SpecCalc.uidToFullPath: UnitId -> String
-op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
+%op  SpecCalc.evaluateTermInfo: SCTerm -> SpecCalc.Env ValueInfo
 
-op uidToDepsName ({path,hashSuffix=_}: UnitId) : String =
-  let device? = deviceString? (head path) in
-  let main_name = last path in
-  let path_dir = butLast path in 
-  let mainPath = flatten (List.foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
-                            ["/deps/",main_name]
-                            (if device? then tail path_dir else path_dir))
-  in if device?
-       then (head path) ^ mainPath
-     else mainPath
+% op uidToDepsName ({path,hashSuffix=_}: UnitId) : String =
+%   let device? = deviceString? (head path) in
+%   let main_name = last path in
+%   let path_dir = butLast path in 
+%   let mainPath = flatten (List.foldr (fn (elem,result) -> Cons("/",Cons(elem,result)))
+%                             ["/deps/",main_name]
+%                             (if device? then tail path_dir else path_dir))
+%   in if device?
+%        then (head path) ^ mainPath
+%      else mainPath
 
-  %% Used because the use of "#" causes problems with syntax coloring.
-op numberSignString : String = implode [##]
+% op uidStringPairForValue (val: Value) : Option (UnitId * String * String) =
+%   case MonadicStateInternal.readGlobalVar "GlobalContext" of
+%   | None -> None
+%   | Some global_context ->
+%     case findUnitIdForUnit(val,global_context) of
+%     | None -> None
+%     | Some uid ->
+%       Some (uid,
+%             fileNameInSubDir(uid, "deps"),
+%             case uid.hashSuffix of
+%             | Some loc_nm -> numberSignString ^ loc_nm
+%             | _ -> "")
 
-op uidStringPairForValue (val: Value) : Option (UnitId * String * String) =
-  case MonadicStateInternal.readGlobalVar "GlobalContext" of
-  | None -> None
-  | Some global_context ->
-    case findUnitIdForUnit(val,global_context) of
-    | None -> None
-    | Some uid ->
-      Some (uid,
-            uidToDepsName uid,
-            case uid.hashSuffix of
-            | Some loc_nm -> numberSignString ^ loc_nm
-            | _ -> "")
-
-op uidStringForValue (val:Value) : Option String =
-  case uidStringPairForValue val of
-  | None -> None
-  | Some(_,filnm,hash) -> Some(filnm ^ hash)
+% op uidStringForValue (val:Value) : Option String =
+%   case uidStringPairForValue val of
+%   | None -> None
+%   | Some(_,filnm,hash) -> Some(filnm ^ hash)
     
 %% Extend deps to indicate that name depends on all the things in ty.
 op addDepsForType (name : QualifiedId) (deps: Deps) (ty: MSType): Deps =
@@ -251,9 +249,10 @@ op showDepsForSpec (uid_str : String) : Bool =
     | Some val ->
       (case val of
        | Spec spc ->
-         (case (uidStringForValue val) of
+         (case uidForValue val of
           | None -> let _ = writeLine "ERROR: Can't get UID string from value" in false
-          | Some uidstr ->
+          | Some uid ->
+            let uidstr = fileNameInSubDir(uid, "deps") in
             let file_name = uidstr ^ ".deps" in
             let _ = ensureDirectoriesExist file_name in
             let deps = getDepsForSpec(spc) in
@@ -261,12 +260,6 @@ op showDepsForSpec (uid_str : String) : Bool =
             let _ = writeStringToFile(deps,file_name) in
               true)
        | _ -> let _ = writeLine "ERROR: The unit evaluated to something other than a spec." in false)
-
-%% Replace leading ~/ (if present) with the user's home dir.
-op substHomeDir (path : String, homedir : String) : String =
-  case (explode path) of
-  | #~ :: #/ :: rest -> homedir ^ "/" ^ (implode rest)
-  | _ -> path
 
 %% This is the top level Metaslang function for the 'showdeps' command.  It
 %% is called by the hand-written Lisp function showdeps in toplevel.lisp.
