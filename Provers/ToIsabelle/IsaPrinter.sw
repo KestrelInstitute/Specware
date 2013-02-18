@@ -549,9 +549,9 @@ IsaTermPrinter qualifying spec
 
  op ruleToIsaRule(rl_spc: RuleSpec): String =
    case rl_spc of
-     | Unfold  qid -> "simp add: "^qidToIsaString qid^"_def"
+     | Unfold  qid -> "simp only: "^qidToIsaString qid^"_def Product_Type.prod.cases x_eq_x"
      | Fold    qid -> "fold "^qidToIsaString qid^"_def, rule HOL.refl"
-     | Rewrite qid -> "simp add: "^qidToIsaString qid^"_def"
+     | Rewrite qid -> "simp only: "^qidToIsaString qid^"_def Product_Type.prod.cases x_eq_x"
      | LeftToRight qid -> "rule "^qidToIsaString qid
      | RightToLeft qid -> "rule "^qidToIsaString qid^"[symmetric]"
      | _ -> "auto"
@@ -632,6 +632,19 @@ IsaTermPrinter qualifying spec
             "rule_tac f = \""^(ppTermStrFix c Top schema_term)^"\" in arg_cong, ")
      ^ruleToIsaRule rl_spc^")\n"
 
+  op chainedEqualityProof(c: Context, init_tm: MSTerm, f_path: PathTerm.Path,
+                          hist: TransformHistory, init_str: String, indent: Nat)
+       : String =
+    flatten(tabulate(length hist,
+                     fn i ->
+                       let (tr_tm, rl_spc) = hist@i in
+                       let tr_tm = fromPathTerm(tr_tm, f_path) in
+                       (if i = 0 then init_str
+                        else spaces indent^"also have \"... = ")
+                       ^ transformedTermPlusProof(c, if i = 0 then init_tm
+                                                     else fromPathTerm((hist@(i-1)).1, f_path),
+                                                  tr_tm, rl_spc)))
+
   op generateProofForRefineObligation(c: Context, eq_tm: MSTerm, init_dfn: MSTerm, hist: TransformHistory, spc: Spec): String =
     let (lhs, rhs) = equalityArgs eq_tm in
     let path = pathWithinDef lhs in
@@ -640,37 +653,26 @@ IsaTermPrinter qualifying spec
       "proof -\n"
     ^ "  have \"           "^(ppTermStr c equalityContext lhs)^"\n"
     ^ "                 = "^(ppTermStr c equalityContext init_dfn)^"\"  by ("^unfoldFn lhs^")\n"
-    ^ flatten(tabulate(length hist,
-                       fn i ->
-                         let (tr_tm, rl_spc) = hist@i in
-                         let tr_tm = fromPathTerm(tr_tm, f_path) in
-                         "  also have \"... = "
-                         ^ transformedTermPlusProof(c, if i = 0 then init_dfn
-                                                       else fromPathTerm((hist@(i-1)).1, f_path),
-                                                    tr_tm, rl_spc)))
+    ^ chainedEqualityProof(c, init_dfn, f_path, hist, "  also have \"... = ", 2)
     ^ "  also have \"... = "^(ppTermStr c equalityContext rhs)^"\"  by ("^unfoldFn rhs^")\n"
     ^ "  finally show ?thesis by assumption\n"
     ^ "qed"
 
   op generateProofForRefinedPostConditionObligation
        (c: Context, new_pcond: MSTerm, prev_pcond: MSTerm, conds: MSTerm, hist: TransformHistory): String =
+    % let _ = writeLine("gpc: \n"^printTerm new_pcond^"\n  =>\n"^printTerm prev_pcond^"\n"^anyToPrettyString hist) in
     %if true then "" else
     %let path = pathWithinDef lhs in
     %let init_dfn = fromPathTerm(init_dfn, path) in
     let f_path = 1 :: [] in %path in
       "proof -\n"
-    ^ "  have \"           "^(ppTermStr c equalityContext prev_pcond)^"\n"
-    ^ flatten(tabulate(length hist,
-                       fn i ->
-                         let (tr_tm, rl_spc) = hist@i in
-                         let tr_tm = fromPathTerm(tr_tm, f_path) in
-                         let i_tm_prf = transformedTermPlusProof(c, if i = 0 then prev_pcond
-                                                                    else fromPathTerm((hist@(i-1)).1, f_path),
-                                                                 tr_tm, rl_spc)
-                         in
-                         if i = 0
-                           then "                 = " ^i_tm_prf
-                           else "  also have \"... = "^i_tm_prf))
+    ^ "  have \""^(ppTermStr c equalityContext prev_pcond)^"\n"
+    ^ "       = "^(ppTermStr c equalityContext new_pcond)^"\"\n"
+    ^ "  proof -\n"
+    ^ "    have \"           "^(ppTermStr c equalityContext prev_pcond)^"\n"
+    ^ chainedEqualityProof(c, prev_pcond, f_path, hist, "                   = ", 4)
+    ^ "    finally show ?thesis by assumption\n"
+    ^ "    qed\n"
     ^ "  moreover\n"
     ^ "  assume \""^(ppTermStr c Top new_pcond)^"\"\n"
     ^ "  ultimately show ?thesis ..\n"
@@ -809,8 +811,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                   overloadedConstructors = overloadedConstructors spc}
     in
     % let _ = printSpecWithTypesToTerminal spc in
-    let spc = addRefineObligations c spc in
     let spc = normalizeNewTypes(spc, false) in
+    let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
+    let spc = addRefineObligations c spc in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
@@ -2728,7 +2731,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let Some(_,opt_ty) = findLeftmost (fn (id1,_) -> id = id1) (coproduct(spc, ty)) in
    mkEmbedPat(id,mapOption mkWildPat opt_ty,ty)
 
- op  ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
+ op ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
    toString(format(80, ppTerm c parentTerm term))
 
  op  ppTerm : Context -> ParentTerm -> MSTerm -> Pretty
@@ -2910,7 +2913,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              prInfix (Infix (Left, p), Infix (Right, p), false, false, t1, pr_op, t2) 
            | (Infix (a1, p1), (Some pr_op, Infix (a2, p2), _, _)) ->
              if p1 = p2
-               then prInfix (Infix (Left, p2), Infix (Right, p2), true,  % be conservative a1 ~= a2
+               then prInfix (Infix (Left, p2), Infix (Right, p2),
+                             p1 ~= 35, % not And % true,  % be conservative a1 ~= a2
                              a1=a2, t1, pr_op, t2)
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) ->

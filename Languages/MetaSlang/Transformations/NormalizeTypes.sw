@@ -72,17 +72,25 @@ NormTypes qualifying spec
   op normalizeNewTypes(spc: Spec, ign_subtypes?: Bool): Spec =
     let typeNameInfo = topLevelTypes spc in
     let map_fns = (id, normalizeType(spc, typeNameInfo, false, ign_subtypes?),id) in
-    let spc = spc \_guillemotleft {elements = map (fn el ->
-                                       case el of
-                                         | Property (pt, nm, tvs, term, a) ->
-                                           % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
-                                           Property (pt, nm, tvs, mapTerm map_fns term, a)
-                                         | _ -> el)
-                                  spc.elements}
+    let spc = spc << {elements = map (fn el ->
+                                        case el of
+                                          | Property (pt, nm, tvs, term, a) ->
+                                            % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
+                                            Property (pt, nm, tvs, mapTerm map_fns term, a)
+                                          | OpDef(qid,n,hist,a) ->
+                                            let new_hist = map (fn (tm, rlspc) ->
+                                                                  %let _ = writeLine("hist: "^printTerm tm^"\n"^printTerm(mapTerm map_fns tm)) in
+                                                                  (mapTerm map_fns tm,
+                                                                   rlspc))
+                                                             hist
+                                            in
+                                            OpDef(qid,n,new_hist,a)
+                                          | _ -> el)
+                        spc.elements}
     in
     foldl (fn (spc,el) \_rightarrow
            case el of
-             | OpDef(qid,_,_,_) \_rightarrow normDef(qid, map_fns, spc)
+             | OpDef(qid,_,hist,_) \_rightarrow normDef(qid, map_fns, spc)
              | Op(qid,true,_) \_rightarrow normDef(qid, map_fns, spc)
              %| TypeDef(qid,_) \_rightarrow normTypeDef(qid, map_fns, spc)
              | _ \_rightarrow spc)
