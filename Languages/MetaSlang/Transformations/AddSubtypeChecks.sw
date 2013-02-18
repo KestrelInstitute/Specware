@@ -39,7 +39,7 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
     | (doms, rng) ->
   let tm = etaExpandCurriedBody(tm, doms) in
   let (param_pats, body) = curriedParamsBody tm in
-  let param_tms = map (fn pat -> let Some p_tm = patternToTerm pat in p_tm) param_pats in
+  let param_tms = mapPartial patternToTerm param_pats in
   let result_sup_ty = stripSubtypes(spc, rng) in
   let body_1 =
       if checkResult? || checkRefine?
@@ -96,6 +96,8 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
           let def checkArgs(doms, param_pats, param_tms) =
                 case (doms, param_pats, param_tms) of
                   | ([], _, _) -> []
+                  | (_, [], _) -> []
+                  | (_, _, []) -> []
                   | (dom :: r_doms, param_pat :: r_param_pats, param_tm :: r_param_tms) ->
                     checkArg(dom, param_pat, param_tm) ++ checkArgs(r_doms, r_param_pats, r_param_tms)
               def mkAssurePair(param_pat, param_tm, pred, warn_fn, param_ty) =
