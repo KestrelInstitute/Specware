@@ -28,6 +28,20 @@ op [a] TRUE: a -> Bool = fn _:a -> true
 op [a] FALSE: a -> Bool = fn _:a -> false
 
 
+
+% Some simple theorems (these were in Library/DataStructures/StructuredTypes.sw):
+% Are any of these built in to the Specware rewriter itself?
+
+theorem conditional_true is [a]
+  fa(p:a,q:a) ((if true then p else q) = p)
+
+theorem conditional_false is [a]
+  fa(p:a,q:a) ((if false then p else q) = q)
+
+theorem conditional_noop is [a]
+  fa(p:Boolean,e:a) ((if p then e else e) = e)
+
+
 % Isabelle pragmas
 
 proof Isa ~~~ [simp] end-proof
