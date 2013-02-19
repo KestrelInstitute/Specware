@@ -36,4 +36,13 @@ spec
       | elt::y -> % push(elt, push_aux(y,stk))
                   push_aux(y, push(elt, stk))
 
+theorem push_aux_append is [a]
+  fa(x:List a,y:List a,stk:Stack a) push_aux(x ++ y, stk) = push_aux(y, push_aux(x, stk))
+
+proof isa push_aux_append
+  apply(induct "x" arbitrary: stk)
+  apply(simp)
+  apply(simp)
+end-proof
+
 end-spec
