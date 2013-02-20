@@ -86,7 +86,7 @@ FM qualifying spec
     let hdV2 = var(hdT2) in
     let hdC1 = constant(hdT1) in
     let hdC2 = constant(hdT2) in
-    if hdV1 = hdV2 && comp2 = GtEq % & hdC1 * hdC2 < zero
+    if hdV1 = hdV2 && comp2 = GtEq % && hdC1 * hdC2 < zero
       then
 	let coefGcd = gcd(hdC1, hdC2) in
 	let p1Mult =abs(hdC2 div coefGcd) in
@@ -121,7 +121,7 @@ FM qualifying spec
     let hdV2 = var(hdT2) in
     let hdC1 = constant(hdT1) in
     let hdC2 = constant(hdT2) in
-      hdV1 = hdV2 & hdC1 * hdC2 < Coef.zero
+      hdV1 = hdV2 && hdC1 * hdC2 < Coef.zero
 
   op chainComp: CompPred * CompPred -> CompPred
   def chainComp(comp1, comp2) =
@@ -157,9 +157,9 @@ FM qualifying spec
     let ineqSet = normalize(ineqSet) in
     %let _ = writeLine("FM: Norm:") in
     %let _ = writeIneqs(ineqSet) in
-    if member(contradictIneqGt, ineqSet) or
-      member(contradictIneqGtEq, ineqSet) or
-      member(contradictIneqGtZero, ineqSet)      
+    if member(contradictIneqGt,     ineqSet) ||
+       member(contradictIneqGtEq,   ineqSet) ||
+       member(contradictIneqGtZero, ineqSet)      
       then None
     else 
     let ineqSet = sortIneqSet(ineqSet) in
@@ -169,9 +169,9 @@ FM qualifying spec
     let completeIneqs = fourierMotzkin(ineqSet) in
     %let _ = writeLine("FM: output:") in
     %let _ = writeIneqs(completeIneqs) in
-    if member(contradictIneqGt, completeIneqs) or
-      member(contradictIneqGtEq, completeIneqs) or
-      member(contradictIneqGtZero, completeIneqs)      
+    if member(contradictIneqGt,     completeIneqs) ||
+       member(contradictIneqGtEq,   completeIneqs) ||
+       member(contradictIneqGtZero, completeIneqs)      
       then None
     else
       let counter = generateCounterExample(completeIneqs) in

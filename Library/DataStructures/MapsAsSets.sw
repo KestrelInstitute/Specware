@@ -18,7 +18,7 @@ spec
   % elements)
 
   type Map(a,b) = {s : Set(a * b) |
-                   fa(x,y1,y2) (x,y1) in? s & (x,y2) in? s => y1 = y2}
+                   fa(x,y1,y2) (x,y1) in? s && (x,y2) in? s => y1 = y2}
 
   % we (re-)define the operations on maps to operate on the
   % sets just defined and to be constructive

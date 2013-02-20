@@ -90,8 +90,8 @@ spec
 
 %  axiom SBFIWT_correctness is 
 %    fa(x:State, st:State, z:R)( B2S(F st (obs st)) = (obs st)  % (obs st) is a fixpoint
-%                           & initialState(x) stle st       % that is above an initial PO element
-%                           => O(x, extract(st)))           % solves the problem instance
+%                           && initialState(x) stle st          % that is above an initial PO element
+%                           => O(x, extract(st)))               % solves the problem instance
 
 end
 

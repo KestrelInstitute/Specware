@@ -121,7 +121,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	 def freshType srt = 
 	     mapType((fn M -> M),doType,fn p -> p) srt
      in
-     %% varMap = {| num -> (num1,srt) | (num,srt) in freeVars & num1 = ... |}
+     %% varMap = {| num -> (num1,srt) | (num,srt) in freeVars && num1 = ... |}
      let varMap = 
 	 foldr (fn ((num,srt), varMap) -> 
                   let num1 = ! context.counter in

@@ -15,7 +15,7 @@ spec
   def member? (l,x) =
     case l of
       | [] -> false
-      | h::t -> (h = x) or (member? (t,x))
+      | h::t -> (h = x) || (member? (t,x))
 
   def delete (l,x) =
     case l of

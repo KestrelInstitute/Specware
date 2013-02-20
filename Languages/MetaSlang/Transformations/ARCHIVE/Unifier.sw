@@ -108,7 +108,7 @@ spec
 				    else None))
 
      | (Fun(f1, s1,_), Fun(f2, s2,_)) ->
-       if equalFun?(f1,f2) & equalType?(s1,s2)
+       if equalFun?(f1,f2) && equalType?(s1,s2)
 	 then Some sb
 	 else None
 

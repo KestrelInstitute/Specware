@@ -32,8 +32,8 @@ spec
 
   op ilfp : I -> A -> {f:I->A->A | fa(i:I) monotone (f i)} -> A 
   def ilfp i a f = the (b)( a<=b 
-                         & (f i b)=b 
-                         & (fa(c:A)(a<=c & (f i c)=c => b<=c)))
+                         && (f i b)=b 
+                         && (fa(c:A)(a<=c && (f i c)=c => b<=c)))
 
 %  def ilfp i a f = the (b)( b = lfp a (f i) ) 
 

@@ -33,8 +33,8 @@ spec
 
   op sblfp (st0:State, F:State->State | monotoneState F && st0 stle F(st0)): State =
      the (stn)( st0 stle stn      %  simpler:  lfp(st0,F) = stn
-                 & F(stn)=stn 
-                 & (fa(st:State)(st0 stle st & F(st)=st => stn stle st)))
+                 && F(stn)=stn 
+                 && (fa(st:State)(st0 stle st && F(st)=st => stn stle st)))
 
 end
 
@@ -48,9 +48,9 @@ end
   op sblfp (a:State, F:State->State | monotone F && a stle F(a)): State =
      the (stn)( fa(a0,an,a)
                   ( a0 = st2po st0
-                    & an = st2po stn
+                    && an = st2po stn
                     => (a0 subset a)      %  simpler:  lfp a0 F = an
-                    & F(stn)=stn 
-                    & (fa(st:State)(st0 stle st & F(st)=st => stn stle st))))
+                    && F(stn)=stn 
+                    && (fa(st:State)(st0 stle st && F(st)=st => stn stle st))))
 
 *)

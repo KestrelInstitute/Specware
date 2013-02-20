@@ -226,7 +226,7 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
           case (stm1, stm2) of
             | (Apply(infix_fn1 as Fun(f, _, _), Record([("1", x1), ("2", y1)], _), _),
                Apply(infix_fn2, Record([("1", x2), ("2", y2)], _), _))
-                | infixFn? f & equalTerm?(infix_fn1, infix_fn2) ->
+                | infixFn? f && equalTerm?(infix_fn1, infix_fn2) ->
               choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
             | (Apply(x1, y1, _), Apply(x2, y2, _)) ->
               choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)

@@ -62,7 +62,7 @@ Maps = Map qualifying spec
 
   axiom map_induction is [a,b]
         fa (p : Map(a,b) -> Boolean)
-           p empty_map &
+           p empty_map &&
            (fa(m,x,y) p m => p (update m x y)) =>
            (fa(m) p m)
 

@@ -142,7 +142,7 @@ Ineq qualifying spec
 
   op normalizeZeroIneq: CompPred -> Ineq
   def normalizeZeroIneq(c) =
-    if c = Gt or c = Lt or c = Neq then falseIneq
+    if c = Gt || c = Lt || c = Neq then falseIneq
     else trueIneq
 
   op oppositeComp: CompPred -> CompPred
@@ -208,7 +208,7 @@ Ineq qualifying spec
 
   op chainComp: CompPred * CompPred -> CompPred
   def chainComp(comp1, comp2) =
-    %let _ = if comp1 = Neq or comp2 = Neq then fail("Neq") else () in
+    %let _ = if comp1 = Neq || comp2 = Neq then fail("Neq") else () in
     if comp1 = Gt then Gt
     else if comp2 = Gt then Gt
     else GtEq

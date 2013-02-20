@@ -38,7 +38,7 @@ GlobalSearchTheory = spec
 
    op Phi : State -> Boolean
    axiom characterization_of_necessary_pruning_test_phi is
-     fa(x:D,z:R,s:State)(Satisfies(z,s) & O(x,z) => Phi(s))
+     fa(x:D,z:R,s:State)(Satisfies(z,s) && O(x,z) => Phi(s))
 
  end-spec
 

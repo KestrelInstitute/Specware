@@ -17,7 +17,7 @@ SpecCalc qualifying spec
            | Some info ->
          let fixity_err? = embed? Error info.fixity in
          let ambiguous? = check_op_ambiguity(spc, info) in
-         if ~fixity_err? & ~ambiguous? then result
+         if ~fixity_err? && ~ambiguous? then result
          else
          let (ambiguous_types, bad_fixity_ops, ambiguous_ops) = result in
          (ambiguous_types,

@@ -27,8 +27,8 @@ ThreeValuesDef = spec
 %  conjecture nextmod3z2 is 
 %        ~(nextmod3 Z2 = Z2)
 %  conjecture nextmod3imp is 
-%        (~(nextmod3 Z0 = Z0) &
-%         ~(nextmod3 Z1 = Z1) &
+%        (~(nextmod3 Z0 = Z0) &&
+%         ~(nextmod3 Z1 = Z1) &&
 %         ~(nextmod3 Z2 = Z2))
 %        =>
 %        (fa(t) ~(nextmod3 t = t))

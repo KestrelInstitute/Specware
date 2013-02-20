@@ -65,14 +65,14 @@ Pi1PTopt1 = spec
  import DRO
  op cost : D * R -> Nat
  op O2 : D * R * D * R -> Boolean
- def O2(x1,z1,x2,z2) = (O(x1,z1) & O(x2,z2) & x1=x2
+ def O2(x1,z1,x2,z2) = (O(x1,z1) && O(x2,z2) && x1=x2
 		        => cost(x1,z1) <= cost(x2,z2))
  op f : D -> R
  axiom correctness_of_f is 
    fa(x1:D,z1:R) fa(x2:D,z2:R)
      (z1=f(x1) 
       => O(x1,z1) 
-         & ( x1=x2 & O(x2,z2) 
+         && ( x1=x2 && O(x2,z2) 
 	    => cost(x1,z1) <= cost(x2,z2)))
  end-spec
 

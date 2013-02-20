@@ -27,14 +27,14 @@ spec
 
   op lfp (a:A, F:A->A | monotone F && a<=F(a)): A =
      the (b)( a<=b 
-               & F(b)=b 
-               & (fa(c:A)(a<=c & F(c)=c => b<=c)))
+               && F(b)=b 
+               && (fa(c:A)(a<=c && F(c)=c => b<=c)))
 
 end
 
 %  axiom lfp_characterization is
-%     fa(a,f,b)(lfp a f = b => (a<=b & f(b)=b & (fa(c:A)(a<=c & f(c)=c => b<=c))))
+%     fa(a,f,b)(lfp a f = b => (a<=b && f(b)=b && (fa(c:A)(a<=c && f(c)=c => b<=c))))
 
 %  op gfp :  A -> {f:A->A | (monotone f)} -> A 
 %  axiom gfp_characterization is
-%     fa(a,f,b)(gfp a f = b => (b<=a & f(b)=b & (fa(c:A)(c<=a & f(c)=c => c<=b))))
+%     fa(a,f,b)(gfp a f = b => (b<=a && f(b)=b && (fa(c:A)(c<=a && f(c)=c => c<=b))))

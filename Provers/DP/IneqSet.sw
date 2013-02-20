@@ -14,9 +14,9 @@ IneqSet qualifying spec
   
   op normalize: IneqSet -> IneqSet
   def normalize(ineqSet) =
-    if member(contradictIneqGt, ineqSet) or
-      member(contradictIneqGtEq, ineqSet) or
-      member(contradictIneqGtZero, ineqSet)
+    if member(contradictIneqGt,     ineqSet) ||
+       member(contradictIneqGtEq,   ineqSet) ||
+       member(contradictIneqGtZero, ineqSet)
       then [falseIneq]
     else
       let ineqSet = map normalize ineqSet in

@@ -104,7 +104,7 @@ FM qualifying spec
     let hdV2 = var(hdT2) in
     let hdC1 = constant(hdT1) in
     let hdC2 = constant(hdT2) in
-    if hdV1 = hdV2 && comp2 = GtEq % & hdC1 * hdC2 < zero
+    if hdV1 = hdV2 && comp2 = GtEq % && hdC1 * hdC2 < zero
       then
 	let coefGcd = gcd(hdC1, hdC2) in
 	let p1Mult =abs(hdC2 div coefGcd) in
@@ -154,7 +154,7 @@ FM qualifying spec
     let hdV2 = var(hdT2) in
     let hdC1 = constant(hdT1) in
     let hdC2 = constant(hdT2) in
-      hdV1 = hdV2 & hdC1 * hdC2 < Coef.zero
+      hdV1 = hdV2 && hdC1 * hdC2 < Coef.zero
 
   op chainComp: CompPred * CompPred -> CompPred
   def chainComp(comp1, comp2) =

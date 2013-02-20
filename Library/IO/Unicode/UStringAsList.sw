@@ -29,7 +29,7 @@ Unicode qualifying spec
       | _ -> None 
 
 
-  % def Unicode.all? pred ustring = foldl (fn (uchar, result) -> result & (pred uchar)) true ustring
+  % def Unicode.all? pred ustring = foldl (fn (uchar, result) -> result && (pred uchar)) true ustring
 
   def Unicode.substring? (s1 : UString, s2 : UString) : Bool =
     case (s1, s2) of

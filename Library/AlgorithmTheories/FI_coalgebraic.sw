@@ -39,7 +39,7 @@ spec
 
   axiom SBFIT_correctness is 
     fa(x:D, y:State, z:R)( F(initialState(x)) = y         % a fixpoint y
-                           & initialState(x) stle y       % that is above an initial PO element
+                           && initialState(x) stle y      % that is above an initial PO element
                            => O(x, extract(y)))           % solves the problem instance
 
 end

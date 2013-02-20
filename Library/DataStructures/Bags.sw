@@ -86,7 +86,7 @@ spec
 
   axiom induction is [a]
         fa (p : Bag a -> Boolean)
-           (p empty_bag &
+           (p empty_bag &&
            (fa(x,b) p b => p(bag_insert(x,b)))) =>
            (fa(b) p b)
 

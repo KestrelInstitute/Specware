@@ -93,8 +93,8 @@ WordMatching = spec
   axiom word_matching is
         fa(wrd,msg,pos)
           word_matches_at?(wrd,msg,pos) <=>
-          pos >= 0 &
-          pos + lenW(wrd) <= lenM(msg) &
+          pos >= 0 &&
+          pos + lenW(wrd) <= lenM(msg) &&
           (fa(i) i < lenW(wrd) =>
                  symb_matches?(nthelemW(wrd,i),
                                nthelemM(msg,pos+i)))
@@ -141,8 +141,8 @@ FindMatches = spec
   axiom match_finding is
         fa(msg,wrds,mtch)
           haselemML(find_matches(msg,wrds),mtch) <=>
-          haselemWL(wrds,mtch.word) &
-          word_matches_at?(mtch.word,msg,mtch.position) &
+          haselemWL(wrds,mtch.word) &&
+          word_matches_at?(mtch.word,msg,mtch.position) &&
           (fa(pos) word_matches_at?(mtch.word,msg,pos) =>
                    pos >= mtch.position)
 

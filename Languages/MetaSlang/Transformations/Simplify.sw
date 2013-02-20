@@ -273,7 +273,7 @@ spec
     %                  Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
     %         lam
            %% Quantification simplification
-           %% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
+           %% fa(x,y) x = a && p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
            | Bind(Forall,_,_,_) ->
              let result = simplifyForall spc (forallComponents term) in
              % let _ = writeLine("\nSFA0:\n"^printTerm term^"\n --->\n"^printTerm result) in
@@ -481,10 +481,10 @@ spec
     
 
   op  normForallBody: MSTerm * StringSet.Set * Spec -> Option(List Var * List MSTerm * MSTerm)
-  %% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
+  %% fa(x) p => let y = m in n --> fa(x,y) p && y = m => n
   def normForallBody(body, used_names, spc) =
     case body of
-      | Let([(pat, val)], let_body, _) ->	% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
+      | Let([(pat, val)], let_body, _) ->	% fa(x) p => let y = m in n --> fa(x,y) p && y = m => n
         (case patternToTerm pat of
 	   | Some pat_tm ->
 	     let new_vs = freeVars pat_tm in

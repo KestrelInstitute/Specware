@@ -38,11 +38,11 @@ MSToFM qualifying spec
     case tm of
       | Poly (p) -> printPoly(p)
       | Ineq (i) -> printIneq(i)
-      | BoolBinOp (And, t1, t2) -> printFMTerm(t1)^" && "^printFMTerm(t2)
+      | BoolBinOp (And,     t1, t2) -> printFMTerm(t1)^" && "^printFMTerm(t2)
       | BoolBinOp (Implies, t1, t2) -> printFMTerm(t1)^" => "^printFMTerm(t2)
-      | BoolBinOp (XOr, t1, t2) -> printFMTerm(t1)^" ^^ "^printFMTerm(t2)
-      | BoolBinOp (Or, t1, t2) -> printFMTerm(t1)^" || "^printFMTerm(t2)
-      | BoolBinOp (Equiv, t1, t2) -> printFMTerm(t1)^" <=> "^printFMTerm(t2)
+      | BoolBinOp (XOr,     t1, t2) -> printFMTerm(t1)^" ^^ "^printFMTerm(t2)
+      | BoolBinOp (Or,      t1, t2) -> printFMTerm(t1)^" || "^printFMTerm(t2)
+      | BoolBinOp (Equiv,   t1, t2) -> printFMTerm(t1)^" <=> "^printFMTerm(t2)
       | _ -> (fail "UnSupported")
 
   op fmTrue: FMTerm
@@ -175,7 +175,7 @@ MSToFM qualifying spec
       | _::rest -> flattenHyps(rest)
 *)
 
-  def fmBoolOps = ["&", "or", "~", "=>", "<=>"]
+  def fmBoolOps = ["&&", "||", "~", "=>", "<=>"]
 
   op fmInterp?: MSTerm -> Bool
   def fmInterp?(term) =

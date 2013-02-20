@@ -76,7 +76,7 @@ WadlerLindig qualifying spec
   
   op ppFits : Int -> List (Int * BreakMode * Doc) -> Bool
   def ppFits w x =
-    (w >= 0) &
+    (w >= 0) &&
     (case x of
        | [] -> true
        | (i,m,DocNil) :: z -> ppFits w z

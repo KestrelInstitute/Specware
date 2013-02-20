@@ -27,8 +27,8 @@ spec
 
   op clfp (a:A, F:A->A | monotone F && a<=F(a)): A =
      the (b)( a<=b 
-               & F(b)=b 
-               & (fa(c:A)(a<=c & F(c)=c => b<=c)))
+               && F(b)=b 
+               && (fa(c:A)(a<=c & F(c)=c => b<=c)))
 
 (*  we need to introduce a new monotone function 
 

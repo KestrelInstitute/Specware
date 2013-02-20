@@ -6,12 +6,12 @@ spec
   def no_repetitions(l) = case l of
                              | nilI -> true
                              | consI(hd,tl) -> ~(member(hd,tl))
-                                             & no_repetitions(tl)
+                                             && no_repetitions(tl)
 
   type ListNR = (ListI | no_repetitions)
 
   op permutation : ListNR * ListNR -> Bool
-  def permutation(l1,l2) = length(l1) = length(l2) &
+  def permutation(l1,l2) = length(l1) = length(l2) &&
                            (case l1 of
                                | nilI -> true
                                | consI(hd,tl) -> permutation(tl,delete(l2,hd)))

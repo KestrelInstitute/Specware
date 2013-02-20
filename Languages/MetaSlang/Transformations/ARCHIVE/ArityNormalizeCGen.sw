@@ -117,7 +117,7 @@ ArityNormalizeCGen qualifying spec {
  def isShortTuple(i,row) = 
      case row
        of [] -> true
-	| (lbl,r)::row -> lbl = toString i & isShortTuple(i + 1,row)
+	| (lbl,r)::row -> lbl = toString i && isShortTuple(i + 1,row)
       
  def typeArity(sp,srt) =
      let 

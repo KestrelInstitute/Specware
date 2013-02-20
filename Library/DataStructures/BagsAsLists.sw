@@ -46,7 +46,7 @@ spec
     case l1 of
     | []          -> l2 = []
  %%TODO expensive to compare the lengths on each recursive call (but needed to cover the case when delete_first does nothing)?
-    | Cons(x,l11) -> length l1 = length l2 & perm?(l11,delete_first(x,l2))
+    | Cons(x,l11) -> length l1 = length l2 && perm?(l11,delete_first(x,l2))
 
 
   % we (re-)define the operations on bags to operate on the equivalence

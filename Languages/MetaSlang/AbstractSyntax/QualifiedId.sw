@@ -48,8 +48,8 @@ MetaSlang qualifying spec
        | "<=>" -> true
        | "="   -> true
        | "~="  -> true
-       | "&"   -> true  % TODO: deprecate
-       | "or"  -> true  % TODO: deprecate
+      %| "&"   -> true  % deprecated
+      %| "or"  -> true  % deprecated
        | _ -> false)
   else
     false

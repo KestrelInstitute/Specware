@@ -47,7 +47,7 @@ spec
 
   axiom FIT_correctness is 
     fa(x:D, y:Set X, z:R)( F(y)=y                     % a fixpoint y,
-                          & initialSet(x) subset y    % that is above an initial PO element,
+                          && initialSet(x) subset y   % that is above an initial PO element,
                           => O(x, extract(y)))        % solves the problem instance
   
 end

@@ -107,7 +107,7 @@ spec
      newPoly <- return (polyPlusPoly(coefTimesPoly(c1, poly1), coefTimesPoly(c2, poly2)));
      newI <- return(mkIneq(GtEq, newPoly));
      newHdVar <- return(hdVar(newPoly));
-     if hdVarI1 = hdVarI2  & compPred(i1) = compPred(i2) & compPred(i1) = GtEq
+     if hdVarI1 = hdVarI2  && compPred(i1) = compPred(i2) && compPred(i1) = GtEq
        && hdVarI1 ~= newHdVar
        then return newI
      else throw "Error ChainNZ"

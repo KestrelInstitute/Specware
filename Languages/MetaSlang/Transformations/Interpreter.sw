@@ -793,7 +793,7 @@ spec
 
     % %% Boolean operations are non-strict
     %% %% Should it be non-strict in first argument as well as second?
-    %% | "&"   ->
+    %% | "&&"   ->
     %%  (case fields of
     %%     | [(_,Bool x),(_,Bool y)] -> Bool(x & y)
     %%     | [(_,Bool false),(_,_)]  -> Bool false
@@ -801,7 +801,7 @@ spec
     %%     | [(_,ut),(_,Bool true)]  -> ut
     %%     | [(_,Bool true),(_,ut)]  -> ut
     %%     | _                       -> default())
-    %%  | "or"  ->
+    %%  | "||"  ->
     %%  (case fields of
     %%     | [(_,Bool x),(_,Bool y)] -> Bool(x or y)
     %%     | [(_,Bool true),(_,_)]   -> Bool true

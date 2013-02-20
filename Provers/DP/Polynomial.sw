@@ -211,7 +211,7 @@ Poly qualifying spec
     if constant?(t1) && constant?(t2)
       then constant(t1) = constant(t2)
     else if constant?(t1) || constant?(t2) then false
-    else equal?(var(t1), var(t2)) & constant(t1) = constant(t2)
+    else equal?(var(t1), var(t2)) && constant(t1) = constant(t2)
 
   op compare: Poly * Poly -> Comparison
   def compare(p1, p2) =

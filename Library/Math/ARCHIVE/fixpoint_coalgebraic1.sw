@@ -32,13 +32,13 @@ spec
   def sblfp st0 F = 
        the (stn)( fa(a0,an,a)
                     (   a0 = st2po st0
-                      & an = st2po stn
+                     && an = st2po stn
                      => (a0<=a)      %  simpler:  lfp a0 F = an
-                      & F stn an =an 
-                      & (fa(a:A)(a0<=a & (F stn a)=a => an<=a))))
+                     && F stn an =an 
+                     && (fa(a:A)(a0<=a && (F stn a)=a => an<=a))))
 
 %  op sbgfp :  State -> {f:A->A | monotone f} -> State 
 %  axiom gfp_characterization is
-%     fa(a,f,b)(gfp a f = b => (b<=a & f(b)=b & (fa(c:State)(c<=a & f(c)=c => c<=b))))
+%     fa(a,f,b)(gfp a f = b => (b<=a && f(b)=b & (fa(c:State)(c<=a && f(c)=c => c<=b))))
 
 end

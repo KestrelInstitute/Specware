@@ -187,14 +187,14 @@ theorem toNat_injective is
 
 theorem toNat_surjective is
   fa  (n:Nat, len:PosNat) ex (bs:Bits1) n < 2***len => 
-     length bs = len & n = toNat bs
+     length bs = len && n = toNat bs
 
 theorem bits_injective is
   fa (n:Nat, m:Nat, len:PosNat) n < 2***len => m < 2***len =>
        (bits(n,len) = bits(m,len)) = (m = n)
 
 theorem bits_surjective is
-  fa (bs:Bits1) ex(i:Nat) i < 2***(length bs) & bs = bits (i, length bs)
+  fa (bs:Bits1) ex(i:Nat) i < 2***(length bs) && bs = bits (i, length bs)
 
 % ------------------------------------------------------------
 
@@ -282,7 +282,7 @@ theorem byte_injective is
   fa (i:Nat, j:Nat) i < 256 => j < 256 => (byte i = byte j) = (i = j)
 
 theorem byte_surjective is
-  fa (bs:Byte) ex(i:Nat) i < 256 & bs = byte i
+  fa (bs:Byte) ex(i:Nat) i < 256 && bs = byte i
 
 theorem byte_PLUS_simp is
   fa (i:Nat, j:Nat) i < 256 => j < 256 => 

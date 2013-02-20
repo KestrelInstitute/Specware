@@ -69,7 +69,7 @@ spec
   op thIfStep: Step
   def thIfStep(g) =
     let eg = goalExpr(g) in
-    if eqExpr?(eg) & ifExpr?(lhs(eg))
+    if eqExpr?(eg) && ifExpr?(lhs(eg))
       then
 	let e = lhs(eg) in
 	let e0 = ifCond(e) in
