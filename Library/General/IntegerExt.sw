@@ -178,7 +178,7 @@ end-proof
 % coprimality:
 
 op coprime? (n1:Nat, n2:Nat) : Bool =
-  fa(d:Nat) d divides n1 & d divides n2 => d = 1
+  fa(d:Nat) d divides n1 && d divides n2 => d = 1
 
 proof Isa coprime_p__def
 proof
