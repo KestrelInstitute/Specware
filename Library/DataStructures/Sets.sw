@@ -109,7 +109,7 @@ theorem set_intersection_idempotence_right is [a]
 
 axiom induction is [a]
       fa (p : Set a -> Boolean)
-         p empty_set &   %TODO why not &&? TODO parens here?
+         p empty_set &&   % TODO parens here?
          (fa(x,s) p s => p(set_insert(x,s))) =>
          (fa(s) p s)
 
