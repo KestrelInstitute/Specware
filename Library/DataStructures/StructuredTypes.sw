@@ -10,6 +10,9 @@
 spec
   import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
 
+%TODO move to the bool library?
+theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
+
  %%TODO won't type-check.  Seems like a hack.
   %op abort(n:Nat): Nat = n div 0
 
@@ -101,15 +104,6 @@ spec
   axiom bag_diff_set_axiom is [a]
         fa(B:Bag a, S:Set a, y: a)
           occs(y,(B bag_diff_set S)) = (if y in? S then 0 else occs(y,B))
-
-  theorem conditional_true is [a]
-    fa(p:a,q:a)((if true then p else q) = p)
-
-  theorem conditional_false is [a]
-    fa(p:a,q:a)((if false then p else q) = q)
-
-  theorem conditional_noop is [a]
-    fa(p:Boolean,e:a)((if p then e else e) = e)
 
   theorem flatten_nested_conditional_1 is [a]
     fa(p,q,expr1:a,expr2:a)
@@ -219,17 +213,26 @@ spec
   theorem Stack2L_Cons is [a]
     fa(y:a,stk:Stack a) ( Stack2L(push(y,stk)) = Cons(y,Stack2L(stk)))
 
+  theorem Stack2L_push_aux is [a]
+    fa(elts:List a,stk:Stack a) ( Stack2L(push_aux(elts,stk)) = (reverse elts) ++ Stack2L(stk))
+
+proof isa Stack2L_push_aux
+  apply(induct "elts"  arbitrary: stk)
+  apply(simp only: append_Nil push_aux.simps rev.simps)
+  apply(simp only: push_aux.simps Stack2L_Cons)
+  apply(simp)
+end-proof
+
   theorem Stack2L_concat is [a]
     fa(elts:List a,stk:Stack a) ( Stack2L(pushl(elts,stk)) = elts ++ Stack2L(stk))
 
-% TODO We need the non-emptiness condition:
-% (~stk = empty_stack) => 
+% I added the non-emptiness condition back in.
   theorem Stack2L_tail is [a]
-    fa(stk:Stack a) (Stack2L(pop(stk)) = tail(Stack2L(stk)))
+    fa(stk:Stack a) (stk ~= empty_stack) => (Stack2L(pop(stk)) = tail(Stack2L(stk)))
 
-% TODO Add the non-emptiness condition:
+% I added the non-emptiness condition.
   theorem Stack2L_head is [a]
-    fa(stk:Stack a) (top(stk) = head(Stack2L(stk)))
+    fa(stk:Stack a) (stk ~= empty_stack) => (top(stk) = head(Stack2L(stk)))
 
   theorem Stack2L_init is [a]
     fa(lst:List a,stk:Stack a) ((Stack2L(stk) = lst) = (stk = pushl(lst,empty_stack)))
@@ -267,9 +270,9 @@ spec
   theorem L2S_head is [a]
     fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) in? L2S(lst) )
 
- % TODO Needs condition that lst is not empty.
+  % The List1 here is new (was List).
   theorem L2S_tail is [a]
-    fa(y:a,lst:List a) ( L2S(tail(lst)) subset (L2S lst) )
+    fa(y:a,lst:List1 a) ( L2S(tail(lst)) subset (L2S lst) )
 
   theorem L2S_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2S (lst1 ++ lst2) = (L2S lst1 \/ L2S lst2) )
@@ -277,6 +280,7 @@ spec
   theorem L2S_diff is [a]
     fa(lst:List a,sub:List a) ( L2S (diff(lst,sub)) = (L2S lst -- L2S sub) )
 
+ %TODO TMApply seems wrong here
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Boolean))
       ( ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
@@ -322,10 +326,10 @@ spec
   theorem L2B_head is [a]
     fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) bagin? L2B(lst) )
 
-  % TODO Add the non-emptiness condition.
+  % The List1 is new (was just List).
   % TODO: Is the "= true" here necessary (e.g., to make this an equality, so that it can be used as a rewrite rule)?  If so, do we need it other places too?
   theorem L2B_tail is [a]
-    fa(y:a,lst:List a) ( (L2B(tail(lst)) subbag (L2B lst)) = true )
+    fa(y:a,lst:List1 a) ( (L2B(tail(lst)) subbag (L2B lst)) = true )
 
   theorem L2B_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2B (lst1 ++ lst2) = (L2B lst1 \/ L2B lst2) )
@@ -595,7 +599,6 @@ proof Isa exist_list_first
  by (metis hd_in_set)
 end-proof
 
-
 proof isa upto_loop ()
 by (pat_completeness, auto)
 termination
@@ -608,6 +611,14 @@ by (pat_completeness, auto)
 termination
   apply (relation "measure (\<lambda>(i,j,ns). j - i)")
   apply (auto simp add: Nat__pred_def)
+end-proof
+
+%TODO completely bogus measure.  I don't think we can prove that this terminates.
+proof isa Stack2L ()
+by (pat_completeness, auto)
+termination
+  apply (relation "measure (\<lambda>(stk). 0)")
+  sorry
 end-proof
 
 proof isa length_of_uptoL
@@ -633,5 +644,233 @@ proof isa empty_bag_bs_diff
   apply(rule Bag__occurrences)
   apply(simp add:bag_set_difference Bag__empty_bag Bag__natMinus_def)
 end-proof
-     
+
+% not true?:
+proof isa Pair2S_empty
+  sorry
+end-proof
+
+% not true?:
+proof isa Pair2S_insert
+  sorry
+end-proof
+
+proof isa Stack2L_Cons
+  sorry
+end-proof
+
+proof isa Stack2L_concat
+  apply(induct "elts"  arbitrary: stk)
+  apply(simp only: append_Nil pushl_def)
+  apply(simp)
+  apply(simp only: pushl_def push_aux.simps)
+  apply(clarify)
+  apply(simp only: Stack2L_Cons rev.simps push_aux_append push_aux.simps)
+  apply(simp)
+end-proof
+
+% proved half of it.  is the other direction true?
+proof isa Stack2L_init
+  apply(rule bool_iff)
+  defer
+  apply(rule impI)
+  apply(simp only: Stack2L_concat)
+  apply(cut_tac Stack2L_mtStack)
+  apply(simp)
+  sorry
+end-proof
+
+proof isa L2S_vs_Pair2S
+  sorry
+end-proof
+
+
+proof isa L2S_Nil
+  apply(rule bool_iff)
+  apply(simp add: L2S_def)
+  apply(simp add: L2S_def)
+  sorry
+end-proof
+
+proof isa L2S_Cons
+  apply(simp add: L2S_def)
+  sorry
+end-proof
+
+
+proof isa L2S_delete1
+  sorry
+end-proof
+
+
+proof isa L2S_member
+  apply(simp add: L2S_def)
+  sorry
+end-proof
+
+proof isa L2S_head
+  sorry
+end-proof
+
+proof isa L2S_tail
+  sorry
+end-proof
+
+proof isa L2S_concat
+  sorry
+end-proof
+
+proof isa L2S_diff
+  sorry
+end-proof
+
+proof isa CM2S_Obligation_subtype
+  sorry
+end-proof
+
+proof isa CM2S_Obligation_subtype0
+  sorry
+end-proof
+
+proof isa CM2S_Obligation_subtype1
+  sorry
+end-proof
+
+proof isa L2S_set_diff_Obligation_subtype
+  sorry
+end-proof
+
+proof isa L2S_set_diff
+  sorry
+end-proof
+
+proof isa L2B_Nil
+  sorry
+end-proof
+
+proof isa L2B_Cons
+  sorry
+end-proof
+
+proof isa L2B_delete1
+  sorry
+end-proof
+
+proof isa L2B_member
+  sorry
+end-proof
+
+proof isa L2B_head
+  sorry
+end-proof
+
+proof isa L2B_tail
+  sorry
+end-proof
+
+proof isa L2B_concat
+  sorry
+end-proof
+
+proof isa L2B_diff
+  sorry
+end-proof
+
+proof isa L2B_bs_diff_Obligation_subtype
+  sorry
+end-proof
+
+proof isa L2B_bs_diff
+  sorry
+end-proof
+
+proof isa F2M_Obligation_subtype
+  sorry
+end-proof
+
+proof isa F2M_Obligation_subtype0
+  sorry
+end-proof
+
+proof isa M2F_empty_map
+  sorry
+end-proof
+
+proof isa M_iso_F
+  sorry
+end-proof
+
+proof isa MM2F_empty_map
+  sorry
+end-proof
+
+proof isa MM2FB_empty_map
+  sorry
+end-proof
+
+proof isa MM2FL_empty_map
+  sorry
+end-proof
+
+proof isa IM2F_empty_map
+  sorry
+end-proof
+
+proof isa M2S_empty_map
+  sorry
+end-proof
+
+proof isa M2S_update_Obligation_subtype
+  sorry
+end-proof
+
+proof isa M2S_update
+  sorry
+end-proof
+
+proof isa S2CM_Obligation_subtype
+  sorry
+end-proof
+
+proof isa S2CM_CM2S
+  sorry
+end-proof
+
+proof isa S2CM_insert
+  sorry
+end-proof
+
+proof isa CM2S_update_Obligation_subtype
+  sorry
+end-proof
+
+proof isa CM2S_update
+  sorry
+end-proof
+
+proof isa CM_iso_S
+  sorry
+end-proof
+
+proof isa CM2S_set_insert_Obligation_subtype
+  sorry
+end-proof
+
+proof isa CM2S_set_insert
+  sorry
+end-proof
+
+proof isa CM2S_set_delete
+  sorry
+end-proof
+
+proof isa CM2S_member_Obligation_subtype
+  sorry
+end-proof
+
+proof isa CM2S_member
+  sorry
+end-proof
+
+
 end-spec

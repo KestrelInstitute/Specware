@@ -11,6 +11,7 @@ spec
   import Maps#Maps_extended
   import Stacks
   import Base
+  import StructuredTypes
   import MapsAsSets#MapsAsSets
   import SetsAsBags#SetsAsBags
   import SetsAsMaps#SetsAsMaps
