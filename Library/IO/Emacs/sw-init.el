@@ -917,7 +917,7 @@ sLisp Heap Image File: ")
                    (file-newer-than-file-p specware-tgz specware4-lisp)))
       (specware-build-command "tar -xvzf %S -C %S" specware-tgz lisp-dir))
 
-    (specware-build-command "sbcl --dynamic-space-size %S")
+    (specware-build-command "sbcl --dynamic-space-size %S" *sbcl-size*)
 
     (sit-for 0.5)
     (specware-build-command "(cl:load %S)"
