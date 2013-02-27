@@ -641,7 +641,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                   if equalType?(result_ty, result_ty') then
                     return new_bod
                   else {
-                    iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) result_ty; 
+                    iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) result_ty None; 
                     % print ("itf: "^ printTermWithTypes iso_fn ^ ": _ -> "^printType result_ty); 
                     return (simplifiedApply(iso_fn, new_bod, spc))
                   }
@@ -870,7 +870,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                      transformQIds)
           }}) ([], []) qidPrMap
       def isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                   (ty: MSType): SpecCalc.Env MSTerm =
+                   (ty: MSType) (par_ty: Option MSType): SpecCalc.Env MSTerm =
+        let src_ty = case par_ty of Some ty -> ty | None -> ty in
         case ty of
           | Base(qid,params,a) ->
             (case lookupIsoFnInfo(qid,iso_fn_info) of  % find if qid is on the lhs of an iso pair
@@ -878,7 +879,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                  (case params of
                     | [p_ty] -> {
                         p_ty' <- isoType (spc, iso_info, iso_fn_info) false p_ty;
-                        arg_iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) p_ty; 
+                        arg_iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) p_ty None; 
                         return (mkHOIsoFn(qid, qid', arg_iso_fn, p_ty, p_ty', spc))
                       }
                     | _ -> fail("Multi-parameter types not yet handled: "^printQualifiedId qid))
@@ -893,15 +894,15 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                         if ty = uf_ty then
                           return (identityFn ty)
                         else
-                          isoTypeFn (spc, iso_info, iso_fn_info) uf_ty))
+                          isoTypeFn (spc, iso_info, iso_fn_info) uf_ty (Some ty)))
           | Arrow(dom,ran,_) -> {
-              fnarg <- return ("f",ty); 
-              iso <- isoTypeFn (spc, iso_info, iso_fn_info) ran;
+              fnarg <- return ("f",src_ty); 
+              iso <- isoTypeFn (spc, iso_info, iso_fn_info) ran None;
               osi <- osiTypeFn (spc, iso_info, iso_fn_info) dom;
               return (mkLambda(mkVarPat fnarg, mkCompose(iso, mkCompose(mkVar fnarg, osi, spc), spc)))
             }
           | Product (row, a) -> {
-              xv <- return ("x",ty); 
+              xv <- return ("x",src_ty); 
               pairs <-
                 mapM (fn (id,i_ty) -> {
                   iso_proj <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkProjection(id,mkVar xv));
@@ -910,7 +911,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
               return (mkLambda(mkVarPat xv, mkRecord pairs))
             }
           | CoProduct (row, a) -> {
-              xv <- return ("x",ty);
+              xv <- return ("x",src_ty);
               matches <-
                 mapM (fn (id,o_i_ty) ->
                       case o_i_ty of
@@ -924,7 +925,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
               return (mkLambda(mkVarPat xv, mkApply(Lambda (matches,noPos), mkVar xv)))
             }
           | Subtype (sub_type, trm, a) -> {
-              xv <- return ("x",ty); 
+              xv <- return ("x",src_ty); 
               iso <- isoTerm (spc, iso_info, iso_fn_info) sub_type (mkVar xv);
               return (mkLambda(mkVarPat xv, iso))
             }
@@ -933,7 +934,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
       def osiTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
                     (ty: MSType): SpecCalc.Env MSTerm = {
           ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
-          isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) ty'
+          isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) ty' None
         }
       def osiTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
                   (ty: MSType)
@@ -941,10 +942,11 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
           ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
           isoTerm (spc, invertIsoInfo iso_info, iso_fn_info) ty' tm
         }
-      def addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MSTerm): SpecCalc.Env Spec =
+      def addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MSTerm) (old?: Bool): SpecCalc.Env Spec =
         case iso_ref of
           | Fun(Op(qid,fixity),ty,_) ->
             (case findTheOp(spc, qid) of
+               | Some opinfo | ~(anyTerm? opinfo.dfn) -> return spc
                | Some opinfo -> {
                    (tvs, srt as Arrow(dom,ran,_)) <-
                      case unpackFirstTerm opinfo.dfn of
@@ -962,13 +964,14 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                                | _ -> escape ("addIsoDefForIso: ran=" ^ anyToString ran ^ "\n");
                            iso <- isoTerm (spc, iso_info, iso_fn_info) super_type (mkVar yv);
                            return (mkLambda(mkVarPat xv,
-                                  mkApply(mkChooseFun(dom, ty, ran,
-                                                      mkLambda(mkVarPat yv,
-                                                               mkQuotient(iso,qid',super_type))),
-                                          mkVar xv)))
+                                            mkApply(mkChooseFun(dom, ty, ran,
+                                                                mkLambda(mkVarPat yv,
+                                                                         mkQuotient(iso,qid',super_type))),
+                                                    mkVar xv)))
                          }
-                       | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom;
+                       | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom (Some dom);
                    newdfn <- return (maybePiTerm(tvs, TypedTerm (newtm, srt, termAnn opinfo.dfn)));
+                   spc <- return(if old? then appendElement(spc, OpDef(qid, 0, [], noPos)) else spc);
                    return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
                  }
                | _ -> escape ("addIsoDefForIso: findTheOp failed qid=" ^ printQualifiedId qid ^ "\n"))
@@ -996,6 +999,22 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
           (escape (printTerm iso ^ " and " ^ printTerm osi ^ " types not inverses\n"));
       return ()
     }) base_iso_info;
+    % Make definitions for any undefined primed types
+    spc <- foldM (fn spc -> fn ((_,_,src_ty,trg_ty), _) ->
+                    case trg_ty of
+                      | Base(qid', _, _) ->
+                        (case findTheType(spc, qid') of
+                           | Some ty_info' | anyType? ty_info'.dfn ->
+                             (case src_ty of
+                                | Base(qid, _, _) ->
+                                  {Some ty_info <- return(findTheType(spc, qid));
+                                   (tvs,ty) <- return(unpackFirstTypeDef ty_info);
+                                   ty' <- isoType (spc, base_iso_info, []) true ty;
+                                   return(addTypeDef(spc, qid', maybePiType(tvs, ty')))}
+                                | _ -> return spc)
+                           | _ -> return spc)
+                      | _ -> return spc)
+              spc base_iso_info;
     %  get qid for src type for each iso (not osi) function
     base_src_QIds <- 
       mapM (fn ((_,_,src_ty,_),_) ->
@@ -1358,14 +1377,20 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
       };
 
     print "adding definitions\n";
-    %  Add definitions for newly introduced iso fns - why is this separate?
-
+    %  Add definitions for newly introduced iso fns
     spc <-
       foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
-        spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref;
-        spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref;
+        spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref false;
+        spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref false;
         return spc
       }) spc prime_type_iso_info; 
+    %  Add definitions for specified iso fns without explicit defs
+    spc <-
+      foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
+        spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref true;
+        spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref true;
+        return spc
+      }) spc base_iso_info; 
     %  Add the theorems that reflect that the isos are inverses 
     (spc, iso_thm_qids) <-
         return (foldl (fn ((spc, iso_thm_qids), ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_))) ->
