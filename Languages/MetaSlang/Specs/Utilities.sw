@@ -1788,6 +1788,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | Some(("1",_)::_) -> true
      | _ -> false
 
+ op tuplePattern? (pat: MSPattern): Bool =
+   case pat of
+     | RecordPat(("1",_)::_, _) -> true
+     | AliasPat(_, p2, _) ->  tuplePattern? p2
+     | RestrictedPat(p1, _, _) -> tuplePattern? p1
+     | _ -> false
+
  op coproductOpt (sp : Spec, ty : MSType): Option (List (Id * Option MSType)) = 
   case stripSubtypes (sp, unfoldBase (sp,ty))
     of CoProduct (fields, _) -> Some fields
