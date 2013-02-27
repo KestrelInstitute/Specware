@@ -443,7 +443,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     let subtypes = foldSubTerms
                      (fn (t, subtypes) ->
                         let ty = inferType(context.spc, t) in
-                        if subtype?(context.spc, ty) && ~(typeIn?(ty, subtypes)) && ~(embed? Subtype ty)
+                        if subtype?(context.spc, ty) && ~(typeIn?(ty, subtypes)) % && ~(embed? Subtype ty)
                           %% Not sure about the ~(embed? ..) but need some restriction to avoid trivial application
                           then
                             %% let _ = writeLine("asr:\n"^printTerm t^"\n: "^printType ty) in

@@ -5,7 +5,7 @@ import Simplify, SubtypeElimination, RuntimeSemanticError, CurryUtils
 op addSubtypeChecksOnResult?: Bool = true
 op addSubtypeChecksOnArgs?: Bool = true
 
-op addSubtypeChecks(spc: Spec): Spec =
+op SpecTransform.addSubtypeChecks(spc: Spec): Spec =
   addSemanticChecks(spc, true, true, false, [])
   
 op checkPredicateComplainQId: QualifiedId = Qualified("SemanticError", "checkPredicateComplain")

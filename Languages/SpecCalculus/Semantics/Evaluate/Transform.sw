@@ -217,7 +217,7 @@ spec
       | Globalize (roots, typ, gvar, opt_init, _) -> return (Globalize (roots, typ, gvar, opt_init))
 
       | _ -> 
-         let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
+        % let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
         raise (TransformError (posOf trans, "Unrecognized transform: "^show trans))
         
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
@@ -580,15 +580,15 @@ spec
       | Command("applyToSpec", [opid],_) ->
         {qid <- extractQId opid;
          return (mkSpecTransform(qid, []))}
-      | Command(fn_nm, [], pos) | fn_nm nin? commands ->
-        return (mkSpecTransform(Qualified("SpecTransform", fn_nm), []))
+      %| Command(fn_nm, [], pos) | fn_nm nin? commands ->
+      %  return (mkSpecTransform(Qualified("SpecTransform", fn_nm), []))
       % | Command(fn_nm as Name(nm, pos), rl_tms, _) | nm nin? commands ->
       %   {qid <- extractQId fn_nm;
       %    rls <- mapM makeRuleRef rl_tms;
       %    return (mkSpecTransform(qid, rls))}
-      | Command(fn_nm, [Tuple(qid_tms,_)], _) | fn_nm nin? commands ->
-        {qids <- mapM extractQId qid_tms;
-         return (mkSpecQIdTransform(Qualified("SpecTransform", fn_nm), qids, []))}
+      %| Command(fn_nm, [Tuple(qid_tms,_)], _) | fn_nm nin? commands ->
+      %  {qids <- mapM extractQId qid_tms;
+      %   return (mkSpecQIdTransform(Qualified("SpecTransform", fn_nm), qids, []))}
       % | Command(Command(fn_nm as Name(nm, pos), qid_tms, _), rl_tms, _) | nm nin? commands ->
       %   {qid <- extractQId fn_nm;
       %    qids <- mapM extractQId qid_tms;
