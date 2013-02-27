@@ -547,11 +547,20 @@ IsaTermPrinter qualifying spec
       | Apply(f, _, _) -> 0 :: pathWithinDef f
       | _ -> []
 
- op ruleToIsaRule(rl_spc: RuleSpec): String =
+ op cleanupCommand(qid: QualifiedId, spc: Spec): String =
+   case findTheOp(spc, qid) of
+     | None -> ""
+     | Some opinfo ->
+   let (_, _, tm) = unpackFirstTerm opinfo.dfn in
+   case tm of
+     | Lambda((pat, _, _)::_, _) | tuplePattern? pat -> ", rule Product_Type.prod.cases"       
+     | _ -> ""
+
+ op ruleToIsaRule (c: Context) (rl_spc: RuleSpec): String =
    case rl_spc of
-     | Unfold  qid -> "simp only: "^qidToIsaString qid^"_def Product_Type.prod.cases x_eq_x"
+     | Unfold  qid -> "unfold "^qidToIsaString qid^"_def"^cleanupCommand(qid, getSpec c)
      | Fold    qid -> "fold "^qidToIsaString qid^"_def, rule HOL.refl"
-     | Rewrite qid -> "simp only: "^qidToIsaString qid^"_def Product_Type.prod.cases x_eq_x"
+     | Rewrite qid -> "unfold "^qidToIsaString qid^"_def"^cleanupCommand(qid, getSpec c)
      | LeftToRight qid -> "rule "^qidToIsaString qid
      | RightToLeft qid -> "rule "^qidToIsaString qid^"[symmetric]"
      | _ -> "auto"
@@ -577,6 +586,8 @@ IsaTermPrinter qualifying spec
            | [] -> mkVar arg_cong_v
            | i :: r_path ->
          case tm of
+          | Apply _ | i = 0 && r_path = [] ->    % Avoid functional variable as leads to non-det match
+            mkVar arg_cong_v
           | Apply(ft as Fun(f, _, _), Record([("1", x), ("2", y)], a1), a2) | infixFn? f ->
             let [x, y] = pick(i, [x, y], r_path, j) in
             Apply(ft, Record([("1", x), ("2", y)], a1), a2)
@@ -630,7 +641,7 @@ IsaTermPrinter qualifying spec
      ^(if path = [] then ""
        else let schema_term = schemaFrom(before, path) in
             "rule_tac f = \""^(ppTermStrFix c Top schema_term)^"\" in arg_cong, ")
-     ^ruleToIsaRule rl_spc^")\n"
+     ^ruleToIsaRule c rl_spc^")\n"
 
   op chainedEqualityProof(c: Context, init_tm: MSTerm, f_path: PathTerm.Path,
                           hist: TransformHistory, init_str: String, indent: Nat)
