@@ -23,45 +23,77 @@ end-spec
 
 B = isos{isomorphism((iso,osi),(isotree,ositree))}
 
+%% trace:
+% * proc /Examples/isorec#B
+% ;;; Elaborating transform at /home/sfitzp/specware/Examples/isorec#B
+% ;;; Elaborating spec at /home/sfitzp/specware/Examples/isorec#isos
+% ;;; Elaborating spec at /home/sfitzp/specware/Examples/isorec#A
+% Domain QId's:
+% rec
+% tree
+% adding definitions
+% make derived ops
+% make derived op definitions
+% mdod: total' not opaque
+% 1 non opaque ops to transform.
+% rewriting ... 
+%   {simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
+%              rewrite Option.isoOption, rewrite List.isoList, 
+%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+%              lr generated.iso__osi, lr generated.osi__iso, 
+%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+%              lr generated.iso__osi, lr generated.osi__iso); 
+%    simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
+%              rewrite Option.isoOption, rewrite List.isoList, 
+%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+%              lr generated.iso__osi, lr generated.osi__iso, 
+%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+%              lr generated.iso__osi, lr generated.osi__iso, rewrite total); 
+%    simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
+%              unfold total, lr generated.inverse_iso_is_osi, 
+%              lr generated.inverse_osi_is_iso, lr generated.iso__osi, 
+%              lr generated.osi__iso, lr generated.inverse_iso_is_osi, 
+%              lr generated.inverse_osi_is_iso, lr generated.iso__osi, 
+%              lr generated.osi__iso); 
+%    SimpStandard}
+
 %% transformed spec:
 
-%% spec  
-%% import A
+% spec  
+% import A
  
-%% type tree2
  
-%% type rec2 = {first: tree2, second: tree2}
+% type tree2 =  | branch rec2 | leaf Nat
  
-%% type tree' =  | branch rec2 | leaf Nat
-%% op isotree (x: tree): tree' = case x
-%%                                of branch y -> branch(iso y)
-%%                                 | leaf y -> leaf y
-%% op iso (therec: rec): rec2 = {first = isotree(therec.left), second = isotree(therec.right)}
-%% op isotree: tree -> tree'
-%% op ositree (x: tree'): tree = case x
-%%                                of branch y -> branch(osi y)
-%%                                 | leaf y -> leaf y
-%% op osi (therec: rec2): rec = {left = ositree(therec.first), right = ositree(therec.second)}
-%% op ositree: tree' -> tree
+% type rec2 = {first: tree2, second: tree2}
+% op iso (therec: rec): rec2 = {first = isotree(therec.left), second = isotree(therec.right)}
+% op isotree: tree -> tree2
+% op osi (therec: rec2): rec = {left = ositree(therec.first), right = ositree(therec.second)}
+% op ositree: tree2 -> tree
+% def isotree (x: tree): tree2 = case x
+%                                 of branch y -> branch(iso y)
+%                                  | leaf y -> leaf y
+% def ositree (x: tree2): tree = case x
+%                                 of branch y -> branch(osi y)
+%                                  | leaf y -> leaf y
  
-%% theorem generated.inverse_iso_is_osi is Function.inverse iso = osi
+% theorem generated.inverse_iso_is_osi is Function.inverse iso = osi
  
-%% theorem generated.inverse_osi_is_iso is Function.inverse osi = iso
+% theorem generated.inverse_osi_is_iso is Function.inverse osi = iso
  
-%% theorem generated.iso__osi is fa(x': rec2) iso(osi x') = x'
+% theorem generated.iso__osi is fa(x': rec2) iso(osi x') = x'
  
-%% theorem generated.osi__iso is fa(x: rec) osi(iso x) = x
+% theorem generated.osi__iso is fa(x: rec) osi(iso x) = x
  
-%% theorem generated.inverse_iso_is_osi is Function.inverse isotree = ositree
+% theorem generated.inverse_iso_is_osi is Function.inverse isotree = ositree
  
-%% theorem generated.inverse_osi_is_iso is Function.inverse ositree = isotree
+% theorem generated.inverse_osi_is_iso is Function.inverse ositree = isotree
  
-%% theorem generated.iso__osi is fa(x': tree') isotree(ositree x') = x'
+% theorem generated.iso__osi is fa(x': tree2) isotree(ositree x') = x'
  
-%% theorem generated.osi__iso is fa(x: tree) ositree(isotree x) = x
-%% op total' (t: tree'): Nat
-%%   = case ositree t
-%%      of leaf x -> x
-%%       | branch therec -> (total'(isotree(therec.left)) + total'(isotree(therec.right)))
-%% end-spec
-
+% theorem generated.osi__iso is fa(x: tree) ositree(isotree x) = x
+% op total' (t: tree2): Nat
+%   = case ositree t
+%      of leaf x -> x
+%       | branch therec -> (total'(isotree(therec.left)) + total'(isotree(therec.right)))
+% end-spec
