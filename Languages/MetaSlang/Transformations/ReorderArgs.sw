@@ -9,7 +9,7 @@ ReviseOps qualifying spec
  import /Languages/MetaSlang/CodeGen/C/CG
  import /Languages/MetaSlang/CodeGen/Java/ToJava
 
- type Probability   = Nat * Nat   %  test is '(random x) <= y'
+ type Probability   = Nat * Nat   %  test is '(random y) <= x'
  type Probabilities = List Probability
 
  type Reordering  = List (Id * Id)
