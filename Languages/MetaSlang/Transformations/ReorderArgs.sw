@@ -197,9 +197,22 @@ ReviseOps qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op SpecTransform.addOpsWithReorderedArgs (spc: Spec, user_rules: RuleSpecs): Spec =
+ % op SpecTransform.addOpsWithReorderedArgs (spc: Spec, user_rules: RuleSpecs): Spec =
+ %  %% let _ = writeLine ("User Rules = " ^ anyToString user_rules) in
+ %  let probs : Probabilities = [(1, 100), (50, 100)] in
+ %  let context = {revise_op  = maybeReorderOpArgs probs,
+ %                 revise_app = maybeReplaceApply  probs}
+ %  in
+ %  run (addDerivativeOps context spc)
+
+% Transform a spec by reordering the arguments to some functions.
+% Functions are chosen at random with probability e1/d1.
+% Each call to the function may be changed with probability e2/d2.
+ op SpecTransform.addOpsWithReorderedArgs
+                  ((e1:Nat, d1:Nat), (e2:Nat, d2:Nat))
+                  (spc: Spec): Spec =
   %% let _ = writeLine ("User Rules = " ^ anyToString user_rules) in
-  let probs : Probabilities = [(1, 100), (50, 100)] in
+  let probs : Probabilities = [(e1, d2), (e2, d2)] in
   let context = {revise_op  = maybeReorderOpArgs probs,
                  revise_app = maybeReplaceApply  probs}
   in
