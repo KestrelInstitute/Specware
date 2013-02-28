@@ -19,14 +19,14 @@ spec
   axiom newPOSet is [a]
         fa(s : Set a) underlyingSet(newPOSet(s)) = s
 %
-    op [a] prec? : POSet(a) -> a -> a -> Boolean
+    op [a] prec? : POSet(a) -> a -> a -> Bool
     %omit reflexivity for now?
     axiom transitivity is
         fa(po,x,y,z) ((prec? po x y) && (prec? po y z) => (prec? po x z))
     axiom antisymmetry is
         fa(po,x,y) ((prec? po x y) && (prec? po y x) => x=y)
 %
-  op [a] immPrec? : POSet(a) -> a -> a -> Boolean
+  op [a] immPrec? : POSet(a) -> a -> a -> Bool
   axiom immPrec? is [a]
     fa(po : POSet a, x:a, y:a, z:a) immPrec? po x y <=>
     prec? po x y && (fa(z) prec? po x z && prec? po z y => z = x || z = y)

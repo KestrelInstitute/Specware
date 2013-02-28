@@ -118,7 +118,7 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
       (if p && q then expr2 else expr1))
 
   theorem lift_if_set_diff is [A]
-   fa(p:Boolean,t1:Set A,t2:Set A,e1:Set A,e2:Set A) 
+   fa(p:Bool,t1:Set A,t2:Set A,e1:Set A,e2:Set A) 
      (  (if p then t1 else e1) -- (if p then t2 else e2)
       = (if p then t1 -- t2 else e1 -- e2) )
 
@@ -282,7 +282,7 @@ end-proof
 
  %TODO TMApply seems wrong here
   theorem L2S_set_diff is [a,M]
-    fa(lst:List a,cm:Map(a,Boolean))
+    fa(lst:List a,cm:Map(a,Bool))
       ( ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
 
 %  theorem L2S_map is [a]
@@ -340,7 +340,7 @@ end-proof
     fa(lst:List a,sub:List a) ( L2B (diff(lst,sub)) = (L2B lst -- L2B sub) )
 
   theorem L2B_bs_diff is [a,M]
-    fa(lst:List a,cm:Map(a,Boolean))
+    fa(lst:List a,cm:Map(a,Bool))
       ( ((L2B lst) --- (CM2S cm)) = (L2B (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
 
 %  theorem L2B_bs_diff is [a]
@@ -530,44 +530,44 @@ with characteristic maps there are several choices:
 
 
 % the starting point (domain m) is already a set, so the set_insert op is unnecessary
-  op [a] CM2S(m:Map(a,Boolean)):Set a =  
+  op [a] CM2S(m:Map(a,Bool)):Set a =  
     set_fold empty_set
              (fn(sa:Set a,domelt:a) -> if TMApply(m,domelt) 
                                        then set_insert_new(domelt, sa)
                                        else sa)
              (domain m)
 
-  op [a] S2CM(S:Set a):Map(a,Boolean) =  
+  op [a] S2CM(S:Set a):Map(a,Bool) =  
     set_fold empty_map
-             (fn(amap:Map(a,Boolean),domelt:a) -> (update amap domelt (true)))
+             (fn(amap:Map(a,Bool),domelt:a) -> (update amap domelt (true)))
              S
 
   theorem S2CM_CM2S is [a]
-      fa(cm:Map(a,Boolean)) (S2CM (CM2S cm)) = cm 
+      fa(cm:Map(a,Bool)) (S2CM (CM2S cm)) = cm 
 
   theorem S2CM_insert is [a]
       fa (S:Set a, n:a) (S2CM(set_insert(n,S)) = (update (S2CM S) n true))
 
 (* this only works for case 1 above
   theorem CM2S_empty_map is [a]
-      CM2S(empty_map:Map(a,Boolean)) = empty_set
+      CM2S(empty_map:Map(a,Bool)) = empty_set
 *)
 
   theorem CM2S_update is [a]
-      fa(m:Map(a,Boolean), x:a, y:Boolean) 
+      fa(m:Map(a,Bool), x:a, y:Bool) 
         CM2S(update m x y)
             = (if y 
                  then set_insert_new(x, CM2S m)
                else set_delete(x, CM2S m))
 
   theorem CM_iso_S is [a]
-    fa(mp:Map(a,Boolean),ns:Set a) (CM2S(mp)=ns) = (mp = S2CM ns)
+    fa(mp:Map(a,Bool),ns:Set a) (CM2S(mp)=ns) = (mp = S2CM ns)
   theorem CM2S_set_insert is [a]
-    fa(x:a,mp:Map(a,Boolean)) CM2S(update mp x true)  = set_insert_new(x, CM2S mp)
+    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x true)  = set_insert_new(x, CM2S mp)
   theorem CM2S_set_delete is [a]
-    fa(x:a,mp:Map(a,Boolean)) CM2S(update mp x false) = set_delete(x, CM2S mp)
+    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
   theorem CM2S_member is [a]
-    fa(x:a,mp:Map(a,Boolean)) TMApply(mp,x) = (x in? CM2S mp)
+    fa(x:a,mp:Map(a,Bool)) TMApply(mp,x) = (x in? CM2S mp)
 
 
 (* ------- M2C: homomorphism from Map to Collection ---------------

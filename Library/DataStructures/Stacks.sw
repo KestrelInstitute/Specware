@@ -12,7 +12,7 @@ spec
 
   op [a] empty_stack : Stack a
 
-  op [a] empty_stack? : Stack a -> Boolean % TODO define this using empty_stack ?
+  op [a] empty_stack? : Stack a -> Bool % TODO define this using empty_stack ?
 
   op [a] push (elt:a, stk:Stack a) : Stack a
 

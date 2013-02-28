@@ -24,7 +24,7 @@ spec
   op [a] empty_stack : VStack a = 
           (MapVec.V_empty_map, 0)
 
-  op [a] empty_stack? (stk:VStack a) : Boolean = 
+  op [a] empty_stack? (stk:VStack a) : Bool = 
           (stk.2 = 0)
 
   op [a] push (elt:a, stk:VStack a): VStack a =

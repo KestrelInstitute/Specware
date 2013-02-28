@@ -33,7 +33,7 @@ Collection qualifying
 spec
   type Collection a
 
-  op [a] in? infixl 20 : a * Collection a -> Boolean
+  op [a] in? infixl 20 : a * Collection a -> Bool
   op [a] empty_coll : Collection a
   op [a] coll_insert : a * Collection a -> Collection a                % insert one occ 
   op [a] coll_delete : a * Collection a -> Collection a                % delete one occ
@@ -42,13 +42,13 @@ spec
 %  op [a] coll_select : Collection a -> Option a                       % define this over State, not here
 %  op [a] coll_rest   : Collection a -> Collection a                   % define this over State, not here
 
-  op [a] subcoll infixl 20    : Collection a * Collection a -> Boolean
+  op [a] subcoll infixl 20    : Collection a * Collection a -> Bool
   %Non-trivial sub-collection?:
-  op [a] nt_subcoll infixl 24 : Collection a * Collection a -> Boolean
+  op [a] nt_subcoll infixl 24 : Collection a * Collection a -> Bool
   op [a] \/ infixl 24 : Collection a * Collection a -> Collection a
   op [a] /\ infixl 25 : Collection a * Collection a -> Collection a
   op [a] -- infixl 25 : Collection a * Collection a -> Collection a    % delete all occs of 2nd arg elts (TODO not true for bags?)
-  op [a] coll_filter  : (a->Boolean) -> Collection a -> Collection a
+  op [a] coll_filter  : (a->Bool) -> Collection a -> Collection a
   op [a,b] coll_fold   : (b*a->b) -> b -> Collection a -> b %TODO not always defined? see the restrictions on set_fold.
 
 %  op [a] size: Collection a -> Nat
@@ -166,12 +166,12 @@ spec
 
 
   axiom def_of_coll_filter is [a]
-      fa(p:a->Boolean, c:Collection a, n:a)
+      fa(p:a->Bool, c:Collection a, n:a)
         (n in? (coll_filter p c) = (n in? c && p n))
 
 
 (* a subcollection As of collection Bs is nontrivial if it is empty iff Bs is empty *)
-   def [a] nt_subcollection(As:Collection a, Bs:Collection a):Boolean =
+   def [a] nt_subcollection(As:Collection a, Bs:Collection a):Bool =
      if As = empty_coll
        then Bs=empty_coll  %empty?(As)
        else As subcoll Bs

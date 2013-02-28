@@ -102,7 +102,7 @@ spec
 
   op [a,b] size (m : Map(a,b)) : Nat = size (domain m)
 
-  op [a,b] total? (s:Set a, m:Map(a,b)): Boolean = (s subset domain m)
+  op [a,b] total? (s:Set a, m:Map(a,b)): Bool = (s subset domain m)
 
   op [a,b] TMApply(m:Map(a,b), x:a | x in? domain(m)): b =
     (case apply m x of

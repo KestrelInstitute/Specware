@@ -61,7 +61,7 @@ Maps = Map qualifying spec
   % obtained by suitable successive applications of update to empty_map
 
   axiom map_induction is [a,b]
-        fa (p : Map(a,b) -> Boolean)
+        fa (p : Map(a,b) -> Bool)
            p empty_map &&
            (fa(m,x,y) p m => p (update m x y)) =>
            (fa(m) p m)
@@ -81,7 +81,7 @@ Maps = Map qualifying spec
      [a,b] fa(m:Map(a,b), z:b)( z in? range(m) = (ex(x:a)(apply m x = Some z)))
 
 % TODO could use a definedOn? helper predicate.  Or just check whether s is a subset of the domain of the map?
-  op [a,b] total? (s:Set a, m:Map(a,b)):Boolean =
+  op [a,b] total? (s:Set a, m:Map(a,b)):Bool =
     fa(x:a) (x in? s => (ex(z:b) apply m x = Some z))
 
 %TODO I guess we don't say how the elements in the list are sorted.
@@ -212,7 +212,7 @@ Maps_extended = spec
       TMApply(mapFrom(s,f), x) = f x
 
   theorem mapFrom_if_shadow is [a,b]
-    fa(x:a, y: b, s: Set a, p: a -> Boolean, f: a -> b, g: a -> b)
+    fa(x:a, y: b, s: Set a, p: a -> Bool, f: a -> b, g: a -> b)
       mapFrom(s,fn x:a -> if p x then f x else g x)
         = mapUpdateSet(mapFrom(s,g), filter p s, f)
 

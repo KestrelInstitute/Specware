@@ -11,7 +11,7 @@ spec
 
   type Bag a = Map(a, Nat)
 
-  op [a] bagin? (x:a, b:Bag a) infixl 100 : Boolean =
+  op [a] bagin? (x:a, b:Bag a) infixl 100 : Bool =
     case apply b x of
       | Some y -> y > 0
       | None   -> false
@@ -22,7 +22,7 @@ spec
       | None   -> 0
 
   %TODO without the Nat annotation on y, the Isabelle obligation is illegal.
-  op [a] subbag (b1:Bag a, b2: Bag a) infixl 200 : Boolean =
+  op [a] subbag (b1:Bag a, b2: Bag a) infixl 200 : Bool =
     %% size b1 <= size b2 &&   % seems wrong (map b1 may have many keys bound to 0 and still represent a subbag of b2)
     foldi (fn (x,y:Nat,r) -> r && y <= occs(x, b2)) true b1
   
@@ -71,7 +71,7 @@ spec
           b1
 
   %or could start out with an empty accumulator?
-  op [a] bag_filter (f: a -> Boolean) (b: Bag a): Bag a =
+  op [a] bag_filter (f: a -> Bool) (b: Bag a): Bag a =
     foldi (fn (x,y,b) -> if f x then b else remove b x) b b
 
   op [a,b] bag_map (f: a -> b) (bg: Bag a) : Bag b =
@@ -81,7 +81,7 @@ spec
     foldi (fn (x,y,sum) -> sum + y) 0 b
 
    %% Changed to match the change in Bags.sw. -Eric
-   op [a] nt_subbag(As:Bag a, Bs:Bag a):Boolean =
+   op [a] nt_subbag(As:Bag a, Bs:Bag a):Bool =
      if As = empty_bag
        then Bs = empty_bag  %empty?(As)
        else As subbag Bs

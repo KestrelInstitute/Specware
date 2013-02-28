@@ -13,12 +13,12 @@ spec
     fa(b1:Bag a, b2:Bag a) (fa(x: a) occs(x,b1) = occs(x,b2)) => b1 = b2
 
   % I made the axiom def_of_Bagin into a definition. -Eric
-  op [a] bagin? (x:a, s : Bag a) infixl 100 : Boolean = ~(occs(x,s) = 0)
+  op [a] bagin? (x:a, s : Bag a) infixl 100 : Bool = ~(occs(x,s) = 0)
 
   % a subbag is characterized by same or fewer occurrences of each element
   % I made the axiom subbag into this definition. -Eric
-  % TODO The name subbag should probably have a ? added to the end, since it returns a Boolean.
-  op [a] subbag (b1: Bag a, b2 : Bag a) infixl 200 : Boolean = (fa(x) occs(x,b1) <= occs(x,b2))
+  % TODO The name subbag should probably have a ? added to the end, since it returns a Bool.
+  op [a] subbag (b1: Bag a, b2 : Bag a) infixl 200 : Bool = (fa(x) occs(x,b1) <= occs(x,b2))
 
   % the empty bag is characterized by zero occurrences of each element
 
@@ -85,7 +85,7 @@ spec
   % obtained by suitable successive applications of bag_insert to empty_bag
 
   axiom induction is [a]
-        fa (p : Bag a -> Boolean)
+        fa (p : Bag a -> Bool)
            (p empty_bag &&
            (fa(x,b) p b => p(bag_insert(x,b)))) =>
            (fa(b) p b)
@@ -117,7 +117,7 @@ spec
     bag_fold empty_bag (\/) bs
 
   %TODO Where do we give this meaning?
-  op [a] bag_filter: (a -> Boolean) -> Bag a -> Bag a
+  op [a] bag_filter: (a -> Bool) -> Bag a -> Bag a
 
 %TODO does this exist elsewhere too?
 % This is proper substraction on Nats.
@@ -142,7 +142,7 @@ spec
   op [a] bag_size: Bag a -> Nat
 
    % A subbag As of bag Bs is nontrivial if it is empty iff Bs is empty.
-   op [a] nt_subbag(As:Bag a, Bs:Bag a):Boolean =
+   op [a] nt_subbag(As:Bag a, Bs:Bag a):Bool =
      if As = empty_bag
        then Bs = empty_bag
        else As subbag Bs
@@ -277,7 +277,7 @@ spec
 
 
   axiom def_of_bag_filter is [a]
-      fa(p:a->Boolean, c:Bag a, n:a)
+      fa(p:a->Bool, c:Bag a, n:a)
         (n bagin? (bag_filter p c) = (n bagin? c && p n))
 *)
 

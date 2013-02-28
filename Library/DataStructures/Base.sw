@@ -30,11 +30,11 @@ spec
     fa(a : Bool, b : Bool) (if a then false else b) = (~a && b)
 
   theorem if_pull is
-    [a,b] fa(f : a -> b, p : Boolean, x : a, y : a)
+    [a,b] fa(f : a -> b, p : Bool, x : a, y : a)
       f(if p then x else y) = (if p then f x else f y)
 
   theorem bool_case_id is [a]
-    fa(b: Boolean, v: a)
+    fa(b: Bool, v: a)
       (case b of true -> v | false -> v) = v
 
 %TODO what are the types?

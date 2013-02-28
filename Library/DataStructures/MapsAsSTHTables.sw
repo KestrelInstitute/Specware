@@ -38,7 +38,7 @@ spec
     foldi (fn (x,y,r) -> set_insert(y,r)) empty_set m
   op [a,b] domainToList(m: Map(a,b)): List a = STH_domainToList m
   op [a,b] rangeToList (m: Map(a,b)): List b = STH_imageToList m
-  op [a,b] total? (s: Set(a), m: Map(a,b)):Boolean =
+  op [a,b] total? (s: Set(a), m: Map(a,b)):Bool =
     set_fold true (fn (val,x) -> val && some?(MapSTHashtable.STH_apply(m,x))) s
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapSTHashtable.STH_eval(m,x)
 

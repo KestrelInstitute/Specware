@@ -42,7 +42,7 @@ spec
   % which is necessary because in generated code it is used to check
   % equality of bags (by calling it on the representing lists)
 
-  op [a] perm?(l1: List a, l2: List a) : Boolean =
+  op [a] perm?(l1: List a, l2: List a) : Bool =
     case l1 of
     | []          -> l2 = []
  %%TODO expensive to compare the lengths on each recursive call (but needed to cover the case when delete_first does nothing)?
@@ -52,11 +52,11 @@ spec
   % we (re-)define the operations on bags to operate on the equivalence
   % classes of lists just defined and to be constructive
 
-  op [a] bagin?(x:a, b:Bag a) infixl 100 : Boolean =
+  op [a] bagin?(x:a, b:Bag a) infixl 100 : Bool =
     choose[Bag] (fn l -> nzcount(x,l)) b
 %  def bagin?(x, quotient[Bag] l) = nzcount(x,l)
 
-  op [a] nzcount(x:a, l:List a) : Boolean =
+  op [a] nzcount(x:a, l:List a) : Bool =
     case l of 
     | []         -> false
     | Cons(y,l1) -> if y = x then true else nzcount(x,l1)
@@ -84,12 +84,12 @@ spec
   % so contained? returns false; contained? returns true if at the end of
   % the recursion the first list ends up being empty
 
-  op [a] subbag (b1:Bag a, b2:Bag a) infixl 200 : Boolean =
+  op [a] subbag (b1:Bag a, b2:Bag a) infixl 200 : Bool =
       choose[Bag] (fn l1 -> choose[Bag] (fn l2 -> contained?(l1,l2)) b2) b1
 
 %  def subbag(quotient perm? l1, quotient perm? l2) = contained?(l1,l2)
 
-  op [a] contained?(l1:List a, l2:List a) : Boolean =
+  op [a] contained?(l1:List a, l2:List a) : Bool =
     case l1 of
     | []          -> true
     | Cons(x,l11) -> let l22 = delete_first(x,l2) in
@@ -159,7 +159,7 @@ spec
     = quotient[Bag](delete_list(l2,l1))
 %     = quotient[Bag] (choose[Bag] (fn l2 -> delete_list(l1,l2)) b)
 
-  op [a] bag_filter (f: a -> Boolean) (b: Bag a): Bag a =
+  op [a] bag_filter (f: a -> Bool) (b: Bag a): Bag a =
     choose[Bag] (fn l -> quotient[Bag](filter f l)) b
 
   op [a,b] bag_map (f: a -> b) (bg: Bag a): Bag b =
@@ -170,7 +170,7 @@ spec
 
 (* a subbag As of bag Bs is nontrivial if it is empty iff Bs is empty *)
    %% Changed to match the change in Bags.sw. -Eric
-   op [a] nt_subbag(As:Bag a, Bs:Bag a) : Boolean =
+   op [a] nt_subbag(As:Bag a, Bs:Bag a) : Bool =
      if As = empty_bag
        then Bs=empty_bag  %empty?(As)
        else As subbag Bs

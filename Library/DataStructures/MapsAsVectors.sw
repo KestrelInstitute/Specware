@@ -50,7 +50,7 @@ spec
 
   op [a,b] rangeToList (m: Map(a,b)): List b = V_imageToList m
 
-  op [a,b] total? (s: Set(a), m: Map(a,b)):Boolean =
+  op [a,b] total? (s: Set(a), m: Map(a,b)):Bool =
     set_fold true (fn (val,x) -> val && some?(MapVec.V_apply(m,x))) s
 
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapVec.V_eval(m,x)

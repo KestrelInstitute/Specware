@@ -22,7 +22,7 @@ spec
   % and for each element of the bag the boolean remains true if the element
   % occurs exactly once in the bag, and becomes false otherwise
 
-  op [a] no_rep? (b : Bag a) : Boolean =
+  op [a] no_rep? (b : Bag a) : Bool =
     bag_fold true
              (fn (no_rep_found, x) -> if no_rep_found = false then 
                                         false
@@ -38,19 +38,19 @@ spec
   % occurrence)
 
 % This is imported via Set in Bag theory.  No it isn't?
-  op [a] in? (x : a, s : Set a) infixl 20 : Boolean = bagin?(x,s)
+  op [a] in? (x : a, s : Set a) infixl 20 : Bool = bagin?(x,s)
 
   % set containment just amounts to bag containment, because there are no
   % repeated elements
 
-  op [a] subset(s1 : Set a, s2 : Set a) infixl 200 : Boolean = subbag(s1,s2)
+  op [a] subset(s1 : Set a, s2 : Set a) infixl 200 : Bool = subbag(s1,s2)
 
   % the empty set is represented by the empty bag
 
   op [a] empty_set : Set a = empty_bag
 
 %TODO add this back?
-%  op [a] empty? (x : Set a) : Boolean = (x = empty_set)
+%  op [a] empty? (x : Set a) : Bool = (x = empty_set)
 
   % to insert an element into a repetition-free bag representing a set,
   % we have to first check whether the element occurs in the bag: if yes,
@@ -120,10 +120,10 @@ spec
 
   op [a] size (s: Set a): Nat = bag_size s
 
-  op [a] filter (p: a -> Boolean) (s: Set a): Set a = bag_filter p s
+  op [a] filter (p: a -> Bool) (s: Set a): Set a = bag_filter p s
   op [a,b] map (p: a -> b) (s: Set a): Set b = bag_map p s
 
-  op [a] nt_subset(As:Set a, Bs:Set a):Boolean = nt_subbag(As,Bs)
+  op [a] nt_subset(As:Set a, Bs:Set a):Bool = nt_subbag(As,Bs)
 
 
 (******************************** The Proofs ********************************)

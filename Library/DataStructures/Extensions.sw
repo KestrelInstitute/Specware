@@ -25,7 +25,7 @@ op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(ele
 (*
   why do you need it to be 1-1?
   op [a,b] set_map : ((a -> b) | 1-1?) -> Set a -> Set b
-  op [a,b] 1-1? : (a -> b) -> Boolean
+  op [a,b] 1-1? : (a -> b) -> Bool
 
   axiom set_map is
         (fa(f,x,s) x in? s => (ex(y) (y in? set_map(f,s) && y = f(x)))) &&
@@ -41,7 +41,7 @@ op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(ele
 %TODO make this a definition or prove it from the def just below.
 %could also define as filtering the set and seeing if the result is equal to the original set
 %TTODO The axiom seems contradictory.  I can use it to prove false (just call sledgehammer).
-op [a] Set.forallIn : Set a -> (a -> Boolean) -> Boolean
+op [a] Set.forallIn : Set a -> (a -> Bool) -> Bool
 %   axiom Set.forAllIn is fa(x,s,p) Set.forallIn s p <=> (x in? s => p(x))
   
 def Set.forallIn s p =
@@ -67,7 +67,7 @@ def numRange(a:Nat, b:Nat) =
     if (a>=b) then [a] else Cons(a, numRange(a+1, b))
 
 %TODO see op forall? in Library/Base/List
-op List.forallIn : [a] List a -> (a -> Boolean) -> Boolean
+op List.forallIn : [a] List a -> (a -> Bool) -> Bool
 def List.forallIn l p =
     foldl (&&) true (map p l)
 
@@ -77,7 +77,7 @@ def [a,b] List.forallIn_do l f =
     map f l
 
 %some occurrence of x1 in the list is followed by some occurrence of x2
-op List.prec? : [a] List a -> a -> a -> Boolean
+op List.prec? : [a] List a -> a -> a -> Bool
 def [a] List.prec? xs x1 x2  =
     case xs of
     | [] -> false

@@ -11,13 +11,13 @@ type Set a
 % an element of type a either belongs to a set or it does not;
 % if two sets have the same elements, they are the same set
 
-op [a] in? infixl 20 : a * Set a -> Boolean
+op [a] in? infixl 20 : a * Set a -> Bool
 axiom membership is [a]
       fa(s1,s2) (fa(x: a) x in? s1 <=> x in? s2) => s1 = s2
 
 % s1 is a subset of s2 iff each element of s1 is also an element of s2
 
-op [a] subset infixl 20 : Set a * Set a -> Boolean
+op [a] subset infixl 20 : Set a * Set a -> Bool
 axiom subset is [a]
       fa(s1,s2) s1 subset s2 <=> (fa(x: a) x in? s1 => x in? s2)
 
@@ -28,7 +28,7 @@ axiom empty_set is [a]
       fa(x: a) ~(x in? empty_set)
 
 %TODO add this back?
-%op [a] empty? (s : Set a) : Boolean = (s = empty_set)
+%op [a] empty? (s : Set a) : Bool = (s = empty_set)
 
 % the result of inserting an element into a set is characterized by
 % consisting of all the old elements plus the newly inserted element
@@ -108,7 +108,7 @@ theorem set_intersection_idempotence_right is [a]
 % obtained by suitable successive applications of set_insert to empty_set
 
 axiom induction is [a]
-      fa (p : Set a -> Boolean)
+      fa (p : Set a -> Bool)
          p empty_set &&   % TODO parens here?
          (fa(x,s) p s => p(set_insert(x,s))) =>
          (fa(s) p s)
@@ -174,16 +174,16 @@ axiom set_difference is [a]
       fa(s1,s2,y: a) y in? s1 -- s2 <=> (y in? s1 && ~(y in? s2))
 
 % TODO define using fold?
-op [a] filter: (a -> Boolean) -> Set a -> Set a
+op [a] filter: (a -> Bool) -> Set a -> Set a
 
 axiom filter_def is [a]
-  fa(x: a, s: Set a, p: a -> Boolean) x in? (filter p s) <=> x in? s && p x
+  fa(x: a, s: Set a, p: a -> Bool) x in? (filter p s) <=> x in? s && p x
 
 theorem filter_true is [a]
   fa(s: Set a) (filter (fn x -> true) s) = s
 
 theorem filter_conj is [a]
-  fa(s: Set a, f: a -> Boolean, g: a -> Boolean)
+  fa(s: Set a, f: a -> Bool, g: a -> Bool)
     filter (fn x:a -> f x && g x) s = filter f (filter g s)
 
 %TODO or just say that it's always equal to delete
@@ -212,7 +212,7 @@ theorem in?_size is [a]
   fa(s: Set a, x: a) x in? s => size s >= 1
 
    % A subset As of set Bs is nontrivial if it is empty iff Bs is empty.
-   op [a] nt_subset(As:Set a, Bs:Set a):Boolean =
+   op [a] nt_subset(As:Set a, Bs:Set a): Bool =
      if As = empty_set
        then Bs = empty_set  %empty?(As)
        else As subset Bs
