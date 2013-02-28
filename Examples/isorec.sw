@@ -21,7 +21,7 @@ isos = spec
   op osi(therec:rec2) : rec = {left=ositree(therec.first), right=ositree(therec.second)}
 end-spec
 
-B = isos{isomorphism(iso,osi)}
+B = isos{isomorphism((iso,osi),(isotree,ositree))}
 
 %% transformed spec:
 
