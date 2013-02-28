@@ -21,13 +21,13 @@ isos = spec
   op osi(therec:rec2) : rec = {left=ositree(therec.first), right=ositree(therec.second)}
 end-spec
 
-B = isos{isomorphism((iso,osi),(isotree,ositree))}
+isorec = isos{isomorphism((iso,osi),(isotree,ositree))[unfold osi, unfold ositree]}
 
 %% trace:
-% * proc /Examples/isorec#B
-% ;;; Elaborating transform at /home/sfitzp/specware/Examples/isorec#B
-% ;;; Elaborating spec at /home/sfitzp/specware/Examples/isorec#isos
-% ;;; Elaborating spec at /home/sfitzp/specware/Examples/isorec#A
+% * proc /Examples/isorec
+% ;;; Elaborating transform at /Users/westfold/Specware/Examples/isorec#isorec
+% ;;; Elaborating spec at /Users/westfold/Specware/Examples/isorec#isos
+% ;;; Elaborating spec at /Users/westfold/Specware/Examples/isorec#A
 % Domain QId's:
 % rec
 % tree
@@ -48,15 +48,15 @@ B = isos{isomorphism((iso,osi),(isotree,ositree))}
 %              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
 %              lr generated.iso__osi, lr generated.osi__iso, 
 %              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
-%              lr generated.iso__osi, lr generated.osi__iso, rewrite total); 
+%              lr generated.iso__osi, lr generated.osi__iso, unfold osi, unfold ositree, 
+%              rewrite total); 
 %    simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
 %              unfold total, lr generated.inverse_iso_is_osi, 
 %              lr generated.inverse_osi_is_iso, lr generated.iso__osi, 
 %              lr generated.osi__iso, lr generated.inverse_iso_is_osi, 
 %              lr generated.inverse_osi_is_iso, lr generated.iso__osi, 
-%              lr generated.osi__iso); 
+%              lr generated.osi__iso, unfold osi, unfold ositree); 
 %    SimpStandard}
-
 %% transformed spec:
 
 % spec  
@@ -93,7 +93,7 @@ B = isos{isomorphism((iso,osi),(isotree,ositree))}
  
 % theorem generated.osi__iso is fa(x: tree) ositree(isotree x) = x
 % op total' (t: tree2): Nat
-%   = case ositree t
-%      of leaf x -> x
-%       | branch therec -> (total'(isotree(therec.left)) + total'(isotree(therec.right)))
+%   = case t
+%      of branch y -> (total'(y.first) + total'(y.second))
+%       | leaf y -> y
 % end-spec
