@@ -1,99 +1,112 @@
-%Currently does not produce a legal spec.
+(*
+ * An example of applying an isomorphic type refinement to a type
+ * that is part of a mutually recursive set of types.
+ *)
 
-A = spec
-  type rec = {left:tree,right:tree}
-  type tree =
-    | leaf Nat
-    | branch rec
-  op total (t:tree) : Nat =
+
+% The original spec.
+TreeSpec = spec
+
+% Children and Tree are mutually recursive.
+  type Children = {left:Tree, right:Tree}
+
+  type Tree =
+    | Leaf Nat
+    | Branch Children
+
+% An example op on Tree.
+  op total (t:Tree) : Nat =
     case t of
-    | leaf x -> x
-    | branch therec -> (total therec.left) + (total therec.right)
+    | Leaf x -> x
+    | Branch b -> total(b.left) + total(b.right)
+
 end-spec
 
+
+% The spec giving the isomorphism.
 isos = spec
-  import A
-  type rec2 = {first:tree2, second:tree2}
-  type tree2
-  op isotree : tree -> tree2
-  op ositree : tree2 -> tree
-  op iso(therec:rec) : rec2 = {first=isotree(therec.left), second=isotree(therec.right)}
-  op osi(therec:rec2) : rec = {left=ositree(therec.first), right=ositree(therec.second)}
+  import TreeSpec
+
+% We are creating a new type, Children', that is the essentially the same as Children,
+% but with the fields renamed.
+% We need to also transform the Tree type, giving Tree', since we need a type that
+% refers to Children' rather than to Children; likewise, Children' refers to
+% Tree' rather than to Tree.
+
+% We define Children' manually, since that is were the desired change is.
+  type Children' = {first:Tree', second:Tree'}
+
+% The Tree' type is fully implied by isomorphism between Children and Children'.
+% We declare it here manually because it is referenced in the definition of Children',
+% but we do not need to define it - the definition will be created automatically.
+  type Tree'
+
+% Likewise, we manually define the isomorphism ops for Children/Children',
+% because they capture our intention. The isomorphims ops of Tree/Tree' are
+% fully implied and will be automatically defined.
+  op isoChildren(therec:Children): Children' =
+    {first=isoTree(therec.left), second=isoTree(therec.right)}
+  op osiChildren(therec:Children'): Children =
+    {left=osiTree(therec.first), right=osiTree(therec.second)}
+
+% We declare to isomorhpism ops for Tree/Tree' because we need to reference them in
+% the isomorphism ops for Children/Children', but we do not need to define them -
+% their definitions will be created automatically.
+  op isoTree: Tree -> Tree'
+  op osiTree: Tree' -> Tree
+
 end-spec
 
-isorec = isos{isomorphism((iso,osi),(isotree,ositree))[unfold osi, unfold ositree]}
+% Apply the isomorphism. Note that we give both pairs of iso/osi ops.
+TreeSpec2 = isos{isomorphism((isoChildren,osiChildren), (isoTree,osiTree))
+                [unfold osiChildren, unfold osiTree]}
 
-%% trace:
-% * proc /Examples/isorec
-% ;;; Elaborating transform at /Users/westfold/Specware/Examples/isorec#isorec
-% ;;; Elaborating spec at /Users/westfold/Specware/Examples/isorec#isos
-% ;;; Elaborating spec at /Users/westfold/Specware/Examples/isorec#A
-% Domain QId's:
-% rec
-% tree
-% adding definitions
-% make derived ops
-% make derived op definitions
-% mdod: total' not opaque
-% 1 non opaque ops to transform.
-% rewriting ... 
-%   {simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
-%              rewrite Option.isoOption, rewrite List.isoList, 
-%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
-%              lr generated.iso__osi, lr generated.osi__iso, 
-%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
-%              lr generated.iso__osi, lr generated.osi__iso); 
-%    simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
-%              rewrite Option.isoOption, rewrite List.isoList, 
-%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
-%              lr generated.iso__osi, lr generated.osi__iso, 
-%              lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
-%              lr generated.iso__osi, lr generated.osi__iso, unfold osi, unfold ositree, 
-%              rewrite total); 
-%    simplify (unfold Function.o, rewrite Function.id, unfold Option.mapOption, 
-%              unfold total, lr generated.inverse_iso_is_osi, 
-%              lr generated.inverse_osi_is_iso, lr generated.iso__osi, 
-%              lr generated.osi__iso, lr generated.inverse_iso_is_osi, 
-%              lr generated.inverse_osi_is_iso, lr generated.iso__osi, 
-%              lr generated.osi__iso, unfold osi, unfold ositree); 
-%    SimpStandard}
-%% transformed spec:
 
-% spec  
-% import A
+% The following, commented-out spec is the result.
+% The definitions for Tree', isoTree and osiTree have been generated.
+% The total' op is equivalent to the total op, but operates directly
+% with Tree' and Children' rather than Tree.
+(*
+  spec  
+  import TreeSpec
  
+  type Tree' =  | Branch Children' | Leaf Nat
  
-% type tree2 =  | branch rec2 | leaf Nat
+  type Children' = {first: Tree', second: Tree'}
+  op isoTree: Tree -> Tree'
+  op isoChildren (therec: Children): Children'
+    = {first = isoTree(therec.left), second = isoTree(therec.right)}
+  op osiTree: Tree' -> Tree
+  op osiChildren (therec: Children'): Children
+    = {left = osiTree(therec.first), right = osiTree(therec.second)}
+  def isoTree (x: Tree): Tree'
+    = case x
+       of Branch y -> Branch(isoChildren y)
+        | Leaf y -> Leaf y
+  def osiTree (x: Tree'): Tree
+    = case x
+       of Branch y -> Branch(osiChildren y)
+        | Leaf y -> Leaf y
  
-% type rec2 = {first: tree2, second: tree2}
-% op iso (therec: rec): rec2 = {first = isotree(therec.left), second = isotree(therec.right)}
-% op isotree: tree -> tree2
-% op osi (therec: rec2): rec = {left = ositree(therec.first), right = ositree(therec.second)}
-% op ositree: tree2 -> tree
-% def isotree (x: tree): tree2 = case x
-%                                 of branch y -> branch(iso y)
-%                                  | leaf y -> leaf y
-% def ositree (x: tree2): tree = case x
-%                                 of branch y -> branch(osi y)
-%                                  | leaf y -> leaf y
+  theorem generated.inverse_iso_is_osi is Function.inverse isoChildren = osiChildren
  
-% theorem generated.inverse_iso_is_osi is Function.inverse iso = osi
+  theorem generated.inverse_osi_is_iso is Function.inverse osiChildren = isoChildren
  
-% theorem generated.inverse_osi_is_iso is Function.inverse osi = iso
+  theorem generated.iso__osi is fa(x': Children') isoChildren(osiChildren x') = x'
  
-% theorem generated.iso__osi is fa(x': rec2) iso(osi x') = x'
+  theorem generated.osi__iso is fa(x: Children) osiChildren(isoChildren x) = x
  
-% theorem generated.osi__iso is fa(x: rec) osi(iso x) = x
+  theorem generated.inverse_iso_is_osi is Function.inverse isoTree = osiTree
  
-% theorem generated.inverse_iso_is_osi is Function.inverse isotree = ositree
+  theorem generated.inverse_osi_is_iso is Function.inverse osiTree = isoTree
  
-% theorem generated.inverse_osi_is_iso is Function.inverse ositree = isotree
+  theorem generated.iso__osi is fa(x': Tree') isoTree(osiTree x') = x'
  
-% theorem generated.iso__osi is fa(x': tree2) isotree(ositree x') = x'
- 
-% theorem generated.osi__iso is fa(x: tree) ositree(isotree x) = x
-% op total' (t: tree2): Nat
-%   = case t
-%      of branch y -> (total'(y.first) + total'(y.second))
-%       | leaf y -> y
-% end-spec
+  theorem generated.osi__iso is fa(x: Tree) osiTree(isoTree x) = x
+
+  op total' (t: Tree'): Nat
+    = case t
+       of Branch y -> (total'(y.first) + total'(y.second))
+        | Leaf y -> y
+  end-spec
+*)
