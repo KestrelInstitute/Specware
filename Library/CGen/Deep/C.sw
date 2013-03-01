@@ -3263,7 +3263,6 @@ op operator_ADD (val1:Value, val2:Value) : OC Value =
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
-   if x2 = 0 then nonstd else
    let y = x1 + x2 in
    if unsignedIntegerType? ty then
      ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
@@ -3289,7 +3288,6 @@ op operator_SUB (val1:Value, val2:Value) : OC Value =
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
-   if x2 = 0 then nonstd else
    let y = x1 - x2 in
    if unsignedIntegerType? ty then
      ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
