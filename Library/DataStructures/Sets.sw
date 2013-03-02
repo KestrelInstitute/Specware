@@ -17,9 +17,13 @@ axiom membership is [a]
 
 % s1 is a subset of s2 iff each element of s1 is also an element of s2
 
+%TODO The name should end in a question mark since this returns a Bool.
 op [a] subset infixl 20 : Set a * Set a -> Bool
 axiom subset is [a]
       fa(s1,s2) s1 subset s2 <=> (fa(x: a) x in? s1 => x in? s2)
+
+theorem subset_self is [a]
+  fa(s:Set a) s subset s
 
 % the empty set has no elements
 
@@ -55,6 +59,9 @@ theorem set_insertion_commutativity is [a]
 
 theorem set_insertion_idempotence is [a]
         fa(x: a,s) set_insert(x,set_insert(x,s)) = set_insert(x,s)
+
+theorem set_insertion_subset_empty is [a]
+  fa(s: Set a, x:a) (set_insert(x,s) subset empty_set) = false
 
 %  op [a] singletonSet(x:a):Set a = set_insert(x,empty_set)
 
@@ -579,6 +586,16 @@ proof Isa Set__distribute_set_diff_over_right_insert_new
   apply(rule Set__membership)
   apply(simp add: Set__set_difference Set__empty_set Set__set_insertion Set__set_deletion Set__set_insert_new_def)
   apply(auto)
+end-proof
+
+proof isa Set__subset_self
+  by(auto simp add: Set__subset)
+end-proof
+
+proof isa Set__set_insertion_subset_empty
+  apply(auto simp add: Set__set_insertion)
+  apply(simp add: Set__subset Set__empty_set)
+  apply(auto simp add: Set__set_insertion del:Set__subset)
 end-proof
 
 
