@@ -11,6 +11,8 @@ spec
   import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
 
 %TODO move to the bool library?
+% This can be used to prove an equality of booleans by proving the forward and backward implications.
+% In Isabelle: apply(rule bool_iff)
 theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 
  %%TODO won't type-check.  Seems like a hack.
@@ -23,6 +25,16 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
   %precondition on ns ensuring that i is not already present.
   op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
       (if i>=j then ns else upto_loop(succ(i),j, set_insert(i,ns)))
+
+  theorem upto_loop_subset is
+    fa(ns:Set Nat, i:Nat, j:Nat) ns subset upto_loop(i,j,ns)
+
+  theorem upto_loop_insert is
+    fa(ns:Set Nat, i:Nat, j:Nat, x:Nat) set_insert(x, upto_loop(i,j,ns)) = upto_loop(i,j,set_insert(x,ns))
+
+  theorem upto_loop_insert_rev is
+    fa(ns:Set Nat, i:Nat, j:Nat, x:Nat) upto_loop(i,j,set_insert(x,ns)) = set_insert(x, upto_loop(i,j,ns))
+
 
   % Returns the list containing the natural numbers in the interval [i,j), in order.
   op uptoL(i:Nat,j:Nat):List Nat = uptoL_loop(i,j, [])
@@ -136,6 +148,7 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
               b)
 
 % This is effectively lifting set to a bag and doing bag_difference
+% TODO Just define it that way?
   op [a] --- infixl 25 : Bag a * Set a -> Bag a
   axiom bag_set_difference is [a]
      fa(b:Bag a, s:Set a, y: a) 
@@ -149,34 +162,32 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
   theorem empty_bag_bs_diff is [a]
       fa(s:Set a) empty_bag --- s = empty_bag
 
-  % TODO Does not seem right. Consider c={y} (i.e., singleton bag containing y) and d={y}.
-  axiom distribute_bs_diff_over_left_insert is [a]
+  theorem distribute_bs_diff_over_left_insert is [a]
       fa(c:Bag a,d:Set a,y:a)
         (bag_insert(y,c) --- d 
            = (if y in? d 
-               then c --- d
+               then c --- set_delete(y,d)  % was c --- d, but that seemed wrong (consider c={y} (i.e., singleton bag containing y) and d={y}.)
              else bag_insert(y,c --- d)))
 
-  % TODO Does not seem right.  Consider y already in d.  More specifically, conside c={y,y} and d={y}.
-  axiom distribute_bs_diff_over_right_insert is [a]
+  theorem distribute_bs_diff_over_right_insert is [a]
       fa(c:Bag a,d:Set a,y:a)
-        (c --- set_insert(y,d) = bag_delete(y, c --- d) )  % bag_delete_all
+        c --- set_insert(y,d) = (if (y in? d) then c --- d else bag_delete(y, c --- d)) %% was bag_delete(y, c --- d), but then consider y already in d.  More specifically, consider c={y,y} and d={y}.
 
-  % TODO Does not seem right.  Consider c={y,y} and d={y}.
-  axiom distribute_bs_diff_over_left_delete is [a]
+  theorem distribute_bs_diff_over_left_delete is [a]
       fa(c:Bag a,d:Set a,y:a)
-        (bag_delete(y,c) --- d    % or simply just = bag_delete(y,c --- d)
-           = (if y in? d 
-               then c --- d
-             else bag_delete(y,c --- d)))
+        bag_delete(y,c) --- d = bag_delete(y,c --- d)
+  % Old: Did not seem right.  Consider c={y,y} and d={y}.
+           %  (if y in? d 
+           %     then c --- d
+           %   else bag_delete(y,c --- d))
 
-  % TODO Does not seem right.  Consider c={y} and d=empty.
-  axiom distribute_bs_diff_over_right_delete is [a]
+  theorem distribute_bs_diff_over_right_delete is [a]
       fa(c:Bag a,d:Set a,y:a)
-        (c --- set_delete(y,d) = bag_delete(y, c --- d) )  % bag_delete_all
+        c --- set_delete(y,d) = %% old: bag_delete(y, c --- d) Did not seem right.  Consider c={y} and d=empty.
+        (if (y in? d && y bagin? c) then bag_insert(y, c --- d) else c --- d)
 
 % not quite right 
-%  axiom distribute_bs_diff_over_bag_join is [a]
+%  theorem distribute_bs_diff_over_bag_join is [a]
 %      fa(A:Bag a,B:Bag a,C:Set a)
 %        ((A \/ B) --- C = (A --- C) \/ (B --- C))
 
@@ -185,13 +196,12 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 
   op Pair2S(lb:Nat,ub:Nat): Set Nat = upto(lb,ub)
 
-  % TODO seems wrong for i=j
   theorem Pair2S_empty is
-    fa(i:Nat,j:Nat) (i>j) = (Pair2S(i,j) = (empty_set:Set Nat))
+    % left hand side was i>j but that seemed wrong for i=j
+    fa(i:Nat,j:Nat) (i>=j) = (Pair2S(i,j) = (empty_set:Set Nat))
 
-  % TODO Seems wrong for the case when i=j
-  theorem Pair2S_insert is
-    fa(i:Nat,j:Nat) (i<=j) = (Pair2S(i,j) = set_insert(i, Pair2S(i+1,j)))
+  theorem Pair2S_insert is  %left side was i<=j but that seemed wrong when when i=j
+    fa(i:Nat,j:Nat) (i<j) = (Pair2S(i,j) = set_insert(i, Pair2S(i+1,j)))
 
 %------- Stack2L: homomorphism from Stack to List -----------------------
 
@@ -263,6 +273,8 @@ end-proof
   % TODO: Doesn't seem right.  Consider when lst contains more than one y.
   theorem L2S_delete1 is [a]
     fa(y:a,lst:List a) ( L2S(delete1(y,lst)) = set_delete(y, L2S lst) )
+  %TODO try something like: ... = if occs(y,lst) > 1 then (L2S lst) else set_delete(y, L2S lst)
+  % TODO Do we have a function to count the number of occurrences of an element in a list?
 
   theorem L2S_member is [a]
     fa(y:a,lst:List a) ( (y in? lst) = (y in? L2S lst) )
@@ -645,16 +657,6 @@ proof isa empty_bag_bs_diff
   apply(simp add:bag_set_difference Bag__empty_bag Bag__natMinus_def)
 end-proof
 
-% not true?:
-proof isa Pair2S_empty
-  sorry
-end-proof
-
-% not true?:
-proof isa Pair2S_insert
-  sorry
-end-proof
-
 proof isa Stack2L_Cons
   sorry
 end-proof
@@ -870,6 +872,83 @@ end-proof
 
 proof isa CM2S_member
   sorry
+end-proof
+
+
+proof isa distribute_bs_diff_over_left_insert
+  apply(auto simp add: Bag__bag_insertion)
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_insertion bag_set_difference)
+  apply(simp add: Set__set_deletion)
+  apply(simp only: Bag__natMinus_def)
+  apply(auto)
+  apply(simp add: Set__set_deletion)
+  apply(simp add: Set__set_deletion)
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_insertion bag_set_difference)
+end-proof
+
+
+proof isa distribute_bs_diff_over_right_insert
+  apply(auto)
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_insertion bag_set_difference Set__set_insertion)
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_insertion bag_set_difference Set__set_insertion Bag__bag_deletion)
+end-proof
+
+proof isa distribute_bs_diff_over_left_delete
+  apply(rule Bag__occurrences)
+  apply(simp add: bag_set_difference Bag__bag_deletion)
+end-proof
+
+
+proof isa distribute_bs_diff_over_right_delete
+  apply(rule Bag__occurrences)
+  apply(auto simp add: bag_set_difference Bag__bag_deletion Bag__bag_insertion Set__set_deletion)
+  apply(simp add: Bag__natMinus_def)
+  apply(auto simp add: Bag__bagin_p_def)
+  apply(simp add: Bag__natMinus_def)
+end-proof
+
+proof isa upto_loop_subset
+  apply(induct "j-i" arbitrary: ns i)
+  apply(simp add: upto_loop.simps Set__subset_self)
+  by (smt Set__set_insertion Set__subset upto_loop.simps)
+end-proof
+
+proof isa Pair2S_empty
+  apply(simp add: Pair2S_def)
+  apply(simp only: upto_def)
+  apply(auto simp del: upto_loop.simps)
+  apply(cut_tac upto_loop.simps(1))
+  apply(auto)
+  apply(cut_tac upto_loop.simps(1))
+  apply(auto)
+  apply(case_tac "j\<le>i", simp)
+  apply(auto simp del: upto_loop.simps)
+  apply(simp only: upto_loop_insert_rev Set__set_insertion_equal_empty)
+end-proof
+
+proof isa upto_loop_insert
+  apply (induct "(i,j,ns)" arbitrary: i ns rule: upto_loop.induct)
+  apply (metis Set__set_insertion_commutativity upto_loop.simps) 
+end-proof
+
+proof isa upto_loop_insert_rev
+  by(simp only: upto_loop_insert)
+end-proof
+
+proof isa Pair2S_insert
+  apply(simp add: Pair2S_def)
+  apply(simp only: upto_def)
+  apply(auto simp del: upto_loop.simps)
+  apply(simp del: upto_loop.simps add: upto_loop_insert)
+  apply(simp)
+  apply(simp)
+  apply(case_tac "j \<le> i")
+  apply(simp add: Set__set_insertion_equal_empty_alt)
+  apply(simp add: Set__set_insertion_equal_empty)
 end-proof
 
 

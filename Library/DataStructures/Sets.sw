@@ -63,6 +63,13 @@ theorem set_insertion_idempotence is [a]
 theorem set_insertion_subset_empty is [a]
   fa(s: Set a, x:a) (set_insert(x,s) subset empty_set) = false
 
+theorem set_insertion_equal_empty is [a]
+  fa(s: Set a, x:a) (set_insert(x,s) = empty_set) = false
+
+theorem set_insertion_equal_empty_alt is [a]
+  fa(s: Set a, x:a) (empty_set = set_insert(x,s)) = false
+
+
 %  op [a] singletonSet(x:a):Set a = set_insert(x,empty_set)
 
 % the union of two sets consists of all the elements of the two sets
@@ -596,6 +603,15 @@ proof isa Set__set_insertion_subset_empty
   apply(auto simp add: Set__set_insertion)
   apply(simp add: Set__subset Set__empty_set)
   apply(auto simp add: Set__set_insertion del:Set__subset)
+end-proof
+
+proof isa Set__set_insertion_equal_empty
+  apply(insert Set__set_insertion [of "x" "x" "s"])
+  apply(auto simp add: Set__empty_set)
+end-proof
+
+proof isa Set__set_insertion_equal_empty_alt
+  apply(cut_tac x=x and s=s in Set__set_insertion_equal_empty, auto)
 end-proof
 
 
