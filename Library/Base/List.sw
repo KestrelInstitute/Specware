@@ -282,9 +282,13 @@ theorem length_removeSuffix is [a]
 
 % specialization of previous four ops to n = 1:
 
+%% Corresponds to "car" or "first" operation:
+
 op [a] head (l: List1 a) : a = theElement (prefix (l, 1))
 
 op [a] last (l: List1 a) : a = theElement (suffix (l, 1))
+
+%% Corresponds to "cdr" or "rest" operation:
 
 op [a] tail (l: List1 a) : List a = removePrefix (l, 1)
 
