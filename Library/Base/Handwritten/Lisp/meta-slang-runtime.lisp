@@ -468,6 +468,17 @@
 (defun implies-2 (x y) 
   (or (not x) y))
 
+(setq SpecToLisp::SuppressGeneratedDefuns
+ (append '("List-Spec::|!length|"
+           "List-Spec::++"
+           "List-Spec::++-2"
+           "List-Spec::head"
+           "List-Spec::tail"
+           "List-Spec::in?"
+           "List-Spec::in?-2"
+           )
+          SpecToLisp::SuppressGeneratedDefuns))
+
 ;; Optimization
 (define-compiler-macro List-Spec::|!length| (l)
   `(length (the list ,l)))
