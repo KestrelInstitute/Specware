@@ -662,7 +662,7 @@ op ppAOpInfo (c : Context, aopinfo : AOpInfo StandardAnnotation) : WLPretty =
                ppTerm c dfn,
                ppString " ",
                ppBreak,
-               ppBoolean fullyQualified?,
+               if fullyQualified? then ppString "IsFullyQualified" else ppString "NotFullyQualified",
                ppString ")",
                ppNewline]
 
@@ -1338,17 +1338,18 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 
   op ppFixity (fix: Fixity) : WLPretty =
     case fix of
-      | Infix (assoc,  n) -> ppConcat [ppString "infix ",
+      | Infix (assoc,  n) -> ppConcat [ppString "(Infix ",
 				       case assoc of
-					 | Left  -> ppString "left "
-					 | Right -> ppString "right ",
-				       ppString (show n)]
-      | Nonfix           -> ppString "nonfix"
-      | Unspecified      -> ppString "unspecified-fixity"
+					 | Left  -> ppString "Left "
+					 | Right -> ppString "Right ",
+				       ppString (show n),
+                                       ppString ")"]
+      | Nonfix           -> ppString "Nonfix"
+      | Unspecified      -> ppString "Unspecified-fixity"
       | Error fixities   -> ppConcat [
-				      ppString "error [",
+				      ppString "(ErrorFixity [",
 				      ppSep (ppString ", ") (map ppFixity fixities),
-				      ppString "]"
+				      ppString "])"
 				     ]
       | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
