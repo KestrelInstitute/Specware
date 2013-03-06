@@ -21,6 +21,7 @@ ReviseOps qualifying spec
 
  op builtInOp? (qid : QualifiedId) : Bool =
   SpecToLisp.builtInLispOp? qid ||
+  printPackageId(qid, "") in? SpecToLisp.SuppressGeneratedDefuns ||
   CG.builtinCOp?            qid ||
   JGen.builtinTypeOp        qid
 
