@@ -35,14 +35,20 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
   theorem upto_loop_insert_rev is
     fa(ns:Set Nat, i:Nat, j:Nat, x:Nat) upto_loop(i,j,set_insert(x,ns)) = set_insert(x, upto_loop(i,j,ns))
 
+  %% Helper function for uptoL:
 
-  % Returns the list containing the natural numbers in the interval [i,j), in order.
-  op uptoL(i:Nat,j:Nat):List Nat = uptoL_loop(i,j, [])
   op uptoL_loop (i:Nat,j:Nat,ns:List Nat):List Nat = 
       (if j<=i then ns else uptoL_loop(i,pred(j),Cons(pred(j),ns)))
 
+  % Returns the list containing the natural numbers in the interval [i,j), in order:
+
+  op uptoL(i:Nat,j:Nat):List Nat = uptoL_loop(i,j, [])
+
+  theorem length_of_uptoL_loop is
+    fa(i:Nat,j:Nat,ns:List Nat) length(uptoL_loop(i,j,ns)) = length(ns) + natMinus(j, i)
+
   theorem length_of_uptoL is
-    fa(i,j)( length(uptoL(i,j)) = j - i )
+    fa(i:Nat,j:Nat) length(uptoL(i,j)) = natMinus(j, i)
 
 % -----   extension of /Library/Base/List.sw ---------
 
@@ -625,7 +631,7 @@ termination
   apply (auto simp add: Nat__pred_def)
 end-proof
 
-%TODO completely bogus measure.  I don't think we can prove that this terminates.
+%TODO completely bogus measure.  I don't think we can prove that this terminates. Maybe once stacks have semantics, we can.
 proof isa Stack2L ()
 by (pat_completeness, auto)
 termination
@@ -633,9 +639,15 @@ termination
   sorry
 end-proof
 
-proof isa length_of_uptoL
+%TODO completely bogus measure.  I don't think we can prove that this terminates. Maybe once stacks have semantics, we can.
+proof isa Stack2L__stp ()
+by (pat_completeness, auto)
+termination
+  apply (relation "measure (\<lambda>(stk). 0)")
   sorry
 end-proof
+
+
 
 proof isa bag_fold_set_Obligation_subtype
   apply(auto)
@@ -658,7 +670,8 @@ proof isa empty_bag_bs_diff
 end-proof
 
 proof isa Stack2L_Cons
-  sorry
+  apply(cut_tac stk="push(y, stk)" in Stack2L.simps)
+  apply(simp add: top_push pop_push push_not_empty del: Stack2L.simps)
 end-proof
 
 proof isa Stack2L_concat
@@ -951,5 +964,23 @@ proof isa Pair2S_insert
   apply(simp add: Set__set_insertion_equal_empty)
 end-proof
 
+proof isa length_of_uptoL_loop
+  apply(induct "(i,j,ns)" arbitrary: j ns rule: uptoL_loop.induct)
+  apply(simp add: Bag__natMinus_def del: uptoL_loop.simps )
+  apply(case_tac "i <j")
+  apply(simp del: uptoL_loop.simps )
+  apply(case_tac "i < Nat__pred j")
+  apply(simp del: uptoL_loop.simps )
+  apply(cut_tac i=i and j=j and ns=ns in uptoL_loop.simps(1))
+  apply(simp del: uptoL_loop.simps add: Nat__pred_def)
+  apply(cut_tac i=i and j=j and ns=ns in uptoL_loop.simps(1))
+  apply(simp del: uptoL_loop.simps add: Nat__pred_def)
+  apply(cut_tac i=i and j=j and ns=ns in uptoL_loop.simps(1))
+  apply(simp del: uptoL_loop.simps add: Nat__pred_def)
+end-proof
+
+proof isa length_of_uptoL
+  apply(simp add: length_of_uptoL_loop uptoL_def del: uptoL_loop.simps)
+end-proof
 
 end-spec

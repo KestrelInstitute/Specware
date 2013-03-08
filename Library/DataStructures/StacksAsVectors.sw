@@ -53,6 +53,12 @@ spec
   theorem empty_stack is [a]
     fa(stk:VStack a)((stk = empty_stack) = (stk.2 = 0))
 
+%% TODO add a definition:
+  op [a] stackToList : Bijection(VStack a, List a)
+
+  op [a] listToStack : Bijection(List a, VStack a) = inverse stackToList
+
+
 end-spec
 
 
