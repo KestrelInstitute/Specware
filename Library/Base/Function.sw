@@ -238,6 +238,11 @@ theorem inverse_f_apply is [a,b]
 theorem fxy_implies_inverse is [a,b]
   fa (f:Bijection(a,b), x:a, y:b) f x = y => x = inverse f y
 
+%% To prove that f is a bijection, it suffices to exhibit its inverse:
+
+theorem bij_from_inverse is [a,b]
+  fa(f:a->b) ((ex(g:b->a) ((fa(x:a) g(f(x)) = x) && (fa(y:b) f(g(y)) = y))) => bijective? f)
+
 % eta conversion:
 
 theorem eta is [a,b]
@@ -421,4 +426,20 @@ qed
 
 end-proof
 % ------------------------------------------------------------------------------
+
+
+proof isa Function__bij_from_inverse
+  apply(simp only: Function__bijective_p__def)
+  apply(rule conjI)
+  apply(auto simp add: Function__injective_p__def Function__surjective_p__def)
+  by metis
+end-proof
+
+proof isa Function__bij_from_inverse__stp
+  apply(simp only: Function__bijective_p__stp_def)
+  apply(auto simp add: inj_on_def)
+  apply (metis mem_def)
+  by (metis mem_def surj_on_def)
+end-proof
+
 endspec
