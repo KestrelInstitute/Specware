@@ -205,7 +205,7 @@ theorem filter_neq is [a]
   fa(s: Set a, y: a)
     filter (fn x:a -> ~(y = x)) s = (if y in? s then set_delete(y, s) else s)
 
-%TODO add an axiom about size
+%TODO add an axiom or definition about size
 op [a] size: Set a -> Nat
   % fa(s: Set a) size s = set_fold 0 (fn (_, cnt) -> cnt + 1) s
 
