@@ -1,5 +1,8 @@
 % refinement of (finite) bags in terms of (finite) lists
 
+%% TODO We can't do this Isabelle proofs for this spec, because the
+%% Isabelle translator doesn't handle quotients.
+
 BagsAsLists =
 Bag qualifying
 spec
@@ -56,6 +59,7 @@ spec
     choose[Bag] (fn l -> nzcount(x,l)) b
 %  def bagin?(x, quotient[Bag] l) = nzcount(x,l)
 
+ %TODO Is this just the in? operator from Lists?!
   op [a] nzcount(x:a, l:List a) : Bool =
     case l of 
     | []         -> false
