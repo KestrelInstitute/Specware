@@ -12,9 +12,12 @@ spec
 %% separately):
 import AllIsa
 
-% These get through Isabelle (modulo sorrys).  However, I am keeping
-%  them separate, because of the issue with obligations of imported
-%  morphism not being imported:
+% These morphisms get through Isabelle (modulo sorrys).  Importing
+% them seems to cause them to be processed.  However, obligations of
+% imported morphisms seem to not be imported into Isabelle specs.  So
+% their Isabelle proofs have to be tested separately.  TODO, What does
+% it even mean to import a morphism?
+
 import MapsAsSets#M
 import SetsAsMaps#M
 import SetsAsBagMaps#M
