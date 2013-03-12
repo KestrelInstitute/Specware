@@ -22,6 +22,8 @@ spec
   % and for each element of the bag the boolean remains true if the element
   % occurs exactly once in the bag, and becomes false otherwise
 
+%TODO: refine this to something that fails faster (as soon as a repetition is found)?
+% TODO: Use a bag fold that folds over (element, number-of-occurrences) pairs?
   op [a] no_rep? (b : Bag a) : Bool =
     bag_fold true
              (fn (no_rep_found, x) -> if no_rep_found = false then 
@@ -58,6 +60,8 @@ spec
 
   op [a] set_insert (x : a, s : Set a) : Set a =
     if x in? s then s else bag_insert(x,s)
+
+%% TODO: add precondition that the element is not in the set?
 
   op [a] set_insert_new (x:a,s:Set a) : Set a = bag_insert(x,s)
 
@@ -105,7 +109,7 @@ spec
   op [a] \\// (ss:Set (Set a)) : Set a =
     set_fold empty_set (\/) ss
 
-
+  %% Or could just call bag_delete?
   op[a] set_delete(x : a, s : Set a) : Set a = 
     if x in? s then bag_delete(x,s) else s
 
