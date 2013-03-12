@@ -21,12 +21,12 @@ op [a] empty_stack? (s:Stack a) : Bool = (s = empty_stack)
 
 op [a] push (elt:a, stk:Stack a) : Stack a = Push(elt, stk)
 
-%% No case needed for Empty_Stack because the type forbids it:
+%% No case needed for Empty_stack because the type forbids it:
 
 op [a] pop (stk:Stack a | stk ~= empty_stack): Stack a =
   case stk of | Push (_,stk) -> stk
 
-%% No case needed for Empty_Stack because the type forbids it:
+%% No case needed for Empty_stack because the type forbids it:
 
 op [a] top (stk:Stack a | stk ~= empty_stack): a =
   case stk of | Push (elt,_) -> elt
