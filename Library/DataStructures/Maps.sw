@@ -72,10 +72,12 @@ Maps = Map qualifying spec
   % operations are sufficient for this example
 
 % TODO could use a definedOn? helper predicate
+%TODO define using a fold?
   op [a,b] domain: Map(a,b) -> Set a
   axiom map_domain is
      [a,b] fa(m:Map(a,b), x:a)( (x in? domain(m)) = (ex(z:b)(apply m x = Some z)))
 
+%TODO define using a fold?
   op [a,b] range : Map(a,b) -> Set b
   axiom map_range is
      [a,b] fa(m:Map(a,b), z:b)( z in? range(m) = (ex(x:a)(apply m x = Some z)))
@@ -107,8 +109,9 @@ Maps = Map qualifying spec
     the(z:b)( apply m x = Some z)
 
  %TODO doesn't seem to type check (what if x is not in the domain of m1 and/or m2?)
+ % TODO add condition that domains are equal and then say for all x in domain m1
   axiom totalmap_equality is [a,b]
-        fa(m1: Map(a,b),m2: Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
+    fa(m1: Map(a,b),m2: Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
 
  %TODO doesn't seem to type check in the else branch
   theorem TMApply_over_update is [a,b]
@@ -187,11 +190,13 @@ end-spec
 
 
 
+% TODO What is the status of this spec?
 
 Maps_extended = spec
   import Maps
 
   %% for some reason the version of this in Maps is not seen by Globalize
+  %% TODO right side doesn't type check?
   theorem TMApply_over_update_2 is [a,b]
     fa(m: Map(a,b), x: a, y: b, z: a)
     %% theorems with this form induce setf generation in Globalize
@@ -235,18 +240,20 @@ Maps_extended = spec
 
 (*--------  Special ops and axioms for isomorphism between Map(a,b)* Map(a,c) and Map(a,b*c) ---*)
 
-  def [A,B,C] map_compose(m1:Map(A,B), m2:Map(A,C)| domain(m1)=domain(m2)): Map(A,B*C) =
+  op [A,B,C] map_compose(m1:Map(A,B), m2:Map(A,C)| domain(m1)=domain(m2)): Map(A,B*C) =
     mapFrom( domain(m1), (fn(domelt:A)-> (TMApply(m1,domelt),TMApply(m2,domelt))))
 
-  def [A,B,C] map_project1(m:Map(A,B*C)): Map(A,B) =
+  op [A,B,C] map_project1(m:Map(A,B*C)): Map(A,B) =
     mapFrom( domain(m), fn(domelt:A)-> (TMApply(m,domelt)).1)
 
-  def [A,B,C] map_project2(m:Map(A,B*C)): Map(A,C) =
+  op [A,B,C] map_project2(m:Map(A,B*C)): Map(A,C) =
     mapFrom( (domain m), fn(domelt:A)-> (TMApply(m,domelt)).2)
 
+  % TODO May not type-check.
   theorem TMApply_map_project1 is [A,B,C]
      fa(m:Map(A,B*C),a:A)( TMApply(map_project1(m),a) = (TMApply(m,a)).1 )
 
+  % TODO May not type-check.
   theorem TMApply_map_project2 is [A,B,C]
      fa(m:Map(A,B*C),a:A)( TMApply(map_project2(m),a) = (TMApply(m,a)).2 )
 
@@ -284,17 +291,17 @@ Maps_extended = spec
 
 %----------------- 3-tuple version -----------------------------------------
 
-  def [A,B,C,D] map_compose3(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D)
+  op [A,B,C,D] map_compose3(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D)
                              | domain(m1)=domain(m2) && domain(m1)=domain(m3)): Map(A,B*C*D) =
     mapFrom( domain(m1), (fn(domelt:A)-> (TMApply(m1,domelt),TMApply(m2,domelt),TMApply(m3,domelt))))
 
-  def [A,B,C,D] map_project31(m:Map(A,B*C*D)): Map(A,B) =
+  op [A,B,C,D] map_project31(m:Map(A,B*C*D)): Map(A,B) =
     mapFrom( domain(m), fn(domelt:A)-> (TMApply(m,domelt)).1)
 
-  def [A,B,C,D] map_project32(m:Map(A,B*C*D)): Map(A,C) =
+  op [A,B,C,D] map_project32(m:Map(A,B*C*D)): Map(A,C) =
     mapFrom( (domain m), fn(domelt:A)-> (TMApply(m,domelt)).2)
 
-  def [A,B,C,D] map_project33(m:Map(A,B*C*D)): Map(A,D) =
+  op [A,B,C,D] map_project33(m:Map(A,B*C*D)): Map(A,D) =
     mapFrom( (domain m), fn(domelt:A)-> (TMApply(m,domelt)).3)
 
   theorem TMApply_map_project31 is [A,B,C,D]
