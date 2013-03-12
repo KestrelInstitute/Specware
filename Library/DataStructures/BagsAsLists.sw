@@ -7,11 +7,6 @@ BagsAsLists =
 Bag qualifying
 spec
 
-  op natMinus(m:Nat,n:Nat):Nat =
-     if n<m
-     then m - n
-     else 0
-
   % we refine bags by means of lists: a bag can be represented by
   % a list containing all its elements, repeated as many times as their
   % occurrences in the bag; the order of the elements in the list does

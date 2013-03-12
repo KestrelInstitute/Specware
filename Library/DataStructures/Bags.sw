@@ -132,15 +132,7 @@ spec
   %TODO Where do we give this meaning?
   op [a] bag_filter: (a -> Bool) -> Bag a -> Bag a
 
-%TODO does this exist elsewhere too?
-% This is proper substraction on Nats.
-% It is needed to reflect semantics of bag_delete and bag_difference
-  op natMinus(m:Nat,n:Nat):Nat =
-     if n<m  %TODO allow m=n in this case (may be more convenient: no case split if we know n<=m)?
-     then m - n
-     else 0
-  
-% delete one occurrence of x in b
+  % delete one occurrence of x in b
 % TODO We could call this delete1 or delete_1.
 %TODO Add a delete_all ?
   op bag_delete : [a] a * Bag a -> Bag a

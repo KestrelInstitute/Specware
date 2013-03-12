@@ -88,11 +88,6 @@ spec
        then Bs = empty_bag  %empty?(As)
        else As subbag Bs
 
-% TODO Perhaps this should be in a library (currently, it is in several places).
-  op natMinus (m:Nat, n:Nat) : Nat =
-    if n<m
-    then m - n
-    else 0
 
 proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
   sorry
