@@ -1,28 +1,41 @@
 % specification of (finite) bags
 
+% TODO The qualifier (Bag) differs from the name of this spec (Bags).
+% It would be nice if they agreed (we have even talked about making
+% this a requirement, for compatibility with other systems).  Having
+% the singular form for the qualifier probably makes sense, so we can
+% talk about the operator Bag.union, etc (Bags.union is awkward).  So
+% perhaps the names of the specs should also be singular.  The
+% singular form also has the benefit of being shorter.
+
 Bag qualifying
 spec
 
   type Bag a
 
-  % each element of type a occurs in a bag a number of times; if two bags
-  % have the same number of occurrences of each element, they are the same bag
+  % Each element of type a occurs in a bag some number of times:
 
-  op occs : [a] a * Bag a -> Nat
+  op [a] occs : a * Bag a -> Nat
+
+  % If two bags have the same number of occurrences of each element, they 
+  % are the same bag:
+
   axiom occurrences is [a]
     fa(b1:Bag a, b2:Bag a) (fa(x: a) occs(x,b1) = occs(x,b2)) => b1 = b2
 
   % I made the axiom def_of_Bagin into a definition. -Eric
+
   op [a] bagin? (x:a, s : Bag a) infixl 100 : Bool = ~(occs(x,s) = 0)
 
   % a subbag is characterized by same or fewer occurrences of each element
   % I made the axiom subbag into this definition. -Eric
   % TODO The name subbag should probably have a ? added to the end, since it returns a Bool.
-  op [a] subbag (b1: Bag a, b2 : Bag a) infixl 200 : Bool = (fa(x) occs(x,b1) <= occs(x,b2))
+
+  op [a] subbag (b1 : Bag a, b2 : Bag a) infixl 200 : Bool = (fa(x) occs(x,b1) <= occs(x,b2))
 
   % the empty bag is characterized by zero occurrences of each element
-
-
+  % TODO Get rid of this axiom (perhaps using 'the'):
+ 
   op empty_bag : [a] Bag a
   axiom empty_bag is [a]
         fa(x: a) occs(x,empty_bag) = 0
@@ -41,8 +54,8 @@ spec
   % are unordered, only their occurrences count
 
   theorem bag_insertion_commutativity is [a]
-          fa(x: a,y,b) bag_insert(x,bag_insert(y,b)) =
-                    bag_insert(y,bag_insert(x,b))
+    fa(x: a,y,b) bag_insert(x,bag_insert(y,b)) =
+                 bag_insert(y,bag_insert(x,b))
 
 % union of bags is characterized by adding the occurrences of each element
 % old:   op bag_union infixl 300 : [a] Bag a * Bag a -> Bag a
@@ -50,13 +63,13 @@ spec
   op [a] \/ infixl 24 : Bag a * Bag a -> Bag a
   axiom occs_bag_union is [a]
         fa(b1,b2,x:a) occs(x,b1 \/ b2) = occs(x,b1) + occs(x,b2)
+
   theorem in_bag_union is [a]
       fa(b1,b2,x: a) x bagin? (b1 \/ b2) <=> (x bagin? b1 || x bagin? b2)
 
 % use this only under careful control
-%TODO change the type var E to a for consistency?
-  theorem commutativity_of_bag_union is [E]
-    fa(x:Bag E,y: Bag E)( x \/ y = y \/ x )
+  theorem commutativity_of_bag_union is [a]
+    fa(x:Bag a,y: Bag a)( x \/ y = y \/ x )
 
 %TODO rename to have union in the name (same for other mentions of join)
   theorem associative_bag_join is [a]
@@ -65,17 +78,17 @@ spec
 
 %TODO add this?
 %TODO add an axiom about occs and make bag_intersection a theorem?
-(*  no image yet i BagsAsLists.sw
-  op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
-  axiom bag_intersection is [a]
-      fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
+%% %%  no image yet i BagsAsLists.sw
+%%   op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
+%%   axiom bag_intersection is [a]
+%%       fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
 
-  theorem bag_intersection_right_zero is [a]
-      fa(c:Bag a)(c /\ empty_bag = empty_bag)
-  theorem bag_intersection_left_zero is [a]
-      fa(c:Bag a)(empty_bag /\ c = empty_bag)
+%%   theorem bag_intersection_right_zero is [a]
+%%       fa(c:Bag a)(c /\ empty_bag = empty_bag)
+%%   theorem bag_intersection_left_zero is [a]
+%%       fa(c:Bag a)(empty_bag /\ c = empty_bag)
 
-*)
+
 
  %TODO give a meaning to this (maybe in terms of fold?)
   op [a,b] bag_map: (a -> b) -> Bag a -> Bag b
@@ -128,17 +141,21 @@ spec
      else 0
   
 % delete one occurrence of x in b
+% TODO We could call this delete1 or delete_1.
+%TODO Add a delete_all ?
   op bag_delete : [a] a * Bag a -> Bag a
   axiom bag_deletion is [a]
         fa(b,x: a,y) occs(y,bag_delete(x,b)) = (if y = x
                                                   then natMinus(occs(x,b),1)  %TODO could say y here instead of x (they are equal if we are in this branch)
                                                 else occs(y,b))
 
+  %% TODO Use \ for difference ops like this?
   op [a] -- infixl 25 : Bag a * Bag a -> Bag a
   axiom bag_difference is [a]
      fa(b1:Bag a,b2:Bag a,y: a) occs(y,(b1 -- b2)) = natMinus(occs(y,b1),occs(y,b2))
 
 %TODO assign meaning to this.  This should be the total of the occurrence counts of all elements in the bag?
+% Could use a fold.
   op [a] bag_size: Bag a -> Nat
 
    % A subbag As of bag Bs is nontrivial if it is empty iff Bs is empty.
@@ -203,83 +220,83 @@ spec
   %     fa(A:Bag a,B:Bag a,C:Bag a)
   %       ((A \/ B) -- C = (A -- C) \/ (B -- C))
 
-(*  theorem fodder  
+%% theorem fodder:
 
 
-% Note that bag difference subtracts ALL occs of all members of s2 from s1.  No it doesn't!
-  axiom bag_difference is [a]
-      fa(s1,s2,y: a) (y bagin? s1 -- s2 <=> (y bagin? s1 && ~(y bagin? s2)))
+%% % Note that bag difference subtracts ALL occs of all members of s2 from s1.  No it doesn't!
+%%   axiom bag_difference is [a]
+%%       fa(s1,s2,y: a) (y bagin? s1 -- s2 <=> (y bagin? s1 && ~(y bagin? s2)))
 
-  theorem bag_diff_right_unit is [a]
-      fa(c:Bag a)(c -- empty_bag = c)
-  theorem bag_diff_left_zero is [a]
-      fa(c:Bag a)(empty_bag -- c = empty_bag)
+%%   theorem bag_diff_right_unit is [a]
+%%       fa(c:Bag a)(c -- empty_bag = c)
+%%   theorem bag_diff_left_zero is [a]
+%%       fa(c:Bag a)(empty_bag -- c = empty_bag)
 
-% this is too powerful... needs to be backtrackable versus a rewrite
-% See above.  This doesn't seem to be true.
-  theorem distribute_bag_join_over_diff is [a]
-      fa(A:Bag a,B:Bag a,C:Bag a)
-        ((A \/ B) -- C = (A -- C) \/ (B -- C))
+%% % this is too powerful... needs to be backtrackable versus a rewrite
+%% % See above.  This doesn't seem to be true.
+%%   theorem distribute_bag_join_over_diff is [a]
+%%       fa(A:Bag a,B:Bag a,C:Bag a)
+%%         ((A \/ B) -- C = (A -- C) \/ (B -- C))
 
-%this also seems false.
-%      fa(A:Bag a,B:Bag a,C:Bag a, D:Bag a)
-%        ( (A -- C) = D  =>
-%           (A \/ B) -- C = D \/ (B -- C))
+%% %this also seems false.
+%% %      fa(A:Bag a,B:Bag a,C:Bag a, D:Bag a)
+%% %        ( (A -- C) = D  =>
+%% %           (A \/ B) -- C = D \/ (B -- C))
 
-% questionable: this may change the order of y in the bagection structure, %TODO mangled comment
-% so its ok for bags (orderless), but not for lists or trees (ordered)...
-% Here are some variant forms of the RHS:
-%            (if y bagin? d then c -- d else (c -- d) -- bag_insert(y,empty_bag))
-%            bag_delete(y, c--d)  NO: del removes only one occ!
-%            (c -- d) -- bag_insert(y,empty_bag)
-%see distribute_bag_diff_over_right_insert above.
-  theorem distribute_bag_diff_over_right_insert1 is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (c -- bag_insert(y,d) 
-           = bag_deleteall(y, c -- d)
-        )
+%% % questionable: this may change the order of y in the bagection structure, %TODO mangled comment
+%% % so its ok for bags (orderless), but not for lists or trees (ordered)...
+%% % Here are some variant forms of the RHS:
+%% %            (if y bagin? d then c -- d else (c -- d) -- bag_insert(y,empty_bag))
+%% %            bag_delete(y, c--d)  NO: del removes only one occ!
+%% %            (c -- d) -- bag_insert(y,empty_bag)
+%% %see distribute_bag_diff_over_right_insert above.
+%%   theorem distribute_bag_diff_over_right_insert1 is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%         (c -- bag_insert(y,d) 
+%%            = bag_deleteall(y, c -- d)
+%%         )
 
-  theorem distribute_bag_diff_over_right_insert2 is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-      d ~= empty_bag =>                                    % beware the circular rewrite!
-        (c -- bag_insert(y,d) 
-           = (c -- d) -- bag_insert(y,empty_bag)
-        )
+%%   theorem distribute_bag_diff_over_right_insert2 is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%       d ~= empty_bag =>                                    % beware the circular rewrite!
+%%         (c -- bag_insert(y,d) 
+%%            = (c -- d) -- bag_insert(y,empty_bag)
+%%         )
 
-% questionable: this may change the order of y in the bagection structure, %TODO mangled comment
-% so its ok for bags (orderless), but not for lists or trees (ordered)...
-  theorem distribute_bag_join_over_right_insert is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (c \/ bag_insert(y,d) = bag_insert(y, c \/ d))
+%% % questionable: this may change the order of y in the bagection structure, %TODO mangled comment
+%% % so its ok for bags (orderless), but not for lists or trees (ordered)...
+%%   theorem distribute_bag_join_over_right_insert is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%         (c \/ bag_insert(y,d) = bag_insert(y, c \/ d))
 
-  theorem distribute_bag_join_over_left_insert is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (bag_insert(y,c) \/ d = bag_insert(y, c \/ d))
+%%   theorem distribute_bag_join_over_left_insert is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%         (bag_insert(y,c) \/ d = bag_insert(y, c \/ d))
 
-%TODO seems not true (when y is in c but not in d)
-% this law is questionable: sensible for bags, but not for lists...
-  theorem distribute_bag_join_over_delete_right is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (c \/ bag_delete(y,d)     % remove one occ of y
-           = bag_delete(y, c \/ d))
+%% %TODO seems not true (when y is in c but not in d)
+%% % this law is questionable: sensible for bags, but not for lists...
+%%   theorem distribute_bag_join_over_delete_right is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%         (c \/ bag_delete(y,d)     % remove one occ of y
+%%            = bag_delete(y, c \/ d))
 
-%TODO seems not true (when y is in d but not in c)
-  theorem distribute_bag_join_over_delete_left is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (bag_delete(y,c) \/ d     % remove one occ of y
-           = bag_delete(y, c \/ d))
+%% %TODO seems not true (when y is in d but not in c)
+%%   theorem distribute_bag_join_over_delete_left is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%         (bag_delete(y,c) \/ d     % remove one occ of y
+%%            = bag_delete(y, c \/ d))
 
-%TODO seems wrong
-  theorem distribute_bag_delete_over_diff is [a]
-      fa(c:Bag a,d:Bag a,y:a)
-        (bag_delete(y,c) -- d     % remove one occ of y
-           = (if y bagin? d then c -- d else bag_delete(y, c -- d)))
+%% %TODO seems wrong
+%%   theorem distribute_bag_delete_over_diff is [a]
+%%       fa(c:Bag a,d:Bag a,y:a)
+%%         (bag_delete(y,c) -- d     % remove one occ of y
+%%            = (if y bagin? d then c -- d else bag_delete(y, c -- d)))
 
 
-  axiom def_of_bag_filter is [a]
-      fa(p:a->Bool, c:Bag a, n:a)
-        (n bagin? (bag_filter p c) = (n bagin? c && p n))
-*)
+%%   axiom def_of_bag_filter is [a]
+%%       fa(p:a->Bool, c:Bag a, n:a)
+%%         (n bagin? (bag_filter p c) = (n bagin? c && p n))
+%% 
 
 (******************************** The Proofs ********************************)
 
@@ -346,14 +363,12 @@ proof Isa bag_intersection_left_zero
   apply(auto simp add: Bag__empty_bag Bag__bag_intersection)
 end-proof
 
-
 proof Isa Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype
   apply(cut_tac A=x and B=y and C=z in Bag__associative_bag_join)
   apply(cut_tac A=x and B=z and C=y in Bag__associative_bag_join)
   apply(cut_tac x=z and y=y in Bag__commutativity_of_bag_union)
   apply(auto)
 end-proof
-
 
 proof Isa Bag__distribute_bag_diff_over_left_insert
   apply(rule Bag__occurrences)
