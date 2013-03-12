@@ -2,7 +2,9 @@
 % represented by a map from elements to their occurrence count in the
 % bag.  I guess this representation is not unique: An element not
 % present in the bag could either be paired with a count of 0 in the
-% map, or have no pair in the map at all.
+% map, or have no pair in the map at all.  TODO, does that violate the
+% axiom 'occurrences' about Bags (that if two bags agree on the number
+% of occurences of all items, then they are equal)?
 
 BagsAsMaps =
 BagsAsMaps qualifying
