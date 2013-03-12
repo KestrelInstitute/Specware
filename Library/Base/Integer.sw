@@ -191,6 +191,14 @@ op Nat.succ (n:Nat): Nat = isucc n
 
 op Nat.pred (n:PosNat) : Nat = ipred n
 
+% This is proper substraction on Nats.
+% It is needed to characterize the number of occurrences of an element in a bag_delete or bag_difference.
+op natMinus(m:Nat,n:Nat):Nat =
+  if n<m  %TODO allow m=n in this case (may be more convenient: no case split if we know n<=m)?
+  then m - n
+  else 0
+
+
 % sign:
 
 op sign (i:Int) : {s:Int | s = 0 || s = 1 || s = -1} =
