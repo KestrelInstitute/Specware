@@ -1,6 +1,25 @@
 (*
  * An example of applying an isomorphic type refinement to a type
  * that is part of a mutually recursive set of types.
+ * 
+ * Suppose that a type Tree refers to (i.e., uses) a type Children,
+ * and that Children refers to Tree, so that the two types are
+ * mutually recursive. If we want to apply an isomorphic type refinement
+ * (ITR) to one of the types, say to transform Children into Children',
+ * then we must also transform the other type, Tree into Tree', such that
+ * Tree' refers only to Children' and not to Children. Similarly, when
+ * transforming Children into Children', we must change all references to
+ * Tree into Tree'. The result is a new pair of types, Tree' and Children',
+ * that refer to each other, and that do not refer to the original types.
+ *
+ * We could manually define the two types and isomorphisms, and apply them
+ * jointly. However, once Children' and its isomorphism are defined, Tree'
+ * and its isomorphism are fully implied and can be computed. We need to
+ * declare (but not define) Tree' and the ops for the Tree/Tree' isomorphism,
+ * because they are referenced in the definitions of Children' and the
+ * Children/Children' isomorphism. The ITR technology will provide the
+ * definitions for Tree' and the Tree/Tree' isomorphism.
+ *
  *)
 
 
