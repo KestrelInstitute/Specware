@@ -41,9 +41,9 @@ import TreeSpec
 
 % We are creating a new type, Children', that is the essentially the same as Children,
 % but with the fields renamed.
-% We need to also transform the Tree type, giving Tree', since we need a type that
-% refers to Children' rather than to Children; likewise, Children' refers to
-% Tree' rather than to Tree.
+% The type Tree refers to the type Children, so we need to transform it into Tree',
+% which refers instead to Children'.
+% Likewise, Children refered to Tree, but Children' must refer to Tree'.
 
 % We define Children' manually, since that is were the desired change is.
   type Children' = {first:Tree', second:Tree'}
@@ -53,15 +53,15 @@ import TreeSpec
 % but we do not need to define it - the definition will be created automatically.
   type Tree'
 
-% Likewise, we manually define the isomorphism ops for Children/Children',
-% because they capture our intention. The isomorphims ops of Tree/Tree' are
+% We manually define the isomorphism ops for Children/Children',
+% because they capture our intention. The ops for the Tree/Tree' isomorphism are
 % fully implied and will be automatically defined.
 op isoChildren(therec:Children): Children' =
   {first=isoTree(therec.left), second=isoTree(therec.right)}
 op osiChildren(therec:Children'): Children =
   {left=osiTree(therec.first), right=osiTree(therec.second)}
 
-% We declare to isomorhpism ops for Tree/Tree' because we need to reference them in
+% We declare the isomorhpism ops for Tree/Tree' because we need to reference them in
 % the isomorphism ops for Children/Children', but we do not need to define them -
 % their definitions will be created automatically.
 op isoTree: Tree -> Tree'
