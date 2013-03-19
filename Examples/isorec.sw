@@ -89,32 +89,13 @@ op osiTree: Tree' -> Tree
 end-spec
 
 % Apply the isomorphism. Note that we give both pairs of iso/osi ops.
-TreeSpec2 = isos{isomorphism((isoChildren,osiChildren), (isoTree,osiTree))}
-
-TreeSpec3 = TreeSpec2
-            {at total' {unfold osiTree;
-                        unfold osiChildren;
-                        simplify (lr *.iso__osi)
-                        }
-             }
-            {at between' {unfold isoTree;
-                          simplify (lr *.iso__osi);
-                          unfold isoChildren;
-                          simplify (lr *.iso__osi)
-                          }
-             }
-            {at double' {unfold osiTree;
-                         simplify (lr *.iso__osi);
-                         simplify (lr *.iso__osi, unfold osiChildren);
-                         simplify (lr *.iso__osi, unfold isoTree);
-                         simplify (lr *.iso__osi, unfold isoChildren)
-                         }
-             }
+isorec = isos{isomorphism((isoChildren,osiChildren), (isoTree,osiTree))
+                [rewrite osiChildren, rewrite isoChildren]}
 
 % The following, commented-out spec is the result.
 % The definitions for Tree', isoTree and osiTree have been generated.
 (*
- 
+
 spec  
 import TreeSpec
  
@@ -153,31 +134,10 @@ theorem generated.iso__osi is fa(x': Tree') isoTree(osiTree x') = x'
  
 theorem generated.osi__iso is fa(x: Tree) osiTree(isoTree x) = x
 op double' (t: Tree'): Tree'
-  = isoTree
-      (case osiTree t
-        of Leaf x -> Leaf(2 * x)
-         | Branch {left = L, right = R} -> 
-           Branch{left = osiTree(double'(isoTree L)), right = osiTree(double'(isoTree R))})
-op between' (m: Nat, n: Nat | m <= n): Tree'
-  = isoTree
-      (if m = n
-        then Leaf m 
-       else 
-       let mid = (m + n) divF 2 in 
-       Branch
-         {left = let (m0, n0 | m0 <= n0) = (m, mid) in 
-                 osiTree(between'(m0, n0)), 
-          right = let (m0, n0 | m0 <= n0) = (mid + 1, n) in 
-                  osiTree(between'(m0, n0))})
-op total' (t: Tree'): Nat
-  = case osiTree t
-     of Leaf x -> x
-      | Branch b -> (total'(isoTree(b.left)) + total'(isoTree(b.right)))
-refine def total' (t: Tree'): Nat
   = case t
-     of Branch y -> (total'(y.first) + total'(y.second))
-      | Leaf y -> y
-refine def between' (m: Nat, n: Nat | m <= n): Tree'
+     of Branch y -> Branch{first = double'(y.first), second = double'(y.second)}
+      | Leaf y -> Leaf(2 * y)
+op between' (m: Nat, n: Nat | m <= n): Tree'
   = if m = n
      then Leaf m 
     else 
@@ -185,12 +145,13 @@ refine def between' (m: Nat, n: Nat | m <= n): Tree'
     Branch
       {first = let (m0, n0 | m0 <= n0) = (m, mid) in 
                between'(m0, n0), 
-       second = let (m0, n0 | m0 <= n0) = (mid + 1, n) in 
-                between'(m0, n0)}
-refine def double' (t: Tree'): Tree'
+       second = let (m1, n1 | m1 <= n1) = (mid + 1, n) in 
+                between'(m1, n1)}
+op total' (t: Tree'): Nat
   = case t
-     of Branch y -> Branch{first = double'(y.first), second = double'(y.second)}
-      | Leaf y -> Leaf(2 * y)
+     of Branch y -> (total'(y.first) + total'(y.second))
+      | Leaf y -> y
 end-spec
+
 *)
 
