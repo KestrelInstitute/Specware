@@ -915,12 +915,12 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
               matches <-
                 mapM (fn (id,o_i_ty) ->
                       case o_i_ty of
-                           | None -> return (mkEmbedPat(id,None,ty), trueTerm, mkEmbed0(id,ty))
+                           | None -> return (mkEmbedPat(id,None,src_ty), trueTerm, mkEmbed0(id,src_ty))
                            | Some i_ty -> {
                                yv <- return ("y",i_ty); 
                                iso <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkVar yv);
-                               return (mkEmbedPat(id,Some(mkVarPat yv),ty), trueTerm,
-                                         mkApply(mkEmbed1(id,mkArrow(i_ty,ty)), iso))
+                               return (mkEmbedPat(id,Some(mkVarPat yv),src_ty), trueTerm,
+                                         mkApply(mkEmbed1(id,mkArrow(i_ty,src_ty)), iso))
                              }) row;
               return (mkLambda(mkVarPat xv, mkApply(Lambda (matches,noPos), mkVar xv)))
             }
@@ -1443,6 +1443,13 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                                       else Some(Unfold osi_qid))
                         iso_info
     in
+    let osi_rewrites = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                    if osi_qid in? recursive_ops
+                                        && definedByCases?(osi_qid, spc)
+                                      then Some(Rewrite osi_qid)
+                                      else None)
+                        iso_info
+    in
     let iso_intro_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
                                           if iso_qid in? recursive_ops then None
                                           else Some(Unfold iso_qid))
@@ -1455,6 +1462,13 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                                                   then Unfold iso_qid
                                                   else Rewrite iso_qid))
                         iso_info
+    in
+    let iso_rewrites = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                    if iso_qid in? recursive_ops
+                                        && definedByCases?(iso_qid, spc)
+                                      then Some(Rewrite iso_qid)
+                                      else None)
+                         iso_info
     in
     %% We want to delay unfolding iso, osi until after the iso/osi elimination rules have had a chance
     let non_iso_extra_rules = filter (fn r ->
@@ -1470,8 +1484,9 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
     % let _ = writeLine("iso: "^anyToString iso_unfolds) in
     let complex_iso_fn_unfolds = map (fn (_,qid) -> Rewrite qid) iso_fn_info in
     let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
-                       Rewrite(mkQualifiedId("Function","id")),
-                       Unfold(mkQualifiedId("Option","mapOption"))]
+                       Unfold(mkQualifiedId("Function","id")),
+                       Rewrite(mkQualifiedId("Option","mapOption")),
+                       MetaRule(mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
     in
     let main_script =
       Steps([%Trace true,% SimpStandard,
@@ -1487,6 +1502,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                            ++ complex_iso_fn_unfolds
                            ++ iso_intro_unfolds
                            ++ iso_osi_rewrites
+                           ++ iso_rewrites
+                           ++ osi_rewrites
                            ++ osi_unfolds
                            ++ extra_rules
                            ++ rewrite_old
@@ -1496,6 +1513,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
              mkSimplify (gen_unfolds
                             ++ unfold_old
                             ++ iso_osi_rewrites
+                            ++ iso_rewrites
+                            ++ osi_rewrites
                             ++ osi_unfolds
                             ++ iso_unfolds
                             ++ extra_rules),
