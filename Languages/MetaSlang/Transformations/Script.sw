@@ -387,6 +387,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
         let not_thm = mkBind(Forall, vs, mkEquality(boolType, t2, t1)) in
         axiomRules context (pt,desc,tyVars,not_thm,a) LeftToRight
 
+  op definedByCases?(qid: QualifiedId, spc: Spec): Bool =
+    length(makeRule(makeContext spc, spc, Rewrite qid)) > 1
+
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q, nm)) ->
@@ -397,12 +400,13 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                                               info.names))
                               (findMatchingOpsEx(spc, qid))))
       | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
-        warnIfNone(qid, "Op ",
-                   flatten (map (fn info ->
+        let rls = flatten (map (fn info ->
                                    flatten (map (fn (Qualified(q, nm)) ->
                                                    defRule(context, q, nm, rule, info, false))
                                               info.names))
-                              (findMatchingOpsEx(spc, qid))))
+                              (findMatchingOpsEx(spc, qid)))
+        in
+        warnIfNone(qid, "Op ", rls)
       | Fold(qid) ->
         mapPartial reverseRuleIfNonTrivial
           (makeRule(context, spc, Unfold(qid)))
