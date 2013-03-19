@@ -351,7 +351,7 @@ PE qualifying spec
                       }
                     def prog () = {
                         returnVar <- OpEnv.deref (specOf (modeSpec newFinal), returnRef);
-                        return (Some returnRef, returnTerm, opinfo_type returnVar,postSubst,bindingTerm)   % Shameful shit!
+                        return (Some returnRef, returnTerm, opinfo_type returnVar,postSubst,bindingTerm)   % Shameful stuff!
                       } in
                       catch (prog ()) handler
           }};

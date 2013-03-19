@@ -1065,7 +1065,7 @@ apply the substitution to the name and all free occurrences of it.
 add the (now corrected parameters to the set of names in scope and
 the recursively visit the inner scopes.
 
-All of this crap is because we do a naive compilation into a diagram
+All of this stuff is because we do a naive compilation into a diagram
 Better to get there by PE .. compiler should name things apart.
 Or should happen at runtime as in a compiler.
 
