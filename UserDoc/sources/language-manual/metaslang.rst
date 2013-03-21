@@ -87,7 +87,7 @@ Models
   op: `op_name`
 
 In |Metaslang|,
-*:token:`op`*  is used
+":token:`op`"  is used
 used as an abbreviation for
 ":token:`op_name`", where :token:`op_names`
 are declared :token:`names` representing values.
@@ -420,7 +420,7 @@ Symbols and Names
   first_word_syllable: `word_start_mark` { `word_continue_mark` }*
   next_word_syllable: `word_continue_mark` { `word_continue_mark` }*
   word_start_mark: `letter`
-  word_continue_mark: `letter` | `decimal_digit` | " | ?
+  word_continue_mark: `letter` | `decimal_digit` | ' | ?
   letter: A | B | C | D | E | F | 
         : G | H | I | J | K | L |
         : M | N | O | P | Q | R | 
@@ -433,9 +433,9 @@ Symbols and Names
   decimal_digit: 0 | 1 | 2 | 3 | 4 | 5 | 
                : 6 | 7 | 8 | 9
   non_word_syllable: `non_word_mark` { `non_word_mark` }*
-  non_word_mark: ` | ~ | ! | @ | * | ^ | 
+  non_word_mark: ` | ~ | ! | @ | $ | ^ | 
                : & | * | - | = | + | \ | 
-               : "|" | : | < | > | / | " | 
+               : "|" | : | < | > | / | ' | 
                : ?
   special_symbol: _ | ( | ) | "[" | "]" | 
                 : "{" | "}" | ; | , | .
@@ -3134,7 +3134,7 @@ Sample :token:`expressions`:
    3260
    z.re
    ("George", Poodle : Dog, 10)
-   {:token:`name` = "George", kind = Poodle : Dog, age = 10}
+   {name = "George", kind = Poodle : Dog, age = 10}
    (writeLine "key not found"; embed Missing)
    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
    project 2
@@ -4231,7 +4231,7 @@ Sample :token:`record_display`:
 
 .. code-block:: specware
 
-   {:token:`name` = "George", kind = Poodle : Dog, age = 10}
+   {name = "George", kind = Poodle : Dog, age = 10}
    
 
 The value of a :token:`record_display` is the record whose components
