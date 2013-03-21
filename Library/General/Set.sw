@@ -38,12 +38,20 @@ op [a] Set_P (Pa: a -> Bool) (s:Set a): Bool =
 
 % (strict) sub/superset:
 
+% subset:
+
 op [a] <= (s1:Set a, s2:Set a) infixl 20 : Bool =
   fa(x) x in? s1 => x in? s2
 
+% proper subset (strict subset):
+
 op [a] < (s1:Set a, s2:Set a) infixl 20 : Bool = (s1 <= s2 && s1 ~= s2)
 
+% superset:
+
 op [a] >= (s1:Set a, s2:Set a) infixl 20 : Bool = (s2 <= s1)
+
+% proper superset (strict superset):
 
 op [a] > (s1:Set a, s2:Set a) infixl 20 : Bool = (s2 < s1)
 
