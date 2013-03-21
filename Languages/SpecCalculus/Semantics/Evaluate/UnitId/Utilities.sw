@@ -458,8 +458,7 @@ emacs interface functions.
       | Some(_,_,_,term) -> Some term
       | _ -> None
 
-  op  findUnitIdForUnit: Value * GlobalContext -> Option UnitId
-  def findUnitIdForUnit (val, globalContext) =
+  op findUnitIdForUnit (val : Value, globalContext : GlobalContext) : Option UnitId =
     foldMap (fn result -> fn unitId -> fn (vali,_,_,_) ->
 	     case result of
 	       | Some _ -> result
