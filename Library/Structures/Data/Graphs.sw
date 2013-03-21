@@ -2,7 +2,7 @@
 
 This is to be deprecated. See Graphs/Finite.sw for the new version.
 
-The translates need typeing out. And the equating of Dom to Edge.Elem should be done
+The translates need sorting out. And the equating of Dom to Edge.Elem should be done
 by translate. Basically reduce the number redundant types.
 
 \begin{spec}
