@@ -120,7 +120,7 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
  op ppUnitId (UID : UnitId) : WLPretty =
    ppConcat[ppString "((path ", 
             ppStrings UID.path, 
-            ppString ")(hashSuffix ", 
+            ppString ") (hashSuffix ", 
             (case UID.hashSuffix of None -> ppString "None" | Some str -> ppConcat [ppString "Some ", ppString str]),
             ppString "))"]
  
@@ -128,7 +128,7 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
  op ppRelativeUID (relUID : RelativeUID) : WLPretty =
    (case relUID of
       | SpecPath_Relative unitId -> ppConcat [ppString "(SpecPath_Relative ", ppUnitId unitId, ppString")"] %ppAppend (ppString "/") (ppUIDlocal unitId)
-      | UnitId_Relative   unitId -> ppConcat [ppString "(UnitId_Relative"   , ppUnitId unitId, ppString")"]) %ppUIDlocal unitId
+      | UnitId_Relative   unitId -> ppConcat [ppString "(UnitId_Relative "   , ppUnitId unitId, ppString")"]) %ppUIDlocal unitId
                
 
  op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
@@ -883,12 +883,12 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
         ppConcat [if c.printPositionInfo?
 		    then ppPosition c pos
 		  else ppNil,
-                  ppGr1Concat[ppString "(import ",
+                  ppGr1Concat[ppString "(Import ",
                               ppSCTerm c im_sc_tm,
                               ppNewline,
                               %%ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
                               ppString "(",
-                              %%ppSpec c im_sp None,
+                              %% ppSpec c im_sp,
                               ppString "...imported spec elided...",
                               ppString ")",
                               ppNewline,
@@ -1339,7 +1339,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
       | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppID id, ppString ") ", ppBreak]
       | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
       | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
-      | String str -> ppString (enquote str)  %TODO escape any quotes in the string with backslash
+      | String str -> ppConcat[ppString "(String ", ppString (enquote str), ppString ")"]  %TODO escape any quotes in the string with backslash
       | Bool b -> ppConcat [ppString "(bool ", ppBoolean b, ppString ")"]
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
