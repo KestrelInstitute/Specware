@@ -1,6 +1,6 @@
 (* MergeSort
 
-List typeing routines using a smooth applicative merge type
+List sorting routines using a smooth applicative merge type
 Taken from the SML/NJ distribution, which again is
 taken from, ML for the Working Programmer, LCPaulson. pg 99-100, which again is.
 taken from ...

@@ -2,7 +2,7 @@
 
 This should be an extension of the spec appearing in ../Graphs. Perhaps later.
 
-The translates need typeing out. 
+The translates need sorting out. 
 
 \begin{spec}
 let
