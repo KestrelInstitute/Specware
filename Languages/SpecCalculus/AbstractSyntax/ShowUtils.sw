@@ -1,5 +1,8 @@
 ShowUtils qualifying spec
 
+%% This file contains utility functions that are used in ShowData,
+%% ShowDeps, ShowImports, etc.
+
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 %op  SpecCalc.findUnitIdForUnit: Value * GlobalContext -> Option UnitId
 

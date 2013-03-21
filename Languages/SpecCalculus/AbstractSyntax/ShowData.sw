@@ -1,21 +1,17 @@
 %% This is a pretty-printer for specs that produces output in a Lisp-like
 %% s-expression-based format.  Having sub-terms printed within balanced
 %% parentheses makes it easy to navigate around the printed representation of a
-%% spec (e.g., using Emacs keys to skip over a large balanced-parentheses
-%% expression).
+%% spec (e.g., using Emacs keys to skip over large 
+%% expressions between balanced parentheses).
 
 %% This file is a modification of ASW_Printer.sw, and it is not yet finished.  I
-%% am changing the prining of constructs to use s-expressions on an as-needed
+%% am changing the printing of constructs to use s-expressions on an as-needed
 %% basis. -EWS
 
 %% The top level function to call is evaluateShowData.
 
 %% TODO: Print to the screen instead of a file?
-%% TODO: Make this command available directly in the Specware shell (how?).
 %% TODO: Print things like this: /\ with vertical bars (or in some other way that doesn't confuse emacs)
-%% TODO: rename this file to ShowData.sw
-%% TODO look for and eliminate duplicate functionality between this file and other files in this dir.
-
 %% TODO: strings that include quotes (single or double?) seem to interfere with the
 %% ability to jump over complete S-expressions in the output of this
 %% tool.  Perhaps PPString should escape such characters or something?
@@ -84,9 +80,12 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 %					 recursive? = false}
 %			         term)
 
+ op ppBoolean (b: Boolean) : WLPretty =
+    case b of
+      | true -> ppString "true"
+      | false -> ppString "false"
 
-% def ppLitString id = ppString(IO.formatString1("~S",id))
- op ppLitString (id:String) : WLPretty = ppString(IO.formatString1("~A",id))
+ op ppLitString (id:String) : WLPretty = ppString(IO.formatString1("~A",id))  %%formatString1("~S",id)
 
  %%% Identifiers have string quotes around them
  op ppID (id: String) : WLPretty = ppLitString id
@@ -112,18 +111,33 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
        in
        ppSep (ppString "/") (pp path)
 
- op ppRelativeUID (relUID : RelativeUID) : WLPretty=
-   case relUID of
-     | SpecPath_Relative unitId -> ppAppend (ppString "/") (ppUIDlocal unitId)
-     | UnitId_Relative   unitId -> ppUIDlocal unitId
+% %TODO wrap in parens
+ op ppStrings (strs : List String) : WLPretty =
+  case strs of
+    | [] -> ppString ""
+    | hd::tl -> ppConcat ((ppString hd)::[(ppStrings tl)])
+
+ op ppUnitId (UID : UnitId) : WLPretty =
+   ppConcat[ppString "((path ", 
+            ppStrings UID.path, 
+            ppString ")(hashSuffix ", 
+            (case UID.hashSuffix of None -> ppString "None" | Some str -> ppConcat [ppString "Some ", ppString str]),
+            ppString "))"]
+ 
+
+ op ppRelativeUID (relUID : RelativeUID) : WLPretty =
+   (case relUID of
+      | SpecPath_Relative unitId -> ppConcat [ppString "(SpecPath_Relative ", ppUnitId unitId, ppString")"] %ppAppend (ppString "/") (ppUIDlocal unitId)
+      | UnitId_Relative   unitId -> ppConcat [ppString "(UnitId_Relative"   , ppUnitId unitId, ppString")"]) %ppUIDlocal unitId
+               
 
  op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
    case term of
      | Print t ->
        ppConcat [ppString "print ",
 		 ppSCTerm c t]
-     | UnitId unitId -> 
-       ppConcat [ppString "(unitId ", ppRelativeUID unitId, ppString ")"]
+     | UnitId unitId ->
+       ppConcat [ppString "(UnitId ", ppRelativeUID unitId, ppString ")"]
      | Spec specElems -> 
        ppConcat [ppString "(SCspec",
 		 ppNewline,
@@ -414,11 +428,11 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
  
   op ppPropertyType (propType:PropertyType) : WLPretty =
     case propType of
-      | Axiom -> ppString "axiom"
-      | Theorem -> ppString "theorem"
-      | Conjecture -> ppString "conjecture"
+      | Axiom -> ppString "Axiom"
+      | Theorem -> ppString "Theorem"
+      | Conjecture -> ppString "Conjecture"
       | any ->
-           fail ("No match in ppPropertyType with: "
+           fail ("ERROR: No match in ppPropertyType with: "
               ^ (anyToString any))
 
  op ppRenaming ((rules, _): Renaming) : WLPretty =
@@ -449,8 +463,8 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 		ppSep (ppString ", ") (map ppRenamingRule rules),
 		ppString "]"]
 
- op  ppOtherTerm         : OtherTerm Position -> WLPretty % Used for extensions to Specware
- op  ppOtherRenamingRule : OtherRenamingRule  -> WLPretty % Used for extensions to Specware
+% op  ppOtherTerm         : OtherTerm Position -> WLPretty % Used for extensions to Specware
+% op  ppOtherRenamingRule : OtherRenamingRule  -> WLPretty % Used for extensions to Specware
 
  % %TODO remove mentions of "asw" here and elsewhere
  %  op uidToAswName ({path,hashSuffix=_} : UnitId) : String =
@@ -625,7 +639,7 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 %      | Other       other_value   -> ppOtherValue other_value
 %      | InProcess                 -> ppString "InProcess"
 %      | UnEvaluated _             -> ppString "some unevaluated term"
-      | _                         -> ppString "<unrecognized value>"
+      | _                         -> ppString "ERROR: <unrecognized value>"
 
 
   (* tentative *)
@@ -1280,11 +1294,6 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 		      ppType c srt]
       | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
-  op ppBoolean (b: Boolean) : WLPretty =
-    case b of
-      | true -> ppString "true"
-      | false -> ppString "false"
-
   op ppFun (fun:Fun) : WLPretty =
     case fun of
       | Not       -> ppString "Not"
@@ -1334,7 +1343,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
       | Bool b -> ppConcat [ppString "(bool ", ppBoolean b, ppString ")"]
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
-      | mystery -> fail ("No match in ppFun with: " ^ (anyToString mystery))
+      | mystery -> fail ("ERROR: No match in ppFun with: " ^ (anyToString mystery))
 
   op ppFixity (fix: Fixity) : WLPretty =
     case fix of
@@ -1351,7 +1360,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 				      ppSep (ppString ", ") (map ppFixity fixities),
 				      ppString "])"
 				     ]
-      | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
+      | mystery -> fail ("ERROR: No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
   % op isSimpleType? (ty:MSType) : Boolean =
   %   case ty of
@@ -1514,7 +1523,7 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 	   (mapToList idMap)))
 
   op printValueTop (value : Value, uid : UnitId) : String =
-    printValue {printTypes? = true, %false, %true,
+    printValue {printTypes? = true,
 		printPositionInfo? = false,
 		fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
 		%currentUID = uid,
