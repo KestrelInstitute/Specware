@@ -46,11 +46,15 @@ AnnSpec qualifying spec
 		     names           : OpNames,
 		     fixity          : Fixity,
 		     dfn             : ATerm b,
-		     fullyQualified? : Bool
+		     fullyQualified? : Bool  % true when no unqualified ops appear in body.  Make it false for new ops?
 		    }
 
  type ASpecElements b  = List (ASpecElement b)
  type ASpecElement b =
+    % For Import, the SpecElements argument has been filtered to
+    % remove redundant imports (things imported before this import in
+    % the over-arching spec that contains this import).  This helps
+    % prevent imported specs from being printed over and over.
    | Import   SCTerm * Spec * SpecElements * b
    | Type     QualifiedId * b
    | TypeDef  QualifiedId * b
