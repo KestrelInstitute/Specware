@@ -44,6 +44,15 @@ op namedPragma?(p: Pragma): Bool =
      | Some(str::_) -> str = verbatimIdString
      | _ -> false
 
+ op defaultProofStrings: List String = ["-default-proof", "-Default-Proof", "-defaultProof", "-DefaultProof"]
+
+ op defaultProofPragma?(p: Pragma): Bool =
+   let (_,s,_,_) = p in
+   let line1 = getFirstLine s in
+   case removeEmpty(splitStringAt(line1, " ")) of
+     | _::str::_ -> str in? defaultProofStrings
+     | _ -> false
+
  op hookIdString: String = "-hook"
 
  op hookPragma?(s: String): Bool =

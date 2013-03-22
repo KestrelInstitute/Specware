@@ -25,7 +25,7 @@ IsaTermPrinter qualifying spec
  op simplify?: Bool       = true
  op usePosInfoForDefAnalysis?: Bool = true
  op printQuantifiersWithType?: Bool = true
- op defaultProof: String = "by auto"
+ op autoProof: String = "by auto"
  op addExplicitTyping?: Bool = true
  op targetFunctionDefs?: Bool = true
  op unfoldMonadBinds?: Bool = true
@@ -41,6 +41,7 @@ IsaTermPrinter qualifying spec
 		 trans_table: TransInfo,
                  coercions: TypeCoercionTable,
                  overloadedConstructors: List String,
+                 defaultProof: String,
                  newVarCount: Ref Nat,
                  source_of_thy_morphism?: Bool,
                  typeNameInfo: List(QualifiedId * TyVars * MSType)}
@@ -51,17 +52,9 @@ IsaTermPrinter qualifying spec
  op  specialTypeInfo: Context -> QualifiedId -> Option TypeTransInfo
  def specialTypeInfo c qid = apply(c.trans_table.type_map, qid)
 
- op  getSpec: Context -> Spec
- def getSpec {printTypes?=_, recursive?=_, thy_name=_, anon_thy_count=_, spec? = Some spc,
-              currentUID=_, trans_table=_, coercions=_, overloadedConstructors=_,
-              newVarCount=_, source_of_thy_morphism?=_, typeNameInfo=_} = spc
+ op getSpec (c: Context): Spec = let Some spc = c.spec? in spc
 
- op  getCurrentUID: Context -> UnitId
- def getCurrentUID {printTypes?=_, recursive?=_, thy_name=_, anon_thy_count=_,
-                    spec?=_, currentUID = Some uid,
-                    trans_table=_, coercions=_, overloadedConstructors=_, newVarCount=_,
-                    source_of_thy_morphism?=_, typeNameInfo=_} =
-   uid
+ op getCurrentUID (c: Context): UnitId = let Some uid = c.currentUID in uid
 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
@@ -316,6 +309,7 @@ IsaTermPrinter qualifying spec
 			       trans_table = emptyTranslationTable,
                                coercions = [],
                                overloadedConstructors = [],
+                               defaultProof = autoProof,
                                newVarCount = Ref 0,
                                source_of_thy_morphism? = false,
                                typeNameInfo = []}
@@ -1051,6 +1045,10 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                  if pretty1 = prEmpty
                    then prettyr
                  else pretty1::prettyr
+               | (Pragma prag) :: rst | defaultProofPragma? prag ->
+                 let prf_str = prfFromPragma prag in
+                 let c = c << {defaultProof = prf_str} in
+                 aux c spc rst
                | el :: rst ->
                  let pretty1 = ppSpecElement c spc el None elems in
                  let prettyr = aux c spc rst in
@@ -1662,8 +1660,8 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                              prString "\""]]
                            ++ prf_pp
                            ++ (if prf_pp = []
-                                 then [[prString defaultProof]]
-                                   ++ (if prfEndsWithTerminator? defaultProof then []
+                                 then [[prString c.defaultProof]]
+                                   ++ (if prfEndsWithTerminator? c.defaultProof then []
                                        else [[prString "done",prEmpty]])
                                else (if includes_prf_terminator?
                                        then []
@@ -1854,6 +1852,14 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
    % let _ = app (fn (x,y) -> writeLine(printTerm x^" -> "^printTerm y)) cases in
    % let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases)
+
+ op prfFromPragma((_,mid_str,_,_): Pragma): String =
+   let len = length mid_str in
+   case search("\n",mid_str) of
+     | None -> (case removeEmpty(splitStringAt(mid_str, " ")) of
+                  | _ :: _ :: p1 :: rst -> foldl (fn (result, w) -> result ^ " " ^ w) p1 rst
+                  | _ -> autoProof)
+     | Some n -> stripExcessWhiteSpace(subFromTo(mid_str,n+1,len))
 
  op processOptPrag(opt_prag: Option Pragma): List (List Pretty) * Bool =
    case opt_prag of
@@ -2538,8 +2544,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        ++ (case propType of
              | Axiom -> []
              | _ -> (if prf_pp = []
-                       then [[prString defaultProof]]
-                           ++ (if prfEndsWithTerminator? defaultProof then []
+                       then [[prString c.defaultProof]]
+                           ++ (if prfEndsWithTerminator? c.defaultProof then []
                                  else [[prString "done",prEmpty]])
                        else (if includes_prf_terminator?
                                then []
