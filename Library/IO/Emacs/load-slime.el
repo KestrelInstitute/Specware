@@ -71,7 +71,9 @@
 
 ;;; prep for loading slime.el...
 (eval-and-compile
-  (require 'cl)
+  (if (require 'cl-lib nil 'noerror)
+      ()
+    (require 'cl))
   (unless (fboundp 'define-minor-mode)
     (require 'easy-mmode)
     (unless (fboundp 'define-minor-mode)
