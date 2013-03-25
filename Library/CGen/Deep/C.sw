@@ -4,36 +4,22 @@ import /Library/General/TwosComplementNumber
 import /Library/General/FunctionExt
 import /Library/General/OptionExt
 
-proof Isa -verbatim
-(*******************************************************************************
- There are at least 100 translation issues, some of them involving ambiguities
- that are very time-consuming to fix. Avoid running this file through the 
- translator until a significant number of new theorems has been proven. 
-
- After translation, it is best to copy the corrected versions of defs and
- theorems from the last C.thy-vxx file
-
-******************************************************************************)
-end-proof
 
 %section (* Introduction *)
 
-(* We formalize a subset of C, which we will incrementally extend. See the
-conclusion section of this file for a list of upcoming extensions.
+(* We formalize a subset of C, which we will incrementally extend as needed.
 
-Our formalization is based on the ANSI C99 standard, ISO/IEC 9899, "Programming
-languages - C", Second edition (1999-12-01). Note that the Second edition of
-Brian Kernighan and Dennis Ritchie's "The C Programming Language", published in
-1988, refers to an earlier version of the standard.
+Our formalization is based on the C11 standard, i.e. ISO/IEC 9899, "Information
+technology - Programming languages - C", Second edition (2011-12-15). Note that
+the Second edition of Brian Kernighan and Dennis Ritchie's "The C Programming
+Language", published in 1988, refers to an earlier version of the standard.
 
-In the comments in this spec, we reference the ISO standard as "[ISO]", possibly
-including (dotted) (sub)section numbers (e.g. "[ISO 6.5.9]") and paragraph
-numbers separated by "/" (e.g. "[ISO 6.5.9/2]"). We also reference the ISO 9899
-Corrigenda 1, 2, and 3 as "[ISO C1]", "[ISO C2]", and "[ISO C3]", possibly
-including the numeric indices of the corrections separated by "." (e.g. "[ISO
-C2.32]"). We use "," to indicate multiple sub-references (e.g. "[ISO 6.5.4/3,
-5.2.1]") and we use "-" to indicate ranges of contiguous sub-references (e.g.
-"[ISO 6.5.4-6.5.6]" is the same as "[ISO 6.5.4, 6.5.5, 6.5.6]"). *)
+In the comments in this spec, we reference the ISO standard as '[ISO]', possibly
+including (dotted) (sub)section numbers (e.g. '[ISO 6.5.9]') and paragraph
+numbers separated by '/' (e.g. '[ISO 6.5.9/2]'). We use ',' to indicate multiple
+sub-references (e.g. '[ISO 6.5.4/3, 5.2.1]') and we use '-' to indicate ranges
+of contiguous sub-references (e.g. '[ISO 6.5.4-6.5.6]' is the same as '[ISO
+6.5.4, 6.5.5, 6.5.6]'). *)
 
 
 %section (* Environment *)
@@ -48,7 +34,7 @@ allowed by [ISO];
 2. aspects for which our formalization allows all the choices allowed by [ISO];
 
 3. aspects for which our formalization neither makes a specific choice nor
-allows all the choices, but instead tags as "non-standard".
+allows all the choices, but instead tags as 'non-standard'.
 
 The significance of the first group is that our formal model captures only those
 implementations of the C language that make the same choices for the aspects in
@@ -57,21 +43,21 @@ instantiated to capture different implementations that make different choices
 for the aspects in the group. The third group consists of run-time behaviors
 that are not prescribed by [ISO] (e.g. the behavior of signed addition when the
 true result is not representable): our formalization denotes such behaviors as
-"non-standard", and anything that depends on those behaviors is denoted as
-"non-standard" as well.
+'non-standard', and anything that depends on those behaviors is denoted as
+'non-standard' as well.
 
 The following subsections describe our choices for the aspects in the first
-group and introduce underspecified Metaslang constants to capture the aspects in
-the second group. The third group is handled later, in the part that formalizes
-the semantics. *)
+group and introduce underspecified Specware constants to capture the aspects in
+the second group. The third group is handled later, in the part of the
+formalization that formalizes the semantics. *)
 
 
 %subsection (* Character sets *)
 
 (* We assume that both the source and the execution character sets [ISO 5.2.1]
 consist of the 128 ASCII characters. These are all members of the basic
-character set, which coincides with the extended character set, i.e. there are
-no extended characters in our C subset. *)
+character set, which coincides with the extended character set in our model,
+i.e. there are no extended characters in our model. *)
 
 
 %subsection (* Identifier non-digits *)
@@ -105,13 +91,14 @@ theorem UCHAR_MAX_VAL is
 
 (* The sizeof operator [ISO 6.5.3.4], which returns the size in bytes of its
 operand [ISO 6.5.3.4/2], must return 1 when applied to a char, unsigned char, or
-signed char object. This implies that signed char objects consist of 1 byte,
-like unsigned char objects, which in our formalization is 8 bits. [ISO
-6.2.6.2/2] says that a signed char object must include a sign bit and that the
-other (7) bits are divided among value and padding bits. The constraint that
-SCHAR_MAX is at least +127 [ISO 5.2.4.2.1/1] implies that all the 7 bits must be
-value bits (otherwise it would not be possible to represent +127). Since no
-number greater than 127 can be represented in 7 bits, SCHAR_MAX must be +127. *)
+signed char object [ISO 6.5.3.4/4]. This implies that signed char objects
+consist, like unsigned char objects, of 1 byte, which in our formalization is 8
+bits. [ISO 6.2.6.2/2] says that a signed char object must include a sign bit and
+that the other (7) bits are divided among value and padding bits. The constraint
+that SCHAR_MAX is at least +127 [ISO 5.2.4.2.1/1] implies that all the 7 bits
+must be value bits (otherwise it would not be possible to represent +127). Since
+no number greater than 127 can be represented in 7 bits, SCHAR_MAX must be
++127. *)
 
 op SCHAR_MAX : Nat = 127
 
@@ -145,7 +132,7 @@ op CHAR_MAX : Nat = if plainCharsAreSigned then SCHAR_MAX else UCHAR_MAX
 (* Note that, regardless of whether plain chars are signed or unsigned, each of
 the 128 ASCII characters (which, as stated earlier, constitute our basic
 character set) can be stored into a (plain) char and the resulting value is
-non-negative [ISO 6.2.5/3] [ISO C1.2]. *)
+non-negative [ISO 6.2.5/3]. *)
 
 
 %subsection (* The other integer types *)
@@ -166,8 +153,8 @@ sizeof_... constants introduced below. For convenience, we also define ..._bit
 constants that express the size in bits of the types.
 
 The minimum magnitude constraints on the U..._MAX values given in [ISO
-5.2.4.2.1/1] correspond to the minimum magnitude constraints on the
-sizeof_... constants captured by the axioms below. *)
+5.2.4.2.1/1] correspond to the minimum magnitude constraints on the sizeof_...
+constants captured by the axioms below. *)
 
 op sizeof_short : Nat
 op sizeof_int   : Nat
@@ -206,9 +193,9 @@ ones. This is why the names of those constants make no reference to
 (un)signedness.
 
 Similarly to the signed char type, we assume that the other signed integer types
-use a two's complement representation with no padding bits. Thus, the
-sizeof_... constants determine the following values for the ..._MIN and ..._MAX
-limits of the signed integer types [ISO 5.2.4.2.1/1]. *)
+use a two's complement representation with no padding bits [ISO 6.2.6.2/2].
+Thus, the sizeof_... constants determine the following values for the ..._MIN
+and ..._MAX limits of the signed integer types [ISO 5.2.4.2.1/1]. *)
 
 op  SHRT_MIN : Int = - (2 ** (short_bits - 1))
 op   INT_MIN : Int = - (2 ** (  int_bits - 1))
@@ -251,13 +238,13 @@ axiom sizeof_long_llong is  sizeof_long  <= sizeof_llong
 only be a letter or an underscore. Thus, an identifier [ISO 6.4.2.1] in our C
 subset is a non-empty sequence of letters (upper and lower case), digits, and
 underscores, starting with a letter or an underscore. Note that the first 128
-Metaslang characters are the ASCII characters, matching our assumption, stated
+characters in Specware are the ASCII characters, matching our assumption, stated
 earlier, that the source character set in our C subset consists of the 128 ASCII
 characters.
 
 Identifiers (as defined in [ISO 6.4.2.1/1]) that are keywords [ISO 6.4.1] become
 keywords after preprocessing [ISO 6.4.2.1/4]. So the predicate ppIdentifier?
-defined below captures preprocessing identifiers [ISO 6.4/1], which the
+defined below captures preprocessing identifiers [ISO 6.4/1], while the
 predicate identifier? and the type Identifier capture identifiers after
 preprocessing. *)
 
@@ -311,24 +298,21 @@ op keywords : List String =
    "void",
    "volatile",
    "while",
+   "_Alignas",
+   "_Alignof",
+   "_Atomic",
    "_Bool",
    "_Complex",
-   "_Imaginary"]
+   "_Generic",
+   "_Imaginary",
+   "_Noreturn",
+   "_Static_assert",
+   "_Thread_local"]
 
 op identifier? (str:String) : Bool =
   ppIdentifier? str && str nin? keywords
 
 type Identifier = (String | identifier?)
-
-proof Isa -typedef 
-  by (rule_tac x="''a''" in exI, 
-      simp add: C__identifier_p_def C__ppIdentifier_p_def C__keywords_def 
-                C__identifierNonDigit_p_def C__digit_p_def C__nonDigit_p_def
-                mem_def Un_def Collect_def  nat_of_char_def,
-      auto simp only: insert_def, auto) 
-end-proof
-
-theorem Identifier_identifier is   fa (cid:Identifier) identifier? cid
 
 
 %subsection (* Constants *)
@@ -392,10 +376,10 @@ for convenience. *)
 op signSuffix? (str:String) : Bool =
   str = "" || unsignedSuffix? str
 
-(* Similarly, the following op captures an optional long or long suffix,
-i.e. either nothing (the empty string) or a long suffix or a long long suffix.
-This op does not directly correspond to any non-terminal symbol in the grammar
-in [ISO 6.4.4.1], but we introduce it for convenience. *)
+(* Similarly, the following op captures an optional long or long suffix, i.e.
+either nothing (the empty string) or a long suffix or a long long suffix. This
+op does not directly correspond to any non-terminal symbol in the grammar in
+[ISO 6.4.4.1], but we introduce it for convenience. *)
 
 op lengthSuffix? (str:String) : Bool =
   str = "" || longSuffix? str || longLongSuffix? str
@@ -403,7 +387,7 @@ op lengthSuffix? (str:String) : Bool =
 (* We can then say that an optional integer suffix consists of a sign suffix and
 a length suffix, in any order. Note that they can be both empty. *)
 
-op integerSuffixOpt? (str:String) : Bool =
+op integerSuffix? (str:String) : Bool =
   ex (ssuffix:String, lsuffix:String)
     signSuffix? ssuffix &&
     lengthSuffix? lsuffix &&
@@ -420,26 +404,15 @@ op integerConstant? (str:String) : Bool =
      octalConstant?       const ||
      hexadecimalConstant? const)
     &&
-    integerSuffixOpt? suffix
+    integerSuffix? suffix
 
 type IntegerConstant = (String | integerConstant?)
-
-proof Isa -typedef
-  by (rule_tac x="''1''" in exI, simp add: C__integerConstant_p_def 
-                                           Collect_def mem_def,
-      rule_tac x="''1''" in exI, rule_tac exI,
-      auto simp add: C__decimalConstant_p_def C__digit_p_def nat_of_char_def
-                     C__integerSuffixOpt_p_def C__lengthSuffix_p_def
-                     C__signSuffix_p_def C__unsignedSuffix_p_def  )
-end-proof
-
-theorem IntegerConstant_constant is   fa (c:IntegerConstant) integerConstant? c
 
 (* We can easily remove the suffix of an integer constant, if any. *)
 
 op unsuffixedIntegerConstant (c:IntegerConstant) : String =
   the(str:String)
-     (ex(suffix:String) c = str ^ suffix && integerSuffixOpt? suffix)
+     (ex(suffix:String) c = str ^ suffix && integerSuffix? suffix)
 
 
 %subsection (* Types *)
@@ -528,8 +501,8 @@ floating types. *)
 op arithmeticType? (ty:Type) : Bool =
   integerType? ty
 
-(* The following are the derived types [ISO 6.2.5/20]. Our C subset has no union
-or (explicit) function types. *)
+(* The following are the derived types [ISO 6.2.5/20]. Our C subset has no
+union, no atomic, and no (explicit) function types. *)
 
 op derivedType? (ty:Type) : Bool =
   embed? struct ty || embed? pointer ty || embed? array ty
@@ -544,10 +517,10 @@ op scalarType? (ty:Type) : Bool =
 op aggregateType? (ty:Type) : Bool =
   embed? struct ty || embed? array ty
 
-(* In our C subset, all types are object types [ISO 6.2.5/1] except void [ISO
+(* In our C subset, all types are complete types [ISO 6.2.5/1] except void [ISO
 6.2.5/19]. *)
 
-op objectType? (ty:Type) : Bool =
+op completeType? (ty:Type) : Bool =
   ty ~= void
 
 (* The following predicates are not explicitly defined in [ISO 6.2.5] but are
@@ -589,8 +562,8 @@ op compositeType (ty1:Type, ty2:Type | compatibleTypes? (ty1, ty2)) : Type =
 
 %subsection (* Unary operators *)
 
-(* Of the unary operators in [ISO 6.5.3], our C subset only includes the address
-and indirection operators [ISO 6.5.3.2] and the unary arithmetic operators [ISO
+(* Of the unary operators in [ISO 6.5.3], our C subset includes the address and
+indirection operators [ISO 6.5.3.2] and the unary arithmetic operators [ISO
 6.5.3.3]. *)
 
 type UnaryOp =
@@ -605,7 +578,7 @@ type UnaryOp =
 %subsection (* Binary operators *)
 
 (* Even though the grammar in [ISO] has no explicit non-terminal for binary
-operators (unlike unary operators [ISO 6.5.2/1]), in our formalization we
+operators (unlike unary operators [ISO 6.5.3/1]), in our formalization we
 introduce a notion of binary operator to enable a more compact definition of
 expressions later. Our C subset includes all the operators in [ISO
 6.5.5-6.5.14]. *)
@@ -634,19 +607,19 @@ type BinaryOp =
 %subsection (* Expressions *)
 
 (* Our C subset features the following kinds of expressions [ISO 6.5]:
-identifiers [ISO 6.5.1], integer constants [ISO 6.5.1], unary expressions using
-the unary operators introduced above, binary expressions using the binary
+identifiers [ISO 6.5.1/1], integer constants [ISO 6.5.1/1], unary expressions
+using the unary operators introduced above, binary expressions using the binary
 operators introduced above, conditional expressions [ISO 6.5.15], structure
-member expressions (i.e. the . and -> operators, respectively denoted by the
-constructors "member" and "memberp", where "p" suggests that the left operand
-must be a pointer, as required for ->) [ISO 6.5.2.3], array subscripting [ISO
-6.5.2.1], and the null pointer constant [ISO 6.3.2.3/3] "(void* ) 0" (we leave
-one space between the "*" and the ")" because comments in Metaslang do not
-nest). The fourth argument (a type) of the cond constructor is the type of the
-result of the conditional expression, inferred by the compiler -- the reason for
-this is explained later. We use a dedicated constructor for the null pointer
-constant "(void* ) 0" to avoid introducing casts in our C subset just for the
-purpose of modeling this null pointer constants. *)
+member expressions (i.e. the '.' and '->' operators, respectively denoted by the
+constructors 'member' and 'memberp', where 'p' suggests that the left operand
+must be a pointer, as required for '->') [ISO 6.5.2.3], array subscripting [ISO
+6.5.2.1], and the null pointer constant [ISO 6.3.2.3/3] '(void* ) 0' (we leave
+one space between the '*' and the ')' because comments in Specware do not nest).
+The fourth argument (a type) of the 'cond' constructor is the type of the result
+of the conditional expression, inferred by the compiler -- the reason for this
+is explained later. We use a dedicated constructor for the null pointer constant
+'(void* ) 0' to avoid introducing casts in our C subset just for the purpose of
+modeling this null pointer constants. *)
 
 type Expression =
   | ident     Identifier
@@ -659,8 +632,8 @@ type Expression =
   | subscript Expression * Expression
   | nullconst
 
-(* In our C subset, the only null pointer constant [ISO 6.3.2.3/3] is "(void* )
-0", captured by constructor nullconst above. *)
+(* In our C subset, the only null pointer constant [ISO 6.3.2.3/3] is '(void* )
+0', captured by constructor 'nullconst' above. *)
 
 op nullPointerConst? (expr:Expression) : Bool =
   embed? nullconst expr
@@ -672,19 +645,19 @@ op nullPointerConst? (expr:Expression) : Bool =
 the declared type of an identifier may be indicated by syntax "around" the
 identifier, as opposed to preceding the identifier completely as in other
 languages. For example, to declare x to be an array of 3 ints, the C syntax is
-"int x[3]", as opposed to something like "int[3] x". As another example, to
-declare y to be a pointer to an array of 2 ints, the C syntax is "int *y[2]", as
-opposed to something like "int[3]* y". (The rationale for the C syntax appears
+'int x[3]', as opposed to something like 'int[3] x'. As another example, to
+declare y to be a pointer to an array of 2 ints, the C syntax is 'int *y[2]', as
+opposed to something like 'int[3]* y'. (The rationale for the C syntax appears
 to be the desire of mirroring the syntax of the expressions that correspond to
 the type.)
 
 In the abstract syntax, it is more convenient to separate the identifier from
 its declared type completely, instead of potentially mixing them as in the
-concrete syntax. In our formalization, we could just use (Metaslang) values of
-(Metaslang) type Type, except that those do not cover the syntactic case of a
-typedef name [ISO 6.7.7]. That is, if the program includes a "typedef int T;"
+concrete syntax. In our formalization, we could just use (Specware) values of
+(Specware) type Type, except that those do not cover the syntactic case of a
+typedef name [ISO 6.7.8]. That is, if the program includes a 'typedef int T;'
 declaration, T is a synonym of int in the scope of that declaration, and thus a
-further declaration could use T, as in "T x;". Typedef names are not part of
+further declaration could use T, as in 'T x;'. Typedef names are not part of
 type Type, and so if we were to use type Type to model a declaration, we would
 be unable to include type identifiers. Extending type Type itself to include
 typedef names does not seem appropriate because type Type is meant to capture
@@ -694,14 +667,14 @@ are just synonyms.
 In essence, to model an object declaration in the abstract syntax, we want to
 pair an identifier with either a type (i.e. a value of type Type) or a typedef
 name (or a combination thereof, e.g. pointer to typedef name). This notion
-corresponds to a type name [ISO 6.7.6], which is syntactically a declaration
-that omits the identifier [ISO 6.7.6/2]. Note that suitable sequences of type
+corresponds to a type name [ISO 6.7.7], which is syntactically a declaration
+that omits the identifier [ISO 6.7.7/2]. Note that suitable sequences of type
 specifiers [ISO 6.7.2] can denote most types (of type Type) and also typedef
 names, but cannot denote pointers and arrays (which in fact have their own
-declarators that follow the type specifiers [ISO 6.7.5.1, 6.7.5.2]), so we could
+declarators that follow the type specifiers [ISO 6.7.6.1, 6.7.6.2]), so we could
 not use type specifiers to model declarations in our abstract syntax.
 
-Abstracting from the concrete syntactic peculiarities of type names [ISO 6.7.6],
+Abstracting from the concrete syntactic peculiarities of type names [ISO 6.7.7],
 we define a type name as follows. This is the same definition as type Type,
 extended with typedef names. Note that the recursion implies that we can form
 pointers and arrays of typedef names. *)
@@ -729,24 +702,24 @@ type TypeName =
 
 %subsection (* Declarations *)
 
-(* We model an object [ISO 3.14] declaration [ISO 6.7] as a pair consisting of a
+(* We model an object [ISO 3.15] declaration [ISO 6.7] as a pair consisting of a
 type name and an identifier. Such a named object is commonly referred to as
-"variable", even though [ISO] seems to carefully avoid this term.
+'variable', even though [ISO] seems to carefully avoid this term.
 
 Our model of object declarations excludes explicit storage class specifiers [ISO
 6.7.1] and type qualifiers [ISO 6.7.3]. It also excludes any declarator other
-than a simple identifier [ISO 6.7.5], as well as any explicit initializer [ISO
-6.7.8]. *)
+than a simple identifier [ISO 6.7.6], as well as any explicit initializer [ISO
+6.7.9]. *)
 
 type ObjectDeclaration =
  {typE : TypeName,
   name : Identifier}
 
-(* [ISO 6.7.2.1/1] uses the term "struct-declaration" for the members of a
+(* [ISO 6.7.2.1/1] uses the term 'struct-declaration' for the members of a
 structure or union type specifier. This term seems unfortunate because it is a
 declaration for a member of a structure, not for the whole structure, and it
 also applies to unions, which are not structures. Thus, we prefer to deviate
-from the [ISO 6.7.2.1/1] terminology and use the term "member declaration",
+from the [ISO 6.7.2.1/1] terminology and use the term 'member declaration',
 which we model as a pair consisting of a type name and an identifier. *)
 
 type MemberDeclaration =
@@ -761,9 +734,8 @@ type StructSpecifier =
   {tag     : Identifier,
    members : List MemberDeclaration}
 
-(* We model a type definition [ISO 6.7.7] as a pair consisting of a type name
-and an identifier. This is the same as an object declaration formalized above,
-but of course the meaning is very different. *)
+(* We model a type definition [ISO 6.7.8] as a pair consisting of a type name
+and an identifier. *)
 
 type TypeDefinition =
   {typE : TypeName,
@@ -785,22 +757,22 @@ assignment expressions [ISO 6.5.16.1] (whose left and right operands are
 expressions in our C subset), or (ii) simple assignment expressions whose left
 operand is an expression in our C subset but whose right operand is a function
 call [ISO 6.5.2.2], or (iii) function calls [ISO 6.5.2.2]. Cases (ii) and (iii)
-are consolidated in constructor "call" below, where the left operand is an
+are consolidated in constructor 'call' below, where the left operand is an
 optional expression (in our C subset) and the right operand consists of the name
-of a function plus a list of argument expressions.  By modeling assignments and
+of a function plus a list of argument expressions. By modeling assignments and
 function calls as statements in our model (vs. expressions as in full C), we
 limit such expressions to occur at the top level (or second level from the top,
 in the case of a function call assigned to an expression), i.e. as expression
-statements. In particular, we exclude multiple assignments like a = b = ... Note
-also that, by having function calls not be expressions in our subset, we
+statements. In particular, we exclude multiple assignments like 'a = b = ...'
+Note also that, by having function calls not be expressions in our subset, we
 maintain expressions free of side effects.
 
-Besides these expression statements, our C subset includes if selection
-statements [ISO 6.8.4.1], return jump statements [ISO 6.8.6.4], and compound
-statements (i.e.  blocks) [ISO 6.8.2]. No iteration statements [ISO 6.8.5] for
-now. Our if statement captures both the variant with else and the variant
-without else, based on the presence of the second, optional statement. A return
-statement [ISO 6.8.6.4] includes an optional expression.
+Besides these expression statements, our C subset includes 'if' selection
+statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], and compound
+statements (i.e. blocks) [ISO 6.8.2]. No iteration statements [ISO 6.8.5] for
+now. Our 'if' statement captures both the variant with 'else' and the variant
+without 'else', based on the presence of the second, optional statement. A
+'return' statement [ISO 6.8.6.4] includes an optional expression.
 
 Besides statements, we only allow object declarations as block items [ISO
 6.8.2], not other kinds of declarations. *)
@@ -819,11 +791,10 @@ type BlockItem =
 
 %subsection (* Function definitions *)
 
-(* In our C subset, a (function) parameter declaration [ISO 6.7.5/1] consists of
-a type name and a name. A parameter list [ISO 6.7.5/1] is of course a list of
-parameter declarations. In our C subset, a parameter list is also a parameter
-type list [ISO 6.7.5/1], because we disallow ellipsis in function
-definitions. *)
+(* In our C subset, a (function) parameter declaration [ISO 6.7.6/1] consists of
+a type name and a name. A parameter list [ISO 6.7.6/1] is a list of parameter
+declarations. In our C subset, a parameter list is also a parameter type list
+[ISO 6.7.6/1], because we disallow ellipsis in function definitions. *)
 
 type ParameterDeclaration =
   {typE : TypeName,
@@ -832,7 +803,7 @@ type ParameterDeclaration =
 type ParameterList = List ParameterDeclaration
 
 (* A function definition consists of a return type (name), a name, a parameter
-list, and a body [ISO 6.7.5.3, 6.9.1]. *)
+list, and a body [ISO 6.7.6.3, 6.9.1]. *)
 
 type FunctionDefinition =
  {return     : TypeName,
@@ -860,10 +831,12 @@ type TranslationUnit = List ExternalDeclaration
 
 %subsection (* Programs *)
 
-(* Even though [ISO] does not seem to define the notion of program precisely,
-normally a C program consists of a set of translation units, as suggested by the
-wording in [ISO 5.1.1.1/1]. In our C subset, we limit the number of translation
-units to one, i.e. a program is a single translation unit. *)
+(* A C program consists of a set of source files [ISO 5.1.1.1/1]. Since our C
+subset has no '#include' directives [ISO 6.10], a source file coincides with a
+preprocessing translation unit, which, as explained above, coincides with a
+translation unit. Thus, in our C subset a program consists of translation units.
+We limit the number of translation units to one, i.e. a program is a single
+translation unit. *)
 
 type Program = TranslationUnit
 
@@ -914,22 +887,7 @@ op maxOfIntegerType (ty:Type | integerType? ty) : Int =
   | ullong -> ULLONG_MAX
   | sllong ->  LLONG_MAX
 
-
-% ----------------------------------------------------------------------------
-% Right now we cannot translate the parameterized type of FiniteSet
-% As a temporary fix I introduce an instantiated Version 
-
-type FiniteSetInt = (Set Int | finite?)
-proof Isa -typedef 
-  by  (rule_tac x="{}" in exI, simp add: Collect_def mem_def)
-end-proof
-
-theorem FiniteSetInt_finite is   fa (ints:FiniteSetInt) finite? ints
-
-% ----------------------------------------------------------------------------
-
-
-op rangeOfIntegerType (ty:Type | integerType? ty) : FiniteSetInt =
+op rangeOfIntegerType (ty:Type | integerType? ty) : FiniteSet Int =
   fn x:Int -> minOfIntegerType ty <= x && x <= maxOfIntegerType ty
 
 
@@ -1050,7 +1008,7 @@ op promoteType (ty:Type) : Type =
 
 %subsubsection (* Usual arithmetic conversions *)
 
-(* At compile time, the "usual arithmetic conversions" [ISO 6.3.1.8] can be
+(* At compile time, the 'usual arithmetic conversions' [ISO 6.3.1.8] can be
 expressed as a mapping from two types to a common type. The result type is the
 type of the converted values, given that the initial values have the argument
 types. *)
@@ -1084,59 +1042,23 @@ constraints (e.g. that a referenced object is in scope).
 We start by defining a symbol table for type definitions, i.e. an association of
 types to typedef names. *)
 
-% ----------------------------------------------------------------------------
-% Did I put this in here ????
-% 
-% type      FiniteMap(a,b) = (Map(a,b) | finite?)
-% proof Isa -typedef 
-%  by (rule_tac x="empty" in exI, simp add: mem_def Map__finite_p_def Collect_def)
-% end-proof
-
-% ----------------------------------------------------------------------------
-% Right now we cannot translate the parameterized type of FiniteMaps
-% As a temporary fix I introduce an instantiated Version 
-
-type FMapIdType = (Map (Identifier,Type) |  finite? )
-proof Isa -typedef 
-   by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
-end-proof
-
-theorem FMapIdType_finite is  fa (m:FMapIdType) finite? m
-theorem FMapIdType_finite1 is fa (m:FMapIdType) finite? (domain m)
-
-% ----------------------------------------------------------------------------
-
-type TypedefTable = FMapIdType
+type TypedefTable = FiniteMap (Identifier, Type)
 
 (* A structure type, introduced by a structure specifier, consists of typed
 members, modeled as a finite map from member names to their types. A symbol
 table for structure specifiers associates typed members to structure tags (which
 are identifiers). *)
 
-type TypedMembers = FMapIdType
+type TypedMembers = FiniteMap (Identifier, Type)
 
-% ----------------------------------------------------------------------------
-% Right now we cannot translate the parameterized type of FiniteMaps
-% As a temporary fix I introduce an instantiated Version 
-
-type FMapIdTypedM = (Map (Identifier,TypedMembers) | finite?)
-proof Isa -typedef 
-   by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
-end-proof
-
-theorem FMapIdTypedM_finite is  fa (m:FMapIdTypedM) finite? m
-theorem FMapIdTypedM_finite1 is fa (m:FMapIdTypedM) finite? (domain m)
-
-% ----------------------------------------------------------------------------
-
-type StructTable = FMapIdTypedM
+type StructTable = FiniteMap (Identifier, TypedMembers)
 
 (* A symbol table for objects is organized as a list that corresponds to the
 nesting of scopes. The head of the list corresponds to the file scope [ISO
 6.2.1/4], while the rest of the list corresponds to nested block scopes [ISO
 6.2.1/4]. *)
 
-type ObjectTable = List (FMapIdType)
+type ObjectTable = List (FiniteMap (Identifier, Type))
 
 (* A function has zero or more typed parameters, captured as follows. *)
 
@@ -1146,28 +1068,10 @@ type TypedParameter =
 
 type TypedParameters = List TypedParameter
 
-% ----------------------------------------------------------------------------
-% Right now we cannot translate the parameterized type of FiniteMaps
-% As a temporary fix I introduce an instantiated Version 
-
-type FMapIdTypedP = (Map (Identifier,Type * TypedParameters) |  finite?)
-proof Isa -typedef 
-   by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
-end-proof
-
-theorem FMapIdTypedP_finite is  fa (m:FMapIdTypedP) finite? m
-theorem FMapIdTypedP_finite1 is fa (m:FMapIdTypedP) finite? (domain m)
-
-% ----------------------------------------------------------------------------
-
 (* A symbol table for functions associates return types and typed parameters to
 the function names. *)
 
-type FunctionTable = FMapIdTypedP
-
-proof Isa -typedef
-sorry
-end-proof
+type FunctionTable = FiniteMap (Identifier, Type * TypedParameters)
 
 (* Note that in our C subset type definitions and structure specifiers always
 have file scope, and so their respective symbol tables are "flat" maps, instead
@@ -1184,14 +1088,14 @@ type SymbolTable =
 
 (* The following op looks up an object in a symbol table, starting with the last
 map in the list (which corresponds to the innermost scope) and proceeding
-leftward into the list (i.e. moving to outer and outer scopes). None is returned
-if the object is not found. If found, its type is returned. Note that the first
-type found for the object is returned, consistently with the fact that an
-identifier declared in an inner scope may hide a homonymous identifier declared
-in an outer scope [ISO 6.2.1/4]. *)
+leftward into the list (i.e. moving to outer and outer scopes). 'None' is
+returned if the object is not found. If found, its type is returned. Note that
+the first type found for the object is returned, consistently with the fact that
+an identifier declared in an inner scope may hide a homonymous identifier
+declared in an outer scope [ISO 6.2.1/4]. *)
 
 op objectTypeInSymTab (symtab:SymbolTable, name:Identifier) : Option Type =
-  let def aux (scopes: List (FMapIdType)) : Option Type =
+  let def aux (scopes: List (FiniteMap (Identifier, Type))) : Option Type =
     if empty? scopes then
       None
     else
@@ -1206,17 +1110,17 @@ op objectTypeInSymTab (symtab:SymbolTable, name:Identifier) : Option Type =
 %subsection (* Actual constraints *)
 
 (* In our formalization, constraints on syntactic entities are expressed via ops
-called "check..." which either succeed, possibly returning some information
+called 'check...' which either succeed, possibly returning some information
 about the checked entity (e.g. the inferred type of an expression), or fail,
 indicating that a compiler may reject the program. Compilers may differ in their
 "permissiveness", but since we are interested in maximally portable programs, we
 want our checking ops to succeed only when all (conforming [ISO 4]) compilers
 do.
 
-Failure is modeled using Option, which is applied to the (Metaslang) type of
+Failure is modeled using 'Option', which is applied to the (Specware) type of
 information to be returned in case of success. When no success information needs
 to be returned, the unit type () is used. The following op turns a boolean into
-an Option () value -- its use will be clear in the ops below. *)
+an 'Option ()' value -- its use will be clear in the ops below. *)
 
 op check (b:Bool) : Option () =
   if b then Some () else None
@@ -1248,12 +1152,12 @@ op longConstant? (c:IntegerConstant) : Bool =
      longSuffix? l)
 
 (* An integer constant must have a type into which the value of the constant
-fits [ISO 6.4.4.1/2, C3.11]. The type is determined using the table in [ISO
-6.4.4.1/5], which associates to each integer constant a list of candidate types,
-based on the suffixes and the base of the constant. The type of the constant is
-the first in the associated list into which the constant's value fits. The
-checking op for integer constants returns the type of the constant, or None if
-the constant cannot be assigned a type. *)
+fits [ISO 6.4.4.1/5]. The type is determined using the table in [ISO 6.4.4.1/5],
+which associates to each integer constant a list of candidate types, based on
+the suffixes and the base of the constant. The type of the constant is the first
+in the associated list into which the constant's value fits. The checking op for
+integer constants returns the type of the constant, or 'None' if the constant
+cannot be assigned any type. *)
 
 op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
   let unsuffixed:String = unsuffixedIntegerConstant c in
@@ -1285,10 +1189,11 @@ op integerConstantCandidateTypes (c:IntegerConstant) : List Type =
 op checkIntegerConstant (c:IntegerConstant) : Option Type =
   let tys = integerConstantCandidateTypes c in
   let val:Nat = integerConstantValue c in
-  if (ex(i:Nat) i < length tys && (val: Int) in? rangeOfIntegerType (tys @ i)) then
+  if (ex(i:Nat) i < length tys && (val:Int) in? rangeOfIntegerType (tys @ i))
+  then
     let firstFitIndex:Nat = the(firstFitIndex:Nat)
         firstFitIndex < length tys &&
-        (val: Int) in? rangeOfIntegerType (tys @ firstFitIndex) &&
+        (val:Int) in? rangeOfIntegerType (tys @ firstFitIndex) &&
         (firstFitIndex = 0 ||  % first type in candidate list
          (val: Int) nin? rangeOfIntegerType (tys @ (firstFitIndex - 1))) in
     Some (tys @ firstFitIndex)
@@ -1326,7 +1231,7 @@ op checkArrayType (ty:Type) : Option (Type * Nat) =
 %subsubsection (* Expressions *)
 
 (* Each expression has a compile-time type. Furthermore, some expressions denote
-objects [ISO 3.14], while others denote values; the former can be used as left
+objects, while others denote values [ISO 6.5/1]; the former can be used as left
 operand of an assignment (lvalues [ISO 6.3.2.1/1]), while the latter cannot. We
 introduce the notion of an expression type as a type accompanied by a flag that
 says whether the expression denotes an object (vs. just a value). *)
@@ -1342,13 +1247,13 @@ op exprTypeValue (ty:Type) : ExpressionType =
   {typE = ty, object = false}
 
 (* The expression checking op returns an expression type. If checking fails,
-None is returned. Most operators operate on values, but can accept operands that
-denote objects because in that case the value stored in the object is used.
+'None' is returned. Most operators operate on values, but can accept operands
+that denote objects because in that case the value stored in the object is used.
 
-A variable denotes an object. Its type is the declared type of the variable,
-which is stored in the symbol table.
+A variable denotes an object [ISO 6.5.1/2]. Its type is the declared type of the
+variable, which is stored in the symbol table.
 
-A constant denotes a value. Its type is formalized above.
+A constant denotes a value [ISO 6.5.1/3]. Its type is formalized above.
 
 The unary + and - operators require an arithmetic operand [ISO 6.5.3.3/1] and
 their result has the promoted type of the operand [ISO 6.5.3.3/2, 6.5.3.3/3].
@@ -1379,7 +1284,7 @@ pointers.
 
 The binary * operator and the / operator require arithmetic operands [ISO
 6.5.5/2] and their result has the type arising from the usual arithmetic
-conversions [ISO 6.5.5/3, 6.5.5/4, 6.5.5/5]. The expression denotes a value.
+conversions [ISO 6.5.5/3, 6.5.5/4]. The expression denotes a value.
 
 The % operator requires integer operands [ISO 6.5.5/2] and its result has the
 type arising from the usual arithmetic conversions [ISO 6.5.5/3, 6.5.5/5]. The
@@ -1398,9 +1303,9 @@ The <, >, <=, and >= operators require real operands (our C subset excludes
 pointer comparisons) [ISO 6.5.8/2] and their result is a signed int [ISO
 6.5.8/6] value.
 
-The == and != operators require (i) two arithmetic operands, or (ii) two
-pointers to compatible types, or (iii) a pointer to a non-void type and a
-pointer to void, or (iv) a pointer and a null pointer constant. Since, as
+The == and != operators require [ISO 6.5.9/2] (i) two arithmetic operands, or
+(ii) two pointers to compatible types, or (iii) a pointer to a non-void type and
+a pointer to void, or (iv) a pointer and a null pointer constant. Since, as
 explained earlier, the null pointer constant has type void*, case (iv) is
 covered by case (iii). The result of these operators is a signed int [ISO
 6.5.9/3] value. Even though, according to [ISO 6.3.2.1/3], an array could be
@@ -1432,18 +1337,18 @@ the common structure type; in case (iii), the result is a pointer to the
 composite type [ISO 6.5.15/6]; in case (iv), the result has the type of the
 operand that is not a null pointer constant [ISO 6.5.15/6]; in case (v), the
 result is a pointer to void. The type of the result must be the fourth argument
-of the cond constructor -- the reason for it is explained later. A conditional
+of the 'cond' constructor -- the reason for it is explained later. A conditional
 expression denotes a value. Even though, according to [ISO 6.3.2.1/3], an array
 could be used as the first operand (because it is converted to a pointer), in
 our C subset we impose a more disciplined use of arrays and so we do not
 automatically convert them to pointers.
 
-The . operator requires a structure type (in scope) as the left operand and a
-member of that structure as the right operand [ISO 6.5.3.2/1]. The expression
+The '.' operator requires a structure type (in scope) as the left operand and a
+member of that structure as the right operand [ISO 6.5.2.3/1]. The expression
 has the type of the member [ISO 6.5.2.3/3]. The expression denotes an object if
 the left operand does, otherwise a value [ISO 6.5.2.3/3].
 
-The -> operator requires a pointer to a structure type (in scope) as the left
+The '->' operator requires a pointer to a structure type (in scope) as the left
 operand and a member of that structure type as the right operand [ISO
 6.5.2.3/2]. The expression has the type of the member and denotes an object [ISO
 6.5.2.3/4]. Even though, according to [ISO 6.3.2.1/3], an array could be used as
@@ -1451,7 +1356,7 @@ operand (because it is converted to a pointer), in our C subset we impose a more
 disciplined use of arrays and so we do not automatically convert them to
 pointers.
 
-The [ ] operator requires a pointer as the first operand and an integer as the
+The '[ ]' operator requires a pointer as the first operand and an integer as the
 second operand, and its result has the referenced type of the pointer [ISO
 6.5.2.1/1]. An array is also allowed as first operand, because it is converted
 to a pointer [ISO 6.3.2.1/3]. In our C subset, we actually require the first
@@ -1614,7 +1519,7 @@ op checkExpression
   | nullconst ->
     Some (exprTypeValue (pointer void))
 
-(* It is useful, for later use, to lift op checkExpression to a list of
+(* It is useful, for later use, to lift op 'checkExpression' to a list of
 expressions. *)
 
 op checkExpressions
@@ -1630,14 +1535,14 @@ op checkExpressions
 %subsubsection (* Type names *)
 
 (* A type name must denote a valid type. If the type name is a typedef name, a
-type definition with that name must be in scope [ISO 6.7.7]. Furthermore, the
+type definition with that name must be in scope [ISO 6.7.8]. Furthermore, the
 tag of a (reference to a) structure type must be the same as some structure
 specifier in scope [ISO 6.2.1/2]. The referenced type of a pointer type and the
 element type of an array type [ISO 6.2.5/20] must recursively satisfy all the
 constraints. An array must have at least one element [ISO 6.2.5/20].
-Furthermore, since the element type of an array type must be an object type [ISO
-6.2.5/20], it cannot be void. There are no constraints on the integer types and
-on the void type, which are built-in.
+Furthermore, since the element type of an array type must be a complete type
+[ISO 6.2.5/20], it cannot be 'void' [ISO 6.2.5/19]. There are no constraints on
+the integer types and on the 'void' type, which are built-in.
 
 The following op checks that a type name satisfies all the needed constraints.
 If it does, the type denoted by the type name is returned. *)
@@ -1684,25 +1589,25 @@ situation never occurs when this op is used by the ops defined later.
 The object declarations in a program in our C subset have file or block scope
 [ISO 6.2.1/4].
 
-Since file-scope object declarations have no explicit initializer, they
-constitute tentative definitions [ISO 6.9.2/2], which are equivalent to a
-definition with initializer equal to 0. Even though multiple declarations of the
-same identifier are allowed, for simplicity we require unique file-scope object
-declarations in our C subset.
+Since file-scope object declarations have no explicit initializer in our C
+subset, they constitute tentative definitions [ISO 6.9.2/2], which are
+equivalent to a definition with initializer equal to 0. Even though multiple
+declarations of the same identifier are allowed, for simplicity we require
+unique file-scope object declarations in our C subset.
 
 Different block-scope object declarations in the same scope must have different
-names [ISO 6.2.1/2, 6.2.2/6]. Since objects and structure tags have different
-name spaces [ISO 6.2.3], there are no constraints between identifiers used for
-objects and identifiers used for structure tags. However, since typedef names,
-function names, and objects live in the same name space of ordinary identifiers
-[ISO 6.2.3], names of objects declared with file-scope must differ from all the
+names [ISO 6.2.1/2]. Since objects and structure tags have different name spaces
+[ISO 6.2.3], there are no constraints between identifiers used for objects and
+identifiers used for structure tags. However, since typedef names, function
+names, and objects live in the same name space of ordinary identifiers [ISO
+6.2.3], names of objects declared with file-scope must differ from all the
 typedef and function names already present in the symbol table. However, an
 object declared in an inner block may well hide a homonymous object declared in
 an outer block or a typedef name or a function name [ISO 6.2.1/4]. Type
-definitions and functions are always declared with file scope, so we require
-that the declared object has a name that differs from all typedefs and functions
-only when the object is declared with file scope, which happens when the symbol
-table for objects consists of exactly one scope.
+definitions and functions are always declared with file scope in our C subset,
+so we require that the declared object has a name that differs from all typedefs
+and functions only when the object is declared with file scope, which happens
+when the symbol table for objects consists of exactly one scope.
 
 The type of each variable cannot be an incomplete type [ISO 6.9.2/3], and so it
 cannot be void [ISO 6.2.5/19]. In addition, the type must satisfy the general
@@ -1725,13 +1630,13 @@ op checkObjectDeclaration
 (* Each structure defines a name space for its members [ISO 6.2.3], which have
 file scope in our C subset [ISO 6.2.1/4]. Thus, the members of a structure
 specifier must have distinct names [ISO 6.2.1/2]. Furthermore, member types
-cannot be incomplete [ISO 6.7.2.1/2], and so cannot be void [ISO 6.2.5/19] --
+cannot be incomplete [ISO 6.7.2.1/3], and so cannot be void [ISO 6.2.5/19] --
 the allowed exception for the last member to have an incomplete array type [ISO
 6.7.2.1/2] does not apply to our C subset, which does not have incomplete
 arrays.
 
 We check the above constraints on the member declarations of a structure
-specifier by constructing, at the same time, a value of type TypedMembers
+specifier by constructing, at the same time, a value of type 'TypedMembers'
 introduced earlier. The checking is done w.r.t. a symbol table that includes all
 the structure specifiers that precede the member declarations. *)
 
@@ -1752,7 +1657,8 @@ op checkMemberDeclarations
 has no unions or enumerations. The structure specifiers in our C subset have
 file scope [ISO 6.2.1/4]. Thus, the structure specifiers must have different
 tags [ISO 6.2.1/2]. Their members must satisfy the constraints formalized just
-above, and there must be at least one member in each structure specifier.
+above, and there must be at least one member in each structure specifier [ISO
+6.7.2.1/1].
 
 We check these constraints w.r.t. a symbol table. Upon successful checking, the
 symbol table is extended with the new structure specifier. We initialize the
@@ -1775,8 +1681,8 @@ op checkStructSpecifier
    Some (symtab << {structures = update symtab.structures tag members})}
 
 (* The type definitions in a program in our C subset have file scope [ISO
-6.2.1/4]. Since type definitions have no linkage [ISO 6.2.2/6], there can be at
-most one type definition for a given identifier [ISO 6.7/3].
+6.2.1/4]. According to [ISO 6.7/3], two type definitions for the same name may
+be present (with certain constraints), but in our C subset we disallow that.
 
 Since typedef names and structure tags have different name spaces [ISO 6.2.3],
 there are no constraints between typedef names and structure tags. However,
@@ -1814,79 +1720,80 @@ op checkDeclaration
 %subsubsection (* Statements *)
 
 (* Statements are normally not regarded as having compile-time types like
-expressions. However, we can regard statements as "having values" based on the
-values they return via return statements. Correspondingly, we can assign
+expressions. However, we can regard statements as "yielding values" based on the
+values they return via 'return' statements. Correspondingly, we can assign
 compile-time types to statements based on the compile-time types of the
-expressions of the return statements; we use the void type for a return
+expressions of the 'return' statements; we use the 'void' type for a 'return'
 statement without an expression.
 
-The following (meta) type captures the "elementary" compile-time types for
+The following Specware type captures the "elementary" compile-time types for
 statements (as defined shortly, statement types are defined as sets of these
-elements). A return statement is assigned the compile-time type of its
-expression, or void if it has no expression. The special "next" compile-time
-type is assigned to statements like assignments, which do not return but instead
-transfer control to the next statement. *)
+elements). A 'return' statement is assigned the compile-time type of its
+expression, or 'void' if it has no expression. The special 'next' compile-time
+"type" is assigned to statements like assignments, which do not return but
+instead transfer control to the next statement. *)
 
 type StatementTypeElement = | next | return Type
 
-(* Since a statement may contain multiple return statements that are executed
-under different circumstances (e.g. an if statement), in general a statement is
-assigned a (finite) set of the elementary types defined just above. We regard
+(* Since a statement may contain multiple 'return' statements that are executed
+under different circumstances (e.g. an 'if' statement), in general a statement
+is assigned a (finite) set of the elementary types defined just above. We regard
 these sets as compile-time types for statements. *)
 
 type StatementType = FiniteSet StatementTypeElement
 
 (* The following ops formalize the compile-time constraints on statements. The
-Metaslang value None indicates a violation of some constraints. Otherwise, a
+Specware value 'None' indicates a violation of some constraints. Otherwise, a
 statement type as defined just above is returned.
 
 The left operand of an assignment must denote an object [ISO 6.5.16/2,
 6.5.16/3]. The left and right operands must be (i) two arithmetic operands, or
 (ii) two compatible structures, or (iii) two pointers to compatible types, or
 (iv) a pointer to a non-void type and a pointer to void, or (v) a pointer (left)
-and a null pointer constant (right) [ISO 6.5.16.1/1]. The case of a left _Bool
-operand does not apply to our C subset. Since, as explained earlier, the null
-pointer constant has type void*, case (v) is covered by case (iv). As explained
-above, the compile-time type of an assignment is "next". Even though, according
-to [ISO 6.3.2.1/3], an array could be used as operand (because it is converted
-to a pointer), in our C subset we impose a more disciplined use of arrays and so
-we do not automatically convert them to pointers. We encapsulate these checks
-for assignability between types into a predicate.
+and a null pointer constant (right) [ISO 6.5.16.1/1]. Our C subset has no notion
+of atomic, qualified, and unqualified types. The case of a left '_Bool' operand
+does not apply to our C subset. Since, as explained earlier, the null pointer
+constant has type 'void*', case (v) is covered by case (iv). As explained above,
+the compile-time type of an assignment is 'next'. Even though, according to [ISO
+6.3.2.1/3], an array could be used as operand (because it is converted to a
+pointer), in our C subset we impose a more disciplined use of arrays and so we
+do not automatically convert them to pointers. We encapsulate these checks for
+assignability between types into a predicate.
 
 In a function call, the called function must be in the symbol table. The
 argument expressions must be assignable to the function's parameters [ISO
-6.5.2.2/4]. If the function returns void, there cannot be any left operand to
+6.5.2.2/4]. If the function returns 'void', there cannot be any left operand to
 assign the result of the call to. If a left operand is present, the same check
 as assignments apply, namely the left operand must denote an object and the
 function's return type must be assignable to the type of the left operand.
 
-The test expression of an if statement must have scalar type [ISO 6.8.4.1/1],
+The test expression of an 'if' statement must have scalar type [ISO 6.8.4.1/1],
 which in our C subset is also an integer type. Since execution can take either
-branch, the compile-time type of an if statement is the union of the
+branch, the compile-time type of an 'if' statement is the union of the
 compile-time types of its branches. Even though, according to [ISO 6.3.2.1/3],
 an array could be used as test (because it is converted to a pointer), in our C
 subset we impose a more disciplined use of arrays and so we do not automatically
 convert them to pointers.
 
-As explained earlier, a return statement has the compile-time type of its
-expression, or void if it has no expression.
+As explained earlier, a 'return' statement has the compile-time type of its
+expression, or 'void' if it has no expression.
 
 When checking a block, we extend the list of object maps in the symbol table
 with an empty map, corresponding to the new block scope.
 
-Like an assignment, an empty block has the "next" compile-time type.
+Like an assignment, an empty block has the 'next' compile-time type.
 
 For a non-empty block, we take the union of the compile-time types of the
-statements of the block, taking care of removing all the "next" types except the
+statements of the block, taking care of removing all the 'next' types except the
 last one (if any). The removal is necessary because otherwise, for example, the
-compile-time type of a block B consistsing of an assignment followed by a return
-statement would contain "next", even though this block B always returns a
-value.
+compile-time type of a block B consisting of an assignment followed by a
+'return' statement would contain 'next', even though this block B always returns
+a value.
 
 A block may include object declarations, which extend the innermost scope of the
 symbol table. For this reason, the op to check a block item returns a symbol
 table besides a statement type. If the block item is a statement, the output
-symbol table is the same as the input one. An object declaration has the "next"
+symbol table is the same as the input one. An object declaration has the 'next'
 compile-time type, because it does not return any value. *)
 
 op assignableTypes? (left:Type, right:Type) : Bool =
@@ -1971,53 +1878,54 @@ Given a symbol table that consists of the externally declared structures,
 objects, and types that precede the function definition we extend the symbol
 table with a new block scope with the function's parameter, and then we check
 the constraints on the body of the function. Even though a function's name is
-visible inside the function's body [ISO 6.2.1/7], in our C subset we do not add
-it to the symbol table until after the whole body has been processed: this
-prevents direct recursive calls. Note also that since our C subset only allows
-functions to be declared as part of their definition, we cannot have indirect
-recursive calls either.
+visible inside the function's body because the body follows the function
+declaration, in our C subset we do not add the function's name to the symbol
+table until after the whole body has been processed: this prevents direct
+recursive calls. Note also that since our C subset only allows functions to be
+declared as part of their definition, we cannot have indirect recursive calls
+either.
 
-The return type of a function cannot be an array [ISO 6.7.5.3/1].
+The return type of a function cannot be an array [ISO 6.7.6.3/1].
 
 The identifiers of objects, typedef names, and functions belong to the name
 space of ordinary identifiers [ISO 6.2.3/1]. Different entities designated by
 the same identifier must have different scopes or name spaces [ISO 6.2.1/2].
 Since external object declarations, type definitions, and function definitions
-have the same (file) scope and the same name space, the name of the (only)
-function of our C programs must be distinct from all the externally declared
-objects and all the externally defined types. When op checkFunctionDefinition is
-used by op checkProgram defined later, the objects component of the symbol table
-always constains exactly one element. However, for completeness, the following
-op checks that the function name does not occur in any element of the list (if
-any).
+have the same (file) scope and the same name space, the name of each function of
+our C program must be distinct from all the externally declared objects and all
+the externally defined types. When op checkFunctionDefinition is used by op
+checkProgram defined later, the objects component of the symbol table always
+contains exactly one element. However, for completeness, the following op checks
+that the function name does not occur in any element of the list (if any).
 
 The type names of the function's parameters must satisfy the usual constraints
-and cannot be void [ISO 6.7.5.3/4]. In addition, the names of the parameters
-must be all distinct, because they belong to the same scope and name space [ISO
-6.2.1/2]. Even though parameters with array types should be adjusted to have
-pointer types [ISO 6.7.5.3/7], in our C subset we impose a more disciplined use
-of arrays and we do not perform this adjustment.
+and cannot be 'void' because they must be all complete [ISO 6.7.6.3/4]. In
+addition, the names of the parameters must be all distinct, because they belong
+to the same scope and name space [ISO 6.2.1/2]. Even though parameters with
+array types should be adjusted to have pointer types [ISO 6.7.6.3/7], in our C
+subset we impose a more disciplined use of arrays and we do not perform this
+adjustment.
 
 The body of a function must be a compound statement [ISO 6.9.1].
 
 The return value of a function is converted, as if by assignment, to the return
 type of the function [ISO 6.8.6.4/3]. Thus, we check (each type in) the
 statement type of the function's body against the return type of the function,
-re-using the predicate assignableTypes? defined earlier. We extend the predicate
-to handle the void type: void, and only void, is assignable to void. Note that
-if the function has return type void, the statement type of the body must only
-include void, which implies that no return statement with an expression can
-occur in the body [ISO 6.8.6.4/1]; and conversely if the function has a non-void
-return type, the statement type of the body must not include void, which implies
-that no return statement without an expression can occur in the body [ISO
-6.8.6.4]. If execution falls off the end of the function (i.e. without executing
-a return statement), the return value is undefined [ISO 6.9.1/12]. For
-well-behaved C programs, this is only acceptable if the function returns
-void. Thus, if the return type is not void, we require that the execution of the
-function's body cannot fall off the end of the function, i.e. that the statement
-type of the body does not include "next".
+using the predicate 'assignableTypes?' defined earlier. We extend the predicate
+to handle the 'void' type: 'void', and only 'void', is assignable to 'void'.
+Note that if the function has return type 'void', the statement type of the body
+must only include 'void', which implies that no 'return' statement with an
+expression can occur in the body [ISO 6.8.6.4/1]; and conversely if the function
+has a non-'void' return type, the statement type of the body must not include
+'void', which implies that no 'return' statement without an expression can occur
+in the body [ISO 6.8.6.4/1]. If execution falls off the end of the function
+(i.e. without executing a 'return' statement), the return value is undefined
+[ISO 6.9.1/12]. For well-behaved C programs, this is only acceptable if the
+function returns 'void'. Thus, if the return type is not 'void', we require that
+the execution of the function's body cannot fall off the end of the function,
+i.e. that the statement type of the body does not include 'next'.
 
-If successful, op checkFunctionDefinition extends the symbol table with
+If successful, op 'checkFunctionDefinition' extends the symbol table with
 information about the function. *)
 
 op checkParameterDeclaration
@@ -2123,17 +2031,17 @@ such situations, i.e. the semantics of the C constructs in [ISO] is only defined
 for those instances of the constructs that satisfy the compile-time checks.
 Correspondingly, our formalization could restrict the specification of execution
 to only the situations allowed by the compile-time checks. However, it seems
-simpler to specify execution in all situations, and have the Metaslang functions
-return a special "error" result to indicate that the situation should not arise
-if all the compile-time checks are satisfied. We then prove that no error ever
-arises when all the compile time checks (formalized earlier) are satisfied.
+simpler to specify execution in all situations, and have the Specware functions
+return a special 'error' result to indicate that the situation should not arise
+if all the compile-time checks are satisfied. We can then prove that no error
+ever arises when all the compile-time checks (formalized earlier) are satisfied.
 
 Thus, a computation can have three possible outcomes in our formalization:
 normal ("OK"), non-standard, and error. The exact nature of a normal outcome
 depends on the computation. So, we introduce a type of outcomes that is
-parameterized over the type of the normal outcomes. We use the short name "OC"
-(for OutCome) so that it is not too invasive when used for the result types of
-the Metaslang ops that formalize execution. *)
+parameterized over the type of the normal outcomes. We use the short name 'OC'
+(for 'OutCome') so that it is not too invasive when used for the result types of
+the Specware ops that formalize execution. *)
 
 type OC a =
   | ok a
@@ -2142,8 +2050,8 @@ type OC a =
 
 (* Whenever a subcomputation yields a non-standard or error outcome, the outer
 computation does too. In other words, non-standard and error outcomes propagate.
-This is the structure of an exception monad, whose bind operator is defined as
-follows. The use of the name "monadBind" enables the use of Metaslang's monadic
+This is the structure of an exception monad, whose 'bind' operator is defined as
+follows. The use of the name 'monadBind' enables the use of Specware's monadic
 syntax. *)
 
 op [a,b] monadBind (m:OC a, f: a -> OC b) : OC b =
@@ -2152,8 +2060,8 @@ op [a,b] monadBind (m:OC a, f: a -> OC b) : OC b =
   | nonstd -> nonstd
   | error -> error
 
-(* It is also useful to define monadic ops that return error of nonstd if some
-condition is true. *)
+(* It is also useful to define monadic ops that return 'error' or 'nonstd' if
+some condition is true. *)
 
 op errorIf (condition:Bool) : OC () =
   if condition then error else ok ()
@@ -2165,7 +2073,7 @@ op nonstdIf (condition:Bool) : OC () =
 %subsection (* Object designators *)
 
 (* Each object declaration in a program in our C subset introduces an object
-[ISO 3.14]. When such an object is a structure, its members are subobjects of
+[ISO 3.15]. When such an object is a structure, its members are subobjects of
 the object, which can be independently written to via a suitable lvalue [ISO
 6.3.2.1/1]. Similarly, when the object is an array, its elements are subobjects
 and they can be written independently via a suitable lvalue. This recursively
@@ -2178,7 +2086,7 @@ with block scope (i.e. inside some block). Since a declaration in an inner block
 may hide a homonymous outer declaration, a name alone does not suffice to
 identify a top-level object at run time. However, a name alone suffices in each
 scope. So, we can identify a top-level object via (an indication of) a scope
-plus a name in that scope. As defined later in type Storage, at each point in
+plus a name in that scope. As defined later in type 'Storage', at each point in
 time there is a list of lists of active block scopes, plus the outer file scope.
 Thus, we also introduce a notion of scope designator that designates either the
 file scope, or a block scope. A block scope is designated by two numbers, one
@@ -2197,64 +2105,38 @@ type ScopeDesignator =
   | block Nat * Nat
 
 type ObjectDesignator =
-  | top       ScopeDesignator * Identifier
+  | top        ScopeDesignator * Identifier
   | member    ObjectDesignator * Identifier
   | subscript ObjectDesignator * Nat
 
 
 %subsection (* Values *)
 
-(* The sizes of shorts, ints, longs, and long longs are captured by ops
-short_bits, int_bits, long_bits, and llong_bits introduced and explained
-earlier. We introduce Metaslang types for words (i.e. bit lists) of the
+(* The sizes of 'short's, 'int's, 'long's, and 'long long's are captured by the
+ops 'short_bits', 'int_bits', 'long_bits', and 'llong_bits' introduced and
+explained earlier. We introduce Specware types for words (i.e. bit lists) of the
 corresponding sizes. These words are interpreted in big endian format in our
 model. Since our C subset is type-safe, it does not actually matter whether the
 words are interpreted in big or little endian format, so long as they are
 treated consistently thoughout the model. *)
 
-type ShortWord = (Bits | ofLength? short_bits)
-proof Isa -typedef
-  by (rule_tac x="replicate C__short_bits B0" in exI, simp)
-end-proof
-
-type IntWord = (Bits | ofLength? int_bits)
-proof Isa -typedef
-  by (rule_tac x="replicate C__int_bits B0" in exI, simp)
-end-proof
-
-type LongWord = (Bits | ofLength? long_bits)
-proof Isa -typedef
-  by (rule_tac x="replicate C__long_bits B0" in exI, simp)
-end-proof
-
+type    ShortWord = (Bits | ofLength? short_bits)
+type      IntWord = (Bits | ofLength?   int_bits)
+type     LongWord = (Bits | ofLength?  long_bits)
 type LongLongWord = (Bits | ofLength? llong_bits)
-proof Isa -typedef
-  by (rule_tac x="replicate C__llong_bits B0" in exI, simp)
-end-proof
 
-% ----------------------------------------------------------------------------
-theorem ShortWord_length is      fa (bs:ShortWord)    ofLength? short_bits bs
-theorem ShortWord_length1 is     fa (bs:ShortWord)    length bs = short_bits
-theorem IntWord_length is        fa (bs:IntWord)      ofLength? int_bits bs
-theorem IntWord_length1 is       fa (bs:IntWord)      length bs = int_bits
-theorem LongWord_length is       fa (bs:LongWord)     ofLength? long_bits bs
-theorem LongWord_length1 is      fa (bs:LongWord)     length bs = long_bits
-theorem LongLongWord_length is   fa (bs:LongLongWord) ofLength? llong_bits bs
-theorem LongLongWord_length1 is  fa (bs:LongLongWord) length bs = llong_bits
-% ----------------------------------------------------------------------------
-
-(* The wording in [ISO 3.17] indicates that, conceptually, a value "includes" a
-type. Typical implementations only store "raw" bits inside objects [ISO 3.14],
+(* The wording in [ISO 3.19] indicates that, conceptually, a value "includes" a
+type. Typical implementations only store "raw" bits inside objects [ISO 3.15],
 without explicit type information, but use the declared type of the object to
 interpret the object's content [ISO 6.5/6].
 
 In our formal model of values, it is convenient to include type information. The
 values in our C subset are those of the integer types, of structure types, of
-pointer types, and of array types; those are all the non-void types in our C
+pointer types, and of array types; those are all the non-'void' types in our C
 subset.
 
 Based on our definition of op CHAR_BIT, as explained earlier, char values in our
-formalization consist of 8 bits, like type Byte in our library.
+formalization consist of 8 bits, like type 'Byte' in the Specware library.
 
 A structure (value) consists of a value assigned to each member, so we use a
 finite map from identifiers (denoting members) to values. We also include the
@@ -2270,17 +2152,16 @@ An array value consists of a list of values -- the elements of the array. We
 also include the type of the elements in our model of an array value.
 
 When an object declared in automatic storage has no initializer, its initial
-value is indeterminate [ISO 6.7.8/10]. Unlike Java, C does not enforce that such
+value is indeterminate [ISO 6.7.9/10]. Unlike Java, C does not enforce that such
 objects are assigned a value before first use. Thus, at run time, we may be
 accessing object with indeterminate value. Since we are interested in
 well-behaved C programs, we introduce, as part of our model of values, special
-"undefined" values, which represent those indeterminate values. These special
+'undefined' values, which represent those indeterminate values. These special
 values include their type, but no other information is predictably known.
 
 Even though some types may represent values in the same way, they are still
 separate types [ISO 6.2.5/14] and thus we use a different constructor for each
 different type. *)
-
 
 type Value =
   |  char               Byte
@@ -2294,30 +2175,11 @@ type Value =
   | slong           LongWord
   | ullong      LongLongWord
   | sllong      LongLongWord
-  | struct      Identifier *  (Map (Identifier,Value) | finite?)
+  | struct      Identifier * FiniteMap (Identifier, Value)
   | pointer     Type * ObjectDesignator
   | array       Type * List Value
   | nullpointer Type
   | undefined   Type
-
-
-% ----------------------------------------------------------------------------
-% Right now we cannot translate the parameterized type of FiniteMaps
-% As a temporary fix I introduce an instantiated Version 
-% that doesn't really work here because of the mutual recursion
-% I'll keep the def for now but we must think of something else
-% In the above definition we will get subtype constr issues again
-
-
-type FMapIdVal = (Map (Identifier,Value) | finite?)
-proof Isa -typedef 
-    by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
-end-proof
-
-theorem FMapIdVal_finite is   fa (m:FMapIdVal) finite? m
-theorem FMapIdVal_finite1 is  fa (m:FMapIdVal) finite? (domain m)
-% ----------------------------------------------------------------------------
-
 
 (* There is an obvious mapping from values to types. Note that this includes
 undefined values, because at run time they are still C values -- we just do not
@@ -2391,8 +2253,8 @@ op valueOfBits
    (bits:Bits, ty:Type | integerType? ty && length bits = typeBits ty) : Value =
   the(val:Value) typeOfValue val = ty && bitsOfIntegerValue val = ok bits
 
-(* Each integer value encodes a "mathematical integer". The outcome is an error
-if the value is not an integer, and non-standard if the value is undefined. *)
+(* Each integer value encodes a mathematical integer. The outcome is an error if
+the value is not an integer, and non-standard if the value is undefined. *)
 
 op mathIntOfValue (val:Value) : OC Int =
   {bits <- bitsOfIntegerValue val;
@@ -2402,12 +2264,6 @@ op mathIntOfValue (val:Value) : OC Int =
    else
      ok (toInt bits)}
 
-(* Dummy theorem to allow inserting lemmas *)
-
-theorem mathIntOfValue_props is 0 = 0
-
-
-
 (* A mathematical integer in the range of an integer type can be represented in
 that type. *)
 
@@ -2415,23 +2271,17 @@ op valueOfMathInt
    (i:Int, ty:Type | integerType? ty && i in? rangeOfIntegerType ty) : Value =
   the(val:Value) typeOfValue val = ty && mathIntOfValue val = ok i
 
-(* Dummy theorem to allow inserting lemmas *)
-
-theorem valueOfMathInt_props is 0 = 0
-
-
 (* Each scalar type has a "zero" value. For integers, it is the representation
-of the mathematical 0. For pointers, it is the null pointer, which "compares
-equal to 0" (e.g. see [ISO 6.3.2.1]). *)
+of the mathematical 0. For pointers, it is the null pointer. *)
 
 op zeroOfScalarType (ty:Type | scalarType? ty) : Value =
   if integerType? ty then valueOfMathInt (0, ty) else nullpointer ty
 
-(* The zero of an integer type consists of all 0 bits [ISO C2.9]. Note that,
-because of our environmental choices about the absence of padding bits and the
-two's complement representation of signed integers, the all-0-bits pattern is
-the only representation of the integer 0 values. In particular, two's complement
-do not have positive and negative zeros. *)
+(* The zero of an integer type consists of all 0 bits. Note that, because of our
+environmental choices about the absence of padding bits and the two's complement
+representation of signed integers, the all-0-bits pattern is the only
+representation of the integer 0 values. In particular, two's complement do not
+have positive and negative zeros. *)
 
 theorem zero_of_integer_type_is_all_zeros is
   fa(ty:Type) integerType? ty =>
@@ -2448,7 +2298,7 @@ op zeroScalarValue? (val:Value) : OC Bool =
   else
     error
 
-(* It is useful to introduce Metaslang constants for the signed ints 0 and 1,
+(* It is useful to introduce Specware constants for the signed ints 0 and 1,
 because they are returned by some operators, as formalized later. *)
 
 op int0 : Value = valueOfMathInt (0, sint)
@@ -2458,7 +2308,7 @@ op int1 : Value = valueOfMathInt (1, sint)
 
 %subsection (* States *)
 
-(* An object is a region of storage [ISO 3.14]. When the object has a name, that
+(* An object is a region of storage [ISO 3.15]. When the object has a name, that
 name identifies that region of storage. We introduce the notion of named storage
 as a mapping from names (of objects) to values (stored in the objects).
 
@@ -2469,15 +2319,15 @@ types to construct the values. But we prefer to associate typed values to names,
 so that the value of an object can be retrieved from a named storage without
 reference to a symbol table or similar information. We could, of course, define
 named storage to also associate a type to each name, but that is really the same
-as associating a typed value to each name, as we do here. We will prove that,
+as associating a typed value to each name, as we do here. We can prove that,
 when all the syntactic constraints formalized earlier are satisfied, the type of
 the value stored into an object always coincides with the type of the object. *)
 
-type NamedStorage = FMapIdVal
+type NamedStorage = FiniteMap (Identifier, Value)
 
-(* As mentioned in the comments for type ObjectDesignator, at each point in time
-the file scope is active, along with a list of lists of block scopes. The list
-of lists arises as follows: the outer list corresponds to the function call
+(* As mentioned in the comments for type 'ObjectDesignator', at each point in
+time the file scope is active, along with a list of lists of block scopes. The
+list of lists arises as follows: the outer list corresponds to the function call
 stack, i.e. there is an element for each nested function call; the inner list of
 each element of the outer list corresponds to the nested block scopes inside
 that function's body. Note that the nesting of scopes only occurs within each
@@ -2486,7 +2336,7 @@ itself, because block scopes inside different functions are unrelated.
 
 The objects declared with file scope have static storage duration [ISO 6.2.4/3],
 while the objects declared with block scope have automatic storage duration [ISO
-6.2.4/4].
+6.2.4/5].
 
 We model the static storage as a named storage, and the automatic storage as a
 list of lists of named storages. *)
@@ -2508,10 +2358,6 @@ type FunctionInfo =
 
 type FunctionsInfo = FiniteMap (Identifier, FunctionInfo)
 
-proof Isa -typedef
-sorry
-end-proof
-
 type State =
   {storage    : Storage,
    typedefs   : TypedefTable,
@@ -2520,7 +2366,7 @@ type State =
 
 (* The following ops provide convenience in updating parts of the state. Using
 typical programming language terminology, we call each element of the outer list
-a "frame". *)
+a 'frame' (this term is not used in [ISO]). *)
 
 op updateStaticStorage (state:State, sstore:NamedStorage) : State =
   state << {storage = state.storage << {static = sstore}}
@@ -2559,7 +2405,7 @@ name. It is an error if no object with the given name is declared in any scope.
 
 If there is no automatic storage, the object is searched in the static storage,
 whose ojects have file scope. Otherwise, the object is searched in the topmost
-(i.e. last frame), starting with the innermost block. Objects in other frames
+(i.e. last) frame, starting with the innermost block. Objects in other frames
 cannot be referenced because they are not in scope.
 
 Note that the recursive call to the following op is made with a storage whose
@@ -2568,7 +2414,7 @@ to outer scope. If the op is called with an empty frame, it means that the
 object has not been found in any block scope of the topmost frame, and thus it
 is searched in the static storage, achieved by removing the automatic storage
 altogether in the recursive call. Since list indices are numbered from 0, we
-return the lengths of the list minus 1 as the indices of a block scope. *)
+return the lengths of the lists minus 1 as the indices of a block scope. *)
 
 op scopeOfObject (state:State, name:Identifier) : OC ScopeDesignator =
   let store = state.storage in
@@ -2595,11 +2441,8 @@ op designatorOfObject (state:State, name:Identifier) : OC ObjectDesignator =
   {scope <- scopeOfObject (state, name);
    ok (top (scope, name))}
 
-(* The following ops read and write the value of a top-level object.
-
-Note that in op writeTopObject we subtract 1 to the scope index when we update
-the list of block scopes, because op update on lists is 0-based. The object
-written to must exist, and its old value must have the same type as the old
+(* The following ops read and write the value of a top-level object. The object
+written to must exist, and its old value must have the same type as the new
 value -- otherwise, it is an error. *)
 
 op readTopObject
@@ -2746,22 +2589,22 @@ op writeObject (state:State, obj:ObjectDesignator, newval:Value) : OC State =
 run-time state. The following op abstracts a state into a symbol table.
 
 The static storage, which is a map from names to values, is turned into a map
-from names to types by applying op typeOfValue to all the values in the map.
-Technically, this is done by lifting typeOfValue to operate on optional values
-and types (via op mapOption) and then composing it with the named storage map,
-as encapsulated in op objectTableOfNamedStorage below. The latter is applied to
-all the blocks of the topmost frame of the automatic storage, and the result
+from names to types by applying op 'typeOfValue' to all the values in the map.
+Technically, this is done by lifting 'typeOfValue' to operate on optional values
+and types (via op 'mapOption') and then composing it with the named storage map,
+as encapsulated in op 'objectTableOfNamedStorage' below. The latter is applied
+to all the blocks of the topmost frame of the automatic storage, and the result
 appended to the map for the static storage.
 
 The function table is created by dropping the bodies from the function
-information in the state, using the same mapOption and function composition
+information in the state, using the same 'mapOption' and function composition
 technique described above for object tables.
 
 The type definition table and the structure table are just copied from the state
 into the symbol table. *)
 
 op objectTableOfNamedStorage
-   (store:NamedStorage) : FMapIdType =
+   (store:NamedStorage) : FiniteMap (Identifier, Type) =
   (mapOption typeOfValue) o store
 
 op objectTableOfStorage (store:Storage) : ObjectTable =
@@ -2785,16 +2628,16 @@ op symbolTableOfState (state:State) : SymbolTable =
 
 %subsection (* State invariants *)
 
-(* Not all the states in the state space defined by type State correspond to
+(* Not all the states in the state space defined by type 'State' correspond to
 states that can actually happen at run time, when a program satisfying the
 compile-time constraints is executed. There are certain invariants that are true
-of the initial state (as proved later) and that are preserved by execution (as
-also proved later). We define some of these invariants.
+of the initial state and that are preserved by execution. We define some of
+these invariants.
 
 An important invariant is the absence of circularities in the structure types in
 the state. In other words, given a structure type S, no member of S can have a
 type that references S, and no member or element of a member S can, and so on
-recursively. (As explained in the comments for op checkStructSpecifier, our C
+recursively. (As explained in the comments for op 'checkStructSpecifier', our C
 subset disallows recursive structure via pointers, unlike [ISO].)
 
 The following op says whether a type references a structure (via a tag). This
@@ -2889,7 +2732,7 @@ items. The symbol table w.r.t. which the constraints are checked, is constructed
 from the state, but all the automatic-storage scopes are replaced with one scope
 for the function, which contains the functions parameters. Furthermore, the
 function's body always return something matching the return type (nothing if
-void). *)
+'void'). *)
 
 op functionBodiesOK? (state:State) : Bool =
   fa (name:Identifier, funinfo:FunctionInfo)
@@ -2920,7 +2763,6 @@ op invariants? (state:State) : Bool =
 
 %subsection (* Conversions *)
 
-
 %subsubsection (* Integer conversions *)
 
 (* An integer value can be converted into (a value of) an(other) integer type
@@ -2931,11 +2773,12 @@ If the new type can represent it, the (mathematical) value is unchanged [ISO
 6.3.1.3/1].
 
 Otherwise, the outcome depends on whether the new type is unsigned or not. Note
-that the new type could be char, which is classified as neither a signed nor an
-unsigned integer type [ISO 6.2.5/4, 6.2.5/6] (cf. ops signedIntegerType? and
-unsignedIntegerType?). But according to [ISO 6.2.5/15] the char type has the
-same behavior as either signed or unsigned char, and this choice is captured by
-ops plainCharsAreSigned and plainCharsAreUnsigned, introduced earlier.
+that the new type could be 'char', which is classified as neither a signed nor
+an unsigned integer type [ISO 6.2.5/4, 6.2.5/6] (cf. ops 'signedIntegerType?'
+and 'unsignedIntegerType?'). But according to [ISO 6.2.5/15] the 'char' type has
+the same behavior as either signed or unsigned 'char', and this choice is
+captured by ops 'plainCharsAreSigned' and 'plainCharsAreUnsigned', introduced
+earlier.
 
 If the type is unsigned, we find the (unique) mathematical integer i' that is
 representable in the type and differs from the original mathematical integer i
@@ -3018,9 +2861,9 @@ theorem convertInteger_no_change is
 
 %subsubsection (* Integer promotions *)
 
-(* At run time, integer promotion [ISO 6.3.1.1/2] [ISO C2.10] can be expressed
-as a mapping from values to values: the value is converted to the type returned
-by op promoteType. *)
+(* At run time, integer promotion [ISO 6.3.1.1/2] can be expressed as a mapping
+from values to values: the value is converted to the type returned by op
+'promoteType'. *)
 
 op promoteValue (val:Value) : OC Value =
   if integerValue? val then
@@ -3031,7 +2874,7 @@ op promoteValue (val:Value) : OC Value =
 
 %subsubsection (* Usual arithmetic conversions *)
 
-(* At run time, the "usual arithmetic conversions" [ISO 6.3.1.8] can be
+(* At run time, the 'usual arithmetic conversions' [ISO 6.3.1.8] can be
 expressed as a mapping from pairs of values to pairs of values: the original
 values are converted to two values of the type returned by op
 arithConvertTypes. *)
@@ -3050,11 +2893,11 @@ op arithConvertValues (val1:Value, val2:Value) : OC (Value * Value) =
 
 (* The compile-time checks formalized earlier allow conversions (i) between
 compatible pointer types (which in our C subset means identical pointer types,
-see op compatibleTypes?) and (ii) between pointers to void and pointers to
-non-void types. Since our C subset is type-safe, we only allow conversion (ii)
+see op 'compatibleTypes?') and (ii) between pointers to 'void' and pointers to
+non-'void' types. Since our C subset is type-safe, we only allow conversion (ii)
 on null pointers; we disallow conversion (ii) between pointers that reference
 objects, because each object has a well-defined type and it should not be
-"changed" by converting to void* and then to an incompatible pointer type.
+"changed" by converting to 'void*' and then to an incompatible pointer type.
 
 The following op returns an error outcome if neither (i) nor (ii) apply, because
 the compile-time checks prevent that from happening. In conversion (ii), unless
@@ -3078,15 +2921,16 @@ op convertPointer (val:Value, ty:Type | embed? pointer ty) : OC Value =
 (* In an assignment [ISO 6.5.16.1], the left and right operands must be (i) two
 arithmetic operands, or (ii) two compatible structures, or (iii) two pointers to
 compatible types, or (iv) a pointer to a non-void type and a pointer to void, or
-(v) a pointer (left) and a null pointer constant (right) [ISO 6.5.16.1/1]. The
-case of a left _Bool operand does not apply to our C subset. In case (i), the
-right operand is converted into the type of the left operand and stored into
-it. In case (ii), the right operand structure is stored into the left operand,
-unchanged. We consolidate and relax cases (iii), (iv), and (v), which all
-involve pointers, by converting the right operand pointer into the left
-operand's pointer type -- recall that op convertPointer preserves the type
-safety of our C subset by disallowing conversions between non-null pointers of
-incompatible types.
+(v) a pointer (left) and a null pointer constant (right) [ISO 6.5.16.1/1]. Our C
+subset has no notion of atomic, qualified, and unqualified types. The case of a
+left '_Bool' operand does not apply to our C subset. In case (i), the right
+operand is converted into the type of the left operand and stored into it. In
+case (ii), the right operand structure is stored into the left operand,
+unchanged. We consolidate cases (iii), (iv), and (v), which all involve
+pointers, by converting the right operand pointer into the left operand's
+pointer type -- recall that op 'convertPointer' preserves the type safety of our
+C subset by disallowing conversions between non-null pointers of incompatible
+types.
 
 The following op captures the process of converting the value of the right
 operand of an assignment to the type of the left operand. An error occurs if
@@ -3106,11 +2950,11 @@ op convertForAssignment (val:Value, ty:Type) : OC Value =
 %subsection (* Integer constants *)
 
 (* An integer constant evaluates to an integer value of the type returned by op
-checkIntegerConstant, if any. Op integerConstantValue returns the mathematical
-integer of the value of an integer constant. Thus, we can define the evaluation
-of integer constants in terms of the value of the inferred type whose
-mathematical integer value is the one returned by op integerConstValue. If the
-constant is too large to fit in a value, error is returned. *)
+'checkIntegerConstant', if any. Op 'integerConstantValue' returns the
+mathematical integer of the value of an integer constant. Thus, we can define
+the evaluation of integer constants in terms of the value of the inferred type
+whose mathematical integer value is the one returned by op 'integerConstValue'.
+If the constant is too large to fit in a value, error is returned. *)
 
 op evaluateIntegerConstant (c:IntegerConstant) : OC Value =
   case checkIntegerConstant c of
@@ -3120,14 +2964,14 @@ op evaluateIntegerConstant (c:IntegerConstant) : OC Value =
 
 %subsection (* Unary and binary operators *)
 
-(* The unary + operator requires an arithmetic operand [ISO 6.5.3.3/1] and just
-returns the promoted operand [ISO 6.5.3.3/2]. Note that op promoteValue returns
-an error if the value is not arithmetic. *)
+(* The unary '+' operator requires an arithmetic operand [ISO 6.5.3.3/1] and
+just returns the promoted operand [ISO 6.5.3.3/2]. Note that op 'promoteValue'
+returns an error if the value is not arithmetic. *)
 
 op operator_PLUS (val:Value) : OC Value =
   promoteValue val
 
-(* The unary - operator requires an arithmetic operand [ISO 6.5.3.3/1] and
+(* The unary '-' operator requires an arithmetic operand [ISO 6.5.3.3/1] and
 returns the negative of its promoted operand [ISO 6.5.3.3/3].
 
 If the operand is unsigned, we follow the laws of arithmetic modulo MAX + 1
@@ -3150,7 +2994,7 @@ op operator_MINUS (val:Value) : OC Value =
      else
        nonstd}
 
-(* The ~ operator requires an integer operand [ISO 6.5.3.3/1] and returns the
+(* The '~' operator requires an integer operand [ISO 6.5.3.3/1] and returns the
 bitwise complement of the promoted operand [ISO 6.5.3.3/4]. *)
 
 op operator_NOT (val:Value) : OC Value =
@@ -3158,7 +3002,7 @@ op operator_NOT (val:Value) : OC Value =
    bits <- bitsOfIntegerValue val';
    ok (valueOfBits (Bits.not bits, typeOfValue val'))}
 
-(* The ! operator requires a scalar operand [ISO 6.5.3.3/1] and returns the
+(* The '!' operator requires a scalar operand [ISO 6.5.3.3/1] and returns the
 signed int 1 or 0 depending on whether the operator compares equal or unequal to
 0 [ISO 6.5.3.3/5]. *)
 
@@ -3166,7 +3010,7 @@ op operator_NEG (val:Value) : OC Value =
   {isZero <- zeroScalarValue? val;
    if isZero then ok int1 else ok int0}
 
-(* The binary * operator requires arithmetic operands [ISO 6.5.5/2], performs
+(* The binary '*' operator requires arithmetic operands [ISO 6.5.5/2], performs
 the usual arithmetic conversions [ISO 6.5.5/3], and returns the product [ISO
 6.5.5/4]. Note that op arithConvertValues returns an error if any of the values
 is not arithmetic.
@@ -3183,7 +3027,7 @@ op operator_MUL (val1:Value, val2:Value) : OC Value =
    let ty = typeOfValue val1' in
    let ok x1 = mathIntOfValue val1' in
    let ok x2 = mathIntOfValue val2' in
-   let y = x1 + x2 in
+   let y = x1 * x2 in
    if unsignedIntegerType? ty then
      ok (valueOfMathInt (y modF (maxOfIntegerType ty + 1), ty))
    else
@@ -3192,16 +3036,16 @@ op operator_MUL (val1:Value, val2:Value) : OC Value =
      else
        nonstd}
 
-(* The / operator requires arithmetic operands [ISO 6.5.5/2], performs the usual
-arithmetic conversions [ISO 6.5.5/3], and returns the quotient [ISO 6.5.5/5],
-truncated towards 0 [ISO 6.5.5/6]. If the divisor is 0, the behavior is
-undefined [ISO 6.5.5/5].
+(* The '/' operator requires arithmetic operands [ISO 6.5.5/2], performs the
+usual arithmetic conversions [ISO 6.5.5/3], and returns the quotient [ISO
+6.5.5/5], truncated towards 0 [ISO 6.5.5/6]. If the divisor is 0, the behavior
+is undefined [ISO 6.5.5/5].
 
 If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 (where MAX is maximum integer representable in the operand's type) [ISO
 6.2.5/9].
 
-If the operands are signed and their product cannot be represented in the
+If the operands are signed and their quotient cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_DIV (val1:Value, val2:Value) : OC Value =
@@ -3219,17 +3063,17 @@ op operator_DIV (val1:Value, val2:Value) : OC Value =
      else
        nonstd}
 
-(* The % operator requires arithmetic operands [ISO 6.5.5/2], performs the usual
-arithmetic conversions [ISO 6.5.5/3], and returns the remainder [ISO 6.5.5/5],
-i.e. the difference between the first operands and the product of the second
-operand by the quotient [ISO 6.5.5/6]. If the divisor is 0, the behavior is
-undefined [ISO 6.5.5/5].
+(* The '%' operator requires arithmetic operands [ISO 6.5.5/2], performs the
+usual arithmetic conversions [ISO 6.5.5/3], and returns the remainder [ISO
+6.5.5/5], i.e. the difference between the first operands and the product of the
+second operand by the quotient [ISO 6.5.5/6]. If the divisor is 0, the behavior
+is undefined [ISO 6.5.5/5].
 
 If the operands are unsigned, we follow the laws of arithmetic modulo MAX+1
 (where MAX is maximum integer representable in the operand's type) [ISO
 6.2.5/9].
 
-If the operands are signed and their product cannot be represented in the
+If the operands are signed and their remainder cannot be represented in the
 operand's type, the behavior is undefined [ISO 6.5/5]. *)
 
 op operator_REM (val1:Value, val2:Value) : OC Value =
@@ -3247,7 +3091,7 @@ op operator_REM (val1:Value, val2:Value) : OC Value =
      else
        nonstd}
 
-(* The binary + operator requires arithmetic operands (our C subset excludes
+(* The binary '+' operator requires arithmetic operands (our C subset excludes
 pointer arithmetic) [ISO 6.5.6/2], performs the usual arithmetic conversions
 [ISO 6.5.6/4], and returns the sum [ISO 6.5.6/5].
 
@@ -3272,7 +3116,7 @@ op operator_ADD (val1:Value, val2:Value) : OC Value =
      else
        nonstd}
 
-(* The binary - operator requires arithmetic operands (our C subset excludes
+(* The binary '-' operator requires arithmetic operands (our C subset excludes
 pointer arithmetic) [ISO 6.5.6/3], performs the usual arithmetic conversions
 [ISO 6.5.6/4], and returns the difference [ISO 6.5.6/6].
 
@@ -3297,7 +3141,7 @@ op operator_SUB (val1:Value, val2:Value) : OC Value =
      else
        nonstd}
 
-(* The << operator requires integer operands [ISO 6.5.7/2], promotes them, and
+(* The '<<' operator requires integer operands [ISO 6.5.7/2], promotes them, and
 left-shifts the first operand E1 by the number of positions E2 indicated by the
 second operand, filling the vacated bits with 0 [ISO 6.5.7/4]. If E2 is negative
 or greater than or equal to the size of E1, the behavior is undefined [ISO
@@ -3338,7 +3182,7 @@ theorem operator_SHL is
        bitsOfIntegerValue val1' = ok bits1' &&
        bits = shiftLeft (bits1', d))
 
-(* The >> operator requires integer operands [ISO 6.5.7/2], promotes them, and
+(* The '>>' operator requires integer operands [ISO 6.5.7/2], promotes them, and
 right-shifts the first operand E1 by the number of positions E2 indicated by the
 second operand [ISO 6.5.7/5]. If E2 is negative or greater than or equal to the
 size of E1, the behavior is undefined [ISO 6.5.7/3].
@@ -3372,10 +3216,10 @@ theorem operator_SHR is
        bitsOfIntegerValue val1' = ok bits1' &&
        bits = shiftRightUnsigned (bits1', d))
 
-(* The <, >, <=, and >= operators require real operands (our C subset excludes
-pointer comparisons) [ISO 6.5.8/2], perform the usual arithmetic conversions
-[ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether the
-comparison is true or false [ISO 6.5.8/6]. *)
+(* The '<', '>', '<=', and '>=' operators require real operands (our C subset
+excludes pointer comparisons) [ISO 6.5.8/2], perform the usual arithmetic
+conversions [ISO 6.5.8/3], and return the signed int 1 or 0 depending on whether
+the comparison is true or false [ISO 6.5.8/6]. *)
 
 op operator_LT (val1:Value, val2:Value) : OC Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
@@ -3401,14 +3245,14 @@ op operator_GE (val1:Value, val2:Value) : OC Value =
    let ok x2 = mathIntOfValue val2' in
    if x1 >= x2 then ok int1 else ok int0}
 
-(* The == and != operators require (i) two arithmetic operands, or (ii) two
+(* The '==' and '!=' operators require (i) two arithmetic operands, or (ii) two
 pointers to compatible types, or (iii) a pointer to a non-void type and a
 pointer to void [ISO 6.5.9/2]. (The case of a null pointer constant, mentioned
 in [ISO 6.5.9/2] applies to expressions, but with values, a null pointer
 constant just evaluates to a null pointer of some type.)
 
 If the two operands are arithmetic, the usual arithmetic conversions are
-performed and the results are compared.
+performed and the results are compared [ISO 6.5.9/4].
 
 If the two operands are pointers, they are compared for equality. If both are
 non-null, they are equal iff they reference the same object. If both are null,
@@ -3423,8 +3267,8 @@ Note that if any value is undefined, the outcome is non-standard because we do
 not know the exact values and therefore we do not know the true result of
 comparing them.
 
-Note that the != operator returns the "opposite" of the == operator, i.e. !=
-returns 0 if == returns 1, and 1 if == returns 0. *)
+Note that the '!=' operator returns the "opposite" of the == operator, i.e. '!='
+returns 0 if '==' returns 1, and 1 if '==' returns 0. *)
 
 op operator_EQ (val1:Value, val2:Value) : OC Value =
   if arithmeticValue? val1 && arithmeticValue? val2 then
@@ -3450,11 +3294,11 @@ op operator_NE (val1:Value, val2:Value) : OC Value =
   {eq_result <- operator_EQ (val1, val2);
    if eq_result = int0 then ok int1 else ok int0}
 
-(* The binary & operator, the ^ operator, and the | operator require integer
-operands [ISO 6.5.10/2, 6.5.11/2, 6.5.12/2], perform the usual arithmetic
-conversions [ISO 6.5.10/3, 6.5.11/3, 6.5.12/3], and return the bitwise AND [ISO
-6.5.10/4], exclusive OR [ISO 6.5.11/4], and inclusive OR [ISO 6.5.12/4] of their
-operands. *)
+(* The binary '&' operator, the '^' operator, and the '|' operator require
+integer operands [ISO 6.5.10/2, 6.5.11/2, 6.5.12/2], perform the usual
+arithmetic conversions [ISO 6.5.10/3, 6.5.11/3, 6.5.12/3], and return the
+bitwise AND [ISO 6.5.10/4], exclusive OR [ISO 6.5.11/4], and inclusive OR [ISO
+6.5.12/4] of their operands. *)
 
 op operator_AND (val1:Value, val2:Value) : OC Value =
   {(val1', val2') <- arithConvertValues (val1, val2);
@@ -3477,11 +3321,11 @@ op operator_IOR (val1:Value, val2:Value) : OC Value =
    let ok bits2 = bitsOfIntegerValue val2' in
    ok (valueOfBits (bits1 Bits.ior bits2, ty))}
 
-(* We do not define ops operator_LAND and operator_LOR for the && and ||
+(* We do not define ops 'operator_LAND' and 'operator_LOR' for the '&&' and '||'
 operators because they are non-strict, i.e. the second value is calculated only
 if the first value does not already determine the result, as formalized below.
-We do not define ops operator_ADDR and operator_STAR because they do not quite
-operate on values, as formalized below. *)
+We do not define ops 'operator_ADDR' and 'operator_STAR' because they do not
+quite operate on values, as formalized below. *)
 
 
 %subsection (* Expressions *)
@@ -3534,60 +3378,64 @@ A variable [ISO 6.5.1/2] evaluates to the object designator that the variable
 references.
 
 An integer constant [ISO 6.5.1/3] evaluates to the integer value formalized by
-op evaluateIntegerConstant.
+op 'evaluateIntegerConstant'.
 
 In a unary expression, first the operand is evaluated, then the operator is
-applied. For the unary & operator, the operand must result in an object
+applied. For the unary '&' operator, the operand must result in an object
 designator [ISO 6.5.3.2/1], which is returned as a pointer value [ISO
-6.5.3.2/3]. For the unary * operator, the operand must be a pointer [ISO
+6.5.3.2/3]. For the unary '*' operator, the operand must be a pointer [ISO
 6.5.3.2/2], which is returned as an object designator [ISO 6.5.3.2/4]. There is
-one exception to this evaluation procedure: an expression of the form &*E
-evaluates to the same as E, i.e. & and * are not applied [ISO 6.5.3.2/3]. The
-difference between the normal evaluation procedure and this exception is visible
-when E is null: dereferencing null yields undefined behavior [ISO 6.5.3.2/4].
-Dereferencing an undefined pointer value also yields undefined behavior.
+one exception to this evaluation procedure: an expression of the form '&*E'
+evaluates to the same as E, i.e. '&' and '*' are not applied [ISO 6.5.3.2/3].
+The difference between the normal evaluation procedure and this exception is
+visible when E is null: dereferencing null yields undefined behavior [ISO
+6.5.3.2/4].  Dereferencing an undefined pointer value also yields undefined
+behavior.
 
-In a binary expression with any operator but && and ||, first the operands are
-evaluated, then the operator is applied. Since expressions in our C subset have
-no side-effects, and since they both must be evaluated (in some order), it makes
-no difference which one is evaluated first (if neither evaluation fails).
+In a binary expression with any operator but '&&' and '||', first the operands
+are evaluated, then the operator is applied. Since expressions in our C subset
+have no side-effects, and since they both must be evaluated (in some order), it
+makes no difference which one is evaluated first.
 
-In a binary expression with the && or || operator, the first operand, which must
-be scalar [ISO 6.5.13/2, 6.5.14/2], is compared with 0. If that suffices to
-determine the result (i.e. 0 for &&, non-0 for ||), the result (i.e. the signed
-int 0 or 1) is returned. Otherwise, the second operand, which must be scalar
-[ISO 6.5.13/2, 6.5.14/2] is compared with 0, returning the signed int 0 or 1
-depending on whether the comparison with 0 succeeds or fails. In other words, &&
-and || guarantee left-to-right evaluation and the second operand is evaluated
-only if needed [ISO 6.5.13/4, 6.5.14/4].
+In a binary expression with the '&&' or '||' operator, the first operand, which
+must be scalar [ISO 6.5.13/2, 6.5.14/2], is compared with 0. If that suffices to
+determine the result (i.e. 0 for '&&', non-0 for '||'), the result (i.e. the
+signed int 0 or 1) is returned. Otherwise, the second operand, which must be
+scalar [ISO 6.5.13/2, 6.5.14/2] is compared with 0, returning the signed 'int' 0
+or 1 depending on whether the comparison with 0 succeeds or fails. In other
+words, '&&' and '||' guarantee left-to-right evaluation and the second operand
+is evaluated only if needed [ISO 6.5.13/4, 6.5.14/4].
 
 A conditional expression requires a scalar first operand [ISO 6.5.15/2], which
 it evaluates and compares with 0 [ISO 6.5.15/4]. Based on the result of the
 comparison, the second or third operand is evaluated and returned [ISO
-6.5.15/4], converted to the type that is the fourth argument of the cond
+6.5.15/4], converted to the type that is the fourth argument of the 'cond'
 constructor. This explains the reason for this fourth argument: without this
 fourth argument, since only one of the second and third operands is evaluated,
 we would not have enough information to calculate the type of the result, which
-depends on the types of both second and third operands (cf. op checkExpression).
+depends on the types of both second and third operands (cf. op
+'checkExpression').
 
-A structure member expression requires a structure as left operand. The right
-operand must be a member of the structure. If the left operand results in an
-object designator, the result is an object designator extended with the right
-operand. If the left operand results in a value, the result is the value of the
-member.
+A structure member expression requires a structure as left operand [ISO
+6.5.2.3/1]. The right operand must be a member of the structure [ISO 6.5.2.3/1].
+If the left operand results in an object designator, the result is an object
+designator extended with the right operand; if the left operand results in a
+value, the result is the value of the member [ISO 6.5.2.3/3].
 
 A structure pointer member expression requires a pointer to a structure as left
-operand. The right operand must be a member of the structure. The result is an
-object designator, obtained by appending the member to the object designator
-carried by the pointer.
+operand [ISO 6.5.2.3/2]. The right operand must be a member of the structure
+[ISO 6.5.2.3/2]. The result is an object designator, obtained by appending the
+member to the object designator carried by the pointer [ISO 6.5.2.3/4].
 
 An array subscripting expression requires a first operand that evaluates to an
-object designator (of an array) and a second operand that evaluates to a
-non-negative integer. The result is an object designator, obtained by extending
-with the integer the object designator returned by the first operand.
+object designator (of an array) and a second operand that evaluates to an
+integer [ISO 6.5.2.1/1]. In order for the result to be well defined, the integer
+must be non-negative and less than the array's length [ISO 6.5.6/8]. If well
+define, the result is an object designator, obtained by extending with the
+integer the object designator returned by the first operand.
 
-As explained earlier, the null pointer constant has type void*, and therefore it
-returns a null pointer to void. *)
+As explained earlier, the null pointer constant has type 'void*', and therefore
+it returns a null pointer to void. *)
 
 op evaluate (state:State, expr:Expression) : OC ExpressionResult =
   case expr of
@@ -3598,11 +3446,11 @@ op evaluate (state:State, expr:Expression) : OC ExpressionResult =
     {val <- evaluateIntegerConstant c;
      ok (value val)}
   | unary (uop, expr) ->
-    % exception if expr is "& * expr0":
+    % special treatment for expr of the form '& * expr0':
     if uop = ADDR && (ex(expr0:Expression) expr = unary (STAR, expr0)) then
       let unary (STAR, expr0) = expr in
       evaluate (state, expr0)
-    % normal evaluation procedure:
+    % normal evaluation procedure for unary operators:
     else
     {res <- evaluate (state, expr);
      val <- expressionValue (state, res);
@@ -3808,7 +3656,7 @@ op evaluateAll
 (* A type name denotes a type. The following op returns the type denoted by a
 type name w.r.t. a state. Recall that a state includes a symbol table for type
 definitions: this is used to look up, and expand away, typedef names. This op is
-similar to op checkTypeName. *)
+similar to op 'checkTypeName'. *)
 
 op expandTypeName (state:State, tyn:TypeName) : OC Type =
   case tyn of
@@ -3840,8 +3688,8 @@ op expandTypeName (state:State, tyn:TypeName) : OC Type =
 %subsection (* Zero values *)
 
 (* As formalized later, all the objects declared in our C subset are initialized
-to 0. For structures and arrays, "0" means that all the members and elements are
-recursively initialized to 0 [ISO 6.7.8/10]. To this end, the following op
+to 0. For structures and arrays, 0 means that all the members and elements are
+recursively initialized to 0 [ISO 6.7.9/10]. To this end, the following op
 returns the 0 value of the given type. When the type is a structure, the op
 looks up its structure information in the state in order to recursively
 calculate 0 values for all the members of the structure. The recursive call on
@@ -3849,10 +3697,10 @@ the members is achieved via the auxiliary op that returns a list of 0 values for
 a list of types: the members are ordered according to their names, and a list of
 0 values is generated in that order.
 
-It is an error if the type to calculate a 0 value of, is the void type or a
-structure type not present in the state. It is also an error if there is some
-circularity in the structures, which could cause the op not to terminate. Recall
-that the non-circularity of the structures is part of the state invariants. *)
+It is an error if the type to calculate a 0 value of, is 'void' or a structure
+type not present in the state. It is also an error if there is some circularity
+in the structures, which could cause the op not to terminate. Recall that the
+non-circularity of the structures is part of the state invariants. *)
 
 op zeroOfType (state:State, ty:Type) : OC Value =
   if ~ (invariants? state) then error else
@@ -3891,9 +3739,9 @@ storage (for an object declared with file scope) or in the automatic storage
 
 If the declared object has file scope, it goes into static storage and it is
 initialized to 0 [ISO 6.9.2/2]. If the declared object has block scope, it goes
-into automatic storage. If it has no initializer, its initial value is
+into automatic storage; if it has no initializer, its initial value is
 indeterminate [ISO 6.7.8/10]. Since object declarations in our C subset have no
-explicit initializer, we set the initial value to undefined. *)
+explicit initializer, we set the initial value to be undefined. *)
 
 op execObjectDeclaration (state:State, odecl:ObjectDeclaration) : OC State =
   {ty <- expandTypeName (state, odecl.typE);
@@ -4020,8 +3868,8 @@ theorem declaration_execution is
 
 %subsection (* Statements *)
 
-(* As formalized shortly, entering a block extends the top frame of the
-automatic storage with a new, empty scope, which is retracted when the block is
+(* As formalized below, entering a block extends the top frame of the automatic
+storage with a new, empty scope, which is retracted when the block is
 exited. Upon retraction, any pointer to an object allocated in that block
 becomes dangling. The dangling pointer may be in an object in an outer
 scope. Similarly, calling a function extends the automatic storage with a new
@@ -4030,11 +3878,11 @@ dangling pointers in the state.
 
 In order to maintain the type safety of our C subset, we need to prevent these
 dangling pointers from being used. To this end, the following ops sets them to
-an undefined value. The following ops systematically set to undefined any
+an undefined value. The following ops systematically set to 'undefined' any
 pointer that designates an object in frame f and, if present, block b of frame f
--- if is not present, all pointers to all objects in frame f are cleared (this
-happens when returning from a function). An op to extract the scope designator
-from an object designator is also defined. *)
+-- if is not present, all pointers to all objects in frame f are set to
+'undefined' (this happens when returning from a function). An op to extract the
+scope designator from an object designator is also defined. *)
 
 op scopeOfObjectDesignator (obj:ObjectDesignator) : ScopeDesignator =
   case obj of
@@ -4113,22 +3961,22 @@ op assignArgumentsToParameters
          {val' <- convertForAssignment (val, tparam.typE);
           ok (update nstore tparam.name val')}})
 
-(* After executing a statement S in our C subset, control is transferred either
-to the next statement to execute, or to the caller of the function in which S
-occurs. The latter case happens when executing a return. The following Metaslang
-type captures these two possible forms of statement completion. In the return
-case, the returned value is included (None if the return statement has no
-expression. *)
+(* After executing a statement 'S' in our C subset, control is transferred
+either to the next statement to execute, or to the caller of the function in
+which 'S' occurs. The latter case happens when executing a 'return'. The
+following Specware type captures these two possible forms of statement
+completion. In the return case, the returned value is included ('None' if the
+'return' statement has no expression. *)
 
 type StatementCompletion = | next | return Option Value
 
-(* We lift op typeOfValue to statement completions and statement type
+(* We lift op 'typeOfValue' to statement completions and statement type
 elements. *)
 
 op typeOfStatementCompletion
    (scomp:StatementCompletion) : StatementTypeElement =
   case scomp of
-  | next -> next
+  | next              -> next
   | return (Some val) -> return (typeOfValue val)
   | return None       -> return void
 
@@ -4149,23 +3997,20 @@ The left operand of an assignment must denote an object [ISO 6.5.16/2,
 6.5.16/3]. The left and right operands must be (i) two arithmetic operands, or
 (ii) two compatible structures, or (iii) two pointers to compatible types, or
 (iv) a pointer to a non-void type and a pointer to void, or (v) a pointer (left)
-and a null pointer constant (right) [ISO 6.5.16.1/1]. The case of a left _Bool
-operand does not apply to our C subset. In case (i), the right operand is
-converted into the type of the left operand and stored into it. In case (ii),
-the right operand structure is stored into the left operand, unchanged. We
-consolidate and relax cases (iii), (iv), and (v), which all involve pointers, by
-converting the right operand pointer into the left operand's pointer type --
-recall that op convertPointer preserves the type safety of our C subset by
-disallowing conversions between non-null pointers of incompatible types.
+and a null pointer constant (right) [ISO 6.5.16.1/1]. Our C subset has no notion
+of atomic, qualified, and unqualified types. The case of a left '_Bool' operand
+does not apply to our C subset. In case (i), the right operand is converted into
+the type of the left operand and stored into it. In case (ii), the right operand
+structure is stored into the left operand, unchanged. We consolidate cases
+(iii), (iv), and (v), which all involve pointers, by converting the right
+operand pointer into the left operand's pointer type -- recall that op
+'convertPointer' preserves the type safety of our C subset by disallowing
+conversions between non-null pointers of incompatible types.
 
-The argument expressions of a function call are evaluated, and the values passed
-as arguments. For now a function call always yields a non-standard outcome, but
-we will fix this soon (we are extending our formalization one step at a time).
-
-The condition of an if statement is evaluated first, and a branch is executed
+The condition of an 'if' statement is evaluated first, and a branch is executed
 depending on whether the condition is 0 or not.
 
-A return statement removes the top frame of automatic storage, because the
+A 'return' statement removes the top frame of automatic storage, because the
 function is exited. As explained above, we undefine all the pointers to objects
 that existed in that frame.
 
@@ -4174,17 +4019,18 @@ scope is retracted when the block is exited. As explained above, when the scope
 is retracted, we undefine all the pointers to objects that existed in that
 scope.
 
-To call a function, the parameters, with their assigned values, are stored into
-a new scope in a new frame in automatic storage. The body of the function must
-be a block, whose block items are extracted and executed (as opposed to
-executing the whole block, which would otherwise create another scope, which
-would be incorrect). If the function has a non-void return type but fails to
-return a value, or returns a value that is not assignable to its return type, it
-is an error. If the returned value is undefined, the behavior is undefined.
-Otherwise, the returned value is converted, as if by assignment, into the return
-type [ISO 6.8.6.4/3]. If the function returns void, but a value is returned, it
-is an error. In the absence of errors, function execution results in a new state
-and an optional value (present iff the function has a non-void return type). *)
+The argument expressions of a function call are evaluated, and the values passed
+as arguments. The arguments are stored into a new scope in a new frame in
+automatic storage. The body of the function must be a block, whose block items
+are extracted and executed (as opposed to executing the whole block, which would
+otherwise create another scope, which would be incorrect). If the function has a
+non-void return type but fails to return a value, or returns a value that is not
+assignable to its return type, it is an error. If the returned value is
+undefined, the behavior is undefined.  Otherwise, the returned value is
+converted, as if by assignment, into the return type [ISO 6.8.6.4/3]. If the
+function returns 'void', but a value is returned, it is an error. In the absence
+of errors, function execution results in a new state and an optional value
+(present iff the function has a non-void return type). *)
 
 type StatementResult =
  {state      : State,
@@ -4310,13 +4156,13 @@ The same applies to lists of block items. For single block items, an additional
 property is that, in case of normal outcome, the new symbol table is the one of
 the new state.
 
-We also have that calling a function in a state that satisfies the invariants,
-with argument values that match the function's parameters, does not yield an
-error. Furthermore, if a normal outcome occurs, the new state satisfies the
-invariants and the returned optional value matches the function's return type
-(where None matches void).
+It is also the case that calling a function in a state that satisfies the
+invariants, with argument values that match the function's parameters, does not
+yield an error. Furthermore, if a normal outcome occurs, the new state satisfies
+the invariants and the returned optional value matches the function's return
+type (where None matches void).
 
-The following four theorems must proved simultaneously by induction. *)
+The following four theorems must be proved simultaneously by induction. *)
 
 theorem statement_execution is
   fa (state:State, stmt:Statement, sty:StatementType)
@@ -4497,33 +4343,17 @@ This subset will be extended in the future. *)
 (* This appendix collects all the Isabelle proofs and lemmas for the theorems
 and proofs obligations in the Specware formalization developed above. *)
 
+proof Isa -verbatim
+(*******************************************************************************
+ There are at least 100 translation issues, some of them involving ambiguities
+ that are very time-consuming to fix. Avoid running this file through the 
+ translator until a significant number of new theorems has been proven. 
 
+ After translation, it is best to copy the corrected versions of defs and
+ theorems from the last C.thy-vxx file
 
-% ------------------------------------------------------------------------------
-% ---------- Part 1: Specifications --------------------------------------------
-% ------------------------------------------------------------------------------
-
-% ------------------------------------------------------------------------------
-% ---------- Part 2: Theorems about properties of operations -------------------
-% ------------------------------------------------------------------------------
-
-
-% ------------------------------------------------------------------------------
-% ---------- Part 3: Main theorems ---------------------------------------------
-% ------------------------------------------------------------------------------
-
-% ------------------------------------------------------------------------------
-% ---------- Part 4: Theory Morphisms ------------------------------------------
-% ------------------------------------------------------------------------------
-
-
-% ------------------------------------------------------------------------------
-% ---------- Part 5: The proofs ------------------------------------------------
-% ------------------------------------------------------------------------------
-% Note: for the time being we place Isabelle lemmas that are needed for a proof 
-%       and cannot be expressed in SpecWare as "verbatim" lemmas into the
-%       preceeding proofs 
-% ------------------------------------------------------------------------------
+******************************************************************************)
+end-proof
 
 % -------------------- section (* Environment *) --------------------------
 
@@ -4846,6 +4676,15 @@ end-proof
 
 % -------------------- section (* Syntax *) --------------------------------
 
+proof Isa Identifier -typedef 
+  by (rule_tac x="''a''" in exI, 
+      simp add: C__identifier_p_def C__ppIdentifier_p_def C__keywords_def 
+                C__identifierNonDigit_p_def C__digit_p_def C__nonDigit_p_def
+                mem_def Un_def Collect_def  nat_of_char_def,
+      auto simp only: insert_def, auto) 
+end-proof
+
+theorem Identifier_identifier is   fa (cid:Identifier) identifier? cid
 
 proof Isa Identifier_identifier [simp]
   by (case_tac "cid", 
@@ -4900,8 +4739,18 @@ lemma C__Identifiers__Order__linearOrder_p [simp]:
  apply auto
 (******************************************************************************)
 
-
 end-proof
+
+proof Isa IntegerConstant -typedef
+  by (rule_tac x="''1''" in exI, simp add: C__integerConstant_p_def 
+                                           Collect_def mem_def,
+      rule_tac x="''1''" in exI, rule_tac exI,
+      auto simp add: C__decimalConstant_p_def C__digit_p_def nat_of_char_def
+                     C__integerSuffixOpt_p_def C__lengthSuffix_p_def
+                     C__signSuffix_p_def C__unsignedSuffix_p_def  )
+end-proof
+
+theorem IntegerConstant_constant is   fa (c:IntegerConstant) integerConstant? c
 
 proof Isa IntegerConstant_constant [simp]
   by (case_tac "c", 
@@ -4976,6 +4825,19 @@ end-proof
 
 
 % ------------------------------------------------------------
+
+% ----------------------------------------------------------------------------
+% Right now we cannot translate the parameterized type of FiniteSet
+% As a temporary fix I introduce an instantiated Version 
+
+type FiniteSetInt = (Set Int | finite?)
+proof Isa -typedef 
+  by  (rule_tac x="{}" in exI, simp add: Collect_def mem_def)
+end-proof
+
+theorem FiniteSetInt_finite is   fa (ints:FiniteSetInt) finite? ints
+
+% ----------------------------------------------------------------------------
 
 proof Isa FiniteSetInt_finite [simp]
   by (case_tac "ints", 
@@ -5911,6 +5773,28 @@ end-proof
 
 % ------------------------------------------------------------
 
+% ----------------------------------------------------------------------------
+% Did I put this in here ????
+% 
+% type      FiniteMap(a,b) = (Map(a,b) | finite?)
+% proof Isa -typedef 
+%  by (rule_tac x="empty" in exI, simp add: mem_def Map__finite_p_def Collect_def)
+% end-proof
+
+% ----------------------------------------------------------------------------
+% Right now we cannot translate the parameterized type of FiniteMaps
+% As a temporary fix I introduce an instantiated Version 
+
+type FMapIdType = (Map (Identifier,Type) |  finite? )
+proof Isa -typedef 
+   by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
+end-proof
+
+theorem FMapIdType_finite is  fa (m:FMapIdType) finite? m
+theorem FMapIdType_finite1 is fa (m:FMapIdType) finite? (domain m)
+
+% ----------------------------------------------------------------------------
+
 proof Isa FMapIdType_finite [simp]
   by (case_tac "m", 
       simp add: Abs_C__FMapIdType_inverse C__FMapIdType_def Collect_def mem_def)
@@ -5936,6 +5820,20 @@ apply (subst Abs_C__FMapIdType_inject [symmetric],
 end-proof
 
 % ------------------------------------------------------------
+
+% ----------------------------------------------------------------------------
+% Right now we cannot translate the parameterized type of FiniteMaps
+% As a temporary fix I introduce an instantiated Version 
+
+type FMapIdTypedM = (Map (Identifier,TypedMembers) | finite?)
+proof Isa -typedef 
+   by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
+end-proof
+
+theorem FMapIdTypedM_finite is  fa (m:FMapIdTypedM) finite? m
+theorem FMapIdTypedM_finite1 is fa (m:FMapIdTypedM) finite? (domain m)
+
+% ----------------------------------------------------------------------------
 
 proof Isa FMapIdTypedM_finite [simp]
   by (case_tac "m", 
@@ -5963,6 +5861,20 @@ end-proof
 
 % ------------------------------------------------------------
 
+% ----------------------------------------------------------------------------
+% Right now we cannot translate the parameterized type of FiniteMaps
+% As a temporary fix I introduce an instantiated Version 
+
+type FMapIdTypedP = (Map (Identifier,Type * TypedParameters) |  finite?)
+proof Isa -typedef 
+   by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
+end-proof
+
+theorem FMapIdTypedP_finite is  fa (m:FMapIdTypedP) finite? m
+theorem FMapIdTypedP_finite1 is fa (m:FMapIdTypedP) finite? (domain m)
+
+% ----------------------------------------------------------------------------
+
 proof Isa FMapIdTypedP_finite [simp]
   by (case_tac "m", 
       simp add: Abs_C__FMapIdTypedP_inverse C__FMapIdTypedP_def Collect_def mem_def)
@@ -5987,7 +5899,9 @@ apply (subst Abs_C__FMapIdTypedP_inject [symmetric],
 
 end-proof
 
-
+proof Isa FunctionTable -typedef
+sorry
+end-proof
 
 proof Isa objectTypeInSymTab__aux () 
  by auto
@@ -6098,6 +6012,21 @@ end-proof
 
 % ------------------------------------------------------------
 
+% ----------------------------------------------------------------------------
+theorem ShortWord_length is      fa (bs:ShortWord)    ofLength? short_bits bs
+theorem ShortWord_length1 is     fa (bs:ShortWord)    length bs = short_bits
+theorem IntWord_length is        fa (bs:IntWord)      ofLength? int_bits bs
+theorem IntWord_length1 is       fa (bs:IntWord)      length bs = int_bits
+theorem LongWord_length is       fa (bs:LongWord)     ofLength? long_bits bs
+theorem LongWord_length1 is      fa (bs:LongWord)     length bs = long_bits
+theorem LongLongWord_length is   fa (bs:LongLongWord) ofLength? llong_bits bs
+theorem LongLongWord_length1 is  fa (bs:LongLongWord) length bs = llong_bits
+% ----------------------------------------------------------------------------
+
+proof Isa ShortWord -typedef
+  by (rule_tac x="replicate C__short_bits B0" in exI, simp)
+end-proof
+
 proof Isa ShortWord_length [simp]
   by (cut_tac x=bs in Rep_C__ShortWord, 
       simp add: C__ShortWord_def Collect_def mem_def)
@@ -6122,6 +6051,9 @@ apply (subst Abs_C__ShortWord_inject [symmetric],
 
 end-proof
 
+proof Isa IntWord -typedef
+  by (rule_tac x="replicate C__int_bits B0" in exI, simp)
+end-proof
 
 proof Isa IntWord_length [simp]
   by (cut_tac x=bs in Rep_C__IntWord, 
@@ -6147,6 +6079,9 @@ apply (subst Abs_C__IntWord_inject [symmetric],
 
 end-proof
 
+proof Isa LongWord -typedef
+  by (rule_tac x="replicate C__long_bits B0" in exI, simp)
+end-proof
 
 proof Isa LongWord_length [simp]
   by (cut_tac x=bs in Rep_C__LongWord, 
@@ -6172,6 +6107,9 @@ apply (subst Abs_C__LongWord_inject [symmetric],
 
 end-proof
 
+proof Isa -typedef
+  by (rule_tac x="replicate C__llong_bits B0" in exI, simp)
+end-proof
 
 proof Isa LongLongWord_length [simp]
   by (cut_tac x=bs in Rep_C__LongLongWord, 
@@ -6220,8 +6158,24 @@ apply (subst Abs_C__LongLongWord_inject [symmetric],
 
 end-proof
 
-
 % ------------------------------------------------------------
+
+% ----------------------------------------------------------------------------
+% Right now we cannot translate the parameterized type of FiniteMaps
+% As a temporary fix I introduce an instantiated Version 
+% that doesn't really work here because of the mutual recursion
+% I'll keep the def for now but we must think of something else
+% In the above definition we will get subtype constr issues again
+
+
+type FMapIdVal = (Map (Identifier,Value) | finite?)
+proof Isa -typedef 
+    by (rule_tac x="empty" in exI, simp add: mem_def  Collect_def)
+end-proof
+
+theorem FMapIdVal_finite is   fa (m:FMapIdVal) finite? m
+theorem FMapIdVal_finite1 is  fa (m:FMapIdVal) finite? (domain m)
+% ----------------------------------------------------------------------------
 
 proof Isa FMapIdVal_finite [simp]
   by (case_tac "m", 
@@ -6518,8 +6472,6 @@ apply simp
 
 end-proof
 
-
-
 proof Isa mathIntOfValue_Obligation_subtype0
   by (drule sym, case_tac val, 
       auto simp add: length_greater_0_conv [symmetric] 
@@ -6527,6 +6479,9 @@ proof Isa mathIntOfValue_Obligation_subtype0
            split: split_if_asm)
 end-proof
 
+(* Dummy theorem to allow inserting lemmas *)
+
+theorem mathIntOfValue_props is 0 = 0
 
 proof Isa C__mathIntOfValue_props 
   by auto
@@ -6736,6 +6691,9 @@ proof Isa C__valueOfMathInt_props
 (** Value of MathInt **)
 (******************************************************************************)
 
+(* Dummy theorem to allow inserting lemmas *)
+
+theorem valueOfMathInt_props is 0 = 0
 
 lemma C__valueOfMathInt_type [simp]:
   "\<lbrakk>C__integerType_p ty; 
@@ -6909,6 +6867,9 @@ proof Isa C__zero_of_integer_type_is_all_zeros
                   split: split_if_asm)
 end-proof
 
+proof Isa FunctionsInfo -typedef
+sorry
+end-proof
 
 proof Isa updateStaticObject_Obligation_subtype
  (** Conclusion must be 
