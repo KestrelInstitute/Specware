@@ -46,4 +46,27 @@ Debugging qualifying spec
   let _ = writeLine "--------------------" in
   spc
 
+ op compressWhiteSpace (s : String) : String =
+  let 
+    def whitespace? char = 
+      char = #\s || char = #\n || char = #\t
+
+    def compress (chars, have_whitespace?) =
+      %% avoid deep recursions...
+      let (chars, _) = 
+          foldl (fn ((chars, have_whitespace?), char) ->
+                   if whitespace? char then
+                     if have_whitespace? then
+                       (chars, have_whitespace?)
+                     else
+                       ([#\s] ++ chars, true)
+                   else
+                     ([char] ++ chars, false))
+                ([], true)
+                chars
+      in
+      reverse chars
+  in
+  implode (compress (explode s, true))
+
 end-spec
