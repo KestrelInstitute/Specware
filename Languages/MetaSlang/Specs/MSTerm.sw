@@ -178,6 +178,16 @@ MS qualifying spec
      | Fun(Bool false,_,_)  -> true
      | _ -> false
 
+ op [a] existsTerm?(t: ATerm a): Bool =
+   case t of
+     | Bind(Exists, _, _, _) -> true
+     | _ -> false
+
+ op [a] forallTerm?(t: ATerm a): Bool =
+   case t of
+     | Bind(Forall, _, _, _) -> true
+     | _ -> false
+
  def mkInt i = if i >= 0
 		 then mkNat(i)
 	       else mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(intType, natType)), mkNat(-i))
