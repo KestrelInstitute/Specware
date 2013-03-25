@@ -958,7 +958,7 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   % let _ = writeLine("ops3: "^printOpNms spc) in
   let spc = lambdaLiftWithImportsSimulatingClosures spc in
   let spc = unfoldTypeAliases spc in
-  let spc = translateRecordMergeInSpec spc in
+  let spc = expandRecordMerges spc in
   let spc = identifyIntTypes spc in
 
   let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic types and ops in the new spec

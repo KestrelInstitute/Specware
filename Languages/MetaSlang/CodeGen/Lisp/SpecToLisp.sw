@@ -1575,8 +1575,8 @@ op addList(S: StringSet, l: List String): StringSet =
    let spc = translateMatch                                 spc in %  (8)
    let _   = showSpecIfVerbose "translateMatch"             spc in
 
-   let spc = translateRecordMergeInSpec                     spc in %  (9)
-   let _   = showSpecIfVerbose "translateRecordMergeInSpec" spc in
+   let spc = expandRecordMerges                             spc in %  (9)
+   let _   = showSpecIfVerbose "expandRecordMerges"         spc in
 
    let spc = arityNormalize                                 spc in % (10)
    let _   = showSpecIfVerbose "arityNormalize"             spc in

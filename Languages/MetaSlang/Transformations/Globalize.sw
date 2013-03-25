@@ -2155,7 +2155,7 @@ Globalize qualifying spec
    % showIntermediateSpec ("with ginit", spec_with_ginit);
 
    % hack to fix problem where 'global_var << {..}' was becoming just '{...}'
-   spec_with_restored_record_merges <- return (SpecTransform.introduceRecordMerges (spec_with_ginit, []));
+   spec_with_restored_record_merges <- return (SpecTransform.introduceRecordMerges spec_with_ginit);
 
    (globalized_spec, tracing?) <- let context = {spc              = spec_with_restored_record_merges,
                                                  root_ops         = root_ops,

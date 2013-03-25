@@ -1581,11 +1581,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     | [] -> mainTerm
     | rvterms ->
       let (_,vbinds) =
-          foldl (fn ((i, result),t) -> 
+          foldl (fn ((i, result), tm) -> 
                    (i+1,
-                    result ++ [(t, 
-                                "tv--"^show i, 
-                                inferType (spc, t))]))
+                    result ++ [(tm, 
+                                "tmp__" ^ show i, 
+                                inferType (spc, tm))]))
                 (0, []) 
                 rvterms
       in

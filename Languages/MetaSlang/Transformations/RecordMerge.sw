@@ -3,14 +3,14 @@ Transform qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op SpecTransform.introduceRecordMerges (spc: Spec, ignore: QualifiedIds): Spec =
+ op SpecTransform.introduceRecordMerges (spc: Spec): Spec =
    mapSpec (makeRecordMerge spc, id, id) spc
 
  op makeTupleUpdate?: Bool = true
 
  op makeRecordMerge (spc: Spec) (tm: MSTerm): MSTerm =
    case tm of
-     | Record (fields as (id0, _) :: _, _) | id0 ~= "1" || makeTupleUpdate? ->
+     | Record (fields as (id0, _) :: _, _) | (id0 ~= "1" || makeTupleUpdate?) ->
        (case maybeTermType tm of
           | None -> tm
           | Some rec_ty ->
@@ -42,7 +42,7 @@ Transform qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op SpecTransform.translateRecordMergeInSpec (spc : Spec) : Spec =
+ op SpecTransform.expandRecordMerges (spc : Spec) : Spec =
    mapSpec (fn tm -> translateRecordMerge spc tm, id, id) spc
 
  %% translateRecordMerge is used by tryEvalOne in Utilities.sw, otherwise would move it here

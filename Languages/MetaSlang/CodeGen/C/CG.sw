@@ -160,7 +160,7 @@ CG qualifying spec
   let spc = translateMatch                                      spc in %  (8) Wadler's pattern matching compiler -- may add calls to polymorphic fns, so must precede poly2mono
   let _   = showSpecIfVerbose "translateMatch"                  spc in
   
-  let spc = translateRecordMergeInSpec                          spc in %  (9) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
+  let spc = expandRecordMerges                                  spc in %  (9) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
   let _   = showSpecIfVerbose "translateRecordMergeInSpec"      spc in
   
   let spc = letWildPatToSeq                                     spc in % (10) transforms "let _ = t1 in t2" into "(t1;t2)"
