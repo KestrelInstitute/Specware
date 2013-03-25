@@ -6,8 +6,8 @@ SubstBaseSpecs qualifying spec
 
  op Specware.evaluateUnitId: String \_rightarrow Option Value   % Defined in /Languages/SpecCalculus/Semantics/Bootstrap, which imports this spec
 
- op substBaseSpecs(spc: Spec) : Spec = substBaseSpecs1(spc, baseExecutableSpecNames)
- op substBaseSpecsJ(spc: Spec): Spec = substBaseSpecs1(spc, baseExecutableSpecNamesJ)
+ op SpecTransform.substBaseSpecs  (spc: Spec) : Spec = substBaseSpecs1(spc, baseExecutableSpecNames)
+ op               substBaseSpecsJ (spc: Spec) : Spec = substBaseSpecs1(spc, baseExecutableSpecNamesJ)
 
  %% To get an executable base
  op baseExecutableSpecNames : List String = ["/Library/Base/List_Executable", "/Library/Base/String_Executable", "/Library/Base/Integer_Executable"]

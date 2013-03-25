@@ -5,7 +5,7 @@ LiftUnsupportedPattern qualifying spec
   %% liftUnsupportedPatterns may introduce case statements,
   %% hence must preceeed pattern compilation
 
-  op  liftUnsupportedPatterns (spc : Spec) : Spec =
+  op SpecTransform.liftUnsupportedPatterns (spc : Spec) : Spec =
     setOps (spc, 
             mapOpInfos (fn info -> 
 			let pos = termAnn info.dfn in
@@ -14,7 +14,7 @@ LiftUnsupportedPattern qualifying spec
 			    map (fn dfn ->
 				 let pos = termAnn dfn in
 				 let (tvs, srt, term) = unpackFirstTerm dfn in
-				 let tm = myLiftUnsupportedPattern (term, spc) in
+				 let tm = liftUnsupportedPattern (term, spc) in
                                  maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
 			        old_defs
 			in
@@ -22,7 +22,7 @@ LiftUnsupportedPattern qualifying spec
 			info << {dfn = new_dfn})
 	               spc.ops)
 
-  op myLiftUnsupportedPattern (tm : MSTerm, spc : Spec) : MSTerm =
+  op liftUnsupportedPattern (tm : MSTerm, spc : Spec) : MSTerm =
     let b = termAnn tm in
     case tm of
       | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->

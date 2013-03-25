@@ -9,16 +9,19 @@ import ToJavaQuotient
 import ToJavaHO
 import ToJavaSpecial
 import /Languages/Java/JavaPrint
+
+import /Languages/MetaSlang/Specs/SubtractSpec
+
 import /Languages/MetaSlang/Transformations/LambdaLift
 import /Languages/MetaSlang/Transformations/Simplify
-%import /Languages/MetaSlang/Transformations/RecordMerge
+import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
-import /Languages/MetaSlang/Specs/SubtractSpec
 
 import /Languages/MetaSlang/CodeGen/AddMissingFromBase
 import /Languages/MetaSlang/CodeGen/IdentifyIntTypes
 import /Languages/MetaSlang/CodeGen/Poly2Mono
 import /Languages/MetaSlang/CodeGen/LetWildPatToSeq
+import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases
 import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
 
 import Monad

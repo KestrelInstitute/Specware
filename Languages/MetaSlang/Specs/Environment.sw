@@ -563,7 +563,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
       | And(tm1::r_tms, a) -> And((normalizeLambda(tm1, dom, ran, usedNames, spc))::r_tms, a) 
       | _ -> term
 
- op normalizeTopLevelLambdas(spc: Spec): Spec =
+ op SpecTransform.normalizeTopLevelLambdas (spc: Spec) : Spec =
    setOps (spc, 
            mapOpInfos (fn opinfo -> 
                          let pos = termAnn opinfo.dfn in

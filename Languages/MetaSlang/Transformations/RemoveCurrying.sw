@@ -23,8 +23,7 @@ Assume that pattern matching has been transformed away
 RemoveCurrying qualifying spec
   import CurryUtils
   
-  op  removeCurrying: Spec -> Spec
-  def removeCurrying spc =
+  op SpecTransform.removeCurrying (spc : Spec) : Spec =
     let spc = addUnCurriedOps spc in
     let newOps = mapOpInfos (fn old_info ->
 			     if definedOpInfo? old_info then

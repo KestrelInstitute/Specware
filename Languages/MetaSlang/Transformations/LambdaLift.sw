@@ -913,10 +913,10 @@ def patternVars (pat:MSPattern): List Var =
          vars)
   ^ "]"
 
- op lambdaLiftWithImports (spc : Spec) : Spec =
+ op SpecTransform.lambdaLiftWithImports (spc : Spec) : Spec =
   lambdaLift (spc, true, false)
 
- op lambdaLiftWithImportsSimulatingClosures (spc : Spec) : Spec =
+ op SpecTransform.lambdaLiftWithImportsSimulatingClosures (spc : Spec) : Spec =
   lambdaLift (spc, true, true)
 
  op lambdaLift (spc : Spec, imports? : Bool, simulateClosures? : Bool) : Spec =

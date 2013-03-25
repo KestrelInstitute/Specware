@@ -74,7 +74,7 @@ spec
  %% instantiate higher order functions
  %% ================================================================================
 
- op instantiateHOFns (spc : Spec) : Spec =
+ op SpecTransform.instantiateHOFns (spc : Spec) : Spec =
    aux_instantiateHOFns spc false
 
  %% snark interface can call this directly to set flag to true

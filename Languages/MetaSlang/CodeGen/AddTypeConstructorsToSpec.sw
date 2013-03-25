@@ -1,37 +1,41 @@
 AddTypeConstructorsToSpec qualifying spec
 
-import CodeGenUtilities
+ import CodeGenUtilities
 
  (**
- * adds for each co-product type the constructor ops for each element.
- * e.g. for Lists, the following ops are added:
- * op List_cons fa (a) a * List -> List
- * def List_cons (x1, x2) = (embed cons) (x1, x2)
- * op List_nil: () -> List
- * def List_nil () = embed nil
- *)
+  * adds for each co-product type the constructor ops for each element.
+  * e.g. for Lists, the following ops are added:
+  * op List_cons fa (a) a * List -> List
+  * def List_cons (x1, x2) = (embed cons) (x1, x2)
+  * op List_nil: () -> List
+  * def List_nil () = embed nil
+  *)
 
-op addTypeConstructorsToSpec : Spec -> Spec
-def addTypeConstructorsToSpec spc =
+ op SpecTransform.addTypeConstructorsToSpec (spc : Spec) : Spec =
   let (spc, _) = addTypeConstructorsToSpecInternal (spc, false) in 
   % ignore names of constrOps
   spc
 
-op addTypeConstructorsToSpecForSnark : Spec -> Spec * QualifiedIds
-def addTypeConstructorsToSpecForSnark spc =
+ op addTypeConstructorsToSpecForSnark (spc : Spec) : Spec * QualifiedIds =
   addTypeConstructorsToSpecInternal (spc, true)
 
-op addTypeConstructorsToSpecInternal : Spec * Bool -> Spec * QualifiedIds
-def addTypeConstructorsToSpecInternal (spc, forSnark?) =
+ op addTypeConstructorsToSpecInternal (spc : Spec, forSnark? : Bool) : Spec * QualifiedIds =
   foldriAQualifierMap
    (fn (q, id, typeinfo, (spc, opnames)) ->
-     let (spc, opnames0) = addTypeConstructorsFromType (spc, forSnark?, Qualified (q, id), typeinfo) in
-    (spc, opnames ++ opnames0))
+     let (spc, opnames0) = addTypeConstructorsFromType (spc, 
+                                                        forSnark?, 
+                                                        Qualified (q, id),
+                                                        typeinfo) 
+     in
+     (spc, opnames ++ opnames0))
    (spc, []) 
-    spc.types
+   spc.types
 
-op addTypeConstructorsFromType: Spec * Bool * QualifiedId * TypeInfo -> Spec * QualifiedIds
-def addTypeConstructorsFromType (spc, forSnark?, qid, info) =
+ op addTypeConstructorsFromType (spc       : Spec, 
+                                 forSnark? : Bool, 
+                                 qid       : QualifiedId, 
+                                 info      : TypeInfo)
+  : Spec * QualifiedIds =
   if ~ (definedTypeInfo? info) then
     (spc, [])
   else
@@ -76,40 +80,45 @@ def addTypeConstructorsFromType (spc, forSnark?, qid, info) =
 		    fields)
       | _ -> (spc, [])
 
- op getConstructorOpName: QualifiedId * String -> QualifiedId
-def getConstructorOpName (qid as Qualified (q, id), consid) =
+ op getConstructorOpName (qid as Qualified (q, id) : QualifiedId, 
+                          consid                   : String) 
+  : QualifiedId =
   % the two _'s are important: that how the constructor op names are
   % distinguished from other opnames (hack)
   let sep = "__" in
   Qualified (q, id^sep^consid)
 
- op getConstructorOpNameForSnark: QualifiedId * String -> QualifiedId
-def getConstructorOpNameForSnark (qid as Qualified (q, id), consid) =
+ op getConstructorOpNameForSnark (qid as Qualified (q, id) : QualifiedId,
+                                  consid                   : String)
+  : QualifiedId =
   % the two __'s are important: that how the constructor op names are
   % distinguished from other opnames (hack)
-  let sep = "__" in
-  Qualified (q, "embed"^sep^consid)
+  Qualified (q, "embed__" ^ consid)
 
 
  (**
- * adds for each product type the Constructor op.
- * e.g. for type P = {a: TypeA, b: TypeB}, the following op is added:
- * op mk_Record_P: typeA * typeB -> P
- * def mk_Record_P (a, b) = (a, b)
- *)
+  * adds for each product type the Constructor op.
+  * e.g. for type P = {a: TypeA, b: TypeB}, the following op is added:
+  * op mk_Record_P: typeA * typeB -> P
+  * def mk_Record_P (a, b) = (a, b)
+  *)
 
-op addProductTypeConstructorsToSpec: Spec -> Spec * List (QualifiedId)
-def addProductTypeConstructorsToSpec spc =
+ op addProductTypeConstructorsToSpec (spc : Spec) : Spec * List QualifiedId =
   foldriAQualifierMap
    (fn (q, id, typeinfo, (spc, opnames)) ->
-     let (spc, opnames0) = addProductTypeConstructorsFromType (spc, Qualified (q, id), typeinfo) in
-    (spc, opnames ++ opnames0))
+     let (spc, opnames0) = addProductTypeConstructorsFromType (spc, 
+                                                               Qualified (q, id), 
+                                                               typeinfo) 
+     in
+     (spc, opnames ++ opnames0))
    (spc, []) 
-    spc.types
+   spc.types
 
 
-op addProductTypeConstructorsFromType: Spec * QualifiedId * TypeInfo -> Spec * List (QualifiedId)
-def addProductTypeConstructorsFromType (spc, qid, info) =
+ op addProductTypeConstructorsFromType (spc  : Spec,
+                                        qid  : QualifiedId,
+                                        info : TypeInfo)
+  : Spec * List QualifiedId =
   if ~ (definedTypeInfo? info) then
     (spc, [])
   else
@@ -141,23 +150,27 @@ def addProductTypeConstructorsFromType (spc, qid, info) =
       | _ -> (spc, [])
 
  (**
- * adds for each product type the accessor ops for each element.
- * e.g. for type P = {a: TypeA, b: TypeB}, the following ops are added:
- * op project_P_a: P -> typeA, and op project_P_b: P -> typeB
- * def project_P_a (p) = project (a) p, ...
- *)
+  * adds for each product type the accessor ops for each element.
+  * e.g. for type P = {a: TypeA, b: TypeB}, the following ops are added:
+  * op project_P_a: P -> typeA, and op project_P_b: P -> typeB
+  * def project_P_a (p) = project (a) p, ...
+  *)
 
- op addProductAccessorsToSpec : Spec -> Spec * List (QualifiedId)
-def addProductAccessorsToSpec spc =
+ op addProductAccessorsToSpec (spc : Spec) : Spec * List QualifiedId =
   foldriAQualifierMap
    (fn (q, id, typeinfo, (spc, opnames)) ->
-     let (spc, opnames0) = addProductAccessorsFromType (spc, Qualified (q, id), typeinfo) in
-    (spc, opnames ++ opnames0))
+     let (spc, opnames0) = addProductAccessorsFromType (spc, 
+                                                        Qualified (q, id), 
+                                                        typeinfo) 
+     in
+     (spc, opnames ++ opnames0))
    (spc, []) 
-    spc.types
+   spc.types
 
-op addProductAccessorsFromType: Spec * QualifiedId * TypeInfo -> Spec * List (QualifiedId)
-def addProductAccessorsFromType (spc, qid, info) =
+ op addProductAccessorsFromType (spc  : Spec,
+                                 qid  : QualifiedId,
+                                 info : TypeInfo)
+  : Spec * List QualifiedId =
   if ~ (definedTypeInfo? info) then
     (spc, [])
   else

@@ -1516,74 +1516,89 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                              ^"at "^print(termAnn term)))
      | _ -> System.fail("Product type expected for mkProjectTerm: "^printTermWithTypes term)
 
- op  translateRecordMergeInSpec : Spec -> Spec
- def translateRecordMergeInSpec spc =
-   mapSpec (translateRecordMerge spc,id,id) spc
+%%  moved to RecordMerge.sw
+%%
+%% op  translateRecordMergeInSpec : Spec -> Spec
+%% def translateRecordMergeInSpec spc =
+%%   mapSpec (translateRecordMerge spc,id,id) spc
+%%
+%% op makeTupleUpdate?: Bool = true
+%%
+%% op makeRecordMerge (spc: Spec) (tm: MSTerm): MSTerm =
+%%   case tm of
+%%     | Record(fields as (id0, _) :: _, a) | id0 ~= "1" || makeTupleUpdate? ->
+%%       (case maybeTermType tm of
+%%          | None -> tm
+%%          | Some rec_ty ->
+%%        let (src_tms, new_fields) =
+%%            foldr (fn ((id1, t), (src_tms, new_fields)) ->
+%%                     case t of
+%%                       | Apply(Fun(Project id2, _, _), src_tm, _)
+%%                           | id1 = id2 && equivTypeSubType? spc (termType src_tm, rec_ty) true ->
+%%                         (if termIn?(src_tm, src_tms) then src_tms else src_tm :: src_tms,
+%%                          new_fields)
+%%                       | _ -> (src_tms, (id1, t):: new_fields))
+%%              ([], []) fields
+%%        in
+%%        (case src_tms of
+%%         | [src_tm] ->
+%%           if new_fields = [] then src_tm
+%%             else mkRecordMerge(src_tm, mkRecord new_fields)
+%%         | _ -> tm))
+%%     | _ -> tm
 
-  op  maybeIntroduceVarsForTerms: MSTerm * List MSTerm * Spec -> MSTerm
-  def maybeIntroduceVarsForTerms(mainTerm,vterms,spc) =
-  %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
-    case filter(fn t -> ~(simpleTerm t) && (existsSubTerm (fn st -> st = t) mainTerm)) vterms of
-      | [] -> mainTerm
-      | rvterms ->
-	let (_,vbinds) =
-	      foldl (fn ((i,result),t) -> (i+1,result ++ [(t,"tv--"^show i,inferType(spc,t))]))
-	        (0,[]) rvterms
-	in
-	mkLet(map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds,
-	      mapTerm ((fn t -> case findLeftmost (fn (tm,_,_) -> t = tm) vbinds of
-				| Some(_,v,s) -> mkVar(v,s)
-				| None -> t),
-			id,id)
-		 mainTerm)
-
- op translateRecordMerge (spc: Spec) (t: MSTerm): MSTerm =
-   case t of
-     | Apply(Fun(RecordMerge,s,_),Record([("1",t1),("2",t2)],_),a) ->
-      (case arrowOpt(spc,s) of
-         | Some(dom,rng) ->
-           (case (productOpt(spc,rng),productOpt(spc,inferType(spc,t2))) of
-              | (Some resultFields,Some t2Fields) ->
-                let rawResult = Record(map (fn (field,_) ->
-                                            (field,if exists? (fn (f,_) -> f=field) t2Fields
-                                                     then fieldAcessTerm(t2,field,spc)
-                                                   else fieldAcessTerm(t1,field,spc)))
-                                       resultFields,
-                                       a)
+ op translateRecordMerge (spc : Spec) (term : MSTerm) : MSTerm =
+  %% used by tryEvalOne, otherwise would move to RecordMerge.sw
+  case term of
+    | Apply (Fun (RecordMerge, typ, _), 
+             Record ([("1",t1),("2",t2)], _), 
+             _)
+      ->
+      (case arrowOpt (spc, typ) of
+         | Some (dom, rng) ->
+           (case (productOpt (spc, rng), productOpt (spc, inferType (spc, t2))) of
+              | (Some resultFields, Some t2Fields) ->
+                let rawResult = Record (map (fn (field,_) ->
+                                               (field, 
+                                                if exists? (fn (f,_) -> f = field) t2Fields then
+                                                  fieldAcessTerm (t2, field, spc)
+                                                else 
+                                                  fieldAcessTerm (t1, field, spc)))
+                                            resultFields,
+                                        noPos)
                 in
-                maybeIntroduceVarsForTerms(rawResult,[t1,t2],spc)
-              | _ -> t)
-         | _ -> t)
-     | _ -> t
+                maybeIntroduceVarsForTerms (rawResult, [t1, t2], spc)
+              | _ -> term)
+         | _ -> term)
+    | _ -> term
 
- op makeTupleUpdate?: Bool = true
-
- op makeRecordMerge (spc: Spec) (tm: MSTerm): MSTerm =
-   case tm of
-     | Record(fields as (id0, _) :: _, a) | id0 ~= "1" || makeTupleUpdate? ->
-       (case maybeTermType tm of
-          | None -> tm
-          | Some rec_ty ->
-        let (src_tms, new_fields) =
-            foldr (fn ((id1, t), (src_tms, new_fields)) ->
-                     case t of
-                       | Apply(Fun(Project id2, _, _), src_tm, _)
-                           | id1 = id2 && equivTypeSubType? spc (termType src_tm, rec_ty) true ->
-                         (if termIn?(src_tm, src_tms) then src_tms else src_tm :: src_tms,
-                          new_fields)
-                       | _ -> (src_tms, (id1, t):: new_fields))
-              ([], []) fields
-        in
-        (case src_tms of
-         | [src_tm] ->
-           if new_fields = [] then src_tm
-             else mkRecordMerge(src_tm, mkRecord new_fields)
-         | _ -> tm))
-     | _ -> tm
-
- %% Interface function suitable for use as a spec transformation
- op SpecTransform.introduceRecordMerges(spc: Spec, ignore: QualifiedIds): Spec =
-   mapSpec (makeRecordMerge spc, id, id) spc
+ op maybeIntroduceVarsForTerms (mainTerm : MSTerm, 
+                                vterms   : List MSTerm, 
+                                spc      : Spec) 
+  : MSTerm =
+  %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
+  case filter (fn tm -> ~(simpleTerm tm) && (existsSubTerm (fn subtm -> subtm = tm) mainTerm)) vterms of
+    | [] -> mainTerm
+    | rvterms ->
+      let (_,vbinds) =
+          foldl (fn ((i, result),t) -> 
+                   (i+1,
+                    result ++ [(t, 
+                                "tv--"^show i, 
+                                inferType (spc, t))]))
+                (0, []) 
+                rvterms
+      in
+      let bindings = map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds in
+      let tsp = ((fn t -> 
+                    case findLeftmost (fn (tm,_,_) -> t = tm) vbinds of
+                      | Some(_,v,s) -> mkVar(v,s)
+                      | None -> t),
+                 id,
+                 id)
+      in
+      let body = mapTerm tsp mainTerm in
+      mkLet (bindings, body)
 
  op  tryEvalOne: Spec -> MSTerm -> Option MSTerm
  def tryEvalOne spc term =

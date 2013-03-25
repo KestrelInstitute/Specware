@@ -2,6 +2,7 @@ Globalize qualifying spec
 {
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/CommonSubExpressions
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var

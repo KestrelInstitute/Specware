@@ -21,7 +21,8 @@ Poly2Mono qualifying spec
   * resulting spec or not. If keepPolyMorphic? is false, the resulting spec will be free of polymorphic
   * entities.
   *)
- op poly2monoAndDropPoly (spc : Spec) : Spec =
+
+ op SpecTransform.poly2monoAndDropPoly (spc : Spec) : Spec =
   poly2mono (spc, false)
  
  op poly2mono (spc : Spec, keepPolyMorphic? : Bool) : Spec =

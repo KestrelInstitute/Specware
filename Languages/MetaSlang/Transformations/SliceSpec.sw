@@ -33,7 +33,7 @@ SliceSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  %% maybe move removeTheorems into scubSpec under a boolean flag...
- op removeTheorems (spc : Spec) : Spec = 
+ op SpecTransform.removeTheorems (spc : Spec) : Spec = 
   %% theorems are irrelevant for code generation
   let
     def filter el =

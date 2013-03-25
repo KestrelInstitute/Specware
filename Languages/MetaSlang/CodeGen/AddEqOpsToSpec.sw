@@ -1,24 +1,21 @@
 AddEqOpsToSpec qualifying spec
 
-import /Languages/MetaSlang/Specs/StandardSpec
-import /Languages/MetaSlang/Specs/Environment
+ import /Languages/MetaSlang/Specs/StandardSpec
+ import /Languages/MetaSlang/Specs/Environment
 
  (**
- * adds for each user type the corresponding
- * equality op
- *)
+  * adds for each user type the corresponding
+  * equality op
+  *)
 
-op addEqOpsToSpec : Spec -> Spec
-def addEqOpsToSpec spc =
+ op SpecTransform.addEqOpsToSpec (spc : Spec) : Spec =
   foldriAQualifierMap (fn (q, id, typeinfo, spc) ->
                          addEqOpsFromType (spc, Qualified (q, id), typeinfo))
                       spc 
                       spc.types
 
-op addEqOpsFromType: Spec * QualifiedId * TypeInfo -> Spec
-def addEqOpsFromType (spc, qid, info) =
+ op addEqOpsFromType (spc : Spec, qid :QualifiedId, info : TypeInfo) : Spec =
   let
-
     def getLambdaTerm (srt, body, b) =
       let cond = mkTrue () in
       let pat = RecordPat ([("1", VarPat (("x", srt), b)), ("2", VarPat (("y", srt), b))], b) in
@@ -141,8 +138,7 @@ def addEqOpsFromType (spc, qid, info) =
 		 addEqOp (eqqid, osrt, body, b))
 	      | _ -> spc
 
-op getEqOpQid: QualifiedId -> QualifiedId
-def getEqOpQid (Qualified (q, id)) =
+ op getEqOpQid (Qualified (q, id) : QualifiedId) : QualifiedId =
   Qualified (q, "eq_" ^ id)
 
 

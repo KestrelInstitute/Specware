@@ -644,14 +644,13 @@ spec
    let _ = if trace? then toScreen("Simp:\n" ^ printTerm simp_term ^ "\n\n") else () in
    simp_term
 
- op  simplifySpec: Spec -> Spec
- def simplifySpec(spc) = 
+ op SpecTransform.simplifySpec (spc : Spec) : Spec =
    % let _ = toScreen("Before:\n" ^ printSpec spc ^ "\n\n") in
-   let simp_spc = mapSpec (simplify spc,fn s -> s,fn p -> p) spc in
+   let simp_spc = mapSpec (simplify spc, fn typ -> typ, fn pat -> pat) spc in
    % let _ = toScreen("After:\n" ^ printSpec simp_spc ^ "\n\n") in
    simp_spc
     
- op simplifyTopSpec(spc: Spec): Spec =
+ op simplifyTopSpec (spc: Spec): Spec =
    let (new_elts, new_ops) =
        foldr (fn (elt, (elts, ops)) ->
                 case elt of

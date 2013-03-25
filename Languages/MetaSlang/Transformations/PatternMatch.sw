@@ -67,8 +67,6 @@ PatternMatch qualifying spec
    
   % import MetaSlangPrint	% imported by ArityNormalize
 
-  op  translateMatch : Spec -> Spec
-
   def match_type srt = srt % mkBase (Qualified("TranslationBuiltIn","Match"), [srt])
 
   def mkBreak    srt = mkOp (Qualified("TranslationBuiltIn","mkBreak"), match_type srt)
@@ -1034,7 +1032,7 @@ PatternMatch qualifying spec
  op translateMatchInTerm (spc: Spec) (funName: String) (tm: MSTerm): MSTerm =
    simpLamBody(eliminateTerm (mkSpcContext spc funName) tm)
 
- def translateMatch spc = 
+ op SpecTransform.translateMatch (spc : Spec) : Spec = 
    % sjw: Moved (Ref 0) in-line in mkSpcContext so it is reexecuted for each call so the counter is reinitialized
    % for each call. (This was presumably what was intended as otherwise there would be no need for mkContext
    % to be a function). This means that compiled functions will have the same generated variables

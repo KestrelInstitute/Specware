@@ -17,7 +17,7 @@ CG qualifying spec
  import /Languages/MetaSlang/Transformations/RemoveCurrying
  import /Languages/MetaSlang/Transformations/LambdaLift
  import /Languages/MetaSlang/Transformations/InstantiateHOFns%
-%import /Languages/MetaSlang/Transformations/RecordMerge
+ import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/TheoryMorphism
  
  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
@@ -105,7 +105,8 @@ CG qualifying spec
  op removeUnusedOps (top_ops : QualifiedIds) (top_types : QualifiedIds) (spc : Spec) : Spec =
   sliceSpecForCode (spc, top_ops, top_types, builtinCOp?, builtinCType?)
 
- op removeNonNatSubtypesAndBaseDefs (spc : Spec) : Spec =
+ op SpecTransform.removeNonNatSubtypesAndBaseDefs (spc : Spec) : Spec =
+  %% Warning: logical mayhem?
   let stripper = stripNonNatSubtypesAndBaseDefs spc in
   mapSpec (fn t -> t, stripper, fn p -> p) spc
 
