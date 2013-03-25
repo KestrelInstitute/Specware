@@ -179,7 +179,7 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
              let (vs, cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
              transEx(vs, cjs, a))
           | _ -> None
-      def transEx(vs: Vars, cjs: MSTerms, a: Position): Option MSTerm=
+      def transEx(vs: Vars, cjs: MSTerms, a: Position): Option MSTerm =
         let lift_cjs = filter (fn cj -> ~(hasRefTo?(cj, vs))) cjs in
         if lift_cjs ~= []
           then let rem_cjs = filter (fn cj -> ~(termIn?(cj, lift_cjs))) cjs in
@@ -205,6 +205,24 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
                                         (mkWildPat constr_ty, falseTerm)]))
                | None -> None)
          | None ->
+        case findLeftmost existsTerm? cjs of
+          | Some(cj as Bind(Exists, s_vs, bod, pos)) ->
+            let cjs = flatten (map (fn cji -> if cj = cji then getConjuncts bod else [cji]) cjs) in
+            transEx(vs ++ s_vs, cjs, a)
+          | None -> 
+        case findLeftmost (embed? IfThenElse) cjs of
+          | Some(cj as IfThenElse(p, q, r, pos)) -> 
+            let q_cjs = map (fn cji -> if cj = cji then q else cji) cjs in
+            let r_cjs = map (fn cji -> if cj = cji then r else cji) cjs in
+            % let _ = (writeLine("Init:\n"^printTerm (mkSimpBind(Exists, vs, mkSimpConj cjs)));
+            %          writeLine("q:\n"^printTerm(transEx1(vs, q_cjs, a)));
+            %          writeLine("r:\n"^printTerm(transEx1(vs, r_cjs, a))))
+            % in
+            (case (transEx(vs, q_cjs, a), transEx(vs, r_cjs, a)) of
+               | (None, None) -> None
+               | (q_trip?, r_trip?) ->
+                 Some(IfThenElse(p, transExResult(q_trip?, vs, cjs, a), transExResult(r_trip?, vs, cjs, a), pos)))
+          | None ->
         if length vs = 1 then None
         else
         case findLeftmost (fn cj -> length(filter (fn v -> inVars?(v, vs)) (freeVars cj)) = 1) cjs of
@@ -215,6 +233,10 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
           | None -> None
       def transEx1(vs, cjs, a) =
         case transEx(vs, cjs, a) of
+          | Some ex_tm -> ex_tm
+          | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)
+      def transExResult(result?, vs, cjs, a) =
+        case result? of
           | Some ex_tm -> ex_tm
           | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)
   in
