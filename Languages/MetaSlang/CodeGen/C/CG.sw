@@ -146,7 +146,7 @@ CG qualifying spec
   let spc = instantiateHOFns                                    spc in %  (6) calls normalizeCurriedDefinitions and simplifySpec -- should precede lambdaLift, poly2mono
   let _   = showSpecIfVerbose "instantiateHOFns"                spc in
   
-  let spc = lambdaLiftWithImportsSimulatingClosures             spc in %  (7) as good a time as any
+  let spc = lambdaLiftWithImportsSimulatingClosures             spc in %  (7) should follow removeCurrying and instantiateHOFns, since less graceful implementation
   let _   = showSpecIfVerbose "lambdaLiftWithImports"           spc in
   
    %% Currently, translateMatch introduces Select's and parallel Let bindings,
