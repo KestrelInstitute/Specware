@@ -281,13 +281,10 @@ Type-declarations
 
 .. productionlist::
   type_declaration: type `type_name` [ `formal_type_parameters` ] 
-                  :  [ `equals` `old_or_new_type_descriptor` ]
   formal_type_parameters: `local_type_variable` | 
                         : ( `local_type_variable_list` )
   local_type_variable: `simple_name`
   local_type_variable_list: `local_type_variable` { , `local_type_variable` }*
-  old_or_new_type_descriptor: `type_descriptor` | 
-                            : `new_type_descriptor`
 
 .. COMMENT:  ***************************************************************** 
 
@@ -297,9 +294,9 @@ Type-definitions
 .. productionlist::
   type_definition: `type_abbreviation` | 
                  : `new_type_definition`
-  type_abbreviation: def [ type ] `type_name` [ `formal_type_parameters` ] 
+  type_abbreviation: type `type_name` [ `formal_type_parameters` ] 
                    : `equals` `type_descriptor`
-  new_type_definition: def [ type ] `type_name` [ `formal_type_parameters` ] 
+  new_type_definition: type `type_name` [ `formal_type_parameters` ] 
                      : `equals` `new_type_descriptor`
 
 .. COMMENT:  ***************************************************************** 
@@ -357,7 +354,7 @@ Type-descriptors
   new_type_descriptor: `type_sum` | `type_quotient`
   slack_type_descriptor: `type_product` | `tight_type_descriptor`
   tight_type_descriptor: `type_instantiation` | `closed_type_descriptor`
-  closed_type_descriptor: `type_name` | Boolean | 
+  closed_type_descriptor: `type_name` | Bool | 
                         : `local_type_variable` | `type_record` | 
                         : `type_restriction` | `type_comprehension` | 
                         : ( `type_descriptor` )
@@ -567,15 +564,15 @@ Literals
 ========
 
 .. productionlist::
-  literal: `boolean_literal` | `nat_literal` | `char_literal` | `string_literal`
+  literal: `bool_literal` | `nat_literal` | `char_literal` | `string_literal`
 
 .. COMMENT:  ***************************************************************** 
 
-Boolean-literals
+Bool-literals
 ================
 
 .. productionlist::
-  boolean_literal: true | false
+  bool_literal: true | false
 
 .. COMMENT:  ***************************************************************** 
 

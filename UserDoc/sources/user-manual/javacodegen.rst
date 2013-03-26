@@ -282,7 +282,7 @@ which can be used when accessing Java methods from |Metaslang|
    *  - \ ``int``\
       - \ ``Integer``\
    *  - \ ``boolean``\
-      - \ ``Boolean``\
+      - \ ``Bool``\
    *  - \ ``char``\
       - \ ``Char``\
    *  - \ ``void``\

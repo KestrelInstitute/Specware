@@ -113,7 +113,7 @@ Names
    - * ```~!|@$^|&*-|=+\||:<|>/?``
      * Examples of non-word-symbols
    - * ``true`` | ``false``
-     * Boolean-literal
+     * Bool-literal
    - * ``0`` | ``1`` | ...
      * Nat-literal
    - * #\ *char-glyph* | ``#"``

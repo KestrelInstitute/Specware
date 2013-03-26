@@ -335,7 +335,7 @@ below).
 .. COMMENT:  ================================================================= 
 
 A type is called discrete if the equality predicate ``=`` for that
-type is constructive. The inbuilt and base-library types ``Boolean``\
+type is constructive. The inbuilt and base-library types ``Bool``\
 , ``Integer``, ``NonZeroInteger``, ``Nat``, ``PosNat``,
 ``Char``, ``String`` and ``Compare`` are all discrete. Types
 ``List`` *T* and ``Option`` *T* are discrete when *T* is. All
@@ -514,7 +514,7 @@ Some |Metaslang| users follow the convention of using
 :token:`letters`: ``x``, ``y``, ``z``, ``a``, ``b``, ``c``, with the
 start of the alphabet preferred for
 :token:`local_type_variables`. :token:`Op_names` of predicates (that
-is, having some type *T* ``-> Boolean``\ ) often end with the mark
+is, having some type *T* ``-> Bool``\ ) often end with the mark
 ``?``. These are just conventions that users are free to follow or
 ignore, but in particular some convention distinguishing
 :token:`constructors` from :token:`ops` and :token:`local_variables`
@@ -1189,7 +1189,7 @@ For example, assume we have:
    AA = spec
      import A
      type Interval = {start: Counter, stop: Counter}
-     op isEmptyInterval? : Interval -> Boolean
+     op isEmptyInterval? : Interval -> Bool
      def isEmptyInterval? {start = x, stop = y} = (x = y)
    endspec
    
@@ -1202,7 +1202,7 @@ Then the result of ``AA[M``\ ] is the same as that of this
    spec
      import B
      type Interval = {start: Register, stop: Register}
-     op isEmptyInterval? : Interval -> Boolean
+     op isEmptyInterval? : Interval -> Bool
      def isEmptyInterval? {start = x, stop = y} = (x = y)
    endspec
    
@@ -1277,7 +1277,7 @@ different :token:`simple_names` does not apply here.  Let *T'* be the
 result of elaborating *T*.  Then, first, each :token:`type_name` or
 :token:`op_name` introduced in *S'* must also be introduced in *T'*.
 Further, no :token:`type_name` or :token:`op_name` originating from a
-library :token:`spec` may have been subject to translation.  Finally,
+library :token:`spec` (or built in to Specware) may have been subject to translation.  Finally,
 each :token:`claim` in *S'* must be a theorem that follows from the
 :token:`claims` of *T'*.  Collectively, the :token:`claims` in *S'*
 are known as the *proof obligations* engendered by the morphism.  They
@@ -1290,11 +1290,10 @@ For example, in
 
    S = spec endspec
    T = spec type Bullion = (Char | isAlpha) endspec
-   M = morphism S -> T {Boolean -> Bullion}
+   M = morphism S -> T {Bool -> Bullion}
    
 
-the type-name ``Boolean``, which originates from a library
-:token:`spec`, is subject to translation. Therefore, ``M`` is not a
+the type-name ``Bool``, which is built in to Specware, is subject to translation. Therefore, ``M`` is not a
 proper morphism. Further, in
 
 .. code-block:: specware
@@ -1489,8 +1488,8 @@ Sample :token:`declarations`:
 
    import Lookup
    type Key
-   def type Key = String
-   op present : Database * Key -> Boolean
+   type Key = String
+   op present : Database * Key -> Bool
    def present(db, k) = embed? Some (lookup (db, k))
    axiom norm_idempotent is fa(x) norm (norm x) = norm x
    
@@ -1632,12 +1631,10 @@ Type-declarations
 .. productionlist::
   type_declaration: type `type_name` 
                   :      [ `formal_type_parameters` ] 
-                  :      [ `equals` `old_or_new_type_descriptor` ]
   formal_type_parameters: `local_type_variable` | 
                         : ( `local_type_variable_list` )
   local_type_variable: `simple_name`
   local_type_variable_list: `local_type_variable` { , `local_type_variable` }*
-  old_or_new_type_descriptor: `type_descriptor` | `new_type_descriptor`
 
 Restriction. Each :token:`local_type_variable` of the
 :token:`formal_type_parameters` must be a different
@@ -1651,17 +1648,16 @@ Sample :token:`type_declarations`:
 
    type Date
    type Array a
-   type Array a = List a
    type Map(a, b)
    
 
-A :token:`type_declaration` of the form ``type`` *T* ``=`` *D* is
-equivalent to the :token:`type_declaration` ``type`` *T* followed by
-the :token:`type_definition` ``def type`` *T* ``=`` *D* .
+.. A :token:`type_declaration` of the form ``type`` *T* ``=`` *D* is
+.. equivalent to the :token:`type_declaration` ``type`` *T* followed by
+.. the :token:`type_definition` ``def type`` *T* ``=`` *D* .
 
 .. COMMENT:  ================================================================= 
 
-Every :token:`type_name` used in a :token:`spec` must be declared (in
+Every :token:`type_name` used in a :token:`spec` must be declared or defined (in
 the same :token:`spec` or in an imported :token:`spec`, including the
 "base-library" :token:`specs` that are always implicitly imported) in
 a :token:`type_declaration` or :token:`type_definition`. A
@@ -1669,25 +1665,16 @@ a :token:`type_declaration` or :token:`type_definition`. A
 *type parameters*.
 Given the example :token:`type_declarations` above, some valid
 :token:`type_descriptors` that can be used in this context are ``Array Date``,
-``Array (Array Date)`` and ``Map (Nat, Boolean)``.
+``Array (Array Date)`` and ``Map (Nat, Bool)``.
 
 .. COMMENT:  ================================================================= 
 
 Restriction. Except for the exception provided in the next paragraph,
 :token:`type_names` may not be redeclared and/or redefined, whether in
-the same :token:`spec` or after having been defined in an imported
-:token:`spec`, not even when both :token:`declarations` or
-:token:`definitions` are identical.
+the same :token:`spec` or after having been declared/defined in an imported
+:token:`spec`, not even when both declarations or definitions are identical.
 
-In |SpecwareV|, a type may be declared in a :token:`type_declaration`
-not containing a defining part (introduced by an :token:`equals`), and
-in the same context also be defined in a :token:`type_declaration`
-containing a defining part.
-*This is now a deprecated feature*  that may not
-persist in future releases.
-Users are advised to either use a :token:`type_declaration` not 
-containing a defining part followed by a :token:`type_definition`, or to combine
-the two in one :token:`type_declaration` containing a defining part.
+In |SpecwareV|, a type may be declared in a :token:`type_declaration` and in the same context also be defined in a :token:`type_definition`.
 
 .. COMMENT:  ================================================================= 
 
@@ -1700,7 +1687,7 @@ for each possible assignment
 of types to the :token:`local_type_variables`.
 So for the above example :token:`type_declaration` of ``Array``
 one type must be assigned to ``Array Nat``, one to
-``Array Boolean``, one to ``Array (Array Date)``, and so on.
+``Array Bool``, one to ``Array (Array Date)``, and so on.
 These assigned types could all be the same type, or perhaps all
 different, as long as the model respects typing.
 
@@ -1713,37 +1700,37 @@ Type-definitions
 
 .. productionlist::
   type_definition: `type_abbreviation` | `new_type_definition`
-  type_abbreviation: def [ type ] `type_name` 
+  type_abbreviation: type `type_name` 
                    :     [ `formal_type_parameters` ] `equals` `type_descriptor`
-  new_type_definition: def [ type ] `type_name` 
+  new_type_definition: type `type_name` 
                      : [ `formal_type_parameters` ] `equals` `new_type_descriptor`
+
+Restriction. Each :token:`local_type_variable` of the
+:token:`formal_type_parameters` must be a different
+:token:`simple_name`.
 
 Sample :token:`type_abbreviations`:
 
 .. code-block:: specware
 
-   def type Date = {year : Nat, month : Nat, day : Nat}
-   def Array a = List a
-   def Map(a, b) = (Array (a * b) | key_uniq?)
+   type Date = {year : Nat, month : Nat, day : Nat}
+   type Array a = List a
+   type Map(a, b) = (Array (a * b) | key_uniq?)
    
 
 Sample :token:`new_type_definitions`:
 
 .. code-block:: specware
 
-   def Tree         a = | Leaf a | Fork (Tree a * Tree a)
-   def {Bush,Shrub} a = | Leaf a | Fork (Tree a * Tree a)
-   def type Z3 =  Nat / (fn (m, n) -> m rem 3 = n rem 3)
+   type Tree         a = | Leaf a | Fork (Tree a * Tree a)
+   type {Bush,Shrub} a = | Leaf a | Fork (Tree a * Tree a)
+   type Z3 =  Nat / (fn (m, n) -> m rem 3 = n rem 3)
    
 
-The keyword ``type`` may be omitted after ``def`` unless the
-:token:`name` following the keyword ``type`` is declared or defined in
-the context as an :token:`op_name`.
-
-Restriction. The :token:`type_name` of a :token:`type_definition` must
-have been previously declared in a :token:`type_declaration`, and
+Restriction. If the :token:`type_name` of a :token:`type_definition` 
+was previously declared in a :token:`type_declaration`, 
 either the :token:`declaration` and :token:`definition` both must
-contain no :token:`formal_type_parameters`, or agree in the number of
+contain no :token:`formal_type_parameters`, or they must agree in the number of
 :token:`local_type_variables` in their
 :token:`formal_type_parameters`.
 
@@ -1775,15 +1762,14 @@ Consider
 
 .. code-block:: specware
 
-   def type Stack a =
+   type Stack a =
      | Empty
      | Push {top : a, pop : Stack a}
    
 
 This means that for each type ``a`` there is a value
 ``Empty`` of type ``Stack a``, and further a function
-``Push`` that maps values of type [[{top : a, pop : Stack
-a}]] to ``Stack a``.
+``Push`` that maps values of type ``{top : a, pop : Stack a}`` to ``Stack a``.
 Furthermore, the type assigned to ``Stack a`` must be such
 that all its inhabitants can be constructed
 *exclusively*  and
@@ -1798,7 +1784,7 @@ deconstructing a stack using
 
 .. code-block:: specware
 
-   def [a] hasBottom? (s : Stack a) : Boolean =
+   op [a] hasBottom? (s : Stack a) : Bool =
      case s of
         | Empty -> true
         | Push {top, pop = rest} -> hasBottom? rest
@@ -1811,7 +1797,7 @@ resulting in ``true``.
 
 In general, :token:`type_definitions` generate implicit axioms, which
 for recursive definitions imply that the type is not "larger" than
-necessary. In technical terms, in each model the type is the least
+necessary. In technical terms, in each model, the type is the least
 fixpoint of a recursive domain equation.
 
 .. COMMENT:  ================================================================= 
@@ -1994,9 +1980,9 @@ for each possible assignment to the :token:`local_type_variables`
 
 ``o``\ :sub:`Nat,String,Char`  ``: (String -> Char) * (Nat -> String) -> Nat -> Char``
    
-``o``\ :sub:`Nat,Nat,Boolean`  ``: (Nat -> Boolean) * (Nat -> Nat) -> Nat -> Boolean``
+``o``\ :sub:`Nat,Nat,Bool`  ``: (Nat -> Bool) * (Nat -> Nat) -> Nat -> Bool``
    
-``o``\ :sub:`Char,Boolean,Nat` ``: (Boolean -> Nat) * (Char -> Boolean) -> Char -> Nat``
+``o``\ :sub:`Char,Bool,Nat` ``: (Bool -> Nat) * (Char -> Bool) -> Char -> Nat``
    
 and so on.  Any :token:`op_definition` for ``o`` must be likewise
 accommodating.
@@ -2036,7 +2022,7 @@ accommodating.
             ** ||   op f : [a] a * a -> a
             ** ]]
             ** the source types are the set
-            ** {\ ``Integer * Integer``, ``Boolean * Boolean``, [[Char *
+            ** {\ ``Integer * Integer``, ``Bool * Bool``, [[Char *
             ** Char]], ...}.
             ** </para>
             ** 
@@ -2374,7 +2360,7 @@ Isabelle, and are not described here. For further details, see the
 
 .. COMMENT:  ================================================================= 
 
-Restriction. The type of the :token:`claim` must be ``Boolean``.
+Restriction. The type of the :token:`claim` must be ``Bool``.
 
 .. COMMENT:  ================================================================= 
 
@@ -2442,7 +2428,7 @@ Type-descriptors
   new_type_descriptor: `type_sum` | `type_quotient`
   slack_type_descriptor: `type_product` | `tight_type_descriptor`
   tight_type_descriptor: `type_instantiation` | `closed_type_descriptor`
-  closed_type_descriptor: `type_name` | Boolean |  `local_type_variable` |
+  closed_type_descriptor: `type_name` | Bool |  `local_type_variable` |
                         : `type_record` | `type_restriction` | 
                         : `type_comprehension` | ( `type_descriptor` )
 
@@ -2458,7 +2444,7 @@ longer legal:
    spec
      type T
      op f : T -> Nat
-     op q : T * T -> Boolean
+     op q : T * T -> Bool
      op q_f (x : T / q) : Nat = let quotient[T / q] y = x in f y
    endspec
    
@@ -2470,7 +2456,7 @@ but can be expressed legally as follows:
    spec
      type T
      op f : T -> Nat
-     op q : T * T -> Boolean
+     op q : T * T -> Bool
      type Q = T / q
      op q_f (x : Q) : Nat = let quotient[Q] y = x in f y
    endspec
@@ -2492,7 +2478,7 @@ Sample :token:`type_descriptors`:
    a * Order a * a
    PartialFunction (Key, Value)
    Key
-   Boolean
+   Bool
    a
    {center : XYpos, radius : Length}
    (Nat | even)
@@ -2508,7 +2494,7 @@ Sample :token:`new_type_descriptors`:
    Nat / (fn (m, n) -> m rem 3 = n rem 3)
    
 
-The meaning of the :token:`type_descriptor` ``Boolean`` is the
+The meaning of the :token:`type_descriptor` ``Bool`` is the
 "inbuilt" type inhabited by the two logical (truth) values ``true``
 and ``false``. The meaning of a parenthesized
 :token:`type_descriptor` ``(`` *T* ``)`` is the same as that of the
@@ -2793,7 +2779,7 @@ Sample :token:`type_instantiation`:
 
 .. code-block:: specware
 
-   Map (Nat, Boolean)
+   Map (Nat, Bool)
    
 
 Restriction. The :token:`type_name` must have been declared or defined
@@ -2927,7 +2913,7 @@ Sample :token:`type_restriction`:
 
 Restriction. In a :token:`type_restriction` ``(``\ *T*\ ``|``\ *P*\
 ``)``, the :token:`expression` *P* must be a predicate on the type
-*T*, that is, *P* must be a function of type \ *T*\ ``-> Boolean``.
+*T*, that is, *P* must be a function of type \ *T*\ ``-> Bool``.
 
 .. COMMENT:  ================================================================= 
 
@@ -3021,7 +3007,7 @@ Sample :token:`type_comprehension`:
 
 Restriction. In a :token:`type_comprehension` ``{``\ *P*\ ``:``\ *T*\
 ``|``\ *E*\ ``}``, the :token:`expression` *E* must have type
-``Boolean``.
+``Bool``.
 
 .. COMMENT:  ================================================================= 
 
@@ -3373,7 +3359,7 @@ Restriction. Each :token:`local_variable` of the
 :token:`Quantifications` are non-constructive, even when the domain
 type is finitely enumerable. The main uses are in
 :token:`type_restrictions` and :token:`type_comprehensions`, and
-:token:`claims`. The type of a :token:`quantification` is ``Boolean``\
+:token:`claims`. The type of a :token:`quantification` is ``Bool``\
 . There are three kinds of quantifiers: ``fa``, for "universal
 quantifications" (fa = for all); ``ex``, for "existential
 quantifications" (ex = there exists); and ``ex1``, for "uniquely
@@ -3432,7 +3418,7 @@ Restriction, Each :token:`local_variable` of the
 
 .. COMMENT:  ================================================================= 
 
-Restriction. The type of the :token:`expression` must be ``Boolean``\
+Restriction. The type of the :token:`expression` must be ``Bool``\
 .
 
 .. COMMENT:  ================================================================= 
@@ -3582,12 +3568,12 @@ following pseudo-:token:`op_declarations`:
 
 .. code-block:: specware
 
-   op <=< infixr 12 : Boolean * Boolean -> Boolean 
-   op =<  infixr 13 : Boolean * Boolean -> Boolean 
-   op ||  infixr 14 : Boolean * Boolean -> Boolean 
-   op &&  infixr 15 : Boolean * Boolean -> Boolean 
-   op =   infixr 20 : [a]   a * a       -> Boolean 
-   op ~=  infixr 20 : [a]   a * a       -> Boolean 
+   op <=< infixr 12 : Bool * Bool -> Bool 
+   op =<  infixr 13 : Bool * Bool -> Bool 
+   op ||  infixr 14 : Bool * Bool -> Bool 
+   op &&  infixr 15 : Bool * Bool -> Bool 
+   op =   infixr 20 : [a]   a * a       -> Bool 
+   op ~=  infixr 20 : [a]   a * a       -> Bool 
    op <<  infixl 25 : {*x*:*A*, ... , *y*:*B*, ...} * {*x*:*A*, ... , *z*:*C*, ...}
                    -> {*x*:*A*, ... , *y*:*B*, ... , *z*:*C*, ...}
    
@@ -3600,7 +3586,7 @@ type of *(H)* must be some function type \ *S*\ ``->``\ *T*\ \ , and
 then *P* must have the domain type *S*. The type of the whole
 :token:`application` is then *T*. In particular, in an
 :token:`application` ``~``\ *P*\ the type of both *P* and the
-:token:`application` is ``Boolean``.
+:token:`application` is ``Bool``.
 
 .. COMMENT:  ================================================================= 
 
@@ -3677,7 +3663,7 @@ side when present in both.
             %%%In a :token:`restrict_expression`
             %%%\ ``restrict``\ *P*\  *E*
             %%%the :token:`expression` *P* must have function
-            %%%type \ *T*\  ``-> Boolean`` and the
+            %%%type \ *T*\  ``-> Bool`` and the
             %%%:token:`expression` *E* must have type
             %%%*T* for some
             %%%*T*.
@@ -3688,7 +3674,7 @@ side when present in both.
             %%%\ ``restrict``\ *P*\ 
             %%%*E*,
             %%%where *P* has
-            %%%type \ *T*\  ``-> Boolean``,
+            %%%type \ *T*\  ``-> Bool``,
             %%%is the type
             %%%\ ``(``\ *T*\  ``|``\ *P*\ ``)``.
             %%%</para>
@@ -3811,7 +3797,7 @@ Literals
 ========
 
 .. productionlist::
-  literal: `boolean_literal` | `nat_literal` | `char_literal` | `string_literal`
+  literal: `bool_literal` | `nat_literal` | `char_literal` | `string_literal`
 
 Sample :token:`literals`:
 
@@ -3830,7 +3816,7 @@ Restriction: No whitespace is allowed anywhere inside any kind of
 .. COMMENT: ====================================================================
 
 :token:`Literals` provide denotations for the inhabitants of the
-inbuilt and "base-library" types ``Boolean``, ``Nat``, ``Char``
+inbuilt and "base-library" types ``Bool``, ``Nat``, ``Char``
 and ``String``. The value of a :token:`literal` is independent of
 the environment.
 
@@ -3843,14 +3829,14 @@ which negates an integer: ``-1`` denote the negative integer ``-`` 1.)
 
 .. COMMENT:  ***************************************************************** 
 
-Boolean-literals
+Bool-literals
 ----------------
 
 .. productionlist::
-  boolean_literal: true | 
+  bool_literal: true | 
                  : false
 
-Sample :token:`boolean_literals`:
+Sample :token:`bool_literals`:
 
 .. code-block:: specware
 
@@ -3858,7 +3844,7 @@ Sample :token:`boolean_literals`:
    false
    
 
-The type ``Boolean`` has precisely two inhabitants, the values of
+The type ``Bool`` has precisely two inhabitants, the values of
 ``true`` and ``false``.
 
 .. COMMENT: ====================================================================
@@ -4518,13 +4504,13 @@ type to its *i*\ th component *v*\ :sub:`i`.
             %%%]]
             %%%Restriction.
             %%%The :token:`closed_expression` of a :token:`relaxator` must have some function
-            %%%type \ *T*\  ``-> Boolean``.
+            %%%type \ *T*\  ``-> Bool``.
             %%%</para>
               %%====================================================================%%
             %%%<para>
             %%%The type of :token:`relaxator` ``relax``\ *P*\ \ ,
             %%%where *P* has type
-            %%%\ \ *T*\  ``-> Boolean``, is the function
+            %%%\ \ *T*\  ``-> Bool``, is the function
             %%%type (whose domain is a subtype) ``(``\ *T*\  ``|``\ *P*\ ``) ->``\ *T*\ \ .
             %%%The value of the :token:`relaxator` is the function that maps each
             %%%inhabitant of subtype
@@ -4596,7 +4582,7 @@ For example, given
 
 .. code-block:: specware
 
-   op congMod3 : Nat * Nat -> Boolean =
+   op congMod3 : Nat * Nat -> Bool =
      (fn (m, n) -> m rem 3 = n rem 3)
    
    op type Z3 = Nat / congMod3
@@ -4676,7 +4662,7 @@ value 1. So ``choose[Z3] (fn n -> n*n rem 3)`` maps the inhabitant {2,
 
 .. COMMENT:  ====================== MORE CONFUSING THAN HELPFUL (jlm/sjw) ==================================
             ** <para>
-            ** The most discriminating *q*-constant functions, where *q* has type \ *T*\  ``*``\ *T*\  ``-> Boolean``,
+            ** The most discriminating *q*-constant functions, where *q* has type \ *T*\  ``*``\ *T*\  ``-> Bool``,
             ** are :token:`quotienters` of the form ``quotient[``\ *Q*\ \ ], where \ *Q*\  ``=``\ *T*\  ``/ q``.
             ** Since all such *Q* are isomorphic to one another (but not necessarily equal),
             ** all these :token:`quotienters` are isomorphic to one another.
@@ -4765,7 +4751,7 @@ Sample :token:`embedding_test`:
    
 
 Restriction. The type of an :token:`embedding_test` ``embed?`` *C*
-must be of the form *T* ``-> Boolean``, where *T* is a sum type
+must be of the form *T* ``-> Bool``, where *T* is a sum type
 that has a :token:`constructor` *C*.
 
 .. COMMENT:  ================================================================= 
@@ -4841,7 +4827,7 @@ a unique type *S* to which the :token:`pattern` of each
 of each :token:`branch` then has type *S*.
 
 Restriction. The type of the :token:`expression` of a :token:`guard`
-must be ``Boolean``
+must be ``Bool``
 
 .. COMMENT:  ================================================================= 
 
@@ -4985,7 +4971,7 @@ Sample :token:`patterns`:
 
 .. code-block:: specware
 
-   (i, p) : Integer * Boolean
+   (i, p) : Integer * Bool
    z as {re = x, im = y}
    hd :: tail
    Push {top, pop = rest}
@@ -5026,7 +5012,7 @@ occurs.)
             %%%<para>
             %%%Restriction.
             %%%The :token:`closed_expression` of a :token:`quotient_pattern` must have some type
-            %%%\ \ *T*\  ``*``\ *T*\  ``-> Boolean``\ ;
+            %%%\ \ *T*\  ``*``\ *T*\  ``-> Bool``\ ;
             %%%in addition, it must be an equivalence relation, as explained
             %%%under <link
             %%%linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
@@ -5044,7 +5030,7 @@ occurs.)
             %%%<para>
             %%%Restriction.
             %%%The :token:`closed_expression` of a :token:`relax_pattern` must have some function
-            %%%type \ *T*\  ``-> Boolean``.
+            %%%type \ *T*\  ``-> Bool``.
             %%%</para>
 
 .. COMMENT:   ================================================================= 

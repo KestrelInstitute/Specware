@@ -144,7 +144,7 @@ Representation of Other Types
 
 ``Character`` and ``String`` types are represented as Lisp characters
 and strings, ``Nat`` and ``Integer`` as Lisp integers, lists are
-represented using Lisp lists, and ``Boolean`` \ ``true`` and ``false``
+represented using Lisp lists, and ``Bool`` \ ``true`` and ``false``
 by the symbols ``T`` and ``NIL``\ .
 
 Sums are represented as the cons of the constructor name in keyword

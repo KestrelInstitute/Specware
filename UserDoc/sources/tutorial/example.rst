@@ -164,7 +164,7 @@ be matched by any symbol. This is captured by the following spec:
    SymbolMatching = spec
    import Symbols
    
-   op symb_matches?(s: Symbol, os: Option Symbol): Boolean
+   op symb_matches?(s: Symbol, os: Option Symbol): Bool
      = case os of
          | Some s1 -> s = s1
          | None    -> true
@@ -176,7 +176,7 @@ The spec imports ``Symbols`` and extends it with an op
 component is a symbol and the second component is a possibly obscured
 symbol. This op can be viewed as a binary predicate. The op is defined
 by pattern matching on the second argument, in a straightforward way.
-Note that ``s = s1`` is a term of type ``Boolean``.
+Note that ``s = s1`` is a term of type ``Bool``.
 
 The definition is constructive in the sense that code can be
 eventually generated directly, without any need to refine it. This is
@@ -185,9 +185,9 @@ an op happens to be directly executable.
 
 Having the notion of symbol matching, now we define the notion of word
 matching, i.e., when a word matches a message. We could define an op
-(predicate) of type ``Word * Message -> Boolean``. However, since
+(predicate) of type ``Word * Message -> Bool``. However, since
 the application involves offsets for matching words, it is better to
-declare the op to have type ``Word * Message * Nat -> Boolean``: the
+declare the op to have type ``Word * Message * Nat -> Bool``: the
 predicate is true if the given word matches the given message at the
 given position. Here is the spec:
 
@@ -200,7 +200,7 @@ given position. Here is the spec:
    import SymbolMatching
    
    op word_matches_at?(wrd: Word, msg: Message, pos: Nat)
-        : Boolean =
+        : Bool =
      pos + length wrd <= length msg |amp||amp|
      (fa(i:Nat) i < length wrd
         =< symb_matches?(wrd@i, msg@(pos+i)))
@@ -471,7 +471,7 @@ defines op ``word_matches_at?`` in an executable way:
    
    op word_matches_aux?(wrd: Word, msg: Message
                           | length wrd <= length msg)
-        : Boolean =
+        : Bool =
      case wrd of [] -> true
                | wsym::wrd1 ->
                  let msym::msg1 = msg in
@@ -480,7 +480,7 @@ defines op ``word_matches_at?`` in an executable way:
                    else false
    
    op word_matches_at?(wrd: Word, msg: Message, pos: Nat)
-        : Boolean =
+        : Bool =
      if pos + length wrd < length msg
        then false
        else word_matches_aux?(wrd, nthTail(msg, pos))
@@ -864,9 +864,9 @@ files:
    
    import MatchingRefinements#FindMatches
    
-   op word_char?(ch: Char): Boolean = isUpperCase ch
+   op word_char?(ch: Char): Bool = isUpperCase ch
    
-   op msg_char?(ch: Char): Boolean = isUpperCase ch || ch = #*
+   op msg_char?(ch: Char): Bool = isUpperCase ch || ch = #*
    
    type WordString = (String | all word_char?)
    

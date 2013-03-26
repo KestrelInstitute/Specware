@@ -34,7 +34,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
 
 .. COMMENT:  <section><title>Inbuilts</title> 
   :command:`Inbuilt Type`
-    \ ``Boolean``\
+    \ ``Bool``\
 
   :command:`Inbuilt Ops`
   .. list-table::
@@ -46,31 +46,31 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
           - |nbsp| Description
        *  - |nbsp| ``=``\
           - |nbsp| ``R 20``\
-          - |nbsp| ``[a] a * a -> Boolean``\
+          - |nbsp| ``[a] a * a -> Bool``\
           - |nbsp| tests if the parameters are equal
        *  - |nbsp| ``~=``\
           - |nbsp| ``R 20``\
-          - |nbsp| ``[a] a * a -> Boolean``\
+          - |nbsp| ``[a] a * a -> Bool``\
           - |nbsp| tests if the parameters are unequal
        *  - |nbsp| ``~``\
           - |nbsp|
-          - |nbsp| ``Boolean -> Boolean``\
+          - |nbsp| ``Bool -> Bool``\
           - |nbsp| logical negation
        *  - |nbsp| ``&&``\
           - |nbsp| ``R 15``\
-          - |nbsp| ``Boolean * Boolean -> Boolean``\
+          - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| non-strict logical and
        *  - |nbsp| ``||``\
           - |nbsp| ``R 14``\
-          - |nbsp| ``Boolean * Boolean -> Boolean``\
+          - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| non-strict logical or
        *  - |nbsp| ``=<``\
           - |nbsp| ``R 13``\
-          - |nbsp| ``Boolean * Boolean -> Boolean``\
+          - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| non-strict logical implication
        *  - |nbsp| ``<=<``\
           - |nbsp| ``R 12``\
-          - |nbsp| ``Boolean * Boolean -> Boolean``\
+          - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| logical equivalence
        *  - |nbsp| ``<<``\
           - |nbsp| ``L 25``\
@@ -84,9 +84,9 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
 
 .. COMMENT:  </section> 
 
-.. COMMENT:  Boolean ****************************************************** 
+.. COMMENT:  Bool ****************************************************** 
 
-.. COMMENT: <section><title>Boolean</title>
+.. COMMENT: <section><title>Bool</title>
              <para>
               <variablelist>
                <varlistentry>
@@ -111,19 +111,19 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``toString``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Boolean -> String``\ </entry>
+                    <entry colname="type">|nbsp| ``Bool -> String``\ </entry>
                     <entry colname="desc">|nbsp| converts logical value to string</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``show``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Boolean -> String``\ </entry>
+                    <entry colname="type">|nbsp| ``Bool -> String``\ </entry>
                     <entry colname="desc">|nbsp| same as ``toString``\ </entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``compare``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Boolean * Boolean -> Comparison``\ </entry>
+                    <entry colname="type">|nbsp| ``Bool * Bool -> Comparison``\ </entry>
                     <entry colname="desc">|nbsp| compares two logical values</entry>
                    </row>
                     </tbody>
@@ -204,25 +204,25 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``<``\ </entry>
                     <entry colname="fxty">|nbsp| ``L 20``\ </entry>
-                    <entry colname="type">|nbsp| ``Integer * Integer -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Integer * Integer -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| less-than</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``&lt;=``\ </entry>
                     <entry colname="fxty">|nbsp| ``L 20``\ </entry>
-                    <entry colname="type">|nbsp| ``Integer * Integer -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Integer * Integer -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| less-than-or-equal</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``>``\ </entry>
                     <entry colname="fxty">|nbsp| ``L 20``\ </entry>
-                    <entry colname="type">|nbsp| ``Integer * Integer -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Integer * Integer -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| greater-than</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``>=``\ </entry>
                     <entry colname="fxty">|nbsp| ``L 20``\ </entry>
-                    <entry colname="type">|nbsp| ``Integer * Integer -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Integer * Integer -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| greater-than-or-equal</entry>
                    </row>
                    <row>
@@ -270,7 +270,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``intConvertible``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``String -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``String -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| tests if string is representation of integer</entry>
                    </row>
                    <row>
@@ -351,7 +351,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``posNat?``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Nat -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Nat -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| yields false for 0, true otherwise</entry>
                    </row>
                    <row>
@@ -376,7 +376,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``natConvertible``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``String -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``String -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| tests if string is representation of natural number</entry>
                    </row>
                    <row>
@@ -438,37 +438,37 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``isAlpha``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Char -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Char -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for letters</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``isNum``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Char -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Char -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for digits</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``isAlphaNum``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Char -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Char -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for letters and digits</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``isAscii``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Char -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Char -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for ASCII characters</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``isLowerCase``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Char -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Char -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for lower-case letters</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``isUpperCase``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``Char -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``Char -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for upper-case letters</entry>
                    </row>
                    <row>
@@ -560,13 +560,13 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``leq``\ </entry>
                     <entry colname="fxty">|nbsp| ``L 20``\ </entry>
-                    <entry colname="type">|nbsp| ``String * String -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``String * String -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| lexicographic less-than-or-equal</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``lt``\ </entry>
                     <entry colname="fxty">|nbsp| ``L 20``\ </entry>
-                    <entry colname="type">|nbsp| ``String * String -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``String * String -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| lexicographic less-than</entry>
                    </row>
                    <row>
@@ -618,14 +618,14 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``all``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``(Char -> Boolean) * String``\ </entry>
+                    <entry colname="type">|nbsp| ``(Char -> Bool) * String``\ </entry>
                     <entry colname="desc">|nbsp| true if all characters in the string satisfy
                         the predicate given as first parameter</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``exists``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``(Char -> Boolean) * String``\ </entry>
+                    <entry colname="type">|nbsp| ``(Char -> Bool) * String``\ </entry>
                     <entry colname="desc">|nbsp| true if some character in the string satisfies
                         the predicate given as first parameter</entry>
                    </row>
@@ -700,7 +700,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``null``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] List a -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] List a -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true for empty lists</entry>
                    </row>
                    <row>
@@ -766,7 +766,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``member``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] a * List a -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] a * List a -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| list membership</entry>
                    </row>
                    <row>
@@ -827,7 +827,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``filter``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] (a -> Boolean) -> List a -> List a``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] (a -> Bool) -> List a -> List a``\ </entry>
                     <entry colname="desc">|nbsp| returns the list of elements satisfying the given predicate</entry>
                    </row>
                    <row>
@@ -839,21 +839,21 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``all``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] (a -> Boolean) -> List a -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] (a -> Bool) -> List a -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true if all elements of the list satisfy
                         the predicate given as first parameter</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``exists``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] (a -> Boolean) -> List a -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] (a -> Bool) -> List a -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| true if some element of the list satisfies
                         the predicate given as first parameter</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``find``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] (a -> Boolean) -> List a -> Option(a)``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] (a -> Bool) -> List a -> Option(a)``\ </entry>
                     <entry colname="desc">|nbsp| returns ``Some``\ *x*\  where *x* is the
                         first element in the list (from left to right) for which the
                         given predicate yields true; if no such element exists,
@@ -869,7 +869,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``firstUpTo``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] (a -> Boolean) -> List a -> Option (a * List a)``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] (a -> Bool) -> List a -> Option (a * List a)``\ </entry>
                     <entry colname="desc">|nbsp| returns [[Some(*e*,
                         *x*)]] where
                         *e* is the first element in the list
@@ -881,7 +881,7 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``splitList``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] (a -> Boolean) -> List a -> Option (List a * a * List a)``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] (a -> Bool) -> List a -> Option (List a * a * List a)``\ </entry>
                     <entry colname="desc">|nbsp| returns [[Some(*x*,
                         *e*,
                         *y*)]] where
@@ -1026,13 +1026,13 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``some?``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] Option a -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] Option a -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| tests if the parameter is of the form ``Some``\ *x*\ \ </entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``none?``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a] Option a -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a] Option a -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| tests if the parameter is ``None``\ </entry>
                    </row>
                    <row>
@@ -1119,19 +1119,19 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
                    <row>
                     <entry colname="name">|nbsp| ``injective?``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a,b] (a -> b) -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a,b] (a -> b) -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| injectivity predicate; non-constructive</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``surjective?``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a,b] (a -> b) -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a,b] (a -> b) -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| surjectivity predicate; non-constructive</entry>
                    </row>
                    <row>
                     <entry colname="name">|nbsp| ``bijective?``\ </entry>
                     <entry colname="fxty">|nbsp| </entry>
-                    <entry colname="type">|nbsp| ``[a,b] (a -> b) -> Boolean``\ </entry>
+                    <entry colname="type">|nbsp| ``[a,b] (a -> b) -> Bool``\ </entry>
                     <entry colname="desc">|nbsp| bijectivity predicate; non-constructive</entry>
                    </row>
                    <row>

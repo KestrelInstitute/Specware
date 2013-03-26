@@ -225,7 +225,7 @@ function. They could denote the set of the days of the week,
 Wednesday, and the identity function, respectively. The intended
 meaning can be enforced by means of axioms.
 
-An axiom is a term of type ``Boolean``\ . ``Boolean`` is a type
+An axiom is a term of type ``Bool``\ . ``Bool`` is a type
 automatically present (built-in) in every spec, which denotes the set
 of boolean truth values (
 "true"  and
