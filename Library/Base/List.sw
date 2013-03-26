@@ -677,10 +677,12 @@ end-proof
 
 % leftmost/rightmost element satisfying predicate (None if none):
 
+% TODO Seems inefficient
 op [a] findLeftmost (p: a -> Bool) (l: List a) : Option a =
   let lp = filter p l in
   if empty? lp then None else Some (head lp)
 
+% TODO Seems inefficient
 op [a] findRightmost (p: a -> Bool) (l: List a) : Option a =
   let lp = filter p l in
   if empty? lp then None else Some (last lp)
