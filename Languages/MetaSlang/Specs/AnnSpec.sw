@@ -1265,8 +1265,8 @@ op [a] showQ(el: ASpecElement a): String =
   %% Type and/or TypeDef spec element.
   let bad_type_infos =
       foldTypeInfos (fn (info, failures) ->
-                       let names = info.names in
-                       let qid = primaryTypeName info in % TODO What about the other names?
+                       let names = info.names in  %% TODO If there is more than one name, should we look up each one below?:
+                       let qid = primaryTypeName info in
                        let typeElts = getTypeElements qid s.elements in
                        let typeDefElts = getTypeDefElements qid s.elements in
                        let _ = if (length names = 0) then writeLine("ERROR: No names for type: " ^ show qid) else () in
@@ -1275,8 +1275,8 @@ op [a] showQ(el: ASpecElement a): String =
                        let typeDefCount = length typeDefElts in
                        let _ = if typeCount    > 1 then writeLine("ERROR: " ^ show typeCount    ^ " declarations for: " ^ show qid) else () in
                        let _ = if typeDefCount > 1 then writeLine("ERROR: " ^ show typeDefCount ^ " definitions for: " ^ show qid) else () in
-                       let found? = (typeElts ~= [] || typeDefElts ~= []) in
-                       if found? then % TODO, check for duplicates, etc. here.
+                       let found? = (typeElts ~= [] || typeDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.
+                       if found? then
                          failures
                        else
                          failures ++ [info])
@@ -1287,6 +1287,7 @@ op [a] showQ(el: ASpecElement a): String =
   %% Op and/or OpDef spec element.
   let bad_op_infos =
       foldOpInfos (fn (info, failures) ->
+                     let names = info.names in
                      let qid = primaryOpName info in
                      let found? = 
                          foldlSpecElements (fn (found?, elt) ->
