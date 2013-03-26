@@ -18,20 +18,20 @@
 
 ShowData qualifying spec 
 
- import Types
- import /Languages/MetaSlang/AbstractSyntax/AnnTerm
- import /Library/PrettyPrinter/WadlerLindig
+import Types
+import /Languages/MetaSlang/AbstractSyntax/AnnTerm
+import /Library/PrettyPrinter/WadlerLindig
 % import /Languages/MetaSlang/Specs/Printer
- import /Languages/SpecCalculus/Semantics/Value
- import /Languages/SpecCalculus/Semantics/Environment
+import /Languages/SpecCalculus/Semantics/Value
+import /Languages/SpecCalculus/Semantics/Environment
  %import /Languages/SpecCalculus/Semantics/Monad
- import ShowUtils
+import ShowUtils
 
-  %% --------------------------------------------------------------------------------
-  %% Give the signature of utilities so we don't have to import them
+%% --------------------------------------------------------------------------------
+%% Give the signature of utilities so we don't have to import them
 
-  %type GlobalContext
-  %op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
+%type GlobalContext
+%op  MonadicStateInternal.readGlobalVar : [a] String -> Option a
 %  op  Specware.evaluateUnitId: String -> Option Value
 %  op  SpecCalc.findDefiningTermForUnit: Value * GlobalContext -> Option SCTerm
   %op  SpecCalc.uidToFullPath: UnitId -> String
@@ -39,18 +39,18 @@ ShowData qualifying spec
   %op  SpecCalc.setCurrentUID : UnitId -> SpecCalc.Env ()
 
 %Additional pretty-printer routines:
- op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
- op ppGr1Concat (x:List WLPretty) : WLPretty = ppNest 1 (ppConcat x)
- op ppGr2Concat (x:List WLPretty) : WLPretty = ppNest 2 (ppConcat x)
- op ppNum (n:Integer) : WLPretty = ppString(show n)
- op ppSpace : WLPretty = ppString " "
- op ppSpaceBreak : WLPretty = ppConcat[ppSpace, ppBreak]
+op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
+op ppGr1Concat (x:List WLPretty) : WLPretty = ppNest 1 (ppConcat x)
+op ppGr2Concat (x:List WLPretty) : WLPretty = ppNest 2 (ppConcat x)
+op ppNum (n:Integer) : WLPretty = ppString(show n)
+op ppSpace : WLPretty = ppString " "
+op ppSpaceBreak : WLPretty = ppConcat[ppSpace, ppBreak]
 
 %TODO: use this more
 op ppWrapParens (pp : WLPretty) : WLPretty =
- ppConcat [ppString "(",
-           pp,
-           ppString ")"]
+  ppConcat [ppString "(",
+            pp,
+            ppString ")"]
 
   % type SpecCalc.Exception
   % type SpecCalc.Result a =
@@ -65,12 +65,12 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
   % op MonadicStateInternal.readGlobalVar : fa (a) String -> Option a
   % op IO.writeStringToFile : String *  Filename -> ()
 
- type Context = {printTypes?: Boolean,
-		 printPositionInfo?: Boolean,
-		 fileName: String,
-		 %currentUID: UnitId,
-		 %uidsSeen: List UnitId,	% Used to avoid infinite recursion because of circularity
-		 recursive?: Boolean}
+type Context = {printTypes?: Boolean,
+                printPositionInfo?: Boolean,
+                fileName: String,
+                %currentUID: UnitId,
+                %uidsSeen: List UnitId,	% Used to avoid infinite recursion because of circularity
+                recursive?: Boolean}
 
 % op  showTerm : SCTerm -> String
 % def showTerm term = ppFormat (ppSCTerm {printTypes? = true,
@@ -80,118 +80,116 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 %					 recursive? = false}
 %			         term)
 
- op ppBoolean (b: Boolean) : WLPretty =
-    case b of
-      | true -> ppString "true"
-      | false -> ppString "false"
+op ppBoolean (b: Boolean) : WLPretty =
+  case b of
+    | true -> ppString "true"
+    | false -> ppString "false"
 
- op ppLitString (id:String) : WLPretty = ppString(IO.formatString1("~A",id))  %%formatString1("~S",id)
+op ppLitString (id:String) : WLPretty = ppString(IO.formatString1("~A",id))  %%formatString1("~S",id)
 
- %%% Identifiers have string quotes around them
- op ppID (id: String) : WLPretty = ppLitString id
+%%% Identifiers have string quotes around them
+op ppID (id: String) : WLPretty = ppLitString id
 
- op ppUID (unitId:UnitId) : WLPretty =
-   let ppLocal = ppUIDlocal unitId in
-   case unitId of
-     | {path=h::_,hashSuffix=_} ->
-       if deviceString? h
-	 then ppLocal
-	 else ppAppend (ppString "/") ppLocal
-     | _ -> ppLocal			% Shouldn't happen
+op ppUID (unitId:UnitId) : WLPretty =
+  let ppLocal = ppUIDlocal unitId in
+  case unitId of
+    | {path=h::_,hashSuffix=_} ->
+      if deviceString? h
+        then ppLocal
+      else ppAppend (ppString "/") ppLocal
+    | _ -> ppLocal			% Shouldn't happen
 
- op ppUIDlocal ({path, hashSuffix}: UnitId) : WLPretty =
-   case hashSuffix of
-     | None -> ppSep (ppString "/") (map ppID path)
-     | Some suffix ->
-       let def pp path =
-             case path of
-	       | [] -> []
-	       | [x] -> [ppID(x ^ numberSignString ^ suffix)]
-	       | x::rp -> Cons(ppID x, pp rp)
-       in
-       ppSep (ppString "/") (pp path)
-
+op ppUIDlocal ({path, hashSuffix}: UnitId) : WLPretty =
+  case hashSuffix of
+    | None -> ppSep (ppString "/") (map ppID path)
+    | Some suffix ->
+      let def pp path =
+      case path of
+        | [] -> []
+        | [x] -> [ppID(x ^ numberSignString ^ suffix)]
+        | x::rp -> Cons(ppID x, pp rp)
+      in
+      ppSep (ppString "/") (pp path)
+       
 % %TODO wrap in parens
- op ppStrings (strs : List String) : WLPretty =
+op ppStrings (strs : List String) : WLPretty =
   case strs of
     | [] -> ppString ""
     | hd::tl -> ppConcat ((ppString hd)::[(ppStrings tl)])
 
- op ppUnitId (UID : UnitId) : WLPretty =
-   ppConcat[ppString "((path ", 
-            ppStrings UID.path,  %TODO separate with spaces.
-            ppString ") (hashSuffix ", 
-            (case UID.hashSuffix of None -> ppString "None" | Some str -> ppConcat [ppString "Some ", ppString str]),
-            ppString "))"]
+op ppUnitId (UID : UnitId) : WLPretty =
+  ppConcat[ppString "((path ", 
+           ppStrings UID.path,  %TODO separate with spaces.
+           ppString ") (hashSuffix ", 
+           (case UID.hashSuffix of None -> ppString "None" | Some str -> ppConcat [ppString "Some ", ppString str]),
+           ppString "))"]
  
-
- op ppRelativeUID (relUID : RelativeUID) : WLPretty =
-   (case relUID of
-      | SpecPath_Relative unitId -> ppConcat [ppString "(SpecPath_Relative ", ppUnitId unitId, ppString")"] %ppAppend (ppString "/") (ppUIDlocal unitId)
-      | UnitId_Relative   unitId -> ppConcat [ppString "(UnitId_Relative "   , ppUnitId unitId, ppString")"]) %ppUIDlocal unitId
-               
-
- op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
-   case term of
-     | Print t ->
-       ppConcat [ppString "print ",
-		 ppSCTerm c t]
-     | UnitId unitId ->
-       ppConcat [ppString "(UnitId ", ppRelativeUID unitId, ppString ")"]
-     | Spec specElems -> 
-       ppConcat [ppString "(SCspec",
-		 ppNewline,
-		 ppNest 2 (ppSpecElemTerms c specElems),
-		 ppNewline,
-		 ppString "endSCspec)"]
-      | Qualify (term, qualifier) ->
-        ppConcat [ppString "(Qualify ",
-		  ppSCTerm c term,
-		  ppString " ",
-		  ppBreak,
-		  ppID qualifier,
-		  ppString ")",
-		  ppBreak]
-      | Translate (term, renaming) ->
-	ppConcat [ppString "(Translate ",
-		  ppSCTerm c term,
-		  ppRenaming renaming,
-                  ppString ")"]
-      | Let (decls, term) ->
-        ppConcat [ppString "let",
-		  ppNewline,
-		  ppString "  ",
-		  ppNest 2 (ppDecls c decls),
-		  ppNewline,
-		  ppString "in",
-		  ppNewline,
-		  ppNest 2 (ppSCTerm c term)]
-      | Where (decls, term) ->
-	ppConcat [ppString "where",
-		  ppNewline,
-		  ppString "  ",
-		  ppNest 2 (ppDecls c decls),
-		  ppNewline,
-		  ppString "in",
-		  ppNewline,
-		  ppNest 2 (ppSCTerm c term)]
-      | Diag elems ->
-        ppConcat [ppString "diag {",    % with apologies to stephen
-         	  ppNewline,
-         	  ppString "  ",
-         	  ppNest 2 (ppSep ppNewline (map (ppDiagElem c) elems)),
-         	  ppNewline,
-         	  ppString "}"]
-      | Colimit term ->
-	ppConcat [ppString "colim ",
-		  ppSCTerm c term]
-      | Subst (specTerm,morphTerm) ->
-	ppConcat [ppSCTerm c specTerm,
-		  ppString " [",
-		  ppSCTerm c morphTerm,
-		  ppString "]"]
-      | SpecMorph (dom, cod, elems, pragmas) ->
-	let 
+op ppRelativeUID (relUID : RelativeUID) : WLPretty =
+  case relUID of
+    | SpecPath_Relative unitId -> ppConcat [ppString "(SpecPath_Relative ", ppUnitId unitId, ppString")"] %ppAppend (ppString "/") (ppUIDlocal unitId)
+    | UnitId_Relative   unitId -> ppConcat [ppString "(UnitId_Relative "   , ppUnitId unitId, ppString")"] %ppUIDlocal unitId
+              
+op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
+  case term of
+    | Print t ->
+      ppConcat [ppString "print ",
+                ppSCTerm c t]
+    | UnitId unitId ->
+      ppConcat [ppString "(UnitId ", ppRelativeUID unitId, ppString ")"]
+    | Spec specElems -> 
+      ppConcat [ppString "(SCspec",
+                ppNewline,
+                ppNest 2 (ppSpecElemTerms c specElems),
+                ppNewline,
+                ppString "endSCspec)"]
+    | Qualify (term, qualifier) ->
+      ppConcat [ppString "(Qualify ",
+                ppSCTerm c term,
+                ppString " ",
+                ppBreak,
+                ppID qualifier,
+                ppString ")",
+                ppBreak]
+    | Translate (term, renaming) ->
+      ppConcat [ppString "(Translate ",
+                ppSCTerm c term,
+                ppRenaming renaming,
+                ppString ")"]
+    | Let (decls, term) ->
+      ppConcat [ppString "let",
+                ppNewline,
+                ppString "  ",
+                ppNest 2 (ppDecls c decls),
+                ppNewline,
+                ppString "in",
+                ppNewline,
+                ppNest 2 (ppSCTerm c term)]
+    | Where (decls, term) ->
+      ppConcat [ppString "where",
+                ppNewline,
+                ppString "  ",
+                ppNest 2 (ppDecls c decls),
+                ppNewline,
+                ppString "in",
+                ppNewline,
+                ppNest 2 (ppSCTerm c term)]
+    | Diag elems ->
+      ppConcat [ppString "diag {",    % with apologies to stephen
+                ppNewline,
+                ppString "  ",
+                ppNest 2 (ppSep ppNewline (map (ppDiagElem c) elems)),
+                ppNewline,
+                ppString "}"]
+    | Colimit term ->
+      ppConcat [ppString "colim ",
+                ppSCTerm c term]
+    | Subst (specTerm,morphTerm) ->
+      ppConcat [ppSCTerm c specTerm,
+                ppString " [",
+                ppSCTerm c morphTerm,
+                ppString "]"]
+    | SpecMorph (dom, cod, elems, pragmas) ->
+      let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 
 	    case rule of          
 	      | Type (left_qid, right_qid) ->
@@ -208,261 +206,258 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 		ppConcat [ppQualifiedId left_qid,
 			  ppString " +-> ",
 			  ppQualifiedId right_qid]
-	in
-          ppConcat [ppString "morphism ",
-		    ppSCTerm c dom,
-		    ppString " -> ",
-		    ppSCTerm c cod,
-		    ppNewline,
-		    ppString "  {",
-		    ppIndent (ppSep ppNewline (map ppSpecMorphRule elems)),
-		    ppNewline,
-		    ppString "} : "]
-      | Hide (nameExprs, term) ->
-        let 
-	  def ppNameExpr expr = 
-	    case expr of          
-	      | Type qid ->
-	        ppConcat [ppString "type ",
-			  ppQualifiedId qid]
-	      | Op (qid, optType) ->
-		ppConcat [ppString "op ",
-			  ppQualifiedId qid]
-	      | Axiom qid ->
-		ppConcat [ppString "axiom ",
-			  ppQualifiedId qid]
-	      | Theorem qid ->
-		ppConcat [ppString "theorem ",
-			  ppQualifiedId qid]
-	      | Conjecture qid ->
-		ppConcat [ppString "conjecture ",
-			  ppQualifiedId qid]
-	      | Ambiguous qid ->
-		ppQualifiedId qid
-	in
-	  ppConcat [ppString "hide {",
-		    ppSep (ppString ", ") (map ppNameExpr nameExprs),
-		    ppString "} in",
-		    ppSCTerm c term]
-    % | Export (nameExpr, term) ->
-    %   ppConcat [ppString "export {",
-    %             ppSep (ppString ",") (map ppIdInfo nameExpr),
-    %             ppString "} from",
-    %             ppSCTerm term]
-      | Generate (target, term, optFileNm) ->
-        ppConcat [ppString ("generate " ^ target ^ " "),
-		  ppSCTerm c term,
-		  (case optFileNm of
-		     | Some filNm -> ppString (" in " ^ filNm)
-		     | _ -> ppNil)]
-      | Reduce (msTerm, scTerm) ->
-	ppConcat [ppString "reduce ",
-		  ppTerm c msTerm,
-		  ppString " in ",
-		  ppSCTerm c scTerm]
-      | Prove (claimName, term, proverName, assertions, proverOptions, proverBaseOptions, answer_var) ->
-	  ppConcat [
-	    ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
-	    ppSCTerm c term,
-	    (case assertions of
-	       | All -> ppNil
-	       | Explicit ([]) -> ppNil
-	       | Explicit (assertions) -> ppConcat [
-					    ppString " using ",
-					    ppSep (ppString ", ") (map ppQualifiedId assertions)]),
-            (case proverOptions of
-	       | OptionString ([option]) -> 
-	                                  if option = string("") then ppNil else
-					  ppConcat [
-					   ppString " options ",
-					   ppString (uncell (option)) ]
-	       | OptionName (prover_option_name) -> ppConcat [
-						    ppString " options ",
-						    ppString (printQualifiedId(prover_option_name)) ])
-		    ]
-      | Expand term ->
-	ppConcat [ppString "expand ",
-		  ppSCTerm c term]
-      | Obligations term ->
-	ppConcat [ppString "obligations ",
-		  ppSCTerm c term]
-      | Quote (value,_,_) -> 
-	ppValue c value
-      | Other other_term -> ppString "<<Other>>"
-	%ppOtherTerm other_term
+      in
+      ppConcat [ppString "morphism ",
+                ppSCTerm c dom,
+                ppString " -> ",
+                ppSCTerm c cod,
+                ppNewline,
+                ppString "  {",
+                ppIndent (ppSep ppNewline (map ppSpecMorphRule elems)),
+                ppNewline,
+                ppString "} : "]
+              | Hide (nameExprs, term) ->
+                let def ppNameExpr expr = 
+                case expr of          
+                  | Type qid ->
+                    ppConcat [ppString "type ",
+                              ppQualifiedId qid]
+                  | Op (qid, optType) ->
+                    ppConcat [ppString "op ",
+                              ppQualifiedId qid]
+                  | Axiom qid ->
+                    ppConcat [ppString "axiom ",
+                              ppQualifiedId qid]
+                  | Theorem qid ->
+                    ppConcat [ppString "theorem ",
+                              ppQualifiedId qid]
+                  | Conjecture qid ->
+                    ppConcat [ppString "conjecture ",
+                              ppQualifiedId qid]
+                  | Ambiguous qid ->
+                    ppQualifiedId qid
+                in
+                ppConcat [ppString "hide {",
+                          ppSep (ppString ", ") (map ppNameExpr nameExprs),
+                          ppString "} in",
+                          ppSCTerm c term]
+                % | Export (nameExpr, term) ->
+                %   ppConcat [ppString "export {",
+                %             ppSep (ppString ",") (map ppIdInfo nameExpr),
+                %             ppString "} from",
+                %             ppSCTerm term]
+                  | Generate (target, term, optFileNm) ->
+                    ppConcat [ppString ("generate " ^ target ^ " "),
+                              ppSCTerm c term,
+                              (case optFileNm of
+                                 | Some filNm -> ppString (" in " ^ filNm)
+                                 | _ -> ppNil)]
+                  | Reduce (msTerm, scTerm) ->
+                    ppConcat [ppString "reduce ",
+                              ppTerm c msTerm,
+                              ppString " in ",
+                              ppSCTerm c scTerm]
+                  | Prove (claimName, term, proverName, assertions, proverOptions, proverBaseOptions, answer_var) ->
+                    ppConcat [
+                              ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
+                              ppSCTerm c term,
+                              (case assertions of
+                                 | All -> ppNil
+                                 | Explicit ([]) -> ppNil
+                                 | Explicit (assertions) -> ppConcat [
+                                                                      ppString " using ",
+                                                                      ppSep (ppString ", ") (map ppQualifiedId assertions)]),
+                              (case proverOptions of
+                                 | OptionString ([option]) -> 
+                                   if option = string("") then ppNil else
+                                     ppConcat [
+                                               ppString " options ",
+                                               ppString (uncell (option)) ]
+                                 | OptionName (prover_option_name) -> ppConcat [
+                                                                                ppString " options ",
+                                                                                ppString (printQualifiedId(prover_option_name)) ])
+                              ]
+                  | Expand term ->
+                    ppConcat [ppString "expand ",
+                              ppSCTerm c term]
+                  | Obligations term ->
+                    ppConcat [ppString "obligations ",
+                              ppSCTerm c term]
+                  | Quote (value,_,_) -> 
+                    ppValue c value
+                  | Other other_term -> ppString "<<Other>>"
+                    %ppOtherTerm other_term
+                    
+op ppQualifiedId (Qualified (q, id) : QualifiedId) : WLPretty =
+  if q = UnQualified then 
+    ppID id
+  else 
+    ppConcat [ppID q, ppString ".", ppID id]
+    
+op ppDiagElem (c:Context) ((elem, _ (* position *)) : DiagElem) : WLPretty =
+  case elem of
+    | Node (nodeId, term) ->
+      ppConcat [
+                ppString nodeId,
+                ppString " |-> ",
+                ppSCTerm c term
+                ]
+    | Edge (edgeId, dom, cod, term) ->
+      ppConcat [
+                ppString edgeId,
+                ppString " : ",
+                ppString dom,
+                ppString " -> ",
+                ppString cod,
+                ppString " |-> ",
+                ppSCTerm c term
+                ]
+      
+op ppDecls (c:Context) (decls: List SCDecl) : WLPretty =
+  let def ppDecl (name, term) =
+    ppConcat [ppID name,
+              ppString " = ",
+              ppSCTerm c term]
+  in
+  ppSep ppNewline (map ppDecl decls)
+  
+op ppSpecElemTerms (c: Context) (elems : List SpecElemTerm) : WLPretty =
+  ppSep ppNewline (map (ppSpecElemTerm c) elems)
 
- op ppQualifiedId (Qualified (q, id) : QualifiedId) : WLPretty =
-   if q = UnQualified then 
-     ppID id
-   else 
-     ppConcat [ppID q, ppString ".", ppID id]
-
-  op ppDiagElem (c:Context) ((elem, _ (* position *)) : DiagElem) : WLPretty =
-    case elem of
-      | Node (nodeId, term) ->
-          ppConcat [
-            ppString nodeId,
-            ppString " |-> ",
-            ppSCTerm c term
-          ]
-      | Edge (edgeId, dom, cod, term) ->
-          ppConcat [
-            ppString edgeId,
-            ppString " : ",
-            ppString dom,
-            ppString " -> ",
-            ppString cod,
-            ppString " |-> ",
-            ppSCTerm c term
-          ]
-
- op ppDecls (c:Context) (decls: List SCDecl) : WLPretty =
-   let 
-     def ppDecl (name, term) =
-       ppConcat [ppID name,
-		 ppString " = ",
-		 ppSCTerm c term]
-   in
-     ppSep ppNewline (map ppDecl decls)
-
- op ppSpecElemTerms (c: Context) (elems : List SpecElemTerm) : WLPretty =
-   ppSep ppNewline (map (ppSpecElemTerm c) elems)
-
- op ppSpecElemTerm (c:Context) ((elem, pos):SpecElemTerm) : WLPretty = 
-   case elem of
-     | Import  term                   -> ppConcat [ppString "import [",
-						   ppSep (ppString ", ") (map (ppSCTerm c) term),
-						   ppString "]"]
-     | Type    (aliases, dfn)         -> ppTypeInfo c true (aliases, dfn) pos
-     | Op      (aliases, fixity, def?, dfn) -> ppOpInfo c true true (aliases, fixity, dfn) pos  % !!!
-     | Claim   (propType, name, tyVars, term) -> ppProperty c (propType, name, tyVars, term, pos)
-     | Comment str                    -> if exists? (fn char -> char = #\n) str then
-                                           ppConcat [ppString " (* ",
-						     ppString str,
-						     ppString " *) "]
-					 else
-					   ppString (" %% " ^ str)
-
- op ppIdInfo (qids: List QualifiedId) : WLPretty = ppSep (ppString ", ") (map ppQualifiedId qids)
+op ppSpecElemTerm (c:Context) ((elem, pos):SpecElemTerm) : WLPretty = 
+  case elem of
+    | Import  term                   -> ppConcat [ppString "import [",
+                                                  ppSep (ppString ", ") (map (ppSCTerm c) term),
+                                                  ppString "]"]
+    | Type    (aliases, dfn)         -> ppTypeInfo c true (aliases, dfn) pos
+    | Op      (aliases, fixity, def?, dfn) -> ppOpInfo c true true (aliases, fixity, dfn) pos  % !!!
+    | Claim   (propType, name, tyVars, term) -> ppProperty c (propType, name, tyVars, term, pos)
+    | Comment str                    -> if exists? (fn char -> char = #\n) str then
+      ppConcat [ppString " (* ",
+                ppString str,
+                ppString " *) "]
+                                        else
+                                          ppString (" %% " ^ str)
+                                          
+op ppIdInfo (qids: List QualifiedId) : WLPretty = ppSep (ppString ", ") (map ppQualifiedId qids)
    
- op ppTypeInfo (c:Context) (full?:Boolean) (aliases: List QualifiedId, dfn: MSType) (pos:Position) : WLPretty =
-   let (tvs, srt) = unpackType dfn in
-   ppGr2Concat
-     ((if c.printPositionInfo?
-        then [ppPosition c pos]
-        else [])
-      ++
-      (if full? && (case srt of Any _ -> false | _ -> true)
+op ppTypeInfo (c:Context) (full?:Boolean) (aliases: List QualifiedId, dfn: MSType) (pos:Position) : WLPretty =
+  let (tvs, srt) = unpackType dfn in
+  ppGr2Concat
+  ((if c.printPositionInfo?
+      then [ppPosition c pos]
+    else [])
+     ++
+     (if full? && (case srt of Any _ -> false | _ -> true)
 	then [ppString "type ",
 	      ppIdInfo aliases,
 	      ppBrTyVars tvs,
 	      ppString " = ",
 	      ppBreak,
 	      ppIndent(ppType c srt)]
-	else [ppString "type decl ",
-	      ppIdInfo aliases,
-	      ppBrTyVars tvs]))
+      else [ppString "type decl ",
+            ppIdInfo aliases,
+            ppBrTyVars tvs]))
+  
+op ppBrTyVars (tvs:TyVars) : WLPretty =
+  if tvs = [] then ppString " "
+  else ppConcat [ppString " [",
+                 ppTyVars tvs,
+                 ppString "] "]
+    
+op ppTyVars (tvs: TyVars) : WLPretty =
+  case tvs of
+    | [] -> ppNil
+    | _  -> ppSep (ppString " ") (map ppID tvs)
 
- op ppBrTyVars (tvs:TyVars) : WLPretty =
-   if tvs = [] then ppString " "
-     else ppConcat [ppString " [",
-		    ppTyVars tvs,
-		    ppString "] "]
-
- op ppTyVars (tvs: TyVars) : WLPretty =
-   case tvs of
-     | [] -> ppNil
-     | _  -> ppSep (ppString " ") (map ppID tvs)
-
- op ppOpInfo (c:Context) (decl?:Boolean) (def?:Boolean) (aliases:Aliases, fixity:Fixity, dfn:MSTerm) (pos:Position) : WLPretty =
-   let (tvs, srt, term) = unpackTerm dfn in %TODO think about this
-   ppGr2Concat
-     ((if c.printPositionInfo?
-        then [ppPosition c pos]
-        else [])
-      ++
-      (if decl?
-         then (if def? \_and (case term of
-                             | Any _ -> false
-                             | _ -> true)
-                 then
+op ppOpInfo (c:Context) (decl?:Boolean) (def?:Boolean) (aliases:Aliases, fixity:Fixity, dfn:MSTerm) (pos:Position) : WLPretty =
+  let (tvs, srt, term) = unpackTerm dfn in %TODO think about this
+  ppGr2Concat
+  ((if c.printPositionInfo?
+      then [ppPosition c pos]
+    else [])
+     ++
+     (if decl?
+        then (if def? \_and (case term of
+                               | Any _ -> false
+                               | _ -> true)
+                then
                   [ppString "op",
                    ppBrTyVars tvs,
                    ppIdInfo aliases,
                    ppString " ",
-%                   ppFixity fixity,
+                   %                   ppFixity fixity,
                    ppString ": ",
                    ppBreak,
                    ppType c srt,
                    ppString " = ",
                    ppNewline,
                    ppIndent(ppTerm c term)]
-                 else
-                  [ppString "op decl",
-                   ppBrTyVars tvs,
-                   ppIdInfo aliases,
-                   ppString " ",
-                   ppFixity fixity,
-                   ppString ": ",
-                   ppType c srt])
-         else [ppString "op def",
-               ppBrTyVars tvs,
-               ppIdInfo aliases,
-               ppString " = ",
+              else
+                [ppString "op decl",
+                 ppBrTyVars tvs,
+                 ppIdInfo aliases,
+                 ppString " ",
+                 ppFixity fixity,
+                 ppString ": ",
+                 ppType c srt])
+      else [ppString "op def",
+            ppBrTyVars tvs,
+            ppIdInfo aliases,
+            ppString " = ",
+            ppBreak,
+            ppIndent(ppTerm c term)]))
+  
+op ppProperty (c:Context) ((propType, name, tyVars, term, pos):Property) : WLPretty =
+  ppGr2Concat [if c.printPositionInfo?
+                 then ppPosition c pos
+               else ppNil,
+               ppString "(claim ",
+               ppPropertyType propType,
+               ppString " ",
+               ppQualifiedId name,
+               ppBrTyVars tyVars,
+               ppString " is ",
                ppBreak,
-               ppIndent(ppTerm c term)]))
-
-  op ppProperty (c:Context) ((propType, name, tyVars, term, pos):Property) : WLPretty =
-    ppGr2Concat [if c.printPositionInfo?
-		    then ppPosition c pos
-                    else ppNil,
-		   ppString "(claim ",
-		   ppPropertyType propType,
-		   ppString " ",
-		   ppQualifiedId name,
-		   ppBrTyVars tyVars,
-		   ppString " is ",
-		   ppBreak,
-		   ppTerm c term,
-                   ppString ")"]
+               ppTerm c term,
+               ppString ")"]
  
-  op ppPropertyType (propType:PropertyType) : WLPretty =
-    case propType of
-      | Axiom -> ppString "Axiom"
-      | Theorem -> ppString "Theorem"
-      | Conjecture -> ppString "Conjecture"
-      | any ->
-           fail ("ERROR: No match in ppPropertyType with: "
+op ppPropertyType (propType:PropertyType) : WLPretty =
+  case propType of
+    | Axiom -> ppString "Axiom"
+    | Theorem -> ppString "Theorem"
+    | Conjecture -> ppString "Conjecture"
+    | any ->
+      fail ("ERROR: No match in ppPropertyType with: "
               ^ (anyToString any))
-
- op ppRenaming ((rules, _): Renaming) : WLPretty =
-   let 
-     def ppRenamingRule (rule, _(* position *)) = 
-      case rule of          
-	  | Type (left_qid, right_qid, aliases) ->
-	    ppConcat [ppString " type ",
-		      ppQualifiedId left_qid,
-		      ppString " +-> ",	% ??
-		      ppString (printAliases aliases)] % ppQualifiedId right_qid
-	    
-	  | Op ((left_qid,_), (right_qid, _), aliases) ->
-	    ppConcat [ppString " op ",
-		      ppQualifiedId left_qid,
-		      ppString " +-> ",
-		      ppQualifiedId right_qid]
-
-	  | Ambiguous (left_qid, right_qid, aliases) ->
-	    ppConcat [ppString " ambiguous ",
-		      ppQualifiedId left_qid,
-		      ppString " +-> ",
-		      ppQualifiedId right_qid]
-	  | Other other_rule -> ppString "<<Other>>"
-	    %ppOtherRenamingRule other_rule
-    in
-      ppConcat [ppString "[",
-		ppSep (ppString ", ") (map ppRenamingRule rules),
-		ppString "]"]
-
+      
+op ppRenaming ((rules, _): Renaming) : WLPretty =
+  let def ppRenamingRule (rule, _(* position *)) = 
+  case rule of          
+    | Type (left_qid, right_qid, aliases) ->
+      ppConcat [ppString " type ",
+                ppQualifiedId left_qid,
+                ppString " +-> ",	% ??
+                ppString (printAliases aliases)] % ppQualifiedId right_qid
+      
+    | Op ((left_qid,_), (right_qid, _), aliases) ->
+      ppConcat [ppString " op ",
+                ppQualifiedId left_qid,
+                ppString " +-> ",
+                ppQualifiedId right_qid]
+      
+    | Ambiguous (left_qid, right_qid, aliases) ->
+      ppConcat [ppString " ambiguous ",
+                ppQualifiedId left_qid,
+                ppString " +-> ",
+                ppQualifiedId right_qid]
+    | Other other_rule -> ppString "<<Other>>"
+      %ppOtherRenamingRule other_rule
+  in
+  ppConcat [ppString "[",
+            ppSep (ppString ", ") (map ppRenamingRule rules),
+            ppString "]"]
+  
 % op  ppOtherTerm         : OtherTerm Position -> WLPretty % Used for extensions to Specware
 % op  ppOtherRenamingRule : OtherRenamingRule  -> WLPretty % Used for extensions to Specware
 
@@ -560,21 +555,21 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 %	| Some val -> printValue (val,printPositionInfo?,recursive?)
 %	| _ -> "<Unknown UID>")
 
-  op printValue (c:Context) (value:Value) : String =
-    let file_nm = case fileNameOfValue value of
-                    | Some str -> str
-                    | _ -> ""
-    in
-    let main_pp_val = ppValue (c << {fileName = file_nm}) value in
-    let pp_val = if c.printPositionInfo?
-                  then ppConcat [ppString "infile ", ppID file_nm, ppBreak, main_pp_val]
-		  else main_pp_val
-    in
-    ppFormat pp_val
-
-  op fileNameOfValue (value:Value) : Option String =
-    case value of
-      | Spec        spc           -> fileNameOfSpec spc
+op printValue (c:Context) (value:Value) : String =
+  let file_nm = case fileNameOfValue value of
+                  | Some str -> str
+                  | _ -> ""
+  in
+  let main_pp_val = ppValue (c << {fileName = file_nm}) value in
+  let pp_val = if c.printPositionInfo?
+                 then ppConcat [ppString "infile ", ppID file_nm, ppBreak, main_pp_val]
+               else main_pp_val
+  in
+  ppFormat pp_val
+  
+op fileNameOfValue (value:Value) : Option String =
+  case value of
+    | Spec        spc           -> fileNameOfSpec spc
 %      | Morph       spec_morphism -> ppMorphism c  spec_morphism
 %      | SpecPrism   spec_prism    -> ppPrism     spec_prism     % tentative
 %      | SpecInterp  spec_interp   -> ppInterp    spec_interp    % tentative
@@ -583,15 +578,15 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 %      | Other       other_value   -> ppOtherValue other_value
 %      | InProcess                 -> ppString "InProcess"
 %      | UnEvaluated _             -> ppString "some unevaluated term"
-      | _                         -> None
+    | _                         -> None
 
-  op fileNameOfSpec (spc:Spec) : Option String =
-    case findLeftmost (fn el -> some?(fileNameOfSpecElement(el,spc))) spc.elements of
-      | Some el -> fileNameOfSpecElement (el,spc)
-      | None -> None
+op fileNameOfSpec (spc:Spec) : Option String =
+  case findLeftmost (fn el -> some?(fileNameOfSpecElement(el,spc))) spc.elements of
+    | Some el -> fileNameOfSpecElement (el,spc)
+    | None -> None
 
-  op fileNameOfSpecElement (el:SpecElement,spc:Spec) : Option String =
-    case el of
+op fileNameOfSpecElement (el:SpecElement,spc:Spec) : Option String =
+  case el of
     | Op (qid,_,_)    -> fileNameOfOpId(qid,spc)
     | OpDef (qid,_,_,_) -> fileNameOfOpId(qid,spc)
     | Type (qid,_)  -> fileNameOfTypeId(qid,spc)
@@ -599,56 +594,56 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
     | Property(_, _, _, term, _) -> fileNameOfTerm term
     | _ -> None
 
-  op fileNameOfOpId(qid:QualifiedId, spc:Spec) : Option String =
-    case findTheOp(spc,qid) of
-      | Some {names=_,fixity=_,dfn,fullyQualified?=_} -> fileNameOfTerm dfn
-      | _ -> None
+op fileNameOfOpId(qid:QualifiedId, spc:Spec) : Option String =
+  case findTheOp(spc,qid) of
+    | Some {names=_,fixity=_,dfn,fullyQualified?=_} -> fileNameOfTerm dfn
+    | _ -> None
 
-  op fileNameOfTypeId(qid:QualifiedId,spc:Spec) : Option String =
-    case findTheType(spc,qid) of
-      | Some {names=_,dfn} -> fileNameOfType dfn
-      | _ -> None
+op fileNameOfTypeId(qid:QualifiedId,spc:Spec) : Option String =
+  case findTheType(spc,qid) of
+    | Some {names=_,dfn} -> fileNameOfType dfn
+    | _ -> None
 
-  op fileNameOfTerm (tm:MSTerm) : Option String =
-    foldSubTerms (fn (t,val) ->
+op fileNameOfTerm (tm:MSTerm) : Option String =
+  foldSubTerms (fn (t,val) ->
 		  case val of
 		    | Some _ -> val
 		    | None ->
-		  case termAnn t of
-		    | File(nm,_,_) -> Some nm
-		    | _ -> None)
-      None tm
+                      case termAnn t of
+                        | File(nm,_,_) -> Some nm
+                        | _ -> None)
+  None tm
 
-  op fileNameOfType (s:MSType) : Option String =
-    case typeAnn s of
-      | File(nm,_,_) -> Some nm
-      | _ -> None
-
+op fileNameOfType (s:MSType) : Option String =
+  case typeAnn s of
+    | File(nm,_,_) -> Some nm
+    | _ -> None
+      
 
   %% --------------------------------------------------------------------------------
 
 % ???
-  op ppValue (c: Context) (value:Value) : WLPretty =
-    case value of
-      | Spec        spc           -> ppSpec c spc %opt_val_tm
-      | Morph       spec_morphism -> ppMorphism c  spec_morphism
-      | SpecPrism   spec_prism    -> ppPrism     spec_prism     % tentative
-      | SpecInterp  spec_interp   -> ppInterp    spec_interp    % tentative
+op ppValue (c: Context) (value:Value) : WLPretty =
+  case value of
+    | Spec        spc           -> ppSpec c spc %opt_val_tm
+    | Morph       spec_morphism -> ppMorphism c  spec_morphism
+    | SpecPrism   spec_prism    -> ppPrism     spec_prism     % tentative
+    | SpecInterp  spec_interp   -> ppInterp    spec_interp    % tentative
 %      | Diag        spec_diagram  -> ppDiagram  c  spec_diagram
 %      | Colimit     spec_colimit  -> ppColimit  c  spec_colimit
 %      | Other       other_value   -> ppOtherValue other_value
 %      | InProcess                 -> ppString "InProcess"
 %      | UnEvaluated _             -> ppString "some unevaluated term"
-      | _                         -> ppString "ERROR: <unrecognized value>"
+    | _                         -> ppString "ERROR: <unrecognized value>"
 
 
   (* tentative *)
-  op ppPrism ({dom=_, sms=_, pmode=_, tm=_}:SpecPrism) : WLPretty =
-    ppString "<some prism>"
+op ppPrism ({dom=_, sms=_, pmode=_, tm=_}:SpecPrism) : WLPretty =
+  ppString "<some prism>"
 
   (* tentative *)
-  op ppInterp ({dom=_, med=_, cod=_, d2m=_, c2m=_}:SpecInterp) : WLPretty =
-    ppString "<some interp>"
+op ppInterp ({dom=_, med=_, cod=_, d2m=_, c2m=_}:SpecInterp) : WLPretty =
+  ppString "<some interp>"
 
   %% --------------------------------------------------------------------------------
   %% Specs
@@ -682,21 +677,21 @@ op ppAOpInfo (c : Context, aopinfo : AOpInfo StandardAnnotation) : WLPretty =
 
 
 op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo StandardAnnotation))) : List WLPretty =
-   foldi
-   (fn (key, val, prettys) -> 
-      ((ppConcat [ppString "(",
-                  ppString key, %% the qualifier
-                  ppNewline,
-                  ppAOpInfo (c, val),
-                  ppString ")",
-                  ppBreak
-                  ])
-         ::prettys))
-   []
-   m
+  foldi
+  (fn (key, val, prettys) -> 
+     ((ppConcat [ppString "(",
+                 ppString key, %% the qualifier
+                 ppNewline,
+                 ppAOpInfo (c, val),
+                 ppString ")",
+                 ppBreak
+                 ])
+        ::prettys))
+  []
+  m
    
 %% Each val in the map is itself a map.
-  op ppAOpMapEntry (c : Context) (key : String, val : (MapL.Map(String, (AOpInfo StandardAnnotation))), pps: List WLPretty) : List WLPretty =
+op ppAOpMapEntry (c : Context) (key : String, val : (MapL.Map(String, (AOpInfo StandardAnnotation))), pps: List WLPretty) : List WLPretty =
   (ppGr2Concat [ppString "(",
                 ppString key, %% the op name (without the qualifier)
                 ppNewline,
@@ -705,9 +700,9 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
                              ppString ")"],
                 ppString ")"])::
   pps
-              
+  
   %% This is a map from op names to (maps from qualifiers to opinfos).
-  op ppAOpMap (c : Context, m:(AOpMap StandardAnnotation)) : WLPretty =
+op ppAOpMap (c : Context, m:(AOpMap StandardAnnotation)) : WLPretty =
   if (m = emptyAQualifierMap) then
     ppString "(ops)"
   else
@@ -716,7 +711,7 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
                  ppSep ppNewline (MapSTHashtable.STH_foldi (ppAOpMapEntry c, [], m)),
                  ppString ")",
                  ppNewline]
-
+    
 op ppATypeInfo (c : Context, atypeinfo : ATypeInfo StandardAnnotation) : WLPretty = 
   let {names, dfn} = atypeinfo in
   ppGr2Concat [ppString "(ATypeInfo ",
@@ -729,22 +724,22 @@ op ppATypeInfo (c : Context, atypeinfo : ATypeInfo StandardAnnotation) : WLPrett
                ppNewline]
 
 op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo StandardAnnotation))) : List WLPretty =
-   foldi
-   (fn (key, val, prettys) -> 
-      ((ppConcat [ppString "(",
-                  ppString key,
-                  ppNewline,
-                  ppATypeInfo (c, val),
-                  ppString ")",
-                  ppBreak
-                  ])
-         ::prettys))
-   []
-   m
+  foldi
+  (fn (key, val, prettys) -> 
+     ((ppConcat [ppString "(",
+                 ppString key,
+                 ppNewline,
+                 ppATypeInfo (c, val),
+                 ppString ")",
+                 ppBreak
+                 ])
+        ::prettys))
+  []
+  m
 
 
 %% Each val in the map is itself a map.
-  op ppATypeMapEntry (c : Context) (key : String, val : (MapL.Map(String, (ATypeInfo StandardAnnotation))), pps: List WLPretty) : List WLPretty =
+op ppATypeMapEntry (c : Context) (key : String, val : (MapL.Map(String, (ATypeInfo StandardAnnotation))), pps: List WLPretty) : List WLPretty =
   (ppGr2Concat [ppString "(",
                 ppString key,
                 ppString " ",
@@ -755,8 +750,8 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                 ppString ")"])::
   pps
 
-  %% This is a map from type names to (maps from qualifiers to typeinfos).
-  op ppATypeMap (c : Context, m:(ATypeMap StandardAnnotation)) : WLPretty =
+%% This is a map from type names to (maps from qualifiers to typeinfos).
+op ppATypeMap (c : Context, m:(ATypeMap StandardAnnotation)) : WLPretty =
   if (m = emptyAQualifierMap) then
     ppString "(types)"
   else
@@ -765,19 +760,19 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                  ppSep ppNewline (MapSTHashtable.STH_foldi (ppATypeMapEntry c, [], m)),
                  ppString ")"
                  ]
- 
-   op ppSpec (c: Context) (spc:Spec) : WLPretty =
-    ppGr2Concat [ppString "(Spec ",
-		 ppNewline,
-                 case spc.qualifier of | Some qual -> ppString qual | None -> ppString "<no-qualifier>",
-                 ppNewline,
-		 ppSpecElements c spc.elements,
-                 ppNewline,
-                 ppAOpMap(c, spc.ops),
-                 ppNewline,
-                 ppATypeMap(c, spc.types),
-                 ppString ")"
-                 ]
+    
+op ppSpec (c: Context) (spc:Spec) : WLPretty =
+  ppGr2Concat [ppString "(Spec ",
+               ppNewline,
+               case spc.qualifier of | Some qual -> ppString qual | None -> ppString "<no-qualifier>",
+               ppNewline,
+               ppSpecElements c spc.elements,
+               ppNewline,
+               ppAOpMap(c, spc.ops),
+               ppNewline,
+               ppATypeMap(c, spc.types),
+               ppString ")"
+               ]
     
   %% op  ppSpecOrigin: Context -> SCTerm -> WLPretty
   %% def ppSpecOrigin c (def_tm,_) =
@@ -859,127 +854,127 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst -> Cons(x,normalizeSpecElements rst)
 
-  op ppSpecElements (c:Context) (elems:SpecElements) : WLPretty = 
-    ppNest 1 (ppConcat [ppString "(elements",
-                        ppNewline,
-                        (ppSep ppNewline
-                           (filter (fn pp -> pp ~= ppNil)  %% why the filter?
-                              (ppSpecElementsAux c elems))),
-                        ppString ")"])
+op ppSpecElements (c:Context) (elems:SpecElements) : WLPretty = 
+  ppNest 1 (ppConcat [ppString "(elements",
+                      ppNewline,
+                      (ppSep ppNewline
+                         (filter (fn pp -> pp ~= ppNil)  %% why the filter?
+                            (ppSpecElementsAux c elems))),
+                      ppString ")"])
     
-  op ppSpecElementsAux (c:Context) (elems:SpecElements) : List WLPretty =
-    case elems of
-      | [] -> []
+op ppSpecElementsAux (c:Context) (elems:SpecElements) : List WLPretty =
+  case elems of
+    | [] -> []
       % | (Op (qid1,false,pos)) :: (OpDef (qid2,0,hist,_)) :: rst | qid1 = qid2 ->
       %   Cons(ppSpecElement c spc (Op (qid1,true,pos)) true,
       %        ppSpecElementsAux c spc rst)
-      | el :: rst ->
-	Cons(ppSpecElement c el,
-	     ppSpecElementsAux c rst)
-
- op ppTransformHistory (c:Context) (hist:TransformHistory) : WLPretty =
+    | el :: rst ->
+      Cons(ppSpecElement c el,
+           ppSpecElementsAux c rst)
+      
+op ppTransformHistory (c:Context) (hist:TransformHistory) : WLPretty =
   ppSep ppSpaceBreak (map (fn (tm:MSTerm, rulespec:RuleSpec) -> ppGr2Concat[ppString "(",
                                                                             ppTerm c tm,
                                                                             ppString " ...rulespec (if any )elided...)"])
                         hist)
-
- op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
-    case elem of
-      | Import (im_sc_tm, im_sp, im_elements, pos) ->
-        ppConcat [if c.printPositionInfo?
-		    then ppPosition c pos
-		  else ppNil,
-                  ppGr1Concat[ppString "(Import ",
-                              ppSCTerm c im_sc_tm,
-                              ppNewline,
-                              %%ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
-                              %%ppSpec c im_sp,
-                              ppString "(...imported spec elided...)",
-                              ppNewline,
-                              %%ppString "(...imported elements elided...)",
-                              ppSpecElements c im_elements,
-                              ppString ")"]
-                  ]
-      | Op (qid,d?,pos) ->
-        ppConcat[ppString "(OpDecl ",
-                 ppQualifiedId qid,
-                 ppString " ",
-                 if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
-                 ppString ")"]
-        %% Note that most of the information for the op is not here but rather in the Spec's op map.
-      | OpDef (qid,refine_num,hist,pos) ->    % !!!
-        ppConcat[ppString "(OpDef ",
-                 ppQualifiedId qid,
-                 ppString " ",
-                 ppString (show refine_num),
-                 ppString " (",
-                 ppTransformHistory c hist,
-                 ppString "))"]
-      | Type (qid,pos) ->
-        ppConcat[ppString "(TypeDecl ",
-                 ppQualifiedId qid,
-                 ppString ")"]
-        %% Note that most of the information for the type is not here but rather in the Spec's type map.
-      | TypeDef (qid,pos) ->
-        ppConcat[ppString "(TypeDef ",
-                 ppQualifiedId qid,
-                 ppString ")"]
-      | Property prop -> ppProperty c prop
-      | Pragma(beg_str,mid_str,end_str,pos) ->
-	ppConcat [if c.printPositionInfo?
-		    then ppPosition c pos
-		  else ppNil,
-		  ppString "(Pragma ",
-		  ppLitString (enquote beg_str),
-		  ppString " ",
-                  ppString "(...middle string elided...)", %%ppLitString mid_str,
-		  ppString " ",
-		  ppLitString (enquote end_str),
-                  ppString ")"]
-      | Comment (str,pos) ->
-	ppConcat [if c.printPositionInfo?
-		    then ppPosition c pos
-		  else ppNil,
-		  ppString "(Comment ",
-		  ppString str,
-		  ppString " ) "]
-
-  op ppPosition (c:Context) (pos:Position) : WLPretty =
-    case pos of
-      | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
-        ppConcat ([ppString "at "]
-		    ++ (if fil_nm = c.fileName
-			  then []
-			else [ppID fil_nm])
-		    ++ [ppString "[",
-			ppSep (ppString ", ") [ppNum x1, ppNum x2, ppNum x3,
-					       ppNum y1, ppNum y2, ppNum y3],
-			ppString "] ",
-			ppBreak])
-      | _ -> ppString "@ "
-
+  
+op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
+  case elem of
+    | Import (im_sc_tm, im_sp, im_elements, pos) ->
+      ppConcat [if c.printPositionInfo?
+                  then ppPosition c pos
+                else ppNil,
+                ppGr1Concat[ppString "(Import ",
+                            ppSCTerm c im_sc_tm,
+                            ppNewline,
+                            %%ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
+                            %%ppSpec c im_sp,
+                            ppString "(...imported spec elided...)",
+                            ppNewline,
+                            %%ppString "(...imported elements elided...)",
+                            ppSpecElements c im_elements,
+                            ppString ")"]
+                ]
+    | Op (qid,d?,pos) ->
+      ppConcat[ppString "(OpDecl ",
+               ppQualifiedId qid,
+               ppString " ",
+               if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
+               ppString ")"]
+      %% Note that most of the information for the op is not here but rather in the Spec's op map.
+    | OpDef (qid,refine_num,hist,pos) ->    % !!!
+      ppConcat[ppString "(OpDef ",
+               ppQualifiedId qid,
+               ppString " ",
+               ppString (show refine_num),
+               ppString " (",
+               ppTransformHistory c hist,
+               ppString "))"]
+    | Type (qid,pos) ->
+      ppConcat[ppString "(TypeDecl ",
+               ppQualifiedId qid,
+               ppString ")"]
+      %% Note that most of the information for the type is not here but rather in the Spec's type map.
+    | TypeDef (qid,pos) ->
+      ppConcat[ppString "(TypeDef ",
+               ppQualifiedId qid,
+               ppString ")"]
+    | Property prop -> ppProperty c prop
+    | Pragma(beg_str,mid_str,end_str,pos) ->
+      ppConcat [if c.printPositionInfo?
+                  then ppPosition c pos
+                else ppNil,
+                ppString "(Pragma ",
+                ppLitString (enquote beg_str),
+                ppString " ",
+                ppString "(...middle string elided...)", %%ppLitString mid_str,
+                ppString " ",
+                ppLitString (enquote end_str),
+                ppString ")"]
+    | Comment (str,pos) ->
+      ppConcat [if c.printPositionInfo?
+                  then ppPosition c pos
+                else ppNil,
+                ppString "(Comment ",
+                ppString str,
+                ppString " ) "]
+      
+op ppPosition (c:Context) (pos:Position) : WLPretty =
+  case pos of
+    | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
+      ppConcat ([ppString "at "]
+                  ++ (if fil_nm = c.fileName
+                        then []
+                      else [ppID fil_nm])
+                  ++ [ppString "[",
+                      ppSep (ppString ", ") [ppNum x1, ppNum x2, ppNum x3,
+                                             ppNum y1, ppNum y2, ppNum y3],
+                      ppString "] ",
+                      ppBreak])
+    | _ -> ppString "@ "
+      
   %% --------------------------------------------------------------------------------
   %% The term language
   %% --------------------------------------------------------------------------------
 
-  op ppTerm (c:Context) (term:MSTerm) : WLPretty =
-    if c.printPositionInfo?
-      then ppConcat [ppPosition c (termAnn term),
-		     ppBreak,
-		     ppTerm1 c term]
-      else ppTerm1 c term
+op ppTerm (c:Context) (term:MSTerm) : WLPretty =
+  if c.printPositionInfo?
+    then ppConcat [ppPosition c (termAnn term),
+                   ppBreak,
+                   ppTerm1 c term]
+  else ppTerm1 c term
 
-  op ppTerm1 (c:Context) (term:MSTerm) : WLPretty =
-    case term of
-      | Apply (term1, term2, _)
-	 ->
-	 ppGr2Concat [ppString "(Apply ",
-		     ppBreak,
-                     ppTerm c term1,
-		     ppSpaceBreak,
-		     ppTerm c term2,
-                     ppString ")"]
-      | Record (fields,_) ->      
+op ppTerm1 (c:Context) (term:MSTerm) : WLPretty =
+  case term of
+    | Apply (term1, term2, _)
+      ->
+      ppGr2Concat [ppString "(Apply ",
+                   ppBreak,
+                   ppTerm c term1,
+                   ppSpaceBreak,
+                   ppTerm c term2,
+                   ppString ")"]
+    | Record (fields,_) ->      
 	% (case fields of
 	%   | [] -> ppString "(tuple)"
 	%   | ("1",_) :: _ ->
@@ -988,76 +983,76 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
         %                  ppSep (ppAppend (ppString " ") ppBreak) (map ppField fields),
         %                  ppString ")"]
 	%   | _ ->
-	    let def ppField (x,y) =
-		      ppWrapParens (ppConcat [ppID x,
-                                              ppString " ",
-                                              ppTerm c y
-                                              ]) in
-	    ppGr2Concat [ppString "(Record ",
-                         ppBreak,
-                         ppSep ppSpaceBreak (map ppField fields),
-                         ppString ")"]
-      | Bind (binder,vars,term,_) ->
-	ppGr2Concat [ppString "(Bind ",
-		     ppBinder binder,
-		     ppString " (",
-		     ppNest 0 (ppSep (ppConcat [(ppString " "), (ppBreak)]) (map (ppVar c) vars)),
-		     ppString ") ",
-		     ppBreak,
-		     ppTerm c term,
-                     ppString ")"
-                     ]
-      | The (var,term,_) ->
-	ppGrConcat [ppString "(The ",
-		    ppVar c var,
-		    ppString " ",
-		    ppTerm c term,
-		    ppString ")"]
-      | Let (decls,term,_) ->
-	  let def ppDecl (pattern: MSPattern, term: MSTerm) =
-	        ppConcat [ppString "(",
-                          ppGr1Concat [ppPattern c pattern,
-                                       ppString " ",
-                                       ppBreak,
-                                       ppTerm c term],
+        let def ppField (x,y) =
+        ppWrapParens (ppConcat [ppID x,
+                                ppString " ",
+                                ppTerm c y
+                                ]) in
+        ppGr2Concat [ppString "(Record ",
+                     ppBreak,
+                     ppSep ppSpaceBreak (map ppField fields),
+                     ppString ")"]
+    | Bind (binder,vars,term,_) ->
+      ppGr2Concat [ppString "(Bind ",
+                   ppBinder binder,
+                   ppString " (",
+                   ppNest 0 (ppSep (ppConcat [(ppString " "), (ppBreak)]) (map (ppVar c) vars)),
+                   ppString ") ",
+                   ppBreak,
+                   ppTerm c term,
+                   ppString ")"
+                   ]
+    | The (var,term,_) ->
+      ppGrConcat [ppString "(The ",
+                  ppVar c var,
+                  ppString " ",
+                  ppTerm c term,
+                  ppString ")"]
+    | Let (decls,term,_) ->
+      let def ppDecl (pattern: MSPattern, term: MSTerm) =
+      ppConcat [ppString "(",
+                ppGr1Concat [ppPattern c pattern,
+                             ppString " ",
+                             ppBreak,
+                             ppTerm c term],
+                ppString ")"]
+      in
+      ppGr2Concat [ppString "(Let (",
+                   ppSep ppBreak (map ppDecl decls) ,
+                   ppString ") ",
+                   ppBreak,
+                   ppTerm c term,
+                   ppString ")"]
+    | LetRec (decls,term,_) ->
+      let def ppDecl (v,term) =
+      ppGr2Concat [
+                   %ppString "def ",
+                   ppVar c v,
+                   ppString " = ",
+                   ppBreak,
+                   ppTerm c term]
+      in
+      ppGr2Concat [ppString "letrec",
+                   ppString "  ",
+                   ppIndent (ppSep ppNewline (map ppDecl decls)),
+                   ppNewline,
+                   ppString "in",
+                   ppNewline,
+                   ppTerm c term
+                   ]
+    | Var (v,_) -> ppVar c v
+    | Fun (fun,ty,_) ->
+      if c.printTypes?
+        then ppGr2Concat [ppString "(Fun ",
+                          ppFun fun,
+                          ppString " ", 
+                          ppBreak,
+                          ppType c ty,
                           ppString ")"]
-	  in
-	  ppGr2Concat [ppString "(Let (",
-                       ppSep ppBreak (map ppDecl decls) ,
-                       ppString ") ",
-                       ppBreak,
-                       ppTerm c term,
-                       ppString ")"]
-      | LetRec (decls,term,_) ->
-	  let def ppDecl (v,term) =
-	        ppGr2Concat [
-			     %ppString "def ",
-			     ppVar c v,
-			     ppString " = ",
-			     ppBreak,
-			     ppTerm c term]
-	  in
-	  ppGr2Concat [ppString "letrec",
-		       ppString "  ",
-		       ppIndent (ppSep ppNewline (map ppDecl decls)),
-		       ppNewline,
-		       ppString "in",
-		       ppNewline,
-		       ppTerm c term
-		      ]
-      | Var (v,_) -> ppVar c v
-      | Fun (fun,ty,_) ->
-	if c.printTypes?
-	  then ppGr2Concat [ppString "(Fun ",
-                            ppFun fun,
-                            ppString " ", 
-                            ppBreak,
-                            ppType c ty,
-                            ppString ")"]
-        else ppGrConcat [ppString "(Fun ",
-                         ppFun fun,
-                         ppString "),",
-                         ppBreak]
+      else ppGrConcat [ppString "(Fun ",
+                       ppFun fun,
+                       ppString "),",
+                       ppBreak]
 %      | Lambda ([(pattern,_,term)],_) ->
 %	  ppGrConcat [
 %	    ppString "lambda ",
@@ -1069,32 +1064,32 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 %	    ]))
 %	  ]
       | Lambda (match,_) ->
-	  ppIndent(ppGr2Concat [ppString "(lambda ",
-				ppBreak,
-				ppNest 1 (ppGrConcat [ppString "(",
-                                                      ppMatch c match,
-                                                      ppString ")"]),
-                                ppString ")"
-                                ])
+        ppIndent(ppGr2Concat [ppString "(lambda ",
+                              ppBreak,
+                              ppNest 1 (ppGrConcat [ppString "(",
+                                                    ppMatch c match,
+                                                    ppString ")"]),
+                              ppString ")"
+                              ])
       | IfThenElse (pred,term1,term2,_) -> 
-	  ppGrConcat [
-	    ppString "(if ",
-	    ppTerm c pred,
-%	    ppString " then",
-	    ppBreak,
-	    ppString "  ",
-	    ppIndent (ppTerm c term1),
-	    ppBreak,
-%	    ppString "else",
-%	    ppBreak,
-	    ppString "  ",
-	    ppIndent (ppTerm c term2),
-	    ppString ")"
-	  ]
+        ppGrConcat [
+                    ppString "(if ",
+                    ppTerm c pred,
+                    %	    ppString " then",
+                    ppBreak,
+                    ppString "  ",
+                    ppIndent (ppTerm c term1),
+                    ppBreak,
+                    %	    ppString "else",
+                    %	    ppBreak,
+                    ppString "  ",
+                    ppIndent (ppTerm c term2),
+                    ppString ")"
+                    ]
       | Seq (terms,_) ->
-	  ppGrConcat [ppString "seq [",
-		      ppSep (ppAppend (ppString ", ") ppBreak) (map (ppTerm c) terms),
-		      ppString "]"]
+        ppGrConcat [ppString "seq [",
+                    ppSep (ppAppend (ppString ", ") ppBreak) (map (ppTerm c) terms),
+                    ppString "]"]
       | Pi(tvs,term1,_) ->
 	% if tvs = [] then ppTerm c term1
 	%   else 
@@ -1115,147 +1110,147 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                     ]
       | Any(_) -> ppString "AnyTerm"
       | TypedTerm (tm,ty,_) ->
-	  ppGr2Concat [ppString "(TypedTerm ",
-                       ppBreak,
-                       ppTerm c tm,
-                       ppString " ", %% ppString ": ",
-                       ppBreak,
-                       ppType c ty, 
-                       ppString ")"]
+        ppGr2Concat [ppString "(TypedTerm ",
+                     ppBreak,
+                     ppTerm c tm,
+                     ppString " ", %% ppString ": ",
+                     ppBreak,
+                     ppType c ty, 
+                     ppString ")"]
       | mystery -> fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
+        
+op ppBinder (binder:Binder) : WLPretty =
+  case binder of
+    | Forall -> ppString "forall"
+    | Exists -> ppString "exists"
+    | Exists1 -> ppString "exists1"
 
-  op ppBinder (binder:Binder) : WLPretty =
-    case binder of
-      | Forall -> ppString "forall"
-      | Exists -> ppString "exists"
-      | Exists1 -> ppString "exists1"
-
-  op ppVar (c:Context) ((id,ty):Var) : WLPretty =
-    if c.printTypes?
-      then ppConcat [ppString "(var ",
-		     ppID id,
-		     ppString " ",
-		     ppType c ty,
-		     ppString ")"]
-      else ppConcat [ppString "(var ",
-		     ppID id,
-		     ppString ")"]
-
-  op ppMatch (c:Context) (cases:Match) : WLPretty =
-    let def ppCase (pattern,guard,term) =
-    ppNest 1 (ppGrConcat [ppString "(",
-                          ppPattern c pattern,
-                          %%		      ppString " | ",
-                          ppString " ",
-                          ppBreak,
-                          ppTerm c guard,	% wrong?
-                          ppString " ",
-                          ppBreak,
-                          ppTerm c term,
-                          ppString ")"])
-    in
-    (ppSep 
-       (ppAppend (ppString " ") ppBreak)
-       (map ppCase cases))
+op ppVar (c:Context) ((id,ty):Var) : WLPretty =
+  if c.printTypes?
+    then ppConcat [ppString "(var ",
+                   ppID id,
+                   ppString " ",
+                   ppType c ty,
+                   ppString ")"]
+  else ppConcat [ppString "(var ",
+                 ppID id,
+                 ppString ")"]
     
+op ppMatch (c:Context) (cases:Match) : WLPretty =
+  let def ppCase (pattern,guard,term) =
+  ppNest 1 (ppGrConcat [ppString "(",
+                        ppPattern c pattern,
+                        %%		      ppString " | ",
+                        ppString " ",
+                        ppBreak,
+                        ppTerm c guard,	% wrong?
+                        ppString " ",
+                        ppBreak,
+                        ppTerm c term,
+                        ppString ")"])
+  in
+  (ppSep 
+     (ppAppend (ppString " ") ppBreak)
+     (map ppCase cases))
+  
  %% Placeholder for patAnn which was missing a case
- op [a] patAnn1 (pat: APattern a) : a =
-   case pat of
-     | AliasPat     (_,_,   a) -> a
-     | VarPat       (_,     a) -> a
-     | EmbedPat     (_,_,_, a) -> a
-     | RecordPat    (_,     a) -> a
-     | WildPat      (_,     a) -> a
-     | BoolPat      (_,     a) -> a
-     | NatPat       (_,     a) -> a
-     | StringPat    (_,     a) -> a
-     | CharPat      (_,     a) -> a
-     %| RelaxPat     (_,_,   a) -> a
-     | QuotientPat  (_,_,   a) -> a
-     | RestrictedPat(_,_,   a) -> a
-     | TypedPat    (_,_,   a) -> a
+op [a] patAnn1 (pat: APattern a) : a =
+  case pat of
+    | AliasPat     (_,_,   a) -> a
+    | VarPat       (_,     a) -> a
+    | EmbedPat     (_,_,_, a) -> a
+    | RecordPat    (_,     a) -> a
+    | WildPat      (_,     a) -> a
+    | BoolPat      (_,     a) -> a
+    | NatPat       (_,     a) -> a
+    | StringPat    (_,     a) -> a
+    | CharPat      (_,     a) -> a
+      %| RelaxPat     (_,_,   a) -> a
+    | QuotientPat  (_,_,   a) -> a
+    | RestrictedPat(_,_,   a) -> a
+    | TypedPat    (_,_,   a) -> a
 
-  op ppPattern (c:Context) (pattern:MSPattern) : WLPretty =
-     if c.printPositionInfo?
-      then case patAnn1 pattern of
-	     | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
-	       ppGrConcat ([ppString "at "]
-			   ++ (if fil_nm = c.fileName
-				then []
+op ppPattern (c:Context) (pattern:MSPattern) : WLPretty =
+   if c.printPositionInfo?
+     then case patAnn1 pattern of
+            | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
+              ppGrConcat ([ppString "at "]
+                            ++ (if fil_nm = c.fileName
+                                  then []
 				else [ppID fil_nm])
-			   ++ [ppString "[",
-			       ppSep (ppString ", ") [ppNum x1, ppNum x2, ppNum x3,
-						      ppNum y1, ppNum y2, ppNum y3],
-			       ppString "] ",
-			       ppBreak,
-			       ppPattern1 c pattern])
-	     | _ -> ppConcat [ppString "@ ", ppPattern1 c pattern]
-      else ppPattern1 c pattern
+                            ++ [ppString "[",
+                                ppSep (ppString ", ") [ppNum x1, ppNum x2, ppNum x3,
+                                                       ppNum y1, ppNum y2, ppNum y3],
+                                ppString "] ",
+                                ppBreak,
+                                ppPattern1 c pattern])
+            | _ -> ppConcat [ppString "@ ", ppPattern1 c pattern]
+   else ppPattern1 c pattern
 
-  op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty = 
-    case pattern of
-      | AliasPat (pat1,pat2,_) -> 
-          ppGrConcat [ppString "alias ",
-		      ppPattern c pat1,
-		      ppString " with ",
-		      ppPattern c pat2
-		     ]
-      | VarPat (v,_) -> ppConcat [ppString "(VarPat ", ppVar c v, ppString ")"]
-      | EmbedPat (constr,pat,ty,_) ->
-	ppGrConcat ([ppString "(EmbedPat ",
-                     ppID constr,
-                     ppString " ",
-                     case pat of
-                       | None -> ppString "None" %ppNil
-                       | Some pat -> (ppPattern c pat),
-                     ppBreak]
-                      ++ (if c.printTypes?
-                            then [ppType c ty]
-                          else [])
-                      ++ [ppString ")"])
-      | RecordPat (fields,_) ->
-	% (case fields of
-	%   | [] -> ppString "(RecordPat)"
-        %     %% If a record has 1 as its first field name, it's really a tuple
-        %     %% ("1" is not a legal record field name because it starts with a
-        %     %% number).
-	%   | ("1",_)::_ ->
-	%     let def ppField (_,pat) = ppPattern c pat in
-	%     ppNest 1 (ppConcat [ppString "(record-pat-for-tuple ",
-        %                         (ppGrConcat [ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
-        %                                        (map ppField fields),
-        %                                      ppString ")"])])
-	%   | _ ->
-	    let def ppField (x,pat) =
-		  ppConcat [ppString "(",
-                            ppID x,
-			    ppString " ",
-			    ppPattern c pat,
-                            ppString ")"]
-	    in
-	    ppGr2Concat [ppString "(RecordPat ",
-                         ppBreak,
-                         ppSep ppSpaceBreak (map ppField fields),
-                         ppString ")"] %)
-      | WildPat (ty,_) -> ppConcat[ppString "(Wild ",
-                                   ppType c ty,
-                                   ppString ")"]
-      | StringPat (str,_) -> ppString (enquote str)
-      | BoolPat (b,_) -> ppBoolean b
-      | CharPat (chr,_) -> ppConcat[ppString numberSignString, ppString (show chr)]
-      | NatPat (int,_) -> ppString (show int)      
-%      | RelaxPat (pat,term,_) ->   
-%        ppGrConcat [ppString "relax ",
-%		    ppPattern c pat,
-%		    ppString ", ",
-%		    ppTerm c term]
-      | QuotientPat (pat,typename,_) ->
-        %% This requires update to interchange grammar
-        ppGrConcat [ppString "quotient[",
-                    ppQualifiedId typename,
-                    ppString "] ",
-		    ppPattern c pat]
-      | RestrictedPat (pat,term,_) -> 
+op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty = 
+  case pattern of
+    | AliasPat (pat1,pat2,_) -> 
+      ppGrConcat [ppString "alias ",
+                  ppPattern c pat1,
+                  ppString " with ",
+                  ppPattern c pat2
+                  ]
+    | VarPat (v,_) -> ppConcat [ppString "(VarPat ", ppVar c v, ppString ")"]
+    | EmbedPat (constr,pat,ty,_) ->
+      ppGrConcat ([ppString "(EmbedPat ",
+                   ppID constr,
+                   ppString " ",
+                   case pat of
+                     | None -> ppString "None" %ppNil
+                     | Some pat -> (ppPattern c pat),
+                   ppBreak]
+                    ++ (if c.printTypes?
+                          then [ppType c ty]
+                        else [])
+                    ++ [ppString ")"])
+    | RecordPat (fields,_) ->
+      % (case fields of
+      %   | [] -> ppString "(RecordPat)"
+      %     %% If a record has 1 as its first field name, it's really a tuple
+      %     %% ("1" is not a legal record field name because it starts with a
+      %     %% number).
+      %   | ("1",_)::_ ->
+      %     let def ppField (_,pat) = ppPattern c pat in
+      %     ppNest 1 (ppConcat [ppString "(record-pat-for-tuple ",
+      %                         (ppGrConcat [ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
+      %                                        (map ppField fields),
+      %                                      ppString ")"])])
+      %   | _ ->
+      let def ppField (x,pat) =
+      ppConcat [ppString "(",
+                ppID x,
+                ppString " ",
+                ppPattern c pat,
+                ppString ")"]
+      in
+      ppGr2Concat [ppString "(RecordPat ",
+                   ppBreak,
+                   ppSep ppSpaceBreak (map ppField fields),
+                   ppString ")"] %)
+    | WildPat (ty,_) -> ppConcat[ppString "(Wild ",
+                                 ppType c ty,
+                                 ppString ")"]
+    | StringPat (str,_) -> ppString (enquote str)
+    | BoolPat (b,_) -> ppBoolean b
+    | CharPat (chr,_) -> ppConcat[ppString numberSignString, ppString (show chr)]
+    | NatPat (int,_) -> ppString (show int)      
+      %      | RelaxPat (pat,term,_) ->   
+      %        ppGrConcat [ppString "relax ",
+      %		    ppPattern c pat,
+      %		    ppString ", ",
+      %		    ppTerm c term]
+    | QuotientPat (pat,typename,_) ->
+      %% This requires update to interchange grammar
+      ppGrConcat [ppString "quotient[",
+                  ppQualifiedId typename,
+                  ppString "] ",
+                  ppPattern c pat]
+    | RestrictedPat (pat,term,_) -> 
 %        (case pat of
 %	   | RecordPat (fields,_) ->
 %	     (case fields of
@@ -1284,260 +1279,260 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 %		     ppString "}"
 %		   ])
 %	       | _ ->
-	    ppGrConcat [ppString "(restrict ",
-			ppPattern c pat,
-%%			ppString " | ",
-			ppString " ",
-                        ppBreak,
-			ppTerm c term,
-			ppString ")"]
-      | TypedPat (pat,srt,_) ->
-	  ppGrConcat [ppString "sorted ",
-		      ppPattern c pat,
-		      ppString ": ",
-		      ppType c srt]
-      | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
-
-  op ppFun (fun:Fun) : WLPretty =
-    case fun of
-      | Not       -> ppString "Not"
-      | And       -> ppString "And"
-      | Or        -> ppString "Or"
-      | Implies   -> ppString "Implies"
-      | Iff       -> ppString "Iff"
-      | Equals    -> ppString "Equals"
-      | NotEquals -> ppString "NotEquals"
-      | Quotient typename  -> ppGr2Concat [ppString "(Quotient",
-                                           ppString " ", 
-                                           ppBreak,
-                                           ppQualifiedId typename,
-                                           ppString ")",
-                                           ppBreak]
-      | PQuotient typename  -> ppGr2Concat [ppString "(PQuotient",
-                                            ppString " ", 
-                                            ppBreak,
-                                            ppQualifiedId typename,
-                                            ppString ")",
-                                            ppBreak]
-      | Choose typename  -> ppGr2Concat [ppString "(Choose",
+      ppGrConcat [ppString "(restrict ",
+                  ppPattern c pat,
+                  %%			ppString " | ",
+                  ppString " ",
+                  ppBreak,
+                  ppTerm c term,
+                  ppString ")"]
+    | TypedPat (pat,srt,_) ->
+      ppGrConcat [ppString "sorted ",
+                  ppPattern c pat,
+                  ppString ": ",
+                  ppType c srt]
+    | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
+  
+op ppFun (fun:Fun) : WLPretty =
+  case fun of
+    | Not       -> ppString "Not"
+    | And       -> ppString "And"
+    | Or        -> ppString "Or"
+    | Implies   -> ppString "Implies"
+    | Iff       -> ppString "Iff"
+    | Equals    -> ppString "Equals"
+    | NotEquals -> ppString "NotEquals"
+    | Quotient typename  -> ppGr2Concat [ppString "(Quotient",
                                          ppString " ", 
                                          ppBreak,
                                          ppQualifiedId typename,
                                          ppString ")",
                                          ppBreak]
-      | PChoose typename  -> ppGr2Concat [ppString "(PChoose",
+    | PQuotient typename  -> ppGr2Concat [ppString "(PQuotient",
                                           ppString " ", 
                                           ppBreak,
                                           ppQualifiedId typename,
                                           ppString ")",
                                           ppBreak]
-      | Restrict -> ppString "Restrict"
-      | Relax -> ppString "Relax"
-      | Op (qid,fix) -> ppConcat[ppString "(Op ", ppQualifiedId qid, % ppString " ", ppFixity fix, 
-                                 ppString ")"]
-      | Project id ->
-          ppConcat [ppString "(Project ", ppID id, ppString ")"]
-      | RecordMerge -> ppString "RecordMerge"
-      | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBoolean b, ppString ")"]
-      | Embedded id  -> ppConcat [ppString "(embedded ", ppID id, ppString ")"]
-      | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppID id, ppString ") ", ppBreak]
-      | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
-      | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
-      | String str -> ppConcat[ppString "(String ", ppString (enquote str), ppString ")"]  %TODO escape any quotes in the string with backslash
-      | Bool b -> ppConcat [ppString "(bool ", ppBoolean b, ppString ")"]
-      | OneName (id,fxty) -> ppString id
-      | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
-      | mystery -> fail ("ERROR: No match in ppFun with: " ^ (anyToString mystery))
+    | Choose typename  -> ppGr2Concat [ppString "(Choose",
+                                       ppString " ", 
+                                       ppBreak,
+                                       ppQualifiedId typename,
+                                       ppString ")",
+                                       ppBreak]
+    | PChoose typename  -> ppGr2Concat [ppString "(PChoose",
+                                        ppString " ", 
+                                        ppBreak,
+                                        ppQualifiedId typename,
+                                        ppString ")",
+                                        ppBreak]
+    | Restrict -> ppString "Restrict"
+    | Relax -> ppString "Relax"
+    | Op (qid,fix) -> ppConcat[ppString "(Op ", ppQualifiedId qid, % ppString " ", ppFixity fix, 
+                               ppString ")"]
+    | Project id ->
+      ppConcat [ppString "(Project ", ppID id, ppString ")"]
+    | RecordMerge -> ppString "RecordMerge"
+    | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBoolean b, ppString ")"]
+    | Embedded id  -> ppConcat [ppString "(embedded ", ppID id, ppString ")"]
+    | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppID id, ppString ") ", ppBreak]
+    | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
+    | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
+    | String str -> ppConcat[ppString "(String ", ppString (enquote str), ppString ")"]  %TODO escape any quotes in the string with backslash
+    | Bool b -> ppConcat [ppString "(bool ", ppBoolean b, ppString ")"]
+    | OneName (id,fxty) -> ppString id
+    | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
+    | mystery -> fail ("ERROR: No match in ppFun with: " ^ (anyToString mystery))
+      
+op ppFixity (fix: Fixity) : WLPretty =
+  case fix of
+    | Infix (assoc,  n) -> ppConcat [ppString "(Infix ",
+                                     case assoc of
+                                       | Left  -> ppString "Left "
+                                       | Right -> ppString "Right ",
+                                     ppString (show n),
+                                     ppString ")"]
+    | Nonfix           -> ppString "Nonfix"
+    | Unspecified      -> ppString "Unspecified-fixity"
+    | Error fixities   -> ppConcat [
+                                    ppString "(ErrorFixity [",
+                                    ppSep (ppString ", ") (map ppFixity fixities),
+                                    ppString "])"
+                                    ]
+    | mystery -> fail ("ERROR: No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
+      
+      % op isSimpleType? (ty:MSType) : Boolean =
+      %   case ty of
+      %     | Base _ -> true
+      %     | Boolean _ -> true
+      %     | _ -> false
 
-  op ppFixity (fix: Fixity) : WLPretty =
-    case fix of
-      | Infix (assoc,  n) -> ppConcat [ppString "(Infix ",
-				       case assoc of
-					 | Left  -> ppString "Left "
-					 | Right -> ppString "Right ",
-				       ppString (show n),
-                                       ppString ")"]
-      | Nonfix           -> ppString "Nonfix"
-      | Unspecified      -> ppString "Unspecified-fixity"
-      | Error fixities   -> ppConcat [
-				      ppString "(ErrorFixity [",
-				      ppSep (ppString ", ") (map ppFixity fixities),
-				      ppString "])"
-				     ]
-      | mystery -> fail ("ERROR: No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
-
-  % op isSimpleType? (ty:MSType) : Boolean =
-  %   case ty of
-  %     | Base _ -> true
-  %     | Boolean _ -> true
-  %     | _ -> false
-
-  op ppType (c: Context) (ty:MSType) : WLPretty =
-    if c.printPositionInfo?
-      then case typeAnn ty of
-	     | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
-	       ppGrConcat ([ppString "at "]
+op ppType (c: Context) (ty:MSType) : WLPretty =
+  if c.printPositionInfo?
+    then case typeAnn ty of
+           | File(fil_nm,(x1,x2,x3),(y1,y2,y3)) ->
+             ppGrConcat ([ppString "at "]
 			   ++ (if fil_nm = c.fileName
-				then []
-				else [ppID fil_nm])
+                                 then []
+                               else [ppID fil_nm])
 			   ++ [ppString "[",
 			       ppSep (ppString ", ") [ppNum x1, ppNum x2, ppNum x3,
 						      ppNum y1, ppNum y2, ppNum y3],
 			       ppString "] ",
 			       ppBreak,
 			       ppType1 c ty])
-	     | _ -> ppConcat [ppString "@ ", ppType1 c ty]
-      else ppType1 c ty
-
-  op ppType1 (c:Context) (ty:MSType) : WLPretty =
-    case ty of
-      | Arrow (ty1,ty2,_) ->
-	ppGrConcat [ppString "(arrow ",
-		    ppType c ty1,
-%%		    ppString " -> ",
-                    ppBreak,
-		    ppString " ",
-		    ppType c ty2,
-                    ppString ")"]
-        %% TODO remove special printing for records here?
-      | Product (fields,_) ->
-	(case fields of
-	    [] -> ppString "(product-type)"
-	  | ("1",_)::_ ->
-	    let def ppField (_,y) = ppType c y in
-	    ppGr2Concat [ppString "(product-type ",
-                         ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
-                           (map ppField fields),
-                         ppString ")"
-                         ]
-	  | _ ->
-	    let def ppField (x,y) =
-	      ppGrConcat [
-		ppID x,
-		ppString " : ",
-		ppType c y
-	      ] in
-	    ppIndent (ppGrConcat [
-	      ppString "(Product-for-record",
-	      ppSep (ppAppend (ppString " ") ppBreak) (map ppField fields),
-	      ppString ")"
-	    ]))
-      | CoProduct (taggedTypes,_) -> 
-	let def ppTaggedType (id,optTy) =
-	  case optTy of %TODO combine these two cases:
-	    | None -> ppConcat [ppString "(",
-                                ppID (id),
-                                ppString " ",
-                                ppString "None",
-                                ppString ")"]
-	    | Some ty ->
-		ppConcat [ppString "(",
-                          ppID id,
-			  ppString " ",
-			  ppType c ty,
-                          ppString ")"]
-	in ppGrConcat [
-	  ppString "(CoProduct (",
-	  ppGrConcat [
-	    ppSep (ppAppend (ppString " ") ppBreak) (map ppTaggedType taggedTypes)
-	  ],
-	  ppString "))"
-	]
-      | Quotient (ty,term,_) ->
-	ppGrConcat [
-	  ppString "(Quotient ",
-	  ppType c ty,
-	  ppString " ",
-          ppNewline,
-	  ppTerm c term,
-	  ppString ")"
-	]
-      | Subtype (ty,term,_) ->
-	ppGr1Concat [
-	  ppString "(Subtype ",
-	  ppType c ty,
-	  ppString " ",
-          ppNewline,
-	  ppTerm c term,
-          ppString ")"
-	]
-%      | Base (qid,[],_) -> ppGrConcat [ppString "(Base ", ppQualifiedId qid, ppString ")"]
-      | Base (qid,tys,_) ->
-        ppGrConcat [ppString "(BaseType ",
-                    ppQualifiedId qid,
-                    %% what are these types?  They appear to be type vars for polymorphic types...
-                    %% But why don't we use a Pi type for that?
-                    ppString " (",
-                    ppSep (ppString " ") (map (ppType c) tys),
-                    ppString "))"
-                    ]
-      | Boolean _ -> ppString "BoolType"  
-      | TyVar (tyVar,_) -> ppConcat [ppString "(tyvar ",
-                                     ppID tyVar,
-                                     ppString ")"]
-      | Pi(tvs,ty,_) ->
-	% if tvs = [] then ppType c ty
-	%   else 
-        ppGrConcat [ppString "(PiType (",
-                    ppTyVars tvs,
-                    ppString ") ",
-                    %%ppString " . ",
+           | _ -> ppConcat [ppString "@ ", ppType1 c ty]
+  else ppType1 c ty
+    
+op ppType1 (c:Context) (ty:MSType) : WLPretty =
+  case ty of
+    | Arrow (ty1,ty2,_) ->
+      ppGrConcat [ppString "(arrow ",
+                  ppType c ty1,
+                  %%		    ppString " -> ",
+                  ppBreak,
+                  ppString " ",
+                  ppType c ty2,
+                  ppString ")"]
+      %% TODO remove special printing for records here?
+    | Product (fields,_) ->
+      (case fields of
+         [] -> ppString "(product-type)"
+       | ("1",_)::_ ->
+         let def ppField (_,y) = ppType c y in
+         ppGr2Concat [ppString "(product-type ",
+                      ppSep (ppAppend (ppString " ") ppBreak) %(ppString ", ")
+                        (map ppField fields),
+                      ppString ")"
+                      ]
+       | _ ->
+         let def ppField (x,y) =
+         ppGrConcat [
+                     ppID x,
+                     ppString " : ",
+                     ppType c y
+                     ] in
+         ppIndent (ppGrConcat [
+                               ppString "(Product-for-record",
+                               ppSep (ppAppend (ppString " ") ppBreak) (map ppField fields),
+                               ppString ")"
+                               ]))
+    | CoProduct (taggedTypes,_) -> 
+      let def ppTaggedType (id,optTy) =
+      case optTy of %TODO combine these two cases:
+        | None -> ppConcat [ppString "(",
+                            ppID (id),
+                            ppString " ",
+                            ppString "None",
+                            ppString ")"]
+        | Some ty ->
+          ppConcat [ppString "(",
+                    ppID id,
+                    ppString " ",
                     ppType c ty,
-                    ppString ")"
-                    ]
-      | And(types,_) ->
-	ppGrConcat[ppString "(AndType (",
-		   ppSep (ppAppend (ppString " ") ppBreak)
-                         (map (ppType c) types),
-		   ppString "))"]
-      | Any(_) -> ppString "AnyType"
-      | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
+                    ppString ")"]
+      in ppGrConcat [
+                     ppString "(CoProduct (",
+                     ppGrConcat [
+                                 ppSep (ppAppend (ppString " ") ppBreak) (map ppTaggedType taggedTypes)
+                                 ],
+                     ppString "))"
+                     ]
+    | Quotient (ty,term,_) ->
+      ppGrConcat [
+                  ppString "(Quotient ",
+                  ppType c ty,
+                  ppString " ",
+                  ppNewline,
+                  ppTerm c term,
+                  ppString ")"
+                  ]
+    | Subtype (ty,term,_) ->
+      ppGr1Concat [
+                   ppString "(Subtype ",
+                   ppType c ty,
+                   ppString " ",
+                   ppNewline,
+                   ppTerm c term,
+                   ppString ")"
+                   ]
+      %      | Base (qid,[],_) -> ppGrConcat [ppString "(Base ", ppQualifiedId qid, ppString ")"]
+    | Base (qid,tys,_) ->
+      ppGrConcat [ppString "(BaseType ",
+                  ppQualifiedId qid,
+                  %% what are these types?  They appear to be type vars for polymorphic types...
+                  %% But why don't we use a Pi type for that?
+                  ppString " (",
+                  ppSep (ppString " ") (map (ppType c) tys),
+                  ppString "))"
+                  ]
+    | Boolean _ -> ppString "BoolType"  
+    | TyVar (tyVar,_) -> ppConcat [ppString "(tyvar ",
+                                   ppID tyVar,
+                                   ppString ")"]
+    | Pi(tvs,ty,_) ->
+      % if tvs = [] then ppType c ty
+      %   else 
+      ppGrConcat [ppString "(PiType (",
+                  ppTyVars tvs,
+                  ppString ") ",
+                  %%ppString " . ",
+                  ppType c ty,
+                  ppString ")"
+                  ]
+    | And(types,_) ->
+      ppGrConcat[ppString "(AndType (",
+                 ppSep (ppAppend (ppString " ") ppBreak)
+                   (map (ppType c) types),
+                 ppString "))"]
+    | Any(_) -> ppString "AnyType"
+    | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
-  op ppMorphism (c:Context) ({dom,cod,typeMap,opMap,pragmas,sm_tm}:Morphism) : WLPretty =
-    ppGrConcat [ppString "morphism ",
-                ppString "(",
-                ppString "...domain spec elided...",  %ppUIDorFull c (Spec dom) None "name ",
-                ppString ")",
-		ppBreak,
-		ppString " to ",
-                ppString "(",
-                ppString "...codomain spec elided...",  %ppUIDorFull c (Spec cod) None "name ",
-                ppString ")",
-		ppBreak,
-		ppString " types ",
-		ppIdMap typeMap,
-		ppBreak,
-		ppString " ops ",
-		ppIdMap opMap,
-		ppBreak,
-		ppString " proof [",
-		ppSep (ppAppend (ppString ", ") ppBreak)
-		  (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
-							 ppLitString p2,
-							 ppLitString p3])
+op ppMorphism (c:Context) ({dom,cod,typeMap,opMap,pragmas,sm_tm}:Morphism) : WLPretty =
+  ppGrConcat [ppString "morphism ",
+              ppString "(",
+              ppString "...domain spec elided...",  %ppUIDorFull c (Spec dom) None "name ",
+              ppString ")",
+              ppBreak,
+              ppString " to ",
+              ppString "(",
+              ppString "...codomain spec elided...",  %ppUIDorFull c (Spec cod) None "name ",
+              ppString ")",
+              ppBreak,
+              ppString " types ",
+              ppIdMap typeMap,
+              ppBreak,
+              ppString " ops ",
+              ppIdMap opMap,
+              ppBreak,
+              ppString " proof [",
+              ppSep (ppAppend (ppString ", ") ppBreak)
+                (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
+                                                       ppLitString p2,
+                                                       ppLitString p3])
 		   pragmas),
-		ppString "]",
-		ppBreak,
-	        ppString "end morphism"]
+              ppString "]",
+              ppBreak,
+              ppString "end morphism"]
+  
+op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
+  ppNest 0
+  (ppSep (ppAppend (ppString ", ") ppBreak)
+     (map (fn (d,r) -> ppConcat [ppQualifiedId d, ppString " -> ",ppQualifiedId r])
+        (mapToList idMap)))
 
- op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
-   ppNest 0
-     (ppSep (ppAppend (ppString ", ") ppBreak)
-	(map (fn (d,r) -> ppConcat [ppQualifiedId d, ppString " -> ",ppQualifiedId r])
-	   (mapToList idMap)))
+op printValueTop (value : Value, uid : UnitId) : String =
+  printValue {printTypes? = true,
+              printPositionInfo? = false,
+              fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
+              %currentUID = uid,
+              %uidsSeen = [uid],
+              recursive? = true}
+             value
 
-  op printValueTop (value : Value, uid : UnitId) : String =
-    printValue {printTypes? = true,
-		printPositionInfo? = false,
-		fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
-		%currentUID = uid,
-		%uidsSeen = [uid],
-		recursive? = true}
-      value
-
-  op showDataCore (val : Value) : Boolean =
-    %TODO Awkward to extract the UID here and the uid string below?; just do whatever evaluateUnitId does to turn it into an absolute path?
-    case uidForValue val of 
+op showDataCore (val : Value) : Boolean =
+%TODO Awkward to extract the UID here and the uid string below?; just do whatever evaluateUnitId does to turn it into an absolute path?
+  case uidForValue val of 
     | None -> let _ = writeLine "Error: Can't get UID string from value" in false
     | Some uid ->
       let uidstr = fileNameInSubDir(uid, "data") in
@@ -1549,13 +1544,13 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 
   %% Evaluate the given unit and print it to a file.
   %% Returns a success flag.
-  op showData (uid_str : String) : Boolean =
+op showData (uid_str : String) : Boolean =
   let _ = writeLine "Printing spec to file." in
   let _ = writeLine ("uid_str:"^uid_str) in
   case evaluateUnitId uid_str of
     | None -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
     | Some val -> showDataCore val
-
+      
 % This is the top-level function for the showdata command.
 % TODO abstract out this pattern for use in other commands?
 op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
@@ -1564,10 +1559,11 @@ op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Opti
   let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> enquote str | None -> "No arg string supplied.")) in
   let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
   case UIDStringFromArgString(optional_argstring, lastUnitIdLoaded, homedir) of
-  | None -> None % fail and don't change *last-unit-Id-_loaded*
-  | Some uid_str ->
-    %% Print the data to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded:
-    let success? = showData uid_str in
-    if success? then Some uid_str else None
-
+    | None -> None % fail and don't change *last-unit-Id-_loaded*
+    | Some uid_str ->
+      %% Print the data to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded:
+      let success? = showData uid_str in
+      if success? then Some uid_str else None
+        
 end-spec
+
