@@ -128,10 +128,21 @@ op SpecTransform.makeImportingSpec (spc : Spec) : Spec =
            
  
 
-
-% op copyOp (base_name : Id,
-%            new_op_qualifier : Qualifier,
-%            spc : Spec) : Spec =
+op SpecTransform.copyOp (%op_to_copy_base_name : Id,
+                         %op_to_copy_qualifier : Qualifier,
+                         qid : QualifiedId,
+                         spc : Spec) : Spec =
+  let Qualified(q,id) = qid in
+  let new_spec = SpecTransform.makeImportingSpec spc in
+  case (findAQualifierMap(spc.ops, q, id)) of
+    | None -> errorSpec ("Can't find op " ^ show qid)
+    | Some (op_info : OpInfo) ->
+      addNewOp(id ^ "NEW",  %TODO Generate a unique name!
+               q,
+               op_info.fixity,
+               op_info.dfn,
+               spc)
+  
 
 % What name should we use for the new op?
   
