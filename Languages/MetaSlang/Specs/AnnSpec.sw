@@ -776,11 +776,14 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 	       | Import (s_tm, i_sp, s_els, a) ->
 		 (case findLeftmost (fn (s, _) -> i_sp = s) imports of
 		    | Some (_, prior_s_els) ->
+                      %% Without this, truly duplicate elements were getting included incorrectly in tricky_els below (e.g., in Eric's test0086.sw):
+                      let (s_els, imports) = mapEls(s_els, imports) in  % TODO Do we want to use the imports returned here, or not?
 		      %% Even though i_sp is a duplicate, tricky_els might be non-empty.
  		      %% Imported elements can be updated even when the imported spec
-		      %% itself is not.  (This happens with qualify, for example.)
+		      %% itself is not.  (This happens with qualify, for example.)  %%TODO, Shouldn't qualify/translate be made to change the specs themselves, not just the imported elements?
 		      %% For efficiency, we only test for duplications of elements
 		      %% between two imports of the same spec.
+                      %% TODO, If tricky_els is not empty, should we consider this import to not be a duplicate?  Currently, we just "inline" the tricky_els below in place of the import.
 		      let tricky_els = diff (s_els, prior_s_els) in
 		      %% add the new els we've seen to the set of elts associated with i_sp
 		      let revised_import = (i_sp, prior_s_els ++ tricky_els) in
@@ -1268,8 +1271,10 @@ op [a] showQ(el: ASpecElement a): String =
                        let typeDefElts = getTypeDefElements qid s.elements in
                        let _ = if (length names = 0) then writeLine("ERROR: No names for type: " ^ show qid) else () in
                        let _ = if (length names > 1) then writeLine("Warning: More than one name for type: " ^ show qid ^ ": " ^ showQIDs names) else () in
-                       let _ = if (length    typeElts > 1) then writeLine("ERROR: More than one type declaration for: " ^ show qid) else () in
-                       let _ = if (length typeDefElts > 1) then writeLine("ERROR: More than one type definition for: " ^ show qid) else () in
+                       let typeCount    = length typeElts    in
+                       let typeDefCount = length typeDefElts in
+                       let _ = if typeCount    > 1 then writeLine("ERROR: " ^ show typeCount    ^ " declarations for: " ^ show qid) else () in
+                       let _ = if typeDefCount > 1 then writeLine("ERROR: " ^ show typeDefCount ^ " definitions for: " ^ show qid) else () in
                        let found? = (typeElts ~= [] || typeDefElts ~= []) in
                        if found? then % TODO, check for duplicates, etc. here.
                          failures
