@@ -725,12 +725,12 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 	       | _ ->  el))
      elements
 
-
- op  foldlSpecElements: [a] (a * SpecElement -> a) -> a -> SpecElements -> a
- def foldlSpecElements f ini els =
+ %% Note that, for imports, this uses the list of elements with redundant imports removed.
+ %% This seems to process the import element itself twice (once before processing the imported elements, and once after).
+ op [a] foldlSpecElements (f: (a * SpecElement -> a)) (ini:a) (els:SpecElements) : a =
    foldl (fn (result, el) ->
 	  case el of
-	    | Import (s_tm, i_sp, elts, _) ->
+	    | Import (_, _, elts, _) ->
 	      let result1 = foldlSpecElements f (f (result, el)) elts in
 	      f (result1, el)
 	    | _ -> f (result, el))
@@ -1232,23 +1232,48 @@ op [a] showQ(el: ASpecElement a): String =
  %%%                Testing
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ %% Gather all of the Type (not TypeDef) spec elements for the given qualified Id.
+ %% TODO use a filter function? (but here we don't want to preserve the import structure, unlike what filterSpecElements seems to do)
+ op getTypeElements (qid : QualifiedId) (elts : SpecElements) : SpecElements =
+   foldlSpecElements (fn (acc:SpecElements, elt:SpecElement) ->
+                        (case elt of
+                           | Type (qid2, _) -> if qid2 = qid then elt::acc else acc
+                           | _ -> acc))
+                     []
+                     elts
+
+ %% Gather all of the TypeDef (not Type) spec elements for the given qualified Id.
+ %% TODO use a filter function? (but here we don't want to preserve the import structure, unlike what filterSpecElements seems to do)
+ op getTypeDefElements (qid : QualifiedId) (elts : SpecElements) : SpecElements =
+   foldlSpecElements (fn (acc:SpecElements, elt:SpecElement) ->
+                        (case elt of
+                           | TypeDef (qid2, _) -> if qid2 = qid then elt::acc else acc
+                           | _ -> acc))
+                     []
+                     elts
+   
+ 
+ % TODO these are duplicated in PrintSpecAsC.sw
+  op [a] intersperse (separator : a, vals : List a) : List a =
+    (head vals)::(foldr (fn (elem, result) -> separator::elem::result) [] (tail vals))
+ op showStrings (strings : List String) : String = (flatten (intersperse(" ", strings)))
+ op showQIDs (qids : List QualifiedId) : String = showStrings (map printQualifiedId qids)
+
  op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
   %% For every type info in the hash table, verify that there is a corresponding
   %% Type and/or TypeDef spec element.
   let bad_type_infos =
       foldTypeInfos (fn (info, failures) ->
-                       let qid = primaryTypeName info in
-                       let found? = 
-                           foldlSpecElements (fn (found?, elt) ->
-                                                found? || 
-                                                (case elt of
-                                                   | Type    (qid2, _) -> qid = qid2
-                                                   | TypeDef (qid2, _) -> qid = qid2
-                                                   | _ -> false))
-                                             false
-                                             s.elements
-                       in
-                       if found? then
+                       let names = info.names in
+                       let qid = primaryTypeName info in % TODO What about the other names?
+                       let typeElts = getTypeElements qid s.elements in
+                       let typeDefElts = getTypeDefElements qid s.elements in
+                       let _ = if (length names = 0) then writeLine("ERROR: No names for type: " ^ show qid) else () in
+                       let _ = if (length names > 1) then writeLine("Warning: More than one name for type: " ^ show qid ^ ": " ^ showQIDs names) else () in
+                       let _ = if (length    typeElts > 1) then writeLine("ERROR: More than one type declaration for: " ^ show qid) else () in
+                       let _ = if (length typeDefElts > 1) then writeLine("ERROR: More than one type definition for: " ^ show qid) else () in
+                       let found? = (typeElts ~= [] || typeDefElts ~= []) in
+                       if found? then % TODO, check for duplicates, etc. here.
                          failures
                        else
                          failures ++ [info])
