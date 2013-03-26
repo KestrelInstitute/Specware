@@ -8,6 +8,7 @@ spec
   import /Languages/MetaSlang/Transformations/Coalgebraic
   import /Languages/MetaSlang/Transformations/PartialEval
   import /Languages/MetaSlang/Transformations/MetaTransform
+  import /Languages/MetaSlang/Transformations/Simple
 
   def posOf(tr: TransformExpr): Position =
     case tr of
