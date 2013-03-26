@@ -119,7 +119,7 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 
  op ppUnitId (UID : UnitId) : WLPretty =
    ppConcat[ppString "((path ", 
-            ppStrings UID.path, 
+            ppStrings UID.path,  %TODO separate with spaces.
             ppString ") (hashSuffix ", 
             (case UID.hashSuffix of None -> ppString "None" | Some str -> ppConcat [ppString "Some ", ppString str]),
             ppString "))"]
@@ -153,10 +153,10 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
 		  ppString ")",
 		  ppBreak]
       | Translate (term, renaming) ->
-	ppConcat [ppString "translate ",
+	ppConcat [ppString "(Translate ",
 		  ppSCTerm c term,
-		  ppString " by ",
-		  ppRenaming renaming]
+		  ppRenaming renaming,
+                  ppString ")"]
       | Let (decls, term) ->
         ppConcat [ppString "let",
 		  ppNewline,
@@ -708,6 +708,9 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
               
   %% This is a map from op names to (maps from qualifiers to opinfos).
   op ppAOpMap (c : Context, m:(AOpMap StandardAnnotation)) : WLPretty =
+  if (m = emptyAQualifierMap) then
+    ppString "(ops)"
+  else
     ppGr2Concat [ppString "(ops ",
                  ppNewline,
                  ppSep ppNewline (MapSTHashtable.STH_foldi (ppAOpMapEntry c, [], m)),
@@ -754,11 +757,14 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
 
   %% This is a map from type names to (maps from qualifiers to typeinfos).
   op ppATypeMap (c : Context, m:(ATypeMap StandardAnnotation)) : WLPretty =
+  if (m = emptyAQualifierMap) then
+    ppString "(types)"
+  else
     ppGr2Concat [ppString "(types ",
                  ppNewline,
                  ppSep ppNewline (MapSTHashtable.STH_foldi (ppATypeMapEntry c, [], m)),
-                 ppString ")",
-                 ppNewline]
+                 ppString ")"
+                 ]
  
    op ppSpec (c: Context) (spc:Spec) : WLPretty =
     ppGr2Concat [ppString "(Spec ",
@@ -887,10 +893,8 @@ op ppMapLMapFromStringsToATypeInfos (c : Context) (m:MapL.Map(String, (ATypeInfo
                               ppSCTerm c im_sc_tm,
                               ppNewline,
                               %%ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
-                              ppString "(",
-                              %% ppSpec c im_sp,
-                              ppString "...imported spec elided...",
-                              ppString ")",
+                              %%ppSpec c im_sp,
+                              ppString "(...imported spec elided...)",
                               ppNewline,
                               %%ppString "(...imported elements elided...)",
                               ppSpecElements c im_elements,
