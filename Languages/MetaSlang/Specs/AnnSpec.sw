@@ -67,8 +67,7 @@ AnnSpec qualifying spec
  type SpecElement  = ASpecElement  StandardAnnotation
  type SpecElements = ASpecElements StandardAnnotation
 
- op  propertyElement?: [a] ASpecElement a -> Bool
- def propertyElement? p =
+ op [a] propertyElement? (p : ASpecElement a) : Bool =
    case p of
      | Property _ -> true
      | _ -> false
@@ -768,8 +767,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  %% Update: In fact, looking for all duplicates seems to take a lot of time.
  %%         It added 9(!) minutes to the normal 3 or 4 minutes for processing
  %%         all the specs in Specware itself.
- op  removeDuplicateImports: Spec -> Spec
- def removeDuplicateImports spc =
+ op removeDuplicateImports (spc : Spec) : Spec =
    let def mapEls(els, imports) =
          case els of
 	   | [] -> ([], imports)
