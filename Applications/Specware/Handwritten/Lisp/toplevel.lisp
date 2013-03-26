@@ -925,7 +925,7 @@
 ;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
 (defun showdata (&optional argstring)
   ;; This calls the Lisp translation of op showData (from
-  ;; Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp.sw).  The "-3" in
+  ;; Languages/SpecCalculus/AbstractSyntax/ShowData.sw).  The "-3" in
   ;; the Lisp function name is added during the translation to Lisp.
   ;; My approach is to have the Metaslang code do all of the argument
   ;; parsing.
@@ -933,6 +933,23 @@
                                            (wrap-option *last-unit-Id-_loaded*)
                                            (home-dir))))
     ;;evaluateShowData returns an optional string to store in *last-unit-Id-_loaded*
+    (if (equal val '(:|None|))
+        nil ;does this return value matter?
+        ;; strip the :|Some| to get the string
+        (setq *last-unit-Id-_loaded* (cdr val)))))
+
+;;; This is the function invoked by the Specware shell command 'showdatav'.
+;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
+(defun showdatav (&optional argstring)
+  ;; This calls the Lisp translation of op evaluateShowDataV (from
+  ;; Languages/SpecCalculus/AbstractSyntax/ShowData.sw).  The "-3" in
+  ;; the Lisp function name is added during the translation to Lisp.
+  ;; My approach is to have the Metaslang code do all of the argument
+  ;; parsing.
+  (let ((val (ShowData::evaluateShowDataV-3 (wrap-option argstring)
+                                           (wrap-option *last-unit-Id-_loaded*)
+                                           (home-dir))))
+    ;;evaluateShowDataV returns an optional string to store in *last-unit-Id-_loaded*
     (if (equal val '(:|None|))
         nil ;does this return value matter?
         ;; strip the :|Some| to get the string

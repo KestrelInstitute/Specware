@@ -65,12 +65,14 @@ op ppWrapParens (pp : WLPretty) : WLPretty =
   % op MonadicStateInternal.readGlobalVar : fa (a) String -> Option a
   % op IO.writeStringToFile : String *  Filename -> ()
 
-type Context = {printTypes?: Boolean,
-                printPositionInfo?: Boolean,
+type Context = {printTypes?: Bool,
+                printPositionInfo?: Bool,
                 fileName: String,
                 %currentUID: UnitId,
                 %uidsSeen: List UnitId,	% Used to avoid infinite recursion because of circularity
-                recursive?: Boolean}
+                recursive?: Bool,
+                showImportedSpecs? : Bool  %Can cause exponential blowup.  Recommend importing /Library/Base/Empty into the spec being shown if you set this to true
+                }
 
 % op  showTerm : SCTerm -> String
 % def showTerm term = ppFormat (ppSCTerm {printTypes? = true,
@@ -80,7 +82,7 @@ type Context = {printTypes?: Boolean,
 %					 recursive? = false}
 %			         term)
 
-op ppBoolean (b: Boolean) : WLPretty =
+op ppBool (b: Bool) : WLPretty =
   case b of
     | true -> ppString "true"
     | false -> ppString "false"
@@ -341,7 +343,7 @@ op ppSpecElemTerm (c:Context) ((elem, pos):SpecElemTerm) : WLPretty =
                                           
 op ppIdInfo (qids: List QualifiedId) : WLPretty = ppSep (ppString ", ") (map ppQualifiedId qids)
    
-op ppTypeInfo (c:Context) (full?:Boolean) (aliases: List QualifiedId, dfn: MSType) (pos:Position) : WLPretty =
+op ppTypeInfo (c:Context) (full?:Bool) (aliases: List QualifiedId, dfn: MSType) (pos:Position) : WLPretty =
   let (tvs, srt) = unpackType dfn in
   ppGr2Concat
   ((if c.printPositionInfo?
@@ -370,7 +372,7 @@ op ppTyVars (tvs: TyVars) : WLPretty =
     | [] -> ppNil
     | _  -> ppSep (ppString " ") (map ppID tvs)
 
-op ppOpInfo (c:Context) (decl?:Boolean) (def?:Boolean) (aliases:Aliases, fixity:Fixity, dfn:MSTerm) (pos:Position) : WLPretty =
+op ppOpInfo (c:Context) (decl?:Bool) (def?:Bool) (aliases:Aliases, fixity:Fixity, dfn:MSTerm) (pos:Position) : WLPretty =
   let (tvs, srt, term) = unpackTerm dfn in %TODO think about this
   ppGr2Concat
   ((if c.printPositionInfo?
@@ -548,7 +550,7 @@ op ppRenaming ((rules, _): Renaming) : WLPretty =
   %     | Some global_context ->
   %       findDefiningTermForUnit(val,global_context)
     
-%  op  printUID : String * Boolean * Boolean -> ()
+%  op  printUID : String * Bool * Bool -> ()
 %  def printUID (uid, printPositionInfo?, recursive?) =
 %    toScreen
 %      (case evaluateUnitId uid of
@@ -807,7 +809,7 @@ op ppSpec (c: Context) (spc:Spec) : WLPretty =
   %%       	    ppSCTermVal c spec_or_morph_tm "name "]
   %%     | _ -> ppString "elements"
 
-  %% op  morphismTerm?: Context -> SCTerm -> Boolean
+  %% op  morphismTerm?: Context -> SCTerm -> Bool
   %% def morphismTerm? c tm =
   %%   case tm of
   %%     | (SpecMorph _,_) -> true
@@ -817,7 +819,7 @@ op ppSpec (c: Context) (spc:Spec) : WLPretty =
   %%         | _ -> false)
   %%     | _ -> false
 
-  %% op  baseUnitId?: UnitId -> Boolean
+  %% op  baseUnitId?: UnitId -> Bool
   %% def baseUnitId? uid =
   %%   let len = length uid.path in
   %%   case subFromTo(uid.path,len-3,len-1) of
@@ -888,8 +890,9 @@ op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
                             ppSCTerm c im_sc_tm,
                             ppNewline,
                             %%ppUIDorFull c (Spec im_sp) (Some im_sc_tm) "name ",
-                            %%ppSpec c im_sp,
-                            ppString "(...imported spec elided...)",
+                            if c.showImportedSpecs? 
+                              then ppSpec c im_sp
+                            else ppString "(...imported spec elided...)",
                             ppNewline,
                             %%ppString "(...imported elements elided...)",
                             ppSpecElements c im_elements,
@@ -1236,7 +1239,7 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
                                  ppType c ty,
                                  ppString ")"]
     | StringPat (str,_) -> ppString (enquote str)
-    | BoolPat (b,_) -> ppBoolean b
+    | BoolPat (b,_) -> ppBool b
     | CharPat (chr,_) -> ppConcat[ppString numberSignString, ppString (show chr)]
     | NatPat (int,_) -> ppString (show int)      
       %      | RelaxPat (pat,term,_) ->   
@@ -1333,13 +1336,13 @@ op ppFun (fun:Fun) : WLPretty =
     | Project id ->
       ppConcat [ppString "(Project ", ppID id, ppString ")"]
     | RecordMerge -> ppString "RecordMerge"
-    | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBoolean b, ppString ")"]
+    | Embed (id,b) -> ppConcat [ppString "(embed ", ppID id, ppString " ", ppBool b, ppString ")"]
     | Embedded id  -> ppConcat [ppString "(embedded ", ppID id, ppString ")"]
     | Select id -> ppGr2Concat [ppString "(Select ", ppBreak, ppID id, ppString ") ", ppBreak]
     | Nat n -> ppConcat[ ppString "(Nat ", ppString (show n), ppString ")"]
     | Char chr -> ppConcat[ppString numberSignString, ppString (show chr)]
     | String str -> ppConcat[ppString "(String ", ppString (enquote str), ppString ")"]  %TODO escape any quotes in the string with backslash
-    | Bool b -> ppConcat [ppString "(bool ", ppBoolean b, ppString ")"]
+    | Bool b -> ppConcat [ppString "(bool ", ppBool b, ppString ")"]
     | OneName (id,fxty) -> ppString id
     | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
     | mystery -> fail ("ERROR: No match in ppFun with: " ^ (anyToString mystery))
@@ -1361,10 +1364,10 @@ op ppFixity (fix: Fixity) : WLPretty =
                                     ]
     | mystery -> fail ("ERROR: No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
       
-      % op isSimpleType? (ty:MSType) : Boolean =
+      % op isSimpleType? (ty:MSType) : Bool =
       %   case ty of
       %     | Base _ -> true
-      %     | Boolean _ -> true
+      %     | Bool _ -> true
       %     | _ -> false
 
 op ppType (c: Context) (ty:MSType) : WLPretty =
@@ -1521,16 +1524,18 @@ op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
      (map (fn (d,r) -> ppConcat [ppQualifiedId d, ppString " -> ",ppQualifiedId r])
         (mapToList idMap)))
 
-op printValueTop (value : Value, uid : UnitId) : String =
+op printValueTop (value : Value, uid : UnitId, showImportedSpecs? : Bool) : String =
   printValue {printTypes? = true,
               printPositionInfo? = false,
               fileName = "", %FIXME the caller already has the file name? ah, this is used to print position information?
               %currentUID = uid,
               %uidsSeen = [uid],
-              recursive? = true}
+              recursive? = true,
+              showImportedSpecs? = showImportedSpecs?}
              value
 
-op showDataCore (val : Value) : Boolean =
+%% Returns a success Bool flag.
+op showDataCore (val : Value, showImportedSpecs? : Bool) : Bool =
 %TODO Awkward to extract the UID here and the uid string below?; just do whatever evaluateUnitId does to turn it into an absolute path?
   case uidForValue val of 
     | None -> let _ = writeLine "Error: Can't get UID string from value" in false
@@ -1539,31 +1544,38 @@ op showDataCore (val : Value) : Boolean =
       let filename = uidstr ^ ".data" in
       let _ = ensureDirectoriesExist filename in
       let _ = writeLine("Writing data to: "^filename^"\n") in
-      let _ = writeStringToFile(printValueTop(val,uid),filename) in
+      let _ = writeStringToFile(printValueTop(val,uid,showImportedSpecs?),filename) in
         true
 
-  %% Evaluate the given unit and print it to a file.
-  %% Returns a success flag.
-op showData (uid_str : String) : Boolean =
-  let _ = writeLine "Printing spec to file." in
-  let _ = writeLine ("uid_str:"^uid_str) in
-  case evaluateUnitId uid_str of
-    | None -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
-    | Some val -> showDataCore val
-      
-% This is the top-level function for the showdata command.
 % TODO abstract out this pattern for use in other commands?
-op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
-  let _ = writeLine "Calling evaluateShowData." in
-  let _ = writeLine ("The user's home directory: "^homedir) in
-  let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> enquote str | None -> "No arg string supplied.")) in
-  let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
+% returns an optional string to store in *last-unit-Id-_loaded*
+op evaluateShowDataHelper (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String, showImportedSpecs? : Bool) : Option String = 
+%  let _ = writeLine "Calling evaluateShowData." in
+%  let _ = writeLine ("The user's home directory: "^homedir) in
+%  let _ = writeLine ("arg string: "^(case optional_argstring of Some str -> enquote str | None -> "No arg string supplied.")) in
+%  let _ = writeLine ("Last unit ID: "^(case lastUnitIdLoaded of | Some str -> str | None ->  "No last uid processed.")) in
   case UIDStringFromArgString(optional_argstring, lastUnitIdLoaded, homedir) of
     | None -> None % fail and don't change *last-unit-Id-_loaded*
     | Some uid_str ->
-      %% Print the data to the file and return a new value for *last-unit-Id-_loaded* if the operation succeeded:
-      let success? = showData uid_str in
+      % let _ = writeLine "Printing spec to file." in
+      % let _ = writeLine ("uid_str:"^uid_str) in
+      %% Evaluate the given unit
+      let success? = (case evaluateUnitId uid_str of
+                        | None -> let _ = writeLine("Error: Unknown UID " ^ uid_str) in false
+                          %%  Print the unit's data structures to a file:
+                        | Some val -> showDataCore(val, showImportedSpecs?)) in
+      %% Return a new value for *last-unit-Id-_loaded* if the operation succeeded:
       if success? then Some uid_str else None
-        
+
+% This is the top-level function for the showdata Specware shell command.
+% returns an optional string to store in *last-unit-Id-_loaded*
+op evaluateShowData (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String =
+  evaluateShowDataHelper (optional_argstring, lastUnitIdLoaded, homedir, false)
+
+% This is the top-level function for the showdatav (verbose) Specware shell command.
+% returns an optional string to store in *last-unit-Id-_loaded*
+op evaluateShowDataV (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
+  evaluateShowDataHelper (optional_argstring, lastUnitIdLoaded, homedir, true)        
+
 end-spec
 
