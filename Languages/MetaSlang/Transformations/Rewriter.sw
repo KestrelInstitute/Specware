@@ -2,6 +2,7 @@
 
 MetaSlangRewriter qualifying spec 
  import /Library/Legacy/DataStructures/LazyList
+ import ../AbstractSyntax/PathTerm
  import DeModRewriteRules, Simplify, Interpreter
  
  type Context = HigherOrderMatching.Context
@@ -9,6 +10,7 @@ MetaSlangRewriter qualifying spec
  type TermPredicate = MSTerm * MSTerm -> Bool
 
  op traceRewriting : Nat = 0
+ op traceShowsLocalChanges?: Bool = true
 
  def mkVar = HigherOrderMatching.mkVar     
 
@@ -97,6 +99,9 @@ MetaSlangRewriter qualifying spec
             ([head results], t1, s1, rule1) (tail results)).1
    in
    %let _ = if length new_results < length results then writeLine(toString (length new_results)) else () in
+   % let _ = if length new_results = length results then
+   %          (writeLine "Opt Success:"; let (t1,(s1,_,_,_))::_ = results in (writeLine(printTerm t1); printSubst s1))
+   %         else () in
    if length new_results < length results
      then optimizeSuccessList new_results
      else new_results
@@ -691,20 +696,31 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 (* Trace utilities *)
 
  op printTerm: Nat * MSTerm -> String
- def printTerm (indent,term) = 
+ def printTerm (indent, term) = 
      let indent   = PrettyPrint.blanks indent in
      let context  = initialize(asciiPrinter,false) in 
      let argument = ([],Top) in
      let termPP   = ppTerm context argument term in
-     let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent,termPP] in
+     let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent, termPP] in
      PrettyPrint.toString(PrettyPrint.format(100,termPP))
 
- op traceTerm : Context * MSTerm * SubstC -> ()
- def traceTerm(context,term,(* subst *)_) = 
+ op traceTerm : Context * MSTerm * MSTerm * SubstC -> ()
+ def traceTerm(context, term, prev_term, (* subst *)_) = 
      if traceRewriting > 1 then 
      % if context.trace then 
-	 (writeLine(printTerm(3 + ! context.traceIndent,term));
-	  ()
+	 (let indent = 3 + ! context.traceIndent in
+          if traceShowsLocalChanges? && ~(equalTerm?(term, prev_term))
+            then (let changed_ptm = changedPathTerm(term, prev_term) in
+                  let prev_sub_tm = fromPathTerm(prev_term, changed_ptm.2) in
+                  let prev_tm_str = printTerm(indent, prev_sub_tm) in
+                  let new_sub_tm = fromPathTerm changed_ptm in
+                  let new_tm_str  = printTerm new_sub_tm in
+                  if length prev_tm_str + length new_tm_str < 90
+                    then writeLine(prev_tm_str^"  --->  "^new_tm_str)
+                    else if length new_tm_str < 40
+                    then writeLine(prev_tm_str^"\n --->  "^new_tm_str)
+                    else writeLine(prev_tm_str^"\n --->\n"^printTerm(indent, new_sub_tm)))
+            else writeLine(printTerm(indent, term))
 	  ) 
      else ()
 
@@ -777,24 +793,24 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
  op conditionResultLimit: Nat = 4
 
- def rewriteRecursivePre(context,boundVars,rules0,term,maxDepth) = 
+ def rewriteRecursivePre(context, boundVars, rules0, term, maxDepth) = 
    let	
-      def rewritesToTrue(rules,term,boundVars,subst,history,backChain): Option SubstC =
+      def rewritesToTrue(rules, term, boundVars, subst, history, backChain): Option SubstC =
           if trueTerm? term then Some subst
           else
-	  let results = rewriteRec(rules,subst,term,freeVars term,history,backChain+1) in
-          case LazyList.find_n (fn (rl,t,c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
+	  let results = rewriteRec(rules, subst, term, term, freeVars term, history, backChain+1) in
+          case LazyList.find_n (fn (rl, t, c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
                  results
                  conditionResultLimit
 	    of None -> None
-	     | Some((rl,t,c_subst)::_) ->
+	     | Some((rl, t, c_subst)::_) ->
                %% Substitutions, history and conditional rewrites need work
 	       if trueTerm? t then Some c_subst else None
 
-      def solveCondition(rules,rule,(typeSubst,termSubst,typeConds),prev_term,boundVars,history,backChain)
+      def solveCondition(rules, rule, (typeSubst, termSubst, typeConds), prev_term, boundVars, history, backChain)
           : Option SubstC = 
-        let subst = (typeSubst,termSubst,[])
+        let subst = (typeSubst, termSubst, [])
         in
         let conds = case rule.condition of
                       | None -> typeConds
@@ -802,16 +818,16 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
         in
 	if conds = []
           then
-	     (traceRule(context,rule);
+	     (traceRule(context, rule);
 	      Some subst)
         else if termIn?(prev_term, conds)   % Avoid subproblem same as original
           then (%writeLine("Found recursive subgoal: "^printTerm prev_term);
                 None)
         else
-	if backChain < backwardChainMaxDepth && completeMatch(rule.lhs,subst) then 
+	if backChain < backwardChainMaxDepth && completeMatch(rule.lhs, subst) then 
             let cond = foldr Utilities.mkAnd trueTerm conds in
             let cond = dereferenceAll subst cond in % redundant?
-            let subst = removeLocalFlexVars(subst,[]) in
+            let subst = removeLocalFlexVars(subst, []) in
             let traceIndent = ! context.traceIndent in
 	    let res = if traceRewriting > 0 then
                         (context.traceIndent := traceIndent + 3;
@@ -819,10 +835,10 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                          writeLine (show(! context.traceDepth)^" : "^rule.name);
                          %              printSubst subst;
                          context.traceDepth := 0;
-                         rewritesToTrue(rules,cond,boundVars,subst,history,backChain))
+                         rewritesToTrue(rules, cond, boundVars, subst, history, backChain))
                       else 
                         (context.traceDepth := 0;
-                         rewritesToTrue(rules,cond,boundVars,subst,history,backChain))
+                         rewritesToTrue(rules, cond, boundVars, subst, history, backChain))
             in
 	    if traceRewriting > 0 then
 	      (context.traceIndent := traceIndent;
@@ -833,33 +849,33 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 	       res
 	else None
 
-      def rewriteRec(rules0,subst,term0,boundVars,history,backChain) =
-	let _ = traceTerm(context,term0,subst)     in
+      def rewriteRec(rules0, subst, term0, prev_term, boundVars, history, backChain) =
+	let _ = traceTerm(context, term0, prev_term, subst) in
 	let traceDepth = ! context.traceDepth + 1 in
         if traceDepth > (if backChain = 0 then maxDepth else max(maxDepth, backwardChainMaxDepth))
           then unit history
         else
-	let def rewrite(strategy,rules) =
+	let def rewrite(strategy, rules) =
 %                 let _ = writeLine("Rules:") in
 %                 let _ = app printRule (listRules rules) in
 		rewriteTerm 
 		  ({strategy = strategy,
-		    rewriter = applyDemodRewrites(context,subst,maxDepth > 1 || backChain > 0),
+		    rewriter = applyDemodRewrites(context, subst, maxDepth > 1 || backChain > 0),
 		    context = context},
-		   boundVars,term0,rules)     
+		   boundVars, term0, rules)     
 	in
 	if historyRepetition(history)
 	    then unit (tail history)
 	else
-	% let rews = (rewrite(Innermost,unconditional) >>= 
-	let rews = (rewrite(Outermost,rules0) >>= 
-		    (fn (term,(subst,rule,boundVars,rules1)) ->  
-			unit (term,(subst,rule,boundVars,rules1))) 
+	% let rews = (rewrite(Innermost, unconditional) >>= 
+	let rews = (rewrite(Outermost, rules0) >>= 
+		    (fn (term, (subst, rule, boundVars, rules1)) ->  
+			unit (term, (subst, rule, boundVars, rules1))) 
 % 		    @@
 % 		    (fn () -> 
-% 		     rewrite(Outermost,conditional) >>= 
-% 		     (fn (term,(subst,rule,boundVars,rules)) ->  
-% 			unit (term,(subst,rule,boundVars,
+% 		     rewrite(Outermost, conditional) >>= 
+% 		     (fn (term, (subst, rule, boundVars, rules)) ->  
+% 			unit (term, (subst, rule, boundVars,
 % 				    {conditional   = conditional,
 % 				     unconditional = unconditional}))))
                     )
@@ -868,18 +884,18 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 	  of Nil -> unit history
 	   | _ ->
 	rews >>=
-	(fn (term,(subst,rule,boundVars,rules1)) -> 
+	(fn (term, (subst, rule, boundVars, rules1)) -> 
 	    (context.traceDepth := traceDepth;
-             let (rule,term,new_flexvarnums) = renameConditionFlexVars(rule,term,subst) in
-	     case solveCondition(rules1,rule,subst,term0,boundVars,history,backChain+1)
+             let (rule, term, new_flexvarnums) = renameConditionFlexVars(rule, term, subst) in
+	     case solveCondition(rules1, rule, subst, term0, boundVars, history, backChain+1)
 	       of Some subst -> 
 		 (context.traceDepth := traceDepth;
 		  let term = dereferenceAll subst term in
 		  let term = renameBound term in
-                  let history = Cons((rule,term,subst),history) in
-                  let subst = removeLocalFlexVars(subst,new_flexvarnums) in
+                  let history = Cons((rule, term, subst), history) in
+                  let subst = removeLocalFlexVars(subst, new_flexvarnums) in
 		  let rec_results
-                     = rewriteRec(rules0,subst,term,boundVars, history, backChain)
+                     = rewriteRec(rules0, subst, term, term0, boundVars, history, backChain)
                    in
                    if rec_results = Nil
                      then unit history
@@ -888,7 +904,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                      ))
    in
       %let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules0,emptySubstitution,term,boundVars,[],0)
+      rewriteRec(rules0, emptySubstitution, term, term, boundVars, [], 0)
 
  op rewriteOnce : 
     Context * List Var * RewriteRules * MSTerm -> List MSTerm
@@ -896,26 +912,27 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 %%
 %% Apply unconditional rewrite rules using outer-most strategy
 %%
- def rewriteOnce(context,boundVars,rules,term) = 
-     let unconditional = Demod.addRules(List.map (fn rl -> (rl.lhs,rl)) 
-						rules.unconditional,Demod.empty) in
+ def rewriteOnce(context, boundVars, rules, term) = 
+     let unconditional = Demod.addRules(List.map (fn rl -> (rl.lhs, rl)) 
+						rules.unconditional, Demod.empty) in
      (* unused...
-     let conditional   = Demod.addRules(List.map (fn rl -> (rl.lhs,rl)) 
-						rules.conditional,Demod.empty)  in
+     let conditional   = Demod.addRules(List.map (fn rl -> (rl.lhs, rl)) 
+						rules.conditional, Demod.empty)  in
      *)
 
-%    let {unconditional,conditional} = rules in
+%    let {unconditional, conditional} = rules in
      let subst = emptySubstitution in
      let term = dereferenceAll emptySubstitution term in
      let rews = rewriteTerm
 		 ({strategy = Innermost,
-		   rewriter = applyDemodRewrites(context,emptySubstitution,false),
+		   rewriter = applyDemodRewrites(context, emptySubstitution, false),
 		   context = context},
-		  boundVars,term,unconditional)
+		  boundVars, term, unconditional)
      in
      let rews = LazyList.toList rews in
-     List.map (fn (newTerm,(subst,rule,boundVars,rules)) -> 
-		  dereferenceAll subst newTerm) rews
+     map (fn (newTerm, (subst, rule, boundVars, rules)) -> 
+            dereferenceAll subst newTerm)
+       rews
 
 	  
 end-spec
