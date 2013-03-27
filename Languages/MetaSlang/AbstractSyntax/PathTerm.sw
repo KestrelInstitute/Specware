@@ -228,6 +228,8 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
                Apply(infix_fn2, Record([("1", x2), ("2", y2)], _), _))
                 | infixFn? f && equalTerm?(infix_fn1, infix_fn2) ->
               choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
+            | (Apply(x1, y1, _), Apply(x2, y2, _)) | embed? Lambda x1 ->   % case expression
+              choose2(compare(x1, x2, 1 :: path), compare(y1, y2, 0 :: path), path)
             | (Apply(x1, y1, _), Apply(x2, y2, _)) ->
               choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
             | (Record(l1, _), Record(l2, _)) | sameFieldNames?(l1, l2) ->
