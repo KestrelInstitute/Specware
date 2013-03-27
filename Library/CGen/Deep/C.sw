@@ -2032,13 +2032,17 @@ for those instances of the constructs that satisfy the compile-time checks.
 Correspondingly, our formalization could restrict the specification of execution
 to only the situations allowed by the compile-time checks. However, it seems
 simpler to specify execution in all situations, and have the Specware functions
-return a special 'error' result to indicate that the situation should not arise
-if all the compile-time checks are satisfied. We can then prove that no error
-ever arises when all the compile-time checks (formalized earlier) are satisfied.
+return a special error result to indicate that the situation should not arise if
+all the compile-time checks are satisfied. We can then prove that no error ever
+arises when all the compile-time checks (formalized earlier) are satisfied.
 
-Thus, a computation can have three possible outcomes in our formalization:
-normal ("OK"), non-standard, and error. The exact nature of a normal outcome
-depends on the computation. So, we introduce a type of outcomes that is
+In the presence of loops, a computation may fail to terminate. We model this via
+a special non-temination result that is returned by Specware functions that
+model the execution of non-terminating computations.
+
+Thus, a computation can have four possible outcomes in our formalization: normal
+("OK"), non-standard, error, and non-termination. The exact nature of a normal
+outcome depends on the computation. So, we introduce a type of outcomes that is
 parameterized over the type of the normal outcomes. We use the short name 'OC'
 (for 'OutCome') so that it is not too invasive when used for the result types of
 the Specware ops that formalize execution. *)
@@ -2047,27 +2051,32 @@ type OC a =
   | ok a
   | nonstd
   | error
+  | nonterm
 
-(* Whenever a subcomputation yields a non-standard or error outcome, the outer
-computation does too. In other words, non-standard and error outcomes propagate.
-This is the structure of an exception monad, whose 'bind' operator is defined as
-follows. The use of the name 'monadBind' enables the use of Specware's monadic
-syntax. *)
+(* Whenever a subcomputation yields a non-standard or error or non-termination
+outcome, the outer computation does too. In other words, non-standard and error
+and non-termination outcomes propagate. This is the structure of an exception
+monad, whose 'bind' operator is defined as follows. The use of the name
+'monadBind' enables the use of Specware's monadic syntax. *)
 
 op [a,b] monadBind (m:OC a, f: a -> OC b) : OC b =
   case m of
-  | ok x -> f x
-  | nonstd -> nonstd
-  | error -> error
+  | ok x    -> f x
+  | nonstd  -> nonstd
+  | error   -> error
+  | nonterm -> nonterm
 
-(* It is also useful to define monadic ops that return 'error' or 'nonstd' if
-some condition is true. *)
+(* It is also useful to define monadic ops that return 'error' or 'nonstd' or
+'nonterm' if some condition is true. *)
 
 op errorIf (condition:Bool) : OC () =
   if condition then error else ok ()
 
 op nonstdIf (condition:Bool) : OC () =
   if condition then nonstd else ok ()
+
+op nontermIf (condition:Bool) : OC () =
+  if condition then nonterm else ok ()
 
 
 %subsection (* Object designators *)
