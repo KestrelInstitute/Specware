@@ -1713,8 +1713,13 @@ Sample :token:`type_abbreviations`:
 
 .. code-block:: specware
 
+   type MyFun = Nat -> Nat
+   type MyProd = Nat * Nat
+   type MyProd2 = MyProd
    type Date = {year : Nat, month : Nat, day : Nat}
    type Array a = List a
+   type PosNat = (Nat | positive?)
+   type PosNat2 = {x:Nat | positive? x}
    type Map(a, b) = (Array (a * b) | key_uniq?)
    
 
@@ -1723,7 +1728,7 @@ Sample :token:`new_type_definitions`:
 .. code-block:: specware
 
    type Tree         a = | Leaf a | Fork (Tree a * Tree a)
-   type {Bush,Shrub} a = | Leaf a | Fork (Tree a * Tree a)
+   type Bush         a = | Leaf a | Fork (Tree a * Tree a)
    type Z3 =  Nat / (fn (m, n) -> m rem 3 = n rem 3)
    
 
@@ -1744,8 +1749,9 @@ isomorphic to the type of the :token:`new_type_descriptor`. Thus,
 while ``Array Nat`` and ``List Nat`` from the examples denote the same
 type, the types assigned to ``Tree Nat`` and ``Bush Nat`` are
 equivalent but not necessarily equal, and commingling them in a
-:token:`spec` results in a type error. On the other hand, ``Bush Nat``
-and ``Shrub Nat`` are truly synonymous.
+:token:`spec` results in a type error. 
+
+.. COMMENT:  On the other hand, ``Bush Nat`` and ``Shrub Nat`` are truly synonymous.
 
 For parameterized types, this extends to all possible assignments of
 types to the :token:`local_type_variables`, taking the right-hand
