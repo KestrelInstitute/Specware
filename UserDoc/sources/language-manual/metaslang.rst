@@ -991,7 +991,7 @@ Translations
 
 .. productionlist::
   spec_translation: translate `spec_term` by `name_map`
-  name_map: "{" [ `name_map_item` { , `name_map_item` }* ] '}
+  name_map: "{" [ `name_map_item` { , `name_map_item` }* ] "}"
   name_map_item: `type_name_map_item` | 
                : `op_name_map_item` | 
                : `wildcard_map_item`
@@ -1341,7 +1341,7 @@ the base-libraries always map to themselves.)
             ** ||     hide :token:`name_list` in :token:`spec_term`
             ** ||   | export :token:`name_list` from :token:`spec_term`
             ** ||
-            ** ||:token:`name_list` ::= '{ :token:`name` { , :token:`name` }* '}
+            ** ||:token:`name_list` ::= '{ :token:`name` { , :token:`name` }* "}"
             ** ``
             ** </para>
             ** </section>
@@ -1354,7 +1354,7 @@ Diagrams
 .. productionlist::
   diagram_term: `unit_identifier` | 
               : `diagram_form`
-  diagram_form: diagram "{" `diagram_element` { , `diagram_element` }* '}
+  diagram_form: diagram "{" `diagram_element` { , `diagram_element` }* "}"
   diagram_element: `diagram_node` | 
                  : `diagram_edge`
   diagram_node: `simple_name` +-> `spec_term`
@@ -1701,9 +1701,9 @@ Type-definitions
 .. productionlist::
   type_definition: `type_abbreviation` | `new_type_definition`
   type_abbreviation: type `type_name` 
-                   :     [ `formal_type_parameters` ] `equals` `type_descriptor`
+                   :     [ `formal_type_parameters` ] = `type_descriptor`
   new_type_definition: type `type_name` 
-                     : [ `formal_type_parameters` ] `equals` `new_type_descriptor`
+                     : [ `formal_type_parameters` ] = `new_type_descriptor`
 
 Restriction. Each :token:`local_type_variable` of the
 :token:`formal_type_parameters` must be a different
@@ -1823,9 +1823,9 @@ Op-declarations
 
 .. productionlist::
   op_declaration: op [ `type_variable_binder` ] `formal_expression` 
-                :    [ `fixity` ] `type_annotation` [ `equals` `expression` ] | 
+                :    [ `fixity` ] `type_annotation` [ = `expression` ] | 
                 : op `formal_expression` [ `fixity` ]
-                :    `polytype_annotation`  [ `equals` `expression` ]
+                :    `polytype_annotation`  [ = `expression` ]
   polytype_annotation: : `type_variable_binder` `type_descriptor`
   type_variable_binder: "[" `local_type_variable_list` "]"
   formal_expression: `op_name` | `formal_application`
@@ -2074,8 +2074,8 @@ Op-definitions
 ==============
 
 .. productionlist::
-  op_definition: def [ op ] [ `type_variable_binder` ] `formal_expression` [ `type_annotation` ]      `equals` `expression` | 
-               : def [ op ] `formal_expression` `polytype_annotation`      `equals` `expression`
+  op_definition: def [ op ] [ `type_variable_binder` ] `formal_expression` [ `type_annotation` ]      = `expression` | 
+               : def [ op ] `formal_expression` `polytype_annotation`      = `expression`
 
 .. COMMENT:  ====================== NOT YET ==================================
             ** ||:token:`formal_application` ::= :token:`formal_prefix_application` | :token:`formal_infix_application`
@@ -2113,7 +2113,7 @@ Sample :token:`op_definitions`:
    
 
 The keyword ``op`` may be omitted after ``def`` unless the part between the
-keyword ``def`` and the :token:`equals` has the syntactic form of a :token:`name`
+keyword ``def`` and the :token:`=` has the syntactic form of a :token:`name`
 *N* followed by an optional :token:`formal_type_parameters`, where the :token:`name` *N*
 is declared or defined in the context as a :token:`type_name`.
 As for :token:`op_declarations`, the placement of any
@@ -4209,9 +4209,9 @@ Record-displays
 ===============
 
 .. productionlist::
-  record_display: "{" `record_display_body` '}
+  record_display: "{" `record_display_body` "}"
   record_display_body: [ `field_filler` { , `field_filler` }* ]
-  field_filler: `field_name` `equals` `expression`
+  field_filler: `field_name` = `expression`
 
 Sample :token:`record_display`:
 
@@ -4334,7 +4334,7 @@ Monadic-expressions
 ===================
 
 .. productionlist::
-  monadic_expression: "{" `open_monadic_expression` '}
+  monadic_expression: "{" `open_monadic_expression` "}"
   open_monadic_expression: `monadic_statement` ; `monadic_tail`
   monadic_statement: `expression` | `monadic_binding`
   monadic_binding: `pattern` <- `expression`
@@ -4963,7 +4963,7 @@ but merely serve to avoid grammatical ambiguities.)
   list_pattern_body: [ `pattern` { , `pattern` }* ]
   tuple_pattern: ( `tuple_pattern_body` )
   tuple_pattern_body: [ `pattern` , `pattern` { , `pattern` }* ]
-  record_pattern: "{" `record_pattern_body` '}
+  record_pattern: "{" `record_pattern_body` "}"
   record_pattern_body: [ `field_patterner` { , `field_patterner` }* ]
   field_patterner: `field_name` [ `equals` `pattern` ]
 
