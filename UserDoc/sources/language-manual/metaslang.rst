@@ -1827,12 +1827,12 @@ Op-declarations
                 : op `formal_expression` [ `fixity` ]
                 :    `polytype_annotation`  [ `equals` `expression` ]
   polytype_annotation: : `type_variable_binder` `type_descriptor`
-  type_variable_binder: "[" `local_type_variable_list` ']
+  type_variable_binder: "[" `local_type_variable_list` "]"
   formal_expression: `op_name` | `formal_application`
   formal_application: `formal_application_head` `formal_parameter`
   formal_application_head: `op_name` | `formal_application`
   formal_parameter: `closed_pattern` | 
-                  : "(" `pattern` "|" `expression` ')
+                  : "(" `pattern` "|" `expression` ")"
   fixity: `associativity` `priority`
   associativity: infixl | infixr
   priority: `nat_literal`
@@ -4285,7 +4285,7 @@ List-displays
 =============
 
 .. productionlist::
-  list_display: "[" `list_display_body` ']
+  list_display: "[" `list_display_body` "]"
   list_display_body: [ `expression` { , `expression` }* ]
 
 Sample :token:`list_display`:
@@ -4959,7 +4959,7 @@ but merely serve to avoid grammatical ambiguities.)
   variable_pattern: `local_variable`
   wildcard_pattern: _
   literal_pattern: `literal`
-  list_pattern: "[" `list_pattern_body` ']
+  list_pattern: "[" `list_pattern_body` "]"
   list_pattern_body: [ `pattern` { , `pattern` }* ]
   tuple_pattern: ( `tuple_pattern_body` )
   tuple_pattern_body: [ `pattern` , `pattern` { , `pattern` }* ]
