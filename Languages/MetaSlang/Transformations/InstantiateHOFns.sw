@@ -945,9 +945,11 @@ op dontUnfoldQualifiers: Ids = ["String"]
                  % let _ = writeLine("unpack = "^printTerm dfn) in
                  (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
 
-                    | (Lambda _, Some tv_subst) ->
-                      let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
-                      Some (simplifiedApply (inst_dfn, arg, spc))
+                    | (t as Lambda body, Some tv_subst) ->
+                        if anyTerm? t
+                          then None
+                          else let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
+                                    Some (simplifiedApply (inst_dfn, arg, spc))
 
                     | _ -> None)
                | _ -> None)
