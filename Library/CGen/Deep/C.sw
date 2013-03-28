@@ -3,6 +3,7 @@ C qualifying spec
 import /Library/General/TwosComplementNumber
 import /Library/General/FunctionExt
 import /Library/General/OptionExt
+import /Library/General/Stream
 
 
 %section (* Introduction *)
@@ -768,9 +769,9 @@ Note also that, by having function calls not be expressions in our subset, we
 maintain expressions free of side effects.
 
 Besides these expression statements, our C subset includes 'if' selection
-statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], and compound
-statements (i.e. blocks) [ISO 6.8.2]. No iteration statements [ISO 6.8.5] for
-now. Our 'if' statement captures both the variant with 'else' and the variant
+statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while'
+iteration statements [ISO 6.8.5], and compound statements (i.e. blocks) [ISO
+6.8.2]. Our 'if' statement captures both the variant with 'else' and the variant
 without 'else', based on the presence of the second, optional statement. A
 'return' statement [ISO 6.8.6.4] includes an optional expression.
 
@@ -782,6 +783,7 @@ type Statement =
   | call   Option Expression * Identifier * List Expression
   | iF     Expression * Statement * Option Statement
   | return Option Expression
+  | while  Expression * Statement
   | block  List BlockItem
 
 type BlockItem =
@@ -1767,16 +1769,19 @@ assign the result of the call to. If a left operand is present, the same check
 as assignments apply, namely the left operand must denote an object and the
 function's return type must be assignable to the type of the left operand.
 
-The test expression of an 'if' statement must have scalar type [ISO 6.8.4.1/1],
-which in our C subset is also an integer type. Since execution can take either
-branch, the compile-time type of an 'if' statement is the union of the
-compile-time types of its branches. Even though, according to [ISO 6.3.2.1/3],
-an array could be used as test (because it is converted to a pointer), in our C
-subset we impose a more disciplined use of arrays and so we do not automatically
-convert them to pointers.
+The test expression of an 'if' statement must have scalar type [ISO 6.8.4.1/1].
+Since execution can take either branch, the compile-time type of an 'if'
+statement is the union of the compile-time types of its branches. Even though,
+according to [ISO 6.3.2.1/3], an array could be used as test (because it is
+converted to a pointer), in our C subset we impose a more disciplined use of
+arrays and so we do not automatically convert them to pointers.
 
 As explained earlier, a 'return' statement has the compile-time type of its
 expression, or 'void' if it has no expression.
+
+The controlling expression of a 'while' statement must have scalar type [ISO
+6.8.5/2]. The compile-time type of a 'while' statement is the compile-time type
+of the loop body.
 
 When checking a block, we extend the list of object maps in the symbol table
 with an empty map, corresponding to the new block scope.
@@ -1844,6 +1849,10 @@ op checkStatement (symtab:SymbolTable, stmt:Statement) : Option StatementType =
      Some (single (return ety.typE))}
   | return None ->
     Some (single (return void))
+  | while (expr, body) ->
+    {ety <- checkExpression (symtab, expr);
+     check (scalarType? ety.typE);
+     checkStatement (symtab, body)}
   | block items ->
     let symtab' = symtab << {objects = symtab.objects ++ [empty]} in
     checkBlockItems (symtab', items)
@@ -2587,7 +2596,7 @@ op writeObject (state:State, obj:ObjectDesignator, newval:Value) : OC State =
          error
      | undefined (array (ty, n)) ->
        if i < n && ty = typeOfValue newval then
-         let allundef = repeat (undefined ty) n in
+         let allundef = List.repeat (undefined ty) n in
          let newval_array = array (ty, update (allundef, i, newval)) in
          writeObject (state, obj_array, newval_array)
        else
@@ -4028,6 +4037,17 @@ scope is retracted when the block is exited. As explained above, when the scope
 is retracted, we undefine all the pointers to objects that existed in that
 scope.
 
+The execution of a 'while' loop [ISO 6.8.5] yields 'nonterm' if there is a
+stream (i.e. infinite sequence) of states that starts with the initial state and
+such that for each state i in the stream (i) the controlling expression of the
+loop always yields a non-0 value (i.e. the test is true) and (ii) executing the
+loop body in the state i yields state i + 1 with the 'next' completion.
+Otherwise, we repeatedly execute the loop until either the condition is false or
+the body yields a 'return' statement completion: this is achieved by first
+testing the condition, then (if true) executing a block consisting of the body
+followed by a copy of the 'while' loop itself (if the body yields a 'return'
+statement completion, the copy of the 'while' loop is not executed).
+
 The argument expressions of a function call are evaluated, and the values passed
 as arguments. The arguments are stored into a new scope in a new frame in
 automatic storage. The body of the function must be a block, whose block items
@@ -4039,7 +4059,7 @@ undefined, the behavior is undefined.  Otherwise, the returned value is
 converted, as if by assignment, into the return type [ISO 6.8.6.4/3]. If the
 function returns 'void', but a value is returned, it is an error. In the absence
 of errors, function execution results in a new state and an optional value
-(present iff the function has a non-void return type). *)
+(present iff the function has a non-'void' return type). *)
 
 type StatementResult =
  {state      : State,
@@ -4102,6 +4122,38 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
                    (state, butLast state.storage.automatic) in
     ok {state = undefinePointersInState (state, f, None),
         completion = return None}
+  | while (expr, body) ->
+    % the loop does not terminate if there is a stream of states:
+    if (ex(states:Stream State)
+          % the stream starts with the initial state:
+          states 0 = state &&
+          % for each state in the stream:
+          (fa(i:Nat)
+             % the test is true:
+             (ex (res:ExpressionResult, condition:Value)
+                evaluate (states i, expr) = ok res &&
+                expressionValue (states i, res) = ok condition &&
+                zeroScalarValue? condition = ok false)
+             &&
+             % the body completes and yields the next state:
+             execStatement (states i, body) =
+              ok {state = states (i + 1), completion = next}))
+    then
+      nonterm
+    % otherwise, the loop eventually terminates:
+    else
+      {res <- evaluate (state, expr);
+       condition <- expressionValue (state, res);
+       isZero <- zeroScalarValue? condition;
+       % terminate if test is false:
+       if isZero then
+         ok {state = state, completion = next}
+       % keep going if test is true (will terminate eventually, either because
+       % the test will become false or because the body will execute a 'return'
+       % statement):
+       else
+         execStatement
+          (state, block [statement body, statement (while (expr, body))])}
   | block items ->
     if empty? state.storage.automatic then error else
     let topframe = last state.storage.automatic in

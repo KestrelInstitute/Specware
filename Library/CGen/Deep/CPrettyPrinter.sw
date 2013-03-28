@@ -559,22 +559,30 @@ expression, we follow the same pattern as assignments.
 
 To print an 'if' statement, we print the test on its own line, followed by the
 'then' branch, optionally followed by the 'else' branch. If the ('then' or
+'else' branch is not a block, we indent it by one level. If the ('then' or
 'else') branch is a block, we print the opening curly brace at the end of the
-line where the if or else appears, then we print the block items indented by one
-level, and then we close the curly brace at the beginning of the line. If the
-'then' branch is a block and there is an 'else' branch, the 'else keyword
+line where the 'if' or 'else' appears, then we print the block items indented by
+one level, and then we close the curly brace at the beginning of the line. If
+the 'then' branch is a block and there is an 'else' branch, the 'else keyword
 follows the closing curly brace of the then block, separated by a space. In the
-op below, the 'case thenBranch ...' expression prints all the needed text up to
-the 'else' keyword, in order to deal with the various cases.
+op below, the 'case thenBranch ...' Specware expression prints all the needed
+text up to the 'else' keyword, in order to deal with the various cases.
 
 Return statements are also printed on their own lines, in a straightforward way.
 
-To print a block that is not a branch of an 'if' statement, we open with a curly
-brace in its own line, we print the items indented by one level, and we close
-with a curly brace in its own line. The items of a block are printed one after
-the other. Since there is no separator needed between them, the structure of op
-'printBlockItems' is a little simpler than ops 'printMemberDeclarations' and
-'printArguments' above. Printing a block item is straightforward. *)
+To print a 'while' statement, we print the test on its own line, followed by the
+body. If the body is not a block, we indent it by one level. If the body is a
+block, we print the opening curly brace at the end of the line where the 'while'
+appears, then we print the block items indented by one level, and then we close
+the curly brace at the beginning of the line.
+
+To print a block that is not a branch of an 'if' or 'while' statement, we open
+with a curly brace in its own line, we print the items indented by one level,
+and we close with a curly brace in its own line. The items of a block are
+printed one after the other. Since there is no separator needed between them,
+the structure of op 'printBlockItems' is a little simpler than ops
+'printMemberDeclarations' and 'printArguments' above. Printing a block item is
+straightforward. *)
 
 op printStatement (stmt:Statement) : PP0 =
   case stmt of
@@ -653,6 +661,26 @@ op printStatement (stmt:Statement) : PP0 =
      | None ->
        {print ";";
         printNewline}}
+  | while (expr, body) ->
+    {startLine;
+     print "while (";
+     printTopExpression expr;
+     print ")";
+     case body of
+     | block items ->
+       {print " {";
+        printNewline;
+        indentIn;
+        printBlockItems items;
+        indentOut;
+        startLine;
+        print "}";
+        printNewline}
+     | _ ->
+       {printNewline;
+        indentIn;
+        printStatement body;
+        indentOut}}
   | block items ->
     {startLine;
      print "{";
@@ -773,33 +801,6 @@ compiler. Formally establishing this fact would require (1) formalizing the
 concrete syntax of our C subset and its relationship R to the abstract syntax
 and (2) proving that the concrete syntax result C of applying the pretty printer
 to the abstract syntax A is such that A and C satisfy relationship R. *)
-
-
-(* proofs *)
-
-proof Isa printSpaces ()
-  sorry 
-end-proof 
-
-proof Isa 
-  sorry 
-end-proof 
-
-proof Isa 
-  sorry 
-end-proof 
-
-proof Isa 
-  sorry 
-end-proof 
-
-proof Isa 
-  sorry 
-end-proof 
-
-proof Isa 
-  sorry 
-end-proof 
 
 
 endspec
