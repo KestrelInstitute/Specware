@@ -1416,7 +1416,7 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
                      ppType c y
                      ] in
          ppIndent (ppGrConcat [
-                               ppString "(Product-for-record",
+                               ppString "(Product-for-record ",
                                ppSep (ppAppend (ppString " ") ppBreak) (map ppField fields),
                                ppString ")"
                                ]))
