@@ -929,6 +929,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
  %% unfold one term
  %% ================================================================================
 
+ % FIXME: This should avoid unfolding uninterpreted functions (those with Any somewhere in the body).
  op tryUnfold (spc: Spec, tm: MSTerm) : Option MSTerm =
    case tm of
 
@@ -941,6 +942,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
 
                | Some opinfo | termCost opinfo.dfn <= unfoldCostThreshold ->
                  let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
+                 % let _ = writeLine("unpack = "^printTerm dfn) in
                  (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
 
                     | (Lambda _, Some tv_subst) ->

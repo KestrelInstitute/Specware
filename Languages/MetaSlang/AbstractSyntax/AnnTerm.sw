@@ -438,7 +438,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | _ -> None
 
  def [a] unpackTerm t =
-   let def unpack(t: ATerm a, tvs: TyVars, o_ty: Option(AType a)): TyVars * (AType a) * (ATerm a) =
+   let def unpack(t: (ATerm a), tvs: TyVars, o_ty: Option(AType a)): TyVars * (AType a) * (ATerm a) =
         case t of
 	 | Pi (tvs, tm, _) -> unpack(tm, tvs, o_ty)
          | TypedTerm(tm, ty, _) -> (case ty of
@@ -735,6 +735,314 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | RestrictedPat(p,_,_) -> p
      | _ -> p
 
+
+
+   
+ % mapAccum is like map, but threads an accumulator through. 
+ op [acc,a,b] mapAccum(f: acc -> a ->  (b*acc))(accum:acc)(xs: List a):(List b * acc) =
+    case xs of
+      | [] -> ([],accum)
+      | y::ys -> let (y',acc') = f accum y in
+                 let (ys',acc'') = mapAccum f acc'  ys
+                 in (y' :: ys', acc'')
+
+ 
+ type TSP_MapAccums (accum,b) = (accum -> ATerm    b -> (ATerm    b * accum)) *
+                                (accum -> AType    b -> (AType    b * accum)) *
+                                (accum -> APattern b -> (APattern b * accum))
+
+ op mapAccumTerm    : [accum,b] (TSP_MapAccums (accum,b)) -> accum -> ATerm    b -> (ATerm    b * accum)
+ op mapAccumType    : [accum,b] TSP_MapAccums (accum,b) -> accum -> AType    b -> (AType    b * accum)
+ op mapAccumPattern : [accum,b] TSP_MapAccums (accum, b) -> accum -> APattern b -> (APattern b * accum)
+
+ def mapAccumTerm  (tsp as (term_map,_,_)) accum term =
+   %%
+   %% traversal of term with post-order applications of term_map
+   %%
+   %% i.e. recursively apply term_map to result of mapping over term
+   %%
+   %% i.e. term will be revised using term_map on its components,
+   %% then term_map will be applied to the revised term.
+   %%
+   let
+
+     def mapT accum (tsp, term) =
+       case term of
+
+	 | Apply (t1, t2, a) ->
+	   let (newT1, accum') = mapAccumRec accum t1 in
+	   let (newT2, accum'') = mapAccumRec accum t2 in
+             (Apply (newT1, newT2, a),accum'')
+
+	 | ApplyN (terms, a) ->
+	   let (newTerms,accum') = mapAccum mapAccumRec accum terms in
+	     (ApplyN (newTerms, a),accum')
+
+	 | Record (row, a) ->
+	   let (newRow,accum') = mapAccum 
+              (fn acc -> fn (id,trm) ->
+                let (trm',acc') = mapAccumRec acc trm in  ((id, trm'),acc')) 
+             accum row 
+           in (Record (newRow, a),accum')
+
+	 | Bind (bnd, vars, trm, a) ->
+	   let (newVars,accum') = 
+               mapAccum (fn accum -> fn (id, ty) ->
+                           let (ty',accum') = mapAccumType tsp accum ty
+                           in ((id, ty'), accum')) 
+                        accum vars
+           in
+	   let (newTrm,accum'') = mapAccumRec accum' trm 
+           in (Bind (bnd, newVars, newTrm, a),accum'')
+
+
+	 | The (var as (id,ty), trm, a) ->
+           let (ty',accum') = mapAccumType tsp accum ty in
+	   let newVar = (id, ty') in
+	   let (newTrm,accum'') = mapAccumRec accum' trm in
+	      (The (newVar, newTrm, a),accum'')
+
+	 | Let (decls, bdy, a) ->
+	   let (newDecls,accum') =
+                  mapAccum (fn accum -> fn (pat, trm) ->
+                              let (pat',accum') = mapAccumPattern tsp accum pat in
+                              let (trm',accum'') = mapAccumRec accum' trm in
+                              ((pat',trm'),accum''))
+                  accum decls
+	   in
+	   let (newBdy,accum'') = mapAccumRec accum' bdy in
+	     (Let (newDecls, newBdy, a),accum'')
+
+	 | LetRec (decls, bdy, a) ->
+	   let (newDecls,accum') = 
+                 mapAccum (fn accum -> fn ((id, ty), trm) ->
+                             let (ty',accum') = mapAccumType tsp accum ty in
+                             let (trm',accum'') = mapAccumRec accum' trm in
+                                 (((id,ty'),trm'),accum''))
+                          accum decls
+	   in
+	   let (newBdy,accum'') = mapAccumRec accum' bdy in
+	     (LetRec (newDecls, newBdy, a),accum'')
+
+	 | Var ((id, ty), a) ->
+	   let (newTy,accum') = mapAccumType tsp accum ty in
+	     (Var ((id, newTy), a),accum')
+
+	 | Fun (f, ty, a) ->
+	   let (newTy,accum') = mapAccumType tsp accum ty in
+	     (Fun (f, newTy, a),accum')
+
+	 | Lambda (match, a) ->
+	   let (newMatch,accum') = mapAccum 
+                 (fn accum -> fn (pat, cond, trm)->
+                    let (pat',accum') = mapAccumPattern tsp accum pat in
+                    let (cond',accum'') = mapAccumRec  accum' cond in
+                    let (trm',accum''') = mapAccumRec accum'' trm in
+                    ((pat',cond',trm'),accum'''))
+                 accum match
+	   in (Lambda (newMatch, a),accum')
+
+	 | IfThenElse (t1, t2, t3, a) ->
+	   let (newT1,accum') = mapAccumRec accum t1 in
+	   let (newT2,accum'') = mapAccumRec accum' t2  in
+	   let (newT3,accum''') = mapAccumRec accum'' t3 in
+	     (IfThenElse (newT1, newT2, newT3, a),accum''')
+
+	 | Seq (terms, a) ->
+	   let (newTerms,accum') = mapAccum mapAccumRec accum terms in
+	     (Seq (newTerms, a),accum')
+
+	 | TypedTerm (trm, ty, a) ->
+	   let (newTrm,accum') = mapAccumRec accum trm in
+	   let (newTy,accum'') = mapAccumType tsp accum' ty in
+	     (TypedTerm (newTrm, newTy, a),accum'')
+
+         | Pi  (tvs, t, a) -> 
+           let (t',accum') = mapAccumRec accum t in
+             (Pi (tvs, t',   a),accum') % TODO: what if map alters vars??
+
+         | And (tms, a)    -> 
+           let (tms',accum') = mapAccum mapAccumRec accum tms
+           in (maybeMkAndTerm (tms', a),accum')
+         | _           -> (term,accum)
+
+     def mapAccumRec accum term =
+       %% apply map to leaves, then apply map to result
+       let (term', accum') = mapT accum (tsp, term) in % Recursively apply map to subterms
+       let (term'',accum'') = term_map accum' term' in % Apply map to top-level term
+       % We do the equality check to reduce space.
+       if (term'' = term) then (term,accum'') else (term'',accum'') % term_map accum' term'
+
+   in
+     mapAccumRec accum term
+
+ def mapAccumType (tsp as (_, type_map, _)) accum ty =
+   let
+
+     %% Written with explicit parameter passing to avoid closure creation
+     def mapS accum (tsp, type_map, ty) =
+       case ty of
+
+	 | Arrow (s1, s2, a) ->
+	   let (newS1,accum') = mapAccumRec accum (tsp, type_map, s1) in
+	   let (newS2,accum'') = mapAccumRec accum' (tsp, type_map, s2) in
+	     (Arrow (newS1, newS2, a),accum'')
+	   
+	 | Product (row, a) ->
+	   let (newRow,accum') = mapAccumSRow accum (tsp, type_map, row) in
+	     (Product (newRow, a),accum')
+	     
+	 | CoProduct (row, a) ->
+	   let (newRow,accum') = mapAccumSRowOpt accum (tsp, type_map, row) in
+	     (CoProduct (newRow, a),accum')
+	       
+	 | Quotient (super_type, trm, a) ->
+	   let (newSty,accum') = mapAccumRec accum (tsp, type_map, super_type) in
+	   let (newTrm,accum'') =  mapAccumTerm tsp accum' trm in
+	     (Quotient (newSty, newTrm, a),accum'')
+		 
+	 | Subtype (sub_type, trm, a) ->
+	   let (newSty,accum') = mapAccumRec accum (tsp, type_map, sub_type) in
+	   let (newTrm,accum'') =  mapAccumTerm tsp accum' trm in
+	     (Subtype (newSty, newTrm, a),accum'')
+		   
+	 | Base (qid, tys, a) ->
+	   let (newTys,accum') = mapAccumSLst accum (tsp, type_map, tys) in
+	     (Base (qid, newTys, a),accum')
+		     
+	 | Boolean _ -> (ty,accum)
+		     
+       % | TyVar ??
+		     
+	 | MetaTyVar (mtv, pos) ->
+	   let {name,uniqueId,link} = ! mtv in
+	   (case link of
+	      | None -> (ty,accum)
+	      | Some sty ->
+	        let (newsty,accum') = mapAccumRec accum (tsp, type_map, sty) in
+	          (MetaTyVar(Ref {name     = name,
+	        		 uniqueId = uniqueId,
+	        		 link     = Some newsty},
+	        	    pos), accum'))
+
+         | Pi  (tvs, ty, a) -> 
+              let (ty',accum') = mapAccumRec accum (tsp, type_map, ty)
+              in (Pi (tvs,ty' , a), accum')  % TODO: what if map alters vars?
+
+         | And (tys,     a) -> 
+             let (tys',accum') = 
+               mapAccum (fn accum -> fn ty -> mapAccumRec accum (tsp, type_map, ty)) accum tys
+             in (maybeAndType(tys', a), accum')
+         | Any  _            -> (ty,accum)
+
+	 | _ -> (ty,accum)
+
+     def mapAccumSLst accum (tsp, type_map, tys) =
+       case tys of
+	 | [] -> ([],accum)
+	 | sty::rtys -> 
+           let (sty',accum') = mapAccumRec accum (tsp, type_map, sty) in
+           let (rtys',accum'') = mapAccumSLst accum' (tsp, type_map, rtys) in
+           (Cons(sty',rtys'),accum'')
+
+     def mapAccumSRowOpt accum (tsp, type_map, row) =
+       case row of
+	 | [] -> ([],accum)
+	 | (id,optty)::rrow -> 
+           let (optty',accum') = mapAccumRecOpt accum (tsp, type_map, optty) in
+           let (rrow',accum'') = mapAccumSRowOpt accum' (tsp, type_map, rrow) in
+           (Cons ((id, optty'),rrow'),accum'')
+
+     def mapAccumSRow accum (tsp, type_map, row) =
+       case row of
+	 | [] -> ([],accum)
+	 | (id,sty)::rrow -> 
+           let (sty',accum') =  mapAccumRec accum (tsp, type_map, sty) in
+           let (rrow',accum'') = mapAccumSRow accum (tsp, type_map, rrow) in
+           (Cons ((id, sty'),rrow'),accum'')
+
+     def mapAccumRecOpt accum (tsp, type_map, opt_type) =
+       case opt_type of
+	 | None      -> (None,accum)
+	 | Some sty -> 
+           let (sty',accum') = mapAccumRec accum (tsp, type_map, sty) in
+           (Some sty',accum')
+           
+
+     def mapAccumRec accum (tsp, type_map, ty) =
+       %% apply map to leaves, then apply map to result
+       let (ty',accum') = (mapS accum (tsp, type_map, ty)) in
+       let (ty'',accum'') = type_map accum' ty' 
+       % We do the equality check to reduce space.
+       in if ty'' = ty then (ty,accum'') else (ty'',accum'')
+   in
+     mapAccumRec accum (tsp, type_map, ty)
+
+ def mapAccumPattern (tsp as (_, _, pattern_map)) accum pattern =
+   let
+
+     def mapP accum (tsp, pattern) =
+       case pattern of
+
+	 | AliasPat (p1, p2, a) ->
+           let (newP1,accum') = mapAccumRec accum p1 in
+	   let (newP2,accum'') = mapAccumRec accum' p2 in
+	     (AliasPat (newP1, newP2, a),accum'')
+	   
+	 | VarPat ((v, ty), a) ->
+	   let (newTy,accum') = mapAccumType tsp accum ty in
+	     (VarPat ((v, newTy), a),accum')
+	     
+	 | EmbedPat (id, Some pat, ty, a) ->
+	   let (newPat,accum') = mapAccumRec accum pat in
+	   let (newTy,accum'') = mapAccumType tsp accum' ty in
+	     (EmbedPat (id, Some newPat, newTy, a),accum'')
+	       
+	 | EmbedPat (id, None, ty, a) ->
+	   let (newTy,accum') = mapAccumType tsp accum ty in
+	     (EmbedPat (id, None, newTy, a),accum')
+		 
+	 | RecordPat (fields, a) ->
+	   let (newFields,accum') = mapAccum 
+               (fn accum -> fn (id, p) -> 
+                  let (p',accum') = mapAccumRec accum p in ((id, p'),accum')) accum fields in
+	     (RecordPat (newFields, a),accum')
+		   
+	 | WildPat (ty, a) ->
+	   let (newTy,accum') = mapAccumType tsp accum ty in
+	     (WildPat (newTy, a),accum')
+		     
+	 | QuotientPat (pat, qid, a) ->
+	   let (newPat,accum') = mapAccumRec accum pat in
+	     (QuotientPat (newPat, qid, a),accum')
+			 
+	 | RestrictedPat (pat, trm, a) ->
+	   let (newPat,accum') = mapAccumRec accum pat in
+	   let (newTrm,accum'') = mapAccumTerm tsp accum' trm in
+	     (RestrictedPat (newPat, newTrm, a),accum'')
+			 
+	 | TypedPat (pat, ty, a) ->
+	   let (newPat,accum') = mapAccumRec accum pat in
+	   let (newTy,accum'') = mapAccumType tsp accum' ty in
+	     (TypedPat (newPat, newTy, a),accum'')
+			   
+       % | BoolPat   ??
+       % | NatPat    ??
+       % | StringPat ??
+       % | CharPat   ??
+	     
+	 | _ -> (pattern,accum)
+
+     def mapAccumRec accum pat =
+       %% apply map to leaves, then apply map to result
+       let (pat',accum') = mapP accum (tsp, pat) in
+       let (pat'',accum'') =  pattern_map accum' pat' 
+       % We do the equality check to reduce space.
+       in if (pat'' = pat) then (pat,accum'') else (pat'',accum'')
+
+   in
+     mapAccumRec accum pattern
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -747,6 +1055,31 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op mapTerm    : [b] TSP_Maps b -> ATerm    b -> ATerm    b
  op mapType    : [b] TSP_Maps b -> AType    b -> AType    b
  op mapPattern : [b] TSP_Maps b -> APattern b -> APattern b
+
+
+(*
+   % GMK: The map* functions can be defined in terms of mapAccum*, as shown below. 
+   % However, it appears that there is a small performance cost (empirically observed 
+   % to be about 5%, when building specware itself with this definition) so we instead
+   % use the direct definition.
+
+
+ op [a,b,atype] add_acc(f:a->b)(acc:atype)(x:a):(b*atype) = (f x, acc)
+
+ 
+ op [b] mapTerm (tsp as (term_map,type_map,pat_map))(t:ATerm b):(ATerm b) =
+    let (val,_) = mapAccumTerm (add_acc term_map, add_acc type_map, add_acc pat_map) () t
+   in val
+
+ op [b] mapType (tsp as (term_map,type_map,pat_map))(t:AType b):(AType b) =
+    let (val,_) = mapAccumType (add_acc term_map, add_acc type_map, add_acc pat_map) () t
+   in val
+
+ op [b] mapPattern (tsp as (term_map,type_map,pat_map))(t:APattern b):(APattern b) =
+    let (val,_) = mapAccumPattern (add_acc term_map, add_acc type_map, add_acc pat_map) () t
+   in val
+*)
+
 
  def mapTerm (tsp as (term_map,_,_)) term =
    %%
@@ -762,117 +1095,117 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapT (tsp, term) =
        case term of
 
-	 | Apply (t1, t2, a) ->
-	   let newT1 = mapRec t1 in
-	   let newT2 = mapRec t2 in
-	   if newT1 = t1 && newT2 = t2 then
-	     term
-	   else
-	     Apply (newT1, newT2, a)
+         | Apply (t1, t2, a) ->
+           let newT1 = mapRec t1 in
+           let newT2 = mapRec t2 in
+           if newT1 = t1 && newT2 = t2 then
+             term
+           else
+             Apply (newT1, newT2, a)
 
-	 | ApplyN (terms, a) ->
-	   let newTerms = map mapRec terms in
-	   if newTerms = terms then
-	     term
-	   else
-	     ApplyN (newTerms, a)
+         | ApplyN (terms, a) ->
+           let newTerms = map mapRec terms in
+           if newTerms = terms then
+             term
+           else
+             ApplyN (newTerms, a)
 
-	 | Record (row, a) ->
-	   let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
-	   if newRow = row then
-	     term
-	   else
-	     Record (newRow, a)
+         | Record (row, a) ->
+           let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
+           if newRow = row then
+             term
+           else
+             Record (newRow, a)
 
-	 | Bind (bnd, vars, trm, a) ->
-	   let newVars = map (fn (id, ty)-> (id, mapType tsp ty)) vars in
-	   let newTrm = mapRec trm in
-	   if newVars = vars && newTrm = trm then
-	     term
-	   else
-	     Bind (bnd, newVars, newTrm, a)
+         | Bind (bnd, vars, trm, a) ->
+           let newVars = map (fn (id, ty)-> (id, mapType tsp ty)) vars in
+           let newTrm = mapRec trm in
+           if newVars = vars && newTrm = trm then
+             term
+           else
+             Bind (bnd, newVars, newTrm, a)
 
-	 | The (var as (id,ty), trm, a) ->
-	   let newVar = (id, mapType tsp ty) in
-	   let newTrm = mapRec trm in
-	   if newVar = var && newTrm = trm then
-	     term
-	   else
-	     The (newVar, newTrm, a)
+         | The (var as (id,ty), trm, a) ->
+           let newVar = (id, mapType tsp ty) in
+           let newTrm = mapRec trm in
+           if newVar = var && newTrm = trm then
+             term
+           else
+             The (newVar, newTrm, a)
 
-	 | Let (decls, bdy, a) ->
-	   let newDecls = map (fn (pat, trm) ->
-			       (mapPattern tsp pat,
-				mapRec trm))
-	                      decls
-	   in
-	   let newBdy = mapRec bdy in
-	   if newDecls = decls && newBdy = bdy then
-	     term
-	   else
-	     Let (newDecls, newBdy, a)
+         | Let (decls, bdy, a) ->
+           let newDecls = map (fn (pat, trm) ->
+        		       (mapPattern tsp pat,
+        			mapRec trm))
+                              decls
+           in
+           let newBdy = mapRec bdy in
+           if newDecls = decls && newBdy = bdy then
+             term
+           else
+             Let (newDecls, newBdy, a)
 
-	 | LetRec (decls, bdy, a) ->
-	   let newDecls = map (fn ((id, ty), trm) ->
-			       ((id, mapType tsp ty),
-				mapRec trm))
-	                      decls
-	   in
-	   let newBdy = mapRec bdy in
-	   if newDecls = decls && newBdy = bdy then
-	     term
-	   else
-	     LetRec (newDecls, newBdy, a)
+         | LetRec (decls, bdy, a) ->
+           let newDecls = map (fn ((id, ty), trm) ->
+        		       ((id, mapType tsp ty),
+        			mapRec trm))
+                              decls
+           in
+           let newBdy = mapRec bdy in
+           if newDecls = decls && newBdy = bdy then
+             term
+           else
+             LetRec (newDecls, newBdy, a)
 
-	 | Var ((id, ty), a) ->
-	   let newTy = mapType tsp ty in
-	   if newTy = ty then
-	     term
-	   else
-	     Var ((id, newTy), a)
+         | Var ((id, ty), a) ->
+           let newTy = mapType tsp ty in
+           if newTy = ty then
+             term
+           else
+             Var ((id, newTy), a)
 
-	 | Fun (f, ty, a) ->
-	   let newTy = mapType tsp ty in
-	   if newTy = ty then
-	     term
-	   else
-	     Fun (f, newTy, a)
+         | Fun (f, ty, a) ->
+           let newTy = mapType tsp ty in
+           if newTy = ty then
+             term
+           else
+             Fun (f, newTy, a)
 
-	 | Lambda (match, a) ->
-	   let newMatch = map (fn (pat, cond, trm)->
-			       (mapPattern tsp pat,
-				mapRec cond,
-				mapRec trm))
-	                      match
-	   in
-	   if newMatch = match then
-	     term
-	   else
-	     Lambda (newMatch, a)
+         | Lambda (match, a) ->
+           let newMatch = map (fn (pat, cond, trm)->
+        		       (mapPattern tsp pat,
+        			mapRec cond,
+        			mapRec trm))
+                              match
+           in
+           if newMatch = match then
+             term
+           else
+             Lambda (newMatch, a)
 
-	 | IfThenElse (t1, t2, t3, a) ->
-	   let newT1 = mapRec t1 in
-	   let newT2 = mapRec t2 in
-	   let newT3 = mapRec t3 in
-	   if newT1 = t1 && newT2 = t2 && newT3 = t3 then
-	     term
-	   else
-	     IfThenElse (newT1, newT2, newT3, a)
+         | IfThenElse (t1, t2, t3, a) ->
+           let newT1 = mapRec t1 in
+           let newT2 = mapRec t2 in
+           let newT3 = mapRec t3 in
+           if newT1 = t1 && newT2 = t2 && newT3 = t3 then
+             term
+           else
+             IfThenElse (newT1, newT2, newT3, a)
 
-	 | Seq (terms, a) ->
-	   let newTerms = map mapRec terms in
-	   if newTerms = terms then
-	     term
-	   else
-	     Seq (newTerms, a)
+         | Seq (terms, a) ->
+           let newTerms = map mapRec terms in
+           if newTerms = terms then
+             term
+           else
+             Seq (newTerms, a)
 
-	 | TypedTerm (trm, ty, a) ->
-	   let newTrm = mapRec trm in
-	   let newTy = mapType tsp ty in
-	   if newTrm = trm && newTy = ty then
-	     term
-	   else
-	     TypedTerm (newTrm, newTy, a)
+         | TypedTerm (trm, ty, a) ->
+           let newTrm = mapRec trm in
+           let newTy = mapType tsp ty in
+           if newTrm = trm && newTy = ty then
+             term
+           else
+             TypedTerm (newTrm, newTy, a)
 
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t,   a) % TODO: what if map alters vars??
 
@@ -894,68 +1227,68 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapS (tsp, type_map, ty) =
        case ty of
 
-	 | Arrow (s1, s2, a) ->
-	   let newS1 = mapRec (tsp, type_map, s1) in
-	   let newS2 = mapRec (tsp, type_map, s2) in
-	   if newS1 = s1 && newS2 = s2 then
-	     ty
-	   else
-	     Arrow (newS1, newS2, a)
+         | Arrow (s1, s2, a) ->
+           let newS1 = mapRec (tsp, type_map, s1) in
+           let newS2 = mapRec (tsp, type_map, s2) in
+           if newS1 = s1 && newS2 = s2 then
+             ty
+           else
+             Arrow (newS1, newS2, a)
 	   
-	 | Product (row, a) ->
-	   let newRow = mapSRow (tsp, type_map, row) in
-	   if newRow = row then
-	     ty
-	   else
-	     Product (newRow, a)
+         | Product (row, a) ->
+           let newRow = mapSRow (tsp, type_map, row) in
+           if newRow = row then
+             ty
+           else
+             Product (newRow, a)
 	     
-	 | CoProduct (row, a) ->
-	   let newRow = mapSRowOpt (tsp, type_map, row) in
-	   if newRow = row then
-	     ty
-	   else
-	     CoProduct (newRow, a)
+         | CoProduct (row, a) ->
+           let newRow = mapSRowOpt (tsp, type_map, row) in
+           if newRow = row then
+             ty
+           else
+             CoProduct (newRow, a)
 	       
-	 | Quotient (super_type, trm, a) ->
-	   let newSty = mapRec (tsp, type_map, super_type) in
-	   let newTrm =  mapTerm tsp trm in
-	   if newSty = super_type && newTrm = trm then
-	     ty
-	   else
-	     Quotient (newSty, newTrm, a)
+         | Quotient (super_type, trm, a) ->
+           let newSty = mapRec (tsp, type_map, super_type) in
+           let newTrm =  mapTerm tsp trm in
+           if newSty = super_type && newTrm = trm then
+             ty
+           else
+             Quotient (newSty, newTrm, a)
 		 
-	 | Subtype (sub_type, trm, a) ->
-	   let newSty = mapRec (tsp, type_map, sub_type) in
-	   let newTrm =  mapTerm tsp trm in
-	   if newSty = sub_type && newTrm = trm then
-	     ty
-	   else
-	     Subtype (newSty, newTrm, a)
+         | Subtype (sub_type, trm, a) ->
+           let newSty = mapRec (tsp, type_map, sub_type) in
+           let newTrm =  mapTerm tsp trm in
+           if newSty = sub_type && newTrm = trm then
+             ty
+           else
+             Subtype (newSty, newTrm, a)
 		   
-	 | Base (qid, tys, a) ->
-	   let newTys = mapSLst (tsp, type_map, tys) in
-	   if newTys = tys then
-	     ty
-	   else
-	     Base (qid, newTys, a)
+         | Base (qid, tys, a) ->
+           let newTys = mapSLst (tsp, type_map, tys) in
+           if newTys = tys then
+             ty
+           else
+             Base (qid, newTys, a)
 		     
-	 | Boolean _ -> ty
+         | Boolean _ -> ty
 		     
        % | TyVar ??
 		     
-	 | MetaTyVar (mtv, pos) ->
-	   let {name,uniqueId,link} = ! mtv in
-	   (case link of
-	      | None -> ty
-	      | Some sty ->
-	        let newsty = mapRec (tsp, type_map, sty) in
-		if newsty = sty then
-		  ty
-		else
-		  MetaTyVar(Ref {name     = name,
-				 uniqueId = uniqueId,
-				 link     = Some newsty},
-			    pos))
+         | MetaTyVar (mtv, pos) ->
+           let {name,uniqueId,link} = ! mtv in
+           (case link of
+              | None -> ty
+              | Some sty ->
+                let newsty = mapRec (tsp, type_map, sty) in
+        	if newsty = sty then
+        	  ty
+        	else
+        	  MetaTyVar(Ref {name     = name,
+        			 uniqueId = uniqueId,
+        			 link     = Some newsty},
+        		    pos))
 
          | Pi  (tvs, ty, a) -> Pi (tvs, mapRec (tsp, type_map, ty), a)  % TODO: what if map alters vars?
 
@@ -963,30 +1296,30 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
          | Any  _            -> ty
 
-	 | _ -> ty
+         | _ -> ty
 
      def mapSLst (tsp, type_map, tys) =
        case tys of
-	 | [] -> []
-	 | sty::rtys -> Cons(mapRec  (tsp, type_map, sty),
-			       mapSLst (tsp, type_map, rtys))
+         | [] -> []
+         | sty::rtys -> Cons(mapRec  (tsp, type_map, sty),
+        		       mapSLst (tsp, type_map, rtys))
 
      def mapSRowOpt (tsp, type_map, row) =
        case row of
-	 | [] -> []
-	 | (id,optty)::rrow -> Cons ((id, mapRecOpt (tsp, type_map, optty)),
-				      mapSRowOpt (tsp, type_map, rrow))
+         | [] -> []
+         | (id,optty)::rrow -> Cons ((id, mapRecOpt (tsp, type_map, optty)),
+        			      mapSRowOpt (tsp, type_map, rrow))
 
      def mapSRow (tsp, type_map, row) =
        case row of
-	 | [] -> []
-	 | (id,sty)::rrow -> Cons ((id, mapRec (tsp, type_map, sty)),
-				    mapSRow (tsp, type_map, rrow))
+         | [] -> []
+         | (id,sty)::rrow -> Cons ((id, mapRec (tsp, type_map, sty)),
+        			    mapSRow (tsp, type_map, rrow))
 
      def mapRecOpt (tsp, type_map, opt_type) =
        case opt_type of
-	 | None      -> None
-	 | Some sty -> Some (mapRec (tsp, type_map, sty))
+         | None      -> None
+         | Some sty -> Some (mapRec (tsp, type_map, sty))
 
      def mapRec (tsp, type_map, ty) =
        %% apply map to leaves, then apply map to result
@@ -1001,79 +1334,79 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      def mapP (tsp, pattern) =
        case pattern of
 
-	 | AliasPat (p1, p2, a) ->
+         | AliasPat (p1, p2, a) ->
            let newP1 = mapRec p1 in
-	   let newP2 = mapRec p2 in
-	   if newP1 = p1 && newP2 = p2 then
-	     pattern
-	   else
-	     AliasPat (newP1, newP2, a)
+           let newP2 = mapRec p2 in
+           if newP1 = p1 && newP2 = p2 then
+             pattern
+           else
+             AliasPat (newP1, newP2, a)
 	   
-	 | VarPat ((v, ty), a) ->
-	   let newTy = mapType tsp ty in
-	   if newTy = ty then
-	     pattern
-	   else
-	     VarPat ((v, newTy), a)
+         | VarPat ((v, ty), a) ->
+           let newTy = mapType tsp ty in
+           if newTy = ty then
+             pattern
+           else
+             VarPat ((v, newTy), a)
 	     
-	 | EmbedPat (id, Some pat, ty, a) ->
-	   let newPat = mapRec pat in
-	   let newTy = mapType tsp ty in
-	   if newPat = pat && newTy = ty then
-	     pattern
-	   else
-	     EmbedPat (id, Some newPat, newTy, a)
+         | EmbedPat (id, Some pat, ty, a) ->
+           let newPat = mapRec pat in
+           let newTy = mapType tsp ty in
+           if newPat = pat && newTy = ty then
+             pattern
+           else
+             EmbedPat (id, Some newPat, newTy, a)
 	       
-	 | EmbedPat (id, None, ty, a) ->
-	   let newTy = mapType tsp ty in
-	   if newTy = ty then
-	     pattern
-	   else
-	     EmbedPat (id, None, newTy, a)
+         | EmbedPat (id, None, ty, a) ->
+           let newTy = mapType tsp ty in
+           if newTy = ty then
+             pattern
+           else
+             EmbedPat (id, None, newTy, a)
 		 
-	 | RecordPat (fields, a) ->
-	   let newFields = map (fn (id, p) -> (id, mapRec p)) fields in
-	   if newFields = fields then
-	     pattern
-	   else
-	     RecordPat (newFields, a)
+         | RecordPat (fields, a) ->
+           let newFields = map (fn (id, p) -> (id, mapRec p)) fields in
+           if newFields = fields then
+             pattern
+           else
+             RecordPat (newFields, a)
 		   
-	 | WildPat (ty, a) ->
-	   let newTy = mapType tsp ty in
-	   if newTy = ty then
-	     pattern
-	   else
-	     WildPat (newTy, a)
+         | WildPat (ty, a) ->
+           let newTy = mapType tsp ty in
+           if newTy = ty then
+             pattern
+           else
+             WildPat (newTy, a)
 		     
-	 | QuotientPat (pat, qid, a) ->
-	   let newPat = mapRec pat in
-	   if newPat = pat then
-	     pattern
-	   else
-	     QuotientPat (newPat, qid, a)
+         | QuotientPat (pat, qid, a) ->
+           let newPat = mapRec pat in
+           if newPat = pat then
+             pattern
+           else
+             QuotientPat (newPat, qid, a)
 			 
-	 | RestrictedPat (pat, trm, a) ->
-	   let newPat = mapRec pat in
-	   let newTrm = mapTerm tsp trm in
-	   if newPat = pat && newTrm = trm then
-	     pattern
-	   else
-	     RestrictedPat (newPat, newTrm, a)
+         | RestrictedPat (pat, trm, a) ->
+           let newPat = mapRec pat in
+           let newTrm = mapTerm tsp trm in
+           if newPat = pat && newTrm = trm then
+             pattern
+           else
+             RestrictedPat (newPat, newTrm, a)
 			 
-	 | TypedPat (pat, ty, a) ->
-	   let newPat = mapRec pat in
-	   let newTy = mapType tsp ty in
-	   if newPat = pat && newTy = ty then
-	     pattern
-	   else
-	     TypedPat (newPat, newTy, a)
+         | TypedPat (pat, ty, a) ->
+           let newPat = mapRec pat in
+           let newTy = mapType tsp ty in
+           if newPat = pat && newTy = ty then
+             pattern
+           else
+             TypedPat (newPat, newTy, a)
 			   
        % | BoolPat   ??
        % | NatPat    ??
        % | StringPat ??
        % | CharPat   ??
 	     
-	 | _ -> pattern
+         | _ -> pattern
 
      def mapRec pat =
        %% apply map to leaves, then apply map to result
@@ -1934,5 +2267,10 @@ op [a] printTermType(t: ATerm a): String =
     | Pi _ -> "Pi"
     | And _ -> "And"
     | Any _ -> "Any"
- 
+
+
+op g:Nat = (-5 : Int)  : Nat
 end-spec
+
+
+
