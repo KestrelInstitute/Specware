@@ -576,6 +576,13 @@ block, we print the opening curly brace at the end of the line where the 'while'
 appears, then we print the block items indented by one level, and then we close
 the curly brace at the beginning of the line.
 
+To print a 'do' statement, we print the keyword 'do' on its own line, followed
+by the body, followed by the test on its own line. If the body is not a block,
+we indent it by one level. If the body is a block, we print the opening curly
+brace at the end of the line where the 'do' appears, then we pring the block
+items indented by one level, and then we close the curly brace just before the
+'while' part.
+
 To print a block that is not a branch of an 'if' or 'while' statement, we open
 with a curly brace in its own line, we print the items indented by one level,
 and we close with a curly brace in its own line. The items of a block are
@@ -681,6 +688,28 @@ op printStatement (stmt:Statement) : PP0 =
         indentIn;
         printStatement body;
         indentOut}}
+  | do (body, expr) ->
+    {startLine;
+     print "do";
+     case body of
+     | block items ->
+       {print " {";
+        printNewline;
+        indentIn;
+        printBlockItems items;
+        indentOut;
+        startLine;
+        print "} "}
+     | _ ->
+       {printNewline;
+        indentIn;
+        printStatement body;
+        indentOut;
+        startLine};
+     print "while (";
+     printTopExpression expr;
+     print ");";
+     printNewline}
   | block items ->
     {startLine;
      print "{";

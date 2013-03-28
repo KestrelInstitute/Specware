@@ -769,11 +769,11 @@ Note also that, by having function calls not be expressions in our subset, we
 maintain expressions free of side effects.
 
 Besides these expression statements, our C subset includes 'if' selection
-statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while'
-iteration statements [ISO 6.8.5], and compound statements (i.e. blocks) [ISO
-6.8.2]. Our 'if' statement captures both the variant with 'else' and the variant
-without 'else', based on the presence of the second, optional statement. A
-'return' statement [ISO 6.8.6.4] includes an optional expression.
+statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while' and
+'do' iteration statements [ISO 6.8.5], and compound statements (i.e. blocks)
+[ISO 6.8.2]. Our 'if' statement captures both the variant with 'else' and the
+variant without 'else', based on the presence of the second, optional
+statement. A 'return' statement [ISO 6.8.6.4] includes an optional expression.
 
 Besides statements, we only allow object declarations as block items [ISO
 6.8.2], not other kinds of declarations. *)
@@ -784,6 +784,7 @@ type Statement =
   | iF     Expression * Statement * Option Statement
   | return Option Expression
   | while  Expression * Statement
+  | do     Statement * Expression
   | block  List BlockItem
 
 type BlockItem =
@@ -1779,9 +1780,9 @@ arrays and so we do not automatically convert them to pointers.
 As explained earlier, a 'return' statement has the compile-time type of its
 expression, or 'void' if it has no expression.
 
-The controlling expression of a 'while' statement must have scalar type [ISO
-6.8.5/2]. The compile-time type of a 'while' statement is the compile-time type
-of the loop body.
+The controlling expression of a 'while' or 'do' statement must have scalar type
+[ISO 6.8.5/2]. The compile-time type of a 'while' or 'do' statement is the
+compile-time type of the loop body.
 
 When checking a block, we extend the list of object maps in the symbol table
 with an empty map, corresponding to the new block scope.
@@ -1850,6 +1851,10 @@ op checkStatement (symtab:SymbolTable, stmt:Statement) : Option StatementType =
   | return None ->
     Some (single (return void))
   | while (expr, body) ->
+    {ety <- checkExpression (symtab, expr);
+     check (scalarType? ety.typE);
+     checkStatement (symtab, body)}
+  | do (body, expr) ->
     {ety <- checkExpression (symtab, expr);
      check (scalarType? ety.typE);
      checkStatement (symtab, body)}
@@ -3654,7 +3659,8 @@ theorem expression_evaluation is
     (case evaluate (state, expr) of
     | ok res -> typeOfExpressionResult (state, res) = ok ety
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 (* It is useful to introduce an op to evaluate a sequence of expressions, one
 after the other. *)
@@ -3792,7 +3798,8 @@ theorem object_declaration_execution is
     (case execObjectDeclaration (state, odecl) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 (* When a structure specifier is encountered, the state of the program is
 extended with information about the structure. *)
@@ -3830,7 +3837,8 @@ theorem structure_specifier_execution is
     (case execStructSpecifier (state, sspec) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 (* When a type definition is encountered, the state of the program is extended
 with information about the structure. *)
@@ -3857,7 +3865,8 @@ theorem type_definition_execution is
     (case execTypeDefinition (state, tdef) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 (* When a declaration is encountered, the state of the program is extended with
 the declaration. *)
@@ -3881,7 +3890,8 @@ theorem declaration_execution is
     (case execDeclaration (state, decl) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 
 %subsection (* Statements *)
@@ -4048,6 +4058,10 @@ testing the condition, then (if true) executing a block consisting of the body
 followed by a copy of the 'while' loop itself (if the body yields a 'return'
 statement completion, the copy of the 'while' loop is not executed).
 
+The execution of a 'do' loop [ISO 6.8.5] is equivalent to the execution of the
+body of the loop followed by a 'while' loop that has the same controlling
+expression and the same body as the 'do' loop.
+
 The argument expressions of a function call are evaluated, and the values passed
 as arguments. The arguments are stored into a new scope in a new frame in
 automatic storage. The body of the function must be a block, whose block items
@@ -4154,6 +4168,9 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
        else
          execStatement
           (state, block [statement body, statement (while (expr, body))])}
+  | do (body, expr) ->
+    execStatement
+     (state, block [statement body, statement (while (expr, body))])
   | block items ->
     if empty? state.storage.automatic then error else
     let topframe = last state.storage.automatic in
@@ -4233,7 +4250,8 @@ theorem statement_execution is
     | ok result -> invariants? result.state &&
                    statementCompletionHasType? (result.completion, sty)
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 theorem block_items_execution is
   fa (state:State, items:List BlockItem, sty:StatementType)
@@ -4243,7 +4261,8 @@ theorem block_items_execution is
     | ok result -> invariants? result.state &&
                    statementCompletionHasType? (result.completion, sty)
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 theorem block_item_execution is
   fa (state:State, item:BlockItem, sty:StatementType, symtab:SymbolTable)
@@ -4254,7 +4273,8 @@ theorem block_item_execution is
                    statementCompletionHasType? (result.completion, sty) &&
                    symtab = symbolTableOfState result.state
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 theorem function_call is
   fa (state:State, name:Identifier, funinfo:FunctionInfo, args:List Value)
@@ -4271,7 +4291,8 @@ theorem function_call is
                            | Some val -> typeOfValue val = funinfo.return
                            | None -> funinfo.return = void)
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 
 %subsection (* Function definitions *)
@@ -4312,7 +4333,8 @@ theorem function_definition_execution is
     (case execFunctionDefinition (state, fun) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 
 %subsection (* Translation units *)
@@ -4337,7 +4359,8 @@ theorem external_declaration_execution is
     (case execExternalDeclaration (state, xdecl) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 (* We execute a translation unit by executing its external declarations in
 order. *)
@@ -4362,7 +4385,8 @@ theorem translation_unit_execution is
     (case execTranslationUnit (state, tunit) of
     | ok state' -> invariants? state' && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 
 %subsection (* Programs *)
@@ -4390,7 +4414,8 @@ theorem initial_state_invariants is
     (case initState prg of
     | ok state' -> invariants? state && symtab = symbolTableOfState state'
     | error -> false
-    | nonstd -> true)
+    | nonstd -> true
+    | nonterm -> true)
 
 
 %section (* Conclusion *)

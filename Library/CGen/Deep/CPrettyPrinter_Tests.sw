@@ -1690,6 +1690,28 @@ a = b;
 }
 "
 ),(
+"statement_27_1",
+text 0 0 (printStatement
+           (do (assign (ident "y", const "0"),
+                binary (ident "x", GE, const "0")))) =
+"do
+y = 0;
+while (x >= 0);
+"
+),(
+"statement_28_1",
+text 0 0 (printStatement
+           (do (block [statement (return (Some (const "0"))),
+                       declaration {typE = sint, name = "y"},
+                       statement (assign (ident "a", ident "b"))],
+                binary (ident "x", GE, const "0")))) =
+"do {
+return 0;
+int y;
+a = b;
+} while (x >= 0);
+"
+),(
 "statement_1_2",
 text 0 4 (printStatement (assign (unary (STAR, ident "q"),
                                   const "33"))) =
@@ -1931,6 +1953,28 @@ text 0 4 (printStatement
     int y;
     a = b;
 }
+"
+),(
+"statement_27_2",
+text 0 4 (printStatement
+           (do (assign (ident "y", const "0"),
+                binary (ident "x", GE, const "0")))) =
+"do
+    y = 0;
+while (x >= 0);
+"
+),(
+"statement_28_2",
+text 0 4 (printStatement
+           (do (block [statement (return (Some (const "0"))),
+                       declaration {typE = sint, name = "y"},
+                       statement (assign (ident "a", ident "b"))],
+                binary (ident "x", GE, const "0")))) =
+"do {
+    return 0;
+    int y;
+    a = b;
+} while (x >= 0);
 "
 ),(
 "statement_1_3",
@@ -2176,6 +2220,28 @@ a = b;
 }
 "
 ),(
+"statement_27_3",
+text 2 0 (printStatement
+           (do (assign (ident "y", const "0"),
+                binary (ident "x", GE, const "0")))) =
+"do
+y = 0;
+while (x >= 0);
+"
+),(
+"statement_28_3",
+text 2 0 (printStatement
+           (do (block [statement (return (Some (const "0"))),
+                       declaration {typE = sint, name = "y"},
+                       statement (assign (ident "a", ident "b"))],
+                binary (ident "x", GE, const "0")))) =
+"do {
+return 0;
+int y;
+a = b;
+} while (x >= 0);
+"
+),(
 "statement_1_4",
 text 2 4 (printStatement (assign (unary (STAR, ident "q"),
                                   const "33"))) =
@@ -2419,6 +2485,28 @@ text 2 4 (printStatement
         }
 "
 ),(
+"statement_27_4",
+text 2 4 (printStatement
+           (do (assign (ident "y", const "0"),
+                binary (ident "x", GE, const "0")))) =
+"        do
+            y = 0;
+        while (x >= 0);
+"
+),(
+"statement_28_4",
+text 2 4 (printStatement
+           (do (block [statement (return (Some (const "0"))),
+                       declaration {typE = sint, name = "y"},
+                       statement (assign (ident "a", ident "b"))],
+                binary (ident "x", GE, const "0")))) =
+"        do {
+            return 0;
+            int y;
+            a = b;
+        } while (x >= 0);
+"
+),(
 "statement_1_5",
 text 1 6 (printStatement (assign (unary (STAR, ident "q"),
                                   const "33"))) =
@@ -2660,6 +2748,28 @@ text 1 6 (printStatement
             int y;
             a = b;
       }
+"
+),(
+"statement_27_5",
+text 1 6 (printStatement
+           (do (assign (ident "y", const "0"),
+                binary (ident "x", GE, const "0")))) =
+"      do
+            y = 0;
+      while (x >= 0);
+"
+),(
+"statement_28_5",
+text 1 6 (printStatement
+           (do (block [statement (return (Some (const "0"))),
+                       declaration {typE = sint, name = "y"},
+                       statement (assign (ident "a", ident "b"))],
+                binary (ident "x", GE, const "0")))) =
+"      do {
+            return 0;
+            int y;
+            a = b;
+      } while (x >= 0);
 "
 ),(
 "parameter_declaration",
