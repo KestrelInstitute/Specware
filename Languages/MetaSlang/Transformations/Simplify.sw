@@ -558,7 +558,33 @@ spec
                             || ~(knownNonEmpty?(v.2,  spc)))
                vs
     in
-    mkSimpBind(Exists, vs, mkSimpConj cjs)    
+    case findLeftmost (fn cj ->
+                         case bindEquality (cj,vs,false) of
+                           | None -> false
+                           | Some([v],_,e) ->
+                             simpleOrConstrTerm? e
+                           || (let num_refs = foldl (fn (r,cji) -> r + countVarRefs(cji,v))
+                                                0 cjs
+                               in
+                                 num_refs - 1 = 1 % This one and the one we want to replace
+                                                               || embed? Record e
+                                                                  && num_refs - 1 = countDeReferencesIn(v, cjs))
+                           | _ -> false)
+           cjs
+      of Some cj ->
+	 (case bindEquality (cj,vs,false) of
+	    | Some (([sv as (_, sv_ty)], _, s_tm)) ->
+	      let sbst = [(sv, s_tm)] in
+              let pred_tm = case subtypeComps(spc, sv_ty) of
+                              | Some(_, pred) -> simplifiedApply(pred, s_tm, spc)
+                              | None -> trueTerm
+              in
+              simplifyExists spc (filter (fn v -> ~(equalVar?(v, sv))) vs,
+                                  pred_tm ::
+                                    (mapPartial (fn c -> if c = cj then None
+                                                         else Some(simpSubstitute(spc,c,sbst)))
+                                       cjs)))
+      | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)    
 
   op  simplifyExists1: List Var * List MSTerm -> MSTerm
   def simplifyExists1(vs, cjs) =
