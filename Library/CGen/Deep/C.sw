@@ -592,8 +592,8 @@ type BinaryOp =
   | SUB   % subtraction    -
   | SHL   % bitwise shift left  <<
   | SHR   % bitwise shirt right >>
-  | LT    %    less-than            relation <
-  | GT    % greater-than            relation >
+  | LT    %    less-than             relation <
+  | GT    % greater-than             relation >
   | LE    %    less-than-or-equal-to relation <=
   | GE    % greater-than-or-equal-to relation >=
   | EQ    %     equal-to relation ==
