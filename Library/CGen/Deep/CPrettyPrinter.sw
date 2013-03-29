@@ -566,6 +566,35 @@ follows the closing curly brace of the then block, separated by a space. In the
 op below, the 'case thenBranch ...' Specware expression prints all the needed
 text up to the 'else' keyword, in order to deal with the various cases.
 
+When printing nested 'if' statements, care must be taken to maintain the correct
+association of the 'else' branch with its 'if' statement. A statement of the
+form
+
+  [*]  iF (..., iF (..., ..., None), Some ...)
+
+is an 'if-then-else' that has an 'if-then' as its 'then' branch. So the 'else'
+branch is associated to the outer 'if'. If this statement is printed following
+the general rules described above, the result is something like
+
+  if (...)
+    if (...)
+      ...
+  else
+    ...
+
+Despite the indentation, this C text associates the 'else' to the inner 'if'
+[ISO 6.8.4.1/3], which in general is not equivalent to the original statement
+[*] above. To avoid this problem, when printing a statement of the form [*] we
+put the inner 'if-else' into a block, producing something like
+
+  if (...) {
+    if (...)
+      ...
+  } else
+    ...
+
+which associates the 'else' to the outer 'if', as intended.
+
 Return statements are also printed on their own lines, in a straightforward way.
 
 To print a 'while' statement, we print the test on its own line, followed by the
@@ -654,6 +683,25 @@ op printStatement (stmt:Statement) : PP0 =
         print "}";
         if elseBranch? = None then printNewline
         else printSpace}
+     | iF (_, _, None) ->
+       if elseBranch? ~= None then
+         % put 'then' branch into block, to associate 'else' to outer 'if':
+         {print " {";
+          printNewline;
+          indentIn;
+          printBlockItems [statement thenBranch];
+          indentOut;
+          startLine;
+          print "}";
+          if elseBranch? = None then printNewline
+          else printSpace}
+       else
+         {printNewline;
+          indentIn;
+          printStatement thenBranch;
+          indentOut;
+          if elseBranch? = None then printNothing
+          else startLine}
      | _ ->
        {printNewline;
         indentIn;
