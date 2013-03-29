@@ -42,9 +42,7 @@ empty, the indentation level 0, and the indentation size is the one supplied as
 argument.
 
 The definition of the bind operator is standard for a state monad. The use of
-the name 'monadBind' enables the use of Metaslang's monadic syntax. We do not
-need to introduce a unit operator, since the same effect is achieved by op
-printNothing defined later. *)
+the name 'monadBind' enables the use of Metaslang's monadic syntax. *)
 
 type State =
   {text        : Text,
@@ -574,14 +572,20 @@ To print a 'while' statement, we print the test on its own line, followed by the
 body. If the body is not a block, we indent it by one level. If the body is a
 block, we print the opening curly brace at the end of the line where the 'while'
 appears, then we print the block items indented by one level, and then we close
-the curly brace at the beginning of the line.
+the curly brace at the beginning of a new line.
 
 To print a 'do' statement, we print the keyword 'do' on its own line, followed
 by the body, followed by the test on its own line. If the body is not a block,
 we indent it by one level. If the body is a block, we print the opening curly
-brace at the end of the line where the 'do' appears, then we pring the block
+brace at the end of the line where the 'do' appears, then we print the block
 items indented by one level, and then we close the curly brace just before the
 'while' part.
+
+To print a 'for' statement, we print the parenthesized (optional) expressions on
+their own line, followed by the body. If the body is not a block, we indent it
+by one level. If the body is a block, we print the opening curly brace at the
+end of the line where the 'for' appears, then we print the block items indented
+by one level, and then we close the curly brace at the beginning of a new line.
 
 To print a block that is not a branch of an 'if' or 'while' statement, we open
 with a curly brace in its own line, we print the items indented by one level,
@@ -591,27 +595,48 @@ the structure of op 'printBlockItems' is a little simpler than ops
 'printMemberDeclarations' and 'printArguments' above. Printing a block item is
 straightforward. *)
 
+% print assignment as expression (i.e. inline, without ending ';'):
+op printAssignmentAsExpression (expr:Expression) (expr':Expression) : PP0 =
+  {printTopExpression expr;
+   print " = ";
+   printTopExpression expr'}
+
+% print function call as expression (i.e. inline, without ending ';'):
+op printCallAsExpression
+   (expr?:Option Expression) (fun:Identifier) (exprs:List Expression) : PP0 =
+  {case expr? of
+   | Some expr ->
+     {printTopExpression expr;
+      print " = "}
+   | None ->
+     printNothing;
+   printIdentifier fun;
+   print "(";
+   printArguments exprs;
+   print ")"}
+
+% print statement used as (first or third) parenthesize expression of 'for':
+op printStatementAsForExpression (stmt?:Option Statement) : PP0 =
+  case stmt? of
+  | Some (assign (expr, expr')) -> printAssignmentAsExpression expr expr'
+  | Some (call (expr?, fun, exprs)) -> printCallAsExpression expr? fun exprs
+  | _ -> printNothing
+    % the constraints on 'for' loops in our model restrict
+    % this statement, if present, to be an assignment or a function call;
+    % so if we get to this 'case' branch it means that the statement is absent,
+    % assuming that the program satisfies the compile-time constraints
+
 op printStatement (stmt:Statement) : PP0 =
   case stmt of
   | assign (expr, expr') ->
     {startLine;
-     printTopExpression expr;
-     print " = ";
-     printTopExpression expr';
+     printAssignmentAsExpression expr expr';
      print ";";
      printNewline}
   | call (expr?, fun, exprs) ->
     {startLine;
-     case expr? of
-     | Some expr ->
-       {printTopExpression expr;
-        print " = "}
-     | None ->
-       printNothing;
-     printIdentifier fun;
-     print "(";
-     printArguments exprs;
-     print ");";
+     printCallAsExpression expr? fun exprs;
+     print ";";
      printNewline}
   | iF (expr, thenBranch, elseBranch?) ->
     {startLine;
@@ -710,6 +735,33 @@ op printStatement (stmt:Statement) : PP0 =
      printTopExpression expr;
      print ");";
      printNewline}
+  | for (first?, expr?, third?, body) ->
+    {startLine;
+     print "for (";
+     printStatementAsForExpression first?;
+     if first? = None then printSpace else printNothing;
+     print "; ";
+     case expr? of
+     | Some expr -> printTopExpression expr
+     | None -> printNothing;
+     print "; ";
+     printStatementAsForExpression third?;
+     print ")";
+     case body of
+     | block items ->
+       {print " {";
+        printNewline;
+        indentIn;
+        printBlockItems items;
+        indentOut;
+        startLine;
+        print "}";
+        printNewline}
+     | _ ->
+       {printNewline;
+        indentIn;
+        printStatement body;
+        indentOut}}
   | block items ->
     {startLine;
      print "{";

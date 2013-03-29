@@ -769,11 +769,18 @@ Note also that, by having function calls not be expressions in our subset, we
 maintain expressions free of side effects.
 
 Besides these expression statements, our C subset includes 'if' selection
-statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while' and
-'do' iteration statements [ISO 6.8.5], and compound statements (i.e. blocks)
-[ISO 6.8.2]. Our 'if' statement captures both the variant with 'else' and the
-variant without 'else', based on the presence of the second, optional
-statement. A 'return' statement [ISO 6.8.6.4] includes an optional expression.
+statements [ISO 6.8.4.1], 'return' jump statements [ISO 6.8.6.4], 'while', 'do',
+and 'for' iteration statements [ISO 6.8.5], and compound statements
+(i.e. blocks) [ISO 6.8.2]. Our 'if' statement captures both the variant with
+'else' and the variant without 'else', based on the presence of the second,
+optional statement. A 'return' statement [ISO 6.8.6.4] includes an optional
+expression.
+
+Because of our treatment of assignments and function calls as statements, we use
+statements as the first and third (optional) expressions of a 'for' statement.
+Later in our model we restrict such statements to assignments and function
+calls. Expressions in our model have no side effects, so allowing expressions in
+(our model of) 'for' statements would not be very useful.
 
 Besides statements, we only allow object declarations as block items [ISO
 6.8.2], not other kinds of declarations. *)
@@ -785,6 +792,7 @@ type Statement =
   | return Option Expression
   | while  Expression * Statement
   | do     Statement * Expression
+  | for    Option Statement * Option Expression * Option Statement * Statement
   | block  List BlockItem
 
 type BlockItem =
@@ -1780,9 +1788,16 @@ arrays and so we do not automatically convert them to pointers.
 As explained earlier, a 'return' statement has the compile-time type of its
 expression, or 'void' if it has no expression.
 
-The controlling expression of a 'while' or 'do' statement must have scalar type
-[ISO 6.8.5/2]. The compile-time type of a 'while' or 'do' statement is the
-compile-time type of the loop body.
+The controlling expression of a 'while' or 'do' or 'for' statement must have
+scalar type [ISO 6.8.5/2]. The compile-time type of a 'while' or 'do' or 'for'
+statement is the compile-time type of the loop body.
+
+Because of our treatment of assignments and function calls as statements, as
+explained when the abstract syntax of 'for' loops is defined, we use statements
+as the first and third (optional) expressions of a 'for' statement. We restrict
+these two statements to be assignments or function calls, which is consistent
+with the fact that [ISO 6.8.5] uses expressions, which are executed as
+expression statement.
 
 When checking a block, we extend the list of object maps in the symbol table
 with an empty map, corresponding to the new block scope.
@@ -1857,6 +1872,26 @@ op checkStatement (symtab:SymbolTable, stmt:Statement) : Option StatementType =
   | do (body, expr) ->
     {ety <- checkExpression (symtab, expr);
      check (scalarType? ety.typE);
+     checkStatement (symtab, body)}
+  | for (first?, expr?, third?, body) ->
+    {case first? of
+     | Some first ->
+       {check (embed? assign first || embed? call first);
+        checkStatement (symtab, first)}
+     | None ->
+       Some (single next);
+     case expr? of
+     | Some expr ->
+       {ety <- checkExpression (symtab, expr);
+        check (scalarType? ety.typE)}
+     | None ->
+       check true;
+     case third? of
+     | Some third ->
+       {check (embed? assign third || embed? call third);
+        checkStatement (symtab, third)}
+     | None ->
+       Some (single next);
      checkStatement (symtab, body)}
   | block items ->
     let symtab' = symtab << {objects = symtab.objects ++ [empty]} in
@@ -4062,6 +4097,13 @@ The execution of a 'do' loop [ISO 6.8.5] is equivalent to the execution of the
 body of the loop followed by a 'while' loop that has the same controlling
 expression and the same body as the 'do' loop.
 
+The execution of a 'for' loop [ISO 6.8.5] is equivalent to the execution of the
+statement used as first expression (if present), followed by a 'while' loop
+whose test is the test of the 'for' and whose body consists of the body of the
+'for' followed by the statement used as third expression (if present) [ISO
+6.8.5.3/1]. If the test is absent from the 'for' loop, the execution is
+equivalent to having the non-0 constant 1 as the test [ISO 6.8.5.3/2].
+
 The argument expressions of a function call are evaluated, and the values passed
 as arguments. The arguments are stored into a new scope in a new frame in
 automatic storage. The body of the function must be a block, whose block items
@@ -4171,6 +4213,17 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
   | do (body, expr) ->
     execStatement
      (state, block [statement body, statement (while (expr, body))])
+  | for (first?, expr?, third?, body) ->
+    let pre:List BlockItem =
+        case first? of Some first -> [statement first] | None -> [] in
+    let test:Expression =
+        case expr? of Some expr -> expr | None -> const "1" in
+    let post:List BlockItem =
+        case third? of Some third -> [statement third] | None -> [] in
+    execStatement
+     (state,
+      block (pre ++
+             [statement (while (test, block ([statement body] ++ post)))]))
   | block items ->
     if empty? state.storage.automatic then error else
     let topframe = last state.storage.automatic in

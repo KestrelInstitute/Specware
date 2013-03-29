@@ -1447,6 +1447,150 @@ text 3 4 (printArguments [binary (ident "i", ADD, const "1"),
                           ident "o"]) =
 "i + 1, ~z, *p, o"
 ),(
+"assignment_1",
+text 0 0 (printAssignmentAsExpression (unary (STAR, ident "q"))
+                                      (const "33")) =
+"*q = 33"
+),(
+"assignment_1'",
+text 3 4 (printAssignmentAsExpression (unary (STAR, ident "q"))
+                                      (const "33")) =
+"*q = 33"
+),(
+"assignment_2",
+text 0 0 (printAssignmentAsExpression (member (ident "r", "f"))
+                                      (cond (ident "a",
+                                             ident "b",
+                                             ident "c",
+                                             char))) =
+"r.f = a ? b : c"
+),(
+"assignment_2'",
+text 3 4 (printAssignmentAsExpression (member (ident "r", "f"))
+                                      (cond (ident "a",
+                                             ident "b",
+                                             ident "c",
+                                             char))) =
+"r.f = a ? b : c"
+),(
+"call_1",
+text 0 0 (printCallAsExpression None "do_it" []) =
+"do_it()"
+),(
+"call_1'",
+text 3 4 (printCallAsExpression None "do_it" []) =
+"do_it()"
+),(
+"call_2",
+text 0 0 (printCallAsExpression (Some (ident "new"))
+                                "quick_sort"
+                                [ident "old", const "100"]) =
+"new = quick_sort(old, 100)"
+),(
+"call_2'",
+text 3 4 (printCallAsExpression (Some (ident "new"))
+                                "quick_sort"
+                                [ident "old", const "100"]) =
+"new = quick_sort(old, 100)"
+),(
+"statement_for_1",
+text 0 0 (printStatementAsForExpression None) =
+""
+),(
+"statement_for_1",
+text 3 4 (printStatementAsForExpression None) =
+""
+),(
+"statement_for_2",
+text 0 0 (printStatementAsForExpression
+           (Some (assign (unary (STAR, ident "q"), const "33")))) =
+"*q = 33"
+),(
+"statement_for_2'",
+text 3 4 (printStatementAsForExpression
+           (Some (assign (unary (STAR, ident "q"), const "33")))) =
+"*q = 33"
+),(
+"statement_for_3",
+text 0 0 (printStatementAsForExpression
+           (Some (call (None, "do_it", [])))) =
+"do_it()"
+),(
+"statement_for_3'",
+text 3 4 (printStatementAsForExpression
+           (Some (call (None, "do_it", [])))) =
+"do_it()"
+),(
+"statement_for_4",
+text 0 0 (printStatementAsForExpression
+           (Some (call (Some (ident "new"),
+                        "quick_sort",
+                        [ident "old", const "100"])))) =
+"new = quick_sort(old, 100)"
+),(
+"statement_for_4'",
+text 3 4 (printStatementAsForExpression
+           (Some (call (Some (ident "new"),
+                        "quick_sort",
+                        [ident "old", const "100"])))) =
+"new = quick_sort(old, 100)"
+),(
+"statement_for_5",
+text 0 0 (printStatementAsForExpression
+           (Some (iF (unary (STAR, ident "q"),
+                      assign (ident "y", const "2"),
+                      None)))) =
+""
+),(
+"statement_for_5'",
+text 3 4 (printStatementAsForExpression
+           (Some (iF (unary (STAR, ident "q"),
+                      assign (ident "y", const "2"),
+                      None)))) =
+""
+),(
+"statement_for_5",
+text 0 0 (printStatementAsForExpression (Some (return None))) =
+""
+),(
+"statement_for_5'",
+text 3 4 (printStatementAsForExpression (Some (return None))) =
+""
+),(
+"statement_for_6",
+text 0 0 (printStatementAsForExpression (Some (while (ident "aq", block [])))) =
+""
+),(
+"statement_for_6'",
+text 3 4 (printStatementAsForExpression (Some (while (ident "aq", block [])))) =
+""
+),(
+"statement_for_7",
+text 0 0 (printStatementAsForExpression (Some (do (block [], ident "aq")))) =
+""
+),(
+"statement_for_7'",
+text 3 4 (printStatementAsForExpression (Some (do (block [], ident "aq")))) =
+""
+),(
+"statement_for_8",
+text 0 0 (printStatementAsForExpression
+           (Some (for (None, None, None, block [])))) =
+""
+),(
+"statement_for_8'",
+text 3 4 (printStatementAsForExpression
+           (Some (for (None, None, None, block [])))) =
+""
+),(
+"statement_for_9",
+text 0 0 (printStatementAsForExpression (Some (block []))) =
+""
+),(
+"statement_for_9'",
+text 3 4 (printStatementAsForExpression (Some (block []))) =
+""
+),(
 "statement_1_1",
 text 0 0 (printStatement (assign (unary (STAR, ident "q"),
                                   const "33"))) =
@@ -1710,6 +1854,206 @@ return 0;
 int y;
 a = b;
 } while (x >= 0);
+"
+),(
+"statement_29_1",
+text 0 0 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"for ( ; ; )
+y = 0;
+"
+),(
+"statement_30_1",
+text 0 0 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; ; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_31_1",
+text 0 0 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for ( ; ; i = i + 1)
+y = 0;
+"
+),(
+"statement_32_1",
+text 0 0 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; ; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_33_1",
+text 0 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"for ( ; i < 10; )
+y = 0;
+"
+),(
+"statement_34_1",
+text 0 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; i < 10; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_35_1",
+text 0 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for ( ; i < 10; i = i + 1)
+y = 0;
+"
+),(
+"statement_36_1",
+text 0 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; i < 10; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_37_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"for (i = 0; ; )
+y = 0;
+"
+),(
+"statement_38_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; ; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_39_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for (i = 0; ; i = i + 1)
+y = 0;
+"
+),(
+"statement_40_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; ; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_41_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"for (i = 0; i < 10; )
+y = 0;
+"
+),(
+"statement_42_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; i < 10; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_43_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for (i = 0; i < 10; i = i + 1)
+y = 0;
+"
+),(
+"statement_44_1",
+text 0 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; i < 10; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
 "
 ),(
 "statement_1_2",
@@ -1977,6 +2321,206 @@ text 0 4 (printStatement
 } while (x >= 0);
 "
 ),(
+"statement_29_2",
+text 0 4 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"for ( ; ; )
+    y = 0;
+"
+),(
+"statement_30_2",
+text 0 4 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; ; ) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_31_2",
+text 0 4 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for ( ; ; i = i + 1)
+    y = 0;
+"
+),(
+"statement_32_2",
+text 0 4 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; ; i = i + 1) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_33_2",
+text 0 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"for ( ; i < 10; )
+    y = 0;
+"
+),(
+"statement_34_2",
+text 0 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; i < 10; ) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_35_2",
+text 0 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for ( ; i < 10; i = i + 1)
+    y = 0;
+"
+),(
+"statement_36_2",
+text 0 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; i < 10; i = i + 1) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_37_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"for (i = 0; ; )
+    y = 0;
+"
+),(
+"statement_38_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; ; ) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_39_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for (i = 0; ; i = i + 1)
+    y = 0;
+"
+),(
+"statement_40_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; ; i = i + 1) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_41_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"for (i = 0; i < 10; )
+    y = 0;
+"
+),(
+"statement_42_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; i < 10; ) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
+"statement_43_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for (i = 0; i < 10; i = i + 1)
+    y = 0;
+"
+),(
+"statement_44_2",
+text 0 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; i < 10; i = i + 1) {
+    return 0;
+    int y;
+    a = b;
+}
+"
+),(
 "statement_1_3",
 text 2 0 (printStatement (assign (unary (STAR, ident "q"),
                                   const "33"))) =
@@ -2240,6 +2784,206 @@ return 0;
 int y;
 a = b;
 } while (x >= 0);
+"
+),(
+"statement_29_3",
+text 2 0 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"for ( ; ; )
+y = 0;
+"
+),(
+"statement_30_3",
+text 2 0 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; ; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_31_3",
+text 2 0 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for ( ; ; i = i + 1)
+y = 0;
+"
+),(
+"statement_32_3",
+text 2 0 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; ; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_33_3",
+text 2 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"for ( ; i < 10; )
+y = 0;
+"
+),(
+"statement_34_3",
+text 2 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; i < 10; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_35_3",
+text 2 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for ( ; i < 10; i = i + 1)
+y = 0;
+"
+),(
+"statement_36_3",
+text 2 0 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for ( ; i < 10; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_37_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"for (i = 0; ; )
+y = 0;
+"
+),(
+"statement_38_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; ; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_39_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for (i = 0; ; i = i + 1)
+y = 0;
+"
+),(
+"statement_40_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; ; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_41_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"for (i = 0; i < 10; )
+y = 0;
+"
+),(
+"statement_42_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; i < 10; ) {
+return 0;
+int y;
+a = b;
+}
+"
+),(
+"statement_43_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"for (i = 0; i < 10; i = i + 1)
+y = 0;
+"
+),(
+"statement_44_3",
+text 2 0 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"for (i = 0; i < 10; i = i + 1) {
+return 0;
+int y;
+a = b;
+}
 "
 ),(
 "statement_1_4",
@@ -2507,6 +3251,206 @@ text 2 4 (printStatement
         } while (x >= 0);
 "
 ),(
+"statement_29_4",
+text 2 4 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"        for ( ; ; )
+            y = 0;
+"
+),(
+"statement_30_4",
+text 2 4 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for ( ; ; ) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_31_4",
+text 2 4 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"        for ( ; ; i = i + 1)
+            y = 0;
+"
+),(
+"statement_32_4",
+text 2 4 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for ( ; ; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_33_4",
+text 2 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"        for ( ; i < 10; )
+            y = 0;
+"
+),(
+"statement_34_4",
+text 2 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for ( ; i < 10; ) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_35_4",
+text 2 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"        for ( ; i < 10; i = i + 1)
+            y = 0;
+"
+),(
+"statement_36_4",
+text 2 4 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for ( ; i < 10; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_37_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"        for (i = 0; ; )
+            y = 0;
+"
+),(
+"statement_38_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for (i = 0; ; ) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_39_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"        for (i = 0; ; i = i + 1)
+            y = 0;
+"
+),(
+"statement_40_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for (i = 0; ; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_41_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"        for (i = 0; i < 10; )
+            y = 0;
+"
+),(
+"statement_42_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for (i = 0; i < 10; ) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
+"statement_43_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"        for (i = 0; i < 10; i = i + 1)
+            y = 0;
+"
+),(
+"statement_44_4",
+text 2 4 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"        for (i = 0; i < 10; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+        }
+"
+),(
 "statement_1_5",
 text 1 6 (printStatement (assign (unary (STAR, ident "q"),
                                   const "33"))) =
@@ -2772,14 +3716,214 @@ text 1 6 (printStatement
       } while (x >= 0);
 "
 ),(
+"statement_29_5",
+text 1 6 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"      for ( ; ; )
+            y = 0;
+"
+),(
+"statement_30_5",
+text 1 6 (printStatement
+           (for (None,
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for ( ; ; ) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_31_5",
+text 1 6 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"      for ( ; ; i = i + 1)
+            y = 0;
+"
+),(
+"statement_32_5",
+text 1 6 (printStatement
+           (for (None,
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for ( ; ; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_33_5",
+text 1 6 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"      for ( ; i < 10; )
+            y = 0;
+"
+),(
+"statement_34_5",
+text 1 6 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for ( ; i < 10; ) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_35_5",
+text 1 6 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"      for ( ; i < 10; i = i + 1)
+            y = 0;
+"
+),(
+"statement_36_5",
+text 1 6 (printStatement
+           (for (None,
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for ( ; i < 10; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_37_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 assign (ident "y", const "0")))) =
+"      for (i = 0; ; )
+            y = 0;
+"
+),(
+"statement_38_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for (i = 0; ; ) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_39_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"      for (i = 0; ; i = i + 1)
+            y = 0;
+"
+),(
+"statement_40_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 None,
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for (i = 0; ; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_41_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 assign (ident "y", const "0")))) =
+"      for (i = 0; i < 10; )
+            y = 0;
+"
+),(
+"statement_42_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 None,
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for (i = 0; i < 10; ) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
+"statement_43_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 assign (ident "y", const "0")))) =
+"      for (i = 0; i < 10; i = i + 1)
+            y = 0;
+"
+),(
+"statement_44_5",
+text 1 6 (printStatement
+           (for (Some (assign (ident "i", const "0")),
+                 Some (binary (ident "i", LT, const "10")),
+                 Some (assign (ident "i", binary (ident "i", ADD, const "1"))),
+                 block [statement (return (Some (const "0"))),
+                        declaration {typE = sint, name = "y"},
+                        statement (assign (ident "a", ident "b"))]))) =
+"      for (i = 0; i < 10; i = i + 1) {
+            return 0;
+            int y;
+            a = b;
+      }
+"
+),(
 "parameter_declaration",
 text 0 0 (printParameterDeclaration
-        {typE = pointer (pointer char), name = "argv"}) =
+            {typE = pointer (pointer char), name = "argv"}) =
 "char **argv"
 ),(
 "parameter_declaration'",
 text 3 4 (printParameterDeclaration
-        {typE = pointer (pointer char), name = "argv"}) =
+            {typE = pointer (pointer char), name = "argv"}) =
 "char **argv"
 ),(
 "parameter_list_1",
