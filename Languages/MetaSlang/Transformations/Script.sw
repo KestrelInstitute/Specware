@@ -278,6 +278,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
      | "rev-leibniz" -> mkRLeibniz
      | "weaken" -> mkWeaken
      | "alldefs" -> mkAllDefs
+     | _ -> fail("Unknown rule constructor: "^id)
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
  op  claimNameMatch: QualifiedId * QualifiedId -> Bool
