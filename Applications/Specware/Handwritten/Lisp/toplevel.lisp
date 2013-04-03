@@ -13,7 +13,7 @@
 (defpackage :ShowDeps)
 (defpackage :ShowImports)
 (defpackage :ShowData)
-(defpackage :TestSpec)
+(defpackage :CheckSpec)
 
 ;; Toplevel Lisp aliases for Specware
 
@@ -924,7 +924,7 @@
 ;;; This is the function invoked by the Specware shell command 'showdata'.
 ;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
 (defun showdata (&optional argstring)
-  ;; This calls the Lisp translation of op showData (from
+  ;; This calls the Lisp translation of op evaluateShowData (from
   ;; Languages/SpecCalculus/AbstractSyntax/ShowData.sw).  The "-3" in
   ;; the Lisp function name is added during the translation to Lisp.
   ;; My approach is to have the Metaslang code do all of the argument
@@ -955,18 +955,18 @@
         ;; strip the :|Some| to get the string
         (setq *last-unit-Id-_loaded* (cdr val)))))
 
-;;; This is the function invoked by the Specware shell command 'testspec'.
+;;; This is the function invoked by the Specware shell command 'checkspec'.
 ;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
-(defun testspec (&optional argstring)
-  ;; This calls the Lisp translation of op testSpec (from
+(defun checkspec (&optional argstring)
+  ;; This calls the Lisp translation of op evaluateCheckSpec (from
   ;; Languages/SpecCalculus/AbstractSyntax/ASW_Printer_SExp.sw).  The "-3" in
   ;; the Lisp function name is added during the translation to Lisp.
   ;; My approach is to have the Metaslang code do all of the argument
   ;; parsing.
-  (let ((val (TestSpec::evaluateTestSpec-3 (wrap-option argstring)
+  (let ((val (CheckSpec::evaluateCheckSpec-3 (wrap-option argstring)
                                            (wrap-option *last-unit-Id-_loaded*)
                                            (home-dir))))
-    ;;evaluateTestSpec returns an optional string to store in *last-unit-Id-_loaded*
+    ;;evaluateCheckSpec returns an optional string to store in *last-unit-Id-_loaded*
     (if (equal val '(:|None|))
         nil ;does this return value matter?
         ;; strip the :|Some| to get the string
