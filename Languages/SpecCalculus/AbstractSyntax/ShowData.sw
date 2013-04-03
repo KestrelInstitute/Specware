@@ -674,10 +674,9 @@ op ppAOpInfo (c : Context, aopinfo : AOpInfo StandardAnnotation) : WLPretty =
                ppString " ",
                ppBreak,
                if fullyQualified? then ppString "IsFullyQualified" else ppString "NotFullyQualified",
-               ppString ")",
-               ppNewline]
+               ppString ")"]
 
-
+% TODO use ppSep to put in the newlines?
 op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo StandardAnnotation))) : List WLPretty =
   foldi
   (fn (key, val, prettys) -> 
@@ -686,7 +685,7 @@ op ppMapLMapFromStringsToAOpInfos (c : Context) (m:MapL.Map(String, (AOpInfo Sta
                  ppNewline,
                  ppAOpInfo (c, val),
                  ppString ")",
-                 ppBreak
+                 ppNewline
                  ])
         ::prettys))
   []
@@ -1027,22 +1026,20 @@ op ppTerm1 (c:Context) (term:MSTerm) : WLPretty =
                    ppTerm c term,
                    ppString ")"]
     | LetRec (decls,term,_) ->
-      let def ppDecl (v,term) =
-      ppGr2Concat [
-                   %ppString "def ",
+      let def ppDecl (v: Var,term: MSTerm) =
+      ppGr2Concat [ppString "(",
                    ppVar c v,
-                   ppString " = ",
+                   ppString " ",
                    ppBreak,
-                   ppTerm c term]
+                   ppTerm c term,
+                   ppString ")"]
       in
-      ppGr2Concat [ppString "letrec",
-                   ppString "  ",
-                   ppIndent (ppSep ppNewline (map ppDecl decls)),
-                   ppNewline,
-                   ppString "in",
-                   ppNewline,
-                   ppTerm c term
-                   ]
+      ppGr2Concat [ppString "(LetRec (",
+                   ppIndent (ppSep ppBreak (map ppDecl decls)),
+                   ppString ") ",
+                   ppBreak,
+                   ppTerm c term,
+                   ppString ")"]
     | Var (v,_) -> ppVar c v
     | Fun (fun,ty,_) ->
       if c.printTypes?
