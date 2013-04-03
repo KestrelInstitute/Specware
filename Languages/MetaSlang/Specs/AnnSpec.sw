@@ -1252,6 +1252,26 @@ op [a] showQ(el: ASpecElement a): String =
                            | _ -> acc))
                      []
                      elts
+
+ %% Gather all of the Op (not OpDef) spec elements for the given qualified Id.
+ %% TODO use a filter function? (but here we don't want to preserve the import structure, unlike what filterSpecElements seems to do)
+ op getOpElements (qid : QualifiedId) (elts : SpecElements) : SpecElements =
+   foldlSpecElements (fn (acc:SpecElements, elt:SpecElement) ->
+                        (case elt of
+                           | Op (qid2, _, _) -> if qid2 = qid then elt::acc else acc
+                           | _ -> acc))
+                     []
+                     elts
+
+ %% Gather all of the OpDef (not Op) spec elements for the given qualified Id.
+ %% TODO use a filter function? (but here we don't want to preserve the import structure, unlike what filterSpecElements seems to do)
+ op getOpDefElements (qid : QualifiedId) (elts : SpecElements) : SpecElements =
+   foldlSpecElements (fn (acc:SpecElements, elt:SpecElement) ->
+                        (case elt of
+                           | OpDef (qid2, _, _, _) -> if qid2 = qid then elt::acc else acc
+                           | _ -> acc))
+                     []
+                     elts
    
  
  % TODO these are duplicated in PrintSpecAsC.sw
@@ -1265,21 +1285,24 @@ op [a] showQ(el: ASpecElement a): String =
   %% Type and/or TypeDef spec element.
   let bad_type_infos =
       foldTypeInfos (fn (info, failures) ->
-                       let names = info.names in  %% TODO If there is more than one name, should we look up each one below?:
-                       let qid = primaryTypeName info in
-                       let typeElts = getTypeElements qid s.elements in
-                       let typeDefElts = getTypeDefElements qid s.elements in
-                       let _ = if (length names = 0) then writeLine("ERROR: No names for type: " ^ show qid) else () in
-                       let _ = if (length names > 1) then writeLine("Warning: More than one name for type: " ^ show qid ^ ": " ^ showQIDs names) else () in
-                       let typeCount    = length typeElts    in
-                       let typeDefCount = length typeDefElts in
-                       let _ = if typeCount    > 1 then writeLine("ERROR: " ^ show typeCount    ^ " declarations for: " ^ show qid) else () in
-                       let _ = if typeDefCount > 1 then writeLine("ERROR: " ^ show typeDefCount ^ " definitions for: " ^ show qid) else () in
-                       let found? = (typeElts ~= [] || typeDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.
-                       if found? then
-                         failures
+                       let names = info.names in
+                       if names = [] then
+                         let _ = writeLine("ERROR: No names for type!") in %% TODO Print the position?  We can't print the name since there isn't one!
+                         failures ++ [info]
                        else
-                         failures ++ [info])
+                         let qid = primaryTypeName info in  %% TODO If there is more than one name, should we look up each one below?:
+                         let _ = if (length names > 1) then writeLine("Warning: More than one name for type: " ^ show qid ^ ": " ^ showQIDs names) else () in
+                         let typeElts = getTypeElements qid s.elements in
+                         let typeDefElts = getTypeDefElements qid s.elements in
+                         let typeCount    = length typeElts    in
+                         let typeDefCount = length typeDefElts in
+                         let _ = if typeCount    > 1 then writeLine("ERROR: " ^ show typeCount    ^ " declarations for: " ^ show qid) else () in
+                         let _ = if typeDefCount > 1 then writeLine("ERROR: " ^ show typeDefCount ^ " definitions for: " ^ show qid) else () in
+                         let found? = (typeElts ~= [] || typeDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.
+                           if found? then
+                             failures
+                           else
+                             failures ++ [info])
                     []
                     s.types
   in
@@ -1288,21 +1311,31 @@ op [a] showQ(el: ASpecElement a): String =
   let bad_op_infos =
       foldOpInfos (fn (info, failures) ->
                      let names = info.names in
-                     let qid = primaryOpName info in
-                     let found? = 
-                         foldlSpecElements (fn (found?, elt) ->
-                                              found? || 
-                                              (case elt of
-                                                 | Op    (qid2, _,    _) -> qid = qid2
-                                                 | OpDef (qid2, _, _, _) -> qid = qid2
-                                                 | _ -> false))
-                                           false
-                                           s.elements
-                     in
-                     if found? then
-                       failures
+                     if names = [] then
+                       let _ = writeLine("ERROR: No names for op!") in %% TODO Print the position?  We can't print the name since there isn't one!
+                       failures ++ [info]
                      else
-                       failures ++ [info])
+                       let qid = primaryOpName info in  %% TODO If there is more than one name, should we look up each one below?:
+                       let _ = if (length names = 0) then writeLine("ERROR: No names for op: " ^ show qid) else () in
+                       let _ = if (length names > 1) then writeLine("Warning: More than one name for op: " ^ show qid ^ ": " ^ showQIDs names) else () in
+                       let opElts = getOpElements qid s.elements in
+                       let opDefElts = getOpDefElements qid s.elements in
+                       let opCount    = length opElts    in
+                       let opDefCount = length opDefElts in
+
+
+                       %% What are the rules about ops?
+                       %% You can have an OpDecl with not-defined-when-declared, followed by any number of OpDefs, numbered starting from 0
+                       %5 You can have an OpDecl with defined-when-declared, followed by any number of opDefs, numbered starting from 1
+
+                       let _ = if opCount    = 0 then writeLine("ERROR: No declarations for: " ^ show qid) else () in
+                       let _ = if opCount    > 1 then writeLine("ERROR: " ^ show opCount    ^ " declarations for: " ^ show qid) else () in
+                       %let _ = if opDefCount > 1 then writeLine("ERROR: " ^ show opDefCount ^ " definitions for: " ^ show qid) else () in
+                       let found? = (opElts ~= [] || opDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.                       
+                         if found? then
+                           failures
+                         else
+                           failures ++ [info])
                   []
                   s.ops
   in
