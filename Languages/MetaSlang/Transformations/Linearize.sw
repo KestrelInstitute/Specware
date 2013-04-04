@@ -3,45 +3,12 @@ Linearize qualifying spec
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % addOp
 
- type Binding  = MSPattern * MSTerm
- type Bindings = List Binding
-
- op printBindings (bindings : Bindings) : String =
+ op printBindings (bindings : List (MSPattern * MSTerm)) : String =
    (foldl (fn (str, (pat, term)) ->
             str ^ printPattern pat ^ " = " ^ printTerm term ^ ",")
          "<< " 
          bindings)
    ^ ">>"
-
- op dissectLet (keep?          : MSTerm -> Bool)
-               (counter        : Nat)
-               (outer_bindings : Bindings)
-               (tm             : MSTerm)
-               (spc            : Spec)
-  : Bindings * MSTerm * Nat =
-  %% given let ... in let ... in let ... in body,
-  %% separate bindings from body
-  case tm of
-    | Let (bindings, body, _) ->
-      dissectLet keep? counter (outer_bindings ++ bindings) body spc
-    | _ ->
-      if keep? tm then
-        (outer_bindings, tm, counter)
-      else
-        let new_vname    = "tmp_" ^ show counter              in
-        let vtype        = termTypeEnv (spc, tm)              in
-        let new_v        = (new_vname, vtype)                 in
-        let new_pat      = VarPat (new_v, noPos)              in
-        let new_var      = Var (new_v, noPos)                 in
-        let new_bindings = outer_bindings ++ [(new_pat, tm)]  in
-        (new_bindings, new_var, counter+1)
-
- op mkLet (bindings : Bindings) (body : MSTerm) : MSTerm =
-  case bindings of
-    | binding :: bindings ->
-      Let ([binding], mkLet bindings body, noPos)
-    | _ -> 
-      body
 
  op anormalizeTerm (tracing? : Bool) (spc : Spec) (counter : Nat) (old_term : MSTerm) : MSTerm * Nat =
   %% Convert term to ANormal form, in which all args are atomic.
@@ -74,6 +41,30 @@ Linearize qualifying spec
         | TypedTerm (tm, _,  _) -> anormal_arg? tm
         | _ -> false  % e.g., an apply
 
+    def dissect keep? counter outer_bindings (tm : MSTerm) =
+      %% given let ... in let ... in let ... in body,
+      %% separate bindings from body
+      case tm of
+        | Let (bindings, body, _) ->
+          dissect keep? counter (outer_bindings ++ bindings) body
+        | _ ->
+          if keep? tm then
+            (outer_bindings, tm, counter)
+          else
+            let new_vname    = "tmp_" ^ show counter              in
+            let vtype        = termTypeEnv (spc, tm)              in
+            let new_v        = (new_vname, vtype)                 in
+            let new_pat      = VarPat (new_v, noPos)              in
+            let new_var      = Var (new_v, noPos)                 in
+            let new_bindings = outer_bindings ++ [(new_pat, tm)]  in
+            (new_bindings, new_var, counter+1)
+
+    def mkLet bindings body =
+      case bindings of
+        | binding :: bindings ->
+          Let ([binding], mkLet bindings body, noPos)
+        | _ -> 
+          body
   in
   case old_term of
 
@@ -81,7 +72,7 @@ Linearize qualifying spec
 
       %% val and body will alredy be in anormal form.
       %% Move all let bindings within val up above this form.
-      let (val_bindings, val_body, counter) = dissectLet anormal_body? counter [] val spc in
+      let (val_bindings, val_body, counter) = dissect anormal_body? counter [] val in
 
       let new_let = Let ([(pat, val_body)], body, noPos) in
       (mkLet val_bindings new_let, counter)
@@ -93,8 +84,8 @@ Linearize qualifying spec
       %% If t2 is an application, we will also create a new binding for it.
       %% (Note: for our purposes here, RecordMerge is just another operator.)
 
-      let (pred_bindings, pred_body, counter) = dissectLet anormal_body? counter [] t1 spc in
-      let (arg_bindings,  arg_body,  counter) = dissectLet anormal_arg?  counter [] t2 spc in
+      let (pred_bindings, pred_body, counter) = dissect anormal_body? counter [] t1 in
+      let (arg_bindings,  arg_body,  counter) = dissect anormal_arg?  counter [] t2 in
       let new_bindings = pred_bindings ++ arg_bindings      in
       let new_apply    = Apply (pred_body, arg_body, noPos) in
       (mkLet new_bindings new_apply, counter)
@@ -108,7 +99,7 @@ Linearize qualifying spec
       let (new_bindings, new_fields, counter) =
           foldl (fn ((bindings, fields, counter), (id, field_value)) ->
                    let (field_bindings, field_body, counter) = 
-                       dissectLet anormal_field_value? counter [] field_value spc
+                       dissect anormal_field_value? counter [] field_value 
                    in
                    (bindings ++ field_bindings, 
                     fields   ++ [(id, field_body)],
@@ -125,7 +116,7 @@ Linearize qualifying spec
       %% Lift all let bindings within pred up above this form, but leave t1 and t2 as is.
       %% (Otherwise we would be calculating values for branches not taken.)
 
-      let (new_bindings, pred_body, counter) = dissectLet anormal_body? counter [] pred spc in
+      let (new_bindings, pred_body, counter) = dissect anormal_body? counter [] pred in
       let new_ifthenelse = IfThenElse (pred_body, t1, t2, noPos) in
       (mkLet new_bindings new_ifthenelse, counter)
 
