@@ -33,5 +33,6 @@ import Bit
 import BitList
 import Stream
 import Sequence
+import SizedNats
 
 endspec
