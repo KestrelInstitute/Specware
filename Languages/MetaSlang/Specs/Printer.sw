@@ -980,6 +980,14 @@ AnnSpecPrinter qualifying spec
 				            ([], Top) 
 					    term))
 
+ op [a]  printTermIndent(indent: Nat, term: ATerm a): String = 
+     let indent   = PrettyPrint.blanks indent in
+     let context  = initialize(asciiPrinter,false) in 
+     let argument = ([],Top) in
+     let termPP   = ppTerm context argument term in
+     let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent,termPP] in
+     PrettyPrint.toString(PrettyPrint.format(100,termPP))
+
  def termToPretty term =
    ppTerm (initialize (asciiPrinter, false)) ([], Top) term
 
