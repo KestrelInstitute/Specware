@@ -695,15 +695,6 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
 (* Trace utilities *)
 
- op printTerm: Nat * MSTerm -> String
- def printTerm (indent, term) = 
-     let indent   = PrettyPrint.blanks indent in
-     let context  = initialize(asciiPrinter,false) in 
-     let argument = ([],Top) in
-     let termPP   = ppTerm context argument term in
-     let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent, termPP] in
-     PrettyPrint.toString(PrettyPrint.format(100,termPP))
-
  op traceTerm : Context * MSTerm * MSTerm * SubstC -> ()
  def traceTerm(context, term, prev_term, (* subst *)_) = 
      if traceRewriting > 1 then 
@@ -712,15 +703,15 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
           if traceShowsLocalChanges? && ~(equalTerm?(term, prev_term))
             then (let changed_ptm = changedPathTerm(term, prev_term) in
                   let prev_sub_tm = fromPathTerm(prev_term, changed_ptm.2) in
-                  let prev_tm_str = printTerm(indent, prev_sub_tm) in
+                  let prev_tm_str = printTermIndent(indent, prev_sub_tm) in
                   let new_sub_tm = fromPathTerm changed_ptm in
                   let new_tm_str  = printTerm new_sub_tm in
                   if length prev_tm_str + length new_tm_str < 90
                     then writeLine(prev_tm_str^"  --->  "^new_tm_str)
                     else if length new_tm_str < 40
                     then writeLine(prev_tm_str^"\n --->  "^new_tm_str)
-                    else writeLine(prev_tm_str^"\n --->\n"^printTerm(indent, new_sub_tm)))
-            else writeLine(printTerm(indent, term))
+                    else writeLine(prev_tm_str^"\n --->\n"^printTermIndent(indent, new_sub_tm)))
+            else writeLine(printTermIndent(indent, term))
 	  ) 
      else ()
 
