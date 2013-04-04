@@ -1531,6 +1531,207 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapRec term
 
+  %% Like mapAccumTerm but ignores types
+  op [a,b] mapAccumSubTerms (f     : b -> ATerm a -> (ATerm a) * b)
+                            (accum : b) 
+                            (term  : ATerm a) 
+   : (ATerm a) * b =
+   let
+
+     def mapT accum term =
+       case term of
+
+	 | Apply (t1, t2, a) ->
+	   let (newT1, accum) = mapAccumRec accum t1 in
+	   let (newT2, accum) = mapAccumRec accum t2 in
+           let new_term =
+	       if newT1 = t1 && newT2 = t2 then
+                 term
+               else
+                 Apply (newT1, newT2, a)
+           in
+           (new_term, accum)
+	   
+	 | ApplyN (terms, a) ->
+	   let (new_terms, accum) = 
+               foldl (fn ((new_terms, accum), tm) ->
+                        let (new_tm, accum) = mapAccumRec accum tm in
+                        (new_terms ++ [new_tm], accum))
+                     ([], accum)
+                     terms
+           in
+           let new_term =
+	       if new_terms = terms then
+                 term
+               else
+                 ApplyN (new_terms, a)
+           in
+           (new_term, accum)
+
+	 | Record (row, a) ->
+	   let (new_row, accum) = 
+               foldl (fn ((new_row, accum), (id, tm)) -> 
+                        let (new_tm, accum) = mapAccumRec accum tm in
+                        (new_row ++ [(id, new_tm)], accum))
+                     ([], accum)
+                     row 
+           in
+           let new_term =
+	       if new_row = row then
+                 term
+               else
+                 Record (new_row, a)
+           in
+           (new_term, accum)
+	       
+	 | Bind (bnd, vars, trm, a) ->
+	   let (newTrm, accum) = mapAccumRec accum trm in
+           let new_term =
+  	       if newTrm = trm then
+                 term
+               else
+                 Bind (bnd, vars, newTrm, a)
+           in
+           (new_term, accum)
+
+	 | The (var, trm, a) ->
+	   let (newTrm, accum) = mapAccumRec accum trm in
+           let new_term =
+	       if newTrm = trm then
+                 term
+               else
+                 The (var, newTrm, a)
+           in
+           (new_term, accum)
+		 
+	 | Let (decls, body, a) ->
+	   let (new_decls, accum) = 
+               foldl (fn ((new_decls, accum), (pat, tm)) -> 
+                        let (new_tm, accum) = mapAccumRec accum tm in
+                        (new_decls ++ [(pat, new_tm)], accum))
+                     ([], accum)
+                     decls 
+           in
+	   let (new_body, accum) = mapAccumRec accum body in
+           let new_term =
+	       if new_decls = decls && new_body = body then
+                 term
+               else
+                 Let (new_decls, new_body, a)
+           in
+           (new_term, accum)
+
+	 | LetRec (decls, body, a) ->
+	   let (new_decls, accum) = 
+               foldl (fn ((new_decls, accum), (pat, tm)) -> 
+                        let (new_tm, accum) = mapAccumRec accum tm in
+                        (new_decls ++ [(pat, new_tm)], accum))
+                     ([], accum)
+                     decls 
+           in
+	   let (new_body, accum) = mapAccumRec accum body in
+           let new_term =
+	       if new_decls = decls && new_body = body then
+                 term
+               else
+                 LetRec (new_decls, new_body, a)
+           in
+           (new_term, accum)
+		     
+	 | Var _ -> (term, accum)
+	     
+	 | Fun _ -> (term, accum)
+		     
+	 | Lambda (match, a) ->
+	   let (new_match, accum) = 
+               foldl (fn ((new_match, accum), (pat, cond, trm)) ->
+                        let (pat,  accum) = mapAccumPat accum pat  in
+                        let (cond, accum) = mapAccumRec accum cond in
+                        let (body, accum) = mapAccumRec accum trm  in
+                        (new_match ++ [(pat, cond, body)],
+                         accum))
+                     ([], accum)
+                     match 
+	   in
+           let new_term =
+               if new_match = match then
+                 term
+               else
+                 Lambda (new_match, a)
+           in
+           (new_term, accum)
+		       
+	 | IfThenElse (t1, t2, t3, a) ->
+	   let (new_t1, accum) = mapAccumRec accum t1 in
+	   let (new_t2, accum) = mapAccumRec accum t2 in
+	   let (new_t3, accum) = mapAccumRec accum t3 in
+           let new_term =
+	       if new_t1 = t1 && new_t2 = t2 && new_t3 = t3 then
+                 term
+               else
+                 IfThenElse (new_t1, new_t2, new_t3, a)
+           in
+           (new_term, accum)
+			 
+	 | Seq (terms, a) ->
+	   let (new_terms, accum) = 
+               foldl (fn ((new_tms, accum), tm) ->
+                        let (new_tm, accum) = mapAccumRec accum tm in
+                        (new_tms ++ [new_tm], accum))
+                     ([], accum) 
+                     terms
+           in
+           let new_term =
+	       if new_terms = terms then
+                 term
+               else
+                 Seq (new_terms, a)
+           in
+           (new_term, accum)
+			   
+	 | TypedTerm (trm, ty, a) ->
+	   let (newTrm, accum) = mapAccumRec accum trm in
+           let new_term =
+	       if newTrm = trm then
+                 term
+               else
+                 TypedTerm (newTrm, ty, a)
+           in
+           (new_term, accum)
+			     
+         | Pi  (tvs, tm, a) -> 
+           let (new_tm, accum) = mapAccumRec accum tm in
+           (Pi (tvs, new_tm, a), accum)  % TODO: what if map alters vars?
+
+         | And (tms, a) -> 
+           let (new_tms, accum) =
+               foldl (fn ((new_tms, accum), tm) ->
+                        let (new_tm, accum) = mapAccumRec accum tm in
+                        (new_tms ++ [new_tm], accum))
+                     ([], accum)
+                     tms
+           in
+           (maybeMkAndTerm (new_tms, a), accum)
+
+         | _ -> (term, accum)
+			     
+     def mapAccumRec accum term =
+       %% apply map to leaves, then apply map to result
+       let (tm, accum) = mapT accum term in
+       f accum tm
+
+     def mapAccumPat accum pat =
+       case pat of
+	 %% RestrictedPats can only occur at top level
+	 | RestrictedPat (spat, tm, a) -> 
+           let (new_tm, accum) = mapAccumRec accum tm in
+           (RestrictedPat (spat, new_tm, a), accum)
+	 | _ ->
+           (pat, accum)
+
+   in
+     mapAccumRec accum term
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive Term Search
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
