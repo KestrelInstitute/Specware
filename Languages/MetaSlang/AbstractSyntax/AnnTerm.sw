@@ -411,7 +411,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op termInnerTerm : [b] ATerm b -> ATerm b
 
  op maybeAndType  : [b] List (AType b) * b -> AType b % Defined in Equalities.sw
- op maybeMkAndTerm  : [b] List (ATerm b) * b -> ATerm b % Defined in Equalities.sw
+ op maybeMkAndTerm  : [b] List (ATerm b) * b -> ATerm b
  def maybeMkAndTerm(tms, a) =
    case tms of
      | [tm] -> tm
@@ -487,7 +487,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 				     | _ -> System.fail ("Cannot extract type of application "
 							 ^ printTerm term))
 
-     | Record     (fields,  a)              -> Product (List.map (fn (id, t) -> (id, termType t)) fields, a)
+     | Record     (fields,  a)              -> Product (map (fn (id, t) -> (id, termType t)) fields, a)
      | Bind       (_,_,_,   a)              -> Boolean a
      | Let        (_,term,  _)              -> termType term
      | LetRec     (_,term,  _)              -> termType term
@@ -1056,7 +1056,6 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op mapType    : [b] TSP_Maps b -> AType    b -> AType    b
  op mapPattern : [b] TSP_Maps b -> APattern b -> APattern b
 
-
 (*
    % GMK: The map* functions can be defined in terms of mapAccum*, as shown below. 
    % However, it appears that there is a small performance cost (empirically observed 
@@ -1282,13 +1281,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
               | None -> ty
               | Some sty ->
                 let newsty = mapRec (tsp, type_map, sty) in
-        	if newsty = sty then
-        	  ty
+        	if newsty = sty % || equalType?(newsty, sty)
+                  then ty
         	else
-        	  MetaTyVar(Ref {name     = name,
-        			 uniqueId = uniqueId,
-        			 link     = Some newsty},
-        		    pos))
+        	   MetaTyVar(Ref {name     = name,
+        	         	 uniqueId = uniqueId,
+        	         	 link     = Some newsty},
+        	             pos))
 
          | Pi  (tvs, ty, a) -> Pi (tvs, mapRec (tsp, type_map, ty), a)  % TODO: what if map alters vars?
 
@@ -1805,6 +1804,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op [a] existsInType? (pred?: AType a -> Bool) (ty: AType a): Bool =
    pred? ty ||
    (case ty of
+      | Base(_, ty_args, _) -> exists? (existsInType? pred?) ty_args
       | Arrow(x,y,_) -> existsInType? pred? x || existsInType? pred? y
       | Product(prs,_) -> exists? (fn (_,f_ty) -> existsInType? pred? f_ty) prs
       | CoProduct(prs,_)  -> exists? (fn (_,o_f_ty) ->
@@ -1814,6 +1814,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                                prs
       | Quotient(x,_,_) -> existsInType? pred? x
       | Subtype(x,_,_) -> existsInType? pred? x
+      | MetaTyVar(Ref{link = Some x, name, uniqueId}, _) -> existsInType? pred? x
       | And(tys,_) -> exists? (existsInType? pred?) tys
       | _ -> false)
 
