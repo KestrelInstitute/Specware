@@ -297,6 +297,7 @@ AnnSpecPrinter qualifying spec
      pretty
 
  op printLocalDefTypes?: Bool = true
+ op useMonadSyntax?: Bool = true
 
  def [a] ppTerm1 context (path, parentTerm) (term: ATerm a) : Pretty =
    let pp : ATermPrinter = context.pp in
@@ -351,7 +352,7 @@ AnnSpecPrinter qualifying spec
 			  string ").", 
 			  pp.fromString p]
          | (Fun (Op(Qualified(_, "monadBind"), _), _, _),
-            Record([(_, t1), (_, Lambda([(pat, Fun (Bool true, _, _), t2)], _))], _)) ->
+            Record([(_, t1), (_, Lambda([(pat, Fun (Bool true, _, _), t2)], _))], _)) | useMonadSyntax? ->
            %% {pat <- t1; t2}
            prettysNone [pp.LCurly,
                         prettysAll (addSeparator (string ";") (ppMonadContents context path term 0)),
