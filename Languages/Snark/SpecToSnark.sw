@@ -1,4 +1,4 @@
-snark qualifying spec {
+snark qualifying spec
 
   import SpecToSnarkProperties
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
@@ -40,7 +40,7 @@ snark qualifying spec {
   op declare_sort: LispCell
   def declare_sort = Lisp.symbol("SNARK","DECLARE-SORT")
 
-  op declare_sub_sorts: LispCell
+  op declare_subsorts: LispCell
   def declare_subsorts = Lisp.symbol("SNARK","DECLARE-SUBSORTS")
 
   op declare_function: LispCell
@@ -578,6 +578,4 @@ snark qualifying spec {
       let spc = toSnarkEnv (spc) in
       ppSpecToFile (spc, file, preamble)
 
-
-
-  }
+end-spec
