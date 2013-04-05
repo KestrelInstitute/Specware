@@ -541,15 +541,20 @@ spec
                          | _ -> None)
                 (exprOfVs t1) r_binds
             | _ -> None
-    in
-    case t of
-      | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
-        (case exprOfVs e1 of
+        def bindE(e1, e2) =
+          case exprOfVs e1 of
            | Some bvs | disjointVars?(if rhs_free? then vs else bvs, freeVars e2) -> Some(bvs, e1, e2)
            | _ ->
          case exprOfVs e2 of
            | Some bvs | disjointVars?(if rhs_free? then vs else bvs, freeVars e1) -> Some(bvs, e2, e1)
-           | _ -> None)
+           | _ -> 
+         case (e1, e2) of
+           | (Apply(Fun(Embed(id1, _), _, _), t1, _), Apply(Fun(Embed(id2, _), _, _), t2, _)) | id1 = id2 ->
+              bindE(t1, t2)
+           | _ -> None
+    in
+    case t of
+      | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) -> bindE(e1, e2)
       | _ -> None
 
   op  simplifyExists: Spec -> List Var * List MSTerm -> MSTerm
