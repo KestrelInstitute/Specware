@@ -2093,6 +2093,9 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 %    let _ = writeLine("= "^printTerm result) in
     result
 
+  op termsSubst(tms: MSTerms, sbst: TermSubst): MSTerms =
+    map (fn t -> termSubst(t, sbst)) tms
+
   op typeTermSubst(ty: MSType, sbst: TermSubst): MSType =
     if sbst = [] then ty
     else
