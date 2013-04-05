@@ -471,7 +471,8 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
             let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
             let new_ty =  MetaSlang.mapType tsp ty in
             let new_tm = MetaSlang.mapTerm tsp tm in
-            if equalTerm?(tm, new_tm) && equalType?(ty, new_ty) then spc
+            if tm = new_tm && ty = new_ty   %equalTerm?(tm, new_tm) && equalType?(ty, new_ty)
+              then spc
             else
               let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, new_ty, new_tm))) in
               spc << {ops = insertAQualifierMap(spc.ops, q, id, opinfo << {dfn = new_dfn})}                                       
