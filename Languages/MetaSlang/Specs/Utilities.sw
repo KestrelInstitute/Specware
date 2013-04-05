@@ -378,6 +378,8 @@ Utilities qualifying spec
      | IfThenElse (t1, t2, t3, _) -> 
        insertVars (freeVarsRec t1, insertVars (freeVarsRec t2, freeVarsRec t3))
 
+     | ApplyN(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
+
      | Seq (tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
 
      | TypedTerm (tm, _, _) -> freeVarsRec tm
@@ -549,52 +551,31 @@ Utilities qualifying spec
 			       M) 
 		  | Some N -> (%String.writeLine "found "; 
 			       N))
-	    | Apply(M1,M2,a)  -> 
-	      Apply(subst M1,subst M2,
-		    a) 
-	    | Record(fields,a) -> 
-	      Record(List.map (fn(f,M)-> (f,subst M)) fields,
-		     a)
+	    | Apply(M1,M2,a)  -> Apply(subst M1,subst M2, a) 
+	    | Record(fields,a) -> Record(List.map (fn(f,M)-> (f,subst M)) fields, a)
 	    | Fun _         -> M 
-	    | Lambda(rules,a)  -> 
-	      Lambda(List.map substRule rules,
-		     a)
+	    | Lambda(rules,a)  -> Lambda(List.map substRule rules, a)
 	    | Let(decls,M,a)  -> 
 	      let decls = List.map (fn(p,M)-> (p,subst M)) decls in
 	      let (decls,freeNames,sub) = List.foldr substLet ([],freeNames,sub) decls
 	      in
-	      Let(decls,
-		  substitute2(M,sub,freeNames),
-		  a)
+	      Let(decls, substitute2(M,sub,freeNames), a)
 	    | LetRec(decls,M,a) -> 
 	      let (vars,sub,freeNames) = substBoundVars(List.map (fn(v,_) -> v) decls,sub,freeNames) 
 	      in
 	      let terms = List.map (fn (_,trm) -> substitute2(trm,sub,freeNames)) decls in
 	      let decls = zip (vars,terms) in
-	      LetRec(decls,
-		     substitute2(M,sub,freeNames),
-		     a)
+	      LetRec(decls, substitute2(M,sub,freeNames), a)
 	    | Bind(b,vars,M,a)  -> 
 	      let (vars,sub,freeNames) = substBoundVars(vars,sub,freeNames) in
-	      Bind(b,
-		   vars,
-		   substitute2(M,sub,freeNames),
-		   a)
+	      Bind(b, vars, substitute2(M,sub,freeNames), a)
 	    | The(var,M,a)  -> 
 	      let ([var],sub,freeNames) = substBoundVars([var],sub,freeNames) in
-	      The (var, 
-		   substitute2(M,sub,freeNames),
-		   a)
-	    | IfThenElse(t1,t2,t3,a) -> 
-	      IfThenElse(subst(t1),
-			 subst(t2),
-			 subst(t3),
-			 a)
-	    | Seq(terms,a) -> 
-	      Seq(List.map subst terms,
-		  a)
-	    | TypedTerm(term, ty, a) ->
-	      TypedTerm(subst(term), ty, a)
+	      The (var, substitute2(M,sub,freeNames), a)
+	    | IfThenElse(t1,t2,t3,a) -> IfThenElse(subst(t1), subst(t2), subst(t3), a)
+	    | Seq(terms,a) -> Seq(map subst terms, a)
+	    | ApplyN(terms,a) -> ApplyN(map subst terms, a)
+	    | TypedTerm(term, ty, a) -> TypedTerm(subst(term), ty, a)
             | _ -> M
 
 	def substRule (pat,cond,term) = 
@@ -602,9 +583,7 @@ Utilities qualifying spec
 	  % if empty? sub && freeNames = empty then
 	  %   (pat, cond, term) 
 	  % else
-	    (pat,
-	     substitute2(cond,sub,freeNames),
-	     substitute2(term,sub,freeNames)) 
+	    (pat, substitute2(cond,sub,freeNames), substitute2(term,sub,freeNames)) 
 
 	def substLet ((pat,trm),(decls,freeNames,sub)) = 
 	  let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
@@ -2632,7 +2611,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 
  op  patternMatch : MSPattern * MSTerm * VarSubst -> MatchResult 
 
- def patternMatch(pat:MSPattern,N,S) = 
+ def patternMatch(pat:MSPattern, N, S) = 
      case pat
        of VarPat(x, _) -> Match(Cons((x,N),S))
 	| WildPat _ -> Match S
@@ -2687,6 +2666,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 	  (case N
 	    of Fun(Nat m,_,_) -> (if n = m then Match S else NoMatch)
 	     | _ -> DontKnow)
+        | TypedPat(p1, _, _) -> patternMatch(p1, N, S)
 	| _ -> DontKnow
 
  op  patternMatchRules : Match * MSTerm -> Option (VarSubst * MSTerm)
