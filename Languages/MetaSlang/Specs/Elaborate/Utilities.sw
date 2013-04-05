@@ -14,7 +14,7 @@ Utilities qualifying spec
        internal   : Spec,
        errors     : Ref (List (String * Position)),
        vars       : StringMap MSType,
-       firstPass? : Bool,
+       passNum    : Nat,
        constrs    : StringMap (List (QualifiedId * MSType)),
        file       : String}
  
@@ -126,7 +126,7 @@ Utilities qualifying spec
               internal   = spc,
               errors     = Ref errs,
               vars       = StringMap.empty,
-              firstPass? = true,
+              passNum    = 0,
               constrs    = StringMap.empty,
               file       = file
              } : LocalEnv
@@ -263,9 +263,16 @@ Utilities qualifying spec
  def addVariable (env, id, srt) =
    env << {vars = StringMap.insert (env.vars, id, srt)}
 
-        
- def secondPass env =
-   env << {firstPass? = false}
+ op firstPass?(env: LocalEnv): Bool = env.passNum = 1
+ op secondPass?(env: LocalEnv): Bool = env.passNum = 2
+ op finalPass?(env: LocalEnv): Bool = env.passNum = 3
+ op notFinalPass?(env: LocalEnv): Bool = env.passNum ~= 3
+
+ op secondPass(env: LocalEnv): LocalEnv =
+   env << {passNum = 2}
+
+ op finalPass(env: LocalEnv): LocalEnv =
+   env << {passNum = 3}
 
  def setEnvTypes (env, newTypes) =
    env << {internal = setTypes (env.internal, newTypes)}
