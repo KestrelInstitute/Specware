@@ -11,9 +11,7 @@ import /Library/General/Stream
 (* We formalize a subset of C, which we will incrementally extend as needed.
 
 Our formalization is based on the C11 standard, i.e. ISO/IEC 9899, "Information
-technology - Programming languages - C", Second edition (2011-12-15). Note that
-the Second edition of Brian Kernighan and Dennis Ritchie's "The C Programming
-Language", published in 1988, refers to an earlier version of the standard.
+technology - Programming languages - C", Second edition (2011-12-15).
 
 In the comments in this spec, we reference the ISO standard as '[ISO]', possibly
 including (dotted) (sub)section numbers (e.g. '[ISO 6.5.9]') and paragraph
@@ -2149,10 +2147,25 @@ time there is a list of lists of active block scopes, plus the outer file scope.
 Thus, we also introduce a notion of scope designator that designates either the
 file scope, or a block scope. A block scope is designated by two numbers, one
 that designates an element of the outer list, and one that designates an element
-of the inner list.
+of the inner list (the numbers are 0-based indices into the lists).
 
-Once we have a designation for a top-level object consisting of a scope
-designation plus a name, designating its subobjects is just a matter of adding
+A program in our formalized C subset is a self-contained translation unit, in
+the sense that it cannot reference entities in other translation units (cf. op
+'checkProgram', which starts with an empty symbol table). However, other
+translation units may call functions defined by our formalized translation unit.
+If these functions have parameters of pointer type, the corresponding pointer
+arguments when the functions are called may well be pointers to (sub)objects
+declared in (or dynamically allocated by) those other translation units. Our
+formalized translation unit can operate on those "outside objects", so our model
+of storage (type 'Storage', defined later) includes a set of such outside
+objects. In our model, we use an infinite type of opaque IDs to identify outside
+objects. This type is defined to be isomorphic to the natural numbers for
+simplicity, but the IDs are opaque, and the isomorphism with the natural numbers
+is not used in our model (in particular, the natural numbers are not meant to be
+memory addresses).
+
+Given a top-level object designated by a scope designation plus a name, or an
+outside object designated by an opaque ID, subobjects are designated by adding
 member names (for structures) and element indices (for arrays).
 
 Thus, we introduce the following notion of object designator as an unambiguous
@@ -2162,8 +2175,11 @@ type ScopeDesignator =
   | file
   | block Nat * Nat
 
+type OutsideID = | outsideID Nat
+
 type ObjectDesignator =
-  | top        ScopeDesignator * Identifier
+  | top       ScopeDesignator * Identifier
+  | outside   OutsideID
   | member    ObjectDesignator * Identifier
   | subscript ObjectDesignator * Nat
 
@@ -2383,6 +2399,12 @@ the value stored into an object always coincides with the type of the object. *)
 
 type NamedStorage = FiniteMap (Identifier, Value)
 
+(* As mentioned in the comments for type 'ObjectDesignator', our model of
+storage includes outside objects, which are identified by the opaque IDs
+introduced earlier. *)
+
+type OutsideStorage = FiniteMap (OutsideID, Value)
+
 (* As mentioned in the comments for type 'ObjectDesignator', at each point in
 time the file scope is active, along with a list of lists of block scopes. The
 list of lists arises as follows: the outer list corresponds to the function call
@@ -2397,11 +2419,13 @@ while the objects declared with block scope have automatic storage duration [ISO
 6.2.4/5].
 
 We model the static storage as a named storage, and the automatic storage as a
-list of lists of named storages. *)
+list of lists of named storages. We also have an outside storage for outside
+objects. *)
 
 type Storage =
   {static    :            NamedStorage,
-   automatic : List (List NamedStorage)}
+   automatic : List (List NamedStorage),
+   outside   :          OutsideStorage}
 
 (* Besides storage, it is convenient to include in the state of a C program in
 our subset also a symbol table of type definitions, a symbol table of structure
@@ -2424,7 +2448,8 @@ type State =
 
 (* The following ops provide convenience in updating parts of the state. Using
 typical programming language terminology, we call each element of the outer list
-a 'frame' (this term is not used in [ISO]). *)
+(of named storages that form the automatic storage) a 'frame' (this term is not
+used in [ISO]). *)
 
 op updateStaticStorage (state:State, sstore:NamedStorage) : State =
   state << {storage = state.storage << {static = sstore}}
@@ -2456,13 +2481,19 @@ op updateAutomaticObject
   let newobjs = update (state.storage.automatic @ f @ o) name val in
   updateAutomaticObjects (state, f, o, newobjs)
 
+op updateOutsideStorage (state:State, ostore:OutsideStorage) : State =
+  state << {storage = state.storage << {outside = ostore}}
+
+op updateOutsideObject (state:State, id:OutsideID, val:Value) : State =
+  updateOutsideStorage (state, update state.storage.outside id val)
+
 (* An object name denotes the object declared with that name in the innermost
 block that declares an object with that name. The following op returns the
 designator of the innermost scope that declares an object with the argument
 name. It is an error if no object with the given name is declared in any scope.
 
 If there is no automatic storage, the object is searched in the static storage,
-whose ojects have file scope. Otherwise, the object is searched in the topmost
+whose objects have file scope. Otherwise, the object is searched in the topmost
 (i.e. last) frame, starting with the innermost block. Objects in other frames
 cannot be referenced because they are not in scope.
 
@@ -2500,8 +2531,8 @@ op designatorOfObject (state:State, name:Identifier) : OC ObjectDesignator =
    ok (top (scope, name))}
 
 (* The following ops read and write the value of a top-level object. The object
-written to must exist, and its old value must have the same type as the new
-value -- otherwise, it is an error. *)
+must exist. When writing, the new value must have the same type as the old
+value. *)
 
 op readTopObject
    (state:State, scope:ScopeDesignator, name:Identifier) : OC Value =
@@ -2528,8 +2559,23 @@ op writeTopObject
    | file -> ok (updateStaticObject (state, name, newval))
    | block (f, o) -> ok (updateAutomaticObject (state, f, o, name, newval))}
 
-(* The following ops read and write the value of the designated object --
-top-level or subobject.
+(* The following ops read and write the value of an outside object. The object
+must exist. When writing, the new value must have the same type as the old
+value. *)
+
+op readOutsideObject (state:State, id:OutsideID) : OC Value =
+  let store = state.storage in
+  if id in? domain store.outside then
+    ok (store.outside @ id)
+  else
+    error
+
+op writeOutsideObject (state:State, id:OutsideID, newval:Value) : OC State =
+  {oldval <- readOutsideObject (state, id);
+   errorIf (typeOfValue oldval ~= typeOfValue newval);
+   ok (updateOutsideObject (state, id, newval))}
+
+(* The following ops read and write the value of the designated object.
 
 An undefined value of an aggregate type is equivalent to an aggregation of
 undefined values. In other words, an undefined structure is equivalent to a
@@ -2537,33 +2583,36 @@ structure of undefined values (one for each member), and an undefined array is
 equivalent to an array of undefined values (one for each element). This applies
 recursively to members and elements of members and elements. This equivalence is
 important when reading and writing values via the following ops. Suppose that a
-local variable of structure type is declared; as formalizer later, the undefined
-value of that structure is initially assigned to it. Suppose that we read a
-member of that structure: we need to look up the structure type in the state,
-find the member's type, and return the undefined value of the member type.
-Similarly, for an undefined array, we need to return the undefined value of the
-array element type. When writing a member into an undefined structure, we need
-to replace the undefined structure with a structure of undefined values (save
-for the value that we are writing into the member). Similarly, when writing an
-element into an undefined array, we need to replace the undefined array with an
-array of undefined values (save for the value that we are writing into the
-element).
+local variable of a structure type is declared; as formalizer later, the
+undefined value of that structure is initially assigned to the local variable.
+Suppose that we read a member of that structure: we need to look up the
+structure type in the state, find the member's type, and return the undefined
+value of the member type. Similarly, for an undefined array, we need to return
+the undefined value of the array element type. When writing a member into an
+undefined structure, we need to replace the undefined structure with a structure
+of undefined values (save for the value that we are writing into the member).
+Similarly, when writing an element into an undefined array, we need to replace
+the undefined array with an array of undefined values (save for the value that
+we are writing into the element).
 
-To write a new value into a top-level object, we just write the value into the
-object using op writeTopObject above. To assign a new value to a member of a
-structure or an element of an array, we first retrieve the old value of the
-structure or array (by reading the value from the super-object designator) --
-not of the member or element that we have to write into, but of the enclosing
-structure or array. Then we overwrite the member of the old structure value, or
-the element of the old array value, with the new value for the member or
-element, obtaining a new value for the enclosing structure or array. Finally, we
-recursively assign this new structure or array value to the super-object
-designator. The recursion eventually terminates with a top-level object. *)
+To write a new value into a top-level or outside object, we just write the value
+into the object using op writeTopObject or writeOutsideObject above. To assign a
+new value to a member of a structure or an element of an array, we first
+retrieve the old value of the structure or array (by reading the value from the
+super-object designator) -- not of the member or element that we have to write
+into, but of the enclosing structure or array. Then we overwrite the member of
+the old structure value, or the element of the old array value, with the new
+value for the member or element, obtaining a new value for the enclosing
+structure or array. Finally, we recursively assign this new structure or array
+value to the super-object designator. The recursion eventually terminates with a
+top-level object. *)
 
 op readObject (state:State, obj:ObjectDesignator) : OC Value =
   case obj of
   | top (scope, name) ->
     readTopObject (state, scope, name)
+  | outside id ->
+    readOutsideObject (state, id)
   | member (obj', mem) ->
     {val' <- readObject (state, obj');
      case val' of
@@ -2595,6 +2644,8 @@ op writeObject (state:State, obj:ObjectDesignator, newval:Value) : OC State =
   case obj of
   | top (scope, name) ->
     writeTopObject (state, scope, name, newval)
+  | outside id ->
+    writeOutsideObject (state, id, newval)
   | member (obj_struct, mem) ->
     {oldval_struct <- readObject (state, obj_struct);
      case oldval_struct of
@@ -2652,7 +2703,8 @@ Technically, this is done by lifting 'typeOfValue' to operate on optional values
 and types (via op 'mapOption') and then composing it with the named storage map,
 as encapsulated in op 'objectTableOfNamedStorage' below. The latter is applied
 to all the blocks of the topmost frame of the automatic storage, and the result
-appended to the map for the static storage.
+appended to the map for the static storage. The outside storage does not
+contribute to the symbol table.
 
 The function table is created by dropping the bodies from the function
 information in the state, using the same 'mapOption' and function composition
@@ -2811,12 +2863,53 @@ op functionBodiesOK? (state:State) : Bool =
        | None -> false)
      | _ -> false)
 
-(* We put together the above invariants in one predicate *)
+(* Another important invariant is that every pointer in the state designates an
+object in the state. The condition that a pointer designates an object in the
+state is equivalent to op 'readObject' returning 'ok'. *)
+
+op objDesignatorInState? (state:State, obj:ObjectDesignator) : Bool =
+  embed? ok (readObject (state, obj))
+
+op valueHasPointersInState? (state:State, val:Value) : Bool =
+  case val of
+  | pointer (_, obj) ->
+    objDesignatorInState? (state, obj)
+  | array (_, vals) ->
+    (fa(val:Value) val in? vals => valueHasPointersInState? (state, val))
+  | struct (_, members) ->
+    (fa(mem:Identifier) mem in? domain members =>
+       valueHasPointersInState? (state, members @ mem))
+  | _ -> true
+
+op namedStorageHasPointersInState? (state:State, store:NamedStorage) : Bool =
+  fa(name:Identifier) name in? domain store =>
+    valueHasPointersInState? (state, store @ name)
+
+op frameHasPointersInState? (state:State, frame:List NamedStorage) : Bool =
+  fa(b:Nat) b < length frame =>
+    namedStorageHasPointersInState? (state, frame @ b)
+
+op outsideStorageHasPointersInState?
+   (state:State, store:OutsideStorage) : Bool =
+  fa(id:OutsideID) id in? domain store =>
+    valueHasPointersInState? (state, store @ id)
+
+op storageHasPointersInState? (state:State, store:Storage) : Bool =
+  namedStorageHasPointersInState? (state, store.static) &&
+  (fa(f:Nat) f < length store.automatic =>
+     frameHasPointersInState? (state, store.automatic @ f)) &&
+  outsideStorageHasPointersInState? (state, store.outside)
+
+op stateHasPointersInState? (state:State) : Bool =
+  storageHasPointersInState? (state, state.storage)
+
+(* We put together the above invariants into one predicate *)
 
 op invariants? (state:State) : Bool =
-  noCircularStructs?   state &&
-  noCircularFunctions? state &&
-  functionBodiesOK?    state
+  noCircularStructs?       state &&
+  noCircularFunctions?     state &&
+  functionBodiesOK?        state &&
+  stateHasPointersInState? state
 
 
 %subsection (* Conversions *)
@@ -3947,7 +4040,8 @@ pointer that designates an object in frame f and, if present, block b of frame f
 'undefined' (this happens when returning from a function). An op to extract the
 scope designator from an object designator is also defined. *)
 
-op scopeOfObjectDesignator (obj:ObjectDesignator) : ScopeDesignator =
+op scopeOfObjectDesignator
+   (obj:ObjectDesignator | ~(embed? outside obj)) : ScopeDesignator =
   case obj of
   | top (scope, _)     -> scope
   | member    (obj, _) -> scopeOfObjectDesignator obj
@@ -3982,22 +4076,29 @@ op undefinePointersInValues
 
 op undefinePointersInNamedStorage
    (store:NamedStorage, f:Nat, b?:Option Nat) : NamedStorage =
-  let orderedObjects:List (Identifier * Value) =
-      toAssocList store (String.<=) in
-  let (names, vals) = unzip orderedObjects in
-  let vals' = undefinePointersInValues (vals, f, b?) in
-  fromAssocList (zip (names, vals'))
+  fn name:Identifier ->
+    case store name of
+    | Some val -> Some (undefinePointersInValue (val, f, b?))
+    | None -> None
 
 op undefinePointersInFrame
    (frame:List NamedStorage, f:Nat, b?:Option Nat) : List NamedStorage =
   map (fn nstore:NamedStorage -> undefinePointersInNamedStorage (nstore, f, b?))
       frame
 
+op undefinePointersInOutsideStorage
+   (store:OutsideStorage, f:Nat, b?:Option Nat) : OutsideStorage =
+  fn id:OutsideID ->
+    case store id of
+    | Some val -> Some (undefinePointersInValue (val, f, b?))
+    | None -> None
+
 op undefinePointersInStorage (store:Storage, f:Nat, b?:Option Nat) : Storage =
   {static = undefinePointersInNamedStorage (store.static, f, b?),
    automatic = map (fn frame:List NamedStorage ->
                        undefinePointersInFrame (frame, f, b?))
-                   store.automatic}
+                   store.automatic,
+   outside = undefinePointersInOutsideStorage (store.outside, f, b?)}
 
 op undefinePointersInState (state:State, f:Nat, b?:Option Nat) : State =
   state << {storage = undefinePointersInStorage (state.storage, f, b?)}
@@ -4448,13 +4549,17 @@ theorem translation_unit_execution is
 yields the initial state of the program. *)
 
 op emptyState : State =
-  {storage    = {static = empty, automatic = []},
+  {storage    = {static = empty, automatic = [], outside = empty},
    typedefs   = empty,
    structures = empty,
    functions  = empty}
 
 op initState (prg:Program) : OC State =
   execTranslationUnit (emptyState, prg)
+
+theorem initState_no_outside_objects is
+  fa (prg:Program, state:State)
+    initState prg = ok state => empty? state.storage.outside
 
 (* If a program satisfies all the compile-time constraints, executing its
 translation unit does not yield an error. If an initial state is returned, it
