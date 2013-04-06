@@ -93,7 +93,7 @@ op expandRecordMerge (spc: Spec) (t: MSTerm): Option MSTerm =
    if equalTerm?(t, nt) then None else Some nt
 
 
-op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * MSTerm) =
+op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * MSTerm * MSTerm) =
   let def checkConstrBind(e1, e2) =
         if ~(disjointVars?(freeVars e2, vs)) then None
         else
@@ -103,7 +103,7 @@ op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * M
             if forall? (fn v -> inVars?(v, vs) && ~(isFree(v, e2))) p_vs
               then
                 case termToPattern v_tm of
-                  | Some v_pat -> Some(p_vs, constr_id, ty, v_pat, e2)
+                  | Some v_pat -> Some(p_vs, constr_id, ty, v_pat, e2, e1)
                   | None -> None
             else None
           | _ -> None
@@ -177,51 +177,58 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
             (if vs = [] then Some bod
              else
              let (vs, cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
-             transEx(vs, cjs, a))
+             transEx(vs, cjs, a, []))
           | _ -> None
-      def transEx(vs: Vars, cjs: MSTerms, a: Position): Option MSTerm =
+      def transEx(vs: Vars, cjs: MSTerms, a: Position, tsb: TermSubst): Option MSTerm =
+        % let _ = writeLine("transEx:\n"^printTerm(mkBind(Exists, vs, mkConj cjs))) in
         let lift_cjs = filter (fn cj -> ~(hasRefTo?(cj, vs))) cjs in
-        if lift_cjs ~= []
+        if lift_cjs ~= [] && vs ~= []
           then let rem_cjs = filter (fn cj -> ~(termIn?(cj, lift_cjs))) cjs in
-               Some(mkSimpConj(lift_cjs ++ [transEx1(vs, rem_cjs, a)]))
+               Some(mkSimpConj(lift_cjs ++ [transEx1(vs, rem_cjs, a, tsb)]))
         else
         case findLeftmost (fn cj -> some?(bindEquality(cj, vs, true))) cjs of
-          | Some cj -> 
+          | Some cj ->
+            % let _ = writeLine("Chose cj: "^printTerm cj) in
             (case bindEquality(cj, vs, true) of
                | Some (svs, v_tm, s_tm) ->
                  let new_vs = filter (fn v -> ~(inVars?(v, svs))) vs in
                  let Some v_pat = termToPattern v_tm in
-                 Some(MS.mkLet([(v_pat, s_tm)], transEx1(new_vs, delete cj cjs, a)))
+                 let trivial_bind? = embed? Var s_tm in
+                 let tsb = (if trivial_bind? then (v_tm, s_tm) else (s_tm, v_tm)) :: tsb in
+                 let new_bod = transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb) in
+                 Some(if trivial_bind? then new_bod
+                      else MS.mkLet([(v_pat, s_tm)], new_bod))
                | None -> None)
          | None ->
         case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
           | Some cj -> 
             (case caseEquality(cj,vs) of
-               | Some (p_vs, constr_id, f_ty, v_pat, s_tm) ->
+               | Some (p_vs, constr_id, f_ty, v_pat, s_tm, v_tm) ->
                  let new_vs = filter (fn v -> ~(inVars?(v, p_vs))) vs in
                  let constr_ty = range(spc, f_ty) in
+                 let tsb =  (s_tm, v_tm) :: tsb in
                  Some(mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty),
-                                         transEx1(new_vs, delete cj cjs, a)),
+                                         transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb)),
                                         (mkWildPat constr_ty, falseTerm)]))
                | None -> None)
          | None ->
         case findLeftmost existsTerm? cjs of
           | Some(cj as Bind(Exists, s_vs, bod, pos)) ->
             let cjs = flatten (map (fn cji -> if cj = cji then getConjuncts bod else [cji]) cjs) in
-            transEx(vs ++ s_vs, cjs, a)
+            transEx(vs ++ s_vs, cjs, a, tsb)
           | None -> 
         case findLeftmost (embed? IfThenElse) cjs of
           | Some(cj as IfThenElse(p, q, r, pos)) -> 
             let q_cjs = map (fn cji -> if cj = cji then q else cji) cjs in
             let r_cjs = map (fn cji -> if cj = cji then r else cji) cjs in
             % let _ = (writeLine("Init:\n"^printTerm (mkSimpBind(Exists, vs, mkSimpConj cjs)));
-            %          writeLine("q:\n"^printTerm(transEx1(vs, q_cjs, a)));
-            %          writeLine("r:\n"^printTerm(transEx1(vs, r_cjs, a))))
+            %          writeLine("q:\n"^printTerm(transEx1(vs, q_cjs, a, tsb)));
+            %          writeLine("r:\n"^printTerm(transEx1(vs, r_cjs, a, tsb))))
             % in
-            (case (transEx(vs, q_cjs, a), transEx(vs, r_cjs, a)) of
+            (case (transEx(vs, q_cjs, a, tsb), transEx(vs, r_cjs, a, tsb)) of
                | (None, None) -> None
                | (q_trip?, r_trip?) ->
-                 Some(IfThenElse(p, transExResult(q_trip?, vs, cjs, a), transExResult(r_trip?, vs, cjs, a), pos)))
+                 Some(IfThenElse(p, transExResult(q_trip?, vs, q_cjs, a), transExResult(r_trip?, vs, r_cjs, a), pos)))
           | None ->
         if length vs = 1 then None
         else
@@ -229,12 +236,14 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
           | Some cj ->
             let [b_v] =  filter (fn v -> inVars?(v, vs)) (freeVars cj) in
             let new_vs = deleteVar(b_v, vs) in
-            Some(mkBind(Exists, [b_v], Utilities.mkAnd(cj, transEx1(new_vs, delete cj cjs, a))))
+            Some(mkBind(Exists, [b_v], Utilities.mkAnd(cj, transEx1(new_vs, delete cj cjs, a, tsb))))
           | None -> None
-      def transEx1(vs, cjs, a) =
-        case transEx(vs, cjs, a) of
+      def transEx1(vs, cjs, a, tsb) =
+        case transEx(vs, cjs, a, tsb) of
           | Some ex_tm -> ex_tm
-          | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)
+          | None ->
+            % let _ = writeLine("Residual:\n"^printTerm(mkBind(Exists, vs, mkSimpConj cjs))) in
+            mkSimpBind(Exists, vs, mkSimpConj cjs)
       def transExResult(result?, vs, cjs, a) =
         case result? of
           | Some ex_tm -> ex_tm
