@@ -682,7 +682,7 @@ def elaborateTerm (env, trm, term_type, args) =
              %% Either Qualified (id1, id2) or field selection
              case findTheOp2 (env, id1, id2) of
                | Some info -> 
-                 if ~(firstPass? env) && groundType? ty && fixity = info.fixity
+                 if finalPass? env && groundType? ty && fixity = info.fixity
                    then trm
                  else
                  %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
