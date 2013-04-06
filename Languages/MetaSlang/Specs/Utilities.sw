@@ -1057,6 +1057,12 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        -> getConjuncts p ++ getConjuncts q
      | _ -> [t]
 
+ op [a] getDisjuncts(t: ATerm a): List (ATerm a) =
+   case t of
+     | Apply(Fun(Or,_,_), Record([("1",p),("2",q)],_),_)
+       -> getDisjuncts p ++ getDisjuncts q
+     | _ -> [t]
+
   op addVarNames(vs: List Var, name_set: StringSet.Set): StringSet.Set =
     foldl (fn (name_set, (n,_)) -> StringSet.add(name_set, n)) name_set vs
 
