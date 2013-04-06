@@ -638,7 +638,7 @@ def elaborateTerm_top (env, trm, term_type) =
   resolveMetaTyVars trm
 
 def elaborateTerm (env, trm, term_type, args) =
-  let _ = if debug? then writeLine("tc"^show env.passNum^printType term_type^"\n"^printTermWithTypes trm) else () in
+  let _ = if debug? then writeLine("tc"^show env.passNum^" "^printType term_type^"\n"^printTermWithTypes trm) else () in
   let typed_term =
         case trm of
           | Fun (OneName (id, fixity), ty, pos) ->
@@ -690,6 +690,10 @@ def elaborateTerm (env, trm, term_type, args) =
                  let (tvs, d_ty, tm) = unpackFirstOpDef info in
                  let (_, d_ty) = metafyType (Pi (tvs, d_ty, typeAnn d_ty)) in
                  let term = Fun (TwoNames (q, id, info.fixity), d_ty, pos) in
+                 let d_ty = if hasFreeVarsInSubty? d_ty && args ~= []
+                              then tryInstantiateDepVars(env, term, d_ty, args)
+                            else d_ty
+                 in
                  let d_ty = elaborateCheckTypeForOpRef (env, term, d_ty, ty) in
                  (case term of
                     | Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, d_ty, pos)
