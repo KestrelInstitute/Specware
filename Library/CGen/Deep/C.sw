@@ -2735,6 +2735,49 @@ op symbolTableOfState (state:State) : SymbolTable =
    functions  = functionTableOfFunctionsInfo state.functions,
    objects    = objectTableOfStorage state.storage}
 
+(* The following ops collect all the object designators that occur in values,
+named storages, frames, outside storages, storages, and states. *)
+
+op objDesignatorsInValue (val:Value) : FiniteSet ObjectDesignator =
+  case val of
+  | pointer (_, obj) ->
+    single obj
+  | array (_, vals) ->
+    (fn obj -> (ex(val) val in? vals && obj in? objDesignatorsInValue val))
+  | struct (_, members) ->
+    (fn obj -> (ex(mem) mem in? domain members &&
+                        obj in? objDesignatorsInValue (members @ mem)))
+  | _ ->
+    empty
+
+op objDesignatorsInNamedStorage
+   (store:NamedStorage) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(name:Identifier) name in? domain store &&
+                                 obj in? objDesignatorsInValue (store @ name))
+
+op objDesignatorsInFrame
+   (frame:List NamedStorage) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(b:Nat) b < length frame &&
+                       obj in? objDesignatorsInNamedStorage (frame @ b))
+
+op objDesignatorsInFrames
+   (frames:List (List NamedStorage)) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(f:Nat) f < length frames &&
+                       obj in? objDesignatorsInFrame (frames @ f))
+
+op objDesignatorsInOutsideStorage
+   (store:OutsideStorage) : FiniteSet ObjectDesignator =
+  fn obj -> (ex(id:OutsideID) id in? domain store &&
+                              obj in? objDesignatorsInValue (store @ id))
+
+op objDesignatorsInStorage (store:Storage) : FiniteSet ObjectDesignator =
+  objDesignatorsInNamedStorage   store.static \/
+  objDesignatorsInFrames         store.automatic \/
+  objDesignatorsInOutsideStorage store.outside
+
+op objDesignatorsInState (state:State) : FiniteSet ObjectDesignator =
+  objDesignatorsInStorage state.storage
+
 
 %subsection (* State invariants *)
 
@@ -2863,53 +2906,115 @@ op functionBodiesOK? (state:State) : Bool =
        | None -> false)
      | _ -> false)
 
-(* Another important invariant is that every pointer in the state designates an
-object in the state. The condition that a pointer designates an object in the
-state is equivalent to op 'readObject' returning 'ok'. *)
+(* Another important invariant is that every object designator in the state
+designates an object in the state. The condition that an object designator
+designates an object in the state is equivalent to op 'readObject' returning
+'ok'. *)
 
-op objDesignatorInState? (state:State, obj:ObjectDesignator) : Bool =
+op objDesignatorOK? (state:State, obj:ObjectDesignator) : Bool =
   embed? ok (readObject (state, obj))
 
-op valueHasPointersInState? (state:State, val:Value) : Bool =
-  case val of
-  | pointer (_, obj) ->
-    objDesignatorInState? (state, obj)
-  | array (_, vals) ->
-    (fa(val:Value) val in? vals => valueHasPointersInState? (state, val))
-  | struct (_, members) ->
-    (fa(mem:Identifier) mem in? domain members =>
-       valueHasPointersInState? (state, members @ mem))
-  | _ -> true
-
-op namedStorageHasPointersInState? (state:State, store:NamedStorage) : Bool =
-  fa(name:Identifier) name in? domain store =>
-    valueHasPointersInState? (state, store @ name)
-
-op frameHasPointersInState? (state:State, frame:List NamedStorage) : Bool =
-  fa(b:Nat) b < length frame =>
-    namedStorageHasPointersInState? (state, frame @ b)
-
-op outsideStorageHasPointersInState?
-   (state:State, store:OutsideStorage) : Bool =
-  fa(id:OutsideID) id in? domain store =>
-    valueHasPointersInState? (state, store @ id)
-
-op storageHasPointersInState? (state:State, store:Storage) : Bool =
-  namedStorageHasPointersInState? (state, store.static) &&
-  (fa(f:Nat) f < length store.automatic =>
-     frameHasPointersInState? (state, store.automatic @ f)) &&
-  outsideStorageHasPointersInState? (state, store.outside)
-
-op stateHasPointersInState? (state:State) : Bool =
-  storageHasPointersInState? (state, state.storage)
+op allObjDesignatorsOK? (state:State) : Bool =
+  fa(obj) obj in? objDesignatorsInState state => objDesignatorOK? (state, obj)
 
 (* We put together the above invariants into one predicate *)
 
 op invariants? (state:State) : Bool =
-  noCircularStructs?       state &&
-  noCircularFunctions?     state &&
-  functionBodiesOK?        state &&
-  stateHasPointersInState? state
+  noCircularStructs?   state &&
+  noCircularFunctions? state &&
+  functionBodiesOK?    state &&
+  allObjDesignatorsOK? state
+
+
+%subsection (* Attachment and detachment of outside storage *)
+
+(* When modeling the interaction of a program in our C subset with outside code,
+it is convenient to attach and detach outside storage to and from the state. If
+outside code calls a function in our C program, there will be an outside storage
+to be attached to the state. During the execution of the function, assuming no
+multi-threading (as our formal model assumes), outside storage can only be
+changed by our program (which does not call the outside code). When the function
+returns, the outside storage can be detached from the state, because at that
+point the outside code can modify the external storage. By attaching and
+detaching outside storage to the state, we can model various forms of
+interaction between our C program and outside code, and we can model various
+kinds on assumptions on modifications to outside storage made by outside code in
+between calls to functions in our C program.
+
+In order to attach and detach outside storage, certain closure conditions on
+pointers (i.e. object designators) must be satisfied. These conditions are
+modeled below, along with ops to attach and detach outside storage.
+
+We start with an op that returns the object designators that are in a state but
+not in the outside storage of the state. *)
+
+op objDesignatorsInNonOutsideStorage
+   (state:State) : FiniteSet ObjectDesignator =
+  objDesignatorsInNamedStorage state.storage.static \/
+  objDesignatorsInFrames       state.storage.automatic
+
+(* Together with the object designators in the outside storage, the object
+designators returned by op 'objDesignatorsInNonOutsideStorage' are all the
+object designators in the state. *)
+
+theorem object_designators_outside_nonoutside_union is
+  fa(state:State)
+    objDesignatorsInState state =
+    objDesignatorsInNonOutsideStorage state \/
+    objDesignatorsInOutsideStorage state.storage.outside
+
+theorem object_designators_outside_nonoutside_intersection is
+  fa(state:State)
+    objDesignatorsInNonOutsideStorage state /\
+    objDesignatorsInOutsideStorage state.storage.outside = empty
+
+(* The following op says whether the non-outside storage of a state has no
+references to the outside storage of the state. *)
+
+op noReferencesToOutsideStorage? (state:State) : Bool =
+  fa(obj) obj in? objDesignatorsInNonOutsideStorage state =>
+          ~ (embed? outside obj)
+
+(* The following op says whether an outside storage has only references to
+outside storage. *)
+
+op allReferencesToOutsideStorage? (ostore:OutsideStorage) : Bool =
+  fa(obj) obj in? objDesignatorsInOutsideStorage ostore => embed? outside obj
+
+(* If the outside and the non-outside storage of a state are partitioned
+(i.e. the non-outside storage has no references to the outside storage, and the
+outside storage has no references to the non-outside storage), we allow the
+outside storage to be detached from the state. The state invariants are
+maintained. *)
+
+op detachableOutsideStorage? (state:State) : Bool =
+  noReferencesToOutsideStorage? state &&
+  allReferencesToOutsideStorage? (state.storage.outside)
+
+op detachOutsideStorage
+   (state:State | detachableOutsideStorage? state) : State =
+  updateOutsideStorage (state, empty)
+
+theorem detachOutsideStorage_invariants is
+  fa(state:State) invariants? state && detachableOutsideStorage? state =>
+                  invariants? (detachOutsideStorage state)
+
+(* If a state has empty outside storage, an outside storage with no references
+to the state's storage can be attached to the state. The state invariants are
+maintained. *)
+
+op attachableOutsideStorage? (state:State, ostore:OutsideStorage) : Bool =
+  empty? state.storage.outside && allReferencesToOutsideStorage? ostore
+
+op attachOutsideStorage
+   (state:State, ostore:OutsideStorage |
+    attachableOutsideStorage? (state, ostore)) : State =
+  updateOutsideStorage (state, ostore)
+
+theorem attachOutsideStorage_invariants is
+  fa (state:State, ostore:OutsideStorage)
+    invariants? state && attachableOutsideStorage? (state, ostore) =>
+    invariants? (attachOutsideStorage (state, ostore))
 
 
 %subsection (* Conversions *)
