@@ -2158,15 +2158,14 @@ arguments when the functions are called may well be pointers to (sub)objects
 declared in (or dynamically allocated by) those other translation units. Our
 formalized translation unit can operate on those "outside objects", so our model
 of storage (type 'Storage', defined later) includes a set of such outside
-objects. In our model, we use an infinite type of opaque IDs to identify outside
+objects. In our model, we use an infinite type of IDs to identify outside
 objects. This type is defined to be isomorphic to the natural numbers for
-simplicity, but the IDs are opaque, and the isomorphism with the natural numbers
-is not used in our model (in particular, the natural numbers are not meant to be
-memory addresses).
+simplicity, but the natural numbers are just IDs, not meant to be memory
+addresses.
 
 Given a top-level object designated by a scope designation plus a name, or an
-outside object designated by an opaque ID, subobjects are designated by adding
-member names (for structures) and element indices (for arrays).
+outside object designated by an ID, subobjects are designated by adding member
+names (for structures) and element indices (for arrays).
 
 Thus, we introduce the following notion of object designator as an unambiguous
 way to denote a (sub)object. *)
@@ -2400,8 +2399,8 @@ the value stored into an object always coincides with the type of the object. *)
 type NamedStorage = FiniteMap (Identifier, Value)
 
 (* As mentioned in the comments for type 'ObjectDesignator', our model of
-storage includes outside objects, which are identified by the opaque IDs
-introduced earlier. *)
+storage includes outside objects, which are identified by the IDs introduced
+earlier. *)
 
 type OutsideStorage = FiniteMap (OutsideID, Value)
 
