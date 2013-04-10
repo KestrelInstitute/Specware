@@ -374,7 +374,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
  op unpackType    : [b] AType b -> TyVars * AType b
  op typeTyVars    : [b] AType b -> TyVars 
- op typeInnerType : [b] AType b -> AType b
+
 
  def unpackType s =
    case s of
@@ -388,7 +388,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | And _ -> [] % fail ("typeTyVars: Trying to extract type vars from an And of types.")
      | _ -> []
 
- def typeInnerType ty =
+ op [b] typeInnerType (ty : AType b) : AType b =
    case ty of
      | Pi (_, ty, _) -> ty
      | And _ -> ty % fail ("typeInneType: Trying to extract inner type from an And of types.")
@@ -406,8 +406,6 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op unpackTerm    : [a] ATerm a -> TyVars * AType a * ATerm a
- op termTyVars    : [b] ATerm b -> TyVars
- op termType      : [b] ATerm b -> AType b
  op termInnerTerm : [b] ATerm b -> ATerm b
 
  op maybeAndType  : [b] List (AType b) * b -> AType b % Defined in Equalities.sw
@@ -469,13 +467,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    % let _ = if embed? And tm then writeLine("unpack:\n"^printTerm t^"\n"^printTerm tm) else () in
    (tvs, ty, tm)
 
- def termTyVars tm =
+ op [b] termTyVars (tm : ATerm b) : TyVars  =
    case tm of
      | Pi (tvs, _, _) -> tvs
      | And _ -> fail ("termTyVars: Trying to extract type vars from an And of terms.")
      | _ -> []
 
- def termType term =
+ op [b] termType (term : ATerm b) : AType b =
    case term of
      | Apply      (t1,t2,   _) -> (case termType t1 of
 				     | Arrow(dom,rng,_) -> rng
@@ -2471,7 +2469,6 @@ op [a] printTermType(t: ATerm a): String =
     | Any _ -> "Any"
 
 
-op g:Nat = (-5 : Int)  : Nat
 end-spec
 
 
