@@ -414,12 +414,13 @@ op ppProperty (c:Context) ((propType, name, tyVars, term, pos):Property) : WLPre
   ppGr2Concat [if c.printPositionInfo?
                  then ppPosition c pos
                else ppNil,
-               ppString "(claim ",
+               ppString "(Property ",
                ppPropertyType propType,
                ppString " ",
                ppQualifiedId name,
-               ppBrTyVars tyVars,
-               ppString " is ",
+               ppString " (", %TODO Have ppTyVars print the parens?
+               ppTyVars tyVars,
+               ppString ") ",
                ppBreak,
                ppTerm c term,
                ppString ")"]
