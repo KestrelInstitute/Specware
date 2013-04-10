@@ -279,7 +279,6 @@ MS qualifying spec
  op mkIff         : MSTerm * MSTerm                -> MSTerm
  op mkConj        : MSTerms                        -> MSTerm
  op mkOrs         : MSTerms                        -> MSTerm
- op mkEquality    : MSType * MSTerm * MSTerm       -> MSTerm
  op mkRestriction : {pred : MSTerm, term : MSTerm} -> MSTerm
  op mkChoice      : MSTerm * MSTerm * MSType       -> MSTerm
  op mkProjection  : Id * MSTerm                    -> MSTerm
@@ -308,7 +307,8 @@ MS qualifying spec
      | [x]    -> x
      | x::rcs -> mkOr (x, mkOrs rcs)
 
- def mkEquality (dom_type, t1, t2) = 
+  % TODO: Is it the case that dom_type should never be a Pi type?  I made that mistake once.
+ op mkEquality (dom_type : MSType, t1 : MSTerm, t2 : MSTerm) : MSTerm = 
      let srt = mkArrow(mkProduct [dom_type,dom_type],boolType) in
      mkApply(mkEquals srt, mkTuple [t1,t2])
 
