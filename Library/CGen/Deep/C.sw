@@ -1236,6 +1236,15 @@ op checkArrayType (ty:Type) : Option (Type * Nat) =
   | array (ty0, n) -> Some (ty0, n)
   | _ -> None
 
+(* The following op checks whether a type is a pointer or array type, and in
+that case it returns the referenced or array type. *)
+
+op checkPointerOrArrayType (ty:Type) : Option Type =
+  case ty of
+  | pointer ty0 -> Some ty0
+  | array (ty0, _) -> Some ty0
+  | _ -> None
+
 
 %subsubsection (* Expressions *)
 
@@ -1264,70 +1273,70 @@ variable, which is stored in the symbol table.
 
 A constant denotes a value [ISO 6.5.1/3]. Its type is formalized above.
 
-The unary + and - operators require an arithmetic operand [ISO 6.5.3.3/1] and
-their result has the promoted type of the operand [ISO 6.5.3.3/2, 6.5.3.3/3].
-The expression denotes a value.
+The unary '+' and '-' operators require an arithmetic operand [ISO 6.5.3.3/1]
+and their result has the promoted type of the operand [ISO 6.5.3.3/2,
+6.5.3.3/3].  The expression denotes a value.
 
-The ~ operator requires an integer operand [ISO 6.5.3.3/1] and its result has
+The '~' operator requires an integer operand [ISO 6.5.3.3/1] and its result has
 the promoted type of the operand [ISO 6.5.3.3/4]. The expression denotes a
 value.
 
-The ! operator requires a scalar operand [ISO 6.5.3.3/1] and its result is a
+The '!' operator requires a scalar operand [ISO 6.5.3.3/1] and its result is a
 signed int [ISO 6.5.3.3/5]. The expression denotes a value. Even though,
 according to [ISO 6.3.2.1/3], an array could be used as operand (because it is
 converted to a pointer), in our C subset we impose a more disciplined use of
 arrays and so we do not automatically convert them to pointers.
 
-The unary & operator requires an operand that denotes an object [ISO 6.5.3.2/1]:
-this covers both the lvalue case and the case of a result of the unary *
-operator, which, as formalized below, denotes an object. The result of the unary
-& operator is a pointer to the type of the operand. The expression denotes a
-value.
+The unary '&' operator requires an operand that denotes an object [ISO
+6.5.3.2/1]: this covers the lvalue case as well as (i) the case of a result of
+the unary '*' operator and (ii) the case of a result of the '[ ]' operator; both
+'*' and '[ ]', as formalized below, denote objects. The result of the unary '&'
+operator is a pointer to the type of the operand.
 
-The unary * operator requires a pointer operand [ISO 6.5.3.2/2] and its result
+The unary '*' operator requires a pointer operand [ISO 6.5.3.2/2] and its result
 is the referenced type [ISO 6.5.3.2/4]. The expression denotes an object [ISO
 6.5.3.2/4]. Even though, according to [ISO 6.3.2.1/3], an array could be used as
 operand (because it is converted to a pointer), in our C subset we impose a more
 disciplined use of arrays and so we do not automatically convert them to
-pointers.
+pointers for the '*' operator.
 
-The binary * operator and the / operator require arithmetic operands [ISO
+The binary '*' operator and the '/' operator require arithmetic operands [ISO
 6.5.5/2] and their result has the type arising from the usual arithmetic
 conversions [ISO 6.5.5/3, 6.5.5/4]. The expression denotes a value.
 
-The % operator requires integer operands [ISO 6.5.5/2] and its result has the
+The '%' operator requires integer operands [ISO 6.5.5/2] and its result has the
 type arising from the usual arithmetic conversions [ISO 6.5.5/3, 6.5.5/5]. The
 expression denotes a value.
 
-The binary + and - operators require arithmetic operands (our C subset excludes
-pointer arithmetic) [ISO 6.5.6/2, 6.5.6/3] and their result has the type arising
-from the usual arithmetic conversions [ISO 6.5.6/4, 6.5.6/5, 6.5.6/6]. The
-expression denotes a value.
+The binary '+' and '-' operators require arithmetic operands (our C subset
+excludes pointer arithmetic) [ISO 6.5.6/2, 6.5.6/3] and their result has the
+type arising from the usual arithmetic conversions [ISO 6.5.6/4, 6.5.6/5,
+6.5.6/6]. The expression denotes a value.
 
-The << and >> operators require integer operands [ISO 6.5.7/2] and their result
-has the promoted type of the left operand [ISO 6.5.7/3]. The expression denotes
-a value.
+The '<<' and '>>' operators require integer operands [ISO 6.5.7/2] and their
+result has the promoted type of the left operand [ISO 6.5.7/3]. The expression
+denotes a value.
 
-The <, >, <=, and >= operators require real operands (our C subset excludes
-pointer comparisons) [ISO 6.5.8/2] and their result is a signed int [ISO
-6.5.8/6] value.
+The '<', '>', '<=', and '>=' operators require real operands (our C subset
+excludes pointer comparisons) [ISO 6.5.8/2] and their result is a signed int
+[ISO 6.5.8/6] value.
 
-The == and != operators require [ISO 6.5.9/2] (i) two arithmetic operands, or
-(ii) two pointers to compatible types, or (iii) a pointer to a non-void type and
-a pointer to void, or (iv) a pointer and a null pointer constant. Since, as
-explained earlier, the null pointer constant has type void*, case (iv) is
+The '==' and '!=' operators require [ISO 6.5.9/2] (i) two arithmetic operands,
+or (ii) two pointers to compatible types, or (iii) a pointer to a non-void type
+and a pointer to void, or (iv) a pointer and a null pointer constant. Since, as
+explained earlier, the null pointer constant has type 'void*', case (iv) is
 covered by case (iii). The result of these operators is a signed int [ISO
 6.5.9/3] value. Even though, according to [ISO 6.3.2.1/3], an array could be
 used as operand (because it is converted to a pointer), in our C subset we
 impose a more disciplined use of arrays and so we do not automatically convert
 them to pointers.
 
-The binary & operator, the ^ operator, and the | operator require integer
+The binary '&' operator, the '^' operator, and the '|' operator require integer
 operands [ISO 6.5.10/2, 6.5.11/2, 6.5.12/2] and their result has the type
 arising from the usual arithmetic conversions [ISO 6.5.10/3, 6.5.10/4, 6.5.11/3,
 6.5.11/4, 6.5.12/3, 6.5.12/4]. The expression denotes a value.
 
-The && and || operators require scalar operands [ISO 6.5.13/2, 6.5.14/2] and
+The '&&' and '||' operators require scalar operands [ISO 6.5.13/2, 6.5.14/2] and
 their result is a signed int [ISO 6.5.13/3, 6.5.14/3] value. Even though,
 according to [ISO 6.3.2.1/3], an array could be used as operand (because it is
 converted to a pointer), in our C subset we impose a more disciplined use of
@@ -1363,14 +1372,13 @@ operand and a member of that structure type as the right operand [ISO
 6.5.2.3/4]. Even though, according to [ISO 6.3.2.1/3], an array could be used as
 operand (because it is converted to a pointer), in our C subset we impose a more
 disciplined use of arrays and so we do not automatically convert them to
-pointers.
+pointers when used as left operands of '->'.
 
 The '[ ]' operator requires a pointer as the first operand and an integer as the
 second operand, and its result has the referenced type of the pointer [ISO
 6.5.2.1/1]. An array is also allowed as first operand, because it is converted
-to a pointer [ISO 6.3.2.1/3]. In our C subset, we actually require the first
-operand to be an array. The expression denotes an object -- the element of the
-array at the index that the second operand evaluates to.
+to a pointer [ISO 6.3.2.1/3]. The expression denotes an object -- the element of
+the array at the index that the second operand evaluates to.
 
 The null pointer constant denotes a value whose type, as explained earlier, is
 void*. *)
@@ -1522,7 +1530,7 @@ op checkExpression
   | subscript (expr, expr') ->
     {ety <- checkExpression (symtab, expr);
      ety' <- checkExpression (symtab, expr');
-     (ty, _) <- checkArrayType ety.typE;
+     ty <- checkPointerOrArrayType ety.typE;
      check (integerType? ety'.typE);
      Some (exprTypeObject ty)}
   | nullconst ->
@@ -1763,10 +1771,12 @@ and a null pointer constant (right) [ISO 6.5.16.1/1]. Our C subset has no notion
 of atomic, qualified, and unqualified types. The case of a left '_Bool' operand
 does not apply to our C subset. Since, as explained earlier, the null pointer
 constant has type 'void*', case (v) is covered by case (iv). As explained above,
-the compile-time type of an assignment is 'next'. Even though, according to [ISO
-6.3.2.1/3], an array could be used as operand (because it is converted to a
-pointer), in our C subset we impose a more disciplined use of arrays and so we
-do not automatically convert them to pointers. We encapsulate these checks for
+the compile-time type of an assignment is 'next'. According to [6.3.2.1/3], an
+array can be used as an operand, converted to a pointer to the initial element
+of the array. Since the left operand of an assignment must denote an object, but
+a pointer is a value (so it does not, directly, denote an object), it follows
+that an array cannot be the left operand of an assignment. However, an array can
+be the right operand of an assignment. We encapsulate all the checks for
 assignability between types into a predicate.
 
 In a function call, the called function must be in the symbol table. The
@@ -1805,9 +1815,9 @@ Like an assignment, an empty block has the 'next' compile-time type.
 For a non-empty block, we take the union of the compile-time types of the
 statements of the block, taking care of removing all the 'next' types except the
 last one (if any). The removal is necessary because otherwise, for example, the
-compile-time type of a block B consisting of an assignment followed by a
-'return' statement would contain 'next', even though this block B always returns
-a value.
+compile-time type of a block 'B' consisting of an assignment followed by a
+'return' statement would contain 'next', even though this block 'B' always
+returns a value.
 
 A block may include object declarations, which extend the innermost scope of the
 symbol table. For this reason, the op to check a block item returns a symbol
@@ -1825,6 +1835,10 @@ op assignableTypes? (left:Type, right:Type) : Bool =
   (compatibleTypes? (left, right) ||
    left  = pointer void ||
    right = pointer void)
+  ||
+  (ex (ty:Type, n:Nat)
+     right = array (ty, n) &&
+     compatibleTypes? (left, pointer ty)) % turn array to pointer
 
 op checkStatement (symtab:SymbolTable, stmt:Statement) : Option StatementType =
   case stmt of
@@ -1940,18 +1954,18 @@ the same identifier must have different scopes or name spaces [ISO 6.2.1/2].
 Since external object declarations, type definitions, and function definitions
 have the same (file) scope and the same name space, the name of each function of
 our C program must be distinct from all the externally declared objects and all
-the externally defined types. When op checkFunctionDefinition is used by op
-checkProgram defined later, the objects component of the symbol table always
+the externally defined types. When op 'checkFunctionDefinition' is used by op
+'checkProgram' defined later, the objects component of the symbol table always
 contains exactly one element. However, for completeness, the following op checks
 that the function name does not occur in any element of the list (if any).
 
 The type names of the function's parameters must satisfy the usual constraints
 and cannot be 'void' because they must be all complete [ISO 6.7.6.3/4]. In
 addition, the names of the parameters must be all distinct, because they belong
-to the same scope and name space [ISO 6.2.1/2]. Even though parameters with
-array types should be adjusted to have pointer types [ISO 6.7.6.3/7], in our C
-subset we impose a more disciplined use of arrays and we do not perform this
-adjustment.
+to the same scope and name space [ISO 6.2.1/2]. Since parameters with array
+types are adjusted to have pointer types [ISO 6.7.6.3/7], in our C subset we
+require function parameters to not have array types, i.e. to be already
+pointers, for simplicity.
 
 The body of a function must be a compound statement [ISO 6.9.1].
 
@@ -1999,6 +2013,8 @@ op checkFunctionDefinition
    (symtab:SymbolTable, fun:FunctionDefinition) : Option SymbolTable =
   {rety <- checkTypeName (symtab, fun.return);
    check (~ (embed? array rety));
+   check (fa(i:Nat) i < length fun.parameters =>
+            ~ (embed? array (fun.parameters @ i).typE));
    check (fa(scope) scope in? symtab.objects => fun.name nin? domain scope);
    check (fun.name nin? domain symtab.typedefs);
    check (fun.name nin? domain symtab.functions);
@@ -3626,8 +3642,43 @@ op typeOfExpressionResult
   {val <- expressionValue (state, res);
    ok {typE = typeOfValue val, object = embed? object res}}
 
+(* For most purposes, (an object designator to) an array that results from an
+expression is converted into a pointer to the array's initial element [ISO
+6.3.2.1/3]. The following op performs this conversion on an expression result,
+when needed. An expression result that is a value is not changed, even if the
+value itself is a value, because as formalized later the evaluation of an
+expression never yields an array value as result, only an array designator. *)
+
+op convertToPointerIfArray
+   (state:State, res:ExpressionResult) : OC ExpressionResult =
+  case res of
+  | object obj ->
+    {val <- readObject (state, obj);
+     case typeOfValue val of
+     | array (ty, n) ->
+       if n ~= 0 then ok (value (pointer (ty, subscript (obj, 0))))
+       else nonstd % array is empty, so there is no initial element
+     | _ -> ok (object obj)} % no change
+  | value val -> ok (value val)  % no change
+
+(* It is convenient to lift the previous op to lists. *)
+
+op convertToPointersIfArrays
+   (state:State, ress:List ExpressionResult) : OC (List ExpressionResult) =
+  case ress of
+  | [] -> ok []
+  | res::ress ->
+    {res' <- convertToPointerIfArray (state, res);
+     ress' <- convertToPointersIfArrays (state, ress);
+     ok (res' :: ress')}
+
 (* We formalize expression evaluation via an op that, given a state, returns an
 expression result outcome.
+
+Op 'convertToPointerIfArray' is applied to every operand (that may be an array),
+except for the operand of unary '&' [ISO 6.3.2.1/3] -- note that our C subset
+does not include the 'sizeof' operator, which is the other case in which op
+'convertToPointerIfArray' should not be used.
 
 A variable [ISO 6.5.1/2] evaluates to the object designator that the variable
 references.
@@ -3640,12 +3691,20 @@ applied. For the unary '&' operator, the operand must result in an object
 designator [ISO 6.5.3.2/1], which is returned as a pointer value [ISO
 6.5.3.2/3]. For the unary '*' operator, the operand must be a pointer [ISO
 6.5.3.2/2], which is returned as an object designator [ISO 6.5.3.2/4]. There is
-one exception to this evaluation procedure: an expression of the form '&*E'
+an exception to this evaluation procedure: an expression of the form '&*E'
 evaluates to the same as E, i.e. '&' and '*' are not applied [ISO 6.5.3.2/3].
 The difference between the normal evaluation procedure and this exception is
-visible when E is null: dereferencing null yields undefined behavior [ISO
-6.5.3.2/4].  Dereferencing an undefined pointer value also yields undefined
-behavior.
+visible when 'E' is null: dereferencing null yields undefined behavior [ISO
+6.5.3.2/4]. Dereferencing an undefined pointer value yields undefined behavior.
+The other exception to normal evaluation mentioned in [ISO 6.5.3.2/3], namely
+the evaluation of an expression of the form '&E[I]', which evaluates to the same
+as 'E + I', makes a difference in our C subset only if 'E' is null and 'I' is 0,
+because in that case the result is null instead of being non-standard. If 'E' is
+null and 'I' is not 0, then 'E + I' is undefined according to [ISO 6.5.6/8],
+just like '&E[I]' is undefined. If 'E' is not null, then there is no difference
+between the result of '&E[I]' and 'E + I' according to [ISO]. Note also that,
+according to [ISO 6.3.2.1/3], we do not use op 'convertToPointerIfArray' on the
+operand of unary '&'.
 
 In a binary expression with any operator but '&&' and '||', first the operands
 are evaluated, then the operator is applied. Since expressions in our C subset
@@ -3678,16 +3737,21 @@ designator extended with the right operand; if the left operand results in a
 value, the result is the value of the member [ISO 6.5.2.3/3].
 
 A structure pointer member expression requires a pointer to a structure as left
-operand [ISO 6.5.2.3/2]. The right operand must be a member of the structure
-[ISO 6.5.2.3/2]. The result is an object designator, obtained by appending the
-member to the object designator carried by the pointer [ISO 6.5.2.3/4].
+operand [ISO 6.5.2.3/2]. Even though [ISO 6.3.2.1/3] allows an array (of
+structures) to be used as left operand because it is converted to a pointer, in
+our formalization we are more strict and regard that behavior as an error. The
+right operand must be a member of the structure [ISO 6.5.2.3/2]. The result is
+an object designator, obtained by appending the member to the object designator
+carried by the pointer [ISO 6.5.2.3/4].
 
 An array subscripting expression requires a first operand that evaluates to an
-object designator (of an array) and a second operand that evaluates to an
-integer [ISO 6.5.2.1/1]. In order for the result to be well defined, the integer
-must be non-negative and less than the array's length [ISO 6.5.6/8]. If well
-define, the result is an object designator, obtained by extending with the
-integer the object designator returned by the first operand.
+object designator of an element i of an array, and a second operand that
+evaluates to an integer j [ISO 6.5.2.1/1]. In order for the result to be well
+defined, j must be non-negative and i + j must be less than the array's length
+[ISO 6.5.6/8]. If well defined, the result is an object designator, obtained by
+replacing the index i of the object designator with i+j. Note that if the first
+operand is an array, it is converted to a pointer to an array's initial element,
+i.e. i is 0 and thus the result is element j of the array, as expected.
 
 As explained earlier, the null pointer constant has type 'void*', and therefore
 it returns a null pointer to void. *)
@@ -3705,42 +3769,65 @@ op evaluate (state:State, expr:Expression) : OC ExpressionResult =
     if uop = ADDR && (ex(expr0:Expression) expr = unary (STAR, expr0)) then
       let unary (STAR, expr0) = expr in
       evaluate (state, expr0)
+    % special treatment for expr of the form '& expr0 [ expr1 ]',
+    % if 'expr1' yields 0:
+    else if uop = ADDR &&
+            (ex (expr0:Expression,
+                 expr1:Expression,
+                 res1:ExpressionResult,
+                 val1:Value)
+               expr = subscript (expr0, expr1) &&
+               evaluate (state, expr1) = ok res1 &&
+               expressionValue (state, res1) = ok val1 &&
+               mathIntOfValue val1 = ok 0) then
+      let subscript (expr0, _) = expr in
+      evaluate (state, expr0)
     % normal evaluation procedure for unary operators:
     else
     {res <- evaluate (state, expr);
-     val <- expressionValue (state, res);
      case uop of
      | ADDR ->
        (case res of
-       | object obj -> ok (value (pointer (typeOfValue val, obj)))
-       | value _    -> error)
+       | object obj ->
+         {val <- expressionValue (state, res);
+          ok (value (pointer (typeOfValue val, obj)))}
+       | value _ -> error)
      | STAR ->
-       (case val of
-       | pointer (_, obj)      -> ok (object obj)
-       | nullpointer _         -> nonstd
-       | undefined (pointer _) -> nonstd
-       | _                     -> error)
+       {res' <- convertToPointerIfArray (state, res);
+        val <- expressionValue (state, res');
+        case val of
+        | pointer (_, obj)      -> ok (object obj)
+        | nullpointer _         -> nonstd
+        | undefined (pointer _) -> nonstd
+        | _                     -> error}
      | PLUS ->
-       {val' <- operator_PLUS val;
+       {val <- expressionValue (state, res);
+        val' <- operator_PLUS val;
         ok (value val')}
      | MINUS ->
-       {val' <- operator_MINUS val;
+       {val <- expressionValue (state, res);
+        val' <- operator_MINUS val;
         ok (value val')}
      | NOT ->
-       {val' <- operator_NOT val;
+       {val <- expressionValue (state, res);
+        val' <- operator_NOT val;
         ok (value val')}
      | NEG ->
-       {val' <- operator_NEG val;
+       {res' <- convertToPointerIfArray (state, res);
+        val <- expressionValue (state, res');
+        val' <- operator_NEG val;
         ok (value val')}}
   | binary (expr1, bop, expr2) ->
     {res1 <- evaluate (state, expr1);
-     val1 <- expressionValue (state, res1);
+     res1' <- convertToPointerIfArray (state, res1);
+     val1 <- expressionValue (state, res1');
      if bop = LAND then
        {isZero1 <- zeroScalarValue? val1;
         if isZero1 then ok (value int0)
         else
           {res2 <- evaluate (state, expr2);
-           val2 <- expressionValue (state, res2);
+           res2' <- convertToPointerIfArray (state, res2);
+           val2 <- expressionValue (state, res2');
            isZero2 <- zeroScalarValue? val2;
            if isZero2 then ok (value int0) else ok (value int1)}}
      else if bop = LOR then
@@ -3748,12 +3835,14 @@ op evaluate (state:State, expr:Expression) : OC ExpressionResult =
         if ~ isZero1 then ok (value int1)
         else
           {res2 <- evaluate (state, expr2);
-           val2 <- expressionValue (state, res2);
+           res2' <- convertToPointerIfArray (state, res2);
+           val2 <- expressionValue (state, res2');
            isZero2 <- zeroScalarValue? val2;
            if isZero2 then ok (value int0) else ok (value int1)}}
      else
      {res2 <- evaluate (state, expr2);
-      val2 <- expressionValue (state, res2);
+      res2' <- convertToPointerIfArray (state, res2);
+      val2 <- expressionValue (state, res2');
       case bop of
       | MUL ->
         {val' <- operator_MUL (val1, val2);
@@ -3805,11 +3894,13 @@ op evaluate (state:State, expr:Expression) : OC ExpressionResult =
          ok (value val')}}}
   | cond (expr1, expr2, expr3, ty) ->
     {res1 <- evaluate (state, expr1);
-     val1 <- expressionValue (state, res1);
+     res1' <- convertToPointerIfArray (state, res1);
+     val1 <- expressionValue (state, res1');
      isZero <- zeroScalarValue? val1;
      if ~ isZero then
        {res2 <- evaluate (state, expr2);
-        val2 <- expressionValue (state, res2);
+        res2' <- convertToPointerIfArray (state, res2);
+        val2 <- expressionValue (state, res2');
         if integerType? ty then
           {val' <- convertInteger (val2, ty);
            ok (value val')}
@@ -3822,7 +3913,8 @@ op evaluate (state:State, expr:Expression) : OC ExpressionResult =
           error}
      else
        {res3 <- evaluate (state, expr3);
-        val3 <- expressionValue (state, res3);
+        res3' <- convertToPointerIfArray (state, res3);
+        val3 <- expressionValue (state, res3');
         if integerType? ty then
           {val' <- convertInteger (val3, ty);
            ok (value val')}
@@ -3863,18 +3955,22 @@ op evaluate (state:State, expr:Expression) : OC ExpressionResult =
           | undefined _ -> nonstd})
      | _ -> error}
   | subscript (expr, expr') ->
-    {res <- evaluate (state, expr);
+    {res0 <- evaluate (state, expr);
+     res <- convertToPointerIfArray (state, res0);
      val <- expressionValue (state, res);
      res' <- evaluate (state, expr');
      val' <- expressionValue (state, res');
      case typeOfValue val of
-     | array (ty, n) ->
+     | pointer _ ->
        (case res of
-       | object obj ->
-         {i <- mathIntOfValue val';
-          errorIf (i < 0 || i >= n);
-          ok (object (subscript (obj, i)))}
-       | value _ -> error)
+       | object (subscript (obj, i)) ->
+         (case readObject (state, obj) of
+         | ok (array (_, vals)) ->
+           {j <- mathIntOfValue val';
+            nonstdIf (j < 0 || i + j >= length vals);
+            ok (object (subscript (obj, i + j)))}
+         | _ -> nonstd)
+       | _ -> error)
      | _ -> error}
   | nullconst ->
     ok (value (nullpointer (pointer void)))
@@ -4273,7 +4369,9 @@ structure is stored into the left operand, unchanged. We consolidate cases
 (iii), (iv), and (v), which all involve pointers, by converting the right
 operand pointer into the left operand's pointer type -- recall that op
 'convertPointer' preserves the type safety of our C subset by disallowing
-conversions between non-null pointers of incompatible types.
+conversions between non-null pointers of incompatible types. We use op
+'convertToPointerIfArray' on the right operand -- see discussion in comments for
+op 'checkStatement'.
 
 The condition of an 'if' statement is evaluated first, and a branch is executed
 depending on whether the condition is 0 or not.
@@ -4310,17 +4408,18 @@ whose test is the test of the 'for' and whose body consists of the body of the
 equivalent to having the non-0 constant 1 as the test [ISO 6.8.5.3/2].
 
 The argument expressions of a function call are evaluated, and the values passed
-as arguments. The arguments are stored into a new scope in a new frame in
-automatic storage. The body of the function must be a block, whose block items
-are extracted and executed (as opposed to executing the whole block, which would
-otherwise create another scope, which would be incorrect). If the function has a
-non-void return type but fails to return a value, or returns a value that is not
-assignable to its return type, it is an error. If the returned value is
-undefined, the behavior is undefined.  Otherwise, the returned value is
-converted, as if by assignment, into the return type [ISO 6.8.6.4/3]. If the
-function returns 'void', but a value is returned, it is an error. In the absence
-of errors, function execution results in a new state and an optional value
-(present iff the function has a non-'void' return type). *)
+as arguments. Arrays are converted to pointers [ISO 6.3.2.1/3]. The arguments
+are stored into a new scope in a new frame in automatic storage. The body of the
+function must be a block, whose block items are extracted and executed (as
+opposed to executing the whole block, which would otherwise create another
+scope, which would be incorrect). If the function has a non-void return type but
+fails to return a value, or returns a value that is not assignable to its return
+type, it is an error. If the returned value is undefined, the behavior is
+undefined.  Otherwise, the returned value is converted, as if by assignment,
+into the return type [ISO 6.8.6.4/3]. If the function returns 'void', but a
+value is returned, it is an error. In the absence of errors, function execution
+results in a new state and an optional value (present iff the function has a
+non-'void' return type). *)
 
 type StatementResult =
  {state      : State,
@@ -4334,14 +4433,16 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
      case res1 of
      | object obj ->
        {res2 <- evaluate (state, expr2);
-        newval <- expressionValue (state, res2);
+        res2' <- convertToPointerIfArray (state, res2);
+        newval <- expressionValue (state, res2');
         newval' <- convertForAssignment (newval, typeOfValue oldval);
         state' <- writeObject (state, obj, newval');
         ok {state = state', completion = next}}
      | value _ -> error}
   | call (expr?, fun, exprs) ->
     {ress <- evaluateAll (state, exprs);
-     args <- expressionValues (state, ress);
+     ress' <- convertToPointersIfArrays (state, ress);
+     args <- expressionValues (state, ress');
      (state', val?) <- callFunction (state, fun, args);
      case expr? of
      | Some expr ->
@@ -4359,7 +4460,8 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
      | None -> ok {state = state', completion = next}}
   | iF (expr, thenBranch, Some elseBranch) ->
     {res <- evaluate (state, expr);
-     condition <- expressionValue (state, res);
+     res' <- convertToPointerIfArray (state, res);
+     condition <- expressionValue (state, res');
      isZero <- zeroScalarValue? condition;
      if ~ isZero then
        execStatement (state, thenBranch)
@@ -4369,7 +4471,8 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
     execStatement (state, iF (expr, thenBranch, Some (block [])))
   | return (Some expr) ->
     {res <- evaluate (state, expr);
-     val <- expressionValue (state, res);
+     res' <- convertToPointerIfArray (state, res);
+     val <- expressionValue (state, res');
      errorIf (empty? state.storage.automatic);
      let f = length state.storage.automatic - 1 in
      let state' = updateAutomaticStorage
@@ -4391,9 +4494,10 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
           % for each state in the stream:
           (fa(i:Nat)
              % the test is true:
-             (ex (res:ExpressionResult, condition:Value)
+             (ex (res:ExpressionResult, res':ExpressionResult, condition:Value)
                 evaluate (states i, expr) = ok res &&
-                expressionValue (states i, res) = ok condition &&
+                convertToPointerIfArray (state, res) = ok res' &&
+                expressionValue (states i, res') = ok condition &&
                 zeroScalarValue? condition = ok false)
              &&
              % the body completes and yields the next state:
@@ -4404,7 +4508,8 @@ op execStatement (state:State, stmt:Statement) : OC StatementResult =
     % otherwise, the loop eventually terminates:
     else
       {res <- evaluate (state, expr);
-       condition <- expressionValue (state, res);
+       res' <- convertToPointerIfArray (state, res);
+       condition <- expressionValue (state, res');
        isZero <- zeroScalarValue? condition;
        % terminate if test is false:
        if isZero then
