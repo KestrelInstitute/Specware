@@ -943,8 +943,7 @@ SpecNorm qualifying spec
       | _ -> tm
 
   op termSubtypeCondn(spc: Spec, term: MSTerm, ty: MSType, defn?: Option MSTerm, depth: Nat): MSTerm =
-    % let _ = writeLine("\ntsc: "^printTerm term^": "^printType ty^"\n"^(case defn? of
-    %                                                                    Some defn -> printTerm defn | _ -> "")) in
+    % let _ = writeLine("\ntsc: "^printTerm term^": "^printType ty^"\n"^(case defn? of Some defn -> printTerm defn | _ -> "")) in
     case unfoldBase(spc, ty) of
       | Arrow(dom, rng, _) ->
 	(let dom_exp = case tryUnfoldBase spc dom of
@@ -971,10 +970,10 @@ SpecNorm qualifying spec
          case productOpt (spc, dom_exp) of
 	  | Some fields ->
             let name = argName depth in
-	    let domVars = map (fn (id: Id, ty) -> (name ^ "_" ^ id, ty))
-                              fields in
-	    let domVarTerms = map (fn (var) -> mkVar(var)) domVars in
-	    let rangeTerm = mkAppl(term, domVarTerms) in
+	    let domIdVars = map (fn (id: Id, ty) -> (id, (name ^ "_" ^ id, ty))) fields in
+            let domVars = List.map (fn (_, v) -> v) domIdVars in
+	    let domVarTerms = map (fn (id, var) -> (id, mkVar(var))) domIdVars in
+	    let rangeTerm = mkApply(term, mkRecord domVarTerms) in
 	    let rangePred = termSubtypeCondn(spc, rangeTerm, rng, None, depth + 1) in
 	    mkBind(Forall, domVars, rangePred)
 	  | _ ->
