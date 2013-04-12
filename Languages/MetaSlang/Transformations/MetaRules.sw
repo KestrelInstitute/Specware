@@ -2,6 +2,28 @@ MetaRule qualifying
 spec
 import Simplify
 
+
+(*
+Case 1:
+   let x1 .. xn = (if p then q else r) in m
+     --  {x1... xn \not\in fv(p)}  -->
+   if p 
+     then let x1 .. xn = q in m
+     else let x1 .. xn = r in m
+
+Case 2:
+  
+   let x1 .. xn =  ((fn x | g1 -> b1 | ... | gn -> bn) arg) in m
+     --> { x1 .. xn \not\in \cup fv(gi) 
+           GK: (Why is there not a check that x1 .. xn \not\in fv(arg)???)
+   (fn x | g1 -> let x1 .. xn -> b1 
+         | ...
+         | gn -> let x1 .. xn -> bn)
+
+
+*)
+
+
 op dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
    case tm of
      | Let([(pat, b_tm)], m, a) ->

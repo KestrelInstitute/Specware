@@ -12,6 +12,4 @@ Welcome to Specware Transformation Manual's documentation!
    intro
    xshell
    iso
-
-
-
+   defining
