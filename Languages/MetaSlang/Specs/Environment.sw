@@ -408,6 +408,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
                                                 else termTypeEnv(sp, last tms)
       | TypedTerm  (_, s,                 _) -> s
       | Pi         (_, t,                 _) -> termTypeEnv   (sp, t)
+      | And        (t :: _,               _) -> termTypeEnv   (sp, t)
       | mystery                              ->
 	System.fail ("In termTypeEnv, unrecognized term: " ^ printTerm mystery)
   in
@@ -464,6 +465,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
                                              else maybeTermTypeEnv(sp, last tms)
       | TypedTerm  (_, s,              _) -> Some s
       | Pi         (_, t,              _) -> maybeTermTypeEnv   (sp, t)
+      | And        (t :: _,            _) -> maybeTermTypeEnv   (sp, t)
       | _                                 -> None
   in
   %let _ = writeLine("termTypeEnv: "^printTerm(term)^"="^printType(res)) in
