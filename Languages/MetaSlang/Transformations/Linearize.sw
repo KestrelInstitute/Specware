@@ -2,6 +2,7 @@ Linearize qualifying spec
 
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % addOp
+ import /Languages/MetaSlang/Codegen/DebuggingSupport                    % TODO: temporary
 
  op printBindings (bindings : List (MSPattern * MSTerm)) : String =
    (foldl (fn (str, (pat, term)) ->
@@ -152,6 +153,6 @@ Linearize qualifying spec
   in
   %% Revise all the ops in some slice of the spec.
   let _ = writeLine("Warning: This is just a hack for testing, until spec marking is finished.") in
-  foldl aux spc ["setTgt", "newGraph", "selectSupply1", "nextState", "foo", "foo2"]
+  foldl aux spc Debugging.temporaryTargets
 
 end-spec
