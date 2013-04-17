@@ -4,6 +4,8 @@ Debugging qualifying spec
 
  op verbosity : Nat = 0
 
+ op temporaryTargets : Ids = ["setTgt", "newGraph", "selectSupply1", "nextState", "foo", "foo2"] % TODO: flush this soon
+
  op showIfVerbose (strings : List String) : () =
   if verbosity > 0 then 
     let _ = map writeLine strings in
