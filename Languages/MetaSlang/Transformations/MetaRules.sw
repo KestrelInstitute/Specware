@@ -152,60 +152,61 @@ op findMaxExistVarId(tms: MSTerms): Nat =
              n tm)
     0 tms    
 
+op varRefTo? (tm: MSTerm, vs: Vars): Bool =
+  case tm of
+    | Var(v, _) -> inVars?(v, vs)
+    | _ -> false
+
 op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
   let existVarIndex = findMaxExistVarId cjs in
-  let def varIntroTerm? tm =
-        case tm of
-          | Record _ -> true
-          | Apply(Fun(Embed(_, true), _, _), _, _) -> true
-          | _ -> false
+  let 
       def flattenConjuncts(cjs: MSTerms, vs: Vars, i: Nat): Vars * MSTerms * Nat =
         foldl (fn ((vs, cjs, i), cj) ->
-               let ( nvs, ncjs, i) = flattenConjunct(cj, i) in
-               (nvs ++ vs, ncjs ++ cjs, i))
+               let ( vs, ncjs, i) = flattenConjunct(cj, vs, i) in
+               (vs, ncjs ++ cjs, i))
           (vs, [], 0) cjs
-      def flattenConjunct(cj: MSTerm, i: Nat): Vars * MSTerms * Nat =
+      def flattenConjunct(cj: MSTerm, vs: Vars, i: Nat): Vars * MSTerms * Nat =
         case cj of
           | Apply(f as Fun(Equals, _, _), Record([("1", e1), ("2", e2)], a1), a0) ->
             (case (e1, e2) of
                | (Apply(Fun(Embed(id1, a1?), _, _), a1, _), Apply(Fun(Embed(id2, a2?), _, _), a2, _)) | id1 = id2 && a1? = a2? ->
                  let new_cj = mkEquality(inferType(spc, a1), a1, a2) in
-                 flattenConjunct(new_cj, i)
+                 flattenConjunct(new_cj, vs, i)
                | (Record(prs1, _), Record(prs2, _)) ->
                  let new_cjs = map (fn ((_, st1), (_, st2)) -> mkEquality(inferType(spc, st1), st1, st2)) (zip(prs1, prs2)) in
                  flattenConjuncts(new_cjs, [], i)
-               | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, [], [], i, false) in
+               | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, vs, [], i, false) in
                       (vs, new_cjs ++ [new_cj], i))
-          | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, [], [], i, false) in
+          | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, vs, [], i, false) in
                  (vs, new_cjs ++ [new_cj], i)
-      def flattenTerm(tm: MSTerm, nvs: Vars, ncjs: MSTerms, i: Nat, intro?: Bool): MSTerm * Vars * MSTerms * Nat =
-        if intro? && varIntroTerm? tm
+      def flattenTerm(tm: MSTerm, vs: Vars, ncjs: MSTerms, i: Nat, intro?: Bool): MSTerm * Vars * MSTerms * Nat =
+        if intro? && ~(varRefTo?(tm, vs))
           then
             let v_ty = inferType(spc, tm) in
             let new_var = (existVarId^show i, v_ty) in
-            let (te, nvs, ncjs, i) = flattenTerm(mkEquality(v_ty, mkVar new_var, tm), nvs, ncjs, i + 1, true) in
-            (mkVar new_var, new_var :: nvs, te :: ncjs, i)
+            let (vs, ncjs1, i) = flattenConjunct(mkEquality(v_ty, mkVar new_var, tm), new_var:: vs, i + 1) in
+            (mkVar new_var, vs, ncjs1 ++ ncjs, i)
         else
         case tm of
           | Apply(f as Fun(Equals, _, _), Record([("1", e1), ("2", e2)], a1), a0) ->
-            let (e1, nvs, ncjs, i) = flattenTerm(e1, nvs, ncjs, i, false) in
-            let (e2, nvs, ncjs, i) = flattenTerm(e2, nvs, ncjs, i, false) in
-            (Apply(f, Record([("1", e1), ("2", e2)], a1), a0), nvs, ncjs, i)
-          | Apply(f, t, a) ->
-            let (t, nvs, ncjs, i) = flattenTerm(t, nvs, ncjs, i, false) in
-            (Apply(f, t, a), nvs, ncjs, i)
+            let (e1, vs, ncjs, i) = flattenTerm(e1, vs, ncjs, i, false) in
+            let (e2, vs, ncjs, i) = flattenTerm(e2, vs, ncjs, i, false) in
+            (Apply(f, Record([("1", e1), ("2", e2)], a1), a0), vs, ncjs, i)
+          | Apply(f as Fun(Embed(_, true), _, _), t, a) ->
+            let (t, vs, ncjs, i) = flattenTerm(t, vs, ncjs, i, false) in
+            (Apply(f, t, a), vs, ncjs, i)
           | Record(prs, a) ->
-            let (prs, nvs, ncjs, i) = foldr (fn ((id, ti), (prs, nvs, ncjs, i)) ->
-                                               let (ti, nvs, ncjs, i) = flattenTerm(ti, nvs, ncjs, i, true) in
-                                               ((id, ti)::prs, nvs, ncjs, i))
-                                        ([], nvs, ncjs, i) prs
+            let (prs, vs, ncjs, i) = foldr (fn ((id, ti), (prs, vs, ncjs, i)) ->
+                                               let (ti, vs, ncjs, i) = flattenTerm(ti, vs, ncjs, i, true) in
+                                               ((id, ti)::prs, vs, ncjs, i))
+                                        ([], vs, ncjs, i) prs
             in
-            (Record(prs, a), nvs, ncjs, i)
-          | _ -> (tm, nvs, ncjs, i)
+            (Record(prs, a), vs, ncjs, i)
+          | _ -> (tm, vs, ncjs, i)
   in
   let (vs, cjs, _) = flattenConjuncts(cjs, vs, 0)  in
   (vs, reverse cjs)
-  
+
 op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
   let def transfm tm =
         case tm of
@@ -213,6 +214,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
             (if vs = [] then Some bod
              else
              let (vs, cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
+             % let _ = writeLine("flat:\n"^printTerm(mkConj cjs)) in
              transEx(vs, cjs, a, []))
           | _ -> None
       def transEx(vs: Vars, cjs: MSTerms, a: Position, tsb: TermSubst): Option MSTerm =
@@ -256,7 +258,11 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
             let cjs = flatten (map (fn cji -> if cj = cji then getConjuncts bod else [cji]) cjs) in
             transEx(vs ++ s_vs, cjs, a, tsb)
           | None -> 
-        case findLeftmost (embed? IfThenElse) cjs of
+        case findLeftmost (fn cj ->
+                           case cj of
+                             | IfThenElse(p, _, _, _) -> ~(hasRefTo?(p, vs))
+                             | _ -> false)
+               cjs of
           | Some(cj as IfThenElse(p, q, r, pos)) -> 
             let q_cjs = map (fn cji -> if cj = cji then q else cji) cjs in
             let r_cjs = map (fn cji -> if cj = cji then r else cji) cjs in
