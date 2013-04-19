@@ -14,13 +14,11 @@
 (in-package :swank-backend)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  ;; sjw: bind sb-fasl:*fasl-file-type* to original value
-  (let ((sb-fasl:*fasl-file-type* "fasl"))
-    (require 'sb-bsd-sockets)
-    (require 'sb-introspect)
-    (require 'sb-posix)
-    (require 'sb-cltl2)
-    (import-from :sb-gray *gray-stream-symbols* :swank-backend)))
+  (require 'sb-bsd-sockets)
+  (require 'sb-introspect)
+  (require 'sb-posix)
+  (require 'sb-cltl2)
+  (import-from :sb-gray *gray-stream-symbols* :swank-backend))
 
 (declaim (optimize (debug 2) 
                    (sb-c::insert-step-conditions 0)
@@ -440,6 +438,9 @@
       (sb-introspect:deftype-lambda-list typespec-operator)
     (if foundp arglist (call-next-method))))
 
+(defimplementation type-specifier-p (symbol)
+  (or (sb-ext:valid-type-specifier-p symbol)
+      (not (eq (type-specifier-arglist symbol) :not-available))))
 
 (defvar *buffer-name* nil)
 (defvar *buffer-tmpfile* nil)
@@ -1272,9 +1273,18 @@ stack."
     (code-location-source-location
      (sb-di:frame-code-location (nth-frame index)))))
 
+(defvar *keep-non-valid-locals* nil)
+
 (defun frame-debug-vars (frame)
   "Return a vector of debug-variables in frame."
-  (sb-di::debug-fun-debug-vars (sb-di:frame-debug-fun frame)))
+  (let ((all-vars (sb-di::debug-fun-debug-vars (sb-di:frame-debug-fun frame))))
+    (cond (*keep-non-valid-locals* all-vars)
+          (t (let ((loc (sb-di:frame-code-location frame)))
+               (remove-if (lambda (var)
+                            (ecase (sb-di:debug-var-validity var loc)
+                              (:valid nil)
+                              ((:invalid :unknown) t)))
+                          all-vars))))))
 
 (defun debug-var-value (var frame location)
   (ecase (sb-di:debug-var-validity var location)
@@ -1352,6 +1362,16 @@ stack."
                (sb-di:preprocess-for-eval form
                                           (sb-di:frame-code-location frame)))
              frame)))
+
+(defimplementation frame-package (frame-number)
+  (let* ((frame (nth-frame frame-number))
+         (fun (sb-di:debug-fun-fun (sb-di:frame-debug-fun frame))))
+    (when fun
+      (let ((name (function-name fun)))
+        (typecase name
+          (null nil)
+          (symbol (symbol-package name))
+          ((cons (eql setf) (cons symbol)) (symbol-package (cadr name))))))))
 
 #+#.(swank-backend::sbcl-with-restart-frame)
 (progn
@@ -1861,10 +1881,5 @@ stack."
                     (assert (sb-posix:wifexited status))
                     (funcall completion-function
                              (zerop (sb-posix:wexitstatus status))))))))))))
-
-(defun deinit-log-output ()
-  ;; Can't hang on to an fd-stream from a previous session.
-  (setf (symbol-value (find-symbol "*LOG-OUTPUT*" 'swank))
-        nil))
 
 (pushnew 'deinit-log-output sb-ext:*save-hooks*)

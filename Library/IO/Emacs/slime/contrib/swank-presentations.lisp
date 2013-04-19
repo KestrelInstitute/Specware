@@ -132,6 +132,14 @@ The secondary value indicates the absence of an entry."
 
 (defvar *presentation-active-menu* nil)
 
+(defun menu-choices-for-presentation-id (id)
+  (multiple-value-bind (ob presentp) (lookup-presented-object id)
+    (cond ((not presentp) 'not-present)
+	  (t
+	   (let ((menu-and-actions (menu-choices-for-presentation ob)))
+	     (setq *presentation-active-menu* (cons id menu-and-actions))
+	     (mapcar 'car menu-and-actions))))))
+
 (defun swank-ioify (thing)
   (cond ((keywordp thing) thing)
 	((and (symbolp thing)(not (find #\: (symbol-name thing))))
@@ -216,14 +224,6 @@ The secondary value indicates the absence of an entry."
               (lambda (choice object id) 
                 (declare (ignore choice id)) 
                 (disassemble object)))))
-
-(defun menu-choices-for-presentation-id (id)
-  (multiple-value-bind (ob presentp) (lookup-presented-object id)
-    (cond ((not presentp) 'not-present)
-	  (t
-	   (let ((menu-and-actions (menu-choices-for-presentation ob)))
-	     (setq *presentation-active-menu* (cons id menu-and-actions))
-	     (mapcar 'car menu-and-actions))))))
 
 (defslimefun inspect-presentation (id reset-p)
   (let ((what (lookup-presented-object-or-lose id)))

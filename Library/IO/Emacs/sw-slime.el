@@ -62,7 +62,7 @@
 )
 
 ;;; Based on slime-init-command -- Allow for pre-loaded swank
-(defun slime-cond-init-command (port-filename coding-system)
+(defun slime-cond-init-command (port-filename _coding-system)
   "Return a string to initialize Lisp."
   (let ((loader (if (file-name-absolute-p slime-backend)
                     slime-backend
@@ -196,7 +196,7 @@ If NEWLINE is true then add a newline at the end of the input."
         (slime-repl-send-string input)))))
 
 
-(defun slime-quit-specware (&optional keep-buffers)
+(defun slime-quit-specware (&optional keep-buffers) ; Still needed??
   "Quit lisp, kill the inferior process and associated buffers."
   (interactive)
   (slime-eval-async '(swank:quit-lisp))
@@ -292,8 +292,8 @@ PROGRAM and PROGRAM-ARGS are the filename and argument strings
   for the subprocess.
 INIT is a function that should return a string to load and start
   Swank. The function will be called with the PORT-FILENAME and ENCODING as
-  arguments.  INIT defaults to `slime-init-command'. 
-CODING-SYSTEM a symbol for the coding system. The default is 
+  arguments.  INIT defaults to `slime-init-command'.
+CODING-SYSTEM a symbol for the coding system. The default is
   slime-net-coding-system
 ENV environment variables for the subprocess (see `process-environment').
 INIT-FUNCTION function to call right after the connection is established.
@@ -393,7 +393,7 @@ DIRECTORY change to this directory before starting the process.
 (defun slime-repl-insert-prompt ()
   "Goto to point max, insert RESULT and the prompt.
 Set slime-output-end to start of the inserted text slime-input-start
-to end end."
+to end."
   (if (not specware-listener-p)
       (funcall old-slime-repl-insert-prompt)  
     (progn

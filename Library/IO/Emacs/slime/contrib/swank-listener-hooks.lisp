@@ -38,16 +38,6 @@
    prevent the repl from advancing the history - * ** *** etc."
   (setq *slime-repl-advance-history* nil))
 
-(defun run-repl-eval-hooks (form)
-  (loop for hook in *slime-repl-eval-hooks* 
-	for res =  (catch *slime-repl-eval-hook-pass* 
-		     (multiple-value-list (funcall hook form)))
-	until (not (eq res *slime-repl-eval-hook-pass*))
-	finally (return 
-		  (if (eq res *slime-repl-eval-hook-pass*)
-		      (multiple-value-list (eval form))
-		      res))))
-
 (defun %eval-region (string)
   (with-input-from-string (stream string)
     (let (- values)
@@ -62,6 +52,16 @@
 	     (setq values (run-repl-eval-hooks form))
 	     (setq values (multiple-value-list (eval form))))
 	 (finish-output))))))
+
+(defun run-repl-eval-hooks (form)
+  (loop for hook in *slime-repl-eval-hooks* 
+	for res =  (catch *slime-repl-eval-hook-pass* 
+		     (multiple-value-list (funcall hook form)))
+	until (not (eq res *slime-repl-eval-hook-pass*))
+	finally (return 
+		  (if (eq res *slime-repl-eval-hook-pass*)
+		      (multiple-value-list (eval form))
+		      res))))
 
 (defun %listener-eval (string)
   (clear-user-input)

@@ -1252,7 +1252,7 @@ Rooted calling trees:
   (maphash #'(lambda (name callers)
 	       (unless (or (member (pattern-caller-type name)
 				   types-to-ignore)
-			   ;; When we're doing fancy package stuff,
+			   ;; When we're doing fancy package crap,
 			   ;; allow us to ignore symbols based on their
 			   ;; packages.
 			   (when *handle-package-forms*

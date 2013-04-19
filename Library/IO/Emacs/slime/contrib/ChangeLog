@@ -1,3 +1,113 @@
+2013-02-13  Helmut Eller  <heller@common-lisp.net>
+
+	* swank-kawa.scm (listener-loop): Use close-port instead of
+	close-output-port.  close-output-port startet to signal errors in
+	recent versions.
+	(listener): Stop taking stack-snapshots on caught exceptions as
+	it's too slow. It was always expensive and in Java7 it's
+	unbearably slow.
+
+2013-02-10  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-repl.el (slime-open-stream-to-lisp): Use current
+	connection host instead of slime-lisp-host.
+
+2013-02-03  Stas Boukarev  <stassats@gmail.com>
+
+	* swank-sprof.lisp (pretty-name): Better frame names.
+
+2013-02-02  Stas Boukarev  <stassats@gmail.com>
+
+	* swank-util.lisp (symbol-classification-string): Use
+	type-specifier-p.
+
+	* swank-fuzzy.lisp: Allow NIL to be completed, don't confuse with
+	it package:
+
+2013-02-01  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-asdf.el (slime-determine-asdf-system): Don't call
+	slime-to-lisp-filename on NIL.
+	Reported by Tamas Papp.
+
+	* swank-asdf.lisp (asdf-determine-system): Return the name of a
+	system.
+	Reported by Tamas Papp.
+
+2013-01-29  Francois-Rene Rideau <tunes@google.com>
+
+	* swank-asdf.lisp: Better upcoming ASDF3 support.
+
+2013-01-20  Stas Boukarev  <stassats@gmail.com>
+
+	* swank-asdf.lisp: Better compatibility with newer ASDF.
+	Patch by Francois-Rene Rideau and Stelian Ionescu.
+
+	Remove auto-upgrading.
+	Rename *asdf-directory* to *asdf-path*, to be a full path to
+	asdf.lisp.
+	Remove #+gcl and #+genera.
+
+2013-01-10  Helmut Eller  <heller@common-lisp.net>
+
+	* slime-autodoc.el (slime-autodoc): Remove :gnu-emacs-only.
+	Suggested by Raymond Toy.
+	(slime-autodoc): Fix long lines.
+
+2013-01-04  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-fancy-inspector.el (slime-edit-inspector-part): New
+	function, tries to find a definition of the part at point. Hooks
+	into `slime-edit-definition-hooks'.
+
+2013-01-03  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-cl-indent.el (define-common-lisp-style "basic"): Don't set
+	`comment-column' to NIL, it only can accept integers.
+
+2012-12-26  Francois-Rene Rideau <tunes@google.com>
+
+	* swank-asdf.lisp: Better support for different versions of ASDF.
+
+2012-12-16  Helmut Eller  <heller@common-lisp.net>
+
+	* swank-repl.lisp (thread-for-evaluation): Override some cases.
+
+2012-11-28  Stas Boukarev  <stassats@gmail.com>
+
+	* swank-asdf.lisp (asdf-system-directory): Return a namestring,
+	not a pathname.
+
+2012-11-23  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-repl.el (slime-repl-auto-right-margin):
+	New variable, defaults to NIL.
+	(slime-repl-eval-string): Respect the above variable.
+	* swank-repl.lisp (listener-eval): New keyword parameter,
+	window-width, if supplied binds *print-right-margin* to its
+	value.
+	Based on a patch by Marco Baringer.
+
+2012-11-22  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-package-fu.el (slime-determine-symbol-style): Fix the
+	default case when no :export symbols are present.
+	Because of (every anything nil) => T.
+
+2012-11-13  Francois-Rene Rideau <tunes@google.com>
+
+	* swank-asdf.lisp: Better ASDF support.
+
+2012-10-19  Stas Boukarev  <stassats@gmail.com>
+
+	* slime-fuzzy.el (slime-fuzzy-choices-buffer): Don't move position
+	in the current buffer, call (slime-fuzzy-next) after switching to
+	the completion buffer.
+
+2012-10-14  Helmut Eller  <heller@common-lisp.net>
+
+	* swank-kawa.scm: Various tweaks.
+
 2012-08-13  Stas Boukarev  <stassats@gmail.com>
 
 	* swank-arglists.lisp (extra-keywords/slots): Check for
