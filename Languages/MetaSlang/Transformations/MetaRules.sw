@@ -159,6 +159,25 @@ op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
           | Record _ -> true
           | Apply(Fun(Embed(_, true), _, _), _, _) -> true
           | _ -> false
+      def flattenConjuncts(cjs: MSTerms, vs: Vars, i: Nat): Vars * MSTerms * Nat =
+        foldl (fn ((vs, cjs, i), cj) ->
+               let ( nvs, ncjs, i) = flattenConjunct(cj, i) in
+               (nvs ++ vs, ncjs ++ cjs, i))
+          (vs, [], 0) cjs
+      def flattenConjunct(cj: MSTerm, i: Nat): Vars * MSTerms * Nat =
+        case cj of
+          | Apply(f as Fun(Equals, _, _), Record([("1", e1), ("2", e2)], a1), a0) ->
+            (case (e1, e2) of
+               | (Apply(Fun(Embed(id1, a1?), _, _), a1, _), Apply(Fun(Embed(id2, a2?), _, _), a2, _)) | id1 = id2 && a1? = a2? ->
+                 let new_cj = mkEquality(inferType(spc, a1), a1, a2) in
+                 flattenConjunct(new_cj, i)
+               | (Record(prs1, _), Record(prs2, _)) ->
+                 let new_cjs = map (fn ((_, st1), (_, st2)) -> mkEquality(inferType(spc, st1), st1, st2)) (zip(prs1, prs2)) in
+                 flattenConjuncts(new_cjs, [], i)
+               | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, [], [], i, false) in
+                      (vs, new_cjs ++ [new_cj], i))
+          | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, [], [], i, false) in
+                 (vs, new_cjs ++ [new_cj], i)
       def flattenTerm(tm: MSTerm, nvs: Vars, ncjs: MSTerms, i: Nat, intro?: Bool): MSTerm * Vars * MSTerms * Nat =
         if intro? && varIntroTerm? tm
           then
@@ -184,15 +203,10 @@ op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
             (Record(prs, a), nvs, ncjs, i)
           | _ -> (tm, nvs, ncjs, i)
   in
-  let (vs, cjs, _) =
-      List.foldl (fn ((vs, cjs, i), cj) ->
-               let (cj, nvs, ncjs, i) = flattenTerm(cj, [], [], i, false) in
-               (nvs ++ vs, ncjs ++ [cj] ++ cjs, i))
-        (vs, [], 0) cjs
-  in
+  let (vs, cjs, _) = flattenConjuncts(cjs, vs, 0)  in
   (vs, reverse cjs)
   
-op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
+op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
   let def transfm tm =
         case tm of
           | Bind(Exists, vs, bod, a) ->
@@ -231,11 +245,14 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
                  let tsb =  (s_tm, v_tm) :: tsb in
                  Some(mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty),
                                          transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb)),
-                                        (mkWildPat constr_ty, falseTerm)]))
+                                        (mkWildPat constr_ty, else_tm)]))
                | None -> None)
          | None ->
         case findLeftmost existsTerm? cjs of
-          | Some(cj as Bind(Exists, s_vs, bod, pos)) ->
+          | Some(cj as Bind(Exists, s_vs, _, _)) ->
+            let free_vs = foldl (fn (fvs, (t1, t2)) -> removeDuplicateVars(freeVars t1 ++ freeVars t2 ++ fvs)) [] tsb in
+            let shared_vars = filter (fn v -> inVars?(v, free_vs)) s_vs in
+            let Bind(Exists, s_vs, bod, _) = renameBoundVars(cj, shared_vars) in
             let cjs = flatten (map (fn cji -> if cj = cji then getConjuncts bod else [cji]) cjs) in
             transEx(vs ++ s_vs, cjs, a, tsb)
           | None -> 
@@ -271,12 +288,76 @@ op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
           | Some ex_tm -> ex_tm
           | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)
   in
-  case transfm tm of
+  case transfm ctm of
     | Some n_tm ->
       let n_tm1 = simplify spc n_tm in
-      if equalTerm?(n_tm1, tm) then None
+      if equalTerm?(n_tm1, ctm) then None
       else
       % let _ = writeLine("structureEx:\n"^printTerm tm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1) in
       Some n_tm1
     | None -> None
+
+  op findCommonTerms(tms1: MSTerms, tms2: MSTerms): MSTerms * MSTerms * MSTerms =
+    case (tms1, tms2) of
+      | (t1::r_tms1, t2::r_tms2) | equalTerm?(t1, t2) ->
+        let (common_tms, rtms1, rtms2) = findCommonTerms(r_tms1, r_tms2) in
+        (t1 :: common_tms, rtms1, rtms2)
+      | _ -> ([], tms1, tms2)           % Conservative: only gets common prefix
+
+op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
+  structureCondEx(spc, tm, falseTerm)
+
+op simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
+  case tm of
+    | IfThenElse(t1, t2, t3, _) | embed? Fun t1 ->
+      (case t1 of
+         | Fun(Bool true, _,_) -> Some t2
+         | Fun(Bool false,_,_) -> Some t1
+         | _ -> None)
+    | IfThenElse(t1, t2, t3, _) | equalTerm?(t2, t3) ->
+      Some t2
+    %% if p then q else r --> p && q || ~p && r
+    %% if ex(x) p x then q else r  -->
+    %% | IfThenElse(condn as Bind(Exists, vs, bod, a), t2, t3, _) | boolType?(spc, t2) ->
+    %%  structureCondEx(spc, Bind(Exists, vs, mkConj[bod, t2], a), t3)
+    | IfThenElse(Let([(p1, t1)], pred_bod, a), t2, t3, _) ->
+      let p1_tm = patternToTerm p1 in
+      let new_if0 = IfThenElse(pred_bod, t2, t3, a) in
+      let new_if1 = case patternToTerm p1 of
+                      | Some p1_tm -> termSubst(new_if0, [(t1, p1_tm)]) 
+                      | None -> new_if0
+      in
+      let new_if2 = simpIf1 spc new_if1 in
+      Some(Let([(p1, t1)], new_if2, a))
+    %% if case e of p1 -> b1 | _ -> false then t2 else t3 --> case e of p1 | b1 -> t2 | _ -> t3
+    | IfThenElse(Apply(Lambda([(p1, _, b1), (wild_pat as (WildPat _), _, Fun(Bool false, _, _))], a), e, _), t2, t3, _) ->
+      let (pat_tm, pat_conds, _) = patternToTermPlusExConds p1 in
+      let simp_t2 = if pat_conds = [] then termSubst(t2, [(e, pat_tm)]) else t2 in
+      let new_pat = mkRestrictedPat(p1, b1) in
+      Some(mkApply(Lambda([(new_pat, trueTerm, simp_t2), (wild_pat, trueTerm, t3)], a), e))
+    | IfThenElse(t1, t2, t3, a) ->
+      let n_t2 = termSubst(t2, map (fn cj -> (cj,  trueTerm)) (getConjuncts t1)) in
+      let n_t3 = termSubst(t3, map (fn cj -> (cj, falseTerm)) (getDisjuncts t1)) in
+      if ~(equalTerm?(t2, n_t2) && equalTerm?(t3, n_t3))
+        then let new_tm = Utilities.mkIfThenElse(t1, n_t2, n_t3) in
+             Some new_tm
+      else
+        (case tm of
+           %% if p && q then t1 else (if p && r then t2 else t3) --> if p then (if q then t1 else (if r then t2 else t3)) else t3)
+           | IfThenElse(p1, t1, IfThenElse(p2, t2, t3, a1), a2) ->
+             (case findCommonTerms(getConjuncts p1,  getConjuncts p2) of
+                | ([], _, _) -> None
+                | (common_cjs, rem_p1_cs, rem_p2_cs) ->
+                  let new_tm =
+                  Utilities.mkIfThenElse(mkConj common_cjs,
+                                         Utilities.mkIfThenElse(mkConj rem_p1_cs, t1, Utilities.mkIfThenElse(mkConj rem_p2_cs, t2, t3)),
+                                         t3)
+                  in Some new_tm)
+           | _ -> None)
+    | _ -> None
+
+op simpIf1 (spc: Spec) (tm: MSTerm): MSTerm =
+  case simpIf spc tm of
+    | None -> tm
+    | Some simp_tm -> simp_tm
 end-spec
