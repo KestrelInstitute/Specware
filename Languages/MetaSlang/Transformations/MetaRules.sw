@@ -174,7 +174,7 @@ op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
                  flattenConjunct(new_cj, vs, i)
                | (Record(prs1, _), Record(prs2, _)) ->
                  let new_cjs = map (fn ((_, st1), (_, st2)) -> mkEquality(inferType(spc, st1), st1, st2)) (zip(prs1, prs2)) in
-                 flattenConjuncts(new_cjs, [], i)
+                 flattenConjuncts(new_cjs, vs, i)
                | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, vs, [], i, false) in
                       (vs, new_cjs ++ [new_cj], i))
           | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, vs, [], i, false) in
