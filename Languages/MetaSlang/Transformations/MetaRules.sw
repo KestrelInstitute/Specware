@@ -184,7 +184,7 @@ op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
           then
             let v_ty = inferType(spc, tm) in
             let new_var = (existVarId^show i, v_ty) in
-            let (vs, ncjs1, i) = flattenConjunct(mkEquality(v_ty, mkVar new_var, tm), new_var:: vs, i + 1) in
+            let (vs, ncjs1, i) = flattenConjunct(mkEquality(v_ty, tm, mkVar new_var), new_var:: vs, i + 1) in
             (mkVar new_var, vs, ncjs1 ++ ncjs, i)
         else
         case tm of
