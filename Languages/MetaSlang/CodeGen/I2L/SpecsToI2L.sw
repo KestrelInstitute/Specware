@@ -313,6 +313,22 @@ SpecsToI2L qualifying spec
               -> 
               I_BoundedNat n
 
+          | Lambda ([(VarPat ((X,_), _),
+                      Fun (Bool true, _, _),
+                      Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
+                             Var((X0,_), _),
+                             _)
+                      )],
+                    _)
+            | X = X0 
+              -> 
+              (case fits_in_pred of
+                 | "fitsIn1Bits?"  -> I_BoundedNat 1
+                 | "fitsIn8Bits?"  -> I_BoundedNat 8
+                 | "fitsIn16Bits?" -> I_BoundedNat 16
+                 | "fitsIn32Bits?" -> I_BoundedNat 32
+                 | _ -> I_Primitive I_Nat)
+
           | _ ->
             I_Primitive I_Nat)
 
