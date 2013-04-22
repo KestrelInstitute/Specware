@@ -436,12 +436,10 @@ I2LToC qualifying spec
   op c4PrimitiveType (prim : I_Primitive) : C_Type =
     case prim of
       | I_Bool   -> C_Int8
-      | I_Nat    -> % let _ = writeLine ("I2LToC Unbounded Nat treated as unsigned 32 bits") in 
-                    let _ = writeLine ("I2LToC Warning: unbound Nat, using C_UInt32") in
-                    C_UInt32
-      | I_Int    -> % let _ = writeLine ("I2LToC Unbounded Int treated as signed 32 bits")   in 
-                    let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int32") in
-                    C_Int32
+      | I_Nat    -> let _ = writeLine ("I2LToC Warning: unbounded Nat, using C_UInt64") in
+                    C_UInt64
+      | I_Int    -> let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int64") in
+                    C_Int64
       | I_Char   -> C_Char
       | I_String -> C_String
       | I_Float  -> C_Float
