@@ -61,24 +61,9 @@ CG qualifying spec
     def strip typ =
       case typ of
         %% new case to preserve subtypes of Nat:
-        | Subtype (Base (Qualified ("Nat", "Nat"), [], _),
-                   %% {x : Nat -> x < n} where n is a Nat
-                   Lambda ([(VarPat ((X,_), _),
-                             Fun (Bool true, _, _),
-                             Apply (Fun (Op (Qualified (_, pred), _), _, _),
-                                    Record ([(_, Var((X0,_), _)),
-                                             (_, Fun (Nat n, _, _))],
-                                            _),
-                                    _)
-                             )],
-                           _),
-                   _)
-           | X = X0 && pred in? ["<=", "<"] 
-          -> 
-          typ
-
+        | Subtype (parent_type as Base (Qualified ("Nat",     "Nat"), [], _), _, _) -> typ
+        | Subtype (parent_type as Base (Qualified ("Integer", "Int"), [], _), _, _) -> typ
         | Subtype (typ, _, _) -> strip typ
-
         | Base (qid, typs, a) ->
           (case findTheType (spc, qid) of
              | Some info ->

@@ -279,24 +279,42 @@ SpecsToI2L qualifying spec
      %     "(e.g. \"{l:List("^printType(ptyp)^")| length(l) <= 32}\")")
      % ----------------------------------------------------------------------
 
-      | Subtype (Base (Qualified ("Nat", "Nat"), [], _),
-                 %% {x : Nat -> x < n} where n is a Nat
-                 Lambda([(VarPat((X,_),_),
-                          Fun (Bool true, _, _),
-                          Apply(Fun(Op(Qualified(_,pred),_),_,_),
-                                Record([(_,Var((X0,_),_)),
-                                        (_,Fun(Nat(n),_,_))],
-                                       _),
-                                _)
-                        )],_),_) 
+      | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _)
         -> 
-        if X = X0 then 
-          (case pred of
-             | "<=" ->  I_BoundedNat n
-             | "<"  ->  I_BoundedNat (n - 1)
-             | _    ->  I_Primitive  I_Nat)
-        else 
-          I_Primitive I_Nat
+        (case pred of
+          %% {x : Nat -> x < n} where n is a Nat
+          | Lambda([(VarPat((X,_),_),
+                     Fun (Bool true, _, _),
+                     Apply(Fun(Op(Qualified(_,pred),_),_,_),
+                           Record([(_,Var((X0,_),_)),
+                                   (_,Fun(Nat(n),_,_))],
+                                  _),
+                           _)
+                     )],_)
+            ->
+            if X = X0 then 
+              (case pred of
+                 | "<=" ->  I_BoundedNat n
+                 | "<"  ->  I_BoundedNat (n - 1)
+                 | _    ->  I_Primitive  I_Nat)
+            else 
+              I_Primitive I_Nat
+
+          | Lambda ([(VarPat ((X,_), _),
+                      Fun (Bool true, _, _),
+                      Apply (Fun (Op (Qualified (_, "fitsInNBits?-1-1"), _), _, _),
+                             Record ([(_, Fun (Nat n, _, _)),
+                                      (_, Var((X0,_), _))],
+                                     _),
+                             _)
+                      )],
+                    _)
+            | X = X0 
+              -> 
+              I_BoundedNat n
+
+          | _ ->
+            I_Primitive I_Nat)
 
       | Subtype (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
         (case find_simple_constant_bounds pred of
