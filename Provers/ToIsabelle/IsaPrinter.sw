@@ -18,6 +18,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/LambdaLift
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/AbstractSyntax/PathTerm
+ import /Languages/MetaSlang/Transformations/RewriteRules
 % import /Languages/MetaSlang/Transformations/ArityNormalize
 
  op addObligations?: Bool = true
@@ -315,7 +316,7 @@ IsaTermPrinter qualifying spec
                                typeNameInfo = []}
 			value
     in
-    format(100, main_pp_val)
+    format(110, main_pp_val)
 
 
   op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
@@ -496,10 +497,12 @@ IsaTermPrinter qualifying spec
                                | Some new_el ->
                                  if hist = []
                                    then (el::new_el::elts, ops)
-                                   else let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
-                                        let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
-                                        % let _ = writeLine("Proof string:\n"^prf_str) in
-                                        (el::new_el::prf_el::elts, ops)
+                                   else
+                                     % let _ = writeLine("Generating proof for "^thm_name) in
+                                     let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
+                                     let prf_el = Pragma("proof", " Isa\n"^prf_str, "end-proof", noPos) in
+                                     % let _ = writeLine("Proof string:\n"^prf_str) in
+                                     (el::new_el::prf_el::elts, ops)
                            else (el::elts, ops)   % Not sure if this is meaningful
                        else
                          if anyTerm? prev_dfn
@@ -510,7 +513,7 @@ IsaTermPrinter qualifying spec
                              if hist = []
                                then (el::eq_oblig::elts, ops)
                              else let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
-                                  let prf_el = Pragma("proof", "Isa\n"^prf_str, "end-proof", noPos) in
+                                  let prf_el = Pragma("proof", " Isa\n"^prf_str, "end-proof", noPos) in
                                   % let _ = writeLine("Proof string:\n"^prf_str) in
                                   (el::eq_oblig::prf_el::elts, ops)
                    | _ -> (el::elts, ops))
@@ -579,12 +582,13 @@ IsaTermPrinter qualifying spec
          case path of
            | [] -> mkVar arg_cong_v
            | i :: r_path ->
+         % let _ = writeLine("schemaFrom: "^anyToString path^"\n"^printTerm tm) in
          case tm of
-          | Apply _ | i = 0 && r_path = [] ->    % Avoid functional variable as leads to non-det match
-            mkVar arg_cong_v
           | Apply(ft as Fun(f, _, _), Record([("1", x), ("2", y)], a1), a2) | infixFn? f ->
             let [x, y] = pick(i, [x, y], r_path, j) in
             Apply(ft, Record([("1", x), ("2", y)], a1), a2)
+          | Apply _ | i = 0 && r_path = [] ->    % Avoid functional variable as leads to non-det match
+            mkVar arg_cong_v
           | Apply(x, y, a) ->
             if embed? Lambda x
               then let [y, x] = pick(i, [y, x], r_path, j) in
@@ -624,22 +628,29 @@ IsaTermPrinter qualifying spec
    % let _ = writeLine("schemaFrom"^anyToString path^"\n"^printTerm schema_tm) in
    mkLambda(mkVarPat arg_cong_v, schema_tm)
 
- op ppTermStrFix (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
-   replaceString(ppTermStr c parentTerm term, "e_pz", "?z")
+ op ppTermStrFix (c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Nat): String =
+   replaceString(ppTermStrIndent c parentTerm term indent, "e_pz", "?z")
 
  op equalityContext: ParentTerm = Infix (Left, 50)
 
- op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec): String =
+ op argCongTerm(c: Context, tm: MSTerm, path: PathTerm.Path, indent: Nat): String =
+   let schema_term = schemaFrom(tm, path) in
+   let schema_str = ppTermStrFix c Top schema_term indent in
+   "rule_tac f = \""^schema_str^"\" in arg_cong"
+
+ op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Nat): String =
    let (_, path) = changedPathTerm(before, after) in
-   ppTermStr c equalityContext after^"\"  by ("
+   let rule_str = ruleToIsaRule c rl_spc in
+   ppTermStrIndent c equalityContext after indent^"\"\n      by ("
      ^(if path = [] then ""
-       else let schema_term = schemaFrom(before, path) in
-            "rule_tac f = \""^(ppTermStrFix c Top schema_term)^"\" in arg_cong, ")
-     ^ruleToIsaRule c rl_spc^")\n"
+       else let arg_cong_str = argCongTerm(c, before, path, indent + 4) in
+            arg_cong_str^(if length arg_cong_str + length rule_str > 90 then ",\n"^(blanks(indent - 10)) else ", "))
+     ^rule_str^")\n"
 
   op chainedEqualityProof(c: Context, init_tm: MSTerm, f_path: PathTerm.Path,
                           hist: TransformHistory, init_str: String, indent: Nat)
        : String =
+    let _ = printTransformHistory hist in
     flatten(tabulate(length hist,
                      fn i ->
                        let (tr_tm, rl_spc) = hist@i in
@@ -648,7 +659,7 @@ IsaTermPrinter qualifying spec
                         else spaces indent^"also have \"... = ")
                        ^ transformedTermPlusProof(c, if i = 0 then init_tm
                                                      else fromPathTerm((hist@(i-1)).1, f_path),
-                                                  tr_tm, rl_spc)))
+                                                  tr_tm, rl_spc, indent + 16)))
 
   op generateProofForRefineObligation(c: Context, eq_tm: MSTerm, init_dfn: MSTerm, hist: TransformHistory, spc: Spec): String =
     let (lhs, rhs) = equalityArgs eq_tm in
@@ -656,12 +667,14 @@ IsaTermPrinter qualifying spec
     let init_dfn = fromPathTerm(init_dfn, path) in
     let f_path = 0 :: path in
       "proof -\n"
-    ^ "  have \"           "^(ppTermStr c equalityContext lhs)^"\n"
-    ^ "                 = "^(ppTermStr c equalityContext init_dfn)^"\"  by ("^unfoldFn lhs^")\n"
+    ^ "  have \"           "^(ppTermStrIndent c equalityContext lhs 19)^"\n"
+    ^ "                 = " ^(ppTermStrIndent c equalityContext init_dfn 19)^"\"\n"
+    ^ "    by ("^unfoldFn lhs^")\n"
     ^ chainedEqualityProof(c, init_dfn, f_path, hist, "  also have \"... = ", 2)
-    ^ "  also have \"... = "^(ppTermStr c equalityContext rhs)^"\"  by ("^unfoldFn rhs^")\n"
+    ^ "  also have \"... = "^(ppTermStr c equalityContext rhs)^"\"\n"
+    ^ "    by ("^unfoldFn rhs^")\n"
     ^ "  finally show ?thesis by assumption\n"
-    ^ "qed"
+    ^ "qed\n"
 
   op generateProofForRefinedPostConditionObligation
        (c: Context, new_pcond: MSTerm, prev_pcond: MSTerm, conds: MSTerm, hist: TransformHistory): String =
@@ -669,19 +682,22 @@ IsaTermPrinter qualifying spec
     %if true then "" else
     %let path = pathWithinDef lhs in
     %let init_dfn = fromPathTerm(init_dfn, path) in
-    let f_path = 1 :: [] in %path in
+    let (_, f_path) = changedPathTerm(prev_pcond, new_pcond) in %path in
+    let prev_changed_subtm = fromPathTerm(prev_pcond, f_path) in
+    % let _ = writeLine("genProof f_path: "^anyToString f_path^"\n"^printTerm prev_changed_subtm) in
+    let arg_cong_str =  argCongTerm(c, prev_pcond, f_path, 43) in
       "proof -\n"
-    ^ "  have \""^(ppTermStr c equalityContext prev_pcond)^"\n"
-    ^ "       = "^(ppTermStr c equalityContext new_pcond)^"\"\n"
+    ^ "  have \""^(ppTermStrIndent c equalityContext prev_pcond 7)^"\n"
+    ^ "      = " ^(ppTermStrIndent c equalityContext new_pcond 7)^"\"\n"
     ^ "  proof -\n"
-    ^ "    have \"           "^(ppTermStr c equalityContext prev_pcond)^"\n"
-    ^ chainedEqualityProof(c, prev_pcond, f_path, hist, "                   = ", 4)
-    ^ "    finally show ?thesis by assumption\n"
+    ^ "    have \"           "^(ppTermStrIndent c equalityContext prev_changed_subtm 20)^"\n"
+    ^ chainedEqualityProof(c, prev_pcond, 1 :: f_path, hist, "                   = ", 4)
+    ^ "    finally show ?thesis by ("^arg_cong_str^")\n"
     ^ "    qed\n"
     ^ "  moreover\n"
-    ^ "  assume \""^(ppTermStr c Top new_pcond)^"\"\n"
+    ^ "  assume \""^(ppTermStrIndent c Top new_pcond 10)^"\"\n"
     ^ "  ultimately show ?thesis ..\n"
-    ^ "qed"
+    ^ "qed\n"
 
 
   op makeSubstFromRecPats(pats: List(Id * MSPattern), rec_tm: MSTerm, spc: Spec): List (MSPattern * MSTerm) =
@@ -2748,8 +2764,6 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let Some(_,opt_ty) = findLeftmost (fn (id1,_) -> id = id1) (coproduct(spc, ty)) in
    mkEmbedPat(id,mapOption mkWildPat opt_ty,ty)
 
- op ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
-   toString(format(80, ppTerm c parentTerm term))
 
  op  ppTerm : Context -> ParentTerm -> MSTerm -> Pretty
  def ppTerm c parentTerm term =
@@ -2902,7 +2916,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | _ ->
         let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
               enclose?(encl?,
-                       prLinearCat (if same? then -2 else 2)
+                       prLinearCat (if same? then -2 else 2)    % -2 is mainly for conjunction
                          [[ppTerm c f1 t1, prSpace],
                           [oper, prSpace, ppTerm c f2 t2]])
         in
@@ -2932,7 +2946,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              if p1 = p2
                then prInfix (Infix (Left, p2), Infix (Right, p2),
                              p1 ~= 35, % not And % true,  % be conservative a1 ~= a2
-                             a1=a2, t1, pr_op, t2)
+                             a1 = Right && a2 = Right, t1, pr_op, t2)
                else prInfix (Infix (Left, p2), Infix (Right, p2), p1 > p2, false, t1, pr_op, t2)))
      | Apply(term1 as Fun (Not, _, _),term2,_) ->
        enclose?(case parentTerm of
@@ -2976,7 +2990,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                   | Infix(_,prec) -> true  % prec > 18
                   | _ -> false,
                 prBreakCat 2 [[ppBinder binder,
-                               prConcat(addSeparator prSpace (map (ppVarWithType c) vars)),
+                               prBreak 2(addSeparator prSpace (map (ppVarWithType c) vars)),
                                prString ". "],
                               [ppTerm c Top term]])
      | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
@@ -3042,6 +3056,16 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | TypedTerm (tm, ty, _) ->
        enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top true ty]])
      | mystery -> fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
+
+ op ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
+   toString(format(110, ppTerm c parentTerm term))
+
+ op ppTermStrIndent(c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Nat): String =
+   let indentPP = PrettyPrint.blanks indent in
+   let termPP   = ppTerm c parentTerm term in
+   let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indentPP, termPP] in
+   let str      = PrettyPrint.toString(format(120,termPP)) in
+   subFromTo(str, indent, length str)
 
  op unfoldToBaseNamedType(spc: Spec, ty: MSType): MSType =
    % let _ = writeLine("ufnp: "^printType ty) in
@@ -3519,8 +3543,7 @@ def infix? parentTerm =
     | Infix _ -> true
     | _ -> false
 
-op  termFixity: Context -> MSTerm -> Option Pretty * Fixity * Bool * Bool
-def termFixity c term = 
+op termFixity (c: Context) (term: MSTerm): Option Pretty * Fixity * Bool * Bool = 
   case term of
     | Fun (termOp, _, _) -> 
       (case termOp of
@@ -3536,8 +3559,8 @@ def termFixity c term =
                   | Nonfix -> (None, Nonfix, false, false)
                   | Infix(assoc, precnum) -> (Some(ppInfixId id), Infix(assoc, convertPrecNum precnum),
                                               true, false))
-         | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 35),true, false)
-         | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 30),true, false)
+         | And            -> (Some(lengthString(1, "\\<and>")),Infix (Right, 35), true, false)
+         | Or             -> (Some(lengthString(1, "\\<or>")), Infix (Right, 30), true, false)
          | Implies        -> (Some(lengthString(3, "\\<longrightarrow>")), Infix (Right, 25), true, false) 
          | Iff            -> (Some(prString "="), Infix (Left, 50), true, false)
          | Not            -> (Some(lengthString(1, "\\<not>")), Infix (Left, 40), false, false) % ?
@@ -3711,6 +3734,6 @@ op unfoldMonadBinds(spc: Spec): Spec =
           | _ -> simplifyUnfoldCase spc tm
   in
   mapSpecLocalOps (unfold, id, id) spc
-endspec
+end-spec
 
 
