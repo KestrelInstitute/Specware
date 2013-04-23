@@ -265,16 +265,19 @@ op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
                              | _ -> false)
     ty
 
-op getConjoinedEqualities(t: MSTerm): MSTerms =
+op getConjoinedEqualities(spc: Spec) (t: MSTerm): MSTerms =
   case t of
     | IfThenElse(_, t1, t2, _) ->
-      getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+      getConjoinedEqualities spc t1 ++ getConjoinedEqualities spc t2
     | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),_) ->
-      getConjoinedEqualities t1 ++ getConjoinedEqualities t2
+      getConjoinedEqualities spc t1 ++ getConjoinedEqualities spc t2
     %% case
     | Apply(Lambda(matches, _), _, _) ->
-      foldl (fn (eqs, (_, _, bod)) -> eqs ++ getConjoinedEqualities bod) [] matches
-    | Let(_, bod, _) -> getConjoinedEqualities bod
+      foldl (fn (eqs, (_, _, bod)) -> eqs ++ getConjoinedEqualities spc bod) [] matches
+    | Let(_, bod, _) -> getConjoinedEqualities spc bod
+    | _ | unfoldable?(t, spc) ->
+      let uf_tm = simplify spc (unfoldTerm(t, spc)) in
+      getConjoinedEqualities spc uf_tm 
     | _ -> [t]
 
 op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
@@ -290,15 +293,20 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
             (mapPartial
                (fn cj ->
                   case cj of
-                    | Apply(Fun(Equals,_,_),Record([(_,lhs),_], _),_) ->
-                      (case lhs of
-                         | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
-                             | qid nin? stored_qids && equalVar?(v, state_var)
-                                  && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid))
-                                  ->
-                           % let _ = if show qid = "deliver_in_udp_opt2" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
-                           Some qid
-                         | _ -> None)
+                    | Apply(Fun(Equals,_,_),Record([(_,lhs), (_,rhs)], _),_) ->
+                      let def bindTerm lhs =
+                           case lhs of
+                              | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)
+                              | qid nin? stored_qids && equalVar?(v, state_var)
+                                && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid))
+                                ->
+                                % let _ = if show qid = "deliver_in_udp_opt2" then writeLine(show(primaryOpName info)^" "^printType ty) else () in
+                                Some qid
+                              | _ -> None
+                      in
+                      (case bindTerm lhs of
+                         | None -> bindTerm rhs
+                         | st -> st)
                     | Apply(Fun(Op(qid,_), _, _), Var(v, _), _)    % Bool
                         | qid nin? stored_qids && equalVar?(v, state_var)
                           && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
@@ -308,7 +316,7 @@ op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
                           && ~(finalizeExcludesDefinedOps? && definedOp?(spc, qid)) ->
                       Some qid
                     | _ -> None)
-            (getConjoinedEqualities post_condn))
+            (getConjoinedEqualities spc post_condn))
           ++ stored_qids
         | None -> stored_qids)  
     [] spc.ops
@@ -355,16 +363,16 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                    (id, tm))
               id_pat_prs)
    in
-   let def makeDef(tm, inh_cjs) =
+   let def makeDef(tm: MSTerm, inh_cjs: MSTerms, seenQIds: QualifiedIds): MSTerm =
          case tm of
            | IfThenElse(p, q, r, a) ->
-             IfThenElse(p, makeDef(q, inh_cjs), makeDef(r, inh_cjs), a)
-           | Let(binds, bod, a) -> Let(binds, makeDef(bod, inh_cjs), a)
+             IfThenElse(p, makeDef(q, inh_cjs, seenQIds), makeDef(r, inh_cjs, seenQIds), a)
+           | Let(binds, bod, a) -> Let(binds, makeDef(bod, inh_cjs, seenQIds), a)
            | Apply(Lambda(matches, a1), e, a2) ->
-             let n_matches = map (fn (p, c, bod) -> (p, c, makeDef(bod, inh_cjs))) matches in
+             let n_matches = map (fn (p, c, bod) -> (p, c, makeDef(bod, inh_cjs, seenQIds))) matches in
              Apply(Lambda(n_matches, a1), e, a2) 
            | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),a) ->
-             (let cjs = getConjuncts tm in
+             (let cjs = getExpandedConjuncts tm in
               let cjs = inh_cjs ++ cjs in
               case findLeftmost (fn cj -> case cj of
                                             | Let _ -> true
@@ -372,7 +380,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                                             | Apply(Lambda _, _, _) -> true
                                             | _ -> false)
                      cjs of
-                | Some complex_cj -> makeDef(complex_cj, delete(complex_cj, cjs))
+                | Some complex_cj -> makeDef(complex_cj, delete(complex_cj, cjs), seenQIds)
                 | None -> 
               let (state_rec_prs, opt_rec_prs) = foldl recordItemVal ([], []) cjs in
               let state_res = case tryIncrementalize(state_rec_prs) of
@@ -387,7 +395,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                 else mkCanonRecord((state_id, state_res) :: opt_rec_prs))
            | _ ->
          if inh_cjs ~= []
-           then makeDef(mkConj(inh_cjs ++ [tm]), [])
+           then makeDef(mkConj(inh_cjs ++ [tm]), [], seenQIds)
          else
          case tm of
            | Apply(Fun(Equals,_,_), _, _) ->
@@ -404,13 +412,23 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
            | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term in "^show op_qid^"\n"
                           ^printTerm tm);
                    mkVar("Unrecognized_term", result_ty))
-       def recordItemVal((state_itms, result_itms), cj): List(Id * MSTerm) * List(Id * MSTerm) =
+       def recordItemVal((state_itms: List(Id * MSTerm), result_itms: List(Id * MSTerm)), cj: MSTerm)
+             : List(Id * MSTerm) * List(Id * MSTerm) =
          case cj of
            | Apply(Fun(Equals,_,_),
                    Record([(_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _)), (_, rhs)], _), _)
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, rhs) :: state_itms, result_itms)
+           | Apply(Fun(Equals,_,_),     % Reversed orientation of equality v = o s'
+                   Record([(_, rhs), (_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _))], _), _)
+               | qid in? stored_qids && equalVar?(state_var, v) ->
+             ((qualifiedIdToField qid, rhs) :: state_itms, result_itms)
            | Apply(Fun(Equals,_,_),Record([(_, lhs), (_, rhs)], _), _)
+               | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
+             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
+                                 result_tuple_info in
+             (state_itms, (id, rhs) :: result_itms)
+           | Apply(Fun(Equals,_,_),Record([(_, rhs), (_, lhs)], _), _)     % Reversed orientation of equality
                | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
              let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
                                  result_tuple_info in
@@ -442,9 +460,18 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
                  (merged_state_items ++ state_itms, result_itms)
              else  % Not sure what to do here
              (writeLine("For "^show op_qid^"\nIgnoring conditional conjunct\n"^printTerm cj);
-              (state_itms, result_itms)) 
-           | _ -> (writeLine("For "^show op_qid^"\nIgnoring conjunct\n"^printTerm cj);
-                   (state_itms, result_itms))
+              (state_itms, result_itms))
+           | _ ->
+             (writeLine("For "^show op_qid^"\nIgnoring conjunct\n"^printTerm cj);
+              (state_itms, result_itms))
+       def getExpandedConjuncts(tm: MSTerm): MSTerms =
+         case tm of
+           | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) -> getExpandedConjuncts p ++ getExpandedConjuncts q
+           | _ ->
+             if unfoldable?(tm, spc)
+               then let uf_tm = simplify spc (unfoldTerm(tm, spc)) in
+                    getExpandedConjuncts uf_tm 
+             else [tm]
        def compatibleItmLists?(p_state_itms, q_state_itms) =
          length p_state_itms = length q_state_itms
            && forall? (fn ((idp, _), (idq, _)) -> idp = idq) (zip(p_state_itms, q_state_itms))
@@ -498,7 +525,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
              Lambda([(binds, p, replaceBody(o_bod, bod))], a)
            | _ -> bod
    in
-   let dfn = replaceBody(top_dfn, makeDef(post_condn, [])) in
+   let dfn = replaceBody(top_dfn, makeDef(post_condn, [], [])) in
    let unfold_tuple_fns = map Unfold stored_qids in
    let (new_dfn_ptm, hist) = rewriteWithRules(spc, unfold_tuple_fns, op_qid, toPathTerm dfn, []) in
    fromPathTerm new_dfn_ptm
