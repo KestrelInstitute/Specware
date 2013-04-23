@@ -629,6 +629,10 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       | Embed _ -> Some "embed"
       | Embedded _ -> Some "embedded"
       | Select _ -> Some "select"
+      | Nat x -> Some(show x)
+      | Char x -> Some(show x)
+      | String x -> Some(x)
+      | Bool x -> Some(show x)
       | _ -> None
 
    op [a] searchPred(s: String): ATerm a -> Bool =
@@ -649,6 +653,10 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       | _ -> (fn t ->
                 case t of
                   | Apply(Fun(f, _, _), _, _) ->
+                    (case funString f of
+                       | Some fn_str -> fn_str = s
+                       | None -> false)
+                  | Fun(f, _, _) ->
                     (case funString f of
                        | Some fn_str -> fn_str = s
                        | None -> false)
