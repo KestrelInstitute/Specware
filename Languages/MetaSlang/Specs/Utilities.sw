@@ -697,6 +697,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
 
  op renameBoundVars(term: MSTerm, vs: List Var): MSTerm =
+   if vs = [] then term
+   else
    let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
@@ -950,10 +952,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | _ ->
    case t2 of
      | Fun(Bool true,_,_)  -> mkOr(t1,t3)
-     | Fun(Bool false,_,_) -> mkAnd(negate t1,t3)
+     %| Fun(Bool false,_,_) -> mkAnd(negate t1,t3)
      | _ ->
    case t3 of
-     | Fun(Bool true,_,_)  -> mkOr(negate t1,t2)
+     %| Fun(Bool true,_,_)  -> mkOr(negate t1,t2)
      | Fun(Bool false,_,_) -> mkAnd(t1,t2)
      | _ ->
    if equalTerm?(t2, t3) && sideEffectFree t1 then t2
@@ -1050,8 +1052,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | _ -> false
 
  
- op  getConjuncts: [a] ATerm a -> List (ATerm a)
- def getConjuncts t =
+ op [a] getConjuncts(t: ATerm a): List (ATerm a) =
    case t of
      | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_)
        -> getConjuncts p ++ getConjuncts q
@@ -2051,6 +2052,32 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
            | None -> None)
       | _ -> None
 
+  op opDefined?(spc: Spec, qid: QualifiedId): Bool =
+   case findTheOp(spc, qid) of
+     | Some info -> ~(anyTerm? info.dfn)
+     | None -> false
+
+  op unfoldable?(tm: MSTerm, spc: Spec): Bool =
+    case tm of
+      | Fun(Op(qid,_),_,_) -> opDefined?(spc, qid)
+      | Apply(f, _, _) -> unfoldable?(f, spc)
+      | _ -> false
+
+  op unfoldableWithOp(tm: MSTerm, spc: Spec): Option QualifiedId =
+    case tm of
+      | Fun(Op(qid,_),_,_) ->
+        if opDefined?(spc, qid) then Some qid else None
+      | Apply(f, _, _) -> unfoldableWithOp(f, spc)
+      | _ -> None
+
+  op unfoldTerm(tm: MSTerm, spc: Spec): MSTerm =
+    case tm of
+      | Apply(f, a, p) -> Apply(unfoldTerm(f, spc), a, p)
+      | _ ->
+    case unfoldOpRef(tm, spc) of
+      | Some tm -> tm
+      | None -> tm
+
   type TermSubst = List(MSTerm * MSTerm)
 
   op mkFoldSubst(tms: MSTerms, spc: Spec): TermSubst =
@@ -2060,10 +2087,10 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                   | None -> None)
       tms
 
-  op termSubst1 (sbst: TermSubst) (s_tm: MSTerm): MSTerm =
+  op termSubst1 (sbst: TermSubst) (s_tm: MSTerm): Option MSTerm =
     case findLeftmost (fn (t1,_) -> equalTerm?(t1, s_tm)) sbst of
-      | Some (_,t2) -> t2
-      | None -> s_tm
+      | Some (_,t2) -> Some t2
+      | None -> None
 
   op printTermSubst(sbst: TermSubst): () =
     (writeLine "TermSubst:";
@@ -2074,7 +2101,18 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     else
 %    let _ = writeLine(printTerm tm) in
 %    let _ = printTermSubst sbst in
-    let result =  mapTerm (termSubst1 sbst, id, id) tm in
+    let free_vs = foldl (fn (fvs, (t1, t2)) -> removeDuplicateVars(freeVars t1 ++ freeVars t2 ++ fvs)) [] sbst in
+    let def repl(tm) =
+          replaceTerm(subst_tm, fn _ -> None, fn _ -> None) tm
+        def subst_tm(stm) =
+          let shared_vars = filter (fn v -> inVars?(v, free_vs)) (boundVars stm) in
+          if shared_vars = [] then termSubst1 sbst stm
+          else let rn_stm = renameBoundVars(stm, shared_vars) in
+               let new_rn_stm = repl rn_stm in
+               Some new_rn_stm
+    in
+    let result =  repl tm
+    in
 %    let _ = writeLine("= "^printTerm result) in
     result
 
@@ -2086,7 +2124,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     else
 %    let _ = writeLine(printType ty) in
 %    let _ = printTermSubst sbst in
-    let result =  mapType (termSubst1 sbst, id, id) ty in
+    let result =  replaceType (termSubst1 sbst, fn _ -> None, fn _ -> None) ty in
 %    let _ = writeLine("= "^printType result) in
     result
 
