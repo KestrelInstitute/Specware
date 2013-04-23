@@ -220,7 +220,7 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
             | _ -> Some path
         def compare(stm1, stm2, path) =
           %% Returns path to first difference or else None if they are equal
-          % let _ = writeLine("rst: "^anyToString path^"\n"^printTerm tm) in
+          % let _ = writeLine("rst: "^anyToString path^"\n"^printTerm stm1^"\n"^printTerm stm2) in
           if equalTerm?(stm1, stm2) then None
           else
           case (stm1, stm2) of

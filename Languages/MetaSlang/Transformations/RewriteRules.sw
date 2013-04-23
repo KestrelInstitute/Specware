@@ -76,7 +76,7 @@ RewriteRules qualifying spec
     %                                      (fromPathTerm(t1, path), fromPathTerm(t2, path)))
     % in
     (app (fn (tm, rs) -> (writeLine(showRuleSpec rs);
-                         writeLine(printTerm tm)))
+                          writeLine(printTerm tm)))
       hist
     %; app (fn (t1, t2) -> writeLine(printTerm t1^" --> "^printTerm t2)) changed_terms
      ))

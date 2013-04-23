@@ -25,7 +25,7 @@ and then qualify the resulting spec if the spec was given a name.
  op  noElaboratingMessageFiles: List String
  def noElaboratingMessageFiles = []
 
- def SpecCalc.evaluateSpec spec_elements defaultQual position = {
+ def SpecCalc.evaluateSpec (spec_elements: ExplicitSpecTerm) (defaultQual: Id) (position: Position) = {
     unitId <- getCurrentUID;
     unitStr <- return (uidToString unitId);
     when (unitStr nin? noElaboratingMessageFiles)
