@@ -69,20 +69,36 @@ import Script
 %% Returns:
 %%  An op with the pre (resp. post) conditions of the named input rules merged
 %%  into a single pre (resp. post) condition. 
-op SpecTransform.mergeRules(spc:Spec)(qids:QualifiedIds):Env Spec = 
+op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec = 
   let _ = writeLine "MergeRules!" in
+  let (fname::qids) = args in
   let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
-  { ruleSpecs <- mapM (fn o -> getOpPreAndPost(spc,o)) qids
-  ; ps <- combineRuleSpecs ruleSpecs
+  { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o)) qids
+  ; ps <- combineRuleSpecs spc ruleSpecs
   ; let (vars,is) = unzip ps in
     let vars' = nubBy (fn (i,j) -> i.1 = j.1 && i.2 = j.2) (flatten vars : ExVars) in 
     let _ = writeLine ("Starting with " ^ printDNF (flatten is)) in
     let (rterm,pred) = bt [] (map (fn i -> i.1) vars') (flatten is) in
     let _ = writeLine ("Result is " ^ printTerm rterm) in
-    let calculatedPreconditions = Bind (Exists,vars',dnfToTerm pred,noPos)  in
-    let _ = writeLine ("Preconditions are:\n " ^ printTerm calculatedPreconditions) in
-    return ()
-  ; return spc}
+    let calculatedPostcondition = Bind (Exists,vars',rterm,noPos)  in
+    %% Use this representation, rather than DNF, since it's easier to read.
+    let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
+    % let calculatedPreconditions = Bind (Exists,vars',dnfToTerm (negateDNF pred),noPos)  in
+    let calculatedPreconditions = Bind (Exists,vars',preAsConj,noPos)  in
+    let _ = writeLine ("Preconditions are:\n " ^ printTerm preAsConj) in
+
+    % Construct the new term
+    let stateType = rs1.1 in
+    let preStateVar = rs1.2 in
+    let postStateVar = rs1.4 in
+    let stPre = Subtype (stateType, Lambda ([(VarPat ((preStateVar, stateType), noPos), mkTrue (),preAsConj)],noPos), noPos) in
+    let stPost = Subtype (stateType, Lambda ([(VarPat ((postStateVar, stateType), noPos), mkTrue (),calculatedPostcondition)],noPos), noPos) in
+    let stType = Arrow (stPre,stPost,noPos) in
+    let stBody = Any noPos in
+    let body = TypedTerm (stBody, stType, noPos) in
+    let spc' = addOpDef(spc,fname,Nonfix,body) in
+    return spc'
+  }
   
 
 
@@ -167,12 +183,12 @@ op getLambdaComponents(spc:Spec)(tm:MSTerm):Env (Id * MSType * MSTerm) =
 %% atomic formula. Moreover, we normalize the names of the pre- and poststate 
 %% variables.
 %% FIXME: Currently, there's no variable renaming going on...
-op combineRuleSpecs(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm)):Env (List (ExVars * DNFRep)) =
+op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm)):Env (List (ExVars * DNFRep)) =
   let types = map (fn r -> r.1) rules  in
   let preconditions = map (fn r -> case r.3 of Some t -> t | None -> (mkTrue ())) rules in
   let postconditions = map (fn r -> case r.5 of Some t -> t | None -> (mkTrue ())) rules in
-  { pres <- mapM normalizeCondition preconditions 
-  ; posts <- mapM normalizeCondition postconditions
+  { pres <- mapM (normalizeCondition spc) preconditions 
+  ; posts <- mapM (normalizeCondition spc) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
     let _ = (writeLine (anyToString (length (flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
     % let _ = map printIt ps in 
@@ -182,47 +198,50 @@ op combineRuleSpecs(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm)):Env (
 type ExVars = List (AVar Position)
 type DNFRep = (List (List MSTerm))
 %% Remove existential quantifers, flatten to DNF.
-op normalizeCondition(tm:MSTerm):Env(ExVars *  DNFRep) = 
+op normalizeCondition(spc:Spec)(tm:MSTerm):Env(ExVars *  DNFRep) = 
   % let _ = writeLine ("Normalizing " ^ printTerm tm) in
   case tm of
     | Bind (Exists,vars,body,_) -> 
-      { dnf <- splitConjuncts body   
+      { dnf <- splitConjuncts spc body   
       ; return (vars,dnf)
       }
     | _ -> 
-      { dnf <- splitConjuncts tm
+      { dnf <- splitConjuncts spc tm
       ; return ([],dnf)
       }
 
 %% Convert a term into DNF, represented as a list of lists.
-op splitConjuncts(tm:MSTerm):Env DNFRep =
+op splitConjuncts(spc:Spec)(tm:MSTerm):Env DNFRep =
   case tm of
    | (Apply (Fun (f as And,_,_), Record (args,_),_)) -> 
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { r1 <- splitConjuncts a1
-       ; r2 <- splitConjuncts a2
+       { r1 <- splitConjuncts spc a1
+       ; r2 <- splitConjuncts spc a2
        ; return (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1))
        }
    | (Apply (Fun (f as Or,_,_), Record (args,_),_)) -> 
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { r1 <- splitConjuncts a1
-       ; r2 <- splitConjuncts a2
+       { r1 <- splitConjuncts spc a1
+       ; r2 <- splitConjuncts spc a2
        ; return (r1 ++ r2)
        }
    | IfThenElse (p,t,e,_) -> 
-     { rp <- splitConjuncts p;
-       rt <- splitConjuncts t;
-       re <- splitConjuncts e;
+     { rp <- splitConjuncts spc p;
+       rt <- splitConjuncts spc t;
+       re <- splitConjuncts spc e;
        let ut = andDNF rp rt in
        % FIXME: This is not properly negating the guard for the
        % else branch.
        let ue = andDNF (negateDNF rp) re in
        return (ut ++ ue)
       }
-     
-   | _ -> return [[tm]]
+   | _ | unfoldable? (tm,spc) ->
+         % let _ = writeLine ("Simplifying " ^ printTerm tm) in
+         splitConjuncts spc (simplifyOne spc (unfoldTerm (tm,spc)))
+   | _ -> % let _ = writeLine ("Can't simplify " ^ printTerm tm) in 
+          return [[tm]]
 
 
 
@@ -360,14 +379,17 @@ op valuation(i:DNFRep):Option Boolean =
 %% The 'BuildTree' operation.  Given a collection of conditions in
 %% disjunctive normal form, (as a DNFRep) return an expression that is
 %% a splitting tree, along with a predicate representing a precondition.
+%%
+%% The returned predicate is the **negation** of the precondition that the 
+%% function must have.
 op bt(assumptions:List MSTerm)(vars:List Id)(inputs:DNFRep):(MSTerm * DNFRep) =
   % let _ = writeLine "Under assumptions:" in
   % let _ = writeLine (printDNF [assumptions]) in
   % let _ = writeLine "With  inputs" in
   % let _ = writeLine (printDNF inputs) in
     case pick vars inputs of
-      | BTFalse -> (mkFalse (), negateConjunction assumptions)
-      | BTTrue _ -> (mkTrue (), [assumptions]) 
+      | BTFalse -> (mkFalse (), [assumptions])
+      | BTTrue _ -> (mkTrue (), []) 
       | BTSplit p -> 
           let pos = simplify p inputs in
           let neg = simplify (negateTerm p) inputs in
