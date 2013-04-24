@@ -9,6 +9,7 @@ spec
   import /Languages/MetaSlang/Transformations/PartialEval
   import /Languages/MetaSlang/Transformations/MetaTransform
   import /Languages/MetaSlang/Transformations/Simple
+  import /Languages/MetaSlang/Transformations/MergeRules
 
   def posOf(tr: TransformExpr): Position =
     case tr of
