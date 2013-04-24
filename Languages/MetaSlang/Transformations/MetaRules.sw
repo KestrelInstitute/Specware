@@ -22,8 +22,6 @@ Case 2:
 
 
 *)
-
-
 op dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
    case tm of
      | Let([(pat, b_tm)], m, a) ->
@@ -37,6 +35,12 @@ op dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
         | _ -> None)
      | _ -> None
 
+% tupleOfVars? determines whether a term is a tuple or record
+% construction, where each element is either:
+% 1. Exactly a variable appearing in the set 'vs'.
+% 2. Recursively, another tuple or record construction with all
+% elements variables, relative to 'vs'.
+%
 op tupleOfVars?(tm: MSTerm, vs: Vars): Bool =
   case tm of
     | Var(v, _) -> inVars?(v, vs)
@@ -44,6 +48,7 @@ op tupleOfVars?(tm: MSTerm, vs: Vars): Bool =
       forall? (fn (_,ti) -> tupleOfVars?(ti, vs)) flds
     | _ -> false
 
+%% ???
 op matchPats(tm: MSTerm, pat: MSPattern): VarPatSubst =
   case (tm, pat) of
     | (Var(v, _), pat) -> [(v, pat)]
@@ -53,6 +58,24 @@ op matchPats(tm: MSTerm, pat: MSPattern): VarPatSubst =
         [] (zip(tm_flds, pat_flds))
     | _ -> []
 
+
+
+%% Case merge nested patterns and guards to the top level, in the case
+%% where the body of a match is a function applied to a tuple of
+%% terms, all of which are variables (or tuples of variables, etc., as
+%% defined by by tupleOfVars?).
+%%
+%% fn | P1 | G1 -> (fn | (u1..un) | H1 -> e1 | w | H2 -> e2) (vi .. vk)
+%%    | P2 | G2 -> e3
+%%  { where (v1 .. vm) are the variable bound by pattern P1 }
+%% --> 
+%% fn | P1 && [vi..vk/u1..un]H1 -> [vi..vk/u1..un]e1
+%%    | P1 && [(vi..vk)/w]H2 -> [(vi..vk)/w]e2
+%%    | P2 | G2 -> e3
+%%
+%% Note that the branch alternatives and the inner patterns can be in
+%% any order; this rule simply shows the various cases in the
+%% transform.
 op caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
@@ -67,7 +90,7 @@ op caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
                                           tj))
                                       s_cases)
                                     ++ new_cases
-                                 | None -> (pi, ci, ti) :: new_cases)
+                                 | _ -> (pi, ci, ti) :: new_cases)
                          [] cases
       in
       if cases = merge_cases then None

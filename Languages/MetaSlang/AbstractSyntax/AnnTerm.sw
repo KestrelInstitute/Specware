@@ -2388,14 +2388,23 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
  %%%  Misc constructors
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-  op mkAndOp : [a] a -> ATerm a
- def mkAndOp a =
-   let bool_type = Boolean a in
-   let binary_bool_type = Arrow (Product ([("1",bool_type), ("2",bool_type)], a),
+  op [a] mkAndOp (pos:a):ATerm a =
+   let bool_type = Boolean pos in
+   let binary_bool_type = Arrow (Product ([("1",bool_type), ("2",bool_type)], pos),
 				 bool_type,
-				 a)
+				 pos)
    in
-     Fun (And, binary_bool_type, a)
+     Fun (And, binary_bool_type, pos)
+
+  op [a] mkOrOp (pos:a):ATerm a =
+   let bool_type = Boolean pos in
+   let binary_bool_type = Arrow (Product ([("1",bool_type), ("2",bool_type)], pos),
+				 bool_type,
+				 pos)
+   in
+     Fun (Or, binary_bool_type, pos)
+
+
 
   op mkABase : [b] QualifiedId * List (AType b) * b -> AType b
  def mkABase (qid, tys, a) = Base (qid, tys, a)
