@@ -190,7 +190,7 @@ op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTe
   { pres <- mapM (normalizeCondition spc) preconditions 
   ; posts <- mapM (normalizeCondition spc) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
-    let _ = (writeLine (anyToString (length (flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
+    let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
     % let _ = map printIt ps in 
     return rels
   }
