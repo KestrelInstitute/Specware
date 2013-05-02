@@ -5,7 +5,7 @@ AddDerivativeOps qualifying spec
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
  import /Library/Unvetted/Random
 
- type MSRules = List MSRule
+ % type MSRules = List MSRule
 
  type Augmentation  a = OpInfo * OpInfo * a
  type Augmentations a = List (Augmentation a)

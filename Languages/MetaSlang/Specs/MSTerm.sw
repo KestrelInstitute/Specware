@@ -15,6 +15,12 @@ MS qualifying spec
  type MSPatterns = List MSPattern
  type MSPattern  = APattern Position
 
+ type MSBindings = List MSBinding
+ type MSBinding  = MSPattern * MSTerm 
+
+ type MSRules    = List MSRule  % same as Match
+ type MSRule     = MSPattern * MSTerm * MSTerm 
+
  type Var          = AVar            StandardAnnotation
  type Match        = AMatch          StandardAnnotation
  type Fun          = AFun            StandardAnnotation
@@ -92,7 +98,7 @@ MS qualifying spec
 
  op mkRecord      : List (Id * MSTerm)                 -> MSTerm
  op mkLetRec      : List (Var       * MSTerm) * MSTerm -> MSTerm
- op mkLambda      : MSPattern * MSTerm                 -> MSTerm
+ op mkLambda      : MSBinding                          -> MSTerm
  op mkThe         : Var * MSTerm                       -> MSTerm
  op mkBind        : Binder * List Var * MSTerm         -> MSTerm
  op mkVar         : Var                                -> MSTerm
@@ -109,7 +115,7 @@ MS qualifying spec
  op mkLet1 (pat : MSPattern, val : MSTerm, body : MSTerm) : MSTerm = 
   Let ([(pat,val)], body, termAnn body)
 
- op mkLet  (bindings : List (MSPattern * MSTerm), body : MSTerm) : MSTerm =
+ op mkLet  (bindings : MSBindings, body : MSTerm) : MSTerm =
   case bindings of
     | [] -> body
     | (pat, val) :: bindings -> mkLet1 (pat, val, mkLet (bindings, body))

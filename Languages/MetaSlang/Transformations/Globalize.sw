@@ -9,7 +9,6 @@ Globalize qualifying spec
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
  type OpTypes         = AQualifierMap MSType
- type MSRule          = MSPattern * MSTerm * MSTerm
  type MSVar           = AVar Position
  type MSVarName       = Id
  type MSVarNames      = List MSVarName
