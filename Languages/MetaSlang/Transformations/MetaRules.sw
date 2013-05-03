@@ -336,6 +336,8 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
 op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
   structureCondEx(spc, tm, falseTerm)
 
+op useRestrictedPat?: Bool = false
+
 op simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | IfThenElse(t1, t2, t3, _) | embed? Fun t1 ->
@@ -347,23 +349,31 @@ op simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
       Some t2
     %% if p then q else r --> p && q || ~p && r
     %% if ex(x) p x then q else r  -->
-    %% | IfThenElse(condn as Bind(Exists, vs, bod, a), t2, t3, _) | boolType?(spc, t2) ->
-    %%  structureCondEx(spc, Bind(Exists, vs, mkConj[bod, t2], a), t3)
+    | IfThenElse(condn as Bind(Exists, _, _, _), t2, t3, a)  ->
+      (case structureEx spc condn of
+         | Some(n_condn as Let _) ->
+           simpIf spc (IfThenElse(n_condn, t2, t3, a))
+         | _ -> None)
     | IfThenElse(Let([(p1, t1)], pred_bod, a), t2, t3, _) ->
       let p1_tm = patternToTerm p1 in
       let new_if0 = IfThenElse(pred_bod, t2, t3, a) in
       let new_if1 = case patternToTerm p1 of
-                      | Some p1_tm -> termSubst(new_if0, [(t1, p1_tm)]) 
+                      | Some p1_tm -> termSubst(simplify spc new_if0, [(t1, p1_tm)]) 
                       | None -> new_if0
       in
       let new_if2 = simpIf1 spc new_if1 in
       Some(Let([(p1, t1)], new_if2, a))
     %% if case e of p1 -> b1 | _ -> false then t2 else t3 --> case e of p1 | b1 -> t2 | _ -> t3
+    %% if case e of p1 -> b1 | _ -> false then t2 else t3 --> case e of p1 -> if b1 then t2 else t3 | _ -> t3
     | IfThenElse(Apply(Lambda([(p1, _, b1), (wild_pat as (WildPat _), _, Fun(Bool false, _, _))], a), e, _), t2, t3, _) ->
       let (pat_tm, pat_conds, _) = patternToTermPlusExConds p1 in
-      let simp_t2 = if pat_conds = [] then termSubst(t2, [(e, pat_tm)]) else t2 in
-      let new_pat = mkRestrictedPat(p1, b1) in
-      Some(mkApply(Lambda([(new_pat, trueTerm, simp_t2), (wild_pat, trueTerm, t3)], a), e))
+      let simp_t2 = if pat_conds = [] then simplify spc (termSubst(simplify spc t2, [(e, pat_tm), (b1, trueTerm)])) else t2 in
+      if useRestrictedPat?
+        then let new_pat = mkRestrictedPat(p1, b1) in
+             Some(mkApply(Lambda([(new_pat, trueTerm, simp_t2), (wild_pat, trueTerm, t3)], a), e))
+      else
+        let simp_t3 = if pat_conds = [] then simplify spc (termSubst(simplify spc t3, [(e, pat_tm)])) else t3 in
+        Some(mkApply(Lambda([(p1, trueTerm, MS.mkIfThenElse(b1, simp_t2, simp_t3)), (wild_pat, trueTerm, t3)], a), e))
     | IfThenElse(t1, t2, t3, a) ->
       let n_t2 = termSubst(t2, map (fn cj -> (cj,  trueTerm)) (getConjuncts t1)) in
       let n_t3 = termSubst(t3, map (fn cj -> (cj, falseTerm)) (getDisjuncts t1)) in
