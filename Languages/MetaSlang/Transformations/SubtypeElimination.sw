@@ -746,17 +746,30 @@ SpecNorm qualifying spec
     % let _ = writeLine("Def:\n"^printTerm tm^"\n  changed to\n"^printTerm result) in
     maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, result)))
 
+  op setType?(spc: Spec, ty: MSType): Bool =
+    case ty of
+     | Base(Qualified("Set", "Set"), _, _) -> true
+     | Base _ ->
+       (case tryUnfoldBase spc ty of
+          | Some uf_ty -> setType?(spc, uf_ty)
+          | None -> false)
+     | Subtype(st, _, _) -> setType?(spc, st)
+     | _ -> false
+
+
   op regularizeIfPFun(tm: MSTerm, ty: MSType, rm_ty: MSType, spc: Spec): MSTerm =
     % ty is expected type, rm_ty is provided types
-    % let _ = writeLine("Regularize: "^printTerm tm^": \n"^printType ty^" to \n"^printType rm_ty) in
+    % let _ = writeLine("Regularize0: "^printTerm tm^": \n"^printType ty^" to \n"^printType rm_ty) in
     case (arrowOpt(spc,ty), arrowOpt(spc,rm_ty)) of
       | (Some(dom, rng), Some(rm_dom, rm_rng)) ->
         if embed? Var tm && equalType?(dom, rm_dom) then tm
         else
-        let rfun = if embed? Boolean (stripSubtypes(spc, rng))
-                     then case ty of
-                            | Base(Qualified("Set", "Set"),_,_) | regularizeSets? -> "RSet"
-                            | _ -> if regularizeBoolToFalse? then "RFunB" else "RFun"
+        let rfun = if boolType?(spc, rng)
+                     then if setType?(spc, ty) && regularizeSets?
+                            then  "RSet"
+                            else if regularizeBoolToFalse?
+                                   then "RFunB"
+                                 else "RFun"
                    else "RFun"
         in
         let def mkRFun(pred, tm) =
@@ -804,7 +817,7 @@ SpecNorm qualifying spec
                                       pred),
                               tm)
               in
-              % let _ = writeLine("Regularize: "^printTerm tm^" to\n"^printTerm reg_tm) in
+              % let _ = writeLine("Regularize1: "^printTerm tm^" to\n"^printTerm reg_tm) in
               reg_tm
         in
         (case subtypeComps(spc, raiseSubtypeFn(dom, spc)) of

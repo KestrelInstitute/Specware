@@ -347,6 +347,11 @@ op [a] polymorphic? (spc: ASpec a) (qid: QualifiedId): Bool =
     | None -> false
     | Some info -> (unpackFirstOpDef info).1 ~= []
 
+op [a] typeOfOp (spc: ASpec a) (qid: QualifiedId): TyVars * AType a =
+  let Some info = findTheOp(spc, qid) in
+  let (tvs, ty, _) = unpackFirstOpDef info in
+  (tvs, ty)
+
 op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   let old_triples = unpackTypedTerms info.dfn in
   let qid as Qualified(q, id) = primaryOpName info in

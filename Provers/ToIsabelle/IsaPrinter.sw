@@ -449,7 +449,7 @@ IsaTermPrinter qualifying spec
      | _ -> (f_tm, [])
 
  op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
-      : MSTerm * MSTerm * MSTerm * MSTerm=
+      : MSTerm * MSTerm * MSTerm * MSTerm =
    % let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
    case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
      | (Some(new_result_tm, new_post_condns), Some(old_result_tm, old_post_condns)) ->
@@ -832,6 +832,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                   overloadedConstructors = overloadedConstructors spc}
     in
     % let _ = printSpecWithTypesToTerminal spc in
+    %% ? let spc = addRefineObligations c spc in
     let spc = normalizeNewTypes(spc, false) in
     let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
     let spc = addRefineObligations c spc in
@@ -912,20 +913,20 @@ removeSubTypes can introduce subtype conditions that require addCoercions
       | Subtype(sup,_,_) -> sup
       | _ -> ty
 
-  op  makeCoercionTable: TransInfo * Spec -> TypeCoercionTable
-  def makeCoercionTable(trans_info, spc) =
-    foldi (fn (subty, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
+  op makeCoercionTable(trans_info: TransInfo, spc: Spec): TypeCoercionTable =
+   foldi (fn (subty_qid, (super_id, opt_coerc, overloadedOps, no_def?), val) ->
            case opt_coerc of
              | None -> val
              | Some(toSuper, toSub) ->
-           let srtDef = typeDef(subty, spc) in
-           let superty = getSuperType srtDef in
-           Cons({subtype = subty,
+           let (tvs, ty_def) = typeDef (subty_qid, spc) in
+           let subty = mkBase(subty_qid, map mkTyVar tvs) in
+           let superty = getSuperType ty_def in
+           Cons({subtype = subty_qid,
                  supertype = superty,
                  coerceToSuper = mkOp(Qualified(toIsaQual, toSuper),
-                                      mkArrow(mkBase(subty, []), srtDef)),
+                                      mkArrow(subty, ty_def)),
                  coerceToSub   = mkOp(Qualified(toIsaQual, toSub),
-                                      mkArrow(srtDef, mkBase(subty, []))),
+                                      mkArrow(ty_def, subty)),
                  overloadedOps = overloadedOps},
                 val))
       [] trans_info.type_map
@@ -2764,7 +2765,6 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let Some(_,opt_ty) = findLeftmost (fn (id1,_) -> id = id1) (coproduct(spc, ty)) in
    mkEmbedPat(id,mapOption mkWildPat opt_ty,ty)
 
-
  op  ppTerm : Context -> ParentTerm -> MSTerm -> Pretty
  def ppTerm c parentTerm term =
    %let _ = writeLine(printTerm term^": "^anyToString parentTerm) in
@@ -2819,6 +2819,14 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 %           in
 %           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
 %                                       [mkNat 0, term2]))
+        %% Set Collect(fn x -> p x) --> {x. p x}
+        | (Fun(Op(Qualified(q,"Collect"), _), _, _), Lambda([(pattern, _, bod)], _)) | q = toIsaQual ->
+          prBreakCat 2 [[prString "{",
+                         let c = c << {printTypes? = true} in
+                         ppPattern c pattern (Some "") false,
+                         prString ". "],
+                        [ppTerm c Top bod],
+                        [prString "}"]]
         | (Fun(Op(qid,Infix _),f_ty,a), term2) ->
           let spc = getSpec c in
           ppTerm c parentTerm
@@ -2981,7 +2989,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                         lengthString(1, "\\<rparr>")])
      | The (var,term,_) ->
        prBreak 0 [prString "(THE ",
-                  ppVarWithType c var,
+                  ppVarWithType c false var,
                   prString ". ",
                   ppTerm c Top term,
                   prString ")"]
@@ -2990,14 +2998,14 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                   | Infix(_,prec) -> true  % prec > 18
                   | _ -> false,
                 prBreakCat 2 [[ppBinder binder,
-                               prBreak 2(addSeparator prSpace (map (ppVarWithType c) vars)),
+                               prBreak 2 (addSeparator prSpace (map (ppVarWithType c (length vars > 1)) vars)),
                                prString ". "],
                               [ppTerm c Top term]])
      | Let ([(p,t)], bod, a) | existsPattern? (embed? EmbedPat) p ->
        prApply(Lambda([(p, trueTerm ,bod)], a), t)
      | Let (decls,term,_) ->
        let def ppDecl (pattern,term) =
-             prBreakCat 2 [[ppPattern c pattern (Some ""),
+             prBreakCat 2 [[ppPattern c pattern (Some "") false,
                             prSpace],
                            [prString "= ",
                             ppTerm c Top term]]
@@ -3033,7 +3041,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        enclose?(parentTerm ~= Top,
                 prBreakCat 2 [[lengthString(2, "\\<lambda> "),
                                let c = c << {printTypes? = true} in
-                                 ppPattern c pattern (Some ""),
+                                 ppPattern c pattern (Some "") true,
                                prString ". "],
                               [ppTerm c Top term]])
      | Lambda (match,_) ->
@@ -3113,9 +3121,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  def ppVarWithoutType (id, _(* ty *)) =
    ppVarStr id
 
- op ppVarWithType (c: Context) ((id, ty): Var): Pretty =
+ op ppVarWithType (c: Context) (parens?: Bool) ((id, ty): Var): Pretty =
    if printQuantifiersWithType? then
-     enclose?(true, prConcat [ppVarStr id, prString "::", ppType c Top true ty])
+     enclose?(parens?, prConcat [ppVarStr id, prString "::", ppType c Top true ty])
    else ppVarStr id
 
  op  ppVar : Context -> Var -> Pretty
@@ -3163,20 +3171,19 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op  ppMatch : Context -> Match -> Pretty
  def ppMatch c cases =
    let def ppCase (pattern, _, term) =
-         prBreakCat 0 [[ppPattern c pattern None,
+         prBreakCat 0 [[ppPattern c pattern None true,
                         lengthString(3, " \\<Rightarrow> ")],
                        [ppTerm c Top term]]
    in
      (prSep (-3) blockAll (prString " | ") (map ppCase cases))
 
- op  ppPattern : Context -> MSPattern -> Option String -> Pretty
- def ppPattern c pattern wildstr = 
+ op ppPattern (c: Context) (pattern: MSPattern) (wildstr: Option String) (parens?: Bool): Pretty = 
    case pattern of
      | AliasPat (pat1, pat2, _) -> 
-       prBreak 0 [ppPattern c pat1 wildstr,
+       prBreak 0 [ppPattern c pat1 wildstr true,
                   prString " as ",
-                  ppPattern c pat2 wildstr]
-     | VarPat (v, _) -> if c.printTypes? && ~(embed? Any v.2) then ppVarWithType c v
+                  ppPattern c pat2 wildstr true]
+     | VarPat (v, _) -> if c.printTypes? && ~(embed? Any v.2) then ppVarWithType c parens? v
                         else ppVarWithoutType v
      | EmbedPat (constr, pat, ty, _) ->
        prBreak 0 [ppConstructorTyped(c, constr, ty, getSpec c),
@@ -3192,20 +3199,20 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                                             | EmbedPat(_, Some _, _, _)-> true
                                                             | AliasPat _ -> true
                                                             | _ -> false,
-                                                          ppPattern c p wildstr))
+                                                          ppPattern c p wildstr true))
                                     (patternToList pat))]
                     | WildPat (pty,_) | multiArgConstructor?(constr, ty, getSpec c) ->
                       let tys = productTypes(getSpec c, pty) in
                       prConcat [prSpace,
                                 prPostSep 0 blockFill prSpace
-                                  (map (fn ty -> ppPattern c (mkWildPat ty) wildstr) tys)]
+                                  (map (fn ty -> ppPattern c (mkWildPat ty) wildstr true) tys)]
                     | _ -> prConcat [prSpace, enclose?(embed? EmbedPat pat,
-                                                       ppPattern c pat wildstr)]]
+                                                       ppPattern c pat wildstr true)]]
      | RecordPat (fields,_) ->
        (case fields of
          | [] -> prString "()"
          | ("1",_)::_ ->
-           let def ppField (idstr,pat) = ppPattern c pat (extendWild wildstr idstr) in
+           let def ppField (idstr,pat) = ppPattern c pat (extendWild wildstr idstr) false in
            prConcat [prString "(",
                      prPostSep 0 blockFill (prString ", ") (map ppField fields),
                      prString ")"]
@@ -3213,7 +3220,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
            let def ppField (x,pat) =
                  prConcat [prString (mkFieldName x),
                            prString "=",
-                           ppPattern c pat (extendWild wildstr x)]
+                           ppPattern c pat (extendWild wildstr x) true]
            in
            prConcat [prString "{",
                      prPostSep 0 blockLinear (prString ", ") (map ppField fields),
@@ -3228,7 +3235,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | NatPat (int,_) -> prString (Nat.show int)      
      | QuotientPat (pat,qid,_) -> 
        prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
-                  ppPattern c pat wildstr,
+                  ppPattern c pat wildstr false,
                   prString ")"]
      | RestrictedPat (pat,term,_) -> 
 %        (case pat of
@@ -3259,19 +3266,19 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 %		     prString "}"
 %		   ])
 %	       | _ ->
-           prBreak 0 [ppPattern c pat wildstr
+           prBreak 0 [ppPattern c pat wildstr parens?
 %% Ignore restricted patterns for now (certainly for lambdas)
 %                       prString " | ",
 %                       ppTerm c Top term
                       ] %)
-     | TypedPat (pat,ty,_) -> ppPattern c pat wildstr
+     | TypedPat (pat,ty,_) -> ppPattern c pat wildstr parens?
      | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
  op  multiArgConstructor?: Id * MSType * Spec -> Bool
  def multiArgConstructor?(constrId,ty,spc) =
    case ty of
      | Base(qid,_,_) ->
-       (let base_ty = typeDef(qid,spc) in
+       (let (_, base_ty) = typeDef(qid,spc) in
         case coproductOpt(spc,base_ty) of
           | None -> false
           | Some fields ->
@@ -3287,10 +3294,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
       | Some s -> Some (s^str)
       | None -> None
 
- op  typeDef: QualifiedId * Spec -> MSType
- def typeDef(qid,spc) =
+ op typeDef(qid: QualifiedId, spc: Spec): TyVars * MSType =
    let Some info = AnnSpec.findTheType(spc,qid) in
-   firstTypeDefInnerType info
+   unpackFirstTypeDef info
 
  op  ppBool : Bool -> Pretty
  def ppBool b =

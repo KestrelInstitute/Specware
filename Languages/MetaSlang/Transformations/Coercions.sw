@@ -89,6 +89,30 @@ spec
       | Fun(Op(Qualified(_, "id"), _), _, _) -> true
       | _ -> false
 
+  op fixType(coerce_fn: MSTerm, sup_ty: MSType, to_super?, spc: Spec): MSTerm =
+    case coerce_fn of
+      | Fun(f, f_ty, a) ->
+        (case arrowOpt(spc, f_ty) of
+           | Some(dom, rng) ->
+             %let _ = writeLine("fixType "^show to_super?^": "^printType sup_ty^"\n"^printType f_ty) in
+             let tvs = freeTyVars dom in
+             let (dom, rng) =
+                 if tvs = []
+                   then (dom, rng)
+                   else
+                     case typeMatch(if to_super? then dom else rng, sup_ty, spc, true) of
+                       | Some(tv_sbst as _ :: _) -> 
+                         (instantiateTyVarsInType(dom, tv_sbst), instantiateTyVarsInType(rng, tv_sbst))
+                       | _ -> (dom, rng)
+             in
+             % let _ = if equalType?(f_ty, mkArrow(dom, rng)) then ()
+             %     else writeLine("fixType "^show to_super?^": "^printType sup_ty^"\n"^printType f_ty^"\n"
+             %                      ^printTermWithTypes(Fun(f, mkArrow(dom, rng), a))) in
+             Fun(f, mkArrow(dom, rng), a) 
+           | None -> coerce_fn)
+      | _ -> coerce_fn
+        
+
   op mkLiftedFun(f: MSTerm, lifterFns: List(QualifiedId * QualifiedId), spc: Spec): MSTerm =
    case lifterFns of
      | [] -> f
@@ -145,16 +169,16 @@ spec
 	      | Record _ -> true
 	      | _ -> false
 	in
-	let n_tm = mapSubTerms(tm, if delayCoercion? \_or embed? Lambda tm then ty else rm_ty) in
-	if delayCoercion? \_or (handleOverloading? && overloadedTerm? n_tm) then n_tm
+	let n_tm = mapSubTerms(tm, if delayCoercion? || embed? Lambda tm then ty else rm_ty) in
+	if delayCoercion? || (handleOverloading? && overloadedTerm? n_tm) then n_tm
 	else
-        % let _ = writeLine(printTerm tm^": "^printType rm_ty ^"\n-> " ^ printType ty^"\n") in
+        % let _ = writeLine(printTerm tm^": "^printType rm_ty ^"\n--> " ^ printType ty^"\n") in
 	case needsCoercion?(ty, rm_ty, coercions, n_tm, spc) of
           | Some(toSuper?, tb, lifters) ->
             (case n_tm of
               | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, ty, a)
-              | _ -> if toSuper? then coerceToSuper(n_tm, tb, lifters)
-                     else coerceToSub(n_tm, tb, lifters))
+              | _ -> if toSuper? then coerceToSuper(n_tm, tb, lifters, ty)
+                     else coerceToSub(n_tm, tb, lifters, ty))
           | None ->
         if simpleTerm n_tm then         % Var or Op
           case (arrowOpt(spc, ty), arrowOpt(spc, rm_ty)) of
@@ -234,24 +258,26 @@ spec
 	    TypedTerm (mapTerm(trm, srt), srt, a)
 	  | _ -> tm
 
-      def coerceToSuper(tm, tb, lifters) =
+      def coerceToSuper(tm, tb, lifters, sup_ty) =
         case tm of
           | Apply(f, x, _) | f = tb.coerceToSub && lifters = [] ->
             x
-          | Let(m, b, a) -> Let(m, coerceToSuper(b, tb, lifters), a)
+          | Let(m, b, a) -> Let(m, coerceToSuper(b, tb, lifters, sup_ty), a)
           | _ ->
             if idFn? tb.coerceToSuper then tm
-              else let coerced_term = mkApply(mkLiftedFun(tb.coerceToSuper, lifters, spc), tm) in
+              else let coerce_fn = fixType(tb.coerceToSuper, sup_ty, true, spc) in
+                   let coerced_term = mkApply(mkLiftedFun(coerce_fn, lifters, spc), tm) in
                    % let _ = writeLine("coerced: "^printTerm coerced_term) in
                    coerced_term
-      def coerceToSub(tm, tb, lifters) =
+      def coerceToSub(tm, tb, lifters, sup_ty) =
         case tm of
           | Apply(f, x, _) | f = tb.coerceToSuper && lifters = [] ->
             x
-          | Let(m, b, a) -> Let(m, coerceToSub(b, tb, lifters), a)
+          | Let(m, b, a) -> Let(m, coerceToSub(b, tb, lifters, sup_ty), a)
           | _ ->
             if idFn? tb.coerceToSub then tm
-              else let coerced_term = mkApply(mkLiftedFun(tb.coerceToSub, lifters, spc), tm) in
+              else let coerce_fn = fixType(tb.coerceToSub, sup_ty, false, spc) in
+                   let coerced_term = mkApply(mkLiftedFun(coerce_fn, lifters, spc), tm) in
                    % let _ = writeLine("coerced: "^printTerm coerced_term) in
                    coerced_term
       def coerceSubtypePreds(ty: MSType): MSType =
