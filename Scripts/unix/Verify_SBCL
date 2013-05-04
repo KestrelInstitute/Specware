@@ -17,6 +17,8 @@ echo "  ------------------------------------------------------------------------
 echo "  Verify_SBCL:  Ensure that SBCL executable exists:"
 echo " "
 
+# I added the last option here according to this comment from the SBCL INSTALL file:
+#   If your "INSTALL_ROOT" was FOO, then your "SBCL_HOME" is "FOO/lib/sbcl".
 for L in /opt/local/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp /usr/bin/sbcl "${SBCL_HOME}/../../bin/sbcl" ; do
   if [ -x "$L" ]; then
     export LISP="$L"; break
