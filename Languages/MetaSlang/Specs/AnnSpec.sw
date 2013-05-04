@@ -58,7 +58,7 @@ AnnSpec qualifying spec
    | Import   SCTerm * Spec * SpecElements * b
    | Type     QualifiedId * b
    | TypeDef  QualifiedId * b
-   | Op       QualifiedId * Bool * b  % if boolean is true, def was supplied as part of decl
+   | Op       QualifiedId * Bool * b  % if the Bool is true, def was supplied as part of decl
    | OpDef    QualifiedId * Nat  * TransformHistory * b  % Nat is number of redefinitions
    | Property (AProperty b)
    | Comment  String * b
@@ -187,6 +187,7 @@ AnnSpec qualifying spec
 
  op  opInfoAllDefs : [b] AOpInfo b -> List (ATerm b)
  def opInfoAllDefs info =
+   % TODO What about intervening Pi's or TypedTerms ?
    case info.dfn of
      | And (tms, _) -> tms
      | tm           -> [tm]
@@ -1286,121 +1287,5 @@ op [a] showQ(el: ASpecElement a): String =
  op showStrings (strings : List String) : String = (flatten (intersperse(" ", strings)))
  op showQIDs (qids : List QualifiedId) : String = showStrings (map printQualifiedId qids)
 
- op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
-  %% For every type info in the hash table, verify that there is a corresponding
-  %% Type and/or TypeDef spec element.
-  let bad_type_infos =
-      foldTypeInfos (fn (info, failures) ->
-                       let names = info.names in
-                       if names = [] then
-                         let _ = writeLine("ERROR: No names for type!") in %% TODO Print the position?  We can't print the name since there isn't one!
-                         failures ++ [info]
-                       else
-                         let qid = primaryTypeName info in  %% TODO If there is more than one name, should we look up each one below?:
-                         let _ = if (length names > 1) then writeLine("Warning: More than one name for type: " ^ show qid ^ ": " ^ showQIDs names) else () in
-                         let typeElts = getTypeElements qid s.elements in
-                         let typeDefElts = getTypeDefElements qid s.elements in
-                         let typeCount    = length typeElts    in
-                         let typeDefCount = length typeDefElts in
-                         let _ = if typeCount    > 1 then writeLine("ERROR: " ^ show typeCount    ^ " declarations for: " ^ show qid) else () in
-                         let _ = if typeDefCount > 1 then writeLine("ERROR: " ^ show typeDefCount ^ " definitions for: " ^ show qid) else () in
-                         let found? = (typeElts ~= [] || typeDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.
-                           if found? then
-                             failures
-                           else
-                             failures ++ [info])
-                    []
-                    s.types
-  in
-  %% For every op info in the hash table, verify that there is a corresponding
-  %% Op and/or OpDef spec element.
-  let bad_op_infos =
-      foldOpInfos (fn (info, failures) ->
-                     let names = info.names in
-                     if names = [] then
-                       let _ = writeLine("ERROR: No names for op!") in %% TODO Print the position?  We can't print the name since there isn't one!
-                       failures ++ [info]
-                     else
-                       let qid = primaryOpName info in  %% TODO If there is more than one name, should we look up each one below?:
-                       let _ = if (length names = 0) then writeLine("ERROR: No names for op: " ^ show qid) else () in
-                       let _ = if (length names > 1) then writeLine("Warning: More than one name for op: " ^ show qid ^ ": " ^ showQIDs names) else () in
-                       let opElts = getOpElements qid s.elements in
-                       let opDefElts = getOpDefElements qid s.elements in
-                       let opCount    = length opElts    in
-                       let opDefCount = length opDefElts in
-
-
-                       %% What are the rules about ops?
-                       %% You can have an OpDecl with not-defined-when-declared, followed by any number of OpDefs, numbered starting from 0
-                       %5 You can have an OpDecl with defined-when-declared, followed by any number of opDefs, numbered starting from 1
-
-                       let _ = if opCount    = 0 then writeLine("ERROR: No declarations for: " ^ show qid) else () in
-                       let _ = if opCount    > 1 then writeLine("ERROR: " ^ show opCount    ^ " declarations for: " ^ show qid) else () in
-                       %let _ = if opDefCount > 1 then writeLine("ERROR: " ^ show opDefCount ^ " definitions for: " ^ show qid) else () in
-                       let found? = (opElts ~= [] || opDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.                       
-                         if found? then
-                           failures
-                         else
-                           failures ++ [info])
-                  []
-                  s.ops
-  in
-  %% For every op info in the hash table, verify that every op-reference 
-  %% has a corresponding entry.
-  %% TODO: types, op-refs withing types, etc.
-  let
-    def bad_ref? tm =
-      case tm of
-        | Fun (Op (qid, _), _, _) ->
-          (case findTheOp (s, qid) of
-             | Some _ -> false
-             | _ -> true)
-        | _ -> false
-  in 
-  let bad_op_infos2 =
-      foldOpInfos (fn (info, failures) ->
-                     if existsSubTerm bad_ref? info.dfn then
-                       failures ++ [info]
-                     else
-                       failures)
-                  []
-                  s.ops
-  in
-  %% For every Type, TypeDef, Op, or OpDef in spec elements,
-  %% verify that it refers to an entry in the appropriate hash table.
-  let bad_elements =
-      foldlSpecElements (fn (failures, elt) ->
-                           case elt of
-                             | Type    (qid, _) ->
-                               (case findTheType (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> failures ++ [elt])
-                             | TypeDef (qid, _) ->
-                               (case findTheType (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> failures ++ [elt])
-                             | Op      (qid, _, _) ->
-                               (case findTheOp (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> failures ++ [elt])
-                             | OpDef   (qid, _, _, _) ->
-                               (case findTheOp (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> failures ++ [elt])
-                             | _ -> failures)
-                        []
-                        s.elements
-  in
-  case (bad_type_infos, bad_op_infos, bad_elements) of
-    | ([], [], []) -> 
-      let _ = writeLine success_msg in
-      false
-    | _ ->
-      let _ = writeLine (failure_msg) in
-      let _ = app (fn info -> writeLine(" Type "       ^ printQualifiedId (primaryTypeName info))) bad_type_infos in
-      let _ = app (fn info -> writeLine(" Op   "       ^ printQualifiedId (primaryOpName   info))) bad_op_infos   in
-      let _ = app (fn info -> writeLine(" Op refs in " ^ printQualifiedId (primaryOpName   info))) bad_op_infos2  in
-      let _ = app (fn elt  -> writeLine(" Elt  "      ^ anyToString elt))                         bad_elements    in
-      true
       
 end-spec
