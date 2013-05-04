@@ -210,6 +210,14 @@ IsaTermPrinter qualifying spec
                      thyName(filnm ^ hash) ^ ".thy"),
              val, uid)
 
+  op strFromRenaming(renamings: RenamingRules, _: Position): String =
+    case renamings of
+      | [] -> "empty"
+      | (Ambiguous(_, t_qid, _), _) :: _ -> show t_qid
+      | (Type(_, t_qid, _), _) :: _ -> show t_qid
+      | (Op(_, (t_qid, _), _), _) :: _ -> show t_qid
+      | _ -> "unknown"
+
   op uidStringPairForTerm(c: Context, sc_tm: SCTerm): Option((String * String * String) * UnitId) =
     case sc_tm of
       | (Subst(spc_tm, morph_tm), pos) ->
@@ -217,6 +225,14 @@ IsaTermPrinter qualifying spec
            | None -> None
            | Some((thynm, sw_file, thy_file), uid) ->
              let sb_id = "_sb_" ^ scTermShortName morph_tm in
+             Some((thynm^sb_id, sw_file, thy_file^sb_id),
+                  uid))
+
+      | (Translate(spc_tm, renaming), pos) ->
+        (case uidStringPairForTerm(c, spc_tm) of
+           | None -> None
+           | Some((thynm, sw_file, thy_file), uid) ->
+             let sb_id = "_tr_" ^ strFromRenaming renaming in
              Some((thynm^sb_id, sw_file, thy_file^sb_id),
                   uid))
 
@@ -999,14 +1015,17 @@ removeSubTypes can introduce subtype conditions that require addCoercions
        if exists? (fn c -> c = #/) nm
          then "\""^nm^"\"" else nm)
 
+  %% Should add "/Isa"
+  op convertToIsaDir(filnm: String): String = filnm
+
   op  ppImport: Context -> SCTerm -> Spec -> Pretty
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
       | None ->
         let thy_ext = show(!c.anon_thy_count) in
         let thy_nm = c.thy_name ^ thy_ext in
-        let thy_fil_nm = "/tmp/" ^ thy_nm ^ ".thy" in   % thy_nm was "??", which crashed as an illegal filename
-        (%writeLine("ppI0: "^thy_nm^" "^uidToFullPath(getCurrentUID c));
+        let thy_fil_nm = convertToIsaDir(uidToFullPath(getCurrentUID c)) ^ thy_ext ^ ".thy" in
+        (%writeLine("ppI0: "^thy_nm^" in "^thy_fil_nm);
          c.anon_thy_count := !c.anon_thy_count + 1;
          if c.recursive?
            then toFile(thy_fil_nm,
