@@ -1468,7 +1468,7 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
                   ppString "))"
                   ]
     | Boolean _ -> ppString "BoolType"  
-    | TyVar (tyVar,_) -> ppConcat [ppString "(tyvar ",
+    | TyVar (tyVar,_) -> ppConcat [ppString "(TyVar ",
                                    ppID tyVar,
                                    ppString ")"]
     | Pi(tvs,ty,_) ->
