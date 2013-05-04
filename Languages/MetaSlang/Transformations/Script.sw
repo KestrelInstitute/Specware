@@ -77,7 +77,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
      | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
      | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
      | MetaRule    qid -> ppConcat[ppString "apply ", ppQid qid]
-     | RLeibniz    qid -> ppConcat[ppString "rev-leibniz ", ppQid qid]
+     | RLeibniz    qid -> ppConcat[ppString "revleibniz ", ppQid qid]
      | Weaken      qid -> ppConcat[ppString "weaken ", ppQid qid]
      | _ -> ppString (showRuleSpec rl)
 
@@ -275,7 +275,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
      | "righttoleft" -> mkRightToLeft
      | "right-to-left" -> mkRightToLeft
      | "apply" -> mkMetaRule
-     | "rev-leibniz" -> mkRLeibniz
+     | "revleibniz" -> mkRLeibniz
      | "weaken" -> mkWeaken
      | "alldefs" -> mkAllDefs
      | _ -> fail("Unknown rule constructor: "^id)
@@ -357,7 +357,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   op makeRevLeibnizRule (context: Context) (spc: Spec) (qid: QualifiedId): List RewriteRule =
     %%  qid x = qid y --> x = y
     case findTheOp(spc, qid) of
-      | None -> fail(show qid^" not found in rev-leibniz rule")
+      | None -> fail(show qid^" not found in revleibniz rule")
       | Some info ->
     let (tvs, ty, _) = unpackFirstTerm info.dfn in
     let qf = mkOp(qid, ty) in

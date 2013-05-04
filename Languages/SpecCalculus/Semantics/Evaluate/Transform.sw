@@ -127,8 +127,8 @@ spec
                                    return (Rewrite qid)}
       | Item("apply",opid,_) -> {qid <- extractQId opid;
                                  return (MetaRule qid)}
-      | Item("rev-leibniz",opid,_) -> {qid <- extractQId opid;
-                                       return (RLeibniz qid)}
+      | Item("revleibniz",opid,_) -> {qid <- extractQId opid;
+                                      return (RLeibniz qid)}
       | _ -> raise (TransformError (posOf trans, "Unrecognized rule reference"))
 
  op getSearchString(se: TransformExpr): SpecCalc.Env String =
@@ -194,7 +194,9 @@ spec
       | Command("unfold", [opid],_) -> {qid <- extractQId opid;
                                         return (Simplify1([Unfold qid]))}
       | Command("rewrite", [opid],_) -> {qid <- extractQId opid;
-                                   return (Simplify1([Rewrite qid]))}
+                                         return (Simplify1([Rewrite qid]))}
+      | Command("revleibniz", [opid],_) -> {qid <- extractQId opid;
+                                            return (Simplify1([RLeibniz qid]))}
       | Command("apply", [opid],_) -> {qid <- extractQId opid;
                                        return (Simplify1([MetaRule qid]))}
       | Command("move", [Tuple(mvs, _)], _) -> {moves <- mapM makeMove mvs;
@@ -347,7 +349,7 @@ spec
       | (Item("unfold", thm, _),  Rule) -> mapOption (fn qid -> RuleV(Unfold qid))      (transformExprToQualifiedId thm)
       | (Item("rewrite", thm, _), Rule) -> mapOption (fn qid -> RuleV(Rewrite qid))     (transformExprToQualifiedId thm)
       | (Item("apply", thm, _),   Rule) -> mapOption (fn qid -> RuleV(MetaRule qid))    (transformExprToQualifiedId thm)
-      | (Item("rev-leibniz", thm, _), Rule) -> mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm)
+      | (Item("revleibniz", thm, _), Rule) -> mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm)
       | (Tuple(flds, _), Tuple tp_mtis) | length flds = length tp_mtis ->
         (let o_flds = foldr (fn ((fldi, tpi_mti), result) ->
                                case result of
