@@ -15,7 +15,7 @@ This directory contains the following top-level scripts:
 . single-step scripts might be useful during debugging
 
     generate-specware-lisp.cmd -- just generate Specware Lisp within Gnu Emacs
-    compile-specware-lisp.cmd  -- just compile Specware Lisp withing Gnu Emacs
+    compile-specware-lisp.cmd  -- just compile Specware Lisp within Gnu Emacs
 
 
 The following scripts are used by the top-level ones and should not be called directly:
