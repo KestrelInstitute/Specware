@@ -393,4 +393,13 @@ SliceSpec qualifying spec
                        tracing?   : Bool)
   : Env (Spec * Bool) =
   return (sliceSpecForCode (spc, root_ops, root_types, cut_op?, cut_type?), tracing?)
+
+ op CG.builtinCType? : QualifiedId -> Bool
+ op CG.builtinCOp?   : QualifiedId -> Bool
+
+ op SpecTransform.sliceSpec (spc        : Spec)
+                            (root_ops   : QualifiedIds)
+                            (root_types : QualifiedIds)
+  : Spec =
+  sliceSpecForCode (spc, root_ops, root_types, CG.builtinCOp?, CG.builtinCType?)
 }
