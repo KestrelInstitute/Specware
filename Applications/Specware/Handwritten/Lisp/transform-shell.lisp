@@ -401,7 +401,8 @@
            ((rewrite rw)       (apply-command argstr 'Script::mkRewrite 'op))
 	   ((left-to-right lr) (apply-command argstr 'Script::mkLeftToRight 'theorem))
 	   ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft 'theorem))
-           (rev-leibniz        (apply-command argstr 'Script::mkRLeibniz 'op))
+           (revleibniz        (apply-command argstr 'Script::mkRLeibniz 'op))
+           (rev-leibniz        (apply-command argstr 'Script::mkRLeibniz 'op)) ; For backward compatibility
            (weaken             (apply-command argstr 'Script::mkWeaken 'theorem))
 	   ((simp-standard ss) (interpret-command (Script::mkSimpStandard-0)))
 	   ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))
