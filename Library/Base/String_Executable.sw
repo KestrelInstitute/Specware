@@ -1,4 +1,4 @@
-spec
+ spec
  import String
 
  refine def natConvertible (s:String) : Bool =
@@ -113,23 +113,13 @@ sorry
 end-proof
 
 proof isa Integer__stringToInt__1_Obligation_subtype0
- (** TRANSLATION ISSUE: intConvertible must be Integer__intConvertible
- proof is then
-
   by (simp add: Integer__intConvertible__1__obligation_refine_def
-                Integer__intConvertible__1_def
- **********************************************************************) 
-sorry
+                Integer__intConvertible__1_def)
 end-proof
 
 proof isa Integer__stringToInt__1_Obligation_subtype
- (** TRANSLATION ISSUE: intConvertible must be Integer__intConvertible
- proof is then
-
   by (clarsimp simp add: Integer__intConvertible__1__obligation_refine_def
                          Integer__intConvertible__1_def)
- **********************************************************************) 
-sorry
 end-proof
 
 proof isa Integer__stringToInt__1__obligation_refine_def
@@ -143,20 +133,11 @@ sorry
 end-proof
 
 proof isa Nat__stringToNat__1_Obligation_subtype
- (** TRANSLATION ISSUE: natConvertible must be Nat__natConvertible
- proof is then
-
   by (clarsimp simp add: Nat__natConvertible__1__obligation_refine_def
                          Nat__natConvertible__1_def)
-
- **********************************************************************)
-sorry
 end-proof
 
 proof isa Nat__stringToNat__1__obligation_refine_def
- (** TRANSLATION ISSUE: natConvertible must be Nat__natConvertible
- proof is then
-
   apply (simp add: Nat__stringToNat_def,
          rule the1I2, erule Nat__stringToNat_Obligation_the)
   apply (thin_tac ?P, simp add: Nat__stringToNat__1_def)
@@ -179,8 +160,6 @@ proof isa Nat__stringToNat__1__obligation_refine_def
          thin_tac "?x mod 10 = ?y", simp add: nat_of_char_def)+
   apply (simp add: nat_of_char_def)
   apply simp
- **********************************************************************)
-sorry
 end-proof
 
 proof isa String__explode__1_Obligation_subtype
