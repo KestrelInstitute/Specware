@@ -468,7 +468,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
          case tm of
            | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) -> getExpandedConjuncts p ++ getExpandedConjuncts q
            | _ ->
-             if unfoldable?(tm, spc)
+             if unfoldable?(tm, spc) && length(freeVars tm) > 1    % if one arg then it is probably a boolean attribute of state
                then let uf_tm = simplify spc (unfoldTerm(tm, spc)) in
                     getExpandedConjuncts uf_tm 
              else [tm]
