@@ -621,7 +621,7 @@ Utilities qualifying spec
             | (CoProduct (r1, _), CoProduct (r2, _)) -> 
               unifyCP (env, s1, s2, r1, r2, pairs, subtype_mode, dom_count)
 
-            | (Base (id, ts, pos1), Base (id2, ts2, pos2)) -> 
+            | (Base (id1, ts1, pos1), Base (id2, ts2, pos2)) -> 
               if exists? (fn (p1, p2) -> 
                             %% p = (unlnk_srt1, unlnk_srt2) 
                             %% need predicate that chases metavar links
@@ -630,9 +630,20 @@ Utilities qualifying spec
                         pairs 
                 then
                   Unify pairs
-              else if equalTypeIds?(env, id, id2) then
-                unifyL (env, s1, s2, ts, ts2, pairs, subtype_mode, dom_count, unify)
-              else 
+              else if equalTypeIds?(env, id1, id2) then
+                unifyL (env, s1, s2, ts1, ts2, pairs, subtype_mode, dom_count, unify)
+              else
+                if subtypeOf?(s1, id2, spc)
+                  then let s1x = unfoldType (env, s1) in
+                       let _ = if debugUnify? then writeLine("s1x: "^printType s1x^"  s2: "^printType s2) else () in
+                       unify (env, withAnnS(s1x, pos1), s2, 
+                              pairs, subtype_mode, dom_count)
+                else if subtypeOf?(s2, id1, spc)
+                  then let s2x = unfoldType (env, s2) in
+                       let _ = if debugUnify? then writeLine("s1: "^printType s1^"  s2x: "^printType s2x) else () in
+                       unify (env, s1, withAnnS(s2x, pos2), 
+                              pairs, subtype_mode, dom_count)
+                else
                 let s1x = unfoldType (env, s1) in
                 let s2x = unfoldType (env, s2) in
                 let _ = if debugUnify? then writeLine("s1x: "^printType s1x^"  s2x: "^printType s2x) else () in
@@ -731,7 +742,7 @@ Utilities qualifying spec
      then result
    else
    let gen_ty = commonSuperType(old_ty, unlinkType new_ty, env.internal) in
-   let _ = if debugUnify? then writeLine("Common supertype: "^printType gen_ty) else () in
+   let _ = if debugUnify? then writeLine("Common supertype of "^printType old_ty^" and "^printType new_ty^": "^printType gen_ty) else () in
    if equalType?(gen_ty, old_ty) then result
    else
    let _ = if debugUnify? then writeLine("Relinking!"^" "^show dom_count) else () in
@@ -898,7 +909,7 @@ Utilities qualifying spec
   def subtypeOf? (ty,qid,spc) =
     % let _ = toScreen(printQualifiedId qid^" <:? "^printType ty^"\n") in
     let result =
-    case ty of
+    case unlinkType ty of
       | Base(qid1,srts,_) ->
         qid1 = qid
 	 || (case findTheType (spc, qid1) of
