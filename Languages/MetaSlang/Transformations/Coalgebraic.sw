@@ -50,7 +50,7 @@ op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var 
               | _ -> None
        else case (result_ty, pat) of
               | (Product(ty_prs, _), RecordPat(pat_prs, _)) ->
-                (case findLeftmost (fn (id, ty) -> equalTypeSubtype?(ty, state_ty, true)) ty_prs of
+                (case findLeftmost (fn (id, ty) -> equivTypeSubType? spc (ty, state_ty) true) ty_prs of
                    | None -> None
                    | Some(id1,_) ->
                  case findLeftmost (fn (id2, _) -> id1 = id2) pat_prs of
