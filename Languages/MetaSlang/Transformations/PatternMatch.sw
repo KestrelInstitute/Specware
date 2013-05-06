@@ -82,21 +82,20 @@ PatternMatch qualifying spec
     | _ -> false
 
  (*
-   The function failWith implements exception handling.
-   It unfolds to the primitive:
-
-   failWith(t1,t2) = 
-     case evaluate t1 of
-       | Break           -> evaluate t2
-       | Succcess result -> Success result
-       | Fail            -> evaluate t2
-
-   when compiled to LISP, C, JAVA failWith unfolds to the continuations used in block statements.
-   Break results in a break;
-   IfThenElse(a,b,Break) translates to if(a) {b};
-   Success(result) translates to return(result);
-   
- *)
+  *   The function failWith implements exception handling.
+  *   It unfolds to the primitive:
+  *
+  *   failWith(t1,t2) = 
+  *     case evaluate t1 of
+  *       | Break           -> evaluate t2
+  *       | Succcess result -> Success result
+  *       | Fail            -> evaluate t2
+  *
+  *   when compiled to LISP, C, JAVA failWith unfolds to the continuations used in block statements.
+  *   Break results in a break;
+  *   IfThenElse(a,b,Break) translates to if(a) {b};
+  *   Success(result) translates to return(result);
+  *)
 
  op failWith (context : Context) (t1 : MSTerm) (t2 : MSTerm) : MSTerm =
   if isBreak t2 then 
@@ -320,35 +319,39 @@ PatternMatch qualifying spec
     | _ -> equivPattern? spc (p1, p2)
       
  (*
-  *  op partitionConstructors : Var * Rules -> List(DestructedRule]
+  *  op partitionConstructors : Var * Rules -> List DestructedRule
   *
   *  Given a list of rules, where the first pattern of each rule is a constructor
   *  we partition the rules into sequences of the same constructor, and for each
   *  segment of the form:
   *
-  *    CONSTR pats_1,patterns_1, cond_1,body_1
-  *    CONSTR pats_2,patterns_2, cond_2,body_2
+  *    CONSTR pats_1, patterns_1, cond_1, body_1
+  *    CONSTR pats_2, patterns_2, cond_2, body_2
   *    ...
-  *    CONSTR pats_n,patterns_n, cond_n,body_n
+  *    CONSTR pats_n, patterns_n, cond_n, body_n
   *
   *  we transform:
   * 
-  *    pats_1,patterns_1, cond_1,body_1
-  *    pats_2,patterns_2, cond_2,body_2
+  *    pats_1, patterns_1, cond_1, body_1
+  *    pats_2, patterns_2, cond_2, body_2
   *    ...
-  *    pats_n,patterns_n, cond_n,body_n
+  *    pats_n, patterns_n, cond_n, body_n
   *
   *  and also return one version of:
   *
-  *     vars  - a list of variables of the same type as pats_i.
-  *     lets  - a list of let bindings that bind vars to destructors of 
-  *             a variable v that is given as argument to partitionConstructors.
-  *             For example, for the pattern {head:pat1,tail:pat2}
-  *             lets = [(VarPat v1,Apply(Fun(Project(head),_),Var v)),
-  *              (VarPat v2,Apply(Fun(Project(tail),_),Var v))]
-  *             which in human terms reads into:
-  *              let v1 = v.head and v2 = v.tail in ...
-  *     query - term determining if the input variable v is an instance of constructor CONSTR.
+  *     vars     - a list of variables of the same type as pats_i.
+  *
+  *     bindings - a list of let bindings that bind vars to destructors of a variable v 
+  *                that is given as argument to partitionConstructors.
+  *
+  *                For example, for the pattern {head:pat1, tail:pat2}, bindings = 
+  *                  [(VarPat v1, Apply(Fun(Project(head),_), Var v)),
+  *                   (VarPat v2, Apply(Fun(Project(tail),_), Var v))]
+  *
+  *                which in human terms reads as:
+  *                  let v1 = v.head and v2 = v.tail in ...
+  *
+  *     query    - term determining if the input variable v is an instance of constructor CONSTR.
   *      
   *)
 
@@ -394,7 +397,7 @@ PatternMatch qualifying spec
                                typeAnn typ)))]
     | _ -> System.fail ("CoProduct type expected, but got " ^ printType typ)
 
- type DestructedRule = {query    : MSTerm , 
+ type DestructedRule = {query    : MSTerm,       % e.g. embed? Foo x
                         new_vars : List MSTerm,
                         bindings : MSBindings,
                         pattern  : MSPattern,
@@ -825,7 +828,7 @@ PatternMatch qualifying spec
   case term of
     | Lambda (rules,_) ->
       let rules = normalizeSimpleAlias rules in
-      let arity = matchArity(rules) in
+      let arity = matchArity           rules in
       let rules = map (fn (p, c, b)-> 
                          (eliminatePattern context p,
                           eliminateTerm    context c,
