@@ -1652,11 +1652,11 @@ proof Isa unflatten_Obligation_the
  sorry
 end-proof
 
-proof Isa unflattenU_Obligation_subtype
-  by (simp add: Stream__Stream_P_def Stream__repeat_def)
-end-proof
+%% proof Isa unflattenU_Obligation_subtype
+%%   by (simp add: Stream__Stream_P_def Stream__repeat_def)
+%% end-proof
 
-proof Isa unflattenU_Obligation_subtype0
+proof Isa unflattenU_Obligation_subtype
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__Seq__inf  
@@ -1667,12 +1667,12 @@ proof Isa unflattenU_Obligation_subtype0
 end-proof
 
 
-proof Isa unflattenU_Obligation_subtype2
-  by (simp add: list_all_iff)
-end-proof
+%% proof Isa unflattenU_Obligation_subtype2
+%%   by (simp add: list_all_iff)
+%% end-proof
 
 
-proof Isa unflattenU_Obligation_subtype3
+proof Isa unflattenU_Obligation_subtype1
   apply (cases s, 
          auto simp add: Seq__segmentationFor_def Seq__segmentationOf_def)
   apply (rule_tac x="Seq__Seq__fin  
