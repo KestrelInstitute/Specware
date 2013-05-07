@@ -442,7 +442,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
 
   op addSubtypeRules?: Bool = true
   op subtypeRules(term: MSTerm, context: Context): List RewriteRule =
-    %% let _ = writeLine("subtypeRules for\n"^printTerm term) in
+    % let _ = writeLine("subtypeRules for\n"^printTerm term) in
     if ~addSubtypeRules? then []
     else
     let subtypes = foldSubTerms
@@ -451,7 +451,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                         if subtype?(context.spc, ty) && ~(typeIn?(ty, subtypes))  && ~(embed? Subtype ty)
                           %% Not sure about the ~(embed? ..) but need some restriction to avoid trivial application
                           then
-                            %% let _ = writeLine("asr:\n"^printTerm t^"\n: "^printType ty) in
+                            % let _ = writeLine("asr:\n"^printTerm t^"\n: "^printType ty) in
                             Cons(ty, subtypes)
                         else subtypes)
                      [] term
@@ -484,7 +484,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
 
   op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
-             % let _=writeLine("Context Rule: "^ruleName cj) in
+             % let _ = writeLine("Context Rule: "^ruleName cj) in
              assertRules(context, cj, ruleName cj, Context, Either) ++ rules)
       [] tms
 
@@ -656,7 +656,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                     (case funString f of
                        | Some fn_str -> fn_str = s
                        | None -> false)
-                  | Fun(f, _, _) ->
+                  | Fun(f, _, _) | ~(embed? Op f) ->
                     (case funString f of
                        | Some fn_str -> fn_str = s
                        | None -> false)
