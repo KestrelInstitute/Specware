@@ -473,6 +473,18 @@ emacs interface functions.
        | Some uid ->
          setCurrentUID uid}
 
+  op UIDfromPosition(pos: Position): Option UnitId =
+    case pos of
+      | File(filnm, _, _) ->
+        let end_uid = length filnm - 3 in
+        let filnm = if testSubseqEqual?(filnm, ".sw",  end_uid, 0)
+                      then subFromTo(filnm, 0, end_uid) else filnm
+        in
+        let uid = pathStringToCanonicalUID(filnm, false) in
+        Some (uid << {hashSuffix = Some ""}
+              )
+       | _ -> None
+
   op setCurrentUIDfromPos(pos: Position): Env (UnitId) =
     % let _ = writeLine("setCurrentUIDfromPos:\n"^anyToString pos) in
     {saveUID <- getCurrentUID;

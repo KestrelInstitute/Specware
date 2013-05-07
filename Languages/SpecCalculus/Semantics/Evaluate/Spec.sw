@@ -54,20 +54,24 @@ axioms, etc.
   def evaluateSpecElems starting_spec specElems = {
       %% Use the name starting_spec to avoid any possible confusion with the
       %% op initialSpecInCat, which refers to the initial spec in the category of specs.
-      (TS,depUIDs) <- foldM checkImports (0,[]) specElems;
-      fullSpec <- foldM evaluateSpecElem starting_spec specElems;
+      (TS, depUIDs, imports_info) <- foldM checkImports (0,[],[]) specElems;
+      imports_spc <- foldM doImport starting_spec imports_info;
+      fullSpec <- foldM evaluateSpecElem imports_spc specElems;
       return (fullSpec,TS,depUIDs)
     }
 
-  op  checkImports : (TimeStamp * UnitId_Dependency) -> SpecElemTerm -> SpecCalc.Env (TimeStamp * UnitId_Dependency)
+  op  checkImports : (TimeStamp * UnitId_Dependency * List(SCTerm * Spec * Position))
+                    -> SpecElemTerm
+                    -> SpecCalc.Env (TimeStamp * UnitId_Dependency * List(SCTerm * Spec * Position))
   def checkImports val (elem, position) =
     case elem of
       | Import terms -> 
-        foldM (fn (cTS,cDepUIDs) -> fn term ->
+        foldM (fn (cTS, cDepUIDs, imports_info) -> fn term ->
 	       {
 		(value,iTS,depUIDs) <- evaluateTermInfo term;
 		(case coerceToSpec value of
-		   | Spec _ -> return (max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
+		   | Spec spc -> return (max(cTS,iTS), listUnion(cDepUIDs,depUIDs),
+                                         (term, spc, position)::imports_info)
 		   | InProcess _ -> 
 		     (case (valueOf term) of
 			| UnitId (UnitId_Relative   x) -> raise (CircularDefinition x)
@@ -84,26 +88,17 @@ axioms, etc.
   def anyImports? specElems =
     exists? (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
+  op doImport(spc: Spec) (term: SCTerm, impSpec: Spec, position: Position): SpecCalc.Env Spec =
+   {impSpec <- if none?(impSpec.qualifier) && some?(spc.qualifier)
+                 then let Some qual = spc.qualifier in
+                      qualifySpec impSpec qual [] position
+               else return impSpec;
+    mergeImport term impSpec spc position}
+
   op evaluateSpecElem : Spec -> SpecElemTerm -> SpecCalc.Env Spec
   def evaluateSpecElem spc (elem, position) =
     case elem of
-      | Import terms ->
-        foldM (fn spc -> fn term ->
-	       {
-		(value,_,_) <- evaluateTermInfo term;
-		(case coerceToSpec value of
-		   | Spec impSpec ->
-                     {impSpec <-
-                         if none?(impSpec.qualifier) && some?(spc.qualifier)
-                           then let Some qual = spc.qualifier in
-                                qualifySpec impSpec qual [] position
-                         else return impSpec;
-                      mergeImport term impSpec spc position}
-		   %% Already checked
-		   | _ -> raise (Fail ("Shouldn't happen!")))
-		  })
-              spc               
-              terms
+      | Import terms -> return spc      % Already done
       | Type    (names,       dfn)               -> addType names      dfn spc position
       | Op      (names, fxty, refine?, dfn)      -> addOp   names fxty refine? dfn spc position
 
