@@ -305,7 +305,7 @@ MetaSlang qualifying spec
      | (RecordMerge,  RecordMerge ) -> true
      | (Embed     x1, Embed     x2) -> x1 = x2
      | (Embedded  x1, Embedded  x2) -> x1 = x2
-    %| (Select    x1, Select    x2) -> x1 = x2
+     | (Select    x1, Select    x2) -> x1 = x2
      | (Nat       x1, Nat       x2) -> x1 = x2
      | (Char      x1, Char      x2) -> x1 = x2
      | (String    x1, String    x2) -> x1 = x2
@@ -458,7 +458,7 @@ MetaSlang qualifying spec
      | (RecordMerge,          RecordMerge)          -> true
      | (Embed     x1,         Embed     x2)         -> x1 = x2
      | (Embedded  x1,         Embedded  x2)         -> x1 = x2
-    %| (Select    x1,         Select    x2)         -> x1 = x2
+     | (Select    x1,         Select    x2)         -> x1 = x2
      | (Nat       x1,         Nat       x2)         -> x1 = x2
      | (Char      x1,         Char      x2)         -> x1 = x2
      | (String    x1,         String    x2)         -> x1 = x2
