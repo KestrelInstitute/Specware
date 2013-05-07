@@ -57,14 +57,20 @@ PatternMatch qualifying spec
  import ArityNormalize
  import Simplify
    
- type Rules = List Rule                         % NOTE: not the same as MSRules or Match
- type Rule  = List MSPattern * MSTerm * MSTerm  % Note: not the same as MSRule, has list of patterns
+ type PMRules = List PMRule                       % NOTE: not the same as MSRules (aka Match)
+ type PMRule  = List MSPattern * MSTerm * MSTerm  % Note: not the same as MSRule, has list of patterns
+
+ type Context = {counter     : Ref Nat,        % counter for variable numbering
+                 spc         : Spec,
+                 error_index : Ref Nat,        % to discriminate error messages
+                 op_name     : String,         % for error messages
+                 lambda      : Option MSTerm}  % for error messages
 
  op match_type (typ : MSType) : MSType = 
   typ 
 
- op mkBreak (t : MSType) : MSTerm = 
-  mkOp (Qualified ("TranslationBuiltIn", "mkBreak"), match_type t)
+ op mkBreak (typ : MSType) : MSTerm = 
+  mkOp (Qualified ("TranslationBuiltIn", "mkBreak"), match_type typ)
 
  op isBreak (trm : MSTerm) : Bool = 
   case trm of
@@ -85,54 +91,52 @@ PatternMatch qualifying spec
   *   The function failWith implements exception handling.
   *   It unfolds to the primitive:
   *
-  *   failWith(t1,t2) = 
-  *     case evaluate t1 of
-  *       | Break           -> evaluate t2
+  *   failWith (body, continuation) = 
+  *     case evaluate body of
   *       | Succcess result -> Success result
-  *       | Fail            -> evaluate t2
+  *       | Break           -> evaluate continuation
+  *       | Fail            -> evaluate continuation
   *
-  *   when compiled to LISP, C, JAVA failWith unfolds to the continuations used in block statements.
+  *   when compiled to LISP, C, or JAVA, failWith unfolds to the continuations used in block statements.
   *   Break results in a break;
-  *   IfThenElse(a,b,Break) translates to if(a) {b};
-  *   Success(result) translates to return(result);
+  *   IfThenElse (a, b, Break) translates to if (a) {b};
+  *   Success (result) translates to return (result);
   *)
 
- op failWith (context : Context) (t1 : MSTerm) (t2 : MSTerm) : MSTerm =
-  if isBreak t2 then 
-    t1 
-  else if isSuccess t1 then 
-    let _ = warnUnreachable context in
-    t1
+ op failWith (ctx : Context) (body : MSTerm) (continuation : MSTerm) : MSTerm =
+  if isBreak continuation then 
+    body 
+  else if isSuccess body then 
+    %% Warn that continuation is not a break, yet we will never reach it.
+    %% TODO: what if continuation is a fail?
+    let _ = warnUnreachable ctx in
+    body
   else
-    let typ  = inferType (context.spc, t1) in
+    let typ  = inferType (ctx.spc, body) in
     let typ  = mkArrow (mkProduct [typ,typ], typ) in
     let trm  = mkApply (mkOp (Qualified ("TranslationBuiltIn", "failWith"), typ), 
-                        mkRecord [("1",t1), ("2",t2)])
+                        mkRecord [("1", body), ("2", continuation)])
     in
     trm
 
- op warnUnreachable (context : Context) : () =
-  writeLine ("Warning: Redundant case in " ^ context.funName ^ "\n" ^ 
-               (case context.term of
-                  | Some t -> printTerm t
+ op storeLambda (trm : MSTerm, ctx : Context) : Context =
+  %% used just to make msg in warnUnreachable
+  ctx << {lambda = Some trm}
+
+ op warnUnreachable (ctx : Context) : () =
+  writeLine ("Warning: Redundant case in " ^ ctx.op_name ^ "\n" ^ 
+               (case ctx.lambda of
+                  | Some tm -> printTerm tm
                   | _ -> ""))
   
- type Context = {counter    : Ref Nat,
-                 spc        : Spec,
-                 funName    : String,
-                 errorIndex : Ref Nat,
-                 term       : Option MSTerm}
-
- op storeTerm (trm : MSTerm, ctx : Context) : Context =
-  ctx << {term = Some trm}
 
  % op  mkProjectTerm (spc : Spec, id   : Id,     trm : MSTerm) : MSTerm = SpecEnvironment.mkProjectTerm
  % op  mkRestrict    (spc : Spec, pred : MSTerm, trm : MSTerm} : MSTerm = SpecEnvironment.mkRestrict
   
  (* 
   * The following invariant holds of the patterns:
-  *  - for a call to match(vars,rules,default):
-  *    each list of patterns in the rules has the same length and typeing 
+  *  - for a call to match (vars, pmrules, continuation):
+  *    each list of patterns in the pmrules has the same length and typing 
   *    as the list of vars.
   *
   *  Pattern matching compilation proceeds according to the following transformation rules on the
@@ -145,13 +149,13 @@ PatternMatch qualifying spec
   *
   *      []
   *      [([],p1,E1),....,([],pn,En)]
-  *      default
+  *      continuation
   *
   *    return: 
   *
   *     if p1 then E1 else break() failWith 
   *     if p2 then E2 else break() failWith 
-  *     if p3 then E3 else break() failWith ... failWith default.
+  *     if p3 then E3 else break() failWith ... failWith continuation.
   *
   *  When there are variables left to match with, there rules are partitioned to contain first 
   *  column elements of the same form.  These are either all variable patterns, constructor 
@@ -175,7 +179,7 @@ PatternMatch qualifying spec
   *        v :: vars  
   *        [(CONS b1 :: patterns_1,cond1,e1),...,
   *         (CONS bn :: patterns_n,condn,en)]
-  *        default
+  *        continuation
   *
   *      return:
   *
@@ -186,7 +190,7 @@ PatternMatch qualifying spec
   *               break()
   *        else break()
   *        failWith 
-  *        default
+  *        continuation
   *
   *  - Alias rule:
   *      Aliased patterns are duplicated.
@@ -195,13 +199,13 @@ PatternMatch qualifying spec
   *
   *        v::vars
   *        [(Alias(p1,p2)::patterns,cond,e)]
-  *        default
+  *        continuation
   * 
   *     return:
   *
   *       v::v::vars
   *       [(p1::p2::patterns,cond,e)]
-  *       default
+  *       continuation
   *
   *  - Quotient rule:
   *
@@ -209,7 +213,7 @@ PatternMatch qualifying spec
   *
   *       (v:Q)::vars
   *       [(QuotientPat(pat: t, Q)::patterns,cond,e)]
-  *       default
+  *       continuation
   *
   *     return:
   *
@@ -217,14 +221,14 @@ PatternMatch qualifying spec
   *        (
   *         x::vars
   *         [(pat::patterns,cond,e)]
-  *         default
+  *         continuation
   *        )
   *
   *     alternatively:
   *
   *       rep(v)::vars
   *       [(pat::patterns,cond,e)]
-  *       default
+  *       continuation
   *
   *
   *     case e::es of
@@ -281,15 +285,16 @@ PatternMatch qualifying spec
  op [a] tack (x : a) ((xs :: xss) : List (List a)) : List (List a) =
   (x::xs) :: xss
 
- type RuleType = | Var 
-                 | Con 
-                 | Alias      MSPattern * MSPattern
-                 | Relax      MSPattern * MSTerm 
-                 | Quotient   MSPattern * TypeName
-                 | Restricted MSPattern * MSTerm 
+ type PMRuleType = | Var 
+                   | Con 
+                   | Alias      MSPattern * MSPattern
+                   | Relax      MSPattern * MSTerm 
+                   | Quotient   MSPattern * TypeName
+                   | Restricted MSPattern * MSTerm 
 
- op ruleType (rule : Rule) : RuleType = 
-  case rule of
+ op pmRuleType (pmrule : PMRule) : PMRuleType = 
+  %% just look at first pattern
+  case pmrule of
     | ((VarPat        _)                  ::_, _, _) -> Var
     | ((WildPat       _)                  ::_, _, _) -> Var
 
@@ -303,9 +308,9 @@ PatternMatch qualifying spec
     | ((AliasPat      (p1,  p2,        _))::_, _, _) -> Alias      (p1,  p2)
     | ((QuotientPat   (pat, qid,       _))::_, _, _) -> Quotient   (pat, qid)
     | ((RestrictedPat (pat, bool_expr, _))::_, _, _) -> Restricted (pat, bool_expr)
-    | _ -> (printRule rule; fail "Unrecognized ruleType!")
+    | _ -> (printPMRule pmrule; fail "Unrecognized ruleType!")
 
- op printRule (pats : MSPatterns, cond : MSTerm, body : MSTerm) : () =
+ op printPMRule (pats : MSPatterns, cond : MSTerm, body : MSTerm) : () =
   let _ = toScreen "Pattern : " in
   let _ = app (fn p -> toScreen (printPattern p ^ " ")) pats in
   let _ = writeLine "" in
@@ -319,7 +324,7 @@ PatternMatch qualifying spec
     | _ -> equivPattern? spc (p1, p2)
       
  (*
-  *  op partitionConstructors : Var * Rules -> List DestructedRule
+  *  op partitionConstructors : Var * MSRules -> DestructuredRules
   *
   *  Given a list of rules, where the first pattern of each rule is a constructor
   *  we partition the rules into sequences of the same constructor, and for each
@@ -330,7 +335,7 @@ PatternMatch qualifying spec
   *    ...
   *    CONSTR pats_n, patterns_n, cond_n, body_n
   *
-  *  we transform:
+  *  we transform to:
   * 
   *    pats_1, patterns_1, cond_1, body_1
   *    pats_2, patterns_2, cond_2, body_2
@@ -339,35 +344,37 @@ PatternMatch qualifying spec
   *
   *  and also return one version of:
   *
+  *     query    - term determining if the input variable v is an instance of constructor CONSTR.
+  *      
   *     vars     - a list of variables of the same type as pats_i.
   *
   *     bindings - a list of let bindings that bind vars to destructors of a variable v 
   *                that is given as argument to partitionConstructors.
   *
-  *                For example, for the pattern {head:pat1, tail:pat2}, bindings = 
+  *                For example, for the pattern {head:pat1, tail:pat2}, 
+  *
+  *                bindings = 
   *                  [(VarPat v1, Apply(Fun(Project(head),_), Var v)),
   *                   (VarPat v2, Apply(Fun(Project(tail),_), Var v))]
   *
   *                which in human terms reads as:
   *                  let v1 = v.head and v2 = v.tail in ...
   *
-  *     query    - term determining if the input variable v is an instance of constructor CONSTR.
-  *      
   *)
 
- op freshVar (context : Context, typ : MSType) : Var =
-  let num = ! context.counter + 1 in
-  (context.counter := num;
+ op freshVar (ctx : Context, typ : MSType) : Var =
+  let num = ! ctx.counter + 1 in
+  (ctx.counter := num;
    ("pV" ^ (Nat.show num), typ))
 
- op freshVars (num : Nat, context : Context, pat : MSPattern) : List (String * Var) =
+ op freshVars (num : Nat, ctx : Context, pat : MSPattern) : List (String * Var) =
   case num of
     | 0 -> []
-    | 1 -> [("", freshVar (context, patternType pat))]
+    | 1 -> [("", freshVar (ctx, patternType pat))]
     | _ ->
       case pat of
         | RecordPat(fields,_) -> 
-          map (fn (l, p) -> (l, freshVar (context, patternType p)))
+          map (fn (l, p) -> (l, freshVar (ctx, patternType p)))
               fields
         | _ -> System.fail "Record pattern expected"
 
@@ -397,25 +404,30 @@ PatternMatch qualifying spec
                                typeAnn typ)))]
     | _ -> System.fail ("CoProduct type expected, but got " ^ printType typ)
 
- type DestructedRule = {query    : MSTerm,       % e.g. embed? Foo x
-                        new_vars : List MSTerm,
-                        bindings : MSBindings,
-                        pattern  : MSPattern,
-                        rules    : Rules}
+ type DestructuredRules = List DestructuredRule
+ type DestructuredRule  = {query    : MSTerm,       % e.g. embed? Foo x -- tests to see if argument matches constructor
+                           new_vars : MSTerms,      % vars that will be bound to args in term, e.g `x' and `y' in  `Foo (x,y)'
+                           bindings : MSBindings,   % each binding associates a var with an extractor from the term
+                           pattern  : MSPattern,    % original pattern
+                           pmrules  : PMRules}
 
- op partitionConstructors (context : Context, 
+ op partitionConstructors (ctx     : Context, 
                            trm     : MSTerm, 
-                           rules   : Rules) 
-  : List DestructedRule =
+                           pmrules : PMRules) 
+  : DestructuredRules =
   let
     def patDecompose (pattern : MSPattern) : MSBindings =
       case pattern of
+
         | RecordPat (pats,_) -> 
+          %% list of patterns with projections
           map (fn (index, p) -> 
-                 (p, mkProjectTerm (context.spc, index, trm))) 
+                 (p, mkProjectTerm (ctx.spc, index, trm))) 
               pats
+
         | EmbedPat (id, Some p, coproduct_type, _) -> 
-          let fields = coproductFields (context.spc, coproduct_type) in
+          %% singleton list of a pattern with a selection 
+          let fields = coproductFields (ctx.spc, coproduct_type) in
           let tm = case findLeftmost (fn (id2, _) -> id = id2) fields of
                      | Some (_, Some field_type) ->
                        mkApply ((Fun (Select id, 
@@ -426,44 +438,69 @@ PatternMatch qualifying spec
                        System.fail "Selection index not found in product"
           in
           [(p, tm)]
+
         | _ -> [] 
 
-    def insert (rule, drules) : List DestructedRule = 
-      case (rule, drules) of
+    def insert (pmrule, drules) : DestructuredRules = 
+      case (pmrule, drules) of
+
         | ((pat::pats, cond, body), []) -> 
-          let query         = queryPat pat trm in
-          let decomposition = patDecompose pat in
-          let new_vars      = map (fn (p, _) -> 
-                                     freshVar (context, patternType p)) 
-                                  decomposition 
+          %% create new drule:
+
+          let query                = queryPat pat trm in
+          let pats_with_extractors = patDecompose pat in 
+
+          %% pats_with_extractors is either:
+          %%   a list of patterns, each paired with a corresponding projections, or
+          %%   a singleton list of one pattern paired with a selection operation.
+
+          %% new_vs will be used for vars that bind to args in constructor term
+          %% bindings will extract values for vars from constructor term
+          let new_vs     = map (fn (pat, _) -> 
+                                  freshVar (ctx, patternType pat)) 
+                               pats_with_extractors 
           in
-          let bindings      = ListPair.map (fn ((p, t), v) -> 
-                                              (mkVarPat v, t))
-                                           (decomposition, new_vars) 
+          let bindings   = map (fn (v, (_, extractor)) -> 
+                                  (mkVarPat v, extractor))
+                               (new_vs, pats_with_extractors)
           in
-          let new_pats      = map (fn (p, _) -> p) decomposition in
-          [{query    = query, 
-            new_vars = map mkVar new_vars, 
-            bindings = bindings,
-            pattern  = pat, 
-            rules    = [(new_pats ++ pats, cond, body)]}]
+
+          %% new_pats will decribe how to destructure vars
+          %% new_vars are terms corresponding to new_pats
+          let new_pats   = map (fn (pat, _) -> pat) pats_with_extractors in
+          let new_vars   = map mkVar new_vs                              in
+          let new_pmrule = (new_pats ++ pats, cond, body)                in
+
+          let new_drule  = {query    = query, 
+                            new_vars = new_vars,
+                            bindings = bindings,
+                            pattern  = pat, 
+                            pmrules  = [new_pmrule]}
+          in 
+          [new_drule]
 
         | ((pat::pats, cond, body), (drule :: drules)) -> 
-          let spc = context.spc in
+          let spc = ctx.spc in
           if sameConstructor spc (pat, drule.pattern) then
-            let decomposition = patDecompose pat in
-            let new_pats      = map (fn (p, _) -> p) decomposition in
-            let new_rule      = (new_pats ++ pats, cond, body) in
-            let new_drule     = drule << {rules = new_rule :: drule.rules} in
-            new_drule :: drules
+            %% add pattern to existing drule for same constructor
+            let pats_with_extractors = patDecompose pat in 
+            let new_pats             = map (fn (pat, _) -> pat) pats_with_extractors in
+            let new_pmrule           = (new_pats ++ pats, cond, body) in
+            let revised_drule        = drule << {pmrules = new_pmrule :: drule.pmrules} in
+            revised_drule :: drules
           else 
+            %% TODO: wierdly ineffecient way to amend an element in a list
+            %% repeats exists? test for every tail of list
             if exists? (fn drule -> sameConstructor spc (pat, drule.pattern)) drules then
-              drule :: insert (rule, drules)
+              %% walk past non-matching drule on way to a matching one (that we know exists)
+              drule :: insert (pmrule, drules)
             else 
-              insert (rule, []) ++ (drule :: drules)
+              %% otherwise create new drule
+              insert (pmrule, []) ++ (drule :: drules)
+
         | _ -> drules (* should not happen *)
   in
-  foldr insert [] rules 
+  foldr insert [] pmrules 
         
  op abstract (vs  : List (String * Var), 
               trm : MSTerm, 
@@ -483,167 +520,169 @@ PatternMatch qualifying spec
   in
   Lambda ([(pat, trueTerm, body)], noPos)
 
- op match (context : Context, 
-           vars    : MSTerms, 
-           rules   : Rules, 
-           default : MSTerm, 
-           break   : MSTerm) 
+ op match (ctx          : Context, 
+           vars         : MSTerms, 
+           pmrules      : PMRules, 
+           continuation : MSTerm, 
+           break        : MSTerm) 
   : MSTerm = 
   case vars of
-    | [] -> foldr (fn ((_,cond,body), default) -> 
-                     failWith context 
-                              (Utilities.mkIfThenElse (cond, body, break))
-                              default)
-                  default
-                  rules
+    | [] -> foldr (fn ((_,cond,body), continuation) -> 
+                     %% this may optimize IfThenElse based on actual terms:
+                     let body = Utilities.mkIfThenElse (cond, body, break) in
+                     failWith ctx body continuation)
+                  continuation
+                  pmrules
     | _ -> 
-      let rules = (partition ruleType rules) in
-      foldr (matchRules (context, break, vars)) 
-            default 
-            rules
+      let pmrules = partition pmRuleType pmrules in
+      foldr (matchPMRules (ctx, break, vars)) 
+            continuation 
+            pmrules
   
- op matchRules (context : Context, 
-                break   : MSTerm, 
-                vars    : MSTerms) 
-               (rules   : Rules, 
-                default : MSTerm) 
+ op matchPMRules (ctx          : Context, 
+                  break        : MSTerm, 
+                  vars         : MSTerms) 
+                 (pmrules      : PMRules, 
+                  continuation : MSTerm) 
   : MSTerm = 
-  case ruleType (head rules) of
+  case pmRuleType (head pmrules) of
+    | Var                        -> matchVar        (ctx,           vars, pmrules, continuation, break)
+    | Con                        -> matchCon        (ctx,           vars, pmrules, continuation, break)
+    | Alias      (p1,  p2)       -> matchAlias      (ctx, p1, p2,   vars, pmrules, continuation, break)
+    | Relax      (pat, pred)     -> matchSubtype    (ctx, pred,     vars, pmrules, continuation, break)
+    | Quotient    _              -> matchQuotient   (ctx,           vars, pmrules, continuation, break) 
     %% Restricted should be unnecessary because top-level Restricteds have been removed in eliminateTerm
-    | Var                        -> matchVar        (context,           vars, rules, default, break)
-    | Con                        -> matchCon        (context,           vars, rules, default, break)
-    | Alias      (p1,  p2)       -> matchAlias      (context, p1, p2,   vars, rules, default, break)
-    | Relax      (pat, pred)     -> matchSubtype    (context, pred,     vars, rules, default, break)
-    | Restricted (pat, bool_exp) -> matchRestricted (context, bool_exp, vars, rules, default, break)
-    | Quotient    _              -> matchQuotient   (context,           vars, rules, default, break) 
+    | Restricted (pat, bool_exp) -> matchRestricted (ctx, bool_exp, vars, pmrules, continuation, break)
       
- op matchVar (context     : Context, 
-              tm :: terms : MSTerms, 
-              rules       : Rules,
-              default     : MSTerm, 
-              break       : MSTerm) 
+ op matchVar (ctx          : Context, 
+              tm :: terms  : MSTerms, 
+              pmrules      : PMRules,
+              continuation : MSTerm, 
+              break        : MSTerm) 
   : MSTerm = 
-  let rules = map (fn rule ->
-                     case rule of
-                       | (pat :: pats, cond, body) ->
-                         (pats, 
-                          substPat (cond, pat, tm),
-                          substPat (body, pat, tm))
-                       | _ -> 
-                         System.fail "Empty list of patterns ")
-                  rules
+  let pmrules = map (fn pmrule ->
+                       case pmrule of
+                         | (pat :: pats, cond, body) ->
+                           (pats, 
+                            substPat (cond, pat, tm),
+                            substPat (body, pat, tm))
+                         | _ -> 
+                           System.fail "Empty list of patterns ")
+                    pmrules
   in
-  match (context, terms, rules, default, break)
+  match (ctx, terms, pmrules, continuation, break)
 
- op matchCon (context : Context, 
-              terms   : MSTerms, 
-              rules   : Rules,
-              default : MSTerm, 
-              break   : MSTerm) 
+ op matchCon (ctx          : Context, 
+              terms        : MSTerms, 
+              pmrules      : PMRules,
+              continuation : MSTerm, 
+              break        : MSTerm) 
   : MSTerm = 
-  let tm :: terms   = terms in
-  let rulePartition = partitionConstructors (context, tm, rules) in
-  let rule          = foldr (fn (drule, default) ->   
-                               Utilities.mkIfThenElse (drule.query, 
-                                                       mkLet (drule.bindings,
-                                                              match (context,
-                                                                     drule.new_vars ++ terms,
-                                                                     drule.rules,
-                                                                     break,
-                                                                     break)),
-                                                       default))
-                            break 
-                            rulePartition
+  let tm :: terms     = terms in  % use tm in Let binding, terms in Let body
+  let pmRulePartition = partitionConstructors (ctx, tm, pmrules) in
+  let body            = foldr (fn (drule, continuation) ->   
+                                 %% this may optimize IfThenElse based on actual terms:
+                                 Utilities.mkIfThenElse (drule.query, 
+                                                         mkLet (drule.bindings,
+                                                                match (ctx,
+                                                                       drule.new_vars ++ terms,
+                                                                       drule.pmrules,
+                                                                       break,
+                                                                       break)),
+                                                         continuation))
+                              break 
+                              pmRulePartition
   in
-  failWith context rule default
+  failWith ctx body continuation
 
- op matchAlias (context : Context, 
-                p1      : MSPattern, 
-                p2      : MSPattern, 
-                terms   : MSTerms, 
-                rules   : Rules, 
-                default : MSTerm, 
-                break   : MSTerm) 
+ op matchAlias (ctx          : Context, 
+                p1           : MSPattern, 
+                p2           : MSPattern, 
+                terms        : MSTerms, 
+                pmrules      : PMRules, 
+                continuation : MSTerm, 
+                break        : MSTerm) 
   : MSTerm = 
   let tm :: _ = terms in
-  let rules   = map (fn rule ->
-                       case rule of
+  let pmrules = map (fn pmrule ->
+                       case pmrule of
                          | (_        :: pats, cond, e) ->
                            (p1 :: p2 :: pats, cond, e))
-                    rules 
+                    pmrules 
   in
-  match (context, tm :: terms, rules, default, break)
+  %% replicate tm
+  match (ctx, tm :: terms, pmrules, continuation, break)
 
- op matchSubtype (context     : Context, 
-                  pred        : MSTerm,
-                  tm :: terms : MSTerms, 
-                  rules       : Rules, 
-                  default     : MSTerm, 
-                  break       : MSTerm) 
+ op matchSubtype (ctx          : Context, 
+                  pred         : MSTerm,
+                  tm :: terms  : MSTerms, 
+                  pmrules      : PMRules, 
+                  continuation : MSTerm, 
+                  break        : MSTerm) 
   : MSTerm = 
-  let _  = inferType  (context.spc, tm) in
-  let t1 = mkRestrict (context.spc, {pred = pred, term = tm}) in
-  failWith context 
-           (Utilities.mkIfThenElse (mkApply (pred, tm),
-                                    match (context, t1::terms, rules, break, break),
-                                    break))
-           default 
+  let _    = inferType  (ctx.spc, tm) in
+  let t1   = mkRestrict (ctx.spc, {pred = pred, term = tm}) in
+  %% this may optimize IfThenElse based on actual terms:
+  let body = Utilities.mkIfThenElse (mkApply (pred, tm),
+                                     match (ctx, t1::terms, pmrules, break, break),
+                                     break)
+  in
+  failWith ctx body continuation 
 
- op matchRestricted (context   : Context, 
-                     bool_expr : MSTerm,
-                     terms     : MSTerms, 
-                     rules     : Rules, 
-                     default   : MSTerm, 
-                     break     : MSTerm) 
+ op matchRestricted (ctx          : Context, 
+                     bool_expr    : MSTerm,
+                     terms        : MSTerms, 
+                     pmrules      : PMRules, 
+                     continuation : MSTerm, 
+                     break        : MSTerm) 
   : MSTerm = 
-  let rules  = map (fn rule ->
-                      case rule of
+  let pmrules = map (fn pmrule ->
+                      case pmrule of
                         | ((RestrictedPat (p,_,_))::pats, cond, e) ->
                           (p :: pats,
                            mkSimpConj [cond, bool_expr], 
                            e)
-                        | _ -> rule)
-                   rules
+                        | _ -> pmrule)
+                    pmrules
   in
-  match (context, terms, rules, default, break) 
+  match (ctx, terms, pmrules, continuation, break) 
 
- op matchQuotient (context     : Context, 
-                   tm :: terms : MSTerms, 
-                   rules       : Rules, 
-                   default     : MSTerm, 
-                   break       : MSTerm) 
+ op matchQuotient (ctx          : Context, 
+                   tm :: terms  : MSTerms, 
+                   pmrules      : PMRules, 
+                   continuation : MSTerm, 
+                   break        : MSTerm) 
   : MSTerm =
-  let q = inferType (context.spc, tm) in
-  case unfoldBase (context.spc, q) of
+  let q = inferType (ctx.spc, tm) in
+  case unfoldBase (ctx.spc, q) of
     | Quotient (typ, pred, _) -> 
       %%
       %%    Given current implementation of choose, we compile
       %%     t1 = choose[q] t 
       %%
-      let v     = ("v", typ)                                   in
-      let f     = mkLambda (VarPat (v, noPos), Var (v, noPos)) in
-      let t1    = mkApply  (mkChooseFun (q, typ, typ, f), tm)  in
-      let rules = map (fn ((QuotientPat (p, pred, _)) :: pats, cond, e) ->
-                         (p::pats, cond, e))
-                      rules 
+      let v       = ("v", typ)                                   in
+      let f       = mkLambda (VarPat (v, noPos), Var (v, noPos)) in
+      let t1      = mkApply  (mkChooseFun (q, typ, typ, f), tm)  in
+      let pmrules = map (fn ((QuotientPat (p, pred, _)) :: pats, cond, e) ->
+                           (p::pats, cond, e))
+                        pmrules 
       in
-      failWith context
-               (match (context, t1::terms, rules, break, break))
-               default  
+      let body    = match (ctx, t1::terms, pmrules, break, break) in
+      failWith ctx body continuation  
     | _ -> 
       fail ("matchQuotient: expected " ^ printType q ^ " to name a quotient type")
 
  %% fn (x as pat) -> bod  -->  fn x -> let pat = x in bod
  %% Without this other normalizations such as arity normalization break
- op normalizeSimpleAlias (match : Match) : Match =
-  case match of
+ op normalizeSimpleAlias (msrules : MSRules) : MSRules =
+  case msrules of
     | [(AliasPat (VarPat (v, a1), p2, a2), cond, body)] ->
       [(VarPat (v, a1), 
         trueTerm, 
         Apply (Lambda ([(p2, cond, body)], a2), 
                Var (v, a1), 
                a2))]
-    | _ -> match
+    | _ -> msrules
 
  op splitPattern (arity : Nat, pat : MSPattern) : MSPatterns =
   if arity = 1 then 
@@ -662,127 +701,131 @@ PatternMatch qualifying spec
     | ((_, pat)::fields, (_,t)::terms) -> (pat,t) :: zipFields (fields, terms)
     | _ -> System.fail "zipFields: Uneven length of fields"
 
- op flattenLetDecl ((pat     : MSPattern, term  : MSTerm), 
-                    (context : Context,   decls : MSBindings))
+ op flattenLetBinding (binding as (pat : MSPattern, term  : MSTerm), 
+                       (ctx : Context,   bindings : MSBindings))
   : Context * MSBindings =
   case (pat, term) of
-    | (WildPat (typ,_), Var _)        -> (context, decls)
-    | (WildPat (typ,_), Record([],_)) -> (context, decls)
-    | (WildPat (typ,_), term)         -> let decl = (mkVarPat (freshVar (context, patternType pat)), term) in
-                                         (context, decl :: decls)
+    | (WildPat (typ,_), Var _)        -> (ctx, bindings)
+    | (WildPat (typ,_), Record([],_)) -> (ctx, bindings)
+    | (WildPat (typ,_), term)         -> let new_pat = mkVarPat (freshVar (ctx, patternType pat)) in
+                                         let new_binding = (new_pat, term) in
+                                         (ctx, new_binding :: bindings)
 
     | (RecordPat (fields, _), Record (terms, _)) ->
-      foldr flattenLetDecl 
-            (context,decls) 
+      foldr flattenLetBinding 
+            (ctx, bindings) 
             (zipFields (fields, terms)) 
 
     | (RecordPat (fields,_), term) -> 
-      let v      = freshVar (context, inferType(context.spc, term)) in
-      let var    = mkVar v                                          in
-      let decls1 = map (fn (id, pat) -> 
-                          (pat, mkProjectTerm (context.spc, id, var))) 
-                       fields 
+      let v            = freshVar (ctx, inferType (ctx.spc, term)) in
+      let var          = mkVar v                                   in
+      let new_bindings = map (fn (id, pat) -> 
+                                (pat, mkProjectTerm (ctx.spc, id, var))) 
+                             fields 
       in
-      let (context, decls2) = foldr flattenLetDecl (context, decls) decls1 in
-      let decl = (mkVarPat v, term) in
-      (context, decl :: (decls2 ++ decls))
+      let (ctx, new_bindings) = foldr flattenLetBinding (ctx, bindings) new_bindings in
+      let new_binding = (mkVarPat v, term) in
+      %% TODO:  just new_bindings ??
+      (ctx, new_binding :: (new_bindings ++ bindings))
 
     | _ -> 
-      (context, (pat, term) :: decls)
+      (ctx, binding :: bindings)
 
- op eliminatePattern (context : Context) (pat : MSPattern) : MSPattern = 
+ op eliminatePattern (ctx : Context) (pat : MSPattern) : MSPattern = 
   case pat of
 
-    | AliasPat (p1,                          p2,                          a) -> 
-      AliasPat (eliminatePattern context p1, eliminatePattern context p2, a)
+    | AliasPat (                     p1,                      p2, a) -> 
+      AliasPat (eliminatePattern ctx p1, eliminatePattern ctx p2, a)
 
-    | VarPat ((n, s),                       a) -> 
-      VarPat ((n, eliminateType context s), a)
+    | VarPat ((n,                   s), a) -> 
+      VarPat ((n, eliminateType ctx s), a)
       
-    | EmbedPat (i, Some p,                            s,                       a) ->
-      EmbedPat (i, Some (eliminatePattern context p), eliminateType context s, a)
+    | EmbedPat (i, Some                       p ,                   s, a) ->
+      EmbedPat (i, Some (eliminatePattern ctx p), eliminateType ctx s, a)
       
-    | EmbedPat (i, None, s,                       a) ->
-      EmbedPat (i, None, eliminateType context s, a)
+    | EmbedPat (i, None,                   s, a) ->
+      EmbedPat (i, None, eliminateType ctx s, a)
       
-    | RecordPat (fields,                                                   a) -> 
-      RecordPat (map (fn (i, p)-> (i, eliminatePattern context p)) fields, a)
+    | RecordPat (                                              fields, a) -> 
+      RecordPat (map (fn (i, p)-> (i, eliminatePattern ctx p)) fields, a)
       
-    | WildPat   (s, a) -> VarPat (freshVar (context, eliminateType context s), a)
+    | WildPat   (s, a) -> VarPat (freshVar (ctx, eliminateType ctx s), a)
     | StringPat (s, a) -> StringPat (s, a)
     | BoolPat   (b, a) -> BoolPat   (b, a)
     | CharPat   (c, a) -> CharPat   (c, a)
     | NatPat    (n, a) -> NatPat    (n, a)
       
-    | QuotientPat  (p,                          qid, a) ->
-      QuotientPat  (eliminatePattern context p, qid, a)
+    | QuotientPat  (                     p, qid, a) ->
+      QuotientPat  (eliminatePattern ctx p, qid, a)
       
-    | RestrictedPat (p,                          tm,                       a) ->
-      RestrictedPat (eliminatePattern context p, eliminateTerm context tm, a)
+    | RestrictedPat (                     p,                   tm, a) ->
+      RestrictedPat (eliminatePattern ctx p, eliminateTerm ctx tm, a)
       
-    | TypedPat (p,                          ty,                       a) ->
-      TypedPat (eliminatePattern context p, eliminateType context ty, a)
+    | TypedPat (                     p,                   ty, a) ->
+      TypedPat (eliminatePattern ctx p, eliminateType ctx ty, a)
 
- op eliminateType (context : Context) (typ : MSType) : MSType =
+ op eliminateType (ctx : Context) (typ : MSType) : MSType =
   case typ of
 
-    | Arrow (s1,                       s2,                       a) -> 
-      Arrow (eliminateType context s1, eliminateType context s2, a)
+    | Arrow (                  s1,                   s2, a) -> 
+      Arrow (eliminateType ctx s1, eliminateType ctx s2, a)
       
-    | Product (fields,                                                 a) -> 
-      Product (map (fn (i, s) -> (i, eliminateType context s)) fields, a)
+    | Product (                                            fields, a) -> 
+      Product (map (fn (i, s) -> (i, eliminateType ctx s)) fields, a)
       
     | CoProduct (fields, a) -> 
       CoProduct (map (fn (i, x) -> 
                         (i,
                          case x of
-                           | Some s -> Some (eliminateType context s)
+                           | Some s -> Some (eliminateType ctx s)
                            | _ -> None))
                    fields,
                  a)
       
-    | Quotient (s,                       tm,                       a) -> 
-      Quotient (eliminateType context s, eliminateTerm context tm, a)
+    | Quotient (                  s,                   tm, a) -> 
+      Quotient (eliminateType ctx s, eliminateTerm ctx tm, a)
       
-    | Subtype (s,                       tm, a) -> 
-      % Subtype predicates aren't used in code generation (??), so omit eliminateTerm context tm,  ????
-      Subtype (eliminateType context s, tm, a) 
+    | Subtype (                  s, tm, a) -> 
+      % Subtype predicates aren't used in code generation (??), so omit eliminateTerm ctx tm,  ????
+      Subtype (eliminateType ctx s, tm, a) 
       
-    | Base (qid, types,                             a) -> 
-      Base (qid, map (eliminateType context) types, a)
+    | Base (qid,                         types, a) -> 
+      Base (qid, map (eliminateType ctx) types, a)
       
     | Boolean _ -> typ
     | TyVar   _ -> typ
     | Any     _ -> typ
 
-    | And (types,    a) -> And (map (eliminateType context) types, a)
-    | Pi  (tvs, typ, a) -> Pi  (tvs, eliminateType context typ,    a)
+    | And (                        types, a) -> 
+      And (map (eliminateType ctx) types, a)
 
- (* Generate the default catch all case given a set of rules *)
+    | Pi (tvs,                   typ, a) -> 
+      Pi (tvs, eliminateType ctx typ, a)
 
- op makeFail (context : Context, typ : MSType, _ : MSTerm) : MSTerm =
-  let index = ! context.errorIndex + 1 in
-  (context.errorIndex := index;
+ op makeFail (ctx : Context, typ : MSType, _ : MSTerm) : MSTerm =
+  %% Generate the continuation catch all case given a set of pattern matching rules.
+  let index = ! ctx.error_index + 1 in
+  (ctx.error_index := index;
    let typ1 = mkArrow(typ,match_type typ) in
-   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ context.funName in
+   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ ctx.op_name in
    mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkFail"), typ1),
             mkString msg))
 
- op makeDefault (context : Context, 
-                 typ     : MSType, 
-                 rules   : Match,
-                 vs      : List (String * Var),
-                 term    : MSTerm) 
-  : Match * MSTerm = 
+ op makeContinuation (ctx     : Context, 
+                      typ     : MSType, 
+                      msrules : MSRules,
+                      vs      : List (String * Var),
+                      term    : MSTerm) 
+  : MSRules * MSTerm = 
   let 
-     def loop (rules, first_rules) =
-       case rules of
+     def loop (msrules, first_msrules) =
+       case msrules of
 
          | [] -> 
-           (reverse first_rules, makeFail (context, typ, term))
+           (reverse first_msrules, makeFail (ctx, typ, term))
 
          | [(WildPat _, Fun (Bool true, _, _), body)] ->
-           (reverse first_rules, mkSuccess (typ, body))
+           (reverse first_msrules, mkSuccess (typ, body))
 
          | [(VarPat (v, _), Fun (Bool true, _, _), body)] ->
            let term =
@@ -791,31 +834,31 @@ PatternMatch qualifying spec
                  | _ -> Record (map (fn(l,v)-> (l, mkVar v)) vs, 
                                 noPos) 
            in
-           let body = mkLet ([(VarPat (v, noPos),term)], body) in
-           (reverse first_rules, mkSuccess (typ, body))
+           let body = mkLet ([(VarPat (v, noPos), term)], body) in
+           (reverse first_msrules, mkSuccess (typ, body))
 
-         | rule :: rules ->
-           loop (rules, rule :: first_rules)
+         | msrule :: msrules ->
+           loop (msrules, msrule :: first_msrules)
    in
-   loop (rules, [])
+   loop (msrules, [])
 
- op wildPattern? (rule : MSRule) : Bool =
-  case rule of
+ op wildPattern? (msrule : MSRule) : Bool =
+  case msrule of
     | (WildPat _,     Fun (Bool true,_,_), _) -> true
     | (VarPat (v, _), Fun (Bool true,_,_), _) -> true
     | _ -> false
 
- op checkUnreachableCase (context : Context, term : MSTerm, rules : MSRules) : () =
+ op checkUnreachableCase (ctx : Context, term : MSTerm, msrules : MSRules) : () =
   let 
-    def nonfinalWildPattern? rules =
-      case rules of
+    def nonfinalWildPattern? msrules =
+      case msrules of
         | []  -> false
         | [_] -> false
-        | rule :: rules ->
-          wildPattern? rule || nonfinalWildPattern? rules
+        | msrule :: msrules ->
+          wildPattern? msrule || nonfinalWildPattern? msrules
   in
-  if nonfinalWildPattern? rules then
-    writeLine ("checkUnreachableCase: Unreachable case in " ^ context.funName ^ "\n" ^ printTerm term)
+  if nonfinalWildPattern? msrules then
+    writeLine ("checkUnreachableCase: Unreachable case in " ^ ctx.op_name ^ "\n" ^ printTerm term)
   else 
     ()
 
@@ -824,142 +867,146 @@ PatternMatch qualifying spec
 
  op alwaysCheckRestrictedPatInLambda? : Bool = false
 
- op eliminateTerm (context : Context) (term : MSTerm) : MSTerm =
+ op eliminateTerm (ctx : Context) (term : MSTerm) : MSTerm =
   case term of
-    | Lambda (rules,_) ->
-      let rules = normalizeSimpleAlias rules in
-      let arity = matchArity           rules in
-      let rules = map (fn (p, c, b)-> 
-                         (eliminatePattern context p,
-                          eliminateTerm    context c,
-                          eliminateTerm    context b)) 
-                      rules 
+    | Lambda (msrules,_) ->
+      let msrules = normalizeSimpleAlias msrules in
+      let msrules = map (fn (p, c, b)-> 
+                         (eliminatePattern ctx p,
+                          eliminateTerm    ctx c,
+                          eliminateTerm    ctx b)) 
+                        msrules 
       in
-      if simpleAbstraction rules then
-        let rules = map (fn (p, c, a) -> (deRestrict p, c, a)) rules in
-        Lambda (rules, noPos)
+      let arity   = matchArity msrules in
+      if simpleAbstraction msrules then
+        let msrules = map (fn (pat, cond, body) -> (deRestrict pat, cond, body)) msrules in
+        Lambda (msrules, noPos)
       else 
         % let _ = writeLine "Elimination from lambda " in
-        let _ = checkUnreachableCase (context, term, rules) in
+        let _ = checkUnreachableCase (ctx, term, msrules) in
 
+        %% TODO: This is the only code in Specware that uses Lambda condition field
+        %%       Change to use RestrictedPat ?
         %% Move RestrictedPat conditions to condition
-        %% Not singleton because obligation should ensure this is always true unless alwaysCheckRestrictedPatInLambda?
-        let rules =
-            case rules of
+        %% Unless alwaysCheckRestrictedPatInLambda? is true, don't add condition,
+        %%  because singleton has obligation to always be true.
 
-              | [(RestrictedPat (pat, rcond, _), cond, bdy)] | ~ alwaysCheckRestrictedPatInLambda? ->
-                [(pat, cond, bdy)]
+        let msrules =
+            case msrules of
 
-              | _ -> map (fn rule ->
-                            case rule of 
-                              | (RestrictedPat (pat, rcond, _), cond,                     bdy) ->
-                                (pat,                           mkSimpConj [rcond, cond], bdy)
-                              | _ -> rule)
-                         rules
+              | [(RestrictedPat (pat, rcond, _), cond, body)] | ~ alwaysCheckRestrictedPatInLambda? ->
+                [(pat, cond, body)]
+
+              | _ -> map (fn msrule ->
+                            case msrule of 
+                              | (RestrictedPat (pat, rcond, _), cond,                     body) ->
+                                (pat,                           mkSimpConj [rcond, cond], body)
+                              | _ -> msrule)
+                         msrules
         in         
-        let (pat, cond, bdy)  = head rules                                      in
-        let bdyType           = inferType (context.spc, bdy)                    in
-        let vs                = freshVars (arity, context, pat)                 in
-        % let _ = writeLine "Elimination from lambda: rules "                   in
-        let (rules, default)  = makeDefault (context, bdyType, rules, vs, term) in
-        let rules = map (fn (p, c, t) -> 
-                           (splitPattern(arity,p), c, mkSuccess (bdyType, t))) 
-                        rules 
+        let (pat, cond, body)       = head msrules                                                     in
+        let body_type               = inferType (ctx.spc, body)                                        in
+        let indices_and_vs          = freshVars (arity, ctx, pat)                                      in
+        let (msrules, continuation) = makeContinuation (ctx, body_type, msrules, indices_and_vs, term) in
+        let pmrules                 = map (fn (pat, cond, body) -> 
+                                             (splitPattern (arity, pat), 
+                                              cond, 
+                                              mkSuccess (body_type, body))) 
+                                          msrules 
         in
-        let vars = map (fn (_, v) -> mkVar v) vs                                            in
-        let trm  = match (storeTerm (term, context), vars, rules, default, mkBreak bdyType) in
-        let trm  = abstract (vs, trm, bdyType)                                              in
+        let vars = map (fn (_, v) -> mkVar v) indices_and_vs                   in
+        let ctx  = storeLambda (term, ctx)                                     in
+        let trm  = match (ctx, vars, pmrules, continuation, mkBreak body_type) in
+        let trm  = abstract (indices_and_vs, trm, body_type)                   in
         trm
 
-    | Let (decls, body,_) -> 
+    | Let (bindings, body,_) -> 
 
      %% Treatment of let-bound patterns is optimized with respect to a number
      %% of special cases: Wildcards, trivially satisfiable patterns, Non-flattened patterns, etc.
 
-     let decls = map (fn (p, e) -> 
-                        (eliminatePattern context p,
-                         eliminateTerm    context e))
-                     decls
+     let bindings = map (fn (pat, exp) -> 
+                        (eliminatePattern ctx pat,
+                         eliminateTerm    ctx exp))
+                     bindings
      in
-     let body  = eliminateTerm context body in
+     let body  = eliminateTerm ctx body in
      %% Translate non-recursive non-simple let patterns into application
     
-     let (context, decls) = foldr flattenLetDecl (context,decls) [] in
-     if forall? (fn (pat, _)-> simplePattern pat) decls then
-       mkLet(decls,body)
+     let (ctx, bindings) = foldr flattenLetBinding (ctx,bindings) [] in
+     if forall? (fn (pat, _)-> simplePattern pat) bindings then
+       mkLet (bindings, body)
      else 
-       let (pats, terms) = unzip decls in
        % let _ = writeLine "Let pattern elimination " in
-       % let _ = app (fn p -> writeLine (printPattern p)) pats in
+       let (pats, terms) = unzip bindings in
        let trm = 
            case terms of
              | [tm]  -> tm
              | terms -> mkTuple terms
        in
-       let bdyTyp = inferType (context. spc, body) in
-       % let _  = writeLine "Let pattern elimination tabulating " in
-       let vs = map (fn pat -> freshVar (context, patternType pat)) pats in
-       let (vars,_) = 
+       let body_type = inferType (ctx. spc, body)                           in
+       let vs        = map (fn pat -> freshVar (ctx, patternType pat)) pats in
+       let (indices_and_vs,_) = 
            foldl (fn ((vars, num), v) -> 
-                    (Cons ((Nat.show num, v), vars), num + 1))
+                    let new_var = (Nat.show num, v) in
+                    (new_var :: vars, num + 1))
                  ([],1) 
                  vs
        in
-       % let _ = writeLine "Let pattern elimination: match" in
-       let tm = match (context,
+       let tm = match (ctx,
                        map mkVar vs,
-                       [(pats, trueTerm, mkSuccess (bdyTyp, body))] : Rules,
-                       makeFail (context, bdyTyp, term),
-                       mkBreak bdyTyp) 
+                       [(pats, trueTerm, mkSuccess (body_type, body))] : PMRules,
+                       makeFail (ctx, body_type, term),
+                       mkBreak body_type) 
        in
-       let tm = abstract (vars, tm, bdyTyp) in
+       let tm = abstract (indices_and_vs, tm, body_type) in
        mkApply (tm,trm)
 
     %% case e of p -> body --> let p = e in body
 
     | Apply (Lambda ([(p, Fun (Bool true,_,_), body)],_), e, pos) ->
-      eliminateTerm context (Let ([(p,e)], body, pos))
+      eliminateTerm ctx (Let ([(p,e)], body, pos))
 
-    | Apply (t1,                       t2,                       a) -> 
-      Apply (eliminateTerm context t1, eliminateTerm context t2, a)
+    | Apply (                  t1,                   t2, a) -> 
+      Apply (eliminateTerm ctx t1, eliminateTerm ctx t2, a)
 
-    | Record (fields,                                                   a) ->
-      Record (map (fn (id, t) -> (id, eliminateTerm context t)) fields, a)
+    | Record (                                              fields, a) ->
+      Record (map (fn (id, t) -> (id, eliminateTerm ctx t)) fields, a)
 
-    | Bind (b, vars,                                             tm,                       a) -> 
-      Bind (b, map (fn(n,s)-> (n,eliminateType context s)) vars, eliminateTerm context tm, a)
+    | Bind (b,                                         vars,                   tm, a) -> 
+      Bind (b, map (fn(n,s)-> (n,eliminateType ctx s)) vars, eliminateTerm ctx tm, a)
 
-    | The ((id, typ),                       tm,                       a) -> 
-      The ((id, eliminateType context typ), eliminateTerm context tm, a)
+    | The ((id,                   typ),                   tm, a) -> 
+      The ((id, eliminateType ctx typ), eliminateTerm ctx tm, a)
 
-    | LetRec (decls, body, a) -> 
-      LetRec (map (fn ((n, s), t)->
-                     ((n, eliminateType context s),
-                      eliminateTerm context t)) 
-                  decls,
-              eliminateTerm context body,
+    | LetRec (bindings, body, a) -> 
+      LetRec (map (fn ((v, typ), value)->
+                     ((v, eliminateType ctx typ),
+                      eliminateTerm ctx value)) 
+                  bindings,
+              eliminateTerm ctx body,
               a)
 
-    | Var ((n, s),                       a) -> 
-      Var ((n, eliminateType context s), a)
+    | Var ((n,                   s), a) -> 
+      Var ((n, eliminateType ctx s), a)
 
-    | Fun (f, s,                       a) -> 
-      Fun (f, eliminateType context s, a)
+    | Fun (f,                   s, a) -> 
+      Fun (f, eliminateType ctx s, a)
 
     | IfThenElse (s1, s2, s3, a) -> 
-      IfThenElse (eliminateTerm context s1,
-                  eliminateTerm context s2,
-                  eliminateTerm context s3,
-                  a)
+      %% this may optimize IfThenElse based on actual terms:
+      Utilities.mkIfThenElse (eliminateTerm ctx s1,
+                              eliminateTerm ctx s2,
+                              eliminateTerm ctx s3)
 
-    | Seq (terms,                             a) -> 
-      Seq (map (eliminateTerm context) terms, a)
+    | Seq (                        tms, a) -> 
+      Seq (map (eliminateTerm ctx) tms, a)
 
-    | And (tm                       :: r_tms, a) -> 
-      And (eliminateTerm context tm :: r_tms, a)
+    | And (                  tm :: r_tms, a) -> 
+      And (eliminateTerm ctx tm :: r_tms, a)
 
-    | TypedTerm (tm,                       ty,                       a) ->
-      TypedTerm (eliminateTerm context tm, eliminateType context ty, a)
+    | TypedTerm (                  tm,                   ty, a) ->
+      TypedTerm (eliminateTerm ctx tm, eliminateType ctx ty, a)
 
     | _ ->
       term
@@ -967,49 +1014,53 @@ PatternMatch qualifying spec
  op simplifyPatternMatchResult (term : MSTerm) : Option MSTerm =
   let 
 
-    def simpRec (t1, t2) =
-      case t1 of
-        | IfThenElse (p, x, y, pos) ->
-          (case simpSuccess x of
-             | Some simp_x ->
-               (case simpRec (y, t2) of
-                  | Some simp_y -> Some (IfThenElse (p, simp_x, simp_y, pos))
+    def simpRec (body, continuation) =
+      case body of
+        | IfThenElse (p, t1, t2, pos) ->
+          (case simpSuccess t1 of
+             | Some simp_t1 ->
+               (case simpRec (t2, continuation) of
+                  | Some simp_t2 -> 
+                    %% this may optimize IfThenElse based on actual terms:
+                    Some (Utilities.mkIfThenElse (p, simp_t1, simp_t2))
                   | _ -> None)
              | _ ->
-               if simpleSuccTerm? t2 then
-                 case simpRec (x, t2) of
-                   | Some simp_x ->
-                     (case simpRec (y, t2) of
-                        | Some simp_y -> Some (IfThenElse (p, simp_x, simp_y, pos))
+               if simpleSuccTerm? continuation then
+                 case simpRec (t1, continuation) of
+                   | Some simp_t1 ->
+                     (case simpRec (t2, continuation) of
+                        | Some simp_t2 -> 
+                          %% this may optimize IfThenElse based on actual terms:
+                          Some (Utilities.mkIfThenElse (p, simp_t1, simp_t2))
                         | _ -> None)
                    | _ -> None
                else 
                  None)
 
         | Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"),_),_,_) -> 
-          simpSuccess t2
+          simpSuccess continuation
 
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), 
                  arg,
                  _) 
           ->
-          Some arg   % t2 is unreachable
+          Some arg   % continuation is unreachable
 
-        | Let (bindings, body, pos) ->
-          (case simpRec (body, t2) of
+        | Let (bindings, let_body, pos) ->
+          (case simpRec (let_body, continuation) of
              | Some simp_body -> Some (Let (bindings, simp_body, pos))
              | _ -> None)
 
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
-                 Record ([("1", arg), ("2", failure)], _),
+                 Record ([("1", inner_body), ("2", inner_continuation)], _),
                  _) 
           ->
-          (case simpRec (failure, t2) of
-             | Some simp_failure -> simpRec (arg, simpLet simp_failure)
+          (case simpRec (inner_continuation, continuation) of
+             | Some simp_continuation -> simpRec (inner_body, simpLet simp_continuation)
              | _ -> None)
 
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_),_,_) -> 
-          Some t1
+          Some body
 
         | _ -> 
           None
@@ -1017,8 +1068,8 @@ PatternMatch qualifying spec
     def simpSuccess tm =
       case tm of
 
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), t1, _) -> 
-          Some t1
+        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), tm, _) -> 
+          Some tm
 
         | Let (bindings, body, pos) ->
           (case simpSuccess body of
@@ -1026,15 +1077,12 @@ PatternMatch qualifying spec
              | _ -> None)
 
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
-                 Record ([("1",t1), ("2",t2)],_),
+                 Record ([("1", body), ("2", continuation)],_),
                  _) 
           ->
-          simpRec (t1, t2)
+          simpRec (body, continuation)
           
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_),
-                 _,
-                 _) 
-          -> 
+        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_), _, _)  ->
           Some tm
 
         | _ -> 
@@ -1043,10 +1091,10 @@ PatternMatch qualifying spec
   case term of
 
     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
-             Record ([("1",t1), ("2",t2)],_), 
+             Record ([("1", body), ("2", continuation)],_), 
              _)
       ->
-      simpRec (t1, simpLet t2)
+      simpRec (body, simpLet continuation)
 
     | _ -> 
       None
@@ -1099,15 +1147,15 @@ PatternMatch qualifying spec
   *  term)
   *)
 
- op mkSpcContext (spc: Spec) (fun_name: String): Context =
-  {counter    = Ref 0,
-   spc        = spc,
-   funName    = fun_name, % used when constructing error messages
-   errorIndex = Ref 0,    % used to distinguish error messages
-   term       = None}
+ op mkSpcContext (spc : Spec) (op_name : String) : Context =
+  {counter     = Ref 0,
+   spc         = spc,
+   error_index = Ref 0,   % to distinguish error messages
+   op_name     = op_name, % for error messages
+   lambda      = None}    % for error messages
 
- op translateMatchInTerm (spc: Spec) (fun_name: String) (tm: MSTerm): MSTerm =
-  simpLamBody(eliminateTerm (mkSpcContext spc fun_name) tm)
+ op translateMatchInTerm (spc: Spec) (op_name: String) (tm: MSTerm): MSTerm =
+  simpLamBody(eliminateTerm (mkSpcContext spc op_name) tm)
 
  op SpecTransform.translateMatch (spc : Spec) : Spec = 
   % sjw: Moved (Ref 0) in-line in mkSpcContext so it is reexecuted for each call so the counter is reinitialized
@@ -1115,16 +1163,16 @@ PatternMatch qualifying spec
   % to be a function). This means that compiled functions will have the same generated variables
   % independent of the rest of the file.
   let 
-    def mkContext funName = mkSpcContext spc funName 
+    def mkContext op_name = mkSpcContext spc op_name
   in
   let new_types =
       mapTypeInfos (fn info ->
-                      let Qualified (_,id) = primaryTypeName info in
+                      let Qualified (_,id)      = primaryTypeName      info in
                       let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
                       let new_defs =
                           map (fn dfn ->
-                                 let (tvs, typ) = unpackType dfn in
-                                 let new_type = eliminateType (mkContext id) typ in
+                                 let (tvs, typ) = unpackType dfn                   in
+                                 let new_type   = eliminateType (mkContext id) typ in
                                  maybePiType (tvs, new_type))
                               old_defs
                       in
