@@ -310,12 +310,12 @@ AnnSpec qualifying spec
                               let y2 = expandType (env, y) in
                               %% treat A and A|p as non-equivalent
                               if equalTypeSubtype? (x, x2, ignore_subtypes?)
-                                  && equalTypeSubtype? (y, y2, ignore_subtypes?) then 
+                                  && equalTypeSubtype? (y, y2, ignore_subtypes?) then
                                 false
                               else 
                                 equivTypeSubType? spc (x2, y2) ignore_subtypes? ||
                                 aux x2 y2 (prior_diffs ++ diffs)
-                                      | _ -> false)
+                     | _ -> ignore_subtypes?)
              diffs)
    in
    let result = aux x y [] in
