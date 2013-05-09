@@ -50,7 +50,7 @@ lemma FSet__fromFSet_f_f:
    apply (simp add: FSet__fromFSet_alt_def)
    apply (rule inv_on_f_f)
    apply (cut_tac FSet__toFSet_subtype_constr,
-          auto simp add: bij_ON_def mem_def)
+          auto simp add: bij_ON_def bij_on_def mem_def)
 done
 end-proof
 % ------------------------------------------------------------------------------

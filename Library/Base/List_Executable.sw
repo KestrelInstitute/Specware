@@ -1,4 +1,4 @@
-spec
+List qualifying spec
 import /Library/Base/List
 
 (* This spec refines some of the ops in the base spec List for lists to be
@@ -963,14 +963,14 @@ proof isa List__repeat__1__obligation_refine_def
   by (induct n, auto)
 end-proof
 
-proof Isa repeat_aux_lemma
+proof Isa List__repeat_aux_lemma
   apply(induct n arbitrary: acc__v)
   apply(simp)
-  by (metis append_Cons repeat_aux.simps(2) replicate_Suc replicate_app_Cons_same)
+  by (metis append_Cons List__repeat_aux.simps(2) replicate_Suc replicate_app_Cons_same)
 end-proof
 
 proof isa List__repeat__2__obligation_refine_def
-  apply(simp add: List__repeat__2_def repeat_aux.simps repeat_aux_lemma)
+  apply(simp add: List__repeat__2_def List__repeat_aux.simps List__repeat_aux_lemma)
 end-proof
 
 proof isa List__allEqualElements_p__1__obligation_refine_def 
@@ -1116,12 +1116,12 @@ proof isa List__positionOf__1__obligation_refine_def
   apply (erule ssubst, simp add: Let_def)
 end-proof
 
-proof isa prefixOf_p_pred
+proof isa List__prefixOf_p_pred
   by (induct subl arbitrary: l, auto, case_tac l, auto)
 end-proof
 
 proof isa List__sublistAt_p__1__obligation_refine_def 
-  apply (auto simp add: List__sublistAt_p__1_def prefixOf_p_pred
+  apply (auto simp add: List__sublistAt_p__1_def List__prefixOf_p_pred
        List__sublistAt_p_def)
   apply (rule_tac x="take i supl" in exI, auto,
          rule_tac x=post in exI, simp)
@@ -1132,7 +1132,7 @@ sorry
 end-proof
 
 proof isa List__leftmostPositionOfSublistAndFollowing__1__loop_Obligation_subtype 
-  by (induct subl, auto simp add: prefixOf_p_pred)  
+  by (induct subl, auto simp add: List__prefixOf_p_pred)  
 end-proof
 
 proof isa List__leftmostPositionOfSublistAndFollowing__1__obligation_refine_def 

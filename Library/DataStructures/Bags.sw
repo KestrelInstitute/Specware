@@ -327,12 +327,12 @@ end-proof
 
 proof Isa Bag__distribute_bagunion_over_right_delete
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__occs_bag_union Bag__bag_deletion Bag__bagin_p_def Bag__natMinus_def)
+  apply(auto simp add: Bag__occs_bag_union Bag__bag_deletion Bag__bagin_p_def Integer__natMinus_def)
 end-proof
 
 proof Isa Bag__distribute_bag_diff_over_right_insert
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Bag__natMinus_def)
+  apply(auto simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Integer__natMinus_def)
 end-proof
 
 proof Isa Bag__bag_union_right_unit
@@ -364,12 +364,12 @@ end-proof
 
 proof Isa Bag__distribute_bag_diff_over_left_insert
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_difference Bag__bag_insertion Bag__bagin_p_def Bag__natMinus_def)
+  apply(auto simp add: Bag__bag_difference Bag__bag_insertion Bag__bagin_p_def Integer__natMinus_def)
 end-proof
 
 proof Isa Bag__distribute_bag_diff_over_left_delete
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_difference Bag__bag_deletion Bag__natMinus_def)
+  apply(auto simp add: Bag__bag_difference Bag__bag_deletion Integer__natMinus_def)
 end-proof
 
 

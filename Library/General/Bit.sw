@@ -191,7 +191,7 @@ end-proof
 
 proof Isa fromNat2_Obligation_subtype
   apply (simp, 
-         simp only: bij_ON_def inj_on_def surj_on_def mem_def Ball_def Bex_def,
+         simp only: bij_ON_def bij_on_def inj_on_def surj_on_def mem_def Ball_def Bex_def,
          safe, simp_all)
   apply (case_tac x, auto)
 end-proof

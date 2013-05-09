@@ -1040,7 +1040,7 @@ op [a,b] isoSeq : Bijection(a,b) -> Bijection (Seq a, Seq b) =
 
 
 proof Isa seq_Obligation_subtype
-  apply (auto simp add: bij_ON_def inj_on_def surj_on_def
+  apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def
                         Seq__SeqMap__subtype_pred_def 
                         definedAt_m_def undefinedAt_m_def)
   (** injectivity: lists  **)
@@ -1054,7 +1054,7 @@ proof Isa seq_Obligation_subtype
   apply (drule_tac x=xa in spec)+
   apply (clarsimp simp add: dom_def)
   (** surjectivity **)
-  apply (drule mem_reverse, simp add: Bex_def, subst mem_def, case_tac y, auto)
+  apply (simp add: Bex_def, subst mem_def, case_tac y, auto)
   (*** ... on lists  **)
   apply (cut_tac l=list in List__list_1_definedOnInitialSegmentOfLength)
   apply (rule_tac x="List__list_1 list" in exI)
@@ -1302,7 +1302,7 @@ proof Isa e_pls_pls_Obligation_the
   apply (drule_tac t="List__subFromLong(list, 0, length list)" in HOL.trans)
   apply (rule List__subFromLong_whole [symmetric])
   apply (cut_tac List__list_subtype_constr, 
-         simp add: bij_ON_def Stream__subFromLong_def List__subFromLong_def,
+         simp add: bij_ON_def bij_on_def Stream__subFromLong_def List__subFromLong_def,
          clarify, thin_tac "surj_on ?f ?A ?B")
   apply (drule inj_onD, erule sym)
   apply (thin_tac "?P", thin_tac "?P", simp add: mem_def,
@@ -1404,7 +1404,7 @@ end-proof
 
 proof Isa unzip_Obligation_subtype
   (** Many cases, thus the long proof ***)
-  apply (simp add: bij_ON_def inj_on_def mem_def surj_on_def Ball_def Bex_def)
+  apply (simp add: bij_ON_def inj_on_def mem_def surj_on_def Ball_def Bex_def bij_on_def)
   apply (rule conjI, clarify)
   apply (simp add: Seq__equiLong_def)
   apply (case_tac a)
@@ -1418,14 +1418,14 @@ proof Isa unzip_Obligation_subtype
                     apply (case_tac ba, simp_all)
   prefer 3
   apply (cut_tac List__unzip_Obligation_subtype, 
-         simp add: bij_ON_def inj_on_def mem_def Ball_def, auto)
+         simp add: bij_ON_def bij_on_def inj_on_def mem_def Ball_def, auto)
   apply (cut_tac Stream__unzip_Obligation_subtype, 
          simp add: bij_def inj_on_def mem_def Ball_def, auto)
   apply (cut_tac Stream__unzip_Obligation_subtype, 
          simp add: bij_def inj_on_def mem_def Ball_def, auto)
   apply (case_tac x)
   apply (cut_tac List__unzip_Obligation_subtype, 
-         simp add: bij_ON_def surj_on_def mem_def Ball_def Bex_def, 
+         simp add: bij_ON_def bij_on_def surj_on_def mem_def Ball_def Bex_def, 
          clarify, thin_tac "?P")
   apply (drule_tac x=list in spec, clarify)
   apply (rule_tac x="Seq__Seq__fin a" in exI, 
@@ -1439,10 +1439,10 @@ proof Isa unzip_Obligation_subtype
 end-proof
 
 proof Isa unzip3_Obligation_subtype
- apply (auto simp add: bij_ON_def)
+ apply (auto simp add: bij_ON_def bij_on_def)
  apply (simp add: Seq__zip3_alt inj_on_def mem_def Ball_def, clarify)
  apply (cut_tac Seq__unzip_Obligation_subtype,
-        simp add: bij_ON_def Seq__zip3_alt inj_on_def mem_def Ball_def, 
+        simp add: bij_ON_def bij_on_def Seq__zip3_alt inj_on_def mem_def Ball_def, 
         clarify, rotate_tac -1, thin_tac "?P")
  apply (drule_tac x=a in spec, drule_tac x="Seq__zip (aa, b)" in spec, 
         drule mp, simp add: Seq__zip_equilong_left)
@@ -1450,7 +1450,7 @@ proof Isa unzip3_Obligation_subtype
         drule mp, simp add: Seq__zip_equilong_left)
  apply (drule mp, simp_all, clarify)
  apply (cut_tac Seq__unzip_Obligation_subtype,
-        simp add: bij_ON_def Seq__zip3_alt inj_on_def mem_def Ball_def, 
+        simp add: bij_ON_def bij_on_def Seq__zip3_alt inj_on_def mem_def Ball_def, 
         clarify, rotate_tac -1, thin_tac "?P")
  apply (drule_tac x=aa in spec, drule_tac x=b in spec, 
         drule mp, simp)
@@ -1458,11 +1458,11 @@ proof Isa unzip3_Obligation_subtype
         drule mp, simp)
  apply (drule mp, simp_all)
  apply (cut_tac Seq__unzip_Obligation_subtype,
-        simp add: bij_ON_def surj_on_def mem_def Ball_def Bex_def, 
+        simp add: bij_ON_def bij_on_def surj_on_def mem_def Ball_def Bex_def, 
         clarify, thin_tac "?P",
         drule_tac x=x in spec, clarify)
  apply (cut_tac Seq__unzip_Obligation_subtype,
-        simp add: bij_ON_def surj_on_def mem_def Ball_def Bex_def, 
+        simp add: bij_ON_def bij_on_def surj_on_def mem_def Ball_def Bex_def, 
         clarify, rotate_tac 1, thin_tac "?P",
         drule_tac x=b in spec, clarify)
  apply (rule_tac x=a in exI, rule_tac x=aa in exI, 

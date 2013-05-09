@@ -666,7 +666,7 @@ end-proof
 
 proof isa empty_bag_bs_diff
   apply(rule Bag__occurrences)
-  apply(simp add:bag_set_difference Bag__empty_bag Bag__natMinus_def)
+  apply(simp add:bag_set_difference Bag__empty_bag Integer__natMinus_def)
 end-proof
 
 proof isa Stack2L_Cons
@@ -893,7 +893,7 @@ proof isa distribute_bs_diff_over_left_insert
   apply(rule Bag__occurrences)
   apply(auto simp add: Bag__bag_insertion bag_set_difference)
   apply(simp add: Set__set_deletion)
-  apply(simp only: Bag__natMinus_def)
+  apply(simp only: Integer__natMinus_def)
   apply(auto)
   apply(simp add: Set__set_deletion)
   apply(simp add: Set__set_deletion)
@@ -919,9 +919,9 @@ end-proof
 proof isa distribute_bs_diff_over_right_delete
   apply(rule Bag__occurrences)
   apply(auto simp add: bag_set_difference Bag__bag_deletion Bag__bag_insertion Set__set_deletion)
-  apply(simp add: Bag__natMinus_def)
+  apply(simp add: Integer__natMinus_def)
   apply(auto simp add: Bag__bagin_p_def)
-  apply(simp add: Bag__natMinus_def)
+  apply(simp add: Integer__natMinus_def)
 end-proof
 
 proof isa upto_loop_subset
@@ -966,7 +966,7 @@ end-proof
 
 proof isa length_of_uptoL_loop
   apply(induct "(i,j,ns)" arbitrary: j ns rule: uptoL_loop.induct)
-  apply(simp add: Bag__natMinus_def del: uptoL_loop.simps )
+  apply(simp add: Integer__natMinus_def del: uptoL_loop.simps )
   apply(case_tac "i <j")
   apply(simp del: uptoL_loop.simps )
   apply(case_tac "i < Nat__pred j")
