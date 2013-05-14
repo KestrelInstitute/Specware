@@ -77,8 +77,8 @@ PatternMatch qualifying spec
     | Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"), _), _, _) -> true
     | _ -> false
 
- op mkSuccess (typ0 : MSType, trm : MSTerm) : MSTerm = 
-  let typ = mkArrow (typ0, match_type typ0) in 
+ op mkSuccess (typ : MSType, trm : MSTerm) : MSTerm = 
+  let typ = mkArrow (typ, match_type typ) in 
   mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkSuccess"), typ), 
            trm)
 
@@ -324,7 +324,7 @@ PatternMatch qualifying spec
     | _ -> equivPattern? spc (p1, p2)
       
  (*
-  *  op partitionConstructors : Var * MSRules -> DestructuredRules
+  *  op partitionConstructors : Var * MSRules -> DestructuringRules
   *
   *  Given a list of rules, where the first pattern of each rule is a constructor
   *  we partition the rules into sequences of the same constructor, and for each
@@ -373,8 +373,8 @@ PatternMatch qualifying spec
     | 1 -> [("", freshVar (ctx, patternType pat))]
     | _ ->
       case pat of
-        | RecordPat(fields,_) -> 
-          map (fn (l, p) -> (l, freshVar (ctx, patternType p)))
+        | RecordPat (fields,_) -> 
+          map (fn (index, pat) -> (index, freshVar (ctx, patternType pat)))
               fields
         | _ -> System.fail "Record pattern expected"
 
@@ -404,28 +404,28 @@ PatternMatch qualifying spec
                                typeAnn typ)))]
     | _ -> System.fail ("CoProduct type expected, but got " ^ printType typ)
 
- type DestructuredRules = List DestructuredRule
- type DestructuredRule  = {query    : MSTerm,       % e.g. embed? Foo x -- tests to see if argument matches constructor
-                           new_vars : MSTerms,      % vars that will be bound to args in term, e.g `x' and `y' in  `Foo (x,y)'
-                           bindings : MSBindings,   % each binding associates a var with an extractor from the term
-                           pattern  : MSPattern,    % original pattern
-                           pmrules  : PMRules}
+ type DestructuringRules = List DestructuringRule
+ type DestructuringRule  = {query    : MSTerm,       % e.g. embed? Foo x -- tests to see if argument matches constructor
+                            new_vars : MSTerms,      % vars that will be bound to args in term, e.g `x' and `y' in  `Foo (x,y)'
+                            bindings : MSBindings,   % each binding associates a var with an extractor from the term
+                            pattern  : MSPattern,    % original pattern
+                            pmrules  : PMRules}
 
  op partitionConstructors (ctx     : Context, 
                            trm     : MSTerm, 
                            pmrules : PMRules) 
-  : DestructuredRules =
+  : DestructuringRules =
   let
     def patDecompose (pattern : MSPattern) : MSBindings =
       case pattern of
 
-        | RecordPat (pats,_) -> 
+        | RecordPat (fields,_) -> 
           %% list of patterns with projections
-          map (fn (index, p) -> 
-                 (p, mkProjectTerm (ctx.spc, index, trm))) 
-              pats
+          map (fn (index, pat) -> 
+                 (pat, mkProjectTerm (ctx.spc, index, trm))) 
+              fields
 
-        | EmbedPat (id, Some p, coproduct_type, _) -> 
+        | EmbedPat (id, Some pat, coproduct_type, _) -> 
           %% singleton list of a pattern with a selection 
           let fields = coproductFields (ctx.spc, coproduct_type) in
           let tm = case findLeftmost (fn (id2, _) -> id = id2) fields of
@@ -437,14 +437,14 @@ PatternMatch qualifying spec
                      | _ -> 
                        System.fail "Selection index not found in product"
           in
-          [(p, tm)]
+          [(pat, tm)]
 
         | _ -> [] 
 
-    def insert (pmrule, drules) : DestructuredRules = 
+    def insert (pmrule, drules) : DestructuringRules = 
       case (pmrule, drules) of
 
-        | ((pat::pats, cond, body), []) -> 
+        | ((pat :: pats, cond, body), []) -> 
           %% create new drule:
 
           let query                = queryPat pat trm in
@@ -479,7 +479,7 @@ PatternMatch qualifying spec
           in 
           [new_drule]
 
-        | ((pat::pats, cond, body), (drule :: drules)) -> 
+        | ((pat :: pats, cond, body), (drule :: drules)) -> 
           let spc = ctx.spc in
           if sameConstructor spc (pat, drule.pattern) then
             %% add pattern to existing drule for same constructor
@@ -638,10 +638,10 @@ PatternMatch qualifying spec
   : MSTerm = 
   let pmrules = map (fn pmrule ->
                       case pmrule of
-                        | ((RestrictedPat (p,_,_))::pats, cond, e) ->
-                          (p :: pats,
+                        | ((RestrictedPat (pat,_,_)) :: pats, cond, body) ->
+                          (pat :: pats,
                            mkSimpConj [cond, bool_expr], 
-                           e)
+                           body)
                         | _ -> pmrule)
                     pmrules
   in
@@ -663,8 +663,8 @@ PatternMatch qualifying spec
       let v       = ("v", typ)                                   in
       let f       = mkLambda (VarPat (v, noPos), Var (v, noPos)) in
       let t1      = mkApply  (mkChooseFun (q, typ, typ, f), tm)  in
-      let pmrules = map (fn ((QuotientPat (p, pred, _)) :: pats, cond, e) ->
-                           (p::pats, cond, e))
+      let pmrules = map (fn ((QuotientPat (pat, pred, _)) :: pats, cond, body) ->
+                           (pat :: pats, cond, body))
                         pmrules 
       in
       let body    = match (ctx, t1::terms, pmrules, break, break) in
@@ -689,7 +689,7 @@ PatternMatch qualifying spec
     [pat] 
   else
     case pat of
-      | RecordPat (fields, _) -> map (fn (_, p)-> p) fields
+      | RecordPat (fields, _) -> map (fn (_, pat) -> pat) fields
       | WildPat   (typ,    _) -> tabulate (arity, fn _ -> pat)
       | _ -> System.fail "splitPattern: unexpected pattern" 
 
@@ -806,7 +806,7 @@ PatternMatch qualifying spec
   %% Generate the continuation catch all case given a set of pattern matching rules.
   let index = ! ctx.error_index + 1 in
   (ctx.error_index := index;
-   let typ1 = mkArrow(typ,match_type typ) in
+   let typ1 = mkArrow (typ, match_type typ) in
    let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ ctx.op_name in
    mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkFail"), typ1),
             mkString msg))
@@ -831,7 +831,7 @@ PatternMatch qualifying spec
            let term =
                case vs of
                  | [(_, v)] -> Var (v, noPos)
-                 | _ -> Record (map (fn(l,v)-> (l, mkVar v)) vs, 
+                 | _ -> Record (map (fn (index, v) -> (index, mkVar v)) vs, 
                                 noPos) 
            in
            let body = mkLet ([(VarPat (v, noPos), term)], body) in
@@ -871,10 +871,10 @@ PatternMatch qualifying spec
   case term of
     | Lambda (msrules,_) ->
       let msrules = normalizeSimpleAlias msrules in
-      let msrules = map (fn (p, c, b)-> 
-                         (eliminatePattern ctx p,
-                          eliminateTerm    ctx c,
-                          eliminateTerm    ctx b)) 
+      let msrules = map (fn (pat, cond, body)-> 
+                         (eliminatePattern ctx pat,
+                          eliminateTerm    ctx cond,
+                          eliminateTerm    ctx body)) 
                         msrules 
       in
       let arity   = matchArity msrules in
@@ -962,10 +962,9 @@ PatternMatch qualifying spec
        let tm = abstract (indices_and_vs, tm, body_type) in
        mkApply (tm,trm)
 
-    %% case e of p -> body --> let p = e in body
-
-    | Apply (Lambda ([(p, Fun (Bool true,_,_), body)],_), e, pos) ->
-      eliminateTerm ctx (Let ([(p,e)], body, pos))
+    | Apply (Lambda ([(pat, Fun (Bool true,_,_), body)],_), arg, pos) ->
+      %% case arg of pat -> body --> let pat = arg in body
+      eliminateTerm ctx (Let ([(pat, arg)], body, pos))
 
     | Apply (                  t1,                   t2, a) -> 
       Apply (eliminateTerm ctx t1, eliminateTerm ctx t2, a)
@@ -1016,13 +1015,13 @@ PatternMatch qualifying spec
 
     def simpRec (body, continuation) =
       case body of
-        | IfThenElse (p, t1, t2, pos) ->
+        | IfThenElse (pred, t1, t2, pos) ->
           (case simpSuccess t1 of
              | Some simp_t1 ->
                (case simpRec (t2, continuation) of
                   | Some simp_t2 -> 
                     %% this may optimize IfThenElse based on actual terms:
-                    Some (Utilities.mkIfThenElse (p, simp_t1, simp_t2))
+                    Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
                   | _ -> None)
              | _ ->
                if simpleSuccTerm? continuation then
@@ -1031,7 +1030,7 @@ PatternMatch qualifying spec
                      (case simpRec (t2, continuation) of
                         | Some simp_t2 -> 
                           %% this may optimize IfThenElse based on actual terms:
-                          Some (Utilities.mkIfThenElse (p, simp_t1, simp_t2))
+                          Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
                         | _ -> None)
                    | _ -> None
                else 
