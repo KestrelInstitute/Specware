@@ -51,7 +51,8 @@
     (gcl     "o")))
 
 (defvar *macos-p* (= (shell-command "ls /mach_kernel") 0))  ; or any other test that tells us we're on a Mac
-(defvar *sbcl-size* (if *windows-system-p* 1200 (if *macos-p* 2000 2400)) "Size of --dynamic-space-size for sbcl")
+(defvar *sbcl-size* (if *windows-system-p* 1200 (if *macos-p* 4000 2400)) "Size of --dynamic-space-size for sbcl")
+(defvar *sbcl-stack-size* 4 "Size of --control-stack-size for sbcl") ; Default 2 (megabytes)
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
@@ -295,7 +296,8 @@
 		     ((cmulisp sbcl)
 		      (if common-lisp-image-file
 			  (list "-core" common-lisp-image-file)
-			(list "--dynamic-space-size" (format "%S" *sbcl-size*))))
+			(list "--dynamic-space-size" (format "%S" *sbcl-size*)
+                              "--control-stack-size" (format "%S" *sbcl-stack-size*))))
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
 					   (if common-lisp-image-file
