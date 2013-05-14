@@ -677,7 +677,7 @@ spec
 
  op SpecTransform.simplifySpec (spc : Spec) : Spec =
    % let _ = toScreen("Before:\n" ^ printSpec spc ^ "\n\n") in
-   let simp_spc = mapSpec (simplify spc, fn typ -> typ, fn pat -> pat) spc in
+   let simp_spc = mapSpec (simplifyOne spc, fn typ -> typ, fn pat -> pat) spc in
    % let _ = toScreen("After:\n" ^ printSpec simp_spc ^ "\n\n") in
    simp_spc
     
