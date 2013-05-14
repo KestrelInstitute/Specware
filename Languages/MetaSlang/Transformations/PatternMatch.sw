@@ -243,6 +243,13 @@ PatternMatch qualifying spec
   *         | ... -> term2
   *)
 
+ type DestructuringRules = List DestructuringRule
+ type DestructuringRule  = {query    : MSTerm,       % e.g. embed? Foo x -- tests to see if argument matches constructor
+                            new_vars : MSTerms,      % vars that will be bound to args in term, e.g `x' and `y' in  `Foo (x,y)'
+                            bindings : MSBindings,   % each binding associates a var with an extractor from the term
+                            pattern  : MSPattern,    % original pattern
+                            pmrules  : PMRules}
+
  op substPat (body : MSTerm, pat : MSPattern, value : MSTerm) : MSTerm = 
   if isTrue body then 
     body
@@ -310,12 +317,52 @@ PatternMatch qualifying spec
     | ((RestrictedPat (pat, bool_expr, _))::_, _, _) -> Restricted (pat, bool_expr)
     | _ -> (printPMRule pmrule; fail "Unrecognized ruleType!")
 
+(*
+ op myshow? : Bool = false
+
+ op printDRules (msg : String) (drules : DestructuringRules) : () = 
+  if myshow? then
+    let _ = writeLine msg in
+    let _ = writeLine "  =========" in
+    let _ = app (fn dr -> printDRule "" dr) drules in
+    let _ = writeLine "  =========" in
+    ()
+  else
+    ()
+
+ op printDRule (msg : String) (drule : DestructuringRule) : () = 
+  if myshow? then
+    let _ = writeLine msg in
+    let _ = writeLine "  ----------------------------------------" in
+    let _ = writeLine ("  query    = " ^ printTerm drule.query) in
+    let _ = writeLine ("  new_vars = " ^ foldl (fn (s, v) -> s ^ ", " ^ printTerm v) "" drule.new_vars) in
+    let _ = writeLine ("  bindings = " ^ foldl (fn (s, (p, b)) -> s ^ ", " ^ printPattern p ^ " = " ^ printTerm b) "" drule.bindings) in
+    let _ = writeLine ("  pattern  = " ^ printPattern drule.pattern) in
+    let _ = printPMRules "  pmrules  =" drule.pmrules in 
+    let _ = writeLine "  ----------------------------------------" in
+    ()
+  else
+    ()
+
+ op printPMRules (msg : String) (pmrules : PMRules) : () = 
+  if myshow? then
+    let _ = writeLine msg in
+    let _ = writeLine "  -------" in
+    let _ = app printPMRule pmrules in
+    let _ = writeLine "  -------" in
+    ()
+  else
+    ()
+*)
+
  op printPMRule (pats : MSPatterns, cond : MSTerm, body : MSTerm) : () =
-  let _ = toScreen "Pattern : " in
+  let _ = toScreen "  Pattern   : " in
   let _ = app (fn p -> toScreen (printPattern p ^ " ")) pats in
   let _ = writeLine "" in
-  let _ = writeLine ("Condition: " ^ printTerm cond) in
-  writeLine ("Body: " ^ printTerm body)
+  let _ = writeLine ("  Condition : " ^ printTerm cond) in
+  let _ = writeLine ("  Body      : " ^ printTerm body) in
+  let _ = writeLine ("  -------") in
+  ()
 
  op sameConstructor (spc : Spec) (p1 : MSPattern, p2 : MSPattern) : Bool = 
   case (p1, p2) of
@@ -404,13 +451,6 @@ PatternMatch qualifying spec
                                typeAnn typ)))]
     | _ -> System.fail ("CoProduct type expected, but got " ^ printType typ)
 
- type DestructuringRules = List DestructuringRule
- type DestructuringRule  = {query    : MSTerm,       % e.g. embed? Foo x -- tests to see if argument matches constructor
-                            new_vars : MSTerms,      % vars that will be bound to args in term, e.g `x' and `y' in  `Foo (x,y)'
-                            bindings : MSBindings,   % each binding associates a var with an extractor from the term
-                            pattern  : MSPattern,    % original pattern
-                            pmrules  : PMRules}
-
  op partitionConstructors (ctx     : Context, 
                            trm     : MSTerm, 
                            pmrules : PMRules) 
@@ -420,13 +460,17 @@ PatternMatch qualifying spec
       case pattern of
 
         | RecordPat (fields,_) -> 
-          %% list of patterns with projections
+          %% Given a record pattern,
+          %%  produce a list of pairs of inner field patterns with field acccess functions.
           map (fn (index, pat) -> 
                  (pat, mkProjectTerm (ctx.spc, index, trm))) 
               fields
 
         | EmbedPat (id, Some pat, coproduct_type, _) -> 
-          %% singleton list of a pattern with a selection 
+          %% Given a constructor with a patterned argument,
+          %%  produce a singleton list pairing that inner argument pattern with a selection function 
+          %%  that assumes the constructor is present in the term surrounding it.
+          %% E.g. given Foo (x, y) the pattern will be (x, y) and the extractor will be select[Foo]
           let fields = coproductFields (ctx.spc, coproduct_type) in
           let tm = case findLeftmost (fn (id2, _) -> id = id2) fields of
                      | Some (_, Some field_type) ->
@@ -439,7 +483,10 @@ PatternMatch qualifying spec
           in
           [(pat, tm)]
 
-        | _ -> [] 
+        | _ -> 
+          %% Given a VarPat of a constant pattern (e.g, a constructor with no argument), 
+          %%  produce an empty list of no inner patterns to match.
+          [] 
 
     def insert (pmrule, drules) : DestructuringRules = 
       case (pmrule, drules) of
@@ -450,9 +497,10 @@ PatternMatch qualifying spec
           let query                = queryPat pat trm in
           let pats_with_extractors = patDecompose pat in 
 
-          %% pats_with_extractors is either:
-          %%   a list of patterns, each paired with a corresponding projections, or
-          %%   a singleton list of one pattern paired with a selection operation.
+          %% pats_with_extractors is a list of patterns paired with extraction functions:
+          %%   a list of patterns, each paired with a corresponding projection   -- exploded record pattern
+          %%   a singleton list of one pattern paired with a selection operation -- exploded embed pattern
+          %%   the empty list                                                    -- constant pattern (e.g. Nil or None)
 
           %% new_vs will be used for vars that bind to args in constructor term
           %% bindings will extract values for vars from constructor term
@@ -465,8 +513,9 @@ PatternMatch qualifying spec
                                (new_vs, pats_with_extractors)
           in
 
-          %% new_pats will decribe how to destructure vars
-          %% new_vars are terms corresponding to new_pats
+          %% new_pats will decribe how to destructure vars within head pattern
+          %% e.g., given pattern Foo (x, y, z), new_pats will be [(x, y, z)]
+          %% new_vars are useable terms corresponding to those new_pats
           let new_pats   = map (fn (pat, _) -> pat) pats_with_extractors in
           let new_vars   = map mkVar new_vs                              in
           let new_pmrule = (new_pats ++ pats, cond, body)                in
@@ -483,20 +532,24 @@ PatternMatch qualifying spec
           let spc = ctx.spc in
           if sameConstructor spc (pat, drule.pattern) then
             %% add pattern to existing drule for same constructor
-            let pats_with_extractors = patDecompose pat in 
-            let new_pats             = map (fn (pat, _) -> pat) pats_with_extractors in
-            let new_pmrule           = (new_pats ++ pats, cond, body) in
+            let pats_with_extractors = patDecompose pat                                 in 
+            let new_pats             = map (fn (pat, _) -> pat) pats_with_extractors    in
+            let new_pmrule           = (new_pats ++ pats, cond, body)                   in
             let revised_drule        = drule << {pmrules = new_pmrule :: drule.pmrules} in
-            revised_drule :: drules
+            let new_drules           = revised_drule :: drules                          in
+            new_drules
           else 
             %% TODO: wierdly ineffecient way to amend an element in a list
             %% repeats exists? test for every tail of list
             if exists? (fn drule -> sameConstructor spc (pat, drule.pattern)) drules then
               %% walk past non-matching drule on way to a matching one (that we know exists)
-              drule :: insert (pmrule, drules)
+              let new_drules = drule :: insert (pmrule, drules) in
+              new_drules
             else 
               %% otherwise create new drule
-              insert (pmrule, []) ++ (drule :: drules)
+              let new_drules = insert (pmrule, []) in
+              let new_drules = new_drules ++ (drule :: drules) in
+              new_drules
 
         | _ -> drules (* should not happen *)
   in
@@ -527,18 +580,19 @@ PatternMatch qualifying spec
            break        : MSTerm) 
   : MSTerm = 
   case vars of
-    | [] -> foldr (fn ((_,cond,body), continuation) -> 
-                     %% this may optimize IfThenElse based on actual terms:
-                     let body = Utilities.mkIfThenElse (cond, body, break) in
-                     failWith ctx body continuation)
-                  continuation
-                  pmrules
+    | [] -> 
+      foldr (fn ((_,cond,body), continuation) -> 
+               %% this may optimize IfThenElse based on actual terms:
+               let body = Utilities.mkIfThenElse (cond, body, break) in
+               failWith ctx body continuation)
+            continuation
+            pmrules
     | _ -> 
-      let pmrules = partition pmRuleType pmrules in
+      let pmruless = partition pmRuleType pmrules in
       foldr (matchPMRules (ctx, break, vars)) 
             continuation 
-            pmrules
-  
+            pmruless
+
  op matchPMRules (ctx          : Context, 
                   break        : MSTerm, 
                   vars         : MSTerms) 
@@ -578,20 +632,20 @@ PatternMatch qualifying spec
               continuation : MSTerm, 
               break        : MSTerm) 
   : MSTerm = 
-  let tm :: terms     = terms in  % use tm in Let binding, terms in Let body
-  let pmRulePartition = partitionConstructors (ctx, tm, pmrules) in
-  let body            = foldr (fn (drule, continuation) ->   
-                                 %% this may optimize IfThenElse based on actual terms:
-                                 Utilities.mkIfThenElse (drule.query, 
-                                                         mkLet (drule.bindings,
-                                                                match (ctx,
-                                                                       drule.new_vars ++ terms,
-                                                                       drule.pmrules,
-                                                                       break,
-                                                                       break)),
-                                                         continuation))
-                              break 
-                              pmRulePartition
+  let tm :: terms         = terms in  % use tm in Let binding, terms in Let body
+  let destructuring_rules = partitionConstructors (ctx, tm, pmrules) in
+  let body                = foldr (fn (drule, continuation) ->   
+                                     %% this may optimize IfThenElse based on actual terms:
+                                     Utilities.mkIfThenElse (drule.query, 
+                                                             mkLet (drule.bindings,
+                                                                    match (ctx,
+                                                                           drule.new_vars ++ terms,
+                                                                           drule.pmrules,
+                                                                           break,
+                                                                           break)),
+                                                             continuation))
+                                  break 
+                                  destructuring_rules
   in
   failWith ctx body continuation
 
@@ -882,7 +936,6 @@ PatternMatch qualifying spec
         let msrules = map (fn (pat, cond, body) -> (deRestrict pat, cond, body)) msrules in
         Lambda (msrules, noPos)
       else 
-        % let _ = writeLine "Elimination from lambda " in
         let _ = checkUnreachableCase (ctx, term, msrules) in
 
         %% TODO: This is the only code in Specware that uses Lambda condition field
@@ -937,7 +990,6 @@ PatternMatch qualifying spec
      if forall? (fn (pat, _)-> simplePattern pat) bindings then
        mkLet (bindings, body)
      else 
-       % let _ = writeLine "Let pattern elimination " in
        let (pats, terms) = unzip bindings in
        let trm = 
            case terms of
@@ -953,9 +1005,10 @@ PatternMatch qualifying spec
                  ([],1) 
                  vs
        in
+       let pmrules = [(pats, trueTerm, mkSuccess (body_type, body))] in
        let tm = match (ctx,
                        map mkVar vs,
-                       [(pats, trueTerm, mkSuccess (body_type, body))] : PMRules,
+                       pmrules,
                        makeFail (ctx, body_type, term),
                        mkBreak body_type) 
        in
