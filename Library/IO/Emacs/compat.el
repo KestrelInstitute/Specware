@@ -8,6 +8,20 @@
 (pushnew ".sfsl" completion-ignored-extensions)	; sbcl
 (pushnew ".fas"  completion-ignored-extensions)	; clisp
 
+(defvar fi:common-lisp-directory)
+(defvar fi:common-lisp-image-name)
+(defvar fi:common-lisp-image-arguments)
+(defvar fi:common-lisp-image-file)
+(defvar fi::toggle-to-lisp-last-lisp-buffer)
+(defvar fi:common-lisp-host)
+(defvar *lisp-prompt-regexp*)
+(defvar ilisp-*directory*)
+(defvar lisp-prev-l/c-dir/file)
+(defvar ilisp-last-buffer)
+(defvar ilisp-last-buffer)
+(defvar comint-status)
+(defvar ilisp-modes)
+
 (defvar lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
 (setq expand-symlinks-rfs-exists t)
 (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
