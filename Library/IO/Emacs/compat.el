@@ -51,8 +51,18 @@
     (gcl     "o")))
 
 (defvar *macos-p* (= (shell-command "ls /mach_kernel") 0))  ; or any other test that tells us we're on a Mac
-(defvar *sbcl-size* (if *windows-system-p* 1200 (if *macos-p* 4000 2400)) "Size of --dynamic-space-size for sbcl")
-(defvar *sbcl-stack-size* 4 "Size of --control-stack-size for sbcl") ; Default 2 (megabytes)
+
+(defvar *sbcl-size* 
+  (let ((given (getenv "SBCL_SIZE")))
+    (if (null given)
+        (if *windows-system-p* 1200 (if *macos-p* 4000 2400))
+      (read given)))
+  "Size of --dynamic-space-size for sbcl")
+
+(defvar *sbcl-stack-size*
+  (let ((given (getenv "SBCL_STACK_SIZE")))
+    (if (null given) 4 (read given))) ; Default is 2 (megabytes)
+  "Size of --control-stack-size for sbcl") 
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
@@ -296,8 +306,8 @@
 		     ((cmulisp sbcl)
 		      (if common-lisp-image-file
 			  (list "-core" common-lisp-image-file)
-			(list "--dynamic-space-size" (format "%S" *sbcl-size*)
-                              "--control-stack-size" (format "%S" *sbcl-stack-size*))))
+                        (list "--dynamic-space-size" (format "%s" *sbcl-size*)           ; %s prints strings without quotes
+                              "--control-stack-size" (format "%s" *sbcl-stack-size*))))  ; %s prints strings without quotes
 		     (allegro (concatenate 'list
 					   common-lisp-image-arguments
 					   (if common-lisp-image-file
