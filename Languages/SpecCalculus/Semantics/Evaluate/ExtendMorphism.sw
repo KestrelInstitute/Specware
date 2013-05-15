@@ -1,3 +1,4 @@
+SpecCalc qualifying
 spec
 
 import UnitId

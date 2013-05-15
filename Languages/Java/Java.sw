@@ -2,7 +2,7 @@
    Java spec defines an abstract syntax for Java programs using MetaSlang.
 *)
 
-
+Java qualifying
 spec
 
 type JavaFile = (*filename*) String * CompUnit

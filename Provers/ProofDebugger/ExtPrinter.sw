@@ -1,8 +1,9 @@
+ProofDebugger qualifying
 spec
 
   % API private default
 
-  import AbbreviationContractor, Base qualifying Printer
+  import AbbreviationContractor, Printer
 
   (* This spec consists of ops that convert judgements, failure, and all their
   syntactic components, to strings. These conversions enable printing such

@@ -35,10 +35,10 @@ SpecCalc qualifying spec
       proofChecked <-
       case checkedProof of
 	% Actually ckeck that the judgement is well formed context of ctxt.
-	| RETURN j -> {SpecCalc.print (printJudgement(j)); (return true)}
-	| THROW exc -> {SpecCalc.print (printFailure(exc)); (return false)};
+	| RETURN j -> {SpecCalc.print (Base.printJudgement(j)); (return true)}
+	| THROW exc -> {SpecCalc.print (Base.printFailure(exc)); (return false)};
 
-      SpecCalc.print (printContext ctxt);
+      SpecCalc.print (Base.printContext ctxt);
       SpecCalc.print (printProof ctxtProof);
       return (Proof {status = if proofChecked then Proved else Unproved,
 		     unit = unitId})

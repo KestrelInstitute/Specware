@@ -1,4 +1,5 @@
 AQualifierMapType =
+AnnSpec qualifying
 spec
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
  import /Library/Structures/Data/Maps/SimpleAsAlist
@@ -6,10 +7,10 @@ spec
 endspec
 
 QualifierMapAsSTHTable2 =
-AnnSpec qualifying
 %%% Curry on second element string so that wildFindUnQualified is fast
 %%% Top map is hash table.  Second level is alist.
 
+AnnSpec qualifying
 spec
  import QualifierMap[morphism QualifierMap#AQualifierMapType -> AQualifierMapType {}]
 

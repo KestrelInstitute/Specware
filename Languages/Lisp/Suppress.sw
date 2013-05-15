@@ -1,14 +1,15 @@
+SpecToLisp qualifying
 spec
   %% This file is used by Interpreter and SpecToLisp
 
   import /Languages/MetaSlang/Specs/StandardSpec
 
-  op SpecToLisp.SuppressGeneratedDefuns : List String 
+  op SuppressGeneratedDefuns : List String 
   %% SpecToLisp.SuppressGeneratedDefuns is initialized by 
   %%  $SPECWARE4/Applications/Specware/Handwritten/Lisp/Specware4.lisp
   %% It is updated by Char.lisp, Integer.lisp, etc.
 
-  op SpecToLisp.printPackageId : QualifiedId * String -> String
+  op printPackageId : QualifiedId * String -> String
   %% SpecToLisp.printPackageId is defined in SpecToLisp
 
   %% There are three distinct, but closely related concepts here:

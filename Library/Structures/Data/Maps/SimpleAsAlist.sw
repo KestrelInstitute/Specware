@@ -3,6 +3,7 @@
 %TODO Do the Alists have that property?  What about the order of entries in the alist?
 
 MapList =
+MapL qualifying
 spec
   type Map (key,a) = List (key * a)
 endspec

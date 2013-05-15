@@ -1,5 +1,4 @@
-spec
-{
+SCParser qualifying spec
 
  import /Languages/SpecCalculus/AbstractSyntax/Types
 
@@ -50,19 +49,19 @@ spec
   % TODO: don't ignore left and right
   (name, term)
 
- op SCParser.mkSpecTerm (elements : SpecElemTerms, left : LCB, right : LCB) : SCTerm =
+ op mkSpecTerm (elements : SpecElemTerms, left : LCB, right : LCB) : SCTerm =
   SpecCalc.mkSpec (elements, mkRegion left right)
 
- op SCParser.mkToplevelTerm  (tm : SCTerm, left : LCB, right : LCB) : SpecTerm = 
+ op mkToplevelTerm  (tm : SCTerm, left : LCB, right : LCB) : SpecTerm = 
   SpecCalc.mkTerm (tm, mkRegion left right)
 
- op SCParser.mkToplevelDecls (decls : SCDecls, left : LCB, right : LCB) : SpecTerm =
+ op mkToplevelDecls (decls : SCDecls, left : LCB, right : LCB) : SpecTerm =
   SpecCalc.mkDecls (decls, mkRegion left right)
  
- op SCParser.mkPrint (term : SCTerm, left : LCB, right : LCB) : SCTerm = 
+ op mkPrint (term : SCTerm, left : LCB, right : LCB) : SCTerm = 
   SpecCalc.mkPrint (term, mkRegion left right)
 
- op SCParser.mkAbsoluteUnitId (path               : List String, 
+ op mkAbsoluteUnitId (path               : List String, 
                                parsed_fragment_id : ParserOptional String,
                                left               : LCB, 
                                right              : LCB) 
@@ -71,7 +70,7 @@ spec
   let uid = SpecPath_Relative {path = path, hashSuffix = suffix} in % relative to SPECPATH
   SpecCalc.mkUnitId (uid, mkRegion left right)
 
- op SCParser.mkRelativeUnitId (path               : List String, 
+ op mkRelativeUnitId (path               : List String, 
                                 parsed_fragment_id : ParserOptional String,
                                 left               : LCB, 
                                 right              : LCB) 
@@ -84,54 +83,54 @@ spec
  type TypeRef  = QualifiedId 
  type OpRef    = QualifiedId * Option MSType
 
- op SCParser.mkLet              (decls     : SCDecls,     trm : SCTerm,        left : LCB, right : LCB) : SCTerm = SpecCalc.mkLet       (decls, trm,     mkRegion left right)
- op SCParser.mkWhere            (decls     : SCDecls,     trm : SCTerm,        left : LCB, right : LCB) : SCTerm = SpecCalc.mkWhere     (decls, trm,     mkRegion left right)
- op SCParser.mkQualify	        (qualifier : Qualifier,   trm : SCTerm,        left : LCB, right : LCB) : SCTerm = SpecCalc.mkQualify   (trm, qualifier, mkRegion left right)
- op SCParser.mkTranslate        (trm       : SCTerm,      renaming : Renaming, left : LCB, right : LCB) : SCTerm = SpecCalc.mkTranslate (trm, renaming,  mkRegion left right)
+ op mkLet              (decls     : SCDecls,     trm : SCTerm,        left : LCB, right : LCB) : SCTerm = SpecCalc.mkLet       (decls, trm,     mkRegion left right)
+ op mkWhere            (decls     : SCDecls,     trm : SCTerm,        left : LCB, right : LCB) : SCTerm = SpecCalc.mkWhere     (decls, trm,     mkRegion left right)
+ op mkQualify	        (qualifier : Qualifier,   trm : SCTerm,        left : LCB, right : LCB) : SCTerm = SpecCalc.mkQualify   (trm, qualifier, mkRegion left right)
+ op mkTranslate        (trm       : SCTerm,      renaming : Renaming, left : LCB, right : LCB) : SCTerm = SpecCalc.mkTranslate (trm, renaming,  mkRegion left right)
 
- op SCParser.mkUnannotatedOpRef      (opRef : QualifiedId,                      left : LCB, right : LCB) : QualifiedId * Option MSType = (opRef, None)      % TODO: use left and right
- op SCParser.mkAnnotatedOpRef        (opRef : QualifiedId, typ : MSType,        left : LCB, right : LCB) : QualifiedId * Option MSType = (opRef, Some typ)  % TODO: use left and right
- op SCParser.mkRenaming              (rules : RenamingRules,                    left : LCB, right : LCB) : Renaming     = (rules,                            mkRegion left right)
- op SCParser.mkTypeRenamingRule      (lref  : TypeRef,     rref : TypeRef,      left : LCB, right : LCB) : RenamingRule = (Type      (lref, rref, [rref]),   mkRegion left right)
- op SCParser.mkOpRenamingRule        (lref  : OpRef,       rref : OpRef,        left : LCB, right : LCB) : RenamingRule = (Op        (lref, rref, [rref.1]), mkRegion left right)
- op SCParser.mkAmbiguousRenamingRule (lref  : AmbigRef,    rref : AmbigRef,     left : LCB, right : LCB) : RenamingRule = (Ambiguous (lref, rref, [rref]),   mkRegion left right)
+ op mkUnannotatedOpRef      (opRef : QualifiedId,                      left : LCB, right : LCB) : QualifiedId * Option MSType = (opRef, None)      % TODO: use left and right
+ op mkAnnotatedOpRef        (opRef : QualifiedId, typ : MSType,        left : LCB, right : LCB) : QualifiedId * Option MSType = (opRef, Some typ)  % TODO: use left and right
+ op mkRenaming              (rules : RenamingRules,                    left : LCB, right : LCB) : Renaming     = (rules,                            mkRegion left right)
+ op mkTypeRenamingRule      (lref  : TypeRef,     rref : TypeRef,      left : LCB, right : LCB) : RenamingRule = (Type      (lref, rref, [rref]),   mkRegion left right)
+ op mkOpRenamingRule        (lref  : OpRef,       rref : OpRef,        left : LCB, right : LCB) : RenamingRule = (Op        (lref, rref, [rref.1]), mkRegion left right)
+ op mkAmbiguousRenamingRule (lref  : AmbigRef,    rref : AmbigRef,     left : LCB, right : LCB) : RenamingRule = (Ambiguous (lref, rref, [rref]),   mkRegion left right)
 
- op SCParser.mkSpecMorphismTerm      (dom : SCTerm, cod : SCTerm, rules : SpecMorphRules, pragmas : ParserOptional SM_Pragmas) 
+ op mkSpecMorphismTerm      (dom : SCTerm, cod : SCTerm, rules : SpecMorphRules, pragmas : ParserOptional SM_Pragmas) 
   : SpecMorphismTerm = 
   (dom, cod, rules, defaultToNull pragmas)
 
- op SCParser.mkDiagramTerm      (elements : DiagElems) : DiagramTerm = elements
- op SCParser.mkNode	        (node_id  : Id,                           trm : SCTerm, left : LCB, right : LCB) : DiagElemBody = Node (node_id,                 trm) % TODO: mkRegion left right
- op SCParser.mkEdge             (edge_id  : Id, dom_id : Id, cod_id : Id, trm : SCTerm, left : LCB, right : LCB) : DiagElemBody = Edge (edge_id, dom_id, cod_id, trm) % TODO: mkRegion left right
- op SCParser.mkColimitTerm	(diag     : SCTerm,                                     left : LCB, right : LCB) : SCTerm = mkColimit (diag, mkRegion left right)
+ op mkDiagramTerm      (elements : DiagElems) : DiagramTerm = elements
+ op mkNode	        (node_id  : Id,                           trm : SCTerm, left : LCB, right : LCB) : DiagElemBody = Node (node_id,                 trm) % TODO: mkRegion left right
+ op mkEdge             (edge_id  : Id, dom_id : Id, cod_id : Id, trm : SCTerm, left : LCB, right : LCB) : DiagElemBody = Edge (edge_id, dom_id, cod_id, trm) % TODO: mkRegion left right
+ op mkColimitTerm	(diag     : SCTerm,                                     left : LCB, right : LCB) : SCTerm = mkColimit (diag, mkRegion left right)
 
- op SCParser.mkSubstitute       (spec_term : SCTerm, sm_term    : SCTerm,         left : LCB, right : LCB) : SCTerm = SpecCalc.mkSubst     (spec_term, sm_term,    mkRegion left right)
- op SCParser.mkOpRefine 	(spec_term : SCTerm, elements   : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
- op SCParser.mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm =
+ op mkSubstitute       (spec_term : SCTerm, sm_term    : SCTerm,         left : LCB, right : LCB) : SCTerm = SpecCalc.mkSubst     (spec_term, sm_term,    mkRegion left right)
+ op mkOpRefine 	(spec_term : SCTerm, elements   : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
+ op mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm =
     SpecCalc.mkTransform (spec_term, transforms, [], mkRegion left right)
 
- op SCParser.mkTransformName   (name  : Id,         left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformName(name,  mkRegion left right)
- op SCParser.mkTransformNumber (num   : Nat,        left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformNumber(num, mkRegion left right)
- op SCParser.mkTransformString (str   : String,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformString(str, mkRegion left right)
-%op SCParser.mkTransformBool   (b     : Bool,       left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformBool(b, mkRegion left right)
- op SCParser.mkTransformSCTerm (uid   : SCTerm,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformSCTerm(uid, mkRegion left right)
- op SCParser.mkTransformQual (q: Qualifier, id: Id, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual(q, id, mkRegion left right)
- op SCParser.mkTransformItem(mod: String, expr: TransformExpr, left : LCB, right : LCB) : TransformExpr =
+ op mkTransformName   (name  : Id,         left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformName(name,  mkRegion left right)
+ op mkTransformNumber (num   : Nat,        left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformNumber(num, mkRegion left right)
+ op mkTransformString (str   : String,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformString(str, mkRegion left right)
+%op mkTransformBool   (b     : Bool,       left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformBool(b, mkRegion left right)
+ op mkTransformSCTerm (uid   : SCTerm,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformSCTerm(uid, mkRegion left right)
+ op mkTransformQual (q: Qualifier, id: Id, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual(q, id, mkRegion left right)
+ op mkTransformItem(mod: String, expr: TransformExpr, left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformItem(mod,  expr, mkRegion left right)
- op SCParser.mkTransformGlobalize(roots : OpNames, typ : TypeName, gvar : Id, init : Option OpName, left : LCB, right : LCB) : TransformExpr =
+ op mkTransformGlobalize(roots : OpNames, typ : TypeName, gvar : Id, init : Option OpName, left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformGlobalize (roots, typ, gvar, init, mkRegion left right)
- op SCParser.mkTransformRecord  (recpairs: List (String * TransformExpr), left : LCB, right : LCB) : TransformExpr =
+ op mkTransformRecord  (recpairs: List (String * TransformExpr), left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformRecord  (recpairs, mkRegion left right)
- op SCParser.mkTransformOptions (args : TransformExprs,  left : LCB, right : LCB) : TransformExpr =
+ op mkTransformOptions (args : TransformExprs,  left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformOptions (args, mkRegion left right)
- op SCParser.mkTransformTuple   (items : TransformExprs, left : LCB, right : LCB) : TransformExpr =
+ op mkTransformTuple   (items : TransformExprs, left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformTuple   (items, mkRegion left right)
- op SCParser.mkTransformCommand (head: String, args: TransformExprs, left : LCB, right : LCB) : TransformExpr =
+ op mkTransformCommand (head: String, args: TransformExprs, left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformCommand (head, args, mkRegion left right)
 
- op SCParser.mkObligations 	     (term  : SCTerm,                                   left : LCB, right : LCB) : SCTerm        = SpecCalc.mkObligations (term, mkRegion left right)
+ op mkObligations 	     (term  : SCTerm,                                   left : LCB, right : LCB) : SCTerm        = SpecCalc.mkObligations (term, mkRegion left right)
 
- op SCParser.mkGenerate (target_language : String, 
+ op mkGenerate (target_language : String, 
                          sc_term         : SCTerm, 
                          filename        : ParserOptional Filename,
                          left            : LCB,
@@ -139,7 +138,7 @@ spec
   : SCTerm = 
   SpecCalc.mkGenerate (target_language, sc_term, defaultToNone filename, mkRegion left right)
 
- op SCParser.mkProve  		      (claim_name  : QualifiedId,
+ op mkProve  		      (claim_name  : QualifiedId,
                                        sc_term     : SCTerm,
                                        prover_name : ProverName,
                                        assertions  : ParserOptional ClaimNames,
@@ -166,23 +165,23 @@ spec
   else    
     SpecCalc.mkProve      (claim_name,       sc_term, prover_name, assertions, opts, ProverBase, answer_var, here)
     
- op SCParser.mkAnswerVar     (annvar : Var)    : AnswerVar     = Some annvar
+ op mkAnswerVar     (annvar : Var)    : AnswerVar     = Some annvar
 
- op SCParser.mkExpand 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExpand      (sc_term,          mkRegion left right)
- op SCParser.mkReduce 	     (ms_term : MSTerm,    sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkReduce      (ms_term, sc_term, mkRegion left right)
- op SCParser.mkExtend 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExtendMorph (sc_term,          mkRegion left right)
- op SCParser.mkHide 	     (names   : NameExprs, sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkHide        (names, sc_term,   mkRegion left right)
- op SCParser.mkExport 	     (names   : NameExprs, sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkExport      (names, sc_term,   mkRegion left right)
+ op mkExpand 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExpand      (sc_term,          mkRegion left right)
+ op mkReduce 	     (ms_term : MSTerm,    sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkReduce      (ms_term, sc_term, mkRegion left right)
+ op mkExtend 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExtendMorph (sc_term,          mkRegion left right)
+ op mkHide 	     (names   : NameExprs, sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkHide        (names, sc_term,   mkRegion left right)
+ op mkExport 	     (names   : NameExprs, sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkExport      (names, sc_term,   mkRegion left right)
 
- op SCParser.mkAmbiguousRef  (ref : QualifiedId,                   left : LCB, right : LCB) : NameExpr = Ambiguous ref  % TODO: use left, right
- op SCParser.mkTypeRef       (ref : QualifiedId,                   left : LCB, right : LCB) : NameExpr = Type      ref  % TODO: use left, right
- op SCParser.mkOpRef 	     (ref : QualifiedId * Option MSType,   left : LCB, right : LCB) : NameExpr = Op        ref  % TODO: use left, right
- op SCParser.mkClaimRef      (claim_type, claimref : QualifiedId,  left : LCB, right : LCB) : NameExpr = case claim_type of
+ op mkAmbiguousRef  (ref : QualifiedId,                   left : LCB, right : LCB) : NameExpr = Ambiguous ref  % TODO: use left, right
+ op mkTypeRef       (ref : QualifiedId,                   left : LCB, right : LCB) : NameExpr = Type      ref  % TODO: use left, right
+ op mkOpRef 	     (ref : QualifiedId * Option MSType,   left : LCB, right : LCB) : NameExpr = Op        ref  % TODO: use left, right
+ op mkClaimRef      (claim_type, claimref : QualifiedId,  left : LCB, right : LCB) : NameExpr = case claim_type of
                                                                                                                       | "Axiom"      -> Axiom      claimref
                                                                                                                       | "Theorem"    -> Theorem    claimref
                                                                                                                       | "Conjecture" -> Conjecture claimref
 
- op SCParser.mkFragmentId (char  : Char, 
+ op mkFragmentId (char  : Char, 
                            num   : ParserOptional Nat, 
                            sym   : ParserOptional String, 
                            left  : LCB, 
@@ -197,18 +196,18 @@ spec
   %% TODO: use left, right
   id 
 
- op SCParser.mkImportDeclaration (tms : SCTerms, left : LCB, right : LCB) 
+ op mkImportDeclaration (tms : SCTerms, left : LCB, right : LCB) 
   : SpecElemTerm = 
   mkImportSpecElem (tms, mkRegion left right)
 
- op SCParser.mkTypeDeclaration (names : MSTypeNames, 
+ op mkTypeDeclaration (names : MSTypeNames, 
                                 tvs   : MSTypeVars,
                                 left  : LCB,
                                 right : LCB) 
   : SpecElemTerm = 
   SpecCalc.mkTypeSpecElem (names, tvs, [], mkRegion left right)
 
- op SCParser.mkTypeDefinition (names : MSTypeNames, 
+ op mkTypeDefinition (names : MSTypeNames, 
                                tvs   : MSTypeVars, 
                                defs  : MSTypes, 
                                left  : LCB, 
@@ -217,7 +216,7 @@ spec
   SpecCalc.mkTypeSpecElem (names, tvs, defs, mkRegion left right)
 
 (*
- op SCParser.mkOpSpecElem (names    : MSOpNames,  
+ op mkOpSpecElem (names    : MSOpNames,  
                            fixity   : Fixity,
                            pre_tvs  : MSTypeVars,
                            post_tvs : MSTypeVars,
@@ -232,10 +231,10 @@ spec
   mkOpSpecElem (names, fixity, tvs, typ, dfn, refine?, mkRegion left right)
 *)
 
- op SCParser.mkPragma 	       (prefix : String, body : String, postfix : String,                     left : LCB, right : LCB) : SpecElemTerm = SpecCalc.mkPragma (prefix, body, postfix, mkRegion left right)
+ op mkPragma 	       (prefix : String, body : String, postfix : String,                     left : LCB, right : LCB) : SpecElemTerm = SpecCalc.mkPragma (prefix, body, postfix, mkRegion left right)
 
- op SCParser.mkClaimDefinition (kind : PropertyType, label : PropertyName, claim : Id, term : MSTerm, left : LCB, right : LCB) : SpecElemTerm = (Claim (kind, label, [], term), mkRegion left right)
+ op mkClaimDefinition (kind : PropertyType, label : PropertyName, claim : Id, term : MSTerm, left : LCB, right : LCB) : SpecElemTerm = (Claim (kind, label, [], term), mkRegion left right)
 
- op SCParser.mkSMPragma        (prefix : String, body : String, postfix : String,                     left : LCB, right : LCB) : SM_Pragma    = ((prefix, body, postfix),          mkRegion left right)
+ op mkSMPragma        (prefix : String, body : String, postfix : String,                     left : LCB, right : LCB) : SM_Pragma    = ((prefix, body, postfix),          mkRegion left right)
 
-}
+end-spec

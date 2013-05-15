@@ -1,3 +1,4 @@
+ProofDebugger qualifying
 spec
 
   % API private default

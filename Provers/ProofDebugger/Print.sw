@@ -1,3 +1,4 @@
+ProofDebugger qualifying
 spec
 
   import ExtPrinter

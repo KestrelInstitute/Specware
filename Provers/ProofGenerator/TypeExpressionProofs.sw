@@ -1,3 +1,4 @@
+ProofGenerator qualifying
 spec
 
   % API private all

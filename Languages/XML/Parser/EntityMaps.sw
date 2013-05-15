@@ -1,3 +1,4 @@
+XML qualifying
 spec
 
  import ../XML_Sig

@@ -1,4 +1,4 @@
-spec
+SpecCalc qualifying spec
 
   import /Languages/SpecCalculus/AbstractSyntax/Types
 

@@ -7,7 +7,7 @@ JGen qualifying spec
 
 %import Monad qualifying /Library/Structures/Data/Monad/Base
 import JGen qualifying /Languages/MetaSlang/Specs/Categories/Specs       % AnnSpec.Spec
-import Java qualifying /Languages/Java/Java
+import /Languages/Java/Java
 
 import Errors
 %import IJavaCodeGen

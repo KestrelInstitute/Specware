@@ -1,3 +1,4 @@
+SpecCalc qualifying
 spec
 
  import Signature    % including SCTerm

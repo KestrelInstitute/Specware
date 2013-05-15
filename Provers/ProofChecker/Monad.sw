@@ -1,3 +1,4 @@
+MetaslangProofChecker qualifying
 spec
 
   % API private default

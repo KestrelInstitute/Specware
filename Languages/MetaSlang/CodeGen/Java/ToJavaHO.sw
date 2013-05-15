@@ -5,7 +5,7 @@
  * @created Sun Jul 13 15:34:43 PDT 2003
  *)
 
-%JGen qualifying 
+JGen qualifying 
 spec
   import ToJavaBase
   import ToJavaStatements

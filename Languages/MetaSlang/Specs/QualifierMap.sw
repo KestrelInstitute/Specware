@@ -1,9 +1,11 @@
 AQualifierMapType =
+AnnSpec qualifying
 spec
  type AQualifierMap b
 endspec  
 
 QualifierMap =
+AnnSpec qualifying
 spec
  import AQualifierMapType
  type MetaSlang.Id        = String
