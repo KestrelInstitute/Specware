@@ -71,4 +71,36 @@ Debugging qualifying spec
   in
   implode (compress (explode s, true))
 
+ %% useful for indented debugging....
+
+ op indentation      : Ref Int = Ref 0
+ op indentationLimit : Ref Int = Ref 40  
+
+ op getIndentationLimit () : Int = (! indentationLimit)          % use this to accesss indentationLimit
+ op getIndentation      () : Int = (! indentation)               % use this to accesss indentation
+
+ op setIndentationLimit (n : Int) : () = (indentationLimit := n) % use this to change indentationLimit
+ op setIndentation      (n : Int) : () = (indentation      := n) % use this to change indentation
+
+ op changeIndentation   (n : Int) : () = setIndentation ((! indentation) + n)
+
+ op whiteSpace (n : Nat) : String = implode (repeat #\s n)
+
+ op writeAt (s : String) : () =
+  let n = getIndentation () in
+  if (n < getIndentationLimit ()) then
+    writeLine (whiteSpace(n) ^ s) 
+  else
+    ()
+
+ op writeIn (s : String) : () =
+  let _ = writeAt s in
+  let _ = changeIndentation 2 in
+  ()
+
+ op writeOut (s : String) : () =
+  let _ = changeIndentation (-2) in
+  let _ = writeAt s in
+  ()
+
 end-spec
