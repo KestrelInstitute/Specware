@@ -280,6 +280,24 @@ op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
  def markQualified   spc q = spc << {qualifier = if q = UnQualified then None else Some q}
  def markUnQualified spc   = spc << {qualifier = None}
 
+ %% A Spec with qualifier = Some dummyQualifier is fully qualified
+ op dummyQualifier: Id = "<dummy qualifier>"
+ op markQualifiedStatus(spc: Spec): Spec =
+   if qualifiedSpec? spc then spc
+     else if existsSpecElement? unQualifiedSpecElement? spc.elements
+      then spc
+      else markQualified spc dummyQualifier
+
+ op unQualifiedSpecElement?(el: SpecElement): Bool =
+   case el of
+     | Import (_, spc, elts, _) ->
+       ~(qualifiedSpec? spc) && existsSpecElement? unQualifiedSpecElement? elts
+     | Type(Qualified(q, _),_) -> q = UnQualified
+     | TypeDef(Qualified(q, _),_) -> q = UnQualified
+     | Op(Qualified(q, _),_,_) -> q = UnQualified
+     | OpDef(Qualified(q, _),_,_,_) -> q = UnQualified
+     | _ -> false
+
  op defaultQualifier(spc: Spec): Id =
     case spc.qualifier of
       | None -> UnQualified
@@ -767,7 +785,13 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  op  existsSpecElement?: (SpecElement -> Bool) -> SpecElements -> Bool
  def existsSpecElement? p els =
-   foldlSpecElements (fn (result, el) -> result || p el) false els
+   exists? (fn el ->
+              p el
+                || (case el of
+                      | Import (_, _, elts, _) ->
+                        existsSpecElement? p elts
+                      | _ -> false))
+     els
 
  %% Just removes duplicate imports although could also remove other duplicate elements
  %% but this would be more expensive and maybe not that helpful

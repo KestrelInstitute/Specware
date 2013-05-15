@@ -227,7 +227,6 @@ IsaTermPrinter qualifying spec
              let sb_id = "_sb_" ^ scTermShortName morph_tm in
              Some((thynm^sb_id, sw_file, thy_file^sb_id),
                   uid))
-
       | (Translate(spc_tm, renaming), pos) ->
         (case uidStringPairForTerm(c, spc_tm) of
            | None -> None
@@ -235,7 +234,13 @@ IsaTermPrinter qualifying spec
              let sb_id = "_tr_" ^ strFromRenaming renaming in
              Some((thynm^sb_id, sw_file, thy_file^sb_id),
                   uid))
-
+      | (Qualify(spc_tm, qual), pos) ->
+        (case uidStringPairForTerm(c, spc_tm) of
+           | None -> None
+           | Some((thynm, sw_file, thy_file), uid) ->
+             let sb_id = "_qual_" ^ qual in
+             Some((thynm^sb_id, sw_file, thy_file^sb_id),
+                  uid))
       | (UnitId relId, pos) ->
         (case evaluateRelUIDWrtUnitId(relId, pos, getCurrentUID c) of
           | None -> None

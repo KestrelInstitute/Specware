@@ -44,7 +44,8 @@ and then qualify the resulting spec if the spec was given a name.
 %    compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
 %    print(printSpec compressed_spec);
     transformed_spec <- applyOpRefinements elaborated_spec;  % compressed_spec;
-    return (Spec (removeDuplicateImports transformed_spec),TS,depUIDs)
+    return (Spec (markQualifiedStatus(removeDuplicateImports transformed_spec)),
+            TS,depUIDs)
   }
 (*
 We first evaluate the imports and then the locally declared ops, types
@@ -62,7 +63,9 @@ axioms, etc.
 
   op  checkImports : (TimeStamp * UnitId_Dependency * List(SCTerm * Spec * Position))
                     -> SpecElemTerm
-                    -> SpecCalc.Env (TimeStamp * UnitId_Dependency * List(SCTerm * Spec * Position))
+                    -> SpecCalc.Env (TimeStamp
+                                      * UnitId_Dependency
+                                      * List(SCTerm * Spec * Position))
   def checkImports val (elem, position) =
     case elem of
       | Import terms -> 
@@ -89,10 +92,13 @@ axioms, etc.
     exists? (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
   op doImport(spc: Spec) (term: SCTerm, impSpec: Spec, position: Position): SpecCalc.Env Spec =
-   {impSpec <- if none?(impSpec.qualifier) && some?(spc.qualifier)
-                 then let Some qual = spc.qualifier in
-                      qualifySpec impSpec qual [] position
-               else return impSpec;
+   {(term, impSpec)
+      <- if ~(qualifiedSpec? impSpec) && qualifiedSpec?(spc)
+           then let Some qual = spc.qualifier in
+                {impSpec <- qualifySpec impSpec qual [] position;
+                 % print("Implicit "^qual^" qualifying "^showSCTerm term^"\n");
+                 return ((Qualify (term, qual), noPos), impSpec)}
+         else return (term, impSpec);
     mergeImport term impSpec spc position}
 
   op evaluateSpecElem : Spec -> SpecElemTerm -> SpecCalc.Env Spec

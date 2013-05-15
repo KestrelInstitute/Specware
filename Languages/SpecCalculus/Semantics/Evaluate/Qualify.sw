@@ -153,7 +153,7 @@ SpecCalc qualifying spec
              check_for_op_collisions   ();
              newTypes    <- qualify_types types;
              newOps      <- qualify_ops   ops;
-             newElements <- return (qualifySpecElements new_q immune_ids elements);
+             newElements <- qualifySpecElements new_q immune_ids elements;
              new_spec    <- return {types     = newTypes,
                                     ops       = newOps,
                                     elements  = newElements,
@@ -172,30 +172,32 @@ SpecCalc qualifying spec
   %% as standalone functions (not local to qualifySpec) so it can call 
   %% them from other contexts, as when qualifying modules, classes, etc.
 
-  op  qualifySpecElements : Qualifier -> Ids -> SpecElements -> SpecElements
+  op  qualifySpecElements : Qualifier -> Ids -> SpecElements -> SpecCalc.Env SpecElements
   def qualifySpecElements new_q immune_ids elts =
-    List.map (qualifySpecElement new_q immune_ids) elts
+    mapM (qualifySpecElement new_q immune_ids) elts
 
-  op  qualifySpecElement : Qualifier -> Ids -> SpecElement -> SpecElement
+  op  qualifySpecElement : Qualifier -> Ids -> SpecElement -> SpecCalc.Env SpecElement
   def qualifySpecElement new_q immune_ids el =
     case el of
       | Import (sp_tm, sp, els, a) ->
         if qualifiedSpec? sp then 
-	  el
-	else 
-	  Import ((Qualify (sp_tm, new_q), noPos),
-		  sp,
-		  qualifySpecElements new_q immune_ids els, a)
-      | Op      (qid,def?,a) -> Op      (qualifyOpId   new_q immune_ids qid, def?,a)
-      | OpDef   (qid, refine?, hist, a) -> OpDef   (qualifyOpId   new_q immune_ids qid, refine?, hist, a)
-      | Type    (qid,a)      -> Type    (qualifyTypeId new_q qid,a)
-      | TypeDef (qid,a)      -> TypeDef (qualifyTypeId new_q qid,a)
+	  return el
+	else
+          {q_sp <- qualifySpec sp new_q immune_ids a;
+           % print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
+           q_elts <- qualifySpecElements new_q immune_ids els;
+           return(Import ((Qualify (sp_tm, new_q), noPos),
+                          q_sp, q_elts, a))}
+      | Op   (qid,def?,a)            -> return(   Op(qualifyOpId new_q immune_ids qid, def?,a))
+      | OpDef(qid, refine?, hist, a) -> return(OpDef(qualifyOpId new_q immune_ids qid, refine?, hist, a))
+      | Type    (qid,a)      -> return(Type    (qualifyTypeId new_q qid,a))
+      | TypeDef (qid,a)      -> return(TypeDef (qualifyTypeId new_q qid,a))
       | Property (pt, qid, tvs, fmla, a) ->
 	%% Translation can cause names to become duplicated, but won't remove duplicates
 	let new_name = qualifyPropertyId new_q qid in
 	let newProp = (pt, new_name, tvs, fmla, a) in
-	Property newProp
-      | _ -> el
+	return(Property newProp)
+      | _ -> return el
 
   def qualifyOpId new_q immune_ids (qid as Qualified (q, id)) =
     if q = UnQualified && id nin? immune_ids then

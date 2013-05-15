@@ -244,36 +244,40 @@ SpecCalc qualifying spec
 
 
       def complain_if_op_collisions_with_priors (ops, op_translator) =
-	foldOverQualifierMap (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
-			      %% we're proposing to translate dom_q.dom_id into new_q.new_id
-			      case findAQualifierMap (ops, new_q, new_id) of
-				| None -> 
-				  %% new_q.new_id does not refer to a pre-existing op, so we're ok
-				  return ()
-				| Some prior_info -> 
-				  %% new_q.new_id refers to a pre-existing op
-				  case findAQualifierMap (op_translator, new_q, new_id) of
-				    | Some _ -> 
-				      %% but we're translator new_q.new_id out of the way, so we're ok
-				      return ()
-				    | None ->
-				      %% new_q, new_id refers to a pre-existing op, and is not being renamed away
-				      if Qualified(dom_q,dom_id) in? prior_info.names then
-					%% but it's an alias of dom_q.dom_id, so we're just collapsing aliases to the same name
-					return ()
-				      else
-					%% new_q,new_id refers to pre-existing, untranslated, non-alias op 
-					raise_later (TranslationError ("Illegal to translate op " ^ (explicitPrintQualifiedId (Qualified(dom_q,dom_id))) ^
-								       " into pre-existing, non-alias, untranslated " ^ (explicitPrintQualifiedId new_qid),
-								       position)))
-	                     ()
-			     op_translator
+	foldOverQualifierMap
+          (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
+              %% we're proposing to translate dom_q.dom_id into new_q.new_id
+            case findAQualifierMap (ops, new_q, new_id) of
+              | None -> 
+                %% new_q.new_id does not refer to a pre-existing op, so we're ok
+                return ()
+              | Some prior_info -> 
+                %% new_q.new_id refers to a pre-existing op
+                case findAQualifierMap (op_translator, new_q, new_id) of
+                  | Some _ -> 
+                    %% but we're translator new_q.new_id out of the way, so we're ok
+                    return ()
+                  | None ->
+                    %% new_q, new_id refers to a pre-existing op, and is not being renamed away
+                    if Qualified(dom_q,dom_id) in? prior_info.names then
+                      %% but it's an alias of dom_q.dom_id, so we're just collapsing aliases to the same name
+                      return ()
+                    else
+                      %% new_q,new_id refers to pre-existing, untranslated, non-alias op 
+                      raise_later (TranslationError ("Illegal to translate op "
+                                                       ^ (explicitPrintQualifiedId (Qualified(dom_q,dom_id)))
+                                                       ^ " into pre-existing, non-alias, untranslated "
+                                                       ^ (explicitPrintQualifiedId new_qid),
+                                                     position)))
+            ()
+            op_translator
 
 
       def insert (op_translator, type_translator) (renaming_rule, rule_pos) =
 
 	let 
-          def add_type_rule op_translator type_translator (dom_qid as Qualified (dom_q, dom_id)) dom_types cod_qid cod_aliases =
+          def add_type_rule op_translator type_translator (dom_qid as Qualified (dom_q, dom_id))
+                dom_types cod_qid cod_aliases =
 	    case dom_types of
 	      | first_info :: other_infos ->
 	        (let primary_dom_qid as Qualified (primary_q, primary_id) = primaryTypeName first_info in
@@ -286,29 +290,33 @@ SpecCalc qualifying spec
 		  %% (Note that a qualified dom_qid can't refer to an unqualified 
 		  %% type, so we can suppress the test for unqualified dom_qid.)						     
 		  if basicTypeName? primary_dom_qid then
-		    {
-		     raise_later (TranslationError ("Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid),
+		    {raise_later (TranslationError ("Illegal to translate from base type : "
+                                                      ^ (explicitPrintQualifiedId dom_qid),
 						    rule_pos));
 		     return (op_translator, type_translator)
 		    }
 		  else
 		    case findAQualifierMap (type_translator, dom_q, dom_id) of
 		      | None -> 
-		        {
-			 when allow_exceptions?
-			   (complain_if_type_collision (types, type_translator, dom_q, dom_id, cod_qid, rule_pos));
-			 new_type_translator <- return (insertAQualifierMap (type_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
-			 new_type_translator <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
-						   %% in rule X +-> Y, X refers to A.X
-						   %% so both X and A.X should translate to Y
-						   insertAQualifierMap (new_type_translator, primary_q, primary_id, (cod_qid, cod_aliases))
-						 else 
-						   new_type_translator);
+		        {when allow_exceptions?
+			   (complain_if_type_collision
+                              (types, type_translator, dom_q, dom_id, cod_qid, rule_pos));
+			 new_type_translator
+                           <- return (insertAQualifierMap
+                                        (type_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
+			 new_type_translator
+                           <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+                                        %% in rule X +-> Y, X refers to A.X
+                                        %% so both X and A.X should translate to Y
+                                        insertAQualifierMap
+                                          (new_type_translator, primary_q, primary_id, (cod_qid, cod_aliases))
+                                      else 
+                                        new_type_translator);
 			 return (op_translator, new_type_translator)
 			 }
 		      | _  -> 
-			{
-			 raise_later (TranslationError ("Multiple rules for source type " ^ (explicitPrintQualifiedId dom_qid),
+			{raise_later (TranslationError ("Multiple rules for source type "
+                                                          ^ (explicitPrintQualifiedId dom_qid),
 							rule_pos));
 			 return (op_translator, type_translator)
 			}
@@ -509,13 +517,15 @@ SpecCalc qualifying spec
 	| Ambiguous (dom_qid, cod_qid, cod_aliases) -> 
 	  if syntactic_qid? dom_qid then 
 	    {
-	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated.",
+	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid)
+                                              ^ "' is syntax, not an op, hence cannot be translated.",
 					    rule_pos));
 	     return (op_translator, type_translator)
 	     }
 	  else if basicQualifiedId? dom_qid then
 	    {
-	     raise_later (TranslationError ("Illegal to translate from base type or op: " ^ (explicitPrintQualifiedId dom_qid),
+	     raise_later (TranslationError ("Illegal to translate from base type or op: "
+                                              ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
 	     return (op_translator, type_translator)
 	     }
@@ -524,18 +534,23 @@ SpecCalc qualifying spec
 	    let dom_types = findAllTypes (dom_spec, dom_qid) in
 	    let dom_ops   = if dom_qid in? immune_op_names then [] else findAllOps (dom_spec, dom_qid) in
 	    case (dom_types, dom_ops) of
-	      | ([], []) -> {
-			     if dom_qid in? immune_op_names && ~ (empty? (findAllOps (dom_spec, dom_qid))) then
-			       raise_later (TranslationError ("Source op "^(explicitPrintQualifiedId dom_qid) ^ " is immune to translation", 
-							      rule_pos))
-			     else
-			       if allow_extra_rules? then
-				 return ()
-			       else
-				 raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
-								rule_pos));
-			     return (op_translator, type_translator)
-			    }
+	      | ([], []) ->
+                {
+                 if dom_qid in? immune_op_names
+                      && ~ (empty? (findAllOps (dom_spec, dom_qid))) then
+                   raise_later (TranslationError ("Source op "
+                                                    ^(explicitPrintQualifiedId dom_qid)
+                                                    ^ " is immune to translation", 
+                                                  rule_pos))
+                 else
+                   if allow_extra_rules? then
+                     return ()
+                   else
+                     raise_later (TranslationError ("Unrecognized source type or op "
+                                                      ^(explicitPrintQualifiedId dom_qid), 
+                                                    rule_pos));
+                     return (op_translator, type_translator)
+                     }
 	      | (_,  []) -> add_type_rule op_translator type_translator dom_qid dom_types cod_qid cod_aliases
 	      | ([], _)  -> add_op_rule   op_translator type_translator dom_qid dom_ops   cod_qid cod_aliases
 	      | (_,  _)  -> {
@@ -664,10 +679,10 @@ SpecCalc qualifying spec
      new_types    <- translateTypeInfos s.types;
      new_ops      <- translateOpInfos   s.ops;
      new_elements <- return (translateSpecElements translators opt_renaming s.elements currentUID?);
-     new_spec     <- return {types     = new_types,
-			     ops       = new_ops,
-			     elements  = new_elements,
-			     qualifier = None};	
+     new_spec     <- return (markQualifiedStatus{types     = new_types,
+                                                 ops       = new_ops,
+                                                 elements  = new_elements,
+                                                 qualifier = None});	
 
      %% Next we worry about traditional captures in which a (global) op Y,
      %% used under a binding of var X, is renamed to X.   Internally, this 
@@ -726,11 +741,7 @@ SpecCalc qualifying spec
       | Property (pt, nm, tvs, term, a) ->
         Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
       | Import (sp_tm, spc, els, a) ->  
-	%% The Import expression we have just dispatched on was constructed 
-	%% by mapSpecElements.  In particular, els was constructed by 
-	%% applying this fn to each of the original imported elements. 
-	%% So we don't want to recur again here, but we do want to tweak 
-	%% the term:
+        let els = translateSpecElements translators opt_renaming els currentUID? in
 	let (new_tm, spc, els) =
             if spc = base
               then (sp_tm, spc, els)
@@ -762,7 +773,6 @@ SpecCalc qualifying spec
                 (case rules of
                    | [] -> (sp_tm, spc, els)
                    | _ ->
-                     let els = translateSpecElements translators opt_renaming els currentUID? in
                      let renaming = (reverse rules, pos) in
                      let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
                      % let _ = writeLine("trans_spc_tm:\n"^anyToString trans_spc_tm) in
