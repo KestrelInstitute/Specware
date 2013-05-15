@@ -1298,6 +1298,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     [("Integer",    "~"),  % TODO: deprecate
      ("IntegerAux", "-"),
      ("Integer",    "+"),
+     ("Nat",        "+"),
      ("Integer",    "<"),
      ("Integer",    ">"),
      ("Integer",    "<="),
