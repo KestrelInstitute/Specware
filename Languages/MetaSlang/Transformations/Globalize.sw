@@ -2166,6 +2166,31 @@ Globalize qualifying spec
    return (spec_with_gvar, tracing?)
    }
 
+ op SpecTransform.new_globalize (spc              : Spec)
+                             (root_ops         : OpNames,
+                              global_type_name : TypeName,
+                              global_var_id    : String,
+                              opt_ginit        : Option OpName,
+                              % for now, tracing? has no default value,
+                              % nor does "trace on/off" affect it
+                              tracing?         : Bool) 
+  : Spec =
+  % let _ = writeLine ("root_ops         = " ^ anyToString root_ops         ) in
+  % let _ = writeLine ("global_type_name = " ^ anyToString global_type_name ) in
+  % let _ = writeLine ("global_var_id    = " ^ anyToString global_var_id    ) in
+  % let _ = writeLine ("opt_ginit        = " ^ anyToString opt_ginit        ) in
+  % let _ = writeLine ("tracing?         = " ^ anyToString tracing?         ) in
+  let (spc, tracing?) =
+      run (globalizeSingleThreadedType (spc,
+                                        root_ops,
+                                        global_type_name,
+                                        global_var_id,
+                                        opt_ginit,
+                                        tracing?))
+  in
+  % for now, there is no way to pass tracing? along
+  spc
+
  %% ================================================================================
 
 }
