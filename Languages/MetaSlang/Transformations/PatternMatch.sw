@@ -1075,21 +1075,45 @@ PatternMatch qualifying spec
  op simplifyPatternMatchResult (term : MSTerm) : Option MSTerm =
   let 
 
-    def simpRec (body, continuation) =
+    def substContinuationInBody (body, continuation) =
+
+      %% basically, try to merge continuation into body
+      %% may simplify if's and let's
+      %% special tricks for mkBreak, mkSuccess, mkFail, failWith
+
       case body of
+
         | IfThenElse (pred, t1, t2, pos) ->
-          (case simpSuccess t1 of
-             | Some simp_t1 ->
-               (case simpRec (t2, continuation) of
+          (case (simpSuccess t1, simpSuccess t2) of
+             | (Some simp_t1, Some simp_t2) ->
+               %% both simplied without even looking at continuation
+               %% this may optimize IfThenElse based on actual terms:
+               Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
+             | (Some simp_t1, _) ->
+               %% t1 simplied without even looking at continuation, 
+               %%  so see what happens with t2
+               (case substContinuationInBody (t2, continuation) of
                   | Some simp_t2 -> 
                     %% this may optimize IfThenElse based on actual terms:
                     Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
                   | _ -> None)
+             | (_, Some simp_t2) ->
+               %% t2 simplied without even looking at continuation, 
+               %%  so see what happens with t1
+               (case substContinuationInBody (t1, continuation) of
+                  | Some simp_t1 -> 
+                    %% this may optimize IfThenElse based on actual terms:
+                    Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
+                  | _ -> None)
              | _ ->
+               %% Neither simplied without looking at continuation, 
+               %%  but maybe continuation is trivial enough that it
+               %%  makes sense to just merge it into both t1 and t2.
                if simpleSuccTerm? continuation then
-                 case simpRec (t1, continuation) of
+                 %% continuation is small, so merge with both t1 and t2
+                 case substContinuationInBody (t1, continuation) of
                    | Some simp_t1 ->
-                     (case simpRec (t2, continuation) of
+                     (case substContinuationInBody (t2, continuation) of
                         | Some simp_t2 -> 
                           %% this may optimize IfThenElse based on actual terms:
                           Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
@@ -1098,30 +1122,37 @@ PatternMatch qualifying spec
                else 
                  None)
 
+        | Let (bindings, let_body, pos) ->
+          (case substContinuationInBody (let_body, continuation) of
+             | Some simp_body -> Some (Let (bindings, simp_body, pos))
+             | _ -> None)
+
         | Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"),_),_,_) -> 
-          simpSuccess continuation
+          % continuation is inevitable
+          simpSuccess continuation 
 
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), 
                  arg,
                  _) 
           ->
-          Some arg   % continuation is unreachable
+          % continuation is unreachable
+          Some arg
 
-        | Let (bindings, let_body, pos) ->
-          (case simpRec (let_body, continuation) of
-             | Some simp_body -> Some (Let (bindings, simp_body, pos))
-             | _ -> None)
+        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_),_,_) -> 
+          % continuation is unreachable
+          Some body
 
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
                  Record ([("1", inner_body), ("2", inner_continuation)], _),
                  _) 
           ->
-          (case simpRec (inner_continuation, continuation) of
-             | Some simp_continuation -> simpRec (inner_body, simpLet simp_continuation)
-             | _ -> None)
-
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_),_,_) -> 
-          Some body
+          % attempt to simplify: failWith (failWith (x, y), z) => failWith (x, y')
+          % requires failWith (y, z) to resolve as y'
+          (case substContinuationInBody (inner_continuation, continuation) of
+             | Some combined_continuation -> 
+               substContinuationInBody (inner_body, simpLet combined_continuation)
+             | _ -> 
+               None)
 
         | _ -> 
           None
@@ -1141,7 +1172,7 @@ PatternMatch qualifying spec
                  Record ([("1", body), ("2", continuation)],_),
                  _) 
           ->
-          simpRec (body, continuation)
+          substContinuationInBody (body, continuation)
           
         | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_), _, _)  ->
           Some tm
@@ -1155,7 +1186,7 @@ PatternMatch qualifying spec
              Record ([("1", body), ("2", continuation)],_), 
              _)
       ->
-      simpRec (body, simpLet continuation)
+      substContinuationInBody (body, simpLet continuation)
 
     | _ -> 
       None
