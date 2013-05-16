@@ -1328,9 +1328,10 @@ op addList(S: StringSet, l: List String): StringSet =
    else
    let tr_infos = generateAddTransformUpdates spc in
    map (fn (Qualified(_, nm), (ty_info, fn_tm)) ->
-        let q_ty_info = Const(Cell(cell ty_info)) in
-        let fn_tm = translateMatchInTerm spc "addTransformInfo" fn_tm in
-        let fn_ltm = lispTerm(spc, defaultSpecwarePackage, fn_tm) in  
+        let q_ty_info = Const (Cell (cell ty_info))                         in
+        let name      = mkQualifiedId ("MetaTransform", "addTransformInfo") in
+        let fn_tm     = translateMatchInTerm spc name fn_tm                 in
+        let fn_ltm    = lispTerm (spc, defaultSpecwarePackage, fn_tm)       in  
         Set("MetaTransform::transformInfoMap",
             mkLApply(mkLOp "MetaTransform::addTransformInfo-3", [mkLString nm, q_ty_info, fn_ltm])))
      tr_infos

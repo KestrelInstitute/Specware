@@ -62,9 +62,16 @@ PatternMatch qualifying spec
 
  type Context = {counter     : Ref Nat,        % counter for variable numbering
                  spc         : Spec,
-                 error_index : Ref Nat,        % to discriminate error messages
-                 op_name     : String,         % for error messages
+                 error_index : Ref Nat,        % to distinguish error messages
+                 name        : QualifiedId,    % for error messages -- name of parent op or type
                  lambda      : Option MSTerm}  % for error messages
+
+ op mkSpcContext (spc : Spec) (name : QualifiedId) : Context =
+  {counter     = Ref 0,
+   spc         = spc,
+   error_index = Ref 0,   % to distinguish error messages
+   name        = name,    % for error messages
+   lambda      = None}    % for error messages
 
  op match_type (typ : MSType) : MSType = 
   typ 
@@ -124,7 +131,7 @@ PatternMatch qualifying spec
   ctx << {lambda = Some trm}
 
  op warnUnreachable (ctx : Context) : () =
-  writeLine ("Warning: Redundant case in " ^ ctx.op_name ^ "\n" ^ 
+  writeLine ("Warning: Redundant case in " ^ (printQualifiedId ctx.name) ^ "\n" ^ 
                (case ctx.lambda of
                   | Some tm -> printTerm tm
                   | _ -> ""))
@@ -861,7 +868,7 @@ PatternMatch qualifying spec
   let index = ! ctx.error_index + 1 in
   (ctx.error_index := index;
    let typ1 = mkArrow (typ, match_type typ) in
-   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ ctx.op_name in
+   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
    mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkFail"), typ1),
             mkString msg))
 
@@ -912,7 +919,9 @@ PatternMatch qualifying spec
           wildPattern? msrule || nonfinalWildPattern? msrules
   in
   if nonfinalWildPattern? msrules then
-    writeLine ("checkUnreachableCase: Unreachable case in " ^ ctx.op_name ^ "\n" ^ printTerm term)
+    writeLine ("checkUnreachableCase: Unreachable case in " ^ 
+                 (printQualifiedId ctx.name) ^ "\n" ^ 
+                 printTerm term)
   else 
     ()
 
@@ -1199,15 +1208,8 @@ PatternMatch qualifying spec
   *  term)
   *)
 
- op mkSpcContext (spc : Spec) (op_name : String) : Context =
-  {counter     = Ref 0,
-   spc         = spc,
-   error_index = Ref 0,   % to distinguish error messages
-   op_name     = op_name, % for error messages
-   lambda      = None}    % for error messages
-
- op translateMatchInTerm (spc: Spec) (op_name: String) (tm: MSTerm): MSTerm =
-  simpLamBody(eliminateTerm (mkSpcContext spc op_name) tm)
+ op translateMatchInTerm (spc : Spec) (name : QualifiedId) (tm : MSTerm): MSTerm =
+  simpLamBody(eliminateTerm (mkSpcContext spc name) tm)
 
  op SpecTransform.translateMatch (spc : Spec) : Spec = 
   % sjw: Moved (Ref 0) in-line in mkSpcContext so it is reexecuted for each call so the counter is reinitialized
@@ -1215,16 +1217,16 @@ PatternMatch qualifying spec
   % to be a function). This means that compiled functions will have the same generated variables
   % independent of the rest of the file.
   let 
-    def mkContext op_name = mkSpcContext spc op_name
+    def mkContext name = mkSpcContext spc name
   in
   let new_types =
       mapTypeInfos (fn info ->
-                      let Qualified (_,id)      = primaryTypeName      info in
+                      let type_name             = primaryTypeName      info in
                       let (old_decls, old_defs) = typeInfoDeclsAndDefs info in
                       let new_defs =
                           map (fn dfn ->
-                                 let (tvs, typ) = unpackType dfn                   in
-                                 let new_type   = eliminateType (mkContext id) typ in
+                                 let (tvs, typ) = unpackType dfn                          in
+                                 let new_type   = eliminateType (mkContext type_name) typ in
                                  maybePiType (tvs, new_type))
                               old_defs
                       in
@@ -1234,7 +1236,7 @@ PatternMatch qualifying spec
   in
   let new_ops =
       mapOpInfos (fn info ->
-                    let Qualified (_,id) = primaryOpName info in
+                    let op_name               = primaryOpName      info in
                     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
                     let new_defs = 
                         map (fn dfn ->
@@ -1242,8 +1244,8 @@ PatternMatch qualifying spec
                                if anyTerm? term then 
                                  dfn
                                else
-                                 let new_typ = eliminateType (mkContext id) typ in
-                                 let new_tm  = eliminateTerm (mkContext id) term in
+                                 let new_typ = eliminateType (mkContext op_name) typ in
+                                 let new_tm  = eliminateTerm (mkContext op_name) term in
                                  let new_tm = simpLamBody new_tm in
                                  maybePiTerm (tvs, TypedTerm (new_tm, new_typ, termAnn term)))
                             old_defs
@@ -1255,8 +1257,8 @@ PatternMatch qualifying spec
   let new_elements =
       map (fn el ->
              case el of
-               | Property (pt, pname as Qualified (_, id), tyvars, term, a) -> 
-                 Property (pt, pname, tyvars, eliminateTerm (mkContext id) term, a)
+               | Property (pt, pname, tyvars,                                 term, a) -> 
+                 Property (pt, pname, tyvars, eliminateTerm (mkContext pname) term, a)
                | _ -> el) 
           spc.elements
   in
