@@ -94,7 +94,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec =
     let stPre = Subtype (stateType, Lambda ([(VarPat ((preStateVar, stateType), noPos), mkTrue (),preAsConj)],noPos), noPos) in
     let stPost = Subtype (stateType, Lambda ([(VarPat ((postStateVar, stateType), noPos), mkTrue (),calculatedPostcondition)],noPos), noPos) in
     let stType = Arrow (stPre,stPost,noPos) in
-    let stBody = Any noPos in
+    let stBody = Lambda ([(VarPat ((preStateVar, stPre), noPos), mkTrue (), Any noPos)],noPos) in
     let body = TypedTerm (stBody, stType, noPos) in
     let spc' = addOpDef(spc,fname,Nonfix,body) in
     return spc'
