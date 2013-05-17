@@ -1,3 +1,6 @@
+%% FIXME: Update docs to note that most functions take in a list of
+%% rewrite rules.
+
 %% This spec exports a transformation 'mergeRules' 
 %%
 %% S0 = S1 { at f { mergeRules [f1,f2]}}
@@ -61,6 +64,17 @@ spec
 
 import Script
 
+% When merging, we may need to simplify given some rewrite rules. The
+% 'mergeRules' spec transform take such a list.
+type Rewrites = List RuleSpec  
+
+%% FIXME: This should take in an extra argument, that is an optional
+%% list of theorem names that should be used when extracting the pre-
+%% and post-conditions. But I don't know how to get multiple arguments
+%% for a transformation to work with the specware tranformation shell
+%% parser.
+op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env Spec =
+
 %% This transformation takes a list of "rules", defined as specware ops, and
 %% combines them into a single op.
 %% Arguments:
@@ -68,24 +82,28 @@ import Script
 %%  qids: The names of the ops defining the ruleset to transform.
 %% Returns:
 %%  An op with the pre (resp. post) conditions of the named input rules merged
-%%  into a single pre (resp. post) condition. 
-op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec = 
+%%  into a single pre (resp. post) condition.
+% op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec =
   let _ = writeLine "MergeRules!" in
   let (fname::qids) = args in
   let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
-  { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o)) qids
-  ; ps <- combineRuleSpecs spc ruleSpecs
+  { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems)) qids
+  ; ps <- combineRuleSpecs spc ruleSpecs theorems
   ; let (vars,is) = unzip ps in
     let vars' = nubBy (fn (i,j) -> i.1 = j.1 && i.2 = j.2) (flatten vars : ExVars) in 
-    let _ = writeLine ("Starting with " ^ printDNF (flatten is)) in
+    % let _ = writeLine ("Starting with ") in
+    % let _ = writeLine (printDNF (flatten is)) in
     let (rterm,pred) = bt [] (map (fn i -> i.1) vars') (flatten is) in
-    let _ = writeLine ("Result is " ^ printTerm rterm) in
-    let calculatedPostcondition = Bind (Exists,vars',rterm,noPos)  in
+    let calculatedPostcondition = mkSimpleExists vars' rterm in    
+    let _ = writeLine ("Result is: ") in
+    let _ = writeLine (printTerm calculatedPostcondition) in
     %% Use this representation, rather than DNF, since it's easier to read.
-    let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
-    % let calculatedPreconditions = Bind (Exists,vars',dnfToTerm (negateDNF pred),noPos)  in
-    let calculatedPreconditions = Bind (Exists,vars',preAsConj,noPos)  in
-    let _ = writeLine ("Preconditions are:\n " ^ printTerm preAsConj) in
+    % let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
+    let preAsConj =
+         ands (map (fn conj -> mkNot (mkSimpleExists vars' (ands conj))) pred) in
+    % let calculatedPreconditions = Bind (Exists,vars',dnfToTerm (negateDNF pred),noPos)in
+    % let calculatedPreconditions = mkSimpleExists vars' preAsConj in
+    % let _ = writeLine ("Preconditions are:\n " ^ printTerm preAsConj) in
 
     % Construct the new term
     let stateType = rs1.1 in
@@ -101,7 +119,13 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec =
   }
   
 
-
+%% FIXME:
+%% This doesn't properly handle the case where the rule does not have the shape
+%% (s:state | P s) -> { s':state | Q s s'}
+%% In particular, when the state transformer takes other arguments, it may
+%% have the shape:
+%% ((s,x1,...xn):(state*T1*...*Tn) | P s) -> { s':state | Q s s'}
+%% This needs to be properly extracted.
 
 %% Get the pre and post condition for an op, extracted from its 
 %% The type of the op must be a function with a single argument (with a
@@ -112,7 +136,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec =
 %%   qid: The op to extract.
 %% Returns:
 %%   A 4-tuple of (stateType, input argument name, precondition, output name, postcondition)
-op getOpPreAndPost(spc:Spec, qid:QualifiedId):Env (MSType*Id*Option MSTerm*Id*Option MSTerm) = 
+op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*Option MSTerm*Id*Option MSTerm) = 
    let _ = writeLine ("Looking up op " ^ (show qid)) in
    case getOpDef(spc,qid) of
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
@@ -121,8 +145,8 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId):Env (MSType*Id*Option MSTerm*Id*Op
        let _ = writeLine ("Arrow type is " ^ printType ty) in
        let _ = writeLine ("Domain is " ^ (printType dom)) in
        let _ = writeLine ("Codomain is " ^ (printType codom)) in
-       { (preStateVar,preStateType,preCondition) <- getSubtypeComponents spc dom
-       ; (postStateVar,postStateType,postCondition) <- getSubtypeComponents spc codom
+       { (preStateVar,preStateType,preCondition) <- getSubtypeComponents spc dom theorems
+       ; (postStateVar,postStateType,postCondition) <- getSubtypeComponents spc codom theorems
          % Require the pre- and poststate types  match.
          % FIXME: Need equality modulo annotations
          % guard (preStateType = postStateType) (
@@ -150,10 +174,10 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId):Env (MSType*Id*Option MSTerm*Id*Op
 %% Returns:
 %%  3-tuple (Bound variable, classifier, Option (subtype expression) )
 
-op getSubtypeComponents(spc:Spec)(ty:MSType):Env (Id * MSType * Option MSTerm) =
+op getSubtypeComponents(spc:Spec)(ty:MSType)(theorems:Rewrites):Env (Id * MSType * Option MSTerm) =
   case ty of
    | Subtype (binding,pred,_) ->
-      { (n,ty,body) <- getLambdaComponents spc pred
+      { (n,ty,body) <- getLambdaComponents spc pred 
       ; return (n,ty,Some body)
       }
    | Base (_,_,_) -> return ("_",ty,None) 
@@ -168,12 +192,14 @@ op getSubtypeComponents(spc:Spec)(ty:MSType):Env (Id * MSType * Option MSTerm) =
 op getLambdaComponents(spc:Spec)(tm:MSTerm):Env (Id * MSType * MSTerm) =
   % let _ = writeLine ("Looking at subtype predicate " ^ printTerm tm) in
   case tm of                                         
-   | Lambda ([(VarPat ((n,ty),_),guard,body)], _) -> %% WTF does VarPat take a tuple with a position???
+   | Lambda ([(VarPat ((n,ty),_),guard,body)], _) ->
       % let _ = writeLine ("Bound Var: " ^ anyToString n) in
       % let _ = writeLine ("Classifier: " ^ printType ty ) in
       % let _ = writeLine ("Guard: " ^ printTerm guard) in
       % let _ = writeLine ("Body: " ^ printTerm body) in
       return (n,ty,body)
+   | Lambda ([(pat,guard,body)], _) -> 
+       raise (Fail ("getLambdaComponents: Not a unary lambda" ^ anyToString pat))
    | _ -> raise (Fail "getLambdaComponents: Not a unary lambda.")
     
 %% combineRuleSpecs normalizes pre/post condition naming, and generates
@@ -183,12 +209,12 @@ op getLambdaComponents(spc:Spec)(tm:MSTerm):Env (Id * MSType * MSTerm) =
 %% atomic formula. Moreover, we normalize the names of the pre- and poststate 
 %% variables.
 %% FIXME: Currently, there's no variable renaming going on...
-op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm)):Env (List (ExVars * DNFRep)) =
+op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm))(theorems:Rewrites):Env (List (ExVars * DNFRep)) =
   let types = map (fn r -> r.1) rules  in
   let preconditions = map (fn r -> case r.3 of Some t -> t | None -> (mkTrue ())) rules in
   let postconditions = map (fn r -> case r.5 of Some t -> t | None -> (mkTrue ())) rules in
-  { pres <- mapM (normalizeCondition spc) preconditions 
-  ; posts <- mapM (normalizeCondition spc) postconditions
+  { pres <- mapM (normalizeCondition spc theorems) preconditions 
+  ; posts <- mapM (normalizeCondition spc theorems) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
     let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
     % let _ = map printIt ps in 
@@ -198,51 +224,61 @@ op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTe
 type ExVars = List (AVar Position)
 type DNFRep = (List (List MSTerm))
 %% Remove existential quantifers, flatten to DNF.
-op normalizeCondition(spc:Spec)(tm:MSTerm):Env(ExVars *  DNFRep) = 
+op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFRep) = 
   % let _ = writeLine ("Normalizing " ^ printTerm tm) in
   case tm of
     | Bind (Exists,vars,body,_) -> 
-      { dnf <- splitConjuncts spc body   
+      { dnf <- splitConjuncts spc theorems body   
       ; return (vars,dnf)
       }
-    | _ -> 
-      { dnf <- splitConjuncts spc tm
-      ; return ([],dnf)
-      }
+    | (Apply (Fun (f as Or,_,_), Record (args,_),_)) ->
+       let Some a1 = getField (args,"1") in
+       let Some a2 = getField (args,"2") in
+       { (v1,dnf1) <- normalizeCondition spc theorems a1;
+         (v2,dnf2) <- normalizeCondition spc theorems a2;
+         return (v1 ++ v2, dnf1 ++ dnf2)
+       }
+
+    | _ | unfoldable? (tm,spc) ->
+            normalizeCondition spc theorems (simplifyOne spc (unfoldTerm (tm,spc)))
+    | _ -> case rewriteTerm spc theorems tm of
+            | Some tm' -> normalizeCondition spc theorems tm'
+            | None -> {  dnf <- splitConjuncts spc theorems tm
+                       ; return ([],dnf)
+                       }
 
 %% Convert a term into DNF, represented as a list of lists.
-op splitConjuncts(spc:Spec)(tm:MSTerm):Env DNFRep =
+op splitConjuncts(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env DNFRep =
   case tm of
    | (Apply (Fun (f as And,_,_), Record (args,_),_)) -> 
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { r1 <- splitConjuncts spc a1
-       ; r2 <- splitConjuncts spc a2
+       { r1 <- splitConjuncts spc theorems a1
+       ; r2 <- splitConjuncts spc theorems a2
        ; return (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1))
        }
    | (Apply (Fun (f as Or,_,_), Record (args,_),_)) -> 
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { r1 <- splitConjuncts spc a1
-       ; r2 <- splitConjuncts spc a2
+       { r1 <- splitConjuncts spc theorems a1
+       ; r2 <- splitConjuncts spc theorems a2
        ; return (r1 ++ r2)
        }
    | IfThenElse (p,t,e,_) -> 
-     { rp <- splitConjuncts spc p;
-       rt <- splitConjuncts spc t;
-       re <- splitConjuncts spc e;
+     { rp <- splitConjuncts spc theorems p;
+       rt <- splitConjuncts spc theorems t;
+       re <- splitConjuncts spc theorems e;
        let ut = andDNF rp rt in
-       % FIXME: This is not properly negating the guard for the
-       % else branch.
        let ue = andDNF (negateDNF rp) re in
        return (ut ++ ue)
       }
    | _ | unfoldable? (tm,spc) ->
          % let _ = writeLine ("Simplifying " ^ printTerm tm) in
-         splitConjuncts spc (simplifyOne spc (unfoldTerm (tm,spc)))
-   | _ -> % let _ = writeLine ("Can't simplify " ^ printTerm tm) in 
-          return [[tm]]
+         splitConjuncts spc theorems (simplifyOne spc (unfoldTerm (tm,spc)))
 
+    | _ -> case rewriteTerm spc theorems tm of
+            | Some tm' -> splitConjuncts spc theorems tm'
+            | None -> return [[tm]] 
 
 
 % The 'Choice' type represents the choice of the next conjunct to
@@ -518,9 +554,9 @@ op gatherPatterns(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option MSPattern) =
 %% To handle the notion of definedness, we pass in a list of
 %% *undefined* variables 'vars'.
 %% 
-%% If the term t is such a definition, we return 'Some v', where 'v'
-%% is the variable being defined. If it is not a definition, then we
-%% return 'None'.
+%% If the term t is such a definition, we return 'Some (v, ty)', where
+%% 'v' is the variable being defined and 'ty' is the type of 'v'. If
+%% it is not a definition, then we return 'None'.
 op isDefinition?(vars:List Id)(t:MSTerm):Option (Id * MSType) =
    % let _ = writeLine ("Checking to see if " ^ printTerm t ^ " is a definition.") in
    % let _ = map writeLine vars in 
@@ -646,6 +682,30 @@ op resolveAll (ps:List (List MSTerm)):List (List MSTerm) =
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Rewriting Utilities
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Given a spec, a list of rewrite rule specs, and a term, return Some
+% tm', where tm' is the first rewrite of tm, w.r.t the rules
+% 'theorems.'
+op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
+   let pterm = toPathTerm tm in
+   let ctx = makeContext spc in
+   let qid = mkUnQualifiedId "What???" in
+   let hist = [] in
+   let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
+   % let _ = writeLine (anyToString rules) in
+   let (pterm',hist') = replaceSubTermH(rewrite(pterm, ctx, qid, rules, 1), pterm, hist) in
+   let tm' = fromPathTerm pterm' in
+   if equalTerm?(tm, tm')
+     then None
+     else % let _ = writeLine ("Term before rewriting: " ^ printTerm tm) in
+          % let _ = writeLine ("Term after rewriting: " ^ printTerm tm') in
+          (Some tm')
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Term construction and manipulation utlities
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -703,6 +763,94 @@ op negateDNF(r:DNFRep):DNFRep =
   let r' = cnf2Dnf (resolveAll cnf) in
   r'
 
+
+%% mkSimpleExists: Close the given term under the list of binders.
+%% Push the quantification as deep as possible into the subterms.
+%%
+%% Arguments:
+%%    vars, a list of AVars
+%%    tm, a term
+%% Returns:
+%%   a new expression, closed w.r.t vars.
+op mkSimpleExists (vars:List MSVar) (tm:MSTerm):MSTerm =
+   if empty? vars
+     then tm
+     else
+       case tm of
+        | Let (decls, M,  _) ->
+          let defVars = foldr
+             (fn ((pat, trm), acc) ->
+                insertVars (freeVars trm, deleteVars (patVars pat, acc))) [] decls in
+          let outer = filter (fn v -> v in? defVars) vars in
+          let inner = filter (fn v -> ~(v in? defVars)) vars in
+          let tm' = mkSimpleExists inner M in
+          let _ = writeLine ("mkSimpleExists on: " ^ printTerm tm) in          
+          Bind (Exists,outer,tm',noPos)
+        % Handle '&&' specially, for now.
+        | (Apply (Fun (f as And,ty,fPos), Record (args,argsPos),appPos)) -> 
+          let Some a1 = getField (args,"1") in
+          let Some a2 = getField (args,"2") in
+          let v1 = freeVars a1 in
+          let v2 = freeVars a2 in
+          % This needs special treatment, because of the
+          % non-commutative nature of && in MetaSlang.
+          let outer = filter (fn v -> v in? v1) vars in
+          let inner1 = filter (fn v -> v in? v1 && ~ (v in? v2)) vars in
+          let inner2 = filter (fn v -> v in? v2 && ~ (v in? v1)) vars in
+          let a1' = mkSimpleExists inner1 a1 in
+          let a2' = mkSimpleExists inner2 a2 in
+          let tm' = Apply (Fun (f,ty,fPos),
+                           Record ([("1",a1'),("2",a2')],argsPos),appPos) in
+          if empty? outer
+            then tm'
+            else Bind(Exists,outer,tm',noPos)
+
+         | IfThenElse (p,t,e,pos) ->
+             let pvars = freeVars p in
+             let tvars = freeVars t in
+             let evars = freeVars e in
+             let outer = filter (fn v -> v in? pvars || (v in? tvars && v in? evars)) vars in
+             let tvars' = filter (fn v -> v in? tvars && ~(v in? outer)) vars in
+             let evars' = filter (fn v -> v in? tvars && ~(v in? outer)) vars in
+             let t' = mkSimpleExists tvars' t in
+             let e' = mkSimpleExists evars' e in
+             let tm' = IfThenElse (p,t',e',pos) in
+             if empty? outer
+               then tm'
+               else Bind(Exists,outer,tm',noPos)
+        % Case expressions.
+        | (Apply (Lambda (matches, lamPos),scrutinee,casePos)) ->
+            let sVars = freeVars scrutinee in
+            let altVars = map freeVarsMatch matches in
+            % If a variable appears in the scrutinee or in every branch, then
+            % we quantify over it outside the case.
+            let outer =
+                filter (fn v -> v in? sVars)
+                    vars in
+            % Build new matches.
+            let matches' =
+                zipWith (fn (p,c,body) -> fn fvs ->
+                           let vars' =
+                             filter (fn v -> v in? fvs && ~(v in? outer)) vars in
+                           let c' = mkSimpleExists vars' c in
+                           let body' = mkSimpleExists vars' body in
+                           (p,c',body'))
+                matches altVars in
+            let tm' = Apply (Lambda (matches', lamPos), scrutinee,casePos) in
+            if empty? outer
+              then tm'
+              else Bind (Exists,outer,tm',noPos)
+
+        % FIXME: This is going to barf on shadowed bindings.
+        | Bind (Exists,vs,tm',pos) -> mkSimpleExists (vs ++ vars) tm'
+          
+        | _ -> let _ = () in %  writeLine ("mkSimpleExists on: " ^ printTerm tm)
+               let vars' = filter (fn v -> v in? (freeVars tm)) vars 
+               in if empty? vars'
+                    then tm
+                    else Bind (Exists,vars',tm,noPos)
+
+      
 %%%%%%%%%%%%%%%%%%%%%%
 %%% Testing 
 %%%%%%%%%%%%%%%%%%%%%%
