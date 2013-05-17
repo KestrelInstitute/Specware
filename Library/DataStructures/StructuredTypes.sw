@@ -26,6 +26,13 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
   op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
       (if i>=j then ns else upto_loop(succ(i),j, set_insert(i,ns)))
 
+  theorem upto_loop_base_case is
+    fa(ns:Set Nat, i:Nat, j:Nat) (i >= j) => (upto_loop(i,j,ns) = ns)
+
+  theorem upto_loop_opener is
+    fa(ns:Set Nat, i:Nat, j:Nat) (i < j) => (upto_loop(i,j,ns) = upto_loop(succ(i),j, set_insert(i,ns)))
+
+
   theorem upto_loop_subset is
     fa(ns:Set Nat, i:Nat, j:Nat) ns subset upto_loop(i,j,ns)
 
@@ -71,7 +78,7 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 % ----------------------------------------------------------------
 
  %% Witness-finding transformation
- theorem exist_list_first is [a, b]
+ theorem exist_list_first is [a]
    fa(s: List a, P: a -> Bool)
      ~(s = []) => P(head s) => (ex(x: a) x in? s && P(x))
 
@@ -208,6 +215,24 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 
   theorem Pair2S_insert is  %left side was i<=j but that seemed wrong when when i=j
     fa(i:Nat,j:Nat) (i<j) = (Pair2S(i,j) = set_insert(i, Pair2S(i+1,j)))
+
+proof isa -verbatim
+theorem pair_lemma:
+  "(fst p, snd p) = p"
+  apply(auto simp add: fst_def snd_def)
+  by (metis PairE Product_Type.prod.simps(2))
+end-proof
+
+  theorem Pair2S_delete is
+    fa(p:Nat*Nat) (Pair2S(p.1 + 1, p.2) = set_delete(p.1, Pair2S(p)))
+
+%------- Partition2S: homomorphism from Partition of Nats to Set -----------------------
+% see CC0 derivation
+
+  % def Partition2S(mp:MemoryPartition): Set Nat = 
+  %       upto(mp.FromLo, mp.ToLo) \/ upto(mp.FromHi, mp.ToHi)
+
+
 
 %------- Stack2L: homomorphism from Stack to List -----------------------
 
@@ -981,6 +1006,25 @@ end-proof
 
 proof isa length_of_uptoL
   apply(simp add: length_of_uptoL_loop uptoL_def del: uptoL_loop.simps)
+end-proof
+
+
+%TODO Finish proof.
+%  apply(cut_tac i="fst p" and j = "snd p" and ns=Set__empty_set in upto_loop_opener)
+ % apply(simp)
+proof isa Pair2S_delete
+  "Pair2S(fst p + 1, snd p) = Set__set_delete(fst p, Pair2S p)"
+  apply(simp add: Pair2S_def)
+  apply(simp only: upto_def)
+  apply(simp del: upto_loop.simps)
+  apply(case_tac "(fst p) \<ge> (snd p)")
+  apply (metis Pair2S_def Pair2S_empty Set__empty_set  Set__set_delete_no_op  StructuredTypes.upto_def internal_split_def le_SucI less_eq_Suc_le_raw not_less_eq_eq order_refl order_trans split_eta surjective_pairing upto_loop_base_case)
+  apply(case_tac "p = (fst p, snd p)")
+  defer
+  apply(simp del: upto_loop.simps add: pair_lemma)
+  apply(simp del: upto_loop.simps)
+  
+  sorry
 end-proof
 
 end-spec

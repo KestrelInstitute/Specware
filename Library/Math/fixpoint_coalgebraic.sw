@@ -27,7 +27,7 @@ spec
   import ../DataStructures/Sets
 %  type State
 %  op stle infixl 20: State * State -> Boolean
-  import translate PartialOrder by {A +-> State, <= +-> stle, monotone +-> monotoneState}
+  import translate PartialOrder#MonotoneFn by {A +-> State, <= +-> stle, monotone +-> monotoneState}
 
 (* In this iterator, F is a state transformer that is monotone wrt stle.  *)
 

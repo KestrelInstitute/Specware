@@ -29,7 +29,7 @@ SBFixpointIterationTheory =
 spec
   import ProblemTheory#DROfTotal
 %  import ../DataStructures/Sets
-  import translate ../Math/PartialOrder by {A +-> State, <= +-> stle, monotone +-> monotoneState}
+  import translate ../Math/PartialOrder#MonotoneFn by {A +-> State, <= +-> stle, monotone +-> monotoneState}
 
   op initialState: D -> State
   op extract : State -> R

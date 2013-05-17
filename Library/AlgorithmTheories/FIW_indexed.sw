@@ -38,7 +38,7 @@ spec
   type X
   type SetX = Set X
   type I
-  import translate ../Math/PartialOrder by {A +-> SetX, <= +-> subset}
+  import translate ../Math/PartialOrder#MonotoneFn by {A +-> SetX, <= +-> subset}
 
   op getI: D -> I
   op initialSet: D -> Set X

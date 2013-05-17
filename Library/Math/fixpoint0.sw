@@ -8,7 +8,7 @@
 *)
 
 spec 
-	import PartialOrder
+	import PartialOrder#MonotoneFn
 	op F: A -> A
 	axiom F_is_monotone is 
            (monotone F)

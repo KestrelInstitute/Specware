@@ -30,7 +30,7 @@
 
 SBFixpointIterationWorksetTheory = 
 spec
-  import translate ../Math/PartialOrder by {A +-> State, <= +-> stle, monotone +-> monotoneState}
+  import translate ../Math/PartialOrder#MonotoneFn by {A +-> State, <= +-> stle, monotone +-> monotoneState}
 
   type X   % type of increments to workset;   but it's odd to put it here ...
 

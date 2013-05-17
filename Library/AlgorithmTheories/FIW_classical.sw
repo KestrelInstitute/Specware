@@ -37,7 +37,7 @@ spec
   import ../DataStructures/Sets
   type X
   type SetX = Set X
-  import translate ../Math/PartialOrder by {A +-> SetX, <= +-> subset}
+  import translate ../Math/PartialOrder#MonotoneFn by {A +-> SetX, <= +-> subset}
 
   op initialSet: D -> Set X
   op extract : Set X -> R

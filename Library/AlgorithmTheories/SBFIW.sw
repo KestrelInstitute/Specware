@@ -38,7 +38,7 @@ spec
   import translate ProblemTheory#DROfTotal by {D +-> State}
   import ../DataStructures/StructuredTypes
 
-  import translate ../Math/PartialOrder by {A +-> State, <= +-> stle, monotone +-> monotoneState}
+  import translate ../Math/PartialOrder#MonotoneFn by {A +-> State, <= +-> stle, monotone +-> monotoneState}
   axiom def_of_stle is
      fa(st1:State, st2:State) ( stle(st1,st2) = ((obs st1) subset (obs st2)) )
 

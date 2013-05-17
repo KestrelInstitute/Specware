@@ -1,7 +1,11 @@
 spec
-  import Semilattice
+  import Semilattice#JoinSemilattice
+  import Semilattice#MeetSemilattice
+  import Semilattice#BoundedJoinSemilattice
+  import Semilattice#BoundedMeetSemilattice
   import PolarityAlgebra
-  import PartialOrder
+  import PartialOrder#PartialOrder
+  import PartialOrder#MonotoneFn
   import PartialOrder_prefix
   import PartialOrder1
   import Orders

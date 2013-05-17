@@ -19,7 +19,7 @@
 *)
 
 spec 
-  import PartialOrder
+  import PartialOrder#MonotoneFn
 
 %  op lfp : A -> {f:A->A | monotone f} -> A 
 %  op lfp : {(a,f):A * (A->A) | monotone f && a<=f(a)} -> A

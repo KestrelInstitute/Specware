@@ -58,6 +58,12 @@ spec
 
   op [a] listToStack : Bijection(List a, VStack a) = inverse stackToList
 
+% TODO new from CRASH:
+  % theorem V_eval_update2 is [a]
+  %   fa(stk:VStack a,argpair:Map(Nat,a)*Nat )
+  %     (V_eval(argpair << {2 = n}) = V_eval((argpair.1,n)))
+
+
 
 end-spec
 

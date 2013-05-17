@@ -27,7 +27,7 @@
 *)
 
 spec 
-  import PartialOrder
+  import PartialOrder#MonotoneFn
   type I
 
   op ilfp : I -> A -> {f:I->A->A | fa(i:I) monotone (f i)} -> A 
