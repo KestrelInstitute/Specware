@@ -98,9 +98,9 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
     let _ = writeLine ("Result is: ") in
     let _ = writeLine (printTerm calculatedPostcondition) in
     %% Use this representation, rather than DNF, since it's easier to read.
-    % let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
-    let preAsConj =
-         ands (map (fn conj -> mkNot (mkSimpleExists vars' (ands conj))) pred) in
+    let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
+    % let preAsConj =
+    %      ands (map (fn conj -> mkNot (mkSimpleExists vars' (ands conj))) pred) in
     % let calculatedPreconditions = Bind (Exists,vars',dnfToTerm (negateDNF pred),noPos)in
     % let calculatedPreconditions = mkSimpleExists vars' preAsConj in
     % let _ = writeLine ("Preconditions are:\n " ^ printTerm preAsConj) in
