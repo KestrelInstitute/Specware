@@ -2969,7 +2969,8 @@ op nonExecutableTerm1? (tm: MSTerm): Bool =
 op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
   let def nonEx?(t: MSTerm, seen: QualifiedIds): Bool =
         % let _ = writeLine(printTerm t) in
-        existsSubTerm (fn t ->
+        existsSubTerm2 false
+                       (fn t ->
                          case t of
                            | Bind _ -> true
                            | The _ -> true
@@ -2986,8 +2987,13 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
                                else (case findTheOpInterp(spc, qid) of
                                        | Some info ->
                                          let (_, _, d_tm) = unpackFirstTerm info.dfn in
-                                         nonEx?(d_tm, qid::seen)
+                                         let r = 
+                                           nonEx?(d_tm, qid::seen)
                                            && printPackageId(qid, "") nin? SuppressGeneratedDefuns
+                                         in
+                                         %let _ =
+                                         %  if r then writeLine("non-executable " ^ printPackageId(qid, "")) else () in
+                                         r
                                        | None -> false    % Assume defined in Lisp?
                                          )
                            | _ -> false)
