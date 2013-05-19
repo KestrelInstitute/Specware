@@ -134,8 +134,8 @@ op addSemanticChecksForTerm(tm: MSTerm, top_ty: MSType, fn_qid: QualifiedId, spc
 
 op SpecTransform.addSemanticChecks(spc: Spec)
      (params: {checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
-               recovery_fns: List(QualifiedId * QualifiedId)}): Spec =
-   addSemanticChecks(spc, params.checkArgs?, params.checkResult?, params.checkRefine?, params.recovery_fns)
+               recoveryFns: List(QualifiedId * QualifiedId)}): Spec =
+   addSemanticChecks(spc, params.checkArgs?, params.checkResult?, params.checkRefine?, params.recoveryFns)
 
 op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefine?: Bool,
                      recovery_fns: List(QualifiedId * QualifiedId)): Spec =

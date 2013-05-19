@@ -40,6 +40,7 @@ spec
           steps <- mapM makeScript transfm_steps;
           tr_spc1 <- interpret(spc, Steps(steps));
           tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
+	  % return (Spec (markQualifiedStatus tr_spc2), spec_timestamp, spec_dep_UIDs)
 	  return (Spec tr_spc2, spec_timestamp, spec_dep_UIDs)
 	  }
        | _  -> raise (TransformError (positionOf spec_tm, "Transform attempted on a non-spec"))
@@ -363,6 +364,14 @@ spec
          case o_flds of
            | None -> None
            | Some flds -> Some(TupleV flds))
+      | (Tuple(flds, _), List el_ty_info) ->
+        (let atvs = mapPartial (fn tei -> transformExprToAnnTypeValue(tei, el_ty_info)) flds in
+         if length atvs = length flds
+           then Some(ListV atvs)
+           else
+           case transformExprToAnnTypeValue(te, el_ty_info) of
+             | None -> None
+             | Some atv1 -> Some(ListV [atv1]))
       | _ -> None
 
   op transformExprsToAnnTypeValues(tes: TransformExprs, ty_infos: List MTypeInfo, pos: Position): Env(List AnnTypeValue) =
@@ -544,9 +553,9 @@ spec
       | Command("addParameter", [Record rec_val_prs], _) ->
         {fields <- getAddParameterFields rec_val_prs;
          return(AddParameter fields)}
-      | Command("addSemanticChecks", [Record rec_val_prs], _) ->
-        {fields <- getAddSemanticFields rec_val_prs;
-         return(AddSemanticChecks fields)}
+      % | Command("addSemanticChecks", [Record rec_val_prs], _) ->
+      %   {fields <- getAddSemanticFields rec_val_prs;
+      %    return(AddSemanticChecks fields)}
 
       | Command("redundantErrorCorrecting", [Tuple(uids, _)], _) ->
         {morphs <- extractMorphs uids;
