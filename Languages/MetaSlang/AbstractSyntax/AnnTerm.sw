@@ -1733,48 +1733,57 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %%%                Recursive Term Search
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op existsSubTerm : [b] (ATerm b -> Bool) -> ATerm b -> Bool
- def existsSubTerm pred? term =
+  op [b] existsSubTerm (pred?:ATerm b -> Bool) (term:ATerm b): Bool
+    = existsSubTerm2 true pred? term
+
+  op existsSubTerm2 : [b] Bool -> (ATerm b -> Bool) -> ATerm b -> Bool
+ def existsSubTerm2 descendIntoSubtypes? pred? term =
    pred? term ||
    (case term of
 
-      | Apply       (M, N,     _) -> existsSubTerm pred? M || existsSubTerm pred? N
+      | Apply       (M, N,     _) -> existsSubTerm2 descendIntoSubtypes? pred? M ||
+                                     existsSubTerm2 descendIntoSubtypes? pred? N
 
-      | ApplyN      (Ms,       _) -> exists? (existsSubTerm pred?) Ms
+      | ApplyN      (Ms,       _) -> exists? (existsSubTerm2 descendIntoSubtypes? pred?) Ms
 
-      | Record      (fields,   _) -> exists? (fn (_,M) -> existsSubTerm pred? M) fields
+      | Record      (fields,   _) -> exists? (fn (_,M) ->
+                                              existsSubTerm2 descendIntoSubtypes? pred? M) fields
 
-      | Bind        (_,_,M,    _) -> existsSubTerm pred? M
+      | Bind        (_,_,M,    _) -> existsSubTerm2 descendIntoSubtypes? pred? M
 
-      | The         (_,M,      _) -> existsSubTerm pred? M
+      | The         (_,M,      _) -> existsSubTerm2 descendIntoSubtypes? pred? M
 
-      | Let         (decls, M, _) -> existsSubTerm pred? M ||
-                                     exists? (fn (_,M) -> existsSubTerm pred? M) decls
+      | Let         (decls, M, _) -> existsSubTerm2 descendIntoSubtypes? pred? M ||
+                                     exists? (fn (_,M) ->
+                                              existsSubTerm2 descendIntoSubtypes? pred? M) decls
 
-      | LetRec      (decls, M, _) -> existsSubTerm pred? M ||
-				     exists? (fn (_,M) -> existsSubTerm pred? M) decls
+      | LetRec      (decls, M, _) -> existsSubTerm2 descendIntoSubtypes? pred? M ||
+				     exists? (fn (_,M) ->
+                                              existsSubTerm2 descendIntoSubtypes? pred? M) decls
 
       | Var         _             -> false
 				     
       | Fun         _             -> false
 
       | Lambda      (rules,    _) -> exists? (fn (p, c, M) ->
-                                                existsSubTermPat pred? p ||
-                                                existsSubTerm pred? c ||
-                                                existsSubTerm pred? M)
+                                                (descendIntoSubtypes?
+                                                   && existsSubTermPat pred? p) ||
+                                                existsSubTerm2 descendIntoSubtypes? pred? c ||
+                                                existsSubTerm2 descendIntoSubtypes? pred? M)
                                             rules
 
-      | IfThenElse  (M, N, P,  _) -> existsSubTerm pred? M ||
-			  	     existsSubTerm pred? N ||
-				     existsSubTerm pred? P
+      | IfThenElse  (M, N, P,  _) -> existsSubTerm2 descendIntoSubtypes? pred? M ||
+			  	     existsSubTerm2 descendIntoSubtypes? pred? N ||
+				     existsSubTerm2 descendIntoSubtypes? pred? P
 
-      | Seq         (Ms,       _) -> exists? (existsSubTerm pred?) Ms
+      | Seq         (Ms,       _) -> exists? (existsSubTerm2 descendIntoSubtypes? pred?) Ms
 
-      | TypedTerm   (M, ty,   _) -> existsSubTerm pred? M
+      | TypedTerm   (M, ty,   _) -> existsSubTerm2 descendIntoSubtypes? pred? M
 
-      | Pi          (tvs, t,   _) -> existsSubTerm pred? t
+      | Pi          (tvs, t,   _) -> descendIntoSubtypes? &&
+                                     existsSubTerm2 descendIntoSubtypes? pred? t
 
-      | And         (tms,      _) -> exists? (existsSubTerm pred?) tms
+      | And         (tms,      _) -> exists? (existsSubTerm2 descendIntoSubtypes? pred?) tms
 
       | _  -> false
       )				    
