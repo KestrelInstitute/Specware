@@ -1,6 +1,14 @@
 (defpackage :System-Spec (:use :cl))
 (in-package :System-Spec)
 
+(setq SpecToLisp::SuppressGeneratedDefuns
+ (append '("System-Spec::|!random|"
+           "System-Spec::anyToString"
+           "System-Spec::writeLine"
+           "System-Spec::|!warn|"
+)
+          SpecToLisp::SuppressGeneratedDefuns))
+
 (defvar specwareDebug? nil)
 
 (defvar proverUseBase? t)

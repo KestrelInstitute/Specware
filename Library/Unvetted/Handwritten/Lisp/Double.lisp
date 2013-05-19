@@ -10,6 +10,50 @@
 
 (in-package :Double)
 
+(setq SpecToLisp::SuppressGeneratedDefuns
+ (append '("Double::the-double"
+           "Double::zero"
+           "Double::|!Pi|"
+           "DoubleAux::|!-|"
+           "DoubleAux::|!atan|"
+           "Double::|!--|"
+           "Double::|!-|"
+           "Double::|!+|"
+           "Double::|!-|"
+           "Double::|!*|"
+           "Double::sq"
+           "Double::|!/|"
+           "Double::|!mod|"
+           "DoubleInt::|!+|"
+           "DoubleInt::|!-|"
+           "DoubleInt::|!*|"
+           "DoubleInt::|!/|"
+           "DoubleInt::|!+|"
+           "IntDouble::|!+|"
+           "IntDouble::|!-|"
+           "IntDouble::|!*|"
+           "Double::rem"
+           "Double::|!<|"
+           "Double::|!<=|"
+           "Double::|!>|"
+           "Double::|!>=|"
+           "Double::max"
+           "Double::min"
+           "Double::|!abs|"
+           "String-Spec::toDouble"
+           "Integer-Spec::toDouble"
+           "Double::show"
+           "Double::|!floor|"
+           "Double::|!ceiling|"
+           "Double::|!sin|"
+           "Double::|!cos|"
+           "Double::|!tan|"
+           "Double::|!asin|"
+           "Double::|!acos|"
+           "Double::|!atan|"
+           "Double::|!sqrt|"
+)
+          SpecToLisp::SuppressGeneratedDefuns))
 
 ;;; For each binary op in the spec Double without a def, there are two Lisp
 ;;; functions. One takes two arguments, the other takes one argument that is a
