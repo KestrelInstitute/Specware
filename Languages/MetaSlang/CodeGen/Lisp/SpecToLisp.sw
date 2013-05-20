@@ -205,13 +205,20 @@ op addList(S: StringSet, l: List String): StringSet =
 	id)
 
  def specId (id, pkg) = 
-   % TODO:  Optimize this to avoid needless consing for normal cases?
-   let id = translate (fn #|  -> "\\|" 
-                        | #`  -> "\\`"
-                        | #'  -> "\\'"
-			| #\\ -> "\\\\" 
-			| ch  -> Char.show ch)
-                      id
+   let id =
+       if forall? (fn #|  -> false
+                    | #`  -> false
+                    | #'  -> false
+                    | #\\ -> false
+                    | _ -> true)
+           id
+         then id                        % Test is redundant, but translate is expensive even if identity
+         else translate (fn #|  -> "\\|" 
+                          | #`  -> "\\`"
+                          | #'  -> "\\'"
+		          | #\\ -> "\\\\" 
+			  | ch  -> Char.show ch)
+                id
    in
    let upper_ID = String.map toUpperCase id in
    let ID = if generateCaseSensitiveLisp? then id else upper_ID in
