@@ -1290,7 +1290,7 @@ For example, in
 
    S = spec endspec
    T = spec type Bullion = (Char | isAlpha) endspec
-   M = morphism S -> T {Bool -> Bullion}
+   M = morphism S -> T {Bool +-> Bullion}
    
 
 the type-name ``Bool``, which is built in to Specware, is subject to translation. Therefore, ``M`` is not a
@@ -3596,8 +3596,8 @@ then *P* must have the domain type *S*. The type of the whole
 
 .. COMMENT:  ================================================================= 
 
-The meaning of :token:`prefix_application` ``~``\ *P*\ is the same as
-that of the :token:`if_expression` ``if``\ *P*\ ``then false else
+The meaning of :token:`prefix_application` ``~``\ *P* is the same as
+that of the :token:`if_expression` ``if`` *P* ``then false else
 true``.
 
 The value of :token:`prefix_application` *H P*, in which
@@ -3611,16 +3611,15 @@ as that of the :token:`prefix_application` *N(P, Q)*.
 
 The meaning of :token:`infix_application` \ *P*\ ``=<``\ *Q*\ \ , in
 which *P* and *Q* are :token:`operands`, is the same as that of the
-:token:`if_expression` ``if``\ *P*\ ``then``\ *Q*\ ``else true``.
+:token:`if_expression` ``if`` *P* ``then`` *Q* ``else true``.
 
 The meaning of :token:`infix_application` \ *P*\ ``||``\ *Q*\ \ , in
 which *P* and *Q* are :token:`operands`, is the same as that of the
-:token:`if_expression` ``if``\ *P*\ ``then true else``\ *Q*\ \ .
+:token:`if_expression` ``if`` *P* ``then true else`` *Q*.
 
-The meaning of :token:`infix_application` \ *P*\ ``&&``\ *Q*\
-\ , in which *P* and *Q* are :token:`operands`, is the same as that of
-the :token:`if_expression` ``if``\ *P*\ ``then``\ *Q*\ ``else false``\
-.
+The meaning of :token:`infix_application`  *P* ``&&`` *Q*
+, in which *P* and *Q* are :token:`operands`, is the same as that of
+the :token:`if_expression` ``if`` *P* ``then`` *Q* ``else false``.
 
 The value of :token:`infix_application` \ *P*\ ``=``\ *Q*\ \ , in
 which *P* and *Q* are :token:`operands`, is ``true`` if *P* and *Q*
@@ -3634,18 +3633,18 @@ The meaning of :token:`infix_application` \ *P*\ ``~=``\ *Q*\ \ , in
 which *P* and *Q* are :token:`operands`, is the same as that of the
 :token:`prefix_application` ``~(``\ *P*\ ``=``\ *Q*\ ``)``.
 
-An :token:`infix_application` \ *P*\ ``<<``\ *Q*\ is also called a
-"record update". In a record update \ *P*\ ``<<``\ *Q*\ \ , in which
+An :token:`infix_application` *P* ``<<`` *Q* is also called a
+"record update". In a record update *P* ``<<`` *Q* , in which
 *P* and *Q* are :token:`operands`, *P* and *Q* must have record types,
 referred to as *S* and *T*, respectively. Moreover, for each
 :token:`field_name` *F* these types *S* and *T* have in common, the
 field types for *F* in *S* and *T* must be the same, or be subtypes of
-the same supertype. The type of \ *P*\ ``<<``\ *Q*\ is then the record
+the same supertype. The type of *P* ``<<`` *Q* is then the record
 type *R* whose :token:`field_names` are formed by the union of the
 :token:`field_names` of *S* and *T*, where for each
 :token:`field_name` *F* in that union, the type of field *F* in *R* is
 that of field *F* in *T* if *F* is a field of *T*, and otherwise the
-type of field *F* in *S*. Likewise, the value of \ *P*\ ``<<``\ *Q*\
+type of field *F* in *S*. Likewise, the value of *P* ``<<`` *Q*
 is the record value of type *R* whose field value of each field *F* is
 that of field *F* in *Q* if *F* is a field of *T*, and otherwise the
 field value of field *F* in *P*. So, for example, the value of ``{a=1,
