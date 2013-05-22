@@ -488,8 +488,8 @@ special meaning and must not be used for :token:`simple_names`:
    def          false     infixr     prove         type
    else         fn        is         qualifying    where
    
-   :        ||       |       =        <=<       <-       ``
-   ::       &&       ~       ~=       =<        ->       +->
+   :        ||       |       =        <=>       <-       ``
+   ::       &&       ~       ~=       =>        ->       +->
    
 
 They each count as a single :token:`symbol`, and no whitespace is
@@ -3095,8 +3095,8 @@ Expressions
   inbuilt_op: `inbuilt_prefix_op` | 
             : `inbuilt_infix_op`
   inbuilt_prefix_op: ~
-  inbuilt_infix_op: <=< | 
-                  : =< | 
+  inbuilt_infix_op: <=> | 
+                  : => | 
                   : "|'|" | 
                   : & | 
                   : = | 
@@ -3117,7 +3117,7 @@ Sample :token:`expressions`:
    case z of {re = x, im = y} -> {re = x, im = -y}
    let x = x + 1 in f(x, x)
    if x <= y then x else y
-   fa(x,y) (x <= y)  <=<  ((x<y) or (x = y))
+   fa(x,y) (x <= y)  <=>  ((x<y) or (x = y))
    f(x, x)
    [] : List Arg
    abs(x-y)
@@ -3574,8 +3574,8 @@ following pseudo-:token:`op_declarations`:
 
 .. code-block:: specware
 
-   op <=< infixr 12 : Bool * Bool -> Bool 
-   op =<  infixr 13 : Bool * Bool -> Bool 
+   op <=> infixr 12 : Bool * Bool -> Bool 
+   op =>  infixr 13 : Bool * Bool -> Bool 
    op ||  infixr 14 : Bool * Bool -> Bool 
    op &&  infixr 15 : Bool * Bool -> Bool 
    op =   infixr 20 : [a]   a * a       -> Bool 
@@ -3609,7 +3609,7 @@ The meaning of :token:`infix_application` *P N Q*, in which *P* and
 *Q* are :token:`operands` and *N* is an :token:`op_name`, is the same
 as that of the :token:`prefix_application` *N(P, Q)*.
 
-The meaning of :token:`infix_application` \ *P*\ ``=<``\ *Q*\ \ , in
+The meaning of :token:`infix_application` \ *P*\ ``=>``\ *Q*\ \ , in
 which *P* and *Q* are :token:`operands`, is the same as that of the
 :token:`if_expression` ``if`` *P* ``then`` *Q* ``else true``.
 
@@ -4628,7 +4628,7 @@ The type of :token:`chooser` ``choose[`` *Q* ``]``, where *Q*
 (`` *Q* ``->`` *R* ``)``, where *F* is the subtype of *T*
 ``->`` *R* consisting of the *q*-constant (explained below)
 functions. Expressed more formally, *F* is the type ``{f :`` *T*
-``->`` *R* ``| fa((x,y) :`` *T* ``*`` *T* ``)`` *q* ``(x,y) =<
+``->`` *R* ``| fa((x,y) :`` *T* ``*`` *T* ``)`` *q* ``(x,y) =>
 f x = f y}``, where the :token:`simple_names` ``f``, ``x`` and
 ``y`` must be replaced by "fresh" :token:`simple_names` not clashing
 with :token:`simple_names` already in use in *T*, *R* or *q*.

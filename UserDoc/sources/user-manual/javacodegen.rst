@@ -139,9 +139,9 @@ ops into Java:
       - ``t1 && t2``
    *  - ``t1 || t2``
       - ``t1 || t2``
-   *  - ``t1 =< t2``
+   *  - ``t1 => t2``
       - ``t1 ? t2 : true``
-   *  - ``t1 <=< t2``
+   *  - ``t1 <=> t2``
       - ``t1 ? t2 : !t2``
 
 |Metaslang|/Java Interface

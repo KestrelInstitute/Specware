@@ -460,8 +460,8 @@ Expressions
   inbuilt_op: `inbuilt_prefix_op` | 
             : `inbuilt_infix_op`
   inbuilt_prefix_op: ~
-  inbuilt_infix_op: <=< | 
-                  : =< | 
+  inbuilt_infix_op: <=> | 
+                  : => | 
                   : "|'|" | 
                   : && | 
                   : = | 

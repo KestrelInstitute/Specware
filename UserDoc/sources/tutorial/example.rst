@@ -203,7 +203,7 @@ given position. Here is the spec:
         : Bool =
      pos + length wrd <= length msg |amp||amp|
      (fa(i:Nat) i < length wrd
-        =< symb_matches?(wrd@i, msg@(pos+i)))
+        => symb_matches?(wrd@i, msg@(pos+i)))
    
    endspec
    
@@ -265,11 +265,11 @@ Finally, the spec for the whole application is the following:
    axiom match_finding is
      fa(msg,wrds,mtch)
        mtch in? find_matches(msg,wrds)
-        <=<
+        <=>
        mtch.word in? wrds
         && word_matches_at?(mtch.word,msg,mtch.position)
         && (fa(pos) word_matches_at?(mtch.word,msg,pos)
-              =< pos >= mtch.position)
+              => pos >= mtch.position)
    
    endspec
    

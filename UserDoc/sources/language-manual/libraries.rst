@@ -64,11 +64,11 @@ For the sake of brevity, ``infixl`` is abbreviated below to ``L`` and
           - |nbsp| ``R 14``\
           - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| non-strict logical or
-       *  - |nbsp| ``=<``\
+       *  - |nbsp| ``=>``\
           - |nbsp| ``R 13``\
           - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| non-strict logical implication
-       *  - |nbsp| ``<=<``\
+       *  - |nbsp| ``<=>``\
           - |nbsp| ``R 12``\
           - |nbsp| ``Bool * Bool -> Bool``\
           - |nbsp| logical equivalence

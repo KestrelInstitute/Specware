@@ -146,12 +146,12 @@ morphisms (or interpretations) from more abstract specs to more
 concrete specs, then compose the morphisms to extend the refinement.
 There are two ways to compose morphisms.
 
-Sequential composition (\ ``A=<B + B=<C = A=<C``\ ) deepens a
+Sequential composition (\ ``A=>B + B=>C = A=>C``\ ) deepens a
 refinement. For example, if you are specifying a house, you might use
 sequential composition of morphisms to create an increasingly detailed
 description of a single room.
 
-Parallel composition (\ ``A=<A' + B=<B' = (A,B) =< (A',B')``\ )
+Parallel composition (\ ``A=>A' + B=>B' = (A,B) => (A',B')``\ )
 widens, or increases the complexity of a refinement. For example, in
 the specification of a house, when you have several morphisms that
 refine different rooms, you could combine them in parallel to create a
