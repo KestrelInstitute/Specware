@@ -7,11 +7,15 @@ spec
 import Order
 import FiniteMap
 import Assert
-import Type#Empty
-import Type#Finite
-import Type#Infinite
-import Type#CountablyInfinite
-import Type#UncountablyInfinite
+
+%% Note that several of these declare the same type, X, so 'qualifying' is used to prevent name clashes:
+import (Empty qualifying Type#Empty)
+import (Finite qualifying Type#Finite)
+import (Infinite qualifying Type#Infinite)
+%% Without the use of 'qualifying', importing both of these would likely result in an inconsistent spec:
+import (CountablyInfinite qualifying Type#CountablyInfinite)
+import (UncountablyInfinite qualifying Type#UncountablyInfinite)
+
 import TwosComplementNumber
 import TwosComplementNumber_Refinement
 import TwosComplementNumber_ExecOps
