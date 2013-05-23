@@ -61,16 +61,12 @@ SpecCalc qualifying spec
            (fn (q, id, dom_info, rdefs) ->
 	    case opInfoDefs dom_info of
 	      | [] -> rdefs
-	      | dom_defs ->
-		let
-                  def defsToConjectures defs =
-		    flatten (List.map (fn tm -> defToConjecture (dom, q, id, tm)) defs)
-		in
+	      | dom_def1 :: _ ->
+                let trans_def1 = translateTerm(dom_def1, typeMap, opMap) in
+                let Qualified(q, id) = translateQId opMap (Qualified(q, id)) in
 		case findAQualifierMap (cod.ops, q, id) of
-		  | None -> 
-		    defsToConjectures dom_defs ++ rdefs
-		  | Some cod_info ->
-		    defsToConjectures (diff (dom_defs, (opInfoDefs cod_info))) ++ rdefs)
+		  | Some cod_info | termIn?(trans_def1, opInfoDefs cod_info) -> rdefs
+                  | _ -> defToConjecture(dom, q, id, trans_def1) ++ rdefs)
 	   [] 
 	   dom.ops
     in
@@ -95,17 +91,18 @@ SpecCalc qualifying spec
     %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
     map (fn(fmla) -> mkConjecture(Qualified (q, id ^ "_def"), [], fmla)) liftedFmlas
 
+  op translateQId(m: QualifiedIdMap) (qid: QualifiedId): QualifiedId =
+    case evalPartial m qid of
+      | Some nqid -> nqid
+      | _ -> qid
+
   op translateTerm: MSTerm * MorphismTypeMap * MorphismOpMap -> MSTerm
   def translateTerm (tm, typeMap, opMap) =
-    let def findName m QId =
-	  case evalPartial m QId of
-	    | Some nQId -> nQId
-	    | _ -> QId
-	def translateType srt =
+    let def translateType srt =
 	  case srt of
 	    | Base (QId, srts, a) -> 
 	      let cod_srt =
-	          (case findName typeMap QId of
+	          (case translateQId typeMap QId of
 		     | Qualified("Boolean", "Boolean") -> Boolean a
 		     | cod_qid -> Base (cod_qid, srts, a))
 	      in
@@ -114,7 +111,7 @@ SpecCalc qualifying spec
 	def translateTerm trm =
 	  case trm of
 	    | Fun (Op (dom_qid, fixity), srt, a) -> 
-	      let cod_qid as Qualified (q, id) = findName opMap dom_qid in
+	      let cod_qid as Qualified (q, id) = translateQId opMap dom_qid in
 	      let fun =
 	          (case q of
 		     | "Boolean" ->
