@@ -148,6 +148,8 @@ case evaluateUnitId uid_str of
   | Some val ->
     case val of
     | Spec spc -> let _ = specOkay? "Spec is okay." "ERROR: Ill-formed spec." spc in true
+    | Morph m -> let _ = writeLine("ERROR: Don't know how to check a morphism yet.") in true %Should these flags be true or false?
+    | _ -> let _ = writeLine("ERROR: Spec checker called on unknown kind of thing.") in true
 
 % This is the top-level function for the checkspec command.
 op evaluateCheckSpec (optional_argstring : Option String, lastUnitIdLoaded : Option String, homedir : String) : Option String = 
