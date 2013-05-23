@@ -5,6 +5,7 @@ spec
 %% reasons why other files' Isabelle obligations fail to go through.
 
 import Order
+import FiniteSet
 import FiniteMap
 import Assert
 
@@ -28,15 +29,16 @@ import IntegerExt
 %% import IntegerExt_Refinement %This is a morphism (with trivial proof obligations)..
 import IntegerExt_ExecOps
 import FunctionExt
-% I guess this has name clashes with FiniteMap (e.g., for type
-%FMap.FMap).  TODO: However, with this uncommented, gen-obligs on AllIsa.sw
-%currently crashes (because of the name clashes?).  gen-obligs on 
-%FiniteMapAsFiniteSet by itself works fine:
-%import FiniteMapAsFiniteSet
 import Bit
 import BitList
 import Stream
 import Sequence
 import SizedNats
+
+% This has name clashes with FiniteMap (e.g., for type FMap.FMap), so
+% we can't include it here but have to test it separately (in
+% test-specware.sh):
+
+%import FiniteMapAsFiniteSet
 
 endspec

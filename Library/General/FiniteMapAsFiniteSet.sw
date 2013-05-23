@@ -8,7 +8,7 @@ import Map, Relation, FiniteSet
   %% These three are copied from FiniteMap.sw. TODO These cause a
   %% problem with the Isabelle obligations for the morphism (why?).
   %% Maybe these should have the FMap qualifier (??), but the Isabelle
-  %% obligations should not cause Isabelle errors in any case.
+  %% obligations should not cause Isabelle errors in any case.  Is the morphism even valid?
   type SingletonFMap(a,b) = (FMap(a,b) | single?)
   type NonEmptyFMap(a,b) = (FMap(a,b) | nonEmpty?)
   type InjectiveFMap(a,b) = (FMap(a,b) | injective?)

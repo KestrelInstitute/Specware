@@ -15,9 +15,15 @@ import AllIsa
 
 % For each of these, I've added a comment about why we can't get its
 % obligations through Isabelle:
-import FiniteSetAsList % contains a quotient
+
+%% This has name clashes with FiniteSet.  It also contains a quotient:
+%import FiniteSetAsList
+
 %%import FiniteSetAsListMorphism % imports FiniteSetAsList, which contains a quotient
-import FiniteMapAsList % ultimately depends on FiniteSetAsList, which contains a quotient
+
+%% Name clashes.  Also, ultimately depends on FiniteSetAsList, which contains a quotient:
+%import FiniteMapAsList
+
 %%import FiniteMapAsListMorphism % ultimately depends on FiniteSetAsList, which contains a quotient
 
 %%import FiniteMapAsFiniteSetMorphism %error in Isabelle obligations
