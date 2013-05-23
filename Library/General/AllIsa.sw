@@ -17,15 +17,15 @@ import (CountablyInfinite qualifying Type#CountablyInfinite)
 import (UncountablyInfinite qualifying Type#UncountablyInfinite)
 
 import TwosComplementNumber
-import TwosComplementNumber_Refinement
+%%import TwosComplementNumber_Refinement %This is a morphism (with trivial proof obligations).
 import TwosComplementNumber_ExecOps
 import Relation
 import OptionExt
 import ListExt
-import ListExt_Refinement
+%%import ListExt_Refinement %This is a morphism (with trivial proof obligations)..
 import ListExt_ExecOps
 import IntegerExt
-import IntegerExt_Refinement
+%% import IntegerExt_Refinement %This is a morphism (with trivial proof obligations)..
 import IntegerExt_ExecOps
 import FunctionExt
 % I guess this has name clashes with FiniteMap (e.g., for type

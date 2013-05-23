@@ -16,11 +16,11 @@ import AllIsa
 % For each of these, I've added a comment about why we can't get its
 % obligations through Isabelle:
 import FiniteSetAsList % contains a quotient
-import FiniteSetAsListMorphism % imports FiniteSetAsList, which contains a quotient
+%%import FiniteSetAsListMorphism % imports FiniteSetAsList, which contains a quotient
 import FiniteMapAsList % ultimately depends on FiniteSetAsList, which contains a quotient
-import FiniteMapAsListMorphism % ultimately depends on FiniteSetAsList, which contains a quotient
+%%import FiniteMapAsListMorphism % ultimately depends on FiniteSetAsList, which contains a quotient
 
-import FiniteMapAsFiniteSetMorphism %error in Isabelle obligations
+%%import FiniteMapAsFiniteSetMorphism %error in Isabelle obligations
 
 import Rational % contains a quotient
 import Real % imports Rational, which contains a quotient
