@@ -1,4 +1,4 @@
-%% TODO This spec is incompatible with Stacks.sw (name clashses, e.g., for push), but Specware allows both to be imported!
+%% TODO This spec is incompatible with Stacks.sw (name clashes, e.g., for push), but Specware allows both to be imported!
 %% TODO Try this (maybe after we give a qualifier to Stacks):
 %% BasicStacks = BasicStacks qualifying spec
 BasicStacks = spec
