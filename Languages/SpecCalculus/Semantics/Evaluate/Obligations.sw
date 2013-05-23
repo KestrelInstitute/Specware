@@ -63,10 +63,10 @@ SpecCalc qualifying spec
 	      | [] -> rdefs
 	      | dom_def1 :: _ ->
                 let trans_def1 = translateTerm(dom_def1, typeMap, opMap) in
-                let Qualified(q, id) = translateQId opMap (Qualified(q, id)) in
-		case findAQualifierMap (cod.ops, q, id) of
+                let n_qid as Qualified(n_q, n_id) = translateQId opMap (Qualified(q, id)) in
+		case findAQualifierMap (cod.ops, n_q, n_id) of
 		  | Some cod_info | termIn?(trans_def1, opInfoDefs cod_info) -> rdefs
-                  | _ -> defToConjecture(dom, q, id, trans_def1) ++ rdefs)
+                  | _ -> defToConjecture(dom, n_qid, q, id, trans_def1) ++ rdefs)
 	   [] 
 	   dom.ops
     in
@@ -82,9 +82,7 @@ SpecCalc qualifying spec
                                      ++ map (fn ((p1,p2,p3),pos) -> Pragma(p1,p2,p3,pos)) pragmas} in
     ob_spc
 
-  op  defToConjecture: Spec * Qualifier * Id * MSTerm -> SpecElements
-  def defToConjecture (spc, q, id, term) =
-    let opName = Qualified (q, id) in
+  op defToConjecture (spc: Spec, opName: QualifiedId, q: Qualifier, id: Id, term: MSTerm): SpecElements =
     let srt = termTypeEnv(spc,term) in
     let initialFmla = head (unLambdaDef(spc, srt, opName, term)) in
     let liftedFmlas = removePatternTop(spc, initialFmla) in

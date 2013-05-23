@@ -15,7 +15,7 @@ end-spec
 M = morphism A -> B {}
 
 
-proof isa bar__double_def
+proof isa foo__double_def
   by(auto simp add: bar__double_def)
 end-proof
 
