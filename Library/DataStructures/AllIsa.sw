@@ -12,9 +12,9 @@ spec
   import Stacks
   import Base
   import StructuredTypes
-  import MapsAsSets#MapsAsSets
+  %% import MapsAsSets#MapsAsSets % leads to name clashes
   import SetsAsBags#SetsAsBags
   import SetsAsMaps#SetsAsMaps
   import BagsAsMaps#BagsAsMaps
-  import SetsAsBagMaps#SetsAsBagMaps
+  %% import SetsAsBagMaps#SetsAsBagMaps % leads to name clashes
 end-spec
