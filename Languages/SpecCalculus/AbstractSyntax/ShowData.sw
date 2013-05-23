@@ -879,6 +879,8 @@ op ppTransformHistory (c:Context) (hist:TransformHistory) : WLPretty =
                                                                             ppTerm c tm,
                                                                             ppString " ...rulespec (if any )elided...)"])
                         hist)
+
+op ElidePragmas? : Bool = true
   
 op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
   case elem of
@@ -930,7 +932,7 @@ op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
                 ppString "(Pragma ",
                 ppLitString (enquote beg_str),
                 ppString " ",
-                ppString "(...middle string elided...)", %%ppLitString mid_str,
+                ppLitString (enquote (if ElidePragmas? then "(...middle string elided...)" else mid_str)), %%ppLitString mid_str,
                 ppString " ",
                 ppLitString (enquote end_str),
                 ppString ")"]
