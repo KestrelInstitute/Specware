@@ -57,3 +57,27 @@ proof Isa Set__map_def
   sorry
 end-proof
 
+proof Isa nt_subset_def
+  sorry
+end-proof
+
+proof Isa e_bsl_bsl_fsl_fsl_def_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa e_bsl_bsl_fsl_fsl_def
+  sorry
+end-proof
+
+proof Isa e_fsl_fsl_bsl_bsl_def_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa e_fsl_fsl_bsl_bsl_def
+  sorry
+end-proof
+
+proof Isa set_insert_new_def
+  sorry
+end-proof
+
