@@ -1,5 +1,5 @@
 %% A specification for (finite) stacks.  For refinements of this spec,
-%% see BasicStacks.sw and StacksAsVectors.sw.
+%% see BasicStacks.sw and StacksAsLists.sw and StacksAsVectors.sw.
 
 %Stacks qualifying spec   %%TODO Add the qualifier back?
 spec
