@@ -19,6 +19,7 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
   %op abort(n:Nat): Nat = n div 0
 
   % Returns the set containing the natural numbers in the interval [i,j).
+  % TODO: Define in the inefficient but nice way with no accumulator?
   op upto(i:Nat,j:Nat):Set Nat = upto_loop(i, j, empty_set)
 
   %Previously this used set_insert_new, but that would require a
@@ -1013,7 +1014,6 @@ end-proof
 %  apply(cut_tac i="fst p" and j = "snd p" and ns=Set__empty_set in upto_loop_opener)
  % apply(simp)
 proof isa Pair2S_delete
-  "Pair2S(fst p + 1, snd p) = Set__set_delete(fst p, Pair2S p)"
   apply(simp add: Pair2S_def)
   apply(simp only: upto_def)
   apply(simp del: upto_loop.simps)
