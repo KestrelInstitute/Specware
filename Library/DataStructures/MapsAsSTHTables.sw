@@ -53,7 +53,26 @@ spec
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
      set_fold m (fn  (m, x) -> update m x (f x)) s
   op [a,b] size(m: Map(a,b)): Nat = MapSTHashtable.STH_size m
+
+
+%% TODO This is unprovable (think about the use of set_insert_new above).
+proof Isa MapsAsSTHTables__domain_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa MapsAsSTHTables__total_p_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa MapsAsSTHTables__mapFrom_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa MapsAsSTHTables__mapUpdateSet_Obligation_subtype
+  sorry
+end-proof
     
 end-spec
+
 
 M = morphism Maps -> MapsAsSTHTables {}

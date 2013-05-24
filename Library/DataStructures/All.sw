@@ -32,7 +32,6 @@ import AllIsa
 %import MapsAsVectors#MapsAsVectors %casuses name clashes (on the MapVec ops?)
 %import MapsAsVectors#M
 
-import MapsAsSTHTables#MapsAsSTHTables
 %import MapsAsSTHTables#M
 
 import MapsAsBTVectors#MapsAsBTVectors
