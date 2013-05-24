@@ -26,7 +26,7 @@ spec
 %% import MapsAsVectors#MapsAsVectors % name clashes on the MapVec ops?
 %% import MapsAsSets#MapsAsSets
 %% import SetsAsBagMaps#SetsAsBagMaps
-%% import BasicStacks
+%% import StacksAsCoproducts
 %% import StacksAsLists
 
 %% Note: The proofs for these morphisms go through (modulo many sorrys!).  They are tested in test-specware.sh:
@@ -35,7 +35,7 @@ spec
 %%SetsAsBagMaps#M
 %%SetsAsBags#M
 %%BagsAsMaps#M
-%%BasicStacks#M
+%%StacksAsCoproducts#M
 %%StacksAsLists#M
 %%MapsAsSTHTables#M
 %%MapsAsVectors#M
