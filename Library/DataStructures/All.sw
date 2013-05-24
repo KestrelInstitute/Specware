@@ -12,47 +12,37 @@ spec
 %% separately):
 import AllIsa
 
-% These morphisms get through Isabelle (modulo sorrys).  Importing
-% them seems to cause them to be processed.  However, obligations of
-% imported morphisms seem to not be imported into Isabelle specs.  So
-% their Isabelle proofs have to be tested separately.  TODO, What does
-% it even mean to import a morphism?
-
-import MapsAsSets#M
-import SetsAsMaps#M
-import SetsAsBagMaps#M
-
-% These ultimately depend on quotient, which prevents getting them through Isabelle:
-import SetsAsLists#SetsAsLists
-import SetsAsLists#M
-import MapsAsLists
-import MapsAsListsRef
-import BagsAsLists#BagsAsLists  %% includes a quotient
-import BagsAsLists#M
-
+%% Note: These morphisms are tested separately (in test-specware.sh):
+%%SetsAsLists#M
+%%MapsAsListsRef % TODO rename?
+%%BagsAsLists#M
 %These have incorrect Isabelle obligations (which give errors):
-import SetsAsBags#M
-import BagsAsMaps#M
+%%SetsAsBags#M
+%%BagsAsMaps#M
+
+% These ultimately depend on quotients, which prevents getting them through Isabelle:
+%import SetsAsLists#SetsAsLists %causes name clashes
+%import MapsAsLists %leads to name clashes?
+%import BagsAsLists#BagsAsLists  %% includes a quotient %causes name clashes?
 
 %These still need to be triaged:
 
-import SetsAsSTHTables0#SetsAsSTHTables0
-import SetsAsSTHTables0#M
+%import SetsAsSTHTables0#SetsAsSTHTables0 % leads to name clashes
+%import SetsAsSTHTables0#M
 
-import MapsAsVectors#MapsAsVectors
-import MapsAsVectors#M
+%import MapsAsVectors#MapsAsVectors %casuses name clashes (on the MapVec ops?)
+%import MapsAsVectors#M
 
 import MapsAsSTHTables#MapsAsSTHTables
-import MapsAsSTHTables#M
+%import MapsAsSTHTables#M
 
 import MapsAsBTVectors#MapsAsBTVectors
-import MapsAsBTVectors#M
+%import MapsAsBTVectors#M
 
 import StacksAsVectors#StacksAsVectors
-import StacksAsVectors#M
+%import StacksAsVectors#M
 
 import POSet
 import Extensions
 import Collections
-import StructuredTypes
 end-spec
