@@ -19,7 +19,7 @@ successive files and then check to see if the UnitId is then defined.
 If we get to the end of the list then we have failed.
 *)
 % See also Specware.evaluateUnitId.
-  def SpecCalc.evaluateUID position unitId = {
+  def evaluateUID position unitId = {
       (value,_) <- evaluateReturnUID position unitId false;
       return value
     }
@@ -27,7 +27,7 @@ If we get to the end of the list then we have failed.
 evaluateReturnUID is the same as evaluateUID except it also returns
 the canonical UnitId found.
 *)
-  def SpecCalc.evaluateReturnUID position unitId notFromCache? = {
+  def evaluateReturnUID position unitId notFromCache? = {
     % let dscr = showRelativeUID unitId in 
     % print ("evaluateUID: " ^ dscr ^ "\n");
     optValue <- lookupInLocalContext unitId;
@@ -72,7 +72,7 @@ These are called only from evaluateReturnUID
 			     {saveUID <- getCurrentUID;
 			      setCurrentUID unitId;
 			      bindInGlobalContext unitId (InProcess(makeMutex "import"),0,[],term);
-			      (value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+			      (value,rTimeStamp,depUIDs) <- evaluateTermInfo term;
 			      setCurrentUID saveUID;
 			      let val = (value,max(timeStamp,rTimeStamp),depUIDs,term) in
 			      {bindInGlobalContext unitId val;
@@ -122,7 +122,7 @@ These are called only from evaluateReturnUID
 			     | UnEvaluated term ->
 			       {setCurrentUID unitId;
 				bindInGlobalContext unitId (InProcess(makeMutex "import"),0,[],term);
-				(value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+				(value,rTimeStamp,depUIDs) <- evaluateTermInfo term;
 				let timeStamp = max(timeStamp,rTimeStamp) in
 				let val = (value,timeStamp,depUIDs,term) in
 				{bindInGlobalContext unitId val;
@@ -310,8 +310,8 @@ to one of many bindings in a file. For example \verb|/a/b#c|.
 (*      
 Given a term find a canonical UnitId for it.
 *)
-  op  SpecCalc.getUID : SCTerm -> Env UnitId
-  def SpecCalc.getUID term =
+  op  getUID : SCTerm -> Env UnitId
+  def getUID term =
     case (valueOf term) of
       | UnitId unitId -> {(_,r_uid) <- evaluateReturnUID (positionOf term) unitId false;
                           return r_uid}
@@ -350,7 +350,7 @@ handled correctly.
 		  return []
 		| _ -> 
 		  { bindInGlobalContext unitId (InProcess(makeMutex "import"),0,[],term);
-		    (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+		    (value,timeStamp,depUIDs) <- evaluateTermInfo term;
 		    bindInGlobalContext unitId (value, max(timeStamp,fileWriteTime fileName), depUIDs, term);
 		    return []
 		   })
