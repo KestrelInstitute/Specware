@@ -100,3 +100,46 @@ M = morphism Bags -> BagsAsMaps {Bag._ +-> BagsAsMaps._% ,
                                  % \/  +-> bag_union,
                                  % --  +-> bag_difference
                                  }
+proof Isa Bag__occurrences
+  sorry
+end-proof
+
+proof Isa Bag__empty_bag
+  sorry
+end-proof
+
+proof Isa Bag__bag_insertion
+  sorry
+end-proof
+
+proof Isa Bag__occs_bag_union
+  sorry
+end-proof
+
+proof Isa Bag__induction
+  sorry
+end-proof
+
+proof Isa Bag__bag_fold1
+  sorry
+end-proof
+
+proof Isa Bag__bag_fold2
+  sorry
+end-proof
+
+proof Isa Bag__bag_deletion
+  sorry
+end-proof
+
+proof Isa Bag__bag_difference
+  sorry
+end-proof
+
+proof Isa Bag__subbag_def
+  sorry
+end-proof
+
+proof Isa Bag__bagin_p_def
+  sorry
+end-proof

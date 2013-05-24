@@ -16,7 +16,6 @@ import AllIsa
 %%SetsAsLists#M
 %%MapsAsListsRef % TODO rename?
 %%BagsAsLists#M
-%These have incorrect Isabelle obligations (which give errors):
 %%SetsAsBags#M
 %%BagsAsMaps#M
 
