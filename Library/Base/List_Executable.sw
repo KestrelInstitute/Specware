@@ -1,5 +1,5 @@
 List qualifying spec
-import /Library/Base/List
+import List
 
 (* This spec refines some of the ops in the base spec List for lists to be
 executable and reasonably efficient when translated to Lisp by the Specware code
