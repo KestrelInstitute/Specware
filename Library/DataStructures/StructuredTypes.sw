@@ -68,6 +68,14 @@ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
           lst
           xs
 
+  % This is basically a duplicate of the refine def in List_Executable.sw
+  theorem ++_def is [a]
+    fa(l1: List a, l2)
+     l1 ++ l2 = (case l1 of
+                  | [] -> l2
+                  | hd::tl -> Cons (hd, tl ++ l2))
+
+
 % % use this only under careful control
 % %TODO seems completely wrong.
 %   theorem commutativity_of_++ is [E]
@@ -1025,6 +1033,11 @@ proof isa Pair2S_delete
   apply(simp del: upto_loop.simps)
   
   sorry
+end-proof
+
+
+proof Isa e_pls_pls_def
+  by (induct l1, auto)
 end-proof
 
 end-spec
