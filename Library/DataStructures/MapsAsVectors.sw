@@ -73,8 +73,89 @@ spec
   %% Added by Eric:
   op [a,b] size: Map(a,b) -> Nat = fn m -> size (domain m)
 
+proof Isa domain_Obligation_subtype
+  sorry
+end-proof
+ 
+proof Isa total_p_Obligation_subtype
+  sorry
+end-proof
+ 
+proof Isa mapFrom_Obligation_subtype
+  sorry
+end-proof
+ 
+proof Isa mapUpdateSet_Obligation_subtype
+  sorry
+end-proof
+ 
+
 end-spec
 
 
 
 M = morphism Maps -> MapsAsVectors {}
+
+proof Isa map_equality
+  sorry
+end-proof
+ 
+proof Isa empty_map
+  sorry
+end-proof
+ 
+proof Isa update
+  sorry
+end-proof
+ 
+proof Isa def_of_singletonMap
+  sorry
+end-proof
+ 
+proof Isa map_induction
+  sorry
+end-proof
+ 
+proof Isa map_domain
+  sorry
+end-proof
+ 
+proof Isa map_range
+  sorry
+end-proof
+ 
+proof Isa map_domainToList
+  sorry
+end-proof
+ 
+proof Isa map_rangeToList
+  sorry
+end-proof
+ 
+proof Isa totalmap_equality_Obligation_subtype
+  sorry
+end-proof
+ 
+proof Isa totalmap_equality_Obligation_subtype0
+  sorry
+end-proof
+ 
+proof Isa totalmap_equality
+  sorry
+end-proof
+ 
+proof Isa TMApply_def_Obligation_the
+  sorry
+end-proof
+ 
+proof Isa TMApply_def
+  sorry
+end-proof
+ 
+proof Isa total_p_def
+  sorry
+end-proof
+ 
+proof Isa map_apply_def
+  sorry
+end-proof

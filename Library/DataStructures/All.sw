@@ -12,14 +12,6 @@ spec
 %% separately):
 import AllIsa
 
-%% Note: These morphisms are tested separately (in test-specware.sh):
-%%SetsAsLists#M
-%%MapsAsListsRef % TODO rename?
-%%BagsAsLists#M
-%%SetsAsBags#M
-%%BagsAsMaps#M
-%%MapsAsSTHTables#M
-
 % These ultimately depend on quotients, which prevents getting them through Isabelle:
 %import SetsAsLists#SetsAsLists %causes name clashes
 %import MapsAsLists %leads to name clashes?
@@ -27,11 +19,9 @@ import AllIsa
 
 %These still need to be triaged:
 
+%% This causes gen-obligs to crash:
 %import SetsAsSTHTables0#SetsAsSTHTables0 % leads to name clashes
 %import SetsAsSTHTables0#M
-
-%import MapsAsVectors#MapsAsVectors %casuses name clashes (on the MapVec ops?)
-%import MapsAsVectors#M
 
 import MapsAsBTVectors#MapsAsBTVectors
 %import MapsAsBTVectors#M
@@ -41,4 +31,11 @@ import StacksAsVectors#StacksAsVectors
 
 import Extensions
 import Collections
+
+%% The proofs of these morphisms do not go through, due to the use of quotients):
+%%SetsAsLists#M
+%%MapsAsListsRef % TODO rename?
+%%BagsAsLists#M
+
+
 end-spec

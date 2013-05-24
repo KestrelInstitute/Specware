@@ -12,11 +12,32 @@ spec
   import Stacks
   import Base
   import StructuredTypes
-  %% import MapsAsSets#MapsAsSets % leads to name clashes
+
   import SetsAsBags#SetsAsBags
   import SetsAsMaps#SetsAsMaps
   import BagsAsMaps#BagsAsMaps
-  %% import SetsAsBagMaps#SetsAsBagMaps % leads to name clashes
+
   import MapsAsSTHTables#MapsAsSTHTables
   import POSet
+
+%% The proofs of these go through, but they would cause name clashes
+%% if they were imported here.  So they are tested separately in
+%% test-specware.sh:
+%% import MapsAsVectors#MapsAsVectors % name clashes on the MapVec ops?
+%% import MapsAsSets#MapsAsSets
+%% import SetsAsBagMaps#SetsAsBagMaps
+%% import BasicStacks
+%% import StacksAsLists
+
+%% Note: The proofs for these morphisms go through (modulo many sorrys!).  They are tested in test-specware.sh:
+%%MapsAsSets#M
+%%SetsAsMaps#M
+%%SetsAsBagMaps#M
+%%SetsAsBags#M
+%%BagsAsMaps#M
+%%BasicStacks#M
+%%StacksAsLists#M
+%%MapsAsSTHTables#M
+%%MapsAsVectors#M
+
 end-spec
