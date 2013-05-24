@@ -32,7 +32,7 @@ import StacksAsVectors#StacksAsVectors
 import Extensions
 import Collections
 
-%% The proofs of these morphisms do not go through, due to the use of quotients):
+%% The proofs of these morphisms do not go through, due to the use of quotients:
 %%SetsAsLists#M
 %%MapsAsListsRef % TODO rename?
 %%BagsAsLists#M
