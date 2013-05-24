@@ -40,8 +40,7 @@ spec
           steps <- mapM makeScript transfm_steps;
           tr_spc1 <- interpret(spc, Steps(steps));
           tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
-	  % return (Spec (markQualifiedStatus tr_spc2), spec_timestamp, spec_dep_UIDs)
-	  return (Spec tr_spc2, spec_timestamp, spec_dep_UIDs)
+	  return (Spec (markQualifiedStatus tr_spc2), spec_timestamp, spec_dep_UIDs)
 	  }
        | _  -> raise (TransformError (positionOf spec_tm, "Transform attempted on a non-spec"))
      }
