@@ -17,4 +17,5 @@ spec
   import SetsAsMaps#SetsAsMaps
   import BagsAsMaps#BagsAsMaps
   %% import SetsAsBagMaps#SetsAsBagMaps % leads to name clashes
+  import POSet
 end-spec

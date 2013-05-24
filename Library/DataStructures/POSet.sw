@@ -53,4 +53,8 @@ spec
     op succs
 *)
 
+proof Isa addArc_Obligation_subtype
+  sorry
+end-proof
+
 end-spec

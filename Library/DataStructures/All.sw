@@ -41,7 +41,6 @@ import MapsAsBTVectors#MapsAsBTVectors
 import StacksAsVectors#StacksAsVectors
 %import StacksAsVectors#M
 
-import POSet
 import Extensions
 import Collections
 end-spec
