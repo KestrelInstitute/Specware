@@ -18,6 +18,7 @@ import AllIsa
 %%BagsAsLists#M
 %%SetsAsBags#M
 %%BagsAsMaps#M
+%%MapsAsSTHTables#M
 
 % These ultimately depend on quotients, which prevents getting them through Isabelle:
 %import SetsAsLists#SetsAsLists %causes name clashes
@@ -31,8 +32,6 @@ import AllIsa
 
 %import MapsAsVectors#MapsAsVectors %casuses name clashes (on the MapVec ops?)
 %import MapsAsVectors#M
-
-%import MapsAsSTHTables#M
 
 import MapsAsBTVectors#MapsAsBTVectors
 %import MapsAsBTVectors#M
