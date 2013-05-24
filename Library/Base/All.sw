@@ -1,15 +1,16 @@
 spec
-  import String
-  import String_Executable
-  import Option
-  import List
-  import List_Executable
-  import IsabelleExtensions
-  import Integer
-  import Integer_Executable
-  import Function
   import Empty
-  import Compare
-  import Character
+  import IsabelleExtensions
   import Boolean
+  import Function
+  import Compare
+  import Integer
+  import Option
+  import Character
+  import List
+  import String
+
+  import String_Executable
+  import List_Executable
+  import Integer_Executable
 end-spec
