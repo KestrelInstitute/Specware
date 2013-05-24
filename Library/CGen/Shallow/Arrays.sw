@@ -90,6 +90,13 @@ proof isa Array__e_ast_Obligation_the
   sorry
 end-proof
 
+%% I moved this to the Array spec to prevent name clashes. (It
+%% appeared in Array1 and also in Array1a, which is generated from
+%% Array1.  So I couldn't legally include both Array1 and Array1a in
+%% All.sw.) --Eric
+
+op abs_add (arr: Array Int) (n:Nat, r: Int | n < length arr) : Int 
+   =  r + arr @ n
 
 endspec
 
@@ -112,9 +119,6 @@ theorem isucc_inv_ipred is   isucc = inverse ipred
 theorem isucc_is_add_1 is    fa (x:Int) isucc x = x + 1
 
 theorem ipred_is_sub_1 is    fa (x:Int) ipred x = x - 1
-
-op abs_add (arr: Array Int) (n:Nat, r: Int | n < length arr) : Int 
-   =  r + arr @ n
 
 endspec
 
