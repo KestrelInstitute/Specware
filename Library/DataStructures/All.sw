@@ -29,7 +29,6 @@ import MapsAsBTVectors#MapsAsBTVectors
 import StacksAsVectors#StacksAsVectors
 %import StacksAsVectors#M
 
-import Extensions
 import Collections
 
 %% The proofs of these morphisms do not go through, due to the use of quotients:

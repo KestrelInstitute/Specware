@@ -19,6 +19,7 @@ spec
 
   import MapsAsSTHTables#MapsAsSTHTables
   import POSet
+  import Extensions
 
 %% The proofs of these go through, but they would cause name clashes
 %% if they were imported here.  So they are tested separately in

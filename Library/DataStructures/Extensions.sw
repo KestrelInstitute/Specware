@@ -61,10 +61,11 @@ def SoL.flatten = set_fold [] (++)
 op fm2fn : [a,b] Map(a,b) -> (a -> b)
 def fm2fn(fm) = (fn(x) -> TMApply(fm, x))
 
-%TODO Perhaps when a>b, this should return the empty list?
-op numRange : Nat * Nat -> List Nat
-def numRange(a:Nat, b:Nat) =
-    if (a>=b) then [a] else Cons(a, numRange(a+1, b))
+%% %TODO Perhaps when a>b, this should return the empty list?
+%% %TODO compare to upto in StructuredTypes.sw.
+%% op numRange : Nat * Nat -> List Nat
+%% def numRange(a:Nat, b:Nat) =
+%%     if (a>=b) then [a] else Cons(a, numRange(a+1, b))
 
 %TODO see op forall? in Library/Base/List
 op List.forallIn : [a] List a -> (a -> Bool) -> Bool
@@ -84,5 +85,21 @@ def [a] List.prec? xs x1 x2  =
     | (x1::rest) -> in? %member
                      (x2, rest)
     | (x::rest) -> (List.prec? rest x1 x2)
+
+proof Isa Set__forallIn_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa flatten_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa SoL__flatten_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa fm2fn_Obligation_subtype
+  sorry
+end-proof
 
 end-spec
