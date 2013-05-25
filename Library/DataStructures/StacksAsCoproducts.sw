@@ -1,7 +1,7 @@
 %% TODO This spec is incompatible with Stacks.sw (name clashes, e.g., for push), but Specware allows both to be imported!
 %% TODO Try this (maybe after we give a qualifier to Stacks):
-%% BasicStacks = BasicStacks qualifying spec
-BasicStacks = spec
+%% StacksAsCoproducts = StacksAsCoproducts qualifying spec
+StacksAsCoproducts = spec
 
 %% This spec is a simple refinement of stacks as a sum type.  Because
 %% this spec will be a refinement of the Stacks spec, we must define
@@ -94,7 +94,7 @@ op [a] pushl (lst:List a, stk:Stack a): Stack a =
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Proofs for BasicStacks
+%% Proofs for StacksAsCoproducts
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -183,8 +183,8 @@ end-spec
 
 
 %% TODO: Try this once Stacks gets a qualifier:
-%% M = morphism Stacks -> BasicStacks {Stack +-> BasicStacks.Stack}
-M = morphism Stacks -> BasicStacks {}
+%% M = morphism Stacks -> StacksAsCoproducts {Stack +-> StacksAsCoproducts.Stack}
+M = morphism Stacks -> StacksAsCoproducts {}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Proofs for morphism M
