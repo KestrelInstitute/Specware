@@ -29,8 +29,6 @@ import MapsAsBTVectors#MapsAsBTVectors
 import StacksAsVectors#StacksAsVectors
 %import StacksAsVectors#M
 
-import Collections
-
 %% The proofs of these morphisms do not go through, due to the use of quotients:
 %%SetsAsLists#M
 %%MapsAsListsRef % TODO rename?
