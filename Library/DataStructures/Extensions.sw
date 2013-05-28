@@ -78,13 +78,14 @@ def [a,b] List.forallIn_do l f =
     map f l
 
 %some occurrence of x1 in the list is followed by some occurrence of x2
-op List.prec? : [a] List a -> a -> a -> Bool
-def [a] List.prec? xs x1 x2  =
+op [a] List.prec? (xs:List a) (x1:a) (x2:a) : Bool =
     case xs of
     | [] -> false
-    | (x1::rest) -> in? %member
-                     (x2, rest)
-    | (x::rest) -> (List.prec? rest x1 x2)
+    | (hd::rest) -> (if hd = x1 then
+                       in? (x2, rest)
+                     else
+                       List.prec? rest x1 x2)
+
 
 proof Isa Set__forallIn_Obligation_subtype
   sorry
