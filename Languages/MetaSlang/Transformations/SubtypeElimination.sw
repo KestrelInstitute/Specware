@@ -112,13 +112,13 @@ SpecNorm qualifying spec
     case arrowOpt(spc, ty) of
       | None -> []
       | Some(dom_ty, _) ->
+    if setType?(spc, ty) && regularizeSets? then []
+    else
     let r_dom_ty = raiseSubtypeFn(dom_ty, spc) in
     case r_dom_ty of
       | Subtype(dom_ty, domPred, _) ->
-        [mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"),
-                      mkArrow(mkArrow(dom_ty, boolType),
-                              mkArrow(ty, boolType))),
-                 domPred)]
+        let ho_ty = mkArrow(mkArrow(dom_ty, boolType), mkArrow(ty, boolType)) in
+        [mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"), ho_ty), domPred)]
       | _ -> []
 
   op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
@@ -1124,17 +1124,39 @@ SpecNorm qualifying spec
     let spc = regularizeFunctions spc in
     %let _ = writeLine(anyToString tbl) in
     %let _ = writeLine(printSpec spc) in
-    let spc = mapSpec (relativizeQuantifiers spc, id, id) spc in
+    let spc = mapSpecHist (relativizeQuantifiers spc, id, id) spc in
     %% Replace subtypes by supertypes
-    let spc = mapSpec (id,fn s ->
-                         case s of
-                           | Subtype(supTy,_,_) -> supTy
-                           | _ -> s,
-                       id)
+    let spc = mapSpecHist (id,fn s ->
+                             case s of
+                               | Subtype(supTy,_,_) -> supTy
+                               | _ -> s,
+                           id)
                 spc
     in
     % let _ = writeLine(printSpec spc) in
     spc
+
+op  mapSpecHist : TSP_Maps_St -> Spec -> Spec
+def mapSpecHist tsp spc =
+  spc << {
+          types        = mapSpecTypes      tsp spc.types,
+          ops          = mapSpecOps        tsp spc.ops,
+          elements     = mapSpecPropertiesHist tsp spc.elements
+         }
+
+ op  mapSpecPropertiesHist : TSP_Maps StandardAnnotation -> SpecElements -> SpecElements
+ def mapSpecPropertiesHist tsp elements =
+   map (fn el ->
+	case el of
+	  | Property (pt, nm, tvs, term, a) ->
+            % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
+            Property (pt, nm, tvs, mapTerm tsp term, a)
+          | OpDef(qid, refine_num, hist, a) ->
+            OpDef(qid, refine_num, map (fn (tm, rl) -> (mapTerm tsp tm, rl)) hist, a)
+	  | Import   (s_tm, i_sp, elts, a)  ->
+            Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
+	  | _ -> el)
+       elements
 
   op removeSubtypesInTerm (spc: Spec) (t: MSTerm): MSTerm =
     let t = mapTerm(relativizeQuantifiers spc, id, id) t in
