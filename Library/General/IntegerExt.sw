@@ -701,13 +701,13 @@ op gcdOf (numbers: Set1 PosNat | finite? numbers) : PosNat =
     i > 0 && (fa(n) n in? numbers => i divides n))
 
 proof Isa lcmOf_Obligation_subtype
-(*   apply (simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_lambda_int)
+   apply (simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_lambda_int)
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p", simp, thin_tac "?a=?b")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
-          thin_tac "?P", thin_tac "?P", thin_tac "?P", 
+          thin_tac "?P", thin_tac "?P", 
           simp add: list_all_iff Nat__posNat_p_def)
    apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> n dvd k)", 
           erule exE, erule exE)
@@ -716,8 +716,6 @@ proof Isa lcmOf_Obligation_subtype
    apply (rotate_tac 4, drule_tac x="nat i1" in spec, auto)
    apply (rule_tac x="prod l" in exI, 
           auto simp add: prod_positive factors_dvd_prod zdvd_int [symmetric])
-*)
-  sorry
 end-proof
 
 proof Isa lcmOf_Obligation_subtype0
@@ -734,13 +732,13 @@ proof Isa lcmOf_Obligation_subtype1
 end-proof
 
 proof Isa gcdOf_Obligation_subtype
-(*   apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_lambda_int)
+   apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_lambda_int)
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p", simp, thin_tac "?a=?b")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
-          thin_tac "?P", thin_tac "?P", thin_tac "?P", 
+          thin_tac "?P", thin_tac "?P", 
           simp add: list_all_iff Nat__posNat_p_def)
    apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> k dvd n)", 
           erule exE, erule exE)
@@ -752,8 +750,6 @@ proof Isa gcdOf_Obligation_subtype
           rule classical, simp add: nat_dvd_not_less)
    apply (rule_tac x="int x" in exI, auto simp add: zdvd_int)
    apply (rotate_tac 4, drule_tac x="nat i1" in spec, auto)
-*)
-  sorry
 end-proof
 
 proof Isa gcdOf_Obligation_subtype0
