@@ -1,5 +1,5 @@
 List qualifying spec
-import List
+import /Library/Base/List
 
 (* This spec refines some of the ops in the base spec List for lists to be
 executable and reasonably efficient when translated to Lisp by the Specware code
@@ -609,12 +609,10 @@ end-proof
 proof isa list__1_Obligation_subtype
   apply (cut_tac List__list_subtype_constr)
   apply (auto simp  add: bij_on_def inj_on_def surj_on_def)
-  apply (drule_tac x=x in bspec, simp)
-  apply (drule_tac x=y in bspec, simp)
-  apply (auto simp add: mem_def List__list__1__loop_steps)
-  apply (drule_tac x=y in spec, clarify)
-  apply (rule bexI)
-  apply (auto simp add: mem_def List__list__1__loop_steps)
+  apply (drule_tac x=x in spec, auto, drule_tac x=y in spec,
+         auto simp add:  List__list__1__loop_steps)
+  apply (drule_tac x=y in spec, clarify, rule exI,
+         auto simp add:  List__list__1__loop_steps)
 end-proof
 
 proof isa List__list__1__obligation_refine_def

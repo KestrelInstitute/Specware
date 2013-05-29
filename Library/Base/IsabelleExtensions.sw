@@ -16,6 +16,7 @@ end-proof
 
 proof Isa -verbatim
 
+
 (*************************************************************
  * Define simple projections 
  *************************************************************)
@@ -59,24 +60,27 @@ defs
  * Translate between set and predicate notation
  ******************************************************************************)
 
-lemma mem_reverse:   "x\<in>P \<Longrightarrow> P x"
-  by (simp add:mem_def)
+lemma mem_reverse:   "x\<in>Collect P \<Longrightarrow> P x"
+  by auto
 
-lemma univ_true:     "(\<lambda>x. True) = UNIV"
-  by (simp only:UNIV_def Collect_def)
 
-lemma empty_false:   "(\<lambda> x. False) = {}"
-  by (simp only: empty_def Collect_def)
+lemma univ_true:     "Collect (\<lambda>x. True) = UNIV"
+  by (simp only:UNIV_def)
+
+lemma empty_false:   "Collect (\<lambda> x. False) = {}"
+  by (simp only: empty_def)
 
 (*** stronger control over unfolding "a \<in> S" ***)
  
 lemma mem_lambda_int:
-  "a \<in> (\<lambda>(i::int). P i) = P a"
- by (simp add: mem_def)  
+  "a \<in> Collect (\<lambda>(i::int). P i) = P a"
+ by (simp)  
 
+(*
 theorem singleton_set [simp]:
   "{z} x = (x = z)"
  by (cut_tac singleton_iff, auto simp add: mem_def)
+*)
 
 (******************************************************************************
  *  A bit more logic 
@@ -111,9 +115,8 @@ proof -
 qed
 
 lemma unique_singleton:
-  "(\<exists>x. P = {x}) = (\<exists>!x. P x)"
-  by (simp add: set_eq_iff singleton_iff,
-      auto simp add: mem_def)
+  "(\<exists>x. Collect P = {x}) = (\<exists>!x. P x)"
+  by (simp add: set_eq_iff singleton_iff, auto)
 
 
 (*************************************************************
@@ -302,8 +305,8 @@ lemma defined_on_simp_set:
   by (auto simp add: defined_on_def image_def subset_eq)
 
 lemma defined_on_simp: 
-  "defined_on f A B = (\<forall>x. A x \<longrightarrow> B(f x))"
-  by (auto simp add: defined_on_simp_set Ball_def mem_def)
+  "defined_on f A B = (\<forall>x. x \<in> A \<longrightarrow> f x \<in> B)"
+  by (auto simp add: defined_on_simp_set Ball_def)
 
 lemma defined_on_UNIV [simp]: 
   "defined_on f A UNIV"
@@ -312,9 +315,9 @@ lemma defined_on_UNIV [simp]:
 
 
 lemma inv_on_unique:
-  "\<lbrakk>bij_on f P UNIV\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). P x \<and> f x = (y::'b)"
+  "\<lbrakk>bij_on f P UNIV\<rbrakk> \<Longrightarrow> \<exists>!(x::'a). x\<in>P \<and> f x = (y::'b)"
   apply(auto simp add:
-        bij_on_def surj_on_def Ball_def Bex_def inj_on_def mem_def)
+        bij_on_def surj_on_def Ball_def Bex_def inj_on_def)
   apply(rotate_tac -1, drule_tac x="y" in spec, auto)
 done
 
@@ -342,7 +345,8 @@ lemma inv_on_f_eq: "\<lbrakk>inj_on f A; f x = y; x \<in> A\<rbrakk>  \<Longrigh
 
 lemma surj_on_f_inv_on_f [simp]: 
   "\<lbrakk>surj_on f A B; y\<in>B\<rbrakk>  \<Longrightarrow> f (inv_on A f y) = y"
-  by (simp add: image_def Collect_def mem_def surj_on_def)
+  by (simp add: image_def surj_on_def)
+
 
 
 lemma inj_on_imp_surj_on_UNIV_inv: 
@@ -568,9 +572,7 @@ lemma zdvd_mult_cancel:           "\<lbrakk>0<(m::int); 0\<le>n\<rbrakk> \<Longr
 
 lemma zdvd_zmult_eq:    (******** don't add this to simp - Isabelle hangs **********)
                      "\<lbrakk>j \<noteq> (0\<Colon>int); k \<noteq> 0\<rbrakk> \<Longrightarrow> j dvd k*i = (j dvd (k * (i mod j)))"
-  by (metis diff_0_right dvd_triv_left
-            number_of_is_id zdvd_iff_zmod_eq_0_number_of
-            zmod_zmult1_eq zmult_div_cancel)
+by (metis dvd_eq_mod_eq_0 zmod_simps(3))
 
 lemma even_suc_imp_not_even:      "(2 dvd ((a::int) + 1)) = (\<not>(2 dvd a))"  
   by arith
@@ -586,9 +588,9 @@ lemma odd_le_even_imp_less:       "\<lbrakk>(2::int) dvd x; \<not> 2 dvd y; y \<
 (******************* DIV / MOD *********************************************)
 
 lemma div_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a div b = q"
-  by (metis div_mult_self2 div_pos_pos_trivial not_less zadd_0_right zadd_commute)
+by (metis int_div_pos_eq)
 lemma div_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a div b = q"
-  by (metis div_mult_self2 div_neg_neg_trivial not_less zadd_0_right zadd_commute)
+by (metis int_div_neg_eq)
 lemma div_pos_unique1:            "\<lbrakk>a = b*q - r; (0::int)<r; r<b\<rbrakk> \<Longrightarrow> a div b = q - 1"
   by (cut_tac a="b*q - r" and b=b and q="q - 1" and r="b - r" in div_pos_unique,
       auto, simp add: algebra_simps)
@@ -597,9 +599,9 @@ lemma div_neg_unique1:            "\<lbrakk>a = b*q - r; (0::int)>r; r>b\<rbrakk
       auto, simp add: algebra_simps)
 
 lemma mod_pos_unique:             "\<lbrakk>a = b*q + r; (0::int)\<le>r; r<b\<rbrakk>  \<Longrightarrow> a mod b = r"
-  by (metis mod_mult_self2 mod_pos_pos_trivial zadd_commute)
+by (metis int_mod_pos_eq)
 lemma mod_neg_unique:             "\<lbrakk>a = b*q + r; (0::int)\<ge>r; r>b\<rbrakk>  \<Longrightarrow> a mod b = r"
-  by (metis mod_mult_self2 mod_neg_neg_trivial zadd_commute)
+by (metis int_mod_neg_eq)
 
 lemma mod_div_eq:                 "(a::int) = b * (a div b) + (a mod b)"
   by (simp add:  zmod_zdiv_equality)
@@ -621,7 +623,7 @@ by auto
 (********** a lemma missing in Divides.thy *********************)
 
 lemma div_neg_pos_trivial: "\<lbrakk>a < (0::int);  0 \<le> a+b\<rbrakk> \<Longrightarrow> a div b = -1"
-  by (auto intro!: divmod_int_rel_div divmod_int_relI)
+  by (auto intro!: int_div_pos_eq)
 
 lemmas div_trivial = div_pos_pos_trivial div_neg_neg_trivial
                      div_pos_neg_trivial div_neg_pos_trivial 
@@ -636,12 +638,11 @@ lemma div_pos_pos_less:          "\<lbrakk>(0::int) < b; b \<le> a\<rbrakk> \<Lo
 lemma div_pos_neg_le:            "\<lbrakk>(0::int) < b; a \<le> 0\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
   by(cut_tac a=a and a'=0 and b=b in zdiv_mono1, auto)   
 lemma div_pos_neg_less:          "\<lbrakk>(0::int) < b; a < 0\<rbrakk> \<Longrightarrow>  a div b < 0"
-  by(metis Pls_def pos_imp_zdiv_neg_iff)
-
+by (metis pos_imp_zdiv_neg_iff)
 lemma div_neg_pos_le:            "\<lbrakk>b < (0::int); 0 \<le> a\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
   by(cut_tac a=0 and a'=a and b=b in zdiv_mono1_neg, auto)   
 lemma div_neg_pos_less:          "\<lbrakk>b < (0::int); 0 < a\<rbrakk> \<Longrightarrow>  a div b < 0"
-  by(metis Pls_def neg_imp_zdiv_neg_iff)
+by (metis neg_imp_zdiv_neg_iff)
 lemma div_neg_neg_le:            "\<lbrakk>b < (0::int); a \<le> 0\<rbrakk> \<Longrightarrow>  0 \<le> a div b"
   by(cut_tac a=a and a'=0 and b=b in zdiv_mono1_neg, auto)   
 lemma div_neg_neg_less:          "\<lbrakk>b < (0::int); a \<le> b\<rbrakk> \<Longrightarrow>  0 < a div b"
@@ -652,6 +653,7 @@ lemma div_pos_neg_le2:           "\<lbrakk>(0::int) < b; a < b\<rbrakk> \<Longri
 lemma div_neg_pos_le2:           "\<lbrakk>b < (0::int); b < a\<rbrakk> \<Longrightarrow>  a div b \<le> 0"
   by(cut_tac a="b + 1" and a'=a and b=b in zdiv_mono1_neg, 
      auto simp add: div_neg_neg_trivial)
+
 
 lemmas div_signs =
       div_pos_pos_le div_pos_pos_less 
@@ -733,8 +735,9 @@ lemma mod_bound [simp]: "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow>
    lemma zmod_zminus_zminus [simp]: "(-a) mod (-b) = - (a mod (b::int))"
 ******************************************************************************)
 
+
 lemma zdiv_zminus1_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> (-a) div b = - (a div b)"
-   by (metis dvd_imp_mod_0 zdiv_zminus2 zdiv_zminus2_eq_if)
+by (metis dvd_neg_div)
 lemma zdiv_zminus1_if_not_dvd:  "\<lbrakk>b \<noteq> (0::int);\<not>(b dvd a)\<rbrakk> \<Longrightarrow> (-a) div b = -(a div b) - 1"
    by (simp add: zdiv_zminus1_eq_if dvd_eq_mod_eq_0)
 lemma zdiv_zminus2_if_dvd:      "\<lbrakk>b \<noteq> (0::int); b dvd a\<rbrakk> \<Longrightarrow> a div (-b) = - (a div b)"
@@ -759,7 +762,7 @@ lemma abs_div_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
 lemma abs_div_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
                         \<Longrightarrow> \<bar>a div -b\<bar> = (if a mod b = 0 then \<bar>a div b\<bar> 
                                                          else \<bar>a div b + 1\<bar>)"
-  by (simp add: zdiv_zminus2 abs_div_zminus1)
+  by (simp add: abs_div_zminus1 div_minus_right)
 
 lemma abs_mod_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
                         \<Longrightarrow> \<bar>-a mod b\<bar> = (if a mod b = 0 then 0 else \<bar>b\<bar> - \<bar>a mod b\<bar>)"
@@ -768,7 +771,7 @@ lemma abs_mod_zminus1: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk>
 
 lemma abs_mod_zminus2: "\<lbrakk>(b::int) \<noteq> 0\<rbrakk> 
                         \<Longrightarrow> \<bar>a mod -b\<bar> = (if a mod b = 0 then 0 else \<bar>b\<bar> - \<bar>a mod b\<bar>)"
-  by (simp add: zmod_zminus2 abs_mod_zminus1)
+  by (simp add: abs_minus abs_mod_zminus1 mod_minus_right)
 
 (**************** div vs. mult-cancellation ***********************)
 lemma div_is_largest_pos: "\<lbrakk>0 < (j::int); k * j \<le> i\<rbrakk> \<Longrightarrow>  k \<le> i div j"
@@ -948,10 +951,10 @@ lemma zgcd_zdvd2 [iff]:          "zgcd(m,n) dvd n"
   by (simp add: zgcd_def abs_if int_dvd_iff)
 
 lemma zgcd_greatest_iff:         "k dvd zgcd(m,n) = (k dvd m \<and> k dvd n)"
-  by (simp add: zgcd_def abs_if int_dvd_iff dvd_int_iff nat_dvd_iff)
+by (metis gcd_greatest_iff_int zgcd_specware_def)
 
 lemma zgcd_zmult_distrib2:       "0 \<le> k \<Longrightarrow> k * zgcd(m,n) = zgcd(k*m,k*n)"
-  by (metis abs_gcd_int abs_mult abs_mult_pos comm_semiring_1_class.normalizing_semiring_rules(7)
+    by (metis abs_gcd_int abs_mult abs_mult_pos comm_semiring_1_class.normalizing_semiring_rules(7)
             gcd_mult_distrib_int zgcd_specware_def)
 
 lemma zgcd_zminus [simp]:        "zgcd(-m,n) = zgcd (m,n)"
@@ -970,7 +973,6 @@ lemma zrelprime_zdvd_zmult:      "zgcd(n,k) = 1 \<Longrightarrow> k dvd m * n \<
   apply (case_tac "0 \<le> m", blast intro: zrelprime_zdvd_zmult_aux)
   apply (subgoal_tac "k dvd -m", rule_tac [2] zrelprime_zdvd_zmult_aux, auto)
 done
-
 
 (****************************************************
 * Right now this is all we need from IntPrimes.thy
@@ -1379,9 +1381,15 @@ lemma divR_def_aux1: "\<lbrakk>b \<noteq> (0\<Colon>int)\<rbrakk> \<Longrightarr
   apply (drule mult_left_less_imp_less_pos, simp)+  apply (simp)
   apply (frule_tac a=a in pos_mod_conj, auto)
   (** 3b - b<0 **)
+  defer
   apply (subgoal_tac "b*0 > b*k \<and> b*k > b*2", clarify)
-  apply (drule mult_left_less_imp_less_neg, simp)+  apply (simp)
+  apply (drule mult_left_less_imp_less_neg, simp)+
+  apply (simp)
   apply (frule_tac a=a in neg_mod_conj, auto)
+  apply (metis comm_semiring_1_class.normalizing_semiring_rules(7)
+         mult_less_cancel_left_disj not_less_iff_gr_or_eq pos_mod_conj zero_less_numeral)
+  apply (metis comm_semiring_1_class.normalizing_semiring_rules(7)
+         mult_less_cancel_left_disj neg_mod_bound not_less_iff_gr_or_eq zero_less_numeral)
 done
 
 lemma divR_def_aux2: "\<lbrakk>b \<noteq> (0\<Colon>int)\<rbrakk> \<Longrightarrow> (2*\<bar>a mod b\<bar> \<le> \<bar>b\<bar>) = (2 * \<bar>\<bar>a\<bar> - \<bar>(a div b) * b\<bar>\<bar> \<le> \<bar>b\<bar>)"
@@ -1419,6 +1427,7 @@ lemma divR_aux4:   "\<lbrakk>j \<noteq> (0\<Colon>int); 2 * \<bar>\<bar>i\<bar> 
   by (simp add: divR_def, cases "0 < i \<or> i = 0",
       auto simp add: not_less neq_iff mod_via_div algebra_simps div_trivial)+
 
+
 lemma divR_aux5a_pos: "\<lbrakk>(0\<Colon>int) < j; 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
                         sign x = sign i * sign j; (2\<Colon>int) * \<bar>i mod j\<bar> < \<bar>j\<bar>\<rbrakk>
                         \<Longrightarrow> x = i div j"
@@ -1432,12 +1441,11 @@ lemma divR_aux5a_pos: "\<lbrakk>(0\<Colon>int) < j; 0 < i; 2 * \<bar>\<bar>i\<ba
            simp add: mult_less_cancel_left)
     apply (subgoal_tac "j * (i div j) < j * x",
            simp add: mult_less_cancel_left)
-    apply (subgoal_tac "j * (i div j) \<le> j * (i div j) + (i mod j)", simp,
-           cut_tac a=0 and b="i mod j" and c="j * (i div j)" in  add_left_mono, 
-           simp, simp)
-    apply(rule_tac t="2 * j * (1 + i div j)" and s = " 2 * (j + i - (i mod j))" in subst,
-          simp add: mod_via_div algebra_simps, simp)
-done 
+    apply (metis comm_semiring_1_class.normalizing_semiring_rules(24) div_gt_pos div_neg_less_iff_neg eq_iff
+           linear mult_eq_0_iff mult_strict_left_mono_neg zle_add1_eq_le zless_add1_eq zmult_zless_mono2)
+    apply (rule_tac t="2 * j * (1 + i div j)" and s = " 2 * (j + i - (i mod j))" in subst,
+           simp add: mod_via_div algebra_simps, simp)
+    done
 
 lemma divR_aux5a_neg: "\<lbrakk>j < (0\<Colon>int); 0 < i; 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; 
                         sign x = sign i * sign j; (2\<Colon>int) * \<bar>i mod j\<bar> < \<bar>j\<bar>\<rbrakk>
@@ -1453,12 +1461,13 @@ lemma divR_aux5a_neg: "\<lbrakk>j < (0\<Colon>int); 0 < i; 2 * \<bar>\<bar>i\<ba
     apply (subgoal_tac "j * (i div j) > j * x",
            simp add: mult_less_cancel_left)
     (********* I have a lemma "j * (i div j) \<le> i"!!!!!!!!!!!!!!!! ************)
-    apply (subgoal_tac "j * (i div j) \<ge> j * (i div j) + (i mod j)", simp,
-           cut_tac b=0 and a="i mod j" and c="j * (i div j)" in  add_left_mono, 
+    apply (subgoal_tac "j * (i div j) \<ge> j * (i div j) + (i mod j)") 
+    apply (metis add1_zle_eq order_trans zmod_zdiv_equality)
+    apply (cut_tac b=0 and a="i mod j" and c="j * (i div j)" in  add_left_mono, 
            simp, simp)
-    apply(rule_tac t="2 * j * (1 + i div j)" and s = " 2 * (j + i - (i mod j))" in subst,
+    apply (rule_tac t="2 * j * (1 + i div j)" and s = " 2 * (j + i - (i mod j))" in subst,
           simp add: mod_via_div algebra_simps, simp)
-done
+    done
 
 lemma divR_aux5a: "\<lbrakk>j \<noteq> (0\<Colon>int); 2 * \<bar>\<bar>i\<bar> - \<bar>x * j\<bar>\<bar> \<le> \<bar>j\<bar>; sign x = sign i * sign j;
                     (2\<Colon>int) * \<bar>i mod j\<bar> < \<bar>j\<bar>\<rbrakk>
@@ -1678,14 +1687,16 @@ lemma exact_divR:              "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \
 lemma divR_zminus1:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i divR j = - (i divR j)"
 by (auto simp add: divR_def,
       simp_all add: abs_mod_zminus1  zdiv_zminus1_eq_if split: split_if_asm,
-      simp_all only: diff_int_def zminus_zadd_distrib [symmetric] dvd_minus_iff,
+      simp_all only: diff_def minus_add_distrib [symmetric] dvd_minus_iff,
       simp_all add : even_suc_imp_not_even) 
+
 
 lemma divR_zminus2:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)" 
 by (auto simp add: divR_def,
       simp_all add: abs_mod_zminus2  zdiv_zminus2_eq_if split: split_if_asm,
-      simp_all only: diff_int_def zminus_zadd_distrib [symmetric] dvd_minus_iff,
+      simp_all only: diff_def minus_add_distrib [symmetric] dvd_minus_iff,
       simp_all add : even_suc_imp_not_even) 
+
 
 (*************************** divE **************************************)
 
@@ -2127,12 +2138,15 @@ abbreviation
 * 
 ******************************************************************************) 
 
+(******************************************************************************
+* Note that after Isabelle 2011 Quotient has been renamed to Quotient3        *
+*******************************************************************************)
 
 locale quotient =
   fixes eq   :: "'a \<Rightarrow> 'a \<Rightarrow> bool"
   and   abs  :: "'a \<Rightarrow> 'b"
   and   rep  :: "'b \<Rightarrow> 'a"
-  assumes quot: "Quotient eq abs rep"
+  assumes quot: "Quotient3 eq abs rep"
   assumes eqv : "equivp eq"
 
 begin
@@ -2147,7 +2161,6 @@ lemma eq_sym_raw:   "eq x y \<Longrightarrow> eq y x "           by (metis eqv e
 lemma eq_trans_raw: "eq x y \<Longrightarrow> eq y z \<Longrightarrow> eq x z" by (metis eqv equivp_transp)
 
 lemma eq_ex:        "\<exists>y. eq x y"                  by (metis eq_refl_raw)
-lemma eq_ex2:       "\<exists>y. y \<in> eq x"                by (metis mem_def eq_ex) 
 
 lemma eq_class_eq:  "(eq x = eq y) = eq x y"      by (metis eqv equivp_def)
 
@@ -2155,53 +2168,39 @@ lemma eq_class_eq:  "(eq x = eq y) = eq x y"      by (metis eqv equivp_def)
 (*** Some explicit lemmas about the quotient type *******************)
 
 lemma abs_inv:  "eq (rep (abs x)) x" 
-   by (metis quot eq_refl_raw Quotient_rep_abs)
+   by (metis quot eq_refl_raw Quotient3_rep_abs)
 lemma abs_inv1: "eq x (rep (abs x))"           by (metis abs_inv eq_sym_raw)
-lemma abs_inv2: "rep (abs x) \<in> eq x"           by (metis mem_def abs_inv1)
+
 
 lemma abs_inj:  "(abs x = abs y) = eq x y" 
-   by (metis quot eq_refl_raw Quotient_rel)
-lemma abs_inj2: "(abs x = abs y) = (y \<in> eq x)" by (metis abs_inj mem_def)
+   by (metis quot eq_refl_raw Quotient3_rel)
 
-
-lemma rep_inv:  "abs (rep q) = q"              by (metis quot Quotient_abs_rep)
+lemma rep_inv:  "abs (rep q) = q"              by (metis quot Quotient3_abs_rep)
 lemma rep_inj:  "(rep q = rep p) = (q = p)"    by (metis rep_inv arg_cong)
-lemma rep_inj2: "eq (rep q) (rep p) = (q = p)" by (metis quot Quotient_rel_rep)
+lemma rep_inj2: "eq (rep q) (rep p) = (q = p)" by (metis quot Quotient3_rel_rep)
 
 lemma rep_to_abs: "eq x (rep q) = (q = abs x)"
   by (metis abs_inj [symmetric] rep_inv)
-lemma rep_to_abs2: "rep q \<in> eq x = (q = abs x)" by (metis mem_def rep_to_abs)
 
 lemma rep_total:   "\<exists>q. eq x (rep q)"          by (metis abs_inv1)
-lemma rep_total2:  "\<exists>q. rep q \<in> eq x"          by (metis mem_def rep_total)
 lemma rep_type:    "\<exists>x. eq x (rep q)"          by (metis eq_refl_raw)
-lemma rep_type2:   "\<exists>x. rep q \<in> eq x"          by (metis mem_def rep_type)
 
 lemma abs_surj:    "\<exists>x. q = abs x"             by (metis rep_inv)
-
 
 lemma abs_simp:     "\<lbrakk>\<And>x. P (abs x)\<rbrakk> \<Longrightarrow> P q"    by (metis rep_inv)
 lemma rep_simp:     "\<lbrakk>\<And>x. P x\<rbrakk> \<Longrightarrow> P (rep q)"    by (metis rep_inv)
 lemma abs_rep_simp: "\<lbrakk>P q\<rbrakk> \<Longrightarrow> P (abs (rep q))"  by (metis rep_inv)
 lemma rep_abs_simp: "\<lbrakk>\<And>z. eq x z \<Longrightarrow> P z\<rbrakk>
                       \<Longrightarrow> P (rep (abs x))"       by (metis abs_inv1)
-lemma rep_abs_simp2:"\<lbrakk>\<And>z. z \<in> eq x \<Longrightarrow> P z\<rbrakk>
-                      \<Longrightarrow> P (rep (abs x))"       by (metis abs_inv2)
 
 (* Helpful, but probably subsumed by the above  **)
 
 lemma quotE:      "\<exists>z. eq x z   \<and> rep (abs x) = z"  by (metis abs_inv1)
-lemma quotE2:     "\<exists>z. z \<in> eq x \<and> rep (abs x) = z"  by (metis abs_inv2)
-
 
 declare abs_inj [simp]  
         rep_inj [simp]  
         rep_inj2 [simp] 
 end
-
-(******************************************************************************)
-(******************************************************************************)
-
 
 (***********************************************************************
  * NEW LEMMAS -- MOVED FROM IntegerExt.thy 
@@ -2406,7 +2405,7 @@ by simp
 lemma mod_add_limit: 
   "\<lbrakk>prime p; (x::nat) < p; y < p;  x + y = p * q\<rbrakk> \<Longrightarrow> q = 0 \<or> q = 1"
 by (drule_tac i=x and j=p and k=y and l=p in add_less_mono,
-    auto simp add: nat_mult_2_right[ symmetric])
+    auto simp add: mult_2_right[ symmetric])
 
 lemma mod_add_inv_0 [simp]: 
   "\<lbrakk>prime p; (x::nat) = 0; y < p\<rbrakk> \<Longrightarrow> ((x + y) mod p = 0) =  (y = 0)"
@@ -2705,12 +2704,10 @@ declare numsimps [simp add]
 
 (** move to IsabelleExtensions ***)
 
-lemma unique_singleton1:   "(\<exists>!x. P = {x}) = (\<exists>!x. P x)"
-  by (simp add: unique_singleton [symmetric],
-      auto simp add: set_eq_iff singleton_iff mem_def)
-
 lemma unique_singleton2:   "(\<exists>!x. P = {x}) = (\<exists>!x. x \<in> P)"
-  by (simp add: mem_def unique_singleton1)
+  by (simp add: unique_singleton [symmetric],
+      auto simp add: set_eq_iff singleton_iff)
+
 
 lemma list_singleton_set:  "\<lbrakk>distinct l; l = [x] \<rbrakk> \<Longrightarrow> x \<in> set l"
    by auto
@@ -2723,14 +2720,8 @@ lemma singleton_list_to_set: "\<lbrakk>distinct l \<rbrakk> \<Longrightarrow> (l
 done
 
 lemma non_empty_simp:     "P \<noteq> {} = (\<exists>x. x \<in> P)"
-  by (auto simp add:  set_eq_iff mem_def)
+  by auto
 
-
-lemma mem_lambda_pair:    "(a,b) \<in> (\<lambda>x. P x) = P (a,b)"
- by (simp add: mem_def)  
-
-lemma lambda_set:         "(\<lambda>x. P x) = {x. x \<in> P}"
- by (simp add: Collect_def)  
 
 (**************************)
 
@@ -2750,17 +2741,6 @@ lemma ran_empty1:
  * NEW LEMMAS -- MOVED FROM SW_Map.thy 
  ***********************************************************************)
 
-lemma finiteRange [simp]: 
-  "finite  (\<lambda> (x::int). l \<le> x \<and> x \<le> u)"
-  by (rule_tac t="\<lambda>x. l \<le> x \<and> x \<le> u" and  s="{l..u}" 
-      in subst, simp_all,
-      auto simp add: atLeastAtMost_def atLeast_def atMost_def mem_def)
-
-lemma finiteRange2 [simp]: 
-  "finite  (\<lambda>(x::int). l \<le>  x \<and>  x < u)"
-  by (rule_tac t="\<lambda>(x::int). l \<le>  x \<and>  x < u" and  s="{l..u - 1}" 
-      in subst, simp_all,
-      auto simp add: atLeastAtMost_def atLeast_def atMost_def mem_def)
 
 lemma sorted_equals_nth_mono2:
   "sorted xs = (\<forall>j < length xs. \<forall>i < length xs - j. xs ! j \<le> xs ! (j+i))"
@@ -2850,18 +2830,44 @@ by (simp add: mult_ac add_ac)
 
 
 lemma set_eq_iff_p:  "(\<forall>i. (i \<in> A) = P i) = (A = {i. P i})"
-  by (simp add: set_eq_iff Collect_def mem_def)
+  by (auto)
+  
+
 
 lemma suc_set: "{i. i>0 \<and> P (i - 1)} = Suc ` {i. P i}"
-  apply (auto simp add: set_eq_iff, simp add: Collect_def image_iff)
-  apply (rule bexI, auto simp add: mem_def)
-done
+  by (auto simp add: set_eq_iff image_iff)
 
 lemma suc_set2: "{i. i=0 \<or> P (i - 1)} = insert 0 (Suc ` {i. P i})"
-  apply (auto simp add: set_eq_iff, simp add: Collect_def image_iff)
-  apply (case_tac x, simp, drule bspec, auto simp add: mem_def)
-done
-(******************************************************************************)
+  by (auto simp add: set_eq_iff image_iff)
+
+(*----------------------------------------------------------------------------
+ The lemma foldl_conv_concat has disappeared in Isabelle 2013.
+------------------------------------------------------------------------------*)
+
+lemma (in semigroup_add) foldl_assoc:
+shows "foldl op+ (x+y) zs = x + (foldl op+ y zs)"
+by (induct zs arbitrary: y) (simp_all add:add_assoc)
+
+lemma (in monoid_add) foldl_absorb0:
+shows "x + (foldl op+ 0 zs) = foldl op+ x zs"
+by (induct zs) (simp_all add:foldl_assoc)
+
+lemma foldl_conv_concat:
+  "foldl (op @) xs xss = xs @ concat xss"
+proof (induct xss arbitrary: xs)
+  case Nil show ?case by simp
+next
+  interpret monoid_add "op @" "[]" proof qed simp_all
+  case Cons then show ?case by (simp add: foldl_absorb0)
+qed
+
+lemma concat_conv_foldl: "concat xss = foldl (op @) [] xss"
+  by (simp add: foldl_conv_concat)
+
+lemma (in monoid_add) foldl_foldr1_lemma:
+  "foldl op + a xs = a + foldr op + xs 0"
+  by (induct xs arbitrary: a) (auto simp: add_assoc)
+
 (******************************************************************************)
 
 end-proof

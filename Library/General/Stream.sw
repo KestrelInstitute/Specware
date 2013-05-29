@@ -659,8 +659,7 @@ proof Isa filterF_Obligation_the
    apply (simp add: set_eq_iff image_iff)
    apply (erule rev_mp,erule rev_mp, rule_tac n=n in nat_induct, clarify)
   (** Base Case **)
-   apply (rule_tac a="[]" in ex1I, rule_tac x="[]" in exI, simp add: mem_def)
-   apply (clarsimp, simp only: empty_def Collect_def fun_eq_iff, simp)
+   apply (rule_tac a="[]" in ex1I, rule_tac x="[]" in exI, simp, clarsimp)
   (** Step Case **)
    apply (clarsimp)
    apply (drule mp, erule subset_inj_on, simp add: subset_eq)
@@ -701,9 +700,8 @@ end-proof
 
 proof Isa removeNonesF_Obligation_subtype
  apply (rule_tac t="\<lambda>i_1. case s i_1 of None \<Rightarrow> False | Some x \<Rightarrow> True"
-             and s="\<lambda>i. s i \<noteq> None" in subst, 
-        auto simp add: mem_def)
- apply (case_tac "s x = None", auto)
+             and s="\<lambda>i. s i \<noteq> None" in subst, auto)
+ apply (rule ext, case_tac "s i = None", auto)
 end-proof
 
 proof Isa removeNonesI_Obligation_the
@@ -712,8 +710,8 @@ end-proof
 
 proof Isa removeNonesI_Obligation_subtype
  apply (rule_tac t="\<lambda>i_1. case s i_1 of None \<Rightarrow> False | Some x \<Rightarrow> True"
-            and  s="\<lambda>i. s i \<noteq> None" in subst, simp_all)
- apply (auto simp add: set_eq_iff mem_def, case_tac "s x", auto)
+            and  s="\<lambda>i. s i \<noteq> None" in subst,  auto)
+   apply (rule ext, case_tac "s i", auto)
 end-proof
 
 proof Isa mapPartialF_Obligation_subtype
@@ -741,9 +739,9 @@ proof Isa mapPartial3I_Obligation_subtype
 end-proof
 
 proof Isa flattenF_Obligation_subtype
-  apply (simp add: Integer__hasMin_p_def Stream__forall_p_def mem_def
+  apply (simp add: Integer__hasMin_p_def Stream__forall_p_def 
                  Integer__isMinIn_def Stream__removePrefix_def)
-  apply (auto simp add: finite_nat_set_iff_bounded_le Ball_def mem_def)
+  apply (auto simp add: finite_nat_set_iff_bounded_le Ball_def )
   apply (cut_tac m=id and k="m+1" 
              and P = "\<lambda>x. 0\<le>x \<and> (\<forall>i. null (sl (i+x)))"
          in ex_has_least_nat)
@@ -754,9 +752,9 @@ proof Isa flattenF_Obligation_subtype
 end-proof
 
 proof Isa flattenF_Obligation_subtype0
- apply (drule Stream__flattenF_Obligation_subtype)
- apply (unfold Least_def, rule the1I2, 
-        auto simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
+ apply (drule Stream__flattenF_Obligation_subtype, simp add: Least_def)
+ apply (rule the1I2, 
+        auto simp add: Integer__hasMin_p_def Integer__isMinIn_def )
  apply (rotate_tac 3, drule_tac x=y in spec, drule_tac x=x in spec, auto)
 end-proof
 
@@ -836,12 +834,11 @@ proof Isa positionsSuchThatF_Obligation_the
    apply (erule ex1E, clarify, rule_tac a=POSs in ex1I, safe)
    apply (rotate_tac -2, drule_tac x=i_1 in spec,
           clarsimp simp add: Stream__prefix_elements)
-   apply (drule_tac x=i_1 in spec, simp add: mem_def,
+   apply (drule_tac x=i_1 in spec, simp add: ,
           drule_tac x=i_1 in spec,
           clarsimp simp add: Stream__prefix_elements)
    apply (drule_tac x=x in spec, erule mp, clarsimp)
-   apply (drule_tac x=i in spec, simp add: mem_def, safe)
-   apply (auto simp add: Stream__prefix_elements)
+   apply (drule_tac x=i in spec, auto simp add: Stream__prefix_elements)
 end-proof
 
 proof Isa positionsSuchThatI_Obligation_the
@@ -850,15 +847,15 @@ end-proof
 
 proof Isa leftmostPositionSuchThat_Obligation_subtype
  apply (auto simp add: Stream__exists_p_def Integer__hasMin_p_def 
-                       Integer__isMinIn_def mem_def)
+                       Integer__isMinIn_def )
  apply (drule_tac k="i" and m=id in ex_has_least_nat, auto)
  apply (rule_tac x="int x" in exI, auto)
 end-proof
 
 proof Isa leftmostPositionSuchThat_Obligation_subtype0
- apply (unfold Least_def, rule the1I2, auto)
+ apply (simp add: Least_def, rule the1I2, auto)
  apply (drule  Stream__leftmostPositionSuchThat_Obligation_subtype,
-        simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
+        simp add: Integer__hasMin_p_def Integer__isMinIn_def )
  apply (drule_tac x=y in spec, drule_tac x=x in spec, auto)
 end-proof
 
@@ -868,8 +865,8 @@ end-proof
 
 proof Isa positionOf_Obligation_subtype
  apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
- apply (rule_tac t="\<lambda>ia. s ia = s i" and s="{i}" in subst)
- apply (simp add: set_eq_iff inj_on_def, auto simp only: mem_def)
+ apply (rule_tac t="{ia. s ia = s i}" and s="{i}" in subst)
+ apply (auto simp: set_eq_iff inj_on_def)
 end-proof
 
 proof Isa positionOf_Obligation_subtype0
@@ -904,25 +901,25 @@ end-proof
 
 proof Isa splitAtLeftmost_Obligation_subtype
   apply (simp add: Stream__exists_p_def Integer__hasMin_p_def 
-                   Integer__isMinIn_def mem_def, clarify)
+                   Integer__isMinIn_def , clarify)
   apply (drule_tac  m=id in ex_has_least_nat, clarify, simp)
   apply (rule_tac x="int x" in exI, auto)
 end-proof
 
 proof Isa splitAtLeftmost_Obligation_subtype0
   apply (drule Stream__splitAtLeftmost_Obligation_subtype)
-  apply (simp add: Integer__minIn__def)
-  apply (rule the1I2, simp add: Integer__minIn_Obligation_the)
-  apply (simp add: Integer__isMinIn_def mem_def)
+  apply (drule Integer__minIn_Obligation_the)
+  apply (simp add: Integer__isMinIn_def Integer__minIn__def Least_def)
+  apply (rule the1I2, auto)
 end-proof
 
 proof Isa leftmostPositionOfSublistAndFollowing_Obligation_subtype0
  by (simp add: Stream__sublistAt_p_def Set__infinite_p_def 
-               fun_Compl_def bool_Compl_def)
+               fun_Compl_def bool_Compl_def setToPred_def)
 end-proof
 
 proof Isa findLeftmost_Obligation_subtype0
- by (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def)
+by (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def setToPred_def)
 end-proof
 
 proof Isa findLeftmostAndPreceding_Obligation_subtype
@@ -930,12 +927,12 @@ proof Isa findLeftmostAndPreceding_Obligation_subtype
 end-proof
 
 proof Isa findLeftmostAndPreceding_Obligation_subtype0
-  by (simp add: Stream__splitAtLeftmost_Obligation_subtype0)
+  by (erule Stream__splitAtLeftmost_Obligation_subtype0)
 end-proof
 
 proof Isa longestCommonPrefix_Obligation_subtype
   apply (auto simp add: Integer__hasMax_p_def Integer__isMaxIn_def 
-                        mem_def fun_eq_iff list_eq_iff_nth_eq 
+                         fun_eq_iff list_eq_iff_nth_eq 
                         Stream__prefix_elements)
   apply (drule_tac k="x" and m=id in ex_has_least_nat, auto)
   apply (rule_tac x="int x" in exI, auto)
@@ -943,10 +940,9 @@ proof Isa longestCommonPrefix_Obligation_subtype
 end-proof
 
 proof Isa longestCommonPrefix_Obligation_subtype0
-  apply (unfold Greatest_def, unfold GreatestM_def, rule someI2_ex)
-  apply (drule Stream__longestCommonPrefix_Obligation_subtype,
-         simp only: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
-  apply (simp)
+  apply (simp add: Greatest_def GreatestM_def, rule someI2_ex, simp_all)
+  apply (drule Stream__longestCommonPrefix_Obligation_subtype)
+  apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def )
 end-proof
 
 proof Isa permute_Obligation_the
@@ -968,10 +964,8 @@ end-proof
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 
-
-
 lemma Stream__unflattenI_lens:
-   "\<lbrakk>Set__infinite_p (\<lambda>i. lens i \<noteq> 0)\<rbrakk> \<Longrightarrow> 
+   "\<lbrakk>Set__infinite_p {i. lens i \<noteq> 0}\<rbrakk> \<Longrightarrow> 
     Stream__map length (Stream__unflattenI (s, lens)) = lens"
   apply (drule_tac s=s in Stream__unflattenI_Obligation_the)
   apply (simp add: Stream__unflattenI_def)
@@ -979,7 +973,7 @@ lemma Stream__unflattenI_lens:
 done
 
 lemma Stream__unflattenI_flatten:
-   "\<lbrakk>Set__infinite_p (\<lambda>i. lens i \<noteq> 0)\<rbrakk> \<Longrightarrow> 
+   "\<lbrakk>Set__infinite_p {i. lens i \<noteq> 0}\<rbrakk> \<Longrightarrow> 
      Stream__flattenI (Stream__unflattenI (s, lens)) = s"
   apply (drule_tac s=s in Stream__unflattenI_Obligation_the)
   apply (simp add: Stream__unflattenI_def)
@@ -1006,9 +1000,9 @@ lemma Stream__unflattenU_flatten [simp]:
 done
 
 lemma Stream__unflattenU_infinite [simp]:
-  "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> \<not> finite (\<lambda>i. Stream__unflattenU (s, n) i \<noteq> [])"
+  "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> \<not> finite {i. Stream__unflattenU (s, n) i \<noteq> []}"
   apply (clarify)
-  apply (drule_tac A="UNIV" in rev_finite_subset, auto simp add: mem_def)
+  apply (drule_tac A="UNIV" in rev_finite_subset, auto)
   apply (frule_tac s=s in Stream__unflattenU_lens)
   apply (simp only: Stream__map_def Stream__repeat_def fun_eq_iff)
   apply (drule_tac x=x in spec, auto)
@@ -1024,9 +1018,9 @@ lemma Stream__increasingNats_p_inf_growth:
 done
 
 lemma Stream__noRepetitions_p_finite_args:
-  "Stream__noRepetitions_p s \<Longrightarrow> finite (\<lambda>i. s i = a)"
+  "Stream__noRepetitions_p s \<Longrightarrow> finite {i. s i = a}"
   apply (cut_tac F="{a}" and h=s in finite_vimageI)
-  apply (auto simp add: vimage_def Collect_def Stream__noRepetitions_p_def)
+  apply (auto simp add: vimage_def  Stream__noRepetitions_p_def)
 done
 
 

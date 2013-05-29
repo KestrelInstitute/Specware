@@ -63,19 +63,14 @@ proof Isa Option__isoOption_subtype_constr1
 end-proof
 
 proof Isa isoOption_subtype_constr2
- apply(simp add: bij_ON_def Option__isoOption_def, auto) 
+ apply(simp add: bij_ON_def Option__isoOption_def, auto)
  (** first subgoal **)
  apply(simp add: inj_on_def Option.map_def, auto)
- apply (simp split: option.split_asm add: Option__Option_P.simps mem_def)
+ apply (simp split: option.split_asm add: Option__Option_P.simps)
  (** second subgoal **)
  apply(simp add:surj_on_def Option.map_def, auto)
- apply (simp add: Option__Option_P.simps mem_def)
- apply (rule_tac P="y = None" in case_split, auto)
- (** subgoal 2.1    **)
- apply (rule_tac x="None" in bexI, simp, simp add: mem_def)
- (** subgoal 2.2 needs some guidance   **)
- apply (drule_tac x = "ya" in  bspec, auto simp add: mem_def)
- apply (rule_tac x="Some x" in bexI, auto  simp add: mem_def)
+ apply(metis (full_types) Option.map_def Option__Option_P.simps(1) 
+       Option__Option_P.simps(2) not_Some_eq option_map_None option_map_Some)
 end-proof
 
 

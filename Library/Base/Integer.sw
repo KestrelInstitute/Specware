@@ -919,8 +919,10 @@ end-proof
 proof Isa gcd_of_not_both_zero
   apply(subgoal_tac "int 0 < int (igcd(x,y))", simp (no_asm_simp), clarify)
   apply(metis igcd_to_zgcd int_eq_0_conv zdvd_imp_le zgcd_greatest_iff)
-  apply(metis Pls_def_raw gcd_int.commute gcd_pos_int igcd_to_zgcd
-              int_eq_0_conv zgcd_specware_def)
+  apply(metis Integer__negative_p_alt_def Integer__negative_p_def 
+              Integer__positive_p_alt_def Integer__zero_p_def abs_eq_0 
+              dvd_0_left igcd_to_zgcd linorder_not_le of_nat_0 zgcd_0 
+              zgcd_geq_zero zgcd_zdvd2)
 end-proof
 
 proof Isa lcm_smallest_abs_multiple
@@ -1018,7 +1020,7 @@ proof Isa divF__def1
 end-proof
 
 proof Isa modF__def
-  apply(cut_tac a=i and b=j and k=0 in zdiv_zmod_equality, arith)
+by (metis mod_via_div)
 end-proof
 
 proof Isa divF_is_largest  
@@ -1320,7 +1322,7 @@ lemma zld_at_least_pos:   "\<lbrakk>0 < i\<rbrakk> \<Longrightarrow> i \<ge> 2 ^
       simp only: convert_to_nat_2 zpower_int)
 
 lemma zld_lower:   "i \<ge> - (2 ^ zld i)"
-  by (cases "i \<ge> 0", rule zle_trans, auto,
+  by (cases "i \<ge> 0", rule order_trans, auto,
       cut_tac x="nat (-(i+1))" and base=2 in ld_mono, simp, simp add: zld_def)
 
 lemma zld_at_most_neg:   "\<lbrakk>i < -1\<rbrakk> \<Longrightarrow> i < -(2 ^ (zld i - 1))"

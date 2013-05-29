@@ -7,30 +7,47 @@ In this spec we follow that customary approach, which is very clear and
 simple. All the types and ops in this spec are defined, i.e. this spec is a
 definitional extension; therefore, it is readily seen to be consistent. *)
 
-type Set a = a -> Bool
+type Predicate a = a -> Bool
+type Set a = Predicate a
 
 %%% Generate stp versions of finite_insert and induction in case they are useful later
 proof Isa -stp-theorems end-proof
-
-(*** Lemmas About Set_P RSet and Fun_PD ***)
-proof Isa -verbatim
-lemma Set_Set_P_converse: "Set_P P A \_Longrightarrow (\_forall x \_in A . P x)"
-  by (auto simp add: Set_P_def mem_def)
-lemma Set_P_unfold:       "Set_P P A = (\_forall x \_in A . P x)"
-  by (auto simp add: Set_P_def mem_def)  
-lemma Set_Fun_PD_Set_P:   "Fun_PD P A \_Longrightarrow Set_P P A"
-  by (auto simp add: Set_P_def mem_def)
-lemma Set_Set_P_Fun_PD:   "Set_P P A \_Longrightarrow Fun_PD P A"
-  by (auto simp add: Set_P_def mem_def)
-lemma Set_Set_P_RSet:     "Set_P P A \_Longrightarrow (RSet P A = A)"
-  by (auto simp add: Set_P_def mem_def)
-end-proof
 
 % membership:
 
 op [a] in? (x:a, s:Set a) infixl 20 : Bool = s x
 
 op [a] nin? (x:a, s:Set a) infixl 20 : Bool = ~(x in? s)
+
+%% Used for coercion between Isabelle sets and predicates
+%op [a] collect (P: Predicate a): Set a = P
+op [a] r_in? (s:Set a) (x:a): Bool = s x
+proof Isa -> setToPred end-proof
+
+
+proof Isa -verbatim
+lemma Collect__setToPred__inverses1 [simp]:
+  "Collect(setToPred s) = s"
+  by (rule set_eqI, simp add: setToPred_def)
+
+lemma Collect__setToPred__inverses2 [simp]:
+  "setToPred(Collect f) = f"
+  by  (rule ext, simp add: setToPred_def)
+
+
+(*** Lemmas About Set_P RSet and Fun_PD ***)
+
+lemma Set_Set_P_converse: "Set_P P A \<Longrightarrow> (\<forall> x \<in> A . P x)"
+  by (auto simp add: Set_P_def)
+lemma Set_P_unfold:       "Set_P P A = (\<forall> x \<in> A . P x)"
+  by (auto simp add: Set_P_def)  
+lemma Set_Fun_PD_Set_P:   "Fun_PD P A \<Longrightarrow> Set_P P (Collect A)"
+  by (simp add: Set_P_def)
+lemma Set_Set_P_Fun_PD:   "Set_P P A \<Longrightarrow> Fun_PD P (setToPred A)"
+  by (simp add: setToPred_def Set_P_def)
+lemma Set_Set_P_RSet:     "Set_P P A \<Longrightarrow> (RSet P A = A)"
+  by (auto simp add: Set_P_def)
+end-proof
 
 % Lifting a predicate from elements to regularized sets
 op [a] Set_P (Pa: a -> Bool) (s:Set a): Bool =
@@ -102,10 +119,10 @@ op empty : [a] Set a = fn _ -> false
 op [a] empty? (s:Set a) : Bool = (s = empty)
 
 proof Isa -verbatim
-lemma Set_empty_apply[simp]:  "{} x = False"       by auto
+lemma Set_empty_apply[simp]:  "x \<in> {} = False"       by auto
 lemma Set_RSet_empty[simp]:   "RSet P_a {} = {}"   by auto
 lemma Set_Set_P_empty[simp]:  "Set_P P {} = True"  by (simp add:Set_P_def)
-lemma Set_Fun_PD_empty[simp]: "Fun_PD P {} = True" by auto
+lemma Set_Fun_PD_empty[simp]: "Fun_PD P (setToPred {}) = True" by (simp add: setToPred_def)
 lemma Set_empty_p_equiv_empty_p_stp:
    "Set__empty_p s = Set__empty_p__stp P__a s"     by auto
 end-proof
@@ -119,13 +136,13 @@ type Set1 a = (Set a | nonEmpty?)
 proof Isa -verbatim
 lemma Set__nonEmpty_p_stp_equ_nonEmpty_p_stp:
   "Set__nonEmpty_p__stp P__a s = Set__nonEmpty_p s"
-  by (auto simp add:Set__nonEmpty_p__stp_def Set__nonEmpty_p_def mem_def)
+  by (auto simp add:Set__nonEmpty_p__stp_def Set__nonEmpty_p_def)
 lemma Set__nonEmpty_p_stp_EX_x_t:
   "\_lbrakk Set_P P__a s; Set__nonEmpty_p__stp P__a (s::'a set)\_rbrakk \_Longrightarrow
     (\_exists (x::'a) (t::'a set). P__a x \_and x \_notin t \_and (s = insert x t))"
 proof(cases "s = {}")
  assume "Set_P P__a s" "Set__nonEmpty_p__stp P__a s" "s = {}"
- from this show ?thesis by(auto simp:Set__nonEmpty_p__stp_def mem_def)
+ from this show ?thesis by(auto simp:Set__nonEmpty_p__stp_def)
 next
  assume "Set_P P__a s" "Set__nonEmpty_p__stp P__a s" "s \_noteq {}"
  from `s \_noteq {}` have "\_exists x. x \_in s" by(auto)
@@ -146,8 +163,8 @@ op full : [a] Set a = fn _ -> true
 op [a] full? (s:Set a) : Bool = (s = full)
 
 proof Isa -verbatim
-lemma Set__full_apply[simp]:  "UNIV x = True"
-  by (auto simp add:Set__full__def)
+lemma Set__full_apply[simp]:  "x \<in> UNIV = True"
+  by (simp add: UNIV_I)
 lemma Set__full_stp_apply:    "\_lbrakkP__a x; Set__full_p__stp P__a s\_rbrakk \_Longrightarrow x \_in s"  
   by (auto simp add:Set__full_p__stp_def)
 end-proof
@@ -163,12 +180,11 @@ op [a] onlyMemberOf (x:a, s:Set a) infixl 20 : Bool =
 
 proof Isa -verbatim
 lemma Set_single_simp [simp]:   "Set__single x = {x}"
-   by (rule set_eqI, simp, simp add: mem_def Set__single_def)
-lemma Set_single_simp_app1:     "{x} x = True"
-   by(simp del:Set_single_simp add:Set_single_simp[symmetric] Set__single_def)
-lemma Set_single_simp_app2:     "{x} y = (x = y)"
-  by(simp del:Set_single_simp  
-          add:Set_single_simp[symmetric] Set__single_def eq_ac)
+  by (rule set_eqI, simp, simp add: Set__single_def)
+lemma Set_single_simp_app1:     "x \<in> {x} = True"
+  by auto
+lemma Set_single_simp_app2:     "y \<in> {x} = (x = y)"
+  by auto
 lemma Set_Pa_Set_P_single:      "P__a (x::'a) \_Longrightarrow Set_P P__a (Set__single x)"
   by(auto simp:Set_P_def)
 lemma Set_Pa_RSet_single[simp]: "P__a (x::'a)\_Longrightarrow RSet P__a (Set__single x) = Set__single x"
@@ -194,13 +210,14 @@ lemma Set__RSet_insert_simp[simp]:
 lemma Set__Set_P_insert:
   "\_lbrakk Set_P P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow Set_P P__a (insert x s)"
   by (auto simp add:Set_P_def)
+(* sjw
 lemma Set__Fun_PD_insert:
   "\_lbrakk Fun_PD P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow Fun_PD P__a (insert x s)"
   proof(rule Set_Set_P_Fun_PD)
    assume "Fun_PD P__a (s::'a set)"  "P__a x" 
    thus "Set_P P__a (insert x s)"
      by (simp add:Set_Fun_PD_Set_P Set__Set_P_insert)
-  qed
+  qed *)
 lemma Set_P_Set_P_insert2: 
   "Set_P P__a (insert x s) \_Longrightarrow Set_P P__a s"
   by (auto simp: Set_P_def)
@@ -224,6 +241,9 @@ lemma Set__SetP_less:
 lemma Set_P_Set_P_Less2: 
   "\_lbrakk Set_P P__a (s less x); P__a (x::'a)\_rbrakk \_Longrightarrow Set_P P__a s"
   by (auto simp: Set_P_def) 
+
+
+(* sjw
 lemma Set_Fun_PD_less:
   "\_lbrakk Fun_PD P__a s; P__a (x::'a)\_rbrakk \_Longrightarrow Fun_PD P__a (s less x)"
   proof(rule Set_Set_P_Fun_PD)
@@ -232,7 +252,7 @@ lemma Set_Fun_PD_less:
    from this have "Set_P P__a s" by(simp add: Set_Fun_PD_Set_P) 
    from this show "Set_P P__a (s less x)"
    by (rule_tac s=s and P__a=P__a in Set__SetP_less)
-  qed
+  qed *)
 end-proof
 
 % map (partial) function over set:
@@ -306,12 +326,12 @@ type FiniteSet a = (Set a | finite?)
 (* Lemmas for proofs about finite sets *)
 proof Isa -verbatim
 lemma Set__finite_insert__stp_sans:
-"\_lbrakk Set__finite_p__stp P__a (s::'a \_Rightarrow bool); Fun_PD P__a s; 
+"\_lbrakk Set__finite_p__stp P__a (s::'a set); Set_P P__a s; 
   P__a (x::'a)\_rbrakk \_Longrightarrow 
  Set__finite_p__stp P__a (insert x (s::'a set))"
 proof -
 assume ps:"Set__finite_p__stp P__a (s::'a set)"
-           "Fun_PD P__a s"
+           "Set_P P__a s"
            "P__a x"
 thus "Set__finite_p__stp P__a (insert x s)"
  apply(simp add: Set__finite_p__stp_def)
@@ -337,14 +357,14 @@ proof Isa -verbatim
 lemma Set__finite_p_stp_imp_finite:
 "\_lbrakk Set__finite_p__stp (P__a::'a\_Rightarrow bool) (s::'a set); Set_P P__a s\_rbrakk
  \_Longrightarrow finite s"
-by(auto simp add:Set__finite_p__def Set__empty_p_def mem_def
+by(auto simp add:Set__finite_p__def Set__empty_p_def
            Set__finite_p__stp_def Set__empty_p__stp_def Set_P_def,
            blast)
 lemma Set__finite_p_imp_finite_stp:
 "\_lbrakk finite (s::'a set); Set_P (P__a::'a\_Rightarrow bool) s\_rbrakk \_Longrightarrow Set__finite_p__stp P__a s"
 proof(induct s rule: finite.induct)
  show "Set__finite_p__stp P__a {}" 
- by(auto simp:Set__finite_p__stp_def Set__empty_p__stp_def mem_def) 
+ by(auto simp:Set__finite_p__stp_def Set__empty_p__stp_def) 
 next
  fix A::"'a set" and a::"'a"
  assume "finite A" "Set_P P__a A \_Longrightarrow Set__finite_p__stp P__a A"
@@ -355,10 +375,10 @@ next
  have "Set_P P__a A" by (rule Set_P_Set_P_insert2)
  from `Set_P P__a A \_Longrightarrow Set__finite_p__stp P__a A` this 
  have "Set__finite_p__stp P__a A" by auto
- from `Set_P P__a A` have "Fun_PD P__a A" by (rule Set_Set_P_Fun_PD)
+ from `Set_P P__a A` have "Fun_PD P__a (setToPred A)" by (rule Set_Set_P_Fun_PD)
  from `Set__finite_p__stp P__a A` this `P__a a`
  have "Set__finite_p__stp P__a (RSet P__a (insert a A))" 
- by (simp only: Set__finite_insert__stp Set_Fun_PD_Set_P)
+   by (metis Set__finite_insert__stp `Set_P P__a A`)
  from `Set_P P__a A` `P__a a` this 
  show "Set__finite_p__stp P__a (insert a A)" by (simp only: Set__RSet_insert_simp)
 qed
@@ -375,24 +395,24 @@ next
  thus "Set__finite_p__stp P__a s" by(simp add: Set__finite_p_imp_finite_stp) 
 qed 
 theorem Set__finite_less__stp_sans:
-  "\_lbrakk Set__finite_p__stp P__a (s::'a \_Rightarrow bool); 
-    Fun_PD P__a s; 
+  "\_lbrakk Set__finite_p__stp P__a (s::'a set); 
+    Set_P P__a s; 
     P__a (x::'a)\_rbrakk \_Longrightarrow 
    Set__finite_p__stp P__a (s less x)"
 proof (rule_tac s="s less x" in Set__finite_p_imp_finite_stp)
- assume "Set__finite_p__stp P__a (s::'a \_Rightarrow bool)" 
-        "Fun_PD P__a s"
+ assume "Set__finite_p__stp P__a (s::'a set)" 
+        "Set_P P__a s"
         "P__a (x::'a)"
  then have "finite s" by(auto simp: Set_Fun_PD_Set_P Set__finite_p_stp_imp_finite)
  thus "finite (s less x)" by(auto simp:less_def)
 next
- assume "Fun_PD P__a s" 
+ assume "Set_P P__a s" 
  thus "Set_P P__a (SW_Set.less s x)" 
  by(simp only:Set_Fun_PD_Set_P Set__SetP_less)
 qed
 lemma Set__finite_less__stp:
-  "\_lbrakk Set__finite_p__stp P__a (s::'a \_Rightarrow bool); 
-    Fun_PD P__a s; 
+  "\_lbrakk Set__finite_p__stp P__a (s::'a set); 
+    Set_P P__a s; 
     P__a (x::'a)\_rbrakk \_Longrightarrow 
    Set__finite_p__stp P__a (RSet P__a (s less x))"
 by(simp only:Set_Fun_PD_Set_P Set__RSet_less_simp
@@ -400,7 +420,7 @@ by(simp only:Set_Fun_PD_Set_P Set__RSet_less_simp
 lemma finite_induct_stp[rule_format]:
 "\_lbrakkfinite (S::'a set);
   (P::('a set) \_Rightarrow bool) {}; 
-  \_forall(A::'a \_Rightarrow bool) a::'a. finite A \_and Set_P PA A \_and PA a \_and P A \_longrightarrow P (insert a A)\_rbrakk
+  \_forall(A::'a set) a::'a. finite A \_and Set_P PA A \_and PA a \_and P A \_longrightarrow P (insert a A)\_rbrakk
  \_Longrightarrow  Set_P PA S \_longrightarrow P S"
   apply (erule finite.induct)
   apply (rule impI, assumption)
@@ -444,10 +464,10 @@ proof Isa -verbatim
 fun SIZ::"('a\_Rightarrowbool) \_Rightarrow ('a set) \_Rightarrow nat"
 where 
 "SIZ p s = 
-         (if (\_not (Set__finite_p__stp p s) \_or \_not (Fun_PD p s))
+         (if (\_not (Set__finite_p__stp p s) \_or \_not (Set_P p s))
           then regular_val else card s)" 
 lemma SIZ_CARD[rule_format]:
- "\_lbrakkSet__finite_p__stp p s; Fun_PD p s\_rbrakk
+ "\_lbrakkSet__finite_p__stp p s; Set_P p s\_rbrakk
   \_Longrightarrow SIZ p s = card s" 
 by simp
 end-proof
@@ -613,7 +633,7 @@ proof (induct n arbitrary: A x x' h rule: less_induct)
         hence "f c d = u"  by (rule IH [OF lessB Bfuncom Beq inj_onB Bu])  
         moreover have "f b d = v"
         proof (rule IH[OF lessC Cfuncom Ceq inj_onC Cv]) 
-          show "fold_graph f z C (f b d)" using C notinB Dfoldd by fastsimp
+          show "fold_graph f z C (f b d)" using C notinB Dfoldd by auto
         qed 
         ultimately show ?thesis 
           using Afuncom AbB AcC x x'  by (auto simp add: fun_left_comm_on_def)
@@ -629,6 +649,11 @@ apply (erule exE, erule exE, erule conjE)
 apply (drule fold_graph_determ_aux, auto)
 done
 
+(* There is now a fold in List.thy - we need the one from Finite_Set *)
+
+definition fold :: "('a \<Rightarrow> 'b \<Rightarrow> 'b) \<Rightarrow> 'b \<Rightarrow> 'a set \<Rightarrow> 'b" where
+  "fold f z A = (THE y. fold_graph f z A y)"
+
 lemma fold_equality:
   "\<lbrakk>fun_left_comm_on f A; fold_graph f z A y\<rbrakk> \<Longrightarrow> fold f z A = y"
 by (unfold fold_def) (blast intro: fold_graph_determ)
@@ -638,7 +663,7 @@ lemma fold_insert_aux:
   \<Longrightarrow> fold_graph f z (insert x A) v = (\<exists>y. fold_graph f z A y \<and> v = f x y)"
 apply auto
 apply (rule_tac A1=A and f1=f and z1=z in finite_imp_fold_graph [THEN exE])
-apply (fastsimp dest: fold_graph_imp_finite)
+apply (auto dest: fold_graph_imp_finite)
 apply (rule_tac x=xa in exI, auto)
 apply (drule fold_graph.insertI, auto)
 apply (thin_tac "fold_graph f z A xa")
@@ -733,6 +758,7 @@ type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
 
 op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
 
+
 % ------------------------------------------------------------------------------
 % ------------------ Theory Morphisms ------------------------------------------
 % ------------------------------------------------------------------------------
@@ -740,7 +766,8 @@ op [a] max (ss: SetOfSetsWithMax a) : Set a = the(s) s isMaxIn ss
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism Set 
-  type Set.Set -> set (id,id)
+  type Set.Set -> set (setToPred, Collect)
+  % Set.collect -> Collect
   Set.Set_P -> Set_P
   Set.in? -> \<in> Left 50
   Set.nin? -> \<notin> Left 50
@@ -777,7 +804,7 @@ proof Isa Set_P__def
 end-proof
 
 proof Isa empty__def
-  by (auto simp add: mem_def)
+  by (auto)
 end-proof
 
 proof Isa empty? [simp] end-proof
@@ -785,7 +812,7 @@ proof Isa empty? [simp] end-proof
 proof Isa empty_p__stp [simp] end-proof
 
 proof Isa full__def
-  by (auto simp add: mem_def)
+  by (auto)
 end-proof
 
 proof Isa full? [simp] end-proof
@@ -831,6 +858,12 @@ proof Isa induction__stp_Obligation_subtype0
 end-proof
 
 proof Isa induction__stp
+ by (induct_tac s rule:finite_induct_stp, 
+     auto simp: Set__finite_p_stp_imp_finite)
+end-proof
+
+(* sjw
+ ****** ck removed OLD proof 
   proof -
  assume 
  "Fun_PD (Set__finite_p__stp (P__a::'a\_Rightarrowbool) &&& Set_P P__a) (p::'a set \_Rightarrow bool)"
@@ -864,8 +897,7 @@ proof Isa induction__stp
   from `Set_P P__a s` show "Set_P P__a s" 
   by(simp)
  qed
-qed
-end-proof
+qed  *)
 
 proof Isa induction
   proof - (* induct_tac s rule:finite_induct, auto *)
@@ -920,17 +952,23 @@ proof Isa fold_Obligation_the
   apply (rule_tac a="(\<lambda>(c,f,s). if finite s \<and> Set__foldable_p (c,f,s)
                                    then fold (\<lambda>x y. f (y,x)) c s 
                                    else regular_val)" in ex1I, auto)
+  apply (rule fold_equality, 
+         auto simp: fold_graph.intros fun_left_comm_on_def 
+                    finite_imp_fold_graph)
   apply (drule_tac f="\<lambda>x y. f_1 (y,x)" in fold_insert_remove, 
          simp add:fun_left_comm_on_def, auto)
   apply (rule ext, simp only: split_paired_all)
   apply (case_tac "finite b", simp_all)
   apply (induct_tac b rule: finite_induct, auto simp add: empty_false)
+  apply (rule fold_equality [symmetric], 
+         auto simp: fold_graph.intros fun_left_comm_on_def 
+                    finite_imp_fold_graph)
   apply (drule_tac A=F and x=xa and z=a and f="\<lambda>x y. aa (y,x)" 
          in fold_insert, simp_all add: fun_left_comm_on_def)
 end-proof
 
 proof Isa Set__toSet_Obligation_subtype
-  by (simp add: mem_def)
+  by (simp)
 end-proof
 
 proof Isa  Set__min_Obligation_the
@@ -963,21 +1001,20 @@ proof Isa -verbatim
 
 
 lemma Set_P__stp_unfold_aux:
- "Set__Set_P__stp P Q A = (\<forall>x\<in>A\<inter>P. Q x)"
-by (auto simp add: Set__Set_P__stp_def mem_def)
+ "Set__Set_P__stp P Q A = (\<forall>x\<in>A\<inter>Collect P. Q x)"
+by (auto simp add: Set__Set_P__stp_def)
 
 lemma Set_P__stp_unfold:
- "Set__Set_P__stp P Q A = (\<forall>x. (A x \<and> P x) \<longrightarrow> Q x)"
-by (auto simp add: Set__Set_P__stp_def mem_def)
-
+ "Set__Set_P__stp P Q A = (\<forall>x. (x \<in> A \<and> P x) \<longrightarrow> Q x)"
+by (auto simp add: Set__Set_P__stp_def)
 
 lemma Set__infinite_nat_growth:
-  "\<lbrakk>Set__infinite_p (\<lambda>(i::nat). p i)\<rbrakk>  \<Longrightarrow> \<forall>j. \<exists>i>j. p i"
-  apply (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def) 
-  apply (auto simp add: finite_nat_set_iff_bounded Bex_def mem_def not_less)
-  apply (drule_tac x="Suc j" in spec, clarify, rule_tac x=x in exI, auto )
+  "\<lbrakk>Set__infinite_p {i::nat. p i}\<rbrakk>  \<Longrightarrow> \<forall>j. \<exists>i>j. p i"
+  apply (auto simp: Set__infinite_p_def fun_Compl_def bool_Compl_def
+                    setToPred_def
+                    finite_nat_set_iff_bounded Bex_def not_less)
+  apply (drule_tac x="Suc j" in spec, clarify, rule_tac x=n in exI, auto )
 done
-
 end-proof
 
 

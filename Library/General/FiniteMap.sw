@@ -266,9 +266,8 @@ end-proof
 proof Isa applyis_Obligation_subtype
   apply (simp add: Map__applyis_def Map__maps_p_def definedAt_m_def 
                    Map__domain__def e_at_m_def,
-         auto simp add: mem_def split: option.split)
+         auto simp add:  split: option.split)
   apply (cut_tac m=m in FMap__domain_Obligation_subtype, simp add: dom_def)
-  apply (rule finite_subset, auto simp add: mem_def)
 end-proof
 
 proof Isa id_Obligation_subtype
@@ -278,7 +277,7 @@ end-proof
 proof Isa e_cl_gt_Obligation_subtype
   apply (cut_tac m=m1 in FMap__domain_Obligation_subtype,          
          simp add: map_comp_def dom_def)
-  apply (rule finite_subset, auto simp add: mem_def split: option.split)
+  apply (rule finite_subset, auto simp add:  split: option.split)
 end-proof
 
 proof Isa o_Obligation_subtype
@@ -288,13 +287,13 @@ end-proof
 proof Isa e_dsh_dsh_Obligation_subtype
   apply (cut_tac m=m in FMap__domain_Obligation_subtype,          
          simp add: e_dsh_dsh_m_def dom_def)
-  apply (rule finite_subset, auto simp add: mem_def split: option.split)
+  apply (rule finite_subset, auto simp add:  split: option.split)
 end-proof
 
 proof Isa e_dsh_Obligation_subtype
   apply (cut_tac m=m in FMap__domain_Obligation_subtype,          
          simp add: e_dsh_dsh_m_def dom_def)
-  apply (rule finite_subset, auto simp add: mem_def split: option.split)
+  apply (rule finite_subset, auto simp add:  split: option.split)
 end-proof
 
 proof Isa e_fsl_bsl_Obligation_subtype
@@ -322,7 +321,7 @@ proof Isa filter_Obligation_subtype
   apply (auto, rule_tac B="dom (Rep_Map__FiniteMap (FMap__fromFMap m))" 
                   in finite_subset, simp_all)
   apply (cut_tac m=m in FMap__domain_Obligation_subtype, 
-         auto simp add: dom_def mem_def)
+         auto simp add: dom_def )
 end-proof
 
 proof Isa restrictDomain_Obligation_subtype
@@ -332,7 +331,7 @@ end-proof
 proof Isa restrictRange_Obligation_subtype
   by (simp, rule_tac B="dom (Rep_Map__FiniteMap (FMap__fromFMap m))" 
                 in finite_subset, simp_all,
-      auto simp add: Map__restrictRange_def dom_def mem_def)
+      auto simp add: Map__restrictRange_def dom_def )
 end-proof
 
 proof Isa single_Obligation_subtype
@@ -346,7 +345,7 @@ end-proof
 proof Isa thePair_Obligation_subtype0
   apply (simp add: Map__single_p_def unique_singleton 
                    definedAt_fm_def definedAt_m_def the_elem_def )
-  apply (rule the1I2, auto simp add: unique_singleton1 set_eq_iff mem_def)  
+  apply (rule the1I2, auto simp add: unique_singleton1 set_eq_iff )  
 end-proof
 
 proof Isa foldable_p_Obligation_subtype
@@ -389,52 +388,46 @@ defs FMap__fromSet_def:
 consts FMap__toSet :: " ('a, 'b)FMap__FMap \<Rightarrow> ('a \<times> 'b) Set__FiniteSet"
 defs FMap__toSet_def: 
   "FMap__toSet m
-     \<equiv> (\<lambda> ((x::'a), (y::'b)). 
+     \<equiv> Collect (\<lambda> ((x::'a), (y::'b)). 
              Map__maps_p (Rep_Map__FiniteMap (FMap__fromFMap m)) x y)"
 
 (****** now link various concepts on FMaps to those on sets *****************)
 
 lemma FMap__toSet_inv_aux:
-  "\<lbrakk>finite s\<rbrakk> \<Longrightarrow> 
-    (\<lambda>x. let yS = \<lambda>y. s (x, y) in if yS = {} then None else Some (the_elem yS))
-   \<in> Map__FiniteMap"
-  apply (simp add:  Map__FiniteMap_def Let_def dom_if)
-  apply (rule_tac B="{fst x |x. s x}" in finite_subset)
+  "\<lbrakk>finite s\<rbrakk> \<Longrightarrow>  
+    (\<lambda>x. if \<forall>xa. (x, xa) \<notin> s then None else Some (the_elem {y. (x, y) \<in> s}))
+    \<in>  {x. Map__finite_p x}"
+  apply (simp add: dom_if)
+  apply (rule_tac B="{fst x |x.  x \<in> s}" in finite_subset)
   defer
-  apply (rule finite_image_set, simp add: Collect_def, auto simp add: mem_def)
+  apply (rule finite_image_set, auto)
 done
 
 lemma  FMap__toSet_inv : 
   "\<lbrakk>finite s; Relation__functional_p s\<rbrakk> \<Longrightarrow> FMap__toSet (FMap__fromSet s) = s"
-  apply (frule_tac FMap__toSet_inv_aux)
+  apply (frule_tac FMap__toSet_inv_aux) 
   apply (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def e_at_m_def
                    FMap__fromSet_def
                    Relation__functional_p_def Relation__apply_def dom_def
-                 FMap__fromFMap_def Function__inverse_f_apply                  
-                 FMap__update_Obligation_subtype
-                 FMap__toFMap_subtype_constr,
-         simp add: mem_def)
-  apply (thin_tac "Map__FiniteMap ?s", 
-         rule ext, case_tac x, simp add: Let_def)
-  apply (drule_tac x=a in spec, erule disjE, simp_all, rule conjI)
-  apply (clarsimp, 
-         rule impI, simp add: unique_singleton the_elem_def,
-         rule the1I2, simp add: unique_singleton1)
-  apply (auto simp add: set_eq_iff mem_def)
+                   FMap__fromFMap_def Function__inverse_f_apply                  
+                   FMap__update_Obligation_subtype
+                   FMap__toFMap_subtype_constr)
+  apply (rule set_eqI, case_tac x, simp)
+  apply (drule_tac x=a in spec, erule disjE, simp_all)
+  apply (clarsimp, auto simp add: set_eq_iff)
 done
 
 
 lemma  FMap__fromSet_inv :  "FMap__fromSet (FMap__toSet m) = m"
   apply (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def e_at_m_def
-                   FMap__fromSet_def Relation__apply_def mem_lambda_pair)
+                   FMap__fromSet_def Relation__apply_def)
   apply (rule_tac t="?m = m" and s="?m = FMap__toFMap (FMap__fromFMap m)"
          in subst, simp add: FMap__toFMap_f_f)
   apply (rule_tac f=FMap__toFMap in arg_cong, rule sym)
   apply (subst Rep_Map__FiniteMap_simp [symmetric],
-         simp add: Let_def dom_if mem_def set_eq_iff Collect_def)
+         simp add: Let_def dom_if  set_eq_iff)
   apply (rule sym, rule ext, 
-         auto simp add: Let_def set_eq_iff mem_def Collect_def dom_def
-                        the_elem_def)
+         auto simp add: Let_def set_eq_iff dom_def the_elem_def)
   apply (rule the1_equality, auto)
 done
 
@@ -451,23 +444,21 @@ lemma FMap__Set_finite [simp]:
   apply (cut_tac m=m in FMap__domain_Obligation_subtype, simp add: dom_def,
          cut_tac m=m in FMap__range_Obligation_subtype, simp add: ran_def,
          drule_tac  finite_cartesian_product, simp, thin_tac ?P)
-  apply (rule finite_subset) defer apply (simp, thin_tac ?P)
-  apply (auto simp add: mem_def, rule exI, auto)
+  apply (rule finite_subset, auto)
 done
 
 lemma FMap__Set_Relation__functional_p [simp]:
   "Relation__functional_p (FMap__toSet m)"
   by (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def e_at_m_def
                 Relation__functional_p_def Relation__apply_def,
-      auto simp add: mem_def)
+      auto)
 
 lemma FMap__Set_empty [simp]:
   "FMap__toSet empty_fm = {}"
   by (simp add: empty_fm_def
                 FMap__fromFMap_def Function__inverse_f_apply  
-                FMap__toFMap_subtype_constr Map__FiniteMap_def
-                FMap__toSet_def Map__maps_p_def definedAt_m_def,
-      auto simp add: mem_def)
+                FMap__toFMap_subtype_constr 
+                FMap__toSet_def Map__maps_p_def definedAt_m_def)
 
 lemma FMap__fromSet_empty [simp]:  "FMap__fromSet {} = empty_fm"
   by (simp add: FMap__Set_inv)
@@ -475,10 +466,9 @@ lemma FMap__fromSet_empty [simp]:  "FMap__fromSet {} = empty_fm"
 lemma  FMap__toSet_less_less [simp]:
   "FMap__toSet m less (x, m @_fm x) less (x, y)
    = FMap__toSet m less (x, m @_fm x)"
-  by (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def e_at_m_def
+  by (simp add: FMap__toSet_def Map__maps_p_def definedAt_m_def
                 Relation__functional_p_def Relation__apply_def
-                e_at_fm_def e_at_m_def,
-      auto simp add: mem_def unique_singleton)
+                e_at_fm_def e_at_m_def)
 
 lemma FMap__Set_less [simp]:
   "FMap__toSet (m less_fm x) = (FMap__toSet m) less (x, m @_fm x)"
@@ -487,14 +477,12 @@ lemma FMap__Set_less [simp]:
                  in_fset_p_def FMap__domain_def FSet__fromFSet_f_f
                  FMap__fromFMap_def Function__inverse_f_apply                  
                  FMap__update_Obligation_subtype
-                 FMap__toFMap_subtype_constr Map__FiniteMap_def
+                 FMap__toFMap_subtype_constr
                  FMap__toSet_def Map__maps_p_def definedAt_m_def,
           simp only: FMap__fromFMap_def [symmetric],
           cut_tac m=m and x=x in FMap__e_dsh_Obligation_subtype, 
-          simp add: Map__FiniteMap_def,
-          thin_tac "finite ?S")
-   apply (auto simp add: mem_lambda_pair e_dsh_dsh_m_def e_at_m_def 
-              split: split_if_asm)
+          simp, thin_tac "finite ?S")
+   apply (auto simp add: e_dsh_dsh_m_def e_at_m_def split: split_if_asm)
 done
 
 lemma FMap__fromSet_less [simp]:
@@ -513,11 +501,10 @@ lemma FMap__Set_update [simp]:
                  in_fset_p_def FMap__domain_def FSet__fromFSet_f_f
                  FMap__fromFMap_def Function__inverse_f_apply                  
                  FMap__update_Obligation_subtype
-                 FMap__toFMap_subtype_constr Map__FiniteMap_def
+                 FMap__toFMap_subtype_constr 
                  FMap__toSet_def Map__maps_p_def definedAt_m_def,
           simp only: FMap__fromFMap_def [symmetric])
-   apply (auto simp add: mem_lambda_pair Map__update_def e_at_m_def 
-               split: split_if_asm)
+   apply (auto simp add: Map__update_def e_at_m_def split: split_if_asm)
 done
 
 lemma FMap__fromSet_insert [simp]:
@@ -538,18 +525,16 @@ lemma FMap__update_at:
   apply (cut_tac m=m in FMap__Set_finite, simp)
   apply (erule rev_mp, subst FMap__Set_inv [symmetric], auto)
   apply (simp add: FMap__fromSet_def FMap__fromFMap_f_f Relation__apply_def)
-  apply (simp add: Let_def)
   apply (subst Abs_Map__FiniteMap_inverse)
-  apply (simp add:  Map__FiniteMap_def dom_if non_empty_simp,
-         simp add: mem_def)
-  apply (auto simp add: non_empty_simp mem_def )
+  apply (simp add:   dom_if non_empty_simp          )
+  apply (auto simp add: non_empty_simp  )
   apply (rule_tac B="{fst x |x. x \<in> insert (a, b) s}" in finite_subset)
   defer apply (rule finite_image_set, simp) prefer 3
-  apply (simp add: Collect_def, auto simp add: mem_def)
+  apply (auto  )
   apply (simp add: the_elem_def, rule the1_equality,
          simp add: unique_singleton1 Relation__functional_p_alt_def, 
-         rule_tac a=b in ex1I, auto simp add: mem_def,
-         simp add: Relation__functional_p_alt_def, auto simp add: mem_def)+
+         rule_tac a=b in ex1I, auto simp add: ,
+         simp add: Relation__functional_p_alt_def, auto simp add: )+
 done
 
 lemma FMap__update_simp:
@@ -596,8 +581,8 @@ lemma FMap__Set_foldable_p [simp]:
   by (simp add: FMap__foldable_aux_def e_at_fm_def
                 in_fset_p_def FMap__domain_def FSet__fromFSet_f_f
                 FMap__fromFMap_def Function__inverse_f_apply  
-                FMap__toFMap_subtype_constr Map__FiniteMap_def
-                FMap__toSet_def Map__maps_p_def definedAt_m_def mem_def)
+                FMap__toFMap_subtype_constr 
+                FMap__toSet_def Map__maps_p_def definedAt_m_def )
 
 
 
@@ -714,7 +699,7 @@ proof Isa fold_Obligation_subtype
    by (simp add: FMap__foldable_aux_def empty_fm_def e_at_fm_def 
                  FMap__fromFMap_def Function__inverse_f_apply 
                  in_fset_p_def FMap__domain_def FSet__fromFSet_f_f 
-                 FMap__toFMap_subtype_constr Map__FiniteMap_def)
+                 FMap__toFMap_subtype_constr )
 end-proof
 
 proof Isa fold_Obligation_subtype0
@@ -724,10 +709,10 @@ proof Isa fold_Obligation_subtype0
                  in_fset_p_def FMap__domain_def FSet__fromFSet_f_f
                  FMap__fromFMap_def Function__inverse_f_apply                  
                  FMap__update_Obligation_subtype
-                 FMap__toFMap_subtype_constr Map__FiniteMap_def,
+                 FMap__toFMap_subtype_constr ,
           simp only: FMap__fromFMap_def [symmetric],
           cut_tac m=m and x=x in FMap__e_dsh_Obligation_subtype, 
-          simp add: Map__FiniteMap_def,
+          simp add: ,
           thin_tac "finite ?S")
    apply (auto simp add: e_dsh_dsh_m_def Map__update_def dom_def e_at_m_def)
    apply (drule_tac x=x1 in spec, drule_tac x=x2 in spec, simp)  
@@ -738,14 +723,14 @@ proof Isa inverse_Obligation_subtype
   apply (cut_tac 
            m="Abs_Map__InjectiveMap (Rep_Map__FiniteMap (FMap__fromFMap m))" 
          in Map__inverse_Obligation_subtype)
-  apply (simp add: FMap__injective_p_def Map__inverse_def Map__InjectiveMap_def
+  apply (simp add: FMap__injective_p_def Map__inverse_def 
                  FMap__fromFMap_def Function__inverse_f_apply  
-                 FMap__toFMap_subtype_constr Map__FiniteMap_def,
+                 FMap__toFMap_subtype_constr ,
          simp only: FMap__fromFMap_def [symmetric]
         )
   apply (subst Abs_Map__FiniteMap_inverse, simp_all,
          simp (no_asm_simp) add: dom_def Let_def Map__Map__applyi_simp
-                 FMap__toFMap_subtype_constr Map__FiniteMap_def ,
+                 FMap__toFMap_subtype_constr  ,
          cut_tac m=m in FMap__domain_Obligation_subtype, auto simp add: dom_def)
 end-proof
 
@@ -764,24 +749,20 @@ proof Isa toFSet_Obligation_subtype
   apply (cut_tac m=m in FMap__domain_Obligation_subtype, simp add: dom_def,
          cut_tac m=m in FMap__range_Obligation_subtype, simp add: ran_def,
          drule_tac  finite_cartesian_product, simp, thin_tac ?P)
-  apply (rule finite_subset) defer apply (simp, thin_tac ?P)
-  apply (auto simp add: mem_def, rule exI, auto)
+  apply (rule finite_subset, auto)
 end-proof
 
 
 proof Isa fromFSet_Obligation_subtype
   apply (simp add: dom_def Relation__apply_def Let_def 
-                   Relation__functional_p_def,
-         simp add: mem_def unique_singleton)
-  apply (rule_tac B="{fst x |x. FSet__fromFSet s x}" in finite_subset)
+                   Relation__functional_p_def unique_singleton)
+  apply (rule_tac B="{fst x |x. x \<in> FSet__fromFSet s}" in finite_subset)
   defer
-  apply (rule finite_image_set, simp add: Collect_def FSet__fromFSet_finite)
-  apply auto
+  apply (rule finite_image_set, auto simp add: FSet__fromFSet_finite)
 end-proof
 
 proof Isa fromFSet_Obligation_subtype0
   by (simp add: Relation__apply_def Relation__functional_p_def,
-      simp add: mem_def,
       drule_tac x=x in spec, erule disjE, auto)
 end-proof
 

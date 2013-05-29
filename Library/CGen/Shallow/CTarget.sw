@@ -182,10 +182,6 @@ theorem C__Uchar__subtype_pred_ucharOfMathInt [simp]:
   done
 end-proof
 
-%%TODO fixme
-proof isa -verbatim
-declare mem_def [simp del]
-end-proof
 
 theorem ucharOfMathInt_mathIntOfUchar is
   fa(x:Uchar) ucharOfMathInt (mathIntOfUchar x) = x
@@ -981,7 +977,6 @@ declare C__rangeOfUlong_def [simp]
 declare C__rangeOfUllong_def [simp]
 declare C__rangeOfSchar_def [simp]
 declare C__rangeOfChar_def [simp]
-declare mem_def [simp]
 end-proof
 
 % ucharOf...:
@@ -3272,57 +3267,57 @@ proof isa C__mathIntOfChar_injective [simp]
 end-proof
 
 proof isa C__uchar_range [simp]
-   apply(simp add: C__rangeOfUchar_def mem_def)
+   apply(simp add: C__rangeOfUchar_def )
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__ushort_range [simp]
-   apply(simp add: C__rangeOfUshort_def mem_def)
+   apply(simp add: C__rangeOfUshort_def )
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__uint_range isa [simp]
-   apply(simp add: C__rangeOfUint_def mem_def)
+   apply(simp add: C__rangeOfUint_def )
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__ulong_range [simp]
-   apply(simp add: C__rangeOfUlong_def mem_def)
+   apply(simp add: C__rangeOfUlong_def )
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__ullong_range [simp]
-   apply(simp add: C__rangeOfUllong_def mem_def)
+   apply(simp add: C__rangeOfUllong_def )
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__schar_range [simp]
-   apply(simp add: C__rangeOfSchar_def mem_def C__SCHAR_MIN_def C__SCHAR_MAX_def)
+   apply(simp add: C__rangeOfSchar_def  C__SCHAR_MIN_def C__SCHAR_MAX_def)
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__sshort_range [simp]
-   apply(simp add: C__rangeOfSshort_def mem_def C__SSHORT_MIN_def C__SSHORT_MAX_def)
+   apply(simp add: C__rangeOfSshort_def  C__SSHORT_MIN_def C__SSHORT_MAX_def)
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__sint_range [simp]
-   apply(simp add: C__rangeOfSint_def mem_def C__SINT_MIN_def C__SINT_MAX_def)
+   apply(simp add: C__rangeOfSint_def  C__SINT_MIN_def C__SINT_MAX_def)
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__slong_range [simp]
-   apply(simp add: C__rangeOfSlong_def mem_def C__SLONG_MIN_def C__SLONG_MAX_def)
+   apply(simp add: C__rangeOfSlong_def  C__SLONG_MIN_def C__SLONG_MAX_def)
    apply(case_tac "x", simp)
 end-proof
 
 proof isa C__sllong_range [simp]
-   apply(simp add: C__rangeOfSllong_def mem_def C__SLLONG_MIN_def C__SLLONG_MAX_def)
+   apply(simp add: C__rangeOfSllong_def  C__SLLONG_MIN_def C__SLLONG_MAX_def)
    apply(case_tac "x", simp)
 end-proof
 
 proof isa char_range [simp]
-   apply(simp add: C__rangeOfChar_def mem_def)
+   apply(simp add: C__rangeOfChar_def )
    apply(case_tac "x", simp)
 end-proof
 
@@ -3340,32 +3335,24 @@ proof isa C__ushortOfMathInt_Obligation_the
   apply(auto)
   apply(rule exI [of _ "C__Ushort__ushort (toBits ((nat i), C__short_bits))"])
   apply(simp add:C__rangeOfUshort_def)
-  apply(cut_tac n="nat i" and len="C__short_bits" in Bits__inverse_toNat_bits)
-  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
 end-proof
 
 proof isa C__uintOfMathInt_Obligation_the
   apply(auto)
   apply(rule exI [of _ "C__Uint__uint (toBits ((nat i), C__int_bits))"])
   apply(simp add:C__rangeOfUint_def)
-  apply(cut_tac n="nat i" and len="C__int_bits" in Bits__inverse_toNat_bits)
-  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
 end-proof
 
 proof isa C__ulongOfMathInt_Obligation_the
   apply(auto)
   apply(rule exI [of _ "C__Ulong__ulong (toBits ((nat i), C__long_bits))"])
   apply(simp add:C__rangeOfUlong_def)
-  apply(cut_tac n="nat i" and len="C__long_bits" in Bits__inverse_toNat_bits)
-  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
 end-proof
 
 proof isa C__ullongOfMathInt_Obligation_the
   apply(auto)
   apply(rule exI [of _ "C__Ullong__ullong (toBits ((nat i), C__llong_bits))"])
   apply(simp add:C__rangeOfUllong_def)
-  apply(cut_tac n="nat i" and len="C__llong_bits" in Bits__inverse_toNat_bits)
-  apply(auto simp del:Bits__inverse_toNat_bits simp add: mem_def)
 end-proof
 
 proof isa C__scharOfMathInt_Obligation_the 
@@ -3402,8 +3389,8 @@ proof isa charOfMathInt_Obligation_the
   apply (auto)
   apply (rule exI [of _ "C__Char__char (if C__plainCharsAreSigned then  (TwosComplement__tcNumber (i, C__CHAR_BIT)) else (toBits ((nat i), C__CHAR_BIT)))"])
   apply (case_tac "C__plainCharsAreSigned")
-  apply (simp add:C__rangeOfChar_def TwosComplement__tcNumber_length TwosComplement__rangeForLength_def mem_def TwosComplement__toInt_tcNumber_reduce TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def mem_def)
-  apply (simp add:C__rangeOfChar_def mem_def TwosComplement__toInt_tcNumber_reduce mem_def)
+  apply (simp add:C__rangeOfChar_def TwosComplement__tcNumber_length TwosComplement__rangeForLength_def  TwosComplement__toInt_tcNumber_reduce TwosComplement__rangeForLength_def TwosComplement__minForLength_def TwosComplement__maxForLength_def )
+  apply (simp add:C__rangeOfChar_def  TwosComplement__toInt_tcNumber_reduce )
 end-proof
 
 proof isa C__mathIntOfUchar_ucharOfMathInt [simp]
@@ -5034,19 +5021,19 @@ sorry
 end-proof
 
 proof isa C__mathIntOfUint_Obligation_subtype0
-  apply(auto simp add: mem_def C__rangeOfUint_def)
+  apply(auto simp add:  C__rangeOfUint_def)
 end-proof
 
 proof isa C__mathIntOfUshort_Obligation_subtype0
-  apply(auto simp add: mem_def C__rangeOfUshort_def)
+  apply(auto simp add:  C__rangeOfUshort_def)
 end-proof
 
 proof isa C__mathIntOfUlong_Obligation_subtype0
-  apply(auto simp add: mem_def C__rangeOfUlong_def)
+  apply(auto simp add:  C__rangeOfUlong_def)
 end-proof
 
 proof isa C__mathIntOfUllong_Obligation_subtype0
-  apply(auto simp add: mem_def C__rangeOfUllong_def)
+  apply(auto simp add:  C__rangeOfUllong_def)
 end-proof
 
 proof isa C__e_at_ushort_Obligation_subtype0

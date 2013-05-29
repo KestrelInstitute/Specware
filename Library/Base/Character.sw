@@ -62,7 +62,7 @@ op compare (c1:Char, c2:Char) : Comparison = compare (ord c1, ord c2)
 
 % Isabelle pragmas
 proof Isa chr_subtype_constr
- apply (auto simp add: bij_on_def inj_on_def surj_on_def mem_def Bex_def)
+ apply (auto simp add: bij_on_def inj_on_def surj_on_def  Bex_def)
  apply (rule_tac s="nat_of_char (char_of_nat x)" in ssubst)
  apply (simp add: nat_of_char_of_nat,
         thin_tac  "char_of_nat x = char_of_nat y", simp add: nat_of_char_of_nat)
@@ -71,7 +71,7 @@ proof Isa chr_subtype_constr
 end-proof
 
 proof Isa ord_subtype_constr
-   apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def Bex_def)
+   apply (auto simp add: bij_ON_def inj_on_def surj_on_def  Bex_def)
  apply (rule_tac s="char_of_nat (nat_of_char x)" in ssubst)
  apply (simp add: char_of_nat_of_char,
         thin_tac  "nat_of_char x = nat_of_char y", simp add: char_of_nat_of_char)
@@ -82,7 +82,7 @@ end-proof
 proof Isa ord__def
  apply (cut_tac Char__chr_subtype_constr, simp add: Function__inverse__stp_simp )
  apply (rule ext)
- apply (rule inv_on_f_eq, auto simp add: bij_on_def mem_def char_of_nat_of_char)
+ apply (rule inv_on_f_eq, auto simp add: bij_on_def  char_of_nat_of_char)
 end-proof
 
 proof Isa isUpperCase [simp] end-proof

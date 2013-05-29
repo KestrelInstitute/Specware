@@ -129,12 +129,12 @@ end-proof
 
 
 proof Isa sorted_p_butlast
- by (induct l rule: rev_induct, auto simp add: List__sorted_p_def mem_def,
+ by (induct l rule: rev_induct, auto simp add: List__sorted_p_def ,
      drule_tac x=i in spec, auto simp add: nth_append)
 end-proof
 
 proof Isa sorted_p_last_is_max
- apply (induct l, auto simp add: List__sorted_p_def mem_def)
+ apply (induct l, auto simp add: List__sorted_p_def )
  apply (subgoal_tac "\<forall>i. int i < int (length l) - 1 \<longrightarrow> l ! i < l ! Suc i", simp)
  apply (case_tac "i=0", simp_all)
  apply (case_tac "length l > 1", simp_all)
@@ -179,9 +179,9 @@ proof Isa -verbatim
 
 (******* SORTED ********)
 
-theorem nondec_as_sorted_p:
-  "List__sorted_p (\_lambda(x, y). x \_le y) = nondec"
-  apply (simp add: List__sorted_p_def mem_def fun_eq_iff, rule allI)
+lemma nondec_as_sorted_p:
+  "List__sorted_p {(x, y). x \<le> y} = nondec"
+  apply (simp add: List__sorted_p_def  fun_eq_iff, rule allI)
   apply (induct_tac x, auto)
   apply (case_tac list, simp_all, rotate_tac 2, drule_tac x=0 in spec, simp)
   apply (case_tac list, simp_all, case_tac "i = 0", auto simp add: neq_iff)
@@ -190,14 +190,14 @@ theorem nondec_as_sorted_p:
 done
 
 
-theorem List__sorted_p_butlast2:
- "\<lbrakk>List__sorted_p (\<lambda>((x::nat), (y::nat)). x < y) l\<rbrakk> \<Longrightarrow> List__sorted_p (\<lambda>((x::nat), (y::nat)). x < y) (butlast l)"
- by (induct l rule: rev_induct, auto simp add: List__sorted_p_def mem_def,
+lemma List__sorted_p_butlast2:
+ "\<lbrakk>List__sorted_p {((x::nat), (y::nat)). x < y} l\<rbrakk> \<Longrightarrow> List__sorted_p {((x::nat), (y::nat)). x < y} (butlast l)"
+ by (induct l rule: rev_induct, auto simp add: List__sorted_p_def ,
      drule_tac x=i in spec, auto simp add: nth_append)
 
-theorem List__sorted_p_last_is_max:
- "\<lbrakk>List__sorted_p (\<lambda>((x::nat), (y::nat)). x < y) (l::nat list)\<rbrakk> \<Longrightarrow> \<forall>i<length l - 1. l!i < last l" 
- apply (induct l, auto simp add: List__sorted_p_def mem_def)
+lemma List__sorted_p_last_is_max:
+ "\<lbrakk>List__sorted_p {((x::nat), (y::nat)). x < y} (l::nat list)\<rbrakk> \<Longrightarrow> \<forall>i<length l - 1. l!i < last l" 
+ apply (induct l, auto simp add: List__sorted_p_def )
  apply (subgoal_tac "\<forall>i. int i < int (length l) - 1 \<longrightarrow> l ! i < l ! Suc i", simp)
  apply (case_tac "i=0", simp_all)
  apply (case_tac "length l > 1", simp_all)
@@ -211,8 +211,8 @@ theorem List__sorted_p_last_is_max:
  apply (clarify, drule_tac x="Suc ia" in spec, auto)
 done
 
-theorem List__sorted_p_max_is_last:
- "\<lbrakk>List__sorted_p (\<lambda>((x::nat), (y::nat)). x < y) (l::nat list); m mem l; \<forall>i<length l. l!i \<le> m\<rbrakk> \<Longrightarrow> m = last l"
+lemma List__sorted_p_max_is_last:
+ "\<lbrakk>List__sorted_p {((x::nat), (y::nat)). x < y} (l::nat list); m mem l; \<forall>i<length l. l!i \<le> m\<rbrakk> \<Longrightarrow> m = last l"
  apply (frule length_pos_if_in_set, simp)
  apply (drule_tac x="length l - 1" in spec, simp)
  apply (drule  List__sorted_p_last_is_max, simp add: last_conv_nth)
@@ -237,7 +237,7 @@ lemma List__unzip_Assoc_empty [simp]:
   apply (rotate_tac -2, drule sym, rotate_tac -1,
          erule rev_mp, simp add: Map__fromAssocList_def,
          subst Abs_Map__FiniteMap_inject,
-         simp_all add: Map__FiniteMap_def member_def dom_if)
+         simp_all add: member_def dom_if)
   apply (simp only: dom_eq_empty_conv [symmetric], 
          auto simp add: dom_if)
 done
@@ -254,7 +254,7 @@ lemma List__unzip_Assoc_singleton [simp]:
   apply (rotate_tac -2, 
          erule rev_mp, simp add: Map__fromAssocList_def,
          subst Abs_Map__FiniteMap_inject,
-         simp_all add: Map__FiniteMap_def member_def dom_if)
+         simp_all add: member_def dom_if)
   apply (subgoal_tac "dom (Map__update Map.empty i val) = {i}", 
          clarify, simp add: dom_if, simp_all add: Map__update_def dom_if)
   apply (drule distinct_card, simp del: One_nat_def,

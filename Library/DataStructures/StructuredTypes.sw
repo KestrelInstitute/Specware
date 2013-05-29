@@ -1026,13 +1026,14 @@ proof isa Pair2S_delete
   apply(simp only: upto_def)
   apply(simp del: upto_loop.simps)
   apply(case_tac "(fst p) \<ge> (snd p)")
-  apply (metis Pair2S_def Pair2S_empty Set__empty_set  Set__set_delete_no_op  StructuredTypes.upto_def internal_split_def le_SucI less_eq_Suc_le_raw not_less_eq_eq order_refl order_trans split_eta surjective_pairing upto_loop_base_case)
+  apply (metis Pair2S_def Pair2S_empty Set__empty_set  Set__set_delete_no_op  StructuredTypes.upto_def internal_split_def le_SucI not_less_eq_eq order_refl order_trans split_eta surjective_pairing upto_loop_base_case)
   apply(case_tac "p = (fst p, snd p)")
   defer
   apply(simp del: upto_loop.simps add: pair_lemma)
   apply(simp del: upto_loop.simps)
   
   sorry
+
 end-proof
 
 

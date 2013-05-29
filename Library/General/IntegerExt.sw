@@ -88,10 +88,10 @@ type PrimeNat = (Nat | prime?)
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
-theorem Integer__primesLessThan_Obligation_the_aux:
+lemma Integer__primesLessThan_Obligation_the_aux:
   "\<lbrakk>list_all prime l; prime limit; 
     \<forall>p. prime p \<longrightarrow> (\<exists>i. List__e_at_at__stp prime (l, i) = Some p) = (p < Suc limit);
-    List__sorted_p (\<lambda>(x, y). x < y) l\<rbrakk>
+    List__sorted_p {(x, y). x < y} l\<rbrakk>
    \<Longrightarrow> \<forall>p. prime p \<longrightarrow> (\<exists>i. List__e_at_at__stp prime (butlast l, i) = Some p) = (p < limit)"
  apply (frule_tac m=limit in List__sorted_p_max_is_last, auto)
  apply (drule_tac x="limit" in spec, auto,
@@ -154,7 +154,7 @@ proof Isa primesLessThan_Obligation_the
          rule_tac x=i in exI, simp add: List__e_at_at__stp_nth nth_append split: split_if_asm,
          rule_tac x="length primes" in exI, 
          simp add: List__e_at_at__stp_nth nth_append split: split_if_asm)
-  apply (simp add: List__sorted_p_def mem_def nth_append, clarify,
+  apply (simp add: List__sorted_p_def  nth_append, clarify,
          drule Suc_mono, drule less_antisym, simp)
   apply (drule_tac x="primes ! i" in spec, drule mp, simp add: list_all_length,
          rotate_tac -1, drule sym, simp, rule_tac x=i in exI, simp add: List__e_at_at__stp_nth)
@@ -248,7 +248,7 @@ proof Isa [simp] end-proof
 op totient (n:PosNat) : Nat = size (fn(m:PosNat) -> m <= n && coprime? (m, n))
 
 proof Isa totient_Obligation_subtype
-  apply (simp add: Set__finite_p__stp_def, safe, erule notE, auto simp add: mem_def)
+  apply (simp add: Set__finite_p__stp_def, safe, erule notE, auto simp add: )
   apply (rule_tac x="\<lambda>i. if (coprime i n \<and> 0 < i) then i else x" in exI, auto)
   apply (rule_tac x="n+1" in exI, auto)
   apply (rule_tac x=xa in exI, auto)
@@ -301,26 +301,26 @@ sorry
 lemma zpower_pred_distrib: 
   "0 < p \<Longrightarrow> (a::int) ^ nat (p) = a * a ^ (nat (p) - 1)"
   apply (subgoal_tac "a ^ (nat p) = a ^ (1 + (nat p - 1))")
-  apply (simp only: zpower_zadd_distrib, simp_all)
+  apply (simp only: power_add, simp_all)
 done
 
-theorem Euler_aux1: "\<lbrakk>(2::int) < p; odd p\<rbrakk>  \<Longrightarrow>  0 < (p - 1) div 2"  
+lemma Euler_aux1: "\<lbrakk>(2::int) < p; odd p\<rbrakk>  \<Longrightarrow>  0 < (p - 1) div 2"  
   by simp
 
-theorem Euler_aux2: "2 * nat((p - 1) div 2) =  nat (2 * ((p - 1) div 2))"
+lemma Euler_aux2: "2 * nat((p - 1) div 2) =  nat (2 * ((p - 1) div 2))"
   by (auto simp add: nat_mult_distrib)
 
-theorem Euler_aux3: "nat((p - 1) div 2) * 2 =  nat (((p - 1) div 2) * 2)"
+lemma Euler_aux3: "nat((p - 1) div 2) * 2 =  nat (((p - 1) div 2) * 2)"
   by (auto simp add: nat_mult_distrib)
 
-theorem Euler_aux4: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<twosuperior> mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
+lemma Euler_aux4: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<twosuperior> mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
   apply (simp add: dvd_eq_mod_eq_0 [symmetric] power2_eq_square zmod_eq_dvd_iff)
   apply (rule classical, erule notE, simp add: not_not)
   apply (cut_tac x=p and y="y * y - x" in dvd_minus_iff [symmetric], simp)
   apply (drule_tac  zdvd_zdiffD, simp add: dvd_mult, simp)
 done
 
-theorem Euler_aux5: "\<lbrakk>(2::int) < p; prime p; a\<twosuperior> mod p = 1 \<rbrakk>  
+lemma Euler_aux5: "\<lbrakk>(2::int) < p; prime p; a\<twosuperior> mod p = 1 \<rbrakk>  
                    \<Longrightarrow> a mod p = 1 mod p \<or> a mod p = -1 mod p"
   apply (subgoal_tac "a\<twosuperior> mod p = 1 mod p", thin_tac "a\<twosuperior> mod p = 1")
   apply (simp only: zmod_eq_dvd_iff, simp_all)
@@ -330,12 +330,12 @@ theorem Euler_aux5: "\<lbrakk>(2::int) < p; prime p; a\<twosuperior> mod p = 1 \
   apply (simp add: mod_pos_pos_trivial)
 done
 
-theorem Euler_part1: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightarrow> a ^ nat ((p - 1) div 2) mod p = 0"
+lemma Euler_part1: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightarrow> a ^ nat ((p - 1) div 2) mod p = 0"
    apply (frule Euler_aux1, rule prime_odd_int, simp_all)
    apply (simp add: zpower_pred_distrib mod_mult_left_eq)
 done
 
-theorem Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<twosuperior> mod p = 1"
+lemma Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<twosuperior> mod p = 1"
    apply (frule prime_odd_int, simp)
    apply (frule_tac a=a in fermat_theorem, simp_all add: dvd_eq_mod_eq_0)
    apply (rule_tac s="a ^ (nat p - Suc 0)" and t = "(a ^ nat ((p - 1) div 2))\<twosuperior>" in subst)
@@ -343,21 +343,21 @@ theorem Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<L
           simp add: algebra_simps two_times_even_div_two  nat_diff_distrib)
 done
 
-theorem Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<rbrakk>
+lemma Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<rbrakk>
                     \<Longrightarrow> a ^ nat ((p - 1) div 2) mod p = 1"
    apply (rule_tac t="a ^ nat ((p - 1) div 2) mod p"
                and s="(a mod p) ^ nat ((p - 1) div 2) mod p" in subst,
-          simp (no_asm) add: zpower_zmod)
+          simp (no_asm) add: power_mod)
    apply (auto simp add: QuadRes_def, drule sym, simp (no_asm_simp))
    apply (frule_tac a=y in fermat_theorem, simp_all add: Euler_aux4)
    apply (frule prime_odd_int, simp,
-          simp add: zpower_zmod zpower_zpower Euler_aux2
+          simp add: power_mod zpower_zpower Euler_aux2
                     two_times_even_div_two nat_diff_distrib)
 done
 
 
 
-theorem QuadRes_criterion:
+lemma QuadRes_criterion:
   "\<lbrakk> 2 < p; prime p; a ^ nat ((p - 1) div 2) mod p = 1\<rbrakk> \<Longrightarrow> QuadRes p a"
   (************************************************************************
   * On paper, the proof is fairly simple:
@@ -373,21 +373,21 @@ theorem QuadRes_criterion:
   ****************************************************************************)
 sorry
 
-theorem Euler_part3: 
+lemma Euler_part3: 
   "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0; \<not>(QuadRes p a)\<rbrakk> 
   \<Longrightarrow>  a^(nat ((p - 1) div 2)) mod p = -1 mod p"
   apply (frule Euler_part1b, auto)
   apply (frule Euler_aux5, auto simp add: QuadRes_criterion mod_pos_pos_trivial)
 done
 
-theorem Euler_Criterion: 
+lemma Euler_Criterion: 
   "\<lbrakk>2 < p; prime p \<rbrakk>
    \<Longrightarrow> (Legendre a p) mod p = a^(nat (((p) - 1) div 2)) mod p"
   by (auto simp add: Legendre_def Euler_part1 Euler_part2  Euler_part3 
                      mod_pos_pos_trivial )
 
 
-theorem Integer__legendreSymbol_as_Legendre:
+lemma Integer__legendreSymbol_as_Legendre:
   "\<lbrakk>prime p\<rbrakk> \<Longrightarrow> Integer__legendreSymbol (a, p) = (Legendre (int a) (int p))"
  apply (auto simp add: Legendre_def Integer__legendreSymbol_def QuadRes_def
                        zmod_int [symmetric] dvd_eq_mod_eq_0 [symmetric] )
@@ -399,7 +399,7 @@ theorem Integer__legendreSymbol_as_Legendre:
         simp, simp only: zmod_int [symmetric])
 done
 
-theorem Legendre_unique: 
+lemma Legendre_unique: 
   "\<lbrakk>0 < a; prime p; 2 < p;
          (x = 0 \<or> x = 1 \<or> x = - 1) \<and> (\<exists>k. a ^ nat ((p - 1) div 2) - x = k * p)\<rbrakk>
         \<Longrightarrow> Legendre a p = x"
@@ -415,18 +415,19 @@ theorem Legendre_unique:
   (** Case 2: QuadRes p a **)
   apply (rule conjI, clarify, frule_tac a="a" in Euler_part2, 
          simp_all del: semiring_norm)
-  apply (drule_tac z="a ^ nat ((p - 1) div 2) - 1" in dvd_diff, 
+  apply (drule_tac z="a ^ nat ((p - 1) div 2) - 1" in dvd_diff,
          simp add: zmod_eq_dvd_iff  [symmetric] mod_pos_pos_trivial, 
-         erule disjE, simp_all del: semiring_norm, 
+         erule disjE, simp_all, 
          erule disjE, simp_all,
          cut_tac m="2" and n="p" in zdvd_not_zless, simp_all)
   (** Case 3: all other inputs **)
   apply (clarify, frule_tac a="a" in Euler_part3, simp_all del: semiring_norm)
-  apply (simp only: zmod_eq_dvd_iff semiring_norm(32) [symmetric] diff_minus_eq_add,
-         drule_tac z="a ^ nat ((p - 1) div 2) + 1" in dvd_diff, simp,
-         simp del: semiring_norm)
-  apply (thin_tac "\<not>?P", thin_tac "\<not>?P", thin_tac "?p dvd ?q", thin_tac "prime p")
-  apply (erule disjE, simp_all del: semiring_norm, erule disjE, simp_all) 
+  apply (simp only: zmod_eq_dvd_iff semiring_norm(32) [symmetric],
+         drule_tac z="a ^ nat ((p - 1) div 2) + 1" in dvd_diff, 
+         simp, simp add:   diff_minus_eq_add [symmetric] )
+  apply (thin_tac "\<not>?P", thin_tac "\<not>?P", thin_tac "?p dvd ?q", 
+         thin_tac "prime p")
+  apply (erule disjE, simp_all, erule disjE, simp_all) 
   apply (cut_tac x="p" and y="2" in dvd_minus_iff,
          cut_tac m="2" and n="p" in zdvd_not_zless, simp_all)
 done 
@@ -479,28 +480,28 @@ end-proof
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
-theorem Integer__primeFactorsOf_prod:
+lemma Integer__primeFactorsOf_prod:
   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> prod (Integer__primeFactorsOf n) = n"
   apply (simp add: Integer__primeFactorsOf_def)
   apply (rule the1I2, drule Integer__primeFactorsOf_Obligation_the, simp)
   apply (simp add: primes_iff prod_as_foldl nondec_as_sorted_p)
 done
 
-theorem Integer__primeFactorsOf_nondec:
+lemma Integer__primeFactorsOf_nondec:
   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> nondec (Integer__primeFactorsOf n)"
   apply (simp add: Integer__primeFactorsOf_def)
   apply (rule the1I2, drule Integer__primeFactorsOf_Obligation_the, simp)
   apply (simp add: primes_iff prod_as_foldl nondec_as_sorted_p)
 done
 
-theorem Integer__primeFactorsOf_primel:
+lemma Integer__primeFactorsOf_primel:
   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> primel (Integer__primeFactorsOf n)"
   apply (simp add: Integer__primeFactorsOf_def)
   apply (rule the1I2, drule Integer__primeFactorsOf_Obligation_the, simp)
   apply (simp add: primes_iff prod_as_foldl nondec_as_sorted_p)
 done
 
-theorem Integer__primeFactorsOf_odd:
+lemma Integer__primeFactorsOf_odd:
   "\<lbrakk>n > 0\<rbrakk> \<Longrightarrow> odd n = (list_all odd (Integer__primeFactorsOf n))"
   by (frule Integer__primeFactorsOf_prod, simp add: factors_of_odd)
 
@@ -511,12 +512,12 @@ end-proof
 
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
-theorem Integer__legendreSymbol_cases:
+lemma Integer__legendreSymbol_cases:
    "\<lbrakk>prime p; a > 0; odd p; (x::int) = Integer__legendreSymbol(a,p)\<rbrakk>
     \<Longrightarrow>  x = - 1 \<or> (x = 0 \<or> x = 1)"
  by (simp (no_asm_simp) add:  Integer__legendreSymbol_def)
 
-theorem Integer__jacobiSymbol_Obligation_subtype0_aux: 
+lemma Integer__jacobiSymbol_Obligation_subtype0_aux: 
   "\<lbrakk>a > 0; list_all prime factors; list_all odd factors\<rbrakk> \<Longrightarrow>  
    \<forall>(x::int). foldl' (\<lambda> ((i::int), (j::int)). i * j) 1
                  (map (\<lambda> (f::Integer__PrimeNat). Integer__legendreSymbol(a, f))
@@ -557,6 +558,33 @@ proof Isa jacobiSymbol_Obligation_subtype0
   apply (simp add:  primes_iff, rule Integer__primeFactorsOf_primel, auto)
   apply (simp add: Integer__primeFactorsOf_odd)
 end-proof
+
+
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+(* Least, Greatest, etc. are defined on predicates. We need a version for sets *)
+
+consts LeastS :: "('a::order) set \<Rightarrow> 'a"	
+defs LeastS_def:  "LeastS S \<equiv> Least (setToPred S)"
+
+consts GreatestS :: "('a::order) set \<Rightarrow> 'a"	
+defs GreatestS_def:  "GreatestS S \<equiv> Greatest (setToPred S)"
+ 
+consts LeastMS :: "('a \<Rightarrow> ('b::order)) \<Rightarrow> 'a set \<Rightarrow> 'a"	
+defs LeastMS_def:  "LeastMS f S \<equiv> LeastM f (setToPred S)"
+
+consts GreatestMS :: "('a \<Rightarrow> ('b::order)) \<Rightarrow> 'a set \<Rightarrow> 'a"
+defs GreatestMS_def:  "GreatestMS f S \<equiv> GreatestM f (setToPred S)"
+
+declare LeastS_def [simp add]
+declare GreatestS_def [simp add]
+declare LeastMS_def [simp add]
+declare GreatestMS_def [simp add]
+
+end-proof
+% ------------------------------------------------------------------------------
+
 
 % min/max(imizers) (should be factored in a more general spec for orders):
 
@@ -628,7 +656,7 @@ proof Isa minIn_Obligation_the
 end-proof
 
 proof Isa minIn__def
- by (simp add: Least_def Integer__isMinIn_def mem_def)
+ by (simp add: Least_def Integer__isMinIn_def setToPred_def)
 end-proof
 
 proof Isa maxIn_Obligation_the
@@ -639,7 +667,7 @@ end-proof
 proof Isa maxIn__def
  by (drule Integer__maxIn_Obligation_the,
      simp add: Integer__maxIn_Obligation_the Greatest_def GreatestM_def 
-               Integer__isMaxIn_def mem_def  THE_SOME)
+               Integer__isMaxIn_def   THE_SOME setToPred_def)
 end-proof
 
 proof Isa minimizer_Obligation_subtype
@@ -647,9 +675,9 @@ proof Isa minimizer_Obligation_subtype
 end-proof
 
 proof Isa minimizer__def
-  by (simp add: Set__theMember__def LeastM_def Integer__minimizers_def mem_def
+  by (simp add: Set__theMember__def LeastM_def Integer__minimizers_def 
                 Integer__hasUniqueMinimizer_p_def  Integer__minimizes_p_def
-                unique_singleton THE_SOME)
+                unique_singleton THE_SOME setToPred_def)
 end-proof
 
 proof Isa maximizer_Obligation_subtype
@@ -657,9 +685,9 @@ proof Isa maximizer_Obligation_subtype
 end-proof
 
 proof Isa maximizer__def
-  by (simp add: Set__theMember__def GreatestM_def Integer__maximizers_def mem_def
+  by (simp add: Set__theMember__def GreatestM_def Integer__maximizers_def 
                 Integer__hasUniqueMaximizer_p_def  Integer__maximizes_p_def
-                unique_singleton THE_SOME)
+                unique_singleton THE_SOME setToPred_def)
 end-proof
 
 % integer square root:
@@ -700,14 +728,14 @@ op gcdOf (numbers: Set1 PosNat | finite? numbers) : PosNat =
   maxIn (fn(i:Int) ->
     i > 0 && (fa(n) n in? numbers => i divides n))
 
-proof Isa lcmOf_Obligation_subtype
+proof Isa lcmOf_Obligation_subtype 
    apply (simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_lambda_int)
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
             = Nat__posNat_p", simp, thin_tac "?a=?b")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
-          thin_tac "?P", thin_tac "?P", 
+          thin_tac "?P", thin_tac "?P",  
           simp add: list_all_iff Nat__posNat_p_def)
    apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> n dvd k)", 
           erule exE, erule exE)
@@ -719,16 +747,16 @@ proof Isa lcmOf_Obligation_subtype
 end-proof
 
 proof Isa lcmOf_Obligation_subtype0
- apply (drule Integer__lcmOf_Obligation_subtype, simp_all)
- apply (unfold Least_def, rule the1I2, 
-        auto simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_def)
- apply (rotate_tac 8, drule_tac x=y in spec, drule_tac x=x in spec, auto)
+  apply (drule Integer__lcmOf_Obligation_subtype, simp_all)
+  apply (unfold Least_def, rule the1I2, 
+        auto simp add: Integer__hasMin_p_def Integer__isMinIn_def )
+  apply (rotate_tac 8, drule_tac x=y in spec, drule_tac x=x in spec, auto)
 end-proof
 
 proof Isa lcmOf_Obligation_subtype1
    apply (drule Integer__lcmOf_Obligation_subtype, simp_all)
    apply (unfold Least_def, rule the1I2, drule Integer__minIn_Obligation_the)
-   apply (auto simp add: Integer__isMinIn_def mem_def)
+   apply (auto simp add: Integer__isMinIn_def )
 end-proof
 
 proof Isa gcdOf_Obligation_subtype
@@ -738,7 +766,7 @@ proof Isa gcdOf_Obligation_subtype
             = Nat__posNat_p", simp, thin_tac "?a=?b")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
-          thin_tac "?P", thin_tac "?P", 
+          thin_tac "?P", thin_tac "?P",
           simp add: list_all_iff Nat__posNat_p_def)
    apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> k dvd n)", 
           erule exE, erule exE)
@@ -755,14 +783,14 @@ end-proof
 proof Isa gcdOf_Obligation_subtype0
  apply (drule Integer__gcdOf_Obligation_subtype, simp_all)
  apply (unfold Greatest_def, unfold GreatestM_def, rule someI2_ex,
-        auto simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
+        auto simp add: Integer__hasMax_p_def Integer__isMaxIn_def )
 end-proof
 
 
 proof Isa gcdOf_Obligation_subtype1
  apply (drule Integer__gcdOf_Obligation_subtype, simp_all)
  apply (unfold Greatest_def, unfold GreatestM_def, rule someI2_ex,
-        auto simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_def)
+        auto simp add: Integer__hasMax_p_def Integer__isMaxIn_def )
 end-proof
 
 % true iff list of digits is little/big-endian representation of x in base
@@ -807,7 +835,7 @@ end-proof
 % -------------------------------------------------------
 proof Isa -verbatim
 
-theorem Integer__littleEndian_p_bound:
+lemma Integer__littleEndian_p_bound:
   "\<lbrakk>base \<ge> 2; digits \<noteq> []; Integer__littleEndian_p (digits, base, x)\<rbrakk> 
       \<Longrightarrow> x < base ^ length digits"
   apply (subgoal_tac "\<forall>x. Integer__littleEndian_p (digits, base,x) \<longrightarrow>  x < base ^ length digits",
@@ -824,11 +852,11 @@ theorem Integer__littleEndian_p_bound:
   apply (simp only: mult_Suc [symmetric] mult_le_mono1)
 done
 
-theorem Integer__littleEndian_p_nil:
+lemma Integer__littleEndian_p_nil:
   "\<lbrakk>base \<ge> 2\<rbrakk> \<Longrightarrow> Integer__littleEndian_p ([], base, x) = False"
  by (auto simp add: Integer__littleEndian_p_def List__map2_def List__tabulate_nil)
 
-theorem Integer__littleEndian_p_snoc:
+lemma Integer__littleEndian_p_snoc:
   "\<lbrakk>base \<ge> 2; digits \<noteq> []\<rbrakk> 
       \<Longrightarrow> Integer__littleEndian_p (digits@[d], base, x) 
           = (let weight = base ^ length digits
@@ -845,7 +873,7 @@ theorem Integer__littleEndian_p_snoc:
 done
 
 
-theorem Integer__littleEndian_p_snoc2:
+lemma Integer__littleEndian_p_snoc2:
   "\<lbrakk>base \<ge> 2;  d < base ; digits \<noteq> []\<rbrakk>
     \<Longrightarrow> Integer__littleEndian_p (digits@[d], base, x) 
         = (\<exists>z. Integer__littleEndian_p (digits, base, z) 
@@ -854,12 +882,12 @@ theorem Integer__littleEndian_p_snoc2:
   apply (drule Integer__littleEndian_p_bound, auto)+
 done
 
-theorem Integer__littleEndian_p_singleton:
+lemma Integer__littleEndian_p_singleton:
   "\<lbrakk>base \<ge> 2;  x < base \<rbrakk> \<Longrightarrow> Integer__littleEndian_p ([d], base, x) = (d = x)"
  by (auto simp add: Integer__littleEndian_p_def List__map2_def List__tabulate_singleton)
 
 
-theorem Integer__littleEndian_p_singleton1:
+lemma Integer__littleEndian_p_singleton1:
   "\<lbrakk>Integer__littleEndian_p ([d], base, x); base \<ge> 2\<rbrakk> \<Longrightarrow> d = x"
  by (auto simp add: Integer__littleEndian_p_def List__map2_def List__tabulate_singleton)
 
@@ -911,19 +939,19 @@ end-proof
 % -------------------------------------------------------
 proof Isa -verbatim
 
-theorem Integer__toLittleEndian_nonempty: 
+lemma Integer__toLittleEndian_nonempty: 
   "\<lbrakk>base \<ge> 2; (len::Nat__PosNat) > 0;  int x < int base ** len\<rbrakk>
    \<Longrightarrow> Integer__toLittleEndian (x, base, len) \<noteq> []"
  by (simp add: Integer__toLittleEndian_def, rule the1I2, 
         drule Integer__toLittleEndian_Obligation_the, auto)
 
-theorem Integer__toLittleEndian_length: 
+lemma Integer__toLittleEndian_length: 
   "\<lbrakk>base \<ge> 2; (len::Nat__PosNat) > 0;  int x < int base ** len\<rbrakk>
    \<Longrightarrow> length (Integer__toLittleEndian (x, base, len)) = len"
  by (simp add: Integer__toLittleEndian_def, rule the1I2, 
         drule Integer__toLittleEndian_Obligation_the, auto)
 
-theorem Integer__toLittleEndian_members: 
+lemma Integer__toLittleEndian_members: 
   "\<lbrakk>base \<ge> 2; (len::Nat__PosNat) > 0;  int x < int base ** len;
      d mem Integer__toLittleEndian (x, base, len)\<rbrakk>
    \<Longrightarrow> d < base"
@@ -932,13 +960,13 @@ theorem Integer__toLittleEndian_members:
  apply (simp add: Integer__littleEndian_p_def)
 done
 
-theorem Integer__toLittleEndian_endian: 
+lemma Integer__toLittleEndian_endian: 
   "\<lbrakk>base \<ge> 2; (len::Nat__PosNat) > 0; int x < int base ** len\<rbrakk>
    \<Longrightarrow> Integer__littleEndian_p(Integer__toLittleEndian (x, base, len), base, x)"
  by (simp add: Integer__toLittleEndian_def, rule the1I2, 
         drule Integer__toLittleEndian_Obligation_the, auto)
 
-theorem Integer__toLittleEndian_p_equality: 
+lemma Integer__toLittleEndian_p_equality: 
   "\<lbrakk> base \<ge> 2 ; length digits1 = length digits2;
      Integer__littleEndian_p (digits1, base, x); Integer__littleEndian_p (digits2, base, x)\<rbrakk>
    \<Longrightarrow> digits1 = digits2"
@@ -974,17 +1002,17 @@ theorem Integer__toLittleEndian_p_equality:
 done
 
 
-theorem Integer__littleEndian_p_nil2:
+lemma Integer__littleEndian_p_nil2:
   "\<lbrakk>base \<ge> 2; Integer__littleEndian_p (digits, base, x)\<rbrakk>
     \<Longrightarrow> 1 \<le> length digits"
  by (rule classical, simp add: not_le Integer__littleEndian_p_nil)
 
-theorem Integer__littleEndian_p_nil3:
+lemma Integer__littleEndian_p_nil3:
   "\<lbrakk>base \<ge> 2; Integer__littleEndian_p (digits, base, x)\<rbrakk>
     \<Longrightarrow> Suc 0 \<le> length digits"
   by (drule Integer__littleEndian_p_nil2, simp_all)
 
-theorem Integer__littleEndian_p_min_length:
+lemma Integer__littleEndian_p_min_length:
   "\<lbrakk>base \<ge> 2; digits \<noteq> []; 0 < x; Integer__littleEndian_p (digits, base, x)\<rbrakk> 
       \<Longrightarrow> ld (x,base) \<le> length digits"
    apply (frule_tac x=x and digits=digits and base=base in Integer__littleEndian_p_bound, simp_all)
@@ -1012,11 +1040,11 @@ proof Isa toMinLittleEndian_Obligation_subtype
                     Integer__minimizes_p_def 
                     Integer__littleEndian_p_nil 
                     conj_imp 
-                    List__nonEmpty_p_def mem_def)
+                    List__nonEmpty_p_def )
    apply (case_tac "x=0") 
    (** special case: represent x=0 by [0] ***)
    apply (rule_tac x="[0]" in exI, 
-          auto simp add: mem_def Integer__littleEndian_p_singleton
+          auto simp add:  Integer__littleEndian_p_singleton
                         Integer__littleEndian_p_nil3)
    apply (frule Integer__littleEndian_p_nil2, simp)      
    apply (rotate_tac -1, drule_tac x="[0]" in spec,
@@ -1029,10 +1057,10 @@ proof Isa toMinLittleEndian_Obligation_subtype
           simp_all)
    (** Otherwise x>0 and we use Integer__toLittleEndian with minimal length **)
    apply (rule_tac x="Integer__toLittleEndian (x, base, ld (x,base))" in exI,
-          auto simp add: mem_def ld_positive zpower_int ld_mono)
+          auto simp add:  ld_positive zpower_int ld_mono)
    defer (*** subgoal 1 later ***)
    apply (rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_members,
-          simp_all add: zpower_int ld_mono ld_positive mem_def)
+          simp_all add: zpower_int ld_mono ld_positive )
    apply (rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_endian,
           simp_all add: zpower_int ld_mono ld_positive)
    apply (subst Integer__toLittleEndian_length,
@@ -1055,7 +1083,7 @@ proof Isa toMinLittleEndian_Obligation_subtype
    apply (drule mp)
    apply (safe, 
           rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_members,
-                   simp_all add: zpower_int ld_mono ld_positive mem_def,
+                   simp_all add: zpower_int ld_mono ld_positive ,
           rule_tac x=x and len="ld (x, base)" in Integer__toLittleEndian_endian,
                    simp_all add: zpower_int ld_mono ld_positive)
 
@@ -1065,7 +1093,7 @@ proof Isa toMinLittleEndian_Obligation_subtype0
   apply (frule_tac x=x in Integer__toMinLittleEndian_Obligation_subtype)
   apply (simp add: Integer__hasUniqueMinimizer_p_def
                    Integer__minimizers_def 
-                   Integer__minimizes_p_def mem_def
+                   Integer__minimizes_p_def 
                    unique_singleton,
          erule ex1E)
   apply (erule conjE)+
@@ -1078,7 +1106,7 @@ proof Isa toMinBigEndian_Obligation_subtype
    apply (drule_tac x=x in Integer__toMinLittleEndian_Obligation_subtype)
    apply (simp add: 
                 Integer__hasUniqueMinimizer_p_def
-                Integer__minimizers_def mem_def
+                Integer__minimizers_def 
                 Integer__minimizes_p_def 
                 unique_singleton,
           erule ex1E, clarify)
@@ -1092,7 +1120,7 @@ proof Isa toMinBigEndian_Obligation_subtype0
   apply (frule_tac x=x in Integer__toMinBigEndian_Obligation_subtype)
   apply (simp add: Integer__hasUniqueMinimizer_p_def
                    Integer__minimizers_def 
-                   Integer__minimizes_p_def mem_def
+                   Integer__minimizes_p_def 
                    Integer__bigEndian_p_def
                    unique_singleton,
          erule ex1E)
@@ -1112,11 +1140,11 @@ proof Isa Thy_Morphism Power Parity
  Integer.coprime?  -> coprime   curried
  Integer.even?     -> even
  Integer.odd?      -> odd
- Integer.minIn     -> Least
- Nat.minIn         -> Least
- Integer.maxIn     -> Greatest
- Integer.minimizer -> LeastM    curried
- Integer.maximizer -> GreatestM curried
+ Integer.minIn     -> LeastS
+ Nat.minIn         -> LeastS
+ Integer.maxIn     -> GreatestS
+ Integer.minimizer -> LeastMS    curried
+ Integer.maximizer -> GreatestMS curried
 end-proof
 
 
@@ -1372,12 +1400,11 @@ lemma  Integer__toMinBigEndian_exists:
              length a \<le> length y)"
   apply (cut_tac base=base and x=x in 
          Integer__toMinBigEndian_Obligation_subtype, simp)
-  apply (simp add: Set_P_def mem_def Integer__bigEndian_p_def 
+  apply (simp add: Set_P_def  Integer__bigEndian_p_def 
                                      Integer__littleEndian_p_def)
   apply (simp add: Integer__hasUniqueMinimizer_p_def Integer__minimizers_def
                    Integer__minimizes_p_def singleton_iff
                    unique_singleton,
-         simp add: mem_def,
          erule ex1_implies_ex)
 done  
 

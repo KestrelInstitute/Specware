@@ -104,7 +104,7 @@ proof (induct l)
   from List__list_subtype_constr
   have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
    by (auto simp add: domP_def codP_def)
-  have FPL: "Fun_P (domP, codP) List__list \_and Fun_PD domP List__list"
+  have FPL: "Fun_P (domP, codP) List__list \<and> Fun_PD domP List__list"
    by (auto simp add: domP_def codP_def)
   have LI: "List__list_1 [] = Function__inverse__stp domP List__list []"
    by (auto simp add: List__list_1_def domP_def)
@@ -117,7 +117,7 @@ proof (induct l)
   from f_init_seg f_all_None have "List__list f = []" by auto
   with BIJ FPL `domP f` `codP []`
   have "f = Function__inverse__stp domP List__list []"
-   by (auto simp add: Function__fxy_implies_inverse__stp)
+   by (metis Function__fxy_implies_inverse__stp2)
   with LI f_def show ?case by auto
  next
  case (Cons x l)
@@ -127,7 +127,7 @@ proof (induct l)
   from List__list_subtype_constr
   have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
    by (auto simp add: domP_def codP_def)
-  have FPL: "Fun_P (domP, codP) List__list \_and Fun_PD domP List__list"
+  have FPL: "Fun_P (domP, codP) List__list \<and> Fun_PD domP List__list"
    by (auto simp add: domP_def codP_def)
   have LI: "List__list_1 (x # l) =
             Function__inverse__stp domP List__list (x # l)"
@@ -170,7 +170,7 @@ proof (induct l)
   with `List__list f = l` have "List__list f' = x # l" by auto
   with BIJ FPL `domP f'` `codP (x # l)`
   have "f' = Function__inverse__stp domP List__list (x # l)"
-   by (auto simp add: Function__fxy_implies_inverse__stp)
+   by (metis Function__fxy_implies_inverse__stp2)
   with LI f'_def show ?case by auto
 qed
 end-proof
@@ -184,6 +184,210 @@ theorem element_of_tabulate is [a]
   fa (n:Nat, f: Nat -> a, i:Nat) i < n => tabulate (n, f) @ i = f i
 
 op [a] @@ (l:List a, i:Nat) infixl 30 : Option a = list_1 l i
+
+
+% ------------------------------------------------------------------------------
+% Here are a few useful properties about concepts specified in this theory
+% that we will need later. 
+% It would be good to couple each Specware theory T with a theory of insights 
+% called, e.g., "T-theorems.sw"  
+% ------------------------------------------------------------------------------
+proof Isa -verbatim
+
+(******************* definedOnInitialSegmentOfLength *****************)
+
+lemma definedOnInitialSegmentOfLengthZero [simp]:
+   "(\_lambdai. None) definedOnInitialSegmentOfLength 0"
+ by (simp add: List__definedOnInitialSegmentOfLength_def)
+
+lemma definedOnInitialSegmentOfLengthEmpty [simp]:
+   "\_existsn. (\_lambdai. None) definedOnInitialSegmentOfLength n"
+ by (rule_tac x=0 in exI, simp)
+
+lemma definedOnInitialSegmentOfLengthNone:
+   "\_lbrakkf definedOnInitialSegmentOfLength n; n  \_le j \_rbrakk \_Longrightarrow f j = None"
+ by (simp add: List__definedOnInitialSegmentOfLength_def)
+  
+lemma definedOnInitialSegmentOfLengthSome:
+   "\_lbrakkf definedOnInitialSegmentOfLength n; j < n  \_rbrakk \_Longrightarrow \_existsa. f j = Some a"
+ by (simp add: List__definedOnInitialSegmentOfLength_def)
+
+lemma definedOnInitialSegmentOfLengthNoneUp:
+   "\_lbrakkf definedOnInitialSegmentOfLength n; f i = None; i \_le j \_rbrakk \_Longrightarrow f j = None"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def,
+     case_tac "i\_gen", auto simp add: not_le)
+  
+lemma definedOnInitialSegmentOfLengthNoneUp2:
+   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f i = None; i \_le j \_rbrakk \_Longrightarrow f j = None"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def,
+     case_tac "i\_gen", auto simp add: not_le)
+  
+lemma definedOnInitialSegmentOfLengthNoneZero:
+   "\_lbrakkf definedOnInitialSegmentOfLength n; f 0 = None\_rbrakk \_Longrightarrow f j = None"
+ by (erule definedOnInitialSegmentOfLengthNoneUp, auto)
+
+lemma definedOnInitialSegmentOfLengthNoneZero2:
+   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f 0 = None\_rbrakk \_Longrightarrow f j = None"
+ by (auto, erule definedOnInitialSegmentOfLengthNoneZero, auto)
+
+lemma definedOnInitialSegmentOfLengthSomeDown:
+   "\_lbrakkf definedOnInitialSegmentOfLength n; f j = Some a; i \_le j \_rbrakk \_Longrightarrow \_existsb. f i = Some b"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def,
+     case_tac "i\_gen", auto simp add: not_le)
+  
+lemma definedOnInitialSegmentOfLengthSomeDown2:
+   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f j = Some a; i \_le j \_rbrakk \_Longrightarrow \_existsb. f i = Some b"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def,
+     case_tac "i\_gen", auto simp add: not_le)
+   
+lemma definedOnInitialSegmentOfLengthSuc:
+  "\_lbrakkf definedOnInitialSegmentOfLength (Suc n);  f 0 = Some x\_rbrakk \_Longrightarrow 
+     (\_lambdai. f (Suc i)) definedOnInitialSegmentOfLength n"
+  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+
+(********************************   List__list *************)
+
+(* declare List__list.simps [simp del] *)
+
+lemma List__list_empty_simp [simp]: 
+   "List__list (\_lambdai. None) = []"
+ by (simp split: option.split)
+
+lemma List__list_empty_iff:
+   "\_lbrakk\_exists(n::nat). f definedOnInitialSegmentOfLength n\_rbrakk
+     \_Longrightarrow (List__list f = []) = (f = (\_lambdai. None))"
+ by (simp split: option.split, 
+     auto simp add: List__definedOnInitialSegmentOfLength_def fun_eq_iff,
+     drule_tac x=0 in spec, auto)
+
+theorem List__length_is_SegmentLength: 
+  "\_lbrakkf definedOnInitialSegmentOfLength n\_rbrakk \_Longrightarrow  length (List__list f) = n"
+  apply (rule_tac t=n and s="List__lengthOfListFunction f" in subst)
+  defer
+  apply (rule List__length_is_length_of_list_function [symmetric], auto)
+  apply (simp add: List__lengthOfListFunction_def, rule the1I2)
+  apply (rule List__lengthOfListFunction_Obligation_the, auto) 
+  apply (simp add: List__unique_initial_segment_length)
+done
+
+lemma List__list_nth_aux:
+    "\_forallf. f definedOnInitialSegmentOfLength n \_longrightarrow  
+         (\_foralli<n. f i = Some a \_longrightarrow (List__list f) ! i = a)"
+  apply (induct n, safe)
+  apply (simp (no_asm_simp), auto simp del:  List__list.simps)
+  apply (split option.split, auto simp del:  List__list.simps)
+  apply (simp add: definedOnInitialSegmentOfLengthNoneZero)
+  apply (case_tac "i=0", simp_all  del:  List__list.simps)
+  apply (drule_tac x="\_lambdai. f (Suc i)" in spec, drule mp, 
+         simp add: definedOnInitialSegmentOfLengthSuc)
+  apply (drule_tac x="i - 1" in spec, auto)
+done
+
+lemma List__list_nth:
+    "\_lbrakkf definedOnInitialSegmentOfLength n; i < n; f i = Some a\_rbrakk \_Longrightarrow (List__list f) ! i = a"
+  by (simp add: List__list_nth_aux del:  List__list.simps)
+
+lemma List__list_members:
+    "\_lbrakkf definedOnInitialSegmentOfLength n; i < n; f i = Some a\_rbrakk \_Longrightarrow a mem (List__list f)"
+ by (frule List__list_nth, 
+     auto simp del: List__list.simps simp add: nth_mem List__length_is_SegmentLength)
+  
+theorem List__list_subtype_constr_refined: 
+  "Function__bijective_p__stp
+     (\_lambda (f::nat \_Rightarrow 'a option). 
+       \_exists(n::nat). f definedOnInitialSegmentOfLength n \_and (\_forallx. Option__Option_P P (f x)), 
+       list_all P) List__list"
+ apply (cut_tac List__list_subtype_constr)
+ apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def
+             simp del: List__list.simps)
+ apply (thin_tac "?P", drule_tac x=y in spec, 
+        auto simp add: list_all_length List__length_is_SegmentLength
+             simp del: List__list.simps)
+ apply (rule_tac x=x in exI, auto simp del: List__list.simps)
+ apply (case_tac "xa \<le> xb",
+        auto simp add: definedOnInitialSegmentOfLengthNone not_le
+        simp del: List__list.simps)
+ apply (drule_tac x=xb in spec, auto simp del: List__list.simps)
+ apply (frule definedOnInitialSegmentOfLengthSome,
+        auto simp add: List__list_nth simp del: List__list.simps)
+done
+
+(********************************   List__list_1_stp *************)
+
+lemma List__list_1_stp_nil:
+ "List__list_1__stp P__a [] = (\_lambdai. None)"
+ apply (simp add: List__list_1__stp_def)
+ apply (cut_tac List__list_subtype_constr)
+ apply (drule_tac x="(\_lambdai. if i < length [] then Some ([] ! i) else None)" and y="[]" 
+        in Function__fxy_implies_inverse__stp, auto) (* Map.empty = \_lambdai. None ***)
+ apply (thin_tac "?a=?b", simp add: Function__inverse__stp_def del:  List__list.simps)
+ apply (rule the1_equality, rule_tac a="\_lambdai. None" in ex1I, simp_all del:  List__list.simps)
+ apply (erule conjE, simp add: List__list_empty_iff del: List__list.simps)
+done
+
+lemma list_1_stp_Isa_nth1:
+ "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = Some (l!i)"
+  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
+  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
+  apply (simp add: List__list_1__stp_def, safe)
+  apply (frule List__length_is_SegmentLength, simp del: List__list.simps)
+  apply (frule_tac j=i in definedOnInitialSegmentOfLengthSome, auto simp del: List__list.simps)
+  apply (drule_tac x=i in spec, simp del: List__list.simps)
+  apply (drule_tac i=i and a=a in List__list_nth, auto)
+done 
+
+lemma list_1_stp_Isa_nth2:
+ "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = None"
+  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
+  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
+  apply (simp add: List__list_1__stp_def, safe)
+  apply (frule List__length_is_SegmentLength, simp del: List__list.simps)
+  apply (simp add: definedOnInitialSegmentOfLengthNone)
+done
+
+lemma list_1_stp_Isa_nth:
+ "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__list_1__stp P l = (\_lambdai. if i < length l then Some (l!i) else None)"
+ by (simp add: fun_eq_iff list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
+
+(******************************** List__tabulate *************)
+
+theorem List__tabulate_nil:
+  "List__tabulate(0, f) = []"
+  by (cut_tac n=0 and f=f in  List__length_tabulate, simp)
+
+theorem List__tabulate_snoc:
+  "List__tabulate(Suc n, f) = List__tabulate(n, f) @ [f n]"
+ by (auto simp add: list_eq_iff_nth_eq nth_append
+                    List__length_tabulate List__element_of_tabulate,
+     drule less_antisym, auto)
+
+theorem List__tabulate_cons:
+  "List__tabulate(Suc n, f) = f 0 # (List__tabulate(n, \_lambdai. f (Suc i)))"
+ by (auto simp add: list_eq_iff_nth_eq List__length_tabulate List__element_of_tabulate,
+     case_tac i, auto simp add: List__element_of_tabulate)
+
+theorem List__tabulate_singleton:
+  "List__tabulate(Suc 0, f) = [f 0]"
+ by (simp add: List__tabulate_nil List__tabulate_snoc)
+
+(************** List__at *****************************)
+
+theorem List__e_at_at__stp_nth1:
+ "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = Some (l!i)"
+ by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth1)
+
+theorem List__e_at_at__stp_nth2:
+ "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = None"
+ by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth2)
+
+theorem List__e_at_at__stp_nth:
+ "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
+ by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
+
+end-proof
+% ------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------
+
 
 (* Since elements are indexed starting at 0, we tend to avoid mentioning the
 "first", "second", etc. element of a list. The reason is that the English
@@ -876,20 +1080,14 @@ end-proof
 proof Isa list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
-              (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
+              (Collect (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)))"
   proof (unfold inj_on_def, clarify)
    fix f1 :: "nat \<Rightarrow> 'b option"
    fix f2 :: "nat \<Rightarrow> 'b option"
-   assume "f1 \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
-   hence "\<exists>n1. f1 definedOnInitialSegmentOfLength n1"
-    by (auto simp add: mem_def)
-   then obtain n1 where F1defN1: "f1 definedOnInitialSegmentOfLength n1"
-    by auto
-   assume "f2 \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
-   hence "\<exists>n2. f2 definedOnInitialSegmentOfLength n2"
-    by (auto simp add: mem_def)
-   then obtain n2 where F2defN2: "f2 definedOnInitialSegmentOfLength n2"
-    by auto
+   fix n1 :: nat
+   fix n2 :: nat
+   assume F1defN1: "f1 definedOnInitialSegmentOfLength n1"
+   assume F2defN2: "f2 definedOnInitialSegmentOfLength n2"
    assume "List__list f1 = List__list f2"
    with F1defN1 F2defN2 show "f1 = f2"
    proof (induct n \<equiv> n1 arbitrary: f1 f2 n1 n2)
@@ -984,11 +1182,11 @@ proof (auto simp add: Function__bijective_p__stp_def)
   qed
  next
  show "surj_on List__list
-               (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))
-               (\<lambda>ignore. True)"
+               (Collect (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)))
+               UNIV"
   proof (auto simp only: surj_on_def)
    fix l
-   show "\<exists>f \<in> \<lambda>f. Ex (op definedOnInitialSegmentOfLength f).
+   show "\<exists>f \<in> Collect(\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)).
            l = List__list f"
     proof (induct l)
      case Nil
@@ -996,20 +1194,20 @@ proof (auto simp add: Function__bijective_p__stp_def)
       hence Fseg: "f definedOnInitialSegmentOfLength 0"
        by (auto simp add: List__definedOnInitialSegmentOfLength_def)
       hence SUB:
-        "f \<in> (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
-       by (auto simp add: mem_def)
+        "f \<in> Collect(\<lambda>f. Ex (op definedOnInitialSegmentOfLength f))"
+       by auto
       from Fdef Fseg have "[] = List__list f" by auto
       with SUB show ?case by blast
      next
      case (Cons x l)
       then obtain f where
-       "f \<in> (\<lambda>f. \<exists>n. f definedOnInitialSegmentOfLength n)
+       "f \<in> Collect(\<lambda>f. \<exists>n. f definedOnInitialSegmentOfLength n)
         \<and>
         l = List__list f"
-       by auto
+       by blast
       hence Fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
         and FL: "l = List__list f"
-       by (auto simp add: mem_def)
+       by auto
       def Fdef': f' \<equiv> "\<lambda>i. if i = 0 then Some x else f (i - 1)"
       from Fseg
       obtain n where FN: "f definedOnInitialSegmentOfLength n"
@@ -1017,14 +1215,12 @@ proof (auto simp add: Function__bijective_p__stp_def)
       with Fdef' have FN': "f' definedOnInitialSegmentOfLength (n + 1)"
        by (auto simp add: List__definedOnInitialSegmentOfLength_def)
       hence Fseg': "\<exists>n. f' definedOnInitialSegmentOfLength n" by auto
-      hence Fin': "f' \<in>
-                     (\<lambda>f'.
-                       \<exists>n'. f' definedOnInitialSegmentOfLength n')"
-       by (auto simp add: mem_def)
+      hence Fin': "f' \<in> Collect (\<lambda>f'. \<exists>n'. f' definedOnInitialSegmentOfLength n')"
+       by auto
       from Fdef' FN' FL have "x # l = List__list f'" by auto
       with Fseg' Fin'
       show "\<exists>f \<in>
-              \<lambda>f. \<exists>n. f definedOnInitialSegmentOfLength n.
+              Collect(\<lambda>f. \<exists>n. f definedOnInitialSegmentOfLength n).
               x # l = List__list f"
        by blast
     qed
@@ -1103,24 +1299,9 @@ end-proof
 *)
 
 proof Isa list_1_subtype_constr
-proof -
- have "defined_on List__list
-                  (\<lambda> (f::nat \<Rightarrow> 'a option).
-                   \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
-                  TRUE"
-  by (auto simp add: defined_on_def mem_def)
- with List__list_subtype_constr
-  have "Function__bijective_p__stp
-         (TRUE, 
-          \<lambda> (f::nat \<Rightarrow> 'a option). 
-            \<exists>(n::nat). f definedOnInitialSegmentOfLength n)
-         (Function__inverse__stp
-          (\<lambda> (f::nat \<Rightarrow> 'a option). 
-             \<exists>(n::nat).
-               f definedOnInitialSegmentOfLength n) List__list)"
-   by (rule Function__inverse__stp_bijective)
-  thus ?thesis by (auto simp add: List__list_1_def)
-qed
+  apply (cut_tac List__list_subtype_constr)
+  apply (drule Function__inverse__stp_bijective)
+  apply (auto simp add: List__list_1_def)
 end-proof
 
 proof Isa list_1_subtype_constr1
@@ -1130,9 +1311,9 @@ proof Isa list_1_subtype_constr1
   apply (simp only: Function__inverse__stp_def Fun_PR.simps)
   apply(rule_tac Q = "\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)" in the1I2)
   apply(auto simp del: List__list.simps)
-  apply (simp add: surj_on_def Bex_def mem_def del: List__list.simps)
+  apply (simp add: surj_on_def Bex_def del: List__list.simps)
   apply (drule_tac x=x in spec, auto simp del: List__list.simps)
-  apply (auto simp add: inj_on_def Ball_def mem_def simp del: List__list.simps)
+  apply (auto simp add: inj_on_def Ball_def simp del: List__list.simps)
 end-proof
 
 proof Isa tabulate_Obligation_subtype
@@ -1149,8 +1330,8 @@ proof Isa tabulate_subtype_constr
 end-proof
 
 proof Isa length_is_length_of_list_function
-proof (induct n \<equiv> "List__lengthOfListFunction f" arbitrary: f)
-case 0
+  proof (induct n \<equiv> "List__lengthOfListFunction f" arbitrary: f)
+case 0 note prems = this
  from prems have "\<exists>!n. f definedOnInitialSegmentOfLength n"
   by (auto simp add: List__unique_initial_segment_length)
  hence "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
@@ -1162,7 +1343,7 @@ case 0
  hence "length (List__list f) = 0" by auto
  with prems show ?case by auto
 next
-case (Suc n)
+case (Suc n) note prems = this
  from prems have "\<exists>!n. f definedOnInitialSegmentOfLength n"
   by (auto simp add: List__unique_initial_segment_length)
  hence "f definedOnInitialSegmentOfLength (List__lengthOfListFunction f)"
@@ -1193,7 +1374,7 @@ case (Suc n)
  with `n = List__lengthOfListFunction (\<lambda>i. f (i + 1))`
   have "length (List__list (\<lambda>i. f (i + 1))) = n" by auto
  hence "length (Cons x (List__list (\<lambda>i. f (i + 1)))) = Suc n" by auto
- with prems show ?case by auto
+ with prems show ?case by (metis `List__list f = x # List__list (\<lambda>i. f (i + 1))`) 
 qed
 end-proof
 
@@ -1789,61 +1970,9 @@ proof Isa e_lt_bar_subtype_constr2
 end-proof
 
 proof Isa update__stp_Obligation_subtype
-apply (rule_tac x="length l" in exI)
-apply (simp add: List__definedOnInitialSegmentOfLength_def 
-                 list_all_length mem_def)
-apply (simp add: List__e_at_at__stp_def List__list_1__stp_def)
-apply (rule_tac t="Function__inverse__stp
-                      (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f) \<and>
-                          (\<forall>z. Option__Option_P P__a (f z)))
-                   List__list l"
-            and s="List__list_1 l"
-       in subst)
-defer apply (simp add:list_1_Isa_nth  del:List__list.simps)
-apply (thin_tac "P__a x", thin_tac "i<length l",
-       cut_tac List__list_subtype_constr, simp add: bij_on_def, clarify)
-apply (subgoal_tac "inj_on List__list
-                    (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f) \<and>
-                            (\<forall>z. Option__Option_P P__a (f z)))
-                    \<and> 
-                    l \<in> List__list `
-                     (\<lambda>f. Ex (op definedOnInitialSegmentOfLength f) \<and>
-                      (\<forall>z. Option__Option_P P__a (f z)))
-                    ",
-       clarify)
-apply (simp add:Function__inverse__stp_alt List__list_1_def del:List__list.simps)
-apply (cut_tac f="List__list"
-           and A="\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)"
-           and y="List__list x"
-       in Function__inverse__stp_alt,
-       auto simp add: image_def simp del:List__list.simps)
-apply (rule_tac x=x in bexI, simp, simp add:mem_def)
-apply (rule inv_on_f_f, simp_all add: mem_def del:List__list.simps)
-apply (simp only: inj_on_def, clarify,
-       drule_tac x=x in bspec, simp only: mem_def,
-       drule_tac x=y in bspec, simp only: mem_def, safe)
-apply (simp only: surj_on_def,
-       drule_tac x=l in bspec, simp only: UNIV_def mem_Collect_eq)
-apply (erule bexE, rule_tac x=x in bexI, simp)
-apply (subgoal_tac "List__list_1 (List__list x) = x", thin_tac "inj_on ?f ?A")
-apply (simp only: list_all_length mem_def, safe)
-apply (subgoal_tac "length (List__list x) = xa", simp del:List__list.simps)
-apply (simp only: mem_def List__definedOnInitialSegmentOfLength_def)
-apply (subgoal_tac "z<xa \<or> z\<ge>xa", erule disjE, auto simp del: List__list.simps)
-apply (drule_tac x=z in spec,  auto simp del: List__list.simps)
-apply (drule_tac x=z in spec,  auto simp del: List__list.simps)
-apply (cut_tac i=z and x=y and l="List__list x" in List__e_at__def,
-       auto simp del:List__list.simps)
-apply (cut_tac f=x in List__length_is_length_of_list_function [symmetric], 
-       auto simp add: List__lengthOfListFunction_def simp del:List__list.simps)
-apply (rule the1_equality, auto simp add: List__unique_initial_segment_length
-                                simp del:List__list.simps)
-apply (simp only: List__list_1_def)
-apply (cut_tac f="List__list"
-           and A="\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)"
-           and y="List__list x"
-       in Function__inverse__stp_alt,
-       auto simp add: image_def simp del:List__list.simps)
+by (rule_tac x="length l" in exI,
+    auto simp add: List__definedOnInitialSegmentOfLength_def 
+                   List__e_at_at__stp_nth)
 end-proof
 
 proof Isa update_Obligation_subtype
@@ -2010,121 +2139,20 @@ proof Isa zip3_Obligation_subtype
 end-proof
 
 proof Isa unzip__stp_Obligation_subtype
-apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def)
-apply (drule_tac f="map fst" in arg_cong, simp)
-apply (drule_tac f="map snd" in arg_cong, simp)
-apply (rule_tac x="(map fst y, map snd y)" in bexI,
-       auto simp add: Bex_def mem_def list_all_iff)
-apply (rule_tac list=y in list.induct, auto)
+  by (auto simp add: bij_ON_def inj_on_def surj_on_def zip_eq_conv,
+      rule_tac x="map fst y" in exI, rule_tac x="map snd y" in exI,
+      auto simp add: zip_map_fst_snd list_all_iff)
 end-proof
 
 proof Isa unzip_Obligation_subtype
-proof (auto simp add: Function__bijective_p__stp_def)
- show "inj_on (\<lambda>(x::'a list, y::'b list). zip x y)
-              (\<lambda>(x,y). length x = length y)"
- proof (unfold inj_on_def, rule ballI, rule ballI, rule impI)
-  fix l1_l2 :: "'a list \<times> 'b list"
-  fix r1_r2 :: "'a list \<times> 'b list"
-  show "\<lbrakk>l1_l2 \<in> (\<lambda>(x,y). length x = length y) ;
-                 r1_r2 \<in> (\<lambda>(x,y). length x = length y) ;
-                 split zip l1_l2 = split zip r1_r2\<rbrakk> \<Longrightarrow>
-        l1_l2 = r1_r2"
-  proof (induct l \<equiv> "snd l1_l2" arbitrary: l1_l2 r1_r2)
-  case Nil
-   hence "l1_l2 = ([], [])" by (auto simp: mem_def)
-   with Nil have "split zip r1_r2 = []" by auto
-   have "r1_r2 = ([], [])"
-   proof (cases "fst r1_r2  = []")
-    assume "fst r1_r2 = []"
-    with Nil show ?thesis by (auto simp: mem_def)
-   next
-    assume "\<not> fst r1_r2 = []"
-    have "snd r1_r2 = []"
-    proof (rule ccontr)
-     assume "\<not> snd r1_r2 = []"
-     with `\<not> fst r1_r2 = []` have "length (split zip r1_r2) > 0"
-      by (auto simp: split_def length_zip)
-     with `split zip r1_r2 = []` show False by auto
-    qed
-    with Nil show ?thesis by (auto simp: mem_def)
-   qed
-   with `l1_l2 = ([], [])` show "l1_l2 = r1_r2" by auto
-  next
-  case (Cons h2 t2)
-   hence "length (snd l1_l2) > 0" by auto
-   with `l1_l2 \<in> (\<lambda>(x,y). length x = length y)`
-   have "length (fst l1_l2) > 0"
-    by (auto simp: mem_def)
-   then obtain h1 and t1 where "fst l1_l2 = h1 # t1"
-    by (cases "fst l1_l2", auto)
-   with Cons have "snd l1_l2 = h2 # t2" by auto
-   with `fst l1_l2 = h1 # t1` `split zip l1_l2 = split zip r1_r2`
-    have ZR: "split zip r1_r2 = (h1,h2) # zip t1 t2"
-     by (auto simp: split_def)
-   from `l1_l2 \<in> (\<lambda>(x,y). length x = length y)`
-        `fst l1_l2 = h1 # t1` `snd l1_l2 = h2 # t2`
-    have "(t1,t2) \<in> (\<lambda>(x,y). length x = length y)"
-     by (auto simp: mem_def)
-   from ZR have "fst r1_r2 \<noteq> []"
-    by (auto simp: split_def)
-   then obtain g1 and u1 where "fst r1_r2 = g1 # u1"
-    by (cases "fst r1_r2", auto)
-   from ZR have "snd r1_r2 \<noteq> []"
-    by (auto simp: split_def)
-   then obtain g2 and u2 where "snd r1_r2 = g2 # u2"
-    by (cases "snd r1_r2", auto)
-   with `fst r1_r2 = g1 # u1` ZR have "h1 = g1" and "h2 = g2"
-    by (auto simp: split_def)
-   with `fst r1_r2 = g1 # u1` `snd r1_r2 = g2 # u2`
-    have "fst r1_r2 = h1 # u1" and "snd r1_r2 = h2 # u2" by auto
-   with `r1_r2 \<in> (\<lambda>(x,y). length x = length y)`
-    have "(u1,u2) \<in> (\<lambda>(x,y). length x = length y)"
-     by (auto simp: mem_def)
-   from `fst r1_r2 = h1 # u1` `snd r1_r2 = h2 # u2` ZR
-    have "split zip (t1,t2) = split zip (u1,u2)"
-     by (auto simp: split_def)
-   with Cons.hyps `(t1,t2) \<in> (\<lambda>(x,y). length x = length y)`
-                  `(u1,u2) \<in> (\<lambda>(x,y). length x = length y)`
-    have "t1 = u1" and "t2 = u2" by auto
-   with `fst l1_l2 = h1 # t1` `snd l1_l2 = h2 # t2`
-        `fst r1_r2 = h1 # u1` `snd r1_r2 = h2 # u2`
-   show "l1_l2 = r1_r2" by (auto simp: Pair_fst_snd_eq)
-  qed
- qed
-next
- show "surj_on (\<lambda>(x,y). zip x y)
-               (\<lambda>(x,y). length x = length y) (\<lambda>_. True)"
- proof (auto simp add: surj_on_def)
-  fix lr
-  show "\<exists> l_r \<in> (\<lambda>(x,y). length x = length y).
-             lr = split zip l_r"
-  proof (induct lr)
-  case Nil
-   def l_r \<equiv> "([], []) :: ('e list \<times> 'f list)"
-   hence EQL: "l_r \<in> (\<lambda>(x,y). length x = length y)"
-    by (auto simp: mem_def)
-   from l_r_def have "[] = split zip l_r" by auto
-   with EQL show ?case by auto
-  next
-  case (Cons hg tu)
-   then obtain t_u
-    where "t_u \<in> (\<lambda>(x,y). length x = length y)"
-      and "tu = split zip t_u"
-     by auto
-   def l_r \<equiv> "(fst hg # fst t_u, snd hg # snd t_u)"
-   with `t_u \<in> (\<lambda>(x,y). length x = length y)`
-    have EQL: "l_r \<in> (\<lambda>(x,y). length x = length y)"
-     by (auto simp: mem_def)
-   from l_r_def `tu = split zip t_u`
-    have "hg # tu = split zip l_r" by (auto simp: split_def)
-   with EQL show ?case by auto
-  qed
- qed
-qed
+  by (auto simp add: bij_on_def inj_on_def surj_on_def zip_eq_conv,
+      rule_tac x="map fst y" in exI, rule_tac x="map snd y" in exI,
+      auto simp add: zip_map_fst_snd)
 end-proof
 
 proof Isa unzip_subtype_constr
-proof (auto simp: Let_def)
+
+  proof (auto simp: Let_def)
  fix x :: "'a list"
  fix y :: "'b list"
  assume "List__unzip d__x = (x,y)"
@@ -2143,14 +2171,14 @@ proof (auto simp: Let_def)
   have SXY: "(SOME p. (\<lambda>(x,y). x equiLong y) p \<and>
                       (\<lambda>(x,y). zip x y) p = d__x) = (x,y)" by auto
  from List__unzip_Obligation_subtype
-  have "surj_on (\<lambda>(x,y). zip x y) (\<lambda>(x,y). x equiLong y) UNIV"
+  have "surj_on (\<lambda>(x,y). zip x y) {(x,y). x equiLong y} UNIV"
    by (auto simp: bij_on_def)
- hence "\<exists>p \<in> (\<lambda>(x,y). x equiLong y).
+ hence "\<exists>p \<in> {(x,y). x equiLong y}.
              d__x = (\<lambda>(x,y). zip x y) p"
    by (auto simp: surj_on_def)
  then obtain p where "(\<lambda>(x,y). x equiLong y) p"
                  and "(\<lambda>(x,y). zip x y) p = d__x"
-  by (auto simp: mem_def)
+  by auto
  hence "\<exists>p. (\<lambda>(x,y). x equiLong y) p \<and>
                     (\<lambda>(x,y). zip x y) p = d__x"
   by auto
@@ -2169,306 +2197,119 @@ qed
 end-proof
 
 proof Isa unzip3__stp_Obligation_subtype
-apply (auto simp add: bij_ON_def inj_on_def surj_on_def mem_def List__zip3_alt)
-apply (drule_tac f="map fst" in arg_cong, simp)
-apply (drule_tac f="map snd" in arg_cong, simp, 
-       drule_tac f="map fst" in arg_cong, simp)
-apply (drule_tac f="map snd" in arg_cong, simp, 
-       drule_tac f="map snd" in arg_cong, simp)
-apply (rule_tac x="(map fst y, map fst (map snd y), map snd (map snd y))" in bexI,
-       auto simp add: Bex_def mem_def list_all_iff List__zip3_alt)
-apply (rule_tac list=y in list.induct, auto)
+ apply (auto simp add: bij_ON_def inj_on_def surj_on_def List__zip3_alt
+                       zip_eq_conv)
+ apply (rule_tac x="map fst y" in exI,
+        rule_tac x="map (fst o snd) y" in exI, auto,
+        rule_tac x="map (snd o snd) y" in exI, 
+        auto simp add: List__zip3_alt list_all_iff)
+ apply (induct_tac y, simp_all)
 end-proof
 
 proof Isa unzip3_Obligation_subtype
-proof (auto simp add: Function__bijective_p__stp_def)
- show "inj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
-                             \<Rightarrow>
-                            ('a \<times> 'b \<times> 'c) list)
-              (\<lambda>(x,y,z). length x = length y \<and>
-                                 length y = length z)"
- proof (unfold inj_on_def, rule ballI, rule ballI, rule impI)
-  fix l1_l2_l3 :: "'a list \<times> 'b list \<times> 'c list"
-  fix r1_r2_r3 :: "'a list \<times> 'b list \<times> 'c list"
-  assume "l1_l2_l3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
-                                            length y = length z)"
-  assume "r1_r2_r3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
-                                            length y = length z)"
-  assume "List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3"
-  def l1 \<equiv> "fst l1_l2_l3"
-  and l2 \<equiv> "fst (snd l1_l2_l3)"
-  and l3 \<equiv> "snd (snd l1_l2_l3)"
-  and r1 \<equiv> "fst r1_r2_r3"
-  and r2 \<equiv> "fst (snd r1_r2_r3)"
-  and r3 \<equiv> "snd (snd r1_r2_r3)"
-  with `l1_l2_l3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
-                                          length y = length z)`
-       `r1_r2_r3 \<in> (\<lambda>(x,y,z). length x = length y \<and>
-                                          length y = length z)`
-   have "length l1 = length l2" and "length r1 = length r2"
-    and "length l2 = length l3" and "length r2 = length r3"
-    and "length l1 = length l3" and "length r1 = length r3"
-    by (auto simp add: mem_def)
-  from `List__zip3 l1_l2_l3 = List__zip3 r1_r2_r3`
-       l1_def l2_def l3_def r1_def r2_def r3_def
-   have "List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)" by auto
-  def fl \<equiv> "\<lambda>i. if i < length l1
-                               then Some (l1!i,l2!i,l3!i) else None"
-  and fr \<equiv> "\<lambda>i. if i < length r1
-                               then Some (r1!i,r2!i,r3!i) else None"
-  with `List__zip3 (l1,l2,l3) = List__zip3 (r1,r2,r3)`
-   have "List__list fl = List__list fr" by (auto simp add: List__zip3_def)
-  from fl_def have fl_seg: "\<exists>n. fl definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  from fr_def have fr_seg: "\<exists>n. fr definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  from List__list_subtype_constr
-   have "inj_on List__list
-                (\<lambda>f:: nat \<Rightarrow>
-                              ('a \<times> 'b \<times> 'c) option.
-                    \<exists>n. f definedOnInitialSegmentOfLength n)"
-    by (auto simp add: Function__bijective_p__stp_def)
-  with fl_seg fr_seg `List__list fl = List__list fr`
-   have "fl = fr"
-    by (auto simp add: inj_on_def mem_def del: List__list.simps)
-  have "length l1 \<ge> length r1"
-  proof (rule ccontr)
-   assume "\<not> length l1 \<ge> length r1"
-   hence "length l1 < length r1" by auto
-   with fl_def fr_def have "fl (length l1) \<noteq> fr (length l1)" by auto
-   with `fl = fr` show False by auto
-  qed
-  have "length l1 \<le> length r1"
-  proof (rule ccontr)
-   assume "\<not> length l1 \<le> length r1"
-   hence "length l1 > length r1" by auto
-   with fl_def fr_def have "fl (length r1) \<noteq> fr (length r1)" by auto
-   with `fl = fr` show False by auto
-  qed
-  with `length l1 \<ge> length r1` have "length l1 = length r1" by auto
-  with `length l1 = length l2` `length r1 = length r2`
-   have "length l2 = length r2" by auto
-  with `length l2 = length l3` `length r2 = length r3`
-   have "length l3 = length r3" by auto
-  have "\<forall>i < length l1. l1 ! i = r1 ! i"
-  proof
-   fix i
-   from `fl = fr` have "fl i = fr i" by auto
-   show "i < length l1 \<longrightarrow> l1 ! i = r1 ! i"
-   proof
-    assume "i < length l1"
-    with `length l1 = length r1` have "i < length r1" by auto
-    with `i < length l1` `fl i = fr i` fl_def fr_def
-     show "l1 ! i = r1 ! i" by auto
-   qed
-  qed
-  with `length l1 = length r1` have "l1 = r1"
-   by (auto simp add: list_eq_iff_nth_eq)
-  have "\<forall>i < length l2. l2 ! i = r2 ! i"
-  proof
-   fix i
-   from `fl = fr` have "fl i = fr i" by auto
-   show "i < length l2 \<longrightarrow> l2 ! i = r2 ! i"
-   proof
-    assume "i < length l2"
-    with `length l1 = length l2` have "i < length l1" by auto
-    with `length l1 = length r1` have "i < length r1" by auto
-    with `i < length l1` `fl i = fr i` fl_def fr_def
-     show "l2 ! i = r2 ! i" by auto
-   qed
-  qed
-  with `length l2 = length r2` have "l2 = r2"
-   by (auto simp add: list_eq_iff_nth_eq)
-  have "\<forall>i < length l3. l3 ! i = r3 ! i"
-  proof
-   fix i
-   from `fl = fr` have "fl i = fr i" by auto
-   show "i < length l3 \<longrightarrow> l3 ! i = r3 ! i"
-   proof
-    assume "i < length l3"
-    with `length l1 = length l3` have "i < length l1" by auto
-    with `length l1 = length r1` have "i < length r1" by auto
-    with `i < length l1` `fl i = fr i` fl_def fr_def
-     show "l3 ! i = r3 ! i" by auto
-   qed
-  qed
-  with `length l3 = length r3` have "l3 = r3"
-   by (auto simp add: list_eq_iff_nth_eq)
-  with `l1 = r1` `l2 = r2` l1_def l2_def l3_def r1_def r2_def r3_def
-  show "l1_l2_l3 = r1_r2_r3" by (auto simp add: Pair_fst_snd_eq)
- qed
-next
- show "surj_on (List__zip3 :: 'a list \<times> 'b list \<times> 'c list
-                              \<Rightarrow>
-                              ('a \<times> 'b \<times> 'c) list)
-               (\<lambda>(x,y,z). length x = length y \<and>
-                                  length y = length z)
-               (\<lambda>_. True)"
- proof (auto simp add: surj_on_def)
-  fix lll :: "('a \<times> 'b \<times> 'c) list"
-  show "\<exists> l1_l2_l3 \<in>
-                (\<lambda>(x,y,z). length x = length y \<and>
-                                   length y = length z).
-           lll = List__zip3 l1_l2_l3"
-  proof (induct lll)
-  case Nil
-   def l1 \<equiv> "[] :: 'a list"
-   and l2 \<equiv> "[] :: 'b list"
-   and l3 \<equiv> "[] :: 'c list"
-   hence MEM: "(l1,l2,l3) \<in>
-               (\<lambda>(x,y,z). length x = length y \<and>
-                                  length y = length z)"
-    by (auto simp: mem_def)
-   def f \<equiv> "\<lambda>i. if i < length l1
-                               then Some (l1!i, l2!i, l3!i) else None"
-   hence fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
-    by (auto simp: List__definedOnInitialSegmentOfLength_def)
-   with f_def l1_def have "[] = List__zip3 (l1,l2,l3)"
-    by (auto simp: List__zip3_def)
-   with MEM show ?case by blast
-  next
-  case (Cons hhh ttt)
-   then obtain t1_t2_t3
-    where TEQL: "t1_t2_t3 \<in>
-                 (\<lambda>(x,y,z). length x = length y \<and>
-                                    length y = length z)"
-      and "ttt = List__zip3 t1_t2_t3"
-     by blast
-   def h1 \<equiv> "fst hhh"
-   and h2 \<equiv> "fst (snd hhh)"
-   and h3 \<equiv> "snd (snd hhh)"
-   and t1 \<equiv> "fst t1_t2_t3"
-   and t2 \<equiv> "fst (snd t1_t2_t3)"
-   and t3 \<equiv> "snd (snd t1_t2_t3)"
-   hence "t1_t2_t3 = (t1,t2,t3)" by auto
-   with TEQL have "length t1 = length t2" and "length t2 = length t3"
-    by (auto simp: mem_def)
-   def l1 \<equiv> "h1 # t1" and l2 \<equiv> "h2 # t2" and l3 \<equiv> "h3 # t3"
-   with `length t1 = length t2` `length t2 = length t3`
-    have LEQL: "(l1,l2,l3) \<in>
-                (\<lambda>(x,y,z). length x = length y \<and>
-                                   length y = length z)"
-     by (auto simp: mem_def)
-   def ft \<equiv> "\<lambda>i. if i < length t1
-                                then Some (t1!i, t2!i, t3!i) else None"
-   with `ttt = List__zip3 t1_t2_t3` `t1_t2_t3 = (t1,t2,t3)`
-    have "ttt = List__list ft" by (auto simp: List__zip3_def)
-   def f \<equiv> "\<lambda>i. if i < length l1
-                               then Some (l1!i, l2!i, l3!i) else None"
-   with l1_def l2_def l3_def have "f 0 = Some (h1,h2,h3)" by auto
-   with h1_def h2_def h3_def have F0: "f 0 = Some hhh" by auto
-   from f_def have fseg: "\<exists>n. f definedOnInitialSegmentOfLength n"
-    by (auto simp: List__definedOnInitialSegmentOfLength_def)
-   from f_def ft_def l1_def l2_def l3_def
-    have F_FT: "(\<lambda>i. f (i + 1)) = ft"
-     by (auto simp: ext)
-   with F0 fseg have "List__list f = hhh # List__list ft" by auto
-   with `ttt = List__list ft` have "hhh # ttt = List__list f" by auto
-   from f_def have "List__zip3 (l1,l2,l3) = List__list f"
-    by (auto simp: List__zip3_def)
-   with `hhh # ttt = List__list f` have "hhh # ttt = List__zip3 (l1,l2,l3)"
-    by auto
-   with LEQL show ?case by blast
-  qed
- qed
-qed
+ apply (auto simp add: bij_on_def inj_on_def surj_on_def List__zip3_alt
+                       zip_eq_conv)
+ apply (rule_tac x="map fst y" in exI,
+        rule_tac x="map (fst o snd) y" in exI, auto,
+        rule_tac x="map (snd o snd) y" in exI, auto simp add: List__zip3_alt)
+ apply (induct_tac y, simp_all)
 end-proof
 
 proof Isa unzip3_subtype_constr
- proof auto
+   proof auto
  fix l1::"'a list"
  and l2::"'b list"
  and l3::"'c list"
  assume "(l1,l2,l3) = List__unzip3 d__x"
  hence IZL: "Function__inverse__stp
-               (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
                List__zip3 d__x
              = (l1,l2,l3)"
   by (auto simp: List__unzip3_def)
  have "TRUE d__x" by auto
  with List__unzip3_Obligation_subtype
   have "Function__inverse__stp
-          (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+          (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
           List__zip3 d__x =
-        (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+        (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
                  List__zip3 l = d__x)"
    by (rule inverse_SOME)
  with IZL
-  have SL: "(SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
-                     \_and List__zip3 l = d__x) = (l1,l2,l3)" by auto
+  have SL: "(SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
+                     \<and> List__zip3 l = d__x) = (l1,l2,l3)" by auto
  from List__unzip3_Obligation_subtype
-  have "surj_on List__zip3 (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+  have "surj_on List__zip3 {(x,y,z). x equiLong y \<and> y equiLong z}
                            UNIV"
    by (auto simp: bij_on_def)
- hence "\_existsl \_in (\_lambda(x,y,z). x equiLong y \_and y equiLong z).
+ hence "\<exists>l \<in> {(x,y,z). x equiLong y \<and> y equiLong z}.
              d__x = List__zip3 l"
    by (auto simp: surj_on_def)
- then obtain l where "(\_lambda(x,y,z). x equiLong y \_and y equiLong z) l"
+ then obtain l where "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l"
                  and "List__zip3 l = d__x"
-  by (auto simp: mem_def)
- hence "\_existsl. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
-                 \_and List__zip3 l = d__x"
   by auto
- hence "(\_lambda(x,y,z). x equiLong y \_and y equiLong z)
-          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+ hence "\<exists>l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
+                 \<and> List__zip3 l = d__x"
+  by auto
+ hence "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
                    List__zip3 l = d__x)
-        \_and
+        \<and>
         List__zip3
-          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
                    List__zip3 l = d__x)
         = d__x"
   by (rule someI_ex)
- with SL have "(\_lambda(x,y,z). x equiLong y) (l1,l2,l3)"
+ with SL have "(\<lambda>(x,y,z). x equiLong y) (l1,l2,l3)"
   by auto
  thus "length l1 = length l2"  by auto  
 qed
 end-proof
 
 proof Isa unzip3_subtype_constr1
- proof auto
+   proof auto
  fix l1::"'a list"
  and l2::"'b list"
  and l3::"'c list"
  assume "(l1,l2,l3) = List__unzip3 d__x"
  hence IZL: "Function__inverse__stp
-               (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+               (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
                List__zip3 d__x
              = (l1,l2,l3)"
   by (auto simp: List__unzip3_def)
  have "TRUE d__x" by auto
  with List__unzip3_Obligation_subtype
   have "Function__inverse__stp
-          (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+          (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
           List__zip3 d__x =
-        (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+        (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
                  List__zip3 l = d__x)"
    by (rule inverse_SOME)
  with IZL
-  have SL: "(SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
-                     \_and List__zip3 l = d__x) = (l1,l2,l3)" by auto
+  have SL: "(SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
+                     \<and> List__zip3 l = d__x) = (l1,l2,l3)" by auto
  from List__unzip3_Obligation_subtype
-  have "surj_on List__zip3 (\_lambda(x,y,z). x equiLong y \_and y equiLong z)
+  have "surj_on List__zip3 {(x,y,z). x equiLong y \<and> y equiLong z}
                            UNIV"
    by (auto simp: bij_on_def)
- hence "\_existsl \_in (\_lambda(x,y,z). x equiLong y \_and y equiLong z).
+ hence "\<exists>l \<in> {(x,y,z). x equiLong y \<and> y equiLong z}.
              d__x = List__zip3 l"
    by (auto simp: surj_on_def)
- then obtain l where "(\_lambda(x,y,z). x equiLong y \_and y equiLong z) l"
+ then obtain l where "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l"
                  and "List__zip3 l = d__x"
-  by (auto simp: mem_def)
- hence "\_existsl. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l
-                 \_and List__zip3 l = d__x"
   by auto
- hence "(\_lambda(x,y,z). x equiLong y \_and y equiLong z)
-          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+ hence "\<exists>l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l
+                 \<and> List__zip3 l = d__x"
+  by auto
+ hence "(\<lambda>(x,y,z). x equiLong y \<and> y equiLong z)
+          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
                    List__zip3 l = d__x)
-        \_and
+        \<and>
         List__zip3
-          (SOME l. (\_lambda(x,y,z). x equiLong y \_and y equiLong z) l \_and
+          (SOME l. (\<lambda>(x,y,z). x equiLong y \<and> y equiLong z) l \<and>
                    List__zip3 l = d__x)
         = d__x"
   by (rule someI_ex)
- with SL have "(\_lambda(x,y,z). y equiLong z) (l1,l2,l3)"
+ with SL have "(\<lambda>(x,y,z). y equiLong z) (l1,l2,l3)"
   by auto
  thus "length l2 = length l3"  by auto
 qed
@@ -4933,18 +4774,17 @@ proof Isa isoList_subtype_constr2
   (*** prove injectivity **)
   apply (thin_tac "\<forall>x. ?P x", thin_tac "\<forall>x. ?P x", thin_tac "surj_on ?f ?A ?B",
          simp add: inj_on_def)
-  apply (rule ballI)
+  apply (rule allI)
   apply (rotate_tac 1, erule rev_mp, induct_tac x, simp, clarify)
-  apply (drule mp, simp add: list_all_iff mem_def)
-  apply (drule_tac x="tl y" in bspec, auto simp add: mem_def list_all_iff)
+  apply (drule mp, simp add: list_all_iff)
+  apply (drule_tac x="tl y" in spec, auto simp add: list_all_iff)
   (*** prove surjectivity **)
   apply (thin_tac "inj_on ?f ?A", auto simp add: surj_on_def)
   apply (rotate_tac 3, erule rev_mp, induct_tac y)
-  apply (simp add: list_all_iff mem_def)
-  apply (simp add: mem_def, auto simp add: list_all_iff)
-  apply (drule_tac x=a in bspec, simp add: mem_def)
-  apply (erule bexE)
-  apply (rule_tac x="xa # x" in bexI, auto  simp add: list_all_iff mem_def)
+  apply (auto simp add: list_all_iff)
+  apply (drule_tac x=a in spec, simp)
+  apply (erule exE)
+  apply (rule_tac x="xa # x" in exI, auto  simp add: list_all_iff)
 end-proof
 
 proof Isa isoList_subtype_constr1
@@ -4952,200 +4792,9 @@ proof Isa isoList_subtype_constr1
 end-proof
 
 % ------------------------------------------------------------------------------
-% Here are a few useful properties about concepts specified in this theory
-% that we will need later. 
-% It would be good to couple each Specware theory T with a theory of insights 
-% called, e.g., "T-theorems.sw"  
+% More extensions
+% ------------------------------------------------------------------------------
 proof Isa -verbatim
-
-(******************* definedOnInitialSegmentOfLength *****************)
-
-lemma definedOnInitialSegmentOfLengthZero [simp]:
-   "(\_lambdai. None) definedOnInitialSegmentOfLength 0"
- by (simp add: List__definedOnInitialSegmentOfLength_def)
-
-lemma definedOnInitialSegmentOfLengthEmpty [simp]:
-   "\_existsn. (\_lambdai. None) definedOnInitialSegmentOfLength n"
- by (rule_tac x=0 in exI, simp)
-
-lemma definedOnInitialSegmentOfLengthNone:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; n  \_le j \_rbrakk \_Longrightarrow f j = None"
- by (simp add: List__definedOnInitialSegmentOfLength_def)
-  
-lemma definedOnInitialSegmentOfLengthSome:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; j < n  \_rbrakk \_Longrightarrow \_existsa. f j = Some a"
- by (simp add: List__definedOnInitialSegmentOfLength_def)
-
-lemma definedOnInitialSegmentOfLengthNoneUp:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; f i = None; i \_le j \_rbrakk \_Longrightarrow f j = None"
- by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
-  
-lemma definedOnInitialSegmentOfLengthNoneUp2:
-   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f i = None; i \_le j \_rbrakk \_Longrightarrow f j = None"
- by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
-  
-lemma definedOnInitialSegmentOfLengthNoneZero:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; f 0 = None\_rbrakk \_Longrightarrow f j = None"
- by (erule definedOnInitialSegmentOfLengthNoneUp, auto)
-
-lemma definedOnInitialSegmentOfLengthNoneZero2:
-   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f 0 = None\_rbrakk \_Longrightarrow f j = None"
- by (auto, erule definedOnInitialSegmentOfLengthNoneZero, auto)
-
-lemma definedOnInitialSegmentOfLengthSomeDown:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; f j = Some a; i \_le j \_rbrakk \_Longrightarrow \_existsb. f i = Some b"
- by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
-  
-lemma definedOnInitialSegmentOfLengthSomeDown2:
-   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f j = Some a; i \_le j \_rbrakk \_Longrightarrow \_existsb. f i = Some b"
- by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
-   
-lemma definedOnInitialSegmentOfLengthSuc:
-  "\_lbrakkf definedOnInitialSegmentOfLength (Suc n);  f 0 = Some x\_rbrakk \_Longrightarrow 
-     (\_lambdai. f (Suc i)) definedOnInitialSegmentOfLength n"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-
-(********************************   List__list *************)
-
-(* declare List__list.simps [simp del] *)
-
-lemma List__list_empty_simp [simp]: 
-   "List__list (\_lambdai. None) = []"
- by (simp split: option.split)
-
-lemma List__list_empty_iff:
-   "\_lbrakk\_exists(n::nat). f definedOnInitialSegmentOfLength n\_rbrakk
-     \_Longrightarrow (List__list f = []) = (f = (\_lambdai. None))"
- by (simp split: option.split, 
-     auto simp add: List__definedOnInitialSegmentOfLength_def fun_eq_iff,
-     drule_tac x=0 in spec, auto)
-
-theorem List__length_is_SegmentLength: 
-  "\_lbrakkf definedOnInitialSegmentOfLength n\_rbrakk \_Longrightarrow  length (List__list f) = n"
-  apply (rule_tac t=n and s="List__lengthOfListFunction f" in subst)
-  defer
-  apply (rule List__length_is_length_of_list_function [symmetric], auto)
-  apply (simp add: List__lengthOfListFunction_def, rule the1I2)
-  apply (rule List__lengthOfListFunction_Obligation_the, auto) 
-  apply (simp add: List__unique_initial_segment_length)
-done
-
-lemma List__list_nth_aux:
-    "\_forallf. f definedOnInitialSegmentOfLength n \_longrightarrow  
-         (\_foralli<n. f i = Some a \_longrightarrow (List__list f) ! i = a)"
-  apply (induct n, safe)
-  apply (simp (no_asm_simp), auto simp del:  List__list.simps)
-  apply (split option.split, auto simp del:  List__list.simps)
-  apply (simp add: definedOnInitialSegmentOfLengthNoneZero)
-  apply (case_tac "i=0", simp_all  del:  List__list.simps)
-  apply (drule_tac x="\_lambdai. f (Suc i)" in spec, drule mp, 
-         simp add: definedOnInitialSegmentOfLengthSuc)
-  apply (drule_tac x="i - 1" in spec, auto)
-done
-
-lemma List__list_nth:
-    "\_lbrakkf definedOnInitialSegmentOfLength n; i < n; f i = Some a\_rbrakk \_Longrightarrow (List__list f) ! i = a"
-  by (simp add: List__list_nth_aux del:  List__list.simps)
-
-lemma List__list_members:
-    "\_lbrakkf definedOnInitialSegmentOfLength n; i < n; f i = Some a\_rbrakk \_Longrightarrow a mem (List__list f)"
- by (frule List__list_nth, 
-     auto simp del: List__list.simps simp add: nth_mem List__length_is_SegmentLength)
-  
-theorem List__list_subtype_constr_refined: 
-  "Function__bijective_p__stp
-     (\_lambda (f::nat \_Rightarrow 'a option). 
-       \_exists(n::nat). f definedOnInitialSegmentOfLength n \_and (\_forallx. Option__Option_P P (f x)), 
-       list_all P) List__list"
- apply (cut_tac List__list_subtype_constr)
- apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def mem_def 
-             simp del: List__list.simps)
- apply (drule_tac x=x in bspec, auto simp add: mem_def simp del: List__list.simps)
- apply (rotate_tac 1, drule_tac x=y in spec, auto simp add: mem_def simp del: List__list.simps)
- apply (rotate_tac 1, thin_tac "?P", rule_tac x=x in bexI, 
-        auto simp add: mem_def list_all_iff simp del: List__list.simps)
- apply (case_tac "xa \<le> xb", simp add: definedOnInitialSegmentOfLengthNone, 
-        simp add: not_le del: List__list.simps)
- apply (frule_tac j=xb in definedOnInitialSegmentOfLengthSome, simp)
- apply (erule exE,  drule_tac x=a in bspec, simp_all del: List__list.simps)
- apply (simp only: List__list_members)
-done
-
-(********************************   List__list_1_stp *************)
-
-lemma List__list_1_stp_nil:
- "List__list_1__stp P__a [] = (\_lambdai. None)"
- apply (simp add: List__list_1__stp_def)
- apply (cut_tac List__list_subtype_constr)
- apply (drule_tac x="(\_lambdai. if i < length [] then Some ([] ! i) else None)" and y="[]" 
-        in Function__fxy_implies_inverse__stp, auto) (* Map.empty = \_lambdai. None ***)
- apply (thin_tac "?a=?b", simp add: Function__inverse__stp_def del:  List__list.simps)
- apply (rule the1_equality, rule_tac a="\_lambdai. None" in ex1I, simp_all del:  List__list.simps)
- apply (erule conjE, simp add: List__list_empty_iff del: List__list.simps)
-done
-
-lemma list_1_stp_Isa_nth1:
- "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = Some (l!i)"
-  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
-  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
-  apply (simp add: List__list_1__stp_def, safe)
-  apply (frule List__length_is_SegmentLength, simp del: List__list.simps)
-  apply (frule_tac j=i in definedOnInitialSegmentOfLengthSome, auto simp del: List__list.simps)
-  apply (drule_tac x=i in spec, simp del: List__list.simps)
-  apply (drule_tac i=i and a=a in List__list_nth, auto)
-done 
-
-lemma list_1_stp_Isa_nth2:
- "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = None"
-  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
-  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
-  apply (simp add: List__list_1__stp_def, safe)
-  apply (frule List__length_is_SegmentLength, simp del: List__list.simps)
-  apply (simp add: definedOnInitialSegmentOfLengthNone)
-done
-
-lemma list_1_stp_Isa_nth:
- "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__list_1__stp P l = (\_lambdai. if i < length l then Some (l!i) else None)"
- by (simp add: fun_eq_iff list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
-
-(******************************** List__tabulate *************)
-
-theorem List__tabulate_nil:
-  "List__tabulate(0, f) = []"
-  by (cut_tac n=0 and f=f in  List__length_tabulate, simp)
-
-theorem List__tabulate_snoc:
-  "List__tabulate(Suc n, f) = List__tabulate(n, f) @ [f n]"
- by (auto simp add: list_eq_iff_nth_eq nth_append
-                    List__length_tabulate List__element_of_tabulate,
-     drule less_antisym, auto)
-
-theorem List__tabulate_cons:
-  "List__tabulate(Suc n, f) = f 0 # (List__tabulate(n, \_lambdai. f (Suc i)))"
- by (auto simp add: list_eq_iff_nth_eq List__length_tabulate List__element_of_tabulate,
-     case_tac i, auto simp add: List__element_of_tabulate)
-
-theorem List__tabulate_singleton:
-  "List__tabulate(Suc 0, f) = [f 0]"
- by (simp add: List__tabulate_nil List__tabulate_snoc)
-
-(************** List__at *****************************)
-
-theorem List__e_at_at__stp_nth1:
- "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = Some (l!i)"
- by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth1)
-
-theorem List__e_at_at__stp_nth2:
- "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = None"
- by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth2)
-
-theorem List__e_at_at__stp_nth:
- "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
- by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
 
 (***********************************************************************
  * From now on List__list should not be unfolded automatically  
@@ -5338,15 +4987,9 @@ by (rule nth_equalityI,
 lemma List__in_p__stp_finite:
   "\<lbrakk>list_all P l\<rbrakk>
    \<Longrightarrow>  finite {x. List__in_p__stp P (x, l)}"
-  apply (auto simp add: List__in_p__stp_def)
-  apply (rule_tac t="{x. \<exists>i.  List__e_at_at__stp P (l, i) = Some x}"
-              and s="{the (List__e_at_at__stp P (l, i)) |
-                        i. \<exists>x.  List__e_at_at__stp P (l, i) = Some x}" in subst)
-  apply (auto simp add: set_eq_iff, rule exI, auto)
-  apply (rule finite_image_set)
-  apply (rule_tac B="{i. i < length l}" in finite_subset, auto)
-  apply (rule classical, auto simp add: not_less List__e_at_at__stp_nth2)
-done
+by (simp add:  List__in_p__stp_def List__e_at_at__stp_nth,
+    rule_tac t="?set" and s="{l ! i | i. i < length l}" in subst,
+    auto)
 
 lemma List__length_rotateRight2 [simp]: 
   "\<lbrakk>length l > 0\<rbrakk> \<Longrightarrow> length (List__rotateRight(l, n)) = length l"
@@ -5406,7 +5049,7 @@ lemma List__unzip_zip_inv [simp]:
   apply (cut_tac List__unzip_Obligation_subtype,
          simp only: TRUE_def Function__bijective_p__stp_univ)
   apply (subst Function__inverse__stp_simp, simp)
-  apply (subst inv_on_f_f, simp_all add: bij_on_def mem_def)
+  apply (subst inv_on_f_f, simp_all add: bij_on_def )
 done
 
 lemma List__unzip_as_zip [simp]:
@@ -5417,7 +5060,7 @@ lemma List__unzip_as_zip [simp]:
   apply (cut_tac List__unzip_Obligation_subtype,
          simp only: TRUE_def Function__bijective_p__stp_univ)
   apply (subst Function__inverse__stp_simp, auto)
-  apply (cut_tac y=l and f="split zip" and A="\<lambda>(x, y). x equiLong y" 
+  apply (cut_tac y=l and f="split zip" and A="{(x, y). x equiLong y}" 
              and B=UNIV in surj_on_f_inv_on_f)
   apply (simp_all add: bij_on_def del: List__equiLong_def)
 done
@@ -6019,7 +5662,7 @@ proof Isa List__length_of_delete1__stp
   apply(case_tac "i")
   apply(simp)
   apply(simp)
-  by (metis diff_add_cancel int_Suc int_int_eq zadd_commute)
+  by (metis diff_add_cancel int_Suc int_int_eq add_commute)
 end-proof
   
 

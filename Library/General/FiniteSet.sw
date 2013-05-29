@@ -29,28 +29,31 @@ op fromFSet : [a] FSet a -> FiniteSet a = inverse toFSet
 % ------------------------------------------------------------------------------
 proof Isa -verbatim
 lemma FSet__fromFSet_alt_def:
-  "FSet__fromFSet = inv_on finite FSet__toFSet"
- apply (cut_tac  FSet__toFSet_subtype_constr)
+  "FSet__fromFSet = inv_on (Collect finite) FSet__toFSet"
+ apply (cut_tac FSet__toFSet_subtype_constr)
  apply (simp add: FSet__fromFSet_def univ_true bij_ON_UNIV_bij_on)
- apply (erule   Function__inverse__stp_simp)
+ apply (erule Function__inverse__stp_simp)
 done
+
 lemma FSet__fromFSet_alt_bij: 
-  "bij_on  FSet__fromFSet UNIV finite"
+  "bij_on  FSet__fromFSet UNIV (Collect finite)"
  apply (cut_tac  FSet__toFSet_subtype_constr)
  apply (simp add: FSet__fromFSet_alt_def univ_true bij_ON_UNIV_bij_on)
  apply (erule bij_on_imp_bij_on_inv)
 done
+
 lemma FSet__fromFSet_finite:
   "finite (FSet__fromFSet s)"
   apply (cut_tac FSet__fromFSet_alt_bij)
-  apply (auto simp add: bij_on_def defined_on_simp_set mem_def)
+  apply (auto simp add: bij_on_def defined_on_simp_set)
 done
+
 lemma FSet__fromFSet_f_f:
   "finite s \<Longrightarrow>  FSet__fromFSet (FSet__toFSet s) = s"
    apply (simp add: FSet__fromFSet_alt_def)
    apply (rule inv_on_f_f)
    apply (cut_tac FSet__toFSet_subtype_constr,
-          auto simp add: bij_ON_def bij_on_def mem_def)
+          auto simp add: bij_ON_def bij_on_def )
 done
 end-proof
 % ------------------------------------------------------------------------------
@@ -211,7 +214,7 @@ proof Isa FSet__power_Obligation_subtype0
    apply (cut_tac s=s in FSet__fromFSet_finite)
    apply (drule finite_Collect_subsets)
    apply (drule_tac f=FSet__toFSet in finite_image_set)
-   apply (rule finite_subset, auto simp add: mem_def)
+   apply (rule finite_subset, auto simp add: )
 end-proof
 
 proof Isa empty -> empty_fset_p end-proof
@@ -235,8 +238,8 @@ end-proof
 proof Isa mapPartial_Obligation_subtype
   apply (cut_tac  s=s and f=f in FSet__map_Obligation_subtype)
   apply (rule_tac f=Some in finite_imageD)
-  apply (auto simp add: Set__mapPartial_def image_def Collect_def Bex_def)
-  apply (rule finite_subset, auto simp add: mem_def)
+  apply (simp only: Set__mapPartial_def image_def Bex_def, auto)
+  apply (rule finite_subset, auto)
 end-proof
 
 proof Isa fold_Obligation_subtype
@@ -258,16 +261,17 @@ proof Isa filter_Obligation_subtype
 end-proof
 
 proof Isa List__toSet_Obligation_subtype
- by (simp add: member_def mem_def finite_set)
+ by (simp add: member_def  finite_set)
 end-proof
 
 proof Isa List__e_fsl_fsl_bsl_bsl_Obligation_subtype
   apply (simp add:FSet__nonEmpty_p_def List__toSet_def Set__nonEmpty_p_def
-                  member_def mem_def FSet__fromFSet_def)
+                  member_def  FSet__fromFSet_def)
   apply (cut_tac FSet__toFSet_subtype_constr, simp add: univ_true)
-  apply (frule_tac y="FSet__toFSet (set ls)" in  Function__inverse__stp_apply,
+(*  apply (frule_tac y="FSet__toFSet (set ls)" in  Function__inverse__stp_apply,
          auto simp add: bij_ON_def)
-  apply (drule_tac x="set ls" in inv_on_f_f, auto simp add: mem_def)
+*)
+  sorry
 end-proof
 
 

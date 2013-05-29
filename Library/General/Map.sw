@@ -139,7 +139,7 @@ op [a,b] injective? (m:Map(a,b)) : Bool =
 type InjectiveMap(a,b) = (Map(a,b) | injective?)
 proof Isa -typedef 
  by (rule_tac x="Map__update empty x y" in exI,
-     simp add: mem_def Map__injective_p_def Map__update_def dom_if Collect_def)
+     simp add:  Map__injective_p_def Map__update_def dom_if )
 end-proof
 
 theorem InjectiveMap_injective is  [a,b] fa (m:InjectiveMap(a,b)) injective? m
@@ -167,7 +167,7 @@ op [a,b] uncountable? (m:Map(a,b)) : Bool = uncountable? (domain m)
 
 type      FiniteMap(a,b) = (Map(a,b) | finite?)
 proof Isa -typedef 
- by (rule_tac x="empty" in exI, simp add: mem_def Map__finite_p_def Collect_def)
+ by (rule_tac x="empty" in exI, simp add:  Map__finite_p_def )
 end-proof
 
 
@@ -286,11 +286,8 @@ proof Isa e_lt_lt_lt__def1
   by (auto simp: map_add_def)
 end-proof
 
-
 proof Isa InjectiveMap_injective [simp]
-  by (case_tac "m",
-      simp add: Abs_Map__InjectiveMap_inverse Map__InjectiveMap_def 
-                Collect_def mem_def)
+  by (case_tac "m", simp add: Abs_Map__InjectiveMap_inverse)
 
 (******************************************************************************)
 declare Rep_Map__InjectiveMap_inverse [simp add]
@@ -302,25 +299,20 @@ declare Abs_Map__InjectiveMap_inverse [simp add]
 lemma Rep_Map__InjectiveMap_simp [simp]:
   "\<lbrakk>Map__injective_p y\<rbrakk>
    \<Longrightarrow>  (Rep_Map__InjectiveMap x = y) = (x = Abs_Map__InjectiveMap y)"
-apply (subst Abs_Map__InjectiveMap_inject [symmetric],
-       simp add: Rep_Map__InjectiveMap,
-       simp add: Map__InjectiveMap_def Collect_def mem_def,
-       simp add: Rep_Map__InjectiveMap_inverse)
-done
+by auto
 (******************************************************************************)
 
 lemma Map__Map__applyi_simp:
   "Map__applyi m y  = {x. x \<in> dom m \<and> m x = Some y}"
   by (simp add: Map__applyi_def Map__maps_p_def definedAt_m_def 
                 Map__domain__def e_at_m_def,
-      auto simp add: mem_def split: option.split)
+      auto simp add:  split: option.split)
 
 lemma Map__Map__applys_simp:
   "Map__applys m S  = {y. \<exists>x. x \<in> S \<and> m x = Some y}"
   apply (simp add: Map__applys_def Map__maps_p_def definedAt_m_def 
                 Map__domain__def e_at_m_def,
-      auto simp add: mem_def split: option.split, 
-      rule exI, auto)
+      auto simp add:  split: option.split)
 (******************************************************************************)
 
 
@@ -328,7 +320,6 @@ end-proof
 
 proof Isa inverse_Obligation_subtype
   apply (case_tac "m", 
-         simp add: Map__InjectiveMap_def Collect_def mem_def,
          auto simp add: Map__injective_p_def Let_def split: split_if_asm)
   apply (simp add: Map__Map__applyi_simp)
   apply (rotate_tac -2, thin_tac ?P, thin_tac ?P, erule notE)
@@ -345,7 +336,6 @@ end-proof
 
 proof Isa inverse_Obligation_subtype0
   apply (case_tac "m", 
-         simp add: Map__InjectiveMap_def Collect_def mem_def,
          auto simp add: Map__injective_p_def Let_def split: split_if_asm)
   apply (rotate_tac -2, drule_tac x=x in spec, simp add: Map__Map__applyi_simp)
   apply (erule notE, auto simp add: set_eq_iff)
@@ -355,9 +345,7 @@ end-proof
 proof Isa finite_p [simp] end-proof
 
 proof Isa FiniteMap_finite [simp]
-  by (case_tac "m",
-      simp add: Abs_Map__FiniteMap_inverse Map__FiniteMap_def 
-                Collect_def mem_def)
+  by (case_tac "m", simp add: Abs_Map__FiniteMap_inverse)
 
 (******************************************************************************)
 declare Rep_Map__FiniteMap_inverse [simp add]
@@ -368,23 +356,18 @@ declare Abs_Map__FiniteMap_inverse [simp add]
 
 lemma Map__FiniteMap_has_finite_domain [simp]:
   "finite (dom (Rep_Map__FiniteMap m))"
-  by (case_tac "m",
-      simp add: Abs_Map__FiniteMap_inverse Map__FiniteMap_def 
-                Collect_def mem_def)
+  by (case_tac "m", simp add: Abs_Map__FiniteMap_inverse)
 
 lemma Rep_Map__FiniteMap_simp [simp]:
   "\<lbrakk>Map__finite_p y\<rbrakk> \<Longrightarrow>  (Rep_Map__FiniteMap x = y) = (x = Abs_Map__FiniteMap y)"
-apply (subst Abs_Map__FiniteMap_inject [symmetric],
-       simp add: Rep_Map__FiniteMap,
-       simp add: Map__FiniteMap_def Collect_def mem_def,
-       simp add: Rep_Map__FiniteMap_inverse)
+apply (subst Abs_Map__FiniteMap_inject [symmetric], auto)
 (******************************************************************************)
 
 end-proof
 
 
 proof Isa update_preserves_finite1 [simp]
-  apply (auto simp add: Map__update_def mem_def dom_if)
+  apply (auto simp add: Map__update_def dom_if)
   apply (erule rev_mp,
          rule_tac t="{z. z \<noteq> x}" and s="UNIV - {x}" in subst, 
          auto simp add: Diff_Int_distrib)
@@ -398,7 +381,7 @@ end-proof
 
 proof Isa fromAssocList_Obligation_subtype1
   apply (cut_tac d__x=alist in List__unzip_subtype_constr)  
-  apply (auto simp add: Collect_def dom_if member_def 
+  apply (auto simp add:  dom_if member_def 
          List__positionOf_def List__theElement_def)
   apply (rule the1I2,
          rule List__theElement_Obligation_the, 
@@ -434,44 +417,39 @@ proof Isa -verbatim
 
 lemma Map__fromAssocList_empty [simp]:
   "Rep_Map__FiniteMap (Map__fromAssocList [])  = Map.empty"
-  by (simp add: Map__fromAssocList_def Map__FiniteMap_def dom_if)
-
+  by (simp add: Map__fromAssocList_def dom_if)
 
 lemma Map__fromAssocList_singleton [simp]:
   "Rep_Map__FiniteMap (Map__fromAssocList [(x,y)]) = Map__update empty x y "
-  by (simp add: Map__fromAssocList_def Map__FiniteMap_def dom_if 
-                Map__update_def ext)
-
+  by (simp add: Map__fromAssocList_def dom_if Map__update_def ext)
 
 lemma Map__singleton_element [simp]: 
   "Map__update Map.empty x y x = Some y"
   by (simp add: Map__update_def)
-
-
 
 end-proof
 % ------------------------------------------------------------------------------
 
 %% TODO This should be in [simp], but I am afraid of breaking things before we have the regression tests running. -EWS
 proof isa Map__dom_update
-  apply(auto simp: add Map__update_def)
+  by(auto simp: Map__update_def)
 end-proof
 
 proof isa Map__at_update_same_Obligation_subtype
-  apply (simp add: Map__dom_update)
+  by (simp add: Map__dom_update)
 end-proof
 
 %% TODO This should be in [simp], but I am afraid of breaking things before we have the regression tests running. -EWS
 proof isa Map__at_update_same
-  apply(simp add:Map__update_def e_at_m_def)
+  by(simp add:Map__update_def e_at_m_def)
 end-proof
 
 proof isa Map__at_update_diff_Obligation_subtype
-  apply (simp add: Map__dom_update)
+  by (simp add: Map__dom_update)
 end-proof
 
 proof isa Map__at_update_diff
-  apply(simp add:Map__update_def e_at_m_def)
+  by(simp add:Map__update_def e_at_m_def)
 end-proof
 
 proof isa Map__double_update [simp]

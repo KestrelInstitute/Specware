@@ -455,8 +455,7 @@ end-proof
 % ------------------------------------------------------------------------------
 
 proof Isa Nibble_length [simp] 
-  by (rule Abs_Bits__Nibble_induct, 
-      simp add: Abs_Bits__Nibble_inverse Bits__Nibble_def)
+  by (rule Abs_Bits__Nibble_induct, simp add: Abs_Bits__Nibble_inverse )
 
 (******************************************************************************)
 declare Rep_Bits__Nibble_inverse [simp add]
@@ -467,15 +466,12 @@ declare Abs_Bits__Nibble_inverse [simp add]
 lemma Rep_Bits__Nibble_simp [simp]:
   "\<lbrakk>length y = 4\<rbrakk> \<Longrightarrow>  (Rep_Bits__Nibble x = y) = (x = Abs_Bits__Nibble y)"
 apply (subst Abs_Bits__Nibble_inject [symmetric],
-      simp add: Rep_Bits__Nibble,
-      simp add: Bits__Nibble_def,
-      simp add: Rep_Bits__Nibble_inverse)
+      simp_all add: Rep_Bits__Nibble Rep_Bits__Nibble_inverse)
 (******************************************************************************)
 end-proof
 
 proof Isa Byte_length [simp]
-  by (rule Abs_Bits__Byte_induct,
-      simp add: Abs_Bits__Byte_inverse Bits__Byte_def)
+  by (rule Abs_Bits__Byte_induct, simp add: Abs_Bits__Byte_inverse)
 
 (******************************************************************************)
 declare Rep_Bits__Byte_inverse [simp add]
@@ -486,15 +482,12 @@ declare Abs_Bits__Byte_inverse [simp add]
 lemma Rep_Bits__Byte_simp [simp]:
   "\<lbrakk>length y = 8\<rbrakk> \<Longrightarrow>  (Rep_Bits__Byte x = y) = (x = Abs_Bits__Byte y)"
 apply (subst Abs_Bits__Byte_inject [symmetric],
-      simp add: Rep_Bits__Byte,
-      simp add: Bits__Byte_def,
-      simp add: Rep_Bits__Byte_inverse)
+      simp_all add: Rep_Bits__Byte Rep_Bits__Byte_inverse)
 (******************************************************************************)
 end-proof
 
 proof Isa Word16_length [simp]
-  by (rule Abs_Bits__Word16_induct,
-      simp add: Abs_Bits__Word16_inverse Bits__Word16_def)
+  by (rule Abs_Bits__Word16_induct, simp add: Abs_Bits__Word16_inverse)
 
 (******************************************************************************)
 declare Rep_Bits__Word16_inverse [simp add]
@@ -505,15 +498,12 @@ declare Abs_Bits__Word16_inverse [simp add]
 lemma Rep_Bits__Word16_simp [simp]:
   "\<lbrakk>length y = 16\<rbrakk> \<Longrightarrow>  (Rep_Bits__Word16 x = y) = (x = Abs_Bits__Word16 y)"
 apply (subst Abs_Bits__Word16_inject [symmetric],
-      simp add: Rep_Bits__Word16,
-      simp add: Bits__Word16_def,
-      simp add: Rep_Bits__Word16_inverse)
+      simp_all add: Rep_Bits__Word16 Rep_Bits__Word16_inverse)
 (******************************************************************************)
 end-proof
 
 proof Isa Word32_length [simp]
-  by (rule Abs_Bits__Word32_induct,
-      simp add: Abs_Bits__Word32_inverse Bits__Word32_def)
+  by (rule Abs_Bits__Word32_induct, simp add: Abs_Bits__Word32_inverse)
 
 (******************************************************************************)
 declare Rep_Bits__Word32_inverse [simp add]
@@ -524,15 +514,12 @@ declare Abs_Bits__Word32_inverse [simp add]
 lemma Rep_Bits__Word32_simp [simp]:
   "\<lbrakk>length y = 32\<rbrakk> \<Longrightarrow>  (Rep_Bits__Word32 x = y) = (x = Abs_Bits__Word32 y)"
 apply (subst Abs_Bits__Word32_inject [symmetric],
-      simp add: Rep_Bits__Word32,
-      simp add: Bits__Word32_def,
-      simp add: Rep_Bits__Word32_inverse)
+      simp_all add: Rep_Bits__Word32 Rep_Bits__Word32_inverse)
 (******************************************************************************)
 end-proof
 
 proof Isa Word64_length [simp]
-  by (rule Abs_Bits__Word64_induct,
-      simp add: Abs_Bits__Word64_inverse Bits__Word64_def)
+  by (rule Abs_Bits__Word64_induct, simp add: Abs_Bits__Word64_inverse)
 
 (******************************************************************************)
 declare Rep_Bits__Word64_inverse [simp add]
@@ -543,9 +530,7 @@ declare Abs_Bits__Word64_inverse [simp add]
 lemma Rep_Bits__Word64_simp [simp]:
   "\<lbrakk>length y = 64\<rbrakk> \<Longrightarrow>  (Rep_Bits__Word64 x = y) = (x = Abs_Bits__Word64 y)"
 apply (subst Abs_Bits__Word64_inject [symmetric],
-      simp add: Rep_Bits__Word64,
-      simp add: Bits__Word64_def,
-      simp add: Rep_Bits__Word64_inverse)
+      simp_all add: Rep_Bits__Word64 Rep_Bits__Word64_inverse)
 (******************************************************************************)
 end-proof
 
@@ -574,7 +559,7 @@ end-proof
 
 
 proof Isa byte_injective
- by (auto simp add: Bits__byte_def Abs_Bits__Byte_inject Bits__Byte_def)
+ by (auto simp add: Bits__byte_def Abs_Bits__Byte_inject)
 end-proof
 
 proof Isa byte_surjective
@@ -585,7 +570,7 @@ end-proof
 
 proof Isa byte_PLUS_simp
   by (simp add: Bits__PLUS_def Bits__byte_def 
-                Bits__Byte_def Abs_Bits__Byte_inverse)
+                Abs_Bits__Byte_inverse)
 end-proof
 
 proof Isa byte_PLUS_simp2 [simp]
@@ -719,7 +704,7 @@ proof Isa -verbatim
 (******************************************************************************)
 
 lemma min_toNat_size [simp]:                "-(2 ^ (len - 1)) \<le> int (toNat bs)"
- by (rule_tac j="0" in zle_trans, auto)
+ by (cut_tac j="0" in le_trans, auto)
 
 theorem Bits__inverse_bits_toNat2 [simp]: (** this form is more useful *)
   "\<lbrakk>0 < len; length bs = len\<rbrakk> \<Longrightarrow> toBits(toNat bs, len) = bs"
@@ -733,7 +718,7 @@ theorem Bits__toNat_inject_rule:
 lemma Bits__inverse_toNat_byte [simp]: 
   "\<lbrakk>n < 2 ^ 8\<rbrakk> 
    \<Longrightarrow> toNat (Rep_Bits__Byte (Bits__byte n)) = n"
- by (simp add: Bits__byte_def Bits__Byte_def)
+ by (simp add: Bits__byte_def)
 (******************************************************************************)
 (*** These should be converted into Specware Theorems later ***)
 (******************************************************************************)

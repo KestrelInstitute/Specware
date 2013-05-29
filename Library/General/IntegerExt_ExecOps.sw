@@ -283,7 +283,7 @@ end-proof
 proof Isa totient__1__obligation_refine_def
   apply (simp add: Integer__totient_def Set__size__stp_def 
                    Integer__totient__1_def)
-  apply (rule_tac x="(\<lambda>m. m \<le> n \<and> coprime m n)" in fun_cong)
+  apply (rule_tac x="{m. m \<le> n \<and> coprime m n}" in fun_cong)
   apply (rule the1_equality)
   (** this should follow by simplification - the current thm is a hack *)
   (** apply (erule ex1E, rule_tac a=size__v in ex1I) *)
@@ -417,7 +417,6 @@ proof isa toLittleEndian__1_Obligation_subtype1
                    Integer__hasUniqueMinimizer_p_def Integer__minimizers_def
                    Integer__minimizes_p_def singleton_iff
                    unique_singleton,
-         simp add: mem_def,
          erule ex1_implies_ex)
   (*****************************************)
   apply (clarify, drule_tac x="Integer__toLittleEndian (x, base, len)" in spec)
@@ -436,7 +435,6 @@ proof isa toLittleEndian__1_Obligation_subtype0
                    Integer__hasUniqueMinimizer_p_def Integer__minimizers_def
                    Integer__minimizes_p_def singleton_iff
                    unique_singleton,
-         simp add: mem_def,
          erule ex1_implies_ex)
   (*****************************************)
   apply (clarify, drule_tac x="Integer__toLittleEndian (x, base, len)" in spec)
