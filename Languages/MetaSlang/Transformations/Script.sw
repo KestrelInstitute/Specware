@@ -304,6 +304,9 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
             [])
       else rls
 
+
+%% Given a Spec `spc` and an op name `qid`, return the (first) definition
+%% and type for that op, if it occurs in the Spec.
 %%% Used by Applications/Specware/Handwritten/Lisp/transform-shell.lisp
   op getOpDef(spc: Spec, qid: QualifiedId): Option(MSTerm * MSType) =
     case findMatchingOps(spc, qid) of
@@ -319,6 +322,14 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       | [(_, _, _, bod, _)] -> Some bod
       | (_, _, _, bod, _) :: _ -> (warn("Ambiguous theorem name."); Some bod)
 
+  % Given a Spec `spc`, and the name of an op, return a list of
+  % OpInfos associated with that op name.
+  % Args:
+  %   `spc`: the specification to look in.
+  %   `Qualified (q,id)` the qualified name of the op.
+  % Returns:
+  %   The singleton list containing the associated OpInfo, if it exists.
+  %   An empty list if the name is not found in the spec.
   op findMatchingOps (spc: Spec, Qualified (q, id): QualifiedId): List OpInfo =
    if q = wildQualifier
      then wildFindUnQualified (spc.ops, id)
@@ -817,6 +828,13 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
      ((new_typed_term, _), tracing?, hist) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false, hist);
      return(new_typed_term, tracing?, hist)}
 
+  % In the spec `spc`, execute the transformation script `script` on
+  % the term `def_term`, which has the type `top_ty`, and is named
+  % `qid`, with tracing flagged on or off `tracing?`.
+  % Notes:
+  % - qid is used for tracing. It is the name of the op that the transformed term will
+  %   ultimately appear in.
+  % - if you don't know the type, then you can use `inferType` to get it.
   op interpretTerm0(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
     run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?, []);
         return (tm, trace?)}

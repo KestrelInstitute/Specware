@@ -41,6 +41,11 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
   in
   replaceInRange ty
 
+% Given a state tranformer op of type `ty`, and a state type
+% `state_ty` and a spec `spc` return the (nm, others, postcondition),
+% where `nm` is the name of the poststate, `others` is (optionally)
+% the non-state results and their names, and finally `postcondition`,
+% which is the constraint on the tuple of (flattened) (nm * others).
 op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Option(Id * List(Id * MSPattern)) * MSTerm) =
   case range_*(spc, ty, false) of
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) ->

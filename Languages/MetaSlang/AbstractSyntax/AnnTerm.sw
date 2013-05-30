@@ -599,6 +599,14 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
  op [a] numTerms(tm: ATerm a): Nat = length (unpackTypedTerms tm)
 
+ % Given a term, extract a three tuple of
+ %  1. A list of the quantified type variables.
+ %  2. The type of the term.
+ %  3. The body of the term.
+ % In the case where the term is the conjunction (with And) of a number
+ % of terms -- which can happen in the case where a refine def is used,
+ % then this will return just the first triple of type variables * type * body,
+ % as returned by `unpackTypedTerms`.
  op [a] unpackFirstTerm(t: ATerm a): TyVars * AType a * ATerm a =
    %let (tvs, ty, tm) = unpackTerm t in
    let ((tvs, ty, tm) :: _) = unpackTypedTerms t in
@@ -615,6 +623,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 *)
 
+ % Given a term, extract a list of three tuples, each element of which represents
+ %  1. A list of the quantified type variables.
+ %  2. The type of the term.
+ %  3. The body of the term.
+ % In the case where the term is the conjunction (with And) of a number
+ % of terms -- which can happen in the case where a refine def is used,
+ % then the various elements of the list will correspond to the arguments to the And(s).
  op [a] unpackTypedTerms (tm : ATerm a) : List (TyVars * AType a * ATerm a) =
    let 
      def unpackTm (tm: ATerm a, ty: AType a) : List (TyVars * AType a * ATerm a) =

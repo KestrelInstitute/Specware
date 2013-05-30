@@ -131,6 +131,10 @@ MetaSlang qualifying spec
  def equalType? (s1, s2) =
    equalTypeSubtype?(s1, s2, false)
  
+%% Given two types, return true if they are equal (modulo
+%% annotations). If `ignore_subtypes` is true, then this identifies
+%% types `{s | P }` and `{s' | Q }`, if `s` and `s'` are identified,
+%% effectively ignoring subtype constraints, as the name suggests.
  op [a, b] equalTypeSubtype?(s1: AType a, s2: AType b, ignore_subtypes?: Bool): Bool =
    let def equalType?(s1, s2) =
          let result =
