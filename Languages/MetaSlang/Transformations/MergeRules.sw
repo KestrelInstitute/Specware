@@ -63,6 +63,9 @@
 spec
 
 import Script
+import Coalgebraic
+import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
+import /Languages/MetaSlang/AbstractSyntax/Equalities
 
 % When merging, we may need to simplify given some rewrite rules. The
 % 'mergeRules' spec transform take such a list.
@@ -89,11 +92,17 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
   let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
   { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems)) qids
   ; ps <- combineRuleSpecs spc ruleSpecs theorems
-  ; let (vars,is) = unzip ps in
+  ;
+    let stateType = rs1.1 in
+    let preStateVar = rs1.2 in
+    let postStateVar = rs1.4 in
+    let obs = findObservers spc stateType in
+
+    let (vars,is) = unzip ps in
     let vars' = nubBy (fn (i,j) -> i.1 = j.1 && i.2 = j.2) (flatten vars : ExVars) in 
     % let _ = writeLine ("Starting with ") in
     % let _ = writeLine (printDNF (flatten is)) in
-    let (rterm,pred) = bt [] (map (fn i -> i.1) vars') (flatten is) in
+    let (rterm,pred) = bt [] (map (fn i -> i.1) vars') obs preStateVar (flatten is) in
     let calculatedPostcondition = mkSimpleExists vars' rterm in    
     let _ = writeLine ("Result is: ") in
     let _ = writeLine (printTerm calculatedPostcondition) in
@@ -105,10 +114,6 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
     % let calculatedPreconditions = mkSimpleExists vars' preAsConj in
     % let _ = writeLine ("Preconditions are:\n " ^ printTerm preAsConj) in
 
-    % Construct the new term
-    let stateType = rs1.1 in
-    let preStateVar = rs1.2 in
-    let postStateVar = rs1.4 in
     let stPre = Subtype (stateType, Lambda ([(VarPat ((preStateVar, stateType), noPos), mkTrue (),preAsConj)],noPos), noPos) in
     let stPost = Subtype (stateType, Lambda ([(VarPat ((postStateVar, stateType), noPos), mkTrue (),calculatedPostcondition)],noPos), noPos) in
     let stType = Arrow (stPre,stPost,noPos) in
@@ -292,18 +297,18 @@ type BTChoice = | BTSplit MSTerm % if-split on the given term.
                 | BTFalse 
                 | BTNone % No idea what to do...
 
-op pick(vars:List Id)(i:DNFRep):BTChoice = 
+op pick(vars:List Id)(obs:List Id)(stateVar:Id)(i:DNFRep):BTChoice = 
   case valuation i of
     | Some true -> BTTrue (filter (fn c -> ~ (empty? c)) i)
     | Some false -> BTFalse
     | _ -> let cs = commons i in
-           let pcs = filter postConstraint? cs in  % Common post constraints.
-           let pps = filter (fn i -> ~ (postConstraint? i)) cs in
+           let pcs = filter (postConstraint? obs stateVar) cs in  % Common post constraints.
+           let pps = filter (fn i -> ~ (postConstraint? obs stateVar i)) cs in
            % If there is a post-condition constraint shared across all branches.
            if ~ (empty? pcs) 
              then BTConstraint pcs
            else 
-           case findLeftmost (forall? postConstraint?) i of
+           case findLeftmost (forall? (postConstraint? obs stateVar)) i of
                %% We have found a clause where all of
                %% the atomic formulae are
                %% post-constraints. This means we can stop.
@@ -311,7 +316,7 @@ op pick(vars:List Id)(i:DNFRep):BTChoice =
 
              | None ->  case i of
                           | [(x::xs)] -> BTSingleton (x::xs)
-                          | ((x::xs)::rest) | postConstraint? x -> 
+                          | ((x::xs)::rest) | postConstraint? obs stateVar x -> 
                             % Move the post-constraint to the end,
                             % repeat. This can only in the case
                             % where all of the formula in the
@@ -319,12 +324,12 @@ op pick(vars:List Id)(i:DNFRep):BTChoice =
                             % which case the conjunction will have
                             % been identified above.
                             let _ = writeLine "Skipping postconstraint" 
-                            in pick vars ((xs ++ [x])::rest)
+                            in pick vars obs stateVar ((xs ++ [x])::rest)
                           | ((x::xs)::rest) | some? (isDefinition? vars x) ->
                             let Some (v,ty) = isDefinition? vars x in
                             BTDef (x, ty, v)
 
-                          | ((x::xs)::rest) | ~ (postConstraint? x) -> 
+                          | ((x::xs)::rest) | ~ (postConstraint? obs stateVar x) -> 
                             % 'x' is not a post-constraint, so split on it.
                             (case scrutineeRefinement? x of
                               | Some (s, (ty,c,pat)) -> 
@@ -332,7 +337,7 @@ op pick(vars:List Id)(i:DNFRep):BTChoice =
                               | None -> BTSplit x)
 
                           | [] -> BTNone % Dead case.
-                          | ([]::rest) -> pick vars rest % Dead case
+                          | ([]::rest) -> pick vars obs stateVar rest % Dead case
 
 
 
@@ -418,19 +423,19 @@ op valuation(i:DNFRep):Option Boolean =
 %%
 %% The returned predicate is the **negation** of the precondition that the 
 %% function must have.
-op bt(assumptions:List MSTerm)(vars:List Id)(inputs:DNFRep):(MSTerm * DNFRep) =
+op bt(assumptions:List MSTerm)(vars:List Id)(obs:List Id)(stateVar:Id)(inputs:DNFRep):(MSTerm * DNFRep) =
   % let _ = writeLine "Under assumptions:" in
   % let _ = writeLine (printDNF [assumptions]) in
   % let _ = writeLine "With  inputs" in
   % let _ = writeLine (printDNF inputs) in
-    case pick vars inputs of
+    case pick vars obs stateVar inputs of
       | BTFalse -> (mkFalse (), [assumptions])
       | BTTrue _ -> (mkTrue (), []) 
       | BTSplit p -> 
           let pos = simplify p inputs in
           let neg = simplify (negateTerm p) inputs in
-          let (tb,tp) = bt (p::assumptions) vars pos in
-          let (eb,ep) = bt (negateTerm p::assumptions) vars neg in
+          let (tb,tp) = bt (p::assumptions) vars obs stateVar pos in
+          let (eb,ep) = bt (negateTerm p::assumptions) vars obs stateVar neg in
           (IfThenElse (p, tb, eb, noPos), tp ++ ep)
 
       | BTCase (s, ty) -> 
@@ -440,7 +445,9 @@ op bt(assumptions:List MSTerm)(vars:List Id)(inputs:DNFRep):(MSTerm * DNFRep) =
                let Some patTerm = patternToTerm pat in
                let eq = mkEquality (ty, s, patTerm) in
                let (t,pre) = bt (eq::assumptions)
-                                (removePatternVars vars pvars) 
+                                (removePatternVars vars pvars)
+                                obs
+                                stateVar
                                 (simplifyCase inputs s ty p) 
                in ((pat,t),pre) 
           in let (tms,pres) = unzip (map mkAlt pats) in
@@ -450,10 +457,10 @@ op bt(assumptions:List MSTerm)(vars:List Id)(inputs:DNFRep):(MSTerm * DNFRep) =
       | BTTrue inputs' -> (mkTrue (), [assumptions]) 
       | BTConstraint cs -> 
           let inputs' = map (fn d -> filter (fn c -> ~ (inTerm? c cs)) d) inputs in
-          let (tm',pre) = bt assumptions vars inputs' in
+          let (tm',pre) = bt assumptions vars obs stateVar inputs' in
           (mkAnd (cs ++ [tm']), pre)
       | BTDef (t,ty,var) -> 
-          let (t',p) = bt (t::assumptions) (diff (vars, [var])) (simplifyDef t inputs)
+          let (t',p) = bt (t::assumptions) (diff (vars, [var])) obs stateVar (simplifyDef t inputs)
           in (Bind (Exists, [(var,ty)], mkAnd [t,t'],noPos), p)
 
 
@@ -461,14 +468,68 @@ op bt(assumptions:List MSTerm)(vars:List Id)(inputs:DNFRep):(MSTerm * DNFRep) =
 %%% Postconstraints
 %%%%%%%%%%%%%%%%%%%%%%
 
-op postConstraint? (t:MSTerm):Boolean =
-  postConstraints? 
-  ["arch", "provs", "ifds", "rttab", 
-   "ts", "files", "listen", "bound", "bndlm", "ticks",
-   "fds", "params", "socks", "oq","privs", "iq"] "h'" t
+op postConstraint?(obs:List Id)(stateVar:Id)(t:MSTerm):Boolean =
+  postConstraints? obs stateVar t
 
 
+%% Given a spec `spc` and a state type `s`, find the names of all of
+%% the observers of the state, which are ops of the form::
+%%
+%%   `op obs_i : s -> a`
+%%
+%%  where `a` /= `s`, or where `a` is a tuple type, and `s` is not one
+%%  of the field types.
+op findObservers(spc:Spec)(s:MSType):List Id =
+  let ois = opInfosAsList spc in
+  let observerInfos = filter (isObserver? s) ois in
+  let observerNames = map (fn oi -> mainId (primaryOpName oi)) observerInfos in
+  let _ = writeLine "Found Observers:" in
+  let _ = map writeLine observerNames in
+  observerNames
 
+  
+%% Given a state type, return true if the op is a function from the
+%% state type to a (different type).
+%% Arguments:
+%%  `s`: The state type.
+%%  `o`: The OpInfo for an spec operation.
+%% Returns:
+%%  true if the type of the op is `{ s | P } -> {a | Q}`
+%%    where the subtype constraints on the domain and range are
+%%    optional, and `a` != `s` and, if `a` is a tuple, `s` does not appear as
+%%    one of the types of the tuple.
+%%  false otherwise.
+op isObserver?(s:MSType)(o:OpInfo):Bool =
+  let (tvs,ty,body) = unpackFirstTerm o.dfn in
+  case isArrowType? ty of
+   |Some (dom, ran) ->
+         (equalTypeSubtype? (s, dom, true)) &&
+         (if isTupleType? ran
+          then ~ (inBy? (fn (x, y) -> equalTypeSubtype? (x, y, true))  s (tupleTypes ran))
+          else ~ (equalTypeSubtype?(s, ran, true)))
+   | None -> false                       
+
+%% These functions have analogues in Languages/MetaSlang/Utilities, or
+%% Languages/MetaSlang/Elaboration/Typechecker but those require a
+%% spec as an argument, so that types can be unfolded, or are monadic. 
+op isTupleType?(ty:MSType):Bool =
+  case ty of
+    | Product _ -> true
+    | _ -> false
+
+op tupleTypes(ty:MSType):List MSType =
+  case ty of
+    | Product (fields,_) -> map (fn (_,t) -> t) fields
+    | _ -> []
+
+      
+op isArrowType?(ty:MSType):Option (MSType * MSType) =
+   case ty of
+     | Arrow (dom,ran,_) -> Some (dom,ran)
+     | _ -> None
+
+
+    
 %% postConstraints? obs p t will return true in the cases where
 %%   t has the form 
 %%     1. postState = e
@@ -493,11 +554,6 @@ op postConstraints?(obs:List Id)(postState:Id)(t:MSTerm):Boolean =
              Record ([(_,l), (_,r)], argPos), appPos) -> isObs l || isObs r
     | _ -> false
 
-%% Collect all of the post-state constraints.
-%% FIXME: Make this work for all post-state identifiers not just a 
-%% fixed "h'"
-op gatherPostConstraints(l:DNFRep):List MSTerm = 
-   filter postConstraint? (nub (flatten l))
 
 
 %%% Handling equations involving constructions, for which a case
@@ -691,7 +747,10 @@ op resolveAll (ps:List (List MSTerm)):List (List MSTerm) =
 op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
    let pterm = toPathTerm tm in
    let ctx = makeContext spc in
-   let qid = mkUnQualifiedId "What???" in
+   let qid = mkUnQualifiedId "What???" in % This should be the name of
+                                          % the op that the rewritten
+                                          % term will ultimately
+                                          % appear in.
    let hist = [] in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
