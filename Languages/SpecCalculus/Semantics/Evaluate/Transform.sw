@@ -20,7 +20,6 @@ spec
       | SCTerm(_,p)-> p
       | Item(_,_,p) -> p
       | Slice(_,_,_,_,p) -> p
-      | Globalize(_,_,_,_,p) -> p
       | Repeat(_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
@@ -217,9 +216,6 @@ spec
       | Command("print", [], _) -> return Print
       | Slice (root_ops, root_types, cut_op?, cut_type?, _) -> 
         return (Slice (root_ops, root_types, cut_op?, cut_type?))
-
-      | Globalize (roots, typ, gvar, opt_init, _) -> return (Globalize (roots, typ, gvar, opt_init))
-
       | _ -> 
         % let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
         raise (TransformError (posOf trans, "Unrecognized transform: "^show trans))

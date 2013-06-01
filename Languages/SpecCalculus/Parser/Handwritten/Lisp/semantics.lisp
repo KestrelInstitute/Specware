@@ -1151,14 +1151,6 @@ If we want the precedence to be optional:
          (cut_type? #'(lambda (typename) (member typename cut_types :test 'equal))))
     (SpecCalc::mkTransformSlice-5 root_ops root_types cut_op? cut_type? (make-pos l r))))
 
-(defun make-transform-globalize (rootOpRefs typeRef globalVar optInitOp l r)
-  ;; typeRef is qualified id
-  ;; globalVar is plain id
-  (let ((initOp (if (equal optInitOp :unspecified)
-                    '(:|None|)
-                    (cons :|Some| optInitOp))))
-    (SpecCalc::mkTransformGlobalize-5 rootOpRefs typeRef globalVar initOp (make-pos l r))))
-
 (defun make-transform-at (qids transforms l r)
   (SpecCalc::mkTransformAt-3 qids (if (listp transforms) transforms (list transforms))
                              (make-pos l r)))

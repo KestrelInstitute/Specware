@@ -153,10 +153,6 @@ MetaSlang qualifying spec
     | Item      String * ATransformExpr a        * a  % e.g. unfold map
 
     | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
-    | Globalize OpNames * TypeName  * Id * Option OpName   * a  % name of global var will be Global.<id> 
-      % Change all local vars of given type into references to named global var, 
-      % which is initialized by the optional named op, or by a unique source op 
-      % if the initializer is left unspecified.
 
     | Repeat    List (ATransformExpr a)          * a
     | Tuple     List (ATransformExpr a)          * a    % (..., ...)
@@ -174,7 +170,6 @@ MetaSlang qualifying spec
      | SCTerm(_, a) -> a
      | Item( _, _, a) -> a
      | Slice(_, _, _, _, a) -> a
-     | Globalize(_, _, _, _, a) -> a
      | Repeat(_, a) -> a
      | Tuple(_, a) -> a
      | Record(_, a) -> a

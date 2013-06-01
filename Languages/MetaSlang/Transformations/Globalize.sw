@@ -2166,14 +2166,14 @@ Globalize qualifying spec
    return (spec_with_gvar, tracing?)
    }
 
- op SpecTransform.new_globalize (spc              : Spec)
-                             (root_ops         : OpNames,
-                              global_type_name : TypeName,
-                              global_var_id    : String,
-                              opt_ginit        : Option OpName,
-                              % for now, tracing? has no default value,
-                              % nor does "trace on/off" affect it
-                              tracing?         : Bool) 
+ op SpecTransform.globalize (spc              : Spec)
+                            (root_ops         : OpNames,
+                             global_type_name : TypeName,
+                             global_var_id    : String,
+                             opt_ginit        : Option OpName,
+                             % for now, tracing? has no default value,
+                             % nor does "trace on/off" affect it
+                             tracing?         : Bool) 
   : Spec =
   % let _ = writeLine ("root_ops         = " ^ anyToString root_ops         ) in
   % let _ = writeLine ("global_type_name = " ^ anyToString global_type_name ) in

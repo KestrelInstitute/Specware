@@ -79,23 +79,6 @@ case tre of
               ppString " ",
               ppATransformExpr transformexpr]
   | Slice        (opnames, typenames, f1, f2, _) -> ppString "(... slice term elided ...)"
-  | Globalize    (opnames, typename, id, optionalopname, _) ->
-    ppConcat [ppString "globalize (",
-              %% opname is either a single QualifiedId (just print it) or several (print them in braces and comma-separated)
-              (if length opnames = 1 then
-                 ppString (printQualifiedId (head opnames))
-               else
-                 ppConcat[ppString "{",
-                          (ppSep (ppString ", ") (map ppString (map printQualifiedId opnames))), 
-                          ppString "}"]),
-              ppString ", ",
-              ppString (printQualifiedId typename),
-              ppString ", ",
-              ppString id,
-              (case optionalopname of
-                 | Some qid -> ppConcat [ppString ", ", ppString (printQualifiedId qid)]
-                 | None -> ppString ""),
-              ppString ")"]
   | Repeat  (transformexprs, _) -> ppConcat [ppString "repeat {",
                                              ppATransformExprs transformexprs,
                                              ppString "}"]

@@ -117,8 +117,6 @@ SCParser qualifying spec
  op mkTransformQual (q: Qualifier, id: Id, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual(q, id, mkRegion left right)
  op mkTransformItem(mod: String, expr: TransformExpr, left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformItem(mod,  expr, mkRegion left right)
- op mkTransformGlobalize(roots : OpNames, typ : TypeName, gvar : Id, init : Option OpName, left : LCB, right : LCB) : TransformExpr =
-    SpecCalc.mkTransformGlobalize (roots, typ, gvar, init, mkRegion left right)
  op mkTransformRecord  (recpairs: List (String * TransformExpr), left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformRecord  (recpairs, mkRegion left right)
  op mkTransformOptions (args : TransformExprs,  left : LCB, right : LCB) : TransformExpr =

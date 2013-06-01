@@ -522,8 +522,6 @@ SpecCalc qualifying spec
  op mkTransformItem    (mod:   String, te: TransformExpr, pos: Position) : TransformExpr = Item   (mod, te, pos)
  op mkTransformSlice   (root_ops: OpNames, root_types: TypeNames, cut_op?: OpName -> Bool, cut_type?: TypeName -> Bool, pos: Position): TransformExpr =
     Slice (root_ops, root_types, cut_op?, cut_type?, pos)
- op mkTransformGlobalize (root_ops: OpNames, typ: TypeName, var:  Id, init : Option OpName, pos: Position) : TransformExpr =
-    Globalize (root_ops, typ, var, init, pos)
  op mkTransformRepeat  (transforms: TransformExprs,       pos: Position) : TransformExpr = Repeat (transforms, pos)
  op mkTransformOptions (args: TransformExprs,             pos: Position) : TransformExpr = Options(args,       pos)
  op mkTransformTuple   (itms: TransformExprs,             pos: Position) : TransformExpr = Tuple  (itms,       pos)
