@@ -59,14 +59,14 @@ type ClassName  = Identifier   %% NOTE: ClassName is used but undefined in the s
 %%%  Unicode
 %%% ========================================================================
 
-import /Library/IO/Unicode/UStringAsList
+%%% TODO:  Change to import a Unicode spec
+%%% Reference: http://www.unicode.org/
 
-%type UnicodeString  %% TODO: Define this. 
-%type UnicodeChar    %% TODO: Define this. 
-%op Unicode.explode (s : UnicodeString) : List UnicodeChar
-%type UnicodeInputCharacter
+type UnicodeString  %% TODO: Define this. 
+type UnicodeChar    %% TODO: Define this. 
+op Unicode.explode (s : UnicodeString) : List UnicodeChar
 
-op Unicode.explode (s : UString) : List UChar = s
+type UnicodeInputCharacter
 
 %% TODO: UTF16 is merely an external printed format, but maybe it makes 
 %%       sense to internalize it here, thus minimizing internal/external 
@@ -77,39 +77,39 @@ op Unicode.explode (s : UString) : List UChar = s
 %%%  3.4 Line Terminators
 %%% ========================================================================
 
-type InputCharacter = {c : UChar | c ~= 10 && c ~= 13} % not lf or cr
+type InputCharacter = UnicodeInputCharacter %% TODO: not CR or LF
 
 %%% ========================================================================
 %%%  3.8 Identifiers
 %%% ========================================================================
 
-op JavaLetter?        (c : UChar)   : Bool % TODO
-op JavaLetterOrDigit? (c : UChar)   : Bool % TODO
-op booleanLiteral?    (s : UString) : Bool % TODO
-op nullLiteral?       (s : UString) : Bool % TODO
+op JavaLetter?        (c : UnicodeChar)   : Bool % TODO
+op JavaLetterOrDigit? (c : UnicodeChar)   : Bool % TODO
+op booleanLiteral?    (s : UnicodeString) : Bool % TODO
+op nullLiteral?       (s : UnicodeString) : Bool % TODO
 
-op JavaIdentifierChars? (s : UString) : Bool = 
+op JavaIdentifierChars? (s : UnicodeString) : Bool = 
  case explode s of
    | [] -> false
    | char :: tail -> (JavaLetter? char) && (forall? JavaLetterOrDigit? tail) 
 
-op JavaIdentifier?    (s : UString) : Bool = 
+op JavaIdentifier?    (s : UnicodeString) : Bool = 
   (JavaIdentifierChars? s) &&
   ~ (keyword?           s) &&
   ~ (booleanLiteral?    s) &&
   ~ (nullLiteral?       s)
 
 
-type Identifier        = UString | JavaIdentifier?
-type IdentifierChars   = UString | JavaIdentifierChars?
-type JavaLetter        = UChar   | JavaLetter?
-type JavaLetterOrDigit = UChar   | JavaLetterOrDigit?
+type Identifier        = UnicodeString | JavaIdentifier?
+type IdentifierChars   = UnicodeString | JavaIdentifierChars?
+type JavaLetter        = UnicodeChar   | JavaLetter?
+type JavaLetterOrDigit = UnicodeChar   | JavaLetterOrDigit?
 
 %%% ========================================================================
 %%%  3.9 Keywords
 %%% ========================================================================
 
-op keyword? (s : UString) : Bool % TODO
+op keyword? (s : UnicodeString) : Bool % TODO
 %% [3.9] lists 50 of these
 
 %%% ========================================================================
