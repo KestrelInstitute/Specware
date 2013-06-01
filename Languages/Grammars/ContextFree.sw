@@ -21,47 +21,45 @@ CFG qualifying spec
 %%% tokens.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type ContexFreeGrammar token = 
+type ContextFreeGrammar (terminal, non_terminal) = 
   {name          : String,      
    documentation : String,      
-   directives    : Directives token}
+   directives    : Directives (terminal, non_terminal)}
 
 %% Could simply have a list of rules, but adding this level 
 %% of abstraction makes it easier to generate literate 
 %% derivative files that contain comments.
 
-type Directives token = List (Directive token)
-type Directive token = | Rule    (Rule token)
+type Directives (terminal, non_terminal) = List (Directive (terminal, non_terminal))
+type Directive (terminal, non_terminal) = | Rule    (Rule (terminal, non_terminal))
                        | Header  String
                        | Comment String
 
-type NonTerminal  % defined as coproduct for each specific grammar
+type Rule (terminal, non_terminal) = {lhs : non_terminal, rhs : RHS (terminal, non_terminal)}
 
-type Rule token = {lhs : NonTerminal, rhs : RHS token}
+type BodyAndSeparator (terminal, non_terminal) = (RHS (terminal, non_terminal)) * (RHS (terminal, non_terminal))
 
-type BodyAndSeparator token = (RHS token) * (RHS token)
+type RHS (terminal, non_terminal) = 
 
-type RHS token = 
+  | Terminal terminal
 
-  | Terminal token                      
+  | NT       non_terminal
 
-  | NT       NonTerminal
+  | Seq      List (RHS (terminal, non_terminal))        % match each RHS, in order
 
-  | Seq      List (RHS token)                   % match each RHS, in order
+  | Any      List (RHS (terminal, non_terminal))        % match any RHS 
 
-  | Any      List (RHS token)                   % match any RHS 
+  | Opt      List (RHS (terminal, non_terminal))        % match the RHS zero or one times
 
-  | Opt      List (RHS token)                   % match the RHS zero or one times
+  | Rep      List (RHS (terminal, non_terminal))        % match the RHS zero or more times
 
-  | Rep      List (RHS token)                   % match the RHS zero or more times
+  | Rep1     List (RHS (terminal, non_terminal))        % match the RHS one or more times
 
-  | Rep1     List (RHS token)                   % match the RHS one or more times
+  | RepSep   BodyAndSeparator (terminal, non_terminal)  % match the first RHS zero or more times, 
+                                                        %  with matches to the second RHS interspersed
 
-  | RepSep   BodyAndSeparator token             % match the first RHS zero or more times, 
-                                                %  with matches to the second RHS interspersed
-
-  | Rep1Sep  BodyAndSeparator token             % match the first RHS one or more times, 
-                                                %  with matches to the second RHS interspersed
+  | Rep1Sep  BodyAndSeparator (terminal, non_terminal)  % match the first RHS one or more times, 
+                                                        %  with matches to the second RHS interspersed
     
   %% Note:
   %%
@@ -71,9 +69,9 @@ type RHS token =
   %% But they move beyond a simple context free grammar into intersections 
   %% of grammars, so use sparingly.
     
-  | Diff     (RHS token) * (RHS token)          % match the first RHS, but not the second 
-                                                %  (e.g. all chars except ...)
+  | Diff     (RHS (terminal, non_terminal)) * (RHS (terminal, non_terminal))          % match the first RHS, but not the second 
+                                                                                      %  (e.g. all chars except ...)
 
-  | Restrict (RHS token) * (RHS token -> Bool)  % match the RHS, but only if predicate is true
+  | Restrict (RHS (terminal, non_terminal)) * (RHS (terminal, non_terminal) -> Bool)  % match the RHS, but only if predicate is true
     
 end-spec
