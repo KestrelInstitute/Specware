@@ -51,1133 +51,12 @@ Java7Ref qualifying spec
 
 import Java7Grammars
 
-type Java7Ref.RHS        = Java7.RHS        Java7Ref.NonTerminal
-type Java7Ref.Rule       = Java7.Rule       Java7Ref.NonTerminal
-type Java7Ref.Directive  = Java7.Directive  Java7Ref.NonTerminal
-type Java7Ref.Directives = Java7.Directives Java7Ref.NonTerminal
-type Java7Ref.Grammar    = Java7.Grammar    Java7Ref.NonTerminal
-
-%%% ========================================================================
-%%% NonTerminals
-%%% ========================================================================
-
-type NonTerminal =
-
-   %%% ========================================================================
-   %%% 3.3 Unicode Escapes
-   %%% ========================================================================
-
-   | UnicodeInputCharacter
-   | UnicodeEscape
-   | UnicodeMarker
-   | RawInputCharacter
-   | HexDigit
-
-   %%% ========================================================================
-   %%% 3.4. Line Terminators
-   %%% ========================================================================
-
-   | LineTerminator
-   | InputCharacter
-
-   %%% ========================================================================
-   %%% 3.5. Input Elements and Tokens
-   %%% ========================================================================
-
-   | Input
-   | InputElements
-   | InputElement
-   | Token
-
-   %%% ========================================================================
-   %%% 3.6. White Space
-   %%% ========================================================================
-
-   | WhiteSpace
-
-   %%% ========================================================================
-   %%% 3.7. Comments
-   %%% ========================================================================
-
-   | Comment
-   | TraditionalComment
-   | EndOfLineComment
-   | CommentTail
-   | CommentTailStar
-   | NotStar
-   | NotStarNotSlash
-   | CharactersInLine
-
-   %%% ========================================================================
-   %%% 3.8. Identifiers
-   %%% ========================================================================
-
-   | Identifier
-   | IdentifierChars
-   | JavaLetter
-   | JavaLetterOrDigit
-
-   %%% ========================================================================
-   %%% 3.9. Keywords
-   %%% ========================================================================
-
-   | Keyword
-   | KW_abstract
-   | KW_assert
-   | KW_boolean
-   | KW_break
-   | KW_byte
-   | KW_case
-   | KW_catch
-   | KW_char
-   | KW_class
-   | KW_const
-   | KW_continue
-   | KW_default
-   | KW_do
-   | KW_double
-   | KW_else
-   | KW_enum
-   | KW_extends
-   | KW_final
-   | KW_finally
-   | KW_float
-   | KW_for
-   | KW_if
-   | KW_goto
-   | KW_implements
-   | KW_import
-   | KW_instanceof
-   | KW_int
-   | KW_interface
-   | KW_long
-   | KW_native
-   | KW_new
-   | KW_package
-   | KW_private
-   | KW_protected
-   | KW_public
-   | KW_return
-   | KW_short
-   | KW_static
-   | KW_strictfp
-   | KW_super
-   | KW_switch
-   | KW_synchronized
-   | KW_this
-   | KW_throw
-   | KW_throws
-   | KW_transient
-   | KW_try
-   | KW_void
-   | KW_volatile
-   | KW_while
-
-   %%% ========================================================================
-   %%% Misc Keywwords
-   %%% ========================================================================
-
-   | Ellipses
-
-   %%% ========================================================================
-   %%% 3.10. Literals
-   %%% ========================================================================
-
-   | Literal
-
-   %%% ========================================================================
-   %%% 3.10.1 Integer Literals
-   %%% ========================================================================
-
-   | IntegerLiteral
-   | DecimalIntegerLiteral
-   | HexIntegerLiteral
-   | OctalIntegerLiteral
-   | BinaryIntegerLiteral
-   | IntegerTypeSuffix
-   % --
-   | DecimalNumeral
-   | Digits
-   | Digit
-   | NonZeroDigit
-   | DigitsAndUnderscores
-   | DigitOrUnderscore
-   | Underscores
-   % --
-   | HexNumeral
-   | HexDigits
-   | HexDigitsAndUnderscores
-   | HexDigitOrUnderscore
-   % --
-   | OctalNumeral
-   | OctalDigits
-   | OctalDigit
-   | OctalDigitsAndUnderscores
-   | OctalDigitOrUnderscore
-   % --
-   | BinaryNumeral
-   | BinaryDigits
-   | BinaryDigit
-   | BinaryDigitsAndUnderscores
-   | BinaryDigitOrUnderscore
-
-   %%% ========================================================================
-   %%% 3.10.2 Floating-Point Literals
-   %%% ========================================================================
-
-   | FloatingPointLiteral
-   | DecimalFloatingPointLiteral
-   | ExponentPart
-   | ExponentIndicator
-   | SignedInteger
-   | Sign
-   | FloatTypeSuffix
-   % --
-   | HexadecimalFloatingPointLiteral
-   | HexSignificand
-   | BinaryExponent
-   | BinaryExponentIndicator
-
-   %%% ========================================================================
-   %%% 3.10.3 Boolean Literals
-   %%% ========================================================================
-
-   | BooleanLiteral
-
-   %%% ========================================================================
-   %%% 3.10.4 Character Literals
-   %%% ========================================================================
-
-   | CharacterLiteral
-   | SingleCharacter
-
-   %%% ========================================================================
-   %%% 3.10.5. String Literals
-   %%% ========================================================================
-
-   | StringLiteral
-   | StringCharacters
-   | StringCharacter
-
-   %%% ========================================================================
-   %%% 3.10.6. Escape Sequences for Character and String Literals
-   %%% ========================================================================
-
-   | EscapeSequence
-   | OctalEscape
-
-   %%% ========================================================================
-   %%% OctalDigit           % identical definitions in [3.10.1] and [3.10.6]
-   %%% ========================================================================
-
-   | ZeroToThree
-
-   %%% ========================================================================
-   %%% 3.10.7. The Null Literal
-   %%% ========================================================================
-
-   | NullLiteral
-
-   %%% ========================================================================
-   %%% 3.11. Separators
-   %%% ========================================================================
-
-   | Separator
-
-   %%% ========================================================================
-   %%% 3.12. Operators
-   %%% ========================================================================
-
-   | Operator
-
-   %%% ========================================================================
-   %%% Identifiers
-   %%% ========================================================================
-
-   | QualifiedIdentifier
-   | QualifiedIdentifierList
-
-   %%% ========================================================================
-   %%% Compilation Unit
-   %%% ========================================================================
-
-   | CompilationUnit
-   | ImportDeclaration
-   | TypeDeclaration
-   | ClassOrInterfaceDeclaration
-   | ClassDeclaration
-   | InterfaceDeclaration
-   | NormalClassDeclaration
-   | EnumDeclaration
-   | NormalInterfaceDeclaration
-   | AnnotationTypeDeclaration
-
-   %%% ========================================================================
-   %%% Types
-   %%% ========================================================================
-
-   | Type
-   | BasicType
-   | ReferenceType
-   | TypeArguments
-   | TypeArgument
-
-   %%% ========================================================================
-   %%% Type Arguments
-   %%% ========================================================================
-
-   | NonWildcardTypeArguments
-   | TypeList
-   | TypeArgumentsOrDiamond
-   | NonWildcardTypeArgumentsOrDiamond
-   | TypeParameters
-   | TypeParameter
-   | Bound
-
-   %%% ========================================================================
-   %%% Modifiers
-   %%% ========================================================================
-
-   | Modifier
-   | Annotations
-   | Annotation
-   | AnnotationElement
-   | ElementValuePairs
-   | ElementValuePair
-   | ElementValue
-   | ElementValueArrayInitializer
-   | ElementValues
-
-   %%% ========================================================================
-   %%% Classes
-   %%% ========================================================================
-
-   | ClassBody
-   | ClassBodyDeclaration
-   | MemberDecl
-   | MethodOrFieldDecl
-   | MethodOrFieldRest
-   | FieldDeclaratorsRest
-   | MethodDeclaratorRest
-   | VoidMethodDeclaratorRest
-   | ConstructorDeclaratorRest
-   | GenericMethodOrConstructorDecl
-   | GenericMethodOrConstructorRest
-
-   %%% ========================================================================
-   %%% Interfaces
-   %%% ========================================================================
-
-   | InterfaceBody
-   | InterfaceBodyDeclaration
-   | InterfaceMemberDecl
-   | InterfaceMethodOrFieldDecl
-   | InterfaceMethodOrFieldRest
-   | ConstantDeclaratorsRest
-   | ConstantDeclaratorRest
-   | ConstantDeclarator
-   | InterfaceMethodDeclaratorRest
-   | VoidInterfaceMethodDeclaratorRest
-   | InterfaceGenericMethodDecl
-
-   %%% ========================================================================
-   %%% Parameters
-   %%% ========================================================================
-
-   | FormalParameters
-   | FormalParameterDecls
-   | VariableModifier
-   | FormalParameterDeclsRest
-   | VariableDeclaratorId
-   | VariableDeclarators
-   | VariableDeclarator
-   | VariableDeclaratorRest
-   | VariableInitializer
-   | ArrayInitializer
-
-   %%% ========================================================================
-   %%% Statements
-   %%% ========================================================================
-
-   | Block
-   | BlockStatements
-   | BlockStatement
-   | LocalVariableDeclarationStatement
-   | Statement
-   | StatementExpression
-
-   %%% ========================================================================
-   %%% Catches
-   %%% ========================================================================
-
-   | Catches
-   | CatchClause
-   | CatchType
-   | Finally
-   | ResourceSpecification
-   | Resources
-   | Resource
-
-   %%% ========================================================================
-   %%% Switch
-   %%% ========================================================================
-
-   | SwitchBlockStatementGroups
-   | SwitchBlockStatementGroup
-   | SwitchLabels
-   | SwitchLabel
-   | EnumConstantName
-
-   %%% ========================================================================
-   %%% For
-   %%% ========================================================================
-
-   | ForControl
-   | ForVarControl
-   | ForVarControlRest
-   | ForVariableDeclaratorsRest
-   | ForInit
-   | ForUpdate
-
-   %%% ========================================================================
-   %%% Expression
-   %%% ========================================================================
-
-   | Expression
-   | AssignmentOperator
-   | Expression1
-   | Expression1Rest
-   | Expression2
-   | Expression2Rest
-
-   %%% ========================================================================
-   %%% Infix
-   %%% ========================================================================
-
-   | InfixOp
-   | Expression3
-   | PrefixOp
-   | PostfixOp
-
-   %%% ========================================================================
-   %%% Primary
-   %%% ========================================================================
-
-   | Primary
-   | ParExpression
-   | Arguments
-   | SuperSuffix
-   | ExplicitGenericInvocationSuffix
-
-   %%% ========================================================================
-   %%% Creator
-   %%% ========================================================================
-
-   | Creator
-   | CreatedName
-   | ClassCreatorRest
-   | ArrayCreatorRest
-   | IdentifierSuffix
-   | ExplicitGenericInvocation
-   | InnerCreator
-   | Selector
-
-   %%% ========================================================================
-   %%% Enum
-   %%% ========================================================================
-
-   | EnumBody
-   | EnumConstants
-   | EnumConstant
-   | EnumBodyDeclarations
-
-   %%% ========================================================================
-   %%% Annotation
-   %%% ========================================================================
-
-   | AnnotationTypeBody
-   | AnnotationTypeElementDeclarations
-   | AnnotationTypeElementDeclaration
-   | AnnotationTypeElementRest
-   | AnnotationMethodOrConstantRest
-   | AnnotationMethodRest
-
-%%% ========================================================================
-%%% Ad Hoc Keywords
-%%% ========================================================================
-
-op Directives_Ad_Hoc_Keywords : Directives =
- [Header  "Ad_Hoc_Keywords",
-
-  Rule {lhs = Ellipses,
-        rhs = Seq [dot, dot, dot]}
-  ]
-
-%%% ========================================================================
-%%% 3.3 Unicode Escapes
-%%% ========================================================================
-
-op Directives_3_3 : Directives =
- [Header  "3.3. Unicode Escapes",
-
-  Rule {lhs = UnicodeInputCharacter,
-        rhs = Any [NT UnicodeEscape,
-                   NT RawInputCharacter]},
-
-  Rule {lhs = UnicodeEscape,
-        rhs = Seq [backslash, NT UnicodeMarker, NT HexDigit, NT HexDigit, NT HexDigit]},
-
-  Rule {lhs = UnicodeMarker,
-        rhs = Any [lower_u,
-                   Seq [NT UnicodeMarker, lower_u]]},
-
-  Rule {lhs = RawInputCharacter,
-        rhs = any_unicode_char},
-
-  Rule {lhs = HexDigit,
-        rhs = Any [digit_0, digit_1, digit_2, digit_3, digit_4, digit_5, digit_6, digit_7,
-                   digit_8, digit_9, lower_a, lower_b, lower_c, lower_d, lower_e, lower_f,
-                   upper_A, upper_B, upper_C, upper_D, upper_E, upper_F]}
-  ]
-
-%%% ========================================================================
-%%% 3.4. Line Terminators
-%%% ========================================================================
-
-op Directives_3_4 : Directives =
- [Header  "3.4. Line Terminators",
-
-  Rule {lhs = LineTerminator,
-        rhs = Any [LF,
-                   CR,
-                   Seq [LF, CR]]},
-
-  Rule {lhs = InputCharacter,
-        rhs = Diff (NT UnicodeInputCharacter, Any [LF, CR])}
-  ]
-
-%%% ========================================================================
-%%% 3.5. Input Elements and Tokens
-%%% ========================================================================
-
-op Directives_3_5 : Directives =
- [Header  "3.5. Input Elements and Tokens",
-
-  Rule {lhs = Input,
-        rhs = Seq [Opt [NT InputElements],
-                   Opt [Sub]]},
-
-  Rule {lhs = InputElements,
-        rhs = Any [NT InputElement,
-                   Seq [NT InputElements, NT InputElement]]},
-
-  Rule {lhs = InputElement,
-        rhs = Any [NT WhiteSpace,
-                   NT Comment,
-                   NT Token]},
-
-  Rule {lhs = Token,
-        rhs = Any [NT Identifier,
-                   NT Keyword,
-                   NT Literal,
-                   NT Separator,
-                   NT Operator]}
-  ]
-
-%%% ========================================================================
-%%% 3.6. White Space
-%%% ========================================================================
-
-op Directives_3_6 : Directives =
- [Header  "3.6. Whitepace",
-
-  Rule {lhs = WhiteSpace,
-        rhs = Any [SP, % space
-                   HT, % tab
-                   FF, % form feed
-                   NT LineTerminator]}
-  ]
-
-%%% ========================================================================
-%%% 3.7. Comments
-%%% ========================================================================
-
-op Directives_3_7 : Directives =
- [Header  "3.7. Comments",
-
-  Rule {lhs = Comment,
-        rhs = Any [NT TraditionalComment,
-                   NT EndOfLineComment]},
-
-  Rule {lhs = TraditionalComment,
-        rhs = Seq [slash, star, NT CommentTail]},
-
-  Rule {lhs = EndOfLineComment,
-        rhs = Seq [slash, slash, Opt [NT CharactersInLine]]},
-
-  Rule {lhs = CommentTail,
-        rhs = Any [slash,
-                   Seq [star,       NT CommentTailStar],
-                   Seq [NT NotStar, NT CommentTail]]},
-
-  Rule {lhs = NotStar,
-        rhs = Any [Diff (NT InputCharacter, star),
-                   NT LineTerminator]},
-
-  Rule {lhs = NotStarNotSlash,
-        rhs = Any [Diff (NT InputCharacter, Any [star, slash]),
-                   NT LineTerminator]},
-
-  Rule {lhs = CharactersInLine,
-        rhs = Any [NT InputCharacter,
-                   Seq [NT CharactersInLine, NT InputCharacter]]}
-  ]
-
-%%% ========================================================================
-%%% 3.8. Identifiers
-%%% ========================================================================
-
-op java_letter? (rhs : RHS) : Bool =
-  case rhs of
-    | Terminal x -> ((uchar #A) <= x && x <= (uchar #Z))
-                    ||
-                    ((uchar #a) <= x && x <= (uchar #z))
-    | _ -> false
-
-op java_letter_or_digit? (rhs : RHS) : Bool =
-  case rhs of
-    | Terminal x -> ((uchar #A) <= x && x <= (uchar #Z))
-                    ||
-                    ((uchar #a) <= x && x <= (uchar #z))
-                    ||
-                    ((uchar #0) <= x && x <= (uchar #9))
-    | _ -> false
-
-op Directives_3_8 : Directives =
- [Header  "3.8. Identifiers",
-
-  Rule {lhs = Identifier,
-        rhs = Diff (NT IdentifierChars, Any [NT Keyword, NT BooleanLiteral, NT NullLiteral])},
-
-  Rule {lhs = IdentifierChars,
-        rhs = Any [NT JavaLetter,
-                   Seq [NT IdentifierChars, NT JavaLetterOrDigit]]},
-
-  Rule {lhs = JavaLetter,
-        rhs = Restrict (any_unicode_char, java_letter?)},
-
-  Rule {lhs = JavaLetterOrDigit,
-        rhs = Restrict (any_unicode_char, java_letter_or_digit?)}
-  ]
-
-%%% ========================================================================
-%%% 3.9. Keywords
-%%% ========================================================================
-
-op Directives_Keywords : Directives =
- [Header "3.9. Keywords",
-
-  Rule {lhs = KW_abstract,
-        rhs = keyword "abstract"},
-
-  Rule {lhs = KW_assert       ,
-        rhs = keyword "assert"},
-
-  Rule {lhs = KW_boolean      ,
-        rhs = keyword "boolean"},
-
-  Rule {lhs = KW_break        ,
-        rhs = keyword "break"},
-
-  Rule {lhs = KW_byte         ,
-        rhs = keyword "byte"},
-
-  Rule {lhs = KW_case         ,
-        rhs = keyword "case"},
-
-  Rule {lhs = KW_catch        ,
-        rhs = keyword "catch"},
-
-  Rule {lhs = KW_char         ,
-        rhs = keyword "char"},
-
-  Rule {lhs = KW_class        ,
-        rhs = keyword "class"},
-
-  Rule {lhs = KW_const        ,
-        rhs = keyword "const"},
-
-  Rule {lhs = KW_continue     ,
-        rhs = keyword "continue"},
-
-  Rule {lhs = KW_default      ,
-        rhs = keyword "default"},
-
-  Rule {lhs = KW_do           ,
-        rhs = keyword "do"},
-
-  Rule {lhs = KW_double       ,
-        rhs = keyword "double"},
-
-  Rule {lhs = KW_else         ,
-        rhs = keyword "else"},
-
-  Rule {lhs = KW_enum         ,
-        rhs = keyword "enum"},
-
-  Rule {lhs = KW_extends      ,
-        rhs = keyword "extends"},
-
-  Rule {lhs = KW_final        ,
-        rhs = keyword "final"},
-
-  Rule {lhs = KW_finally      ,
-        rhs = keyword "finally"},
-
-  Rule {lhs = KW_float        ,
-        rhs = keyword "float"},
-
-  Rule {lhs = KW_for          ,
-        rhs = keyword "for"},
-
-  Rule {lhs = KW_if           ,
-        rhs = keyword "if"},
-
-  Rule {lhs = KW_goto         ,
-        rhs = keyword "goto"},
-
-  Rule {lhs = KW_implements   ,
-        rhs = keyword "implements"},
-
-  Rule {lhs = KW_import       ,
-        rhs = keyword "import"},
-
-  Rule {lhs = KW_instanceof   ,
-        rhs = keyword "instanceof"},
-
-  Rule {lhs = KW_int          ,
-        rhs = keyword "int"},
-
-  Rule {lhs = KW_interface    ,
-        rhs = keyword "interface"},
-
-  Rule {lhs = KW_long         ,
-        rhs = keyword "long"},
-
-  Rule {lhs = KW_native       ,
-        rhs = keyword "native"},
-
-  Rule {lhs = KW_new          ,
-        rhs = keyword "new"},
-
-  Rule {lhs = KW_package      ,
-        rhs = keyword "package"},
-
-  Rule {lhs = KW_private      ,
-        rhs = keyword "private"},
-
-  Rule {lhs = KW_protected    ,
-        rhs = keyword "protected"},
-
-  Rule {lhs = KW_public       ,
-        rhs = keyword "public"},
-
-  Rule {lhs = KW_return       ,
-        rhs = keyword "return"},
-
-  Rule {lhs = KW_short        ,
-        rhs = keyword "short"},
-
-  Rule {lhs = KW_static       ,
-        rhs = keyword "static"},
-
-  Rule {lhs = KW_strictfp     ,
-        rhs = keyword "strictfp"},
-
-  Rule {lhs = KW_super        ,
-        rhs = keyword "super"},
-
-  Rule {lhs = KW_switch       ,
-        rhs = keyword "switch"},
-
-  Rule {lhs = KW_synchronized ,
-        rhs = keyword "synchronized"},
-
-  Rule {lhs = KW_this         ,
-        rhs = keyword "this"},
-
-  Rule {lhs = KW_throw        ,
-        rhs = keyword "throw"},
-
-  Rule {lhs = KW_throws       ,
-        rhs = keyword "throws"},
-
-  Rule {lhs = KW_transient    ,
-        rhs = keyword "transient"},
-
-  Rule {lhs = KW_try          ,
-        rhs = keyword "try"},
-
-  Rule {lhs = KW_void         ,
-        rhs = keyword "void"},
-
-  Rule {lhs = KW_volatile     ,
-        rhs = keyword "volatile"},
-
-  Rule {lhs = KW_while,
-        rhs = keyword "while"},
-
-  Rule {lhs = Keyword,
-        rhs = Any [NT KW_abstract,   NT KW_assert,       NT KW_boolean,   NT KW_break,      NT KW_byte,
-                   NT KW_case,       NT KW_catch,        NT KW_char,      NT KW_class,      NT KW_const,
-                   NT KW_continue,   NT KW_default,      NT KW_do,        NT KW_double,     NT KW_else,
-                   NT KW_enum,       NT KW_extends,      NT KW_final,     NT KW_finally,    NT KW_float,
-                   NT KW_for,        NT KW_if,           NT KW_goto,      NT KW_implements, NT KW_import,
-                   NT KW_instanceof, NT KW_int,          NT KW_interface, NT KW_long,       NT KW_native,
-                   NT KW_new,        NT KW_package,      NT KW_private,   NT KW_protected,  NT KW_public,
-                   NT KW_return,     NT KW_short,        NT KW_static,    NT KW_strictfp,   NT KW_super,
-                   NT KW_switch,     NT KW_synchronized, NT KW_this,      NT KW_throw,      NT KW_throws,
-                   NT KW_transient,  NT KW_try,          NT KW_void,      NT KW_volatile,   NT KW_while]}
-    ]
-
-%%% ========================================================================
-%%% 3.10. Literals
-%%% ========================================================================
-
-op Directives_3_10 : Directives =
- [Header "3.10. Literals",
-
-  Rule {lhs = Literal,
-        rhs = Any [NT IntegerLiteral,
-                   NT FloatingPointLiteral,
-                   NT BooleanLiteral,
-                   NT CharacterLiteral,
-                   NT StringLiteral,
-                   NT NullLiteral]}
-  ]
-
-%%% ========================================================================
-%%% 3.10.1 Integer Literals
-%%% ========================================================================
-
-op Directives_3_10_1 : Directives =
- [Header "3.10.1. Integer Literals",
-
-  Rule {lhs = IntegerLiteral,
-        rhs = Any [NT DecimalIntegerLiteral,
-                   NT HexIntegerLiteral,
-                   NT OctalIntegerLiteral,
-                   NT BinaryIntegerLiteral]},
-
-  Rule {lhs = DecimalIntegerLiteral,
-        rhs = Seq [NT DecimalNumeral, Opt [NT IntegerTypeSuffix]]},
-
-  Rule {lhs = HexIntegerLiteral,
-        rhs = Seq [NT HexNumeral,     Opt [NT IntegerTypeSuffix]]},
-
-  Rule {lhs = OctalIntegerLiteral,
-        rhs = Seq [NT OctalNumeral,   Opt [NT IntegerTypeSuffix]]},
-
-  Rule {lhs = BinaryIntegerLiteral,
-        rhs = Seq [NT BinaryNumeral,  Opt [NT IntegerTypeSuffix]]},
-
-  Rule {lhs = IntegerTypeSuffix,
-        rhs = Any [lower_l, upper_L]},
-
-  %%% Decimal
-
-  Rule {lhs = DecimalNumeral,
-        rhs = Any [digit_0,
-                   Seq [NT NonZeroDigit, Opt [NT Digits]],
-                   Seq [NT NonZeroDigit, NT Underscores, NT Digits]]},
-
-  Rule {lhs = Digits,
-        rhs = Any [NT Digit,
-                   Seq [NT Digit, Opt [NT DigitsAndUnderscores], NT Digit]]},
-
-  Rule {lhs = Digit,
-        rhs = Any [digit_0,
-                   NT NonZeroDigit]},
-
-  Rule {lhs = NonZeroDigit,
-        rhs = Any [digit_1, digit_2, digit_3, digit_4, digit_5, digit_6, digit_7, digit_8, digit_9]},
-
-  Rule {lhs = DigitsAndUnderscores,
-        rhs = Any [NT DigitOrUnderscore,
-                   Seq [NT DigitsAndUnderscores, NT DigitOrUnderscore]]},
-
-  Rule {lhs = DigitOrUnderscore,
-        rhs = Any [NT Digit,
-                   underscore]},
-
-  Rule {lhs = Underscores,
-        rhs = Any [underscore,
-                   Seq [NT Underscores, underscore]]},
-
-  %%% Hex
-
-  Rule {lhs = HexNumeral,
-        rhs = Any [Seq [digit_0, lower_x, NT HexDigits],
-                   Seq [digit_0, upper_X, NT HexDigits]]},
-
-  Rule {lhs = HexDigits,
-        rhs = Any [NT HexDigit,
-                   Seq [NT HexDigit, Opt [NT HexDigitsAndUnderscores], NT HexDigit]]},
-
-  Rule {lhs = HexDigitsAndUnderscores,
-        rhs = Any [NT HexDigitOrUnderscore,
-                   Seq [NT HexDigitsAndUnderscores, NT HexDigitOrUnderscore]]},
-
-  Rule {lhs = HexDigitOrUnderscore,
-        rhs = Any [NT HexDigit,
-                   underscore]},
-
-  %%% Octal
-
-  Rule {lhs = OctalNumeral,
-        rhs = Any [Seq [digit_0, NT OctalDigits],
-                   Seq [digit_0, NT OctalDigits]]},
-
-  Rule {lhs = OctalDigits,
-        rhs = Any [NT OctalDigit,
-                   Seq [NT OctalDigit, Opt [NT OctalDigitsAndUnderscores], NT OctalDigit]]},
-
-  Rule {lhs = OctalDigit,
-        rhs = Any [digit_0, digit_1, digit_2, digit_3, digit_4, digit_5, digit_6, digit_7]},
-
-  Rule {lhs = OctalDigitsAndUnderscores,
-        rhs = Any [NT OctalDigitOrUnderscore,
-                   Seq [NT OctalDigitsAndUnderscores, NT OctalDigitOrUnderscore]]},
-
-  Rule {lhs = OctalDigitOrUnderscore,
-        rhs = Any [NT OctalDigit,
-                   underscore]},
-
-  %%% Binary
-
-  Rule {lhs = BinaryNumeral,
-        rhs = Any [Seq [digit_0, lower_b, NT BinaryDigits],
-                   Seq [digit_0, upper_B, NT BinaryDigits]]},
-
-  Rule {lhs = BinaryDigits,
-        rhs = Any [NT BinaryDigit,
-                   Seq [NT BinaryDigit, Opt [NT BinaryDigitsAndUnderscores], NT BinaryDigit]]},
-
-  Rule {lhs = BinaryDigit,
-        rhs = Any [digit_0, digit_1]},
-
-  Rule {lhs = BinaryDigitsAndUnderscores,
-        rhs = Any [NT BinaryDigitOrUnderscore,
-                   Seq [NT BinaryDigitsAndUnderscores, NT BinaryDigitOrUnderscore]]},
-
-  Rule {lhs = BinaryDigitOrUnderscore,
-        rhs = Any [NT BinaryDigit,
-                   underscore]}
-
-  ]
-
-%%% ========================================================================
-%%% 3.10.2 Floating-Point Literals
-%%% ========================================================================
-
-op Directives_3_10_2 : Directives =
- [Header "3.10.2. Floating-Point Literals",
-
-  Rule {lhs = FloatingPointLiteral,
-        rhs = Any [NT DecimalFloatingPointLiteral,
-                   NT HexadecimalFloatingPointLiteral]},
-
-  %% Decimal
-
-  Rule {lhs = DecimalFloatingPointLiteral,
-        rhs = Any [Seq [NT Digits, dot, Opt [NT Digits], Opt [NT ExponentPart], Opt [NT FloatTypeSuffix]],
-                   Seq [           dot,      NT Digits,  Opt [NT ExponentPart], Opt [NT FloatTypeSuffix]],
-                   Seq [NT Digits,                            NT ExponentPart,  Opt [NT FloatTypeSuffix]],
-                   Seq [NT Digits,                       Opt [NT ExponentPart],      NT FloatTypeSuffix ]]},
-
-  Rule {lhs = ExponentPart,
-        rhs = Seq [NT ExponentIndicator, NT SignedInteger]},
-
-  Rule {lhs = ExponentIndicator,
-        rhs = Any [lower_e, upper_E]},
-
-  Rule {lhs = SignedInteger,
-        rhs = Seq [Opt [NT Sign], NT Digits]},
-
-  Rule {lhs = Sign,
-        rhs = Any [plus, minus]},
-
-  Rule {lhs = FloatTypeSuffix,
-        rhs = Any [lower_f, upper_F, lower_d, upper_D]},
-
-  %% Hexadecimal
-
-  Rule {lhs = HexadecimalFloatingPointLiteral,
-        rhs = Seq [NT HexSignificand, NT BinaryExponent, Opt [NT FloatTypeSuffix]]},
-
-  Rule {lhs = HexSignificand,
-        rhs = Any [NT HexNumeral,
-                   Seq [NT HexNumeral, dot],
-                   Seq [digit_0, lower_x, Opt [NT HexDigits], dot, NT HexDigits],
-                   Seq [digit_0, upper_X, Opt [NT HexDigits], dot, NT HexDigits]]},
-
-  Rule {lhs = BinaryExponent,
-        rhs = Seq [NT BinaryExponentIndicator, NT SignedInteger]},
-
-  Rule {lhs = BinaryExponentIndicator,
-        rhs = Any [lower_p, upper_P]}
-
-  ]
-
-%%% ========================================================================
-%%% 3.10.3 Boolean Literals
-%%% ========================================================================
-
-op kw_true  : RHS = keyword "true"
-op kw_false : RHS = keyword "false"
-
-op Directives_3_10_3 : Directives =
- [Header "3.10.3. Boolean Literals",
-
-  Rule {lhs = BooleanLiteral,
-        rhs = Any [kw_true, kw_false]}
-  ]
-
-%%% ========================================================================
-%%% 3.10.4 Character Literals
-%%% ========================================================================
-
-op Directives_3_10_4 : Directives =
- [Header "3.10.4. Character Literals",
-
-  Rule {lhs = CharacterLiteral,
-        rhs = Any [Seq [single_quote, NT SingleCharacter, single_quote],
-                   Seq [single_quote, NT EscapeSequence,  single_quote]]},
-
-  Rule {lhs = SingleCharacter,
-        rhs = Diff (NT InputCharacter, Any [single_quote, backslash])}
-
-  ]
-
-%%% ========================================================================
-%%% 3.10.5. String Literals
-%%% ========================================================================
-
-op Directives_3_10_5 : Directives =
- [Header "3.10.5. String Literals",
-
-  Rule {lhs = StringLiteral,
-        rhs = Seq [double_quote, Opt [NT StringCharacters], double_quote]},
-
-  Rule {lhs = StringCharacters,
-        rhs = Any [NT StringCharacter,
-                   NT StringCharacters, NT StringCharacter]},
-
-  Rule {lhs = StringCharacter,
-        rhs = Any [Diff (NT InputCharacter, Any [double_quote, backslash]),
-                   NT EscapeSequence]}
-
-  ]
-
-%%% ========================================================================
-%%% 3.10.6. Escape Sequences for Character and String Literals
-%%% ========================================================================
-
-op Directives_3_10_6 : Directives =
- [Header "3.10.6. Escape Sequences for Character and String Literals",
-
-  Rule {lhs = EscapeSequence,
-        rhs = Any [backspace,        % \u0008: backspace
-                   HT,               % \u0009: horizontal tab
-                   LF,               % \u000a: linefeed
-                   FF,               % \u000c: form feed
-                   CR,               % \u000d: carriage return
-                   double_quote,     % \u0027
-                   single_quote,     % \u0027
-                   backslash,        % \u005c
-                   NT OctalEscape]}, % \u0000 to \u00ff from octal value
-
-  Rule {lhs = OctalEscape,
-        rhs = Any [Seq [backslash, NT OctalDigit],
-                   Seq [backslash, NT OctalDigit, NT OctalDigit],
-                   Seq [backslash, NT ZeroToThree, NT OctalDigit, NT OctalDigit]]},
-
-  % identical rule at 3.10.1
-  % Rule {lhs = OctalDigit,
-  %       rhs = Any [digit_0, digit_1, digit_2, digit_3, digit_4, digit_5, digit_6, digit_7]},
-
-  Rule {lhs = ZeroToThree,
-        rhs = Any [digit_0, digit_1, digit_2, digit_3]}
-
- ]
-
-%%% ========================================================================
-%%% 3.10.7. The Null Literal
-%%% ========================================================================
-
-op Directives_3_10_7 : Directives =
- [Header "3.10.7. The Null Literal",
-
-  Rule {lhs = NullLiteral,
-        rhs = keyword "null"}
-  ]
-
-%%% ========================================================================
-%%% 3.11. Separators
-%%% ========================================================================
-
-op Directives_3_11 : Directives =
- [Header "3.11. Separators",
-
-  Rule {lhs = Separator,
-        rhs = Any [left_paren,  right_paren,
-                   left_curly,  right_curly,
-                   left_square, right_square,
-                   semicolon, comma, dot]}
-  ]
-
-%%% ========================================================================
-%%% 3.12. Operators
-%%% ========================================================================
-
-op op_==        : RHS = keyword "=="
-op op_<=        : RHS = keyword "<="
-op op_>=        : RHS = keyword ">="
-op op_!=        : RHS = keyword "!="
-op op_&&        : RHS = keyword "&&"
-op op_||        : RHS = keyword "||"
-op op_++        : RHS = keyword "++"
-op op_--        : RHS = keyword "--"
-op op_<<        : RHS = keyword "<<"
-op op_>>        : RHS = keyword ">>"
-op op_>>>       : RHS = keyword ">>>"
-
-op op_+=        : RHS = keyword "+="
-op op_-=        : RHS = keyword "-="
-op op_*=        : RHS = keyword "*="
-op op_/=        : RHS = keyword "/="
-op op_&=        : RHS = keyword "&="
-op op_|=        : RHS = keyword "|="
-op op_^=        : RHS = keyword "^="
-op op_percent_= : RHS = keyword "%="    % op_%= would cause parsing problems
-op op_<<=       : RHS = keyword "<<="
-op op_>>=       : RHS = keyword ">>="
-op op_>>>=      : RHS = keyword ">>>="
-
-op Directives_3_12 : Directives =
- [Header "3.12. Operators",
-
-  Rule {lhs = Separator,
-        rhs = Any [equal_sign, right_angle, left_angle, exclamation, tilde, question_mark, colon          ,
-                   op_==, op_<=, op_>=, op_!=, op_&&, op_||, op_++, op_--,
-                   ampersand, bar, carrot, percent,
-                   op_<<, op_>>, op_>>>, op_+=, op_-=, op_*=, op_/=, op_&=, op_|=, op_^=,
-                   op_percent_=, op_<<=, op_>>=, op_>>>=]}
-  ]
-
 %%% ========================================================================
 %%% Identifiers
 %%% ========================================================================
+
+op QualifiedIdentifier     : NonTerminal = nonTerminal "QualifiedIdentifier"
+op QualifiedIdentifierList : NonTerminal = nonTerminal "QualifiedIdentifierList"
 
 op Directives_Identifiers : Directives =
  [Header  "Identifiers",
@@ -1193,6 +72,17 @@ op Directives_Identifiers : Directives =
 %%% ========================================================================
 %%% Compilation Unit
 %%% ========================================================================
+
+op CompilationUnit             : NonTerminal = nonTerminal "CompilationUnit"
+op ImportDeclaration           : NonTerminal = nonTerminal "ImportDeclaration"
+op TypeDeclaration             : NonTerminal = nonTerminal "TypeDeclaration"
+op ClassOrInterfaceDeclaration : NonTerminal = nonTerminal "ClassOrInterfaceDeclaration"
+op ClassDeclaration            : NonTerminal = nonTerminal "ClassDeclaration"
+op InterfaceDeclaration        : NonTerminal = nonTerminal "InterfaceDeclaration"
+op NormalClassDeclaration      : NonTerminal = nonTerminal "NormalClassDeclaration"
+op EnumDeclaration             : NonTerminal = nonTerminal "EnumDeclaration"
+op NormalInterfaceDeclaration  : NonTerminal = nonTerminal "NormalInterfaceDeclaration"
+op AnnotationTypeDeclaration   : NonTerminal = nonTerminal "AnnotationTypeDeclaration"
 
 op Directives_CompilationUnit : Directives =
  [Header  "Compilation Unit",
@@ -1262,6 +152,12 @@ op Directives_CompilationUnit : Directives =
 %%% Types
 %%% ========================================================================
 
+op Type          : NonTerminal = nonTerminal "Type"
+op BasicType     : NonTerminal = nonTerminal "BasicType"
+op ReferenceType : NonTerminal = nonTerminal "ReferenceType"
+op TypeArguments : NonTerminal = nonTerminal "TypeArguments"
+op TypeArgument  : NonTerminal = nonTerminal "TypeArgument"
+
 op Directives_Types : Directives =
  [Header "Types",
 
@@ -1301,6 +197,14 @@ op Directives_Types : Directives =
 %%% Type Arguments
 %%% ========================================================================
 
+op NonWildcardTypeArguments          : NonTerminal = nonTerminal "NonWildcardTypeArguments"
+op TypeList                          : NonTerminal = nonTerminal "TypeList"
+op TypeArgumentsOrDiamond            : NonTerminal = nonTerminal "TypeArgumentsOrDiamond"
+op NonWildcardTypeArgumentsOrDiamond : NonTerminal = nonTerminal "NonWildcardTypeArgumentsOrDiamond"
+op TypeParameters                    : NonTerminal = nonTerminal "TypeParameters"
+op TypeParameter                     : NonTerminal = nonTerminal "TypeParameter"
+op Bound                             : NonTerminal = nonTerminal "Bound"
+
 op Directives_TypeArguments : Directives =
  [Header "Type Arguments",
 
@@ -1336,6 +240,16 @@ op Directives_TypeArguments : Directives =
 %%% ========================================================================
 %%% Modifiers
 %%% ========================================================================
+
+op Modifier                     : NonTerminal = nonTerminal "Modifier"
+op Annotations                  : NonTerminal = nonTerminal "Annotations"
+op Annotation                   : NonTerminal = nonTerminal "Annotation"
+op AnnotationElement            : NonTerminal = nonTerminal "AnnotationElement"
+op ElementValuePairs            : NonTerminal = nonTerminal "ElementValuePairs"
+op ElementValuePair             : NonTerminal = nonTerminal "ElementValuePair"
+op ElementValue                 : NonTerminal = nonTerminal "ElementValue"
+op ElementValueArrayInitializer : NonTerminal = nonTerminal "ElementValueArrayInitializer"
+op ElementValues                : NonTerminal = nonTerminal "ElementValues"
 
 op Directives_Modifiers : Directives =
  [Header "Modifiers",
@@ -1394,6 +308,18 @@ op Directives_Modifiers : Directives =
 %%% Classes
 %%% ========================================================================
 
+op ClassBody                      : NonTerminal = nonTerminal "ClassBody"
+op ClassBodyDeclaration           : NonTerminal = nonTerminal "ClassBodyDeclaration"
+op MemberDecl                     : NonTerminal = nonTerminal "MemberDecl"
+op MethodOrFieldDecl              : NonTerminal = nonTerminal "MethodOrFieldDecl"
+op MethodOrFieldRest              : NonTerminal = nonTerminal "MethodOrFieldRest"
+op FieldDeclaratorsRest           : NonTerminal = nonTerminal "FieldDeclaratorsRest"
+op MethodDeclaratorRest           : NonTerminal = nonTerminal "MethodDeclaratorRest"
+op VoidMethodDeclaratorRest       : NonTerminal = nonTerminal "VoidMethodDeclaratorRest"
+op ConstructorDeclaratorRest      : NonTerminal = nonTerminal "ConstructorDeclaratorRest"
+op GenericMethodOrConstructorDecl : NonTerminal = nonTerminal "GenericMethodOrConstructorDecl"
+op GenericMethodOrConstructorRest : NonTerminal = nonTerminal "GenericMethodOrConstructorRest"
+
 op Directives_Classes : Directives =
  [Header "Classes",
 
@@ -1450,6 +376,18 @@ op Directives_Classes : Directives =
 %%% ========================================================================
 %%% Interfaces
 %%% ========================================================================
+
+op InterfaceBody                     : NonTerminal = nonTerminal "InterfaceBody"
+op InterfaceBodyDeclaration          : NonTerminal = nonTerminal "InterfaceBodyDeclaration"
+op InterfaceMemberDecl               : NonTerminal = nonTerminal "InterfaceMemberDecl"
+op InterfaceMethodOrFieldDecl        : NonTerminal = nonTerminal "InterfaceMethodOrFieldDecl"
+op InterfaceMethodOrFieldRest        : NonTerminal = nonTerminal "InterfaceMethodOrFieldRest"
+op ConstantDeclaratorsRest           : NonTerminal = nonTerminal "ConstantDeclaratorsRest"
+op ConstantDeclaratorRest            : NonTerminal = nonTerminal "ConstantDeclaratorRest"
+op ConstantDeclarator                : NonTerminal = nonTerminal "ConstantDeclarator"
+op InterfaceMethodDeclaratorRest     : NonTerminal = nonTerminal "InterfaceMethodDeclaratorRest"
+op VoidInterfaceMethodDeclaratorRest : NonTerminal = nonTerminal "VoidInterfaceMethodDeclaratorRest"
+op InterfaceGenericMethodDecl        : NonTerminal = nonTerminal "InterfaceGenericMethodDecl"
 
 op Directives_Interfaces : Directives =
  [Header "Interfaces",
@@ -1508,6 +446,17 @@ op Directives_Interfaces : Directives =
 %%% Parameters
 %%% ========================================================================
 
+op FormalParameters         : NonTerminal = nonTerminal "FormalParameters"
+op FormalParameterDecls     : NonTerminal = nonTerminal "FormalParameterDecls"
+op VariableModifier         : NonTerminal = nonTerminal "VariableModifier"
+op FormalParameterDeclsRest : NonTerminal = nonTerminal "FormalParameterDeclsRest"
+op VariableDeclaratorId     : NonTerminal = nonTerminal "VariableDeclaratorId"
+op VariableDeclarators      : NonTerminal = nonTerminal "VariableDeclarators"
+op VariableDeclarator       : NonTerminal = nonTerminal "VariableDeclarator"
+op VariableDeclaratorRest   : NonTerminal = nonTerminal "VariableDeclaratorRest"
+op VariableInitializer      : NonTerminal = nonTerminal "VariableInitializer"
+op ArrayInitializer         : NonTerminal = nonTerminal "ArrayInitializer"
+
 op Directives_Parameters : Directives =
  [Header "Parameters",
 
@@ -1555,6 +504,13 @@ op Directives_Parameters : Directives =
 %%% ========================================================================
 %%% Statements
 %%% ========================================================================
+
+op Block                             : NonTerminal = nonTerminal "Block"
+op BlockStatements                   : NonTerminal = nonTerminal "BlockStatements"
+op BlockStatement                    : NonTerminal = nonTerminal "BlockStatement"
+op LocalVariableDeclarationStatement : NonTerminal = nonTerminal "LocalVariableDeclarationStatement"
+op Statement                         : NonTerminal = nonTerminal "Statement"
+op StatementExpression               : NonTerminal = nonTerminal "StatementExpression"
 
 op Directives_Statements : Directives =
  [Header "Statements",
@@ -1605,6 +561,14 @@ op Directives_Statements : Directives =
 %%% Catches
 %%% ========================================================================
 
+op Catches               : NonTerminal = nonTerminal "Catches"
+op CatchClause           : NonTerminal = nonTerminal "CatchClause"
+op CatchType             : NonTerminal = nonTerminal "CatchType"
+op Finally               : NonTerminal = nonTerminal "Finally"
+op ResourceSpecification : NonTerminal = nonTerminal "ResourceSpecification"
+op Resources             : NonTerminal = nonTerminal "Resources"
+op Resource              : NonTerminal = nonTerminal "Resource"
+
 op Directives_Catches : Directives =
  [Header "Catches",
 
@@ -1647,6 +611,12 @@ op Directives_Catches : Directives =
 %%% Switch
 %%% ========================================================================
 
+op SwitchBlockStatementGroups : NonTerminal = nonTerminal "SwitchBlockStatementGroups"
+op SwitchBlockStatementGroup  : NonTerminal = nonTerminal "SwitchBlockStatementGroup"
+op SwitchLabels               : NonTerminal = nonTerminal "SwitchLabels"
+op SwitchLabel                : NonTerminal = nonTerminal "SwitchLabel"
+op EnumConstantName           : NonTerminal = nonTerminal "EnumConstantName"
+
 op Directives_Switch : Directives =
  [Header "Switch",
 
@@ -1672,6 +642,13 @@ op Directives_Switch : Directives =
 %%% ========================================================================
 %%% For
 %%% ========================================================================
+
+op ForControl                 : NonTerminal = nonTerminal "ForControl"
+op ForVarControl              : NonTerminal = nonTerminal "ForVarControl"
+op ForVarControlRest          : NonTerminal = nonTerminal "ForVarControlRest"
+op ForVariableDeclaratorsRest : NonTerminal = nonTerminal "ForVariableDeclaratorsRest"
+op ForInit                    : NonTerminal = nonTerminal "ForInit"
+op ForUpdate                  : NonTerminal = nonTerminal "ForUpdate"
 
 op Directives_For : Directives =
  [Header "For",
@@ -1714,6 +691,13 @@ op Directives_For : Directives =
 %%% Expression
 %%% ========================================================================
 
+op Expression         : NonTerminal = nonTerminal "Expression"
+op AssignmentOperator : NonTerminal = nonTerminal "AssignmentOperator"
+op Expression1        : NonTerminal = nonTerminal "Expression1"
+op Expression1Rest    : NonTerminal = nonTerminal "Expression1Rest"
+op Expression2        : NonTerminal = nonTerminal "Expression2"
+op Expression2Rest    : NonTerminal = nonTerminal "Expression2Rest"
+
 op Directives_Expression : Directives =
  [Header "Expression",
 
@@ -1755,6 +739,11 @@ op Directives_Expression : Directives =
 %%% ========================================================================
 %%% Infix
 %%% ========================================================================
+
+op InfixOp     : NonTerminal = nonTerminal "InfixOp"
+op Expression3 : NonTerminal = nonTerminal "Expression3"
+op PrefixOp    : NonTerminal = nonTerminal "PrefixOp"
+op PostfixOp   : NonTerminal = nonTerminal "PostfixOp"
 
 op Directives_Infix : Directives =
  [Header "Infix",
@@ -1801,6 +790,12 @@ op Directives_Infix : Directives =
 %%% Primary
 %%% ========================================================================
 
+op Primary                         : NonTerminal = nonTerminal "Primary"
+op ParExpression                   : NonTerminal = nonTerminal "ParExpression"
+op Arguments                       : NonTerminal = nonTerminal "Arguments"
+op SuperSuffix                     : NonTerminal = nonTerminal "SuperSuffix"
+op ExplicitGenericInvocationSuffix : NonTerminal = nonTerminal "ExplicitGenericInvocationSuffix"
+
 op Directives_Primary : Directives =
  [Header "Primary",
 
@@ -1817,14 +812,6 @@ op Directives_Primary : Directives =
                         Opt [NT IdentifierSuffix]],
                    Seq [NT BasicType, Rep [left_square, right_square], dot, NT KW_class],
                    Seq [NT KW_void, dot, NT KW_class]]},
-
-  Rule {lhs = Literal,
-        rhs = Any [NT IntegerLiteral,
-                   NT FloatingPointLiteral,
-                   NT CharacterLiteral,
-                   NT StringLiteral,
-                   NT BooleanLiteral,
-                   NT NullLiteral]},
 
   Rule {lhs = ParExpression,
         rhs = Seq [left_paren, NT Expression, right_paren]},
@@ -1851,6 +838,15 @@ op Directives_Primary : Directives =
 %%% ========================================================================
 %%% Creator
 %%% ========================================================================
+
+op Creator                   : NonTerminal = nonTerminal "Creator"
+op CreatedName               : NonTerminal = nonTerminal "CreatedName"
+op ClassCreatorRest          : NonTerminal = nonTerminal "ClassCreatorRest"
+op ArrayCreatorRest          : NonTerminal = nonTerminal "ArrayCreatorRest"
+op IdentifierSuffix          : NonTerminal = nonTerminal "IdentifierSuffix"
+op ExplicitGenericInvocation : NonTerminal = nonTerminal "ExplicitGenericInvocation"
+op InnerCreator              : NonTerminal = nonTerminal "InnerCreator"
+op Selector                  : NonTerminal = nonTerminal "Selector"
 
 op Directives_Creator : Directives =
  [Header "Creator",
@@ -1917,6 +913,11 @@ op Directives_Creator : Directives =
 %%% Enum
 %%% ========================================================================
 
+op EnumBody             : NonTerminal = nonTerminal "EnumBody"
+op EnumConstants        : NonTerminal = nonTerminal "EnumConstants"
+op EnumConstant         : NonTerminal = nonTerminal "EnumConstant"
+op EnumBodyDeclarations : NonTerminal = nonTerminal "EnumBodyDeclarations"
+
 op Directives_Enum : Directives =
  [Header "Enum",
 
@@ -1945,6 +946,13 @@ op Directives_Enum : Directives =
 %%% ========================================================================
 %%% Annotation
 %%% ========================================================================
+
+op AnnotationTypeBody                : NonTerminal = nonTerminal "AnnotationTypeBody"
+op AnnotationTypeElementDeclarations : NonTerminal = nonTerminal "AnnotationTypeElementDeclarations"
+op AnnotationTypeElementDeclaration  : NonTerminal = nonTerminal "AnnotationTypeElementDeclaration"
+op AnnotationTypeElementRest         : NonTerminal = nonTerminal "AnnotationTypeElementRest"
+op AnnotationMethodOrConstantRest    : NonTerminal = nonTerminal "AnnotationMethodOrConstantRest"
+op AnnotationMethodRest              : NonTerminal = nonTerminal "AnnotationMethodRest"
 
 op Directives_Annotation : Directives =
  [Header "Annotation",
@@ -1985,21 +993,8 @@ op Directives_Annotation : Directives =
 %%% Full grammar
 %%% ========================================================================
 
-op Java7ReferenceGrammar : Grammar =
- let directives = Directives_Ad_Hoc_Keywords
-                  ++ Directives_3_3
-                  ++ Directives_3_4
-                  ++ Directives_3_5
-                  ++ Directives_3_6
-                  ++ Directives_3_7
-                  ++ Directives_3_8
-                  ++ Directives_Keywords
-                  ++ Directives_3_10
-                  ++ Directives_3_10_1
-                  ++ Directives_3_10_6
-                  ++ Directives_3_10_7
-                  ++ Directives_3_11
-                  ++ Directives_3_12
+op Java7ReferenceGrammar : ContextFreeGrammar =
+ let directives = Directives_Java_Tokens
                   ++ Directives_Identifiers
                   ++ Directives_CompilationUnit
                   ++ Directives_Types
