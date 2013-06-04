@@ -52,8 +52,9 @@ type RHS =
   | Terminal Terminal
   | NT       NonTerminal
 
-  | Seq      List RHS          % match each RHS, in order
   | Any      List RHS          % match any RHS 
+
+  | Seq      List RHS          % match each RHS, in order
   | Opt      List RHS          % match the RHS zero or one times
   | Rep      List RHS          % match the RHS zero or more times
   | Rep1     List RHS          % match the RHS one or more times
