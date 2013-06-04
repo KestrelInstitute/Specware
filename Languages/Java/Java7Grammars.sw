@@ -15,8 +15,6 @@ op keyword (key  : String) : RHS =
              Terminal (uchar char))
           (explode key))
 
-op nonTerminal (s : String) : NonTerminal
-
 %%% ========================================================================
 %%% Terminals
 %%% ========================================================================
