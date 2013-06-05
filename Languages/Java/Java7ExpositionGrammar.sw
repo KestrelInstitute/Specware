@@ -473,7 +473,7 @@ op Directives_8_1_5_Superinterfaces : Directives =
 %%% ========================================================================
 
 op ClassBody              : NonTerminal = nonTerminal "ClassBody"
-op ClassBodyDeclarations  : NonTerminal = nonTerminal "ClassBodyDeclarationop ClassBodyDeclarations"
+op ClassBodyDeclarations  : NonTerminal = nonTerminal "ClassBodyDeclarations"
 op ClassBodyDeclaration   : NonTerminal = nonTerminal "ClassBodyDeclaration"
 op ClassMemberDeclaration : NonTerminal = nonTerminal "ClassMemberDeclaration"
 
@@ -586,9 +586,9 @@ op Directives_8_4_Method_Declarations : Directives =
 %%% ========================================================================
 
 op FormalParameterList : NonTerminal = nonTerminal "FormalParameterList"
-op FormalParameters    : NonTerminal = nonTerminal "FormalParameterop FormalParameters"
-op FormalParameter     : NonTerminal = nonTerminal "VariableModifiersop FormalParameter"
-op VariableModifiers   : NonTerminal = nonTerminal "VariableModifierop VariableModifiers"
+op FormalParameters    : NonTerminal = nonTerminal "FormalParameters"
+op FormalParameter     : NonTerminal = nonTerminal "FormalParameter"
+op VariableModifiers   : NonTerminal = nonTerminal "VariableModifiers"
 op VariableModifier    : NonTerminal = nonTerminal "VariableModifier"
 op LastFormalParameter : NonTerminal = nonTerminal "LastFormalParameter"
 
@@ -729,7 +729,7 @@ op Directives_8_7_Static_Initializers : Directives =
 %%%  8.8. Constructor Declarations
 %%% ========================================================================
 
-op ConstructorDeclaration : NonTerminal = nonTerminal "ConstructorDeclaratorop ConstructorDeclaration"
+op ConstructorDeclaration : NonTerminal = nonTerminal "ConstructorDeclaration"
 op ConstructorDeclarator  : NonTerminal = nonTerminal "ConstructorDeclarator"
 
 op Directives_8_8_Constructor_Declarations : Directives =
@@ -835,8 +835,8 @@ op Directives_8_9_Enums : Directives =
 %%% ========================================================================
 
 op EnumConstants        : NonTerminal = nonTerminal "EnumConstants"
-op EnumConstant         : NonTerminal = nonTerminal "Argumentsop EnumConstant"
-op Arguments            : NonTerminal = nonTerminal "EnumBodyDeclarationsop Arguments"
+op EnumConstant         : NonTerminal = nonTerminal "EnumConstant"
+op Arguments            : NonTerminal = nonTerminal "Arguments"
 op EnumBodyDeclarations : NonTerminal = nonTerminal "EnumBodyDeclarations"
 
 op Directives_8_9_1_Enum_Constants : Directives =
@@ -944,7 +944,7 @@ op Directives_9_1_4_Interface_Body : Directives =
 %%% ========================================================================
 
 op ConstantDeclaration : NonTerminal = nonTerminal "ConstantDeclaration"
-op ConstantModifiers   : NonTerminal = nonTerminal "ConstantModifierop ConstantModifiers"
+op ConstantModifiers   : NonTerminal = nonTerminal "ConstantModifiers"
 op ConstantModifier    : NonTerminal = nonTerminal "ConstantModifier"
 
 op Directives_9_3_Constant_Field_Declarations : Directives =
@@ -1065,7 +1065,7 @@ op Directives_9_7_Annotations : Directives =
 %%% ========================================================================
 
 op NormalAnnotation             : NonTerminal = nonTerminal "NormalAnnotation"
-op ElementValuePairs            : NonTerminal = nonTerminal "ElementValuePairop ElementValuePairs"
+op ElementValuePairs            : NonTerminal = nonTerminal "ElementValuePairs"
 op ElementValuePair             : NonTerminal = nonTerminal "ElementValuePair"
 op ElementValue                 : NonTerminal = nonTerminal "ElementValue"
 op ElementValueArrayInitializer : NonTerminal = nonTerminal "ElementValueArrayInitializer"
@@ -1286,7 +1286,7 @@ op Directives_14_8_Expression_Statements : Directives =
 %%% ========================================================================
 
 op IfThenStatement              : NonTerminal = nonTerminal "IfThenStatement"
-op IfThenElseStatement          : NonTerminal = nonTerminal "IfThenElseStatementNoShortIfop IfThenElseStatement"
+op IfThenElseStatement          : NonTerminal = nonTerminal "IfThenElseStatement"
 op IfThenElseStatementNoShortIf : NonTerminal = nonTerminal "IfThenElseStatementNoShortIf"
 
 op Directives_14_9_If_Statement : Directives =
@@ -1412,7 +1412,7 @@ op Directives_14_14_For_Statement : Directives =
 %%% 14.14.1. The basic for Statement
 %%% ========================================================================
 
-op BasicForStatement       : NonTerminal = nonTerminal "ForStatementNoShortIfop BasicForStatement"
+op BasicForStatement       : NonTerminal = nonTerminal "BasicForStatement"
 op ForStatementNoShortIf   : NonTerminal = nonTerminal "ForStatementNoShortIf"
 op ForInit                 : NonTerminal = nonTerminal "ForInit"
 op ForUpdate               : NonTerminal = nonTerminal "ForUpdate"
@@ -1524,8 +1524,8 @@ op Directives_14_19_Synchronized_Statement : Directives =
 %%% 14.20. The try statement
 %%% ========================================================================
 
-op TryStatement         : NonTerminal = nonTerminal "Catchesop TryStatement"
-op Catches              : NonTerminal = nonTerminal "CatchClauseop Catches"
+op TryStatement         : NonTerminal = nonTerminal "TryStatement"
+op Catches              : NonTerminal = nonTerminal "Catches"
 op CatchClause          : NonTerminal = nonTerminal "CatchClause"
 op CatchFormalParameter : NonTerminal = nonTerminal "CatchFormalParameter"
 op CatchType            : NonTerminal = nonTerminal "CatchType"
@@ -1642,7 +1642,7 @@ op Directives_15_9_Class_Instance_Creation : Directives =
 %%% ========================================================================
 
 op ArrayCreationExpression : NonTerminal = nonTerminal "ArrayCreationExpression"
-op DimExprs                : NonTerminal = nonTerminal "DimExprop DimExprs"
+op DimExprs                : NonTerminal = nonTerminal "DimExprs"
 op DimExpr                 : NonTerminal = nonTerminal "DimExpr"
 op Dims                    : NonTerminal = nonTerminal "Dims"
 
@@ -1908,7 +1908,7 @@ op Directives_15_22_Bitwise : Directives =
                    Seq [NT ExclusiveOrExpression, carrot, NT AndExpression]]},
 
   Rule {lhs = InclusiveOrExpression,
-        rhs = Any [NT InclusiveOrExpression,
+        rhs = Any [NT ExclusiveOrExpression,
                    Seq [NT InclusiveOrExpression, bar, NT ExclusiveOrExpression]]}
 
   ]
