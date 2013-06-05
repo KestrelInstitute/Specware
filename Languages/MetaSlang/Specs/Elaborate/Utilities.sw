@@ -917,8 +917,11 @@ Utilities qualifying spec
 	      | Some info ->
 		if definedTypeInfo? info then
 		  let (tvs, srt) = unpackFirstTypeDef info in
-		  let ssrt = substType (zip (tvs, srts), srt) in
-		  subtypeOf?(ssrt,qid,spc)
+                  if length tvs = length srts then
+                    let ssrt = substType (zip (tvs, srts), srt) in
+                    subtypeOf?(ssrt,qid,spc)
+                  else
+                    false
 		else
 		  false)
       | Subtype(t1,_,_) -> subtypeOf?(t1,qid,spc)
