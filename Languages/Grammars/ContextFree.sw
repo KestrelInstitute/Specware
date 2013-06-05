@@ -45,7 +45,7 @@ type Directive  = | Rule    Rule
 
 type Rule = {lhs : NonTerminal, rhs : RHS}
 
-type BodyAndSeparator = RHS * RHS
+type BodyAndSeparator = {body : List RHS, sep : List RHS}
 
 type RHS =
 
