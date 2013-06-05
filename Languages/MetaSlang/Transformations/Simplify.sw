@@ -217,7 +217,7 @@ spec
              simplifyOne spc (Let(new_decls, body, pos))
            %% let y = x in f y  --> f x
            | Let([(VarPat(v,_),wVar as (Var(w,_)))],body,pos) ->
-             substitute(body,[(v,wVar)])
+             simplifyOne spc (substitute(body,[(v,wVar)]))
            %% case e of pat => bod   --> let pat = e in bod
            | Apply(Lambda([(pat, Fun(Bool true,_,_), body)],_),t,pos) ->
              simplifyOne spc (Let([(pat, t)], body, pos))
