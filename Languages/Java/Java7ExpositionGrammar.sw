@@ -2133,7 +2133,6 @@ op Java7ExpositionGrammar : ContextFreeGrammar =
                   ++ Directives_15_27_Expression
                   ++ Directives_15_28_Constant
                   ++ Directives_Misc
-                  ++ Directives_Ad_Hoc_Keywords
  in
  {name          = "Java7ExpositionGrammar",
   documentation = "todo",
