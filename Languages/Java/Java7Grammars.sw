@@ -3,16 +3,14 @@ Java7 qualifying spec
 import /Languages/Grammars/ContextFree
 import /Library/IO/Unicode/UnicodeSig
 
-%%% All versions of Java use Unicode
-
-type CFG.Terminal = UChar
+type CFG.Terminal = | Some UChar | AnyChar
 
 op token (char : Char) : RHS =
- Terminal (uchar char)
+ Terminal (Some (uchar char))
 
 op keyword (key  : String) : RHS =
  Seq (map (fn char ->
-             Terminal (uchar char))
+             Terminal (Some (uchar char)))
           (explode key))
 
 %%% ========================================================================
@@ -101,7 +99,7 @@ op star           : RHS = token #*
 op tilde          : RHS = token #~
 op underscore     : RHS = token #_
 
-op any_unicode_char : RHS = token #0
+op any_unicode_char : RHS = Terminal AnyChar
 
 %%% ========================================================================
 %%% Ad Hoc Keywords
@@ -222,9 +220,9 @@ op Directives_3_6_WhiteSpace : Directives =
 %%% ========================================================================
 
 op Comment            : NonTerminal = nonTerminal "Comment"
-op TraditionalComment : NonTerminal = nonTerminal "EndOfLineCommentop TraditionalComment"
-op EndOfLineComment   : NonTerminal = nonTerminal "CommentTailop EndOfLineComment"
-op CommentTail        : NonTerminal = nonTerminal "CommentTailStarop CommentTail"
+op TraditionalComment : NonTerminal = nonTerminal "TraditionalComment"
+op EndOfLineComment   : NonTerminal = nonTerminal "EndOfLineComment"
+op CommentTail        : NonTerminal = nonTerminal "CommentTail"
 op CommentTailStar    : NonTerminal = nonTerminal "CommentTailStar"
 op NotStar            : NonTerminal = nonTerminal "NotStar"
 op NotStarNotSlash    : NonTerminal = nonTerminal "NotStarNotSlash"
@@ -272,18 +270,18 @@ op JavaLetterOrDigit : NonTerminal = nonTerminal "JavaLetterOrDigit"
 
 op java_letter? (rhs : RHS) : Bool =
   case rhs of
-    | Terminal x -> ((uchar #A) <= x && x <= (uchar #Z))
-                    ||
-                    ((uchar #a) <= x && x <= (uchar #z))
+    | Terminal (Some x) -> ((uchar #A) <= x && x <= (uchar #Z))
+                           ||
+                           ((uchar #a) <= x && x <= (uchar #z))
     | _ -> false
 
 op java_letter_or_digit? (rhs : RHS) : Bool =
   case rhs of
-    | Terminal x -> ((uchar #A) <= x && x <= (uchar #Z))
-                    ||
-                    ((uchar #a) <= x && x <= (uchar #z))
-                    ||
-                    ((uchar #0) <= x && x <= (uchar #9))
+    | Terminal (Some x) -> ((uchar #A) <= x && x <= (uchar #Z))
+                           ||
+                           ((uchar #a) <= x && x <= (uchar #z))
+                           ||
+                           ((uchar #0) <= x && x <= (uchar #9))
     | _ -> false
 
 op Directives_3_8_Identifiers : Directives =
@@ -707,11 +705,11 @@ op ExponentIndicator               : NonTerminal = nonTerminal "ExponentIndicato
 op SignedInteger                   : NonTerminal = nonTerminal "SignedInteger"
 op Sign                            : NonTerminal = nonTerminal "Sign"
 op FloatTypeSuffix                 : NonTerminal = nonTerminal "FloatTypeSuffix"
-   % --
+% --
 op HexadecimalFloatingPointLiteral : NonTerminal = nonTerminal "HexadecimalFloatingPointLiteral"
 op HexSignificand                  : NonTerminal = nonTerminal "HexSignificand"
-op BinaryExponent : NonTerminal = nonTerminal "BinaryExponent"
-op BinaryExponentIndicator : NonTerminal = nonTerminal "BinaryExponentIndicator"
+op BinaryExponent                  : NonTerminal = nonTerminal "BinaryExponent"
+op BinaryExponentIndicator         : NonTerminal = nonTerminal "BinaryExponentIndicator"
 
 op Directives_3_10_2_Floating_Point_Literals : Directives =
  [Header "3.10.2. Floating-Point Literals",
