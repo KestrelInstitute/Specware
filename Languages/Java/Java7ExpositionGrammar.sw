@@ -127,7 +127,7 @@ op Directives_4_3_Reference_Types : Directives =
         rhs = Seq [NT TypeDeclSpecifier, Opt [NT TypeArguments]]},
 
   Rule {lhs = TypeDeclSpecifier,
-        rhs = Any [NT TypeName,
+        rhs = Any [NT TypeNameNoPackage,
                    Seq [NT ClassOrInterfaceType, dot, NT Identifier]]},
 
   %%  Section 6.5 gives an alternative definition for TypeName, using PackageOrTypeName
