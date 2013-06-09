@@ -27,8 +27,7 @@ spec
                                     if loc in? result then result
                                       else loc::result
                                   | _ -> result
-                              else result
-                              | _ -> result)
+                              else result)
                            result dfn)
                      result (opInfoDefs info))
                  result spc.ops
