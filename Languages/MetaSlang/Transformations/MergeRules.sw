@@ -454,7 +454,7 @@ op bt(assumptions:List MSTerm)(vars:List Id)(obs:List Id)(stateVar:Id)(inputs:DN
                  (mkCaseExpr(s,tms), flatten pres)
                  
       | BTSingleton t -> (mkAnd t, [assumptions]) 
-      | BTTrue inputs' -> (mkTrue (), [assumptions]) 
+      | BTTrue inputs' -> (mkTrue (), [assumptions]) %% TODO: ??? shadowed by BTTrue case above
       | BTConstraint cs -> 
           let inputs' = map (fn d -> filter (fn c -> ~ (inTerm? c cs)) d) inputs in
           let (tm',pre) = bt assumptions vars obs stateVar inputs' in
