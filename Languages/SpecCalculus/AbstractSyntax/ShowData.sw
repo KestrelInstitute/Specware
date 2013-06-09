@@ -588,13 +588,13 @@ op fileNameOfSpec (spc:Spec) : Option String =
     | Some el -> fileNameOfSpecElement (el,spc)
     | None -> None
 
-op fileNameOfSpecElement (el:SpecElement,spc:Spec) : Option String =
+op fileNameOfSpecElement (el : SpecElement, spc : Spec) : Option String =
   case el of
-    | Op (qid,_,_)    -> fileNameOfOpId(qid,spc)
-    | OpDef (qid,_,_,_) -> fileNameOfOpId(qid,spc)
-    | Type (qid,_)  -> fileNameOfTypeId(qid,spc)
-    | Type (qid,_)  -> fileNameOfTypeId(qid,spc)
-    | Property(_, _, _, term, _) -> fileNameOfTerm term
+    | Op       (qid, _,       _) -> fileNameOfOpId   (qid, spc)
+    | OpDef    (qid, _, _,    _) -> fileNameOfOpId   (qid, spc)
+    | Type     (qid,          _) -> fileNameOfTypeId (qid, spc)
+    | TypeDef  (qid,          _) -> fileNameOfTypeId (qid, spc)
+    | Property (_, _, _, trm, _) -> fileNameOfTerm   trm
     | _ -> None
 
 op fileNameOfOpId(qid:QualifiedId, spc:Spec) : Option String =

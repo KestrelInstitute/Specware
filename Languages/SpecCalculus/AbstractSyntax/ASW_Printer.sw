@@ -637,15 +637,14 @@ ASWPrinter qualifying spec
       | Some el -> fileNameOfSpecElement (el,spc)
       | None -> None
 
-  op  fileNameOfSpecElement: SpecElement * Spec -> Option String
-  def fileNameOfSpecElement (el,spc) =
+  op fileNameOfSpecElement (el : SpecElement, spc : Spec) : Option String =
     case el of
-    | Op (qid,_,_)    -> fileNameOfOpId(qid,spc)
-    | OpDef (qid,_,_,_) -> fileNameOfOpId(qid,spc)
-    | Type (qid,_)  -> fileNameOfTypeId(qid,spc)
-    | Type (qid,_)  -> fileNameOfTypeId(qid,spc)
-    | Property(_, _, _, term, _) -> fileNameOfTerm term
-    | _ -> None
+      | Op       (qid, _,       _) -> fileNameOfOpId   (qid, spc)
+      | OpDef    (qid, _, _,    _) -> fileNameOfOpId   (qid, spc)
+      | Type     (qid,          _) -> fileNameOfTypeId (qid, spc)
+      | TypeDef  (qid,          _) -> fileNameOfTypeId (qid, spc)
+      | Property (_, _, _, trm, _) -> fileNameOfTerm   trm
+      | _ -> None
 
   op  fileNameOfOpId: QualifiedId * Spec -> Option String
   def fileNameOfOpId(qid,spc) =
