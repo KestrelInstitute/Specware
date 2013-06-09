@@ -16,7 +16,7 @@
  *   
  * 1. Generate the If-Then-Else expressions as described above with minimal branching.
  *     References
- *       Phil's chapter in Peyton Jones' book
+ *       Phil Wadler's chapter in Peyton Jones' book
  *       The pattern matching compilers in HOL
  *       The matching compiler in Moscow ML (does use sharing, but branches).
  *
@@ -35,22 +35,21 @@
  *
  * 4. Generate proof-obligations for exhaustive pattern matching when these cannot be detected statically.
  *
+ * Note: 
  *
- * The pattern matching compiler generates expressions of the form:
+ * This pattern matcher now uses a revised version of Wadler's algorithm, no longer producing forms 
+ * containing non-standard forms such as TranslationBuiltIn,mkBreak, since these non-standard forms 
+ * complicate further reasoning and transformations within Specware, and also are not easily modeled 
+ * in languages such as C which lack a "try/catch" feature.
  *
- *   match-term ::= TranslationBuiltIn.block block-term
- *  
- *   BLOCK-TERM ::= if TERM then BLOCK-TERM else BREAK
- *                | if TERM then BLOCK-TERM else SUCCESS
- *                | if TERM then BLOCK-TERM else FAIL
- *                | let x = TERM in BLOCK-TERM
- *                | FAIL
- *                | SUCCESS
- *                | BREAK
- *                | TranslationBuiltIn.failWith (BLOCK-TERM, BLOCK-TERM)
+ * Instead, this pattern matching compiler generates intermediate forms for TranslationBuiltIn,mkBreak
+ * just as Wadler does, but then removes them when the nearest containing failWith is processed, 
+ * converting breaks into calls to a local continuation function which ecapsulates the "fail" clause 
+ * given to failWith.
  *
- *   BREAK      ::= TranslationBuiltIn.mkBreak
- *   SUCCESS    ::= TranslationBuiltIn.mkSuccess TERM
+ *
+ * Thie pattern matcher also produces calls to TranslationBuiltIn,mkFail for "fall-through" cases, 
+ * and these may persist into the result.
  *)
 
 PatternMatch qualifying spec
@@ -73,25 +72,26 @@ PatternMatch qualifying spec
    name        = name,    % for error messages
    lambda      = None}    % for error messages
 
- op match_type (typ : MSType) : MSType = 
-  typ 
-
  op mkBreak (typ : MSType) : MSTerm = 
-  mkOp (Qualified ("TranslationBuiltIn", "mkBreak"), match_type typ)
+  mkOp (Qualified ("TranslationBuiltIn", "mkBreak"), typ)
 
- op isBreak (trm : MSTerm) : Bool = 
+ op isBreak? (trm : MSTerm) : Bool = 
   case trm of
     | Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"), _), _, _) -> true
     | _ -> false
 
- op mkSuccess (typ : MSType, trm : MSTerm) : MSTerm = 
-  let typ = mkArrow (typ, match_type typ) in 
-  mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkSuccess"), typ), 
-           trm)
+ op mkFail (ctx : Context, typ : MSType, _ : MSTerm) : MSTerm =
+  %% Generate the continuation catch all case given a set of pattern matching rules.
+  let index = ! ctx.error_index + 1 in
+  (ctx.error_index := index;
+   let typ1 = mkArrow (typ, typ) in
+   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
+   mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkFail"), typ1),
+            mkString msg))
 
- op isSuccess (trm : MSTerm) : Bool = 
+ op isFail? (trm : MSTerm) : Bool = 
   case trm of
-    | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"), _), _, _), _, _) -> true
+    | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"), _), _, _),  _, _) -> true
     | _ -> false
 
  (*
@@ -110,32 +110,131 @@ PatternMatch qualifying spec
   *   Success (result) translates to return (result);
   *)
 
- op failWith (ctx : Context) (body : MSTerm) (continuation : MSTerm) : MSTerm =
-  if isBreak continuation then 
-    body 
-  else if isSuccess body then 
-    %% Warn that continuation is not a break, yet we will never reach it.
-    %% TODO: what if continuation is a fail?
-    let _ = warnUnreachable ctx in
-    body
-  else
-    let typ  = inferType (ctx.spc, body) in
-    let typ  = mkArrow (mkProduct [typ,typ], typ) in
-    let trm  = mkApply (mkOp (Qualified ("TranslationBuiltIn", "failWith"), typ), 
-                        mkRecord [("1", body), ("2", continuation)])
-    in
-    trm
+ op emptyPat : MSPattern = mkTuplePat []
 
  op storeLambda (trm : MSTerm, ctx : Context) : Context =
   %% used just to make msg in warnUnreachable
   ctx << {lambda = Some trm}
 
- op warnUnreachable (ctx : Context) : () =
-  writeLine ("Warning: Redundant case in " ^ (printQualifiedId ctx.name) ^ "\n" ^ 
-               (case ctx.lambda of
-                  | Some tm -> printTerm tm
-                  | _ -> ""))
-  
+ op verbose? : Bool = false
+
+ op failWith (ctx : Context) (body : MSTerm) (continuation : MSTerm) : MSTerm =
+  let
+    def isTiny? tm =
+      case tm of
+        | Var _ -> true
+        | Fun _ -> ~ (isBreak? tm)
+        | TypedTerm (tm, _, _) -> isTiny? tm
+        | _ -> false
+
+    def isSmallArg? tm =
+      case tm of
+        | Var _ -> true
+        | Fun _ -> ~ (isBreak? tm)
+        | Record (fields, _) -> forall? (fn (_, tm) -> isTiny? tm) fields
+        | TypedTerm (tm, _, _) -> isSmallArg? tm
+        | _ -> false
+
+    def isSmall? tm =
+      %% true for terms such as 'nil', 'foo (1,x,bar)', '(a,b,c)' etc.
+      %% perhaps could use a more explicit size calculation, but this
+      %% is just a heuristic and should avoid the exponential explosion
+      %% that could happen when continuations recusively each contain
+      %% multiple continuations.
+      let result =
+      case tm of
+        | Var _ -> true
+        | Fun _ -> ~ (isBreak? tm)
+        | Record (fields, _) -> forall? (fn (_, tm) -> isTiny? tm) fields
+        | Apply (f, arg, _) -> isTiny? f && isSmallArg? arg
+        | TypedTerm (tm, _, _) -> isSmall? tm
+        | _ -> false
+      in
+      let _ = if verbose? then
+               let _ = writeLine("----------") in
+               let _ = writeLine((Bool.show result) ^ " for " ^ printTerm tm) in
+               let _ = writeLine("----------") in
+               ()
+              else
+                ()
+      in
+      result
+  in
+  %% let continuation = simplify ctx.spc continuation in
+  if isBreak? continuation then 
+    body 
+  else
+    let break_count = 
+        foldSubTerms (fn (tm, n) ->
+                        if isBreak? tm then
+                          n + 1
+                        else 
+                          n)
+                     0 
+                     body
+    in
+    let _ = if verbose? then writeLine ("breaks = " ^ show break_count) else () in
+    case break_count of
+
+      | 0 -> 
+        if isFail? continuation then
+          body
+        else
+          let _ = writeLine ("\nWarning: Redundant case in " ^ (printQualifiedId ctx.name) ^ " :\n\n" ^ 
+                               (printTerm continuation) ^ "\n\n  within\n\n" ^
+                               (case ctx.lambda of
+                                  | Some tm -> printTerm tm
+                                  | _ -> "") ^ "\n")
+          in
+          body
+
+      | 1 -> 
+        %% Substitute continuation used once
+        mapSubTerms (fn tm -> 
+                       if isBreak? tm then
+                         continuation
+                       else 
+                         tm)
+                    body
+      | _ -> 
+        let new_trm = 
+            %% If the continuation is small, just substitute it everywhere.
+            if isSmall? continuation then
+              mapSubTerms (fn tm -> 
+                             if isBreak? tm then
+                               continuation
+                             else
+                               tm)
+                          body
+            else
+              %% make local fn for continuation, and change breaks to call it
+              let result_type      = inferType (ctx.spc, body)                    in
+              let continue_fn_type = mkArrow (mkProduct [], result_type)          in
+              let continue_fn_var  = freshVar (ctx, continue_fn_type)             in
+              let continue_fn_def  = mkLambda (emptyPat, continuation)            in
+              let call_continue_fn = mkApply (mkVar continue_fn_var, mkRecord []) in
+              let new_body = 
+                  %% Substitute calls to continue fn 
+                  mapSubTerms (fn tm -> 
+                                 if isBreak? tm then
+                                   call_continue_fn
+                                 else
+                                   tm)
+                              body
+              in
+              mkLetRec ([(continue_fn_var, continue_fn_def)],
+                        new_body)
+        in
+        let _ = if verbose? then
+                  let _ = writeLine ("====================") in
+                  let _ = writeLine ("failWith: ") in
+                  let _ = writeLine (printTerm new_trm) in
+                  let _ = writeLine ("====================") in
+                  ()
+                else
+                  ()
+        in
+        new_trm
 
  % op  mkProjectTerm (spc : Spec, id   : Id,     trm : MSTerm) : MSTerm = SpecEnvironment.mkProjectTerm
  % op  mkRestrict    (spc : Spec, pred : MSTerm, trm : MSTerm} : MSTerm = SpecEnvironment.mkRestrict
@@ -562,17 +661,10 @@ PatternMatch qualifying spec
   in
   foldr insert [] pmrules 
         
- op abstract (vs  : List (String * Var), 
-              trm : MSTerm, 
-              typ : MSType) 
+ op abstract (vs   : List (String * Var), 
+              body : MSTerm, 
+              typ  : MSType) 
   : MSTerm = 
-  let possible_body = simplifyPatternMatchResult trm in
-  let body          = case possible_body of
-                        | Some body -> body
-                        | _ -> mkApply (mkOp (Qualified ("TranslationBuiltIn", "block"),
-                                              mkArrow (match_type typ, typ)), 
-                                        trm)
-  in
   let pat = case vs of 
               | [(_,v)] -> mkVarPat v
               | _ -> RecordPat (map (fn (index, v)-> (index, mkVarPat v)) vs, 
@@ -863,15 +955,6 @@ PatternMatch qualifying spec
     | Pi (tvs,                   typ, a) -> 
       Pi (tvs, eliminateType ctx typ, a)
 
- op makeFail (ctx : Context, typ : MSType, _ : MSTerm) : MSTerm =
-  %% Generate the continuation catch all case given a set of pattern matching rules.
-  let index = ! ctx.error_index + 1 in
-  (ctx.error_index := index;
-   let typ1 = mkArrow (typ, match_type typ) in
-   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
-   mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkFail"), typ1),
-            mkString msg))
-
  op makeContinuation (ctx     : Context, 
                       typ     : MSType, 
                       msrules : MSRules,
@@ -883,10 +966,10 @@ PatternMatch qualifying spec
        case msrules of
 
          | [] -> 
-           (reverse first_msrules, makeFail (ctx, typ, term))
+           (reverse first_msrules, mkFail (ctx, typ, term))
 
          | [(WildPat _, Fun (Bool true, _, _), body)] ->
-           (reverse first_msrules, mkSuccess (typ, body))
+           (reverse first_msrules, body)
 
          | [(VarPat (v, _), Fun (Bool true, _, _), body)] ->
            let term =
@@ -896,7 +979,7 @@ PatternMatch qualifying spec
                                 noPos) 
            in
            let body = mkLet ([(VarPat (v, noPos), term)], body) in
-           (reverse first_msrules, mkSuccess (typ, body))
+           (reverse first_msrules, body)
 
          | msrule :: msrules ->
            loop (msrules, msrule :: first_msrules)
@@ -973,7 +1056,7 @@ PatternMatch qualifying spec
         let pmrules                 = map (fn (pat, cond, body) -> 
                                              (splitPattern (arity, pat), 
                                               cond, 
-                                              mkSuccess (body_type, body))) 
+                                              body))
                                           msrules 
         in
         let vars = map (fn (_, v) -> mkVar v) indices_and_vs                   in
@@ -1014,11 +1097,11 @@ PatternMatch qualifying spec
                  ([],1) 
                  vs
        in
-       let pmrules = [(pats, trueTerm, mkSuccess (body_type, body))] in
+       let pmrules = [(pats, trueTerm, body)] in
        let tm = match (ctx,
                        map mkVar vs,
                        pmrules,
-                       makeFail (ctx, body_type, term),
+                       mkFail (ctx, body_type, term),
                        mkBreak body_type) 
        in
        let tm = abstract (indices_and_vs, tm, body_type) in
@@ -1072,153 +1155,6 @@ PatternMatch qualifying spec
     | _ ->
       term
 
- op simplifyPatternMatchResult (term : MSTerm) : Option MSTerm =
-  let 
-
-    def substContinuationInBody (body, continuation) =
-
-      %% basically, try to merge continuation into body
-      %% may simplify if's and let's
-      %% special tricks for mkBreak, mkSuccess, mkFail, failWith
-
-      case body of
-
-        | IfThenElse (pred, t1, t2, pos) ->
-          (case (simpSuccess t1, simpSuccess t2) of
-             | (Some simp_t1, Some simp_t2) ->
-               %% both simplied without even looking at continuation
-               %% this may optimize IfThenElse based on actual terms:
-               Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
-             | (Some simp_t1, _) ->
-               %% t1 simplied without even looking at continuation, 
-               %%  so see what happens with t2
-               (case substContinuationInBody (t2, continuation) of
-                  | Some simp_t2 -> 
-                    %% this may optimize IfThenElse based on actual terms:
-                    Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
-                  | _ -> None)
-             | (_, Some simp_t2) ->
-               %% t2 simplied without even looking at continuation, 
-               %%  so see what happens with t1
-               (case substContinuationInBody (t1, continuation) of
-                  | Some simp_t1 -> 
-                    %% this may optimize IfThenElse based on actual terms:
-                    Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
-                  | _ -> None)
-             | _ ->
-               %% Neither simplied without looking at continuation, 
-               %%  but maybe continuation is trivial enough that it
-               %%  makes sense to just merge it into both t1 and t2.
-               if simpleSuccTerm? continuation then
-                 %% continuation is small, so merge with both t1 and t2
-                 case substContinuationInBody (t1, continuation) of
-                   | Some simp_t1 ->
-                     (case substContinuationInBody (t2, continuation) of
-                        | Some simp_t2 -> 
-                          %% this may optimize IfThenElse based on actual terms:
-                          Some (Utilities.mkIfThenElse (pred, simp_t1, simp_t2))
-                        | _ -> None)
-                   | _ -> None
-               else 
-                 None)
-
-        | Let (bindings, let_body, pos) ->
-          (case substContinuationInBody (let_body, continuation) of
-             | Some simp_body -> Some (Let (bindings, simp_body, pos))
-             | _ -> None)
-
-        | Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"),_),_,_) -> 
-          % continuation is inevitable
-          simpSuccess continuation 
-
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), 
-                 arg,
-                 _) 
-          ->
-          % continuation is unreachable
-          Some arg
-
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_),_,_) -> 
-          % continuation is unreachable
-          Some body
-
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
-                 Record ([("1", inner_body), ("2", inner_continuation)], _),
-                 _) 
-          ->
-          % attempt to simplify: failWith (failWith (x, y), z) => failWith (x, y')
-          % requires failWith (y, z) to resolve as y'
-          (case substContinuationInBody (inner_continuation, continuation) of
-             | Some combined_continuation -> 
-               substContinuationInBody (inner_body, simpLet combined_continuation)
-             | _ -> 
-               None)
-
-        | _ -> 
-          None
-
-    def simpSuccess tm =
-      case tm of
-
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), tm, _) -> 
-          Some tm
-
-        | Let (bindings, body, pos) ->
-          (case simpSuccess body of
-             | Some simp_body -> Some (Let (bindings, simp_body, pos))
-             | _ -> None)
-
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
-                 Record ([("1", body), ("2", continuation)],_),
-                 _) 
-          ->
-          substContinuationInBody (body, continuation)
-          
-        | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"),_),_,_), _, _)  ->
-          Some tm
-
-        | _ -> 
-          None         
-  in
-  case term of
-
-    | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"),_),_,_),
-             Record ([("1", body), ("2", continuation)],_), 
-             _)
-      ->
-      substContinuationInBody (body, simpLet continuation)
-
-    | _ -> 
-      None
-     
- op simpLamBody (term : MSTerm) : MSTerm =
-  case term of
-    | Lambda ([(pat, c, Apply (Lambda ([(VarPat (v,_), _, body)], _), wVar as Var _, _))], pos) ->
-      Lambda ([(pat, c, substitute (body, [(v, wVar)]))],                                  pos)
-    | _ -> term
-
- op simpLet (term : MSTerm) : MSTerm =
-  case term of
-
-    | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),a1), t1, a2), arg,         a3) ->
-      Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),a1), t1, a2), simpLet arg, a3)
-
-    | Let ([(VarPat (id,_), value)], body, _) ->
-      (case countVarRefs (body, id) of
-         | 0 -> if sideEffectFree value then body else term
-         | _ -> term)
-
-    | _ -> term
-
- op simpleSuccTerm? (tm : MSTerm) : Bool =
-  case tm of
-    | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"),_),_,_), arg, _) -> 
-      simpleSuccTerm? arg
-    | Var    _       -> true
-    | Fun    _       -> true
-    | Record ([], _) -> true
-    | _              -> false
-
  %- --------------------------------------------------------------------------------
  %- checks whether Record is a Product or a user-level Record
 
@@ -1239,8 +1175,14 @@ PatternMatch qualifying spec
   *  term)
   *)
 
- op translateMatchInTerm (spc : Spec) (name : QualifiedId) (tm : MSTerm): MSTerm =
-  simpLamBody(eliminateTerm (mkSpcContext spc name) tm)
+ op betaReduceLambdaBody (term : MSTerm) : MSTerm =
+  case term of
+    | Lambda ([(pat, c,  Apply (Lambda ([(VarPat (v,_), _, body)], _), wVar as Var _, _))],  pos) ->
+      Lambda ([(pat, c,  substitute (body, [(v, wVar)]))],                                   pos)
+    | _ -> term
+
+ op translateMatchInTerm (spc : Spec) (name : QualifiedId) (term : MSTerm): MSTerm =
+  betaReduceLambdaBody (eliminateTerm (mkSpcContext spc name) term)
 
  op SpecTransform.translateMatch (spc : Spec) : Spec = 
   % sjw: Moved (Ref 0) in-line in mkSpcContext so it is reexecuted for each call so the counter is reinitialized
@@ -1277,7 +1219,7 @@ PatternMatch qualifying spec
                                else
                                  let new_typ = eliminateType (mkContext op_name) typ in
                                  let new_tm  = eliminateTerm (mkContext op_name) term in
-                                 let new_tm = simpLamBody new_tm in
+                                 let new_tm = betaReduceLambdaBody new_tm in
                                  maybePiTerm (tvs, TypedTerm (new_tm, new_typ, termAnn term)))
                             old_defs
                     in
