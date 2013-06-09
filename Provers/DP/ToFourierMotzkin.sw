@@ -40,7 +40,7 @@ MSToFM qualifying spec
       | Ineq (i) -> printIneq(i)
       | BoolBinOp (And,     t1, t2) -> printFMTerm(t1)^" && "^printFMTerm(t2)
       | BoolBinOp (Implies, t1, t2) -> printFMTerm(t1)^" => "^printFMTerm(t2)
-      | BoolBinOp (XOr,     t1, t2) -> printFMTerm(t1)^" ^^ "^printFMTerm(t2)
+      | BoolBinOp (Xor,     t1, t2) -> printFMTerm(t1)^" ^^ "^printFMTerm(t2)
       | BoolBinOp (Or,      t1, t2) -> printFMTerm(t1)^" || "^printFMTerm(t2)
       | BoolBinOp (Equiv,   t1, t2) -> printFMTerm(t1)^" <=> "^printFMTerm(t2)
       | _ -> (fail "UnSupported")
