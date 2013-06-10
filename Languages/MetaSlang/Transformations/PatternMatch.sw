@@ -159,8 +159,56 @@ PatternMatch qualifying spec
                 ()
       in
       result
+
+    def simplifyIfResultIsSmall tm =
+      %% The motivation for calling simplify is to allow forms such as
+      %% 'let x = y in false' to be recognized as small terms (e.g. 'false') 
+      %% and thus avoid producing silly local functions such as
+      %% 'def pv7 () = false'.
+      %%
+      %% But simplify can turn a case into a form such as 'let (x, y) = ...',
+      %% and this is problematic since we're supposedly past the point at 
+      %% which such complex let's are transformed into cases.
+      %% 
+      %% Fortunately, we can avoid this problem by simply ignoring any 
+      %% simplications that don't succeed in producing a small term.
+      let new = simplify ctx.spc tm in
+      if isSmall? new then
+        new
+      else
+        tm
+
+    def possibleVariableCapture? continuation body =
+
+      %% We must not sustitute the continuation term for any break's found 
+      %% in the body if that body binds free vars found in the continuation.
+
+      %% This is a conservative test to avoid that situation -- it will 
+      %% return true for the problematic situtations, but (rarely) might
+      %% also return true for some that would not be problematic.
+      
+      let free_vars  = freeVars continuation          in
+      let free_names = map (fn (v, _) -> v) free_vars in
+      existsSubTerm (fn tm ->
+                       case tm of
+
+                         | Let (bindings, _, _) -> 
+                           exists? (fn (pat, _) -> 
+                                      case pat of
+                                        | VarPat ((v, _), _) -> v in? free_names
+                                        | _ -> false)
+                                   bindings
+
+                        | LetRec (bindings, _, _) -> 
+                          exists? (fn ((v, _), _) -> v in? free_names)
+                                  bindings
+
+                        | _ -> false)
+      
+                    body
+
   in
-  %% let continuation = simplify ctx.spc continuation in
+  let continuation = simplifyIfResultIsSmall continuation in
   if isBreak? continuation then 
     body 
   else
@@ -198,8 +246,9 @@ PatternMatch qualifying spec
                     body
       | _ -> 
         let new_trm = 
-            %% If the continuation is small, just substitute it everywhere.
-            if isSmall? continuation then
+            %% If the continuation is small and there is no chance of a variable capture, 
+            %% directly substitute continuation for each break in body.
+            if (isSmall? continuation) && ~ (possibleVariableCapture? continuation body) then
               mapSubTerms (fn tm -> 
                              if isBreak? tm then
                                continuation
@@ -207,14 +256,19 @@ PatternMatch qualifying spec
                                tm)
                           body
             else
-              %% make local fn for continuation, and change breaks to call it
+
+              %% For whatever reason, we have decided here to not use direct substitution
+              %% of continuation for each break in body.
+
+              %% Make a local function to encapsulate the continuation:
               let result_type      = inferType (ctx.spc, body)                    in
               let continue_fn_type = mkArrow (mkProduct [], result_type)          in
               let continue_fn_var  = freshVar (ctx, continue_fn_type)             in
               let continue_fn_def  = mkLambda (emptyPat, continuation)            in
+
+              %% Then substitute a call to that local function for each break in body:
               let call_continue_fn = mkApply (mkVar continue_fn_var, mkRecord []) in
               let new_body = 
-                  %% Substitute calls to continue fn 
                   mapSubTerms (fn tm -> 
                                  if isBreak? tm then
                                    call_continue_fn
