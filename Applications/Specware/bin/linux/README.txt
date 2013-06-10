@@ -1,61 +1,45 @@
 This directory contains a variety of scripts and needs to be cleaned
-up.  (This directory is also where executable images currently get put.)
+up.  (This directory is also where executable images currently get
+put, but perhaps that should change.)
+
+Naming style:
+- underscores preferred to dashes or camel case
+- "Specware" preferred over "Specware4"
+- Jim suggests the format "command_application_language"
+
+TODO: Consider doing much of this scripting in Emacs.  Would then work
+on Windows too.
 
 Here is a start at figuring out the status of each script (I don't
 list all the callers of each script, if there is any caller script
 that we have to keep, the callee script must also be kept -- unless we
 can refactor or unify scripts somehow):
 
-Specware-gnu - Preferred way on Linux to run Specware within emacs
-Specware4-shell-sbcl - Preferred way on Linux to run Specware in a terminal
+Specware-gnu - Preferred way on Linux to run Specware within emacs (TODO: get rid of the -gnu in the name)
+Specware-shell-sbcl - Garrin says he uses this on occasion (why not use Specware4-shell-sbcl?) - TODO: delete!
+Specware4-shell-sbcl - Preferred way on Linux to run Specware in a terminal - TODO: rename to not have 4 in the name, after deleting the above script.
 
 Isabelle_Specware - Preferred way to run Isabelle with Specware? (doesn't seem to work on Linux for Eric)
-Emacs_Specware - used by Isabelle_Specware script (unify with Specware-gnu?)
-Isabelle_Specware_gnu - ???
+Emacs_Specware - used by Isabelle_Specware script (unify with Specware-gnu? - no, not meant to be called directly)
 
-SpecwareMac - Alessandro uses this on the Mac
-Specware4Mac - identical to SpecwareMac (delete one of them!)
+SpecwareMac - Preferred way to run Specware on the Mac (click and you are left with the Specware Emacs window in focus)
+Specware4Mac - identical to SpecwareMac - TODO: delete
 
-bootstrap - main script for building Specware on Mac and Linux
+bootstrap - main script for building Specware on Mac and Linux (SW builds Specware from emacs, runs elisp code, see the Windows scripts - these scripts possibly allow other lisps, uses more non-hardwired variables, could mimic what Windows does, e.g., with Set_Environment_Vars.cmd)
 Bootstrap_Specware - called by bootstrap
 Prepare_Bootstrap_Image - called by Bootstrap_Specware
 Generate_Specware_Lisp - called by Bootstrap_Specware
 Compile_Specware_Lisp - called by Bootstrap_Specware
 Build_Specware_Dev - called by Bootstrap_Specware
-Verify_Specware_Variables - called by Prepare_Bootstrap_Image
+Verify_Specware_Variables - called by Prepare_Bootstrap_Image - finds Specware, emacs, etc.  lots of scripts call this, to get a uniform environment.
 
-Scripts of unknown status (can we delete these?):
+SnapshotSpecwareLispFiles - created March, 2012?  Used when you make an incompatible change, keep a snapshot, need to keep this script
 
-XEmacs_Specware - Didn't we stop supporting xemacs (we only support Gnu Emacs now)?
-Specware4 - seems to run xemacs
-Test_Specware4_Subdir
-Test_Specware4_Bugs
-Test_Specware4_Bug
-Test_Specware4
-Specware-slime-xmlrpc-server
-Specware-slime
-Specware-shell-sbcl
-Specware-sbcl-slime
-Specware-sbcl
-Specware-cmulisp-slime
-Specware-cmulisp
-Specware4-xmlrpc-server-openmcl
-Specware4-xmlrpc-server
-Specware4-text-sbcl
-Specware4-text-acl
-Specware4-text
-Specware4-shell-openmcl
-Specware4-shell-clisp
-Specware4-shell
-Specware4-openmcl
-Specware4-emacs-xmlrpc-server-openmcl
-Specware4-emacs-xmlrpc-server
-SpecBeans-text
-SnapshotSpecwareLispFiles
-Init-ilisp-for-xemacs-cmucl
-Init-ilisp-for-xemacs-acl
-Init-ilisp-for-xemacs
-build-with-cache
-Build_Specware_Dev_With_Cache
-bootstrap-acl
+Jim uses to run the Specware test suite (TODO: integrate into Bamboo tests):
+ (subdir handling broken on Mac?)
+Test_Specware4_Subdir - test a subdir of the bugs dir
+Test_Specware4_Bugs - just test the bugs
+Test_Specware4_Bug - takes an arg, which is a specific bug to test
+Test_Specware4 - Jim changed in Nov. 2012
+
 
