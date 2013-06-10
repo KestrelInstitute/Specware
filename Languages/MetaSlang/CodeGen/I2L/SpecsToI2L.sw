@@ -735,11 +735,8 @@ SpecsToI2L qualifying spec
     let typ  = unfoldBaseKeepPrimitives (typ, spc)            in
     let exp  = term2expression_internal (tm, typ, ctxt, spc)  in
     let ityp = type2itype ([], typ, unsetToplevel ctxt, spc)  in
-    let cast? = 
-        case exp of
-          | I_FunCall(("TranslationBuiltIn", "failWith"), _, _) -> true
-          | _ -> false
-    in
+    %% TODO: cast? used to be set to true for failWith forms.
+    let cast? = false in
     {expr = exp, typ = ityp, cast? = cast?}
 
   op term2expression_internal (tm : MSTerm, typ : MSType, ctxt : S2I_Context, spc : Spec) : I_Expr =

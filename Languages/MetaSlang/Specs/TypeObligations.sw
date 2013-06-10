@@ -821,35 +821,6 @@ spec
    let condn = (mkQualifiedId(qual, sname), [], mkFalse()) in
    (Cons(mkConjecture condn, tccs), StringSet.add(claimNames, sname))
 
-%
-% Simplify term obtained from pattern matching compilation
-% by replacing TranslationBuiltIn.failWith by "or"
-%
-
- op simplifyMatch: MSTerm -> MSTerm
- def simplifyMatch(trm) = 
-     case trm
-       of IfThenElse(t1, t2, t3, _) -> 
-	  let t2 = simplifyMatch(t2) in
-	  let t3 = simplifyMatch(t3) in
-	  Utilities.mkIfThenElse(t1, t2, t3)
-	| Apply(Fun(Op(Qualified("TranslationBuiltIn", "failWith"), _), _, _),
-		Record([(_, t1), (_, t2)], _), _) -> 
-	  let t1 = simplifyMatch(t1) in
-	  let t2 = simplifyMatch(t2) in
-	  Utilities.mkOr(t1, t2)
-	| Apply(Fun(And, _, _),
-		Record([(_, t1), (_, t2)], _), _) -> 
-	  let t1 = simplifyMatch(t1) in
-	  let t2 = simplifyMatch(t2) in
-	  Utilities.mkAnd(t1, t2)
-	| Let(decls, body, _) -> 
-	  let trm = simplifyMatch(body) in
-	  (case trm
-	     of Fun(Bool _, _, _) -> trm
-	      | _ -> Let(decls, trm, noPos))
-	| _ -> trm
-
  op includesPredLifter?(spc: Spec): Bool = embed? Some (findTheOp(spc, Qualified("List", "List_P")))
 
  op maybeRaiseSubtypes(ty1: MSType, ty2: MSType, gamma: Gamma): MSType * MSType =

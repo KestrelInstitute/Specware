@@ -576,59 +576,6 @@ op addList(S: StringSet, l: List String): StringSet =
 
      | mystery -> System.fail ("In mkLTermOp, unexpected termOp: " ^ (anyToString mystery))
 
- op  flattenFailWith : MSTerm -> MSTerms
- def flattenFailWith term =
-   case term of
-     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _), 
-	      Record ([(_, t1), (_, t2)], _), _)
-       -> 
-       flattenFailWith t1 ++ flattenFailWith t2
-     | _ -> [term]
-
-
- def lispBlock (sp, dpn, vars, term : MSTerm) : LispTerm = 
-   let terms = flattenFailWith term in
-   let terms = List.map (fn term -> blockAtom (sp, dpn, vars, term)) terms in
-   mkLSeq terms        
-
- def blockAtom (sp, dpn, vars, term : MSTerm) : LispTerm = 
-   case term of
-
-     | IfThenElse (t1, t2, Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"), _), _, _), _) ->
-       IfThen (mkLTerm   (sp, dpn, vars, t1), 
-	       blockAtom (sp, dpn, vars, t2))
-
-     | IfThenElse (t1, t2, t3, _) -> 
-       If (mkLTerm  (sp, dpn, vars, t1), 
-	   blockAtom (sp, dpn, vars, t2), 
-	   blockAtom (sp, dpn, vars, t3))
-
-     | Let (decls, body, _) -> 
-       let (pats, terms) = unzip decls in
-       let  names = List.map patternName pats  in
-       let  names = List.map (fn id -> specId (id, "")) names      in
-       mkLLet (names, 
-	      List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms, 
-	      blockAtom (sp, dpn, addList (vars, names), body))   
-
-     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkSuccess"), _), _, _), 
-	      term, _)
-       -> 
-       mkLApply (mkLOp "return", [mkLTerm (sp, dpn, vars, term)])
-
-     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkFail"), _), _, _), 
-	      Fun (String msg, _, _), _) 
-       -> 
-       mkLApply (mkLOp "error", [mkLString msg])
-        
-     | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _, _), _, _) -> 
-       lispBlock (sp, dpn, vars, term)
-
-     | _ -> 
-       System.fail ("Unexpected atom " ^ printTerm term)
-
- % DIE HARD if the above cases are not exhaustive
-
  op  typeOfOp : Spec * QualifiedId -> MSType
  def typeOfOp (sp, qid) =
    case AnnSpec.findTheOp (sp, qid) of
@@ -733,18 +680,6 @@ op addList(S: StringSet, l: List String): StringSet =
 
 	 | Apply (t1, Apply (Fun (Relax, _, _), t2, _), a) ->
 	   mkLTerm (sp, dpn, vars, Apply (t1, t2, a))
-
-	 (*
-	  * Here we translate the pattern matching monads that are inserted 
-	  * by the pattern matching translator.
-	  * They are translated to block constructs.
-	  *)
-	   
-	 | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "block"), _), _, _), t, _) ->
-	   %% let _ = writeLine ("Block " ^ printTerm term) in 
-	   let terms = flattenFailWith t in
-	   let terms = List.map (fn term -> blockAtom (sp, dpn, vars, term)) terms in
-	   mkLApply (mkLOp "block", Cons (Const (Boolean false), terms))
 
 	 %% Forced tuples are translated to tuples by translating the argument to mkLTuple recursively
 
