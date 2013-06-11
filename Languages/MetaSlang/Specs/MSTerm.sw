@@ -43,13 +43,13 @@ MS qualifying spec
  op mkCanonRecordType(fields: List(Id * MSType)): MSType =
    mkRecordType(sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) fields)
 
- op mkCoProduct    : List (String * Option MSType) -> MSType
+ op mkCoProduct    : List (Id * Option MSType) -> MSType
 
  def mkTyVar        name        = TyVar    (name,       noPos)
- def mkBase         (qid, srts) = Base     (qid, srts,  noPos)
- def mkArrow        (s1, s2)    = Arrow    (s1, s2,     noPos)
- def mkSubtype      (srt, pred) = Subtype  (srt, pred,  noPos)
- def mkQuotientType (srt, rel)  = Quotient (srt, rel,   noPos)
+ def mkBase         (qid, typs) = Base     (qid, typs,  noPos)
+ def mkArrow        (dom, rng)  = Arrow    (dom, rng,   noPos)
+ def mkSubtype      (typ, pred) = Subtype  (typ, pred,  noPos)
+ def mkQuotientType (typ, rel)  = Quotient (typ, rel,   noPos)
 
  def mkProduct types =
   case types of
@@ -58,13 +58,13 @@ MS qualifying spec
       let def loop (n, types) = 
 	   case types  of
 	      | []         -> []
-	      | srt::types -> Cons((show n, srt), loop(n + 1, types))
+	      | typ::types -> Cons((show n, typ), loop(n + 1, types))
       in
 	Product(loop(1,types), noPos)
 
  def mkCoProduct fields = CoProduct (fields, noPos)
 
- op mkCanonCoProduct(flds: List(String * Option MSType)): MSType =
+ op mkCanonCoProduct(flds: List (Id * Option MSType)): MSType =
    mkCoProduct (sortGT (fn ((fld1,_), (fld2,_)) -> fld1 > fld2) flds)
 
  %% Type terms for constant types:
@@ -82,8 +82,8 @@ MS qualifying spec
  def stringType  = mkBase (Qualified("String",  "String"), [])
  op voidType : MSType = mkProduct[]
 
- op mkListType  (ty: MSType): MSType = mkBase(Qualified("List",  "List"),   [ty])
- op mkOptionType(ty: MSType): MSType = mkBase(Qualified("Option","Option"), [ty])
+ op mkListType   (typ : MSType) : MSType = mkBase(Qualified("List",  "List"),   [typ])
+ op mkOptionType (typ : MSType) : MSType = mkBase(Qualified("Option","Option"), [typ])
 
  op listCharType     : MSType = mkListType charType
  op optionStringType : MSType = mkOptionType stringType
@@ -130,7 +130,7 @@ MS qualifying spec
 
 
  def mkVar        v               = Var        (v,                       noPos)
- def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 
+ def mkFun        (constant, typ) = Fun        (constant, typ,           noPos) 
  def mkApply      (t1, t2)        = Apply      (t1, t2,                  termAnn(t2))
  op mkCurriedApply(f: MSTerm, terms: MSTerms): MSTerm =
    foldl mkApply f terms
@@ -147,7 +147,7 @@ MS qualifying spec
    case tms of
      | [tm] -> tm
      | _ -> Seq(tms, noPos)
- op mkTypedTerm(tm: MSTerm, ty: MSType): MSTerm = TypedTerm(tm, ty, termAnn tm)
+ op mkTypedTerm (tm : MSTerm, typ : MSType) : MSTerm = TypedTerm (tm, typ, termAnn tm)
 
  %% Fun's
 
@@ -202,28 +202,31 @@ MS qualifying spec
  def mkBool bool = mkFun (Bool bool, boolType)
  def mkString str = mkFun (String str, stringType)
 
- def mkRelax    (srt, pred)   = mkFun (Relax, mkArrow (mkSubtype (srt, pred), srt))
- def mkRestrict (srt, pred)   = mkFun (Restrict, mkArrow (srt, mkSubtype (srt, pred)))
-% def mkChoose   (srt, equiv) = let q = mkQuotientType (srt, equiv) in mkFun (Choose q, mkArrow (q, srt))
- def mkQuotient (a,qid,ty) =
-   let ty_args = case ty of
-                   | Base(_, ty_args, _) -> ty_args
-                   | _ -> []
+ def mkRelax    (typ, pred)   = mkFun (Relax, mkArrow (mkSubtype (typ, pred), typ))
+ def mkRestrict (typ, pred)   = mkFun (Restrict, mkArrow (typ, mkSubtype (typ, pred)))
+% def mkChoose   (typ, equiv) = let q = mkQuotientType (typ, equiv) in mkFun (Choose q, mkArrow (q, typ))
+ def mkQuotient (a,qid,typ) =
+   let type_args = case typ of
+                     | Base(_, type_args, _) -> type_args
+                     | _ -> []
    in
-   %% Could well need a better way of getting ty_args
-   mkApply(mkFun (Quotient qid, mkArrow(ty,Base(qid,ty_args,noPos))), a)
+   %% Could well need a better way of getting type_args
+   mkApply (mkFun (Quotient qid, 
+                   mkArrow (typ, 
+                            Base (qid, type_args, noPos))), 
+            a)
 
- def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
- def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
- def mkEmbedded (id, srt) = mkFun (Embedded id, mkArrow (srt, boolType))
+ def mkEmbed0 (id, typ) = mkFun (Embed (id, false), typ) % no arg
+ def mkEmbed1 (id, typ) = mkFun (Embed (id, true), typ) % arg
+ def mkEmbedded (id, typ) = mkFun (Embedded id, mkArrow (typ, boolType))
  def mkProject (id, super, sub) = mkFun (Project id, mkArrow (super, sub))
  def mkSelect (id, super, field) = mkFun (Project id, mkArrow (super, field))
- def mkEquals (srt) = mkFun (Equals, srt)
- def mkNotEquals (srt) = mkFun (NotEquals, srt)
+ def mkEquals (typ) = mkFun (Equals, typ)
+ def mkNotEquals (typ) = mkFun (NotEquals, typ)
 
  % Is the Nonfix here always correct?
- def mkOp (qid, srt) = mkFun (Op (qid, Nonfix), srt)
- def mkInfixOp (qid, fixity, srt) = mkFun (Op (qid, fixity), srt)
+ def mkOp (qid, typ) = mkFun (Op (qid, Nonfix), typ)
+ def mkInfixOp (qid, fixity, typ) = mkFun (Op (qid, fixity), typ)
 
  %% Op's (particular Fun's)
 
@@ -298,8 +301,11 @@ MS qualifying spec
 
  op mkRecordMerge(t1: MSTerm, t2: MSTerm): MSTerm =
    let arg = mkTuple [t1,t2] in
-   let rec_ty = termType t1 in
-   mkApply(mkFun(RecordMerge, mkArrow(mkProduct[rec_ty, termType t2], rec_ty)), mkTuple [t1,t2])
+   let record_type = termType t1 in
+   mkApply (mkFun (RecordMerge, 
+                   mkArrow(mkProduct [record_type, termType t2], 
+                           record_type)), 
+            mkTuple [t1,t2])
 
  def mkConj(cjs) =
   case cjs
@@ -315,24 +321,24 @@ MS qualifying spec
 
   % TODO: Is it the case that dom_type should never be a Pi type?  I made that mistake once.
  op mkEquality (dom_type : MSType, t1 : MSTerm, t2 : MSTerm) : MSTerm = 
-     let srt = mkArrow(mkProduct [dom_type,dom_type],boolType) in
-     mkApply(mkEquals srt, mkTuple [t1,t2])
+     let typ = mkArrow(mkProduct [dom_type,dom_type],boolType) in
+     mkApply(mkEquals typ, mkTuple [t1,t2])
 
  op mkNotEquality (dom_type: MSType, t1: MSTerm, t2: MSTerm): MSTerm = 
-     let srt = mkArrow(mkProduct [dom_type,dom_type],boolType) in
-     mkApply(mkNotEquals srt, mkTuple [t1,t2])
+     let typ = mkArrow(mkProduct [dom_type,dom_type],boolType) in
+     mkApply(mkNotEquals typ, mkTuple [t1,t2])
 
  def mkRestriction {pred, term} = 
-   let srt = termType term in
-   mkApply (mkRestrict(srt, pred), term)
+   let typ = termType term in
+   mkApply (mkRestrict(typ, pred), term)
     
  % This definition of choose is not correct according to David's
  % requirements.
-% def mkChoice (term, equiv, srt) =   mkApply (mkChoose(srt, equiv), term)
+% def mkChoice (term, equiv, typ) =   mkApply (mkChoose(typ, equiv), term)
 
- def mkChooseFun (q as Base(qid,_,_), srt1, srt2, f) = % used by matchSubType
-   let chSrt = mkArrow(mkArrow(srt1,srt2), mkArrow (q, srt2)) in
-   let ch = mkFun(Choose qid, chSrt) in
+ def mkChooseFun (q as Base(qid,_,_), typ1, typ2, f) = % used by matchSubType
+   let chTyp = mkArrow(mkArrow(typ1,typ2), mkArrow (q, typ2)) in
+   let ch = mkFun(Choose qid, chTyp) in
    mkApply (ch, f)
 
  def mkProjection (id, term) = 
@@ -347,22 +353,22 @@ MS qualifying spec
 
 
  def mkSelection (id, term) = 
-   let srt = termType term in
-   case srt
+   let typ = termType term in
+   case typ
      of CoProduct(fields,_) -> 
         (case findLeftmost (fn (id2,_) -> id = id2) fields
            of Some (_,Some fieldType) ->
-              mkApply(mkSelect (id, srt, fieldType), term)
+              mkApply(mkSelect (id, typ, fieldType), term)
             | _ -> System.fail "Selection index not found in product")
-      | _ -> System.fail ("CoProduct type expected for mkSelection: " ^ printType srt)
+      | _ -> System.fail ("CoProduct type expected for mkSelection: " ^ printType typ)
 
  op negateTerm: MSTerm -> MSTerm
  %% Gets the negated version of term. 
  def negateTerm tm =
    case tm of
-     | Apply(Fun(Not,_,_),negTm,_) -> negTm
-     | Apply(Fun(NotEquals,ty,a1),args,a2) ->
-       Apply(Fun(Equals,ty,a1),args,a2)
+     | Apply (Fun (Not,_,_), negTm, _) -> negTm
+     | Apply (Fun (NotEquals, typ, a1), args, a2) ->
+       Apply (Fun (Equals,    typ, a1), args, a2)
      | _ -> mkNot tm
 
  %% Patterns ...
@@ -403,10 +409,10 @@ MS qualifying spec
  def mkTypedPat      (p, typ)     = TypedPat      (p, typ,        noPos)
 
  op mkConsPat(p1: MSPattern, p2: MSPattern): MSPattern = mkEmbedPat("Cons", Some(mkTuplePat[p1, p2]), patternType p2)
- op mkNilPat(ty: MSType): MSPattern = mkEmbedPat("Nil", None, ty)
+ op mkNilPat(typ: MSType): MSPattern = mkEmbedPat("Nil", None, typ)
  op mkListPat(pats: MSPatterns | pats ~= []): MSPattern =
-   let el_ty = patternType(pats@0) in
-   foldr mkConsPat (mkNilPat(mkListType el_ty)) pats
+   let elt_type = patternType (pats @ 0) in
+   foldr mkConsPat (mkNilPat (mkListType elt_type)) pats
 
  def patternToList t =
     case t of
