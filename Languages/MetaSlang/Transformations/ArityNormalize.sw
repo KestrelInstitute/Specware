@@ -141,7 +141,7 @@ ArityNormalize qualifying spec
                  let relaxOp = mkRelax(s,t) in
                  let t2 = mkApply(relaxOp,t2) in
                  let (t2,decls) = unfoldArgument(s,t2) in
-                 let t2 = mkRestriction({pred = t,term = t2}) in
+                 let t2 = mkRestriction(t,t2) in
                  (t2,decls)
                | Product(fields,_) -> 
                  let (names,usedNames) = 
