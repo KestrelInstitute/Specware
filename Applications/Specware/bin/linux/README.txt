@@ -23,7 +23,6 @@ Isabelle_Specware - Preferred way to run Isabelle with Specware? (doesn't seem t
 Emacs_Specware - used by Isabelle_Specware script (unify with Specware-gnu? - no, not meant to be called directly)
 
 SpecwareMac - Preferred way to run Specware on the Mac (click and you are left with the Specware Emacs window in focus)
-Specware4Mac - identical to SpecwareMac - TODO: delete
 
 bootstrap - main script for building Specware on Mac and Linux (SW builds Specware from emacs, runs elisp code, see the Windows scripts - these scripts possibly allow other lisps, uses more non-hardwired variables, could mimic what Windows does, e.g., with Set_Environment_Vars.cmd)
 Bootstrap_Specware - called by bootstrap
