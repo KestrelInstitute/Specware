@@ -16,7 +16,6 @@ that we have to keep, the callee script must also be kept -- unless we
 can refactor or unify scripts somehow):
 
 Specware-gnu - Preferred way on Linux to run Specware within emacs (TODO: get rid of the -gnu in the name)
-Specware-shell-sbcl - Garrin says he uses this on occasion (why not use Specware4-shell-sbcl?) - TODO: delete!
 Specware4-shell-sbcl - Preferred way on Linux to run Specware in a terminal - TODO: rename to not have 4 in the name, after deleting the above script.
 
 Isabelle_Specware - Preferred way to run Isabelle with Specware? (doesn't seem to work on Linux for Eric)
