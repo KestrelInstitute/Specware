@@ -71,7 +71,7 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
 %    | Monad Term ->  mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
     | _ -> fail ("Can only return Specs or MSTerms")
 
-op varForMTypeInfo(ty_i: MTypeInfo): Var =
+op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
   case ty_i of
     | Spec -> ("spc__0", specType)
     | Term -> ("tm__0", msTermType)

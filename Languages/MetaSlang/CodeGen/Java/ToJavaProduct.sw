@@ -55,7 +55,7 @@ def productToClsDecls(id, srtDef as Product (fields, _)) =
    addClsDecl clsDecl
   }
 
-op mkEqualityBodyForProduct: List Field -> JGenEnv JavaExpr
+op mkEqualityBodyForProduct: MSProductFields -> JGenEnv JavaExpr
 def mkEqualityBodyForProduct(fields) =
   case fields of
     | [] -> return(CondExp (Un (Prim (Bool true)), None))

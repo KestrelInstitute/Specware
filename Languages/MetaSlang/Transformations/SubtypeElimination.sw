@@ -155,7 +155,7 @@ SpecNorm qualifying spec
                        | _ -> false)
       t
 
-  op subtypePredFreeVars (t: MSTerm, spc: Spec): List Var =
+  op subtypePredFreeVars (t: MSTerm, spc: Spec): MSVars =
     foldSubTerms (fn (t,fvs) ->
                     case t of
                       | Bind(_,bndVars,_,_) ->
@@ -582,7 +582,7 @@ SpecNorm qualifying spec
         The((vn,ty),new_bod,a)
       | _ -> t
 
-  op refToHo_eqfns(f: Fun, qids: List QualifiedId): Bool =
+  op refToHo_eqfns(f: MSFun, qids: List QualifiedId): Bool =
     case f of
       | Op(qid,_) -> qid in? qids
       | _ -> false
@@ -646,7 +646,7 @@ SpecNorm qualifying spec
 
   op hoFun2s: List String = ["Fun_P", "Fun_PD", "Fun_PR"]
 
-  op possibleEqTestableFun?(f: Fun, ho_eqfns: QualifiedIds): Bool =
+  op possibleEqTestableFun?(f: MSFun, ho_eqfns: QualifiedIds): Bool =
     case f of
       | Equals -> true
       | NotEquals -> true
@@ -683,7 +683,7 @@ SpecNorm qualifying spec
       | Lambda _ -> possibleEqTestableFunTermIn? (ho_eqfns, spc) f
       | _ -> false
 
-  op simpleTermIn?(term: MSTerm, vs: Vars): Bool = 
+  op simpleTermIn?(term: MSTerm, vs: MSVars): Bool = 
     case term of 
       | Record(fields,_) ->
         forall? (fn (_,t) -> simpleTermIn?(t, vs)) fields

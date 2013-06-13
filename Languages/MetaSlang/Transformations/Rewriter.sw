@@ -28,8 +28,8 @@ MetaSlangRewriter qualifying spec
 
  op applyRewrites : 
     Context * List RewriteRule * SubstC 
-       -> List Var * MSTerm 
-	   -> LazyList (MSTerm * (SubstC * RewriteRule * List Var * List RewriteRule))
+       -> MSVars * MSTerm 
+	   -> LazyList (MSTerm * (SubstC * RewriteRule * MSVars * List RewriteRule))
 
  op applyRewrite(context: Context, rule: RewriteRule, subst: SubstC, term: MSTerm): List SubstC = 
    let lhs = rule.lhs in
@@ -66,8 +66,8 @@ MetaSlangRewriter qualifying spec
    in
     simpleRules ++ condRules
 
- op optimizeSuccessList(results: List(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule)))
-      : List(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
+ op optimizeSuccessList(results: List(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule)))
+      : List(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule)) =
    %% Prefer unconditional match if result is the same -- happens with subtypes and type parameters
 %    let opt_num = if length results > 1 then
 %                   let (t1,(s1,rule1,_,_))::_ = results in
@@ -110,8 +110,8 @@ MetaSlangRewriter qualifying spec
  op debugApplyRewrites?:  Bool = false
 
  op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Bool)
-                      (boundVars: List Var, term: MSTerm, demod: Demod RewriteRule)
-                      : LazyList(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule))  = 
+                      (boundVars: MSVars, term: MSTerm, demod: Demod RewriteRule)
+                      : LazyList(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule))  = 
 %     let _ = writeLine("Rewriting:\n"^printTerm term) in
 %     let _ = writeLine("with rules:") in
 %     let _ = app printRule (listRules demod) in
@@ -203,8 +203,8 @@ MetaSlangRewriter qualifying spec
  op pushFunctionsIn?: Bool = true
  op evalGroundTerms?: Bool = true
 
- op standardSimplify (spc: Spec) (term: MSTerm, subst: SubstC, boundVars: List Var, demod: Demod RewriteRule)
-    :  LazyList(MSTerm * (SubstC * RewriteRule * List Var * Demod RewriteRule)) =
+ op standardSimplify (spc: Spec) (term: MSTerm, subst: SubstC, boundVars: MSVars, demod: Demod RewriteRule)
+    :  LazyList(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule)) =
    %let _ = (writeLine "ss:"; printSubst subst) in
    let (simp?, term) = if evalGroundTerms?
                          then
@@ -313,7 +313,7 @@ MetaSlangRewriter qualifying spec
 
  op useUnfoldLetStrategy?: Bool = true
 
- op substFromBinds(binds: List(MSPattern * MSTerm)): VarSubst =
+ op substFromBinds(binds: List(MSPattern * MSTerm)): MSVarSubst =
    foldl (fn (sbst, (p, be)) ->
                  case (p, be) of
                    | (VarPat(v,_), _) -> (v, be) :: sbst
@@ -451,7 +451,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
      See spec builtInRewrites
  op matchEquality : 
     fa(rules) Context * rules * SubstC 
-       -> List Var * Term * Term -> LazyList (SubstC * RewriteRule * rules)
+       -> MSVars * Term * Term -> LazyList (SubstC * RewriteRule * rules)
 
  def equalityRule : RewriteRule = 
      { 
@@ -493,17 +493,17 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
 *)
 
- type Rewriter a = List Var * MSTerm * Demod RewriteRule -> LazyList (MSTerm * a) 
- %type Matcher  a = List Var * Term * Term -> LazyList a
+ type Rewriter a = MSVars * MSTerm * Demod RewriteRule -> LazyList (MSTerm * a) 
+ %type Matcher  a = MSVars * Term * Term -> LazyList a
  type Strategy   = | Innermost | Outermost
  type RewriteInfo a = {strategy: Strategy, rewriter: Rewriter a, context: Context}
 
- op rewriteTerm    : [a] RewriteInfo a * List Var * MSTerm * Demod RewriteRule
+ op rewriteTerm    : [a] RewriteInfo a * MSVars * MSTerm * Demod RewriteRule
                            -> LazyList (MSTerm * a)
- op rewriteSubTerm : [a] RewriteInfo a * List Var * MSTerm * Demod RewriteRule
+ op rewriteSubTerm : [a] RewriteInfo a * MSVars * MSTerm * Demod RewriteRule
                            -> LazyList (MSTerm * a)
 
- op [a] rewritePattern (solvers: RewriteInfo a, boundVars: List Var,
+ op [a] rewritePattern (solvers: RewriteInfo a, boundVars: MSVars,
                         pat: MSPattern, rules: Demod RewriteRule)
           : LazyList(MSPattern * a) =
    case pat of
@@ -765,10 +765,10 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
       | _ -> false
 
  op rewriteRecursive : 
-    Context * List Var * RewriteRules * MSTerm * Nat -> LazyList (History)
+    Context * MSVars * RewriteRules * MSTerm * Nat -> LazyList (History)
 
  op rewriteRecursivePre : 
-    Context * List Var * Demod RewriteRule * MSTerm * Nat -> LazyList (History)
+    Context * MSVars * Demod RewriteRule * MSTerm * Nat -> LazyList (History)
 
 
 %%
@@ -898,7 +898,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
       rewriteRec(rules0, emptySubstitution, term, term, boundVars, [], 0)
 
  op rewriteOnce : 
-    Context * List Var * RewriteRules * MSTerm -> List MSTerm
+    Context * MSVars * RewriteRules * MSTerm -> List MSTerm
 
 %%
 %% Apply unconditional rewrite rules using outer-most strategy

@@ -9,13 +9,10 @@ Utilities qualifying spec
  import ../AbstractSyntax/Fold
  import /Languages/Lisp/Suppress
 
- type Vars = List Var
- type VarSubst = List (Var * MSTerm)
+ op varNames (vs: MSVars): List Id = map (fn (vn,_) -> vn) vs
 
- op varNames(vs: Vars): List Id = map (fn (vn,_) -> vn) vs
-
- op substitute    : MSTerm * VarSubst -> MSTerm
- op freeVars      : MSTerm -> Vars
+ op substitute  : MSTerm * MSVarSubst -> MSTerm
+ op freeVars    : MSTerm -> MSVars
 
  %% Translate a term encoding an assignment to a list of pairs.
  %% Redundant assignments of a variable to itself are eliminated.
@@ -62,7 +59,7 @@ Utilities qualifying spec
 %	        Some(trm,vars,cons((v,trm),S)))
 	| AliasPat _ -> None %% Not supported
 
- op  patternToTermPlusExConds(pat: MSPattern): MSTerm * MSTerms * List Var =
+ op  patternToTermPlusExConds(pat: MSPattern): MSTerm * MSTerms * MSVars =
    let wild_num = Ref 0 in
    let def patToTPV pat =
          case pat
@@ -130,7 +127,7 @@ Utilities qualifying spec
      | Fun(Char c, _, a) -> Some(CharPat(c, a))
      | _ -> None
 
- op isFree : Var * MSTerm -> Bool
+ op isFree : MSVar * MSTerm -> Bool
  def isFree (v, term) = 
    case term of
      | Var(w,_)               -> v = w
@@ -162,7 +159,7 @@ Utilities qualifying spec
      | Seq(tms,_)             -> exists? (fn t -> isFree(v,t)) tms
      | mystery -> fail ("unrecognized argument to isFree : " ^ anyToString mystery)
 
- op isPatBound : Var * MSPattern -> Bool
+ op isPatBound : MSVar * MSPattern -> Bool
  def isPatBound (v,pat) = 
    case pat of
      | AliasPat(p1,p2,_)      -> isPatBound(v,p1) || isPatBound(v,p2)
@@ -249,7 +246,7 @@ Utilities qualifying spec
      rep(M)
 
  op repPattern : MSPattern * List (MSTerm * MSTerm) * StringSet.Set -> MSPattern * List (MSTerm * MSTerm) * StringSet.Set
- op repBoundVars: Vars *  List (MSTerm * MSTerm) * StringSet.Set -> Vars *  List (MSTerm * MSTerm) * StringSet.Set
+ op repBoundVars: MSVars *  List (MSTerm * MSTerm) * StringSet.Set -> MSVars *  List (MSTerm * MSTerm) * StringSet.Set
 
 
  def repBoundVars(vars,sub,freeNames) = 
@@ -301,49 +298,49 @@ Utilities qualifying spec
    let vars = freeVarsRec(M) in
    removeDuplicateVars vars
 
-  op inVars?(v: Var, vs: Vars): Bool =
+  op inVars?(v: MSVar, vs: MSVars): Bool =
     exists? (fn v1 -> equalVar?(v,v1)) vs
 
-  op disjointVars?(vs1: Vars, vs2: Vars): Bool =
+  op disjointVars?(vs1: MSVars, vs2: MSVars): Bool =
      ~(exists? (fn v -> inVars?(v, vs1)) vs2)
 
-  op hasRefTo?(t: MSTerm, vs: List Var): Bool =
+  op hasRefTo?(t: MSTerm, vs: MSVars): Bool =
     existsSubTerm (fn t -> case t of
                              | Var(v,_) -> inVars?(v, vs)
                              | _ -> false)
       t
 
- op hasVarNameConflict?(tm: MSTerm, vs: List Var): Bool =
+ op hasVarNameConflict?(tm: MSTerm, vs: MSVars): Bool =
    let names = map (project 1) vs in
    existsSubTerm (fn t -> case t of
                             | Var((nm,_),_) -> nm in? names
                             | _ -> false)
      tm
 
- op disjointVarNames?(vs1: Vars, vs2: Vars): Bool =
+ op disjointVarNames?(vs1: MSVars, vs2: MSVars): Bool =
    forall? (fn (vn1, _) -> forall? (fn (vn2, _) -> vn1 ~= vn2) vs2) vs1
 
- op removeDuplicateVars: List Var -> List Var
+ op removeDuplicateVars: MSVars -> MSVars
  def removeDuplicateVars vars = 
    case vars of
      | [] -> []
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
- op insertVar (new_var: Var, vars: Vars): Vars = 
+ op insertVar (new_var: MSVar, vars: MSVars): MSVars = 
    if (exists? (fn v -> v.1 = new_var.1) vars) then
      vars
    else
      Cons (new_var, vars)
 
- op deleteVar (var_to_remove: Var, vars: Vars): Vars = 
+ op deleteVar (var_to_remove: MSVar, vars: MSVars): MSVars = 
    List.filter (fn v -> v.1 ~= var_to_remove.1) vars
 
- op insertVars (vars_to_add: Vars, original_vars: Vars): Vars =
+ op insertVars (vars_to_add: MSVars, original_vars: MSVars): MSVars =
    foldl (fn (vars, new_var)       -> insertVar(new_var,       vars)) original_vars vars_to_add
- op deleteVars (vars_to_remove: Vars, original_vars: Vars): Vars =
+ op deleteVars (vars_to_remove: MSVars, original_vars: MSVars): MSVars =
    foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
 
- op freeVarsRec (M : MSTerm): Vars =   
+ op freeVarsRec (M : MSTerm): MSVars =   
    case M of
      | Var    (v,      _) -> [v]
 
@@ -389,7 +386,7 @@ Utilities qualifying spec
      | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
      | _ -> []
 
- op  freeVarsList : [a] List(a * MSTerm) -> Vars
+ op  freeVarsList : [a] List(a * MSTerm) -> MSVars
  def freeVarsList tms = 
    foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm, vars)) [] tms
 
@@ -399,7 +396,7 @@ Utilities qualifying spec
    let bvars = freeVarsRec body in
    deleteVars (pvars, insertVars (cvars, bvars))
 
- op  patVars: MSPattern -> List Var
+ op  patVars: MSPattern -> MSVars
  def patVars(pat:MSPattern) = 
    case pat
      of AliasPat(p1,p2,_)      -> insertVars (patVars p1, patVars p2)
@@ -463,7 +460,7 @@ Utilities qualifying spec
    let _ = appType(fn _ -> (),vr,fn _ -> ()) ty in
    ! vars
 
- op boundVars(t: MSTerm): List Var =
+ op boundVars(t: MSTerm): MSVars =
    case t of
      | Let(decls, _, _) -> flatten (map (fn (pat, _) -> patternVars pat) decls)
      | LetRec (decls, _, _) ->  map (fn (v, _) -> v) decls
@@ -471,7 +468,7 @@ Utilities qualifying spec
      | Bind (_, bound, _, _) -> bound
      | _ -> []
 
- op boundVarsIn(t: MSTerm): List Var =
+ op boundVarsIn(t: MSTerm): MSVars =
    removeDuplicateVars(foldSubTerms (fn (t,r) -> boundVars t ++ r) [] t)
 
  op boundVarNamesIn(t: MSTerm): List Id =
@@ -524,7 +521,7 @@ Utilities qualifying spec
    in
    subst(ty) 
 
- op printVarSubst(sb: VarSubst): () =
+ op printVarSubst(sb: MSVarSubst): () =
    app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sb
 
  def substitute(M,sub) = 
@@ -537,7 +534,7 @@ Utilities qualifying spec
    in 
    substitute2(M,sub,freeNames)
  
- op substitute2(M: MSTerm, sub: VarSubst, freeNames: StringSet.Set): MSTerm = 
+ op substitute2(M: MSTerm, sub: MSVarSubst, freeNames: StringSet.Set): MSTerm = 
    % let _ = writeLine("subst: "^printTerm M) in
    % let _ = writeLine "Map is " in
    % let _ = List.app (fn ((v,_),tm) -> writeLine (v^" |-> "^printTerm tm)) sub in	
@@ -649,7 +646,7 @@ Utilities qualifying spec
       | _ -> 
 	(pat,sub,freeNames)
 
-type VarPatSubst = List (Var * MSPattern)
+type VarPatSubst = List (MSVar * MSPattern)
 
 op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern = 
    case pat
@@ -696,7 +693,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	    [] (fields,fields2) 
 
 
- op renameBoundVars(term: MSTerm, vs: List Var): MSTerm =
+ op renameBoundVars(term: MSTerm, vs: MSVars): MSTerm =
    if vs = [] then term
    else
    let freeNames = StringSet.fromList(varNames vs) in
@@ -705,13 +702,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  op renameShadowedVars(term: MSTerm): MSTerm =
    renameBoundVars(term, freeVars term)
 
- op reverseSubst (v_subst: VarSubst) (t: MSTerm): MSTerm =
+ op reverseSubst (v_subst: MSVarSubst) (t: MSTerm): MSTerm =
    case v_subst of
      | [] -> t
      | (v,vt)::_ | equalTerm?(vt,t) && ~(embed? Fun vt) -> mkVar v
      | _ :: r -> reverseSubst r t
 
- op invertSubst (tm: MSTerm, sbst: VarSubst): MSTerm =
+ op invertSubst (tm: MSTerm, sbst: MSVarSubst): MSTerm =
    if sbst = [] then tm
      else mapTerm (reverseSubst sbst, id, id) tm
 
@@ -843,7 +840,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	    a)
       | _  -> term
 
- op letRecToLetTermVar: Var -> Var
+ op letRecToLetTermVar: MSVar -> MSVar
  def letRecToLetTermVar ((id, ty)) = (id, letRecToLetTermType ty)
 
  op letRecToLetTermPattern: MSPattern -> MSPattern
@@ -877,7 +874,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 		      a)
       | _ -> pat
 
- op letRecToLetTermFun: Fun -> Fun
+ op letRecToLetTermFun: MSFun -> MSFun
  def letRecToLetTermFun fun = fun
 
  op letRecToLetTermSpec: Spec -> Spec
@@ -912,7 +909,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    {types = mapTypeInfos letRecToLetTermTypeInfo spc.types,
     ops   = mapOpInfos   letRecToLetTermOpInfo   spc.ops}
 
- op  patternVars  : MSPattern -> List Var
+ op  patternVars  : MSPattern -> MSVars
  def patternVars(p) = 
      let
 	def loopP(p:MSPattern,vs) = 
@@ -930,7 +927,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      in
      loopP(p,[])
 
- op  mkLetWithSubst: MSTerm * VarSubst -> MSTerm
+ op  mkLetWithSubst: MSTerm * MSVarSubst -> MSTerm
  def mkLetWithSubst(tm,sb) =
    if sb = [] then tm
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
@@ -999,7 +996,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | [x]    -> x
      | x::rcs -> mkOr (x, mkOrs rcs)
 
- op mkSimpBind: Binder * List Var * MSTerm -> MSTerm
+ op mkSimpBind: Binder * MSVars * MSTerm -> MSTerm
  def mkSimpBind(b, vars, term) =
    if vars = []
      then term
@@ -1064,11 +1061,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
        -> getDisjuncts p ++ getDisjuncts q
      | _ -> [t]
 
-  op addVarNames(vs: List Var, name_set: StringSet.Set): StringSet.Set =
+  op addVarNames(vs: MSVars, name_set: StringSet.Set): StringSet.Set =
     foldl (fn (name_set, (n,_)) -> StringSet.add(name_set, n)) name_set vs
 
   %% Given a universal quantification return list of quantified variables, conditions and rhs
-  op  forallComponents: MSTerm -> List Var * MSTerms * MSTerm
+  op  forallComponents: MSTerm -> MSVars * MSTerms * MSTerm
   def forallComponents t =
     % let _ = writeLine("forallComponents:\n"^printTerm t) in
     let def aux(t, sbst, freeNames) =
@@ -1112,7 +1109,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      else t
 
   %% Given an existential quantification return list of quantified variables and conjuncts
-  op  existsComponents: MSTerm -> List Var * MSTerms
+  op  existsComponents: MSTerm -> MSVars * MSTerms
   def existsComponents t =
     let def aux(t, sbst, freeNames) =
           case t of
@@ -1131,7 +1128,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     aux(t, [], freeNames)
 
   %% Given an existential (one) quantification return list of quantified variables and conjuncts
-  op  exists1Components: MSTerm -> List Var * MSTerms
+  op  exists1Components: MSTerm -> MSVars * MSTerms
   def exists1Components t =
     let def aux(t, sbst, freeNames) =
           case t of
@@ -1315,7 +1312,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    op knownSideEffectFreeFns: List String =
     ["toString", "return"]
 
-  op  knownSideEffectFreeFn?: Fun -> Bool
+  op  knownSideEffectFreeFn?: MSFun -> Bool
   def knownSideEffectFreeFn? f =
     case f of
       | Op(Qualified(qid),_) ->
@@ -1349,7 +1346,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                       | _ -> false)
      term
 
- op  evalBinary: [a] (a * a -> Fun) * (List(Id * MSTerm) -> List a)
+ op  evalBinary: [a] (a * a -> MSFun) * (List(Id * MSTerm) -> List a)
                       * List(Id * MSTerm) * MSType
                      -> Option MSTerm
  def evalBinary(f, fVals, fields, ty) =
@@ -1357,7 +1354,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      of [i,j] -> Some(Fun(f(i,j),ty,noPos))
       | _ -> None
 
- op  evalBinaryNotZero: (Nat * Nat -> Fun) * (List(Id * MSTerm) -> List Nat)
+ op  evalBinaryNotZero: (Nat * Nat -> MSFun) * (List(Id * MSTerm) -> List Nat)
                       * List(Id * MSTerm) * MSType
                      -> Option MSTerm
  def evalBinaryNotZero(f, fVals, fields, ty) =
@@ -1367,10 +1364,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	  else Some(Fun(f(i,j),ty,noPos))
       | _ -> None
 
- op nat:  [a] (a -> Nat)    -> a -> Fun
- op char: [a] (a -> Char)   -> a -> Fun
- op str:  [a] (a -> String) -> a -> Fun
- op bool: [a] (a -> Bool)   -> a -> Fun
+ op nat:  [a] (a -> Nat)    -> a -> MSFun
+ op char: [a] (a -> Char)   -> a -> MSFun
+ op str:  [a] (a -> String) -> a -> MSFun
+ op bool: [a] (a -> Bool)   -> a -> MSFun
  def nat  f x = Nat    (f x)
  def char f x = Char   (f x)
  def str  f x = String (f x)
@@ -1656,7 +1653,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
         Some bod
       | _ -> None
 
- op  disjointMatches: Match -> Bool
+ op  disjointMatches: MSMatch -> Bool
  def disjointMatches = 
      fn [] -> true
       | (pat1,_,_)::matches -> 
@@ -2652,9 +2649,9 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | Any _ -> false
       | _ -> true
 
- type MatchResult = | Match VarSubst | NoMatch | DontKnow
+ type MatchResult = | Match MSVarSubst | NoMatch | DontKnow
 
- op  patternMatch : MSPattern * MSTerm * VarSubst -> MatchResult 
+ op  patternMatch : MSPattern * MSTerm * MSVarSubst -> MatchResult 
 
  def patternMatch(pat:MSPattern, N, S) = 
      case pat
@@ -2714,7 +2711,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
         | TypedPat(p1, _, _) -> patternMatch(p1, N, S)
 	| _ -> DontKnow
 
- op  patternMatchRules : Match * MSTerm -> Option (VarSubst * MSTerm)
+ op  patternMatchRules : MSMatch * MSTerm -> Option (MSVarSubst * MSTerm)
  def patternMatchRules(rules,N) = 
      case rules 
        of [] -> None
@@ -2731,7 +2728,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | _ -> None
 
   %% ignores types
-  op matchPatterns(p1: MSPattern, p2: MSPattern): Option VarSubst =
+  op matchPatterns(p1: MSPattern, p2: MSPattern): Option MSVarSubst =
     if equalPatternStruct?(p1, p2) then Some []
       else
       case (p1, p2) of
@@ -2880,7 +2877,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
      | Some(old_qual) -> old_qual = ""    % Don't know what old qualifier was
                        || some?(findTheOp(spc, Qualified(old_qual, id)))
 
- op varSubstFromTerms(old_tm: MSTerm, new_tm: MSTerm): VarSubst =
+ op varSubstFromTerms(old_tm: MSTerm, new_tm: MSTerm): MSVarSubst =
    let def match(old_tm, new_tm, sbst) =
          case (old_tm, new_tm) of
            | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, _, new_ptm)], _)) ->

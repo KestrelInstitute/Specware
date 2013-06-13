@@ -64,7 +64,7 @@ spec
  op simplifyUsingSubtypes?: Bool = false
 
 
- op  countVarRefs: MSTerm * Var -> Nat
+ op  countVarRefs: MSTerm * MSVar -> Nat
  def countVarRefs(term,v) =
    let occ = Ref 0 : Ref Nat in
    let
@@ -345,7 +345,7 @@ spec
                then writeLine("s1: "^printTerm term^"\n--> "^printTerm result) else () in
     result
 
-  op countDeReferencesIn(v: Var, tms: List MSTerm): Nat =
+  op countDeReferencesIn(v: MSVar, tms: MSTerms): Nat =
     foldl (fn (i,t) ->
              foldSubTerms (fn (st,i) ->
                              case st of
@@ -356,7 +356,7 @@ spec
                i t)
       0 tms
 
-  op  simplifyForall: Spec -> List Var * List MSTerm * MSTerm -> MSTerm
+  op  simplifyForall: Spec -> MSVars * MSTerms * MSTerm -> MSTerm
   def simplifyForall spc (vs, cjs, bod) =
     % let _ = writeLine("\nsfa: "^printTerm(mkConj cjs)^"\n => "^ printTerm bod) in
     let name_set = varNamesSet(vs, bod::cjs) in
@@ -473,14 +473,14 @@ spec
              | _ -> cj)
       cjs
 
-  op  varNamesSet: List Var * List MSTerm -> StringSet.Set
+  op  varNamesSet: MSVars * MSTerms -> StringSet.Set
   def varNamesSet(vs,tms) =
     foldl (fn (nm_set,(nm,_)) -> StringSet.add(nm_set,nm))
       StringSet.empty
       (vs ++ foldl (fn (fvs,t) -> freeVars t ++ fvs) [] tms)
     
 
-  op  normForallBody: MSTerm * StringSet.Set * Spec -> Option(List Var * List MSTerm * MSTerm)
+  op  normForallBody: MSTerm * StringSet.Set * Spec -> Option(MSVars * MSTerms * MSTerm)
   %% fa(x) p => let y = m in n --> fa(x,y) p && y = m => n
   def normForallBody(body, used_names, spc) =
     case body of
@@ -506,7 +506,7 @@ spec
           | (vs, lhs_cjs, rhs_cjs) -> Some (vs, lhs_cjs, mkConj rhs_cjs))
       | _ -> None
 
-  op  getRenamingSubst: List Var * StringSet.Set -> List Var * List (Var * MSTerm)
+  op  getRenamingSubst: MSVars * StringSet.Set -> MSVars * MSVarSubst
   def getRenamingSubst(vs, used_names) =
     foldr (fn (v as (nm, ty), (vs, sb)) ->
 	   let new_nm = StringUtilities.freshName(nm, used_names) in
@@ -516,7 +516,7 @@ spec
 	         (Cons(new_v, vs), Cons((v, mkVar new_v), sb)))
       ([], []) vs
 
-  op  simpSubstitute: Spec * MSTerm *  List (Var * MSTerm) -> MSTerm
+  op  simpSubstitute: Spec * MSTerm *  MSVarSubst -> MSTerm
   def simpSubstitute(spc, t, sbst) =
     % let _ = toScreen("\nBefore subst:\n" ^ printTerm t ^ "\n") in
     let stm = substitute(t, sbst) in
@@ -525,10 +525,10 @@ spec
     % let _ = toScreen("Simp:\n" ^ printTerm result ^ "\n\n") in
     result
 
-  op  bindEquality: MSTerm * Vars * Bool -> Option(Vars * MSTerm * MSTerm)
+  op  bindEquality: MSTerm * MSVars * Bool -> Option (MSVars * MSTerm * MSTerm)
   def bindEquality (t, vs, rhs_free?: Bool) =
     %% rhs_free? means that we require the expression that the variables is equal to not have any refs to other vs
-    let def exprOfVs(e: MSTerm): Option Vars =
+    let def exprOfVs(e: MSTerm): Option MSVars =
           case e of
             | Var(v, _) | inVars?(v, vs) -> Some [v]
             | Record((_, t1) :: r_binds, _) ->
@@ -557,7 +557,7 @@ spec
       | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) -> bindE(e1, e2)
       | _ -> None
 
-  op  simplifyExists: Spec -> List Var * List MSTerm -> MSTerm
+  op  simplifyExists: Spec -> MSVars * MSTerms -> MSTerm
   def simplifyExists spc (vs, cjs) =
     let vs = filter (fn v -> (exists? (fn cj -> isFree(v, cj)) cjs)
                             || ~(knownNonEmpty?(v.2,  spc)))
@@ -591,7 +591,7 @@ spec
                                        cjs)))
       | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)    
 
-  op  simplifyExists1: List Var * List MSTerm -> MSTerm
+  op  simplifyExists1: MSVars * MSTerms -> MSTerm
   def simplifyExists1(vs, cjs) =
     mkSimpBind(Exists1, vs, mkSimpConj cjs)    
 
@@ -640,7 +640,7 @@ spec
                 (mkLet(map (fn (id,p) -> (p, mkProjection(id, v, spc))) pats, body)))
       | _ -> None
 
-  op  makeSubstFromBindPairs: List(MSPattern * MSTerm) -> List(Var * MSTerm)
+  op  makeSubstFromBindPairs: List(MSPattern * MSTerm) -> MSVarSubst
   def makeSubstFromBindPairs(pairs) =
     foldl (fn (result,(VarPat(v,_), tm)) -> (v,tm) :: result
             | (result,_) -> result)

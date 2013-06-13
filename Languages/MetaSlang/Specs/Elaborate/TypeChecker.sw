@@ -1272,7 +1272,7 @@ def typeCognizantOperators : List (Id * Id) =
 
    ]
 
-def typeCognizantOperator? (f1 : MS.Fun) : Bool = 
+def typeCognizantOperator? (f1 : MSFun) : Bool = 
   case f1 of
     | TwoNames (id1, id2, _) ->
       (id1, id2) in? typeCognizantOperators
@@ -1971,7 +1971,7 @@ op hasFreeVarsInSubty?(ty: MSType): Bool =
                      | _ -> false)
     ty
 
-op makeSubstFromLambdas(tm: MSTerm, args: MSTerms): VarSubst =
+op makeSubstFromLambdas(tm: MSTerm, args: MSTerms): MSVarSubst =
   case args of
     | [] -> []
     | a1::r_args ->

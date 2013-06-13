@@ -237,9 +237,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %% This invariant is established by the parser and must be
  %% maintained by all transformations.
 
- type AFields b = List (AField b)
- type AField  b = FieldName * AType b  % used by products and co-products
- type FieldName = String
+ %% type AFields b = List (AField b)
+ %% type AField  b = FieldName * AType b  % used by products and co-products
+ %% type FieldName = String
 
   op getField: [a] List (Id * ATerm a) * Id -> Option(ATerm a)
  def getField (m, id) =

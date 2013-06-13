@@ -298,7 +298,7 @@ RemoveCurrying qualifying spec
 
   def varNamePool = ["x","y","z","w","l","m","n","o","p","q","r","s"]
 
-  op  mkNewVars: MSTypes * List Id * Spec -> List Var
+  op  mkNewVars: MSTypes * List Id * Spec -> MSVars
   def mkNewVars(srts,usedNames,spc) =
     let def findUnused(srts,usedNames,pool) =
           case srts of

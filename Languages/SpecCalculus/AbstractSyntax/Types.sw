@@ -123,7 +123,7 @@ SpecCalc qualifying spec
 
  type ProverBaseOptions = | ProverBase | Base | AllBase | NoBase
   
- type AnswerVar = Option Var
+ type AnswerVar = Option MSVar
 
  op mkProve (claim_name     : ClaimName, 
              term           : SCTerm,

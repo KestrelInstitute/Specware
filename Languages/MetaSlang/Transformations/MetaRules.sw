@@ -41,7 +41,7 @@ op dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
 % 2. Recursively, another tuple or record construction with all
 % elements variables, relative to 'vs'.
 %
-op tupleOfVars?(tm: MSTerm, vs: Vars): Bool =
+op tupleOfVars?(tm: MSTerm, vs: MSVars): Bool =
   case tm of
     | Var(v, _) -> inVars?(v, vs)
     | Record(flds, _) ->
@@ -97,7 +97,7 @@ op caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
         else Some(Apply(Lambda(merge_cases, a0), arg1, a1))
     | _ -> None
 
-op constantCases(cases: Match): Bool =
+op constantCases(cases: MSMatch): Bool =
   case cases of
     | [_] -> true
     | (pi, c, ti) :: rst ->
@@ -138,7 +138,7 @@ op expandRecordMerge (spc: Spec) (t: MSTerm): Option MSTerm =
    if equalTerm?(t, nt) then None else Some nt
 
 
-op caseEquality (t: MSTerm, vs: Vars): Option(Vars * Id * MSType * MSPattern * MSTerm * MSTerm) =
+op caseEquality (t: MSTerm, vs: MSVars): Option(MSVars * Id * MSType * MSPattern * MSTerm * MSTerm) =
   let def checkConstrBind(e1, e2) =
         if ~(disjointVars?(freeVars e2, vs)) then None
         else
@@ -175,20 +175,20 @@ op findMaxExistVarId(tms: MSTerms): Nat =
              n tm)
     0 tms    
 
-op varRefTo? (tm: MSTerm, vs: Vars): Bool =
+op varRefTo? (tm: MSTerm, vs: MSVars): Bool =
   case tm of
     | Var(v, _) -> inVars?(v, vs)
     | _ -> false
 
-op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
+op flattenExistsTerms (vs: MSVars, cjs: MSTerms, spc: Spec) : MSVars * MSTerms =
   let existVarIndex = findMaxExistVarId cjs in
   let 
-      def flattenConjuncts(cjs: MSTerms, vs: Vars, i: Nat): Vars * MSTerms * Nat =
+      def flattenConjuncts(cjs: MSTerms, vs: MSVars, i: Nat): MSVars * MSTerms * Nat =
         foldl (fn ((vs, cjs, i), cj) ->
                let ( vs, ncjs, i) = flattenConjunct(cj, vs, i) in
                (vs, ncjs ++ cjs, i))
           (vs, [], 0) cjs
-      def flattenConjunct(cj: MSTerm, vs: Vars, i: Nat): Vars * MSTerms * Nat =
+      def flattenConjunct(cj: MSTerm, vs: MSVars, i: Nat): MSVars * MSTerms * Nat =
         case cj of
           | Apply(f as Fun(Equals, _, _), Record([("1", e1), ("2", e2)], a1), a0) ->
             (case (e1, e2) of
@@ -202,7 +202,8 @@ op flattenExistsTerms(vs: Vars, cjs: MSTerms, spc: Spec): Vars * MSTerms =
                       (vs, new_cjs ++ [new_cj], i))
           | _ -> let (new_cj, vs, new_cjs, i) = flattenTerm(cj, vs, [], i, false) in
                  (vs, new_cjs ++ [new_cj], i)
-      def flattenTerm(tm: MSTerm, vs: Vars, ncjs: MSTerms, i: Nat, intro?: Bool): MSTerm * Vars * MSTerms * Nat =
+      def flattenTerm(tm: MSTerm, vs: MSVars, ncjs: MSTerms, i: Nat, intro?: Bool) 
+        : MSTerm * MSVars * MSTerms * Nat =
         if intro? && ~(varRefTo?(tm, vs))
           then
             let v_ty = inferType(spc, tm) in
@@ -240,7 +241,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
              % let _ = writeLine("flat:\n"^printTerm(mkConj cjs)) in
              transEx(vs, cjs, a, []))
           | _ -> None
-      def transEx(vs: Vars, cjs: MSTerms, a: Position, tsb: TermSubst): Option MSTerm =
+      def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst): Option MSTerm =
         % let _ = writeLine("transEx:\n"^printTerm(mkBind(Exists, vs, mkConj cjs))) in
         let lift_cjs = filter (fn cj -> ~(hasRefTo?(cj, vs))) cjs in
         if lift_cjs ~= [] && vs ~= []

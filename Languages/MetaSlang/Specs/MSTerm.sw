@@ -22,24 +22,36 @@ type MSBinding  = MSPattern * MSTerm
 type MSRules    = List MSRule  % same as Match
 type MSRule     = MSPattern * MSTerm * MSTerm 
 
-type Var          = AVar            StandardAnnotation
-type Match        = AMatch          StandardAnnotation
-type Fun          = AFun            StandardAnnotation
+type MSVars       = List MSVar
+type MSVar        = AVar            Position
 
-type Fields       = AFields         StandardAnnotation
-type Field        = AField          StandardAnnotation
+type MSVarSubst   = List (MSVar * MSTerm)
 
-type MetaTyVar    = AMetaTyVar      StandardAnnotation
-type MetaTyVars   = AMetaTyVars     StandardAnnotation
+type MSMatch      = AMatch          Position
+type MSFun        = AFun            Position
 
+type MetaTyVar    = AMetaTyVar      Position
+type MetaTyVars   = AMetaTyVars     Position
+
+type MSFieldName    = Id
+
+type MSRecordFields = List MSRecordField
+type MSRecordField  = MSFieldName * MSTerm
+
+type MSProductFields = List MSProductField
+type MSProductField  = MSFieldName * MSType
+
+type MSCoProductFields = List MSCoProductField
+type MSCoProductField  = MSFieldName * Option MSType
 
 op mkTyVar        (name : String)                       : MSType = TyVar     (name,       noPos)
 op mkBase         (qid  : QualifiedId, types : MSTypes) : MSType = Base      (qid, types, noPos)
 op mkArrow        (dom  : MSType,      rng   : MSType)  : MSType = Arrow     (dom, rng,   noPos)
 op mkSubtype      (typ  : MSType,      pred  : MSTerm)  : MSType = Subtype   (typ, pred,  noPos)
 op mkQuotientType (typ  : MSType,      rel   : MSTerm)  : MSType = Quotient  (typ, rel,   noPos)
-op mkRecordType   (fields : List (Id * MSType))         : MSType = Product   (fields,     noPos)
-op mkCoProduct    (fields : List (Id * Option MSType))  : MSType = CoProduct (fields,     noPos)
+
+op mkRecordType   (fields : MSProductFields)            : MSType = Product   (fields,     noPos)
+op mkCoProduct    (alts   : MSCoProductFields)          : MSType = CoProduct (alts,       noPos)
 
 op mkProduct (types : MSTypes) : MSType =
  case types of
@@ -52,11 +64,11 @@ op mkProduct (types : MSTypes) : MSType =
      in
      Product (loop (1, types), noPos)
 
-op mkCanonRecordType (fields: List (Id * MSType)) : MSType =
+op mkCanonRecordType (fields : MSProductFields) : MSType =
  mkRecordType (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) fields)
 
-op mkCanonCoProduct(flds: List (Id * Option MSType)): MSType =
- mkCoProduct (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) flds)
+op mkCanonCoProduct (alts: MSCoProductFields) : MSType =
+ mkCoProduct  (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) alts)
 
 %% Type terms for constant types:
 
@@ -77,29 +89,29 @@ op binaryBoolType   : MSType = mkArrow (mkProduct [boolType, boolType], boolType
 
 %% Primitive term constructors:
 
-op mkRecord      (fields : List (Id * MSTerm)) : MSTerm = Record (fields, noPos)
+op mkRecord      (fields : MSRecordFields) : MSTerm = Record (fields, noPos)
 
-op mkCanonRecord (fields: List(Id * MSTerm)) : MSTerm =
+op mkCanonRecord (fields : MSRecordFields) : MSTerm = 
  mkRecord (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) fields)
 
 op mkTypedTerm   (term     : MSTerm, typ : MSType)                   : MSTerm = TypedTerm  (term, typ,               termAnn term)
-op mkLetRec      (decls    : List (Var * MSTerm),     body : MSTerm) : MSTerm = LetRec     (decls,  body,            termAnn body)
+op mkLetRec      (decls    : List (MSVar * MSTerm),   body : MSTerm) : MSTerm = LetRec     (decls,  body,            termAnn body)
 op mkLambda      (pat      : MSPattern,               body : MSTerm) : MSTerm = Lambda     ([(pat, mkTrue(), body)], termAnn body)
-op mkThe         (var      : Var,                     body : MSTerm) : MSTerm = The        (var, body,               termAnn body)
-op mkBind        (binder   : Binder, vars : List Var, body : MSTerm) : MSTerm = Bind       (binder, vars, body,      termAnn body)
-op mkVar         (v        : Var)                                    : MSTerm = Var        (v,                       noPos)
-op mkFun         (constant : Fun, typ : MSType)                      : MSTerm = Fun        (constant, typ,           noPos) 
+op mkThe         (var      : MSVar,                   body : MSTerm) : MSTerm = The        (var, body,               termAnn body)
+op mkBind        (binder   : Binder, vars : MSVars,   body : MSTerm) : MSTerm = Bind       (binder, vars, body,      termAnn body)
+op mkVar         (v        : MSVar)                                  : MSTerm = Var        (v,                       noPos)
+op mkFun         (constant : MSFun, typ : MSType)                    : MSTerm = Fun        (constant, typ,           noPos)
 op mkIfThenElse  (t1       : MSTerm,  t2 : MSTerm,  t3 : MSTerm)     : MSTerm = IfThenElse (t1, t2, t3,              termAnn t1)
 
-op mkApply       (f : MSTerm, arg  : MSTerm)                         : MSTerm = Apply      (f, arg,                  termAnn arg)
-op mkAppl        (f : MSTerm, args : MSTerms)                        : MSTerm = Apply      (f, mkTuple args,         termAnn f)
-op mkApplication (f : MSTerm, args : MSTerms)                        : MSTerm = 
+op mkApply       (f : MSTerm, arg  : MSTerm)  : MSTerm = Apply (f, arg,          termAnn arg)
+op mkAppl        (f : MSTerm, args : MSTerms) : MSTerm = Apply (f, mkTuple args, termAnn f)
+op mkApplication (f : MSTerm, args : MSTerms) : MSTerm = 
  case args of
    | []    -> mkApply (f, Record ([], termAnn f))
    | [arg] -> mkApply (f, arg)
-   | _ -> mkAppl (f, args)
+   | _  -> mkAppl (f, args)
 
-op mkLet1        (pat : MSPattern, val : MSTerm,      body : MSTerm) : MSTerm = Let        ([(pat,val)], body,       termAnn body)
+op mkLet1 (pat : MSPattern, val : MSTerm, body : MSTerm) : MSTerm = Let ([(pat,val)], body, termAnn body)
 
 op mkLet  (bindings : MSBindings, body : MSTerm) : MSTerm =
  case bindings of
@@ -132,10 +144,11 @@ op mkNat    (n : Nat)    : MSTerm = mkFun (Nat  n,   natType)
 op mkChar   (c : Char)   : MSTerm = mkFun (Char c,   charType)
 op mkBool   (b : Bool)   : MSTerm = mkFun (Bool b,   boolType)
 op mkString (s : String) : MSTerm = mkFun (String s, stringType)
-op mkRelax    (typ : MSType,   pred : MSTerm) : MSTerm = mkFun (Relax,    mkArrow (mkSubtype (typ, pred), typ))
-op mkRestrict (typ : MSType,   pred : MSTerm) : MSTerm = mkFun (Restrict, mkArrow (typ, mkSubtype (typ, pred)))
-op mkEmbed0   (id  : FieldName, typ : MSType) : MSTerm = mkFun (Embed (id, false), typ) % no arg
-op mkEmbed1   (id  : FieldName, typ : MSType) : MSTerm = mkFun (Embed (id, true),  typ) % arg
+
+op mkRelax    (typ : MSType,      pred : MSTerm) : MSTerm = mkFun (Relax,    mkArrow (mkSubtype (typ, pred), typ))
+op mkRestrict (typ : MSType,      pred : MSTerm) : MSTerm = mkFun (Restrict, mkArrow (typ, mkSubtype (typ, pred)))
+op mkEmbed0   (id  : MSFieldName, typ  : MSType) : MSTerm = mkFun (Embed (id, false), typ) % no arg
+op mkEmbed1   (id  : MSFieldName, typ  : MSType) : MSTerm = mkFun (Embed (id, true),  typ) % arg
 
 % def mkChoose   (typ, equiv) = let q = mkQuotientType (typ, equiv) in mkFun (Choose q, mkArrow (q, typ))
 % This definition of choose is not correct according to David's requirements.
@@ -164,7 +177,7 @@ op mkQuotient (a : MSTerm, qid : QualifiedId, typ : MSType) : MSTerm =
                           Base (qid, type_args, noPos))), 
           a)
 
-op mkEmbedded (id : FieldName, typ : MSType) : MSTerm = mkFun (Embedded id, mkArrow (typ, boolType))
+op mkEmbedded (id : MSFieldName, typ : MSType) : MSTerm = mkFun (Embedded id, mkArrow (typ, boolType))
 
  % Is the Nonfix here always correct?
 op mkOp       (qid : QualifiedId,                  typ : MSType) : MSTerm = mkFun (Op (qid, Nonfix), typ)
@@ -336,10 +349,10 @@ op negateTerm (term : MSTerm) : MSTerm =
 
 %% Patterns ...
 
-op mkAliasPat   (p1 : MSPattern, p2 : MSPattern)                : MSPattern = AliasPat  (p1, p2,       noPos)
-op mkVarPat     (v  : Var)                                      : MSPattern = VarPat    (v,            noPos)
-op mkEmbedPat   (id : Id, pat : Option MSPattern, typ : MSType) : MSPattern = EmbedPat  (id, pat, typ, noPos) 
-op mkRecordPat  (pats : List (Id * MSPattern))                  : MSPattern = RecordPat (pats,         noPos)
+op mkAliasPat   (p1   : MSPattern, p2 : MSPattern)                : MSPattern = AliasPat  (p1, p2,       noPos)
+op mkVarPat     (v    : MSVar)                                    : MSPattern = VarPat    (v,            noPos)
+op mkEmbedPat   (id   : Id, pat : Option MSPattern, typ : MSType) : MSPattern = EmbedPat  (id, pat, typ, noPos) 
+op mkRecordPat  (pats : List (Id * MSPattern))                    : MSPattern = RecordPat (pats,         noPos)
 
 op mkTuplePat   (pats : MSPatterns) : MSPattern =
  case pats of
@@ -347,11 +360,11 @@ op mkTuplePat   (pats : MSPatterns) : MSPattern =
    | _ -> 
      RecordPat (tagTuple pats, noPos)
 
-op mkWildPat       (term : MSType) : MSPattern = WildPat   (term, noPos)
-op mkBoolPat       (b    : Bool)   : MSPattern = BoolPat   (b,    noPos)
-op mkNatPat        (n    : Nat)    : MSPattern = NatPat    (n,    noPos)
-op mkStringPat     (s    : String) : MSPattern = StringPat (s,    noPos)
-op mkCharPat       (c    : Char)   : MSPattern = CharPat   (c,    noPos)
+op mkWildPat       (typ : MSType) : MSPattern = WildPat   (typ, noPos)
+op mkBoolPat       (b   : Bool)   : MSPattern = BoolPat   (b,   noPos)
+op mkNatPat        (n   : Nat)    : MSPattern = NatPat    (n,   noPos)
+op mkStringPat     (s   : String) : MSPattern = StringPat (s,   noPos)
+op mkCharPat       (c   : Char)   : MSPattern = CharPat   (c,   noPos)
 
 op mkQuotientPat   (pat : MSPattern, qid  : TypeName) : MSPattern = QuotientPat   (pat, qid,  noPos)
 op mkRestrictedPat (pat : MSPattern, term : MSTerm)   : MSPattern = RestrictedPat (pat, term, noPos)
@@ -372,7 +385,7 @@ op mkListPat (pats : MSPatterns | pats ~= []): MSPattern =
  let elt_type = patternType (pats @ 0) in
  foldr mkConsPat (mkNilPat (mkListType elt_type)) pats
 
-op mkUnaryBooleanFn (f : Fun, pos : Position) : MSTerm =
+op mkUnaryBooleanFn (f : MSFun, pos : Position) : MSTerm =
  %let pos = Internal "mkUnaryBooleanFn" in
  let pattern = VarPat (("xb", Boolean pos), pos) in
  let f       = Fun (f, unaryBoolType, pos) in
@@ -380,7 +393,7 @@ op mkUnaryBooleanFn (f : Fun, pos : Position) : MSTerm =
  let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
  Lambda ([branch], pos)
 
-op mkBinaryFn (f   : Fun, 
+op mkBinaryFn (f   : MSFun, 
                t1  : MSType, 
                t2  : MSType, 
                t3  : MSType, 

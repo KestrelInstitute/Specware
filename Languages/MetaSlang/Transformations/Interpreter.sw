@@ -19,8 +19,8 @@ spec
     | Constant    Id * MSType
     | QuotientVal MSIValue * MSIValue	* QualifiedId	% closure * element * type id
     | ChooseClosure MSIValue * MSType * QualifiedId
-    | Closure     Match * Subst
-    | RecClosure  Match * Subst * List Id
+    | Closure     MSMatch * Subst
+    | RecClosure  MSMatch * Subst * List Id
     | Unevaluated MSTerm
 
   op equalValue?(v1: MSIValue, v2: MSIValue): Bool =
@@ -207,7 +207,7 @@ spec
     val
 
  
-  op  evalFun: Fun * MSTerm * MSType * Subst * Spec * Nat * Bool -> MSIValue
+  op  evalFun: MSFun * MSTerm * MSType * Subst * Spec * Nat * Bool -> MSIValue
   def evalFun(fun,t,ty,sb,spc,depth,trace?) =
     case fun of
       | Op (qid, _) ->
@@ -453,7 +453,7 @@ spec
  %% Adapted from HigherOrderMatching 
  type MatchResult = | Match Subst | NoMatch | DontKnow
 
- op  patternMatchRules : Match * MSIValue * Subst * Spec * Nat * Bool -> Option MSIValue
+ op  patternMatchRules : MSMatch * MSIValue * Subst * Spec * Nat * Bool -> Option MSIValue
  def patternMatchRules(rules,N,sb,spc,depth,trace?) = 
      case rules 
        of [] -> None

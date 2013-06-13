@@ -3,12 +3,12 @@ spec
 
 import LiftPattern
 
-op renameVar: MSTerm * Var * Var -> MSTerm
+op renameVar: MSTerm * MSVar * MSVar -> MSTerm
 
-op renameVarApply: MSTerm * Var * Var -> MSTerm
-op renameVarRecord: MSTerm * Var * Var -> MSTerm
-op renameVarIfThenElse: MSTerm * Var * Var -> MSTerm
-op renameVarLet: MSTerm * Var * Var -> MSTerm
+op renameVarApply: MSTerm * MSVar * MSVar -> MSTerm
+op renameVarRecord: MSTerm * MSVar * MSVar -> MSTerm
+op renameVarIfThenElse: MSTerm * MSVar * MSVar -> MSTerm
+op renameVarLet: MSTerm * MSVar * MSVar -> MSTerm
 
 
 def renameVar(term, oldV, newV) =
@@ -48,7 +48,7 @@ def renameVarCase(term, oldV, newV) =
   let res = mkApply(Lambda (newCases, b), newCaseTerm) in
   withAnnT(res,termAnn(term))
 
-op renameVarMatch: (MSPattern * MSTerm * MSTerm) * Var * Var -> MSPattern * MSTerm * MSTerm
+op renameVarMatch: (MSPattern * MSTerm * MSTerm) * MSVar * MSVar -> MSPattern * MSTerm * MSTerm
 
 def renameVarMatch((pat, cond, patBody), oldV, newV) =
   let boundVars = patVars(pat) in

@@ -7,6 +7,7 @@ spec
   import /Languages/SpecCalculus/Semantics/Monad
   import /Languages/SpecCalculus/AbstractSyntax/SCTerm
   import /Languages/SpecCalculus/AbstractSyntax/Printer % ppSCTerm
+  import /Languages/MetaSlang/Specs/MSTerm
 
 %  op [a] dummy: a
 
@@ -499,7 +500,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
              assertRules(context, cj, ruleName cj, Context, Either) ++ rules)
       [] tms
 
-  op varProjections (ty: MSType, spc: Spec): Option(MSTerm * List(Var * Option Id)) =
+  op varProjections (ty: MSType, spc: Spec): Option (MS.MSTerm * List (MS.MSVar * Option Id)) =
     case range_*(spc, ty, false) of
     | Subtype(result_ty, Lambda([(pat, _, pred)], _), _) ->
       (case pat of

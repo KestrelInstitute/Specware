@@ -37,7 +37,7 @@ Prover qualifying spec
     %    Cons(constructAxiom, projectAxioms)
     Cons(Property equalityAxiom, projectAxioms)
 
- op  mkProdEqualityAxiom: Spec * QualifiedId * MSType * Fields -> Property
+ op  mkProdEqualityAxiom: Spec * QualifiedId * MSType * MSProductFields -> Property
  def mkProdEqualityAxiom(spc, name as Qualified (prodQ, prodSrtId), srt, fields) =
    let rec1 as Record(fields1, _) = mkRecordTerm(spc, name, srt, "x") in
    let rec2 as Record(fields2, _) = mkRecordTerm(spc, name, srt, "y") in
@@ -57,12 +57,12 @@ Prover qualifying spec
    %let _ = writeLine("fmla is: "^printTerm(fmla)) in
    (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla, noPos)
 
- op  mkProjectAxioms: Spec * QualifiedId * MSType * Fields -> SpecElements
+ op  mkProjectAxioms: Spec * QualifiedId * MSType * MSProductFields -> SpecElements
  def mkProjectAxioms(spc, name, srt, fields) =
    let recordArg as Record(resFields, _) =  mkRecordTerm(spc, name, srt, "") in
    ListPair.map (fn (field, res) -> mkProjectAxiom(spc, name, srt, field, recordArg, res)) (fields, resFields)
 
- op  mkProjectAxiom: Spec * QualifiedId * MSType * Field * MSTerm * (Id * MSTerm) -> SpecElement
+ op  mkProjectAxiom: Spec * QualifiedId * MSType * MSProductField * MSTerm * (Id * MSTerm) -> SpecElement
  def mkProjectAxiom(spc, name as Qualified(prodQ, prodSrtId), srt, field as (fId, fSrt), arg, (_, res)) =
    let projQid as Qualified(projQ,projId) = getAccessorOpName(prodSrtId,name,fId) in
    let lhs = mkProjectTerm(spc, name, srt, field, arg) in
@@ -93,7 +93,7 @@ Prover qualifying spec
 	  | _ -> mkVarTerm ("x", srt)
       in term
 
- op  mkProjectTerm: Spec * QualifiedId * MSType * Field * MSTerm -> MSTerm
+ op  mkProjectTerm: Spec * QualifiedId * MSType * MSProductField * MSTerm -> MSTerm
  def mkProjectTerm(spc, srtName, srt, field as (fId, fSrt), arg) =
    let b = noPos in
    let Qualified(_, srtId) = srtName in
@@ -111,7 +111,7 @@ Prover qualifying spec
     argTermFromType(Some srt,funterm,b)
   *)
 
- op  mkConstructAxiom: Spec * QualifiedId * MSType * Fields -> Property
+ op  mkConstructAxiom: Spec * QualifiedId * MSType * MSProductFields -> Property
  def mkConstructAxiom(spc, name as Qualified(srtQ, srtId), srt, fields) =
    let b = noPos in
    let varId = srtId^"_Rec_Var" in
@@ -147,7 +147,7 @@ Prover qualifying spec
    [Property(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla, noPos),
     Property(Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla, noPos)]
 
- op  mkEqFmlasForFields: MSType * Var * List (Id * Option MSType) -> List MSTerm
+ op  mkEqFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> List MSTerm
  def mkEqFmlasForFields(srt, var, fields) =
    case fields of
      | [] -> []
@@ -159,7 +159,7 @@ Prover qualifying spec
        let restEqls = mkEqFmlasForFields(srt, var, restFields) in
        Cons(eqlFmla, restEqls)
 
- op  mkPredFmlasForFields: MSType * Var * List (Id * Option MSType) -> List MSTerm
+ op  mkPredFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> List MSTerm
  def mkPredFmlasForFields(srt, var, fields) =
    case fields of
      | [] -> []
@@ -209,7 +209,7 @@ Prover qualifying spec
        let arg = mkVar(("constr_var_arg", aSrt)) in
        Apply (Fun (Embed (id, true), srt, noPos), arg, noPos)
 
- op  mkEmbedPred: MSType * Id * Var -> MSTerm
+ op  mkEmbedPred: MSType * Id * MSVar -> MSTerm
  def mkEmbedPred(srt, id, var) =
    mkApply((mkEmbedded(id, srt)), mkVar(var))
 

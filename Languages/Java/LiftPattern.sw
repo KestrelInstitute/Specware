@@ -16,10 +16,10 @@ type Op = QualifiedId
 
 %type BaseType = (Type | baseType?)
 
-type OpDef  = Op * MSTypes * MSType * List Var * MSTerm
+type OpDef  = Op * MSTypes * MSType * MSVars * MSTerm
 % the Boolean flag is used to distinguish the case of a function with no arguments
 % from a constant: if the flag is true, then it's a constant
-type OpDef2 = Op * MSTypes * MSType * List Var * MSTerm * Bool (* constant or function *)
+type OpDef2 = Op * MSTypes * MSType * MSVars * MSTerm * Bool (* constant or function *)
 
 op unSupported: Op -> String
 def unSupported x =
@@ -167,8 +167,8 @@ def flatType?(srt) =
     | Base(qid,_,_) -> true
     | _ -> false
 
-op baseVar?: Spec * Var -> Bool
-op userVar?: Spec * Var -> Bool
+op baseVar?: Spec * MSVar -> Bool
+op userVar?: Spec * MSVar -> Bool
 
 def baseVar?(spc,variable) =
   let (id, srt) = variable in
@@ -189,7 +189,7 @@ def mkNewOp(oper, k) =
   let Qualified (qual, id) = oper in
   mkQualifiedId(qual, id ^ natToString(k))
 
-op mkNewVar: Op * Nat * MSType -> Var
+op mkNewVar: Op * Nat * MSType -> MSVar
 
 def mkNewVar(oper, k, t) =
   let Qualified (qual, id) = oper in
@@ -208,7 +208,7 @@ def caseTerm(term) =
   let Apply (Lambda (match, _), trm, _) = term in
     trm
 
-op caseCases: (MSTerm | caseTerm?) -> Match
+op caseCases: (MSTerm | caseTerm?) -> MSMatch
 def caseCases(trm) =
   let  Apply (Lambda (match, _), trm, _) = trm in
     match
@@ -344,7 +344,7 @@ def patternNamesOpt (pattern) =
 		 fields
      | _ -> None
 
-op opDelta: Spec * Op -> List Var * MSTerm
+op opDelta: Spec * Op -> MSVars * MSTerm
 
 def opDelta(spc, oper) =
   let opDom = opDom(spc, oper) in
@@ -377,10 +377,10 @@ def opDelta(spc, oper) =
 % (See Sec. 1.5 of DevDoc/java-codegen/v3.pdf)
 % It takes a Lambda term and its type and
 % returns the list of arguments and the lambda body.
-op srtTermDelta : MSType * MSTerm -> List Var * MSTerm
+op srtTermDelta : MSType * MSTerm -> MSVars * MSTerm
 def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,false)
 
-op srtTermDelta_internal: MSType * MSTerm * Bool-> List Var * MSTerm
+op srtTermDelta_internal: MSType * MSTerm * Bool-> MSVars * MSTerm
 def srtTermDelta_internal(srt, term, fail?) =
   let opDom = typeDom(srt) in
   let opRng = typeRng(srt) in
@@ -500,7 +500,7 @@ def liftCases(oper, terms, k) =
     let (restTerms, restK, restOds) = liftCases(oper, terms, newK) in
     (Cons(newTerm, restTerms), restK, newOds++restOds)
 
-op lift: Spec * Op * (List Var * MSTerm) -> MSTerm * List OpDef
+op lift: Spec * Op * (MSVars * MSTerm) -> MSTerm * List OpDef
 
 def lift(spc,oper, (formals, body)) =
   let firstUserVar = findLeftmost (fn(v) -> userVar?(spc,v)) formals in

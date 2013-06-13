@@ -26,7 +26,7 @@ there is a final clean-up phase to get rid of introduced variables that are only
     let poss_tms = termsDiff(termsUnion(poss_tms1, poss_tms2), new_ces) in
     (new_ces, single_tms, poss_tms)
 
-  op removeLocal(tms: List MSTerm, vs: List Var): List MSTerm =
+  op removeLocal(tms: List MSTerm, vs: MSVars): List MSTerm =
     filter (fn t -> ~(hasRefTo?(t,vs))) tms
 
   op maybeAbstract(t: MSTerm, cse: List MSTerm, names: List String, bindable?: Bool,

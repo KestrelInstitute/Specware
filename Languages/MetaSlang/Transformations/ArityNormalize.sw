@@ -49,19 +49,19 @@ ArityNormalize qualifying spec
  * otherwise it is 1.
  *)
 
- op matchArity : Match -> Nat
+ op matchArity : MSMatch -> Nat
 
  def matchArity(match) = 
      let
-        def mA(match,num) = 
-            case match:Match
-              of [] -> num
-               | Cons((RecordPat(pats,_),_,_),match) ->
-                 if num = length(pats)
-                    then mA(match,num)
-                 else 1
-               | Cons((WildPat(_,_),_,_),match) -> mA(match,num)
-               | _ -> 1
+        def mA (match : MSMatch, num) = 
+            case match of
+              | [] -> num
+              | Cons((RecordPat(pats,_),_,_),match) ->
+                if num = length(pats)
+                  then mA(match,num)
+                else 1
+              | Cons((WildPat(_,_),_,_),match) -> mA(match,num)
+              | _ -> 1
             
      in
         case match
@@ -237,7 +237,7 @@ ArityNormalize qualifying spec
          | RestrictedPat(p,_,_) -> simplePattern p
 	 | _ -> false
  
- def simpleAbstraction(rules:Match) = 
+ def simpleAbstraction(rules:MSMatch) = 
      case rules
        of [(RecordPat(fields,_),cond,_)] -> 
 	  isTrue cond && forall? (fn(_,p)-> simplePattern p) fields

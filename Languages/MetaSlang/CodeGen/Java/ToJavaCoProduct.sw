@@ -5,7 +5,7 @@ import ToJavaBase
 import ToJavaStatements
 import Monad
 
-op mkEqualityBodyForSum: List Field -> JGenEnv JavaExpr
+op mkEqualityBodyForSum: MSProductFields -> JGenEnv JavaExpr
 def mkEqualityBodyForSum(fields) =
   case fields of
     | [] -> return(CondExp (Un (Prim (Bool true)), None))
@@ -107,7 +107,7 @@ def sumToClsDecl(id, c, args) =
    return([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(Java.emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl]))
   }
 
-op mkSumEqMethBody: Id * Id * Id * List Field -> JGenEnv JavaBlock
+op mkSumEqMethBody: Id * Id * Id * MSProductFields -> JGenEnv JavaBlock
 def mkSumEqMethBody(clsId, consId, summandId, flds) =
   {
    eqExpr <- mkEqualityBodyForSum flds;

@@ -46,7 +46,8 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
 % where `nm` is the name of the poststate, `others` is (optionally)
 % the non-state results and their names, and finally `postcondition`,
 % which is the constraint on the tuple of (flattened) (nm * others).
-op getStateVarAndPostCondn(ty: MSType, state_ty: MSType, spc: Spec): Option(Var * Option(Id * List(Id * MSPattern)) * MSTerm) =
+op getStateVarAndPostCondn (ty: MSType, state_ty: MSType, spc: Spec)
+ : Option(MSVar * Option(Id * List(Id * MSPattern)) * MSTerm) =
   case range_*(spc, ty, false) of
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) ->
       (if equivTypeSubType? spc (result_ty, state_ty) true
@@ -93,7 +94,7 @@ op subtypeCondition(p1: MSPattern, p2: MSPattern, spc: Spec): MSTerm =
         trueTerm (zip(prs1, prs2))
     | _ -> trueTerm
 
-op makeSubstFromPatLists(pats1: List MSPattern, pats2: List MSPattern): VarSubst =
+op makeSubstFromPatLists(pats1: List MSPattern, pats2: List MSPattern): MSVarSubst =
   flatten (map (fn (p1, p2) -> let Some sbst = matchPatterns(p1, p2) in sbst) (zip(pats1, pats2)))
 
 op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): MSTerm =
@@ -345,9 +346,9 @@ op makeRecordFieldsFromQids(spc: Spec, qids: QualifiedIds): List(Id * MSType) =
          (qualifiedIdToField qid, scrubSubtypes(range(spc, inferType(spc, info.dfn)))))
     qids  
 
-op findSourceVar(cjs: MSTerms, state_var: Var, stored_qids: QualifiedIds): Option Var
+op findSourceVar(cjs: MSTerms, state_var: MSVar, stored_qids: QualifiedIds): Option MSVar
 
-op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: Var,
+op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVar,
                             deref?: Option(Id * List(Id * MSPattern)), op_qid: QualifiedId,
                             spc: Spec, state_ty: MSType, stored_qids: QualifiedIds,
                             field_pairs: List(Id * MSType), result_ty: MSType)

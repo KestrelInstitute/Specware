@@ -93,7 +93,7 @@ op filterSpecElements (elements : SpecElements, p : SpecElement -> Bool) : SpecE
   aux tm
 
 
- op getVars (status : CGenStatus, opt_pat : Option MSPattern) : Option Vars * CGenStatus =
+ op getVars (status : CGenStatus, opt_pat : Option MSPattern) : Option MSVars * CGenStatus =
   case opt_pat of
     | Some pat -> 
       (case pat of

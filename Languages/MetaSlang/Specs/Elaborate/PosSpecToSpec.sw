@@ -5,7 +5,7 @@ PosSpecToSpec qualifying spec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
  import ../../Transformations/NormalizeTypes
 
- op correctEqualityType (spc: Spec, eq_or_neq: Fun, ty: MSType, eq_args: MSTerm, pos1: Position)
+ op correctEqualityType (spc: Spec, eq_or_neq: MSFun, ty: MSType, eq_args: MSTerm, pos1: Position)
      : MSTerm =
     case (eq_args, unlinkType ty) of
      | (Record ([("1", e1), ("2", e2)], _), 

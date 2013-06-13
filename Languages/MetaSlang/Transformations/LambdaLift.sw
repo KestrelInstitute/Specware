@@ -67,7 +67,7 @@ efficiently, but cmulisp may do better with local functions.
 	       usedNames         : Ref StringSet.Set,
                simulateClosures? : Bool}
 
- type FreeVars = List Var 
+ type FreeVars = MSVars
 
 
 (* 
@@ -78,12 +78,12 @@ efficiently, but cmulisp may do better with local functions.
  type VarTermBody = 
   | Apply        VarTerm * VarTerm
   | Record       List (Id * VarTerm)
-  | Bind         Binder * List Var * VarTerm
-  | The          Var * VarTerm
+  | Bind         Binder * MSVars * VarTerm
+  | The          MSVar * VarTerm
   | Let	         List (MSPattern * VarTerm) * VarTerm
-  | LetRec       List (Var       * VarTerm) * VarTerm
-  | Var          Var
-  | Fun          Fun * MSType
+  | LetRec       List (MSVar     * VarTerm) * VarTerm
+  | Var          MSVar
+  | Fun          MSFun * MSType
   | Lambda       VarMatch
   | IfThenElse   VarTerm * VarTerm * VarTerm
   | Seq          List VarTerm
@@ -149,7 +149,7 @@ efficiently, but cmulisp may do better with local functions.
  *)
 
  (* Already defined in Utilities
-def patternVars (pat:MSPattern): List Var = 
+def patternVars (pat:MSPattern): MSVars = 
    case pat of
      | VarPat       (v,              _) -> [v]
      | RecordPat    (fields,         _) -> foldr (fn ((_, p), vs)-> patternVars p ++ vs) [] fields
@@ -248,7 +248,7 @@ def patternVars (pat:MSPattern): List Var =
    %let _ = String.writeLine("}") in
    %res
 
- op diffVs (l1 : List Var, l2 : List Var) : List Var =
+ op diffVs (l1 : MSVars, l2 : MSVars) : MSVars =
   case l1 of
     | [] -> []
     | hd :: tl -> 
@@ -611,7 +611,7 @@ def patternVars (pat:MSPattern): List Var =
 
  op lambdaLiftLetRec (env   : LLEnv,
                       vars  : FreeVars, 
-                      decls : List (Var * VarTerm),
+                      decls : List (MSVar * VarTerm),
                       body  : VarTerm,
                       pos   : Position)
   : List LiftInfo * MSTerm =
@@ -717,7 +717,7 @@ def patternVars (pat:MSPattern): List Var =
 
  op lambdaLiftFun (env  : LLEnv, 
                    vars : FreeVars, 
-                   f    : Fun,
+                   f    : MSFun,
                    typ  : MSType,
                    pos  : Position)
   : List LiftInfo * MSTerm =
@@ -800,7 +800,7 @@ def patternVars (pat:MSPattern): List Var =
 
     | _ -> System.fail "Unexpected term"
 
- op makeNewVars (types : List MSType) : List Var =
+ op makeNewVars (types : List MSType) : MSVars =
   foldl (fn (vars, typ) ->
            let var = ("llp-" ^ Nat.show (length vars), typ) in
             var :: vars)
@@ -905,7 +905,7 @@ def patternVars (pat:MSPattern): List Var =
  op getSpecEnv (env : LLEnv) : Spec =
   env.spc			% Better be defined
 
- op varsToString (vars : List Var) : String =
+ op varsToString (vars : MSVars) : String =
   (foldl (fn (s, v as (id, srt)) ->
             s ^ (if s = "[" then "" else " ")
             ^ id ^ ":" ^ printType srt)

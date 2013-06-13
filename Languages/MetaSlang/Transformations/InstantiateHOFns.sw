@@ -3,6 +3,7 @@ spec
  import Simplify
  import CurryUtils
  import ../Specs/AnalyzeRecursion
+ import /Languages/MetaSlang/Specs/MSTerm
 
 % op CodeGenTransforms.stripSubtypesAndBaseDefs (spc : Spec) (typ : MSType) : MSType  % in CodeGenTransforms
 
@@ -673,7 +674,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
      else 
        trans_new_tm
 
- op matchPairs (pat : MSPattern, tm : MSTerm) : List (Var * MSTerm) =
+ op matchPairs (pat : MSPattern, tm : MSTerm) : MSVarSubst =
    case (pat, tm) of
 
      | (VarPat(pv, _), _) -> [(pv, tm)]
@@ -694,7 +695,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                            remaining_params  : MSPatterns,
                            remaining_args    : MSTerms,
                            remaining_indices : List Nat,
-                           param_subst       : VarSubst,
+                           param_subst       : MSVarSubst,
                            curried?          : Bool,
                            numargs           : Nat,
                            unfold_map        : AQualifierMap DefInfo,
@@ -814,8 +815,8 @@ op dontUnfoldQualifiers: Ids = ["String"]
        unzip (filter (fn (param, arg) -> ~ (similar? (param, arg)))
                      (zip (remaining_params, remaining_args)))
    in
-   let pattern_vars  : List (List Var) = map patVars  remaining_params in
-   let arg_free_vars : List (List Var) = map freeVars remaining_args   in
+   let pattern_vars  : List MSVars = map patVars  remaining_params in
+   let arg_free_vars : List MSVars = map freeVars remaining_args   in
    let possible_capture? =
        case reverse pattern_vars of
 
@@ -872,7 +873,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
  op avoid_bindings? : Bool = false % not clear if this helps or hurts
 
  op makeLetBinds (params : MSPatterns, args : MSTerms) 
-   : List (MSPattern * MSTerm) * VarSubst =
+   : List (MSPattern * MSTerm) * MSVarSubst =
    let
      def aux (params, args, binds, sbst) =
        case (params, args) of
@@ -1045,7 +1046,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
      | _ -> tv_subst
 
 
- op patternMatchRulesToLet (rules : Match, tm : MSTerm, spc : Spec) : Option MSTerm =
+ op patternMatchRulesToLet (rules : MSMatch, tm : MSTerm, spc : Spec) : Option MSTerm =
    case patternMatchRules (rules, tm) of
      | Some (vsubst, body) ->
        let bindings = map (fn (var, val) -> (mkVarPat var, val)) vsubst in

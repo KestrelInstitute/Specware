@@ -1029,7 +1029,7 @@ op ppTerm1 (c:Context) (term:MSTerm) : WLPretty =
                    ppTerm c term,
                    ppString ")"]
     | LetRec (decls,term,_) ->
-      let def ppDecl (v: Var,term: MSTerm) =
+      let def ppDecl (v: MSVar,term: MSTerm) =
       ppGr2Concat [ppString "(",
                    ppVar c v,
                    ppString " ",
@@ -1128,7 +1128,7 @@ op ppBinder (binder:Binder) : WLPretty =
     | Exists -> ppString "exists"
     | Exists1 -> ppString "exists1"
 
-op ppVar (c:Context) ((id,ty):Var) : WLPretty =
+op ppVar (c:Context) ((id,ty):MSVar) : WLPretty =
   if c.printTypes?
     then ppConcat [ppString "(var ",
                    ppID id,
@@ -1139,7 +1139,7 @@ op ppVar (c:Context) ((id,ty):Var) : WLPretty =
                  ppID id,
                  ppString ")"]
     
-op ppMatch (c:Context) (cases:Match) : WLPretty =
+op ppMatch (c:Context) (cases:MSMatch) : WLPretty =
   let def ppCase (pattern,guard,term) =
   ppNest 1 (ppGrConcat [ppString "(",
                         ppPattern c pattern,
@@ -1296,7 +1296,7 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
                   ppType c srt]
     | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
   
-op ppFun (fun:Fun) : WLPretty =
+op ppFun (fun:MSFun) : WLPretty =
   case fun of
     | Not       -> ppString "Not"
     | And       -> ppString "And"

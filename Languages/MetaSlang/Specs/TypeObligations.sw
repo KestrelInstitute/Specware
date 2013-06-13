@@ -34,18 +34,18 @@ spec
 % and also accumulates local context assertions.
 
  type Decl  = 
-   | Var    Var 
+   | Var    MSVar 
    | Cond   MSTerm                 
-   | LetRec List (Var       * MSTerm) 
+   | LetRec List (MSVar     * MSTerm) 
    | Let    List (MSPattern * MSTerm)
 
  type Gamma = List Decl * TyVars * Spec * Option (QualifiedId * MSPatterns) * QualifiedId
                 * Option MSType * NameSupply * Bool * Ref Nat
 
- op  insert       : Var * Gamma -> Gamma
+ op  insert       : MSVar * Gamma -> Gamma
  op  assertCond   : MSTerm * Gamma * String -> Gamma
  op  insertLet    : List (MSPattern * MSTerm) * Gamma -> Gamma
- op  insertLetRec : List (Var       * MSTerm) * Gamma -> Gamma
+ op  insertLetRec : List (MSVar     * MSTerm) * Gamma -> Gamma
 
  op  assertSubtypeCond: MSTerm * MSType * Gamma -> Gamma
  def assertSubtypeCond(term, srt, gamma) = 
@@ -160,7 +160,7 @@ spec
 
  op trivObligCountRef((_, _, _, _, _, _, _, _, triv_count_ref): Gamma): Ref Nat = triv_count_ref
 
- op notTypePredTerm? (spc: Spec, vs: Vars) (t: MSTerm): Bool =
+ op notTypePredTerm? (spc: Spec, vs: MSVars) (t: MSTerm): Bool =
    case t of
      | Apply(p, Var(v as (_,ty), _), _) ->
        ~(inVars?(v, vs) && subtypePred?(ty, p, spc))
@@ -476,7 +476,7 @@ spec
      | (Fun(Implies, _, _), Record([("1", p), ("2", q)], _)) -> Some (p, q, true)   % p => q -- can assume  p in q
      | _ -> None
 
- op  checkLambda: TypeCheckConditions * Gamma * Match * MSType * Option MSTerm -> TypeCheckConditions
+ op  checkLambda: TypeCheckConditions * Gamma * MSMatch * MSType * Option MSTerm -> TypeCheckConditions
  def checkLambda(tcc, gamma, rules, tau, optArg) =
    let spc = getSpec gamma in
    let dom = domain(spc, tau) in

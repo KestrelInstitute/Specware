@@ -480,10 +480,10 @@ Poly2Mono qualifying spec
  
  op p2mFun (spc                 : Spec, 
             modifyConstructors? : Bool, 
-            fun                 : Fun, 
+            fun                 : MSFun, 
             typ                 : MSType, 
             minfo               : TypeOpInfos)
-  : Fun * MSType * TypeOpInfos =
+  : MSFun * MSType * TypeOpInfos =
   let (typ1, minfo) = p2mType (spc, modifyConstructors?, typ, minfo) in
   case fun of
 

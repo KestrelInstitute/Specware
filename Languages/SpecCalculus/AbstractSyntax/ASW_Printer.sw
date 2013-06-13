@@ -1043,7 +1043,7 @@ ASWPrinter qualifying spec
       | Exists -> ppString "exists"
       | Exists1 -> ppString "exists1"
 
-  op  ppVar : Context -> Var -> WLPretty
+  op  ppVar : Context -> MSVar -> WLPretty
   def ppVar c (id,srt) =
     if c.printTypes?
       then ppConcat [ppString "var(",
@@ -1055,7 +1055,7 @@ ASWPrinter qualifying spec
 		     ppID id,
 		     ppString ")"]
 
-  op  ppMatch : Context -> Match -> WLPretty
+  op  ppMatch : Context -> MSMatch -> WLPretty
   def ppMatch c cases =
     let def ppCase (pattern,guard,term) =
 	  ppGrConcat [ppPattern c pattern,
@@ -1205,11 +1205,11 @@ ASWPrinter qualifying spec
       | true -> ppString "true"
       | false -> ppString "false"
 
-  op  ppFunWithType: Context -> Fun -> MSType -> WLPretty
+  op  ppFunWithType: Context -> MSFun -> MSType -> WLPretty
   def ppFunWithType c fun ty =
     ppGrConcat [ppFun fun, ppString ": ", ppType c ty]
 
-  op  ppFun : Fun -> WLPretty
+  op  ppFun : MSFun -> WLPretty
   def ppFun fun =
     case fun of
       | Not       -> ppString "not"

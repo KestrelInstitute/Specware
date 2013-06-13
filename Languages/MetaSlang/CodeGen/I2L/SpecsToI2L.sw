@@ -783,7 +783,7 @@ SpecsToI2L qualifying spec
         let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printType typ) in
         0
 
-  op term2expression_fun (fun : Fun, typ : MSType, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_fun (fun : MSFun, typ : MSType, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
 
     % This is called when a Fun occurs "standalone", i.e. not in the context of an apply.
     % We restrict the possible forms to those not having an arrow type, 
@@ -885,7 +885,7 @@ SpecsToI2L qualifying spec
         in
         process_t1 (t1, [])
 
-  op term2expression_apply_fun (fun         : Fun, 
+  op term2expression_apply_fun (fun         : MSFun, 
                                 origlhs     : MSTerm,
                                 projections : List Id, 
                                 t2          : MSTerm,

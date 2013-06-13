@@ -104,7 +104,7 @@ op mkPrimOpsClsDecl: String -> ClsDecl
 def mkPrimOpsClsDecl primitiveClassName =
   ([], (primitiveClassName, None, []), emptyClsBody)
 
-op varsToFormalParamsM: Vars -> JGenEnv (List FormPar)
+op varsToFormalParamsM: MSVars -> JGenEnv (List FormPar)
 def varsToFormalParamsM vars =
   foldM (fn fps -> fn v ->
 	 {
@@ -112,7 +112,7 @@ def varsToFormalParamsM vars =
 	  return(fps ++ [fp0])
 	 }) [] vars
 
-op varToFormalParamM: Var -> JGenEnv FormPar
+op varToFormalParamM: MSVar -> JGenEnv FormPar
 def varToFormalParamM(id,srt) =
   {
    ty <- tt_v3M srt;
@@ -686,7 +686,7 @@ def mkAsrtTestAppl(spc,(trm,optt)) =
 (**
  * generates the conjunction of assertions for the given variable list
  *)
-op mkAsrtExpr: Spec * List Var * List(Option MSTerm) -> Option MSTerm
+op mkAsrtExpr: Spec * MSVars * List (Option MSTerm) -> Option MSTerm
 def mkAsrtExpr(spc,vars,dompreds) =
   % let _ = writeLine("mse: "^foldl (fn (r,(id,_)) -> r^" "^id) "" vars) in
   % let _ = writeLine(foldl (fn (r,dp) -> r^(case dp of Some d -> ", "^printTerm d | _ -> " ? ")) "" dompreds) in
@@ -1156,7 +1156,7 @@ def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
  * search for the wild pattern in the match and returns the corresponding body, if it
  * has been found.
  *)
-op findVarOrWildPat: Match -> Option MSTerm
+op findVarOrWildPat: MSMatch -> Option MSTerm
 def findVarOrWildPat(cases) =
   case cases of
     | [] -> None

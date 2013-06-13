@@ -1770,8 +1770,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  %% Ops that are not polymorphic in Specware but are mapped to polymorphic ops in Haskell
  op haskellOverloadedOps: List String = ["**", "modF", "divF"]
 
- op filterConstrainedVars(c: Context, t: MSTerm, vs: Vars): Vars =
-   let def removeArgs(vs: Vars, args: MSTerms, bound_vars: Vars): Vars =
+ op filterConstrainedVars(c: Context, t: MSTerm, vs: MSVars): MSVars =
+   let def removeArgs(vs: MSVars, args: MSTerms, bound_vars: MSVars): MSVars =
          % let _ = writeLine("removeArgs: "^anyToString (map (fn (x, _) -> x) bound_vars)) in
          % let _ = app (fn t -> writeLine (printTerm t)) args in
          let v_args = mapPartial (fn t ->
@@ -1782,7 +1782,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                       | _ -> None)
                          args
          in deleteVars(v_args, vs)
-       def filterKnown(vs: Vars, id: String, f: MSTerm, args: MSTerms, bound_vs: Vars): Vars =
+       def filterKnown(vs: MSVars, id: String, f: MSTerm, args: MSTerms, bound_vs: MSVars): MSVars =
          % let _ = writeLine("fk "^id^": "^ anyToString (map (fn (x, _) -> x) vs)) in
          if id = "natural?" \_or id in? haskellOverloadedOps 
             \_or exists? (fn ci -> id in? ci.overloadedOps)
@@ -1802,7 +1802,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 %                     removeArgs(vs, args, bound_vs)
 %                   | _ -> vs)
 %              | _ -> vs
-      def fCV(st, vs: Vars, bound_vs: Vars): Vars =
+      def fCV(st, vs: MSVars, bound_vs: MSVars): MSVars =
         % let _ = writeLine("fCV: "^printTerm st^"\n"^anyToString (map (fn (x, _) -> x) vs)) in
         let vs = case st of
                    | Apply(f as Fun(Op(Qualified(q, id), _), _, _), arg, _) ->
@@ -1820,8 +1820,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                    | _ -> vs
         in
         % let _ = writeLine("fCV 1: "^anyToString (map (fn (x, _) -> x) vs)) in
-        let def fCVBV(vs: Vars, st: MSTerm): Vars = fCV(st, vs, bound_vs)
-            def fCVsBV(vs: Vars, tms: MSTerms): Vars = foldl fCVBV vs tms
+        let def fCVBV(vs: MSVars, st: MSTerm): MSVars = fCV(st, vs, bound_vs)
+            def fCVsBV(vs: MSVars, tms: MSTerms): MSVars = foldl fCVBV vs tms
         in
         case st of
           | Apply     (M, N, _)     -> fCVBV(fCVBV(vs, M), N)
@@ -1853,8 +1853,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    fCV(t, vs, [])
 
  %% Adds explicit typing for first reference of variable
- op addExplicitTypingForVars(t: MSTerm, vs: Vars): MSTerm * Vars =
-   let def addExpl(t: MSTerm, vs: Vars, bound_vs: Vars): MSTerm * Vars =
+ op addExplicitTypingForVars(t: MSTerm, vs: MSVars): MSTerm * MSVars =
+   let def addExpl(t: MSTerm, vs: MSVars, bound_vs: MSVars): MSTerm * MSVars =
          case t of
            | Var(v1 as (_, ty), pos) | inVars?(v1, vs) && ~(hasVarNameConflict?(t, bound_vs)) ->
              (TypedTerm(t, ty, pos), filter (fn v2 -> \_not (equalVar?(v1, v2))) vs)
@@ -1970,7 +1970,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  %% Terms
  %% --------------------------------------------------------------------------------
 
- op infixFun? (c: Context) (f: Fun): Option String =
+ op infixFun? (c: Context) (f: MSFun): Option String =
    % let _ = writeLine("infixFun? of "^anyToString f) in
    let result =
          case f of
@@ -2020,13 +2020,13 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Fun(f, _, _) -> infixFun? c f
      | _ -> None
 
- op nonCaseMatch?(match: Match): Bool =
+ op nonCaseMatch?(match: MSMatch): Bool =
    case match of
      | (NatPat _, _, _)::_ -> true
      | (CharPat _, _, _)::_ -> true
      | _ -> false
 
- op charMatch?(match: Match): Bool =
+ op charMatch?(match: MSMatch): Bool =
    case match of
      | (CharPat _, _, _)::_ -> true
      | _ -> false
@@ -2460,18 +2460,18 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    if nm in? disallowedVarNames then prString(nm^"__v")
      else prString (ppIdStr nm false)
 
- op  ppVarWithoutType : Var -> Pretty
+ op  ppVarWithoutType : MSVar -> Pretty
  def ppVarWithoutType (id, _(* ty *)) =
    ppVarStr id
 
- op  ppVar : Context -> Var -> Pretty
+ op  ppVar : Context -> MSVar -> Pretty
  def ppVar c (id, ty) =
    ppVarStr id
 %   prConcat [ppVarStr id,
 %             prString ":",
 %             ppType c Top ty]
 
- op  ppMatch : Context -> Match -> Pretty
+ op  ppMatch : Context -> MSMatch -> Pretty
  def ppMatch c cases =
    let def ppCase (pattern, _, term): Pretty =
          prBreakCat 4 [[ppPattern c pattern, prString " -> "],
@@ -2591,7 +2591,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let (pat, arg) = patTermVarsForProduct fields in
    mkLambda(pat, mkApply(tm, arg))
 
- op  ppFun : Context -> ParentTerm -> Fun -> MSType -> Pretty
+ op  ppFun : Context -> ParentTerm -> MSFun -> MSType -> Pretty
  def ppFun c parentTerm fun ty =
    case fun of
      | Not       -> prString "not"

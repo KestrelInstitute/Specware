@@ -58,7 +58,7 @@ def extendMorphism(morph, base_spc) =
       then extendMorphismWithAnswer(morph, ansVars)
     else morph
 
-op extendMorphismWithAnswer: Morphism * Vars -> Morphism
+op extendMorphismWithAnswer: Morphism * MSVars -> Morphism
 
 def extendMorphismWithAnswer(morph, domVars) =
   let dom = morph.dom in
@@ -74,7 +74,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   %%let _ = if specwareDebug? then printMapToTerminal(newOpMap) else () in
     makeMorphism(dom, cod, srtMap, newOpMap, morph.pragmas, morph.sm_tm)
 
-op mkExistential: Spec * MSTerm -> Property * Vars
+op mkExistential: Spec * MSTerm -> Property * MSVars
 
 def mkExistential (spc, term) =
   let opsToQuantify = termOpsInSpec(term, spc) in
@@ -319,7 +319,7 @@ def substOpMap (opMap, term) =
 									   hashSuffix = None});
 *)
  
- op proveForAns: Vars * Property * Spec * Spec * LispCells * String -> Bool
+ op proveForAns: MSVars * Property * Spec * Spec * LispCells * String -> Bool
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, prover_options, snarkLogFileName) =
    %% (removed base_spc as distinct arg)

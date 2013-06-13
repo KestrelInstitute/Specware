@@ -11,7 +11,7 @@ AnnSpec qualifying spec
 
  op equivTerm?    : Spec -> MSTerm    * MSTerm    -> Bool
  op equivPattern? : Spec -> MSPattern * MSPattern -> Bool
- op equivVar?     : Spec -> MS.Var    * MS.Var    -> Bool
+ op equivVar?     : Spec -> MSVar     * MSVar     -> Bool
 
  op similarType?  : Spec -> MSType    * MSType    -> Bool  % assumes A and A|p are similar
  op equivType?    : Spec -> MSType    * MSType    -> Bool  % assumes A and A|p are not equivalent

@@ -20,9 +20,9 @@ RewriteRules qualifying spec
  type Context = HigherOrderMatching.Context
 
  type Decl  = 
-   | Var Var 
-   | Cond MSTerm 
-   | LetRec List (Var * MSTerm) 
+   | Var      MSVar 
+   | Cond     MSTerm 
+   | LetRec   MSVarSubst
    | Let List (MSPattern * MSTerm)
 
  type Gamma = List Decl * TyVars * Spec * String * StringSet.Set
@@ -234,7 +234,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
               let new_rule = freshRule(context, rule) in
               deleteLambdaFromRule context includeAll? (rules, new_rule::old))
 
- op deleteMatches(context: Context, matches: Match, opt_case_tm: Option MSTerm,
+ op deleteMatches(context: Context, matches: MSMatch, opt_case_tm: Option MSTerm,
                   rule: RewriteRule, rules: List RewriteRule,
                   old: List RewriteRule, includeAll?: Bool)
      : List RewriteRule = 
@@ -246,7 +246,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
        of None -> []
         | Some (patternTerm,vars,S) ->
           % let _ = writeLine("patternTerm: "^printTerm patternTerm) in
-          let cond = substitute(cond,S) in
+          let cond : MSTerm = Utilities.substitute(cond : MSTerm,S) in
           let body = substitute(body,S) in
           let rule1 = rule << {lhs  = case opt_case_tm of
                                         | Some case_tm -> replaceArg(case_tm, patternTerm, rule.lhs)
@@ -264,9 +264,9 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
         | (None,_) -> Some cond
 	| (Some cond1,_) -> Some (Utilities.mkAnd(cond1,cond))
 
- type PatternToTermOut =  Option (MSTerm * List (Nat * MSType) * List (Var * MSTerm))
+ type PatternToTermOut =  Option (MSTerm * List (Nat * MSType) * MSVarSubst)
 
- op patternToTerm : Context * MSPattern * List (Nat * MSType) * List (Var * MSTerm) -> PatternToTermOut
+ op patternToTerm : Context * MSPattern * List (Nat * MSType) * MSVarSubst -> PatternToTermOut
 
  def patternToTerm(context,pat,vars,S) = 
      case pat
@@ -402,8 +402,8 @@ is rewritten to
  %% A substitution mapping old Var to new flex var with that number
  %% The body of the binder (handles nested binders of the same type)
  op bound(qf: Binder, n: Nat, term: MSTerm, freeVars: List(Nat * MSType),
-          S: List(Var * MSTerm)) 
-    : List (Nat * MSType) * Nat * List (Var * MSTerm) * MSTerm =
+          S: MSVarSubst)
+    : List (Nat * MSType) * Nat * MSVarSubst * MSTerm =
    case term
      of Bind(binder,vars,body,_) -> 
         if qf = binder
@@ -422,7 +422,7 @@ is rewritten to
 % Disambiguate between HigerOrderMatchingMetaSlang and MetaSlang
   def mkVar = HigherOrderMatching.mkVar     
 
-  op equality : Context -> List (Var * MSTerm) * MSTerm -> Option (MSTerm * MSTerm)
+  op equality : Context -> MSVarSubst * MSTerm -> Option (MSTerm * MSTerm)
 
   def equality context (S,N)  = 
       case N
@@ -465,9 +465,15 @@ op simpleRwTerm?(t: MSTerm): Bool =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
    assertRulesRec(context, term, desc, rsp, dirn, [], [], None)
 
- op assertRulesRec (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, freeVars: List (Nat * MSType), 
-                    subst: VarSubst, condition: Option MSTerm)
-    : List RewriteRule =
+ op assertRulesRec (context   : Context, 
+                    term      : MSTerm, 
+                    desc      : String, 
+                    rsp       : RuleSpec, 
+                    dirn      : Direction, 
+                    freeVars  : List (Nat * MSType), 
+                    subst     : MSVarSubst, 
+                    condition : Option MSTerm)
+   : List RewriteRule =
    % let _ = writeLine("assertRules "^show dirn^": "^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let freeVars = fvs ++ freeVars in

@@ -27,7 +27,7 @@ spec
         trace 	    : Bool,
         traceDepth  : Ref Nat,
 	traceIndent : Ref Nat,
-	boundVars   : List Var,
+	boundVars   : MSVars,
         counter     : Ref Nat
       }
 
@@ -600,7 +600,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 
                    let pats = map (fn v -> VarPat(v,noPos)) vars in
                    let varTerms = map (fn v -> Var(v,noPos)) vars in	
-                   let def makeMatchForSubTerm (trm: MSTerm, bound_vs: List Var, o_ctxt_ty: Option MSType) =
+                   let def makeMatchForSubTerm (trm: MSTerm, bound_vs: MSVars, o_ctxt_ty: Option MSType) =
                          let ty = inferType(context.spc,subst,trm) in
                          let ty = foldr mkArrow ty (termTypes ++ List.map(fn(_,ty) -> ty) bound_vs) in
                          let v = freshVar(context,ty) in
@@ -817,7 +817,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 \]
 *)
 
-  op projections : Context * SubstC * MSTerms * List Var * MSType -> List (SubstC * MSTerm)
+  op projections : Context * SubstC * MSTerms * MSVars * MSType -> List (SubstC * MSTerm)
 
   def projectTerm (fields,label,ty,N):MSTerm = 
       mkApply(mkFun(Project label,mkArrow(Product(fields,noPos),ty)),N)
@@ -867,7 +867,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
               [] (unifyTypes(context,subst,ty1,ty2,Some N))
       else []
 
-  op matchFuns : Context * Fun * MSType * Fun * MSType * Stack * SubstC * MSTerm -> List SubstC
+  op matchFuns : Context * MSFun * MSType * MSFun * MSType * Stack * SubstC * MSTerm -> List SubstC
   def matchFuns (context,x,ty1,y,ty2,stack,subst,N) =
       % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printType ty1^"\n"^printType ty2) in
       if equalFun?(x, y)
@@ -907,9 +907,9 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 (* matchPattern, matchPatterns, and matchIrefutablePattern recurse on
   aligning the same pattern matches. *)
 
-   op matchPattern(context: Context, pat1: MSPattern, pat2: MSPattern, pairs: List(MSPattern * MSPattern),
-                   S1: VarSubst, S2: VarSubst)
-      : Option (VarSubst * VarSubst) = 
+  op matchPattern(context: Context, pat1: MSPattern, pat2: MSPattern, pairs: List(MSPattern * MSPattern),
+                  S1: MSVarSubst, S2: MSVarSubst)
+      : Option (MSVarSubst * MSVarSubst) = 
       case (pat1,pat2)
         of (VarPat((x,ty1), _),VarPat((y,ty2), _)) ->
            let z  = freshBoundVar(context,ty1) in
@@ -952,13 +952,13 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
               of Some S2 -> matchPatterns(context,pairs,S1,S2)
                | None -> None
 
-  op matchPatterns(context: Context, pairs: List(MSPattern * MSPattern), S1: VarSubst, S2: VarSubst)
-     : Option (VarSubst * VarSubst) = 
+  op matchPatterns(context: Context, pairs: List(MSPattern * MSPattern), S1: MSVarSubst, S2: MSVarSubst)
+     : Option (MSVarSubst * MSVarSubst) = 
      case pairs
        of (p1,p2)::pairs -> matchPattern(context,p1,p2,pairs,S1,S2)
         | [] -> Some (S1,S2)	   
-  op matchIrefutablePattern(context: Context, pat: MSPattern, S: VarSubst)
-     : Option VarSubst = 
+  op matchIrefutablePattern(context: Context, pat: MSPattern, S: MSVarSubst)
+     : Option MSVarSubst = 
      case pat
        of WildPat _ -> Some S
         | VarPat((x,s),a) -> 
@@ -966,7 +966,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
           Some(Cons(((x,s),Var(z,a)),S))
         | RecordPat(fields, _) -> 
           let
-              def loop(fields,S): Option VarSubst = 
+              def loop(fields,S): Option MSVarSubst = 
                   case fields
                     of (l,p)::fields -> 
                        (case matchIrefutablePattern(context,p,S)
@@ -1023,7 +1023,7 @@ closedTerm  determines whether a term contains any free variables or not.
 closedTermV detects existence of free variables not included in the argument 
 *)
   op closedTerm : MSTerm -> Bool
-  op closedTermV : MSTerm * List Var -> Bool
+  op closedTermV : MSTerm * MSVars -> Bool
 
   def closedTerm(term) = closedTermV(term,[])
 
@@ -1346,7 +1346,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 	counter    = Ref 1
      }
  
- op setBound : Context * List Var -> Context
+ op setBound : Context * MSVars -> Context
  def setBound({spc,trace,traceDepth,traceIndent,boundVars,counter},bv) = 
      {spc = spc,trace = trace,
       traceDepth = traceDepth,

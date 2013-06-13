@@ -831,7 +831,7 @@ op negateDNF(r:DNFRep):DNFRep =
 %%    tm, a term
 %% Returns:
 %%   a new expression, closed w.r.t vars.
-op mkSimpleExists (vars:List MSVar) (tm:MSTerm):MSTerm =
+op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
    if empty? vars
      then tm
      else
@@ -914,9 +914,10 @@ op mkSimpleExists (vars:List MSVar) (tm:MSTerm):MSTerm =
 %%% Testing 
 %%%%%%%%%%%%%%%%%%%%%%
 
-op x : MSTerm = Var (("x", natType),noPos)
-op expr : MSTerm = Var (("expr", natType),noPos)
-op obs(o:Id)(s:Id):MSTerm =
+op x    : MSTerm = Var (("x",    natType), noPos)
+op expr : MSTerm = Var (("expr", natType), noPos)
+
+op obs (o : Id) (s : Id) : MSTerm =
    mkApplication 
      (mkOp (mkQualifiedId ("Source",o), mkArrow (natType, natType)), 
      [Var (("x", natType),noPos)])

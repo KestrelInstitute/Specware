@@ -136,14 +136,14 @@ SCParser qualifying spec
   : SCTerm = 
   SpecCalc.mkGenerate (target_language, sc_term, defaultToNone filename, mkRegion left right)
 
- op mkProve  		      (claim_name  : QualifiedId,
-                                       sc_term     : SCTerm,
-                                       prover_name : ProverName,
-                                       assertions  : ParserOptional ClaimNames,
-                                       opts        : ParserOptional ProverOptions,
-                                       answer_var  : ParserOptional AnswerVar,
-                                       left        : LCB,
-                                       right       : LCB)
+ op mkProve (claim_name  : QualifiedId,
+             sc_term     : SCTerm,
+             prover_name : ProverName,
+             assertions  : ParserOptional ClaimNames,
+             opts        : ParserOptional ProverOptions,
+             answer_var  : ParserOptional AnswerVar,
+             left        : LCB,
+             right       : LCB)
   : SCTerm =
   
   let _ = if prover_name in? ["Snark", "PVS", "FourierM", "Checker"] then
@@ -163,7 +163,7 @@ SCParser qualifying spec
   else    
     SpecCalc.mkProve      (claim_name,       sc_term, prover_name, assertions, opts, ProverBase, answer_var, here)
     
- op mkAnswerVar     (annvar : Var)    : AnswerVar     = Some annvar
+ op mkAnswerVar     (annvar : MSVar)    : AnswerVar     = Some annvar
 
  op mkExpand 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExpand      (sc_term,          mkRegion left right)
  op mkReduce 	     (ms_term : MSTerm,    sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkReduce      (ms_term, sc_term, mkRegion left right)

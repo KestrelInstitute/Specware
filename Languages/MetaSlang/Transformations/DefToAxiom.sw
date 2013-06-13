@@ -312,7 +312,7 @@ Prover qualifying spec
 	   | _ -> [])
       | _ -> []
 
-  op substituteInRHSEquality: MSTerm * List (Var * MSTerm) -> MSTerm
+  op substituteInRHSEquality: MSTerm * MSVarSubst -> MSTerm
   def substituteInRHSEqualityBody (term, subst) =
     case term of
       | Apply (Fun (Equals, eSrt, _), 
@@ -326,7 +326,7 @@ Prover qualifying spec
   op mkRecVarId: QualifiedId -> String
   def mkRecVarId (Qualified (_, id)) = id ^ "RecVar"
 
-    op mkSubstProjForVar: List Var * List (FieldName * MSType) * MSType * Var -> List (Var * MSTerm)
+  op mkSubstProjForVar: MSVars * MSProductFields * MSType * MSVar -> MSVarSubst
   def mkSubstProjForVar (vars, fields, recSrt as Base (type_qid as Qualified (_, type_id), _,  _), recVar) =
     let
       def mkSubstProjForVarRec (vars, fields) =

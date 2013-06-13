@@ -277,7 +277,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                     iso_ref: MSTerm, osi_ref: MSTerm)
      : MSTerm =
     let
-      def makePrimedPat (p: MSPattern, sb: List(Var * MSTerm)): MSPattern * List(Var * MSTerm) =
+      def makePrimedPat (p: MSPattern, sb: MSVarSubst): MSPattern * MSVarSubst =
         case p of
           | VarPat(v as (vn,v_ty),a) ->
             if equalType?(v_ty,src_ty)
@@ -587,8 +587,8 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                  (ty: MSType)
                  (tm: MSTerm): SpecCalc.Env MSTerm =
         let
-          def makePrimedPat (p: MSPattern, body: MSTerm, p_ty: MSType, sb: List(Var * MSTerm))
-              : SpecCalc.Env (MSPattern * MSTerm * List(Var * MSTerm)) =
+          def makePrimedPat (p: MSPattern, body: MSTerm, p_ty: MSType, sb: MSVarSubst)
+              : SpecCalc.Env (MSPattern * MSTerm * MSVarSubst) =
             case p of
               | VarPat(v as (vn,v_ty),a) -> {
                   v_ty' <- isoType (spc, iso_info, iso_fn_info) false v_ty; 

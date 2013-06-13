@@ -186,7 +186,7 @@ MSToFM qualifying spec
 	   | _ -> fmInterpFun?(f))
       | _ -> false
 
-  op fmInterpFun?: Fun -> Bool
+  op fmInterpFun?: MSFun -> Bool
   def fmInterpFun?(f) =
     case f of
       | Op (Qualified (q, id), _) ->
@@ -221,7 +221,7 @@ MSToFM qualifying spec
        | NotEquals  -> true
        | _ -> false
 
-  op fmInterpFun: Fun -> ((List FMTerm) -> FMTerm)
+  op fmInterpFun: MSFun -> ((List FMTerm) -> FMTerm)
   def fmInterpFun(f) =
     case f of
       | Op (Qualified (q, id), _) ->
@@ -354,7 +354,7 @@ MSToFM qualifying spec
   def fmNatural(t1) =
     fmGtEq(t1, zero)
   
-  op reduceFMInterpOp: Fun * List FMTerm -> FMTerm 
+  op reduceFMInterpOp: MSFun * List FMTerm -> FMTerm 
   def reduceFMInterpOp(f, args) =
     let interpFun = fmInterpFun(f) in
     interpFun args
@@ -383,7 +383,13 @@ MSToFM qualifying spec
     case term of 
       | Bind(Forall, bndVars, term, _) ->
 	let fmBndList = fmBndVars bndVars in
-	let bndVarsPred:MSTerm = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MSTerm in
+	let bndVarsPred : MSTerm = 
+            (foldl (fn (res, (var:Id, srt)) -> 
+                      Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), 
+                                      res)) 
+                   (mkTrue())
+                   (bndVars: MSVars)) : MSTerm 
+        in
 	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
 	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
 	(fmFmla, newContext)
@@ -401,7 +407,7 @@ MSToFM qualifying spec
     case term of 
       (* | Bind(Forall, bndVars, term, _) ->
 	let fmBndList = fmBndVars bndVars in
-	let bndVarsPred:MSTerm = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MSTerm in
+	let bndVarsPred:MSTerm = (foldl (fn (res, (var:Id, srt)) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars: MSVars)):MSTerm in
 	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
 	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
 	(fmFmla, newContext)
@@ -427,7 +433,7 @@ MSToFM qualifying spec
      *)
     (resTerm, newContext)
 
-  op toFMTermApp:  Context * Spec * MSTerm * Fun * MSType * MSTerm -> FMTerm * Context
+  op toFMTermApp:  Context * Spec * MSTerm * MSFun * MSType * MSTerm -> FMTerm * Context
   def toFMTermApp(cntxt, spc, term, f, _, arg) =
     let args = case arg of
                  | Record(flds,_) -> map(fn (_, term) -> term) flds
@@ -449,16 +455,16 @@ MSToFM qualifying spec
       else (resPoly, context)
 
 
-  op toFMVar:  Context * Spec * MS.Var -> FMTerm * Context
+  op toFMVar:  Context * Spec * MSVar -> FMTerm * Context
   def toFMVar (context, spc, var as (v, s)) =
     (Poly (mkPoly1(mkMonom(one, v))), context)
 
-  op fmBndVars: List MS.Var -> List FMTerm
+  op fmBndVars: MSVars -> List FMTerm
   def fmBndVars vars =
     let fmVarList = map (fn (v, s) -> Poly (mkPoly1(mkMonom(one, v)))) vars in
       fmVarList
 
-  op toFMTermConstant: Context * MSTerm * Fun -> FMTerm * Context
+  op toFMTermConstant: Context * MSTerm * MSFun -> FMTerm * Context
   def toFMTermConstant(cntxt, term, f) =
     let resTerm = 
     case f of

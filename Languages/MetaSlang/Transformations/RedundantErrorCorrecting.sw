@@ -118,8 +118,8 @@ op mkRedundantDef(dfn: MSTerm, src_ty: MSType, trg_ty: MSType, test_fix_fn: MSTe
   in
   convertDef dfn
 
-op findUniversalIdentity(ty: MSType, term: MSTerm): Option(Var * MSTerm) =
-  let def findId(t, universals: Vars) =
+op findUniversalIdentity(ty: MSType, term: MSTerm): Option (MSVar * MSTerm) =
+  let def findId(t, universals: MSVars) =
         case t of
           | Apply(Fun(Equals,_,_), Record([(_,Var(v, _)), (_, rhs as Apply _)], _),_) ->
              %% let _ = writeLine("findUniversalIdentity:\n"^printTerm t) in
@@ -139,7 +139,7 @@ op findUniversalIdentity(ty: MSType, term: MSTerm): Option(Var * MSTerm) =
   in
   findId(term, [])
 
-op findIdentityExpr(ty: MSType, spc: Spec): Option(Var * MSTerm) =
+op findIdentityExpr(ty: MSType, spc: Spec): Option (MSVar * MSTerm) =
   foldlSpecElements (fn (result, el) ->
                        if some? result then result
                        else case el of
@@ -164,8 +164,16 @@ op mkFailForm(fail_str: String): MSTerm =
   mkApply(mkOp(Qualified("System", "fail"), mkArrow(stringType, voidType)),
           mkString fail_str)
 
-op mkConverterFromIdFun(src_ty_ind: Nat, trg_ty_ind: Nat, src_var: MSTerm, primary_ty_qid: QualifiedId, ident_param: Var,
-                        ident_exp: MSTerm, primary_ty: MSType, ty_targets: MSTypes, ops_map: QIdMap(QualifiedIds), spc: Spec)
+op mkConverterFromIdFun(src_ty_ind     : Nat, 
+                        trg_ty_ind     : Nat, 
+                        src_var        : MSTerm, 
+                        primary_ty_qid : QualifiedId, 
+                        ident_param    : MSVar,
+                        ident_exp      : MSTerm, 
+                        primary_ty     : MSType, 
+                        ty_targets     : MSTypes, 
+                        ops_map        : QIdMap QualifiedIds, 
+                        spc            : Spec)
    : MSTerm =
    mapTerm(fn t ->
              case t of
@@ -363,11 +371,18 @@ op mkChooseFunction(primary_ty_qid: QualifiedId, new_primary_ty: MSType, coProd_
   (choose_fn_qid, choose_fn_body)
 
 
-op mkConversionFunction(to_type_qid: QualifiedId, primary_ty: MSType, primary_ty_qid: QualifiedId, 
-                        new_primary_ty: MSType, new_primary_ty_qid: QualifiedId, 
-                        CoProduct(coprod_flds, _): MSType, ident_param: Var, ident_exp: MSTerm,
-                        opt_qual: Option Qualifier, ty_targets: MSTypes, ops_map: QIdMap(QualifiedIds),
-                        new_spc: Spec)
+op mkConversionFunction (to_type_qid               : QualifiedId, 
+                         primary_ty                : MSType, 
+                         primary_ty_qid            : QualifiedId, 
+                         new_primary_ty            : MSType, 
+                         new_primary_ty_qid        : QualifiedId, 
+                         CoProduct(coprod_flds, _) : MSType, 
+                         ident_param               : MSVar, 
+                         ident_exp                 : MSTerm,
+                         opt_qual                  : Option Qualifier, 
+                         ty_targets                : MSTypes, 
+                         ops_map                   : QIdMap QualifiedIds,
+                         new_spc                   : Spec)
    : QualifiedId * MSTerm * MSTerm =
   let to_type = mkBase(to_type_qid, []) in
   let conversion_fn_qid = makeDerivedQId new_spc (prependIdInQId(to_type_qid, "to_")) opt_qual in

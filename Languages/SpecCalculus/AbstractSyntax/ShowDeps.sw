@@ -115,7 +115,7 @@ op addDepsForType (name : QualifiedId) (deps: Deps) (ty: MSType): Deps =
   | Any(_) -> deps
   | mystery -> fail ("No match in addDepsForType with: '" ^ (anyToString mystery) ^ "'")
         
-op addDepsForFun (name : QualifiedId) (fun:Fun) (deps:Deps) : Deps =
+op addDepsForFun (name : QualifiedId) (fun:MSFun) (deps:Deps) : Deps =
   case fun of
   | Not       -> deps
   | And       -> deps
@@ -148,7 +148,7 @@ op addDepsForMatchCase (name : QualifiedId) (deps : Deps, triple : (APattern Pos
   let (pattern, guard, term) = triple in
     addDepsForTerm name deps term
     
-op addDepsForMatch (name : QualifiedId) (cases:Match) (deps:Deps) : Deps =
+op addDepsForMatch (name : QualifiedId) (cases:MSMatch) (deps:Deps) : Deps =
   List.foldl (addDepsForMatchCase name) deps cases
 
 % Walk through term and, for each thing mentioned, record the fact that name depends on that thing.

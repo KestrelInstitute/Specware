@@ -10,6 +10,7 @@ snark qualifying spec
 %  import /Languages/MetaSlang/Transformations/Match
 %  import /Languages/MetaSlang/CodeGen/Lisp/Lisp
 %  import /Languages/MetaSlang/Specs/StandardSpec
+  import /Languages/MetaSlang/Specs/MSTerm
 
 
   op simpApplies: MSTerm -> MSTerm
@@ -148,7 +149,7 @@ snark qualifying spec
       of Forall -> "ALL"
 	| Exists -> "EXISTS"
 
-  op snarkVar: Var -> LispCell
+  op snarkVar: MSVar -> LispCell
 
   def snarkVar(v as (id, srt)) =
     case srt of
@@ -163,14 +164,14 @@ snark qualifying spec
 
   def snarkBoolVarFromId(id) =  Lisp.symbol("SNARK", "?" ^ id ^ "_Logical")
   
-  op snarkVarTerm: Var -> LispCell
+  op snarkVarTerm: MSVar -> LispCell
 
   def snarkVarTerm(v as (id, srt)) =
     case srt of
       | Boolean _ -> snarkBoolVarTermFromId(id)
       | _ -> snarkVarFromId(id)
 
-  op snarkVarFmla: Var -> LispCell
+  op snarkVarFmla: MSVar -> LispCell
 
   def snarkVarFmla(v as (id, srt)) =
     case srt of
@@ -186,7 +187,7 @@ snark qualifying spec
 
   def snarkBoolVarFmlaFromId(id) =
     Lisp.list [Lisp.symbol("SNARK","HOLDS"), snarkBoolVarFromId(id)]
-  op snarkBndVar: Spec * Var * Vars -> LispCell
+  op snarkBndVar: Spec * MSVar * MSVars -> LispCell
 
   def snarkBndVar(sp, var, globalVars) =
     let (name, srt) = var in
@@ -202,7 +203,7 @@ snark qualifying spec
 		  Lisp.symbol("KEYWORD","SORT"),
 		  snarkPBaseSort(sp, srt, false)]
   
-  op snarkBndVars: Spec * List Var * Vars -> LispCell
+  op snarkBndVars: Spec * MSVars * MSVars -> LispCell
 
   def snarkBndVars(sp, vars, globalVars) =
     let snarkVarList = map (fn (var) -> snarkBndVar(sp, var, globalVars)) vars in
@@ -234,7 +235,7 @@ snark qualifying spec
 	       then id
 	     else qual^"."^id
 
-  op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * MSType * MSTerm -> LispCell
+  op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * MSFun * MSType * MSTerm -> LispCell
 
   def mkSnarkFmlaApp(context, sp, dpn, vars, f, srt, arg) =
     let args = case arg
@@ -320,7 +321,7 @@ snark qualifying spec
 				 else Lisp.cons(Lisp.symbol("SNARK","="), Lisp.list [snarkArg1, snarkArg2])]))
 
 
-  op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * MSTerm -> LispCell
+  op mkSnarkFmla: Context * Spec * String * StringSet.Set * MSVars * MSTerm -> LispCell
 
   def mkSnarkFmla(context, sp, dpn, vars, globalVars, fmla) =
     case containsTheTerm fmla of
@@ -400,7 +401,7 @@ snark qualifying spec
       | TypedTerm(stm,_,_) -> containsTheTerm stm
       | _ -> None
 
-  op  expandExists1: Var * MSTerm * Position -> MSTerm
+  op  expandExists1: MSVar * MSTerm * Position -> MSTerm
   def expandExists1(v as (vn,s), bod, pos) =
     let v1 = (vn ^ "__exists1",s) in
     let v1_tm = Var(v1,pos) in
@@ -408,7 +409,7 @@ snark qualifying spec
     let v1_bod = substitute(bod,[(v,v1_tm)]) in
     Bind(Exists,[v],MS.mkAnd(bod, Bind(Forall,[v1],mkImplies(v1_bod,mkEquality(s,v1_tm,v_tm)),pos)),pos)
 
-  op mkSnarkTermAppTop: Context * Spec * String * StringSet.Set * Fun * MSType * MSTerm -> LispCell
+  op mkSnarkTermAppTop: Context * Spec * String * StringSet.Set * MSFun * MSType * MSTerm -> LispCell
   def mkSnarkTermAppTop(context, sp, dpn, vars, f, srt, arg) =
     case arrowOpt(sp, srt) of
       | Some(dom, range) ->
@@ -420,7 +421,7 @@ snark qualifying spec
 	      | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg))
       | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
 
-  op mkSnarkTermAppRecordArg: Context * Spec * String * StringSet.Set * Fun * MSType * MSTerm -> LispCell
+  op mkSnarkTermAppRecordArg: Context * Spec * String * StringSet.Set * MSFun * MSType * MSTerm -> LispCell
   def mkSnarkTermAppRecordArg(context, sp, dpn, vars, f, dom as Base (qid, _ , _), arg) =
     case f of
       | Op(Qualified(qual,id),_) ->
@@ -433,7 +434,7 @@ snark qualifying spec
       | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
 
 
-  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * MSTerm -> LispCell
+  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * MSFun * MSTerm -> LispCell
   def mkSnarkTermApp(context, sp, dpn, vars, f, arg) =
     let args = case arg
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
@@ -604,7 +605,7 @@ snark qualifying spec
       Lisp.list [snark_prove, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
 
-  op snarkAnswer: Context * Spec * Property * Vars -> LispCell
+  op snarkAnswer: Context * Spec * Property * MSVars -> LispCell
 
   def snarkAnswer(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla, _), ansVars) =
     %% ansVars don't have to be global in newer versions of SNARK

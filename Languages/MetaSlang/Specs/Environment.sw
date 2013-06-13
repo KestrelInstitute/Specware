@@ -501,7 +501,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      | Some (TyVar _, _) -> true
      | _                -> false
 
- op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MSTerm, rhs_tm: MSTerm): MSTerm * List MSTerm * List Var =
+ op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MSTerm, rhs_tm: MSTerm): MSTerm * List MSTerm * MSVars =
    case rhs_tm of
      | Lambda ([(pat, _, body)], _) ->
        let (arg_tm, conds, vs) = patternToTermPlusExConds(pat) in

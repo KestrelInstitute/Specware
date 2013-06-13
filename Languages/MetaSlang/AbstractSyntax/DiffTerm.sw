@@ -13,8 +13,8 @@ AnnSpec qualifying spec
                | MetaTyVars (MetaTyVar * MetaTyVar)
 
  type Equivs = List Equiv
- type Equiv  = | TypeVars (TyVar  * TyVar)
-               | TermVars (MS.Var * MS.Var)
+ type Equiv  = | TypeVars (TyVar * TyVar)
+               | TermVars (MSVar * MSVar)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -30,7 +30,7 @@ AnnSpec qualifying spec
    in
      aux (x, y)
 
- op  matchingVars? : Equivs -> MS.Var * MS.Var -> Bool
+ op  matchingVars? : Equivs -> MSVar * MSVar -> Bool
  def matchingVars? equivs (v1, v2) =
    case equivs of
      | [] -> false
@@ -69,10 +69,10 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op diffTerm    : Equivs -> MSTerm     * MSTerm     -> Diffs
- op diffType    : Equivs -> MSType     * MSType     -> Diffs
- op diffPattern : Equivs -> MSPattern  * MSPattern  -> Option (Equivs * Diffs)
- op diffVars    : Equivs -> List MS.Var * List MS.Var -> Equivs * Diffs
+ op diffTerm    : Equivs -> MSTerm    * MSTerm     -> Diffs
+ op diffType    : Equivs -> MSType    * MSType     -> Diffs
+ op diffPattern : Equivs -> MSPattern * MSPattern  -> Option (Equivs * Diffs)
+ op diffVars    : Equivs -> MSVars    * MSVars     -> Equivs * Diffs
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Terms

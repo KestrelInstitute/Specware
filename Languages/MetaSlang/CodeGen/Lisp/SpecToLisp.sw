@@ -350,7 +350,7 @@ op addList(S: StringSet, l: List String): StringSet =
 	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
      | _ -> "Slang-Built-In::slang-term-not-equals-2"
 
- op  mkLTermOp : [a] Spec * String * StringSet * (Fun * MSType * a) * Option (MSTerm) -> LispTerm
+ op  mkLTermOp : [a] Spec * String * StringSet * (MSFun * MSType * a) * Option (MSTerm) -> LispTerm
  def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
    case termOp of
      | (Project id, ty, _) -> 

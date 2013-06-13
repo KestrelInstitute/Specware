@@ -39,7 +39,7 @@ Prover qualifying spec
     let wildCount = useWildCounter() in
     Var(("Wild__Var_"^natToString(wildCount), srt), noPos)
 
-  type CondTerm = List(Var) * MSTerm * MSTerm
+  type CondTerm = MSVars * MSTerm * MSTerm
   type CondTerms = List(CondTerm)
 
   op printCondTerm: CondTerm -> String
@@ -132,7 +132,7 @@ Prover qualifying spec
 
     def generateCrossTerms(condTermsList, leafFunction) =
       let def initialFun(condTerms:CondTerms) = map (fn (vars, cond, term) -> (vars, cond, [term])) condTerms in
-      let def interimFun(condTerm:CondTerm, condCrossTerm:(List Var) * MSTerm * MSTerms) =
+      let def interimFun(condTerm:CondTerm, condCrossTerm: MSVars * MSTerm * MSTerms) =
             let (vars, cond, term) = condTerm in
 	    let (dnVars, dnCond, dnTerms) = condCrossTerm in
 	    (vars++dnVars, Utilities.mkAnd(cond, dnCond), term :: dnTerms) in
@@ -212,7 +212,7 @@ def removePatternCase(spc, term) =
 	    let newCondTerm = (hdCaseVars++hdBodyVars, Utilities.mkAnd(hdBodyCond, caseCond), hdBody):CondTerm in
 	    %let _ = writeLine("hdBody = "^printTerm(hdBody)) in
 	    newCondTerm :: tlCondTerms in
-  let def combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars:List(Var), caseCTs, bodyCTs, negPrevCases) =
+  let def combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars:MSVars, caseCTs, bodyCTs, negPrevCases) =
         case caseCTs of
 	  | Nil -> []
 	  | (hdCaseVars, hdCaseCond, hdCaseTerm)::tlCaseCTs ->
@@ -284,7 +284,7 @@ def removePatternCase(spc, term) =
           mkRecord(zip(fieldIds, terms)) in
     generateCrossTerms(condFieldTermsList, mkLeafCase)
 
-(*  op findNewVar: Var * List Var -> Var
+(*  op findNewVar: MSVar * MSVars -> MSVar
 
   def findNewVar(var, vars) =
     let ids = map (fn (id, srt) -> id) vars in
@@ -294,7 +294,7 @@ def removePatternCase(spc, term) =
     let newId = findNewIdRec(id, ids, 1) in
  *)
 
-  op insertNewVar: Var * List Var -> List Var
+  op insertNewVar: MSVar * MSVars -> MSVars
   def insertNewVar(v, l) =
     case l of
       | [] -> [v]
@@ -304,7 +304,7 @@ def removePatternCase(spc, term) =
           else
             Cons (v1, insertNewVar (v, l1))
 
-  op varUnion: List Var * List Var -> List Var
+  op varUnion: MSVars * MSVars -> MSVars
   def varUnion(vl1, vl2) = foldl (fn (l,v) -> insertNewVar(v,l)) vl1 vl2
 
   op removePatternBind: Spec * MSTerm -> CondTerms

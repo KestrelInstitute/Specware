@@ -27,7 +27,7 @@ Prover qualifying spec
 
   op treatNatSpecially?: Bool = true
 
-  op simpleFun?(f: Fun): Bool =
+  op simpleFun?(f: MSFun): Bool =
     case f of
       | Not -> true
       | And -> true

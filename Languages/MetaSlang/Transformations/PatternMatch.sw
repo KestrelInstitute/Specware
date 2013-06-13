@@ -569,12 +569,12 @@ PatternMatch qualifying spec
   *
   *)
 
- op freshVar (ctx : Context, typ : MSType) : Var =
+ op freshVar (ctx : Context, typ : MSType) : MSVar =
   let num = ! ctx.counter + 1 in
   (ctx.counter := num;
    ("pV" ^ (Nat.show num), typ))
 
- op freshVars (num : Nat, ctx : Context, pat : MSPattern) : List (String * Var) =
+ op freshVars (num : Nat, ctx : Context, pat : MSPattern) : List (String * MSVar) =
   case num of
     | 0 -> []
     | 1 -> [("", freshVar (ctx, patternType pat))]
@@ -715,7 +715,7 @@ PatternMatch qualifying spec
   in
   foldr insert [] pmrules 
         
- op abstract (vs   : List (String * Var), 
+ op abstract (vs   : List (String * MSVar), 
               body : MSTerm, 
               typ  : MSType) 
   : MSTerm = 
@@ -1012,7 +1012,7 @@ PatternMatch qualifying spec
  op makeContinuation (ctx     : Context, 
                       typ     : MSType, 
                       msrules : MSRules,
-                      vs      : List (String * Var),
+                      vs      : List (String * MSVar),
                       term    : MSTerm) 
   : MSRules * MSTerm = 
   let 
