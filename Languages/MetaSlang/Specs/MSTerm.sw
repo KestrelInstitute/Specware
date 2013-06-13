@@ -94,24 +94,20 @@ op mkRecord      (fields : MSRecordFields) : MSTerm = Record (fields, noPos)
 op mkCanonRecord (fields : MSRecordFields) : MSTerm = 
  mkRecord (sortGT (fn ((id1,_), (id2,_)) -> id1 > id2) fields)
 
-op mkTypedTerm   (term     : MSTerm, typ : MSType)                   : MSTerm = TypedTerm  (term, typ,               termAnn term)
-op mkLetRec      (decls    : List (MSVar * MSTerm),   body : MSTerm) : MSTerm = LetRec     (decls,  body,            termAnn body)
-op mkLambda      (pat      : MSPattern,               body : MSTerm) : MSTerm = Lambda     ([(pat, mkTrue(), body)], termAnn body)
-op mkThe         (var      : MSVar,                   body : MSTerm) : MSTerm = The        (var, body,               termAnn body)
-op mkBind        (binder   : Binder, vars : MSVars,   body : MSTerm) : MSTerm = Bind       (binder, vars, body,      termAnn body)
+op mkTypedTerm   (term     : MSTerm, typ : MSType)                   : MSTerm = TypedTerm  (term, typ,               noPos)
+op mkLetRec      (decls    : List (MSVar * MSTerm),   body : MSTerm) : MSTerm = LetRec     (decls,  body,            noPos)
+op mkLambda      (pat      : MSPattern,               body : MSTerm) : MSTerm = Lambda     ([(pat, mkTrue(), body)], noPos)
+op mkThe         (var      : MSVar,                   body : MSTerm) : MSTerm = The        (var, body,               noPos)
+op mkBind        (binder   : Binder, vars : MSVars,   body : MSTerm) : MSTerm = Bind       (binder, vars, body,      noPos)
 op mkVar         (v        : MSVar)                                  : MSTerm = Var        (v,                       noPos)
 op mkFun         (constant : MSFun, typ : MSType)                    : MSTerm = Fun        (constant, typ,           noPos)
-op mkIfThenElse  (t1       : MSTerm,  t2 : MSTerm,  t3 : MSTerm)     : MSTerm = IfThenElse (t1, t2, t3,              termAnn t1)
+op mkIfThenElse  (t1       : MSTerm,  t2 : MSTerm,  t3 : MSTerm)     : MSTerm = IfThenElse (t1, t2, t3,              noPos)
 
-op mkApply       (f : MSTerm, arg  : MSTerm)  : MSTerm = Apply (f, arg,          termAnn arg)
-op mkAppl        (f : MSTerm, args : MSTerms) : MSTerm = Apply (f, mkTuple args, termAnn f)
-op mkApplication (f : MSTerm, args : MSTerms) : MSTerm = 
- case args of
-   | []    -> mkApply (f, Record ([], termAnn f))
-   | [arg] -> mkApply (f, arg)
-   | _  -> mkAppl (f, args)
+op mkApply       (f : MSTerm, arg  : MSTerm)  : MSTerm = Apply (f, arg,          noPos)
+op mkAppl        (f : MSTerm, args : MSTerms) : MSTerm = Apply (f, mkTuple args, noPos)
+op mkApplication (f : MSTerm, args : MSTerms) : MSTerm = Apply (f, mkTuple args, noPos)
 
-op mkLet1 (pat : MSPattern, val : MSTerm, body : MSTerm) : MSTerm = Let ([(pat,val)], body, termAnn body)
+op mkLet1 (pat : MSPattern, val : MSTerm, body : MSTerm) : MSTerm = Let ([(pat,val)], body, noPos)
 
 op mkLet  (bindings : MSBindings, body : MSTerm) : MSTerm =
  case bindings of
