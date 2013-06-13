@@ -18,7 +18,7 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op  diffTermList : Equivs -> List MSTerm * List MSTerm -> Diffs
+ op  diffTermList : Equivs -> MSTerms * MSTerms -> Diffs
  def diffTermList equivs (x, y) =
    let
      def aux (x, y) =

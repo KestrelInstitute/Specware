@@ -217,7 +217,7 @@ def standAloneFromTypeM(s,srt,k,l) =
    standaloneM(s,(apdom,apran),(atdom,atran),k,l)
   }
 
-op mapTypeColM: (MSType -> JGenEnv Id) * List MSType -> JGenEnv (List String)
+op mapTypeColM: (MSType -> JGenEnv Id) * MSTypes -> JGenEnv (List String)
 def mapTypeColM(srtf,srtl) =
   mapM (fn(srt) -> srtf srt) srtl
 %  foldl (fn((srtl,col),srt) ->

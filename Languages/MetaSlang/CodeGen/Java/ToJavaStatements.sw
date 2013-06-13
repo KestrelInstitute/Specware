@@ -690,7 +690,7 @@ def relaxChooseTerm(spc,t) =
         | _ -> t
 
 
-op translateTermsToExpressionsM: TCx * List MSTerm * Nat * Nat -> JGenEnv (JavaBlock * List JavaExpr * Nat * Nat)
+op translateTermsToExpressionsM: TCx * MSTerms * Nat * Nat -> JGenEnv (JavaBlock * List JavaExpr * Nat * Nat)
 def translateTermsToExpressionsM(tcx, terms, k, l) =
     case terms of
     | [] ->  return ([], [], k, l)

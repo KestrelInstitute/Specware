@@ -35,7 +35,7 @@ Prover qualifying spec
 %   % term corresponding to the op (suitable to be applied to argument
 %   % terms).  paramsFound is in reverse order from the order
 %   % of the params in the call. Each param is a variable or tuple.
-%   op equateFunCallToBody_aux (tm:MSTerm, ty:MSType, topFun : MSTerm, topTy : MSType, spc:Spec, paramsFound : List MSTerm) : MSTerm =
+%   op equateFunCallToBody_aux (tm:MSTerm, ty:MSType, topFun : MSTerm, topTy : MSType, spc:Spec, paramsFound : MSTerms) : MSTerm =
 %     case tm of
 %       %% TODO Should we preserve the type somehow?
 %       | TypedTerm(tm,_,_) -> equateFunCallToBody_aux(tm, ty, topFun, topTy, spc, paramsFound)
@@ -82,7 +82,7 @@ Prover qualifying spec
     mkUncurryEqualityRec (sp, srt, trm, funOp, srt, trm, [])
 
   op mkUncurryEqualityRec: Spec * MSType * MSTerm * MSTerm *
-                           MSType * MSTerm * List MSTerm -> MSTerm
+                           MSType * MSTerm * MSTerms -> MSTerm
 
   def mkUncurryEqualityRec (sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
     %let _ = writeLine("mkUncurryEqualityRec: "^printTerm trm) in
@@ -191,7 +191,7 @@ Prover qualifying spec
      | _ -> None
 *)
 
-  op unLambdaDef (spc:Spec, srt:MSType, name:QualifiedId, term:MSTerm) : List MSTerm =
+  op unLambdaDef (spc:Spec, srt:MSType, name:QualifiedId, term:MSTerm) : MSTerms =
     % let _ = writeLine("unLambdaDef: "^printTerm term) in
     let new_equality = equateFunCallToBody(term, srt, name, spc) in %% mkUncurryEquality (spc, srt, name, term) in
     % let _ = writeLine("new_eq: "^printTerm new_equality) in
@@ -293,7 +293,7 @@ Prover qualifying spec
       []
 
 
-  op foldRecordFmla: Spec * MSType * MSTerm -> List MSTerm
+  op foldRecordFmla: Spec * MSType * MSTerm -> MSTerms
   def foldRecordFmla (spc, srt, fmla) =
     case srt of
       | Arrow (dom, range, _) ->

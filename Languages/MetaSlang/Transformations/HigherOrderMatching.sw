@@ -15,7 +15,7 @@ spec
  import ../Specs/Utilities
  import Simplify, Interpreter
 
- type SubstC    = StringMap MSType * NatMap.Map MSTerm * List MSTerm
+ type SubstC    = StringMap MSType * NatMap.Map MSTerm * MSTerms
 
  op match : Context -> MSTerm * MSTerm -> List SubstC
 
@@ -226,7 +226,7 @@ beta contraction.
  def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
 % Get list of applications, assumes that the term is already dereferenced.
- op headForm (term: MSTerm): List MSTerm = 
+ op headForm (term: MSTerm): MSTerms = 
      case isFlexVar? term
        of Some n -> [term]
         | None -> 
@@ -1071,7 +1071,7 @@ closedTermV detects existence of free variables not included in the argument
 	   closedTermV(M,bound) && 
 	   (forall? (fn (_,M) -> closedTermV(M,bound)) decls) 
 
- op noReferencesTo?(tm: MSTerm, tms: List MSTerm): Bool =
+ op noReferencesTo?(tm: MSTerm, tms: MSTerms): Bool =
    ~(existsSubTerm (fn t -> termIn?(t,tms)) tm)
 
 (* Type unification}

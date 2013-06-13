@@ -4,7 +4,7 @@ Prover qualifying spec
 
   type GoalStatus = | Discharged | False | Attempted | Pending
   type GoalContext = {spc: Spec, prop: Property, autoProps: AutomaticProperties}
-  type AutomaticProperties = {autoRewrites: Properties, autoDefs: Properties, groundFacts: List MS.Term}
+  type AutomaticProperties = {autoRewrites: Properties, autoDefs: Properties, groundFacts: List MSTerm}
   type Goal = {sequent: Sequent, parent: Option Goal, subGoals: List Goal, status: GoalStatus, contex: GoalContext}
   type Sequent = {hypothesis: SequentFmlas, conclusions: SequentFmlas}
   type SequentFmlas = List SequentFmla

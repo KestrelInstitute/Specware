@@ -1142,8 +1142,8 @@ spec
                    (let tcc = (el::tccs, claimNames) in
                     case findTheType(spc, qid) of
                       | Some typeinfo ->
-                        let quotientRelations: Ref(List MSTerm) = Ref [] in
-                        let subtypePreds:      Ref(List (TyVars * MSTerm * MSType)) = Ref [] in
+                        let quotientRelations: Ref MSTerms = Ref [] in
+                        let subtypePreds:      Ref (List (TyVars * MSTerm * MSType)) = Ref [] in
                         let _ = app (fn srt ->
                                      let (tvs, srt) = unpackType srt in
                                      appType (fn _ -> (),

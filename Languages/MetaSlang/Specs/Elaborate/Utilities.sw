@@ -25,7 +25,7 @@ Utilities qualifying spec
  op secondPass     : LocalEnv                   -> LocalEnv
  op setEnvTypes    : LocalEnv * TypeMap         -> LocalEnv
  op unfoldType     : LocalEnv * MSType          -> MSType
- op findVarOrOps   : LocalEnv * Id * Position   -> List MSTerm
+ op findVarOrOps   : LocalEnv * Id * Position   -> MSTerms
 
  op error          : LocalEnv * String * Position -> ()
 

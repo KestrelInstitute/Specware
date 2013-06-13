@@ -1557,7 +1557,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     | _ -> term
 
  op maybeIntroduceVarsForTerms (mainTerm : MSTerm, 
-                                vterms   : List MSTerm, 
+                                vterms   : MSTerms, 
                                 spc      : Spec) 
   : MSTerm =
   %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
@@ -1777,7 +1777,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     of Product (fields, _) -> Some fields
      | _ -> None
 
- op fieldTypes (sp : Spec, ty : MSType): List MSType =
+ op fieldTypes (sp : Spec, ty : MSType): MSTypes =
    case stripSubtypes (sp, unfoldBase (sp,ty))
     of Product (fields, _) -> map (fn (_, ty) -> ty) fields
      | _ -> [ty]
@@ -1893,7 +1893,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | _ -> None
 
 
-   op subtypePreds(tys: List MSType): MSTerms =
+   op subtypePreds(tys: MSTypes): MSTerms =
      mapPartial (fn ty ->
                  case ty of
                    | Subtype(_, p, _) -> Some p

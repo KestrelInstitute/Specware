@@ -2387,7 +2387,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      (addExplicitTypingForVars(t, freeVars t)).1
    else t
 
- op addExplicitTyping_n1(c: Context, lhs: List MSTerm, rhs: MSTerm): List MSTerm * MSTerm =
+ op addExplicitTyping_n1(c: Context, lhs: MSTerms, rhs: MSTerm): MSTerms * MSTerm =
    if addExplicitTyping? then
      let fvs = removeDuplicateVars(foldl (fn (vs,t) -> freeVars t ++ vs)
                                      (freeVars rhs) lhs)
@@ -3169,7 +3169,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                lengthString(5, " \\<Longrightarrow> ")],
                       ppTerm c Top concl]
 
- op  parsePropertyTerm: Context -> List String -> MSTerm -> List MSTerm * MSTerm
+ op  parsePropertyTerm: Context -> List String -> MSTerm -> MSTerms * MSTerm
  def parsePropertyTerm c explicit_universals term =
    case term of
      | Bind (Forall, vars, bod, a) ->

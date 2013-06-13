@@ -492,7 +492,7 @@ MSToFM qualifying spec
     let context = {map = context.map, revMap = context.revMap, varCounter = varCounter+1} in
     (newVar, context)
 
-  op toFMTerms: Spec * List MSTerm * Context -> (List FMTerm) * Context
+  op toFMTerms: Spec * MSTerms * Context -> (List FMTerm) * Context
   def toFMTerms(spc, terms, context) =
     case terms of
       | [] -> ([], context)

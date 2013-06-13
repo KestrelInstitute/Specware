@@ -929,7 +929,7 @@ type QIDorAll =
         % TODO: any other cases to consider?
       | _ -> []
 
-  op typesToTranslateFromTypes (tys : List MSType) : List QualifiedId =
+  op typesToTranslateFromTypes (tys : MSTypes) : List QualifiedId =
     case tys of
       | [] -> []
       | ty::rest -> (typesToTranslateFromType ty)++(typesToTranslateFromTypes rest)
@@ -972,7 +972,7 @@ type QIDorAll =
     %% TODO should we allow seq?  could get rid of seqs with a transformation
     | _ -> [] %TODO anything missing?
                    
-  op opsToTranslateFromTerms (tms : List MSTerm) : (List QualifiedId) =
+  op opsToTranslateFromTerms (tms : MSTerms) : (List QualifiedId) =
     case tms of
       | [] -> []
       | tm::rest -> (opsToTranslateFromTerm tm)++(opsToTranslateFromTerms rest)        

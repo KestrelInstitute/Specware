@@ -130,7 +130,7 @@ SpecToLisp qualifying spec
 	  | None -> None)
      | _ -> None
 
- op listTerm(tm: MSTerm, sp: Spec): Option(List MSTerm) =
+ op listTerm(tm: MSTerm, sp: Spec): Option MSTerms =
    case tm of
      | Apply(Fun(Op(Qualified("TranslationBuiltIn", "mkTuple"), _), _, _),
              Record([(_, x), (_, y)], _), _) ->

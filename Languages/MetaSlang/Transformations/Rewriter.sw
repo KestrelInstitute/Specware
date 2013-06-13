@@ -898,7 +898,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
       rewriteRec(rules0, emptySubstitution, term, term, boundVars, [], 0)
 
  op rewriteOnce : 
-    Context * MSVars * RewriteRules * MSTerm -> List MSTerm
+    Context * MSVars * RewriteRules * MSTerm -> MSTerms
 
 %%
 %% Apply unconditional rewrite rules using outer-most strategy

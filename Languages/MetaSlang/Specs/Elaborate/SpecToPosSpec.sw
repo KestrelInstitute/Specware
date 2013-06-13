@@ -11,12 +11,12 @@ SpecToPosSpec qualifying spec {
  op convertTypeInfoToPTypeInfo : TypeInfo  -> MS.TypeInfo
  op convertOpInfoToPOpInfo     : OpInfo    -> MS.OpInfo
 
- op convertTermToPTerm         : MS.Term      -> MS.Term
- op convertVarToPVar           : Var       -> MS.Var
- op convertVarsToPVars         : List Var  -> List MS.Var
- op convertPatternToPPattern   : Pattern   -> MS.Pattern
- op convertTypeToPType         : Type      -> MS.Type
- op convertFunToPFun           : Fun       -> MS.Fun
+ op convertTermToPTerm         : MS.Term   -> MSTerm
+ op convertVarToPVar           : MSVar     -> MSVar
+ op convertVarsToPVars         : MSVars    -> MSVars
+ op convertPatternToPPattern   : MSPattern -> MSPattern
+ op convertTypeToPType         : MSType    -> MSType
+ op convertFunToPFun           : MSFun     -> MSFun
 *)
 
 (* ### unused

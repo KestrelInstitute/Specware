@@ -147,7 +147,7 @@ Prover qualifying spec
    [Property(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla, noPos),
     Property(Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla, noPos)]
 
- op  mkEqFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> List MSTerm
+ op  mkEqFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> MSTerms
  def mkEqFmlasForFields(srt, var, fields) =
    case fields of
      | [] -> []
@@ -159,7 +159,7 @@ Prover qualifying spec
        let restEqls = mkEqFmlasForFields(srt, var, restFields) in
        Cons(eqlFmla, restEqls)
 
- op  mkPredFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> List MSTerm
+ op  mkPredFmlasForFields: MSType * MSVar * List (Id * Option MSType) -> MSTerms
  def mkPredFmlasForFields(srt, var, fields) =
    case fields of
      | [] -> []

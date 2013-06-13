@@ -14,9 +14,9 @@ there is a final clean-up phase to get rid of introduced variables that are only
 (in the more complex common expression)
 *)
 
-  op newCSEs(cse1: List MSTerm, cse2: List MSTerm, tms1: List MSTerm, tms2: List MSTerm,
-             poss_tms1: List MSTerm, poss_tms2: List MSTerm)
-    : List MSTerm * List MSTerm * List MSTerm =
+  op newCSEs(cse1: MSTerms, cse2: MSTerms, tms1: MSTerms, tms2: MSTerms,
+             poss_tms1: MSTerms, poss_tms2: MSTerms)
+    : MSTerms * MSTerms * MSTerms =
     let cse12 = termsUnion(termsIntersect(tms1, tms2),
                            termsUnion(termsIntersect(tms1, poss_tms2),
                                       termsIntersect(poss_tms1, tms2)))
@@ -26,12 +26,12 @@ there is a final clean-up phase to get rid of introduced variables that are only
     let poss_tms = termsDiff(termsUnion(poss_tms1, poss_tms2), new_ces) in
     (new_ces, single_tms, poss_tms)
 
-  op removeLocal(tms: List MSTerm, vs: MSVars): List MSTerm =
+  op removeLocal(tms: MSTerms, vs: MSVars): MSTerms =
     filter (fn t -> ~(hasRefTo?(t,vs))) tms
 
-  op maybeAbstract(t: MSTerm, cse: List MSTerm, names: List String, bindable?: Bool,
-                   single_tms: List MSTerm, poss_tms: List MSTerm, spc: Spec)
-    : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
+  op maybeAbstract(t: MSTerm, cse: MSTerms, names: List String, bindable?: Bool,
+                   single_tms: MSTerms, poss_tms: MSTerms, spc: Spec)
+    : MSTerm * MSTerms * MSTerms * MSTerms * List String =
       % let _ = (writeLine("maybeAbstract "^show bindable?^":\n"^printTerm t^"\ncse:");
       %          app (fn t -> writeLine(printTerm t)) cse;
       %          writeLine("single_tms: ");
@@ -70,7 +70,7 @@ there is a final clean-up phase to get rid of introduced variables that are only
         (t, cse, single_tms, poss_tms, names)
 
   op recAbstractCSE(t: MSTerm, names: List String, bindable?: Bool, spc: Spec)
-    : MSTerm * List MSTerm * List MSTerm * List MSTerm * List String =
+    : MSTerm * MSTerms * MSTerms * MSTerms * List String =
     case getCurryArgs t of
       | Some(f,c_args) ->
         %% Don't wan't to abstract partial applications

@@ -500,7 +500,7 @@ def resolveNameFromType(env, trm, id, ty, pos) =
     | None -> undeclaredName (env, trm, id, ty, pos)
     | _    -> ambiguousCons (env, trm, id, ty, pos)
 
-op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): List MSTerm =
+op findConstrsWithName(env: LocalEnv, trm: MSTerm, id: Id, ty: MSType, pos: Position): MSTerms =
   case mkEmbed0 (env, ty, id) of
     | Some id -> [Fun (Embed (id, false), checkType0 (env, ty), pos)]
     | None -> 

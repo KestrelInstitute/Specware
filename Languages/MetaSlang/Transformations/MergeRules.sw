@@ -227,7 +227,7 @@ op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTe
   }
  
 type ExVars = List (AVar Position)
-type DNFRep = (List (List MSTerm))
+type DNFRep = (List MSTerms)
 %% Remove existential quantifers, flatten to DNF.
 op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFRep) = 
   % let _ = writeLine ("Normalizing " ^ printTerm tm) in
@@ -290,8 +290,8 @@ op splitConjuncts(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env DNFRep =
 % split on in a DNF representation of postconditions.
 type BTChoice = | BTSplit MSTerm % if-split on the given term.
                 | BTCase (MSTerm * MSType) % Case split on the given term.
-                | BTConstraint (List MSTerm) % poststate constraint, for all disjuncts
-                | BTSingleton (List MSTerm) % There is only one disjunct left.
+                | BTConstraint MSTerms % poststate constraint, for all disjuncts
+                | BTSingleton MSTerms % There is only one disjunct left.
                 | BTDef (MSTerm *  MSType * Id) % Definition, for all disjuncts.
                 | BTTrue DNFRep
                 | BTFalse 
@@ -404,7 +404,7 @@ op simplifyDef(t:MSTerm)(i:DNFRep):DNFRep =
 %%% Simplify a DNF representation with respect to a list of
 %%% post-constraints. Remove all atomic formula that occur in
 %% the list of postconstraints.
-op simplifyPostConstraints(i:DNFRep)(cs:List MSTerm):DNFRep =
+op simplifyPostConstraints(i:DNFRep)(cs:MSTerms):DNFRep =
    map (fn d -> filter (fn c -> ~ (inTerm? c cs)) d) i
 
  
@@ -423,7 +423,7 @@ op valuation(i:DNFRep):Option Boolean =
 %%
 %% The returned predicate is the **negation** of the precondition that the 
 %% function must have.
-op bt(assumptions:List MSTerm)(vars:List Id)(obs:List Id)(stateVar:Id)(inputs:DNFRep):(MSTerm * DNFRep) =
+op bt(assumptions:MSTerms)(vars:List Id)(obs:List Id)(stateVar:Id)(inputs:DNFRep):(MSTerm * DNFRep) =
   % let _ = writeLine "Under assumptions:" in
   % let _ = writeLine (printDNF [assumptions]) in
   % let _ = writeLine "With  inputs" in
@@ -517,7 +517,7 @@ op isTupleType?(ty:MSType):Bool =
     | Product _ -> true
     | _ -> false
 
-op tupleTypes(ty:MSType):List MSType =
+op tupleTypes(ty:MSType): MSTypes =
   case ty of
     | Product (fields,_) -> map (fn (_,t) -> t) fields
     | _ -> []
@@ -645,7 +645,7 @@ op removePatternVars (vars:List Id)(pat:Option MSPattern):List Id =
 
 
 % Remove duplicate elements (inefficient, as is most stuff in this module ..)
-op nub (l:List MSTerm):List MSTerm = nubBy equalTerm? l
+op nub (l:MSTerms):MSTerms = nubBy equalTerm? l
 
 op [a] nubBy (p:a * a -> Boolean)(l:List a):List a =
   case l of 
@@ -663,7 +663,7 @@ op [a] catOptions(l:List (Option a)):List a =
 
 % Find all terms in common. Corresponds to intersection of a
 % set of sets.
-op commons (l:DNFRep):List MSTerm =
+op commons (l:DNFRep):MSTerms =
   case l of
     | [] -> []
     | [p] -> p
@@ -677,7 +677,7 @@ op [a] inBy? (p:(a*a)->Boolean)(e:a)(l:List a):Boolean =
 
 
 %%% Set membership, specialized to using the 'equalTerm?' relation.
-op inTerm? (c:MSTerm) (l:List MSTerm):Boolean = inBy? equalTerm? c l
+op inTerm? (c:MSTerm) (l:MSTerms):Boolean = inBy? equalTerm? c l
 
 
 op printIt ((vs,xs) : (ExVars * DNFRep)):() =
@@ -699,7 +699,7 @@ op guard(p:Bool)(msg:String):Env () =
 %%%%%%%%%%%%%%%
 
 %% Code for converting a CNF representation to DNF.
-op cnf2Dnf (i:List (List MSTerm)):DNFRep =
+op cnf2Dnf (i:List MSTerms):DNFRep =
    case i of
      | [] -> [[]]
      | c::cs -> let tl = cnf2Dnf cs 
@@ -708,19 +708,19 @@ op cnf2Dnf (i:List (List MSTerm)):DNFRep =
 
 %% Given two lists of atomic formulae, find all formula that
 %% occur positively in on list and negatively in the other.
-op complements (ps:List MSTerm) (qs:List MSTerm):List MSTerm =
+op complements (ps:MSTerms) (qs:MSTerms):MSTerms =
   filter (fn p -> inTerm? (negateTerm p) qs) ps
 
 %% Perform one step multi-resolution between a pair of disjunctions of
 %% formulas.
-op resolution (ps:List MSTerm) (qs:List MSTerm):Option (List MSTerm) =
+op resolution (ps:MSTerms) (qs:MSTerms):Option MSTerms =
     let cs = complements ps qs in
     let cs' = cs ++ map negateTerm cs in
     if empty? cs then None 
     else Some ( filter (fn x -> ~ (inTerm? x cs) ) (ps ++ qs))
 
 %% Resolve one disjunction of formulas, ps,  with each of the disjunctions in qs.
-op resolveOne (ps:List MSTerm)(qs:List (List MSTerm)) (changed?:Boolean):List (List  MSTerm) =
+op resolveOne (ps:MSTerms)(qs:List MSTerms) (changed?:Boolean):List MSTerms =
   case qs of 
     | [] | changed? -> []
     | [] | ~ changed? -> [ps]
@@ -731,7 +731,7 @@ op resolveOne (ps:List MSTerm)(qs:List (List MSTerm)) (changed?:Boolean):List (L
 
 %% Given a ***CNF*** representation of formulas, perform resolution to
 %% simplify them.
-op resolveAll (ps:List (List MSTerm)):List (List MSTerm) =
+op resolveAll (ps:List MSTerms):List MSTerms =
   case ps of
     | [] -> ps
     | (p::pss) -> resolveOne p (resolveAll pss) false
@@ -774,25 +774,25 @@ op andDNF (p1:DNFRep) (p2:DNFRep):DNFRep =
 
 
 % Construct an n-ary and. Assume t is nonempty.
-op ands(t:List MSTerm):MSTerm =
+op ands(t:MSTerms):MSTerm =
    case t of
      | [t] -> t
      | (x::xs) -> Apply (mkAndOp noPos , Record ([("1", x), ("2", ands xs)], noPos), noPos)
 
 % Construct an n-ary or. Assume t is nonempty.
-op ors(t:List MSTerm):MSTerm =
+op ors(t:MSTerms):MSTerm =
    case t of
      | [t] -> t
      | (x::xs) -> Apply (mkOrOp noPos , Record ([("1", x), ("2", ors xs)], noPos), noPos)
 
 
-op mkAnd(t:List MSTerm):MSTerm =
+op mkAnd(t:MSTerms):MSTerm =
    case t of
      | [] -> mkTrue ()
      | [p] -> p
      | _ -> ands t
 
-op mkOr(t:List MSTerm):MSTerm =
+op mkOr(t:MSTerms):MSTerm =
    case t of
      | [] -> mkFalse ()
      | [p] -> p
@@ -802,7 +802,7 @@ op printDNF (x:DNFRep):String = printTerm (dnfToTerm x)
 
 op dnfToTerm(x:DNFRep):MSTerm = mkOr (map mkAnd x)
 
-op negateConjunction(conj:List MSTerm):DNFRep =
+op negateConjunction(conj:MSTerms):DNFRep =
     map (fn c -> [negateTerm c]) conj
 
 

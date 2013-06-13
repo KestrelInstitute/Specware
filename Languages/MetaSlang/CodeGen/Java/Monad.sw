@@ -29,8 +29,8 @@ type State = {
 	      clsDecls           : List ClsDecl,
 	      interfDecls        : List InterfDecl,
 	      arrowclasses       : List Java.ClsDecl,
-	      productTypes       : List MSType,
-	      typeAliases        : List(String * String), % a list of type aliases for recording type definitions of the form "type t1 = t2" where t2 is either a base type or boolean
+	      productTypes       : MSTypes,
+	      typeAliases        : List (String * String), % a list of type aliases for recording type definitions of the form "type t1 = t2" where t2 is either a base type or boolean
 	      primitiveClassName : String,
 	      ignoreSubtypes     : Bool,
 	      verbose            : Bool,

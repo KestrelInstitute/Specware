@@ -113,7 +113,7 @@ StandardSpec qualifying spec
  op mkApplyN      : MSTerm * MSTerm                 -> MSTerm
  def mkApplyN (t1, t2) : MSTerm = ApplyN ([t1, t2],       internalPosition)
 
- def mkList (terms : List MSTerm, pos: Position, element_type: MSType): MSTerm = 
+ def mkList (terms : MSTerms, pos: Position, element_type: MSType): MSTerm = 
   let list_type  = Base (Qualified ("List", "List"),  [element_type], pos) in
   let list1_type = Base (Qualified ("List", "List1"), [element_type], pos) in
   let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),

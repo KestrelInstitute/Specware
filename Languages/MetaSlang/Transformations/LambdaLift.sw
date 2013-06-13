@@ -800,7 +800,7 @@ def patternVars (pat:MSPattern): MSVars =
 
     | _ -> System.fail "Unexpected term"
 
- op makeNewVars (types : List MSType) : MSVars =
+ op makeNewVars (types : MSTypes) : MSVars =
   foldl (fn (vars, typ) ->
            let var = ("llp-" ^ Nat.show (length vars), typ) in
             var :: vars)

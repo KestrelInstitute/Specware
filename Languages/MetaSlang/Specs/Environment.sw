@@ -172,7 +172,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      | Product (fields, _) -> fields
      | mystery -> System.fail ("Could not extract product type: " ^ (printType srt) ^ " yielded " ^ (printType mystery))
       
- op  productTypes: Spec * MSType -> List MSType
+ op  productTypes: Spec * MSType -> MSTypes
  def productTypes (sp, srt1) =
    let srt = unfoldBase(sp,srt1) in
    case stripSubtypes (sp, srt)
@@ -182,7 +182,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
 	 else [srt1]
      | _ -> [srt1]
 
- op recordTypes(sp: Spec, ty1: MSType): List MSType =
+ op recordTypes(sp: Spec, ty1: MSType): MSTypes =
    let ty = unfoldBase(sp, ty1) in
    case stripSubtypes (sp, ty)
     of Product (fields, _) ->
@@ -501,7 +501,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      | Some (TyVar _, _) -> true
      | _                -> false
 
- op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MSTerm, rhs_tm: MSTerm): MSTerm * List MSTerm * MSVars =
+ op mkCondEqualityFromLambdaDef(spc: Spec, lhs_tm: MSTerm, rhs_tm: MSTerm): MSTerm * MSTerms * MSVars =
    case rhs_tm of
      | Lambda ([(pat, _, body)], _) ->
        let (arg_tm, conds, vs) = patternToTermPlusExConds(pat) in

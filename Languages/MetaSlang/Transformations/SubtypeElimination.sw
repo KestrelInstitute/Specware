@@ -108,7 +108,7 @@ SpecNorm qualifying spec
     in
     (doTerm, doType, id)
 
-  op domSubtypePred(ty: MSType, spc: Spec): List MSTerm =
+  op domSubtypePred(ty: MSType, spc: Spec): MSTerms =
     case arrowOpt(spc, ty) of
       | None -> []
       | Some(dom_ty, _) ->
@@ -587,7 +587,7 @@ SpecNorm qualifying spec
       | Op(qid,_) -> qid in? qids
       | _ -> false
 
-  op hoTypesIn(spc: Spec) (ty: MSType): List MSType =
+  op hoTypesIn(spc: Spec) (ty: MSType): MSTypes =
     case unfoldBeforeCoProduct(spc, ty) of
       | Arrow _ -> [ty]
       | TyVar _ -> [ty]
@@ -595,19 +595,19 @@ SpecNorm qualifying spec
       | Subtype(s_ty,_,_) -> hoTypesIn spc s_ty
       | _ -> []
 
-  op hoFunTypes(spc: Spec) (f_ty: MSType): List MSType =
+  op hoFunTypes(spc: Spec) (f_ty: MSType): MSTypes =
     case arrowOpt(spc, f_ty) of
       | Some(dom, rng) ->
         hoTypesIn spc dom ++ hoFunTypes spc rng
       | None -> []
 
-  op hasArgTypeIn?(spc: Spec) (tys: List MSType) (a_ty: MSType): Bool =
+  op hasArgTypeIn?(spc: Spec) (tys: MSTypes) (a_ty: MSType): Bool =
     case unfoldBeforeCoProduct(spc, a_ty) of
       | Product(flds,_)   -> exists? (fn (_,tyi) -> hasArgTypeIn? spc tys tyi) flds
       | Subtype(s_ty,_,_) -> hasArgTypeIn? spc tys s_ty
       | _ -> a_ty in? tys
 
-  op hasFunTypeIn?(spc: Spec) (tys: List MSType) (f_ty: MSType): Bool =
+  op hasFunTypeIn?(spc: Spec) (tys: MSTypes) (f_ty: MSType): Bool =
     case arrowOpt(spc, f_ty) of
       | Some(dom, rng) ->
         hasArgTypeIn? spc tys dom
@@ -1036,7 +1036,7 @@ SpecNorm qualifying spec
          let pred_thm = mkBind(Forall, map (fn (_,Var(v,_)) -> v) tv_map, pred_tm) in
          mkConj[base_thm, pred_thm]) 
 
-  op separateRhsConjuncts (spc: Spec) (tm: MSTerm): List MSTerm =
+  op separateRhsConjuncts (spc: Spec) (tm: MSTerm): MSTerms =
     case tm of
       | Bind(Forall, vs, bod, a) ->
         map (fn b -> Bind(Forall, vs, b, a)) (separateRhsConjuncts spc bod)
@@ -1166,7 +1166,7 @@ def mapSpecHist tsp spc =
              id)
       t
 
-  op hoSubtypePredicateForType(qid as Qualified(q,id): QualifiedId, tys: List MSType, param_ty: MSType, spc: Spec)
+  op hoSubtypePredicateForType(qid as Qualified(q,id): QualifiedId, tys: MSTypes, param_ty: MSType, spc: Spec)
      : Option MSTerm =
     let pred_qid = Qualified(q,id^"_P") in
     case AnnSpec.findTheOp(spc, pred_qid) of

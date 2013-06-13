@@ -65,7 +65,7 @@ op getStateVarAndPostCondn (ty: MSType, state_ty: MSType, spc: Spec)
               | _ -> None)
     | _ -> None
 
-op equalitySpecToLambda(lhs: MSTerm, rhs: MSTerm, lam_pats: List MSPattern, fn_qid: QualifiedId): Option(List MSPattern * MSTerm) =
+op equalitySpecToLambda(lhs: MSTerm, rhs: MSTerm, lam_pats: MSPatterns, fn_qid: QualifiedId): Option (MSPatterns * MSTerm) =
   case lhs of
     | Fun(Op(qid, _), _, _) | qid = fn_qid -> Some (lam_pats, rhs)
     | Apply(n_lhs, arg, _) ->
@@ -94,7 +94,7 @@ op subtypeCondition(p1: MSPattern, p2: MSPattern, spc: Spec): MSTerm =
         trueTerm (zip(prs1, prs2))
     | _ -> trueTerm
 
-op makeSubstFromPatLists(pats1: List MSPattern, pats2: List MSPattern): MSVarSubst =
+op makeSubstFromPatLists(pats1: MSPatterns, pats2: MSPatterns): MSVarSubst =
   flatten (map (fn (p1, p2) -> let Some sbst = matchPatterns(p1, p2) in sbst) (zip(pats1, pats2)))
 
 op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): MSTerm =
@@ -102,7 +102,7 @@ op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): M
     | [] -> error("No theorem matching "^show thm_qid)
     | matching_thms ->
       let (_, _, tvs, bod, _) = last matching_thms in
-      let def extractDefComps(bod: MSTerm): List(List MSPattern * MSTerm * MSTerm) =
+      let def extractDefComps(bod: MSTerm): List (MSPatterns * MSTerm * MSTerm) =
            case bod of
               | Bind(Forall, _, Apply(Fun(Equals,_,_),
                                       Record([(_,lhs),(_,rhs)], _),_),_) ->

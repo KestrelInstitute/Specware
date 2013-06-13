@@ -8,7 +8,7 @@ Infix qualifying spec
  type FixatedTerm = | Infix   MSTerm *  (Associativity * Precedence)
                     | Nonfix  MSTerm
 
- op resolveInfixes : Option LocalEnv * (MSTerm -> FixatedTerm) * Position * List MSTerm -> MSTerm
+ op resolveInfixes : Option LocalEnv * (MSTerm -> FixatedTerm) * Position * MSTerms -> MSTerm
 
  %    fun printTagged(Nonfix t) = TextIO.print("Nonfix "^AstPrint4.printTerm t^"\n")
  %      | printTagged(Infix(t,(assoc,p))) = 

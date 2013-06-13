@@ -55,9 +55,9 @@
 PatternMatch qualifying spec
  import ArityNormalize
  import Simplify
-   
- type PMRules = List PMRule                       % NOTE: not the same as MSRules (aka Match)
- type PMRule  = List MSPattern * MSTerm * MSTerm  % Note: not the same as MSRule, has list of patterns
+
+ type PMRules = List PMRule                    % NOTE: not the same as MSRules (aka Match)
+ type PMRule  = MSPatterns * MSTerm * MSTerm   % Note: not the same as MSRule, has list of patterns
 
  type Context = {counter     : Ref Nat,        % counter for variable numbering
                  spc         : Spec,
