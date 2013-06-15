@@ -1437,9 +1437,6 @@ op addList(S: StringSet, l: List String): StringSet =
    in
      aux tm
 
- op builtInLispType? (qid : QualifiedId) : Bool = false
- op builtInLispOp?   (qid : QualifiedId) : Bool = false
-
  op maybeRemoveUnusedOps (slice? : Bool) (spc : Spec) : Spec =
   if slice? then 
     sliceSpecForCode (spc, 
@@ -1525,7 +1522,7 @@ op addList(S: StringSet, l: List String): StringSet =
    let spc = expandRecordMerges                             spc in %  (9)
    let _   = showSpecIfVerbose "expandRecordMerges"         spc in
 
-   let spc = arityNormalize                                 spc in % (10)
+   let spc = SpecTransform.arityNormalize                   spc in % (10)
    let _   = showSpecIfVerbose "arityNormalize"             spc in
 
    spc

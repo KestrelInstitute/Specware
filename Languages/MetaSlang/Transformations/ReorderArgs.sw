@@ -19,12 +19,6 @@ ReviseOps qualifying spec
  %% utilities
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op builtInOp? (qid : QualifiedId) : Bool =
-  SpecToLisp.builtInLispOp? qid ||
-  printPackageId(qid, "") in? SpecToLisp.SuppressGeneratedDefuns ||
-  CG.builtinCOp?            qid ||
-  JGen.builtinTypeOp        qid
-
  op randomReorderings (n : Nat) : Reorderings =
   let
     def prepend_new_id (taken : List Nat) : List Nat =

@@ -32,18 +32,6 @@ SliceSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- %% maybe move removeTheorems into scubSpec under a boolean flag...
- op SpecTransform.removeTheorems (spc : Spec) : Spec = 
-  %% theorems are irrelevant for code generation
-  let
-    def filter el =
-      case el of
-        | Property _ -> None
-        | _ -> Some el
-  in
-  setElements (spc, mapPartialSpecElements filter spc.elements)
-
-
  op scrubSpec (spc : Spec, op_set : QualifierSet, type_set : QualifierSet) : Spec =
   let new_types =
       mapiPartialAQualifierMap (fn (q, id, v) ->
@@ -394,12 +382,124 @@ SliceSpec qualifying spec
   : Env (Spec * Bool) =
   return (sliceSpecForCode (spc, root_ops, root_types, cut_op?, cut_type?), tracing?)
 
- op CG.builtinCType? : QualifiedId -> Bool
- op CG.builtinCOp?   : QualifiedId -> Bool
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% If these predicates are true, don't include the indicated op or type when 
+%% slicing, and don't recur through their definitions.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op SpecTransform.sliceSpec (spc        : Spec)
-                            (root_ops   : QualifiedIds)
-                            (root_types : QualifiedIds)
-  : Spec =
-  sliceSpecForCode (spc, root_ops, root_types, CG.builtinCOp?, CG.builtinCType?)
+%% ========
+%%  Lisp
+%% ========
+
+op builtInLispOp?   (qid : QualifiedId) : Bool = 
+ printPackageId(qid, "") in? SpecToLisp.SuppressGeneratedDefuns
+
+op builtInLispType? (qid : QualifiedId) : Bool = 
+ false
+
+op SpecTransform.sliceSpecForLisp (spc             : Spec)
+                                  (root_ops        : QualifiedIds)
+                                  (root_types      : QualifiedIds)
+ : Spec =
+ sliceSpecForCode (spc, root_ops, root_types, builtInLispOp?, builtInLispType?)
+
+%% ========
+%%  C
+%% ========
+
+op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
+ case q of
+
+   %% Base specs:
+   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
+   | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
+                             "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
+                             "isucc", "ipred", "positive?", "negative?", "zero", "one"]
+   | "IntegerAux" -> id in? ["-"]  % unary minus
+   | "Nat"        -> id in? ["show", "toString", "natToString", "stringToNat"]
+   | "Char"       -> id in? ["show", "toString", "chr", "ord", "compare",
+                             "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
+                             "toUpperCase", "toLowerCase"]
+   | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode",
+                             "concat", "subFromTo", "substring", "@", "sub"]
+   | "System"     -> id in? ["writeLine", "toScreen"]
+
+   %% Non-constructive:
+   | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
+   | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
+
+   %% Explicitly handcoded:
+   | "Handcoded"  -> true
+
+   | _ -> false
+
+op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
+ case q of
+   | "Boolean"    -> id in? ["Bool"]
+   | "Integer"    -> id in? ["Int", "Int0"]
+   | "Nat"        -> id in? ["Nat"]
+   | "Char"       -> id in? ["Char"]
+   | "String"     -> id in? ["String"]
+   | _ -> false
+      
+op SpecTransform.sliceSpecForC (spc             : Spec)
+                               (root_ops        : QualifiedIds)
+                               (root_types      : QualifiedIds)
+ : Spec =
+ sliceSpecForCode (spc, root_ops, root_types, builtinCOp?, builtinCType?)
+
+%% ========
+%%  Java
+%% ========
+
+op builtinJavaOp? (Qualified (q, id) : QualifiedId) : Bool =
+ case q of
+
+   %% Base specs:
+   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
+   | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
+                             "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
+                             "isucc", "ipred", "positive?", "negative?", "zero", "one"]
+   | "IntegerAux" -> id in? ["-"]  % unary minus
+   | "Nat"        -> id in? ["show", "toString", "natToString", "stringToNat"]
+   | "Char"       -> id in? ["show", "toString", "chr", "ord", "compare",
+                             "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
+                             "toUpperCase", "toLowerCase"]
+   | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode",
+                             "concat", "subFromTo", "substring", "@", "sub"]
+   | "System"     -> id in? ["writeLine", "toScreen"]
+
+   %% Non-constructive
+   | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
+   | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
+
+   %% Explicitly handcoded
+   | "Handcoded"  -> true
+
+   | _ -> false
+
+op builtinJavaType? (Qualified (q, id) : QualifiedId) : Bool =
+  case q of
+    | "Boolean"    -> id in? ["Bool"]
+    | "Integer"    -> id in? ["Int", "Int0"]
+    | "Nat"        -> id in? ["Nat", "PosNat"]
+    | "Char"       -> id in? ["Char"]
+    | "String"     -> id in? ["String"]
+    | _ -> false
+
+op SpecTransform.sliceSpecForJava (spc             : Spec)
+                                  (root_ops        : QualifiedIds)
+                                  (root_types      : QualifiedIds)
+ : Spec =
+ sliceSpecForCode (spc, root_ops, root_types, builtinJavaOp?, builtinJavaType?)
+
+%% ==========
+%%  Generic
+%% ==========
+
+op builtInOp? (qid : QualifiedId) : Bool =
+  builtInLispOp? qid ||   
+  builtinCOp?    qid ||
+  builtinJavaOp? qid 
+
 }

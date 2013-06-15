@@ -40,9 +40,6 @@ ArityNormalize qualifying spec
  % import StringUtilities          % imported by SpecEnvironment
  % import MetaSlang               % imported by SpecEnvironment
 
- op arityNormalize : Spec -> Spec
-
-
 (*
  * The arity of a match is some n >= 0,
  * when all patterns in the match are records of arity n,
@@ -231,6 +228,25 @@ ArityNormalize qualifying spec
            mkLambda(mkRecordPat(map (fn (l,v) -> (l, mkVarPat v)) vars),
                     mkApply(term, mkRecord(map (fn (l,v) -> (l, mkVar v)) vars))))))
 
+ op SpecTransform.etaExpandDefs(spc: Spec): Spec =
+  setOps (spc, 
+            mapOpInfos (fn info -> 
+			let pos = termAnn info.dfn in
+                        % let _ = writeLine("an: "^printQualifiedId(head info.names)) in
+			let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+			let new_defs =
+			    map (fn dfn ->
+				 let pos = termAnn dfn in
+				 let (tvs, srt, term) = unpackFirstTerm dfn in
+				 let usedNames = addLocalVars (term, empty) in
+				 let tm = etaExpand (spc, usedNames, srt, term) in
+				 maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
+			        old_defs
+			in
+			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+			info << {dfn = new_dfn})
+	               spc.ops)
+
  def simplePattern pattern = 
       case pattern
 	of VarPat _ -> true
@@ -394,7 +410,7 @@ ArityNormalize qualifying spec
 % This one ignores arity normalization in types, axioms and theorems.
 %     
 
-  def arityNormalize spc =
+ op SpecTransform.arityNormalize (spc : Spec) : Spec =
     let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
             mapOpInfos (fn info -> 

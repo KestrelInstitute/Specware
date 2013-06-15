@@ -19,6 +19,12 @@ Debugging qualifying spec
            (fn pat -> writeLine (printPattern       pat)))
           spc
 
+ op maybeShowSpecIfVerbose (pred? : Bool) (msg : String) (spc : Spec) : () =
+  if pred? then
+    showSpecIfVerbose msg spc
+  else
+    ()
+
  op showSpecIfVerbose (msg : String) (spc : Spec) : () =
   if verbosity > 0 then 
     let _ = writeLine "--------------------" in

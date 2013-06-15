@@ -12,16 +12,18 @@ TranslationBuiltIn.mkFail (for when no case applies) translates to an error.00
 
 *)
 
-op  translateMatchJava: Spec -> Spec
-def translateMatchJava spc =
-  % opt_counter is added so Accord can avoid resetting counter over an accord program
-  let spc = translateMatch spc in
-  mapSpec (fn t -> case t of
-	             | Let([(VarPat(v,_),vt as (Apply(Fun(Select _,_,_),_,_)))], body, _) ->
-	               substitute(body,[(v,vt)])
-		     | _ -> t,
-	   id,id)
-    spc
+(*
+ * op  translateMatchJava: Spec -> Spec
+ * def translateMatchJava spc =
+ *   % opt_counter is added so Accord can avoid resetting counter over an accord program
+ *   let spc = translateMatch spc in
+ *   mapSpec (fn t -> case t of
+ * 	             | Let([(VarPat(v,_),vt as (Apply(Fun(Select _,_,_),_,_)))], body, _) ->
+ * 	               substitute(body,[(v,vt)])
+ * 		     | _ -> t,
+ * 	   id,id)
+ *     spc
+ *)
 
 op  parseCoProductCase: Spec -> MSTerm -> Option(MSTerm * List (Id * MSTerm) * Option MSTerm * Bool)
 

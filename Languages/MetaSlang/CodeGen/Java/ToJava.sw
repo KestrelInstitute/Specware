@@ -914,30 +914,11 @@ op printOpNms(spc: Spec): String =
   let ops = opsAsList spc in
   "("^show(length ops)^")"^foldl (fn (s,o) -> s^" "^o.2) "" ops
 
-op etaExpandDefs(spc: Spec): Spec =
-  setOps (spc, 
-            mapOpInfos (fn info -> 
-			let pos = termAnn info.dfn in
-                        % let _ = writeLine("an: "^printQualifiedId(head info.names)) in
-			let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-			let new_defs =
-			    map (fn dfn ->
-				 let pos = termAnn dfn in
-				 let (tvs, srt, term) = unpackFirstTerm dfn in
-				 let usedNames = addLocalVars (term, empty) in
-				 let tm = etaExpand (spc, usedNames, srt, term) in
-				 maybePiTerm (tvs, TypedTerm (tm, srt, pos)))
-			        old_defs
-			in
-			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
-			info << {dfn = new_dfn})
-	               spc.ops)
-
 %op JGen.transformSpecForJavaCodeGen: Spec -> Spec -> Spec
 def JGen.transformSpecForJavaCodeGen basespc spc =
   %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
-  let spc = substBaseSpecsJ spc in
+  let spc = substBaseSpecs spc in
   let spc = normalizeTopLevelLambdas spc in
   let spc = instantiateHOFns spc in
   let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
@@ -946,7 +927,7 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   % let _ = writeLine("ops1: "^printOpNms spc) in
   let spc = addMissingFromBase(basespc,spc,builtinTypeOp) in
   % let _ = writeLine("ops2: "^printOpNms spc) in
-  let spc = substBaseSpecsJ spc in
+  let spc = substBaseSpecs spc in
   % let _ = writeLine("ops3: "^printOpNms spc) in
   let spc = lambdaLiftWithImportsSimulatingClosures spc in
   let spc = unfoldTypeAliases spc in
@@ -957,7 +938,7 @@ def JGen.transformSpecForJavaCodeGen basespc spc =
   %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
 
   let spc = letWildPatToSeq spc in
-  let spc = translateMatchJava spc in
+  let spc = translateMatch spc in
   %let _ = toScreen(printSpecFlat spc) in
   let spc = simplifySpec spc in
   let spc = etaExpandDefs spc in
