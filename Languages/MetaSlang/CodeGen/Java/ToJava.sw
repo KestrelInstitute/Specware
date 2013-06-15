@@ -12,11 +12,8 @@ import /Languages/Java/JavaPrint
 
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
-import /Languages/MetaSlang/Specs/SubtractSpec
-import /Languages/MetaSlang/CodeGen/AddMissingFromBase
-import /Languages/MetaSlang/CodeGen/IdentifyIntTypes
-
 import Monad
+
 
 type ArrowType = MSTypes * MSType
 
@@ -886,27 +883,6 @@ def JGen.printJavaFile(jfile as (filename,jspc)) =
     toFile (filename, t)
 
 % --------------------------------------------------------------------------------
-
-op builtinTypeOp: QualifiedId -> Bool
-def builtinTypeOp(qid) =
-  let Qualified (q, id) = qid in
-  case q of
-    | "Nat"        -> id in? ["Nat", "PosNat", "toString", "natToString", "show", "stringToNat"]
-    | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<", "<=", ">", ">=", "toString", "intToString", 
-                              "show", "stringToInt", "positive?", "one", "zero", "isucc", "positive?", "negative?"]
-    | "IntegerAux" -> id in? ["-"]  % unary minus
-    | "Boolean"    -> id in? ["Bool", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-    | "Char"       -> id in? ["Char", "chr", "ord", 
-                              "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
-                              "toUpperCase", "toLowerCase", "toString"]
-    | "String"     -> id in? ["String", "concat", "++", "^", "newline", "length", "subFromTo", "substring", "@", "sub", "<"]
-    | "System"     -> id in? ["writeLine", "toScreen"]
-      %% Non-constructive
-    | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
-    | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
-    | _ -> false
-
-% --------------------------------------------------------------------------------
 def printOriginalSpec? = false
 def printTransformedSpec? = false
 
@@ -914,40 +890,216 @@ op printOpNms(spc: Spec): String =
   let ops = opsAsList spc in
   "("^show(length ops)^")"^foldl (fn (s,o) -> s^" "^o.2) "" ops
 
-%op JGen.transformSpecForJavaCodeGen: Spec -> Spec -> Spec
-def JGen.transformSpecForJavaCodeGen basespc spc =
-  %let _ = writeLine("transformSpecForJavaCodeGen...") in
-  let _ = if printOriginalSpec? then printSpecFlatToTerminal spc else () in
-  let spc = substBaseSpecs spc in
-  let spc = normalizeTopLevelLambdas spc in
-  let spc = instantiateHOFns spc in
-  let _ = if printTransformedSpec? then printSpecFlatToTerminal spc else () in
-  % let _ = writeLine("ops0: "^printOpNms spc) in
-  let spc = subtractSpec spc basespc in
-  % let _ = writeLine("ops1: "^printOpNms spc) in
-  let spc = addMissingFromBase(basespc,spc,builtinTypeOp) in
-  % let _ = writeLine("ops2: "^printOpNms spc) in
-  let spc = substBaseSpecs spc in
-  % let _ = writeLine("ops3: "^printOpNms spc) in
-  let spc = lambdaLiftWithImportsSimulatingClosures spc in
-  let spc = unfoldTypeAliases spc in
-  let spc = expandRecordMerges spc in
-  let spc = identifyIntTypes spc in
+op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
 
-  let spc = poly2mono(spc,false) in % false means we do not keep declarations for polymorphic types and ops in the new spec
-  %% Specs from here on may be evil -- they can have terms that refer to undeclared ops!
+ let _ = showIfVerbose ["---------------------------------------------",
+                        "transforming spec for Java code generation...",
+                        "---------------------------------------------"]
+ in
+ let _ = showSpecIfVerbose "Original"                          spc in
 
-  let spc = letWildPatToSeq spc in
-  let spc = translateMatch spc in
-  %let _ = toScreen(printSpecFlat spc) in
-  let spc = simplifySpec spc in
-  let spc = etaExpandDefs spc in
-  %let _ = toScreen(printSpecFlat spc) in
-  let spc = distinctVariable(spc) in
-  % let _ = toScreen("\n================================\n") in
-  % let _ = toScreen(printSpecFlat spc) in
-  % let _ = toScreen("\n================================\n") in
-  spc
+ %% ==========================================================================================
+ %% fetch toplevel types and op early, to avoid including anything incidentally added later
+ %% ==========================================================================================
+
+ let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts spc in 
+ let _ = showIfVerbose ["toplevel ops: ", 
+                        anyToString top_ops, 
+                        "------------------------------------------"]
+ in
+
+ %% ==========================================================================================
+ %%  (1) refine (possibly unused) ops using List_Executable.sw, String_Executable.sw, etc.
+ %% ==========================================================================================
+
+ %% substBaseSpecs should preceed other transforms, so those other transforms can apply to 
+ %% the substituted definitions
+
+ let spc = SpecTransform.substBaseSpecs                            spc in 
+ let _   = showSpecIfVerbose "substBaseSpecs"                      spc in 
+
+ %% ==========================================================================================
+ %%  (2) might as well remove theorems early [could be done at any time, or never]
+ %% ==========================================================================================
+
+ let spc = SpecTransform.removeTheorems                            spc in 
+ let _   = showSpecIfVerbose "removeTheorems"                      spc in 
+
+ %% ==========================================================================================
+ %%  (3) slice unused types and ops early to minimize wasted motion 
+ %% ==========================================================================================
+
+ let spc = SpecTransform.sliceSpecForJava                          spc top_ops top_types in
+ let _ = showSpecIfVerbose "sliceSpecForC[1]"                      spc in 
+  
+ %% ==========================================================================================
+ %%  (4) op f: A -> B -> C  ==>  op f_1_1: A * B -> C, etc.
+ %% ==========================================================================================
+
+ let spc = SpecTransform.removeCurrying                            spc in 
+ let _   = showSpecIfVerbose "removeCurrying"                      spc in
+  
+ %% ==========================================================================================
+ %%  (5) convert patterned lambdas into case expressions
+ %% ==========================================================================================
+
+ let spc = SpecTransform.normalizeTopLevelLambdas                  spc in 
+ let _   = showSpecIfVerbose "normalizeTopLevelLambdas"            spc in
+  
+ %% ==========================================================================================
+ %%  (6) instantiate higher order functions
+ %%
+ %%      calls normalizeCurriedDefinitions and simplifySpec 
+ %%      should precede lambdaLift, poly2mono
+ %% ==========================================================================================
+
+ let spc = SpecTransform.instantiateHOFns                          spc in 
+ let _   = showSpecIfVerbose "instantiateHOFns"                    spc in
+  
+ %% ==========================================================================================
+ %%  (7) should follow removeCurrying and instantiateHOFns, since less graceful implementation
+ %% ==========================================================================================
+
+ let spc = lambdaLiftWithImportsSimulatingClosures                 spc in 
+ let _   = showSpecIfVerbose "lambdaLiftWithImports"               spc in
+  
+ %% ==========================================================================================
+ %%  (8) Variant of Wadler's pattern matching compiler 
+ %% ==========================================================================================
+
+ %% Currently, translateMatch introduces Select's and parallel Let bindings,
+ %% which would confuse other transforms.  So until that is changed, 
+ %% translateMatch should be done late in the transformation sequence.
+ %%
+ %% We also might wish to convert matches to case or typecase expressions,
+ %% in which case not all matches would be transformed to if statements.
+
+ %% This may add calls to polymorphic fns, so must precede poly2mono.
+
+ let spc = SpecTransform.translateMatch                            spc in 
+ let _   = showSpecIfVerbose "translateMatch"                      spc in
+  
+ %% ==========================================================================================
+ %%  (9) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
+ %% ==========================================================================================
+
+ let spc = SpecTransform.expandRecordMerges                        spc in 
+ let _   = showSpecIfVerbose "translateRecordMergeInSpec"          spc in
+  
+ %% ==========================================================================================
+ %% (10) transforms "let _ = t1 in t2" into "(t1;t2)"
+ %% ==========================================================================================
+
+ let spc = SpecTransform.letWildPatToSeq                           spc in 
+ let _   = showSpecIfVerbose "letWildPatToSeq"                     spc in
+  
+ %% ==========================================================================================
+ %% (11) 
+ %% ==========================================================================================
+
+ let spc = SpecTransform.unfoldTypeAliases                         spc in
+ let _   = showSpecIfVerbose "unfoldTypeAliases"                   spc in
+
+ %% ==========================================================================================
+ %% (12) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+ %% ==========================================================================================
+
+ let spc = SpecTransform.expandTypeDefs                            spc in 
+ let _   = showSpecIfVerbose "expandTypeDefs"                      spc in
+  
+ %% ==========================================================================================
+ %% (13) should preceed poly2mono, to avoid introducing spurious names such as List_List1_Nat__Cons
+ %% ==========================================================================================
+
+ %%  let spc = identifyIntTypes spc in
+ let spc = SpecTransform.removeNonNatSubtypes                      spc in 
+ let _   = showSpecIfVerbose "removeNonNatSubtypes"                spc in
+  
+ %% ==========================================================================================
+ %% (14) turn bodies of lambda's with restricted var types into case expressions 
+ %% ==========================================================================================
+
+ let spc = SpecTransform.liftUnsupportedPatterns                   spc in 
+ let _   = showSpecIfVerbose "liftUnsupportedPatterns"             spc in
+
+ %% ==========================================================================================
+ %% (15) After this is called, we can no longer reason about polymorphic types such as List(a)
+ %% ==========================================================================================
+
+ let spc = SpecTransform.poly2monoAndDropPoly                      spc in 
+ let _   = showSpecIfVerbose "poly2monoAndDropPoly"                spc in
+  
+ %% ==========================================================================================
+ %% (16) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
+ %% ==========================================================================================
+
+ let spc = SpecTransform.simplifySpec                              spc in 
+ let _   = showSpecIfVerbose "simplifySpec"                        spc in
+  
+ %% ==========================================================================================
+ %% (17) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
+ %% ==========================================================================================
+
+ let spc = SpecTransform.addEqOps                                  spc in 
+ let _   = showSpecIfVerbose "addEqOps"                            spc in
+  
+ %% ==========================================================================================
+ %% (18) remove newly introduced but unused ops (mainly eq ops) 
+ %% ==========================================================================================
+
+ let spc = SpecTransform.sliceSpecForC                             spc top_ops top_types in 
+ let _   = showSpecIfVerbose "sliceSpecForC[2]"                    spc in 
+  
+ %% ==========================================================================================
+ %% (19) these ops won't survive slicing, so this must follow removeUnusedOps
+ %% ==========================================================================================
+
+ let spc = SpecTransform.addTypeConstructors                       spc in 
+ let _   = showSpecIfVerbose "addTypeConstructors"                 spc in
+  
+ %% ==========================================================================================
+ %% (20) change def with multiple args to decompose single arg when decl has one (product) arg
+ %% ==========================================================================================
+
+ let spc = SpecTransform.conformOpDecls                            spc in 
+ let _   = showSpecIfVerbose "conformOpDecls"                      spc in
+  
+ %% ==========================================================================================
+ %% (21) Lisp: arityNormalize, Java: etaExpandDefs
+ %% ==========================================================================================
+
+ let spc = SpecTransform.etaExpandDefs                             spc in
+ let _   = showSpecIfVerbose "etaExpandDefs"                       spc in
+
+ %% ==========================================================================================
+ %% (22) change call with multiple args to compose single arg when decl has one (product) arg
+ %% ==========================================================================================
+
+ let spc = SpecTransform.adjustAppl                                spc in 
+ let _   = showSpecIfVerbose "adjustAppl"                          spc in
+  
+ %% ==========================================================================================
+ %% (23) lambda lift again ??
+ %% ==========================================================================================
+
+ let spc = SpecTransform.lambdaLiftWithImports                     spc in 
+ let _   = showSpecIfVerbose "lambdaLiftWithImports[2]"            spc in
+
+ %% ==========================================================================================
+ %% (24) expand pattern matches again ??
+ %% ==========================================================================================
+
+ let spc = SpecTransform.translateMatch                            spc in 
+ let _   = showSpecIfVerbose "translateMatch[2]"                   spc in
+
+ %% ==========================================================================================
+ %% (25) 
+ %% ==========================================================================================
+
+ let spc = SpecTransform.distinctVariable                          spc in
+ let _   = showSpecIfVerbose "distinctVariable"                    spc in
+
+ spc
 
 %op JGen.generateJavaCodeFromTransformedSpec: Spec -> JSpec
 def JGen.generateJavaCodeFromTransformedSpec spc =
@@ -985,7 +1137,7 @@ def JGen.generateJavaCodeFromTransformedSpecM spc =
 op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
-  let spc = JGen.transformSpecForJavaCodeGen basespc spc in
+  let spc = SpecTransform.transformSpecForJavaCodeGen spc in
   let jspc = generateJavaCodeFromTransformedSpec spc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = List.app printJavaFile jfiles in

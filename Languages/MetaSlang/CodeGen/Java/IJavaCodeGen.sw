@@ -31,11 +31,6 @@ spec
   %% OPERATIONS
 
   (**
-   * performs the transformation as required by the Java code generation
-   *)
-  op transformSpecForJavaCodeGen: (* basespec: *) Spec -> (* spc: *) Spec -> Spec
-
-  (**
    * takes a spec which is supposed to be the result of the above
    * transformSpecForJavaCodeGen operation and generates a Java spec
    * from it
