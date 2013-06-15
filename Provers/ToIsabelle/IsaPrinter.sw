@@ -20,6 +20,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/AbstractSyntax/PathTerm
  import /Languages/MetaSlang/Transformations/RewriteRules
 % import /Languages/MetaSlang/Transformations/ArityNormalize
+ import /Languages/MetaSlang/Transformations/NormalizeTopLevelLambdas
 
  op addObligations?: Bool = true
  op lambdaLift?: Bool     = true

@@ -1,7 +1,7 @@
 Prover qualifying spec
 
-  import ../Specs/MSTerm
-  import /Languages/Java/DistinctVariable
+  import /Languages/MetaSlang/Specs/MSTerm
+  import /Languages/MetaSlang/Transformations/DistinctVariable
   import /Library/Legacy/DataStructures/ListPair
   import /Library/Legacy/DataStructures/SplaySet
   import Simplify

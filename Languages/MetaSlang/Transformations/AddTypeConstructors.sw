@@ -1,6 +1,7 @@
 AddTypeConstructorsToSpec qualifying spec
 
- import CodeGenUtilities
+import /Languages/MetaSlang/CodeGen/CodeGenUtilities
+
 
  (**
   * adds for each co-product type the constructor ops for each element.

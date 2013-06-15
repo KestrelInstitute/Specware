@@ -1,24 +1,7 @@
 CG qualifying spec
 
- import /Languages/MetaSlang/Transformations/PatternMatch
- import /Languages/MetaSlang/Transformations/SliceSpec
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
- import /Languages/MetaSlang/CodeGen/AddMissingFromBase
- import /Languages/MetaSlang/CodeGen/Poly2Mono
- import /Languages/MetaSlang/CodeGen/LetWildPatToSeq
- import /Languages/MetaSlang/CodeGen/AddEqOpsToSpec
- import /Languages/MetaSlang/CodeGen/AddTypeConstructorsToSpec
- import /Languages/MetaSlang/CodeGen/ConformOpDecls
- import /Languages/MetaSlang/CodeGen/AdjustAppl
- import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
- import /Languages/MetaSlang/CodeGen/DebuggingSupport
- import /Languages/MetaSlang/CodeGen/LiftUnsupportedPatterns
- 
- import /Languages/MetaSlang/Transformations/RemoveCurrying
- import /Languages/MetaSlang/Transformations/LambdaLift
- import /Languages/MetaSlang/Transformations/InstantiateHOFns%
- import /Languages/MetaSlang/Transformations/RecordMerge
- import /Languages/MetaSlang/Transformations/TheoryMorphism
  
  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
  import /Languages/I2L/CodeGen/C/I2LToC              % I2L       =codegen=> C

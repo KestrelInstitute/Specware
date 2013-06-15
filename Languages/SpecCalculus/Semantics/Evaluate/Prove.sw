@@ -1,18 +1,14 @@
 SpecCalc qualifying spec 
   import UnitId
-  %import SpecUnion
+
+  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
   import /Languages/Snark/SpecToSnark
   import /Provers/DP/ToFourierMotzkin
 
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import /Languages/MetaSlang/Transformations/RemoveQuotient
-
- %import /Languages/MetaSlang/CodeGen/CodeGenTransforms
-  import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases
   import /Languages/MetaSlang/CodeGen/AddMissingFromBase
-  import /Languages/MetaSlang/CodeGen/Poly2Mono                  % poly2monoForSnark
-  import /Languages/MetaSlang/CodeGen/AddTypeConstructorsToSpec  % addTypeConstructorsToSpecForSnark, addProductTypeConstructorsToSpec, addProductAccessorsToSpec
 
   import /Library/IO/Primitive/IO
   import UnitId/Utilities                                    % for uidToString, if used...

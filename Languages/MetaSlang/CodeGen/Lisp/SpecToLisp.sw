@@ -1,17 +1,11 @@
 (* Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl *)
 
 SpecToLisp qualifying spec
- import /Languages/MetaSlang/Transformations/PatternMatch
- import /Languages/MetaSlang/Transformations/InstantiateHOFns
- import /Languages/MetaSlang/Transformations/LambdaLift
- import /Languages/MetaSlang/Transformations/RemoveCurrying
-% import /Languages/MetaSlang/Transformations/RecordMerge
- import /Languages/MetaSlang/Transformations/SliceSpec
- import /Languages/MetaSlang/Transformations/Globalize
+
+ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
  import /Languages/MetaSlang/Transformations/MetaTransform
-%import /Languages/MetaSlang/CodeGen/CodeGenTransforms
- import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
- import /Languages/MetaSlang/CodeGen/DebuggingSupport
+ import /Languages/MetaSlang/Transformations/Globalize
  import /Languages/Lisp/Lisp
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
@@ -1442,16 +1436,6 @@ op addList(S: StringSet, l: List String): StringSet =
 	  | _                      -> false
    in
      aux tm
-
- op removeTheorems (spc : Spec) : Spec = 
-  %% theorems are irrelevant for code generation
-  let
-    def filter el =
-      case el of
-        | Property _ -> None
-        | _ -> Some el
-  in
-  setElements (spc, mapPartialSpecElements filter spc.elements)
 
  op builtInLispType? (qid : QualifiedId) : Bool = false
  op builtInLispOp?   (qid : QualifiedId) : Bool = false

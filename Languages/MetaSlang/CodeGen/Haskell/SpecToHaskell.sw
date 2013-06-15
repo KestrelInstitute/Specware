@@ -1,9 +1,11 @@
 Haskell qualifying spec
 
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature             % SCTerm
-%import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % adjustElementOrder
- import /Languages/MetaSlang/CodeGen/SubstBaseSpecs                      % substBaseSpecs1, also gets hack for evaluateUnitId
+
+ % import /Languages/MetaSlang/CodeGen/SubstBaseSpecs                    % substBaseSpecs1, also gets hack for evaluateUnitId
 
  import /Languages/MetaSlang/Transformations/TheoryMorphism
  import /Languages/MetaSlang/Transformations/NormalizeTypes
@@ -14,10 +16,8 @@ Haskell qualifying spec
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/Coercions
- import /Languages/MetaSlang/Transformations/Simplify
  import /Languages/MetaSlang/Transformations/CurryUtils
  import /Languages/MetaSlang/Transformations/RenameBound
- import /Languages/MetaSlang/Transformations/SliceSpec
 
  op useQualifiedNames?: Bool = false
  op simplify?: Bool = false
@@ -982,7 +982,7 @@ Haskell qualifying spec
             | (_, Base(u_qid, _, _)) | exists? (fn (qid, _) -> qid = u_qid) type_qid_constrs && ~(embed? Base d_ty) ->
               let Some(_, newtypeConstructorNmID) = findLeftmost (fn (qid, _) -> qid = u_qid) type_qid_constrs in
               let x = ("x", d_ty) in
-              mkLet([(mkEmbedPat(newtypeConstructorNmID, Some(mkVarPat x), u_ty), new_tm)], mkVar x)
+              MS.mkLet([(mkEmbedPat(newtypeConstructorNmID, Some(mkVarPat x), u_ty), new_tm)], mkVar x)
             | _ -> new_tm
     in
     let (tvs, ty, term) = unpackFirstTerm(dfn) in
@@ -2440,7 +2440,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                       else mkWildPat fld_ty))
                     fields
    in
-   let pat_match_project = mkLet([(mkRecordPat rec_pats, t2)], mkVar result_var) in
+   let pat_match_project = MS.mkLet([(mkRecordPat rec_pats, t2)], mkVar result_var) in
    ppTerm c parentTerm pat_match_project
 %    if length p > 1 && p ~= "10"
 %      then (warn("Can't dereference tuples longer than size 10: use pattern matching (or records");

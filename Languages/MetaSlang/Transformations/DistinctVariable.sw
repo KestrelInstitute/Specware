@@ -1,7 +1,7 @@
 JGen qualifying
 spec
 
-import LiftPattern
+import /Languages/MetaSlang/Transformations/LiftPattern
 
 op renameVar: MSTerm * MSVar * MSVar -> MSTerm
 

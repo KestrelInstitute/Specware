@@ -2,18 +2,15 @@ JGen qualifying spec
 
 import IJavaCodeGen
 import ToJavaPatternMatch
-%import Java qualifying /Languages/Java/Java
-import /Languages/Java/DistinctVariable
 
-% import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/MetaSlang/Transformations/HigherOrderMatching
+
 import /Languages/MetaSlang/CodeGen/CodeGenUtilities % findMatchingUserType
 
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 import /Languages/Java/JavaPrint % ppFormPars
-%import /Languages/SpecCalculus/Semantics/Exception
-import ../../Transformations/LambdaLift
-import ../../Transformations/HigherOrderMatching
-import /Languages/MetaSlang/Specs/Environment
+
 import IJavaCodeGen
 import Monad
 
