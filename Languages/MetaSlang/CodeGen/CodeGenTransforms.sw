@@ -18,7 +18,7 @@ import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases                   % (11)  
 import /Languages/MetaSlang/Transformations/ExpandTypeDefs              % (12)      C Java  expandTypeDefs
 import /Languages/MetaSlang/CodeGen/RemoveSubtypes                      % (13)      C Java  removeNonNatSubtypes
 import /Languages/MetaSlang/Transformations/LiftUnsupportedPatterns     % (14)      C Java  liftUnsupportedPatterns
-import /Languages/MetaSlang/CodeGen/Poly2mono                           % (15)      C Java  poly2monoAndDropPoly
+import /Languages/MetaSlang/CodeGen/Poly2Mono                           % (15)      C Java  poly2monoAndDropPoly
 import /Languages/MetaSlang/Transformations/Simplify                    % (16)      C Java  simplifySpec
 import /Languages/MetaSlang/Transformations/AddEqOps                    % (16)      C Java  addEqOps
                                                                         % (18)      C Java  sliceSpecForLisp, sliceSpecForC, sliceSpecForJava  [see 3]
