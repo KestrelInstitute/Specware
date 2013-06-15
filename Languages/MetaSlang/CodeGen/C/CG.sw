@@ -1,7 +1,7 @@
 CG qualifying spec
 
 %% SpecTransforms:
-import /Languages/MetaSlang/CodeGen/CodegenTransforms
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
  %% 
  import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
