@@ -1,6 +1,6 @@
 LiftUnsupportedPattern qualifying spec
 
-  import ../Specs/Environment
+  import /Languages/MetaSlang/Specs/Environment
 
   %% liftUnsupportedPatterns may introduce case statements,
   %% hence must preceeed pattern compilation

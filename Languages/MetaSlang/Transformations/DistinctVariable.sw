@@ -1,5 +1,4 @@
-JGen qualifying
-spec
+DistinctVariable qualifying spec
 
 import /Languages/MetaSlang/Transformations/LiftPattern
 
@@ -250,9 +249,7 @@ def mkNewId(id, n) =
  %% (which contains merely names, not infos) is left unchanged, so the import
  %% hierarchy is preserved.
  %%
- op  distinctVariable: Spec -> Spec
- def distinctVariable(spc) =
-   %let _ = writeLine("distinctVariable...") in
+ op SpecTransform.distinctVariable (spc : Spec) : Spec =
    let new_ops =
        foldriAQualifierMap (fn (q, id, old_info, new_map) ->
 			    let qid = Qualified(q,id) in

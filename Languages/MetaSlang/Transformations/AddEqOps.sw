@@ -1,4 +1,4 @@
-AddEqOpsToSpec qualifying spec
+AddEqOps qualifying spec
 
  import /Languages/MetaSlang/Specs/StandardSpec
  import /Languages/MetaSlang/Specs/Environment
@@ -8,7 +8,7 @@ AddEqOpsToSpec qualifying spec
   * equality op
   *)
 
- op SpecTransform.addEqOpsToSpec (spc : Spec) : Spec =
+ op SpecTransform.addEqOps (spc : Spec) : Spec =
   foldriAQualifierMap (fn (q, id, typeinfo, spc) ->
                          addEqOpsFromType (spc, Qualified (q, id), typeinfo))
                       spc 

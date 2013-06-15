@@ -1,7 +1,6 @@
 
-                                 Lisp       C      Java
-                                 ----     ----     ----
- subtractSpec                     
+ SpecTransform                    Lisp      C   Java
+ -------------------------------  ----     --   ----
  substBaseSpecs                    1        1  
  removeTheorems                    2        2
  removeUnusedOps                  (3)       3  
@@ -23,4 +22,7 @@
  arityNormalize                   10       
  conformOpDecls                            17
  adjustAppl                                18
+ 
 
+Note:
+ subtractSpec is deprecated                     

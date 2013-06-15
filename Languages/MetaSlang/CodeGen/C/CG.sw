@@ -146,14 +146,14 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   let spc = simplifySpec                                        spc in % (13) generic optimizations -- inlining, remove dead code, etc. % TODO: move to end?
   let _   = showSpecIfVerbose "simplifySpec"                    spc in
   
-  let spc = addEqOpsToSpec                                      spc in % (14) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
-  let _   = showSpecIfVerbose "addEqOpsToSpec"                  spc in
+  let spc = addEqOps                                            spc in % (14) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
+  let _   = showSpecIfVerbose "addEqOps"                        spc in
   
   let spc = removeUnusedOps top_ops top_types                   spc in % (15) remove newly introduced but unused ops (mainly eq ops) 
   let _   = showSpecIfVerbose "removeUnusedOps[2]"              spc in 
   
-  let spc = addTypeConstructorsToSpec                           spc in % (16) these ops won't survive slicing, so this must follow removeUnusedOps
-  let _   = showSpecIfVerbose "addTypeConstructorsToSpec"       spc in
+  let spc = addTypeConstructors                                 spc in % (16) these ops won't survive slicing, so this must follow removeUnusedOps
+  let _   = showSpecIfVerbose "addTypeConstructors"             spc in
   
   let spc = conformOpDecls                                      spc in % (17) change def with multiple args to decompose single arg when decl has one (product) arg
   let _   = showSpecIfVerbose "conformOpDecls"                  spc in

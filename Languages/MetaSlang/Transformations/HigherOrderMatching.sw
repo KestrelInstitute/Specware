@@ -9,11 +9,11 @@ match(lhs,rhs,flexTerms,context)
  [matchPairs]   The main recursive matching loop.
 *)
 
-HigherOrderMatching qualifying
-spec
- import ../Specs/Environment
- import ../Specs/Utilities
- import Simplify, Interpreter
+HigherOrderMatching qualifying spec
+ import /Languages/MetaSlang/Specs/Environment
+ import /Languages/MetaSlang/Specs/Utilities
+ import Simplify
+ import Interpreter
 
  type SubstC    = StringMap MSType * NatMap.Map MSTerm * MSTerms
 

@@ -1,9 +1,9 @@
-LetWildPatToSeq qualifying spec
+UnfoldTypeAliases qualifying spec
 
 import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements 
 
-op unfoldTypeAliases (spc : Spec) : Spec =
+op SpecTransform.unfoldTypeAliases (spc : Spec) : Spec =
   let srts = typesAsList spc in
   case findLeftmost (fn (_, _, info) -> 
                        case typeInfoDefs info of

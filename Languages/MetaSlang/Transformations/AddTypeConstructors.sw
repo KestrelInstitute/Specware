@@ -1,4 +1,4 @@
-AddTypeConstructorsToSpec qualifying spec
+AddTypeConstructors qualifying spec
 
 import /Languages/MetaSlang/CodeGen/CodeGenUtilities
 
@@ -12,15 +12,15 @@ import /Languages/MetaSlang/CodeGen/CodeGenUtilities
   * def List_nil () = embed nil
   *)
 
- op SpecTransform.addTypeConstructorsToSpec (spc : Spec) : Spec =
-  let (spc, _) = addTypeConstructorsToSpecInternal (spc, false) in 
+ op SpecTransform.addTypeConstructors (spc : Spec) : Spec =
+  let (spc, _) = addTypeConstructorsInternal (spc, false) in 
   % ignore names of constrOps
   spc
 
- op addTypeConstructorsToSpecForSnark (spc : Spec) : Spec * QualifiedIds =
-  addTypeConstructorsToSpecInternal (spc, true)
+ op addTypeConstructorsForSnark (spc : Spec) : Spec * QualifiedIds =
+  addTypeConstructorsInternal (spc, true)
 
- op addTypeConstructorsToSpecInternal (spc : Spec, forSnark? : Bool) : Spec * QualifiedIds =
+ op addTypeConstructorsInternal (spc : Spec, forSnark? : Bool) : Spec * QualifiedIds =
   foldriAQualifierMap
    (fn (q, id, typeinfo, (spc, opnames)) ->
      let (spc, opnames0) = addTypeConstructorsFromType (spc, 
@@ -104,7 +104,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenUtilities
   * def mk_Record_P (a, b) = (a, b)
   *)
 
- op addProductTypeConstructorsToSpec (spc : Spec) : Spec * List QualifiedId =
+ op addProductTypeConstructors (spc : Spec) : Spec * List QualifiedId =
   foldriAQualifierMap
    (fn (q, id, typeinfo, (spc, opnames)) ->
      let (spc, opnames0) = addProductTypeConstructorsFromType (spc, 
@@ -157,7 +157,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenUtilities
   * def project_P_a (p) = project (a) p, ...
   *)
 
- op addProductAccessorsToSpec (spc : Spec) : Spec * List QualifiedId =
+ op addProductAccessors (spc : Spec) : Spec * List QualifiedId =
   foldriAQualifierMap
    (fn (q, id, typeinfo, (spc, opnames)) ->
      let (spc, opnames0) = addProductAccessorsFromType (spc, 
