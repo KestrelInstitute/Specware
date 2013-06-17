@@ -21,8 +21,8 @@ function choosefrom ()
 }
 
 emacs="$(choosefrom \
-  "/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
-  "$HOME/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
+  "/Applications/Isabelle2013.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
+  "$HOME/Applications/Isabelle2013.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs" \
   /Applications/Emacs.app/Contents/MacOS/Emacs \
   "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs" \
   "")"

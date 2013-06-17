@@ -22,7 +22,7 @@ if [ -z "$SWPATH" ]; then
 fi
 
 if [ -z "$EMACS" ]; then
-   for L in /Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs "$HOME"/Applications/Isabelle2011-1.app/Contents/Resources/Emacs-23.app/Contents/MacOS/Emacs /Applications/Emacs.app/Contents/MacOS/Emacs; do
+   for L in /Applications/Isabelle2013.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs "$HOME"/Applications/Isabelle2013.app/Contents/Resources/Emacs-23.app/Contents/MacOS/Emacs /Applications/Emacs.app/Contents/MacOS/Emacs; do
       if [ -x "$L" ]; then
          EMACS="$L"; break
       fi

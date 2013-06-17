@@ -4,12 +4,12 @@
 # files. See "man bash" for details. 
 source ~/.bashrc
 SCRIPTDIR=`/usr/bin/dirname $0`/../../..
-export EMACS=/Applications/Isabelle2011-1.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs
+export EMACS=/Applications/Isabelle2013.app/Contents/Resources/Emacs.app/Contents/MacOS/Emacs
 EMACS_SPECWARE="$SCRIPTDIR"/Emacs_Specware
 cd "$SCRIPTDIR"
 
 # Isabelle, fink, darwinports
-PATH=/Applications/Isabelle2011-1.app/Isabelle/bin:/sw/bin:/opt/local/bin:/opt/local/sbin:$HOME/Applications/Isabelle2011-1.app/Isabelle/bin:${PATH}
+PATH=/Applications/Isabelle2013.app/Isabelle/bin:/sw/bin:/opt/local/bin:/opt/local/sbin:$HOME/Applications/Isabelle2013.app/Isabelle/bin:${PATH}
 
 ISABELLE0=`which isabelle`
 export EMACS="$ISABELLE0/../../../Emacs.app/Contents/MacOS/Emacs"
