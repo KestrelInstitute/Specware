@@ -54,7 +54,7 @@ op generateCSpecFromTransformedSpec (app_name : String) (ms_spec : Spec)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% generateCSpec is the canonical entry point for producing a C spec, 
-%% sinec there is no point in trying to generate a C spec until we have first
+%% since there is no point in trying to generate a C spec until we have first
 %% done all the appropriate spec-to-spec transforms within metaslang.
 
 op generateCSpec (app_name : String) (ms_spec : Spec) : C_Spec =

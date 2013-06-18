@@ -8,7 +8,7 @@ import /Languages/C/CUtils
 
 op printCSpec (app_name     : String,
                c_spec       : C_Spec,
-                opt_filename : Option String)
+               opt_filename : Option String)
  : () =
  let filename =
      case opt_filename of
