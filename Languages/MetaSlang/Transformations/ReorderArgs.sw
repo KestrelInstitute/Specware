@@ -6,7 +6,6 @@ ReviseOps qualifying spec
  import /Library/Unvetted/Random
 
  import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
- import /Languages/MetaSlang/CodeGen/C/CG
  import /Languages/MetaSlang/CodeGen/Java/ToJava
 
  type Probability   = Nat * Nat   %  test is '(random y) <= x'

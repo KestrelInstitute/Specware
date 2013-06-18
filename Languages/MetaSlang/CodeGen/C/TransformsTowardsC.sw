@@ -1,11 +1,7 @@
-CG qualifying spec
+CGen qualifying spec
 
 %% SpecTransforms:
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
-
- %% 
- import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L  % MetaSlang =codegen=> I2L
- import /Languages/I2L/CodeGen/C/I2LToC              % I2L       =codegen=> C
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Transform MetaSlang spec in preparation for C code generation. 
@@ -220,118 +216,5 @@ op SpecTransform.transformSpecForCGen (spc : Spec) : Spec =
  %% let _   = showSpecIfVerbose "distinctVariable"                 spc in
 
  spc
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Generate the C_Spec for the given spec. 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-op generateCSpec (app_name : String) (spc : Spec) : C_Spec =
- let spc  = transformSpecForCGen spc in
- generateCSpecFromTransformedSpec app_name spc 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Generate a C_Spec from an already transformed MetaSlang spec.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-op generateCSpecFromTransformedSpec (app_name : String) (spc : Spec) : C_Spec =
- generateCSpecFromTransformedSpecIncr app_name spc (emptyCSpec "") 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% As above, but incremental -- the provided C_Spec is used to lookup already 
-%% existing definitions.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-op generateCSpecFromTransformedSpecIncr (app_name : String) 
-                                         (spc      : Spec) 
-                                         (xcspc    : C_Spec)
-  : C_Spec =
-  let filter = (fn _ -> true) in
-  generateCSpecFromTransformedSpecIncrFilter app_name spc xcspc filter
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %% Generate a C_Spec from an already transformed MetaSlang spec.
- %% The filter function is used to selectively generate code only for those ops 
- %% and types x for which filter(x) is true.
- %% The C_Spec parameter is used for incremental code generation.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op generateCSpecFromTransformedSpecIncrFilter (app_name : String) 
-                                               (spc      : Spec) 
-                                               (xcspc    : C_Spec)
-                                               (filter   : QualifiedId -> Bool) 
-  : C_Spec =
-  let constrOps   = []                                                              in
-  let useRefTypes = true                                                            in
-  let impunit     = generateI2LCodeSpecFilter (spc, useRefTypes, constrOps, filter) in
-  let cspec       = generateC4ImpUnit         (impunit, xcspc, useRefTypes)         in
-  cspec
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %% Split the C spec into .c and .h portions and print those two files.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op printToFile (app_name     : String,
-                 c_spec       : C_Spec,
-                 opt_filename : Option String)
-  : () =
-  let filename =
-      case opt_filename of
-        | None          -> "cgenout.c"
-        | Some filename -> filename
-  in
-  let len = length filename in
-  let basename = if subFromTo (filename, len-2, len) = ".c" then
-                   subFromTo (filename, 0, len-2)
-                 else
-                   filename
-  in
-  let _ = writeLine (";; writing generated code to " ^ basename ^ ".[ch]...") in
-
-  let c_filename       = basename ^ ".c"    in
-  let h_filename       = basename ^ ".h"    in
-  let (h_spec, c_spec) = splitCSpec c_spec  in  
-
-  let id_dfn           = ("Patched_PrismId", C_String, C_Const (C_Str basename)) in
-  let h_spec           = addHeader    (h_spec, app_name)   in
-  let h_spec           = addTrailer   (h_spec, app_name)   in
-  let h_spec           = addConstDefn (h_spec, id_dfn)     in  
-
-  let c_spec           = addHeader    (c_spec, app_name)   in
-  let c_spec           = addTrailer   (c_spec, app_name)   in
-  let c_spec           = addInclude   (c_spec, h_filename) in
-
-  let _ = printCSpecAsHeaderToFile (h_spec, h_filename) in
-  let _ = printCSpecToFile         (c_spec, c_filename) in
-  ()
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %% Generate C code for the given spec and write it into the given file.
- %% If the filename is None, "cgenout.c" is taken.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- op generateCCode (app_name     : String,
-                   spc          : Spec, 
-                   opt_filename : Option String)
-  : () =
-  % for generation using CTarget, see evaluateGenCThin in Languages/SpecCalculus/Semantics/Specware.sw
-  % if importsCTarget? spc then
-  %   let _ = writeLine("Spec refers to CTarget, will use new C generator.") in
-  %   let filename = case opt_filename of 
-  %                    | Some filename -> filename 
-  %                    | _ -> "testing" 
-  %   in
-  %   printSpecAsCToFile (filename, spc)
-  % else
-  let cspec = generateCSpec app_name spc in 
-  printToFile (app_name, cspec, opt_filename)
-
- op SpecTransform.emitCCode (spc          : Spec, 
-                             app_name     : String,
-                             opt_filename : Option String)
-  : Spec =
-  let spc  = transformSpecForCGen spc in
-  let cspec = generateCSpecFromTransformedSpec app_name spc in
-  let _ = printToFile (app_name, cspec, opt_filename) in
-  spc
 
 end-spec
