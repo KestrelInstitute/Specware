@@ -29,4 +29,24 @@ op SpecTransform.generateCCode (ms_spec      : Spec,
  let _      = printCSpec (app_name, c_spec, opt_filename) in
  ms_spec
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% emtiCFiles is a side-effecting transform that returns the original spec.
+%%
+%% For testing purposes, we may wish to first transform the MetaSlang spec
+%% and print it, etc., then generate C files.
+%%
+%% We can accomplish that with the following pattern:
+%%
+%% ms_spec {transformSpecForCGen; emitCFiles ("app_name", "filename")}
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op SpecTransform.emitCFiles (ms_spec      : Spec,
+                             app_name     : String,
+                             opt_filename : Option String)
+ : Spec =
+ let c_spec  = generateCSpecFromTransformedSpec app_name ms_spec in
+ let _       = printCSpec (app_name, c_spec, opt_filename)       in
+ ms_spec
+
 end-spec
