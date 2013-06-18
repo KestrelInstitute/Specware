@@ -276,6 +276,14 @@ def TypeChecker.checkType (env, ty) =
 op checkType0(env: LocalEnv, ty: MSType): MSType =
   checkType1(env, ty, None, true)
 
+%% Check that ty is a valid type (has a valid kind)
+%% Args:
+%%   env  A local environment.
+%%   ty   The type to check has a valid kind.
+%%   o_tm  TODO: Document what this parameter is supposed to be.
+%%   checkTerms?  TODO: Document what this parameter is supposed to be.
+%% Returns:
+%%  A type. TODO: Document the relationship between the result and the argument ty.
 op checkType1(env: LocalEnv, ty: MSType, o_tm: Option MSTerm, checkTerms?: Bool): MSType =
   %% checkType calls elaborateTerm, which calls checkType
   % let _ = if debug? then writeLine("checkType: "^printType ty) else () in
@@ -637,7 +645,14 @@ def elaborateTerm_top (env, trm, term_type) =
   %% Resolve now rather than later to release space
   resolveMetaTyVars trm
 
-def elaborateTerm (env, trm, term_type, args) =
+%% elaborateTerm typechecks and elaborates a term to the simpler core representation.
+%% Arguments:
+%%   env  The environment, which is a record with a bunch of fields, which
+%%        TODO needs to be documented.
+%%   trm  The term to be typechecked.
+%%   term_type  The expected type.
+%%   args       Local *type* arguments.
+op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTerm = 
   let _ = if debug? then writeLine("tc"^show env.passNum^" "^printType term_type^"\n"^printTermWithTypes trm) else () in
   let typed_term =
         case trm of

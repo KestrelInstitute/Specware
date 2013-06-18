@@ -97,12 +97,15 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
     let preStateVar = rs1.2 in
     let postStateVar = rs1.4 in
     let obs = findObservers spc stateType in
-
     let (vars,is) = unzip ps in
     let vars' = nubBy (fn (i,j) -> i.1 = j.1 && i.2 = j.2) (flatten vars : ExVars) in 
     % let _ = writeLine ("Starting with ") in
     % let _ = writeLine (printDNF (flatten is)) in
-    let (rterm,pred) = bt [] (map (fn i -> i.1) vars') obs preStateVar (flatten is) in
+    let args = { spc=spc, obs=obs, stateVar=postStateVar,
+                 assumptions=[], vars=(map (fn i -> i.1) vars') } in
+    % let (rterm,pred) = bt [] (map (fn i -> i.1) vars') obs postStateVar (flatten is) in
+    let (rterm,pred) = bt args (flatten is) in
+
     let calculatedPostcondition = mkSimpleExists vars' rterm in    
     let _ = writeLine ("Result is: ") in
     let _ = writeLine (printTerm calculatedPostcondition) in
@@ -142,14 +145,14 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
 %% Returns:
 %%   A 4-tuple of (stateType, input argument name, precondition, output name, postcondition)
 op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*Option MSTerm*Id*Option MSTerm) = 
-   let _ = writeLine ("Looking up op " ^ (show qid)) in
+   % let _ = writeLine ("Looking up op " ^ (show qid)) in
    case getOpDef(spc,qid) of
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
        % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
      | Some (tm, ty as (Arrow (dom, codom,_))) ->
-       let _ = writeLine ("Arrow type is " ^ printType ty) in
-       let _ = writeLine ("Domain is " ^ (printType dom)) in
-       let _ = writeLine ("Codomain is " ^ (printType codom)) in
+       % let _ = writeLine ("Arrow type is " ^ printType ty) in
+       % let _ = writeLine ("Domain is " ^ (printType dom)) in
+       % let _ = writeLine ("Codomain is " ^ (printType codom)) in
        { (preStateVar,preStateType,preCondition) <- getSubtypeComponents spc dom theorems
        ; (postStateVar,postStateType,postCondition) <- getSubtypeComponents spc codom theorems
          % Require the pre- and poststate types  match.
@@ -182,7 +185,7 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*
 op getSubtypeComponents(spc:Spec)(ty:MSType)(theorems:Rewrites):Env (Id * MSType * Option MSTerm) =
   case ty of
    | Subtype (binding,pred,_) ->
-      { (n,ty,body) <- getLambdaComponents spc pred 
+      { (n,ty,rest,body) <- getLambdaComponents spc pred 
       ; return (n,ty,Some body)
       }
    | Base (_,_,_) -> return ("_",ty,None) 
@@ -194,7 +197,7 @@ op getSubtypeComponents(spc:Spec)(ty:MSType)(theorems:Rewrites):Env (Id * MSType
 %% From `fn (x:T | guard)  -> body` extract (x,T,body).
 %% Constraints: function is unary, binding a variable (only)guard is true.
 %% _Surely_ this is defined somewhere???
-op getLambdaComponents(spc:Spec)(tm:MSTerm):Env (Id * MSType * MSTerm) =
+op getLambdaComponents(spc:Spec)(tm:MSTerm):Env (Id * MSType * List (Id*MSType) * MSTerm) =
   % let _ = writeLine ("Looking at subtype predicate " ^ printTerm tm) in
   case tm of                                         
    | Lambda ([(VarPat ((n,ty),_),guard,body)], _) ->
@@ -202,10 +205,36 @@ op getLambdaComponents(spc:Spec)(tm:MSTerm):Env (Id * MSType * MSTerm) =
       % let _ = writeLine ("Classifier: " ^ printType ty ) in
       % let _ = writeLine ("Guard: " ^ printTerm guard) in
       % let _ = writeLine ("Body: " ^ printTerm body) in
-      return (n,ty,body)
+      return (n,ty,[],body)
+   | Lambda ([(pat as (RecordPat (fields,recordLoc)),guard,body)], lamLoc) ->
+        (case getRecPatternElements pat of
+          | Some (s,stype,rest) -> return (s,stype,rest,body)
+          | None ->
+            raise (Fail ("Cannot fetch state elements." ^ anyToString fields)))
    | Lambda ([(pat,guard,body)], _) -> 
        raise (Fail ("getLambdaComponents: Not a unary lambda" ^ anyToString pat))
    | _ -> raise (Fail "getLambdaComponents: Not a unary lambda.")
+
+%% Given a record pattern of the form RecordPat [(s:Stype, p1:T1,
+%% p2:T2, ...)] return Some (s, Stype, [(p1,T1),...]. If the pattern
+%% does not that form, then return None.
+op getRecPatternElements(pat:MSPattern):Option (Id*MSType*List (Id*MSType)) =
+  case pat of
+    | RecordPat (("1", (VarPat ((s,stype), varPatLoc)))::rest, patLoc) ->
+      let def tupleElements x:Option (List (Id*MSType)) =
+            case x of
+              | [] -> Some []
+              | ((idx, (VarPat ((vname,vtype), _)))::rest) ->
+                  (case tupleElements rest of
+                     | Some l -> Some ((vname,vtype)::l)
+                     | None -> let _ = writeLine "e1" in None)
+              | _ -> let _ = writeLine "e2" in None
+      in (case tupleElements rest of
+             | Some params -> Some (s,stype,params)
+             | None -> let _ = writeLine "e3" in None)
+    | _ -> let _ = writeLine "e4" in None
+               
+
     
 %% combineRuleSpecs normalizes pre/post condition naming, and generates
 %% a "DNF" representation of the pre- and post-conditions as a list of lists
@@ -222,7 +251,11 @@ op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTe
   ; posts <- mapM (normalizeCondition spc theorems) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
     let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
-    % let _ = map printIt ps in 
+    % let _ = map printIt ps in
+    % let _ = writeLine "Preconditions" in
+    % let _ = List.map (fn p -> writeLine (printDNF (p.2))) pres in
+    % let _ = writeLine "Postconditions" in
+    % let _ = List.map (fn p -> writeLine (printDNF (p.2))) posts in
     return rels
   }
  
@@ -243,9 +276,17 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFR
          (v2,dnf2) <- normalizeCondition spc theorems a2;
          return (v1 ++ v2, dnf1 ++ dnf2)
        }
+    % | Let (_,_,_) -> raise (Fail("Let " ^ anyToString tm))
+    | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
+      normalizeCondition spc theorems (substitute (body, [(var,definition)]))
+
+      
 
     | _ | unfoldable? (tm,spc) ->
-            normalizeCondition spc theorems (simplifyOne spc (unfoldTerm (tm,spc)))
+            % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
+            let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
+            % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
+            normalizeCondition spc theorems tm'
     | _ -> case rewriteTerm spc theorems tm of
             | Some tm' -> normalizeCondition spc theorems tm'
             | None -> {  dnf <- splitConjuncts spc theorems tm
@@ -277,10 +318,16 @@ op splitConjuncts(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env DNFRep =
        let ue = andDNF (negateDNF rp) re in
        return (ut ++ ue)
       }
+   | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
+      splitConjuncts spc theorems (substitute (body, [(var,definition)]))
+   | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+        return [[mkNot (Apply(Fun(Equals,ty,a1),args,a2))]]
    | _ | unfoldable? (tm,spc) ->
          % let _ = writeLine ("Simplifying " ^ printTerm tm) in
-         splitConjuncts spc theorems (simplifyOne spc (unfoldTerm (tm,spc)))
-
+         % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
+         let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
+         % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
+         splitConjuncts spc theorems tm'
     | _ -> case rewriteTerm spc theorems tm of
             | Some tm' -> splitConjuncts spc theorems tm'
             | None -> return [[tm]] 
@@ -297,18 +344,21 @@ type BTChoice = | BTSplit MSTerm % if-split on the given term.
                 | BTFalse 
                 | BTNone % No idea what to do...
 
-op pick(vars:List Id)(obs:List Id)(stateVar:Id)(i:DNFRep):BTChoice = 
+%% Choose a next term to split on.
+op pick(args:BTArgs)(i:DNFRep):BTChoice =
+  % let _ = writeLine "Picking from" in
+  % let _ = writeLine (printDNF i) in  
   case valuation i of
     | Some true -> BTTrue (filter (fn c -> ~ (empty? c)) i)
     | Some false -> BTFalse
     | _ -> let cs = commons i in
-           let pcs = filter (postConstraint? obs stateVar) cs in  % Common post constraints.
-           let pps = filter (fn i -> ~ (postConstraint? obs stateVar i)) cs in
+           let pcs = filter (postConstraint? args) cs in  % Common post constraints.
+           let pps = filter (fn i -> ~ (postConstraint? args i)) cs in
            % If there is a post-condition constraint shared across all branches.
            if ~ (empty? pcs) 
              then BTConstraint pcs
            else 
-           case findLeftmost (forall? (postConstraint? obs stateVar)) i of
+           case findLeftmost (forall? (postConstraint? args)) i of
                %% We have found a clause where all of
                %% the atomic formulae are
                %% post-constraints. This means we can stop.
@@ -316,38 +366,50 @@ op pick(vars:List Id)(obs:List Id)(stateVar:Id)(i:DNFRep):BTChoice =
 
              | None ->  case i of
                           | [(x::xs)] -> BTSingleton (x::xs)
-                          | ((x::xs)::rest) | postConstraint? obs stateVar x -> 
+                          | ((x::xs)::rest) | postConstraint? args x -> 
                             % Move the post-constraint to the end,
                             % repeat. This can only in the case
                             % where all of the formula in the
                             % conjunction are postConstraints, in
                             % which case the conjunction will have
                             % been identified above.
-                            let _ = writeLine "Skipping postconstraint" 
-                            in pick vars obs stateVar ((xs ++ [x])::rest)
-                          | ((x::xs)::rest) | some? (isDefinition? vars x) ->
-                            let Some (v,ty) = isDefinition? vars x in
+                            let _ = writeLine "Skipping postconstraint" in
+                            % let _ = writeLine (printTerm x) in
+                            pick args ((xs ++ [x])::rest)
+                          | ((x::xs)::rest) | some? (isDefinition? args.vars x) ->
+                            %% If the term is of the form (ex x. v)
+                            let Some (v,ty) = isDefinition? args.vars x in
                             BTDef (x, ty, v)
 
-                          | ((x::xs)::rest) | ~ (postConstraint? obs stateVar x) -> 
+                          | ((x::xs)::rest) | ~ (postConstraint? args x) -> 
                             % 'x' is not a post-constraint, so split on it.
-                            (case scrutineeRefinement? x of
-                              | Some (s, (ty,c,pat)) -> 
+                            (case scrutineeRefinement? args x of
+                              | Some (s, (ty,c,pat,negated)) -> 
                                      BTCase (s, ty) 
-                              | None -> BTSplit x)
+                              | None ->
+                                let _ = writeLine (printTerm x ^ " is not a case split.") in BTSplit x)
 
                           | [] -> BTNone % Dead case.
-                          | ([]::rest) -> pick vars obs stateVar rest % Dead case
+                          | ([]::rest) -> pick args rest % Dead case
 
 
 
 %% Simplify all of the conjuncts in a DNF, given the assumption
 %% condition 'p' is true.
 op simplify(p:MSTerm)(i:DNFRep):DNFRep =
+
+   let def noNE(p) =
+         case p of
+           | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+              mkNot (Apply(Fun(Equals,ty,a1),args,a2))
+           | _ -> p  in
+
+  
    let def conflicts(cn) = 
           case cn of 
             | [] -> false 
-            | (q::qs) ->  (equalTerm? (negateTerm p, q)) || conflicts qs in
+            | (q::qs) ->  (equalTerm? (negateTerm (noNE p), (noNE q)))
+                        || conflicts qs in
    
    % remove any atomic predicates matching p.
    let rempos = map (fn cn -> filter (fn t ->  ~ (equalTerm? (t, p))) cn) i in
@@ -359,22 +421,22 @@ op simplify(p:MSTerm)(i:DNFRep):DNFRep =
 
 
 
-op simplifyCase(i:DNFRep)(s:MSTerm)(ty:MSType)((c,pat):(Id * Option MSPattern)):DNFRep =
+op simplifyCase(args:BTArgs)(i:DNFRep)(s:MSTerm)(ty:MSType)((c,pat):(Id * Option MSPattern)):DNFRep =
    % let _ = writeLine ("Under pattern " ^ printPattern (EmbedPat (c,pat,ty,noPos))) in
    % let _ = writeLine (printDNF i) in 
    let def conflicts?(cn) =
             case cn of 
               | [] -> false
               | (q::qs) -> 
-                  case scrutineeRefinement? q of
-                    | Some (s',(ty,c',pat)) -> 
+                  case scrutineeRefinement? args q of
+                    | Some (s',(ty,c',pat,_)) -> 
                         equalTerm? (s,s') &&  ~ (c = c')  || conflicts? qs
                     | None -> conflicts? qs 
 
    in 
    let def samePattern? t = 
-             case scrutineeRefinement? t of
-               | Some (s',(ty,c',pat)) -> 
+             case scrutineeRefinement? args t of
+               | Some (s',(ty,c',pat,_)) -> 
                    equalTerm? (s,s') &&  (c = c') 
                | None -> false
 
@@ -417,59 +479,119 @@ op valuation(i:DNFRep):Option Boolean =
     | ps -> if forall? empty? i then Some true else None
    
 
+% Package up the arguments to bt and auxillary functions.
+% The spc, obs, and stateVar fields should be constant,
+% but assumptions and vars will vary.
+type BTArgs = { spc:Spec,
+                obs:List Id,
+                stateVar:Id,
+                assumptions:List MSTerm,
+                vars:List Id
+               }
+
+op addAssumption(args:BTArgs)(a:MSTerm):BTArgs =
+  args << { assumptions = a::(args.assumptions) }
+
+op setVars(args:BTArgs)(vs:List Id):BTArgs =
+  args << { vars = vs }
+  
+  
 %% The 'BuildTree' operation.  Given a collection of conditions in
 %% disjunctive normal form, (as a DNFRep) return an expression that is
 %% a splitting tree, along with a predicate representing a precondition.
 %%
 %% The returned predicate is the **negation** of the precondition that the 
 %% function must have.
-op bt(assumptions:MSTerms)(vars:List Id)(obs:List Id)(stateVar:Id)(inputs:DNFRep):(MSTerm * DNFRep) =
+op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
+    let vars = args.vars in
+    let obs = args.obs in
+    let assumptions = args.assumptions in
+    let stateVar = args.stateVar in
   % let _ = writeLine "Under assumptions:" in
   % let _ = writeLine (printDNF [assumptions]) in
   % let _ = writeLine "With  inputs" in
   % let _ = writeLine (printDNF inputs) in
-    case pick vars obs stateVar inputs of
-      | BTFalse -> (mkFalse (), [assumptions])
+    case pick args inputs of
+      | BTFalse -> (mkFalse (), [args.assumptions])
       | BTTrue _ -> (mkTrue (), []) 
-      | BTSplit p -> 
+      | BTSplit p ->
+          let _ = writeLine ("Split on " ^ printTerm p) in
           let pos = simplify p inputs in
           let neg = simplify (negateTerm p) inputs in
-          let (tb,tp) = bt (p::assumptions) vars obs stateVar pos in
-          let (eb,ep) = bt (negateTerm p::assumptions) vars obs stateVar neg in
+          let (tb,tp) = bt (addAssumption args p) pos in
+          let (eb,ep) = bt (addAssumption args (negateTerm p)) neg in
           (IfThenElse (p, tb, eb, noPos), tp ++ ep)
 
       | BTCase (s, ty) -> 
-          let pats = gatherPatterns s ty inputs in 
+          let pats = gatherPatterns args s ty inputs in 
           let def mkAlt (p as (con,pvars)) = 
                let pat = EmbedPat (con,pvars,ty,noPos) in
                let Some patTerm = patternToTerm pat in
                let eq = mkEquality (ty, s, patTerm) in
-               let (t,pre) = bt (eq::assumptions)
-                                (removePatternVars vars pvars)
-                                obs
-                                stateVar
-                                (simplifyCase inputs s ty p) 
+               let (t,pre) = bt (setVars
+                                   (addAssumption args eq)
+                                   (removePatternVars vars pvars))
+                                (simplifyCase args inputs s ty p) 
                in ((pat,t),pre) 
           in let (tms,pres) = unzip (map mkAlt pats) in
                  (mkCaseExpr(s,tms), flatten pres)
                  
-      | BTSingleton t -> (mkAnd t, [assumptions]) 
-     %| BTTrue inputs' -> (mkTrue (), [assumptions]) %% shadowed by BTTrue case above
+      | BTSingleton t -> (mkAnd t, [args.assumptions]) 
+      % | BTTrue inputs' -> (mkTrue (), [args.assumptions]) 
       | BTConstraint cs -> 
           let inputs' = map (fn d -> filter (fn c -> ~ (inTerm? c cs)) d) inputs in
-          let (tm',pre) = bt assumptions vars obs stateVar inputs' in
+          let (tm',pre) = bt args inputs' in
           (mkAnd (cs ++ [tm']), pre)
       | BTDef (t,ty,var) -> 
-          let (t',p) = bt (t::assumptions) (diff (vars, [var])) obs stateVar (simplifyDef t inputs)
+          let (t',p) = bt (setVars (addAssumption args t) (diff (vars, [var])))
+                            (simplifyDef t inputs)
           in (Bind (Exists, [(var,ty)], mkAnd [t,t'],noPos), p)
+
+
+
+%% State Transformers
+%% Given a state transformer -- a function with type:
+%% ((s:stype,a1:T1,...an:Tn) | P) -> {stype * R1 * .. * Rn | Q}
+%%
+%% Returns an n-tuple:
+%%   1. The state type.
+%%   2. The current state name
+%%   3. A list of the other argument names and types.
+%%   4. An optional precondition
+%%   5. The next state name
+%%   6. A list of the other result names and types.
+%%   7. An optional postcondition.
+op getTransformerInfo(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*(List (Id*MSType))* Option MSTerm*Id*(List (Id * MSType)) * Option MSTerm) = 
+   let _ = writeLine ("Looking up op " ^ (show qid)) in
+   case getOpDef(spc,qid) of
+     | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
+       % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
+     | Some (tm, ty as (Arrow (dom, codom,_))) ->
+       let _ = writeLine ("Arrow type is " ^ printType ty) in
+       let _ = writeLine ("Domain is " ^ (printType dom)) in
+       let _ = writeLine ("Codomain is " ^ (printType codom)) in
+       { (preStateVar,preStateType,preCondition) <- getSubtypeComponents spc dom theorems
+       ; (postStateVar,postStateType,postCondition) <- getSubtypeComponents spc codom theorems
+         % Require the pre- and poststate types  match.
+         % FIXME: Need equality modulo annotations
+         % guard (preStateType = postStateType) (
+         %   "In the definition of the coalgebraic function: " ^ (show qid) ^ "\n" ^
+         %   "Type of prestate:                 " ^ printType preStateType ^ "\n" ^
+         %   "Does not match type of poststate: " ^ printType postStateType)
+       ; return (preStateType, preStateVar,[],preCondition,postStateVar,[],postCondition)
+       }
+     | Some (tm,ty) -> 
+         let m1 = ("getOpPreAndPost:\n Type is " ^ (printType ty)) in 
+         let m2 = ("Which is not of the correct form.") in
+         raise (Fail (m1 ^ m2))
 
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%% Postconstraints
 %%%%%%%%%%%%%%%%%%%%%%
 
-op postConstraint?(obs:List Id)(stateVar:Id)(t:MSTerm):Boolean =
-  postConstraints? obs stateVar t
+op postConstraint?(args:BTArgs)(t:MSTerm):Boolean =
+  postConstraints? args.obs args.stateVar t
 
 
 %% Given a spec `spc` and a state type `s`, find the names of all of
@@ -483,8 +605,8 @@ op findObservers(spc:Spec)(s:MSType):List Id =
   let ois = opInfosAsList spc in
   let observerInfos = filter (isObserver? s) ois in
   let observerNames = map (fn oi -> mainId (primaryOpName oi)) observerInfos in
-  let _ = writeLine "Found Observers:" in
-  let _ = map writeLine observerNames in
+  % let _ = writeLine "Found Observers:" in
+  % let _ = map writeLine observerNames in
   observerNames
 
   
@@ -558,20 +680,19 @@ op postConstraints?(obs:List Id)(postState:Id)(t:MSTerm):Boolean =
 
 %%% Handling equations involving constructions, for which a case
 %%% expression in the resulting postcondition will be generated.
-
-%% If a term has the form 
-%%  e = C p1 .. pn  (or the symmetric case C p1 .. pn = e)
-%% then it can be implemented terms of a case split:
-%% case e of C p1 .. pn -> ... | ...
+%% If a term has the form e = C p1 .. pn (or the symmetric case C p1
+%%  .. pn = e), or ~(e = C p1 .. pn) then it can be implemented terms
+%%  of a case split: case e of C p1 .. pn -> ... | ...
 %%
-%% The function returns the scrutinee, paired with a triple of the
-%% type, the constructor, and any subpattern. The type will be used to
+%% The function returns the scrutinee, paired with a 4-tuple of the
+%% type, the constructor, any subpattern, and a boolean flag that indicates whether
+%% the term is negated (e.g. ~(e = C p1 .. pn)). The type will be used to
 %% identify the other constructors for the type, to generate the other
 %% case alternatives.
-op scrutineeRefinement?(t:MSTerm):Option (MSTerm * (MSType * Id * Option MSPattern)) =
+op scrutineeRefinement?(args:BTArgs)(t:MSTerm):Option (MSTerm * (MSType * Id * Option MSPattern * Boolean)) =
   let def checkTerm l r = 
             case termToPattern r of
-              | Some (EmbedPat (con,vars,pty,_)) -> Some (l,(pty,con,vars))
+              | Some (EmbedPat (con,vars,pty,_)) -> Some (l,(pty,con,vars,true))
               | Some p -> None % let _ = writeLine ( "Non-constructor pattern" ^ printPattern p) in None
               | None -> None
   in
@@ -581,22 +702,46 @@ op scrutineeRefinement?(t:MSTerm):Option (MSTerm * (MSType * Id * Option MSPatte
       (case checkTerm l r of
         | Some t -> Some t
         | None -> checkTerm r l)
+    | Apply(Fun(Not,_,_), arg, appPos) ->
+      (case scrutineeRefinement? args arg of
+        | Some (s,(ty,cons,pats,_)) -> Some (s,(ty,cons,pats,true))
+        | _ -> None)
    | _ -> None
 
+op gatherPatterns(args:BTArgs)(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option MSPattern) =
+  case coproductOpt(args.spc, ty) of
+     | Some fields ->
+        let _ = writeLine ("Checking type" ^ printType ty) in
+        let constrs = List.map (fn cons -> cons.1) fields in
+        let _ = List.map (fn cons -> writeLine cons.1) fields in
+        gatherPatterns' args s ty d
+     | None ->
+        let _ = writeLine ("Error: Can't find constructors for type " ^ printType ty)
+        in []
+     
 %% Given a DNF representation d, gather up all of the patterns
 %% (constructor, pattern) that constrain the scrutinee s at type ty.
-op gatherPatterns(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option MSPattern) =
+op gatherPatterns'(args:BTArgs)(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option MSPattern) =
    let def altPattern? (t:MSTerm):Option (Id*Option MSPattern) =
-            case scrutineeRefinement? t of
-              | Some (s', (ty',c,pat)) |
+            case scrutineeRefinement? args t of
+              | Some (s', (ty',c,pat,_)) |
                  equalTerm? (s, s') (* && equalType? (ty, ty') *) -> Some (c,pat)
               | _ -> None 
    in let def samePattern?(p1,p2) =
                 case (p1,p2) of
                   | ((i1,Some pat1),(i2,Some pat2)) ->
                      i1 = i2 && equalPattern? (pat1,pat2)
+                  | ((i1,None),(i2,None)) ->
+                     i1 = i2
                   | _ -> false
-   in nubBy samePattern? (catOptions (map altPattern? (flatten d)))
+   in let def printPat(p) =
+            case p of
+              | (i, Some x) -> printPattern x
+              | (i,_) -> i ^ " (nopattern) "
+   in let pats =  nubBy samePattern? (catOptions (map altPattern? (flatten d)))
+   in let _ = writeLine ("Matching patterns for " ^ printTerm s)
+   in let _ = List.map (fn p -> writeLine (printPat p)) pats
+   in pats
 
 %%%%%%%%%%%%%%%%%%%%%%
 %%% Definitions
@@ -935,5 +1080,8 @@ op test3 : MSTerm =
 op test4 : MSTerm =
   mkApplication (mkEquals natType, [obs "f" "x",expr])
 
+
 endspec
+
+
 

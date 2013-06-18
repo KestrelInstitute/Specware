@@ -41,7 +41,7 @@ op addPostCondition(post_condn: MSTerm, ty: MSType): MSType =
   in
   replaceInRange ty
 
-% Given a state tranformer op of type `ty`, and a state type
+% Given a state transformer op of type `ty`, and a state type
 % `state_ty` and a spec `spc` return the (nm, others, postcondition),
 % where `nm` is the name of the poststate, `others` is (optionally)
 % the non-state results and their names, and finally `postcondition`,
