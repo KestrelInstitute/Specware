@@ -1,5 +1,0 @@
-Want to change Embed to have the same arguments as Op. What is the bool field for in Embed
-Want to get rid of Var
-Get rid of Embed pattern and use Apply instead
-Why not just get rid of pattern sort altogether and use term?
-If so then what does it mean to have Let in a pattern?
