@@ -40,7 +40,9 @@ fi
 # see assignment of SBCL_SIZE at start of script
 # 1000 was too large, but now 1200 seems ok (?) 
 
-export BIG_LISP="$LISP --dynamic-space-size $SBCL_SIZE --end-runtime-options"
+if [$BIG_LISP == ""]; then
+  export BIG_LISP="$LISP --dynamic-space-size $SBCL_SIZE --end-runtime-options"
+fi
 export LISP_VERSION="SBCL"
 export BATCH_LISP="$BIG_LISP --disable-debugger"
 
