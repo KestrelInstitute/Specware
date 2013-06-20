@@ -16,7 +16,7 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/LambdaLift
- import /Languages/MetaSlang/Transformations/InstantiateHOFns
+% import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/AbstractSyntax/PathTerm
  import /Languages/MetaSlang/Transformations/RewriteRules
 % import /Languages/MetaSlang/Transformations/ArityNormalize
@@ -451,7 +451,7 @@ IsaTermPrinter qualifying spec
     Property(Theorem, qid, tyVarsInTerm fml, fml, termAnn fml)
 
   op makeNonTrivTheorem(q: Id, nm: Id, fml: MSTerm, spc: Spec): Option SpecElement =
-    let fml = simplify spc fml in
+    let s_fml = simplify spc fml in
     if equalTerm?(fml, trueTerm) then None
       else Some(makeTheorem(Qualified(q, nm), fml))
 
@@ -487,7 +487,7 @@ IsaTermPrinter qualifying spec
     let (newelements, ops) =
         foldr (fn (el, (elts, ops)) ->
                  case el of
-                   | OpDef(qid as Qualified(q,id), refine_num, hist, _) | refine_num > 0 ->
+                   | OpDef(qid as Qualified(q,id), refine_num, _, _) | refine_num > 0 ->
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
@@ -507,24 +507,17 @@ IsaTermPrinter qualifying spec
                              insertAQualifierMap (ops, q, id, new_opinfo)
                      in
                      %% Make refinement obligation obligations
-                     let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def" in
+                     let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def"^show refine_num in
                      if anyTerm? dfn
                        then
                          if anyTerm? prev_dfn
                            then    % Post-condition refinement
                              let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
-                             % let _ = writeLine("oblig: "^printTerm oblig) in
+                              let _ = writeLine("oblig: "^printTerm oblig) in
                              case makeNonTrivTheorem(q, thm_name, oblig, spc) of
                                | None -> (el::elts, ops)
                                | Some new_el ->
-                                 if hist = []
-                                   then (el::new_el::elts, ops)
-                                   else
-                                     % let _ = writeLine("Generating proof for "^thm_name) in
-                                     let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
-                                     let prf_el = Pragma("proof", " Isa\n"^prf_str, "end-proof", noPos) in
-                                     % let _ = writeLine("Proof string:\n"^prf_str) in
-                                     (el::new_el::prf_el::elts, ops)
+                                 (el::new_el::elts, ops)
                            else (el::elts, ops)   % Not sure if this is meaningful
                        else
                          if anyTerm? prev_dfn
@@ -532,17 +525,60 @@ IsaTermPrinter qualifying spec
                            else
                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), prev_dfn, spc) in
                              let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
-                             if hist = []
-                               then (el::eq_oblig::elts, ops)
-                             else let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
-                                  let prf_el = Pragma("proof", " Isa\n"^prf_str, "end-proof", noPos) in
-                                  % let _ = writeLine("Proof string:\n"^prf_str) in
-                                  (el::eq_oblig::prf_el::elts, ops)
+                             (el::eq_oblig::elts, ops)
                    | _ -> (el::elts, ops))
            ([], spc.ops) spc.elements
     in
     spc << {elements = newelements,
             ops      = ops}
+
+  op addRefinementProofs (c: Context) (spc: Spec): Spec =
+    let newelements =
+        foldr (fn (el, elts) ->
+                 case el of
+                   | OpDef(qid as Qualified(q,id1), refine_num, hist, _) | refine_num > 0 && hist ~= [] ->
+                     let Some opinfo = findTheOp(spc, qid) in
+                     let mainId = head opinfo.names in
+                     let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
+                     let tsp = (relativizeQuantifiers spc, id, id) in
+                     let hist = map (fn (tm, rl) -> (mapTerm tsp tm, rl)) hist in
+                     let trps = unpackTypedTerms (mapTerm tsp opinfo.dfn) in
+                     let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
+                     let (_, prev_ty, prev_dfn) = nthRefinement(trps, refine_num - 1) in
+
+                     %% Make refinement obligation proof
+                     let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
+                     let _ = writeLine("arp: "^thm_name^" "^show(embed? Property (head elts))) in
+                     let _ = writeLine(printTerm dfn^"\n"^printTerm prev_dfn) in 
+                     if anyTerm? dfn
+                        then
+                          if anyTerm? prev_dfn
+                            then    % Post-condition refinement
+                              let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                              if equalTerm?(oblig, trueTerm) then el::elts
+                              else
+                               let _ = writeLine("oblig: "^printTerm oblig) in
+                               let _ = writeLine("Generating proof for "^thm_name) in
+                              let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
+                              let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
+                               let _ = writeLine("Proof string:\n"^prf_str) in
+                              el::prf_el::elts
+                            else el::elts   % Not sure if this is meaningful
+                        else
+                          if anyTerm? prev_dfn
+                            then el::elts    % !!! place holder
+                            else
+                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), prev_dfn, spc) in
+                              let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
+                              let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
+                               let _ = writeLine("Proof string:\n"^prf_str) in
+                              el::prf_el::elts
+
+                   | _ -> el::elts)
+           [] spc.elements
+    in
+    spc << {elements = newelements}
+
 
   op fnQidOfTerm(tm: MSTerm): QualifiedId =
     case tm of
@@ -568,12 +604,13 @@ IsaTermPrinter qualifying spec
 
  op cleanupCommand(qid: QualifiedId, spc: Spec): String =
    case findTheOp(spc, qid) of
-     | None -> ""
+     | None -> ", rule HOL.refl"
      | Some opinfo ->
    let (_, _, tm) = unpackFirstTerm opinfo.dfn in
    case tm of
-     | Lambda((pat, _, _)::_, _) | tuplePattern? pat -> ", rule Product_Type.prod.cases"       
-     | _ -> ""
+     | Lambda((pat, _, _)::_, _) | tuplePattern? pat ->
+       ", rule split_conv"  %", rule Product_Type.prod.cases"       
+     | _ -> ", rule HOL.refl"
 
  op ruleToIsaRule (c: Context) (rl_spc: RuleSpec): String =
    case rl_spc of
@@ -593,84 +630,103 @@ IsaTermPrinter qualifying spec
 
  op anyType: MSType = Any noPos
 
- op schemaFrom(tm: MSTerm, path: PathTerm.Path): MSTerm =
+ op schemaFrom(tm: MSTerm, path: PathTerm.Path): MSTerm * Bool =
    let arg_cong_v = ("xxx", anyType) in
-   let def pick(i: Nat, tms: MSTerms, r_path: PathTerm.Path, j: Nat): MSTerms =
-         let len = length tms in
-         tabulate(len, fn k -> if i = k
-                                then schematize(tms@i, r_path, j+len)
-                                else mkVar("?z_"^show(j+k), anyType))
-       def schematize(tm, path, j) =
+   let def pick(i: Nat, tm_lvs: List(MSTerm * MSVars), r_path: PathTerm.Path, j: Nat): MSTerms =
+         %% new_vars are vars bound over the scope of the last element of tms (for let and letrec cases)
+         let len = length tm_lvs in
+         tabulate(len, fn k -> let (tm, local_vars) = tm_lvs@i in
+                               if i = k
+                                then schematize(tm, r_path, j+len, local_vars)
+                                else makeApplyTerm(mkVar("?z_"^show(j+k), anyType), local_vars))
+       def schematize(tm, path, j, local_vars) =
          case path of
-           | [] -> mkVar arg_cong_v
+           | [] -> makeApplyTerm(mkVar arg_cong_v, local_vars)
            | i :: r_path ->
-         % let _ = writeLine("schemaFrom: "^anyToString path^"\n"^printTerm tm) in
+          let _ = writeLine("schemaFrom: "^anyToString path^"\n"^printVars local_vars^"\n"^printTerm tm) in
          case tm of
           | Apply(ft as Fun(f, _, _), Record([("1", x), ("2", y)], a1), a2) | infixFn? f ->
-            let [x, y] = pick(i, [x, y], r_path, j) in
+            let [x, y] = pick(i, [(x, local_vars), (y, local_vars)], r_path, j) in
             Apply(ft, Record([("1", x), ("2", y)], a1), a2)
           | Apply _ | i = 0 && r_path = [] ->    % Avoid functional variable as leads to non-det match
             mkVar arg_cong_v
           | Apply(x, y, a) ->
             if embed? Lambda x
-              then let [y, x] = pick(i, [y, x], r_path, j) in
+              then let [y, x] = pick(i, [(y, local_vars), (x, local_vars)], r_path, j) in
                    Apply(x, y, a)
-            else let [x, y] = pick(i, [x, y], r_path, j) in
+            else let [x, y] = pick(i, [(x, local_vars), (y, local_vars)], r_path, j) in
                  Apply(x, y, a)
           | Record(l, a) ->
-            let new_tms = pick(i, map (fn (_, t) -> t) l, r_path, j) in
+            let new_tms = pick(i, map (fn (_, t) -> (t, local_vars)) l, r_path, j) in
             Record(tabulate(length l, fn k -> let (id, _) = l@k in (id, new_tms@k)), a)
-          | Bind(bdr, vs, x, a) -> Bind(bdr, vs, schematize(x, r_path, j), a)
-          | The(v, x, a) -> The(v, schematize(x, r_path, j), a)
+          | Bind(bdr, vs, x, a) -> Bind(bdr, vs, schematize(x, r_path, j, local_vars ++ vs), a)
+          | The(v, x, a) -> The(v, schematize(x, r_path, j, local_vars ++ [v]), a)
           | Let (l, b, a) ->
-            let new_tms = pick(i, (map (fn (_, t) -> t) l) ++ [b], r_path, j) in
+            let new_tms = pick(i, (map (fn (_, t) -> (t, local_vars)) l) ++ [(b, local_vars ++ boundVars tm)], r_path, j) in
             Let (tabulate(length l, fn k -> let (pat, _) = l@k in (pat, new_tms@k)),
                  last new_tms, a)
           | LetRec (l, b, a) ->
-            let new_tms = pick(i, (map (fn (_, t) -> t) l) ++ [b], r_path, j) in
+            let local_vars = local_vars ++ boundVars tm in
+            let new_tms = pick(i, (map (fn (_, t) -> (t, local_vars)) l) ++ [(b, local_vars)], r_path, j) in
             LetRec (tabulate(length l, fn k -> let (v, _) = l@k in (v, new_tms@k)),
                     last new_tms, a)
           | Lambda (l, a) ->
-            let new_tms = map (fn (_, _, t) -> t) l in
+            let new_tms = pick(i, map (fn (pat, _, t) -> (t, local_vars ++ patternVars pat)) l, r_path, j) in
             Lambda(tabulate(length l, fn k -> let (pat, condn, _) = l@k in (pat, condn, new_tms@k)), a)
           | IfThenElse(x, y, z, a) ->
-            let [x, y, z] = pick(i, [x, y, z], r_path, j) in
+            let [x, y, z] = pick(i, [(x, local_vars), (y, local_vars), (z, local_vars)], r_path, j) in
             IfThenElse(x, y, z, a)
-          | Seq(l, a) -> Seq(pick(i, l, r_path, j), a)
+          | Seq(l, a) -> Seq(pick(i, map (fn tm -> (tm, local_vars)) l, r_path, j), a)
           | TypedTerm(x, ty, a) ->
             (case postCondn? ty of
-               | None -> TypedTerm(schematize(x, r_path, j), ty, a)
-               | Some post -> let [x,post] = pick(i, [x,post], r_path, j) in
+               | None -> TypedTerm(schematize(x, r_path, j, local_vars), ty, a)
+               | Some post -> let [x,post] = pick(i, [(x, local_vars), (post, local_vars)], r_path, j) in
                               %% Need to incorporate updated post
                               TypedTerm(x, ty, a))
-          | And(l, a) -> And(pick(i, l, r_path, j), a)
+          | And(l, a) -> And(pick(i, map (fn tm -> (tm, local_vars)) l, r_path, j), a)
           | _ -> tm
+      def makeApplyTerm(main_tm: MSTerm, local_vars: MSVars): MSTerm =
+        foldl (fn (result, v) -> mkApply(result, mkVar v)) main_tm local_vars
    in
-   let schema_tm = schematize(tm, reverse path, 0) in
+   let schema_tm = schematize(tm, reverse path, 0, []) in
    % let _ = writeLine("schemaFrom"^anyToString path^"\n"^printTerm schema_tm) in
-   mkLambda(mkVarPat arg_cong_v, schema_tm)
+   % Simpler to do existsSubTerm search than thread result through schematize
+   let has_local_vars? = existsSubTerm (fn stm ->
+                                          case stm of
+                                            | Apply(Var(fv, _), Var _, _) | fv = arg_cong_v -> true
+                                            | _ -> false)
+                           schema_tm
+   in
+   (mkLambda(mkVarPat arg_cong_v, schema_tm), has_local_vars?)
 
- op ppTermStrFix (c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Nat): String =
+ op ppTermStrFix (c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Int): String =
    replaceString(ppTermStrIndent c parentTerm term indent, "e_pz", "?z")
 
  op equalityContext: ParentTerm = Infix (Left, 50)
 
- op argCongTerm(c: Context, tm: MSTerm, path: PathTerm.Path, indent: Nat): String =
-   let schema_term = schemaFrom(tm, path) in
-   let schema_str = ppTermStrFix c Top schema_term indent in
+ op argCongTerm(c: Context, tm: MSTerm, path: PathTerm.Path, indent: Int): String =
+   let (schema_term, has_local_vars?) = schemaFrom(tm, path) in
+   let schema_str = ppTermStrFix c Top schema_term (indent + 14) in
    "rule_tac f = \""^schema_str^"\" in arg_cong"
+      %% If there are local variables then terms are wrapped in lambdas: use rule ext to lift
+      ^(if has_local_vars? then ", (rule ext)+" else "")
 
- op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Nat): String =
+ op ruleProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Int): String =
    let (_, path) = changedPathTerm(before, after) in
+   let _ = writeLine("changed term:\n"^printTerm(fromPathTerm(before, path))) in
    let rule_str = ruleToIsaRule c rl_spc in
-   ppTermStrIndent c equalityContext after indent^"\"\n      by ("
+   spaces indent^"by ("
      ^(if path = [] then ""
        else let arg_cong_str = argCongTerm(c, before, path, indent + 4) in
-            arg_cong_str^(if length arg_cong_str + length rule_str > 90 then ",\n"^(blanks(indent - 10)) else ", "))
+            arg_cong_str^(if length arg_cong_str + length rule_str > 90 then ",\n"^(blanks(indent + 4)) else ", "))
      ^rule_str^")\n"
 
+ op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Int): String =
+   ppTermStrIndent c equalityContext after indent^"\"\n"
+    ^ ruleProof(c, before, after, rl_spc, indent - 14)
+
   op chainedEqualityProof(c: Context, init_tm: MSTerm, f_path: PathTerm.Path,
-                          hist: TransformHistory, init_str: String, indent: Nat)
+                          hist: TransformHistory, init_str: String, indent: Int)
        : String =
     let _ = printTransformHistory hist in
     flatten(tabulate(length hist,
@@ -711,14 +767,22 @@ IsaTermPrinter qualifying spec
       "proof -\n"
     ^ "  have \""^(ppTermStrIndent c equalityContext prev_pcond 7)^"\n"
     ^ "      = " ^(ppTermStrIndent c equalityContext new_pcond 7)^"\"\n"
-    ^ "  proof -\n"
-    ^ "    have \"           "^(ppTermStrIndent c equalityContext prev_changed_subtm 20)^"\n"
-    ^ chainedEqualityProof(c, prev_pcond, 1 :: f_path, hist, "                   = ", 4)
-    ^ "    finally show ?thesis by ("^arg_cong_str^")\n"
-    ^ "    qed\n"
+    ^ (case hist of
+         | [hist1] ->
+           let (tr_tm, rl_spc) = hist1 in
+           ruleProof(c, prev_pcond, new_pcond, rl_spc, 4)
+         | _ ->
+       "  proof -\n"
+      ^ "    have \"           "^(ppTermStrIndent c equalityContext prev_changed_subtm 20)^"\n"
+      ^ chainedEqualityProof(c, prev_pcond, 1 :: f_path, hist, "                   = ", 4)
+      ^ "    finally show ?thesis by ("^arg_cong_str^")\n"
+      ^ "    qed\n")
     ^ "  moreover\n"
-    ^ "  assume \""^(ppTermStrIndent c Top new_pcond 10)^"\"\n"
-    ^ "  ultimately show ?thesis ..\n"
+    ^ (case getConjuncts new_pcond of
+       | [_] -> "  assume \""^(ppTermStrIndent c Top new_pcond 10)^"\"\n"
+              ^ "  ultimately show ?thesis ..\n"
+       | cjs -> "  assume "^(foldr (fn (cj, str) -> "\""^(ppTermStrIndent c Top cj 10)^"\" "^str) "\n" cjs)
+             ^ "  ultimately show ?thesis by auto\n")
     ^ "qed\n"
 
 
@@ -858,6 +922,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = normalizeNewTypes(spc, false) in
     let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
     let spc = addRefineObligations c spc in
+    % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
@@ -878,6 +943,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
+    let spc = addRefinementProofs c spc in
     % let _ = writeLine("9:\n"^printSpec spc) in
     let spc = removeSubTypes spc coercions stp_tbl in
     % let _ = writeLine("10:\n"^printSpec spc) in
@@ -1128,6 +1194,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
   op findMutuallyRecursiveElts(qid0: QualifiedId, els: SpecElements, spc: Spec)
        : QualifiedIds * SpecElements * SpecElements * SpecElements =
     let op_refs = qid0 :: opsInOpDefFor(qid0, spc) in
+    let _ = writeLine(show qid0^" has ops (0)\n"^anyToString(map show (opsInOpDefFor(qid0, spc)))) in
     let def findMutuallyRecursiveOps(els, op_refs, mr_els, pending_prag_els) =
           case els of
             | [] -> orderElts(mr_els, pending_prag_els)
@@ -1137,6 +1204,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
               if qid in? op_refs
                 then
                   let new_op_refs = opsInOpDefFor(qid, spc) ++ op_refs in
+                  % let _ = writeLine(show qid^" has ops\n"^anyToString(map show (opsInOpDefFor(qid, spc)))) in
                   findMutuallyRecursiveOps(r_els, new_op_refs,
                                            mr_els ++ pending_prag_els ++ [el], [])
                 else
@@ -1895,7 +1963,7 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
    % let _ = writeLine(" = "^show (length cases)^", "^show tuple?) in
    (map fix_vars cases)
 
- op prfFromPragma((_,mid_str,_,_): Pragma): String =
+ op prfFromPragma ((_,mid_str,_,_): Pragma): String =
    let len = length mid_str in
    case search("\n",mid_str) of
      | None -> (case removeEmpty(splitStringAt(mid_str, " ")) of
@@ -2845,7 +2913,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 %           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
 %                                       [mkNat 0, term2]))
         %% Set Collect(fn x -> p x) --> {x. p x}
-        | (Fun(Op(Qualified(q,"Collect"), _), _, _), Lambda([(pattern, _, bod)], _)) | q = toIsaQual ->
+        | (Fun(Op(Qualified("Set","collect"), _), _, _), Lambda([(pattern, _, bod)], _)) ->
           prBreakCat 2 [[prString "{",
                          let c = c << {printTypes? = true} in
                          ppPattern c pattern (Some "") false,
@@ -3093,7 +3161,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
    toString(format(110, ppTerm c parentTerm term))
 
- op ppTermStrIndent(c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Nat): String =
+ op ppTermStrIndent(c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Int): String =
    let indentPP = PrettyPrint.blanks indent in
    let termPP   = ppTerm c parentTerm term in
    let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indentPP, termPP] in
