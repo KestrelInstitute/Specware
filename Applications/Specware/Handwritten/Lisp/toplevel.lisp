@@ -1308,7 +1308,8 @@
 
 (defun Specware::exit ()
   #+allegro (exit)
-  #-allegro (quit))
+  #+sbcl    (exit)
+  #-(or allegro sbcl) (quit))
 
 #+allegro
 (top-level:alias ("quit" ) () (exit))
