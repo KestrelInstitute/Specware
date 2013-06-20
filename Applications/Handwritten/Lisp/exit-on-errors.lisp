@@ -39,9 +39,7 @@
   (format t "~%Lisp session exiting with code ~D~%" return-code)
   #+Allegro                       (excl::exit        return-code)
   #+CMU                           (unix::unix-exit   return-code)
-  ;; This line should replace the following one once sb-unix:unix-exit goes away
-  ;; #+SBCL                          (sb-sys:os-exit return-code)
-  #+SBCL                          (sb-unix:unix-exit return-code)
+  #+SBCL                          (sb-sys:os-exit    return-code)
   #+OpenMCL                       (quit              return-code)
   #-(or Allegro CMU SBCL OpenMCL) (quit              return-code)
   )
