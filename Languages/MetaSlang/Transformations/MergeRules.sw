@@ -69,7 +69,24 @@ import /Languages/MetaSlang/AbstractSyntax/Equalities
 
 % When merging, we may need to simplify given some rewrite rules. The
 % 'mergeRules' spec transform take such a list.
-type Rewrites = List RuleSpec  
+type Rewrites = List RuleSpec
+
+%% A rule to be merged has the form:
+%%
+%% op rule(h:StateType,i1:T1,...,in:Tn | pre):{(h',o1,...,om) : (StateType * OT1 * ... * OTn) | post}
+%%
+
+type STRule = { st_stateType : MSType,   % StateType
+                st_prestate : Id, % h
+                st_precondition : Option MSTerm, % pre
+                st_poststate : Id, % h'
+                st_postcondition : Option MSTerm, % post
+                st_inputs : List (Id*MSType), % [(i1,T1),...,(in,Tn)]
+                st_outputs : List (Id*MSType) % [(o1,OT1),...,(on,OTn)]
+              }
+
+
+
 
 %% FIXME: This should take in an extra argument, that is an optional
 %% list of theorem names that should be used when extracting the pre-
@@ -92,40 +109,43 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
   let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
   { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems)) qids
   ; ps <- combineRuleSpecs spc ruleSpecs theorems
-  ;
-    let stateType = rs1.1 in
-    let preStateVar = rs1.2 in
-    let postStateVar = rs1.4 in
+  ; let stateType = rs1.st_stateType in
+    let preStateVar = rs1.st_prestate in
+    let postStateVar = rs1.st_poststate in
+    let inputs = rs1.st_inputs in
+    let outputs = rs1.st_outputs in
     let obs = findObservers spc stateType in
     let (vars,is) = unzip ps in
     let vars' = nubBy (fn (i,j) -> i.1 = j.1 && i.2 = j.2) (flatten vars : ExVars) in 
-    % let _ = writeLine ("Starting with ") in
-    % let _ = writeLine (printDNF (flatten is)) in
-    let args = { spc=spc, obs=obs, stateVar=postStateVar,
-                 assumptions=[], vars=(map (fn i -> i.1) vars') } in
-    % let (rterm,pred) = bt [] (map (fn i -> i.1) vars') obs postStateVar (flatten is) in
+    let args : BTArgs =
+          { spc=spc, obs=obs,
+            stateVar=postStateVar,
+            assumptions=[],
+            outputs= List.map (fn i -> i.1) outputs,
+            vars=(List.map (fn i -> i.1) vars') } in
     let (rterm,pred) = bt args (flatten is) in
-
     let calculatedPostcondition = mkSimpleExists vars' rterm in    
-    let _ = writeLine ("Result is: ") in
-    let _ = writeLine (printTerm calculatedPostcondition) in
+
+    % let _ = writeLine ("Result is: ") in
+    % let _ = writeLine (printTerm calculatedPostcondition) in
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
-    % let preAsConj =
-    %      ands (map (fn conj -> mkNot (mkSimpleExists vars' (ands conj))) pred) in
-    % let calculatedPreconditions = Bind (Exists,vars',dnfToTerm (negateDNF pred),noPos)in
-    % let calculatedPreconditions = mkSimpleExists vars' preAsConj in
-    % let _ = writeLine ("Preconditions are:\n " ^ printTerm preAsConj) in
-
-    let stPre = Subtype (stateType, Lambda ([(VarPat ((preStateVar, stateType), noPos), mkTrue (),preAsConj)],noPos), noPos) in
-    let stPost = Subtype (stateType, Lambda ([(VarPat ((postStateVar, stateType), noPos), mkTrue (),calculatedPostcondition)],noPos), noPos) in
-    let stType = Arrow (stPre,stPost,noPos) in
-    let stBody = Lambda ([(VarPat ((preStateVar, stPre), noPos), mkTrue (), Any noPos)],noPos) in
-    let body = TypedTerm (stBody, stType, noPos) in
+    let body = mkCombTerm ((preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
     let spc' = addOpDef(spc,fname,Nonfix,body) in
     return spc'
   }
-  
+
+op mkCombTerm(dom:List (Id * MSType))(ran:List (Id * MSType))(pre:MSTerm)(post:MSTerm):MSTerm =
+    let (domNames, domTypes) = unzip dom in
+    let (ranNames,ranTypes) = unzip ran in
+    let domType = mkProduct domTypes in
+    let ranType = mkProduct ranTypes in
+    let domPred = mkLambda (mkTuplePat (map mkVarPat dom), pre) in
+    let ranPred = mkLambda (mkTuplePat (map mkVarPat ran), post) in
+    let domType = mkSubtype (domType, domPred) in
+    let ranType = mkSubtype (ranType, ranPred) in
+    let body = mkLambda (mkTuplePat (map mkVarPat dom),Any noPos) in
+    mkTypedTerm (body,mkArrow(domType, ranType))
 
 %% FIXME:
 %% This doesn't properly handle the case where the rule does not have the shape
@@ -143,9 +163,10 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env 
 %%%  spc: The spec that contains the op.
 %%   qid: The op to extract.
 %% Returns:
-%%   A 4-tuple of (stateType, input argument name, precondition, output name, postcondition)
-op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*Option MSTerm*Id*Option MSTerm) = 
+%%   A 4-tuple of (stateType, input argument name, precondition, output name, postcondition, input args, output values)
+op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule = 
    % let _ = writeLine ("Looking up op " ^ (show qid)) in
+   let def printOthers(p:Id*MSType) = writeLine (p.1 ^ " " ^ printType p.2) in
    case getOpDef(spc,qid) of
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
        % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
@@ -153,20 +174,34 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*
        % let _ = writeLine ("Arrow type is " ^ printType ty) in
        % let _ = writeLine ("Domain is " ^ (printType dom)) in
        % let _ = writeLine ("Codomain is " ^ (printType codom)) in
-       { (preStateVar,preStateType,preCondition) <- getSubtypeComponents spc dom theorems
-       ; (postStateVar,postStateType,postCondition) <- getSubtypeComponents spc codom theorems
+       { (preStateVar,preStateType,inputArgs,preCondition) <- getSubtypeComponents spc dom theorems
+       ; (postStateVar,postStateType,outputVals,postCondition) <- getSubtypeComponents spc codom theorems
          % Require the pre- and poststate types  match.
          % FIXME: Need equality modulo annotations
          % guard (preStateType = postStateType) (
          %   "In the definition of the coalgebraic function: " ^ (show qid) ^ "\n" ^
          %   "Type of prestate:                 " ^ printType preStateType ^ "\n" ^
          %   "Does not match type of poststate: " ^ printType postStateType)
-       ; return (preStateType, preStateVar,preCondition,postStateVar,postCondition)
+       ; let _ = writeLine "inputs" in
+         let _ = map printOthers inputArgs in
+         let _ = writeLine "outputs" in
+         let _ = map printOthers outputVals in return ()          
+       ; return { st_stateType = preStateType,
+                  st_prestate = preStateVar,
+                  st_poststate = postStateVar,
+                  st_precondition = preCondition,
+                  st_postcondition = postCondition,
+                  st_inputs = inputArgs,
+                  st_outputs = outputVals
+                 }
+
        }
      | Some (tm,ty) -> 
          let m1 = ("getOpPreAndPost:\n Type is " ^ (printType ty)) in 
          let m2 = ("Which is not of the correct form.") in
          raise (Fail (m1 ^ m2))
+
+
 
 %% Get the predicate constraining a subtype. 
 %% return the bound variable, and its classifier.
@@ -180,15 +215,15 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*Id*
 %%  spc: The spec that the subtype expression appears in.
 %%  ty:  The type 
 %% Returns:
-%%  3-tuple (Bound variable, classifier, Option (subtype expression) )
+%%  3-tuple (Bound variable, classifier, other components and types, Option (subtype expression) )
 
-op getSubtypeComponents(spc:Spec)(ty:MSType)(theorems:Rewrites):Env (Id * MSType * Option MSTerm) =
+op getSubtypeComponents(spc:Spec)(ty:MSType)(theorems:Rewrites):Env (Id * MSType * List (Id * MSType) * Option MSTerm) =
   case ty of
    | Subtype (binding,pred,_) ->
       { (n,ty,rest,body) <- getLambdaComponents spc pred 
-      ; return (n,ty,Some body)
+      ; return (n,ty,rest,Some body)
       }
-   | Base (_,_,_) -> return ("_",ty,None) 
+   | Base (_,_,_) -> return ("_",ty,[],None) 
    | _ ->  
      let _ = (writeLine ("getSubtypeComponents" ^ anyToString ty))
      in raise (Fail ("Can't extract subtype from " ^ printType ty))
@@ -243,10 +278,11 @@ op getRecPatternElements(pat:MSPattern):Option (Id*MSType*List (Id*MSType)) =
 %% atomic formula. Moreover, we normalize the names of the pre- and poststate 
 %% variables.
 %% FIXME: Currently, there's no variable renaming going on...
-op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm))(theorems:Rewrites):Env (List (ExVars * DNFRep)) =
-  let types = map (fn r -> r.1) rules  in
-  let preconditions = map (fn r -> case r.3 of Some t -> t | None -> (mkTrue ())) rules in
-  let postconditions = map (fn r -> case r.5 of Some t -> t | None -> (mkTrue ())) rules in
+op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites):Env (List (ExVars * DNFRep)) =
+% op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm))(theorems:Rewrites):Env (List (ExVars * DNFRep)) =
+  let types = map (fn r -> r.st_stateType) rules  in
+  let preconditions = map (fn r -> case r.st_precondition of Some t -> t | None -> (mkTrue ())) rules in
+  let postconditions = map (fn r -> case r.st_postcondition of Some t -> t | None -> (mkTrue ())) rules in
   { pres <- mapM (normalizeCondition spc theorems) preconditions 
   ; posts <- mapM (normalizeCondition spc theorems) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
@@ -422,16 +458,22 @@ op simplify(p:MSTerm)(i:DNFRep):DNFRep =
 
 
 op simplifyCase(args:BTArgs)(i:DNFRep)(s:MSTerm)(ty:MSType)((c,pat):(Id * Option MSPattern)):DNFRep =
-   % let _ = writeLine ("Under pattern " ^ printPattern (EmbedPat (c,pat,ty,noPos))) in
-   % let _ = writeLine (printDNF i) in 
+   let _ = writeLine ("Under pattern " ^ printPattern (EmbedPat (c,pat,ty,noPos))) in
+   let _ = writeLine ("And scrutinee " ^ printTerm s) in
+   let _ = writeLine (printDNF i) in 
    let def conflicts?(cn) =
             case cn of 
               | [] -> false
               | (q::qs) -> 
                   case scrutineeRefinement? args q of
-                    | Some (s',(ty,c',pat,_)) -> 
-                        equalTerm? (s,s') &&  ~ (c = c')  || conflicts? qs
-                    | None -> conflicts? qs 
+                    | Some (s',(ty,c',pat,false)) ->  % s' = c' pat and c' and c are not the same.
+                        let _ = writeLine (printTerm q ^ " is a scrutinee refinement")
+                        in (equalTerm? (s,s') &&  ~ (c = c'))  || conflicts? qs
+                    | Some (s',(ty,c',pat,true)) ->  % ~(s' = c pat)
+                        let _ = writeLine (printTerm q ^ " is a scrutinee refinement")                      
+                        in (equalTerm? (s,s') &&  (c = c'))  || conflicts? qs
+                    | None -> % let _ = writeLine ("Not a scrutinee refinement: " ^ printTerm q) in
+                              conflicts? qs 
 
    in 
    let def samePattern? t = 
@@ -443,7 +485,7 @@ op simplifyCase(args:BTArgs)(i:DNFRep)(s:MSTerm)(ty:MSType)((c,pat):(Id * Option
    in 
    let rempos = map (fn cn -> filter (fn c -> ~ (samePattern? c)) cn) i in
    let remneg = filter (fn cn -> ~ (conflicts? cn)) rempos in
-   % let _ = writeLine ("New conditions " ^ printDNF remneg) in
+   let _ = writeLine ("New conditions " ^ printDNF remneg) in
    remneg
 
 
@@ -484,6 +526,7 @@ op valuation(i:DNFRep):Option Boolean =
 % but assumptions and vars will vary.
 type BTArgs = { spc:Spec,
                 obs:List Id,
+                outputs : List Id,
                 stateVar:Id,
                 assumptions:List MSTerm,
                 vars:List Id
@@ -523,8 +566,12 @@ op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
           (IfThenElse (p, tb, eb, noPos), tp ++ ep)
 
       | BTCase (s, ty) -> 
-          let pats = gatherPatterns args s ty inputs in 
-          let def mkAlt (p as (con,pvars)) = 
+          let Some addends = coproductOpt(args.spc,ty) in
+          let constructors = List.map (fn c -> c.1) addends in
+          let _ = writeLine "Case split with constructors:" in
+          let _ = map writeLine constructors in
+          let pats = gatherPatterns args s ty inputs in
+          let def mkAlt (p as (con,pvars)) =
                let pat = EmbedPat (con,pvars,ty,noPos) in
                let Some patTerm = patternToTerm pat in
                let eq = mkEquality (ty, s, patTerm) in
@@ -570,8 +617,8 @@ op getTransformerInfo(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*
        let _ = writeLine ("Arrow type is " ^ printType ty) in
        let _ = writeLine ("Domain is " ^ (printType dom)) in
        let _ = writeLine ("Codomain is " ^ (printType codom)) in
-       { (preStateVar,preStateType,preCondition) <- getSubtypeComponents spc dom theorems
-       ; (postStateVar,postStateType,postCondition) <- getSubtypeComponents spc codom theorems
+       { (preStateVar,preStateType,preArgs,preCondition) <- getSubtypeComponents spc dom theorems
+       ; (postStateVar,postStateType,postResults,postCondition) <- getSubtypeComponents spc codom theorems
          % Require the pre- and poststate types  match.
          % FIXME: Need equality modulo annotations
          % guard (preStateType = postStateType) (
@@ -590,8 +637,10 @@ op getTransformerInfo(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*
 %%% Postconstraints
 %%%%%%%%%%%%%%%%%%%%%%
 
-op postConstraint?(args:BTArgs)(t:MSTerm):Boolean =
-  postConstraints? args.obs args.stateVar t
+
+
+% op postConstraint?(args:BTArgs)(t:MSTerm):Boolean =
+%   postConstraints? args.obs args.stateVar t 
 
 
 %% Given a spec `spc` and a state type `s`, find the names of all of
@@ -658,22 +707,30 @@ op isArrowType?(ty:MSType):Option (MSType * MSType) =
 %%     2. e = postState
 %%     3. o postState = e
 %%     4. e = o postState
-%%   where o in? obs % 
-op postConstraints?(obs:List Id)(postState:Id)(t:MSTerm):Boolean =
+%%     5. e = ret
+%%     6. ret = e
+%%   where o in? obs or ret in? outputs
+op postConstraint?(args:BTArgs)(t:MSTerm):Boolean =
   let def isObs (tm:MSTerm):Boolean = 
          case tm of 
-           % The term is the poststate
-          | Var ((v,_),_) -> v = postState
+           % The term is the poststate 
+          | Var ((v,_),_) -> v = args.stateVar
            % The term is an observation on the poststate
           | Apply (Fun (Op (Qualified (_,o),opFix),ftype,fPos),
                    (Var ((v,_),varPos)),
-                   appPos) -> v = postState && o in? obs
+                   appPos) -> v = args.stateVar && o in? args.obs
           | _ -> false
+  in
+  let def isOutput (tm:MSTerm):Boolean =
+           case tm of 
+              % The term is an output
+              | Var ((v,_),_) -> v in? args.outputs
+              | _ -> false
   in 
   % let _ = writeLine ("Checking postConstraint on " ^ (printTerm t)) in
   case t of
     | Apply (Fun (Equals,_,eqPos), 
-             Record ([(_,l), (_,r)], argPos), appPos) -> isObs l || isObs r
+             Record ([(_,l), (_,r)], argPos), appPos) -> isObs l || isObs r || isOutput l || isOutput r
     | _ -> false
 
 
@@ -692,7 +749,7 @@ op postConstraints?(obs:List Id)(postState:Id)(t:MSTerm):Boolean =
 op scrutineeRefinement?(args:BTArgs)(t:MSTerm):Option (MSTerm * (MSType * Id * Option MSPattern * Boolean)) =
   let def checkTerm l r = 
             case termToPattern r of
-              | Some (EmbedPat (con,vars,pty,_)) -> Some (l,(pty,con,vars,true))
+              | Some (EmbedPat (con,vars,pty,_)) -> Some (l,(pty,con,vars,false))
               | Some p -> None % let _ = writeLine ( "Non-constructor pattern" ^ printPattern p) in None
               | None -> None
   in
@@ -714,7 +771,18 @@ op gatherPatterns(args:BTArgs)(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option 
         let _ = writeLine ("Checking type" ^ printType ty) in
         let constrs = List.map (fn cons -> cons.1) fields in
         let _ = List.map (fn cons -> writeLine cons.1) fields in
-        gatherPatterns' args s ty d
+        let present = gatherPatterns' args s ty d in
+        let _ = writeLine "Patterns are " in
+        let def printPat p = case p of
+                               | (c,Some pat) -> c ^ " " ^ printPattern pat
+                               | (c,None) -> c in
+        let _ = List.map (fn p -> writeLine (printPat p)) present in
+        % present is the set [(Ci, pati) ...] of constraints of the
+        % form s = Ci pati or ~(s = Ci pati) (closed under
+        % reflexivity) present in d.
+        
+        present
+        
      | None ->
         let _ = writeLine ("Error: Can't find constructors for type " ^ printType ty)
         in []
