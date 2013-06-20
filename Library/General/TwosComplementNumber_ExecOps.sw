@@ -38,7 +38,7 @@ proof Isa minTCNumber__1_Obligation_subtype2
   sorry   
 end-proof
 
-proof Isa minTCNumber__1__obligation_refine_def
+proof Isa minTCNumber__1__obligation_refine_def1
   sorry   
 end-proof
 
@@ -46,7 +46,7 @@ proof Isa tcNumber__1_Obligation_subtype
   by (simp add: TwosComplement__length_of_minTCNumber)
 end-proof
 
-proof Isa tcNumber__1__obligation_refine_def
+proof Isa tcNumber__1__obligation_refine_def1
   apply (simp add: TwosComplement__tcNumber__1_def)
   apply (simp add: TwosComplement__signExtend_def)
   apply (simp add: TwosComplement__sign_def)

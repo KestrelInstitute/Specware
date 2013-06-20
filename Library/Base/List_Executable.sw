@@ -615,7 +615,7 @@ proof isa list__1_Obligation_subtype
          auto simp add:  List__list__1__loop_steps)
 end-proof
 
-proof isa List__list__1__obligation_refine_def
+proof isa List__list__1__obligation_refine_def1
   by (auto simp add: List__list__1_def List__list__1__loop_steps)
 end-proof
 
@@ -628,11 +628,11 @@ proof isa List__list_1__1_Obligation_subtype
   by (simp only: List__e_at_at_def List__list_1_subtype_constr)
 end-proof
 
-proof isa List__list_1__1__obligation_refine_def
+proof isa List__list_1__1__obligation_refine_def1
   by (simp add: List__e_at_at_def List__list_1__1_def)
 end-proof
 
-proof isa List__tabulate__1__obligation_refine_def
+proof isa List__tabulate__1__obligation_refine_def1
   apply (subgoal_tac "\<forall>i l x.
                               List__tabulate__1__loop (i, l, f) @ [x] =
                               List__tabulate__1__loop (i, l @ [x], f)")
@@ -648,13 +648,13 @@ proof Isa List__e_at__def1
 end-proof
 
 
-proof isa List__e_at__1__obligation_refine_def 
+proof isa List__e_at__1__obligation_refine_def1 
   apply (induct l arbitrary: i, simp)
   apply (case_tac i, simp_all)
 end-proof
 
 
-proof isa List__e_at_at__1__obligation_refine_def 
+proof isa List__e_at_at__1__obligation_refine_def1 
   apply (rule sym)
   apply (induct l arbitrary: i, simp add:  List__e_at_at_def list_1_Isa_nth)
   apply (case_tac i, auto simp add:  List__e_at_at_def list_1_Isa_nth)
@@ -664,7 +664,7 @@ proof Isa List__empty_p__def1
   by (case_tac Wild__Var_0, auto)
 end-proof
 
-proof isa List__empty_p__1__obligation_refine_def 
+proof isa List__empty_p__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
@@ -672,24 +672,24 @@ proof Isa List__nonEmpty_p__def
   by (case_tac l, auto)
 end-proof
 
-proof isa List__nonEmpty_p__1__obligation_refine_def 
+proof isa List__nonEmpty_p__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
-proof isa List__theElement__1__obligation_refine_def 
+proof isa List__theElement__1__obligation_refine_def1 
   by (frule List__theElement_Obligation_the,
       auto simp add: List__theElement_def)
 end-proof
 
-proof isa List__in_p__1__obligation_refine_def 
+proof isa List__in_p__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
-proof isa List__nin_p__1__obligation_refine_def 
+proof isa List__nin_p__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
-proof isa List__subFromLong__1__obligation_refine_def 
+proof isa List__subFromLong__1__obligation_refine_def1 
    apply (simp add: List__subFromLong__1_def)
    apply (auto simp add: list_eq_iff_nth_eq List__length_subFromLong)
    apply (simp add: List__subFromLong_def, subst List__list_nth,
@@ -697,7 +697,7 @@ proof isa List__subFromLong__1__obligation_refine_def
 end-proof
 
 
-proof isa List__prefix__1__obligation_refine_def 
+proof isa List__prefix__1__obligation_refine_def1 
   apply (simp add: List__prefix__1_def)
   apply (induct l arbitrary: n, simp)
   apply (rotate_tac -1, erule rev_mp, induct_tac n, auto)
@@ -710,19 +710,19 @@ proof isa List__prefix__1__obligation_refine_def
 end-proof
 
 
-proof isa List__suffix__1__obligation_refine_def 
+proof isa List__suffix__1__obligation_refine_def1 
   apply (simp add: List__suffix_def List__suffix__1_def)
   apply (auto simp add: list_eq_iff_nth_eq List__length_subFromLong)
   apply (simp add: List__subFromLong_def, subst List__list_nth,
          simp_all add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
-proof isa List__removePrefix__1__obligation_refine_def 
+proof isa List__removePrefix__1__obligation_refine_def1 
   apply (induct l arbitrary: n, simp)
   apply (rotate_tac -1, erule rev_mp, induct_tac n, auto)
 end-proof
 
-proof isa List__head__1__obligation_refine_def 
+proof isa List__head__1__obligation_refine_def1 
  by (induct l, auto)
 end-proof
 
@@ -730,11 +730,11 @@ proof isa List__last__1_Obligation_exhaustive
   by (induct l, auto)
 end-proof
 
-proof isa List__last__1__obligation_refine_def 
+proof isa List__last__1__obligation_refine_def1 
   by (induct l, simp, case_tac l, auto)
 end-proof
 
-proof isa List__tail__1__obligation_refine_def 
+proof isa List__tail__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
@@ -746,11 +746,11 @@ proof isa butLast_alt_lemma
   by (induct l, simp, case_tac l, auto)
 end-proof
 
-proof isa List__e_pls_pls__1__obligation_refine_def 
+proof isa List__e_pls_pls__1__obligation_refine_def1 
   by (induct l1, auto)
 end-proof
 
-proof isa List__e_bar_gt__1__obligation_refine_def 
+proof isa List__e_bar_gt__1__obligation_refine_def1 
   by (simp add: List__e_bar_gt__1_def)
 end-proof
 
@@ -758,19 +758,19 @@ proof isa e_lt_bar_alt_lemma
   by (simp add: List__e_lt_bar_def, induct l, auto)
 end-proof
 
-proof isa List__update__1__obligation_refine_def 
+proof isa List__update__1__obligation_refine_def1 
   by (induct l arbitrary: i, simp, case_tac i, auto)
 end-proof
 
-proof isa List__forall_p__1__obligation_refine_def 
+proof isa List__forall_p__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
-proof isa List__exists_p__1__obligation_refine_def
+proof isa List__exists_p__1__obligation_refine_def1
   by (induct l, auto)
 end-proof
 
-proof isa List__exists1_p__1__obligation_refine_def
+proof isa List__exists1_p__1__obligation_refine_def1
   apply (induct l, clarsimp simp add: List__exists1_p_def)
   apply (drule sym, simp, thin_tac ?P, rule iffI)
   apply (simp add: List__exists1_p_def List__exists_p__def Ex1_def,
@@ -785,7 +785,7 @@ proof isa List__exists1_p__1__obligation_refine_def
   apply (rule_tac x="Suc x" in exI, clarsimp, case_tac y, simp_all)
 end-proof
 
-proof isa List__foralli_p__1__obligation_refine_def 
+proof isa List__foralli_p__1__obligation_refine_def1 
   apply (subgoal_tac "\<forall>p. List__foralli_p p l = List__foralli_p__1 p l",
          simp)
   apply (simp add: List__foralli_p__1_def List__foralli_p_def)
@@ -801,7 +801,7 @@ proof isa List__foralli_p__1__obligation_refine_def
   apply (rule list.induct, simp, clarsimp)
 end-proof
 
-proof isa List__filter__1__obligation_refine_def 
+proof isa List__filter__1__obligation_refine_def1 
   apply (simp add: List__filter__1_def rev_swap [symmetric])
   apply (induct l, auto, thin_tac ?P)
   apply (subgoal_tac "\<forall>s. foldl (\<lambda>b a. if p a then a # b else b) s l @ [a] =
@@ -814,7 +814,7 @@ proof isa List__zip__1_Obligation_exhaustive
   by (induct l1, auto, induct l2, auto)
 end-proof
 
-proof isa List__zip__1__obligation_refine_def
+proof isa List__zip__1__obligation_refine_def1
   by (induct l1 arbitrary: l2, auto, case_tac l2, simp_all)
 end-proof
 
@@ -822,7 +822,7 @@ proof isa List__zip3__1_Obligation_exhaustive
   by (induct l1, auto, case_tac l2, simp_all, case_tac l3, simp_all)
 end-proof
 
-proof isa List__zip3__1__obligation_refine_def 
+proof isa List__zip3__1__obligation_refine_def1 
   by (induct l1 arbitrary: l2 l3, auto simp add: List__zip3_alt,
       case_tac l2, simp_all, case_tac l3, simp_all)
 end-proof
@@ -836,7 +836,7 @@ proof isa List__unzip__1_Obligation_subtype
 sorry
 end-proof
 
-proof isa List__unzip__1__obligation_refine_def 
+proof isa List__unzip__1__obligation_refine_def1 
   by (induct x0, auto, case_tac "List__unzip__1 x0", auto)
 end-proof
 
@@ -849,7 +849,7 @@ proof isa List__unzip3__1_Obligation_subtype
 sorry
 end-proof
 
-proof isa List__unzip3__1__obligation_refine_def 
+proof isa List__unzip3__1__obligation_refine_def1 
     apply (case_tac "List__unzip3__1 x0", simp,
          frule List__unzip3__1_Obligation_subtype, clarsimp)
   apply (simp only:  List__unzip3_def)
@@ -859,7 +859,7 @@ proof isa List__unzip3__1__obligation_refine_def
   apply (case_tac "List__unzip3__1 x0", clarsimp)
 end-proof
 
-proof isa List__map__1__obligation_refine_def
+proof isa List__map__1__obligation_refine_def1
   (* I had a similar proof before - need lemmas about foldl *)
   apply (simp add: List__map__1_def rev_swap [symmetric])
   apply (induct l, auto, thin_tac ?P)
@@ -873,7 +873,7 @@ proof isa List__map2__1_Obligation_exhaustive
   by (induct l1, auto, induct l2, auto)
 end-proof
 
-proof isa List__map2__1__obligation_refine_def 
+proof isa List__map2__1__obligation_refine_def1 
   by (simp add: List__map2_def,
       induct l1 arbitrary: l2, auto, case_tac l2, simp_all)
 end-proof
@@ -883,7 +883,7 @@ proof isa List__map3__1_Obligation_exhaustive
 end-proof
 
 
-proof isa List__map3__1__obligation_refine_def 
+proof isa List__map3__1__obligation_refine_def1 
   by (simp add: List__map3_def List__zip3_alt,
       induct l1 arbitrary: l2 l3, auto,
       case_tac l2, simp_all, case_tac l3, simp_all)
@@ -893,13 +893,13 @@ proof isa List__removeNones__1_Obligation_exhaustive
   by (case_tac xx, auto)
 end-proof
 
-proof isa List__removeNones__1__obligation_refine_def 
+proof isa List__removeNones__1__obligation_refine_def1 
   apply (simp add:  List__removeNones_def, 
          rule the1I2, rule List__removeNones_Obligation_the)
   apply (induct l, auto, case_tac a, auto)
 end-proof
 
-proof isa List__matchingOptionLists_p__1__obligation_refine_def 
+proof isa List__matchingOptionLists_p__1__obligation_refine_def1 
   apply (subgoal_tac "\<forall>s. List__matchingOptionLists_p(l1, s) 
                         = List__matchingOptionLists_p__1(l1, s)",
          drule spec, simp)
@@ -923,7 +923,7 @@ proof isa List__matchingOptionLists_p__1__obligation_refine_def
   apply (clarsimp, case_tac i, clarsimp, clarsimp)
 end-proof
 
-proof isa List__mapPartial__1__obligation_refine_def 
+proof isa List__mapPartial__1__obligation_refine_def1 
   by (induct l, auto, case_tac "f a", auto)
 end-proof
 
@@ -932,7 +932,7 @@ proof isa List__mapPartial2__1_Obligation_exhaustive
 end-proof
 
 
-proof isa List__mapPartial2__1__obligation_refine_def 
+proof isa List__mapPartial2__1__obligation_refine_def1 
   by (simp add: List__mapPartial2_def,
       induct l1 arbitrary: l2, auto, case_tac l2, simp_all,
       case_tac "f (a, aa)", simp_all)
@@ -943,21 +943,21 @@ proof isa List__mapPartial3__1_Obligation_exhaustive
 end-proof
 
 
-proof isa List__mapPartial3__1__obligation_refine_def 
+proof isa List__mapPartial3__1__obligation_refine_def1 
   by (simp add: List__mapPartial3_def List__zip3_alt,
       induct l1 arbitrary: l2 l3, auto,
       case_tac l2, simp_all, case_tac l3, simp_all,
       case_tac "f (a, aa, ab)", simp_all)
 end-proof
 
-proof isa List__reverse__1__obligation_refine_def 
+proof isa List__reverse__1__obligation_refine_def1 
   apply (simp add: List__reverse__1_def, induct l, auto)
   apply (subgoal_tac "\<forall>s. List__reverse__1__loop (l, s) @ [a] 
                         = List__reverse__1__loop (l, s @ [a])", simp)
   apply (induct_tac l, auto)  
 end-proof
 
-proof isa List__repeat__1__obligation_refine_def
+proof isa List__repeat__1__obligation_refine_def1
   by (induct n, auto)
 end-proof
 
@@ -967,17 +967,17 @@ proof Isa List__repeat_aux_lemma
   by (metis append_Cons List__repeat_aux.simps(2) replicate_Suc replicate_app_Cons_same)
 end-proof
 
-proof isa List__repeat__2__obligation_refine_def
+proof isa List__repeat__2__obligation_refine_def1
   apply(simp add: List__repeat__2_def List__repeat_aux.simps List__repeat_aux_lemma)
 end-proof
 
-proof isa List__allEqualElements_p__1__obligation_refine_def 
+proof isa List__allEqualElements_p__1__obligation_refine_def1 
   apply (induct l, simp_all add: list_all_length List__allEqualElements_p_def)
   apply (thin_tac ?P, auto simp add: list_eq_iff_nth_eq)
 end-proof
 
 
-proof isa List__extendLeft__1__obligation_refine_def 
+proof isa List__extendLeft__1__obligation_refine_def1 
   apply (subgoal_tac "\<forall>k. List__extendLeft(l, x, length l + k)
                         = List__extendLeft__1(l, x, length l +  k)",
          drule_tac x="n - length l" in spec, simp)
@@ -1007,7 +1007,7 @@ proof isa List__unflattenL__1_Obligation_subtype
 end-proof
 
 
-proof isa List__unflattenL__1__obligation_refine_def 
+proof isa List__unflattenL__1__obligation_refine_def1 
   apply (cut_tac l=l in List__unflattenL_Obligation_the, simp,
          simp add:  List__unflattenL_def, rule the1I2, simp)
   apply (thin_tac "\<exists>!l. ?P l", clarsimp)
@@ -1046,7 +1046,7 @@ sorry
 end-proof
 
 
-proof isa List__unflatten__1__obligation_refine_def
+proof isa List__unflatten__1__obligation_refine_def1
   apply (simp add: zdvd_int [symmetric] del: List__unflatten__1.simps)
   apply (rule sym, induct l rule: length_induct)
   apply (case_tac "null xs")
@@ -1058,7 +1058,7 @@ proof isa List__unflatten__1__obligation_refine_def
   apply (simp_all, drule dvd_imp_le, simp_all)
 end-proof
 
-proof isa List__noRepetitions_p__1__obligation_refine_def 
+proof isa List__noRepetitions_p__1__obligation_refine_def1 
   by (induct l, auto)
 end-proof
 
@@ -1066,7 +1066,7 @@ proof isa List__increasingNats_p__1_Obligation_exhaustive
   by (cases xx, simp, case_tac "list", simp_all)
 end-proof
 
-proof isa List__increasingNats_p__1__obligation_refine_def 
+proof isa List__increasingNats_p__1__obligation_refine_def1 
   apply (case_tac nats, simp, clarsimp)
   apply (subgoal_tac "\<forall>a. List__increasingNats_p (a # list)
                         = List__increasingNats_p__1 (a # list)", simp)
@@ -1074,7 +1074,7 @@ proof isa List__increasingNats_p__1__obligation_refine_def
   apply (drule_tac x=aa in spec, auto)
 end-proof
 
-proof isa List__positionsSuchThat__1__obligation_refine_def 
+proof isa List__positionsSuchThat__1__obligation_refine_def1 
   apply (simp add: List__positionsSuchThat__1_def)
   apply (induct l, simp)
   apply (subgoal_tac "\<forall>k. map Suc (List__positionsSuchThat__1__loop (l, k, p)) =
@@ -1082,7 +1082,7 @@ proof isa List__positionsSuchThat__1__obligation_refine_def
   apply (induct_tac l, simp, clarsimp)
 end-proof
 
-proof isa List__leftmostPositionSuchThat__1__obligation_refine_def 
+proof isa List__leftmostPositionSuchThat__1__obligation_refine_def1 
   apply (simp add: List__leftmostPositionSuchThat_def 
                    List__leftmostPositionSuchThat__1_def)
   apply (induct l, auto simp add: Let_def null_def hd_map)
@@ -1100,11 +1100,11 @@ proof isa List__leftmostPositionSuchThat__1__obligation_refine_def
   apply (induct_tac l, simp, clarsimp)
 end-proof
 
-proof isa List__rightmostPositionSuchThat__1__obligation_refine_def 
+proof isa List__rightmostPositionSuchThat__1__obligation_refine_def1 
 sorry
 end-proof
 
-proof isa List__positionOf__1__obligation_refine_def 
+proof isa List__positionOf__1__obligation_refine_def1 
   apply (frule  List__positionOf_Obligation_subtype)
   apply (simp_all add: List__positionsOf_subtype_constr length_1_hd_conv 
                   del: One_nat_def)
@@ -1118,14 +1118,14 @@ proof isa List__prefixOf_p_pred
   by (induct subl arbitrary: l, auto, case_tac l, auto)
 end-proof
 
-proof isa List__sublistAt_p__1__obligation_refine_def 
+proof isa List__sublistAt_p__1__obligation_refine_def1 
   apply (auto simp add: List__sublistAt_p__1_def List__prefixOf_p_pred
        List__sublistAt_p_def)
   apply (rule_tac x="take i supl" in exI, auto,
          rule_tac x=post in exI, simp)
 end-proof
 
-proof isa List__positionsOfSublist__1__obligation_refine_def 
+proof isa List__positionsOfSublist__1__obligation_refine_def1 
 sorry
 end-proof
 
@@ -1133,7 +1133,7 @@ proof isa List__leftmostPositionOfSublistAndFollowing__1__loop_Obligation_subtyp
   by (induct subl, auto simp add: List__prefixOf_p_pred)  
 end-proof
 
-proof isa List__leftmostPositionOfSublistAndFollowing__1__obligation_refine_def 
+proof isa List__leftmostPositionOfSublistAndFollowing__1__obligation_refine_def1 
 sorry
 end-proof
 
@@ -1141,30 +1141,30 @@ proof isa List__rightmostPositionOfSublistAndPreceding__1_Obligation_subtype
 sorry
 end-proof
 
-proof isa List__rightmostPositionOfSublistAndPreceding__1__obligation_refine_def 
+proof isa List__rightmostPositionOfSublistAndPreceding__1__obligation_refine_def1 
 sorry
 end-proof
 
-proof isa List__findLeftmost__1__obligation_refine_def 
+proof isa List__findLeftmost__1__obligation_refine_def1 
   by (induct l, simp_all  add: List__findLeftmost_def)
 end-proof
 
-proof isa List__findRightmost__1__obligation_refine_def 
+proof isa List__findRightmost__1__obligation_refine_def1 
   apply (induct l, auto simp add: List__findRightmost_def 
                                   List__findRightmost__1_def null_def )
   apply (rotate_tac -2, erule rev_mp, induct_tac l, auto)+
 end-proof
 
-proof isa List__delete__1__obligation_refine_def 
+proof isa List__delete__1__obligation_refine_def1 
   by (induct l, auto simp add: List__delete_def)
 end-proof
 
-proof isa List__diff__1__obligation_refine_def 
+proof isa List__diff__1__obligation_refine_def1 
   by (simp add: List__diff_def, case_tac "l2=[]", auto,
       induct l1, auto)
 end-proof
 
-proof isa List__longestCommonPrefix__1__obligation_refine_def 
+proof isa List__longestCommonPrefix__1__obligation_refine_def1 
   apply (simp add: List__longestCommonPrefix_def)
   apply (rule the1I2, rule List__longestCommonPrefix_Obligation_the)
   apply (clarsimp, induct l2 arbitrary: l1 x, induct_tac l1, simp_all)
@@ -1172,7 +1172,7 @@ proof isa List__longestCommonPrefix__1__obligation_refine_def
   apply (erule disjE, simp_all, case_tac l1, simp_all)+
 end-proof
 
-proof isa List__permutation_p__1__obligation_refine_def 
+proof isa List__permutation_p__1__obligation_refine_def1 
   by (simp add: List__permutation_p_def List__permutation_p__1_def 
                 list_all_iff Ball_def)
 end-proof
@@ -1202,7 +1202,7 @@ proof isa List__permute__1_Obligation_subtype
       erule List__permute__1_Obligation_subtype_explicit, simp)
 end-proof
 
-proof isa List__permute__1__obligation_refine_def
+proof isa List__permute__1__obligation_refine_def1
   apply (simp add: List__permute_def, rule the1I2,
          drule_tac l=l in List__permute_Obligation_the, auto)
   apply (frule_tac l=l in List__permute__1_Obligation_subtype_explicit, simp)
@@ -1246,7 +1246,7 @@ sorry
 
 end-proof
 
-proof isa List__permutationOf__1__obligation_refine_def 
+proof isa List__permutationOf__1__obligation_refine_def1 
   apply (subgoal_tac "\<forall>l2. l1 permutationOf l2 = l1 permutationOf__1 l2", simp)
   apply (induct l1)
   apply (clarsimp simp add: List__permutationOf_nil null_def)

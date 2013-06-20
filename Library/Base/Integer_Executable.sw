@@ -27,25 +27,25 @@ refine def divT (i:Int, j:Int0): Int =
 
 
 
-proof isa Integer__divides__1__obligation_refine_def
+proof isa Integer__divides__1__obligation_refine_def1
   by (simp add: Integer__divides__1_def dvd_eq_mod_eq_0)
 end-proof
 
-proof isa Integer__divR__1__obligation_refine_def
+proof isa Integer__divR__1__obligation_refine_def1
   apply (simp only: Integer__divR__1_def transfer_nat_int_numerals(3) 
                     zabs_def nat_mult_distrib [symmetric] nat_less_eq_zless)
   apply (auto simp add: divR_def)
 end-proof
 
-proof isa Integer__divE__1__obligation_refine_def
+proof isa Integer__divE__1__obligation_refine_def1
   by (simp add: Integer__divE__1_def divE_def)
 end-proof
 
-proof isa Integer__modE__1__obligation_refine_def
+proof isa Integer__modE__1__obligation_refine_def1
   by (simp add: Integer__modE__1_def modE_def)
 end-proof
 
-proof isa Integer__divT__1__obligation_refine_def
+proof isa Integer__divT__1__obligation_refine_def1
   by (simp add: Integer__divT__1_def divT_def)
 end-proof
 
