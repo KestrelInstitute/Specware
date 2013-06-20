@@ -572,8 +572,8 @@ spec
                                                 0 cjs
                                in
                                  num_refs - 1 = 1 % This one and the one we want to replace
-                                                               || embed? Record e
-                                                                  && num_refs - 1 = countDeReferencesIn(v, cjs))
+                                   || embed? Record e
+                                      && num_refs - 1 = countDeReferencesIn(v, cjs))
                            | _ -> false)
            cjs
       of Some cj ->
@@ -581,13 +581,13 @@ spec
 	    | Some (([sv as (_, sv_ty)], _, s_tm)) ->
 	      let sbst = [(sv, s_tm)] in
               let pred_tm = case subtypeComps(spc, sv_ty) of
-                              | Some(_, pred) -> simplifiedApply(pred, s_tm, spc)
-                              | None -> trueTerm
+                              | Some(_, pred) | ~(equivType? spc (sv_ty, inferType(spc, s_tm))) ->
+                                simplifiedApply(pred, s_tm, spc)
+                              | _ -> trueTerm
               in
               simplifyExists spc (filter (fn v -> ~(equalVar?(v, sv))) vs,
-                                  pred_tm ::
-                                    (mapPartial (fn c -> if c = cj then None
-                                                         else Some(simpSubstitute(spc,c,sbst)))
+                                    (map (fn c -> if c = cj then pred_tm
+                                                  else simpSubstitute(spc,c,sbst))
                                        cjs)))
       | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)    
 
