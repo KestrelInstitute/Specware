@@ -293,6 +293,19 @@ Utilities qualifying spec
 	(RestrictedPat(pat,trm,a),sub,freeNames)
       | _ -> (pat,sub,freeNames)
 
+
+ op printVar ((id, ty) : MSVar) : String =
+   id ^ ": " ^ printType ty
+
+ op printVars (vars : MSVars) : String =
+  (foldl (fn (s, v) ->
+            s ^ (if s = "[" then "" else " ")
+              ^ printVar v)
+         "[" 
+         vars)
+  ^ "]"
+
+
  %----------------------
  def freeVars (M) = 
    let vars = freeVarsRec(M) in
@@ -970,17 +983,17 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	| _ -> MS.mkOr(t1,t2)
 
  op  mkAnd: MSTerm * MSTerm -> MSTerm 
- def mkAnd(t1,t2) = 
-     case (t1,t2)
-       of (Fun(Bool true,_,_),_) -> t2
-	| (Fun(Bool false,_,_),_) -> t1
-	| (_,Fun(Bool true,_,_)) -> t1
-	| (_,Fun(Bool false,_,_)) -> t2
-	| _ ->
-          if termIn?(t1, getConjuncts t2)
-            then t2
-            else MS.mkAnd(t1,t2)
-
+ def mkAnd(t1,t2) =
+   let t1_cjs = getConjuncts t1 in
+   let t2_cjs = getConjuncts t2 in
+   let t1_cjs = filter (fn cj -> ~(trueTerm? cj || termIn?(t1, t2_cjs))) t1_cjs in
+   let t2_cjs = filter (fn cj -> ~(trueTerm? cj)) t2_cjs in
+   let new_cjs = t1_cjs ++ t2_cjs in
+   if exists? falseTerm? new_cjs
+     then falseTerm
+     else if new_cjs = [] then trueTerm
+     else foldr MS.mkAnd (last new_cjs) (butLast new_cjs)
+ 
  op  mkSimpConj: MSTerms -> MSTerm
  def mkSimpConj(cjs) =
   let cjs = foldl (fn (cjs, cj) -> if termIn?(cj, cjs) then cjs else cj::cjs) [] cjs in
