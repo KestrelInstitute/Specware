@@ -57,9 +57,6 @@
 %%   efficiency and to ensure that it is faithful to the pseudocode
 %%   definitions.
 %% 
-%% - The transform doesn't actually even construct a new spec
-%%   currently; it merely prints out the combined postcondition and
-%%   inferred precondition.
 spec
 
 import Script
@@ -86,13 +83,6 @@ type STRule = { st_stateType : MSType,   % StateType
               }
 
 
-
-
-%% FIXME: This should take in an extra argument, that is an optional
-%% list of theorem names that should be used when extracting the pre-
-%% and post-conditions. But I don't know how to get multiple arguments
-%% for a transformation to work with the specware tranformation shell
-%% parser.
 op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites):Env Spec =
 
 %% This transformation takes a list of "rules", defined as specware ops, and
@@ -147,23 +137,18 @@ op mkCombTerm(dom:List (Id * MSType))(ran:List (Id * MSType))(pre:MSTerm)(post:M
     let body = mkLambda (mkTuplePat (map mkVarPat dom),Any noPos) in
     mkTypedTerm (body,mkArrow(domType, ranType))
 
-%% FIXME:
-%% This doesn't properly handle the case where the rule does not have the shape
-%% (s:state | P s) -> { s':state | Q s s'}
-%% In particular, when the state transformer takes other arguments, it may
-%% have the shape:
-%% ((s,x1,...xn):(state*T1*...*Tn) | P s) -> { s':state | Q s s'}
-%% This needs to be properly extracted.
-
-%% Get the pre and post condition for an op, extracted from its 
-%% The type of the op must be a function with a single argument (with a
-%% optional subtype constraint) maping to first-order result (with an
-%% optional subtype constraint).
+%% Get the pre and post condition for an op, extracted from its The
+%% type of the op must be a function with at least one argument, (with
+%% the state being the first argument) to one or more values. If the
+%% result of the op is a single type, it must match the type of the
+%% first argument to the op. If the result is a tuple of types, then
+%% the first element of the tuple must match the first argument of the
+%% op.
 %% Arguments:
 %%%  spc: The spec that contains the op.
 %%   qid: The op to extract.
 %% Returns:
-%%   A 4-tuple of (stateType, input argument name, precondition, output name, postcondition, input args, output values)
+%%   An STRule representing the elements of the rule.
 op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule = 
    % let _ = writeLine ("Looking up op " ^ (show qid)) in
    let def printOthers(p:Id*MSType) = writeLine (p.1 ^ " " ^ printType p.2) in
@@ -216,7 +201,6 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule =
 %%  ty:  The type 
 %% Returns:
 %%  3-tuple (Bound variable, classifier, other components and types, Option (subtype expression) )
-
 op getSubtypeComponents(spc:Spec)(ty:MSType)(theorems:Rewrites):Env (Id * MSType * List (Id * MSType) * Option MSTerm) =
   case ty of
    | Subtype (binding,pred,_) ->
@@ -319,9 +303,9 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFR
       
 
     | _ | unfoldable? (tm,spc) ->
-            % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
+            let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
             let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
-            % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
+            let _ = writeLine ("Simplified to \n"^ printTerm tm') in
             normalizeCondition spc theorems tm'
     | _ -> case rewriteTerm spc theorems tm of
             | Some tm' -> normalizeCondition spc theorems tm'
@@ -422,8 +406,8 @@ op pick(args:BTArgs)(i:DNFRep):BTChoice =
                             (case scrutineeRefinement? args x of
                               | Some (s, (ty,c,pat,negated)) -> 
                                      BTCase (s, ty) 
-                              | None ->
-                                let _ = writeLine (printTerm x ^ " is not a case split.") in BTSplit x)
+                              | None | isFullyDefined? args x -> BTSplit x
+                              | None -> pick args ((xs++[x])::rest))
 
                           | [] -> BTNone % Dead case.
                           | ([]::rest) -> pick args rest % Dead case
@@ -839,8 +823,11 @@ op isDefinition?(vars:List Id)(t:MSTerm):Option (Id * MSType) =
              Record ([(_,l), (_,Var ((r,ty),_))], argPos), appPos) 
       | checkDef r l -> Some (r,ty)
     | _ -> None
-   
 
+%% An expression 't' is fully defined if it doesn't reference any
+%% variables not yet defined.
+op isFullyDefined?(args:BTArgs)(t:MSTerm):Boolean =
+    (forall? (fn v -> ~(v in? args.vars)) (varNames (freeVars t)))
 
 
 op removePatternVars (vars:List Id)(pat:Option MSPattern):List Id =
