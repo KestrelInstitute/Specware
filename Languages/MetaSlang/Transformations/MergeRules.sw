@@ -297,6 +297,7 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFR
        ; return (v1 ++ v2, (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1)))
        }
     | (Apply (Fun (f as Or,_,_), Record (args,_),_)) ->
+       % let _ = writeLine ("Splitting in " ^ printTerm tm) in
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
        { (v1,dnf1) <- normalizeCondition spc theorems a1;
@@ -317,7 +318,7 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFR
     | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
         normalizeCondition spc theorems (substitute (body, [(var,definition)]))
 
-    | _ | unfoldable? (tm,spc) ->
+    | _ | isUnfoldable? tm spc  ->
             % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
             let tm' = betan_step (unfoldTerm (tm,spc)) in
             % let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
@@ -1106,9 +1107,6 @@ op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
                tm
 
 
-%%%%%%%%%%%%%%%%%%%%%%
-%%% Testing 
-%%%%%%%%%%%%%%%%%%%%%%
 
 % Beta-Reduction
 op betan_step (t:MSTerm):MSTerm =
@@ -1143,7 +1141,12 @@ op isBetaRedex (t:MSTerm):Boolean =
      | Apply(Lambda([(pat,_,body)],_),argument,pos) -> true
      | _ -> false
 
-      
+op isUnfoldable? (tm:MSTerm)(spc:Spec):Boolean =
+  case tm of
+      | Apply(Fun(Op(Qualified (_,qid),_),_,_), _, _)
+          | qid in? (["<=", "<"] : List Id) -> false
+      | _ -> unfoldable?(tm,spc)
+
 %%%%%%%%%%%%%%%%%%%%%%
 %%% Testing 
 %%%%%%%%%%%%%%%%%%%%%%
