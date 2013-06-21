@@ -274,8 +274,8 @@ op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites):Env (List (E
     % let _ = map printIt ps in
     % let _ = writeLine "Preconditions" in
     % let _ = List.map (fn p -> writeLine (printDNF (p.2))) pres in
-    % let _ = writeLine "Postconditions" in
-    % let _ = List.map (fn p -> writeLine (printDNF (p.2))) posts in
+    let _ = writeLine "Postconditions" in
+    let _ = List.map (fn p -> writeLine (printDNF (p.2))) posts in
     return rels
   }
  
@@ -286,9 +286,16 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFR
   % let _ = writeLine ("Normalizing " ^ printTerm tm) in
   case tm of
     | Bind (Exists,vars,body,_) -> 
-      { dnf <- splitConjuncts spc theorems body   
-      ; return (vars,dnf)
+      { (vs',dnf) <- normalizeCondition spc theorems body   
+      ; return (vs' ++ vars,dnf)
       }
+   | (Apply (Fun (f as And,_,_), Record (args,_),_)) -> 
+       let Some a1 = getField (args,"1") in
+       let Some a2 = getField (args,"2") in
+       { (v1,r1) <- normalizeCondition spc theorems a1
+       ; (v2,r2) <- normalizeCondition spc theorems a2
+       ; return (v1 ++ v2, (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1)))
+       }
     | (Apply (Fun (f as Or,_,_), Record (args,_),_)) ->
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
@@ -296,61 +303,31 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env(ExVars *  DNFR
          (v2,dnf2) <- normalizeCondition spc theorems a2;
          return (v1 ++ v2, dnf1 ++ dnf2)
        }
-    % | Let (_,_,_) -> raise (Fail("Let " ^ anyToString tm))
-    | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
-      normalizeCondition spc theorems (substitute (body, [(var,definition)]))
+   | IfThenElse (p,t,e,_) -> 
+     { (vp,rp) <- normalizeCondition spc theorems p;
+       (vt,rt) <- normalizeCondition spc theorems t;
+       (ve,re) <- normalizeCondition spc theorems e;
+       let ut = andDNF rp rt in
+       let ue = andDNF (negateDNF rp) re in
+       return (vp ++ vt ++ ve, ut ++ ue)
+      }
+   | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+        return ([],[[mkNot (Apply(Fun(Equals,ty,a1),args,a2))]])
 
-      
+    | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
+        normalizeCondition spc theorems (substitute (body, [(var,definition)]))
 
     | _ | unfoldable? (tm,spc) ->
-            let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
-            let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
-            let _ = writeLine ("Simplified to \n"^ printTerm tm') in
+            % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
+            let tm' = betan_step (unfoldTerm (tm,spc)) in
+            % let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
+            % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
             normalizeCondition spc theorems tm'
     | _ -> case rewriteTerm spc theorems tm of
             | Some tm' -> normalizeCondition spc theorems tm'
-            | None -> {  dnf <- splitConjuncts spc theorems tm
-                       ; return ([],dnf)
-                       }
+            | None -> return ([],[[tm]]) 
 
-%% Convert a term into DNF, represented as a list of lists.
-op splitConjuncts(spc:Spec)(theorems:Rewrites)(tm:MSTerm):Env DNFRep =
-  case tm of
-   | (Apply (Fun (f as And,_,_), Record (args,_),_)) -> 
-       let Some a1 = getField (args,"1") in
-       let Some a2 = getField (args,"2") in
-       { r1 <- splitConjuncts spc theorems a1
-       ; r2 <- splitConjuncts spc theorems a2
-       ; return (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1))
-       }
-   | (Apply (Fun (f as Or,_,_), Record (args,_),_)) -> 
-       let Some a1 = getField (args,"1") in
-       let Some a2 = getField (args,"2") in
-       { r1 <- splitConjuncts spc theorems a1
-       ; r2 <- splitConjuncts spc theorems a2
-       ; return (r1 ++ r2)
-       }
-   | IfThenElse (p,t,e,_) -> 
-     { rp <- splitConjuncts spc theorems p;
-       rt <- splitConjuncts spc theorems t;
-       re <- splitConjuncts spc theorems e;
-       let ut = andDNF rp rt in
-       let ue = andDNF (negateDNF rp) re in
-       return (ut ++ ue)
-      }
-   | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
-      splitConjuncts spc theorems (substitute (body, [(var,definition)]))
-   | Apply(Fun(NotEquals,ty,a1),args,a2) ->
-        return [[mkNot (Apply(Fun(Equals,ty,a1),args,a2))]]
-   | _ | unfoldable? (tm,spc) ->
-         % let _ = writeLine ("Simplifying " ^ printTerm tm) in
-         % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
-         let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
-         % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
-         splitConjuncts spc theorems tm'
-    | _ -> case rewriteTerm spc theorems tm of
-            | Some tm' -> splitConjuncts spc theorems tm'
-            | None -> return [[tm]] 
+
 
 
 % The 'Choice' type represents the choice of the next conjunct to
@@ -393,8 +370,10 @@ op pick(args:BTArgs)(i:DNFRep):BTChoice =
                             % conjunction are postConstraints, in
                             % which case the conjunction will have
                             % been identified above.
-                            let _ = writeLine "Skipping postconstraint" in
-                            % let _ = writeLine (printTerm x) in
+                            % let _ = writeLine ("Skipping postconstraint " ^ printTerm x) in
+                            % let _ = writeLine "In clause" in
+                            % let _ = map (fn i -> writeLine (printTerm i)) (x::xs) in
+                            % let _ = writeLine "End clause" in
                             pick args ((xs ++ [x])::rest)
                           | ((x::xs)::rest) | some? (isDefinition? args.vars x) ->
                             %% If the term is of the form (ex x. v)
@@ -405,7 +384,8 @@ op pick(args:BTArgs)(i:DNFRep):BTChoice =
                             % 'x' is not a post-constraint, so split on it.
                             (case scrutineeRefinement? args x of
                               | Some (s, (ty,c,pat,negated)) -> 
-                                     BTCase (s, ty) 
+                                     BTCase (s, ty)
+                              | None | trueTerm? x -> pick args (xs::rest)
                               | None | isFullyDefined? args x -> BTSplit x
                               | None -> pick args ((xs++[x])::rest))
 
@@ -423,7 +403,6 @@ op simplify(p:MSTerm)(i:DNFRep):DNFRep =
            | Apply(Fun(NotEquals,ty,a1),args,a2) ->
               mkNot (Apply(Fun(Equals,ty,a1),args,a2))
            | _ -> p  in
-
   
    let def conflicts(cn) = 
           case cn of 
@@ -431,8 +410,8 @@ op simplify(p:MSTerm)(i:DNFRep):DNFRep =
             | (q::qs) ->  (equalTerm? (negateTerm (noNE p), (noNE q)))
                         || conflicts qs in
    
-   % remove any atomic predicates matching p.
-   let rempos = map (fn cn -> filter (fn t ->  ~ (equalTerm? (t, p))) cn) i in
+   % remove any atomic predicates matching p and not 'true'
+   let rempos = map (fn cn -> filter (fn t -> ~(trueTerm? t) &&  ~ (equalTerm? (t, p))) cn) i in
    let remneg = filter (fn cn -> ~ (conflicts cn)) rempos in
    % let _ = writeLine ("Under " ^ printTerm p) in
    % let _ = writeLine ("simplify " ^ printDNF i) in
@@ -442,19 +421,19 @@ op simplify(p:MSTerm)(i:DNFRep):DNFRep =
 
 
 op simplifyCase(args:BTArgs)(i:DNFRep)(s:MSTerm)(ty:MSType)((c,pat):(Id * Option MSPattern)):DNFRep =
-   let _ = writeLine ("Under pattern " ^ printPattern (EmbedPat (c,pat,ty,noPos))) in
-   let _ = writeLine ("And scrutinee " ^ printTerm s) in
-   let _ = writeLine (printDNF i) in 
+   % let _ = writeLine ("Under pattern " ^ printPattern (EmbedPat (c,pat,ty,noPos))) in
+   % let _ = writeLine ("And scrutinee " ^ printTerm s) in
+   % let _ = writeLine (printDNF i) in 
    let def conflicts?(cn) =
             case cn of 
               | [] -> false
               | (q::qs) -> 
                   case scrutineeRefinement? args q of
                     | Some (s',(ty,c',pat,false)) ->  % s' = c' pat and c' and c are not the same.
-                        let _ = writeLine (printTerm q ^ " is a scrutinee refinement")
+                        let _ = () % writeLine (printTerm q ^ " is a scrutinee refinement")
                         in (equalTerm? (s,s') &&  ~ (c = c'))  || conflicts? qs
                     | Some (s',(ty,c',pat,true)) ->  % ~(s' = c pat)
-                        let _ = writeLine (printTerm q ^ " is a scrutinee refinement")                      
+                        let _ = () % writeLine (printTerm q ^ " is a scrutinee refinement")                      
                         in (equalTerm? (s,s') &&  (c = c'))  || conflicts? qs
                     | None -> % let _ = writeLine ("Not a scrutinee refinement: " ^ printTerm q) in
                               conflicts? qs 
@@ -469,7 +448,7 @@ op simplifyCase(args:BTArgs)(i:DNFRep)(s:MSTerm)(ty:MSType)((c,pat):(Id * Option
    in 
    let rempos = map (fn cn -> filter (fn c -> ~ (samePattern? c)) cn) i in
    let remneg = filter (fn cn -> ~ (conflicts? cn)) rempos in
-   let _ = writeLine ("New conditions " ^ printDNF remneg) in
+   % let _ = writeLine ("New conditions " ^ printDNF remneg) in
    remneg
 
 
@@ -542,9 +521,11 @@ op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
       | BTFalse -> (mkFalse (), [args.assumptions])
       | BTTrue _ -> (mkTrue (), []) 
       | BTSplit p ->
-          let _ = writeLine ("Split on " ^ printTerm p) in
+          % let _ = writeLine ("Split on " ^ printTerm p) in
           let pos = simplify p inputs in
           let neg = simplify (negateTerm p) inputs in
+          % let _ = writeLine ("positive is " ^ printDNF pos) in
+          % let _ = writeLine ("negative is " ^ printDNF neg) in
           let (tb,tp) = bt (addAssumption args p) pos in
           let (eb,ep) = bt (addAssumption args (negateTerm p)) neg in
           (IfThenElse (p, tb, eb, noPos), tp ++ ep)
@@ -552,8 +533,9 @@ op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
       | BTCase (s, ty) -> 
           let Some addends = coproductOpt(args.spc,ty) in
           let constructors = List.map (fn c -> c.1) addends in
-          let _ = writeLine "Case split with constructors:" in
-          let _ = map writeLine constructors in
+          % let _ = writeLine "Case split with constructors:" in
+          % let _ = writeLine ("on scrutinee\n" ^ printTerm s) in          
+          % let _ = map writeLine constructors in
           let pats = gatherPatterns args s ty inputs in
           let def mkAlt (p as (con,pvars)) =
                let pat = EmbedPat (con,pvars,ty,noPos) in
@@ -598,9 +580,9 @@ op getTransformerInfo(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env (MSType*
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
        % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
      | Some (tm, ty as (Arrow (dom, codom,_))) ->
-       let _ = writeLine ("Arrow type is " ^ printType ty) in
-       let _ = writeLine ("Domain is " ^ (printType dom)) in
-       let _ = writeLine ("Codomain is " ^ (printType codom)) in
+       % let _ = writeLine ("Arrow type is " ^ printType ty) in
+       % let _ = writeLine ("Domain is " ^ (printType dom)) in
+       % let _ = writeLine ("Codomain is " ^ (printType codom)) in
        { (preStateVar,preStateType,preArgs,preCondition) <- getSubtypeComponents spc dom theorems
        ; (postStateVar,postStateType,postResults,postCondition) <- getSubtypeComponents spc codom theorems
          % Require the pre- and poststate types  match.
@@ -714,7 +696,8 @@ op postConstraint?(args:BTArgs)(t:MSTerm):Boolean =
   % let _ = writeLine ("Checking postConstraint on " ^ (printTerm t)) in
   case t of
     | Apply (Fun (Equals,_,eqPos), 
-             Record ([(_,l), (_,r)], argPos), appPos) -> isObs l || isObs r || isOutput l || isOutput r
+             Record ([(_,l), (_,r)], argPos), appPos) ->
+               isObs l || isObs r || isOutput l || isOutput r
     | _ -> false
 
 
@@ -752,15 +735,15 @@ op scrutineeRefinement?(args:BTArgs)(t:MSTerm):Option (MSTerm * (MSType * Id * O
 op gatherPatterns(args:BTArgs)(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option MSPattern) =
   case coproductOpt(args.spc, ty) of
      | Some fields ->
-        let _ = writeLine ("Checking type" ^ printType ty) in
+        % let _ = writeLine ("Checking type" ^ printType ty) in
         let constrs = List.map (fn cons -> cons.1) fields in
-        let _ = List.map (fn cons -> writeLine cons.1) fields in
+        % let _ = List.map (fn cons -> writeLine cons.1) fields in
         let present = gatherPatterns' args s ty d in
-        let _ = writeLine "Patterns are " in
+        % let _ = writeLine "Patterns are " in
         let def printPat p = case p of
                                | (c,Some pat) -> c ^ " " ^ printPattern pat
                                | (c,None) -> c in
-        let _ = List.map (fn p -> writeLine (printPat p)) present in
+        % let _ = List.map (fn p -> writeLine (printPat p)) present in
         % present is the set [(Ci, pati) ...] of constraints of the
         % form s = Ci pati or ~(s = Ci pati) (closed under
         % reflexivity) present in d.
@@ -791,8 +774,8 @@ op gatherPatterns'(args:BTArgs)(s:MSTerm)(ty:MSType)(d:DNFRep):List (Id * Option
               | (i, Some x) -> printPattern x
               | (i,_) -> i ^ " (nopattern) "
    in let pats =  nubBy samePattern? (catOptions (map altPattern? (flatten d)))
-   in let _ = writeLine ("Matching patterns for " ^ printTerm s)
-   in let _ = List.map (fn p -> writeLine (printPat p)) pats
+   % in let _ = writeLine ("Matching patterns for " ^ printTerm s)
+   % in let _ = List.map (fn p -> writeLine (printPat p)) pats
    in pats
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -882,7 +865,7 @@ op inTerm? (c:MSTerm) (l:MSTerms):Boolean = inBy? equalTerm? c l
 
 op printIt ((vs,xs) : (ExVars * DNFRep)):() =
 
-   let _ = map (fn d -> let _ = writeLine "Conjunction:" in
+   let _ = map (fn d -> % let _ = writeLine "Conjunction:" in
                         % let _ = writeLine (anyToString vs ) in
                         map (fn c -> writeLine ("\t" ^ printTerm c)) d) xs
    in ()
@@ -1122,6 +1105,43 @@ op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
                % let _ = writeLine ("Yields:\n" ^ printTerm newTerm) in
                tm
 
+
+%%%%%%%%%%%%%%%%%%%%%%
+%%% Testing 
+%%%%%%%%%%%%%%%%%%%%%%
+
+% Beta-Reduction
+op betan_step (t:MSTerm):MSTerm =
+  case t of
+     | Apply(Lambda([(pat,_,body)],_),argument,pos) ->
+         % let _ = writeLine ("Beta-reducing:\n " ^ printTerm t) in
+         let boundVars =
+             case pat of
+               | VarPat(v,_)            -> [v]
+               | RecordPat(fields,_)    ->
+                   List.map (fn (x,VarPat(v,_)) -> v) fields
+         in
+         let arguments = termToList argument in
+         % let _ = writeLine "Lambda arguments" in
+         % let _ = List.map (fn i -> writeLine i.1) boundVars in
+         let zip = zipWith (fn x -> fn y -> (x,y)) in
+         substitute(body,zip boundVars arguments)
+     | Apply(fun,argument,_) ->
+         let t' = betan_step fun in
+         (case t' of
+           | Lambda([(pat,_,body)],_) ->
+                betan_step (mkApply (t', argument))
+           | _ -> mkApply(t',argument))
+     | _  ->
+       % let _ = writeLine ("Can't reduce term") in
+       % let _ = writeLine (printTerm t) in
+       t
+
+
+op isBetaRedex (t:MSTerm):Boolean =
+  case t of
+     | Apply(Lambda([(pat,_,body)],_),argument,pos) -> true
+     | _ -> false
 
       
 %%%%%%%%%%%%%%%%%%%%%%
