@@ -967,7 +967,7 @@ proof Isa List__repeat_aux_lemma
   by (metis append_Cons List__repeat_aux.simps(2) replicate_Suc replicate_app_Cons_same)
 end-proof
 
-proof isa List__repeat__2__obligation_refine_def1
+proof isa List__repeat__2__obligation_refine_def2
   apply(simp add: List__repeat__2_def List__repeat_aux.simps List__repeat_aux_lemma)
 end-proof
 
