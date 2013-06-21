@@ -13,6 +13,7 @@
 (defpackage :ShowDeps)
 (defpackage :ShowImports)
 (defpackage :ShowData)
+(defpackage :SpecToACL2)
 (defpackage :CheckSpec)
 
 ;; Toplevel Lisp aliases for Specware
@@ -918,6 +919,16 @@
     (if (equal val '(:|None|))
         nil ;does this return value matter?
         ;; strip the :|Some| to get the string
+        (setq *last-unit-Id-_loaded* (cdr val)))))
+
+;;; This is the function invoked by the Specware shell command 'gen-acl2'/
+;;; This function is the Lisp 'wrapper' of the Metaslang code that does the real work.
+(defun gen-acl2 (&optional argstring)
+  (let ((val (ACL2::evaluateGenACL2-3 (wrap-option argstring)
+                                            (wrap-option *last-unit-Id-_loaded*)
+                                            (home-dir))))
+    (if (equal val '(:|None|))
+        nil
         (setq *last-unit-Id-_loaded* (cdr val)))))
 
 

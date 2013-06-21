@@ -15,6 +15,7 @@ Specware qualifying spec
   import /Languages/MetaSlang/Transformations/EditFunctions  % Functions called from XEmacs
   import /Languages/SpecCalculus/AbstractSyntax/CheckSpec
   import /Languages/SpecCalculus/AbstractSyntax/ShowData
+  import /Languages/ACL2/SpecToACL2
   import /Languages/SpecCalculus/AbstractSyntax/ShowDeps
   import /Languages/SpecCalculus/AbstractSyntax/ShowImports
   import /Languages/MetaSlang/CodeGen/C/PrintSpecAsC

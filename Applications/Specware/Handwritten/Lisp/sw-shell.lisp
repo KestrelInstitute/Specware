@@ -37,6 +37,7 @@
     ("oblig"     . "[unit-term] Abbreviation for show obligations ...")
     ("gen-obligations" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
     ("gen-obligs" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
+    ("gen-acl2"   . "Generates ACL2 code for unit.")
     ("gen-haskell" . "[unit-term] Generate Haskell code for unit.")
     ("gen-h" . "[unit-term] Generate Haskell code theory for unit.")
     ("gen-haskell-top" . "[unit-term] Generate Haskell code for unit slicing imports.")
@@ -386,6 +387,13 @@
               (unless (null uid)
                 (setq cl-user::*last-unit-Id-_loaded* uid)
                 (IsaTermPrinter::printUIDtoThyFile-2 uid t))))
+           (gen-acl2 
+            (let ((TypeObligations::generateTerminationConditions? nil)
+                  (TypeObligations::generateExhaustivityConditions? t)
+                  (Simplify::simplifyUsingSubtypes? t)
+                  (Prover::treatNatSpecially? nil)
+                  (Utilities::namedTypesRaised? t))
+              (cl-user::gen-acl2 argstr) (values)))
            ((gen-haskell gen-h)
             (let ((uid (if (not (null argstr))
                            argstr
