@@ -512,8 +512,9 @@ IsaTermPrinter qualifying spec
                        then
                          if anyTerm? prev_dfn
                            then    % Post-condition refinement
+                             let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def"^show refine_num in
                              let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
-                              let _ = writeLine("oblig: "^printTerm oblig) in
+                             % let _ = writeLine("oblig: "^printTerm oblig) in
                              case makeNonTrivTheorem(q, thm_name, oblig, spc) of
                                | None -> (el::elts, ops)
                                | Some new_el ->
@@ -523,7 +524,9 @@ IsaTermPrinter qualifying spec
                          if anyTerm? prev_dfn
                            then (el::elts, ops)    % !!! place holder
                            else
-                             let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), prev_dfn, spc) in
+                             let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def" in
+                             let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
+                                                      prev_dfn, spc) in
                              let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
                              (el::eq_oblig::elts, ops)
                    | _ -> (el::elts, ops))
@@ -554,6 +557,7 @@ IsaTermPrinter qualifying spec
                         then
                           if anyTerm? prev_dfn
                             then    % Post-condition refinement
+                              let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
                               let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
@@ -568,7 +572,9 @@ IsaTermPrinter qualifying spec
                           if anyTerm? prev_dfn
                             then el::elts    % !!! place holder
                             else
-                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty), prev_dfn, spc) in
+                              let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def" in
+                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
+                                                       prev_dfn, spc) in
                               let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                                let _ = writeLine("Proof string:\n"^prf_str) in

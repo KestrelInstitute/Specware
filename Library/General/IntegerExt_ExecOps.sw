@@ -156,7 +156,7 @@ proof Isa e_ast_ast__1_Obligation_subtype
 end-proof
 
 
-proof Isa e_ast_ast__1__obligation_refine_def1
+proof Isa e_ast_ast__1__obligation_refine_def
   apply (subgoal_tac "base **__1 0 = 1", rule nat_induct,
          simp_all (no_asm_simp) only: Integer__e_ast_ast__1.simps,
          simp_all del: Integer__e_ast_ast__1.simps)
@@ -176,7 +176,7 @@ termination
 end-proof
 
 
-proof Isa isqrt__1__obligation_refine_def1
+proof Isa isqrt__1__obligation_refine_def
   apply (simp only:  int_int_eq [symmetric],
          simp add: Integer__isqrt_def, rule the1_equality)
   apply (rule Integer__isqrt_Obligation_the)
@@ -190,7 +190,7 @@ proof Isa isqrt__1__obligation_refine_def1
 end-proof
 
 
-proof Isa isqrt__2__obligation_refine_def1
+proof Isa isqrt__2__obligation_refine_def
   apply (simp only:  int_int_eq [symmetric],
          simp add: Integer__isqrt_def, rule the1_equality)
   apply (rule Integer__isqrt_Obligation_the)
@@ -219,7 +219,7 @@ proof Isa primesLessThan__1_Obligation_subtype0
 end-proof
 
 
-proof Isa primesLessThan__1__obligation_refine_def1
+proof Isa primesLessThan__1__obligation_refine_def
   apply (simp add: Integer__primesLessThan_def, rule the1_equality)
   apply (rule Integer__primesLessThan_Obligation_the)
   apply (simp only: Integer__primesLessThan__1_def)
@@ -243,7 +243,7 @@ proof Isa primesLessThan__1__obligation_refine_def1
   sorry
 end-proof
 
-proof Isa prime_p__1__obligation_refine_def1
+proof Isa prime_p__1__obligation_refine_def
   apply (simp add: Integer__prime_p__1_def)
   apply (simp add: Integer__primesLessThan_def,
          rule the1I2, rule Integer__primesLessThan_Obligation_the)
@@ -254,7 +254,7 @@ proof Isa prime_p__1__obligation_refine_def1
          simp add: list_all_iff, auto split: split_if_asm)
 end-proof
 
-proof Isa coprime_p__1__obligation_refine_def1
+proof Isa coprime_p__1__obligation_refine_def
   apply (auto simp add: igcd_def Integer__coprime_p__1_def)
   apply (case_tac n2, simp_all)+
 end-proof
@@ -276,11 +276,11 @@ termination
      rule div_less_dividend, auto simp add: list_all_iff)
 end-proof
 
-proof Isa primeFactorsOf__1__obligation_refine_def1
+proof Isa primeFactorsOf__1__obligation_refine_def
   sorry  
 end-proof
 
-proof Isa totient__1__obligation_refine_def1
+proof Isa totient__1__obligation_refine_def
   apply (simp add: Integer__totient_def Set__size__stp_def 
                    Integer__totient__1_def)
   apply (rule_tac x="{m. m \<le> n \<and> coprime m n}" in fun_cong)
@@ -302,20 +302,20 @@ proof Isa littleEndian_p__1_Obligation_subtype
  by (simp add: list_all_length List__length_tabulate List__element_of_tabulate)
 end-proof
 
-proof Isa littleEndian_p__1__obligation_refine_def1
+proof Isa littleEndian_p__1__obligation_refine_def
   sorry 
 end-proof
 
 (* fromBigEndian_alt might help to prove this *)
-proof Isa fromBigEndian__1__obligation_refine_def1
+proof Isa fromBigEndian__1__obligation_refine_def
   sorry
 end-proof
 
-proof Isa fromLittleEndian__1__obligation_refine_def1 
+proof Isa fromLittleEndian__1__obligation_refine_def 
   (**************************************************************************** 
      shouldn't Integer__fromLittleEndian__1 be based on 
                Integer__fromBigEndian__1 instead of Integer__fromBigEndian ?
-     If so, I need to add Integer__fromBigEndian__1__obligation_refine_def1
+     If so, I need to add Integer__fromBigEndian__1__obligation_refine_def
      to the simplification
   *****************************************************************************)
   by (simp add: Integer__fromLittleEndian_def 
@@ -332,7 +332,7 @@ termination
 end-proof
 
 
-proof Isa toMinBigEndian__1__obligation_refine_def1
+proof Isa toMinBigEndian__1__obligation_refine_def
   sorry 
 end-proof
 
@@ -341,13 +341,13 @@ proof Isa toMinLittleEndian__1_Obligation_subtype
   by (simp add: Integer__toMinBigEndian_nonnil)
 end-proof
 
-proof Isa toMinLittleEndian__1__obligation_refine_def1
+proof Isa toMinLittleEndian__1__obligation_refine_def
   apply (simp add: Integer__toMinLittleEndian_def Integer__toMinBigEndian_def
                    Integer__toMinLittleEndian__1_def)
   (**************************************************************************** 
      shouldn't Integer__toMinLittleEndian__1 be based on 
                Integer__toMinBigEndian__1 instead of Integer__toMinBigEndian ?
-     If so, I need to add Integer__toMinBigEndian__1__obligation_refine_def1
+     If so, I need to add Integer__toMinBigEndian__1__obligation_refine_def
      to the simplification
   *****************************************************************************)
   apply (simp add: LeastM_def,
@@ -386,7 +386,7 @@ proof isa toBigEndian__1_Obligation_subtype0
                         Integer__toLittleEndian_length)
 end-proof
 
-proof Isa toBigEndian__1__obligation_refine_def1
+proof Isa toBigEndian__1__obligation_refine_def
   apply (simp add: Integer__toBigEndian__1_def Integer__toMinBigEndian_def 
                    LeastM_def,
         frule_tac base=base and x=x in Integer__toMinBigEndian_exists)
@@ -443,15 +443,15 @@ proof isa toLittleEndian__1_Obligation_subtype0
                         Integer__toLittleEndian_length)
 end-proof
 
-proof isa toLittleEndian__1__obligation_refine_def1_Obligation_subtype
-  by (erule Integer__toBigEndian__1__obligation_refine_def1_Obligation_subtype)
+proof isa toLittleEndian__1__obligation_refine_def_Obligation_subtype
+  by (erule Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype)
 end-proof
 
-proof isa toLittleEndian__1__obligation_refine_def1_Obligation_subtype0
-  by (erule Integer__toBigEndian__1__obligation_refine_def1_Obligation_subtype)
+proof isa toLittleEndian__1__obligation_refine_def_Obligation_subtype0
+  by (erule Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype)
 end-proof
 
-proof Isa toLittleEndian__1__obligation_refine_def1
+proof Isa toLittleEndian__1__obligation_refine_def
   (** similar to BigEndian once I figure that out **)
   sorry   
 end-proof

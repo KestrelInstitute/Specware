@@ -1182,7 +1182,7 @@ proof isa fromBigEndian_intro
   apply(simp add: Library__all_less_becomes, auto)
 end-proof
 
-proof isa TwosComplement__tcNumber__1__obligation_refine_def1
+proof isa TwosComplement__tcNumber__1__obligation_refine_def
   apply(simp add: TwosComplement__tcNumber__1_def)
   apply(case_tac "i \<ge> 0")
   apply(simp add: TwosComplement_TC_toBits_pos2)
@@ -1225,11 +1225,11 @@ proof isa toNat_bound_rule
 end-proof
 
 proof isa suffix_0 [simp]
-  apply(simp add: List__suffix__1__obligation_refine_def1 List__suffix__1_def)
+  apply(simp add: List__suffix__1__obligation_refine_def List__suffix__1_def)
 end-proof
 
 proof isa map_suffix
-  apply (auto simp add: List__suffix__1__obligation_refine_def1 List__suffix__1_def List.drop_map)
+  apply (auto simp add: List__suffix__1__obligation_refine_def List__suffix__1_def List.drop_map)
 end-proof
 
 proof isa map_drop

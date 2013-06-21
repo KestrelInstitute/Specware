@@ -29,7 +29,7 @@
    foldl (fn (s, c) -> s ^ show c) "" char_list      % Hopefully code generators will provide a more efficient version
 
 
-proof isa Nat__natConvertible__1__obligation_refine_def1
+proof isa Nat__natConvertible__1__obligation_refine_def
  (** TRANSLATION ISSUE: natConvertible must be Nat__natConvertible
                         everywhere in this theory
  proof is extremely tedious  -- see attempt below
@@ -94,14 +94,14 @@ proof isa Nat__natConvertible__1__obligation_refine_def1
 sorry
 end-proof
 
-proof isa Integer__intConvertible__1__obligation_refine_def1
+proof isa Integer__intConvertible__1__obligation_refine_def
  (** TRANSLATION ISSUE: intConvertible must be Integer__intConvertible
                         everywhere in this theory
  proof is extremely tedious
 
   apply (simp add: Integer__intConvertible_def Integer__intToString_def
                    Integer__intConvertible__1_def)
-  apply (cut_tac s=s in Nat__natConvertible__1__obligation_refine_def1,
+  apply (cut_tac s=s in Nat__natConvertible__1__obligation_refine_def,
          simp add: Nat__natConvertible_def Nat__natConvertible__1_def)
  **********************************************************************)
 sorry
@@ -113,16 +113,16 @@ sorry
 end-proof
 
 proof isa Integer__stringToInt__1_Obligation_subtype0
-  by (simp add: Integer__intConvertible__1__obligation_refine_def1
+  by (simp add: Integer__intConvertible__1__obligation_refine_def
                 Integer__intConvertible__1_def)
 end-proof
 
 proof isa Integer__stringToInt__1_Obligation_subtype
-  by (clarsimp simp add: Integer__intConvertible__1__obligation_refine_def1
+  by (clarsimp simp add: Integer__intConvertible__1__obligation_refine_def
                          Integer__intConvertible__1_def)
 end-proof
 
-proof isa Integer__stringToInt__1__obligation_refine_def1
+proof isa Integer__stringToInt__1__obligation_refine_def
  (** TRANSLATION ISSUE: intConvertible must be Integer__intConvertible
                         stringToInt    must be Integer__stringToInt
  proof is then
@@ -133,11 +133,11 @@ sorry
 end-proof
 
 proof isa Nat__stringToNat__1_Obligation_subtype
-  by (clarsimp simp add: Nat__natConvertible__1__obligation_refine_def1
+  by (clarsimp simp add: Nat__natConvertible__1__obligation_refine_def
                          Nat__natConvertible__1_def)
 end-proof
 
-proof isa Nat__stringToNat__1__obligation_refine_def1
+proof isa Nat__stringToNat__1__obligation_refine_def
   apply (simp add: Nat__stringToNat_def,
          rule the1I2, erule Nat__stringToNat_Obligation_the)
   apply (thin_tac ?P, simp add: Nat__stringToNat__1_def)
@@ -170,12 +170,12 @@ proof isa String__explode__1_Obligation_subtype
 sorry
 end-proof
 
-proof isa String__explode__1__obligation_refine_def1
+proof isa String__explode__1__obligation_refine_def
   by (simp add: String__explode__1_def list_eq_iff_nth_eq, 
       simp add: List__tabulate_alt )
 end-proof
 
-proof isa String__implode__1__obligation_refine_def1
+proof isa String__implode__1__obligation_refine_def
   by (induct char_list rule: rev_induct, 
       auto simp add: String__implode__1_def Char__show_def)
 end-proof

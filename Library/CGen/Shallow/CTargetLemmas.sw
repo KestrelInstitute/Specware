@@ -61,19 +61,19 @@ theorem introduce_ullongConstant is fa(i:Int) (i in? rangeOfUllong) => (ullongOf
 (******************************** The Proofs ********************************)
 
 proof isa scharOfMathInt_inject [simp]
-  apply(simp add: C__scharOfMathInt__1_def C__scharOfMathInt__1__obligation_refine_def1)
+  apply(simp add: C__scharOfMathInt__1_def C__scharOfMathInt__1__obligation_refine_def)
 end-proof
 proof isa sintOfMathInt_inject [simp]
-  apply(simp add: C__sintOfMathInt__1_def C__sintOfMathInt__1__obligation_refine_def1)
+  apply(simp add: C__sintOfMathInt__1_def C__sintOfMathInt__1__obligation_refine_def)
 end-proof
 proof isa sshortOfMathInt_inject [simp]
-  apply(simp add: C__sshortOfMathInt__1_def C__sshortOfMathInt__1__obligation_refine_def1)
+  apply(simp add: C__sshortOfMathInt__1_def C__sshortOfMathInt__1__obligation_refine_def)
 end-proof
 proof isa slongOfMathInt_inject [simp]
-  apply(simp add: C__slongOfMathInt__1_def C__slongOfMathInt__1__obligation_refine_def1)
+  apply(simp add: C__slongOfMathInt__1_def C__slongOfMathInt__1__obligation_refine_def)
 end-proof
 proof isa sllongOfMathInt_inject [simp]
-  apply(simp add: C__sllongOfMathInt__1_def C__sllongOfMathInt__1__obligation_refine_def1)
+  apply(simp add: C__sllongOfMathInt__1_def C__sllongOfMathInt__1__obligation_refine_def)
 end-proof
 
 proof isa mathIntOfUint_minus

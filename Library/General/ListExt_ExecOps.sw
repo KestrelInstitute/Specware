@@ -27,11 +27,11 @@ spec
 % ------------------------------------------------------------------------------
 
 
-proof Isa sorted_p__1__obligation_refine_def1
+proof Isa sorted_p__1__obligation_refine_def
   sorry   
 end-proof
 
-proof Isa sortt__1__obligation_refine_def1
+proof Isa sortt__1__obligation_refine_def
   sorry   
 end-proof
 
