@@ -1043,8 +1043,19 @@ op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
           let outer = filter (fn v -> v in? defVars) vars in
           let inner = filter (fn v -> ~(v in? defVars)) vars in
           let tm' = mkSimpleExists inner M in
-          let _ = writeLine ("mkSimpleExists on: " ^ printTerm tm) in          
+          % let _ = writeLine ("mkSimpleExists on: " ^ printTerm tm) in          
           Bind (Exists,outer,tm',noPos)
+        | LetRec (decls, M,  _) ->
+          let defVars : MSVars = List.foldr
+             (fn ((v : MSVar, trm: MSTerm), acc) ->
+                insertVars (freeVars trm, deleteVars ([v], acc))) [] decls in
+          let outer = filter (fn v -> v in? defVars) vars in
+          let inner = filter (fn v -> ~(v in? defVars)) vars in
+          let tm' = mkSimpleExists inner M in
+          % let _ = writeLine ("mkSimpleExists on: " ^ printTerm tm) in          
+          Bind (Exists,outer,tm',noPos)
+
+          
         % Handle '&&' specially, for now.
         | (Apply (Fun (f as And,ty,fPos), Record (args,argsPos),appPos)) -> 
           let Some a1 = getField (args,"1") in
@@ -1090,7 +1101,7 @@ op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
             let matches' =
                 zipWith (fn (p,c,body) -> fn fvs ->
                            let vars' =
-                             filter (fn v -> v in? fvs && ~(v in? outer)) vars in
+                             nubBy equalVar? (filter (fn v -> v in? fvs && ~(v in? outer)) vars) in
                            let c' = mkSimpleExists vars' c in
                            let body' = mkSimpleExists vars' body in
                            (p,c',body'))
@@ -1101,13 +1112,16 @@ op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
               else Bind (Exists,outer,tm',noPos)
 
         % FIXME: This is going to barf on shadowed bindings.
-        | Bind (Exists,vs,tm',pos) -> mkSimpleExists (vs ++ vars) tm'
+        | Bind (Exists,vs,tm',pos) -> mkSimpleExists (nubBy equalVar? (vs ++ vars)) tm'
           
-        | _ -> let _ = () in %  writeLine ("mkSimpleExists on: " ^ printTerm tm)
-               let vars' = filter (fn v -> v in? (freeVars tm)) vars 
-               in if empty? vars'
-                    then tm
-                    else Bind (Exists,vars',tm,noPos)
+        | _ -> % let _ = writeLine ("mkSimpleExists") in
+               % let _ = List.map (fn v -> writeLine v.1) vars in
+               % let _ = writeLine (printTerm tm) in
+               let vars' = nubBy equalVar? (filter (fn v -> v in? (freeVars tm)) vars) in
+               let newTerm = if empty? vars' then tm else Bind (Exists,vars',tm,noPos) in
+               % let _ = writeLine ("Yields:\n" ^ printTerm newTerm) in
+               tm
+
 
       
 %%%%%%%%%%%%%%%%%%%%%%
