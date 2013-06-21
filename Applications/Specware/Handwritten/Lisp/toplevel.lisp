@@ -13,7 +13,7 @@
 (defpackage :ShowDeps)
 (defpackage :ShowImports)
 (defpackage :ShowData)
-(defpackage :SpecToACL2)
+(defpackage :ACL2)
 (defpackage :CheckSpec)
 
 ;; Toplevel Lisp aliases for Specware
