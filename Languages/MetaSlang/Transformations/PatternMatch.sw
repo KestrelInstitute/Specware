@@ -116,49 +116,38 @@ PatternMatch qualifying spec
   %% used just to make msg in warnUnreachable
   ctx << {lambda = Some trm}
 
- op verbose? : Bool = false
-
  op failWith (ctx : Context) (body : MSTerm) (continuation : MSTerm) : MSTerm =
   let
-    def isTiny? tm =
+    def tinyTerm? tm =
       case tm of
         | Var _ -> true
         | Fun _ -> ~ (isBreak? tm)
-        | TypedTerm (tm, _, _) -> isTiny? tm
+        | TypedTerm (tm, _, _) -> tinyTerm? tm
         | _ -> false
 
-    def isSmallArg? tm =
+    def smallArg? tm =
       case tm of
         | Var _ -> true
         | Fun _ -> ~ (isBreak? tm)
-        | Record (fields, _) -> forall? (fn (_, tm) -> isTiny? tm) fields
-        | TypedTerm (tm, _, _) -> isSmallArg? tm
+        | Record (fields, _) -> forall? (fn (_, tm) -> tinyTerm? tm) fields
+        | TypedTerm (tm, _, _) -> smallArg? tm
         | _ -> false
 
-    def isSmall? tm =
+    def smallTerm? tm =
       %% true for terms such as 'nil', 'foo (1,x,bar)', '(a,b,c)' etc.
       %% perhaps could use a more explicit size calculation, but this
       %% is just a heuristic and should avoid the exponential explosion
       %% that could happen when continuations recusively each contain
       %% multiple continuations.
-      let result =
       case tm of
         | Var _ -> true
         | Fun _ -> ~ (isBreak? tm)
-        | Record (fields, _) -> forall? (fn (_, tm) -> isTiny? tm) fields
-        | Apply (f, arg, _) -> isTiny? f && isSmallArg? arg
-        | TypedTerm (tm, _, _) -> isSmall? tm
+        | Record (fields, _) -> forall? (fn (_, tm) -> tinyTerm? tm) fields
+        | Apply (Fun (RecordMerge, _, _), Record ([(_,x), (_,y)], _), _) -> tinyTerm? x && smallArg? y
+        | Apply (f, arg, _) -> tinyTerm? f && smallArg? arg
+        | TypedTerm (tm, _, _) -> smallTerm? tm
         | _ -> false
-      in
-      let _ = if verbose? then
-               let _ = writeLine("----------") in
-               let _ = writeLine((Bool.show result) ^ " for " ^ printTerm tm) in
-               let _ = writeLine("----------") in
-               ()
-              else
-                ()
-      in
-      result
+
 
     def simplifyIfResultIsSmall tm =
       %% The motivation for calling simplify is to allow forms such as
@@ -173,7 +162,7 @@ PatternMatch qualifying spec
       %% Fortunately, we can avoid this problem by simply ignoring any 
       %% simplications that don't succeed in producing a small term.
       let new = simplify ctx.spc tm in
-      if isSmall? new then
+      if smallTerm? new then
         new
       else
         tm
@@ -208,7 +197,6 @@ PatternMatch qualifying spec
                     body
 
   in
-  let continuation = simplifyIfResultIsSmall continuation in
   if isBreak? continuation then 
     body 
   else
@@ -221,10 +209,10 @@ PatternMatch qualifying spec
                      0 
                      body
     in
-    let _ = if verbose? then writeLine ("breaks = " ^ show break_count) else () in
     case break_count of
 
       | 0 -> 
+        let continuation = simplifyIfResultIsSmall continuation in
         if isFail? continuation then
           body
         else
@@ -245,52 +233,47 @@ PatternMatch qualifying spec
                          tm)
                     body
       | _ -> 
-        let new_trm = 
-            %% If the continuation is small and there is no chance of a variable capture, 
-            %% directly substitute continuation for each break in body.
-            if (isSmall? continuation) && ~ (possibleVariableCapture? continuation body) then
-              mapSubTerms (fn tm -> 
-                             if isBreak? tm then
-                               continuation
-                             else
-                               tm)
-                          body
-            else
+        let continuation = simplifyIfResultIsSmall continuation in
+        if isBreak? continuation then 
+          body 
+        else
+          %% If the continuation is small and there is no chance of a variable capture, 
+          %% directly substitute continuation for each break in body.
+          if (smallTerm? continuation) && ~ (possibleVariableCapture? continuation body) then
+            mapSubTerms (fn tm -> 
+                           if isBreak? tm then
+                             continuation
+                           else
+                             tm)
+                        body
+          else
 
-              %% For whatever reason, we have decided here to not use direct substitution
-              %% of continuation for each break in body.
+            %% For whatever reason, we have decided here to not use direct substitution
+            %% of continuation for each break in body.
 
-              %% Make a local function to encapsulate the continuation:
-              let result_type      = inferType (ctx.spc, body)                    in
-              let continue_fn_type = mkArrow (mkProduct [], result_type)          in
-              let continue_fn_var  = freshVar (ctx, continue_fn_type)             in
-              let continue_fn_def  = mkLambda (emptyPat, continuation)            in
+            %% So make a local function to encapsulate the continuation:
 
-              %% Then substitute a call to that local function for each break in body:
-              let call_continue_fn = mkApply (mkVar continue_fn_var, mkRecord []) in
-              let new_body = 
-                  mapSubTerms (fn tm -> 
-                                 if isBreak? tm then
-                                   call_continue_fn
-                                 else
-                                   tm)
-                              body
-              in
-              mkLetRec ([(continue_fn_var, continue_fn_def)],
-                        new_body)
-        in
-        let _ = if verbose? then
-                  let _ = writeLine ("====================") in
-                  let _ = writeLine ("failWith: ") in
-                  let _ = writeLine (printTerm new_trm) in
-                  let _ = writeLine ("====================") in
-                  ()
-                else
-                  ()
-        in
-        new_trm
+            let result_type      = inferType (ctx.spc, body)                    in
+            let continue_fn_type = mkArrow (mkProduct [], result_type)          in
+            let continue_fn_var  = freshVar (ctx, continue_fn_type)             in
+            let continue_fn_def  = mkLambda (emptyPat, continuation)            in
 
- % op  mkProjectTerm (spc : Spec, id   : Id,     trm : MSTerm) : MSTerm = SpecEnvironment.mkProjectTerm
+            %% Then substitute a call to that local function for each break in body:
+
+            let call_continue_fn = mkApply (mkVar continue_fn_var, mkRecord []) in
+            let new_body = 
+                mapSubTerms (fn tm -> 
+                               if isBreak? tm then
+                                 call_continue_fn
+                               else
+                                 tm)
+                            body
+            in
+            mkLetRec ([(continue_fn_var, continue_fn_def)],
+                      new_body)
+
+            
+% op  mkProjectTerm (spc : Spec, id   : Id,     trm : MSTerm) : MSTerm = SpecEnvironment.mkProjectTerm
  % op  mkRestrict    (spc : Spec, pred : MSTerm, trm : MSTerm} : MSTerm = SpecEnvironment.mkRestrict
   
  (* 
@@ -1152,14 +1135,20 @@ PatternMatch qualifying spec
                  vs
        in
        let pmrules = [(pats, trueTerm, body)] in
-       let tm = match (ctx,
-                       map mkVar vs,
-                       pmrules,
-                       mkFail (ctx, body_type, term),
-                       mkBreak body_type) 
+       let body = match (ctx,
+                         map mkVar vs,
+                         pmrules,
+                         mkFail (ctx, body_type, term),
+                         mkBreak body_type) 
        in
-       let tm = abstract (indices_and_vs, tm, body_type) in
-       mkApply (tm,trm)
+       let pat = case indices_and_vs of 
+                   | [(_,v)] -> mkVarPat v
+                   | _ -> RecordPat (map (fn (index, v)-> 
+                                            (index, mkVarPat v)) 
+                                         indices_and_vs, 
+                                     noPos)
+       in
+       Let ([(pat, trm)], body, noPos)
 
     | Apply (Lambda ([(pat, Fun (Bool true,_,_), body)],_), arg, pos) ->
       %% case arg of pat -> body --> let pat = arg in body
