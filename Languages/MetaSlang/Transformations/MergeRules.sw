@@ -159,8 +159,10 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule =
        % let _ = writeLine ("Arrow type is " ^ printType ty) in
        % let _ = writeLine ("Domain is " ^ (printType dom)) in
        % let _ = writeLine ("Codomain is " ^ (printType codom)) in
-       { (preStateVar,preStateType,inputArgs,preCondition) <- getSubtypeComponents spc dom theorems
-       ; (postStateVar,postStateType,outputVals,postCondition) <- getSubtypeComponents spc codom theorems
+       { (preStateVar,preStateType,inputArgs,preCondition) <-
+          getSubtypeComponents spc dom theorems
+       ; (postStateVar,postStateType,outputVals,postCondition) <-
+          getSubtypeComponents spc codom theorems
          % Require the pre- and poststate types  match.
          % FIXME: Need equality modulo annotations
          % guard (preStateType = postStateType) (
@@ -371,10 +373,10 @@ op pick(args:BTArgs)(i:DNFRep):BTChoice =
                             % conjunction are postConstraints, in
                             % which case the conjunction will have
                             % been identified above.
-                            % let _ = writeLine ("Skipping postconstraint " ^ printTerm x) in
-                            % let _ = writeLine "In clause" in
-                            % let _ = map (fn i -> writeLine (printTerm i)) (x::xs) in
-                            % let _ = writeLine "End clause" in
+                            let _ = writeLine ("Skipping postconstraint " ^ printTerm x) in
+                            let _ = writeLine "In clause" in
+                            let _ = map (fn i -> writeLine (printTerm i)) (x::xs) in
+                            let _ = writeLine "End clause" in
                             pick args ((xs ++ [x])::rest)
                           | ((x::xs)::rest) | some? (isDefinition? args.vars x) ->
                             %% If the term is of the form (ex x. v)
@@ -522,7 +524,7 @@ op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
       | BTFalse -> (mkFalse (), [args.assumptions])
       | BTTrue _ -> (mkTrue (), []) 
       | BTSplit p ->
-          % let _ = writeLine ("Split on " ^ printTerm p) in
+          let _ = writeLine ("Split on " ^ printTerm p) in
           let pos = simplify p inputs in
           let neg = simplify (negateTerm p) inputs in
           % let _ = writeLine ("positive is " ^ printDNF pos) in
@@ -534,8 +536,8 @@ op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
       | BTCase (s, ty) -> 
           let Some addends = coproductOpt(args.spc,ty) in
           let constructors = List.map (fn c -> c.1) addends in
-          % let _ = writeLine "Case split with constructors:" in
-          % let _ = writeLine ("on scrutinee\n" ^ printTerm s) in          
+          let _ = writeLine "Case split:" in
+          let _ = writeLine ("on scrutinee\n" ^ printTerm s) in          
           % let _ = map writeLine constructors in
           let pats = gatherPatterns args s ty inputs in
           let def mkAlt (p as (con,pvars)) =
@@ -552,12 +554,13 @@ op bt(args:BTArgs)(inputs:DNFRep):(MSTerm * DNFRep) =
                  
       | BTSingleton t -> (mkAnd t, [args.assumptions]) 
       % | BTTrue inputs' -> (mkTrue (), [args.assumptions]) 
-      | BTConstraint cs -> 
+      | BTConstraint cs ->
           let inputs' = map (fn d -> filter (fn c -> ~ (inTerm? c cs)) d) inputs in
           let (tm',pre) = bt args inputs' in
           (mkAnd (cs ++ [tm']), pre)
-      | BTDef (t,ty,var) -> 
-          let (t',p) = bt (setVars (addAssumption args t) (diff (vars, [var])))
+      | BTDef (t,ty,var) ->
+          let _ = writeLine ("Defining variable" ^ var) in
+          let (t',p) = bt (setVars (addAssumption args t) (diff (vars, [var]))) 
                             (simplifyDef t inputs)
           in (Bind (Exists, [(var,ty)], mkAnd [t,t'],noPos), p)
 
@@ -698,7 +701,8 @@ op postConstraint?(args:BTArgs)(t:MSTerm):Boolean =
   case t of
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos) ->
-               isObs l || isObs r || isOutput l || isOutput r
+       (isFullyDefined? args r && (isObs l || isOutput l)) ||
+       (isFullyDefined? args l && (isObs r || isOutput r))        
     | _ -> false
 
 
@@ -1065,7 +1069,7 @@ op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
              let evars = freeVars e in
              let outer = filter (fn v -> v in? pvars || (v in? tvars && v in? evars)) vars in
              let tvars' = filter (fn v -> v in? tvars && ~(v in? outer)) vars in
-             let evars' = filter (fn v -> v in? tvars && ~(v in? outer)) vars in
+             let evars' = filter (fn v -> v in? evars && ~(v in? outer)) vars in
              let t' = mkSimpleExists tvars' t in
              let e' = mkSimpleExists evars' e in
              let tm' = IfThenElse (p,t',e',pos) in
