@@ -960,8 +960,8 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %%  (7) should follow removeCurrying and instantiateHOFns, since less graceful implementation
  %% ==========================================================================================
 
- let spc = lambdaLiftWithImportsSimulatingClosures                 spc in 
- let _   = showSpecIfVerbose "lambdaLiftWithImports"               spc in
+ let spc = SpecTransform.lambdaLift                                spc true in 
+ let _   = showSpecIfVerbose "lambdaLift"                          spc in
   
  %% ==========================================================================================
  %%  (8) Variant of Wadler's pattern matching compiler 
@@ -1082,8 +1082,8 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %% (23) lambda lift again ??
  %% ==========================================================================================
 
- let spc = SpecTransform.lambdaLiftWithImports                     spc in 
- let _   = showSpecIfVerbose "lambdaLiftWithImports[2]"            spc in
+ let spc = SpecTransform.lambdaLift                                spc false in 
+ let _   = showSpecIfVerbose "lambdaLift[2]"                       spc in
 
  %% ==========================================================================================
  %% (24) expand pattern matches again ??

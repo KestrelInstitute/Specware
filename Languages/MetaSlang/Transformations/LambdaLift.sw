@@ -913,13 +913,11 @@ def patternVars (pat:MSPattern): MSVars =
          vars)
   ^ "]"
 
- op SpecTransform.lambdaLiftWithImports (spc : Spec) : Spec =
-  lambdaLift (spc, true, false)
+ op SpecTransform.lambdaLift (spc : Spec) (simulateClosures? : Bool) : Spec =
+  let _ = writeLine("Simulate closures = " ^ show simulateClosures?) in
+  lambdaLiftInternal (spc, true, simulateClosures?)
 
- op SpecTransform.lambdaLiftWithImportsSimulatingClosures (spc : Spec) : Spec =
-  lambdaLift (spc, true, true)
-
- op lambdaLift (spc : Spec, imports? : Bool, simulateClosures? : Bool) : Spec =
+ op lambdaLiftInternal (spc : Spec, imports? : Bool, simulateClosures? : Bool) : Spec =
   % let _ = toScreen(printSpec spc^"\n\n") in
   let counter = Ref 1 : Ref Nat in
   let 
