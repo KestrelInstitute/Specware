@@ -165,4 +165,28 @@ op SpecTransform.showElements (spc : Spec) (msg : String) (depth : Nat) (verbose
  let _ = Debugging.showElements spc msg depth verbose? in
  spc
 
+op SpecTransform.showOps (spc : Spec) (msg : String) (names : QualifiedIds) : Spec =
+ let _ = writeLine "-showOps------------" in
+ let _ = writeLine ("##9 " ^ msg)         in  % "##9" is just a convenient pattern to search for
+ let _ = app (fn qid -> 
+                writeLine (show qid ^ " =\n" ^
+                             (case findTheOp (spc, qid) of
+                                | Some info -> 
+                                  let tm = case info.dfn of
+                                             | And (tm :: _, _) -> tm
+                                             | tm -> tm
+                                  in
+                                  printTerm tm
+                                | _ -> "not found")))
+             names
+ in
+ let _ = writeLine "--------------------" in
+ spc
+
+op MetaRule.showTerm (spc : Spec) (msg : String) (term : MSTerm) : Option MSTerm =
+ let _ = writeLine "-showTerm-----------" in
+ let _ = writeLine (msg ^ printTerm term) in
+ let _ = writeLine "--------------------" in
+ Some term
+
 end-spec
