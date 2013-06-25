@@ -914,11 +914,9 @@ def patternVars (pat:MSPattern): MSVars =
   ^ "]"
 
  op SpecTransform.lambdaLift (spc : Spec) (simulateClosures? : Bool) : Spec =
-  let _ = writeLine("Simulate closures = " ^ show simulateClosures?) in
   lambdaLiftInternal (spc, true, simulateClosures?)
 
  op lambdaLiftInternal (spc : Spec, imports? : Bool, simulateClosures? : Bool) : Spec =
-  % let _ = toScreen(printSpec spc^"\n\n") in
   let counter = Ref 1 : Ref Nat in
   let 
     def mkEnv (qname, name) =
@@ -1020,12 +1018,10 @@ def patternVars (pat:MSPattern): MSVars =
              result
              elts
    in 
-   % let _ = printSpecFlatToTerminal spc in
    let (newElts,newOps) = liftElts(spc.elements, ([],spc.ops)) in
    let new_spc = spc << {ops        = newOps, 
                          elements   = newElts}
    in
-   % let _ = printSpecFlatToTerminal new_spc in
    new_spc
 
  % op  addNewOp : [a] QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
