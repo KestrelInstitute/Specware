@@ -1154,8 +1154,15 @@ PatternMatch qualifying spec
       %% case arg of pat -> body --> let pat = arg in body
       eliminateTerm ctx (Let ([(pat, arg)], body, pos))
 
-    | Apply (                  t1,                   t2, a) -> 
-      Apply (eliminateTerm ctx t1, eliminateTerm ctx t2, a)
+    | Apply (f, arg, pos) ->
+      let f   = eliminateTerm ctx f   in
+      let arg = eliminateTerm ctx arg in
+      (case f of
+         | Lambda ([(pat, Fun (Bool true,_,_), body)],_) ->
+           %% case arg of pat -> body --> let pat = arg in body
+           eliminateTerm ctx (Let ([(pat, arg)], body, pos))
+         | _ ->
+           Apply (f, arg, pos))
 
     | Record (                                              fields, a) ->
       Record (map (fn (id, t) -> (id, eliminateTerm ctx t)) fields, a)
