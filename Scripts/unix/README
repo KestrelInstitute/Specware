@@ -1,5 +1,9 @@
+TODO Could move all other scripts (under bin/linux) here.
 
-Important files:
+Guesses at the status of these files:
+
+ Specware_Version - Jim says he uses this, but it seems broken, I asked Jim if we can delete it. -ES
+ Make_Distribution_Dir - TODO mentions CVS
 
 main scripts under Scripts/unix/ :
 
@@ -10,11 +14,13 @@ main scripts under Scripts/unix/ :
 
 support scripts under Scripts/unix/ :
 
- Verify_Specware -- unused for now
+ Verify_Specware4 - Jim uses
+ Verify_Specware - unused for now
 
- Verify_Lisp    -- call one of following: 
- Verify_ACL     -- find ACL     images, set up shell vars, etc.
- Verify_CMUCL   -- find CMUCL   images, set up shell vars, etc.
- Verify_OpenMCL -- find OpenMCL images, set up shell vars, etc.
+ Verify_Lisp    -- call one of following (Jim uses this)
+ Verify_SBCL    -- find SBCL images, set up shell vars, etc. (Jim uses this)
+ Verify_ACL     -- find ACL     images, set up shell vars, etc. TODO deprecate? (Used by PSL?)
+ Verify_CMUCL   -- find CMUCL   images, set up shell vars, etc. TODO deprecate?
+ Verify_OpenMCL -- find OpenMCL images, set up shell vars, etc. TODO deprecate?
 
 
