@@ -539,30 +539,4 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      (nameList,names)
 
 
- op normalizeLambda(term: MSTerm, dom: MSType, ran: MSType, usedNames: StringSet.Set, spc: Spec): MSTerm =
-   case term of
-     | Lambda((pat1,_,_)::(_::_),_) ->
-       (case productOpt(spc, dom) of
-          | None ->
-            let (name,_) = freshName("xx",usedNames) in
-            let x = (name, dom) in
-            mkLambda(mkVarPat x, mkApply(term, mkVar x))
-          | Some fields ->
-            let (names,_) = freshNames("xx",fields,usedNames) in
-            let vars = map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
-            mkLambda(mkRecordPat(map (fn (l,v) -> (l, mkVarPat v)) vars),
-                     mkApply(term, mkRecord(map (fn (l,v) -> (l, mkVar v)) vars))))
-      | Lambda([(pat, cnd, bod)], pos) ->
-        let usedNames = foldl (fn (usedNames, (vn,_)) ->
-                                 StringSet.add(usedNames, vn))
-                          usedNames (patVars pat)
-        in
-        let bod = case arrowOpt(spc, ran) of
-                    | None -> bod
-                    | Some(dom1, ran1) -> normalizeLambda(bod, dom1, ran1, usedNames, spc)
-        in
-        Lambda([(pat, cnd, bod)], pos)
-      | And(tm1::r_tms, a) -> And((normalizeLambda(tm1, dom, ran, usedNames, spc))::r_tms, a) 
-      | _ -> term
-
 end-spec
