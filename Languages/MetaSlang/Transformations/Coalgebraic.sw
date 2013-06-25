@@ -398,7 +398,8 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
               % let _ = writeLine("makeDef: "^printTerm state_res) in
               if result_tuple_info = []
                 then state_res
-                else mkCanonRecord((state_id, state_res) :: opt_rec_prs))
+                else mkCanonRecord(if stored_qids = [] then opt_rec_prs
+                                     else (state_id, state_res) :: opt_rec_prs))
            | _ ->
          if inh_cjs ~= []
            then makeDef(mkConj(inh_cjs ++ [tm]), [], seenQIds)
@@ -566,6 +567,8 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
           addRefinedDef(spc, info, maybePiTerm(tvs, TypedTerm(new_def, ty, termAnn tm)))
         | _ -> spc
 
+op SpecTransform.doNothing(spc: Spec): Spec = spc
+
 op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List RuleSpec): Env Spec =
   let _ = writeLine("finalizeCoType") in
   case qids of
@@ -579,7 +582,7 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List Rul
    stored_qids <- return(reverse(findStoredOps(spc, state_qid)));
    print("stored_qids: "^anyToString (map show stored_qids)^"\n");
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
-   new_spc <- return(addTypeDef(new_spc, state_qid, mkCanonRecordType(field_pairs)));
+   new_spc <- return(if stored_qids = [] then new_spc else addTypeDef(new_spc, state_qid, mkCanonRecordType(field_pairs)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
    new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
