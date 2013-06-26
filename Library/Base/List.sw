@@ -961,6 +961,7 @@ op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
 
 % true iff l2 is a permutation of l1 (and vice versa):
 
+%% TODO: Name should end in a question mark.
 op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
   ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
 

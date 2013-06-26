@@ -418,7 +418,14 @@ refine def [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
   let n = length l in
   list (fn(i:Nat) -> if i < n then l @@ (positionOf(prm,i)) else None)
 
+%% TODO: Name should end in a question mark:
+
 refine def [a] permutationOf (l1: List a, l2: List a) : Bool =
+
+%% Could use the delete1 operator here, except that one doesn't return
+%% an Option.  This one combines the presence check and the deletion
+%% and so should be faster:
+
   let def deleteOne (x:a, l: List a) : Option (List a) =
       % delete exactly one (leftmost) occurrence of x in l,
       % return None if x does not occur in l:
