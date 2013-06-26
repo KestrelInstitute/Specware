@@ -434,9 +434,10 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                       (mkCaseExpr (scrutinee, (map (fn x -> x.1) branches)), pres)
                               
                     | _ ->
-                      let _ = writeLine "Mergerules is stuck" in
+                      let _ = writeLine "Mergerules is stuck on the inputs:" in
                       let _ = writeLine (printDNF (map (map classToTerm) inputs)) in
-                      let _ = debugClauses inputs in
+                      % let _ = debugClauses inputs in
+                      let _ = debugFailure args inputs in
                       (mkVar ("<<<Failure Here>>>",boolType), [])
                       
   
@@ -780,7 +781,7 @@ op defVars(c:CClass):List (Id * MSType) =
     | CDef(vars,_,_,_) -> vars
     | _ -> []
 
-op debugClassify? : Boolean = true      
+op debugClassify? : Boolean = false % true      
 op traceClassify(s:String):() =
   if debugClassify? then writeLine s else ()
 
@@ -891,19 +892,57 @@ op patternVars(l:MSTerm):List (Id * MSType) =
 % 0 (that is, the `CDef x 0` should become CAtom (x = 0)
 op defineLocals(defs:List CClass)(clauses:List (List CClass)):(List (List CClass)) =
    let vars : List (Id * MSType) = flatten (List.map defVars defs) in
-   let _ = writeLine "Updating locals" in
-   let _ = List.map (fn i -> writeLine i.1) vars in
+   % let _ = writeLine "Updating locals" in
+   % let _ = List.map (fn i -> writeLine i.1) vars in
    let def toPred atom =
            case atom of
              | CDef ([var as (v,ty)],t,deps,b) ->
                  if exists? (fn (v',ty') -> v' = v && equalType? (ty, ty')) vars
-                  then let _ = writeLine ("Updated" ^ printClass atom) in
+                  then % let _ = writeLine ("Updated" ^ printClass atom) in
                        CAtom (mkEquality (ty,mkVar (v,ty),t), v::deps, b)
-                 else let _ = writeLine ("Skipping" ^ printClass atom) in
+                 else % let _ = writeLine ("Skipping" ^ printClass atom) in
                       atom
              | _ -> atom
    in map (map toPred) clauses
-     
+
+
+op debugFailure(args:BTArgs)(clauses:List (List CClass)):() =
+  let def debugClass c =
+           let _ = writeLine ("Literal:\n\t " ^ (printClass c)) in
+           let undef : List Id = filter (fn d -> d in? args.vars) (atomDeps c) in
+           let _ = if ~(empty? undef)
+                      then let _ = writeLine "Depends on undefined vars: " in
+                           let _ = map (fn i -> writeLine ("\t" ^ i)) undef in
+                           ()
+                   else writeLine "Fully defined."
+           in
+           case c of
+            |  CConstrain (var,t, deps, b) ->
+                let _ =
+                   if (exists? (fn clause -> ~(exists? (fn a -> equalClass? a c) clause)) clauses)
+                     then writeLine "Constraint does not appear globally."
+                   else writeLine "Constraint appears globally."
+                in writeLine ""
+
+            |  CDef (vars,t,deps, b) ->
+                let _ =
+                   if (exists? (fn clause -> ~(exists? (fn a -> equalClass? a c) clause)) clauses)
+                     then writeLine "Definition does not appear globally."
+                   else writeLine "Definition appears globally."
+                in writeLine ""
+                
+             | _ -> ()
+  in
+  let def debugClause clause =
+     let _ = writeLine "Clause" in
+     let _ = List.map debugClass clause in
+     ()
+  
+  in
+  let _ =  List.map debugClause clauses in
+  ()
+  
+
 %%%%%%%%%%%%%%%
 %%% Resolution
 %%%%%%%%%%%%%%%
