@@ -383,7 +383,6 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                     map (fn c -> List.filter (fn a -> ~(inClause? a gds)) c) inputs in
                   let defsToAtoms = defineLocals gds next in                    
                   let tvars : List (Id * MSType) = (flatten (map defVars gds)) in
-                  % FIXME: The booltype stuff is bogus!
                   let dvars = map (fn v -> v.1) tvars in 
                   let newAssumptions = map classToTerm gds in
                   let (t',p) =
@@ -408,15 +407,14 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                          bt2 (addAssumption args (classToTerm (negateClass a))) neg in
                               (IfThenElse (classToTerm a, tb, eb, noPos), tp ++ ep)
 
-                    | ((a as CCase (_,scrutinee,_,_))::_) ->
+                    | ((a as CCase (_,scrutinee,_,_,ty))::_) ->
                       % let _ = writeLine ("Splitting on a construction  " ^
                       %                      printTerm (classToTerm a)) in
                       let (branchClauses,unhandled) = simplifyCaseSplit args a inputs in
                       % Branch construction
                       let def mkAlt (pat,clauses) =
                                let Some patTerm = patternToTerm pat in
-                               %% FIXME: The 'boolType' is bogus.
-                               let eq = mkEquality (boolType,scrutinee,patTerm) in
+                               let eq = mkEquality (ty,scrutinee,patTerm) in
                                let (tm',pres) = bt2 (setVars (addAssumption args eq)
                                                        (removePatternVars args.vars (Some pat))) clauses in
                                ((pat,tm'),pres)
@@ -425,8 +423,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                             let alts = map mkAlt branchClauses
                             in case unhandled of
                                 | Some clauses -> let (tm',pres) = bt2 args clauses in
-                                                   %% FIXME: Bool type is bogus.
-                                                  let default = ((mkWildPat boolType, tm'),pres) in 
+                                                  let default = ((mkWildPat ty, tm'),pres) in 
                                                   alts ++ [default]
                                  | _ -> alts
                       in
@@ -563,12 +560,12 @@ op guard(p:Bool)(msg:String):Env () =
 
 %%% Classification of clauses
 type CClass =
-  | CAtom (MSTerm * (List Id) * Boolean) % Term * Referenced existentials 
-  | CDef (List (Id * MSType) * MSTerm * List Id * Boolean) 
+  | CAtom (MSTerm * (List Id) * Boolean * MSType) % Term * Referenced existentials 
+  | CDef (List (Id * MSType) * MSTerm * List Id * Boolean * MSType) 
     % Defined variables * definition * referenced variables
-  | CConstrain (MSTerm * MSTerm * List Id * Boolean)
+  | CConstrain (MSTerm * MSTerm * List Id * Boolean * MSType)
     % poststate/return value * definition * referenced variables
-  | CCase (MSPattern * MSTerm * List Id * Boolean)
+  | CCase (MSPattern * MSTerm * List Id * Boolean * MSType)
 
 % Recognizers for the various classes.
 op isAtomClass(c:CClass):Boolean =
@@ -579,12 +576,12 @@ op isAtomClass(c:CClass):Boolean =
 
 op isTrueAtom?(c:CClass):Boolean =
   case c of
-    | CAtom (t,_,_) -> trueTerm? t
+    | CAtom (t,_,_,_) -> trueTerm? t
     | _ -> false
 
 op isFalseAtom?(c:CClass):Boolean =
   case c of
-    | CAtom (t,_,_) -> falseTerm? t
+    | CAtom (t,_,_,_) -> falseTerm? t
     | _ -> false
 
 op isDefClass(c:CClass):Boolean =
@@ -607,7 +604,7 @@ op isSplit(args:BTArgs)(c:CClass):Boolean =
 
 op casePattern (c:CClass):MSPattern =
   case c of
-    | CCase (pat,_,_,_) -> pat
+    | CCase (pat,_,_,_,_) -> pat
 
 % Is a clause c in a list of clauses.
 op inClause?(c:CClass)(l:List CClass):Boolean =
@@ -618,32 +615,31 @@ op inClause?(c:CClass)(l:List CClass):Boolean =
 % Are two atomic terms equal.
 op equalClass?(c1:CClass)(c2:CClass):Boolean =
   case (c1,c2) of
-    | (CAtom (t,_,b1), CAtom (u,_,b2)) ->
-        equalTerm? (t,u) && (b1 = b2)
-    | (CDef (d1,t1,_,b1), CDef (d2,t2,_,b2)) ->
-        equalTerm? (t1,t2) && (b1 = b2)
-    | (CConstrain (d1,t1,_,b1), CConstrain (d2,t2,_,b2)) ->
-        equalTerm? (t1,t2) && (b1 = b2)
-    | (CCase (p1,t1,_,b1), CCase (p2,t2,_,b2)) ->
-        equalTerm? (t1,t2)
+    | (CAtom (t,_,b1,ty1), CAtom (u,_,b2,ty2)) ->
+        equalTerm? (t,u) && (b1 = b2) && equalType? (ty1,ty2)
+    | (CDef (d1,t1,_,b1,ty1), CDef (d2,t2,_,b2,ty2)) ->
+        equalTerm? (t1,t2) && (b1 = b2) && equalType? (ty1,ty2)
+    | (CConstrain (d1,t1,_,b1,ty1), CConstrain (d2,t2,_,b2,ty2)) ->
+        equalTerm? (t1,t2) && (b1 = b2) && equalType? (ty1,ty2)
+    | (CCase (p1,t1,_,b1,ty1), CCase (p2,t2,_,b2,ty2)) ->
+        equalTerm? (t1,t2) && equalType? (ty1,ty2)
     | _ -> false        
 
 
 op classToTerm(c:CClass):MSTerm =
   let def n b t = if b then t else negateTerm t in
-  let dummyType = boolType in
   case c of
-    | CAtom (t,ids,b) -> n b t 
-    | CDef ([v], t, deps,b) ->
-        n b (mkEquality (dummyType,mkVar v, t))
-    | CDef (vs, t, deps,b) ->
+    | CAtom (t,ids,b,_) -> n b t 
+    | CDef ([v], t, deps,b,ty) ->
+        n b (mkEquality (ty,mkVar v, t))
+    | CDef (vs, t, deps,b,ty) ->
         let vars = mkTuple (map MS.mkVar vs) in
-        n b (mkEquality (dummyType,vars, t))
-    | CConstrain (v, t, deps,b) ->
-        n b (mkEquality (dummyType, v, t))
-    | CCase (pat, t, deps,b) ->
+        n b (mkEquality (ty,vars, t))
+    | CConstrain (v, t, deps,b,ty) ->
+        n b (mkEquality (ty, v, t))
+    | CCase (pat, t, deps,b,ty) ->
         let Some u = patternToTerm pat in
-        n b (mkEquality (dummyType, u, t))
+        n b (mkEquality (ty, u, t))
 
 % Get all of the atoms satisfying a criteria.
 op gatherAtoms(p:CClass -> Boolean)(cs:(List (List CClass))):List CClass =
@@ -675,13 +671,13 @@ op globalDef(args:BTArgs)(clauses:List (List CClass)):(List CClass) =
 op printClass(c:CClass):String =
   let def lead x = if x then "+" else "-" in
   case c of
-    | CAtom (t,ids,b) -> lead b ^ "atom[" ^ printTerm t ^ "]"
-    | CDef (vs, t, deps,b) ->
+    | CAtom (t,ids,b,_) -> lead b ^ "atom[" ^ printTerm t ^ "]"
+    | CDef (vs, t, deps,b,_) ->
        let def vars start = foldr (fn ((v,ty), acc) -> v ^ " " ^ acc) start vs in  
        lead b ^ "def[" ^ vars "/" ^  printTerm t ^ "]"
-    | CConstrain (v, t, deps,b) ->
+    | CConstrain (v, t, deps,b,_) ->
          lead b ^  "cons[" ^ printTerm v ^ "/" ^ printTerm t  ^ "]"
-    | CCase (pat, t, deps,b) ->
+    | CCase (pat, t, deps,b,_) ->
          lead b ^ "case[" ^ printPattern pat ^ "/" ^ printTerm t  ^ "]"
 
 op debugClauses(l:List (List CClass)):() =
@@ -697,10 +693,10 @@ op debugClauses(l:List (List CClass)):() =
          
 op negateClass(c:CClass):CClass =
   case c of
-    | CAtom (t,ids,b) -> CAtom (t,ids,~b)
-    | CDef ([v], t, deps,b) -> CDef ([v], t, deps,~b)
-    | CConstrain (v, t, deps,b) -> CConstrain (v, t, deps,~b)
-    | CCase (pat, t, deps,b) -> CCase (pat, t, deps,~b)
+    | CAtom (t,ids,b,ty) -> CAtom (t,ids,~b,ty)
+    | CDef ([v], t, deps,b,ty) -> CDef ([v], t, deps,~b,ty)
+    | CConstrain (v, t, deps,b,ty) -> CConstrain (v, t, deps,~b,ty)
+    | CCase (pat, t, deps,b,ty) -> CCase (pat, t, deps,~b,ty)
 
 
 op simplifySplit(c:CClass)(l:List (List CClass)):List (List CClass) =
@@ -710,7 +706,7 @@ op simplifySplit(c:CClass)(l:List (List CClass)):List (List CClass) =
 % Return a list of (Pattern,clauses that don't conflict with that pattern), as well as a list of unhandled clauses.         
 op simplifyCaseSplit(args:BTArgs)(c:CClass)(l:List (List CClass)):List (MSPattern * List (List CClass)) *(Option (List (List CClass))) =
   case c of
-     | CCase (pat, s, vars,_) ->
+     | CCase (pat, s, vars,_,_) ->
        % Collect all of the terms constraining the same scrutinee
        let sameCases = flatten (map (fn clause -> filter (fn a -> equalClass? c a) clause) l) in
        % Eliminate duplicates., only get the patterns.
@@ -734,7 +730,7 @@ op simplifyCaseSplit(args:BTArgs)(c:CClass)(l:List (List CClass)):List (MSPatter
        % clause, with the constraint on the scrutinee removed.
        let def clauseMatch (p:MSPattern) (a:CClass) : Boolean =
           case a of
-            | CCase (p', s',_,_) -> equalPattern? (p,p') || ~(atomPolarity a)
+            | CCase (p', s',_,_,_) -> equalPattern? (p,p') || ~(atomPolarity a)
             | _ -> false
        in
        let filteredClauses : List (MSPattern * List (List CClass)) =
@@ -755,19 +751,19 @@ op simplifyCaseSplit(args:BTArgs)(c:CClass)(l:List (List CClass)):List (MSPatter
 % Get the variables an atom depends on.
 op atomDeps(c:CClass):List Id =
    case c of
-     | CAtom (_,deps,_) -> deps
-     | CDef (_,_,deps,_) -> deps
-     | CConstrain (_,_,deps,_) -> deps
-     | CCase (_,_,deps,_) -> deps
+     | CAtom (_,deps,_,_) -> deps
+     | CDef (_,_,deps,_,_) -> deps
+     | CConstrain (_,_,deps,_,_) -> deps
+     | CCase (_,_,deps,_,_) -> deps
 
 
 % Get the variables an atom depends on.
 op atomPolarity(c:CClass):Boolean =
    case c of
-     | CAtom (_,_,b) -> b
-     | CDef (_,_,_,b) -> b
-     | CConstrain (_,_,_,b) -> b
-     | CCase (_,_,_,b) -> b
+     | CAtom (_,_,b,_) -> b
+     | CDef (_,_,_,b,_) -> b
+     | CConstrain (_,_,_,b,_) -> b
+     | CCase (_,_,_,b,_) -> b
        
 
 % An atom is fully defined if none of its dependencies occur
@@ -778,7 +774,7 @@ op fullyDefined?(args:BTArgs)(c:CClass):Boolean =
 % The variables defined by a def
 op defVars(c:CClass):List (Id * MSType) =
   case c of
-    | CDef(vars,_,_,_) -> vars
+    | CDef(vars,_,_,_,_) -> vars
     | _ -> []
 
 op debugClassify? : Boolean = false % true      
@@ -795,6 +791,7 @@ op classify(args:BTArgs)(t:MSTerm):CClass =
 op classifyAux(args:BTArgs)(t:MSTerm):CClass =
 
   let def theVars tm = map (fn x -> x.1) (filter (fn (i,_) -> i in? args.vars) (freeVars tm)) in
+  let def getTy (tm:MSTerm):MSType = inferType (args.spc,tm) in
   case t of
     % ~(expr)
     | Apply(Fun(Not,_,_), arg, appPos) -> negateClass (classifyAux args arg)
@@ -802,12 +799,12 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
     % s' = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v = args.stateVar -> CConstrain (l,r,theVars r,true)
+      | v = args.stateVar -> CConstrain (l,r,theVars r,true,getTy r)
 
     % expr = s' 
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v = args.stateVar -> CConstrain (r,l,theVars l,true)
+      | v = args.stateVar -> CConstrain (r,l,theVars l,true,getTy l)
 
     % obs s' = expr        
     | Apply (Fun (Equals,_,eqPos), 
@@ -816,7 +813,7 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
                               (Var ((v,_),varPos)),
                               appPos)),
                        (_,r)], argPos), _)
-      | o in? args.obs && v = args.stateVar -> CConstrain (l,r,theVars r,true)
+      | o in? args.obs && v = args.stateVar -> CConstrain (l,r,theVars r,true,getTy r)
 
     % expr = obs s'
     | Apply (Fun (Equals,_,eqPos), 
@@ -825,38 +822,38 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
                               (Var ((v,_),varPos)),
                               appPos)
                         )], argPos), _)
-      | o in? args.obs && v = args.stateVar -> CConstrain (r,l,theVars l,true)
+      | o in? args.obs && v = args.stateVar -> CConstrain (r,l,theVars l,true,getTy l)
 
     % result = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? args.outputs -> CConstrain (l,r,theVars r,true)
+      | v in? args.outputs -> CConstrain (l,r,theVars r,true, getTy r)
 
     % expr = result
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? args.outputs -> CConstrain (r,l,theVars l,true)
+      | v in? args.outputs -> CConstrain (r,l,theVars l,true, getTy l)
 
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? args.vars) pvars -> CDef (patternVars l,r,theVars r,true)
+      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? args.vars) pvars -> CDef (patternVars l,r,theVars r,true, getTy r)
         
     % v = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? args.vars -> CDef ([(v,ty)],r,theVars r,true)
+      | v in? args.vars -> CDef ([(v,ty)],r,theVars r,true,getTy r)
 
 
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? args.vars) pvars -> CDef (patternVars r,l,theVars l,true)
+      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? args.vars) pvars -> CDef (patternVars r,l,theVars l,true, getTy r)
         
     % expr = v
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? args.vars -> CDef ([(v,ty)],l,theVars l,true)
+      | v in? args.vars -> CDef ([(v,ty)],l,theVars l,true, getTy l)
 
         
     | Apply (Fun (Equals,_,eqPos), 
@@ -864,15 +861,15 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
         (case termToPattern r of
               | Some (pat as EmbedPat (con,vars,pty,_)) ->
      % expr = pat
-                  CCase (pat, l, theVars l,true)
+                  CCase (pat, l, theVars l,true, getTy l)
               | _ ->  (case termToPattern l of
                            | Some (pat as EmbedPat (con,vars,pty,_)) ->
      % pat = expr
-                             CCase (pat, r, theVars r,true)
-                           | _ -> CAtom (t,theVars t,true)))
+                             CCase (pat, r, theVars r,true, getTy l)
+                           | _ -> CAtom (t,theVars t,true, boolType)))
 
    % otherwise
-   | _ -> CAtom (t,theVars t,true)
+   | _ -> CAtom (t,theVars t,true,boolType)
 
 
 % If a term is of the form `x` or `(x1,x2,..., xn)`, where
@@ -896,10 +893,10 @@ op defineLocals(defs:List CClass)(clauses:List (List CClass)):(List (List CClass
    % let _ = List.map (fn i -> writeLine i.1) vars in
    let def toPred atom =
            case atom of
-             | CDef ([var as (v,ty)],t,deps,b) ->
+             | CDef ([var as (v,ty)],t,deps,b,_) ->
                  if exists? (fn (v',ty') -> v' = v && equalType? (ty, ty')) vars
                   then % let _ = writeLine ("Updated" ^ printClass atom) in
-                       CAtom (mkEquality (ty,mkVar (v,ty),t), v::deps, b)
+                       CAtom (mkEquality (ty,mkVar (v,ty),t), v::deps, b,boolType)
                  else % let _ = writeLine ("Skipping" ^ printClass atom) in
                       atom
              | _ -> atom
@@ -917,14 +914,14 @@ op debugFailure(args:BTArgs)(clauses:List (List CClass)):() =
                    else writeLine "Fully defined."
            in
            case c of
-            |  CConstrain (var,t, deps, b) ->
+            |  CConstrain (var,t, deps, b,_) ->
                 let _ =
                    if (exists? (fn clause -> ~(exists? (fn a -> equalClass? a c) clause)) clauses)
                      then writeLine "Constraint does not appear globally."
                    else writeLine "Constraint appears globally."
                 in writeLine ""
 
-            |  CDef (vars,t,deps, b) ->
+            |  CDef (vars,t,deps, b,_) ->
                 let _ =
                    if (exists? (fn clause -> ~(exists? (fn a -> equalClass? a c) clause)) clauses)
                      then writeLine "Definition does not appear globally."
