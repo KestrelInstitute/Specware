@@ -13,7 +13,7 @@ THISSCRIPTDIR=$1     #old: `dirname $0`
 
 pushd ${THISSCRIPTDIR}/sources > /dev/null
 make clean &> /dev/null
-LOG=${THISSCRIPTDIR}/test.log
+LOG=${THISSCRIPTDIR}/build-docs-test.log
 echo "Building documentation (see ${LOG})."
 make &> ${LOG}
 popd > /dev/null
