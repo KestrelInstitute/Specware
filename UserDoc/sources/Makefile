@@ -7,12 +7,12 @@ all: publish
 build: language-manual user-manual tutorial xform-manual isabelle-interface quick-reference
 
 publish: build
-	cp language-manual/_build/latex/*.pdf ..
-	cp user-manual/_build/latex/*.pdf ..
-	cp tutorial/_build/latex/*.pdf ..
-	cp xform-manual/_build/latex/*.pdf ..
-	cp isabelle-interface/_build/latex/*.pdf ..
-	cp quick-reference/_build/latex/*.pdf ..
+# cp language-manual/_build/latex/*.pdf ..
+# cp user-manual/_build/latex/*.pdf ..
+# cp tutorial/_build/latex/*.pdf ..
+# cp xform-manual/_build/latex/*.pdf ..
+# cp isabelle-interface/_build/latex/*.pdf ..
+# cp quick-reference/_build/latex/*.pdf ..
 
 
 language-manual:
@@ -34,4 +34,4 @@ quick-reference:
 	cd quick-reference ; make $(FORMAT)
 
 clean:
-	cd language-manual ; make clean ; cd ../user-manual ; make clean ; cd ../xform-manual ; make clean ; cd ../tutorial ; make clean ; cd ../isabelle-interface ; make clean
+	cd language-manual ; make clean ; cd ../user-manual ; make clean ; cd ../xform-manual ; make clean ; cd ../tutorial ; make clean ; cd ../isabelle-interface ; make clean ; cd ../quick-reference ; make clean

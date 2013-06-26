@@ -21,9 +21,21 @@ There are six main documents that get built, each with its own directory under s
  isabelle-interface
  quick-reference
 
-To build the documentation, cd to 'sources' and type 'make'. This will
-build a pdf version of each manual and copy it to this directory. To
-build an HTML version, execute 'make html'. See the manual writers
+To build the documentation (in PDF form), cd to 'sources' and type
+'make'. This will build a pdf version of each manual.  The manuals
+will be generated in the _build/latex/ subdirectory of each manual's
+source directory, for example:
+./sources/language-manual/_build/latex/SpecwareLanguageManual.pdf
+
+This UserDoc/ directory also contains a snapshot copy of all of the
+manuals (these files are checked in to SVN).  To update these
+snapshots when the manuals are improved, run the refresh-docs.sh
+script to copy over the updated PDFs from the _build/latex/
+subdirectories.  (This Makefile used to do this, but that led SVN to
+always think the manuals were updated, even when no substantive change
+was made.)
+
+To build an HTML version, execute 'make html'. See the manual writers
 guide for more information on the various makefile targets.
 
 This file was written by Eric Smith, based on information from Lambert
