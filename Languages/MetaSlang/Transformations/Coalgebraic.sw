@@ -377,7 +377,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
            | Apply(Lambda(matches, a1), e, a2) ->
              let n_matches = map (fn (p, c, bod) -> (p, c, makeDef(bod, inh_cjs, seenQIds))) matches in
              Apply(Lambda(n_matches, a1), e, a2) 
-           | Apply(Fun(And,_,_), Record([("1",t1),("2",t2)],_),a) ->
+           | Apply(Fun(And,_,_), Record([("1",t1), ("2",t2)],_),a) ->
              (let cjs = getExpandedConjuncts tm in
               let cjs = inh_cjs ++ cjs in
               case findLeftmost (fn cj -> case cj of
@@ -430,16 +430,23 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                    Record([(_, rhs), (_, Apply(Fun(Op(qid,_),_,_), Var(v,_), _))], _), _)
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, rhs) :: state_itms, result_itms)
-           | Apply(Fun(Equals,_,_),Record([(_, lhs), (_, rhs)], _), _)
+           | Apply(Fun(Equals,_,_), Record([(_, lhs), (_, rhs)], _), _)
                | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
              let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
                                  result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
-           | Apply(Fun(Equals,_,_),Record([(_, rhs), (_, lhs)], _), _)     % Reversed orientation of equality
+           | Apply(Fun(Equals,_,_), Record([(_, rhs), (_, lhs)], _), _)     % Reversed orientation of equality
                | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
              let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
                                  result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
+           | Apply(Fun(Equals,_,_), Record([(_, lhs as Record(flds as ("1", _) :: _, _)), (_, rhs)], _), _) ->
+             let projection_cjs = map (fn (id, fld_val) ->
+                                         mkEquality(inferType(spc, fld_val),
+                                                    fld_val, mkProjection(id, rhs, spc)))
+                                    flds
+             in
+             foldl recordItemVal (state_itms, result_itms) projection_cjs
            | Apply(Fun(Op(qid,_),_,_), Var(v,_), _)
                | qid in? stored_qids && equalVar?(state_var, v) ->   % Bool true
              ((qualifiedIdToField qid, trueTerm) :: state_itms, result_itms)
@@ -468,6 +475,8 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
              else  % Not sure what to do here
              (writeLine("For "^show op_qid^"\nIgnoring conditional conjunct\n"^printTerm cj);
               (state_itms, result_itms))
+           | Apply(Fun(And,_,_), Record([("1",_), ("2",_)],_), _) ->
+             foldl recordItemVal (state_itms, result_itms) (getExpandedConjuncts cj)
            | _ ->
              (writeLine("For "^show op_qid^"\nIgnoring conjunct\n"^printTerm cj);
               (state_itms, result_itms))
