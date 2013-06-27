@@ -15,6 +15,7 @@ Isomorphism qualifying
 spec
 import Script
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+import NormalizeTypes
 %  import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
 op orderElements?: Bool = true
@@ -425,7 +426,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                               | Product([("1", ty1), ("2", ty2)], _) ->
                                 recordTy? ty1 && recordTy? ty2
                               | _ -> false)
-                      | Fun (Project _, _, _) ->
+                      | Fun (Project _, _, _) | typeOfInterest? dom ->
                         embed? Product (inferType(spc, t2))
                       | Fun (Embed(_, false), Base(ty_qid, _, _), _) -> ty_qid nin? base_src_QIds
                       | Fun (Embed(_, true), Arrow(_, Base(ty_qid, _, _), _), _) -> ty_qid nin? base_src_QIds
@@ -558,7 +559,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   op simplifyIsomorphism?: Bool = true
   %% Temporary until we have slicing
   op simplifyUnPrimed?: Bool = false
-  op opaqueSimplifyScript: Script = mkSimplify[Rewrite idQId]
+  op opaqueSimplifyScript: Script = mkSteps[]  %mkSimplify[Rewrite idQId]
 
    def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                     newOptQual : Option String, extra_rules: List RuleSpec)
@@ -886,7 +887,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                | None ->
                    (case lookupIsoInfo(qid, iso_info) of
                      | Some ((iso_fn,_,_,_),_) ->
-                       (case typeMatch(domain(spc, inferType(spc, iso_fn)), ty, spc, false) of
+                       (case typeMatch(domain(spc, inferType(spc, iso_fn)), ty, spc, false, true) of
                          | None -> return iso_fn         % Shouldn't happen
                          | Some subst -> return (instantiateTyVarsInTerm(iso_fn, subst)))
                      | None ->
@@ -905,7 +906,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
               xv <- return ("x",src_ty); 
               pairs <-
                 mapM (fn (id,i_ty) -> {
-                  iso_proj <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkProjection(id,mkVar xv));
+                  iso_proj <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkProjection(id, mkVar xv, spc));
                   return (id, iso_proj)
                 }) row;
               return (mkLambda(mkVarPat xv, mkRecord pairs))
@@ -952,6 +953,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                      case unpackFirstTerm opinfo.dfn of
                        | (tvs, srt as Arrow(dom,ran,_), _) -> return (tvs,srt)
                        | (_,srt,_) -> escape ("addIsoDefForIso: srt=" ^ anyToString srt ^ "\n");
+                   print("addIsoDefForIso: "^show qid^"\n"^printTerm opinfo.dfn^"\n\n");
                    uf_dom <- return (unfoldBaseOne(spc, dom));
                    newtm <-
                      case uf_dom of
@@ -999,6 +1001,28 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
           (escape (printTerm iso ^ " and " ^ printTerm osi ^ " types not inverses\n"));
       return ()
     }) base_iso_info;
+    % Introduce named types for any complex types
+    (base_iso_info, typeNameInfo, spc, _)
+        <- foldM (fn (base_iso_info, typeNameInfo, spc, i) ->
+                    fn pr as ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
+                    let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
+                    case src_ty of
+                      | Base(qid', [], _) ->
+                        return(pr :: base_iso_info, typeNameInfo, spc, i)
+                      | _ ->
+                        let dummy_ty_qid = mkUnQualifiedId("iso-dom-ty"^show i) in
+                        let dummy_ty = mkBase(dummy_ty_qid, []) in
+                        let spc = spc << {types = insertAQualifierMap(spc.types, UnQualified, "iso-dom-ty",
+                                                                      {names = [dummy_ty_qid], dfn = maybePiType(tvs, src_ty)})}
+                        in
+                        let _ = writeLine("dummy_ty: "^printType dummy_ty^" = "^printType src_ty) in
+                        let typeNameInfo = (dummy_ty_qid, [], src_ty) :: typeNameInfo in
+                        let base_iso_info = ((iso,tvs,dummy_ty,trg_ty), (osi,inv_tvs,inv_src_ty,dummy_ty)) :: base_iso_info in
+                        return (base_iso_info, typeNameInfo, spc, i + 1))
+              ([], [], spc, 0) base_iso_info;
+    print("typeNameInfo: "^anyToString typeNameInfo^"\n\n");
+    spc <- return(if typeNameInfo = [] then spc
+                    else mapSpec (id, normalizeType(spc, typeNameInfo, false, false, false), id) spc);
     % Make definitions for any undefined primed types
     spc <- foldM (fn spc -> fn ((_,_,src_ty,trg_ty), _) ->
                     case trg_ty of
@@ -1021,6 +1045,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
         case src_ty of
           | Base(qid, _, _) -> return qid 
           | _ -> escape ("Domain of iso is not a named type\n")) base_iso_info;
+    print("base_src_QIds: "^anyToString base_src_QIds^"\n");
     %  find complex isos
     (* It may be that the spec provides ops that lift bijections to
        higher types.  For example, given isomorphic types A <-> B, then
@@ -1234,7 +1259,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                       opsDone <- return (Cons ((qual,id,ty),opsDone));
                       info <- findTheOp spc (mkQualifiedId (qual,id));
                       (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
-                      monoDefn <- case typeMatch(defnType, ty, spc, true) of
+                      monoDefn <- case typeMatch(defnType, ty, spc, true, true) of
                          | None -> {
                              print ("defnType: " ^ printType defnType ^ "\n");
                              print ("upType: " ^ printType ty ^ "\n");
@@ -1577,6 +1602,17 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                   return (opinfo \_guillemotleft {dfn = new_dfn})
                 }}) spc.ops;
     spc <- return (spc \_guillemotleft {ops = simp_ops});
+    spc <- return (if typeNameInfo = [] then spc
+                    else mapSpec (id,
+                                  fn ty ->
+                                    case ty of
+                                      | Base(qid, [], _) ->
+                                        (case findLeftmost(fn (qid1, _, _) -> qid = qid1) typeNameInfo of
+                                           | Some(_, _, orig_ty) -> orig_ty
+                                           | None -> ty)
+                                      | _ -> ty,
+                                  id)
+                           spc);
     spc <- return
      (if orderElements? then
        adjustElementOrder spc

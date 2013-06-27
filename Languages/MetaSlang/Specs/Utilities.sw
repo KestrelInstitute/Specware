@@ -2057,7 +2057,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
         (case findTheOp(spc, qid) of
            | Some opinfo ->
              (let (tvs,ty1,defn) = unpackFirstOpDef opinfo in
-              case typeMatch(ty1, ty, spc, true) of
+              case typeMatch(ty1, ty, spc, true, true) of
                 | Some subst -> Some(instantiateTyVarsInTerm(defn, subst))
                 | None -> None)
            | None -> None)
@@ -2504,8 +2504,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
   op instantiateTyVarsInPattern(pat: MSPattern, subst: TyVarSubst): MSPattern =
     mapPattern (id, fn ty -> instantiateTyVars(ty,subst), id) pat
 
-  op  typeMatch: MSType * MSType * Spec * Bool -> Option TyVarSubst
-  def typeMatch(s1,s2,spc,ign_subtypes?) =
+  op typeMatch(s1: MSType, s2: MSType, spc: Spec, ign_subtypes?: Bool, unfold?: Bool): Option TyVarSubst =
    let def match(ty1: MSType, ty2: MSType, pairs: TyVarSubst): Option TyVarSubst =
         % let _ = writeLine(printType ty1^" =?= "^ printType ty2) in
         let result =
@@ -2556,11 +2555,11 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                      (case tryUnfoldBase spc ty1 of
                       | Some exp_ty1 -> match(exp_ty1, ty2, pairs)
                       | None -> None))
-              | (_,Base _) ->
+              | (_,Base _) | unfold? ->
                 (case tryUnfoldBase spc ty2 of
                  | Some exp_ty2 -> match(ty1, exp_ty2, pairs)
                  | None -> None)
-              | (Base _,_) ->
+              | (Base _,_) | unfold? ->
                 (case tryUnfoldBase spc ty1 of
                  | Some exp_ty1 -> match(exp_ty1, ty2, pairs)
                  | None -> None)
@@ -2585,7 +2584,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     case findTheOp(spc, qid) of
       | Some opinfo ->
         (let (tvs,ty1,_) = unpackFirstOpDef opinfo in
-         case typeMatch(ty1,ty,spc,true) of
+         case typeMatch(ty1,ty,spc,true,true) of
            | Some subst ->
              let inst_ty = instantiateTyVarsInType(ty1, subst) in
              mkInfixOp(qid, opinfo.fixity, inst_ty)

@@ -3006,7 +3006,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | (Fun(RecordMerge, ty, _), Record (fields,_)) ->
           let spc = getSpec c in
           let recd_ty = range(spc, ty) in
-          let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
+          let recd_ty = normalizeType (spc, c.typeNameInfo, false, true, true) recd_ty in
           let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
           enclose?(parentTerm ~= Top,
                    prBreak 2 [ppTerm c (Infix(Left,1000)) t1,
@@ -3074,7 +3074,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
           | _ ->
             let spc = getSpec c in
             let recd_ty = inferType(spc, term) in
-            let recd_ty = normalizeType (spc, c.typeNameInfo, false, true) recd_ty in
+            let recd_ty = normalizeType (spc, c.typeNameInfo, false, true, true) recd_ty in
             let recd_ty = unfoldToBaseNamedType(spc, recd_ty) in
             let def ppField (x,y) =
                   prConcat [prString (case recd_ty of

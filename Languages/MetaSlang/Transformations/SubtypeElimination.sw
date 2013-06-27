@@ -62,7 +62,7 @@ SpecNorm qualifying spec
                let (tvs, ty1, defn) = unpackFirstOpDef opinfo in
                % let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printType ty) in
                % let _ = writeLine("Matching with: "^printType ty1) in
-               case typeMatch(ty1, ty, spc, false) of
+               case typeMatch(ty1, ty, spc, false, true) of
                  | None -> t
                  | Some tvsubst ->
                let tvsubst = filter (fn (tv,_) -> tv in? used_tvs) tvsubst in
@@ -764,12 +764,12 @@ SpecNorm qualifying spec
       | (Some(dom, rng), Some(rm_dom, rm_rng)) ->
         if embed? Var tm && equalType?(dom, rm_dom) then tm
         else
-        let rfun = if boolType?(spc, rng)
-                     then if setType?(spc, ty) && regularizeSets?
-                            then  "RSet"
-                            else if regularizeBoolToFalse?
-                                   then "RFunB"
-                                 else "RFun"
+        let rfun = if setType?(spc, ty) && regularizeSets?
+                    then  "RSet"
+                   else if boolType?(spc, rng)
+                     then if regularizeBoolToFalse?
+                            then "RFunB"
+                          else "RFun"
                    else "RFun"
         in
         let def mkRFun(pred, tm) =

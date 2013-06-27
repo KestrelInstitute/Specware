@@ -59,7 +59,7 @@ Prover qualifying spec
                 case defn of
                   | Lambda([(VarPat _, _, bod)],_)
                       | simpleBody? bod && termSize bod < unfoldSizeThreshold ->
-                    (case typeMatch(ty1, ty,spc,true) of
+                    (case typeMatch(ty1, ty,spc,true,true) of
                        | Some subst ->  % Should match!
                          % let _ = writeLine(show qid^": Matching "^printType ty^" with "^printType ty1) in
                          instantiateTyVarsInTerm(defn, subst)

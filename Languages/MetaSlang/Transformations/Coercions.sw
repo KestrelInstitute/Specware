@@ -100,7 +100,7 @@ spec
                  if tvs = []
                    then (dom, rng)
                    else
-                     case typeMatch(if to_super? then dom else rng, sup_ty, spc, true) of
+                     case typeMatch(if to_super? then dom else rng, sup_ty, spc, true, true) of
                        | Some(tv_sbst as _ :: _) -> 
                          (instantiateTyVarsInType(dom, tv_sbst), instantiateTyVarsInType(rng, tv_sbst))
                        | _ -> (dom, rng)

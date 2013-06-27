@@ -68,10 +68,10 @@ PosSpecToSpec qualifying spec
      def convertPTerm term =
            % let _ = writeLine("cvt: "^printTerm term^"\n"^anyToString term) in
            case term of
-              | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
-                correctEqualityType(spc, eq_or_neq, ty, t2, pos)
-              | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
-                correctMapType(m, l, ty, spc, fx, a)
+             | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
+               correctEqualityType(spc, eq_or_neq, ty, t2, pos)
+             | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
+               correctMapType(m, l, ty, spc, fx, a)
 	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
 	     | ApplyN (t1::t2::terms,pos) -> 
 	       convertPTerm (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))
@@ -137,6 +137,7 @@ PosSpecToSpec qualifying spec
   normalizeNewTypes(spc, false)
 
 
+(* 6/26/2013 sjw: Doesn't seem to be used
  op  convertPosTermToTerm : MSTerm -> MSTerm
  def convertPosTermToTerm tm =
    let context = initializeMetaTyVars() in
@@ -166,6 +167,7 @@ PosSpecToSpec qualifying spec
    in
    let tsp = (convertPTerm, convertPType, fn x -> x) in
    mapTerm tsp tm
+*)
 
-endspec
+end-spec
 

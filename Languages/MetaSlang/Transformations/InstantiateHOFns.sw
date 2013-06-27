@@ -944,7 +944,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
                | Some opinfo | termCost opinfo.dfn <= unfoldCostThreshold ->
                  let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
                  % let _ = writeLine("unpack = "^printTerm dfn) in
-                 (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
+                 (case (dfn, typeMatch (op_type, fun_type, spc, true, true)) of
 
                     | (t as Lambda body, Some tv_subst) ->
                         if anyTerm? t
@@ -966,7 +966,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
 
                          | Some opinfo | termCost opinfo.dfn <= unfoldCostThreshold ->
                            let (tvs, op_type, dfn) = unpackFirstOpDef opinfo in
-                           (case (dfn, typeMatch (op_type, fun_type, spc, true)) of
+                           (case (dfn, typeMatch (op_type, fun_type, spc, true, true)) of
 
                               | (Lambda _, Some tv_subst) ->
                                 let inst_dfn = instantiateTyVarsInTerm (dfn, tv_subst) in
