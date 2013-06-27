@@ -45,6 +45,7 @@ import Coalgebraic
 import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
 import /Languages/MetaSlang/AbstractSyntax/Equalities
 
+
 % When merging, we may need to simplify given some rewrite rules. The
 % 'mergeRules' spec transform take such a list.
 type Rewrites = List RuleSpec
@@ -63,8 +64,8 @@ type STRule = { st_stateType : MSType,   % StateType
                 st_outputs : List (Id*MSType) % [(o1,OT1),...,(on,OTn)]
               }
 
-op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites)(noUnfolds:QualifiedIds):Env Spec =
-
+op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
+      (theorems:Rewrites)(noUnfolds:QualifiedIds)(unfoldDepth:Option Int):Env Spec =
 %% This transformation takes a list of "rules", defined as specware ops, and
 %% combines them into a single op.
 %% Arguments:
@@ -74,11 +75,13 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(theorems:Rewrites)(noUn
 %%  An op with the pre (resp. post) conditions of the named input rules merged
 %%  into a single pre (resp. post) condition.
 % op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec =
+  let unfoldDepth = case unfoldDepth of | Some i -> i | None -> 1 in
+
   let _ = writeLine "MergeRules!" in
   let (fname::qids) = args in
   let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
   { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems)) qids
-  ; ps <- combineRuleSpecs spc ruleSpecs theorems noUnfolds
+  ; ps <- combineRuleSpecs spc ruleSpecs theorems noUnfolds unfoldDepth
   ; let stateType = rs1.st_stateType in
     let preStateVar = rs1.st_prestate in
     let postStateVar = rs1.st_poststate in
@@ -243,7 +246,7 @@ op getRecPatternElements(pat:MSPattern):Option (Id*MSType*List (Id*MSType)) =
     | _ -> let _ = writeLine "e4" in None
                
 
-    
+
 %% combineRuleSpecs normalizes pre/post condition naming, and generates
 %% a "DNF" representation of the pre- and post-conditions as a list of lists
 %% of MSTerms, where each outer term corresponds to a disjunct, and each
@@ -251,13 +254,16 @@ op getRecPatternElements(pat:MSPattern):Option (Id*MSType*List (Id*MSType)) =
 %% atomic formula. Moreover, we normalize the names of the pre- and poststate 
 %% variables.
 %% FIXME: Currently, there's no variable renaming going on...
-op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites)(noUnfolds:List QualifiedId):Env (List (ExVars * DNFRep)) =
+op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites)
+    (noUnfolds:List QualifiedId)(unfoldDepth:Int):Env (List (ExVars * DNFRep)) =
 % op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm))(theorems:Rewrites):Env (List (ExVars * DNFRep)) =
   let types = map (fn r -> r.st_stateType) rules  in
   let preconditions = map (fn r -> case r.st_precondition of Some t -> t | None -> (mkTrue ())) rules in
   let postconditions = map (fn r -> case r.st_postcondition of Some t -> t | None -> (mkTrue ())) rules in
-  { pres <- mapM (normalizeCondition spc theorems noUnfolds) preconditions 
-  ; posts <- mapM (normalizeCondition spc theorems noUnfolds) postconditions
+  { pres <-
+     mapM (normalizeCondition spc theorems noUnfolds unfoldDepth) preconditions 
+  ; posts <-
+     mapM (normalizeCondition spc theorems noUnfolds unfoldDepth) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
     let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
     % let _ = map printIt ps in
@@ -271,32 +277,33 @@ op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites)(noUnfolds:Li
 type ExVars = List (AVar Position)
 type DNFRep = (List MSTerms)
 %% Remove existential quantifers, flatten to DNF.
-op normalizeCondition(spc:Spec)(theorems:Rewrites)(noUnfolds:List QualifiedId)(tm:MSTerm):Env(ExVars *  DNFRep) = 
+op normalizeCondition(spc:Spec)(theorems:Rewrites)
+   (noUnfolds:List QualifiedId)(undepth:Int)(tm:MSTerm):Env(ExVars *  DNFRep) = 
   % let _ = writeLine ("Normalizing " ^ printTerm tm) in
   case tm of
     | Bind (Exists,vars,body,_) -> 
-      { (vs',dnf) <- normalizeCondition spc theorems noUnfolds body 
+      { (vs',dnf) <- normalizeCondition spc theorems noUnfolds undepth  body 
       ; return (vs' ++ vars,dnf)
       }
    | (Apply (Fun (f as And,_,_), Record (args,_),_)) -> 
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { (v1,r1) <- normalizeCondition spc theorems noUnfolds a1
-       ; (v2,r2) <- normalizeCondition spc theorems noUnfolds a2 
+       { (v1,r1) <- normalizeCondition spc theorems noUnfolds undepth a1
+       ; (v2,r2) <- normalizeCondition spc theorems noUnfolds undepth a2 
        ; return (v1 ++ v2, (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1)))
        }
     | (Apply (Fun (f as Or,_,_), Record (args,_),_)) ->
        % let _ = writeLine ("Splitting in " ^ printTerm tm) in
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { (v1,dnf1) <- normalizeCondition spc theorems noUnfolds a1;
-         (v2,dnf2) <- normalizeCondition spc theorems noUnfolds a2;
+       { (v1,dnf1) <- normalizeCondition spc theorems noUnfolds undepth a1;
+         (v2,dnf2) <- normalizeCondition spc theorems noUnfolds undepth a2;
          return (v1 ++ v2, dnf1 ++ dnf2)
        }
    | IfThenElse (p,t,e,_) -> 
-     { (vp,rp) <- normalizeCondition spc theorems noUnfolds p;
-       (vt,rt) <- normalizeCondition spc theorems noUnfolds t;
-       (ve,re) <- normalizeCondition spc theorems noUnfolds e;
+     { (vp,rp) <- normalizeCondition spc theorems noUnfolds undepth p;
+       (vt,rt) <- normalizeCondition spc theorems noUnfolds undepth t;
+       (ve,re) <- normalizeCondition spc theorems noUnfolds undepth e;
        let ut = andDNF rp rt in
        let ue = andDNF (negateDNF rp) re in
        return (vp ++ vt ++ ve, ut ++ ue)
@@ -305,16 +312,16 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)(noUnfolds:List QualifiedId)(t
         return ([],[[mkNot (Apply(Fun(Equals,ty,a1),args,a2))]])
 
     | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
-        normalizeCondition spc theorems noUnfolds (substitute (body, [(var,definition)]))
+        normalizeCondition spc theorems noUnfolds undepth (substitute (body, [(var,definition)]))
 
-    | _ | isUnfoldable? tm spc noUnfolds  ->
+    | _ | undepth > 0 && isUnfoldable? tm spc noUnfolds  ->
             % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
             let tm' = betan_step (unfoldTerm (tm,spc)) in
             % let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
             % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
-            normalizeCondition spc theorems noUnfolds tm'
+            normalizeCondition spc theorems noUnfolds (undepth - 1)  tm'
     | _ -> case rewriteTerm spc theorems tm of
-            | Some tm' -> normalizeCondition spc theorems noUnfolds tm'
+            | Some tm' -> normalizeCondition spc theorems noUnfolds undepth tm'
             | None -> return ([],[[tm]]) 
 
 
