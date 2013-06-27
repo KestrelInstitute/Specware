@@ -1028,9 +1028,9 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                     case trg_ty of
                       | Base(qid', _, _) ->
                         (case findTheType(spc, qid') of
-                           | Some ty_info' | anyType? ty_info'.dfn ->
+                           | Some ty_info' | anyType? ty_info'.dfn && qid' nin? builtinBaseTypes ->
                              (case src_ty of
-                                | Base(qid, _, _) ->
+                                | Base(qid, _, _) | qid nin? builtinBaseTypes ->
                                   {Some ty_info <- return(findTheType(spc, qid));
                                    (tvs,ty) <- return(unpackFirstTypeDef ty_info);
                                    ty' <- isoType (spc, base_iso_info, []) true ty;

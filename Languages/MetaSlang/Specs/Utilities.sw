@@ -2627,6 +2627,11 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
      Qualified("List",    "List"), 
      Qualified("Option",  "Option")]
 
+  op builtinBaseTypes: QualifiedIds =
+    [Qualified("Integer", "Int"), 
+     Qualified("Char",    "Char"),
+     Qualified("String",  "String")]
+
   op existsOpWithType?(ty: MSType, spc: Spec): Bool =
     foldriAQualifierMap
       (fn (q, id, info, result) ->
