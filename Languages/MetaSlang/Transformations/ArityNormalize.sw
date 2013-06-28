@@ -1,44 +1,58 @@
-% Synchronized with version 1.3 of SW4/Languages/MetaSlang/Transformations/ArityNormalize.sl
-
-(* 
- *  normalizeArity(specName,nameSupply,term) 
- *
- *  normalizes the arities of function applications and tuple formations in term
- *  such that tuples only appear as arguments to functions that are declared as
- *  n-ary or to the polymorphic constructor TranslationBuiltIn.mkTuple
- *  (whose semantics is to be the identity function, but it is translated into
- *   the adequate constructors that form tuples).
- * 
- *  We assume that nested patterns have been be eliminated using the pattern 
- *  matching algorithm and that all identifiers are unique (resolveTerm has been
- *  invoked).
- * 
- *  Let f : fn x -> fn (y,z) -> (+ x y z) 
- *  then f 1 (2,3)
- *  translates into: (funcall (f 1) 2 3)
- * 
- *  Let f : fn x -> fn y -> (+ x (car y) (cdr y))
- *  then f 1 (2,3)
- *  translates into: (funcall (f 1) (mkTuple 2 3))
- * 
- *  Let f : fn (x,y) -> (+ x y)
- *  then f z
- *  translates into: (mkApply f z)        
- * 
- *  def foo(x,y) = x + y
- * 
- *  (fn f -> f(1,2)) foo
- *  translates into: funcall #' (lambda (f) (funcall f 1 2)) #'foo
- *)
-
 ArityNormalize qualifying spec
 
 import /Languages/MetaSlang/Specs/Environment
 
-(*
- *  The arity of a match is some n >= 0,
- *  when all patterns in the match are records of arity n,
- *  otherwise it is 1.
+(* 
+ *  normalizeArity normalizes the arities of function applications and tuple formations 
+ *  so that tuples appear as arguments only to functions declared to be n-ary or to the 
+ *  polymorphic constructor TranslationBuiltIn.mkTuple.
+ *  
+ *  The semantics of mkTuple is the identity function, but for purposes of code generation 
+ *  it is translated into appropriate constructors to form tuples.
+ * 
+ *  We assume that nested patterns have been be eliminated using the pattern matching 
+ *  algorithm and that all identifiers are unique (resolveTerm has been invoked).
+ * 
+ *  ----------------------------------------
+ * 
+ *  Given:  
+ *   op f (x : Nat) (y : Nat, z : Nat) : Nat
+ *
+ *  f 1 (2, 3)
+ *   produces
+ *  (funcall (f 1) 2 3)
+ * 
+ *  ----------------------------------------
+ * 
+ *  Given:  
+ *   op f (x : Nat) (y : Nat * Nat) : Nat 
+ *
+ *  f 1 (2, 3)
+ *   produces
+ *  (funcall (f 1) (mkTuple 2 3))
+ * 
+ *  ----------------------------------------
+ * 
+ *  Given:  
+ *   op f (x : Nat: y : Nat) : Nat
+ *   op z : Nat * Nat
+ *
+ *  f z
+ *   produces
+ *  (mkApply f z)        
+ * 
+ *  ----------------------------------------
+ * 
+ *  Given
+ *   op foo (x : Nat,y : Nat) : Nat
+ * 
+ *  (fn f -> f (1, 2)) foo
+ *   produces
+ *  (funcall #'(lambda (f) (funcall f 1 2)) #'foo)
+ *
+ *
+ *  When all patterns in the match are records of the same arity n >= 0, 
+ *  the arity of a match is n, otherwise it is 1.
  *)
 
 op matchArity (match : MSMatch) : Nat =
@@ -61,24 +75,21 @@ op matchArity (match : MSMatch) : Nat =
    | (RestrictedPat (RecordPat (pats, _) , _, _), _, _) :: match -> aux (match, length pats)
    | _ -> 1
         
-% The arity map stores the ops having a domain type consisting of
-% a record (possibly subsetted)
+% The arity map stores the ops having a domain type consisting of a record (possibly subsetted)
 
 type Gamma = List (String * Option (MSType * Nat))
 
 (*
- Arities are associated with term identifiers according to 
- arities in type definitions or arities of top-level pattern.
- The top-level pattern gets precedence such that the pattern 
- matching algorithm can always generate the pattern with 
- as many arguments as possible.
+ * Arities are associated with term identifiers according to arities in type definitions 
+ * or arities of top-level pattern.  
+ *
+ * The top-level pattern gets precedence such that the pattern matching algorithm can 
+ * always generate the pattern with as many arguments as possible.
  *)
   
-op termArity (spc   : Spec, 
-              gamma : Gamma, 
-              term  : MSTerm) 
- : Option (MSType * Nat) =
+op termArity (spc : Spec, gamma : Gamma, term  : MSTerm) : Option (MSType * Nat) =
  case term of
+
    | Apply _ -> None
 
    | Var ((id, _),_ ) -> 
@@ -94,7 +105,8 @@ op termArity (spc   : Spec,
    | Fun (Equals,           typ, _) -> typeArity (spc, typ)
    | Fun (NotEquals,        typ, _) -> typeArity (spc, typ)
    | Fun (RecordMerge,      typ, _) -> typeArity (spc, typ)
-   | Fun (Embed (id, true), typ, _) -> None  % typeArity(spc,typ)
+   | Fun (Embed (id, true), typ, _) -> None  
+
    | Fun        _ -> None
    | Let        _ -> None
    | LetRec     _ -> None
@@ -103,6 +115,7 @@ op termArity (spc   : Spec,
    | IfThenElse _ -> None
    | Record     _ -> None
    | Seq        _ -> None
+
    | Lambda (match, _) -> 
      let mArity = matchArity match in
      if mArity = 1 then
@@ -111,57 +124,53 @@ op termArity (spc   : Spec,
        Some (case match of
                | (pat, _, _) :: _ -> patternType pat
                | _ -> System.fail "Unexpected empty match",mArity)
+
    | _ -> System.fail "Unmatched term"
     
 op mkArityApply (spc        : Spec,
-                 dom       : MSType,
-                 t1        : MSTerm,
-                 t2        : MSTerm,
+                 dom        : MSType,
+                 t1         : MSTerm,
+                 t2         : MSTerm,
                  used_names : UsedNames) 
  : MSTerm =
  let
-  def unfoldArgument (dom : MSType, t2) = 
+
+  def unfoldArgument (dom, arg) = 
     case unfoldBase (spc, dom) of
-      | Subtype(s,t,_) -> 
+
+      | Subtype (typ, pred, _) -> 
         %
-        % First relax the argument, then restrict the result.
+        % Relax the argument, then restrict the result.
         %
-        let relaxOp = mkRelax(s,t) in
-        let t2 = mkApply(relaxOp,t2) in
-        let (t2,decls) = unfoldArgument(s,t2) in
-        let t2 = mkRestriction(t,t2) in
-        (t2,decls)
-      | Product(fields,_) -> 
-        let (names, used_names) = 
-            foldr (fn ((fieldName, typ), (names, used_names)) ->
-                     let (newName,used_names) = freshName("v"^fieldName,used_names) in
-                     let names = (newName, fieldName, typ) :: names in
-                     (names, used_names))
-                  ([], used_names) 
-                  fields
-        in
-        let (x, used_names) = freshName("x",used_names) in
-        let decl           = (mkVarPat(x,dom),t2) in
-        let v              = mkVar(x,dom) in
-        let fields = 
-            map (fn (name, label, typ)->
-                   let trm = mkApply ((Fun (Project label, 
+        let relaxOp      = mkRelax (typ, pred)       in
+        let arg          = mkApply (relaxOp, arg)    in
+        let (arg, decls) = unfoldArgument (typ, arg) in
+        let arg          = mkRestriction (pred, arg) in
+        (arg, decls)
+
+      | Product (product_fields, _) -> 
+        let (vname, used_names) = freshName ("x", used_names) in
+        let vpat                = mkVarPat (vname, dom)       in
+        let vref                = mkVar    (vname, dom)       in
+        let record_fields = 
+            map (fn (label, typ) ->
+                   let arg = mkApply ((Fun (Project label, 
                                             mkArrow (dom, typ), 
                                             noPos)),
-                                      v) 
+                                      vref) 
                    in
-                   (label, trm))
-                names
+                   (label, arg))
+                product_fields
         in
-        (mkRecord fields, [decl])
+        (mkRecord record_fields, [(vpat, arg)])
+
       | _ -> 
-        (toScreen "Unexpected non-record argument to function ";
-         toScreen (printTerm t2^" :  " );
-         writeLine (printType dom);
-         (t2,[])) 
-        %% This should not happen (?) 
-        %% because we only apply it to terms expecting
-        %% a record of arguments.
+        %% This should not happen (?) because we only apply it to terms 
+        %% expecting a record of arguments.
+        let _ = writeLine "Unexpected non-record argument to function " in
+        let _ = writeLine (printTerm arg ^ " : " )                      in
+        let _ = writeLine (printType dom)                               in
+        (arg, []) 
  in
  let (t2, decls) = unfoldArgument (dom, t2) in
  mkLet (decls, mkApply (t1, t2))
@@ -211,17 +220,20 @@ op insertVars (vars       : MSVars,
        vars
 
 op addLocalVars (term : MSTerm, used_names : UsedNames) : UsedNames =
- let used = Ref used_names in
- let _ = mapTerm (id, 
-                  id, 
-                  fn pat ->
-                    case pat of
-                      | VarPat ((qid, _), _) ->
-                        (used := StringSet.add (!used, qid); pat)
-                      | _ -> pat)
-                 term
- in 
- !used
+ let (_, used_names) =
+     mapAccumTerm (fn used_names -> fn tm  -> (tm,  used_names),
+                   fn used_names -> fn typ -> (typ, used_names),
+                   fn used_names -> fn pat ->
+                     (pat, 
+                      case pat of
+                        | VarPat ((qid, _), _) ->
+                          StringSet.add (used_names, qid)
+                        | _ -> 
+                         used_names))
+                  used_names
+                  term
+ in
+ used_names
 
 op etaExpand (spc        : Spec, 
               used_names : UsedNames, 
@@ -236,8 +248,9 @@ op etaExpand (spc        : Spec,
                     | Lambda _ -> term
                     | _ -> 
                       let (name,_) = freshName ("x", used_names) in
-                      let x = (name, dom) in
-                      mkLambda (mkVarPat x, mkApply (term, mkVar x)))
+                      let var      = (name, dom)                 in
+                      mkLambda (mkVarPat var, 
+                                mkApply (term, mkVar var)))
        | Some fields ->
          if case term of
               | Lambda (rules, _) -> simpleAbstraction? rules
@@ -256,7 +269,7 @@ op etaExpand (spc        : Spec,
            let body         = mkApply (term, mkRecord vrefs) in
            mkLambda (pat, body)
 
-op SpecTransform.etaExpandDefs (spc: Spec) : Spec =
+op SpecTransform.etaExpandDefs (spc : Spec) : Spec =
  setOps (spc, 
          mapOpInfos (fn info -> 
                        let (old_decls, old_defs) = opInfoDeclsAndDefs info in
@@ -298,7 +311,7 @@ op normalizeArityTopLevel (spc        : Spec,
                            gamma      : Gamma,
                            used_names : UsedNames,
                            term       : MSTerm)
- :MSTerm =
+ : MSTerm =
  if anyTerm? term then 
    term 
  else
@@ -320,7 +333,7 @@ op normalizeArity (spc        : Spec,
  : MSTerm = 
  let
 
-  def normalizeRecordArguments (trm : MSTerm) : MSTerm * Bool = 
+  def normalizeRecordArguments trm =
     case trm of
 
       | Record (fields, _) -> 
@@ -454,7 +467,7 @@ op convertToArity1 (spc        : Spec,
      %% we pass the pV? test in reduceTerm,
      %% which allows use to include an ignore decl
      %% if the var is not used in the body
-     let (name,used_names) = freshName("apV",used_names) in
+     let (name, used_names) = freshName ("apV", used_names) in
      let x = (name, dom) in
      (Lambda ([(VarPat (x, noPos), 
                 mkTrue (),
