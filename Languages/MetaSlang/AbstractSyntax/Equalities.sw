@@ -165,6 +165,10 @@ MetaSlang qualifying spec
                | (Subtype   (x1, t1,  _),
                   Subtype   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
+               % These cases are useful until we remove "Boolean" as an alternative for "Bool"
+               | (Boolean _, Base(Qualified("Bool", "Bool"), [], _)) -> true
+               | (Base(Qualified("Bool", "Bool"), [], _), Boolean _) -> true
+
                | (Base      (q1, xs1, _),
                   Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalType?)
 
