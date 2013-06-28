@@ -114,13 +114,48 @@ op ppTypeLocalDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
 
 op ppTypeName (t:MSType) : PPError WLPretty = 
   case t of
-    | Base (Qualified (_, pid),_,_) -> Good (ppString pid)
+%    | Base (Qualified (_, "Integer"),_,_) -> Good (ppString "integerp")
+    | Base (Qualified (_, pid),_,_) -> Good (ppConcat [ppString pid, ppString "p"])
     | Boolean _ -> Good (ppString "booleanp")
     | Subtype _ -> Bad "ppTypeName doesn't accept subtypes yet"
     | Product _ -> Bad "ppTypeName doesn't accept product types yet"
     | CoProduct _ -> Bad "ppTypeName doesn't accept coproduct types yet"
     | Arrow _ -> Bad "ppTypeName doesn't accept arrow type (really bad)"
     | _ -> Bad "Can't handle t in typeName"
+
+
+op ppCoproductTypeDefHelper (typeCases : List (Id * Option MSType)) : PPError (List WLPretty) = 
+  let def ppTypeCaseHelper (id,optTy) =
+  case optTy of
+    | None    -> Good (ppString "")
+    | Some (Product ([],_)) -> Good (ppString "")
+    | Some (Product ((caseId,ty)::fields,pos)) ->
+      (case (ppTypeName ty, ppTypeCaseHelper (id, Some (Product (fields,pos)))) of
+         | (Good tn,
+            Good rst) -> Good (ppConcat [ppString id, ppString "-arg-", ppString caseId,
+                                         ppString " :type ", tn, ppString " ",
+                                         rst])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
+    | Some ty -> 
+      (case ppTypeName ty of
+         | Good tn -> Good (ppConcat [ppString id, ppString "-arg",
+                                      ppString " :type ", tn])
+         | Bad s -> Bad s)
+  in let def ppTypeCase (id,optTy) =
+  case ppTypeCaseHelper (id,optTy) of
+    | Good s -> Good (ppConcat [ppString "(", ppString id, ppString " ", s, ppString ")"])
+    | Bad s -> Bad s
+  in ppErrorMap ppTypeCase typeCases
+
+op ppCoproductTypeDef (id : Id) (typeCases : List (Id * Option MSType)) : PPError WLPretty = 
+  case ppCoproductTypeDefHelper typeCases of
+    | Good tcstrs ->
+      Good (ppConcat [ppString "(defcoproduct ", ppString id, ppNewline,
+                      ppSep (ppConcat [ppNewline, ppString "  "])
+                        tcstrs,
+                      ppString ")"])
+    | Bad s -> Bad s
 
 op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
   case elem of
@@ -129,11 +164,14 @@ op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
       let Some typeDefInfo = findTheType (spc, qid) in
       let name = typeDefInfo.names @ 0 in
       let dfn = typeDefInfo.dfn in
-      (case ppTypeName dfn of
-         | Good tn ->
-           Good (ppConcat [ppString "(defun ", ppString id, ppString " (x)", ppNewline,
-                           ppString "  (", tn, ppString " x))"])
-         | _ -> Bad ("Can't handle type of " ^ id))
+      (case dfn of 
+         | CoProduct (l,_) -> ppCoproductTypeDef id l
+         | _ ->
+           (case ppTypeName dfn of
+              | Good tn ->
+                Good (ppConcat [ppString "(defun-typed ", ppString id, ppString ":type booleanp (x :type :all)", ppNewline,
+                                ppString "  (", tn, ppString " x))"])
+              | Bad s -> Bad s))
     | _ -> Bad "Bad argument to ppTypeDef"
 
 op opVarListHelper (l : MSMatch) : List MSVar =
@@ -329,18 +367,18 @@ op ppSpecElements (types:SpecElements) (typeDefs:SpecElements) (opDefs:SpecEleme
         ppErrorMap (fn t -> ppTypeThm t spc) opDefs,
         ppErrorMap (fn t -> ppThm t spc) thms) of
     | (Good typeString, Good localTypeDefString, Good typeDefString, Good opDefString, Good typeThmString, Good thmString) ->
-      Good (ppConcat [ppString "(encapsulate", ppNewline,
-                      ppString " ;; Constrained function declarations", ppNewline,
-                      ppString " (",
-                      ppGr1Concat [ppConcat [ppString " ;; types", ppNewline], 
-                                   ppSep ppNewline typeString], ppString ")", ppNewline, ppNewline,
-                      ppGr1Concat [ppConcat [ppString " ;; Local Definitions", ppNewline], 
-                                   ppSep ppNewline localTypeDefString], ppNewline, ppNewline,
-                      ppGr1Concat [ppConcat [ppString " ;; typeDefs", ppNewline],
+      Good (ppConcat [%ppString "(encapsulate", ppNewline,
+                      %ppString " ;; Constrained function declarations", ppNewline,
+                      %ppString " (",
+                      %ppGr1Concat [ppConcat [ppString " ;; types", ppNewline], 
+                      %             ppSep ppNewline typeString], ppString ")", ppNewline, ppNewline,
+                      %ppGr1Concat [ppConcat [ppString " ;; Local Definitions", ppNewline], 
+                      %             ppSep ppNewline localTypeDefString], ppNewline, ppNewline,
+                      ppGr1Concat [ppConcat [ppString ";; type definition", ppNewline],
                                    ppSep ppNewline typeDefString], ppNewline, ppNewline,
-                      ppGr1Concat [ppConcat [ppString " ;; opDefs", ppNewline],
-                                   ppSep ppNewline opDefString],
-                      ppString ")", ppNewline, ppNewline,
+                      ppGr1Concat [ppConcat [ppString ";; op definitions", ppNewline],
+                                   ppSep ppNewline opDefString], ppNewline, ppNewline,
+                      %ppString ")", ppNewline, ppNewline,
                       ppGr1Concat [ppConcat [ppString ";; type constraints", ppNewline],
                                    ppSep ppNewline typeThmString],
                       ppNewline, ppNewline,
