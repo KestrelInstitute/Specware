@@ -394,13 +394,14 @@ PatternMatch qualifying spec
                             pmrules  : PMRules}
 
  op substPat (body : MSTerm, pat : MSPattern, value : MSTerm) : MSTerm = 
-  if isTrue body then 
-    body
-  else 
-    case pat of
-      | WildPat _ -> body
-      | VarPat  _ -> mkLet ([(pat, value)], body)
-      | _         -> body (* Should not happen *)
+  case body of
+    | Fun (Bool true, _, _) ->
+      body
+    | _ ->
+      case pat of
+        | WildPat _ -> body
+        | VarPat  _ -> mkLet ([(pat, value)], body)
+        | _         -> body (* Should not happen *)
       
  (* 
   *  We generate tester functions for the various constructor formats.
@@ -1061,7 +1062,7 @@ PatternMatch qualifying spec
                         msrules 
       in
       let arity   = matchArity msrules in
-      if simpleAbstraction msrules then
+      if simpleAbstraction? msrules then
         let msrules = map (fn (pat, cond, body) -> (deRestrict pat, cond, body)) msrules in
         Lambda (msrules, noPos)
       else 
@@ -1116,7 +1117,7 @@ PatternMatch qualifying spec
      %% Translate non-recursive non-simple let patterns into application
     
      let (ctx, bindings) = foldr flattenLetBinding (ctx,bindings) [] in
-     if forall? (fn (pat, _)-> simplePattern pat) bindings then
+     if forall? (fn (pat, _)-> simplePattern? pat) bindings then
        mkLet (bindings, body)
      else 
        let (pats, terms) = unzip bindings in
