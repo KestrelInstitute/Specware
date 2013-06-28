@@ -778,8 +778,8 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
        case term of
 
 	 | Apply (t1, t2, a) ->
-	   let (newT1, accum') = mapAccumRec accum t1 in
-	   let (newT2, accum'') = mapAccumRec accum t2 in
+	   let (newT1, accum')  = mapAccumRec accum  t1 in
+	   let (newT2, accum'') = mapAccumRec accum' t2 in
              (Apply (newT1, newT2, a),accum'')
 
 	 | ApplyN (terms, a) ->
