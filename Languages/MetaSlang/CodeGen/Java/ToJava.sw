@@ -1075,7 +1075,7 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %% (22) change call with multiple args to compose single arg when decl has one (product) arg
  %% ==========================================================================================
 
- let spc = SpecTransform.adjustAppl                                spc in 
+ let spc = SpecTransform.encapsulateProductArgs                    spc in 
  let _   = showSpecIfVerbose "adjustAppl"                          spc in
   
  %% ==========================================================================================

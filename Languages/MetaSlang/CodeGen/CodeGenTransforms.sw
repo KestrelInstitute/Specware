@@ -25,7 +25,7 @@ import /Languages/MetaSlang/Transformations/AddEqOps                    % (16)  
 import /Languages/MetaSlang/Transformations/AddTypeConstructors         % (19)      C Java  addTypeConstructors
 import /Languages/MetaSlang/CodeGen/ConformOpDecls                      % (20)      C Java  conformOpDecls
 import /Languages/MetaSlang/Transformations/ArityNormalize              % (21) Lisp   Java  arityNormalize, etaExpandDefs
-import /Languages/MetaSlang/CodeGen/AdjustAppl                          % (22)      C Java  adjustAppl
+import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (22)      C Java  encapsulateProductArgs
                                                                         % (23)      C Java  lambdaLiftWithImports  [see 7]
                                                                         % (24)      C Java  translateMatch         [see 8]
 import /Languages/MetaSlang/Transformations/DistinctVariable            % (25)        Java  distinctVariable
