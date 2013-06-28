@@ -266,6 +266,33 @@ Example 2 (specific):
 (defun assert-one-of-type-cases-macro (type-cases)
   (cons 'xor-all (assert-one-of-type-cases-macro-1 type-cases)))
 
+(defun type-destructor-macro (case-type arg-name arg-type n)
+  (list 'defun-typed
+        arg-name
+        ':type
+        arg-type
+        (list 'data ':type case-type)
+        (list 'car (list 'nthcdr-ex n 'data))))
+
+(defun type-case-destructors-macro-1 (case-type rst n)
+  (cond ((atom rst) nil)
+        (t (cons (type-destructor-macro case-type
+                                        (car rst)
+                                        (caddr rst)
+                                        n)
+                 (type-case-destructors-macro-1 case-type
+                                                (cdddr rst)
+                                                (1+ n))))))
+
+(defun type-case-destructors-macro (case-type args)
+  (type-case-destructors-macro-1 case-type args 1))
+
+(defun destructors-macro (type-cases)
+  (cond ((atom type-cases) nil)
+        (t (append (type-case-destructors-macro (add-p-to-name (caar type-cases))
+                                                (cdar type-cases))
+                   (destructors-macro (cdr type-cases))))))
+
 (defmacro defcoproduct (type &rest type-cases)
   (append 
    (list 'progn
@@ -284,4 +311,5 @@ Example 2 (specific):
                (list 'equal 
                      (list (add-p-to-name type)
                            '(quote data))
-                     (assert-one-of-type-cases-macro type-cases))))))
+                     (assert-one-of-type-cases-macro type-cases))))
+   (destructors-macro type-cases)))
