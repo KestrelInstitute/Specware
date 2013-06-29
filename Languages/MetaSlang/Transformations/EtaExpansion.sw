@@ -41,11 +41,13 @@ op etaExpand (spc        : Spec,
            mkLambda (pat, body)
 
 op SpecTransform.etaExpandDefs (spc : Spec) : Spec =
+
+ %% note: matchCon in the pattern matching transformation seems to already do this,
+ %%       so this might be redundant if following pattern match complilation.
+
  let used_names = StringSet.fromList (qualifierIds spc.ops) in
  let 
    def revise dfn =
-     %% note: this rarely (if ever) makes any actual changes
-
      let (tvs, typ, term) = unpackFirstTerm dfn                    in
      let used_names       = addLocalVars (term, used_names)        in
      let term             = etaExpand (spc, used_names, typ, term) in

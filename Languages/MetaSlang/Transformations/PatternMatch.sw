@@ -744,7 +744,7 @@ PatternMatch qualifying spec
     | Quotient    _              -> matchQuotient   (ctx,           vars, pmrules, continuation, break) 
     %% Restricted should be unnecessary because top-level Restricteds have been removed in eliminateTerm
     | Restricted (pat, bool_exp) -> matchRestricted (ctx, bool_exp, vars, pmrules, continuation, break)
-      
+
  op matchVar (ctx          : Context, 
               tm :: terms  : MSTerms, 
               pmrules      : PMRules,
@@ -764,19 +764,36 @@ PatternMatch qualifying spec
   match (ctx, terms, pmrules, continuation, break)
 
  op matchCon (ctx          : Context, 
-              terms        : MSTerms, 
+              vars         : MSTerms, 
               pmrules      : PMRules,
               continuation : MSTerm, 
               break        : MSTerm) 
   : MSTerm = 
-  let tm :: terms         = terms in  % use tm in Let binding, terms in Let body
-  let destructuring_rules = partitionConstructors (ctx, tm, pmrules) in
+
+  %% this effectively turns something like
+  %%
+  %%   let (x : Nat, y : Nat) = complex_tm in
+  %%   ...
+  %%
+  %% into something like
+  %%
+  %%   let (z : Nat * Nat) = complex_tm in
+  %%   let x = z.1 in
+  %%   let y = z.2 in 
+  %%   ...
+  %%
+  %% var is a variable (z) bound to the structured argument (a record, etc.)
+  %% partitionConstructors produces local variables (x,y), each paired with 
+  %% an extraction function on the var (z)
+
+  let var :: vars         = vars in  % use var in Let binding, vars in Let body
+  let destructuring_rules = partitionConstructors (ctx, var, pmrules) in
   let body                = foldr (fn (drule, continuation) ->   
-                                     %% this may optimize IfThenElse based on actual terms:
+                                     %% this may optimize IfThenElse based on actual vars:
                                      Utilities.mkIfThenElse (drule.query, 
                                                              mkLet (drule.bindings,
                                                                     match (ctx,
-                                                                           drule.new_vars ++ terms,
+                                                                           drule.new_vars ++ vars,
                                                                            drule.pmrules,
                                                                            break,
                                                                            break)),
