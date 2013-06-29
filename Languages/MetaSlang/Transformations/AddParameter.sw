@@ -1,7 +1,8 @@
 AddParameter qualifying
 spec
-import ../Specs/AnalyzeRecursion
+import /Languages/MetaSlang/Specs/AnalyzeRecursion
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+import EtaExpansion
 import ArityNormalize
 
 op addIsabelleProofs: Bool = true

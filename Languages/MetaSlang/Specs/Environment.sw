@@ -538,5 +538,42 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      in
      (nameList,names)
 
+op addLocalVars (term : MSTerm, used_names : UsedNames) : UsedNames =
+ let (_, used_names) =
+     mapAccumTerm (fn used_names -> fn tm  -> (tm,  used_names),
+                   fn used_names -> fn typ -> (typ, used_names),
+                   fn used_names -> fn pat ->
+                     (pat, 
+                      case pat of
+                        | VarPat ((id, _), _) ->
+                          StringSet.add (used_names, id)
+                        | _ -> 
+                         used_names))
+                  used_names
+                  term
+ in
+ used_names
+
+op simplePattern? (pattern : MSPattern) : Bool = 
+ case pattern of
+   | VarPat _ -> true
+   | RestrictedPat (p, _, _) -> simplePattern? p
+   | _ -> false
+ 
+op simpleAbstraction? (rules : MSMatch) : Bool = 
+ case rules of
+
+   | [(pat, Fun (Bool true, _, _), _)] ->
+     (case pat of
+        | RecordPat (fields, _) ->
+          forall? (fn (_, p) -> simplePattern? p) fields 
+
+        | RestrictedPat (RecordPat (fields, _), _, _) ->
+          forall? (fn (_, p) -> simplePattern? p) fields
+
+        | _ ->
+          simplePattern? pat)
+
+   | _ -> false
 
 end-spec

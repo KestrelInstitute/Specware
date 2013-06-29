@@ -24,10 +24,11 @@ import /Languages/MetaSlang/Transformations/AddEqOps                    % (16)  
                                                                         % (18)      C Java  sliceSpecForLisp, sliceSpecForC, sliceSpecForJava  [see 3]
 import /Languages/MetaSlang/Transformations/AddTypeConstructors         % (19)      C Java  addTypeConstructors
 import /Languages/MetaSlang/CodeGen/ConformOpDecls                      % (20)      C Java  conformOpDecls
-import /Languages/MetaSlang/Transformations/ArityNormalize              % (21) Lisp   Java  arityNormalize, etaExpandDefs
-import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (22)      C Java  encapsulateProductArgs
-                                                                        % (23)      C Java  lambdaLiftWithImports  [see 7]
-                                                                        % (24)      C Java  translateMatch         [see 8]
-import /Languages/MetaSlang/Transformations/DistinctVariable            % (25)        Java  distinctVariable
+import /Languages/MetaSlang/Transformations/EtaExpansion                % (21) Lisp   Java  etaExpandDefs
+import /Languages/MetaSlang/Transformations/ArityNormalize              % (22) Lisp   Java  arityNormalize
+import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (23)      C Java  encapsulateProductArgs
+                                                                        % (24)      C Java  lambdaLiftWithImports  [see 7]
+                                                                        % (25)      C Java  translateMatch         [see 8]
+import /Languages/MetaSlang/Transformations/DistinctVariable            % (26)        Java  distinctVariable
 
 end-spec

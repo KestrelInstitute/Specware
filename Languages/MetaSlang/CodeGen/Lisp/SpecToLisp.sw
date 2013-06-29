@@ -1568,7 +1568,14 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  let _   = showSpecIfVerbose "translateRecordMergeInSpec"          spc in
   
  %% ==========================================================================================
- %% (21) Lisp: arityNormalize, Java: etaExpandDefs
+ %% (21) Lisp: arityNormalize
+ %% ==========================================================================================
+
+ %% translateMatch seems to do eta expansion, so this is probably redundant
+ let spc = SpecTransform.etaExpandDefs                             spc in  
+
+ %% ==========================================================================================
+ %% (22) Lisp: arityNormalize
  %% ==========================================================================================
 
  let spc = SpecTransform.arityNormalize                            spc in

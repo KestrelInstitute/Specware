@@ -2,6 +2,10 @@ ArityNormalize qualifying spec
 
 import /Languages/MetaSlang/Specs/Environment
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Normalize Arity
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 (* 
  *  normalizeArity normalizes the arities of function applications and tuple formations 
  *  so that tuples appear as arguments only to functions declared to be n-ary or to the 
@@ -10,52 +14,105 @@ import /Languages/MetaSlang/Specs/Environment
  *  The semantics of mkTuple is the identity function, but for purposes of code generation 
  *  it is translated into appropriate constructors to form tuples.
  * 
- *  We assume that nested patterns have been be eliminated using the pattern matching 
+ *  We assume that nested patterns have been eliminated using the pattern matching 
  *  algorithm and that all identifiers are unique (resolveTerm has been invoked).
  * 
- *  ----------------------------------------
- * 
- *  Given:  
- *   op f (x : Nat) (y : Nat, z : Nat) : Nat
+ *  Some examples of the effect of this transformation, and the eventual lisp code that
+ *  is produced:
+ *  ----------------------------------------------------------------------------------------------------
  *
- *  f 1 (2, 3)
- *   produces
- *  (funcall (f 1) 2 3)
- * 
- *  ----------------------------------------
- * 
- *  Given:  
- *   op f (x : Nat) (y : Nat * Nat) : Nat 
+ *   op f1 (x: Nat) (y: Nat, z: Nat) : Nat = x + y + z
+ *     =>
+ *   op f1 (x: Nat) (apV: Nat * Nat) : Nat = let x0 = apV in case (x0.1, x0.2) of (y, z) -> x + y + z
  *
- *  f 1 (2, 3)
- *   produces
- *  (funcall (f 1) (mkTuple 2 3))
- * 
- *  ----------------------------------------
- * 
- *  Given:  
- *   op f (x : Nat: y : Nat) : Nat
- *   op z : Nat * Nat
+ *   op g1 (x: Nat, y: Nat, z: Nat) : Nat = f1 x (y, z)
+ *     =>
+ *   op g1 (x: Nat, y: Nat, z: Nat) : Nat = f1 x (TranslationBuiltIn.mkTuple(y, z))
+ *   
+ *   to lisp:
  *
- *  f z
- *   produces
- *  (mkApply f z)        
- * 
- *  ----------------------------------------
- * 
- *  Given
- *   op foo (x : Nat,y : Nat) : Nat
- * 
- *  (fn f -> f (1, 2)) foo
- *   produces
- *  (funcall #'(lambda (f) (funcall f 1 2)) #'foo)
+ *     (defun f1-1-1 (x apV) (Nat-Spec::+-2 (Nat-Spec::+-2 x (car apV)) (cdr apV)))
+ *     (defun g1-3 (x y z) (f1-1-1 x (cons y z)))
  *
+ *     (defun f1 (x1) #'(lambda (x2) (f1-1-1 x1 x2)))
+ *     (defun g1 (x) (g1-3 (svref x 0) (svref x 1) (svref x 2)))
  *
- *  When all patterns in the match are records of the same arity n >= 0, 
- *  the arity of a match is n, otherwise it is 1.
+ *  ----------------------------------------------------------------------------------------------------
+ *
+ *   op f2 (x: Nat) (y: Nat * Nat) : Nat = x + y.1 + y.2
+ *    =>
+ *   op f2 (x: Nat) (y: Nat * Nat) : Nat = x + y.1 + y.2
+ *
+ *   op g2 (x: Nat, y: Nat, z: Nat) = f2 x (y, z)
+ *    =>
+ *   op g2 (x: Nat, y: Nat, z: Nat) = f2 x (TranslationBuiltIn.mkTuple(y, z))
+ *
+ *   to lisp:
+ * 
+ *     (defun f2-1-1 (x y) (Nat-Spec::+-2 (Nat-Spec::+-2 x (car y)) (cdr y)))
+ *     (defun g2-3 (x y z) (f2-1-1 x (cons y z)))
+ *     
+ *     (defun f2 (x1) #'(lambda (x2) (f2-1-1 x1 x2)))
+ *     (defun g2 (x) (g2-3 (svref x 0) (svref x 1) (svref x 2)))
+ *
+ *  ----------------------------------------------------------------------------------------------------
+ *
+ *   op f3 (x: Nat, y: Nat) : Nat  = x + y
+ *    =>
+ *   op f3 (x: Nat, y: Nat) : Nat  = x + y
+ *   
+ *   op z3 : Nat * Nat = (4,5)
+ *    =>
+ *   op z3 : Nat * Nat = TranslationBuiltIn.mkTuple(4, 5)
+ *
+ *   op g3 (x: Nat, y: Nat) : Nat = f3 (x, y)
+ *    =>
+ *   op g3 (x: Nat, y: Nat) : Nat = f3 (x, y)
+ * 
+ *   op h3 (x: Nat, y: Nat) : Nat = f3 z3
+ *    =>
+ *   op h3 (x: Nat, y: Nat) : Nat = f3 z3
+ *
+ *   to lisp:
+ *
+ *     (defun f3-2 (x y) (Nat-Spec::+-2 x y))
+ *     (defparameter z3 (cons 4 5))
+ *     (defun g3-2 (x y) (f3-2 x y))
+ *     (defun h3-2 (x y) (f3 z3))                ; note
+ *
+ *     (defun f3 (x) (f3-2 (car x) (cdr x)))
+ *     (defun g3 (x) (g3-2 (car x) (cdr x)))
+ *     (defun h3 (x) (h3-2 (car x) (cdr x))) 
+ *
+ *  ----------------------------------------------------------------------------------------------------
+ *
+ *   op f4 (x: Nat, y: Nat) : Nat  = x + y
+ *    =>
+ *   op f4 (x: Nat, y: Nat) : Nat  = x + y
+ * 
+ *   op g4 (x: Nat, y: Nat) : Nat = (fn f -> f (x, y)) f4
+ *    =>
+ *   op g4 (x: Nat, y: Nat) : Nat = (fn f -> f (x, y)) f4
+ *  
+ *   to lisp:
+ *
+ *     (defun f4-2 (x y) (Nat-Spec::+-2 x y))
+ *     (defun g4-2 (x y) (f4-2 x y))
+ *     
+ *     (defun f4 (x) (f4-2 (car x) (cdr x)))
+ *     (defun g4 (x) (g4-2 (car x) (cdr x)))
+ *
+ *  ----------------------------------------------------------------------------------------------------
  *)
 
+%% The arity map stores the ops having a domain type consisting of a record (possibly subsetted)
+
+type Gamma = List (String * Option (MSType * Nat))
+
+
 op matchArity (match : MSMatch) : Nat =
+ %%  When all patterns in the match are records of the same arity n >= 0, 
+ %%  the arity of a match is n, otherwise it is 1.
  let
    def aux (match, num) = 
      case match of
@@ -75,10 +132,6 @@ op matchArity (match : MSMatch) : Nat =
    | (RestrictedPat (RecordPat (pats, _) , _, _), _, _) :: match -> aux (match, length pats)
    | _ -> 1
         
-% The arity map stores the ops having a domain type consisting of a record (possibly subsetted)
-
-type Gamma = List (String * Option (MSType * Nat))
-
 (*
  * Arities are associated with term identifiers according to arities in type definitions 
  * or arities of top-level pattern.  
@@ -133,6 +186,11 @@ op mkArityApply (spc        : Spec,
                  t2         : MSTerm,
                  used_names : UsedNames) 
  : MSTerm =
+ %%  t1 (t2)
+ %%   =>
+ %%  let v = t2 in t1 (v.1, ..., v.n)
+ %%   -or-
+ %%  let v = t2 in t1 {a = v.a, ..., z = v.z}
  let
 
   def unfoldArgument (dom, arg) = 
@@ -219,94 +277,6 @@ op insertVars (vars       : MSVars,
        (used_names, gamma) 
        vars
 
-op addLocalVars (term : MSTerm, used_names : UsedNames) : UsedNames =
- let (_, used_names) =
-     mapAccumTerm (fn used_names -> fn tm  -> (tm,  used_names),
-                   fn used_names -> fn typ -> (typ, used_names),
-                   fn used_names -> fn pat ->
-                     (pat, 
-                      case pat of
-                        | VarPat ((id, _), _) ->
-                          StringSet.add (used_names, id)
-                        | _ -> 
-                         used_names))
-                  used_names
-                  term
- in
- used_names
-
-op etaExpand (spc        : Spec, 
-              used_names : UsedNames, 
-              typ        : MSType, 
-              term       : MSTerm)
- : MSTerm =
- case arrowOpt (spc, typ) of
-   | None -> term
-   | Some (dom, _) -> 
-     case productOpt (spc, dom) of
-       | None -> (case term of
-                    | Lambda _ -> term
-                    | _ -> 
-                      let (name,_) = freshName ("x", used_names) in
-                      let var      = (name, dom)                 in
-                      mkLambda (mkVarPat var, 
-                                mkApply (term, mkVar var)))
-       | Some fields ->
-         if case term of
-              | Lambda (rules, _) -> simpleAbstraction? rules
-              | _ -> false
-           then 
-             term
-         else
-           let (vnames, _)  = freshNames ("x", fields, used_names) in
-           let labeled_vars = map (fn (vname, (label, typ)) -> 
-                                     (label, (vname, typ))) 
-                                  (vnames, fields) 
-           in
-           let vpats        = map (fn (label, var) -> (label, mkVarPat var)) labeled_vars in
-           let vrefs        = map (fn (label, var) -> (label, mkVar    var)) labeled_vars in
-           let pat          = mkRecordPat vpats in
-           let body         = mkApply (term, mkRecord vrefs) in
-           mkLambda (pat, body)
-
-op SpecTransform.etaExpandDefs (spc : Spec) : Spec =
- setOps (spc, 
-         mapOpInfos (fn info -> 
-                       let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-                       let new_defs =
-                           map (fn dfn ->
-                                  let (tvs, typ, term) = unpackFirstTerm dfn        in
-                                  let used_names       = addLocalVars (term, empty) in
-                                  let term = etaExpand (spc, used_names, typ, term) in
-                                  maybePiTerm (tvs, TypedTerm (term, typ, noPos)))
-                               old_defs
-                       in
-                       let new_dfn = maybeAndTerm (old_decls ++ new_defs, noPos) in
-                       info << {dfn = new_dfn})
-                    spc.ops)
-
-op simplePattern? (pattern : MSPattern) : Bool = 
- case pattern of
-   | VarPat _ -> true
-   | RestrictedPat (p, _, _) -> simplePattern? p
-   | _ -> false
- 
-op simpleAbstraction? (rules : MSMatch) : Bool = 
- case rules of
-
-   | [(pat, Fun (Bool true, _, _), _)] ->
-     (case pat of
-        | RecordPat (fields, _) ->
-          forall? (fn (_, p) -> simplePattern? p) fields
-
-        | RestrictedPat (RecordPat (fields, _), _, _) ->
-          forall? (fn (_, p) -> simplePattern? p) fields
-
-        | _ ->
-          simplePattern? pat)
-
-   | _ -> false
-
 op normalizeArityTopLevel (spc        : Spec,
                            gamma      : Gamma,
                            used_names : UsedNames,
@@ -325,6 +295,25 @@ op normalizeArityTopLevel (spc        : Spec,
                    rules,
                noPos)
      | _ -> normalizeArity (spc, gamma, used_names, term)
+
+op convertToArity1 (spc        : Spec, 
+                    gamma      : Gamma,
+                    used_names : UsedNames,
+                    term       : MSTerm)
+ : MSTerm = 
+ case termArity (spc, gamma, term) of
+   | None -> term
+   | Some (dom, num) ->
+     %% by using "pV" as the prefix, 
+     %% we pass the pV? test in reduceTerm,
+     %% which allows use to include an ignore decl
+     %% if the var is not used in the body
+     let (name, used_names) = freshName ("apV", used_names) in
+     let x = (name, dom) in
+     (Lambda ([(VarPat (x, noPos), 
+                mkTrue (),
+                mkArityApply (spc, dom, term, mkVar x, used_names))],
+              noPos))
 
 op normalizeArity (spc        : Spec, 
                    gamma      : Gamma, 
@@ -455,51 +444,33 @@ op normalizeArity (spc        : Spec,
 
    | tm -> tm
 
-op convertToArity1 (spc        : Spec, 
-                    gamma      : Gamma,
-                    used_names : UsedNames,
-                    term       : MSTerm)
- : MSTerm = 
- case termArity (spc, gamma, term) of
-   | None -> term
-   | Some (dom, num) ->
-     %% by using "pV" as the prefix, 
-     %% we pass the pV? test in reduceTerm,
-     %% which allows use to include an ignore decl
-     %% if the var is not used in the body
-     let (name, used_names) = freshName ("apV", used_names) in
-     let x = (name, dom) in
-     (Lambda ([(VarPat (x, noPos), 
-                mkTrue (),
-                mkArityApply (spc, dom, term, mkVar x, used_names))],
-              noPos))
-
-%
-% This one ignores arity normalization in types, axioms and theorems.
-%     
-
 op SpecTransform.arityNormalize (spc : Spec) : Spec =
  let used_names = StringSet.fromList (qualifierIds spc.ops) in
- setOps (spc, 
-         mapOpInfos (fn info -> 
-                       let pos                   = termAnn info.dfn        in
-                       let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-                       let new_defs =
-                           map (fn dfn ->
-                                  let pos = termAnn dfn in
-                                  let (tvs, typ, term) = unpackFirstTerm dfn                    in
-                                  let used_names       = addLocalVars (term, used_names)        in
-                                  let term             = etaExpand (spc, used_names, typ, term) in
-                                  let term             = normalizeArityTopLevel (spc, 
-                                                                                 [],  % gamma
-                                                                                 used_names,
-                                                                                 term)
-                                  in
-                                  maybePiTerm (tvs, TypedTerm (term, typ, pos)))
-                               old_defs
-                       in
-                       let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
-                       info << {dfn = new_dfn})
-                    spc.ops)
+ let 
+   def revise dfn =
+     let (tvs, typ, term) = unpackFirstTerm dfn                    in
+     let used_names       = addLocalVars (term, used_names)        in
+     let term             = normalizeArityTopLevel (spc, 
+                                                    [],  % gamma
+                                                    used_names,
+                                                    term)
+     in
+     maybePiTerm (tvs, TypedTerm (term, typ, noPos))
+ in
+
+ let new_ops = 
+     mapOpInfos (fn info -> 
+                   let (old_decls, old_defs) = opInfoDeclsAndDefs info                     in
+                   let new_defs              = map revise old_defs                         in
+                   let new_dfn               = maybeAndTerm (old_decls ++ new_defs, noPos) in
+                   info << {dfn = new_dfn})
+                spc.ops
+ in
+
+ %% --------------------------------------------------------
+ %% ignore arity normalization in types, axioms and theorems
+ %% --------------------------------------------------------
+
+ setOps (spc, new_ops)
 
 endspec
