@@ -163,6 +163,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
   let result =
       case ty of
         | Boolean _ -> Some Bool
+        | Base(Qualified("Bool", "Bool"), [], _)  -> Some Bool % otherwise fails below
         | Base(Qualified("AnnSpec", "Spec"), [], _)  -> Some Spec
         | Base(Qualified("Integer", "Nat"), [], _)   -> Some Num
         | Base(Qualified("Integer", "Int"), [], _)   -> Some Num
@@ -175,7 +176,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("List", "List"), [el_ty], _) -> mapOption (fn el_info -> List el_info) (argInfoFromType(el_ty, spc))
         | Base(Qualified("Option", "Option"), [op_ty], _) -> mapOption (fn op_info -> Opt op_info) (argInfoFromType(op_ty, spc))
         | Base _ -> let uf_ty = unfoldBase0 spc ty in
-                    if equalType?(ty, uf_ty) then None
+                    if equalType?(ty, uf_ty) then None % Bool.Bool = Boolean, so Bool.Bool would fail here
                       else argInfoFromType(uf_ty, spc)
         | Arrow(dom, rng, _) ->
           (case (argInfoFromType(dom, spc), argInfoFromType(rng, spc)) of
