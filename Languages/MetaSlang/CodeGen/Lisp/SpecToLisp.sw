@@ -1498,7 +1498,8 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  let _   = maybeShowSpecIfVerbose substBaseSpecs? "substBaseSpecs" spc in
 
  %% ==========================================================================================
- %%  (2) might as well remove theorems early [could be done at any time, or never]
+ %%  (2) might as well remove theorems early 
+ %%      TODO: deprecate?
  %% ==========================================================================================
 
  let spc = SpecTransform.removeTheorems                            spc in 
@@ -1506,6 +1507,7 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
 
  %% ==========================================================================================
  %%  (3) slice unused types and ops early to minimize wasted motion 
+ %%      TODO: move to later?
  %% ==========================================================================================
 
  %% slice? is true for gen-lisp-top, false for gen-lisp and lgen-lisp
@@ -1538,14 +1540,7 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  let _   = showSpecIfVerbose "instantiateHOFns"                    spc in
 
  %% ==========================================================================================
- %%  (7) by default we do not lambda lift
- %% ==========================================================================================
-
- %% let spc = lambdaLiftWithImportsSimulatingClosures              spc in 
- %% let _   = showSpecIfVerbose "lambdaLiftWithImports"            spc in
-
- %% ==========================================================================================
- %%  (8) Variant of Wadler's pattern matching compiler 
+ %%  (7) Variant of Wadler's pattern matching compiler 
  %% ==========================================================================================
 
  %% Currently, translateMatch introduces Select's and parallel Let bindings,
@@ -1555,28 +1550,55 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  %% We also might wish to convert matches to case or typecase expressions,
  %% in which case not all matches would be transformed to if statements.
 
- %% This may add calls to polymorphic fns, so must precede poly2mono.
+ %% This may add calls to polymorphic fns, so must precede poly2mono. [TODO: verify this]
+ %% This may add local defs, so should preceed lambda lift.
 
  let spc = SpecTransform.translateMatch                            spc in 
  let _   = showSpecIfVerbose "translateMatch"                      spc in
 
  %% ==========================================================================================
+ %%  (8) by default we do not lambda lift
+ %% ==========================================================================================
+
+ %% If we do this, it should follow translateMatch
+
+ %% let spc = SpecTransform.lambdaLift                             spc in 
+ %% let _   = showSpecIfVerbose "lambdaLift"                       spc in
+
+ %% ==========================================================================================
  %%  (9) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
  %% ==========================================================================================
+
+ %% Make record constructions explicit.
+
+ %% This might be reversed later by introduceRecordMerges if we choose to produce Setf forms
+ %% to revise mutable structures, but for now we stay within normal MetaSlang.
 
  let spc = SpecTransform.expandRecordMerges                        spc in 
  let _   = showSpecIfVerbose "translateRecordMergeInSpec"          spc in
   
  %% ==========================================================================================
- %% (21) Lisp: arityNormalize
+ %% (21) Eta Expansion
  %% ==========================================================================================
 
- %% translateMatch seems to do eta expansion, so this is probably redundant
+ %% TODO: Verity conjecture that matchCon in translateMatch has already done eta expansion,
+ %%       making this redundant.  If so, we can remove this.
+
  let spc = SpecTransform.etaExpandDefs                             spc in  
 
  %% ==========================================================================================
- %% (22) Lisp: arityNormalize
+ %% (22) arityNormalize
  %% ==========================================================================================
+
+ %% For exmaple, revise
+ %%
+ %%  op f1 (x: Nat) (y: Nat, z: Nat) : Nat = x + y + z
+ %%   =>
+ %%  op f1 (x: Nat) (apV: Nat * Nat) : Nat = let x0 = apV in case (x0.1, x0.2) of (y, z) -> x + y + z
+ %%
+ %%  op g1 (x: Nat, y: Nat, z: Nat) : Nat = f1 x (y, z)
+ %%   =>
+ %%  op g1 (x: Nat, y: Nat, z: Nat) : Nat = f1 x (TranslationBuiltIn.mkTuple(y, z))'
 
  let spc = SpecTransform.arityNormalize                            spc in
  let _   = showSpecIfVerbose "arityNormalize"                      spc in

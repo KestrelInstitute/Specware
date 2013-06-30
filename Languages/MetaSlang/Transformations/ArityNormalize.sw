@@ -186,11 +186,13 @@ op mkArityApply (spc        : Spec,
                  t2         : MSTerm,
                  used_names : UsedNames) 
  : MSTerm =
+
  %%  t1 (t2)
  %%   =>
- %%  let v = t2 in t1 (v.1, ..., v.n)
+ %%  let x = t2 in t1 (x.1, ..., x.n)
  %%   -or-
- %%  let v = t2 in t1 {a = v.a, ..., z = v.z}
+ %%  let x = t2 in t1 {a = x.a, ..., z = x.z}
+
  let
 
   def unfoldArgument (dom, arg) = 
@@ -301,19 +303,30 @@ op convertToArity1 (spc        : Spec,
                     used_names : UsedNames,
                     term       : MSTerm)
  : MSTerm = 
+
  case termArity (spc, gamma, term) of
-   | None -> term
    | Some (dom, num) ->
-     %% by using "pV" as the prefix, 
-     %% we pass the pV? test in reduceTerm,
-     %% which allows use to include an ignore decl
-     %% if the var is not used in the body
+
+     %%  eta expansion:
+     %%
+     %%  fn (y: Nat, z: Nat) -> x + y + z
+     %%   =>
+     %%  fn (apV: Nat * Nat) -> 
+     %%    let x0 = apV in 
+     %%    case (x0.1, x0.2) of (y, z) -> x + y + z
+
+     %% by using "pV" as the prefix we pass the pV? test in reduceTerm, which
+     %% allows use to include an ignore decl if the var is not used in the body
+
      let (name, used_names) = freshName ("apV", used_names) in
-     let x = (name, dom) in
-     (Lambda ([(VarPat (x, noPos), 
-                mkTrue (),
-                mkArityApply (spc, dom, term, mkVar x, used_names))],
-              noPos))
+     let var  = (name, dom) in
+     let vpat = VarPat (var, noPos)  in
+     let vref = Var    (var, noPos)  in
+     Lambda ([(vpat, 
+               mkTrue (),
+               mkArityApply (spc, dom, term, vref, used_names))],
+              noPos)
+   | _ -> term
 
 op normalizeArity (spc        : Spec, 
                    gamma      : Gamma, 
@@ -431,8 +444,9 @@ op normalizeArity (spc        : Spec,
           noPos)
 
    | Lambda _ -> 
-     let term = normalizeArityTopLevel (spc, gamma, used_names, term) in
-     convertToArity1 (spc, gamma, used_names, term)
+     let t1 = normalizeArityTopLevel (spc, gamma, used_names, term) in
+     let t2 = convertToArity1        (spc, gamma, used_names, t1)   in
+     t2
 
    | Var _ -> convertToArity1 (spc, gamma, used_names, term)
 
@@ -450,14 +464,13 @@ op SpecTransform.arityNormalize (spc : Spec) : Spec =
    def revise dfn =
      let (tvs, typ, term) = unpackFirstTerm dfn                    in
      let used_names       = addLocalVars (term, used_names)        in
-     let term             = normalizeArityTopLevel (spc, 
+     let term1            = normalizeArityTopLevel (spc, 
                                                     [],  % gamma
                                                     used_names,
                                                     term)
      in
-     maybePiTerm (tvs, TypedTerm (term, typ, noPos))
+     maybePiTerm (tvs, TypedTerm (term1, typ, noPos))
  in
-
  let new_ops = 
      mapOpInfos (fn info -> 
                    let (old_decls, old_defs) = opInfoDeclsAndDefs info                     in
