@@ -247,6 +247,58 @@ SpecsToI2L qualifying spec
                  ctxt : S2I_Context,
                  spc  : Spec)
     : I_Type =
+
+    let 
+      def bounded_list_type? element_type pred =
+        %% a bit of overkill, but this is just stopgap code, so...
+        case unfold_bounded_list_type element_type pred of
+          | Some _ -> true
+          | _ -> false
+        
+      def unfold_bounded_list_type element_type pred =
+        let element_type = type2itype (tvs, element_type, unsetToplevel ctxt, spc) in
+        case pred of
+           | Lambda ([(VarPat ((pred_var, _), _),
+                       Fun (Bool true, _, _),
+                       pred_body)],
+                     _)
+             -> 
+             (case pred_body of
+                | Apply (Fun (cmp, _, _),
+                         Record([arg1, arg2], _),
+                        _) 
+                  ->
+                  let
+                    def check_length_term ((_,length_op), (_,constant_term), min_const) =
+                      let _ = 
+                          case length_op of
+                            | Apply (Fun (Op (Qualified (_, "length"), _), _, _),
+                                     length_arg, 
+                                     _)
+                              ->
+                              (case length_arg of
+                                 | Var ((length_var, _), _) -> if length_var = pred_var then Some () else None
+                                 | _ -> None)
+                            | _ -> None
+                      in
+                      let const = constant_term_Int_value (constant_term, spc) in
+                      if const < min_const then None else Some const
+                  in
+                  (case cmp of
+                     | Op (Qualified (_, compare_sym), _) ->
+                       (case compare_sym of
+                          | ">"  -> (case check_length_term (arg2, arg1, 2) of | Some const -> Some (I_BoundedList (element_type, const - 1)) | _ -> None)
+                          | "<"  -> (case check_length_term (arg1, arg2, 2) of | Some const -> Some (I_BoundedList (element_type, const - 1)) | _ -> None)
+                          | "<=" -> (case check_length_term (arg1, arg2, 1) of | Some const -> Some (I_BoundedList (element_type, const))     | _ -> None)
+                          | ">=" -> (case check_length_term (arg2, arg1, 1) of | Some const -> Some (I_BoundedList (element_type, const))     | _ -> None)
+                          | _ -> None)
+                     | Eq -> 
+                       case check_length_term (arg1, arg2,1) of
+                         | Some const -> Some (I_BoundedList (element_type, const))
+                         | _ -> None)
+                | _ -> None)
+           | _ -> None
+    in
     let utyp = unfoldToSpecials (typ, spc) in
     %let utyp = unfoldBaseVP(spc,typ,false,true) in
     case utyp of
@@ -349,46 +401,11 @@ SpecsToI2L qualifying spec
       % lenght(X) <= N, N > length(X), N >= length(X), N = length(X) can also be used
       % ----------------------------------------------------------------------
 
-      | Subtype (Base (Qualified ("List", "List"), [ptyp], _), tm, _) ->
-        let ptype = type2itype (tvs, ptyp, unsetToplevel ctxt, spc) in
-        let err = "wrong form of restriction term for list length" in
-        (case tm of
-           | Lambda ([(VarPat((X,_),_),
-                       Fun (Bool true, _, _),
-                       t2)],
-                     _)
-             -> 
-             (case t2 of
-                | Apply(Fun(cmp,_,_),
-                        Record([arg1,arg2],_),_) ->
-                  let
-                    def checklengthterm((_,lengthop),(_,constantterm),minconst) =
-                      let _ = 
-                          case lengthop of
-                            | Apply (Fun (Op (Qualified (_, "length"), _), _, _),
-                                     V, 
-                                     _)
-                              ->
-                              (case V of
-                                 | Var ((X0, _), _) -> if X = X0 then () else fail err
-                                 | _ -> fail err)
-                            | _ -> fail err
-                      in
-                      let const = constantTermIntValue (constantterm, spc) in
-                      if const < minconst then fail err else const
-                  in
-                  (case cmp of
-                     | Op (Qualified (_, comparesym), _) ->
-                       (case comparesym of
-                          | ">"  -> let const = checklengthterm (arg2, arg1, 2) in I_BoundedList (ptype, const - 1)
-                          | "<"  -> let const = checklengthterm (arg1, arg2, 2) in I_BoundedList (ptype, const - 1)
-                          | "<=" -> let const = checklengthterm (arg1, arg2, 1) in I_BoundedList (ptype, const)
-                          | ">=" -> let const = checklengthterm (arg2, arg1, 1) in I_BoundedList (ptype, const)
-                          | _ -> fail err)
-                     | Eq -> let const = checklengthterm(arg1,arg2,1) in
-                       I_BoundedList (ptype, const))
-                | _ -> fail err)
-           | _ -> fail err)
+      | Subtype (Base (Qualified ("List", "List"), [element_type], _), pred, _) 
+         | bounded_list_type? element_type pred ->
+           % given the restriction above, the following must succeed
+           let Some i_type = unfold_bounded_list_type element_type pred in
+           i_type
 
       % ----------------------------------------------------------------------
       % for arrow types make a distinction between products and argument lists:
@@ -467,7 +484,7 @@ SpecsToI2L qualifying spec
         fail ("sorry, code generation doesn't support the use of this type:\n       "
                 ^ printType typ)
 
-  op constantTermIntValue (tm : MSTerm, spc : Spec) : Int =
+  op constant_term_Int_value (tm : MSTerm, spc : Spec) : Int =
     let 
       def err () = 
         let _ = print tm in
@@ -478,7 +495,7 @@ SpecsToI2L qualifying spec
       | Fun (Op (qid, _), _, _) -> 
         (case getOpDefinition (qid, spc) of
            | None -> err()
-           | Some tm -> constantTermIntValue (tm, spc))
+           | Some tm -> constant_term_Int_value (tm, spc))
       | _ -> err()
 
 
