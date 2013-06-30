@@ -1012,8 +1012,8 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %% ==========================================================================================
 
  %%  let spc = identifyIntTypes spc in
- let spc = SpecTransform.removeNonNatSubtypes                      spc in 
- let _   = showSpecIfVerbose "removeNonNatSubtypes"                spc in
+ let spc = SpecTransform.reviseTypesForJava                        spc in 
+ let _   = showSpecIfVerbose "remiseTypesForJava"                  spc in
   
  %% ==========================================================================================
  %% (14) turn bodies of lambda's with restricted var types into case expressions 

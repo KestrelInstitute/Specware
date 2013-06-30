@@ -7,7 +7,13 @@ import /Languages/MetaSlang/Specs/Environment
 %% Keep subtypes of Nat, later used to choose among char, short, int, long, etc.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op SpecTransform.removeNonNatSubtypes (spc : Spec) : Spec =
+op SpecTransform.reviseTypesForJava (spc : Spec) : Spec =
+ revise_types spc
+
+op SpecTransform.reviseTypesForC (spc : Spec) : Spec =
+ revise_types spc
+
+op revise_types (spc : Spec) : Spec =
  let 
    def strip typ =
      case typ of

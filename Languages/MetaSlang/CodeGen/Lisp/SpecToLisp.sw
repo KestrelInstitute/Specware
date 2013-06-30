@@ -1485,8 +1485,12 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
                         "------------------------------------------"]
  in
 
+
+ %% Phase 1: Add stuff
+
  %% ==========================================================================================
- %%  (1) refine (possibly unused) ops using List_Executable.sw, String_Executable.sw, etc.
+ %%  (1) Substitute Base Specs, to intoduce executable definitions
+ %%      Refine (possibly unused) ops using List_Executable.sw, String_Executable.sw, etc.
  %% ==========================================================================================
 
  %% substBaseSpecs should preceed other transforms, so those other transforms can apply to 
@@ -1497,97 +1501,83 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  let spc = maybeSubstBaseSpecs substBaseSpecs?                     spc in
  let _   = maybeShowSpecIfVerbose substBaseSpecs? "substBaseSpecs" spc in
 
- %% ==========================================================================================
- %%  (2) might as well remove theorems early 
- %%      TODO: deprecate?
- %% ==========================================================================================
 
- let spc = SpecTransform.removeTheorems                            spc in 
- let _   = showSpecIfVerbose "removeTheorems"                      spc in 
+ %% Phase 2: Spec to Spec transforms
 
  %% ==========================================================================================
- %%  (3) slice unused types and ops early to minimize wasted motion 
- %%      TODO: move to later?
- %% ==========================================================================================
-
- %% slice? is true for gen-lisp-top, false for gen-lisp and lgen-lisp
-
- let spc = maybeSliceSpecForLisp slice?                            spc top_ops top_types in
- let _   = maybeShowSpecIfVerbose slice? "maybeSliceSpecForLisp"   spc in
-
- %% ==========================================================================================
- %%  (4) by default we do not remove currying 
- %% ==========================================================================================
-
- %% let spc = SpecTransform.removeCurrying                         spc in 
- %% let _   = showSpecIfVerbose "removeCurrying"                   spc in
-
- %% ==========================================================================================
- %%  (5) convert patterned lambdas into case expressions
+ %%  (2) Normalize Top Level Lambdas
+ %%      Convert patterned lambdas into case expressions.
  %% ==========================================================================================
 
  let spc = SpecTransform.normalizeTopLevelLambdas                  spc in 
  let _   = showSpecIfVerbose "normalizeTopLevelLambdas"            spc in
 
  %% ==========================================================================================
- %%  (6) instantiate higher order functions
+ %%  (3) Instantiate Higher Order Functions
+ %%      Calls normalizeCurriedDefinitions and simplifySpec.
  %%
- %%      calls normalizeCurriedDefinitions and simplifySpec 
- %%      should precede lambdaLift, poly2mono
+ %%      Should precede removeCurrying, which eliminates higher order.
+ %%      Should precede lambdaLift, which would remove inlineable local functions.
+ %%      Should precede poly2mono, since higher order functions are usually polymorphic.
  %% ==========================================================================================
 
  let spc = SpecTransform.instantiateHOFns                          spc in 
  let _   = showSpecIfVerbose "instantiateHOFns"                    spc in
 
  %% ==========================================================================================
- %%  (7) Variant of Wadler's pattern matching compiler 
+ %%  (4) Remove Currying
+ %% ==========================================================================================
+  
+ %% ==========================================================================================
+ %%  (5) Lift Unsupported Patterns
  %% ==========================================================================================
 
- %% Currently, translateMatch introduces Select's and parallel Let bindings,
- %% which would confuse other transforms.  So until that is changed, 
- %% translateMatch should be done late in the transformation sequence.
+ %% ==========================================================================================
+ %%  (6) Pattern Match Compiler, to remove case expressions.
+ %%      Variant of Wadler's pattern matching compiler.
  %%
- %% We also might wish to convert matches to case or typecase expressions,
- %% in which case not all matches would be transformed to if statements.
-
- %% This may add calls to polymorphic fns, so must precede poly2mono. [TODO: verify this]
- %% This may add local defs, so should preceed lambda lift.
+ %%      Currently introduces Select's and parallel Let bindings, which may confuse other
+ %%      transforms.  
+ %%
+ %%      This may add calls to polymorphic fns, so must precede poly2mono. [TODO: verify this]
+ %%      This may add local defs, so should preceed lambda lift.
+ %% ==========================================================================================
 
  let spc = SpecTransform.translateMatch                            spc in 
  let _   = showSpecIfVerbose "translateMatch"                      spc in
 
  %% ==========================================================================================
- %%  (8) by default we do not lambda lift
+ %%  (7) Lambda Lift
  %% ==========================================================================================
 
- %% If we do this, it should follow translateMatch
-
- %% let spc = SpecTransform.lambdaLift                             spc in 
- %% let _   = showSpecIfVerbose "lambdaLift"                       spc in
-
  %% ==========================================================================================
- %%  (9) rewrite forms such as foo << {y = y} to {x = foo.x, y = y, z = foo.z}
+ %%  (8) Expand Record Merges
+ %%      Make record constructions explicit.
+ %%      'foo << {y = y}'   =>  '{x = foo.x, y = y, z = foo.z}'
+ %%
+ %%     This might be reversed later by introduceRecordMerges if we choose to produce Setf 
+ %%     forms to revise mutable structures, but for now we stay within normal MetaSlang.
  %% ==========================================================================================
-
- %% Make record constructions explicit.
-
- %% This might be reversed later by introduceRecordMerges if we choose to produce Setf forms
- %% to revise mutable structures, but for now we stay within normal MetaSlang.
 
  let spc = SpecTransform.expandRecordMerges                        spc in 
  let _   = showSpecIfVerbose "translateRecordMergeInSpec"          spc in
   
  %% ==========================================================================================
- %% (21) Eta Expansion
+ %%  (9) Convert Lets of Wild Patterns to Seq's
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (10) Eta Expansion
  %% ==========================================================================================
 
  %% TODO: Verity conjecture that matchCon in translateMatch has already done eta expansion,
  %%       making this redundant.  If so, we can remove this.
 
  let spc = SpecTransform.etaExpandDefs                             spc in  
+ let _   = showSpecIfVerbose "etaExpandDefs"                       spc in
 
  %% ==========================================================================================
- %% (22) arityNormalize
+ %% (11) arityNormalize
  %% ==========================================================================================
 
  %% For exmaple, revise
@@ -1602,6 +1592,41 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
 
  let spc = SpecTransform.arityNormalize                            spc in
  let _   = showSpecIfVerbose "arityNormalize"                      spc in
+
+ %% PHASE 3: Slicing, trimming
+
+ %% ==========================================================================================
+ %% (12) Conform Op Decls
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (13) Encapsulate Product Args
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (14) Introduce Record Merges
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (15) Expand Type Defs
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (16) Revise Types for Code Generation
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (17) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
+ %% ==========================================================================================
+
+ %% ==========================================================================================
+ %% (18) slice unused types and ops 
+ %% ==========================================================================================
+
+ %% slice? is true for gen-lisp-top, false for gen-lisp and lgen-lisp
+
+ let spc = maybeSliceSpecForLisp slice?                            spc top_ops top_types in
+ let _   = maybeShowSpecIfVerbose slice? "maybeSliceSpecForLisp"   spc in
 
  spc
 

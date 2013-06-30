@@ -4,43 +4,50 @@
 
  get executable fragment:
 
-     substBaseSpecs                    1        1                 introduces various stuff
-     sliceSpecforXXX                  (3)       3                 XXX = Lisp, C, Java
-     addEqOpsToSpec                            14                 ugh
-     addTypeConstructorsToSpec                 16                 
+     substBaseSpecs                    1        1                 introduces executable version of base ops
     
  transform into simpler subset of metaslang:
     
-     removeCurrying                   (4)       4                 do not introduce new curried functions after this
-     normalizeTopLevelLambdas          5        5                 ??
-     instantiateHOFns                  6        6                 do not introduce new HO functions after this
-                                                                  simplifies?
-    
-     translateMatch                    8        8                 introduces local functions
+     normalizeTopLevelLambdas          2        2                 simplify top-level lambdas -- may introduce case expressions, so precedes translateMatch
+     instantiateHOFns                  3        3                 may inline local functions -- should preceed lambdaLift, removeCurrying
+                                                                  calls simplify?
+     removeCurrying                             4                 removes curried functions -- must follow instantiateHOFns
+                                                                  
+     liftUnsupportedPatterns                    5                 introduces local functions, so should preceed lambdaLift (but orthogonal to instantiateHOFns)
+
+     translateMatch                    6        6                 removes case expressions, introduces local functions, so should preceded lambdaLift
                                                                   removes types?                  
     
-     lambdaLift                       (7)       7                 do not introduce local functions after this
+     lambdaLift                       -7-       7                 removes local functions
     
-     expandRecordMerges                9        9                 
-     letWildPatToSeq                           10                 cosmetic
+     expandRecordMerges                8        8                 replaces << with explicit record constructions
+
+     letWildPatToSeq                            9                 removes wild patterns, introduces sequences  [maybe pointless?]
 
  introduce options that simplify code generation:
 
-     introduceRecordMerges                      9A                simplifies record constructions to be updates 
-                                                                  of pre-existing records (useful for setf)
-    
-     poly2monoAndDropPoly                      12                 ??
-    
-     arityNormalize                   10       
-     conformOpDecls                            17
-     adjustAppl                                18
-    
-     sliceSpecforXXX                  (3)       3                 XXX = Lisp, C, Java   [??]
+     etaExpansion                     10
+     arityNormalize                   11       
+     conformOpDecls                            12
+     encapsulateProductArgs                    13                 compose tuple of args into a single arg when op has a single parameter 
 
-     simplifySpec                              13                 ?? overkill ??
-     removeTheorems                    2        2                 not needed for code
-     removeNonNatSubtypesAndBaseDefs           11                 well-formed specs, but losing ability to prove
-     
+     introduceRecordMerges                     14                 opposite of expandRecordMerges above -- replaces record constructions with << (useful for setf)
     
+     expandTypeDefs                            15                 ??
+    
+     reviseTypesForGenXXX                      16                 todo: replace with introduceCanonicalTypes ? [create appropriate subtypes of Nat8, Nat16, etc.]
+
+     addEqOpsToSpec                            17                 todo: fold into routines that introduce calls to thse
+     addTypeConstructorsToSpec                 18                 todo: ??
+    
+     sliceSpecforXXX                  19       19                 remove ops not executably reachable [XXX = Lisp, C, Java] 
+
 Note:
  subtractSpec is deprecated                     
+
+   % removeTheorems                    2        2                 todo: is this necessary?
+   % simplifySpec                              15                 ?? overkill ??
+   % poly2monoAndDropPoly                      19                 todo: is this necessary?
+   % sliceSpecforXXX                  [3]      20                 remove ops not executably reachable [XXX = Lisp, C, Java] 
+
+     
