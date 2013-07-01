@@ -1,3 +1,4 @@
+Nat qualifying
 spec
 
 %% This spec defines types for "sized" Nats (natural numbers
