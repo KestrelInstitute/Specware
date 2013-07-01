@@ -5,30 +5,28 @@ import /Languages/MetaSlang/CodeGen/DebuggingSupport
 %% SpecTransforms used for code generation
 
 import /Languages/MetaSlang/CodeGen/SubstBaseSpecs                      %  (1) Lisp C Java  subtBaseSpecs
-import /Languages/MetaSlang/Transformations/RemoveTheorems              %  (2) Lisp C Java  removeTheorems
-import /Languages/MetaSlang/Transformations/SliceSpec                   %  (3) Lisp C Java  sliceSpecForLisp, sliceSpecForC, sliceSpecForJava
+import /Languages/MetaSlang/Transformations/NormalizeTopLevelLambdas    %  (2) Lisp C Java  normalizeTopLevelLambdas
+import /Languages/MetaSlang/Transformations/InstantiateHOFns            %  (3) Lisp C Java  instantiateHOFns
 import /Languages/MetaSlang/Transformations/RemoveCurrying              %  (4)      C Java  removeCurrying
-import /Languages/MetaSlang/Transformations/NormalizeTopLevelLambdas    %  (5) Lisp C Java  normalizeTopLevelLambdas
-import /Languages/MetaSlang/Transformations/InstantiateHOFns            %  (6) Lisp C Java  instantiateHOFns
+import /Languages/MetaSlang/Transformations/LiftUnsupportedPatterns     %  (5)      C Java  liftUnsupportedPatterns
+import /Languages/MetaSlang/Transformations/PatternMatch                %  (6) Lisp C Java  translateMatch
 import /Languages/MetaSlang/Transformations/LambdaLift                  %  (7)      C Java  lambdaLiftWithImportsSimulatingClosures, lambdaLift
-import /Languages/MetaSlang/Transformations/PatternMatch                %  (8) Lisp C Java  translateMatch
-import /Languages/MetaSlang/Transformations/RecordMerge                 %  (9) Lisp C Java  expandRecordMerges
-import /Languages/MetaSlang/Transformations/LetWildPatToSeq             % (10)      C Java  letWildPatToSeq
-import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases                   % (11)        Java  unfoldTypeAliases
-import /Languages/MetaSlang/Transformations/ExpandTypeDefs              % (12)      C Java  expandTypeDefs
-import /Languages/MetaSlang/CodeGen/RemoveSubtypes                      % (13)      C Java  removeNonNatSubtypes
-import /Languages/MetaSlang/Transformations/LiftUnsupportedPatterns     % (14)      C Java  liftUnsupportedPatterns
-import /Languages/MetaSlang/CodeGen/Poly2Mono                           % (15)      C Java  poly2monoAndDropPoly
-import /Languages/MetaSlang/Transformations/Simplify                    % (16)      C Java  simplifySpec
-import /Languages/MetaSlang/Transformations/AddEqOps                    % (16)      C Java  addEqOps
-                                                                        % (18)      C Java  sliceSpecForLisp, sliceSpecForC, sliceSpecForJava  [see 3]
-import /Languages/MetaSlang/Transformations/AddTypeConstructors         % (19)      C Java  addTypeConstructors
-import /Languages/MetaSlang/CodeGen/ConformOpDecls                      % (20)      C Java  conformOpDecls
-import /Languages/MetaSlang/Transformations/EtaExpansion                % (21) Lisp   Java  etaExpandDefs
-import /Languages/MetaSlang/Transformations/ArityNormalize              % (22) Lisp   Java  arityNormalize
-import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (23)      C Java  encapsulateProductArgs
-                                                                        % (24)      C Java  lambdaLiftWithImports  [see 7]
-                                                                        % (25)      C Java  translateMatch         [see 8]
-import /Languages/MetaSlang/Transformations/DistinctVariable            % (26)        Java  distinctVariable
+import /Languages/MetaSlang/Transformations/RecordMerge                 %  (8) Lisp C Java  expandRecordMerges
+import /Languages/MetaSlang/Transformations/LetWildPatToSeq             %  (9)      C Java  letWildPatToSeq
+
+%% TODO: Clarify these four.  They are currently rather confusing.
+import /Languages/MetaSlang/Transformations/EtaExpansion                % (10) Lisp   Java  etaExpandDefs
+import /Languages/MetaSlang/Transformations/ArityNormalize              % (11) Lisp   Java  arityNormalize
+import /Languages/MetaSlang/CodeGen/ConformOpDecls                      % (12)      C Java  conformOpDecls
+import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (13)      C Java  encapsulateProductArgs
+
+                                                                        % (14)      C Java  introduceRecordMerges  -- RecordMerge alredy imported
+
+import /Languages/MetaSlang/Transformations/ExpandTypeDefs              % (15)      C Java  expandTypeDefs
+import /Languages/MetaSlang/CodeGen/ReviseTypesForCodeGen               % (16)      C Java  reviseTypesForC, reviseTypesForJava
+import /Languages/MetaSlang/Transformations/AddEqOps                    % (17)      C Java  addEqOps
+import /Languages/MetaSlang/Transformations/AddTypeConstructors         % (18)      C Java  addTypeConstructors
+
+import /Languages/MetaSlang/Transformations/SliceSpec                   % (19) Lisp C Java  sliceSpecForLisp, sliceSpecForC, sliceSpecForJava
 
 end-spec

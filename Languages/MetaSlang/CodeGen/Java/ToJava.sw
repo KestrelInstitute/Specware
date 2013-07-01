@@ -922,8 +922,8 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %%  (2) might as well remove theorems early [could be done at any time, or never]
  %% ==========================================================================================
 
- let spc = SpecTransform.removeTheorems                            spc in 
- let _   = showSpecIfVerbose "removeTheorems"                      spc in 
+ %% let spc = SpecTransform.removeTheorems                            spc in 
+ %% let _   = showSpecIfVerbose "removeTheorems"                      spc in 
 
  %% ==========================================================================================
  %%  (3) slice unused types and ops early to minimize wasted motion 

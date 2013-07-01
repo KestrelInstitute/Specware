@@ -1,11 +1,11 @@
-RemoveSubtypes qualifying spec
+CodeGen qualifying spec
 
 import /Languages/MetaSlang/Specs/Environment
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Remove subtype predicates, etc. that would not appear in final code.
-%% Keep subtypes of Nat, later used to choose among char, short, int, long, etc.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TODO: Change this to preserve all subtypes but to canonicalize them in a way
+%%       that facilitates code generation.
+%%       Revise types to be subtypes of supertypes that have direct 
+%%       implmentations in target languages:  Nat8, Int32, etc.
 
 op SpecTransform.reviseTypesForJava (spc : Spec) : Spec =
  revise_types spc
@@ -23,7 +23,7 @@ op revise_types (spc : Spec) : Spec =
        | Subtype (typ, _, _) -> strip typ
        | _ -> typ
  in
- %% Warning: logical mayhem?
+ %% Warning: logical mayhem? -- TODO: See note above
  mapSpec (fn t -> t, strip, fn p -> p) spc
 
 end-spec

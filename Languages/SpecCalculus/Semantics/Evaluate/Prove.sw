@@ -2,6 +2,8 @@ SpecCalc qualifying spec
   import UnitId
 
   import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+  import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases            
+  import /Languages/MetaSlang/CodeGen/Poly2Mono
 
   import /Languages/Snark/SpecToSnark
   import /Provers/DP/ToFourierMotzkin

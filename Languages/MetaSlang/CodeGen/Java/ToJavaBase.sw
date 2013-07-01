@@ -6,6 +6,11 @@ import ToJavaPatternMatch
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/MetaSlang/Transformations/HigherOrderMatching
 
+import /Languages/MetaSlang/Transformations/LiftPattern
+import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases            
+import /Languages/MetaSlang/CodeGen/Poly2Mono
+import /Languages/MetaSlang/Transformations/DistinctVariable
+
 import /Languages/MetaSlang/CodeGen/CodeGenUtilities % findMatchingUserType
 
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
