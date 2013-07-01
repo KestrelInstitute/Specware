@@ -4,8 +4,6 @@ spec
 %% This spec defines types for "sized" Nats (natural numbers
 %% representable in the given number of bits).
 
-%% TODO: Add a qualifier?
-
 %% TODO: Is there a better way to do this?  We may need dependent
 %% types to make this more elegant.
 
