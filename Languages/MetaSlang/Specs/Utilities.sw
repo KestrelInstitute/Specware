@@ -2110,8 +2110,6 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
   op termSubst(tm: MSTerm, sbst: TermSubst): MSTerm =
     if sbst = [] then tm
     else
-%    let _ = writeLine(printTerm tm) in
-%    let _ = printTermSubst sbst in
     let free_vs = foldl (fn (fvs, (t1, t2)) -> removeDuplicateVars(freeVars t1 ++ freeVars t2 ++ fvs)) [] sbst in
     let def repl(tm) =
           replaceTerm(subst_tm, fn _ -> None, fn _ -> None) tm
@@ -2124,7 +2122,6 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     in
     let result =  repl tm
     in
-%    let _ = writeLine("= "^printTerm result) in
     result
 
   op termsSubst(tms: MSTerms, sbst: TermSubst): MSTerms =
@@ -2620,7 +2617,8 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       loop 1
 
   op knownNonEmptyBaseTypes: QualifiedIds =
-    [Qualified("Integer", "Int"),   
+    [Qualified("Boolean", "Bool"),   
+     Qualified("Integer", "Int"),   
      Qualified("Nat",     "Nat"), 
      Qualified("Char",    "Char"),
      Qualified("String",  "String"), 
@@ -2658,13 +2656,26 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
           || existsOpWithType?(ty, spc)
          %% Leave out for now as it messes up emptyTypesToSubtypes
          %% || existsTrueExistentialAxiomForType?(ty, spc)
+      | Boolean _ -> true
       | Quotient(sty,_,_) -> knownNonEmpty?(sty, spc)
       | Pi(_,sty,_) -> knownNonEmpty?(sty, spc)
       | And(sty::_,_) -> knownNonEmpty?(sty, spc)
+      | Subtype(Base(qid,_,_), pred, _) | qid in? knownNonEmptyBaseTypes ->
+        knownNotAlwaysFalse?(pred, spc)
       | Subtype _ -> false
       | TyVar _ -> false
       | Any _ -> false
       | _ -> true
+
+ op knownNotAlwaysFalsePreds: QualifiedIds =
+   []
+
+ %% Currently ad-hoc
+ op knownNotAlwaysFalse?(pred: MSTerm, spc: Spec): Bool =
+   case pred of
+     | Fun(Op(qid, _), _, _) -> qid in? knownNotAlwaysFalsePreds
+     | Apply(Fun(Op(Qualified("Nat", fitsInNBits?), _), _, _), Fun(Nat i, _, _), _) -> i ~= 0
+     | _ -> false
 
  type MatchResult = | Match MSVarSubst | NoMatch | DontKnow
 
