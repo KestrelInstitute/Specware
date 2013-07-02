@@ -4,8 +4,22 @@
 %TODO combine some ops and defs in this file into ops.
 
 %---- Functions missing from existing library datatypes ---------
+Map qualifying
 spec
 import Maps
+
+%%% Isomorphism stuff
+op [a,b,c] isoMap: Bijection(a,b) -> Bijection(Map(c, a), Map(c, b)) =
+  fn iso_elem -> foldi (fn (x, y, new_m) -> update new_m x (iso_elem y)) empty_map
+
+theorem isoMap_over_update is [a,b,c]
+  fa(m: Map(a,b), x:a, y:b, el_iso: (b -> c))
+    isoMap el_iso (update m x y) = update (isoMap el_iso m) x (el_iso y)
+
+theorem isoMap_over_empty_map is [a,b,c]
+  fa(el_iso: (b -> c))
+    isoMap el_iso (empty_map: Map(a,b)) = (empty_map: Map(a,c))
+
 %----- set stuff ------
 op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(elem, set)) empty_set lst
 
