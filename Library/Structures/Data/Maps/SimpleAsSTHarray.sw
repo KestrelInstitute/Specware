@@ -2,13 +2,18 @@ SimpleAsSTHarray = STHMap qualifying
 spec
   import Simple
 
-  op MapSTHashtable.STH_empty_map    : [key,a]    Map (key,a)
-  op MapSTHashtable.STH_numItems     : [a,key]    Map (key,a) -> Nat
-  op MapSTHashtable.STH_apply        : [key,a]    Map (key,a) * key     -> Option a
-  op MapSTHashtable.STH_eval         : [key,a]    Map (key,a) * key     -> a
-  op MapSTHashtable.STH_update       : fa (key,a) Map (key,a) * key * a -> Map (key,a)
-  op MapSTHashtable.STH_remove       : fa (a,key) Map (key,a) * key     -> Map (key,a)
-  op MapSTHashtable.STH_inDomain?    : [key,a]    Map (key,a) * key     -> Bool
+%% TODO Where does the semantics of these functions come from?  Just
+%% the handwritten Lisp code (which seems to be in
+%% /Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp)?
+
+%% TODO: Pull these MapSTHashtable functions out into a separate spec?
+  op MapSTHashtable.STH_empty_map    : [key,a] Map (key,a)
+  op MapSTHashtable.STH_numItems     : [a,key] Map (key,a) -> Nat
+  op MapSTHashtable.STH_apply        : [key,a] Map (key,a) * key     -> Option a
+  op MapSTHashtable.STH_eval         : [key,a] Map (key,a) * key     -> a
+  op MapSTHashtable.STH_update       : [key,a] Map (key,a) * key * a -> Map (key,a)
+  op MapSTHashtable.STH_remove       : [a,key] Map (key,a) * key     -> Map (key,a)
+  op MapSTHashtable.STH_inDomain?    : [key,a] Map (key,a) * key     -> Bool
 
   op MapSTHashtable.STH_mapi         : [key,a,b]   (key * a -> b)           * Map (key,a) -> Map (key,b)
   op MapSTHashtable.STH_map          : [key,a,b]   (a       -> b)           * Map (key,a) -> Map (key,b)
