@@ -101,6 +101,30 @@ op [a] List.prec? (xs:List a) (x1:a) (x2:a) : Bool =
                        List.prec? rest x1 x2)
 
 
+proof Isa Map__isoMap_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_empty_map_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_empty_map
+  sorry
+end-proof
+
 proof Isa Set__forallIn_Obligation_subtype
   sorry
 end-proof
