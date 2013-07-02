@@ -77,7 +77,7 @@ fi
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /Applications/sbcl/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp /usr/bin/sbcl; do
+   for L in /Applications/sbcl/bin/sbcl /usr/local/bin/sbcl "$HOME"/bin/sbcl /bin/lisp /usr/bin/sbcl ${SBCL_EXECUTABLE}; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
