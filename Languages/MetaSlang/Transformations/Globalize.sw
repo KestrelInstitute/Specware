@@ -2073,7 +2073,10 @@ Globalize qualifying spec
    global_type      <- return (Base (global_type_name, [], noPos));
    global_var       <- return (Fun (Op (global_var_name, Nonfix), global_type, noPos));
    global_init_name <- (case opt_ginit of
-                          | Some ginit -> checkGlobalInitOp (spc, ginit, global_type_name)
+                          | Some ginit -> 
+                            (case ginit of
+                               | Qualified(_, "None") -> return ginit
+                               | _ -> checkGlobalInitOp (spc, ginit, global_type_name))
                           | _ -> findInitOp (spc, global_type_name));
 
    global_var_map   <- return (case findTheType (spc, global_type_name) of
@@ -2108,25 +2111,30 @@ Globalize qualifying spec
                              
    % showIntermediateSpec ("with gvars", spec_with_gvars);
 
-   spec_with_ginit  <- return (case findTheOp (spec_with_gvars, global_init_name) of
-                                 | Some info ->
-                                   (case globalizeInitOp (spec_with_gvars,
-                                                          global_type, 
-                                                          global_var, 
-                                                          global_var_map,
-                                                          global_init_name,
-                                                          tracing?)
-                                      of
-                                      | Some new_info ->
-                                        let Qualified (q,id) = global_init_name in
-                                        let new_ops  = insertAQualifierMap (spec_with_gvars.ops, q, id, new_info) in
-                                        spec_with_gvars << {ops = new_ops}
-                                      | _ ->
-                                        let _ = writeLine ("??? Globalize could not revise init op " ^ show global_init_name) in
-                                        spec_with_gvars)
+   spec_with_ginit  <- return (case (global_init_name : QualifiedId) of
+                                 | Qualified (_, "None") -> 
+                                   %% Use "None" as hack to say there is no initializer, so don't look for one.
+                                   spec_with_gvars 
                                  | _ -> 
-                                   let _ = writeLine ("??? Op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
-                                   spec_with_gvars);
+                                   case findTheOp (spec_with_gvars, global_init_name) of
+                                     | Some info ->
+                                       (case globalizeInitOp (spec_with_gvars,
+                                                              global_type, 
+                                                              global_var, 
+                                                              global_var_map,
+                                                              global_init_name,
+                                                              tracing?)
+                                          of
+                                          | Some new_info ->
+                                            let Qualified (q,id) = global_init_name in
+                                            let new_ops  = insertAQualifierMap (spec_with_gvars.ops, q, id, new_info) in
+                                            spec_with_gvars << {ops = new_ops}
+                                          | _ ->
+                                            let _ = writeLine ("??? Globalize could not revise init op " ^ show global_init_name) in
+                                            spec_with_gvars)
+                                     | _ -> 
+                                       let _ = writeLine ("??? Op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
+                                       spec_with_gvars);
 
    % showIntermediateSpec ("with ginit", spec_with_ginit);
 
