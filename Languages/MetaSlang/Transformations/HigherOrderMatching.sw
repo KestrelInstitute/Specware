@@ -1165,9 +1165,9 @@ closedTermV detects existence of free variables not included in the argument
 			then unify(subst,s1,s2,s1,equals,None)
 		      else [NotUnify(ty1,ty2)])
 	def unify(subst,ty1:MSType,ty2:MSType,ty1_orig:MSType,equals,optTerm: Option MSTerm): List Unification =
-             % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
-             %                  ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
-             %     let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
+              % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
+              %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
+              % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
 	    case (dereferenceType(subst,ty1), dereferenceType(subst,ty2))
 	      of (Boolean _, Boolean_) -> [Unify subst]
                | (CoProduct(r1,_),CoProduct(r2,_)) -> 
@@ -1234,7 +1234,7 @@ closedTermV detects existence of free variables not included in the argument
                | (bty1 as Subtype(ty1 ,p1, _), ty2) | ~(possiblySubtypeOf?(ty2, bty1, spc)) ->
                  % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
                  (case optTerm of
-                       | None -> [NotUnify(ty1,ty2)]
+                       | None -> [NotUnify(bty1,ty2)]
                        | Some tm ->
                          case unify(subst,ty1,ty2,ty1_orig,equals,optTerm) of
                            | (Unify subst) :: _ ->    % Should generalize
