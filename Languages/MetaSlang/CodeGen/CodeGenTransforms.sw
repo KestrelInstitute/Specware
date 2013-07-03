@@ -8,7 +8,7 @@ import /Languages/MetaSlang/CodeGen/SubstBaseSpecs                      %  (1) L
 import /Languages/MetaSlang/Transformations/NormalizeTopLevelLambdas    %  (2) Lisp C Java  normalizeTopLevelLambdas
 import /Languages/MetaSlang/Transformations/InstantiateHOFns            %  (3) Lisp C Java  instantiateHOFns
 import /Languages/MetaSlang/Transformations/RemoveCurrying              %  (4)      C Java  removeCurrying
-import /Languages/MetaSlang/Transformations/LiftUnsupportedPatterns     %  (5)      C Java  liftUnsupportedPatterns
+import /Languages/MetaSlang/Transformations/LiftUnsupportedPatterns     %  (5)      C Java  liftUnsupportedPatterns [expand type restrictions into cases]
 import /Languages/MetaSlang/Transformations/PatternMatch                %  (6) Lisp C Java  translateMatch
 import /Languages/MetaSlang/Transformations/LambdaLift                  %  (7)      C Java  lambdaLiftWithImportsSimulatingClosures, lambdaLift
 import /Languages/MetaSlang/Transformations/RecordMerge                 %  (8) Lisp C Java  expandRecordMerges

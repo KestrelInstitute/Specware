@@ -6,8 +6,8 @@ import /Languages/C/CUtils
 %% Split the C spec into .c and .h portions and print those two files.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op printCSpec (app_name     : String,
-               c_spec       : C_Spec,
+op printCSpec (c_spec       : C_Spec,
+               app_name     : String,
                opt_filename : Option String)
  : () =
  let filename =

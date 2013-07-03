@@ -10,7 +10,7 @@
     
      normalizeTopLevelLambdas          2        2                 removes cases from top-level lambdas -- moves cases into lambda body, must preceed translateMatch
 
-     instantiateHOFns                  3        3                 removes some calls to HO functions and inlines some local function -- must preceed removeCurrying, lambdaLift
+     instantiateHOFns                  3        3                 removes some calls to HO functions, introduces some local function -- must preceed removeCurrying, lambdaLift
                                                                      TODO: why does it call simplify?
 
      removeCurrying                             4                 removes curried functions -- must follow instantiateHOFns

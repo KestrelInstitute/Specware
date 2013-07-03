@@ -11,11 +11,11 @@ import /Languages/I2L/CodeGen/C/I2LToC                   % I2L       to C
 %% The C_Spec parameter is used for incremental code generation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpecIncrFilter (app_name   : String) 
-                                              (ms_spec    : Spec) 
+op generateCSpecFromTransformedSpecIncrFilter (ms_spec    : Spec) 
+                                              (app_name   : String) 
                                               (old_c_spec : C_Spec)
                                               (filter     : QualifiedId -> Bool) 
- : C_Spec =
+ : Option C_Spec =
  let use_ref_types?  = true in
  let constructer_ops = []   in
 
@@ -28,26 +28,26 @@ op generateCSpecFromTransformedSpecIncrFilter (app_name   : String)
                                     old_c_spec, 
                                     use_ref_types?)
  in
- new_c_spec
+ Some new_c_spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Increment a pre-existing C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpecIncr (app_name   : String) 
-                                        (ms_spec    : Spec) 
+op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec) 
+                                        (app_name   : String) 
                                         (old_c_spec : C_Spec)
- : C_Spec =
+ : Option C_Spec =
  let accept_all = (fn _ -> true) in
- generateCSpecFromTransformedSpecIncrFilter app_name ms_spec old_c_spec accept_all
+ generateCSpecFromTransformedSpecIncrFilter ms_spec app_name old_c_spec accept_all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpec (app_name : String) (ms_spec : Spec) 
- : C_Spec =
- generateCSpecFromTransformedSpecIncr app_name ms_spec (emptyCSpec "")
+op generateCSpecFromTransformedSpec (ms_spec : Spec) (app_name : String) 
+ : Option C_Spec =
+ generateCSpecFromTransformedSpecIncr ms_spec app_name (emptyCSpec "")
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C spec from a MetaSlang spec
@@ -57,8 +57,8 @@ op generateCSpecFromTransformedSpec (app_name : String) (ms_spec : Spec)
 %% since there is no point in trying to generate a C spec until we have first
 %% done all the appropriate spec-to-spec transforms within metaslang.
 
-op generateCSpec (app_name : String) (ms_spec : Spec) : C_Spec =
+op generateCSpec (ms_spec : Spec) (app_name : String) : Option C_Spec =
  let ms_spec = transformSpecForCGen ms_spec in
- generateCSpecFromTransformedSpec app_name ms_spec
+ generateCSpecFromTransformedSpec ms_spec app_name 
 
 end-spec

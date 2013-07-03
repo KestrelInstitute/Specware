@@ -9,7 +9,7 @@ SpecCalc qualifying spec
                    opt_filename                     : Option String)
    : SpecCalc.Env ValueInfo =
    {
-    return (generateCCode (ms_spec, app_name, opt_filename));
+    return (generateCFiles (ms_spec, app_name, opt_filename));
     return value_info
     }
 end-spec
