@@ -129,6 +129,8 @@ spec
 
   op [a] nt_subset(As:Set a, Bs:Set a):Bool = nt_subbag(As,Bs)
 
+  %% TODO: Define this (perhaps using fold).
+  op [a] forall? (p: a -> Bool) (m: Set a) : Bool
 
 (******************************** The Proofs ********************************)
 
