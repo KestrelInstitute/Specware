@@ -13,57 +13,36 @@ def productfieldsAreNumbered (fields) =
   in
   fieldsAreNumbered0 (1, fields)
 
-
-op patternFromType: Option MSType * Position -> MSPattern
-def patternFromType (optsrt, b) =
+op getPatternAndTermFromType (typ : MSType) : MSPattern * MSTerm =
+  %% Get pattern which decomposes an argument of the given type, 
+  %% plus a term of the given type made by referencing vars from that pattern.
   let
-    def mkVarPat (id, srt) =
-      VarPat ((id, srt), b)
+    def mkVarPatAndTerm (id, typ) =
+      (VarPat ((id, typ), noPos),
+       Var    ((id, typ), noPos))
   in
-  case optsrt of
-    | None -> RecordPat ([], b)
-    | Some srt -> 
-      case srt of
-	| Product ([], _) -> RecordPat ([], b)
-	| Product (fields, _) ->
-	  if productfieldsAreNumbered fields then
-	    RecordPat (List.map (fn (id, srt) -> (id, mkVarPat ("x"^id, srt))) fields, b)
-	  else mkVarPat ("x", srt)
-	| _ -> mkVarPat ("x", srt)
-
-op argTermFromType: Option MSType * MSTerm * Position -> MSTerm
-def argTermFromType (optsrt, funterm, b) =
-  let
-    def mkVarTerm (id, srt) =
-      Var ((id, srt), b)
-  in
-  case optsrt of
-    | None -> funterm
-    | Some srt -> 
-      let term = 
-        case srt of
-	  | Product (fields, _) ->
-	    if productfieldsAreNumbered fields then
-	      Record (List.map (fn (id, srt) -> (id, mkVarTerm ("x"^id, srt))) fields, b)
-	    else mkVarTerm ("x", srt)
-	  | _ -> mkVarTerm ("x", srt)
-      in
-      Apply (funterm, term, b)
-
-op recordTermFromType: MSType * Position -> MSTerm
-def recordTermFromType (srt, b) =
-  let
-    def mkVarTerm (id, srt) =
-      Var ((id, srt), b)
-  in
-      let term = 
-        case srt of
-	  | Product (fields, _) ->
-	    if productfieldsAreNumbered fields then
-	      Record (List.map (fn (id, srt) -> (id, mkVarTerm ("x"^id, srt))) fields, b)
-	    else mkVarTerm ("x", srt)
-	  | _ -> mkVarTerm ("x", srt)
-      in term
+  case typ of
+    | Product (fields, _) ->
+      if productfieldsAreNumbered fields then
+        let pat  = RecordPat (map (fn (field_id, field_type) -> 
+                                     let var       = ("x"^field_id, field_type) in
+                                     let field_pat = VarPat (var, noPos) in
+                                     (field_id, field_pat))
+                                  fields, 
+                              noPos)
+        in
+        let term = Record (map (fn (field_id, field_type) -> 
+                                  let var      = ("x"^field_id, field_type) in
+                                  let field_tm = Var (var, noPos) in
+                                  (field_id, field_tm))
+                               fields, 
+                           noPos)
+        in
+        (pat, term)
+      else 
+        mkVarPatAndTerm ("x", typ)
+    | _ -> 
+      (mkVarPatAndTerm ("x", typ))
 
  op getAccessorOpName: String * QualifiedId * String -> QualifiedId
 def getAccessorOpName (srtName, qid as Qualified (q, id), accid) =

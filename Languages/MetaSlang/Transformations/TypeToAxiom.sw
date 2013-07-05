@@ -105,10 +105,10 @@ Prover qualifying spec
 
   (*
     let termsrt = Arrow(codom,srt,b) in
-    let pat = patternFromType(Some srt,b) in
+    let pat = patternFromType srt in
     let cond = mkTrue() in
     let funterm = Fun(Project(fId),termsrt,b) in
-    argTermFromType(Some srt,funterm,b)
+    argTermFromType(srt,funterm,b)
   *)
 
  op  mkConstructAxiom: Spec * QualifiedId * MSType * MSProductFields -> Property
