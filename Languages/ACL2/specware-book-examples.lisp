@@ -10,6 +10,14 @@
   (IEmpty)
   (IBranch integerp ITreep ITreep))
 
+;; Doesn't type check because it doesn't assert
+;; (integerp (+ 1 (ibranch-arg1 it)))
+(defun-typed ITree-1+ :type ITreep (it :type ITreep)
+  (case-of it
+   ((IEmpty) it)
+   ((IBranch x left right) 
+    (IBranch (1+ x) (ITree-1+ left) (ITree-1+ right)))))
+
 ;;;;;;;;;;;
 ;; LISTS ;;
 ;;;;;;;;;;;
@@ -17,6 +25,12 @@
 (defcoproduct IList
   (INil)
   (ICons integerp IListp))
+
+(defun-typed ISingletonp :type booleanp (a :type IListp)
+  (case-of a
+   ((ICons _ (ICons _ _)) nil)
+   ((ICons _ _) t)
+   ((INil) nil)))
 
 (defun-typed IAppend :type IListp (a :type IListp
                                    b :type IListp)
@@ -54,7 +68,7 @@
 
 (defun-typed IMember :type booleanp (x :type integerp
                                      a :type IListp)
-  (case-of l
+  (case-of a
    ((INil) nil)
    ((ICons y ys) (or (equal y x) (IMember x ys)))))
 

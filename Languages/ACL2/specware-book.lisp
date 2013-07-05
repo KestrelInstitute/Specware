@@ -142,45 +142,74 @@
 (defun type-constraint-name (name)
   (intern (string-append (string name) "-TYPE-CONSTRAINT") "ACL2"))
 
-(defun bindings-1 (constructor-name var-name bound-vars n)
-  (declare (xargs :mode :program))
-  (cond ((atom bound-vars) nil)
-        ((equal (car bound-vars) '_)
-         (bindings-1 constructor-name
-                     var-name
-                     (cdr bound-vars)
-                     (1+ n)))
-        (t (cons (list (car bound-vars)
-                       (list 
-                        (hyphenate-symbols 
-                         (list constructor-name
-                               (intern (string-append 
-                                        "ARG"
-                                        (integer-to-string n))
-                                       "ACL2")))
-                        var-name))
-                 (bindings-1 constructor-name 
-                             var-name 
-                             (cdr bound-vars) 
-                             (1+ n))))))
+(mutual-recursion
+ (defun match-conditions (pattern var-name)
+   (declare (xargs :mode :program))
+   (cond ((atom pattern) nil)
+         (t
+          (cons (list (add-p-to-name (car pattern)) var-name)
+                (subterm-match-conditions-1 (car pattern) 
+                                            (cdr pattern) 
+                                            var-name 
+                                            1)))))
+ 
+ (defun subterm-match-conditions-1 (constructor-name arg-patterns var-name n)
+   (declare (xargs :mode :program))
+   (cond ((atom arg-patterns) nil)
+         (t (append (match-conditions 
+                     (car arg-patterns)
+                     (list (hyphenate-symbols 
+                            (list constructor-name
+                                  (intern (string-append 
+                                           "ARG"
+                                           (integer-to-string n))
+                                          "ACL2")))
+                           var-name))
+                    (subterm-match-conditions-1 constructor-name
+                                                (cdr arg-patterns)
+                                                var-name
+                                                (1+ n)))))))
 
-(defun bindings (constructor-name var-name bound-vars)
+(defun match-condition (pattern var-name)
   (declare (xargs :mode :program))
-  (bindings-1 constructor-name var-name bound-vars 1))
+  (cons 'and (match-conditions pattern var-name)))
+
+(mutual-recursion
+ (defun bindings (pattern term)
+   (cond ((equal pattern '_) nil)
+         ((symbolp pattern) (list (list pattern term)))
+         ((atom pattern) nil)
+         (t (subterm-bindings-1 (car pattern) (cdr pattern) term 1))))
+
+ (defun subterm-bindings-1 (constructor-name arg-patterns var-name n)
+   (declare (xargs :mode :program))
+   (cond ((atom arg-patterns) nil)
+         (t (append (bindings 
+                     (car arg-patterns)
+                     (list (hyphenate-symbols 
+                            (list constructor-name
+                                  (intern (string-append 
+                                           "ARG"
+                                           (integer-to-string n))
+                                          "ACL2")))
+                           var-name))
+                    (subterm-bindings-1 constructor-name
+                                        (cdr arg-patterns)
+                                        var-name
+                                        (1+ n)))))))
 
 (defun case-to-cond-1 (var-name cases)
   (declare (xargs :mode :program))
   (cond ((atom cases) nil)
         (t 
          (let* ((pattern (caar cases))
-                (constructor-name (car pattern))
-                (bound-vars (cdr pattern))
                 (term (cadar cases)))
            (cons (list
-                  (list (add-p-to-name constructor-name)
-                        var-name)
-                  (list 'let (bindings constructor-name var-name bound-vars)
-                        term))
+                  (match-condition pattern var-name)
+                  (let ((b (bindings pattern var-name)))
+                    (if (atom b)
+                        term
+                        (list 'let (bindings pattern var-name) term))))
                  (case-to-cond-1 var-name (cdr cases)))))))
 
 (defun case-to-cond (var-name cases)
