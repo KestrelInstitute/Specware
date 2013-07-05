@@ -144,6 +144,20 @@ Maps = Map qualifying spec
 %TODO rename the type variables here, for consistency with the rest of this file.
   op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a
 
+  op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
+    the (isoMap)
+      fa(m: Map(a, b), iso_a: Bijection(a,c), iso_b: Bijection(b,d), x: a, y: Option b)
+        (apply m x = y) <=> (apply (isoMap iso_a iso_b m) (iso_a x) = isoOption iso_b y)
+    %% fn iso_elem1 -> fn iso_elem2 -> foldi (fn (x, y, new_m) -> update new_m (iso_elem1 x) (iso_elem2 y)) empty_map
+
+  theorem isoMap_over_update is [a,b,c,d]
+    fa(m: Map(a,b), x:a, y:b, iso_a: (a -> c), iso_b: b -> d)
+      isoMap iso_a iso_b (update m x y) = update (isoMap iso_a iso_b m) (iso_a x) (iso_b y)
+
+  theorem isoMap_over_empty_map is [a,b,c,d]
+    fa(iso_a: a -> c, iso_b: b -> d)
+      isoMap iso_a iso_b (empty_map: Map(a,b)) = (empty_map: Map(c,d))
+
 
 (******************************** The Proofs ********************************)
 
@@ -183,6 +197,41 @@ proof isa Map__domain_update
   sorry
 end-proof
 
+proof Isa Map__isoMap_Obligation_the
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update_Obligation_subtype1
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update_Obligation_subtype2
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_update
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_empty_map_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_empty_map_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa Map__isoMap_over_empty_map
+  sorry
+end-proof
 
 end-spec
 
@@ -667,8 +716,5 @@ proof isa TMApply_over_update_2
   apply(cut_tac Map__TMApply_over_update)
   apply(auto)
 end-proof
-
-
-
 
 end-spec

@@ -70,6 +70,9 @@ spec
   op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a =
     fn f -> fn acc -> fn map -> MapVec.V_foldi(f,acc,map)
 
+  op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
+    fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
+
   %% Added by Eric:
   op [a,b] size: Map(a,b) -> Nat = fn m -> size (domain m)
 
@@ -89,6 +92,9 @@ proof Isa mapUpdateSet_Obligation_subtype
   sorry
 end-proof
  
+proof Isa isoMap_Obligation_subtype
+  sorry
+end-proof
 
 end-spec
 
@@ -144,6 +150,14 @@ proof Isa totalmap_equality
   sorry
 end-proof
  
+proof Isa isoMap_def_Obligation_the
+  sorry
+end-proof
+
+proof Isa isoMap_def
+  sorry
+end-proof
+
 proof Isa TMApply_def_Obligation_the
   sorry
 end-proof

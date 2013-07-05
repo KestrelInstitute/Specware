@@ -31,6 +31,8 @@ op [a] empty_set : Set a
 axiom empty_set is [a]
       fa(x: a) ~(x in? empty_set)
 
+op [a] forall? (p: a -> Bool) (m: Set a) : Bool
+
 %TODO add this back?
 %op [a] empty? (s : Set a) : Bool = (s = empty_set)
 
@@ -115,6 +117,7 @@ theorem commutativity_of_intersection_two is [a]
 
 theorem set_intersection_idempotence_right is [a]
   fa(x : Set a, y : Set a) (x /\ y) /\ y = x /\ y
+
 
 
 %TODO note that Library/General/Set also applies to infinite set (there is also Library/General/FSet for finite sets)

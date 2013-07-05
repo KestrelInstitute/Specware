@@ -45,6 +45,9 @@ spec
    op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a =
      fn f -> fn e -> fn m -> MapSTHashtable.STH_foldi(f,e,m)
 
+  op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
+    fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
+
 % how to handle apply outside the domain in MapSTHashtable?
   op [a,b] map_apply (m: Map(a,b))(null_elt:b)(x: a): b = MapSTHashtable.STH_eval(m,x)
 
@@ -64,6 +67,10 @@ proof Isa MapsAsSTHTables__total_p_Obligation_subtype
   sorry
 end-proof
 
+proof Isa isoMap_Obligation_subtype
+  sorry
+end-proof
+
 proof Isa MapsAsSTHTables__mapFrom_Obligation_subtype
   sorry
 end-proof
@@ -71,7 +78,9 @@ end-proof
 proof Isa MapsAsSTHTables__mapUpdateSet_Obligation_subtype
   sorry
 end-proof
-    
+
+
+
 end-spec
 
 
@@ -122,6 +131,14 @@ proof Isa Map__totalmap_equality_Obligation_subtype0
 end-proof
 
 proof Isa Map__totalmap_equality
+  sorry
+end-proof
+
+proof Isa isoMap_def_Obligation_the
+  sorry
+end-proof
+
+proof Isa isoMap_def
   sorry
 end-proof
 

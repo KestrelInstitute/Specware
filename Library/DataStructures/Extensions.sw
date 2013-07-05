@@ -8,17 +8,6 @@ Map qualifying
 spec
 import Maps
 
-%%% Isomorphism stuff
-op [a,b,c] isoMap: Bijection(a,b) -> Bijection(Map(c, a), Map(c, b)) =
-  fn iso_elem -> foldi (fn (x, y, new_m) -> update new_m x (iso_elem y)) empty_map
-
-theorem isoMap_over_update is [a,b,c]
-  fa(m: Map(a,b), x:a, y:b, el_iso: (b -> c))
-    isoMap el_iso (update m x y) = update (isoMap el_iso m) x (el_iso y)
-
-theorem isoMap_over_empty_map is [a,b,c]
-  fa(el_iso: (b -> c))
-    isoMap el_iso (empty_map: Map(a,b)) = (empty_map: Map(a,c))
 
 %----- set stuff ------
 op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(elem, set)) empty_set lst
@@ -99,31 +88,6 @@ op [a] List.prec? (xs:List a) (x1:a) (x2:a) : Bool =
                        in? (x2, rest)
                      else
                        List.prec? rest x1 x2)
-
-
-proof Isa Map__isoMap_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_update_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_update_Obligation_subtype0
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_update
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_empty_map_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_empty_map
-  sorry
-end-proof
 
 proof Isa Set__forallIn_Obligation_subtype
   sorry

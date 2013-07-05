@@ -117,7 +117,10 @@ spec
   op [Dom,Cod,a] foldi (f : (Dom * Cod * a -> a)) (acc:a) (m : Map (Dom,Cod)) : a =
     set_fold acc
              (fn (acc,(x,y)) -> f(x,y,acc))
-             m
+             m 
+
+  op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
+    fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
 
 %TODO The Isabelle obligations don't seem to include the crucial information from the type Map.
 proof Isa Map__apply_Obligation_subtype
@@ -182,6 +185,10 @@ proof Isa Map__mapUpdateSet_Obligation_subtype
 end-proof
 
 proof Isa Map__foldi_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa isoMap_Obligation_subtype
   sorry
 end-proof
 
@@ -255,6 +262,14 @@ proof Isa Map__totalmap_equality_Obligation_subtype0
 end-proof
 
 proof Isa Map__totalmap_equality
+  sorry
+end-proof
+
+proof Isa isoMap_def_Obligation_the
+  sorry
+end-proof
+
+proof Isa isoMap_def
   sorry
 end-proof
 

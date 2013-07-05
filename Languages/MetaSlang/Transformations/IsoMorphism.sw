@@ -68,18 +68,25 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
      | RestrictedPat(_,t,_) -> existsSubTerm pred? t
      | _ -> return false
 
-  type IsoFnInfo = List(QualifiedId * QualifiedId)
+  type IsoFnInfo = List(QualifiedId * QualifiedId * MSTerm)
   %% Look for fns of the form Bijection(a,a') -> Bijection(L a,L a')
+  op higherOrderBijectionType?(ty: MSType): Option QualifiedId =
+    case ty of
+      | Arrow(Base(Qualified("Function","Bijection"),_,_),
+              rng, _) ->
+        (case rng of
+           | Base(Qualified("Function","Bijection"), [Base(qid1,_,_), Base(qid2,_,_)], _)
+               | qid1 = qid2 ->
+             Some(qid1)
+           | _ -> higherOrderBijectionType? rng)
+      | _ -> None
+
   op findComplexIsoFns(spc: Spec): IsoFnInfo =
     foldOpInfos (fn (info, result) ->
-                   case firstOpDefInnerType info of
-                     | Arrow(Base(Qualified("Function","Bijection"),_,_),
-                             Base(Qualified("Function","Bijection"),
-                                  [Base(qid1,_,_), Base(qid2,_,_)],
-                                  _), _)
-                         | qid1 = qid2 ->
-                             Cons((qid1, primaryOpName info), result)
-                     | _ -> result)
+                   case higherOrderBijectionType?(firstOpDefInnerType info) of
+                     | Some(HOTyQId) ->
+                       (HOTyQId, primaryOpName info, info.dfn) :: result
+                     | None -> result)
       []
       spc.ops
 
@@ -87,14 +94,19 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   % (fn_qid) : (dom_ty -> rng_ty) -> (ty_qid dom_ty -> ty_qid rng_ty)
   % and (fn_arg)
   % construct (fn_qid fn_arg)
-  op mkHOIsoFn(ty_qid: QualifiedId, fn_qid: QualifiedId, fn_arg: MSTerm, dom_ty: MSType, rng_ty: MSType,
-               spc: Spec): MSTerm =
-    mkApply(mkOpFromDef (fn_qid,
-                         mkArrow(mkArrow(dom_ty,rng_ty),
-                                 mkArrow(mkBase(ty_qid, [dom_ty]),
-                                         mkBase(ty_qid, [rng_ty]))),
-                         spc),
-            fn_arg)
+
+  op mkHOIsoFn(ty_qid: QualifiedId, fn_qid: QualifiedId,
+               isos_info: List(MSType * MSType * MSTerm), spc: Spec): MSTerm =
+    mkCurriedApply(mkOpFromDef (fn_qid,
+                                foldr (fn ((dom_ty, rng_ty, _), result_ty) ->
+                                         mkArrow(mkBase(Qualified("Function", "Bijection"), [dom_ty,rng_ty]),
+                                                 result_ty))
+                                  (mkBase(Qualified("Function", "Bijection"),
+                                          [mkBase(ty_qid, map (project 1) isos_info),
+                                           mkBase(ty_qid, map (project 2) isos_info)]))
+                                  isos_info,
+                                spc),
+                   map (project 3) isos_info)
 
   % given fn_arg and list_arg
   % construct (List.Map fn_arg list_arg)
@@ -188,7 +200,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   op lookupIsoFnInfo(qid: QualifiedId, iso_fn_info: IsoFnInfo): Option QualifiedId =
     case iso_fn_info of
       | [] -> None
-      | (qid1,qid2)::_ | qid = qid1 -> Some qid2
+      | (qid1,qid2,_)::_ | qid = qid1 -> Some qid2
       | _::r -> lookupIsoFnInfo(qid,r)
 
   type IsoInfo = MSTerm * TyVars * MSType * MSType
@@ -561,1065 +573,1067 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
   op simplifyUnPrimed?: Bool = false
   op opaqueSimplifyScript: Script = mkSteps[]  %mkSimplify[Rewrite idQId]
 
-   def Isomorphism.makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
-                                    newOptQual : Option String, extra_rules: List RuleSpec)
-      : SpecCalc.Env Spec =
-    let
-      def newQId? qid = derivedQId?(qid, newOptQual, spc)
+def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
+                     newOptQual : Option String, extra_rules: List RuleSpec)
+    : SpecCalc.Env Spec =
+  let
+    def makeFreshQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
+      let newQId = makeDerivedQId spc qid newOptQual in
+      case findTheOp(spc, newQId) of
+        | Some info -> {
+            print ("Cannot make qualified id: " ^ (printQualifiedId newQId) ^ "\n"); 
+            escape "An operator with that name already exists\n" 
+          }
+        | None ->
+            (case findTheType(spc, newQId) of
+              | Some info -> {
+                  print ("Cannot make qualified id: " ^ (printQualifiedId newQId) ^ "\n"); 
+                  escape "A type with that name already exists\n" 
+                }
+              | None -> return newQId)
 
-      def makeFreshQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
-        let newQId = makeDerivedQId spc qid newOptQual in
-        case findTheOp(spc, newQId) of
-          | Some info -> {
-              print ("Cannot make qualified id: " ^ (printQualifiedId newQId) ^ "\n"); 
-              escape "An operator with that name already exists\n" 
-            }
-          | None ->
-              (case findTheType(spc, newQId) of
-                | Some info -> {
-                    print ("Cannot make qualified id: " ^ (printQualifiedId newQId) ^ "\n"); 
-                    escape "A type with that name already exists\n" 
-                  }
-                | None -> return newQId)
-
-      def makeFreshTypeQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
-        makeFreshQId spc qid
-      def isoTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                 (ty: MSType)
-                 (tm: MSTerm): SpecCalc.Env MSTerm =
-        let
-          def makePrimedPat (p: MSPattern, body: MSTerm, p_ty: MSType, sb: MSVarSubst)
-              : SpecCalc.Env (MSPattern * MSTerm * MSVarSubst) =
-            case p of
-              | VarPat(v as (vn,v_ty),a) -> {
-                  v_ty' <- isoType (spc, iso_info, iso_fn_info) false v_ty; 
-                  if equalType?(v_ty,v_ty') then
-                    return (p, body, sb)
-                  else {
-                    v' <- return (makePrimedVar vn,v_ty'); 
-                    osi <- osiTerm (spc, iso_info, iso_fn_info) (v_ty') (Var(v',a));
-                    return (VarPat(v',a), body, Cons((v, osi), sb))
-                  }
+    def makeFreshTypeQId (spc:Spec) (qid:QualifiedId) : SpecCalc.Env QualifiedId =
+      makeFreshQId spc qid
+    def isoTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
+                (ty: MSType)
+                (tm: MSTerm): SpecCalc.Env MSTerm =
+      let
+        def makePrimedPat (p: MSPattern, body: MSTerm, p_ty: MSType, sb: MSVarSubst)
+            : SpecCalc.Env (MSPattern * MSTerm * MSVarSubst) =
+          case p of
+            | VarPat(v as (vn,v_ty),a) -> {
+                v_ty' <- isoType (spc, iso_info, iso_fn_info) false v_ty; 
+                if equalType?(v_ty,v_ty') then
+                  return (p, body, sb)
+                else {
+                  v' <- return (makePrimedVar vn,v_ty'); 
+                  osi <- osiTerm (spc, iso_info, iso_fn_info) (v_ty') (Var(v',a));
+                  return (VarPat(v',a), body, Cons((v, osi), sb))
                 }
-              | RestrictedPat(p1,pred,a) -> {
-                  (p1_pr, body, sb) <- makePrimedPat(p1, body, p_ty, sb); 
-                  return (RestrictedPat(p1_pr, substitute(pred,sb) ,a), body, sb)
+              }
+            | RestrictedPat(p1,pred,a) -> {
+                (p1_pr, body, sb) <- makePrimedPat(p1, body, p_ty, sb); 
+                return (RestrictedPat(p1_pr, substitute(pred,sb) ,a), body, sb)
+              }
+            | _ | embed? Base p_ty -> {
+                v <- return ("x",p_ty); 
+                makePrimedPat (mkVarPat v, mkSimpApply(mkLambda(p,body), mkVar v), p_ty, sb)
+              }
+            | RecordPat(idprs,a) ->
+              (case productOpt(spc, p_ty) of
+                 | None -> fail("Shouldn't happen!")
+                 | Some fields -> {
+                    (idprs_pr,body,sb) <-
+                      foldrM (fn (idprs_pr,body,sb) -> fn (id,p) ->
+                            case getTermField(fields, id) of
+                              | None -> fail("Shouldn't happen!")
+                              | Some f_ty -> {
+                                  (p_pr, body, sb) <- makePrimedPat (p,body,f_ty,sb); 
+                                  return (Cons((id,p_pr), idprs_pr), body, sb)
+                                }) ([],body,sb) idprs;
+                     return (RecordPat(idprs_pr, a), body, sb)
+                   })
+            | _ -> return (p, body, sb)
+        def makePrimeBody (old_def_tm, sb, result_ty) =
+          case old_def_tm of
+            | Lambda([(p, condn, body)],a) | ~(embed? Base result_ty)
+                             % && (embed? Base (domain(spc, result_ty)) => embed? VarPat)
+                              ->
+              (case arrowOpt(spc,result_ty) of
+                 | None -> fail("Illegal type")
+                 | Some(d_ty,body_ty) -> {
+                     (p_pr, body, sb) <- makePrimedPat(p, body, d_ty, sb);
+                     new_body <- makePrimeBody(body, sb, body_ty); 
+                     return (Lambda([(p_pr, condn, new_body)],a))
+                   })
+            | _ -> {
+                new_bod <- return (substitute(old_def_tm, sb)); 
+                result_ty' <- isoType (spc, iso_info, iso_fn_info) false result_ty; 
+                if equalType?(result_ty, result_ty') then
+                  return new_bod
+                else {
+                  iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) result_ty None; 
+                  % print ("itf: "^ printTermWithTypes iso_fn ^ ": _ -> "^printType result_ty); 
+                  return (simplifiedApply(iso_fn, new_bod, spc))
                 }
-              | _ | embed? Base p_ty -> {
-                  v <- return ("x",p_ty); 
-                  makePrimedPat (mkVarPat v, mkSimpApply(mkLambda(p,body), mkVar v), p_ty, sb)
-                }
-              | RecordPat(idprs,a) ->
-                (case productOpt(spc, p_ty) of
-                   | None -> fail("Shouldn't happen!")
-                   | Some fields -> {
-                      (idprs_pr,body,sb) <-
-                        foldrM (fn (idprs_pr,body,sb) -> fn (id,p) ->
-                              case getTermField(fields, id) of
-                                | None -> fail("Shouldn't happen!")
-                                | Some f_ty -> {
-                                    (p_pr, body, sb) <- makePrimedPat (p,body,f_ty,sb); 
-                                    return (Cons((id,p_pr), idprs_pr), body, sb)
-                                  }) ([],body,sb) idprs;
-                       return (RecordPat(idprs_pr, a), body, sb)
-                     })
-              | _ -> return (p, body, sb)
-          def makePrimeBody (old_def_tm, sb, result_ty) =
-            case old_def_tm of
-              | Lambda([(p, condn, body)],a) | ~(embed? Base result_ty)
-                               % && (embed? Base (domain(spc, result_ty)) => embed? VarPat)
-                                ->
-                (case arrowOpt(spc,result_ty) of
-                   | None -> fail("Illegal type")
-                   | Some(d_ty,body_ty) -> {
-                       (p_pr, body, sb) <- makePrimedPat(p, body, d_ty, sb);
-                       new_body <- makePrimeBody(body, sb, body_ty); 
-                       return (Lambda([(p_pr, condn, new_body)],a))
-                     })
-              | _ -> {
-                  new_bod <- return (substitute(old_def_tm, sb)); 
-                  result_ty' <- isoType (spc, iso_info, iso_fn_info) false result_ty; 
-                  if equalType?(result_ty, result_ty') then
-                    return new_bod
-                  else {
-                    iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) result_ty None; 
-                    % print ("itf: "^ printTermWithTypes iso_fn ^ ": _ -> "^printType result_ty); 
-                    return (simplifiedApply(iso_fn, new_bod, spc))
-                  }
-                }
-        in
-          makePrimeBody(tm, [], ty)    
-      def isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (recursive?: Bool)
-                    (ty: MSType): SpecCalc.Env MSType =
-        let
-          def isoType1 ty =
-              case ty of
-                | Base(qid, params, a) -> {
-                    iso_params <- mapM isoType1 params; 
-                    case lookupIsoInfo(qid, iso_info) of
-                      | Some((_,_,_,r_ty as Base(osi_qid,_,_)), _) ->
-                          if params = [] then
-                            return r_ty
-                          else
-                            return (Base(osi_qid,params,a))
-                      | _ ->
-                          if recursive? && dependsOnIsoInfo?(qid,iso_info,spc,[]) then {
-                            newQId <- makeFreshQId spc qid;
-                            return (Base(newQId, iso_params, a))
-                          }
-                          else
-                            return (Base(qid, iso_params, a))
-                  }
-                | Arrow (s1, s2, a) -> {
-                    s1 <- isoType1 s1;
-                    s2 <- isoType1 s2;
-                    return (Arrow(s1, s2, a))
-                  }
-                | Product (pairs,a) -> {
-                    pairs <-
-                      mapM (fn (id,typ) -> {
-                        typ <- isoType1 typ;
-                        return (id,typ)
-                      }) pairs;
-                    return (Product (pairs,a))
-                  }
-                | CoProduct(pairs,a) -> {
-                    pairs <-
-                      mapM (fn (id,optType) ->
-                        case optType of
-                          | None -> return (id,None)
-                          | Some typ -> {
-                              typ <- isoType1 typ;
-                              return (id,Some typ)
-                            }) pairs;
-                    return (CoProduct (pairs,a))
-                  }
-                | Quotient (s, tm, a) -> {
-                    s' <- isoType1 s; 
-                    if equalType? (s,s') then
-                      return ty
-                    else {
-                      tm' <-
-                        case tm of
-                          | Fun(Op(qid,fx), tm_ty, b) | recursive? -> {
-                              % Shouldn't happen otherwise
-                              newQId <- makeFreshQId spc qid;
-                              tm_ty' <- isoType1 tm_ty;
-                              return (Fun(Op(newQId, fx),tm_ty',b))
-                            }
-                          | _ -> {
-                              tm_ty <- return (inferType(spc,tm)); 
-                              isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
-                            };
-                      return (Quotient(s', tm', a))
-                    }
-                  }
-                | Subtype (s, tm, a) -> {
-                    s1 <- isoType1 s; 
-                    if equalType?(s,s1) then
-                      return ty
-                    else {
-                      tm' <-
-                        case tm of
-                          | Fun(Op(qid,fx), tm_ty, b) | recursive? -> {
-                              % Shouldn't happen otherwise
-                              newQId <- makeFreshQId spc qid;
-                              tm_ty' <- isoType1 tm_ty;
-                              return (Fun(Op(newQId, fx),tm_ty',b))
-                            }
-                          | _ -> {
-                              tm_ty <- return (inferType(spc,tm)); 
-                              isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
-                            };
-                      return (Subtype (s1, tm', a))
-                    }
-                  }
-                | Pi (tvs, ty1, a) -> {
-                    ty1' <- isoType1 ty1;
-                    return (Pi (tvs, ty1', a))
-                  }
-                | And(tys, a) -> {
-                    tys' <- mapM isoType1 tys;
-                    return (And(tys', a))
-                  }
-                | _ -> return ty
-        in
-          isoType1 ty
-      def newPrimedTypes(init_spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-         : SpecCalc.Env (IsoInfoList * Spec) =
-        foldOverQualifierMap 
-          (fn (_,_,info,result as (new_iso_info, spc)) ->
-             let qid = primaryTypeName info in
-             let Qualified(q,id) = qid in
-             if typeInIsoInfoList(qid, iso_info) then
-               return result
-             else
-               let (tvs,ty) = unpackFirstTypeDef info in {
-                 %% Use init_spec because priming algorithm assumes primed types haven't been added yet
-                 ty' <- isoType (init_spc, iso_info, iso_fn_info) true ty;
-                 % print("type "^printQualifiedId qid^" = "^printType ty^"\n--> "^printType ty'^"\n");
-                 if equalType? (ty,ty') then
-                   return result
-                 else {
-                   qid' <- makeFreshTypeQId spc qid;
-                   let spc  = addTypeDef(spc, qid', maybePiType(tvs, ty')) in
-                   let qid_ref  = mkBase(qid, map mkTyVar tvs) in
-                   let qid'_ref = mkBase(qid',map mkTyVar tvs) in
-          
-                   let iso_qid = Qualified(q,"iso"^id) in
-                   let iso_ty  = mkArrow(qid_ref, qid'_ref) in
-                   let iso_fn  = mkInfixOp(iso_qid, Unspecified, iso_ty) in
-                   let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, iso_ty, noPos))) in
-    
-                   let osi_qid = Qualified(q,"osi"^id) in
-                   let osi_ty  = mkArrow(qid'_ref, qid_ref) in
-                   let osi_fn  = mkInfixOp(osi_qid, Unspecified, osi_ty) in
-                   let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, osi_ty, noPos))) in
-                   return
-                     (Cons(((iso_fn, tvs, qid_ref, qid'_ref), (osi_fn, tvs, qid'_ref, qid_ref)),
-                         new_iso_info),
-                      spc)
-                 }}) ([], init_spc) init_spc.types
-      %% (search-forward-regexp specware-definition-regexp) (match-string 0) (match-string 2)
-      % Construct a map from a qualified id to the primed qualified id for
-      % a new primed op.
-      % Make map identity for ops whose type doesn't change but uses type internally
-      def makeDerivedOps(spc: Spec,
-                         iso_info: IsoInfoList,
-                         iso_fn_info: IsoFnInfo)
-         : SpecCalc.Env QualifiedIdMap =
-        % Ignore the ops in the the list of pairs of iso's?
-        let ign_qids = foldl (fn (result, ((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_))) ->
-                                [iso_qid, osi_qid] ++ result)
-                         [] iso_info
-        in
-        foldOverQualifierMap
-          (fn (q, nm, info, result) ->
-           let qid = Qualified(q,nm) in
-           let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in
-           if anyTerm? dfn then
-             return result
-           else {
-             op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty; 
-             % ### LE - we are folding over ops. Is the equivType? test where we
-             % establish whether the op depends on a type subject to an isomorphism?
-             % is there overlap with the ignore list? 
-             if qid in? ign_qids || some?(findTheOp(spc, makeDerivedQId spc qid newOptQual))
-               then return result
-             else if equivType? spc (op_ty_pr,op_ty)
-               then if existsTypeInTerm? (fn Base(qid, _, _) -> some?(lookupIsoInfo(qid, iso_info))
-                                                 | _ -> false)
-                         dfn
-                     then let _ = writeLine("refine "^show qid) in
-                          return (insertAQualifierMap(result, q, nm, qid))
-                     else return result
-            else {
-              qid_pr <- makeFreshQId spc qid;
-              return (insertAQualifierMap(result, q, nm, qid_pr))
-            }
-          }) emptyAQualifierMap spc.ops
-      (* We are given a map as produced above, For each pair (qid,qid') we
-      retrieve opinfo for qid and construct a pair (opinfo_1,opinfo_2) where
-      opinfo_1 is a reference to qid' (via the isomorphisms) and opinfo_2
-      is opinfo in the new type.  ### LE not sure I understand opinfo_2? *)
-      def makeDerivedOpDefs(spc:           Spec,
-                            iso_info:      IsoInfoList,
-                            iso_fn_info:   IsoFnInfo,
-                            base_src_QIds: List QualifiedId,
-                            src_QIds:      List QualifiedId,
-                            qidPrMap:      QualifiedIdMap)
-         : SpecCalc.Env (List (OpInfo * OpInfo) * QualifiedIds) =
-        foldOverQualifierMap
-          (fn (q, nm, qid_pr, (result, transformQIds)) ->
-           let qid = Qualified(q,nm) in
-           let Some info = findTheOp(spc, qid) in
-           let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in {
-             type_opaque_in_term? <- return(checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc));
-             op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty;
-             % qid_pr <- makeFreshQId spc qid;
-             (dfn_pr, transformQIds) <-
-               if type_opaque_in_term? then
-                 return ((primeTermsTypes(dfn, qidPrMap, iso_info), transformQIds))
-               else
-                 {dfn_pr <- isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
-                  return(dfn_pr, qid_pr :: transformQIds)};
-             if type_opaque_in_term? then {
-               print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
-               when (nm = "anddd")
-                 (let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
-                  print (printTermWithTypes dfn ^ "\n"
-                           ^ printTermWithTypes prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
-             }
-             else
-               {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
-                when (nm = "nnnot") (print(printTermWithTypes dfn^"\n"))};
-             if qid = qid_pr
-               then    % refine def instead of generating new one
-               return ((addRefinedDefToOpinfo(info, dfn_pr),
-                        info)
-                       :: result,
-                       transformQIds)   
-             else {
-             qid_pr_ref <- return (mkInfixOp(qid_pr,info.fixity,op_ty_pr)); 
-             id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
-             new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr; 
-             % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
-             return ((info << {dfn = maybePiTerm(tvs, TypedTerm(new_dfn, op_ty, noPos))},
-                      info << {names = [qid_pr],
-                               dfn = maybePiTerm(tvs, TypedTerm(dfn_pr, op_ty_pr, noPos))})
-                       ::result,
-                     transformQIds)
-          }}) ([], []) qidPrMap
-      def isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                   (ty: MSType) (par_ty: Option MSType): SpecCalc.Env MSTerm =
-        let src_ty = case par_ty of Some ty -> ty | None -> ty in
-        case ty of
-          | Base(qid,params,a) ->
-            (case lookupIsoFnInfo(qid,iso_fn_info) of  % find if qid is on the lhs of an iso pair
-               | Some qid' ->
-                 (case params of
-                    | [p_ty] -> {
-                        p_ty' <- isoType (spc, iso_info, iso_fn_info) false p_ty;
-                        arg_iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) p_ty None; 
-                        return (mkHOIsoFn(qid, qid', arg_iso_fn, p_ty, p_ty', spc))
-                      }
-                    | _ -> fail("Multi-parameter types not yet handled: "^printQualifiedId qid))
-               | None ->
-                   (case lookupIsoInfo(qid, iso_info) of
-                     | Some ((iso_fn,_,_,_),_) ->
-                       (case typeMatch(domain(spc, inferType(spc, iso_fn)), ty, spc, false, true) of
-                         | None -> return iso_fn         % Shouldn't happen
-                         | Some subst -> return (instantiateTyVarsInTerm(iso_fn, subst)))
-                     | None ->
-                        let uf_ty = unfoldBaseOne(spc, ty) in
-                        if ty = uf_ty then
-                          return (identityFn ty)
+              }
+      in
+        {% print("isoTerm:\n"^printTerm tm^"\n");
+         new_tm <- makePrimeBody(tm, [], ty);
+         % print(" -->\n"^printTerm new_tm^"\n");
+         return new_tm}
+    def isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (recursive?: Bool)
+                (ty: MSType): SpecCalc.Env MSType =
+      let
+        def isoType1 ty =
+            case ty of
+              | Base(qid, params, a) -> {
+                  iso_params <- mapM isoType1 params; 
+                  case lookupIsoInfo(qid, iso_info) of
+                    | Some((_,_,_,r_ty as Base(osi_qid,_,_)), _) ->
+                        if params = [] then
+                          return r_ty
                         else
-                          isoTypeFn (spc, iso_info, iso_fn_info) uf_ty (Some ty)))
-          | Arrow(dom,ran,_) -> {
-              fnarg <- return ("f",src_ty); 
-              iso <- isoTypeFn (spc, iso_info, iso_fn_info) ran None;
-              osi <- osiTypeFn (spc, iso_info, iso_fn_info) dom;
-              return (mkLambda(mkVarPat fnarg, mkCompose(iso, mkCompose(mkVar fnarg, osi, spc), spc)))
-            }
-          | Product (row, a) -> {
-              xv <- return ("x",src_ty); 
-              pairs <-
-                mapM (fn (id,i_ty) -> {
-                  iso_proj <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkProjection(id, mkVar xv, spc));
-                  return (id, iso_proj)
-                }) row;
-              return (mkLambda(mkVarPat xv, mkRecord pairs))
-            }
-          | CoProduct (row, a) -> {
-              xv <- return ("x",src_ty);
-              matches <-
-                mapM (fn (id,o_i_ty) ->
-                      case o_i_ty of
-                           | None -> return (mkEmbedPat(id,None,src_ty), trueTerm, mkEmbed0(id,src_ty))
-                           | Some i_ty -> {
+                          return (Base(osi_qid,params,a))
+                    | _ ->
+                        if recursive? && dependsOnIsoInfo?(qid,iso_info,spc,[]) then {
+                          newQId <- makeFreshQId spc qid;
+                          return (Base(newQId, iso_params, a))
+                        }
+                        else
+                          return (Base(qid, iso_params, a))
+                }
+              | Arrow (s1, s2, a) -> {
+                  s1 <- isoType1 s1;
+                  s2 <- isoType1 s2;
+                  return (Arrow(s1, s2, a))
+                }
+              | Product (pairs,a) -> {
+                  pairs <-
+                    mapM (fn (id,typ) -> {
+                      typ <- isoType1 typ;
+                      return (id,typ)
+                    }) pairs;
+                  return (Product (pairs,a))
+                }
+              | CoProduct(pairs,a) -> {
+                  pairs <-
+                    mapM (fn (id,optType) ->
+                      case optType of
+                        | None -> return (id,None)
+                        | Some typ -> {
+                            typ <- isoType1 typ;
+                            return (id,Some typ)
+                          }) pairs;
+                  return (CoProduct (pairs,a))
+                }
+              | Quotient (s, tm, a) -> {
+                  s' <- isoType1 s; 
+                  if equalType? (s,s') then
+                    return ty
+                  else {
+                    tm' <-
+                      case tm of
+                        | Fun(Op(qid,fx), tm_ty, b) | recursive? -> {
+                            % Shouldn't happen otherwise
+                            newQId <- makeFreshQId spc qid;
+                            tm_ty' <- isoType1 tm_ty;
+                            return (Fun(Op(newQId, fx),tm_ty',b))
+                          }
+                        | _ -> {
+                            tm_ty <- return (inferType(spc,tm)); 
+                            isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
+                          };
+                    return (Quotient(s', tm', a))
+                  }
+                }
+              | Subtype (s, tm, a) -> {
+                  s1 <- isoType1 s; 
+                  if equalType?(s,s1) then
+                    return ty
+                  else {
+                    tm' <-
+                      case tm of
+                        | Fun(Op(qid,fx), tm_ty, b) | recursive? -> {
+                            % Shouldn't happen otherwise
+                            newQId <- makeFreshQId spc qid;
+                            tm_ty' <- isoType1 tm_ty;
+                            return (Fun(Op(newQId, fx),tm_ty',b))
+                          }
+                        | _ -> {
+                            tm_ty <- return (inferType(spc,tm)); 
+                            isoTerm (spc, iso_info, iso_fn_info) tm_ty tm
+                          };
+                    return (Subtype (s1, tm', a))
+                  }
+                }
+              | Pi (tvs, ty1, a) -> {
+                  ty1' <- isoType1 ty1;
+                  return (Pi (tvs, ty1', a))
+                }
+              | And(tys, a) -> {
+                  tys' <- mapM isoType1 tys;
+                  return (And(tys', a))
+                }
+              | _ -> return ty
+      in
+      {%print("isoType: "^printType ty);
+       new_ty <- isoType1 ty;
+       %print(" -->\n"^printType new_ty^"\n");
+       return new_ty} 
+    def newPrimedTypes(init_spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
+       : SpecCalc.Env (IsoInfoList * Spec) =
+      foldOverQualifierMap 
+        (fn (_,_,info,result as (new_iso_info, spc)) ->
+           let qid = primaryTypeName info in
+           let Qualified(q,id) = qid in
+           if typeInIsoInfoList(qid, iso_info) then
+             return result
+           else
+             let (tvs,ty) = unpackFirstTypeDef info in {
+               %% Use init_spec because priming algorithm assumes primed types haven't been added yet
+               ty' <- isoType (init_spc, iso_info, iso_fn_info) true ty;
+               % print("type "^printQualifiedId qid^" = "^printType ty^"\n--> "^printType ty'^"\n");
+               if equalType? (ty,ty') then
+                 return result
+               else {
+                 qid' <- makeFreshTypeQId spc qid;
+                 let spc  = addTypeDef(spc, qid', maybePiType(tvs, ty')) in
+                 let qid_ref  = mkBase(qid, map mkTyVar tvs) in
+                 let qid'_ref = mkBase(qid',map mkTyVar tvs) in
+
+                 let iso_qid = Qualified(q,"iso"^id) in
+                 let iso_ty  = mkArrow(qid_ref, qid'_ref) in
+                 let iso_fn  = mkInfixOp(iso_qid, Unspecified, iso_ty) in
+                 let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, iso_ty, noPos))) in
+
+                 let osi_qid = Qualified(q,"osi"^id) in
+                 let osi_ty  = mkArrow(qid'_ref, qid_ref) in
+                 let osi_fn  = mkInfixOp(osi_qid, Unspecified, osi_ty) in
+                 let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, osi_ty, noPos))) in
+                 return
+                   (Cons(((iso_fn, tvs, qid_ref, qid'_ref), (osi_fn, tvs, qid'_ref, qid_ref)),
+                       new_iso_info),
+                    spc)
+               }}) ([], init_spc) init_spc.types
+    %% (search-forward-regexp specware-definition-regexp) (match-string 0) (match-string 2)
+    % Construct a map from a qualified id to the primed qualified id for
+    % a new primed op.
+    % Make map identity for ops whose type doesn't change but uses type internally
+    def makeDerivedOps(spc: Spec,
+                       iso_info: IsoInfoList,
+                       iso_fn_info: IsoFnInfo)
+       : SpecCalc.Env QualifiedIdMap =
+      % Ignore the ops in the the list of pairs of iso's?
+      let ign_qids = foldl (fn (result, ((Fun(Op(iso_qid,_),_,_),_,_,_), (Fun(Op(osi_qid,_),_,_),_,_,_))) ->
+                              [iso_qid, osi_qid] ++ result)
+                       [] iso_info
+      in
+      foldOverQualifierMap
+        (fn (q, nm, info, result) ->
+         let qid = Qualified(q,nm) in
+         let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in
+         if anyTerm? dfn then
+           return result
+         else {
+           op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty; 
+           % ### LE - we are folding over ops. Is the equivType? test where we
+           % establish whether the op depends on a type subject to an isomorphism?
+           % is there overlap with the ignore list? 
+           if qid in? ign_qids || some?(findTheOp(spc, makeDerivedQId spc qid newOptQual))
+             then return result
+           else if equivType? spc (op_ty_pr,op_ty)
+             then if existsTypeInTerm? (fn Base(qid, _, _) -> some?(lookupIsoInfo(qid, iso_info))
+                                               | _ -> false)
+                       dfn
+                   then let _ = writeLine("refine "^show qid) in
+                        return (insertAQualifierMap(result, q, nm, qid))
+                   else return result
+          else {
+            qid_pr <- makeFreshQId spc qid;
+            return (insertAQualifierMap(result, q, nm, qid_pr))
+          }
+        }) emptyAQualifierMap spc.ops
+    (* We are given a map as produced above, For each pair (qid,qid') we
+    retrieve opinfo for qid and construct a pair (opinfo_1,opinfo_2) where
+    opinfo_1 is a reference to qid' (via the isomorphisms) and opinfo_2
+    is opinfo in the new type.  ### LE not sure I understand opinfo_2? *)
+    def makeDerivedOpDefs(spc:           Spec,
+                          iso_info:      IsoInfoList,
+                          iso_fn_info:   IsoFnInfo,
+                          base_src_QIds: List QualifiedId,
+                          src_QIds:      List QualifiedId,
+                          qidPrMap:      QualifiedIdMap)
+       : SpecCalc.Env (List (OpInfo * OpInfo) * QualifiedIds) =
+      foldOverQualifierMap
+        (fn (q, nm, qid_pr, (result, transformQIds)) ->
+         let qid = Qualified(q,nm) in
+         let Some info = findTheOp(spc, qid) in
+         let (tvs, op_ty, dfn) = unpackFirstTerm info.dfn in {
+           type_opaque_in_term? <- return(checkTypeOpacity?(dfn, op_ty, base_src_QIds, src_QIds, spc));
+           op_ty_pr <- isoType (spc, iso_info, iso_fn_info) false op_ty;
+           % qid_pr <- makeFreshQId spc qid;
+           (dfn_pr, transformQIds) <-
+             if type_opaque_in_term? then
+               return ((primeTermsTypes(dfn, qidPrMap, iso_info), transformQIds))
+             else
+               {dfn_pr <- isoTerm (spc, iso_info, iso_fn_info) op_ty dfn;
+                return(dfn_pr, qid_pr :: transformQIds)};
+           if type_opaque_in_term? then {
+             print ("mdod: " ^ printQualifiedId qid_pr ^ " opaque!\n");
+             when (nm = "anddd")
+               (let prim_dfn = primeTermsTypes(dfn, qidPrMap, iso_info) in
+                print (printTermWithTypes dfn ^ "\n"
+                         ^ printTermWithTypes prim_dfn^"\n" ^ printTerm prim_dfn^"\n"))
+           }
+           else
+             {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
+              when (nm = "nnnot") (print(printTermWithTypes dfn^"\n"))};
+           if qid = qid_pr
+             then    % refine def instead of generating new one
+             return ((addRefinedDefToOpinfo(info, dfn_pr),
+                      info)
+                     :: result,
+                     transformQIds)   
+           else {
+           qid_pr_ref <- return (mkInfixOp(qid_pr,info.fixity,op_ty_pr)); 
+           id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
+           new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr; 
+           % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
+           return ((info << {dfn = maybePiTerm(tvs, TypedTerm(new_dfn, op_ty, noPos))},
+                    info << {names = [qid_pr],
+                             dfn = maybePiTerm(tvs, TypedTerm(dfn_pr, op_ty_pr, noPos))})
+                     ::result,
+                   transformQIds)
+        }}) ([], []) qidPrMap
+    def isoTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
+                  (ty: MSType) (par_ty: Option MSType): SpecCalc.Env MSTerm =
+      let src_ty = case par_ty of Some ty -> ty | None -> ty in
+      case ty of
+        | Base(qid,params,a) ->
+          (case lookupIsoFnInfo(qid, iso_fn_info) of  % find if qid is on the lhs of an iso pair
+             | Some qid' ->
+               {p_ty_iso_info <- foldM (fn p_ty_prs -> fn p_ty ->
+                                         {p_ty' <- isoType (spc, iso_info, iso_fn_info) false p_ty;
+                                          arg_iso_fn <- isoTypeFn (spc, iso_info, iso_fn_info) p_ty None; 
+                                          % print(printType p_ty^" --> "^printType p_ty'^"\n"^printTerm arg_iso_fn^"\n");
+                                          return((p_ty, p_ty', arg_iso_fn)::p_ty_prs)})
+                                   [] params;
+                return (mkHOIsoFn(qid, qid', reverse p_ty_iso_info, spc))}
+             | None ->
+                 (case lookupIsoInfo(qid, iso_info) of
+                   | Some ((iso_fn,_,_,_),_) ->
+                     (case typeMatch(domain(spc, inferType(spc, iso_fn)), ty, spc, false, true) of
+                       | None -> return iso_fn         % Shouldn't happen
+                       | Some subst -> return (instantiateTyVarsInTerm(iso_fn, subst)))
+                   | None ->
+                      let uf_ty = unfoldBaseOne(spc, ty) in
+                      if ty = uf_ty then
+                        return (identityFn ty)
+                      else
+                        isoTypeFn (spc, iso_info, iso_fn_info) uf_ty (Some ty)))
+        | Arrow(dom,ran,_) -> {
+            fnarg <- return ("f",src_ty); 
+            iso <- isoTypeFn (spc, iso_info, iso_fn_info) ran None;
+            osi <- osiTypeFn (spc, iso_info, iso_fn_info) dom;
+            return (mkLambda(mkVarPat fnarg, mkCompose(iso, mkCompose(mkVar fnarg, osi, spc), spc)))
+          }
+        | Product (row, a) -> {
+            xv <- return ("x",src_ty); 
+            pairs <-
+              mapM (fn (id,i_ty) -> {
+                iso_proj <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkProjection(id, mkVar xv, spc));
+                return (id, iso_proj)
+              }) row;
+            return (mkLambda(mkVarPat xv, mkRecord pairs))
+          }
+        | CoProduct (row, a) -> {
+            xv <- return ("x",src_ty);
+            matches <-
+              mapM (fn (id,o_i_ty) ->
+                    case o_i_ty of
+                         | None -> return (mkEmbedPat(id,None,src_ty), trueTerm, mkEmbed0(id,src_ty))
+                         | Some i_ty -> {
                                yv <- return ("y",i_ty); 
                                iso <- isoTerm (spc, iso_info, iso_fn_info) i_ty (mkVar yv);
+                               iso_ty <- return (inferType(spc, iso));
+                               iso_src_ty <- isoType (spc, iso_info, iso_fn_info) false src_ty;
                                return (mkEmbedPat(id,Some(mkVarPat yv),src_ty), trueTerm,
-                                         mkApply(mkEmbed1(id,mkArrow(i_ty,src_ty)), iso))
+                                       mkApply(mkEmbed1(id, mkArrow(iso_ty,iso_src_ty)), iso))
                              }) row;
-              return (mkLambda(mkVarPat xv, mkApply(Lambda (matches,noPos), mkVar xv)))
+            return (mkLambda(mkVarPat xv, mkApply(Lambda (matches,noPos), mkVar xv)))
+          }
+        | Subtype (sub_type, trm, a) -> {
+            xv <- return ("x",src_ty); 
+            iso <- isoTerm (spc, iso_info, iso_fn_info) sub_type (mkVar xv);
+            return (mkLambda(mkVarPat xv, iso))
+          }
+    %     | Quotient (super_type, trm, a) ->  %% Shouldn't happen as quotients should be at top level
+        | _ -> return (identityFn ty)
+    def osiTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
+                  (ty: MSType): SpecCalc.Env MSTerm = {
+        ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
+        isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) ty' None
+      }
+    def osiTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
+                (ty: MSType)
+                (tm: MSTerm): SpecCalc.Env MSTerm = {
+        ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
+        isoTerm (spc, invertIsoInfo iso_info, iso_fn_info) ty' tm
+      }
+    def addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MSTerm) (old?: Bool): SpecCalc.Env Spec =
+      case iso_ref of
+        | Fun(Op(qid,fixity),ty,_) ->
+          (case findTheOp(spc, qid) of
+             | Some opinfo | ~(anyTerm? opinfo.dfn) -> return spc
+             | Some opinfo -> {
+                 (tvs, srt as Arrow(dom,ran,_)) <-
+                   case unpackFirstTerm opinfo.dfn of
+                     | (tvs, srt as Arrow(dom,ran,_), _) -> return (tvs,srt)
+                     | (_,srt,_) -> escape ("addIsoDefForIso: srt=" ^ anyToString srt ^ "\n");
+                 % print("addIsoDefForIso: "^show qid^"\n"^printTerm opinfo.dfn^"\n\n");
+                 uf_dom <- return (unfoldBaseOne(spc, dom));
+                 newtm <-
+                   case uf_dom of
+                     | Quotient (super_type, trm, a) -> {
+                         xv <- return ("x",ty); 
+                         yv <- return ("y",super_type);
+                         qid' <- 
+                           case ran of
+                             | Base(qid',_,_) -> return qid'
+                             | _ -> escape ("addIsoDefForIso: ran=" ^ anyToString ran ^ "\n");
+                         iso <- isoTerm (spc, iso_info, iso_fn_info) super_type (mkVar yv);
+                         return (mkLambda(mkVarPat xv,
+                                          mkApply(mkChooseFun(dom, ty, ran,
+                                                              mkLambda(mkVarPat yv,
+                                                                       mkQuotient(iso,qid',super_type))),
+                                                  mkVar xv)))
+                       }
+                     | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom (Some dom);
+                 newdfn <- return (maybePiTerm(tvs, TypedTerm (newtm, srt, termAnn opinfo.dfn)));
+                 spc <- return(if old? then appendElement(spc, OpDef(qid, 0, [], noPos)) else spc);
+                 return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
+               }
+             | _ -> escape ("addIsoDefForIso: findTheOp failed qid=" ^ printQualifiedId qid ^ "\n"))
+        | _ -> return spc
+  in catch {
+  %  Extend the list
+  % We are given a list of pairs of qids for ops purporting to be isomorphisms.
+  % For each pair (qid1,qid2) we contruct a pair of 'infos' where an info
+  % is a tuple consisting of (t,tvs,dom,cod) where
+  %  t is a term referring to the op
+  %  tvs are the type variables in the definition of of the op
+  %  dom is the type for the domain of the op
+  %  cod is the type for the codomain of the op
+  base_iso_info <-
+    mapM (fn (iso_qid, osi_qid) -> {
+      iso_info <- findOpInfo spc iso_qid;
+      osi_info <- findOpInfo spc osi_qid;
+      return (iso_info,osi_info)
+    }) iso_qid_prs;
+  %  Check compatibility of iso and osi
+  mapM (fn ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) -> {
+    when (~(length tvs = length inv_tvs
+      && equivType? spc (src_ty,inv_trg_ty)
+      && equivType? spc (trg_ty,inv_src_ty)))
+        (escape (printTerm iso ^ " and " ^ printTerm osi ^ " types not inverses\n"));
+    return ()
+  }) base_iso_info;
+  % Introduce named types for any complex types
+  (base_iso_info, typeNameInfo, spc, _)
+      <- foldM (fn (base_iso_info, typeNameInfo, spc, i) ->
+                  fn pr as ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
+                  let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
+                  case src_ty of
+                    | Base(qid', [], _) ->
+                      return(pr :: base_iso_info, typeNameInfo, spc, i)
+                    | _ ->
+                      let dummy_ty_id = "iso-dom-ty"^show i in
+                      let dummy_ty_qid = mkUnQualifiedId(dummy_ty_id) in
+                      let dummy_ty = mkBase(dummy_ty_qid, []) in
+                      let spc = spc << {types = insertAQualifierMap(spc.types, UnQualified, dummy_ty_id,
+                                                                    {names = [dummy_ty_qid], dfn = maybePiType(tvs, src_ty)})}
+                      in
+                      let typeNameInfo = (dummy_ty_qid, [], src_ty) :: typeNameInfo in
+                      let base_iso_info = ((iso,tvs,dummy_ty,trg_ty), (osi,inv_tvs,inv_src_ty,dummy_ty)) :: base_iso_info in
+                      return (base_iso_info, typeNameInfo, spc, i + 1))
+            ([], [], spc, 0) base_iso_info;
+  spc <- return(if typeNameInfo = [] then spc
+                  else mapSpec (id, normalizeType(spc, typeNameInfo, true, false, false), id) spc);
+  % Make definitions for any undefined primed types
+  spc <- foldM (fn spc -> fn ((_,_,src_ty,trg_ty), _) ->
+                  case trg_ty of
+                    | Base(qid', _, _) ->
+                      (case findTheType(spc, qid') of
+                         | Some ty_info' | anyType? ty_info'.dfn && qid' nin? builtinBaseTypes ->
+                           (case src_ty of
+                              | Base(qid, _, _) | qid nin? builtinBaseTypes ->
+                                {Some ty_info <- return(findTheType(spc, qid));
+                                 (tvs,ty) <- return(unpackFirstTypeDef ty_info);
+                                 ty' <- isoType (spc, base_iso_info, []) true ty;
+                                 return(addTypeDef(spc, qid', maybePiType(tvs, ty')))}
+                              | _ -> return spc)
+                         | _ -> return spc)
+                    | _ -> return spc)
+            spc base_iso_info;
+  %  get qid for src type for each iso (not osi) function
+  base_src_QIds <- 
+    mapM (fn ((_,_,src_ty,_),_) ->
+      case src_ty of
+        | Base(qid, _, _) -> return qid 
+        | _ -> escape ("Domain of iso is not a named type\n")) base_iso_info;
+  print("base_src_QIds: "^anyToString base_src_QIds^"\n");
+  %  find complex isos
+  (* It may be that the spec provides ops that lift bijections to
+     higher types.  For example, given isomorphic types A <-> B, then
+     the map operator can lift the iso to an isomorphism to List A <->
+     List B Later look to generate such liftings *)
+  iso_fn_info <- return (findComplexIsoFns spc);
+
+  (* For each type T in the spec that depends on one or more types,
+     X_i, in the domain of an op in the iso pairs f_i:X_i <-> Y_i:g_i,
+     extend the spec with new 'primed' type T' with each X_i replaced with
+     Y_i. Also add placeholders for ops that witness the isomorphism T <->
+     T'. Return the new spec plus an additional collection of iso_infos
+     for the new types. No theorems for the iso's are added *)
+  (prime_type_iso_info, spc) <- newPrimedTypes(spc, base_iso_info, iso_fn_info); 
+
+  iso_info <- return (base_iso_info ++ prime_type_iso_info);
+
+  src_QIds <- return (map srcQId iso_info);
+
+  print (ppFormat (
+    ppConcat [
+      ppString "Domain QId's:",
+      ppNewline,
+      ppSep ppNewline (map (fn q -> ppString (printQualifiedId q)) src_QIds),
+      ppNewline
+    ]));
+
+  %  handle special case of monomorphic references to polymorphic functions 
+  spc <-
+    let
+      def doPattern accum pat =
+        case pat of 
+          | AliasPat (pat1,pat2,pos) -> {
+              (accum,pat1) <- doPattern accum pat1;
+              (accum,pat2) <- doPattern accum pat2;
+              return (accum,AliasPat(pat1,pat2,pos))
             }
-          | Subtype (sub_type, trm, a) -> {
-              xv <- return ("x",src_ty); 
-              iso <- isoTerm (spc, iso_info, iso_fn_info) sub_type (mkVar xv);
-              return (mkLambda(mkVarPat xv, iso))
-            }
-      %     | Quotient (super_type, trm, a) ->  %% Shouldn't happen as quotients should be at top level
-          | _ -> return (identityFn ty)
-      def osiTypeFn (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                    (ty: MSType): SpecCalc.Env MSTerm = {
-          ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
-          isoTypeFn (spc, invertIsoInfo iso_info, iso_fn_info) ty' None
-        }
-      def osiTerm (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo)
-                  (ty: MSType)
-                  (tm: MSTerm): SpecCalc.Env MSTerm = {
-          ty' <- isoType (spc, iso_info, iso_fn_info) false ty;
-          isoTerm (spc, invertIsoInfo iso_info, iso_fn_info) ty' tm
-        }
-      def addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (iso_ref: MSTerm) (old?: Bool): SpecCalc.Env Spec =
-        case iso_ref of
-          | Fun(Op(qid,fixity),ty,_) ->
-            (case findTheOp(spc, qid) of
-               | Some opinfo | ~(anyTerm? opinfo.dfn) -> return spc
-               | Some opinfo -> {
-                   (tvs, srt as Arrow(dom,ran,_)) <-
-                     case unpackFirstTerm opinfo.dfn of
-                       | (tvs, srt as Arrow(dom,ran,_), _) -> return (tvs,srt)
-                       | (_,srt,_) -> escape ("addIsoDefForIso: srt=" ^ anyToString srt ^ "\n");
-                   print("addIsoDefForIso: "^show qid^"\n"^printTerm opinfo.dfn^"\n\n");
-                   uf_dom <- return (unfoldBaseOne(spc, dom));
-                   newtm <-
-                     case uf_dom of
-                       | Quotient (super_type, trm, a) -> {
-                           xv <- return ("x",ty); 
-                           yv <- return ("y",super_type);
-                           qid' <- 
-                             case ran of
-                               | Base(qid',_,_) -> return qid'
-                               | _ -> escape ("addIsoDefForIso: ran=" ^ anyToString ran ^ "\n");
-                           iso <- isoTerm (spc, iso_info, iso_fn_info) super_type (mkVar yv);
-                           return (mkLambda(mkVarPat xv,
-                                            mkApply(mkChooseFun(dom, ty, ran,
-                                                                mkLambda(mkVarPat yv,
-                                                                         mkQuotient(iso,qid',super_type))),
-                                                    mkVar xv)))
-                         }
-                       | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom (Some dom);
-                   newdfn <- return (maybePiTerm(tvs, TypedTerm (newtm, srt, termAnn opinfo.dfn)));
-                   spc <- return(if old? then appendElement(spc, OpDef(qid, 0, [], noPos)) else spc);
-                   return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
-                 }
-               | _ -> escape ("addIsoDefForIso: findTheOp failed qid=" ^ printQualifiedId qid ^ "\n"))
-          | _ -> return spc
-    in catch {
-    %  Extend the list
-    % We are given a list of pairs of qids for ops purporting to be isomorphisms.
-    % For each pair (qid1,qid2) we contruct a pair of 'infos' where an info
-    % is a tuple consisting of (t,tvs,dom,cod) where
-    %  t is a term referring to the op
-    %  tvs are the type variables in the definition of of the op
-    %  dom is the type for the domain of the op
-    %  cod is the type for the codomain of the op
-    base_iso_info <-
-      mapM (fn (iso_qid, osi_qid) -> {
-        iso_info <- findOpInfo spc iso_qid;
-        osi_info <- findOpInfo spc osi_qid;
-        return (iso_info,osi_info)
-      }) iso_qid_prs;
-    %  Check compatibility of iso and osi
-    mapM (fn ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) -> {
-      when (~(length tvs = length inv_tvs
-        && equivType? spc (src_ty,inv_trg_ty)
-        && equivType? spc (trg_ty,inv_src_ty)))
-          (escape (printTerm iso ^ " and " ^ printTerm osi ^ " types not inverses\n"));
-      return ()
-    }) base_iso_info;
-    % Introduce named types for any complex types
-    (base_iso_info, typeNameInfo, spc, _)
-        <- foldM (fn (base_iso_info, typeNameInfo, spc, i) ->
-                    fn pr as ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
-                    let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
-                    case src_ty of
-                      | Base(qid', [], _) ->
-                        return(pr :: base_iso_info, typeNameInfo, spc, i)
-                      | _ ->
-                        let dummy_ty_qid = mkUnQualifiedId("iso-dom-ty"^show i) in
-                        let dummy_ty = mkBase(dummy_ty_qid, []) in
-                        let spc = spc << {types = insertAQualifierMap(spc.types, UnQualified, "iso-dom-ty",
-                                                                      {names = [dummy_ty_qid], dfn = maybePiType(tvs, src_ty)})}
-                        in
-                        let _ = writeLine("dummy_ty: "^printType dummy_ty^" = "^printType src_ty) in
-                        let typeNameInfo = (dummy_ty_qid, [], src_ty) :: typeNameInfo in
-                        let base_iso_info = ((iso,tvs,dummy_ty,trg_ty), (osi,inv_tvs,inv_src_ty,dummy_ty)) :: base_iso_info in
-                        return (base_iso_info, typeNameInfo, spc, i + 1))
-              ([], [], spc, 0) base_iso_info;
-    print("typeNameInfo: "^anyToString typeNameInfo^"\n\n");
-    spc <- return(if typeNameInfo = [] then spc
-                    else mapSpec (id, normalizeType(spc, typeNameInfo, false, false, false), id) spc);
-    % Make definitions for any undefined primed types
-    spc <- foldM (fn spc -> fn ((_,_,src_ty,trg_ty), _) ->
-                    case trg_ty of
-                      | Base(qid', _, _) ->
-                        (case findTheType(spc, qid') of
-                           | Some ty_info' | anyType? ty_info'.dfn && qid' nin? builtinBaseTypes ->
-                             (case src_ty of
-                                | Base(qid, _, _) | qid nin? builtinBaseTypes ->
-                                  {Some ty_info <- return(findTheType(spc, qid));
-                                   (tvs,ty) <- return(unpackFirstTypeDef ty_info);
-                                   ty' <- isoType (spc, base_iso_info, []) true ty;
-                                   return(addTypeDef(spc, qid', maybePiType(tvs, ty')))}
-                                | _ -> return spc)
-                           | _ -> return spc)
-                      | _ -> return spc)
-              spc base_iso_info;
-    %  get qid for src type for each iso (not osi) function
-    base_src_QIds <- 
-      mapM (fn ((_,_,src_ty,_),_) ->
-        case src_ty of
-          | Base(qid, _, _) -> return qid 
-          | _ -> escape ("Domain of iso is not a named type\n")) base_iso_info;
-    print("base_src_QIds: "^anyToString base_src_QIds^"\n");
-    %  find complex isos
-    (* It may be that the spec provides ops that lift bijections to
-       higher types.  For example, given isomorphic types A <-> B, then
-       the map operator can lift the iso to an isomorphism to List A <->
-       List B Later look to generate such liftings *)
-    iso_fn_info <- return (findComplexIsoFns spc);
-
-    (* For each type T in the spec that depends on one or more types,
-       X_i, in the domain of an op in the iso pairs f_i:X_i <-> Y_i:g_i,
-       extend the spec with new 'primed' type T' with each X_i replaced with
-       Y_i. Also add placeholders for ops that witness the isomorphism T <->
-       T'. Return the new spec plus an additional collection of iso_infos
-       for the new types. No theorems for the iso's are added *)
-    (prime_type_iso_info, spc) <- newPrimedTypes(spc, base_iso_info, iso_fn_info); 
-
-    iso_info <- return (base_iso_info ++ prime_type_iso_info);
-
-    src_QIds <- return (map srcQId iso_info);
-
-    print (ppFormat (
-      ppConcat [
-        ppString "Domain QId's:",
-        ppNewline,
-        ppSep ppNewline (map (fn q -> ppString (printQualifiedId q)) src_QIds),
-        ppNewline
-      ]));
-
-    %  handle special case of monomorphic references to polymorphic functions 
-    spc <-
-      let
-        def doPattern accum pat =
-          case pat of 
-            | AliasPat (pat1,pat2,pos) -> {
-                (accum,pat1) <- doPattern accum pat1;
-                (accum,pat2) <- doPattern accum pat2;
-                return (accum,AliasPat(pat1,pat2,pos))
-              }
-            | EmbedPat (id,optPat,typ,pos) -> {
-                (accum,optPat) <-
-                  case optPat of
-                    | None -> return (accum, None)
-                    | Some pat -> {
-                        (accum,pat) <- doPattern accum pat;
-                        return (accum, Some pat)
-                      };
-                (accum,typ) <- doType accum typ;
-                return (accum, EmbedPat (id,optPat,typ,pos))
-              }
-            | RecordPat (pairs,pos) -> {
-                (accum,pairs) <-
-                  doList (fn accum -> fn (id,pat) -> {
-                    (accum,pat) <- doPattern accum pat;
-                    return (accum,(id,pat))
-                  }) accum pairs;
-                return (accum, RecordPat (pairs,pos))
-              }
-            | WildPat (typ,pos) -> {
-                (accum,typ) <- doType accum typ;
-                return (accum, WildPat (typ,pos))
-              }
-            | QuotientPat (pat,typName,pos) -> {
-                (accum,pat) <- doPattern accum pat;
-                return (accum, QuotientPat (pat,typName,pos))
-              }
-            | RestrictedPat (pat,trm,pos) -> {
-                (accum,pat) <- doPattern accum pat;
-                (accum,trm) <- doTerm accum trm boolType;  % ### LE Check!
-                return (accum, RestrictedPat (pat,trm,pos))
-              }
-            | TypedPat (pat,typ,pos) -> {
-                (accum,pat) <- doPattern accum pat;
-                (accum,typ) <- doType accum typ;
-                return (accum, TypedPat (pat,typ,pos))
-              }
-            | _ -> return (accum,pat)
-        def doType accum typ =
-          case typ of
-            | Arrow (typ1,typ2,pos) -> {
-                (accum, typ1) <- doType accum typ1;
-                (accum, typ2) <- doType accum typ2;
-                return (accum, Arrow (typ1,typ2,pos))
-              }
-            | Product (pairs,pos) -> {
-                (accum,pairs) <-
-                  doList (fn accum -> fn (id,typ) -> {
-                    (accum,typ) <- doType accum typ;
-                    return (accum, (id,typ))
-                  }) accum pairs;
-                return (accum,Product(pairs,pos))
-              }
-            | CoProduct (pairs,pos) -> {
-                (accum,pairs) <-
-                  doList (fn accum -> fn (id,optTyp) ->
-                    case optTyp of
-                      | None -> return (accum, (id,optTyp))
-                      | Some typ -> {
-                          (accum,typ) <- doType accum typ;
-                          return (accum,(id,Some typ))
-                        }) accum pairs;
-                return (accum,CoProduct (pairs,pos))
-              }
-            | Quotient (typ,trm,pos) -> {
-                (accum,typ) <- doType accum typ;
-                (accum,trm) <- doTerm accum trm (mkArrow (mkProduct [typ,typ], boolType));
-                return (accum, Quotient (typ,trm,pos))
-              }
-            | Subtype (typ,trm,pos) -> {
-                (accum,typ) <- doType accum typ;
-                (accum,trm) <- doTerm accum trm (mkArrow (typ,boolType));
-                return (accum, Subtype (typ,trm,pos))
-              }
-            | Pi (tyVars,typ,pos) -> {
-                (accum,typ) <- doType accum typ;
-                return (accum, Pi (tyVars,typ,pos))
-              }
-            | Base (qid,typs,pos) -> {
-                (accum,typs) <- doList doType accum typs;
-                return (accum,Base (qid,typs,pos))
-              }
-            | _ -> return (accum,typ)
-(*
-
-            | Boolean b
-            | TyVar TyVar * b
-            | MetaTyVar    AMetaTyVar b * b  % Before elaborateSpec
-            | And List (AType b) * b  
-            | Any b  % e.g. "type S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
-*)
-        def doTerm accum trm ctxtType = {
-          when traceMono? (print ("doTerm:  " ^ printTerm trm ^ "\n"));
-          when traceMono? (print ("  dnType=" ^ printType ctxtType ^ "\n"));
-          case trm of
-            | Fun (Op(qid, fxty), ty, pos) ->
-                let
-                  def monoInstance dnType upType =
-                   (if traceMono? then (writeLine ("mono dnType=" ^ printType dnType);
-                                        writeLine ("     upType=" ^ printType upType))
-                      else ();
-                    case (dnType,upType) of
-                      | (Base (dnQid,dnTypes,_), _) ->
-                          if (dnQid in? src_QIds) && (dnTypes = []) then
-                            case upType of
-                              | Base (upQid,_::_,_) -> true
-                              | _ -> false   % ### LE This is wrong what if it is eg (A -> Nat)
-                          else
-                            false   % ### LE or perhaps we need to unfold to the penultimate type (a Base)
-                      | (Arrow (dnDom,dnCod,_), Arrow (upDom,upCod,_)) ->
-                          % ### LE This test is not entirely correct. If we are
-                          % comparing types (BitList -> X) with (List Bit -> Y) then
-                          % the domain on the left is certainly a monomorphic instance
-                          % of domain the right. But we only want the predicate to
-                          % hold on the function space when X and Y are monomophic.
-                          (monoInstance dnDom upDom) || (monoInstance dnCod upCod) 
-                      | (Product (dnPairs,_), Product (upPairs,_)) ->
-                          exists? (fn ((_,dnType),(_,upType)) -> monoInstance dnType upType) (zip (dnPairs,upPairs))
-                      | (CoProduct (dnPairs,_), CoProduct (upPairs,_)) ->  % ### But we only find sums at the top level
-                          exists? 
-                          (fn | ((_,None),(_,None)) -> true
-                              | ((_,Some dnType), (_,Some upType)) -> monoInstance dnType upType
-                              | _ -> fail ("doTerm: monoInstance: coproduct\n")) (zip (dnPairs,upPairs))
-                      | (Subtype (dnType,_,_),Subtype (upType,_,_)) -> monoInstance dnType upType
-                      | (Subtype (dnType,_,_),                   _) -> monoInstance dnType upType
-                      | (                   _,Subtype (upType,_,_)) -> monoInstance dnType upType
-                      | (Quotient (dnType,_,_),Quotient (upType,_,_)) -> monoInstance dnType upType
-                      | (TyVar _, _) -> false
-                      | (_, TyVar _) -> false
-                      | (MetaTyVar _, _) -> false
-                      | (_, MetaTyVar _) -> false
-                      | (Boolean _,_) -> false
-                      | (_,Boolean _) -> false
-                      | _ -> (%writeLine ("doTerm: monoInstance:\n  dnType=" ^ printType dnType
-                              %             ^ "\n  upType=" ^ printType upType);
-                              false))
-                in
-                  if monoInstance ctxtType ty then {
-                    print ("found monomorphic instance of " ^ printQualifiedId qid ^ "\n");
-                    Qualified (qual,id) <- return qid;
-                    (spc,opsDone) <- return accum;
-                    % check if there has been an earlier occurrence of the name 
-                    % In which case much of the work has already been done
-                    found <- foldM (fn found -> fn (otherQual,otherId,otherTyp) ->
-                        if found then
-                          return found
-                        else
-                          if id = otherId then
-                            if qual ~= otherQual then
-                              if some? newOptQual
-                                then escape ("applyIso: disparately qualified functions subject to iso transformation: "
-                                               ^ qual ^ "." ^ id ^ " and " ^ otherQual ^ "." ^ id ^ "\n")
-                                else return false
-                            else
-                              if ~(equivType? spc (maybePiType(freeTyVars ty, ty),maybePiType (freeTyVars otherTyp, otherTyp))) then {
-                                print "makeIsomorphism: two functions with common qualified id by disparate types subject to iso transformation\n";
-                                print ("funType: " ^ (printType ty) ^ "\n");
-                                print ("otherType: " ^ (printType otherTyp) ^ "\n");
-                                print "ignoring\n";
-                                return true
-                              }
-                              else
-                                return true  %  op with same qualifier, id and type already occurs
-                          else
-                            return false) false opsDone;
-                    % ### LE Need to think about how to names these - 
-                    % The names generated here (copies of instantiated polymorphic
-                    % functions) serve a different purpose from those generated
-                    % as a result of applying the isomorphism transformation
-                    newQId <- return (mkQualifiedId (qual ^ "_*",id));
-                    if ~found then {
-                      %  create a new op and replace this reference
-                      % But first we must recursively transform the body of the new op
-                      opsDone <- return (Cons ((qual,id,ty),opsDone));
-                      info <- findTheOp spc (mkQualifiedId (qual,id));
-                      (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
-                      monoDefn <- case typeMatch(defnType, ty, spc, true, true) of
-                         | None -> {
-                             print ("defnType: " ^ printType defnType ^ "\n");
-                             print ("upType: " ^ printType ty ^ "\n");
-                             escape "makeIsoMorphism: typeMatch failed\n"
-                           }
-                         | Some subst -> return (instantiateTyVarsInTerm(defnTerm, subst));
-                      ((spc,opsDone),defnTerm) <- doTerm (spc,opsDone) monoDefn ctxtType;
-                      newDefnTerm <- return (TypedTerm (defnTerm, ctxtType,noPos));
-                      spc <- return (addOpDef (spc, newQId, info.fixity, newDefnTerm));
-                      print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
-                      return ((spc,opsDone), Fun (Op(newQId, fxty), ctxtType, pos))
-                    }
-                    else {
-                      print ("Already processed: " ^ printQualifiedId qid ^ "\n");
-                      return (accum, Fun (Op(newQId, fxty), ctxtType, pos))
-                    }
-                  }
-                  else
-                    return (accum,trm)
-            | Apply (M, N, pos) -> {
-                (dom,cod) <- return (arrow(spc,inferType(spc, M)));
-                when traceMono? {print ("doTerm: Apply: inferType M gives:\n");
-                                 print ("  dom=" ^ printType dom ^ "\n");
-                                 print ("  cod=" ^ printType cod ^ "\n");
-                                 print ("doTerm: Apply: inferType N gives:\n")};
-                dom <- return (inferType(spc, N));
-                when traceMono? (print ("  dom=" ^ printType dom ^ "\n"));
-                (accum,M) <- doTerm accum M (mkArrow(dom,ctxtType));   % ### LE range ctxtType and cod should agree
-                (accum,N) <- doTerm accum N dom;
-                return (accum, Apply (M, N, pos))
-              }
-            | Record (pairs, pos) -> {
-                types <- return (recordTypes(spc,ctxtType));
-                when (length types ~= length pairs)
-                  {print("zip3err: "^show(length types)^" ~= "^show(length pairs)^"\n"^printTerm trm^ " :\n"^ printType ctxtType);
-                   
-                   _ <- mapM (fn (id, tyi) -> print (id^" ")) pairs;
-                   print "\n"};
-                triples <- 
-                  let
-                    def zip3 trms typs =
-                      case (trms,typs) of
-                        | ([],[]) -> []
-                        | ((id,trm)::trms,typ::typs) -> (id,trm,typ) :: (zip3 trms typs)
-                  in
-                    return (zip3 pairs types);
-                (accum,pairs) <-
-                  doList (fn accum -> fn (id,trm,typ) -> {
-                      (accum,trm) <- doTerm accum trm typ;
-                      return (accum,(id,trm))   
-                    }) accum triples;
-                return (accum,Record (pairs,pos))
-              }
-            | Bind (binder,vars,trm,pos) -> {
-                (accum,trm) <- doTerm accum trm boolType;
-                return (accum,Bind (binder,vars,trm,pos))       
-              }
-            | The (var,trm,pos) -> {
-                (accum,trm) <- doTerm accum trm boolType;
-                return (accum,The (var,trm,pos))       
-              }
-            | Let (decls,trm,pos) -> {
-                (accum,decls) <-
-                  doList (fn accum -> fn (pat,rhs) -> {
+          | EmbedPat (id,optPat,typ,pos) -> {
+              (accum,optPat) <-
+                case optPat of
+                  | None -> return (accum, None)
+                  | Some pat -> {
                       (accum,pat) <- doPattern accum pat;
-                      (accum,rhs) <- doTerm accum rhs (patternType pat);
-                      return (accum,(pat,rhs))
-                    }) accum decls;
-                (accum,trm) <- doTerm accum trm ctxtType;
-                return (accum,Let (decls,trm,pos))
-              }
-            | LetRec (decls,trm,pos) -> {
-                (accum,decls) <-
-                  doList (fn accum -> fn (var as (id,typ),rhs) -> {
-                      (accum,rhs) <- doTerm accum rhs typ;
-                      return (accum,(var,rhs))
-                    }) accum decls;
-                (accum,trm) <- doTerm accum trm ctxtType;
-                return (accum,LetRec (decls,trm,pos))
-              }
-            | Lambda (matches,pos) -> {
-                (accum,matches) <- 
-                  doList (fn accum -> fn (pat,cond,trm) -> {
-                      (accum,pat) <- doPattern accum pat;    % ### LE Should be (domain ctxtType)
-                      (accum,cond) <- doTerm accum cond boolType;
-                      (accum,trm) <- doTerm accum trm (range (spc, ctxtType));
-                      return (accum,(pat,cond,trm))
-                    }) accum matches;
-                return (accum,Lambda (matches,pos))
-              }
-            | IfThenElse (pred,t1,t2,pos) -> {
-                (accum,pred) <- doTerm accum pred boolType;
-                (accum,t1) <- doTerm accum t1 ctxtType;
-                (accum,t2) <- doTerm accum t2 ctxtType;
-                return (accum,IfThenElse (pred,t1,t2,pos))
-              }
-            | TypedTerm (trm,typ,pos) -> {
-                (accum,trm) <- doTerm accum trm typ;
-                (accum,typ) <- doType accum typ;
-                return (accum,TypedTerm (trm,typ,pos))
-              }
-            | Var ((id,typ),pos) -> {
-                when traceMono? (print ("doTerm: Var: id=" ^ id ^ "\n"));
-                when traceMono? (print ("  typ=" ^ printType typ ^ "\n"));
-                return (accum,trm)
-              }
-            | _ -> return (accum,trm)
-          }
-        def doOp (qual,id,opInfo,(spc,opsDone)) = {
-            % ### LE what's the difference between unpackTerm and unpackFirstTerm?
-            % ### LE we are folding over ops - but don't need to do the aliases.
-            % ### LE Should we also 'doType typ' in the following.
-            % ### LE This doesn't handle aliases properly
-            % print ("doOp: " ^ qual ^ "." ^ id ^ ":" ^ printTerm opInfo.dfn ^ "\n");
-            (typVars,typ,trm) <- return (unpackFirstTerm opInfo.dfn);  
-            ((spc,opsDone),trm) <- doTerm (spc,opsDone) trm typ ;
-            dfn <- return (maybePiTerm(typVars, TypedTerm (trm, typ, noPos))); 
-            ops <- return (insertAQualifierMap (spc.ops,qual,id,opInfo << {dfn = dfn}));
-            return (spc << {ops = ops},opsDone)
-          }
-        def doTypeDef (qual,id,typeInfo,(spc,opsDone)) = {
-            ((spc,opsDone),dfn) <- doType (spc,opsDone) typeInfo.dfn;
-            types <- return (insertAQualifierMap (spc.types,qual,id,typeInfo << {dfn = dfn}));
-            return (spc << {types = types},opsDone)
-          }
-        def matchingQualifier (qual,_) = return (case newOptQual of
-                                                   | Some newQual -> qual = newQual
-                                                   | None -> false)
-      in {
-          %print ("applyIso: Qualifier=" ^ newQual ^"\n");
-          %  Fail if new qualifier conflicts with those in use
-          % b1 <- existsQMap matchingQualifier spc.ops;
-          % b2 <- existsQMap matchingQualifier spc.types;
-          % when (b1 || b2) 
-            % (escape ("Iso: new qualifier '" ^ newQual ^ "' conflicts with existing qualifiers\n"));
-          % ### LE perhaps make "opsDone" a qualifier map rather than a list.
-          (spc,opsDone) <- foldOverQualifierMap doOp (spc,[]) spc.ops;
-          (spc,opsDone) <- foldOverQualifierMap doTypeDef (spc,opsDone) spc.types;
-          return spc 
-      };
+                      return (accum, Some pat)
+                    };
+              (accum,typ) <- doType accum typ;
+              return (accum, EmbedPat (id,optPat,typ,pos))
+            }
+          | RecordPat (pairs,pos) -> {
+              (accum,pairs) <-
+                doList (fn accum -> fn (id,pat) -> {
+                  (accum,pat) <- doPattern accum pat;
+                  return (accum,(id,pat))
+                }) accum pairs;
+              return (accum, RecordPat (pairs,pos))
+            }
+          | WildPat (typ,pos) -> {
+              (accum,typ) <- doType accum typ;
+              return (accum, WildPat (typ,pos))
+            }
+          | QuotientPat (pat,typName,pos) -> {
+              (accum,pat) <- doPattern accum pat;
+              return (accum, QuotientPat (pat,typName,pos))
+            }
+          | RestrictedPat (pat,trm,pos) -> {
+              (accum,pat) <- doPattern accum pat;
+              (accum,trm) <- doTerm accum trm boolType;  % ### LE Check!
+              return (accum, RestrictedPat (pat,trm,pos))
+            }
+          | TypedPat (pat,typ,pos) -> {
+              (accum,pat) <- doPattern accum pat;
+              (accum,typ) <- doType accum typ;
+              return (accum, TypedPat (pat,typ,pos))
+            }
+          | _ -> return (accum,pat)
+      def doType accum typ =
+        case typ of
+          | Arrow (typ1,typ2,pos) -> {
+              (accum, typ1) <- doType accum typ1;
+              (accum, typ2) <- doType accum typ2;
+              return (accum, Arrow (typ1,typ2,pos))
+            }
+          | Product (pairs,pos) -> {
+              (accum,pairs) <-
+                doList (fn accum -> fn (id,typ) -> {
+                  (accum,typ) <- doType accum typ;
+                  return (accum, (id,typ))
+                }) accum pairs;
+              return (accum,Product(pairs,pos))
+            }
+          | CoProduct (pairs,pos) -> {
+              (accum,pairs) <-
+                doList (fn accum -> fn (id,optTyp) ->
+                  case optTyp of
+                    | None -> return (accum, (id,optTyp))
+                    | Some typ -> {
+                        (accum,typ) <- doType accum typ;
+                        return (accum,(id,Some typ))
+                      }) accum pairs;
+              return (accum,CoProduct (pairs,pos))
+            }
+          | Quotient (typ,trm,pos) -> {
+              (accum,typ) <- doType accum typ;
+              (accum,trm) <- doTerm accum trm (mkArrow (mkProduct [typ,typ], boolType));
+              return (accum, Quotient (typ,trm,pos))
+            }
+          | Subtype (typ,trm,pos) -> {
+              (accum,typ) <- doType accum typ;
+              (accum,trm) <- doTerm accum trm (mkArrow (typ,boolType));
+              return (accum, Subtype (typ,trm,pos))
+            }
+          | Pi (tyVars,typ,pos) -> {
+              (accum,typ) <- doType accum typ;
+              return (accum, Pi (tyVars,typ,pos))
+            }
+          | Base (qid,typs,pos) -> {
+              (accum,typs) <- doList doType accum typs;
+              return (accum,Base (qid,typs,pos))
+            }
+          | _ -> return (accum,typ)
+ (*
 
-    print "adding definitions\n";
-    %  Add definitions for newly introduced iso fns
-    spc <-
-      foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
-        spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref false;
-        spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref false;
-        return spc
-      }) spc prime_type_iso_info; 
-    %  Add definitions for specified iso fns without explicit defs
-    spc <-
-      foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
-        spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref true;
-        spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref true;
-        return spc
-      }) spc base_iso_info; 
-    %  Add the theorems that reflect that the isos are inverses 
-    (spc, iso_thm_qids) <-
-        return (foldl (fn ((spc, iso_thm_qids), ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_))) ->
-                 makeIsoTheorems(spc, iso_ref, osi_ref, tvs, src_ty, trg_ty, iso_thm_qids))
-          (spc, []) iso_info);
-    print "make derived ops\n";
-    %  make derived ops
-    (* For each operator "op f = t" whose type depends on one or more iso types
-    X_i <-> Y_i, construct a new operator op f' = s' where 's' is expressed in terms
-    of types Y_i. Also replace "t" with a term "t'" expressed in terms of "f'".The
-    latter is needed as the new definition of "f" will be used to generate a rewrite
-    rule enabling references to "f" to be replaced by references to "f'" *)
-    % ### LE why is this two passes?
-    qidPrMap <- makeDerivedOps(spc, iso_info, iso_fn_info); 
-    qidPr_Set <- return(invertQualifiedIdMap qidPrMap);
+          | Boolean b
+          | TyVar TyVar * b
+          | MetaTyVar    AMetaTyVar b * b  % Before elaborateSpec
+          | And List (AType b) * b  
+          | Any b  % e.g. "type S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
+ *)
+      def doTerm accum trm ctxtType = {
+        when traceMono? (print ("doTerm:  " ^ printTerm trm ^ "\n"));
+        when traceMono? (print ("  dnType=" ^ printType ctxtType ^ "\n"));
+        case trm of
+          | Fun (Op(qid, fxty), ty, pos) ->
+              let
+                def monoInstance dnType upType =
+                 (if traceMono? then (writeLine ("mono dnType=" ^ printType dnType);
+                                      writeLine ("     upType=" ^ printType upType))
+                    else ();
+                  case (dnType,upType) of
+                    | (Base (dnQid,dnTypes,_), _) ->
+                        if (dnQid in? src_QIds) && (dnTypes = []) then
+                          case upType of
+                            | Base (upQid,_::_,_) -> true
+                            | _ -> false   % ### LE This is wrong what if it is eg (A -> Nat)
+                        else
+                          false   % ### LE or perhaps we need to unfold to the penultimate type (a Base)
+                    | (Arrow (dnDom,dnCod,_), Arrow (upDom,upCod,_)) ->
+                        % ### LE This test is not entirely correct. If we are
+                        % comparing types (BitList -> X) with (List Bit -> Y) then
+                        % the domain on the left is certainly a monomorphic instance
+                        % of domain the right. But we only want the predicate to
+                        % hold on the function space when X and Y are monomophic.
+                        (monoInstance dnDom upDom) || (monoInstance dnCod upCod) 
+                    | (Product (dnPairs,_), Product (upPairs,_)) ->
+                        exists? (fn ((_,dnType),(_,upType)) -> monoInstance dnType upType) (zip (dnPairs,upPairs))
+                    | (CoProduct (dnPairs,_), CoProduct (upPairs,_)) ->  % ### But we only find sums at the top level
+                        exists? 
+                        (fn | ((_,None),(_,None)) -> true
+                            | ((_,Some dnType), (_,Some upType)) -> monoInstance dnType upType
+                            | _ -> fail ("doTerm: monoInstance: coproduct\n")) (zip (dnPairs,upPairs))
+                    | (Subtype (dnType,_,_),Subtype (upType,_,_)) -> monoInstance dnType upType
+                    | (Subtype (dnType,_,_),                   _) -> monoInstance dnType upType
+                    | (                   _,Subtype (upType,_,_)) -> monoInstance dnType upType
+                    | (Quotient (dnType,_,_),Quotient (upType,_,_)) -> monoInstance dnType upType
+                    | (TyVar _, _) -> false
+                    | (_, TyVar _) -> false
+                    | (MetaTyVar _, _) -> false
+                    | (_, MetaTyVar _) -> false
+                    | (Boolean _,_) -> false
+                    | (_,Boolean _) -> false
+                    | _ -> (%writeLine ("doTerm: monoInstance:\n  dnType=" ^ printType dnType
+                            %             ^ "\n  upType=" ^ printType upType);
+                            false))
+              in
+                if monoInstance ctxtType ty then {
+                  print ("found monomorphic instance of " ^ printQualifiedId qid ^ "\n");
+                  Qualified (qual,id) <- return qid;
+                  (spc,opsDone) <- return accum;
+                  % check if there has been an earlier occurrence of the name 
+                  % In which case much of the work has already been done
+                  found <- foldM (fn found -> fn (otherQual,otherId,otherTyp) ->
+                      if found then
+                        return found
+                      else
+                        if id = otherId then
+                          if qual ~= otherQual then
+                            if some? newOptQual
+                              then escape ("applyIso: disparately qualified functions subject to iso transformation: "
+                                             ^ qual ^ "." ^ id ^ " and " ^ otherQual ^ "." ^ id ^ "\n")
+                              else return false
+                          else
+                            if ~(equivType? spc (maybePiType(freeTyVars ty, ty),maybePiType (freeTyVars otherTyp, otherTyp))) then {
+                              print "makeIsomorphism: two functions with common qualified id by disparate types subject to iso transformation\n";
+                              print ("funType: " ^ (printType ty) ^ "\n");
+                              print ("otherType: " ^ (printType otherTyp) ^ "\n");
+                              print "ignoring\n";
+                              return true
+                            }
+                            else
+                              return true  %  op with same qualifier, id and type already occurs
+                        else
+                          return false) false opsDone;
+                  % ### LE Need to think about how to names these - 
+                  % The names generated here (copies of instantiated polymorphic
+                  % functions) serve a different purpose from those generated
+                  % as a result of applying the isomorphism transformation
+                  newQId <- return (mkQualifiedId (qual ^ "_*",id));
+                  if ~found then {
+                    %  create a new op and replace this reference
+                    % But first we must recursively transform the body of the new op
+                    opsDone <- return (Cons ((qual,id,ty),opsDone));
+                    info <- findTheOp spc (mkQualifiedId (qual,id));
+                    (defTypeVars,defnType,defnTerm) <- return (unpackFirstTerm info.dfn);
+                    monoDefn <- case typeMatch(defnType, ty, spc, true, true) of
+                       | None -> {
+                           print ("defnType: " ^ printType defnType ^ "\n");
+                           print ("upType: " ^ printType ty ^ "\n");
+                           escape "makeIsoMorphism: typeMatch failed\n"
+                         }
+                       | Some subst -> return (instantiateTyVarsInTerm(defnTerm, subst));
+                    ((spc,opsDone),defnTerm) <- doTerm (spc,opsDone) monoDefn ctxtType;
+                    newDefnTerm <- return (TypedTerm (defnTerm, ctxtType,noPos));
+                    spc <- return (addOpDef (spc, newQId, info.fixity, newDefnTerm));
+                    print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
+                    return ((spc,opsDone), Fun (Op(newQId, fxty), ctxtType, pos))
+                  }
+                  else {
+                    print ("Already processed: " ^ printQualifiedId qid ^ "\n");
+                    return (accum, Fun (Op(newQId, fxty), ctxtType, pos))
+                  }
+                }
+                else
+                  return (accum,trm)
+          | Apply (M, N, pos) -> {
+              (dom,cod) <- return (arrow(spc,inferType(spc, M)));
+              when traceMono? {print ("doTerm: Apply: inferType M gives:\n");
+                               print ("  dom=" ^ printType dom ^ "\n");
+                               print ("  cod=" ^ printType cod ^ "\n");
+                               print ("doTerm: Apply: inferType N gives:\n")};
+              dom <- return (inferType(spc, N));
+              when traceMono? (print ("  dom=" ^ printType dom ^ "\n"));
+              (accum,M) <- doTerm accum M (mkArrow(dom,ctxtType));   % ### LE range ctxtType and cod should agree
+              (accum,N) <- doTerm accum N dom;
+              return (accum, Apply (M, N, pos))
+            }
+          | Record (pairs, pos) -> {
+              types <- return (recordTypes(spc,ctxtType));
+              when (length types ~= length pairs)
+                {print("zip3err: "^show(length types)^" ~= "^show(length pairs)^"\n"^printTerm trm^ " :\n"^ printType ctxtType);
 
-    print "make derived op definitions\n";
-    (new_defs, transformQIds) <- makeDerivedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap);
-    print(show(length transformQIds)^" non opaque ops to transform.\n");
-    let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
-                     let qid  = head opinfo.names in
-                     let qid_pr = head opinfo_pr.names in
-                     let spc = setOpInfo(spc,qid,opinfo) in
-                     if qid = qid_pr
-                       then   % Transformed
-                       let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, [], noPos)) in
-                       spc
-                     else
-                     let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
-                     let spc = setOpInfo(spc,qid_pr,opinfo_pr) in
-                     spc)
-                spc new_defs
-    in
-    % let _ = writeLine(printSpec spc) in
-    %% Remove transformed defs
-    let new_defs = filter (fn (opinfo,opinfo_pr) -> head opinfo.names ~= head opinfo_pr.names) new_defs in
-    let recursive_ops = recursiveOps spc in
-    (* Now construct a script to remove the ops defined in terms of
-       the old types, create references to the new ops and simplify (eg
-       replacing (osi (iso x)) with x). Note that we are not generating the
-       rules here - rather a script of what rewrites and unfolds to apply *)
-    let rewrite_old = map (fn (opinfo,_) -> Rewrite(head opinfo.names)) new_defs in
-    let unfold_old  = map (fn (opinfo,_) -> Unfold (head opinfo.names)) new_defs in
-    let iso_osi_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
+                 _ <- mapM (fn (id, tyi) -> print (id^" ")) pairs;
+                 print "\n"};
+              triples <- 
+                let
+                  def zip3 trms typs =
+                    case (trms,typs) of
+                      | ([],[]) -> []
+                      | ((id,trm)::trms,typ::typs) -> (id,trm,typ) :: (zip3 trms typs)
+                in
+                  return (zip3 pairs types);
+              (accum,pairs) <-
+                doList (fn accum -> fn (id,trm,typ) -> {
+                    (accum,trm) <- doTerm accum trm typ;
+                    return (accum,(id,trm))   
+                  }) accum triples;
+              return (accum,Record (pairs,pos))
+            }
+          | Bind (binder,vars,trm,pos) -> {
+              (accum,trm) <- doTerm accum trm boolType;
+              return (accum,Bind (binder,vars,trm,pos))       
+            }
+          | The (var,trm,pos) -> {
+              (accum,trm) <- doTerm accum trm boolType;
+              return (accum,The (var,trm,pos))       
+            }
+          | Let (decls,trm,pos) -> {
+              (accum,decls) <-
+                doList (fn accum -> fn (pat,rhs) -> {
+                    (accum,pat) <- doPattern accum pat;
+                    (accum,rhs) <- doTerm accum rhs (patternType pat);
+                    return (accum,(pat,rhs))
+                  }) accum decls;
+              (accum,trm) <- doTerm accum trm ctxtType;
+              return (accum,Let (decls,trm,pos))
+            }
+          | LetRec (decls,trm,pos) -> {
+              (accum,decls) <-
+                doList (fn accum -> fn (var as (id,typ),rhs) -> {
+                    (accum,rhs) <- doTerm accum rhs typ;
+                    return (accum,(var,rhs))
+                  }) accum decls;
+              (accum,trm) <- doTerm accum trm ctxtType;
+              return (accum,LetRec (decls,trm,pos))
+            }
+          | Lambda (matches,pos) -> {
+              (accum,matches) <- 
+                doList (fn accum -> fn (pat,cond,trm) -> {
+                    (accum,pat) <- doPattern accum pat;    % ### LE Should be (domain ctxtType)
+                    (accum,cond) <- doTerm accum cond boolType;
+                    (accum,trm) <- doTerm accum trm (range (spc, ctxtType));
+                    return (accum,(pat,cond,trm))
+                  }) accum matches;
+              return (accum,Lambda (matches,pos))
+            }
+          | IfThenElse (pred,t1,t2,pos) -> {
+              (accum,pred) <- doTerm accum pred boolType;
+              (accum,t1) <- doTerm accum t1 ctxtType;
+              (accum,t2) <- doTerm accum t2 ctxtType;
+              return (accum,IfThenElse (pred,t1,t2,pos))
+            }
+          | TypedTerm (trm,typ,pos) -> {
+              (accum,trm) <- doTerm accum trm typ;
+              (accum,typ) <- doType accum typ;
+              return (accum,TypedTerm (trm,typ,pos))
+            }
+          | Var ((id,typ),pos) -> {
+              when traceMono? (print ("doTerm: Var: id=" ^ id ^ "\n"));
+              when traceMono? (print ("  typ=" ^ printType typ ^ "\n"));
+              return (accum,trm)
+            }
+          | _ -> return (accum,trm)
+        }
+      def doOp (qual,id,opInfo,(spc,opsDone)) = {
+          % ### LE what's the difference between unpackTerm and unpackFirstTerm?
+          % ### LE we are folding over ops - but don't need to do the aliases.
+          % ### LE Should we also 'doType typ' in the following.
+          % ### LE This doesn't handle aliases properly
+          % print ("doOp: " ^ qual ^ "." ^ id ^ ":" ^ printTerm opInfo.dfn ^ "\n");
+          (typVars,typ,trm) <- return (unpackFirstTerm opInfo.dfn);  
+          ((spc,opsDone),trm) <- doTerm (spc,opsDone) trm typ ;
+          dfn <- return (maybePiTerm(typVars, TypedTerm (trm, typ, noPos))); 
+          ops <- return (insertAQualifierMap (spc.ops,qual,id,opInfo << {dfn = dfn}));
+          return (spc << {ops = ops},opsDone)
+        }
+      def doTypeDef (qual,id,typeInfo,(spc,opsDone)) = {
+          ((spc,opsDone),dfn) <- doType (spc,opsDone) typeInfo.dfn;
+          types <- return (insertAQualifierMap (spc.types,qual,id,typeInfo << {dfn = dfn}));
+          return (spc << {types = types},opsDone)
+        }
+      def matchingQualifier (qual,_) = return (case newOptQual of
+                                                 | Some newQual -> qual = newQual
+                                                 | None -> false)
+    in {
+        %print ("applyIso: Qualifier=" ^ newQual ^"\n");
+        %  Fail if new qualifier conflicts with those in use
+        % b1 <- existsQMap matchingQualifier spc.ops;
+        % b2 <- existsQMap matchingQualifier spc.types;
+        % when (b1 || b2) 
+          % (escape ("Iso: new qualifier '" ^ newQual ^ "' conflicts with existing qualifiers\n"));
+        % ### LE perhaps make "opsDone" a qualifier map rather than a list.
+        (spc,opsDone) <- foldOverQualifierMap doOp (spc,[]) spc.ops;
+        (spc,opsDone) <- foldOverQualifierMap doTypeDef (spc,opsDone) spc.types;
+        return spc 
+    };
 
-    let osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
-                                    if osi_qid in? recursive_ops
-                                      || ~(definedOp?(spc, osi_qid))
-                                      then None
-                                      else Some(Unfold osi_qid))
+   print "adding definitions\n";
+   %  Add definitions for newly introduced iso fns
+   spc <-
+     foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
+       spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref false;
+       spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref false;
+       return spc
+     }) spc prime_type_iso_info; 
+   %  Add definitions for specified iso fns without explicit defs
+   spc <-
+     foldM (fn spc -> fn ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_)) -> {
+       spc <- addIsoDefForIso(spc,iso_info,iso_fn_info) iso_ref true;
+       spc <- addIsoDefForIso(spc,invertIsoInfo iso_info,iso_fn_info) osi_ref true;
+       return spc
+     }) spc base_iso_info; 
+   %  Add the theorems that reflect that the isos are inverses 
+   (spc, iso_thm_qids) <-
+       return (foldl (fn ((spc, iso_thm_qids), ((iso_ref,tvs,src_ty,trg_ty), (osi_ref,_,_,_))) ->
+                makeIsoTheorems(spc, iso_ref, osi_ref, tvs, src_ty, trg_ty, iso_thm_qids))
+         (spc, []) iso_info);
+   print "make derived ops\n";
+   %  make derived ops
+   (* For each operator "op f = t" whose type depends on one or more iso types
+   X_i <-> Y_i, construct a new operator op f' = s' where 's' is expressed in terms
+   of types Y_i. Also replace "t" with a term "t'" expressed in terms of "f'".The
+   latter is needed as the new definition of "f" will be used to generate a rewrite
+   rule enabling references to "f" to be replaced by references to "f'" *)
+   % ### LE why is this two passes?
+   qidPrMap <- makeDerivedOps(spc, iso_info, iso_fn_info); 
+   qidPr_Set <- return(invertQualifiedIdMap qidPrMap);
+
+   print "make derived op definitions\n";
+   (new_defs, transformQIds) <- makeDerivedOpDefs(spc, iso_info, iso_fn_info, base_src_QIds, src_QIds, qidPrMap);
+   print(show(length transformQIds)^" non opaque ops to transform.\n");
+   let spc = foldl (fn (spc, (opinfo,opinfo_pr)) ->
+                    let qid  = head opinfo.names in
+                    let qid_pr = head opinfo_pr.names in
+                    let spc = setOpInfo(spc,qid,opinfo) in
+                    if qid = qid_pr
+                      then   % Transformed
+                      let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, [], noPos)) in
+                      spc
+                    else
+                    let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
+                    let spc = setOpInfo(spc,qid_pr,opinfo_pr) in
+                    spc)
+               spc new_defs
+   in
+   % let _ = writeLine(printSpec spc) in
+   %% Remove transformed defs
+   let new_defs = filter (fn (opinfo,opinfo_pr) -> head opinfo.names ~= head opinfo_pr.names) new_defs in
+   let recursive_ops = recursiveOps spc in
+   (* Now construct a script to remove the ops defined in terms of
+      the old types, create references to the new ops and simplify (eg
+      replacing (osi (iso x)) with x). Note that we are not generating the
+      rules here - rather a script of what rewrites and unfolds to apply *)
+   let rewrite_old = map (fn (opinfo,_) -> Rewrite(head opinfo.names)) new_defs in
+   let unfold_old  = map (fn (opinfo,_) -> Unfold (head opinfo.names)) new_defs in
+   let iso_osi_rewrites = map (fn qid -> LeftToRight qid) iso_thm_qids in
+
+   let osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                   if osi_qid in? recursive_ops
+                                     || ~(definedOp?(spc, osi_qid))
+                                     then None
+                                     else Some(Unfold osi_qid))
+                       iso_info
+   in
+   let osi_rewrites = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                   if osi_qid in? recursive_ops
+                                       && definedByCases?(osi_qid, spc)
+                                     then Some(Rewrite osi_qid)
+                                     else None)
+                       iso_info
+   in
+   let iso_intro_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                         if iso_qid in? recursive_ops then None
+                                         else Some(Unfold iso_qid))
+                             prime_type_iso_info
+   in
+   % let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
+   let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                   if iso_qid in? recursive_ops then None
+                                     else Some(if unfoldIsos?
+                                                 then Unfold iso_qid
+                                                 else Rewrite iso_qid))
+                       iso_info
+   in
+   let iso_rewrites = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                   if iso_qid in? recursive_ops
+                                       && definedByCases?(iso_qid, spc)
+                                     then Some(Rewrite iso_qid)
+                                     else None)
                         iso_info
-    in
-    let osi_rewrites = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
-                                    if osi_qid in? recursive_ops
-                                        && definedByCases?(osi_qid, spc)
-                                      then Some(Rewrite osi_qid)
-                                      else None)
-                        iso_info
-    in
-    let iso_intro_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
-                                          if iso_qid in? recursive_ops then None
-                                          else Some(Unfold iso_qid))
-                              prime_type_iso_info
-    in
-    % let _ = writeLine("intro: "^anyToString iso_intro_unfolds) in
-    let iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
-                                    if iso_qid in? recursive_ops then None
-                                      else Some(if unfoldIsos?
-                                                  then Unfold iso_qid
-                                                  else Rewrite iso_qid))
-                        iso_info
-    in
-    let iso_rewrites = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
-                                    if iso_qid in? recursive_ops
-                                        && definedByCases?(iso_qid, spc)
-                                      then Some(Rewrite iso_qid)
-                                      else None)
-                         iso_info
-    in
-    %% We want to delay unfolding iso, osi until after the iso/osi elimination rules have had a chance
-    let non_iso_extra_rules = filter (fn r ->
-                                        case r of
-                                          | Unfold qid ->
-                                            ~(List.exists? (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),
-                                                                (Fun(Op(osi_qid,_),_,_),_,_,_)) ->
-                                                         qid = iso_qid || qid = osi_qid)
-                                                iso_info)
-                                          | _ -> true)
-                                extra_rules
-    in
-    % let _ = writeLine("iso: "^anyToString iso_unfolds) in
-    let complex_iso_fn_unfolds = map (fn (_,qid) -> Rewrite qid) iso_fn_info in
-    let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
-                       Unfold(mkQualifiedId("Function","id")),
-                       Rewrite(mkQualifiedId("Option","mapOption")),
-                       MetaRule(mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
-    in
-    let main_script =
-      Steps([%Trace true,% SimpStandard,
-             mkSimplify (gen_unfolds
-                           ++ non_iso_extra_rules
-                           % ++ iso_osi_rewrites
-                           % ++ osi_unfolds
-                           ++ complex_iso_fn_unfolds
-                           ++ iso_osi_rewrites
-                           %++ rewrite_old
-                           ),            
-             mkSimplify (gen_unfolds
-                           ++ complex_iso_fn_unfolds
-                           ++ iso_intro_unfolds
+   in
+   %% We want to delay unfolding iso, osi until after the iso/osi elimination rules have had a chance
+   let non_iso_extra_rules = filter (fn r ->
+                                       case r of
+                                         | Unfold qid ->
+                                           ~(List.exists? (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),
+                                                               (Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                                        qid = iso_qid || qid = osi_qid)
+                                               iso_info)
+                                         | _ -> true)
+                               extra_rules
+   in
+   % let _ = writeLine("iso: "^anyToString iso_unfolds) in
+   let complex_iso_fn_unfolds = map (fn (_,qid,_) -> Rewrite qid) iso_fn_info in
+   let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
+                      Unfold(mkQualifiedId("Function","id")),
+                      Rewrite(mkQualifiedId("Option","mapOption")),
+                      MetaRule(mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
+   in
+   let main_script =
+     Steps([%Trace true,% SimpStandard,
+            mkSimplify (gen_unfolds
+                          ++ non_iso_extra_rules
+                          % ++ iso_osi_rewrites
+                          % ++ osi_unfolds
+                          ++ complex_iso_fn_unfolds
+                          ++ iso_osi_rewrites
+                          %++ rewrite_old
+                          ),            
+            mkSimplify (gen_unfolds
+                          ++ complex_iso_fn_unfolds
+                          ++ iso_intro_unfolds
+                          ++ iso_osi_rewrites
+                          ++ iso_rewrites
+                          ++ osi_rewrites
+                          ++ osi_unfolds
+                          ++ extra_rules
+                          ++ rewrite_old
+                          ),
+              % AbstractCommonExpressions
+
+            mkSimplify (gen_unfolds
+                           ++ unfold_old
                            ++ iso_osi_rewrites
                            ++ iso_rewrites
                            ++ osi_rewrites
                            ++ osi_unfolds
-                           ++ extra_rules
-                           ++ rewrite_old
-                           ),
-               % AbstractCommonExpressions
-             
-             mkSimplify (gen_unfolds
-                            ++ unfold_old
-                            ++ iso_osi_rewrites
-                            ++ iso_rewrites
-                            ++ osi_rewrites
-                            ++ osi_unfolds
-                            ++ iso_unfolds
-                            ++ extra_rules),
-             SimpStandard
-               % AbstractCommonExpressions
-             ])
-    in {
+                           ++ iso_unfolds
+                           ++ extra_rules),
+            SimpStandard
+              % AbstractCommonExpressions
+            ])
+   in {
 
-    (* Rewriting is performed on individual ops rather than on the entire spec. *)
-
-    print "rewriting ... \n";
-    print (scriptToString main_script^"\n"); 
-    simp_ops
-       <- Env.mapOpInfos
-           (fn opinfo ->
-              if exists? (fn (hidden_opinfo,_) -> opinfo = hidden_opinfo) new_defs then
-                return opinfo
-              else {
-%                 when (existsSubTerm (fn t -> case t of
-%                       | And(_::(_::_),_) -> true
-%                       | _ -> false) opinfo.dfn) {
-%                   print ("Multiple defs for " ^ printQualifiedId (head opinfo.names));
-%                   escape (printTerm opinfo.dfn)
-%                 };
-                (tvs, ty, dfn) <- return (unpackFirstTerm opinfo.dfn);
-                (qid as Qualified(q, id)) <- return (head opinfo.names);
-                (simp_dfn, _, hist) <-
-                  if simplifyIsomorphism? then
-                   { % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
-                    b <- existsSubTerm (fn t ->
-                                          let ty = inferType(spc, t) in
-                                          {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
-                                           return (equalType?(ty, isoTy))})
-                           dfn;
-                    if (simplifyUnPrimed? || (newQId? qid && some?(findAQualifierMap(qidPr_Set, q, id)))
-                          || findAQualifierMap(qidPrMap, q, id) = Some(Qualified(q, id)))
-                      then {
-                      when traceIsomorphismGenerator? 
-                        (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
-                      interpretTerm(spc, if qid in? transformQIds
-                                          then main_script
-                                          else opaqueSimplifyScript,
-                                    dfn, ty, qid, false, [])
-                    }
-                    else
-                      return (dfn, false, [])
-                  }
-                  else
-                    return (dfn, false, []);
-                if equalTerm?(dfn, simp_dfn) then
-                  return opinfo
-                else {
-                  when traceIsomorphismGenerator?
-                    (printDef (spc, qid));
-                  new_dfn <- return (maybePiTerm(tvs, TypedTerm (simp_dfn, ty, noPos))); 
-                  when traceIsomorphismGenerator? {
-                     print ("\n" ^ printQualifiedId qid ^ ":");
-                     print (printTerm simp_dfn ^ "\n")
-                  };
-                  return (opinfo \_guillemotleft {dfn = new_dfn})
-                }}) spc.ops;
-    spc <- return (spc \_guillemotleft {ops = simp_ops});
-    spc <- return (if typeNameInfo = [] then spc
-                    else mapSpec (id,
-                                  fn ty ->
-                                    case ty of
-                                      | Base(qid, [], _) ->
-                                        (case findLeftmost(fn (qid1, _, _) -> qid = qid1) typeNameInfo of
-                                           | Some(_, _, orig_ty) -> orig_ty
-                                           | None -> ty)
-                                      | _ -> ty,
-                                  id)
-                           spc);
-    spc <- return
-     (if orderElements? then
-       adjustElementOrder spc
-     else
-       spc);
-    return spc
-  }
+   (* Rewriting is performed on individual ops rather than on the entire spec. *)
+   print "rewriting ... \n";
+   print (scriptToString main_script^"\n"); 
+   simp_ops
+      <- Env.mapOpInfos
+          (fn opinfo ->
+             if exists? (fn (hidden_opinfo,_) -> opinfo = hidden_opinfo) new_defs then
+               return opinfo
+             else {
+  %                 when (existsSubTerm (fn t -> case t of
+  %                       | And(_::(_::_),_) -> true
+  %                       | _ -> false) opinfo.dfn) {
+  %                   print ("Multiple defs for " ^ printQualifiedId (head opinfo.names));
+  %                   escape (printTerm opinfo.dfn)
+  %                 };
+               (tvs, ty, dfn) <- return (unpackFirstTerm opinfo.dfn);
+               (qid as Qualified(q, id)) <- return (head opinfo.names);
+               (simp_dfn, _, hist) <-
+                 if simplifyIsomorphism? then
+                  { % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
+                   b <- existsSubTerm (fn t ->
+                                         let ty = inferType(spc, t) in
+                                         {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
+                                          return (equalType?(ty, isoTy))})
+                          dfn;
+                   if (simplifyUnPrimed? || (derivedQId?(qid, newOptQual, spc) && some?(findAQualifierMap(qidPr_Set, q, id)))
+                         || findAQualifierMap(qidPrMap, q, id) = Some(Qualified(q, id)))
+                     then {
+                     when traceIsomorphismGenerator? 
+                       (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
+                     interpretTerm(spc, if qid in? transformQIds
+                                         then main_script
+                                         else opaqueSimplifyScript,
+                                   dfn, ty, qid, false, [])
+                   }
+                   else
+                     return (dfn, false, [])
+                 }
+                 else
+                   return (dfn, false, []);
+               if equalTerm?(dfn, simp_dfn) then
+                 return opinfo
+               else {
+                 when traceIsomorphismGenerator?
+                   (printDef (spc, qid));
+                 new_dfn <- return (maybePiTerm(tvs, TypedTerm (simp_dfn, ty, noPos))); 
+                 when traceIsomorphismGenerator? {
+                    print ("\n" ^ printQualifiedId qid ^ ":");
+                    print (printTerm simp_dfn ^ "\n")
+                 };
+                 return (opinfo \_guillemotleft {dfn = new_dfn})
+               }}) spc.ops;
+   spc <- return (spc \_guillemotleft {ops = simp_ops});
+   spc <- return (if typeNameInfo = [] then spc
+                   else mapSpec (id,
+                                 fn ty ->
+                                   case ty of
+                                     | Base(qid, [], _) ->
+                                       (case findLeftmost(fn (qid1, _, _) -> qid = qid1) typeNameInfo of
+                                          | Some(_, _, orig_ty) -> orig_ty
+                                          | None -> ty)
+                                     | _ -> ty,
+                                 id)
+                          spc);
+   spc <- return (if orderElements? then
+                    adjustElementOrder spc
+                  else spc);
+   return spc
+   }
 }
   (fn 
     | Escape -> return spc
