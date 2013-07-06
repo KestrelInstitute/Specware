@@ -6,6 +6,8 @@ import Character, List
 
 type String.String  % qualifier required for internal parsing reasons
 
+proof Isa -hook helperlemma end-proof
+
 % string that consists of argument list of characters:
 
 op implode : Bijection (List Char, String)
@@ -144,17 +146,15 @@ lemma Nat__digitToString_not_empty [simp]:
 lemma Nat__digitToString_not_sign [simp]: 
 "x<10 \<Longrightarrow> (Nat__digitToString x = ''-'') = False"
   by (induct x rule: Nat__digitToString.induct, auto)
-
-lemma Nat__digitToString_injective [simp]: 
-"\<lbrakk>x<10; y<10; Nat__digitToString x = Nat__digitToString y\<rbrakk>
- \<Longrightarrow>  x = y"
-  apply (subgoal_tac "x=0 \<or> x=1 \<or> x=2 \<or> x=3 \<or> x=4 \<or>
-                      x=5 \<or> x=6 \<or> x=7 \<or> x=8 \<or> x=9",
-         auto simp del: One_nat_def)
-  apply (drule sym, simp)+
-done
 end-proof
 % --------------------------------------------------------------------------------
+
+theorem digitToString_injective is
+  fa(x:{d:Nat | d < 10}, y:{d:Nat | d < 10})
+  (digitToString x = digitToString y) = (x = y)
+
+theorem length_of_digitToString is fa (d:Nat)
+  d < 10 => length (digitToString d) = 1
 
 op Nat.natToString (x:Nat) : String =
   if x < 10 then digitToString x
@@ -198,6 +198,10 @@ lemma Nat__natToString_no_sign2 [simp]:
   by (simp add: not_sym)
 end-proof
 % --------------------------------------------------------------------------------
+
+theorem natToString_injective is
+  fa(x:Nat, y:Nat)
+  (natToString x = natToString y) = (x = y)
 
 op Nat.show : Nat -> String = natToString
 
@@ -254,45 +258,17 @@ op List.show (sep:String) (l: List String) : String =
      | hd::[] -> hd
      | hd::tl -> hd ^ sep ^ (List.show sep tl)
 
+
+
 %%% Isabelle proofs
+
+
 
 proof Isa stringToNat_Obligation_the
   apply (simp add: Nat__natConvertible_def, erule exE)
   apply (rule_tac a=x in ex1I, simp) 
-  apply (cut_tac xs=s and
-                 P ="\<lambda>s. \<forall>z y.
-                     (Nat__natToString z = s \<and> Nat__natToString y = s)
-                     -->  (y = z)" 
-         in rev_induct, auto,
-         thin_tac "Nat__natToString xa = Nat__natToString x")
-  apply (drule_tac x="z div 10" in spec, drule_tac x="y div 10" in spec)
-  (**** splitting with the simplifier loops, I'll do it manually ************)
-  apply (case_tac "z<10")
-    defer apply (case_tac "y<10") prefer 3 apply (case_tac "y<10")
-  apply (simp_all only: not_less Nat__natToString_small Nat__natToString_large)
-  (** 1 **) 
-  apply (simp)
-  (** 2 **) 
-  apply (cut_tac x="y mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
-                                       simp add: mod_less_divisor,
-         cut_tac x="z" in Nat__digitToString_singleton, simp,
-         erule exE, erule exE, simp)
-  (** 3 **) 
-  apply (cut_tac x="z mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
-                                       simp add: mod_less_divisor,
-         cut_tac x="y" in Nat__digitToString_singleton, simp,
-         erule exE, erule exE, simp)
-  (** 4 **)
-  apply (cut_tac x="z mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
-                                       simp add: mod_less_divisor,
-         cut_tac x="y mod (10\<Colon>nat)" in Nat__digitToString_singleton, 
-                                       simp add: mod_less_divisor,
-         erule exE, erule exE, simp)
-  apply (subgoal_tac "(y mod 10) = (z mod 10)", auto) 
-  apply (rule_tac s="10 * (y div 10) + (y mod 10)" in ssubst)
-  apply (rule_tac s="10 * (z div 10) + (z mod 10)" in ssubst)
-  apply (simp, rule sym, rule mod_div_equality2, rule sym,
-         rule mod_div_equality2)
+  apply(clarify)
+  apply(simp add: String__natToString_injective)
 end-proof
 
 proof Isa stringToInt_Obligation_the
@@ -386,7 +362,6 @@ lemma String__compare_equal_simp:
   "(String__compare (x, y) = Equal) = (x = y)"
  by auto
 
-
 lemma String__compare_antisym_aux: 
  "\<forall>y. String__compare (x, y) = Less \<and> String__compare (y, x) = Less \<longrightarrow> x = y"
  apply (simp add: String__compare_def)
@@ -412,7 +387,6 @@ lemma String__compare_linear_aux:
         simp_all add: Char__compare_equal_simp Char__compare_greater2less)
 done
 
-
 lemma String__compare_linear: 
  "\<lbrakk>String__compare (x, y) \<noteq> Less; y \<noteq> x\<rbrakk> \<Longrightarrow> String__compare (y, x) = Less"
  by (cut_tac x=x in String__compare_linear_aux, simp)
@@ -437,13 +411,50 @@ lemma String__compare_trans_aux:
  apply (frule Char__compare_trans, simp, clarsimp)
 done
 
-
 lemma String__compare_trans: 
  "\<lbrakk>String__compare (x, y) = Less; String__compare (y, z) = Less\<rbrakk>
   \<Longrightarrow> String__compare (x, z) = Less"
  by (cut_tac x=x in String__compare_trans_aux, auto)
 
+end-proof    % end verbatim block
+% ------------------------------------------------------------------------------
 
+proof Isa digitToString_injective [simp]
+  apply (subgoal_tac "x=0 \<or> x=1 \<or> x=2 \<or> x=3 \<or> x=4 \<or>
+                      x=5 \<or> x=6 \<or> x=7 \<or> x=8 \<or> x=9",
+         auto simp del: One_nat_def)
+  apply (drule sym, simp)+
 end-proof
 
-endspec
+proof Isa natToString_injective
+  apply(induct x arbitrary: y rule: Nat__natToString.induct)
+  apply(case_tac "x < 10", simp)
+  apply(case_tac "y < 10")
+  apply(simp add: Nat__natToString_small)
+  apply(cut_tac x=y in Nat__natToString_large, simp)
+  apply(simp add: Nat__natToString_small)
+  apply (metis Nat__digitToString_singleton Nat__natToString_Obligation_subtype Nat__natToString_not_empty append1_eq_conv eq_Nil_appendI)
+  apply(auto)
+  apply(case_tac "y < 10", (auto)[1])
+  apply (metis Nat__digitToString_singleton Nat__natToString_Obligation_subtype Nat__natToString_not_empty append1_eq_conv eq_Nil_appendI Nat__natToString.simps)
+  apply(auto simp add: Nat__natToString_large)
+  apply(rule divmodten)
+  apply(case_tac "y div 10 = x div 10")
+  apply(clarify)
+  apply(clarify)
+  apply(simp add: Nat__natToString_large)
+end-proof
+
+proof Isa length_of_digitToString [simp]
+  apply (subgoal_tac "d=0 \<or> d=1 \<or> d=2 \<or> d=3 \<or> d=4 \<or>
+                      d=5 \<or> d=6 \<or> d=7 \<or> d=8 \<or> d=9",
+         auto simp del: One_nat_def)
+end-proof
+
+proof Isa helperlemma
+theorem divmodten:
+"\<lbrakk>(x::nat) mod 10 = (y mod 10); (x div 10) = (y div 10)\<rbrakk> \<Longrightarrow> x = y"
+   by (metis semiring_div_class.mod_div_equality')
+end-proof
+
+end-spec

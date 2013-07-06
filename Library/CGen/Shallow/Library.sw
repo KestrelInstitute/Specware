@@ -24,10 +24,6 @@ theorem toNat_bound_rule is
 %%TODO does the simp del below also apply to files that import this file?
 proof isa -verbatim
 
-(* TODO are these the same? *)
-declare Nat__digitToString_injective [simp del]
-declare SW_String.Nat__digitToString_injective [simp del]
-
 theorem nat_less256 [simp]:
   "((nat i) < (256::nat)) = (i < 256)"
   apply(auto)
