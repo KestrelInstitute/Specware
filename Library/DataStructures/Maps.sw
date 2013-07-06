@@ -205,31 +205,7 @@ proof Isa Map__isoMap_Obligation_the
   sorry
 end-proof
 
-proof Isa Map__isoMap_over_update_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_update_Obligation_subtype0
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_update_Obligation_subtype1
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_update_Obligation_subtype2
-  sorry
-end-proof
-
 proof Isa Map__isoMap_over_update
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_empty_map_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__isoMap_over_empty_map_Obligation_subtype0
   sorry
 end-proof
 
