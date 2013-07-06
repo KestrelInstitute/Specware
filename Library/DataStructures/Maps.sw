@@ -105,8 +105,15 @@ Maps = Map qualifying spec
 %  type TotalMap(a, b) = (Set(a) * Map(a,b) | total?)
 
   % Strips off the Some constructor.  Only works if the key is known to be in the domain of the map.
+  % TODO: Just define using let, as proved equivalent below.
   op [a,b] TMApply(m:Map(a,b), x:a | x in? domain(m)): b =
     the(z:b)( apply m x = Some z)
+
+  theorem TMApply_becomes_apply is [a,b]
+    fa(m: Map(a,b), x:a)
+      (x in? domain m) => (TMApply(m,x)) = (let Some y = (apply m x) in y)
+
+
 
  %TODO doesn't seem to type check (what if x is not in the domain of m1 and/or m2?)
  % TODO add condition that domains are equal and then say for all x in domain m1
@@ -120,9 +127,8 @@ Maps = Map qualifying spec
 
 %TODO these next theorems don't have much to do with the Map data structure:
 
- %TODO needs to assert that f is a bijection
  theorem map_map_inv is [a,b]
-   fa(f: a -> b, f': b -> a, l: List b)
+   fa(f: Bijection(a, b), f': b -> a, l: List b)
    inverse f = f' => map f (map f' l) = l
  
   theorem map_doubleton is [a,b]
@@ -142,6 +148,7 @@ Maps = Map qualifying spec
 % who added this?
 %TODO This may need commutativity and idempotence restrictions, like those for set_fold?
 %TODO rename the type variables here, for consistency with the rest of this file.
+%TODO: Give this a definition!
   op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
@@ -160,10 +167,6 @@ Maps = Map qualifying spec
 
 
 (******************************** The Proofs ********************************)
-
-proof isa Map__TMApply_Obligation_the
-  sorry
-end-proof
 
 proof isa Map__totalmap_equality_Obligation_subtype
   sorry
@@ -185,16 +188,17 @@ proof isa Map__TMApply_over_update
   sorry
 end-proof
 
-proof isa Map__map_map_inv_Obligation_subtype
-  sorry
-end-proof
-
 proof isa Map__map_map_inv
-  sorry
+  apply(simp add: map_map)
+  by (metis Function__id__def Function__inverse_comp List.map.id)
 end-proof
 
 proof isa Map__domain_update
-  sorry
+  apply(auto)
+  apply(rule Set__membership)
+  apply(simp add: Map__map_domain Map__update)
+  apply(rule Set__membership)
+  apply(simp add: Map__map_domain Map__update Set__set_insert_new_def Set__set_insertion)
 end-proof
 
 proof Isa Map__isoMap_Obligation_the
@@ -231,6 +235,18 @@ end-proof
 
 proof Isa Map__isoMap_over_empty_map
   sorry
+end-proof
+
+proof Isa TMApply_becomes_apply
+  apply(simp add: Map__TMApply_def)
+  apply(case_tac  "Map__apply m x")
+  apply(simp_all add: Map__map_domain)
+end-proof
+
+proof isa TMApply_Obligation_the
+  apply(case_tac "Map__apply m x")
+  apply(auto)
+  by (metis Map__map_domain option.distinct(1))
 end-proof
 
 end-spec
@@ -716,5 +732,7 @@ proof isa TMApply_over_update_2
   apply(cut_tac Map__TMApply_over_update)
   apply(auto)
 end-proof
+
+%% End of proofs for Maps_extended
 
 end-spec
