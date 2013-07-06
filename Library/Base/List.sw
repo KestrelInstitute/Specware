@@ -462,6 +462,7 @@ op [a] prefix (l: List a, n:Nat | n <= length l) : List a =
 op [a] suffix (l: List a, n:Nat | n <= length l) : List a =
   subFromLong (l, length l - n, n)
 
+% similar to nthtail or nthcdr:
 op [a] removePrefix (l: List a, n:Nat | n <= length l) : List a =
   suffix (l, length l - n)
 
