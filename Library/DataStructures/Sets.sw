@@ -30,7 +30,7 @@ op [a] empty_set : Set a
 axiom empty_set is [a]
       fa(x: a) ~(x in? empty_set)
 
-op [a] forall? (p: a -> Bool) (m: Set a) : Bool
+op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 
 %TODO add this back?
 %op [a] empty? (s : Set a) : Bool = (s = empty_set)

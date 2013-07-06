@@ -40,17 +40,7 @@ op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(ele
 % op [a,b] Set.map : (a->b) -> Set a -> Set b
 % def [a,b] Set.map f s =
 %     list2set (map f (set2list s))
-
-%TODO make this a definition or prove it from the def just below.
-%could also define as filtering the set and seeing if the result is equal to the original set
-%TTODO The axiom seems contradictory.  I can use it to prove false (just call sledgehammer).
-%TTODO We now have a forall? operator in Set.
-op [a] Set.forallIn : Set a -> (a -> Bool) -> Bool
-%   axiom Set.forAllIn is fa(x,s,p) Set.forallIn s p <=> (x in? s => p(x))
-  
-def Set.forallIn s p =
-    set_fold true (&&) (Set.map p s)
-
+    
 op flatten : [a] Set (Set a) -> Set a
 %TODO interesting that there are no formals given here.  Maybe this is a use case for using def insted of op?  Or can we do the same with op?
 def flatten = set_fold empty_set (Set.\/)
@@ -71,15 +61,15 @@ def flatten = set_fold empty_set (Set.\/)
 %% def numRange(a:Nat, b:Nat) =
 %%     if (a>=b) then [a] else Cons(a, numRange(a+1, b))
 
-%TODO see op forall? in Library/Base/List
-op List.forallIn : [a] List a -> (a -> Bool) -> Bool
-def List.forallIn l p =
-    foldl (&&) true (map p l)
+%% %TODO see op forall? in Library/Base/List
+%% op List.forallIn : [a] List a -> (a -> Bool) -> Bool
+%% def List.forallIn l p =
+%%     foldl (&&) true (map p l)
 
-%TODO just use map and deprecate this?
-op List.forallIn_do : [a,b] List a -> (a->b) -> List b
-def [a,b] List.forallIn_do l f =
-    map f l
+%% %TODO just use map and deprecate this?
+%% op List.forallIn_do : [a,b] List a -> (a->b) -> List b
+%% def [a,b] List.forallIn_do l f =
+%%     map f l
 
 %some occurrence of x1 in the list is followed by some occurrence of x2
 op [a] List.prec? (xs:List a) (x1:a) (x2:a) : Bool =

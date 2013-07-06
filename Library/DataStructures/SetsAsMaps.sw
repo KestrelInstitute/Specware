@@ -90,8 +90,7 @@ spec
        then Bs = empty_set  %empty?(Bs)
        else As subset Bs
 
-  %% TODO: Define this (perhaps using fold).
-  op [a] forall? (p: a -> Bool) (m: Set a) : Bool
+  op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 
 proof Isa SetsAsMap__e_fsl_fsl_bsl_bsl_Obligation_subtype
   sorry
