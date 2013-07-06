@@ -961,7 +961,7 @@ end-proof
 proof isa upto_loop_subset
   apply(induct "j-i" arbitrary: ns i)
   apply(simp add: upto_loop.simps Set__subset_self)
-  apply(auto simp add: Set__set_insertion Set__subset upto_loop.simps)
+  apply(auto simp add: Set__set_insertion Set__subset_def upto_loop.simps)
 end-proof
 
 proof isa Pair2S_empty

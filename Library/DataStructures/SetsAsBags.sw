@@ -199,7 +199,7 @@ proof Isa Set__membership
   sorry
 end-proof
 
-proof Isa Set__subset
+proof Isa Set__subset_def
   sorry
 end-proof
 

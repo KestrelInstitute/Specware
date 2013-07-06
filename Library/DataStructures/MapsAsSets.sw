@@ -209,7 +209,7 @@ M = morphism Maps -> MapsAsSets {}    % {Map.map_apply +-> apply}
 
 
 proof Isa Map__total_p_def
-  apply(auto simp add: Map__total_p_def Set__subset)
+  apply(auto simp add: Map__total_p_def Set__subset_def)
   apply(rule ext)
   apply(case_tac x, simp)
   apply(auto)

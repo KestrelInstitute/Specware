@@ -18,9 +18,8 @@ axiom membership is [a]
 % s1 is a subset of s2 iff each element of s1 is also an element of s2
 
 %TODO The name should end in a question mark since this returns a Bool.
-op [a] subset infixl 20 : Set a * Set a -> Bool
-axiom subset is [a]
-      fa(s1,s2) s1 subset s2 <=> (fa(x: a) x in? s1 => x in? s2)
+op [a] subset (s1 : Set a, s2 : Set a) infixl 20 : Bool =
+  (fa(x: a) x in? s1 => x in? s2)
 
 theorem subset_self is [a]
   fa(s:Set a) s subset s
@@ -599,13 +598,13 @@ proof Isa Set__distribute_set_diff_over_right_insert_new
 end-proof
 
 proof isa Set__subset_self
-  by(auto simp add: Set__subset)
+  by(auto simp add: Set__subset_def)
 end-proof
 
 proof isa Set__set_insertion_subset_empty
   apply(auto simp add: Set__set_insertion)
-  apply(simp add: Set__subset Set__empty_set)
-  apply(auto simp add: Set__set_insertion del:Set__subset)
+  apply(simp add: Set__subset_def Set__empty_set)
+  apply(auto simp add: Set__set_insertion del:Set__subset_def)
 end-proof
 
 proof isa Set__set_insertion_equal_empty
