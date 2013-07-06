@@ -201,7 +201,7 @@ given position. Here is the spec:
    
    op word_matches_at?(wrd: Word, msg: Message, pos: Nat)
         : Bool =
-     pos + length wrd <= length msg |amp||amp|
+     pos + length wrd <= length msg &&
      (fa(i:Nat) i < length wrd
         => symb_matches?(wrd@i, msg@(pos+i)))
    
@@ -481,9 +481,9 @@ defines op ``word_matches_at?`` in an executable way:
    
    op word_matches_at?(wrd: Word, msg: Message, pos: Nat)
         : Bool =
-     if pos + length wrd < length msg
+     if pos + length wrd > length msg
        then false
-       else word_matches_aux?(wrd, nthTail(msg, pos))
+       else word_matches_aux?(wrd, removePrefix(msg, pos))
    
    endspec
    
@@ -736,36 +736,45 @@ obligation of the overall refinement, namely that the definitio of
 ``find_matches`` in ``MatchingRefinements#FindMatches0`` satisfies the axiom
 in ``MatchingSpecs#FindMatches``.
 
+.. TODO Add more detail here:
+
 |Specware| provides the capability to invoke external theorem provers
-in order to attempt proofs of conjectures. Concretely, this is carried
-out by creating proof objects. Each proof object is associated with a
-certain conjecture in a certain spec; it also indicates the prover to
-use and some directives on how to perform the proof. Processing of the
-proof object invokes the indicated prover with the given directives.
-Currently, the only available prover is Snark; more provers will be
-added in the future.
+in order to attempt proofs of conjectures. Currently, the only
+available prover is Isabelle/HOL; more provers may be added in the
+future.  The ``gen-obligs`` Specware shell command is used to create
+the Isabelle/HOL theory file corresponding to a Specware unit (spec or
+morphism).  Then, one uses Isabelle/HOL to complete the proof.  Proofs
+for Isabelle/HOL can be inserted into Specware files using "proof Isa"
+pragmas. See ``SpecwareIsabelleInterface.pdf`` for more information.
 
-For example, the user can attempt to discharge the proof obligation
-for ``MatchingSpecs#SymbolMatching`` by writing the following command
-in a file named ``MatchingProofs.sw``, located in the same directory
-as ``MatchingObligations.sw``:
 
-.. code-block:: specware
+.. Concretely, this is carried
+.. out by creating proof objects. Each proof object is associated with a
+.. certain conjecture in a certain spec; it also indicates the prover to
+.. use and some directives on how to perform the proof. Processing of the
+.. proof object invokes the indicated prover with the given directives.
 
-   p1A = prove symb_matches?_Obligation_exhaustive in
-         MatchingObligations#SymbolMatching_Oblig
+.. For example, the user can attempt to discharge the proof obligation
+.. for ``MatchingSpecs#SymbolMatching`` by writing the following command
+.. in a file named ``MatchingProofs.sw``, located in the same directory
+.. as ``MatchingObligations.sw``:
+
+.. .. code-block:: specware
+
+..    p1A = prove symb_matches?_Obligation_exhaustive in
+..          MatchingObligations#SymbolMatching_Oblig
    
 
-At the shell, the user can issue this command to attempt the proof:
+.. At the shell, the user can issue this command to attempt the proof:
 
-.. code-block:: specware
+.. .. code-block:: specware
 
-   proc MatchingProofs#p1
+..    proc MatchingProofs#p1
    
 
-The obligation is translated to the Snark theorem prover and
-automatically proven based primarily on the knowledge of |Specware|'s
-``Option`` type that we automatically send to Snark.
+.. The obligation is translated to the Snark theorem prover and
+.. automatically proven based primarily on the knowledge of |Specware|'s
+.. ``Option`` type that we automatically send to Snark.
 
  
 
@@ -868,9 +877,9 @@ files:
    
    op msg_char?(ch: Char): Bool = isUpperCase ch || ch = #*
    
-   type WordString = (String | all word_char?)
+   type WordString = (String | forall? word_char?)
    
-   type MessageString = (String | all msg_char?)
+   type MessageString = (String | forall? msg_char?)
    
    op word2string(wrd: Word): WordString = implode wrd
    
@@ -893,10 +902,10 @@ files:
      map match2string
        (find_matches(string2message mstr, map string2word wstrs))
    
-   def implode l = foldl (fn (s,c) -> s ^ toString c) "" l
+   def implode l = foldl (fn (s,c) -> s ^ show c) "" l
    def explode s =
      if s = "" then []
-       else sub(s,0) :: explode(substring(s,1,length s))
+       else s@0 :: explode(subFromTo(s,1,length s))
    
    endspec
    
