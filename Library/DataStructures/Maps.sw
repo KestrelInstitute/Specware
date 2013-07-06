@@ -158,11 +158,11 @@ Maps = Map qualifying spec
     %% fn iso_elem1 -> fn iso_elem2 -> foldi (fn (x, y, new_m) -> update new_m (iso_elem1 x) (iso_elem2 y)) empty_map
 
   theorem isoMap_over_update is [a,b,c,d]
-    fa(m: Map(a,b), x:a, y:b, iso_a: (a -> c), iso_b: b -> d)
+    fa(m: Map(a,b), x:a, y:b, iso_a: Bijection(a,c), iso_b: Bijection(b,d))
       isoMap iso_a iso_b (update m x y) = update (isoMap iso_a iso_b m) (iso_a x) (iso_b y)
 
   theorem isoMap_over_empty_map is [a,b,c,d]
-    fa(iso_a: a -> c, iso_b: b -> d)
+    fa(iso_a: Bijection(a, c), iso_b: Bijection(b,d))
       isoMap iso_a iso_b (empty_map: Map(a,b)) = (empty_map: Map(c,d))
 
 
