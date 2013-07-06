@@ -1,6 +1,6 @@
 % refinement of (finite) bags in terms of (finite) lists
 
-%% TODO We can't do this Isabelle proofs for this spec, because the
+%% TODO We can't do the Isabelle proofs for this spec, because the
 %% Isabelle translator doesn't handle quotients.
 
 BagsAsLists =
@@ -50,6 +50,7 @@ spec
   % we (re-)define the operations on bags to operate on the equivalence
   % classes of lists just defined and to be constructive
 
+%%TODO: In this file, should we use the trick from the manual of using a let instead of a chooser?
   op [a] bagin?(x:a, b:Bag a) infixl 100 : Bool =
     choose[Bag] (fn l -> nzcount(x,l)) b
 %  def bagin?(x, quotient[Bag] l) = nzcount(x,l)
@@ -69,6 +70,7 @@ spec
 
 %  def occs(x, quotient[Bag] l) = count(x,l)
 
+  %%TODO Use something from the lists library?  Or add this to it.
   op [a] count(x:a, l:List a) : Nat =
     case l of 
     | []         -> 0
@@ -88,10 +90,13 @@ spec
 
 %  def subbag(quotient perm? l1, quotient perm? l2) = contained?(l1,l2)
 
+  %% Add to Library/Base/Lists
+  %% Note that if an element appears multiple times in l1, it must appear at least that many times in l2.
   op [a] contained?(l1:List a, l2:List a) : Bool =
     case l1 of
     | []          -> true
     | Cons(x,l11) -> let l22 = delete_first(x,l2) in
+      		     	       %% TODO: Use the deleteOne op from List_Executable over in Base/
                                 if length l22 = length l2 %inefficient?
                                 then false
                                 else contained?(l11,l22)
@@ -122,7 +127,7 @@ spec
 
 
   % bag_fold amounts to list_fold on a representing list
-  op [a,b] bag_fold (c:b) 
+  op [a,b] bag_fold (c:b)
                     (f: b * a -> b |
                          fa(x,y,z) f(f(x,y),z) = f(f(x,z),y))
                     ((quotient[Bag.Bag] l) : Bag a) : b = 
@@ -137,18 +142,19 @@ spec
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (bag_union) bs
 
-  % TODO Just use something from the List library?
+  % TODO Just use delete1 from the List library?
   op [a] delete_first(x:a,l:List a) : List a =
     case l of 
     | []        -> []
     | Cons(y,l1) -> if x = y then l1 else Cons(y,delete_first(x,l1))
 
+  %% Delete one occurrence of x from the bag.  If x does not occur in the bag, this makes no change.
   op [a] bag_delete(x:a, (quotient[Bag.Bag] (l:List a)) : Bag a) : Bag a = quotient[Bag] (delete_first(x,l))
 
 %  def bag_delete(x,b) =
 %      quotient[Bag] (choose[Bag] (fn l -> delete_first(x,l)) b)
 
-  %%TODO just use something from the List library?
+  %%TODO just use something from the List library?  Not quite the same as diff in Base/List...
   op [a] delete_list (l1:List a, l2:List a) : List a =
     case l1 of 
     | []           -> l2
