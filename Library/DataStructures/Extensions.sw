@@ -44,6 +44,7 @@ op [a] list2set (lst : List a) : Set a = foldl (fn (set, elem) -> set_insert(ele
 %TODO make this a definition or prove it from the def just below.
 %could also define as filtering the set and seeing if the result is equal to the original set
 %TTODO The axiom seems contradictory.  I can use it to prove false (just call sledgehammer).
+%TTODO We now have a forall? operator in Set.
 op [a] Set.forallIn : Set a -> (a -> Bool) -> Bool
 %   axiom Set.forAllIn is fa(x,s,p) Set.forallIn s p <=> (x in? s => p(x))
   
@@ -54,15 +55,15 @@ op flatten : [a] Set (Set a) -> Set a
 %TODO interesting that there are no formals given here.  Maybe this is a use case for using def insted of op?  Or can we do the same with op?
 def flatten = set_fold empty_set (Set.\/)
 
-%TODO does not seem well-defined; in what order do the lists get appended?  See the restrictions on set_fold. 
-op SoL.flatten : [a] Set (List a) -> List a
-def SoL.flatten = set_fold [] (++)
+%% %TODO does not seem well-defined; in what order do the lists get appended?  See the restrictions on set_fold. 
+%% op SoL.flatten : [a] Set (List a) -> List a
+%% def SoL.flatten = set_fold [] (++)
 
-%Convert a finite map to a function.
-%TODO Not sure this is well-defined; what should it do on keys that are not given values by the map?
-%We could instead have this return a function from a to Option b.
-op fm2fn : [a,b] Map(a,b) -> (a -> b)
-def fm2fn(fm) = (fn(x) -> TMApply(fm, x))
+%% %Convert a finite map to a function.
+%% %TODO Not sure this is well-defined; what should it do on keys that are not given values by the map?
+%% %We could instead have this return a function from a to Option b.
+%% op fm2fn : [a,b] Map(a,b) -> (a -> b)
+%% def fm2fn(fm) = (fn(x) -> TMApply(fm, x))
 
 %% %TODO Perhaps when a>b, this should return the empty list?
 %% %TODO compare to upto in StructuredTypes.sw.
@@ -89,20 +90,16 @@ op [a] List.prec? (xs:List a) (x1:a) (x2:a) : Bool =
                      else
                        List.prec? rest x1 x2)
 
-proof Isa Set__forallIn_Obligation_subtype
-  sorry
-end-proof
-
 proof Isa flatten_Obligation_subtype
-  sorry
+  by (metis Set__e_bsl_bsl_fsl_fsl_Obligation_subtype)
 end-proof
 
-proof Isa SoL__flatten_Obligation_subtype
-  sorry
-end-proof
+%% proof Isa SoL__flatten_Obligation_subtype
+%%   sorry
+%% end-proof
 
-proof Isa fm2fn_Obligation_subtype
-  sorry
-end-proof
+%% proof Isa fm2fn_Obligation_subtype
+%%   sorry
+%% end-proof
 
 end-spec
