@@ -1,6 +1,5 @@
 CGen qualifying spec
 
-import /Languages/MetaSlang/CodeGen/C/TransformsTowardsC % MetaSlang to MetaSlang
 import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L       % MetaSlang to I2L
 import /Languages/I2L/CodeGen/C/I2LToC                   % I2L       to C
 
@@ -48,17 +47,5 @@ op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec)
 op generateCSpecFromTransformedSpec (ms_spec : Spec) (app_name : String) 
  : Option C_Spec =
  generateCSpecFromTransformedSpecIncr ms_spec app_name (emptyCSpec "")
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Generate a C spec from a MetaSlang spec
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% generateCSpec is the canonical entry point for producing a C spec, 
-%% since there is no point in trying to generate a C spec until we have first
-%% done all the appropriate spec-to-spec transforms within metaslang.
-
-op generateCSpec (ms_spec : Spec) (app_name : String) : Option C_Spec =
- let ms_spec = transformSpecForCGen ms_spec in
- generateCSpecFromTransformedSpec ms_spec app_name 
 
 end-spec
