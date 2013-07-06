@@ -92,7 +92,7 @@
     ("pa"       . "[package name] Set package for lisp forms.")
     ("proofcheck". "[unit-identifier] Abbreviation for proc prove WELLFORMED [unit-identifier] with Checker ..")
     ("pc"        . "[unit-identifier] Abbreviation for proc prove WELLFORMED [unit-identifier] with Checker ..")
-    ("prwb"      . "[on] Include the base hypothesis when invokig Snark.")
+    ("prwb"      . "[on] Include the base hypothesis when invoking Snark.") ;TODO: deprecate this command
     ("dev"      . "[on] Set *developer?*. No argument gives current setting.")
     ("wiz"      . "[on] Set SpecCalc::specwareWizard?. No argument gives current setting.")
     ("swdbg"    . "[on] Set System-Spec::specwareDebug?. No argument gives current setting.")))
