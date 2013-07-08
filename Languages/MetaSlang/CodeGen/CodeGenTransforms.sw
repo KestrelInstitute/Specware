@@ -22,6 +22,7 @@ import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (13)  
 
                                                                         % (14)      C Java  introduceRecordMerges  -- RecordMerge alredy imported
 
+import /Languages/MetaSlang/Transformations/TypeAllTerms                %                   typeAllTerms [work in progress]
 import /Languages/MetaSlang/Transformations/ExpandTypeDefs              % (15)      C Java  expandTypeDefs
 import /Languages/MetaSlang/CodeGen/ReviseTypesForCodeGen               % (16)      C Java  reviseTypesForC, reviseTypesForJava
 import /Languages/MetaSlang/Transformations/AddEqOps                    % (17)      C Java  addEqOps
