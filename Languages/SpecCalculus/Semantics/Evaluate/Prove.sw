@@ -133,9 +133,7 @@ SpecCalc qualifying spec
      %let _ = writeLine("lambdaLift") in
      %let _ = writeLine(printSpec spc) in
      %let spc = foldRecordTypes(spc) in
-    let (spc,constrOps) = addTypeConstructorsForSnark spc in
-    let (spc,constrOps) = addProductTypeConstructors spc in
-    let (spc,constrOps) = addProductAccessors spc in
+    let spc = addTypeConstructorsInternal (spc, true) in % true is for snark?
      %let _ = writeLine("ConsAccAdds") in
      %let _ = writeLine(printSpec spc) in
      %let spc = conformOpDecls spc in

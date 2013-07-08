@@ -807,10 +807,33 @@ SpecsToI2L qualifying spec
     % i.e. we don't support functions as objects
     % Not, And, Or, etc,. should never occur "standalone", so we don't look for them here
     % See process_t1 below for case where Fun is applied.
+   let 
+     def make_embedder (typ, id, arg?) =
+       let selector = {name = id, index = alt_index (id, typ, spc)} in
+       if useConstrCalls? ctxt then
+         case typ of
+              
+           | Base (qid, _, _) ->
+             let vname = qid2varid qid in
+             I_ConstrCall (vname, selector, [])
+
+           | Boolean _ -> 
+             I_ConstrCall (("Boolean", "Boolean"), selector, [])
+
+           | _ -> 
+             I_AssignUnion (selector, None)
+       else
+         I_AssignUnion (selector, None)
+
+
+   in
 
     if arrowType? (typ, spc) then
       case fun of
-        | Op (qid,_) -> I_VarRef (qid2varid qid)
+        | Op    (qid, _)     -> I_VarRef (qid2varid qid)
+        | Embed (id,  false) -> 
+          let Arrow (_, rng, _) = typ in
+          term2expression_apply_fun (fun, tm, [], Record ([], noPos), [], tm, rng, ctxt, spc)
         | _ -> 
           fail("sorry, functions as objects (higher-order functions) are not yet supported:\n" ^ printTerm tm)
     else
@@ -825,23 +848,8 @@ SpecsToI2L qualifying spec
           %if isOutputOp varname then VarDeref varname else 
           I_Var varname
 
-        | Embed (id,_) -> 
-          let selector = {name = id, index = alt_index (id, typ, spc)} in
-          if useConstrCalls? ctxt then
-            case typ of
-              
-              | Base (qid, _, _) ->
-                let vname = qid2varid qid in
-                I_ConstrCall (vname, selector, [])
-
-              | Boolean _ -> 
-                I_ConstrCall (("Boolean", "Boolean"), selector, [])
-
-              | _ -> 
-                I_AssignUnion (selector, None)
-          else
-            I_AssignUnion (selector, None)
-
+        | Embed (id,arg?) -> 
+          make_embedder (typ, id, arg?)
         | _ -> 
           fail (mkInOpStr ctxt ^ "unsupported Fun: " ^ printTerm tm)
 
@@ -886,7 +894,8 @@ SpecsToI2L qualifying spec
                 let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, spc) in
                 I_FunCall(varname,projections,exprs)
                 
-              | Fun (fun, _, _) -> term2expression_apply_fun (fun, origlhs, projections, t2, args, tm, typ, ctxt, spc)
+              | Fun (fun, _, _) -> 
+                term2expression_apply_fun (fun, origlhs, projections, t2, args, tm, typ, ctxt, spc)
               | _ ->
                 case getProjectionList (t1, []) of
                   | (prjs as (_::_), t1) -> process_t1 (t1, prjs)
