@@ -29,37 +29,38 @@ op newCoProductOpInfos (spc          : Spec,
                         alternatives : List (Id * Option MSType),
                         snark?       : Bool)
   : List OpInfo =
+  %% e.g., type X = | A | B Nat
   let Qualified (type_q, type_id) = type_name in
   map (fn (alt_id, opt_alt_type) ->
          %% A coproduct alternative (opt_alt_type) might be None, for an atomic constructor,
          %% or Some MSType, for a constructor from arguments.
 
-         let op_q             = type_q                                                   in    
-         let op_id            = getConstructorId (type_id, alt_id, snark?)               in
-         let op_name          = Qualified (op_q, op_id)                                  in
+         let op_q    = type_q                                     in    
+         let op_id   = getConstructorId (type_id, alt_id, snark?) in
+         let op_name = Qualified (op_q, op_id)                    in
 
-         let alt_type         = case opt_alt_type of
-                                  | Some alt_type -> alt_type
-                                  | _  -> Product ([], noPos)
+         let (op_body, op_type) =
+             case opt_alt_type of
+               | Some alt_type -> 
+                 %% e.g.  | B Nat
+                 let op_type          = Arrow (alt_type, type_ref, noPos)                  in
+                 let (op_pat, op_tm)  = getPatternAndTermFromType alt_type                 in
+                 let op_fn            = Fun (Embed (alt_id, true), op_type, noPos)         in
+                 let lambda_body      = Apply (op_fn, op_tm, noPos)                        in
+                 let op_lambda        = Lambda ([(op_pat, true_cond, lambda_body)], noPos) in
+                 (op_lambda, op_type)
+               | _  -> 
+                 %% e.g.  | A
+                 let op_type     = type_ref                                    in
+                 let op_constant = Fun (Embed (alt_id, false), op_type, noPos) in
+                 (op_constant, op_type)
          in
-         let has_arg?         = case opt_alt_type of
-                                  | Some _ -> true
-                                  | _ -> false
-         in
-         let op_type          = Arrow (alt_type, type_ref, noPos)                        in
-         let (op_pat, op_tm)  = getPatternAndTermFromType alt_type                       in
-         let op_fn            = Fun (Embed (alt_id, has_arg?), op_type, noPos)           in
-         let op_body          = if has_arg? then
-         Apply (op_fn, op_tm, noPos)
-                                else
-                                   op_fn
-         in
-         let op_lambda        = Lambda ([(op_pat, true_cond, op_body)], noPos)           in
-         let op_dfn           = maybePiTerm (tvs, TypedTerm (op_lambda, op_type, noPos)) in
-         let op_info          = {names           = [op_name], 
-                                 fixity          = Nonfix, 
-                                 dfn             = op_dfn,
-                                 fullyQualified? = false}
+
+         let op_dfn  = maybePiTerm (tvs, TypedTerm (op_body, op_type, noPos)) in
+         let op_info = {names           = [op_name], 
+                        fixity          = Nonfix, 
+                        dfn             = op_dfn,
+                        fullyQualified? = false}
          in
          op_info)
      alternatives

@@ -333,8 +333,6 @@ I2LToC qualifying spec
     case c4TypeSpecial (cspc, typ) of
       | Some res -> res
       | _ ->
-        %let _ = writeLine ("Looking at " ^ anyToString typ) in
-        let xx =
         case typ of
 
           | I_Primitive p -> (cspc, c4PrimitiveType p)
@@ -422,9 +420,6 @@ I2LToC qualifying spec
             (print typ;
              % (cspc, Int)
              fail ("sorry, no code generation implemented for that type."))
-        in
-        % let _ = writeLine ("result = " ^ anyToString xx) in
-        xx
             
   op c4Types (ctxt : I2C_Context, cspc : C_Spec, types : I_Types) : C_Spec * C_Types =
     foldl (fn ((cspc, ctypes), typ) ->
@@ -436,10 +431,8 @@ I2LToC qualifying spec
   op c4PrimitiveType (prim : I_Primitive) : C_Type =
     case prim of
       | I_Bool   -> C_Int8
-      | I_Nat    -> let _ = writeLine ("I2LToC Warning: unbounded Nat, using C_UInt64") in
-                    C_UInt64
-      | I_Int    -> let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int64") in
-                    C_Int64
+      | I_Nat    -> let _ = writeLine ("I2LToC Warning: unbounded Nat, using C_UInt64") in C_UInt64
+      | I_Int    -> let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int64")  in C_Int64
       | I_Char   -> C_Char
       | I_String -> C_String
       | I_Float  -> C_Float
@@ -609,7 +602,7 @@ I2LToC qualifying spec
             case exprs of
               | [] -> 
                 let fndecl = (fnid, [], ctype) in
-                (cspc, block, C_Apply (C_Fn fndecl, []))
+                (cspc, block, C_Fn fndecl)
               | _ :: _ -> 
                 let (cspc, ctypes) = foldl (fn ((cspc, ctypes), typed_expr) -> 
                                               let (cspc, ctype) = c4Type (ctxt, cspc, typed_expr.typ) in
