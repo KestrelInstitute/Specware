@@ -487,21 +487,20 @@ I2LToC qualifying spec
                     forInitializer?         : Bool)
     : C_Spec * C_Block * C_Exp =
     let
+
       def addProjections (cexpr, projections) =
         case projections of
           | [] -> cexpr
           | p :: projections ->
             addProjections (mkCStructRef (cexpr, p), projections)
-    in
-    let
+
       def processFunMap f (vname, projections, exprs) =
         let id                    = qname2id vname                                      in
         let (cspc, block, cexprs) = c4Expressions (ctxt, cspc, block, exprs)            in
         let (cspc, ctype)         = c4Type (ctxt, cspc, typ)                            in
         let cexpr1                = addProjections (f (C_Var (id, ctype)), projections) in
         (cspc, block, C_Apply (cexpr1, cexprs))
-    in
-    let
+
       def processMapAccess f (vname, maptype, projections, exprs) =
         let id = qname2id vname in
         case maptype of
@@ -527,6 +526,7 @@ I2LToC qualifying spec
                  fail "unsupported variable format, use 1-ary vars from bounded Nat")
           | _ -> 
             fail "unsupported variable format, use 1-ary vars from bounded Nat"
+
     in
     case expr of
       | I_Str   s -> (cspc, block, C_Const (C_Str   s))
@@ -634,7 +634,7 @@ I2LToC qualifying spec
         in
         let (cspc, ctype) = c4Type (ctxt, cspc, typ)                          in
         let varPrefix     = getVarPrefix ("_Vc", ctype)                       in
-        let xname         = varPrefix ^ (show (length decls))                 in
+        let xname         = freshVarName (varPrefix, ctxt, block)             in
         let decl          = (xname, ctype)                                    in
         let optinit       = getMallocApply (cspc, ctype)                      in
         let decl1         = (xname, ctype, optinit)                           in
@@ -673,7 +673,7 @@ I2LToC qualifying spec
         let (cspc, xtype)      = c4Type (ctxt, cspc, typ)                  in
         let xtype              = if xtype = C_Void then C_Int32 else xtype in
         let varPrefix          = getVarPrefix ("_Vd_", xtype)              in
-        let xname              = varPrefix ^ show (length decls)           in
+        let xname              = freshVarName (varPrefix, ctxt, block)     in
         let xdecl              = (xname, xtype, None)                      in
         let funname4errmsg     = case ctxt.currentFunName of 
                                    | Some id -> " (\"function '"^id^"'\")" 
@@ -735,7 +735,7 @@ I2LToC qualifying spec
                                           % by corresponding StructRefs into the record.
 
                                           let varPrefix      = getVarPrefix ("_Va", idtype)                                   in
-                                          let id             = varPrefix^ (show (length decls))                               in
+                                          let id             = freshVarName (varPrefix, ctxt, block)                           in
                                           %
                                           let decl           = (id, idtype)                                                   in
                                           let assign         = getSetExpr (ctxt, C_Var decl, valexp)                          in
@@ -883,7 +883,7 @@ I2LToC qualifying spec
     let (cspc, block as (decls, stmts), fexprs) = c4Expressions (ctxt, cspc, block, exprs)                        in
     let (cspc, ctype)                           = c4Type (ctxt, cspc, typ)                                        in
     let varPrefix                               = getVarPrefix ("_Vb", ctype)                                     in
-    let xname                                   = varPrefix^ (show (length decls))                                in
+    let xname                                   = freshVarName (varPrefix, ctxt, block)                            in
     let ctype                                   = if ctype = C_Void then C_Int32 else ctype                       in
     let decl                                    = (xname, ctype)                                                  in
     let optinit                                 = if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
@@ -1435,4 +1435,19 @@ I2LToC qualifying spec
       | C_Base s -> map toLowerCase s
       | _ -> gen
   
+  op freshVarName (prefix : String, ctxt : I2C_Context, block : C_Block) : String =
+   let freevars = (map (fn cvar_decl -> cvar_decl.1) ctxt.currentFunParams) 
+                  ++ 
+                  (freeVars block) 
+   in
+   let
+     def aux (n, name) = 
+       if name in? freevars then
+         aux (n + 1, prefix ^ (show n))
+       else 
+         name
+   in
+   aux (0, prefix)
+
+
 }
