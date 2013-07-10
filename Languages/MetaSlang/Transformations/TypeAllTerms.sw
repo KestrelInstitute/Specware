@@ -23,19 +23,25 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
    def typeRecord record_fields =
      case unfolded_type of
        | Product (product_fields, _) ->
-         let typed_record_fields = 
-             map2 (fn ((record_id, record_term), (product_id, product_type)) ->
-                    if record_id = product_id then
-                      (record_id, fullyType (record_term, product_type, spc))
-                    else
-                      let _ = writeLine ("Internal confusion: Product field " ^ product_id ^ " doesn't match record field " ^ record_id) in
-                      let _ = writeLine (" Record  : " ^ printTerm term)          in
-                      let _ = writeLine (" Product : " ^ printType unfolded_type) in
-                      (record_id, record_term))
-                 (record_fields,
-                  product_fields)
-         in
-         Record (typed_record_fields, noPos)
+         if length record_fields = length product_fields then
+           let typed_record_fields = 
+               map2 (fn ((record_id, record_term), (product_id, product_type)) ->
+                       if record_id = product_id then
+                         (record_id, fullyType (record_term, product_type, spc))
+                       else
+                         let _ = writeLine ("Internal confusion: Product field " ^ product_id ^ " doesn't match record field " ^ record_id) in
+                         let _ = writeLine (" Record  : " ^ printTerm term)          in
+                         let _ = writeLine (" Product : " ^ printType unfolded_type) in
+                         (record_id, record_term))
+                    (record_fields,
+                     product_fields)
+           in
+           Record (typed_record_fields, noPos)
+         else
+           let _ = writeLine ("Internal confusion: Record term inconsistent with Product type") in
+           let _ = writeLine (" Record  : " ^ printTerm term)          in
+           let _ = writeLine (" Product : " ^ printType unfolded_type) in
+           Record (record_fields, noPos)
       | _ ->
         let _ = writeLine ("Internal confusion: Type for record is not a Product")      in
         let _ = writeLine (" Record : " ^ printTerm term)          in
