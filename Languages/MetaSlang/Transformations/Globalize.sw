@@ -178,10 +178,10 @@ Globalize qualifying spec
                                       [] 
                                       tms
 
-   | The        (v, tm,   _) -> globalRefsIn context global_vars term
-   | TypedTerm  (tm, _,   _) -> globalRefsIn context global_vars term
-   | Pi         (_, tm,   _) -> globalRefsIn context global_vars term
-   | And        (tm::_,   _) -> globalRefsIn context global_vars term
+   | The        (v, tm,   _) -> globalRefsIn context global_vars tm
+   | TypedTerm  (tm, _,   _) -> globalRefsIn context global_vars tm
+   | Pi         (_, tm,   _) -> globalRefsIn context global_vars tm
+   | And        (tm::_,   _) -> globalRefsIn context global_vars tm
 
    | _ -> []
  
@@ -879,7 +879,7 @@ Globalize qualifying spec
    % let _ = writeLine (" lhs: " ^ printTerm lhs) in
    % let _ = writeLine (" rhs: " ^ printTerm rhs) in
    % let _ = writeLine ("let bindings:\n") in
-   let _ = map (fn (pattern, value) -> writeLine (printPattern pattern ^ " = " ^ printTerm value)) context.let_bindings in
+   % let _ = map (fn (pattern, value) -> writeLine (printPattern pattern ^ " = " ^ printTerm value)) context.let_bindings in
    % let result = 
    case rhs of
      | IfThenElse (p, tm1, tm2, _) ->
@@ -1293,85 +1293,106 @@ Globalize qualifying spec
 
  %% ================================================================================
 
+ op nullify_global (context        : Context,
+                    vars_to_remove : MSVarNames,      % vars of global type, remove on sight
+                    substitutions  : MSSubstitutions, % tm -> varname
+                    xtyp           : MSType)
+  : MSType =
+  let
+    def aux typ =
+      if globalType? context typ then
+        nullType
+      else
+        case typ of
+
+          | Arrow (dom, rng, pos) -> 
+            let rng = aux rng in
+            if globalType? context dom then
+              case rng of
+                | Arrow _ -> rng
+                | _ -> Arrow (aux dom, rng, noPos)
+            else
+              Arrow (aux dom, rng, noPos)
+
+          | Product (fields, pos) ->
+            (let new_fields = foldl (fn (fields, (id, typ)) ->
+                                       if globalType? context typ then
+                                         fields
+                                       else
+                                         fields ++ [(id, aux typ)])
+                                    []
+                                    fields
+             in
+             case new_fields of
+               | [(id, typ)] | natConvertible id -> typ
+               | _ -> Product (renumber new_fields, noPos))
+          | CoProduct (fields, pos) -> 
+            %% TODO: revise CoProduct ??
+            let new_fields = foldl (fn (fields, field as (id, opt_typ)) ->
+                                      case opt_typ of
+                                        | Some typ ->
+                                          if globalType? context typ then
+                                            fields
+                                          else
+                                            fields ++ [(id, Some (aux typ))]
+                                        | _ ->
+                                          fields ++ [field])
+                                   []
+                                   fields
+            in
+            CoProduct (new_fields, noPos)
+
+          | Quotient (typ, tm, pos) -> 
+            let new_typ = aux typ in
+            let new_tm = 
+                case globalizeTerm context vars_to_remove substitutions tm false of
+                  | Changed new_tm -> new_tm
+                  | GlobalVar -> 
+                    let _ = writeLine("Warning: Using the master global var as a quotient predicate.") in
+                    context.global_var
+                  | Unchanged -> tm
+            in
+            Quotient (new_typ, new_tm, pos)
+
+          | Subtype (typ, _, _) -> aux typ
+
+          | Pi (tvs, typ, pos) -> Pi (tvs, aux typ, pos)
+            
+          | And (tm :: _, _) -> aux tm
+            
+          | _ -> typ
+  in
+  aux xtyp
+
  op globalizeTypedTerm (context                  : Context)
                        (vars_to_remove           : MSVarNames)      % vars of global type, remove on sight
                        (substitutions            : MSSubstitutions) % tm -> varname
                        (TypedTerm (tm, typ, pos) : MSTerm)
   : GlobalizedTerm = 
-  let
-   def nullify_global typ =
-     if globalType? context typ then
-       nullType
-     else
-       case typ of
-
-         | Arrow (dom, rng, pos) -> 
-           let rng = nullify_global rng in
-           if globalType? context dom then
-             case rng of
-               | Arrow _ -> rng
-               | _ -> Arrow (nullify_global dom, rng, noPos)
-           else
-             Arrow (nullify_global dom, rng, noPos)
-
-         | Product (fields, pos) ->
-           (let new_fields = foldl (fn (fields, (id, typ)) ->
-                                      if globalType? context typ then
-                                        fields
-                                      else
-                                        fields ++ [(id, nullify_global typ)])
-                                   []
-                                   fields
-            in
-            case new_fields of
-              | [(id, typ)] | natConvertible id -> typ
-              | _ -> Product (renumber new_fields, noPos))
-         | CoProduct (fields, pos) -> 
-           %% TODO: revise CoProduct ??
-           let new_fields = foldl (fn (fields, field as (id, opt_typ)) ->
-                                     case opt_typ of
-                                       | Some typ ->
-                                         if globalType? context typ then
-                                           fields
-                                         else
-                                           fields ++ [(id, Some (nullify_global typ))]
-                                       | _ ->
-                                         fields ++ [field])
-                                  []
-                                  fields
-           in
-           CoProduct (new_fields, noPos)
-
-         | Quotient (typ, tm, pos) -> 
-           let new_typ = nullify_global typ in
-           let new_tm = 
-               case globalizeTerm context vars_to_remove substitutions tm false of
-                 | Changed new_tm -> new_tm
-                 | GlobalVar -> 
-                   let _ = writeLine("Warning: Using the master global var as a quotient predicate.") in
-                   context.global_var
-                 | Unchanged -> tm
-           in
-           Quotient (new_typ, new_tm, pos)
-
-         | Subtype (typ, _, _) -> nullify_global typ
-
-         | Pi (tvs, typ, pos) -> Pi (tvs, nullify_global typ, pos)
-
-         | And (tm :: _, _) -> nullify_global tm
-
-         | _ -> typ
-
-  in
   case globalizeTerm context vars_to_remove substitutions tm false of
     | Changed new_tm ->
-      let new_typ = nullify_global typ in 
+      let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in 
       Changed (TypedTerm (new_tm, new_typ, pos))
 
     | GlobalVar ->
       GlobalVar
 
     | _ ->
+      Unchanged
+
+ op globalizeFun (context        : Context)
+                 (vars_to_remove : MSVarNames)      % vars of global type, remove on sight
+                 (substitutions  : MSSubstitutions) % tm -> varname
+                 (term           : MSTerm) 
+  : GlobalizedTerm =
+  case term of
+    | Fun (tm, typ, _) -> 
+      let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in 
+      if typ = new_typ then
+        Unchanged
+      else
+        Changed (Fun (tm, new_typ, noPos))
+    | _ -> 
       Unchanged
 
  %% ================================================================================
@@ -1578,10 +1599,11 @@ Globalize qualifying spec
         | Pi         _ -> globalizePi         context vars_to_remove substitutions term
         | And        _ -> globalizeAnd        context vars_to_remove substitutions term
           
+        | Fun        _ -> globalizeFun        context vars_to_remove substitutions term
+
        %| ApplyN     _ -> Unchanged % not present after elaborateSpec is called
        %| Bind       _ -> Unchanged % should not be globalizing inside quantified terms
        %| The        _ -> Unchanged % should not be globalizing inside 'the' term
-       %| Fun        _ -> Unchanged % primitive terms are never global
        %| Transform  _ -> Unchanged % doesn't make sense to globalize this
        %| Any        _ -> Unchanged % can appear within typed term, for example
           
