@@ -626,7 +626,7 @@ I2LToC qualifying spec
                 (cspc, block, None)
         in
         let (cspc, ctype) = c4Type (ctxt, cspc, typ)                          in
-        let varPrefix     = getVarPrefix ("_Vc", ctype)                       in
+        let varPrefix     = getVarPrefix ("_coproduct", ctype)                in
         let xname         = freshVarName (varPrefix, ctxt, block)             in
         let decl          = (xname, ctype)                                    in
         let optinit       = getMallocApply (cspc, ctype)                      in
@@ -645,10 +645,12 @@ I2LToC qualifying spec
         (cspc, block, res)
         
       | I_UnionCaseExpr (typed_expr, unioncases) ->
-        let I_Union union_fields = typed_expr.typ in
+        let I_Union union_fields                      = typed_expr.typ                               in
         let (cspc0, block0 as (decls, stmts), cexpr0) = c4Expression (ctxt, cspc, block, typed_expr) in
-        % insert a variable for the discriminator in case cexpr0 isn't a variable, 
-        % otherwise it can happen that the C Compiler issues an "illegal lvalue" error
+
+        % Insert a variable for the discriminator in case cexpr0 isn't a variable.
+        % Otherwise the C Compiler might issue an "illegal lvalue" error.
+
         let (block0 as (decls, stmts), disdecl, newdecl?) =
             case cexpr0 of
               | C_Var decl -> ((decls, stmts), decl, false)
@@ -660,9 +662,10 @@ I2LToC qualifying spec
                 let block0          = (decls++[disdecl0], stmts)          in
                 (block0, disdecl, true)
         in
-        % insert a dummy variable of the same type as the expression to be
-        % used in the nonexhaustive match case in order to prevent typing 
-        % errors of the C compiler
+
+        %% To prevent C typing errors, insert a dummy variable of the same type 
+        %% as the expression to be used in the nonexhaustive match case, 
+
         let (cspc, xtype)      = c4Type (ctxt, cspc, typ)                  in
         let xtype              = if xtype = C_Void then C_Int32 else xtype in
         let varPrefix          = getVarPrefix ("_Vd_", xtype)              in
@@ -675,11 +678,13 @@ I2LToC qualifying spec
         let errorCaseExpr      = C_Comma (C_Var ("NONEXHAUSTIVEMATCH_ERROR"^funname4errmsg, C_Int32), 
                                           C_Var (xname, xtype)) 
         in
-        let block0             = (decls ++ [xdecl], stmts)               in
+        let block0             = (decls ++ [xdecl], stmts)                 in
+
         let 
           def casecond index = 
             getSelCompareExp (ctxt, C_Var disdecl, index) 
         in
+
         let (cspc, block, ifexpr) =
             foldr (fn (unioncase, (cspc, block as (decls, stmts), ifexp)) -> 
                      case unioncase of
@@ -708,35 +713,43 @@ I2LToC qualifying spec
                                       let valexp              = mkCUnionRef (mkCStructRef (structref, "alt"), selector.name)      in
                                       case vlist of
                                         
-                                        | [Some id] -> % contains exactly one var
-                                          let (id, expr)     = substVarIfDeclared (ctxt, id, decls, expr)                       in % subst before
-                                          %
-                                          let decl           = (id, idtype)                                                     in
-                                          let assign         = getSetExpr (ctxt, C_Var decl, valexp)                            in
-                                          % the assignment must be attached to the declaration, otherwise
-                                          % it may happen that the new variable is accessed in the term without
-                                          % being initialized  [so why is optinit None then?]
-                                          let optinit        = None                                                             in
-                                          let decl1          = (id, idtype, optinit)                                            in
-                                          let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr)   in
+                                        | [Some id] -> 
+
+                                          %% vlist contains exactly one var
+
+                                          let (id, expr) = substVarIfDeclared (ctxt, id, decls, expr) in % subst before
+                                          let decl       = (id, idtype)                               in
+                                          let assign     = getSetExpr (ctxt, C_Var decl, valexp)      in
+
+                                          %% The assignment must be attached to the declaration.  
+                                          %% Otherwise the new variable could be accessed without being initialized.
+                                          %% [so why is optinit None then?]
+
+                                          let optinit                       = None                                   in
+                                          let decl1                         = (id, idtype, optinit)                  in
+                                          let (cspc, (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr) in
                                           (cspc, (decls ++ [decl1], stmts), C_Comma (assign, cexpr))
                                           
                                         | _ -> 
-                                          % the vlist consists of a list of variable names representing the fields
-                                          % of the record that is the argument of the constructor. We will introduce
-                                          % a fresh variable of that record type and substitute the variable in the vlist
-                                          % by corresponding StructRefs into the record.
 
-                                          let varPrefix      = getVarPrefix ("_Va", idtype)                                   in
-                                          let id             = freshVarName (varPrefix, ctxt, block)                           in
-                                          %
-                                          let decl           = (id, idtype)                                                   in
-                                          let assign         = getSetExpr (ctxt, C_Var decl, valexp)                          in
-                                          let optinit        = None                                                           in
-                                          let decl1          = (id, idtype, optinit)                                          in
-                                          let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr) in
-                                          let cexpr          = substVarListByFieldRefs (ctxt, vlist, C_Var decl, cexpr)       in  % subst after
-                                          (cspc, (decls ++ [decl1], stmts), C_Comma (assign, cexpr))
+                                          %% vlist is a list of variable names representing the fields of the record 
+                                          %% that is the argument of the constructor. 
+
+                                          %% We introduce a fresh variable of that record type and substitute the variable
+                                          %% in the vlist by corresponding StructRefs into the record.
+
+                                          let varPrefix            = getVarPrefix ("_Va", idtype)                             in
+                                          let id                   = freshVarName (varPrefix, ctxt, block)                    in
+                                          let decl                 = (id, idtype)                                             in
+                                          let assign               = getSetExpr (ctxt, C_Var decl, valexp)                    in
+                                          let optinit              = None                                                     in
+                                          let decl1                = (id, idtype, optinit)                                    in
+                                          %% Put decl1 into the block passed to c4Expression, to avoid reusing id.
+                                          let (decls, stmts)       = block                                                    in
+                                          let block                = (decls ++ [decl1], stmts)                                in
+                                          let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr)                   in
+                                          let cexpr                = substVarListByFieldRefs (ctxt, vlist, C_Var decl, cexpr) in  % subst after
+                                          (cspc, block, C_Comma (assign, cexpr))
 
                               in
                               (cspc, block, C_IfExp (condition, cexpr, ifexp)))
@@ -747,9 +760,11 @@ I2LToC qualifying spec
                          let (cspc, ctype)       = c4Type (ctxt, cspc, ityp)                    in
                          let cvar                = (cid, ctype)                                 in
                          let cassign             = getSetExpr (ctxt, C_Var cvar, C_Var disdecl) in
-                         % the assignment must be attached to the declaration, otherwise
-                         % it may happen that the new variable is accessed in the term 
-                         % without being initialized  [so why is coptinit None then?]
+
+                         %% The assignment must be attached to the declaration.
+                         %% Otherwise the new variable may be accessed without being initialized.
+                         %% [so why is coptinit None then?]
+
                          let coptinit            = None                                         in
                          let cdecl               = (cid, ctype, coptinit)                       in
                          (cspc, (decls ++ [cdecl], stmts), C_Comma (cassign, cexp))
@@ -875,8 +890,8 @@ I2LToC qualifying spec
     : C_Spec * C_Block * C_Exp =
     let (cspc, block as (decls, stmts), fexprs) = c4Expressions (ctxt, cspc, block, exprs)                        in
     let (cspc, ctype)                           = c4Type (ctxt, cspc, typ)                                        in
-    let varPrefix                               = getVarPrefix ("_Vb", ctype)                                     in
-    let xname                                   = freshVarName (varPrefix, ctxt, block)                            in
+    let varPrefix                               = getVarPrefix ("_product", ctype)                                in
+    let xname                                   = freshVarName (varPrefix, ctxt, block)                           in
     let ctype                                   = if ctype = C_Void then C_Int32 else ctype                       in
     let decl                                    = (xname, ctype)                                                  in
     let optinit                                 = if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
@@ -1426,16 +1441,19 @@ I2LToC qualifying spec
   op getVarPrefix (gen : String, typ : C_Type) : String =
     case typ of
       | C_Base s -> map toLowerCase s
+      | C_Ptr (C_Struct s) -> "_" ^ (map toLowerCase s) ^ "_"
       | _ -> gen
   
-  op freshVarName (prefix : String, ctxt : I2C_Context, block : C_Block) : String =
-   let freevars = (map (fn cvar_decl -> cvar_decl.1) ctxt.currentFunParams) 
-                  ++ 
-                  (freeVars block) 
+  op freshVarName (prefix : String, ctxt : I2C_Context, block as (decls, _) : C_Block) : String =
+   let vars_to_avoid = (map (fn cvar_decl -> cvar_decl.1) ctxt.currentFunParams) 
+                       ++ 
+                       (freeVars block) 
+                       ++ 
+                       (map (fn (v, _, _) -> v) decls)
    in
    let
      def aux (n, name) = 
-       if name in? freevars then
+       if name in? vars_to_avoid then
          aux (n + 1, prefix ^ (show n))
        else 
          name
