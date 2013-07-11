@@ -102,7 +102,11 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     let cclauses : List (List CClass) = map (List.map (classify args)) (flatten is) in
     %% Remove any atomic expressions representing true.
     let noTauto : List (List CClass) = map (fn clause -> filter (fn a -> ~ (isTrueAtom? a)) clause) cclauses in
-    let noContra = filter (fn clause -> ~ (exists? (fn a ->  (isFalseAtom? a)) clause)) noTauto in    
+    let noContra = filter (fn clause -> ~ (exists? (fn a ->  (isFalseAtom? a)) clause)) noTauto in
+    let _ = writeLine (anyToString (List.length noContra) ^ " total postconditions.") in
+    let _ = writeLine "Postconditions:" in
+    let _ = writeLine (printDNF (map (map classToTerm) noContra)) in
+    
     let _ = writeLine "About to begin merge" in    
     let (rterm,pred) = bt2 args noContra in
     let _ = writeLine "Done with merge" in
@@ -111,7 +115,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
 
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
-    let body = mkCombTerm ((preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
+    let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
     let spc' = addOpDef(spc,fname,Nonfix,body) in
     return spc'
   }
@@ -265,12 +269,12 @@ op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites)
   ; posts <-
      mapM (normalizeCondition spc theorems noUnfolds unfoldDepth) postconditions
   ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
-    let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
+    % let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
     % let _ = map printIt ps in
     % let _ = writeLine "Preconditions" in
     % let _ = List.map (fn p -> writeLine (printDNF (p.2))) pres in
-    let _ = writeLine "Postconditions" in
-    let _ = List.map (fn p -> writeLine (printDNF (p.2))) posts in
+    % let _ = writeLine "Postconditions" in
+    % let _ = List.map (fn p -> writeLine (printDNF (p.2))) posts in
     return rels
   }
  
@@ -438,7 +442,10 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                       (mkCaseExpr (scrutinee, (map (fn x -> x.1) branches)), pres)
                               
                     | _ ->
-                      let _ = writeLine "Mergerules is stuck on the inputs:" in
+                      let _ = writeLine "Mergerules is stuck." in
+                      let _ = writeLine "Under assumptions:" in
+                      let _ = writeLine (printTerm (mkAnd args.assumptions)) in
+                      let _ = writeLine "Merging clauses" in
                       let _ = writeLine (printDNF (map (map classToTerm) inputs)) in
                       % let _ = debugClauses inputs in
                       let _ = debugFailure args inputs in
@@ -1031,8 +1038,10 @@ op betan_step (t:MSTerm):MSTerm =
   case t of
      | Apply(Lambda([(pat,_,body)],_),argument,pos) ->
          % let _ = writeLine ("Beta-reducing:\n " ^ printTerm t) in
+         let def norestrict p = case p of | RestrictedPat (p',_,_) -> p' | _ -> p
+         in
          let boundVars =
-             case pat of
+             case norestrict pat of
                | VarPat(v,_)            -> [v]
                | RecordPat(fields,_)    ->
                    List.map (fn (x,VarPat(v,_)) -> v) fields
@@ -1062,7 +1071,7 @@ op isBetaRedex (t:MSTerm):Boolean =
 op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Boolean =
   case tm of
       | Apply(Fun(Op(Qualified (_,qid),_),_,_), _, _)
-          | qid in? (["<=", "<"] : List Id) -> false
+          | qid in? (["<=", "<", ">="] : List Id) -> false
       | Apply(Fun(Op(qid,_),_,_), _, _)
           | qid in? noUnfolds -> false
       | _ -> unfoldable?(tm,spc)
