@@ -1440,7 +1440,7 @@ I2LToC qualifying spec
   % variable prefix is used.
   op getVarPrefix (gen : String, typ : C_Type) : String =
     case typ of
-      | C_Base s -> map toLowerCase s
+      | C_Base s           -> "_" ^ (map toLowerCase s) ^ "_"
       | C_Ptr (C_Struct s) -> "_" ^ (map toLowerCase s) ^ "_"
       | _ -> gen
   
