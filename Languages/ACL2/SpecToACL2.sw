@@ -9,6 +9,7 @@ import /Languages/SpecCalculus/Semantics/Environment
  %import /Languages/SpecCalculus/Semantics/Monad
 import /Languages/SpecCalculus/AbstractSyntax/ShowUtils
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+import /Library/Legacy/Utilities/System
 
 type PPError a = 
   | Good a
@@ -115,7 +116,7 @@ op ppTypeLocalDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
 op ppTypeName (t:MSType) : PPError WLPretty = 
   case t of
 %    | Base (Qualified (_, "Integer"),_,_) -> Good (ppString "integerp")
-    | Base (Qualified (_, pid),_,_) -> Good (ppConcat [ppString pid, ppString "p"])
+    | Base (Qualified (_, pid),_,_) -> Good (ppConcat [ppString pid, ppString "-p"])
     | Boolean _ -> Good (ppString "booleanp")
     | Subtype _ -> Bad "ppTypeName doesn't accept subtypes yet"
     | Product _ -> Bad "ppTypeName doesn't accept product types yet"
@@ -132,15 +133,12 @@ op ppCoproductTypeDefHelper (typeCases : List (Id * Option MSType)) : PPError (L
     | Some (Product ((caseId,ty)::fields,pos)) ->
       (case (ppTypeName ty, ppTypeCaseHelper (id, Some (Product (fields,pos)))) of
          | (Good tn,
-            Good rst) -> Good (ppConcat [ppString id, ppString "-arg-", ppString caseId,
-                                         ppString " :type ", tn, ppString " ",
-                                         rst])
+            Good rst) -> Good (ppConcat [tn, ppString " ", rst])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
     | Some ty -> 
       (case ppTypeName ty of
-         | Good tn -> Good (ppConcat [ppString id, ppString "-arg",
-                                      ppString " :type ", tn])
+         | Good tn -> Good tn
          | Bad s -> Bad s)
   in let def ppTypeCase (id,optTy) =
   case ppTypeCaseHelper (id,optTy) of
@@ -169,7 +167,8 @@ op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
          | _ ->
            (case ppTypeName dfn of
               | Good tn ->
-                Good (ppConcat [ppString "(defun-typed ", ppString id, ppString ":type booleanp (x :type :all)", ppNewline,
+                Good (ppConcat [ppString "(defpredicate ", ppString id, ppString " (x)", 
+                                ppNewline,
                                 ppString "  (", tn, ppString " x))"])
               | Bad s -> Bad s))
     | _ -> Bad "Bad argument to ppTypeDef"
@@ -212,7 +211,52 @@ op ppFun (f : MSFun) : PPError WLPretty =
     | Iff -> Good (ppString "iff")
     | Equals -> Good (ppString "equal")
     | Op (Qualified (q,id),_) -> Good (ppString id)
+    | Embed (id,true) -> Good (ppString id)
+    | Embed (id,false) -> Good (ppConcat [ppString "(", ppString id, ppString ")"])
     | _ -> Bad "Can't handle f in ppFun"
+
+op ppTermLambda (trm : MSTerm) : PPError WLPretty =
+  case trm of
+    | Lambda ((_,_,trm)::ms,_) -> ppTerm trm
+    | _ -> Bad "ppTermLambda only accepts lambdas"
+
+op ppPattern (pat:MSPattern) : PPError WLPretty =
+  case pat of
+    | WildPat _ -> Good (ppString "_")
+    | VarPat ((v,_),_) -> Good (ppString v)
+    | RecordPat ([],_) -> Good (ppString "")
+    | RecordPat ((_,inPat)::rst,pos) ->
+      (case (ppPattern inPat, ppPattern (RecordPat (rst,pos))) of
+         | (Good sInPat, Good srst) ->
+           Good (ppConcat [sInPat, ppString " ", srst])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
+    | EmbedPat (id,None,_,_) ->
+      Good (ppConcat [ppString "(", ppString id, ppString ")"])
+    | EmbedPat (id,Some inPat,_,_) -> 
+      (case ppPattern inPat of
+         | Good sInPat -> Good (ppConcat [ppString "(", ppString id, ppString " ", sInPat, ppString ")"])
+         | Bad s -> Bad s)
+    | _ -> Bad "foo"
+
+op ppTermApplyLambdaHelper (match:MSMatch) : PPError WLPretty =
+  case match of
+    | (pat,_,trm)::rst ->
+      (case (ppPattern pat, ppTerm trm, ppTermApplyLambdaHelper rst) of
+         | (Good spat, Good strm, Good srst) ->
+           Good (ppConcat [ppString "(", spat, ppString " ", strm, ppString ")", ppNewline, srst])
+         | (Bad s,_,_) -> Bad s
+         | (_,Bad s,_) -> Bad s
+         | (_,_,Bad s) -> Bad s)
+    | [] -> Good (ppString "")
+    | _ -> Bad "Can't handle match in ppTermApplyLambdaHelper"
+
+op ppTermApplyLambda (match:MSMatch) (trm:MSTerm) : PPError WLPretty =
+  case (ppTermApplyLambdaHelper match, ppTerm trm) of
+    | (Good smatch, Good strm) ->
+      Good (ppConcat [ppString "(case-of ", strm, ppNewline, smatch, ppString ")"])
+    | (Bad s,_) -> Bad s
+    | (_,Bad s) -> Bad s
 
 op ppTerm (trm : MSTerm) : PPError WLPretty =
   case trm of
@@ -225,7 +269,7 @@ op ppTerm (trm : MSTerm) : PPError WLPretty =
         | (Good strm, Good srst) -> Good (ppConcat [strm, ppString " ", srst])
         | (Bad s,_) -> Bad s
         | (_,Bad s) -> Bad s)
-    | Lambda ((_,_,trm)::ms,_) -> ppTerm trm
+    | Lambda ((_,_,trm)::ms,_) -> Bad "Can't handle lambdas in ppTerm"
     | IfThenElse (t1,t2,t3,_) ->
       (case (ppTerm t1, ppTerm t2, ppTerm t3) of
          | (Good st1, Good st2, Good st3) -> 
@@ -235,6 +279,7 @@ op ppTerm (trm : MSTerm) : PPError WLPretty =
          | (Bad s,_,_) -> Bad s
          | (_,Bad s,_) -> Bad s
          | (_,_,Bad s) -> Bad s)
+    | Apply (Lambda (match,_), trm, _) -> ppTermApplyLambda match trm
     | Apply (t1,t2,_) ->
       (case (ppTerm t1, ppTerm t2) of
          | (Good st1, Good st2) ->
@@ -253,31 +298,26 @@ op ppOpDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
       let name = opDefInfo.names @ 0 in
       let dfn = opDefInfo.dfn in
       (case dfn of
-         | TypedTerm (trm,tpe,pos) -> 
-           (case (ppTerm trm, opVarList trm) of
-              | (Good strm, Good varlist) ->
-                let svarlist = map (fn (id,_) -> ppString id) varlist in
-                let varGuardStrings = ppErrorMap (fn (id,tpe) ->
-                                                    (case ppTypeName tpe of
-                                                       | Good tn -> Good (ppConcat [ppString "(",
-                                                                                    tn,
-                                                                                    ppString " ",
-                                                                                    ppString id,
-                                                                                    ppString ")"])
-                                                       | Bad s -> Bad s)) varlist in
-                (case varGuardStrings of
-                   | Good varGuardStrings ->
-                     Good (ppConcat [ppString "(defun ", ppString id, ppString " (", ppSep (ppString " ") svarlist, ppString ")", ppNewline,
-                                     ppString "  (declare (ignorable ", ppSep (ppString " ") svarlist, ppString ")", ppNewline,
-                                     ppString "           (xargs :guard (and ",
-                                     ppSep 
-                                       (ppConcat [ppString "                              ", ppNewline])
-                                       varGuardStrings,
-                                     ppString ")))", ppNewline,
+         | TypedTerm (trm, Arrow (_,tpe,_),pos) -> 
+           (case (ppTermLambda trm, opVarList trm, ppTypeName tpe) of
+              | (Good strm, Good varlist, Good tpestring) ->
+                let typedVarList = ppErrorMap (fn (id,tpe) ->
+                                                 (case ppTypeName tpe of
+                                                    | Good tn -> Good (ppConcat [ppString "(",
+                                                                                 tn,
+                                                                                 ppString " ",
+                                                                                 ppString id,
+                                                                                 ppString ")"])
+                                                    | Bad s -> Bad s)) varlist in
+                (case typedVarList of
+                   | Good sTypedVarList ->
+                     Good (ppConcat [ppString "(defun-typed (", tpestring, ppString " ", ppString id,
+                                     ppString ") (", ppSep (ppString " ") sTypedVarList, ppString ")", ppNewline,
                                      ppString "  ", strm, ppString ")"])
                    | Bad s -> Bad s)
-              | (Bad s,_) -> Bad s
-              | (_,Bad s) -> Bad s)
+              | (Bad s,_,_) -> Bad s
+              | (_,Bad s,_) -> Bad s
+              | (_,_,Bad s) -> Bad s)
          | _ -> Bad "Can't handle dfn in ppOpDef")
     | _ -> Bad "Bad argument to ppOpDef"
 
@@ -379,8 +419,8 @@ op ppSpecElements (types:SpecElements) (typeDefs:SpecElements) (opDefs:SpecEleme
                       ppGr1Concat [ppConcat [ppString ";; op definitions", ppNewline],
                                    ppSep ppNewline opDefString], ppNewline, ppNewline,
                       %ppString ")", ppNewline, ppNewline,
-                      ppGr1Concat [ppConcat [ppString ";; type constraints", ppNewline],
-                                   ppSep ppNewline typeThmString],
+%                      ppGr1Concat [ppConcat [ppString ";; type constraints", ppNewline],
+%                                   ppSep ppNewline typeThmString],
                       ppNewline, ppNewline,
                       ppGr1Concat [ppConcat [ppString ";; theorems", ppNewline],
                                    ppSep ppNewline thmString],
@@ -427,16 +467,19 @@ op filterThm (elems:SpecElements) : SpecElements =
         | _ -> filterThm rst
 
 op ppSpec (c: Context) (spc:Spec) : PPError WLPretty =
-  let spc = adjustElementOrder spc in
-  case ppSpecElements (filterType spc.elements) (filterTypeDef spc.elements) (filterOp spc.elements) (filterThm spc.elements) spc of
-    | Good s -> 
+%  let spc = adjustElementOrder spc in
+  case (getEnv "SPECWARE4", ppSpecElements (filterType spc.elements) (filterTypeDef spc.elements) (filterOp spc.elements) (filterThm spc.elements) spc ) of
+    | (Some specware4, Good s) -> 
       Good (ppGr2Concat [ppString "(in-package \"ACL2\")",
                          ppNewline,
-                         ppString "(include-book \"~/Specware/Languages/ACL2/specware-book\")",
+                         ppString "(include-book \"",
+                         ppString specware4,
+                         ppString "/Languages/ACL2/specware-book\")",
                          ppNewline,
                          ppNewline,
                          s])
-    | Bad s -> Bad s
+    | (None,_) -> Bad "Please set SPECWARE4 environment variable"
+    | (_,Bad s) -> Bad s
       
 (*               case spc.qualifier of | Some qual -> ppString qual | None -> ppString "<no-qualifier>",
                ppNewline,
@@ -474,12 +517,47 @@ op printValueTop (value : Value, uid : UnitId, showImportedSpecs? : Bool) : PPEr
               showImportedSpecs? = showImportedSpecs?}
              value
 
+op  uidToIsaName : UnitId -> String
+def uidToIsaName {path, hashSuffix=_} =
+  let device? = deviceString? (head path) in
+  let main_name = last path in
+  let path_dir = butLast path in 
+  let mainPath = flatten (foldr (fn (elem, result) -> "/"::elem::result)
+                            ["/acl2/", main_name]
+                            (if device? then tail path_dir else path_dir))
+  in if device?
+       then (head path) ^ mainPath
+       else mainPath
+
+
+op unitIdToIsaString(uid: UnitId): (String * String * String) =
+  case uid.hashSuffix of
+    | Some loc_nm | loc_nm ~= last uid.path -> (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
+    | _ ->           (last uid.path, uidToIsaName uid, "")
+
+op  uidNamesForValue: Value -> Option (String * String * UnitId)
+def uidNamesForValue val =
+  case uidStringPairForValue val of
+    | None -> None
+    | Some((thynm, filnm, hash), uid) ->
+      Some(if thynm = hash then (thynm, filnm, uid)
+           else (thynm ^ hash, filnm ^ hash, uid))
+
+op  uidStringPairForValue: Value -> Option ((String * String * String) * UnitId)
+def uidStringPairForValue val =
+  case MonadicStateInternal.readGlobalVar "GlobalContext" of
+    | None -> None
+    | Some global_context ->
+  case findUnitIdForUnit(val, global_context) of
+    | None -> None
+    | Some uid -> Some (unitIdToIsaString uid, uid)
+
 op genACL2Core (val : Value, showImportedSpecs? : Bool) : Bool =
-  case uidForValue val of
+  case uidNamesForValue val of
     | None -> let _ = writeLine "Error: Can't get UID string from value" in false
-    | Some uid -> 
-      let uidstr = fileNameInSubDir(uid, "acl2") in
-      let filename = uidstr ^ "-acl2.lisp" in
+    | Some (thy_nm, uidstr, uid) -> 
+%      let uidstr = fileNameInSubDir(uidstr, "acl2") in
+      let filename = uidstr ^ ".lisp" in
       let _ = ensureDirectoriesExist filename in
       let _ = writeLine("Writing ACL2 to: " ^ filename ^ "\n") in
       case printValueTop(val,uid,showImportedSpecs?) of

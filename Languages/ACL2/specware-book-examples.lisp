@@ -6,17 +6,54 @@
 ;; BINARY TREES ;;
 ;;;;;;;;;;;;;;;;;;
 
-(defcoproduct ITree
-  (IEmpty)
-  (IBranch integerp ITreep ITreep))
+(defcoproduct BinaryTree
+  (Empty)
+  (Branch integerp BinaryTree-p BinaryTree-p))
 
-;; Doesn't type check because it doesn't assert
-;; (integerp (+ 1 (ibranch-arg1 it)))
-(defun-typed ITree-1+ :type ITreep (it :type ITreep)
-  (case-of it
-   ((IEmpty) it)
-   ((IBranch x left right) 
-    (IBranch (1+ x) (ITree-1+ left) (ITree-1+ right)))))
+(defun-typed (BinaryTree-p flipTree) ((BinaryTree-p tree))
+  (case-of tree
+   ((Branch x left right)
+    (Branch x (flipTree right) (flipTree left)))
+   (_ tree)))
+
+(defun-typed (BinaryTree-p 1+-tree) ((BinaryTree-p tree))
+  (case-of tree
+   ((Branch x left right)
+    (Branch (1+ x) (1+-tree left) (1+-tree right)))
+   (_ (Empty))))
+
+(defthm-guarded flipTree-flipTree
+  (implies (BinaryTree-p tree)
+           (equal (flipTree (flipTree tree)) tree)))
+
+(defpredicate heapOrdered ((BinaryTree-p tree))
+  (case-of tree
+   ((Branch x 
+            (as left  (Branch lx _ _)) 
+            (as right (Branch rx _ _)))
+    (and (> x lx) (> x rx)
+         (heapOrdered left)
+         (heapOrdered right)))
+   ((Branch x (as left (Branch lx _ _)) _)
+    (and (> x lx) (heapOrdered left)))
+   ((Branch x _ (as right (Branch rx _ _)))
+    (and (> x rx) (heapOrdered right)))
+   (_ t)))
+
+(defpredicate evenTree ((BinaryTree-p tree))
+  (case-of tree
+   ((Branch x 
+            (as left  (Branch _ _ _)) 
+            (as right (Branch _ _ _)))
+    (and (evenp x) (evenTree left) (evenTree right)))
+   ((Branch x left right)
+    (and (evenp x) (evenTree left) (evenTree right)))
+   (_ t)))
+
+(defthm-guarded flipTree-heapOrdered
+    (implies (and (BinaryTree-p tree)
+                  (heapOrdered tree))
+             (heapOrdered (flipTree tree))))
 
 ;;;;;;;;;;;
 ;; LISTS ;;
@@ -24,77 +61,120 @@
 
 (defcoproduct IList
   (INil)
-  (ICons integerp IListp))
+  (ICons integerp IList-p))
 
-(defun-typed ISingletonp :type booleanp (a :type IListp)
-  (case-of a
-   ((ICons _ (ICons _ _)) nil)
-   ((ICons _ _) t)
-   ((INil) nil)))
-
-(defun-typed IAppend :type IListp (a :type IListp
-                                   b :type IListp)
-  (case-of a
-   ((INil) b)
-   ((ICons x xs) (ICons x (IAppend xs b)))))
+(defun-typed (IList-p IAppend) ((IList-p a)
+                                (IList-p b))
+ (case-of a
+  ((INil) b)
+  ((ICons x xs) (ICons x (IAppend xs b)))))
 
 (defthm-guarded IAppend-assoc
-    (implies (and (IListp a)
-                  (IListp b)
-                  (IListp c))
+    (implies (and (IList-p a)
+                  (IList-p b)
+                  (IList-p c))
              (equal (IAppend (IAppend a b) c)
                     (IAppend a (IAppend b c)))))
 
-(defun-typed IRev :type IListp (a :type IListp)
-  (case-of a
+(defun-typed (IList-p IRev) ((IList-p a))
+  (pattern-match a
    ((INil) a)
    ((ICons head tail) (IAppend (IRev tail) (ICons head (INil))))))
 
 (defthm IAppend-Nil
-    (implies (and (IListp a)
-                  (INilp b))
+    (implies (and (IList-p a)
+                  (INil-p b))
              (equal (IAppend a b) a)))
 
 (defthm-guarded IRev-append
-    (implies (and (IListp a)
-                  (IListp b))
+    (implies (and (IList-p a)
+                  (IList-p b))
              (equal (IRev (IAppend a b))
                     (IAppend (IRev b)
                              (IRev a)))))
 
 (defthm-guarded IRev-IRev
-    (implies (IListp a)
+    (implies (IList-p a)
              (equal (IRev (IRev a)) a)))
 
-(defun-typed IMember :type booleanp (x :type integerp
-                                     a :type IListp)
+(defun-typed (booleanp IMember) ((integerp x) 
+                                 (IList-p a))
   (case-of a
    ((INil) nil)
    ((ICons y ys) (or (equal y x) (IMember x ys)))))
 
 (defthm-guarded IMember-IAppend
-    (implies (and (integerp x) (IListp a) (IListp b))
+    (implies (and (integerp x) (IList-p a) (IList-p b))
              (equal (IMember x (IAppend a b))
                     (or (IMember x a) (IMember x b)))))
 
-(defthm not-equal-ICons
-    (implies (and (IListp l)
-                  (integerp x))
-             (not (equal l (ICons x l))))
-  :hints (("Goal" :in-theory (enable ICons))))
+;;;;;;;;;;;;;;;;;
+;; EXPERIMENTS ;;
+;;;;;;;;;;;;;;;;;
 
-(defun-typed IList-to-list :type integer-listp (il :type IListp)
-  (cond ((INilp il) nil)
-        ((IConsp il)
-         (let ((head (ICons-arg1 il))
-               (tail (ICons-arg2 il)))
-           (cons head (IList-to-list tail))))))
+(defcoproduct Lang
+  (LTrue)
+  (LFalse)
+  (LZero)
+  (LSucc Lang-p)
+  (LPred Lang-p)
+  (LIsZero Lang-p)
+  (LIf Lang-p Lang-p Lang-p))
 
-(defun-typed list-to-IList :type IListp (l :type integer-listp)
-  (cond ((endp l) (INil))
-        ((consp l)
-         (ICons (car l) (list-to-IList (cdr l))))))
+(defpredicate Lang-or-nilp (x)
+  (or (null x) (lang-p x)))
 
-(defthm-typed ilist-list
-    (implies (integer-listp l)
-             (equal (list-to-IList 
+(defun-typed (booleanp is-numeric) ((Lang-p term))
+  (case-of term
+   ((LZero) t)
+   ((LSucc t1) (is-numeric t1))
+   (_ nil)))
+
+(defun-typed (booleanp is-value) ((Lang-p term))
+  (case-of term
+   ((LTrue) t)
+   ((LFalse) t)
+   (t1 (is-numeric t1))))
+
+;; GUARDS
+
+(defun-typed (Lang-or-nilp eval1) ((Lang-p exp))
+  (case-of exp
+   ((LIf  (LTrue) t2  _) t2)
+   ((LIf (LFalse)  _ t3) t3)
+   ((LIf t1 t2 t3)
+    (let ((t1_ (eval1 t1)))
+      (if t1_
+          (LIf t1_ t2 t3)
+          nil)))
+   ((LSucc t1)
+    (let ((t1_ (eval1 t1)))
+      (if t1_
+          (LSucc t1_)
+          nil)))
+   ((LPred (LZero))
+    (LZero))
+   ((LPred (LSucc t1)) (is-numeric t1) t1)
+   ((LPred t1)
+    (let ((t1_ (eval1 t1)))
+      (if t1_
+          (LSucc t1_)
+          nil)))
+   ((LIsZero (LZero)) (LTrue))
+   ((LIsZero (LSucc t1)) (is-numeric t1) (declare (ignore t1)) (LFalse))
+   ((LIsZero t1)
+    (let ((t1_ (eval1 t1)))
+      (if t1_
+          (LIsZero t1_)
+          nil)))
+   (_ nil)))
+
+(defthm eval1-langp 
+    (implies (and (lang-p exp) (eval1 exp)) 
+             (lang-p (eval1 exp))))
+
+(defun-typed (Lang-p eval-exp) ((Lang-p exp))
+  (let ((exp_ (eval1 exp)))
+    (if exp_
+        (eval-exp exp_)
+        exp)))
