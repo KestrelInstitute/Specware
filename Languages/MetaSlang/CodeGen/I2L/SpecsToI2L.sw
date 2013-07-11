@@ -884,6 +884,8 @@ SpecsToI2L qualifying spec
           def process_t1 (t1, projections) =
             case t1 of
 
+              | TypedTerm (tm, _, _) -> process_t1 (tm, projections)
+
               | Var ((id, _), _) ->
                 let exprs = getExprs4Args (args, ctxt, spc) in
                 let varname = ("", id) in
