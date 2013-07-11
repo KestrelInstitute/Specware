@@ -34,6 +34,7 @@ import BitList
 import Stream
 import Sequence
 import SizedNats
+import SizedInts
 
 % This has name clashes with FiniteMap (e.g., for type FMap.FMap), so
 % we can't include it here but have to test it separately (in
