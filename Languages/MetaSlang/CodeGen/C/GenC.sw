@@ -258,8 +258,6 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
  %% (19) slice unused types and ops 
  %% ==========================================================================================
 
- %% slice? is true for gen-lisp-top, false for gen-lisp and lgen-lisp
-
  let ms_spec = SpecTransform.sliceSpecForC   ms_spec top_ops top_types in
  let _   = showSpecIfVerbose "sliceSpecForC" ms_spec                   in
 
