@@ -608,6 +608,15 @@ Globalize qualifying spec
   else
     ([], Unchanged)
 
+ op globalizeWildPat (context                     : Context)
+                     (vars_to_remove              : MSVarNames) % vars of global type, remove on sight
+                     (pat as (WildPat (typ, pos)) : MSPattern)
+  : Ids * GlobalizedPattern =
+  if globalType? context typ then
+    ([], GlobalVarPat)
+  else
+    ([], Unchanged)
+
  op globalizeTypedPat (context                          : Context)
                       (vars_to_remove                   : MSVarNames) % vars of global type, remove on sight
                       (pat as (TypedPat (p1, typ, pos)) : MSPattern)
@@ -622,16 +631,17 @@ Globalize qualifying spec
   case pat of
     | AliasPat      _ -> globalizeAliasPat      context vars_to_remove pat
     | VarPat        _ -> globalizeVarPat        context vars_to_remove pat
+    | WildPat       _ -> globalizeWildPat       context vars_to_remove pat
     | EmbedPat      _ -> globalizeEmbedPat      context vars_to_remove pat
     | RecordPat     _ -> globalizeRecordPat     context vars_to_remove pat
-   %| WildPat       
+    | QuotientPat   _ -> globalizeQuotientPat   context vars_to_remove pat
+    | RestrictedPat _ -> globalizeRestrictedPat context vars_to_remove pat
+    | TypedPat      _ -> globalizeTypedPat      context vars_to_remove pat
+   % literals can never be the state
    %| BoolPat       
    %| NatPat        
    %| StringPat     
    %| CharPat       
-    | QuotientPat   _ -> globalizeQuotientPat   context vars_to_remove pat
-    | RestrictedPat _ -> globalizeRestrictedPat context vars_to_remove pat
-    | TypedPat      _ -> globalizeTypedPat      context vars_to_remove pat
     | _ -> ([], Unchanged)
 
 
