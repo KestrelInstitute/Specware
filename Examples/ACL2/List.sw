@@ -1,7 +1,5 @@
 spec
 
-%  import /Languages/ACL2/BaseTypes
-
   type IList =
     | INil
     | ICons Int * IList

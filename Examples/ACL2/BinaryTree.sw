@@ -25,4 +25,12 @@ BinaryTree = spec
   theorem flipTree_heapOrdered is
   fa(tree:BinaryTree) (heapOrdered tree => heapOrdered (flipTree tree))
 
+  op addOneTree (tree:BinaryTree) : BinaryTree =
+    case tree of
+      | Empty -> Empty
+      | Node (x,left,right) -> Node (x+1,addOneTree left,addOneTree right)
+
+  theorem flipTree_addOneTree is
+  fa(tree:BinaryTree) flipTree (addOneTree tree) = addOneTree (flipTree tree)
+
 end-spec
