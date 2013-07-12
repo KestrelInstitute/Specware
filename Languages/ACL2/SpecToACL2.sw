@@ -9,6 +9,7 @@ import /Languages/SpecCalculus/Semantics/Environment
  %import /Languages/SpecCalculus/Semantics/Monad
 import /Languages/SpecCalculus/AbstractSyntax/ShowUtils
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
+import /Languages/MetaSlang/Transformations/Pragma
 import /Library/Legacy/Utilities/System
 
 type PPError a = 
@@ -204,6 +205,8 @@ op ppFun (f : MSFun) : PPError WLPretty =
   case f of
     | Bool x -> 
       (case x of | false -> Good (ppString "nil") | _ -> Good (ppString "t"))
+    | Nat x -> Good (ppString (intToString x))
+%    | Char x -> Good (ppString x)
     | Not -> Good (ppString "not")
     | And -> Good (ppString "and")
     | Or -> Good (ppString "or")
@@ -236,6 +239,10 @@ op ppPattern (pat:MSPattern) : PPError WLPretty =
     | EmbedPat (id,Some inPat,_,_) -> 
       (case ppPattern inPat of
          | Good sInPat -> Good (ppConcat [ppString "(", ppString id, ppString " ", sInPat, ppString ")"])
+         | Bad s -> Bad s)
+    | AliasPat (VarPat ((v,_),_),pat,_) ->
+      (case ppPattern pat of
+         | Good spat -> Good (ppConcat [ppString "(as ", ppString v, ppString " ", spat, ppString ")"])
          | Bad s -> Bad s)
     | _ -> Bad "foo"
 
@@ -399,6 +406,33 @@ op ppThm (elem:SpecElement) (spc:Spec) : PPError WLPretty =
          | Bad s -> Bad s)
     | _ -> Bad "Bad argument to ppThm"
 
+%op filterSpecElements (elts:SpecElements) : SpecElements =
+%  case elts of
+%    | [] -> []
+%    | 
+
+op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
+  case elt of
+    | Type _ -> ppType elt spc
+    | TypeDef _ -> ppTypeDef elt spc
+    | Op _ -> ppOpDef elt spc
+    | Property (Theorem,_,_,_,_) -> ppThm elt spc
+    | Import _ -> Good (ppString "")
+    | Pragma ("proof",prag,"end-proof",_) | verbatimPragma? prag ->
+        let verbatim_str = case search("\n", prag) of
+                             | None -> ""
+                             | Some n -> subFromTo(prag, n, length prag)
+        in
+        Good (ppString verbatim_str)
+    | Pragma _ -> Good (ppString "")
+    | _ -> Bad "oops"
+
+op ppSpecElements (elts:SpecElements) (spc:Spec) : PPError WLPretty =
+  case ppErrorMap (fn t -> ppSpecElement t spc) elts of
+    | Good eltsStrings ->
+      Good (ppSep (ppConcat [ppNewline, ppNewline]) eltsStrings)
+    | Bad s -> Bad s
+(*
 op ppSpecElements (types:SpecElements) (typeDefs:SpecElements) (opDefs:SpecElements) (thms:SpecElements) (spc:Spec) : PPError WLPretty =
   case (ppErrorMap (fn t -> ppType t spc) types,
         ppErrorMap (fn t -> ppTypeLocalDef t spc) types,
@@ -465,10 +499,10 @@ op filterThm (elems:SpecElements) : SpecElements =
         | Property (p as (Theorem,_,_,_,_)) ->
           (Property p) :: filterThm rst
         | _ -> filterThm rst
-
+*)
 op ppSpec (c: Context) (spc:Spec) : PPError WLPretty =
 %  let spc = adjustElementOrder spc in
-  case (getEnv "SPECWARE4", ppSpecElements (filterType spc.elements) (filterTypeDef spc.elements) (filterOp spc.elements) (filterThm spc.elements) spc ) of
+  case (getEnv "SPECWARE4", ppSpecElements spc.elements spc ) of
     | (Some specware4, Good s) -> 
       Good (ppGr2Concat [ppString "(in-package \"ACL2\")",
                          ppNewline,

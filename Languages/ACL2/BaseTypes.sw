@@ -7,6 +7,7 @@ spec
   % primitives
   op <  infixl 20 : Int * Int -> Bool
   op zero : Int
+  op one : Int
   
   % 
   op >= (x:Int,y:Int) infixl 20 : Bool = ~(x < y)
@@ -14,9 +15,10 @@ spec
 
   type Nat = {x : Int | x >= zero}
 
-%  op nat_+ infixl 20 : Nat * Nat -> Nat
+  op int_+ infixl 20 : Int * Int -> Int
+  op nat_+ infixl 20 : Nat * Nat -> Nat
 
-  type Positive = {x : Int | x > zero}
+%  type Positive = {x : Int | x > zero}
 
 (*
 (defsubtype positivep integerp (> x 0))

@@ -785,5 +785,11 @@
           (pattern-bindings-list lhses rhses tests bindings pmstate)))))
 
 
-;(defmacro guard-pattern-matcher
-;  (term args tests bindings lhses rhses pmstate)
+;;;;;;;;;;;;;;
+;; BUILTINS ;;
+;;;;;;;;;;;;;;
+
+(defpredicate Int-p (x) (integerp x))
+(defpredicate Bool-p (x) (booleanp x))
+(defun-typed (Int-p int_+) ((Int-p x) (Int-p y))
+  (binary-+ x y))
