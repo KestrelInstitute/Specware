@@ -1,73 +1,39 @@
 spec
 
-  import /Library/Base/Empty
+%  import /Languages/ACL2/BaseTypes
 
-  type BList =
-    | BNil
-    | BCons Boolean * BList
+  type IList =
+    | INil
+    | ICons Int * IList
 
-  op BAppend (a:BList, b:BList) : BList = 
+  op IAppend (a:IList, b:IList) : IList = 
   case a of
-    | BNil -> b
-    | BCons (x,xs) -> BCons (x, (BAppend (xs,b)))
+    | INil -> b
+    | ICons (x,xs) -> ICons (x, (IAppend (xs,b)))
 
-  theorem BAppend_associative is
-  fa (a:BList, b:BList, c:BList) (BAppend (BAppend (a,b), c) = BAppend (a, BAppend (b,c)))
+  theorem IAppend_associative is
+  fa (a:IList, b:IList, c:IList) (IAppend (IAppend (a,b), c) = IAppend (a, IAppend (b,c)))
 
-  op BRev (a:BList) : BList =
+  op IRev (a:IList) : IList =
   case a of
-    | BNil -> a
-    | BCons (x,xs) -> BAppend (BRev xs, BCons (x,BNil))
+    | INil -> a
+    | ICons (x,xs) -> IAppend (IRev xs, ICons (x,INil))
 
-  theorem BAppend_BNil is
-  fa (a:BList) BAppend(a,BNil) = a
+  theorem IAppend_INil is
+  fa (a:IList) IAppend(a,INil) = a
 
-%  theorem BAppend_BNil is
-%  fa (a:BList,b:BList) (b = BNil => BAppend (a,b) = a)
+  theorem IRev_IAppend is
+  fa (a:IList,b:IList) IRev (IAppend (a,b)) = IAppend (IRev b, IRev a)
 
-  theorem BRev_BAppend is
-  fa (a:BList,b:BList) BRev (BAppend (a,b)) = BAppend (BRev b, BRev a)
+  theorem IRev_IRev is
+  fa (a:IList) (IRev (IRev a)) = a
 
-  theorem BRev_BRev is
-  fa (a:BList) (BRev (BRev a)) = a
+  op ILength (a:IList) : Int =
+  case a of
+    | INil -> 0
+    | ICons (_,xs) -> 1 + ILength(xs)
+
+  theorem ILength_IAppend is
+  fa (a:IList,b:IList) ILength(IAppend(a,b)) = (ILength(a) + ILength(b))
 
 end-spec
-
-(*
-
-(in-package "ACL2")
-(include-book "~/Specware/Languages/ACL2/specware-book")
-
-(defcoproduct BList
-  (BNil)
-  (BCons BCons-arg1 :type booleanp
-         BCons-arg2 :type BListp))
-
-(defun-typed BAppend :type BListp (a :type BListp
-                                   b :type BListp)
-   (cond ((BNilp a) b)
-         ((BConsp a)
-          (let ((x (BCons-arg1 a))
-                (xs (BCons-arg2 a)))
-           (BCons x (BAppend xs b))))))
-
-(defthm-guarded BAppend-assoc
-  (implies (and (BListp a)
-                (BListp b)
-                (BListp c))
-           (equal (BAppend (BAppend a b) c)
-                  (BAppend a (BAppend b c)))))
-
-(defun-typed BReverse :type BListp (a :type BListp)
-  (cond ((BNilp a) a)
-        ((BConsp a)
-         (let ((x  (BCons-arg1 a))
-               (xs (BCons-arg2 a)))
-          (BAppend (BReverse xs)
-                   (BCons x (BNil)))))))
-
-(defthm BReverse-BReverse
-   (implies (BListp a)
-            (equal (BReverse (BReverse a)) a)))
-
-*)
