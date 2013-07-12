@@ -102,15 +102,22 @@ SpecsToI2L qualifying spec
          name     = "",%s pc.name:String,
          includes = [],
          decls    = {
-                     typedefs = foldriAQualifierMap (fn (qid, name, typeinfo, l2) ->
-                                                       if filter (Qualified (qid, name)) then
-                                                         case typeinfo2typedef (Qualified (qid, name), typeinfo, ctxt, spc) of
-                                                           | Some typedef -> l2 ++ [typedef]
-                                                           | _            -> l2
-                                                       else 
-                                                         l2)
-                                                    []
-                                                    spc.types,
+                     typedefs = foldlSpecElements (fn (defs,el) ->
+                                                     case el of
+                                                       | TypeDef (name, _) ->
+                                                         (case findTheType (spc, name) of
+                                                            | Some typeinfo ->
+                                                              if filter name then
+                                                                case typeinfo2typedef (name, typeinfo, ctxt, spc) of
+                                                                  | Some typedef -> defs ++ [typedef]
+                                                                  | _            -> defs
+                                                              else 
+                                                                defs)
+                                                       | _ -> defs)
+
+                                                  []
+                                                  spc.elements,
+
                      opdecls  = foldl (fn | (l3,OpDecl d) -> l3++[d] 
                                           | (l4,_)        -> l4)
                                       []
@@ -313,6 +320,8 @@ SpecsToI2L qualifying spec
       | Base(Qualified("Character", "Char"),   [],_) -> I_Primitive I_Char
       | Base(Qualified("String",    "String"), [],_) -> I_Primitive I_String
      %| Base(Qualified("Float",     "Float"),  [],_) -> I_Primitive I_Float
+
+      | Base(Qualified(_,           "Ptr"),    [t1],_) -> I_Ref (type2itype (tvs, t1, ctxt, spc)) 
 
       % ----------------------------------------------------------------------
 
