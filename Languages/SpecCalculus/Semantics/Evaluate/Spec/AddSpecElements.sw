@@ -510,7 +510,7 @@ SpecCalc qualifying spec
   topSort (EQUAL, element_refs, elements) % robustTopSort
 
  (* Adjust order of top-level ops to avoid forward references except for mutual recursion *)
- op adjustElementOrder (spc: Spec): Spec =
+ op SpecTransform.adjustElementOrder (spc: Spec): Spec =
   setElements (spc, topSortElements (spc, spc.elements))
 
 endspec
