@@ -24,7 +24,7 @@ op SpecTransform.generateCFiles (ms_spec      : Spec,
                                  opt_filename : Option String)
  : Spec =
  let new_ms_spec = transformSpecTowardsC ms_spec                               in
- let _           = emitCFiles            (new_ms_spec, app_name, opt_filename) in
+ let _           = emitCFiles            (new_ms_spec, app_name, opt_filename,[],[],[]) in
  ms_spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -282,7 +282,11 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
 
 op SpecTransform.emitCFiles (ms_spec      : Spec,
                              app_name     : String,
-                             opt_filename : Option String)
+                             opt_filename : Option String,
+                             includes : List String,
+                             op_extern_types : (List (String*String)),
+                             op_extern_defs : (List String)
+                             )
  : Spec =
  let _ = 
      case generateCSpecFromTransformedSpec ms_spec app_name of
