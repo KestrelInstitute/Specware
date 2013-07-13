@@ -247,6 +247,36 @@ SpecsToI2L qualifying spec
            | (Some (Min, m), Some (Max, n)) -> Some (m, n)
            | (Some (Max, n), Some (Min, m)) -> Some (m, n)
            | _ -> None)
+        
+       | Lambda ([(VarPat ((X,_), _),
+                   Fun (Bool true, _, _),
+                   Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
+                          Record ([(_, Fun (Nat n, _, _)),
+                                   (_, Var((X0,_), _))],
+                                  _),
+                          _)
+                   )],
+                 _)
+           | X = X0 ->  Some (- (2**(n-1)),2**(n - 1) -1)
+           
+      | Lambda ([(VarPat ((X,_), _),
+                      Fun (Bool true, _, _),
+                      Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
+                             Var((X0,_), _),
+                             _)
+                      )],
+                    _)
+            | X = X0 
+              -> 
+              (case fits_in_pred of
+                 | "intFitsIn1Bits?"  -> Some (-1,0)
+                 | "intFitsIn8Bits?"  -> Some (- (2**7),2**7-1)
+                 | "intFitsIn16Bits?" -> Some (- (2**15),2**15-1)
+                 | "intFitsIn32Bits?" -> Some (- (2**31),2**31-1)
+                 | _ -> None)
+
+
+        
       | _ -> None
 
   op type2itype (tvs  : TyVars,
@@ -341,7 +371,7 @@ SpecsToI2L qualifying spec
      % ----------------------------------------------------------------------
 
       | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _)
-        -> 
+        ->
         (case pred of
           %% {x : Nat -> x < n} where n is a Nat
           | Lambda([(VarPat((X,_),_),
@@ -355,8 +385,8 @@ SpecsToI2L qualifying spec
             ->
             if X = X0 then 
               (case pred of
-                 | "<=" ->  I_BoundedNat n
-                 | "<"  ->  I_BoundedNat (n - 1)
+                 | "<=" ->  I_BoundedNat (n + 1)
+                 | "<"  ->  I_BoundedNat n
                  | _    ->  I_Primitive  I_Nat)
             else 
               I_Primitive I_Nat
@@ -372,8 +402,9 @@ SpecsToI2L qualifying spec
                     _)
             | X = X0 
               -> 
-              I_BoundedNat n
+              I_BoundedNat (2**n)
 
+           
           | Lambda ([(VarPat ((X,_), _),
                       Fun (Bool true, _, _),
                       Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
@@ -384,10 +415,10 @@ SpecsToI2L qualifying spec
             | X = X0 
               -> 
               (case fits_in_pred of
-                 | "fitsIn1Bits?"  -> I_BoundedNat 1
-                 | "fitsIn8Bits?"  -> I_BoundedNat 8
-                 | "fitsIn16Bits?" -> I_BoundedNat 16
-                 | "fitsIn32Bits?" -> I_BoundedNat 32
+                 | "fitsIn1Bits?"  -> I_BoundedNat (2**1)
+                 | "fitsIn8Bits?"  -> I_BoundedNat (2**8)
+                 | "fitsIn16Bits?" -> I_BoundedNat (2**16)
+                 | "fitsIn32Bits?" -> I_BoundedNat (2**32)
                  | _ -> I_Primitive I_Nat)
 
           | _ ->
@@ -395,12 +426,13 @@ SpecsToI2L qualifying spec
 
       | Subtype (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
         (case find_simple_constant_bounds pred of
-           | Some (m, n) ->
+           | Some (m, n) -> % Inclusive bounds.
              if m = 0 then
                I_BoundedNat n
              else
-               I_BoundedInt (m, n)
+               I_BoundedInt (m-1, n+1) % I_BoundedInt takes an open interval.
            | _ ->
+             let _ = writeLine "FindSimpleConstantBounds failed" in
              I_Primitive I_Int)
 
       % ----------------------------------------------------------------------
@@ -1023,6 +1055,7 @@ SpecsToI2L qualifying spec
 
       | _ ->
        let msg = mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun in
+       let _ = writeLine (anyToString fun) in 
        let _ = writeLine msg in
        I_Str msg
 

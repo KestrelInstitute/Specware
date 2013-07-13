@@ -376,12 +376,11 @@ I2LToC qualifying spec
           | I_Void -> (cspc, C_Void)
             
           | I_BoundedNat n -> 
-            %let _ = writeLine ("Type for bounded nat : " ^ anyToString n) in
             let c_type =
-                if n < 2**8  then C_UInt8  else
-                if n < 2**16 then C_UInt16 else
-                if n < 2**32 then C_UInt32 else
-                if n < 2**64 then C_UInt64 else
+                if n <= 2**8  then C_UInt8  else
+                if n <= 2**16 then C_UInt16 else
+                if n <= 2**32 then C_UInt32 else
+                if n <= 2**64 then C_UInt64 else
                 let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using C_UInt64") in
                 C_UInt64
             in
@@ -391,14 +390,14 @@ I2LToC qualifying spec
           | I_BoundedInt (m, n) -> 
             %let _ = writeLine ("Type for bounded int : " ^ anyToString m ^ " " ^ anyToString n) in
             let c_type =
-                if        0 <= m && n < 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
-                if        0 <= m && n < 2**16 then C_UInt16 else 
-                if        0 <= m && n < 2**32 then C_UInt32 else
-                if        0 <= m && n < 2**64 then C_UInt64 else
-                if -(2**7)  <= m && n < 2**7  then C_Int8   else
-                if -(2**15) <= m && n < 2**15 then C_Int16  else
-                if -(2**31) <= m && n < 2**31 then C_Int32  else
-                if -(2**63) <= m && n < 2**63 then C_Int64  else
+                if        -1 <= m && n <= 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
+                if        -1 <= m && n <= 2**16 then C_UInt16 else 
+                if        -1 <= m && n <= 2**32 then C_UInt32 else
+                if        -1 <= m && n <= 2**64 then C_UInt64 else
+                if -(2**7)  - 1 <= m && n <= 2**7  then C_Int8   else
+                if -(2**15) - 1 <= m && n <= 2**15 then C_Int16  else
+                if -(2**31) - 1 <= m && n <= 2**31 then C_Int32  else
+                if -(2**63) - 1 <= m && n <= 2**63 then C_Int64  else
                 let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_Int32") in
                 C_Int64
             in
