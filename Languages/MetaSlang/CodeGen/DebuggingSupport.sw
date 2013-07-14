@@ -1,6 +1,7 @@
 Debugging qualifying spec
 
-import /Languages/MetaSlang/Specs/Printer % printSpec
+import /Languages/MetaSlang/Specs/Printer                  % printSpec
+import /Languages/MetaSlang/Transformations/CountTermTypes % initTermTypeCounter, countTermTypes
 
 op verbosity : Nat = 0
 
