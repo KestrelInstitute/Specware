@@ -14,10 +14,19 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
          let new_t2 = fullyType (t2, dom, spc)     in
          Apply (new_t1, new_t2, noPos)
        | _ ->
+         let t2_type          = termType t2               in
+         let unfolded_t2_type = unfoldBase (spc, t2_type) in
+         let _ = writeLine ("") in
          let _ = writeLine ("Internal confusion: Type for applied term is not an Arrow")       in
-         let _ = writeLine (" Apply      : " ^ printTerm term)             in
-         let _ = writeLine (" Type of t1 : " ^ printType t1_type)          in
-         let _ = writeLine ("         => : " ^ printType unfolded_t1_type) in
+         let _ = writeLine (" Application : " ^ printTerm term)             in
+         let _ = writeLine (anyToString term) in
+         let _ = writeLine ("          t1 : " ^ printTerm t1)               in
+         let _ = writeLine ("  Type of t1 : " ^ printType t1_type)          in
+         let _ = writeLine ("          => " ^ printType unfolded_t1_type) in
+         let _ = writeLine ("          t2 : " ^ printTerm t2)               in
+         let _ = writeLine ("  Type of t2 : " ^ printType t2_type)          in
+         let _ = writeLine ("          => " ^ printType unfolded_t2_type) in
+         let _ = writeLine ("") in
          term
 
    def typeRecord record_fields =
@@ -29,24 +38,31 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
                        if record_id = product_id then
                          (record_id, fullyType (record_term, product_type, spc))
                        else
+                         let _ = writeLine ("") in
                          let _ = writeLine ("Internal confusion: Product field " ^ product_id ^ " doesn't match record field " ^ record_id) in
-                         let _ = writeLine (" Record  : " ^ printTerm term)          in
-                         let _ = writeLine (" Product : " ^ printType unfolded_type) in
+                         let _ = writeLine (" Record : " ^ printTerm term)          in
+                         let _ = writeLine ("   type : " ^ printType expected_type) in
+                         let _ = writeLine ("       => " ^ printType unfolded_type) in
+                         let _ = writeLine ("") in
                          (record_id, record_term))
                     (record_fields,
                      product_fields)
            in
            Record (typed_record_fields, noPos)
          else
+           let _ = writeLine ("") in
            let _ = writeLine ("Internal confusion: Record term inconsistent with Product type") in
            let _ = writeLine (" Record  : " ^ printTerm term)          in
            let _ = writeLine (" Product : " ^ printType unfolded_type) in
+           let _ = writeLine ("") in
            Record (record_fields, noPos)
       | _ ->
+        let _ = writeLine ("") in
         let _ = writeLine ("Internal confusion: Type for record is not a Product")      in
         let _ = writeLine (" Record : " ^ printTerm term)          in
         let _ = writeLine ("   Type : " ^ printType expected_type) in
-        let _ = writeLine ("     => : " ^ printType unfolded_type) in
+        let _ = writeLine ("       => " ^ printType unfolded_type) in
+        let _ = writeLine ("") in
         term
 
    def typeBind (binder, vars, body) = 
@@ -94,10 +110,12 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
          let rules = map (fn rule -> typeRule (rule, rng)) rules in
          Lambda (rules, noPos)
        | _ ->
+         let _ = writeLine ("") in
          let _ = writeLine ("Internal confusion: Type for lambda is not an Arrow")  in
          let _ = writeLine (" Lambda : " ^ printTerm term)          in
          let _ = writeLine ("   Type : " ^ printType expected_type) in
-         let _ = writeLine ("     => : " ^ printType unfolded_type) in
+         let _ = writeLine ("       => " ^ printType unfolded_type) in
+         let _ = writeLine ("") in
          term
 
    def typeIfThenElse (pred, t1, t2) = 
@@ -144,7 +162,6 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
  in
  TypedTerm (new, expected_type, noPos)
 
-
 %% ================================================================================
 %% SpecTransform.typeAllTerms is a user-invocable transformation that explicitly
 %% types every sub-term with the type imposed by its context.
@@ -169,6 +186,5 @@ op SpecTransform.typeAllTerms (spc : Spec) : Spec =
                 spc.ops
  in
  setOps (spc, new_ops)
-
 
 end-spec
