@@ -89,8 +89,8 @@ I2L qualifying spec
                      }
   type I_StadsFunBody = List I_StadCode
 
-  type I_TypedExpr  = {expr: I_Expr, typ : I_Type, cast? : Bool}
   type I_TypedExprs = List I_TypedExpr
+  type I_TypedExpr  = {expr: I_Expr, typ : I_Type, cast? : Bool}
 
   type I_Expr = | I_Str            String
                 | I_Int            Int
@@ -116,6 +116,12 @@ I2L qualifying spec
                 | I_StructExpr     I_StructExprFields                        % create a structure using given names
                 | I_Project        I_TypedExpr * String                      % access a field   in a product/structure
                 | I_Select         I_TypedExpr * String                      % access a variant in a coproduct/union 
+
+  op I_True  : I_TypedExpr = {expr = I_Bool true,  typ = I_Primitive I_Bool, cast? = false} 
+  op I_False : I_TypedExpr = {expr = I_Bool false, typ = I_Primitive I_Bool, cast? = false} 
+
+  op I_Zero  : I_TypedExpr = {expr = I_Int 0, typ = I_Primitive I_Nat, cast? = false} 
+  op I_One   : I_TypedExpr = {expr = I_Int 1, typ = I_Primitive I_Nat, cast? = false} 
 
   % a variable reference consists of a unit name and an identifier name
   type I_VarName = String * String
