@@ -420,25 +420,29 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
   let res =
    case term 
      of Apply      (t1, t2,            _) -> (case maybeTermTypeEnv(sp, t1) of
-                                                | Some(Arrow(dom,rng,_)) -> Some rng 
-                                                | Some(Subtype(Arrow(dom,rng,_),_,_)) -> Some rng
+                                                | Some typ ->
+                                                  (case arrowOpt (sp, typ) of
+                                                     | Some (_, rng) -> Some rng
+                                                     | _ -> None)
                                                 | _ -> None)
       | ApplyN     ([t1,t2],          _)  -> (case maybeTermTypeEnv(sp, t1) of
-                                                | Some(Arrow(dom,rng,_)) ->
-                                                  % let _ = writeLine("tt2*: "^printTerm term^"\n"^anyToString t1) in
-                                                  (case rng of
-                                                     | MetaTyVar(tv,_) -> 
-                                                       let {name=_,uniqueId=_,link} = ! tv in
-                                                       (case link
-                                                          of None -> (case (t1, productOpt(sp, termType t2)) of
-                                                                        | (Fun(Project id, _, _), Some fields) ->
-                                                                          (case findLeftmost (fn (id2, _) -> id = id2) fields of
-                                                                           | Some(_, f_ty) -> Some f_ty
-                                                                           | None -> Some rng)
-                                                                        | _ -> Some rng)
-                                                           | _ -> Some rng)
-                                                     | _ -> Some rng)
-                                                | _ -> None)
+                                                | Some typ ->
+                                                  case arrowOpt (sp, typ) of
+                                                    | Some (_, rng) ->
+                                                      % let _ = writeLine("tt2*: "^printTerm term^"\n"^anyToString t1) in
+                                                      (case rng of
+                                                         | MetaTyVar(tv,_) -> 
+                                                           let {name=_,uniqueId=_,link} = ! tv in
+                                                           (case link of
+                                                              | None -> (case (t1, productOpt(sp, termType t2)) of
+                                                                           | (Fun(Project id, _, _), Some fields) ->
+                                                                             (case findLeftmost (fn (id2, _) -> id = id2) fields of
+                                                                                | Some(_, f_ty) -> Some f_ty
+                                                                                | None -> Some rng)
+                                                                           | _ -> Some rng)
+                                                              | _ -> Some rng)
+                                                         | _ -> Some rng)
+                                                    | _ -> None)
       | Bind       _                      -> Some boolType
       | Record     (fields,            _) -> (case foldr (fn ((id, t), result) ->
                                                                case result of
