@@ -21,27 +21,37 @@ op SpecTransform.liftUnsupportedPatterns (spc : Spec) : Spec =
                     spc.ops)
 
 op liftUnsupportedPattern (term : MSTerm, spc : Spec) : MSTerm =
+
+ %% fn (pattern : X) : Y -> body
+ %%  =>
+ %% fn (var : X) : Y -> 
+ %%  (fn (pattern : X) : X -> body) var
+ %%
+ %% unless pattern is a VarPat or a RecordPat of VarPat's
+
  case term of
    | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
      (case pat of
-
+                   
         | VarPat _ -> term
 
         | RecordPat (fields, _) -> 
           if forall? (fn | (_, VarPat _) -> true | _ -> false) fields then 
             term
           else
-            % let _ = writeLine ("lifting unsupported pattern in operator definition: " ^ printPattern pat) in
-            let inferred_type = inferType (spc, term) in
-            % todo: use domain of inferred_type
-            let varx     = Var    (("x", inferred_type),        noPos) in
-            let appl     = Apply  (term, varx,                  noPos) in
-            let varpatx  = VarPat (("x", inferred_type),        noPos) in
-            let new_term = Lambda ([(varpatx, mkTrue(), appl)], noPos) in
+
+            %% structured pattern that is not a simple tuple or record of vars
+            %% let _ = writeLine ("lifting unsupported pattern in operator definition: " ^ printPattern pat) in
+
+            let xvar     = ("x", patternType pat)     in
+            let xref     = Var    (xvar, noPos)       in
+            let xpat     = VarPat (xvar, noPos)       in
+            let new_body = Apply  (term, xref, noPos) in
+            let new_rule = (xpat, mkTrue(), new_body) in
+            let new_term = Lambda ([new_rule], noPos) in
             new_term
 
         | _ -> term)
    | _ -> term
-
 
 end-spec
