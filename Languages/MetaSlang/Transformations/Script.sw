@@ -1,7 +1,7 @@
 Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
-         RedundantErrorCorrecting, Globalize, SliceSpec, MetaTransform
+         RedundantErrorCorrecting, SliceSpec, MetaTransform
   import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
@@ -46,7 +46,6 @@ spec
     | AddSemanticChecks(Bool * Bool * Bool)
     | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
     | Slice     (OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool))
-    | Globalize (OpNames * TypeName  * Id * Option OpName)
     | Trace Bool
     | Print
 
@@ -986,8 +985,6 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
         return(addSemanticChecks(spc, checkArgs?, checkResult?, checkRefine?, recovery_fns), tracing?)
       | RedundantErrorCorrecting(morphs, opt_qual, restart?) ->
         redundantErrorCorrecting spc morphs opt_qual restart? tracing?
-      | Globalize (root_ops, gtype, gvar, opt_ginit) -> 
-        globalizeSingleThreadedType (spc, root_ops, gtype, gvar, opt_ginit, tracing?)
       | Slice     (root_ops, root_types, cut_op?, cut_type?) -> sliceSpecForCodeM (spc, root_ops, root_types, cut_op?, cut_type?, tracing?)
       | Trace on_or_off -> return (spc, on_or_off)
       | _ -> raise (Fail ("Unimplemented script element:\n"^scriptToString script))
