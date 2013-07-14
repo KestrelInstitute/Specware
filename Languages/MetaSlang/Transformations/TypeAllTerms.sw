@@ -3,11 +3,11 @@ TypeAllTerms qualifying spec
 import /Languages/MetaSlang/Specs/Environment
 
 op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
- let unfolded_type = unfoldBase (spc, expected_type) in
+ let unfolded_type = stripSubtypes (spc, unfoldBase (spc, expected_type)) in
  let
    def typeApply (t1, t2) = 
      let t1_type          = termType t1               in
-     let unfolded_t1_type = unfoldBase (spc, t1_type) in
+     let unfolded_t1_type = stripSubtypes (spc, unfoldBase (spc, t1_type)) in
      case unfolded_t1_type of
        | Arrow (dom, rng, _) ->
          let new_t1 = fullyType (t1, t1_type, spc) in
@@ -129,7 +129,7 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
      let new_last_term = fullyType (last_term, expected_type, spc) in
      Seq (reverse (new_last_term :: rev_prefix), noPos)
 
-   def typeTypedTerm (trm, explicit_type) = 
+   def typeTypedTerm (trm, explicit_type, expected_type) = 
      fullyType (trm, explicit_type, spc) 
      
    def typePi (tvs, trm) = 
@@ -154,13 +154,44 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
        | Lambda     (match,              _) -> typeLambda     match
        | IfThenElse (pred, t1, t2,       _) -> typeIfThenElse (pred, t1, t2)
        | Seq        (terms,              _) -> typeSeq        terms
-       | TypedTerm  (trm, typ,           _) -> typeTypedTerm  (trm, typ)
+       | TypedTerm  (trm, explicit_type, _) -> typeTypedTerm  (trm, explicit_type, expected_type)
        | Pi         (tvs, trm,           _) -> typePi         (tvs, trm)
        | And        (terms,              _) -> typeAnd        terms
        | _ -> 
          term 
  in
- TypedTerm (new, expected_type, noPos)
+ let
+   def matches? (t1, t2) =
+     (possiblySubtypeOf? (t1, t2, spc))
+     ||
+     (case (t1, t2) of
+        | (Product (fields1, _), Product (fields2, _)) 
+          | (length fields1 = length fields2)
+          ->
+          forall? (fn ((id1, t1), (id2, t2)) -> 
+                     id1 = id2 &&
+                     matches? (t1, t2))
+                  (zip (fields2, fields2))
+        | _ ->
+          false)
+ in
+ case maybeTermTypeEnv (spc, new) of
+   | Some inferred_type ->
+     if matches? (inferred_type, expected_type) then
+       new
+     else
+       % let _ = writeLine ("") in
+       % let _ = writeLine ("Adding type for " ^ printTerm new) in
+       % let _ = writeLine ("inferred type = " ^ printType inferred_type) in
+       % let _ = writeLine ("     new type = " ^ printType expected_type) in
+       % let _ = writeLine ("") in
+       TypedTerm (new, expected_type, noPos)
+   | _ ->
+     % let _ = writeLine ("") in
+     % let _ = writeLine ("Could not infer type for " ^ printTerm new) in
+     % let _ = writeLine ("new type = " ^ printType expected_type) in
+     % let _ = writeLine ("") in
+     TypedTerm (new, expected_type, noPos)
 
 %% ================================================================================
 %% SpecTransform.typeAllTerms is a user-invocable transformation that explicitly
