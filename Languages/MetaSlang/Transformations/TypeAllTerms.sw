@@ -2,8 +2,8 @@ TypeAllTerms qualifying spec
 
 import /Languages/MetaSlang/Specs/Environment
 
-op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
- let unfolded_type = unfoldBase (spc, typ) in
+op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
+ let unfolded_type = unfoldBase (spc, expected_type) in
  let
    def typeApply (t1, t2) = 
      let t1_type          = termType t1               in
@@ -45,7 +45,7 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
       | _ ->
         let _ = writeLine ("Internal confusion: Type for record is not a Product")      in
         let _ = writeLine (" Record : " ^ printTerm term)          in
-        let _ = writeLine ("   Type : " ^ printType typ)           in
+        let _ = writeLine ("   Type : " ^ printType expected_type) in
         let _ = writeLine ("     => : " ^ printType unfolded_type) in
         term
 
@@ -54,7 +54,7 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
      Bind (binder, vars, new_body, noPos)
 
    def typeThe (var, body) = 
-     let new_body = fullyType (body, typ, spc) in
+     let new_body = fullyType (body, Boolean noPos, spc) in
      The (var, new_body, noPos)
 
    def typeLet (bindings, body) = 
@@ -65,7 +65,7 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
                 (pat, new_value))
              bindings 
      in
-     let new_body = fullyType (body, typ, spc) in
+     let new_body = fullyType (body, expected_type, spc) in
      Let (new_bindings, new_body, noPos)
 
    def typeLetRec (bindings, body) = 
@@ -75,7 +75,7 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
                 (var, new_value))
              bindings 
      in
-     let new_body = fullyType (body, typ, spc) in
+     let new_body = fullyType (body, expected_type, spc) in
      LetRec (new_bindings, new_body, noPos)
 
    def typeVar var = 
@@ -96,30 +96,30 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
        | _ ->
          let _ = writeLine ("Internal confusion: Type for lambda is not an Arrow")  in
          let _ = writeLine (" Lambda : " ^ printTerm term)          in
-         let _ = writeLine ("   Type : " ^ printType typ)           in
+         let _ = writeLine ("   Type : " ^ printType expected_type) in
          let _ = writeLine ("     => : " ^ printType unfolded_type) in
          term
 
    def typeIfThenElse (pred, t1, t2) = 
      let new_pred = fullyType (pred, Boolean noPos, spc) in
-     let new_t1   = fullyType (t1,   typ,           spc) in
-     let new_t2   = fullyType (t2,   typ,           spc) in
+     let new_t1   = fullyType (t1,   expected_type, spc) in
+     let new_t2   = fullyType (t2,   expected_type, spc) in
      IfThenElse (new_pred, new_t1, new_t2, noPos)
 
    def typeSeq terms = 
      let last_term :: rev_prefix = reverse terms in
-     let new_last_term = fullyType (last_term, typ, spc) in
+     let new_last_term = fullyType (last_term, expected_type, spc) in
      Seq (reverse (new_last_term :: rev_prefix), noPos)
 
    def typeTypedTerm (trm, explicit_type) = 
      fullyType (trm, explicit_type, spc) 
      
    def typePi (tvs, trm) = 
-     let new_trm = fullyType (trm, typ, spc) in
+     let new_trm = fullyType (trm, expected_type, spc) in
      Pi (tvs, new_trm, noPos)
 
    def typeAnd terms = 
-     And (map (fn tm -> fullyType (tm, typ, spc)) terms, noPos)
+     And (map (fn tm -> fullyType (tm, expected_type, spc)) terms, noPos)
 
  in
 
@@ -142,7 +142,7 @@ op fullyType (term : MSTerm, typ : MSType, spc  : Spec) : MSTerm =
        | _ -> 
          term 
  in
- TypedTerm (new, typ, noPos)
+ TypedTerm (new, expected_type, noPos)
 
 
 %% ================================================================================
