@@ -188,9 +188,11 @@ op evaluateCheckSpec (optional_argstring : Option String, lastUnitIdLoaded : Opt
 %% It does not attempt any repairs.  Logically, this is just the
 %% identity transformation on specs.
 
-%% The optional string argument allows you to name this call of check spec, to support easy grepping, in case checkSpec is called many times in a derivation.
+%% The optional string argument allows you to name this call of check
+%% spec, to support easy grepping, in case checkSpec is called many
+%% times in a derivation.
 
-op SpecTransform.CheckSpec (spc : Spec, opt_str : Option String) : Spec =
+op SpecTransform.checkSpec (spc : Spec, opt_str : Option String) : Spec =
   let str = case opt_str of | Some str -> str | None -> "" in
   let _ = checkSpecCore(spc, str) in spc
 
