@@ -53,8 +53,7 @@ RemoveCurrying qualifying spec
     in
     setOps (setTypes (spc, newTypes), newOps)
 
-   op addUnCurriedOps: Spec -> Spec
-  def addUnCurriedOps spc =
+   op addUnCurriedOps (spc : Spec) : Spec =
     let def doOp (old_el, q, id, info, r_elts, r_ops) =
 	  let pos = termAnn info.dfn in
 	  let (old_decls, old_defs) = opInfoDeclsAndDefs info in
@@ -78,8 +77,8 @@ RemoveCurrying qualifying spec
 		   let new_dfn = maybePiTerm (old_tvs, TypedTerm (old_tm, new_srt, pos)) in
 		   let new_ops = insertAQualifierMap (new_ops, q, new_id,
 						      info << {names = [Qualified (q, new_id)],
-							       dfn   = new_dfn})
-		   in
+							       dfn   = new_dfn}) 
+                  in
 		   let new_qid = Qualified (q, new_id) in
 		   (Cons (Op (new_qid, false, pos), % false means def is not printed as part of decl
                           Cons (OpDef (new_qid, 0, [], noPos),
@@ -115,8 +114,7 @@ RemoveCurrying qualifying spec
     spc << {ops        = newOps, 
 	    elements   = newElts}
 
-  op  newUncurriedOp: Spec * Id * MSType -> Option (Id * MSType)
-  def newUncurriedOp (spc, nm, srt) =
+  op newUncurriedOp (spc : Spec, nm : Id, srt : MSType) : Option (Id * MSType) =
     let (hasCurried?, unCurriedSrt) = unCurryType (srt, spc) in
     if ~hasCurried? then 
       None
@@ -128,8 +126,7 @@ RemoveCurrying qualifying spec
  %op  unCurryDef: MSTerm * Nat -> MSTerm
  %def unCurryDef(tm,curryshape) =
 
-  op  getCurryFnArgs: MSTerm -> Option (MSTerm * MSTerms)
-  def getCurryFnArgs t =
+  op getCurryFnArgs (t : MSTerm) : Option (MSTerm * MSTerms) =
     let def aux (term, i, args) =
       case term of
 	| Fun _ -> Some (term, args)
@@ -139,8 +136,7 @@ RemoveCurrying qualifying spec
     in 
       aux (t, 0, [])
 
-  op  unCurryTerm: MSTerm * Spec -> MSTerm
-  def unCurryTerm (tm, spc) =
+  op unCurryTerm (tm : MSTerm, spc : Spec) : MSTerm =
     let def unCurryTermRec t = unCurryTerm(t,spc)
         def unCurryApply(f,args,spc) =
 	  let fsrt = termTypeEnv(spc,f) in
@@ -228,11 +224,10 @@ RemoveCurrying qualifying spec
 %      | Bind(b,vars,M,_)  -> 
       | _ -> tm
 
-  op  unCurryType: MSType * Spec -> Bool * MSType
   %% Returns transformed type and whether any change was made
   %% Don't look inside type definitions except to follow arrows
   %% (otherwise infinitely recursive)
-  def unCurryType(srt,spc) =
+  op unCurryType(srt : MSType, spc : Spec) : Bool * MSType =
     let def unCurryRec s = unCurryType(s,spc)
         def unCurryArrowAux(rng,accumDomSrts) =
 	  (case stripSubtypes(spc,rng) of
@@ -279,8 +274,7 @@ RemoveCurrying qualifying spec
 	(changed?, Quotient (ns,nt,a))
       | s -> (false,s)
 
-  op  flattenLambda: MSPatterns * MSTerm * MSType * Spec -> MSTerm
-  def flattenLambda(vs,body,bodyType,spc) =
+  op flattenLambda(vs : MSPatterns, body : MSTerm, bodyType : MSType, spc : Spec) : MSTerm =
     case body of
       | Lambda([(sPat,_,sBody)],_) ->
         flattenLambda(vs ++ [sPat],sBody,termTypeEnv(spc,sBody),spc)
@@ -296,10 +290,9 @@ RemoveCurrying qualifying spec
 		       unCurryTerm(mkApply(body,mkTuple(map mkVar newVars)),spc))
 	  | None -> mkLambda(mkTuplePat vs,unCurryTerm(body,spc))
 
-  def varNamePool = ["x","y","z","w","l","m","n","o","p","q","r","s"]
+  op varNamePool : List String = ["x","y","z","w","l","m","n","o","p","q","r","s"]
 
-  op  mkNewVars: MSTypes * List Id * Spec -> MSVars
-  def mkNewVars(srts,usedNames,spc) =
+  op mkNewVars(srts : MSTypes, usedNames : List Id, spc : Spec) : MSVars =
     let def findUnused(srts,usedNames,pool) =
           case srts of
 	    | [] -> []
@@ -310,12 +303,11 @@ RemoveCurrying qualifying spec
 			  findUnused(rSrts,usedNames,tail pool))
     in findUnused(srts,usedNames,varNamePool)
 
-  op  convertFun: MSTerm * Nat * Spec -> MSTerm
-  def convertFun(tm,curryshape,spc) =
+  op convertFun(tm : MSTerm, curryshape : Nat, spc : Spec) : MSTerm =
     case tm of
       | Fun (Op (Qualified(q,id),_),srt,_) ->
         mkOp(Qualified(q,unCurryName(id,curryshape)),
 	     (unCurryType(srt,spc)).2)
       | Var((id,srt),a) -> Var((id,(unCurryType(srt,spc)).2),a)
       | _ -> tm
-endspec
+end-spec
