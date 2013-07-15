@@ -92,9 +92,13 @@ I2LToC qualifying spec
 
   op c4TypeDefinition (ctxt : I2C_Context, cspc : C_Spec, (tname,typ) : I_TypeDefinition) : C_Spec =
     let tname        = qname2id tname            in
-    let (cspc,ctype) = c4Type(ctxt,cspc,typ)     in
-    let typedef      = (tname,ctype)             in
-    let cspc         = addTypeDefn(cspc,typedef) in
+    let cspc         = if tname in? ["Option_Option", "List_List"] then
+                         cspc
+                       else
+                         let (cspc,ctype) = c4Type(ctxt,cspc,typ)     in
+                         let typedef      = (tname,ctype)             in
+                         addTypeDefn(cspc,typedef) 
+    in
    %let cspc = if typ = Any then cspc else addDefine(cspc,"TypeDef_For_"^tname) in
     cspc
 
