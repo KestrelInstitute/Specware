@@ -738,12 +738,10 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
        Subtype(patternType p,Lambda([(p,mkTrueA a,t)],a),a)
      | TypedPat     (_, ty,  _) -> ty
 
- op [a] deRestrict(p: APattern a): APattern a =
+ op [a] deRestrict (p: APattern a): APattern a =
    case p of
-     | RestrictedPat(p,_,_) -> p
+     | RestrictedPat(p,_,_) -> deRestrict p
      | _ -> p
-
-
 
    
  % mapAccum is like map, but threads an accumulator through. 
