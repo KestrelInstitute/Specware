@@ -976,7 +976,7 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
 
  %% This may add calls to polymorphic fns, so must precede poly2mono.
 
- let spc = SpecTransform.translateMatch                            spc in 
+ let spc = SpecTransform.translateMatch                            (spc, true) in 
  let _   = showSpecIfVerbose "translateMatch"                      spc in
   
  %% ==========================================================================================
@@ -1089,7 +1089,7 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %% (24) expand pattern matches again ??
  %% ==========================================================================================
 
- let spc = SpecTransform.translateMatch                            spc in 
+ let spc = SpecTransform.translateMatch                            (spc, true) in 
  let _   = showSpecIfVerbose "translateMatch[2]"                   spc in
 
  %% ==========================================================================================

@@ -63,14 +63,16 @@ PatternMatch qualifying spec
                  spc         : Spec,
                  error_index : Ref Nat,        % to distinguish error messages
                  name        : QualifiedId,    % for error messages -- name of parent op or type
-                 lambda      : Option MSTerm}  % for error messages
+                 lambda      : Option MSTerm,  % for error messages
+                 c?          : Bool}
 
- op mkSpcContext (spc : Spec) (name : QualifiedId) : Context =
+ op mkSpcContext (spc : Spec) (name : QualifiedId) (c? : Bool) : Context =
   {counter     = Ref 0,
    spc         = spc,
    error_index = Ref 0,   % to distinguish error messages
    name        = name,    % for error messages
-   lambda      = None}    % for error messages
+   lambda      = None,    % for error messages
+   c?          = c?}
 
  op mkBreak (typ : MSType) : MSTerm = 
   mkOp (Qualified ("TranslationBuiltIn", "mkBreak"), typ)
@@ -1068,6 +1070,14 @@ PatternMatch qualifying spec
 
  op alwaysCheckRestrictedPatInLambda? : Bool = false
 
+op almostSimplePattern? (pattern : MSPattern) : Bool = 
+ case pattern of
+   | VarPat _ -> true
+   | RestrictedPat (p, _, _) -> simplePattern? p
+   | RecordPat (fields, _) ->forall? (fn (_, p) -> simplePattern? p) fields 
+   | _ -> false
+ 
+
  op eliminateTerm (ctx : Context) (term : MSTerm) : MSTerm =
   case term of
     | Lambda (msrules,_) ->
@@ -1134,8 +1144,13 @@ PatternMatch qualifying spec
      %% Translate non-recursive non-simple let patterns into application
     
      let (ctx, bindings) = foldr flattenLetBinding (ctx,bindings) [] in
-     if forall? (fn (pat, _)-> simplePattern? pat) bindings then
-       mkLet (bindings, body)
+     if (if ctx.c? then 
+           let _ = writeLine("forall c? : " ^ show ctx.c?) in
+             forall? (fn (pat, _)-> almostSimplePattern? pat) bindings
+           else
+             forall? (fn (pat, _)-> simplePattern? pat) bindings)
+       then
+         mkLet (bindings, body)
      else 
        let (pats, terms) = unzip bindings in
        let trm = 
@@ -1250,15 +1265,16 @@ PatternMatch qualifying spec
     | _ -> term
 
  op translateMatchInTerm (spc : Spec) (name : QualifiedId) (term : MSTerm): MSTerm =
-  betaReduceLambdaBody (eliminateTerm (mkSpcContext spc name) term)
+  betaReduceLambdaBody (eliminateTerm (mkSpcContext spc name false) term)
 
- op SpecTransform.translateMatch (spc : Spec) : Spec = 
+ op SpecTransform.translateMatch (spc : Spec, c? : Bool) : Spec = 
   % sjw: Moved (Ref 0) in-line in mkSpcContext so it is reexecuted for each call so the counter is reinitialized
   % for each call. (This was presumably what was intended as otherwise there would be no need for mkContext
   % to be a function). This means that compiled functions will have the same generated variables
   % independent of the rest of the file.
+  let _ = writeLine("c? : " ^ show c?) in
   let 
-    def mkContext name = mkSpcContext spc name
+    def mkContext name = mkSpcContext spc name c?
   in
   let new_types =
       mapTypeInfos (fn info ->

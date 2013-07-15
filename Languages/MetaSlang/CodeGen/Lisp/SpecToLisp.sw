@@ -1543,7 +1543,7 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  %%      This may add local defs, so should preceed lambda lift.
  %% ==========================================================================================
 
- let spc = SpecTransform.translateMatch                            spc in 
+ let spc = SpecTransform.translateMatch                            (spc, false) in 
  let _   = showSpecIfVerbose "translateMatch"                      spc in
 
  %% ==========================================================================================

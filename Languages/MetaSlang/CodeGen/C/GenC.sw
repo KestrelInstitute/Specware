@@ -125,7 +125,7 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
  %%      This may add local defs, so should preceed lambda lift.
  %% ==========================================================================================
 
- let ms_spec = SpecTransform.translateMatch   ms_spec in 
+ let ms_spec = SpecTransform.translateMatch   (ms_spec, true) in 
  let _   = showSpecIfVerbose "translateMatch" ms_spec in
 
  %% ==========================================================================================
@@ -288,8 +288,19 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
                              op_extern_defs : (List String)
                              )
  : Spec =
+ let empty_c_spec = emptyCSpec "" in
+ let 
+   def filter (Qualified (q, id)) =
+     if id in? op_extern_defs then
+       false
+     else if exists? (fn (x, _) -> x = id) op_extern_types then
+       false
+     else
+       true
+ in
  let _ = 
-     case generateCSpecFromTransformedSpec ms_spec app_name of
+     % case generateCSpecFromTransformedSpec ms_spec app_name of
+     case generateCSpecFromTransformedSpecIncrFilter ms_spec app_name empty_c_spec filter of
        | Some c_spec ->
          printCSpec (c_spec, app_name, opt_filename) 
        | _ ->
