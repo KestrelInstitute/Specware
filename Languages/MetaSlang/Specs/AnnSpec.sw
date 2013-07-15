@@ -133,12 +133,10 @@ AnnSpec qualifying spec
      | And (srts,   _) -> exists? definedType? srts
      | _               -> true
 
- op  definedOpInfo? : [b] AOpInfo b -> Bool
- def definedOpInfo? info =
+ op [b] definedOpInfo? (info : AOpInfo b) : Bool =
    definedTerm? info.dfn
 
- op  definedTerm? : [b] ATerm b -> Bool
- def definedTerm? tm =
+ op [b] definedTerm? (tm : ATerm b) : Bool =
    case tm of
      | Any        _                  -> false               % op foo : Nat
      | Lambda     ([(_,_,body)],  _) -> definedTerm? body   % e.g., "op foo (n : Nat) : Nat" will see internal "fn n -> any" as undefined
@@ -198,12 +196,12 @@ AnnSpec qualifying spec
      | And (tms, _) -> filter definedTerm? tms
      | tm           -> filter definedTerm? [tm]
 
- op  opInfoDeclsAndDefs : [b] AOpInfo b -> List (ATerm b) * List (ATerm b)
- def opInfoDeclsAndDefs info =
+ % Will there always be exactly one decl?
+ op [b] opInfoDeclsAndDefs (info : AOpInfo b) : List (ATerm b) * List (ATerm b) =
    termDeclsAndDefs info.dfn
 
-op  termDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
- def termDeclsAndDefs tm =
+ % Will there always be exactly one decl?
+ op [b] termDeclsAndDefs (tm : ATerm b) : List (ATerm b) * List (ATerm b) =
    % let _ = writeLine("termDeclsAndDefs:\n"^printTerm tm) in
    let a = termAnn tm in
    let def segregate(tm, tvs, o_ty, tms) =

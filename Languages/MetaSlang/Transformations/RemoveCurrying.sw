@@ -1,24 +1,24 @@
-(* Replace all curried functions by functions that take products
- op f: A -> B -> C
--->
- op f_1_1: A * B -> C
+%% Replace all curried functions by functions that take products
+%%  op f: A -> B -> C
+%% -->
+%%  op f_1_1: A * B -> C
+%%
+%% Calls f x y --> f_1_1(x,y), f x --> (fn y -> f_1_1(x,y))
+%%
+%%  op f: A * (B -> C -> D) -> E
+%% -->
+%%  op f_2: A * (B * C -> D) -> E
+%%
+%%  fn x -> (fn y -> e(x,y))
+%% -->
+%%  fn (x,y) -> e(x,y)
+%%
+%%  fn x -> (e: (A -> B))
+%% -->
+%%  fn (x,y) e y
+%%
+%% Assume that pattern matching has been transformed away
 
-Calls f x y --> f_1_1(x,y), f x --> (fn y -> f_1_1(x,y))
-
- op f: A * (B -> C -> D) -> E
--->
- op f_2: A * (B * C -> D) -> E
-
- fn x -> (fn y -> e(x,y))
--->
- fn (x,y) -> e(x,y)
-
- fn x -> (e: (A -> B))
--->
- fn (x,y) e y
-
-Assume that pattern matching has been transformed away
-*)
 
 RemoveCurrying qualifying spec
   import CurryUtils
@@ -77,8 +77,9 @@ RemoveCurrying qualifying spec
 		   let new_dfn = maybePiTerm (old_tvs, TypedTerm (old_tm, new_srt, pos)) in
 		   let new_ops = insertAQualifierMap (new_ops, q, new_id,
 						      info << {names = [Qualified (q, new_id)],
-							       dfn   = new_dfn}) 
-                  in
+							       dfn   = new_dfn}) in
+                   %% Test: I am removing the old op from the hash map (to ensure the resulting spec is well-formed; hope this is okay):
+                   %% let new_ops = removeAQualifierMap (new_ops, q, id) in
 		   let new_qid = Qualified (q, new_id) in
 		   (Cons (Op (new_qid, false, pos), % false means def is not printed as part of decl
                           Cons (OpDef (new_qid, 0, [], noPos),
@@ -114,14 +115,14 @@ RemoveCurrying qualifying spec
     spc << {ops        = newOps, 
 	    elements   = newElts}
 
-  op newUncurriedOp (spc : Spec, nm : Id, srt : MSType) : Option (Id * MSType) =
-    let (hasCurried?, unCurriedSrt) = unCurryType (srt, spc) in
+  op newUncurriedOp (spc : Spec, nm : Id, ty : MSType) : Option (Id * MSType) =
+    let (hasCurried?, unCurriedTy) = unCurryType (ty, spc) in
     if ~hasCurried? then 
       None
     else 
-      let curryshape = curryShapeNum (spc, srt) in
+      let curryshape = curryShapeNum (spc, ty) in
       Some(unCurryName (nm, curryshape),
-	   unCurriedSrt)
+	   unCurriedTy)
 
  %op  unCurryDef: MSTerm * Nat -> MSTerm
  %def unCurryDef(tm,curryshape) =
