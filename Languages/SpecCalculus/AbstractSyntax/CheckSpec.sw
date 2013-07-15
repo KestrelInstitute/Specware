@@ -20,12 +20,12 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
 
   %% For every type info in the hash table, verify that there is a corresponding
   %% Type and/or TypeDef spec element:
-  let bad_type_infos =
-      foldTypeInfos (fn (info, failures) ->
+  let bad_or_missing_type_elements? =
+      foldTypeInfos (fn (info, err) ->
                        let names = info.names in
                        if names = [] then
                          let _ = writeLine("ERROR: No names for type!") in %% TODO Print the position?  We can't print the name since there isn't one!
-                         failures ++ [info]
+                         true
                        else
                          let qid = primaryTypeName info in  %% TODO If there is more than one name, should we look up each one below?:
                          let _ = if (length names > 1) then writeLine("Warning: More than one name for type: " ^ show qid ^ ": " ^ showQIDs names) else () in
@@ -42,20 +42,20 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                          %% There can't be more than one declaration or more than one definition for the type:
                          let okay? = (typeCount <= 1 && typeDefCount <= 1) in
                            if found? && okay? then
-                             failures   %% TODO Make sure we return a failure for any of the errors above
+                             err  %% TODO Make sure we return a failure for any of the errors above
                            else
-                             failures ++ [info])
-                    []
+                             true)
+                   false
                     s.types
   in
   %% For every op info in the hash table, verify that there is a corresponding
   %% Op and/or OpDef spec element.
-  let bad_op_infos =
-      foldOpInfos (fn (info, failures) ->
+  let bad_or_missing_op_elements? =
+      foldOpInfos (fn (info, err) ->
                      let names = info.names in
                      if names = [] then
                        let _ = writeLine("ERROR: No names for op!") in %% TODO Print the position?  We can't print the name since there isn't one!
-                       failures ++ [info]
+                       true
                      else
                        let qid = primaryOpName info in  %% TODO If there is more than one name, should we look up each one below?:
                        let _ = if (length names = 0) then writeLine("ERROR: No names for op: " ^ show qid) else () in
@@ -83,10 +83,10 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                        %let _ = if opDefCount > 1 then writeLine("ERROR: " ^ show opDefCount ^ " definitions for op: " ^ show qid) else () in
                        let found? = (opElts ~= [] || opDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.
                          if found? then
-                           failures
+                           err
                          else
-                           failures ++ [info])
-                  []
+                           true)
+                 false
                   s.ops
   in
   %% For every op info in the hash table, verify that every op-reference 
@@ -98,56 +98,56 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
         | Fun (Op (qid, _), _, _) ->
           (case findTheOp (s, qid) of
              | Some _ -> false
-             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist.") in true)
+             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
         | _ -> false
   in 
-  let bad_op_infos2 =
-      foldOpInfos (fn (info, failures) ->
+  let calls_to_non_existing_ops? =
+      foldOpInfos (fn (info, err) ->
                      if existsSubTerm (bad_ref? (primaryOpName info)) info.dfn then
-                       failures ++ [info]
+                       true
                      else
-                       failures)
-                  []
+                       err)
+                 false
                   s.ops
   in
-  let bad_op_infos3 =
-      foldOpInfos (fn (info, failures) ->
+  let ops_with_free_vars? =
+      foldOpInfos (fn (info, err) ->
                      case (freeVars info.dfn) of
-                       | [] -> failures
+                       | [] -> err
                        | vars -> let _ = writeLine ("ERROR: Op " ^ show (primaryOpName info) ^ " has the following free vars in its body: " ^ (anyToString vars) ^ ".") in
-                         failures ++ [info])
-                  []
+                         true)
+                 false
                   s.ops
   in
 
 
   %% For every Type, TypeDef, Op, or OpDef in spec elements,
   %% verify that it refers to an entry in the appropriate hash table.
-  let bad_elements =
-      foldlSpecElements (fn (failures, elt) ->
+  let missing_hash_table_entries? =
+      foldlSpecElements (fn (err, elt) ->
                            case elt of
                              | Type    (qid, _) ->
                                (case findTheType (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for type:" ^ show qid) in failures ++ [elt])
+                                  | Some _ -> err
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for type:" ^ show qid) in true)
                              | TypeDef (qid, _) ->
                                (case findTheType (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for type:" ^ show qid) in failures ++ [elt])
+                                  | Some _ -> err
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for type:" ^ show qid) in true)
                              | Op      (qid, _, _) ->
                                (case findTheOp (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in failures ++ [elt])
+                                  | Some _ -> err
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in true)
                              | OpDef   (qid, _, _, _) ->
                                (case findTheOp (s, qid) of
-                                  | Some _ -> failures
-                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in failures ++ [elt])
-                             | _ -> failures)
-                        []
+                                  | Some _ -> err
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in true)
+                             | _ -> err)
+                       false
                         s.elements
   in
-  case (bad_type_infos, bad_op_infos, bad_op_infos2, bad_op_infos3, bad_elements) of
-    | ([], [], [], [], []) -> 
+  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || calls_to_non_existing_ops? || ops_with_free_vars? || missing_hash_table_entries?) of
+    | false ->
       let _ = writeLine success_msg in
       false
     | _ ->
