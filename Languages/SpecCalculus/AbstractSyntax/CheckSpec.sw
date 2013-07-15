@@ -8,6 +8,7 @@ CheckSpec qualifying spec
 import ShowUtils
 import /Languages/MetaSlang/Specs/AnnSpec
 import /Languages/MetaSlang/Specs/Utilities
+import /Languages/MetaSlang/AbstractSyntax/AnnTerm
 
 %% import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
 
@@ -16,8 +17,9 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
  %%  | Errors errs -> let _ = writeLine( "Errors in spec:" ^ (anyToString errs)) in false
  %%  | Spec spc -> let _ = writeLine "No type checking error in spec." in
 %should we use spc here?
+
   %% For every type info in the hash table, verify that there is a corresponding
-  %% Type and/or TypeDef spec element.
+  %% Type and/or TypeDef spec element:
   let bad_type_infos =
       foldTypeInfos (fn (info, failures) ->
                        let names = info.names in
@@ -35,6 +37,8 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                          let _ = if typeDefCount > 1 then writeLine("ERROR: " ^ show typeDefCount ^ " definitions for type: " ^ show qid) else () in
                          %% There must be at least one declaration or definition for the type:
                          let found? = (typeCount > 0 || typeDefCount > 0) in
+                         let _ = if found? then () else writeLine("ERROR: No type declarations or definitions for type " ^ show qid) in
+
                          %% There can't be more than one declaration or more than one definition for the type:
                          let okay? = (typeCount <= 1 && typeDefCount <= 1) in
                            if found? && okay? then
@@ -74,10 +78,10 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                          %%   If there is exactly 1 def, the body does not contain And.
                          %%   If there is more than 1 def, the body is an And (possibly wrapped in Pi and maybe TypedTerm).
 
-                       let _ = if opCount = 0 then writeLine("ERROR: No declarations for op: " ^ show qid) else () in
+                       let _ = if opCount = 0 then writeLine("ERROR: No declarations for op " ^ show qid ^ ", which has an entry in the hash table.") else () in
                        let _ = if opCount > 1 then writeLine("ERROR: " ^ show opCount    ^ " declarations for op: " ^ show qid) else () in
                        %let _ = if opDefCount > 1 then writeLine("ERROR: " ^ show opDefCount ^ " definitions for op: " ^ show qid) else () in
-                       let found? = (opElts ~= [] || opDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.                       
+                       let found? = (opElts ~= [] || opDefElts ~= []) in %% TODO Eventually, have this check for all the errors just above here.
                          if found? then
                            failures
                          else
@@ -87,19 +91,19 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
   in
   %% For every op info in the hash table, verify that every op-reference 
   %% has a corresponding entry.
-  %% TODO: types, op-refs withing types, etc.
+  %% TODO: types, op-refs within types, etc.
   let
-    def bad_ref? tm =
+    def bad_ref? (nm : QualifiedId) (tm:MSTerm) =
       case tm of
         | Fun (Op (qid, _), _, _) ->
           (case findTheOp (s, qid) of
              | Some _ -> false
-             | _ -> true)
+             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist.") in true)
         | _ -> false
   in 
   let bad_op_infos2 =
       foldOpInfos (fn (info, failures) ->
-                     if existsSubTerm bad_ref? info.dfn then
+                     if existsSubTerm (bad_ref? (primaryOpName info)) info.dfn then
                        failures ++ [info]
                      else
                        failures)
@@ -110,7 +114,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
       foldOpInfos (fn (info, failures) ->
                      case (freeVars info.dfn) of
                        | [] -> failures
-                       | vars -> let _ = writeLine ("ERROR: free vars found: " ^ (anyToString vars) ^ " in function: " ^ anyToString (head info.names) ^ ".") in
+                       | vars -> let _ = writeLine ("ERROR: Op " ^ show (primaryOpName info) ^ " has the following free vars in its body: " ^ (anyToString vars) ^ ".") in
                          failures ++ [info])
                   []
                   s.ops
@@ -125,19 +129,19 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                              | Type    (qid, _) ->
                                (case findTheType (s, qid) of
                                   | Some _ -> failures
-                                  | _ -> failures ++ [elt])
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for type:" ^ show qid) in failures ++ [elt])
                              | TypeDef (qid, _) ->
                                (case findTheType (s, qid) of
                                   | Some _ -> failures
-                                  | _ -> failures ++ [elt])
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for type:" ^ show qid) in failures ++ [elt])
                              | Op      (qid, _, _) ->
                                (case findTheOp (s, qid) of
                                   | Some _ -> failures
-                                  | _ -> failures ++ [elt])
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in failures ++ [elt])
                              | OpDef   (qid, _, _, _) ->
                                (case findTheOp (s, qid) of
                                   | Some _ -> failures
-                                  | _ -> failures ++ [elt])
+                                  | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in failures ++ [elt])
                              | _ -> failures)
                         []
                         s.elements
@@ -148,11 +152,6 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
       false
     | _ ->
       let _ = writeLine (failure_msg) in
-      let _ = app (fn info -> writeLine(" Type "       ^ printQualifiedId (primaryTypeName info))) bad_type_infos in
-      let _ = app (fn info -> writeLine(" Op   "       ^ printQualifiedId (primaryOpName   info))) bad_op_infos   in
-      let _ = app (fn info -> writeLine(" Op refs in " ^ printQualifiedId (primaryOpName   info))) bad_op_infos2  in
-      let _ = app (fn info -> writeLine(" Free vars in op: " ^ printQualifiedId (primaryOpName   info))) bad_op_infos3  in
-      let _ = app (fn elt  -> writeLine(" Elt  "      ^ anyToString elt))                         bad_elements    in
       true
 
 op checkSpecCore(spc : Spec, str : String) : Boolean =
