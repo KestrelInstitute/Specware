@@ -62,11 +62,12 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                        let opDefCount = length opDefElts in
 
 
-                       %% What are the rules about ops?  %%TODO: Implement these checks.
+                       %% TODO: Are these the correct rules about ops?  Some things like "add refined type" don't seem to respect these rules.
+                       %% TODO: Implement all of these checks.
                        %% You can have an OpDecl with not-defined-when-declared, followed by any number of OpDefs, numbered starting from 0
                          %% What does the body in the opInfo look like?
                          %%   If there are no defs, the body is Any (possibly wrapped in TypedTerm and/or Pi?).
-                         %%   If there is exactly 1 def, the body is does not contain Any or And.
+                         %%   If there is exactly 1 def, the body does not contain Any or And.
                          %%   If there is more than 1 def, the body is an And (possibly wrapped in Pi and maybe TypedTerm).
                        %% You can have an OpDecl with defined-when-declared, followed by any number of opDefs, numbered starting from 1
                          %% What does the body in the opInfo look like?  First, the body in the opInfo can never contains Any.
@@ -154,19 +155,19 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
       let _ = app (fn elt  -> writeLine(" Elt  "      ^ anyToString elt))                         bad_elements    in
       true
 
-op checkSpecCore(spc : Spec) : Boolean =
+op checkSpecCore(spc : Spec, str : String) : Boolean =
+  let _ = writeLine ("Checking spec " ^ str ^ ".") in
   specOkay? "Spec is okay." "ERROR: Ill-formed spec." spc
 
 %% Evaluate the given unit and print it to a file.
 %% Returns a success flag.
 op checkSpec (uid_str : String) : Boolean =
-%let _ = writeLine "Checking spec." in
 %let _ = writeLine ("uid_str:"^uid_str) in
 case evaluateUnitId uid_str of
   | None -> let _ = writeLine("Error in checkspec: Unknown UID " ^ uid_str) in false
   | Some val ->
     case val of
-    | Spec spc -> let _ = (checkSpecCore spc) in true
+    | Spec spc -> let _ = (checkSpecCore(spc, uid_str)) in true
     | Morph m -> let _ = writeLine("ERROR: Don't know how to check a morphism yet.") in true %Should these flags be true or false?
     | _ -> let _ = writeLine("ERROR: Spec checker called on unknown kind of thing.") in true
 
@@ -186,7 +187,11 @@ op evaluateCheckSpec (optional_argstring : Option String, lastUnitIdLoaded : Opt
 %% This checks the spec and prints errors if it finds any problems.
 %% It does not attempt any repairs.  Logically, this is just the
 %% identity transformation on specs.
-op SpecTransform.CheckSpec (spc : Spec) : Spec =
-  let _ = checkSpecCore spc in spc
+
+%% The optional string argument allows you to name this call of check spec, to support easy grepping, in case checkSpec is called many times in a derivation.
+
+op SpecTransform.CheckSpec (spc : Spec, opt_str : Option String) : Spec =
+  let str = case opt_str of | Some str -> str | None -> "" in
+  let _ = checkSpecCore(spc, str) in spc
 
 end-spec
