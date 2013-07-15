@@ -5,18 +5,6 @@ import /Languages/MetaSlang/Specs/Environment
 %% liftUnsupportedPatterns may introduce case statements,
 %% hence must preceeed pattern compilation
 
-op SpecTransform.Hack (spc : Spec) : Spec =
- let _ = 
-     case findTheOp (spc, Qualified(UnQualified, "udp_hdr_ok?-1-1")) of
-       | Some info -> 
-         let _ = writeLine("Hack found it: " ^ printTerm info.dfn) in
-         ()
-       | _ -> 
-         let _ = writeLine("Hack did not find it: ") in
-         ()
- in
- spc
-
 op SpecTransform.liftUnsupportedPatterns (spc : Spec) : Spec =
  setOps (spc, 
          mapOpInfos (fn info -> 
@@ -56,42 +44,46 @@ op liftUnsupportedPattern (term : MSTerm, spc : Spec, debug? : Bool) : MSTerm =
             %% structured pattern that is not a simple tuple or record of vars
             %% let _ = writeLine ("lifting unsupported pattern in operator definition: " ^ printPattern pat) in
             %% May have fn (p1, ..., pn | restriction) -> body
-            %%     Want fn (x : {p1, ..., pn} -> case body of | (p1, ..., pn | restriction) -> bod  y)
+            %%     Want fn (x : {t1, ..., tn | restriction} -> case x of | (p1, ..., pn | restriction) -> body)
                
             let derestricted_pattern_fields = 
                 map (fn (id, pat) -> 
                        (id, deRestrict pat)) 
                     pattern_fields  
             in
-            let derestricted_pattern = RecordPat (derestricted_pattern_fields, noPos) in
-            let xtype                = patternType derestricted_pattern               in
-            let xvar                 = ("x", xtype)                                   in
-            let xref                 = Var    (xvar, noPos)                           in
-            let xpat                 = VarPat (xvar, noPos)                           in
+            if forall? (fn | (_, VarPat _) -> true | _ -> false) derestricted_pattern_fields then 
+              %% TODO: this is not semantically equivalent
+              Lambda ([(RecordPat (derestricted_pattern_fields, noPos), cond, body)], noPos)               
+            else
+              let derestricted_pattern = RecordPat (derestricted_pattern_fields, noPos) in
+              let xtype                = patternType derestricted_pattern               in
+              let xvar                 = ("x", xtype)                                   in
+              let xref                 = Var    (xvar, noPos)                           in
+              let xpat                 = VarPat (xvar, noPos)                           in
 
-            let new_case_rule        = (derestricted_pattern, cond, body)             in
-            let new_term             = Lambda ([new_case_rule], noPos)                in
-            let new_body             = Apply  (new_term, xref, noPos)                 in
+              let new_case_rule        = (derestricted_pattern, cond, body)             in
+              let new_term             = Lambda ([new_case_rule], noPos)                in
+              let new_body             = Apply  (new_term, xref, noPos)                 in
 
-            let new_lambda_rule      = (xpat, mkTrue(), new_body)                     in
-            let new_lambda           = Lambda ([new_lambda_rule], noPos)              in
+              let new_lambda_rule      = (xpat, mkTrue(), new_body)                     in
+              let new_lambda           = Lambda ([new_lambda_rule], noPos)              in
 
-            % let restricted? =
-            %     exists? (fn (_, pat) -> 
-            %                case pat of
-            %                  | RestrictedPat _ -> true
-            %                  | _ -> false)
-            %                         pattern_fields
-            % in
-            % let _ = if restricted? then
-            %           let _ = writeLine ("Old term: " ^ printTerm term) in
-            %           let _ = writeLine ("New term: " ^ printTerm new_lambda) in
-            %           ()
-            %         else
-            %           ()
-            % in
-
-            new_lambda
+              % let restricted? =
+              %     exists? (fn (_, pat) -> 
+              %                case pat of
+              %                  | RestrictedPat _ -> true
+              %                  | _ -> false)
+              %                         pattern_fields
+              % in
+              % let _ = if restricted? then
+              %           let _ = writeLine ("Old term: " ^ printTerm term) in
+              %           let _ = writeLine ("New term: " ^ printTerm new_lambda) in
+              %           ()
+              %         else
+              %           ()
+              % in
+              
+              new_lambda
 
         | _ -> term)
    | _ -> term
