@@ -116,7 +116,11 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
-    let spc' = addOpDef(spc,fname,Nonfix,body) in
+   let spc' = case findTheOp(spc, fname)  of
+                | Some oi -> let TypedTerm(_,ty,_) = body in
+                             let _ = writeLine "Refining quid"
+                             in addRefinedType(spc,oi,ty)
+                | None -> addOpDef(spc,fname,Nonfix,body) in
     return spc'
   }
 
