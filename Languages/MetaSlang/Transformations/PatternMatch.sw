@@ -1145,7 +1145,7 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
     
      let (ctx, bindings) = foldr flattenLetBinding (ctx,bindings) [] in
      if (if ctx.c? then 
-           let _ = writeLine("forall c? : " ^ show ctx.c?) in
+             % let _ = writeLine("forall c? : " ^ show ctx.c?) in
              forall? (fn (pat, _)-> almostSimplePattern? pat) bindings
            else
              forall? (fn (pat, _)-> simplePattern? pat) bindings)
@@ -1272,7 +1272,7 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
   % for each call. (This was presumably what was intended as otherwise there would be no need for mkContext
   % to be a function). This means that compiled functions will have the same generated variables
   % independent of the rest of the file.
-  let _ = writeLine("c? : " ^ show c?) in
+  % let _ = writeLine("c? : " ^ show c?) in
   let 
     def mkContext name = mkSpcContext spc name c?
   in
