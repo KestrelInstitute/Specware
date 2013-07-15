@@ -1,9 +1,14 @@
 %% This utility checks a spec for well-formedness.  It is available as
-%% the Specware shell command 'checkspec'.
+%% the Specware shell command 'checkspec' or as the spec
+%% transformation CheckSpec (which is logically the identity
+%% transformation but also prints messages about problems in specs).
+
 CheckSpec qualifying spec 
 
 import ShowUtils
 import /Languages/MetaSlang/Specs/AnnSpec
+import /Languages/MetaSlang/Specs/Utilities
+
 %% import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
 
 op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
@@ -100,6 +105,17 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                   []
                   s.ops
   in
+  let bad_op_infos3 =
+      foldOpInfos (fn (info, failures) ->
+                     case (freeVars info.dfn) of
+                       | [] -> failures
+                       | vars -> let _ = writeLine ("ERROR: free vars found: " ^ (anyToString vars) ^ " in function: " ^ anyToString (head info.names) ^ ".") in
+                         failures ++ [info])
+                  []
+                  s.ops
+  in
+
+
   %% For every Type, TypeDef, Op, or OpDef in spec elements,
   %% verify that it refers to an entry in the appropriate hash table.
   let bad_elements =
@@ -125,8 +141,8 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                         []
                         s.elements
   in
-  case (bad_type_infos, bad_op_infos, bad_elements) of
-    | ([], [], []) -> 
+  case (bad_type_infos, bad_op_infos, bad_op_infos2, bad_op_infos3, bad_elements) of
+    | ([], [], [], [], []) -> 
       let _ = writeLine success_msg in
       false
     | _ ->
@@ -134,9 +150,12 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
       let _ = app (fn info -> writeLine(" Type "       ^ printQualifiedId (primaryTypeName info))) bad_type_infos in
       let _ = app (fn info -> writeLine(" Op   "       ^ printQualifiedId (primaryOpName   info))) bad_op_infos   in
       let _ = app (fn info -> writeLine(" Op refs in " ^ printQualifiedId (primaryOpName   info))) bad_op_infos2  in
+      let _ = app (fn info -> writeLine(" Free vars in op: " ^ printQualifiedId (primaryOpName   info))) bad_op_infos3  in
       let _ = app (fn elt  -> writeLine(" Elt  "      ^ anyToString elt))                         bad_elements    in
       true
 
+op checkSpecCore(spc : Spec) : Boolean =
+  specOkay? "Spec is okay." "ERROR: Ill-formed spec." spc
 
 %% Evaluate the given unit and print it to a file.
 %% Returns a success flag.
@@ -147,7 +166,7 @@ case evaluateUnitId uid_str of
   | None -> let _ = writeLine("Error in checkspec: Unknown UID " ^ uid_str) in false
   | Some val ->
     case val of
-    | Spec spc -> let _ = specOkay? "Spec is okay." "ERROR: Ill-formed spec." spc in true
+    | Spec spc -> let _ = (checkSpecCore spc) in true
     | Morph m -> let _ = writeLine("ERROR: Don't know how to check a morphism yet.") in true %Should these flags be true or false?
     | _ -> let _ = writeLine("ERROR: Spec checker called on unknown kind of thing.") in true
 
@@ -163,5 +182,11 @@ op evaluateCheckSpec (optional_argstring : Option String, lastUnitIdLoaded : Opt
     %% Check the spec and return a new value for *last-unit-Id-_loaded* if the spec was found:
     let success? = checkSpec uid_str in
     if success? then Some uid_str else None
+
+%% This checks the spec and prints errors if it finds any problems.
+%% It does not attempt any repairs.  Logically, this is just the
+%% identity transformation on specs.
+op SpecTransform.CheckSpec (spc : Spec) : Spec =
+  let _ = checkSpecCore spc in spc
 
 end-spec
