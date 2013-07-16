@@ -1384,11 +1384,16 @@ Globalize qualifying spec
       let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in 
       Changed (TypedTerm (new_tm, new_typ, pos))
 
-    | GlobalVar ->
-      GlobalVar
+    | GlobalVar -> GlobalVar
 
-    | _ ->
-      Unchanged
+    | Unchanged ->
+        case tm of
+          | Any  _ -> let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in
+                          if equalType?(new_typ, typ)
+                            then Unchanged
+                            else Changed (TypedTerm (tm, new_typ, pos))
+                       
+          | _ -> Unchanged
 
  op globalizeFun (context        : Context)
                  (vars_to_remove : MSVarNames)      % vars of global type, remove on sight
@@ -1676,7 +1681,8 @@ Globalize qualifying spec
 
       | Unchanged -> 
         let _ = if context.tracing? then
-                  writeLine("Globalize: no change to " ^ show qid)
+                  let _ = writeLine("Globalize: no change to " ^ show qid) 
+                  in writeLine (printTerm old_dfn)                  
                 else
                   ()
         in
