@@ -38,6 +38,13 @@ op generateC4ImpUnit (impunit     : I_ImpUnit,
                       xcspc       : C_Spec, 
                       useRefTypes : Bool) 
  : C_Spec =
+ generateC4ImpUnitHack (impunit, xcspc, useRefTypes, [])
+
+op generateC4ImpUnitHack (impunit     : I_ImpUnit, 
+                          xcspc       : C_Spec, 
+                          useRefTypes : Bool,
+                          includes    : List String)
+ : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
  let ctxt = {xcspc            = xcspc,
              useRefTypes      = useRefTypes,
@@ -46,6 +53,7 @@ op generateC4ImpUnit (impunit     : I_ImpUnit,
  in
  let cspc = emptyCSpec impunit.name in
  let cspc = addBuiltIn (ctxt, cspc) in
+ let cspc = foldl (fn (cspc, include) -> addInclude             (cspc, include)) cspc includes               in
  let cspc = foldl (fn (cspc, typedef) -> c4TypeDefinition (ctxt, cspc, typedef)) cspc impunit.decls.typedefs in
  let cspc = foldl (fn (cspc, opdecl)  -> c4OpDecl         (ctxt, cspc, opdecl))  cspc impunit.decls.opdecls  in
  let cspc = foldl (fn (cspc, fundecl) -> c4FunDecl        (ctxt, cspc, fundecl)) cspc impunit.decls.funDecls in

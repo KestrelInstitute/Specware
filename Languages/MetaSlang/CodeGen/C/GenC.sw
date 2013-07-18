@@ -283,10 +283,9 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
 op SpecTransform.emitCFiles (ms_spec      : Spec,
                              app_name     : String,
                              opt_filename : Option String,
-                             includes : List String,
-                             op_extern_types : (List (String*String)),
-                             op_extern_defs : (List String)
-                             )
+                             includes        : List String,
+                             op_extern_types : List (String*String),
+                             op_extern_defs  : List String)
  : Spec =
  let empty_c_spec = emptyCSpec "" in
  let 
@@ -300,7 +299,12 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
  in
  let _ = 
      % case generateCSpecFromTransformedSpec ms_spec app_name of
-     case generateCSpecFromTransformedSpecIncrFilter ms_spec app_name empty_c_spec filter of
+     % case generateCSpecFromTransformedSpecIncrFilter ms_spec app_name empty_c_spec filter of
+
+     %% temporary hack until '#translate C' is working
+     case generateCSpecFromTransformedSpecHack ms_spec app_name empty_c_spec filter 
+                                               includes op_extern_types op_extern_defs  
+       of
        | Some c_spec ->
          printCSpec (c_spec, app_name, opt_filename) 
        | _ ->

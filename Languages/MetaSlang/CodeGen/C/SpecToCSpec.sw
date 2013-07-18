@@ -10,6 +10,31 @@ import /Languages/I2L/CodeGen/C/I2LToC                   % I2L       to C
 %% The C_Spec parameter is used for incremental code generation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% temporary hack until '#translate C' is working
+op generateCSpecFromTransformedSpecHack (ms_spec    : Spec) 
+                                        (app_name   : String) 
+                                        (old_c_spec : C_Spec)
+                                        (filter     : QualifiedId -> Bool) 
+                                        (includes        : List String)
+                                        (op_extern_types : List (String*String))
+                                        (op_extern_defs  : List String)
+ : Option C_Spec =
+ let use_ref_types?  = true in
+ let constructer_ops = []   in
+ %% TODO: do spec-to-spec transform to rename types using op_extern_types
+ %% TODO: make filter using op_extern_defs
+ let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
+                                             use_ref_types?,
+                                             constructer_ops,
+                                             filter)
+ in
+ let new_c_spec = generateC4ImpUnitHack (i2l_spec,
+                                         old_c_spec, 
+                                         use_ref_types?,
+                                         includes)
+ in
+ Some new_c_spec
+
 op generateCSpecFromTransformedSpecIncrFilter (ms_spec    : Spec) 
                                               (app_name   : String) 
                                               (old_c_spec : C_Spec)
