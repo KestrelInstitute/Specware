@@ -10,6 +10,27 @@ import /Languages/I2L/CodeGen/C/I2LToC                   % I2L       to C
 %% The C_Spec parameter is used for incremental code generation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+op renameTypes (spc : Spec, renamings : List (String * String)) : Spec =
+ let
+   def map_term term = term
+
+   def map_type typ =
+     case typ of
+       | Base (Qualified(q,id), args, _) ->
+         (case findLeftmost (fn (old, _) -> id = old) renamings of
+            | Some (_, new) -> 
+              Base (Qualified(q,new), args, noPos)
+            | _ ->
+              typ)
+       | _ -> typ
+
+   def map_pattern pattern = pattern
+
+ in
+ let tsp = (map_term, map_type, map_pattern) in
+ %% TODO: rename elements?
+ mapSpec tsp spc
+
 %% temporary hack until '#translate C' is working
 op generateCSpecFromTransformedSpecHack (ms_spec    : Spec) 
                                         (app_name   : String) 
@@ -21,8 +42,7 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
  : Option C_Spec =
  let use_ref_types?  = true in
  let constructer_ops = []   in
- %% TODO: do spec-to-spec transform to rename types using op_extern_types
- %% TODO: make filter using op_extern_defs
+ let ms_spec = renameTypes (ms_spec, op_extern_types) in
  let 
    def filter_wrt_extern_defs (qid as Qualified (q, id)) =
     filter qid && ~(id in? op_extern_defs)
