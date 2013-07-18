@@ -23,10 +23,14 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
  let constructer_ops = []   in
  %% TODO: do spec-to-spec transform to rename types using op_extern_types
  %% TODO: make filter using op_extern_defs
+ let 
+   def filter_wrt_extern_defs (qid as Qualified (q, id)) =
+    filter qid && ~(id in? op_extern_defs)
+ in
  let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
                                              use_ref_types?,
                                              constructer_ops,
-                                             filter)
+                                             filter_wrt_extern_defs)
  in
  let new_c_spec = generateC4ImpUnitHack (i2l_spec,
                                          old_c_spec, 
