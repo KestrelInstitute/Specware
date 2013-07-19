@@ -2,10 +2,6 @@
 
 (include-book "tools/defsum" :dir :system)
 
-;;;;;;;;;;;;;;;;;;;;
-;; DEFTHM-GUARDED ;;
-;;;;;;;;;;;;;;;;;;;;
-
 (defmacro implies-macro (x y)
   (list 'if x (list 'if y 't 'nil) 't))
 
@@ -25,61 +21,138 @@
        (cons (implies-to-implies-macro (car terms))
              (map-implies-to-implies-macro (cdr terms))))))
 
-(defmacro defthm-guarded (name term)
-  (list 'progn
-        (list 'defthm name (implies-to-implies-macro term)
-              ':rule-classes 
-              (list (list ':rewrite
-                          ':corollary
-                          term
-                          ':hints
-                          (list (list '"Goal" 
-                                      ':in-theory 
-                                      (list 'theory '(quote minimal-theory))))
-                          )))
-        (list 'verify-guards name)))
+(defun lookup (x l)
+  (cond ((atom l) nil)
+        ((equal (car l) x)
+         (cond ((atom (cdr l)) nil)
+               (t (cadr l))))
+        (t (lookup x (cdr l)))))
 
 ;;;;;;;;;;;;;;;;;
 ;; DEFUN-TYPED ;;
 ;;;;;;;;;;;;;;;;;
 
-;; Example 1 (general):
+;; Use:
+;;
+;; (defun-typed example ((x type1-p)
+;;                       (y type2-p)
+;;                       (z type3-p)
+;;                       (a type4-p)
+;;                       (b type5-p)
+;;                       (c type6-p)
+;;                       (i type7-p)
+;;                       (j type8-p))
+;;              output-type-p
+;;   (declare (ignore a b c)
+;;            (type integer i j)
+;;            (xargs :guard (symbolp x)
+;;                   :measure (- i j)
+;;                   :ruler-extenders :basic
+;;                   :well-founded-relation my-wfr
+;;                   :hints (("Goal"
+;;                            :do-not-induct t
+;;                            :do-not '(generalize fertilize)
+;;                            :expand ((assoc x a) (member y z))
+;;                            :restrict ((<-trans ((x x) (y (foo x)))))
+;;                            :hands-off (length binary-append)
+;;                            :in-theory (set-difference-theories
+;;                                        (current-theory :here)
+;;                                        '(assoc))
+;;                            :induct (and (nth n a) (nth n b))
+;;                            :use ((:instance assoc-of-append
+;;                                             (x a) (y b) (z c))
+;;                                  (:functional-instance
+;;                                   (:instance p-f (x a) (y b))
+;;                                   (p consp)
+;;                                   (f assoc)))))
+;;                   :guard-hints (("Subgoal *1/3'"
+;;                                  :use ((:instance assoc-of-append
+;;                                                   (x a) (y b) (z c)))))
+;;                   :mode :logic
+;;                   :normalize nil
+;;                   :non-executable t
+;;                   :otf-flg t
+;;                   :type-constraint-lemmas 
+;;                    ((defthm example-type-constraint-lemma1 ...)
+;;                     (defthm example-type-constraint-lemma2 ...))
+;;                   :type-constraint-args
+;;                   (:rule-classes foo1
+;;                    :instructions foo2
+;;                    :hints foo3
+;;                    :otf-flg foo4
+;;                    :doc foo5))
+;;   (example-body x y z i j))
+;;
+;;  =>
+;;
+;; (defun example (x y z a b c i j
+;;   (declare (ignore a b c)
+;;            (type integer i j)
+;;            (xargs :guard (and (type1-p x)
+;;                               (type2-p y)
+;;                               (type3-p z)
+;;                               (type4-p a)
+;;                               (type5-p b)
+;;                               (type6-p c)
+;;                               (type7-p i)
+;;                               (type8-p j))
+;;                   :verify-guards nil
+;;                   :guard (symbolp x)
+;;                   :measure (- i j)
+;;                   :ruler-extenders :basic
+;;                   :well-founded-relation my-wfr
+;;                   :hints (("Goal"
+;;                            :do-not-induct t
+;;                            :do-not '(generalize fertilize)
+;;                            :expand ((assoc x a) (member y z))
+;;                            :restrict ((<-trans ((x x) (y (foo x)))))
+;;                            :hands-off (length binary-append)
+;;                            :in-theory (set-difference-theories
+;;                                        (current-theory :here)
+;;                                        '(assoc))
+;;                            :induct (and (nth n a) (nth n b))
+;;                            :use ((:instance assoc-of-append
+;;                                             (x a) (y b) (z c))
+;;                                  (:functional-instance
+;;                                   (:instance p-f (x a) (y b))
+;;                                   (p consp)
+;;                                   (f assoc)))))
+;;                   :guard-hints (("Subgoal *1/3'"
+;;                                  :use ((:instance assoc-of-append
+;;                                                   (x a) (y b) (z c)))))
+;;                   :mode :logic
+;;                   :normalize nil
+;;                   :non-executable t
+;;                   :otf-flg t
+;;   (if (mbt (and (type1-p x)
+;;                 (type2-p y)
+;;                 (type3-p z)
+;;                 (type4-p a)
+;;                 (type5-p b)
+;;                 (type6-p c)
+;;                 (type7-p i)
+;;                 (type8-p j)))
+;;       (example-body x y z i j)
+;;       nil))
+;;
+;; (defthm example-type-constraint-lemma1 ...)
+;; (defthm example-type-constraint-lemma2 ...)
+;;
+;; (defthm example-type-constraint
+;;   (implies (and (type1-p x)
+;;                 (type2-p y)
+;;                 (type3-p z)
+;;                 (type4-p a)
+;;                 (type5-p b)
+;;                 (type6-p c)
+;;                 (type7-p i)
+;;                 (type8-p j)))
+;;   :type-constraint-rule-classes foo1
+;;   :type-constraint-instructions foo2
+;;   :type-constraint-hints foo3
+;;   :type-constraint-otf-flg foo4
+;;   :type-constraint-doc foo5)
 
-;; (defun-typed foo :C (x :A y :B)
-;;   <definition>)
-
-;; =>
-
-;; (defun foo (x y)
-;;   (declare (xargs :guard (and (A x)
-;;                               (B y))))
-;;   <definition>)
-
-;; (defthm-guarded foo-type-constraint
-;;     (implies (and (A x)
-;;                   (B y))
-;;              (C (foo x y))))
-
-;; Example 2 (specific):
-
-;; (defun-typed between :type booleanp (x :type integerp 
-;;                                      y :type integerp 
-;;                                      z :type integerp)
-;;   (and (<= x y) (<= y z)))
-
-;; =>
-
-;; (defun between (x y z)
-;;   (declare (xargs :guard (and (integerp x)
-;;                               (integerp y)
-;;                               (integerp z))))
-;;   (and (<= x y) (<= y z)))
-
-;; (defthm-guarded between-type-constraint
-;;     (implies (and (integerp x)
-;;                   (integerp y)
-;;                   (integerp z))
-;;              (booleanp (between x y z))))
 
 (defun add-p-to-name (name)
   (intern (string-append (string name) "P") "ACL2"))
@@ -116,13 +189,14 @@
         ((atom (car typed-args))
          (cons (car typed-args)
                (get-args (cdr typed-args))))
-        (t (cons (cadar typed-args)
+        (t (cons (caar typed-args)
                  (get-args (cdr typed-args))))))
 
 (defun get-types (typed-args)
   (declare (xargs :guard (typed-arg-listp typed-args)))
   (cond ((endp typed-args) nil)
-        ((atom (car typed-args)) nil)
+        ((atom (car typed-args))
+         (cons ':all (get-types (cdr typed-args))))
         (t (cons (caar typed-args)
                  (get-types (cdr typed-args))))))
 
@@ -131,7 +205,7 @@
   (cond ((endp typed-args) nil)
         ((atom (car typed-args))
          (get-type-constraint-1 (cdr typed-args)))
-        (t (cons (list (caar typed-args) (cadar typed-args))
+        (t (cons (list (cadar typed-args) (caar typed-args))
                  (get-type-constraint-1 (cdr typed-args))))))
 
 (defun get-type-constraint (typed-args)
@@ -139,6 +213,287 @@
     (cond ((atom gtc-1) t)
           ((atom (cdr gtc-1)) (car gtc-1))
           (t (cons 'and gtc-1)))))
+
+(defun lookup-declare (l)
+  (cond ((atom l) nil)
+        ((atom (car l)) (lookup-declare (cdr l)))
+        ((equal (caar l) 'declare)
+         (car l))
+        (t (lookup-declare (cdr l)))))
+
+(defun remove-type-constraint-xargs-1 (xargs)
+  (cond ((atom xargs) nil)
+        ((equal (car xargs) ':type-constraint-lemmas)
+         (remove-type-constraint-xargs-1 (cddr xargs)))
+        ((equal (car xargs) ':type-constraint-args)
+         (remove-type-constraint-xargs-1 (cddr xargs)))
+        (t (cons (car xargs) 
+                 (cons (cadr xargs) (remove-type-constraint-xargs-1
+                                     (cddr xargs)))))))
+
+;(defun remove-type-constraint-xargs (xargs typed-args)
+;  (append (list ':guard (get-type-constraint typed-args)
+;                ':verify-guards nil)
+;          (remove-type-constraint-xargs-1 xargs)))
+
+(defun remove-type-constraint-declare-1 (decl)
+  (cond ((atom decl) nil)
+        ((equal (caar decl) 'xargs)
+         (cons (cons 'xargs (remove-type-constraint-xargs-1 (cdar decl)))
+               (remove-type-constraint-declare-1 (cdr decl))))
+        (t (cons (car decl) (remove-type-constraint-declare-1 (cdr decl))))))
+
+(defun remove-type-constraint-declare (decl)
+  (if decl
+      (cons 'declare (remove-type-constraint-declare-1 (cdr decl)))
+      nil))
+
+(defun get-type-constraint-args-1 (xargs)
+  (cond ((atom xargs) nil)
+        ((equal (car xargs) ':type-constraint-args)
+         (cadr xargs))
+        (t (get-type-constraint-args-1 (cddr xargs)))))
+
+(defun get-type-constraint-args-decl-1 (decl)
+  (cond ((atom decl) nil)
+        ((equal (caar decl) 'xargs)
+         (get-type-constraint-args-1 (cdar decl)))
+        (t (get-type-constraint-args-decl-1 (cdr decl)))))
+
+(defun get-type-constraint-args-decl (decl)
+  (if decl
+      (get-type-constraint-args-decl-1 (cdr decl))
+      nil))
+
+(defun get-type-constraint-lemmas-1 (xargs)
+  (cond ((atom xargs) nil)
+        ((equal (car xargs) ':type-constraint-lemmas)
+         (cadr xargs))
+        (t (get-type-constraint-lemmas-1 (cddr xargs)))))
+
+(defun get-type-constraint-lemmas-decl-1 (decl)
+  (cond ((atom decl) nil)
+        ((equal (caar decl) 'xargs)
+         (get-type-constraint-lemmas-1 (cdar decl)))
+        (t (get-type-constraint-lemmas-decl-1 (cdr decl)))))
+
+(defun get-type-constraint-lemmas-decl (decl)
+  (if decl
+      (get-type-constraint-lemmas-decl-1 (cdr decl))
+      nil))
+
+(defun lookup-body (l)
+  (cond ((atom l) nil)
+        ((keywordp (car l))
+         (lookup-body (cddr l)))
+        ((equal (caar l) 'declare)
+         (lookup-body (cdr l)))
+        (t (car l))))
+
+(defmacro defun-typed (name typed-args type &rest rst)
+  (let* ((decl (lookup-declare rst))
+         (decl-defun (remove-type-constraint-declare decl))
+         (type-constraint-args (get-type-constraint-args-decl decl))
+         (type-constraint-lemmas (get-type-constraint-lemmas-decl decl))
+         (body (lookup-body rst)))
+    (append (list 'progn
+                  (append (list 'defun name (get-args typed-args) 
+                                (list 'declare
+                                      (list 'xargs 
+                                            ':guard 
+                                            (get-type-constraint typed-args)
+                                            ':verify-guards nil)))
+                          (if decl-defun (list decl-defun) nil)
+                          (if (equal (get-type-constraint typed-args) t)
+                              (list body)
+                              (list 
+                               (list 'if
+                                     (list 'mbt 
+                                           (get-type-constraint typed-args))
+                                     body
+                                     nil)))))
+            type-constraint-lemmas
+            (if (equal type ':all)
+                nil
+                (let ((term (list 'implies
+                                  (get-type-constraint typed-args)
+                                  (list type (cons name (get-args
+                                                         typed-args))))))
+                  (list 
+                   (append (list 'defthm (hyphenate-symbols (list name 'type-constraint))
+                                 term)
+                           type-constraint-args))))
+;            (lookup ':guard-lemmas rst)
+            (list (list 'verify-guards name)))))
+;            (list (list 'verify-guards (hyphenate-symbols (list name 'type-constraint)))))))
+
+;;;;;;;;;;;;;;;;;;
+;; DEFPREDICATE ;;
+;;;;;;;;;;;;;;;;;;
+
+(defmacro defpredicate (name args &rest rst)
+  (append (list 'defun-typed name (list (car args)) 'booleanp)
+          rst))
+
+;;;;;;;;;;;;;;;;;;
+;; DEFTHM-TYPED ;;
+;;;;;;;;;;;;;;;;;;
+
+;; Use:
+;;
+;; (defthm-typed the-theorem
+;;   ((type1-p x) (type2-p y) (type3-p z))
+;;   (implies (hyps x y z) (concl x y z))
+;;   :rule-classes (:REWRITE :GENERALIZE)
+;;   :instructions (induct prove promote (dive 1) x
+;;                         (dive 2) = top (drop 2) prove)
+;;   :hints (("Goal"
+;;            :do-not '(generalize fertilize)
+;;            :in-theory (set-difference-theories
+;;                        (current-theory :here)
+;;                        '(assoc))
+;;            :induct (and (nth n a) (nth n b))
+;;            :use ((:instance assoc-of-append
+;;                             (x a) (y b) (z c))
+;;                  (:functional-instance
+;;                   (:instance p-f (x a) (y b))
+;;                   (p consp)
+;;                   (f assoc)))))
+;;   :otf-flg t
+;;   :doc "#0[one-liner/example/details]")
+;;
+;; =>
+;;
+;; (progn
+;; (defthm the-theorem
+;;     (implies (and (type1-p x)
+;;                   (type2-p y)
+;;                   (type3-p z)
+;;                   (hyps x y z))
+;;              (concl x y z))
+;;   :rule-classes (:REWRITE :GENERALIZE)
+;;   :instructions (induct prove promote (dive 1) x
+;;                         (dive 2) = top (drop 2) prove)
+;;   :hints (("Goal"
+;;            :do-not '(generalize fertilize)
+;;            :in-theory (set-difference-theories
+;;                        (current-theory :here)
+;;                        '(assoc))
+;;            :induct (and (nth n a) (nth n b))
+;;            :use ((:instance assoc-of-append
+;;                             (x a) (y b) (z c))
+;;                  (:functional-instance
+;;                   (:instance p-f (x a) (y b))
+;;                   (p consp)
+;;                   (f assoc)))))
+;;   :otf-flg t
+;;   :doc "#0[one-liner/example/details]")
+;; 
+;; (defun-typed main-body ((type1-p x)
+;;                         (type2-p y)
+;;                         (type3-p z))
+;;              booleanp
+;;   (implies (hyps  x y z)
+;;            (concl x y z))))
+
+(defun flip-typed-vars (x)
+  (cond ((atom x) nil)
+        (t (cons (list (cadar x) (caar x))
+                 (flip-typed-vars (cdr x))))))
+
+(defmacro defthm-typed (name typed-vars term &rest rst)
+  (list 'progn
+        (append (list 'defthm name 
+                      (list 'implies 
+                            (cons 'and (flip-typed-vars typed-vars))
+                            term))
+                rst)
+        (list 'defun-typed
+              (hyphenate-symbols (list name 'body))
+              typed-vars
+              'booleanp
+              (implies-to-implies-macro term))))
+
+;;;;;;;;;;;;;;;;;;
+;; DEFCOPRODUCT ;;
+;;;;;;;;;;;;;;;;;;
+
+(defun transform-type-case-1 (constructor-name rst-type-case n)
+  (declare (xargs :mode :program))
+  (cond ((atom rst-type-case) nil)
+        ((atom (car rst-type-case))
+         (cons
+          (list (car rst-type-case)
+                (hyphenate-symbols 
+                 (list constructor-name
+                       (intern (string-append "ARG" 
+                                              (integer-to-string n)) 
+                               "ACL2"))))
+          (transform-type-case-1 constructor-name (cdr rst-type-case) (1+ n))))
+        (t (cons (car rst-type-case) (transform-type-case-1 constructor-name
+                                                            (cdr rst-type-case)
+                                                            (1+ n))))))
+
+(defun transform-type-case (constructor-name rst-type-case)
+  (declare (xargs :mode :program))
+  (cons constructor-name 
+        (transform-type-case-1 constructor-name 
+                               rst-type-case
+                               1)))
+
+(defun map-transform-type-case (type-cases)
+  (declare (xargs :mode :program))
+  (cond ((atom type-cases) nil)
+        (t (cons (transform-type-case (caar type-cases)
+                                      (cdar type-cases))
+                 (map-transform-type-case (cdr type-cases))))))
+
+(defun defcoproduct-macro (type type-cases)
+  (declare (xargs :mode :program))
+;  (append (list 'defcoproduct-explicit-destructor-names
+  (append (list 'defsum
+                type)
+          (map-transform-type-case type-cases)))
+
+(defmacro defcoproduct (type &rest type-cases)
+  (defcoproduct-macro type type-cases))
+
+(defun replace-_-with-& (x)
+  (cond ((atom x) (if (equal x '_) '& x))
+        (t (cons (replace-_-with-& (car x))
+                 (replace-_-with-& (cdr x))))))
+
+(defmacro case-of (term &rest clauses)
+  (append (list 'pattern-match term)
+          (replace-_-with-& clauses)))
+
+(defmacro as-pattern-matcher
+    (term args tests bindings lhses rhses pmstate)
+  (cond ((not (true-listp args))
+         (er hard 'pattern-match
+             "badly formed expression: ~x0~%"
+             (cons 'cons args)))
+        (t ;; recursively pattern match all the args against copies of the term
+         (let ((rhses (make-list-ac (len args) term rhses))
+               (lhses (append args lhses)))
+           (pattern-bindings-list lhses rhses tests bindings pmstate)))))
+
+
+;;;;;;;;;;;;;;
+;; BUILTINS ;;
+;;;;;;;;;;;;;;
+
+(defpredicate Int-p (x) (integerp x))
+(defpredicate Bool-p (x) (booleanp x))
+(defpredicate Nat-p (x) (natp x))
+(defpredicate String-p (x) (stringp x))
+(defun-typed int_+ ((x Int-p) (y Int-p))
+             integerp
+  (binary-+ x y))
+
+;;;;;;;;;
+;; OLD ;;
+;;;;;;;;;
 
 ;(defun type-constraint-name (name)
 ;  (intern (string-append (string name) "-TYPE-CONSTRAINT") "ACL2"))
@@ -159,7 +514,7 @@
 ;;                                             (cdr pattern) 
 ;;                                             var-name 
 ;;                                             1)))))
- 
+
 ;;  (defun subterm-match-conditions-1 (constructor-name arg-patterns var-name n)
 ;;    (declare (xargs :mode :program))
 ;;    (cond ((atom arg-patterns) nil)
@@ -236,97 +591,6 @@
 ;;          (case-to-cond (cadr term) (cddr term)))
 ;;         (t term)))
 
-(defun lookup (x l)
-  (cond ((atom l) nil)
-        ((equal (car l) x)
-         (cond ((atom (cdr l)) nil)
-               (t (cadr l))))
-        (t (lookup x (cdr l)))))
-
-(defmacro defun-typed (type-and-name typed-args dfn &rest rst)
-  (let ((type (if (consp type-and-name) (car type-and-name) ':all))
-        (name (if (consp type-and-name) (cadr type-and-name) type-and-name)))
-    (append (list 'progn
-                  (append (list 'defun name (get-args typed-args)
-                                (list 'declare 
-                                      (list 'xargs 
-                                            :guard 
-                                            (get-type-constraint typed-args)
-                                            :verify-guards
-                                            nil)))
-                          (list dfn)))
-            (lookup ':type-constraint-lemmas rst)
-            (if (equal type ':all)
-                nil
-              (let ((term (list 'implies
-                                (get-type-constraint typed-args)
-                                (list type (cons name (get-args
-                                                       typed-args))))))
-                (list 
-                 (list 'defthm (hyphenate-symbols (list name 'type-constraint))
-                       (implies-to-implies-macro term)
-                       ':rule-classes 
-                       (list 
-                        (list ':rewrite
-                              ':corollary
-                              term
-                              ':hints
-                              (list 
-                               (list '"Goal" 
-                                     ':in-theory 
-                                     (list 'theory '(quote
-                                                     minimal-theory))))))))))
-            (lookup ':guard-lemmas rst)
-            (list (list 'verify-guards name))
-            (list (list 'verify-guards (hyphenate-symbols (list name 'type-constraint)))))))
-
-;;;;;;;;;;;;;;;;;;
-;; DEFPREDICATE ;;
-;;;;;;;;;;;;;;;;;;
-
-(defmacro defpredicate (name args dfn &rest rst)
-  (list 'defun-typed (list 'booleanp name) (list (car args))
-        dfn rst))
-
-;;;;;;;;;;;;;;;;;;;;;
-;; TYPED FUNCTIONS ;;
-;;;;;;;;;;;;;;;;;;;;;
-
-;; (defun-typed (integerp integer-+) ((integerp x)
-;;                                    (integerp y))
-;;   (binary-+ x y))
-;; (defthm inverse-of-integer-+
-;;     (equal (integer-+ x (- x)) 0))
-;; (defthm unicity-of-0-integer-+
-;;     (equal (integer-+ 0 x) (fix x)))
-;; (defthm commutativity-of-integer-+
-;;     (equal (integer-+ x y) (integer-+ y x))
-;;   :rule-classes 
-;;   ((:rewrite :loop-stopper ((x y binary-+)))))
-;; (defthm associativity-of-integer-+
-;;     (equal (integer-+ (integer-+ x y) z)
-;;            (integer-+ x (integer-+ y z))))
-;; (in-theory (disable integer-+))
-
-;; (defun-typed (integerp integer-max) ((integerp x)
-;;                                      (integerp y))
-;;   (max x y))
-
-;;;;;;;;;;;;;;;;;;
-;; DEFCOPRODUCT ;;
-;;;;;;;;;;;;;;;;;;
-
-
-
-#|
-(defcoproduct type-name
-    <type-case> = (constructor-name arg1 :type arg1-type
-                                    arg2 :type arg2-type
-                                    ...)
-    <type-case>
-    <type-case>)
-
-|#
 
 ;(defun add-type-union-to-name (name)
 ;  (intern (string-append (string name) "-TYPE-UNION") "ACL2"))
@@ -336,7 +600,7 @@
 ;;  (defun coproduct-measure (x)
 ;;    (cond ((atom x) 0)
 ;;          (t (+ 1 (sum-coproduct-measure (cdr x))))))
- 
+
 ;;  (defun sum-coproduct-measure (xs)
 ;;    (cond ((atom xs) 0)
 ;;          (t (+ (coproduct-measure (car xs))
@@ -724,72 +988,3 @@
 ;;                (list 'disable (hyphenate-symbols 
 ;;                                (list type 'destructors)))))))
 
-(defun transform-type-case-1 (constructor-name rst-type-case n)
-  (declare (xargs :mode :program))
-  (cond ((atom rst-type-case) nil)
-        ((atom (car rst-type-case))
-         (cons
-          (list (car rst-type-case)
-                (hyphenate-symbols 
-                 (list constructor-name
-                       (intern (string-append "ARG" 
-                                              (integer-to-string n)) 
-                               "ACL2"))))
-          (transform-type-case-1 constructor-name (cdr rst-type-case) (1+ n))))
-        (t (cons (car rst-type-case) (transform-type-case-1 constructor-name
-                                                            (cdr rst-type-case)
-                                                            (1+ n))))))
-
-(defun transform-type-case (constructor-name rst-type-case)
-  (declare (xargs :mode :program))
-  (cons constructor-name 
-        (transform-type-case-1 constructor-name 
-                               rst-type-case
-                               1)))
-
-(defun map-transform-type-case (type-cases)
-  (declare (xargs :mode :program))
-  (cond ((atom type-cases) nil)
-        (t (cons (transform-type-case (caar type-cases)
-                                      (cdar type-cases))
-                 (map-transform-type-case (cdr type-cases))))))
-
-(defun defcoproduct-macro (type type-cases)
-  (declare (xargs :mode :program))
-;  (append (list 'defcoproduct-explicit-destructor-names
-  (append (list 'defsum
-                type)
-          (map-transform-type-case type-cases)))
-
-(defmacro defcoproduct (type &rest type-cases)
-  (defcoproduct-macro type type-cases))
-
-(defun replace-_-with-& (x)
-  (cond ((atom x) (if (equal x '_) '& x))
-        (t (cons (replace-_-with-& (car x))
-                 (replace-_-with-& (cdr x))))))
-
-(defmacro case-of (term &rest clauses)
-  (append (list 'pattern-match term)
-          (replace-_-with-& clauses)))
-
-(defmacro as-pattern-matcher
-  (term args tests bindings lhses rhses pmstate)
-  (cond ((not (true-listp args))
-        (er hard 'pattern-match
-            "badly formed expression: ~x0~%"
-            (cons 'cons args)))
-       (t ;; recursively pattern match all the args against copies of the term
-        (let ((rhses (make-list-ac (len args) term rhses))
-              (lhses (append args lhses)))
-          (pattern-bindings-list lhses rhses tests bindings pmstate)))))
-
-
-;;;;;;;;;;;;;;
-;; BUILTINS ;;
-;;;;;;;;;;;;;;
-
-(defpredicate Int-p (x) (integerp x))
-(defpredicate Bool-p (x) (booleanp x))
-(defun-typed (Int-p int_+) ((Int-p x) (Int-p y))
-  (binary-+ x y))
