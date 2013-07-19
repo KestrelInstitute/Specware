@@ -323,7 +323,7 @@ CUtils qualifying spec
         [c]
       else
         case ord of
-          |  32 -> explode "Space"
+          |  32 -> explode " "
           |  33 -> explode "Exclam"
           |  34 -> explode "Quotedbl"
           |  35 -> explode "Numbersign"

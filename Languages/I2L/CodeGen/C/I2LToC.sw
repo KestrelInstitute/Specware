@@ -23,7 +23,7 @@ type I2C_Context = {
 op default_I2C_Context : I2C_Context =
  {
   xcspc            = emptyCSpec "",
-  useRefTypes      = true,
+  useRefTypes      = false,
   currentFunName   = None,
   currentFunParams = []
   }

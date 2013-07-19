@@ -189,8 +189,9 @@ CPrint qualifying spec
                                                         string " ", 
                                                         ppExp_internal (e, inOneLine)])
       
-    | C_StructRef  (C_Unary (Contents, e), s) ->  prettysNone [ppExpRec (e, inOneLine), 
-                                                               strings [" -> ", cId s]]
+    | C_StructRef  (C_Unary (Contents, e), s) ->
+        prettysNone [ppExpRec (e, inOneLine), 
+                     strings [".", cId s]]
       
     | C_StructRef  (e, s)       -> prettysNone [ppExp_internal (e, inOneLine), 
                                                 strings [".", cId s]]
