@@ -820,8 +820,8 @@ SpecCalc qualifying spec
       let base_ops = wildFindUnQualified (base.ops, id) in
       forall? (fn spec_op-> ~ (spec_op in? base_ops)) spec_ops
 
-op  Specware.cleanEnv : SpecCalc.Env ()
-op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
+% op  Specware.cleanEnv : SpecCalc.Env ()
+% op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
 op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value = 
   let
     %% Ignore exceptions
