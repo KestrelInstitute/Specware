@@ -30,4 +30,6 @@ import /Languages/MetaSlang/Transformations/AddTypeConstructors         % (18)  
 
 import /Languages/MetaSlang/Transformations/SliceSpec                   % (19) Lisp C Java  sliceSpecForLisp, sliceSpecForC, sliceSpecForJava
 
+import /Languages/MetaSlang/CodeGen/RemoveGeneratedSuffixes             % (20) Lisp C Java  removeGeneratedSuffixes
+
 end-spec
