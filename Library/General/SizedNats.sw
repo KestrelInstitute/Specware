@@ -50,5 +50,8 @@ type Nat32  = (Nat | fitsInNBits? 32 )
 %% ... We can add Nat33 through Nat63 (and others) if necessary ...
 type Nat64  = (Nat | fitsInNBits? 64 )
 
+% TODO: Define these:
+op BVAND32 (x : Nat32, y : Nat32) infixl 25 : Nat32
+op BVOR32 (x : Nat32, y : Nat32) infixl 24 : Nat32
 
 end-spec
