@@ -1,9 +1,20 @@
-BinaryTree = spec
+spec
 
   type BinaryTree =
     | Empty
     | Node (Int * BinaryTree * BinaryTree)
 
+  op addOneTree (tree:BinaryTree) : BinaryTree =
+    case tree of
+      | Empty -> Empty
+      | Node (x,left,right) -> Node (x+1,addOneTree left,addOneTree right)
+        
+  proof ACL2 addOneTree
+  (declare (xargs :measure (acl2-count tree)))
+  end-proof
+
+
+(*
   op flipTree (tree:BinaryTree) : BinaryTree =
     case tree of
       | Empty -> Empty
@@ -55,21 +66,13 @@ BinaryTree = spec
 
   theorem flipTree_heapOrdered is
   fa(tree:BinaryTree) (heapOrdered tree => heapOrdered (flipTree tree))
-
-  op addOneTree (tree:BinaryTree) : BinaryTree =
-    case tree of
-      | Empty -> Empty
-      | Node (x,left,right) -> Node (x+1,addOneTree left,addOneTree right)
-        
-  proof ACL2 addOneTree
-  (declare (xargs :measure (acl2-count tree)))
-  end-proof
-
+*)
+(*
   theorem flipTree_addOneTree is
   fa(tree:BinaryTree) flipTree (addOneTree tree) = addOneTree (flipTree tree)
 
   proof ACL2 flipTree_addOneTree
   :otf-flg t
   end-proof
-
+*)
 end-spec

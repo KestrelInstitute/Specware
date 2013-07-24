@@ -116,10 +116,15 @@ op ppTypeLocalDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
 
 op ppTypeName (t:MSType) : PPError WLPretty = 
   case t of
-%    | Base (Qualified (_, "Integer"),_,_) -> Good (ppString "integerp")
     | Base (Qualified (_, pid),_,_) -> Good (ppConcat [ppString pid, ppString "-p"])
     | Boolean _ -> Good (ppString "booleanp")
-    | Subtype _ -> Bad "ppTypeName doesn't accept subtypes yet"
+    | Subtype (parentType, restriction, _) -> 
+      (case (ppTypeName parentType, ppTerm restriction) of
+         | (Good sParentType, Good sRestriction) ->
+           Good (ppConcat [ppString "(:subtype ", sParentType,
+                           ppString " ", sRestriction, ppString ")"])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
     | Product _ -> Bad "ppTypeName doesn't accept product types yet"
     | CoProduct _ -> Bad "ppTypeName doesn't accept coproduct types yet"
     | Arrow _ -> Bad "ppTypeName doesn't accept arrow type (really bad)"
@@ -155,7 +160,7 @@ op ppCoproductTypeDef (id : Id) (typeCases : List (Id * Option MSType)) : PPErro
                         tcstrs,
                       ppString ")"])
     | Bad s -> Bad s
-
+ 
 op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
   case elem of
     | TypeDef (qid, pos) ->
@@ -168,9 +173,8 @@ op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
          | Subtype (parentType, condition, _) ->
            (case (ppTypeName parentType, ppTerm condition) of
               | (Good sParentType, Good sCondition) ->
-                Good (ppConcat [ppString "(defpredicate ", ppString id, ppString "-p (x)",
-                                ppNewline,
-                                ppString "  (and (", sParentType, ppString " x) (", sCondition, ppString" x)))"])
+                Good (ppConcat [ppString "(defsubtype ", ppString id, ppString "-p ",
+                                sParentType, ppString " ", sCondition, ppString")"])
               | (Bad s,_) -> Bad s
               | (_,Bad s) -> Bad s)
          | _ ->
@@ -232,22 +236,33 @@ op ppTermLambda (trm : MSTerm) : PPError WLPretty =
     | Lambda ((_,_,trm)::ms,_) -> ppTerm trm
     | _ -> Bad "ppTermLambda only accepts lambdas"
 
+op ppPatternHelper (pat:MSPattern) : PPError WLPretty =
+case pat of 
+  | WildPat _ -> Good (ppString "_")
+  | NatPat (n,_) -> Good (ppString (intToString n))
+  | VarPat ((v,_),_) -> Good (ppString v)
+  | RecordPat ([],_) -> Good (ppString "")
+  | RecordPat ((_,inPat)::rst,pos) ->
+    (case (ppPattern inPat, ppPatternHelper (RecordPat (rst,pos))) of
+       | (Good sInPat, Good srst) ->
+         Good (ppConcat [sInPat, ppString " ", srst])
+       | (Bad s,_) -> Bad s
+       | (_,Bad s) -> Bad s)
+  | _ -> Bad "Bad pattern in ppPatternHelper"
+
 op ppPattern (pat:MSPattern) : PPError WLPretty =
   case pat of
     | WildPat _ -> Good (ppString "_")
     | NatPat (n,_) -> Good (ppString (intToString n))
     | VarPat ((v,_),_) -> Good (ppString v)
-    | RecordPat ([],_) -> Good (ppString "")
-    | RecordPat ((_,inPat)::rst,pos) ->
-      (case (ppPattern inPat, ppPattern (RecordPat (rst,pos))) of
-         | (Good sInPat, Good srst) ->
-           Good (ppConcat [sInPat, ppString " ", srst])
-         | (Bad s,_) -> Bad s
-         | (_,Bad s) -> Bad s)
     | EmbedPat (id,None,_,_) ->
       Good (ppConcat [ppString "(", ppString id, ppString ")"])
+    | RecordPat _ ->
+      (case ppPatternHelper pat of
+         | Good spat -> Good (ppConcat [ppString "(list ", spat, ppString ")"])
+         | Bad s -> Bad s)
     | EmbedPat (id,Some inPat,_,_) -> 
-      (case ppPattern inPat of
+      (case ppPatternHelper inPat of
          | Good sInPat -> Good (ppConcat [ppString "(", ppString id, ppString " ", sInPat, ppString ")"])
          | Bad s -> Bad s)
     | AliasPat (VarPat ((v,_),_),pat,_) ->
@@ -260,7 +275,7 @@ op ppPattern (pat:MSPattern) : PPError WLPretty =
            Good (ppConcat [spat, ppString " ", sconstraint])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
-    | _ -> Bad "foo"
+    | _ -> Bad "Bad pattern in ppPattern"
 
 op ppTermApplyLambdaHelper (match:MSMatch) : PPError WLPretty =
   case match of
@@ -277,22 +292,35 @@ op ppTermApplyLambdaHelper (match:MSMatch) : PPError WLPretty =
 op ppTermApplyLambda (match:MSMatch) (trm:MSTerm) : PPError WLPretty =
   case (ppTermApplyLambdaHelper match, ppTerm trm) of
     | (Good smatch, Good strm) ->
-      Good (ppConcat [ppString "(case-of ", strm, ppNewline, smatch, ppString ")"])
+      (case trm of
+         | Record _ ->
+           Good (ppConcat [ppString "(case-of (list ", strm, ppString ")", ppNewline, smatch, ppString ")"])
+         | _ ->
+           Good (ppConcat [ppString "(case-of ", strm, ppNewline, smatch, ppString ")"]))
     | (Bad s,_) -> Bad s
     | (_,Bad s) -> Bad s
+
+op ppLambda (match:MSMatch) : PPError WLPretty =
+case match of
+  | (VarPat ((v,_),_),_,trm)::[] -> 
+    (case ppTerm trm of
+       | Good strm ->
+         Good (ppConcat [ppString "(lambda (", ppString v, ppString ") ",
+                         strm, ppString ")"])
+       | Bad s -> Bad s)
 
 op ppTerm (trm : MSTerm) : PPError WLPretty =
   case trm of
     | Fun (f, _, _) -> ppFun f
     | Var ((v,_),_) -> Good (ppString v)
     | Record ([],pos) -> Good (ppString "")
-    | Record ((_,trm) ::[], pos) -> ppTerm trm
+    | Record ((_,trm)::[], pos) -> ppTerm trm
     | Record ((_,trm)::xs, pos) -> 
       (case (ppTerm trm, ppTerm (Record (xs,pos))) of
         | (Good strm, Good srst) -> Good (ppConcat [strm, ppString " ", srst])
         | (Bad s,_) -> Bad s
         | (_,Bad s) -> Bad s)
-    | Lambda ((_,_,trm)::ms,_) -> Bad "Can't handle lambdas in ppTerm"
+    | Lambda (match,_) -> ppLambda match
     | IfThenElse (t1,t2,t3,_) ->
       (case (ppTerm t1, ppTerm t2, ppTerm t3) of
          | (Good st1, Good st2, Good st3) -> 

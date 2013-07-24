@@ -3,11 +3,13 @@
 (include-book "tools/defsum" :dir :system)
 
 (defmacro implies-macro (x y)
+  (declare (xargs :guard t))
   (list 'if x (list 'if y 't 'nil) 't))
 
 (mutual-recursion
 
  (defun implies-to-implies-macro (term)
+   (declare (xargs :guard t))
    (if (atom term) 
        term
        (let ((fn-name (if (equal (car term) 'implies) 
@@ -16,17 +18,25 @@
          (cons fn-name (map-implies-to-implies-macro (cdr term))))))
 
  (defun map-implies-to-implies-macro (terms)
+   (declare (xargs :guard t))
    (if (atom terms)
        nil
        (cons (implies-to-implies-macro (car terms))
              (map-implies-to-implies-macro (cdr terms))))))
 
+(defun lookup-listp (x)
+  (declare (xargs :guard t))
+  (cond ((atom x) (eq x nil))
+        (t (and (consp (cdr x))
+                (lookup-listp (cddr x))))))
+
 (defun lookup (x l)
-  (cond ((atom l) nil)
-        ((equal (car l) x)
-         (cond ((atom (cdr l)) nil)
-               (t (cadr l))))
-        (t (lookup x (cdr l)))))
+  (declare (xargs :guard (lookup-listp l)))
+  (if (mbt (lookup-listp l))
+      (cond ((atom l) nil)
+            ((equal (car l) x) (cadr l))
+            (t (lookup x (cddr l))))
+      nil))
 
 ;;;;;;;;;;;;;;;;;
 ;; DEFUN-TYPED ;;
@@ -155,9 +165,11 @@
 
 
 (defun add-p-to-name (name)
+  (declare (xargs :guard (symbolp name)))
   (intern (string-append (string name) "P") "ACL2"))
 
 (defun hyphenate-symbols-string (syms)
+  (declare (xargs :guard (symbol-listp syms)))
   (cond ((atom syms) "")
         ((atom (cdr syms)) (string (car syms)))
         (t (string-append (string-append (string (car syms))
@@ -165,22 +177,39 @@
                           (hyphenate-symbols-string (cdr syms))))))
 
 (defun hyphenate-symbols (syms)
+  (declare (xargs :guard (symbol-listp syms)))
   (intern (hyphenate-symbols-string syms) "ACL2"))
 
 (defun integer-to-string (n)
-  (declare (xargs :mode :program))
+  (declare (xargs :mode :program
+                  :guard (integerp n)))
   (subseq (fms-to-string "~s0" (list (cons #\0 n))
                          :fmt-control-alist nil)
           1 nil))
 
+(defun is-function-p (term)
+  (declare (xargs :guard t))
+  (or (atom term)
+      (equal (car term) 'lambda)))
+
+(defun type-p (x)
+  (declare (xargs :guard t))
+  (or (symbolp x)
+      (and (consp x)
+           (consp (cdr x))
+           (consp (cddr x))
+           (atom (cdddr x))
+           (equal (car x) ':subtype)
+           (symbolp (cadr x)))))
+
 (defun typed-arg-listp (x)
   (declare (xargs :guard t))
-  (cond ((null x) t)
-        ((atom x) nil)
+  (cond ((atom x) (eq x nil))
         ((atom (car x)) (typed-arg-listp (cdr x)))
         (t (and (consp (car x))
                 (consp (cdar x))
                 (atom (cddar x))
+                (type-p (cadar x))
                 (typed-arg-listp (cdr x))))))
 
 (defun get-args (typed-args)
@@ -197,7 +226,7 @@
   (cond ((endp typed-args) nil)
         ((atom (car typed-args))
          (cons ':all (get-types (cdr typed-args))))
-        (t (cons (caar typed-args)
+        (t (cons (cadar typed-args)
                  (get-types (cdr typed-args))))))
 
 (defun get-type-constraint-1 (typed-args)
@@ -205,23 +234,37 @@
   (cond ((endp typed-args) nil)
         ((atom (car typed-args))
          (get-type-constraint-1 (cdr typed-args)))
-        (t (cons (list (cadar typed-args) (caar typed-args))
+        ((consp (second (first typed-args)))
+         (let* ((arg-name (first (first typed-args)))
+                (parent-type-p (second (second (first typed-args))))
+                (restriction (third (second (first typed-args))))
+                (restriction-term
+                 (if (is-function-p restriction)
+                     (list restriction arg-name)
+                     restriction)))
+           (cons (list parent-type-p arg-name)
+                 (cons restriction-term
+                       (get-type-constraint-1 (cdr typed-args))))))
+        (t (cons (list (second (first typed-args)) (first (first typed-args)))
                  (get-type-constraint-1 (cdr typed-args))))))
 
 (defun get-type-constraint (typed-args)
+  (declare (xargs :guard (typed-arg-listp typed-args)))
   (let ((gtc-1 (get-type-constraint-1 typed-args)))
     (cond ((atom gtc-1) t)
           ((atom (cdr gtc-1)) (car gtc-1))
           (t (cons 'and gtc-1)))))
 
 (defun lookup-declare (l)
-  (cond ((atom l) nil)
+  (declare (xargs :guard (true-listp l)))
+  (cond ((endp l) nil)
         ((atom (car l)) (lookup-declare (cdr l)))
         ((equal (caar l) 'declare)
          (car l))
         (t (lookup-declare (cdr l)))))
 
 (defun remove-type-constraint-xargs-1 (xargs)
+  (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
         ((equal (car xargs) ':type-constraint-lemmas)
          (remove-type-constraint-xargs-1 (cddr xargs)))
@@ -237,6 +280,7 @@
 ;          (remove-type-constraint-xargs-1 xargs)))
 
 (defun remove-type-constraint-declare-1 (decl)
+  (declare (xargs :guard (true-list-listp decl)))
   (cond ((atom decl) nil)
         ((equal (caar decl) 'xargs)
          (cons (cons 'xargs (remove-type-constraint-xargs-1 (cdar decl)))
@@ -244,53 +288,76 @@
         (t (cons (car decl) (remove-type-constraint-declare-1 (cdr decl))))))
 
 (defun remove-type-constraint-declare (decl)
+  (declare (xargs :guard (or (null decl)
+                             (and (consp decl)
+                                  (equal (car decl) 'declare)
+                                  (true-list-listp (cdr decl))))))
   (if decl
       (cons 'declare (remove-type-constraint-declare-1 (cdr decl)))
       nil))
 
 (defun get-type-constraint-args-1 (xargs)
+  (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
         ((equal (car xargs) ':type-constraint-args)
          (cadr xargs))
         (t (get-type-constraint-args-1 (cddr xargs)))))
 
 (defun get-type-constraint-args-decl-1 (decl)
+  (declare (xargs :guard (true-list-listp decl)))
   (cond ((atom decl) nil)
         ((equal (caar decl) 'xargs)
          (get-type-constraint-args-1 (cdar decl)))
         (t (get-type-constraint-args-decl-1 (cdr decl)))))
 
 (defun get-type-constraint-args-decl (decl)
+  (declare (xargs :guard (or (null decl)
+                             (and (consp decl)
+                                  (equal (car decl) 'declare)
+                                  (true-list-listp (cdr decl))))))
   (if decl
       (get-type-constraint-args-decl-1 (cdr decl))
       nil))
 
 (defun get-type-constraint-lemmas-1 (xargs)
+  (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
         ((equal (car xargs) ':type-constraint-lemmas)
          (cadr xargs))
         (t (get-type-constraint-lemmas-1 (cddr xargs)))))
 
 (defun get-type-constraint-lemmas-decl-1 (decl)
+  (declare (xargs :guard (true-list-listp decl)))
   (cond ((atom decl) nil)
         ((equal (caar decl) 'xargs)
          (get-type-constraint-lemmas-1 (cdar decl)))
         (t (get-type-constraint-lemmas-decl-1 (cdr decl)))))
 
 (defun get-type-constraint-lemmas-decl (decl)
+  (declare (xargs :guard (or (null decl)
+                             (and (consp decl)
+                                  (equal (car decl) 'declare)
+                                  (true-list-listp (cdr decl))))))
   (if decl
       (get-type-constraint-lemmas-decl-1 (cdr decl))
       nil))
 
 (defun lookup-body (l)
+  (declare (xargs :guard (true-listp l)))
   (cond ((atom l) nil)
         ((keywordp (car l))
-         (lookup-body (cddr l)))
-        ((equal (caar l) 'declare)
+         (if (consp (cdr l))
+             (lookup-body (cddr l))
+             nil))
+        ((and (consp (car l)) (equal (caar l) 'declare))
          (lookup-body (cdr l)))
         (t (car l))))
 
 (defmacro defun-typed (name typed-args type &rest rst)
+  (declare (xargs :guard (and (symbolp name)
+                              (typed-arg-listp typed-args)
+                              (type-p type)
+                              (true-listp rst))))
   (let* ((decl (lookup-declare rst))
          (decl-defun (remove-type-constraint-declare decl))
          (type-constraint-args (get-type-constraint-args-decl decl))
@@ -313,16 +380,44 @@
                                      body
                                      nil)))))
             type-constraint-lemmas
-            (if (equal type ':all)
-                nil
-                (let ((term (list 'implies
-                                  (get-type-constraint typed-args)
-                                  (list type (cons name (get-args
-                                                         typed-args))))))
-                  (list 
-                   (append (list 'defthm (hyphenate-symbols (list name 'type-constraint))
-                                 term)
-                           type-constraint-args))))
+            (cond ((equal type ':all) nil)
+                  ((consp type) ; subtype
+                   (let* ((parent-type (cadr type))
+                          (restriction (caddr type))
+                          (type-constraint (get-type-constraint typed-args))
+                          (term 
+                           (if (eq type-constraint t)
+                               (list 'and
+                                     (list parent-type (cons name (get-args
+                                                                   typed-args)))
+                                     (list restriction (cons name (get-args
+                                                                   typed-args))))
+                               (list 'implies
+                                      (get-type-constraint typed-args)
+                                      (list 
+                                       'and
+                                       (list parent-type (cons name (get-args
+                                                                     typed-args)))
+                                       (list restriction (cons name (get-args
+                                                                     typed-args))))))))
+                     (list
+                      (append (list 'defthm 
+                                    (hyphenate-symbols 
+                                     (list name 'type-constraint))
+                                    term)
+                              type-constraint-args))))
+                  (t (let* ((type-constraint (get-type-constraint typed-args))
+                            (term
+                             (if (eq type-constraint t)
+                                 (list type (cons name (get-args typed-args)))
+                                 (list 'implies
+                                       (get-type-constraint typed-args)
+                                       (list type (cons name (get-args
+                                                              typed-args)))))))
+                       (list 
+                        (append (list 'defthm (hyphenate-symbols (list name 'type-constraint))
+                                      term)
+                                type-constraint-args)))))
 ;            (lookup ':guard-lemmas rst)
             (list (list 'verify-guards name)))))
 ;            (list (list 'verify-guards (hyphenate-symbols (list name 'type-constraint)))))))
@@ -334,6 +429,25 @@
 (defmacro defpredicate (name args &rest rst)
   (append (list 'defun-typed name (list (car args)) 'booleanp)
           rst))
+
+;;;;;;;;;;;;;;;;
+;; DEFSUBTYPE ;;
+;;;;;;;;;;;;;;;;
+
+;; (defsubtype subtype parenttype-p restriction)
+;;
+;; =>
+;;
+;; (defpredicate subtype-p ((parenttype-p x))
+;;   (and (parenttype-p x)
+;;        (restriction x)))
+
+(defmacro defsubtype (subtype parenttype-p restriction)
+  (list 'defpredicate
+        subtype
+        (list 'x)
+        (list 'and (list parenttype-p 'x)
+              (list restriction 'x))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; DEFTHM-TYPED ;;
@@ -403,16 +517,16 @@
 
 (defmacro defthm-typed (name typed-vars term &rest rst)
   (list 'progn
-        (append (list 'defthm name 
-                      (list 'implies 
-                            (cons 'and (flip-typed-vars typed-vars))
-                            term))
-                rst)
         (list 'defun-typed
               (hyphenate-symbols (list name 'body))
               typed-vars
               'booleanp
-              (implies-to-implies-macro term))))
+              (implies-to-implies-macro term))
+        (append (list 'defthm name 
+                      (list 'implies 
+                            (cons 'and (flip-typed-vars typed-vars))
+                            term))
+                rst)))
 
 ;;;;;;;;;;;;;;;;;;
 ;; DEFCOPRODUCT ;;
