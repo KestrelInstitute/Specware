@@ -511,7 +511,7 @@ op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
     | Property (Theorem,_,_,_,_) -> ppThm elt spc
     | Import ((UnitId (UnitId_Relative uid),_),_,_,_) -> 
       let (path,name,hs) = unitIdToACL2String uid in
-      let fullPath = ppString uid.path in
+      let fullPath = ppString (intercalate "/" uid.path) in
       Good (ppConcat [ppString "(include-book \"",
                       fullPath,
                       ppString "\")"])
