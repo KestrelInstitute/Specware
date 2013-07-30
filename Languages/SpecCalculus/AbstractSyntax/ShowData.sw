@@ -121,7 +121,8 @@ op ppStrings (strs : List String) : WLPretty =
 
 op ppUnitId (UID : UnitId) : WLPretty =
   ppConcat[ppString "((path ", 
-           ppStrings UID.path,  %TODO separate with spaces.
+           %ppStrings UID.path,  %TODO separate with spaces.
+           ppSep ppSpace (map (ppString) UID.path),
            ppString ") (hashSuffix ", 
            (case UID.hashSuffix of None -> ppString "None" | Some str -> ppConcat [ppString "Some ", ppString str]),
            ppString "))"]
