@@ -1,10 +1,13 @@
 (in-package "ACL2")
+(set-ignore-ok t)
+(set-bogus-defun-hints-ok t)
 
 (include-book "tools/defsum" :dir :system)
 
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))
-  (list 'if x (list 'if y 't 'nil) 't))
+  `(if ,x (if ,y t nil) t))
+;  (list 'if x (list 'if y 't 'nil) 't))
 
 (mutual-recursion
 
@@ -266,9 +269,9 @@
 (defun remove-type-constraint-xargs-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
-        ((equal (car xargs) ':type-constraint-lemmas)
-         (remove-type-constraint-xargs-1 (cddr xargs)))
-        ((equal (car xargs) ':type-constraint-args)
+        ((or (equal (car xargs) ':type-constraint-lemmas)
+             (equal (car xargs) ':type-constraint-args)
+             (equal (car xargs) ':verify-guards-args))
          (remove-type-constraint-xargs-1 (cddr xargs)))
         (t (cons (car xargs) 
                  (cons (cadr xargs) (remove-type-constraint-xargs-1
@@ -297,7 +300,7 @@
       nil))
 
 (defun get-type-constraint-args-1 (xargs)
-  (declare (xargs :guard (true-listp xargs)))
+   (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
         ((equal (car xargs) ':type-constraint-args)
          (cadr xargs))
@@ -342,6 +345,29 @@
       (get-type-constraint-lemmas-decl-1 (cdr decl))
       nil))
 
+(defun get-verify-guards-args-1 (xargs)
+  (declare (xargs :guard (true-listp xargs)))
+  (cond ((atom xargs) nil)
+        ((equal (car xargs) ':verify-guards-args)
+         (cadr xargs))
+        (t (get-verify-guards-args-1 (cddr xargs)))))
+
+(defun get-verify-guards-args-decl-1 (decl)
+  (declare (xargs :guard (true-list-listp decl)))
+  (cond ((atom decl) nil)
+        ((equal (caar decl) 'xargs)
+         (get-verify-guards-args-1 (cdar decl)))
+        (t (get-verify-guards-args-decl-1 (cdr decl)))))
+
+(defun get-verify-guards-args-decl (decl)
+  (declare (xargs :guard (or (null decl)
+                             (and (consp decl)
+                                  (equal (car decl) 'declare)
+                                  (true-list-listp (cdr decl))))))
+  (if decl
+      (get-verify-guards-args-decl-1 (cdr decl))
+      nil))
+
 (defun lookup-body (l)
   (declare (xargs :guard (true-listp l)))
   (cond ((atom l) nil)
@@ -362,6 +388,7 @@
          (decl-defun (remove-type-constraint-declare decl))
          (type-constraint-args (get-type-constraint-args-decl decl))
          (type-constraint-lemmas (get-type-constraint-lemmas-decl decl))
+         (verify-guards-args (get-verify-guards-args-decl decl))
          (body (lookup-body rst)))
     (append (list 'progn
                   (append (list 'defun name (get-args typed-args) 
@@ -419,15 +446,19 @@
                                       term)
                                 type-constraint-args)))))
 ;            (lookup ':guard-lemmas rst)
-            (list (list 'verify-guards name)))))
+            (list (append (list 'verify-guards name) verify-guards-args)))))
 ;            (list (list 'verify-guards (hyphenate-symbols (list name 'type-constraint)))))))
+
+(defmacro defund-typed (name typed-args type &rest rst)
+  `(progn ,(append `(defun-typed ,name ,typed-args ,type) rst)
+          (in-theory (disable ,name))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; DEFPREDICATE ;;
 ;;;;;;;;;;;;;;;;;;
 
 (defmacro defpredicate (name args &rest rst)
-  (append (list 'defun-typed name (list (car args)) 'booleanp)
+  (append (list 'defund-typed name (list (car args)) 'booleanp)
           rst))
 
 ;;;;;;;;;;;;;;;;
@@ -442,12 +473,16 @@
 ;;   (and (parenttype-p x)
 ;;        (restriction x)))
 
-(defmacro defsubtype (subtype parenttype-p restriction)
-  (list 'defpredicate
-        subtype
-        (list 'x)
-        (list 'and (list parenttype-p 'x)
-              (list restriction 'x))))
+(defmacro defsubtype (subtype-p parenttype-p restriction)
+  `(progn
+     (defpredicate ,subtype-p (x)
+       (and (,parenttype-p x)
+            (,restriction x)))
+     (defthm ,(hyphenate-symbols (list subtype-p 'is parenttype-p))
+         (implies (,subtype-p x)
+                  (,parenttype-p x))
+       :rule-classes :forward-chaining)))
+
 
 ;;;;;;;;;;;;;;;;;;
 ;; DEFTHM-TYPED ;;
@@ -528,6 +563,10 @@
                             term))
                 rst)))
 
+(defmacro defthmd-typed (name typed-vars term &rest rst)
+  `(progn ,(append `(defthm-typed ,name ,typed-vars ,term) rst)
+          (in-theory (disable ,name))))
+
 ;;;;;;;;;;;;;;;;;;
 ;; DEFCOPRODUCT ;;
 ;;;;;;;;;;;;;;;;;;
@@ -592,18 +631,54 @@
                (lhses (append args lhses)))
            (pattern-bindings-list lhses rhses tests bindings pmstate)))))
 
+;;;;;;;;;;;;;;;;;;;;;;
+;; DEFCOPRODUCTPOLY ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+; (defcoproductpoly SWList (a)
+;   (SWNil)
+;   (SWCons a (SWList a)))
+;
+; =>
+;
+;; (defmacro SWList (x) (hyphenate-symbols (list 'SWList x)))
+
+;; (defmacro SWList-instantiate (var)
+;;   `(defcoproduct ,(hyphenate-symbols (list 'SWList var)) (SWNil)
+;;      (,(hyphenate-symbols (list 'SWNil var)))
+;;      (,(hyphenate-symbols (list 'SWCons var))
+;;       ,var)))
+
+;; (encapsulate 
+;;  (((a *) => *))
+;;  (local (defun a (x) 
+;;           (declare (xargs :guard t :verify-guards nil)
+;;                    (ignore x))
+;;           t))
+;;  (defthm a-type-constraint (booleanp (a x)))
+;;  (verify-guards a))
+
+;; (SWList-instantiate a)
 
 ;;;;;;;;;;;;;;
 ;; BUILTINS ;;
 ;;;;;;;;;;;;;;
 
-(defpredicate Int-p (x) (integerp x))
-(defpredicate Bool-p (x) (booleanp x))
-(defpredicate Nat-p (x) (natp x))
-(defpredicate String-p (x) (stringp x))
-(defun-typed int_+ ((x Int-p) (y Int-p))
-             integerp
-  (binary-+ x y))
+(defmacro Int-p (x) `(integerp ,x))
+(defmacro Bool-p (x) `(booleanp ,x))
+(defmacro Nat-p (x) `(natp ,x))
+(defmacro String-p (x) `(stringp ,x))
+;(defun-typed int_+ ((x Int-p) (y Int-p))
+;             integerp
+;  (binary-+ x y))
+
+;; (defpredicate Int-p (x) (integerp x))
+;; (defpredicate Bool-p (x) (booleanp x))
+;; (defpredicate Nat-p (x) (natp x))
+;; (defpredicate String-p (x) (stringp x))
+;; (defun-typed int_+ ((x Int-p) (y Int-p))
+;;              integerp
+;;   (binary-+ x y))
 
 ;;;;;;;;;
 ;; OLD ;;

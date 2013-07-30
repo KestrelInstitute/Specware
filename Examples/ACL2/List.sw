@@ -1,8 +1,16 @@
 spec
 
+  %%%%%%%%%
+  % IList %
+  %%%%%%%%%
+
   type IList =
     | INil
     | ICons Int * IList
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%
+  % IAppend, IRev, ILength %
+  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op IAppend (a:IList, b:IList) : IList = 
   case a of
@@ -34,9 +42,26 @@ spec
   theorem ILength_IAppend is
   fa (a:IList,b:IList) ILength(IAppend(a,b)) = (ILength(a) + ILength(b))
 
-  %%%%%%%%%%%
-  % ISubBag %
-  %%%%%%%%%%%
+  % Proofs %
+  proof ACL2 IAppend_associative
+    :hints (("Goal" :in-theory (enable IAppend)))
+  end-proof
+  proof ACL2 IAppend_INil
+    :hints (("Goal" :in-theory (enable IAppend)))
+  end-proof
+  proof ACL2 IRev_IAppend
+    :hints (("Goal" :in-theory (enable IAppend IRev)))
+  end-proof
+  proof ACL2 IRev_IRev
+    :hints (("Goal" :in-theory (enable IAppend IRev)))
+  end-proof
+  proof ACL2 ILength_IAppend
+    :hints (("Goal" :in-theory (enable IAppend ILength)))
+  end-proof
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % ISubBag, IPerm, IOrdered %
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op IHowMany (x:Int, a:IList) : Nat = 
   case a of
@@ -44,13 +69,10 @@ spec
     | ICons (y,ys) | x = y -> 1 + IHowMany (x,ys)
     | ICons (_,ys)         -> IHowMany (x,ys)
 
-  op IHowManyLE (x:Int, a:IList, b:IList) : Bool =
-  IHowMany (x,a) <= IHowMany (x,b)
-
   op ISubBag (a:IList, b:IList) : Bool =
   case a of
     | INil -> true
-    | ICons (x,xs) -> IHowManyLE (x,a,b) && ISubBag (xs,b)
+    | ICons (x,xs) -> IHowMany (x,a) <= IHowMany (x,b) && ISubBag (xs,b)
 
   theorem ISubBag_ICons is
   fa(x:Int, a:IList, b:IList) ISubBag (a,b) => ISubBag (a, ICons(x,b))
@@ -62,7 +84,7 @@ spec
   fa (a:IList, b:IList, c:IList) ISubBag(a,b) && ISubBag(b,c) => ISubBag(a,c)
 
   theorem ISubBag_IHowManyLE is
-  fa (x:Int, a:IList, b:IList) ISubBag(a,b) => IHowManyLE(x,a,b)
+  fa (x:Int, a:IList, b:IList) ISubBag(a,b) => IHowMany(x,a) <= IHowMany(x,b)
 
   op IPerm (a:IList, b:IList) : Bool =
   ISubBag (a,b) && ISubBag (b,a)
@@ -76,6 +98,23 @@ spec
 
   type IOrderedList = IList | IOrdered
 
+  proof ACL2 ISubBag_ICons
+    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
+  end-proof
+  proof ACL2 ISubBag_reflexive
+    :hints (("Goal" :in-theory (enable ISubBag)))
+  end-proof
+  proof ACL2 ISubBag_transitive
+    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
+  end-proof
+  proof ACL2 ISubBag_IHowManyLE
+    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
+  end-proof
+
+  %%%%%%%%%%%%%%%%%%
+  % IInsertionSort %
+  %%%%%%%%%%%%%%%%%%
+(*
   op IInsert (x:Int, a:IOrderedList) : IOrderedList =
   case a of
     | INil -> ICons (x, INil)
@@ -91,16 +130,16 @@ spec
   fa(x:Int,y:Int,a:IOrderedList) ~(x=y) => IHowMany(x,a) = IHowMany(x,IInsert(y,a))
 
   theorem IHowManyLE_Insert_1 is
-  fa(x:Int,a:IOrderedList,b:IList) IHowManyLE(x,a,b) => IHowManyLE(x,IInsert(x,a),ICons(x,b))
+  fa(x:Int,a:IOrderedList,b:IList) IHowMany(x,a) <= IHowMany(x,b) => IHowMany(x,IInsert(x,a)) <= IHowMany(x,ICons(x,b))
 
   theorem IHowManyLE_Insert_2 is
-  fa(x:Int,a:IList,b:IOrderedList) IHowManyLE(x,a,b) => IHowManyLE(x,a,IInsert(x,b))
+  fa(x:Int,a:IList,b:IOrderedList) IHowMany(x,a) <= IHowMany (x,b) => IHowMany(x,a) <= IHowMany(x,IInsert(x,b))
 
   theorem IHowManyLE_Insert_3 is
   fa(x:Int,y:Int,a:IOrderedList) IHowMany(x,a) <= IHowMany(x,IInsert(y,a))
 
   theorem IHowManyLE_Insert_4 is
-  fa(x:Int,a:IList,b:IOrderedList) IHowManyLE(x,a,b) => IHowManyLE(x,ICons(x,a),IInsert(x,b))
+  fa(x:Int,a:IList,b:IOrderedList) IHowMany(x,a) <= IHowMany(x,b) => IHowMany(x,ICons(x,a)) <= IHowMany(x,IInsert(x,b))
 
   proof ACL2 -verbatim
 (DEFTHM
@@ -198,4 +237,29 @@ spec
   theorem IInsertionSortPerm is
   fa (a:IList) IPerm(a, IInsertionSort a)
 
+  % Proofs %
+  proof ACL2 IInsert
+    (declare (xargs :type-constraint-args
+                    (:hints (("Goal" :in-theory 
+                                     (enable IOrderedList-p
+                                             IOrdered))))
+                    :verify-guards-args
+                    (:hints (("Goal" :in-theory
+                                     (enable IOrderedList-p
+                                             IOrdered))))))
+  end-proof
+  proof ACL2 IInsertionSort
+    (declare (xargs :type-constraint-args
+                    (:hints (("Goal" :in-theory 
+                                     (enable IOrderedList-p
+                                             IOrdered))))
+                    :verify-guards-args
+                    (:hints (("Goal" :in-theory
+                                     (enable IOrderedList-p
+                                             IOrdered))))))
+  end-proof
+  proof ACL2 IHowManyEQ_Insert
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
+  end-proof
+*)
 end-spec

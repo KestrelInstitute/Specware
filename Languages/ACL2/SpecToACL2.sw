@@ -362,12 +362,12 @@ op ppOpDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
                                                     | Bad s -> Bad s)) varlist in
                 (case (typedVarList, getProofPragma id spc.elements) of 
                    | (Good sTypedVarList,None) ->
-                     Good (ppConcat [ppString "(defun-typed ", ppString id,
+                     Good (ppConcat [ppString "(defund-typed ", ppString id,
                                      ppString " (", ppSep (ppString " ") sTypedVarList, ppString ")", ppNewline,
                                      ppString "             ", tpestring, ppNewline,
                                      ppString "  ", strm, ppString ")"])
                    | (Good sTypedVarList,Some decl) ->
-                     Good (ppConcat [ppString "(defun-typed ", ppString id,
+                     Good (ppConcat [ppString "(defund-typed ", ppString id,
                                      ppString " (", ppSep (ppString " ") sTypedVarList, ppString ")", ppNewline,
                                      ppString "             ", tpestring, ppNewline,
                                      ppString decl, ppNewline,
@@ -497,12 +497,24 @@ case elts of
        | None -> getProofPragma name rst)
   | _::rst -> getProofPragma name rst
 
+op intercalate (inString:String) (strs:List String) : String =
+case strs of
+  | [] -> ""
+  | (x::[]) -> x
+  | (x::xs) -> x ^ inString ^ (intercalate inString xs)
+
 op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
   case elt of
     | Type _ -> ppType elt spc
     | TypeDef _ -> ppTypeDef elt spc
     | Op _ -> ppOpDef elt spc
     | Property (Theorem,_,_,_,_) -> ppThm elt spc
+    | Import ((UnitId (UnitId_Relative uid),_),_,_,_) -> 
+      let (path,name,hs) = unitIdToACL2String uid in
+      let fullPath = ppString uid.path in
+      Good (ppConcat [ppString "(include-book \"",
+                      fullPath,
+                      ppString "\")"])
     | Import _ -> Good (ppString "")
     | Pragma ("proof",prag,"end-proof",_) | verbatimPragma? prag ->
         let verbatim_str = case search("\n", prag) of
@@ -511,7 +523,7 @@ op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
         in
         Good (ppString verbatim_str)
     | Pragma _ -> Good (ppString "")
-    | _ -> Bad "oops"
+    | _ -> Bad "Bad SpecElement"
 
 op ppSpecElements (elts:SpecElements) (spc:Spec) : PPError WLPretty =
   case ppErrorMap (fn t -> ppSpecElement t spc) elts of
@@ -640,8 +652,8 @@ op printValueTop (value : Value, uid : UnitId, showImportedSpecs? : Bool) : PPEr
               showImportedSpecs? = showImportedSpecs?}
              value
 
-op  uidToIsaName : UnitId -> String
-def uidToIsaName {path, hashSuffix=_} =
+op  uidToACL2Name : UnitId -> String
+def uidToACL2Name {path, hashSuffix=_} =
   let device? = deviceString? (head path) in
   let main_name = last path in
   let path_dir = butLast path in 
@@ -653,10 +665,10 @@ def uidToIsaName {path, hashSuffix=_} =
        else mainPath
 
 
-op unitIdToIsaString(uid: UnitId): (String * String * String) =
+op unitIdToACL2String(uid: UnitId): (String * String * String) =
   case uid.hashSuffix of
-    | Some loc_nm | loc_nm ~= last uid.path -> (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
-    | _ ->           (last uid.path, uidToIsaName uid, "")
+    | Some loc_nm | loc_nm ~= last uid.path -> (last uid.path, uidToACL2Name uid, "_" ^ loc_nm)
+    | _ ->           (last uid.path, uidToACL2Name uid, "")
 
 op  uidNamesForValue: Value -> Option (String * String * UnitId)
 def uidNamesForValue val =
@@ -673,7 +685,7 @@ def uidStringPairForValue val =
     | Some global_context ->
   case findUnitIdForUnit(val, global_context) of
     | None -> None
-    | Some uid -> Some (unitIdToIsaString uid, uid)
+    | Some uid -> Some (unitIdToACL2String uid, uid)
 
 op genACL2Core (val : Value, showImportedSpecs? : Bool) : Bool =
   case uidNamesForValue val of
