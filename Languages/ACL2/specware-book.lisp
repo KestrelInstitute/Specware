@@ -641,24 +641,24 @@
 ;
 ; =>
 ;
-;; (defmacro SWList (x) (hyphenate-symbols (list 'SWList x)))
+(defmacro SWList (x) (hyphenate-symbols (list 'SWList x)))
 
-;; (defmacro SWList-instantiate (var)
-;;   `(defcoproduct ,(hyphenate-symbols (list 'SWList var)) (SWNil)
-;;      (,(hyphenate-symbols (list 'SWNil var)))
-;;      (,(hyphenate-symbols (list 'SWCons var))
-;;       ,var)))
+(defmacro SWList-instantiate (var)
+  `(defcoproduct ,(hyphenate-symbols (list 'SWList var)) (SWNil)
+     (,(hyphenate-symbols (list 'SWNil var)))
+     (,(hyphenate-symbols (list 'SWCons var))
+      ,var)))
 
-;; (encapsulate 
-;;  (((a *) => *))
-;;  (local (defun a (x) 
-;;           (declare (xargs :guard t :verify-guards nil)
-;;                    (ignore x))
-;;           t))
-;;  (defthm a-type-constraint (booleanp (a x)))
-;;  (verify-guards a))
+(encapsulate 
+ (((a *) => *))
+ (local (defun a (x) 
+          (declare (xargs :guard t :verify-guards nil)
+                   (ignore x))
+          t))
+ (defthm a-type-constraint (booleanp (a x)))
+ (verify-guards a))
 
-;; (SWList-instantiate a)
+(SWList-instantiate integerp)
 
 ;;;;;;;;;;;;;;
 ;; BUILTINS ;;

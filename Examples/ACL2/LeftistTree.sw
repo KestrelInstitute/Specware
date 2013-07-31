@@ -1,6 +1,6 @@
 spec
 
-import List
+import /Examples/ACL2/List
 
 %%%%%%%%%%%%%%%
 % LeftistTree %
@@ -50,7 +50,7 @@ fa (tree:LeftistTree) lengthRightSpine tree = getRank tree
 % Tree operations %
 %%%%%%%%%%%%%%%%%%%
 
-op makeLT (x:Int, tree1:LeftistTree, tree2:LeftistTree) : LeftistTree =
+op makeLT (x:Int, tree1:LeftistTree, tree2:LeftistTree) : ITree =
 if getRank tree2 <= getRank tree1
   then IBranch (1+getRank tree2, x, tree1, tree2)
 else IBranch (1+getRank tree1, x, tree2, tree1)
@@ -138,7 +138,7 @@ end-proof
 % Tree operation proofs %
 
 proof ACL2 rankIsLRT
-  :hints (("Goal" :in-theory (enable lengthRightSpine getRank isLeftist))))
+  :hints (("Goal" :in-theory (enable lengthRightSpine getRank isLeftist LeftistTree-p)))
 end-proof
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -497,11 +497,11 @@ case elts of
        | None -> getProofPragma name rst)
   | _::rst -> getProofPragma name rst
 
-op intercalate (inString:String) (strs:List String) : String =
-case strs of
+op swPathToACL2Path (path:List String) : String =
+case path of
   | [] -> ""
-  | (x::[]) -> x
-  | (x::xs) -> x ^ inString ^ (intercalate inString xs)
+  | (x::[]) -> "acl2/" ^ x
+  | (x::xs) -> x ^ "/" ^ (swPathToACL2Path xs)
 
 op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
   case elt of
@@ -509,13 +509,16 @@ op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
     | TypeDef _ -> ppTypeDef elt spc
     | Op _ -> ppOpDef elt spc
     | Property (Theorem,_,_,_,_) -> ppThm elt spc
-    | Import ((UnitId (UnitId_Relative uid),_),_,_,_) -> 
-      let (path,name,hs) = unitIdToACL2String uid in
-      let fullPath = ppString (intercalate "/" uid.path) in
-      Good (ppConcat [ppString "(include-book \"",
-                      fullPath,
-                      ppString "\")"])
-    | Import _ -> Good (ppString "")
+    | Import ((UnitId (SpecPath_Relative uid),_),_,_,_) -> 
+      (case getEnv "SPECWARE4" of
+         | Some specware4 -> 
+           let fullPath = ppConcat [ppString specware4, ppString "/",
+                                    ppString (swPathToACL2Path uid.path)] in
+           Good (ppConcat [ppString "(include-book \"",
+                           fullPath,
+                           ppString "\")"])
+         | _ -> Bad "blah")
+    | Import _ -> Good (ppString "; can't handle import")
     | Pragma ("proof",prag,"end-proof",_) | verbatimPragma? prag ->
         let verbatim_str = case search("\n", prag) of
                              | None -> ""
