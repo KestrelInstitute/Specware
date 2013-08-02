@@ -286,7 +286,7 @@ op checkType0(env: LocalEnv, ty: MSType): MSType =
 %%  A type. TODO: Document the relationship between the result and the argument ty.
 op checkType1(env: LocalEnv, ty: MSType, o_tm: Option MSTerm, checkTerms?: Bool): MSType =
   %% checkType calls elaborateTerm, which calls checkType
-  % let _ = if debug? then writeLine("checkType: "^printType ty) else () in
+   let _ = if debug? then writeLine("checkType: "^printType ty) else () in
   case ty of
 
     | TyVar _ -> ty
@@ -1068,7 +1068,7 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
                   then
                     let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
                     let ty    = Arrow (alpha, term_type, pos) in
-                    % let _ = case f1 of OneName("getBits", _) -> writeLine("getBits: "^printType ty) | _ -> () in 
+                    % let _ = case f1 of OneName("getBits", _) -> writeLine("getBits: "^printType ty) | _ -> () in
                     let t2    = elaborateTerm (env, t2, alpha, []) in
                     let t1    = if false  %embed? Arrow (unlinkType alpha)
                                   then let term_ty = Arrow (freshMetaTyVar("ApplyN_HOFun", pos), term_type, pos) in
@@ -1600,9 +1600,9 @@ def mkEmbed1 (env, ty, trm, id, pos) =
               if id = constructor_id then
                   %let _ = writeLine ("ty:  "^printType ty) in
                   %let _ = writeLine ("dom:  "^printType (constructor_dom_type)) in
-                let constructor_dom_type = checkType (env, constructor_dom_type) in
+                % let constructor_dom_type = checkType (env, constructor_dom_type) in
                 let constr_ty = Arrow(constructor_dom_type, coprod_ty, pos) in
-                let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
+                % let _ (* dom *) = elaborateType (env, constructor_dom_type, withAnnS (dom_type, pos)) in
                 let _ = elaborateType(env, constr_ty, ty) in
                 Some (Fun (Embed (id, true), constr_ty, pos))
               else 

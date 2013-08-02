@@ -204,7 +204,9 @@ Utilities qualifying spec
 	       | (true,  false) -> Less
 	       | (false, true)  -> Greater
 	       | (true,  true)  -> compare1 (em1,em2)
-	   else 
+	   else if file_1 ~= file_2 then   % Prefer errors in current file
+             if file_1 = env.file then Less else Greater
+           else
 	     compare1 (em1, em2)
 	  | _ -> compare1 (em1, em2)
      def compare1 ((msg_1, pos_1), (msg_2, pos_2)) =
@@ -288,11 +290,15 @@ Utilities qualifying spec
      | result -> result
 
  %% sjw: Replace base srt by its instantiated definition
- def unfoldType (env,srt) = 
-   unfoldTypeRec (env, srt, false, SplaySet.empty compareQId) 
+ def unfoldType (env,srt) =
+   unfoldTypeRec (env, srt, false, SplaySet.empty compareQId)
+   % withAnnS(unfoldTypeRec (env, srt, false, SplaySet.empty compareQId),
+   %          typeAnn srt)
 
  op unfoldTypeCoProd (env: LocalEnv, srt: MSType): MSType = 
-   unfoldTypeRec (env, srt, true, SplaySet.empty compareQId) 
+   unfoldTypeRec (env, srt, true, SplaySet.empty compareQId)
+   % withAnnS(unfoldTypeRec (env, srt, true, SplaySet.empty compareQId),
+   %          typeAnn srt)
    
  op unfoldTypeRec (env: LocalEnv, srt: MSType, coprod?: Bool, qids: SplaySet.Set TypeName) : MSType = 
    let unlinked_type = unlinkType srt in
