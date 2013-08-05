@@ -1,8 +1,27 @@
 spec
 
+%%fixme add to library
+proof ACL2 -verbatim
+  (defthmd split-equal
+    (implies (and (booleanp x)
+                  (booleanp y))
+             (equal (equal x y)
+                    (and (implies x y)
+                         (implies y x)))))
+
+  (defthm cancel_ones
+    (implies (and (natp x) (natp y))
+    (equal (< (+ 1 x)
+              (+ 1 y))
+           (< x y)))
+           :hints (("Goal" :in-theory (enable split-equal))))
+end-proof
+
   %%%%%%%%%
   % IList %
   %%%%%%%%%
+
+
 
   type IList =
     | INil
@@ -69,6 +88,13 @@ spec
     | ICons (y,ys) | x = y -> 1 + IHowMany (x,ys)
     | ICons (_,ys)         -> IHowMany (x,ys)
 
+  theorem IHowmany_of_inil is
+  fa(x:Int) IHowMany(x, INil) = 0
+
+  proof ACL2 IHowmany_of_inil
+  :hints (("Goal" :in-theory (enable ihowmany)))
+  end-proof
+
   op ISubBag (a:IList, b:IList) : Bool =
   case a of
     | INil -> true
@@ -111,6 +137,18 @@ spec
     :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
   end-proof
 
+  theorem ISubBag_of_Nil is
+    fa (a:IList) ISubBag(a,INil) = (a = INil)
+  proof ACL2 ISubBag_of_Nil
+    :hints (("Goal" :in-theory (enable ISubBag ihowmany)))
+  end-proof
+
+  theorem ISubBag_of_Nil2 is
+    fa (a:IList) ISubBag(INil,a) = true
+  proof ACL2 ISubBag_of_Nil2
+    :hints (("Goal" :in-theory (enable ISubBag ihowmany)))
+  end-proof
+
   %%%%%%%%%%%%%%%%%%
   % IInsertionSort %
   %%%%%%%%%%%%%%%%%%
@@ -121,13 +159,69 @@ spec
     | ICons (y,ys) | x <= y -> ICons (x,a)
     | ICons (y,ys)          -> ICons (y, IInsert (x,ys))
 
+
+
+proof ACL2 -verbatim
+ (defthm ilist-p_of_iinsert
+ (implies (and (IorderedLIST-P B)
+               (integerp x))
+          (ILIST-P (IINSERT X B)))
+          :hints (("Goal" :in-theory (enable iinsert))))
+end-proof
+
+% put the perm in the type?
   op IInsertionSort (a:IList) : IOrderedList =
   case a of
     | INil -> INil
     | ICons (x,xs) -> IInsert (x,IInsertionSort xs)
 
+%% fixme unfortunate that I need this.  defun-typed should do this?
+proof ACL2 -verbatim      
+(defthm IORDERED-of-ICONS-ICONS-ARG2
+  (implies (and (IORDERED A)
+                (ICONS-P A))
+           (IORDERED (ICONS-ICONS-ARG2 A)))
+  :hints (("Goal" :in-theory (enable IORDERED))))
+end-proof
+
+%% Eric's lemmas:
+  theorem IHowMany_of_ICons_diff is
+  fa(x:Int,y:Int,a:IList) ~(x=y) => (IHowMany(x,ICons(y,a)) = IHowMany(x,a))
+
+  theorem IHowMany_of_ICons_same is
+  fa(x:Int,y:Int,a:IList) IHowMany(x,ICons(x,a)) = 1 + IHowMany(x,a)
+
+  theorem IHowMany_of_ICons_both is
+  fa(x:Int,y:Int,a:IList) IHowMany(x,ICons(y,a)) = (if x = y then (1 + IHowMany(x,a)) else IHowMany(x,a))
+
+  theorem IHowMany_of_IInsert_diff is
+  fa(x:Int,y:Int,a:IOrderedList) ~(x=y) => (IHowMany(x,IInsert(y,a)) = IHowMany(x,a))
+
+  theorem IHowMany_of_IInsert_same is
+  fa(x:Int,y:Int,a:IOrderedList) IHowMany(x,IInsert(x,a)) = 1 + IHowMany(x,a)
+
+  theorem IHowMany_of_IInsert_both is
+  fa(x:Int,y:Int,a:IOrderedList) IHowMany(x,IInsert(y,a)) = (if x = y then (1 + IHowMany(x,a)) else IHowMany(x,a))
+
+%%fixme the need to enable IORDEREDLIST-P here is unfortunate
+proof ACL2 IHowMany_of_IInsert_diff
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IORDEREDLIST-P)))
+end-proof
+
+proof ACL2 IHowMany_of_IInsert_same
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IORDEREDLIST-P)))
+end-proof
+
+proof ACL2 IHowMany_of_ICons_same
+    :hints (("Goal" :in-theory (enable IHowMany)))
+end-proof
+proof ACL2 IHowMany_of_ICons_diff
+    :hints (("Goal" :in-theory (enable IHowMany)))
+end-proof
+
+%% drop some lemmas?
   theorem IHowManyEQ_Insert is
-  fa(x:Int,y:Int,a:IOrderedList) ~(x=y) => IHowMany(x,a) = IHowMany(x,IInsert(y,a))
+  fa(x:Int,y:Int,a:IOrderedList) ~(x=y) => IHowMany(x,IInsert(y,a)) = IHowMany(x,a)
 
   proof ACL2 -verbatim
     (defthmd howmany-rationalp 
@@ -145,9 +239,27 @@ spec
   theorem IHowManyLE_Insert_3 is
   fa(x:Int,y:Int,a:IOrderedList) IHowMany(x,a) <= IHowMany(x,IInsert(y,a))
 
+
+%%fixme needed for some guard conjecture.  expensive?
+  proof ACL2 -verbatim
+  (defthm rationalp-when-natp
+    (implies (natp x)
+             (rationalp x)))
+end-proof
+
   theorem IHowManyLE_Insert_4 is
   fa(x:Int,a:IList,b:IOrderedList) IHowMany(x,a) <= IHowMany(x,b) => IHowMany(x,ICons(x,a)) <= IHowMany(x,IInsert(x,b))
 
+%% fixme why is this needed?
+proof ACL2 -verbatim
+(defthm IORDEREDLIST-P_of_ICONS-ICONS-ARG2
+        (implies (and (IORDEREDLIST-P A)
+                      (NOT (INIL-P A)))
+                 (IORDEREDLIST-P (ICONS-ICONS-ARG2 A)))
+                 :hints (("Goal" :in-theory (enable IORDEREDLIST-P IORDERED))))
+end-proof
+
+% lift these into specware lemmas?
   proof ACL2 -verbatim
 (DEFTHM
  ISUBBAG_IINSERT_1_LEMMA1
@@ -182,7 +294,13 @@ spec
 
   theorem ISubBag_IInsert_1 is
   fa(x:Int,a:IOrderedList,b:IList) ISubBag(a,b) => ISubBag(IInsert(x,a), ICons(x,b))
+
+proof ACL2 ISubBag_IInsert_1
+  :hints (("Goal" :do-not '(generalize eliminate-destructors)
+                  :in-theory (enable IINSERT ISubBag IHOWMANY)))
+end-proof
   
+%% avoid prood checker instructions?
   proof ACL2 -verbatim
 (DEFTHM
     ISUBBAG_IINSERT_2_LEMMA1
@@ -215,6 +333,12 @@ spec
         :BASH))
   end-proof
 
+  theorem ISubBag_of_insert is
+    fa (a:IOrderedList, x:Int) ISubBag(a,IInsert(x,a)) = true
+  proof ACL2 ISubBag_of_insert
+    :hints (("Goal" :in-theory (enable ISubBag IInsert ihowmany)))
+  end-proof
+
   theorem ISubBag_IInsert_2 is
   fa(x:Int,a:IList,b:IOrderedList) ISubBag(a,b) => ISubBag(a,IInsert(x,b))
 
@@ -243,6 +367,11 @@ spec
 
   theorem IInsertionSortPerm is
   fa (a:IList) IPerm(a, IInsertionSort a)
+
+proof ACL2 IInsertionSortPerm
+      :hints (("Goal" :in-theory (enable IINSERTIONSORT iperm ISUBBAG)))
+end-proof
+
 
   % Proofs %
   proof ACL2 IInsert
@@ -278,7 +407,7 @@ spec
     :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
   end-proof
   proof ACL2 IHowManyLE_Insert_2
-    :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered))))
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
   end-proof
 
 end-spec
