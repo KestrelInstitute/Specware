@@ -509,6 +509,8 @@ op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
     | TypeDef _ -> ppTypeDef elt spc
     | Op _ -> ppOpDef elt spc
     | Property (Theorem,_,_,_,_) -> ppThm elt spc
+    | Import ((UnitId (SpecPath_Relative uid),_),_,_,_) | uid.path = ["Library","Base"] ->
+      Good (ppString "; base import")
     | Import ((UnitId (SpecPath_Relative uid),_),_,_,_) -> 
       (case getEnv "SPECWARE4" of
          | Some specware4 -> 

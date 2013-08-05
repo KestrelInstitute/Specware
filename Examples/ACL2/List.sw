@@ -114,7 +114,7 @@ spec
   %%%%%%%%%%%%%%%%%%
   % IInsertionSort %
   %%%%%%%%%%%%%%%%%%
-(*
+
   op IInsert (x:Int, a:IOrderedList) : IOrderedList =
   case a of
     | INil -> ICons (x, INil)
@@ -128,6 +128,13 @@ spec
 
   theorem IHowManyEQ_Insert is
   fa(x:Int,y:Int,a:IOrderedList) ~(x=y) => IHowMany(x,a) = IHowMany(x,IInsert(y,a))
+
+  proof ACL2 -verbatim
+    (defthmd howmany-rationalp 
+      (implies (and (integerp x) (ilist-p a)) 
+               (rationalp (ihowmany x a)))
+      :hints (("Goal" :in-theory (enable ihowmany))))
+  end-proof
 
   theorem IHowManyLE_Insert_1 is
   fa(x:Int,a:IOrderedList,b:IList) IHowMany(x,a) <= IHowMany(x,b) => IHowMany(x,IInsert(x,a)) <= IHowMany(x,ICons(x,b))
@@ -261,5 +268,17 @@ spec
   proof ACL2 IHowManyEQ_Insert
     :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
   end-proof
-*)
+  proof ACL2 IHowManyLE_Insert_1
+    :body-declare
+    (declare (xargs :verify-guards-args
+                    (:hints (("Goal" :in-theory (enable IOrderedList-p
+                                                        IOrdered
+                                                        IHowMany
+                                                        howmany-rationalp))))))
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
+  end-proof
+  proof ACL2 IHowManyLE_Insert_2
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered))))
+  end-proof
+
 end-spec
