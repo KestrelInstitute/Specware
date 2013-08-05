@@ -10,4 +10,14 @@ DeMorgan = spec
   theorem demorgan2 is
     fa (x:Boolean, y:Boolean) bnot (bor (x,y)) = band (bnot x, bnot y)
 
+%%% The proofs:
+
+  proof ACL2 demorgan1
+    :hints (("Goal" :in-theory (enable band bor not)))
+  end-proof
+
+  proof ACL2 demorgan2
+    :hints (("Goal" :in-theory (enable band bor not)))
+  end-proof
+
 end-spec
