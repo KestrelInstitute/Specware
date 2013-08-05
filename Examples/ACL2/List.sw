@@ -61,23 +61,6 @@ end-proof
   theorem ILength_IAppend is
   fa (a:IList,b:IList) ILength(IAppend(a,b)) = (ILength(a) + ILength(b))
 
-  % Proofs %
-  proof ACL2 IAppend_associative
-    :hints (("Goal" :in-theory (enable IAppend)))
-  end-proof
-  proof ACL2 IAppend_INil
-    :hints (("Goal" :in-theory (enable IAppend)))
-  end-proof
-  proof ACL2 IRev_IAppend
-    :hints (("Goal" :in-theory (enable IAppend IRev)))
-  end-proof
-  proof ACL2 IRev_IRev
-    :hints (("Goal" :in-theory (enable IAppend IRev)))
-  end-proof
-  proof ACL2 ILength_IAppend
-    :hints (("Goal" :in-theory (enable IAppend ILength)))
-  end-proof
-
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % ISubBag, IPerm, IOrdered %
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,10 +73,6 @@ end-proof
 
   theorem IHowmany_of_inil is
   fa(x:Int) IHowMany(x, INil) = 0
-
-  proof ACL2 IHowmany_of_inil
-  :hints (("Goal" :in-theory (enable ihowmany)))
-  end-proof
 
   op ISubBag (a:IList, b:IList) : Bool =
   case a of
@@ -124,30 +103,11 @@ end-proof
 
   type IOrderedList = IList | IOrdered
 
-  proof ACL2 ISubBag_ICons
-    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
-  end-proof
-  proof ACL2 ISubBag_reflexive
-    :hints (("Goal" :in-theory (enable ISubBag)))
-  end-proof
-  proof ACL2 ISubBag_transitive
-    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
-  end-proof
-  proof ACL2 ISubBag_IHowManyLE
-    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
-  end-proof
-
   theorem ISubBag_of_Nil is
     fa (a:IList) ISubBag(a,INil) = (a = INil)
-  proof ACL2 ISubBag_of_Nil
-    :hints (("Goal" :in-theory (enable ISubBag ihowmany)))
-  end-proof
 
   theorem ISubBag_of_Nil2 is
     fa (a:IList) ISubBag(INil,a) = true
-  proof ACL2 ISubBag_of_Nil2
-    :hints (("Goal" :in-theory (enable ISubBag ihowmany)))
-  end-proof
 
   %%%%%%%%%%%%%%%%%%
   % IInsertionSort %
@@ -159,8 +119,6 @@ end-proof
     | ICons (y,ys) | x <= y -> ICons (x,a)
     | ICons (y,ys)          -> ICons (y, IInsert (x,ys))
 
-
-
 proof ACL2 -verbatim
  (defthm ilist-p_of_iinsert
  (implies (and (IorderedLIST-P B)
@@ -168,6 +126,9 @@ proof ACL2 -verbatim
           (ILIST-P (IINSERT X B)))
           :hints (("Goal" :in-theory (enable iinsert))))
 end-proof
+
+
+
 
 % put the perm in the type?
   op IInsertionSort (a:IList) : IOrderedList =
@@ -202,26 +163,6 @@ end-proof
 
   theorem IHowMany_of_IInsert_both is
   fa(x:Int,y:Int,a:IOrderedList) IHowMany(x,IInsert(y,a)) = (if x = y then (1 + IHowMany(x,a)) else IHowMany(x,a))
-
-%%fixme the need to enable IORDEREDLIST-P here is unfortunate
-proof ACL2 IHowMany_of_IInsert_diff
-    :hints (("Goal" :in-theory (enable IHowMany IInsert IORDEREDLIST-P)))
-end-proof
-
-proof ACL2 IHowMany_of_IInsert_same
-    :hints (("Goal" :in-theory (enable IHowMany IInsert IORDEREDLIST-P)))
-end-proof
-
-proof ACL2 IHowMany_of_ICons_same
-    :hints (("Goal" :in-theory (enable IHowMany)))
-end-proof
-proof ACL2 IHowMany_of_ICons_diff
-    :hints (("Goal" :in-theory (enable IHowMany)))
-end-proof
-
-%% drop some lemmas?
-  theorem IHowManyEQ_Insert is
-  fa(x:Int,y:Int,a:IOrderedList) ~(x=y) => IHowMany(x,IInsert(y,a)) = IHowMany(x,a)
 
   proof ACL2 -verbatim
     (defthmd howmany-rationalp 
@@ -259,85 +200,12 @@ proof ACL2 -verbatim
                  :hints (("Goal" :in-theory (enable IORDEREDLIST-P IORDERED))))
 end-proof
 
-% lift these into specware lemmas?
-  proof ACL2 -verbatim
-(DEFTHM
- ISUBBAG_IINSERT_1_LEMMA1
- (IMPLIES (AND (INTEGERP X)
-               (ILIST-P A)
-               (ICONS-P (ICONS-ICONS-ARG2 A))
-               (<= (ICONS-ICONS-ARG1 A)
-                   (ICONS-ICONS-ARG1 (ICONS-ICONS-ARG2 A)))
-               (IORDERED (ICONS-ICONS-ARG2 A))
-               (< (ICONS-ICONS-ARG1 A) X)
-               (ICONS-P A)
-               (ISUBBAG (IINSERT X (ICONS-ICONS-ARG2 A))
-                        (ICONS X B))
-               (ILIST-P B)
-               (<= (+ 1
-                      (IHOWMANY (ICONS-ICONS-ARG1 A)
-                                (ICONS-ICONS-ARG2 A)))
-                   (IHOWMANY (ICONS-ICONS-ARG1 A) B))
-               (ISUBBAG (ICONS-ICONS-ARG2 A) B)
-               (NOT (EQUAL (ICONS-ICONS-ARG1 A) X)))
-          (<= (+ 1
-                 (IHOWMANY (ICONS-ICONS-ARG1 A)
-                           (IINSERT X (ICONS-ICONS-ARG2 A))))
-              (IHOWMANY (ICONS-ICONS-ARG1 A) B)))
-  :hints (("Goal" 
-             :in-theory (disable IHOWMANYEQ_INSERT)
-             :use ((:instance IHOWMANYEQ_INSERT
-                      (X (ICONS-ICONS-ARG1 A))
-                      (Y X)
-                      (A (ICONS-ICONS-ARG2 A)))))))
-  end-proof
-
   theorem ISubBag_IInsert_1 is
   fa(x:Int,a:IOrderedList,b:IList) ISubBag(a,b) => ISubBag(IInsert(x,a), ICons(x,b))
-
-proof ACL2 ISubBag_IInsert_1
-  :hints (("Goal" :do-not '(generalize eliminate-destructors)
-                  :in-theory (enable IINSERT ISubBag IHOWMANY)))
-end-proof
   
-%% avoid prood checker instructions?
-  proof ACL2 -verbatim
-(DEFTHM
-    ISUBBAG_IINSERT_2_LEMMA1
-    (IMPLIES (AND (ILIST-P A)
-                  (ILIST-P (IINSERT X B))
-                  (ICONS-P A)
-                  (ISUBBAG (ICONS-ICONS-ARG2 A) B)
-                  (INTEGERP X)
-                  (ILIST-P B)
-                  (IORDERED B)
-                  (<= (+ 1
-                         (IHOWMANY (ICONS-ICONS-ARG1 A)
-                                   (ICONS-ICONS-ARG2 A)))
-                      (IHOWMANY (ICONS-ICONS-ARG1 A) B)))
-             (<= (+ 1
-                    (IHOWMANY (ICONS-ICONS-ARG1 A)
-                              (ICONS-ICONS-ARG2 A)))
-                 (IHOWMANY (ICONS-ICONS-ARG1 A)
-                           (IINSERT X B))))
-  :INSTRUCTIONS
-  (:PRO (:CLAIM (<= (IHOWMANY (ICONS-ICONS-ARG1 A) B)
-                    (IHOWMANY (ICONS-ICONS-ARG1 A)
-                              (IINSERT X B)))
-                :HINTS (("Goal" 
-                           :IN-THEORY (DISABLE IHOWMANYLE_INSERT_3)
-                           :USE ((:INSTANCE IHOWMANYLE_INSERT_3
-                                    (X (ICONS-ICONS-ARG1 A))
-                                    (A B)
-                                    (Y X))))))
-        :BASH))
-  end-proof
 
   theorem ISubBag_of_insert is
     fa (a:IOrderedList, x:Int) ISubBag(a,IInsert(x,a)) = true
-  proof ACL2 ISubBag_of_insert
-    :hints (("Goal" :in-theory (enable ISubBag IInsert ihowmany)))
-  end-proof
 
   theorem ISubBag_IInsert_2 is
   fa(x:Int,a:IList,b:IOrderedList) ISubBag(a,b) => ISubBag(a,IInsert(x,b))
@@ -356,24 +224,89 @@ end-proof
                               (ICONS-ICONS-ARG2 A)))
                  (IHOWMANY (ICONS-ICONS-ARG1 A)
                            (IINSERT (ICONS-ICONS-ARG1 A)
-                                    (IINSERTIONSORT (ICONS-ICONS-ARG2 A))))))
-  :hints (("Goal" 
-             :in-theory (disable IHowManyLE_Insert_4)
-             :use ((:instance IHowManyLE_Insert_4 
-                      (x (icons-icons-arg1 a))
-                      (a (icons-icons-arg2 a))
-                      (b (iinsertionsort (icons-icons-arg2 a))))))))
+                                    (IINSERTIONSORT (ICONS-ICONS-ARG2 A)))))))
   end-proof
 
   theorem IInsertionSortPerm is
   fa (a:IList) IPerm(a, IInsertionSort a)
 
-proof ACL2 IInsertionSortPerm
-      :hints (("Goal" :in-theory (enable IINSERTIONSORT iperm ISUBBAG)))
-end-proof
-
 
   % Proofs %
+
+  proof ACL2 IAppend_associative
+    :hints (("Goal" :in-theory (enable IAppend)))
+  end-proof
+
+  proof ACL2 IAppend_INil
+    :hints (("Goal" :in-theory (enable IAppend)))
+  end-proof
+
+  proof ACL2 IRev_IAppend
+    :hints (("Goal" :in-theory (enable IAppend IRev)))
+  end-proof
+
+  proof ACL2 IRev_IRev
+    :hints (("Goal" :in-theory (enable IAppend IRev)))
+  end-proof
+
+  proof ACL2 ILength_IAppend
+    :hints (("Goal" :in-theory (enable IAppend ILength)))
+  end-proof
+
+  proof ACL2 IHowmany_of_inil
+  :hints (("Goal" :in-theory (enable ihowmany)))
+  end-proof
+
+  proof ACL2 ISubBag_ICons
+    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
+  end-proof
+
+  proof ACL2 ISubBag_reflexive
+    :hints (("Goal" :in-theory (enable ISubBag)))
+  end-proof
+
+  proof ACL2 ISubBag_transitive
+    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
+  end-proof
+
+  proof ACL2 ISubBag_IHowManyLE
+    :hints (("Goal" :in-theory (enable ISubBag IHowMany)))
+  end-proof
+
+  proof ACL2 ISubBag_of_Nil
+    :hints (("Goal" :in-theory (enable ISubBag ihowmany)))
+  end-proof
+
+  proof ACL2 ISubBag_of_Nil2
+    :hints (("Goal" :in-theory (enable ISubBag ihowmany)))
+  end-proof
+
+%%fixme the need to enable IORDEREDLIST-P here is unfortunate
+proof ACL2 IHowMany_of_IInsert_diff
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IORDEREDLIST-P)))
+end-proof
+
+proof ACL2 IHowMany_of_IInsert_same
+    :hints (("Goal" :in-theory (enable IHowMany IInsert IORDEREDLIST-P)))
+end-proof
+
+proof ACL2 IHowMany_of_ICons_same
+    :hints (("Goal" :in-theory (enable IHowMany)))
+end-proof
+
+proof ACL2 IHowMany_of_ICons_diff
+    :hints (("Goal" :in-theory (enable IHowMany)))
+end-proof
+
+proof ACL2 ISubBag_IInsert_1
+  :hints (("Goal" :do-not '(generalize eliminate-destructors)
+                  :in-theory (enable IINSERT ISubBag IHOWMANY)))
+end-proof
+
+  proof ACL2 ISubBag_of_insert
+    :hints (("Goal" :in-theory (enable ISubBag IInsert ihowmany)))
+  end-proof
+
   proof ACL2 IInsert
     (declare (xargs :type-constraint-args
                     (:hints (("Goal" :in-theory 
@@ -384,6 +317,7 @@ end-proof
                                      (enable IOrderedList-p
                                              IOrdered))))))
   end-proof
+
   proof ACL2 IInsertionSort
     (declare (xargs :type-constraint-args
                     (:hints (("Goal" :in-theory 
@@ -394,9 +328,7 @@ end-proof
                                      (enable IOrderedList-p
                                              IOrdered))))))
   end-proof
-  proof ACL2 IHowManyEQ_Insert
-    :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
-  end-proof
+
   proof ACL2 IHowManyLE_Insert_1
     :body-declare
     (declare (xargs :verify-guards-args
@@ -406,8 +338,13 @@ end-proof
                                                         howmany-rationalp))))))
     :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
   end-proof
+ 
   proof ACL2 IHowManyLE_Insert_2
     :hints (("Goal" :in-theory (enable IHowMany IInsert IOrderedList-p IOrdered)))
   end-proof
+
+proof ACL2 IInsertionSortPerm
+      :hints (("Goal" :in-theory (enable IINSERTIONSORT iperm ISUBBAG)))
+end-proof
 
 end-spec
