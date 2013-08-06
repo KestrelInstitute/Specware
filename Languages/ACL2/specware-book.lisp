@@ -1263,3 +1263,27 @@
 ;;                (list 'disable (hyphenate-symbols 
 ;;                                (list type 'destructors)))))))
 
+
+;; Library lemmas:
+
+(defthmd split-equal
+  (implies (and (booleanp x)
+                (booleanp y))
+           (equal (equal x y)
+                  (and (implies x y)
+                       (implies y x)))))
+
+;;fixme make this into a specware lemma (generalize?!)
+(defthm cancel_ones
+  (implies (and (natp x) (natp y))
+           (equal (< (+ 1 x)
+                     (+ 1 y))
+                  (< x y)))
+  :hints (("Goal" :in-theory (enable split-equal))))
+
+;; ;;This could be expensive.
+;; ;;It was needed for a guard conjecture, presumably because we used <, which expects rationals.
+;; ;;we almost want the obligation to be tighter (natp) rather than the weaker rationalp, because we have rules about thins returning rationals.
+;;   (defthm rationalp-when-natp
+;;     (implies (natp x)
+;;              (rationalp x)))
