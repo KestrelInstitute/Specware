@@ -2,6 +2,10 @@ Welcome to Specware!
 
 Specware runs on Linux, Mac OS X, and Windows.
 
+It requires a machine with about 2800MB of memory or more (should not
+be an issue on physical machines; on virtual machines, be sure to
+provision the machine with enough memory).
+
 Specware runs on top of SBCL (Steel Bank Common Lisp).  To build
 Specware, first install SBCL (available from http://www.sbcl.org/).
 Specware has been successfully built with SBCL 1.1.7, and later
