@@ -119,17 +119,17 @@ theorem IOrdered_of_ICons_ICons is
 %%            (equal (IORDERED (ICONS x a))
 %%                   (if (equal a (INil))
 %%                       t
-%%                     (and (<= x (ICONS-ICONS-ARG1 A))
+%%                     (and (<= x (ICONS-ARG1 A))
 %%                          (IORDERED A)))))
 %%   :hints (("Goal" :in-theory (enable IORDERED))))
 %% end-proof
 
 %% %% fixme unfortunate that I need this.  could defun-typed do this?  the elim rule almost gets us what we need, but we need a rule for iordered-listp of icons
 %% proof ACL2 -verbatim
-%% (defthm IORDERED-of-ICONS-ICONS-ARG2
+%% (defthm IORDERED-of-ICONS-ARG2
 %%   (implies (and (IORDERED A)
 %%                 (ICONS-P A))
-%%            (IORDERED (ICONS-ICONS-ARG2 A)))
+%%            (IORDERED (ICONS-ARG2 A)))
 %%   :hints (("Goal" :in-theory (enable IORDERED))))
 %% end-proof
 
@@ -137,10 +137,10 @@ type IOrderedList = IList | IOrdered
 
 %% fixme think about this.  can't easily state in Specware terms.
 proof ACL2 -verbatim
-(defthm IORDEREDLIST-P_of_ICONS-ICONS-ARG2
+(defthm IORDEREDLIST-P_of_ICONS-ARG2
         (implies (and (IORDEREDLIST-P A)
                       (ICONS-P A))
-                 (IORDEREDLIST-P (ICONS-ICONS-ARG2 A)))
+                 (IORDEREDLIST-P (ICONS-ARG2 A)))
                :hints (("Goal" :in-theory (enable IORDEREDLIST-P IORDERED))))
 end-proof
 
@@ -227,7 +227,7 @@ proof ACL2 IOrdered_of_ICons_ICons   :hints (("Goal" :in-theory (enable iordered
 
 %%FIXME allow just :type-hints and :guard-hints (or even :guard-enable and :type-enable)?
 proof ACL2 IInsert
-  (declare (xargs :type-constraint-args
+  (declare (xargs :type-args
                   (:hints (("Goal" :in-theory 
                                    (enable IOrderedList-p
                                            IOrdered))))
@@ -238,7 +238,7 @@ proof ACL2 IInsert
 end-proof
 
 proof ACL2 IInsertionSort
-  (declare (xargs :type-constraint-args
+  (declare (xargs :type-args
                   (:hints (("Goal" :in-theory 
                                    (enable IOrderedList-p
                                            IOrdered))))
