@@ -86,10 +86,10 @@
 ;;                   :normalize nil
 ;;                   :non-executable t
 ;;                   :otf-flg t
-;;                   :type-constraint-lemmas 
-;;                    ((defthm example-type-constraint-lemma1 ...)
-;;                     (defthm example-type-constraint-lemma2 ...))
-;;                   :type-constraint-args
+;;                   :type-lemmas 
+;;                    ((defthm example-type-lemma1 ...)
+;;                     (defthm example-type-lemma2 ...))
+;;                   :type-args
 ;;                   (:rule-classes foo1
 ;;                    :instructions foo2
 ;;                    :hints foo3
@@ -149,10 +149,10 @@
 ;;       (example-body x y z i j)
 ;;       nil))
 ;;
-;; (defthm example-type-constraint-lemma1 ...)
-;; (defthm example-type-constraint-lemma2 ...)
+;; (defthm example-type-lemma1 ...)
+;; (defthm example-type-lemma2 ...)
 ;;
-;; (defthm example-type-constraint
+;; (defthm example-type
 ;;   (implies (and (type1-p x)
 ;;                 (type2-p y)
 ;;                 (type3-p z)
@@ -161,11 +161,11 @@
 ;;                 (type6-p c)
 ;;                 (type7-p i)
 ;;                 (type8-p j)))
-;;   :type-constraint-rule-classes foo1
-;;   :type-constraint-instructions foo2
-;;   :type-constraint-hints foo3
-;;   :type-constraint-otf-flg foo4
-;;   :type-constraint-doc foo5)
+;;   :rule-classes foo1
+;;   :instructions foo2
+;;   :hints foo3
+;;   :otf-flg foo4
+;;   :doc foo5)
 
 
 (defun add-p-to-name (name)
@@ -270,8 +270,8 @@
 (defun remove-type-constraint-xargs-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
-        ((or (equal (car xargs) ':type-constraint-lemmas)
-             (equal (car xargs) ':type-constraint-args)
+        ((or (equal (car xargs) ':type-lemmas)
+             (equal (car xargs) ':type-args)
              (equal (car xargs) ':verify-guards-args))
          (remove-type-constraint-xargs-1 (cddr xargs)))
         (t (cons (car xargs) 
@@ -298,7 +298,7 @@
 (defun get-type-constraint-args-1 (xargs)
    (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
-        ((equal (car xargs) ':type-constraint-args)
+        ((equal (car xargs) ':type-args)
          (cadr xargs))
         (t (get-type-constraint-args-1 (cddr xargs)))))
 
@@ -321,7 +321,7 @@
 (defun get-type-constraint-lemmas-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
-        ((equal (car xargs) ':type-constraint-lemmas)
+        ((equal (car xargs) ':type-lemmas)
          (cadr xargs))
         (t (get-type-constraint-lemmas-1 (cddr xargs)))))
 
@@ -426,9 +426,10 @@
                      (list
                       (append (list 'defthm 
                                     (hyphenate-symbols 
-                                     (list name 'type-constraint))
+                                     (list name 'type))
                                     term
-                                    ':rule-classes '(:type-prescription :rewrite))
+                                    ':rule-classes '(:type-prescription
+                                                     :rewrite))
                               type-constraint-args))))
                   (t (let* ((type-constraint (get-type-constraint typed-args))
                             (term
@@ -439,15 +440,20 @@
                                        (list type (cons name (get-args
                                                               typed-args)))))))
                        (list 
-                        (append (list 'defthm (hyphenate-symbols (list name 'type-constraint))
+                        (append (list 'defthm (hyphenate-symbols (list name 'type))
                                       term
-                                      ':rule-classes '(:type-prescription :rewrite))
+                                      ':rule-classes '(:type-prescription 
+                                                       :rewrite))
                                 type-constraint-args)))))
 ;            (lookup ':guard-lemmas rst)
             (list (append (list 'verify-guards name) verify-guards-args)))))
 ;            (list (list 'verify-guards (hyphenate-symbols (list name 'type-constraint)))))))
 
 (defmacro defund-typed (name typed-args type &rest rst)
+  (declare (xargs :guard (and (symbolp name)
+                              (typed-arg-listp typed-args)
+                              (type-p type)
+                              (true-listp rst))))
   `(progn ,(append `(defun-typed ,name ,typed-args ,type) rst)
           (in-theory (disable ,name))))
 
@@ -456,6 +462,9 @@
 ;;;;;;;;;;;;;;;;;;
 
 (defmacro defpredicate (name args &rest rst)
+  (declare (xargs :guard (and (symbolp name)
+                              (symbol-listp args)
+                              (true-listp rst))))
   (append (list 'defund-typed name (list (car args)) 'booleanp)
           rst))
 
@@ -472,6 +481,8 @@
 ;;        (restriction x)))
 
 (defmacro defsubtype (subtype-p parenttype-p restriction)
+  (declare (xargs :guard (and (symbolp subtype-p)
+                              (symbolp parenttype-p))))
   `(progn
      (defpredicate ,subtype-p (x)
        (and (,parenttype-p x)
@@ -544,7 +555,10 @@
 ;;            (concl x y z))))
 
 (defun flip-typed-vars (x)
+  (declare (xargs :guard (typed-arg-listp x)))
   (cond ((atom x) nil)
+        ((atom (car x))
+         (cons (car x) (flip-typed-vars (cdr x))))
         (t (cons (list (cadar x) (caar x))
                  (flip-typed-vars (cdr x))))))
 
@@ -565,6 +579,9 @@
         (t (get-body-declare (cddr rst)))))
 
 (defmacro defthm-typed (name typed-vars term &rest rst)
+  (declare (xargs :guard (and (symbolp name)
+                              (typed-arg-listp typed-vars)
+                              (true-listp rst))))
   (list 'progn
         (append (list 'defund-typed
                       (hyphenate-symbols (list name 'body))
@@ -581,6 +598,9 @@
                 (remove-body-declare rst))))
 
 (defmacro defthmd-typed (name typed-vars term &rest rst)
+  (declare (xargs :guard (and (symbolp name)
+                              (typed-arg-listp typed-vars)
+                              (true-listp rst))))
   `(progn ,(append `(defthm-typed ,name ,typed-vars ,term) rst)
           (in-theory (disable ,name))))
 
@@ -594,11 +614,9 @@
         ((atom (car rst-type-case))
          (cons
           (list (car rst-type-case)
-                (hyphenate-symbols 
-                 (list constructor-name
-                       (intern (string-append "ARG" 
-                                              (integer-to-string n)) 
-                               "ACL2"))))
+                (intern (string-append "ARG" 
+                                       (integer-to-string n)) 
+                        "ACL2"))
           (transform-type-case-1 constructor-name (cdr rst-type-case) (1+ n))))
         (t (cons (car rst-type-case) (transform-type-case-1 constructor-name
                                                             (cdr rst-type-case)
@@ -618,18 +636,19 @@
                                       (cdar type-cases))
                  (map-transform-type-case (cdr type-cases))))))
 
-(defun defcoproduct-macro (type type-cases)
+(defun defcoproduct-concrete-fn (type type-cases)
   (declare (xargs :mode :program))
-;  (append (list 'defcoproduct-explicit-destructor-names
-  (append (list 'defsum
-                type)
-          (map-transform-type-case type-cases)))
+  `(defsum ,type ,@(map-transform-type-case type-cases)))
 
-(defmacro defcoproduct (type &rest type-cases)
-  (defcoproduct-macro type type-cases))
+  ;; (append (list 'defsum
+  ;;               type)
+  ;;         (map-transform-type-case type-cases)))
+
+(defmacro defcoproduct-concrete (type &rest type-cases)
+  (defcoproduct-concrete-fn type type-cases))
 
 (defun replace-_-with-& (x)
-  (cond ((atom x) (if (equal x '_) '& x))
+  (cond ((atom x) (if (eq x '_) '& x))
         (t (cons (replace-_-with-& (car x))
                  (replace-_-with-& (cdr x))))))
 
@@ -670,26 +689,50 @@
 (defthm alistp-make-alist
   (alistp (make-alist a b)))
 
-(defun sub-type-case-1 (rst-type-case var-alist)
-  (declare (xargs :mode :program))
-  (cond ((atom rst-type-case) nil)
-        ((consp (car rst-type-case))
-         (cons (appsyms (append
-                         (cons (caar rst-type-case)
-                               (sub-type-case-1 (cdar rst-type-case)
-                                                var-alist))
-                         '(p)))
-               (sub-type-case-1 (cdr rst-type-case) var-alist)))
-        (t (let ((var-sub (assoc-equal (car rst-type-case) var-alist)))
-             (if var-sub
-                 (cons (cdr var-sub) (sub-type-case-1 (cdr rst-type-case) var-alist))
-                 (cons (car rst-type-case)
-                       (sub-type-case-1 (cdr rst-type-case) var-alist)))))))
-  
+(mutual-recursion
+
+ (defun subst-type-name (type var-alist)
+   (declare (xargs :mode :program))
+   (cond ((atom type)
+          (let ((var-sub (assoc-equal type var-alist)))
+            (if var-sub
+                (cdr var-sub)
+              type)))
+         (t (appsyms (cons (car type)
+                           (map-subst-type-name (cdr type) var-alist))))))
+
+ (defun map-subst-type-name (types var-alist)
+   (declare (xargs :mode :program))
+   (cond ((atom types) nil)
+         (t (cons (subst-type-name (car types) var-alist)
+                  (map-subst-type-name (cdr types) var-alist))))))
+
+;; (defun sub-type-case-1 (rst-type-case var-alist)
+;;   (declare (xargs :mode :program))
+;;   (cond ((atom rst-type-case) nil)
+;;         ((consp (car rst-type-case))
+;;          (cons (appsyms (append
+;;                          (cons (caar rst-type-case)
+;;                                (sub-type-case-1 (cdar rst-type-case)
+;;                                                 var-alist))))
+;;                (sub-type-case-1 (cdr rst-type-case) var-alist)))
+;;         (t (let ((var-sub (assoc-equal (car rst-type-case) var-alist)))
+;;              (if var-sub
+;;                  (cons (cdr var-sub) (sub-type-case-1 (cdr rst-type-case) var-alist))
+;;                  (cons (car rst-type-case)
+;;                        (sub-type-case-1 (cdr rst-type-case) var-alist)))))))
+
+(defun add-p-to-list (symlist)
+  (declare (xargs :mode :program
+                  :guard (symbol-listp symlist)))
+  (cond ((atom symlist) nil)
+        (t (cons (appsyms (list (car symlist) 'p))
+                 (add-p-to-list (cdr symlist))))))
+
 (defun sub-type-case (type-case var-alist)
   (declare (xargs :mode :program))
   (cons (appsyms (cons (car type-case) (strip-cdrs var-alist)))
-        (sub-type-case-1 (cdr type-case) var-alist)))
+        (add-p-to-list (map-subst-type-name (cdr type-case) var-alist))))
 
 (defun sub-type-cases (type-cases var-alist)
   (declare (xargs :mode :program))
@@ -714,12 +757,12 @@
   (declare (xargs :mode :program
                   :guard (and (symbolp var) (symbolp fn))))
   `(encapsulate
-    (((,(constrained-type-var-name var fn) *) => *))
-    (local (defun ,(constrained-type-var-name var fn)
+    (((,(appsyms (list (constrained-type-var-name var fn) 'p)) *) => *))
+    (local (defun ,(appsyms (list (constrained-type-var-name var fn) 'p))
              (x) (declare (ignore x)) t))
     (defthm ,(appsyms (list (constrained-type-var-name var fn)
-                            'type-constraint))
-      (booleanp (,(constrained-type-var-name var fn) x))
+                            'type))
+      (booleanp (,(appsyms (list (constrained-type-var-name var fn) 'p)) x))
       :rule-classes :type-prescription)))
 
 (defun constrained-type-vars (vars fn)
@@ -730,6 +773,32 @@
         (t (cons (constrained-type-var (car vars) fn)
                  (constrained-type-vars (cdr vars) fn)))))
 
+(mutual-recursion
+
+ (defun type-inst-prereqs (type var-alist skip-types)
+   (declare (xargs :mode :program))
+   (cond ((atom type) nil)
+         ((member-equal (car type) skip-types)
+          nil)
+         (t `(,@(type-inst-list-prereqs (cdr type) var-alist skip-types)
+              (,(appsyms `(,(car type) instantiate))
+               ,@(map-subst-type-name (cdr type) var-alist))))))
+
+ (defun type-inst-list-prereqs (types var-alist skip-types)
+   (cond ((atom types) nil)
+         (t (append (type-inst-prereqs (car types) var-alist skip-types)
+                    (type-inst-list-prereqs (cdr types) var-alist skip-types))))))
+
+(defun type-case-prereqs (type-case var-alist skip-types)
+  (declare (xargs :mode :program))
+  (type-inst-list-prereqs (cdr type-case) var-alist skip-types))
+
+(defun type-cases-prereqs (type-cases var-alist skip-types)
+  (declare (xargs :mode :program))
+  (cond ((atom type-cases) nil)
+        (t (append (type-case-prereqs (car type-cases) var-alist skip-types)
+                 (type-cases-prereqs (cdr type-cases) var-alist skip-types)))))
+
 (defun defcoproduct-poly-fn (name vars cases)
   (declare (xargs :guard (and (symbolp name)
                               (symbol-listp vars)
@@ -737,14 +806,29 @@
                   :mode :program))
   `(progn
      (defmacro ,(appsyms (list name 'instantiate)) ,vars
-       `(defcoproduct ,(appsyms (cons ',name (list ,@vars)))
-          ,@(sub-type-cases ',cases (make-alist ',vars (list ,@vars)))))
+       `(progn
+          ,@(type-cases-prereqs ',cases (make-alist ',vars (list ,@vars)) (list ',name))
+          (defcoproduct-concrete ,(appsyms (cons ',name (list ,@vars)))
+            ,@(sub-type-cases ',cases (make-alist ',vars (list ,@vars))))))
      ,@(constrained-type-vars vars name)
      (,(appsyms (list name 'instantiate)) ,@(constrained-type-var-names vars name))))
 
 (defmacro defcoproduct-poly (name vars &rest cases)
   (defcoproduct-poly-fn name vars cases))
 
+;;;;;;;;;;;;;;;;;;
+;; DEFCOPRODUCT ;;
+;;;;;;;;;;;;;;;;;;
+
+(defun defcoproduct-fn (name rst)
+  (if (and (consp rst)
+           (consp (cdr rst))
+           (eq (car rst) ':type-vars))
+      `(defcoproduct-poly ,name ,(cadr rst) ,@(cddr rst))
+    `(defcoproduct-concrete ,name ,@rst)))
+
+(defmacro defcoproduct (name &rest rst)
+  (defcoproduct-fn name rst))
 
 ;;;;;;;;;;;;;;
 ;; BUILTINS ;;
