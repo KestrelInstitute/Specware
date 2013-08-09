@@ -435,7 +435,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
                                                            let {name=_,uniqueId=_,link} = ! tv in
                                                            (case link of
                                                               | None -> 
-                                                                (case maybeTermTypeEnv (sp, t1) of
+                                                                (case maybeTermTypeEnv (sp, t2) of
                                                                    | Some typ2 ->
                                                                      (case (t1, productOpt(sp, typ2)) of
                                                                            | (Fun(Project id, _, _), Some fields) ->
@@ -443,7 +443,7 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
                                                                                 | Some(_, f_ty) -> Some f_ty
                                                                                 | None -> Some rng)
                                                                            | _ -> Some rng)
-                                                                   | _ -> None)
+                                                                   | _ -> Some rng)
                                                               | _ -> Some rng)
                                                          | _ -> Some rng)
                                                     | _ -> None)
