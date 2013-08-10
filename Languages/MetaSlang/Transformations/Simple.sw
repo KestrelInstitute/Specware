@@ -10,6 +10,7 @@
 %% every op in the new spec is explicitly qualified with the same
 %% qualifiers as the original op.
 
+Simple qualifying
 spec
 
 %% TODO: Include less:

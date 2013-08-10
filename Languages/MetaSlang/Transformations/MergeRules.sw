@@ -38,6 +38,7 @@
 %%   pattern variable, and rename x to z in the first clause and y to
 %%   z in the second clause.
 %%
+MergeRules qualifying
 spec
 
 import Script
