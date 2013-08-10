@@ -36,35 +36,9 @@ RewriteRules qualifying spec
 	tyVars    : List String,
 	freeVars  : List (Nat * MSType),
 	condition : Option MSTerm,
-        trans_fn  : Option(MSTerm -> Option MSTerm)
+        trans_fn  : Option(TypedFun)
    } 
 
- op showRuleSpec(rs: RuleSpec): String =
-   case rs of
-     | Unfold  qid -> "unfold " ^ show qid
-     | Fold    qid -> "fold " ^ show qid
-     | Rewrite qid -> "rewrite " ^ show qid
-     | LeftToRight qid -> "lr " ^ show qid
-     | RightToLeft qid -> "rl " ^ show qid
-     | RLeibniz    qid -> "revleibniz " ^ show qid
-     | Weaken      qid -> "weaken " ^ show qid
-     | MetaRule    qid -> "meta-rule " ^ show qid
-     | RenameVars binds -> "rename [" ^ (foldr (fn ((id1, id2), r) -> "("^id1^", "^id2^")"^(if r = "" then r else ", "^r)) "" binds)
-                                 ^ "]"
-     | SimpStandard -> "simplify"
-     | AbstractCommonExpressions -> "abstractCommonExpressions"
-     | Eval -> "eval"
-     | Context -> "context"
-     | AllDefs -> "alldefs"
-
- op reverseRuleSpec(rs: RuleSpec): RuleSpec =
-   case rs of
-     | Unfold qid -> Fold qid
-     | Fold qid -> Unfold qid
-     | Rewrite qid -> Fold qid
-     | LeftToRight qid -> RightToLeft qid
-     | RightToLeft qid -> LeftToRight qid
-     | _ -> (warn("Trying to reverse rule "^showRuleSpec rs))
 
  op printTransformHistory(hist: TransformHistory): () =
    if hist = [] then ()

@@ -3,7 +3,7 @@
 MetaSlangRewriter qualifying spec 
  import /Library/Legacy/DataStructures/LazyList
  import ../AbstractSyntax/PathTerm
- import DeModRewriteRules, Simplify, Interpreter
+ import DeModRewriteRules, Simplify, Interpreter, MetaTransform
  
  type Context = HigherOrderMatching.Context
 
@@ -106,6 +106,8 @@ MetaSlangRewriter qualifying spec
      then optimizeSuccessList new_results
      else new_results
 
+
+ 
  op useStandardSimplify?: Bool = true
  op debugApplyRewrites?:  Bool = false
 
@@ -130,7 +132,7 @@ MetaSlangRewriter qualifying spec
           in
           case rule.trans_fn of
             | Some f ->
-              (case f term of
+              (case extractMSTerm(apply(f, replaceSpecTermArgs(metaRuleATV rule.rule_spec, spc, term))) of
                | Some new_term ->
                  (if debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
                     else ();
@@ -504,29 +506,24 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                            -> LazyList (MSTerm * a)
 
  op [a] rewritePattern (solvers: RewriteInfo a, boundVars: MSVars,
-                        pat: MSPattern, rules: Demod RewriteRule)
+                        pat: MSPattern, rules: Demod RewriteRule, ign?: Bool)
           : LazyList(MSPattern * a) =
    case pat of
-     | RestrictedPat(p,t,b) ->
+     | RestrictedPat(p,t,b) | ign? ->
        LazyList.map 
          (fn (t,a) -> (RestrictedPat(p,t,b),a)) 
          (rewriteTerm(solvers,boundVars ++ patternVars p,t,rules))
      | _ -> Nil
+ 
+ op pushTerm?(tm: MSTerm): Bool =
+   case tm of
+     | IfThenElse _ -> true
+     | Let _ -> true
+     | _ -> caseExpr? tm
 
- def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
-     case strategy
-       of Innermost -> 
-          rewriteSubTerm(solvers,boundVars,term,rules) 
-          @@
-	  (fn () -> rewriter (boundVars,term,rules))
-        | Outermost -> 
-	  rewriter (boundVars,term,rules) 
-	  @@
-	  (fn () -> rewriteSubTerm(solvers,boundVars,term,rules))
-
- def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
+ def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) =
    case term of
-     | Apply(M,N,b) ->
+     | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
        let Ns = termToList N in
        (case findIndex (embed? IfThenElse) Ns  of
           | Some (i,if_tm) | pushFunctionsIn? && pushable? M ->
@@ -557,16 +554,30 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
              in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
              LazyList.map (fn (tr_tm, a) -> (maybePushCaseBack(tr_tm, M, Ns, i), a))
-               tr_tms)
-          | _ ->
-        case M of
+               tr_tms))
+     | _ ->
+   case strategy
+     of Innermost -> 
+        rewriteSubTerm(solvers,boundVars,term,rules) 
+        @@
+        (fn () -> rewriter (boundVars,term,rules))
+      | Outermost -> 
+        rewriter (boundVars,term,rules) 
+        @@
+        (fn () -> rewriteSubTerm(solvers,boundVars,term,rules))
+
+ def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
+   case term of
+     | Apply(M,N,b) ->
+       let Ns = termToList N in
+       (case M of
           | Lambda(lrules,b1) ->
             %% Separate case so we can use the context of the pattern matching
             LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
               (rewriteTerm(solvers,boundVars,N,rules))
             @@ (fn () ->
                   mapEach(fn (first,(pat,cond,M),rest) -> 
-                      rewritePattern(solvers,boundVars,pat,rules)
+                      rewritePattern(solvers,boundVars,pat,rules,false)
                       >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
                     lrules
             @@ (fn () ->
@@ -622,10 +633,11 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
             (fn (M,a) -> unit(Record(first ++ [(label,M)] ++ rest,b),a)))
         fields
      | Lambda(lrules,b) ->
-       mapEach(fn (first,(pat,cond,M),rest) -> 
-                 rewritePattern(solvers,boundVars,pat,rules)
+       let last_rule = last lrules in
+       mapEach(fn (first,rule as (pat,cond,M),rest) -> 
+                 rewritePattern(solvers,boundVars,pat,rules, rule = last_rule)
                  >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
-         lrules
+         lrules               % A condition on the last case should be guaranteed by the type
        @@ (fn () ->
            mapEach 
              (fn (first,(pat,cond,M),rest) -> 
@@ -927,38 +939,3 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
 	  
 end-spec
-
-(*
-Discussion
-
-* This allows to use rewriting as abstract execution. 
-      What about compiled forms? A la type based partial evaluation forms, or
-      unboxing analysis?
-
-      Code generation should generate code of the form
-      (defun f (x) 
-        (let ((x-unboxed (unbox x)))
-             (if (boxed? x)
-                 (box (cons :|Apply| AST-for-symbol-f x-unboxed))
-	      (unboxed (standard-code-for-f x-unboxed)))))
-* Implement the boxification as a Spec to Spec transformation that allows
-      to reuse one code generator.
-        type Box a = | Boxed Term | UnBoxed a
-        op  boxifySpec : Spec -> Spec
-        op  boxifyTerm : Term -> Term
-        op  boxifyType : Type -> Type
-            
-        boxifyDef(def f = fn x -> body) = 
-            def f = fn Boxed x -> Boxed('Apply(f,x)) | UnBoxed x -> boxifyTerm body
-
-        boxifyTerm(Apply(f,g)) = 
-            case f
-              of Boxed f -> Boxed('Apply(f,'g))
-               | Unboxed f -> 
-            case g
-              of Unboxed g -> Apply(f,g)
-               | Boxed g -> Boxed('Apply(f,g))
-
-* Extend partial evaluation/boxing format with calls to rewrite engine, or
-      interleave these steps.
-*)

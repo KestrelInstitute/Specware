@@ -2503,7 +2503,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 
   op typeMatch(s1: MSType, s2: MSType, spc: Spec, ign_subtypes?: Bool, unfold?: Bool): Option TyVarSubst =
    let def match(ty1: MSType, ty2: MSType, pairs: TyVarSubst): Option TyVarSubst =
-        % let _ = writeLine(printType ty1^" =?= "^ printType ty2) in
+        % let _ = if printType ty1 = "Bool" then writeLine(show unfold?^anyToString ty1^"\n =?= \n"^ anyToString ty2) else () in
         let result =
             case (ty1,ty2) of
               | (TyVar(id1,_), ty2) -> 
@@ -2563,7 +2563,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
               | (Boolean _, Boolean _) -> Some pairs
               | _ -> None
         in
-        % let _ = writeLine("Result: "^anyToString result) in
+        % let _ = if printType ty1 = "Bool" then writeLine("Result: "^(show (some? result))) else () in
         result
   in match(s1,s2,[])
 

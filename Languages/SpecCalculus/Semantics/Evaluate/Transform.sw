@@ -124,8 +124,29 @@ spec
                                   return (Unfold qid)}
       | Item("rewrite",opid,_) -> {qid <- extractQId opid;
                                    return (Rewrite qid)}
+      | Name(cmd_name, pos) | transformInfoCommand? cmd_name ->
+        (case lookupMSTermTransformInfo cmd_name of
+           | Some(ty_info, tr_fn) ->
+             (case ty_info of
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
+                  {atvs <- transformExprsToAnnTypeValues([], mtis, pos);
+                   % print("atvs_1:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+                   return(MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                                   tr_fn, ArrowsV atvs))}
+                | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
+           | None -> raise (TransformError (pos, cmd_name^" not a term transformer.")))
+      | Item(cmd_name, Tuple(args, _), pos) | transformInfoCommand? cmd_name ->
+        (case lookupMSTermTransformInfo cmd_name of
+           | Some(ty_info, tr_fn) ->
+             (case ty_info of
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
+                   return(MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                                   tr_fn, ArrowsV atvs))}
+                | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
+           | None -> raise (TransformError (pos, cmd_name^" not a term transformer.")))
       | Item("apply",opid,_) -> {qid <- extractQId opid;
-                                 return (MetaRule qid)}
+                                 return (MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue))}
       | Item("revleibniz",opid,_) -> {qid <- extractQId opid;
                                       return (RLeibniz qid)}
       | _ -> raise (TransformError (posOf trans, "Unrecognized rule reference"))
@@ -197,7 +218,7 @@ spec
       | Command("revleibniz", [opid],_) -> {qid <- extractQId opid;
                                             return (Simplify1([RLeibniz qid]))}
       | Command("apply", [opid],_) -> {qid <- extractQId opid;
-                                       return (Simplify1([MetaRule qid]))}
+                                       return (Simplify1([MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)]))}
       | Command("move", [Tuple(mvs, _)], _) -> {moves <- mapM makeMove mvs;
                                                 return (Move moves)}
       | Command("move", [move1], _) -> {move <- makeMove move1;
@@ -330,6 +351,15 @@ spec
   op reservedWords: List String =
     ["true", "false"] ++ commands
 
+  op convertMTItoDefaultATV(mti: MTypeInfo): Option AnnTypeValue =
+    case mti of
+      | Spec -> Some(SpecV emptySpec)
+      | Term -> Some(TermV(Any noPos))
+      | Bool -> Some(BoolV false)
+      | Opt _ -> Some(OptV None)
+      | List _ -> Some(ListV [])
+      | _ -> None
+
   op transformExprToAnnTypeValue(te: TransformExpr, ty_info: MTypeInfo): Option AnnTypeValue =
     case (te, ty_info) of
       | (Str(s, _),  Str) | s nin? reservedWords -> Some(StrV s)
@@ -344,7 +374,22 @@ spec
       | (Item("fold", thm, _),    Rule) -> mapOption (fn qid -> RuleV(Fold qid))        (transformExprToQualifiedId thm)
       | (Item("unfold", thm, _),  Rule) -> mapOption (fn qid -> RuleV(Unfold qid))      (transformExprToQualifiedId thm)
       | (Item("rewrite", thm, _), Rule) -> mapOption (fn qid -> RuleV(Rewrite qid))     (transformExprToQualifiedId thm)
-      | (Item("apply", thm, _),   Rule) -> mapOption (fn qid -> RuleV(MetaRule qid))    (transformExprToQualifiedId thm)
+      | (Item("apply", thm, _),   Rule) -> mapOption (fn qid -> RuleV(MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)))
+                                             (transformExprToQualifiedId thm)
+      | (Name(cmd_name, _),   Rule) | transformInfoCommand? cmd_name ->
+         (case lookupMSTermTransformInfo cmd_name of
+           | Some(ty_info, tr_fn) ->
+             (case ty_info of
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
+                  let atvs = mapPartial convertMTItoDefaultATV mtis in
+                  if length atvs = length mtis
+                    then
+                      % let _ = writeLine("atvs_1:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs) in
+                      Some(RuleV(MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                                          tr_fn, ArrowsV atvs)))
+                  else None
+                | _ -> None)
+           | None -> None)
       | (Item("revleibniz", thm, _), Rule) -> mapOption (fn qid -> RuleV(RLeibniz qid)) (transformExprToQualifiedId thm)
       | (Tuple(flds, _), Tuple tp_mtis) | length flds = length tp_mtis ->
         (let o_flds = foldr (fn ((fldi, tpi_mti), result) ->
@@ -424,6 +469,7 @@ spec
       | ([],          (List _)   ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos);
                                                  return((ListV [])::r_atvs)}
       | ((te1 as Tuple(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) ->
+        % let _ = writeLine("tetatv Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
         (let atvs = mapPartial (fn tei -> transformExprToAnnTypeValue(tei, ty_i1)) l_tes in
          if length atvs = length l_tes
            then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos);
@@ -493,17 +539,30 @@ spec
     % let _ = writeLine("MS: "^anyToString trans_step) in
     case trans_step of
       | Command(cmd_name, args, pos) | transformInfoCommand? cmd_name ->
-        let Some(ty_info, tr_fn) = lookupTransformInfo cmd_name in
-        (case ty_info of
-           | Arrows(mtis, Spec) -> 
-             {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
-              % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
-              return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))}
-           | Arrows(mtis, Monad Spec) -> 
-             {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
-              % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
-              return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))}
-           | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
+        (case lookupSpecTransformInfo cmd_name of
+           | Some(ty_info, tr_fn) ->
+             (case ty_info of
+                | Arrows(mtis, Spec) -> 
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
+                   % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+                   return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))}
+                | Arrows(mtis, Monad Spec) -> 
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
+                   % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+                   return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))}
+                | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
+           | None ->
+         case lookupMSTermTransformInfo cmd_name of
+           | Some(ty_info, tr_fn) ->
+             (case ty_info of
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos);
+                   % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+                   return(Simplify1([MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                                              tr_fn, ArrowsV atvs)]))}
+                | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
+           %% Shouldn't happen
+           | None -> raise (TransformError (pos, cmd_name^" unknown transform type.")))
       | Command("isomorphism", args, _) ->
         (case args of
            | [Tuple(iso_tms, _)] ->  % isomorphism((iso, osi), ...)

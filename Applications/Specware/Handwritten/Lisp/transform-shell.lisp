@@ -394,7 +394,7 @@
 						   (String-Spec::split argstr))))
            ((rename renamevars) (renamevars-command argstr))
 	   ((simplify simp)    (simplify-command argstr))
-	   (apply              (apply-command argstr 'Script::mkMetaRule 'fn))
+	   (apply              (apply-command argstr 'Script::mkMetaRule0 'fn))
 	   ((applyToSpec a-s)  (apply-spec-command argstr 'Script::mkSpecTransform 'fn))
 	   (fold               (apply-command argstr 'Script::mkFold 'op))
 	   ((unfold uf)        (apply-command argstr 'Script::mkUnfold 'op))

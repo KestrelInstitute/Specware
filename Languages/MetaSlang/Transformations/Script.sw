@@ -2,283 +2,13 @@ Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
          RedundantErrorCorrecting, SliceSpec, MetaTransform
-  import ../AbstractSyntax/PathTerm
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
   import /Languages/SpecCalculus/AbstractSyntax/SCTerm
   import /Languages/SpecCalculus/AbstractSyntax/Printer % ppSCTerm
-  import /Languages/MetaSlang/Specs/MSTerm
 
 %  op [a] dummy: a
-
-  type Context = RewriteRules.Context
-  type PathTerm = APathTerm Position
-
-  type Location =
-    | Def QualifiedId
-
-  type Movement =
-    | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String | Post
-
-  type Scripts = List Script
-  type Script =
-    | At (List Location * Script)
-    | AtTheorem (List Location * Script)
-    | Move (List Movement)
-    | Steps Scripts
-    | Repeat Scripts
-    | Simplify (RuleSpecs * Nat)
-    | Simplify1 (RuleSpecs)
-    | SimpStandard
-    | RenameVars (List(Id * Id))
-    | PartialEval
-    | AbstractCommonExpressions
-    | SpecMetaTransform(String * TypedFun * AnnTypeValue)
-    | SpecTransformInMonad(String * TypedFun * AnnTypeValue)
-    | SpecTransform(QualifiedId * RuleSpecs)
-    | SpecQIdTransform(QualifiedId * QualifiedIds * RuleSpecs)
-    | IsoMorphism(List(QualifiedId * QualifiedId) * RuleSpecs * Option Qualifier)
-    | Implement(QualifiedIds * RuleSpecs)
-    | Maintain(QualifiedIds * RuleSpecs)
-      %%      function, position, return_position, name, type,         within,       value,        qualifier
-    | AddParameter(QualifiedId * Nat * Option Nat * Id * QualifiedId * QualifiedIds * QualifiedId * Option Qualifier)
-    | AddSemanticChecks(Bool * Bool * Bool * List((QualifiedId * QualifiedId)))
-    | AddSemanticChecks(Bool * Bool * Bool)
-    | RedundantErrorCorrecting (List (SCTerm * Morphism) * Option Qualifier * Bool)
-    | Slice     (OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool))
-    | Trace Bool
-    | Print
-
- %% Defined in Isomorphism.sw
- op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * RuleSpecs -> SpecCalc.Env Spec
- op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * RuleSpecs -> SpecCalc.Env Spec
-
- %% Defined in Coalgebraic.sw
- op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> SpecCalc.Env Spec
- op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> SpecCalc.Env Spec
-
- op ppSpace: WLPretty = ppString " "
-
- op wildQualifier: String = "*"
-
- op ppQid(Qualified(q, nm): QualifiedId): WLPretty =
-   if q = UnQualified then ppString nm
-     else ppConcat[ppString q, ppString ".", ppString nm]
-
- op ppLoc(loc: Location): WLPretty =
-   case loc of
-     | Def qid -> ppQid qid
-
-op ppRuleSpec(rl: RuleSpec): WLPretty =
-   case rl of
-     | Unfold  qid -> ppConcat   [ppString "unfold ", ppQid qid]
-     | Fold    qid -> ppConcat   [ppString "fold ", ppQid qid]
-     | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
-     | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
-     | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
-     | MetaRule    qid -> ppConcat[ppString "apply ", ppQid qid]
-     | RLeibniz    qid -> ppConcat[ppString "revleibniz ", ppQid qid]
-     | Weaken      qid -> ppConcat[ppString "weaken ", ppQid qid]
-     | _ -> ppString (showRuleSpec rl)
-
-  op moveString(m: Movement): String =
-   case m of
-     | First -> "f"
-     | Last -> "l"
-     | Next -> "n"
-     | Prev -> "p"
-     | Widen -> "w"
-     | All -> "a"
-     | Search s -> "s \"" ^ s ^ "\""
-     | ReverseSearch s -> "r \"" ^ s ^ "\""
-     | Post -> "post"
-
- op ppBool(b: Bool): WLPretty =
-   ppString(if b then "true" else "false")
-
- op commaBreak: WLPretty = ppConcat [ppString ", ", ppBreak]
-
- op ppQIds(qids: QualifiedIds): WLPretty = ppConcat[ppString "(",
-                                                    ppSep(ppString ", ") (map ppQid qids),
-                                                    ppString ")"]
- op ppRls(rls: RuleSpecs): WLPretty = if rls = [] then ppNil
-                                      else ppConcat[ppString "(",
-                                                    ppSep(ppString ", ") (map ppRuleSpec rls),
-                                                    ppString ")"]
-
- op ppOptionRls(rls: RuleSpecs): WLPretty = if rls = [] then ppNil
-                                            else ppConcat[ppString "[",
-                                                          ppSep(ppString ", ") (map ppRuleSpec rls),
-                                                          ppString "]"]
-
- op ppScript(scr: Script): WLPretty =
-    case scr of
-      | Steps steps ->
-        ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)
-      | Repeat steps ->
-        ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
-                 ppString "}"]
-      | At(locs, scr) ->
-        ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
-                           ppNewline,
-                           ppString "{", ppNest 0 (ppScript scr), ppString "}"])
-      | AtTheorem(locs, scr) ->
-        ppIndent(ppConcat [ppString "at-theorem (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
-                           ppNewline,
-                           ppString "{", ppNest 0 (ppScript scr), ppString "}"])
-      | Move mvmts -> ppConcat [ppString "move (",
-                                ppSep (ppString ", ") (map (fn m -> ppString(moveString m)) mvmts),
-                                ppString ")"]
-      | Simplify(rules, n) ->
-        if rules = [] then ppString "simplify"
-          else
-            ppConcat [ppString "simplify ",
-                      ppNest 1 (ppConcat [ppString "(", ppSep commaBreak (map ppRuleSpec rules), ppString ")"])]
-      | Simplify1 [rl] -> ppRuleSpec rl
-      | Simplify1 rules ->
-        ppConcat [ppString "simplify1 (", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString ")"]
-      | SimpStandard -> ppString "SimpStandard"
-      | RenameVars binds -> ppConcat [ppString "rename [",
-                                      ppSep(ppString ", ")
-                                        (map (fn (id1, id2) ->
-                                                ppConcat[ppString"(", ppString id1, ppString ", ", ppString id2, ppString ")"])
-                                           binds),
-                                      ppString "]"]
-      | PartialEval -> ppString "eval"
-      | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-      | SpecMetaTransform(transfn, _, atv) -> ppConcat[ppString transfn, ppAnnTypeValue atv]
-      | SpecTransformInMonad(transfn, _, atv) -> ppConcat[ppString transfn, ppAnnTypeValue atv]
-      | SpecTransform(qid as Qualified(q,id), rls) ->
-        ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
-                 ppOptionRls rls]
-      | SpecQIdTransform(qid as Qualified(q,id), qids, rls) ->
-        ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
-                 ppQIds qids,
-                 ppRls rls]
-      | IsoMorphism(iso_qid_prs, rls, opt_qual) ->
-        ppConcat[ppString "isomorphism (",
-                 ppSep(ppString ", ") (map (fn (iso, osi) ->
-                                              ppConcat[ppString "(",
-                                                       ppQid iso,
-                                                       ppQid osi,
-                                                       ppString ")"])
-                                         iso_qid_prs),
-                 ppString "), (",
-                 ppSep commaBreak (map ppRuleSpec rls),
-                 ppString ")"]
-      | Maintain(qids, rls) ->
-        ppConcat[ppString "maintain (",
-                 ppSep(ppString ", ") (map ppQid qids),
-                 ppString "), (",
-                 ppNest 0 (ppSep commaBreak (map ppRuleSpec rls)),
-                 ppString ")"]
-      | Implement(qids, rls) ->
-        ppConcat[ppString "implement (",
-                 ppSep(ppString ", ") (map ppQid qids),
-                 ppString "), (",
-                 ppNest 0 (ppSep commaBreak (map ppRuleSpec rls)),
-                 ppString ")"]
-      | AddParameter(fun, pos, o_return_pos, name, ty, within, val, o_qual) ->
-        ppConcat[ppString "addParameter {",
-                 ppNest 0 (ppSep(ppConcat[ppString ",", ppNewline])
-                             ([ppConcat[ppString "function: ", ppQid fun]]
-                              ++ (if pos = 99 then []
-                                    else [ppConcat[ppString "parameter_position: ", ppString(show pos)]])
-                              ++ (case o_return_pos of
-                                    | Some return_pos -> [ppConcat[ppString "return_position: ", ppString(show return_pos)]]
-                                    | None -> [])
-                              ++ [ppConcat[ppString "parameter_name: ", ppString name],
-                                  ppConcat[ppString "parameter_type: ", ppQid ty],
-                                  case within of
-                                    | [] -> ppNil
-                                    | [within1] -> ppConcat[ppString "top_function: ", ppQid within1]
-                                    | _ -> ppConcat[ppString "top_function: ",
-                                                    ppConcat[ppString "(",
-                                                             ppSep(ppString ", ") (map ppQid within),
-                                                             ppString ")"]],
-                                  ppConcat[ppString "default_value: ", ppQid val]]
-                              ++ (case o_qual of
-                                    | Some qual -> [ppConcat[ppString "qualifier: ", ppString qual]]
-                                    | None -> []))),
-                 ppString "}"]
-
-      | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
-        ppConcat[ppString "addSemanticChecks {",
-                 ppString "checkArgs?: ", ppBool checkArgs?, ppString ", ",
-                 ppString "checkResult?: ", ppBool checkResult?, ppString ", ",
-                 ppString "checkRefine?: ", ppBool checkRefine?,
-                 ppString "recoveryFns: ",
-                 (case recovery_fns of
-                   | [(ty_qid, recovery_fn_qid)] -> ppQidPair (ty_qid, recovery_fn_qid)
-                   | _ -> enclose "(" ")" [ppSep (ppString ", ") (map ppQidPair recovery_fns)]),
-                 ppString "}"]
-
-      | RedundantErrorCorrecting(morphisms, opt_qual, restart?) ->
-        ppConcat[ppString(if restart? then "redundantErrorCorrectingRestart ("else "redundantErrorCorrecting ("),
-                 ppSep(ppString ", ") (map (fn (m_uid,_) -> ppSCTerm m_uid) morphisms),
-                 ppString ")"]
-      | Trace on_or_off ->
-        ppConcat [ppString "trace ", ppString (if on_or_off then "on" else "off")]
-      | Print -> ppString "print"
-      | scr -> ppString(anyToString scr)
-
- op enclose (l: String) (r: String) (main: List WLPretty): WLPretty =
-   ppConcat([ppString l] ++ main ++ [ppString r])
-   
- op ppQidPair(qid1: QualifiedId, qid2: QualifiedId): WLPretty =
-   enclose "(" ")" [ppQid qid1, ppString ", ", ppQid qid2]
-
- op scriptToString(scr: Script): String =
-   let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
-   ppFormat(pp)
-
- op printScript(scr: Script): () =
-   writeLine(scriptToString scr)
-
- op mkAt(qid: QualifiedId, steps: Scripts): Script = At([Def qid], mkSteps steps)
- op mkAtTheorem(qid: QualifiedId, steps: Scripts): Script = AtTheorem([Def qid], mkSteps steps)
- op mkSteps(steps: Scripts): Script = if length steps = 1 then head steps else Steps steps
- op mkRepeat(steps: Scripts): Script = Repeat steps
- op mkSimplify(steps: RuleSpecs): Script = Simplify(steps, maxRewrites)
- op mkSimplify1(rules: RuleSpecs): Script = Simplify1 rules
- op mkSimpStandard(): Script = SimpStandard
- op mkRenameVars (binds: List(Id * Id)): Script = RenameVars binds
- op mkPartialEval (): Script = PartialEval
- op mkAbstractCommonExpressions (): Script = AbstractCommonExpressions
- op mkMove(l: List Movement): Script = Move l
- op mkSpecTransform(qid: QualifiedId, rls: RuleSpecs): Script = SpecTransform(qid, rls)
- op mkSpecQIdTransform(qid: QualifiedId, qids: QualifiedIds, rls: RuleSpecs): Script = SpecQIdTransform(qid, qids, rls)
-
- %% For convenience calling from lisp
- op mkFold(qid: QualifiedId): RuleSpec = Fold qid
- op mkUnfold(qid: QualifiedId): RuleSpec = Unfold qid
- op mkRewrite(qid: QualifiedId): RuleSpec = Rewrite qid
- op mkLeftToRight(qid: QualifiedId): RuleSpec = LeftToRight qid
- op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
- op mkMetaRule(qid: QualifiedId): RuleSpec = MetaRule qid
- op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
- op mkWeaken(qid: QualifiedId): RuleSpec = Weaken qid
- op mkAllDefs(qid: QualifiedId): RuleSpec = AllDefs
-
- op ruleConstructor(id: String): QualifiedId -> RuleSpec =
-   case id of
-     | "fold" -> mkFold
-     | "f" -> mkFold
-     | "unfold" -> mkUnfold
-     | "uf" -> mkUnfold
-     | "rewrite" -> mkRewrite
-     | "rw" -> mkRewrite
-     | "lr" -> mkLeftToRight
-     | "lefttoright" -> mkLeftToRight
-     | "left-to-right" -> mkLeftToRight
-     | "rl" -> mkRightToLeft
-     | "righttoleft" -> mkRightToLeft
-     | "right-to-left" -> mkRightToLeft
-     | "apply" -> mkMetaRule
-     | "revleibniz" -> mkRLeibniz
-     | "weaken" -> mkWeaken
-     | "alldefs" -> mkAllDefs
-     | _ -> fail("Unknown rule constructor: "^id)
+ type Context = RewriteRules.Context
 
  %% From /Languages/SpecCalculus/Semantics/Evaluate/Prove.sw
  op  claimNameMatch: QualifiedId * QualifiedId -> Bool
@@ -352,18 +82,21 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
 
   op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
   op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
-  op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
   op specTransformFn?:  String * String -> Bool                              % defined in transform-shell.lisp
 
-  op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId): RewriteRule =
+  op makeMetaRule (spc: Spec) (qid as Qualified(q,id): QualifiedId) (rl_spec as MetaRule(_, t_fn, _) : RuleSpec): RewriteRule =
+    let rl_spec as MetaRule(_, t_fn, _) = if t_fn = dummyTypedFun
+                                           then mkMetaRule spc qid
+                                          else rl_spec
+    in
     {name     = show qid,
-     rule_spec = MetaRule qid,
+     rule_spec = rl_spec,
      freeVars = [],
      tyVars = [],
      condition = None,
      lhs   = HigherOrderMatching.mkVar(1,TyVar("''a",noPos)),  % dummy
      rhs   = HigherOrderMatching.mkVar(2,TyVar("''a",noPos)),  % dummy
-     trans_fn = Some(metaRuleFunction(q, id) spc)}
+     trans_fn = Some(t_fn)}
 
   op makeRevLeibnizRule (context: Context) (spc: Spec) (qid: QualifiedId): List RewriteRule =
     %%  qid x = qid y --> x = y
@@ -443,7 +176,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
                               then (weakenRules context p) ++ r
                             else r)
                      [] (allProperties spc))
-      | MetaRule qid -> [makeMetaRule spc qid]
+      | MetaRule (qid, t_fn, a_val) -> [makeMetaRule spc qid rule]
       | RLeibniz qid -> makeRevLeibnizRule context spc qid
       | AllDefs ->
         foldriAQualifierMap
@@ -734,8 +467,6 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
             | _ -> t
     in
     mapTerm (renameVar, id, renameVarPat) tm
-
-  op maxRewrites: Nat = 900
 
   op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, hist: TransformHistory)
        : PathTerm * TransformHistory =

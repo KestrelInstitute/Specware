@@ -99,6 +99,9 @@ AnnSpec qualifying spec
  def primaryOpName   info = head info.names
  def propertyName    p    = p.2
 
+ type MetaTransform.TypedFun      % Defined in /Languages/MetaSlang/Transformations/MetaTransform
+ type MetaTransform.AnnTypeValue  % Defined in /Languages/MetaSlang/Specs/Utilities
+
  type RuleSpec =
    | Unfold      QualifiedId
    | Fold        QualifiedId
@@ -107,7 +110,7 @@ AnnSpec qualifying spec
    | RightToLeft QualifiedId
    | RLeibniz    QualifiedId
    | Weaken      QualifiedId
-   | MetaRule    QualifiedId
+   | MetaRule    (QualifiedId * TypedFun * AnnTypeValue)
    | SimpStandard
    | RenameVars  (List(Id * Id))
    | AbstractCommonExpressions
@@ -118,6 +121,37 @@ AnnSpec qualifying spec
  type RuleSpecs = List RuleSpec
 
  type TransformHistory = List(MSTerm * RuleSpec)
+
+ op metaRuleATV(rl: RuleSpec): AnnTypeValue =
+   let MetaRule(_, _, atv) = rl in
+   atv
+
+ op showRuleSpec(rs: RuleSpec): String =
+   case rs of
+     | Unfold  qid -> "unfold " ^ show qid
+     | Fold    qid -> "fold " ^ show qid
+     | Rewrite qid -> "rewrite " ^ show qid
+     | LeftToRight qid -> "lr " ^ show qid
+     | RightToLeft qid -> "rl " ^ show qid
+     | RLeibniz    qid -> "revleibniz " ^ show qid
+     | Weaken      qid -> "weaken " ^ show qid
+     | MetaRule   (qid, _, _) -> "meta-rule " ^ show qid
+     | RenameVars binds -> "rename [" ^ (foldr (fn ((id1, id2), r) -> "("^id1^", "^id2^")"^(if r = "" then r else ", "^r)) "" binds)
+                                 ^ "]"
+     | SimpStandard -> "simplify"
+     | AbstractCommonExpressions -> "abstractCommonExpressions"
+     | Eval -> "eval"
+     | Context -> "context"
+     | AllDefs -> "alldefs"
+
+ op reverseRuleSpec(rs: RuleSpec): RuleSpec =
+   case rs of
+     | Unfold qid -> Fold qid
+     | Fold qid -> Unfold qid
+     | Rewrite qid -> Fold qid
+     | LeftToRight qid -> RightToLeft qid
+     | RightToLeft qid -> LeftToRight qid
+     | _ -> (warn("Trying to reverse rule "^showRuleSpec rs))
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

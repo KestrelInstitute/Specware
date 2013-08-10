@@ -1,7 +1,7 @@
 MetaRule qualifying
 spec
 import Simplify
-
+import /Languages/MetaSlang/AbstractSyntax/ScriptLang
 
 (*
 Case 1:
@@ -232,21 +232,23 @@ op flattenExistsTerms (vs: MSVars, cjs: MSTerms, spc: Spec) : MSVars * MSTerms =
   (vs, reverse cjs)
 
 op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
-  let def transfm tm =
+  let def transfm(tm: MSTerm): Option (MSTerm * List(MSTerm * MSTerm * MSTerm)) =
         case tm of
           | Bind(Exists, vs, bod, a) ->
-            (if vs = [] then Some bod
+            (if vs = [] then Some(bod, [])
              else
              let (vs, cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
              % let _ = writeLine("flat:\n"^printTerm(mkConj cjs)) in
              transEx(vs, cjs, a, []))
           | _ -> None
-      def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst): Option MSTerm =
+      def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst)
+            : Option (MSTerm * List(MSTerm * MSTerm * MSTerm)) =
         % let _ = writeLine("transEx:\n"^printTerm(mkBind(Exists, vs, mkConj cjs))) in
         let lift_cjs = filter (fn cj -> ~(hasRefTo?(cj, vs))) cjs in
         if lift_cjs ~= [] && vs ~= []
           then let rem_cjs = filter (fn cj -> ~(termIn?(cj, lift_cjs))) cjs in
-               Some(mkSimpConj(lift_cjs ++ [transEx1(vs, rem_cjs, a, tsb)]))
+               let (rec_ex_tm, case_trs) = transEx1(vs, rem_cjs, a, tsb) in
+               Some(mkSimpConj(lift_cjs ++ [rec_ex_tm]), case_trs)
         else
         case findLeftmost (fn cj -> some?(bindEquality(cj, vs, true))) cjs of
           | Some cj ->
@@ -257,9 +259,10 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
                  let Some v_pat = termToPattern v_tm in
                  let trivial_bind? = embed? Var s_tm in
                  let tsb = (if trivial_bind? then (v_tm, s_tm) else (s_tm, v_tm)) :: tsb in
-                 let new_bod = transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb) in
+                 let (new_bod, case_trs) = transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb) in
                  Some(if trivial_bind? then new_bod
-                      else MS.mkLet([(v_pat, s_tm)], new_bod))
+                      else MS.mkLet([(v_pat, s_tm)], new_bod),
+                      case_trs)
                | None -> None)
          | None ->
         case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
@@ -269,9 +272,17 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
                  let new_vs = filter (fn v -> ~(inVars?(v, p_vs))) vs in
                  let constr_ty = range(spc, f_ty) in
                  let tsb =  (s_tm, v_tm) :: tsb in
-                 Some(mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty),
-                                         transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb)),
+                 let (rec_ex_tm, case_trs) = transEx1(new_vs, termsSubst(delete cj cjs, tsb), a, tsb) in
+                 let case_trs =
+                     (s_tm, mkBind(Exists, vs, mkConj cjs),
+                      mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty),
+                                         mkBind(Exists, new_vs, mkConj(termsSubst(delete cj cjs, tsb)))),
                                         (mkWildPat constr_ty, else_tm)]))
+                        :: case_trs
+                 in
+                 Some(mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty), rec_ex_tm),
+                                        (mkWildPat constr_ty, else_tm)]),
+                      case_trs)
                | None -> None)
          | None ->
         case findLeftmost existsTerm? cjs of
@@ -297,7 +308,9 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
             (case (transEx(vs, q_cjs, a, tsb), transEx(vs, r_cjs, a, tsb)) of
                | (None, None) -> None
                | (q_trip?, r_trip?) ->
-                 Some(IfThenElse(p, transExResult(q_trip?, vs, q_cjs, a), transExResult(r_trip?, vs, r_cjs, a), pos)))
+                 let (nq_tm, q_case_trs) = transExResult(q_trip?, vs, q_cjs, a) in
+                 let (nr_tm, r_case_trs) = transExResult(r_trip?, vs, r_cjs, a) in
+                 Some(IfThenElse(p, nq_tm, nr_tm, pos), q_case_trs))   %  Need to do better in general!!
           | None ->
         if length vs = 1 then None
         else
@@ -305,26 +318,31 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
           | Some cj ->
             let [b_v] =  filter (fn v -> inVars?(v, vs)) (freeVars cj) in
             let new_vs = deleteVar(b_v, vs) in
-            Some(mkBind(Exists, [b_v], Utilities.mkAnd(cj, transEx1(new_vs, delete cj cjs, a, tsb))))
+            let (tr_tm, case_trs) = transEx1(new_vs, delete cj cjs, a, tsb) in
+            Some(mkBind(Exists, [b_v], Utilities.mkAnd(cj, tr_tm)), case_trs)
           | None -> None
       def transEx1(vs, cjs, a, tsb) =
         case transEx(vs, cjs, a, tsb) of
-          | Some ex_tm -> ex_tm
+          | Some pr -> pr
           | None ->
             % let _ = writeLine("Residual:\n"^printTerm(mkBind(Exists, vs, mkSimpConj cjs))) in
-            mkSimpBind(Exists, vs, mkSimpConj cjs)
+            (mkSimpBind(Exists, vs, mkSimpConj cjs), [])
       def transExResult(result?, vs, cjs, a) =
         case result? of
-          | Some ex_tm -> ex_tm
-          | None -> mkSimpBind(Exists, vs, mkSimpConj cjs)
+          | Some pr -> pr
+          | None -> (mkSimpBind(Exists, vs, mkSimpConj cjs), [])
   in
   case transfm ctm of
-    | Some n_tm ->
+    | Some (n_tm, case_trs) ->
       let n_tm1 = simplify spc n_tm in
       if equalTerm?(n_tm1, ctm) then None
       else
-      % let _ = writeLine("structureEx:\n"^printTerm tm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1) in
-      Some n_tm1
+       % let _ = (writeLine("structureEx:\n"^printTerm n_tm1^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
+       %          app (fn (case_tm, before, after) ->
+       %               writeLine("case split on "^printTerm case_tm^" to prove\n"^printTerm before^"\n = \n"^printTerm after))
+       %            case_trs)
+       % in           
+       Some n_tm1
     | None -> None
 
   op findCommonTerms(tms1: MSTerms, tms2: MSTerms): MSTerms * MSTerms * MSTerms =
@@ -337,9 +355,12 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
 op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
   structureCondEx(spc, tm, falseTerm)
 
+op MSTermTransform.structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
+  structureCondEx(spc, tm, falseTerm)
+
 op useRestrictedPat?: Bool = false
 
-op simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSTermTransform.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | IfThenElse(t1, t2, t3, _) | embed? Fun t1 ->
       (case t1 of
@@ -400,4 +421,9 @@ op simpIf1 (spc: Spec) (tm: MSTerm): MSTerm =
   case simpIf spc tm of
     | None -> tm
     | Some simp_tm -> simp_tm
+
+op MSTermTransform.testTr (spc: Spec) (tm: MSTerm) (rls: RuleSpecs): Option MSTerm =
+  (writeLine ("applying "^showRls rls^" to\n"^printTerm tm);
+   None)
+
 end-spec

@@ -20,6 +20,16 @@ type MTypeInfo = | Spec
                  | Rec List(String * MTypeInfo)
                  | Monad MTypeInfo
 
+op existsMTypeInfo? (p: MTypeInfo -> Bool) (mti: MTypeInfo): Bool =
+  p mti ||
+    (case mti of
+       | Arrows(mtis, rng) -> exists? (existsMTypeInfo? p) (rng::mtis)
+       | Opt o_mti -> existsMTypeInfo? p o_mti
+       | List l_mti -> existsMTypeInfo? p l_mti
+       | Tuple mtis -> exists? (existsMTypeInfo? p) mtis
+       | Rec tagged_mtis -> exists? (fn (_, mtii) -> existsMTypeInfo? p mtii) tagged_mtis
+       | Monad mti1 -> existsMTypeInfo? p mti1
+       | _ -> false)
 
 op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
   case mty of
@@ -28,6 +38,7 @@ op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
     | List _ -> Some(ListV [])
     | _ -> None
 
+%% The next two give up on MonadV
 op mapAnnTypeValue (f: AnnTypeValue -> AnnTypeValue) (atv: AnnTypeValue): AnnTypeValue =
   let n_atv = f atv in
   case n_atv of
@@ -38,6 +49,16 @@ op mapAnnTypeValue (f: AnnTypeValue -> AnnTypeValue) (atv: AnnTypeValue): AnnTyp
     | RecV tagged_atvs -> RecV(map (fn (tgi, atvi) -> (tgi, mapAnnTypeValue f atvi)) tagged_atvs)
     | _ -> n_atv
 
+op existsAnnTypeValue? (p: AnnTypeValue -> Bool) (atv: AnnTypeValue): Bool =
+  p atv ||
+    (case atv of
+       | ArrowsV atvs -> exists? (existsAnnTypeValue? p) atvs
+       | OptV (Some o_atv) -> existsAnnTypeValue? p o_atv
+       | ListV atvs -> exists? (existsAnnTypeValue? p) atvs
+       | TupleV atvs -> exists? (existsAnnTypeValue? p) atvs
+       | RecV tagged_atvs -> exists? (fn (_, atvi) -> existsAnnTypeValue? p atvi) tagged_atvs
+       | _ -> false)
+
 op replaceSpecArg(atv: AnnTypeValue, spc: Spec): AnnTypeValue =
   mapAnnTypeValue (fn atvi ->
                      case atvi of
@@ -45,27 +66,62 @@ op replaceSpecArg(atv: AnnTypeValue, spc: Spec): AnnTypeValue =
                        | _ -> atvi)
     atv
 
+op replaceTermArg(atv: AnnTypeValue, tm: MSTerm): AnnTypeValue =
+   mapAnnTypeValue (fn atvi ->
+                     case atvi of
+                       | TermV _ -> TermV tm
+                       | _ -> atvi)
+     atv
+
+op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
+   mapAnnTypeValue (fn atvi ->
+                     case atvi of
+                       | SpecV _ -> SpecV spc
+                       | TermV _ -> TermV tm
+                       | _ -> atvi)
+     atv
+
+ op extractMSTerm(tf: TypedFun): Option MSTerm =
+   let def findTerm atv =
+         case atv of
+           | TermV tm -> Some tm
+           | OptV(Some o_atv) -> findTerm o_atv
+           | TupleV(atvs) ->
+             (case mapPartial findTerm atvs of
+                | tm :: _ -> Some tm
+                | _ -> None)
+           | _ -> None
+   in
+   case tf of
+     | TVal atv -> findTerm atv
+     | _ -> None
+
 op annTypeValueType: MSType = mkBase(Qualified("MetaTransform", "AnnTypeValue"), [])
 op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
 op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
 op msTermType: MSType = mkBase(Qualified("MetaSlang", "MSTerm"), [])
+op optionMsTermType: MSType = mkBase(Qualified("Option", "Option"), [msTermType])
 op qualifiedIdType: MSType = mkBase(Qualified("MetaSlang", "QualifiedId"), [])
 op ruleSpecType: MSType = mkBase(Qualified("AnnSpec", "RuleSpec"), [])
 op monadAnnTypeValueType: MSType = mkBase(Qualified("SpecCalc", "Env"), [annTypeValueType])
+op optionAnnTypeValueType: MSType = mkBase(Qualified("Option", "Option"), [annTypeValueType])
 
 op TFnTerm: MSTerm = mkEmbed1("TFn", mkArrow(mkArrow(annTypeValueType, typedFunType), typedFunType))
 op TValTerm: MSTerm = mkEmbed1("TVal", mkArrow(annTypeValueType, typedFunType))
 op monadVTerm: MSTerm = mkEmbed1("MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
+op optVTerm: MSTerm = mkEmbed1("OptV", mkArrow(optionAnnTypeValueType, annTypeValueType))
 op returnTerm: MSTerm = mkOp(Qualified("SpecCalc", "return"), mkArrow(annTypeValueType, monadAnnTypeValueType))
 op monadBindTerm: MSTerm = mkOp(Qualified("SpecCalc", "monadBind"),
                                 mkArrow(mkProduct[mkBase(Qualified("SpecCalc", "Env"), [specType]),
                                                   mkArrow(specType, monadAnnTypeValueType)],
                                         mkArrow(annTypeValueType, monadAnnTypeValueType)))
+op mapOptionTerm: MSTerm =  mkOp(Qualified("Option", "mapOption"), mkArrow(annTypeValueType, optionAnnTypeValueType))
 
 op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
   case ty_i of
     | Spec -> mkEmbed1("SpecV", mkArrow(specType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
+    | Opt _ -> mkEmbed1("OptV", mkArrow(optionAnnTypeValueType, annTypeValueType))
     | Monad _ -> mkEmbed1("MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
 %    | Monad Spec -> mkEmbed1("MonadV", mkArrow(specType, annTypeValueType))
 %    | Monad Term ->  mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
@@ -154,6 +210,7 @@ op transformResultType?(ti: MTypeInfo): Bool =
   case ti of
     | Spec -> true
     | Term -> true
+    | Opt Term -> true
     | Monad Spec -> true
     | Arrows(tis, ran) -> transformResultType? ran
     | _ -> false
@@ -271,6 +328,10 @@ op annFunTerm(Arrows(dom_tyis, ran_tyi): MTypeInfo, qid: QualifiedId, op_ty: MST
                    let return_lam = mkLambda(mkVarPat val_v, return_tm) in
                    let bind_tm = mkAppl(monadBindTerm, [main_comp, return_lam]) in
                    mkApply(monadVTerm, bind_tm)
+                 | Opt o_ty ->
+                   let val_fn = mkAnnTypeValueFun o_ty in
+                   let map_option_tm = mkCurriedApply(mapOptionTerm, [val_fn, main_comp]) in
+                   mkApply(mkAnnTypeValueFun(ran_tyi), map_option_tm)
                  | _ ->  mkApply(mkAnnTypeValueFun(ran_tyi), main_comp)
   in
   let body = mkApply(TValTerm, val_tm) in
@@ -279,18 +340,26 @@ op annFunTerm(Arrows(dom_tyis, ran_tyi): MTypeInfo, qid: QualifiedId, op_ty: MST
   % let _ = writeLine(printTerm lam) in
   lam
 
-op transformQualifier: Id = "SpecTransform"
+op specTransformQualifier: String = "SpecTransform"
+op msTermTransformQualifier: String = "MSTermTransform"
+op transformQualifiers: Ids = [specTransformQualifier, msTermTransformQualifier]
 
-op addTransformInfo(nm: Id, ty_info: MTypeInfo, tr_fn: TypedFun): TransformInfoMap =
-  insertAQualifierMap(transformInfoMap, transformQualifier, nm, (ty_info, tr_fn))
+op addTransformInfo(q: Id, nm: Id, ty_info: MTypeInfo, tr_fn: TypedFun): TransformInfoMap =
+  insertAQualifierMap(transformInfoMap, q, nm, (ty_info, tr_fn))
 
-op lookupTransformInfo(nm: Id): Option TransformInfo =
-  findAQualifierMap(transformInfoMap, transformQualifier, nm)
+op lookupTransformInfo(q: Id, nm: Id): Option TransformInfo =
+  findAQualifierMap(transformInfoMap, q, nm)
+
+op lookupSpecTransformInfo(nm: Id): Option TransformInfo =
+  lookupTransformInfo(specTransformQualifier, nm)
+
+op lookupMSTermTransformInfo(nm: Id): Option TransformInfo =
+  lookupTransformInfo(msTermTransformQualifier, nm)
 
 op generateAddTransformUpdates(spc: Spec): List(QualifiedId * (MTypeInfo * MSTerm)) =
   foldriAQualifierMap
      (fn (q, id, info, result)->
-        if q = transformQualifier
+        if q in? transformQualifiers
           then
             let (_, op_ty, _) = unpackFirstOpDef info in
             case argInfoFromType(op_ty, spc) of
@@ -302,9 +371,6 @@ op generateAddTransformUpdates(spc: Spec): List(QualifiedId * (MTypeInfo * MSTer
      spc.ops
 
 op transformInfoCommand?(nm: String): Bool =
-  case lookupTransformInfo nm of
-    | None -> false
-    | Some(ty_info, _) ->
-      true
+  exists? (fn q -> some?(lookupTransformInfo(q, nm))) transformQualifiers
 
 end-spec

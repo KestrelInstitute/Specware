@@ -1268,13 +1268,13 @@ op addList(S: StringSet, l: List String): StringSet =
    if ~indexTransforms? || none?(findTheType(spc, Qualified("MetaTransform", "AnnTypeValue"))) then []
    else
    let tr_infos = generateAddTransformUpdates spc in
-   map (fn (Qualified(_, nm), (ty_info, fn_tm)) ->
+   map (fn (Qualified(q, nm), (ty_info, fn_tm)) ->
         let q_ty_info = Const (Cell (cell ty_info))                         in
         let name      = mkQualifiedId ("MetaTransform", "addTransformInfo") in
         let fn_tm     = translateMatchInTerm spc name fn_tm                 in
         let fn_ltm    = lispTerm (spc, defaultSpecwarePackage, fn_tm)       in  
         Set("MetaTransform::transformInfoMap",
-            mkLApply(mkLOp "MetaTransform::addTransformInfo-3", [mkLString nm, q_ty_info, fn_ltm])))
+            mkLApply(mkLOp "MetaTransform::addTransformInfo-4", [mkLString q, mkLString nm, q_ty_info, fn_ltm])))
      tr_infos
 
  op lisp(spc: Spec): LispSpec =
