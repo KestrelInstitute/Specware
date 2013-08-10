@@ -1528,22 +1528,22 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
    let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
                       Unfold(mkQualifiedId("Function","id")),
                       Rewrite(mkQualifiedId("Option","mapOption")),
-                      MetaRule(mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
+                      mkMetaRule spc (mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
    in
    let main_script =
-     Steps([%Trace true,% SimpStandard,
+     Steps([Trace true,% SimpStandard,
             mkSimplify (gen_unfolds
+                          ++ iso_osi_rewrites
                           ++ non_iso_extra_rules
                           % ++ iso_osi_rewrites
                           % ++ osi_unfolds
                           ++ complex_iso_fn_unfolds
-                          ++ iso_osi_rewrites
                           %++ rewrite_old
                           ),            
             mkSimplify (gen_unfolds
+                          ++ iso_osi_rewrites
                           ++ complex_iso_fn_unfolds
                           ++ iso_intro_unfolds
-                          ++ iso_osi_rewrites
                           ++ iso_rewrites
                           ++ osi_rewrites
                           ++ osi_unfolds
@@ -1553,8 +1553,8 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
               % AbstractCommonExpressions
 
             mkSimplify (gen_unfolds
-                           ++ unfold_old
                            ++ iso_osi_rewrites
+                           ++ unfold_old
                            ++ iso_rewrites
                            ++ osi_rewrites
                            ++ osi_unfolds
@@ -1584,7 +1584,7 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                (qid as Qualified(q, id)) <- return (head opinfo.names);
                (simp_dfn, _, hist) <-
                  if simplifyIsomorphism? then
-                  { % print ("\nSimplify "^id^" ?\n"^printTerm dfn^"\n");
+                  {  print ("\nSimplify "^q^"."^id^" ?\n"^printTerm dfn^"\n");
                    b <- existsSubTerm (fn t ->
                                          let ty = inferType(spc, t) in
                                          {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
