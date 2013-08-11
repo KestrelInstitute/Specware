@@ -87,12 +87,12 @@ SpecCalc qualifying spec
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
       | mystery                        -> (None,              "ERROR: Unknown exception: " ^ (anyToString mystery))
 
-   op printException : Exception -> String
-  def printException except =
-    case decodeException except of
+  op printException (except : Exception) : String =
+   ("ERROR:" ^  %% New, so we can grep for this string and find all the exceptions.
+    (case decodeException except of
       | (None,             msg) -> msg
       | (Some (pos, ref?), msg) -> 
-	msg ^ (if ref? then "\n referenced from " else "\n found in ") ^ (printAll pos)
+       msg ^ (if ref? then "\n referenced from " else "\n found in ") ^ (printAll pos)))
 
   op  numberOfTypeErrorsToPrint: Nat
   def numberOfTypeErrorsToPrint = 10
