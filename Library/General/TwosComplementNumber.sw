@@ -50,7 +50,6 @@ op toInt (x:TCNumber) : Int = if nonNegative? x then toNat x
 % has the same effect but is more complicated to compute and reason about.
 % -----------------------------------------------------------------------------
 
-%TODO Do we still need the axiom below?
 proof Isa -verbatim  
 
 (************ important insights that we need over and over again*********)
@@ -63,9 +62,11 @@ declare One_nat_def [simp del]
  as axiom stating that a TCNumber is never empty.
  ********************************************************************)
 
+(*
+I am commenting out this axiom because it is inconsistent!
 axiomatization where TwosComplement__toInt_subtype_constr:
   "TwosComplement__toInt x = i \<Longrightarrow> x \<noteq> []"
-
+*)
 
 lemma TwosComplement__negative_p_iff_less_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
@@ -307,11 +308,12 @@ lemmas TwosComplement_tcN =
 
 lemma TwosComplement__toInt_length:
  (*************************************************************
-    This is the only lemma that makes use of the axiom
-    TwosComplement__toInt_subtype_constr
+    This made use of the axiom TwosComplement__toInt_subtype_constr.
+    TODO: Think about whether this is consistent.
  **************************************************************)
   "\<lbrakk>TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x > zld i"
- apply (frule_tac TwosComplement__toInt_subtype_constr)
+sorry
+(* apply (frule_tac TwosComplement__toInt_subtype_constr)
  apply (case_tac "i = 0 \<or> i = -1", erule disjE, simp_all)
  apply (frule_tac TwosComplement__integer_range, simp,  thin_tac "?a = i")
  apply (auto simp add: TwosComplement_tcN)
@@ -325,6 +327,7 @@ lemma TwosComplement__toInt_length:
  apply (drule zld_at_least_pos, simp)
  apply (subgoal_tac "i < -1", drule zld_at_most_neg, simp, arith)
 done 
+*)
   
 lemma TwosComplement__toInt_length1:
   "\<lbrakk>TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x \<ge> zld i + 1"
@@ -976,11 +979,14 @@ lemma TwosComplement__minTCNumber_toInt:
   by (simp add: TwosComplement__minTCNumber_def LeastM_def,
       rule someI2_ex, rule TwosComplement__minTCNumber_exists, simp)
 
+(*     This made use of the axiom TwosComplement__toInt_subtype_constr. TODO: Think about whether this is conistent.  *)
 lemma TwosComplement__minTCNumber_nonEmpty:
   "TwosComplement__minTCNumber i \<noteq> []"
-  by (simp add: TwosComplement__minTCNumber_def LeastM_def,
+  sorry
+(*  by (simp add: TwosComplement__minTCNumber_def LeastM_def,
       rule someI2_ex, rule TwosComplement__minTCNumber_exists,
       simp add: TwosComplement__toInt_subtype_constr)
+*)
 
 end-proof  %% end big verbatim block
 
