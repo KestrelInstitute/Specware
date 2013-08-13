@@ -514,10 +514,12 @@ op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
     | Import ((UnitId (SpecPath_Relative uid),_),_,_,_) -> 
       (case getEnv "SPECWARE4" of
          | Some specware4 -> 
-           let fullPath = ppConcat [ppString specware4, ppString "/",
-                                    ppString (swPathToACL2Path uid.path)] in
+           let fullPath = specware4 ^ "/" ^ (swPathToACL2Path uid.path) in
+           let fullPath = (case (uid.hashSuffix) of
+                             | None -> fullPath
+                             | Some suff -> fullPath ^ "_" ^ suff) in
            Good (ppConcat [ppString "(include-book \"",
-                           fullPath,
+                           ppString fullPath,
                            ppString "\")"])
          | _ -> Bad "blah")
     | Import _ -> Good (ppString "; can't handle import")
