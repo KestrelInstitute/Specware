@@ -1,9 +1,9 @@
 TwosComplement qualifying spec
 
-(* A two's complement number ("TC number") is a (finite) list of bits,
-interpreted as an integer. We consider the bit list in big endian format,
-i.e. the sign bit is the leftmost one and the least significant bit is the
-rightmost one. There must be at least one bit. *)
+%% A two's complement number ("TC number") is a (finite) list of bits,
+%% interpreted as an integer. We consider the bit list in big endian
+%% format, i.e. the sign bit is the leftmost one and the least
+%% significant bit is the rightmost one. There must be at least one bit.
 
 import BitList
 
@@ -25,12 +25,6 @@ op nonNegative? : TCNumber -> Bool = ~~ negative?
 
 theorem nonNegative?_alt_def is
   fa(x:TCNumber) nonNegative? x <=> sign x = B0
-
-proof Isa nonNegative_p_alt_def
- by (auto simp add: TwosComplement__nonNegative_p_def fun_Compl_def 
-                  TwosComplement__negative_p_def bool_Compl_def
-                  TwosComplement__sign_def  setToPred_def)
-end-proof
 
 op positive? : TCNumber -> Bool = nonNegative? /\ (~~ zero?)
 
@@ -71,6 +65,7 @@ declare One_nat_def [simp del]
 
 axiomatization where TwosComplement__toInt_subtype_constr:
   "TwosComplement__toInt x = i \<Longrightarrow> x \<noteq> []"
+
 
 lemma TwosComplement__negative_p_iff_less_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
@@ -161,24 +156,12 @@ lemma TwosComplement__sign_extension_aux:
           simp add: Bits__extendLeft_toNat_B1 [symmetric])
 done
 (*************************************************************************)
-end-proof
+end-proof  %% end verbatim block
 
 theorem twos_complement_of_negative is
   fa(x:TCNumber) negative? x =>  % given negative TC number
     toNat (not x) + 1 =  % two's complement operation
       - (toInt x)  % yields absolute value of represented integer
-
-proof Isa twos_complement_of_negative_Obligation_subtype
- by (auto simp: not_bs_def)
-end-proof
-
-proof Isa twos_complement_of_negative
- apply (simp add: TwosComplement__toInt_def fun_Compl_def
-                  TwosComplement__nonNegative_p_def bool_Compl_def
-                  algebra_simps setToPred_def)
- apply (drule Bits__toNat_complement_sum, simp, 
-        simp only: convert_to_nat zpower_int)
-end-proof
 
 % minimum/maximum integer representable as TC number of length len:
 
@@ -194,19 +177,6 @@ op rangeForLength (len:PosNat) : Set Int =
 theorem integer_range is
   fa(x:TCNumber) toInt x in? rangeForLength (length x)
 
-proof Isa integer_range [simp]
- apply (auto simp add: TwosComplement__toInt_def 
-                       TwosComplement__rangeForLength_def 
-                       TwosComplement__minForLength_def 
-                       TwosComplement__maxForLength_def
-                       TwosComplement__nonNegative_p_alt_def 
-                       TwosComplement__sign_def neq_Nil_conv)
- apply (case_tac "ys = []", simp_all)
- apply (case_tac "ys = []", simp_all, simp only: convert_to_nat zpower_int)
- apply (case_tac "ys = []", simp_all, 
-        frule Bits__toNat_bound2, simp only: convert_to_nat zpower_int)
-end-proof
-
 % zero TC number of given length (i.e. number of bits):
 
 op zero (len:PosNat) : TCNumber = repeat B0 len
@@ -214,39 +184,20 @@ op zero (len:PosNat) : TCNumber = repeat B0 len
 theorem zero_is_zero is
   fa(len:PosNat) zero? (zero len)
 
-proof Isa zero_is_zero
-  by (simp add: TwosComplement__zero_p_def TwosComplement__zero_def list_all_iff)
-end-proof
-
 % extend sign bit to given length (>= current length):
 
 op signExtend (x:TCNumber, newLen:PosNat | newLen >= length x) : TCNumber =
   extendLeft (x, sign x, newLen)
-
-proof Isa signExtend_Obligation_subtype
-  by (simp add: List__extendLeft_def)
-end-proof
 
 theorem sign_extension_does_not_change_value is
   fa (x:TCNumber, newLen:PosNat)
     newLen >= length x =>
     toInt (signExtend (x, newLen)) = toInt x
 
-proof Isa sign_extension_does_not_change_value
- by (simp add: TwosComplement__signExtend_def,
-     frule_tac k="newLen - length x" in TwosComplement__sign_extension_aux,
-     simp)
-end-proof
-
 % sign-extend shorter TC number to length of longer TC number:
 
 op equiSignExtend (x:TCNumber, y:TCNumber) : TCNumber * TCNumber =
   equiExtendLeft (x, y, sign x, sign y)
-
-proof Isa equiSignExtend_Obligation_subtype
- by (simp add:  Let_def List__equiExtendLeft_def List__extendLeft_def
-          split: split_if_asm)
-end-proof
 
 % change length of TC number by either sign-extending or discarding higher
 % bits (depending on whether new length is > or <= current length)
@@ -259,45 +210,6 @@ op changeLength (x:TCNumber, newLen:PosNat) : TCNumber =
 
 op tcNumber (i:Int, len:PosNat | i in? rangeForLength len) : TCNumber =
   the(x:TCNumber) length x = len && toInt x = i
-
-proof Isa tcNumber_Obligation_the
- apply (simp add: TwosComplement__toInt_def 
-                  TwosComplement__rangeForLength_def 
-                  TwosComplement__minForLength_def 
-                  TwosComplement__maxForLength_def
-                  TwosComplement__nonNegative_p_def fun_Compl_def 
-                  TwosComplement__negative_p_def    bool_Compl_def
-                  TwosComplement__sign_def setToPred_def,
-        clarify)
- apply (cases "len = 1", simp_all)
- apply (case_tac "i = 0", simp_all) 
- (* can't use auto before I assign the solutions *)
- (* 1 *) apply (rule_tac a="[B0]" in ex1I, simp_all) defer
- (* 2 *) apply (rule_tac a="[B1]" in ex1I, simp_all) defer 
- apply (subgoal_tac "1 < len", simp_all)
- apply (cut_tac n="nat i" and len = "len - 1" in Bits__bits_length,
-        simp, simp  add: zless_power_convert_1 [symmetric])
- apply (case_tac "i \<ge> 0", simp_all add: not_le) 
- (* 3 *) apply (rule_tac a="B0 # toBits (nat i, len - 1)" in ex1I, simp_all) defer defer
- (* 4 *) apply (rule_tac a="B1 # toBits (nat (i + 2 ^ (len - 1)), len - 1)" in ex1I, simp_all) 
-         defer defer
- (* Now we're back at cases 1 and 2 *)
- apply (case_tac "hd x", simp_all add: length_1_hd_conv, clarsimp)
- (* 3a *)
- apply (subst Bits__toNat_induct, simp only: length_greater_0_iff, simp)
- apply (subst Bits__inverse_toNat_bits, simp_all)
- (* 3b *)
- apply (case_tac "hd x", simp_all, clarsimp simp add: neq_Nil_conv)
- apply (clarify, simp only: not_less [symmetric], erule notE, simp)
- (* 4a *)
- apply (cut_tac n="nat (i + 2^(len - 1))" and len = "len - 1" in Bits__bits_length,
-        simp, simp  add: zless_power_convert_1 [symmetric])
- apply (subst Bits__toNat_induct, simp only: length_greater_0_iff, simp)
- apply (simp add:  power2_nat One_nat_def power_sub_1_eq_int)
- (* 4b *)
- apply (case_tac "hd x", simp_all, clarsimp, simp add: neq_Nil_conv, clarsimp)
- apply (simp only: convert_to_nat zpower_int, simp)
-end-proof
 
 proof Isa -verbatim
 (******************************************************************************)
@@ -428,62 +340,19 @@ lemma TwosComplement__minTCNumber_exists:
 (******************************************************************************)
 
 (******************************************************************************)
-end-proof
+end-proof % end big verbatim block
 
 op minTCNumber (i:Int) : TCNumber =
   minimizer (fn x:TCNumber -> length x, fn x:TCNumber -> toInt x = i)
 
 
-proof Isa minTCNumber_Obligation_subtype
-   apply (simp add: Set_P_def Integer__hasUniqueMinimizer_p__stp_def
-                    Set__single_p__stp_def Integer__minimizers__stp_def 
-                    Integer__minimizes_p__stp_def  conj_imp,
-          auto simp add: set_eq_iff)
-   apply (rule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in exI,
-          clarsimp simp add: TwosComplement__toInt_tcNumber_reduce 
-                             TwosComplement_tcN zld_props            )
-   apply (rule iffI, erule conjE, erule conjE)
-   apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
-          simp add: TwosComplement__toInt_tcNumber_reduce 
-                    TwosComplement_tcN zld_props)
-   apply (simp add: TwosComplement__tcNumber_inverse_fwd 
-                    TwosComplement__toInt_length1 eq_iff)
-   apply (auto simp add: TwosComplement__toInt_tcNumber_reduce 
-                    TwosComplement__tcNumber_length
-                    TwosComplement_tcN zld_props 
-                    TwosComplement__toInt_length1)
-end-proof
-
 theorem length_of_minTCNumber is
   fa (i:Int, len:PosNat) i in? rangeForLength len =>
                          length (minTCNumber i) <= len
 
-proof Isa length_of_minTCNumber
-  apply (simp add: TwosComplement__minTCNumber_def LeastM_def,
-         rule someI2_ex, rule TwosComplement__minTCNumber_exists)
-  apply (erule conjE)
-  apply (drule_tac x="TwosComplement__tcNumber (i, len)" in spec,
-         simp add: TwosComplement_tcN )
- done
-
-(**************** we may need that later ***********************)
-
-lemma TwosComplement__length_of_minTCNumber_is_zld:
-   "length (TwosComplement__minTCNumber i) = zld i + 1"
-  apply (simp add: TwosComplement__minTCNumber_def LeastM_def,
-         rule someI2_ex, rule TwosComplement__minTCNumber_exists)
-  apply (erule conjE)
-  apply (frule TwosComplement__toInt_length1)
-  apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
-         simp add: TwosComplement__toInt_tcNumber_reduce 
-                   TwosComplement_tcN zld_props)
-(******************************************************************************)
-
-end-proof
-
-(* The following arithmetic operations on TC numbers are all calculated
-according to the same pattern: convert operand(s) to integer(s), perform exact
-operation, truncate result to operand length. *)
+%% The following arithmetic operations on TC numbers are all calculated
+%% according to the same pattern: convert operand(s) to integer(s), perform exact
+%% operation, truncate result to operand length.
 
 % unary minus:
 
@@ -521,90 +390,50 @@ op divT (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   changeLength (z, length x)
 proof Isa -> divT_tc end-proof
 
-proof Isa divT_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
-
 op modT (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x modT toInt y) in
   changeLength (z, length x)
 proof Isa -> modT_tc end-proof
-
-proof Isa modT_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
 
 op divF (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x divF toInt y) in
   changeLength (z, length x)
 proof Isa -> divF_tc end-proof
 
-proof Isa divF_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
-
 op modF (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x modF toInt y) in
   changeLength (z, length x)
 proof Isa -> modF_tc end-proof
-
-proof Isa modF_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
 
 op divC (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x divC toInt y) in
   changeLength (z, length x)
 proof Isa -> divC_tc end-proof
 
-proof Isa divC_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
-
 op modC (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x modC toInt y) in
   changeLength (z, length x)
 proof Isa -> modC_tc end-proof
-
-proof Isa modC_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
 
 op divR (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x divR toInt y) in
   changeLength (z, length x)
 proof Isa -> divR_tc end-proof
 
-proof Isa divR_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
-
 op modR (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x modR toInt y) in
   changeLength (z, length x)
 proof Isa -> modR_tc end-proof
-
-proof Isa modR_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
 
 op divE (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x divE toInt y) in
   changeLength (z, length x)
 proof Isa -> divE_tc end-proof
 
-proof Isa divE_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
-
 op modE (x:TCNumber, y:TCNumber0 | x equiLong y) infixl 26 : TCNumber =
   let z = minTCNumber (toInt x modE toInt y) in
   changeLength (z, length x)
 proof Isa -> modE_tc end-proof
-
-proof Isa modE_Obligation_subtype
-  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
-end-proof
 
 % relational operators:
 
@@ -634,26 +463,211 @@ op EQ (x:TCNumber, y:TCNumber) infixl 20 : Bool =
 op shiftLeft (x:TCNumber, n:Nat | n <= length x) : TCNumber =
   shiftLeft (x, B0, n)
 
+op shiftRightSigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
+  shiftRight (x, sign x, n)
+
+op shiftRightUnsigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
+  shiftRight (x, B0, n)
+
+
+%%
+%% Start of the proofs:
+%%
+
+proof Isa nonNegative_p_alt_def
+ by (auto simp add: TwosComplement__nonNegative_p_def fun_Compl_def 
+                  TwosComplement__negative_p_def bool_Compl_def
+                  TwosComplement__sign_def  setToPred_def)
+end-proof
+
+proof Isa twos_complement_of_negative_Obligation_subtype
+  by (auto simp: not_bs_def)
+end-proof
+
+proof Isa twos_complement_of_negative
+  apply (simp add: TwosComplement__toInt_def fun_Compl_def
+                   TwosComplement__nonNegative_p_def bool_Compl_def
+                   algebra_simps setToPred_def)
+  apply (drule Bits__toNat_complement_sum, simp, 
+         simp only: convert_to_nat zpower_int)
+end-proof
+
+
+proof Isa integer_range [simp]
+ apply (auto simp add: TwosComplement__toInt_def 
+                       TwosComplement__rangeForLength_def 
+                       TwosComplement__minForLength_def 
+                       TwosComplement__maxForLength_def
+                       TwosComplement__nonNegative_p_alt_def 
+                       TwosComplement__sign_def neq_Nil_conv)
+ apply (case_tac "ys = []", simp_all)
+ apply (case_tac "ys = []", simp_all, simp only: convert_to_nat zpower_int)
+ apply (case_tac "ys = []", simp_all, 
+        frule Bits__toNat_bound2, simp only: convert_to_nat zpower_int)
+end-proof
+
+proof Isa zero_is_zero
+  by (simp add: TwosComplement__zero_p_def TwosComplement__zero_def list_all_iff)
+end-proof
+
+proof Isa signExtend_Obligation_subtype
+  by (simp add: List__extendLeft_def)
+end-proof
+
+proof Isa sign_extension_does_not_change_value
+ by (simp add: TwosComplement__signExtend_def,
+     frule_tac k="newLen - length x" in TwosComplement__sign_extension_aux,
+     simp)
+end-proof
+
+proof Isa equiSignExtend_Obligation_subtype
+ by (simp add:  Let_def List__equiExtendLeft_def List__extendLeft_def
+          split: split_if_asm)
+end-proof
+
+proof Isa tcNumber_Obligation_the
+ apply (simp add: TwosComplement__toInt_def 
+                  TwosComplement__rangeForLength_def 
+                  TwosComplement__minForLength_def 
+                  TwosComplement__maxForLength_def
+                  TwosComplement__nonNegative_p_def fun_Compl_def 
+                  TwosComplement__negative_p_def    bool_Compl_def
+                  TwosComplement__sign_def setToPred_def,
+        clarify)
+ apply (cases "len = 1", simp_all)
+ apply (case_tac "i = 0", simp_all) 
+ (* can't use auto before I assign the solutions *)
+ (* 1 *) apply (rule_tac a="[B0]" in ex1I, simp_all) defer
+ (* 2 *) apply (rule_tac a="[B1]" in ex1I, simp_all) defer 
+ apply (subgoal_tac "1 < len", simp_all)
+ apply (cut_tac n="nat i" and len = "len - 1" in Bits__bits_length,
+        simp, simp  add: zless_power_convert_1 [symmetric])
+ apply (case_tac "i \<ge> 0", simp_all add: not_le) 
+ (* 3 *) apply (rule_tac a="B0 # toBits (nat i, len - 1)" in ex1I, simp_all) defer defer
+ (* 4 *) apply (rule_tac a="B1 # toBits (nat (i + 2 ^ (len - 1)), len - 1)" in ex1I, simp_all) 
+         defer defer
+ (* Now we're back at cases 1 and 2 *)
+ apply (case_tac "hd x", simp_all add: length_1_hd_conv, clarsimp)
+ (* 3a *)
+ apply (subst Bits__toNat_induct, simp only: length_greater_0_iff, simp)
+ apply (subst Bits__inverse_toNat_bits, simp_all)
+ (* 3b *)
+ apply (case_tac "hd x", simp_all, clarsimp simp add: neq_Nil_conv)
+ apply (clarify, simp only: not_less [symmetric], erule notE, simp)
+ (* 4a *)
+ apply (cut_tac n="nat (i + 2^(len - 1))" and len = "len - 1" in Bits__bits_length,
+        simp, simp  add: zless_power_convert_1 [symmetric])
+ apply (subst Bits__toNat_induct, simp only: length_greater_0_iff, simp)
+ apply (simp add:  power2_nat One_nat_def power_sub_1_eq_int)
+ (* 4b *)
+ apply (case_tac "hd x", simp_all, clarsimp, simp add: neq_Nil_conv, clarsimp)
+ apply (simp only: convert_to_nat zpower_int, simp)
+end-proof
+
+proof Isa minTCNumber_Obligation_subtype
+   apply (simp add: Set_P_def Integer__hasUniqueMinimizer_p__stp_def
+                    Set__single_p__stp_def Integer__minimizers__stp_def 
+                    Integer__minimizes_p__stp_def  conj_imp,
+          auto simp add: set_eq_iff)
+   apply (rule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in exI,
+          clarsimp simp add: TwosComplement__toInt_tcNumber_reduce 
+                             TwosComplement_tcN zld_props            )
+   apply (rule iffI, erule conjE, erule conjE)
+   apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
+          simp add: TwosComplement__toInt_tcNumber_reduce 
+                    TwosComplement_tcN zld_props)
+   apply (simp add: TwosComplement__tcNumber_inverse_fwd 
+                    TwosComplement__toInt_length1 eq_iff)
+   apply (auto simp add: TwosComplement__toInt_tcNumber_reduce 
+                    TwosComplement__tcNumber_length
+                    TwosComplement_tcN zld_props 
+                    TwosComplement__toInt_length1)
+end-proof
+
+proof Isa length_of_minTCNumber
+  apply (simp add: TwosComplement__minTCNumber_def LeastM_def,
+         rule someI2_ex, rule TwosComplement__minTCNumber_exists)
+  apply (erule conjE)
+  apply (drule_tac x="TwosComplement__tcNumber (i, len)" in spec,
+         simp add: TwosComplement_tcN )
+ done
+
+(**************** we may need that later ***********************)
+
+lemma TwosComplement__length_of_minTCNumber_is_zld:
+   "length (TwosComplement__minTCNumber i) = zld i + 1"
+  apply (simp add: TwosComplement__minTCNumber_def LeastM_def,
+         rule someI2_ex, rule TwosComplement__minTCNumber_exists)
+  apply (erule conjE)
+  apply (frule TwosComplement__toInt_length1)
+  apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
+         simp add: TwosComplement__toInt_tcNumber_reduce 
+                   TwosComplement_tcN zld_props)
+(******************************************************************************)
+
+end-proof
+
+proof Isa divT_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa modT_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa modR_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa divF_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa modF_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa divC_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa modC_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa divR_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa modF_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa divE_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+proof Isa modE_Obligation_subtype
+  by (simp add: TwosComplement__nonZero_p_iff_neq_0)
+end-proof
+
+
 proof Isa shiftLeft_Obligation_subtype
  by (auto simp add: List__shiftLeft_def)
 end-proof
 
-op shiftRightSigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
-  shiftRight (x, sign x, n)
 
 proof Isa shiftRightSigned_Obligation_subtype
  by (simp, simp only: length_greater_0_iff List__length_shiftRight)
 end-proof
 
-op shiftRightUnsigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
-  shiftRight (x, B0, n)
 
 proof Isa shiftRightUnsigned_Obligation_subtype
  by (simp, simp only: length_greater_0_iff List__length_shiftRight)
 end-proof
 
 
-% ------------------------------------------------------------
+
 
 % ------------------------------------------------------------------------------
 % ---------- Part 6: verbatim Isabelle lemmas             ----------------------
@@ -968,9 +982,6 @@ lemma TwosComplement__minTCNumber_nonEmpty:
       rule someI2_ex, rule TwosComplement__minTCNumber_exists,
       simp add: TwosComplement__toInt_subtype_constr)
 
-(******************************************************************************)
+end-proof  %% end big verbatim block
 
-(******************************************************************************)
-end-proof
-
-endspec
+end-spec
