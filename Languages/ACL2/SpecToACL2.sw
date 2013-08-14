@@ -124,7 +124,7 @@ op ppTypeName (t:MSType) : PPError WLPretty =
                            ppString ")"])
          | Bad s -> Bad s)
     | Base (Qualified (_, pid),_,_) -> Good (ppString pid)
-    | Boolean _ -> Good (ppString "booleanp")
+    | Boolean _ -> Good (ppString "bool")
     | Subtype (parentType, restriction, _) -> 
       (case (ppTypeName parentType, ppTerm restriction) of
          | (Good sParentType, Good sRestriction) ->
