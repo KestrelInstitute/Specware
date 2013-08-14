@@ -116,7 +116,14 @@ op ppTypeLocalDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
 
 op ppTypeName (t:MSType) : PPError WLPretty = 
   case t of
-    | Base (Qualified (_, pid),_,_) -> Good (ppConcat [ppString pid, ppString "-p"])
+    | Base (Qualified (_, pid),actuals as (_::_),_) ->
+      (case ppErrorMap ppTypeName actuals of
+         | Good actuals -> 
+           Good (ppConcat [ppString "(:inst ", ppString pid, ppString " ",
+                           ppSep (ppString " ") actuals,
+                           ppString ")"])
+         | Bad s -> Bad s)
+    | Base (Qualified (_, pid),_,_) -> Good (ppString pid)
     | Boolean _ -> Good (ppString "booleanp")
     | Subtype (parentType, restriction, _) -> 
       (case (ppTypeName parentType, ppTerm restriction) of
@@ -125,6 +132,7 @@ op ppTypeName (t:MSType) : PPError WLPretty =
                            ppString " ", sRestriction, ppString ")"])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
+    | TyVar (tv,_) -> Good (ppString tv)
     | Product _ -> Bad "ppTypeName doesn't accept product types yet"
     | CoProduct _ -> Bad "ppTypeName doesn't accept coproduct types yet"
     | Arrow _ -> Bad "ppTypeName doesn't accept arrow type (really bad)"
@@ -152,14 +160,22 @@ op ppCoProductTypeDefHelper (typeCases : List (Id * Option MSType)) : PPError (L
     | Bad s -> Bad s
   in ppErrorMap ppTypeCase typeCases
 
-op ppCoproductTypeDef (id : Id) (typeCases : List (Id * Option MSType)) : PPError WLPretty = 
-  case ppCoProductTypeDefHelper typeCases of
-    | Good tcstrs ->
+op ppCoproductTypeDef (id : Id) (typeCases : List (Id * Option MSType)) (typeVars : List String) : PPError WLPretty = 
+  case (ppCoProductTypeDefHelper typeCases, typeVars) of
+    | (Good tcstrs,[]) ->
       Good (ppConcat [ppString "(defcoproduct ", ppString id, ppNewline,
                       ppSep (ppConcat [ppNewline, ppString "  "])
                         tcstrs,
                       ppString ")"])
-    | Bad s -> Bad s
+    | (Good tcstrs,typeVars) ->
+      Good (ppConcat [ppString "(defcoproduct ", ppString id, ppNewline,
+                      ppString "  :type-vars (",
+                      ppSep (ppString " ") (map ppString typeVars),
+                      ppString ")", ppNewline,
+                      ppSep (ppConcat [ppNewline, ppString "  "])
+                        tcstrs,
+                      ppString ")"])
+    | (Bad s,_) -> Bad s
  
 op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
   case elem of
@@ -169,7 +185,8 @@ op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
       let name = typeDefInfo.names @ 0 in
       let dfn = typeDefInfo.dfn in
       (case dfn of 
-         | CoProduct (l,_) -> ppCoproductTypeDef id l
+         | Pi (tyVars, CoProduct (l,_), _) -> ppCoproductTypeDef id l tyVars
+         | CoProduct (l,_) -> ppCoproductTypeDef id l []
          | Subtype (parentType, condition, _) ->
            (case (ppTypeName parentType, ppTerm condition) of
               | (Good sParentType, Good sCondition) ->
@@ -255,15 +272,31 @@ op ppPattern (pat:MSPattern) : PPError WLPretty =
     | WildPat _ -> Good (ppString "_")
     | NatPat (n,_) -> Good (ppString (intToString n))
     | VarPat ((v,_),_) -> Good (ppString v)
+    | EmbedPat (id,None,Base (_,actuals as (_::_),_),_) ->
+      (case ppErrorMap ppTypeName actuals of
+         | Good actualstrs ->
+           Good (ppConcat [ppString "((:inst ", ppString id, 
+                           ppString " ", ppSep (ppString " ") actualstrs, 
+                           ppString "))"])
+         | Bad s -> Bad s)
     | EmbedPat (id,None,_,_) ->
       Good (ppConcat [ppString "(", ppString id, ppString ")"])
-    | RecordPat _ ->
-      (case ppPatternHelper pat of
-         | Good spat -> Good (ppConcat [ppString "(list ", spat, ppString ")"])
-         | Bad s -> Bad s)
+    | EmbedPat (id,Some inPat,Base (_,actuals as (_::_),_),_) ->
+      (case (ppErrorMap ppTypeName actuals, ppPatternHelper inPat) of
+         | (Good actualstrs, Good sInPat) ->
+           Good (ppConcat [ppString "((:inst ", ppString id,
+                           ppString " ", ppSep (ppString " ") actualstrs,
+                           ppString ") ",
+                           sInPat, ppString ")"])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
     | EmbedPat (id,Some inPat,_,_) -> 
       (case ppPatternHelper inPat of
          | Good sInPat -> Good (ppConcat [ppString "(", ppString id, ppString " ", sInPat, ppString ")"])
+         | Bad s -> Bad s)
+    | RecordPat _ ->
+      (case ppPatternHelper pat of
+         | Good spat -> Good (ppConcat [ppString "(list ", spat, ppString ")"])
          | Bad s -> Bad s)
     | AliasPat (VarPat ((v,_),_),pat,_) ->
       (case ppPattern pat of
@@ -289,6 +322,7 @@ op ppTermApplyLambdaHelper (match:MSMatch) : PPError WLPretty =
     | [] -> Good (ppString "")
     | _ -> Bad "Can't handle match in ppTermApplyLambdaHelper"
 
+
 op ppTermApplyLambda (match:MSMatch) (trm:MSTerm) : PPError WLPretty =
   case (ppTermApplyLambdaHelper match, ppTerm trm) of
     | (Good smatch, Good strm) ->
@@ -311,6 +345,16 @@ case match of
 
 op ppTerm (trm : MSTerm) : PPError WLPretty =
   case trm of
+    | Fun (f, Arrow (_,Base (_,actuals as (_::_),_),_), _) -> 
+      (case (ppFun f,ppErrorMap ppTypeName actuals) of
+         | (Good fstr, Good actualstrs) ->
+           Good (ppConcat [ppString "(:inst ",
+                           fstr,
+                           ppString " ",
+                           ppSep (ppString " ") actualstrs,
+                           ppString ")"])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
     | Fun (f, _, _) -> ppFun f
     | Var ((v,_),_) -> Good (ppString v)
     | Record ([],pos) -> Good (ppString "")
@@ -384,6 +428,39 @@ op ppOpDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
                                 ppString "  ", strm, ppString ")"])
               | (Bad s,_) -> Bad s
               | (_,Bad s) -> Bad s)
+         | Pi (tyVars, TypedTerm (trm, Arrow (_,tpe,_), _), _) -> 
+           (case (ppTermLambda trm, opVarList trm, ppTypeName tpe) of
+              | (Good strm, Good varlist, Good tpestring) ->
+                let typedVarList = ppErrorMap (fn (id,tpe) ->
+                                                 (case ppTypeName tpe of
+                                                    | Good tn -> Good (ppConcat [ppString "(",
+                                                                                 ppString id,
+                                                                                 ppString " ",
+                                                                                 tn,
+                                                                                 ppString ")"])
+                                                    | Bad s -> Bad s)) varlist in
+                (case (typedVarList, getProofPragma id spc.elements) of 
+                   | (Good sTypedVarList,None) ->
+                     Good (ppConcat [ppString "(defund-typed ", ppString id, ppNewline,
+                                     ppString "  :type-vars (",
+                                     ppSep (ppString " ") (map ppString tyVars),
+                                     ppString ")", ppNewline,
+                                     ppString " (", ppSep (ppString " ") sTypedVarList, ppString ")", ppNewline,
+                                     ppString "             ", tpestring, ppNewline,
+                                     ppString "  ", strm, ppString ")"])
+                   | (Good sTypedVarList,Some decl) ->
+                     Good (ppConcat [ppString "(defund-typed ", ppString id,
+                                     ppString "  :type-vars (",
+                                     ppSep (ppString " ") (map ppString tyVars),
+                                     ppString ")", ppNewline,
+                                     ppString " (", ppSep (ppString " ") sTypedVarList, ppString ")", ppNewline,
+                                     ppString "             ", tpestring, ppNewline,
+                                     ppString decl, ppNewline,
+                                     ppString "  ", strm, ppString ")"])
+                   | (Bad s,_) -> Bad s)
+              | (Bad s,_,_) -> Bad s
+              | (_,Bad s,_) -> Bad s
+              | (_,_,Bad s) -> Bad s)
          | _ -> Bad "Can't handle dfn in ppOpDef")
     | _ -> Bad "Bad argument to ppOpDef"
 
