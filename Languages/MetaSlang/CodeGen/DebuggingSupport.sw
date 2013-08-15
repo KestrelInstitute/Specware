@@ -184,6 +184,33 @@ op SpecTransform.showOps (spc : Spec) (msg : String) (names : QualifiedIds) : Sp
  let _ = writeLine "--------------------" in
  spc
 
+op SpecTransform.showAllTypes (spc : Spec) (msg : String) : Spec =
+ let _ = writeLine "-showAllTypes-------" in
+ let _ = writeLine ("## " ^ msg)          in
+ let
+   def showit qid =
+     writeLine (show qid ^ " =\n" ^
+                  (case findTheType (spc, qid) of
+                     | Some info -> 
+                       let typ = case info.dfn of
+                                   | And (typ :: _, _) -> typ
+                                   | typ -> typ
+                       in
+                       printType typ
+                     | _ -> "not found"))
+   def scan elts =
+     app (fn elt -> 
+            case elt of
+              | Type    (qid, _) -> showit qid
+              | TypeDef (qid, _) -> showit qid
+              | Import  (_, _, elts, _) -> scan elts 
+              | _ -> writeLine("ignore: " ^ anyToString elt))
+         elts
+ in
+ let _ = scan spc.elements in
+ let _ = writeLine "--------------------" in
+ spc
+
 op MetaRule.showTerm (spc : Spec) (msg : String) (term : MSTerm) : Option MSTerm =
  let _ = writeLine "-showTerm-----------" in
  let _ = writeLine (msg ^ printTerm term) in
