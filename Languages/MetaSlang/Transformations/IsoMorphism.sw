@@ -1531,7 +1531,7 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                       mkMetaRule spc (mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
    in
    let main_script =
-     Steps([Trace true,% SimpStandard,
+     Steps([% Trace true,% SimpStandard,
             mkSimplify (gen_unfolds
                           ++ iso_osi_rewrites
                           ++ non_iso_extra_rules
@@ -1584,7 +1584,7 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                (qid as Qualified(q, id)) <- return (head opinfo.names);
                (simp_dfn, _, hist) <-
                  if simplifyIsomorphism? then
-                  {  print ("\nSimplify "^q^"."^id^" ?\n"^printTerm dfn^"\n");
+                  {%  print ("\nSimplify "^q^"."^id^" ?\n"^printTerm dfn^"\n");
                    b <- existsSubTerm (fn t ->
                                          let ty = inferType(spc, t) in
                                          {isoTy <- isoType (spc, iso_info, iso_fn_info) false ty;
