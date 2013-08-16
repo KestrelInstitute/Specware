@@ -145,15 +145,36 @@ Return nil if nothing appropriate is available."
                                     :type (pathname-type cfp))
                      binary-dir)))
 
-(defun handle-swank-load-error (condition context pathname)
+(defun handle-swank-compile-error (condition source)
   (fresh-line *error-output*)
   (pprint-logical-block (*error-output* () :per-line-prefix ";; ")
     (format *error-output*
-            "~%Error while ~A ~A:~%  ~A~%Aborting.~%"
-            context pathname condition))
-  (when (equal (directory-namestring pathname)
-               (directory-namestring *fasl-directory*))
-    (ignore-errors (delete-file pathname)))
+            "~%Error while compiling ~A:~%  ~A~%Aborting.~%"
+            source condition))
+  (abort))
+
+(defun handle-swank-load-error (condition fasl)
+  (fresh-line *error-output*)
+  (pprint-logical-block (*error-output* () :per-line-prefix ";; ")
+    (format *error-output*
+            "~%Error while loading ~A:~%  ~A~%Aborting.~%"
+            fasl condition))
+  (when (and (equal (directory-namestring fasl)
+                    (directory-namestring *fasl-directory*))
+             (not (equal (pathname-type fasl) "lisp")))
+    (ignore-errors (delete-file fasl)))
+  (abort))
+
+(defun handle-swank-unknown-error (condition source fasl)
+  (fresh-line *error-output*)
+  (pprint-logical-block (*error-output* () :per-line-prefix ";; ")
+    (format *error-output*
+            "~%Unknown error while compiling ~A to ~A or loading +A:~%  ~A~%Aborting.~%"
+            source fasl fasl condition))
+  (when (and (equal (directory-namestring fasl)
+                    (directory-namestring *fasl-directory*))
+             (not (equal (pathname-type fasl) "lisp")))
+    (ignore-errors (delete-file fasl)))
   (abort))
 
 (defun compile-files (files fasl-dir load quiet)
@@ -185,9 +206,9 @@ If LOAD is true, load the fasl file."
           ;; Fail as early as possible
           (serious-condition (c)
             (ecase state
-              (:compile (handle-swank-load-error c "compiling" src))
-              (:load    (handle-swank-load-error c "loading" dest))
-              (:unknown (handle-swank-load-error c "???ing" src)))))))))
+              (:compile (handle-swank-compile-error c src))
+              (:load    (handle-swank-load-error    c dest))
+              (:unknown (handle-swank-unknown-error c src dest)))))))))
 
 #+(or cormanlisp)
 (defun compile-files (files fasl-dir load quiet)
