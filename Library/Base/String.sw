@@ -26,6 +26,7 @@ op length (s:String) : Nat = length (explode s)
 
 op @ (s:String, i:Nat | i < length s) infixl 30 : Char = (explode s) @ i
 
+% Also could be called "substring":
 op subFromTo (s:String, i:Nat, j:Nat | i <= j && j <= length s) : String =
   implode (subFromTo (explode s, i, j))
 

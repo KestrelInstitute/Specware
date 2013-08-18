@@ -447,6 +447,7 @@ theorem subFromLong_whole is [a]
 % sublist from index i (inclusive) to index j (exclusive); if i = j then we
 % could have i = j = length l, even though those are not valid indices:
 
+% Also could be called sublist:
 op [a] subFromTo
        (l: List a, i:Nat, j:Nat | i <= j && j <= length l) : List a =
   subFromLong (l, i, j - i)
@@ -657,6 +658,7 @@ op [a] repeat (x:a) (n:Nat) : List a =
 theorem repeat_length is [a]
   fa (x:a, n:Nat) length (repeat x n) = n
 
+% could also be called allsame?
 op [a] allEqualElements? (l: List a) : Bool =
   ex(x:a) l = repeat x (length l)
 
