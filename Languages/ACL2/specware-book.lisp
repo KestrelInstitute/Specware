@@ -3,7 +3,7 @@
 (set-irrelevant-formals-ok t)
 (set-bogus-defun-hints-ok t)
 
-(include-book "defsum")
+(include-book "mydefsum")
 
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))
@@ -81,8 +81,27 @@
                                       (cdar type-cases))
                  (map-transform-type-case (cdr type-cases))))))
 
-(defun defcoproduct-concrete-fn (type type-cases)
+(defun remove-kwds (stuff)
   (declare (xargs :mode :program))
+xb  (cond ((atom stuff) stuff)
+        ((keywordp (car stuff))
+         (remove-kwds (cddr stuff)))
+        (t (cons (car stuff)
+                 (remove-kwds (cdr stuff))))))
+
+(defun get-kwds (stuff)
+  (declare (xargs :mode :program))
+  (cond ((atom stuff) stuff)
+        ((keywordp (car stuff))
+         (cons (car stuff)
+               (cons (cadr stuff)
+                     (get-kwds (cddr stuff)))))
+        (t (get-kwds (cdr stuff)))))
+
+(defun defcoproduct-concrete-fn (type rst)
+  (declare (xargs :mode :program))
+  (let ((type-cases (remove-kwds type-cases))
+        (kwds (get-kwds type-cases))))
   `(defsum ,type ,@(map-transform-type-case type-cases)))
 
   ;; (append (list 'defsum
