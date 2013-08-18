@@ -238,7 +238,7 @@
 			  (Specware::evaluateUID_fromLisp-1-1 (setq *last-unit-Id-_loaded* x) *force-reprocess-of-unit*)
 			(if *last-unit-Id-_loaded*
 			    (Specware::evaluateUID_fromLisp-1-1 *last-unit-Id-_loaded* *force-reprocess-of-unit*)
-			  (format t "No previous unit evaluated~%")))))
+			  (format t "ERROR: No previous unit evaluated~%")))))
 	     (show-error-position Emacs::*goto-file-position-stored* 1)
 	     (maybe-restore-swpath)
 	     val)))
