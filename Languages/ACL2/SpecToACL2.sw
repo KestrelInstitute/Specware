@@ -244,13 +244,14 @@ op ppFun (f : MSFun) : PPError WLPretty =
     | Iff -> Good (ppString "iff")
     | Equals -> Good (ppString "equal")
     | Op (Qualified (q,id),_) -> Good (ppString id)
-    | Embed (id,true) -> Good (ppString id)
-    | Embed (id,false) -> Good (ppConcat [ppString "(", ppString id, ppString ")"])
+    | Embed (id,_) -> Good (ppString id)
+%    | Embed (id,false) -> Good (ppConcat [ppString "", ppString id, ppString ""])
     | _ -> Bad "Can't handle f in ppFun"
 
 op ppTermLambda (trm : MSTerm) : PPError WLPretty =
   case trm of
-    | Lambda ((_,_,trm)::ms,_) -> ppTerm trm
+    | Lambda ((_,_,trm)::[],_) -> ppTerm trm
+    | Lambda _ -> Bad "Top level lambda contained more than match"
     | _ -> Bad "ppTermLambda only accepts lambdas"
 
 op ppPatternHelper (pat:MSPattern) : PPError WLPretty =
@@ -353,6 +354,16 @@ op ppTerm (trm : MSTerm) : PPError WLPretty =
                            ppString " ",
                            ppSep (ppString " ") actualstrs,
                            ppString ")"])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
+    | Fun (f, Base (_, actuals as (_::_),_),_) ->
+      (case (ppFun f, ppErrorMap ppTypeName actuals) of
+         | (Good fstr, Good actualstrs) ->
+           Good (ppConcat [ppString "((:inst ",
+                           fstr,
+                           ppString " ",
+                           ppSep (ppString " ") actualstrs,
+                           ppString "))"])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
     | Fun (f, _, _) -> ppFun f

@@ -3,7 +3,7 @@
 (set-irrelevant-formals-ok t)
 (set-bogus-defun-hints-ok t)
 
-(include-book "tools/defsum" :dir :system)
+(include-book "defsum")
 
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))
@@ -900,6 +900,10 @@
                               (true-listp rst))))
   `(progn ,(append `(defthm-typed ,name ,typed-vars ,term) rst)
           (in-theory (disable ,name))))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; DEFTHM-TYPED-POLY ;;
+;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;
 ;; BUILTINS ;;
