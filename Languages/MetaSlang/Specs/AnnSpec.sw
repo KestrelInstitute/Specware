@@ -707,8 +707,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      init
      types
 
- op  foldOpInfos : [a,b] (AOpInfo a * b -> b) -> b -> AOpMap a -> b
- def foldOpInfos f init ops =
+ op [a,b] foldOpInfos (f : AOpInfo a * b -> b) (init:b) (ops : AOpMap a) : b =
    foldriAQualifierMap
      (fn (q, id, info, result) ->
       if primaryOpName? (q, id, info) then
@@ -717,6 +716,19 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 	result)
      init
      ops
+
+ %% Check whether all opinfos satisfy the pred:
+ op [a] forallOpInfos? (pred : AOpInfo a -> Bool) (ops : AOpMap a) : Bool =
+   foldOpInfos (fn (x, result) -> result && pred x) true ops
+
+ %% Check whether any opinfo satisfies the pred:
+ op [a] existsOpInfo? (pred : AOpInfo a -> Bool) (ops : AOpMap a) : Bool =
+   foldOpInfos (fn (x, result) -> result || pred x) false ops
+
+ %% Count how many opinfos satisfy the pred:
+ op [a] countOpInfos (pred? : AOpInfo a -> Bool) (ops : AOpMap a) : Nat =
+   foldOpInfos (fn (x, result) -> result + (if pred? x then 1 else 0)) 0 ops
+
 
  op  appTypeInfos : [b] (ATypeInfo b -> ()) -> ATypeMap b -> ()
  def appTypeInfos f types =

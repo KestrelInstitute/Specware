@@ -191,8 +191,8 @@ MetaSlang qualifying spec
      | [] -> ty
      | _ -> Pi (tvs, ty, typeAnn ty)
 
-  op maybePiTerm : [b] TyVars * ATerm b -> ATerm b
- def maybePiTerm (tvs, tm) =
+ %% Wraps a Pi around tm if there are any type variables:
+ op [b] maybePiTerm (tvs : TyVars, tm : ATerm b) : ATerm b =
    case tvs of
      | [] -> tm
      | _ -> Pi (tvs, tm, termAnn tm)
@@ -1744,8 +1744,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
   op [b] existsSubTerm (pred?:ATerm b -> Bool) (term:ATerm b): Bool
     = existsSubTerm2 true pred? term
 
-  op existsSubTerm2 : [b] Bool -> (ATerm b -> Bool) -> ATerm b -> Bool
- def existsSubTerm2 descendIntoSubtypes? pred? term =
+  op [b] existsSubTerm2 (descendIntoSubtypes? : Bool) (pred? : ATerm b -> Bool) (term : ATerm b) : Bool =
    pred? term ||
    (case term of
 
@@ -1788,10 +1787,14 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
       | TypedTerm   (M, ty,   _) -> existsSubTerm2 descendIntoSubtypes? pred? M
 
+      %% TODO: What about transform?
+
       | Pi          (tvs, t,   _) -> descendIntoSubtypes? &&
                                      existsSubTerm2 descendIntoSubtypes? pred? t
 
       | And         (tms,      _) -> exists? (existsSubTerm2 descendIntoSubtypes? pred?) tms
+
+      %% TODO: What about Any?
 
       | _  -> false
       )				    
@@ -1903,9 +1906,13 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
 
      | TypedTerm (M,   _,   _) -> foldSubTerms f newVal M
 
+     %% TODO: What about transform?
+
      | Pi        (_,   M,   _) -> foldSubTerms f newVal M
 
      | And       (tm1::tms, _) -> foldSubTerms f newVal tm1
+
+     %% TODO: What about Any?
 
      | _  -> newVal
 

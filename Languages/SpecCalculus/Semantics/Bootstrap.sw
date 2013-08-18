@@ -151,8 +151,7 @@ Specware qualifying spec
   %% The first just evaluates a UnitId. The second evaluates a UnitId and then
   %% compiles the resulting specification to lisp.
 
-  op  evaluateUID_fromLisp : String -> Bool -> Bool
-  def evaluateUID_fromLisp path notFromCache? = 
+  op evaluateUID_fromLisp (path : String) (notFromCache? : Bool) : Bool = 
     let prog = {
 		cleanEnv;
 		currentUID <- pathToCanonicalUID ".";
@@ -169,9 +168,7 @@ Specware qualifying spec
     in
       runSpecCommand (catch prog toplevelHandler)
 
-
-  op  fileNameHandler : RelativeUID -> Exception -> SpecCalc.Env ()
-  def fileNameHandler unitId except =
+  op fileNameHandler (unitId : RelativeUID) (except : Exception) : SpecCalc.Env () =
     case except of
       | UIDNotFound (position, badUnitId) ->
         if badUnitId = unitId && ~(hasHashSuffix? unitId) then
