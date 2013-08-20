@@ -65,9 +65,10 @@
         ((atom (car rst-type-case))
          (cons
           (list (appsyms (list (car rst-type-case) 'p))
-                (intern (string-append "ARG" 
-                                       (integer-to-string n)) 
-                        "ACL2"))
+                (appsyms (list 'arg (integer-to-symbol n))))
+;                (intern (string-append "ARG" 
+;                                       (integer-to-string n)) 
+;                        "ACL2"))
           (transform-type-case-1 constructor-name (cdr rst-type-case) (1+ n))))
         (t (cons (car rst-type-case) (transform-type-case-1 constructor-name
                                                             (cdr rst-type-case)
@@ -306,9 +307,11 @@
   (declare (xargs :mode :program))
   (cond ((zp num-fields) nil)
         (t (cons `(,(appsyms `(,constructor ,@var-names 
+                                            arg
                                             ,(integer-to-symbol
                                               num-fields)))
                     ,(appsyms `(,constructor ,@type-names
+                                             arg
                                              ,(integer-to-symbol
                                                num-fields))))
                  (functional-instance-destructor-subs-1 constructor
@@ -859,10 +862,10 @@
        (declare (xargs :mode :program))
        (list (list (appsyms (append (list ',name)
                                     var-names 
-                                    (list 'p)))
+                                    nil))
                    (appsyms (append (list ',name)
                                     type-names
-                                    (list 'p))))))))
+                                    nil)))))))
 
 
 (defmacro defun-typed-poly (name type-vars typed-args type &rest rst)
@@ -1107,23 +1110,120 @@
                              (list 'quote type-names)))))
         ((consp (car term))
          (append (collect-functional-instance-subs-1 (car term)
-                                                   var-names
-                                                   type-names
-                                                   skip-insts)
+                                                     var-names
+                                                     type-names
+                                                     skip-insts)
                  (collect-functional-instance-subs-1 (cdr term)
-                                                   var-names
-                                                   type-names
-                                                   skip-insts)))
+                                                     var-names
+                                                     type-names
+                                                     skip-insts)))
         (t (collect-functional-instance-subs-1 (cdr term)
-                                             var-names
-                                             type-names
-                                             skip-insts))))
-                                        
+                                               var-names
+                                               type-names
+                                               skip-insts))))
+
 (defun collect-functional-instance-subs (term var-names type-names skip-insts)
   (declare (xargs :mode :program))
   (remove-duplicates
    (collect-functional-instance-subs-1 term var-names type-names skip-insts)
    :test 'equal))
+
+
+;; (defthm-typed ,(appsyms `(,',name ,,@type-vars))
+;;     ,(replace-inst ',typed-variables var-alist nil)
+;;   ,@(replace-inst ',body var-alist nil)
+;;   :hints (("Goal"
+;;            :do-not-induct t
+;;            :in-theory (enable 
+;;                        ,@(remove-duplicates
+;;                           (function-theory-prereqs
+;;                            ',typed-variables
+;;                            var-alist
+;;                            nil)))
+;;            :use ((:functional-instance
+;;                   ,',abstract-name
+;;                   ,(collect-functional-instance-subs
+;;                     ',(cons typed-variables body)
+;;                     ',(constrained-type-var-names
+;;                        type-vars
+;;                        name)
+;;                     (list ,@type-vars)
+;;                     nil))))))
+
+;; name, of original theorem
+;; type-actuals
+;; typed-variables  ((x (:inst Seq a)) ...)
+;; body
+;; var-alist
+;; abstract-name
+
+(defun zip-lists (x y name)
+  (declare (xargs :mode :program))
+  (cond ((atom x) nil)
+        (t (cons (list (appsyms (list (car x) 
+                                      'var
+                                      name
+                                      'p))
+                       (appsyms (list (car y) 'p)))
+                 (zip-lists (cdr x) (cdr y) name)))))
+
+;; `(progn
+;;                 ,@(remove-duplicates
+;;                     (type-inst-prereqs-defun 
+;;                      ',typed-variables 
+;;                      var-alist
+;;                      (list ',name))
+;;                     :test 'equal)
+;;                 ,@(remove-duplicates
+;;                     (type-inst-prereqs-defun 
+;;                      ',body
+;;                      var-alist
+;;                      (list ',name))
+;;                     :test 'equal)
+(defun instance-defthm
+    (name; of original theorem
+     type-vars
+     type-actuals
+     typed-variables;  ((x (:inst Seq a)) ...)
+     body
+     var-alist
+     abstract-name)
+  (declare (xargs :mode :program))
+  ``(progn
+      ,@(remove-duplicates
+         (type-inst-prereqs-defun
+          ',typed-variables
+          ',var-alist
+          (list ',name))
+          :test 'equal)
+      ,@(remove-duplicates
+         (type-inst-prereqs-defun
+          ',body
+          ',var-alist
+          (list ',name))
+          :test 'equal)
+      (defthm-typed ,',(appsyms `(,name ,@type-actuals))
+          ,',(replace-inst typed-variables var-alist nil)
+        ,',@(replace-inst body var-alist nil)
+        :hints (("Goal"
+                 :do-not-induct t
+                 :in-theory (enable 
+                             ,',@(remove-duplicates
+                                  (function-theory-prereqs
+                                   typed-variables
+                                   var-alist
+                                   nil)))
+                 :use ((:functional-instance
+                        ,',abstract-name
+                        ,@(zip-lists ',type-vars ',type-actuals ',name)
+                        ,@(append
+                           ,@(collect-functional-instance-subs
+                              (cons typed-variables body)
+                              (constrained-type-var-names
+                               type-vars
+                               name)
+                              type-actuals
+                              nil)))))))))
 
 (defun defthm-typed-poly-fn (name type-vars typed-variables body)
   (declare (xargs :mode :program))
@@ -1154,33 +1254,17 @@
                                  (list ,@type-vars)
                                  nil)))
 
-           `(progn
-              ,@(remove-duplicates
-                 (type-inst-prereqs-defun 
-                  ',typed-variables 
-                  var-alist
-                  (list ',name))
-                 :test 'equal)
-              ,@(remove-duplicates
-                 (type-inst-prereqs-defun 
-                  ',body
-                  var-alist
-                  (list ',name))
-                 :test 'equal)
-              (defthm-typed ,(appsyms `(,',name ,,@type-vars))
-                ,(replace-inst ',typed-variables var-alist nil)
-                ,@(replace-inst ',body var-alist nil)
-                :hints (("Goal"
-                         :do-not-induct t
-                         :in-theory (enable 
-                                     ,@(remove-duplicates
-                                        (function-theory-prereqs
-                                         ',typed-variables
-                                         var-alist
-                                         nil)))
-                         :use ((:functional-instance
-                                ,',abstract-name
-                                ,functional-subs)))))))))))
+           `(make-event
+             ,(instance-defthm
+               ',name; of original theorem
+               ',type-vars
+               (list ,@type-vars)
+               ',typed-variables;  ((x (:inst Seq a)) ...)
+               ',body
+               var-alist
+               ',abstract-name)))))))
+
+             
 
 (defmacro defthm-typed-poly (name type-vars typed-variables &rest body)
   (defthm-typed-poly-fn name type-vars typed-variables body))
@@ -1189,18 +1273,18 @@
 ;; BUILTINS ;;
 ;;;;;;;;;;;;;;
 
-(defmacro Int-p (x) `(integerp ,x))
-(defmacro Bool-p (x) `(booleanp ,x))
-(defmacro Nat-p (x) `(natp ,x))
-(defmacro String-p (x) `(stringp ,x))
+;(defmacro Int-p (x) `(integerp ,x))
+;(defmacro Bool-p (x) `(booleanp ,x))
+;(defmacro Nat-p (x) `(natp ,x))
+;(defmacro String-p (x) `(stringp ,x))
 ;(defun-typed int_+ ((x Int-p) (y Int-p))
 ;             integerp
 ;  (binary-+ x y))
 
-;; (defpredicate Int-p (x) (integerp x))
-;; (defpredicate Bool-p (x) (booleanp x))
-;; (defpredicate Nat-p (x) (natp x))
-;; (defpredicate String-p (x) (stringp x))
+(defpredicate Bool-p (x) (booleanp x))
+(defpredicate Int-p (x) (integerp x))
+(defpredicate Nat-p (x) (natp x))
+(defpredicate String-p (x) (stringp x))
 ;; (defun-typed int_+ ((x Int-p) (y Int-p))
 ;;              integerp
 ;;   (binary-+ x y))
