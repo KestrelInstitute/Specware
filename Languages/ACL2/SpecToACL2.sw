@@ -455,7 +455,7 @@ op ppOpDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
                                                     | Bad s -> Bad s)) varlist in
                 (case (typedVarList, getProofPragma id spc.elements) of 
                    | (Good sTypedVarList,None) ->
-                     Good (ppConcat [ppString "(defund-typed ", ppString id, ppNewline,
+                     Good (ppConcat [ppString "(defun-typed ", ppString id, ppNewline,
                                      ppString "  :type-vars (",
                                      ppSep (ppString " ") (map ppString tyVars),
                                      ppString ")", ppNewline,
@@ -463,7 +463,7 @@ op ppOpDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
                                      ppString "             ", tpestring, ppNewline,
                                      ppString "  ", strm, ppString ")"])
                    | (Good sTypedVarList,Some decl) ->
-                     Good (ppConcat [ppString "(defund-typed ", ppString id,
+                     Good (ppConcat [ppString "(defun-typed ", ppString id,
                                      ppString "  :type-vars (",
                                      ppSep (ppString " ") (map ppString tyVars),
                                      ppString ")", ppNewline,
@@ -533,6 +533,41 @@ op ppOpDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
 
 op ppThm (elem:SpecElement) (spc:Spec) : PPError WLPretty =
   case elem of
+    | Property (p as (Theorem,Qualified(q,pn),tyVars as (_::_),trm,_)) ->
+      (case ppTerm trm of
+         | Good strm -> 
+           let varStrings = ppErrorMap (fn (id,tpe) ->
+                                          (case ppTypeName tpe of
+                                             | Good tn -> Good (ppConcat [ppString "(",
+                                                                          ppString id, 
+                                                                          ppString " ",
+                                                                          tn,
+                                                                          ppString ")"])
+                                             | Bad s -> Bad s)) (thmVarList trm) in
+           (case (varStrings,getProofPragma pn spc.elements) of
+              | (Good vs,None) ->
+                Good (ppConcat [ppString "(defthm-typed ", ppString pn, ppNewline,
+                                ppString "  :type-vars (",
+                                ppSep (ppString " ") (map ppString tyVars),
+                                ppString ")", ppNewline,
+                                ppString "  (",
+                                ppSep (ppConcat [ppNewline,ppString "                "])
+                                  vs,
+                                ppString ")", ppNewline,
+                                strm, ppString ")"])
+              | (Good vs,Some args) ->
+                Good (ppConcat [ppString "(defthm-typed ", ppString pn, ppNewline,
+                                ppString "  :type-vars (",
+                                ppSep (ppString " ") (map ppString tyVars),
+                                ppString ")", ppNewline,
+                                ppString "  (",
+                                ppSep (ppConcat [ppNewline,ppString "                "])
+                                  vs,
+                                ppString ")", ppNewline,
+                                strm, ppNewline,
+                                ppString args, ppString ")"])
+              | (Bad s,_) -> Bad s)
+         | Bad s -> Bad s)
     | Property (p as (Theorem,Qualified(q,pn),_,trm,_)) -> 
       (case ppTerm trm of
          | Good strm -> 

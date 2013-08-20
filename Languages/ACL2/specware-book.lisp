@@ -2,10 +2,11 @@
 (set-ignore-ok t)
 (set-irrelevant-formals-ok t)
 (set-bogus-defun-hints-ok t)
+;(set-guard-checking nil)
 
 (include-book "mydefsum")
 ;(include-book "~/Specware2/Languages/ACL2/mydefsum")
-
+ 
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))
   `(if ,x (if ,y t nil) t))
@@ -544,16 +545,26 @@
   (declare (xargs :guard t))
   (or (atom term)
       (equal (car term) 'lambda)))
+ 
+(mutual-recursion
+ (defun type-p (x)
+   (declare (xargs :guard t))
+   (or (symbolp x)
+       (and (consp x)
+            (consp (cdr x))
+            (consp (cddr x))
+            (atom (cdddr x))
+            (eq (car x) ':subtype)
+            (symbolp (cadr x)))
+       (and (consp x)
+            (eq (car x) ':inst)
+            (type-list-p (cdr x)))))
 
-(defun type-p (x)
-  (declare (xargs :guard t))
-  (or (symbolp x)
-      (and (consp x)
-           (consp (cdr x))
-           (consp (cddr x))
-           (atom (cdddr x))
-           (equal (car x) ':subtype)
-           (symbolp (cadr x)))))
+ (defun type-list-p (l)
+   (declare (xargs :guard t))
+   (cond ((atom l) t)
+         (t (and (type-p (car l))
+                 (type-list-p (cdr l)))))))
 
 (defun typed-arg-listp (x)
   (declare (xargs :guard t))
@@ -583,7 +594,8 @@
                  (get-types (cdr typed-args))))))
 
 (defun get-type-constraint-1 (typed-args)
-  (declare (xargs :guard (typed-arg-listp typed-args)))
+  (declare (xargs :guard (typed-arg-listp typed-args)
+                  :verify-guards nil))
   (cond ((endp typed-args) nil)
         ((atom (car typed-args))
          (get-type-constraint-1 (cdr typed-args)))
@@ -605,7 +617,8 @@
                  (get-type-constraint-1 (cdr typed-args))))))
 
 (defun get-type-constraint (typed-args)
-  (declare (xargs :guard (typed-arg-listp typed-args)))
+  (declare (xargs :guard (typed-arg-listp typed-args)
+                  :verify-guards nil))
   (let ((gtc-1 (get-type-constraint-1 typed-args)))
     (cond ((atom gtc-1) t)
           ((atom (cdr gtc-1)) (car gtc-1))
@@ -942,9 +955,9 @@
                   (,(add-p-to-name parenttype) x))
        :rule-classes :forward-chaining)))
 
-;;;;;;;;;;;;;;;;;;
-;; DEFTHM-TYPED ;;
-;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DEFTHM-TYPED-CONCRETE ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Use:
 ;;
@@ -1019,7 +1032,7 @@
          (cadr rst))
         (t (get-body-declare (cddr rst)))))
 
-(defmacro defthm-typed (name typed-vars term &rest rst)
+(defmacro defthm-typed-concrete (name typed-vars term &rest rst)
   (declare (xargs :guard (and (symbolp name)
                               (typed-arg-listp typed-vars)
                               (true-listp rst))))
@@ -1038,11 +1051,11 @@
                             term))
                 (remove-body-declare rst))))
 
-(defmacro defthmd-typed (name typed-vars term &rest rst)
+(defmacro defthmd-typed-concrete (name typed-vars term &rest rst)
   (declare (xargs :guard (and (symbolp name)
                               (typed-arg-listp typed-vars)
                               (true-listp rst))))
-  `(progn ,(append `(defthm-typed ,name ,typed-vars ,term) rst)
+  `(progn ,(append `(defthm-typed-concrete ,name ,typed-vars ,term) rst)
           (in-theory (disable ,name))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -1275,6 +1288,24 @@
 
 (defmacro defthm-typed-poly (name type-vars typed-variables &rest body)
   (defthm-typed-poly-fn name type-vars typed-variables body))
+
+;;;;;;;;;;;;;;;;;;
+;; DEFTHM-TYPED ;;
+;;;;;;;;;;;;;;;;;;
+
+(defun defthm-typed-fn (name rst)
+  (if (and (consp rst)
+           (consp (cdr rst))
+           (eq (car rst) ':type-vars))
+      `(defthm-typed-poly ,name ,(cadr rst) ,@(cddr rst))
+      `(defthm-typed-concrete ,name ,@rst)))
+
+(defmacro defthm-typed (name &rest rst)
+  (defthm-typed-fn name rst))
+
+(defmacro defthmd-typed (name &rest rst)
+  `(progn (defun-typed ,name ,@rst)
+          (in-theory (disable ,name))))
 
 ;;;;;;;;;;;;;;
 ;; BUILTINS ;;
