@@ -889,8 +889,8 @@
   (defun-typed-fn name rst))
 
 (defmacro defund-typed (name &rest rst)
-  `(progn (defun-typed ,name ,@rst)))
-;          (in-theory (disable ,name))))
+  `(progn (defun-typed ,name ,@rst)
+          (in-theory (disable ,name))))
 
 ;; (defmacro defund-typed (name typed-args type &rest rst)
 ;;   (declare (xargs :guard (and (symbolp name)
@@ -905,6 +905,13 @@
 ;;;;;;;;;;;;;;;;;;
 
 (defmacro defpredicate (name args &rest rst)
+  (declare (xargs :guard (and (symbolp name)
+                              (symbol-listp args)
+                              (true-listp rst))))
+  (append (list 'defun-typed name (list (car args)) 'bool)
+          rst))
+
+(defmacro defpredicated (name args &rest rst)
   (declare (xargs :guard (and (symbolp name)
                               (symbol-listp args)
                               (true-listp rst))))

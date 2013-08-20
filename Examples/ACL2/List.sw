@@ -218,8 +218,10 @@ proof ACL2 ISubBag_of_INil_1  :hints (("Goal" :in-theory (enable ISubBag ihowman
 proof ACL2 ISubBag_of_INil_2  :hints (("Goal" :in-theory (enable ISubBag ihowmany))) end-proof
 proof ACL2 IHowMany_of_IInsert_diff  :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
 proof ACL2 IHowMany_of_IInsert_same  :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
+proof ACL2 IHowMany_of_IInsert_both  :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
 proof ACL2 IHowMany_of_ICons_same    :hints (("Goal" :in-theory (enable IHowMany))) end-proof
 proof ACL2 IHowMany_of_ICons_diff    :hints (("Goal" :in-theory (enable IHowMany))) end-proof
+proof ACL2 IHowMany_of_ICons_both    :hints (("Goal" :in-theory (enable IHowMany))) end-proof
 proof ACL2 ISubBag_IInsert_1         :hints (("Goal" :in-theory (enable IINSERT ISubBag IHOWMANY))) end-proof
 proof ACL2 ISubBag_of_IInsert_1      :hints (("Goal" :in-theory (enable ISubBag IInsert ihowmany))) end-proof
 proof ACL2 Perm_of_IInsertionSort    :hints (("Goal" :in-theory (enable IINSERTIONSORT iperm ISUBBAG))) end-proof
