@@ -206,29 +206,29 @@ theorem Perm_of_IInsertionSort is
 
 %% FIXME allow just ':enable (IAppend)' as an abbreviation for the enable hint on "Goal"?
 
-proof ACL2 IAppend_associative :hints (("Goal" :in-theory (enable IAppend))) end-proof
-proof ACL2 IAppend_of_INil_1  :hints (("Goal" :in-theory (enable IAppend))) end-proof
-proof ACL2 IAppend_of_INil_2  :hints (("Goal" :in-theory (enable IAppend))) end-proof
-proof ACL2 IRev_of_IAppend    :hints (("Goal" :in-theory (enable IAppend IRev))) end-proof
-proof ACL2 IRev_of_IRev       :hints (("Goal" :in-theory (enable IAppend IRev))) end-proof
-proof ACL2 ILength_of_IAppend :hints (("Goal" :in-theory (enable IAppend ILength))) end-proof
-proof ACL2 IHowmany_of_INil   :hints (("Goal" :in-theory (enable ihowmany))) end-proof
-proof ACL2 ISubBag_of_ICons   :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
-proof ACL2 ISubBag_reflexive  :hints (("Goal" :in-theory (enable ISubBag))) end-proof
-proof ACL2 ISubBag_transitive :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
-proof ACL2 ISubBag_IHowManyLE :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
-proof ACL2 ISubBag_of_INil_1  :hints (("Goal" :in-theory (enable ISubBag ihowmany))) end-proof
-proof ACL2 ISubBag_of_INil_2  :hints (("Goal" :in-theory (enable ISubBag ihowmany))) end-proof
-proof ACL2 IHowMany_of_IInsert_diff  :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
-proof ACL2 IHowMany_of_IInsert_same  :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
-proof ACL2 IHowMany_of_IInsert_both  :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
-proof ACL2 IHowMany_of_ICons_same    :hints (("Goal" :in-theory (enable IHowMany))) end-proof
-proof ACL2 IHowMany_of_ICons_diff    :hints (("Goal" :in-theory (enable IHowMany))) end-proof
-proof ACL2 IHowMany_of_ICons_both    :hints (("Goal" :in-theory (enable IHowMany))) end-proof
-proof ACL2 ISubBag_IInsert_1         :hints (("Goal" :in-theory (enable IINSERT ISubBag IHOWMANY))) end-proof
-proof ACL2 ISubBag_of_IInsert_1      :hints (("Goal" :in-theory (enable ISubBag IInsert ihowmany))) end-proof
-proof ACL2 Perm_of_IInsertionSort    :hints (("Goal" :in-theory (enable IINSERTIONSORT iperm ISUBBAG))) end-proof
-proof ACL2 IOrdered_of_ICons_ICons   :hints (("Goal" :in-theory (enable iordered)))end-proof
+proof ACL2 IAppend_associative        :hints (("Goal" :in-theory (enable IAppend))) end-proof
+proof ACL2 IAppend_of_INil_1          :hints (("Goal" :in-theory (enable IAppend))) end-proof
+proof ACL2 IAppend_of_INil_2          :hints (("Goal" :in-theory (enable IAppend))) end-proof
+proof ACL2 IRev_of_IAppend            :hints (("Goal" :in-theory (enable IAppend IRev))) end-proof
+proof ACL2 IRev_of_IRev               :hints (("Goal" :in-theory (enable IAppend IRev))) end-proof
+proof ACL2 ILength_of_IAppend         :hints (("Goal" :in-theory (enable IAppend ILength))) end-proof
+proof ACL2 IHowmany_of_INil           :hints (("Goal" :in-theory (enable IHowMany))) end-proof
+proof ACL2 ISubBag_of_ICons           :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
+proof ACL2 ISubBag_reflexive          :hints (("Goal" :in-theory (enable ISubBag))) end-proof
+proof ACL2 ISubBag_transitive         :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
+proof ACL2 ISubBag_IHowManyLE         :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
+proof ACL2 ISubBag_of_INil_1          :hints (("Goal" :in-theory (enable ISubBag ihowmany))) end-proof
+proof ACL2 ISubBag_of_INil_2          :hints (("Goal" :in-theory (enable ISubBag ihowmany))) end-proof
+proof ACL2 IHowMany_of_IInsert_diff   :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
+proof ACL2 IHowMany_of_IInsert_same   :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
+proof ACL2 IHowMany_of_IInsert_both   :hints (("Goal" :in-theory (enable IHowMany IInsert))) end-proof
+proof ACL2 IHowMany_of_ICons_same     :hints (("Goal" :in-theory (enable IHowMany))) end-proof
+proof ACL2 IHowMany_of_ICons_diff     :hints (("Goal" :in-theory (enable IHowMany))) end-proof
+proof ACL2 IHowMany_of_ICons_both     :hints (("Goal" :in-theory (enable IHowMany))) end-proof
+proof ACL2 ISubBag_IInsert_1          :hints (("Goal" :in-theory (enable IInsert ISubBag IHOWMANY))) end-proof
+proof ACL2 ISubBag_of_IInsert_1       :hints (("Goal" :in-theory (enable ISubBag IInsert IHowMany))) end-proof
+proof ACL2 Perm_of_IInsertionSort     :hints (("Goal" :in-theory (enable IInsertionSort IPerm ISubBag))) end-proof
+proof ACL2 IOrdered_of_ICons_ICons    :hints (("Goal" :in-theory (enable IOrdered)))end-proof
 proof ACL2 IHowMany_of_IInsertionSort :hints (("Goal" :in-theory (enable IHowMany IInsertionSort))) end-proof
 
 %%FIXME allow just :type-hints and :guard-hints (or even :guard-enable and :type-enable)?
