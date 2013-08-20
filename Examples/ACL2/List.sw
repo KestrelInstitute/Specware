@@ -194,6 +194,9 @@ op IInsertionSort (a:IList) : IOrderedList =
   | INil -> INil
   | ICons (x,xs) -> IInsert (x,IInsertionSort xs)
 
+theorem IHowMany_of_IInsertionSort is
+  fa (a:IList, val:Int) IHowMany(val, IInsertionSort a) = IHowMany(val, a)
+
 %% Note that we've already proved that IInsertionSort returns an
 %% ordered list (it's part of the type).
 theorem Perm_of_IInsertionSort is
@@ -226,6 +229,7 @@ proof ACL2 ISubBag_IInsert_1         :hints (("Goal" :in-theory (enable IINSERT 
 proof ACL2 ISubBag_of_IInsert_1      :hints (("Goal" :in-theory (enable ISubBag IInsert ihowmany))) end-proof
 proof ACL2 Perm_of_IInsertionSort    :hints (("Goal" :in-theory (enable IINSERTIONSORT iperm ISUBBAG))) end-proof
 proof ACL2 IOrdered_of_ICons_ICons   :hints (("Goal" :in-theory (enable iordered)))end-proof
+proof ACL2 IHowMany_of_IInsertionSort :hints (("Goal" :in-theory (enable IHowMany IInsertionSort))) end-proof
 
 %%FIXME allow just :type-hints and :guard-hints (or even :guard-enable and :type-enable)?
 proof ACL2 IInsert
