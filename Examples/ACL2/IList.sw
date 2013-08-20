@@ -1,5 +1,7 @@
 spec
 
+%% A spec for lists of integers.
+
 %%%%%%%%%
 % IList %
 %%%%%%%%%
