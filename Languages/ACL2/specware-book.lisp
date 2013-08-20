@@ -3,7 +3,8 @@
 (set-irrelevant-formals-ok t)
 (set-bogus-defun-hints-ok t)
 
-(include-book "mydefsum")
+;(include-book "mydefsum")
+(include-book "~/Specware2/Languages/ACL2/mydefsum")
 
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))
@@ -49,6 +50,11 @@
                          :fmt-control-alist nil)
           1 nil))
 
+(defun integer-to-symbol (n)
+  (declare (xargs :mode :program
+                  :guard (integerp n)))
+  (intern (integer-to-string n) "ACL2"))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFCOPRODUCT-CONCRETE ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -81,33 +87,30 @@
                                       (cdar type-cases))
                  (map-transform-type-case (cdr type-cases))))))
 
-;; (defun remove-kwds (stuff)
-;;   (declare (xargs :mode :program))
-;;   (cond ((atom stuff) stuff)
-;;         ((keywordp (car stuff))
-;;          (remove-kwds (cddr stuff)))
-;;         (t (cons (car stuff)
-;;                  (remove-kwds (cdr stuff))))))
+(defun remove-kwds (stuff)
+  (declare (xargs :mode :program))
+  (cond ((atom stuff) stuff)
+        ((keywordp (car stuff))
+         (remove-kwds (cddr stuff)))
+        (t (cons (car stuff)
+                 (remove-kwds (cdr stuff))))))
 
-;; (defun get-kwds (stuff)
-;;   (declare (xargs :mode :program))
-;;   (cond ((atom stuff) stuff)
-;;         ((keywordp (car stuff))
-;;          (cons (car stuff)
-;;                (cons (cadr stuff)
-;;                      (get-kwds (cddr stuff)))))
-;;         (t (get-kwds (cdr stuff)))))
+(defun get-kwds (stuff)
+  (declare (xargs :mode :program))
+  (cond ((atom stuff) stuff)
+        ((keywordp (car stuff))
+         (cons (car stuff)
+               (cons (cadr stuff)
+                     (get-kwds (cddr stuff)))))
+        (t (get-kwds (cdr stuff)))))
 
 (defun defcoproduct-concrete-fn (type rst)
   (declare (xargs :mode :program))
-  (let ((type-cases rst))
-;  (let ((type-cases (remove-kwds type-cases))
-;        (kwds (get-kwds type-cases)))
-  `(defsum ,type ,@(map-transform-type-case type-cases))))
+  (let* ((type-cases (remove-kwds rst))
+         (kwds (get-kwds rst)))
+    `(defsum ,type ,@(map-transform-type-case type-cases)
+       ,@kwds)))
 
-  ;; (append (list 'defsum
-  ;;               type)
-  ;;         (map-transform-type-case type-cases)))
 
 (defmacro defcoproduct-concrete (type &rest type-cases)
   (defcoproduct-concrete-fn type type-cases))
@@ -152,7 +155,7 @@
                  (make-alist (cdr vars) (cdr vals))))))
 
 (defthm alistp-make-alist
-  (alistp (make-alist a b)))
+    (alistp (make-alist a b)))
 
 (mutual-recursion
 
@@ -162,7 +165,7 @@
           (let ((var-sub (assoc-equal type var-alist)))
             (if var-sub
                 (cdr var-sub)
-              type)))
+                type)))
          (t (appsyms (cons (cadr type)
                            (map-subst-type-name (cddr type) var-alist))))))
 
@@ -210,10 +213,10 @@
   `(encapsulate
     (((,(appsyms (list (constrained-type-var-name var fn) 'p)) *) => *))
     (local (defun ,(appsyms (list (constrained-type-var-name var fn) 'p))
-             (x) (declare (ignore x)) t))
+               (x) (declare (ignore x)) t))
     (defthm ,(appsyms (list (constrained-type-var-name var fn)
                             'type))
-      (booleanp (,(appsyms (list (constrained-type-var-name var fn) 'p)) x))
+        (booleanp (,(appsyms (list (constrained-type-var-name var fn) 'p)) x))
       :rule-classes :type-prescription)))
 
 (defun constrained-type-vars (vars fn)
@@ -232,8 +235,8 @@
          ((member-equal (cadr type) skip-types)
           nil)
          (t `(,@(type-inst-list-prereqs (cdr type) var-alist skip-types)
-              (,(appsyms `(,(cadr type) instantiate))
-               ,@(map-subst-type-name (cddr type) var-alist))))))
+                (,(appsyms `(,(cadr type) instantiate))
+                  ,@(map-subst-type-name (cddr type) var-alist))))))
 
  (defun type-inst-list-prereqs (types var-alist skip-types)
    (cond ((atom types) nil)
@@ -248,14 +251,103 @@
   (declare (xargs :mode :program))
   (cond ((atom type-cases) nil)
         (t (append (type-case-prereqs (car type-cases) var-alist skip-types)
-                 (type-cases-prereqs (cdr type-cases) var-alist skip-types)))))
+                   (type-cases-prereqs (cdr type-cases) var-alist skip-types)))))
 
 (defun type-case-instantiators (type-name type-case-names vars)
   (declare (xargs :mode :program))
   (cond ((atom type-case-names) nil)
         (t (cons `(defmacro ,(appsyms `(,(car type-case-names) instantiate)) ,vars
                     (list ',(appsyms `(,type-name instantiate)) ,@vars))
-                 (type-case-instantiators type-name (cdr type-case-names) vars)))))
+                 (type-case-instantiators type-name (cdr type-case-names)
+                                          vars)))))
+
+(defun make-tag-alist (case-names type-actuals)
+  (declare (xargs :mode :program))
+  (cond ((atom case-names) case-names)
+        (t (cons (cons (appsyms (cons (car case-names)
+                                      type-actuals))
+                       (car case-names))
+                 (make-tag-alist (cdr case-names)
+                                 type-actuals)))))
+
+;; Functional instance stuff
+
+(defun functional-instance-coproduct-recognizer-sub (name
+                                                     var-names
+                                                     type-names)
+  (declare (xargs :mode :program))
+  (list (appsyms `(,name ,@var-names p))
+        (appsyms `(,name ,@type-names p))))
+
+(defun functional-instance-product-recognizer-subs (constructors var-names
+                                                    type-names)
+  (declare (xargs :mode :program))
+  (cond ((atom constructors) nil)
+        (t (cons (list (appsyms `(,(car constructors) ,@var-names p))
+                       (appsyms `(,(car constructors) ,@type-names p)))
+                 (functional-instance-product-recognizer-subs
+                  (cdr constructors)
+                  var-names
+                  type-names)))))
+
+(defun functional-instance-constructor-subs (constructors var-names type-names)
+  (declare (xargs :mode :program))
+  (cond ((atom constructors) nil)
+        (t (cons (list (appsyms `(,(car constructors) ,@var-names))
+                       (appsyms `(,(car constructors) ,@type-names)))
+                 (functional-instance-constructor-subs (cdr constructors)
+                                                       var-names
+                                                       type-names)))))
+
+(defun functional-instance-destructor-subs-1 (constructor
+                                              num-fields
+                                              var-names
+                                              type-names)
+  (declare (xargs :mode :program))
+  (cond ((zp num-fields) nil)
+        (t (cons `(,(appsyms `(,constructor ,@var-names 
+                                            ,(integer-to-symbol
+                                              num-fields)))
+                    ,(appsyms `(,constructor ,@type-names
+                                             ,(integer-to-symbol
+                                               num-fields))))
+                 (functional-instance-destructor-subs-1 constructor
+                                                        (1- num-fields)
+                                                        var-names
+                                                        type-names)))))
+
+(defun functional-instance-destructor-subs (constructors nums-fields var-names
+                                            type-names)
+  (declare (xargs :mode :program))
+  (cond ((atom constructors) nil)
+        (t (append (functional-instance-destructor-subs-1 
+                    (car constructors)
+                    (car nums-fields)
+                    var-names
+                    type-names)
+                   (functional-instance-destructor-subs
+                    (cdr constructors)
+                    (cdr nums-fields)
+                    var-names
+                    type-names)))))
+
+(defun functional-instance-subs (name constructors nums-fields var-names
+                                 type-names)
+  (declare (xargs :mode :program))
+  `(,(functional-instance-coproduct-recognizer-sub name var-names type-names)
+     ,@(functional-instance-product-recognizer-subs constructors
+                                                    var-names
+                                                    type-names)
+     ,@(functional-instance-constructor-subs constructors var-names type-names)
+     ,@(functional-instance-destructor-subs constructors 
+                                            nums-fields 
+                                            var-names
+                                            type-names)))
+
+(defun nums-args (type-cases)
+  (cond ((atom type-cases) nil)
+        (t (cons (1- (len (car type-cases)))
+                 (nums-args (cdr type-cases))))))
 
 (defun defcoproduct-poly-fn (name vars cases)
   (declare (xargs :guard (and (symbolp name)
@@ -271,10 +363,20 @@
          `(progn
             ,@(type-cases-prereqs ',cases (make-alist ',vars (list ,@vars)) (list ',name))
             (defcoproduct-concrete ,(appsyms (cons ',name (list ,@vars)))
-              ,@(sub-type-cases ',cases (make-alist ',vars (list ,@vars))))))
+                ,@(sub-type-cases ',cases (make-alist ',vars (list ,@vars)))
+              :tag-alist ,(make-tag-alist ',(strip-cars cases) (list ,@vars)))))
        ,@(type-case-instantiators name (strip-cars cases) vars)
        ,@(constrained-type-vars vars name)
-       (,(appsyms (list name 'instantiate)) ,@(constrained-type-var-names vars name)))))
+       (,(appsyms (list name 'instantiate)) 
+         ,@(constrained-type-var-names vars name))
+       (defun ,(appsyms `(,name functional-instance-subs))
+           (var-names type-names)
+         (declare (xargs :mode :program))
+         (functional-instance-subs ',name 
+                                   ',(strip-cars cases)
+                                   ',(nums-args cases)
+                                   var-names
+                                   type-names)))))
 
 (defmacro defcoproduct-poly (name vars &rest cases)
   (defcoproduct-poly-fn name vars cases))
@@ -288,7 +390,7 @@
            (consp (cdr rst))
            (eq (car rst) ':type-vars))
       `(defcoproduct-poly ,name ,(cadr rst) ,@(cddr rst))
-    `(defcoproduct-concrete ,name ,@rst)))
+      `(defcoproduct-concrete ,name ,@rst)))
 
 (defmacro defcoproduct (name &rest rst)
   (defcoproduct-fn name rst))
@@ -543,7 +645,7 @@
       nil))
 
 (defun get-type-constraint-args-1 (xargs)
-   (declare (xargs :guard (true-listp xargs)))
+  (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
         ((equal (car xargs) ':type-args)
          (cadr xargs))
@@ -659,17 +761,17 @@
                            (if (eq type-constraint t)
                                (list 'and
                                      (list parent-type-p (cons name (get-args
-                                                                   typed-args)))
+                                                                     typed-args)))
                                      (list restriction (cons name (get-args
                                                                    typed-args))))
                                (list 'implies
-                                      (get-type-constraint typed-args)
-                                      (list 
-                                       'and
-                                       (list parent-type-p (cons name (get-args
-                                                                     typed-args)))
-                                       (list restriction (cons name (get-args
-                                                                     typed-args))))))))
+                                     (get-type-constraint typed-args)
+                                     (list 
+                                      'and
+                                      (list parent-type-p (cons name (get-args
+                                                                      typed-args)))
+                                      (list restriction (cons name (get-args
+                                                                    typed-args))))))))
                      (list
                       (append (list 'defthm 
                                     (hyphenate-symbols 
@@ -686,7 +788,7 @@
                                  (list 'implies
                                        (get-type-constraint typed-args)
                                        (list (add-p-to-name type) (cons name (get-args
-                                                              typed-args)))))))
+                                                                              typed-args)))))))
                        (list 
                         (append (list 'defthm (hyphenate-symbols (list name 'type))
                                       term
@@ -695,6 +797,7 @@
                                 type-constraint-args)))))
 ;            (lookup ':guard-lemmas rst)
             (list (append (list 'verify-guards name) verify-guards-args)))))
+
 ;            (list (list 'verify-guards (hyphenate-symbols (list name 'type-constraint)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -724,9 +827,9 @@
                                           var-alist
                                           skip-insts)
                  (list (cons (appsyms (list (cadr term)
-                                           'instantiate))
-                            (map-subst-type-name (cddr term)
-                                                 var-alist)))))
+                                            'instantiate))
+                             (map-subst-type-name (cddr term)
+                                                  var-alist)))))
         ((consp (car term)) 
          (append (type-inst-prereqs-defun (car term)
                                           var-alist
@@ -738,18 +841,29 @@
 
 (defun defun-typed-poly-fn (name type-vars typed-args type rst)
   (declare (xargs :mode :program))
-  `(defmacro ,(appsyms `(,name instantiate)) ,type-vars
-     (let ((var-alist (make-alist ',type-vars (list ,@type-vars))))
-     `(progn
-        ,@(remove-duplicates
-           (append (type-inst-prereqs-defun ',typed-args var-alist (list ',name))
-                   (type-inst-prereqs-defun ',type var-alist (list ',name))
-                   (type-inst-prereqs-defun ',rst var-alist (list ',name)))
-           :test 'equal)
-        (defun-typed ,(appsyms (list ',name ,@type-vars))
-          ,(replace-inst ',typed-args var-alist nil)
-          ,(replace-inst ',type var-alist nil)
-          ,@(replace-inst ',rst var-alist nil))))))
+  `(progn 
+     (defmacro ,(appsyms `(,name instantiate)) ,type-vars
+       (let ((var-alist (make-alist ',type-vars (list ,@type-vars))))
+         `(progn
+            ,@(remove-duplicates
+               (append (type-inst-prereqs-defun ',typed-args var-alist (list ',name))
+                       (type-inst-prereqs-defun ',type var-alist (list ',name))
+                       (type-inst-prereqs-defun ',rst var-alist (list ',name)))
+               :test 'equal)
+            (defun-typed ,(appsyms (list ',name ,@type-vars))
+                ,(replace-inst ',typed-args var-alist nil)
+              ,(replace-inst ',type var-alist nil)
+              ,@(replace-inst ',rst var-alist nil)))))
+     (defun ,(appsyms `(,name functional-instance-subs))
+         (var-names type-names)
+       (declare (xargs :mode :program))
+       (list (list (appsyms (append (list ',name)
+                                    var-names 
+                                    (list 'p)))
+                   (appsyms (append (list ',name)
+                                    type-names
+                                    (list 'p))))))))
+
 
 (defmacro defun-typed-poly (name type-vars typed-args type &rest rst)
   (defun-typed-poly-fn name type-vars typed-args type rst))
@@ -924,6 +1038,152 @@
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFTHM-TYPED-POLY ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (defun type-inst-prereqs-defun (term var-alist skip-insts)
+;;   (declare (xargs :mode :program))
+;;   (cond ((atom term)
+;;          (let ((pair (assoc-equal term var-alist)))
+;;            (if pair (cdr pair) term)))
+;;         ((and (eq (car term) ':inst)
+;;               (member-equal (cadr term) skip-insts))
+;;          nil)
+;;         ((eq (car term) ':inst)
+;;          (append (type-inst-prereqs-defun (cddr term)
+;;                                           var-alist
+;;                                           skip-insts)
+;;                  (list (cons (appsyms (list (cadr term)
+;;                                             'instantiate))
+;;                              (map-subst-type-name (cddr term)
+;;                                                   var-alist)))))
+;;         ((consp (car term)) 
+;;          (append (type-inst-prereqs-defun (car term)
+;;                                           var-alist
+;;                                           skip-insts)
+;;                  (type-inst-prereqs-defun (cdr term)
+;;                                           var-alist
+;;                                           skip-insts)))
+;;         (t (type-inst-prereqs-defun (cdr term) var-alist skip-insts))))
+
+(defun function-theory-prereqs (term var-alist skip-insts)
+  (declare (xargs :mode :program))
+  (cond ((atom term)
+         (let ((pair (assoc-equal term var-alist)))
+           (if pair (cdr pair) term)))
+        ((and (eq (car term) ':inst)
+              (member-equal (cadr term) skip-insts))
+         nil)
+        ((eq (car term) ':inst)
+         (append (function-theory-prereqs (cddr term)
+                                          var-alist
+                                          skip-insts)
+                 (list (appsyms (append (list (cadr term))
+                                        (map-subst-type-name (cddr term)
+                                                             var-alist)
+                                        (list 'functions))))))
+        ((consp (car term))
+         (append (function-theory-prereqs (car term)
+                                          var-alist
+                                          skip-insts)
+                 (function-theory-prereqs (cdr term)
+                                          var-alist
+                                          skip-insts)))
+        (t (function-theory-prereqs (cdr term) var-alist skip-insts))))
+
+(defun collect-functional-instance-subs-1 (term var-names type-names skip-insts)
+  (declare (xargs :mode :program))
+  (cond ((atom term) nil)
+        ((and (eq (car term) ':inst)
+              (member-equal (cadr term) skip-insts))
+         nil)
+        ((eq (car term) ':inst)
+         (append (collect-functional-instance-subs-1
+                  (cddr term)
+                  var-names
+                  type-names
+                  skip-insts)
+                 (list (list (appsyms (list (cadr term)
+                                            'functional-instance-subs))
+                             (list 'quote var-names)
+                             (list 'quote type-names)))))
+        ((consp (car term))
+         (append (collect-functional-instance-subs-1 (car term)
+                                                   var-names
+                                                   type-names
+                                                   skip-insts)
+                 (collect-functional-instance-subs-1 (cdr term)
+                                                   var-names
+                                                   type-names
+                                                   skip-insts)))
+        (t (collect-functional-instance-subs-1 (cdr term)
+                                             var-names
+                                             type-names
+                                             skip-insts))))
+                                        
+(defun collect-functional-instance-subs (term var-names type-names skip-insts)
+  (declare (xargs :mode :program))
+  (remove-duplicates
+   (collect-functional-instance-subs-1 term var-names type-names skip-insts)
+   :test 'equal))
+
+(defun defthm-typed-poly-fn (name type-vars typed-variables body)
+  (declare (xargs :mode :program))
+  (let ((var-alist (make-alist type-vars (constrained-type-var-names
+                                          type-vars
+                                          name)))
+        (abstract-name (appsyms `(,name ,@(constrained-type-var-names
+                                           type-vars
+                                           name)))))
+    `(progn
+       ,@(constrained-type-vars type-vars name)
+       ,@(remove-duplicates
+          (append (type-inst-prereqs-defun typed-variables var-alist (list name))
+                  (type-inst-prereqs-defun body  var-alist (list name)))
+          :test 'equal)
+       (defthm-typed ,(appsyms `(,name ,@(constrained-type-var-names 
+                                          type-vars
+                                          name)))
+           ,(replace-inst typed-variables var-alist nil)
+         ,@(replace-inst body var-alist nil))
+       (defmacro ,(appsyms `(,name instantiate)) ,type-vars
+         (let ((var-alist (make-alist ',type-vars (list ,@type-vars)))
+               (functional-subs (collect-functional-instance-subs
+                                 ',(cons typed-variables body)
+                                 ',(constrained-type-var-names
+                                    type-vars
+                                    name)
+                                 (list ,@type-vars)
+                                 nil)))
+
+           `(progn
+              ,@(remove-duplicates
+                 (type-inst-prereqs-defun 
+                  ',typed-variables 
+                  var-alist
+                  (list ',name))
+                 :test 'equal)
+              ,@(remove-duplicates
+                 (type-inst-prereqs-defun 
+                  ',body
+                  var-alist
+                  (list ',name))
+                 :test 'equal)
+              (defthm-typed ,(appsyms `(,',name ,,@type-vars))
+                ,(replace-inst ',typed-variables var-alist nil)
+                ,@(replace-inst ',body var-alist nil)
+                :hints (("Goal"
+                         :do-not-induct t
+                         :in-theory (enable 
+                                     ,@(remove-duplicates
+                                        (function-theory-prereqs
+                                         ',typed-variables
+                                         var-alist
+                                         nil)))
+                         :use ((:functional-instance
+                                ,',abstract-name
+                                ,functional-subs)))))))))))
+
+(defmacro defthm-typed-poly (name type-vars typed-variables &rest body)
+  (defthm-typed-poly-fn name type-vars typed-variables body))
 
 ;;;;;;;;;;;;;;
 ;; BUILTINS ;;
@@ -1446,18 +1706,18 @@
 ;; Library lemmas:
 
 (defthmd split-equal
-  (implies (and (booleanp x)
-                (booleanp y))
-           (equal (equal x y)
-                  (and (implies x y)
-                       (implies y x)))))
+    (implies (and (booleanp x)
+                  (booleanp y))
+             (equal (equal x y)
+                    (and (implies x y)
+                         (implies y x)))))
 
 ;;fixme make this into a specware lemma (generalize?!)
 (defthm cancel_ones
-  (implies (and (natp x) (natp y))
-           (equal (< (+ 1 x)
-                     (+ 1 y))
-                  (< x y)))
+    (implies (and (natp x) (natp y))
+             (equal (< (+ 1 x)
+                       (+ 1 y))
+                    (< x y)))
   :hints (("Goal" :in-theory (enable split-equal))))
 
 ;; ;;This could be expensive.
