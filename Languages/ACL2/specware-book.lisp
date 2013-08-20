@@ -3,8 +3,8 @@
 (set-irrelevant-formals-ok t)
 (set-bogus-defun-hints-ok t)
 
-;(include-book "mydefsum")
-(include-book "~/Specware2/Languages/ACL2/mydefsum")
+(include-book "mydefsum")
+;(include-book "~/Specware2/Languages/ACL2/mydefsum")
 
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))

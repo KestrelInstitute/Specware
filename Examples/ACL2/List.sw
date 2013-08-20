@@ -137,10 +137,10 @@ type IOrderedList = IList | IOrdered
 
 %% fixme think about this.  can't easily state in Specware terms.
 proof ACL2 -verbatim
-(defthm IORDEREDLIST-P_of_ICONS-ARG2
+(defthm IORDEREDLIST-P_of_ICONS-ARG-2
         (implies (and (IORDEREDLIST-P A)
                       (ICONS-P A))
-                 (IORDEREDLIST-P (ICONS-ARG2 A)))
+                 (IORDEREDLIST-P (ICONS-ARG-2 A)))
                :hints (("Goal" :in-theory (enable IORDEREDLIST-P IORDERED))))
 end-proof
 

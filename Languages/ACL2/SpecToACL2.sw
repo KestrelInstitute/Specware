@@ -245,7 +245,6 @@ op ppFun (f : MSFun) : PPError WLPretty =
     | Equals -> Good (ppString "equal")
     | Op (Qualified (q,id),_) -> Good (ppString id)
     | Embed (id,_) -> Good (ppString id)
-%    | Embed (id,false) -> Good (ppConcat [ppString "", ppString id, ppString ""])
     | _ -> Bad "Can't handle f in ppFun"
 
 op ppTermLambda (trm : MSTerm) : PPError WLPretty =
@@ -366,6 +365,10 @@ op ppTerm (trm : MSTerm) : PPError WLPretty =
                            ppString "))"])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
+    | Fun (f as Embed e, Base _, _) -> 
+      (case ppFun f of
+         | Good fstr -> Good (ppConcat [ppString "(", fstr, ppString ")"])
+         | Bad s -> Bad s)
     | Fun (f, _, _) -> ppFun f
     | Var ((v,_),_) -> Good (ppString v)
     | Record ([],pos) -> Good (ppString "")
