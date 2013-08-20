@@ -658,10 +658,16 @@ op ppSpecElement (elt:SpecElement) (spc:Spec) : PPError WLPretty =
     | Pragma _ -> Good (ppString "")
     | _ -> Bad "Bad SpecElement"
 
+op filterNonEmpty (strs:List Doc) : List WLPretty =
+case strs of
+  | [] -> []
+  | (DocText "")::rst -> filterNonEmpty rst
+  | (x::rst) -> x :: (filterNonEmpty rst)
+
 op ppSpecElements (elts:SpecElements) (spc:Spec) : PPError WLPretty =
   case ppErrorMap (fn t -> ppSpecElement t spc) elts of
     | Good eltsStrings ->
-      Good (ppSep (ppConcat [ppNewline, ppNewline]) eltsStrings)
+      Good (ppSep (ppConcat [ppNewline, ppNewline]) (filterNonEmpty eltsStrings))
     | Bad s -> Bad s
 (*
 op ppSpecElements (types:SpecElements) (typeDefs:SpecElements) (opDefs:SpecElements) (thms:SpecElements) (spc:Spec) : PPError WLPretty =
