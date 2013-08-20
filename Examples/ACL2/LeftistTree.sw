@@ -1,6 +1,6 @@
 spec
 
-import /Examples/ACL2/List
+import /Examples/ACL2/IList
 
 %%%%%%%%%%%%%%%
 % LeftistTree %
@@ -64,15 +64,15 @@ case (tree1, tree2) of
 
 proof ACL2 mergeLT
   (declare (xargs :measure (+ (itree-measure tree1) (itree-measure tree2))
-                  :type-constraint-lemmas
-                  ((defthm mergeLT-type-constraint-lemma1
+                  :type-lemmas
+                  ((defthm mergeLT-type-lemma1
                        (implies (and (itree-p x)
                                      (ibranch-p x))
-                                (integerp (+ 1 (ibranch-ibranch-arg1 x))))))
-                  :type-constraint-args
+                                (integerp (+ 1 (ibranch-arg1 x))))))
+                  :type-args
                   (:hints (("Subgoal *1/4.54.2" 
-                            :by (:instance mergeLT-type-constraint-lemma1 
-                                           (x (IBRANCH-IBRANCH-ARG1 (MERGELT TREE1 (IBRANCH-IBRANCH-ARG4 TREE2))))))))))
+                            :by (:instance mergeLT-type-lemma1 
+                                           (x (IBRANCH-ARG1 (MERGELT TREE1 (IBRANCH-ARG4 TREE2))))))))))
 end-proof
 
 op findMinLT (tree:NonEmptyLeftistTree) : Int =
@@ -86,53 +86,53 @@ case tree of
   | IBranch (_,_,left,right) -> mergeLT (left, right)
 
 proof ACL2 deleteMinLT
-  (declare (xargs :type-constraint-lemmas
-                  ((DEFTHM DELETEMIN-TYPE-CONSTRAINT-LEMMA1
+  (declare (xargs :type-lemmas
+                  ((DEFTHM DELETEMIN-TYPE-LEMMA1
                        (IMPLIES (AND (ITREE-P TREE)
-                                     (IBRANCH-P (IBRANCH-IBRANCH-ARG3 TREE))
-                                     (IBRANCH-P (IBRANCH-IBRANCH-ARG4 TREE))
-                                     (ISLEFTIST (IBRANCH-IBRANCH-ARG3 TREE))
-                                     (ISLEFTIST (IBRANCH-IBRANCH-ARG4 TREE))
-                                     (EQUAL (IBRANCH-IBRANCH-ARG1 TREE)
+                                     (IBRANCH-P (IBRANCH-ARG3 TREE))
+                                     (IBRANCH-P (IBRANCH-ARG4 TREE))
+                                     (ISLEFTIST (IBRANCH-ARG3 TREE))
+                                     (ISLEFTIST (IBRANCH-ARG4 TREE))
+                                     (EQUAL (IBRANCH-ARG1 TREE)
                                             (+ 1
-                                               (IBRANCH-IBRANCH-ARG1 (IBRANCH-IBRANCH-ARG4 TREE))))
-                                     (<= (IBRANCH-IBRANCH-ARG1 (IBRANCH-IBRANCH-ARG4 TREE))
-                                         (IBRANCH-IBRANCH-ARG1 (IBRANCH-IBRANCH-ARG3 TREE)))
+                                               (IBRANCH-ARG1 (IBRANCH-ARG4 TREE))))
+                                     (<= (IBRANCH-ARG1 (IBRANCH-ARG4 TREE))
+                                         (IBRANCH-ARG1 (IBRANCH-ARG3 TREE)))
                                      (NOT (IEMPTY-P TREE)))
                                 (ITREE-P (MERGELT 
-                                          (IBRANCH-IBRANCH-ARG3 TREE)
-                                          (IBRANCH-IBRANCH-ARG4 TREE))))
+                                          (IBRANCH-ARG3 TREE)
+                                          (IBRANCH-ARG4 TREE))))
                      :hints (("Goal" :in-theory (disable
                                                  mergeLT-type-constraint)
                                      :use 
                                      ((:instance mergeLT-type-constraint
                                                  (tree1 
-                                                  (IBRANCH-IBRANCH-ARG3 TREE))
+                                                  (IBRANCH-ARG3 TREE))
                                                  (tree2
-                                                  (IBRANCH-IBRANCH-ARG4
+                                                  (IBRANCH-ARG4
   tree)))))))
-                   (DEFTHM DELETEMIN-TYPE-CONSTRAINT-LEMMA2
+                   (DEFTHM DELETEMIN-TYPE-LEMMA2
                        (IMPLIES (AND (ITREE-P TREE)
-                                     (IBRANCH-P (IBRANCH-IBRANCH-ARG3 TREE))
-                                     (IBRANCH-P (IBRANCH-IBRANCH-ARG4 TREE))
-                                     (ISLEFTIST (IBRANCH-IBRANCH-ARG3 TREE))
-                                     (ISLEFTIST (IBRANCH-IBRANCH-ARG4 TREE))
-                                     (EQUAL (IBRANCH-IBRANCH-ARG1 TREE)
+                                     (IBRANCH-P (IBRANCH-ARG3 TREE))
+                                     (IBRANCH-P (IBRANCH-ARG4 TREE))
+                                     (ISLEFTIST (IBRANCH-ARG3 TREE))
+                                     (ISLEFTIST (IBRANCH-ARG4 TREE))
+                                     (EQUAL (IBRANCH-ARG1 TREE)
                                             (+ 1
-                                               (IBRANCH-IBRANCH-ARG1 (IBRANCH-IBRANCH-ARG4 TREE))))
-                                     (<= (IBRANCH-IBRANCH-ARG1 (IBRANCH-IBRANCH-ARG4 TREE))
-                                         (IBRANCH-IBRANCH-ARG1 (IBRANCH-IBRANCH-ARG3 TREE)))
+                                               (IBRANCH-ARG1 (IBRANCH-ARG4 TREE))))
+                                     (<= (IBRANCH-ARG1 (IBRANCH-ARG4 TREE))
+                                         (IBRANCH-ARG1 (IBRANCH-ARG3 TREE)))
                                      (NOT (IEMPTY-P TREE)))
                                 (ISLEFTIST (MERGELT 
-                                            (IBRANCH-IBRANCH-ARG3 TREE)
-                                            (IBRANCH-IBRANCH-ARG4 TREE))))
+                                            (IBRANCH-ARG3 TREE)
+                                            (IBRANCH-ARG4 TREE))))
                      :hints (("Goal" :in-theory 
                                      (disable mergeLT-type-constraint)
                                      :use ((:instance mergeLT-type-constraint
                                                       (tree1
-                                                       (IBRANCH-IBRANCH-ARG3 TREE))
+                                                       (IBRANCH-ARG3 TREE))
                                                       (tree2
-                                                       (IBRANCH-IBRANCH-ARG4 TREE))))))))))
+                                                       (IBRANCH-ARG4 TREE))))))))))
 end-proof
 
 % Tree operation proofs %
