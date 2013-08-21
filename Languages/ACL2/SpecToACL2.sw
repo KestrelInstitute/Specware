@@ -345,6 +345,9 @@ case match of
 
 op ppTerm (trm : MSTerm) : PPError WLPretty =
   case trm of
+    % BOZO TODO: Actually look up the type variables of the op in question
+    %            Right now all we're doing is looking at the types of the
+    %            args and assuming the vars match. Really stupid.
     | Fun (f, Arrow (_,Base (_,actuals as (_::_),_),_), _) -> 
       (case (ppFun f,ppErrorMap ppTypeName actuals) of
          | (Good fstr, Good actualstrs) ->

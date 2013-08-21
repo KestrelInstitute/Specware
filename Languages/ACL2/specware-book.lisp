@@ -834,8 +834,9 @@
 (defun type-inst-prereqs-defun (term var-alist skip-insts)
   (declare (xargs :mode :program))
   (cond ((atom term)
-         (let ((pair (assoc-equal term var-alist)))
-           (if pair (cdr pair) term)))
+         nil)
+         ;; (let ((pair (assoc-equal term var-alist)))
+         ;;   (if pair (cdr pair) term)))
         ((and (eq (car term) ':inst)
               (member-equal (cadr term) skip-insts))
          nil)
@@ -1033,24 +1034,53 @@
          (cadr rst))
         (t (get-body-declare (cddr rst)))))
 
+(defun remove-enable (rst)
+  (declare (xargs :guard (true-listp rst)))
+  (cond ((endp rst) nil)
+        ((equal (car rst) ':enable)
+         (remove-enable (cddr rst)))
+        (t (cons (car rst) 
+                 (cons (cadr rst) (remove-enable
+                                   (cddr rst)))))))
+
+(defun get-enable (rst)
+  (declare (xargs :guard (true-listp rst) :verify-guards nil))
+  (cond ((endp rst) nil)
+        ((equal (car rst) ':enable)
+         (cadr rst))
+        (t (get-enable (cddr rst)))))
+
 (defmacro defthm-typed-concrete (name typed-vars term &rest rst)
   (declare (xargs :guard (and (symbolp name)
                               (typed-arg-listp typed-vars)
                               (true-listp rst))))
-  (list 'progn
-        (append (list 'defund-typed
-                      (hyphenate-symbols (list name 'body))
-                      typed-vars
-                      'bool)
-                (if (get-body-declare rst)
-                    (list (get-body-declare rst))
-                    nil)
-                (list (implies-to-implies-macro term)))
-        (append (list 'defthm name 
-                      (list 'implies 
-                            (get-type-constraint typed-vars)
-                            term))
-                (remove-body-declare rst))))
+  `(progn
+     (defund-typed ,(appsyms `(,name body))
+         ,typed-vars
+         bool
+         ,@(if (get-body-declare rst)
+               (list (get-body-declare rst))
+               nil)
+         ,(implies-to-implies-macro term))
+     (defthm ,name
+       (implies ,(get-type-constraint typed-vars)
+                ,term)
+       ,@(remove-body-declare rst))))
+
+  ;; (list 'progn
+  ;;       (append (list 'defund-typed
+  ;;                     (hyphenate-symbols (list name 'body))
+  ;;                     typed-vars
+  ;;                     'bool)
+  ;;               (if (get-body-declare rst)
+  ;;                   (list (get-body-declare rst))
+  ;;                   nil)
+  ;;               (list (implies-to-implies-macro term)))
+  ;;       (append (list 'defthm name 
+  ;;                     (list 'implies 
+  ;;                           (get-type-constraint typed-vars)
+  ;;                           term))
+  ;;               (remove-body-declare rst))))
 
 (defmacro defthmd-typed-concrete (name typed-vars term &rest rst)
   (declare (xargs :guard (and (symbolp name)
