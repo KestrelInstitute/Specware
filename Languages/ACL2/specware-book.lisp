@@ -199,7 +199,8 @@
 (defun constrained-type-var-name (var fn)
   (declare (xargs :mode :program
                   :guard (and (symbolp var) (symbolp fn))))
-  (appsyms (list var 'var fn)))
+  var)
+;  (appsyms (list var 'var fn)))
 
 (defun constrained-type-var-names (vars fn)
   (declare (xargs :mode :program
@@ -1177,16 +1178,26 @@
 ;; var-alist
 ;; abstract-name
 
+;; (defun zip-lists (x y name)
+;;   (declare (xargs :mode :program))
+;;   (cond ((atom x) nil)
+;;         (t (cons (list (appsyms (list (car x) 
+;;                                       'var
+;;                                       name
+;;                                       'p))
+;;                        (appsyms (list (car y) 'p)))
+;;                  (zip-lists (cdr x) (cdr y) name)))))
+
 (defun zip-lists (x y name)
   (declare (xargs :mode :program))
   (cond ((atom x) nil)
         (t (cons (list (appsyms (list (car x) 
-                                      'var
-                                      name
+ ;                                     'var
+;                                      name
                                       'p))
                        (appsyms (list (car y) 'p)))
                  (zip-lists (cdr x) (cdr y) name)))))
-
+ 
 ;; `(progn
 ;;                 ,@(remove-duplicates
 ;;                     (type-inst-prereqs-defun 
