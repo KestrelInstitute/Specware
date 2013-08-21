@@ -57,7 +57,7 @@ op IHowMany (x:Int, a:IList) : Nat =
   | ICons (y,ys) | x = y -> 1 + IHowMany (x,ys)
   | ICons (_,ys)         -> IHowMany (x,ys)
 
-theorem IHowmany_of_INil is
+theorem IHowMany_of_INil is
   fa(x:Int) IHowMany(x, INil) = 0
 
 theorem IHowMany_of_ICons_diff is
@@ -214,7 +214,7 @@ proof ACL2 IAppend_of_INil_2          :hints (("Goal" :in-theory (enable IAppend
 proof ACL2 IRev_of_IAppend            :hints (("Goal" :in-theory (enable IAppend IRev))) end-proof
 proof ACL2 IRev_of_IRev               :hints (("Goal" :in-theory (enable IAppend IRev))) end-proof
 proof ACL2 ILength_of_IAppend         :hints (("Goal" :in-theory (enable IAppend ILength))) end-proof
-proof ACL2 IHowmany_of_INil           :hints (("Goal" :in-theory (enable IHowMany))) end-proof
+proof ACL2 IHowMany_of_INil           :hints (("Goal" :in-theory (enable IHowMany))) end-proof
 proof ACL2 ISubBag_of_ICons           :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
 proof ACL2 ISubBag_reflexive          :hints (("Goal" :in-theory (enable ISubBag))) end-proof
 proof ACL2 ISubBag_transitive         :hints (("Goal" :in-theory (enable ISubBag IHowMany))) end-proof
