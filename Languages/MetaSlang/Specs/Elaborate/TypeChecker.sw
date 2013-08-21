@@ -1529,12 +1529,14 @@ def elaborateTypeForTerm (env, term, givenType, expectedType) =
 
 op argMismatchMsg(ty1: MSType, ty2: MSType, spc: Spec): String =
   let nc1 = curryShapeNum(spc, ty1) in
+  let nc2 = curryShapeNum(spc, ty2) in
   if nc1 > 1
-    then let nc2 = curryShapeNum(spc, ty2) in
-         if nc2 > nc1
-           then show nc2^" arguments given when "^show nc1^" expected for "
-           else ""
-  else ""
+    then if nc2 > nc1
+      then show nc2^" arguments given when at most "^show nc1^" expected for "
+    else ""
+  else if nc2 > nc1
+    then "Non-curried function given "^show nc2^" curried arguments"
+    else ""
 
 op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
   let givenTypeChecked = checkType (env, givenType) in
