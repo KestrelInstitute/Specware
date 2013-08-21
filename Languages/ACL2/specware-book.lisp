@@ -1066,7 +1066,7 @@
   (let ((enable (get-enable rst))
         (rst (remove-enable rst)))
     `(progn
-       ,@(if enable `(in-theory (enable ,enable)) nil)
+       ,@(if enable (list `(in-theory (enable ,@enable))) nil)
        (defund-typed ,(appsyms `(,name body))
            ,typed-vars
          bool
@@ -1078,7 +1078,7 @@
            (implies ,(get-type-constraint typed-vars)
                     ,term)
          ,@(remove-body-declare rst))
-       ,@(if enable `(in-theory (disable ,enable)) nil))))
+       ,@(if enable (list `(in-theory (disable ,@enable))) nil))))
 
   ;; (list 'progn
   ;;       (append (list 'defund-typed
