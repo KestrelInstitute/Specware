@@ -741,6 +741,42 @@
          (lookup-body (cdr l)))
         (t (car l))))
 
+(defun replace-inst (term var-alist end-syms)
+  (declare (xargs :mode :program))
+  (cond ((atom term) 
+         (let ((pair (assoc-equal term var-alist)))
+           (if pair (cdr pair) term)))
+        ((eq (car term) ':inst)
+         (appsyms (append (replace-inst (cdr term) var-alist end-syms) end-syms)))
+        (t (cons (replace-inst (car term) var-alist end-syms)
+                 (replace-inst (cdr term) var-alist end-syms)))))
+
+(defun type-inst-prereqs-defun (term var-alist skip-insts)
+  (declare (xargs :mode :program))
+  (cond ((atom term)
+         nil)
+         ;; (let ((pair (assoc-equal term var-alist)))
+         ;;   (if pair (cdr pair) term)))
+        ((and (eq (car term) ':inst)
+              (member-equal (cadr term) skip-insts))
+         nil)
+        ((eq (car term) ':inst)
+         (append (type-inst-prereqs-defun (cddr term)
+                                          var-alist
+                                          skip-insts)
+                 (list (cons (appsyms (list (cadr term)
+                                            'instantiate))
+                             (map-subst-type-name (cddr term)
+                                                  var-alist)))))
+        ((consp (car term)) 
+         (append (type-inst-prereqs-defun (car term)
+                                          var-alist
+                                          skip-insts)
+                 (type-inst-prereqs-defun (cdr term)
+                                          var-alist
+                                          skip-insts)))
+        (t (type-inst-prereqs-defun (cdr term) var-alist skip-insts))))
+
 (defmacro defun-typed-concrete (name typed-args type &rest rst)
   (declare (xargs :guard (and (symbolp name)
                               (typed-arg-listp typed-args)
@@ -751,9 +787,17 @@
          (type-constraint-args (get-type-constraint-args-decl decl))
          (type-constraint-lemmas (get-type-constraint-lemmas-decl decl))
          (verify-guards-args (get-verify-guards-args-decl decl))
-         (body (lookup-body rst)))
-    (append (list 'progn
-                  (append (list 'defun name (get-args typed-args) 
+         (body (lookup-body rst))
+         (type-inst-prereqs (append
+                             (type-inst-prereqs-defun typed-args nil (list
+                                                                      name))
+                             (type-inst-prereqs-defun body nil (list name))))
+         (typed-args (replace-inst typed-args nil nil))
+         (type (replace-inst type nil nil))
+         (body (replace-inst body nil nil)))
+    (append (list 'progn)
+            type-inst-prereqs
+            (list (append (list 'defun name (get-args typed-args) 
                                 (list 'declare
                                       (list 'xargs 
                                             ':guard 
@@ -821,41 +865,6 @@
 ;; DEFUN-TYPED-POLY ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(defun replace-inst (term var-alist end-syms)
-  (declare (xargs :mode :program))
-  (cond ((atom term) 
-         (let ((pair (assoc-equal term var-alist)))
-           (if pair (cdr pair) term)))
-        ((eq (car term) ':inst)
-         (appsyms (append (replace-inst (cdr term) var-alist end-syms) end-syms)))
-        (t (cons (replace-inst (car term) var-alist end-syms)
-                 (replace-inst (cdr term) var-alist end-syms)))))
-
-(defun type-inst-prereqs-defun (term var-alist skip-insts)
-  (declare (xargs :mode :program))
-  (cond ((atom term)
-         nil)
-         ;; (let ((pair (assoc-equal term var-alist)))
-         ;;   (if pair (cdr pair) term)))
-        ((and (eq (car term) ':inst)
-              (member-equal (cadr term) skip-insts))
-         nil)
-        ((eq (car term) ':inst)
-         (append (type-inst-prereqs-defun (cddr term)
-                                          var-alist
-                                          skip-insts)
-                 (list (cons (appsyms (list (cadr term)
-                                            'instantiate))
-                             (map-subst-type-name (cddr term)
-                                                  var-alist)))))
-        ((consp (car term)) 
-         (append (type-inst-prereqs-defun (car term)
-                                          var-alist
-                                          skip-insts)
-                 (type-inst-prereqs-defun (cdr term)
-                                          var-alist
-                                          skip-insts)))
-        (t (type-inst-prereqs-defun (cdr term) var-alist skip-insts))))
 
 (defun defun-typed-poly-fn (name type-vars typed-args type rst)
   (declare (xargs :mode :program))
@@ -1054,18 +1063,22 @@
   (declare (xargs :guard (and (symbolp name)
                               (typed-arg-listp typed-vars)
                               (true-listp rst))))
-  `(progn
-     (defund-typed ,(appsyms `(,name body))
-         ,typed-vars
+  (let ((enable (get-enable rst))
+        (rst (remove-enable rst)))
+    `(progn
+       ,@(if enable `(in-theory (enable ,enable)) nil)
+       (defund-typed ,(appsyms `(,name body))
+           ,typed-vars
          bool
          ,@(if (get-body-declare rst)
                (list (get-body-declare rst))
                nil)
          ,(implies-to-implies-macro term))
-     (defthm ,name
-       (implies ,(get-type-constraint typed-vars)
-                ,term)
-       ,@(remove-body-declare rst))))
+       (defthm ,name
+           (implies ,(get-type-constraint typed-vars)
+                    ,term)
+         ,@(remove-body-declare rst))
+       ,@(if enable `(in-theory (disable ,enable)) nil))))
 
   ;; (list 'progn
   ;;       (append (list 'defund-typed
