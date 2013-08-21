@@ -355,6 +355,16 @@ op ppTerm (trm : MSTerm) : PPError WLPretty =
                            ppString ")"])
          | (Bad s,_) -> Bad s
          | (_,Bad s) -> Bad s)
+    | Fun (f, Arrow (Base (_,actuals as (_::_),_),_,_), _) -> 
+      (case (ppFun f,ppErrorMap ppTypeName actuals) of
+         | (Good fstr, Good actualstrs) ->
+           Good (ppConcat [ppString "(:inst ",
+                           fstr,
+                           ppString " ",
+                           ppSep (ppString " ") actualstrs,
+                           ppString ")"])
+         | (Bad s,_) -> Bad s
+         | (_,Bad s) -> Bad s)
     | Fun (f, Base (_, actuals as (_::_),_),_) ->
       (case (ppFun f, ppErrorMap ppTypeName actuals) of
          | (Good fstr, Good actualstrs) ->
