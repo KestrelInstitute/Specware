@@ -34,10 +34,8 @@ op [a] SeqLength (x:Seq a) : Int =
   | SeqNil -> 0
   | SeqCons (_,xs) -> 1 + SeqLength(xs)
 
-theorem dumb is [a]
-  fa (x:Seq a) SeqLength x = SeqLength x
 
-%%op BoolSeqLength (x:Seq Bool) : Int = SeqLength x
+op BoolSeqLength (x:Seq Bool) : Int = SeqLength x
 
 %op [a] SeqLength2 (x:Seq a) : Int = SeqLength x
 
