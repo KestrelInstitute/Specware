@@ -18,7 +18,7 @@ theorem SeqAppend_of_SeqNil_1 is [a]
 theorem SeqAppend_of_SeqNil_2 is [a]
   fa (x:Seq a) SeqAppend(x,SeqNil) = x
 
-op [a] SeqRev (x:Seq a) : Seq a =
+op [b] SeqRev (x:Seq b) : Seq b =
 case x of
   | SeqNil -> SeqNil
   | SeqCons (hd,tl) -> SeqAppend (SeqRev tl, SeqCons (hd,SeqNil))
@@ -34,8 +34,8 @@ op [a] SeqLength (x:Seq a) : Int =
   | SeqNil -> 0
   | SeqCons (_,xs) -> 1 + SeqLength(xs)
 
-
-op BoolSeqLength (x:Seq Bool) : Int = SeqLength x
+theorem SeqLength_of_SeqAppend is [a]
+  fa (x:Seq a, y:Seq a) SeqLength(SeqAppend(x,y)) = SeqLength(x) + SeqLength(y)
 
 %op [a] SeqLength2 (x:Seq a) : Int = SeqLength x
 
@@ -46,11 +46,11 @@ op BoolSeqLength (x:Seq Bool) : Int = SeqLength x
 % SeqSubBag, SeqPerm, SeqOrdered %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% op [a] SeqHowMany (val:Int, x:Seq a) : Nat = 
-%   case x of
-%   | SeqNil -> 0
-%   | SeqCons (y,ys) | val = y -> 1 + SeqHowMany (val,ys)
-%   | SeqCons (_,ys)         -> SeqHowMany (val,ys)
+op [a] SeqHowMany (val:a, x:Seq a) : Nat = 
+  case x of
+  | SeqNil -> 0
+  | SeqCons (y,ys) | val = y -> 1 + SeqHowMany (val,ys)
+  | SeqCons (_,ys)         -> SeqHowMany (val,ys)
 
 % theorem SeqHowMany_of_SeqNil is
 %   fa(x:Int) SeqHowMany(x, SeqNil) = 0

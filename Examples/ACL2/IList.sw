@@ -14,13 +14,13 @@ type IList =
 % IAppend, IRev, ILength %
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op IAppend (a:IList, b:IList) : IList = 
-  case a of
-  | INil -> b
-  | ICons (x,xs) -> ICons (x, (IAppend (xs,b)))
+op IAppend (x:IList, y:IList) : IList = 
+case x of
+  | INil -> y
+  | ICons (hd,tl) -> ICons (hd, (IAppend (tl,y)))
 
 theorem IAppend_associative is
-  fa (a:IList, b:IList, c:IList) (IAppend (IAppend (a,b), c) = IAppend (a, IAppend (b,c)))
+  fa (x:IList, y:IList, z:IList) (IAppend (IAppend (x,y), z) = IAppend (x, IAppend (y,z)))
 
 theorem IAppend_of_INil_1 is
   fa (a:IList) IAppend(INil,a) = a

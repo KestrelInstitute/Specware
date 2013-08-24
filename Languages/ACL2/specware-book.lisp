@@ -7,6 +7,17 @@
 (include-book "mydefsum")
 ;(include-book "~/Specware2/Languages/ACL2/mydefsum")
  
+;;;;;;;;;;;;;;;;;;;
+;; MISCELLANEOUS ;;
+;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; implies-to-implies-macro ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Used to convert all instances of ``implies'' to macros, in order to make
+;; guard verification of theorem bodies possible.
+
 (defmacro implies-macro (x y)
   (declare (xargs :guard t))
   `(if ,x (if ,y t nil) t))
@@ -30,6 +41,13 @@
        (cons (implies-to-implies-macro (car terms))
              (map-implies-to-implies-macro (cdr terms))))))
 
+;;;;;;;;;;;;
+;; lookup ;;
+;;;;;;;;;;;;
+
+;; Look up the value of a keyword in a list. 
+;; Used for extracting the values of :hints, :otf-flg, etc.
+
 (defun lookup-listp (x)
   (declare (xargs :guard t))
   (cond ((atom x) (eq x nil))
@@ -43,6 +61,34 @@
             ((equal (car l) x) (cadr l))
             (t (lookup x (cddr l))))
       nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; remove-kwds, get-kwds ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Pretty self-explanatory. remove-kwds removes the keywords and their values,
+;; get-kwds only retains the list of keywords and values.
+
+(defun remove-kwds (stuff)
+  (declare (xargs :mode :program))
+  (cond ((atom stuff) stuff)
+        ((keywordp (car stuff))
+         (remove-kwds (cddr stuff)))
+        (t (cons (car stuff)
+                 (remove-kwds (cdr stuff))))))
+
+(defun get-kwds (stuff)
+  (declare (xargs :mode :program))
+  (cond ((atom stuff) stuff)
+        ((keywordp (car stuff))
+         (cons (car stuff)
+               (cons (cadr stuff)
+                     (get-kwds (cddr stuff)))))
+        (t (get-kwds (cdr stuff)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; integer-to-string, integer-to-symbol ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun integer-to-string (n)
   (declare (xargs :mode :program
@@ -60,6 +106,14 @@
 ;; DEFCOPRODUCT-CONCRETE ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; transform-type-case ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Just an auxiliary function, used to convert defcoproduct-style definitions
+;; into a defsum-friendly format. Basically, we add -p to all the type names,
+;; and give arbitrary names to all the fields (arg-1, arg-2, etc.)
+
 (defun transform-type-case-1 (constructor-name rst-type-case n)
   (declare (xargs :mode :program))
   (cond ((atom rst-type-case) nil)
@@ -67,9 +121,6 @@
          (cons
           (list (appsyms (list (car rst-type-case) 'p))
                 (appsyms (list 'arg (integer-to-symbol n))))
-;                (intern (string-append "ARG" 
-;                                       (integer-to-string n)) 
-;                        "ACL2"))
           (transform-type-case-1 constructor-name (cdr rst-type-case) (1+ n))))
         (t (cons (car rst-type-case) (transform-type-case-1 constructor-name
                                                             (cdr rst-type-case)
@@ -89,22 +140,9 @@
                                       (cdar type-cases))
                  (map-transform-type-case (cdr type-cases))))))
 
-(defun remove-kwds (stuff)
-  (declare (xargs :mode :program))
-  (cond ((atom stuff) stuff)
-        ((keywordp (car stuff))
-         (remove-kwds (cddr stuff)))
-        (t (cons (car stuff)
-                 (remove-kwds (cdr stuff))))))
-
-(defun get-kwds (stuff)
-  (declare (xargs :mode :program))
-  (cond ((atom stuff) stuff)
-        ((keywordp (car stuff))
-         (cons (car stuff)
-               (cons (cadr stuff)
-                     (get-kwds (cddr stuff)))))
-        (t (get-kwds (cdr stuff)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; defcoproduct-concrete ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun defcoproduct-concrete-fn (type rst)
   (declare (xargs :mode :program))
@@ -117,15 +155,21 @@
 (defmacro defcoproduct-concrete (type &rest type-cases)
   (defcoproduct-concrete-fn type type-cases))
 
+;; This function is needed, because defsum uses & as the wildcard pattern, but
+;; defcoproduct uses _.
 (defun replace-_-with-& (x)
   (cond ((atom x) (if (eq x '_) '& x))
         (t (cons (replace-_-with-& (car x))
                  (replace-_-with-& (cdr x))))))
 
+;; case-of is a synonym for pattern-match from the defsum book, but we use _
+;; instead of &.
 (defmacro case-of (term &rest clauses)
   (append (list 'pattern-match term)
           (replace-_-with-& clauses)))
 
+;; This allows the pattern (as x (...)), binding x to a value matching the
+;; pattern (...). This is needed for the Specware translation.
 (defmacro as-pattern-matcher
     (term args tests bindings lhses rhses pmstate)
   (cond ((not (true-listp args))
@@ -141,12 +185,13 @@
 ;; DEFCOPRODUCT-POLY ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-; (defcoproduct-poly SWList (a)
-;   (SWNil)
-;   (SWCons a (SWList a)))
-;
-; =>
-;
+;;;;;;;;;;;;;;;;
+;; make-alist ;;
+;;;;;;;;;;;;;;;;
+
+;; Create an alist from a list of keys and values. We use this as input to
+;; several functions that deal with polymorphic type instantiation; we often
+;; need to be able to look up the actuals for type variables. 
 
 (defun make-alist (vars vals)
   (declare (xargs :guard (and (true-listp vars)
@@ -158,6 +203,20 @@
 
 (defthm alistp-make-alist
     (alistp (make-alist a b)))
+
+;;;;;;;;;;;;;;;;;;;;;
+;; subst-type-name ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+;; Given a type, potentially containing type variables, and an alist mapping
+;; variables to actuals (these cannot themselves be variables), produce the
+;; instantiated type.
+;;
+;; To best see how this works, I recommend just calling things like
+;;
+;;   (subst-type-name '(:inst Seq a) '((a . int)))
+;;   (subst-type-name '(:inst Seq (:inst Maybe a) (:inst Either a b)) 
+;;                    '((a . int) (b . bool)))
 
 (mutual-recursion
 
@@ -177,30 +236,37 @@
          (t (cons (subst-type-name (car types) var-alist)
                   (map-subst-type-name (cdr types) var-alist))))))
 
-;; (defun add-p-to-list (symlist)
-;;   (declare (xargs :mode :program
-;;                   :guard (symbol-listp symlist)))
-;;   (cond ((atom symlist) nil)
-;;         (t (cons (appsyms (list (car symlist) 'p))
-;;                  (add-p-to-list (cdr symlist))))))
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; subst-type-case(s) ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun sub-type-case (type-case var-alist)
+;; Crawl through a type case or cases (i.e. ``ICons'' ``INil'') and replace
+;; variable types with their instantiated versions. Essentially we are just
+;; applying subst-type-name to everything in the type case.
+
+(defun subst-type-case (type-case var-alist)
   (declare (xargs :mode :program))
   (cons (appsyms (cons (car type-case) (strip-cdrs var-alist)))
-;        (add-p-to-list (map-subst-type-name (cdr type-case) var-alist))))
         (map-subst-type-name (cdr type-case) var-alist)))
 
-(defun sub-type-cases (type-cases var-alist)
+(defun subst-type-cases (type-cases var-alist)
   (declare (xargs :mode :program))
   (cond ((endp type-cases) nil)
-        (t (cons (sub-type-case (car type-cases) var-alist)
-                 (sub-type-cases (cdr type-cases) var-alist)))))
+        (t (cons (subst-type-case (car type-cases) var-alist)
+                 (subst-type-cases (cdr type-cases) var-alist)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; constrained-type-var-name(s) ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Right now, this does nothing, but we may want to use more specific names for
+;; type variables, indicating the data structure, function or theorem to which
+;; they have been instantiated for.
 
 (defun constrained-type-var-name (var fn)
   (declare (xargs :mode :program
                   :guard (and (symbolp var) (symbolp fn))))
   var)
-;  (appsyms (list var 'var fn)))
 
 (defun constrained-type-var-names (vars fn)
   (declare (xargs :mode :program
@@ -209,6 +275,12 @@
   (cond ((endp vars) nil)
         (t (cons (constrained-type-var-name (car vars) fn)
                  (constrained-type-var-names (cdr vars) fn)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; constrained-type-var(s) ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Produces a constrained function representing an arbitrary type.
 
 (defun constrained-type-var (var fn)
   (declare (xargs :mode :program
@@ -230,6 +302,13 @@
         (t (cons (constrained-type-var (car vars) fn)
                  (constrained-type-vars (cdr vars) fn)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;
+;; type-inst-prereqs ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Given a type, produces the list of ``instantiate'' calls required in order
+;; to work with this type.
+
 (mutual-recursion
 
  (defun type-inst-prereqs (type var-alist skip-types)
@@ -244,7 +323,14 @@
  (defun type-inst-list-prereqs (types var-alist skip-types)
    (cond ((atom types) nil)
          (t (append (type-inst-prereqs (car types) var-alist skip-types)
-                    (type-inst-list-prereqs (cdr types) var-alist skip-types))))))
+                    (type-inst-list-prereqs (cdr types) var-alist
+   skip-types))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; type-case-prereqs ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Apply type-inst-prereqs to a type case
 
 (defun type-case-prereqs (type-case var-alist skip-types)
   (declare (xargs :mode :program))
@@ -254,7 +340,20 @@
   (declare (xargs :mode :program))
   (cond ((atom type-cases) nil)
         (t (append (type-case-prereqs (car type-cases) var-alist skip-types)
-                   (type-cases-prereqs (cdr type-cases) var-alist skip-types)))))
+                   (type-cases-prereqs (cdr type-cases) var-alist
+  skip-types)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; type-case-instantiators ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Along with the coproduct instantiators, we also provide an instantiate
+;; function for each constructor, which is basically a synonym for the
+;; coproduct instantiator. The reason we do this is because sometimes, an :inst
+;; will appear for a constructor, but we won't know what the type of that
+;; constructor is out of context. So this macro allows us to just
+;; ``instantiate'' the constructor without having to look up what its coproduct
+;; instantiator is.
 
 (defun type-case-instantiators (type-name type-case-names vars)
   (declare (xargs :mode :program))
@@ -263,6 +362,15 @@
                     (list ',(appsyms `(,type-name instantiate)) ,@vars))
                  (type-case-instantiators type-name (cdr type-case-names)
                                           vars)))))
+
+;;;;;;;;;;;;;;;;;;;;
+;; make-tag-alist ;;
+;;;;;;;;;;;;;;;;;;;;
+
+;; This is used for the functional instantiation macros below. The idea is to
+;; use the abstract constructor names as the tags instead of the specific
+;; constructor names. If the tags are different then we can't use functional
+;; instantation, so we make sure they are all the same. 
 
 (defun make-tag-alist (case-names type-actuals)
   (declare (xargs :mode :program))
@@ -273,7 +381,12 @@
                  (make-tag-alist (cdr case-names)
                                  type-actuals)))))
 
-;; Functional instance stuff
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functional instance stuff ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; These functions help to produce the list of substitutions needed for
+;; functional instantiation.
 
 (defun functional-instance-coproduct-recognizer-sub (name
                                                      var-names
@@ -336,6 +449,7 @@
                     var-names
                     type-names)))))
 
+;; This is the daddy function - we call him to produce the list of substitutions.
 (defun functional-instance-subs (name constructors nums-fields var-names
                                  type-names)
   (declare (xargs :mode :program))
@@ -349,10 +463,20 @@
                                             var-names
                                             type-names)))
 
+;;;;;;;;;;;;;;
+;; num-args ;;
+;;;;;;;;;;;;;;
+
+;; Given a list of type cases, produces a list of the numbers of arguments for
+;; each type case. 
 (defun nums-args (type-cases)
   (cond ((atom type-cases) nil)
         (t (cons (1- (len (car type-cases)))
                  (nums-args (cdr type-cases))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; defcoproduct-poly ;;
+;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun defcoproduct-poly-fn (name vars cases)
   (declare (xargs :guard (and (symbolp name)
@@ -368,7 +492,7 @@
          `(progn
             ,@(type-cases-prereqs ',cases (make-alist ',vars (list ,@vars)) (list ',name))
             (defcoproduct-concrete ,(appsyms (cons ',name (list ,@vars)))
-                ,@(sub-type-cases ',cases (make-alist ',vars (list ,@vars)))
+                ,@(subst-type-cases ',cases (make-alist ',vars (list ,@vars)))
               :tag-alist ,(make-tag-alist ',(strip-cars cases) (list ,@vars)))))
        ,@(type-case-instantiators name (strip-cars cases) vars)
        ,@(constrained-type-vars vars name)
@@ -525,10 +649,19 @@
 ;;   :otf-flg foo4
 ;;   :doc foo5)
 
+;;;;;;;;;;;;;;;;;;;
+;; add-p-to-name ;;
+;;;;;;;;;;;;;;;;;;;
 
 (defun add-p-to-name (name)
   (declare (xargs :guard (symbolp name)))
   (intern (string-append (string name) "-P") "ACL2"))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; hyphenate-symbols ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: Replace this throughout with appsyms 
 
 (defun hyphenate-symbols-string (syms)
   (declare (xargs :guard (symbol-listp syms)))
@@ -542,10 +675,23 @@
   (declare (xargs :guard (symbol-listp syms)))
   (intern (hyphenate-symbols-string syms) "ACL2"))
 
+;;;;;;;;;;;;;;;;;;;
+;; is-function-p ;;
+;;;;;;;;;;;;;;;;;;;
+
+;; Check if the term is possibly a function. This is outdated, because now we
+;; allow things like (:inst foo a)
+
 (defun is-function-p (term)
   (declare (xargs :guard t))
   (or (atom term)
       (equal (car term) 'lambda)))
+
+;;;;;;;;;;;;
+;; type-p ;;
+;;;;;;;;;;;;
+
+;; Check if the term is possibly a type.
  
 (mutual-recursion
  (defun type-p (x)
@@ -567,6 +713,13 @@
          (t (and (type-p (car l))
                  (type-list-p (cdr l)))))))
 
+;;;;;;;;;;;;;;;;;;;;;
+;; typed-arg-listp ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+;; Check if a term is a typed list of arguments, i.e.: 
+;; ((x int) y (z (:inst Seq a)))
+
 (defun typed-arg-listp (x)
   (declare (xargs :guard t))
   (cond ((atom x) (eq x nil))
@@ -576,6 +729,12 @@
                 (atom (cddar x))
                 (type-p (cadar x))
                 (typed-arg-listp (cdr x))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; get-args, get-types ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; retrieve the list of args, list of types of a typed-arg-listp
 
 (defun get-args (typed-args)
   (declare (xargs :guard (typed-arg-listp typed-args)))
@@ -593,6 +752,13 @@
          (cons ':all (get-types (cdr typed-args))))
         (t (cons (cadar typed-args)
                  (get-types (cdr typed-args))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; get-type-constraint ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Given a typed-arg-listp, construct the type constraint (left-hand side of
+;; implication). Test this with a typed-arg-listp to see what it does exactly.
 
 (defun get-type-constraint-1 (typed-args)
   (declare (xargs :guard (typed-arg-listp typed-args)
@@ -625,6 +791,12 @@
           ((atom (cdr gtc-1)) (car gtc-1))
           (t (cons 'and gtc-1)))))
 
+;;;;;;;;;;;;;;;;;;;;
+;; lookup-declare ;;
+;;;;;;;;;;;;;;;;;;;;
+
+;; Looks up the (declare ..) form in a function body.
+
 (defun lookup-declare (l)
   (declare (xargs :guard (true-listp l)))
   (cond ((endp l) nil)
@@ -633,33 +805,50 @@
          (car l))
         (t (lookup-declare (cdr l)))))
 
-(defun remove-type-constraint-xargs-1 (xargs)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; remove-new-xargs-1 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Given (xargs l), removes the additional args so that defun can process them
+;; normally. 
+
+(defun remove-new-xargs-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
         ((or (equal (car xargs) ':type-lemmas)
              (equal (car xargs) ':type-args)
              (equal (car xargs) ':verify-guards-args))
-         (remove-type-constraint-xargs-1 (cddr xargs)))
+         (remove-new-xargs-1 (cddr xargs)))
         (t (cons (car xargs) 
-                 (cons (cadr xargs) (remove-type-constraint-xargs-1
+                 (cons (cadr xargs) (remove-new-xargs-1
                                      (cddr xargs)))))))
 
-(defun remove-type-constraint-declare-1 (decl)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; remove-new-xargs-declare ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Applies remove-new-xargs-1 to a (declare ...) form
+
+(defun remove-new-xargs-declare-1 (decl)
   (declare (xargs :guard (true-list-listp decl)))
   (cond ((atom decl) nil)
         ((equal (caar decl) 'xargs)
-         (cons (cons 'xargs (remove-type-constraint-xargs-1 (cdar decl)))
-               (remove-type-constraint-declare-1 (cdr decl))))
-        (t (cons (car decl) (remove-type-constraint-declare-1 (cdr decl))))))
+         (cons (cons 'xargs (remove-new-xargs-1 (cdar decl)))
+               (remove-new-xargs-declare-1 (cdr decl))))
+        (t (cons (car decl) (remove-new-xargs-declare-1 (cdr decl))))))
 
-(defun remove-type-constraint-declare (decl)
+(defun remove-new-xargs-declare (decl)
   (declare (xargs :guard (or (null decl)
                              (and (consp decl)
                                   (equal (car decl) 'declare)
                                   (true-list-listp (cdr decl))))))
   (if decl
-      (cons 'declare (remove-type-constraint-declare-1 (cdr decl)))
+      (cons 'declare (remove-new-xargs-declare-1 (cdr decl)))
       nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; get-type-constraint-args-decl ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun get-type-constraint-args-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
@@ -684,6 +873,10 @@
       (get-type-constraint-args-decl-1 (cdr decl))
       nil))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; get-type-constraint-lemmas-decl ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defun get-type-constraint-lemmas-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
   (cond ((atom xargs) nil)
@@ -706,6 +899,10 @@
   (if decl
       (get-type-constraint-lemmas-decl-1 (cdr decl))
       nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; get-verify-guards-args-decl ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun get-verify-guards-args-1 (xargs)
   (declare (xargs :guard (true-listp xargs)))
@@ -730,6 +927,12 @@
       (get-verify-guards-args-decl-1 (cdr decl))
       nil))
 
+;;;;;;;;;;;;;;;;;
+;; lookup-body ;;
+;;;;;;;;;;;;;;;;;
+
+;; Looks up the body of a function, skipping the declare and any keywords 
+
 (defun lookup-body (l)
   (declare (xargs :guard (true-listp l)))
   (cond ((atom l) nil)
@@ -741,6 +944,12 @@
          (lookup-body (cdr l)))
         (t (car l))))
 
+;;;;;;;;;;;;;;;;;;
+;; replace-inst ;;
+;;;;;;;;;;;;;;;;;;
+
+;; replace any (:inst .. ) 's with the instantiated types
+
 (defun replace-inst (term var-alist end-syms)
   (declare (xargs :mode :program))
   (cond ((atom term) 
@@ -750,6 +959,14 @@
          (appsyms (append (replace-inst (cdr term) var-alist end-syms) end-syms)))
         (t (cons (replace-inst (car term) var-alist end-syms)
                  (replace-inst (cdr term) var-alist end-syms)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; type-inst-prereqs-defun ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Given the body of the function, the type variable substitution, and a list
+;; of functions to skip, produces a list of the prerequisite instantiations we
+;; need to perform before we can define this function
 
 (defun type-inst-prereqs-defun (term var-alist skip-insts)
   (declare (xargs :mode :program))
@@ -777,16 +994,23 @@
                                           skip-insts)))
         (t (type-inst-prereqs-defun (cdr term) var-alist skip-insts))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; defun-typed-concrete ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: use backquotes!!! (moron)
+
 (defmacro defun-typed-concrete (name typed-args type &rest rst)
   (declare (xargs :guard (and (symbolp name)
                               (typed-arg-listp typed-args)
                               (type-p type)
                               (true-listp rst))))
   (let* ((decl (lookup-declare rst))
-         (decl-defun (remove-type-constraint-declare decl))
+         (decl-defun (remove-new-xargs-declare decl))
          (type-constraint-args (get-type-constraint-args-decl decl))
          (type-constraint-lemmas (get-type-constraint-lemmas-decl decl))
          (verify-guards-args (get-verify-guards-args-decl decl))
+;         (type-hints (lookup ':type-hints rst))
          (body (lookup-body rst))
          (type-inst-prereqs (append
                              (type-inst-prereqs-defun typed-args nil (list
@@ -864,7 +1088,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFUN-TYPED-POLY ;;
 ;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defun defun-typed-poly-fn (name type-vars typed-args type rst)
   (declare (xargs :mode :program))
@@ -1027,6 +1250,14 @@
 ;;   (implies (hyps  x y z)
 ;;            (concl x y z))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; remove-body-declare, get-body-declare ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; To guard-verify the body of a theorem, we may need to add a declare form to
+;; it. To do this, just add a :body-declare to the body of the theorem, and it
+;; will be inserted at the top of the body function definition.
+
 (defun remove-body-declare (rst)
   (declare (xargs :guard (true-listp rst)))
   (cond ((endp rst) nil)
@@ -1043,6 +1274,14 @@
          (cadr rst))
         (t (get-body-declare (cddr rst)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; remove-enable, get-enable ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A quick-and-dirty way to enable a function for proving a theorem. Doesn't
+;; work in the presence of other hints; if you need to do any more complicated
+;; hints, just put the :enable there.
+
 (defun remove-enable (rst)
   (declare (xargs :guard (true-listp rst)))
   (cond ((endp rst) nil)
@@ -1058,6 +1297,10 @@
         ((equal (car rst) ':enable)
          (cadr rst))
         (t (get-enable (cddr rst)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; defthm-typed-concrete ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmacro defthm-typed-concrete (name typed-vars term &rest rst)
   (declare (xargs :guard (and (symbolp name)
@@ -1079,21 +1322,6 @@
                     ,term)
          ,@(remove-body-declare rst))
        ,@(if enable (list `(in-theory (disable ,@enable))) nil))))
-
-  ;; (list 'progn
-  ;;       (append (list 'defund-typed
-  ;;                     (hyphenate-symbols (list name 'body))
-  ;;                     typed-vars
-  ;;                     'bool)
-  ;;               (if (get-body-declare rst)
-  ;;                   (list (get-body-declare rst))
-  ;;                   nil)
-  ;;               (list (implies-to-implies-macro term)))
-  ;;       (append (list 'defthm name 
-  ;;                     (list 'implies 
-  ;;                           (get-type-constraint typed-vars)
-  ;;                           term))
-  ;;               (remove-body-declare rst))))
 
 (defmacro defthmd-typed-concrete (name typed-vars term &rest rst)
   (declare (xargs :guard (and (symbolp name)
@@ -1131,6 +1359,12 @@
 ;;                                           skip-insts)))
 ;;         (t (type-inst-prereqs-defun (cdr term) var-alist skip-insts))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; function-theory-prereqs ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Compute the theory calls we need enabled for functional instantiation...
+
 (defun function-theory-prereqs (term var-alist skip-insts)
   (declare (xargs :mode :program))
   (cond ((atom term)
@@ -1155,6 +1389,13 @@
                                           var-alist
                                           skip-insts)))
         (t (function-theory-prereqs (cdr term) var-alist skip-insts))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; collect-functional-instance-subs ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Compute the full list of substitutions needed for functional instantiation
+;; of this theorem
 
 (defun collect-functional-instance-subs-1 (term var-names type-names skip-insts)
   (declare (xargs :mode :program))
@@ -1192,68 +1433,28 @@
    (collect-functional-instance-subs-1 term var-names type-names skip-insts)
    :test 'equal))
 
+;;;;;;;;;;;;;;;
+;; zip-lists ;;
+;;;;;;;;;;;;;;;
 
-;; (defthm-typed ,(appsyms `(,',name ,,@type-vars))
-;;     ,(replace-inst ',typed-variables var-alist nil)
-;;   ,@(replace-inst ',body var-alist nil)
-;;   :hints (("Goal"
-;;            :do-not-induct t
-;;            :in-theory (enable 
-;;                        ,@(remove-duplicates
-;;                           (function-theory-prereqs
-;;                            ',typed-variables
-;;                            var-alist
-;;                            nil)))
-;;            :use ((:functional-instance
-;;                   ,',abstract-name
-;;                   ,(collect-functional-instance-subs
-;;                     ',(cons typed-variables body)
-;;                     ',(constrained-type-var-names
-;;                        type-vars
-;;                        name)
-;;                     (list ,@type-vars)
-;;                     nil))))))
-
-;; name, of original theorem
-;; type-actuals
-;; typed-variables  ((x (:inst Seq a)) ...)
-;; body
-;; var-alist
-;; abstract-name
-
-;; (defun zip-lists (x y name)
-;;   (declare (xargs :mode :program))
-;;   (cond ((atom x) nil)
-;;         (t (cons (list (appsyms (list (car x) 
-;;                                       'var
-;;                                       name
-;;                                       'p))
-;;                        (appsyms (list (car y) 'p)))
-;;                  (zip-lists (cdr x) (cdr y) name)))))
+;; takes a list of vars, list of actuals, and gives the combined list of
+;; substituting the ones for the others.
 
 (defun zip-lists (x y name)
   (declare (xargs :mode :program))
   (cond ((atom x) nil)
         (t (cons (list (appsyms (list (car x) 
- ;                                     'var
-;                                      name
                                       'p))
                        (appsyms (list (car y) 'p)))
                  (zip-lists (cdr x) (cdr y) name)))))
  
-;; `(progn
-;;                 ,@(remove-duplicates
-;;                     (type-inst-prereqs-defun 
-;;                      ',typed-variables 
-;;                      var-alist
-;;                      (list ',name))
-;;                     :test 'equal)
-;;                 ,@(remove-duplicates
-;;                     (type-inst-prereqs-defun 
-;;                      ',body
-;;                      var-alist
-;;                      (list ',name))
-;;                     :test 'equal)
+;;;;;;;;;;;;;;;;;;;;;
+;; instance-defthm ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+;; This is pretty horrific - we need two levels of backquotes to achieve the
+;; needed effect. 
+
 (defun instance-defthm
     (name; of original theorem
      type-vars
@@ -1298,6 +1499,10 @@
                                name)
                               type-actuals
                               nil)))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; defthm-typed-poly ;;
+;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun defthm-typed-poly-fn (name type-vars typed-variables body)
   (declare (xargs :mode :program))
@@ -1365,21 +1570,10 @@
 ;; BUILTINS ;;
 ;;;;;;;;;;;;;;
 
-;(defmacro Int-p (x) `(integerp ,x))
-;(defmacro Bool-p (x) `(booleanp ,x))
-;(defmacro Nat-p (x) `(natp ,x))
-;(defmacro String-p (x) `(stringp ,x))
-;(defun-typed int_+ ((x Int-p) (y Int-p))
-;             integerp
-;  (binary-+ x y))
-
 (defpredicate Bool-p (x) (booleanp x))
 (defpredicate Int-p (x) (integerp x))
 (defpredicate Nat-p (x) (natp x))
 (defpredicate String-p (x) (stringp x))
-;; (defun-typed int_+ ((x Int-p) (y Int-p))
-;;              integerp
-;;   (binary-+ x y))
 
 ;;;;;;;;;
 ;; OLD ;;
