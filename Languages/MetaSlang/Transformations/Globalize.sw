@@ -1816,6 +1816,7 @@ Globalize qualifying spec
                    (case findAQualifierMap (new_ops, q, id) of
                       | Some _ -> new_elts ++ [elt]
                       | _ -> new_elts)
+                 | Pragma _ -> new_elts ++ [elt]  % used by later code generators
                  | _ -> new_elts)
              []
              elements
