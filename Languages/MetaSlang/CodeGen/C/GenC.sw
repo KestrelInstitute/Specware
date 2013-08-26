@@ -3,6 +3,7 @@ GCG qualifying spec
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms % ms spec => ms spec
 import /Languages/MetaSlang/CodeGen/C/SpecToCSpec     % ms spec =>  c spec
 import /Languages/C/PrintCSpec                        %  c spec =>  c files
+import /Languages/MetaSlang/CodeGen/C/PragmaParser/SW_To_C_Semantics    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% generateCFiles is a side-effecting transform that returns the original 

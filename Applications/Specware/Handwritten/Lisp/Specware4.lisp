@@ -307,6 +307,8 @@
 
 (make-system (in-specware-dir "Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
+(make-system (in-specware-dir "Languages/MetaSlang/CodeGen/C/PragmaParser/Handwritten/Lisp"))
+
 ;;; Initialization includes preloading the base spec.
 ;;; (Specware::initializeSpecware-0) ; Now happens in startup actions (see bootstrap script)
 
