@@ -6,7 +6,7 @@
 ;;;  Parser interface
 ;;; ======================================================================
 
-(defun Parse_LanguageMorphism (string) 
+(defun LM::parseLanguageMorphism (string) 
   (let* ((*parser-source* (list :string string))
 	 (session         (parse-language-morphism-via-file string))
 	 (raw-results     (parse-session-results session))
@@ -33,7 +33,7 @@
 		(pprint raw-form)
 		(format t "~%---~%")))
 	     (let ((result (eval raw-form))) ; may refer to *parser-source*
-	       (cons :|Some| result))))
+	       (cons :|Parsed| result))))
 	  (t
 	   (cons :|Error|
 		 (format nil "Syntax error: ~D top-level forms (as opposed to one term or one sequence of decls) in ~A~%"

@@ -62,14 +62,14 @@
 
 (define-lm-parser-rule :LanguageMorphism 
     (:tuple (1 :Language) (2 :Sections))
-  (lm::make_LanguageMorphism "MetaSlang" 1 2))
+  (lm::make_LanguageMorphism-3 "MetaSlang" 1 2))
 
 ;;; ========================================================================
 ;;;  Language
 ;;; ========================================================================
 
 (define-lm-parser-rule :Language
-    (:tuple (1 :Name))
+    (:tuple (1 :SimpleName))
   (lm::make_Language 1))
 
 ;;; ========================================================================
@@ -167,7 +167,8 @@
      ))
 
 (define-lm-parser-rule :Name 
-  (:repeat :SimpleName "."))
+    (:tuple (1 (:repeat :SimpleName ".")))
+  (list . 1))
 
 ;;; ========================================================================
 ;;;  Terms
@@ -269,7 +270,8 @@
     :Number)
 
 (define-lm-parser-rule :Reversed
-    (:tuple "reversed"))
+    (:tuple "reversed")
+  (LM::make_true))
 
 ;;; ========================================================================
 ;;;  Natives

@@ -3,6 +3,28 @@ CGen qualifying spec
 import /Languages/SpecCalculus/Semantics/Evaluate/Translate  % translateSpec
 import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L           % MetaSlang to I2L
 import /Languages/I2L/CodeGen/C/I2LToC                       % I2L       to C
+import /Languages/MetaSlang/Transformations/Pragma           % for selecting pragmas
+import /Languages/MetaSlang/CodeGen/LanguageMorphism         % for parsing   pragmas
+
+op parseCTranslationPragmas (s : Spec) : LanguageMorphisms =
+ foldlSpecElements (fn (lms, elt) ->
+                      case elt of
+                        | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, "C") ->
+                          (case parseLanguageMorphism body of
+                             | Parsed lm -> lms ++ [lm]
+                             | Error msg ->
+                               let _ = writeLine("Error: " ^ msg) in
+                               lms
+                             | _ ->
+                               let _ = writeLine "====================" in
+                               let _ = writeLine ("Error -- unrecognized result from parsing this pragma:") in
+                               let _ = writeLine body in
+                               let _ = writeLine "====================" in
+                               lms)
+                        | _ ->
+                          lms)
+                   []
+                   s.elements
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.
@@ -50,6 +72,7 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
                                         (op_extern_types : List (String*String))
                                         (op_extern_defs  : List String)
  : Option C_Spec =
+ let foo = parseCTranslationPragmas ms_spec in
  let use_ref_types?  = true in
  let constructer_ops = []   in
  let ms_spec = renameTypes (ms_spec, op_extern_types) in

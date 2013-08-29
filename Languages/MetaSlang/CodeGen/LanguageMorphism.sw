@@ -11,15 +11,21 @@ import /Languages/SpecCalculus/AbstractSyntax/Types
 %% so any code using them must verify appropriately in context.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op lowercase : String -> String
+op lowercase (s : String) : String = map toLowerCase s % why not in string library?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LanguageMorphism
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type LanguageMorphism = {source   : Language,
-                         target   : Language,
-                         sections : Sections}
+type Parsed a = | Parsed a
+                | Error  String
+
+op parseLanguageMorphism (s : String) : Parsed LanguageMorphism % defined in lm-parser-interface.lisp
+
+type LanguageMorphisms = List LanguageMorphism
+type LanguageMorphism  = {source   : Language,
+                          target   : Language,
+                          sections : Sections}
 
 op make_LanguageMorphism (source   : Language, 
                           target   : Language, 
@@ -156,7 +162,7 @@ op make_Typed_Term (typ   : Term, trm : Term) : Term = Typed {typ = typ, trm = t
 
 type TypeTranslation = {source : Name, target : Term}
 
-op make_TypeTranslation (source : Name, target : Term)
+op make_Type_Translation (source : Name, target : Term)
  : Translation =
  Type {source = source, target = target}
 
