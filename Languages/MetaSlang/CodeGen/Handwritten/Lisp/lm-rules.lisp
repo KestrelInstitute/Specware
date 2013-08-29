@@ -1,7 +1,6 @@
 ;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
 
-(defpackage :SpecCalc (:use :COMMON-LISP-USER))
-(defpackage :LM       (:use :COMMON-LISP-USER))
+(defpackage :LM (:use :COMMON-LISP-USER))
 (in-package :Parser4)
 
 ;;; This generic file is loaded prior to (or within) a file with more 

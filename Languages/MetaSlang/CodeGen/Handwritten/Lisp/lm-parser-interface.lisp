@@ -1,5 +1,6 @@
 ;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
 
+(defpackage :LM (:use :COMMON-LISP-USER))
 (in-package :Parser4)
 
 ;;; ======================================================================
