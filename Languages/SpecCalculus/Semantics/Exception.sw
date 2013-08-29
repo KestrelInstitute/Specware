@@ -65,30 +65,30 @@ SpecCalc qualifying spec
   op decodeException : Exception -> (Option (Position * Bool)) * String 
   def decodeException except =
     case except of
-      | Fail str                       -> (None,              "ERROR: Fail: " ^ str)
-      | FileNotFound        (pos, uid) -> (Some (pos, true),  "ERROR: Unknown unit " ^ (showRelativeUID uid))
-      | UIDNotFound         (pos, uid) -> (Some (pos, true),  "ERROR: Unknown unit " ^ (showRelativeUID uid))
+      | Fail str                       -> (None,              "Fail: " ^ str)
+      | FileNotFound        (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
+      | UIDNotFound         (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
       | TypeCheck           (pos, msg) -> (Some (pos, false), "Type error: "              ^ msg)
       | TypeCheckErrors     pairs      -> (None,              printTypeErrors pairs)
-      | Unsupported         (pos, msg) -> (Some (pos, false), "ERROR: Unsupported operation: "   ^ msg)
+      | Unsupported         (pos, msg) -> (Some (pos, false), "Unsupported operation: "   ^ msg)
       | SyntaxError         msg        -> (None,              "Syntax error: "            ^ msg)
       | ParserError         fileName   -> (None,              "Syntax error in file "     ^ fileName)
       | DiagError           (pos, msg) -> (Some (pos, false), "Diagram error: "           ^ msg)
-      | SpecError           (pos, msg) -> (Some (pos, false), "Error in specification: "  ^ msg)
-      | MorphError          (pos, msg) -> (Some (pos, false), "Error in morphism: "       ^ msg)
-      | QualifyError        (pos, msg) -> (Some (pos, false), "Error in qualify: "        ^ msg)
-      | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: "    ^ msg)
-      | ColimitError        (pos, msg) -> (Some (pos, false), "\nError in colimit: "      ^ msg)
-      | SubstError          (pos, msg) -> (Some (pos, false), "\nError in substitution: " ^ msg)
-      | CircularDefinition  uid        -> (None,              "ERROR: Circular definition: " ^ showUnitId uid)
+      | SpecError           (pos, msg) -> (Some (pos, false), "in specification: "  ^ msg)
+      | MorphError          (pos, msg) -> (Some (pos, false), "in morphism: "       ^ msg)
+      | QualifyError        (pos, msg) -> (Some (pos, false), "in qualify: "        ^ msg)
+      | TranslationError    (msg, pos) -> (Some (pos, false), "in translation: "    ^ msg)
+      | ColimitError        (pos, msg) -> (Some (pos, false), "in colimit: "      ^ msg)
+      | SubstError          (pos, msg) -> (Some (pos, false), "in substitution: " ^ msg)
+      | CircularDefinition  uid        -> (None,              "Circular definition: " ^ showUnitId uid)
       | Proof               (pos, msg) -> (Some (pos, false), "Proof error: "             ^ msg)
-      | TransformError      (pos, msg) -> (Some (pos, false), "Error in transform: "      ^ msg)
-      | UndefinedGlobalVar  name       -> (None,              "ERROR: Undefined global var: "    ^ name)
+      | TransformError      (pos, msg) -> (Some (pos, false), "in transform: "      ^ msg)
+      | UndefinedGlobalVar  name       -> (None,              "Undefined global var: "    ^ name)
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
-      | mystery                        -> (None,              "ERROR: Unknown exception: " ^ (anyToString mystery))
+      | mystery                        -> (None,              "Unknown exception: " ^ (anyToString mystery))
 
   op printException (except : Exception) : String =
-   ("ERROR:" ^  %% New, so we can grep for this string and find all the exceptions.
+   ("ERROR: " ^  %% New, so we can grep for this string and find all the exceptions.
     (case decodeException except of
       | (None,             msg) -> msg
       | (Some (pos, ref?), msg) -> 
