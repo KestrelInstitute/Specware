@@ -535,11 +535,11 @@ op [a] exists? (p: a -> Bool) (l: List a) : Bool =
 
 theorem ex_List_in? is [a] fa (l: List a, p) (ex(x: a) x in? l && p x) = (exists? p l)
 
-proof Isa List__ex_List_in_p:
+proof Isa ex_List_in_p
   by (metis Bex_set_list_ex)
 end-proof
 
-proof Isa List__ex_List_in_p__stp: 
+proof Isa ex_List_in_p__stp
    by (auto simp add: List__in_p__stp_def List__e_at_at__stp_def list_1_stp_Isa_nth List__exists_p__def)
 end-proof
 
@@ -1405,8 +1405,7 @@ proof -
  proof (induct n arbitrary: f)
  case 0
   then obtain x where "f 0 = Some x"
-   apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
-   by (metis (full_types) not_Some_eq option.simps(4))
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
   hence "the (f 0) = x" by auto
   from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
    by (auto simp: List__definedOnInitialSegmentOfLength_def)

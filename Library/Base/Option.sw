@@ -12,6 +12,15 @@ type Option a = | None | Some a
 
 op [a] some? (x: Option a) : Bool = embed? Some x
 
+%% quick and dirty fix for failing proofs:
+proof Isa -verbatim
+theorem some_old_def [simp]:
+  "Option__some_p x = (x \<noteq> None)"
+  apply(case_tac "x", auto simp add: Option__some_p_def)
+done
+declare Option__some_p_def [simp del]
+end-proof
+
 op [a] none? (x: Option a) : Bool = (x = None)
 
 (* Given a comparison function over type a, type Option a can be linearly
