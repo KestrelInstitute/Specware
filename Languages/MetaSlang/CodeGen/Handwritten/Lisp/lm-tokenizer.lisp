@@ -2,10 +2,10 @@
 
 (in-package :Parser4)
 
-(defparameter *sw-to-c-tokenizer-parameters*
+(defparameter *lm-tokenizer-parameters*
   (create-tokenizer-parameters 
    ;;
-   :name                        'sw-to-c
+   :name                        'language-morphism
    ;;
    :size-of-character-set       128
    ;;
@@ -26,8 +26,8 @@
    ;; I think these are called special characters in the user documentation
    :separator-chars             '(#\. #\/)
 
-   :ad-hoc-keywords             '("-include" "-translate" "-native" "type" "field" "op") ; to avoid getting multiple tokens
-   :ad-hoc-symbols              '("-include" "-translate" "-native" "type" "field" "op") ; to allow filename called type.c, etc.
+   :ad-hoc-keywords             '("-import" "-include" "-morphism" "-translate" "-native" "-generated" "type" "field" "op") ; to avoid getting multiple tokens
+   :ad-hoc-symbols              '("-import" "-include" "-morphism" "-translate" "-native" "-generated" "type" "field" "op") ; to allow filename called type.c, etc.
    ;;
    :ad-hoc-numbers              '()
    ;;
@@ -42,5 +42,5 @@
    ;; Underbar #\_ is implicitly given its own code as a syllable separator
    ))
 
-(defun extract-sw-to-c-tokens-from-file (file)
-  (extract-tokens-from-file file *sw-to-c-tokenizer-parameters*))
+(defun extract-lm-tokens-from-file (file)
+  (extract-tokens-from-file file *lm-tokenizer-parameters*))
