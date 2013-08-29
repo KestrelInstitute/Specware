@@ -295,6 +295,13 @@ Specware qualifying spec
     in
       runSpecCommand (catch prog toplevelHandler)
 
+
+  op makeScript_fromLisp(trans: TransformExpr): Option Script =
+    let prog = {scr <- makeScript trans;
+                return(Some scr)} 
+    in
+      run (catch prog toplevelHandlerOption)
+
   %% getOptSpec returns Some spc if the given string evaluates to a spec
 
   %op Specware.getOptSpec : Option String -> Option Spec
@@ -396,15 +403,18 @@ Specware qualifying spec
      if specwareWizard? then
        fail message
      else
-       print message;
+       print (message);
      return None
     }
+
+  op stringErrorByte: Ref Int = Ref(-1)
 
   op  gotoErrorLocation : Exception -> ()
   def gotoErrorLocation except = 
    case getFirstErrorLocation except of
      | Some (File (file, (left_line, left_column, left_byte), right)) ->   
        IO.gotoFilePosition (file, left_line, left_column)
+     | Some (String (_, (_, _, error_byte), _)) -> (stringErrorByte := error_byte)
      | _ -> ()
 
   op  getFirstErrorLocation : Exception -> Option Position
