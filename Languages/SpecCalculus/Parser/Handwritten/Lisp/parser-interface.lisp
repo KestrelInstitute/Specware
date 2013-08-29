@@ -53,9 +53,9 @@
 ;; parseString is not called by anything, but is handy for debugging...
 (defun parseString (string) (parseSpecwareString string))
 
-(defun parseSpecwareString (string) 
+(defun parseSpecwareString (string &key start-rule-name) 
   (let* ((*parser-source* (list :string string))
-	 (session     (parse-string string *specware4-parser* *specware4-tokenizer*))
+	 (session     (parse-string string *specware4-parser* *specware4-tokenizer* :start-rule-name start-rule-name))
 	 (raw-results (parse-session-results session))
 	 (error?      (or (parse-session-error-reported? session) 
 			  (parse-session-gaps            session) 
@@ -76,7 +76,7 @@
 		  ; (start    (first  raw-result))  
 		  ; (end      (second raw-result))  
 		  (raw-data   (third  raw-result))  
-		  (raw-form   (first  raw-data)))   ; why is raw-data is a 1-element list ?
+		  (raw-form   raw-data))
 	     (when-debugging
 	      (when (or *verbose?* *show-results?*)
 		(format t "~%---parseSpecwareFile pre-evaluation result---~%")
@@ -92,10 +92,10 @@
 
 ;; Mock string parser based on printing to /tmp, and then parsing.
 
-(defun parse-string (string parser tokenizer) 
-  (with-open-file (s "/tmp/string-spec" :direction :output :if-exists :new-version)
+(defun parse-string (string parser tokenizer &key start-rule-name) 
+  (with-open-file (s "/tmp/string-spec" :direction :output :if-exists :supersede)
     (format s "~A" string))
   ;; parse-file is defined in /Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-top.lisp
   (let ((*parser-source* (list :string string)))
-    (parse-file "/tmp/string-spec" parser tokenizer)))
+    (parse-file "/tmp/string-spec" parser tokenizer :start-rule-name start-rule-name :report-gaps? nil)))
 

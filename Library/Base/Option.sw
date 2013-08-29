@@ -10,7 +10,7 @@ type Option a = | None | Some a
 
 % synonyms of embedding tests ("embed? Some" and "embed? None"):
 
-op [a] some? (x: Option a) : Bool = (x ~= None)
+op [a] some? (x: Option a) : Bool = embed? Some x
 
 op [a] none? (x: Option a) : Bool = (x = None)
 

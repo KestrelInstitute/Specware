@@ -41,6 +41,24 @@ type Script =
   | Trace Bool
   | Print
 
+op specCommand?(script: Script): Bool =
+  case script of
+    | At _ -> true
+    | AtTheorem _ -> true
+    | PartialEval -> true
+    | SpecMetaTransform _ -> true
+    | SpecTransformInMonad _ -> true
+    | SpecTransform _ -> true
+    | SpecQIdTransform _ -> true
+    | IsoMorphism _ -> true
+    | Implement _ -> true
+    | Maintain _ -> true
+    | AddParameter _ -> true
+    | AddSemanticChecks _ -> true
+    | RedundantErrorCorrecting _ -> true
+    | Slice _ -> true
+    | _ -> false
+
 %% Defined in Isomorphism.sw
 op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * RuleSpecs -> SpecCalc.Env Spec
 op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * RuleSpecs -> SpecCalc.Env Spec
@@ -110,18 +128,18 @@ op ppOptionRls(rls: RuleSpecs): WLPretty = if rls = [] then ppNil
 op ppScript(scr: Script): WLPretty =
   case scr of
     | Steps steps ->
-      ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)
+      ppConcat[ppString "{", ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps), ppString "}"]
     | Repeat steps ->
       ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
                ppString "}"]
     | At(locs, scr) ->
       ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
                          ppNewline,
-                         ppString "{", ppNest 0 (ppScript scr), ppString "}"])
+                         ppScript scr])
     | AtTheorem(locs, scr) ->
       ppIndent(ppConcat [ppString "at-theorem (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
                          ppNewline,
-                         ppString "{", ppNest 0 (ppScript scr), ppString "}"])
+                         ppScript scr])
     | Move mvmts -> ppConcat [ppString "move (",
                               ppSep (ppString ", ") (map (fn m -> ppString(moveString m)) mvmts),
                               ppString ")"]

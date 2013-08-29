@@ -251,6 +251,7 @@ If NEWLINE is true then add a newline at the end of the input."
   "Major mode for Specware Shell."
   (interactive)
   (kill-all-local-variables)
+  (set-syntax-table specware-mode-syntax-table)
   (setq major-mode 'specware-listener-mode)
   (set (make-local-variable 'specware-listener-p) t)
   (use-local-map specware-listener-mode-map)
@@ -421,18 +422,21 @@ to end."
                 (setq sw:license-displayed-p t))
               prompt-start)))))))
 
-(defun slime-repl-show-maximum-output ()
-  "Put the end of the buffer at the bottom of the window."
-  (when (eobp)
-    (let ((win (if (eq (window-buffer) (current-buffer))
-                   (selected-window)
-                   (get-buffer-window (current-buffer) t))))
-      (when win
-        (with-selected-window win
-          (set-window-point win (point-max)) 
-          (recenter -1)
-          (while (not (null *sw-after-prompt-forms*))
-            (eval (pop *sw-after-prompt-forms*))))))))
+(defun slime-repl-insert-result (result)
+  (with-current-buffer (slime-output-buffer)
+    (save-excursion
+      (when result
+        (destructure-case result
+          ((:values &rest strings)
+           (cond ((null strings)
+                  (slime-repl-emit-result "; No value\n" t))
+                 (t
+                  (dolist (s strings)
+                    (slime-repl-emit-result s t)))))))
+      (slime-repl-insert-prompt))
+    (slime-repl-show-maximum-output)
+    (while (not (null *sw-after-prompt-forms*))
+      (eval (pop *sw-after-prompt-forms*)))))
 
 ;;; Mods to slime.el and slime-repl.el
 (defun slime-repl-emit (string)

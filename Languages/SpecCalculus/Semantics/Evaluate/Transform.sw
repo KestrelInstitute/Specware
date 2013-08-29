@@ -24,6 +24,7 @@ spec
       | Tuple(_,p) -> p
       | Record(_,p) -> p
       | Options(_,p) -> p
+      | Block(_,p) -> p
       | At(_,_,p) -> p
       | Command(_,_,p) -> p
 
@@ -240,7 +241,7 @@ spec
       | _ -> 
         % let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
         raise (TransformError (posOf trans, "Unrecognized transform: "^show trans))
-        
+
   op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
     case iso_tm of
       | Tuple ([iso,osi], _) ->
@@ -563,30 +564,30 @@ spec
                 | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
            %% Shouldn't happen
            | None -> raise (TransformError (pos, cmd_name^" unknown transform type.")))
-      | Command("isomorphism", args, _) ->
-        (case args of
-           | [Tuple(iso_tms, _)] ->  % isomorphism((iso, osi), ...)
-             {iso_prs <- extractIsos iso_tms;
-              return (IsoMorphism(iso_prs, [], None)) }
-           | [Tuple(iso_tms, _), Tuple(rls, _)] ->  % isomorphism((iso, osi), ...)(rls)
-             {iso_prs <- extractIsos iso_tms;
-              srls <- mapM makeRuleRef rls;
-              return (IsoMorphism(iso_prs, srls, None))}
-           | [Tuple(iso_tms, _), Options(rls, _)] -> % isomorphism((iso, osi), ...)[rls]
-             {iso_prs <- extractIsos iso_tms;
-              srls <- mapM makeRuleRef rls;
-              return (IsoMorphism(iso_prs, srls, None))}
-           | [Options([Name (qual, _)], _), Tuple(iso_tms, _)]-> % isomorphism[New_*]((iso, osi), ...)
-             {iso_prs <- extractIsos iso_tms;
-              return (IsoMorphism(iso_prs, [], Some qual))}
-           | [Options([Name (qual, _)], _), Tuple(iso_tms, _), Tuple(rls, _)] -> % isomorphism[New_*]((iso, osi), ...)(rls)
-             {iso_prs <- extractIsos iso_tms;
-              srls <- mapM makeRuleRef rls;
-              return (IsoMorphism(iso_prs, srls, Some qual))}
-           | [Options([Name (qual, _)], _), Tuple(iso_tms, _), Options(rls, _)] ->  % isomorphism[New_*]((iso, osi), ...)[rls]
-             {iso_prs <- extractIsos iso_tms;
-              srls <- mapM makeRuleRef rls;
-              return (IsoMorphism(iso_prs, srls, Some qual))})
+      % | Command("isomorphism", args, _) ->
+      %   (case args of
+      %      | [Tuple(iso_tms, _)] ->  % isomorphism((iso, osi), ...)
+      %        {iso_prs <- extractIsos iso_tms;
+      %         return (IsoMorphism(iso_prs, [], None)) }
+      %      | [Tuple(iso_tms, _), Tuple(rls, _)] ->  % isomorphism((iso, osi), ...)(rls)
+      %        {iso_prs <- extractIsos iso_tms;
+      %         srls <- mapM makeRuleRef rls;
+      %         return (IsoMorphism(iso_prs, srls, None))}
+      %      | [Tuple(iso_tms, _), Options(rls, _)] -> % isomorphism((iso, osi), ...)[rls]
+      %        {iso_prs <- extractIsos iso_tms;
+      %         srls <- mapM makeRuleRef rls;
+      %         return (IsoMorphism(iso_prs, srls, None))}
+      %      | [Options([Name (qual, _)], _), Tuple(iso_tms, _)]-> % isomorphism[New_*]((iso, osi), ...)
+      %        {iso_prs <- extractIsos iso_tms;
+      %         return (IsoMorphism(iso_prs, [], Some qual))}
+      %      | [Options([Name (qual, _)], _), Tuple(iso_tms, _), Tuple(rls, _)] -> % isomorphism[New_*]((iso, osi), ...)(rls)
+      %        {iso_prs <- extractIsos iso_tms;
+      %         srls <- mapM makeRuleRef rls;
+      %         return (IsoMorphism(iso_prs, srls, Some qual))}
+      %      | [Options([Name (qual, _)], _), Tuple(iso_tms, _), Options(rls, _)] ->  % isomorphism[New_*]((iso, osi), ...)[rls]
+      %        {iso_prs <- extractIsos iso_tms;
+      %         srls <- mapM makeRuleRef rls;
+      %         return (IsoMorphism(iso_prs, srls, Some qual))})
 
       | Command("maintain", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
         {op_qids <- mapM extractQId i_ops;
@@ -625,9 +626,13 @@ spec
         {morphs <- extractMorphs uids;
          return(RedundantErrorCorrecting(morphs, Some qual, true))}
 
-      | At(qids, comms, _) ->
-        {commands <- mapM makeScript comms;
-         return (At(map Def qids, Steps commands))}
+      | Block(stmts, _) ->
+        {commands <- mapM makeScript stmts;
+         return (Steps commands)}
+
+      | At(qids, comm, _) ->
+        {command <- makeScript comm;
+         return (At(map Def qids, command))}
 
       % | Item("atTheorem", [loc], _) ->
       %   {qid <-  extractQId loc;

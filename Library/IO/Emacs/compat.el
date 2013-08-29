@@ -369,7 +369,7 @@
 
   (defun sw:exit-lisp ()
     (interactive)
-    (lisp-or-specware-command ":quit" "quit"))
+    (lisp-or-specware-command-quiet ":quit" "quit"))
 
   (defvar slime-last-buffer nil)
 

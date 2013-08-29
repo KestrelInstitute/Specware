@@ -89,12 +89,13 @@ case tre of
   | Options (transformexprs, _) -> ppConcat [ppString "[",
                                              ppATransformExprs transformexprs,
                                              ppString "]"]
-  | At(qids, transformexprs, _) -> ppConcat [ppString "at (",
+  | Block (transformexprs, _)  -> ppConcat [ppString "{",
+                                            ppATransformExprs transformexprs,
+                                            ppString "}"]
+  | At(qids, transformexpr, _) -> ppConcat [ppString "at (",
                                              ppSep (ppString ", ") (map ppQualifier qids),
                                              ppString ")",
-                                             ppString "{",
-                                             ppATransformExprs transformexprs,
-                                             ppString "}"]
+                                             ppATransformExpr transformexpr]
   | Command(command_name, transformexprs, _) -> ppConcat [ppString command_name,
                                                           ppATransformExprs transformexprs]
 

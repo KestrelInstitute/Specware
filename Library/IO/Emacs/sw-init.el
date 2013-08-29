@@ -303,16 +303,23 @@ sLisp Heap Image File: ")
 	      (error "Could not start Specware.")))
 	(error "Specware not running. Do M-x run-specware4")))))
 
-;; (simulate-input-expression "path")
 (defun simulate-input-expression (str)
   (ensure-specware-running)
   (let ((win (get-buffer-window *specware-buffer-name*)))
-    (if win (select-window win)
-      (sw:switch-to-lisp)))
-  (pop-to-buffer *specware-buffer-name*) ; might want to choose explicit frame
-  (goto-char (point-max))
-  (insert str)
-  (inferior-lisp-newline)
+        (if win (select-window win)
+          (sw:switch-to-lisp))
+        (pop-to-buffer *specware-buffer-name*) ; might want to choose explicit frame
+        (goto-char (point-max))
+        (insert str)
+        (inferior-lisp-newline))
+  (sit-for 0.1))
+
+(defun simulate-input-expression-quiet (str)
+  (ensure-specware-running)
+  (with-current-buffer *specware-buffer-name*
+        (goto-char (point-max))
+        (insert str)
+        (inferior-lisp-newline))
   (sit-for 0.1))
 
 (defvar *specware-continue-form* nil)

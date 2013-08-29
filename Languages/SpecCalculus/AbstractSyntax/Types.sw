@@ -525,8 +525,9 @@ SpecCalc qualifying spec
  op mkTransformRepeat  (transforms: TransformExprs,       pos: Position) : TransformExpr = Repeat (transforms, pos)
  op mkTransformOptions (args: TransformExprs,             pos: Position) : TransformExpr = Options(args,       pos)
  op mkTransformTuple   (itms: TransformExprs,             pos: Position) : TransformExpr = Tuple  (itms,       pos)
+ op mkTransformBlock   (comms: TransformExprs,            pos: Position) : TransformExpr = Block  (comms,      pos)
  op mkTransformRecord  (fld_val_prs: List (String * TransformExpr), pos: Position) : TransformExpr = Record (fld_val_prs,    pos)
- op mkTransformAt      (qids: QualifiedIds, comms: TransformExprs,  pos: Position) : TransformExpr = At     (qids, comms,    pos)
+ op mkTransformAt      (qids: QualifiedIds, comm: TransformExpr,  pos: Position)   : TransformExpr = At     (qids, comm,    pos)
  op mkTransformCommand (name:  String, args: TransformExprs,        pos: Position) : TransformExpr = Command(name, args,     pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

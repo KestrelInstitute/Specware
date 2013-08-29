@@ -1322,6 +1322,13 @@ If anyone has a good algorithm for this..."
 	      spec-comm lisp-comm)
 	   argstrs)))
 
+(defun lisp-or-specware-command-quiet (lisp-comm spec-comm &rest argstrs)
+  (simulate-input-expression-quiet
+   (apply 'concat
+	  (if (sw:running-specware-shell-p)
+	      spec-comm lisp-comm)
+	   argstrs)))
+
 (defun ensure-list (fm-str)
   (if (equal (elt fm-str 0) (elt "(" 0))
       fm-str
@@ -2159,14 +2166,14 @@ qualifier: }")
       (forward-chars-counting-x-symbols col))))
 
 ;;; Command for showing error point in specware shell
-(defun show-error-on-new-input (col)
+(defun show-error-on-new-input (col skip_command?)
   (if (eq lisp-emacs-interface-type 'slime)
-      (push `(show-error-on-new-input-real ,col) *sw-after-prompt-forms*)
-    (progn (sit-for 0.1 t)   ; Allow error message to be printed
-	   (show-error-on-new-input-real col)))
+      (push `(show-error-on-new-input-real ,col ,skip_command?) *sw-after-prompt-forms*)
+    (progn (sit-for 0.5 t)   ; Allow error message to be printed
+	   (show-error-on-new-input-real col skip_command?)))
   nil)
 
-(defun show-error-on-new-input-real (col)
+(defun show-error-on-new-input-real (col skip_command?)
   (goto-char (point-max))
   (previous-input-line)
   (if (eq (current-column) 0)
@@ -2174,9 +2181,13 @@ qualifier: }")
   (if (eq lisp-emacs-interface-type 'slime)
       (goto-char slime-repl-input-start-mark)
     (comint-bol nil))
-  (forward-sexp 1)
-  (forward-chars-counting-x-symbols (max 1 col))
+  (when skip_command? (forward-sexp 1))
+  (when (looking-at "[\t \n\014]")                ; Skip to beginning of non-whitespace
+    (re-search-forward "[^\t \n\014]")
+    (forward-char -1))
+  (forward-chars-counting-x-symbols (max 0 col))
   ())
+
 
 (defun forward-chars-counting-x-symbols (i)
   (if (or (not sw:use-x-symbol) (not x-symbol-mode) (< i 1))

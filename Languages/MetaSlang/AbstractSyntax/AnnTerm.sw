@@ -158,7 +158,8 @@ MetaSlang qualifying spec
     | Tuple     List (ATransformExpr a)          * a    % (..., ...)
     | Record    List (String * ATransformExpr a) * a    % {..., attr: val, ...}
     | Options   List (ATransformExpr a)          * a    % [..., ...]
-    | At        QualifiedIds * List (ATransformExpr a) * a
+    | Block     List (ATransformExpr a)          * a
+    | At        QualifiedIds * ATransformExpr a * a
     | Command   String * List (ATransformExpr a) * a
 
  op [a] posOf(tr: ATransformExpr a): a =
@@ -174,6 +175,7 @@ MetaSlang qualifying spec
      | Tuple(_, a) -> a
      | Record(_, a) -> a
      | Options(_, a) -> a
+     | Block(_, a) -> a
      | At(_, _, a) -> a
      | Command(_, _, a) -> a
 

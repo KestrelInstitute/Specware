@@ -356,7 +356,8 @@ MetaSlang qualifying spec
      | (Record(l1, _), Record(l2, _)) ->
        length l1 = length l1 && forall? (fn ((l1i,t1i),(l2i, t2i)) -> l1i = l2i && equalTransform?(t1i, t2i)) (zip(l1, l1))
      | (Options(l1, _), Options(l2, _)) -> equalTransformList?(l1, l2) 
-     | (At(qids1, comms1, _), At(qids2, comms2, _)) -> qids1 = qids2 && equalTransformList?(comms1, comms2)
+     | (Block(l1, _), Options(l2, _)) -> equalTransformList?(l1, l2) 
+     | (At(qids1, comm1, _), At(qids2, comm2, _)) -> qids1 = qids2 && equalTransform?(comm1, comm2)
      | (Command(t1, l1, _), Command(t2, l2, _)) -> t1 = t2 && equalTransformList?(l1, l2)
      | _ -> false
 

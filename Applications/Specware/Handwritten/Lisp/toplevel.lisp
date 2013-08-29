@@ -177,7 +177,7 @@
 	  (charpos (third emacs-error-info)))
       (unless *running-test-harness?*
 	(if (sw-temp-file? error-file)
-	    (let ((emacs-command (format nil "(show-error-on-new-input ~a)" (+ charpos position-delta))))
+	    (let ((emacs-command (format nil "(show-error-on-new-input ~a t)" (+ charpos position-delta))))
 	      (if SWShell::*in-specware-shell?*
 		  (setq SWShell::*emacs-eval-form-after-prompt* emacs-command)
 		(Emacs::eval-in-emacs emacs-command)))
@@ -687,6 +687,8 @@
 	      errstr)))
     (when (setq pos (search " At line" errstr))
       (setq errstr (concatenate 'string (subseq errstr 0 pos) (subseq errstr (+ pos 16)))))
+    (when (setq pos (search " found in " errstr))
+      (setq errstr (subseq errstr 0 pos)))
     (when (setq pos (search "op tmp" errstr))
       (setq errstr (concatenate 'string (subseq errstr 0 pos) "top-level expression"
 				(subseq errstr (+ pos 6)))))

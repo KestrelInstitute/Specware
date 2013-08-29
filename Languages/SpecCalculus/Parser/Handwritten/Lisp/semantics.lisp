@@ -599,6 +599,19 @@ If we want the precedence to be optional:
               (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
+;;;   SET-COMPREHENSION
+;;; ------------------------------------------------------------------------
+
+(defun make-set-comprehension (pat body l r)
+  (make-application
+   (make-unqualified-op-ref "collect" l r)
+   (list (cons :|Lambda|
+               (cons (list (make-branch pat body l r))
+                     (make-pos l r))))
+   l r))
+
+
+;;; ------------------------------------------------------------------------
 ;;;   CASE-EXPRESSION
 ;;; ------------------------------------------------------------------------
 
@@ -1151,11 +1164,11 @@ If we want the precedence to be optional:
          (cut_type? #'(lambda (typename) (member typename cut_types :test 'equal))))
     (SpecCalc::mkTransformSlice-5 root_ops root_types cut_op? cut_type? (make-pos l r))))
 
-(defun make-transform-at (qids transforms l r)
-  (SpecCalc::mkTransformAt-3 qids (if (listp transforms) transforms (list transforms))
-                             (make-pos l r)))
-(defun make-transform-at-1 (qids transform l r)
-  (SpecCalc::mkTransformAt-3 qids (list transform) (make-pos l r)))
+(defun make-transform-block (transforms l r)
+  (SpecCalc::mkTransformBlock-2 transforms (make-pos l r)))
+
+(defun make-transform-at (qids transform l r)
+  (SpecCalc::mkTransformAt-3 qids transform (make-pos l r)))
 
 (defun make-transform-repeat (transforms l r)
   (SpecCalc::mkTransformRepeat-2 transforms (make-pos l r)))

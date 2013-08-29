@@ -822,6 +822,7 @@ If we want the precedence to be optional:
   (:anyof
    (1 :CLOSED-EXPRESSION-NSWB)
    (1 :LIST-DISPLAY           :documentation "List") ; starts with left bracket
+   (1 :SET-COMPREHENSION    :documentation "{x: a | P x}")
    )
   1)
 
@@ -920,6 +921,11 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :LAMBDA-FORM ()
   (:tuple (:anyof "fn" "\\_lambda") (1 :MATCH))
   (make-lambda-form 1 ':left-lcb ':right-lcb)
+  :documentation "Lambda abstraction")
+
+(define-sw-parser-rule :SET-COMPREHENSION ()
+  (:tuple "{" (1 :TOP-PATTERN) "|" (2 :EXPRESSION) "}")
+  (make-set-comprehension 1 2 ':left-lcb ':right-lcb)
   :documentation "Lambda abstraction")
 
 ;;; ------------------------------------------------------------------------
@@ -1677,24 +1683,67 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-TERM ()
   (:anyof
-   ((:tuple (1 :NUMBER))                     (make-transform-number    1   ':left-lcb ':right-lcb))
-   ((:tuple (1 :STRING))                     (make-transform-string    1   ':left-lcb ':right-lcb))
-   ((:tuple (1 :NAME))                       (make-transform-name      1   ':left-lcb ':right-lcb))
-   ((:tuple "true")                          (make-transform-boolean   t   ':left-lcb ':right-lcb))
-   ((:tuple "false")                         (make-transform-boolean   nil ':left-lcb ':right-lcb))
-   ((:tuple "UID" (1 :SC-UNIT-ID))           (make-transform-scterm    1   ':left-lcb ':right-lcb))
-   ((:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
-   ((:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
+   (1 :TRANSFORM-NUMBER)
+   (1 :TRANSFORM-STRING)
+   (1 :TRANSFORM-TRUE)
+   (1 :TRANSFORM-FALSE)
+   (1 :TRANSFORM-NAME)
+   (1 :TRANSFORM-UID)
+   (1 :TRANSFORM-QUALIFIED-NAME)
+   (1 :TRANSFORM-APPLY)
 
-   ((:tuple "(" (1 (:repeat* :TRANSFORM-TERM ",")) ")") (make-transform-tuple 1 ':left-lcb ':right-lcb))
-   ((:tuple "[" (1 (:repeat* :TRANSFORM-TERM ",")) "]") (make-transform-options 1 ':left-lcb ':right-lcb))
-   ((:tuple "{" (1 (:repeat* :TRANSFORM-RECORD-PAIR ",")) "}") (make-transform-record 1 ':left-lcb ':right-lcb))
-   ))
+   (1 :TRANSFORM-TUPLE)
+   (1 :TRANSFORM-LIST)
+   (1 :TRANSFORM-RECORD)
+   )
+  1)
+
+(define-sw-parser-rule :TRANSFORM-NUMBER ()
+  (:tuple (1 :NUMBER))                     (make-transform-number    1   ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-STRING ()
+  (:tuple (1 :STRING))                     (make-transform-string    1   ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-NAME ()
+  (:tuple (1 :NAME))                       (make-transform-name      1   ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-TRUE ()
+  (:tuple "true")                          (make-transform-boolean   t   ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-FALSE ()
+  (:tuple "false")                         (make-transform-boolean   nil ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-UID ()
+  (:tuple "UID" (1 :SC-UNIT-ID))           (make-transform-scterm    1   ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-QUALIFIED-NAME ()
+  (:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-APPLY ()
+  (:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-TUPLE ()
+  (:tuple "(" (1 (:repeat* :TRANSFORM-TERM ",")) ")") (make-transform-tuple 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-LIST ()
+  (:tuple "[" (1 (:repeat* :TRANSFORM-TERM ",")) "]") (make-transform-options 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-RECORD ()
+  (:tuple "{" (1 (:repeat* :TRANSFORM-RECORD-PAIR ",")) "}") (make-transform-record 1 ':left-lcb ':right-lcb))
+
 
 (define-sw-parser-rule :TRANSFORM-STMT ()
   (:anyof
+   (1 :TRANSFORM-SLICE)
+   (1 :TRANSFORM-BLOCK)
+   (1 :TRANSFORM-AT)
+   (1 :TRANSFORM-REPEAT)
+   (1 :TRANSFORM-PROC))
+  1)
+
+(define-sw-parser-rule :TRANSFORM-SLICE ()
    ;; slice (spec, ops, types)
-   ((:tuple "slice" 
+  (:tuple "slice" 
             (:optional (:tuple "from"
                                (:tuple "{" (1 (:repeat* :QUALIFIABLE-OP-NAME   ",")) "}")
                                (:tuple "{" (2 (:repeat* :QUALIFIABLE-TYPE-NAME ",")) "}")))
@@ -1703,19 +1752,22 @@ If we want the precedence to be optional:
                                (:tuple "{" (4 (:repeat* :QUALIFIABLE-TYPE-NAME ",")) "}"))))
     (make-transform-slice 1 2 3 4 ':left-lcb ':right-lcb))
 
-   ((:tuple "at" (1 :QUALIFIABLE-OP-NAMES-PARENS)
-            "{" (2 (:repeat+ :TRANSFORM-STMT ";")) "}")
-    (make-transform-at 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :TRANSFORM-BLOCK ()
+  (:tuple "{" (1 (:repeat+ :TRANSFORM-STMT ";")) "}")
+  (make-transform-block 1 ':left-lcb ':right-lcb))
 
-   ((:tuple "at" (1 :QUALIFIABLE-OP-NAMES-PARENS)
-                 (2 :TRANSFORM-STMT))
-    (make-transform-at-1 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :TRANSFORM-AT ()
+  (:tuple "at" (1 :QUALIFIABLE-OP-NAMES-PARENS)
+          (2 :TRANSFORM-STMT))
+  (make-transform-at 1 2 ':left-lcb ':right-lcb))
 
-   ((:tuple "repeat" "{" (1 (:repeat+ :TRANSFORM-STMT ";")) "}")
-    (make-transform-repeat 1 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :TRANSFORM-REPEAT ()
+  (:tuple "repeat" "{" (1 (:repeat+ :TRANSFORM-STMT ";")) "}")
+  (make-transform-repeat 1 ':left-lcb ':right-lcb))
 
-   ((:tuple (1 :SYMBOL) (2 (:repeat* :TRANSFORM-TERM)))
-    (make-transform-command (common-lisp::symbol-name (quote 1)) 2 ':left-lcb ':right-lcb))))
+(define-sw-parser-rule :TRANSFORM-PROC ()
+  (:tuple (1 :SYMBOL) (2 (:repeat* :TRANSFORM-TERM)))
+    (make-transform-command (common-lisp::symbol-name (quote 1)) 2 ':left-lcb ':right-lcb))
 
 ;; (define-sw-parser-rule :TRANSFORM-EXPR-ARG ()
 ;;   (:anyof
