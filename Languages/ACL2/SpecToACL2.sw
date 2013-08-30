@@ -231,18 +231,21 @@ op ppTypeDef (elem:SpecElement) (spc:Spec) : PPError WLPretty =
 
 %% Given a function term, get the list of variables
 
-op opVarListHelper (l : MSMatch) : List MSVar =
+op opVarListHelper (l : MSMatch) : PPError (List MSVar) =
   case l of
-    | [] -> []
-    | ((VarPat (v,_), _, trm)::[]) -> [v]
-    | ((RecordPat ((_,VarPat (v,_))::[],_), _, trm)::[]) -> [v]
-    | ((RecordPat ((_,VarPat (v,_))::xs,x), y, trm)::[]) -> 
-      v :: (opVarListHelper ((RecordPat (xs,x), y, trm)::[]))
+    | [] -> Good []
+    | ((VarPat (v,_), _, trm)::[]) -> Good [v]
+    | ((RecordPat ((_,VarPat (v,_))::[],_), _, trm)::[]) -> Good [v]
+    | ((RecordPat ((_,VarPat (v,_))::xs,x), y, trm)::[]) ->
+      (case (opVarListHelper ((RecordPat (xs,x), y, trm)::[])) of 
+        | Good val -> Good (v :: val)
+        | Bad str -> Bad str)
+    | _ -> Bad ("Can't handle trm in opVarListHelper"^(anyToString l))
 
 op opVarList (trm : MSTerm) : PPError (List MSVar) =
   case trm of
     | Fun _ -> Good []
-    | Lambda (l, _) -> Good (opVarListHelper l)
+    | Lambda (l, _) -> opVarListHelper l
     | IfThenElse _ -> Good []
     | Apply _ -> Good []
     | _ -> Bad "Can't handle trm in opVarList"
@@ -403,6 +406,7 @@ case match of
          Good (ppConcat [ppString "(lambda (", ppString v, ppString ") ",
                          strm, ppString ")"])
        | Bad s -> Bad s)
+  | _ -> Bad "Unsupported feature in ppLambda"
 
 %%%%%%%%%%%%
 %% ppTerm %%
