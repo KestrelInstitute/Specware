@@ -11,15 +11,18 @@ op parseCTranslationPragmas (s : Spec) : LanguageMorphisms =
                       case elt of
                         | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, "C") ->
                           (case parseLanguageMorphism body of
-                             | Parsed lm -> lms ++ [lm]
+                             | Parsed lm -> 
+                               lms ++ [lm]
                              | Error msg ->
-                               let _ = writeLine("Error: " ^ msg) in
+                               let _ = writeLine("Error parsing C translation pragma: " ^ msg) in
                                lms
-                             | _ ->
-                               let _ = writeLine "====================" in
-                               let _ = writeLine ("Error -- unrecognized result from parsing this pragma:") in
-                               let _ = writeLine body in
-                               let _ = writeLine "====================" in
+                             | result ->
+                               let _ = writeLine "=======================================" in
+                               let _ = writeLine "Unecognized result from parsing pragma:" in
+                               let _ = writeLine body                                      in
+                               let _ = writeLine " => "                                    in
+                               let _ = writeLine (anyToString result)                      in
+                               let _ = writeLine "=======================================" in
                                lms)
                         | _ ->
                           lms)

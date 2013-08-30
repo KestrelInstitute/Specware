@@ -217,4 +217,24 @@ op MetaRule.showTerm (spc : Spec) (msg : String) (term : MSTerm) : Option MSTerm
  let _ = writeLine "--------------------" in
  Some term
 
+op SpecTransform.showPragmas (s : Spec, msg : String) : Spec =
+ let _ = writeLine "====================" in
+ let _ = writeLine ("Pragmas: " ^ msg) in
+ let _ = writeLine "--------------------" in
+ let _ = mapSpecElements (fn elt ->
+                            case elt of
+                              | Pragma (prefix, body, postfix, _) ->
+                                let _ = writeLine "--------------------" in
+                                let _ = writeLine prefix in
+                                let _ = writeLine body in
+                                let _ = writeLine postfix in
+                                let _ = writeLine "====================" in
+                                elt
+                              | _ ->
+                                elt)
+                         s.elements
+  in
+  let _ = writeLine "====================" in
+  s
+
 end-spec

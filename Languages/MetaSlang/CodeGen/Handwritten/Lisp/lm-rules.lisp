@@ -31,7 +31,7 @@
 
 ;;; Parser may return :uspecified for (:optional ..)
 
-(defun make-option  (x) (if (eq x :unspecified) '(:|None|) `(:|Some| . x)))
+(defun make-option  (x) (if (eq x :unspecified) '(:|None|) `(:|Some| . ,x)))
 (defun make-boolean (x) (if (eq x :unspecified) nil        x))
 
 ;;; ========================================================================
@@ -251,7 +251,7 @@
             (:optional (4 :Fixity))
             (:optional (5 :Precedence))
             (:optional (6 :Reversed)))
-  (LM::make_Op_Translation-2 1 2 
+  (LM::make_Op_Translation-6 1 2 
                              (make-option  3) 
                              (make-option  4)
                              (make-option  5)
@@ -263,7 +263,7 @@
 
 (define-lm-parser-rule :Fixity
     (:tuple (1 (:anyof "infix" "right" "left")))
-  (LM::make_LM_Fixity))
+  (LM::make_LM_Fixity 1))
 
 (define-lm-parser-rule :Precedence
     :Number)

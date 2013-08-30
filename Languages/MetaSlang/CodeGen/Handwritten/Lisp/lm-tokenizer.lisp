@@ -9,16 +9,17 @@
    ;;
    :size-of-character-set       128
    ;;
-   :word-symbol-start-chars     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-   :word-symbol-continue-chars  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'?"
+   :word-symbol-start-chars     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()_+-={}[]|\\:;'<>?/\""
+   :word-symbol-continue-chars  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()_+-={}[]|\\:;'<>?/\""
    ;;
-   :non-word-symbol-start-chars    "`~!@$^&*-=+\\|:<>/'?"
-   :non-word-symbol-continue-chars "`~!@$^&*-=+\\|:<>/'?"  ; note: we need to repeat \ here, since lisp removes one
+
+   :non-word-symbol-start-chars    ""
+   :non-word-symbol-continue-chars ""
    ;;
    :number-start-chars          "0123456789"
    :number-continue-chars       "0123456789"
    ;;
-   :string-quote-char           #\"
+   ;; :string-quote-char           #\"
    :string-escape-char          #\\
    ;;
    :whitespace-chars            '(#\space #\tab #\newline #\page #\return)

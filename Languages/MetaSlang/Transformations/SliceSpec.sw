@@ -20,6 +20,12 @@ op addList(s: QualifierSet, l: QualifiedIds): QualifierSet =
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+op codeGenElement?(el: SpecElement): Bool =
+ case el of
+   | Pragma("#translate", _, "#end", _) -> true
+   | Pragma _ -> false
+   | _ -> true
+
 op scrubSpec (spc : Spec, op_set : QualifierSet, type_set : QualifierSet) : Spec =
  let new_types =
      mapiPartialAQualifierMap (fn (q, id, v) ->
@@ -52,7 +58,7 @@ op scrubSpec (spc : Spec, op_set : QualifierSet, type_set : QualifierSet) : Spec
              forall? (fn qid -> qid in? type_set) (typesInTerm formula)
              % | Import   (_, _, elts,       _) -> exists? (fn el -> element_filter el) elts
            | Import _ -> true
-           | _ -> haskellElement? el
+           | _ -> codeGenElement? el
      in
      mapPartial (fn elt ->
                    if keep? elt then
