@@ -57,6 +57,7 @@ op specCommand?(script: Script): Bool =
     | AddSemanticChecks _ -> true
     | RedundantErrorCorrecting _ -> true
     | Slice _ -> true
+    | Steps (stp1 :: _) -> specCommand? stp1
     | _ -> false
 
 %% Defined in Isomorphism.sw
@@ -86,7 +87,8 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
     | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
     | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
-    | MetaRule   (Qualified(q, id), _, _) | q = msTermTransformQualifier -> ppConcat[ppString id]
+    | MetaRule   (Qualified(q, id), _, atv) | q = msTermTransformQualifier ->
+      ppConcat[ppString id, ppString " ", ppAbbrAnnTypeValue atv]
     | MetaRule   (qid, _, _) -> ppConcat[ppString "apply ", ppQid qid]
     | RLeibniz    qid -> ppConcat[ppString "revleibniz ", ppQid qid]
     | Weaken      qid -> ppConcat[ppString "weaken ", ppQid qid]
@@ -128,7 +130,7 @@ op ppOptionRls(rls: RuleSpecs): WLPretty = if rls = [] then ppNil
 op ppScript(scr: Script): WLPretty =
   case scr of
     | Steps steps ->
-      ppConcat[ppString "{", ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps), ppString "}"]
+      ppConcat[ppString "{", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)), ppString "}"]
     | Repeat steps ->
       ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
                ppString "}"]
@@ -160,8 +162,8 @@ op ppScript(scr: Script): WLPretty =
                                     ppString "]"]
     | PartialEval -> ppString "eval"
     | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
-    | SpecMetaTransform(transfn, _, atv) -> ppConcat[ppString transfn, ppAnnTypeValue atv]
-    | SpecTransformInMonad(transfn, _, atv) -> ppConcat[ppString transfn, ppAnnTypeValue atv]
+    | SpecMetaTransform(transfn, _, atv) -> ppConcat[ppString transfn, ppString " ", ppAbbrAnnTypeValue atv]
+    | SpecTransformInMonad(transfn, _, atv) -> ppConcat[ppString transfn, ppString " ", ppAbbrAnnTypeValue atv]
     | SpecTransform(qid as Qualified(q,id), rls) ->
       ppConcat[if q = "SpecTransform" then ppString id else ppQid qid,
                ppOptionRls rls]
@@ -243,7 +245,7 @@ op ppQidPair(qid1: QualifiedId, qid2: QualifiedId): WLPretty =
   enclose "(" ")" [ppQid qid1, ppString ", ", ppQid qid2]
 
 op scriptToString(scr: Script): String =
-  let pp = ppNest 3 (ppConcat [ppString "  {", ppScript scr, ppString "}"]) in
+  let pp = ppNest 3 (ppScript scr) in
   ppFormat(pp)
 
 op printScript(scr: Script): () =

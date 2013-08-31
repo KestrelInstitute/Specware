@@ -162,7 +162,7 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
   case atv of
     | SpecV _ -> ppString "spec"
     | TermV _ -> ppString "term"
-    | ArrowsV atvs -> ppSep (ppString " -> ") (map ppAnnTypeValue atvs)
+    | ArrowsV atvs -> ppSep (ppString " ") (map ppAnnTypeValue atvs)
     | StrV str -> ppString str
     | NumV n -> ppString(show n)
     | BoolV b -> ppString(show b)
@@ -179,6 +179,40 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
                                         id_atv_prs),
                                    ppString "}"]
     | MonadV atv1 -> ppConcat[ppString "Monad"]
+
+op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
+  let def ppOpt(atv: AnnTypeValue): Option Doc =
+       case atv of
+         | SpecV _ -> None
+         | TermV _ -> None
+         | ArrowsV atvs -> Some(ppSep (ppString " ") (mapPartial ppOpt atvs))
+         | StrV str -> Some(ppString str)
+         | NumV n -> Some(ppString(show n))
+         | BoolV b -> Some(ppString(show b))
+         | OpNameV qid -> Some(ppString(show qid))
+         | RuleV rs -> Some(ppRuleSpec rs)
+         | OptV None -> None
+         | OptV (Some atv1) -> ppOpt atv1
+         | ListV [] -> None
+         | ListV atvs -> Some(ppConcat[ppString "[", ppSep (ppString ", ") (map ppSome atvs), ppString "]"])
+         | TupleV atvs -> Some(ppConcat[ppString "(", ppSep (ppString ", ") (map ppSome atvs), ppString ")"])
+         | RecV id_atv_prs  -> Some(ppConcat[ppString "{",
+                                             ppSep (ppString ", ")
+                                               (mapPartial (fn (id, atvi) ->
+                                                              case ppOpt atvi of
+                                                                | None -> None
+                                                                | Some doci -> 
+                                                                  Some(ppConcat[ppString id, ppString ": ", doci]))
+                                                  id_atv_prs),
+                                             ppString "}"])
+         | MonadV atv1 -> None
+     def ppSome(atv: AnnTypeValue): Doc =
+       case ppOpt atv of
+         | Some d -> d
+         | None -> ppString ""
+  in
+  ppSome atv
+
 
 op AnnTypeValue.show(atv: AnnTypeValue): String =
   let pp = ppNest 2 (ppAnnTypeValue atv) in
