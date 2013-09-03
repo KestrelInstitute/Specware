@@ -4,10 +4,11 @@
 
 I2LToC qualifying spec 
 
+import /Languages/MetaSlang/CodeGen/LanguageMorphism
+import /Languages/I2L/I2L
+import /Languages/I2L/CodeGen/C/CGenOptions
 import /Languages/C/C
 import /Languages/C/CUtils
-import /Languages/I2L/I2L
-import CGenOptions
 
 % import ESpecsCodeGenerationOptions
 
@@ -17,7 +18,8 @@ type I2C_Context = {
                     xcspc            : C_Spec,    % for incremental code generation, xcspc holds existing cspec being extended
                     useRefTypes      : Bool,
                     currentFunName   : Option String,
-                    currentFunParams : C_VarDecls
+                    currentFunParams : C_VarDecls,
+                    lms              : LanguageMorphisms
                     }
 
 op default_I2C_Context : I2C_Context =
@@ -25,7 +27,8 @@ op default_I2C_Context : I2C_Context =
   xcspc            = emptyCSpec "",
   useRefTypes      = false,
   currentFunName   = None,
-  currentFunParams = []
+  currentFunParams = [],
+  lms              = []
   }
 
 op setCurrentFunName (ctxt : I2C_Context, id : String) : I2C_Context =
@@ -36,20 +39,23 @@ op setCurrentFunParams (ctxt : I2C_Context, params : C_VarDecls) : I2C_Context =
 
 op generateC4ImpUnit (impunit     : I_ImpUnit, 
                       xcspc       : C_Spec, 
-                      useRefTypes : Bool) 
+                      useRefTypes : Bool,
+                      lms         : LanguageMorphisms)
  : C_Spec =
- generateC4ImpUnitHack (impunit, xcspc, useRefTypes, [])
+ generateC4ImpUnitHack (impunit, xcspc, useRefTypes, [], lms)
 
 op generateC4ImpUnitHack (impunit     : I_ImpUnit, 
                           xcspc       : C_Spec, 
                           useRefTypes : Bool,
-                          includes    : List String)
+                          includes    : List String,
+                          lms         : LanguageMorphisms)
  : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
  let ctxt = {xcspc            = xcspc,
              useRefTypes      = useRefTypes,
              currentFunName   = None,
-             currentFunParams = []}
+             currentFunParams = [],
+             lms              = lms}
  in
  let cspc = emptyCSpec impunit.name in
  let cspc = addBuiltIn (ctxt, cspc) in
@@ -1161,7 +1167,7 @@ op c4StadCode (ctxt       : I2C_Context,
                stadcode   : I_StadCode) 
  : C_Spec * C_Block * C_Stmts =
  % decls are empty, so the following 2 lines have no effect:
- let declscspc = generateC4ImpUnit (stadcode.decls, ctxt.xcspc, ctxt.useRefTypes) in
+ let declscspc = generateC4ImpUnit (stadcode.decls, ctxt.xcspc, ctxt.useRefTypes, ctxt.lms) in
  let cspc      = mergeCSpecs [cspc, declscspc] in
  let (cspc, block, stepstmts) =
  foldl (fn ((cspc, block, stmts), stp) ->

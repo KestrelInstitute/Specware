@@ -66,8 +66,6 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 
  revised_spec
 
-op jlm () : () = ()
-
 op verbose? : Bool = false
 
 %% temporary hack until '#translate C' is working
@@ -79,13 +77,11 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
                                         (old_op_extern_types : List (String*String))
                                         (old_op_extern_defs  : List String)
  : Option C_Spec =
- let _ = jlm() in
  let lms             = parseCTranslationPragmas ms_spec     in
  let lm_verbatims    = extract_verbatims        lms         in 
  let lm_imports      = extract_imports          lms         in 
  let lm_translations = extract_translations     lms         in 
  let lm_natives      = extract_natives          lms         in 
-
  let includes        = map printImport          lm_imports  in
  %% 
  let _ = 
@@ -130,31 +126,35 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
  let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
                                              use_ref_types?,
                                              constructer_ops,
-                                             filter_wrt_extern_defs)
+                                             filter_wrt_extern_defs,
+                                             lms)
  in
  let new_c_spec = generateC4ImpUnitHack (i2l_spec,
                                          old_c_spec, 
                                          use_ref_types?,
-                                         includes)
+                                         includes,
+                                         lms)
  in
  Some new_c_spec
 
 op generateCSpecFromTransformedSpecIncrFilter (ms_spec    : Spec) 
                                               (app_name   : String) 
                                               (old_c_spec : C_Spec)
-                                              (filter     : QualifiedId -> Bool) 
+                                              (filter     : QualifiedId -> Bool)
  : Option C_Spec =
  let use_ref_types?  = true in
  let constructer_ops = []   in
-
+ let lms        = parseCTranslationPragmas ms_spec in
  let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
                                              use_ref_types?,
                                              constructer_ops,
-                                             filter)
+                                             filter,
+                                             lms)
  in
  let new_c_spec = generateC4ImpUnit (i2l_spec,
-                                    old_c_spec, 
-                                    use_ref_types?)
+                                     old_c_spec, 
+                                     use_ref_types?,
+                                     lms)
  in
  Some new_c_spec
 

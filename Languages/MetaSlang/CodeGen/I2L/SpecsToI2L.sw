@@ -12,6 +12,7 @@ SpecsToI2L qualifying spec
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Environment
 % import /Languages/MetaSlang/CodeGen/CodeGenTransforms  % stripSubtypesAndBaseDefs
+  import /Languages/MetaSlang/Codegen/LanguageMorphism
 
   import /Languages/I2L/I2L
 
@@ -22,7 +23,8 @@ SpecsToI2L qualifying spec
                       isToplevel     : Bool,               % not used
                       useRefTypes    : Bool,               % always true
                       constrOps      : List   QualifiedId, % not used, constrOps are distinguished by their name (contain "__")
-                      currentOpType  : Option QualifiedId
+                      currentOpType  : Option QualifiedId,
+                      lms            : LanguageMorphisms
                       }
 
   op default_S2I_Context : S2I_Context =
@@ -31,7 +33,8 @@ SpecsToI2L qualifying spec
      isToplevel    = false,
      useRefTypes   = true,
      constrOps     = [],
-     currentOpType = None
+     currentOpType = None,
+     lms           = []
      }
 
   op unsetToplevel (ctxt : S2I_Context) : S2I_Context =
@@ -71,20 +74,26 @@ SpecsToI2L qualifying spec
 
   op generateI2LCodeSpec (spc          : Spec,
                           useRefTypes? : Bool, 
-                          constrOps    : List QualifiedId)
+                          constrOps    : List QualifiedId,
+                          lms          : LanguageMorphisms)
     : I_ImpUnit =
-    generateI2LCodeSpecFilter (spc, useRefTypes?, constrOps, fn(_) -> true)
+    generateI2LCodeSpecFilter (spc, 
+                               useRefTypes?, 
+                               constrOps, fn(_) -> true,
+                               lms)
 
   op generateI2LCodeSpecFilter (spc          : Spec, 
                                 useRefTypes? : Bool,
                                 constrOps    : List QualifiedId, 
-                                filter       : QualifiedId -> Bool)
+                                filter       : QualifiedId -> Bool,
+                                lms          : LanguageMorphisms)
     : I_ImpUnit =
     let ctxt = {specname      = "", 
                 isToplevel    = true, 
                 useRefTypes   = useRefTypes?,
                 constrOps     = constrOps,
-                currentOpType = None}
+                currentOpType = None,
+                lms           = lms}
     in
     %let spc = normalizeArrowTypesInSpec spc in
     let transformedOps = 
