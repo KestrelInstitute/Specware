@@ -91,7 +91,7 @@ op make_Verbatim_Section  (pre : String, body : String, post : String)
  : Section = 
  Verbatim  body
 
-op extract_verbatims (lms : LanguageMorphisms) : List String =
+op extractVerbatims (lms : LanguageMorphisms) : List String =
  foldl (fn (all_strs, lm) ->
           foldl (fn (all_strs, section) ->
                    case section of
@@ -110,7 +110,7 @@ op make_Imports_Section (imports : Imports)
  : Section = 
  Imports imports
 
-op extract_imports (lms : LanguageMorphisms) : Imports =
+op extractImports (lms : LanguageMorphisms) : Imports =
  foldl (fn (all_imports, lm) ->
           foldl (fn (all_imports, section) ->
                    case section of
@@ -175,7 +175,7 @@ op make_Morphism_Section (translations : Translations)
  : Section = 
  Morphism translations
 
-op extract_translations (lms : LanguageMorphisms) : Translations =
+op extractTranslations (lms : LanguageMorphisms) : Translations =
  foldl (fn (all_translations, lm) ->
           foldl (fn (all_translations, section) ->
                    case section of
@@ -201,9 +201,10 @@ op printTranslation (lm_translation : Translation) : String =
 %% Names
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type Symbol  = String               %% in practice, no dots
+type Symbol = String               %% in practice, no dots
 
-type Name    = List Symbol
+type Names  = List Name
+type Name   = List Symbol
 
 op printName (name : Name) : String =
  let hd :: tail = name in
@@ -413,7 +414,7 @@ op make_Natives_Section (natives : Natives)
  : Section = 
  Natives natives
 
-op extract_natives (lms : LanguageMorphisms) : Natives =
+op extractNatives (lms : LanguageMorphisms) : Natives =
  foldl (fn (all_natives, lm) ->
           foldl (fn (all_natives, section) ->
                    case section of
@@ -451,6 +452,80 @@ op printNative (lm_native : Native) : String =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op make_Generated_Section ()                                           : Section = Generated
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Utility Routines
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op extractPreNatives (lms : LanguageMorphisms) 
+ : Names * Names =
+ %% extract metaslang names that translate to native types and ops
+ let translations      = extractTranslations lms in
+ let natives           = extractNatives      lms in
+ let native_type_names = foldl (fn (native_names, native) ->
+                                  case native of
+                                    | Type x -> native_names ++ [x.name]
+                                    | _ -> native_names)
+                                []
+                                natives
+ in
+ let native_op_names   = foldl (fn (native_names, native) ->
+                                  case native of
+                                    | Op x -> native_names ++ [x.name]
+                                    | _ -> native_names)
+                                []
+                                natives
+ in
+ foldl (fn (result as (pre_native_types, pre_native_ops), translation) ->
+          case translation of
+            | Type trans -> 
+              (case trans.location of
+                 | Some _ -> 
+                   % we know the location of the target definition (so it must be native)
+                   (pre_native_types ++ [trans.source],
+                    pre_native_ops)
+                 | _ ->
+                   case trans.target of
+                     | Name name -> 
+                       if exists? (fn native -> 
+                                     case native of
+                                       | Type x -> x.name = name
+                                       | _ -> false)
+                                  natives
+                         then
+                           % we've declared the target to be native
+                           (pre_native_types ++ [trans.source],
+                            pre_native_ops)
+                       else
+                         result
+                     | _ ->
+                       result)
+            | Op trans ->
+              (case trans.location of
+                 | Some _ -> 
+                   % we know the location of the target definition (so it must be native)
+                   (pre_native_types,
+                    pre_native_ops ++ [trans.source])
+                 | _ ->
+                   case trans.target of
+                     | Name name -> 
+                       if exists? (fn native -> 
+                                     case native of
+                                       | Op x -> x.name = name
+                                       | _ -> false)
+                                  natives
+                         then
+                           % we've declared the target to be native
+                           (pre_native_types,
+                            pre_native_ops ++ [trans.source])
+                       else
+                         result
+                     | _ ->
+                       result)
+            | _ -> 
+              result)
+       (native_type_names, native_op_names)
+       translations
 
 end-spec
 

@@ -289,21 +289,25 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
  : Spec =
  let empty_c_spec = emptyCSpec "" in
  let 
-   def filter (Qualified (q, id)) =
-     if id in? op_extern_defs then
-       false
-     else if exists? (fn (x, _) -> x = id) op_extern_types then
-       false
-     else
-       true
+   def desired_type? (Qualified (q, id)) =
+     ~(exists? (fn (x, _) -> x = id) op_extern_types)
+
+   def desired_op? (Qualified (q, id)) =
+     ~ (id in? op_extern_defs)
  in
  let _ = 
      % case generateCSpecFromTransformedSpec ms_spec app_name of
      % case generateCSpecFromTransformedSpecIncrFilter ms_spec app_name empty_c_spec filter of
 
      %% temporary hack until '#translate C' is working
-     case generateCSpecFromTransformedSpecHack ms_spec app_name empty_c_spec filter 
-                                               includes op_extern_types op_extern_defs  
+     case generateCSpecFromTransformedSpecHack ms_spec 
+                                               app_name 
+                                               empty_c_spec 
+                                               desired_type?
+                                               desired_op?
+                                               includes 
+                                               op_extern_types 
+                                               op_extern_defs  
        of
        | Some c_spec ->
          printCSpec (c_spec, app_name, opt_filename) 

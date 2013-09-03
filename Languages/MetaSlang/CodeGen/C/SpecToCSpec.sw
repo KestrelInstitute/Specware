@@ -69,19 +69,20 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 op verbose? : Bool = false
 
 %% temporary hack until '#translate C' is working
-op generateCSpecFromTransformedSpecHack (ms_spec    : Spec) 
-                                        (app_name   : String) 
-                                        (old_c_spec : C_Spec)
-                                        (filter     : QualifiedId -> Bool) 
+op generateCSpecFromTransformedSpecHack (ms_spec       : Spec) 
+                                        (app_name      : String) 
+                                        (old_c_spec    : C_Spec)
+                                        (desired_type? : QualifiedId -> Bool) 
+                                        (desired_op?   : QualifiedId -> Bool) 
                                         (old_includes        : List String)
                                         (old_op_extern_types : List (String*String))
                                         (old_op_extern_defs  : List String)
  : Option C_Spec =
  let lms             = parseCTranslationPragmas ms_spec     in
- let lm_verbatims    = extract_verbatims        lms         in 
- let lm_imports      = extract_imports          lms         in 
- let lm_translations = extract_translations     lms         in 
- let lm_natives      = extract_natives          lms         in 
+ let lm_verbatims    = extractVerbatims         lms         in 
+ let lm_imports      = extractImports           lms         in 
+ let lm_translations = extractTranslations      lms         in 
+ let lm_natives      = extractNatives           lms         in 
  let includes        = map printImport          lm_imports  in
  %% 
  let _ = 
@@ -120,13 +121,14 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
  let constructer_ops = []   in
  let ms_spec = renameTypes (ms_spec, op_extern_types) in
  let 
-   def filter_wrt_extern_defs (qid as Qualified (q, id)) =
-    filter qid && ~(id in? op_extern_defs)
+   def desired_non_native_op? (qid as Qualified (q, id)) =
+    desired_op? qid && ~(id in? op_extern_defs)
  in
  let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
                                              use_ref_types?,
                                              constructer_ops,
-                                             filter_wrt_extern_defs,
+                                             desired_type?,
+                                             desired_non_native_op?,
                                              lms)
  in
  let new_c_spec = generateC4ImpUnitHack (i2l_spec,
@@ -137,10 +139,11 @@ op generateCSpecFromTransformedSpecHack (ms_spec    : Spec)
  in
  Some new_c_spec
 
-op generateCSpecFromTransformedSpecIncrFilter (ms_spec    : Spec) 
-                                              (app_name   : String) 
-                                              (old_c_spec : C_Spec)
-                                              (filter     : QualifiedId -> Bool)
+op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec) 
+                                              (app_name      : String) 
+                                              (old_c_spec    : C_Spec)
+                                              (desired_type? : QualifiedId -> Bool)
+                                              (desired_op?   : QualifiedId -> Bool)
  : Option C_Spec =
  let use_ref_types?  = true in
  let constructer_ops = []   in
@@ -148,7 +151,8 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec    : Spec)
  let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
                                              use_ref_types?,
                                              constructer_ops,
-                                             filter,
+                                             desired_type?,
+                                             desired_op?,
                                              lms)
  in
  let new_c_spec = generateC4ImpUnit (i2l_spec,
@@ -166,8 +170,15 @@ op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec)
                                         (app_name   : String) 
                                         (old_c_spec : C_Spec)
  : Option C_Spec =
- let accept_all = (fn _ -> true) in
- generateCSpecFromTransformedSpecIncrFilter ms_spec app_name old_c_spec accept_all
+ let 
+  def desired_type? _ = true 
+  def desired_op?   _ = true
+ in
+ generateCSpecFromTransformedSpecIncrFilter ms_spec 
+                                            app_name
+                                            old_c_spec 
+                                            desired_type?
+                                            desired_op?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.

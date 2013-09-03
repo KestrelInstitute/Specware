@@ -71,22 +71,24 @@ SpecsToI2L qualifying spec
 
           | _ -> true
 
-
-  op generateI2LCodeSpec (spc          : Spec,
-                          useRefTypes? : Bool, 
-                          constrOps    : List QualifiedId,
-                          lms          : LanguageMorphisms)
+  op generateI2LCodeSpec (ms_spec         : Spec,
+                          use_ref_types?  : Bool, 
+                          constructor_ops : List QualifiedId,
+                          lms             : LanguageMorphisms)
     : I_ImpUnit =
-    generateI2LCodeSpecFilter (spc, 
-                               useRefTypes?, 
-                               constrOps, fn(_) -> true,
+    generateI2LCodeSpecFilter (ms_spec,
+                               use_ref_types?,
+                               constructor_ops,
+                               fn _ -> true,    % desire all types
+                               fn _ -> true,    % desire all ops
                                lms)
 
-  op generateI2LCodeSpecFilter (spc          : Spec, 
-                                useRefTypes? : Bool,
-                                constrOps    : List QualifiedId, 
-                                filter       : QualifiedId -> Bool,
-                                lms          : LanguageMorphisms)
+  op generateI2LCodeSpecFilter (spc           : Spec,
+                                useRefTypes?  : Bool, 
+                                constrOps     : List QualifiedId,
+                                desired_type? : QualifiedId -> Bool,
+                                desired_op?   : QualifiedId -> Bool,
+                                lms           : LanguageMorphisms)
     : I_ImpUnit =
     let ctxt = {specname      = "", 
                 isToplevel    = true, 
@@ -95,13 +97,38 @@ SpecsToI2L qualifying spec
                 currentOpType = None,
                 lms           = lms}
     in
+    let (pre_native_types, pre_native_ops) = extractPreNatives lms in
+    %  let _ = writeLine "====================" in
+    %  let _ = writeLine "Pre-native types:"    in
+    %  let _ = app (fn x -> writeLine (anyToString x)) pre_native_types in
+    %  let _ = writeLine "Pre-native ops:"      in
+    %  let _ = app (fn x -> writeLine (anyToString x)) pre_native_ops   in
+    %  let _ = writeLine "====================" in
     %let spc = normalizeArrowTypesInSpec spc in
+    let
+      def print_qid (q, id, explicit_q?) =
+        if explicit_q? then
+          q ^ "." ^ id
+        else if q = UnQualified then
+          id
+        else 
+          "[" ^ q ^ ".]" ^ id        
+    in
     let transformedOps = 
         foldriAQualifierMap (fn (q, id, opinfo, l1) ->
-                               if filter (Qualified (q, id)) then
-                                 let trOp = opinfo2declOrDefn (Qualified (q, id), opinfo, None, ctxt, spc) in
+                               let qid = Qualified (q, id) in
+                               %% op must be desired and not translate to native op
+                               if [q,id] in? pre_native_ops then
+                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, true)) in
+                                 l1
+                               else if [id] in? pre_native_ops then
+                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, false)) in
+                                 l1
+                               else if desired_op? qid then
+                                 let trOp = opinfo2declOrDefn (qid, opinfo, None, ctxt, spc) in
                                  l1 ++ [trOp]
                                else
+                                 let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_qid (q, id, false)) in
                                  l1)
                             []
                             spc.ops
@@ -113,14 +140,21 @@ SpecsToI2L qualifying spec
          decls    = {
                      typedefs = foldlSpecElements (fn (defs,el) ->
                                                      case el of
-                                                       | TypeDef (name, _) ->
+                                                       | TypeDef (name as Qualified(q,id), _) ->
                                                          (case findTheType (spc, name) of
                                                             | Some typeinfo ->
-                                                              if filter name then
+                                                              if [q,id] in? pre_native_types then
+                                                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
+                                                                defs
+                                                              else if [id] in? pre_native_types then
+                                                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, false)) in
+                                                                defs
+                                                              else if desired_type? name then
                                                                 case typeinfo2typedef (name, typeinfo, ctxt, spc) of
                                                                   | Some typedef -> defs ++ [typedef]
                                                                   | _            -> defs
                                                               else 
+                                                                let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_qid (q, id, false)) in
                                                                 defs)
                                                        | _ -> defs)
 
