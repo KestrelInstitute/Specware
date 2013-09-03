@@ -83,7 +83,7 @@ SpecsToI2L qualifying spec
                                fn _ -> true,    % desire all ops
                                lms)
 
-  op generateI2LCodeSpecFilter (spc           : Spec,
+  op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                 useRefTypes?  : Bool, 
                                 constrOps     : List QualifiedId,
                                 desired_type? : QualifiedId -> Bool,
@@ -120,13 +120,13 @@ SpecsToI2L qualifying spec
                                  let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, false)) in
                                  l1
                                else if desired_op? qid then
-                                 let trOp = opinfo2declOrDefn (qid, opinfo, None, ctxt, spc) in
+                                 let trOp = opinfo2declOrDefn (qid, opinfo, None, ctxt, ms_spec) in
                                  l1 ++ [trOp]
                                else
                                  let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_qid (q, id, false)) in
                                  l1)
                             []
-                            spc.ops
+                            ms_spec.ops
     in
     let res : I_ImpUnit = 
         {
@@ -136,7 +136,7 @@ SpecsToI2L qualifying spec
                      typedefs = foldlSpecElements (fn (defs,el) ->
                                                      case el of
                                                        | TypeDef (name as Qualified(q,id), _) ->
-                                                         (case findTheType (spc, name) of
+                                                         (case findTheType (ms_spec, name) of
                                                             | Some typeinfo ->
                                                               %% to be considered, type must be desired and not translate to native type
                                                               if [q,id] in? pre_native_types then
@@ -146,7 +146,7 @@ SpecsToI2L qualifying spec
                                                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, false)) in
                                                                 defs
                                                               else if desired_type? name then
-                                                                case typeinfo2typedef (name, typeinfo, ctxt, spc) of
+                                                                case typeinfo2typedef (name, typeinfo, ctxt, ms_spec) of
                                                                   | Some typedef -> defs ++ [typedef]
                                                                   | _            -> defs
                                                               else 
@@ -155,7 +155,7 @@ SpecsToI2L qualifying spec
                                                        | _ -> defs)
 
                                                   []
-                                                  spc.elements,
+                                                  ms_spec.elements,
 
                      opdecls  = foldl (fn | (l3,OpDecl d) -> l3++[d] 
                                           | (l4,_)        -> l4)
@@ -200,19 +200,19 @@ SpecsToI2L qualifying spec
   op typeinfo2typedef (Qualified (q, id) : QualifiedId,
                        info              : TypeInfo,
                        ctxt              : S2I_Context,
-                       spc               : Spec)
+                       ms_spec           : Spec)
     : Option I_TypeDefinition =
     if definedTypeInfo? info then
       let (tvs, typ) = unpackFirstTypeDef info in
       let typename = (q, id) in
-      Some (typename, type2itype (tvs, typ, ctxt, spc))
+      Some (typename, type2itype (tvs, typ, ctxt, ms_spec))
     else
       None 
 
   type LeLt   = | LE | LT
   type MinMax = | Min | Max
 
-  op find_simple_constant_bounds (tm : MSTerm) : Option (Int * Int) =
+  op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
     %% returns Some (m, n) if the type directly expresses the inclusive range [m, n], otherwise None
     let 
 
@@ -272,7 +272,7 @@ SpecsToI2L qualifying spec
           | _ -> None
 
     in
-    case tm of
+    case ms_term of
       | Lambda([(VarPat ((vid,_),_),
                  Fun (Bool true, _, _),
                  Apply  (Fun(And,_,_), Record ([("1",tm1), ("2",tm2)], _), _))],
@@ -318,10 +318,10 @@ SpecsToI2L qualifying spec
         
       | _ -> None
 
-  op type2itype (tvs  : TyVars,
-                 typ  : MSType,
-                 ctxt : S2I_Context,
-                 spc  : Spec)
+  op type2itype (tvs     : TyVars,
+                 ms_type : MSType,
+                 ctxt    : S2I_Context,
+                 ms_spec : Spec)
     : I_Type =
 
     let 
@@ -332,7 +332,7 @@ SpecsToI2L qualifying spec
           | _ -> false
         
       def unfold_bounded_list_type element_type pred =
-        let element_type = type2itype (tvs, element_type, unsetToplevel ctxt, spc) in
+        let element_type = type2itype (tvs, element_type, unsetToplevel ctxt, ms_spec) in
         case pred of
            | Lambda ([(VarPat ((pred_var, _), _),
                        Fun (Bool true, _, _),
@@ -357,7 +357,7 @@ SpecsToI2L qualifying spec
                                  | _ -> None)
                             | _ -> None
                       in
-                      let const = constant_term_Int_value (constant_term, spc) in
+                      let const = constant_term_Int_value (constant_term, ms_spec) in
                       if const < min_const then None else Some const
                   in
                   (case cmp of
@@ -375,7 +375,7 @@ SpecsToI2L qualifying spec
                 | _ -> None)
            | _ -> None
     in
-    let utyp = unfoldToSpecials (typ, spc) in
+    let utyp = unfoldToSpecials (ms_type, ms_spec) in
     %let utyp = unfoldBaseVP(spc,typ,false,true) in
     case utyp of
 
@@ -390,7 +390,7 @@ SpecsToI2L qualifying spec
       | Base(Qualified("String",    "String"), [],_) -> I_Primitive I_String
      %| Base(Qualified("Float",     "Float"),  [],_) -> I_Primitive I_Float
 
-      | Base(Qualified(_,           "Ptr"),    [t1],_) -> I_Ref (type2itype (tvs, t1, ctxt, spc)) 
+      | Base(Qualified(_,           "Ptr"),    [t1],_) -> I_Ref (type2itype (tvs, t1, ctxt, ms_spec)) 
 
       % ----------------------------------------------------------------------
 
@@ -493,25 +493,25 @@ SpecsToI2L qualifying spec
       % ----------------------------------------------------------------------
 
       | Arrow (typ1, typ2, _) ->
-        let typ1 = unfoldToSpecials (typ1, spc) in
+        let typ1 = unfoldToSpecials (typ1, ms_spec) in
         %let typ1 = unfoldToProduct(spc,typ1) in
         (case typ1 of
            | Product (fields, _) ->
              let types = map (fn (_, typ) -> 
-                                let typ = unfoldToSpecials (typ, spc) in
-                                type2itype (tvs, typ, unsetToplevel ctxt, spc)) 
+                                let typ = unfoldToSpecials (typ, ms_spec) in
+                                type2itype (tvs, typ, unsetToplevel ctxt, ms_spec)) 
                              fields
              in
-             let typ = type2itype (tvs, typ2, unsetToplevel ctxt, spc) in
+             let typ = type2itype (tvs, typ2, unsetToplevel ctxt, ms_spec) in
              I_FunOrMap (types, typ)
            | _ -> 
              let dom_type =
-                 case type2itype (tvs, typ1, unsetToplevel ctxt, spc) of
+                 case type2itype (tvs, typ1, unsetToplevel ctxt, ms_spec) of
                    | I_Tuple types -> types
                    | typ -> [typ]
              in
              I_FunOrMap (dom_type, 
-                         type2itype (tvs, typ2, unsetToplevel ctxt, spc)))
+                         type2itype (tvs, typ2, unsetToplevel ctxt, ms_spec)))
 
       % ----------------------------------------------------------------------
 
@@ -519,14 +519,14 @@ SpecsToI2L qualifying spec
         if numbered? fields then
           let types = 
               map (fn (_,typ) -> 
-                     type2itype (tvs, typ, unsetToplevel ctxt, spc)) 
+                     type2itype (tvs, typ, unsetToplevel ctxt, ms_spec)) 
                   fields 
           in
           if types = [] then I_Void else I_Tuple types
         else
           let structfields = 
               map (fn (id, typ) -> 
-                     (id, type2itype (tvs, typ, unsetToplevel ctxt, spc)))
+                     (id, type2itype (tvs, typ, unsetToplevel ctxt, ms_spec)))
                   fields
           in
           if structfields = [] then I_Void else I_Struct structfields
@@ -535,7 +535,7 @@ SpecsToI2L qualifying spec
 
       | CoProduct(fields,_) ->
         let unionfields = map (fn | (id,None)     -> (id, I_Void)
-                                  | (id,Some typ) -> (id, type2itype (tvs, typ, unsetToplevel ctxt, spc)))
+                                  | (id,Some typ) -> (id, type2itype (tvs, typ, unsetToplevel ctxt, ms_spec)))
                               fields
         in
         I_Union unionfields
@@ -555,35 +555,35 @@ SpecsToI2L qualifying spec
       | Base (Qualified (q, id), _, _) -> I_Base (q, id)
 
       | Subtype (typ, trm, _) -> % ignore the term...
-        type2itype (tvs, typ, ctxt, spc)
+        type2itype (tvs, typ, ctxt, ms_spec)
 
       | Quotient (typ, trm, _) -> % ignore the term...
-        type2itype (tvs, typ, ctxt, spc)
+        type2itype (tvs, typ, ctxt, ms_spec)
 
       | _ ->
         fail ("sorry, code generation doesn't support the use of this type:\n       "
-                ^ printType typ)
+                ^ printType ms_type)
 
-  op constant_term_Int_value (tm : MSTerm, spc : Spec) : Int =
+  op constant_term_Int_value (ms_term : MSTerm, ms_spec : Spec) : Int =
     let 
       def err () = 
-        let _ = print tm in
-        fail ("cannot evaluate the constant value of term " ^ printTerm tm)
+        let _ = print ms_term in
+        fail ("cannot evaluate the constant value of term " ^ printTerm ms_term)
     in
-    case tm of
+    case ms_term of
       | Fun (Nat n, _, _) -> n
       | Fun (Op (qid, _), _, _) -> 
-        (case getOpDefinition (qid, spc) of
+        (case getOpDefinition (qid, ms_spec) of
            | None -> err()
-           | Some tm -> constant_term_Int_value (tm, spc))
+           | Some tm -> constant_term_Int_value (tm, ms_spec))
       | _ -> err()
 
 
   (**
    returns the definition term of the given op, if it exists in the given spec.
    *)
-  op getOpDefinition (Qualified (q, id) : QualifiedId, spc : Spec) : Option MSTerm =
-    case findAQualifierMap (spc.ops, q, id) of
+  op getOpDefinition (Qualified (q, id) : QualifiedId, ms_spec : Spec) : Option MSTerm =
+    case findAQualifierMap (ms_spec.ops, q, id) of
       | Some info ->
         if definedOpInfo? info then
           Some (firstOpDefInnerTerm info)
@@ -597,43 +597,43 @@ SpecsToI2L qualifying spec
     an arrow type is a product or not. Only "real" products are unfolded, i.e. type of the
     form (A1 * A2 * ... * An) are unfolded, not those of the form {x1:A1,x2:A2,...,xn:An}
   *)
-  op  unfoldToProduct (typ : MSType, spc : Spec) : MSType =
+  op  unfoldToProduct (ms_type : MSType, ms_spec : Spec) : MSType =
     let
       def unfoldRec typ =
-        let utyp = unfoldBaseKeepPrimitives (typ, spc) in
+        let utyp = unfoldBaseKeepPrimitives (typ, ms_spec) in
         if utyp = typ then typ else unfoldRec utyp
 
     in
-    let utyp = unfoldRec typ in
+    let utyp = unfoldRec ms_type in
     case utyp of
-      | Product (fields, _) -> if numbered? fields then utyp else typ
-      | _ -> typ
+      | Product (fields, _) -> if numbered? fields then utyp else ms_type
+      | _ -> ms_type
 
 
-  op unfoldToCoProduct (typ : MSType, spc : Spec) : MSType =
+  op unfoldToCoProduct (ms_type : MSType, ms_spec : Spec) : MSType =
     let
       def unfoldRec typ =
-        let utyp = unfoldBase (spc, typ) in
+        let utyp = unfoldBase (ms_spec, typ) in
         if utyp = typ then typ else unfoldRec utyp
 
     in
-    let utyp = unfoldRec typ in
+    let utyp = unfoldRec ms_type in
     case utyp of
       | CoProduct (fields, _) -> utyp
-      | _ -> typ
+      | _ -> ms_type
 
   % unfold to special type in order to get the necessary information to generate code
   % e.g. unfold to type of the form {n:Nat|n<C} which is needed to generate arrays
 
-  op unfoldToSpecials (typ : MSType, _ : Spec) : MSType = 
-    typ
+  op unfoldToSpecials (ms_type : MSType, _ : Spec) : MSType = 
+    ms_type
 
-  op unfoldToSpecials1 (typ : MSType, spc : Spec) : MSType =
+  op unfoldToSpecials1 (ms_type : MSType, ms_spec : Spec) : MSType =
     let
       def unfoldToSpecials0 typ =
         let
           def unfoldRec typ =
-            let utyp = unfoldBaseKeepPrimitives (typ, spc) in
+            let utyp = unfoldBaseKeepPrimitives (typ, ms_spec) in
             if utyp = typ then typ else unfoldRec utyp
         in
         let utyp = unfoldRec typ in
@@ -653,50 +653,50 @@ SpecsToI2L qualifying spec
             if X = X0 then utyp else typ
         | _ -> typ
     in
-    mapType (fn tm -> tm, unfoldToSpecials0, fn pat -> pat) typ
+    mapType (fn tm -> tm, unfoldToSpecials0, fn pat -> pat) ms_type
   
-  op normalizeArrowTypesInSpec (spc : Spec) : Spec =
+  op normalizeArrowTypesInSpec (ms_spec : Spec) : Spec =
     mapSpec (fn tm -> tm,
              fn | Arrow (typ1, typ2, X) -> 
-                  Arrow (unfoldToProduct (typ1, spc), typ2, X)
+                  Arrow (unfoldToProduct (typ1, ms_spec), typ2, X)
                 | typ -> typ,
              fn pat -> pat) 
-            spc
+            ms_spec
 
- op unfoldBaseKeepPrimitives (typ : MSType, spc : Spec) : MSType =
-   case typ of
+ op unfoldBaseKeepPrimitives (ms_type : MSType, ms_spec : Spec) : MSType =
+   case ms_type of
      | Base (qid, typs, a) ->
-       (case AnnSpec.findTheType (spc, qid) of
+       (case AnnSpec.findTheType (ms_spec, qid) of
           | Some info ->
             (if ~ (definedTypeInfo? info) then
-               typ
+               ms_type
              else
                let (tvs, typ2) = unpackFirstTypeDef info in
                let
                  def continue () =
                    let styp = substType (zip (tvs, typs), typ2) in
-                   unfoldBaseKeepPrimitives (styp, spc)
+                   unfoldBaseKeepPrimitives (styp, ms_spec)
                in
-               case typ of
-                 | Boolean                                         _  -> typ
-                 | Base (Qualified ("Nat",     "Nat"),    [],      _) -> typ
-                 | Base (Qualified ("Integer", "Int"),    [],      _) -> typ
-                 | Base (Qualified ("Char",    "Char"),   [],      _) -> typ
-                 | Base (Qualified ("String",  "String"), [],      _) -> typ
+               case ms_type of
+                 | Boolean                                         _  -> ms_type
+                 | Base (Qualified ("Nat",     "Nat"),    [],      _) -> ms_type
+                 | Base (Qualified ("Integer", "Int"),    [],      _) -> ms_type
+                 | Base (Qualified ("Char",    "Char"),   [],      _) -> ms_type
+                 | Base (Qualified ("String",  "String"), [],      _) -> ms_type
 
                  | Base (Qualified ("List",    "List"),   [ptyp],  X) ->
                    Base (Qualified ("List",    "List"),   
-                         [unfoldBaseKeepPrimitives (ptyp, spc)], 
+                         [unfoldBaseKeepPrimitives (ptyp, ms_spec)], 
                          X)
 
                  | Base (Qualified ("Option",  "Option"), [ptyp],  X) ->
                    Base (Qualified ("Option",  "Option"), 
-                         [unfoldBaseKeepPrimitives (ptyp, spc)],
+                         [unfoldBaseKeepPrimitives (ptyp, ms_spec)],
                          X)
 
                  | _ -> continue ())
-          | _ -> typ)
-     | _ -> typ
+          | _ -> ms_type)
+     | _ -> ms_type
 
 
   % this is used to distinguish "real" product from "record-products"
@@ -727,7 +727,7 @@ SpecsToI2L qualifying spec
                         info        : OpInfo,
                         optParNames : Option (List String),
                         ctxt        : S2I_Context, 
-                        spc         : Spec)
+                        ms_spec     : Spec)
     : opInfoResult =
     let Qualified(q,id) = qid in
     let (tvs, typ, _) = unpackFirstOpDef info in
@@ -782,11 +782,11 @@ SpecsToI2L qualifying spec
 
     in
     let Qualified (q, lid) = qid in
-    let id   = (q, lid)                                       in
-    let id0  = (q, "__" ^ lid ^ "__")                         in
-    let typ  = unfoldToArrow (spc, typ)                       in
-    let typ  = type2itype (tvs, typ, unsetToplevel ctxt, spc) in
-    let ctxt = setCurrentOpType (qid, ctxt)                   in
+    let id   = (q, lid)                                           in
+    let id0  = (q, "__" ^ lid ^ "__")                             in
+    let typ  = unfoldToArrow (ms_spec, typ)                       in
+    let typ  = type2itype (tvs, typ, unsetToplevel ctxt, ms_spec) in
+    let ctxt = setCurrentOpType (qid, ctxt)                       in
     case typ of 
       | I_FunOrMap (types, rtype) ->
         if definedOpInfo? info then
@@ -798,7 +798,7 @@ SpecsToI2L qualifying spec
                       params     = zip (pnames, types),
                       returntype = rtype}
           in
-          let expr = term2expression (body, ctxt, spc) in
+          let expr = term2expression (body, ctxt, ms_spec) in
           FunDefn {decl = decl,
                    body = I_Exp expr} % functional function body
         else
@@ -817,7 +817,7 @@ SpecsToI2L qualifying spec
         let opt_exp = 
             if definedOpInfo? info then
               let tm = firstOpDefInnerTerm info in
-              Some (term2expression (tm, ctxt, spc))
+              Some (term2expression (tm, ctxt, ms_spec))
             else
               None
         in
@@ -827,16 +827,20 @@ SpecsToI2L qualifying spec
 
   op qid2varid (Qualified (q, id) : QualifiedId) : I_VarName = (q, id)
 
-  op term2expression (tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_TypedExpr =
-    let typ  = inferType (spc, tm)                            in
-    let typ  = unfoldBaseKeepPrimitives (typ, spc)            in
-    let exp  = term2expression_internal (tm, typ, ctxt, spc)  in
-    let ityp = type2itype ([], typ, unsetToplevel ctxt, spc)  in
+  op term2expression (ms_term : MSTerm, ctxt : S2I_Context, ms_spec : Spec) : I_TypedExpr =
+    let ms_type  = inferType (ms_spec, ms_term)                               in
+    let ms_type  = unfoldBaseKeepPrimitives (ms_type, ms_spec)                in
+    let i_expr   = term2expression_internal (ms_term, ms_type, ctxt, ms_spec) in
+    let i_type   = type2itype ([], ms_type, unsetToplevel ctxt, ms_spec)      in
     %% TODO: cast? used to be set to true for failWith forms.
     let cast? = false in
-    {expr = exp, typ = ityp, cast? = cast?}
+    {expr = i_expr, typ = i_type, cast? = cast?}
 
-  op term2expression_internal (tm : MSTerm, typ : MSType, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_internal (ms_term : MSTerm, 
+                               ms_type : MSType, 
+                               ctxt    : S2I_Context, 
+                               ms_spec : Spec) 
+   : I_Expr =
 
     % Accord hack:
     % checks, whether the given id is an outputop of the espec; if yes is has to be
@@ -846,24 +850,24 @@ SpecsToI2L qualifying spec
     %    (spcname = ctxt.espc.spc.name) && lid in? outputops)
     %    in
 
-    case tm of
-      | Apply      (t1,            t2,  _) -> term2expression_apply  (t1,  t2,    tm, typ, ctxt, spc)
-      | Record     (fields,             _) -> term2expression_record (fields,     tm,      ctxt, spc)
-      | Let        ([(pat,deftm)], tm,  _) -> term2expression_let    (pat, deftm, tm,      ctxt, spc)
+    case ms_term of
+      | Apply      (t1,            t2,  _) -> term2expression_apply  (t1,  t2,    ms_term, ms_type, ctxt, ms_spec)
+      | Record     (fields,             _) -> term2expression_record (fields,     ms_term,          ctxt, ms_spec)
+      | Let        ([(pat,deftm)], tm,  _) -> term2expression_let    (pat, deftm, tm,               ctxt, ms_spec)
       | Var        ((id, _),            _) -> I_Var ("", id)
-      | Fun        (fun,           typ, _) -> term2expression_fun    (fun, typ,   tm,      ctxt, spc)
-      | IfThenElse (t1, t2, t3,         _) -> I_IfExpr (term2expression (t1, ctxt, spc),
-                                                        term2expression (t2, ctxt, spc),
-                                                        term2expression (t3, ctxt, spc))
-      | Seq        (tms,                _) -> I_Comma (map (fn tm -> term2expression (tm, ctxt, spc)) tms)
-      | TypedTerm  (tm, typ,            _) -> let typed_expr = term2expression (tm, ctxt, spc) in typed_expr.expr  % TODO: add cast? ??
+      | Fun        (fun,           typ, _) -> term2expression_fun    (fun, typ,   ms_term,          ctxt, ms_spec)
+      | IfThenElse (t1, t2, t3,         _) -> I_IfExpr (term2expression (t1, ctxt, ms_spec),
+                                                        term2expression (t2, ctxt, ms_spec),
+                                                        term2expression (t3, ctxt, ms_spec))
+      | Seq        (tms,                _) -> I_Comma (map (fn tm -> term2expression (tm, ctxt, ms_spec)) tms)
+      | TypedTerm  (tm, typ,            _) -> let typed_expr = term2expression (tm, ctxt, ms_spec) in typed_expr.expr  % TODO: add cast? ??
       | _ -> 
         % Bind, The, LetRec, Lambda, Transform, Pi, And, Any 
-        let s = "Unrecognized term in term2expression: " ^ printTerm tm in
+        let s = "Unrecognized term in term2expression: " ^ printTerm ms_term in
         let _ = writeLine s in
         I_Str s
 
-  op alt_index (x : Id, typ : MSType, spc : Spec) : Nat =
+  op alt_index (x : Id, ms_type : MSType, ms_spec : Spec) : Nat =
     let 
       def aux (n, alts) =
         case alts of
@@ -874,13 +878,18 @@ SpecsToI2L qualifying spec
             else
               aux (n + 1, alts)
     in
-    case unfoldToCoProduct (typ, spc) of
+    case unfoldToCoProduct (ms_type, ms_spec) of
       | CoProduct (alts,_) -> aux (1, alts)
       | _ -> 
-        let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printType typ) in
+        let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printType ms_type) in
         0
 
-  op term2expression_fun (fun : MSFun, typ : MSType, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_fun (fun     : MSFun, 
+                          ms_type : MSType, 
+                          ms_term : MSTerm, 
+                          ctxt    : S2I_Context, 
+                          ms_spec : Spec) 
+  : I_Expr =
 
     % This is called when a Fun occurs "standalone", i.e. not in the context of an apply.
     % We restrict the possible forms to those not having an arrow type, 
@@ -889,7 +898,7 @@ SpecsToI2L qualifying spec
     % See process_t1 below for case where Fun is applied.
    let 
      def make_embedder (typ, id, arg?) =
-       let selector = {name = id, index = alt_index (id, typ, spc)} in
+       let selector = {name = id, index = alt_index (id, typ, ms_spec)} in
        if useConstrCalls? ctxt then
          case typ of
               
@@ -908,14 +917,14 @@ SpecsToI2L qualifying spec
 
    in
 
-    if arrowType? (typ, spc) then
+    if arrowType? (ms_type, ms_spec) then
       case fun of
         | Op    (qid, _)     -> I_VarRef (qid2varid qid)
         | Embed (id,  false) -> 
-          let Arrow (_, rng, _) = typ in
-          term2expression_apply_fun (fun, tm, [], Record ([], noPos), [], tm, rng, ctxt, spc)
+          let Arrow (_, rng, _) = ms_type in
+          term2expression_apply_fun (fun, ms_term, [], Record ([], noPos), [], ms_term, rng, ctxt, ms_spec)
         | _ -> 
-          fail("sorry, functions as objects (higher-order functions) are not yet supported:\n" ^ printTerm tm)
+          fail("sorry, functions as objects (higher-order functions) are not yet supported:\n" ^ printTerm ms_term)
     else
       case fun of
         | Nat    n -> I_Int  n
@@ -929,14 +938,20 @@ SpecsToI2L qualifying spec
           I_Var varname
 
         | Embed (id,arg?) -> 
-          make_embedder (typ, id, arg?)
+          make_embedder (ms_type, id, arg?)
         | _ -> 
-          fail (mkInOpStr ctxt ^ "unsupported Fun: " ^ printTerm tm)
+          fail (mkInOpStr ctxt ^ "unsupported Fun: " ^ printTerm ms_term)
 
-  op getExprs4Args (args : MSTerms, ctxt : S2I_Context, spc : Spec) : List I_TypedExpr = 
-    map (fn tm -> term2expression (tm, ctxt, spc)) args
+  op getExprs4Args (ms_args : MSTerms, ctxt : S2I_Context, ms_spec : Spec) : List I_TypedExpr = 
+    map (fn ms_arg -> term2expression (ms_arg, ctxt, ms_spec)) ms_args
 
-  op term2expression_apply (t1 : MSTerm, t2 : MSTerm, tm : MSTerm, typ : MSType, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_apply (t1      : MSTerm,
+                            t2      : MSTerm,
+                            ms_term : MSTerm,
+                            ms_type : MSType,
+                            ctxt    : S2I_Context, 
+                            ms_spec : Spec)
+   : I_Expr =
     let args = 
         % extract the list of argument terms from a record term given
         % as second argument of an Apply term
@@ -949,7 +964,7 @@ SpecsToI2L qualifying spec
           | _ -> [t2]
 
     in
-    case getBuiltinExpr (t1, args, ctxt, spc) of
+    case getBuiltinExpr (t1, args, ctxt, ms_spec) of
       | Some expr -> expr
       | _ ->
         let origlhs = t1 in
@@ -967,23 +982,23 @@ SpecsToI2L qualifying spec
               | TypedTerm (tm, _, _) -> process_t1 (tm, projections)
 
               | Var ((id, _), _) ->
-                let exprs = getExprs4Args (args, ctxt, spc) in
+                let exprs = getExprs4Args (args, ctxt, ms_spec) in
                 let varname = ("", id) in
                 % infer the type of the original lhs to get the real type of the map
                 % taking all the projections into account
-                let lhstype = inferType (spc, origlhs)                          in
-                let lhstype = unfoldToSpecials (lhstype, spc)                   in
-                let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, spc) in
+                let lhstype = inferType (ms_spec, origlhs)                          in
+                let lhstype = unfoldToSpecials (lhstype, ms_spec)                   in
+                let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, ms_spec) in
                 I_FunCall(varname,projections,exprs)
                 
               | Fun (fun, _, _) -> 
-                term2expression_apply_fun (fun, origlhs, projections, t2, args, tm, typ, ctxt, spc)
+                term2expression_apply_fun (fun, origlhs, projections, t2, args, ms_term, ms_type, ctxt, ms_spec)
               | _ ->
                 case getProjectionList (t1, []) of
                   | (prjs as (_::_), t1) -> process_t1 (t1, prjs)
                   | _ -> 
                     % handle special cases:
-                    case simpleCoProductCase (tm, ctxt, spc) of
+                    case simpleCoProductCase (ms_term, ctxt, ms_spec) of
                       | Some expr -> expr
                       | _ ->
                         let msg = mkInOpStr ctxt ^ "cannot yet handle: " ^ printTerm t1 in
@@ -998,20 +1013,20 @@ SpecsToI2L qualifying spec
                                 projections : List Id, 
                                 t2          : MSTerm,
                                 args        : MSTerms,
-                                tm          : MSTerm, 
-                                typ         : MSType, 
+                                ms_term     : MSTerm, 
+                                ms_type     : MSType, 
                                 ctxt        : S2I_Context, 
-                                spc         : Spec) 
+                                ms_spec     : Spec) 
     : I_Expr =
     case fun of
       | Op (qid, _) ->
-        let exprs   = getExprs4Args (args, ctxt, spc)                   in
-        let varname = qid2varid qid                                     in
+        let exprs   = getExprs4Args (args, ctxt, ms_spec)                   in
+        let varname = qid2varid qid                                         in
         % infer the type of the original lhs to get the real type of the map
         % taking all the projections into account
-        let lhstype = inferType (spc, origlhs)                          in
-        let lhstype = unfoldToSpecials (lhstype, spc)                   in
-        let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, spc) in
+        let lhstype = inferType (ms_spec, origlhs)                          in
+        let lhstype = unfoldToSpecials (lhstype, ms_spec)                   in
+        let lhstype = type2itype ([], lhstype, unsetToplevel ctxt, ms_spec) in
         %if isOutputOp varname then MapAccessDeref (varname,lhstype,projections,exprs) else 
         if isVariable (ctxt, qid) then
           I_MapAccess (varname, lhstype, projections, exprs)
@@ -1020,20 +1035,20 @@ SpecsToI2L qualifying spec
 
       | Embed (id, _) ->
         let 
-          def mkExpr2() = term2expression (t2, ctxt, spc)
+          def mkExpr2() = term2expression (t2, ctxt, ms_spec)
         in
         if projections = [] then
           % let typ = foldType (typ, spc) in
-          let selector = {name = id, index = alt_index (id, typ, spc)} in
+          let selector = {name = id, index = alt_index (id, ms_type, ms_spec)} in
           if useConstrCalls? ctxt then
-            case typ of
+            case ms_type of
               
               | Base (qid, _, _) ->
                 let vname = qid2varid qid in
                 let exprs = case t2 of
                               | Record (fields, b) ->
                                 if numbered? fields then
-                                  map (fn (_,tm) -> term2expression (tm, ctxt, spc)) fields
+                                  map (fn (_,tm) -> term2expression (tm, ctxt, ms_spec)) fields
                                 else 
                                   [mkExpr2()]
                               | _ -> 
@@ -1045,7 +1060,7 @@ SpecsToI2L qualifying spec
                 let exprs = case t2 of
                               | Record (fields, b) ->
                                 if numbered? fields then
-                                  map (fn(_,tm) -> term2expression (tm, ctxt, spc)) fields
+                                  map (fn(_,tm) -> term2expression (tm, ctxt, ms_spec)) fields
                                 else 
                                   [mkExpr2()]
                               | _ -> 
@@ -1062,21 +1077,21 @@ SpecsToI2L qualifying spec
           fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun)
 
       | Embedded id -> 
-        let lhstype = inferType (spc, origlhs)        in
+        let lhstype = inferType (ms_spec, origlhs) in
         let index =
-            case unfoldToArrow (spc, lhstype) of
+            case unfoldToArrow (ms_spec, lhstype) of
               | Arrow (super_type, Bool, _) ->
                 %% type of a predicate used to test for variants among a coproduct
-                alt_index (id, super_type, spc) 
+                alt_index (id, super_type, ms_spec) 
               | _ ->
                 let _ = writeLine ("Expected arrow type: " ^ printType lhstype) in
                 0
         in
         let selector = {name = id, index = index} in
-        I_Embedded (selector, term2expression (t2, ctxt, spc))
+        I_Embedded (selector, term2expression (t2, ctxt, ms_spec))
 
       | Select id ->
-        let expr2 = term2expression (t2, ctxt, spc) in
+        let expr2 = term2expression (t2, ctxt, ms_spec) in
         if projections = [] then 
           % let union = I_Project(expr2,"alt") in
           % let (_,ityp2) = expr2 in
@@ -1086,7 +1101,7 @@ SpecsToI2L qualifying spec
           fail (mkInOpStr ctxt ^ "not handled as selection: " ^ anyToString id ^ " given projections " ^ anyToString projections)
 
       | Project id ->
-        let expr2 = term2expression (t2, ctxt, spc) in
+        let expr2 = term2expression (t2, ctxt, ms_spec) in
         if projections = [] then 
           I_Project(expr2,id)
         else 
@@ -1098,10 +1113,10 @@ SpecsToI2L qualifying spec
        let _ = writeLine msg in
        I_Str msg
 
-  op term2expression_let (pat : MSPattern, deftm : MSTerm, tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr =
+  op term2expression_let (pat : MSPattern, deftm : MSTerm, tm : MSTerm, ctxt : S2I_Context, ms_spec : Spec) : I_Expr =
     % let's can only contain one pattern/term entry (see parser)
-    let defexp = term2expression (deftm, ctxt, spc) in
-    let exp    = term2expression (tm,    ctxt, spc) in
+    let defexp = term2expression (deftm, ctxt, ms_spec) in
+    let exp    = term2expression (tm,    ctxt, ms_spec) in
 
     case pat of
 
@@ -1112,34 +1127,34 @@ SpecsToI2L qualifying spec
         I_Comma [defexp, exp]
 
       | VarPat ((id, typ), _) ->
-        let typ = type2itype ([], typ, unsetToplevel ctxt, spc) in
+        let typ = type2itype ([], typ, unsetToplevel ctxt, ms_spec) in
         I_Let (id, typ, defexp, exp)
 
       | _ -> 
         fail (mkInOpStr ctxt ^ "unsupported feature: this form of pattern cannot be used in a let:\n" ^ printPattern pat)
 
-  op term2expression_record (fields : List (Id * MSTerm), tm : MSTerm, ctxt : S2I_Context, spc : Spec) : I_Expr = 
+  op term2expression_record (fields : List (Id * MSTerm), _ : MSTerm, ctxt : S2I_Context, ms_spec : Spec) : I_Expr = 
     if numbered? fields then
-      let exps = map (fn (_, tm) -> term2expression (tm, ctxt, spc)) fields in
+      let exps = map (fn (_, tm) -> term2expression (tm, ctxt, ms_spec)) fields in
       I_TupleExpr exps
     else
-      let fields = map (fn (id, tm) -> (id, term2expression (tm, ctxt, spc))) fields in
+      let fields = map (fn (id, tm) -> (id, term2expression (tm, ctxt, ms_spec))) fields in
       I_StructExpr fields
 
-  op arrowType? (typ : MSType, spc : Spec) : Bool =
-    case unfoldToArrow (spc, typ) of
+  op arrowType? (ms_type : MSType, ms_spec : Spec) : Bool =
+    case unfoldToArrow (ms_spec, ms_type) of
       | Arrow _ -> true
       | _ -> false
 
   op getEqOpQid (Qualified (q, id) : QualifiedId) : QualifiedId =
     Qualified (q, "eq_" ^ id)
 
-  op equalsExpression (t1 : MSTerm, t2 : MSTerm, ctxt : S2I_Context, spc : Spec) 
+  op equalsExpression (t1 : MSTerm, t2 : MSTerm, ctxt : S2I_Context, ms_spec : Spec) 
     : I_Expr =
     let
 
       def t2e tm = 
-        term2expression (tm, ctxt, spc)
+        term2expression (tm, ctxt, ms_spec)
 
       def primEq () =
         I_Builtin (I_Equals (t2e t1, t2e t2))
@@ -1149,11 +1164,11 @@ SpecsToI2L qualifying spec
     % analyse, which equal we need; let's hope type checking
     % already made sure, that the types fit, so just look at one
     % of the terms
-    let typ = inferType (spc, t1) in
+    let typ = inferType (ms_spec, t1) in
     %% Was unfoldStripType which is unnecessary and dangerous because of recursive types
-    let utyp = stripSubtypesAndBaseDefs spc typ in
+    let utyp = stripSubtypesAndBaseDefs ms_spec typ in
     case utyp of
-      | Boolean                         _  -> primEq ()
+      | Boolean                                   _  -> primEq ()
       | Base (Qualified ("Bool",    "Bool"),   [],_) -> primEq ()
       | Base (Qualified ("Nat",     "Nat"),    [],_) -> primEq ()  % TODO: is this possible?
       | Base (Qualified ("Integer", "Int"),    [],_) -> primEq ()
@@ -1161,7 +1176,7 @@ SpecsToI2L qualifying spec
       | Base (Qualified ("Float",   "Float"),  [],_) -> primEq ()
       | Base (Qualified ("String",  "String"), [],_) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
       | _ ->
-        let typ = foldType (termType t1, spc) in
+        let typ = foldType (termType t1, ms_spec) in
         let 
           def errmsg () = 
             "sorry, the current version of the code generator doesn't support the equality check for\ntype = "
@@ -1171,7 +1186,7 @@ SpecsToI2L qualifying spec
 
           | Base(qid,_,_) ->
             let eqid as Qualified (eq, eid) = getEqOpQid qid in
-            (case AnnSpec.findTheOp(spc,eqid) of
+            (case AnnSpec.findTheOp (ms_spec, eqid) of
                | Some _ ->
                  let eqfname = (eq, eid) in
                  I_FunCall (eqfname, [], [t2e t1, t2e t2])
@@ -1210,16 +1225,16 @@ SpecsToI2L qualifying spec
           default
           fields
 
-  op getBuiltinExpr (tm   : MSTerm, 
-                     args : MSTerms,
-                     ctxt : S2I_Context,
-                     spc  : Spec)
+  op getBuiltinExpr (ms_term : MSTerm, 
+                     ms_args : MSTerms,
+                     ctxt    : S2I_Context,
+                     ms_spec : Spec)
     : Option I_Expr =
     let
-      def t2e tm = term2expression (tm, ctxt, spc)
+      def t2e tm = term2expression (tm, ctxt, ms_spec)
     in
-    case (tm, args) of
-      | (Fun (Equals,    _, _),                                          [t1,t2]) -> Some (equalsExpression (t1, t2, ctxt, spc))
+    case (ms_term, ms_args) of
+      | (Fun (Equals,    _, _),                                          [t1,t2]) -> Some (equalsExpression (t1, t2, ctxt, ms_spec))
 
       | (Fun (Not,       _, _),                                          [t1])    -> Some (I_Builtin (I_BoolNot             (t2e t1)))
       | (Fun (And,       _, _),                                          [t1,t2]) -> Some (I_Builtin (I_BoolAnd             (t2e t1, t2e t2)))
@@ -1300,33 +1315,33 @@ SpecsToI2L qualifying spec
   *  In the args of the constructors (x1,x2,y1 above) only var pattern are supported.
   *)
 
-  op simpleCoProductCase (tm : MSTerm, ctxt : S2I_Context, spc : Spec) : Option I_Expr =
-    let outer_tm = tm in
-    case tm of
+  op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context, ms_spec : Spec) : Option I_Expr =
+    let outer_tm = ms_term in
+    case ms_term of
 
       | Apply(embedfun as Lambda (rules,_), tm, _) ->
         (case rules of
            | [(p as VarPat ((v,ty), b), _, body)] ->
              % that's a very simple case: "case tm of v -> body" (no other case)
              % we transform it to "let v = tm in body"
-             let typed_expr = term2expression (Let ([(p,tm)], body, b), ctxt, spc) in
+             let typed_expr = term2expression (Let ([(p,tm)], body, b), ctxt, ms_spec) in
              Some typed_expr.expr
            | _ -> 
              let
 
                def getTypeForConstructorArgs (typ, id) =
                  %let typ = unfoldBase(spc,typ) in
-                 let typ = stripSubtypesAndBaseDefs spc typ in
+                 let typ = stripSubtypesAndBaseDefs ms_spec typ in
                  case typ of
                    | CoProduct (fields,_) ->
                      (case findLeftmost (fn (id0, _) -> id0 = id) fields of
                         | Some(_,opttype) -> (case opttype of
-                                                | Some typ -> Some (type2itype ([], typ, unsetToplevel ctxt, spc))
+                                                | Some typ -> Some (type2itype ([], typ, unsetToplevel ctxt, ms_spec))
                                                 | None -> None)
                         | _ -> fail("internal error: constructor id " ^ id ^ " of term " ^
                                       printTerm tm ^ " cannot be found."))
                    | _ -> 
-                     let utyp = unfoldBase (spc, typ) in
+                     let utyp = unfoldBase (ms_spec, typ) in
                      if utyp = typ then
                        fail ("internal error: type of term is no coproduct: " ^
                                printTerm tm ^ ":" ^ printType typ)
@@ -1339,7 +1354,7 @@ SpecsToI2L qualifying spec
              let
 
                def getUnionCase (pat, cond, tm) =
-                 let exp = term2expression (tm, ctxt, spc) in
+                 let exp = term2expression (tm, ctxt, ms_spec) in
                  case pat of
 
                    | EmbedPat (constructorId, optpat, parent_type, _) ->
@@ -1368,13 +1383,13 @@ SpecsToI2L qualifying spec
                                      "var patterns, tuples of these, or \"_\" here, "^
                                      "not:\n"^printPattern pat)
                      in
-                     let selector = {name = constructorId, index = alt_index (constructorId, parent_type, spc)} in
+                     let selector = {name = constructorId, index = alt_index (constructorId, parent_type, ms_spec)} in
                      I_ConstrCase (Some selector, vars, exp)
 
                    | WildPat _            -> I_ConstrCase (None, [], exp)
                    | NatPat  (n,_)        -> I_NatCase    (n,        exp)
                    | CharPat (c,_)        -> I_CharCase   (c,        exp)
-                   | VarPat  ((id,typ),_) -> let ityp = type2itype([], typ, unsetToplevel ctxt, spc) in
+                   | VarPat  ((id,typ),_) -> let ityp = type2itype([], typ, unsetToplevel ctxt, ms_spec) in
                                              I_VarCase    (id, ityp, exp)
                    | RestrictedPat (pat, _, _) -> getUnionCase (pat, cond, tm) % cond will be ignored, is just a filler 
                    | _ -> 
@@ -1382,7 +1397,7 @@ SpecsToI2L qualifying spec
                              ^ " pattern = " ^ printPattern pat ^ " = " ^ anyToString pat ^ "\n inside term = " ^ printTerm outer_tm ^ " = " ^ anyToString outer_tm ^ "\n")
              in
              let unioncases = map getUnionCase rules          in
-             let expr       = term2expression (tm, ctxt, spc) in
+             let expr       = term2expression (tm, ctxt, ms_spec) in
              Some (I_UnionCaseExpr (expr, unioncases)))
 
       | _ -> 
@@ -1392,7 +1407,7 @@ SpecsToI2L qualifying spec
 
 % --------------------------------------------------------------------------------
 
- op foldType (typ : MSType, spc : Spec) : MSType =
+ op foldType (ms_type : MSType, ms_spec : Spec) : MSType =
    let opt_typ =
        foldriAQualifierMap (fn (q, id, info, opt_typ) ->
                               case opt_typ of
@@ -1402,7 +1417,7 @@ SpecsToI2L qualifying spec
                                     let (tvs, typ0) = unpackFirstTypeDef info in
                                     %let utyp = unfoldBase(spc,typ) in
                                     %let utyp0 = unfoldBase(spc,typ0) in
-                                    if equivType? spc (typ, typ0) then
+                                    if equivType? ms_spec (ms_type, typ0) then
                                       let b   = typeAnn typ0                     in
                                       let qid = Qualified (q, id)                in
                                       let tvs = map (fn tv -> TyVar (tv, b)) tvs in
@@ -1412,11 +1427,11 @@ SpecsToI2L qualifying spec
                                   else
                                     None)
                            None 
-                           spc.types
+                           ms_spec.types
    in
    case opt_typ of
      | Some new_typ -> new_typ
-     | _ -> typ
+     | _ -> ms_type
 
 
 }
