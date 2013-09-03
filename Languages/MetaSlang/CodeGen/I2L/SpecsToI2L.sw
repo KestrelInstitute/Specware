@@ -12,7 +12,7 @@ SpecsToI2L qualifying spec
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/MetaSlang/Specs/Environment
 % import /Languages/MetaSlang/CodeGen/CodeGenTransforms  % stripSubtypesAndBaseDefs
-  import /Languages/MetaSlang/Codegen/LanguageMorphism
+  import /Languages/MetaSlang/CodeGen/LanguageMorphism
 
   import /Languages/I2L/I2L
 
