@@ -31,8 +31,10 @@
 
 ;;; Parser may return :uspecified for (:optional ..)
 
-(defun make-option  (x) (if (eq x :unspecified) '(:|None|) `(:|Some| . ,x)))
-(defun make-boolean (x) (if (eq x :unspecified) nil        x))
+(defun make-false  () nil)
+(defun make-true   () t)
+(defun make-option (x) (if (eq x :unspecified) '(:|None|) `(:|Some| . ,x)))
+(defun make-bool   (x) (if (eq x :unspecified) (make-false) (make-true)))
 
 ;;; ========================================================================
 ;;;  Primitives
@@ -103,25 +105,39 @@
   (LM::make_Imports_Section 1))  
 
 (define-lm-parser-rule :Imports 
-    (:repeat* :Import))
+    :Pathnames)
 
-(define-lm-parser-rule :Import 
-    (:tuple (1 :DirectoryPath) (2 :FileName))
-  (LM::make_Import-2 1 2)) 
+(define-lm-parser-rule :Pathnames
+    (:repeat* :Pathname))
 
-(define-lm-parser-rule :DirectoryPath 
-    (:tuple "/" (1 (:repeat* :DirectoryName)))
-  1)
+(define-lm-parser-rule :Pathname
+    (:tuple (:optional (1 :Directory)) (2 :FileName) "." (3 :FileExtension))
+  (LM::make_Pathname-3 (make-option 1) 2 3))
 
-(define-lm-parser-rule :DirectoryName 
-    (:tuple (1 :FileId) "/")
+(define-lm-parser-rule :Directory
+    (:anyof :RootedDir :NonRootedDir))
+
+(define-lm-parser-rule :RootedDir
+    (:tuple "/" (1 (:repeat* :DirectoryNode)))
+  (LM::make_Directory-2 (make-true) 1))
+
+(define-lm-parser-rule :NonRootedDir
+    (:tuple (1 (:repeat+ :DirectoryNode)))
+  (LM::make_Directory-2 (make-false) 1))
+
+(define-lm-parser-rule :DirectoryNode
+    (:tuple (1 :DirectoryId) "/")
   1)
 
 (define-lm-parser-rule :FileName 
-    (:tuple (1 :FileId) "." (2 :FileId))
-  (LM::make_FileName-2 1 2)) 
+    (:tuple (1 :Symbol))
+  (common-lisp::symbol-name (quote 1)))
 
-(define-lm-parser-rule :FileId 
+(define-lm-parser-rule :FileExtension
+    (:tuple (1 :Symbol))
+  (common-lisp::symbol-name (quote 1)))
+  
+(define-lm-parser-rule :DirectoryId 
     (:tuple (1 :Symbol))
   (common-lisp::symbol-name (quote 1)))
   
@@ -139,10 +155,10 @@
 (define-lm-parser-rule :KW_Morphism
     (:anyof "-morphism" "-translate"))
 
-(define-lm-parser-rule :Translations 
+(define-lm-parser-rule :Translations
     (:repeat* :Translation))
 
-(define-lm-parser-rule :Translation 
+(define-lm-parser-rule :Translation
     (:anyof :TypeTranslation 
             :FieldTranslation
             :OpTranslation))
@@ -217,21 +233,35 @@
   (LM::make_Typed_Term-2 2 1))
 
 ;;; ========================================================================
+;;;  Location
+;;; ========================================================================
+
+(define-lm-parser-rule :Location
+    (:anyof :PathnameLocation :PrimitiveLocation))
+
+(define-lm-parser-rule :PathnameLocation
+    (:tuple "in" (1 :Pathname))
+  (LM::make_Pathname_Location 1))
+
+(define-lm-parser-rule :PrimitiveLocation
+    (:tuple "primitive")
+  (LM::make_Primitive_Location-0))
+
+;;; ========================================================================
 ;;;  TypeTranslation
 ;;; ========================================================================
 
 (define-lm-parser-rule :TypeTranslation 
-    (:tuple "type" (1 :Name) :Arrow (2 :Term))
-  (LM::make_Type_Translation-2 1 2))  
-
+    (:tuple "type" (1 :Name) :Arrow (2 :Term) (:optional (3 :Location)))
+  (LM::make_Type_Translation-3 1 2 (make-option 3)))
 
 ;;; ========================================================================
 ;;;  FieldTranslation
 ;;; ========================================================================
 
 (define-lm-parser-rule :FieldTranslation 
-    (:tuple "field" (1 :FieldRef) :Arrow (2 :FieldRef))
-  (LM::make_Field_Translation-2 1 2)) 
+    (:tuple "field" (1 :FieldRef) :Arrow  (2 :FieldRef) (:optional (3 :Location)))
+  (LM::make_Field_Translation-3 1 2 (make-option 3)))
 
 (define-lm-parser-rule :FieldRef 
     (:tuple (1 :Name) "." (2 :Fieldid))
@@ -246,16 +276,21 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :OpTranslation 
-    (:tuple "op" (1 :Name) :Arrow (2 :Term)
+    (:tuple "op" 
+            (1 :Name)
+            :Arrow 
+            (2 :Term)
             (:optional (3 :ReCurry))
             (:optional (4 :Fixity))
             (:optional (5 :Precedence))
-            (:optional (6 :Reversed)))
-  (LM::make_Op_Translation-6 1 2 
-                             (make-option  3) 
-                             (make-option  4)
-                             (make-option  5)
-                             (make-boolean 6)))
+            (:optional (6 :Reversed))
+            (:optional (7 :Location)))
+  (LM::make_Op_Translation-7 1 2 
+                             (make-option 3) 
+                             (make-option 4)
+                             (make-option 5)
+                             (make-bool   6)
+                             (make-option 7)))
 
 (define-lm-parser-rule :ReCurry
     (:tuple (1 (:anyof "curried" "uncurried")))
@@ -287,12 +322,12 @@
     (:anyof :NativeType :NativeOp))
 
 (define-lm-parser-rule :NativeType 
-    (:tuple "type" (1 :Name))
-  (LM::make_Type_Native 1)) 
+    (:tuple "type" (1 :Name) (:optional (2 :Location)))
+  (LM::make_Type_Native-2 1 (make-option 2)))
 
 (define-lm-parser-rule :NativeOp 
-    (:tuple "op" (1 :Name))
-  (LM::make_Op_Native 1)) 
+    (:tuple "op" (1 :Name) (:optional (2 :Location)))
+  (LM::make_Op_Native-2 1 (make-option 2)))
 
 ;;; ========================================================================
 ;;;  Generated

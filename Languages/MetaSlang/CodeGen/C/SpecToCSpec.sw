@@ -66,16 +66,60 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 
  revised_spec
 
+op jlm () : () = ()
+
+op verbose? : Bool = false
+
 %% temporary hack until '#translate C' is working
 op generateCSpecFromTransformedSpecHack (ms_spec    : Spec) 
                                         (app_name   : String) 
                                         (old_c_spec : C_Spec)
                                         (filter     : QualifiedId -> Bool) 
-                                        (includes        : List String)
-                                        (op_extern_types : List (String*String))
-                                        (op_extern_defs  : List String)
+                                        (old_includes        : List String)
+                                        (old_op_extern_types : List (String*String))
+                                        (old_op_extern_defs  : List String)
  : Option C_Spec =
- let foo = parseCTranslationPragmas ms_spec in
+ let _ = jlm() in
+ let lms             = parseCTranslationPragmas ms_spec     in
+ let lm_verbatims    = extract_verbatims        lms         in 
+ let lm_imports      = extract_imports          lms         in 
+ let lm_translations = extract_translations     lms         in 
+ let lm_natives      = extract_natives          lms         in 
+
+ let includes        = map printImport          lm_imports  in
+ %% 
+ let _ = 
+     if verbose? then
+       let _ = writeLine "================================================================================" in
+       let _ = writeLine "Verbatims in Pragmas:"                                                            in
+       let _ = app (fn verbatim -> writeLine verbatim) lm_verbatims                                         in
+       let _ = writeLine "================================================================================" in
+       let _ = writeLine "Includes in emit_c_files:"                                                        in
+       let _ = app (fn include -> writeLine include) old_includes                                           in
+       let _ = writeLine "----------"                                                                       in
+       let _ = writeLine "Includes in Pragmas:"                                                             in
+       let _ = app (fn include -> writeLine include) includes                                               in
+       let _ = writeLine "================================================================================" in
+       let _ = writeLine "Translations in emit_c_files:"                                                    in
+       let _ = app (fn (old,new) -> writeLine (old ^ " \t=> " ^ new)) old_op_extern_types                   in
+       let _ = writeLine "----------"                                                                       in
+       let _ = writeLine "Translations in Pragmas:"                                                         in
+       let _ = app (fn trans -> writeLine (printTranslation trans)) lm_translations                         in
+       let _ = writeLine "================================================================================" in
+       let _ = writeLine "Natives in emit_c_files:"                                                         in
+       let _ = app (fn str -> writeLine str) old_op_extern_defs                                             in
+       let _ = writeLine "----------"                                                                       in
+       let _ = writeLine "Natives in Pragmas:"                                                              in
+       let _ = app (fn native -> writeLine (printNative native)) lm_natives                                 in
+       let _ = writeLine "================================================================================" in
+       ()
+     else
+       ()
+ in
+ let includes        = old_includes        in
+ let op_extern_types = old_op_extern_types in
+ let op_extern_defs  = old_op_extern_defs  in
+ %% 
  let use_ref_types?  = true in
  let constructer_ops = []   in
  let ms_spec = renameTypes (ms_spec, op_extern_types) in
