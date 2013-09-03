@@ -74,21 +74,33 @@ SpecsToI2L qualifying spec
   op generateI2LCodeSpec (ms_spec         : Spec,
                           use_ref_types?  : Bool, 
                           constructor_ops : List QualifiedId,
-                          lms             : LanguageMorphisms)
+                          lms             : LanguageMorphisms,
+                          %% deprecate these:
+                          includes        : List String,
+                          op_extern_types : List (String*String),
+                          op_extern_defs  : List String)
     : I_ImpUnit =
     generateI2LCodeSpecFilter (ms_spec,
                                use_ref_types?,
                                constructor_ops,
                                fn _ -> true,    % desire all types
                                fn _ -> true,    % desire all ops
-                               lms)
+                               lms,
+                               %% deprecate these:
+                               includes        : List String,
+                               op_extern_types : List (String*String),
+                               op_extern_defs  : List String)
 
   op generateI2LCodeSpecFilter (spc           : Spec,
                                 useRefTypes?  : Bool, 
                                 constrOps     : List QualifiedId,
                                 desired_type? : QualifiedId -> Bool,
                                 desired_op?   : QualifiedId -> Bool,
-                                lms           : LanguageMorphisms)
+                                lms           : LanguageMorphisms,
+                                %% deprecate these:
+                                includes        : List String,
+                                op_extern_types : List (String*String),
+                                op_extern_defs  : List String)
     : I_ImpUnit =
     let ctxt = {specname      = "", 
                 isToplevel    = true, 
@@ -97,14 +109,9 @@ SpecsToI2L qualifying spec
                 currentOpType = None,
                 lms           = lms}
     in
-    let (pre_native_types, pre_native_ops) = extractPreNatives lms in
-    %  let _ = writeLine "====================" in
-    %  let _ = writeLine "Pre-native types:"    in
-    %  let _ = app (fn x -> writeLine (anyToString x)) pre_native_types in
-    %  let _ = writeLine "Pre-native ops:"      in
-    %  let _ = app (fn x -> writeLine (anyToString x)) pre_native_ops   in
-    %  let _ = writeLine "====================" in
-    %let spc = normalizeArrowTypesInSpec spc in
+    % collect types and ops that map to native types and ops
+    let (pre_native_types, pre_native_ops) = extractPreNatives lms in 
+    % let spc = normalizeArrowTypesInSpec spc in
     let
       def print_qid (q, id, explicit_q?) =
         if explicit_q? then
@@ -117,7 +124,7 @@ SpecsToI2L qualifying spec
     let transformedOps = 
         foldriAQualifierMap (fn (q, id, opinfo, l1) ->
                                let qid = Qualified (q, id) in
-                               %% op must be desired and not translate to native op
+                               %% to be considered, op must be desired and not translate to native op
                                if [q,id] in? pre_native_ops then
                                  let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, true)) in
                                  l1
@@ -135,7 +142,7 @@ SpecsToI2L qualifying spec
     in
     let res : I_ImpUnit = 
         {
-         name     = "",%s pc.name:String,
+         name     = "",    %s pc.name:String,
          includes = [],
          decls    = {
                      typedefs = foldlSpecElements (fn (defs,el) ->
@@ -143,6 +150,7 @@ SpecsToI2L qualifying spec
                                                        | TypeDef (name as Qualified(q,id), _) ->
                                                          (case findTheType (spc, name) of
                                                             | Some typeinfo ->
+                                                              %% to be considered, type must be desired and not translate to native type
                                                               if [q,id] in? pre_native_types then
                                                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
                                                                 defs

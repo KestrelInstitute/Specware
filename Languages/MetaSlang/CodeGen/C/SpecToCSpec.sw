@@ -66,17 +66,16 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 
  revised_spec
 
-op verbose? : Bool = false
+op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec) 
+                                              (app_name      : String) 
+                                              (old_c_spec    : C_Spec)
+                                              (desired_type? : QualifiedId -> Bool) 
+                                              (desired_op?   : QualifiedId -> Bool) 
+                                              %% deprecate these:
+                                              (includes        : List String)
+                                              (op_extern_types : List (String*String))
+                                              (op_extern_defs  : List String)
 
-%% temporary hack until '#translate C' is working
-op generateCSpecFromTransformedSpecHack (ms_spec       : Spec) 
-                                        (app_name      : String) 
-                                        (old_c_spec    : C_Spec)
-                                        (desired_type? : QualifiedId -> Bool) 
-                                        (desired_op?   : QualifiedId -> Bool) 
-                                        (old_includes        : List String)
-                                        (old_op_extern_types : List (String*String))
-                                        (old_op_extern_defs  : List String)
  : Option C_Spec =
  let lms             = parseCTranslationPragmas ms_spec     in
  let lm_verbatims    = extractVerbatims         lms         in 
@@ -84,76 +83,21 @@ op generateCSpecFromTransformedSpecHack (ms_spec       : Spec)
  let lm_translations = extractTranslations      lms         in 
  let lm_natives      = extractNatives           lms         in 
  let includes        = map printImport          lm_imports  in
- %% 
- let _ = 
-     if verbose? then
-       let _ = writeLine "================================================================================" in
-       let _ = writeLine "Verbatims in Pragmas:"                                                            in
-       let _ = app (fn verbatim -> writeLine verbatim) lm_verbatims                                         in
-       let _ = writeLine "================================================================================" in
-       let _ = writeLine "Includes in emit_c_files:"                                                        in
-       let _ = app (fn include -> writeLine include) old_includes                                           in
-       let _ = writeLine "----------"                                                                       in
-       let _ = writeLine "Includes in Pragmas:"                                                             in
-       let _ = app (fn include -> writeLine include) includes                                               in
-       let _ = writeLine "================================================================================" in
-       let _ = writeLine "Translations in emit_c_files:"                                                    in
-       let _ = app (fn (old,new) -> writeLine (old ^ " \t=> " ^ new)) old_op_extern_types                   in
-       let _ = writeLine "----------"                                                                       in
-       let _ = writeLine "Translations in Pragmas:"                                                         in
-       let _ = app (fn trans -> writeLine (printTranslation trans)) lm_translations                         in
-       let _ = writeLine "================================================================================" in
-       let _ = writeLine "Natives in emit_c_files:"                                                         in
-       let _ = app (fn str -> writeLine str) old_op_extern_defs                                             in
-       let _ = writeLine "----------"                                                                       in
-       let _ = writeLine "Natives in Pragmas:"                                                              in
-       let _ = app (fn native -> writeLine (printNative native)) lm_natives                                 in
-       let _ = writeLine "================================================================================" in
-       ()
-     else
-       ()
- in
- let includes        = old_includes        in
- let op_extern_types = old_op_extern_types in
- let op_extern_defs  = old_op_extern_defs  in
- %% 
- let use_ref_types?  = true in
- let constructer_ops = []   in
- let ms_spec = renameTypes (ms_spec, op_extern_types) in
- let 
-   def desired_non_native_op? (qid as Qualified (q, id)) =
-    desired_op? qid && ~(id in? op_extern_defs)
- in
- let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
-                                             use_ref_types?,
-                                             constructer_ops,
-                                             desired_type?,
-                                             desired_non_native_op?,
-                                             lms)
- in
- let new_c_spec = generateC4ImpUnitHack (i2l_spec,
-                                         old_c_spec, 
-                                         use_ref_types?,
-                                         includes,
-                                         lms)
- in
- Some new_c_spec
 
-op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec) 
-                                              (app_name      : String) 
-                                              (old_c_spec    : C_Spec)
-                                              (desired_type? : QualifiedId -> Bool)
-                                              (desired_op?   : QualifiedId -> Bool)
- : Option C_Spec =
  let use_ref_types?  = true in
  let constructer_ops = []   in
- let lms        = parseCTranslationPragmas ms_spec in
+ %% let ms_spec = renameTypes (ms_spec, op_extern_types) in
  let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
                                              use_ref_types?,
                                              constructer_ops,
                                              desired_type?,
                                              desired_op?,
-                                             lms)
+                                             lms,
+                                             %% deprecate these:
+                                             includes,
+                                             op_extern_types,
+                                             op_extern_defs )
+
  in
  let new_c_spec = generateC4ImpUnit (i2l_spec,
                                      old_c_spec, 
@@ -169,6 +113,10 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
 op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec) 
                                         (app_name   : String) 
                                         (old_c_spec : C_Spec)
+                                        %% deprecate these:
+                                        (includes        : List String)
+                                        (op_extern_types : List (String*String))
+                                        (op_extern_defs  : List String)
  : Option C_Spec =
  let 
   def desired_type? _ = true 
@@ -179,13 +127,26 @@ op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec)
                                             old_c_spec 
                                             desired_type?
                                             desired_op?
+                                            %% deprecate these:
+                                            includes 
+                                            op_extern_types 
+                                            op_extern_defs  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op generateCSpecFromTransformedSpec (ms_spec : Spec) (app_name : String) 
+                                    %% deprecate these:
+                                    (includes        : List String)
+                                    (op_extern_types : List (String*String))
+                                    (op_extern_defs  : List String)
  : Option C_Spec =
- generateCSpecFromTransformedSpecIncr ms_spec app_name (emptyCSpec "")
+ let old_c_spec = emptyCSpec "" in
+ generateCSpecFromTransformedSpecIncr ms_spec app_name old_c_spec
+                                      %% deprecate these:
+                                      includes 
+                                      op_extern_types 
+                                      op_extern_defs  
 
 end-spec

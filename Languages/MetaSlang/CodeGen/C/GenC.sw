@@ -23,8 +23,19 @@ op SpecTransform.generateCFiles (ms_spec      : Spec,
                                  app_name     : String,
                                  opt_filename : Option String)
  : Spec =
- let new_ms_spec = transformSpecTowardsC ms_spec                               in
- let _           = emitCFiles            (new_ms_spec, app_name, opt_filename,[],[],[]) in
+ %% deprecate these:
+ let includes        = [] in
+ let op_extern_types = [] in
+ let op_extern_defs  = [] in
+
+ let new_ms_spec = transformSpecTowardsC ms_spec in
+
+ let _ = emitCFiles (new_ms_spec, app_name, opt_filename,
+                     %% deprecate these:
+                     includes,
+                     op_extern_types, 
+                     op_extern_defs)
+ in
  ms_spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -283,6 +294,7 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
 op SpecTransform.emitCFiles (ms_spec      : Spec,
                              app_name     : String,
                              opt_filename : Option String,
+                             %% deprecate these:
                              includes        : List String,
                              op_extern_types : List (String*String),
                              op_extern_defs  : List String)
@@ -296,18 +308,15 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
      ~ (id in? op_extern_defs)
  in
  let _ = 
-     % case generateCSpecFromTransformedSpec ms_spec app_name of
-     % case generateCSpecFromTransformedSpecIncrFilter ms_spec app_name empty_c_spec filter of
-
-     %% temporary hack until '#translate C' is working
-     case generateCSpecFromTransformedSpecHack ms_spec 
-                                               app_name 
-                                               empty_c_spec 
-                                               desired_type?
-                                               desired_op?
-                                               includes 
-                                               op_extern_types 
-                                               op_extern_defs  
+     case generateCSpecFromTransformedSpecIncrFilter ms_spec 
+                                                     app_name 
+                                                     empty_c_spec 
+                                                     desired_type?
+                                                     desired_op?
+                                                     %% deprecate these:
+                                                     includes 
+                                                     op_extern_types 
+                                                     op_extern_defs  
        of
        | Some c_spec ->
          printCSpec (c_spec, app_name, opt_filename) 
@@ -325,8 +334,17 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
 %% since there is no point in trying to generate a C spec until we have first
 %% done all the appropriate spec-to-spec transforms within metaslang.
 
-op generateCSpec (ms_spec : Spec) (app_name : String) : Option C_Spec =
+op generateCSpec (ms_spec : Spec) (app_name : String) 
+                 %% deprecate these:
+                 (includes        : List String)
+                 (op_extern_types : List (String*String))
+                 (op_extern_defs  : List String)
+ : Option C_Spec =
  let ms_spec = SpecTransform.transformSpecTowardsC ms_spec in
  generateCSpecFromTransformedSpec ms_spec app_name 
+                                  %% deprecate these:
+                                  includes 
+                                  op_extern_types 
+                                  op_extern_defs  
 
 end-spec
