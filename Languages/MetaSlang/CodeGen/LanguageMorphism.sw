@@ -224,12 +224,14 @@ type Term  = | Name  Name
 
 type SeqTerm   = {terms : Terms, separator : String}
 type ApplyTerm = {x     : Term,  y         : Term}
-type TypedTerm = {typ   : Term,  trm       : Term}
+type TypedTerm = {typ   : Term,  trm       : Term,  prefix? : Bool}
 
-op make_Name_Term  (name  : Name)             : Term = Name name
-op make_List_Term  (terms : Terms)            : Term = List  {terms = terms, separator = " "}
-op make_Apply_Term (x     : Term, y   : Term) : Term = Apply {x     = x,     y         = y}
-op make_Typed_Term (typ   : Term, trm : Term) : Term = Typed {typ   = typ,   trm       = trm}
+op make_Name_Term           (name  : Name)             : Term = Name name
+op make_List_Term_Spaces    (terms : Terms)            : Term = List  {terms = terms, separator = " "}
+op make_List_Term_Commas    (terms : Terms)            : Term = List  {terms = terms, separator = ","}
+op make_Apply_Term          (x     : Term, y   : Term) : Term = Apply {x     = x,     y         = y}
+op make_Prefix_Typed_Term   (typ   : Term, trm : Term) : Term = Typed {typ   = typ,   trm       = trm, prefix? = true}
+op make_Postfix_Typed_Term  (typ   : Term, trm : Term) : Term = Typed {typ   = typ,   trm       = trm, prefix? = false}
 
 op printTerm (term : Term) : String =
  case term of 
@@ -252,7 +254,10 @@ op printApplyTerm (aterm : ApplyTerm) : String =
  printTerm aterm.x ^ "(" ^ printTerm aterm.y ^ ")"
 
 op printTypedTerm (tterm : TypedTerm) : String =
- "((" ^ printTerm tterm.typ ^ ") " ^ printTerm tterm.trm ^ ")"
+ if tterm.prefix? then
+   "((" ^ printTerm tterm.typ ^ ") " ^ printTerm tterm.trm ^ ")"
+ else
+   printTerm tterm.trm ^ " :: " ^ printTerm tterm.typ
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Location

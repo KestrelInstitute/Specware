@@ -12,6 +12,7 @@ C qualifying spec
 
      %% these go into .h file:
      includes             : Strings,         % the .c file will merely include the .h file, which includes all other files
+     verbatims            : Strings,
      defines	          : Strings,
      constDefns           : C_VarDefns,      % constant expressions defined by #define's
      vars                 : C_VarDecls,

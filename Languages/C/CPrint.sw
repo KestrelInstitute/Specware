@@ -279,6 +279,9 @@ CPrint qualifying spec
   prettysAll [strings ["#include \"", s, "\""],
               emptyPretty ()]     
 
+ op ppVerbatim (s : String) : Pretty =
+  strings [s]
+
  op ppDefine (s : String) : Pretty =
   strings ["#define ", s]
 
@@ -434,6 +437,7 @@ CPrint qualifying spec
   % let _ = writeLine "Toptype done..." in
   let headers              = map ppComment             s.headers              in
   let includes             = map ppInclude             s.includes             in
+  let verbatims            = map ppVerbatim            s.verbatims            in    
   let defines              = map ppDefine              s.defines              in
   let constDefns           = map ppVarDefnAsDefine     s.constDefns           in
   let structUnionTypeDefns = map ppStructUnionTypeDefn s.structUnionTypeDefns in
@@ -465,6 +469,7 @@ CPrint qualifying spec
   let trailers    = map ppComment            s.trailers in
   prettysAll (section ("/* C spec */",               [])
                 ++ section ("/* Include files */",        includes)
+                ++ section ("/* Verbatim Text */",        verbatims)
                 ++ section ("/* Definitions */",          defines)
                 ++ section ("/* Constant Definitions */", constDefns)
                 ++ section ("/* Structs/Unions/Types */", structUnionTypeDefns)

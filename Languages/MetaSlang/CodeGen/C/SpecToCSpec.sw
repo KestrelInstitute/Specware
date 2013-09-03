@@ -71,10 +71,6 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
                                               (old_c_spec    : C_Spec)
                                               (desired_type? : QualifiedId -> Bool) 
                                               (desired_op?   : QualifiedId -> Bool) 
-                                              %% deprecate these:
-                                              (includes        : List String)
-                                              (op_extern_types : List (String*String))
-                                              (op_extern_defs  : List String)
 
  : Option C_Spec =
  let lms             = parseCTranslationPragmas ms_spec     in
@@ -92,12 +88,7 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
                                              constructer_ops,
                                              desired_type?,
                                              desired_op?,
-                                             lms,
-                                             %% deprecate these:
-                                             includes,
-                                             op_extern_types,
-                                             op_extern_defs )
-
+                                             lms)
  in
  let new_c_spec = generateC4ImpUnit (i2l_spec,
                                      old_c_spec, 
@@ -113,10 +104,6 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
 op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec) 
                                         (app_name   : String) 
                                         (old_c_spec : C_Spec)
-                                        %% deprecate these:
-                                        (includes        : List String)
-                                        (op_extern_types : List (String*String))
-                                        (op_extern_defs  : List String)
  : Option C_Spec =
  let 
   def desired_type? _ = true 
@@ -127,26 +114,14 @@ op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec)
                                             old_c_spec 
                                             desired_type?
                                             desired_op?
-                                            %% deprecate these:
-                                            includes 
-                                            op_extern_types 
-                                            op_extern_defs  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op generateCSpecFromTransformedSpec (ms_spec : Spec) (app_name : String) 
-                                    %% deprecate these:
-                                    (includes        : List String)
-                                    (op_extern_types : List (String*String))
-                                    (op_extern_defs  : List String)
  : Option C_Spec =
  let old_c_spec = emptyCSpec "" in
  generateCSpecFromTransformedSpecIncr ms_spec app_name old_c_spec
-                                      %% deprecate these:
-                                      includes 
-                                      op_extern_types 
-                                      op_extern_defs  
 
 end-spec

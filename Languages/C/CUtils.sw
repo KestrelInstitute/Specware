@@ -10,6 +10,7 @@ CUtils qualifying spec
    headers              = [],
    trailers             = [],
    includes             = [],
+   verbatims            = [],
    defines              = [],
    constDefns           = [],
    vars                 = [],
@@ -29,6 +30,7 @@ CUtils qualifying spec
  op addHeader               (cspc : C_Spec, X : String)                 : C_Spec = cspc << {headers              = cspc.headers              ++ [X]}
  op addTrailer              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {trailers             = cspc.trailers             ++ [X]}
  op addInclude              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {includes             = cspc.includes             ++ [X]}
+ op addVerbatim             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {verbatims            = cspc.verbatims            ++ [X]}
  op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
  op addVar                  (cspc : C_Spec, X : C_VarDecl)              : C_Spec = cspc << {vars                 = cspc.vars                 ++ [X]}
 
@@ -227,6 +229,7 @@ CUtils qualifying spec
            headers              = cspc1.headers  ++ cspc2.headers,
            trailers             = cspc1.trailers ++ cspc2.trailers,
            includes             = concatnewEq (cspc1. includes,   cspc2.includes),
+           verbatims            = cspc1.verbatims ++ cspc2.verbatims,
            defines              = concatnewEq (cspc1. defines,    cspc2.defines),
            constDefns           = concatnewEq (cspc1. constDefns, cspc2.constDefns),
            vars                 = concatnew (fn ((var1,_),      (var2,_))       -> var1=var2)     (cspc1.vars,    cspc2.vars),

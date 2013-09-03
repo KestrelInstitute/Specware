@@ -74,33 +74,21 @@ SpecsToI2L qualifying spec
   op generateI2LCodeSpec (ms_spec         : Spec,
                           use_ref_types?  : Bool, 
                           constructor_ops : List QualifiedId,
-                          lms             : LanguageMorphisms,
-                          %% deprecate these:
-                          includes        : List String,
-                          op_extern_types : List (String*String),
-                          op_extern_defs  : List String)
+                          lms             : LanguageMorphisms)
     : I_ImpUnit =
     generateI2LCodeSpecFilter (ms_spec,
                                use_ref_types?,
                                constructor_ops,
                                fn _ -> true,    % desire all types
                                fn _ -> true,    % desire all ops
-                               lms,
-                               %% deprecate these:
-                               includes        : List String,
-                               op_extern_types : List (String*String),
-                               op_extern_defs  : List String)
+                               lms)
 
   op generateI2LCodeSpecFilter (spc           : Spec,
                                 useRefTypes?  : Bool, 
                                 constrOps     : List QualifiedId,
                                 desired_type? : QualifiedId -> Bool,
                                 desired_op?   : QualifiedId -> Bool,
-                                lms           : LanguageMorphisms,
-                                %% deprecate these:
-                                includes        : List String,
-                                op_extern_types : List (String*String),
-                                op_extern_defs  : List String)
+                                lms           : LanguageMorphisms)
     : I_ImpUnit =
     let ctxt = {specname      = "", 
                 isToplevel    = true, 

@@ -190,7 +190,7 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :Term
-    (:anyOf :Name_Term :List_Term :Apply_Term :Typed_Term))
+    (:anyOf :Name_Term :Apply_Term :Typed_Term))
 
 ;;; --------
 
@@ -201,36 +201,32 @@
 ;;; --------
 
 (define-lm-parser-rule :List_Term
-    (:tuple "(" (1 :Terms) ")")
-  (LM::make_List_Term 1))
+    (:anyof :List_Term_Spaces :List_Term_Commas))
 
-(define-lm-parser-rule :Terms
-    (:anyof :Terms_Spaces :Terms_Commas))
+(define-lm-parser-rule :List_Term_Spaces
+    (:tuple "(" (1 (:repeat* :Term)) ")")
+  (LM::make_List_Term_Spaces 1))
 
-(define-lm-parser-rule :Terms_Spaces
-    (:repeat* :Term))
-
-(define-lm-parser-rule :Terms_Commas
-    (:repeat* :Term ","))
-
-;;; --------
+(define-lm-parser-rule :List_Term_Commas
+    (:tuple "(" (1 :Term) "," (2  (:repeat+ :Term ",")) ")")
+  (LM::make_List_Term_Commas (cons 1 2)))
 
 (define-lm-parser-rule :Apply_Term
-    (:tuple (1 :Term) "(" (2 :Term) ")")
+    (:tuple (1 :Term) (2 :List_Term))
   (LM::make_Apply_Term-2 1 2)) 
 
 ;;; --------
 
 (define-lm-parser-rule :Typed_Term
-    (:anyOf :C_Typed_Term :Isabelle_Typed_Term))
+    (:anyof :Prefix_Typed_Term :Postfix_Typed_Term))
 
-(define-lm-parser-rule :C_Typed_Term
-    (:tuple "(" "(" (1 :Term) ")" (2 :Term) ")")
-  (LM::make_Typed_Term-2 1 2))
+(define-lm-parser-rule :Prefix_Typed_Term  ; C
+   (:tuple (:anyof (:tuple "(" "(") "((") (1 :Term) ")" (2 :Term) ")")
+  (LM::make_Prefix_Typed_Term-2 1 2))
 
-(define-lm-parser-rule :Isabelle_Typed_Term
+(define-lm-parser-rule :Postfix_Typed_Term ; Haskell, Isabelle
     (:tuple (1 :Term) "::" (2 :Term))
-  (LM::make_Typed_Term-2 2 1))
+  (LM::make_Postfix_Typed_Term-2 2 1))
 
 ;;; ========================================================================
 ;;;  Location

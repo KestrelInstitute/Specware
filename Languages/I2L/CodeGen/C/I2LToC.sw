@@ -42,15 +42,17 @@ op generateC4ImpUnit (impunit     : I_ImpUnit,
                       useRefTypes : Bool,
                       lms         : LanguageMorphisms)
  : C_Spec =
- generateC4ImpUnitHack (impunit, xcspc, useRefTypes, [], lms)
+ generateC4ImpUnitHack (impunit, xcspc, useRefTypes, lms)
 
 op generateC4ImpUnitHack (impunit     : I_ImpUnit, 
                           xcspc       : C_Spec, 
                           useRefTypes : Bool,
-                          includes    : List String,
                           lms         : LanguageMorphisms)
  : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
+ let includes     = extractImports   lms      in
+ let include_strs = map printImport  includes in
+ let verbatims    = extractVerbatims lms      in
  let ctxt = {xcspc            = xcspc,
              useRefTypes      = useRefTypes,
              currentFunName   = None,
@@ -59,13 +61,14 @@ op generateC4ImpUnitHack (impunit     : I_ImpUnit,
  in
  let cspc = emptyCSpec impunit.name in
  let cspc = addBuiltIn (ctxt, cspc) in
- let cspc = foldl (fn (cspc, include) -> addInclude             (cspc, include)) cspc includes               in
- let cspc = foldl (fn (cspc, typedef) -> c4TypeDefinition (ctxt, cspc, typedef)) cspc impunit.decls.typedefs in
- let cspc = foldl (fn (cspc, opdecl)  -> c4OpDecl         (ctxt, cspc, opdecl))  cspc impunit.decls.opdecls  in
- let cspc = foldl (fn (cspc, fundecl) -> c4FunDecl        (ctxt, cspc, fundecl)) cspc impunit.decls.funDecls in
- let cspc = foldl (fn (cspc, fundefn) -> c4FunDefn        (ctxt, cspc, fundefn)) cspc impunit.decls.funDefns in
- let cspc = foldl (fn (cspc, vardecl) -> c4VarDecl        (ctxt, cspc, vardecl)) cspc impunit.decls.varDecls in
- let cspc = foldl (fn (cspc, mapdecl) -> c4MapDecl        (ctxt, cspc, mapdecl)) cspc impunit.decls.mapDecls in
+ let cspc = foldl (fn (cspc, include)  -> addInclude       (cspc, include))       cspc include_strs           in
+ let cspc = foldl (fn (cspc, verbatim) -> addVerbatim      (cspc, verbatim))      cspc verbatims              in
+ let cspc = foldl (fn (cspc, typedef)  -> c4TypeDefinition (ctxt, cspc, typedef)) cspc impunit.decls.typedefs in
+ let cspc = foldl (fn (cspc, opdecl)   -> c4OpDecl         (ctxt, cspc, opdecl))  cspc impunit.decls.opdecls  in
+ let cspc = foldl (fn (cspc, fundecl)  -> c4FunDecl        (ctxt, cspc, fundecl)) cspc impunit.decls.funDecls in
+ let cspc = foldl (fn (cspc, fundefn)  -> c4FunDefn        (ctxt, cspc, fundefn)) cspc impunit.decls.funDefns in
+ let cspc = foldl (fn (cspc, vardecl)  -> c4VarDecl        (ctxt, cspc, vardecl)) cspc impunit.decls.varDecls in
+ let cspc = foldl (fn (cspc, mapdecl)  -> c4MapDecl        (ctxt, cspc, mapdecl)) cspc impunit.decls.mapDecls in
  let cspc = postProcessCSpec cspc   in
  cspc
  
