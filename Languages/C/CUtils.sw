@@ -1064,6 +1064,7 @@ CUtils qualifying spec
  op extractCSpec (cspc : C_Spec) : C_Spec =
   cspc << {includes             = [], % will later include .h file, which in turn includes other files
            defines              = [],
+           verbatims            = [],
            constDefns           = [],
            vars                 = [],
            fns                  = [],
