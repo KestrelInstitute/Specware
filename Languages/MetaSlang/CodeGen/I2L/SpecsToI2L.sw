@@ -12,6 +12,15 @@ import /Languages/I2L/I2L
 
 op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
+type TypeRenamings = List TypeRenaming
+type TypeRenaming  = {source : QualifiedId, 
+                      target : I_TypeName}
+
+type OpRenamings   = List OpRenaming
+type OpRenaming    = {source    : QualifiedId, 
+                      target    : I_TypeName,
+                      reversed? : Bool,
+                      fixity    : Option LM_Fixity}
 type S2I_Context = {
                     specname       : String,             % not (yet) used
                     isToplevel     : Bool,               % not used
@@ -19,30 +28,54 @@ type S2I_Context = {
                     constrOps      : List   QualifiedId, % not used, constrOps are distinguished by their name (contain "__")
                     currentOpType  : Option QualifiedId,
                     ms_spec        : Spec,
-                    lms            : LanguageMorphisms
+                    lms            : LanguageMorphisms,
+                    type_renamings : TypeRenamings,
+                    op_renamings   : OpRenamings
                     }
 
 op default_S2I_Context (ms_spec : Spec) : S2I_Context =
  {
-  specname      = "",
-  isToplevel    = false,
-  useRefTypes   = true,
-  constrOps     = [],
-  currentOpType = None,
-  ms_spec       = ms_spec,
-  lms           = []
+  specname       = "",
+  isToplevel     = false,
+  useRefTypes    = true,
+  constrOps      = [],
+  currentOpType  = None,
+  ms_spec        = ms_spec,
+  lms            = [],
+  type_renamings = [],
+  op_renamings   = []
   }
 
 op qid2TypeName (Qualified (q, id) : QualifiedId, 
                  ctxt              : S2I_Context) 
  : I_TypeName = 
  %% Possibly rename using pragma info for type map
+ let match =
+     findLeftmost (fn renaming -> 
+                     let Qualified (x, y) = renaming.source in
+                     q = x && y = id)
+                  ctxt.type_renamings
+ in
+ let _ = case match of
+           | Some match -> writeLine("Match type : " ^ anyToString match)
+           | _ -> ()
+ in
  (q, id)
 
 op qid2FunName (Qualified (q, id) : QualifiedId, 
                 ctxt              : S2I_Context) 
  : I_FunName = 
  %% Possibly rename using pragma info for op map
+ let match =
+     findLeftmost (fn renaming -> 
+                     let Qualified (x, y) = renaming.source in
+                     q = x && y = id)
+                  ctxt.op_renamings
+ in
+ let _ = case match of
+           | Some match -> writeLine("Match op : " ^ anyToString match)
+           | _ -> ()
+ in
  (q, id)
 
 op qid2VarName (Qualified (q, id) : QualifiedId, 
@@ -106,6 +139,81 @@ op generateI2LCodeSpec (ms_spec         : Spec,
                             fn _ -> true,    % desire all ops
                             lms)
  
+
+op makeRenaming (source : LM.Name, target : LM.Name) 
+ : Option (QualifiedId * (String * String)) =
+ let source = 
+     case source of
+       | [id]    -> Some (mkUnQualifiedId id)
+       | [q, id] -> Some (mkQualifiedId (q, id))
+       | _ -> None
+ in
+ let target = 
+     case target of
+       | [id]    -> Some ("", id)
+       | [q, id] -> Some (q, id)
+       | _ -> None
+ in
+ case (source, target) of
+   | (Some source, Some target) -> Some (source, target)
+   | _ -> None
+
+op extractTypeRenamings (lms : LanguageMorphisms) : TypeRenamings = 
+ foldl (fn (renamings, lm) ->
+          foldl (fn (renamings, section) ->
+                   case section of
+                     | Morphism translations ->
+                       foldl (fn (renamings, translation) ->
+                                case translation of
+                                  | Type trans -> 
+                                    (case trans.target of
+                                       | Name target ->
+                                         (case makeRenaming (trans.source, target) of
+                                            | Some (qid, pair) -> 
+                                              renamings ++ [{source = qid, 
+                                                             target = pair}]
+                                            | _ -> renamings)
+                                       | _ ->
+                                         renamings)
+                                  | _ -> renamings)
+                             renamings
+                             translations
+                     | _ ->
+                       renamings)
+                renamings
+                lm.sections)
+       []
+       lms
+
+op extractOpRenamings (lms : LanguageMorphisms) : OpRenamings = 
+ foldl (fn (renamings, lm) ->
+          foldl (fn (renamings, section) ->
+                   case section of
+                     | Morphism translations ->
+                       foldl (fn (renamings, translation) ->
+                                case translation of
+                                  | Op trans -> % trans also has information about infix, etc.
+                                    (case trans.target of
+                                       | Name target ->
+                                         (case makeRenaming (trans.source, target) of
+                                            | Some (qid, pair) -> 
+                                              renamings ++ [{source    = qid, 
+                                                             target    = pair,
+                                                             reversed? = trans.reversed?,
+                                                             fixity    = trans.fixity}]
+                                            | _ -> renamings)
+                                       | _ ->
+                                         renamings)
+                                  | _ -> renamings)
+                             renamings
+                             translations
+                     | _ ->
+                       renamings)
+                renamings
+                lm.sections)
+       []
+       lms
+
 op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               useRefTypes?  : Bool, 
                               constrOps     : List QualifiedId,
@@ -113,13 +221,17 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               desired_op?   : QualifiedId -> Bool,
                               lms           : LanguageMorphisms)
  : I_ImpUnit =
- let ctxt = {specname      = "", 
-             isToplevel    = true, 
-             useRefTypes   = useRefTypes?,
-             constrOps     = constrOps,
-             currentOpType = None,
-             ms_spec       = ms_spec,
-             lms           = lms}
+ let type_renamings = extractTypeRenamings lms in
+ let op_renamings   = extractOpRenamings   lms in
+ let ctxt = {specname       = "", 
+             isToplevel     = true, 
+             useRefTypes    = useRefTypes?,
+             constrOps      = constrOps,
+             currentOpType  = None,
+             ms_spec        = ms_spec,
+             lms            = lms,
+             type_renamings = type_renamings,
+             op_renamings   = op_renamings}
  in
  % collect types and ops that map to native types and ops
  let (pre_native_types, pre_native_ops) = extractPreNatives lms in 
