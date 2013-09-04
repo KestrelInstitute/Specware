@@ -49,15 +49,15 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
    
    | None -> true
      
-   | Some (qid as Qualified(q,id)) -> %~(member(qid,ctxt.constrOps))
+   | Some (qid as Qualified (q, id)) -> % ~(member (qid, ctxt. constrOps))
      let expl = explode q ++ explode id in
-     let (indl,_) = 
+     let (indl, _) = 
          foldl (fn ((indl, n), c) -> 
                   if c = #_ then 
                     (n::indl, n+1) 
                   else 
                     (indl, n+1))
-               ([],0) 
+               ([], 0) 
                expl 
      in
      %% indl records positions of _'s in name
@@ -136,7 +136,7 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
  let typedefs =
      foldlSpecElements (fn (defs,el) ->
                           case el of
-                            | TypeDef (name as Qualified(q,id), _) ->
+                            | TypeDef (name as Qualified (q,id), _) ->
                               (case findTheType (ms_spec, name) of
                                  | Some typeinfo ->
                                    %% to be considered, type must be desired and not translate to native type
@@ -164,29 +164,29 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
       decls    = {
                   typedefs = typedefs,
                   
-                  opdecls  = foldl (fn | (l3,OpDecl d) -> l3++[d] 
-                                       | (l4,_)        -> l4)
+                  opdecls  = foldl (fn | (l3, OpDecl d) -> l3++[d] 
+                                       | (l4, _)        -> l4)
                                    []
                                    transformedOps,
                   
-                  funDecls = foldl (fn | (l5,FunDecl d)              -> l5++[d]
-                                       | (l6,FunDefn{decl=d,body=_}) -> l6++[d]
-                                       | (l7,_)                      -> l7)
+                  funDecls = foldl (fn | (l5, FunDecl d)                    -> l5++[d]
+                                       | (l6, FunDefn {decl = d, body = _}) -> l6++[d]
+                                       | (l7, _)                            -> l7)
                                    [] 
                                    transformedOps,
 
-                  funDefns = foldl (fn | (l8,FunDefn d) -> l8++[d] 
-                                       | (l9,_)         -> l9)
+                  funDefns = foldl (fn | (l8, FunDefn d) -> l8++[d] 
+                                       | (l9, _)         -> l9)
                                    []
                                    transformedOps,
 
-                  varDecls = foldl (fn | (l10,VarDecl d) -> l10++[d] 
-                                       | (l11,_)         -> l11)
+                  varDecls = foldl (fn | (l10, VarDecl d) -> l10++[d] 
+                                       | (l11, _)         -> l11)
                                    [] 
                                    transformedOps,
 
-                  mapDecls = foldl (fn | (l12,MapDecl d) -> l12++[d] 
-                                       | (l13,_)         -> l13)
+                  mapDecls = foldl (fn | (l12, MapDecl d) -> l12++[d] 
+                                       | (l13, _)         -> l13)
                                    [] 
                                    transformedOps
                  }
@@ -204,7 +204,6 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
  *  transforms a typeinfo into a type definition; the name of the type
  *  is the unqualified name, the qualifier is ignored.
  *)
-
 op typeinfo2typedef (Qualified (q, id) : QualifiedId,
                      info              : TypeInfo,
                      ctxt              : S2I_Context)
@@ -225,18 +224,18 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
    def eval_const tm =
      %% todo: could be smarter, but for now just recognizes constant terms such as 10 or -10, but not 3+4 or 2**8, etc.
      case tm of
-       | Fun   (Nat m,_,_)                                                      -> Some m
-       | Apply (Fun(Op(Qualified("IntegerAux","-"),_),_,_), Fun(Nat m,_,_), _) -> Some (-m)
+       | Fun   (Nat m, _, _)                                                               -> Some m
+       | Apply (Fun (Op (Qualified ("IntegerAux", "-"), _), _, _), Fun (Nat m, _, _), _) -> Some (-m)
        | _ -> None
          
    def find_min_bound vid tm1 tm2 =
      %% look for simple constant lower bounds such as '-10 < x', 'x >= 100', etc. 
      let maybe_min =
          case (vid, tm1, tm2) of
-           | ("<",  bound,        Var ((v,_),_)) -> Some (bound, LT, v)
-           | ("<=", bound,        Var ((v,_),_)) -> Some (bound, LE, v)
-           | (">",  Var((v,_),_), bound        ) -> Some (bound, LT, v)
-           | (">=", Var((v,_),_), bound        ) -> Some (bound, LE, v)
+           | ("<",  bound,           Var ((v, _), _)) -> Some (bound, LT, v)
+           | ("<=", bound,           Var ((v, _), _)) -> Some (bound, LE, v)
+           | (">",  Var ((v, _), _), bound          ) -> Some (bound, LT, v)
+           | (">=", Var ((v, _), _), bound          ) -> Some (bound, LE, v)
            | _ -> None
      in
      case maybe_min of
@@ -250,10 +249,10 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
      %% similar, but look for upper bounds such as 'x < -10', 'x <= 100', etc.
      let maybe_max = 
          case (vid, tm1, tm2) of
-           | ("<",  Var((v,_),_), bound         ) -> Some (v, LT, bound)
-           | ("<=", Var((v,_),_), bound         ) -> Some (v, LE, bound)
-           | (">",  bound,        Var ((v,_),_) ) -> Some (v, LT, bound)
-           | (">=", bound,        Var ((v,_),_) ) -> Some (v, LE, bound)
+           | ("<",  Var ((v, _), _), bound          ) -> Some (v, LT, bound)
+           | ("<=", Var ((v, _), _), bound          ) -> Some (v, LE, bound)
+           | (">",  bound,           Var ((v, _), _)) -> Some (v, LT, bound)
+           | (">=", bound,           Var ((v, _), _)) -> Some (v, LE, bound)
            | _ -> None
      in
      case maybe_max of
@@ -265,8 +264,8 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
          
    def find_bound tm vid =
      case (tm : MSTerm) of
-       | Apply (Fun(Op(Qualified("Integer",id),_),_,_),
-                Record ([("1",tm1),("2",tm2)],_),
+       | Apply (Fun (Op (Qualified ("Integer", id), _), _, _),
+                Record ([("1", tm1), ("2", tm2)], _),
                 _)
          ->
          (case find_min_bound id tm1 tm2 of
@@ -279,10 +278,12 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
          
  in
  case ms_term of
-   | Lambda([(VarPat ((vid,_),_),
-              Fun (Bool true, _, _),
-              Apply  (Fun(And,_,_), Record ([("1",tm1), ("2",tm2)], _), _))],
-            _)
+   | Lambda ([(VarPat ((vid, _), _),
+               Fun (Bool true, _, _),
+               Apply  (Fun (And, _, _), 
+                       Record ([("1",tm1), ("2",tm2)], _), 
+                       _))],
+             _)
      ->
      (let r1 = find_bound tm1 vid in 
       let r2 = find_bound tm2 vid in
@@ -293,22 +294,23 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
         | (Some (Max, n), Some (Min, m)) -> Some (m, n)
         | _ -> None)
      
-   | Lambda ([(VarPat ((X,_), _),
+   | Lambda ([(VarPat ((X, _), _),
                Fun (Bool true, _, _),
                Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
                       Record ([(_, Fun (Nat n, _, _)),
-                               (_, Var((X0,_), _))],
+                               (_, Var ((X0, _),  _))],
                               _),
                       _)
                )],
              _)
      | X = X0 ->  
-       Some (- (2**(n-1)),2**(n - 1) -1)
+       let m = 2 ** (n-1) in
+       Some (- m, m -1)
           
-   | Lambda ([(VarPat ((X,_), _),
+   | Lambda ([(VarPat ((X, _), _),
                Fun (Bool true, _, _),
                Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
-                      Var((X0,_), _),
+                      Var ((X0, _), _),
                       _)
                )],
              _)
@@ -344,7 +346,7 @@ op type2itype (tvs     : TyVars,
          -> 
          (case pred_body of
             | Apply (Fun (cmp, _, _),
-                     Record([arg1, arg2], _),
+                     Record ([arg1, arg2], _),
                      _) 
               ->
               let
@@ -376,51 +378,53 @@ op type2itype (tvs     : TyVars,
        | _ -> None
  in
  let utyp = unfoldToSpecials (ms_type, ctxt) in
-%let utyp = unfoldBaseVP(spc,typ,false,true) in
+%let utyp = unfoldBaseVP (spc, typ, false, true) in
  case utyp of
    
    % ----------------------------------------------------------------------
    % primitives
    % ----------------------------------------------------------------------
    
-   | Boolean _                                    -> I_Primitive I_Bool
-   | Base(Qualified("Nat",       "Nat"),    [],_) -> I_Primitive I_Nat
-   | Base(Qualified("Integer",   "Int"),    [],_) -> I_Primitive I_Int
-   | Base(Qualified("Character", "Char"),   [],_) -> I_Primitive I_Char
-   | Base(Qualified("String",    "String"), [],_) -> I_Primitive I_String
-  %| Base(Qualified("Float",     "Float"),  [],_) -> I_Primitive I_Float
+   | Boolean _                                         -> I_Primitive I_Bool
+   | Base (Qualified ("Nat",       "Nat"),    [],   _) -> I_Primitive I_Nat
+   | Base (Qualified ("Integer",   "Int"),    [],   _) -> I_Primitive I_Int
+   | Base (Qualified ("Character", "Char"),   [],   _) -> I_Primitive I_Char
+   | Base (Qualified ("String",    "String"), [],   _) -> I_Primitive I_String
+  %| Base (Qualified ("Float",     "Float"),  [],   _) -> I_Primitive I_Float
    
-   | Base(Qualified(_,           "Ptr"),    [t1],_) -> I_Ref (type2itype (tvs, t1, ctxt)) 
+   | Base (Qualified (_,           "Ptr"),    [t1], _) -> I_Ref (type2itype (tvs, t1, ctxt)) 
      
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
    
   % reference type
-  %| Base(Qualified("ESpecPrimitives","Ref"),[typ],_) -> Ref(type2itype(ctxt,spc,tvs,typ))
+  %| Base (Qualified ("ESpecPrimitives", "Ref"), [typ], _) -> Ref (type2itype (ctxt, spc, tvs, typ))
    
-  %| Base(Qualified(_,"List"),[ptyp],_) ->
-  %    let ptype = type2itype(ctxt,spc,tvs,ptyp) in
-  %    List(ptype)
+  %| Base (Qualified (_, "List"), [ptyp], _) ->
+  %    let ptype = type2itype (ctxt, spc, tvs, ptyp) in
+  %    List ptype
    
-  %| Base(Qualified(_,"List"),[ptyp],_) ->
-  %  System.fail("sorry, this version of the code generator doesn't support lists.")
+  %| Base (Qualified (_, "List"), [ptyp], _) ->
+  %  System.fail ("sorry, this version of the code generator doesn't support lists.")
   %         
-  %     System.fail("if using List type, please add a term restricting "^
+  %     System.fail ("if using List type, please add a term restricting "^
   %     "the length of the list\n       "^
-  %     "(e.g. \"{l:List("^printType(ptyp)^")| length(l) <= 32}\")")
-  % ----------------------------------------------------------------------
+  %     "(e.g. \"{l:List ("^printType ptyp ^")| length l <= 32}\")")
+
+   % ----------------------------------------------------------------------
    
    | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _)
      ->
      (case pred of
         %% {x : Nat -> x < n} where n is a Nat
-        | Lambda([(VarPat((X,_),_),
-                   Fun (Bool true, _, _),
-                   Apply(Fun(Op(Qualified(_,pred),_),_,_),
-                         Record([(_,Var((X0,_),_)),
-                                 (_,Fun(Nat(n),_,_))],
-                                _),
-                         _)
-                   )],_)
+        | Lambda ([(VarPat ((X, _), _),
+                    Fun (Bool true, _, _),
+                    Apply (Fun (Op (Qualified (_, pred), _), _, _),
+                           Record ([(_, Var ((X0, _),  _)),
+                                    (_, Fun (Nat n, _, _))],
+                                   _),
+                           _)
+                    )],
+                  _)
           ->
           if X = X0 then 
             (case pred of
@@ -430,11 +434,11 @@ op type2itype (tvs     : TyVars,
           else 
             I_Primitive I_Nat
             
-        | Lambda ([(VarPat ((X,_), _),
+        | Lambda ([(VarPat ((X, _), _),
                     Fun (Bool true, _, _),
                     Apply (Fun (Op (Qualified (_, "fitsInNBits?-1-1"), _), _, _),
                            Record ([(_, Fun (Nat n, _, _)),
-                                    (_, Var((X0,_), _))],
+                                    (_, Var ((X0, _), _))],
                                    _),
                            _)
                     )],
@@ -443,10 +447,10 @@ op type2itype (tvs     : TyVars,
             I_BoundedNat (2**n)
           
           
-        | Lambda ([(VarPat ((X,_), _),
+        | Lambda ([(VarPat ((X, _), _),
                     Fun (Bool true, _, _),
                     Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
-                           Var((X0,_), _),
+                           Var ((X0, _), _),
                            _)
                     )],
                   _)
@@ -472,12 +476,12 @@ op type2itype (tvs     : TyVars,
           let _ = writeLine "FindSimpleConstantBounds failed" in
           I_Primitive I_Int)
      
-  % ----------------------------------------------------------------------
-  % special form for list types, term must restrict length of list
-  % the form of the term must be {X:List(T)| length(X) < N}
-  % where N must be a constant term evaluating to a positive Nat
-  % lenght(X) <= N, N > length(X), N >= length(X), N = length(X) can also be used
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
+   % special form for list types, term must restrict length of list
+   % the form of the term must be {X:List T | length X < N}
+   % where N must be a constant term evaluating to a positive Nat
+   % length X <= N, N > length X , N >= length X, N = length X can also be used
+   % ----------------------------------------------------------------------
   
    | Subtype (Base (Qualified ("List", "List"), [element_type], _), pred, _) 
      | bounded_list_type? element_type pred ->
@@ -485,14 +489,14 @@ op type2itype (tvs     : TyVars,
        let Some i_type = unfold_bounded_list_type element_type pred in
        i_type
           
-  % ----------------------------------------------------------------------
-  % for arrow types make a distinction between products and argument lists:
-  % op foo(n:Nat,m:Nat) -> Nat must be called with two Nats
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
+   % for arrow types make a distinction between products and argument lists:
+   % op foo (n:Nat, m:Nat) -> Nat must be called with two Nats
+   % ----------------------------------------------------------------------
   
    | Arrow (typ1, typ2, _) ->
      let typ1 = unfoldToSpecials (typ1, ctxt) in
-    %let typ1 = unfoldToProduct(spc,typ1) in
+    %let typ1 = unfoldToProduct (spc, typ1) in
      (case typ1 of
         | Product (fields, _) ->
           let types = map (fn (_, typ) -> 
@@ -511,7 +515,7 @@ op type2itype (tvs     : TyVars,
           I_FunOrMap (dom_type, 
                       type2itype (tvs, typ2, unsetToplevel ctxt)))
      
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
 
    | Product (fields, _) ->
      if numbered? fields then
@@ -529,9 +533,9 @@ op type2itype (tvs     : TyVars,
        in
        if structfields = [] then I_Void else I_Struct structfields
          
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
 
-   | CoProduct(fields,_) ->
+   | CoProduct (fields, _) ->
      let unionfields = 
          map (fn | (id,None)     -> (id, I_Void)
                  | (id,Some typ) -> (id, type2itype (tvs, typ, unsetToplevel ctxt)))
@@ -539,17 +543,17 @@ op type2itype (tvs     : TyVars,
      in
      I_Union unionfields
      
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
      
    | TyVar _ -> 
      if ctxt.useRefTypes then 
        I_Any
      else
-       fail("sorry, this version of the code generator doesn't support polymorphic types.")
+       fail ("sorry, this version of the code generator doesn't support polymorphic types.")
 
-  % ----------------------------------------------------------------------
-  % use the base types as given, assume that the original definition has been checked
-  % ----------------------------------------------------------------------
+   % ----------------------------------------------------------------------
+   % use the base types as given, assume that the original definition has been checked
+   % ----------------------------------------------------------------------
   
    | Base (Qualified (q, id), _, _) -> I_Base (q, id)
      
@@ -575,7 +579,7 @@ op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Int =
      (case getOpDefinition (qid, ctxt) of
         | Some tm -> constant_term_Int_value (tm, ctxt)
         | _ -> err ())
-   | _ -> err()
+   | _ -> err ()
      
      
 (*
@@ -640,12 +644,12 @@ op unfoldToSpecials1 (ms_type : MSType, ctxt : S2I_Context) : MSType =
      case utyp of
        % this corresponds to a term of the form {x:Nat|x<C} where C must be a Integer const
        | Subtype (Base (Qualified (_, "Nat"), [], _),
-                  Lambda ([(VarPat((X,_), _), 
+                  Lambda ([(VarPat ((X, _), _), 
                             Fun (Bool true, _, _),
-                            Apply (Fun (Op (Qualified(_,"<"), _), _, _),
-                                   Record([(_, Var ((X0,_), _)),
-                                           (_, Fun (Nat(n), _, _))],
-                                          _),
+                            Apply (Fun (Op (Qualified (_, "<"), _), _, _),
+                                   Record ([(_, Var ((X0, _),   _)),
+                                            (_, Fun (Nat n, _,  _))],
+                                           _),
                                    _))],
                           _),
                   _) 
@@ -728,7 +732,7 @@ op opinfo2declOrDefn (qid         : QualifiedId,
                       optParNames : Option (List String),
                       ctxt        : S2I_Context)
  : opInfoResult =
- let Qualified(q,id) = qid in
+ let Qualified (q, id) = qid in
  let (tvs, typ, _) = unpackFirstOpDef info in
  let 
 
@@ -749,19 +753,19 @@ op opinfo2declOrDefn (qid         : QualifiedId,
          let plist =
              case pat of
            
-               | VarPat ((id,_), _) -> 
+               | VarPat ((id, _), _) -> 
                  [cString id]
              
                | RecordPat (plist, _) -> 
-                 map (fn | (_,VarPat((id,_),_)) -> cString id
+                 map (fn | (_,VarPat ((id, _), _)) -> cString id
                          | _ -> fail (err ()))
                      plist
              
-               | RestrictedPat (VarPat((id,_),_), _, _) -> 
+               | RestrictedPat (VarPat ((id, _), _), _, _) -> 
                  [cString id]
              
-               | RestrictedPat (RecordPat(plist,_), _, _) -> 
-                 map (fn | (_,VarPat((id,_),_)) -> cString id
+               | RestrictedPat (RecordPat (plist, _), _, _) -> 
+                 map (fn | (_,VarPat ((id, _), _)) -> cString id
                          | _ -> fail (err ()))
                      plist
              
@@ -769,7 +773,7 @@ op opinfo2declOrDefn (qid         : QualifiedId,
                  fail (err ())
          in
          (plist,body)
-       | _ -> fail (err())
+       | _ -> fail (err ())
 
    def alignTypes pnames types =
      %% given one var and a list of types, convert list of types to a tuple type
@@ -789,9 +793,9 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  case typ of 
    | I_FunOrMap (types, rtype) ->
      if definedOpInfo? info then
-       let tm = firstOpDefInnerTerm info          in
-      %let tm = liftUnsupportedPattern (tm, spc)  in  % must do this in prior pass before pattern match compilation
-       let (pnames,body) = getParamNames(ctxt,tm) in
+       let tm = firstOpDefInnerTerm info            in
+      %let tm = liftUnsupportedPattern (tm, spc)    in  % must do this in prior pass before pattern match compilation
+       let (pnames,body) = getParamNames (ctxt, tm) in
        let types = alignTypes pnames types in
        let decl = {name       = id,
                    params     = zip (pnames, types),
@@ -843,7 +847,7 @@ op term2expression_internal (ms_term : MSTerm,
  % Accord hack:
  % checks, whether the given id is an outputop of the espec; if yes is has to be
  % replaced by a VarDeref/FunCallDeref, as done below
- %    let def isOutputOp(varid as (spcname,lid)) =
+ %    let def isOutputOp (varid as (spcname,lid)) =
  %          let outputops = ctxt.espc.interface.outputops in
  %    (spcname = ctxt.espc.spc.name) && lid in? outputops)
  %    in
@@ -870,14 +874,14 @@ op alt_index (x : Id, ms_type : MSType, ctxt : S2I_Context) : Nat =
    def aux (n, alts) =
      case alts of
        | [] -> 0
-       | (alt,_) :: alts ->
+       | (alt, _) :: alts ->
          if alt = x then 
            n
          else
            aux (n + 1, alts)
  in
  case unfoldToCoProduct (ms_type, ctxt) of
-   | CoProduct (alts,_) -> aux (1, alts)
+   | CoProduct (alts, _) -> aux (1, alts)
    | _ -> 
      let _ = writeLine ("Type is not a coproduct, so index is 0: " ^ printType ms_type) in
      0
@@ -920,7 +924,7 @@ op term2expression_fun (fun     : MSFun,
        let Arrow (_, rng, _) = ms_type in
        term2expression_apply_fun (fun, ms_term, [], Record ([], noPos), [], ms_term, rng, ctxt)
      | _ -> 
-       fail("sorry, functions as objects (higher-order functions) are not yet supported:\n" ^ printTerm ms_term)
+       fail ("sorry, functions as objects (higher-order functions) are not yet supported:\n" ^ printTerm ms_term)
  else
    case fun of
      | Nat    n -> I_Int  n
@@ -983,7 +987,7 @@ op term2expression_apply (t1      : MSTerm,
               let lhstype = inferType (ctxt.ms_spec, origlhs)            in
               let lhstype = unfoldToSpecials (lhstype, ctxt)             in
               let lhstype = type2itype ([], lhstype, unsetToplevel ctxt) in
-              I_FunCall(varname,projections,exprs)
+              I_FunCall (varname, projections, exprs)
               
             | Fun (fun, _, _) -> 
               term2expression_apply_fun (fun, origlhs, projections, t2, args, ms_term, ms_type, ctxt)
@@ -1028,7 +1032,7 @@ op term2expression_apply_fun (fun         : MSFun,
        
    | Embed (id, _) ->
      let 
-       def mkExpr2() = term2expression (t2, ctxt)
+       def mkExpr2 () = term2expression (t2, ctxt)
      in
      if projections = [] then
        % let typ = foldType (typ, spc) in
@@ -1043,9 +1047,9 @@ op term2expression_apply_fun (fun         : MSFun,
                              if numbered? fields then
                                map (fn (_,tm) -> term2expression (tm, ctxt)) fields
                              else 
-                               [mkExpr2()]
+                               [mkExpr2 ()]
                              | _ -> 
-                               [mkExpr2()]
+                               [mkExpr2 ()]
              in
              I_ConstrCall (vname, selector, exprs)
              
@@ -1053,18 +1057,18 @@ op term2expression_apply_fun (fun         : MSFun,
              let exprs = case t2 of
                            | Record (fields, b) ->
                              if numbered? fields then
-                               map (fn(_,tm) -> term2expression (tm, ctxt)) fields
+                               map (fn (_, tm) -> term2expression (tm, ctxt)) fields
                              else 
-                               [mkExpr2()]
+                               [mkExpr2 ()]
                            | _ -> 
-                             [mkExpr2()]
+                             [mkExpr2 ()]
              in
              I_ConstrCall (("Boolean", "Boolean"), selector, exprs)
              
            | _ -> 
-             I_AssignUnion (selector, Some (mkExpr2()))
+             I_AssignUnion (selector, Some (mkExpr2 ()))
        else 
-         I_AssignUnion (selector, Some (mkExpr2()))
+         I_AssignUnion (selector, Some (mkExpr2 ()))
          
      else 
        fail (mkInOpStr ctxt ^ "not handled as fun to be applied: " ^ anyToString fun)
@@ -1086,7 +1090,7 @@ op term2expression_apply_fun (fun         : MSFun,
    | Select id ->
      let expr2 = term2expression (t2, ctxt) in
      if projections = [] then 
-       % let union = I_Project(expr2,"alt") in
+       % let union = I_Project (expr2, "alt") in
        % let (_,ityp2) = expr2 in
        % I_Select ((union, ityp2), id)
        I_Select (expr2, id)
@@ -1096,7 +1100,7 @@ op term2expression_apply_fun (fun         : MSFun,
    | Project id ->
      let expr2 = term2expression (t2, ctxt) in
      if projections = [] then 
-       I_Project(expr2,id)
+       I_Project (expr2, id)
      else 
        fail (mkInOpStr ctxt ^ "not handled as projection: " ^ anyToString id ^ " given projections " ^ anyToString projections)
        
@@ -1116,7 +1120,7 @@ op term2expression_let (pat : MSPattern, deftm : MSTerm, tm : MSTerm, ctxt : S2I
    | WildPat _ ->
      I_Comma [defexp, exp]
      
-   | VarPat ((_, Product ([],_)), _) ->
+   | VarPat ((_, Product ([], _)), _) ->
      I_Comma [defexp, exp]
      
    | VarPat ((id, typ), _) ->
@@ -1164,13 +1168,13 @@ op equalsExpression (t1 : MSTerm, t2 : MSTerm, ctxt : S2I_Context)
  let utyp = stripSubtypesAndBaseDefs ctxt.ms_spec typ in
 
  case utyp of
-   | Boolean                                   _  -> primEq ()
-   | Base (Qualified ("Bool",    "Bool"),   [],_) -> primEq ()
-   | Base (Qualified ("Nat",     "Nat"),    [],_) -> primEq ()  % TODO: is this possible?
-   | Base (Qualified ("Integer", "Int"),    [],_) -> primEq ()
-   | Base (Qualified ("Char",    "Char"),   [],_) -> primEq ()
-   | Base (Qualified ("Float",   "Float"),  [],_) -> primEq ()
-   | Base (Qualified ("String",  "String"), [],_) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
+   | Boolean                                    _  -> primEq ()
+   | Base (Qualified ("Bool",    "Bool"),   [], _) -> primEq ()
+   | Base (Qualified ("Nat",     "Nat"),    [], _) -> primEq ()  % TODO: is this possible?
+   | Base (Qualified ("Integer", "Int"),    [], _) -> primEq ()
+   | Base (Qualified ("Char",    "Char"),   [], _) -> primEq ()
+   | Base (Qualified ("Float",   "Float"),  [], _) -> primEq ()
+   | Base (Qualified ("String",  "String"), [], _) -> I_Builtin (I_StrEquals (t2e t1,t2e t2))
    | _ ->
      let typ = foldType (termType t1, ctxt) in
      let 
@@ -1180,7 +1184,7 @@ op equalsExpression (t1 : MSTerm, t2 : MSTerm, ctxt : S2I_Context)
      in
      case typ of
        
-   | Base(qid,_,_) ->
+   | Base (qid, _, _) ->
      let eqid as Qualified (eq, eid) = getEqOpQid qid in
      (case AnnSpec.findTheOp (ctxt.ms_spec, eqid) of
         | Some _ ->
@@ -1198,7 +1202,7 @@ op equalsExpression (t1 : MSTerm, t2 : MSTerm, ctxt : S2I_Context)
      typed_expr.expr
      
    | _ -> 
-     fail (errmsg() ^ "\n[term type must be a base or product type]") %primEq()
+     fail (errmsg () ^ "\n[term type must be a base or product type]") % primEq ()
 
 op getEqTermFromProductFields (fields : List (Id * MSType),
                                otyp   : MSType,
@@ -1206,14 +1210,14 @@ op getEqTermFromProductFields (fields : List (Id * MSType),
                                vary   : MSTerm)
  : MSTerm =
  let b       = typeAnn otyp in
- let default = mkTrue()     in
+ let default = mkTrue ()    in
  foldr (fn ((fid, ftyp), eq_all) ->
-          let projtyp  = Arrow (otyp,                                 ftyp,          b) in
-          let eqtyp    = Arrow (Product([("1",ftyp), ("2",ftyp)], b), Boolean b,     b) in
-          let proj     = Fun   (Project fid, projtyp,                                b) in
-          let t1       = Apply (proj,                varx,                           b) in
-          let t2       = Apply (proj,                vary,                           b) in
-          let eq_field = Apply (Fun(Equals,eqtyp,b), Record([("1",t1),("2",t2)],b),  b) in
+          let projtyp  = Arrow (otyp,                                    ftyp,             b) in
+          let eqtyp    = Arrow (Product ([("1", ftyp), ("2",ftyp)], b),  Boolean b,        b) in
+          let proj     = Fun   (Project fid, projtyp,                                      b) in
+          let t1       = Apply (proj,                   varx,                              b) in
+          let t2       = Apply (proj,                   vary,                              b) in
+          let eq_field = Apply (Fun (Equals, eqtyp, b), Record ([("1",t1), ("2",t2)], b),  b) in
           if eq_all = default then
             eq_field
           else
@@ -1276,20 +1280,20 @@ op getBuiltinExpr (ms_term : MSTerm,
    | (Fun (Op (Qualified ("String",     ">"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrGreater          (t2e t1, t2e t2)))
 
   % var refs:
-  %      | (Fun(Op(Qualified("ESpecPrimitives","ref"),_),_,_),[t1])
-  %        -> let def qid2varname(qid) =
+  %      | (Fun (Op (Qualified ("ESpecPrimitives", "ref"), _), _, _), [t1])
+  %        -> let def qid2varname qid =
   %                 case qid of
-  %                   | Qualified(spcname,name) -> (spcname,name)
-  %                  %| Local(name) -> (spc.name,name)
+  %                   | Qualified (spcname, name) -> (spcname,name)
+  %                  %| Local name -> (spc.name,name)
   %           in
   %           (case t1 of
-  %              | Fun(Op(qid,_),_,_)
-  %                -> %if member(qid,ctxt.vars) then Some(VarRef(qid2varname qid))
+  %              | Fun (Op (qid, _), _, _)
+  %                -> %if member (qid,ctxt.vars) then Some (VarRef (qid2varname qid))
   %                   %else 
-  %                       fail("\"ref\" can only be used for vars, but \""^
-  %                            (qidstr qid)^"\" is not declared as a var.")
-  %              | _ -> fail("\"ref\" can only be used for vars, not for:\n"^
-  %                          printTerm(t1))
+  %                       fail ("\"ref\" can only be used for vars, but \""^
+  %                             (qidstr qid)^"\" is not declared as a var.")
+  %              | _ -> fail ("\"ref\" can only be used for vars, not for:\n"^
+  %                           printTerm t1)
   %           )
   
    | _ -> None
@@ -1297,7 +1301,7 @@ op getBuiltinExpr (ms_term : MSTerm,
 op isVariable (_ : S2I_Context, _ : QualifiedId) : Bool = 
  % In vanilla metaslang, as opposed to ESpecs, there are no variables,
  % but they might appear at a future date.
- false % member(qid, ctxt.vars)
+ false % member (qid, ctxt. vars)
  
 (*
  *  simpleCoProductCase checks for a special case of lambda term that represents one of the most
@@ -1314,7 +1318,7 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
  let outer_tm = ms_term in
  case ms_term of
    
-   | Apply(embedfun as Lambda (rules,_), tm, _) ->
+   | Apply (embedfun as Lambda (rules, _), tm, _) ->
      (case rules of
         | [(p as VarPat ((v,ty), b), _, body)] ->
           % that's a very simple case: "case tm of v -> body" (no other case)
@@ -1324,16 +1328,16 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
         | _ -> 
           let
             def getTypeForConstructorArgs (typ, id) =
-              %let typ = unfoldBase(spc,typ) in
+              %let typ = unfoldBase (spc, typ) in
               let typ = stripSubtypesAndBaseDefs ctxt.ms_spec typ in
               case typ of
-                | CoProduct (fields,_) ->
+                | CoProduct (fields, _) ->
                   (case findLeftmost (fn (id0, _) -> id0 = id) fields of
-                     | Some(_,opttype) -> (case opttype of
-                                             | Some typ -> Some (type2itype ([], typ, unsetToplevel ctxt))
-                                             | _ -> None)
-                     | _ -> fail("internal error: constructor id " ^ id ^ " of term " ^
-                                   printTerm tm ^ " cannot be found."))
+                     | Some (_, opttype) -> (case opttype of
+                                               | Some typ -> Some (type2itype ([], typ, unsetToplevel ctxt))
+                                               | _ -> None)
+                     | _ -> fail ("internal error: constructor id " ^ id ^ " of term " ^
+                                    printTerm tm ^ " cannot be found."))
                 | _ -> 
                   let utyp = unfoldBase (ctxt.ms_spec, typ) in
                   if utyp = typ then
@@ -1363,9 +1367,9 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
                         | Some (pat as RecordPat (fields, _)) ->
                           % pattern must be a recordpat consisting of var or wildpattern
                           if numbered? fields then
-                            map (fn | (_,WildPat _) -> None
-                                    | (_,VarPat((id,_),_)) -> Some id
-                                    | (_,pat) -> 
+                            map (fn | (_, WildPat _)           -> None
+                                    | (_, VarPat ((id, _), _)) -> Some id
+                                    | (_, pat) -> 
                                       fail (mkInOpStr ctxt ^ "unsupported feature: you can only use var patterns or _ here, not:\n" 
                                               ^ printPattern pat))
                                 fields
@@ -1380,11 +1384,11 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
                   let selector = {name = constructorId, index = alt_index (constructorId, parent_type, ctxt)} in
                   I_ConstrCase (Some selector, vars, exp)
                   
-                | WildPat _            -> I_ConstrCase (None, [], exp)
-                | NatPat  (n,_)        -> I_NatCase    (n,        exp)
-                | CharPat (c,_)        -> I_CharCase   (c,        exp)
-                | VarPat  ((id,typ),_) -> let ityp = type2itype([], typ, unsetToplevel ctxt) in
-                  I_VarCase    (id, ityp, exp)
+                | WildPat _              -> I_ConstrCase (None, [], exp)
+                | NatPat  (n, _)         -> I_NatCase    (n,        exp)
+                | CharPat (c, _)         -> I_CharCase   (c,        exp)
+                | VarPat  ((id, typ), _) -> let ityp = type2itype ([], typ, unsetToplevel ctxt) in
+                  I_VarCase (id, ityp, exp)
                 | RestrictedPat (pat, _, _) -> getUnionCase (pat, cond, tm) % cond will be ignored, is just a filler 
                 | _ -> 
                   fail (mkInOpStr ctxt ^ "unsupported feature: pattern not supported, use embed or wildcard pattern instead:\n"
@@ -1409,8 +1413,8 @@ op foldType (ms_type : MSType, ctxt : S2I_Context) : MSType =
                               | _ -> 
                                 if definedTypeInfo? info then
                                   let (tvs, typ0) = unpackFirstTypeDef info in
-                                  %let utyp = unfoldBase(spc,typ) in
-                                  %let utyp0 = unfoldBase(spc,typ0) in
+                                  %let utyp  = unfoldBase (spc, typ)  in
+                                  %let utyp0 = unfoldBase (spc, typ0) in
                                   if equivType? ctxt.ms_spec (ms_type, typ0) then
                                     let b   = typeAnn typ0                     in
                                     let qid = Qualified (q, id)                in
