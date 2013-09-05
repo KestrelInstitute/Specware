@@ -27,8 +27,8 @@
    ;; I think these are called special characters in the user documentation
    :separator-chars             '(#\. #\/ #\( #\))
 
-   :ad-hoc-keywords             '("-import" "-include" "-morphism" "-translate" "-native" "-generated" "type" "field" "op" "in" "primitive") ; to avoid getting multiple tokens
-   :ad-hoc-symbols              '("-import" "-include" "-morphism" "-translate" "-native" "-generated" "type" "field" "op" "in" "primitive") ; to allow filename called type.c, etc.
+   :ad-hoc-keywords             '("-import" "-include" "-morphism" "-translate" "-native" "-generated")   ;; to avoid getting multiple tokens
+   :ad-hoc-symbols              '("-import" "-include" "-morphism" "-translate" "-native" "-generated")
    ;;
    :ad-hoc-numbers              '()
    ;;

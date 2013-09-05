@@ -29,7 +29,7 @@ I2L qualifying spec
                          }
 
   type I_TypeName = String * String
-  type I_FunName  = String * String    
+  type I_OpName   = String * String
   type I_VarName  = String * String    % var reference consists of a unit name and an identifier name
 
   type I_TypeDefinition = I_TypeName * I_Type
@@ -57,8 +57,6 @@ I2L qualifying spec
 
   type I_UnionField = String * I_Type  % constructor * typ
   type I_UnionFields = List I_UnionField
-
-  type I_OpName = String * String
 
   type I_Declaration = I_OpName * I_Type * Option I_TypedExpr
   type I_Declarations = List I_Declaration
@@ -104,17 +102,17 @@ I2L qualifying spec
                 | I_VarRef         I_VarName
                 | I_VarDeref       I_VarName         
 
-                | I_FunCall        I_FunName * (*projections*) List String * I_TypedExprs
-                | I_FunCallDeref   I_FunName * (*projections*) List String * I_TypedExprs
-                | I_MapAccess      I_FunName * I_Type * (*projections:*) List String * I_TypedExprs
-                | I_MapAccessDeref I_FunName * I_Type * (*projections:*) List String * I_TypedExprs
+                | I_FunCall        I_OpName * (*projections*) List String * I_TypedExprs
+                | I_FunCallDeref   I_OpName * (*projections*) List String * I_TypedExprs
+                | I_MapAccess      I_OpName * I_Type * (*projections:*) List String * I_TypedExprs
+                | I_MapAccessDeref I_OpName * I_Type * (*projections:*) List String * I_TypedExprs
                 | I_IfExpr         I_TypedExpr * I_TypedExpr * I_TypedExpr
                 | I_Comma          I_TypedExprs
                 | I_Let            String * I_Type * I_TypedExpr * I_TypedExpr
                 | I_UnionCaseExpr  I_TypedExpr * List I_UnionCase            % dispatch among variants of a coproduct/union
                 | I_Embedded       I_Selector * I_TypedExpr                  % test for a variant of a coproduct/union
                 | I_AssignUnion    I_Selector * Option I_TypedExpr           % set the variant field for a union
-                | I_ConstrCall     I_FunName * I_Selector * List I_TypedExpr % call a constructor as a function
+                | I_ConstrCall     I_OpName * I_Selector * List I_TypedExpr  % call a constructor as a function
                 | I_Builtin        I_BuiltinExpression
                 | I_TupleExpr      I_TypedExprs                              % create a structure using generated field names
                 | I_StructExpr     I_StructExprFields                        % create a structure using given names

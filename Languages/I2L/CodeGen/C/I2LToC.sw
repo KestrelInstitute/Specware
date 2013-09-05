@@ -237,15 +237,15 @@ op c4FunDefn (ctxt  : I2C_Context,
      addFnDefn (cspc, fdefn)
 
    | I_Exp expr ->
-     let ctxt                                   = setCurrentFunParams (ctxt, vardecls)      in
-     let (cspc, block as (decls, stmts), cexpr) = c4Expression (ctxt, cspc, ([], []), expr) in
-     let (stmts1, cexpr1)                       = commaExprToStmts (ctxt, cexpr)            in
+     let ctxt                                   = setCurrentFunParams (ctxt, vardecls)         in
+     let (cspc, block as (decls, stmts), cexpr) = c4RhsExpression (ctxt, cspc, ([], []), expr) in
+     let (stmts1, cexpr1)                       = commaExprToStmts (ctxt, cexpr)               in
      let stmts2                                 = conditionalExprToStmts (ctxt, cexpr1, convertExprToStmt rtype) in
-     let block                                  = (decls, stmts++stmts1++stmts2)            in
-     let block                                  = findBlockForDecls block                   in
-     let stmt                                   = C_Block block                             in
-     let stmt                                   = moveFailAwayFromEnd stmt                  in
-     let fdefn                                  = (fname, vardecls, rtype, stmt)            in
+     let block                                  = (decls, stmts++stmts1++stmts2)               in
+     let block                                  = findBlockForDecls block                      in
+     let stmt                                   = C_Block block                                in
+     let stmt                                   = moveFailAwayFromEnd stmt                     in
+     let fdefn                                  = (fname, vardecls, rtype, stmt)               in
      addFnDefn (cspc, fdefn)
 
 op moveFailAwayFromEnd (stmt : C_Stmt) : C_Stmt =
@@ -394,7 +394,9 @@ op c4Type (ctxt : I2C_Context,
        
        | I_Primitive p -> (cspc, c4PrimitiveType p)
 
-       | I_Base tname  -> (cspc, C_Base (qname2id tname))
+       | I_Base tname  -> 
+         let x = (qname2id tname) in
+         (cspc, C_Base x)
 
        | I_Struct [] -> (cspc, C_Void)
          
@@ -511,6 +513,57 @@ op c4TypeSpecial (cspc : C_Spec, typ : I_Type)
 %                                                                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% --------------------------------------------------------------------------------
+
+op c4RhsExpressions (ctxt  : I2C_Context,
+                     cspc  : C_Spec,
+                     block : C_Block,
+                     exprs : I_TypedExprs) 
+ : C_Spec * C_Block * C_Exps =
+ foldl (fn ((cspc, block, cexprs), expr) ->
+          let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
+          (cspc, block, cexprs++[cexpr]))
+       (cspc, block, []) 
+       exprs
+
+op c4RhsExpression (ctxt  : I2C_Context,
+                    cspc  : C_Spec,
+                    block : C_Block,
+                    exp   : I_TypedExpr) 
+ : C_Spec * C_Block * C_Exp =
+ c4Expression1 (ctxt, cspc, block, exp, false, false)
+     
+% --------------------------------------------------------------------------------
+
+op c4LhsExpression (ctxt  : I2C_Context,
+                    cspc  : C_Spec,
+                    block : C_Block,
+                    exp   : I_TypedExpr) 
+ : C_Spec * C_Block * C_Exp =
+ c4Expression1 (ctxt, cspc, block, exp, true, false)
+
+% --------------------------------------------------------------------------------
+
+op c4InitializerExpressions (ctxt  : I2C_Context,
+                             cspc  : C_Spec,
+                             block : C_Block,
+                             exprs : I_TypedExprs) 
+ : C_Spec * C_Block * C_Exps =
+ foldl (fn ((cspc, block, cexprs), expr) ->
+          let (cspc, block, cexpr) = c4InitializerExpression (ctxt, cspc, block, expr) in
+          (cspc, block, cexprs++[cexpr]))
+       (cspc, block, []) 
+       exprs
+
+op c4InitializerExpression (ctxt  : I2C_Context,
+                            cspc  : C_Spec,
+                            block : C_Block,
+                            exp   : I_TypedExpr) 
+ : C_Spec * C_Block * C_Exp =
+ c4Expression1 (ctxt, cspc, block, exp, false, true)
+
+% --------------------------------------------------------------------------------
+
 op c4Expression1 (ctxt            : I2C_Context, 
                   cspc            : C_Spec, 
                   block           : C_Block,  
@@ -533,11 +586,14 @@ op c4Expression1 (ctxt            : I2C_Context,
 op c4Expression2 (ctxt                    : I2C_Context,
                   cspc                    : C_Spec,
                   block as (decls, stmts) : C_Block,
-                  {expr, typ, cast?}      : I_TypedExpr,
+                  exp as {expr, typ, cast?}      : I_TypedExpr,
                   lhs?                    : Bool,
                   forInitializer?         : Bool)
- : C_Spec * C_Block * C_Exp =
- let
+ : C_Spec * C_Block * C_Exp = 
+ case c4SpecialExpr (ctxt, cspc, block, exp) of
+   | Some x -> x
+   | _ ->
+ let     
 
    def addProjections (cexpr, projections) =
      case projections of
@@ -547,7 +603,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
 
    def processFunMap f (vname, projections, exprs) =
      let id                    = qname2id vname                                      in
-     let (cspc, block, cexprs) = c4Expressions (ctxt, cspc, block, exprs)            in
+     let (cspc, block, cexprs) = c4RhsExpressions (ctxt, cspc, block, exprs)         in
      let (cspc, ctype)         = c4Type (ctxt, cspc, typ)                            in
      let cexpr1                = addProjections (f (C_Var (id, ctype)), projections) in
      (cspc, block, C_Apply (cexpr1, cexprs))
@@ -560,8 +616,8 @@ op c4Expression2 (ctxt                    : I2C_Context,
          (case getBoundedNatList (types) of
             
             | Some ns ->
-              let (cspc, block, cexprs) = c4Expressions (ctxt, cspc, block, exprs)      in
-              let (cspc, ctype)         = c4Type (ctxt, cspc, typ)                      in
+              let (cspc, block, cexprs) = c4RhsExpressions (ctxt, cspc, block, exprs) in
+              let (cspc, ctype)         = c4Type (ctxt, cspc, typ)                    in
               % if we have projections, the map name must be the prefix of the last field name
               % otherwise of the id itself
               let id = foldl (fn (s, p) -> 
@@ -592,13 +648,13 @@ op c4Expression2 (ctxt                    : I2C_Context,
    | I_Let (id, typ, idexpr, expr) ->
      let (id, expr)                      = substVarIfDeclared (ctxt, id, decls, expr)     in
      let (cspc, ctype)                   = c4Type (ctxt, cspc, typ)                       in
-     let (cspc, (decls, stmts), idcexpr) = c4Expression (ctxt, cspc, block, idexpr)       in
+     let (cspc, (decls, stmts), idcexpr) = c4RhsExpression (ctxt, cspc, block, idexpr)    in
      let letvardecl                      = (id, ctype)                                    in
      let optinit                         = None                                           in  % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
      let letvardecl1                     = (id, ctype, optinit)                           in
      let letsetexpr                      = getSetExpr (ctxt, C_Var (letvardecl), idcexpr) in
      let block                           = (decls++[letvardecl1], stmts)                  in
-     let (cspc, block, cexpr)            = c4Expression (ctxt, cspc, block, expr)         in
+     let (cspc, block, cexpr)            = c4RhsExpression (ctxt, cspc, block, expr)      in
      (cspc, block, C_Comma (letsetexpr, cexpr))
      
    | I_FunCall (vname, projections, exprs) ->
@@ -670,7 +726,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
                    (cspc, []) 
                    exprs 
          in
-         let (cspc, block, cexprs) = c4Expressions (ctxt, cspc, block, exprs) in
+         let (cspc, block, cexprs) = c4RhsExpressions (ctxt, cspc, block, exprs) in
          let fndecl = (fnid, ctypes, ctype) in
          (cspc, block, C_Apply (C_Fn fndecl, cexprs))
      in
@@ -680,7 +736,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
      let (cspc, block as (decls, stmts), optcexpr) =
      case optexpr of
        | Some expr -> 
-         let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr) in
+         let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
          (cspc, block, Some cexpr)
        | None -> 
          (cspc, block, None)
@@ -705,8 +761,8 @@ op c4Expression2 (ctxt                    : I2C_Context,
      (cspc, block, res)
      
    | I_UnionCaseExpr (typed_expr, unioncases) ->
-     let I_Union union_fields                      = typed_expr.typ                               in
-     let (cspc0, block0 as (decls, stmts), cexpr0) = c4Expression (ctxt, cspc, block, typed_expr) in
+     let I_Union union_fields                      = typed_expr.typ                                  in
+     let (cspc0, block0 as (decls, stmts), cexpr0) = c4RhsExpression (ctxt, cspc, block, typed_expr) in
      
      % Insert a variable for the discriminator in case cexpr0 isn't a variable.
      % Otherwise the C Compiler might issue an "illegal lvalue" error.
@@ -754,7 +810,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
 
                          | None -> 
                            %% pattern is just a simple wildcard
-                           c4Expression (ctxt, cspc0, block0, expr)
+                           c4RhsExpression (ctxt, cspc0, block0, expr)
                            
                          | Some selector ->
                            let condition = casecond selector in
@@ -764,7 +820,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
                                  
                                  | None -> 
                                    %% varlist contains only wildcards (same as single wildcard case)
-                                   c4Expression (ctxt, cspc, block, expr)
+                                   c4RhsExpression (ctxt, cspc, block, expr)
                                    
                                  | _ ->
                                    let Some (_,field_type) = findLeftmost (fn field -> field.1 = selector.name) union_fields   in
@@ -785,9 +841,9 @@ op c4Expression2 (ctxt                    : I2C_Context,
                                        %% Otherwise the new variable could be accessed without being initialized.
                                        %% [so why is optinit None then?]
                                        
-                                       let optinit                       = None                                   in
-                                       let decl1                         = (id, idtype, optinit)                  in
-                                       let (cspc, (decls, stmts), cexpr) = c4Expression (ctxt, cspc, block, expr) in
+                                       let optinit                       = None                                      in
+                                       let decl1                         = (id, idtype, optinit)                     in
+                                       let (cspc, (decls, stmts), cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
                                        (cspc, (decls ++ [decl1], stmts), C_Comma (assign, cexpr))
                                        
                                      | _ -> 
@@ -804,10 +860,10 @@ op c4Expression2 (ctxt                    : I2C_Context,
                                        let assign               = getSetExpr (ctxt, C_Var decl, valexp)                    in
                                        let optinit              = None                                                     in
                                        let decl1                = (id, idtype, optinit)                                    in
-                                       %% Put decl1 into the block passed to c4Expression, to avoid reusing id.
+                                       %% Put decl1 into the block passed to c4RhsExpression, to avoid reusing id.
                                        let (decls, stmts)       = block                                                    in
                                        let block                = (decls ++ [decl1], stmts)                                in
-                                       let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr)                   in
+                                       let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr)                in
                                        let cexpr                = substVarListByFieldRefs (ctxt, vlist, C_Var decl, cexpr) in  % subst after
                                        (cspc, block, C_Comma (assign, cexpr))
 
@@ -816,7 +872,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
 
                     | I_VarCase (id,ityp,exp) ->
                       let (cid, exp)          = substVarIfDeclared (ctxt, id, decls, exp)    in
-                      let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, exp)        in
+                      let (cspc, block, cexp) = c4RhsExpression (ctxt, cspc, block, exp)     in
                       let (cspc, ctype)       = c4Type (ctxt, cspc, ityp)                    in
                       let cvar                = (cid, ctype)                                 in
                       let cassign             = getSetExpr (ctxt, C_Var cvar, C_Var disdecl) in
@@ -830,17 +886,17 @@ op c4Expression2 (ctxt                    : I2C_Context,
                       (cspc, (decls ++ [cdecl], stmts), C_Comma (cassign, cexp))
                       
                     | I_NatCase (n, exp) -> 
-                      let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                    in
+                      let (cspc, block, ce)    = c4RhsExpression (ctxt, cspc, block, exp)                 in
                       let constant             = {expr = I_Int n, typ = I_Primitive I_Int, cast? = false} in
-                      let (cspc, block, const) = c4Expression (ctxt, cspc, block, constant)               in  
+                      let (cspc, block, const) = c4RhsExpression (ctxt, cspc, block, constant)            in  
                       let cond                 = C_Binary (C_Eq, C_Var disdecl, const)                    in
                       let ifexp                = C_IfExp  (cond, ce, ifexp)                               in
                       (cspc, block, ifexp)
                       
                     | I_CharCase (c, exp) ->
-                      let (cspc, block, ce)    = c4Expression (ctxt, cspc, block, exp)                      in
+                      let (cspc, block, ce)    = c4RhsExpression (ctxt, cspc, block, exp)                   in
                       let constant             = {expr = I_Char c, typ = I_Primitive I_Char, cast? = false} in
-                      let (cspc, block, const) = c4Expression (ctxt, cspc, block, constant)                 in
+                      let (cspc, block, const) = c4RhsExpression (ctxt, cspc, block, constant)              in
                       let cond                 = C_Binary (C_Eq, C_Var disdecl, const)                      in
                       let ifexp                = C_IfExp  (cond, ce, ifexp)                                 in
                       (cspc, block, ifexp))
@@ -863,13 +919,13 @@ op c4Expression2 (ctxt                    : I2C_Context,
            ifexpr)
 
    | I_Embedded (id, exp) ->
-     let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, exp) in
+     let (cspc, block, cexp) = c4RhsExpression (ctxt, cspc, block, exp) in
      (cspc, block, getSelCompareExp (ctxt, cexp, id))
 
    | I_IfExpr (e1, e2, e3) ->
-     let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
-     let (cspc, block, ce2) = c4Expression (ctxt, cspc, block, e2) in
-     let (cspc, block, ce3) = c4Expression (ctxt, cspc, block, e3) in
+     let (cspc, block, ce1) = c4RhsExpression (ctxt, cspc, block, e1) in
+     let (cspc, block, ce2) = c4RhsExpression (ctxt, cspc, block, e2) in
+     let (cspc, block, ce3) = c4RhsExpression (ctxt, cspc, block, e3) in
      (cspc, block, C_IfExp (ce1, ce2, ce3))
      
    | I_Var id ->
@@ -880,12 +936,12 @@ op c4Expression2 (ctxt                    : I2C_Context,
      
    | I_VarDeref id ->
      let var_expr = {expr = I_Var id, typ = typ, cast? = false} in
-     let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, var_expr) in
+     let (cspc, block, cexp) = c4RhsExpression (ctxt, cspc, block, var_expr) in
      (cspc, block, C_Unary (C_Contents, cexp))
      
    | I_VarRef id ->
      let var_expr = {expr = I_Var id, typ = typ, cast? = false} in
-     let (cspc, block, cexp) = c4Expression (ctxt, cspc, block, var_expr) in
+     let (cspc, block, cexp) = c4RhsExpression (ctxt, cspc, block, var_expr) in
      (cspc, block, C_Unary (C_Address, cexp))
      
    | I_Comma (exprs) ->
@@ -893,9 +949,9 @@ op c4Expression2 (ctxt                    : I2C_Context,
         
         | expr1::exprs1 ->
           let (exprs, expr)        = getLastElem (exprs)                    in
-          let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr) in
+          let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
           foldr (fn (expr1, (cspc, block, cexpr)) ->
-                   let (cspc, block, cexpr1) = c4Expression (ctxt, cspc, block, expr1) in
+                   let (cspc, block, cexpr1) = c4RhsExpression (ctxt, cspc, block, expr1) in
                    (cspc, block, C_Comma (cexpr1, cexpr)))
                 (cspc, block, cexpr) 
                 exprs
@@ -905,55 +961,6 @@ op c4Expression2 (ctxt                    : I2C_Context,
    | _ -> 
      (print expr;
       fail  "unimplemented case for expression.")
-
-% --------------------------------------------------------------------------------
-
-op c4LhsExpression (ctxt  : I2C_Context,
-                    cspc  : C_Spec,
-                    block : C_Block,
-                    exp   : I_TypedExpr) 
- : C_Spec * C_Block * C_Exp =
- c4Expression1 (ctxt, cspc, block, exp, true, false)
-
-op c4InitializerExpression (ctxt  : I2C_Context,
-                            cspc  : C_Spec,
-                            block : C_Block,
-                            exp   : I_TypedExpr) 
- : C_Spec * C_Block * C_Exp =
- c4Expression1 (ctxt, cspc, block, exp, false, true)
-
-op c4Expression (ctxt  : I2C_Context,
-                 cspc  : C_Spec,
-                 block : C_Block,
-                 exp   : I_TypedExpr) 
- : C_Spec * C_Block * C_Exp =
- case c4SpecialExpr (ctxt, cspc, block, exp) of
-   | Some res -> res
-   | None -> c4Expression1 (ctxt, cspc, block, exp, false, false)
-     
-% --------------------------------------------------------------------------------
-
-op c4Expressions (ctxt  : I2C_Context,
-                  cspc  : C_Spec,
-                  block : C_Block,
-                  exprs : I_TypedExprs) 
- : C_Spec * C_Block * C_Exps =
- foldl (fn ((cspc, block, cexprs), expr) ->
-          let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr) in
-          (cspc, block, cexprs++[cexpr]))
-       (cspc, block, []) 
-       exprs
-
-op c4InitializerExpressions (ctxt  : I2C_Context,
-                             cspc  : C_Spec,
-                             block : C_Block,
-                             exprs : I_TypedExprs) 
- : C_Spec * C_Block * C_Exps =
- foldl (fn ((cspc, block, cexprs), expr) ->
-          let (cspc, block, cexpr) = c4InitializerExpression (ctxt, cspc, block, expr) in
-          (cspc, block, cexprs++[cexpr]))
-       (cspc, block, []) 
-       exprs
 
 % --------------------------------------------------------------------------------
 
@@ -979,7 +986,7 @@ op c4StructExpr2 (ctxt       : I2C_Context,
                   exprs      : I_TypedExprs, 
                   fieldnames : List String)
  : C_Spec * C_Block * C_Exp =
- let (cspc, block as (decls, stmts), fexprs) = c4Expressions (ctxt, cspc, block, exprs)                        in
+ let (cspc, block as (decls, stmts), fexprs) = c4RhsExpressions (ctxt, cspc, block, exprs)                     in
  let (cspc, ctype)                           = c4Type (ctxt, cspc, typ)                                        in
  let varPrefix                               = getVarPrefix ("_product", ctype)                                in
  let xname                                   = freshVarName (varPrefix, ctxt, block)                           in
@@ -1021,17 +1028,17 @@ op c4BuiltInExpr (ctxt  : I2C_Context,
                   exp   : I_BuiltinExpression) 
  : C_Spec * C_Block * C_Exp =
  let 
-   def c4e e = c4Expression (ctxt, cspc, block, e) 
+   def c4e e = c4RhsExpression (ctxt, cspc, block, e) 
  in
  let
    def c42e f e1 e2 = 
-     let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
-     let (cspc, block, ce2) = c4Expression (ctxt, cspc, block, e2) in
+     let (cspc, block, ce1) = c4RhsExpression (ctxt, cspc, block, e1) in
+     let (cspc, block, ce2) = c4RhsExpression (ctxt, cspc, block, e2) in
      (cspc, block, f (ce1, ce2))
  in
  let
    def c41e f e1 =
-     let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
+     let (cspc, block, ce1) = c4RhsExpression (ctxt, cspc, block, e1) in
      (cspc, block, f ce1)
  in
  let
@@ -1102,19 +1109,82 @@ op cfalse : C_Exp = C_Var ("FALSE", C_Int32)
  * code for handling special case, e.g. the bitstring operators
  *)
 
+type PrePost = | Prefix | Postfix
+
+op map_unary_name (s : String, prepost : PrePost) : Option C_UnaryOp =
+ case s of
+
+   % for unary "*" "&" "-" "~" "!", there is no ambiguity, 
+   % so allow prefix or nothing:
+
+   | "*"          -> Some C_Contents
+   | "prefix_*"   -> Some C_Contents
+   | "&"          -> Some C_Address
+   | "prefix_&"   -> Some C_Address
+   | "-"          -> Some C_Negate
+   | "prefix_-"   -> Some C_Negate
+   | "~"          -> Some C_BitNot
+   | "prefix_~"   -> Some C_BitNot
+   | "!"          -> Some C_LogNot
+   | "prefix_!"   -> Some C_LogNot
+     
+   % but force user to be explicit for "++" and "--", where there 
+   % is a real ambiguity between prefix and postfix:
+     
+   | "prefix_++"  -> Some C_PreInc
+   | "postfix_++" -> Some C_PostInc
+     
+   | "prefix_--"  -> Some C_PreDec
+   | "postfix_--" -> Some C_PostDec
+     
+   | _ -> None
+       
+op map_binary_name (s : String) : Option C_BinaryOp =
+ case s of
+   | "="   -> Some C_Set          
+   | "+"   -> Some C_Add          
+   | "-"   -> Some C_Sub          
+   | "*"   -> Some C_Mul          
+   | "/"   -> Some C_Div          
+   | "%"   -> Some C_Mod          
+   | "&"   -> Some C_BitAnd       
+   | "|"   -> Some C_BitOr        
+   | "xor" -> Some C_BitXor       
+   | "<<"  -> Some C_ShiftLeft    
+   | ">>"  -> Some C_ShiftRight   
+   | "+="  -> Some C_SetAdd       
+   | "-="  -> Some C_SetSub       
+   | "*="  -> Some C_SetMul       
+   | "/="  -> Some C_SetDiv       
+   | "%="  -> Some C_SetMod       
+   | "&="  -> Some C_SetBitAnd    
+   | "|="  -> Some C_SetBitOr     
+   | "^="  -> Some C_SetBitXor    
+   | "<<=" -> Some C_SetShiftLeft 
+   | ">>=" -> Some C_SetShiftRight
+   | "&&"  -> Some C_LogAnd       
+   | "||"  -> Some C_LogOr        
+   | "=="  -> Some C_Eq           
+   | "!="  -> Some C_NotEq        
+   | "< "  -> Some C_Lt           
+   | "> "  -> Some C_Gt           
+   | "<="  -> Some C_Le           
+   | ">="  -> Some C_Ge           
+   | _ -> None
+
 op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr : I_TypedExpr) 
  : Option (C_Spec * C_Block * C_Exp) =
  let 
    %% def c4e e = 
-   %%   Some (c4Expression (ctxt, cspc, block, e))
+   %%   Some (c4RhsExpression (ctxt, cspc, block, e))
  
    def c41e f e1 =
-     let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
+     let (cspc, block, ce1) = c4RhsExpression (ctxt, cspc, block, e1) in
      Some (cspc, block, f ce1)
      
    def c42e f e1 e2 = 
-     let (cspc, block, ce1) = c4Expression (ctxt, cspc, block, e1) in
-     let (cspc, block, ce2) = c4Expression (ctxt, cspc, block, e2) in
+     let (cspc, block, ce1) = c4RhsExpression (ctxt, cspc, block, e1) in
+     let (cspc, block, ce2) = c4RhsExpression (ctxt, cspc, block, e2) in
      Some (cspc, block, f (ce1, ce2))
      
  in
@@ -1124,16 +1194,28 @@ op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr
    case typed_expr.expr of
      | I_Var     (_, "Zero")                        -> Some (cspc, block, C_Const (C_Int (true, 0)))
      | I_Var     (_, "One")                         -> Some (cspc, block, C_Const (C_Int (true, 1)))
-     | I_FunCall ((_, "leftShift"),   [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftLeft,  c1, c2)) e1 e2
-     | I_FunCall ((_, "rightShift"),  [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_ShiftRight, c1, c2)) e1 e2
-     | I_FunCall ((_, "andBits"),     [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitAnd,     c1, c2)) e1 e2
-     | I_FunCall ((_, "orBits"),      [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitOr,      c1, c2)) e1 e2
-     | I_FunCall ((_, "xorBits"),     [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_BitXor,     c1, c2)) e1 e2
-     | I_FunCall ((_, "complement"),  [], [e1])     -> c41e (fn  c1      -> C_Unary  (C_BitNot,     c1))     e1
-     | I_FunCall ((_, "notZero"),     [], [e1])     -> c41e (fn  c1      -> c1)                              e1
-     | I_FunCall (("System", "setf"), [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_Set,        c1, c2)) e1 e2
+
+     | I_FunCall (("System", "setf"), [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_Set, c1, c2)) e1 e2
        
-     | _ -> None
+     | I_FunCall ((_, name),  [], [e1]) ->
+       (case map_unary_name (name, Prefix) of % todo: allow PostFix
+          | Some c_unary_op ->
+            c41e (fn c1 -> 
+                    C_Unary (c_unary_op, c1))
+                 e1
+          | _ -> None)
+
+     | I_FunCall ((_, name),  [], [e1, e2]) ->
+       %% todo: verify Infix ??
+       (case map_binary_name name of 
+          | Some c_binary_op ->
+            c42e (fn (c1, c2) -> 
+                    C_Binary (c_binary_op, c1, c2)) 
+                 e1 
+                 e2
+          | _ -> None)
+     | _ ->
+       None
 
 % --------------------------------------------------------------------------------
 
@@ -1212,12 +1294,12 @@ op c4StepRule (ctxt                    : I2C_Context,
      (cspc, block, gotostmts)
      
    | I_Cond (expr, rule) ->
-     let (cspc, block,  cexpr)     = c4Expression (ctxt, cspc, block, expr)                 in
+     let (cspc, block,  cexpr)     = c4RhsExpression (ctxt, cspc, block, expr)                 in
      let (cspc, block0, rulestmts) = c4StepRule   (ctxt, cspc, ([], []), optgotostmt, rule) in
      (cspc, block, [C_IfThen (cexpr, addStmts (C_Block block0, rulestmts))])
 
    | I_Update (optexpr1, expr2) ->
-     let (cspc, block0 as (decls0, stmts0), cexpr2) = c4Expression (ctxt, cspc, ([], []), expr2) in
+     let (cspc, block0 as (decls0, stmts0), cexpr2) = c4RhsExpression (ctxt, cspc, ([], []), expr2) in
      (case optexpr1 of
         
         | Some expr1 ->
@@ -1245,7 +1327,7 @@ op c4StepRule (ctxt                    : I2C_Context,
                       (cspc, block, [])
                       
                     | Some expr ->
-                      let (cspc, block, cexpr) = c4Expression (ctxt, cspc, block, expr) in
+                      let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
                       (cspc, block, [C_Exp (getSetExpr (ctxt, C_Var iddecl, cexpr))])
                       
                   in

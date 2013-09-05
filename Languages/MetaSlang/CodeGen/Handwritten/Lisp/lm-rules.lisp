@@ -130,16 +130,13 @@
   1)
 
 (define-lm-parser-rule :FileName 
-    (:tuple (1 :Symbol))
-  (common-lisp::symbol-name (quote 1)))
+    :SimpleName)
 
 (define-lm-parser-rule :FileExtension
-    (:tuple (1 :Symbol))
-  (common-lisp::symbol-name (quote 1)))
+    :SimpleName)
   
 (define-lm-parser-rule :DirectoryId 
-    (:tuple (1 :Symbol))
-  (common-lisp::symbol-name (quote 1)))
+    :SimpleName)
   
 (define-lm-parser-rule :KW_Import
     (:anyof "-import" "-include"))
@@ -173,11 +170,19 @@
 (define-lm-parser-rule :SimpleName ; corresponds to Symbol in LanguageMorphism.sw
     (:anyof
      ;; keywords in pragma parser are also legal ids
-     ((:tuple "curry")    "curry")
-     ((:tuple "uncurry")  "uncurry")
-     ((:tuple "infix")    "infix")
-     ((:tuple "right")    "right")
-     ((:tuple "left")     "left")
+     ((:tuple "curry")     "curry")
+     ((:tuple "uncurry")   "uncurry")
+     ((:tuple "left")      "left")
+     ((:tuple "right")     "right")
+     ((:tuple "infix")     "infix")
+     ((:tuple "prefix")    "prefix")
+     ((:tuple "postfix")   "postfix")
+     ((:tuple "reversed")  "reversed")
+     ((:tuple "primitive") "primitive") 
+     ((:tuple "type")      "type")
+     ((:tuple "field")     "field")
+     ((:tuple "op")        "op")
+     ((:tuple "in")        "in")
      ((:tuple (1 :Symbol)) (common-lisp::symbol-name (quote 1)))
      ))
 
@@ -264,8 +269,7 @@
   (LM::make_FieldRef-2 1 2)) 
 
 (define-lm-parser-rule :FieldId
-    (:tuple (1 :Symbol))
-  (common-lisp::symbol-name (quote 1)))
+    :SimpleName)
 
 ;;; ========================================================================
 ;;;  OpTranslation
@@ -293,7 +297,7 @@
   (LM::make_recurry 1))
 
 (define-lm-parser-rule :Fixity
-    (:tuple (1 (:anyof "infix" "right" "left")))
+    (:tuple (1 (:anyof "infix" "right" "left" "prefix" "postfix")))
   (LM::make_LM_Fixity 1))
 
 (define-lm-parser-rule :Precedence

@@ -353,13 +353,15 @@ type OpTranslation = {source     : Name,
                       precedence : Option Nat,
                       location   : Option Location}
 
-type LM_Fixity = | Left | Right | Infix
+type LM_Fixity = | Left | Right | Infix | Prefix | Postfix
 
 op make_LM_Fixity (s : String) : LM_Fixity =
    case lowercase s of
-     | "right" -> Right 
-     | "left"  -> Left 
-     | "infix" -> Infix
+     | "right"   -> Right 
+     | "left"    -> Left 
+     | "infix"   -> Infix
+     | "prefix"  -> Prefix
+     | "postfix" -> Postfix
 
 op make_Op_Translation (source     : Name, 
                         target     : Term,

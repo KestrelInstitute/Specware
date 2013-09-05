@@ -18,7 +18,7 @@ type TypeRenaming  = {source : QualifiedId,
 
 type OpRenamings   = List OpRenaming
 type OpRenaming    = {source    : QualifiedId, 
-                      target    : I_TypeName,
+                      target    : I_OpName,
                       reversed? : Bool,
                       fixity    : Option LM_Fixity}
 type S2I_Context = {
@@ -53,35 +53,37 @@ op qid2TypeName (Qualified (q, id) : QualifiedId,
  let match =
      findLeftmost (fn renaming -> 
                      let Qualified (x, y) = renaming.source in
-                     q = x && y = id)
+                     y = id && (x = q || x = UnQualified))
                   ctxt.type_renamings
  in
- let _ = case match of
-           | Some match -> writeLine("Match type : " ^ anyToString match)
-           | _ -> ()
- in
- (q, id)
+ case match of
+   | Some match -> match.target
+   | _ -> (q, id)
 
-op qid2FunName (Qualified (q, id) : QualifiedId, 
-                ctxt              : S2I_Context) 
- : I_FunName = 
+op qid2OpName (Qualified (q, id) : QualifiedId, 
+                ctxt             : S2I_Context) 
+ : I_OpName = 
  %% Possibly rename using pragma info for op map
  let match =
      findLeftmost (fn renaming -> 
                      let Qualified (x, y) = renaming.source in
-                     q = x && y = id)
+                     y = id && (x = q || x = UnQualified))
                   ctxt.op_renamings
  in
- let _ = case match of
-           | Some match -> writeLine("Match op : " ^ anyToString match)
-           | _ -> ()
- in
- (q, id)
+ case match of
+   | Some match -> 
+     let target as (q, id) = match.target in
+     (case match.fixity of
+        | Some Prefix  -> (q, "prefix_"  ^ id)
+        | Some Postfix -> (q, "postfix_" ^ id)
+        | _ -> target)
+   | _ -> (q, id)
 
 op qid2VarName (Qualified (q, id) : QualifiedId, 
                 ctxt              : S2I_Context) 
  : I_VarName = 
  %% Vars are not renamed
+ let _ = writeLine("Not renaming var : " ^ q ^ "," ^ id) in
  (q, id)
 
 
@@ -918,8 +920,8 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  in
  let Qualified (q, lid) = qid in
  let qid0     = Qualified (q, "__" ^ lid ^ "__")                 in
- let id       = qid2FunName (qid, ctxt)                          in
- let id0      = qid2FunName (qid0, ctxt)                         in
+ let id       = qid2OpName (qid, ctxt)                           in
+ let id0      = qid2OpName (qid0, ctxt)                          in
  let ms_type  = unfoldToArrow (ctxt.ms_spec, ms_type)            in
  let i_type   = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
  let ctxt     = setCurrentOpType (qid, ctxt)                     in
@@ -1037,7 +1039,7 @@ op term2expression_fun (ms_fun  : MSFun,
        case ms_type of
          
          | Base (qid, _, _) ->
-           let i_fname = qid2FunName (qid, ctxt) in
+           let i_fname = qid2OpName (qid, ctxt) in
            I_ConstrCall (i_fname, i_selector, [])
            
          | Boolean _ -> 
@@ -1052,7 +1054,9 @@ op term2expression_fun (ms_fun  : MSFun,
  
  if arrowType? (ms_type, ctxt) then
    case ms_fun of
-     | Op    (qid, _)     -> I_VarRef (qid2VarName (qid, ctxt))
+     | Op    (qid, _)     -> 
+       let _ = writeLine("Ok. arrow type for ms_term = " ^ printTerm ms_term ^ ", type = " ^ printType ms_type) in
+       I_VarRef (qid2OpName (qid, ctxt))
      | Embed (id,  false) -> 
        let Arrow (_, ms_rng, _) = ms_type in
        term2expression_apply_fun (ms_fun,
@@ -1073,7 +1077,7 @@ op term2expression_fun (ms_fun  : MSFun,
      | Bool   b -> I_Bool b
        
      | Op (qid, _) -> 
-       let i_fname = qid2FunName (qid, ctxt) in
+       let i_fname = qid2OpName (qid, ctxt) in
        %if isOutputOp varname then VarDeref varname else 
        I_Var i_fname
        
@@ -1121,7 +1125,7 @@ op term2expression_apply (ms_t1   : MSTerm,
               
             | Var ((id, _), _) ->
               let i_exprs   = getExprs4Args (ms_args, ctxt)  in
-              let i_varname = ("", id)                       in % don't rename vars with pragma info
+              let i_varname = qid2VarName (mkUnQualifiedId id, ctxt) in % don't rename vars with pragma info
 
               % infer the type of the original lhs to get the real type of the map
               % taking all the projections into account
@@ -1167,7 +1171,7 @@ op term2expression_apply_fun (ms_fun      : MSFun,
  case ms_fun of
    | Op (qid, _) ->
      let i_exprs     = getExprs4Args (ms_args, ctxt)                    in
-     let i_fname     = qid2VarName (qid, ctxt)                          in
+     let i_fname     = qid2OpName (qid, ctxt)                           in
      % infer the type of the original lhs to get the real type of the map
      % taking all the projections into account
      let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs)            in
@@ -1192,7 +1196,7 @@ op term2expression_apply_fun (ms_fun      : MSFun,
          case ms_type of
            
            | Base (qid, _, _) ->
-             let i_fname = qid2FunName (qid, ctxt) in
+             let i_fname = qid2OpName (qid, ctxt) in
              let i_exprs = case ms_t2 of
                              | Record (ms_fields, b) ->
                                if numbered? ms_fields then
@@ -1347,7 +1351,7 @@ op equalsExpression (ms_t1 : MSTerm, ms_t2 : MSTerm, ctxt : S2I_Context)
        
        | Base (qid, _, _) ->
          let eqid as Qualified (eq, eid) = getEqOpQid qid in
-         let i_eq_fname = qid2FunName (eqid, ctxt) in
+         let i_eq_fname = qid2OpName (eqid, ctxt) in
          (case AnnSpec.findTheOp (ctxt.ms_spec, eqid) of
             | Some _ ->
               I_FunCall (i_eq_fname, [], [t2e ms_t1, t2e ms_t2])
