@@ -198,6 +198,15 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                                  true
                                                else
                                                  false
+                                             | Op trans ->
+                                               if trans.source = [q, id] then
+                                                 let _ = writeLine ("Op defined as macro: " ^ print_qid (q, id, true)) in
+                                                 true
+                                               else if trans.source = [id] then
+                                                 let _ = writeLine ("Op defined as macro: " ^ print_qid (q, id, false)) in
+                                                 true
+                                               else
+                                                 false
                                              | _ -> false)
                                         translations)
                               then
@@ -229,6 +238,15 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                                    true
                                                  else
                                                    false
+                                             | Type trans ->
+                                               if trans.source = [q, id] then
+                                                 let _ = writeLine ("Type defined as macro: " ^ print_qid (q, id, true)) in
+                                                 true
+                                               else if trans.source = [id] then
+                                                 let _ = writeLine ("Type defined as macro: " ^ print_qid (q, id, false)) in
+                                                 true
+                                               else
+                                                 false
                                                | _ -> false)
                                           translations)
                                 then
