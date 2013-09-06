@@ -425,8 +425,12 @@ op make_Op_Translation (source     : Name,
  : Translation =
  let native? = 
      case location of
-       | Some _ -> true
-       | _ -> false  % may later be set to true, given info from Natives section
+       | Some _ -> true  % if it has a target location, it must be native
+       | _ -> 
+         % At this point, we don't know for sure if native or not.
+         % See markNativeTranslations, which uses information from native 
+         % section to possibly revise this to true.
+         false
  in
  Op {source     = source,
      target     = target,
