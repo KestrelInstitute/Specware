@@ -165,15 +165,6 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               natives       : Natives,
                               translations  : Translations)
  : I_ImpUnit =
- let
-   def print_qid (q, id, explicit_q?) =
-     if explicit_q? then
-       q ^ "." ^ id
-     else if q = UnQualified then
-       id
-          else 
-            "[" ^ q ^ ".]" ^ id        
- in
  let ctxt = {specname       = "", 
              isToplevel     = true, 
              useRefTypes    = useRefTypes?,
@@ -183,6 +174,13 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
              lms            = lms,
              translations   = translations}
  in
+ let
+  def print_q_id (q, id) =
+    if q = UnQualified then
+      id
+    else
+      q ^ "." ^ id
+ in
  let i_opdefs =
      foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
                             let qid = Qualified (q, id) in
@@ -191,19 +189,19 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                            case translation of
                                              | Op trans | trans.native? ->
                                                if trans.source = [q, id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, true)) in
+                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
                                                  true
                                                else if trans.source = [id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, false)) in
+                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
                                                  true
                                                else
                                                  false
                                              | Op trans ->
                                                if trans.source = [q, id] then
-                                                 let _ = writeLine ("Op defined as macro: " ^ print_qid (q, id, true)) in
+                                                 let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
                                                  true
                                                else if trans.source = [id] then
-                                                 let _ = writeLine ("Op defined as macro: " ^ print_qid (q, id, false)) in
+                                                 let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
                                                  true
                                                else
                                                  false
@@ -212,13 +210,13 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               then
                                 i_opdefs
                             else if nativeOp? ([q,id], natives) then
-                              let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, true)) in
+                              let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
                               i_opdefs
                             else if desired_op? qid then
                               let i_opdef = opinfo2declOrDefn (qid, opinfo, None, ctxt) in
                               i_opdefs ++ [i_opdef]
                             else
-                              let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_qid (q, id, false)) in
+                              let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_q_id (q, id)) in
                               i_opdefs)
                          []
                          ms_spec.ops
@@ -231,19 +229,19 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                              case translation of
                                                | Type trans | trans.native? ->
                                                  if trans.source = [q, id] then
-                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
+                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
                                                    true
                                                  else if trans.source = [id] then
-                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, false)) in
+                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
                                                    true
                                                  else
                                                    false
                                              | Type trans ->
                                                if trans.source = [q, id] then
-                                                 let _ = writeLine ("Type defined as macro: " ^ print_qid (q, id, true)) in
+                                                 let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
                                                  true
                                                else if trans.source = [id] then
-                                                 let _ = writeLine ("Type defined as macro: " ^ print_qid (q, id, false)) in
+                                                 let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
                                                  true
                                                else
                                                  false
@@ -252,7 +250,7 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                 then
                                   i_typedefs
                               else if nativeType? ([q,id], natives) then
-                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
+                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
                                 i_typedefs
                               else if desired_type? name then
                                 (case findTheType (ms_spec, name) of
@@ -263,7 +261,7 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                        | _ ->
                                          i_typedefs)
                               else
-                                let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_qid (q, id, false)) in
+                                let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_q_id (q, id)) in
                                 i_typedefs
                             | _ ->
                               i_typedefs)

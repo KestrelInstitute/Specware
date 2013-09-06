@@ -255,30 +255,44 @@ op printName (name : Name) : String =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 type Terms = List Term
-type Term  = | Name  Name
-             | List  SeqTerm
-             | Apply ApplyTerm
-             | Typed TypedTerm 
+type Term  = | Name   Name
+             | Number Nat
+             | Apply  ApplyTerm
+             | List   SeqTerm
+             | Vector SeqTerm
+             | Typed  TypedTerm 
 
-type SeqTerm   = {terms : Terms, separator : String}
 type ApplyTerm = {x     : Term,  y         : Term}
+type SeqTerm   = {terms : Terms, separator : String}
 type TypedTerm = {typ   : Term,  trm       : Term,  prefix? : Bool}
 
-op make_Name_Term           (name  : Name)             : Term = Name name
-op make_List_Term_Spaces    (terms : Terms)            : Term = List  {terms = terms, separator = " "}
-op make_List_Term_Commas    (terms : Terms)            : Term = List  {terms = terms, separator = ","}
-op make_Apply_Term          (x     : Term, y   : Term) : Term = Apply {x     = x,     y         = y}
-op make_Prefix_Typed_Term   (typ   : Term, trm : Term) : Term = Typed {typ   = typ,   trm       = trm, prefix? = true}
-op make_Postfix_Typed_Term  (typ   : Term, trm : Term) : Term = Typed {typ   = typ,   trm       = trm, prefix? = false}
+op make_Name_Term           (name  : Name)             : Term = Name   name
+
+op make_Number_Term         (n     : Nat)              : Term = Number n
+
+op make_Apply_Term          (x     : Term, y   : Term) : Term = Apply  {x     = x,     y         = y}
+op make_List_Term_Spaces    (terms : Terms)            : Term = List   {terms = terms, separator = " "}
+op make_List_Term_Commas    (terms : Terms)            : Term = List   {terms = terms, separator = ","}
+
+op make_Vector_Term         (terms : Terms)            : Term = Vector {terms = terms, separator = ","}
+
+op make_Prefix_Typed_Term   (typ   : Term, trm : Term) : Term = Typed  {typ   = typ,   trm       = trm, prefix? = true}
+op make_Postfix_Typed_Term  (typ   : Term, trm : Term) : Term = Typed  {typ   = typ,   trm       = trm, prefix? = false}
+
 
 op printTerm (term : Term) : String =
  case term of 
-   | Name  name  -> printName      name
-   | List  sterm -> printSeqTerm   sterm
-   | Apply aterm -> printApplyTerm aterm
-   | Typed tterm -> printTypedTerm tterm
+   | Name   name  -> printName       name
+   | Number n     -> show n
+   | Apply  aterm -> printApplyTerm  aterm
+   | List   sterm -> printListTerm   sterm
+   | Vector sterm -> printVectorTerm sterm
+   | Typed  tterm -> printTypedTerm  tterm
 
-op printSeqTerm (seq : SeqTerm) : String =
+op printApplyTerm (aterm : ApplyTerm) : String =
+  "(" ^ printTerm aterm.x ^ " " ^ printTerm aterm.y ^ ")"
+
+op printListTerm (seq : SeqTerm) : String =
  case seq.terms of
    | [] -> "()"
    | hd :: tail ->
@@ -288,8 +302,15 @@ op printSeqTerm (seq : SeqTerm) : String =
            tail
      ^ ")"
 
-op printApplyTerm (aterm : ApplyTerm) : String =
- printTerm aterm.x ^ "(" ^ printTerm aterm.y ^ ")"
+op printVectorTerm (seq : SeqTerm) : String =
+ case seq.terms of
+   | [] -> "[]"
+   | hd :: tail ->
+     "[" ^
+     foldl (fn (str, tm) -> str ^ seq.separator ^ printTerm tm) 
+           (printTerm hd)
+           tail
+     ^ "]"
 
 op printTypedTerm (tterm : TypedTerm) : String =
  if tterm.prefix? then

@@ -195,7 +195,7 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :Term
-    (:anyOf :Name_Term :Apply_Term :Typed_Term))
+    (:anyof :Name_Term :Number_Term :Apply_Term :Vector_Term :Typed_Term))
 
 ;;; --------
 
@@ -204,6 +204,19 @@
   (LM::make_Name_Term 1))
 
 ;;; --------
+
+(define-lm-parser-rule :Number_Term
+    (:tuple (1 :Number))
+  (LM::make_Number_Term 1))
+
+;;; --------
+
+(define-lm-parser-rule :Apply_Term
+    (:tuple (1 :Term) (2 :Arg_Term))
+  (LM::make_Apply_Term-2 1 2))
+
+(define-lm-parser-rule :Arg_Term
+    (:anyof :List_Term :Vector_Term))
 
 (define-lm-parser-rule :List_Term
     (:anyof :List_Term_Spaces :List_Term_Commas))
@@ -216,20 +229,22 @@
     (:tuple "(" (1 :Term) "," (2  (:repeat+ :Term ",")) ")")
   (LM::make_List_Term_Commas (cons 1 2)))
 
-(define-lm-parser-rule :Apply_Term
-    (:tuple (1 :Term) (2 :List_Term))
-  (LM::make_Apply_Term-2 1 2)) 
+;;; --------
+
+(define-lm-parser-rule :Vector_Term
+    (:tuple "[" (1 :Term) "," (2  (:repeat+ :Term ",")) "]")
+  (LM::make_Vector_Term (cons 1 2)))
 
 ;;; --------
 
 (define-lm-parser-rule :Typed_Term
     (:anyof :Prefix_Typed_Term :Postfix_Typed_Term))
 
-(define-lm-parser-rule :Prefix_Typed_Term  ; C
+(define-lm-parser-rule :Prefix_Typed_Term   ; C
    (:tuple (:anyof (:tuple "(" "(") "((") (1 :Term) ")" (2 :Term) ")")
   (LM::make_Prefix_Typed_Term-2 1 2))
 
-(define-lm-parser-rule :Postfix_Typed_Term ; Haskell, Isabelle
+(define-lm-parser-rule :Postfix_Typed_Term  ; Haskell, Isabelle
     (:tuple (1 :Term) "::" (2 :Term))
   (LM::make_Postfix_Typed_Term-2 2 1))
 
