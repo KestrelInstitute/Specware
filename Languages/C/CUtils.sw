@@ -21,19 +21,15 @@ CUtils qualifying spec
    fnDefns              = []
    }
 
- op addDefine    (cspc : C_Spec, X : String) : C_Spec =
-  let defines = filter (fn(df) -> df ~= X) cspc.defines in
-  let defines = defines ++ [X] in
-  cspc << {defines = defines}
 
  op renameCSpec             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {name                 = cString X}                       
  op addHeader               (cspc : C_Spec, X : String)                 : C_Spec = cspc << {headers              = cspc.headers              ++ [X]}
  op addTrailer              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {trailers             = cspc.trailers             ++ [X]}
  op addInclude              (cspc : C_Spec, X : String)                 : C_Spec = cspc << {includes             = cspc.includes             ++ [X]}
  op addVerbatim             (cspc : C_Spec, X : String)                 : C_Spec = cspc << {verbatims            = cspc.verbatims            ++ [X]}
+ op addDefine               (cspc : C_Spec, X : C_Define)               : C_Spec = cspc << {defines              = cspc.defines              ++ [X]}
  op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
  op addVar                  (cspc : C_Spec, X : C_VarDecl)              : C_Spec = cspc << {vars                 = cspc.vars                 ++ [X]}
-
  op setStructUnionTypeDefns (cspc : C_Spec, X : C_StructUnionTypeDefns) : C_Spec = cspc << {structUnionTypeDefns = X}
  op addStructDefn           (cspc : C_Spec, X : C_StructDefn)           : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [C_Struct X]}
  op addUnionDefn            (cspc : C_Spec, X : C_UnionDefn)            : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [C_Union  X]}
@@ -732,7 +728,7 @@ CUtils qualifying spec
                  in
                  %let _ = writeLine("identifying structs \""^id^"\" and \""^id0^"\"") in
                  let cspc = setStructUnionTypeDefns(cspc,suts) in
-                 let cspc = addDefine(cspc,id0^" "^id) in
+                 let cspc = addDefine (cspc, (id0, id)) in
                  let cspc = mapCSpec (fn e -> e,
                                       fn t ->
                                         case t of
@@ -761,7 +757,7 @@ CUtils qualifying spec
                  in
                  %let _ = writeLine("identifying unions \""^id^"\" and \""^id0^"\"") in
                  let cspc = setStructUnionTypeDefns (cspc, suts) in
-                 let cspc = addDefine (cspc, id0 ^ " " ^ id)     in
+                 let cspc = addDefine (cspc, (id0, id)) in
                  let cspc = mapCSpec (fn e -> e,
                                       fn t ->
                                         case t of

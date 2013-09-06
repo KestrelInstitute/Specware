@@ -282,8 +282,8 @@ CPrint qualifying spec
  op ppVerbatim (s : String) : Pretty =
   strings [s]
 
- op ppDefine (s : String) : Pretty =
-  strings ["#define ", s]
+ op ppDefine (name : String, defn : String) : Pretty =
+  strings ["#define ", name, " ", defn]
 
  op ppArg (s : String, t : C_Type) : Pretty =
   ppType (t, strings [" ", cId s])

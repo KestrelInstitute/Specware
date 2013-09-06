@@ -73,27 +73,28 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
                                               (desired_op?   : QualifiedId -> Bool) 
 
  : Option C_Spec =
- let lms             = parseCTranslationPragmas ms_spec     in
- let lm_verbatims    = extractVerbatims         lms         in 
- let lm_imports      = extractImports           lms         in 
- let lm_translations = extractTranslations      lms         in 
- let lm_natives      = extractNatives           lms         in 
- let includes        = map printImport          lm_imports  in
-
+ let lms = parseCTranslationPragmas ms_spec in
+ 
  let use_ref_types?  = true in
  let constructer_ops = []   in
  %% let ms_spec = renameTypes (ms_spec, op_extern_types) in
- let i2l_spec   = generateI2LCodeSpecFilter (ms_spec,
-                                             use_ref_types?,
-                                             constructer_ops,
-                                             desired_type?,
-                                             desired_op?,
-                                             lms)
+ let natives      = extractNatives         lms                  in
+ let translations = extractTranslations    lms                  in
+ let translations = markNativeTranslations translations natives in
+ let i2l_spec     = generateI2LCodeSpecFilter (ms_spec,
+                                               use_ref_types?,
+                                               constructer_ops,
+                                               desired_type?,
+                                               desired_op?,
+                                               lms,
+                                               natives,
+                                               translations)
  in
- let new_c_spec = generateC4ImpUnit (i2l_spec,
-                                     old_c_spec, 
-                                     use_ref_types?,
-                                     lms)
+ let new_c_spec   = generateC4ImpUnit (i2l_spec,
+                                       old_c_spec, 
+                                       use_ref_types?,
+                                       lms,
+                                       translations)
  in
  Some new_c_spec
 

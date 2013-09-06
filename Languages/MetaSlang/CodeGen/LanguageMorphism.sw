@@ -175,16 +175,54 @@ op make_Morphism_Section (translations : Translations)
  : Section = 
  Morphism translations
 
-op extractTranslations (lms : LanguageMorphisms) : Translations =
+op extractTranslations (lms : LanguageMorphisms) 
+ : Translations =
  foldl (fn (all_translations, lm) ->
           foldl (fn (all_translations, section) ->
                    case section of
-                     | Morphism translations -> all_translations ++ translations
-                     | _ -> all_translations)
+                     | Morphism translations -> 
+                       all_translations ++ translations
+                     | _ -> 
+                       all_translations)
                 all_translations
                 lm.sections)
        []
        lms
+
+op markNativeTranslations (translations : Translations)
+                          (natives      : Natives)
+ : Translations =
+ let native_type_names = foldl (fn (native_names, native : Native) ->
+                                  case native of
+                                    | Type x -> native_names ++ [x.name]
+                                    | _ -> native_names)
+                                []
+                                natives
+ in
+ let native_op_names   = foldl (fn (native_names, native : Native) ->
+                                  case native of
+                                    | Op x -> native_names ++ [x.name]
+                                    | _ -> native_names)
+                                []
+                                natives
+ in
+ map (fn translation ->
+        case translation of
+          | Type trans | trans.native? = false ->
+            (case trans.target of
+               | Name name -> 
+                 % the target definition is among the types declared to be native
+                 Type (trans << {native? = name in? native_type_names})
+               | _ -> translation)
+          | Op trans | trans.native? = false ->
+            (case trans.target of
+               | Name name -> 
+                 % the target definition is among the ops declared to be native
+                 Op (trans << {native? = name in? native_op_names})
+               | _ -> translation)
+          | _ ->
+            translation)
+     translations
 
 type Translations = List Translation
 type Translation  = | Type  TypeTranslation
@@ -288,17 +326,29 @@ op printOptionalLocation (x : Option Location) : String =
 %% TypeTranslation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type TypeTranslation = {source   : Name, 
-                        target   : Term,
-                        location : Option Location}
+type TypeTranslations = List TypeTranslation
+type TypeTranslation  = {source   : Name, 
+                         target   : Term,
+                         location : Option Location,
+                         native?  : Bool}
 
 op make_Type_Translation (source   : Name, 
                           target   : Term,
                           location : Option Location)
  : Translation =
+ let native? = 
+     case location of
+       | Some _ -> true  % if it has a target location, it must be native
+       | _ -> 
+         % At this point, we don't know for sure if native or not.
+         % See markNativeTranslations, which uses information from native 
+         % section to possibly revise this to true.
+         false
+ in
  Type {source   = source, 
        target   = target, 
-       location = location}
+       location = location,
+       native?  = native?}
 
 op printTypeTranslation (trans : TypeTranslation) : String =
  "Translate type:  "     ^ 
@@ -345,13 +395,15 @@ op printFieldTranslation (trans : FieldTranslation) : String =
 %% OpTranslation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type OpTranslation = {source     : Name, 
-                      target     : Term,
-                      recurry    : Option ReCurry,
-                      reversed?  : Bool,
-                      fixity     : Option LM_Fixity,
-                      precedence : Option Nat,
-                      location   : Option Location}
+type OpTranslations = List OpTranslation
+type OpTranslation  = {source     : Name, 
+                       target     : Term,
+                       recurry    : Option ReCurry,
+                       reversed?  : Bool,
+                       fixity     : Option LM_Fixity,
+                       precedence : Option Nat,
+                       location   : Option Location,
+                       native?    : Bool}
 
 type LM_Fixity = | Left | Right | Infix | Prefix | Postfix
 
@@ -371,13 +423,19 @@ op make_Op_Translation (source     : Name,
                         reversed?  : Bool,
                         location   : Option Location)
  : Translation =
+ let native? = 
+     case location of
+       | Some _ -> true
+       | _ -> false  % may later be set to true, given info from Natives section
+ in
  Op {source     = source,
      target     = target,
      recurry    = recurry,
      fixity     = fixity,
      precedence = precedence,
      reversed?  = reversed?,
-     location   = location}
+     location   = location,
+     native?    = native?}
 
 %%% --------
 
@@ -436,6 +494,26 @@ type Natives = List Native
 type Native  = | Type {name : Name, location : Option Location}
                | Op   {name : Name, location : Option Location}
 
+op nativeOp? (full_name : Name,
+              natives   : Natives) 
+ : Bool =
+ let just_id = [last full_name] in
+ exists? (fn native ->
+            case native of
+              | Op x -> x.name = full_name || x.name = just_id
+              | _ -> false)
+         natives
+
+op nativeType? (full_name : Name,
+                natives   : Natives) 
+ : Bool =
+ let just_id = [last full_name] in
+ exists? (fn native ->
+            case native of
+              | Type x -> x.name = full_name || x.name = just_id
+              | _ -> false)
+         natives
+
 op make_Type_Native (name     : Name,
                      location : Option Location)
  : Native = 
@@ -458,81 +536,7 @@ op printNative (lm_native : Native) : String =
 %%% Generated
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op make_Generated_Section ()                                           : Section = Generated
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Utility Routines
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-op extractPreNatives (lms : LanguageMorphisms) 
- : Names * Names =
- %% extract metaslang names that translate to native types and ops
- let translations      = extractTranslations lms in
- let natives           = extractNatives      lms in
- let native_type_names = foldl (fn (native_names, native) ->
-                                  case native of
-                                    | Type x -> native_names ++ [x.name]
-                                    | _ -> native_names)
-                                []
-                                natives
- in
- let native_op_names   = foldl (fn (native_names, native) ->
-                                  case native of
-                                    | Op x -> native_names ++ [x.name]
-                                    | _ -> native_names)
-                                []
-                                natives
- in
- foldl (fn (result as (pre_native_types, pre_native_ops), translation) ->
-          case translation of
-            | Type trans -> 
-              (case trans.location of
-                 | Some _ -> 
-                   % we know the location of the target definition (so it must be native)
-                   (pre_native_types ++ [trans.source],
-                    pre_native_ops)
-                 | _ ->
-                   case trans.target of
-                     | Name name -> 
-                       if exists? (fn native -> 
-                                     case native of
-                                       | Type x -> x.name = name
-                                       | _ -> false)
-                                  natives
-                         then
-                           % we've declared the target to be native
-                           (pre_native_types ++ [trans.source],
-                            pre_native_ops)
-                       else
-                         result
-                     | _ ->
-                       result)
-            | Op trans ->
-              (case trans.location of
-                 | Some _ -> 
-                   % we know the location of the target definition (so it must be native)
-                   (pre_native_types,
-                    pre_native_ops ++ [trans.source])
-                 | _ ->
-                   case trans.target of
-                     | Name name -> 
-                       if exists? (fn native -> 
-                                     case native of
-                                       | Op x -> x.name = name
-                                       | _ -> false)
-                                  natives
-                         then
-                           % we've declared the target to be native
-                           (pre_native_types,
-                            pre_native_ops ++ [trans.source])
-                       else
-                         result
-                     | _ ->
-                       result)
-            | _ -> 
-              result)
-       (native_type_names, native_op_names)
-       translations
+op make_Generated_Section () : Section = Generated
 
 end-spec
 

@@ -13,7 +13,7 @@ C qualifying spec
      %% these go into .h file:
      includes             : Strings,         % the .c file will merely include the .h file, which includes all other files
      verbatims            : Strings,
-     defines	          : Strings,
+     defines	          : C_Defines,
      constDefns           : C_VarDefns,      % constant expressions defined by #define's
      vars                 : C_VarDecls,
      fns                  : C_FnDecls,
@@ -31,6 +31,7 @@ C qualifying spec
 
   type C_StructUnionTypeDefns = List C_StructUnionTypeDefn
 
+  type C_Define     = String * String
   type C_VarDecl    = String * C_Type
   type C_VarDecl1   = String * C_Type * Option C_Exp
   type C_FnDecl     = String * C_Types * C_Type
@@ -39,7 +40,6 @@ C qualifying spec
   type C_UnionDefn  = String * C_VarDecls
   type C_VarDefn    = String * C_Type * C_Exp
   type C_FnDefn     = String * C_VarDecls * C_Type * C_Stmt
-
 
   type C_Block      = C_VarDecls1 * C_Stmts
 
@@ -178,7 +178,9 @@ C qualifying spec
     | C_Le             %  x <= y
     | C_Ge             %  x >= y
 
+
   type Strings       = List String
+  type C_Defines     = List C_Define
   type C_VarDecls    = List C_VarDecl
   type C_VarDecls1   = List C_VarDecl1
   type C_FnDecls     = List C_FnDecl

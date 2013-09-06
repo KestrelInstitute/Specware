@@ -12,15 +12,6 @@ import /Languages/I2L/I2L
 
 op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
-type TypeRenamings = List TypeRenaming
-type TypeRenaming  = {source : QualifiedId, 
-                      target : I_TypeName}
-
-type OpRenamings   = List OpRenaming
-type OpRenaming    = {source    : QualifiedId, 
-                      target    : I_OpName,
-                      reversed? : Bool,
-                      fixity    : Option LM_Fixity}
 type S2I_Context = {
                     specname       : String,             % not (yet) used
                     isToplevel     : Bool,               % not used
@@ -29,8 +20,7 @@ type S2I_Context = {
                     currentOpType  : Option QualifiedId,
                     ms_spec        : Spec,
                     lms            : LanguageMorphisms,
-                    type_renamings : TypeRenamings,
-                    op_renamings   : OpRenamings
+                    translations   : Translations
                     }
 
 op default_S2I_Context (ms_spec : Spec) : S2I_Context =
@@ -42,8 +32,7 @@ op default_S2I_Context (ms_spec : Spec) : S2I_Context =
   currentOpType  = None,
   ms_spec        = ms_spec,
   lms            = [],
-  type_renamings = [],
-  op_renamings   = []
+  translations   = []
   }
 
 op qid2TypeName (Qualified (q, id) : QualifiedId, 
@@ -51,39 +40,61 @@ op qid2TypeName (Qualified (q, id) : QualifiedId,
  : I_TypeName = 
  %% Possibly rename using pragma info for type map
  let match =
-     findLeftmost (fn renaming -> 
-                     let Qualified (x, y) = renaming.source in
-                     y = id && (x = q || x = UnQualified))
-                  ctxt.type_renamings
+     findLeftmost (fn translation -> 
+                     case translation of
+                       | Type trans ->
+                         (case trans.source of
+                            | [x, y] -> q = x && id = y
+                            | [y]    -> id = y
+                            | _ -> false)
+                       | _ ->
+                         false)
+                  ctxt.translations
  in
  case match of
-   | Some match -> match.target
+   | Some (Type match) -> 
+     (case match.target of
+        | Name [x, y] -> (x,  y)
+        | Name [y]    -> ("", y)
+        | _ -> (q,  id))
    | _ -> (q, id)
 
 op qid2OpName (Qualified (q, id) : QualifiedId, 
-                ctxt             : S2I_Context) 
+               ctxt              : S2I_Context) 
  : I_OpName = 
- %% Possibly rename using pragma info for op map
+ %% Possibly rename using pragma info for type map
  let match =
-     findLeftmost (fn renaming -> 
-                     let Qualified (x, y) = renaming.source in
-                     y = id && (x = q || x = UnQualified))
-                  ctxt.op_renamings
+     findLeftmost (fn translation -> 
+                     case translation of
+                       | Op trans ->
+                         (case trans.source of
+                            | [x, y] -> q = x && id = y
+                            | [y]    -> id = y
+                            | _ -> false)
+                       | _ ->
+                         false)
+                  ctxt.translations
  in
  case match of
-   | Some match -> 
-     let target as (q, id) = match.target in
-     (case match.fixity of
-        | Some Prefix  -> (q, "prefix_"  ^ id)
-        | Some Postfix -> (q, "postfix_" ^ id)
-        | _ -> target)
+   | Some (Op match) -> 
+     (case match.target of
+        | Name [x, y] -> 
+          (case match.fixity of
+             | Some Prefix  -> (x,  "prefix_"  ^ y)
+             | Some Postfix -> (x,  "postfix_" ^ y)
+             | _ ->            (x,  y))
+        | Name [y] -> 
+          (case match.fixity of
+             | Some Prefix  -> ("", "prefix_"  ^ y)
+             | Some Postfix -> ("", "postfix_" ^ y)
+             | _ ->            ("", y))
+        | _ ->  (q, id))
    | _ -> (q, id)
 
 op qid2VarName (Qualified (q, id) : QualifiedId, 
                 ctxt              : S2I_Context) 
  : I_VarName = 
  %% Vars are not renamed
- let _ = writeLine("Not renaming var : " ^ q ^ "," ^ id) in
  (q, id)
 
 
@@ -132,112 +143,28 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
 op generateI2LCodeSpec (ms_spec         : Spec,
                         use_ref_types?  : Bool, 
                         constructor_ops : List QualifiedId,
-                        lms             : LanguageMorphisms)
+                        lms             : LanguageMorphisms,
+                        natives         : Natives,
+                        translations    : Translations)
  : I_ImpUnit =
  generateI2LCodeSpecFilter (ms_spec,
                             use_ref_types?,
                             constructor_ops,
                             fn _ -> true,    % desire all types
                             fn _ -> true,    % desire all ops
-                            lms)
- 
-
-op makeRenaming (source : LM.Name, target : LM.Name) 
- : Option (QualifiedId * (String * String)) =
- let source = 
-     case source of
-       | [id]    -> Some (mkUnQualifiedId id)
-       | [q, id] -> Some (mkQualifiedId (q, id))
-       | _ -> None
- in
- let target = 
-     case target of
-       | [id]    -> Some ("", id)
-       | [q, id] -> Some (q, id)
-       | _ -> None
- in
- case (source, target) of
-   | (Some source, Some target) -> Some (source, target)
-   | _ -> None
-
-op extractTypeRenamings (lms : LanguageMorphisms) : TypeRenamings = 
- foldl (fn (renamings, lm) ->
-          foldl (fn (renamings, section) ->
-                   case section of
-                     | Morphism translations ->
-                       foldl (fn (renamings, translation) ->
-                                case translation of
-                                  | Type trans -> 
-                                    (case trans.target of
-                                       | Name target ->
-                                         (case makeRenaming (trans.source, target) of
-                                            | Some (qid, pair) -> 
-                                              renamings ++ [{source = qid, 
-                                                             target = pair}]
-                                            | _ -> renamings)
-                                       | _ ->
-                                         renamings)
-                                  | _ -> renamings)
-                             renamings
-                             translations
-                     | _ ->
-                       renamings)
-                renamings
-                lm.sections)
-       []
-       lms
-
-op extractOpRenamings (lms : LanguageMorphisms) : OpRenamings = 
- foldl (fn (renamings, lm) ->
-          foldl (fn (renamings, section) ->
-                   case section of
-                     | Morphism translations ->
-                       foldl (fn (renamings, translation) ->
-                                case translation of
-                                  | Op trans -> % trans also has information about infix, etc.
-                                    (case trans.target of
-                                       | Name target ->
-                                         (case makeRenaming (trans.source, target) of
-                                            | Some (qid, pair) -> 
-                                              renamings ++ [{source    = qid, 
-                                                             target    = pair,
-                                                             reversed? = trans.reversed?,
-                                                             fixity    = trans.fixity}]
-                                            | _ -> renamings)
-                                       | _ ->
-                                         renamings)
-                                  | _ -> renamings)
-                             renamings
-                             translations
-                     | _ ->
-                       renamings)
-                renamings
-                lm.sections)
-       []
-       lms
+                            lms,
+                            natives,
+                            translations)
 
 op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               useRefTypes?  : Bool, 
                               constrOps     : List QualifiedId,
                               desired_type? : QualifiedId -> Bool,
                               desired_op?   : QualifiedId -> Bool,
-                              lms           : LanguageMorphisms)
+                              lms           : LanguageMorphisms,
+                              natives       : Natives,
+                              translations  : Translations)
  : I_ImpUnit =
- let type_renamings = extractTypeRenamings lms in
- let op_renamings   = extractOpRenamings   lms in
- let ctxt = {specname       = "", 
-             isToplevel     = true, 
-             useRefTypes    = useRefTypes?,
-             constrOps      = constrOps,
-             currentOpType  = None,
-             ms_spec        = ms_spec,
-             lms            = lms,
-             type_renamings = type_renamings,
-             op_renamings   = op_renamings}
- in
- % collect types and ops that map to native types and ops
- let (pre_native_types, pre_native_ops) = extractPreNatives lms in 
- % let spc = normalizeArrowTypesInSpec spc in
  let
    def print_qid (q, id, explicit_q?) =
      if explicit_q? then
@@ -247,22 +174,43 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
           else 
             "[" ^ q ^ ".]" ^ id        
  in
- let transformedOps = 
-     foldriAQualifierMap (fn (q, id, opinfo, l1) ->
+ let ctxt = {specname       = "", 
+             isToplevel     = true, 
+             useRefTypes    = useRefTypes?,
+             constrOps      = constrOps,
+             currentOpType  = None,
+             ms_spec        = ms_spec,
+             lms            = lms,
+             translations   = translations}
+ in
+ let i_opdefs =
+     foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
                             let qid = Qualified (q, id) in
                             %% to be considered, op must be desired and not translate to native op
-                            if [q,id] in? pre_native_ops then
+                            if (exists? (fn translation ->
+                                           case translation of
+                                             | Op trans | trans.native? ->
+                                               if trans.source = [q, id] then
+                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, true)) in
+                                                 true
+                                               else if trans.source = [id] then
+                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, false)) in
+                                                 true
+                                               else
+                                                 false
+                                             | _ -> false)
+                                        translations)
+                              then
+                                i_opdefs
+                            else if nativeOp? ([q,id], natives) then
                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, true)) in
-                              l1
-                            else if [id] in? pre_native_ops then
-                              let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_qid (q, id, false)) in
-                              l1
+                              i_opdefs
                             else if desired_op? qid then
-                              let trOp = opinfo2declOrDefn (qid, opinfo, None, ctxt) in
-                              l1 ++ [trOp]
+                              let i_opdef = opinfo2declOrDefn (qid, opinfo, None, ctxt) in
+                              i_opdefs ++ [i_opdef]
                             else
                               let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_qid (q, id, false)) in
-                              l1)
+                              i_opdefs)
                          []
                          ms_spec.ops
  in
@@ -270,23 +218,37 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
      foldlSpecElements (fn (i_typedefs, el) ->
                           case el of
                             | TypeDef (name as Qualified (q, id), _) ->
-                              (case findTheType (ms_spec, name) of
-                                 | Some ms_typeinfo ->
-                                   %% to be considered, type must be desired and not translate to native type
-                                   if [q,id] in? pre_native_types then
-                                     let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
-                                     i_typedefs
-                                   else if [id] in? pre_native_types then
-                                     let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, false)) in
-                                     i_typedefs
-                                   else if desired_type? name then
-                                     case typeinfo2typedef (name, ms_typeinfo, ctxt) of
-                                       | Some i_typedef -> i_typedefs ++ [i_typedef]
-                                       | _              -> i_typedefs
-                                   else 
-                                     let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_qid (q, id, false)) in
-                                     i_typedefs)
-                            | _ -> i_typedefs)
+                              if (exists? (fn translation ->
+                                             case translation of
+                                               | Type trans | trans.native? ->
+                                                 if trans.source = [q, id] then
+                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
+                                                   true
+                                                 else if trans.source = [id] then
+                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, false)) in
+                                                   true
+                                                 else
+                                                   false
+                                               | _ -> false)
+                                          translations)
+                                then
+                                  i_typedefs
+                              else if nativeType? ([q,id], natives) then
+                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_qid (q, id, true)) in
+                                i_typedefs
+                              else if desired_type? name then
+                                (case findTheType (ms_spec, name) of
+                                   | Some typeinfo ->
+                                     case typeinfo2typedef (name, typeinfo, ctxt) of
+                                       | Some i_typedef ->
+                                         i_typedefs ++ [i_typedef]
+                                       | _ ->
+                                         i_typedefs)
+                              else
+                                let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_qid (q, id, false)) in
+                                i_typedefs
+                            | _ ->
+                              i_typedefs)
                        []
                        ms_spec.elements
  in
@@ -300,28 +262,28 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                   opdecls  = foldl (fn | (l3, OpDecl d) -> l3++[d] 
                                        | (l4, _)        -> l4)
                                    []
-                                   transformedOps,
+                                   i_opdefs,
                   
                   funDecls = foldl (fn | (l5, FunDecl d)                    -> l5++[d]
                                        | (l6, FunDefn {decl = d, body = _}) -> l6++[d]
                                        | (l7, _)                            -> l7)
                                    [] 
-                                   transformedOps,
+                                   i_opdefs,
 
                   funDefns = foldl (fn | (l8, FunDefn d) -> l8++[d] 
                                        | (l9, _)         -> l9)
                                    []
-                                   transformedOps,
+                                   i_opdefs,
 
                   varDecls = foldl (fn | (l10, VarDecl d) -> l10++[d] 
                                        | (l11, _)         -> l11)
                                    [] 
-                                   transformedOps,
+                                   i_opdefs,
 
                   mapDecls = foldl (fn | (l12, MapDecl d) -> l12++[d] 
                                        | (l13, _)         -> l13)
                                    [] 
-                                   transformedOps
+                                   i_opdefs
                  }
       }
  in
@@ -1055,7 +1017,7 @@ op term2expression_fun (ms_fun  : MSFun,
  if arrowType? (ms_type, ctxt) then
    case ms_fun of
      | Op    (qid, _)     -> 
-       let _ = writeLine("Ok. arrow type for ms_term = " ^ printTerm ms_term ^ ", type = " ^ printType ms_type) in
+       % let _ = writeLine("Ok. arrow type for ms_term = " ^ printTerm ms_term ^ ", type = " ^ printType ms_type) in
        I_VarRef (qid2OpName (qid, ctxt))
      | Embed (id,  false) -> 
        let Arrow (_, ms_rng, _) = ms_type in

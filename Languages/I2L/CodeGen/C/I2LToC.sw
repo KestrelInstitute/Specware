@@ -19,7 +19,8 @@ type I2C_Context = {
                     useRefTypes      : Bool,
                     currentFunName   : Option String,
                     currentFunParams : C_VarDecls,
-                    lms              : LanguageMorphisms
+                    lms              : LanguageMorphisms,
+                    translations     : Translations
                     }
 
 op default_I2C_Context : I2C_Context =
@@ -28,7 +29,8 @@ op default_I2C_Context : I2C_Context =
   useRefTypes      = false,
   currentFunName   = None,
   currentFunParams = [],
-  lms              = []
+  lms              = [],
+  translations     = []
   }
 
 op setCurrentFunName (ctxt : I2C_Context, id : String) : I2C_Context =
@@ -37,32 +39,59 @@ op setCurrentFunName (ctxt : I2C_Context, id : String) : I2C_Context =
 op setCurrentFunParams (ctxt : I2C_Context, params : C_VarDecls) : I2C_Context =
  ctxt << {currentFunParams = params}                        
 
-op generateC4ImpUnit (impunit     : I_ImpUnit, 
-                      xcspc       : C_Spec, 
-                      useRefTypes : Bool,
-                      lms         : LanguageMorphisms)
+op generateC4ImpUnit (impunit      : I_ImpUnit, 
+                      xcspc        : C_Spec, 
+                      useRefTypes  : Bool,
+                      lms          : LanguageMorphisms,
+                      translations : Translations)
  : C_Spec =
- generateC4ImpUnitHack (impunit, xcspc, useRefTypes, lms)
+ generateC4ImpUnitHack (impunit, xcspc, useRefTypes, lms, translations)
 
-op generateC4ImpUnitHack (impunit     : I_ImpUnit, 
-                          xcspc       : C_Spec, 
-                          useRefTypes : Bool,
-                          lms         : LanguageMorphisms)
+op generateC4ImpUnitHack (impunit      : I_ImpUnit, 
+                          xcspc        : C_Spec, 
+                          useRefTypes  : Bool,
+                          lms          : LanguageMorphisms,
+                          translations : Translations)
  : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
- let includes     = extractImports   lms      in
- let include_strs = map printImport  includes in
- let verbatims    = extractVerbatims lms      in
+ let includes      = extractImports   lms          in
+ let include_strs  = map printImport  includes     in
+ let verbatims     = extractVerbatims lms          in
+ let defines       = foldl (fn (defines, translation) ->
+                              case translation of
+                                | Type trans -> 
+                                  (case trans.target of 
+                                     | Name _ -> defines
+                                     | term -> 
+                                       defines ++ [(printName trans.source,
+                                                    printTerm term)])
+                                | Op   trans -> 
+                                  (case trans.target of 
+                                     | Name _ -> defines
+                                     | term -> 
+                                       defines ++ [(printName trans.source,
+                                                    printTerm term)])
+                                | _ -> defines)
+                            []
+                            translations
+ in
  let ctxt = {xcspc            = xcspc,
              useRefTypes      = useRefTypes,
              currentFunName   = None,
              currentFunParams = [],
-             lms              = lms}
+             lms              = lms,
+             translations     = translations}
  in
+
+ % let defined_types = map (fn name -> ) partition.defined_types in
+ % let defined_op    = map (fn name -> ) partition.defined_op    in
+
+
  let cspc = emptyCSpec impunit.name in
  let cspc = addBuiltIn (ctxt, cspc) in
  let cspc = foldl (fn (cspc, include)  -> addInclude       (cspc, include))       cspc include_strs           in
  let cspc = foldl (fn (cspc, verbatim) -> addVerbatim      (cspc, verbatim))      cspc verbatims              in
+ let cspc = foldl (fn (cpsc, define)   -> addDefine        (cspc, define))        cspc defines                in
  let cspc = foldl (fn (cspc, typedef)  -> c4TypeDefinition (ctxt, cspc, typedef)) cspc impunit.decls.typedefs in
  let cspc = foldl (fn (cspc, opdecl)   -> c4OpDecl         (ctxt, cspc, opdecl))  cspc impunit.decls.opdecls  in
  let cspc = foldl (fn (cspc, fundecl)  -> c4FunDecl        (ctxt, cspc, fundecl)) cspc impunit.decls.funDecls in
@@ -169,7 +198,7 @@ op c4NonConstVarDef (ctxt                    : I2C_Context,
  : C_Spec =
  let initfname  = "get_" ^ vname                                           in
  let valuevname = vname ^ "_value"                                         in
- let cspc       = addDefine  (cspc, vname ^ " " ^ initfname ^ "()")        in
+ let cspc       = addDefine  (cspc, (vname, initfname ^ "()"))             in
  let null_value = C_Cast (ctype, C_Const (C_Int (true, 0)))                in  % cast null to actual desired type
  let cspc       = addVarDefn (cspc, (valuevname, ctype, null_value))       in
  let condexp    = C_Binary   (C_Eq,  C_Var(valuevname, ctype), null_value) in
@@ -465,7 +494,7 @@ op c4Type (ctxt : I2C_Context,
          let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                                   in
          let deflen             = length cspc.defines                                                          in
          let constName          = genName (cspc, "MAX", deflen)                                                in
-         let cspc               = addDefine (cspc, constName ^ " " ^ show n)                                   in
+         let cspc               = addDefine (cspc, (constName, show n))                                        in
          let arraytype          = C_ArrayWithSize ([C_Const (C_Macro constName)], ctype)                       in
          let structname         = genName (cspc, "BoundList", length (getStructDefns cspc))                    in
          let sfields            = [("length", C_Int32), ("data", arraytype)]                                   in
@@ -1252,7 +1281,12 @@ op c4StadCode (ctxt       : I2C_Context,
                stadcode   : I_StadCode) 
  : C_Spec * C_Block * C_Stmts =
  % decls are empty, so the following 2 lines have no effect:
- let declscspc = generateC4ImpUnit (stadcode.decls, ctxt.xcspc, ctxt.useRefTypes, ctxt.lms) in
+ let declscspc = generateC4ImpUnit (stadcode.decls, 
+                                    ctxt.xcspc, 
+                                    ctxt.useRefTypes, 
+                                    ctxt.lms, 
+                                    ctxt.translations)
+ in
  let cspc      = mergeCSpecs [cspc, declscspc] in
  let (cspc, block, stepstmts) =
  foldl (fn ((cspc, block, stmts), stp) ->
