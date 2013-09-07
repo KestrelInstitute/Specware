@@ -16,7 +16,6 @@ import /Library/Legacy/DataStructures/ListPair
 
 type I2C_Context = {
                     xcspc            : C_Spec,    % for incremental code generation, xcspc holds existing cspec being extended
-                    useRefTypes      : Bool,
                     currentFunName   : Option String,
                     currentFunParams : C_VarDecls,
                     lms              : LanguageMorphisms,
@@ -26,7 +25,6 @@ type I2C_Context = {
 op default_I2C_Context : I2C_Context =
  {
   xcspc            = emptyCSpec "",
-  useRefTypes      = false,
   currentFunName   = None,
   currentFunParams = [],
   lms              = [],
@@ -41,15 +39,13 @@ op setCurrentFunParams (ctxt : I2C_Context, params : C_VarDecls) : I2C_Context =
 
 op generateC4ImpUnit (impunit      : I_ImpUnit, 
                       xcspc        : C_Spec, 
-                      useRefTypes  : Bool,
                       lms          : LanguageMorphisms,
                       translations : Translations)
  : C_Spec =
- generateC4ImpUnitHack (impunit, xcspc, useRefTypes, lms, translations)
+ generateC4ImpUnitHack (impunit, xcspc, lms, translations)
 
 op generateC4ImpUnitHack (impunit      : I_ImpUnit, 
                           xcspc        : C_Spec, 
-                          useRefTypes  : Bool,
                           lms          : LanguageMorphisms,
                           translations : Translations)
  : C_Spec =
@@ -76,7 +72,6 @@ op generateC4ImpUnitHack (impunit      : I_ImpUnit,
                             translations
  in
  let ctxt = {xcspc            = xcspc,
-             useRefTypes      = useRefTypes,
              currentFunName   = None,
              currentFunParams = [],
              lms              = lms,
@@ -426,9 +421,9 @@ op c4Type (ctxt : I2C_Context,
        | I_Struct [] -> (cspc, C_Void)
          
        | I_Struct fields -> 
-         let (cspc, sfields)    = structUnionFields (cspc, fields)                                             in
-         let structname         = genName (cspc, "Product", length (getStructDefns cspc))                      in
-         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
+         let (cspc, sfields)    = structUnionFields (cspc, fields)                           in
+         let structname         = genName (cspc, "Product", length (getStructDefns cspc))    in
+         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields)) in
          (cspc, structtype)
          
        | I_Tuple types ->
@@ -436,12 +431,12 @@ op c4Type (ctxt : I2C_Context,
          c4Type (ctxt, cspc, I_Struct fields)
          
        | I_Union fields ->
-         let (cspc, ufields)    = structUnionFields (cspc, fields)                                             in
-         let unionname          = genName (cspc, "CoProduct",  length (getUnionDefns  cspc))                   in
-         let structname         = genName (cspc, "CoProductS", length (getStructDefns cspc))                   in
-         let (cspc, uniontype)  = addNewUnionDefn (cspc, ctxt.xcspc, (unionname, ufields))                     in
-         let sfields            = [("sel", C_Selector), ("alt", uniontype)]                                    in
-         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
+         let (cspc, ufields)    = structUnionFields (cspc, fields)                           in
+         let unionname          = genName (cspc, "CoProduct",  length (getUnionDefns  cspc)) in
+         let structname         = genName (cspc, "CoProductS", length (getStructDefns cspc)) in
+         let (cspc, uniontype)  = addNewUnionDefn (cspc, ctxt.xcspc, (unionname, ufields))   in
+         let sfields            = [("sel", C_Selector), ("alt", uniontype)]                  in
+         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields)) in
          (cspc, structtype)
          
        | I_Ref (rtype, struct?) ->
@@ -491,14 +486,14 @@ op c4Type (ctxt : I2C_Context,
          (cspc, c_type)
          
        | I_BoundedList (ltype, n) -> 
-         let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                                   in
-         let deflen             = length cspc.defines                                                          in
-         let constName          = genName (cspc, "MAX", deflen)                                                in
-         let cspc               = addDefine (cspc, (constName, show n))                                        in
-         let arraytype          = C_ArrayWithSize ([C_Const (C_Macro constName)], ctype)                       in
-         let structname         = genName (cspc, "BoundList", length (getStructDefns cspc))                    in
-         let sfields            = [("length", C_Int32), ("data", arraytype)]                                   in
-         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
+         let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                 in
+         let deflen             = length cspc.defines                                        in
+         let constName          = genName (cspc, "MAX", deflen)                              in
+         let cspc               = addDefine (cspc, (constName, show n))                      in
+         let arraytype          = C_ArrayWithSize ([C_Const (C_Macro constName)], ctype)     in
+         let structname         = genName (cspc, "BoundList", length (getStructDefns cspc))  in
+         let sfields            = [("length", C_Int32), ("data", arraytype)]                 in
+         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields)) in
          (cspc, structtype)
          
        | _ -> 
@@ -679,7 +674,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
      let (cspc, ctype)                   = c4Type (ctxt, cspc, typ)                       in
      let (cspc, (decls, stmts), idcexpr) = c4RhsExpression (ctxt, cspc, block, idexpr)    in
      let letvardecl                      = (id, ctype)                                    in
-     let optinit                         = None                                           in  % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
+     let optinit                         = None                                           in  % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None  ??
      let letvardecl1                     = (id, ctype, optinit)                           in
      let letsetexpr                      = getSetExpr (ctxt, C_Var (letvardecl), idcexpr) in
      let block                           = (decls++[letvardecl1], stmts)                  in
@@ -715,7 +710,6 @@ op c4Expression2 (ctxt                    : I2C_Context,
      
    | I_Project (expr, id) ->
      let (cspc, block, cexpr) = c4Expression1 (ctxt, cspc, block, expr, lhs?, forInitializer?)  in
-     let cexpr                = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr) else cexpr in
      (cspc, block, mkCStructRef (cexpr, id))
      
    | I_Select (expr, id) ->
@@ -780,9 +774,9 @@ op c4Expression2 (ctxt                    : I2C_Context,
      let altassign     = case optcexpr of
                            | None -> []
                            | Some cexpr ->
-                             let var   = C_Var decl                                                  in
-                             let sref0 = if ctxt.useRefTypes then C_Unary (C_Contents, var) else var in
-                             let sref  = mkCUnionRef (mkCStructRef (sref0, "alt"), selector.name)    in
+                             let sref  = mkCUnionRef (mkCStructRef (C_Var decl, "alt"), 
+                                                      selector.name) 
+                             in
                              [C_Exp (getSetExpr (ctxt, sref, cexpr))]
      in
      let block = (decls ++ [decl1], stmts ++ selassign ++ altassign) in
@@ -854,8 +848,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
                                  | _ ->
                                    let Some (_,field_type) = findLeftmost (fn field -> field.1 = selector.name) union_fields   in
                                    let (cspc, idtype)      = c4Type (ctxt, cspc, field_type)                                   in
-                                   let structref           = if ctxt.useRefTypes then C_Unary (C_Contents, cexpr0) else cexpr0 in
-                                   let valexp              = mkCUnionRef (mkCStructRef (structref, "alt"), selector.name)      in
+                                   let valexp              = mkCUnionRef (mkCStructRef (cexpr0, "alt"), selector.name)         in
                                    case vlist of
                                      
                                      | [Some id] -> 
@@ -1015,18 +1008,16 @@ op c4StructExpr2 (ctxt       : I2C_Context,
                   exprs      : I_TypedExprs, 
                   fieldnames : List String)
  : C_Spec * C_Block * C_Exp =
- let (cspc, block as (decls, stmts), fexprs) = c4RhsExpressions (ctxt, cspc, block, exprs)                     in
- let (cspc, ctype)                           = c4Type (ctxt, cspc, typ)                                        in
- let varPrefix                               = getVarPrefix ("_product", ctype)                                in
- let xname                                   = freshVarName (varPrefix, ctxt, block)                           in
- let ctype                                   = if ctype = C_Void then C_Int32 else ctype                       in
- let decl                                    = (xname, ctype)                                                  in
- let optinit                                 = if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
- let decl1                                   = (xname, ctype, optinit)                                         in
+ let (cspc, block as (decls, stmts), fexprs) = c4RhsExpressions (ctxt, cspc, block, exprs) in
+ let (cspc, ctype)                           = c4Type (ctxt, cspc, typ)                    in
+ let varPrefix                               = getVarPrefix ("_product", ctype)            in
+ let xname                                   = freshVarName (varPrefix, ctxt, block)       in
+ let ctype                                   = if ctype = C_Void then C_Int32 else ctype   in
+ let decl                                    = (xname, ctype)                              in
+ let optinit                                 = None                                        in % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None ???
+ let decl1                                   = (xname, ctype, optinit)                     in
  let assignstmts = map (fn (field, fexpr) ->
-                          let variable = C_Var decl                                                            in
-                          let variable = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
-                          let fieldref = mkCStructRef (variable, field)                                        in
+                          let fieldref = mkCStructRef (C_Var decl, field) in
                           C_Exp (getSetExpr (ctxt, fieldref, fexpr)))
                        (zip (fieldnames, fexprs))
  in
@@ -1283,7 +1274,6 @@ op c4StadCode (ctxt       : I2C_Context,
  % decls are empty, so the following 2 lines have no effect:
  let declscspc = generateC4ImpUnit (stadcode.decls, 
                                     ctxt.xcspc, 
-                                    ctxt.useRefTypes, 
                                     ctxt.lms, 
                                     ctxt.translations)
  in
@@ -1350,10 +1340,10 @@ op c4StepRule (ctxt                    : I2C_Context,
    | I_UpdateBlock (upddecls, updates) ->
      let (cspc, block, declstmts) =
          foldl (fn ((cspc, block, updstmts), ((_, id), typ, optexpr)) ->
-                  let (cspc, ctype) = c4Type (ctxt, cspc, typ)                                        in
-                  let iddecl        = (id, ctype)                                                     in
-                  let optinit       = if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None in
-                  let iddecl1       = (id, ctype, optinit)                                            in
+                  let (cspc, ctype) = c4Type (ctxt, cspc, typ) in
+                  let iddecl        = (id, ctype)              in
+                  let optinit       = None                     in % if ctxt.useRefTypes then getMallocApply (cspc, ctype) else None ??
+                  let iddecl1       = (id, ctype, optinit)     in
                   let (cspc, block as (decls1, stmts1), assignidstmts) = 
                   case optexpr of
                     
@@ -1403,17 +1393,14 @@ op getSelAssignStmt (ctxt     : I2C_Context,
                      varname  : String,
                      vartype  : C_Type) 
  : C_Stmt =
- let variable = C_Var (varname, vartype)                                              in
- let variable = if ctxt.useRefTypes then C_Unary (C_Contents, variable) else variable in
  C_Exp (C_Binary (C_Set, 
-                  mkCStructRef (variable, "sel"), 
+                  mkCStructRef (C_Var (varname, vartype), "sel"), 
                   C_Const (C_Int (true, selector.index))))
 
 op getSelCompareExp (ctxt     : I2C_Context,
                      expr     : C_Exp,
                      selector : I_Selector) 
  : C_Exp =
- let expr = if ctxt.useRefTypes then C_Unary (C_Contents, expr) else expr in
  case expr of
    
    | C_Unary (C_Contents, expr) -> 
@@ -1426,11 +1413,6 @@ op getSelCompareExp0 (ctxt     : I2C_Context,
                       expr     : C_Exp,
                       selector : I_Selector) 
  : C_Exp =
- let expr = if ctxt.useRefTypes then 
-              C_Unary (C_Contents, expr) 
-            else 
-              expr 
- in
  C_Binary (C_Eq, mkCStructRef (expr, "sel"), C_Const (C_Int (true, selector.index)))
 
 % --------------------------------------------------------------------------------
@@ -1479,8 +1461,7 @@ op substVarListByFieldRefs (ctxt       : I2C_Context,
        | [] -> expr
        | None::vlist -> subst (vlist, expr, n+1)
        | (Some v)::vlist ->
-         let structexpr = if ctxt.useRefTypes then C_Unary (C_Contents, structexpr) else structexpr in
-         let expr       = substVarInExp (expr, v, mkCStructRef (structexpr, "field" ^ show n))      in
+         let expr = substVarInExp (expr, v, mkCStructRef (structexpr, "field" ^ show n)) in
          subst (vlist, expr, n+1)
  in
  subst (vlist, expr, 0)

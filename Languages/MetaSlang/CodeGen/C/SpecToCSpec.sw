@@ -73,28 +73,24 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
                                               (desired_op?   : QualifiedId -> Bool) 
 
  : Option C_Spec =
- let lms = parseCTranslationPragmas ms_spec in
- 
- let use_ref_types?  = false in
- let constructer_ops = []   in
- %% let ms_spec = renameTypes (ms_spec, op_extern_types) in
- let natives      = extractNatives         lms                  in
- let translations = extractTranslations    lms                  in
- let translations = markNativeTranslations translations natives in
- let i2l_spec     = generateI2LCodeSpecFilter (ms_spec,
-                                               use_ref_types?,
-                                               constructer_ops,
-                                               desired_type?,
-                                               desired_op?,
-                                               lms,
-                                               natives,
-                                               translations)
+ let lms             = parseCTranslationPragmas ms_spec in
+ let constructer_ops = []                               in
+%let ms_spec         = renameTypes (ms_spec, op_extern_types) in
+ let natives         = extractNatives         lms                  in
+ let translations    = extractTranslations    lms                  in
+ let translations    = markNativeTranslations translations natives in
+ let i2l_spec        = generateI2LCodeSpecFilter (ms_spec,
+                                                  constructer_ops,
+                                                  desired_type?,
+                                                  desired_op?,
+                                                  lms,
+                                                  natives,
+                                                  translations)
  in
- let new_c_spec   = generateC4ImpUnit (i2l_spec,
-                                       old_c_spec, 
-                                       use_ref_types?,
-                                       lms,
-                                       translations)
+ let new_c_spec      = generateC4ImpUnit (i2l_spec,
+                                          old_c_spec, 
+                                          lms,
+                                          translations)
  in
  Some new_c_spec
 

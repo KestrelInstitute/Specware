@@ -15,7 +15,6 @@ op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 type S2I_Context = {
                     specname       : String,             % not (yet) used
                     isToplevel     : Bool,               % not used
-                    useRefTypes    : Bool,               % always true
                     constrOps      : List   QualifiedId, % not used, constrOps are distinguished by their name (contain "__")
                     currentOpType  : Option QualifiedId,
                     ms_spec        : Spec,
@@ -27,7 +26,6 @@ op default_S2I_Context (ms_spec : Spec) : S2I_Context =
  {
   specname       = "",
   isToplevel     = false,
-  useRefTypes    = true,
   constrOps      = [],
   currentOpType  = None,
   ms_spec        = ms_spec,
@@ -141,14 +139,12 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
        | _ -> true
 
 op generateI2LCodeSpec (ms_spec         : Spec,
-                        use_ref_types?  : Bool, 
                         constructor_ops : List QualifiedId,
                         lms             : LanguageMorphisms,
                         natives         : Natives,
                         translations    : Translations)
  : I_ImpUnit =
  generateI2LCodeSpecFilter (ms_spec,
-                            use_ref_types?,
                             constructor_ops,
                             fn _ -> true,    % desire all types
                             fn _ -> true,    % desire all ops
@@ -157,7 +153,6 @@ op generateI2LCodeSpec (ms_spec         : Spec,
                             translations)
 
 op generateI2LCodeSpecFilter (ms_spec       : Spec,
-                              useRefTypes?  : Bool, 
                               constrOps     : List QualifiedId,
                               desired_type? : QualifiedId -> Bool,
                               desired_op?   : QualifiedId -> Bool,
@@ -167,7 +162,6 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
  : I_ImpUnit =
  let ctxt = {specname       = "", 
              isToplevel     = true, 
-             useRefTypes    = useRefTypes?,
              constrOps      = constrOps,
              currentOpType  = None,
              ms_spec        = ms_spec,
@@ -674,10 +668,7 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
      
    | TyVar _ -> 
-     if ctxt.useRefTypes then 
-       I_Any
-     else
-       fail ("sorry, this version of the code generator doesn't support polymorphic types.")
+     fail ("sorry, this version of the code generator doesn't support polymorphic types.")
 
    % ----------------------------------------------------------------------
    % use the base types as given, assume that the original definition has been checked

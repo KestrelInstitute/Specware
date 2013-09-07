@@ -129,25 +129,23 @@ CUtils qualifying spec
  % returns the struct definition that contains the same fields as
  % the input struct definition.
 
- op addNewStructDefn (cspc : C_Spec, xcspc : C_Spec, (sname,sfields) : C_StructDefn, useRefTypes? : Bool) 
+ op addNewStructDefn (cspc : C_Spec, xcspc : C_Spec, (sname, sfields) : C_StructDefn) 
   : C_Spec * C_Type =
   let structs  = getStructDefns cspc  in
   let xstructs = getStructDefns xcspc in
-  let (cspc,struct) = 
+  let (cspc, struct) = 
       case findLeftmost (fn (sname0,sfields0) -> sfields = sfields0) (structs ++ xstructs) of
     
         | Some (sname,_) -> 
           (cspc, C_Struct sname)
           
         | None -> 
-          let cspc   = addStructDefn (cspc, (sname,sfields)) in
-          let struct = C_Struct sname in
-          (cspc,struct)
+          let cspc = addStructDefn (cspc, (sname,sfields)) in
+          (cspc, C_Struct sname)
   in
-  let typ = if useRefTypes? then C_Ptr struct else struct in
-  let typ = case findTypeDefnInCSpecs ([cspc,xcspc], typ) of
+  let typ = case findTypeDefnInCSpecs ([cspc,xcspc], struct) of
               | Some s -> C_Base s
-              | None -> typ
+              | None -> struct
   in
   (cspc,typ)
 
