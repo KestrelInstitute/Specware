@@ -75,7 +75,7 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
  : Option C_Spec =
  let lms = parseCTranslationPragmas ms_spec in
  
- let use_ref_types?  = true in
+ let use_ref_types?  = false in
  let constructer_ops = []   in
  %% let ms_spec = renameTypes (ms_spec, op_extern_types) in
  let natives      = extractNatives         lms                  in
