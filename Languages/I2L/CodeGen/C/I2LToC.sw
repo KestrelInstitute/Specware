@@ -444,9 +444,14 @@ op c4Type (ctxt : I2C_Context,
          let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields), ctxt.useRefTypes) in
          (cspc, structtype)
          
-       | I_Ref rtype ->
+       | I_Ref (rtype, struct?) ->
          let (cspc, ctype) = c4Type (ctxt, cspc, rtype) in
-         (cspc, C_Ptr ctype)
+         let target = 
+             case ctype of
+               | C_Base x | struct? -> C_Struct x
+               | _ -> ctype
+         in
+         (cspc, C_Ptr target)
          
        | I_FunOrMap (types, rtype) ->
          let (cspc, ctypes) = c4Types (ctxt, cspc, types)                                       in
@@ -483,7 +488,6 @@ op c4Type (ctxt : I2C_Context,
              let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_Int32") in
              C_Int64
          in
-         % let _ = writeLine (" ===> " ^ anyToString c_type) in
          (cspc, c_type)
          
        | I_BoundedList (ltype, n) -> 

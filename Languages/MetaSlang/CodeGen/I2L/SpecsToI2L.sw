@@ -435,6 +435,21 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
      
    | _ -> None
      
+op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context) 
+ : Bool =
+ case t1 of
+   | Base (qid, [], _) ->
+     (case findTheType (ctxt.ms_spec, qid) of
+        | Some info ->
+          (case info.dfn of
+             | Product   _ -> true
+             | CoProduct _ -> true
+             | _ -> false)
+        | _ ->
+          false)
+   | _ ->
+     false
+
 op type2itype (ms_tvs  : TyVars,
                ms_type : MSType,
                ctxt    : S2I_Context)
@@ -502,8 +517,11 @@ op type2itype (ms_tvs  : TyVars,
    | Base (Qualified ("String",    "String"), [],   _) -> I_Primitive I_String
   %| Base (Qualified ("Float",     "Float"),  [],   _) -> I_Primitive I_Float
    
-   | Base (Qualified (_,           "Ptr"),    [t1], _) -> I_Ref (type2itype (ms_tvs, t1, ctxt)) 
-     
+   | Base (Qualified (_,           "Ptr"),    [t1], _) -> 
+     let target  = type2itype (ms_tvs, t1, ctxt)       in
+     let struct? = typeImplementedAsStruct? (t1, ctxt) in
+     I_Ref (target, struct?)
+
    % ----------------------------------------------------------------------
    
   % reference type
@@ -1033,7 +1051,6 @@ op term2expression_fun (ms_fun  : MSFun,
  if arrowType? (ms_type, ctxt) then
    case ms_fun of
      | Op    (qid, _)     -> 
-       % let _ = writeLine("Ok. arrow type for ms_term = " ^ printTerm ms_term ^ ", type = " ^ printType ms_type) in
        I_VarRef (qid2OpName (qid, ctxt))
      | Embed (id,  false) -> 
        let Arrow (_, ms_rng, _) = ms_type in

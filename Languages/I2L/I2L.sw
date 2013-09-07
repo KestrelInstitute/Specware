@@ -47,7 +47,7 @@ I2L qualifying spec
                 | I_List        I_Type
                 | I_Base        I_TypeName        % reference to an itype definition
                 | I_FunOrMap    I_Types * I_Type
-                | I_Ref         I_Type
+                | I_Ref         I_Type  * Bool    % true means pointer at structure (different name space)
                 | I_Void
                 | I_Any
   type I_Types = List I_Type
@@ -341,7 +341,7 @@ I2L qualifying spec
          | I_Tuple  types  -> foldl (fn (deps, t)      -> typeDepends0 (iu, t, deps)) deps types
 
          | I_BoundedList (t, _)  -> typeDepends0 (iu, t, deps)
-         | I_Ref         t       -> typeDepends0 (iu, t, deps)
+         | I_Ref         (t, _)  -> typeDepends0 (iu, t, deps)
 
          | I_FunOrMap (types, t) -> foldl (fn (deps, t) -> typeDepends0 (iu, t, deps))
                                           (typeDepends0 (iu, t, deps))
