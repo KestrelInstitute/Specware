@@ -351,11 +351,15 @@ type TypeTranslations = List TypeTranslation
 type TypeTranslation  = {source   : Name, 
                          target   : Term,
                          location : Option Location,
-                         native?  : Bool}
+                         native?  : Bool,
+                         struct?  : Bool}  % if true, claims to be C structure
+
+%% TODO: more general scheme for properties, instead of ad-hoc struct? field for C
 
 op make_Type_Translation (source   : Name, 
                           target   : Term,
-                          location : Option Location)
+                          location : Option Location,
+                          struct?  : Bool)
  : Translation =
  let native? = 
      case location of
@@ -369,12 +373,14 @@ op make_Type_Translation (source   : Name,
  Type {source   = source, 
        target   = target, 
        location = location,
-       native?  = native?}
+       native?  = native?,
+       struct?  = struct?}
 
 op printTypeTranslation (trans : TypeTranslation) : String =
  "Translate type:  "     ^ 
  printName trans.source  ^ 
  " \t=> "                ^ 
+ (if trans.struct? then "struct " else "") ^
  printTerm trans.target  ^
  printOptionalLocation trans.location
 

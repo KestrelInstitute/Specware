@@ -170,6 +170,7 @@
 (define-lm-parser-rule :SimpleName ; corresponds to Symbol in LanguageMorphism.sw
     (:anyof
      ;; keywords in pragma parser are also legal ids
+     ((:tuple "struct")    "struct")
      ((:tuple "curry")     "curry")
      ((:tuple "uncurry")   "uncurry")
      ((:tuple "left")      "left")
@@ -268,8 +269,13 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :TypeTranslation 
-    (:tuple "type" (1 :Name) :Arrow (2 :Term) (:optional (3 :Location)))
-  (LM::make_Type_Translation-3 1 2 (make-option 3)))
+    (:tuple "type"
+            (1 :Name)
+            :Arrow 
+            (:optional (4 "struct"))
+            (2 :Term) 
+            (:optional (3 :Location)))
+  (LM::make_Type_Translation-4 1 2 (make-option 3) (make-bool 4)))
 
 ;;; ========================================================================
 ;;;  FieldTranslation

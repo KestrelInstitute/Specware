@@ -13,25 +13,15 @@ import /Languages/I2L/I2L
 op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
 type S2I_Context = {
-                    specName      : String,             % not (yet) used
-                    isTopLevel?   : Bool,               % not used
-                    constructors  : List   QualifiedId, % not used, constructors distinguished by name containing "__"
-                    currentOpType : Option QualifiedId,
-                    ms_spec       : Spec,
-                    lms           : LanguageMorphisms,
-                    translations  : Translations
+                    specName        : String,             % not (yet) used
+                    isTopLevel?     : Bool,               % not used
+                    constructors    : List   QualifiedId, % not used, constructors distinguished by name containing "__"
+                    currentOpType   : Option QualifiedId,
+                    ms_spec         : Spec,
+                    lms             : LanguageMorphisms,
+                    translations    : Translations,
+                    declaredStructs : List QualifiedId    % C pragma may say implementation of type is C struct
                     }
-
-op default_S2I_Context (ms_spec : Spec) : S2I_Context =
- {
-  specName      = "",
-  isTopLevel?   = false,
-  constructors  = [],
-  currentOpType = None,
-  ms_spec       = ms_spec,
-  lms           = [],
-  translations  = []
-  }
 
 op qid2TypeName (Qualified (q, id) : QualifiedId, 
                  ctxt              : S2I_Context) 
@@ -160,13 +150,27 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               natives       : Natives,
                               translations  : Translations)
  : I_ImpUnit =
- let ctxt = {specName      = "", 
-             isTopLevel?   = true, 
-             constructors  = constructors,
-             currentOpType = None,
-             ms_spec       = ms_spec,
-             lms           = lms,
-             translations  = translations}
+ let declared_structs = 
+     foldl (fn (names, translation) ->
+              case translation of
+                | Type trans | trans.struct? -> 
+                  let qid = case trans.source of
+                              | [id]   -> mkUnQualifiedId id
+                              | [q,id] -> mkQualifiedId (q, id)
+                  in
+                  names ++ [qid]
+                | _ -> names)
+           []
+           translations
+ in
+ let ctxt = {specName        = "", 
+             isTopLevel?     = true, 
+             constructors    = constructors,
+             currentOpType   = None,
+             ms_spec         = ms_spec,
+             lms             = lms,
+             translations    = translations,
+             declaredStructs = declared_structs}
  in
  let
   def print_q_id (q, id) =
@@ -432,15 +436,30 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
 op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context) 
  : Bool =
  case t1 of
+
    | Base (qid, [], _) ->
-     (case findTheType (ctxt.ms_spec, qid) of
-        | Some info ->
-          (case info.dfn of
-             | Product   _ -> true
-             | CoProduct _ -> true
-             | _ -> false)
-        | _ ->
-          false)
+     let (implicit_struct?, implicit_non_struct?) =
+         case findTheType (ctxt.ms_spec, qid) of
+           | Some info ->
+             (case info.dfn of
+                | Product   _ -> (true,  false)
+                | CoProduct _ -> (true,  false)
+                | Any       _ -> (false, false)
+                | _ ->           (false, true))
+           | _ ->
+             (false, false)
+     in
+     let explicit_struct? = qid in? ctxt.declaredStructs in 
+     if explicit_struct? then
+       let _ = if implicit_non_struct? then
+                 writeLine ("Type " ^ show qid ^ " translated as struct, but not Product or CoProduct")
+               else
+                 ()
+       in
+       true
+     else
+       implicit_struct? 
+
    | _ ->
      false
 
