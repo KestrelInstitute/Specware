@@ -13,24 +13,24 @@ import /Languages/I2L/I2L
 op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
 type S2I_Context = {
-                    specname       : String,             % not (yet) used
-                    isToplevel     : Bool,               % not used
-                    constrOps      : List   QualifiedId, % not used, constrOps are distinguished by their name (contain "__")
-                    currentOpType  : Option QualifiedId,
-                    ms_spec        : Spec,
-                    lms            : LanguageMorphisms,
-                    translations   : Translations
+                    specName      : String,             % not (yet) used
+                    isTopLevel?   : Bool,               % not used
+                    constructors  : List   QualifiedId, % not used, constructors distinguished by name containing "__"
+                    currentOpType : Option QualifiedId,
+                    ms_spec       : Spec,
+                    lms           : LanguageMorphisms,
+                    translations  : Translations
                     }
 
 op default_S2I_Context (ms_spec : Spec) : S2I_Context =
  {
-  specname       = "",
-  isToplevel     = false,
-  constrOps      = [],
-  currentOpType  = None,
-  ms_spec        = ms_spec,
-  lms            = [],
-  translations   = []
+  specName      = "",
+  isTopLevel?   = false,
+  constructors  = [],
+  currentOpType = None,
+  ms_spec       = ms_spec,
+  lms           = [],
+  translations  = []
   }
 
 op qid2TypeName (Qualified (q, id) : QualifiedId, 
@@ -97,7 +97,7 @@ op qid2VarName (Qualified (q, id) : QualifiedId,
 
 
 op unsetToplevel (ctxt : S2I_Context) : S2I_Context =
- ctxt << {isToplevel = false}
+ ctxt << {isTopLevel? = false}
 
 op setCurrentOpType (qid : QualifiedId, ctxt : S2I_Context) : S2I_Context = 
  ctxt << {currentOpType = Some qid}
@@ -112,7 +112,7 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
    
    | None -> true
      
-   | Some (qid as Qualified (q, id)) -> % ~(member (qid, ctxt. constrOps))
+   | Some (qid as Qualified (q, id)) -> % ~(member (qid, ctxt. constr_ops))
      let expl = explode q ++ explode id in
      let (indl, _) = 
          foldl (fn ((indl, n), c) -> 
@@ -138,14 +138,14 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
            
        | _ -> true
 
-op generateI2LCodeSpec (ms_spec         : Spec,
-                        constructor_ops : List QualifiedId,
-                        lms             : LanguageMorphisms,
-                        natives         : Natives,
-                        translations    : Translations)
+op generateI2LCodeSpec (ms_spec      : Spec,
+                        constructors : List QualifiedId,
+                        lms          : LanguageMorphisms,
+                        natives      : Natives,
+                        translations : Translations)
  : I_ImpUnit =
  generateI2LCodeSpecFilter (ms_spec,
-                            constructor_ops,
+                            constructors,
                             fn _ -> true,    % desire all types
                             fn _ -> true,    % desire all ops
                             lms,
@@ -153,20 +153,20 @@ op generateI2LCodeSpec (ms_spec         : Spec,
                             translations)
 
 op generateI2LCodeSpecFilter (ms_spec       : Spec,
-                              constrOps     : List QualifiedId,
+                              constructors  : List QualifiedId,
                               desired_type? : QualifiedId -> Bool,
                               desired_op?   : QualifiedId -> Bool,
                               lms           : LanguageMorphisms,
                               natives       : Natives,
                               translations  : Translations)
  : I_ImpUnit =
- let ctxt = {specname       = "", 
-             isToplevel     = true, 
-             constrOps      = constrOps,
-             currentOpType  = None,
-             ms_spec        = ms_spec,
-             lms            = lms,
-             translations   = translations}
+ let ctxt = {specName      = "", 
+             isTopLevel?   = true, 
+             constructors  = constructors,
+             currentOpType = None,
+             ms_spec       = ms_spec,
+             lms           = lms,
+             translations  = translations}
  in
  let
   def print_q_id (q, id) =
