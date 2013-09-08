@@ -124,7 +124,7 @@ op addBuiltIn (_ : I2C_Context, cspc : C_Spec) : C_Spec =
   %%    in
   %%    let cspc = addInclude(cspc,"stdio.h") in
   %%    let cspc = addInclude(cspc,"string.h") in
-  let cspc = addInclude (cspc, "SWC_Common.h") in
+  %%    let cspc = addInclude (cspc, "SWC_Common.h") in  %% deprecated 
   cspc
 
 % --------------------------------------------------------------------------------
