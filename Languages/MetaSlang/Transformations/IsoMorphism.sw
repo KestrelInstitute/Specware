@@ -1528,7 +1528,7 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
    let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
                       Unfold(mkQualifiedId("Function","id")),
                       Rewrite(mkQualifiedId("Option","mapOption")),
-                      mkMetaRule spc (mkQualifiedId("MetaRule", "simplifyUnfoldCase"))]
+                      mkMetaRule0 (Qualified("MSTermTransform", "simplifyUnfoldCase"))]
    in
    let main_script =
      Steps([% Trace true,% SimpStandard,
@@ -1640,8 +1640,8 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
     | except -> raise except)
 
  op SpecTransform.isomorphism (spc: Spec) (newOptQual : Option String)
-                               (iso_qid_prs: List(QualifiedId * QualifiedId))
-                               (extra_rules: List RuleSpec):  SpecCalc.Env Spec =
+                              (iso_qid_prs: List(QualifiedId * QualifiedId))
+                              (extra_rules: List RuleSpec):  SpecCalc.Env Spec =
     makeIsoMorphism(spc, iso_qid_prs, newOptQual, extra_rules)
 
 end-spec

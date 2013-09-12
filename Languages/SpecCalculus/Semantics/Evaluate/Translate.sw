@@ -775,14 +775,14 @@ SpecCalc qualifying spec
                    | _ ->
                      let renaming = (reverse rules, pos) in
                      let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
-                     % let _ = writeLine("trans_spc_tm:\n"^anyToString trans_spc_tm) in
-                     % let _ = writeLine("currentUID?:\n"^anyToString currentUID?) in
+                      let _ = writeLine("trans_spc_tm:\n"^anyToString trans_spc_tm) in
+                      let _ = writeLine("currentUID?:\n"^anyToString currentUID?) in
                      case UIDfromPosition(sp_tm.2) of
                        | None -> (trans_spc_tm, spc, els)
                        | Some currentUID ->
                      case evaluateTermWrtUnitId(trans_spc_tm, currentUID) of
                        | Some(Spec trans_spc) ->
-                         % let _ = writeLine("trans_spc:\n"^anyToString trans_spc) in
+                          let _ = writeLine("trans_spc:\n"^anyToString trans_spc) in
                          (trans_spc_tm, trans_spc, els)
                        | None ->
                          % let _ = writeLine("Failed to evaluate translate:\n"

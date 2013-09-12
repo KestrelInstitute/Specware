@@ -1050,7 +1050,8 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :QUALIFIABLE-OP-NAMES-PARENS ()
   (:anyof 
    ((:tuple (1 :QUALIFIABLE-OP-NAME)) (list 1))
-   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) ")") 2)))
+   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) ")") 2)
+   ((:tuple "[" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) "]") 2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   APPLICATION

@@ -154,7 +154,9 @@ op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): M
           in
           mkCurriedLambda(lam_pats, bod)
           
-      
+op SpecTransform.maintain (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs): Env Spec =
+  maintainOpsCoalgebraically(spc, qids, rules)
+
 def Coalgebraic.maintainOpsCoalgebraically
       (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   let intro_qid as Qualified(intro_q, intro_id) = head qids in
@@ -215,6 +217,9 @@ op findHomomorphismFn(tm: MSTerm): Option QualifiedId =
             Record([(_,e1),(_,Apply(Fun(Op(qid,_),_,_), _, _))], _),_) ->
       Some qid
     | _ -> None
+
+op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs): Env Spec =
+  implementOpsCoalgebraically(spc, qids, rules)
 
 def Coalgebraic.implementOpsCoalgebraically
   (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
@@ -596,7 +601,7 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List Rul
    new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
 
-op MetaRule.mergePostConditions (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSTermTransform.mergePostConditions (spc: Spec) (tm: MSTerm): Option MSTerm =
   % let _ = writeLine("mergePostConditions:\n"^printTerm tm) in
   case tm of
     | TypedTerm(orig_tm, orig_ty, a) ->
