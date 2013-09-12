@@ -193,6 +193,9 @@ spec
       | Command("simplify", [Tuple(rls, _)], _) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify(srls, maxRewrites))}
+      | Command("simplify", [Options(rls, _)], _) ->
+        {srls <- mapM makeRuleRef rls;
+         return(Simplify(srls, maxRewrites))}
       | Command("simplify1", [Tuple(rls, _)],_) ->
         {srls <- mapM makeRuleRef rls;
          return(Simplify1 srls)}
@@ -205,9 +208,9 @@ spec
       | Command("AbstractCommonExprs",[],_) -> return AbstractCommonExpressions
       | Command("AbstractCommonSubExprs",[],_) -> return AbstractCommonExpressions
       | Command("lr", [thm],_) -> {qid <- extractQId thm;
-                             return (Simplify1([LeftToRight qid]))}
+                                   return (Simplify1([LeftToRight qid]))}
       | Command("rl", [thm],_) -> {qid <- extractQId thm;
-                             return (Simplify1([RightToLeft qid]))}
+                                   return (Simplify1([RightToLeft qid]))}
       | Command("weaken", [thm],_) -> {qid <- extractQId thm;
                                  return (Simplify1([Weaken qid]))}
       | Command("fold", [opid],_) -> {qid <- extractQId opid;
@@ -220,8 +223,10 @@ spec
                                             return (Simplify1([RLeibniz qid]))}
       | Command("apply", [opid],_) -> {qid <- extractQId opid;
                                        return (Simplify1([MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)]))}
-      | Command("move", [Tuple(mvs, _)], _) -> {moves <- mapM makeMove mvs;
-                                                return (Move moves)}
+      | Command("move", [Options(mvs, _)], _) -> {moves <- mapM makeMove mvs;
+                                                  return (Move moves)}
+      | Command("move", [Tuple(mvs, _)], _) | allowLooseSyntax? -> {moves <- mapM makeMove mvs;
+                                                                    return (Move moves)}
       | Command("move", [move1], _) -> {move <- makeMove move1;
                                         return (Move [move])}
       | Command("move", rmoves, _) -> {moves <- mapM makeMove rmoves;
@@ -242,24 +247,24 @@ spec
         % let _ = writeLine ("Unrecognized transform command: " ^ anyToString trans) in
         raise (TransformError (posOf trans, "Unrecognized transform: "^show trans))
 
-  op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
-    case iso_tm of
-      | Tuple ([iso,osi], _) ->
-        {iso_qid <- extractQId iso;
-         osi_qid <- extractQId osi;
-         return (iso_qid, osi_qid)}
-      | _ -> raise (TransformError (posOf iso_tm, "Parenthesis expected"))
+  % op extractIsoFromTuple(iso_tm: TransformExpr): SpecCalc.Env (QualifiedId * QualifiedId) =
+  %   case iso_tm of
+  %     | Tuple ([iso,osi], _) ->
+  %       {iso_qid <- extractQId iso;
+  %        osi_qid <- extractQId osi;
+  %        return (iso_qid, osi_qid)}
+  %     | _ -> raise (TransformError (posOf iso_tm, "Parenthesis expected"))
  
-  op extractIsos(iso_tms: TransformExprs): SpecCalc.Env (List(QualifiedId * QualifiedId)) =
-    case iso_tms of
-      | [] -> return []
-      | (Tuple _) :: _ ->
-        mapM extractIsoFromTuple iso_tms
-      | [iso,osi] ->
-        {iso_qid <- extractQId iso;
-         osi_qid <- extractQId osi;
-         return [(iso_qid, osi_qid)]}
-      | tm :: _ -> raise (TransformError (posOf tm, "Illegal isomorphism reference."))
+  % op extractIsos(iso_tms: TransformExprs): SpecCalc.Env (List(QualifiedId * QualifiedId)) =
+  %   case iso_tms of
+  %     | [] -> return []
+  %     | (Tuple _) :: _ ->
+  %       mapM extractIsoFromTuple iso_tms
+  %     | [iso,osi] ->
+  %       {iso_qid <- extractQId iso;
+  %        osi_qid <- extractQId osi;
+  %        return [(iso_qid, osi_qid)]}
+  %     | tm :: _ -> raise (TransformError (posOf tm, "Illegal isomorphism reference."))
 
   op checkForNonAttributes(val_prs: List(String * TransformExpr), fld_names: List String, pos: Position): SpecCalc.Env () =
     case findLeftmost(fn (nm, _) -> nm nin? fld_names) val_prs of
@@ -616,21 +621,21 @@ spec
       %         srls <- mapM makeRuleRef rls;
       %         return (IsoMorphism(iso_prs, srls, Some qual))})
 
-      | Command("maintain", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
-        {op_qids <- mapM extractQId i_ops;
-         srls <- mapM makeRuleRef rls;
-         return (Maintain(op_qids, srls))}
-      | Command("maintain", [Tuple(i_ops, _)], _) ->
-        {op_qids <- mapM extractQId i_ops;
-         return (Maintain(op_qids, []))}
+      % | Command("maintain", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
+      %   {op_qids <- mapM extractQId i_ops;
+      %    srls <- mapM makeRuleRef rls;
+      %    return (Maintain(op_qids, srls))}
+      % | Command("maintain", [Tuple(i_ops, _)], _) ->
+      %   {op_qids <- mapM extractQId i_ops;
+      %    return (Maintain(op_qids, []))}
 
-      | Command("implement", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
-        {op_qids <- mapM extractQId i_ops;
-         srls <- mapM makeRuleRef rls;
-         return (Implement(op_qids, srls))}
-      | Command("implement", [Tuple(i_ops, _)], _) ->
-         {op_qids <- mapM extractQId i_ops;
-          return (Implement(op_qids, []))}
+      % | Command("implement", [Tuple(i_ops, _), Tuple(rls, _)], _) ->
+      %   {op_qids <- mapM extractQId i_ops;
+      %    srls <- mapM makeRuleRef rls;
+      %    return (Implement(op_qids, srls))}
+      % | Command("implement", [Tuple(i_ops, _)], _) ->
+      %    {op_qids <- mapM extractQId i_ops;
+      %     return (Implement(op_qids, []))}
 
       | Command("addParameter", [Record rec_val_prs], _) ->
         {fields <- getAddParameterFields rec_val_prs;
