@@ -958,7 +958,7 @@ spec
   op  valueToTerm: MSIValue -> MSTerm
   def valueToTerm v =
     case v of
-      | Int         n  -> mkNat n
+      | Int         n  -> mkInt n
       | Char        c  -> mkChar c
       | String      s  -> mkString s
       | Bool        b  -> mkBool b
