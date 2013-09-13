@@ -327,7 +327,49 @@ op typeinfo2typedef (qid     : QualifiedId,
 type LeLt   = | LE  | LT
 type MinMax = | Min | Max
 
-op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
+op find_constant_nat_bound (ms_term : MSTerm) : Option Nat =
+ %% returns (Some n) if the type directly expresses the inclusive range [0, n], otherwise None
+ %% i.e. {x : Nat -> x <= n} where n is a Nat
+ case ms_term of
+   | Lambda ([(VarPat ((v0, _), _), Fun (Bool true, _, _),  body)], _)
+     ->
+     (case body of
+        | Apply (Fun (Op (Qualified (_, pred), _), _, _),
+                 Record ([(_, Var ((v1, _),  _)),
+                          (_, Fun (Nat n, _, _))],
+                         _),
+                 _)
+          ->
+          if v0 = v1 then 
+            (case pred of
+               | "<=" ->  Some n
+               | "<"  ->  Some (n - 1)
+               | _    ->  None)
+          else 
+            None
+            
+        | Apply (Fun (Op (Qualified (_, "fitsInNBits?-1-1"), _), _, _),
+                 Record ([(_, Fun (Nat n, _, _)),
+                          (_, Var ((v1, _), _))],
+                         _),
+                 _)
+          | v0 = v1 -> 
+            Some (2**n - 1)
+          
+        | Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
+                 Var ((v1, _), _),
+                 _) 
+          | v0 = v1 -> 
+            (case fits_in_pred of
+               | "fitsIn1Bits?"  -> Some (2**1  - 1)
+               | "fitsIn8Bits?"  -> Some (2**8  - 1)
+               | "fitsIn16Bits?" -> Some (2**16 - 1)
+               | "fitsIn32Bits?" -> Some (2**32 - 1)
+               | _ -> None)
+        | _ -> None)
+   | _ -> None
+
+op find_constant_int_bounds (ms_term : MSTerm) : Option (Int * Int) =
  %% returns Some (m, n) if the type directly expresses the inclusive range [m, n], otherwise None
  let 
    def eval_const tm =
@@ -387,52 +429,89 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
          
  in
  case ms_term of
-   | Lambda ([(VarPat ((vid, _), _),
-               Fun (Bool true, _, _),
-               Apply  (Fun (And, _, _), 
-                       Record ([("1",tm1), ("2",tm2)], _), 
-                       _))],
-             _)
-     ->
-     (let r1 = find_bound tm1 vid in 
-      let r2 = find_bound tm2 vid in
-      %% Some (true.  m) indicates inclusive min restriction
-      %% Some (false. n) indicates inclusive max restriction
-      case (r1, r2) of
-        | (Some (Min, m), Some (Max, n)) -> Some (m, n)
-        | (Some (Max, n), Some (Min, m)) -> Some (m, n)
-        | _ -> None)
+   | Lambda ([(VarPat ((v0, _), _), Fun (Bool true, _, _), body)], _) ->
+     (case body of
+        | Apply (Fun (And, _, _), 
+                 Record ([("1",tm1), ("2",tm2)], _), 
+                 _)
+          ->
+          (let r1 = find_bound tm1 v0 in 
+           let r2 = find_bound tm2 v0 in
+           %% Some (true.  m) indicates inclusive min restriction
+           %% Some (false. n) indicates inclusive max restriction
+           case (r1, r2) of
+             | (Some (Min, m), Some (Max, n)) -> Some (m, n)
+             | (Some (Max, n), Some (Min, m)) -> Some (m, n)
+             | _ -> None)
      
-   | Lambda ([(VarPat ((X, _), _),
-               Fun (Bool true, _, _),
-               Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
-                      Record ([(_, Fun (Nat n, _, _)),
-                               (_, Var ((X0, _),  _))],
-                              _),
-                      _)
-               )],
-             _)
-     | X = X0 ->  
-       let m = 2 ** (n-1) in
-       Some (- m, m -1)
+        | Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
+                 Record ([(_, Fun (Nat n, _, _)),
+                          (_, Var ((v1, _),  _))],
+                         _),
+                 _)
+          | v0 = v1 ->  
+            let m = 2 ** (n-1) in
+            Some (- m, m -1)
           
-   | Lambda ([(VarPat ((X, _), _),
-               Fun (Bool true, _, _),
-               Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
-                      Var ((X0, _), _),
-                      _)
-               )],
-             _)
-     | X = X0 -> 
-       (case fits_in_pred of
-          | "intFitsIn1Bits?"  -> Some (-1,0)
-          | "intFitsIn8Bits?"  -> Some (- (2**7),2**7-1)
-          | "intFitsIn16Bits?" -> Some (- (2**15),2**15-1)
-          | "intFitsIn32Bits?" -> Some (- (2**31),2**31-1)
-          | _ -> None)
-     
+        | Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
+                 Var ((v1, _), _),
+                 _)
+          | v0 = v1 -> 
+            (case fits_in_pred of
+               | "intFitsIn1Bits?"  -> Some (-1,0)
+               | "intFitsIn8Bits?"  -> Some (- (2**7),2**7-1)
+               | "intFitsIn16Bits?" -> Some (- (2**15),2**15-1)
+               | "intFitsIn32Bits?" -> Some (- (2**31),2**31-1)
+               | _ -> None)
+        | _ -> None)
    | _ -> None
      
+op unfold_bounded_list_type (ms_tvs          : TyVars, 
+                             ms_element_type : MSType, 
+                             pred            : MSTerm,
+                             ctxt            : S2I_Context)
+ : Option I_Type =
+ let i_element_type = type2itype (ms_tvs, ms_element_type, unsetToplevel ctxt) in
+ case pred of
+   | Lambda ([(VarPat ((pred_var, _), _), Fun (Bool true, _, _), pred_body)], _) -> 
+     (case pred_body of
+        | Apply (Fun (cmp, _, _), Record ([arg1, arg2], _), _) ->
+          let
+            def check_length_term ((_,length_op), (_,constant_term)) =
+              case length_op of
+                | Apply (Fun (Op (Qualified (_, "length"), _), _, _),
+                         length_arg, 
+                         _)
+                  ->
+                  (case length_arg of
+                     | Var ((length_var, _), _) -> 
+                       if length_var = pred_var then 
+                         constant_term_Int_value (constant_term, ctxt)
+                       else 
+                         None
+                     | _ -> None)
+                | _ -> None
+          in
+          let opt_bound =
+              case cmp of
+                | Op (Qualified (_, compare_sym), _) ->
+                  (case compare_sym of
+                     % compute inclusive bound for length of list
+                     | ">"  -> (case check_length_term (arg2, arg1) of | Some n | n > 0 -> Some (n - 1) | _ -> None)
+                     | "<"  -> (case check_length_term (arg1, arg2) of | Some n | n > 0 -> Some (n - 1) | _ -> None)
+                     | "<=" -> (case check_length_term (arg1, arg2) of | Some n         -> Some n       | _ -> None)
+                     | ">=" -> (case check_length_term (arg2, arg1) of | Some n         -> Some n       | _ -> None)
+                     | _ -> None)
+                | Equals ->    (case check_length_term (arg1, arg2) of | Some n         -> Some n       | _ -> None)
+                | _ -> None
+          in
+          (case opt_bound of
+             | Some list_length ->
+               Some (I_BoundedList (i_element_type, list_length))
+             | _ -> None)
+        | _ -> None)
+   | _ -> None
+
 op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context) 
  : Bool =
  case t1 of
@@ -471,50 +550,10 @@ op type2itype (ms_tvs  : TyVars,
  let 
    def bounded_list_type? ms_element_type pred =
      %% a bit of overkill, but this is just stopgap code, so...
-     case unfold_bounded_list_type ms_element_type pred of
+     case unfold_bounded_list_type (ms_tvs, ms_element_type, pred, ctxt) of
        | Some _ -> true
        | _ -> false
          
-   def unfold_bounded_list_type ms_element_type pred =
-     let i_element_type = type2itype (ms_tvs, ms_element_type, unsetToplevel ctxt) in
-     case pred of
-       | Lambda ([(VarPat ((pred_var, _), _),
-                   Fun (Bool true, _, _),
-                   pred_body)],
-                 _)
-         -> 
-         (case pred_body of
-            | Apply (Fun (cmp, _, _),
-                     Record ([arg1, arg2], _),
-                     _) 
-              ->
-              let
-                def check_length_term ((_,length_op), (_,constant_term), min_const) =
-                  let _ = 
-                      case length_op of
-                        | Apply (Fun (Op (Qualified (_, "length"), _), _, _),
-                                 length_arg, 
-                                 _)
-                          ->
-                          (case length_arg of
-                             | Var ((length_var, _), _) -> if length_var = pred_var then Some () else None
-                             | _ -> None)
-                        | _ -> None
-                  in
-                  let const = constant_term_Int_value (constant_term, ctxt) in
-                  if const < min_const then None else Some const
-              in
-              (case cmp of
-                 | Op (Qualified (_, compare_sym), _) ->
-                   (case compare_sym of
-                      | ">"  -> (case check_length_term (arg2, arg1, 2) of | Some const -> Some (I_BoundedList (i_element_type, const - 1)) | _ -> None)
-                      | "<"  -> (case check_length_term (arg1, arg2, 2) of | Some const -> Some (I_BoundedList (i_element_type, const - 1)) | _ -> None)
-                      | "<=" -> (case check_length_term (arg1, arg2, 1) of | Some const -> Some (I_BoundedList (i_element_type, const))     | _ -> None)
-                      | ">=" -> (case check_length_term (arg2, arg1, 1) of | Some const -> Some (I_BoundedList (i_element_type, const))     | _ -> None)
-                      | _ -> None)
-                 | Eq ->         case check_length_term (arg1, arg2, 1) of | Some const -> Some (I_BoundedList (i_element_type, const))     | _ -> None)
-            | _ -> None)
-       | _ -> None
  in
  let ms_utype = unfoldToSpecials (ms_type, ctxt) in
  case ms_utype of
@@ -553,68 +592,23 @@ op type2itype (ms_tvs  : TyVars,
 
    % ----------------------------------------------------------------------
    
-   | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _)
-     ->
-     (case pred of
-        %% {x : Nat -> x < n} where n is a Nat
-        | Lambda ([(VarPat ((X, _), _),
-                    Fun (Bool true, _, _),
-                    Apply (Fun (Op (Qualified (_, pred), _), _, _),
-                           Record ([(_, Var ((X0, _),  _)),
-                                    (_, Fun (Nat n, _, _))],
-                                   _),
-                           _)
-                    )],
-                  _)
-          ->
-          if X = X0 then 
-            (case pred of
-               | "<=" ->  I_BoundedNat (n + 1)
-               | "<"  ->  I_BoundedNat n
-               | _    ->  I_Primitive  I_Nat)
-          else 
-            I_Primitive I_Nat
-            
-        | Lambda ([(VarPat ((X, _), _),
-                    Fun (Bool true, _, _),
-                    Apply (Fun (Op (Qualified (_, "fitsInNBits?-1-1"), _), _, _),
-                           Record ([(_, Fun (Nat n, _, _)),
-                                    (_, Var ((X0, _), _))],
-                                   _),
-                           _)
-                    )],
-                  _)
-          | X = X0 -> 
-            I_BoundedNat (2**n)
-          
-          
-        | Lambda ([(VarPat ((X, _), _),
-                    Fun (Bool true, _, _),
-                    Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
-                           Var ((X0, _), _),
-                           _)
-                    )],
-                  _)
-          | X = X0 -> 
-            (case fits_in_pred of
-               | "fitsIn1Bits?"  -> I_BoundedNat (2**1)
-               | "fitsIn8Bits?"  -> I_BoundedNat (2**8)
-               | "fitsIn16Bits?" -> I_BoundedNat (2**16)
-               | "fitsIn32Bits?" -> I_BoundedNat (2**32)
-               | _ -> I_Primitive I_Nat)
-          
-        | _ ->
+   | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _) ->
+     (case find_constant_nat_bound pred of
+        | Some n ->               % Inclusive bound
+          I_BoundedNat n          % closed interval [0, n]
+        | _ -> 
+          let _ = writeLine ("FindConstantNatBound failed for " ^ printTerm pred) in
           I_Primitive I_Nat)
      
    | Subtype (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
-     (case find_simple_constant_bounds pred of
-        | Some (m, n) -> % Inclusive bounds.
+     (case find_constant_int_bounds pred of
+        | Some (m, n) ->          % Inclusive bounds.
           if m = 0 then
-            I_BoundedNat n
+            I_BoundedNat n        % closed interval [0, n]
           else
-            I_BoundedInt (m-1, n+1) % I_BoundedInt takes an open interval.
+            I_BoundedInt (m, n)   % closed interval [m, n]
         | _ ->
-          let _ = writeLine "FindSimpleConstantBounds failed" in
+          let _ = writeLine ("FindConstantIntBounds failed for " ^ printTerm pred) in
           I_Primitive I_Int)
      
    % ----------------------------------------------------------------------
@@ -627,7 +621,7 @@ op type2itype (ms_tvs  : TyVars,
    | Subtype (Base (Qualified ("List", "List"), [ms_element_type], _), pred, _) 
      | bounded_list_type? ms_element_type pred ->
        % given the restriction above, the following must succeed
-       let Some i_type = unfold_bounded_list_type ms_element_type pred in
+       let Some i_type = unfold_bounded_list_type (ms_tvs, ms_element_type, pred, ctxt) in
        i_type
           
    % ----------------------------------------------------------------------
@@ -707,19 +701,14 @@ op type2itype (ms_tvs  : TyVars,
      fail ("sorry, code generation doesn't support the use of this type:\n       "
              ^ printType ms_type)
 
-op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Int =
- let 
-   def err () = 
-     let _ = print ms_term in
-     fail ("cannot evaluate the constant value of term " ^ printTerm ms_term)
- in
+op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Option Int =
  case ms_term of
-   | Fun (Nat n, _, _) -> n
+   | Fun (Nat n, _, _) -> Some n
    | Fun (Op (qid, _), _, _) -> 
      (case getOpDefinition (qid, ctxt) of
         | Some tm -> constant_term_Int_value (tm, ctxt)
-        | _ -> err ())
-   | _ -> err ()
+        | _ -> None)
+   | _ -> None
      
      
 (*

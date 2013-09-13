@@ -38,8 +38,8 @@ I2L qualifying spec
   type I_Primitive = | I_Bool | I_Char | I_String | I_Nat | I_Int | I_Float
 
   type I_Type = | I_Primitive   I_Primitive
-                | I_BoundedNat  Nat               % Nats smaller than N (e.g. 'unsigned short')
-                | I_BoundedInt  Int * Int         % Ints within exclusive bounds (e.g. 'signed short')
+                | I_BoundedNat  Nat               % Nats within inclusive bound  (e.g. 'unsigned short')
+                | I_BoundedInt  Int * Int         % Ints within inclusive bounds (e.g. 'signed short')
                 | I_Struct      I_StructFields
                 | I_Union       I_UnionFields
                 | I_Tuple       I_Types

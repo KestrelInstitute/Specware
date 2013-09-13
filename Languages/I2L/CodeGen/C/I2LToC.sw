@@ -45,7 +45,6 @@ type I2C_Context = {
                     lms              : LanguageMorphisms,
                     translations     : Translations
                     }
-
 op default_I2C_Context : I2C_Context =
  {
   voidToUIntType   = C_UInt32,       % TODO: target various versions of C
@@ -498,37 +497,37 @@ op c4Type (ctxt : I2C_Context,
          
        | I_Void -> (cspc, C_Void)
          
-       | I_BoundedNat n -> 
+       | I_BoundedNat n -> % inclusive bound
          let c_type =
-             if n <= 2**8  then C_UInt8  else
-             if n <= 2**16 then C_UInt16 else
-             if n <= 2**32 then C_UInt32 else
-             if n <= 2**64 then C_UInt64 else
-             let _ = maybe_warn (ctxt, "Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using C_UIntInf") in
+             if n < 2**8  then C_UInt8  else
+             if n < 2**16 then C_UInt16 else
+             if n < 2**32 then C_UInt32 else
+             if n < 2**64 then C_UInt64 else
+             let _ = maybe_warn (ctxt, "Nat maximum exceeds 2**64 - 1: " ^ anyToString n ^ ", using C_UIntInf") in
              C_UIntInf
          in
          (cspc, c_type)
          
-       | I_BoundedInt (m, n) -> 
+       | I_BoundedInt (m, n) -> % inclusive bounds
          let c_type =
-             if           -1 <= m && n <= 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
-             if           -1 <= m && n <= 2**16 then C_UInt16 else 
-             if           -1 <= m && n <= 2**32 then C_UInt32 else
-             if           -1 <= m && n <= 2**64 then C_UInt64 else
-             if -(2**7)  - 1 <= m && n <= 2**7  then C_Int8   else
-             if -(2**15) - 1 <= m && n <= 2**15 then C_Int16  else
-             if -(2**31) - 1 <= m && n <= 2**31 then C_Int32  else
-             if -(2**63) - 1 <= m && n <= 2**63 then C_Int64  else
-             let _ = maybe_warn (ctxt, "Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_IntInf") in
+             if        0 <= m && n < 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
+             if        0 <= m && n < 2**16 then C_UInt16 else 
+             if        0 <= m && n < 2**32 then C_UInt32 else
+             if        0 <= m && n < 2**64 then C_UInt64 else
+             if -(2** 7) <= m && n < 2**7  then C_Int8   else
+             if -(2**15) <= m && n < 2**15 then C_Int16  else
+             if -(2**31) <= m && n < 2**31 then C_Int32  else
+             if -(2**63) <= m && n < 2**63 then C_Int64  else
+             let _ = maybe_warn (ctxt, "Int range exceeds [-2**63, 2**63 -1]: [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_IntInf") in
              C_IntInf
          in
          (cspc, c_type)
          
-       | I_BoundedList (ltype, n) -> 
+       | I_BoundedList (ltype, list_length) -> 
          let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                 in
          let deflen             = length cspc.defines                                        in
          let constName          = genName (cspc, "MAX", deflen)                              in
-         let cspc               = addDefine (cspc, (constName, show n))                      in
+         let cspc               = addDefine (cspc, (constName, show list_length))            in
          let arraytype          = C_ArrayWithSize ([C_Const (C_Macro constName)], ctype)     in
          let structname         = genName (cspc, "BoundList", length (getStructDefns cspc))  in
          let sfields            = [("length", C_Int32), ("data", arraytype)]                 in
@@ -701,7 +700,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
  in
  case expr of
    | I_Str   s -> (cspc, block, C_Const (C_Str   s))
-   | I_Int   n -> (cspc, block, C_Const (C_Int   (true, n)))
+   | I_Int   n -> (cspc, block, C_Const (C_Int   (true, n))) % TODO: Should we ignore type here?
    | I_Char  c -> (cspc, block, C_Const (C_Char  c))
    | I_Float f -> (cspc, block, C_Const (C_Float f))
    | I_Bool  b -> (cspc, block, if b then ctrue else cfalse)
