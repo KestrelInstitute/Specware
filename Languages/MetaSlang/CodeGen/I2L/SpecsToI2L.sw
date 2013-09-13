@@ -567,31 +567,12 @@ op type2itype (ms_tvs  : TyVars,
    | Base (Qualified ("Integer",   "Int"),    [],   _) -> I_Primitive I_Int
    | Base (Qualified ("Character", "Char"),   [],   _) -> I_Primitive I_Char
    | Base (Qualified ("String",    "String"), [],   _) -> I_Primitive I_String
-  %| Base (Qualified ("Float",     "Float"),  [],   _) -> I_Primitive I_Float
-   
+
    | Base (Qualified (_,           "Ptr"),    [t1], _) -> 
      let target  = type2itype (ms_tvs, t1, ctxt)       in
      let struct? = typeImplementedAsStruct? (t1, ctxt) in
      I_Ref (target, struct?)
 
-   % ----------------------------------------------------------------------
-   
-  % reference type
-  %| Base (Qualified ("ESpecPrimitives", "Ref"), [ms_type], _) -> Ref (type2itype (ms_tvs, ms_type, ctxt))
-   
-  %| Base (Qualified (_, "List"), [ms_ptyp], _) ->
-  %    let i_ptype = type2itype (ms_vs, ms_ptyp, ctxt) in
-  %    List i_ptype
-   
-  %| Base (Qualified (_, "List"), [ms_ptyp], _) ->
-  %  System.fail ("sorry, this version of the code generator doesn't support lists.")
-  %         
-  %     System.fail ("if using List type, please add a term restricting "^
-  %     "the length of the list\n       "^
-  %     "(e.g. \"{l:List ("^printType ms_ptyp ^")| length l <= 32}\")")
-
-   % ----------------------------------------------------------------------
-   
    | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _) ->
      (case find_constant_nat_bound pred of
         | Some n ->               % Inclusive bound
@@ -1440,23 +1421,6 @@ op getBuiltinExpr (ms_term : MSTerm,
    | (Fun (Op (Qualified ("String",     "<"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrLess             (t2e t1, t2e t2)))
    | (Fun (Op (Qualified ("String",     ">"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrGreater          (t2e t1, t2e t2)))
 
-  % var refs:
-  %      | (Fun (Op (Qualified ("ESpecPrimitives", "ref"), _), _, _), [t1])
-  %        -> let def qid2varname qid =
-  %                 case qid of
-  %                   | Qualified (spcname, name) -> (spcname,name)
-  %                  %| Local name -> (spc.name,name)
-  %           in
-  %           (case t1 of
-  %              | Fun (Op (qid, _), _, _)
-  %                -> %if member (qid,ctxt.vars) then Some (VarRef (qid2varname qid))
-  %                   %else 
-  %                       fail ("\"ref\" can only be used for vars, but \""^
-  %                             (qidstr qid)^"\" is not declared as a var.")
-  %              | _ -> fail ("\"ref\" can only be used for vars, not for:\n"^
-  %                           printTerm t1)
-  %           )
-  
    | _ -> None
 
 op isVariable (_ : S2I_Context, _ : QualifiedId) : Bool = 
