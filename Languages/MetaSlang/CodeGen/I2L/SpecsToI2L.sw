@@ -23,9 +23,9 @@ type S2I_Context = {
                     declaredStructs : List QualifiedId    % C pragma may say implementation of type is C struct
                     }
 
-op qid2TypeName (Qualified (q, id) : QualifiedId, 
-                 ctxt              : S2I_Context) 
- : I_TypeName = 
+op pragmaTypeTranslation (Qualified (q, id) : QualifiedId, 
+                          ctxt              : S2I_Context) 
+ : Option I_TypeName = 
  %% Possibly rename using pragma info for type map
  let match =
      findLeftmost (fn translation -> 
@@ -40,16 +40,16 @@ op qid2TypeName (Qualified (q, id) : QualifiedId,
                   ctxt.translations
  in
  case match of
-   | Some (Type match) -> 
-     (case match.target of
-        | Name [x, y] -> (x,  y)
-        | Name [y]    -> ("", y)
-        | _ -> (q,  id))
-   | _ -> (q, id)
+   | Some (Type translation) -> 
+     (case translation.target of
+        | Name [x, y] -> Some (x,  y)
+        | Name [y]    -> Some ("", y)
+        | _ -> None) % Name -> Term
+   | _ -> None
 
-op qid2OpName (Qualified (q, id) : QualifiedId, 
-               ctxt              : S2I_Context) 
- : I_OpName = 
+op pragmaOpTranslation (Qualified (q, id) : QualifiedId, 
+                        ctxt              : S2I_Context) 
+ : Option I_OpName = 
  %% Possibly rename using pragma info for type map
  let match =
      findLeftmost (fn translation -> 
@@ -67,23 +67,26 @@ op qid2OpName (Qualified (q, id) : QualifiedId,
    | Some (Op match) -> 
      (case match.target of
         | Name [x, y] -> 
-          (case match.fixity of
-             | Some Prefix  -> (x,  "prefix_"  ^ y)
-             | Some Postfix -> (x,  "postfix_" ^ y)
-             | _ ->            (x,  y))
+          Some (case match.fixity of
+                  | Some Prefix  -> (x,  "prefix_"  ^ y)
+                  | Some Postfix -> (x,  "postfix_" ^ y)
+                  | _ ->            (x,  y))
         | Name [y] -> 
-          (case match.fixity of
-             | Some Prefix  -> ("", "prefix_"  ^ y)
-             | Some Postfix -> ("", "postfix_" ^ y)
-             | _ ->            ("", y))
-        | _ ->  (q, id))
-   | _ -> (q, id)
+          Some (case match.fixity of
+                  | Some Prefix  -> ("", "prefix_"  ^ y)
+                  | Some Postfix -> ("", "postfix_" ^ y)
+                  | _ ->            ("", y))
+        | _ -> 
+          % Name -> Term
+          None)
+   | _ -> 
+     None
 
-op qid2VarName (Qualified (q, id) : QualifiedId, 
-                ctxt              : S2I_Context) 
- : I_VarName = 
- %% Vars are not renamed
- (q, id)
+
+%% Simple conversions:
+op qid2OpName   (Qualified (q, id) : QualifiedId) : I_OpName   = (q, id)
+op qid2TypeName (Qualified (q, id) : QualifiedId) : I_TypeName = (q, id)
+op qid2VarName  (Qualified (q, id) : QualifiedId) : I_VarName  = (q, id)
 
 
 op unsetToplevel (ctxt : S2I_Context) : S2I_Context =
@@ -319,8 +322,15 @@ op typeinfo2typedef (qid     : QualifiedId,
  : Option I_TypeDefinition =
  if definedTypeInfo? ms_info then
    let (ms_tvs, ms_type) = unpackFirstTypeDef ms_info in
-   let i_typename = qid2TypeName (qid, ctxt) in
-   Some (i_typename, type2itype (ms_tvs, ms_type, ctxt))
+   case pragmaTypeTranslation (qid, ctxt) of
+     | Some i_typename ->   
+       % let _ = writeLine("Suppress definition for translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+       %% don't need definitions for types defined in target
+       None
+     | _ ->
+       let i_typename = qid2TypeName qid in
+       % let _ = writeLine("Emit definition for base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+       Some (i_typename, type2itype (ms_tvs, ms_type, ctxt))
  else
    None 
 
@@ -669,8 +679,14 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
   
    | Base (qid, _, _) -> 
-     let i_typename = qid2TypeName (qid, ctxt) in
-     I_Base i_typename
+     (case pragmaTypeTranslation (qid, ctxt) of
+        | Some i_typename ->
+          % let _ = writeLine("Translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+          I_Base i_typename
+        | _ ->
+          let i_typename = qid2TypeName qid in
+          % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+          I_Base i_typename)
      
    | Subtype (ms_type, ms_term, _) -> % ignore the term...
      type2itype (ms_tvs, ms_type, ctxt)
@@ -896,8 +912,8 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  in
  let Qualified (q, lid) = qid in
  let qid0     = Qualified (q, "__" ^ lid ^ "__")                 in
- let id       = qid2OpName (qid, ctxt)                           in
- let id0      = qid2OpName (qid0, ctxt)                          in
+ let id       = qid2OpName qid                                   in
+ let id0      = qid2OpName qid0                                  in
  let ms_type  = unfoldToArrow (ctxt.ms_spec, ms_type)            in
  let i_type   = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
  let ctxt     = setCurrentOpType (qid, ctxt)                     in
@@ -1015,8 +1031,12 @@ op term2expression_fun (ms_fun  : MSFun,
        case ms_type of
          
          | Base (qid, _, _) ->
-           let i_fname = qid2OpName (qid, ctxt) in
-           I_ConstrCall (i_fname, i_selector, [])
+           (case pragmaOpTranslation (qid, ctxt) of
+              | Some i_fname ->
+                I_ConstrCall (i_fname, i_selector, [])
+              | _ ->
+                let i_fname = qid2OpName qid in
+                I_ConstrCall (i_fname, i_selector, []))
            
          | Boolean _ -> 
            I_ConstrCall (("Boolean", "Boolean"), i_selector, [])
@@ -1031,7 +1051,13 @@ op term2expression_fun (ms_fun  : MSFun,
  if arrowType? (ms_type, ctxt) then
    case ms_fun of
      | Op    (qid, _)     -> 
-       I_VarRef (qid2OpName (qid, ctxt))
+       (case pragmaOpTranslation (qid, ctxt) of
+          | Some i_opname ->
+            I_VarRef i_opname
+          | _ ->
+            let i_opname = qid2OpName qid in
+            I_VarRef i_opname)
+
      | Embed (id,  false) -> 
        let Arrow (_, ms_rng, _) = ms_type in
        term2expression_apply_fun (ms_fun,
@@ -1052,9 +1078,13 @@ op term2expression_fun (ms_fun  : MSFun,
      | Bool   b -> I_Bool b
        
      | Op (qid, _) -> 
-       let i_fname = qid2OpName (qid, ctxt) in
-       %if isOutputOp varname then VarDeref varname else 
-       I_Var i_fname
+       (case pragmaOpTranslation (qid, ctxt) of
+          | Some i_fname ->
+            I_Var i_fname
+          | _ ->
+            let i_fname = qid2OpName qid in
+            %if isOutputOp varname then VarDeref varname else 
+            I_Var i_fname)
        
      | Embed (id,arg?) -> 
        make_embedder (ms_type, id, arg?)
@@ -1100,7 +1130,7 @@ op term2expression_apply (ms_t1   : MSTerm,
               
             | Var ((id, _), _) ->
               let i_exprs   = getExprs4Args (ms_args, ctxt)  in
-              let i_varname = qid2VarName (mkUnQualifiedId id, ctxt) in % don't rename vars with pragma info
+              let i_varname = ("", id)                       in % don't rename vars with pragma info
 
               % infer the type of the original lhs to get the real type of the map
               % taking all the projections into account
@@ -1146,7 +1176,10 @@ op term2expression_apply_fun (ms_fun      : MSFun,
  case ms_fun of
    | Op (qid, _) ->
      let i_exprs     = getExprs4Args (ms_args, ctxt)                    in
-     let i_fname     = qid2OpName (qid, ctxt)                           in
+     let i_fname     = case pragmaOpTranslation (qid, ctxt) of
+                         | Some i_fname -> i_fname
+                         | _ -> qid2OpName qid
+     in
      % infer the type of the original lhs to get the real type of the map
      % taking all the projections into account
      let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs)            in
@@ -1171,7 +1204,10 @@ op term2expression_apply_fun (ms_fun      : MSFun,
          case ms_type of
            
            | Base (qid, _, _) ->
-             let i_fname = qid2OpName (qid, ctxt) in
+             let i_fname = case pragmaOpTranslation (qid, ctxt) of
+                             | Some i_fname -> i_fname
+                             | _ -> qid2OpName qid
+             in
              let i_exprs = case ms_t2 of
                              | Record (ms_fields, b) ->
                                if numbered? ms_fields then
@@ -1326,7 +1362,10 @@ op equalsExpression (ms_t1 : MSTerm, ms_t2 : MSTerm, ctxt : S2I_Context)
        
        | Base (qid, _, _) ->
          let eqid as Qualified (eq, eid) = getEqOpQid qid in
-         let i_eq_fname = qid2OpName (eqid, ctxt) in
+         let i_eq_fname = case pragmaOpTranslation (eqid, ctxt) of
+                            | Some i_eq_fname -> i_eq_fname
+                            | _ -> qid2OpName eqid
+         in
          (case AnnSpec.findTheOp (ctxt.ms_spec, eqid) of
             | Some _ ->
               I_FunCall (i_eq_fname, [], [t2e ms_t1, t2e ms_t2])
