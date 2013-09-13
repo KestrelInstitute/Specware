@@ -25,10 +25,13 @@ CPrint qualifying spec
     | C_Int16         -> ppBaseType  ("int16_t"       , p)  % <stdint.h>
     | C_Int32         -> ppBaseType  ("int32_t"       , p)  % <stdint.h>
     | C_Int64         -> ppBaseType  ("int64_t"       , p)  % <stdint.h>
+    | C_IntInf        -> ppBaseType  ("unbounded_int" , p) 
+
     | C_UInt8         -> ppBaseType  ("uint8_t"       , p)  % <stdint.h>
     | C_UInt16        -> ppBaseType  ("uint16_t"      , p)  % <stdint.h>
     | C_UInt32        -> ppBaseType  ("uint32_t"      , p)  % <stdint.h>
     | C_UInt64        -> ppBaseType  ("uint64_t"      , p)  % <stdint.h>
+    | C_UIntInf       -> ppBaseType  ("unbounded_unsigned_int" , p) 
       
     | C_Size          -> ppBaseType  ("uint32_t"      , p)  % TODO: ? machine dependent?
       

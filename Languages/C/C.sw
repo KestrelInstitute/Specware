@@ -55,10 +55,13 @@ C qualifying spec
     | C_Int16                  % same as 'signed short int'   or 'signed int'           or 'int'
     | C_Int32                  % same as 'signed int'         or 'signed long int'      or 'int'
     | C_Int64                  % same as 'signed long int'    or 'signed long long int'
+    | C_IntInf                 % unbounded ints, no simple representation
+
     | C_UInt8                  % same as 'unsigned char'      or 'char'
     | C_UInt16                 % same as 'unsigned short int' or 'unsigned int'         
     | C_UInt32                 % same as 'unsigned int'       or 'unsigned long int'
     | C_UInt64                 % same as 'unsigned long int'  or 'unsigned long long int'
+    | C_UIntInf                % unbounded unsigned ints, no simple representation
 
     | C_Size                   % used as coercion from ptrs, length of arrays, etc. -- machine dependent
 

@@ -465,8 +465,8 @@ op c4Type (ctxt : I2C_Context,
              if n <= 2**16 then C_UInt16 else
              if n <= 2**32 then C_UInt32 else
              if n <= 2**64 then C_UInt64 else
-               let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using C_UInt64") in
-               C_UInt64
+               let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using C_UIntInf") in
+               C_UIntInf
          in
          (cspc, c_type)
          
@@ -480,8 +480,8 @@ op c4Type (ctxt : I2C_Context,
              if -(2**15) - 1 <= m && n <= 2**15 then C_Int16  else
              if -(2**31) - 1 <= m && n <= 2**31 then C_Int32  else
              if -(2**63) - 1 <= m && n <= 2**63 then C_Int64  else
-             let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_Int32") in
-             C_Int64
+             let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_IntInf") in
+             C_IntInf
          in
          (cspc, c_type)
          
@@ -514,8 +514,8 @@ op c4Types (ctxt  : I2C_Context,
 op c4PrimitiveType (prim : I_Primitive) : C_Type =
  case prim of
    | I_Bool   -> C_Int8
-   | I_Nat    -> let _ = writeLine ("I2LToC Warning: unbounded Nat, using C_UInt64") in C_UInt64
-   | I_Int    -> let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int64")  in C_Int64
+   | I_Nat    -> let _ = writeLine ("I2LToC Warning: unbounded Nat, using C_UIntInf") in C_UIntInf
+   | I_Int    -> let _ = writeLine ("I2LToC Warning: unbounded Int, using C_IntInf")  in C_IntInf
    | I_Char   -> C_Char
    | I_String -> C_String
    | I_Float  -> C_Float
@@ -1186,8 +1186,8 @@ op map_binary_name (s : String) : Option C_BinaryOp =
    | "||"  -> Some C_LogOr        
    | "=="  -> Some C_Eq           
    | "!="  -> Some C_NotEq        
-   | "< "  -> Some C_Lt           
-   | "> "  -> Some C_Gt           
+   | "<"   -> Some C_Lt           
+   | ">"   -> Some C_Gt           
    | "<="  -> Some C_Le           
    | ">="  -> Some C_Ge           
    | _ -> None
@@ -1212,10 +1212,14 @@ op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr
    None
  else 
    case typed_expr.expr of
-     | I_Var     (_, "Zero")                        -> Some (cspc, block, C_Const (C_Int (true, 0)))
-     | I_Var     (_, "One")                         -> Some (cspc, block, C_Const (C_Int (true, 1)))
+     | I_Var (_, "Zero") -> Some (cspc, block, C_Const (C_Int (true, 0)))
+     | I_Var (_, "One")  -> Some (cspc, block, C_Const (C_Int (true, 1)))
 
-     | I_FunCall (("System", "setf"), [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_Set, c1, c2)) e1 e2
+     | I_FunCall (("System", "setf"), [], [e1, e2]) -> 
+       c42e (fn (c1, c2) -> 
+               C_Binary (C_Set, c1, c2))
+            e1
+            e2
        
      | I_FunCall ((_, name),  [], [e1]) ->
        (case map_unary_name (name, Prefix) of % todo: allow PostFix
@@ -1242,12 +1246,12 @@ op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr
 op constExpr? (cspc : C_Spec, expr : C_Exp) : Bool =
  case expr of
    | C_Const  _                  -> true
-   | C_Unary  (_, e1)            -> constExpr? (cspc, e1)
-   | C_Binary (_, e1, e2)        -> (constExpr? (cspc, e1)) && (constExpr? (cspc, e2))
    | C_Var    ("TRUE",  C_Int32) -> true
    | C_Var    ("FALSE", C_Int32) -> true
    | C_Field  []                 -> true
-   | C_Field  (e::es)            -> (constExpr? (cspc, e)) && (constExpr? (cspc, C_Field es))
+   | C_Field  (e1 :: es)         -> (constExpr? (cspc, e1)) && (constExpr? (cspc, C_Field es))
+   | C_Unary  (_, e1)            ->  constExpr? (cspc, e1)
+   | C_Binary (_, e1, e2)        -> (constExpr? (cspc, e1)) && (constExpr? (cspc, e2))
      
      % this isn't true in C:
      % | C_Var (vname, vdecl) ->
