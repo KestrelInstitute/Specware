@@ -1,5 +1,20 @@
 
-(* A formalization of MetaSlang specs in Coq *)
+(*** A formalization of MetaSlang specs in Coq ***)
+
+(***
+ *** Misc helper functions
+ ***)
+
+Fixpoint multi_arrow (types : list Type) (B : Type) : Type :=
+  match types with
+    | nil => B
+    | cons A types' => A -> multi_arrow types' B
+  end.
+
+
+(***
+ *** Helper functions for identifying Prop and bool
+ ***)
 
 (* NOTE: MetaSlang depends on classical logic in a number of ways; the
     strongest way is that propositions are identified with Bool,
@@ -60,3 +75,37 @@ Definition iffb_pair (p : bool * bool) : bool :=
 Definition dec_neq_b_pair (p : bool * bool) :=
   negb (dec_eq_b_pair p).
 
+
+(***
+ *** The Spec type
+ ***)
+
+Record Spec :=
+  mk_Spec {
+      RT : Type;
+      holes : list Type;
+      partial_inst : multi_arrow holes RT
+    }.
+
+
+(***
+ *** Examples
+ ***)
+
+Module trivial_sig.
+
+  Record sig :=
+    mk_sig {
+        sig_t : Set
+      }.
+
+  Definition holes : list Type := cons Set nil.
+
+  Parameter t : Set.
+
+  Definition p_inst : multi_arrow holes sig := fun t => mk_sig {| sig_t := t |}.
+
+
+  Definition trivial_spec : Spec :=
+    mk_Spec {|
+        RT = 
