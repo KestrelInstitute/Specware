@@ -4,7 +4,7 @@ BUG_NUMBER=$1
 
 LISP_MODE=${LISP_MODE:-SBCL}
 
-xemacs=`which xemacs`
+emacs=`which emacs`
 export act='test Specware4 bug %BUG_NUMBER using $LISP_MODE'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin:${PATH}
@@ -24,7 +24,7 @@ else
 fi
 export LISP_DIRECTORY="$SPECWARE4"
 
-xemacs=`which xemacs`
+emacs=`which emacs`
 
 LOG_FILE=/tmp/test-specware4-bug-$BUG_NUMBER-`/bin/date +"%y%m%d-%H%M%S"`
 export LISP_HEAP_IMAGE=NONE
@@ -39,7 +39,7 @@ echo "Waiting for $LOG_FILE ..."
 # We print a mini-buffer progress msg for each test,
 # so make the value very much larger -- 100000.
 
-$xemacs -no-init-file \
+$emacs -no-init-file \
 	-geometry 137x50-50-50 \
 	-name "Specware4" \
 	-title "Specware4" \
