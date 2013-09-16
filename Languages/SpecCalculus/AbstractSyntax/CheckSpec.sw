@@ -3,14 +3,76 @@
 %% transformation CheckSpec (which is logically the identity
 %% transformation but also prints messages about problems in specs).
 
+%% TODO: Move this file to something under Languages/MetaSlang.
+%% TODO: combine all opinfo checks into one routine
+%% TODO: consistently count and report the number of errors.
+
 CheckSpec qualifying spec 
 
 import ShowUtils
 import /Languages/MetaSlang/Specs/AnnSpec
 import /Languages/MetaSlang/Specs/Utilities
 import /Languages/MetaSlang/AbstractSyntax/AnnTerm
-
 %% import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
+
+%%TTODO: Not right <- huh?
+%% Strip off a call to Pi if it is the outermost construct in the term:
+op [b] stripPossiblePi (tm : ATerm b) : ATerm b =
+  case tm of
+  | Pi(_,tm,_) -> tm
+  | tm -> tm
+
+%% walk down the list, calling compare on each pair of elements.  return true if compare returns true for all pairs.
+op [a] comparePairwise? (compare : a * a -> Bool, x : List a) : Bool =
+  case x of
+  | [] -> true
+  | [hd] -> true
+  | hd::tl -> ((compare(hd, head tl)) && (comparePairwise? (compare, tl)))
+
+
+op [a] badOpInfo? (opinfo : AOpInfo a, spc : Spec) : Bool =
+  let name = primaryOpName opinfo in
+  let dfn = opinfo.dfn in
+  let triples = unpackTypedTerms dfn in % each triple is (tyvar, ty, body)
+  let tyvarss = map (fn x -> x.1) triples in
+  let tyvars_bad? = if ~ (allEqualElements? tyvarss) then let _ = writeLine("ERROR: Inconsistent type vars for the defintions of op " ^ show name ^ ".") in true else false in
+  let tys = map (fn x -> x.2) triples in
+  let _ = if (~ (comparePairwise? (equalType?, tys))) then writeLine("NOTE: Inconsistent types for the multiple defintions of op " ^ show name ^ " (may be okay).") else () in
+
+ %% TODO: check that Any does not appear in any argument of And?
+
+  % let dfnNoPi = stripPossiblePi dfn in
+  % %TODO: Add many more tests
+  % if (existsSubTerm (fn tm -> case tm of | Pi(_,_,_) -> true | _ -> false) dfnNoPi) then
+  %   let _ = writeLine ("ERROR: Pi term found not at top level in op " ^ show name ^ ".") in true
+  % else
+  %   false
+  tyvars_bad?
+
+op opsOkay?(s : Spec) : Bool =
+  %% For every op info in the hash table, verify that every op-reference 
+  %% has a corresponding entry.
+  %% TODO: types, op-refs within types, etc.
+  let
+    def bad_ref? (nm : QualifiedId) (tm:MSTerm) =
+      case tm of
+        | Fun (Op (qid, _), _, _) ->
+          (case findTheOp (s, qid) of
+             | Some _ -> false
+             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
+        | _ -> false
+  in 
+  let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> existsSubTerm (bad_ref? (primaryOpName info)) info.dfn) s.ops in
+  let ops_with_free_vars = countOpInfos (fn (info) -> case (freeVars info.dfn) of
+                                                         | [] -> false
+                                                         | vars -> let _ = writeLine ("ERROR: Op " ^ show (primaryOpName info) ^ " has the following free vars in its body: " ^ (anyToString vars) ^ ".") in
+                                                           true)
+                                         s.ops
+  in
+  let other_bad_op_infos = countOpInfos (fn x -> badOpInfo?(x, s)) s.ops in
+  (ops_that_call_non_existing_ops = 0 && ops_with_free_vars = 0)
+                  
+
 
 op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
  %% case elaboratePosSpec(s, "") of  % TODO Stephen says this is not really the right thing to call.
@@ -89,37 +151,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                  false
                   s.ops
   in
-  %% For every op info in the hash table, verify that every op-reference 
-  %% has a corresponding entry.
-  %% TODO: types, op-refs within types, etc.
-  let
-    def bad_ref? (nm : QualifiedId) (tm:MSTerm) =
-      case tm of
-        | Fun (Op (qid, _), _, _) ->
-          (case findTheOp (s, qid) of
-             | Some _ -> false
-             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
-        | _ -> false
-  in 
-  let calls_to_non_existing_ops? =
-      foldOpInfos (fn (info, err) ->
-                     if existsSubTerm (bad_ref? (primaryOpName info)) info.dfn then
-                       true
-                     else
-                       err)
-                 false
-                  s.ops
-  in
-  let ops_with_free_vars? =
-      foldOpInfos (fn (info, err) ->
-                     case (freeVars info.dfn) of
-                       | [] -> err
-                       | vars -> let _ = writeLine ("ERROR: Op " ^ show (primaryOpName info) ^ " has the following free vars in its body: " ^ (anyToString vars) ^ ".") in
-                         true)
-                 false
-                  s.ops
-  in
-
+  let bad_ops? = ~ (opsOkay? s) in
 
   %% For every Type, TypeDef, Op, or OpDef in spec elements,
   %% verify that it refers to an entry in the appropriate hash table.
@@ -146,7 +178,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                        false
                         s.elements
   in
-  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || calls_to_non_existing_ops? || ops_with_free_vars? || missing_hash_table_entries?) of
+  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || bad_ops? || missing_hash_table_entries?) of
     | false ->
       let _ = writeLine success_msg in
       false
