@@ -2,9 +2,8 @@
 CoqTermPrinter qualifying spec
 
 import /Library/PrettyPrinter/BjornerEspinosa
-import /Library/Structures/Data/Monad
+import translate /Library/Structures/Data/Monad by {Monad._ +-> CoqTermPrinter._}
 import /Library/Base/List
-
 import /Library/Structures/Data/Monad/State
 
 (* specs, terms, etc. *)
@@ -103,17 +102,17 @@ type Context = { }
 
 type Monad a = Context -> Either (String, a)
 
-op monadBind: [a,b] (Monad a) * (a -> Monad b) -> Monad b
+% op monadBind: [a,b] (Monad a) * (a -> Monad b) -> Monad b
 def monadBind (m, f) =
   fn ctx ->
   case m ctx of
     | Right res -> f res ctx
     | Left str -> Left str
 
-op monadSeq : [a,b] (Monad a) * (Monad b) -> Monad b
+% op monadSeq : [a,b] (Monad a) * (Monad b) -> Monad b
 def monadSeq (m1, m2) = monadBind (m1, (fn _ -> m2))
 
-op return : [a] a -> Monad a
+% op return : [a] a -> Monad a
 def return x = fn ctx -> Right x
 
 op err : [a] String -> Monad a
