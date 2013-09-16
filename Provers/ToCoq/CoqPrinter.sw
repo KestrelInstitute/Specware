@@ -1,5 +1,5 @@
 
-CoqTermPrinter = CoqTermPrinter qualifying spec
+CoqTermPrinter qualifying spec
 
 import /Library/PrettyPrinter/BjornerEspinosa
 import /Library/Structures/Data/Monad
