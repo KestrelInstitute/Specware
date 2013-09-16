@@ -328,7 +328,8 @@ sorry
  apply (subgoal_tac "i < -1", drule zld_at_most_neg, simp, arith)
 done 
 *)
-  
+
+(* TODO: Is this lemma consistent? *)  
 lemma TwosComplement__toInt_length1:
   "\<lbrakk>TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x \<ge> zld i + 1"
  by (frule TwosComplement__toInt_length, auto)
