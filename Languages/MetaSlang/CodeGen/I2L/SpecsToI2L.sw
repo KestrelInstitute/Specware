@@ -20,7 +20,8 @@ type S2I_Context = {
                     ms_spec         : Spec,
                     lms             : LanguageMorphisms,
                     translations    : Translations,
-                    declaredStructs : List QualifiedId    % C pragma may say implementation of type is C struct
+                    declaredStructs : List QualifiedId,   % C pragma may say implementation of type is C struct
+                    expandTypes?    : Bool                % If false, retain some defined types (TODO: user-selective expansion?)
                     }
 
 op pragmaTypeTranslation (Qualified (q, id) : QualifiedId, 
@@ -131,27 +132,15 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
            
        | _ -> true
 
-op generateI2LCodeSpec (ms_spec      : Spec,
-                        constructors : List QualifiedId,
-                        lms          : LanguageMorphisms,
-                        natives      : Natives,
-                        translations : Translations)
- : I_ImpUnit =
- generateI2LCodeSpecFilter (ms_spec,
-                            constructors,
-                            fn _ -> true,    % desire all types
-                            fn _ -> true,    % desire all ops
-                            lms,
-                            natives,
-                            translations)
-
+%% Called from generateCSpecFromTransformedSpecIncrFilter in MetaSlang/CodeGen/C/SpecToCSpec.sw 
 op generateI2LCodeSpecFilter (ms_spec       : Spec,
                               constructors  : List QualifiedId,
                               desired_type? : QualifiedId -> Bool,
                               desired_op?   : QualifiedId -> Bool,
                               lms           : LanguageMorphisms,
                               natives       : Natives,
-                              translations  : Translations)
+                              translations  : Translations,
+                              expand_types? : Bool)
  : I_ImpUnit =
  let declared_structs = 
      foldl (fn (names, translation) ->
@@ -173,7 +162,8 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
              ms_spec         = ms_spec,
              lms             = lms,
              translations    = translations,
-             declaredStructs = declared_structs}
+             declaredStructs = declared_structs,
+             expandTypes?    = expand_types?}
  in
  let
   def print_q_id (q, id) =
@@ -324,6 +314,7 @@ op typeinfo2typedef (qid     : QualifiedId,
    let (ms_tvs, ms_type) = unpackFirstTypeDef ms_info in
    case pragmaTypeTranslation (qid, ctxt) of
      | Some i_typename ->   
+       %% Type should have been filtered by nativeType? 
        % let _ = writeLine("Suppress definition for translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
        %% don't need definitions for types defined in target
        None
@@ -552,6 +543,17 @@ op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context)
    | _ ->
      false
 
+% utility for stepwise type expansion
+op expandTypeOnce (name : TypeName, ctxt : S2I_Context) 
+ : Option MSType =
+ case findTheType (ctxt.ms_spec, name) of
+   | Some info ->
+     % let _ = writeLine("Expanding " ^ show name ^ " to " ^ printType info.dfn) in
+     Some info.dfn
+   | _ ->
+     % let _ = writeLine("Not Expanding " ^ show name) in
+     None
+
 op type2itype (ms_tvs  : TyVars,
                ms_type : MSType,
                ctxt    : S2I_Context)
@@ -684,6 +686,8 @@ op type2itype (ms_tvs  : TyVars,
           % let _ = writeLine("Translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
           I_Base i_typename
         | _ ->
+          %% TODO: this will change to possibly expand type, 
+          %%        paying attention to reachability via ops in executable slice
           let i_typename = qid2TypeName qid in
           % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
           I_Base i_typename)

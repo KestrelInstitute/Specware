@@ -284,6 +284,7 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
                              app_name     : String,
                              opt_filename : Option String)
  : Spec =
+ let expand_types? = false in  % TODO: move up to be an argument
  let empty_c_spec = emptyCSpec "" in
  let 
    def desired_type? (Qualified (q, id)) =
@@ -293,11 +294,12 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
      true
  in
  let _ = 
-     case generateCSpecFromTransformedSpecIncrFilter ms_spec 
-                                                     app_name 
-                                                     empty_c_spec 
-                                                     desired_type?
-                                                     desired_op?
+     case generateCSpecFromTransformedSpecIncrFilter (ms_spec,
+                                                      app_name,
+                                                      empty_c_spec,
+                                                      desired_type?,
+                                                      desired_op?,
+                                                      expand_types?)
        of
        | Some c_spec ->
          printCSpec (c_spec, app_name, opt_filename) 
@@ -317,7 +319,8 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
 
 op generateCSpec (ms_spec : Spec) (app_name : String) 
  : Option C_Spec =
+ let expand_types? = false in  % TODO: move up to be an argument
  let ms_spec = SpecTransform.transformSpecTowardsC ms_spec in
- generateCSpecFromTransformedSpec ms_spec app_name 
+ generateCSpecFromTransformedSpec (ms_spec, app_name, expand_types?)
 
 end-spec

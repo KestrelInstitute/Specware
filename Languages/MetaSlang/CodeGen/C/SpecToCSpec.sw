@@ -66,11 +66,12 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 
  revised_spec
 
-op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec) 
-                                              (app_name      : String) 
-                                              (old_c_spec    : C_Spec)
-                                              (desired_type? : QualifiedId -> Bool) 
-                                              (desired_op?   : QualifiedId -> Bool) 
+op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec,
+                                               app_name      : String, 
+                                               old_c_spec    : C_Spec,
+                                               desired_type? : QualifiedId -> Bool,
+                                               desired_op?   : QualifiedId -> Bool, 
+                                               expand_types? : Bool)
 
  : Option C_Spec =
  let lms             = parseCTranslationPragmas ms_spec in
@@ -85,7 +86,8 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
                                                   desired_op?,
                                                   lms,
                                                   natives,
-                                                  translations)
+                                                  translations,
+                                                  expand_types?)
  in
  let new_c_spec      = generateC4ImpUnit (i2l_spec,
                                           old_c_spec, 
@@ -98,27 +100,34 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec)
 %% Increment a pre-existing C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpecIncr (ms_spec    : Spec) 
-                                        (app_name   : String) 
-                                        (old_c_spec : C_Spec)
+op generateCSpecFromTransformedSpecIncr (ms_spec       : Spec,
+                                         app_name      : String,
+                                         old_c_spec    : C_Spec,
+                                         expand_types? : Bool)
  : Option C_Spec =
  let 
   def desired_type? _ = true 
   def desired_op?   _ = true
  in
- generateCSpecFromTransformedSpecIncrFilter ms_spec 
-                                            app_name
-                                            old_c_spec 
-                                            desired_type?
-                                            desired_op?
+ generateCSpecFromTransformedSpecIncrFilter (ms_spec,
+                                             app_name,
+                                             old_c_spec,
+                                             desired_type?,
+                                             desired_op?,
+                                             expand_types?)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpec (ms_spec : Spec) (app_name : String) 
+op generateCSpecFromTransformedSpec (ms_spec       : Spec,
+                                     app_name      : String,
+                                     expand_types? : Bool)
  : Option C_Spec =
  let old_c_spec = emptyCSpec "" in
- generateCSpecFromTransformedSpecIncr ms_spec app_name old_c_spec
+ generateCSpecFromTransformedSpecIncr (ms_spec,
+                                       app_name,
+                                       old_c_spec,
+                                       expand_types?)
 
 end-spec
