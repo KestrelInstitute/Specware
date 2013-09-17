@@ -3,7 +3,6 @@ CoqTermPrinter qualifying spec
 
 import /Library/PrettyPrinter/BjornerEspinosa
 import translate /Library/Structures/Data/Monad by {Monad._ +-> CoqTermPrinter._}
-import /Library/Base/List
 import /Library/Structures/Data/Monad/State
 
 (* specs, terms, etc. *)
