@@ -35,6 +35,9 @@ op make_LanguageMorphism (source   : Language,
   target   = target,
   sections = sections}
 
+type NativeLocations = List NativeLocation
+type NativeLocation  = {name : Name, location : Option Location}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Language
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -391,9 +394,10 @@ op printTypeTranslation (trans : TypeTranslation) : String =
 type FieldId  = Symbol
 type FieldRef = {type_name : Name, field_id : FieldId}
 
-type FieldTranslation = {source   : FieldRef, 
-                         target   : FieldRef,
-                         location : Option Location}
+type FieldTranslations = List FieldTranslation
+type FieldTranslation  = {source   : FieldRef, 
+                          target   : FieldRef,
+                          location : Option Location}
 
 op make_Field_Translation (source   : FieldRef,
                            target   : FieldRef,
@@ -522,28 +526,8 @@ op extractNatives (lms : LanguageMorphisms) : Natives =
        lms
 
 type Natives = List Native  
-type Native  = | Type {name : Name, location : Option Location}
-               | Op   {name : Name, location : Option Location}
-
-op nativeOp? (full_name : Name,
-              natives   : Natives) 
- : Bool =
- let just_id = [last full_name] in
- exists? (fn native ->
-            case native of
-              | Op x -> x.name = full_name || x.name = just_id
-              | _ -> false)
-         natives
-
-op nativeType? (full_name : Name,
-                natives   : Natives) 
- : Bool =
- let just_id = [last full_name] in
- exists? (fn native ->
-            case native of
-              | Type x -> x.name = full_name || x.name = just_id
-              | _ -> false)
-         natives
+type Native  = | Type NativeLocation
+               | Op   NativeLocation
 
 op make_Type_Native (name     : Name,
                      location : Option Location)
@@ -568,6 +552,111 @@ op printNative (lm_native : Native) : String =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op make_Generated_Section () : Section = Generated
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Post-Processing for easier use 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+type LMData = {lms                : LanguageMorphisms,
+               op_translations    : OpTranslations,
+               type_translations  : TypeTranslations,
+               field_translations : FieldTranslations,
+               native_ops         : NativeLocations,
+               native_types       : NativeLocations}
+
+op nativeOp? (name : Name, lm_data : LMData) : Bool =
+ let just_id = [last name] in
+ exists? (fn native -> 
+            native.name = name || 
+            native.name = just_id) 
+         lm_data.native_ops
+
+op nativeType? (name : Name, lm_data : LMData) : Bool =
+ let just_id = [last name] in
+ exists? (fn native -> 
+            native.name = name || 
+            native.name = just_id) 
+         lm_data.native_types
+            
+op collectNativeOps (natives      : Natives, 
+                     translations : OpTranslations) 
+ : NativeLocations =
+ let native_ops = foldl (fn (nlocs, native : Native) ->
+                           case native of
+                             | Op nloc -> nlocs ++ [nloc]
+                             | _ -> nlocs)
+                        []
+                        natives
+ in
+ let native_ops = foldl (fn (nlocs : NativeLocations, trans : OpTranslation) ->
+                           let name = trans.source in
+                           if exists? (fn nloc -> name = nloc.name) nlocs then
+                             nlocs
+                           else
+                             case trans.location of
+                               | Some loc -> nlocs ++ [{name = name, location = Some loc}]
+                               | _ -> nlocs)
+                        native_ops
+                        translations
+ in
+ native_ops
+
+op collectNativeTypes (natives      : Natives, 
+                       translations : TypeTranslations) 
+ : NativeLocations =
+ let native_types = foldl (fn (nlocs, native : Native) ->
+                             case native of
+                               | Type nloc -> nlocs ++ [nloc]
+                               | _ -> nlocs)
+                          []
+                          natives
+ in
+ let native_types = foldl (fn (nlocs : NativeLocations, trans : TypeTranslation) ->
+                             let name = trans.source in
+                             if exists? (fn nloc -> name = nloc.name) nlocs then
+                               nlocs
+                             else
+                               case trans.location of
+                                 | Some loc -> nlocs ++ [{name = name, location = Some loc}]
+                                 | _ -> nlocs)
+                          native_types
+                          translations
+ in
+ native_types
+
+op make_LMData (lms : LanguageMorphisms) : LMData =
+ let translations       = extractTranslations lms in
+ let natives            = extractNatives      lms in
+ let op_translations    = foldl (fn (otranslations, trans) ->
+                                   case trans of
+                                     | Op otrans -> otranslations ++ [otrans]
+                                     | _ -> otranslations)
+                                []
+                                translations
+ in
+ let type_translations  = foldl (fn (ttranslations, trans) ->
+                                   case trans of
+                                     | Type ttrans -> ttranslations ++ [ttrans]
+                                     | _ -> ttranslations)
+                                []
+                                translations
+ in
+ let field_translations = foldl (fn (ftranslations, trans) ->
+                                   case trans of
+                                     | Field ftrans -> ftranslations ++ [ftrans]
+                                     | _ -> ftranslations)
+                                []
+                                translations
+ in
+ let native_ops         = collectNativeOps   (natives, op_translations)   in
+ let native_types       = collectNativeTypes (natives, type_translations) in
+
+ {lms                = lms,
+  op_translations    = op_translations,
+  type_translations  = type_translations,
+  field_translations = field_translations,
+  native_ops         = native_ops,
+  native_types       = native_types}
 
 end-spec
 

@@ -7,7 +7,7 @@ import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Specs/Printer
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
-
+import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/I2L/I2L
 
 op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
@@ -18,9 +18,8 @@ type S2I_Context = {
                     constructors    : List   QualifiedId, % not used, constructors distinguished by name containing "__"
                     currentOpType   : Option QualifiedId,
                     ms_spec         : Spec,
-                    lms             : LanguageMorphisms,
-                    translations    : Translations,
-                    declaredStructs : List QualifiedId,   % C pragma may say implementation of type is C struct
+                    lm_data         : LMData,
+                    declaredStructs : List   QualifiedId,
                     expandTypes?    : Bool                % If false, retain some defined types (TODO: user-selective expansion?)
                     }
 
@@ -29,20 +28,16 @@ op pragmaTypeTranslation (Qualified (q, id) : QualifiedId,
  : Option I_TypeName = 
  %% Possibly rename using pragma info for type map
  let match =
-     findLeftmost (fn translation -> 
-                     case translation of
-                       | Type trans ->
-                         (case trans.source of
-                            | [x, y] -> q = x && id = y
-                            | [y]    -> id = y
-                            | _ -> false)
-                       | _ ->
-                         false)
-                  ctxt.translations
+     findLeftmost (fn trans -> 
+                     case trans.source of
+                       | [x, y] -> q = x && id = y
+                       | [y]    -> id = y
+                       | _ -> false)
+                  ctxt.lm_data.type_translations
  in
  case match of
-   | Some (Type translation) -> 
-     (case translation.target of
+   | Some trans -> 
+     (case trans.target of
         | Name [x, y] -> Some (x,  y)
         | Name [y]    -> Some ("", y)
         | _ -> None) % Name -> Term
@@ -53,27 +48,23 @@ op pragmaOpTranslation (Qualified (q, id) : QualifiedId,
  : Option I_OpName = 
  %% Possibly rename using pragma info for type map
  let match =
-     findLeftmost (fn translation -> 
-                     case translation of
-                       | Op trans ->
-                         (case trans.source of
-                            | [x, y] -> q = x && id = y
-                            | [y]    -> id = y
-                            | _ -> false)
-                       | _ ->
-                         false)
-                  ctxt.translations
+     findLeftmost (fn trans ->
+                     case trans.source of
+                       | [x, y] -> q = x && id = y
+                       | [y]    -> id = y
+                       | _ -> false)
+                  ctxt.lm_data.op_translations
  in
  case match of
-   | Some (Op match) -> 
-     (case match.target of
+   | Some trans -> 
+     (case trans.target of
         | Name [x, y] -> 
-          Some (case match.fixity of
+          Some (case trans.fixity of
                   | Some Prefix  -> (x,  "prefix_"  ^ y)
                   | Some Postfix -> (x,  "postfix_" ^ y)
                   | _ ->            (x,  y))
         | Name [y] -> 
-          Some (case match.fixity of
+          Some (case trans.fixity of
                   | Some Prefix  -> ("", "prefix_"  ^ y)
                   | Some Postfix -> ("", "postfix_" ^ y)
                   | _ ->            ("", y))
@@ -82,7 +73,6 @@ op pragmaOpTranslation (Qualified (q, id) : QualifiedId,
           None)
    | _ -> 
      None
-
 
 %% Simple conversions:
 op qid2OpName   (Qualified (q, id) : QualifiedId) : I_OpName   = (q, id)
@@ -134,34 +124,31 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
 
 %% Called from generateCSpecFromTransformedSpecIncrFilter in MetaSlang/CodeGen/C/SpecToCSpec.sw 
 op generateI2LCodeSpecFilter (ms_spec       : Spec,
+                              lm_data       : LMData,
                               constructors  : List QualifiedId,
                               desired_type? : QualifiedId -> Bool,
                               desired_op?   : QualifiedId -> Bool,
-                              lms           : LanguageMorphisms,
-                              natives       : Natives,
-                              translations  : Translations,
                               expand_types? : Bool)
  : I_ImpUnit =
  let declared_structs = 
-     foldl (fn (names, translation) ->
-              case translation of
-                | Type trans | trans.struct? -> 
-                  let qid = case trans.source of
-                              | [id]   -> mkUnQualifiedId id
-                              | [q,id] -> mkQualifiedId (q, id)
-                  in
-                  names ++ [qid]
-                | _ -> names)
+     foldl (fn (names, trans) ->
+              if trans.struct? then
+                let qid = case trans.source of
+                            | [id]   -> mkUnQualifiedId id
+                            | [q,id] -> mkQualifiedId (q, id)
+                in
+                names ++ [qid]
+              else 
+                names)
            []
-           translations
+           lm_data.type_translations
  in
  let ctxt = {specName        = "", 
              isTopLevel?     = true, 
              constructors    = constructors,
              currentOpType   = None,
              ms_spec         = ms_spec,
-             lms             = lms,
-             translations    = translations,
+             lm_data         = lm_data,
              declaredStructs = declared_structs,
              expandTypes?    = expand_types?}
  in
@@ -176,31 +163,29 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
      foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
                             let qid = Qualified (q, id) in
                             %% to be considered, op must be desired and not translate to native op
-                            if (exists? (fn translation ->
-                                           case translation of
-                                             | Op trans | trans.native? ->
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false
-                                             | Op trans ->
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false
-                                             | _ -> false)
-                                        translations)
+                            if (exists? (fn trans ->
+                                           if trans.native? then
+                                             if trans.source = [q, id] then
+                                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
+                                               true
+                                             else if trans.source = [id] then
+                                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
+                                               true
+                                             else
+                                               false
+                                           else
+                                             if trans.source = [q, id] then
+                                               let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
+                                               true
+                                             else if trans.source = [id] then
+                                               let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
+                                               true
+                                             else
+                                               false)
+                                        lm_data.op_translations)
                               then
                                 i_opdefs
-                            else if nativeOp? ([q,id], natives) then
+                            else if nativeOp? ([q,id], lm_data) then
                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
                               i_opdefs
                             else if desired_op? qid then
@@ -216,18 +201,17 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
      foldlSpecElements (fn (i_typedefs, el) ->
                           case el of
                             | TypeDef (name as Qualified (q, id), _) ->
-                              if (exists? (fn translation ->
-                                             case translation of
-                                               | Type trans | trans.native? ->
-                                                 if trans.source = [q, id] then
-                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                                   true
-                                                 else if trans.source = [id] then
-                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                                   true
-                                                 else
-                                                   false
-                                             | Type trans ->
+                              if (exists? (fn trans ->
+                                             if trans.native? then
+                                               if trans.source = [q, id] then
+                                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
+                                                 true
+                                               else if trans.source = [id] then
+                                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
+                                                 true
+                                               else
+                                                 false
+                                             else
                                                if trans.source = [q, id] then
                                                  let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
                                                  true
@@ -235,12 +219,11 @@ op generateI2LCodeSpecFilter (ms_spec       : Spec,
                                                  let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
                                                  true
                                                else
-                                                 false
-                                               | _ -> false)
-                                          translations)
+                                                 false)
+                                           lm_data.type_translations)
                                 then
                                   i_typedefs
-                              else if nativeType? ([q,id], natives) then
+                              else if nativeType? ([q,id], lm_data) then
                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
                                 i_typedefs
                               else if desired_type? name then

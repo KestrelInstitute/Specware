@@ -42,62 +42,45 @@ type I2C_Context = {
                     xcspc            : C_Spec,    % for incremental code generation, xcspc holds existing cspec being extended
                     currentContext   : CurrentContext,
                     currentFunParams : C_VarDecls,
-                    lms              : LanguageMorphisms,
-                    translations     : Translations
+                    lm_data          : LMData
                     }
-op default_I2C_Context : I2C_Context =
- {
-  voidToUIntType   = C_UInt32,       % TODO: target various versions of C
-  xcspc            = emptyCSpec "",
-  currentContext   = Unknown,
-  currentFunParams = [],
-  lms              = [],
-  translations     = []
-  }
 
 op setCurrentFunParams (ctxt : I2C_Context, params : C_VarDecls) : I2C_Context =
  ctxt << {currentFunParams = params}                        
 
-op generateC4ImpUnit (impunit      : I_ImpUnit, 
-                      xcspc        : C_Spec, 
-                      lms          : LanguageMorphisms,
-                      translations : Translations)
- : C_Spec =
- generateC4ImpUnitHack (impunit, xcspc, lms, translations)
-
-op generateC4ImpUnitHack (impunit      : I_ImpUnit, 
-                          xcspc        : C_Spec, 
-                          lms          : LanguageMorphisms,
-                          translations : Translations)
+op generateC4ImpUnit (impunit : I_ImpUnit, 
+                      xcspc   : C_Spec, 
+                      lm_data : LMData)
  : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
- let includes      = extractImports   lms          in
- let include_strs  = map printImport  includes     in
- let verbatims     = extractVerbatims lms          in
- let defines       = foldl (fn (defines, translation) ->
-                              case translation of
-                                | Type trans -> 
-                                  (case trans.target of 
-                                     | Name _ -> defines
-                                     | term -> 
-                                       defines ++ [(printName trans.source,
-                                                    printTerm term)])
-                                | Op   trans -> 
-                                  (case trans.target of 
-                                     | Name _ -> defines
-                                     | term -> 
-                                       defines ++ [(printName trans.source,
-                                                    printTerm term)])
-                                | _ -> defines)
-                            []
-                            translations
+ let includes      = extractImports   lm_data.lms in
+ let include_strs  = map printImport  includes    in
+ let verbatims     = extractVerbatims lm_data.lms in
+ let type_defines  = foldl (fn (defines, trans) ->
+                              case trans.target of 
+                                | Name _ -> defines
+                                | term -> 
+                                  defines ++ [(printName trans.source,
+                                               printTerm term)])
+                           []
+                           lm_data.type_translations
  in
+ let op_defines    = foldl (fn (defines, trans) ->
+                              case trans.target of 
+                                | Name _ -> defines
+                                | term -> 
+                                  defines ++ [(printName trans.source,
+                                               printTerm term)])
+                           []
+                           lm_data.op_translations
+ in
+ let defines = type_defines ++ op_defines in
+
  let ctxt = {xcspc            = xcspc,
              voidToUIntType   = C_Int32,  % TODO: see above
              currentContext   = Unknown,
              currentFunParams = [],
-             lms              = lms,
-             translations     = translations}
+             lm_data          = lm_data}
  in
 
  let cspc = emptyCSpec impunit.name in
@@ -1313,8 +1296,7 @@ op c4StadCode (ctxt       : I2C_Context,
  % decls are empty, so the following 2 lines have no effect:
  let declscspc = generateC4ImpUnit (stadcode.decls, 
                                     ctxt.xcspc, 
-                                    ctxt.lms, 
-                                    ctxt.translations)
+                                    ctxt.lm_data)
  in
  let cspc      = mergeCSpecs [cspc, declscspc] in
  let (cspc, block, stepstmts) =

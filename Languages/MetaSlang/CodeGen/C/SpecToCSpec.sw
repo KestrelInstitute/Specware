@@ -75,24 +75,18 @@ op generateCSpecFromTransformedSpecIncrFilter (ms_spec       : Spec,
 
  : Option C_Spec =
  let lms             = parseCTranslationPragmas ms_spec in
+ let lm_data         = make_LMData              lms     in
  let constructer_ops = []                               in
-%let ms_spec         = renameTypes (ms_spec, op_extern_types) in
- let natives         = extractNatives         lms                  in
- let translations    = extractTranslations    lms                  in
- let translations    = markNativeTranslations translations natives in
  let i2l_spec        = generateI2LCodeSpecFilter (ms_spec,
+                                                  lm_data,
                                                   constructer_ops,
                                                   desired_type?,
                                                   desired_op?,
-                                                  lms,
-                                                  natives,
-                                                  translations,
                                                   expand_types?)
  in
  let new_c_spec      = generateC4ImpUnit (i2l_spec,
                                           old_c_spec, 
-                                          lms,
-                                          translations)
+                                          lm_data)
  in
  Some new_c_spec
 
