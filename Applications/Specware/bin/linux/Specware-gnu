@@ -114,7 +114,7 @@ export LISP_DIRECTORY
 # echo "Specware-gnu:  SPECWARE_INIT_FORM = [$SPECWARE_INIT_FORM]"
 
 $emacs -l "$SPECWARE4"/Library/IO/Emacs/load-slime \
-       -f run-specware4 &
+       -f run-specware4
 #       -name "Specware" \
 #       -title "Specware" \
 #       -geometry =150x60+20+20 \
