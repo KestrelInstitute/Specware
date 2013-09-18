@@ -44,13 +44,10 @@
 					  (decode-universal-time (get-universal-time))
 					(format nil "/tmp/test-specware4-~D-~D-~D-~D-~D-~D"
 						yy mo dd hh mm ss))))
-  (let ((home (Specware::getenv "HOME"))
-	(subdir (format nil "Bugs/Bug_~4,'0D" bug-number)))
-    (if (probe-file (format nil "~A/Specware4/TestSuite/~A/" home subdir))
-	(test-specware4-subdir subdir log-file-name)
-      (with-open-file (s log-file-name :direction :output)
-	(format s "No test number ~D~%" bug-number)))))
-
-
-
-
+  (let ((subdir (format nil "Bugs/Bug_~4,'0D" bug-number)))
+    ;; CEM: Don't wire in HOME dir --- use SPECWARE4 environment variable
+    (let ((dir-to-check (format nil "~A/TestSuite/~A/" (Specware::getenv "SPECWARE4") subdir)))
+      (if (probe-file dir-to-check)
+          (test-specware4-subdir subdir log-file-name)
+          (with-open-file (s log-file-name :direction :output)
+            (format s "No test number ~D in directory ~S~%" bug-number dir-to-check))))))
