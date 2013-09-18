@@ -181,14 +181,12 @@ MetaSlang qualifying spec
 
 
  %%% Predicates
- op product?: [a] AType a -> Bool
- def product? s =
+ op [a] product? (s : AType a) : Bool =
    case s of
      | Product _ -> true
      | _         -> false
 
-  op maybePiType : [b] TyVars * AType b -> AType b
- def maybePiType (tvs, ty) =
+ op [b] maybePiType (tvs : TyVars, ty : AType b) : AType b =
    case tvs of
      | [] -> ty
      | _ -> Pi (tvs, ty, typeAnn ty)
@@ -243,8 +241,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %% type AField  b = FieldName * AType b  % used by products and co-products
  %% type FieldName = String
 
-  op getField: [a] List (Id * ATerm a) * Id -> Option(ATerm a)
- def getField (m, id) =
+ op [a] getField (m : List (Id * ATerm a), id : Id) : Option(ATerm a) =
    case findLeftmost (fn (id1,_) -> id = id1) m of
      | None      -> None
      | Some(_,t) -> Some t
@@ -258,8 +255,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %%%                Term Annotations
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op termAnn: [a] ATerm a -> a
- def termAnn tm =
+ op [a] termAnn (tm : ATerm a) : a =
    case tm of
      | Apply      (_,_,   a) -> a
      | ApplyN     (_,     a) -> a
@@ -279,8 +275,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | And        (_,     a) -> a
      | Any                a  -> a
 
-  op withAnnT: [a] ATerm a * a -> ATerm a
- def withAnnT (tm, a) =
+ op [a] withAnnT (tm : ATerm a, a : a) : ATerm a =
    case tm of
      | Apply      (t1, t2,   b) -> if a = b then tm else Apply      (t1, t2,     a)
      | ApplyN     (l,        b) -> if a = b then tm else ApplyN     (l,          a)
@@ -300,8 +295,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | And        (l,        b) -> if a = b then tm else And        (l,          a)
      | Any                   b  -> if a = b then tm else Any                     a
 
-  op typeAnn: [a] AType a -> a
- def typeAnn ty =
+ op [a] typeAnn (ty : AType a) : a =
    case ty of
      | Arrow     (_,_, a) -> a
      | Product   (_,   a) -> a
@@ -316,8 +310,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | And       (_,   a) -> a
      | Any             a  -> a
 
-  op patAnn: [a] APattern a -> a
- def patAnn pat =
+ op [a] patAnn (pat : APattern a) : a =
    case pat of
      | AliasPat     (_,_,   a) -> a
      | VarPat       (_,     a) -> a
@@ -332,8 +325,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | RestrictedPat(_,_,   a) -> a
      | TypedPat     (_,_,   a) -> a
 
-  op withAnnP: [a] APattern a * a -> APattern a
- def withAnnP (pat, b) =
+ op [a] withAnnP (pat : APattern a, b : a) : APattern a =
    case pat of
      | AliasPat      (p1,p2,   a) -> if b = a then pat else AliasPat     (p1,p2,   b)
      | VarPat        (v,       a) -> if b = a then pat else VarPat       (v,       b)
@@ -348,8 +340,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | RestrictedPat (p,t,     a) -> if b = a then pat else RestrictedPat(p,t,     b)
      | TypedPat      (p,s,     a) -> if b = a then pat else TypedPat    (p,s,     b)
 
-  op withAnnS: [a] AType a * a -> AType a
- def withAnnS (ty, a) =
+ op [a] withAnnS (ty : AType a, a : a) : AType a =
   % Avoid creating new structure if possible
    case ty of
      | Arrow     (s1,s2,    b) -> if a = b then ty else Arrow     (s1,s2,    a)
@@ -369,17 +360,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %%%                Type components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op unpackType    : [b] AType b -> TyVars * AType b
- op typeTyVars    : [b] AType b -> TyVars 
-
-
- def unpackType s =
+ op [b] unpackType (s : AType b) : TyVars * AType b =
    case s of
      | Pi (tvs, ty, _) -> (tvs, ty)
-     | And (tms, _) -> ([], s) %  fail ("unpackType: Trying to unpack an And of types.")
+     | And (tys, _) -> ([], s) %  fail ("unpackType: Trying to unpack an And of types.")
      | _ -> ([], s)
 
- def typeTyVars ty =
+ op [b] typeTyVars (ty : AType b) : TyVars =
    case ty of
      | Pi (tvs, _, _) -> tvs
      | And _ -> [] % fail ("typeTyVars: Trying to extract type vars from an And of types.")
@@ -388,26 +375,23 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  op [b] typeInnerType (ty : AType b) : AType b =
    case ty of
      | Pi (_, ty, _) -> ty
-     | And _ -> ty % fail ("typeInneType: Trying to extract inner type from an And of types.")
+     | And _ -> ty % fail ("typeInnerType: Trying to extract inner type from an And of types.")
      | _ -> ty
 
  op [a] anyType?(t: AType a): Bool =
    case t of
      | Any _        -> true
-     | Pi(_, tm, _) -> anyType? tm
-     | And(tms, _)  -> forall? anyType? tms
+     | Pi(_, ty, _) -> anyType? ty
+     | And(tys, _)  -> forall? anyType? tys
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op unpackTerm    : [a] ATerm a -> TyVars * AType a * ATerm a
- op termInnerTerm : [b] ATerm b -> ATerm b
-
  op maybeAndType  : [b] List (AType b) * b -> AType b % Defined in Equalities.sw
- op maybeMkAndTerm  : [b] List (ATerm b) * b -> ATerm b
- def maybeMkAndTerm(tms, a) =
+
+ op [b] maybeMkAndTerm(tms : List (ATerm b), a : b) : ATerm b =
    case tms of
      | [tm] -> tm
      | _ -> And(tms, a)
@@ -432,7 +416,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | Lambda([(_,_,tm)], _) -> transformSteps? tm     % Arguments given but no body
      | _ -> None
 
- def [a] unpackTerm t =
+ op [a] unpackTerm (t : ATerm a) : TyVars * AType a * ATerm a =
    let def unpack(t: (ATerm a), tvs: TyVars, o_ty: Option(AType a)): TyVars * (AType a) * (ATerm a) =
         case t of
 	 | Pi (tvs, tm, _) -> unpack(tm, tvs, o_ty)
@@ -576,7 +560,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
          else Some(maybeAndType (tys,  a))
      | _ -> None
 
- def termInnerTerm tm =
+ op [b] termInnerTerm (tm : ATerm b) : ATerm b =
    case tm of
      | Pi (_, tm, _) -> termInnerTerm tm
      | And (tm::r,pos) ->
@@ -718,9 +702,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %%%                Pattern components
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op patternType : [b] APattern b -> AType b
-
- def patternType pat =
+ op [b] patternType (pat : APattern b) : AType b =
    case pat of
      | AliasPat     (p1,_,    _) -> patternType p1
      | VarPat       ((_,s),   _) -> s
@@ -798,11 +780,11 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                                 (accum -> AType    b -> (AType    b * accum)) *
                                 (accum -> APattern b -> (APattern b * accum))
 
- op mapAccumTerm    : [accum,b] (TSP_MapAccums (accum,b)) -> accum -> ATerm    b -> (ATerm    b * accum)
- op mapAccumType    : [accum,b] TSP_MapAccums (accum,b) -> accum -> AType    b -> (AType    b * accum)
- op mapAccumPattern : [accum,b] TSP_MapAccums (accum, b) -> accum -> APattern b -> (APattern b * accum)
 
- def mapAccumTerm  (tsp as (term_map,_,_)) accum term =
+
+ op [accum,b] mapAccumTerm ((tsp as (term_map,_,_)) : (TSP_MapAccums (accum,b)))
+                           (accum : accum)
+                           (term : ATerm b) : (ATerm b * accum) =
    %%
    %% traversal of term with post-order applications of term_map
    %%
@@ -923,7 +905,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapAccumRec accum term
 
- def mapAccumType (tsp as (_, type_map, _)) accum ty =
+ op [accum,b] mapAccumType ((tsp as (_, type_map, _)) : TSP_MapAccums (accum,b))
+                           (accum : accum)
+                           (ty : AType b) : (AType b * accum) =
    let
 
      %% Written with explicit parameter passing to avoid closure creation
@@ -1025,7 +1009,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapAccumRec accum (tsp, type_map, ty)
 
- def mapAccumPattern (tsp as (_, _, pattern_map)) accum pattern =
+ op [accum,b] mapAccumPattern ((tsp as (_, _, pattern_map)) : TSP_MapAccums (accum, b))
+                              (accum : accum)
+                              (pattern : APattern b) : (APattern b * accum) =
    let
 
      def mapP accum (tsp, pattern) =
@@ -1093,15 +1079,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% "TSP" means "Term, Type, Pattern"
+ %%% "TSP" means "Term, Type, Pattern" (Used to be "Term, Sort, Pattern".)
 
  type TSP_Maps b = (ATerm    b -> ATerm    b) *
                    (AType    b -> AType    b) *
                    (APattern b -> APattern b)
 
- op mapTerm    : [b] TSP_Maps b -> ATerm    b -> ATerm    b
- op mapType    : [b] TSP_Maps b -> AType    b -> AType    b
- op mapPattern : [b] TSP_Maps b -> APattern b -> APattern b
 
 (*
    % GMK: The map* functions can be defined in terms of mapAccum*, as shown below. 
@@ -1126,8 +1109,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in val
 *)
 
-
- def mapTerm (tsp as (term_map,_,_)) term =
+ op [b] mapTerm ((tsp as (term_map,_,_)) : TSP_Maps b) (term : ATerm b) : ATerm b =
    %%
    %% traversal of term with post-order applications of term_map
    %%
@@ -1266,7 +1248,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapRec term
 
- def mapType (tsp as (_, type_map, _)) ty =
+ op [b] mapType ((tsp as (_, type_map, _)) : TSP_Maps b) (ty :AType b) : AType b =
    let
 
      %% Written with explicit parameter passing to avoid closure creation
@@ -1374,7 +1356,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapRec (tsp, type_map, ty)
 
- def mapPattern (tsp as (_, _, pattern_map)) pattern =
+ op [b] mapPattern ((tsp as (_, _, pattern_map)) : TSP_Maps b) (pattern : APattern b) : APattern b =
    let
 
      def mapP (tsp, pattern) =
@@ -1462,8 +1444,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      mapRec pattern
 
  %% Like mapTerm but ignores types
-  op mapSubTerms: [a] (ATerm a -> ATerm a) -> ATerm a -> ATerm a
- def mapSubTerms f term =
+ op [a] mapSubTerms (f : (ATerm a -> ATerm a)) (term : ATerm a) : ATerm a =
    let
 
      def mapT term =
@@ -1840,14 +1821,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
       | _  -> false
       )				    
 
- op  existsSubTermPat : [b] (ATerm b -> Bool) -> APattern b -> Bool
- def existsSubTermPat pred? pat =
+ op [b] existsSubTermPat (pred? : (ATerm b -> Bool)) (pat : APattern b) : Bool =
    case pat of
      | RestrictedPat(_,t,_) -> existsSubTerm pred? t
      | _ -> false
 
- op  existsPattern? : [b] (APattern b -> Bool) -> APattern b -> Bool
- def existsPattern? pred? pattern =
+ op [b] existsPattern? (pred? : (APattern b -> Bool)) (pattern : APattern b) : Bool =
    pred? pattern ||
    (case pattern of
      | AliasPat(p1, p2,_) ->
@@ -1906,8 +1885,7 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
     tm
 
  %% folds function over all the subterms in top-down order
-  op foldSubTerms : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
- def foldSubTerms f val term =
+ op [b,r] foldSubTerms (f : ATerm b * r -> r) (val : r) (term : ATerm b) : r =
    let newVal = f (term, val) in
    case term of
 
@@ -1957,15 +1935,12 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
 
      | _  -> newVal
 
- op  foldSubTermsPat : [b,r] (ATerm b * r -> r) -> r -> APattern b -> r
- def foldSubTermsPat f val pat =
+ op [b,r] foldSubTermsPat (f : ATerm b * r -> r) (val : r) (pat : APattern b) : r =
    case pat of
      | RestrictedPat(_,t,_) -> foldSubTerms f val t
      | _ -> val
 
-
-  op foldSubTermsEvalOrder : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
- def foldSubTermsEvalOrder f val term =
+ op [b,r] foldSubTermsEvalOrder (f : ATerm b * r -> r) ( val : r) (term : ATerm b) : r =
    let recVal =
        case term of
 
@@ -2040,14 +2015,12 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
        | Lambda _ -> recVal
        | _        -> f (term, recVal)
 
- op  foldSubTermsEvalOrderPat : [b,r] (ATerm b * r -> r) -> r -> APattern b -> r
- def foldSubTermsEvalOrderPat f val pat =
+ op [b,r] foldSubTermsEvalOrderPat (f : ATerm b * r -> r) (val : r) (pat : APattern b) : r =
    case pat of
      | RestrictedPat(_,t,_) -> foldSubTermsEvalOrder f val t
      | _ -> val
 
- op  foldSubPatterns : [b,r] (APattern b * r -> r) -> r -> APattern b -> r
- def foldSubPatterns f result pattern =
+ op [b,r] foldSubPatterns (f : APattern b * r -> r) (result : r) (pattern : APattern b) : r =
    let result = f (pattern,result) in
    case pattern of
      | AliasPat(p1, p2,_) ->
@@ -2084,12 +2057,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
                       (AType    a -> Option (AType    a)) *
                       (APattern a -> Option (APattern a))
 
- op replaceTerm    : [b] ReplaceType b -> ATerm    b -> ATerm    b
- op replaceType    : [b] ReplaceType b -> AType    b -> AType    b
- op replacePattern : [b] ReplaceType b -> APattern b -> APattern b
-
-
- def replaceTerm (tsp as (term_map, _, _)) term =
+ op [b] replaceTerm ((tsp as (term_map, _, _)) : ReplaceType b) (term : ATerm b) : ATerm b =
   let
 
     def replace term =
@@ -2165,7 +2133,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
   in
     replaceRec term
 
- def replaceType (tsp as (_, type_map, _)) ty =
+ op [b] replaceType ((tsp as (_, type_map, _)) : ReplaceType b) (ty : AType b) : AType b =
    let
 
      def replace ty =
@@ -2217,7 +2185,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
    in
      replaceRec ty
 
- def replacePattern (tsp as (_, _, pattern_map)) pattern =
+ op [b] replacePattern ((tsp as (_, _, pattern_map)) : ReplaceType b) (pattern : APattern b) : APattern b =
    let
 
      def replace pattern =
@@ -2281,15 +2249,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
  type ATypeSchemes b = List (ATypeScheme b)
  type ATermSchemes b = List (ATermScheme b)
 
- op appTerm        : [a] appTSP a -> ATerm        a -> ()
- op appType        : [a] appTSP a -> AType        a -> ()
- op appPattern     : [a] appTSP a -> APattern     a -> ()
- op appTermOpt     : [a] appTSP a -> ATermOpt     a -> ()
- op appTypeOpt     : [a] appTSP a -> ATypeOpt     a -> ()
- op appTypeSchemes : [a] appTSP a -> ATypeSchemes a -> ()
- op appTermSchemes : [a] appTSP a -> ATermSchemes a -> ()
-
- def appTerm (tsp as (term_app, _, _)) term =
+ op [a] appTerm ((tsp as (term_app, _, _)) : appTSP a) (term : ATerm a) : () =
    let 
 
      def appT (tsp, term) =
@@ -2344,7 +2304,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
    in
      appRec term
 
- def appType (tsp as (_, ty_app, _)) ty =
+ op [a] appType ((tsp as (_, ty_app, _)) : appTSP a) (ty : AType a) : () =
    let 
 
      def appS (tsp, ty) =
@@ -2373,7 +2333,7 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
    in
      appRec ty
 
- def appPattern (tsp as (_, _, pattern_app)) pat =
+ op [a] appPattern ((tsp as (_, _, pattern_app)) : appTSP a) (pat : APattern a) : () =
    let 
 
      def appP (tsp, pat) =
@@ -2398,53 +2358,47 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
    in
      appRec pat
 
- def appTypeOpt tsp opt_type =
+ op [a] appTypeOpt (tsp : appTSP a) (opt_type : ATypeOpt a) : () =
    case opt_type of
      | None     -> ()
      | Some ty -> appType tsp ty
 
- def appTermOpt tsp opt_term =
+ op [a] appTermOpt (tsp : appTSP a) (opt_term : ATermOpt a) : () =
    case opt_term of
      | None     -> ()
      | Some trm -> appTerm tsp trm
 
- def appTypeSchemes tsp type_schemes =
+ op [a] appTypeSchemes (tsp : appTSP a) (type_schemes : ATypeSchemes a) : () =
    app (fn (_,ty) -> appType tsp ty) type_schemes
 
- def appTermSchemes tsp term_schemes =
+ op [a] appTermSchemes (tsp : appTSP a) (term_schemes : ATermSchemes a) : () =
    app (fn (_,term) -> appTerm tsp term) term_schemes
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op boolType?    : [b] AType b -> Bool
- op stringType?  : [b] AType b -> Bool
- op natType?     : [b] AType b -> Bool
- op intType?     : [b] AType b -> Bool
- op charType?    : [b] AType b -> Bool
-
- def boolType? s =
+ op [b] boolType? (s : AType b) : Bool =
    case s of
      | Boolean _ -> true
      | _ -> false
 
- def stringType? s =
+ op [b] stringType? (s : AType b) : Bool =
    case s of
      | Base (Qualified ("String",  "String"),  [], _) -> true
      | _ -> false
 
- def charType? s =
+ op [b] charType? (s : AType b) : Bool =
    case s of
      | Base (Qualified ("Char",  "Char"),  [], _) -> true
      | _ -> false
 
- def natType? s =
+ op [b] natType? (s : AType b) : Bool =
    case s of
      | Base (Qualified ("Nat",     "Nat"),     [], _) -> true
      | _ -> false
 
- def intType? s =
+ op [b] intType? (s : AType b) : Bool =
    case s of
      | Base (Qualified ("Integer", "Int"),     [], _) -> true
      | _ -> false
@@ -2469,16 +2423,11 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
    in
      Fun (Or, binary_bool_type, pos)
 
+ op [b] mkABase (qid : QualifiedId, tys : List (AType b), a : b) : AType b = Base (qid, tys, a)
 
+ op [b] mkTrueA (a : b) : ATerm b = Fun (Bool true,  Boolean a, a)
 
-  op mkABase : [b] QualifiedId * List (AType b) * b -> AType b
- def mkABase (qid, tys, a) = Base (qid, tys, a)
-
- op mkTrueA  : [b] b -> ATerm b
- op mkFalseA : [b] b -> ATerm b
-
- def mkTrueA  a = Fun (Bool true,  Boolean a, a)
- def mkFalseA a = Fun (Bool false, Boolean a, a)
+ op [b] mkFalseA (a : b) : ATerm b = Fun (Bool false, Boolean a, a)
 
  op [a] listType?(ty: AType a): Bool =
    case ty of
