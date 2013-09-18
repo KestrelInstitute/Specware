@@ -152,12 +152,6 @@ op retString (str : String) : Monad Pretty =
 op retFill (elems : List (Nat * Pretty)) : Monad Pretty =
   return (blockFill (0, elems))
 
-(* pretty-print a Coq application *)
-op coqApply : Monad Pretty * Monad Pretty -> Monad Pretty
-def coqApply (mf, ma) =
-  { f_pp <- mf; a_pp <- ma;
-    retFill [(0, f_pp), (2, a_pp)] }
-
 (* pretty-print p1 followed by p2 with a string separator *)
 op ppSeparator (sep : String) (p1 : Pretty) (p2 : Pretty) : Pretty =
   blockFill (0, [(0, p1), (0, string sep), (0, p2)])
@@ -178,9 +172,33 @@ op ppCurlies (pp : Pretty) : Pretty =
  *** Coq-specific pretty-printing functions
  ***)
 
+(* pretty-print a Coq application *)
+op coqApply : Pretty -> Pretty -> Pretty
+def coqApply f_pp a_pp =
+  blockFill (0, [(0, ppParens f_pp), (2, ppParens a_pp)])
+
+(* pretty-print a Coq application, using monads *)
+op coqApplyM : Monad Pretty -> Monad Pretty -> Monad Pretty
+def coqApplyM mf ma =
+  { f_pp <- mf; a_pp <- ma; return (coqApply f_pp a_pp) }
+
+op coqApplyMultiM : Monad Pretty -> List (Monad Pretty) -> Monad Pretty
+def coqApplyMultiM mf mas =
+  foldl (fn (m1, m2) -> coqApplyM m1 m2) mf mas
+
 (* convert a Coq Prop to a bool, in a monad *)
 op prop2bool : Monad Pretty -> Monad Pretty
-def prop2bool m = coqApply ((return (string "prop2bool")), m)
+def prop2bool m = coqApplyM (return (string "prop2bool")) m
+
+(* pretty-print a Coq fun from a pretty-printed variable (either in
+    the form "x" or the form "(x:A)") and a pretty-printed body *)
+op ppCoqFun : Pretty -> Pretty -> Pretty
+def ppCoqFun var_pp body_pp =
+  (blockFill
+     (0, [(0, string "fun"),
+          (2, var_pp),
+          (0, string "=>"),
+          (2, body_pp)]))
 
 (* pretty-print a Coq parameter *)
 op ppCoqParam : (String * String * Pretty) -> Pretty
@@ -225,17 +243,47 @@ def ppCoqRecordDef (nm, ctor, fieldAlist) =
     (0, string "}.")])
 
 (* pretty-print an element of a Coq record type *)
-op ppCoqRecordElem : (String * List (String * Pretty)) -> Pretty
-def ppCoqRecordElem (ctor, fields) =
+op ppCoqRecordElem : (List (String * Pretty)) -> Pretty
+def ppCoqRecordElem (fields) =
   blockFill
     (0,
-     [(0, string ctor),
-      (0, string "{|")]
+     [(0, string "{|")]
      ++
      map (fn (fname, fval_pp) ->
-            (2, ppSeparator "=" (string fname) fval_pp)) fields
+            (2, ppSeparator ":=" (string fname) fval_pp)) fields
      ++
      [(0, string "|}")])
+
+(* pretty-print a Coq Inductive declaration *)
+op ppCoqInductive : (String * String * TyVars * List (Id * Option Pretty)) -> Pretty
+def ppCoqInductive (q, id, tyvars, id_tps) =
+  let tpName = qidToCoqName (q, id) in
+  prLines 0
+  ([blockFill
+      (0,
+       [(0, string "Inductive"),
+        (2, string tpName),
+        (4, ppParens (ppColon (prBreak 0 (map string tyvars)) (string "Set"))),
+        (2, string ":"),
+        (4, string "Set"),
+        (2, string ":=")
+        ])]
+   ++
+   (map
+      (fn (ctor, tp_pp_opt) ->
+         blockFill
+         (2,
+          [(0, string "|"),
+           (2, string ctor),
+           (2, string ":"),
+           (4,
+            case tp_pp_opt of
+              | Some tp_pp -> ppSeparator "->" tp_pp (string tpName)
+              | None -> string tpName)]))
+      id_tps)
+   ++
+   [string "."])
+
 
 (* pretty-print a Coq module *)
 op ppCoqModule : (String * List Pretty) -> Pretty
@@ -250,12 +298,12 @@ def ppCoqModule (mod_name, pps) =
  *** pretty-printers for term constructs (everything but specs)
  ***)
 
-op unhandled : String * String -> Monad Pretty
-def unhandled (fun, construct) =
-  err (fun ^ ": unhandled construct " ^ construct)
+op unhandled : String * String * String -> Monad Pretty
+def unhandled (fun, construct, obj_str) =
+  err (fun ^ ": unhandled construct " ^ construct ^ " in: " ^ obj_str)
 
-def unhandledTerm (str : String) : Monad Pretty =
-  unhandled ("ppTerm", str)
+def unhandledTerm (str : String) (tm : MSTerm) : Monad Pretty =
+  unhandled ("ppTerm", str, anyToString tm)
 
 (* pretty-print a qualified id *)
 op ppQid : QualifiedId -> Monad Pretty
@@ -267,19 +315,27 @@ def ppQid qid =
 op ppTerm : MSTerm -> Monad Pretty
 def ppTerm tm =
   case tm of
-    | Apply (f, a, _) -> coqApply (ppTerm f, ppTerm a)
-    | ApplyN (ts, _) -> unhandledTerm "ApplyN"
-    | Record (elems, _) -> unhandledTerm "Record"
+    | Apply (f, a, _) -> coqApplyM (ppTerm f) (ppTerm a)
+    | ApplyN (ts, _) -> unhandledTerm "ApplyN" tm
+    | Record (elems, _) ->
+      { elems_pp
+         <- mapM (fn (id, tm) ->
+                    { tm_pp <- ppTerm tm; return (id, tm_pp) }) elems;
+        return (ppCoqRecordElem elems_pp) }
     | Bind (Forall, vars, body, _) ->
       prop2bool
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
         return (ppForall vars_pp body_pp) }
-    | Bind (Exists, vars, body, _) -> unhandledTerm "Bind (Exists)"
-    | Bind (Exists1, vars, body, _) -> unhandledTerm "Bind (Exists1)"
-    | The (var, body, _) -> unhandledTerm "The"
-    | Let (bindings, body, _) -> unhandledTerm "Let"
-    | LetRec (bindings, body, _) -> unhandledTerm "LetRec"
+    | Bind (Exists, vars, body, _) ->
+      prop2bool
+      { vars_pp <- mapM ppVarBinding vars ;
+        body_pp <- ppTerm body ;
+        return (ppExists vars_pp body_pp) }
+    | Bind (Exists1, vars, body, _) -> unhandledTerm "Bind (Exists1)" tm
+    | The (var, body, _) -> unhandledTerm "The" tm
+    | Let (bindings, body, _) -> unhandledTerm "Let" tm
+    | LetRec (bindings, body, _) -> unhandledTerm "LetRec" tm
     | Var ((str, tp), _) ->
       (* FIXME: add type annotation? *)
       return (string str)
@@ -291,14 +347,11 @@ def ppTerm tm =
       { var_pp <- ppVarBinding v ;
         body_pp <- ppTerm body ;
         return
-         (ppParens
-            (blockFill
-               (0, [(0, string "fun"),
-                     (2, var_pp),
-                     (0, string "=>"),
-                     (2, body_pp)]))) }
+         (ppParens (ppCoqFun var_pp body_pp)) }
     | Lambda (matches, _) ->
-      err "ppTerm: pattern-matching lambdas currently unhandled"
+      % FIXME: generate a fresh variable here!!
+      { body_pp <- ppMatch (string "__match_x") matches;
+        return (ppParens (ppCoqFun (string "__match_x") body_pp)) }
     | IfThenElse (t1, t2, t3, _) ->
       { t1_pp <- ppTerm t1 ;
         t2_pp <- ppTerm t2 ;
@@ -311,15 +364,35 @@ def ppTerm tm =
                                  (2, t2_pp),
                                  (0, string "else"),
                                  (2, t3_pp)]))) }
-    | Seq (ts, _) -> unhandledTerm "Seq"
+    | Seq (ts, _) -> unhandledTerm "Seq" tm
     | TypedTerm (tm, tp, _) ->
       { tm_pp <- ppTerm tm ;
         tp_pp <- ppType tp ;
         return (ppParens (ppColon tm_pp tp_pp)) }
-    | Transform (transforms, _) -> unhandledTerm "Transform"
-    | Pi (tyvars, body, _) -> unhandledTerm "Pi"
-    | And (ts, _) -> unhandledTerm "And"
-    | Any _ -> unhandledTerm "Any"
+    | Transform (transforms, _) -> unhandledTerm "Transform" tm
+    | Pi (tyvars, body, _) ->
+      let tyvars_pp = map (fn (pp : Pretty) -> (0, pp)) (ppTyVarBindings tyvars) in
+      { body_pp <- ppTerm body;
+        return (ppCoqFun (blockFill (0, tyvars_pp)) body_pp) }
+    | And (ts, _) -> unhandledTerm "And" tm
+    | Any _ -> unhandledTerm "Any" tm
+
+op ppMatch : Pretty -> MSMatch -> Monad Pretty
+def ppMatch scrut_pp pats =
+  err "ppMatch: unimplemented!"
+(*
+  { pat_pps <- mapM ppPat pats;
+    return
+     (prLines 0
+        [blockFill (0, [(0, string "match"), (2, scrut_pp), (0, string "with")]),
+         prLines 2 pat_pps,
+         string "end"]) }
+
+(* pretty-print a pattern to a patern and  *)
+op ppPat : (MSPattern * MSTerm * MSTerm) -> Monad (Pretty * Pretty)
+def ppPat (pat, gd, body) =
+  err "ppPat: unimplemented!"
+*)
 
 op ppVarBinding : MSVar -> Monad Pretty
 def ppVarBinding (str, tp) =
@@ -330,8 +403,8 @@ op ppVarBindings (vs : List MSVar) : Monad Pretty =
   { pps <- mapM ppVarBinding vs ;
     retFill (List.map (fn pp -> (0, pp)) pps) }
 
-op unhandledFun (str : String) : Monad Pretty =
-  unhandled ("ppFun", str)
+op unhandledFun (str : String) (f : MSFun) : Monad Pretty =
+  unhandled ("ppFun", str, anyToString f)
 
 op ppFun : MSFun * MSType -> Monad Pretty
 def ppFun (f, tp) =
@@ -344,31 +417,31 @@ def ppFun (f, tp) =
     | Equals -> retString "dec_eq_pair"
     | NotEquals -> retString "dec_neq_pair"
 
-    | Quotient tp -> unhandledFun "Quotient"
-    | Choose tp -> unhandledFun "Choose"
-    | Restrict -> unhandledFun "Restrict"
-    | Relax -> unhandledFun "Relax"
+    | Quotient tp -> unhandledFun "Quotient" f
+    | Choose tp -> unhandledFun "Choose" f
+    | Restrict -> unhandledFun "Restrict" f
+    | Relax -> unhandledFun "Relax" f
 
-    | PQuotient tp -> unhandledFun "PQuotient"
-    | PChoose tp -> unhandledFun "PChoose"
+    | PQuotient tp -> unhandledFun "PQuotient" f
+    | PChoose tp -> unhandledFun "PChoose" f
 
     | Op (qid, fixity) -> ppQid qid
-    | Project id -> unhandledFun "Project"
-    | RecordMerge -> unhandledFun "RecordMerge"
-    | Embed (id, flag) -> unhandledFun "Embed"
-    | Embedded id -> unhandledFun "Embedded"
-    | Select id -> unhandledFun "Select"
+    | Project id -> unhandledFun "Project" f
+    | RecordMerge -> unhandledFun "RecordMerge" f
+    | Embed (id, flag) -> unhandledFun "Embed" f
+    | Embedded id -> unhandledFun "Embedded" f
+    | Select id -> unhandledFun "Select" f
     | Nat n -> retString (show n)
-    | Char c -> unhandledFun "Char"
-    | String str -> unhandledFun "String"
+    | Char c -> unhandledFun "Char" f
+    | String str -> unhandledFun "String" f
     | Bool b -> retString (show b)
 
-    | OneName (id, fixity) -> unhandledFun "OneName"
-    | TwoNames (id1, id2, fixity) -> unhandledFun "TwoNames"
+    | OneName (id, fixity) -> unhandledFun "OneName" f
+    | TwoNames (id1, id2, fixity) -> unhandledFun "TwoNames" f
 
 
-def unhandledType (construct : String) : Monad Pretty =
-  unhandled ("ppType", construct)
+def unhandledType (construct : String) (tp : MSType): Monad Pretty =
+  unhandled ("ppType", construct, anyToString tp)
 
 op ppTyVarBinding : TyVar -> Pretty
 def ppTyVarBinding str =
@@ -386,6 +459,14 @@ def ppForall (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
      ++ (map (fn v_pp -> (0, ppParens v_pp)) vs_pp)
      ++ [(0, string ","), (0, body_pp)])
 
+(* pretty-print an exists, assuming all the variables have been
+   pretty-printed as name : tp pairs*)
+def ppExists (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
+  blockFill
+  (0, [(0, string "exists")]
+     ++ (map (fn v_pp -> (0, ppParens v_pp)) vs_pp)
+     ++ [(0, string ","), (0, body_pp)])
+
 op ppType : MSType -> Monad Pretty
 def ppType tp =
   case tp of
@@ -393,20 +474,77 @@ def ppType tp =
       { t1_pp <- ppType t1 ;
         t2_pp <- ppType t2 ;
         retFill [(0, t1_pp), (0, string "->"), (0, t2_pp)] }
-  | Product (id_tps, _) -> unhandledType "Product"
-  | CoProduct (id_tps, _) -> unhandledFun "CoProduct"
-  | Quotient (tp, tm, _) -> unhandledFun "Quotient"
-  | Subtype (tp, pred, _) -> unhandledFun "Subtype"
-  | Base (id, params, _) -> unhandledFun "Base"
+  | Product (id_tps, _) ->
+    let def helper i (id_tps') =
+      case id_tps' of
+        | [] -> err ("Unexpected empty type list in Product type: "
+                       ^ anyToString tp)
+        | [(proj,tp)] ->
+          if proj = intToString i then ppType tp else
+            err ("Unexpected projection function " ^ proj
+                   ^ " in product type: " ^ anyToString tp)
+        | (proj,tp1)::rest ->
+          if proj = intToString i then
+            coqApplyM
+              (coqApplyM (return (string "prod")) (ppType tp1))
+              (helper (i+1) rest)
+          else
+            err ("Unexpected projection function " ^ proj
+                   ^ " in product type: " ^ anyToString tp)
+    in
+    helper 1 id_tps
+  | CoProduct (id_tps, _) -> unhandledType "CoProduct" tp
+  | Quotient (base_tp, tm, _) -> unhandledType "Quotient" tp
+  | Subtype (base_tp, pred, _) ->
+    { base_tp_pp <- ppType base_tp;
+      pred_pp <- ppTerm pred;
+      return
+       (ppCurlies
+          (ppSeparator "|"
+             (ppColon (string "x") base_tp_pp)
+             (coqApply pred_pp (string "x")))) }
+  | Base (Qualified qid, params, _) ->
+    coqApplyMultiM (return (string (qidToCoqName qid)))
+      (map ppType params)
   | Boolean _ -> retString "bool"
   | TyVar (str, _) -> retString str
-  | MetaTyVar (_, _) -> unhandledType "MetaTyVar"
+  | MetaTyVar (_, _) -> unhandledType "MetaTyVar" tp
   | Pi (tyvars, body, _) ->
     { body_pp <- ppType body ;
       return (ppForall (ppTyVarBindings tyvars) body_pp) }
-  | And (ts, _) -> unhandledFun "And"
-  | Any _ -> unhandledFun "Any"
+  | And (ts, _) -> unhandledType "And" tp
+  | Any _ -> unhandledType "Any" tp
 
+(* remove all leading Pis, returning a pair of (tyvars, body) *)
+def unzipPis (tp : MSType) : TyVars * MSType =
+  case tp of
+    | Pi (tyvars, body, _) ->
+      let (tyvars', body') = unzipPis body in
+      (tyvars ++ tyvars', body')
+    | _ -> ([], tp)
+
+(* pretty-print a type definition, where we know the name of the type;
+   this is the only way we can, for example, pretty-print coproduct
+   types (at least, for now...). Note that by "definition" we also
+   include a Coq Parameter declaration when the type is "Any" *)
+op ppTypeDef : (String * String * MSType) -> Monad Pretty
+def ppTypeDef (q,id, tp) =
+  let (tyvars, body) = unzipPis tp in
+  case body of
+    | Any _ -> return (ppCoqParam (q, id, string "Set"))
+    | CoProduct (id_tps, _) ->
+      { id_tps_pp
+         <- (mapM
+               (fn (ctor, tp_opt) ->
+                  case tp_opt of
+                    | None -> return (ctor, None)
+                    | Some tp ->
+                      { tp_pp <- ppType tp ; return (ctor, Some tp_pp) })
+               id_tps) ;
+        return (ppCoqInductive (q, id, tyvars, id_tps_pp)) }
+    | _ ->
+         { tp_pp <- ppType tp ;
+           return (ppCoqDef (q, id, string "Set", tp_pp)) }
 
 (***
  *** pretty-printer for specs
@@ -495,13 +633,9 @@ def ppSpec s =
 
    (* form a list of type names with pp-ed defs *)
    tps_list
-   <- (mapM
-         (fn (q, id, tp) ->
-            if typeIsDefined? tp then
-              { tp_pp <- ppType tp ;
-               return (q, id, string "Set", Some tp_pp)}
-            else return (q, id, string "Set", None))
-         types_with_defs) ;
+   <- (mapM (fn (q, id, tp) ->
+               { tp_def_pp <- ppTypeDef (q, id, tp) ;
+                 return (q, id, string "Set", tp_def_pp) }) types_with_defs) ;
 
    (* form a list of op names with pp-ed defs and types *)
    ops_list
@@ -509,10 +643,11 @@ def ppSpec s =
                if termIsDefined? op_def then
                  { def_pp <- ppTerm op_def ;
                    tp_pp <- ppType op_tp ;
-                   return (q, id, tp_pp, Some def_pp) }
+                   return (q, id, tp_pp,
+                           ppCoqDef (q, id, tp_pp, def_pp)) }
                else if typeIsDefined? op_tp then
                  { tp_pp <- ppType op_tp ;
-                   return (q, id, tp_pp, None) }
+                   return (q, id, tp_pp, ppCoqParam (q, id, tp_pp)) }
                else
                  err ("Could not get type for op: " ^ q ^ "." ^ id))
          ops_with_defs_tps) ;
@@ -528,7 +663,7 @@ def ppSpec s =
                          (return
                             (ppForall (ppTyVarBindings tyvars)
                                (ppSeparator "=" ax_term_pp (string "true"))))) ;
-                     return (q, id, ax_pp, None) }
+                     return (q, id, ax_pp, ppCoqParam (q, id, ax_pp)) }
                  | Some _ ->
                    err "Cannot yet handle axioms with proofs!")
          axioms_with_pfs) ;
@@ -543,15 +678,12 @@ def ppSpec s =
       ppCoqRecordDef
         (specName, "mk_" ^ specName,
          (map (fn (q, id, tp_pp, _) ->
-                 (qidToCoqName (q, id), string "Set")) elems_list))
+                 (qidToCoqName (q, id), tp_pp)) elems_list))
     in 
 
     (* next build Prettys for type, op, and axiom module elements *)
     let defs_pps =
-      map (fn (q, id, tp_pp, def_pp_opt) ->
-             case def_pp_opt of
-               | Some def_pp -> ppCoqDef (q, id, tp_pp, def_pp)
-               | None -> ppCoqParam (q, id, tp_pp)) elems_list
+      map (fn (q, id, tp_pp, def_pp) -> def_pp) elems_list
     in
 
     (* now build the __pinst module element *)
@@ -559,8 +691,7 @@ def ppSpec s =
       ppCoqDefNoT
         ("", "__pinst",
          ppCoqRecordElem
-           ("mk_" ^ specName,
-            map
+           (map
               (fn (q, id, _, _) ->
                  (qidToCoqName (q, id), string (qidToCoqName (q, id))))
               elems_list))
