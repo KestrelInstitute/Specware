@@ -121,7 +121,8 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                 | Some oi -> let TypedTerm(_,ty,_) = body in
                              let _ = writeLine "Refining quid"
                              in addRefinedType(spc,oi,ty)
-                | None -> addOpDef(spc,fname,Nonfix,body) in
+                | None -> let _ = writeLine ("Pre state variable is " ^ anyToString preStateVar)
+                          in addOpDef(spc,fname,Nonfix,body) in
     let (thms,_) = mkTraceThms 0 prf in
     let spc' = foldl (fn (acc,(n,thm)) -> addTheoremLast ((mkUnQualifiedId ("thm" ^ anyToString n),[],thm,noPos), acc)) spc' thms in
     return spc'
@@ -158,9 +159,10 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule =
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
        % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
      | Some (tm, ty as (Arrow (dom, codom,_))) ->
-       % let _ = writeLine ("Arrow type is " ^ printType ty) in
-       % let _ = writeLine ("Domain is " ^ (printType dom)) in
-       % let _ = writeLine ("Codomain is " ^ (printType codom)) in
+       let _ = writeLine ("Arrow type is " ^ printType ty) in
+       let _ = writeLine ("Term  is " ^ printTerm tm) in       
+       let _ = writeLine ("Domain is " ^ (printType dom)) in
+       let _ = writeLine ("Codomain is " ^ (printType codom)) in
        { (preStateVar,preStateType,inputArgs,preCondition) <-
           getSubtypeComponents spc dom theorems
        ; (postStateVar,postStateType,outputVals,postCondition) <-
