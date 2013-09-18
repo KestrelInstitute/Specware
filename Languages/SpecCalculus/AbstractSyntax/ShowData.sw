@@ -1464,8 +1464,7 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
     | Base (qid,tys,_) ->
       ppGrConcat [ppString "(BaseType ",
                   ppQualifiedId qid,
-                  %% what are these types?  They appear to be type vars for polymorphic types...
-                  %% But why don't we use a Pi type for that?
+                  %% what are these types?  They are the instantiations of the polymorphic type vars of the type whose name is qid.
                   ppString " (",
                   ppSep (ppString " ") (map (ppType c) tys),
                   ppString "))"
