@@ -55,6 +55,13 @@ op [b] badTerm    (x:Bool) (tm:ATerm    b) : (ATerm    b * Bool) = (tm, x)
 %% FIXME: get rid of the false!
 op [b] badPattern (x:Bool) (pat:APattern b) : (APattern b * Bool) = (pat, x)
 
+  %%FIXME: Consider replacing typeTyVars with this version: 
+ op [b] typeTyVars2 (ty : AType b) : TyVars =
+  case ty of
+     | Pi (tvs, _, _) -> tvs
+     | And (tms, _) -> if tms = [] then [] else typeTyVars (head tms)
+     | _ -> []
+
 op opsOkay?(s : Spec) : Bool =
   %% For every op info in the hash table, verify that every op-reference 
   %% has a corresponding entry.
@@ -66,14 +73,14 @@ op opsOkay?(s : Spec) : Bool =
     | Base(qid, args, _) ->
      (let argcount = length args in
       let correctargcount = 
-       (let op_ty = findTheType(s,qid) in 
-        (case op_ty of | None -> 0 %%FIXME error here?
+       (let op_ty = findTheType(s,qid) in
+        (case op_ty of | None -> let _ = writeLine("ERROR: Can't find type."^(show qid)) in 0 %%FIXME error here?
                        | Some ty_info -> let dfn = ty_info.dfn in
-                         (case dfn of | Pi(vars,ty,_) -> length vars | _ -> 0 %%FIXME error if there's a pi not at top level
-                          )))
+                                         let tyvars = typeTyVars2 dfn in  %FIXME what if there is an and whose conjuncts have different lists of ty vars?
+                                         length tyvars))
 in
       (if (argcount = correctargcount) then x else % not bad
-       let _ = writeLine ("Error: Wrong arg count in Base type node for "^(show qid)) in true))
+       let _ = writeLine ("Error: Wrong arg count in Base type node applying type "^(show qid)^". Got: "^(anyToString argcount)^". Should be: "^(anyToString correctargcount)^".") in true))
       | _ -> x % not bad
    ) in
 
