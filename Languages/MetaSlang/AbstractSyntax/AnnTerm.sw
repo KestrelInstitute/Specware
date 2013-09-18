@@ -61,7 +61,7 @@ MetaSlang qualifying spec
 
  type AVar b = Id * AType b
 
- type AMatch b = List (APattern b * ATerm b * ATerm b)
+ type AMatch b = List (APattern b * ATerm b * ATerm b) % Match is a pattern, a guard, and a body.
 
  type MetaSlang.AType b =
   | Arrow        AType b * AType b                   * b
