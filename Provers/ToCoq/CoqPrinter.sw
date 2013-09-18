@@ -154,18 +154,18 @@ op retFill (elems : List (Nat * Pretty)) : Monad Pretty =
 
 (* pretty-print p1 followed by p2 with a string separator *)
 op ppSeparator (sep : String) (p1 : Pretty) (p2 : Pretty) : Pretty =
-  blockFill (0, [(0, p1), (0, string sep), (0, p2)])
+  blockFill (0, [(0, p1), (0, string (" " ^ sep ^ " ")), (0, p2)])
 
 def ppColon = ppSeparator ":"
 def ppSemi = ppSeparator ";"
 
 (* pretty-print parens around a Pretty *)
 op ppParens (pp : Pretty) : Pretty =
-  blockFill (0, [(0, string "("), (1, pp), (0, string ")")])
+  blockFill (0, [(0, string " ("), (1, pp), (0, string ") ")])
 
 (* pretty-print curly brackets around a Pretty *)
 op ppCurlies (pp : Pretty) : Pretty =
-  blockFill (0, [(0, string "{"), (1, pp), (0, string "}")])
+  blockFill (0, [(0, string " {"), (1, pp), (0, string "} ")])
 
 
 (***
@@ -195,15 +195,15 @@ def prop2bool m = coqApplyM (return (string "prop2bool")) m
 op ppCoqFun : Pretty -> Pretty -> Pretty
 def ppCoqFun var_pp body_pp =
   (blockFill
-     (0, [(0, string "fun"),
+     (0, [(0, string " fun "),
           (2, var_pp),
-          (0, string "=>"),
+          (0, string " => "),
           (2, body_pp)]))
 
 (* pretty-print a Coq parameter *)
 op ppCoqParam : (String * String * Pretty) -> Pretty
 def ppCoqParam (q, id, tp_pp) =
-  blockFill (0, [(0, string "Parameter"),
+  blockFill (0, [(0, string "Parameter "),
                       (2, string (qidToCoqName (q,id))),
                       (0, string ":"),
                       (2, tp_pp)])
@@ -212,19 +212,19 @@ def ppCoqParam (q, id, tp_pp) =
    Coq type and Coq value of that type *)
 op ppCoqDef : (String * String * Pretty * Pretty) -> Pretty
 def ppCoqDef (q, id, tp_pp, def_pp) =
-  blockFill (0, [(0, string "Program Definition"),
+  blockFill (0, [(0, string "Program Definition "),
                       (2, string (qidToCoqName (q,id))),
-                      (0, string ":"),
+                      (0, string " : "),
                       (2, tp_pp),
-                      (0, string "="),
+                      (0, string " := "),
                       (2, def_pp)])
 
 (* pretty-print a Coq definition without a type *)
 op ppCoqDefNoT : (String * String * Pretty) -> Pretty
 def ppCoqDefNoT (q, id, def_pp) =
-  blockFill (0, [(0, string "Definition"),
+  blockFill (0, [(0, string "Definition "),
                       (2, string (qidToCoqName (q,id))),
-                      (0, string "="),
+                      (0, string " := "),
                       (2, def_pp)])
 
 (* pretty-print a Coq record type *)
@@ -232,15 +232,15 @@ op ppCoqRecordDef : (String * String * List (String * Pretty)) -> Pretty
 def ppCoqRecordDef (nm, ctor, fieldAlist) =
   blockFill
   (0,
-   [(0, string "Record"),
+   [(0, string "Record "),
     (4, string nm),
-    (2, string ":="),
+    (2, string " := "),
     (2, string ctor),
-    (2, string "{"),
+    (2, string " {"),
     (4,
      prLines 0 (map (fn (fnm, ftp_pp) ->
                        ppColon (string fnm) ftp_pp) fieldAlist)),
-    (0, string "}.")])
+    (0, string " }.")])
 
 (* pretty-print an element of a Coq record type *)
 op ppCoqRecordElem : (List (String * Pretty)) -> Pretty
@@ -662,7 +662,7 @@ def ppSpec s =
                       (prop2bool
                          (return
                             (ppForall (ppTyVarBindings tyvars)
-                               (ppSeparator "=" ax_term_pp (string "true"))))) ;
+                               (ppSeparator ":=" ax_term_pp (string "true"))))) ;
                      return (q, id, ax_pp, ppCoqParam (q, id, ax_pp)) }
                  | Some _ ->
                    err "Cannot yet handle axioms with proofs!")
