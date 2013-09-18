@@ -49,10 +49,10 @@ op [a] badOpInfo? (opinfo : AOpInfo a, spc : Spec) : Bool =
   %   false
   tyvars_bad?
 
-%% FIXME: get rid of the false!
+%% FIXME: Flesh this out.
 op [b] badTerm    (x:Bool) (tm:ATerm    b) : (ATerm    b * Bool) = (tm, x)
 
-%% FIXME: get rid of the false!
+%% FIXME: Flesh this out.
 op [b] badPattern (x:Bool) (pat:APattern b) : (APattern b * Bool) = (pat, x)
 
   %%FIXME: Consider replacing typeTyVars with this version: 
