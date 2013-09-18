@@ -1250,10 +1250,12 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
       %		    ppTerm c term]
     | QuotientPat (pat,typename,_) ->
       %% This requires update to interchange grammar
-      ppGrConcat [ppString "quotient[",
+      ppGrConcat [ppString "(QuotientPat ",
+                  ppPattern c pat,
+                  ppString " ",
                   ppQualifiedId typename,
-                  ppString "] ",
-                  ppPattern c pat]
+                  ppString ")"
+                  ]
     | RestrictedPat (pat,term,_) -> 
 %        (case pat of
 %	   | RecordPat (fields,_) ->
