@@ -1928,6 +1928,17 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                   | Some info ->
                     if definedTypeInfo? info then
                       let (tvs, ty) = unpackFirstTypeDef info in
+                      let n_tvs = length tvs in
+                      let n_tys = length tys in
+                      let (tvs, tys) =
+                          if n_tvs = n_tys then (tvs, tys)
+                          else
+                           let min_len = min(n_tvs, n_tys) in
+                           (warn("Mismatch in type: "^show n_tvs^" ~= "^show n_tys^"\n"^printType info.dfn^"\n"
+                                   ^printType ty1);
+                            (subFromTo(tvs, 0, min_len),
+                             subFromTo(tys, 0, min_len)))
+                      in
                       let sty = substType (zip (tvs, tys), ty) in
                       possiblySubtypeOf?(sty, ty2, spc)
                     else
