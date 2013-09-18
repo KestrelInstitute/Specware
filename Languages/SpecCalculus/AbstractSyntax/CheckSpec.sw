@@ -49,10 +49,34 @@ op [a] badOpInfo? (opinfo : AOpInfo a, spc : Spec) : Bool =
   %   false
   tyvars_bad?
 
+%% FIXME: get rid of the false!
+op [b] badTerm    (x:Bool) (tm:ATerm    b) : (ATerm    b * Bool) = (tm, x)
+
+%% FIXME: get rid of the false!
+op [b] badPattern (x:Bool) (pat:APattern b) : (APattern b * Bool) = (pat, x)
+
 op opsOkay?(s : Spec) : Bool =
   %% For every op info in the hash table, verify that every op-reference 
   %% has a corresponding entry.
   %% TODO: types, op-refs within types, etc.
+
+  let def badType (x:Bool) (ty:AType StandardAnnotation) : (AType    StandardAnnotation * Bool) =
+  (ty,
+   case ty of
+    | Base(qid, args, _) ->
+     (let argcount = length args in
+      let correctargcount = 
+       (let op_ty = findTheType(s,qid) in 
+        (case op_ty of | None -> 0 %%FIXME error here?
+                       | Some ty_info -> let dfn = ty_info.dfn in
+                         (case dfn of | Pi(vars,ty,_) -> length vars | _ -> 0 %%FIXME error if there's a pi not at top level
+                          )))
+in
+      (if (argcount = correctargcount) then x else % not bad
+       let _ = writeLine ("Error: Wrong arg count in Base type node for "^(show qid)) in true))
+      | _ -> x % not bad
+   ) in
+
   let
     def bad_ref? (nm : QualifiedId) (tm:MSTerm) =
       case tm of
@@ -61,7 +85,8 @@ op opsOkay?(s : Spec) : Bool =
              | Some _ -> false
              | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
         | _ -> false
-  in 
+  in
+  let ops_with_bad_definitions = countOpInfos (fn (info) -> (let bad? = ((mapAccumTerm (badTerm, badType, badPattern) false info.dfn).2) in if bad? then let _ = writeLine ("ERROR: Found problems (listed above) with op "^(show (primaryOpName info))) in true else false)) s.ops in  %FIXME: make something like mapaccumterm that doesn't return the term
   let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> existsSubTerm (bad_ref? (primaryOpName info)) info.dfn) s.ops in
   let ops_with_free_vars = countOpInfos (fn (info) -> case (freeVars info.dfn) of
                                                          | [] -> false
@@ -70,7 +95,7 @@ op opsOkay?(s : Spec) : Bool =
                                          s.ops
   in
   let other_bad_op_infos = countOpInfos (fn x -> badOpInfo?(x, s)) s.ops in
-  (ops_that_call_non_existing_ops = 0 && ops_with_free_vars = 0)
+  (ops_that_call_non_existing_ops = 0 && ops_with_free_vars = 0 && ops_with_bad_definitions = 0)
                   
 
 
@@ -152,7 +177,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                   s.ops
   in
   let bad_ops? = ~ (opsOkay? s) in
-
+  let _ = writeLine "Done testing ops." in
   %% For every Type, TypeDef, Op, or OpDef in spec elements,
   %% verify that it refers to an entry in the appropriate hash table.
   let missing_hash_table_entries? =
