@@ -37,6 +37,53 @@ def addToAlist (k, v, al) =
     | Some _ -> al
     | Non -> (k, v) :: al
 
+(* version of foldr that assumes a non-empty list, so does not need a
+   base case *)
+(*
+op [a] foldr1 (f: a * a -> b) (l: List a) : a =
+  case l of
+  | [x] -> x
+  | hd::tl -> f (hd, foldr f base tl)
+*)
+
+(* separate a string into a list of the strings between a separator *)
+def separateString (sep : Char) (str : String) : List String =
+  let def helper strList =
+    case splitAtLeftmost (fn c -> c = sep) strList of
+      | Some (pre, _, post) -> implode pre :: helper post
+      | None -> [implode strList]
+  in
+  helper (explode str)
+
+(* concatenate a list of strings with a separator; inverse of above *)
+def concatenate (sep : Char) (strs : List String) : String =
+  case strs of
+    | [] -> ""
+    | [str] -> str
+    | str :: strs' -> str ^ (implode [sep]) ^ concatenate sep strs'
+
+(* add an element in between every existing element of a list *)
+op [a] intersperse (x : a) (l : List a) : List a =
+  case l of
+    | [] -> []
+    | y::l' -> y :: x :: intersperse x l'
+
+(* convert a Spec path into a triple (path, name, suffix_opt) *)
+op specPathToRelUID : String -> Option (List String * String * Option String)
+def specPathToRelUID spath =
+  let spath_elems = separateString #/ spath in
+  let path =
+    % If spath starts with "/" drop the empty string first elem
+    if head spath_elems = "" then butLast (tail spath_elems)
+    else butLast spath_elems
+  in
+  let base = last spath_elems in
+  let hash_elems = separateString ## base in
+  case hash_elems of
+    | [filename] -> Some (path, filename, None)
+    | [filename, suffix] -> Some (path, filename, Some suffix)
+    | _ -> None
+
 (* declare this here so we don't have to import Bootstrap above *)
 op  Specware.evaluateUnitId: String -> Option Value
 
@@ -45,8 +92,20 @@ op  Specware.evaluateUnitId: String -> Option Value
  *** converting Specware names to Coq names
  ***)
 
+def qidToCoqName (q, id) =
+  if q = "" || q = "<unqualified>" then id else q ^ "__" ^ id
+
+op specPathToCoqModule : String -> Option (List String * String)
+def specPathToCoqModule spath =
+  case specPathToRelUID spath of
+    | Some (rel_dir, base, Some hashname) ->
+      Some (rel_dir ++ [base], hashname)
+    | Some (rel_dir, base, None) -> Some (rel_dir, base)
+    | None -> None
+
 (* muck around with Specware internal state to get a name for a Value;
    code taken from IsaPrinter.sw *)
+(*
 op uidForValue: Value -> Option UnitId
 def uidForValue val =
   case MonadicStateInternal.readGlobalVar "GlobalContext" of
@@ -54,18 +113,16 @@ def uidForValue val =
     | Some global_context -> findUnitIdForUnit(val, global_context)
 
 def uidToCoqName (uid : UnitId) =
-  foldr (fn (str, rest) -> str ^ "__" ^ rest) "" uid.path
+  foldr (fn (str, rest) -> str ^ "." ^ rest) "" uid.path
   ^ (case uid.hashSuffix of
-       | Some suffix -> "__" ^ suffix
+       | Some suffix -> "." ^ suffix
        | None -> "")
-
-def qidToCoqName (q, id) =
-  if q = "" then id else q ^ "." ^ id
 
 def valueToCoqName v =
   case uidForValue v of
     | Some uid -> Some (uidToCoqName uid)
     | None -> None
+*)
 
 (* convert a QualifierMap b to a list of ((q, id), b) *)
 op listOfAQualifierMap : [a] AQualifierMap a -> List (String * String * a)
@@ -156,6 +213,16 @@ op retFill (elems : List (Nat * Pretty)) : Monad Pretty =
 op ppSeparator (sep : String) (p1 : Pretty) (p2 : Pretty) : Pretty =
   blockFill (0, [(0, p1), (0, string (" " ^ sep ^ " ")), (0, p2)])
 
+(* pretty-print p1 and p2 with a separator and a terminator *)
+op ppSeparatorTerm : Pretty -> String -> Pretty -> String -> Pretty
+def ppSeparatorTerm p1 sep p2 term =
+  blockFill
+  (0,
+   [(0, p1),
+    (1, string (" " ^ sep ^ " ")),
+    (4, p2),
+    (1, string (" " ^ term))])
+
 def ppColon = ppSeparator ":"
 def ppSemi = ppSeparator ";"
 
@@ -205,7 +272,7 @@ op ppCoqParam : (String * String * Pretty) -> Pretty
 def ppCoqParam (q, id, tp_pp) =
   blockFill (0, [(0, string "Parameter "),
                       (2, string (qidToCoqName (q,id))),
-                      (0, string ":"),
+                      (0, string " : "),
                       (2, tp_pp)])
 
 (* pretty-print a Coq definition, which takes in a (pretty-printed)
@@ -230,16 +297,20 @@ def ppCoqDefNoT (q, id, def_pp) =
 (* pretty-print a Coq record type *)
 op ppCoqRecordDef : (String * String * List (String * Pretty)) -> Pretty
 def ppCoqRecordDef (nm, ctor, fieldAlist) =
-  blockFill
+  blockLinear
   (0,
-   [(0, string "Record "),
-    (4, string nm),
-    (2, string " := "),
-    (2, string ctor),
-    (2, string " {"),
-    (4,
-     prLines 0 (map (fn (fnm, ftp_pp) ->
-                       ppColon (string fnm) ftp_pp) fieldAlist)),
+   [(0,
+     blockFill
+       (0,
+        [(0, string "Record "),
+         (4, string nm),
+         (2, string " := "),
+         (2, string ctor),
+         (2, string " {")])),
+    (2,
+     prLinear 0
+       (map (fn (fnm, ftp_pp) ->
+               ppSeparatorTerm (string fnm) ":" ftp_pp ";") fieldAlist)),
     (0, string " }.")])
 
 (* pretty-print an element of a Coq record type *)
@@ -247,12 +318,12 @@ op ppCoqRecordElem : (List (String * Pretty)) -> Pretty
 def ppCoqRecordElem (fields) =
   blockFill
     (0,
-     [(0, string "{|")]
+     [(0, string "{| ")]
      ++
      map (fn (fname, fval_pp) ->
-            (2, ppSeparator ":=" (string fname) fval_pp)) fields
+            (2, ppSeparatorTerm (string fname) ":=" fval_pp ";")) fields
      ++
-     [(0, string "|}")])
+     [(0, string " |}")])
 
 (* pretty-print a Coq Inductive declaration *)
 op ppCoqInductive : (String * String * TyVars * List (Id * Option Pretty)) -> Pretty
@@ -289,9 +360,9 @@ def ppCoqInductive (q, id, tyvars, id_tps) =
 op ppCoqModule : (String * List Pretty) -> Pretty
 def ppCoqModule (mod_name, pps) =
   prLines 0
-    ([string ("Module " ^ mod_name ^ ".")]
-     ++ pps
-     ++ [string ("End " ^ mod_name ^ ".")])
+    ([string ("Module " ^ mod_name ^ ".\n")]
+     ++ (intersperse (string "") pps)
+     ++ [string ("End " ^ mod_name ^ ".\n")])
 
 
 (***
@@ -387,8 +458,10 @@ def ppMatch scrut_pp pats =
         [blockFill (0, [(0, string "match"), (2, scrut_pp), (0, string "with")]),
          prLines 2 pat_pps,
          string "end"]) }
+*)
 
 (* pretty-print a pattern to a patern and  *)
+(*
 op ppPat : (MSPattern * MSTerm * MSTerm) -> Monad (Pretty * Pretty)
 def ppPat (pat, gd, body) =
   err "ppPat: unimplemented!"
@@ -584,8 +657,8 @@ def ppTypeDef (q,id, tp) =
 
 *)
 
-op ppSpec : Spec -> Monad Pretty
-def ppSpec s =
+op ppSpec : List String -> String -> Spec -> Monad Pretty
+def ppSpec mod_dir mod_name s =
 
   (* first get all the types, ops, and axioms with (optional) defs *)
   let types_with_defs =
@@ -625,12 +698,6 @@ def ppSpec s =
   in
 
   {
-   (* form the Coq name for the Spec *)
-   specName <-
-     (case valueToCoqName (Spec s) of
-        | Some nm -> return nm
-        | None -> err "Could not look up name of this Spec!!") ;
-
    (* form a list of type names with pp-ed defs *)
    tps_list
    <- (mapM (fn (q, id, tp) ->
@@ -676,7 +743,7 @@ def ppSpec s =
     (* first build the Pretty for the __type module element *)
     let rt_pp =
       ppCoqRecordDef
-        (specName, "mk_" ^ specName,
+        (mod_name, "mk_" ^ mod_name,
          (map (fn (q, id, tp_pp, _) ->
                  (qidToCoqName (q, id), tp_pp)) elems_list))
     in 
@@ -699,7 +766,7 @@ def ppSpec s =
 
     (* Finally, build the Module! *)
     ppCoqModule
-      (specName, [rt_pp] ++ defs_pps ++ [pinst_pp])
+      (mod_name, [rt_pp] ++ defs_pps ++ [pinst_pp])
     )}
 
 
@@ -709,17 +776,18 @@ def ppSpec s =
 
 (* adapted from IsaPrinter.sw *)
 op printUIDToCoqFile : String -> String
-def printUIDToCoqFile uid_str =
-  case Specware.evaluateUnitId uid_str of
-    | None -> "Error: Unknown UID " ^ uid_str
-    | Some (Spec s) ->
-      (case valueToCoqName (Spec s) of
-         | None -> "Error: Can't get UID string from value"
-         | Some nm ->
+def printUIDToCoqFile spath =
+  case specPathToCoqModule spath of
+    | None -> "Error: Malformed spec path: " ^ spath
+    | Some (mod_dir, mod_name) ->
+      (case Specware.evaluateUnitId spath of
+         | None -> "Error: Unknown UID " ^ spath
+         | Some (Spec s) ->
            let context = { } in
-           let filename = "Coq/" ^ nm ^ ".v" in
+           let filename = concatenate #/ (mod_dir ++ [mod_name]) ^ ".v" in
            let _ = ensureDirectoriesExist filename in
-           (case writingToFile (filename, context, ppSpec s) of
+           let m = ppSpec mod_dir mod_name s in
+           (case writingToFile (filename, context, m) of
               | None -> filename
               | Some err_str -> "Error: " ^ err_str))
     | _ -> "Error: currently only support converting Specs to Coq"
