@@ -419,26 +419,51 @@ op haskellPragma?(s: String): Bool =
 %% ========
 
 op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
+ % TODO: ugly and a maintenance problem -- rethink
  case q of
 
    %% Base specs:
-   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-   | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
-                             "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
-                             "isucc", "ipred", "positive?", "negative?", "zero", "one"]
+   | "Bool"       -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
+   | "Integer"    -> id in? ["zero", "isucc", "ipred", "one" , "positive?", "negative?", 
+                             "+", "-", "*", "<", ">", "<=", ">=", "natMinus", "sign", "abs", 
+                             "divides", "multipleOf", "gcd", "lcm", 
+                             "/", "divT", "modT", "divF", "modF", "divC", "modC", "divR", "modR",
+                             "euclideanDivision?", "divE", "modE", "div", "mod", 
+                             "**", "***", "min", "max", "compare", 
+                             "intToString", "show", "intCovertible", "stringToInt"]
    | "IntegerAux" -> id in? ["-"]  % unary minus
-   | "Nat"        -> id in? ["show", "toString", "natToString", "stringToNat"]
-   | "Char"       -> id in? ["show", "toString", "chr", "ord", "compare",
+   | "Nat"        -> id in? ["succ", "pred", "+", "*", 
+                             "digitToString", "natToString", "show", "natConverible", "stringToNat"]
+   | "Char"       -> id in? ["chr", "ord", "compare",
                              "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
-                             "toUpperCase", "toLowerCase"]
-   | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode",
-                             "concat", "subFromTo", "substring", "@", "sub"]
+                             "toUpperCase", "toLowerCase", "show", "toString" ]
+   | "String"     -> id in? ["implode", "explode", "length", "@", "subFromTo", "^",
+                             "forall?", "exists?", "map", "flatten", "translate", 
+                             "compare", "<", "<=", ">", ">=", "newline"]
    | "System"     -> id in? ["writeLine", "toScreen"]
 
-   %% Non-constructive:
-   | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
-   | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
-
+   | "Function"   -> id in? ["o", ":>", "injective?", "surjective?", "bijective?", "inverse"] 
+   | "List"       -> id in? ["definedOnInitialSegmentOfLength", "lengthOfListFunction", "list", "list_1", 
+                             "tabulate", "length", "ofLength?", "@", "@@", "empty", "empty?", "nonEmpty?",
+                             "single", "in?", "nin?", "subFromLong", "subFromTo", "prefix", "suffix",
+                             "removePrefix", "removeSuffix", "head", "last", "tail", "butLast", "++",
+                             "|>", "<|", "update", "forall?", "exists?", "exists1", "foralli?", 
+                             "filter", "foldl", "foldr", "equiLong", "zip", "zip3", "unzip", "unzip3",
+                             "map", "map2", "map3", "removeNones", "matchingOptionLists?", 
+                             "mapPartial", "mapPartial2", "mapPartial3", "reverse", "repeat",
+                             "allEqualElements?", "extendLeft", "extendRight", 
+                             "equiExtendLeft", "equiExtendRight", "shiftLeft", "shiftRight",
+                             "rotateLeft", "rotateRight", "flatten", "unflattenL", "unflatten", 
+                             "noRepititions?", "increasingNats?", 
+                             "positionsSuchThat", "leftmostPositionSuchThat", "rightmostPositionSuchThat", 
+                             "positionsOf", "positionOf", "sublistAt?", "positionsOfSublist",
+                             "leftmostPositionOfSublistAndFollowing", "rightmostPositionOfSublistAndPreceding",
+                             "splitAt", "splitAtLeftmost", "splitAtRightmost", 
+                             "findLefttmost", "findRightmost",
+                             "findLefttmostAndPreceeding", "findRightmostAndFollowing",
+                             "delete", "diff", "longestCommonPrefix", "permutation?", "permute", "compare",
+                             "isoList"]
+                             
    %% Explicitly handcoded:
    | "Handcoded"  -> true
 
@@ -446,11 +471,12 @@ op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
 
 op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
  case q of
-   | "Boolean"    -> id in? ["Bool"]
-   | "Integer"    -> id in? ["Int", "Int0"]
-   | "Nat"        -> id in? ["Nat"]
+   | "Bool"       -> id in? ["Bool"]
+   | "Integer"    -> id in? ["Int", "Int0", "Integer"]
+   | "Nat"        -> id in? ["Nat", "PosNat"]
    | "Char"       -> id in? ["Char"]
    | "String"     -> id in? ["String"]
+   | "List"       -> id in? ["List", "List1", "ListFunction", "InjList", "Permutation"]
    | _ -> false
       
 op SpecTransform.sliceSpecForC (spc             : Spec)
