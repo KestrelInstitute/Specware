@@ -4590,7 +4590,7 @@ For example, given
    op congMod3 : Nat * Nat -> Bool =
      (fn (m, n) -> m rem 3 = n rem 3)
    
-   op type Z3 = Nat / congMod3
+   type Z3 = Nat / congMod3
    
 
 we have the typing
