@@ -731,14 +731,53 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
      | StringPat    (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
      | CharPat      (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
-     | QuotientPat  (p, qid,  a) -> mkABase  (qid,                              [], a)
-       %% WARNING:
-       %% The result for QuotientPat is missing potential tyvars (it simply uses []),
-       %% so users of that result must be prepared to handle that discrepency between 
-       %% this result and the actual type referenced.
+
+     | QuotientPat  (p, qid,  a) -> 
+       %% TODO: This is a stop-gap that can still be wrong in some cases.  Rethink it.
+       let base_type = patternType p in
+       (case base_type of
+          | Base (_, args, _) -> mkABase (qid, args, a)
+          | MetaTyVar (mtv, _) ->
+            %% For example, can arise from following, where type of l is unknown:
+            %% def bag_insert(x, quotient[Bag.Bag] l) = quotient[Bag.Bag] (Cons(x,l))
+            (case (!mtv).link of
+               | Some typ -> typ
+               | _ ->
+                 %% The metaTyVar is unlinked, so use an ordinary tyvar.
+                 %% "QQQ" makes it easy to trace back to here
+                 %% A more robust solution would use the arity of the type named qid,
+                 %% but that would require access to the spec to find its definition.
+                 mkABase  (qid, [TyVar ("QQQ", a)], a))
+          | _ -> 
+            let typ = mkABase  (qid, [], a) in
+            let _ = writeLine("WARNING: unexpected quotient pattern in patternType: " ^ printPattern pat) in
+            let _ = writeLine("         base pattern is " ^ printPattern p)                               in
+            let _ = writeLine("         with type " ^ printType base_type)                                in
+            let _ = writeLine("         but expected a (possibly polymorphic) atomic type,")              in 
+            let _ = writeLine("         No args in resulting type: " ^ printType typ)                     in
+            typ)
+
      | RestrictedPat(p, t,    a) ->
        Subtype(patternType p,Lambda([(p,mkTrueA a,t)],a),a)
      | TypedPat     (_, ty,  _) -> ty
+
+ op [a] tyVarsInPattern (pattern : APattern a) : TyVars =
+  let
+    def tvsInTerm    tvs trm = (trm, tvs)
+    def tvsInPattern tvs pat = (pat, tvs)
+    def tvsInType    tvs typ =
+      (typ,
+       case typ of 
+         | TyVar(tv, _) -> 
+           if tv in? tvs then
+             tvs
+           else
+             tvs ++ [tv] 
+         | _ -> tvs)
+  in
+  let tsp = (tvsInTerm, tvsInType, tvsInPattern) in
+  let (_, tvs) = mapAccumPattern tsp [] pattern in
+  tvs
 
  op [a] deRestrict (p: APattern a): APattern a =
    case p of
