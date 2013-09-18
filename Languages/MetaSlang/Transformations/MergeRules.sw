@@ -117,14 +117,19 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
-    let spc' = case findTheOp(spc, fname)  of
+    let (thms,_,_) = mkTraceThms 0 vars' prf in
+    let spc' = foldl (fn (acc,(n,thm,pf)) ->
+                        let thmName = "thm" ^ anyToString n in
+                        let thmSpc = addTheoremLast ((mkUnQualifiedId thmName,[],thm,noPos), acc) in
+                        let prfSpc = addPragma (("proof", " Isa " ^ thmName ^ "\n" ^ pf ^ "\n", "end-proof",noPos),thmSpc) in
+                        prfSpc) spc thms in
+    let spc' = case findTheOp(spc', fname)  of
                 | Some oi -> let TypedTerm(_,ty,_) = body in
                              let _ = writeLine "Refining quid"
-                             in addRefinedType(spc,oi,ty)
+                             in addRefinedType(spc',oi,ty)
                 | None -> let _ = writeLine ("Pre state variable is " ^ anyToString preStateVar)
-                          in addOpDef(spc,fname,Nonfix,body) in
-    let (thms,_) = mkTraceThms 0 prf in
-    let spc' = foldl (fn (acc,(n,thm)) -> addTheoremLast ((mkUnQualifiedId ("thm" ^ anyToString n),[],thm,noPos), acc)) spc' thms in
+                          in addOpDef(spc',fname,Nonfix,body) in
+    
     return spc'
   }
 
@@ -348,41 +353,103 @@ type TraceTree =
   | TFactoring  (MSTerm * CDNFRep * (List MSTerm) * List MSTerm *  TraceTree * DNFRep)
   | Unknown
 
-
-op mkRefinement (i:Int)(assumps:List MSTerm)(pre:DNFRep)(res:MSTerm)(input:CDNFRep): MSTerm =
+op mkRefinement (i:Int)(vars:List MSVar)(assumps:List MSTerm)(pre:DNFRep)(res:MSTerm)(input:CDNFRep): MSTerm =
    let inp = dnfToTerm (map (map classToTerm) input) in
-   mkImplies (mkAnd assumps,
-              mkImplies(negateTerm (dnfToTerm pre),
-                        mkImplies(res,inp)))
+   let locals = filter (fn i -> inBy? equalVar? i vars) (freeVars inp) in
+   let quant = case locals of
+                 | [] -> inp 
+                 | _ -> Bind (Exists,locals,inp,noPos) in
+   let ref = 
+          mkImplies (mkAnd assumps,
+                  mkImplies(negateTerm (dnfToTerm pre),
+                            mkImplies(res,quant))) in
+   let _ = writeLine (printTerm ref) in
+   ref
 
-op mkTraceThms(n:Int)(t:TraceTree):(List(Int*MSTerm) * Int) =
+op if_trace_proof(t:MSTerm)(n1:Int)(n2:Int):String =
+   let br_term = printTerm t in
+   let tid1 = "thm" ^ anyToString n1 in
+   let tid2 = "thm"^ anyToString n2 in
+   "  apply (case_tac \"" ^ br_term ^ "\")\n" ^
+   "  apply (simp add:" ^ tid1 ^ ")\n" ^
+   "  apply (simp add:" ^ tid2 ^ ")\n"
+
+op case_trace_proof(t:MSTerm)(ids:List Int):String =
+   let sterm = printTerm t in
+   let def mkBranch i = "  apply simp\n" in
+   let def cats l = case l of
+                  | [] -> ""
+                  | x::xs -> x ^ cats xs in
+   "  apply (case_tac \"" ^ sterm ^ "\")\n" ^
+   cats (map mkBranch ids)
+
+   
+   
+
+(* This is the more desirable, stepwise proof. Unfortunately, it is
+too brittle, as the apply rules require percise forms for the goal. *)
+op if_trace_proof'(t:MSTerm)(n1:Int)(n2:Int):String =
+   let br_term = printTerm t in
+   let tid1 = "thm" ^ anyToString n1 in
+   let tid2 = "thm"^ anyToString n2 in
+   "  apply (erule rev_mp)\n" ^
+   "  apply (case_tac \"" ^ br_term ^ "\")\n" ^
+   "  apply (subst if_P)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule impI)\n" ^
+   "  apply (rule disjI1)\n" ^ 
+   "  apply (rule conjI)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule " ^ tid1 ^ ", assumption, assumption)\n" ^
+   "  apply (subst if_not_P)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule impI)\n" ^
+   "  apply (rule disjI2)\n" ^
+   "  apply (rule conjI)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule " ^ tid2 ^ ", assumption, assumption)\n"
+
+
+op foldTraceAlts(n:Int)(vars:List MSVar)(alts:List (MSPattern * TraceTree)):(List (Int*MSTerm*String) * List Int * Int) =
+  case alts of
+    | [] -> ([],[],n)
+    | ((pat,pt)::ps) -> let (thms,ix,n0) = mkTraceThms n vars pt in
+                        let (thmss,ixs,n1) = foldTraceAlts n0 vars ps in
+                        (thms ++ thmss, ix::ixs,n1)
+                      
+
+op mkTraceThms(n:Int)(vars:List MSVar)(t:TraceTree):(List(Int*MSTerm*String) * Int * Int) =
    case t of
      | Contra (input, assumptions) ->
-       let thm = mkRefinement n assumptions [assumptions] (mkFalse ()) input in
-       ([(n,thm)],n+1)
+       let thm = mkRefinement n vars assumptions [assumptions] (mkFalse ()) input in
+       ([(n,thm, "  by auto")],n,n+1)
      | Tauto (input, assumptions)  ->
-       let thm = mkRefinement n assumptions [] (mkTrue ()) input in
-       ([(n,thm)], n + 1)
+       let thm = mkRefinement n vars assumptions [] (mkTrue ()) input in
+       ([(n,thm,"  by auto")],n, n + 1)
 
      | TIf (result, inputs, assumptions, split, tt, ft, pre) ->
-        let (thm0, n0) = mkTraceThms n tt  in
-        let (thm1, n1) = mkTraceThms n0 ft in
-        let thm = mkRefinement n assumptions pre result inputs in
-        (thm0 ++ thm1 ++ [(n1,thm)],n1+1)
-
+        let (thm0, i1, n0) = mkTraceThms n vars tt  in
+        let (thm1, i2, n1) = mkTraceThms n0 vars ft in
+        let thm = mkRefinement n vars assumptions pre result inputs in
+        let pf = if_trace_proof split i1 i2 in 
+        (thm0 ++ thm1 ++ [(n1,thm,pf)],n1,n1+1)
         
-     | TCase _ -> ([],n)
+     | TCase (result,inputs,assumptions,scrutinee,alts,pre) ->
+         let (thms,ixs,n0) = foldTraceAlts n vars alts in
+         let thm = mkRefinement n0 vars assumptions pre result inputs in
+         (thms ++ [(n0,thm,case_trace_proof scrutinee ixs)],n0,n0+1)
+       
      | TLocal (result, input,assumptions,definitions,child,pre)  ->
-       let (thm0,n0) = mkTraceThms n child in
-       let thm = mkRefinement n0 assumptions pre result input  in
-       (thm0 ++ [(n0,thm)], n0+1)
+       let (thm0,i0,n0) = mkTraceThms n vars child in
+       let thm = mkRefinement n0 vars assumptions pre result input  in
+       (thm0 ++ [(n0,thm,"  by auto")], n0, n0+1)
        
      | TFactoring (result, inputs, assumptions,factors,child,pre) ->
-       let (thm0,n0) = mkTraceThms n child in
-       let thm = mkRefinement n0 assumptions pre result inputs in
-       (thm0 ++ [(n0,thm)],n0+1)
+       let (thm0,i0,n0) = mkTraceThms n vars child in
+       let thm = mkRefinement n0 vars assumptions pre result inputs in
+       (thm0 ++ [(n0,thm,"  by auto")],n0, n0+1)
 
-     | Unknown -> ([], n)
+     | Unknown -> ([],n, n)
         
 
 % Package up the arguments to bt and auxillary functions.
@@ -504,7 +571,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                       let pres : DNFRep = flatten (map (fn x -> x.2) branches) in
                       let pfAlts = map (fn x -> (x.1.1, x.3)) branches in
                       let resTerm = mkCaseExpr (scrutinee, (map (fn x -> x.1) branches)) in
-                      let pf = TCase (resTerm, inputs, args.assumptions, scrutinee, [],  pres) in
+                      let pf = TCase (resTerm, inputs, args.assumptions, scrutinee, pfAlts,  pres) in
                       (resTerm, pres, pf)
                               
                     | _ ->
