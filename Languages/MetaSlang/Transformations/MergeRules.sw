@@ -349,7 +349,7 @@ type TraceTree =
   | Tauto (CDNFRep * (List MSTerm)) % No need for assumptions
   | TIf (MSTerm * CDNFRep * (List MSTerm) * MSTerm * TraceTree * TraceTree * DNFRep)  % input, assumptions, branch term, true child, false child, precondition
   | TCase (MSTerm * CDNFRep * (List MSTerm) * MSTerm * List (MSPattern * TraceTree) * DNFRep)   % input, assumptions, scrutinee, alts, precondition
-  | TLocal (MSTerm * CDNFRep * (List MSTerm) * List (MSVar * MSTerm) * TraceTree * DNFRep) % input, assumptions, variable, def, child, precondition
+  | TLocal (MSTerm * CDNFRep * (List MSTerm) * List Id * TraceTree * DNFRep) % input, assumptions, variable, def, child, precondition
   | TFactoring  (MSTerm * CDNFRep * (List MSTerm) * List MSTerm *  TraceTree * DNFRep)
   | Unknown
 
@@ -374,16 +374,18 @@ op if_trace_proof(t:MSTerm)(n1:Int)(n2:Int):String =
    "  apply (simp add:" ^ tid1 ^ ")\n" ^
    "  apply (simp add:" ^ tid2 ^ ")\n"
 
+
+op cats(l:List String):String =
+  case l of
+    | [] -> ""
+    | x::xs -> x ^ cats xs 
+   
 op case_trace_proof(t:MSTerm)(ids:List Int):String =
    let sterm = printTerm t in
    let def mkBranch i = "  apply simp\n" in
-   let def cats l = case l of
-                  | [] -> ""
-                  | x::xs -> x ^ cats xs in
    "  apply (case_tac \"" ^ sterm ^ "\")\n" ^
    cats (map mkBranch ids)
 
-   
    
 
 (* This is the more desirable, stepwise proof. Unfortunately, it is
@@ -409,6 +411,15 @@ op if_trace_proof'(t:MSTerm)(n1:Int)(n2:Int):String =
    "  apply assumption\n" ^
    "  apply (rule " ^ tid2 ^ ", assumption, assumption)\n"
 
+op ex_trace_proof(vars:List String)(n1:Int):String =
+   let tid1 = "thm" ^ anyToString n1 in
+   let def exIntro var = "  apply (rule_tac x=" ^ var ^ " in exI)\n" in
+     "  apply (erule exE)\n" ^
+     (cats (map exIntro vars)) ^
+     "  apply (erule conjE)\n" ^ 
+     "  apply (frule " ^  tid1 ^ " )\n" ^ 
+     "  apply assumption\n" ^ 
+     "  apply auto"
 
 op foldTraceAlts(n:Int)(vars:List MSVar)(alts:List (MSPattern * TraceTree)):(List (Int*MSTerm*String) * List Int * Int) =
   case alts of
@@ -442,7 +453,7 @@ op mkTraceThms(n:Int)(vars:List MSVar)(t:TraceTree):(List(Int*MSTerm*String) * I
      | TLocal (result, input,assumptions,definitions,child,pre)  ->
        let (thm0,i0,n0) = mkTraceThms n vars child in
        let thm = mkRefinement n0 vars assumptions pre result input  in
-       (thm0 ++ [(n0,thm,"  by auto")], n0, n0+1)
+       (thm0 ++ [(n0,thm,ex_trace_proof definitions i0)], n0, n0+1)
        
      | TFactoring (result, inputs, assumptions,factors,child,pre) ->
        let (thm0,i0,n0) = mkTraceThms n vars child in
@@ -525,7 +536,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                   let resTerm = Bind (Exists, tvars, mkAnd (newAssumptions ++ [t']),noPos) in
                   % FIXME!!! Supply the defs, instead of []
                   let defs = [] in 
-                  let pf = TLocal (resTerm, inputs,args.assumptions, [], pf1, p) in
+                  let pf = TLocal (resTerm, inputs,args.assumptions, dvars, pf1, p) in
                   (resTerm, p, pf)
               else
                 % let _ = writeLine "There are no global definitions" in
