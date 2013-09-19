@@ -68,6 +68,21 @@ op [a] intersperse (x : a) (l : List a) : List a =
     | [] -> []
     | y::l' -> y :: x :: intersperse x l'
 
+op [a,b] mapM (f : a -> Monad b) (l : List a) : Monad (List b) =
+  case l of
+    | [] -> return []
+    | x::l' ->
+      { x_ret <- f x ;
+        l_ret <- mapM f l' ;
+        return (x_ret :: l_ret) }
+(*
+def mapM (f, l) =
+  List.foldl
+  ((fn (m, x) ->
+      { x' <- f x ; l' <- m ; return (x'::l') }),
+   return [], l)
+*)
+
 (* convert a Spec path into a triple (path, name, suffix_opt) *)
 op specPathToRelUID : String -> Option (List String * String * Option String)
 def specPathToRelUID spath =
@@ -151,50 +166,58 @@ def termIsDefined? (t : MSTerm) : Bool =
  *** The monad for translating to Coq
  ***)
 
-(* Translation to Coq takes place in a monad, which (so far!) is just
-   a reader monad for Contexts combined with an error monad *)
+(* Translation to Coq takes place in a monad, which is a state monad
+   for a "current context" combined with an error monad *)
 
-type Context = { }
+type Context =
+  {
+   freshNatCounter : Nat
+   }
 
-type Monad a = Context -> Either (String, a)
+def mkContext () =
+  { freshNatCounter = 0 }
+
+type Monad a = Context -> Either (String, Context * a)
 
 % op monadBind: [a,b] (Monad a) * (a -> Monad b) -> Monad b
 def monadBind (m, f) =
   fn ctx ->
   case m ctx of
-    | Right res -> f res ctx
+    | Right (ctx', res) -> f res ctx'
     | Left str -> Left str
 
 % op monadSeq : [a,b] (Monad a) * (Monad b) -> Monad b
 def monadSeq (m1, m2) = monadBind (m1, (fn _ -> m2))
 
 % op return : [a] a -> Monad a
-def return x = fn ctx -> Right x
+def return x = fn ctx -> Right (ctx, x)
 
 op err : [a] String -> Monad a
 def err str = fn _ -> Left str
 
-op [a,b] mapM (f : a -> Monad b) (l : List a) : Monad (List b) =
-  case l of
-    | [] -> return []
-    | x::l' ->
-      { x_ret <- f x ;
-        l_ret <- mapM f l' ;
-        return (x_ret :: l_ret) }
-(*
-def mapM (f, l) =
-  List.foldl
-  ((fn (m, x) ->
-      { x' <- f x ; l' <- m ; return (x'::l') }),
-   return [], l)
-*)
+op getCtx : Monad Context
+def getCtx = fn ctx -> Right (ctx, ctx)
 
-(* Use a computation to write a Pretty to a file, returning an error
-   string on error *)
+op putCtx : Context -> Monad ()
+def putCtx ctx = fn _ -> Right (ctx, ())
+
+op freshNat : Monad Nat
+def freshNat =
+  { ctx <- getCtx;
+    () <- putCtx { freshNatCounter = ctx.freshNatCounter + 1 };
+    return ctx.freshNatCounter }
+
+op ppFreshVar : Monad Pretty
+def ppFreshVar =
+  { var_nat <- freshNat;
+    return (string ("__fresh_" ^ intToString var_nat)) }
+
+(* Run operation for our monad: use a computation to write a Pretty to
+   a file, returning an error string on error *)
 op writingToFile : String * Context * Monad Pretty -> Option String
 def writingToFile (filename, ctx, m) =
   case m ctx of
-    | Right pp -> (toFile (filename, format (formatWidth, pp)) ; None)
+    | Right (_, pp) -> (toFile (filename, format (formatWidth, pp)) ; None)
     | Left str -> Some str
 
 
@@ -222,6 +245,12 @@ def ppSeparatorTerm p1 sep p2 term =
     (1, string (" " ^ sep ^ " ")),
     (4, p2),
     (1, string (" " ^ term))])
+
+(* pretty-print something like begin { middle } end, where either the
+   whole thing is on one line on three with the middle indented *)
+op ppIndentMiddle : Pretty -> Pretty -> Pretty -> Pretty
+def ppIndentMiddle p1 p2 p3 =
+  blockLinear (0, [(0, p1),(2, p2),(0, p3)])
 
 def ppColon = ppSeparator ":"
 def ppSemi = ppSeparator ";"
@@ -297,21 +326,18 @@ def ppCoqDefNoT (q, id, def_pp) =
 (* pretty-print a Coq record type *)
 op ppCoqRecordDef : (String * String * List (String * Pretty)) -> Pretty
 def ppCoqRecordDef (nm, ctor, fieldAlist) =
-  blockLinear
-  (0,
-   [(0,
-     blockFill
+  ppIndentMiddle
+    (blockFill
        (0,
         [(0, string "Record "),
          (4, string nm),
          (2, string " := "),
          (2, string ctor),
-         (2, string " {")])),
-    (2,
-     prLinear 0
+         (2, string " {")]))
+    (prLinear 0
        (map (fn (fnm, ftp_pp) ->
-               ppSeparatorTerm (string fnm) ":" ftp_pp ";") fieldAlist)),
-    (0, string " }.")])
+               ppSeparatorTerm (string fnm) ":" ftp_pp ";") fieldAlist))
+    (string " }.")
 
 (* pretty-print an element of a Coq record type *)
 op ppCoqRecordElem : (List (String * Pretty)) -> Pretty
@@ -420,9 +446,9 @@ def ppTerm tm =
         return
          (ppParens (ppCoqFun var_pp body_pp)) }
     | Lambda (matches, _) ->
-      % FIXME: generate a fresh variable here!!
-      { body_pp <- ppMatch (string "__match_x") matches;
-        return (ppParens (ppCoqFun (string "__match_x") body_pp)) }
+      { var_pp <- ppFreshVar;
+        body_pp <- ppCaseExpr var_pp matches;
+        return (ppParens (ppCoqFun var_pp body_pp)) }
     | IfThenElse (t1, t2, t3, _) ->
       { t1_pp <- ppTerm t1 ;
         t2_pp <- ppTerm t2 ;
@@ -448,24 +474,62 @@ def ppTerm tm =
     | And (ts, _) -> unhandledTerm "And" tm
     | Any _ -> unhandledTerm "Any" tm
 
-op ppMatch : Pretty -> MSMatch -> Monad Pretty
-def ppMatch scrut_pp pats =
-  err "ppMatch: unimplemented!"
-(*
-  { pat_pps <- mapM ppPat pats;
+(* pretty-print a pattern-match over a scrutinee, where the latter has
+   already been pretty-printed *)
+(* NOTE: we do not handle guards *)
+(* FIXME: print the whole term being printed when reporting errors *)
+op ppCaseExpr : Pretty -> MSMatch -> Monad Pretty
+def ppCaseExpr scrut_pp pats =
+  { pat_pps <- mapM ppBranch pats;
     return
-     (prLines 0
-        [blockFill (0, [(0, string "match"), (2, scrut_pp), (0, string "with")]),
-         prLines 2 pat_pps,
-         string "end"]) }
-*)
+     (ppIndentMiddle
+        (blockFill
+           (0, [(0, string "match "), (4, scrut_pp), (1, string " with")]))
+        (prLinear 0 pat_pps)
+        (string "end")) }
 
-(* pretty-print a pattern to a patern and  *)
-(*
-op ppPat : (MSPattern * MSTerm * MSTerm) -> Monad (Pretty * Pretty)
-def ppPat (pat, gd, body) =
-  err "ppPat: unimplemented!"
-*)
+(* pretty-print a pattern-matching branch, i.e., a pattern + body *)
+op ppBranch : (MSPattern * MSTerm * MSTerm) -> Monad Pretty
+def ppBranch (pat, gd, body) =
+  case gd of
+    | Fun (Bool true, Boolean _, _) ->
+      { pat_pp <- ppPat pat;
+        body_pp <- ppTerm body;
+        retFill
+         [(0, string "| "), (2, pat_pp), (1, string " => "), (4, body_pp)]}
+    | _ ->
+      err "ppBranch: cannot handle pattern guards!"
+
+op unhandledPat (str : String) (p : MSPattern) : Monad Pretty =
+  unhandled ("ppPat", str, anyToString p)
+
+(* pretty-print the actual pattern itself *)
+op ppPat : MSPattern -> Monad Pretty
+def ppPat pat =
+  case pat of
+    | AliasPat (p, VarPat ((v, _), _), _) ->
+      { p_pp <- ppPat p;
+        retFill [(0, ppParens p_pp), (0, string "as"), (0, string v)] }
+    | VarPat ((v, _), _) -> retString v
+    | EmbedPat (ctor, None, _, _) -> retString ctor
+    | EmbedPat (ctor, Some arg_pat, _, _) ->
+      { arg_pp <- ppPat arg_pat;
+        retFill [(0, string ctor), (2, arg_pp)] }
+    | RecordPat (id_pats, _) ->
+         unhandledPat "RecordPat" pat
+      (* FIXME HERE *)
+    | WildPat (_, _) -> retString "_"
+    | BoolPat (b, _) ->
+         if b then retString "true" else retString "false"
+    | NatPat (n, _) -> retString (intToString n)
+    | StringPat (str, _) -> retString ("\"" ^ str ^ "\"%string")
+    | CharPat (c, _) -> retString ("\"" ^ implode [c] ^ "\"%char")
+    | QuotientPat (_, _, _) ->
+         unhandledPat "QuotientPat" pat
+    | RestrictedPat (_, _, _) ->
+         unhandledPat "RestrictedPat" pat
+    | TypedPat (pat', _, _) -> ppPat pat'
+
 
 op ppVarBinding : MSVar -> Monad Pretty
 def ppVarBinding (str, tp) =
@@ -783,7 +847,7 @@ def printUIDToCoqFile spath =
       (case Specware.evaluateUnitId spath of
          | None -> "Error: Unknown UID " ^ spath
          | Some (Spec s) ->
-           let context = { } in
+           let context = mkContext () in
            let filename = concatenate #/ (mod_dir ++ [mod_name]) ^ ".v" in
            let _ = ensureDirectoriesExist filename in
            let m = ppSpec mod_dir mod_name s in
