@@ -1,6 +1,9 @@
 
 (*** A formalization of MetaSlang specs in Coq ***)
 
+Require Import String.
+
+
 (***
  *** Misc helper functions
  ***)
