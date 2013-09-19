@@ -49,40 +49,71 @@ op [a] badOpInfo? (opinfo : AOpInfo a, spc : Spec) : Bool =
   %   false
   tyvars_bad?
 
-%% FIXME: Flesh this out.
-op [b] badTerm    (x:Bool) (tm:ATerm    b) : (ATerm    b * Bool) = (tm, x)
-
-%% FIXME: Flesh this out.
-op [b] badPattern (x:Bool) (pat:APattern b) : (APattern b * Bool) = (pat, x)
-
-  %%FIXME: Consider replacing typeTyVars with this version: 
- op [b] typeTyVars2 (ty : AType b) : TyVars =
+%%FIXME: Consider replacing typeTyVars with this version: 
+op [b] typeTyVars2 (ty : AType b) : TyVars =
   case ty of
      | Pi (tvs, _, _) -> tvs
      | And (tms, _) -> if tms = [] then [] else typeTyVars (head tms)
      | _ -> []
 
-op opsOkay?(s : Spec) : Bool =
-  %% For every op info in the hash table, verify that every op-reference 
-  %% has a corresponding entry.
-  %% TODO: types, op-refs within types, etc.
+%% FIXME: Flesh this out.  Should take a spec as an argument?
+op [b] badTerm    (accum:Bool) (tm:ATerm    b) : (ATerm    b * Bool) =
+  (tm,
+  case tm of
+    | And(tms, _) -> (if (exists? anyTerm? tms) then 
+                         let _ = writeLine("ERROR: 'Any' term inside of 'And' term.") in true
+                       else
+                         accum)
+    | _ -> false)
 
-  let def badType (x:Bool) (ty:AType StandardAnnotation) : (AType    StandardAnnotation * Bool) =
+
+%% FIXME: Flesh this out.  Should take a spec as an argument?
+op [b] badPattern (accum:Bool) (pat:APattern b) : (APattern b * Bool) = (pat, accum)
+
+op badType (s:Spec) (accum:Bool) (ty:AType StandardAnnotation) : (AType StandardAnnotation * Bool) =
   (ty,
    case ty of
     | Base(qid, args, _) ->
      (let argcount = length args in
       let correctargcount = 
        (let op_ty = findTheType(s,qid) in
-        (case op_ty of | None -> let _ = writeLine("ERROR: Can't find type."^(show qid)) in 0 %%FIXME error here?
+        (case op_ty of | None -> let _ = writeLine("ERROR: Can't find type: "^(show qid)) in 0 %%FIXME error here?
                        | Some ty_info -> let dfn = ty_info.dfn in
-                                         let tyvars = typeTyVars2 dfn in  %FIXME what if there is an and whose conjuncts have different lists of ty vars?
+                                         let tyvars = typeTyVars2 dfn in  %FIXME what about an And whose conjuncts have different lists of ty vars?
                                          length tyvars))
 in
-      (if (argcount = correctargcount) then x else % not bad
+      (if (argcount = correctargcount) then accum else % not bad
        let _ = writeLine ("Error: Wrong arg count in Base type node applying type "^(show qid)^". Got: "^(anyToString argcount)^". Should be: "^(anyToString correctargcount)^".") in true))
-      | _ -> x % not bad
-   ) in
+       %% FIXME recur on the conjuncts!
+      | And(tys, _) -> (if (exists? anyType? tys) then 
+                         let _ = writeLine("ERROR: 'Any' type inside of 'And' type.") in true
+                       else 
+                         accum)
+      | _ -> accum % not bad
+   )
+
+op typeInfoBad? (s : Spec) (info : ATypeInfo StandardAnnotation) : Bool =
+  %FIXME: make something like mapaccumterm that doesn't return the term:
+  let bad? = ((mapAccumType (badTerm, badType s, badPattern) false info.dfn).2) in
+  if bad? then
+    let _ = writeLine ("ERROR: Found problems (listed just above) with type "^(show (primaryTypeName info))) in true
+  else
+   false
+
+op typesOkay?(s : Spec) : Bool =
+  (countTypeInfos (typeInfoBad? s) s.types) = 0
+
+op opInfoBad? (s : Spec) (info : AOpInfo StandardAnnotation) : Bool =
+  let bad? = ((mapAccumTerm (badTerm, badType s, badPattern) false info.dfn).2) in
+  if bad? then
+    let _ = writeLine ("ERROR: Found problems (listed above) with op "^(show (primaryOpName info))) in true
+  else
+    false
+
+op opsOkay?(s : Spec) : Bool =
+  %% For every op info in the hash table, verify that every op-reference 
+  %% has a corresponding entry.  This now checks several more things.
+  %% TODO: types, op-refs within types, etc.
 
   let
     def bad_ref? (nm : QualifiedId) (tm:MSTerm) =
@@ -93,7 +124,7 @@ in
              | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
         | _ -> false
   in
-  let ops_with_bad_definitions = countOpInfos (fn (info) -> (let bad? = ((mapAccumTerm (badTerm, badType, badPattern) false info.dfn).2) in if bad? then let _ = writeLine ("ERROR: Found problems (listed above) with op "^(show (primaryOpName info))) in true else false)) s.ops in  %FIXME: make something like mapaccumterm that doesn't return the term
+  let ops_with_bad_definitions = countOpInfos (opInfoBad? s) s.ops in  %FIXME: make something like mapaccumterm that doesn't return the term
   let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> existsSubTerm (bad_ref? (primaryOpName info)) info.dfn) s.ops in
   let ops_with_free_vars = countOpInfos (fn (info) -> case (freeVars info.dfn) of
                                                          | [] -> false
@@ -185,6 +216,8 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
   in
   let bad_ops? = ~ (opsOkay? s) in
   let _ = writeLine "Done testing ops." in
+  let bad_types? = ~ (typesOkay? s) in
+  let _ = writeLine "Done testing types." in
   %% For every Type, TypeDef, Op, or OpDef in spec elements,
   %% verify that it refers to an entry in the appropriate hash table.
   let missing_hash_table_entries? =
@@ -210,7 +243,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                        false
                         s.elements
   in
-  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || bad_ops? || missing_hash_table_entries?) of
+  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || bad_ops? || bad_types? || missing_hash_table_entries?) of
     | false ->
       let _ = writeLine success_msg in
       false
@@ -219,7 +252,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
       true
 
 op checkSpecCore(spc : Spec, str : String) : Boolean =
-  let _ = writeLine ("Checking spec " ^ str ^ ".") in
+  let _ = writeLine ("Checking spec: " ^ str ^ ".") in
   specOkay? "Spec is okay." "ERROR: Ill-formed spec." spc
 
 %% Evaluate the given unit and print it to a file.

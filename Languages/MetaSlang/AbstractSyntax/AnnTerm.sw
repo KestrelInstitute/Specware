@@ -382,7 +382,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    case t of
      | Any _        -> true
      | Pi(_, ty, _) -> anyType? ty
-     | And(tys, _)  -> forall? anyType? tys
+     | And(tys, _)  -> forall? anyType? tys  % I wonder if this should be exists? instead of forall?
      | _ -> false
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
