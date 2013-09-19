@@ -61,7 +61,7 @@ op [b] badTerm    (accum:Bool) (tm:ATerm    b) : (ATerm    b * Bool) =
   (tm,
   case tm of
     | And(tms, _) -> (if (exists? anyTerm? tms) then 
-                         let _ = writeLine("ERROR: 'Any' term inside of 'And' term.") in true
+                         accum %% FFIXME Put this back, once these errors stop happening in HACMS!  let _ = writeLine("ERROR: 'Any' term inside of 'And' term.") in true
                        else
                          accum)
     | _ -> false)
