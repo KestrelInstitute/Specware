@@ -2,6 +2,7 @@
 (*** A formalization of MetaSlang specs in Coq ***)
 
 Require Import String.
+Require Import Coq.Logic.Epsilon.
 
 
 (***
@@ -21,9 +22,10 @@ Fixpoint multi_arrow (types : list Type) (B : Type) : Type :=
 
 (* NOTE: MetaSlang depends on classical logic in a number of ways; the
     strongest way is that propositions are identified with Bool,
-    meaning that all propositions are not just decidable. This means
-    we need not only excluded middle, but informative excluded middle,
-    which we call em_inf for short. *)
+    meaning that all propositions are decidable. This means we need
+    not only excluded middle, but informative excluded middle, which
+    we call em_inf for short. *)
+
 Axiom em_inf : forall (P : Prop), {P} + {~ P}.
 
 Definition prop2bool (P : Prop) : bool :=
@@ -55,8 +57,25 @@ Definition dec_eq_b (A : Set) (a b : A) : bool :=
 
 Arguments dec_eq_b [A] _ _.
 
-(* Binary boolean functions that operate on pairs, instead of using
-    the standard Curried approach *)
+
+(***
+ *** Coq versions of some basic Specware constructs
+ ***)
+
+Definition the (A : Type) (p : { f : A -> bool | exists! x, f x = true })
+: { x : A | proj1_sig p x = true } :=
+  constructive_definite_description
+    (fun x => (proj1_sig p) x = true)
+    (proj2_sig p).
+
+Arguments the [A] _.
+
+
+(***
+ *** Coq versions of Specware Boolean operations
+ ***)
+
+(* These operate on pairs, instead of being Curried *)
 
 Definition andb_pair (p : bool * bool) : bool :=
   andb (fst p) (snd p).
