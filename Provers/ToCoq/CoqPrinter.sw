@@ -278,6 +278,10 @@ op coqApplyM : Monad Pretty -> Monad Pretty -> Monad Pretty
 def coqApplyM mf ma =
   { f_pp <- mf; a_pp <- ma; return (coqApply f_pp a_pp) }
 
+op coqApplyMulti : Pretty -> List Pretty -> Pretty
+def coqApplyMulti f args =
+  foldl (fn (f', a') -> coqApply f' a') f args
+
 op coqApplyMultiM : Monad Pretty -> List (Monad Pretty) -> Monad Pretty
 def coqApplyMultiM mf mas =
   foldl (fn (m1, m2) -> coqApplyM m1 m2) mf mas
@@ -397,7 +401,9 @@ def ppCoqModule (mod_name, pps) =
 
 op unhandled : String * String * String -> Monad Pretty
 def unhandled (fun, construct, obj_str) =
-  err (fun ^ ": unhandled construct " ^ construct ^ " in: " ^ obj_str)
+  % err (fun ^ ": unhandled construct " ^ construct ^ " in: " ^ obj_str)
+  let _ = System.writeLine (fun ^ ": unhandled construct " ^ construct ^ " in: " ^ obj_str) in
+  return (string ("##unknown construct " ^ construct ^ "##"))
 
 def unhandledTerm (str : String) (tm : MSTerm) : Monad Pretty =
   unhandled ("ppTerm", str, anyToString tm)
@@ -430,7 +436,10 @@ def ppTerm tm =
         body_pp <- ppTerm body ;
         return (ppExists vars_pp body_pp) }
     | Bind (Exists1, vars, body, _) -> unhandledTerm "Bind (Exists1)" tm
-    | The (var, body, _) -> unhandledTerm "The" tm
+    | The (var, body, _) ->
+      { body_pp <- ppTerm body;
+        var_pp <- ppVarBinding var;
+        return (coqApply (string "the") (ppCoqFun var_pp body_pp)) }
     | Let (bindings, body, _) -> unhandledTerm "Let" tm
     | LetRec (bindings, body, _) -> unhandledTerm "LetRec" tm
     | Var ((str, tp), _) ->
@@ -516,8 +525,21 @@ def ppPat pat =
       { arg_pp <- ppPat arg_pat;
         retFill [(0, string ctor), (2, arg_pp)] }
     | RecordPat (id_pats, _) ->
-         unhandledPat "RecordPat" pat
-      (* FIXME HERE *)
+      if foralli? (fn (i, (fld, _)) -> intToString i = fld) id_pats then
+        { pats_pp <- mapM (fn (_, pat') -> ppPat pat') id_pats;
+          return
+           (ppParens
+              (blockFill
+                 (0, (intersperse (1, (string ", "))
+                        (map (fn (pp:Pretty) -> (1, pp)) pats_pp))))) }
+      else
+        { fld_pats_pp
+           <- mapM (fn (fname, fpat) ->
+                      { fpat_pp <- ppPat fpat;
+                        return (fname, fpat_pp) }) id_pats;
+          return
+            (ppCoqRecordElem fld_pats_pp)
+        }
     | WildPat (_, _) -> retString "_"
     | BoolPat (b, _) ->
          if b then retString "true" else retString "false"
@@ -565,12 +587,12 @@ def ppFun (f, tp) =
     | Op (qid, fixity) -> ppQid qid
     | Project id -> unhandledFun "Project" f
     | RecordMerge -> unhandledFun "RecordMerge" f
-    | Embed (id, flag) -> unhandledFun "Embed" f
+    | Embed (id, flag) -> retString id
     | Embedded id -> unhandledFun "Embedded" f
     | Select id -> unhandledFun "Select" f
     | Nat n -> retString (show n)
-    | Char c -> unhandledFun "Char" f
-    | String str -> unhandledFun "String" f
+    | Char c -> retString ("\"" ^ implode [c] ^ "\"%char")
+    | String str -> retString ("\"" ^ str ^ "\"%string")
     | Bool b -> retString (show b)
 
     | OneName (id, fixity) -> unhandledFun "OneName" f
