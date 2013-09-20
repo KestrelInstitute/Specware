@@ -83,20 +83,32 @@ def mapM (f, l) =
    return [], l)
 *)
 
+(* remove duplicates with a user-defined equality predicate *)
+op [a] removeDups (eq : a -> a -> Bool) (l : List a) : List a =
+  case l of
+    | [] -> []
+    | x :: l' ->
+      (case findLeftmost (eq x) l' of
+         | Some _ -> removeDups eq l'
+         | None -> x :: (removeDups eq l'))
+
 (* convert a Spec path into a triple (path, name, suffix_opt) *)
-op specPathToRelUID : String -> Option (List String * String * Option String)
+op specPathToRelUID : String -> Option RelativeUID
 def specPathToRelUID spath =
   let spath_elems = separateString #/ spath in
-  let path =
-    % If spath starts with "/" drop the empty string first elem
-    if head spath_elems = "" then butLast (tail spath_elems)
-    else butLast spath_elems
+  let (path, ctorfun) =
+    % If spath starts with "/" then it is "SpecPath-Relative"
+    if head spath_elems = "" then
+      (butLast (tail spath_elems), (fn p -> SpecPath_Relative p))
+    else (butLast spath_elems, (fn p -> UnitId_Relative p))
   in
   let base = last spath_elems in
   let hash_elems = separateString ## base in
   case hash_elems of
-    | [filename] -> Some (path, filename, None)
-    | [filename, suffix] -> Some (path, filename, Some suffix)
+    | [filename] ->
+      Some (ctorfun { path = path ++ [filename], hashSuffix = None })
+    | [filename, suffix] ->
+      Some (ctorfun { path = path ++ [filename], hashSuffix = Some suffix })
     | _ -> None
 
 (* declare this here so we don't have to import Bootstrap above *)
@@ -110,13 +122,42 @@ op  Specware.evaluateUnitId: String -> Option Value
 def qidToCoqName (q, id) =
   if q = "" || q = "<unqualified>" then id else q ^ "__" ^ id
 
-op specPathToCoqModule : String -> Option (List String * String)
-def specPathToCoqModule spath =
+type CoqModName = List String
+
+def coqModNameToString (coq_mod : CoqModName) : String =
+  concatenate #. coq_mod
+
+def relUIDToCoqModuleName (ruid : RelativeUID) : CoqModName =
+  let (uid, specpath?) =
+    case ruid of
+      | SpecPath_Relative uid -> (uid, true)
+      | UnitId_Relative uid -> (uid, false)
+  in
+  (if specpath? then "Specware" :: uid.path else uid.path)
+  ++ (case uid.hashSuffix of
+        | Some suffix -> [suffix]
+        | None -> [])
+
+def relUIDToCoqNameString (ruid : RelativeUID) : String =
+  coqModNameToString (relUIDToCoqModuleName ruid)
+
+def specPathToCoqModule (spath : String) : Option CoqModName =
   case specPathToRelUID spath of
-    | Some (rel_dir, base, Some hashname) ->
-      Some (rel_dir ++ [base], hashname)
-    | Some (rel_dir, base, None) -> Some (rel_dir, base)
+    | Some ruid -> Some (relUIDToCoqModuleName ruid)
     | None -> None
+
+(* README: we do not want to deal with absolute paths, which are
+   mostly what Specware seems to put out... *)
+(* convert a uid to a Coq module name *)
+(*
+def uidToCoqModule (uid : UnitId) : Pretty =
+  let suffixList =
+    case uid.hashSuffix of
+      | Some suf -> [suf]
+      | None -> []
+  in
+  string (concatenate (intersperse "." (uid.path ++ suffixList)))
+*)
 
 (* muck around with Specware internal state to get a name for a Value;
    code taken from IsaPrinter.sw *)
@@ -159,6 +200,7 @@ def typeIsDefined? (t : MSType) : Bool =
 def termIsDefined? (t : MSTerm) : Bool =
   case t of
     | Any _ -> false
+    | TypedTerm (t', _, _) -> termIsDefined? t'
     | _ -> true
 
 
@@ -306,7 +348,8 @@ def ppCoqParam (q, id, tp_pp) =
   blockFill (0, [(0, string "Parameter "),
                       (2, string (qidToCoqName (q,id))),
                       (0, string " : "),
-                      (2, tp_pp)])
+                      (2, tp_pp),
+                      (0, string ".")])
 
 (* pretty-print a Coq definition, which takes in a (pretty-printed)
    Coq type and Coq value of that type *)
@@ -317,7 +360,8 @@ def ppCoqDef (q, id, tp_pp, def_pp) =
                       (0, string " : "),
                       (2, tp_pp),
                       (0, string " := "),
-                      (2, def_pp)])
+                      (2, def_pp),
+                      (0, string ".")])
 
 (* pretty-print a Coq definition without a type *)
 op ppCoqDefNoT : (String * String * Pretty) -> Pretty
@@ -325,7 +369,8 @@ def ppCoqDefNoT (q, id, def_pp) =
   blockFill (0, [(0, string "Definition "),
                       (2, string (qidToCoqName (q,id))),
                       (0, string " := "),
-                      (2, def_pp)])
+                      (2, def_pp),
+                      (0, string ".")])
 
 (* pretty-print a Coq record type *)
 op ppCoqRecordDef : (String * String * List (String * Pretty)) -> Pretty
@@ -709,6 +754,43 @@ def ppTypeDef (q,id, tp) =
  *** pretty-printer for specs
  ***)
 
+(* pretty-print a spec element as an element of a Coq module *)
+op ppSpecElem : Spec -> SpecElement -> Monad Pretty
+def ppSpecElem s elem =
+  let def ppTypeSpecElem (q, id) : Monad Pretty =
+    (case findAQualifierMap (s.types, q, id) of
+       | Some tp_info ->
+         if typeIsDefined? tp_info.dfn then
+           { tp_pp <- ppType tp_info.dfn;
+            return (ppCoqDef (q, id, string "Set", tp_pp)) }
+         else
+           return (ppCoqParam (q, id, string "Set"))
+       | None -> err ("ppSpecElem: could not find type " ^ id ^ " in spec!"))
+  in
+  let def ppOpSpecElem (q, id) : Monad Pretty =
+    (case findAQualifierMap (s.ops, q, id) of
+       | Some op_info ->
+         if termIsDefined? op_info.dfn then
+           { def_pp <- ppTerm op_info.dfn;
+             tp_pp <- ppType (termType op_info.dfn);
+            return (ppCoqDef (q, id, tp_pp, def_pp)) }
+         else
+           { tp_pp <- ppType (termType op_info.dfn);
+             return (ppCoqParam (q, id, tp_pp)) }
+       | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))
+  in
+  case elem of
+   | Import ((UnitId ruid, _), _, _, _) ->
+     retString ("Require Import " ^ relUIDToCoqNameString ruid ^ ".")
+   | Type (Qualified qid, _) -> ppTypeSpecElem qid
+   | TypeDef (Qualified qid, _) -> ppTypeSpecElem qid
+   | Op (Qualified qid, _, _) -> ppOpSpecElem qid
+   | OpDef (Qualified qid, _, _, _) -> ppOpSpecElem qid
+   | Property prop -> (* FIXME *) retString "(* property *)"
+   | Comment (str, _) -> (* FIXME *) retString ("(* Comment: " ^ str ^ " *)")
+   | Pragma (str1, str2, str3, _) -> (* FIXME *) retString "(* pragma *)"
+
+
 (* The basic idea is that a spec is translated into two Coq objects:
 
     1. A record type, whose elements are the types (in Set),
@@ -743,103 +825,51 @@ def ppTypeDef (q,id, tp) =
 
 *)
 
-op ppSpec : List String -> String -> Spec -> Monad Pretty
-def ppSpec mod_dir mod_name s =
+op ppSpec : CoqModName -> Spec -> Monad Pretty
+def ppSpec coq_mod s =
 
-  (* first get all the types, ops, and axioms with (optional) defs *)
-  let types_with_defs =
-    mappedListOfAQualifierMap (fn tinfo -> tinfo.dfn) s.types
-  (*
-   foldr (fn (elem, rest) ->
-            case elem of
-              | Type (Qualified (q, id), _) ->
-                addToAlist ((q, id), findAQualifierMap (types s, q, id))
-              | TypeDef (qid, _) ->
-                addToAlist ((q, id), findAQualifierMap (types s, q, id))
-              | _ -> rest) [] (elements s)
-     *)
+  (* first get the spec elements, ensuring that we don't have both a
+     decl and def of the same type or op *)
+  let def spec_elem_same_qid elem1 elem2 =
+    case (elem1, elem2) of
+      | (Op (qid1, _, _), Op (qid2, _, _)) -> qid1 = qid2
+      | (Op (qid1, _, _), OpDef (qid2, _, _, _)) -> qid1 = qid2
+      | (OpDef (qid1, _, _, _), Op (qid2, _, _)) -> qid1 = qid2
+      | (OpDef (qid1, _, _, _), OpDef (qid2, _, _, _)) -> qid1 = qid2
+      | (Type (qid1, _), Type (qid2, _)) -> qid1 = qid2
+      | _ -> false
   in
-  let ops_with_defs_tps =
-    mappedListOfAQualifierMap
-      (fn op_info -> (op_info.dfn, termType op_info.dfn))
-      s.ops
-  (*
-  let ops_with_defs =
-   foldr (fn (elem, rest) ->
-            case elem of
-              | Op (qid, _, _) ->
-                addToAlist ((q, id), findAQualifierMap (ops s, q, id))
-              | OpDef (qid, _, _, _) ->
-                addToAlist ((q, id), findAQualifierMap (ops s, q, id))
-              | _ -> rest) [] (elements s)
-   *)
-  in
-  let axioms_with_pfs =
-   foldr (fn (elem, rest) ->
-            case elem of
-              | Property (Axiom, Qualified (q, id), tyvars, pred, _) ->
-                (* FIXME: look for proofs given as pragmas...? *)
-                (q, id, tyvars, pred, None) :: rest
-              | _ -> rest) [] s.elements
-  in
+  let spec_elems = removeDups spec_elem_same_qid s.elements in
 
   {
-   (* form a list of type names with pp-ed defs *)
-   tps_list
-   <- (mapM (fn (q, id, tp) ->
-               { tp_def_pp <- ppTypeDef (q, id, tp) ;
-                 return (q, id, string "Set", tp_def_pp) }) types_with_defs) ;
-
-   (* form a list of op names with pp-ed defs and types *)
-   ops_list
-   <- (mapM (fn (q, id, (op_def, op_tp)) ->
-               if termIsDefined? op_def then
-                 { def_pp <- ppTerm op_def ;
-                   tp_pp <- ppType op_tp ;
-                   return (q, id, tp_pp,
-                           ppCoqDef (q, id, tp_pp, def_pp)) }
-               else if typeIsDefined? op_tp then
-                 { tp_pp <- ppType op_tp ;
-                   return (q, id, tp_pp, ppCoqParam (q, id, tp_pp)) }
-               else
-                 err ("Could not get type for op: " ^ q ^ "." ^ id))
-         ops_with_defs_tps) ;
-
-   (* form a list of axiom names with pp-ed props and proofs *)
-   axioms_list
-   <- (mapM (fn (q, id, tyvars, ax, pf_opt) ->
-               case pf_opt of
-                 | None ->
-                   { ax_term_pp <- ppTerm ax ;
-                     ax_pp <-
-                      (prop2bool
-                         (return
-                            (ppForall (ppTyVarBindings tyvars)
-                               (ppSeparator ":=" ax_term_pp (string "true"))))) ;
-                     return (q, id, ax_pp, ppCoqParam (q, id, ax_pp)) }
-                 | Some _ ->
-                   err "Cannot yet handle axioms with proofs!")
-         axioms_with_pfs) ;
+   (* next, pretty-print the spec elements *)
+   spec_elems_pp <- mapM (ppSpecElem s) spec_elems;
 
    (* Now, build the Coq module! *)
    return
    (
-    let elems_list = tps_list ++ ops_list ++ axioms_list in
+    prLines 0 (intersperse (string "") spec_elems_pp)
+
+    (* old stuff below... *)
 
     (* first build the Pretty for the __type module element *)
+    (*
     let rt_pp =
       ppCoqRecordDef
         (mod_name, "mk_" ^ mod_name,
          (map (fn (q, id, tp_pp, _) ->
                  (qidToCoqName (q, id), tp_pp)) elems_list))
-    in 
+    in
+     *)
 
     (* next build Prettys for type, op, and axiom module elements *)
+    (*
     let defs_pps =
       map (fn (q, id, tp_pp, def_pp) -> def_pp) elems_list
-    in
+    in *)
 
     (* now build the __pinst module element *)
+    (*
     let pinst_pp =
       ppCoqDefNoT
         ("", "__pinst",
@@ -848,11 +878,13 @@ def ppSpec mod_dir mod_name s =
               (fn (q, id, _, _) ->
                  (qidToCoqName (q, id), string (qidToCoqName (q, id))))
               elems_list))
-    in
+    in *)
 
     (* Finally, build the Module! *)
+    (*
     ppCoqModule
       (mod_name, [rt_pp] ++ defs_pps ++ [pinst_pp])
+       *)
     )}
 
 
@@ -865,14 +897,18 @@ op printUIDToCoqFile : String -> String
 def printUIDToCoqFile spath =
   case specPathToCoqModule spath of
     | None -> "Error: Malformed spec path: " ^ spath
-    | Some (mod_dir, mod_name) ->
+    | Some mod_path ->
       (case Specware.evaluateUnitId spath of
          | None -> "Error: Unknown UID " ^ spath
          | Some (Spec s) ->
            let context = mkContext () in
-           let filename = concatenate #/ (mod_dir ++ [mod_name]) ^ ".v" in
+           let filepath =
+             if head mod_path = "Specware" then tail mod_path
+             else mod_path
+           in
+           let filename = concatenate #/ filepath ^ ".v" in
            let _ = ensureDirectoriesExist filename in
-           let m = ppSpec mod_dir mod_name s in
+           let m = ppSpec mod_path s in
            (case writingToFile (filename, context, m) of
               | None -> filename
               | Some err_str -> "Error: " ^ err_str))
