@@ -273,14 +273,15 @@ theorem in?_size is [a]
   %     fa(c:Set a,d:Set a,y:a)
   %       (set_delete(y,c -- d) = set_delete(y,c) -- d)
 
-%commenting this out because I am commenting out delete_new
-  % theorem distribute_set_delete_new_over_union is [a]
-  %     fa(c:Set a,d:Set a,y:a)
-  %       (set_delete_new(y, c \/ d) = set_delete(y,c) \/ set_delete(y,d))
-
   theorem distribute_set_delete_over_union is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_delete(y, c \/ d) = set_delete(y,c) \/ set_delete(y,d))
+
+%% FIXME: Split into 2 rules, depending on whether y is in c or d?
+  %% theorem distribute_set_delete_new_over_union is [a]
+  %%   fa(c:Set a,d:Set a,y:a)
+  %%     (y in? c || y in? d) =>
+  %%     (set_delete_new(y, c \/ d) = set_delete(y,c) \/ set_delete(y,d))
 
   theorem distribute_union_over_right_delete is [a]
       fa(c:Set a,d:Set a,y:a)
@@ -298,20 +299,18 @@ theorem in?_size is [a]
       fa(c:Set a,d:Set a,y:a)
         (c -- set_insert(y,d) = set_delete(y, c -- d))
 
-%commenting out. is this needed?  there is no refinement for it in
-% SetsAsMaps#M, which causes an error, so I am commenting it out
-% here. -Eric, 10/11/12
-% Also, what does "delete new" mean?  Maybe this if for deleting 
-% an element when we know it is present in the set? - Eric, 10/18/12
-  % %% What does the "new" mean?
-  % op [a] set_delete_new (x:a,S:Set a): Set a
 
+% This is for deleting an element when we know it is present in the set.
+% TODO: Seems like a confusing name for that notion.  How about set_delete_present ?
+  op [a] set_delete_new (x:a, s:Set a | x in? s): Set a = set_delete(x,s)
+
+  %% TODO: Add a version without the (y in? c) premise that just calls set_delete, not set_delete_new
   theorem distribute_set_diff_over_right_insert_new is [a]
       fa(c:Set a,d:Set a,y:a)
         %% TODO The condition is new. It seems to be needed in order for 
         %% the call to set_insert_new to type-check:
-        ~(y in? d) =>
-        (c -- set_insert_new(y,d) = set_delete(y, c -- d)) %TODO was delete_new
+        (~(y in? d) && (y in? c)) =>
+        (c -- set_insert_new(y,d) = set_delete_new(y, c -- d))
 
 (* this is ok, but need a special form for GC derivation
 %  theorem distribute_set_diff_over_right_insert_new is [a]
@@ -531,8 +530,8 @@ proof isa distribute_set_delete_over_union
   apply(auto)
 end-proof
 
-proof isa distribute_set_diff_over_right_insert_new
-  sorry
+proof isa distribute_set_delete_new_over_union
+  apply(simp add: Set__set_delete_new_def Set__distribute_set_delete_over_union)
 end-proof
 
 proof isa Set__associative_union
@@ -593,7 +592,7 @@ end-proof
 
 proof Isa Set__distribute_set_diff_over_right_insert_new
   apply(rule Set__membership)
-  apply(simp add: Set__set_difference Set__empty_set Set__set_insertion Set__set_deletion Set__set_insert_new_def)
+  apply(simp add: Set__set_difference Set__empty_set Set__set_insertion Set__set_deletion Set__set_insert_new_def Set__set_delete_new_def)
   apply(auto)
 end-proof
 
@@ -616,6 +615,13 @@ proof isa Set__set_insertion_equal_empty_alt
   apply(cut_tac x=x and s=s in Set__set_insertion_equal_empty, auto)
 end-proof
 
+proof isa Set__distribute_set_delete_new_over_union_Obligation_subtype
+  apply(simp add: Set__set_union)
+end-proof  
+
+proof isa Set__distribute_set_diff_over_right_insert_new_Obligation_subtype
+  apply(simp add: Set__set_difference)
+end-proof  
 
 end-spec
 

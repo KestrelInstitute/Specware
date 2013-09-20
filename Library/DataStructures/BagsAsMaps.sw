@@ -50,6 +50,16 @@ spec
           c 
           bag
 
+
+  theorem bag_fold1 is [a,b]
+    fa(c:b, f : {f : b * a -> b | fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)})
+      bag_fold c f empty_bag = c
+
+  theorem bag_fold2 is [a,b]
+    fa(c:b, f : {f : b * a -> b | fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)}, x : a , b : Bag a)
+      bag_fold c f (bag_insert(x,b)) = f (bag_fold c f b, x)
+
+
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (\/) bs
 
@@ -90,6 +100,14 @@ spec
 
 
 proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_fold1
+  sorry
+end-proof
+
+proof Isa bag_fold2
   sorry
 end-proof
 

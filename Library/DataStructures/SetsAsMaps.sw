@@ -63,6 +63,7 @@ spec
     set_fold empty_set (\/) ss
 
   op [a] set_delete (x:a, s:Set a) : Set a = remove s x
+  op [a] set_delete_new (x:a, s:Set a) : Set a = remove s x
 
   op [a] -- (s1: Set a, s2: Set a) infixl 25 : Set a =
     foldi (fn (x, _, result) -> remove result x)
@@ -176,4 +177,8 @@ end-proof
 
 proof Isa set_insert_new_def
   sorry
+end-proof
+
+proof Isa Set__set_delete_new_def
+  apply( auto, rule ext, auto simp add: SetsAsMap__set_delete_new_def SetsAsMap__set_delete_def) 
 end-proof

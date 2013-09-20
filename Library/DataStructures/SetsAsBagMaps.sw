@@ -1,7 +1,10 @@
 %%% Should directly go to sets as characteristic Maps, i.e. Set a = Map(a, Bool)
 
-%% TODO: Add a SetsAsBagMaps qualifier?  Otherwise, the names conflict with SetsAsBags
+%% FIXME: Figure out the story with the proof obligations of this.
+%% FIXME: The obligations have the same names as the obligations in SetsAsBags, for which we already have proofs that Specware tries to use but that won't work in this context!
+%% FIXME: I'd like to put the proofs for this just below this next line:
 SetsAsBagMaps = SetsAsBags[BagsAsMaps#M]
+
 
 M = morphism Sets -> SetsAsBagMaps {Set._ +-> SetsAsBags._}
 
@@ -81,3 +84,6 @@ proof Isa set_insert_new_def
   sorry
 end-proof
 
+proof Isa Set__set_delete_new_def
+  sorry
+end-proof
