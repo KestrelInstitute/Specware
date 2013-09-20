@@ -49,6 +49,9 @@ spec
                                              then occs(y,b) + 1
                                              else occs(y,b))
 
+theorem bagin_of_insert is [a]
+    fa(x: a, y :a, b : Bag a) (x bagin? bag_insert(y, b)) = (x = y || x bagin? b)
+
   % bag_insert is "commutative" in the sense that inserting x and then y
   % is the same as inserting y and then x; in fact, the elements of a bag
   % are unordered, only their occurrences count
@@ -124,6 +127,19 @@ spec
   axiom bag_fold2 is [a,b]
     fa(c:b, f : {f : b * a -> b | fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)}, x : a , b : Bag a)
       bag_fold c f (bag_insert(x,b)) = f (bag_fold c f b, x)
+
+% FIXME combine these two into an equality rule?:
+
+%% TODO: Or specialize fold to forall?
+theorem bag_fold_true is [a]
+  fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
+    (fa(elem : a) (elem bagin? bag) => f(true, elem)) =>
+       bag_fold true (f) bag
+
+theorem bag_fold_true_back is [a]
+  fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
+    bag_fold true (f) bag && (fa(elem:a) f(false, elem) = false) => (fa(elem : a) (elem bagin? bag) => f(true, elem))
+       
 
 %TODO: Won't this definition always return the empty bag?
 %  op [a] //\\ (bs:Bag (Bag a)) : Bag a =
@@ -302,7 +318,8 @@ proof isa Bag__bag_insertion_commutativity
 end-proof
 
 proof isa Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences)
+  apply(simp add: Bag__occs_bag_union)
 end-proof
 
 proof Isa Bag__in_bag_union
@@ -336,7 +353,7 @@ end-proof
 
 proof Isa Bag__distribute_bag_diff_over_right_insert
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Integer__natMinus_def)
+  apply(simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Integer__natMinus_def)
 end-proof
 
 proof Isa Bag__bag_union_right_unit
@@ -373,8 +390,33 @@ end-proof
 
 proof Isa Bag__distribute_bag_diff_over_left_delete
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_difference Bag__bag_deletion Integer__natMinus_def)
+  apply(simp add: Bag__bag_difference Bag__bag_deletion Integer__natMinus_def)
 end-proof
 
+
+proof Isa Bag__bag_fold_true
+  apply(rule_tac P="\<forall>elem::'a. elem bagin? bag \<longrightarrow> f(True, elem)" in mp)
+  defer
+  apply(simp)
+  apply(rule Bag__induction)
+  apply(auto simp add: Bag__bag_fold1 Bag__bag_fold2)
+  apply (smt Bag__bag_insertion Bag__bagin_p_def)
+  apply (metis (full_types) Bag__bag_insertion Bag__bagin_p_def comm_semiring_1_class.normalizing_semiring_rules(24) gr_implies_not0 less_add_one)  
+end-proof
+
+proof Isa Bag__bag_fold_true_back
+  apply(rule_tac P=" Bag__bag_fold True f bag \<and> elem bagin? bag" in mp)
+  defer
+  apply(simp)
+  apply(rule Bag__induction)
+  apply(auto simp add: Bag__bag_fold1 Bag__bag_fold2)
+  apply (metis Bag__bagin_p_def Bag__empty_bag)
+  apply(metis (full_types))
+ apply (metis (full_types) Bag__bag_insertion Bag__bagin_p_def) 
+end-proof
+
+proof Isa Bag__bagin_of_insert
+  apply(simp add: Bag__bagin_p_def Bag__bag_insertion)
+end-proof
 
 end-spec

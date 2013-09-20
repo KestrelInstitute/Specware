@@ -63,7 +63,7 @@ spec
 
 %% TODO: add precondition that the element is not in the set?
 
-  op [a] set_insert_new (x:a,s:Set a) : Set a = bag_insert(x,s)
+  op [a] set_insert_new (x:a,s:Set a | ~(x in? s)) : Set a = bag_insert(x,s)
 
   % to take the union of two sets, again we need to ensure that the resulting
   % bag is repetition-free; we use a bag_fold, starting with the first bag,
@@ -81,6 +81,7 @@ spec
   %% we call one of them.):
   proof Isa -> SetsAsBags_union end-proof
 
+%%FIXME Just use bag intersection?
   op [a] /\ (s1 : Set a, s2 : Set a) infixl 300 : Set a = 
     bag_fold empty_set
              (fn(result,x) -> if x in? s1 then set_insert(x,result) else result)
@@ -134,23 +135,31 @@ spec
 (******************************** The Proofs ********************************)
 
 proof Isa empty_set_Obligation_subtype
-  sorry
+  apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold1)
 end-proof
 
 proof Isa set_insert_Obligation_subtype
-  sorry
+  apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold2 Bag__bag_insertion)
+  apply(auto simp add: SetsAsBags__in_p_def Bag__bagin_p_def)
+  apply(rule Bag__bag_fold_true)
+  apply(auto)
+  apply(smt Bag__bag_fold_true_back Pair_inject prod_caseE)
 end-proof
 
 proof Isa set_insert_new_Obligation_subtype
-  sorry
+  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption)
 end-proof
 
 proof Isa e_bsl_fsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences)
+  apply(simp add: SetsAsBags__set_insert_def Bag__bag_insertion)
+  apply(auto simp add: Bag__bagin_of_insert SetsAsBags__in_p_def)
 end-proof
 
 proof Isa e_fsl_bsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences, auto simp add: SetsAsBags__set_insert_def Bag__bag_insertion SetsAsBags__in_p_def Bag__bagin_of_insert)
+  apply(cases "z=y", auto)
+  apply(simp add: Bag__bag_insertion_commutativity)
 end-proof
 
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
