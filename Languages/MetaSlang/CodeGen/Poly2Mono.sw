@@ -462,9 +462,9 @@ Poly2Mono qualifying spec
       in
       (RecordPat (fields, pos), minfo)
 
-    | QuotientPat (pat, qid, pos) ->
+    | QuotientPat (pat, qid, tys, pos) ->
       let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in
-      (QuotientPat (pat, qid, pos), minfo)
+      (QuotientPat (pat, qid, tys, pos), minfo)
 
     | RestrictedPat (pat, typ, pos) ->
       let (pat, minfo) = p2mPattern (spc, modifyConstructors?, pat, minfo) in

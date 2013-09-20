@@ -915,7 +915,7 @@ AnnSpecPrinter qualifying spec
                                 ppPattern context ([0]++ path, true, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, true, false) pat2)]))
-     | QuotientPat (pat, qid, _) -> 
+     | QuotientPat (pat, qid, _, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
 			   [(0, string ("quotient[" ^ show qid ^ "] ")),

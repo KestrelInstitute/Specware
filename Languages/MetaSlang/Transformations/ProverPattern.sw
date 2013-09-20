@@ -347,7 +347,7 @@ def removePatternCase(spc, term) =
       | CharPat(char, b) -> [mkChar(char)]
       | NatPat(nat, b) -> [mkNat(nat)]
       | WildPat(srt, _) -> [mkWildVar(srt)]
-      | QuotientPat(p,_,_)  -> patternToTerms p
+      | QuotientPat(p,_,_,_)  -> patternToTerms p
       | RestrictedPat(p,_,_) -> patternToTerms p
       | _ -> fail("pattern not supported")
 

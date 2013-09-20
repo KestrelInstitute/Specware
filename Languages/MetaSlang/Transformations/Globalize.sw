@@ -586,7 +586,7 @@ Globalize qualifying spec
 
  op globalizeQuotientPat (context                                  : Context)
                          (vars_to_remove                           : MSVarNames) % vars of global type, remove on sight
-                         (pat as (QuotientPat (p1, typename, pos)) : MSPattern)
+                         (pat as (QuotientPat (p1, _, _, _)) : MSPattern)
   : Ids * GlobalizedPattern = 
   globalizePattern context vars_to_remove p1
 

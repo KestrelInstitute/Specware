@@ -171,7 +171,7 @@ def addMissingFromPattern (bspc, spc, ignore?, pat, minfo) =
     | EmbedPat     (_, None,   s, _) -> ams (s, minfo)
     | RecordPat    (fields,       _) -> foldl (fn (minfo, (_, p)) -> amp (p, minfo)) minfo fields
     | WildPat      (s,            _) -> ams (s, minfo)
-    | QuotientPat  (p, qid,       _) -> let q = Base (qid, [], noPos) in amp (p, ams (q, minfo))
+    | QuotientPat  (p, qid, _,    _) -> let q = Base (qid, [], noPos) in amp (p, ams (q, minfo))
     | RestrictedPat(p, t,         _) -> amp (p, amt (t, minfo))
     | TypedPat     (p, s,         _) -> amp (p, ams (s, minfo))
     | _ -> minfo

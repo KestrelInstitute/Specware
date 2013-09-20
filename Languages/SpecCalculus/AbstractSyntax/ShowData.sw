@@ -1170,7 +1170,7 @@ op [a] patAnn1 (pat: APattern a) : a =
     | StringPat    (_,     a) -> a
     | CharPat      (_,     a) -> a
       %| RelaxPat     (_,_,   a) -> a
-    | QuotientPat  (_,_,   a) -> a
+    | QuotientPat  (_,_,_, a) -> a
     | RestrictedPat(_,_,   a) -> a
     | TypedPat    (_,_,   a) -> a
 
@@ -1248,13 +1248,15 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
       %		    ppPattern c pat,
       %		    ppString ", ",
       %		    ppTerm c term]
-    | QuotientPat (pat,typename,_) ->
+    | QuotientPat (pat,typename,tys,_) ->
       %% This requires update to interchange grammar
       ppGrConcat [ppString "(QuotientPat ",
                   ppPattern c pat,
                   ppString " ",
                   ppQualifiedId typename,
-                  ppString ")"
+                  ppString " (",
+                  ppSep (ppString " ") (map (ppType c) tys),
+                  ppString "))"
                   ]
     | RestrictedPat (pat,term,_) -> 
 %        (case pat of

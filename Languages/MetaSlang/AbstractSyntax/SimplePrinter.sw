@@ -326,7 +326,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | BoolPat (b,_) -> ppBoolean b
       | CharPat (chr,_) -> ppString (Char.show chr)
       | NatPat (int,_) -> ppString (Nat.show int)      
-      | QuotientPat (pat,qid,_) -> 
+      | QuotientPat (pat,qid,_,_) -> 
           ppGrConcat [ppString ("(quotient[" ^ show qid ^ "] "),
                       ppAPattern pat,
                       ppString ")"]

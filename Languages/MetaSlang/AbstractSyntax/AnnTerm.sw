@@ -89,7 +89,7 @@ MetaSlang qualifying spec
   | NatPat        Nat                                 * b
   | StringPat     String                              * b
   | CharPat       Char                                * b
-  | QuotientPat   APattern b * TypeName               * b
+  | QuotientPat   APattern b * TypeName * List(AType b) * b
   | RestrictedPat APattern b * ATerm b                * b
   | TypedPat      APattern b * AType b                * b  % Before elaborateSpec
 
@@ -321,7 +321,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | NatPat       (_,     a) -> a
      | StringPat    (_,     a) -> a
      | CharPat      (_,     a) -> a
-     | QuotientPat  (_,_,   a) -> a
+     | QuotientPat  (_,_,_, a) -> a
      | RestrictedPat(_,_,   a) -> a
      | TypedPat     (_,_,   a) -> a
 
@@ -336,9 +336,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | NatPat        (n,       a) -> if b = a then pat else NatPat       (n,       b)
      | StringPat     (s,       a) -> if b = a then pat else StringPat    (s,       b)
      | CharPat       (c,       a) -> if b = a then pat else CharPat      (c,       b)
-     | QuotientPat   (p,t,     a) -> if b = a then pat else QuotientPat  (p,t,     b)
+     | QuotientPat   (p,t,tys, a) -> if b = a then pat else QuotientPat  (p,t,tys,  b)
      | RestrictedPat (p,t,     a) -> if b = a then pat else RestrictedPat(p,t,     b)
-     | TypedPat      (p,s,     a) -> if b = a then pat else TypedPat    (p,s,     b)
+     | TypedPat      (p,s,     a) -> if b = a then pat else TypedPat     (p,s,     b)
 
  op [a] withAnnS (ty : AType a, a : a) : AType a =
   % Avoid creating new structure if possible
@@ -713,32 +713,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | NatPat       (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
      | StringPat    (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
      | CharPat      (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
-
-     | QuotientPat  (p, qid,  a) -> 
-       %% TODO: This is a stop-gap that can still be wrong in some cases.  Rethink it.
-       let base_type = patternType p in
-       (case base_type of
-          | Base (_, args, _) -> mkABase (qid, args, a)
-          | MetaTyVar (mtv, _) ->
-            %% For example, can arise from following, where type of l is unknown:
-            %% def bag_insert(x, quotient[Bag.Bag] l) = quotient[Bag.Bag] (Cons(x,l))
-            (case (!mtv).link of
-               | Some typ -> typ
-               | _ ->
-                 %% The metaTyVar is unlinked, so use an ordinary tyvar.
-                 %% "QQQ" makes it easy to trace back to here
-                 %% A more robust solution would use the arity of the type named qid,
-                 %% but that would require access to the spec to find its definition.
-                 mkABase  (qid, [TyVar ("QQQ", a)], a))
-          | _ -> 
-            let typ = mkABase  (qid, [], a) in
-            let _ = writeLine("WARNING: unexpected quotient pattern in patternType: " ^ printPattern pat) in
-            let _ = writeLine("         base pattern is " ^ printPattern p)                               in
-            let _ = writeLine("         with type " ^ printType base_type)                                in
-            let _ = writeLine("         but expected a (possibly polymorphic) atomic type,")              in 
-            let _ = writeLine("         No args in resulting type: " ^ printType typ)                     in
-            typ)
-
+     | QuotientPat  (_, qid, tys, a) -> mkABase (qid, tys, a)
      | RestrictedPat(p, t,    a) ->
        Subtype(patternType p,Lambda([(p,mkTrueA a,t)],a),a)
      | TypedPat     (_, ty,  _) -> ty
@@ -780,11 +755,21 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                                 (accum -> AType    b -> (AType    b * accum)) *
                                 (accum -> APattern b -> (APattern b * accum))
 
+ op mapAccumTerm    : [accum,b] TSP_MapAccums (accum,b) -> accum -> ATerm    b -> (ATerm    b * accum)
+ op mapAccumType    : [accum,b] TSP_MapAccums (accum,b) -> accum -> AType    b -> (AType    b * accum)
+ op mapAccumPattern : [accum,b] TSP_MapAccums (accum, b) -> accum -> APattern b -> (APattern b * accum)
+ op [accum,b] mapAccumSLst (accum: accum)
+                           (tsp: TSP_MapAccums (accum,b))
+                           (tys: List(AType b))
+                : (List(AType b) * accum) =
+   case tys of
+     | [] -> ([],accum)
+     | sty::rtys ->
+       let (sty',  accum')  = mapAccumType tsp accum sty in
+       let (rtys', accum'') = mapAccumSLst accum' tsp rtys in
+       (sty'::rtys', accum'')
 
-
- op [accum,b] mapAccumTerm ((tsp as (term_map,_,_)) : (TSP_MapAccums (accum,b)))
-                           (accum : accum)
-                           (term : ATerm b) : (ATerm b * accum) =
+ def mapAccumTerm  (tsp as (term_map,_,_)) accum term =
    %%
    %% traversal of term with post-order applications of term_map
    %%
@@ -938,7 +923,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     (Subtype (newSty, newTrm, a),accum'')
 		   
 	 | Base (qid, tys, a) ->
-	   let (newTys,accum') = mapAccumSLst accum (tsp, type_map, tys) in
+	   let (newTys,accum') = mapAccumSLst accum tsp tys in
 	     (Base (qid, newTys, a),accum')
 		     
 	 | Boolean _ -> (ty,accum)
@@ -967,14 +952,6 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
          | Any  _            -> (ty,accum)
 
 	 | _ -> (ty,accum)
-
-     def mapAccumSLst accum (tsp, type_map, tys) =
-       case tys of
-	 | [] -> ([],accum)
-	 | sty::rtys -> 
-           let (sty',accum') = mapAccumRec accum (tsp, type_map, sty) in
-           let (rtys',accum'') = mapAccumSLst accum' (tsp, type_map, rtys) in
-           (Cons(sty',rtys'),accum'')
 
      def mapAccumSRowOpt accum (tsp, type_map, row) =
        case row of
@@ -1045,9 +1022,10 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	   let (newTy,accum') = mapAccumType tsp accum ty in
 	     (WildPat (newTy, a),accum')
 		     
-	 | QuotientPat (pat, qid, a) ->
+	 | QuotientPat (pat, qid, tys, a) ->
 	   let (newPat,accum') = mapAccumRec accum pat in
-	     (QuotientPat (newPat, qid, a),accum')
+           let (newTys,accum') = mapAccumSLst accum' tsp tys in
+	     (QuotientPat (newPat, qid, newTys, a),accum')
 			 
 	 | RestrictedPat (pat, trm, a) ->
 	   let (newPat,accum') = mapAccumRec accum pat in
@@ -1248,9 +1226,14 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapRec term
 
- op [b] mapType ((tsp as (_, type_map, _)) : TSP_Maps b) (ty :AType b) : AType b =
-   let
+ op [b] mapSLst (tsp: TSP_Maps b) (tys: List(AType b)): List(AType b) =
+   case tys of
+     | [] -> []
+     | sty :: rtys -> (mapType tsp sty) :: (mapSLst tsp rtys)
 
+
+ def mapType (tsp as (_, type_map, _)) ty =
+   let
      %% Written with explicit parameter passing to avoid closure creation
      def mapS (tsp, type_map, ty) =
        case ty of
@@ -1294,7 +1277,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              Subtype (newSty, newTrm, a)
 		   
          | Base (qid, tys, a) ->
-           let newTys = mapSLst (tsp, type_map, tys) in
+           let newTys = mapSLst tsp tys in
            if newTys = tys then
              ty
            else
@@ -1325,12 +1308,6 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
          | Any  _            -> ty
 
          | _ -> ty
-
-     def mapSLst (tsp, type_map, tys) =
-       case tys of
-         | [] -> []
-         | sty::rtys -> Cons(mapRec  (tsp, type_map, sty),
-        		       mapSLst (tsp, type_map, rtys))
 
      def mapSRowOpt (tsp, type_map, row) =
        case row of
@@ -1406,12 +1383,13 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
            else
              WildPat (newTy, a)
 		     
-         | QuotientPat (pat, qid, a) ->
+         | QuotientPat (pat, qid, tys, a) ->
            let newPat = mapRec pat in
-           if newPat = pat then
+           let newTys = mapSLst tsp tys in
+           if newPat = pat && tys = newTys then
              pattern
            else
-             QuotientPat (newPat, qid, a)
+             QuotientPat (newPat, qid, newTys, a)
 			 
          | RestrictedPat (pat, trm, a) ->
            let newPat = mapRec pat in
@@ -1834,7 +1812,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | EmbedPat(id, Some pat,_,_) -> existsPattern? pred? pat
      | RecordPat(fields,_) ->
        exists? (fn (_,p)-> existsPattern? pred? p) fields
-     | QuotientPat  (pat,_,_) -> existsPattern? pred? pat
+     | QuotientPat  (pat,_,_,_) -> existsPattern? pred? pat
      | RestrictedPat(pat,_,_) -> existsPattern? pred? pat
      | TypedPat     (pat,_,_) -> existsPattern? pred? pat
      | _ -> false)
@@ -2028,7 +2006,7 @@ op [a] existsTypeInTerm? (pred?: AType a -> Bool) (tm: ATerm a): Bool =
      | EmbedPat(id, Some pat,_,_) -> foldSubPatterns f result pat
      | RecordPat(fields,_) ->
        foldl (fn (r,(_,p))-> foldSubPatterns f r p) result fields
-     | QuotientPat  (pat,_,_) -> foldSubPatterns f result pat
+     | QuotientPat  (pat,_,_,_) -> foldSubPatterns f result pat
      | RestrictedPat(pat,_,_) -> foldSubPatterns f result pat
      | TypedPat     (pat,_,_) -> foldSubPatterns f result pat
      | _ -> result
@@ -2209,8 +2187,8 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 	 | WildPat      (                ty, a) ->
 	   WildPat      (replaceType tsp ty, a)
 
-	 | QuotientPat  (           pat, qid, a) -> 
-	   QuotientPat  (replaceRec pat, qid, a)
+	 | QuotientPat  (           pat, qid, tys, a) -> 
+	   QuotientPat  (replaceRec pat, qid, tys, a)
 
 	 | RestrictedPat(           pat,                 trm, a) ->
 	   RestrictedPat(replaceRec pat, replaceTerm tsp trm, a)
@@ -2338,14 +2316,14 @@ op [b,r] foldTypesInPattern (f: r * AType b -> r) (init: r) (tm: APattern b): r 
 
      def appP (tsp, pat) =
        case pat of
-	 | AliasPat     (p1, p2,            _) -> (appRec p1; appRec p2)
+	 | AliasPat     (p1, p2,           _) -> (appRec p1; appRec p2)
 	 | VarPat       ((v, ty),          _) -> appType tsp ty
 	 | EmbedPat     (id, Some pat, ty, _) -> (appRec pat; appType tsp ty)
 	 | EmbedPat     (id, None, ty,     _) -> appType tsp ty
-	 | RecordPat    (fields,            _) -> app (fn (id, p) -> appRec p) fields
+	 | RecordPat    (fields,           _) -> app (fn (id, p) -> appRec p) fields
 	 | WildPat      (ty,               _) -> appType tsp ty
-	 | QuotientPat  (pat, _,            _) -> appRec pat
-	 | RestrictedPat(pat, trm,          _) -> appRec pat
+	 | QuotientPat  (pat, _, _,        _) -> appRec pat
+	 | RestrictedPat(pat, trm,         _) -> appRec pat
         %| TypedPat  ??
         %| BoolPat   ??
         %| NatPat    ??

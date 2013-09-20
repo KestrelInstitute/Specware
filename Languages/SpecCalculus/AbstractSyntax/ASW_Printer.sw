@@ -1081,9 +1081,9 @@ ASWPrinter qualifying spec
      | StringPat    (_,     a) -> a
      | CharPat      (_,     a) -> a
      %| RelaxPat     (_,_,   a) -> a
-     | QuotientPat  (_,_,   a) -> a
+     | QuotientPat  (_,_,_, a) -> a
      | RestrictedPat(_,_,   a) -> a
-     | TypedPat    (_,_,   a) -> a
+     | TypedPat     (_,_,   a) -> a
 
   op  ppPattern : Context -> MSPattern -> WLPretty
   def ppPattern c pattern =
@@ -1152,10 +1152,10 @@ ASWPrinter qualifying spec
 %		    ppPattern c pat,
 %		    ppString ", ",
 %		    ppTerm c term]
-      | QuotientPat (pat,typename,_) ->
+      | QuotientPat (pat,typename,tys,_) ->
         %% This requires update to interchange grammar
         ppGrConcat [ppString "quotient[",
-                    ppQualifiedId typename,
+                    ppType c (mkBase(typename, tys)),
                     ppString "] ",
 		    ppPattern c pat]
       | RestrictedPat (pat,term,_) -> 

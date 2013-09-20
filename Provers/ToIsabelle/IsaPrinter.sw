@@ -2272,7 +2272,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          let _ = (cnt := !cnt + 1) in
          let v = "zzz_"^show (!cnt) in
          Some(Var((v,ty), a))
-       | QuotientPat(pat,cond,_)  -> None %% Not implemented
+       | QuotientPat(pat,cond,_,_)  -> None %% Not implemented
        | RestrictedPat(pat,cond,_)  ->
          patToTerm(pat,ext, c)		% cond ??
        | AliasPat(p1,p2,_) -> 
@@ -3332,7 +3332,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | BoolPat (b,_) -> ppBool b
      | CharPat (chr,_) -> prString (Char.show chr)
      | NatPat (int,_) -> prString (Nat.show int)      
-     | QuotientPat (pat,qid,_) -> 
+     | QuotientPat (pat,qid,_,_) -> 
        prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
                   ppPattern c pat wildstr false,
                   prString ")"]

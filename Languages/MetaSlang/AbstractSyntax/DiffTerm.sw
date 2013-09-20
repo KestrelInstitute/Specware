@@ -507,7 +507,7 @@ AnnSpec qualifying spec
        | (CharPat   (x1, _), CharPat   (x2, _)) -> if x1 = x2 then no_new_equivs else None
        | (NatPat    (x1, _), NatPat    (x2, _)) -> if x1 = x2 then no_new_equivs else None
 
-       | (QuotientPat (p1, qid1, _), QuotientPat (p2, qid2, _)) -> 
+       | (QuotientPat (p1, qid1, _, _), QuotientPat (p2, qid2, _, _)) -> 
          (if qid1 = qid2 then % TODO: handle aliases
             diffPattern outer_equivs (p1, p2)
           else

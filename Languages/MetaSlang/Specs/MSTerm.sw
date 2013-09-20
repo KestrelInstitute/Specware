@@ -362,7 +362,8 @@ op mkNatPat        (n   : Nat)    : MSPattern = NatPat    (n,   noPos)
 op mkStringPat     (s   : String) : MSPattern = StringPat (s,   noPos)
 op mkCharPat       (c   : Char)   : MSPattern = CharPat   (c,   noPos)
 
-op mkQuotientPat   (pat : MSPattern, qid  : TypeName) : MSPattern = QuotientPat   (pat, qid,  noPos)
+op mkQuotientPat   (pat : MSPattern, qid  : TypeName, params: MSTypes) : MSPattern =
+  QuotientPat   (pat, qid,  params, noPos)
 op mkRestrictedPat (pat : MSPattern, term : MSTerm)   : MSPattern = RestrictedPat (pat, term, noPos)
 op mkTypedPat      (pat : MSPattern, typ  : MSType)   : MSPattern = TypedPat      (pat, typ,  noPos)
 op [a] patternToList (pat : APattern a) : List (APattern a) =

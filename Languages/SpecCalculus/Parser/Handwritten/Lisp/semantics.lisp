@@ -934,7 +934,10 @@ If we want the precedence to be optional:
 
 (defun make-aliased-pattern    (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
 (defun make-embed-pattern      (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
-(defun make-quotient-pattern   (type-qid pattern l r) (cons :|QuotientPat|   (vector pattern type-qid                                   (make-pos l r))))
+(defun make-quotient-pattern   (type-qid pattern l r)
+  (cons :|QuotientPat|   (vector pattern type-qid
+                                 '()                     ; Type checker ignores this
+                                  (make-pos l r))))
 (defun make-restricted-pattern (pattern term     l r) (cons :|RestrictedPat| (vector pattern term                                       (make-pos l r))))
 (defun make-variable-pattern   (id               l r) (cons :|VarPat|        (cons   (cons id (freshMetaTypeVar l r))                   (make-pos l r))))
 (defun make-wildcard-pattern   (                 l r) (cons :|WildPat|       (cons   (freshMetaTypeVar l r)                             (make-pos l r))))

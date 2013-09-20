@@ -940,7 +940,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 % Possibly generalize the matching to include matching on (t1,t2), assuming t1 can
 % contain meta variables.
 % 
-         | (QuotientPat(p1,t1,_),QuotientPat(p2,t2,_)) -> 
+         | (QuotientPat(p1,t1,_,_),QuotientPat(p2,t2,_,_)) -> 
            if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
          | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
            if equalTerm?(t1,t2) then matchPatterns(context,pairs,S1,S2) else None

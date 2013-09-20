@@ -58,11 +58,11 @@ Utilities qualifying spec
        | _ -> srt)
    | _ -> srt 
 
- %% sjw: unused?
- def unlinkMetaTyVar (mtv : MS.MetaTyVar) = 
+ op unlinkMetaTyVar (mtv : MS.MetaTyVar): MSType = 
    case ! mtv of
      | {link = Some (MetaTyVar (tw, _)), name, uniqueId} -> unlinkMetaTyVar tw
-     | _ -> mtv
+     | {link = Some (ty), name, uniqueId} -> ty
+     | _ -> MetaTyVar(mtv, noPos)
 
  %% create a copy of srt, but replace type vars by meta type vars
   op metafyType : MSType -> MetaTypeScheme
@@ -424,7 +424,7 @@ Utilities qualifying spec
       | None     -> mkTerms (wildFindUnQualified (env.internal.ops, id))
 
 
- def instantiateScheme (env, pos, types, srt) = 
+ op instantiateScheme (env: LocalEnv, pos: Position, types: MSTypes, srt: MSType): MSType = 
    let (tvs, sss) = unpackType srt in
    if ~(length types = length tvs) then
      (error (env, 

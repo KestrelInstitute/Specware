@@ -500,7 +500,7 @@ spec
 	       else NoMatch
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
-        | QuotientPat(pat,_,_) ->
+        | QuotientPat(pat,_,_,_) ->
 	  (case N of
 	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,soft_conds?,spc,depth,trace?)
 	     | Unevaluated _ -> DontKnow

@@ -1698,10 +1698,10 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          %% Not valid Specware but seems to work for our purposes here except we need to check this doesn't end up
          %% on rhs of a definition
        | WildPat(ty, a) -> Some(Var(("_", ty), a))   
-       | QuotientPat(qpat, qid, pos)  ->
+       | QuotientPat(qpat, qid, tys, pos)  ->
          (case patToTerm(qpat, ext, c) of
             | None -> None
-            | Some tm -> Some(mkQuotient(tm, qid, natType)))    % !!! Nattype is wrong but no one cares(?)
+            | Some tm -> Some(mkQuotient(tm, qid, mkBase(qid, tys))))
        | RestrictedPat(pat, cond, _)  ->
          patToTerm(pat, ext, c)		% cond ??
        | AliasPat(p1, p2, _) -> 
@@ -2543,7 +2543,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | BoolPat (b, _) -> ppBool b
      | CharPat (chr, _) -> prString ("'"^(cShow chr)^"'")
      | NatPat (int, _) -> prString (Nat.show int)      
-     | QuotientPat (pat, qid, _) -> 
+     | QuotientPat (pat, qid, _, _) -> 
        prBreak 0 [prConcat [prString "Make", ppTyQualifiedId c qid, prSpace],
                   ppPattern c pat]
      | RestrictedPat (pat, term, _) -> 

@@ -597,7 +597,7 @@ spec
      | Some arg ->
        (case foldSubPatterns (fn (p, result) -> 
                                 case p of 
-                                  | QuotientPat (VarPat pv, super_type_name, _) -> 
+                                  | QuotientPat (VarPat pv, super_type_name, _, _) -> 
                                     %% If the spec has type-checked, there must be an info for the super_type.
                                     let Some info = findTheType (gamma.3, super_type_name) in
                                     let Quotient (base_type, _, _) = info.dfn in
@@ -699,7 +699,7 @@ spec
        returnPattern(gamma, mkFun(Char ch, charType), charType, tau)
      | NatPat(i, _) 		->      
        returnPattern(gamma, mkFun(Nat i, natType), natType, tau)
-     | QuotientPat(p, qid, _) 	-> 
+     | QuotientPat(p, qid, _, _) 	-> 
        let Quotient(tau1, _, _) = unfoldBase(gamma, tau) in
        let (gamma, trm) = bindPattern(gamma, p, tau1)
        in

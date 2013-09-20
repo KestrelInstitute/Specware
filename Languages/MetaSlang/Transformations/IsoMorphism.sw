@@ -491,7 +491,7 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
                           let Some(_, d_s_ty) = findLeftmost (fn (id1, _) -> id1 = id) d_ty_flds in
                           cpo?(s_pat, d_s_ty))
                  fields               
-             | QuotientPat  (p, qid, _) -> ~(typeOfInterest? ty)
+             | QuotientPat  (p, qid, _, _) -> ~(typeOfInterest? ty)
                %% WARNING:
                %% The result for QuotientPat is missing potential tyvars (it simply uses []),
                %% so users of that result must be prepared to handle that discrepency between 
@@ -1123,9 +1123,9 @@ def makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
               (accum,typ) <- doType accum typ;
               return (accum, WildPat (typ,pos))
             }
-          | QuotientPat (pat,typName,pos) -> {
+          | QuotientPat (pat,typName,tys,pos) -> {
               (accum,pat) <- doPattern accum pat;
-              return (accum, QuotientPat (pat,typName,pos))
+              return (accum, QuotientPat (pat,typName,tys,pos))
             }
           | RestrictedPat (pat,trm,pos) -> {
               (accum,pat) <- doPattern accum pat;

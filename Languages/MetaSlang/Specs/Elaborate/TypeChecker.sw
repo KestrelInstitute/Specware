@@ -1891,29 +1891,35 @@ def elaboratePatternRec (env, p, type1, seenVars) =
       in
         (RecordPat (reverse r, pos), env, seenVars)
 
-    | QuotientPat (pat, qid, pos) ->
-      let v = freshMetaTyVar ("QuotientPat", pos) in
-      let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
+    | QuotientPat (pat, qid, param_tys, pos) ->
       (case findTheType (env.internal, qid) of
          | Some info ->
            (case unpackFirstTypeDef info of
               | (tvs, Quotient (base_body, equiv, _)) ->
-                %% In general, base_body and equiv will have free references to the tvs
-                %% TODO: More checking needed here?
-                (QuotientPat (pat, qid, pos), env, seenVars)
+                let (qp_ty, base_body) =
+                    if param_tys ~= [] || tvs = []
+                      then (Base(qid, param_tys, pos),
+                            instantiateScheme(env, pos, param_tys, Pi(tvs, base_body, pos)))
+                      else metafyBaseType(qid, Pi(tvs, base_body, pos), pos)
+                in
+                let _ = elaborateTypeForPat(env, p, qp_ty, type1) in
+                let (pat, env, seenVars)
+                   = elaboratePatternRec (env, pat, base_body, seenVars) in
+                let Base(_, nparam_tys, _) = qp_ty in
+                (QuotientPat (pat, qid, nparam_tys, pos), env, seenVars)
               | _ ->
                 let ss = show qid in
                 (error (env, 
                         "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                         pos);
-                 (QuotientPat (pat, qid, pos), env, seenVars)))
+                 (QuotientPat (pat, qid, param_tys, pos), env, seenVars)))
 
          | _ ->
            let ss = show qid in
            (error (env, 
                    "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                    pos);
-            (QuotientPat (pat, qid, pos), env, seenVars)))
+            (QuotientPat (pat, qid, param_tys, pos), env, seenVars)))
 
     | RestrictedPat (pat, term, pos) ->
       let (pat, env, seenVars) = elaboratePatternRec (env, pat, type1, seenVars) in
