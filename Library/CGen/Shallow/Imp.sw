@@ -42,11 +42,13 @@ def return val = fn state -> (val, state)
 % Lift expressions into statements 
 % ---------------------------------------------------------------------
 
-op [A]   `(expr : A): Monad A   = return expr
+%% TODO: backtick used to be named ` but that now seems to be an illegal name
+op [A]   backtick (expr : A): Monad A   = return expr
 
 op -                : Monad ()  = return ()
 
-op [A]  '(stm : Monad A): A     = inverse return stm
+%% TODO: singlequote used to be named ' but that now seems to be an illegal name
+op [A]  singlequote(stm : Monad A): A     = inverse return stm
    
 % ---------------------------------------------------------------------
 % Control Operations 
@@ -58,7 +60,7 @@ op repeat (stm : Monad (), n : Nat): Monad () =
   if n = 0 then - else {stm; repeat (stm, n-1)}
 
 op terminates?(goon?: Monad Bool, stm : Monad ()) : Bool =
-   ex(n:Nat) {repeat(stm, n); goon?} = `false
+   ex(n:Nat) {repeat(stm, n); goon?} = backtick false
 
 % ---------------------------------------------------------------------
 
@@ -93,11 +95,11 @@ op [A,B] frec_aux (init:A, base: B, expr: A * B -> B, decr: A->A, limit:A) : B
 
 op [A,B] floop (init:A, base: B, expr: A * B -> B, incr: A->A, limit:A) : 
                 Monad B
-  = {  x <- `init
-    ;  r <- `base 
-    ;  while ( `(x ~= limit) )
-             { x <- `(incr x)
-             ; r <- `(expr (x,r))
+  = {  x <- backtick init
+    ;  r <- backtick base 
+    ;  while ( backtick (x ~= limit) )
+             { x <- backtick (incr x)
+             ; r <- backtick (expr (x,r))
              ; -    % return ()
              }
     ;  return r
@@ -111,12 +113,12 @@ op [A,B] floop (init:A, base: B, expr: A * B -> B, incr: A->A, limit:A) :
 theorem rec_to_loop is [A,B]
    fa (init:A, base: B, expr: A * B -> B, decr: A->A, x:A)
            frec  (init, base, expr, decr, x)
-       =  '(floop (init, base, expr, inverse decr, x) )
+       =  singlequote(floop (init, base, expr, inverse decr, x) )
    
 theorem rec_aux_to_loop is [A,B,C]
    fa (init:A, base: B, expr: A * B -> B, decr: A->A, limit:A)
           frec_aux  (init, base, expr, decr, limit)
-       =  '(floop (init, base, expr, inverse decr, limit))
+       =  singlequote(floop (init, base, expr, inverse decr, limit))
 
 % ---------------------------------------------------------------------
 % More direct versions that I can't use yet 
@@ -133,10 +135,10 @@ theorem rec_to_loop1 is [A,B]
                          else expr (x, f (decr x))))
       =>
    f z        
-   =  '{  x <- `init
-       ;  r <- `base
-       ;  while ( `(x ~= z) )
-                { x <- `(inverse decr x); r <- `(expr (x,r)); - }
+   =  singlequote{  x <- backtick init
+       ;  r <- backtick base
+       ;  while ( backtick (x ~= z) )
+                { x <- backtick (inverse decr x); r <- backtick (expr (x,r)); - }
        ;  return r
        }    
 
@@ -146,11 +148,11 @@ theorem rec_aux_to_loop1 is [A,B]
                                  then base
                                  else expr (x, aux (decr x))
        in aux limit)       
-   =  '{  x <- `init
-       ;  r <- `base
-       ;  while ( `(x ~= limit) )
-                { x <- `(inverse decr x)
-                ; r <- `(expr (x,r))
+   =  singlequote{  x <- backtick init
+       ;  r <- backtick base
+       ;  while ( backtick (x ~= limit) )
+                { x <- backtick (inverse decr x)
+                ; r <- backtick (expr (x,r))
                 ; -    % return ()
                 }
        ;  return r
