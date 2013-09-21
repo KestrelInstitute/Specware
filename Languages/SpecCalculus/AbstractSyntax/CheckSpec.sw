@@ -60,6 +60,7 @@ op [b] typeTyVars2 (ty : AType b) : TyVars =
 op [b] badTerm    (accum:Bool) (tm:ATerm    b) : (ATerm    b * Bool) =
   (tm,
   case tm of
+    | And([] , _) -> let _ = writeLine("ERROR: 'And' term with no conjuncts.") in true
     | And(tms, _) -> (if (exists? anyTerm? tms) then 
                          accum %% FFIXME Put this back, once these errors stop happening in HACMS!  let _ = writeLine("ERROR: 'Any' term inside of 'And' term.") in true
                        else
@@ -85,6 +86,7 @@ in
       (if (argcount = correctargcount) then accum else % not bad
        let _ = writeLine ("Error: Wrong arg count in Base type node applying type "^(show qid)^". Got: "^(anyToString argcount)^". Should be: "^(anyToString correctargcount)^".") in true))
        %% FIXME recur on the conjuncts!
+      | And([] , _) -> let _ = writeLine("ERROR: 'And' type with no conjuncts.") in true
       | And(tys, _) -> (if (exists? anyType? tys) then 
                          let _ = writeLine("ERROR: 'Any' type inside of 'And' type.") in true
                        else 
