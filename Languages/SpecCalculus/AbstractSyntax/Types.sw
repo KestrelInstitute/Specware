@@ -477,13 +477,14 @@ SpecCalc qualifying spec
  %% Subsitution. The first term should be spec valued and the second should be
  %% morphism valued. Remains to be seen what will happen if/when we have diagrams.
 
- type SubstTerm = SCTerm * SCTerm
+ type SubstTerm = SCTerm * SCTerm * SM_Pragmas
 
  op  mkSubst (spec_term : SCTerm, 
-              sm_term   : SCTerm, 
+              sm_term   : SCTerm,
+              pragmas   : SM_Pragmas,
               pos       : Position) 
   : SCTerm = 
-  (Subst (spec_term, sm_term), pos)
+  (Subst (spec_term, sm_term, pragmas), pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% Op refinement. 
@@ -518,6 +519,7 @@ SpecCalc qualifying spec
  op mkTransformNumber  (n:     Nat,                       pos: Position) : TransformExpr = Number (n,       pos)
  op mkTransformString  (s:     String,                    pos: Position) : TransformExpr = Str    (s,       pos)
  op mkTransformSCTerm  (sc_tm: SCTerm,                    pos: Position) : TransformExpr = SCTerm (sc_tm,   pos)
+ op mkTransformQuotedTerm (tm: MSTerm,                    pos: Position) : TransformExpr = QuotedTerm(tm,   pos)
  op mkTransformQual    (q:     String, name: String,      pos: Position) : TransformExpr = Qual   (q, name, pos)
  op mkTransformItem    (mod:   String, te: TransformExpr, pos: Position) : TransformExpr = Item   (mod, te, pos)
  op mkTransformSlice   (root_ops: OpNames, root_types: TypeNames, cut_op?: OpName -> Bool, cut_type?: TypeName -> Bool, pos: Position): TransformExpr =

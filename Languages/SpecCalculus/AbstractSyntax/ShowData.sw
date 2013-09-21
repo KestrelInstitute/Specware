@@ -186,11 +186,18 @@ op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
     | Colimit term ->
       ppConcat [ppString "colim ",
                 ppSCTerm c term]
-    | Subst (specTerm,morphTerm) ->
+    | Subst (specTerm, morphTerm, pragmas) ->
       ppConcat [ppSCTerm c specTerm,
                 ppString " [",
                 ppSCTerm c morphTerm,
-                ppString "]"]
+                ppString "]",
+                ppBreak,
+                ppString " proof [",
+                ppSep (ppAppend (ppString ", ") ppBreak)
+                  (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
+                                                         ppLitString p2,
+                                                         ppLitString p3])
+                     pragmas)]
     | SpecMorph (dom, cod, elems, pragmas) ->
       let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 

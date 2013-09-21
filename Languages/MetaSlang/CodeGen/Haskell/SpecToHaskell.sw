@@ -278,7 +278,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
        : Option((String * String * String * String) * UnitId) =
     % let _ = writeLine("Evaluating sc_tm:\n"^anyToString sc_tm) in
     case sc_tm of
-      | (Subst(spc_tm, morph_tm), pos) ->
+      | (Subst(spc_tm, morph_tm, pragmas), pos) ->
         (case uidStringPairForTerm(currentUID, spc_tm, slicing?, top_uid) of
            | None -> (writeLine("subst sc_tm not evaluated:\n"^anyToString spc_tm);
                       None)

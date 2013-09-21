@@ -45,10 +45,6 @@ spec
        | _  -> raise (TransformError (positionOf spec_tm, "Transform attempted on a non-spec"))
      }
 
-  op SMPragmaToElement(((prefix, body, postfix), pos): SM_Pragma): SpecElement =
-    Pragma(prefix, body, postfix, pos)
-    
-
   op extractQId(itm: TransformExpr): SpecCalc.Env QualifiedId =
     case itm of
       | Qual(q,n,_) -> return (Qualified(q,n))

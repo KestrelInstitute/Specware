@@ -7,9 +7,9 @@ SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                             % for uidToString, if used...
   import SpecSubst   
-  import SpecPrismSubst   
+  import SpecPrismSubst  
 
-  def SpecCalc.evaluateSubstitute (spec_tm, subst_tm) term_pos = % subst_tm could be morphism or prism
+  def SpecCalc.evaluateSubstitute (spec_tm, subst_tm, pragmas) term_pos = % subst_tm could be morphism or prism
    {
     unitId <- getCurrentUID;  % this seems to refer to an outer term, e.g. the "X" in "X = S[M]"
     print (";;; Elaborating spec-substitution at " ^ uidToString unitId ^ "\n");
@@ -26,7 +26,8 @@ SpecCalc qualifying spec
         {
          new_spec   <- applySpecMorphismSubstitution sm spc subst_tm term_pos;
          compressed <- complainIfAmbiguous new_spec term_pos;  %(compressDefs new_spec)   term_pos;
-         return (Spec compressed, timeStamp, dep_UIDs)
+         new_spec <- return(setElements(compressed, compressed.elements ++ map SMPragmaToElement pragmas));
+         return (Spec new_spec, timeStamp, dep_UIDs)
          }
 
       | (Spec spc, SpecPrism prsm) ->
@@ -35,7 +36,8 @@ SpecCalc qualifying spec
         {
          new_spec   <- applySpecPrismSubstitution prsm spc subst_tm term_pos;
          compressed <- complainIfAmbiguous new_spec term_pos;  %(compressDefs new_spec)   term_pos;
-         return (Spec compressed, timeStamp, dep_UIDs)
+         new_spec <- return(setElements(compressed, compressed.elements ++ map SMPragmaToElement pragmas));
+         return (Spec new_spec, timeStamp, dep_UIDs)
          }
 
       | (Other _, Other _) ->
@@ -46,6 +48,7 @@ SpecCalc qualifying spec
       | (_,      SpecPrism _) -> raise (TypeCheck (positionOf spec_tm,  "prism substitution attempted on a non-spec"))
       | _                     -> raise (TypeCheck (term_pos,            "substitution is not a morphism or a prism, and is attempted on a non-spec"))
     }
+
 end-spec
 
 (*

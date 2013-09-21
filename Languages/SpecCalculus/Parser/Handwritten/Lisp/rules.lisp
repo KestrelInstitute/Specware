@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
+;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
 
 (defpackage :SpecCalc (:use :COMMON-LISP-USER))
 (defpackage :SCParser (:use :COMMON-LISP-USER))
@@ -1653,8 +1653,8 @@ If we want the precedence to be optional:
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 (define-sw-parser-rule :SC-SUBSTITUTE ()
-  (:tuple (1 :SC-TERM) "[" (2 :SC-TERM) "]")
-  (make-sc-substitute 1 2 ':left-lcb ':right-lcb))
+  (:tuple (1 :SC-TERM) "[" (2 :SC-TERM) "]" (3 (:repeat* :SM-PRAGMA)))
+  (make-sc-substitute 1 2 3 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-OP-REFINE
@@ -1691,6 +1691,7 @@ If we want the precedence to be optional:
    (1 :TRANSFORM-NAME)
    (1 :TRANSFORM-UID)
    (1 :TRANSFORM-QUALIFIED-NAME)
+   (1 :TRANSFORM-QUOTED-TERM)
    (1 :TRANSFORM-APPLY)
 
    (1 :TRANSFORM-TUPLE)
@@ -1719,6 +1720,9 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-QUALIFIED-NAME ()
   (:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-QUOTED-TERM ()
+  (:tuple "`" (1 :EXPRESSION) "'")               (make-transform-quoted-term 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-APPLY ()
   (:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))

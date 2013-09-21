@@ -173,7 +173,7 @@ op baseTerm(tm:SCTerm):SCTerm =
     | (Qualify (tm',nm), pos) -> baseTerm tm'
     | (Translate (tm', renm), pos) -> baseTerm tm'
     | (SpecMorph (tm',_ , _ , _),pos) -> baseTerm tm'
-    | (Subst (tm', morph), pos) -> baseTerm tm'
+    | (Subst (tm', morph, pragmas), pos) -> baseTerm tm'
     | _ -> tm
       % Yeah, there's probably a better way to raise an error so that
       % we can inspect the raw data structure

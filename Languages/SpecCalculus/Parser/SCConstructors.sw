@@ -104,8 +104,9 @@ SCParser qualifying spec
  op mkEdge             (edge_id  : Id, dom_id : Id, cod_id : Id, trm : SCTerm, left : LCB, right : LCB) : DiagElemBody = Edge (edge_id, dom_id, cod_id, trm) % TODO: mkRegion left right
  op mkColimitTerm	(diag     : SCTerm,                                     left : LCB, right : LCB) : SCTerm = mkColimit (diag, mkRegion left right)
 
- op mkSubstitute       (spec_term : SCTerm, sm_term    : SCTerm,         left : LCB, right : LCB) : SCTerm = SpecCalc.mkSubst     (spec_term, sm_term,    mkRegion left right)
- op mkOpRefine 	(spec_term : SCTerm, elements   : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
+ op mkSubstitute       (spec_term : SCTerm, sm_term : SCTerm, pragmas : ParserOptional SM_Pragmas, left : LCB, right : LCB) : SCTerm =
+   SpecCalc.mkSubst     (spec_term, sm_term, defaultToNull pragmas, mkRegion left right)
+ op mkOpRefine 	(spec_term : SCTerm, elements : SpecElemTerms,  left : LCB, right : LCB) : SCTerm = SpecCalc.mkOpRefine  (spec_term, elements,   mkRegion left right)
  op mkTransform 	(spec_term : SCTerm, transforms : TransformExprs, left : LCB, right : LCB) : SCTerm =
     SpecCalc.mkTransform (spec_term, transforms, [], mkRegion left right)
 
@@ -114,6 +115,7 @@ SCParser qualifying spec
  op mkTransformString (str   : String,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformString(str, mkRegion left right)
 %op mkTransformBool   (b     : Bool,       left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformBool(b, mkRegion left right)
  op mkTransformSCTerm (uid   : SCTerm,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformSCTerm(uid, mkRegion left right)
+ op mkTransformQuotedTerm (tm: MSTerm,     left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQuotedTerm(tm, mkRegion left right)
  op mkTransformQual (q: Qualifier, id: Id, left : LCB, right : LCB) : TransformExpr = SpecCalc.mkTransformQual(q, id, mkRegion left right)
  op mkTransformItem(mod: String, expr: TransformExpr, left : LCB, right : LCB) : TransformExpr =
     SpecCalc.mkTransformItem(mod,  expr, mkRegion left right)

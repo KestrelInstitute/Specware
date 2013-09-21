@@ -151,11 +151,19 @@ ASWPrinter qualifying spec
 	ppConcat [ppString "colim ",
 		  ppSCTerm c term]
 
-      | Subst (specTerm,morphTerm) ->
+      | Subst (specTerm,morphTerm,pragmas) ->
 	ppConcat [ppSCTerm c specTerm,
 		  ppString " [",
 		  ppSCTerm c morphTerm,
-		  ppString "]"]
+		  ppString "]",
+                  ppBreak,
+                  ppString " proof [",
+                  ppSep (ppAppend (ppString ", ") ppBreak)
+                    (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
+                                                           ppLitString p2,
+                                                           ppLitString p3])
+                       pragmas),
+                  ppString "]"]
 
       | SpecMorph (dom, cod, elems, pragmas) ->
 	let 
@@ -732,7 +740,7 @@ ASWPrinter qualifying spec
   op  ppSpecOrigin: Context -> SCTerm -> WLPretty
   def ppSpecOrigin c (def_tm,_) =
     case def_tm of
-      | Subst(spec_tm,morph_tm) ->
+      | Subst(spec_tm,morph_tm,pragmas) ->
         ppGr2Concat [ppString "substitution ",
 		     ppSCTermVal c spec_tm "name ",
 		     ppNewline,

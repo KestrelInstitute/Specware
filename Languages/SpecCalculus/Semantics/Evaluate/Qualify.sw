@@ -45,6 +45,7 @@ SpecCalc qualifying spec
     %% Moreover, by definition only unqualified names are candidates for 
     %% qualification, so we need only check the ids of the "local" ops
     %% (as opposed to checking against the full name).
+    %let _ = writeLine("qs: "^anyToString(findAQualifierMap (spc.types, UnQualified, "Complex"))) in
 
     let
 
@@ -183,8 +184,8 @@ SpecCalc qualifying spec
         if qualifiedSpec? sp then 
 	  return el
 	else
-          {q_sp <- qualifySpec sp new_q immune_ids a;
-           % print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
+          {print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
+           q_sp <- qualifySpec sp new_q immune_ids a;
            q_elts <- qualifySpecElements new_q immune_ids els;
            return(Import ((Qualify (sp_tm, new_q), noPos),
                           q_sp, q_elts, a))}

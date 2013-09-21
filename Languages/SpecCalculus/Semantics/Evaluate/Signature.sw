@@ -1,7 +1,6 @@
-\section{Evalution of a term in the Spec Calculus}
+(* Evalution of a term in the Spec Calculus *)
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import /Languages/SpecCalculus/AbstractSyntax/Types  % including SCTerm
   import /Languages/SpecCalculus/Semantics/Environment
   import /Languages/SpecCalculus/AbstractSyntax/Printer % showValue, ppDecls, ppRenaming, etc.
@@ -70,9 +69,10 @@ SpecCalc qualifying spec {
 
   op SpecCalc.otherSameSCTerm? : SCTerm * SCTerm -> Bool
 
-}
+  op SMPragmaToElement(((prefix, body, postfix), pos): SM_Pragma): SpecElement =
+    Pragma(prefix, body, postfix, pos)
+end-spec
 
-\end{spec}
 
 %%
 %% $Id$

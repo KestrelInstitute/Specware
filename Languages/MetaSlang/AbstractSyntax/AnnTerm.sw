@@ -150,6 +150,7 @@ MetaSlang qualifying spec
     | Str       String                           * a
     | Qual      String * String                  * a
     | SCTerm    SCTerm                           * a
+    | QuotedTerm (ATerm a)                       * a
     | Item      String * ATransformExpr a        * a  % e.g. unfold map
 
     | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  

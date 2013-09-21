@@ -95,8 +95,8 @@ axioms, etc.
    {(term, impSpec)
       <- if ~(qualifiedSpec? impSpec) && qualifiedSpec?(spc)
            then let Some qual = spc.qualifier in
-                {impSpec <- qualifySpec impSpec qual [] position;
-                 % print("Implicit "^qual^" qualifying "^showSCTerm term^"\n");
+                { print("Implicit "^qual^" qualifying "^showSCTerm term^"\n");
+                 impSpec <- qualifySpec impSpec qual [] position;
                  return ((Qualify (term, qual), noPos), impSpec)}
          else return (term, impSpec);
     mergeImport term impSpec spc position}

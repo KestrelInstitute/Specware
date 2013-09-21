@@ -1121,8 +1121,8 @@ If we want the precedence to be optional:
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 
-(defun make-sc-substitute (spec-term morph-term l r)
-  (SpecCalc::mkSubst-3 spec-term morph-term (make-pos l r)))
+(defun make-sc-substitute (spec-term morph-term pragmas l r)
+  (SpecCalc::mkSubst-4 spec-term morph-term pragmas (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-OP-REFINE
