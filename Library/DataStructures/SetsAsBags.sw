@@ -141,7 +141,8 @@ proof Isa set_insert_Obligation_subtype
    apply(auto simp add: SetsAsBags__in_p_def Bag__bagin_p_def)
    apply(rule Bag__bag_fold_true)
    apply(auto)
-   apply(smt Bag__bag_fold_true_back Pair_inject prod_caseE)
+   apply(cut_tac f=" (\<lambda>(no_rep_found, x). if \<not> no_rep_found then False else Bag__occs (x, s) = 1)" in  Bag__bag_fold_true_back)
+   apply(auto)
 end-proof
 
 proof Isa set_insert_new_Obligation_subtype
