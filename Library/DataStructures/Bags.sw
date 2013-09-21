@@ -25,7 +25,7 @@ spec
 
   % I made the axiom def_of_Bagin into a definition. -Eric
 
-  op [a] bagin? (x:a, s : Bag a) infixl 100 : Bool = ~(occs(x,s) = 0)
+  op [a] bagin? (x:a, b : Bag a) infixl 100 : Bool = ~(occs(x,b) = 0)
 
   % a subbag is characterized by same or fewer occurrences of each element
   % I made the axiom subbag into this definition. -Eric

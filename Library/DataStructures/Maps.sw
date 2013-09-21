@@ -113,12 +113,15 @@ Maps = Map qualifying spec
     fa(m: Map(a,b), x:a)
       (x in? domain m) => (TMApply(m,x)) = (let Some y = (apply m x) in y)
 
-
-
- %TODO doesn't seem to type check (what if x is not in the domain of m1 and/or m2?)
- % TODO add condition that domains are equal and then say for all x in domain m1
-  axiom totalmap_equality is [a,b]
-    fa(m1: Map(a,b),m2: Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
+  theorem totalmap_equality is [a,b]
+    fa(m1: Map(a,b),m2: Map(a,b))
+      ((domain m1 = domain m2) &&
+       (fa(x) (x in? domain m1) => (TMApply(m1,x) = TMApply(m2,x))))
+      => 
+      m1 = m2
+%% old (didn't seem to type check: what if x is not in the domain of m1 and/or m2?)
+%%  axiom totalmap_equality is [a,b]
+%%    fa(m1: Map(a,b),m2: Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
 
  %TODO doesn't seem to type check in the else branch
   theorem TMApply_over_update is [a,b]
@@ -168,12 +171,10 @@ Maps = Map qualifying spec
 
 (******************************** The Proofs ********************************)
 
-proof isa Map__totalmap_equality_Obligation_subtype
-  sorry
-end-proof
-
-proof isa Map__totalmap_equality_Obligation_subtype0
-  sorry
+proof Isa Map__totalmap_equality
+  apply(rule Map__map_equality)
+  apply(auto simp add: Map__TMApply_becomes_apply)
+  by (metis Map__map_domain not_Some_eq option.simps(5))
 end-proof
 
 proof isa Map__TMApply_over_update_Obligation_subtype

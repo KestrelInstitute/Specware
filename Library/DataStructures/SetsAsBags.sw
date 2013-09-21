@@ -132,43 +132,34 @@ spec
 
 (******************************** The Proofs ********************************)
 
-%% FIXME: Uncomment these proofs once the issue of them being improperly used in SetsAsBagMaps is sorted out.
-
 proof Isa SetsAsBags__empty_set_Obligation_subtype
-  sorry
+  apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold1)
 end-proof
-
-%%  apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold1)
 
 proof Isa set_insert_Obligation_subtype
-  sorry
+   apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold2 Bag__bag_insertion)
+   apply(auto simp add: SetsAsBags__in_p_def Bag__bagin_p_def)
+   apply(rule Bag__bag_fold_true)
+   apply(auto)
+   apply(smt Bag__bag_fold_true_back Pair_inject prod_caseE)
 end-proof
-
-  %% apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold2 Bag__bag_insertion)
-  %% apply(auto simp add: SetsAsBags__in_p_def Bag__bagin_p_def)
-  %% apply(rule Bag__bag_fold_true)
-  %% apply(auto)
-  %% apply(smt Bag__bag_fold_true_back Pair_inject prod_caseE)
 
 proof Isa set_insert_new_Obligation_subtype
   apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption)
 end-proof
 
 proof Isa e_bsl_fsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences)
+  apply(simp add: SetsAsBags__set_insert_def Bag__bag_insertion)
+  apply(auto simp add: Bag__bagin_of_insert SetsAsBags__in_p_def)
 end-proof
-
-  %% apply(rule Bag__occurrences)
-  %% apply(simp add: SetsAsBags__set_insert_def Bag__bag_insertion)
-  %% apply(auto simp add: Bag__bagin_of_insert SetsAsBags__in_p_def)
 
 proof Isa e_fsl_bsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences, auto simp add: SetsAsBags__set_insert_def Bag__bag_insertion SetsAsBags__in_p_def Bag__bagin_of_insert)
+  apply(cases "z=y", auto)
+  apply(simp add: Bag__bag_insertion_commutativity)
 end-proof
 
-  %% apply(rule Bag__occurrences, auto simp add: SetsAsBags__set_insert_def Bag__bag_insertion SetsAsBags__in_p_def Bag__bagin_of_insert)
-  %% apply(cases "z=y", auto)
-  %% apply(simp add: Bag__bag_insertion_commutativity)
 
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
   sorry

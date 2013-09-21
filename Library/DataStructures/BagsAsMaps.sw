@@ -13,15 +13,20 @@ spec
 
   type Bag a = Map(a, Nat)
 
-  op [a] bagin? (x:a, b:Bag a) infixl 100 : Bool =
-    case apply b x of
-      | Some y -> y > 0
-      | None   -> false
-
   op [a] occs(x:a, b:Bag a) : Nat =
     case apply b x of
       | Some y -> y
       | None   -> 0
+
+  theorem occurrences is [a]
+    fa(b1:Bag a, b2:Bag a) (fa(x: a) occs(x,b1) = occs(x,b2)) => b1 = b2
+
+  op [a] bagin? (x:a, b:Bag a) infixl 100 : Bool  = 
+    ~(occs(x,b) = 0)
+%%old body (didn't match the one in Bags.sw, so the proofs didn't go the same way):
+    %% case apply b x of
+    %%   | Some y -> y > 0
+    %%   | None   -> false
 
   %TODO without the Nat annotation on y, the Isabelle obligation is illegal.
   op [a] subbag (b1:Bag a, b2: Bag a) infixl 200 : Bool =
@@ -31,6 +36,12 @@ spec
   op [a] empty_bag : Bag a = empty_map
 
   op [a] bag_insert(x:a, b:Bag a) : Bag a = update b x (occs(x, b) + 1)
+
+  theorem bag_insertion is [a]
+        fa(b,x: a,y) occs(y,bag_insert(x,b)) = (if y = x
+                                             then occs(y,b) + 1
+                                             else occs(y,b))
+
 
   %op bag_union infixl 300 : [a] Bag a * Bag a -> Bag a
   op [a] \/ (b1:Bag a, b2:Bag a) infixl 24 : Bag a =
@@ -99,6 +110,80 @@ spec
        else As subbag Bs
 
 
+%% Things copied over from Bags.sw (should the morphism adapt these proofs?):
+
+  theorem induction is [a]
+        fa (p : Bag a -> Bool)
+           (p empty_bag &&
+           (fa(x,b) p b => p(bag_insert(x,b)))) =>
+           (fa(b) p b)
+
+theorem bagin_of_insert is [a]
+    fa(x: a, y :a, b : Bag a) (x bagin? bag_insert(y, b)) = (x = y || x bagin? b)
+
+  theorem empty_bag is [a]
+        fa(x: a) occs(x,empty_bag) = 0
+
+%% TODO: Or specialize fold to forall?
+theorem bag_fold_true is [a]
+  fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
+    (fa(elem : a) (elem bagin? bag) => f(true, elem)) =>
+       bag_fold true (f) bag
+
+theorem bag_fold_true_back is [a]
+  fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
+    bag_fold true (f) bag && (fa(elem:a) f(false, elem) = false) => (fa(elem : a) (elem bagin? bag) => f(true, elem))
+
+  theorem bag_insertion_commutativity is [a]
+    fa(x: a,y,b) bag_insert(x,bag_insert(y,b)) =
+                 bag_insert(y,bag_insert(x,b))
+
+
+%%
+%% Proofs
+%%
+
+
+
+%% Translated version of the proof in Bags.sw:
+proof Isa bagin_of_insert
+  apply(simp add: BagsAsMaps__bagin_p_def BagsAsMaps__bag_insertion)
+end-proof
+
+%% Translated version of the proof in Bags.sw:
+proof Isa bag_fold_true
+  apply(rule_tac P="\<forall>elem::'a. elem bagin? bag \<longrightarrow> f(True, elem)" in mp)
+  defer
+  apply(simp)
+  apply(rule BagsAsMaps__induction)
+  apply(auto simp add: BagsAsMaps__bag_fold1 BagsAsMaps__bag_fold2)
+  apply (metis BagsAsMaps__bagin_of_insert)
+  apply (metis (full_types) BagsAsMaps__bag_insertion BagsAsMaps__bagin_p_def comm_semiring_1_class.normalizing_semiring_rules(24) gr_implies_not0 less_add_one)
+end-proof
+
+%% Translated version of the proof in Bags.sw:
+proof Isa bag_fold_true_back
+  apply(rule_tac P=" BagsAsMaps__bag_fold True f bag \<and> elem bagin? bag" in mp)
+  defer
+  apply(simp)
+  apply(rule BagsAsMaps__induction)
+  apply(auto simp add: BagsAsMaps__bag_fold1 BagsAsMaps__bag_fold2)
+  apply (metis BagsAsMaps__bagin_p_def BagsAsMaps__empty_bag)
+  apply(metis (full_types))
+ apply (metis (full_types) BagsAsMaps__bag_insertion BagsAsMaps__bagin_p_def) 
+end-proof
+
+%% Translated version of the proof in Bags.sw:
+proof isa bag_insertion_commutativity
+  apply(rule BagsAsMaps__occurrences)
+  apply(auto simp add: BagsAsMaps__bag_insertion)
+end-proof
+
+
+proof Isa BagsAsMaps__empty_bag
+  apply(auto simp add: BagsAsMaps__empty_bag_def BagsAsMaps__occs_def Map__empty_map)
+end-proof
+
 proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
   sorry
 end-proof
@@ -111,6 +196,18 @@ proof Isa bag_fold2
   sorry
 end-proof
 
+proof Isa bag_insertion
+  sorry
+end-proof
+
+proof Isa induction
+  sorry
+end-proof
+
+proof Isa occurrences
+  sorry
+end-proof
+
 end-spec
 
 
@@ -118,31 +215,8 @@ M = morphism Bags -> BagsAsMaps {Bag._ +-> BagsAsMaps._% ,
                                  % \/  +-> bag_union,
                                  % --  +-> bag_difference
                                  }
-proof Isa Bag__occurrences
-  sorry
-end-proof
-
-proof Isa Bag__empty_bag
-  sorry
-end-proof
-
-proof Isa Bag__bag_insertion
-  sorry
-end-proof
 
 proof Isa Bag__occs_bag_union
-  sorry
-end-proof
-
-proof Isa Bag__induction
-  sorry
-end-proof
-
-proof Isa Bag__bag_fold1
-  sorry
-end-proof
-
-proof Isa Bag__bag_fold2
   sorry
 end-proof
 
@@ -155,9 +229,5 @@ proof Isa Bag__bag_difference
 end-proof
 
 proof Isa Bag__subbag_def
-  sorry
-end-proof
-
-proof Isa Bag__bagin_p_def
   sorry
 end-proof

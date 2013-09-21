@@ -5,6 +5,39 @@
 %% FIXME: I'd like to put the proofs for this just below this next line:
 SetsAsBagMaps = SetsAsBags[BagsAsMaps#M]
 
+%% Translated version of the proof in SetsAsBags.sw:
+proof Isa set_insert_Obligation_subtype
+   apply(simp add: SetsAsBags__no_rep_p_def BagsAsMaps__bag_fold2 BagsAsMaps__bag_insertion)
+   apply(auto simp add: SetsAsBags__in_p_def BagsAsMaps__bagin_p_def)
+   apply(rule BagsAsMaps__bag_fold_true)
+   apply(auto)
+   apply(smt BagsAsMaps__bag_fold_true_back Pair_inject prod_caseE)
+end-proof
+
+%% Translated version of the proof in SetsAsBags.sw:
+proof Isa SetsAsBags__empty_set_Obligation_subtype
+  apply(simp add: SetsAsBags__no_rep_p_def BagsAsMaps__bag_fold1)
+end-proof
+
+%% Translated version of the proof in SetsAsBags.sw:
+proof Isa set_insert_new_Obligation_subtype
+  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption)
+end-proof
+
+%% Translated version of the proof in SetsAsBags.sw:
+proof Isa e_bsl_fsl_Obligation_subtype
+  apply(rule BagsAsMaps__occurrences)
+  apply(simp add: SetsAsBags__set_insert_def BagsAsMaps__bag_insertion)
+  apply(auto simp add: BagsAsMaps__bagin_of_insert SetsAsBags__in_p_def)
+end-proof
+
+%% Translated version of the proof in SetsAsBags.sw:
+proof Isa e_fsl_bsl_Obligation_subtype
+  apply(rule BagsAsMaps__occurrences, auto simp add: SetsAsBags__set_insert_def BagsAsMaps__bag_insertion SetsAsBags__in_p_def BagsAsMaps__bagin_of_insert)
+  apply(cases "z=y", auto)
+  apply(simp add: BagsAsMaps__bag_insertion_commutativity)
+end-proof
+
 
 M = morphism Sets -> SetsAsBagMaps {Set._ +-> SetsAsBags._}
 

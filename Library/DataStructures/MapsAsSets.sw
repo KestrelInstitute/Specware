@@ -253,18 +253,6 @@ proof Isa Map__map_rangeToList
   sorry
 end-proof
 
-proof Isa Map__totalmap_equality_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality_Obligation_subtype0
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality
-  sorry
-end-proof
-
 proof Isa isoMap_def_Obligation_the
   sorry
 end-proof

@@ -138,18 +138,6 @@ proof Isa map_rangeToList
   sorry
 end-proof
  
-proof Isa totalmap_equality_Obligation_subtype
-  sorry
-end-proof
- 
-proof Isa totalmap_equality_Obligation_subtype0
-  sorry
-end-proof
- 
-proof Isa totalmap_equality
-  sorry
-end-proof
- 
 proof Isa isoMap_def_Obligation_the
   sorry
 end-proof
