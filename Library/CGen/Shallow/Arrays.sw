@@ -177,7 +177,7 @@ Array2a = transform Array2 by
 RESULT:
 
 refine def array_sum(arr: C.Array(Int)): Int
-  = singlequote
+  = '
       ({x <- backtick 0;
         r <- backtick 0;
         while(x ~= C.length arr) ({x <- backtick(x + 1);

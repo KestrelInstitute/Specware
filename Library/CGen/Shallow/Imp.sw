@@ -47,8 +47,7 @@ op [A]   backtick (expr : A): Monad A   = return expr
 
 op -                : Monad ()  = return ()
 
-%% TODO: singlequote used to be named ' but that now seems to be an illegal name
-op [A]  singlequote(stm : Monad A): A     = inverse return stm
+op [A]  '(stm : Monad A): A     = inverse return stm
    
 % ---------------------------------------------------------------------
 % Control Operations 
@@ -113,12 +112,12 @@ op [A,B] floop (init:A, base: B, expr: A * B -> B, incr: A->A, limit:A) :
 theorem rec_to_loop is [A,B]
    fa (init:A, base: B, expr: A * B -> B, decr: A->A, x:A)
            frec  (init, base, expr, decr, x)
-       =  singlequote(floop (init, base, expr, inverse decr, x) )
+       =  '(floop (init, base, expr, inverse decr, x) )
    
 theorem rec_aux_to_loop is [A,B,C]
    fa (init:A, base: B, expr: A * B -> B, decr: A->A, limit:A)
           frec_aux  (init, base, expr, decr, limit)
-       =  singlequote(floop (init, base, expr, inverse decr, limit))
+       =  '(floop (init, base, expr, inverse decr, limit))
 
 % ---------------------------------------------------------------------
 % More direct versions that I can't use yet 
@@ -135,7 +134,7 @@ theorem rec_to_loop1 is [A,B]
                          else expr (x, f (decr x))))
       =>
    f z        
-   =  singlequote{  x <- backtick init
+   =  '{  x <- backtick init
        ;  r <- backtick base
        ;  while ( backtick (x ~= z) )
                 { x <- backtick (inverse decr x); r <- backtick (expr (x,r)); - }
@@ -148,7 +147,7 @@ theorem rec_aux_to_loop1 is [A,B]
                                  then base
                                  else expr (x, aux (decr x))
        in aux limit)       
-   =  singlequote{  x <- backtick init
+   =  '{  x <- backtick init
        ;  r <- backtick base
        ;  while ( backtick (x ~= limit) )
                 { x <- backtick (inverse decr x)
