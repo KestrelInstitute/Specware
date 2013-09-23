@@ -37,6 +37,28 @@ def addToAlist (k, v, al) =
     | Some _ -> al
     | Non -> (k, v) :: al
 
+(* map a function of type A -> Option B over a list and then filter
+   out only the "Some"'s returned by that function *)
+op [a,b] filterMap (f : a -> Option b) (l : List a) : List b =
+  case l of
+    | [] -> []
+    | x::l' ->
+      case f x of
+        | None -> filterMap f l'
+        | Some x_out -> x_out :: filterMap f l'
+
+(* map a function of type A -> Monad (Option B) over a list and then
+   filter out only the "Some"'s returned by that function *)
+op [a,b] filterMapM (f : a -> Monad (Option b)) (l : List a) : Monad (List b) =
+  case l of
+    | [] -> return []
+    | x::l' ->
+      { x_out_opt <- f x;
+        l'_out <- filterMapM f l';
+        case x_out_opt of
+          | None -> return l'_out
+          | Some x_out -> return (x_out :: l'_out) }
+
 (* version of foldr that assumes a non-empty list, so does not need a
    base case *)
 (*
@@ -66,6 +88,7 @@ def concatenate (sep : Char) (strs : List String) : String =
 op [a] intersperse (x : a) (l : List a) : List a =
   case l of
     | [] -> []
+    | y::[] -> [y]
     | y::l' -> y :: x :: intersperse x l'
 
 op [a,b] mapM (f : a -> Monad b) (l : List a) : Monad (List b) =
@@ -122,6 +145,8 @@ op  Specware.evaluateUnitId: String -> Option Value
 def qidToCoqName (q, id) =
   if q = "" || q = "<unqualified>" then id else q ^ "__" ^ id
 
+def ppQid qid : Pretty = string (qidToCoqName qid)
+
 type CoqModName = List String
 
 def coqModNameToString (coq_mod : CoqModName) : String =
@@ -145,6 +170,17 @@ def specPathToCoqModule (spath : String) : Option CoqModName =
   case specPathToRelUID spath of
     | Some ruid -> Some (relUIDToCoqModuleName ruid)
     | None -> None
+
+def meta_mod_name = "Meta"
+
+(* add "Meta" to the end of a Coq module name *)
+def coqModNameAddMeta (coq_mod : CoqModName) : CoqModName =
+  coq_mod ++ [meta_mod_name]
+
+(*
+def relUIDToCoqMetaModuleName (ruid : RelativeUID) : String =
+  coqModNameToString (coqModNameAddMeta (relUIDToCoqModuleName ruid))
+*)
 
 (* README: we do not want to deal with absolute paths, which are
    mostly what Specware seems to put out... *)
@@ -286,7 +322,7 @@ def ppSeparatorTerm p1 sep p2 term =
    [(0, p1),
     (1, string (" " ^ sep ^ " ")),
     (4, p2),
-    (1, string (" " ^ term))])
+    (1, string (term ^ " "))])
 
 (* pretty-print something like begin { middle } end, where either the
    whole thing is on one line on three with the middle indented *)
@@ -296,6 +332,7 @@ def ppIndentMiddle p1 p2 p3 =
 
 def ppColon = ppSeparator ":"
 def ppSemi = ppSeparator ";"
+def ppColonEq = ppSeparator ":="
 
 (* pretty-print parens around a Pretty *)
 op ppParens (pp : Pretty) : Pretty =
@@ -329,8 +366,16 @@ def coqApplyMultiM mf mas =
   foldl (fn (m1, m2) -> coqApplyM m1 m2) mf mas
 
 (* convert a Coq Prop to a bool, in a monad *)
-op prop2bool : Monad Pretty -> Monad Pretty
-def prop2bool m = coqApplyM (return (string "prop2bool")) m
+op prop2bool : Pretty -> Pretty
+def prop2bool pp = coqApply (string "prop2bool") pp
+
+op prop2boolM : Monad Pretty -> Monad Pretty
+def prop2boolM m = coqApplyM (return (string "prop2bool")) m
+
+(* convert a Coq bool to a Coq Prop *)
+op bool2prop : Pretty -> Pretty
+def bool2prop pp =
+  ppSeparator "=" pp (string "true")
 
 (* pretty-print a Coq fun from a pretty-printed variable (either in
     the form "x" or the form "(x:A)") and a pretty-printed body *)
@@ -353,10 +398,22 @@ def ppCoqParam (q, id, tp_pp) =
 
 (* pretty-print a Coq definition, which takes in a (pretty-printed)
    Coq type and Coq value of that type *)
-op ppCoqDef : (String * String * Pretty * Pretty) -> Pretty
-def ppCoqDef (q, id, tp_pp, def_pp) =
+op ppCoqDef : (String * Pretty * Pretty) -> Pretty
+def ppCoqDef (nm, tp_pp, def_pp) =
   blockFill (0, [(0, string "Program Definition "),
-                      (2, string (qidToCoqName (q,id))),
+                      (2, string nm),
+                      (0, string " : "),
+                      (2, tp_pp),
+                      (0, string " := "),
+                      (2, def_pp),
+                      (0, string ".")])
+
+(* pretty-print a Coq definition, which takes in a (pretty-printed)
+   Coq type and Coq value of that type *)
+op ppCoqPgmDef : (String * Pretty * Pretty) -> Pretty
+def ppCoqPgmDef (nm, tp_pp, def_pp) =
+  blockFill (0, [(0, string "Program Definition "),
+                      (2, string nm),
                       (0, string " : "),
                       (2, tp_pp),
                       (0, string " := "),
@@ -364,10 +421,10 @@ def ppCoqDef (q, id, tp_pp, def_pp) =
                       (0, string ".")])
 
 (* pretty-print a Coq definition without a type *)
-op ppCoqDefNoT : (String * String * Pretty) -> Pretty
-def ppCoqDefNoT (q, id, def_pp) =
+op ppCoqDefNoT : (String * Pretty) -> Pretty
+def ppCoqDefNoT (nm, def_pp) =
   blockFill (0, [(0, string "Definition "),
-                      (2, string (qidToCoqName (q,id))),
+                      (2, string nm),
                       (0, string " := "),
                       (2, def_pp),
                       (0, string ".")])
@@ -384,8 +441,10 @@ def ppCoqRecordDef (nm, ctor, fieldAlist) =
          (2, string ctor),
          (2, string " {")]))
     (prLinear 0
-       (map (fn (fnm, ftp_pp) ->
-               ppSeparatorTerm (string fnm) ":" ftp_pp ";") fieldAlist))
+       (intersperse
+          (string "; ")
+          (map (fn (fnm, ftp_pp) ->
+                  ppColon (string fnm) ftp_pp) fieldAlist)))
     (string " }.")
 
 (* pretty-print an element of a Coq record type *)
@@ -395,10 +454,24 @@ def ppCoqRecordElem (fields) =
     (0,
      [(0, string "{| ")]
      ++
-     map (fn (fname, fval_pp) ->
-            (2, ppSeparatorTerm (string fname) ":=" fval_pp ";")) fields
+     intersperse
+       (2, (string "; "))
+       (map (fn (fname, fval_pp) ->
+            (2, ppColonEq (string fname) fval_pp)) fields)
      ++
      [(0, string " |}")])
+
+def ppTuple (l : List Pretty) : Pretty =
+  ppParens (prBreak 0 (intersperse (string ", ") l))
+
+(* pretty-print an element of a Specware record type, which is a tuple
+   if the fields are all natural numbers in ascending order from 1 *)
+op ppCoqRecordElemOrTuple : (List (String * Pretty)) -> Pretty
+def ppCoqRecordElemOrTuple fields =
+  if foralli? (fn (i, (fld, _)) -> intToString (i+1) = fld) fields then
+    ppTuple (map (fn (_, val) -> val) fields)
+  else
+    ppCoqRecordElem fields
 
 (* pretty-print a Coq Inductive declaration *)
 op ppCoqInductive : (String * String * TyVars * List (Id * Option Pretty)) -> Pretty
@@ -453,12 +526,6 @@ def unhandled (fun, construct, obj_str) =
 def unhandledTerm (str : String) (tm : MSTerm) : Monad Pretty =
   unhandled ("ppTerm", str, anyToString tm)
 
-(* pretty-print a qualified id *)
-op ppQid : QualifiedId -> Monad Pretty
-def ppQid qid =
-  case qid of
-    | Qualified (q, id) -> retString (q ^ "." ^ id)
-
 (* pretty-print an MSTerm into a Coq term *)
 op ppTerm : MSTerm -> Monad Pretty
 def ppTerm tm =
@@ -469,17 +536,15 @@ def ppTerm tm =
       { elems_pp
          <- mapM (fn (id, tm) ->
                     { tm_pp <- ppTerm tm; return (id, tm_pp) }) elems;
-        return (ppCoqRecordElem elems_pp) }
+        return (ppCoqRecordElemOrTuple elems_pp) }
     | Bind (Forall, vars, body, _) ->
-      prop2bool
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
-        return (ppForall vars_pp body_pp) }
+        return (ppForallB vars_pp body_pp) }
     | Bind (Exists, vars, body, _) ->
-      prop2bool
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
-        return (ppExists vars_pp body_pp) }
+        return (ppExistsB vars_pp body_pp) }
     | Bind (Exists1, vars, body, _) -> unhandledTerm "Bind (Exists1)" tm
     | The (var, body, _) ->
       { body_pp <- ppTerm body;
@@ -570,21 +635,12 @@ def ppPat pat =
       { arg_pp <- ppPat arg_pat;
         retFill [(0, string ctor), (2, arg_pp)] }
     | RecordPat (id_pats, _) ->
-      if foralli? (fn (i, (fld, _)) -> intToString i = fld) id_pats then
-        { pats_pp <- mapM (fn (_, pat') -> ppPat pat') id_pats;
-          return
-           (ppParens
-              (blockFill
-                 (0, (intersperse (1, (string ", "))
-                        (map (fn (pp:Pretty) -> (1, pp)) pats_pp))))) }
-      else
-        { fld_pats_pp
-           <- mapM (fn (fname, fpat) ->
-                      { fpat_pp <- ppPat fpat;
-                        return (fname, fpat_pp) }) id_pats;
-          return
-            (ppCoqRecordElem fld_pats_pp)
-        }
+      { fld_pats_pp
+         <- mapM (fn (fname, fpat) ->
+                    { fpat_pp <- ppPat fpat;
+                     return (fname, fpat_pp) }) id_pats;
+        return
+          (ppCoqRecordElemOrTuple fld_pats_pp) }
     | WildPat (_, _) -> retString "_"
     | BoolPat (b, _) ->
          if b then retString "true" else retString "false"
@@ -618,8 +674,8 @@ def ppFun (f, tp) =
     | Or -> retString "orb_pair"
     | Implies -> retString "implb_pair"
     | Iff -> retString "iffb_pair"
-    | Equals -> retString "dec_eq_pair"
-    | NotEquals -> retString "dec_neq_pair"
+    | Equals -> retString "dec_eq_b_pair"
+    | NotEquals -> retString "dec_neq_b_pair"
 
     | Quotient tp -> unhandledFun "Quotient" f
     | Choose tp -> unhandledFun "Choose" f
@@ -629,7 +685,7 @@ def ppFun (f, tp) =
     | PQuotient tp -> unhandledFun "PQuotient" f
     | PChoose tp -> unhandledFun "PChoose" f
 
-    | Op (qid, fixity) -> ppQid qid
+    | Op (Qualified qid, fixity) -> return (ppQid qid)
     | Project id -> unhandledFun "Project" f
     | RecordMerge -> unhandledFun "RecordMerge" f
     | Embed (id, flag) -> retString id
@@ -655,21 +711,37 @@ op ppTyVarBindings : TyVars -> List Pretty
 def ppTyVarBindings tyvars =
   map ppTyVarBinding tyvars
 
-(* pretty-print a forall, assuming all the variables have been
-   pretty-printed as name : tp pairs*)
+(* pretty-print a forall type, assuming all the variables have been
+   pretty-printed as "(name : tp)" and that body_pp is a
+   pretty-printed Coq type *)
 def ppForall (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
-  blockFill
-  (0, [(0, string "forall")]
-     ++ (map (fn v_pp -> (0, ppParens v_pp)) vs_pp)
-     ++ [(0, string ","), (0, body_pp)])
+  if vs_pp = [] then body_pp else
+    blockFill
+    (0, [(0, string "forall")]
+       ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
+       ++ [(0, string ","), (0, body_pp)])
 
-(* pretty-print an exists, assuming all the variables have been
-   pretty-printed as name : tp pairs*)
-def ppExists (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
-  blockFill
-  (0, [(0, string "exists")]
-     ++ (map (fn v_pp -> (0, ppParens v_pp)) vs_pp)
-     ++ [(0, string ","), (0, body_pp)])
+(* pretty-print a forall proposition converted to a bool, assuming all
+   the variables have been pretty-printed as "(name : tp)" and that
+   body_pp is a pretty-printed Coq term of type bool *)
+def ppForallB (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
+  if vs_pp = [] then body_pp else
+    prop2bool
+    (blockFill
+       (0, [(0, string "forall")]
+          ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
+          ++ [(0, string ","), (0, bool2prop body_pp)]))
+
+(* pretty-print an exists proposition converted to a bool, assuming
+   all the variables have been pretty-printed as "(name : tp)" and
+   that body_pp is a pretty-printed Coq term of type bool *)
+def ppExistsB (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
+  if vs_pp = [] then body_pp else
+    prop2bool
+    (blockFill
+       (0, [(0, string "exists")]
+          ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
+          ++ [(0, string ","), (0, bool2prop body_pp)]))
 
 op ppType : MSType -> Monad Pretty
 def ppType tp =
@@ -748,48 +820,11 @@ def ppTypeDef (q,id, tp) =
         return (ppCoqInductive (q, id, tyvars, id_tps_pp)) }
     | _ ->
          { tp_pp <- ppType tp ;
-           return (ppCoqDef (q, id, string "Set", tp_pp)) }
+           return (ppCoqPgmDef (qidToCoqName (q, id), string "Set", tp_pp)) }
 
 (***
  *** pretty-printer for specs
  ***)
-
-(* pretty-print a spec element as an element of a Coq module *)
-op ppSpecElem : Spec -> SpecElement -> Monad Pretty
-def ppSpecElem s elem =
-  let def ppTypeSpecElem (q, id) : Monad Pretty =
-    (case findAQualifierMap (s.types, q, id) of
-       | Some tp_info ->
-         if typeIsDefined? tp_info.dfn then
-           { tp_pp <- ppType tp_info.dfn;
-            return (ppCoqDef (q, id, string "Set", tp_pp)) }
-         else
-           return (ppCoqParam (q, id, string "Set"))
-       | None -> err ("ppSpecElem: could not find type " ^ id ^ " in spec!"))
-  in
-  let def ppOpSpecElem (q, id) : Monad Pretty =
-    (case findAQualifierMap (s.ops, q, id) of
-       | Some op_info ->
-         if termIsDefined? op_info.dfn then
-           { def_pp <- ppTerm op_info.dfn;
-             tp_pp <- ppType (termType op_info.dfn);
-            return (ppCoqDef (q, id, tp_pp, def_pp)) }
-         else
-           { tp_pp <- ppType (termType op_info.dfn);
-             return (ppCoqParam (q, id, tp_pp)) }
-       | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))
-  in
-  case elem of
-   | Import ((UnitId ruid, _), _, _, _) ->
-     retString ("Require Import " ^ relUIDToCoqNameString ruid ^ ".")
-   | Type (Qualified qid, _) -> ppTypeSpecElem qid
-   | TypeDef (Qualified qid, _) -> ppTypeSpecElem qid
-   | Op (Qualified qid, _, _) -> ppOpSpecElem qid
-   | OpDef (Qualified qid, _, _, _) -> ppOpSpecElem qid
-   | Property prop -> (* FIXME *) retString "(* property *)"
-   | Comment (str, _) -> (* FIXME *) retString ("(* Comment: " ^ str ^ " *)")
-   | Pragma (str1, str2, str3, _) -> (* FIXME *) retString "(* pragma *)"
-
 
 (* The basic idea is that a spec is translated into two Coq objects:
 
@@ -809,22 +844,133 @@ def ppSpecElem s elem =
     To make the above easier to work with in Coq, these are defined in
     a Coq module, of the same name as the spec, that contains:
 
-    * An element "__type" equal to the record type of the spec;
-
-    * A Coq Export statement for each imported spec (FIXME: this is
-      not yet supported);
-
     * A Coq parameter for each "hole" in the spec;
 
     * A Coq definition for each type, op, and proof (given with
-      specware pragmas) in the spec; and
+      specware pragmas) in the spec;
 
-    * An element __pinst that gives the partial instance, i.e., where
-      each type, op, and proof is bound to either its parameter or
-      its definition given in the module.
+    * A Coq Export statement for each imported spec (FIXME: this is
+      not yet supported); and
+
+    * A sub-module "Meta" that contains:
+
+      - An element "__type" equal to the record type of the spec;
+
+      - An element "__pinst" that gives the partial instance, i.e.,
+         where each type, op, and proof is bound to either its
+         parameter or its definition given in the module.
 
 *)
 
+def tp_elem_name = "__type"
+def pinst_elem_name = "__pinst"
+
+
+(* pretty-print a spec element as an element of a Coq module *)
+op ppSpecElem : Spec -> SpecElement -> Monad (Option Pretty)
+def ppSpecElem s elem =
+  let def ppTypeSpecElem (q, id) : Monad (Option Pretty) =
+    (case findAQualifierMap (s.types, q, id) of
+       | Some tp_info ->
+         if typeIsDefined? tp_info.dfn then
+           { tp_pp <- ppType tp_info.dfn;
+            return
+              (Some
+                 (ppCoqPgmDef (qidToCoqName (q, id), string "Set", tp_pp))) }
+         else
+           return (Some (ppCoqParam (q, id, string "Set")))
+       | None -> err ("ppSpecElem: could not find type " ^ id ^ " in spec!"))
+  in
+  let def ppOpSpecElem (q, id) : Monad (Option Pretty) =
+    (case findAQualifierMap (s.ops, q, id) of
+       | Some op_info ->
+         if termIsDefined? op_info.dfn then
+           { def_pp <- ppTerm op_info.dfn;
+             tp_pp <- ppType (termType op_info.dfn);
+            return (Some (ppCoqPgmDef (qidToCoqName (q, id), tp_pp, def_pp))) }
+         else
+           { tp_pp <- ppType (termType op_info.dfn);
+             return (Some (ppCoqParam (q, id, tp_pp))) }
+       | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))
+  in
+  case elem of
+   | Import ((UnitId ruid, _), _, _, _) ->
+     return
+     (Some
+        (string ("Require Import " ^ relUIDToCoqNameString ruid ^ ".")))
+   | Type (Qualified qid, _) -> ppTypeSpecElem qid
+   | TypeDef (Qualified qid, _) -> ppTypeSpecElem qid
+   | Op (Qualified qid, _, _) -> ppOpSpecElem qid
+   | OpDef (Qualified qid, _, _, _) -> ppOpSpecElem qid
+   | Property (Axiom, Qualified (q, id), tyvars, tm, _) ->
+     (* FIXME: search for a proof *)
+     { tm_pp <- ppTerm tm;
+       return
+        (Some
+           (ppCoqParam
+              (q, id,
+               ppForall (ppTyVarBindings tyvars) (bool2prop tm_pp)))) }
+   | Property prop -> (* FIXME *) return (Some (string "(* property *)"))
+   | Comment (str, _) ->
+     (* FIXME *)
+     return (Some (string ("(* Comment: " ^ str ^ " *)")))
+   | Pragma (str1, str2, str3, _) ->
+     (* FIXME *)
+     return (Some (string "(* pragma *)"))
+
+
+(* return a tuple of a pretty-printed (name, type, value) for a spec
+   element as an element of a Coq record. The "value" here for
+   types, ops, and axioms is just the name of the variable in the
+   current module (introduced by Definition or Parameter)
+   corresponding to the particular element; for imports, it is
+   the "__pinst" value for the module being imported *)
+op ppSpecElemInRecord
+  : Spec -> SpecElement -> Monad (Option (String * Pretty * Pretty))
+def ppSpecElemInRecord s elem =
+  let def opHelper (q, id) =
+    (case findAQualifierMap (s.ops, q, id) of
+       | Some op_info ->
+         { tp_pp <- ppType (termType op_info.dfn);
+           return (Some ("__" ^ qidToCoqName (q, id), tp_pp, ppQid (q, id))) }
+       | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))  in
+  case elem of
+   | Import ((UnitId ruid, _), _, _, _) ->
+     (* for an import,  *)
+     let modName = relUIDToCoqModuleName ruid in
+     let metaModStr = coqModNameToString (coqModNameAddMeta modName) in
+     let modField = last modName in
+     (* README: we are using the last element of the module name as
+        the name of the field in the __pinst record. Hopefully this
+        will not cause name clashes. If it does, maybe we can allow
+        user control with pragmas? *)
+     return
+     (Some
+        (modField,
+         string (metaModStr ^ "." ^ tp_elem_name),
+         string (metaModStr ^ "." ^ pinst_elem_name)))
+   | Type (Qualified qid, _) ->
+     return (Some ("__" ^ qidToCoqName qid, string "Set", ppQid qid))
+   | TypeDef (Qualified qid, _) ->
+     return (Some ("__" ^ qidToCoqName qid, string "Set", ppQid qid))
+   | Op (Qualified qid, _, _) -> opHelper qid
+   | OpDef (Qualified qid, _, _, _) -> opHelper qid
+   | Property (Axiom, Qualified qid, tyvars, tm, _) ->
+     (* FIXME: search for a proof *)
+     { tm_pp <- ppTerm tm;
+       return
+        (Some
+           ("__" ^ qidToCoqName qid,
+            ppForall (ppTyVarBindings tyvars) (bool2prop tm_pp),
+            ppQid qid)) }
+   | Property prop -> (* FIXME *) return None
+   | Comment (str, _) -> return None
+   | Pragma (str1, str2, str3, _) ->
+     (* FIXME *)
+     return None
+
+
+(* top-level entry point for pretty-printing specs *)
 op ppSpec : CoqModName -> Spec -> Monad Pretty
 def ppSpec coq_mod s =
 
@@ -843,48 +989,35 @@ def ppSpec coq_mod s =
 
   {
    (* next, pretty-print the spec elements *)
-   spec_elems_pp <- mapM (ppSpecElem s) spec_elems;
+   spec_elems_pp <- filterMapM (ppSpecElem s) spec_elems;
+
+   (* pretty-print spec elems to Coq record elems *)
+   spec_record_elems_pp <- filterMapM (ppSpecElemInRecord s) spec_elems;
 
    (* Now, build the Coq module! *)
    return
    (
-    prLines 0 (intersperse (string "") spec_elems_pp)
+    prLines 0
+    (intersperse (string "")
+       (spec_elems_pp
+          ++
+          (* build the "Meta" module *)
+          [ppCoqModule
+             (meta_mod_name,
+              [
+               (* build the "__type" component *)
+               ppCoqRecordDef
+               (tp_elem_name, "mk" ^ tp_elem_name,
+                map (fn (nm, tp_pp, _) -> (nm, tp_pp)) spec_record_elems_pp)
+               ,
 
-    (* old stuff below... *)
-
-    (* first build the Pretty for the __type module element *)
-    (*
-    let rt_pp =
-      ppCoqRecordDef
-        (mod_name, "mk_" ^ mod_name,
-         (map (fn (q, id, tp_pp, _) ->
-                 (qidToCoqName (q, id), tp_pp)) elems_list))
-    in
-     *)
-
-    (* next build Prettys for type, op, and axiom module elements *)
-    (*
-    let defs_pps =
-      map (fn (q, id, tp_pp, def_pp) -> def_pp) elems_list
-    in *)
-
-    (* now build the __pinst module element *)
-    (*
-    let pinst_pp =
-      ppCoqDefNoT
-        ("", "__pinst",
-         ppCoqRecordElem
-           (map
-              (fn (q, id, _, _) ->
-                 (qidToCoqName (q, id), string (qidToCoqName (q, id))))
-              elems_list))
-    in *)
-
-    (* Finally, build the Module! *)
-    (*
-    ppCoqModule
-      (mod_name, [rt_pp] ++ defs_pps ++ [pinst_pp])
-       *)
+               (* build the "__pinst" component *)
+               ppCoqDefNoT
+                 (pinst_elem_name,
+                  ppCoqRecordElem
+                    (map (fn (nm, _, val_pp) -> (nm, val_pp)) spec_record_elems_pp))
+               ])]
+          ))
     )}
 
 
