@@ -28,6 +28,9 @@ Fixpoint multi_arrow (types : list Type) (B : Type) : Type :=
 
 Axiom em_inf : forall (P : Prop), {P} + {~ P}.
 
+Definition bool2prop (b : bool) : Prop :=
+  b = true.
+
 Definition prop2bool (P : Prop) : bool :=
   match em_inf P with
     | left _ => true
@@ -102,18 +105,20 @@ Definition dec_neq_b_pair (p : bool * bool) :=
  *** The Spec type
  ***)
 
+(*
 Record Spec :=
   mk_Spec {
       RT : Type;
       holes : list Type;
       partial_inst : multi_arrow holes RT
     }.
-
+*)
 
 (***
  *** Examples
  ***)
 
+(*
 Module trivial_sig.
 
   Record sig :=
@@ -131,3 +136,4 @@ Module trivial_sig.
   Definition trivial_spec : Spec :=
     mk_Spec {|
         RT = 
+*)
