@@ -30,9 +30,7 @@
 
 
 proof isa Nat__natConvertible__1__obligation_refine_def
- (** TRANSLATION ISSUE: natConvertible must be Nat__natConvertible
-                        everywhere in this theory
- proof is extremely tedious  -- see attempt below
+ (**  proof is extremely tedious  -- see attempt below
 
   apply (simp add: Nat__natConvertible_def Nat__natConvertible__1_def
                    list_ex_iff list_all_iff,
@@ -95,9 +93,7 @@ sorry
 end-proof
 
 proof isa Integer__intConvertible__1__obligation_refine_def
- (** TRANSLATION ISSUE: intConvertible must be Integer__intConvertible
-                        everywhere in this theory
- proof is extremely tedious
+ (**  proof is extremely tedious
 
   apply (simp add: Integer__intConvertible_def Integer__intToString_def
                    Integer__intConvertible__1_def)
@@ -123,12 +119,6 @@ proof isa Integer__stringToInt__1_Obligation_subtype
 end-proof
 
 proof isa Integer__stringToInt__1__obligation_refine_def
- (** TRANSLATION ISSUE: intConvertible must be Integer__intConvertible
-                        stringToInt    must be Integer__stringToInt
- proof is then
-
- 
- **********************************************************************) 
 sorry
 end-proof
 
