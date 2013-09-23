@@ -101,6 +101,46 @@ proof Isa SetsAsMap__e_bsl_bsl_fsl_fsl_Obligation_subtype
   sorry
 end-proof
 
+proof Isa SetsAsMap__subset_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def)
+end-proof
+
+proof Isa SetsAsMap__e_bsl_fsl_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa SetsAsMap__e_fsl_bsl_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa SetsAsMap__set_fold_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def)
+end-proof
+
+proof Isa SetsAsMap__e_dsh_dsh_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__remove)
+end-proof
+
+proof Isa SetsAsMap__filter_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa SetsAsMap__map_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+
+
 end-spec
 
 

@@ -45,7 +45,7 @@ spec
 
   %op bag_union infixl 300 : [a] Bag a * Bag a -> Bag a
   op [a] \/ (b1:Bag a, b2:Bag a) infixl 24 : Bag a =
-    foldi (fn (x,y,b) -> update b x (occs(x, b2) + y)) b2 b1
+    foldi (fn (x,y,b) -> update b x (occs(x, b2) + y)) b1 b2
 
   % finally, bag_fold amounts to list_fold on a representing list
 
@@ -55,7 +55,7 @@ spec
                          fa(x,y,z) f(f(x,y),z) = f(f(x,z),y))
                     (bag : Bag a) : b =
     %% Could be more efficient
-    foldi (fn (x,y,r) -> foldl (fn (r, z) -> f(r, z)) %TODO just say f here?
+    foldi (fn (x,y,r) -> foldl f
                                r 
                                (repeat x y)) 
           c 
@@ -189,6 +189,7 @@ proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
 end-proof
 
 proof Isa bag_fold1
+  apply(simp add: BagsAsMaps__bag_fold_def BagsAsMaps__empty_bag_def)
   sorry
 end-proof
 
@@ -197,7 +198,7 @@ proof Isa bag_fold2
 end-proof
 
 proof Isa bag_insertion
-  sorry
+  apply(simp add: BagsAsMaps__bag_insert_def BagsAsMaps__occs_def Map__update)
 end-proof
 
 proof Isa induction
@@ -207,6 +208,49 @@ end-proof
 proof Isa occurrences
   sorry
 end-proof
+
+proof Isa subbag_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def)
+end-proof
+
+proof Isa BagsAsMaps__e_bsl_fsl_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa bag_fold_Obligation_subtype
+  apply(auto simp add: Map__mappable_p_def)
+  sorry
+end-proof
+
+proof Isa BagsAsMaps__e_dsh_dsh_Obligation_subtype
+  apply(auto simp add:  Map__mappable_p_def)
+  apply(rule Map__map_equality, auto)
+  apply(case_tac "val1 \<le>  BagsAsMaps__occs (key1, b2)", simp)
+  apply(case_tac "val2 \<le>  BagsAsMaps__occs (key2, b2)", simp add: Map__remove)
+  apply(simp add: Map__remove Map__update)
+  apply(simp)
+  apply(case_tac "val2 \<le>  BagsAsMaps__occs (key2, b2)", simp add: Map__remove Map__update)
+  apply(auto simp add: Map__remove Map__update)
+end-proof
+
+proof Isa BagsAsMaps__bag_filter_Obligation_subtype
+  apply(auto simp add:  Map__mappable_p_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__remove)
+end-proof
+
+proof Isa BagsAsMaps__bag_map_Obligation_subtype
+  apply(auto simp add:  Map__mappable_p_def)
+  apply(rule Map__map_equality)
+  apply(auto simp add: Map__update BagsAsMaps__occs_def)
+end-proof
+
+proof Isa BagsAsMaps__bag_size_Obligation_subtype
+  apply(auto simp add:  Map__mappable_p_def)
+end-proof
+
 
 end-spec
 

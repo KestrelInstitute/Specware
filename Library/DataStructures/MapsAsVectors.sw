@@ -66,8 +66,14 @@ spec
   %% Added by Eric:
   op remove : [a,b] Map (a,b) -> a -> Map (a,b) = fn x -> fn y -> MapVec.V_remove(x,y)
 
+  %% Added by Eric (just copied from Maps.sw):
+  op [a,b,acc] mappable? (f : (a * b * acc -> acc)) : Bool =
+    fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
+      key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
+      f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
+
   %% Added by Eric:
-  op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a =
+  op foldi : [Dom,Cod,a] ((Dom * Cod * a -> a) | mappable?) -> a -> Map (Dom,Cod) -> a =
     fn f -> fn acc -> fn map -> MapVec.V_foldi(f,acc,map)
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
@@ -93,6 +99,10 @@ proof Isa mapUpdateSet_Obligation_subtype
 end-proof
  
 proof Isa isoMap_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa isoMap_Obligation_subtype0
   sorry
 end-proof
 
@@ -159,5 +169,17 @@ proof Isa total_p_def
 end-proof
  
 proof Isa map_apply_def
+  sorry
+end-proof
+
+proof Isa Map__remove
+  sorry
+end-proof
+
+proof Isa Map__map_foldi_empty
+  sorry
+end-proof
+
+proof Isa Map__map_foldi_update
   sorry
 end-proof

@@ -48,8 +48,12 @@ Maps = Map qualifying spec
         fa(m,x,y,z) apply (update m x y) z =
                     (if z = x then Some y else apply m z)
 
-%  who added this? %TODO add axiom for this
-  op remove : [a,b] Map (a,b) -> a -> Map (a,b)
+%  who added this?
+  op [a,b] remove (m : Map (a,b)) (key : a) : Map (a,b)
+  axiom remove is [a,b]
+    fa(m: Map(a,b), key1 : a, key2 : a)
+      apply (remove m key1) key2 =
+      (if key1 = key2 then None else apply m key2)
 
 %TODO why not use the def?
   op [a,b] singletonMap : a -> b -> Map(a,b)
@@ -98,6 +102,19 @@ Maps = Map qualifying spec
   axiom map_rangeToList is
      [a,b] fa(m:Map(a,b), z:b) (z in? range(m)) = (z in? rangeToList m)
 
+
+ %TODO could also phrase in terms of insert and then prove that insert is either a no-op or insert_new
+  theorem domain_update is [a,key]
+    fa(m: Map(key,a), x: key, y: a)
+      domain(update m x y) 
+       = (if x in? domain m 
+            then domain m 
+          else set_insert_new(x, domain m))
+
+  theorem domain_update2 is [a,key]
+    fa(m: Map(key,a), x: key, y: a)
+      domain(update m x y) = set_insert(x, domain m)
+
 % who added this?
  % This op previously was given meaning by the axiom map_size.  I changed it to just be a definition. -Eric
   op [a,b] size (m:Map(a,b)) : Nat = size(domain m)
@@ -106,7 +123,7 @@ Maps = Map qualifying spec
 
   % Strips off the Some constructor.  Only works if the key is known to be in the domain of the map.
   % TODO: Just define using let, as proved equivalent below.
-  op [a,b] TMApply(m:Map(a,b), x:a | x in? domain(m)): b =
+  op [a,b] TMApply(m:Map(a,b), x:a | x in? domain m): b =
     the(z:b)( apply m x = Some z)
 
   theorem TMApply_becomes_apply is [a,b]
@@ -123,10 +140,10 @@ Maps = Map qualifying spec
 %%  axiom totalmap_equality is [a,b]
 %%    fa(m1: Map(a,b),m2: Map(a,b)) (fa(x) TMApply(m1,x) = TMApply(m2,x)) => m1 = m2
 
- %TODO doesn't seem to type check in the else branch
   theorem TMApply_over_update is [a,b]
     fa(m: Map(a,b), x: a, y: b, z: a)
-    TMApply(update m x y, z) = (if x = z then y else TMApply(m, z))
+    z in? domain m =>
+    (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
 
 %TODO these next theorems don't have much to do with the Map data structure:
 
@@ -140,19 +157,29 @@ Maps = Map qualifying spec
   theorem map_empty is [a,b]
     fa(f: a -> b) map f [] = []
 
- %TODO could also phrase in terms of insert and then prove that insert is either a no-op or insert_new
-  theorem domain_update is [a,key]
-    fa(m: Map(key,a), x: key, y: a)
-      domain(update m x y) 
-       = (if x in? domain m 
-            then domain m 
-          else set_insert_new(x, domain m))
+ %TODO: Pull this into a helper spec, since now we have to repeat it in each implementation of Maps.
+  op [a,b,acc] mappable? (f : (a * b * acc -> acc)) : Bool =
+    fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
+      key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
+      f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
 
 % who added this?
 %TODO This may need commutativity and idempotence restrictions, like those for set_fold?
 %TODO rename the type variables here, for consistency with the rest of this file.
 %TODO: Give this a definition!
-  op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a
+% TODO: Could allow f to be mappable only on the values in m, rather than in general.
+  op [a,b,acc] foldi (f : ((a * b * acc -> acc) | mappable?))
+                     (initialacc : acc)  
+                     (m: Map (a,b)) : acc       
+                     
+  axiom map_foldi_empty is [a,b,acc]
+    fa(f : ((a * b * acc -> acc) | mappable?), accval : acc)
+      foldi f accval empty_map = accval
+
+  axiom map_foldi_update is [a,b,acc]
+    fa(f : ((a * b * acc -> acc) | mappable?), accval : acc, key : a, val : b, m : Map(a,b))
+      foldi f accval (update m key val) = f(key, val, foldi f accval (remove m key))
+
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     the (isoMap)
@@ -178,15 +205,11 @@ proof Isa Map__totalmap_equality
 end-proof
 
 proof isa Map__TMApply_over_update_Obligation_subtype
-  sorry
-end-proof
-
-proof isa Map__TMApply_over_update_Obligation_subtype0
-  sorry
+  apply(simp add: Map__domain_update2 Set__set_insertion)
 end-proof
 
 proof isa Map__TMApply_over_update
-  sorry
+  apply(auto simp add: Map__TMApply_becomes_apply Map__domain_update2 Set__set_insertion Map__update)
 end-proof
 
 proof isa Map__map_map_inv
@@ -200,6 +223,12 @@ proof isa Map__domain_update
   apply(simp add: Map__map_domain Map__update)
   apply(rule Set__membership)
   apply(simp add: Map__map_domain Map__update Set__set_insert_new_def Set__set_insertion)
+end-proof
+
+proof isa Map__domain_update2
+  apply(rule Set__membership)
+  apply(simp add: Map__map_domain Map__update)
+  apply(simp add: Map__map_domain Map__update Set__set_insertion)
 end-proof
 
 proof Isa Map__isoMap_Obligation_the
@@ -237,12 +266,12 @@ end-spec
 Maps_extended = spec
   import Maps
 
-  %% for some reason the version of this in Maps is not seen by Globalize
-  %% TODO right side doesn't type check?
+  %% for some reason the version of this in Maps is not seen by Globalize. TODO: Is this still an issue?  If not, delete this:
   theorem TMApply_over_update_2 is [a,b]
     fa(m: Map(a,b), x: a, y: b, z: a)
+      z in? domain m =>
     %% theorems with this form induce setf generation in Globalize
-    TMApply(update m x y, z) = (if x = z then y else TMApply(m, z))
+      (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
 
   op [a,b] mapFrom(s: Set a, f: a -> b): Map(a,b) =
     set_fold empty_map (fn (m, x) -> update m x (f x)) s

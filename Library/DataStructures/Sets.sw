@@ -149,10 +149,16 @@ op [a,b] set_fold : b ->
                        (fa(x,y)   f(f(x,y), y) = f(x,y))} ->
                       Set a ->
                       b
-axiom set_fold1 is
-      fa(c,f) set_fold c f empty_set = c
-axiom set_fold2 is
-      fa(c,f,x,s) set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
+axiom set_fold1 is [a,b]
+  fa(c:b, f : {f : b * a -> b |
+                   (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
+                   (fa(x,y)   f(f(x,y), y) = f(x,y))}) set_fold c f empty_set = c
+
+axiom set_fold2 is [a,b]
+      fa(c:b, f : {f : b * a -> b |
+                       (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
+                       (fa(x,y)   f(f(x,y), y) = f(x,y))}, x:a, s:Set a)
+     set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
 
 % TODO bad to have s as a type var and a non-type var here:
 % This doesn't seem to be used.

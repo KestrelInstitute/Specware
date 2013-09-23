@@ -114,6 +114,12 @@ spec
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
      set_fold m (fn (m, x) -> update m x (f x)) s
 
+  %% Added by Eric (just copied from Maps.sw):
+  op [a,b,acc] mappable? (f : (a * b * acc -> acc)) : Bool =
+    fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
+      key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
+      f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
+
   op [Dom,Cod,a] foldi (f : (Dom * Cod * a -> a)) (acc:a) (m : Map (Dom,Cod)) : a =
     set_fold acc
              (fn (acc,(x,y)) -> f(x,y,acc))
@@ -274,6 +280,23 @@ proof Isa Map__map_apply_def
 end-proof
 
 proof Isa Map__size_def
+  sorry
+end-proof
+
+proof Isa Map__remove
+  sorry
+end-proof
+
+%% may need to first fix set_fold:
+proof Isa Map__map_foldi_empty
+  apply(auto simp add: Map__foldi_def Map__empty_map_def)
+  apply(rule Set__set_fold1)
+  apply(auto simp add:  Map__mappable_p_def)
+  apply(cut_tac c=accval and f = " (\<lambda>(acc0, x, y). f (x, y, acc0))" in Set__set_fold1)
+  sorry
+end-proof
+
+proof Isa Map__map_foldi_update
   sorry
 end-proof
 
