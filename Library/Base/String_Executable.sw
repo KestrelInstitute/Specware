@@ -11,7 +11,7 @@
    ((forall? isNum cs) || (head cs = #- && forall? isNum (tail cs)))
 
  op explodedStringToNat(l: List Char | forall? isNum l): Nat =
-   foldl (fn (result, dig) -> result * 10 + ord dig - 48) 0 l
+   foldl (fn (result, dig:(Char | isNum)) -> result * 10 + ord dig - 48) 0 l
 
  refine def stringToInt (s:String | intConvertible s) : Int =
    let e_s = explode s in
@@ -104,8 +104,7 @@ sorry
 end-proof
 
 proof isa explodedStringToNat_Obligation_subtype
- (** TRANSLATION ISSUE: no link between list l and variables of foldl *)
-sorry
+ by (auto simp: nat_of_char_def)
 end-proof
 
 proof isa Integer__stringToInt__1_Obligation_subtype0
