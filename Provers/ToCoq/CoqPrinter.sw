@@ -970,6 +970,9 @@ def ppSpecElemInRecord s elem =
      return None
 
 
+(* FIXME HERE: use "Variable" instead of "Parameter"; add Sections
+   inside our modules *)
+
 (* top-level entry point for pretty-printing specs *)
 op ppSpec : CoqModName -> Spec -> Monad Pretty
 def ppSpec coq_mod s =

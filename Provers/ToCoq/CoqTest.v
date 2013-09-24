@@ -67,3 +67,37 @@ End Blah.
 Import Blah.
 
 Print x.
+
+
+Module Foo.
+
+  Section Foo.
+
+  Variable t : Set.
+
+  Definition my_t := t.
+
+  Definition id_t : t -> t := fun x => x.
+
+  Variable pf_false : False.
+  Definition my_pf_false := pf_false.
+
+  End Foo.
+
+End Foo.
+
+(* Check Foo.t. *)
+Check Foo.my_t.
+Print Foo.my_t.
+Check Foo.id_t.
+Check Foo.my_pf_false.
+
+Module Bar.
+
+  Import Foo.
+
+  Check t.
+
+End Bar.
+
+Print Foo.
