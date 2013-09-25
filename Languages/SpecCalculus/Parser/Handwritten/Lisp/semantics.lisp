@@ -1155,6 +1155,9 @@ If we want the precedence to be optional:
 (defun make-transform-qual (q name l r)
   (SpecCalc::mkTransformQual-3 q name (make-pos l r)))
 
+(defun make-transform-quoted-term (tm l r)
+  (SpecCalc::mkTransformQuotedTerm-2 tm (make-pos l r)))
+
 (defun make-transform-item (oper transform l r)
   (SpecCalc::mkTransformItem-3 oper transform (make-pos l r)))
 

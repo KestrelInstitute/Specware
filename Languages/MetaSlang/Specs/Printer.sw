@@ -1893,6 +1893,7 @@ AnnSpecPrinter qualifying spec
     | Str(str, _) -> pp.fromString ("\""^str^"\"")
     | Qual(q, id, _) -> pp.ppOpId(Qualified(q, id))
     | SCTerm(sct, _) -> string (showSCTerm sct)
+    | QuotedTerm(tm, _) -> prettysNone[string "`", string(printTerm tm), string "`"]
     | Item(nm, tre1, _) -> prettysNone[pp.ppOp nm, string " ", ppTransformExpr pp tre1]
     | Repeat(tres, _) -> prettysNone[string "repeat",  ppList (ppTransformExpr pp) ("{", ", ", "}") tres]
     | Tuple(tres, _) -> ppList (ppTransformExpr pp) ("(", ", ", ")") tres

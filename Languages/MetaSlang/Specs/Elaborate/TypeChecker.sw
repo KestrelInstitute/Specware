@@ -243,6 +243,25 @@ case findAQualifierMap (ops, "Foo", "increasingNats1?") of
   | Some info -> writeLine("increasingNats1?:\n"^printTermWithTypes info.dfn)
 *)
 
+op elaboratePosTerm(tm: MSTerm, spc: Spec, vars: MSVars): Option MSTerm =
+  let _ = initializeMetaTyVarCounter () in
+  let env  = addConstrsEnv(initialEnv (spc, "string"), spc) in
+  let {types     = given_types, 
+       ops       = given_ops, 
+       elements  = given_elts,
+       qualifier = qualifier} 
+      = spc
+  in
+  let env = foldr (fn ((id, ty), env) -> addVariable(env, id, ty)) env vars in
+  let ty = freshMetaTyVar("top_tm_ty", termAnn tm) in
+  let tm = elaborateTerm(env, tm, ty, []) in
+  let env = finalPass env in
+  let tm = elaborateTerm(env, tm, ty, []) in
+  case checkErrors env of
+    | [] -> Some(convertPTerm spc tm)
+    | msgs -> (printTypeErrors msgs;
+               None)
+
 % ========================================================================
 %% ---- called inside TYPES : PASS 0  -----
 % ========================================================================

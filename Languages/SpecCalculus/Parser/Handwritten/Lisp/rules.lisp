@@ -1722,7 +1722,7 @@ If we want the precedence to be optional:
   (:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-QUOTED-TERM ()
-  (:tuple "`" (1 :EXPRESSION) "`")               (make-transform-quoted-term 1 ':left-lcb ':right-lcb))
+  (:tuple "`" (1 :EXPRESSION) "`")         (make-transform-quoted-term 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-APPLY ()
   (:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
