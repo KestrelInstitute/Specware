@@ -61,22 +61,31 @@ PosSpecToSpec qualifying spec
 
  op correctPolyTypes?: Bool = false
 
+ op convertPTerm (spc: Spec) (term: MSTerm): MSTerm =
+   % let _ = writeLine("cvt: "^printTerm term^"\n"^anyToString term) in
+   case term of
+     | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
+       correctEqualityType(spc, eq_or_neq, ty, t2, pos)
+     | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
+       correctMapType(m, l, ty, spc, fx, a)
+     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
+     | ApplyN (t1::t2::terms,pos) -> 
+       convertPTerm spc (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))
+     | Fun (f,s,pos) -> Fun(convertPFun f,s,pos)
+     | _ -> term
+
+op convertPFun (f: MSFun): MSFun = 
+   case f of
+     | PQuotient qid -> Quotient qid
+     | PChoose   qid -> Choose   qid
+     | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
+     | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
+     | _ -> f
+
  op  convertPosSpecToSpec: Spec -> Spec
  def convertPosSpecToSpec spc =
    let context = initializeMetaTyVars() in
    let
-     def convertPTerm term =
-           % let _ = writeLine("cvt: "^printTerm term^"\n"^anyToString term) in
-           case term of
-             | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
-               correctEqualityType(spc, eq_or_neq, ty, t2, pos)
-             | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
-               correctMapType(m, l, ty, spc, fx, a)
-	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
-	     | ApplyN (t1::t2::terms,pos) -> 
-	       convertPTerm (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))
-	     | Fun (f,s,pos) -> Fun(convertPFun f,s,pos)
-	     | _ -> term
      def convertPType ty =
            case ty of
 	     | MetaTyVar(tv,pos) -> 
@@ -90,16 +99,8 @@ PosSpecToSpec qualifying spec
                let conjs = getConjuncts condn in
                Subtype(sty, Lambda ([(pat, c, mkSimpConj conjs)], a1), a2)
 	     | _ -> ty
-     def convertPFun (f) = 
-           case f of
-	     | PQuotient qid -> Quotient qid
-             | PChoose   qid -> Choose   qid
-             | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
-             | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
-             | _ -> f
-
    in
-   let tsp = (convertPTerm, convertPType, fn x -> x) in
+   let tsp = (convertPTerm spc, convertPType, fn x -> x) in
 
    %% let spc = mapSpec tsp spc -- would be correct but unnecessarily maps non-locals
    
@@ -135,39 +136,6 @@ PosSpecToSpec qualifying spec
                     }
   in
   normalizeNewTypes(spc, false)
-
-
-(* 6/26/2013 sjw: Doesn't seem to be used
- op  convertPosTermToTerm : MSTerm -> MSTerm
- def convertPosTermToTerm tm =
-   let context = initializeMetaTyVars() in
-   let
-     def convertPTerm term =
-           case term of
-	     | ApplyN([t1,t2],pos) -> Apply(t1,t2,pos)
-	     | ApplyN (t1::t2::terms,pos) -> 
-	       convertPTerm (ApplyN([t1,ApplyN(Cons(t2,terms),pos)],pos))
-	     | Fun (f,s,pos) -> Fun(convertPFun f,s,pos)
-	     | _ -> term
-     def convertPType ty =
-           case ty of
-	     | MetaTyVar(tv,pos) -> 
-	       let {name,uniqueId,link} = ! tv in
-	       (case link
-		  of None -> TyVar (findTyVar(context,uniqueId),pos)
-		   | Some sty -> convertPType sty)
-	     | _ -> ty
-     def convertPFun (f) = 
-           case f of
-	     | PQuotient qid -> Quotient qid
-             | PChoose   qid -> Choose   qid
-             | OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
-             | TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
-             | _ -> f
-   in
-   let tsp = (convertPTerm, convertPType, fn x -> x) in
-   mapTerm tsp tm
-*)
 
 end-spec
 
