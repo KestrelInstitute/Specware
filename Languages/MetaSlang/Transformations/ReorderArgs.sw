@@ -7,6 +7,7 @@ ReviseOps qualifying spec
 
  import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
  import /Languages/MetaSlang/CodeGen/Java/ToJava
+ import /Languages/MetaSlang/CodeGen/C/SliceForC
 
  type Probability   = Nat * Nat   %  test is '(random y) <= x'
  type Probabilities = List Probability
@@ -158,6 +159,11 @@ ReviseOps qualifying spec
     reorderOpArgs (spc, info)
   else
     []
+
+ op builtInOp? (qid : QualifiedId) : Bool =
+  builtInLispOp? qid ||   
+  builtinCOp?    qid ||
+  builtinJavaOp? qid 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %% revise calls to use reordered ops

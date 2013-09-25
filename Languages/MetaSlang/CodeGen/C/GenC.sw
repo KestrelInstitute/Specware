@@ -1,6 +1,7 @@
 GCG qualifying spec
 
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms % ms spec => ms spec
+import /Languages/MetaSlang/CodeGen/C/SliceForC       
 import /Languages/MetaSlang/CodeGen/C/SpecToCSpec     % ms spec =>  c spec
 import /Languages/C/PrintCSpec                        %  c spec =>  c files
 

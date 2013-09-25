@@ -415,77 +415,6 @@ op haskellPragma?(s: String): Bool =
              pr_type = "haskell")
 
 %% ========
-%%  C
-%% ========
-
-op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
- % TODO: ugly and a maintenance problem -- rethink
- case q of
-
-   %% Base specs:
-   | "Bool"       -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-   | "Integer"    -> id in? ["zero", "isucc", "ipred", "one" , "positive?", "negative?", 
-                             "+", "-", "*", "<", ">", "<=", ">=", "natMinus", "sign", "abs", 
-                             "divides", "multipleOf", "gcd", "lcm", 
-                             "/", "divT", "modT", "divF", "modF", "divC", "modC", "divR", "modR",
-                             "euclideanDivision?", "divE", "modE", "div", "mod", 
-                             "**", "***", "min", "max", "compare", 
-                             "intToString", "show", "intCovertible", "stringToInt"]
-   | "IntegerAux" -> id in? ["-"]  % unary minus
-   | "Nat"        -> id in? ["succ", "pred", "+", "*", 
-                             "digitToString", "natToString", "show", "natConverible", "stringToNat"]
-   | "Char"       -> id in? ["chr", "ord", "compare",
-                             "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
-                             "toUpperCase", "toLowerCase", "show", "toString" ]
-   | "String"     -> id in? ["implode", "explode", "length", "@", "subFromTo", "^",
-                             "forall?", "exists?", "map", "flatten", "translate", 
-                             "compare", "<", "<=", ">", ">=", "newline"]
-   | "System"     -> id in? ["writeLine", "toScreen"]
-
-   | "Function"   -> id in? ["o", ":>", "injective?", "surjective?", "bijective?", "inverse"] 
-   | "List"       -> id in? ["definedOnInitialSegmentOfLength", "lengthOfListFunction", "list", "list_1", 
-                             "tabulate", "length", "ofLength?", "@", "@@", "empty", "empty?", "nonEmpty?",
-                             "single", "in?", "nin?", "subFromLong", "subFromTo", "prefix", "suffix",
-                             "removePrefix", "removeSuffix", "head", "last", "tail", "butLast", "++",
-                             "|>", "<|", "update", "forall?", "exists?", "exists1", "foralli?", 
-                             "filter", "foldl", "foldr", "equiLong", "zip", "zip3", "unzip", "unzip3",
-                             "map", "map2", "map3", "removeNones", "matchingOptionLists?", 
-                             "mapPartial", "mapPartial2", "mapPartial3", "reverse", "repeat",
-                             "allEqualElements?", "extendLeft", "extendRight", 
-                             "equiExtendLeft", "equiExtendRight", "shiftLeft", "shiftRight",
-                             "rotateLeft", "rotateRight", "flatten", "unflattenL", "unflatten", 
-                             "noRepititions?", "increasingNats?", 
-                             "positionsSuchThat", "leftmostPositionSuchThat", "rightmostPositionSuchThat", 
-                             "positionsOf", "positionOf", "sublistAt?", "positionsOfSublist",
-                             "leftmostPositionOfSublistAndFollowing", "rightmostPositionOfSublistAndPreceding",
-                             "splitAt", "splitAtLeftmost", "splitAtRightmost", 
-                             "findLefttmost", "findRightmost",
-                             "findLefttmostAndPreceeding", "findRightmostAndFollowing",
-                             "delete", "diff", "longestCommonPrefix", "permutation?", "permute", "compare",
-                             "isoList"]
-                             
-   %% Explicitly handcoded:
-   | "Handcoded"  -> true
-
-   | _ -> false
-
-op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
- case q of
-   | "Bool"       -> id in? ["Bool"]
-   | "Integer"    -> id in? ["Int", "Int0", "Integer"]
-   | "Nat"        -> id in? ["Nat", "PosNat"]
-   | "Char"       -> id in? ["Char"]
-   | "String"     -> id in? ["String"]
-   | "List"       -> id in? ["List", "List1", "ListFunction", "InjList", "Permutation"]
-   | _ -> false
-      
-op SpecTransform.sliceSpecForC (spc             : Spec)
-                               (root_ops        : QualifiedIds)
-                               (root_types      : QualifiedIds)
- : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtinCOp?, builtinCType?)
-
-%% ========
 %%  Java
 %% ========
 
@@ -530,13 +459,470 @@ op SpecTransform.sliceSpecForJava (spc             : Spec)
  : Spec =
  sliceSpecForCode (spc, root_ops, root_types, builtinJavaOp?, builtinJavaType?)
 
-%% ==========
-%%  Generic
-%% ==========
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% New Slicing Code -- Intended to replace much of the above
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op builtInOp? (qid : QualifiedId) : Bool =
- builtInLispOp? qid ||   
- builtinCOp?    qid ||
- builtinJavaOp? qid 
+import /Languages/MetaSlang/Specs/Environment
+import /Library/Structures/Data/Maps/SimpleAsSTHarray
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+%%%  Misc support
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
+op [a] union (xs : List a, ys : List a) : List a =
+ foldl (fn (new, x) -> 
+          if x in? ys then
+            new
+          else
+            x |> new)
+       ys
+       xs
+
+op executable? (info : OpInfo) : Bool =
+ let (decls, defs)  = opInfoDeclsAndDefs info in
+ case defs of
+   | dfn :: _ -> ~ (nonExecutableTerm1? dfn)
+   | _ -> false
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+%%%  ADT for op/type reachability
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
+type TranslationStatus = | Primitive | API | Macro 
+type DefStatus = | Defined | Undefined | Missing
+type Status   = | Translated TranslationStatus 
+                | Used       DefStatus 
+                | Logical    DefStatus 
+                | Contextual DefStatus 
+                | Misc       String
+
+type OpMap   = STHMap.Map (OpName,   Status)
+type TypeMap = STHMap.Map (TypeName, Status)
+
+op empty_op_map   : OpMap   = STH_empty_map
+op empty_type_map : TypeMap = STH_empty_map
+
+type Slice = {ms_spec         : Spec, 
+              op_map          : OpMap, 
+              type_map        : TypeMap,
+              pending_ops     : OpNames,
+              pending_types   : TypeNames,
+              % In the following, Some X means it is primitive, 
+              %  see status for explanation.
+              primitive_op?   : OpName   -> Option Status,  
+              primitive_type? : TypeName -> Option Status}  
+
+type Groups = List Group
+type Group  = {status     : Status, 
+               type_names : Ref TypeNames,
+               op_names   : Ref OpNames}
+
+op describeGroup (group : Group) : () =
+ case (! group.type_names, ! group.op_names) of
+   | ([], []) -> ()
+   | (type_names, op_names) ->
+     let line  = case group.status of
+                   | Translated Primitive -> "These translate to primitive syntax : "
+                   | Translated API       -> "These translate to an api interface : "
+                   | Translated Macro     -> "These translate to macros : "
+
+                   | Used       Defined   -> "These can be generated : "
+                   | Used       Undefined -> "WARNING: These are referenced, but undefined : "
+                   | Used       Missing   -> "WARNING: These are referenced, but missing : "
+
+                   | Logical    Defined   -> "These are provide explicit logical constraints, but won't be generated : "
+                   | Logical    Undefined -> "These are provide explicit logical constraints, and can't be generated : "
+                   | Logical    Missing   -> "WARNING: These provide explicit logical constraints, but are missing : "
+
+                   | Contextual Defined   -> "These provide implicit logical context, but won't be generated : "
+                   | Contextual Undefined -> "These provide implicit logical context, but can't be generated : "
+                   | Contextual Missing   -> "WARNING: These provide implicit logical context, but are missing : "
+
+                   | Misc       str       -> "NOTE: These have some miscellaneous property: " ^ str ^ " : "
+     in
+     let _ = writeLine line                                                              in
+     let _ = writeLine ""                                                                in
+     let _ = app (fn name -> writeLine ("  type " ^ show name)) type_names               in
+     let _ = case (type_names, op_names) of | (_ :: _, _ :: _) -> writeLine "" | _ -> () in
+     let _ = app (fn name -> writeLine ("  op "   ^ show name)) op_names                 in
+     let _ = writeLine ""                                                                in
+     ()
+
+op describeSlice (msg : String, slice : Slice) : () =
+ let
+   def pad (str, n) =
+     let m = length str in
+     if m < n then
+       str ^ implode (repeat #\s (n - m))
+     else
+       str
+
+   def partition_types (qid, status, groups) : Groups =
+     case findLeftmost (fn group -> group.status = status) groups of
+       | Some group -> 
+         let _ = (group.type_names := (! group.type_names) ++ [qid]) in
+         groups
+         
+       | _ -> 
+         %% Misc options will be added to end
+         let group = {status = status, type_names = Ref [qid], op_names = Ref []} in
+         groups ++ [group]
+
+   def partition_ops (qid, status, groups) : Groups =
+     case findLeftmost (fn group -> group.status = status) groups of
+       | Some group -> 
+         let _ = (group.op_names := (! group.op_names) ++ [qid]) in
+         groups
+         
+       | _ -> 
+         %% Misc options will be added to end
+         let group = {status = status, type_names = Ref [], op_names = Ref [qid]} in
+         groups ++ [group]
+
+ in
+ let status_options = [Translated Primitive,
+                       Translated API,
+                       Translated Macro, 
+                       Used       Defined,
+                       Used       Undefined,
+                       Used       Missing,
+                       Logical    Defined,
+                       Logical    Undefined,
+                       Logical    Missing,
+                       Contextual Defined,
+                       Contextual Undefined,
+                       Contextual Missing]
+ in
+ let groups = map (fn status -> 
+                     {status     = status, 
+                      type_names = Ref [], 
+                      op_names   = Ref []})
+                  status_options
+ in
+ let groups = foldi partition_ops   groups slice.op_map   in
+ let groups = foldi partition_types groups slice.type_map in
+
+ let _ = writeLine ("") in
+ let _ = writeLine ("Slice: " ^ msg) in
+ let _ = writeLine ("") in
+
+ let _ = if length (slice.pending_types ++ slice.pending_ops) > 0 then 
+           let _ = writeLine "--------------------" in
+           let _ = app (fn name -> writeLine ("pending type: " ^ show name)) slice.pending_types in
+           let _ = app (fn name -> writeLine ("pending op:   " ^ show name)) slice.pending_ops   in
+           let _ = writeLine "--------------------" in
+           ()
+         else
+           () 
+ in
+
+ let _ = app describeGroup groups in
+ ()
+ 
+op ops_update (ops : OpMap, name : OpName, status : Status) : OpMap =
+ %% don't update if name already has a value
+ case apply (ops, name) of
+   | Some _ -> ops
+   | _ -> update (ops, name, status)
+
+op types_update (types: TypeMap, name : TypeName, status : Status) : TypeMap =
+ %% don't update if name already has a value
+ case apply (types, name) of
+   | Some _ -> types
+   | _ -> update (types, name, status)
+ 
+op ops_in_slice (slice : Slice) : OpNames =
+ domainToList slice.op_map
+
+op types_in_slice (slice : Slice) : TypeNames =
+ domainToList slice.type_map
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+%%%  Chase invoked ops to fixpoint
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
+
+op extend_execution_slice_for_op (pending : OpNames) (slice : Slice, name : OpName) : Slice =
+ % let _ = writeLine("") in
+ % let _ = writeLine("Extending execution for op " ^ show name) in
+ let 
+   def status info = if executable? info then Defined else Undefined
+ in
+ case slice.primitive_op? name of
+   | Some status ->
+     let new_op_map = ops_update (slice.op_map, name, status) in
+     slice << {op_map = new_op_map}
+   | _ ->
+     case findTheOp (slice.ms_spec, name) of
+       | Some info  ->
+         let status       = Used (status info) in
+         let new_op_map   = ops_update (slice.op_map, name, status) in
+         let new_op_names = foldl (fn (names, name) ->
+                                     case apply (new_op_map, name) of
+                                       | Some _ -> names
+                                       | _ -> 
+                                         if name in? pending then
+                                           % it's already in the queue to be processed
+                                           names
+                                         else
+                                           name |> names)
+                                  []
+                                  (opsInTerm info.dfn)
+        in
+        % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
+        let new_pending_ops = union (new_op_names, slice.pending_ops)    in
+        slice << {op_map      = new_op_map,
+                  pending_ops = new_pending_ops}
+       | _ ->
+         let new_op_map = ops_update (slice.op_map, name, Used Missing) in
+         slice << {op_map = new_op_map}
+
+op extend_execution_slice (s0 : Slice) : Slice =
+ % let _ = writeLine("-----------------------------") in
+ % let _ = writeLine("new round for execution slice") in
+ let pending = s0.pending_ops           in
+ let s1      = s0 << {pending_ops = []} in
+ foldl (extend_execution_slice_for_op pending)
+       s1
+       pending
+
+op execution_closure (slice : Slice) : Slice =
+ case slice.pending_ops of
+   | [] ->  slice
+   | _ ->
+     execution_closure (extend_execution_slice slice)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+%%%  Chase referenced types to fixpoint
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
+op extend_typing_slice_for_type (pending : TypeNames) (slice : Slice, name : TypeName) : Slice =
+ % let _ = writeLine("") in
+ % let _ = writeLine("Extending typing for type " ^ show name) in
+ let 
+   def status info = if anyType? info.dfn then Undefined else Defined
+ in
+ case slice.primitive_type? name of
+   | Some status ->
+     let new_type_map = types_update (slice.type_map, name, status) in
+     slice << {type_map = new_type_map}
+   | _ ->
+     case findTheType (slice.ms_spec, name) of
+       | Some info -> 
+         % let _ = writeLine("Found type " ^ show name) in
+         % let _ = writeLine(anyToString info) in
+         let status = Used (status info) in
+         let new_type_map      = types_update (slice.type_map, name, status) in
+         let new_type_names    = foldl (fn (names, name) ->
+                                          case apply (new_type_map, name) of
+                                            | Some _ -> names
+                                            | _ -> 
+                                              if name in? pending then
+                                                % it's already in the queue to be processed
+                                                names
+                                              else
+                                                name |> names)
+                                       []
+                                       (typesInType info.dfn)
+         in
+         % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
+         let new_pending_types = union (new_type_names, slice.pending_types) in
+         slice << {type_map      = new_type_map,
+                   pending_types = new_pending_types}
+       | _ ->
+         let new_type_map = types_update (slice.type_map, name, Used Missing) in
+         slice << {type_map = new_type_map}
+
+op extend_typing_slice (s0 : Slice) : Slice =
+ % let _ = writeLine("--------------------------") in
+ % let _ = writeLine("new round for typing slice") in
+ % let _ = app (fn name -> writeLine("Pending type " ^ show name)) s0.pending_types in
+ let pending = s0.pending_types           in
+ let s1      = s0 << {pending_types = []} in
+ foldl (extend_typing_slice_for_type pending)
+       s1
+       pending
+
+op typing_closure (s0 : Slice) : Slice =
+ let root_types = types_in_slice s0 in
+ let root_ops   = ops_in_slice   s0 in
+ % let _ = app (fn name -> writeLine("root type: " ^ show name)) root_types in
+ % let _ = app (fn name -> writeLine("root op: " ^ show name)) root_ops   in
+ let directly_referenced_types = 
+     foldl (fn (type_names, op_name) ->
+              case findTheOp (s0.ms_spec, op_name) of
+                | Some info ->
+                  union (typesInTerm info.dfn, type_names)
+                | _ ->
+                  type_names)
+           root_types
+           root_ops
+ in
+ let s1 = s0 << {pending_types = directly_referenced_types} in
+ let
+   def aux s2 =
+     case s2.pending_types of
+       | [] ->  s2
+       | _ ->
+         aux (extend_typing_slice s2)
+ in
+ aux s1
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+%%%  Chase all referenced types and ops to fixpoint
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
+op extend_logical_slice_for_type (pending_ops   : OpNames) 
+                                 (pending_types : TypeNames)
+                                 (slice : Slice, 
+                                  name  : TypeName) 
+ : Slice =
+ % let _ = writeLine("") in
+ % let _ = writeLine("Extending logical slice for type " ^ show name) in
+ let 
+   def status info = if anyType? info.dfn then Undefined else Defined
+ in
+ case slice.primitive_type? name of
+   | Some status ->
+     let new_type_map = types_update (slice.type_map, name, status) in
+     slice << {type_map = new_type_map}
+   | _ ->
+     case findTheType (slice.ms_spec, name) of
+       | Some info ->
+         let status       = Logical (status info) in
+         let new_type_map = types_update (slice.type_map, name, status) in
+         let new_op_names = foldl (fn (names, name) ->
+                                     case apply (slice.op_map, name) of
+                                       | Some _ -> names
+                                       | _ -> 
+                                         if name in? pending_ops then
+                                           % it's already in the queue to be processed
+                                           names
+                                         else
+                                           name |> names)
+                                  []
+                                  (opsInType info.dfn)
+         in
+         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
+         let new_type_names    = foldl (fn (names, name) ->
+                                          case apply (new_type_map, name) of
+                                            | Some _ -> names
+                                            | _ -> 
+                                              if name in? pending_types then
+                                                % it's already in the queue to be processed
+                                                names
+                                              else
+                                                name |> names)
+                                       []
+                                       (typesInType info.dfn)
+         in
+         % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
+         let new_pending_ops   = union (new_op_names,   slice.pending_ops)         in
+         let new_pending_types = union (new_type_names, slice.pending_types)       in
+         slice << {type_map      = new_type_map,
+                   pending_ops   = new_pending_ops,
+                   pending_types = new_pending_types}
+       | _ ->
+         let new_type_map = types_update (slice.type_map, name, Logical Missing) in
+         slice << {type_map = new_type_map}
+
+op extend_logical_slice_for_op (pending_ops   : OpNames)
+                               (pending_types : TypeNames)
+                               (slice : Slice, 
+                                name  : OpName) 
+ : Slice =
+ % let _ = writeLine("") in
+ % let _ = writeLine("Extending logical slice for op " ^ show name) in
+ let 
+   def status info = if executable? info then Defined else Undefined
+ in
+ case slice.primitive_op? name of
+   | Some status ->
+     let new_op_map = ops_update (slice.op_map, name, status) in
+     slice << {op_map = new_op_map}
+   | _ ->
+     case findTheOp (slice.ms_spec, name) of
+       | Some info ->
+         let status       = Logical (status info) in
+         let new_op_map   = ops_update (slice.op_map, name, status) in
+         let new_op_names = foldl (fn (names, name) ->
+                                     case apply (new_op_map, name) of
+                                       | Some _ -> names
+                                       | _ -> 
+                                         if name in? pending_ops then
+                                           % it's already in the queue to be processed
+                                           names
+                                         else
+                                           name |> names)
+                                  []
+                                  (opsInTerm info.dfn)
+           in
+           % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
+           let new_type_names    = foldl (fn (names, name) ->
+                                            case apply (slice.type_map, name) of
+                                              | Some _ -> names
+                                              | _ -> 
+                                                if name in? pending_types then
+                                                  % it's already in the queue to be processed
+                                                  names
+                                                else
+                                                  name |> names)
+                                         []
+                                         (typesInTerm info.dfn)
+           in
+           % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
+           let new_pending_ops   = union (new_op_names,   slice.pending_ops)   in
+           let new_pending_types = union (new_type_names, slice.pending_types) in
+           slice << {op_map        = new_op_map,
+                     pending_ops   = new_pending_ops,
+                     pending_types = new_pending_types}
+       | _ ->
+         let new_op_map = ops_update (slice.op_map, name, Logical Missing) in
+         slice << {op_map = new_op_map}
+
+op extend_logical_slice (s0 : Slice) : Slice =
+ % let _ = writeLine("---------------------------") in
+ % let _ = writeLine("new round for logical slice") in
+ let pending_types = s0.pending_types   in
+ let pending_ops   = s0.pending_ops     in
+ let s1 = s0 << {pending_ops = [],
+                 pending_types = []}
+ in
+ let s2 = foldl (extend_logical_slice_for_type pending_ops pending_types)
+                s1
+                pending_types
+ in
+ let s3 = foldl (extend_logical_slice_for_op pending_ops pending_types)
+                s2
+                pending_ops
+ in
+ s3
+
+op logical_closure (s0 : Slice) : Slice =
+ let root_ops   = ops_in_slice   s0 in
+ let root_types = types_in_slice s0 in
+ let s1 = s0 << {pending_ops   = root_ops, 
+                 pending_types = root_types}
+ in
+ let
+   def aux s2 =
+     case (s2.pending_types, s2.pending_ops) of
+       | ([], []) ->  s2
+       | _ ->
+         aux (extend_logical_slice s2)
+ in
+ aux s1
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
+op completeSlice (s0 : Slice) : Slice =
+ %% s0 begins with pending ops and types
+ let s1 = execution_closure s0 in
+ let s2 = typing_closure    s1 in
+ let s3 = logical_closure   s2 in
+ s3
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
 end-spec
