@@ -5,29 +5,7 @@ import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L           % MetaSlang to I2L
 import /Languages/I2L/CodeGen/C/I2LToC                       % I2L       to C
 import /Languages/MetaSlang/Transformations/Pragma           % for selecting pragmas
 import /Languages/MetaSlang/CodeGen/LanguageMorphism         % for parsing   pragmas
-
-op parseCTranslationPragmas (s : Spec) : LanguageMorphisms =
- foldlSpecElements (fn (lms, elt) ->
-                      case elt of
-                        | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, "C") ->
-                          (case parseLanguageMorphism body of
-                             | Parsed lm -> 
-                               lms ++ [lm]
-                             | Error msg ->
-                               let _ = writeLine("Error parsing C translation pragma: " ^ msg) in
-                               lms
-                             | result ->
-                               let _ = writeLine "=======================================" in
-                               let _ = writeLine "Unecognized result from parsing pragma:" in
-                               let _ = writeLine body                                      in
-                               let _ = writeLine " => "                                    in
-                               let _ = writeLine (anyToString result)                      in
-                               let _ = writeLine "=======================================" in
-                               lms)
-                        | _ ->
-                          lms)
-                   []
-                   s.elements
+import /Languages/MetaSlang/CodeGen/C/SliceForC
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate a C_Spec from an already transformed MetaSlang spec.
@@ -73,28 +51,9 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 op generateCSpecFromTransformedSpec (ms_spec       : Spec,
                                      app_name      : String)
  : Option C_Spec =
- let expand_types? = false in  % TODO: move up to be an argument
- let old_c_spec = emptyCSpec "" in
-
- let 
-  def desired_type? _ = true 
-  def desired_op?   _ = true
- in
- let lms             = parseCTranslationPragmas ms_spec in
- let lm_data         = make_LMData              lms     in
- let constructer_ops = []                               in
- let i2l_spec        = generateI2LCodeSpecFilter (ms_spec,
-                                                  lm_data,
-                                                  constructer_ops,
-                                                  desired_type?,
-                                                  desired_op?,
-                                                  expand_types?)
- in
- let new_c_spec      = generateC4ImpUnit (i2l_spec,
-                                          old_c_spec, 
-                                          lm_data)
- in
+ let slice      = getDefaultSliceForCGen    ms_spec           in
+ let i2l_spec   = generateI2LCodeSpecFilter slice             in
+ let new_c_spec = generateC4ImpUnit         (i2l_spec, slice) in
  Some new_c_spec
-
 
 end-spec

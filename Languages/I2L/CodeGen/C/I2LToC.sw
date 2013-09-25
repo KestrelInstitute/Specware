@@ -4,6 +4,7 @@
 
 I2LToC qualifying spec 
 
+import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
 import /Languages/I2L/I2L
 import /Languages/I2L/CodeGen/C/CGenOptions
@@ -38,21 +39,20 @@ op setCurrentContext (ctxt : I2C_Context, new : CurrentContext) : I2C_Context =
  ctxt << {currentContext = new}
  
 type I2C_Context = {
+                    slice            : Slice,
                     voidToUIntType   : C_Type,    % varies with different versions of C
                     xcspc            : C_Spec,    % for incremental code generation, xcspc holds existing cspec being extended
                     currentContext   : CurrentContext,
-                    currentFunParams : C_VarDecls,
-                    lm_data          : LMData
+                    currentFunParams : C_VarDecls
                     }
 
 op setCurrentFunParams (ctxt : I2C_Context, params : C_VarDecls) : I2C_Context =
  ctxt << {currentFunParams = params}                        
 
-op generateC4ImpUnit (impunit : I_ImpUnit, 
-                      xcspc   : C_Spec, 
-                      lm_data : LMData)
- : C_Spec =
+op generateC4ImpUnit (impunit : I_ImpUnit, slice : Slice) : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
+ let xcspc    = emptyCSpec "" in
+ let lm_data  = slice.lm_data in
  let includes      = extractImports   lm_data.lms in
  let include_strs  = map printImport  includes    in
  let verbatims     = extractVerbatims lm_data.lms in
@@ -76,11 +76,11 @@ op generateC4ImpUnit (impunit : I_ImpUnit,
  in
  let defines = type_defines ++ op_defines in
 
- let ctxt = {xcspc            = xcspc,
+ let ctxt = {slice            = slice,
+             xcspc            = xcspc,
              voidToUIntType   = C_Int32,  % TODO: see above
              currentContext   = Unknown,
-             currentFunParams = [],
-             lm_data          = lm_data}
+             currentFunParams = []}
  in
 
  let cspc = emptyCSpec impunit.name in
@@ -1294,10 +1294,7 @@ op c4StadCode (ctxt       : I2C_Context,
                stadcode   : I_StadCode) 
  : C_Spec * C_Block * C_Stmts =
  % decls are empty, so the following 2 lines have no effect:
- let declscspc = generateC4ImpUnit (stadcode.decls, 
-                                    ctxt.xcspc, 
-                                    ctxt.lm_data)
- in
+ let declscspc = generateC4ImpUnit (stadcode.decls, ctxt.slice) in
  let cspc      = mergeCSpecs [cspc, declscspc] in
  let (cspc, block, stepstmts) =
  foldl (fn ((cspc, block, stmts), stp) ->

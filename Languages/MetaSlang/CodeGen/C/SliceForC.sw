@@ -1,6 +1,7 @@
 CGen qualifying spec
 
-import /Languages/MetaSlang/CodeGen/C/SpecToCSpec
+% import /Languages/MetaSlang/CodeGen/C/SpecToCSpec
+import /Languages/MetaSlang/Transformations/Pragma
 import /Languages/MetaSlang/Transformations/SliceSpec
 
 op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
@@ -45,6 +46,11 @@ op SpecTransform.newSliceSpecForC (ms_spec         : Spec)
  let slice = getSliceForCGen (ms_spec, root_ops, root_types) in
  let _     = describeSlice ("For C: " ^ msg, slice) in
  ms_spec
+ 
+op getDefaultSliceForCGen (ms_spec : Spec) : Slice =
+ let root_ops   = [] in
+ let root_types = [] in
+ getSliceForCGen (ms_spec, root_ops, root_types)
  
 %% TODO: This will be used by other transforms
 op getSliceForCGen (ms_spec    : Spec,
@@ -116,5 +122,29 @@ op getSliceForCGen (ms_spec    : Spec,
               primitive_type? = primitive_type?}
  in
  completeSlice slice 
+
+op parseCTranslationPragmas (s : Spec) : LanguageMorphisms =
+ foldlSpecElements (fn (lms, elt) ->
+                      case elt of
+                        | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, "C") ->
+                          (case parseLanguageMorphism body of
+                             | Parsed lm -> 
+                               lms ++ [lm]
+                             | Error msg ->
+                               let _ = writeLine("Error parsing C translation pragma: " ^ msg) in
+                               lms
+                             | result ->
+                               let _ = writeLine "=======================================" in
+                               let _ = writeLine "Unecognized result from parsing pragma:" in
+                               let _ = writeLine body                                      in
+                               let _ = writeLine " => "                                    in
+                               let _ = writeLine (anyToString result)                      in
+                               let _ = writeLine "=======================================" in
+                               lms)
+                        | _ ->
+                          lms)
+                   []
+                   s.elements
+
 
 end-spec

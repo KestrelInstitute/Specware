@@ -9,8 +9,9 @@ import /Languages/MetaSlang/Specs/Environment
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
 import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/I2L/I2L
+import /Languages/C/CUtils
 
-op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
+% op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
 type S2I_Context = {
                     specName        : String,             % not (yet) used
@@ -123,13 +124,15 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
        | _ -> true
 
 %% Called from generateCSpecFromTransformedSpecIncrFilter in MetaSlang/CodeGen/C/SpecToCSpec.sw 
-op generateI2LCodeSpecFilter (ms_spec       : Spec,
-                              lm_data       : LMData,
-                              constructors  : List QualifiedId,
-                              desired_type? : QualifiedId -> Bool,
-                              desired_op?   : QualifiedId -> Bool,
-                              expand_types? : Bool)
- : I_ImpUnit =
+op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
+ let ms_spec = slice.ms_spec in
+ let lm_data = slice.lm_data in
+ let constructors = [] in
+ let 
+  def desired_type? _ = true 
+  def desired_op?   _ = true
+ in
+ let expand_types? = false in
  let declared_structs = 
      foldl (fn (names, trans) ->
               if trans.struct? then
