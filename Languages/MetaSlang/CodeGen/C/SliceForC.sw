@@ -4,10 +4,7 @@ import /Languages/MetaSlang/CodeGen/C/SpecToCSpec
 import /Languages/MetaSlang/Transformations/SliceSpec
 
 op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
- % TODO: ugly and a maintenance problem -- rethink
  case q of
-
-   %% Base specs:
    | "Bool"       -> id in? ["true", "false", "~", "&&", "||", "=>", "<=>", "~="]
    | "Integer"    -> id in? ["zero", "isucc", "ipred", "one", "+", "-", "*", "<", ">", "<=", ">="]
    | "IntegerAux" -> id in? ["-"]  % unary minus
@@ -17,10 +14,7 @@ op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
    | "System"     -> id in? ["writeLine", "toScreen"]
    | "Function"   -> id in? []
    | "List"       -> id in? []
-
-   %% Explicitly handcoded:
    | "Handcoded"  -> true
-
    | _ -> false
 
 op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
@@ -113,6 +107,7 @@ op getSliceForCGen (ms_spec    : Spec,
        None
  in
  let slice = {ms_spec         = ms_spec,
+              lm_data         = lm_data,
               op_map          = empty_op_map,
               type_map        = empty_type_map,
               pending_ops     = root_ops,

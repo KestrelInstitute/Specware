@@ -390,6 +390,7 @@ op sliceSpecForCodeM (spc        : Spec,
 
 import /Languages/MetaSlang/Specs/Environment
 import /Library/Structures/Data/Maps/SimpleAsSTHarray
+import /Languages/MetaSlang/CodeGen/LanguageMorphism
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 %%%  Misc support
@@ -429,6 +430,7 @@ op empty_op_map   : OpMap   = STH_empty_map
 op empty_type_map : TypeMap = STH_empty_map
 
 type Slice = {ms_spec         : Spec, 
+              lm_data         : LMData,
               op_map          : OpMap, 
               type_map        : TypeMap,
               pending_ops     : OpNames,
