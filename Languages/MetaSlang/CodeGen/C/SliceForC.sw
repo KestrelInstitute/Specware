@@ -1,4 +1,4 @@
-spec
+CGen qualifying spec
 
 import /Languages/MetaSlang/CodeGen/C/SpecToCSpec
 import /Languages/MetaSlang/Transformations/SliceSpec

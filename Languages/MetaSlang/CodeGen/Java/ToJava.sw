@@ -11,6 +11,7 @@ import ToJavaSpecial
 import /Languages/Java/JavaPrint
 
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/Java/SliceForJava
 
 import Monad
 

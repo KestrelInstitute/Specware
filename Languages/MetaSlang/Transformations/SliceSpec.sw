@@ -1,5 +1,10 @@
 SliceSpec qualifying spec 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Old stuff that is deprecated
+%%% See below for new stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 import ../Specs/AnalyzeRecursion
 
 type QualifierSet = AQualifierMap Bool
@@ -376,88 +381,8 @@ op sliceSpecForCodeM (spc        : Spec,
  : Env (Spec * Bool) =
  return (sliceSpecForCode (spc, root_ops, root_types, cut_op?, cut_type?), tracing?)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% If these predicates are true, don't include the indicated op or type when 
-%% slicing, and don't recur through their definitions.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ========
-%%  Lisp
-%% ========
-
-op builtInLispOp?   (qid : QualifiedId) : Bool = 
- printPackageId(qid, "") in? SpecToLisp.SuppressGeneratedDefuns
-
-op builtInLispType? (qid : QualifiedId) : Bool = 
- false
-
-op SpecTransform.sliceSpecForLisp (spc             : Spec)
-                                  (root_ops        : QualifiedIds)
-                                  (root_types      : QualifiedIds)
- : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtInLispOp?, builtInLispType?)
-
-%% ========
-%%  Haskell
-%% ========
-
-op haskellElement?(el: SpecElement): Bool =
- case el of
-   | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str -> true
-   | Pragma _ -> false
-   | _ -> true
-
-op haskellPragma?(s: String): Bool =
- let s = stripOuterSpaces s in
- let len = length s in
- len > 2 && (let pr_type = subFromTo(s, 0, 7) in
-             pr_type = "Haskell" || 
-             pr_type = "haskell")
-
-%% ========
-%%  Java
-%% ========
-
-op builtinJavaOp? (Qualified (q, id) : QualifiedId) : Bool =
- case q of
-
-   %% Base specs:
-   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-   | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
-                             "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
-                             "isucc", "ipred", "positive?", "negative?", "zero", "one"]
-   | "IntegerAux" -> id in? ["-"]  % unary minus
-   | "Nat"        -> id in? ["show", "toString", "natToString", "stringToNat"]
-   | "Char"       -> id in? ["show", "toString", "chr", "ord", "compare",
-                             "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
-                             "toUpperCase", "toLowerCase"]
-   | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode",
-                             "concat", "subFromTo", "substring", "@", "sub"]
-   | "System"     -> id in? ["writeLine", "toScreen"]
-
-   %% Non-constructive
-   | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
-   | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
-
-   %% Explicitly handcoded
-   | "Handcoded"  -> true
-
-   | _ -> false
-
-op builtinJavaType? (Qualified (q, id) : QualifiedId) : Bool =
-  case q of
-    | "Boolean"    -> id in? ["Bool"]
-    | "Integer"    -> id in? ["Int", "Int0"]
-    | "Nat"        -> id in? ["Nat", "PosNat"]
-    | "Char"       -> id in? ["Char"]
-    | "String"     -> id in? ["String"]
-    | _ -> false
-
-op SpecTransform.sliceSpecForJava (spc             : Spec)
-                                  (root_ops        : QualifiedIds)
-                                  (root_types      : QualifiedIds)
- : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtinJavaOp?, builtinJavaType?)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% New Slicing Code -- Intended to replace much of the above

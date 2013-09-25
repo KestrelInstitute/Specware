@@ -19,6 +19,8 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/Transformations/CurryUtils
  import /Languages/MetaSlang/Transformations/RenameBound
 
+ import /Languages/MetaSlang/CodeGen/Haskell/SliceForHaskell
+
  op useQualifiedNames?: Bool = false
  op simplify?: Bool = false
 
