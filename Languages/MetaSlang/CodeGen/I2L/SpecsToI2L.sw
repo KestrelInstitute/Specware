@@ -157,11 +157,7 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
       id
     else
       q ^ "." ^ id
-  def 
-
-
  in
-
  let i_opdefs =
      foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
                             let qid = Qualified (q, id) in
@@ -232,7 +228,7 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                                        | Some i_typedef ->
                                          i_typedefs ++ [i_typedef]
                                        | _ ->
-                                         i_typedefs))
+                                         i_typedefs)
                             | _ ->
                               i_typedefs)
                        []
