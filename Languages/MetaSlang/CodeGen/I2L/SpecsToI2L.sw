@@ -128,10 +128,6 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
  let ms_spec = slice.ms_spec in
  let lm_data = slice.lm_data in
  let constructors = [] in
- let 
-  def desired_type? _ = true 
-  def desired_op?   _ = true
- in
  let expand_types? = false in
  let declared_structs = 
      foldl (fn (names, trans) ->
@@ -161,11 +157,14 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
       id
     else
       q ^ "." ^ id
+  def 
+
+
  in
+
  let i_opdefs =
      foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
                             let qid = Qualified (q, id) in
-                            %% to be considered, op must be desired and not translate to native op
                             if (exists? (fn trans ->
                                            if trans.native? then
                                              if trans.source = [q, id] then
@@ -191,12 +190,9 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                             else if nativeOp? ([q,id], lm_data) then
                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
                               i_opdefs
-                            else if desired_op? qid then
+                            else 
                               let i_opdef = opinfo2declOrDefn (qid, opinfo, None, ctxt) in
-                              i_opdefs ++ [i_opdef]
-                            else
-                              let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_q_id (q, id)) in
-                              i_opdefs)
+                              i_opdefs ++ [i_opdef])
                          []
                          ms_spec.ops
  in
@@ -229,17 +225,14 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                               else if nativeType? ([q,id], lm_data) then
                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
                                 i_typedefs
-                              else if desired_type? name then
+                              else 
                                 (case findTheType (ms_spec, name) of
                                    | Some typeinfo ->
                                      case typeinfo2typedef (name, typeinfo, ctxt) of
                                        | Some i_typedef ->
                                          i_typedefs ++ [i_typedef]
                                        | _ ->
-                                         i_typedefs)
-                              else
-                                let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_q_id (q, id)) in
-                                i_typedefs
+                                         i_typedefs))
                             | _ ->
                               i_typedefs)
                        []
