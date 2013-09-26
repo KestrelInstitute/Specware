@@ -57,44 +57,16 @@ op getSliceForCGen (ms_spec    : Spec,
                     root_ops   : QualifiedIds,
                     root_types : QualifiedIds)
  : Slice =
- let
-   def nameToQid name =
-     case name of
-       | [id]   -> mkUnQualifiedId id
-       | [q,id] -> mkQualifiedId (q, id)
-       | _ -> fail ("illegal name in Spec-To-C pragma: " ^ anyToString name)
-
-   def QidForLocation loc =
-     nameToQid loc.name
- in
  let lms          = parseCTranslationPragmas ms_spec in
  let lm_data      = make_LMData              lms     in
 
- let type_macros    = foldl (fn (macro_names, ttrans) ->
-                               % Target Term can be Name, Number, Apply, List, Vector, or Typed
-                               case ttrans.target of
-                                 | Name _ -> macro_names
-                                 | _ -> (nameToQid ttrans.source) |> macro_names)
-                            []
-                            lm_data.type_translations
- in
- let op_macros    = foldl (fn (macro_names, otrans) ->
-                             case otrans.target of
-                               % Target Term can be Name, Number, Apply, List, Vector, or Typed
-                               | Name _ -> macro_names
-                               | _ -> (nameToQid otrans.source) |> macro_names)
-                          []
-                          lm_data.op_translations
- in
- let native_types = map QidForLocation lm_data.native_type_locations in
- let native_ops   = map QidForLocation lm_data.native_op_locations   in
  let
    def oracular_type_status name =
      if builtinCType? name then
        Some (Translated Primitive)
-     else if name in? native_types then
+     else if name in? lm_data.native_types then
        Some (Translated API)
-     else if name in? type_macros then
+     else if name in? lm_data.type_macros then
        Some (Translated Macro)
      else
        None
@@ -102,13 +74,14 @@ op getSliceForCGen (ms_spec    : Spec,
    def oracular_op_status name =
      if builtinCOp? name then
        Some (Translated Primitive)
-     else if name in? native_ops then
+     else if name in? lm_data.native_ops then
        Some (Translated API)
-     else if name in? op_macros then
+     else if name in? lm_data.op_macros then
        Some (Translated Macro)
      else
        None
  in
+
  let slice = {ms_spec              = ms_spec,
               lm_data              = lm_data,
               op_map               = empty_op_map,

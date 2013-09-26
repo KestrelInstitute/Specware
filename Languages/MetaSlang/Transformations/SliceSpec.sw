@@ -415,7 +415,7 @@ op executable? (info : OpInfo) : Bool =
 %%%  ADT for op/type reachability
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
-type TranslationStatus = | Primitive | API | Macro
+type TranslationStatus = | Primitive | API | Handwritten | Macro
 type DefStatus = | Defined | Undefined | Missing
 type Status   = | Translated TranslationStatus 
                 | Used       DefStatus 
@@ -448,23 +448,24 @@ op describeGroup (group : Group) : () =
    | ([], []) -> ()
    | (type_names, op_names) ->
      let line  = case group.status of
-                   | Translated Primitive -> "These translate to primitive syntax : "
-                   | Translated API       -> "These translate to an api interface : "
-                   | Translated Macro     -> "These translate to macros : "
+                   | Translated Primitive   -> "These translate to primitive syntax : "
+                   | Translated API         -> "These translate to an api interface : "
+                   | Translated Handwritten -> "These translate to handwritten code : "
+                   | Translated Macro       -> "These translate to macros : "
 
-                   | Used       Defined   -> "These can be generated : "
-                   | Used       Undefined -> "WARNING: These are referenced, but undefined : "
-                   | Used       Missing   -> "WARNING: These are referenced, but missing : "
+                   | Used       Defined     -> "These can be generated : "
+                   | Used       Undefined   -> "WARNING: These are referenced, but undefined : "
+                   | Used       Missing     -> "WARNING: These are referenced, but missing : "
 
-                   | Logical    Defined   -> "These are provide explicit logical constraints, but won't be generated : "
-                   | Logical    Undefined -> "These are provide explicit logical constraints, and can't be generated : "
-                   | Logical    Missing   -> "WARNING: These provide explicit logical constraints, but are missing : "
+                   | Logical    Defined     -> "These are provide explicit logical constraints, but won't be generated : "
+                   | Logical    Undefined   -> "These are provide explicit logical constraints, and can't be generated : "
+                   | Logical    Missing     -> "WARNING: These provide explicit logical constraints, but are missing : "
 
-                   | Contextual Defined   -> "These provide implicit logical context, but won't be generated : "
-                   | Contextual Undefined -> "These provide implicit logical context, but can't be generated : "
-                   | Contextual Missing   -> "WARNING: These provide implicit logical context, but are missing : "
+                   | Contextual Defined     -> "These provide implicit logical context, but won't be generated : "
+                   | Contextual Undefined   -> "These provide implicit logical context, but can't be generated : "
+                   | Contextual Missing     -> "WARNING: These provide implicit logical context, but are missing : "
 
-                   | Misc       str       -> "NOTE: These have some miscellaneous property: " ^ str ^ " : "
+                   | Misc       str         -> "NOTE: These have some miscellaneous property: " ^ str ^ " : "
      in
      let _ = writeLine line                                                              in
      let _ = writeLine ""                                                                in
@@ -508,6 +509,7 @@ op describeSlice (msg : String, slice : Slice) : () =
  in
  let status_options = [Translated Primitive,
                        Translated API,
+                       Translated Handwritten,
                        Translated Macro, 
                        Used       Defined,
                        Used       Undefined,

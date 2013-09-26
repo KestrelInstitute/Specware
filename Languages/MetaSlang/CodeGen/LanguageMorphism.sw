@@ -562,7 +562,11 @@ type LMData = {lms                   : LanguageMorphisms,
                type_translations     : TypeTranslations,
                field_translations    : FieldTranslations,
                native_op_locations   : NativeLocations,   % explict via native and implicit via translate
-               native_type_locations : NativeLocations}   % explict via native and implicit via translate
+               native_type_locations : NativeLocations,   % explict via native and implicit via translate
+               native_ops            : OpNames,
+               native_types          : TypeNames,
+               op_macros             : OpNames,
+               type_macros           : TypeNames}
 
 op nativeOp? (name : Name, lm_data : LMData) : Bool =
  let just_id = [last name] in
@@ -635,6 +639,16 @@ op collectNativeTypeLocations (natives      : Natives,
  native_types
 
 op make_LMData (lms : LanguageMorphisms) : LMData =
+ let
+   def nameToQid name =
+     case name of
+       | [id]   -> mkUnQualifiedId id
+       | [q,id] -> mkQualifiedId (q, id)
+       | _ -> fail ("illegal name in pragma: " ^ anyToString name)
+
+   def QidForLocation loc =
+     nameToQid loc.name
+ in
  let translations       = extractTranslations lms in
  let natives            = extractNatives      lms in
  let translations       = markNativeTranslations (translations, natives) in % set native? flag
@@ -663,15 +677,37 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
                                 translations
  in
 
- let native_ops         = collectNativeOpLocations   (natives, op_translations)   in
- let native_types       = collectNativeTypeLocations (natives, type_translations) in
+ let native_op_locations   = collectNativeOpLocations   (natives, op_translations)   in
+ let native_type_locations = collectNativeTypeLocations (natives, type_translations) in
+ let native_ops            = map QidForLocation         native_op_locations          in
+ let native_types          = map QidForLocation         native_type_locations        in
 
+ let op_macros    = foldl (fn (macro_names, otrans) ->
+                             case otrans.target of
+                               % Target Term can be Name, Number, Apply, List, Vector, or Typed
+                               | Name _ -> macro_names
+                               | _ -> (nameToQid otrans.source) |> macro_names)
+                          []
+                          op_translations
+ in
+ let type_macros  = foldl (fn (macro_names, ttrans) ->
+                             % Target Term can be Name, Number, Apply, List, Vector, or Typed
+                             case ttrans.target of
+                               | Name _ -> macro_names
+                               | _ -> (nameToQid ttrans.source) |> macro_names)
+                          []
+                          type_translations
+ in
  {lms                   = lms,
   op_translations       = op_translations,
   type_translations     = type_translations,
   field_translations    = field_translations,
-  native_op_locations   = native_ops,
-  native_type_locations = native_types}
+  native_op_locations   = native_op_locations,
+  native_type_locations = native_type_locations,
+  native_ops            = native_ops,
+  native_types          = native_types,
+  op_macros             = op_macros,
+  type_macros           = type_macros}
 
 end-spec
 
