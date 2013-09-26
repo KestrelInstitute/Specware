@@ -19,7 +19,9 @@ import /Languages/MetaSlang/CodeGen/C/SliceForC
  *  def  allow_exceptions? spc renaming immune_op_names allow_extra_rules? currentUID? = 
  *)
 
-op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
+op renameTypes (ms_spec   : Spec, 
+                renamings : List (String * String)) 
+ : Spec =
  let rules = map (fn (old, new) -> 
                     let new = mkUnQualifiedId new in
                     (Type (mkUnQualifiedId old, new, [new]), 
@@ -48,8 +50,8 @@ op renameTypes (ms_spec : Spec, renamings : List (String * String)) : Spec =
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpec (ms_spec       : Spec,
-                                     app_name      : String)
+op generateCSpecFromTransformedSpec (ms_spec  : Spec, 
+                                     app_name : String)
  : Option C_Spec =
  let slice      = getDefaultSliceForCGen    ms_spec           in
  let i2l_spec   = generateI2LCodeSpecFilter slice             in
