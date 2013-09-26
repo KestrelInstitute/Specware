@@ -55,20 +55,44 @@ Maps = Map qualifying spec
       apply (remove m key1) key2 =
       (if key1 = key2 then None else apply m key2)
 
-%TODO why not use the def?
-  op [a,b] singletonMap : a -> b -> Map(a,b)
-%  def [a,b] singletonMap x y = (update (empty_map) x y)
-  axiom def_of_singletonMap is
-        fa(x,y) (singletonMap x y) = (update empty_map x y)
+  theorem update_of_remove_same is [a,b]
+    fa(m: Map(a,b), key : a, val: b)
+      update (remove m key) key val = update m key val
+
+  theorem remove_of_update_same is [a,b]
+    fa(m: Map(a,b), key : a, val: b)
+      (remove (update m key val) key) = (remove m key)
+
+  theorem remove_of_empty is [a,b]
+    fa(key : a)
+      (remove (empty_map : Map(a,b)) key) = empty_map
+
+  theorem remove_of_update_both is [a,b]
+    fa(m: Map(a,b), key1 : a, key2 : a, val: b)
+      remove (update m key1 val) key2 = (if key1 = key2 then (remove m key2) else (update (remove m key2) key1 val))
+
+  theorem update_of_update_both is [a,b]
+    fa(m: Map(a,b), keyone : a, keytwo : a, val1: b, val2 : b)
+      update (update m keyone val1) keytwo val2 = (if keyone = keytwo then (update m keytwo val2) else (update (update m keytwo val2) keyone val1))
+
+  %% TODO: why can't I do cut_tac if the vars in the theorem are key1 and key2?
+  theorem remove_of_remove_both is [a,b]
+    fa(m: Map(a,b), keyone : a, keytwo : a)
+      remove (remove m keyone) keytwo = remove (remove m keytwo) keyone
+
+    
+
+  op [a,b] singletonMap (x:a) (y:b) : Map(a,b) = update (empty_map) x y
 
   % this induction axiom constrains maps to be finite: any finite map can be
   % obtained by suitable successive applications of update to empty_map
 
   axiom map_induction is [a,b]
-        fa (p : Map(a,b) -> Bool)
-           p empty_map &&
-           (fa(m,x,y) p m => p (update m x y)) =>
-           (fa(m) p m)
+    fa (p : Map(a,b) -> Bool)
+      p empty_map &&
+      (fa(m,x,y) p m => p (update m x y))
+      =>
+      (fa(m) p m)
 
  %TODO delete this comment?
   % we could define several other operations on maps (e.g., "undefinition"
@@ -85,6 +109,12 @@ Maps = Map qualifying spec
   op [a,b] range : Map(a,b) -> Set b
   axiom map_range is
      [a,b] fa(m:Map(a,b), z:b)( z in? range(m) = (ex(x:a)(apply m x = Some z)))
+
+
+  theorem update_of_apply_same is [a,b]
+    fa(m: Map(a,b), key : a)
+      key in? domain m =>
+      update m key (case (apply m key) of | Some val -> val) = m
 
 % TODO could use a definedOn? helper predicate.  Or just check whether s is a subset of the domain of the map?
   op [a,b] total? (s:Set a, m:Map(a,b)):Bool =
@@ -114,6 +144,11 @@ Maps = Map qualifying spec
   theorem domain_update2 is [a,key]
     fa(m: Map(key,a), x: key, y: a)
       domain(update m x y) = set_insert(x, domain m)
+
+  theorem remove_does_noting is [a,b]
+    fa(m: Map(a,b), x: a)
+      ~(x in? domain m) => (remove m x) = m
+
 
 % who added this?
  % This op previously was given meaning by the axiom map_size.  I changed it to just be a definition. -Eric
@@ -158,27 +193,78 @@ Maps = Map qualifying spec
     fa(f: a -> b) map f [] = []
 
  %TODO: Pull this into a helper spec, since now we have to repeat it in each implementation of Maps.
-  op [a,b,acc] mappable? (f : (a * b * acc -> acc)) : Bool =
+ % (Or don't, if eventually this will take the map as an argument and only require foldability over elements in the map.)
+  op [a,b,acc] foldable? (f : (a * b * acc -> acc)) : Bool =
     fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
       key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
       f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
 
-% who added this?
-%TODO This may need commutativity and idempotence restrictions, like those for set_fold?
-%TODO rename the type variables here, for consistency with the rest of this file.
-%TODO: Give this a definition!
-% TODO: Could allow f to be mappable only on the values in m, rather than in general.
-  op [a,b,acc] foldi (f : ((a * b * acc -> acc) | mappable?))
+ theorem foldable?_helper is [a,b]
+   fa(p : a * b -> Bool)
+     foldable? (fn (key:a, val:b, accval:Bool) -> accval && p(key,val))
+
+% TODO: Could allow f to be foldable only on the values in m, rather than in general.
+  op [a,b,acc] foldi (f : ((a * b * acc -> acc) | foldable?))
                      (initialacc : acc)  
                      (m: Map (a,b)) : acc       
                      
   axiom map_foldi_empty is [a,b,acc]
-    fa(f : ((a * b * acc -> acc) | mappable?), accval : acc)
+    fa(f : ((a * b * acc -> acc) | foldable?), accval : acc)
       foldi f accval empty_map = accval
 
   axiom map_foldi_update is [a,b,acc]
-    fa(f : ((a * b * acc -> acc) | mappable?), accval : acc, key : a, val : b, m : Map(a,b))
+    fa(f : ((a * b * acc -> acc) | foldable?), accval : acc, key : a, val : b, m : Map(a,b))
       foldi f accval (update m key val) = f(key, val, foldi f accval (remove m key))
+
+  op [a,b] forall? (p : a * b -> Bool) (m: Map (a,b)) : Bool =
+    foldi (fn (key,val,acc) -> acc && p(key,val))
+          true
+          m
+
+  theorem forall?_of_update is [a,b]
+    fa(p : a * b -> Bool, m : Map(a,b), key:a, val:b)
+    forall? p (update m key val) = (forall? p (remove m key) && p(key,val))
+    
+  theorem forall?_of_remove is [a,b]
+    fa(p : a * b -> Bool, m : Map(a,b), key:a)
+      (forall? p m) => forall? p (remove m key)
+
+  %% theorem forall?_of_update is [a,b]
+  %%   fa(p : a * b -> Bool, m : Map(a,b), key:a, val:b)
+  %%   (forall? p m && p(key,val)) => 
+  %%   forall? p (update m key val)
+
+  % This is due to the subtype (PosNat) on the values stored in the map.
+  % If this is not defined, a declaration is added to the Isabelle translation:
+  % Check all pairs in the map to ensure that the preds apply to the keys and values.
+  op [a,b] Map_P (preda: a -> Bool, predb: b -> Bool) (m : Map(a,b)) : Bool =
+    forall? (fn (key, val) -> preda key && predb val)
+            m
+
+  theorem Map_P_of_update is [a,b,acc]
+    fa(preda: a -> Bool, predb: b -> Bool, m : Map(a,b), key:a, val:b)
+      Map_P(preda, predb) (update m key val) =
+      (preda key && predb val && Map_P(preda, predb) (remove m key))
+
+  theorem Map_P_of_remove is [a,b,acc]
+    fa(preda: a -> Bool, predb: b -> Bool, m : Map(a,b), key:a)
+      Map_P(preda, predb) m =>
+      Map_P(preda, predb) (remove m key)
+
+
+  %% FIXME Prove or drop this:
+  %% %% This one fits better with reasoning about fold
+  %% theorem map_induction2 is [a,b]
+  %%       fa (p : Map(a,b) -> Bool)
+  %%          p empty_map &&
+  %%          (fa(m,x,y) p(remove m x) => p(update m x y)) =>
+  %%          (fa(m) p m)
+
+  %% % TODO: using the name pred here caused a name clash?
+  %% theorem mypred_of_fold is [a,b,acc]
+  %%   fa(m : Map(a,b), acc : acc, f : ((a * b * acc -> acc) | foldable?), mypred : acc -> Bool)
+  %%     (mypred(acc) && (fa(key:a,val:b, acc:acc) mypred acc => mypred (f(key,val,acc)))) =>
+  %%     mypred (foldi f acc m)
 
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
@@ -197,6 +283,45 @@ Maps = Map qualifying spec
 
 
 (******************************** The Proofs ********************************)
+
+proof Isa Map__Map_P_of_remove
+  apply(simp add: Map__Map_P_def Map__forall_p_of_remove)
+end-proof
+
+proof Isa Map__forall_p_of_remove
+  apply(case_tac "key in? Map__domain m")
+  defer
+  apply(force simp add: Map__remove_does_noting)
+  apply(cut_tac m="m" and p=p and key=key and val="(Map__TMApply(m,key))" in Map__forall_p_of_update)
+  apply(auto simp add: Map__TMApply_becomes_apply Map__update_of_apply_same)
+end-proof
+
+proof Isa Map__update_of_apply_same
+  apply(rule Map__map_equality, simp add: Map__update Map__remove)
+  apply(auto simp add: Map__map_domain)
+end-proof
+
+proof Isa Map__remove_does_noting
+  apply(rule Map__map_equality)
+  apply(auto simp add: Map__remove Map__map_domain)
+end-proof
+
+proof Isa Map__remove_of_update_both
+  apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
+
+proof Isa Map__update_of_update_both
+  apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
+
+proof Isa Map__foldable_p_helper [simp]
+  apply(simp add: Map__foldable_p_def)
+  apply(metis)
+end-proof
+
+proof Isa Map__remove_of_remove_both
+  apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
 
 proof Isa Map__totalmap_equality
   apply(rule Map__map_equality)
@@ -254,6 +379,97 @@ proof isa TMApply_Obligation_the
   apply(auto)
   by (metis Map__map_domain option.distinct(1))
 end-proof
+
+proof isa Map__Map_P_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def)
+end-proof
+
+proof Isa Map__map_induction2
+  apply(rule Map__map_induction)
+  apply(assumption)
+  apply(simp add: Map__update_of_remove_same)
+end-proof
+
+proof Isa Map__update_of_remove_same
+  apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
+
+%% proof Isa Map__mypred_of_fold
+%%   sorry
+%% end-proof
+
+proof Isa Map__forall_p_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def)
+end-proof
+
+proof Isa Map__remove_of_empty
+  apply(rule Map__map_equality)
+  apply(simp add: Map__remove Map__empty_map)
+end-proof
+
+
+proof Isa Map__forall_p_of_update
+  apply(cut_tac p="\<lambda> (m:: ('a, 'b)Map__Map) .  Map__forall_p p (Map__update m key val) = (Map__forall_p p (Map__remove m key) \<and> p (key, val))" and m=m in Map__map_induction)
+  defer
+  defer
+  apply(assumption)
+  apply(simp add: Map__forall_p_def Map__map_foldi_update Map__foldable_p_def Map__remove_of_empty Map__map_foldi_empty)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m=" Map__empty_map" and key=key and val=val and accval=True in  Map__map_foldi_update)
+  apply(simp add: Map__foldable_p_def)
+  apply(metis)
+  apply(simp add:  Map__remove_of_empty)
+  apply(clarsimp)
+  apply(case_tac "x=key")
+  apply(simp add: Map__remove_of_update_same Map__forall_p_def)
+  apply(auto)[1]
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m key y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)[1]
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m key y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)[1]
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m key y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)[1]
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m key y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)[1]
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m key y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+
+apply(auto simp add: Map__remove_of_update_same Map__forall_p_def)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="m" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+  apply(cut_tac f=" (\<lambda>(key, val, acc__v). acc__v \<and> p (key, val))" and m="(Map__update m x y)" and key=key and val=val and accval=True in  Map__map_foldi_update, force)
+apply(auto simp add: Map__remove_of_update_same)
+end-proof
+
+proof Isa Map__Map_P_of_update
+  apply(auto simp add: Map__Map_P_def Map__forall_p_of_update)
+end-proof
+
+
+proof Isa  Map__remove_of_update_same
+  apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
+
 
 end-spec
 

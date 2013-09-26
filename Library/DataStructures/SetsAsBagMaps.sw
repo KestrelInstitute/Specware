@@ -2,8 +2,10 @@
 
 %% FIXME: Figure out the story with the proof obligations of this.
 %% FIXME: The obligations have the same names as the obligations in SetsAsBags, for which we already have proofs that Specware tries to use but that won't work in this context!
-%% FIXME: I'd like to put the proofs for this just below this next line:
+%% add JIRA issue
 SetsAsBagMaps = SetsAsBags[BagsAsMaps#M]
+
+%% NOTE: These pragmas overwrite the pragmas with the same names in SetsAsBags:
 
 %% Translated version of the proof in SetsAsBags.sw:
 proof Isa set_insert_Obligation_subtype
@@ -20,9 +22,9 @@ proof Isa SetsAsBags__empty_set_Obligation_subtype
   apply(simp add: SetsAsBags__no_rep_p_def BagsAsMaps__bag_fold1)
 end-proof
 
-%% Translated version of the proof in SetsAsBags.sw:
+%% Translated version of the proof in SetsAsBags.sw (slightly fixed up, since there are more assumptions to discharge):
 proof Isa set_insert_new_Obligation_subtype
-  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption)
+  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption, assumption, assumption)
 end-proof
 
 %% Translated version of the proof in SetsAsBags.sw:
@@ -32,13 +34,21 @@ proof Isa e_bsl_fsl_Obligation_subtype
   apply(auto simp add: BagsAsMaps__bagin_of_insert SetsAsBags__in_p_def)
 end-proof
 
-%% Translated version of the proof in SetsAsBags.sw:
+%% Translated version of the proof in SetsAsBags.sw (now somewhat changed):
 proof Isa e_fsl_bsl_Obligation_subtype
   apply(rule BagsAsMaps__occurrences, auto simp add: SetsAsBags__set_insert_def BagsAsMaps__bag_insertion SetsAsBags__in_p_def BagsAsMaps__bagin_of_insert)
   apply(cases "z=y", auto)
-  apply(simp add: BagsAsMaps__bag_insertion_commutativity)
+  apply(auto simp add:  BagsAsMaps__Map_P_of_insert)
+  apply(cases "z=y", auto simp add: BagsAsMaps__Map_P_of_insert)
+  apply(cases "z=y", auto simp add: BagsAsMaps__Map_P_of_insert)
+  apply(cases "z=y", auto simp add: BagsAsMaps__Map_P_of_insert BagsAsMaps__bag_insertion_commutativity)
 end-proof
 
+proof Isa SetsAsBags__e_bsl_fsl_Obligation_subtype
+  apply(rule BagsAsMaps__occurrences)
+  apply(simp add: SetsAsBags__set_insert_def BagsAsMaps__bag_insertion)
+  apply(auto simp add: BagsAsMaps__bagin_of_insert SetsAsBags__in_p_def BagsAsMaps__Map_P_of_insert SetsAsBags__set_insert_def BagsAsMaps__bag_insertion)
+end-proof
 
 M = morphism Sets -> SetsAsBagMaps {Set._ +-> SetsAsBags._}
 

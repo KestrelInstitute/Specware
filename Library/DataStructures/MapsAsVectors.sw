@@ -67,14 +67,25 @@ spec
   op remove : [a,b] Map (a,b) -> a -> Map (a,b) = fn x -> fn y -> MapVec.V_remove(x,y)
 
   %% Added by Eric (just copied from Maps.sw):
-  op [a,b,acc] mappable? (f : (a * b * acc -> acc)) : Bool =
+  op [a,b,acc] foldable? (f : (a * b * acc -> acc)) : Bool =
     fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
       key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
       f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
 
   %% Added by Eric:
-  op foldi : [Dom,Cod,a] ((Dom * Cod * a -> a) | mappable?) -> a -> Map (Dom,Cod) -> a =
+  op foldi : [Dom,Cod,a] ((Dom * Cod * a -> a) | foldable?) -> a -> Map (Dom,Cod) -> a =
     fn f -> fn acc -> fn map -> MapVec.V_foldi(f,acc,map)
+
+  % Just copied from Maps.sw:
+  op [a,b] forall? (p : a * b -> Bool) (m: Map (a,b)) : Bool =
+    foldi (fn (key,val,acc) -> acc && p(key,val))
+          true
+          m
+
+  %% Just copied from Maps.sw:
+  op [a,b] Map_P (preda: a -> Bool, predb: b -> Bool) (m : Map(a,b)) : Bool =
+    forall? (fn (key, val) -> preda key && predb val)
+            m
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
@@ -106,6 +117,16 @@ proof Isa isoMap_Obligation_subtype0
   sorry
 end-proof
 
+proof Isa MapsAsVectors__Map_P_Obligation_subtype
+  apply(auto simp add: MapsAsVectors__foldable_p_def)
+end-proof
+
+%% translated from the proof in Maps.sw:
+proof Isa MapsAsVectors__forall_p_Obligation_subtype
+  apply(auto simp add: MapsAsVectors__foldable_p_def)
+end-proof
+
+
 end-spec
 
 
@@ -124,8 +145,8 @@ proof Isa update
   sorry
 end-proof
  
-proof Isa def_of_singletonMap
-  sorry
+proof Isa Map__singletonMap_def
+  apply(simp add: MapsAsVectors__singletonMap_def MapsAsVectors__update_def MapsAsVectors__empty_map_def)
 end-proof
  
 proof Isa map_induction
@@ -182,4 +203,8 @@ end-proof
 
 proof Isa Map__map_foldi_update
   sorry
+end-proof
+
+proof Isa Map__Map_P_def
+  apply(auto simp add: MapsAsVectors__Map_P_def)
 end-proof

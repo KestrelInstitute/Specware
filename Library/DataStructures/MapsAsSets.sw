@@ -115,7 +115,7 @@ spec
      set_fold m (fn (m, x) -> update m x (f x)) s
 
   %% Added by Eric (just copied from Maps.sw):
-  op [a,b,acc] mappable? (f : (a * b * acc -> acc)) : Bool =
+  op [a,b,acc] foldable? (f : (a * b * acc -> acc)) : Bool =
     fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
       key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
       f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
@@ -124,6 +124,17 @@ spec
     set_fold acc
              (fn (acc,(x,y)) -> f(x,y,acc))
              m 
+
+  % Just copied from Maps.sw:
+  op [a,b] Map_P (preda: a -> Bool, predb: b -> Bool) (m : Map(a,b)) : Bool =
+    forall? (fn (key, val) -> preda key && predb val)
+            m
+
+  % Just copied from Maps.sw:
+  op [a,b] forall? (p : a * b -> Bool) (m: Map (a,b)) : Bool =
+    foldi (fn (key,val,acc) -> acc && p(key,val))
+          true
+          m
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
@@ -291,7 +302,7 @@ end-proof
 proof Isa Map__map_foldi_empty
   apply(auto simp add: Map__foldi_def Map__empty_map_def)
   apply(rule Set__set_fold1)
-  apply(auto simp add:  Map__mappable_p_def)
+  apply(auto simp add:  Map__foldable_p_def)
   apply(cut_tac c=accval and f = " (\<lambda>(acc0, x, y). f (x, y, acc0))" in Set__set_fold1)
   sorry
 end-proof

@@ -149,6 +149,7 @@ op [a,b] set_fold : b ->
                        (fa(x,y)   f(f(x,y), y) = f(x,y))} ->
                       Set a ->
                       b
+
 axiom set_fold1 is [a,b]
   fa(c:b, f : {f : b * a -> b |
                    (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
