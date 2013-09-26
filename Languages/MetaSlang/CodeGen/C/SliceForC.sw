@@ -92,7 +92,7 @@ op getSliceForCGen (ms_spec    : Spec,
                         lm_data.native_ops 
  in
  let
-   def primitive_type? name =
+   def oracular_type_status name =
      if builtinCType? name then
        Some (Translated Primitive)
      else if name in? native_types then
@@ -102,7 +102,7 @@ op getSliceForCGen (ms_spec    : Spec,
      else
        None
 
-   def primitive_op? name =
+   def oracular_op_status name =
      if builtinCOp? name then
        Some (Translated Primitive)
      else if name in? native_ops then
@@ -112,14 +112,14 @@ op getSliceForCGen (ms_spec    : Spec,
      else
        None
  in
- let slice = {ms_spec         = ms_spec,
-              lm_data         = lm_data,
-              op_map          = empty_op_map,
-              type_map        = empty_type_map,
-              pending_ops     = root_ops,
-              pending_types   = root_types,
-              primitive_op?   = primitive_op?,
-              primitive_type? = primitive_type?}
+ let slice = {ms_spec              = ms_spec,
+              lm_data              = lm_data,
+              op_map               = empty_op_map,
+              type_map             = empty_type_map,
+              pending_ops          = root_ops,
+              pending_types        = root_types,
+              oracular_type_status = oracular_type_status,
+              oracular_op_status   = oracular_op_status}
  in
  completeSlice slice 
 

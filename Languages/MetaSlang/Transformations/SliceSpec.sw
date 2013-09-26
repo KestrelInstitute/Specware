@@ -415,7 +415,7 @@ op executable? (info : OpInfo) : Bool =
 %%%  ADT for op/type reachability
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
-type TranslationStatus = | Primitive | API | Macro 
+type TranslationStatus = | Primitive | API | Macro
 type DefStatus = | Defined | Undefined | Missing
 type Status   = | Translated TranslationStatus 
                 | Used       DefStatus 
@@ -429,16 +429,14 @@ type TypeMap = STHMap.Map (TypeName, Status)
 op empty_op_map   : OpMap   = STH_empty_map
 op empty_type_map : TypeMap = STH_empty_map
 
-type Slice = {ms_spec         : Spec, 
-              lm_data         : LMData,
-              op_map          : OpMap, 
-              type_map        : TypeMap,
-              pending_ops     : OpNames,
-              pending_types   : TypeNames,
-              % In the following, Some X means it is primitive, 
-              %  see status for explanation.
-              primitive_op?   : OpName   -> Option Status,  
-              primitive_type? : TypeName -> Option Status}  
+type Slice = {ms_spec              : Spec, 
+              lm_data              : LMData,
+              op_map               : OpMap, 
+              type_map             : TypeMap,
+              pending_ops          : OpNames,
+              pending_types        : TypeNames,
+              oracular_type_status : TypeName -> Option Status,
+              oracular_op_status   : OpName   -> Option Status}
 
 type Groups = List Group
 type Group  = {status     : Status, 
@@ -576,7 +574,7 @@ op extend_execution_slice_for_op (pending : OpNames) (slice : Slice, name : OpNa
  let 
    def status info = if executable? info then Defined else Undefined
  in
- case slice.primitive_op? name of
+ case slice.oracular_op_status name of
    | Some status ->
      let new_op_map = ops_update (slice.op_map, name, status) in
      slice << {op_map = new_op_map}
@@ -630,7 +628,7 @@ op extend_typing_slice_for_type (pending : TypeNames) (slice : Slice, name : Typ
  let 
    def status info = if anyType? info.dfn then Undefined else Defined
  in
- case slice.primitive_type? name of
+ case slice.oracular_type_status name of
    | Some status ->
      let new_type_map = types_update (slice.type_map, name, status) in
      slice << {type_map = new_type_map}
@@ -710,7 +708,7 @@ op extend_logical_slice_for_type (pending_ops   : OpNames)
  let 
    def status info = if anyType? info.dfn then Undefined else Defined
  in
- case slice.primitive_type? name of
+ case slice.oracular_type_status name of
    | Some status ->
      let new_type_map = types_update (slice.type_map, name, status) in
      slice << {type_map = new_type_map}
@@ -764,7 +762,7 @@ op extend_logical_slice_for_op (pending_ops   : OpNames)
  let 
    def status info = if executable? info then Defined else Undefined
  in
- case slice.primitive_op? name of
+ case slice.oracular_op_status name of
    | Some status ->
      let new_op_map = ops_update (slice.op_map, name, status) in
      slice << {op_map = new_op_map}
