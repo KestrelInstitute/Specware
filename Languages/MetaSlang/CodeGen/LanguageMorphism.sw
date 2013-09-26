@@ -561,8 +561,8 @@ type LMData = {lms                : LanguageMorphisms,
                op_translations    : OpTranslations,
                type_translations  : TypeTranslations,
                field_translations : FieldTranslations,
-               native_ops         : NativeLocations,
-               native_types       : NativeLocations}
+               native_ops         : NativeLocations,   % both explicit and implicit
+               native_types       : NativeLocations}   % both explicit and implicit
 
 op nativeOp? (name : Name, lm_data : LMData) : Bool =
  let just_id = [last name] in
@@ -581,6 +581,8 @@ op nativeType? (name : Name, lm_data : LMData) : Bool =
 op collectNativeOps (natives      : Natives, 
                      translations : OpTranslations) 
  : NativeLocations =
+ %% explicitly native ops --
+ %%   those in "native" section
  let native_ops = foldl (fn (nlocs, native : Native) ->
                            case native of
                              | Op nloc -> nlocs ++ [nloc]
@@ -588,6 +590,9 @@ op collectNativeOps (natives      : Natives,
                         []
                         natives
  in
+ %% plus all implicitly native ops -- 
+ %%  those translated to a target op defined at some target location
+ %%  (excluding ad hoc macros, for example)
  let native_ops = foldl (fn (nlocs : NativeLocations, trans : OpTranslation) ->
                            let name = trans.source in
                            if exists? (fn nloc -> name = nloc.name) nlocs then
@@ -604,6 +609,8 @@ op collectNativeOps (natives      : Natives,
 op collectNativeTypes (natives      : Natives, 
                        translations : TypeTranslations) 
  : NativeLocations =
+ %% explicitly native types -- 
+ %%   those in "native" section
  let native_types = foldl (fn (nlocs, native : Native) ->
                              case native of
                                | Type nloc -> nlocs ++ [nloc]
@@ -611,6 +618,9 @@ op collectNativeTypes (natives      : Natives,
                           []
                           natives
  in
+ %% plus all implicitly native types -- 
+ %%  those translated to a target type defined at some target location
+ %%  (excluding ad hoc macros, for example)
  let native_types = foldl (fn (nlocs : NativeLocations, trans : TypeTranslation) ->
                              let name = trans.source in
                              if exists? (fn nloc -> name = nloc.name) nlocs then
