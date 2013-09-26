@@ -299,12 +299,8 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
 %% Generate a C spec from a MetaSlang spec
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% generateCSpec is the canonical entry point for producing a C spec, 
-%% since there is no point in trying to generate a C spec until we have first
-%% done all the appropriate spec-to-spec transforms within metaslang.
-
-op generateCSpec (ms_spec : Spec) (app_name : String) 
- : Option C_Spec =
+%% For debugging purposes only.  No one calls this.
+op generateCSpec (ms_spec : Spec) (app_name : String) : Option C_Spec =
  let ms_spec = SpecTransform.transformSpecTowardsC ms_spec in
  generateCSpecFromTransformedSpec (ms_spec, app_name)
 
