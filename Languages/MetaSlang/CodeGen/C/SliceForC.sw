@@ -63,6 +63,9 @@ op getSliceForCGen (ms_spec    : Spec,
        | [id]   -> mkUnQualifiedId id
        | [q,id] -> mkQualifiedId (q, id)
        | _ -> fail ("illegal name in Spec-To-C pragma: " ^ anyToString name)
+
+   def QidForLocation loc =
+     nameToQid loc.name
  in
  let lms          = parseCTranslationPragmas ms_spec in
  let lm_data      = make_LMData              lms     in
@@ -83,14 +86,8 @@ op getSliceForCGen (ms_spec    : Spec,
                           []
                           lm_data.op_translations
  in
- let native_types = map (fn loc ->
-                           nameToQid loc.name)
-                        lm_data.native_types
- in
- let native_ops   = map (fn loc -> 
-                           nameToQid loc.name) 
-                        lm_data.native_ops 
- in
+ let native_types = map QidForLocation lm_data.native_type_locations in
+ let native_ops   = map QidForLocation lm_data.native_op_locations   in
  let
    def oracular_type_status name =
      if builtinCType? name then
