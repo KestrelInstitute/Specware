@@ -125,30 +125,17 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
 
 %% Called from generateCSpecFromTransformedSpecIncrFilter in MetaSlang/CodeGen/C/SpecToCSpec.sw 
 op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
- let ms_spec = slice.ms_spec in
- let lm_data = slice.lm_data in
- let constructors = [] in
- let expand_types? = false in
- let declared_structs = 
-     foldl (fn (names, trans) ->
-              if trans.struct? then
-                let qid = case trans.source of
-                            | [id]   -> mkUnQualifiedId id
-                            | [q,id] -> mkQualifiedId (q, id)
-                in
-                names ++ [qid]
-              else 
-                names)
-           []
-           lm_data.type_translations
- in
+ let expand_types? = false in          % todo: make this arg to transform
+ let constructors  = []    in          % ??
+ let ms_spec       = slice.ms_spec in
+ let lm_data       = slice.lm_data in
  let ctxt = {specName        = "", 
              isTopLevel?     = true, 
              constructors    = constructors,
              currentOpType   = None,
              ms_spec         = ms_spec,
              lm_data         = lm_data,
-             declaredStructs = declared_structs,
+             declaredStructs = lm_data.structure_types,
              expandTypes?    = expand_types?}
  in
  let

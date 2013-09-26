@@ -566,7 +566,8 @@ type LMData = {lms                   : LanguageMorphisms,
                native_ops            : OpNames,
                native_types          : TypeNames,
                op_macros             : OpNames,
-               type_macros           : TypeNames}
+               type_macros           : TypeNames,
+               structure_types       : TypeNames}
 
 op nativeOp? (name : Name, lm_data : LMData) : Bool =
  let just_id = [last name] in
@@ -682,22 +683,35 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
  let native_ops            = map QidForLocation         native_op_locations          in
  let native_types          = map QidForLocation         native_type_locations        in
 
- let op_macros    = foldl (fn (macro_names, otrans) ->
-                             case otrans.target of
-                               % Target Term can be Name, Number, Apply, List, Vector, or Typed
-                               | Name _ -> macro_names
-                               | _ -> (nameToQid otrans.source) |> macro_names)
-                          []
-                          op_translations
+ let op_macros       = foldl (fn (macro_names, otrans) ->
+                                case otrans.target of
+                                  % Target Term can be Name, Number, Apply, List, Vector, or Typed
+                                  | Name _ -> macro_names
+                                  | _ -> (nameToQid otrans.source) |> macro_names)
+                             []
+                             op_translations
  in
- let type_macros  = foldl (fn (macro_names, ttrans) ->
-                             % Target Term can be Name, Number, Apply, List, Vector, or Typed
-                             case ttrans.target of
-                               | Name _ -> macro_names
-                               | _ -> (nameToQid ttrans.source) |> macro_names)
-                          []
-                          type_translations
+ let type_macros     = foldl (fn (macro_names, ttrans) ->
+                                % Target Term can be Name, Number, Apply, List, Vector, or Typed
+                                case ttrans.target of
+                                  | Name _ -> macro_names
+                                  | _ -> (nameToQid ttrans.source) |> macro_names)
+                             []
+                             type_translations
  in
+ let structure_types = foldl (fn (struct_names, ttrans) ->
+                                 if ttrans.struct? then
+                                   let qid = case ttrans.source of
+                                               | [id]   -> mkUnQualifiedId id
+                                               | [q,id] -> mkQualifiedId (q, id)
+                                   in
+                                   struct_names ++ [qid]
+                                 else 
+                                   struct_names)
+                              []
+                              type_translations
+ in
+
  {lms                   = lms,
   op_translations       = op_translations,
   type_translations     = type_translations,
@@ -707,7 +721,8 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
   native_ops            = native_ops,
   native_types          = native_types,
   op_macros             = op_macros,
-  type_macros           = type_macros}
+  type_macros           = type_macros,
+  structure_types       = structure_types}
 
 end-spec
 
