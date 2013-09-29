@@ -1684,6 +1684,13 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-TERM ()
   (:anyof
+   (1 :NON-APPLY-TRANSFORM-TERM)
+   (1 :TRANSFORM-APPLY)
+   )
+  1)
+
+(define-sw-parser-rule :NON-APPLY-TRANSFORM-TERM ()
+  (:anyof
    (1 :TRANSFORM-NUMBER)
    (1 :TRANSFORM-STRING)
    (1 :TRANSFORM-TRUE)
@@ -1692,7 +1699,6 @@ If we want the precedence to be optional:
    (1 :TRANSFORM-UID)
    (1 :TRANSFORM-QUALIFIED-NAME)
    (1 :TRANSFORM-QUOTED-TERM)
-   (1 :TRANSFORM-APPLY)
 
    (1 :TRANSFORM-TUPLE)
    (1 :TRANSFORM-LIST)
@@ -1771,7 +1777,7 @@ If we want the precedence to be optional:
   (make-transform-repeat 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-PROC ()
-  (:tuple (1 :SYMBOL) (2 (:repeat* :TRANSFORM-TERM)))
+  (:tuple (1 :SYMBOL) (2 (:repeat* :NON-APPLY-TRANSFORM-TERM)))
     (make-transform-command (common-lisp::symbol-name (quote 1)) 2 ':left-lcb ':right-lcb))
 
 ;; (define-sw-parser-rule :TRANSFORM-EXPR-ARG ()
