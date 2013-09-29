@@ -12,11 +12,11 @@ op printCSpec (c_spec       : C_Spec,
  : () =
  let filename =
      case opt_filename of
-       | None          -> "cgenout.c"
+       | None          -> app_name
        | Some filename -> filename
  in
  let len = length filename in
- let basename = if subFromTo (filename, len-2, len) = ".c" then
+ let basename = if (len > 2) && (subFromTo (filename, len-2, len) = ".c") then
                   subFromTo (filename, 0, len-2)
                  else
                    filename
