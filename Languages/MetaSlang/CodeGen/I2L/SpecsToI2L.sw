@@ -146,80 +146,29 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
       q ^ "." ^ id
  in
  let i_opdefs =
-     foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
-                            let qid = Qualified (q, id) in
-                            if (exists? (fn trans ->
-                                           if trans.native? then
-                                             if trans.source = [q, id] then
-                                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                                               true
-                                             else if trans.source = [id] then
-                                               let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                                               true
-                                             else
-                                               false
-                                           else
-                                             if trans.source = [q, id] then
-                                               let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
-                                               true
-                                             else if trans.source = [id] then
-                                               let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
-                                               true
-                                             else
-                                               false)
-                                        lm_data.op_translations)
-                              then
-                                i_opdefs
-                            else if nativeOp? ([q,id], lm_data) then
-                              let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                              i_opdefs
-                            else 
-                              let i_opdef = opinfo2declOrDefn (qid, opinfo, None, ctxt) in
-                              i_opdefs ++ [i_opdef])
-                         []
-                         ms_spec.ops
+     foldl (fn (defs, (name, status)) ->
+              case status of
+                | Used _ ->
+                  (case findTheOp (ctxt.ms_spec, name) of
+                     | Some info -> 
+                       defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
+                     | _ ->
+                       defs)
+                | _ -> defs)
+           []
+           (mapToList slice.op_map)
  in
  let i_typedefs =
-     foldlSpecElements (fn (i_typedefs, el) ->
-                          case el of
-                            | TypeDef (name as Qualified (q, id), _) ->
-                              if (exists? (fn trans ->
-                                             if trans.native? then
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false
-                                             else
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false)
-                                           lm_data.type_translations)
-                                then
-                                  i_typedefs
-                              else if nativeType? ([q,id], lm_data) then
-                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                i_typedefs
-                              else 
-                                (case findTheType (ms_spec, name) of
-                                   | Some typeinfo ->
-                                     case typeinfo2typedef (name, typeinfo, ctxt) of
-                                       | Some i_typedef ->
-                                         i_typedefs ++ [i_typedef]
-                                       | _ ->
-                                         i_typedefs)
-                            | _ ->
-                              i_typedefs)
-                       []
-                       ms_spec.elements
+     foldl (fn (defs, (name, status)) ->
+              case status of
+                | Used _ ->
+                  (let Some info = findTheType (ctxt.ms_spec, name) in
+                   case typeinfo2typedef (name, info, ctxt) of
+                     | Some typedef -> defs ++ [typedef]
+                     | _ -> defs)
+                | _ -> defs)
+           []
+           (mapToList slice.type_map)
  in
  let res : I_ImpUnit = 
      {
