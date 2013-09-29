@@ -29,7 +29,6 @@ op renameTypes (ms_spec   : Spec,
                  renamings
  in
  let renaming = (rules, noPos) in
-
  let revised_spec = run (translateSpec false         % allow_exceptions? 
                                        ms_spec
                                        renaming 
@@ -50,10 +49,9 @@ op renameTypes (ms_spec   : Spec,
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromTransformedSpec (ms_spec  : Spec, 
-                                     app_name : String)
+op generateCSpecFromSlice (slice : Slice,
+                           app_name : String)
  : Option C_Spec =
- let slice      = getDefaultSliceForCGen    ms_spec           in
  let i2l_spec   = generateI2LCodeSpecFilter slice             in
  let new_c_spec = generateC4ImpUnit         (i2l_spec, slice) in
  Some new_c_spec

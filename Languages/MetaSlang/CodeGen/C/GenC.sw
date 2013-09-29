@@ -281,12 +281,40 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+op default_roots (ms_spec : Spec) : OpNames * TypeNames = 
+ all_ops_and_types ms_spec
+
+op all_ops_and_types (ms_spec : Spec) : OpNames * TypeNames = 
+ let op_names = 
+     foldriAQualifierMap (fn (_, _, info, names) ->
+                            (primaryOpName info) |> names)
+                         []
+                         ms_spec.ops
+ in
+ let type_names = 
+     foldriAQualifierMap (fn (_, _, info, names) ->
+                            (primaryTypeName info) |> names)
+                         []
+                         ms_spec.types
+ in
+ (op_names, type_names)
+
 op SpecTransform.emitCFiles (ms_spec      : Spec,
                              app_name     : String,
                              opt_filename : Option String)
  : Spec =
+ let (root_ops, root_types) = default_roots ms_spec in
+ newEmitCFiles (ms_spec, app_name, root_ops, root_types, opt_filename)
+
+op SpecTransform.newEmitCFiles (ms_spec      : Spec,
+                                app_name     : String,
+                                root_ops     : OpNames,
+                                root_types   : TypeNames,
+                                opt_filename : Option String)
+ : Spec =
+ let slice = sliceForCGen (ms_spec, root_ops, root_types) in
  let _ = 
-     case generateCSpecFromTransformedSpec (ms_spec, app_name) of
+     case generateCSpecFromSlice (slice, app_name) of
        | Some c_spec ->
          printCSpec (c_spec, app_name, opt_filename) 
        | _ ->
@@ -302,6 +330,8 @@ op SpecTransform.emitCFiles (ms_spec      : Spec,
 %% For debugging purposes only.  No one calls this.
 op generateCSpec (ms_spec : Spec) (app_name : String) : Option C_Spec =
  let ms_spec = SpecTransform.transformSpecTowardsC ms_spec in
- generateCSpecFromTransformedSpec (ms_spec, app_name)
+ let slice   = defaultSliceForCGen                 ms_spec in
+ generateCSpecFromSlice (slice, app_name)
+
 
 end-spec

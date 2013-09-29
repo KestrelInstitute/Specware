@@ -43,23 +43,22 @@ op SpecTransform.newSliceSpecForC (ms_spec         : Spec)
                                   (root_ops        : QualifiedIds)
                                   (root_types      : QualifiedIds)
  : Spec =
- let slice = getSliceForCGen (ms_spec, root_ops, root_types) in
+ let slice = sliceForCGen (ms_spec, root_ops, root_types) in
  let _     = describeSlice ("For C: " ^ msg, slice) in
  ms_spec
  
-op getDefaultSliceForCGen (ms_spec : Spec) : Slice =
- let root_ops   = [] in
- let root_types = [] in
- getSliceForCGen (ms_spec, root_ops, root_types)
+op defaultSliceForCGen (ms_spec : Spec) : Slice =
+ let root_ops   = topLevelOps   ms_spec in
+ let root_types = topLevelTypes ms_spec in
+ sliceForCGen (ms_spec, root_ops, root_types)
  
 %% TODO: This will be used by other transforms
-op getSliceForCGen (ms_spec    : Spec,
-                    root_ops   : QualifiedIds,
-                    root_types : QualifiedIds)
+op sliceForCGen (ms_spec    : Spec,
+                 root_ops   : QualifiedIds,
+                 root_types : QualifiedIds)
  : Slice =
- let lms          = parseCTranslationPragmas ms_spec in
- let lm_data      = make_LMData              lms     in
-
+ let lms     = parseCTranslationPragmas ms_spec in
+ let lm_data = make_LMData              lms     in
  let
    def oracular_type_status name =
      if builtinCType? name then
@@ -81,7 +80,6 @@ op getSliceForCGen (ms_spec    : Spec,
      else
        None
  in
-
  let slice = {ms_spec              = ms_spec,
               lm_data              = lm_data,
               op_map               = empty_op_map,
