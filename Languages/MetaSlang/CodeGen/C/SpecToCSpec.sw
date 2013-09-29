@@ -3,8 +3,6 @@ CGen qualifying spec
 import /Languages/SpecCalculus/Semantics/Evaluate/Translate  % translateSpec
 import /Languages/MetaSlang/CodeGen/I2L/SpecsToI2L           % MetaSlang to I2L
 import /Languages/I2L/CodeGen/C/I2LToC                       % I2L       to C
-import /Languages/MetaSlang/Transformations/Pragma           % for selecting pragmas
-import /Languages/MetaSlang/CodeGen/LanguageMorphism         % for parsing   pragmas
 import /Languages/MetaSlang/CodeGen/C/SliceForC
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
