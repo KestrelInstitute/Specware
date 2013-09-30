@@ -1823,7 +1823,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                                                 (case findTheType (sp, qid) of
                                                                    | None -> writeLine(show qid^" not defined ")
                                                                    | Some info -> writeLine(show qid^" defined"^"\n"^printType info.dfn))
-                                                              | _ -> writeLine("Not Base")
+                                                              | _ -> 
+                                                                let _ = writeLine("Infering type for " ^ printTerm tm) in
+                                                                let _ = writeLine("Applied term is " ^ printTerm t1) in
+                                                                let _ = writeLine("Type of applied term is not an application: " ^ printType t1_ty) in
+                                                                ()
                                                     in
 						    System.fail ("inferType: Could not extract type for "
                                                                    ^ printTerm tm
