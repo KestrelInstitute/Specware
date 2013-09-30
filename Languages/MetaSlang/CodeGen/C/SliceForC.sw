@@ -31,17 +31,17 @@ op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
    | _ -> false
       
 %% TODO: Begin to deprecate this
-op SpecTransform.sliceSpecForC (spc             : Spec)
-                               (root_ops        : QualifiedIds)
-                               (root_types      : QualifiedIds)
+op SpecTransform.sliceSpecForC (spc        : Spec)
+                               (root_ops   : QualifiedIds)
+                               (root_types : QualifiedIds)
  : Spec =
  sliceSpecForCode (spc, root_ops, root_types, builtinCOp?, builtinCType?)
 
 %% TODO: for now, transform is just for debugging
-op SpecTransform.newSliceSpecForC (ms_spec         : Spec)
-                                  (msg             : String)
-                                  (root_ops        : QualifiedIds)
-                                  (root_types      : QualifiedIds)
+op SpecTransform.newSliceSpecForC (ms_spec    : Spec)
+                                  (msg        : String)
+                                  (root_ops   : QualifiedIds)
+                                  (root_types : QualifiedIds)
  : Spec =
  let slice = sliceForCGen (ms_spec, root_ops, root_types) in
  let _     = describeSlice ("For C: " ^ msg, slice) in
@@ -60,8 +60,8 @@ op sliceForCGen (ms_spec    : Spec,
  let lms     = parseCTranslationPragmas ms_spec in
  let lm_data = make_LMData              lms     in
  let
-   def oracular_type_status pending_type =
-     let name = pending_type.name in
+   def oracular_type_ref_status pending_type_ref =
+     let name = pending_type_ref.name in
      if builtinCType? name then
        Some (Translated Primitive)
      else if name in? lm_data.native_types then
@@ -71,8 +71,8 @@ op sliceForCGen (ms_spec    : Spec,
      else
        None
 
-   def oracular_op_status pending_op =
-     let name = pending_op.name in
+   def oracular_op_ref_status pending_op_ref =
+     let name = pending_op_ref.name in
      if builtinCOp? name then
        Some (Translated Primitive)
      else if name in? lm_data.native_ops then
@@ -82,25 +82,25 @@ op sliceForCGen (ms_spec    : Spec,
      else
        None
  in
- let pending_ops   = map (fn name ->
-                            {name            = name, 
-                             contextual_type = Any noPos, 
-                             location        = Root})
-                         root_ops
+ let pending_op_refs   = map (fn name ->
+                                {name            = name, 
+                                 contextual_type = Any noPos, 
+                                 location        = ExecutionRoot})
+                             root_ops
  in
- let pending_types = map (fn name -> 
-                            {name     = name, 
-                             location = Root})
-                         root_types
+ let pending_type_refs = map (fn name -> 
+                                {name     = name, 
+                                 location = ExecutionRoot})
+                             root_types
  in
- let slice = {ms_spec              = ms_spec,
-              lm_data              = lm_data,
-              resolved_ops         = empty_resolved_ops,
-              resolved_types       = empty_resolved_types,
-              pending_ops          = pending_ops,
-              pending_types        = pending_types,
-              oracular_type_status = oracular_type_status,
-              oracular_op_status   = oracular_op_status}
+ let slice = {ms_spec                  = ms_spec,
+              lm_data                  = lm_data,
+              resolved_op_refs         = empty_resolved_op_refs,
+              resolved_type_refs       = empty_resolved_type_refs,
+              pending_op_refs          = pending_op_refs,
+              pending_type_refs        = pending_type_refs,
+              oracular_op_ref_status   = oracular_op_ref_status,
+              oracular_type_ref_status = oracular_type_ref_status}
  in
  completeSlice slice 
 

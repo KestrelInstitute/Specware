@@ -146,10 +146,10 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
       q ^ "." ^ id
  in
  let i_opdefs =
-     foldl (fn (defs, op_status) ->
-              case op_status.status of
+     foldl (fn (defs, resolved) ->
+              case resolved.status of
                 | Used _ ->
-                  let name = op_status.name in
+                  let name = resolved.name in
                   (case findTheOp (ctxt.ms_spec, name) of
                      | Some info -> 
                        defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
@@ -157,13 +157,13 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                        defs)
                 | _ -> defs)
            []
-           slice.resolved_ops
+           slice.resolved_op_refs
  in
  let i_typedefs =
-     foldl (fn (defs, type_status) ->
-              case type_status.status of
+     foldl (fn (defs, resolved) ->
+              case resolved.status of
                 | Used _ ->
-                  let name = type_status.name in
+                  let name = resolved.name in
                   (case findTheType (ctxt.ms_spec, name) of
                      | Some info ->
                        (case typeinfo2typedef (name, info, ctxt) of
@@ -172,7 +172,7 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                      | _ -> defs)
                 | _ -> defs)
            []
-           slice.resolved_types
+           slice.resolved_type_refs
  in
  let res : I_ImpUnit = 
      {
