@@ -60,7 +60,8 @@ op sliceForCGen (ms_spec    : Spec,
  let lms     = parseCTranslationPragmas ms_spec in
  let lm_data = make_LMData              lms     in
  let
-   def oracular_type_status name =
+   def oracular_type_status pending_type =
+     let name = pending_type.name in
      if builtinCType? name then
        Some (Translated Primitive)
      else if name in? lm_data.native_types then
@@ -70,7 +71,8 @@ op sliceForCGen (ms_spec    : Spec,
      else
        None
 
-   def oracular_op_status name =
+   def oracular_op_status pending_op =
+     let name = pending_op.name in
      if builtinCOp? name then
        Some (Translated Primitive)
      else if name in? lm_data.native_ops then
@@ -80,12 +82,23 @@ op sliceForCGen (ms_spec    : Spec,
      else
        None
  in
+ let pending_ops   = map (fn name ->
+                            {name            = name, 
+                             contextual_type = Any noPos, 
+                             location        = noLoc})
+                         root_ops
+ in
+ let pending_types = map (fn name -> 
+                            {name     = name, 
+                             location = noLoc})
+                         root_types
+ in
  let slice = {ms_spec              = ms_spec,
               lm_data              = lm_data,
               resolved_ops         = empty_resolved_ops,
               resolved_types       = empty_resolved_types,
-              pending_ops          = root_ops,
-              pending_types        = root_types,
+              pending_ops          = pending_ops,
+              pending_types        = pending_types,
               oracular_type_status = oracular_type_status,
               oracular_op_status   = oracular_op_status}
  in

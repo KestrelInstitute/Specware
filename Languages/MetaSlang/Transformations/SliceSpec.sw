@@ -424,11 +424,37 @@ type Status            = | Translated TranslationStatus
                          | Contextual DefStatus 
                          | Misc       String
 
-type OpStatus   = {name : OpName,   status : Status}
-type TypeStatus = {name : TypeName, status : Status}
+type TheoremName = PropertyName
 
-type ResolvedOps   = List OpStatus
-type ResolvedTypes = List TypeStatus
+type Parent        = | Op      OpName
+                     | Type    TypeName
+                     | Theorem TheoremName
+
+type Locations     = List Location
+type Location      = {parent : Option Parent,  % None indicates root
+                      pos    : Position}
+
+op noLoc : Location = {parent = None, pos = noPos}
+
+type ResolvedOps   = List ResolvedOp
+type ResolvedOp    = {name            : OpName,   
+                      contextual_type : MSType, % how it is used (as opposed to how it is defined)
+                      locations       : Locations,
+                      status          : Status}
+
+type ResolvedTypes = List ResolvedType
+type ResolvedType  = {name      : TypeName, 
+                      locations : Locations,
+                      status    : Status}
+
+type PendingOps    = List PendingOp
+type PendingOp     = {name            : OpName,   
+                      contextual_type : MSType, % how it is used (as opposed to how it is defined)
+                      location        : Location}
+
+type PendingTypes  = List PendingType
+type PendingType   = {name     : TypeName, 
+                      location : Location}
 
 op empty_resolved_ops   : ResolvedOps   = []
 op empty_resolved_types : ResolvedTypes = []
@@ -439,10 +465,10 @@ type Slice = {ms_spec              : Spec,
               % (as opposed to having a Pending status)
               resolved_ops         : ResolvedOps, 
               resolved_types       : ResolvedTypes,
-              pending_ops          : OpNames,       
-              pending_types        : TypeNames,     
-              oracular_type_status : TypeName -> Option Status,
-              oracular_op_status   : OpName   -> Option Status}
+              pending_ops          : PendingOps,
+              pending_types        : PendingTypes,
+              oracular_op_status   : PendingOp   -> Option Status,
+              oracular_type_status : PendingType -> Option Status}
 
 type Groups = List Group
 type Group  = {status     : Status, 
@@ -544,10 +570,10 @@ op describeSlice (msg : String, slice : Slice) : () =
  let _ = writeLine ("Slice: " ^ msg) in
  let _ = writeLine ("") in
 
- let _ = if length (slice.pending_types ++ slice.pending_ops) > 0 then 
+ let _ = if (length slice.pending_types) + (length slice.pending_ops) > 0 then 
            let _ = writeLine "--------------------" in
-           let _ = app (fn name -> writeLine ("pending type: " ^ show name)) slice.pending_types in
-           let _ = app (fn name -> writeLine ("pending op:   " ^ show name)) slice.pending_ops   in
+           let _ = app (fn pending -> writeLine ("pending type: " ^ show pending.name)) slice.pending_types in
+           let _ = app (fn pending -> writeLine ("pending op:   " ^ show pending.name)) slice.pending_ops   in
            let _ = writeLine "--------------------" in
            ()
          else
@@ -557,22 +583,39 @@ op describeSlice (msg : String, slice : Slice) : () =
  let _ = app describeGroup groups in
  ()
  
-op ops_update (resolved_ops : ResolvedOps, name : OpName, status : Status) : ResolvedOps =
- %% don't update if name already has a value
- case findLeftmost (fn op_status -> name = op_status.name) resolved_ops of
-   | Some _ -> resolved_ops
+op ops_update (slice   : Slice, 
+               pending : PendingOp,
+               status  : Status)
+ : ResolvedOps =
+ let resolved_ops = slice.resolved_ops in
+ case findLeftmost (fn resolved -> pending.name = resolved.name) resolved_ops of
+   | Some _ -> 
+     %% don't update if name already has a value
+     resolved_ops
    | _ -> 
-     let op_status = {name = name, status = status} in
-     op_status |> resolved_ops
+     let resolved_op = {name            = pending.name, 
+                        contextual_type = pending.contextual_type, 
+                        locations       = [pending.location],
+                        status          = status} 
+     in
+     resolved_op |> resolved_ops
 
-op types_update (resolved_types: ResolvedTypes, name : TypeName, status : Status) : ResolvedTypes =
- %% don't update if name already has a value
- case findLeftmost (fn type_status -> name = type_status.name) resolved_types of
-   | Some _ -> resolved_types
+op types_update (slice    : Slice, 
+                 pending  : PendingType,
+                 status   : Status)
+ : ResolvedTypes =
+ let resolved_types = slice.resolved_types in
+ case findLeftmost (fn resolved -> pending.name = resolved.name) resolved_types of
+   | Some _ -> 
+     %% don't update if name already has a value
+     resolved_types
    | _ -> 
-     let type_status = {name = name, status = status} in
-     type_status |> resolved_types
- 
+     let resolved_type = {name      = pending.name, 
+                          locations = [pending.location],
+                          status    = status} 
+     in
+     resolved_type |> resolved_types
+
 op ops_in_slice (slice : Slice) : OpNames =
  map (fn op_status -> op_status.name) slice.resolved_ops
 
@@ -584,30 +627,36 @@ op types_in_slice (slice : Slice) : TypeNames =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
 
-op extend_execution_slice_for_op (pending : OpNames) (slice : Slice, name : OpName) : Slice =
+op extend_execution_slice_for_pending_op (pending_ops : PendingOps)
+                                         (slice : Slice, pending_op : PendingOp)
+  : Slice =
  % let _ = writeLine("") in
  % let _ = writeLine("Extending execution for op " ^ show name) in
  let 
    def status info = if executable? info then Defined else Undefined
  in
- case slice.oracular_op_status name of
+ case slice.oracular_op_status pending_op of
    | Some status ->
-     let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
+     let new_resolved_ops = ops_update (slice, pending_op, status) in
      slice << {resolved_ops = new_resolved_ops}
    | _ ->
-     case findTheOp (slice.ms_spec, name) of
+     case findTheOp (slice.ms_spec, pending_op.name) of
        | Some info  ->
          let status           = Used (status info) in
-         let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
-         let new_pending_ops  = foldl (fn (names, name) ->
-                                         case findLeftmost (fn op_status -> name = op_status.name) new_resolved_ops of
-                                           | Some _ -> names
+         let new_resolved_ops = ops_update (slice, pending_op, status) in
+         let new_pending_ops  = foldl (fn (pending_ops, name) ->
+                                         let contextual_type = Any noPos in % TODO: make real
+                                         let location        = noLoc     in % TODO: make real
+                                         let pending         = {name = name, contextual_type = contextual_type, location = location} in
+                                         case findLeftmost (fn resolved -> pending.name = resolved.name) new_resolved_ops of
+                                           | Some _ -> 
+                                             pending_ops
                                            | _ -> 
-                                             if name in? pending then
+                                             if pending in? pending_ops then
                                                % it's already in the queue to be processed
-                                               names
+                                               pending_ops
                                              else
-                                               name |> names)
+                                               pending |> pending_ops)
                                       []
                                       (opsInTerm info.dfn)
         in
@@ -616,17 +665,17 @@ op extend_execution_slice_for_op (pending : OpNames) (slice : Slice, name : OpNa
         slice << {resolved_ops = new_resolved_ops,
                   pending_ops  = new_pending_ops}
        | _ ->
-         let new_resolved_ops = ops_update (slice.resolved_ops, name, Used Missing) in
+         let new_resolved_ops = ops_update (slice, pending_op, Used Missing) in
          slice << {resolved_ops = new_resolved_ops}
 
 op extend_execution_slice (s0 : Slice) : Slice =
  % let _ = writeLine("-----------------------------") in
  % let _ = writeLine("new round for execution slice") in
- let pending = s0.pending_ops           in
- let s1      = s0 << {pending_ops = []} in
- foldl (extend_execution_slice_for_op pending)
+ let pending_ops = s0.pending_ops           in
+ let s1          = s0 << {pending_ops = []} in
+ foldl (extend_execution_slice_for_pending_op pending_ops)
        s1
-       pending
+       pending_ops
 
 op execution_closure (slice : Slice) : Slice =
  case slice.pending_ops of
@@ -638,41 +687,48 @@ op execution_closure (slice : Slice) : Slice =
 %%%  Chase referenced types to fixpoint
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
-op extend_typing_slice_for_type (pending : TypeNames) (slice : Slice, name : TypeName) : Slice =
+op extend_typing_slice_for_pending_type (pending : PendingTypes)
+                                        (slice : Slice, pending_type : PendingType)
+ : Slice =
  % let _ = writeLine("") in
  % let _ = writeLine("Extending typing for type " ^ show name) in
  let 
    def status info = if anyType? info.dfn then Undefined else Defined
  in
- case slice.oracular_type_status name of
+ case slice.oracular_type_status pending_type of
    | Some status ->
-     let new_resolved_types = types_update (slice.resolved_types, name, status) in
+     let new_resolved_types = types_update (slice, pending_type, status) in
      slice << {resolved_types = new_resolved_types}
    | _ ->
-     case findTheType (slice.ms_spec, name) of
+     case findTheType (slice.ms_spec, pending_type.name) of
        | Some info -> 
          % let _ = writeLine("Found type " ^ show name) in
          % let _ = writeLine(anyToString info) in
          let status             = Used (status info) in
-         let new_resolved_types = types_update (slice.resolved_types, name, status) in
-         let new_type_names     = foldl (fn (names, name) ->
-                                           case findLeftmost (fn type_status -> name = type_status.name) new_resolved_types of
-                                             | Some _ -> names
+         let new_resolved_types = types_update (slice, pending_type, status) in
+         let new_pending_types  = foldl (fn (pending_types, name) ->
+                                           let location = noLoc     in % TODO: make real
+                                           let pending  = {name = name, location = location} in
+                                           case findLeftmost (fn resolved -> pending.name = resolved.name) 
+                                                             new_resolved_types 
+                                             of
+                                             | Some _ -> 
+                                               pending_types
                                              | _ -> 
-                                               if name in? pending then
+                                               if pending in? pending_types then
                                                  % it's already in the queue to be processed
-                                                 names
+                                                 pending_types
                                                else
-                                                 name |> names)
+                                                 pending |> pending_types)
                                         []
                                         (typesInType info.dfn)
          in
          % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
-         let new_pending_types = union (new_type_names, slice.pending_types) in
+         let new_pending_types = union (new_pending_types, slice.pending_types) in
          slice << {resolved_types = new_resolved_types,
                    pending_types  = new_pending_types}
        | _ ->
-         let new_resolved_types = types_update (slice.resolved_types, name, Used Missing) in
+         let new_resolved_types = types_update (slice, pending_type, Used Missing) in
          slice << {resolved_types = new_resolved_types}
 
 op extend_typing_slice (s0 : Slice) : Slice =
@@ -681,26 +737,49 @@ op extend_typing_slice (s0 : Slice) : Slice =
  % let _ = app (fn name -> writeLine("Pending type " ^ show name)) s0.pending_types in
  let pending = s0.pending_types           in
  let s1      = s0 << {pending_types = []} in
- foldl (extend_typing_slice_for_type pending)
+ foldl (extend_typing_slice_for_pending_type pending)
        s1
        pending
+
+op pendingOpsInTerm (term : MSTerm) : PendingOps =
+ %% TODO: get real locations
+ map (fn name -> {name = name, contextual_type = Any noPos, location = noLoc}) 
+     (opsInTerm term)
+
+op pendingOpsInType (typ : MSType) : PendingOps =
+ %% TODO: get real locations
+ map (fn name -> {name = name, contextual_type = Any noPos, location = noLoc}) 
+     (opsInType typ)
+
+op pendingTypesInTerm (term : MSTerm) : PendingTypes =
+ %% TODO: get real locations
+ map (fn name -> {name = name, location = noLoc}) 
+     (typesInTerm term)
+
+op pendingTypesInType (typ : MSType) : PendingTypes =
+ %% TODO: get real locations
+ map (fn name -> {name = name, location = noLoc}) 
+     (typesInType typ)
+
+
 
 op typing_closure (s0 : Slice) : Slice =
  let root_types = types_in_slice s0 in
  let root_ops   = ops_in_slice   s0 in
  % let _ = app (fn name -> writeLine("root type: " ^ show name)) root_types in
  % let _ = app (fn name -> writeLine("root op: " ^ show name)) root_ops   in
- let directly_referenced_types = 
-     foldl (fn (type_names, op_name) ->
+ let pending_types = map (fn name -> {name = name, location = noLoc}) root_types in
+ let pending_types = 
+     foldl (fn (pending_types, op_name) ->
               case findTheOp (s0.ms_spec, op_name) of
                 | Some info ->
-                  union (typesInTerm info.dfn, type_names)
+                  union (pendingTypesInTerm info.dfn, pending_types)
                 | _ ->
-                  type_names)
-           root_types
+                  pending_types)
+           pending_types
            root_ops
  in
- let s1 = s0 << {pending_types = directly_referenced_types} in
+ let s1 = s0 << {pending_types = pending_types} in
  let
    def aux s2 =
      case s2.pending_types of
@@ -714,49 +793,53 @@ op typing_closure (s0 : Slice) : Slice =
 %%%  Chase all referenced types and ops to fixpoint
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
-op extend_logical_slice_for_type (pending_ops   : OpNames) 
-                                 (pending_types : TypeNames)
-                                 (slice : Slice, 
-                                  name  : TypeName) 
+op extend_logical_slice_for_pending_type (pending_ops   : PendingOps)
+                                         (pending_types : PendingTypes)
+                                         (slice        : Slice, 
+                                          pending_type : PendingType)
  : Slice =
  % let _ = writeLine("") in
  % let _ = writeLine("Extending logical slice for type " ^ show name) in
  let 
    def status info = if anyType? info.dfn then Undefined else Defined
  in
- case slice.oracular_type_status name of
+ case slice.oracular_type_status pending_type of
    | Some status ->
-     let new_resolved_types = types_update (slice.resolved_types, name, status) in
+     let new_resolved_types = types_update (slice, pending_type, status) in
      slice << {resolved_types = new_resolved_types}
    | _ ->
-     case findTheType (slice.ms_spec, name) of
+     case findTheType (slice.ms_spec, pending_type.name) of
        | Some info ->
          let status             = Logical (status info) in
-         let new_resolved_types = types_update (slice.resolved_types, name, status) in
-         let new_pending_ops    = foldl (fn (names, name) ->
-                                           case findLeftmost (fn op_status -> name = op_status.name) slice.resolved_ops of
-                                             | Some _ -> names
+         let new_resolved_types = types_update (slice, pending_type, status) in
+         let new_pending_ops    = foldl (fn (pending_ops, pending) ->
+                                           case findLeftmost (fn resolved -> resolved.name = pending.name) 
+                                                             slice.resolved_ops 
+                                             of
+                                             | Some _ -> pending_ops
                                              | _ -> 
-                                               if name in? pending_ops then
+                                               if pending in? pending_ops then
                                                  % it's already in the queue to be processed
-                                                 names
+                                                 pending_ops
                                                else
-                                                 name |> names)
+                                                pending |> pending_ops)
                                         []
-                                        (opsInType info.dfn)
+                                        (pendingOpsInType info.dfn)
          in
          % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_pending_ops in
-         let new_pending_types  = foldl (fn (names, name) ->
-                                           case findLeftmost (fn type_status -> name = type_status.name) new_resolved_types of
-                                             | Some _ -> names
+         let new_pending_types  = foldl (fn (pending_types, pending) ->
+                                           case findLeftmost (fn resolved -> resolved.name = pending.name)
+                                                             new_resolved_types 
+                                             of
+                                             | Some _ -> pending_types
                                              | _ -> 
-                                               if name in? pending_types then
+                                               if pending in? pending_types then
                                                  % it's already in the queue to be processed
-                                                 names
+                                                 pending_types
                                                else
-                                                 name |> names)
+                                                 pending |> pending_types)
                                         []
-                                        (typesInType info.dfn)
+                                        (pendingTypesInType info.dfn)
          in
          % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
          let new_pending_ops   = union (new_pending_ops,   slice.pending_ops)   in
@@ -765,52 +848,56 @@ op extend_logical_slice_for_type (pending_ops   : OpNames)
                    pending_ops    = new_pending_ops,
                    pending_types  = new_pending_types}
        | _ ->
-         let new_resolved_types = types_update (slice.resolved_types, name, Logical Missing) in
+         let new_resolved_types = types_update (slice, pending_type, Logical Missing) in
          slice << {resolved_types = new_resolved_types}
 
-op extend_logical_slice_for_op (pending_ops   : OpNames)
-                               (pending_types : TypeNames)
-                               (slice : Slice, 
-                                name  : OpName) 
+op extend_logical_slice_for_pending_op (pending_ops   : PendingOps)
+                                       (pending_types : PendingTypes)
+                                       (slice      : Slice, 
+                                        pending_op : PendingOp)
  : Slice =
  % let _ = writeLine("") in
  % let _ = writeLine("Extending logical slice for op " ^ show name) in
  let 
    def status info = if executable? info then Defined else Undefined
  in
- case slice.oracular_op_status name of
+ case slice.oracular_op_status pending_op of
    | Some status ->
-     let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
+     let new_resolved_ops = ops_update (slice, pending_op, status) in
      slice << {resolved_ops = new_resolved_ops}
    | _ ->
-     case findTheOp (slice.ms_spec, name) of
+     case findTheOp (slice.ms_spec, pending_op.name) of
        | Some info ->
          let status            = Logical (status info) in
-         let new_resolved_ops  = ops_update (slice.resolved_ops, name, status) in
-         let new_pending_ops   = foldl (fn (names, name) ->
-                                          case findLeftmost (fn op_status -> name = op_status.name) new_resolved_ops of
-                                            | Some _ -> names
+         let new_resolved_ops  = ops_update (slice, pending_op, status) in
+         let new_pending_ops   = foldl (fn (pending_ops, pending) ->
+                                          case findLeftmost (fn resolved -> pending.name = resolved.name) 
+                                                            new_resolved_ops 
+                                            of
+                                            | Some _ -> pending_ops
                                             | _ -> 
-                                              if name in? pending_ops then
+                                              if pending in? pending_ops then
                                                 % it's already in the queue to be processed
-                                                names
+                                                pending_ops
                                               else
-                                                name |> names)
+                                                pending |> pending_ops)
                                        []
-                                       (opsInTerm info.dfn)
+                                       (pendingOpsInTerm info.dfn)
          in
-         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
-         let new_pending_types = foldl (fn (names, name) ->
-                                          case findLeftmost (fn type_status -> name = type_status.name) slice.resolved_types of
-                                            | Some _ -> names
+         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_pending_ops in
+         let new_pending_types = foldl (fn (pending_types, pending) ->
+                                          case findLeftmost (fn resolved -> pending.name = resolved.name)
+                                                            slice.resolved_types 
+                                            of
+                                            | Some _ -> pending_types
                                             | _ -> 
-                                              if name in? pending_types then
+                                              if pending in? pending_types then
                                                 % it's already in the queue to be processed
-                                                names
+                                                pending_types
                                               else
-                                                name |> names)
+                                                pending |> pending_types)
                                        []
-                                       (typesInTerm info.dfn)
+                                       (pendingTypesInTerm info.dfn)
          in
          % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
          let new_pending_ops   = union (new_pending_ops,   slice.pending_ops)   in
@@ -819,7 +906,7 @@ op extend_logical_slice_for_op (pending_ops   : OpNames)
                    pending_ops   = new_pending_ops,
                    pending_types = new_pending_types}
        | _ ->
-         let new_resolved_ops = ops_update (slice.resolved_ops, name, Logical Missing) in
+         let new_resolved_ops = ops_update (slice, pending_op, Logical Missing) in
          slice << {resolved_ops = new_resolved_ops}
 
 op extend_logical_slice (s0 : Slice) : Slice =
@@ -830,21 +917,32 @@ op extend_logical_slice (s0 : Slice) : Slice =
  let s1 = s0 << {pending_ops   = [],
                  pending_types = []}
  in
- let s2 = foldl (extend_logical_slice_for_type pending_ops pending_types)
+ let s2 = foldl (extend_logical_slice_for_pending_type pending_ops pending_types)
                 s1
                 pending_types
  in
- let s3 = foldl (extend_logical_slice_for_op   pending_ops pending_types)
+ let s3 = foldl (extend_logical_slice_for_pending_op   pending_ops pending_types)
                 s2
                 pending_ops
  in
  s3
 
 op logical_closure (s0 : Slice) : Slice =
- let root_ops   = ops_in_slice   s0 in
- let root_types = types_in_slice s0 in
- let s1 = s0 << {pending_ops   = root_ops, 
-                 pending_types = root_types}
+ let root_ops      = ops_in_slice   s0 in
+ let root_types    = types_in_slice s0 in
+ let pending_ops   = map (fn name ->
+                            {name            = name, 
+                             contextual_type = Any noPos, 
+                             location        = noLoc})
+                         root_ops
+ in
+ let pending_types = map (fn name -> 
+                            {name     = name, 
+                             location = noLoc})
+                         root_types
+ in
+ let s1 = s0 << {pending_ops   = pending_ops, 
+                 pending_types = pending_types}
  in
  let
    def aux s2 =
