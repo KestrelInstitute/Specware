@@ -47,7 +47,8 @@ SpecCalc qualifying spec
                         "attempting to generate code from an object that is not a specification"))
         }
 
-  def lispFilePreamble() = "(require \"SpecwareRuntime\" \""
+  def lispFilePreamble() =
+      ";; THIS FILE IS GENERATED FROM SPECWARE SOURCE. DO NOT HAND-EDIT THIS FILE.\n" ^    "(require \"SpecwareRuntime\" \""
                           ^(case getEnv "SPECWARE4" of
 			     | Some path -> translate (fn ch ->	  % \ to / for windows
 						       case ch of
@@ -56,6 +57,8 @@ SpecCalc qualifying spec
 			                      path
 			     | None -> "")
 		          ^"/Library/SpecwareRuntime.lisp\")\n\n"
+                          
+                          
 
   %% Need to add error detection code
   def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName, slicing?) =
@@ -79,6 +82,7 @@ SpecCalc qualifying spec
          lispFileName <- UIDtoLispFile (cUID, optFileName);
          print (";;; Generating lisp file " ^ lispFileName ^ "\n");
          let _ = ensureDirectoriesExist lispFileName in
+         let preamble = ";; THIS FILE IS GENERATED FROM SPECWARE SOURCE. DO NOT HAND-EDIT THIS FILE.\n" in
          let _ = localDefsToLispFile (spc, lispFileName,"") in
          return valueInfo}
       | _ -> raise (TypeCheck ((positionOf cterm),
