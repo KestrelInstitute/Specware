@@ -426,15 +426,12 @@ type Status            = | Translated TranslationStatus
 
 type TheoremName = PropertyName
 
-type Parent        = | Op      OpName
-                     | Type    TypeName
-                     | Theorem TheoremName
-
 type Locations     = List Location
-type Location      = {parent : Option Parent,  % None indicates root
-                      pos    : Position}
-
-op noLoc : Location = {parent = None, pos = noPos}
+type Location      = | Root
+                     | Unknown
+                     | Op      {name : OpName,      pos: Position}
+                     | Type    {name : TypeName,    pos: Position}
+                     | Theorem {name : TheoremName, pos: Position}
 
 type ResolvedOps   = List ResolvedOp
 type ResolvedOp    = {name            : OpName,   
@@ -646,7 +643,7 @@ op extend_execution_slice_for_pending_op (pending_ops : PendingOps)
          let new_resolved_ops = ops_update (slice, pending_op, status) in
          let new_pending_ops  = foldl (fn (pending_ops, name) ->
                                          let contextual_type = Any noPos in % TODO: make real
-                                         let location        = noLoc     in % TODO: make real
+                                         let location        = Unknown   in % TODO: make real
                                          let pending         = {name = name, contextual_type = contextual_type, location = location} in
                                          case findLeftmost (fn resolved -> pending.name = resolved.name) new_resolved_ops of
                                            | Some _ -> 
@@ -707,7 +704,7 @@ op extend_typing_slice_for_pending_type (pending : PendingTypes)
          let status             = Used (status info) in
          let new_resolved_types = types_update (slice, pending_type, status) in
          let new_pending_types  = foldl (fn (pending_types, name) ->
-                                           let location = noLoc     in % TODO: make real
+                                           let location = Unknown in % TODO: make real
                                            let pending  = {name = name, location = location} in
                                            case findLeftmost (fn resolved -> pending.name = resolved.name) 
                                                              new_resolved_types 
@@ -743,32 +740,39 @@ op extend_typing_slice (s0 : Slice) : Slice =
 
 op pendingOpsInTerm (term : MSTerm) : PendingOps =
  %% TODO: get real locations
- map (fn name -> {name = name, contextual_type = Any noPos, location = noLoc}) 
+ map (fn name -> 
+        {name            = name, 
+         contextual_type = Any noPos, 
+         location        = Unknown})
      (opsInTerm term)
 
 op pendingOpsInType (typ : MSType) : PendingOps =
  %% TODO: get real locations
- map (fn name -> {name = name, contextual_type = Any noPos, location = noLoc}) 
+ map (fn name -> 
+        {name            = name, 
+         contextual_type = Any noPos, 
+         location        = Unknown})
      (opsInType typ)
 
 op pendingTypesInTerm (term : MSTerm) : PendingTypes =
  %% TODO: get real locations
- map (fn name -> {name = name, location = noLoc}) 
+ map (fn name -> 
+        {name     = name, 
+         location = Unknown})
      (typesInTerm term)
 
 op pendingTypesInType (typ : MSType) : PendingTypes =
  %% TODO: get real locations
- map (fn name -> {name = name, location = noLoc}) 
+ map (fn name -> 
+        {name     = name, 
+         location = Unknown})
      (typesInType typ)
 
 
-
 op typing_closure (s0 : Slice) : Slice =
- let root_types = types_in_slice s0 in
- let root_ops   = ops_in_slice   s0 in
- % let _ = app (fn name -> writeLine("root type: " ^ show name)) root_types in
- % let _ = app (fn name -> writeLine("root op: " ^ show name)) root_ops   in
- let pending_types = map (fn name -> {name = name, location = noLoc}) root_types in
+ let root_types    = types_in_slice s0 in
+ let root_ops      = ops_in_slice   s0 in
+ let pending_types = map (fn name -> {name = name, location = Unknown}) root_types in
  let pending_types = 
      foldl (fn (pending_types, op_name) ->
               case findTheOp (s0.ms_spec, op_name) of
@@ -933,12 +937,12 @@ op logical_closure (s0 : Slice) : Slice =
  let pending_ops   = map (fn name ->
                             {name            = name, 
                              contextual_type = Any noPos, 
-                             location        = noLoc})
+                             location        = Unknown})
                          root_ops
  in
  let pending_types = map (fn name -> 
                             {name     = name, 
-                             location = noLoc})
+                             location = Unknown})
                          root_types
  in
  let s1 = s0 << {pending_ops   = pending_ops, 

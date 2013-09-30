@@ -85,12 +85,12 @@ op sliceForCGen (ms_spec    : Spec,
  let pending_ops   = map (fn name ->
                             {name            = name, 
                              contextual_type = Any noPos, 
-                             location        = noLoc})
+                             location        = Root})
                          root_ops
  in
  let pending_types = map (fn name -> 
                             {name     = name, 
-                             location = noLoc})
+                             location = Root})
                          root_types
  in
  let slice = {ms_spec              = ms_spec,
