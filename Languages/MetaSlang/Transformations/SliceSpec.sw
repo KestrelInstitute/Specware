@@ -389,7 +389,6 @@ op sliceSpecForCodeM (spc        : Spec,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 import /Languages/MetaSlang/Specs/Environment
-import /Library/Structures/Data/Maps/SimpleAsSTHarray
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
@@ -416,18 +415,23 @@ op executable? (info : OpInfo) : Bool =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
 type TranslationStatus = | Primitive | API | Handwritten | Macro
-type DefStatus = | Defined | Undefined | Missing
-type Status   = | Translated TranslationStatus 
-                | Used       DefStatus 
-                | Logical    DefStatus 
-                | Contextual DefStatus 
-                | Misc       String
 
-type ResolvedOps   = STHMap.Map (OpName,   Status)  % TODO: change to list
-type ResolvedTypes = STHMap.Map (TypeName, Status)  % TODO: change to list
+type DefStatus         = | Defined | Undefined | Missing
 
-op empty_resolved_ops   : ResolvedOps   = STH_empty_map
-op empty_resolved_types : ResolvedTypes = STH_empty_map
+type Status            = | Translated TranslationStatus 
+                         | Used       DefStatus 
+                         | Logical    DefStatus 
+                         | Contextual DefStatus 
+                         | Misc       String
+
+type OpStatus   = {name : OpName,   status : Status}
+type TypeStatus = {name : TypeName, status : Status}
+
+type ResolvedOps   = List OpStatus
+type ResolvedTypes = List TypeStatus
+
+op empty_resolved_ops   : ResolvedOps   = []
+op empty_resolved_types : ResolvedTypes = []
 
 type Slice = {ms_spec              : Spec, 
               lm_data              : LMData,
@@ -486,26 +490,30 @@ op describeSlice (msg : String, slice : Slice) : () =
      else
        str
 
-   def partition_types (qid, status, groups) : Groups =
-     case findLeftmost (fn group -> group.status = status) groups of
+   def partition_types (groups, type_status) : Groups =
+     case findLeftmost (fn group -> group.status = type_status.status) groups of
        | Some group -> 
-         let _ = (group.type_names := (! group.type_names) ++ [qid]) in
+         let _ = (group.type_names := (! group.type_names) ++ [type_status.name]) in
          groups
          
        | _ -> 
          %% Misc options will be added to end
-         let group = {status = status, type_names = Ref [qid], op_names = Ref []} in
+         let group = {status     = type_status.status, 
+                      type_names = Ref [type_status.name], 
+                      op_names   = Ref []} in
          groups ++ [group]
 
-   def partition_ops (qid, status, groups) : Groups =
-     case findLeftmost (fn group -> group.status = status) groups of
+   def partition_ops (groups, op_status) : Groups =
+     case findLeftmost (fn group -> group.status = op_status.status) groups of
        | Some group -> 
-         let _ = (group.op_names := (! group.op_names) ++ [qid]) in
+         let _ = (group.op_names := (! group.op_names) ++ [op_status.name]) in
          groups
          
        | _ -> 
          %% Misc options will be added to end
-         let group = {status = status, type_names = Ref [], op_names = Ref [qid]} in
+         let group = {status     = op_status.status, 
+                      type_names = Ref [], 
+                      op_names   = Ref [op_status.name]} in
          groups ++ [group]
 
  in
@@ -529,8 +537,8 @@ op describeSlice (msg : String, slice : Slice) : () =
                       op_names   = Ref []})
                   status_options
  in
- let groups = foldi partition_ops   groups slice.resolved_ops   in
- let groups = foldi partition_types groups slice.resolved_types in
+ let groups = foldl partition_ops   groups slice.resolved_ops   in
+ let groups = foldl partition_types groups slice.resolved_types in
 
  let _ = writeLine ("") in
  let _ = writeLine ("Slice: " ^ msg) in
@@ -549,23 +557,27 @@ op describeSlice (msg : String, slice : Slice) : () =
  let _ = app describeGroup groups in
  ()
  
-op ops_update (ops : ResolvedOps, name : OpName, status : Status) : ResolvedOps =
+op ops_update (resolved_ops : ResolvedOps, name : OpName, status : Status) : ResolvedOps =
  %% don't update if name already has a value
- case apply (ops, name) of
-   | Some _ -> ops
-   | _ -> update (ops, name, status)
+ case findLeftmost (fn op_status -> name = op_status.name) resolved_ops of
+   | Some _ -> resolved_ops
+   | _ -> 
+     let op_status = {name = name, status = status} in
+     op_status |> resolved_ops
 
-op types_update (types: ResolvedTypes, name : TypeName, status : Status) : ResolvedTypes =
+op types_update (resolved_types: ResolvedTypes, name : TypeName, status : Status) : ResolvedTypes =
  %% don't update if name already has a value
- case apply (types, name) of
-   | Some _ -> types
-   | _ -> update (types, name, status)
+ case findLeftmost (fn type_status -> name = type_status.name) resolved_types of
+   | Some _ -> resolved_types
+   | _ -> 
+     let type_status = {name = name, status = status} in
+     type_status |> resolved_types
  
 op ops_in_slice (slice : Slice) : OpNames =
- domainToList slice.resolved_ops
+ map (fn op_status -> op_status.name) slice.resolved_ops
 
 op types_in_slice (slice : Slice) : TypeNames =
- domainToList slice.resolved_types
+ map (fn type_status -> type_status.name) slice.resolved_types
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 %%%  Chase invoked ops to fixpoint
@@ -588,7 +600,7 @@ op extend_execution_slice_for_op (pending : OpNames) (slice : Slice, name : OpNa
          let status           = Used (status info) in
          let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
          let new_pending_ops  = foldl (fn (names, name) ->
-                                         case apply (new_resolved_ops, name) of
+                                         case findLeftmost (fn op_status -> name = op_status.name) new_resolved_ops of
                                            | Some _ -> names
                                            | _ -> 
                                              if name in? pending then
@@ -644,7 +656,7 @@ op extend_typing_slice_for_type (pending : TypeNames) (slice : Slice, name : Typ
          let status             = Used (status info) in
          let new_resolved_types = types_update (slice.resolved_types, name, status) in
          let new_type_names     = foldl (fn (names, name) ->
-                                           case apply (new_resolved_types, name) of
+                                           case findLeftmost (fn type_status -> name = type_status.name) new_resolved_types of
                                              | Some _ -> names
                                              | _ -> 
                                                if name in? pending then
@@ -722,7 +734,7 @@ op extend_logical_slice_for_type (pending_ops   : OpNames)
          let status             = Logical (status info) in
          let new_resolved_types = types_update (slice.resolved_types, name, status) in
          let new_pending_ops    = foldl (fn (names, name) ->
-                                           case apply (slice.resolved_ops, name) of
+                                           case findLeftmost (fn op_status -> name = op_status.name) slice.resolved_ops of
                                              | Some _ -> names
                                              | _ -> 
                                                if name in? pending_ops then
@@ -735,7 +747,7 @@ op extend_logical_slice_for_type (pending_ops   : OpNames)
          in
          % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_pending_ops in
          let new_pending_types  = foldl (fn (names, name) ->
-                                           case apply (new_resolved_types, name) of
+                                           case findLeftmost (fn type_status -> name = type_status.name) new_resolved_types of
                                              | Some _ -> names
                                              | _ -> 
                                                if name in? pending_types then
@@ -776,7 +788,7 @@ op extend_logical_slice_for_op (pending_ops   : OpNames)
          let status            = Logical (status info) in
          let new_resolved_ops  = ops_update (slice.resolved_ops, name, status) in
          let new_pending_ops   = foldl (fn (names, name) ->
-                                          case apply (new_resolved_ops, name) of
+                                          case findLeftmost (fn op_status -> name = op_status.name) new_resolved_ops of
                                             | Some _ -> names
                                             | _ -> 
                                               if name in? pending_ops then
@@ -789,7 +801,7 @@ op extend_logical_slice_for_op (pending_ops   : OpNames)
          in
          % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
          let new_pending_types = foldl (fn (names, name) ->
-                                          case apply (slice.resolved_types, name) of
+                                          case findLeftmost (fn type_status -> name = type_status.name) slice.resolved_types of
                                             | Some _ -> names
                                             | _ -> 
                                               if name in? pending_types then
