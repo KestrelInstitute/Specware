@@ -137,6 +137,20 @@
 ;;; If specware is already in this emacs, just switch to it.
 (if (and (boundp '*specware-buffer-name*)
          (get-buffer *specware-buffer-name*))
-    (switch-to-buffer *specware-buffer-name*)
+    (progn (switch-to-buffer *specware-buffer-name*)
+	   (if (not (inferior-lisp-running-p))
+	       (run-specware4)
+	       ;; TODO: Fix the following bug:
+	       ;; When you are in a *Specware Shell* buffer that does not have
+	       ;; its inferior lisp running (i.e., you had done a "quit" earlier)
+	       ;; and then you load this file (e.g., by doing "m-x run-specware")
+	       ;; it does not put you at the end of the buffer at the Specware
+	       ;; prompt, it leaves you one line up.
+	       ;; I tried to fix this by putting (goto-char (point-max))
+	       ;; after the (run-specware4), but that doesn't work,
+	       ;; so there must be something else going on.
+	       ;; Note that this doesn't happen if you are in a different
+	       ;; buffer when you load this file.
+	     ))
   (set-specware-env)
   (load-slime-and-run))
