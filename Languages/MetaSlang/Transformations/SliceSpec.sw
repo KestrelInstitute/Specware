@@ -423,18 +423,20 @@ type Status   = | Translated TranslationStatus
                 | Contextual DefStatus 
                 | Misc       String
 
-type OpMap   = STHMap.Map (OpName,   Status)
-type TypeMap = STHMap.Map (TypeName, Status)
+type ResolvedOps   = STHMap.Map (OpName,   Status)  % TODO: change to list
+type ResolvedTypes = STHMap.Map (TypeName, Status)  % TODO: change to list
 
-op empty_op_map   : OpMap   = STH_empty_map
-op empty_type_map : TypeMap = STH_empty_map
+op empty_resolved_ops   : ResolvedOps   = STH_empty_map
+op empty_resolved_types : ResolvedTypes = STH_empty_map
 
 type Slice = {ms_spec              : Spec, 
               lm_data              : LMData,
-              op_map               : OpMap, 
-              type_map             : TypeMap,
-              pending_ops          : OpNames,
-              pending_types        : TypeNames,
+              % code is simpler if resolved and pending are tracked separately
+              % (as opposed to having a Pending status)
+              resolved_ops         : ResolvedOps, 
+              resolved_types       : ResolvedTypes,
+              pending_ops          : OpNames,       
+              pending_types        : TypeNames,     
               oracular_type_status : TypeName -> Option Status,
               oracular_op_status   : OpName   -> Option Status}
 
@@ -527,8 +529,8 @@ op describeSlice (msg : String, slice : Slice) : () =
                       op_names   = Ref []})
                   status_options
  in
- let groups = foldi partition_ops   groups slice.op_map   in
- let groups = foldi partition_types groups slice.type_map in
+ let groups = foldi partition_ops   groups slice.resolved_ops   in
+ let groups = foldi partition_types groups slice.resolved_types in
 
  let _ = writeLine ("") in
  let _ = writeLine ("Slice: " ^ msg) in
@@ -547,23 +549,23 @@ op describeSlice (msg : String, slice : Slice) : () =
  let _ = app describeGroup groups in
  ()
  
-op ops_update (ops : OpMap, name : OpName, status : Status) : OpMap =
+op ops_update (ops : ResolvedOps, name : OpName, status : Status) : ResolvedOps =
  %% don't update if name already has a value
  case apply (ops, name) of
    | Some _ -> ops
    | _ -> update (ops, name, status)
 
-op types_update (types: TypeMap, name : TypeName, status : Status) : TypeMap =
+op types_update (types: ResolvedTypes, name : TypeName, status : Status) : ResolvedTypes =
  %% don't update if name already has a value
  case apply (types, name) of
    | Some _ -> types
    | _ -> update (types, name, status)
  
 op ops_in_slice (slice : Slice) : OpNames =
- domainToList slice.op_map
+ domainToList slice.resolved_ops
 
 op types_in_slice (slice : Slice) : TypeNames =
- domainToList slice.type_map
+ domainToList slice.resolved_types
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 %%%  Chase invoked ops to fixpoint
@@ -578,32 +580,32 @@ op extend_execution_slice_for_op (pending : OpNames) (slice : Slice, name : OpNa
  in
  case slice.oracular_op_status name of
    | Some status ->
-     let new_op_map = ops_update (slice.op_map, name, status) in
-     slice << {op_map = new_op_map}
+     let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
+     slice << {resolved_ops = new_resolved_ops}
    | _ ->
      case findTheOp (slice.ms_spec, name) of
        | Some info  ->
-         let status       = Used (status info) in
-         let new_op_map   = ops_update (slice.op_map, name, status) in
-         let new_op_names = foldl (fn (names, name) ->
-                                     case apply (new_op_map, name) of
-                                       | Some _ -> names
-                                       | _ -> 
-                                         if name in? pending then
-                                           % it's already in the queue to be processed
-                                           names
-                                         else
-                                           name |> names)
-                                  []
-                                  (opsInTerm info.dfn)
+         let status           = Used (status info) in
+         let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
+         let new_pending_ops  = foldl (fn (names, name) ->
+                                         case apply (new_resolved_ops, name) of
+                                           | Some _ -> names
+                                           | _ -> 
+                                             if name in? pending then
+                                               % it's already in the queue to be processed
+                                               names
+                                             else
+                                               name |> names)
+                                      []
+                                      (opsInTerm info.dfn)
         in
         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
-        let new_pending_ops = union (new_op_names, slice.pending_ops)    in
-        slice << {op_map      = new_op_map,
-                  pending_ops = new_pending_ops}
+        let new_pending_ops = union (new_pending_ops, slice.pending_ops) in
+        slice << {resolved_ops = new_resolved_ops,
+                  pending_ops  = new_pending_ops}
        | _ ->
-         let new_op_map = ops_update (slice.op_map, name, Used Missing) in
-         slice << {op_map = new_op_map}
+         let new_resolved_ops = ops_update (slice.resolved_ops, name, Used Missing) in
+         slice << {resolved_ops = new_resolved_ops}
 
 op extend_execution_slice (s0 : Slice) : Slice =
  % let _ = writeLine("-----------------------------") in
@@ -632,34 +634,34 @@ op extend_typing_slice_for_type (pending : TypeNames) (slice : Slice, name : Typ
  in
  case slice.oracular_type_status name of
    | Some status ->
-     let new_type_map = types_update (slice.type_map, name, status) in
-     slice << {type_map = new_type_map}
+     let new_resolved_types = types_update (slice.resolved_types, name, status) in
+     slice << {resolved_types = new_resolved_types}
    | _ ->
      case findTheType (slice.ms_spec, name) of
        | Some info -> 
          % let _ = writeLine("Found type " ^ show name) in
          % let _ = writeLine(anyToString info) in
-         let status = Used (status info) in
-         let new_type_map      = types_update (slice.type_map, name, status) in
-         let new_type_names    = foldl (fn (names, name) ->
-                                          case apply (new_type_map, name) of
-                                            | Some _ -> names
-                                            | _ -> 
-                                              if name in? pending then
-                                                % it's already in the queue to be processed
-                                                names
-                                              else
-                                                name |> names)
-                                       []
-                                       (typesInType info.dfn)
+         let status             = Used (status info) in
+         let new_resolved_types = types_update (slice.resolved_types, name, status) in
+         let new_type_names     = foldl (fn (names, name) ->
+                                           case apply (new_resolved_types, name) of
+                                             | Some _ -> names
+                                             | _ -> 
+                                               if name in? pending then
+                                                 % it's already in the queue to be processed
+                                                 names
+                                               else
+                                                 name |> names)
+                                        []
+                                        (typesInType info.dfn)
          in
          % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
          let new_pending_types = union (new_type_names, slice.pending_types) in
-         slice << {type_map      = new_type_map,
-                   pending_types = new_pending_types}
+         slice << {resolved_types = new_resolved_types,
+                   pending_types  = new_pending_types}
        | _ ->
-         let new_type_map = types_update (slice.type_map, name, Used Missing) in
-         slice << {type_map = new_type_map}
+         let new_resolved_types = types_update (slice.resolved_types, name, Used Missing) in
+         slice << {resolved_types = new_resolved_types}
 
 op extend_typing_slice (s0 : Slice) : Slice =
  % let _ = writeLine("--------------------------") in
@@ -712,47 +714,47 @@ op extend_logical_slice_for_type (pending_ops   : OpNames)
  in
  case slice.oracular_type_status name of
    | Some status ->
-     let new_type_map = types_update (slice.type_map, name, status) in
-     slice << {type_map = new_type_map}
+     let new_resolved_types = types_update (slice.resolved_types, name, status) in
+     slice << {resolved_types = new_resolved_types}
    | _ ->
      case findTheType (slice.ms_spec, name) of
        | Some info ->
-         let status       = Logical (status info) in
-         let new_type_map = types_update (slice.type_map, name, status) in
-         let new_op_names = foldl (fn (names, name) ->
-                                     case apply (slice.op_map, name) of
-                                       | Some _ -> names
-                                       | _ -> 
-                                         if name in? pending_ops then
-                                           % it's already in the queue to be processed
-                                           names
-                                         else
-                                           name |> names)
-                                  []
-                                  (opsInType info.dfn)
+         let status             = Logical (status info) in
+         let new_resolved_types = types_update (slice.resolved_types, name, status) in
+         let new_pending_ops    = foldl (fn (names, name) ->
+                                           case apply (slice.resolved_ops, name) of
+                                             | Some _ -> names
+                                             | _ -> 
+                                               if name in? pending_ops then
+                                                 % it's already in the queue to be processed
+                                                 names
+                                               else
+                                                 name |> names)
+                                        []
+                                        (opsInType info.dfn)
          in
-         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
-         let new_type_names    = foldl (fn (names, name) ->
-                                          case apply (new_type_map, name) of
-                                            | Some _ -> names
-                                            | _ -> 
-                                              if name in? pending_types then
-                                                % it's already in the queue to be processed
-                                                names
-                                              else
-                                                name |> names)
-                                       []
-                                       (typesInType info.dfn)
+         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_pending_ops in
+         let new_pending_types  = foldl (fn (names, name) ->
+                                           case apply (new_resolved_types, name) of
+                                             | Some _ -> names
+                                             | _ -> 
+                                               if name in? pending_types then
+                                                 % it's already in the queue to be processed
+                                                 names
+                                               else
+                                                 name |> names)
+                                        []
+                                        (typesInType info.dfn)
          in
          % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
-         let new_pending_ops   = union (new_op_names,   slice.pending_ops)         in
-         let new_pending_types = union (new_type_names, slice.pending_types)       in
-         slice << {type_map      = new_type_map,
-                   pending_ops   = new_pending_ops,
-                   pending_types = new_pending_types}
+         let new_pending_ops   = union (new_pending_ops,   slice.pending_ops)   in
+         let new_pending_types = union (new_pending_types, slice.pending_types) in
+         slice << {resolved_types = new_resolved_types,
+                   pending_ops    = new_pending_ops,
+                   pending_types  = new_pending_types}
        | _ ->
-         let new_type_map = types_update (slice.type_map, name, Logical Missing) in
-         slice << {type_map = new_type_map}
+         let new_resolved_types = types_update (slice.resolved_types, name, Logical Missing) in
+         slice << {resolved_types = new_resolved_types}
 
 op extend_logical_slice_for_op (pending_ops   : OpNames)
                                (pending_types : TypeNames)
@@ -766,61 +768,61 @@ op extend_logical_slice_for_op (pending_ops   : OpNames)
  in
  case slice.oracular_op_status name of
    | Some status ->
-     let new_op_map = ops_update (slice.op_map, name, status) in
-     slice << {op_map = new_op_map}
+     let new_resolved_ops = ops_update (slice.resolved_ops, name, status) in
+     slice << {resolved_ops = new_resolved_ops}
    | _ ->
      case findTheOp (slice.ms_spec, name) of
        | Some info ->
-         let status       = Logical (status info) in
-         let new_op_map   = ops_update (slice.op_map, name, status) in
-         let new_op_names = foldl (fn (names, name) ->
-                                     case apply (new_op_map, name) of
-                                       | Some _ -> names
-                                       | _ -> 
-                                         if name in? pending_ops then
-                                           % it's already in the queue to be processed
-                                           names
-                                         else
-                                           name |> names)
-                                  []
-                                  (opsInTerm info.dfn)
-           in
-           % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
-           let new_type_names    = foldl (fn (names, name) ->
-                                            case apply (slice.type_map, name) of
-                                              | Some _ -> names
-                                              | _ -> 
-                                                if name in? pending_types then
-                                                  % it's already in the queue to be processed
-                                                  names
-                                                else
-                                                  name |> names)
-                                         []
-                                         (typesInTerm info.dfn)
-           in
-           % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
-           let new_pending_ops   = union (new_op_names,   slice.pending_ops)   in
-           let new_pending_types = union (new_type_names, slice.pending_types) in
-           slice << {op_map        = new_op_map,
-                     pending_ops   = new_pending_ops,
-                     pending_types = new_pending_types}
+         let status            = Logical (status info) in
+         let new_resolved_ops  = ops_update (slice.resolved_ops, name, status) in
+         let new_pending_ops   = foldl (fn (names, name) ->
+                                          case apply (new_resolved_ops, name) of
+                                            | Some _ -> names
+                                            | _ -> 
+                                              if name in? pending_ops then
+                                                % it's already in the queue to be processed
+                                                names
+                                              else
+                                                name |> names)
+                                       []
+                                       (opsInTerm info.dfn)
+         in
+         % let _ = app (fn name -> writeLine("Newly pending op " ^ show name)) new_op_names in
+         let new_pending_types = foldl (fn (names, name) ->
+                                          case apply (slice.resolved_types, name) of
+                                            | Some _ -> names
+                                            | _ -> 
+                                              if name in? pending_types then
+                                                % it's already in the queue to be processed
+                                                names
+                                              else
+                                                name |> names)
+                                       []
+                                       (typesInTerm info.dfn)
+         in
+         % let _ = app (fn name -> writeLine("Newly pending type " ^ show name)) new_type_names in
+         let new_pending_ops   = union (new_pending_ops,   slice.pending_ops)   in
+         let new_pending_types = union (new_pending_types, slice.pending_types) in
+         slice << {resolved_ops  = new_resolved_ops,
+                   pending_ops   = new_pending_ops,
+                   pending_types = new_pending_types}
        | _ ->
-         let new_op_map = ops_update (slice.op_map, name, Logical Missing) in
-         slice << {op_map = new_op_map}
+         let new_resolved_ops = ops_update (slice.resolved_ops, name, Logical Missing) in
+         slice << {resolved_ops = new_resolved_ops}
 
 op extend_logical_slice (s0 : Slice) : Slice =
  % let _ = writeLine("---------------------------") in
  % let _ = writeLine("new round for logical slice") in
  let pending_types = s0.pending_types   in
  let pending_ops   = s0.pending_ops     in
- let s1 = s0 << {pending_ops = [],
+ let s1 = s0 << {pending_ops   = [],
                  pending_types = []}
  in
  let s2 = foldl (extend_logical_slice_for_type pending_ops pending_types)
                 s1
                 pending_types
  in
- let s3 = foldl (extend_logical_slice_for_op pending_ops pending_types)
+ let s3 = foldl (extend_logical_slice_for_op   pending_ops pending_types)
                 s2
                 pending_ops
  in

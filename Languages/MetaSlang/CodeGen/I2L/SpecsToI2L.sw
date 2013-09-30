@@ -156,7 +156,7 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                        defs)
                 | _ -> defs)
            []
-           (mapToList slice.op_map)
+           (mapToList slice.resolved_ops)
  in
  let i_typedefs =
      foldl (fn (defs, (name, status)) ->
@@ -168,7 +168,7 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                      | _ -> defs)
                 | _ -> defs)
            []
-           (mapToList slice.type_map)
+           (mapToList slice.resolved_types)
  in
  let res : I_ImpUnit = 
      {
