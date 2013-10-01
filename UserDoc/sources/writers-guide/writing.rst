@@ -1,4 +1,4 @@
-.. _`Writing Documentation with reStructuredText`:
+.. _Writing Documentation with reStructuredText:
 
 =============================================
  Writing Documentation with reStructuredText
@@ -22,31 +22,37 @@ Chapters
     This is a Chapter Title
     =======================
 
-
 Sections
   The beginning of sections is denoted by writing the section title
   with a line of ``##`` immediately below the section
-  title::
+  title.  The output includes a number preceding the title like **NN.NN**.
+  For example::
 
     This is a Section Title
     #######################
 
-.. todo::
-
-   Don't really know how subsections are defined. Need to look through
-   the sources.
-
-Sub-sections
+Subsections
   The beginning of subsections is denoted by writing the section title
   with a line of ``=====`` immediately below the section
-  title::
+  title.  The output includes a number preceding the title like **NN.NN.NN**.
+  For example::
 
-    This is a Section Title
-    =======================
+    This is a Subsection Title
+    ==========================
+
+Subsubsections
+  The beginning of subsubsections is denoted by writing the section title
+  with a line of hyphens (``-----``) immediately below the section
+  title.  The subsubsection name output is larger and bolder than the following 
+  text but it has no preceding number.  For example::
+
+    This is a Subsubsection Title
+    -----------------------------
+
 
 
 References
-----------
+==========
 
 To refer to a section, simply put the title of the section in
 single-backtick quotes, followed by an underscore. This will create a
@@ -56,19 +62,18 @@ link to the section. For example::
 
 Creates a link to (this) `Sectioning Commands`_ section.
 
-
-This appears to only work within a single ``.rst`` file. To allow
+That form works only within a single ``.rst`` file. To allow
 cross-references between rst files within a single document, you can
-give an explicit label::
+give an explicit label preceding the chapter, section, or subsection title::
 
-  .. _`SecLabel`:
+  .. _Sec Label:
   
   -----------------
   This is a section 
   -----------------
 
 Then, when you want to refer to this label, just write
-``:ref:`SecLabel```.
+``:ref:`Sec Label```.
 
 
 To refer to an external link, use the same syntax for the
@@ -101,11 +106,11 @@ text in a ``monospaced`` font::
    Inside a paragraph, you can use double-backticks to typeset
    text in a ``monospaced`` font.
 
-Surround text with asterisks to for *emphasis*, use double-asterisks
+Surround text with asterisks for *emphasis*, use double-asterisks
 for **strong** emphasis. This corresponds to *italics* and **bold**
 fonts::
 
-  Surround text with asterisks to for *emphasis*, use double-asterisks
+  Surround text with asterisks for *emphasis*, use double-asterisks
   for **strong** emphasis. This corresponds to *italics* and **bold**
   fonts.
 
@@ -125,6 +130,7 @@ from the ``::``. For example::
     map f (x:xs) = f x:map f xs
 
 
+Becomes:
 
 I'll show you come code below.
 
@@ -138,17 +144,18 @@ Rather than a blank line, you can use::
 
   .. code-block:: common-lisp
   
-    (defun map (f l) (if l (cons (f (car l)) (map f (cdr l))) l))
+     (defun map (f l) (if l (cons (f (car l)) (map f (cdr l))) l))
+
+Which generates:
+
+.. code-block:: common-lisp
+  
+   (defun map (f l) (if l (cons (f (car l)) (map f (cdr l))) l))
 
 ``common-lisp`` can be replaced with the language that the code block
 is written in. When generating output for some formats, the tools will colorize and
 typeset the code appropriately, if it knows about the language. Sadly,
-specware is not a supported language.
-
-
-.. code-block:: common-lisp
-  
-  (defun map (f l) (if l (cons (f (car l)) (map f (cdr l))) l))
+Specware is not a supported language.
 
 
 Finally, you can merge the ``::`` notation with the previous
@@ -172,19 +179,28 @@ Lists
 
 There are a number of ways to define lists.
 
-A series of paragraphs, with the first line of each proceeded by a
-``-`` will give a bullet list::
+A series of paragraphs, with the first line of each preceded by a hypen
+(``-``) will give a bullet list.  If you want a second line at the same indent level, you have to leave a blank line.  Otherwise the second line will be joined to the first line.  This text::
 
-  - First Item
+  - First Item.
+    Not a Second line of first item.
 
-    A Second line of first item.
+  - Second Item.
 
-  - Second Item
-   
-- First Item
-  A Second line of first item.
+    A second line of second item.
 
-- Second Item
+  - Third Item.
+
+is displayed as:
+
+- First Item.
+  Not a Second line of first item.
+
+- Second Item.
+
+  A second line of second item.
+
+- Third Item.
 
 Other bullet list indicators, like ``*``, are valid, as long as they
 are used uniformly for all items in the list.
@@ -200,12 +216,14 @@ A list will continue until it is followed by a paragraph (at the same
 indentation level as the list) that is not preceded by a list item
 indicator. 
 
-Numbered lists are much the same, except the list items are preceeded
-by a ``#.``, instead of a ``-``::
+Numbered lists are much the same, except the list items are preceded
+by a ``#.`` instead of a hyphen (``-``)::
 
   #. First item.
 
   #. Second item.
+
+becomes:
 
 #. First item.
 
@@ -213,7 +231,7 @@ by a ``#.``, instead of a ``-``::
 
 The tools automatically insert the proper numbers.
  
-Definition lists are given as a series lines, where the term being
+Definition lists are given as a series of lines, where the term being
 defined is given on the first line, then the definition is indented on
 the following line (with no separating blank line between the term and
 the definition::
@@ -222,6 +240,8 @@ the definition::
     is the first number.
   two
     comes right after one.
+
+becomes:
 
 one
   is the first number.
@@ -240,25 +260,33 @@ To typeset a shell command, use the ``command`` directive::
 Which typesets as :command:`ls -la`
 
 
-Index Terms
-###########
+Index Entries
+#############
+
+.. index::
+   single: index entries; defining
 
 .. index::
    pair: shell-command; command-name
 
 
-To insert a term into the index, use the ``.. index`` directive::
+To insert an entry into the index, use the ``.. index`` directive.
+The following will insert a single index entry ``index entries`` with subentry ``defining`` under ``I``::
+
+   .. index::
+      single: index entries; defining
+   
+The following is a shortcut way of defining two related index entries, each with a subentry.
+This will insert a pair of index entries, one for ``shell-command``,
+with subentry ``command-name``, and one for ``command-name`` with 
+subentry ``shell-command``::
 
    .. index::
        pair: shell-command; command-name
 
-This will insert a pair of index entries, one for ``shell-command``,
-with sub-term ``command-name``, and one
-``command-name, shell-command``.
 The resulting index entries can be found at the end
 of this document. For complete usage information for the index
 directive, check the `Sphinx Index Docs`_.
-
 
 .. _`Sphinx Index Docs`: http://sphinx-doc.org/markup/misc.html#directive-index
 
@@ -266,11 +294,8 @@ directive, check the `Sphinx Index Docs`_.
 
 
 
-
-
 BNF Grammar Descriptions
 ########################
-
 
 
 Sphinx has support for typesetting BNFs. For example::
@@ -297,17 +322,17 @@ Important points:
 #. There's no blank line between the ``..productionlist::`` directive
    and the productions.
 
-#. Each production begins with a non-terminal, followed by a colon,
+#. Each production begins with a nonterminal, followed by a colon,
    then a collection of right-hand sides. 
 
-#. In a RHS, if an identifier is surrounded by single-quotes then it's
-   marked as a non-terminal. When docs are generated, the name in the
-   RHS will be hyperlinked to the non-terminal's definition.
+#. In the RHS, if an identifier is surrounded by single-quotes then it's
+   marked as a nonterminal. When docs are generated, the name in the
+   RHS will be hyperlinked to the nonterminal's definition.
 
 #. A production can span multiple lines, but each additional line
    after the first needs to begin with a colon horizontally aligned with
    the first line.
 
 #. In the body of a document, you can make a hyperlinked reference to
-   a non-terminal with the syntax: ``:token:`name```, where ``name``
-   is the name of the non-terminal.
+   a nonterminal with the syntax: ``:token:`name```, where ``name``
+   is the name of the nonterminal.
