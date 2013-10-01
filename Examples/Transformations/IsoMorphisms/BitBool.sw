@@ -10,9 +10,10 @@ Step1 = spec
 end-spec
 
 BitBool0 = transform Step1 by {isomorphism "new_*" [(toBool, fromBool)][]}
-BitBool = transform Step1 by {isomorphism "new_*" (toBool, fromBool)}
+BitBool = transform Step1 by {trace on; isomorphism "new_*" (toBool, fromBool)}
 BitBool1 = transform Step1 by {isomorphism [new_*] (toBool, fromBool)}
 BitBool2 = transform Step1 by {isomorphism (toBool, fromBool)}
+BitBool3 = transform Step1 by {isomorphism new_* (toBool, fromBool)}
 
 (* Signature of isomorphism function is:
  op SpecTransform.isomorphism (spc: Spec) (newOptQual : Option String)
@@ -27,7 +28,4 @@ a singleton list does not require a brackets,
 an empty list can be omitted.
 BitBool1 shows how an optional argument can be in brackets and a string does not need 
 string quotes if it is an identifier.
-I think the following should parse but currently fails for lexical reasons I don't 
-understand:
-BitBool3 = transform Step1 by {isomorphism new_* [(toBool, fromBool)]}
 *)
