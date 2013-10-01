@@ -6,4 +6,6 @@
 % the refinements are composed by substituting Sets with SetsAsLists
 % in MapsAsSets
 
-MapsAsSets[SetsAsLists#M]
+MapsAsLists = MapsAsSets[SetsAsLists#M]
+
+M = morphism Maps -> MapsAsLists {}
