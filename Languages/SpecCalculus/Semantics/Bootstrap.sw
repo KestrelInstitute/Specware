@@ -296,8 +296,8 @@ Specware qualifying spec
       runSpecCommand (catch prog toplevelHandler)
 
 
-  op makeScript_fromLisp(trans: TransformExpr): Option Script =
-    let prog = {scr <- makeScript trans;
+  op makeScript_fromLisp(trans: TransformExpr, spc: Spec): Option Script =
+    let prog = {scr <- makeScript spc trans;
                 return(Some scr)} 
     in
       run (catch prog toplevelHandlerOption)
@@ -431,7 +431,13 @@ Specware qualifying spec
       | TypeCheck        (position,_) -> Some position
       | Proof            (position,_) -> Some position
       | TransformError   (position,_) -> Some position
-      | TypeCheckErrors  errs         -> getFirstRealPosition errs
+      | TypeCheckErrors  errs         ->
+        (case getFirstRealPosition errs of
+           | None ->
+             (case errs of
+                | [] -> None
+                | (_, position)::_ -> Some position)
+           | o_pos -> o_pos)
       | _ -> None
 
   op  getFirstRealPosition : List (String * Position) -> Option Position

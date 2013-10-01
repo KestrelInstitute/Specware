@@ -685,6 +685,8 @@
 	    (if syntax-err-pos
 		(subseq errstr 0 syntax-err-pos)
 	      errstr)))
+    (when (setq pos (search "ERROR: Could not match type constraint for" errstr))
+      (setq errstr (subseq errstr pos)))
     (when (setq pos (search " At line" errstr))
       (setq errstr (concatenate 'string (subseq errstr 0 pos) (subseq errstr (+ pos 16)))))
     (when (setq pos (search " found in " errstr))

@@ -69,7 +69,7 @@ op replaceSpecArg(atv: AnnTypeValue, spc: Spec): AnnTypeValue =
 op replaceTermArg(atv: AnnTypeValue, tm: MSTerm): AnnTypeValue =
    mapAnnTypeValue (fn atvi ->
                      case atvi of
-                       | TermV _ -> TermV tm
+                       | TermV(Any _) -> TermV tm
                        | _ -> atvi)
      atv
 
@@ -77,7 +77,7 @@ op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
    mapAnnTypeValue (fn atvi ->
                      case atvi of
                        | SpecV _ -> SpecV spc
-                       | TermV _ -> TermV tm
+                       | TermV(Any _) -> TermV tm
                        | _ -> atvi)
      atv
 

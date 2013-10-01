@@ -389,7 +389,7 @@
   (Emacs::eval-in-emacs "(setq *sw-slime-prompt* \"*\")")
   (values))
 
-(defvar *parse-characters* (coerce "()[]{}" 'list))
+(defvar *parse-characters* (coerce "()[]{}`" 'list))
 
 (defun needs-parsing? (str)
   (some #'(lambda (c) (member c *parse-characters*)) str))
@@ -409,7 +409,7 @@
               (setq parsed_input (parser4::parseSpecwareString full_input
                                                                :start-rule-name :TRANSFORM-STMT))
               (when (Option::some? parsed_input)
-                (setq o_script (Specware::makeScript_fromLisp (cdr parsed_input)))))))
+                (setq o_script (Specware::makeScript_fromLisp-2 (cdr parsed_input) *transform-spec*))))))
     (if (Option::some? o_script)
         (if (Script::specCommand? (cdr o_script))
             (apply-spec-command (cdr o_script))
