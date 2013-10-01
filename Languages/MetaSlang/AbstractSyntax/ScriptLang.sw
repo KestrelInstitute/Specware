@@ -244,6 +244,10 @@ op enclose (l: String) (r: String) (main: List WLPretty): WLPretty =
 op ppQidPair(qid1: QualifiedId, qid2: QualifiedId): WLPretty =
   enclose "(" ")" [ppQid qid1, ppString ", ", ppQid qid2]
 
+op show(scr: Script): String =
+  let pp = ppNest 3 (ppScript scr) in
+  ppFormat(pp)
+
 op scriptToString(scr: Script): String =
   let pp = ppNest 3 (ppScript scr) in
   ppFormat(pp)

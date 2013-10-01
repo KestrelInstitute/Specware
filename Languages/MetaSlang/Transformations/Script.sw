@@ -681,7 +681,7 @@ spec
         result <- implementOpsCoalgebraically(spc, qids, rls);
         return (result, tracing?)}
       | SpecMetaTransform(tr_name, tr_fn, arg) ->
-        let _ = if tracing? then writeLine tr_name else () in
+        let _ = if tracing? then writeLine(show script) else () in
         let arg_with_spc = replaceSpecArg(arg, spc) in
         let result = apply(tr_fn, arg_with_spc) in
         % let _ = writeLine(anyToString result) in
@@ -689,7 +689,7 @@ spec
         % let _ = writeLine(printSpec new_spc) in
         return(new_spc, tracing?)
       | SpecTransformInMonad(tr_name, tr_fn, arg) ->
-        let _ = if tracing? then writeLine tr_name else () in
+        let _ = if tracing? then writeLine(show script) else () in
         let arg_with_spc = replaceSpecArg(arg, spc) in
         {%result <- applyM(tr_fn, arg_with_spc);
          % let _ = writeLine(anyToString result) in
