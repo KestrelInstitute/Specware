@@ -1628,16 +1628,24 @@ Globalize qualifying spec
        %| Transform  _ -> Unchanged % doesn't make sense to globalize this
        %| Any        _ -> Unchanged % can appear within typed term, for example
           
-        | Var ((id,_), _) -> if id in? vars_to_remove then
-                               GlobalVar
-                             else
-                               Unchanged
-        | _ -> Unchanged
+        | Var ((id,typ), _) -> 
+          if id in? vars_to_remove then
+            GlobalVar
+          else if equivType? context.spc (typ, context.global_type) then
+            GlobalVar
+          else
+            Unchanged
+
+        | _ -> 
+          Unchanged
   in
   case (opt_term, conflicts) of
-    | (Unchanged, []) -> Unchanged     
-    | (Unchanged, _)  -> Changed term  % consider changed if there are conflicts
-    | _               -> opt_term      % changed or global
+    | (Unchanged, []) -> 
+      Unchanged     
+    | (Unchanged, _)  -> 
+      Changed term  % consider changed if there are conflicts
+    | _ ->
+      opt_term      % changed or global
       
  %% ================================================================================
 
