@@ -365,18 +365,6 @@ op coqApplyMultiM : Monad Pretty -> List (Monad Pretty) -> Monad Pretty
 def coqApplyMultiM mf mas =
   foldl (fn (m1, m2) -> coqApplyM m1 m2) mf mas
 
-(* convert a Coq Prop to a bool, in a monad *)
-op prop2bool : Pretty -> Pretty
-def prop2bool pp = coqApply (string "prop2bool") pp
-
-op prop2boolM : Monad Pretty -> Monad Pretty
-def prop2boolM m = coqApplyM (return (string "prop2bool")) m
-
-(* convert a Coq bool to a Coq Prop *)
-op bool2prop : Pretty -> Pretty
-def bool2prop pp =
-  ppSeparator "=" pp (string "true")
-
 (* pretty-print a Coq fun from a pretty-printed variable (either in
     the form "x" or the form "(x:A)") and a pretty-printed body *)
 op ppCoqFun : Pretty -> Pretty -> Pretty
@@ -545,7 +533,10 @@ def ppTerm tm =
       { vars_pp <- mapM ppVarBinding vars ;
         body_pp <- ppTerm body ;
         return (ppExistsB vars_pp body_pp) }
-    | Bind (Exists1, vars, body, _) -> unhandledTerm "Bind (Exists1)" tm
+    | Bind (Exists1, vars, body, _) ->
+      { vars_pp <- mapM ppVarBinding vars ;
+        body_pp <- ppTerm body ;
+        return (ppExistsB1 vars_pp body_pp) }
     | The (var, body, _) ->
       { body_pp <- ppTerm body;
         var_pp <- ppVarBinding var;
@@ -726,22 +717,30 @@ def ppForall (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
    body_pp is a pretty-printed Coq term of type bool *)
 def ppForallB (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
   if vs_pp = [] then body_pp else
-    prop2bool
     (blockFill
-       (0, [(0, string "forall")]
+       (0, [(0, string "forallB")]
           ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
-          ++ [(0, string ","), (0, bool2prop body_pp)]))
+          ++ [(0, string ","), (0, body_pp)]))
 
 (* pretty-print an exists proposition converted to a bool, assuming
    all the variables have been pretty-printed as "(name : tp)" and
    that body_pp is a pretty-printed Coq term of type bool *)
 def ppExistsB (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
   if vs_pp = [] then body_pp else
-    prop2bool
     (blockFill
-       (0, [(0, string "exists")]
+       (0, [(0, string "existsB")]
           ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
-          ++ [(0, string ","), (0, bool2prop body_pp)]))
+          ++ [(0, string ","), (0, body_pp)]))
+
+(* pretty-print an exists! proposition converted to a bool, assuming
+   all the variables have been pretty-printed as "(name : tp)" and
+   that body_pp is a pretty-printed Coq term of type bool *)
+def ppExistsB1 (vs_pp : List Pretty) (body_pp : Pretty) : Pretty =
+  if vs_pp = [] then body_pp else
+    (blockFill
+       (0, [(0, string "existsB!")]
+          ++ (map (fn (v_pp : Pretty) -> (2, v_pp)) vs_pp)
+          ++ [(0, string ","), (0, body_pp)]))
 
 op ppType : MSType -> Monad Pretty
 def ppType tp =
@@ -909,14 +908,16 @@ def ppSpecElem s elem =
         (Some
            (ppCoqParam
               (q, id,
-               ppForall (ppTyVarBindings tyvars) (bool2prop tm_pp)))) }
+               ppForall (ppTyVarBindings tyvars) tm_pp))) }
    | Property prop -> (* FIXME *) return (Some (string "(* property *)"))
    | Comment (str, _) ->
      (* FIXME *)
      return (Some (string ("(* Comment: " ^ str ^ " *)")))
    | Pragma (str1, str2, str3, _) ->
      (* FIXME *)
-     return (Some (string "(* pragma *)"))
+     return
+       (Some
+          (string ("(* pragma: (" ^ str1 ^ "," ^ str2 ^ "," ^ str3 ^ ") *)")))
 
 
 (* return a tuple of a pretty-printed (name, type, value) for a spec
@@ -961,7 +962,7 @@ def ppSpecElemInRecord s elem =
        return
         (Some
            ("__" ^ qidToCoqName qid,
-            ppForall (ppTyVarBindings tyvars) (bool2prop tm_pp),
+            ppForall (ppTyVarBindings tyvars) tm_pp,
             ppQid qid)) }
    | Property prop -> (* FIXME *) return None
    | Comment (str, _) -> return None
