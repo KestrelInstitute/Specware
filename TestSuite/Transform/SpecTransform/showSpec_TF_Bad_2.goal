@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/showSpec#TF_Bad_2
+ERROR: in transform: Missing field: Str
+ found in $TESTDIR/showSpec.sw
+17.22-17.22

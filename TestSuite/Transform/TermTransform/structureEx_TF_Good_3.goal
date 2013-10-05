@@ -1,0 +1,13 @@
+;;; Elaborating transform at $TESTDIR/structureEx#TF_Good_3
+;;; Elaborating spec at $TESTDIR/structureEx#B
+-showSpec-----------
+##4 tf
+spec  
+import A
+refine def f1 (n: Int): 
+    {r: Int | case g1 n
+               of Some (Some m) -> (r = m ** 2)
+                | _ -> false}
+end-spec
+
+--------------------

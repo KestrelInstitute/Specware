@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/move#TF_Bad_4
+ERROR: in transform: Illegal search string
+ found in $TESTDIR/move.sw
+36.41-36.41

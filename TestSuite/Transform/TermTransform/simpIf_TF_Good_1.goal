@@ -1,0 +1,16 @@
+;;; Elaborating transform at $TESTDIR/simpIf#TF_Good_1
+-showSpec-----------
+##4 simpIf
+spec  
+import A
+refine def f (n: Int): 
+    {r: Int | 
+     let (m, ev__0) = g1 n in 
+     if m > 2 && (case ev__0
+                   of Some w -> (r = m ** w)
+                    | _ -> false)
+      then g2 r 
+     else true}
+end-spec
+
+--------------------

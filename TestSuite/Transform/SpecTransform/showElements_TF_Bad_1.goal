@@ -1,0 +1,6 @@
+;;; Elaborating transform at $TESTDIR/showElements#TF_Bad_1
+;;; Elaborating spec at $TESTDIR/showElements#B
+;;; Elaborating spec at $TESTDIR/showElements#A
+ERROR: in transform: Expected argument: Num
+ found in $TESTDIR/showElements.sw
+21.43-21.46

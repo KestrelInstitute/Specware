@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/simpIf#TF_Bad_1
+;;; Elaborating spec at $TESTDIR/simpIf#B
+;;; Elaborating spec at $TESTDIR/simpIf#A
+In transform, At referenced unknown op: f1

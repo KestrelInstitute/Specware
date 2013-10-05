@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/unknown#TF_Bad_2
+ERROR: in transform: Unrecognized rule reference
+ found in $TESTDIR/unknown.sw
+20.44-20.50

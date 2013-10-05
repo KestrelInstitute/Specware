@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/isomorphism_BitBool#TF_Bad_3
+ERROR: in transform: Expected argument: List Rule
+ found in $TESTDIR/isomorphism_BitBool.sw
+30.83-30.92

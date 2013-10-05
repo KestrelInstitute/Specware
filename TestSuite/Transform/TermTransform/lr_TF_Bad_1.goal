@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/lr#TF_Bad_1
+;;; Elaborating spec at $TESTDIR/lr#A
+WARNING: Rule-shaped theorem ex_some1 unable to extract any rules!
+f1a not modified.

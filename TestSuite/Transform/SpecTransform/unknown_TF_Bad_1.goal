@@ -1,0 +1,5 @@
+;;; Elaborating transform at $TESTDIR/unknown#TF_Bad_1
+;;; Elaborating spec at $TESTDIR/unknown#A
+ERROR: in transform: Unrecognized transform: nonExistentSpecTransform 
+ found in $TESTDIR/unknown.sw
+15.27-15.50

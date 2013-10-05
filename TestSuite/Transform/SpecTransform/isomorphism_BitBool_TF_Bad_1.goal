@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/isomorphism_BitBool#TF_Bad_1
+;;; Elaborating spec at $TESTDIR/isomorphism_BitBool#Bit2Bool_Step1
+;;; Elaborating spec at $TESTDIR/isomorphism_BitBool#Bit
+No op with name: toBool

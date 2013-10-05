@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/trace#TF_Bad_2
+ERROR: in transform: Trace on or off?
+ found in $TESTDIR/trace.sw
+21.27-21.34

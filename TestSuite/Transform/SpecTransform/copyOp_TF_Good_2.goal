@@ -1,0 +1,11 @@
+;;; Elaborating transform at $TESTDIR/copyOp#TF_Good_2
+-showSpec-----------
+##4 A with copy of op 'f'
+spec  
+ 
+type T
+op f: T -> T
+op fNEW: T -> T
+end-spec
+
+--------------------

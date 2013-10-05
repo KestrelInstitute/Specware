@@ -1,0 +1,23 @@
+;;; Elaborating transform at $TESTDIR/lr#TF_Good_1
+-showSpec-----------
+##4 tf
+spec  
+op g1 (n: Int): Option.Option(Option.Option(Int))
+op f1a (n: Int)
+    : {r: Int | ex(m: Int, y: Option.Option(Int)) Some y = g1 n && Some m = y 
+                                                                && r = m ** 2}
+ 
+theorem ex_some is [a, b] 
+  fa(e: Option.Option(b), p: a * b -> Bool) 
+   (ex(x: a, y: b) (Some y = e && p (x, y))) 
+    = (case e
+        of Some y -> ex(x: a) p (x, y)
+         | _ -> false)
+refine def f1a (n: Int): 
+    {r: Int | 
+     case g1 n
+      of Some y -> ex(x: Int) (Some x = y && r = x ** 2)
+       | _ -> false}
+end-spec
+
+--------------------

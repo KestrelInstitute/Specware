@@ -1,0 +1,10 @@
+;;; Elaborating transform at $TESTDIR/makeImportingSpec#TF_Good_2
+;;; Elaborating spec-morphism at $TESTDIR/makeImportingSpec#M
+;;; Elaborating spec at $TESTDIR/makeImportingSpec#B
+-showSpec-----------
+##4 
+spec  
+import $TESTDIR/makeImportingSpec#B
+end-spec
+
+--------------------

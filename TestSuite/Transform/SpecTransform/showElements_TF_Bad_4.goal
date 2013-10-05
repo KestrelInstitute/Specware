@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/showElements#TF_Bad_4
+ERROR: in transform: Unexpected argument type
+ found in $TESTDIR/showElements.sw
+29.39-29.51

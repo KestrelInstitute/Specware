@@ -1,0 +1,19 @@
+;;; Elaborating transform at $TESTDIR/structureEx#TF_Good_1
+;;; Elaborating spec at $TESTDIR/structureEx#A1
+-showSpec-----------
+##4 tf
+spec  
+op g1 (n: Int): Option.Option(Option.Option(Int))
+op f1a (n: Int)
+    : {r: Int | ex(m: Int, y: Option.Option(Int)) Some y = g1 n && Some m = y 
+                                                                && r = m ** 2}
+refine def f1a (n: Int): 
+    {r: Int | 
+     case g1 n
+      of Some y -> (case y
+                     of Some m -> (r = m ** 2)
+                      | _ -> false)
+       | _ -> false}
+end-spec
+
+--------------------
