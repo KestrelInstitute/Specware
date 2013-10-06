@@ -288,7 +288,6 @@ op SpecCalc.mergeImport: SCTerm -> Spec -> Spec -> Position -> Env Spec
 op redundantErrorCorrectingProduct (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier)
                                    (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
-  let {types = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
   {morphs2 <- return(map (fn (_,yy) -> yy) morphs);
    ops_map <- return(criticalOpMap morphs2);      % Maps source ops to list of ops (when mapped differently)
@@ -505,7 +504,6 @@ op runtimeSemanticErrorSpec: String = "/Languages/MetaSlang/Transformations/Runt
 
 op redundantErrorCorrectingRestart (spc: Spec) (morphs: List (SCTerm * Morphism)) (opt_qual: Option Qualifier) (tracing?: Bool): Env(Spec * Bool) =
 %%  return(spc, tracing?) (*
-  let {types = spc_types, ops = spc_ops, elements = _, qualifier = _} = spc in
   let ((_,pos), morph1) :: _ = morphs in
   {morphs2 <- return(map (fn (_,yy) -> yy) morphs);
    ops_map <- return(criticalOpMap morphs2);      % Maps source ops to list of ops (when mapped differently)

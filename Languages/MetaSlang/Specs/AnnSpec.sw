@@ -1023,7 +1023,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  def emptyATypeMap      = emptyAQualifierMap
  def emptyAOpMap        = emptyAQualifierMap
 
- def emptySpec =
+ op emptySpec : Spec =
    {
     types     = emptyATypeMap,
     ops       = emptyAOpMap,
@@ -1031,13 +1031,13 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
     qualifier = None
    }
 
- def initialSpecInCat =
-   {
-    types     = emptyATypeMap,
-    ops       = emptyAOpMap,
-    elements  = emptyAElements,
-    qualifier = None
-   }
+ op initialSpecInCat : Spec = emptySpec
+
+ op copySpec (spc : Spec) : Spec =
+  {types     = spc.types,
+   ops       = spc.ops,
+   elements  = spc.elements,
+   qualifier = spc.qualifier}
 
  def setTypes    (spc, new_types)    = spc << {types    = new_types}
  def setOps      (spc, new_ops)      = spc << {ops      = new_ops}

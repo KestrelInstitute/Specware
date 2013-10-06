@@ -104,9 +104,8 @@ op convertPFun (f: MSFun): MSFun =
 
    %% let spc = mapSpec tsp spc -- would be correct but unnecessarily maps non-locals
    
-   let {types, ops, elements, qualifier} = spc in
    let spc = spc << {ops = if ~(hasLocalOp? spc) then 
-                             ops
+                             spc.ops
                            else
                              % mapOpInfosUnqualified causes some specs to fail to elaborate properly
                              mapOpInfos (fn info ->
@@ -114,17 +113,17 @@ op convertPFun (f: MSFun): MSFun =
                                              info << {dfn = mapTerm tsp info.dfn}
                                            else 
                                              info)
-                                        ops,
+                                        spc.ops,
 
                      types = if ~(hasLocalType? spc) then 
-                              types
+                              spc.types
                              else
                               mapTypeInfos (fn info ->
                                             if someTypeAliasIsLocal? (info.names, spc) then
                                               info << {dfn = mapType tsp info.dfn}
                                             else 
                                               info)
-                                           types,
+                                           spc.types,
 
                      elements =  map (fn el ->
                                         case el of
@@ -132,7 +131,7 @@ op convertPFun (f: MSFun): MSFun =
                                             Property(pt, qid, tvs, 
                                                      mapTerm tsp term, a)
                                           | _ -> el)
-                                      elements
+                                      spc.elements
                     }
   in
   normalizeNewTypes(spc, false)

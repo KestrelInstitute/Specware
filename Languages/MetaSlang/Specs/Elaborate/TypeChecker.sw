@@ -81,12 +81,6 @@ def elaboratePosSpec (given_spec0, filename) =
   %% 
   let given_spec = resolveTypeNames given_spec0 in
   let initial_env  = initialEnv (given_spec, filename) in
-  let {types     = given_types, 
-       ops       = given_ops, 
-       elements  = given_elts,
-       qualifier = qualifier} 
-      = given_spec
-  in
   let 
     def elaborate_local_op_types (ops, env) =
       let _ = if debug? then writeLine "**elaborate_local_op_types" else () in
@@ -193,10 +187,10 @@ def elaboratePosSpec (given_spec0, filename) =
 
 
   %% Elaborate types of ops
-  let elaborated_ops_0 = elaborate_local_op_types (given_ops,env_with_constrs) in
+  let elaborated_ops_0 = elaborate_local_op_types (given_spec.ops,env_with_constrs) in
 
   %% Elaborate types
-  let elaborated_types = elaborate_local_types (given_types, env_with_constrs) in
+  let elaborated_types = elaborate_local_types (given_spec.types, env_with_constrs) in
   let env_with_elaborated_types = setEnvTypes (env_with_constrs, elaborated_types) in
 
   %% Elaborate types of ops pass 2 so that subtypes are resolved before instantiation
@@ -214,7 +208,7 @@ def elaboratePosSpec (given_spec0, filename) =
   let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, second_pass_env, true)  in
   let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, second_pass_env, false) in
   %% Elaborate properties
-  let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_types, false) in
+  let elaborated_elts = elaborate_local_props (given_spec.elements, env_with_elaborated_types, false) in
 
   %% ======================================================================
   %%                           PASS TWO  
@@ -246,12 +240,6 @@ case findAQualifierMap (ops, "Foo", "increasingNats1?") of
 op elaboratePosTerm(tm: MSTerm, spc: Spec, vars: MSVars): MSTerm * List (String * Position) =
   let _ = initializeMetaTyVarCounter () in
   let env  = addConstrsEnv(initialEnv (spc, "string"), spc) in
-  let {types     = given_types, 
-       ops       = given_ops, 
-       elements  = given_elts,
-       qualifier = qualifier} 
-      = spc
-  in
   let env = foldr (fn ((id, ty), env) -> addVariable(env, id, ty)) env vars in
   let ty = freshMetaTyVar("top_tm_ty", termAnn tm) in
   let tm = elaborateTerm(env, tm, ty, []) in

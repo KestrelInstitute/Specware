@@ -111,27 +111,17 @@ Utilities qualifying spec
      let mtvs = List.map (fn (_, mv) -> mv) tv_map in
      (Base(qid,mtvs,pos), srt)
 
- def initialEnv (spc, file) = 
-   let errs : List (String * Position) = [] in
-   let {types, ops, elements, qualifier} = spc in
-   let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
-   let spc = {%importInfo = importInfo,
-	      types      = types,
-	      ops        = ops,
-	      elements   = elements,
-	      qualifier  = qualifier
-	     } : Spec
-   in
-   let env = {importMap  = StringMap.empty, % importMap,
-              internal   = spc,
-              errors     = Ref errs,
-              vars       = StringMap.empty,
-              passNum    = 0,
-              constrs    = StringMap.empty,
-              file       = file
-             } : LocalEnv
-   in
-   env
+ op initialEnv (spc, file) : LocalEnv = 
+   % let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in  % TODO: is this needed?
+   % let spc = copySpec spc in                                                     % TODO: is this needed?
+   {importMap  = StringMap.empty, % importMap,
+    internal   = spc,
+    errors     = Ref [],
+    vars       = StringMap.empty,
+    passNum    = 0,
+    constrs    = StringMap.empty,
+    file       = file
+    } 
 
  def sameCPType? (s1 : MSType, s2 : MSType) : Bool =
    case (s1, s2) of

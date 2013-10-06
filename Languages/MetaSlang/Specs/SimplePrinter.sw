@@ -16,13 +16,13 @@ SpecCalc qualifying spec
  %% called via ppObj attribute in specCat
  %% (see /Languages/MetaSlang/Specs/Categories/AsRecord.sw)
   op ppASpec : Spec -> WLPretty
- def ppASpec (spc as {types,ops,elements,qualifier}) = 
+ def ppASpec spc =
    let 
      def lookupType(Qualified(q,id)) =
-       case findAQualifierMap(types,q,id) of
+       case findAQualifierMap(spc.types,q,id) of
 	 | Some v -> v
      def lookupOp(Qualified(q,id)) =
-       case findAQualifierMap(ops,q,id) of
+       case findAQualifierMap(spc.ops,q,id) of
 	 | Some v -> v
      def ppAOp qId = ppAOpInfo (lookupOp qId)
      def ppAType qId = ppATypeInfo (lookupType qId)
@@ -45,20 +45,20 @@ SpecCalc qualifying spec
   in
      
      ppConcat [ppString "spec ",
-	       ppIndent (ppSep ppNewline (ppElements elements)),
+	       ppIndent (ppSep ppNewline (ppElements spc.elements)),
 	       ppBreak,
 	       ppString "endspec"
 	      ]
 
  %% not called by Specware per se (see PSL)
   op ppASpecLocal : Spec -> WLPretty
- def ppASpecLocal (spc as {types,ops,elements,qualifier}) = 
+ def ppASpecLocal spc =
    let 
      def lookupType(Qualified(q,id)) =
-       case findAQualifierMap(types,q,id) of
+       case findAQualifierMap(spc.types,q,id) of
 	 | Some v -> v
      def lookupOp(Qualified(q,id)) =
-       case findAQualifierMap(ops,q,id) of
+       case findAQualifierMap(spc.ops,q,id) of
 	 | Some v -> v
      def ppAOp qId = ppAOpInfo (lookupOp qId)
      def ppAType qId = ppATypeInfo (lookupType qId)
@@ -81,7 +81,7 @@ SpecCalc qualifying spec
   in
      
      ppConcat [ppString "spec ",
-	       ppIndent (ppSep ppNewline (ppElements elements)),
+	       ppIndent (ppSep ppNewline (ppElements spc.elements)),
 	       ppString "endspec"
 	      ]
 
