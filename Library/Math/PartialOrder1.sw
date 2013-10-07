@@ -1,7 +1,7 @@
 spec
 
  type A
- op <= infixl 20 : A * A -> Boolean
+ op <= infixl 20 : A * A -> Bool
 
  axiom reflexive_le is
     fa(a:A) a<=a
@@ -12,7 +12,7 @@ spec
  axiom antisymmetric_le is
     fa(a:A,b:A)(a<=b && b<=a => a=b)
 
- op monotone: (A->A) -> Boolean
+ op monotone: (A->A) -> Bool
  axiom def_of_monotone is
    fa(a1:A,a2:A,f:A->A)(a1<=a2 => f(a1)<=f(a2))
 

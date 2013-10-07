@@ -8,7 +8,7 @@
 DRO = spec
  type D
  type R
- op O : D * R -> Boolean
+ op O : D * R -> Bool
  end-spec
 
 (* finding one feasible solution *)
@@ -24,8 +24,8 @@ DROfPartial = spec
 
 DROfTotal = spec
  import DRO
- op pre: D->Boolean
- op post: D*R->Boolean
+ op pre: D->Bool
+ op post: D*R->Bool
  op f (x:D|pre(x)) : {z:R | post(x,z)}
  axiom correctness_of_f is 
    fa(x:D,z:R) ((pre(x) && z=f(x)) => O(x,z))
@@ -47,7 +47,7 @@ DROf_All = spec
 Pi1PT = spec
  type D
  type R
- op O2 : D * R * D * R -> Boolean
+ op O2 : D * R * D * R -> Bool
  end-spec
 
 (* finding one feasible solution for a Pi1 problem *)
@@ -64,7 +64,7 @@ Pi1PTf1 = spec
 Pi1PTopt1 = spec
  import DRO
  op cost : D * R -> Nat
- op O2 : D * R * D * R -> Boolean
+ op O2 : D * R * D * R -> Bool
  def O2(x1,z1,x2,z2) = (O(x1,z1) && O(x2,z2) && x1=x2
 		        => cost(x1,z1) <= cost(x2,z2))
  op f : D -> R

@@ -36,12 +36,12 @@ spec
 % and the Kleene Theorem guarantees finite convergence.
 
 % decides if z is the least A element above w that satisfies predicate p
-   def isLeast?(w:A)(p:A ->Boolean)(z:A):Boolean
+   def isLeast?(w:A)(p:A -> Bool)(z:A):Bool
       = w<=z && p(z) && (fa(y:A)(w<=y && p(y) => z<=y))
 
-   op least(w:A)(p:A ->Boolean):A 
+   op least(w:A)(p:A -> Bool):A 
    axiom spec_of_least is 
-       fa(w:A,p:A ->Boolean,z:A)
+       fa(w:A,p:A ->Bool,z:A)
          (least w p = z => isLeast? w p z)
 
 end

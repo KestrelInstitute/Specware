@@ -13,8 +13,8 @@
 %% must be uniform. The state variables 's' and 's'' can vary between
 %% functions 'f1' and 'f2', but will be renamed uniformly in the
 %% resulting function 'f'. 'Pre' is a precondition of type 'StateType
-%% -> Boolean' which 's' can appear free in, and 'Post' is a
-%% postcondition of type 'StateType -> StateType -> Boolean' in which
+%% -> Bool' which 's' can appear free in, and 'Post' is a
+%% postcondition of type 'StateType -> StateType -> Bool' in which
 %% 's' and 's'' can both appear free.
 
 %% TODO: Describe the rule combination algorithm and correctness
@@ -683,7 +683,7 @@ op removePatternVars (vars:List Id)(pat:Option MSPattern):List Id =
 % Remove duplicate elements (inefficient, as is most stuff in this module ..)
 op nub (l:MSTerms):MSTerms = nubBy equalTerm? l
 
-op [a] nubBy (p:a * a -> Boolean)(l:List a):List a =
+op [a] nubBy (p:a * a -> Bool)(l:List a):List a =
   case l of 
     | [] -> []
     | (x::xs) | exists? (fn y -> p (x,y)) xs -> nubBy p xs
@@ -693,14 +693,14 @@ op [a,b,c] uncurry (f: (a -> b -> c))((x,y):(a*b)):c =
   f x y
   
 %% Set membership, over an arbitrary equivalence.
-op [a] inBy? (p:(a*a)->Boolean)(e:a)(l:List a):Boolean =
+op [a] inBy? (p:(a*a)->Bool)(e:a)(l:List a):Bool =
    case l of 
      | [] -> false
      | (x::xs) -> p (e, x) || inBy? p e xs
 
 
 % %%% Set membership, specialized to using the 'equalTerm?' relation.
-op inTerm? (c:MSTerm) (l:MSTerms):Boolean = inBy? equalTerm? c l
+op inTerm? (c:MSTerm) (l:MSTerms):Bool = inBy? equalTerm? c l
 
 
 op printIt ((vs,xs) : (ExVars * DNFRep)):() =
@@ -718,46 +718,46 @@ op guard(p:Bool)(msg:String):Env () =
 
 %%% Classification of clauses
 type CClass =
-  | CAtom (MSTerm * (List Id) * Boolean * MSType) % Term * Referenced existentials 
-  | CDef (List (Id * MSType) * MSTerm * List Id * Boolean * MSType) 
+  | CAtom (MSTerm * (List Id) * Bool * MSType) % Term * Referenced existentials 
+  | CDef (List (Id * MSType) * MSTerm * List Id * Bool * MSType) 
     % Defined variables * definition * referenced variables
-  | CConstrain (MSTerm * MSTerm * List Id * Boolean * MSType)
+  | CConstrain (MSTerm * MSTerm * List Id * Bool * MSType)
     % poststate/return value * definition * referenced variables
-  | CCase (MSPattern * MSTerm * List Id * Boolean * MSType)
+  | CCase (MSPattern * MSTerm * List Id * Bool * MSType)
 
 % Recognizers for the various classes.
-op isAtomClass(c:CClass):Boolean =
+op isAtomClass(c:CClass):Bool =
   case c of
     | CAtom _ -> true
     | _ -> false
 
 
-op isTrueAtom?(c:CClass):Boolean =
+op isTrueAtom?(c:CClass):Bool =
   case c of
     | CAtom (t,_,_,_) -> trueTerm? t
     | _ -> false
 
-op isFalseAtom?(c:CClass):Boolean =
+op isFalseAtom?(c:CClass):Bool =
   case c of
     | CAtom (t,_,_,_) -> falseTerm? t
     | _ -> false
 
-op isDefClass(c:CClass):Boolean =
+op isDefClass(c:CClass):Bool =
   case c of
     | CDef _ -> true
     | _ -> false
 
-op isConstrainClass(c:CClass):Boolean =
+op isConstrainClass(c:CClass):Bool =
   case c of
     | CConstrain _ -> true
     | _ -> false
 
-op isCaseClass(c:CClass):Boolean =
+op isCaseClass(c:CClass):Bool =
   case c of
     | CCase _ -> true
     | _ -> false
 
-op isSplit(args:BTArgs)(c:CClass):Boolean =
+op isSplit(args:BTArgs)(c:CClass):Bool =
   (isAtomClass c || isCaseClass c) && fullyDefined? args c
 
 op casePattern (c:CClass):MSPattern =
@@ -765,13 +765,13 @@ op casePattern (c:CClass):MSPattern =
     | CCase (pat,_,_,_,_) -> pat
 
 % Is a clause c in a list of clauses.
-op inClause?(c:CClass)(l:List CClass):Boolean =
+op inClause?(c:CClass)(l:List CClass):Bool =
   case l of
    | [] -> false
    | (x :: xs) -> equalClass? c x || inClause? c xs
 
 % Are two atomic terms equal.
-op equalClass?(c1:CClass)(c2:CClass):Boolean =
+op equalClass?(c1:CClass)(c2:CClass):Bool =
   case (c1,c2) of
     | (CAtom (t,_,b1,ty1), CAtom (u,_,b2,ty2)) ->
         equalTerm? (t,u) && (b1 = b2) && equalType? (ty1,ty2)
@@ -800,17 +800,17 @@ op classToTerm(c:CClass):MSTerm =
         n b (mkEquality (ty, u, t))
 
 % Get all of the atoms satisfying a criteria.
-op gatherAtoms(p:CClass -> Boolean)(cs:(List (List CClass))):List CClass =
+op gatherAtoms(p:CClass -> Bool)(cs:(List (List CClass))):List CClass =
   nubBy (uncurry equalClass?) (flatten (map (filter p) cs))
 
 % Remove all of the atoms satisfying a criteria
-op removeAtoms(p:CClass -> Boolean)(cs:(List (List CClass))):List (List CClass) =
+op removeAtoms(p:CClass -> Bool)(cs:(List (List CClass))):List (List CClass) =
    map (filter p) cs
 
         
 % An atom is a global definition for a set of clauses if it is a def
 % and it is fully defined and it occurs in each of the input clauses.
-op globalAtom(args:BTArgs)(cpred:(CClass -> Boolean))(clauses:List (List CClass)):(List CClass) =
+op globalAtom(args:BTArgs)(cpred:(CClass -> Bool))(clauses:List (List CClass)):(List CClass) =
    let atoms = gatherAtoms cpred clauses in
    let defined = filter (fullyDefined? args) atoms in
    let occurs = filter
@@ -886,7 +886,7 @@ op simplifyCaseSplit(args:BTArgs)(c:CClass)(l:List (List CClass)):List (MSPatter
             map (fn p -> (p,filter (fn clause -> ~ (clauseClash p clause)) l)) noDups in
        % For each pattern pa, return pat paired with the matching
        % clause, with the constraint on the scrutinee removed.
-       let def clauseMatch (p:MSPattern) (a:CClass) : Boolean =
+       let def clauseMatch (p:MSPattern) (a:CClass) : Bool =
           case a of
             | CCase (p', s',_,_,_) -> equalPattern? (p,p') || ~(atomPolarity a)
             | _ -> false
@@ -916,7 +916,7 @@ op atomDeps(c:CClass):List Id =
 
 
 % Get the variables an atom depends on.
-op atomPolarity(c:CClass):Boolean =
+op atomPolarity(c:CClass):Bool =
    case c of
      | CAtom (_,_,b,_) -> b
      | CDef (_,_,_,b,_) -> b
@@ -926,7 +926,7 @@ op atomPolarity(c:CClass):Boolean =
 
 % An atom is fully defined if none of its dependencies occur
 % in the list of args
-op fullyDefined?(args:BTArgs)(c:CClass):Boolean =
+op fullyDefined?(args:BTArgs)(c:CClass):Bool =
    forall? (fn v -> ~(v in? args.vars)) (atomDeps c)
 
 % The variables defined by a def
@@ -935,7 +935,7 @@ op defVars(c:CClass):List (Id * MSType) =
     | CDef(vars,_,_,_,_) -> vars
     | _ -> []
 
-op debugClassify? : Boolean = false % true      
+op debugClassify? : Bool = false % true      
 op traceClassify(s:String):() =
   if debugClassify? then writeLine s else ()
 
@@ -1124,7 +1124,7 @@ op resolution (ps:MSTerms) (qs:MSTerms):Option MSTerms =
     else Some ( filter (fn x -> ~ (inTerm? x cs) ) (ps ++ qs))
 
 %% Resolve one disjunction of formulas, ps,  with each of the disjunctions in qs.
-op resolveOne (ps:MSTerms)(qs:List MSTerms) (changed?:Boolean):List MSTerms =
+op resolveOne (ps:MSTerms)(qs:List MSTerms) (changed?:Bool):List MSTerms =
   case qs of 
     | [] | changed? -> []
     | [] | ~ changed? -> [ps]
@@ -1207,12 +1207,12 @@ op betan_step (t:MSTerm):MSTerm =
        t
 
 
-op isBetaRedex (t:MSTerm):Boolean =
+op isBetaRedex (t:MSTerm):Bool =
   case t of
      | Apply(Lambda([(pat,_,body)],_),argument,pos) -> true
      | _ -> false
 
-op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Boolean =
+op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Bool =
   case tm of
       | Apply(Fun(Op(Qualified (_,qid),_),_,_), _, _)
           | qid in? (["<=", "<", ">="] : List Id) -> false

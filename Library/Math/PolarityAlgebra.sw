@@ -32,7 +32,7 @@ spec
 
   type Polarity = |bot |pos |neg | top
 
-  def polLe (p1:Polarity, p2:Polarity) : Boolean =
+  def polLe (p1:Polarity, p2:Polarity) : Bool =
     case p1 of
       | bot -> true
       | neg -> (case p2 of

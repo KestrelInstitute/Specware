@@ -8,7 +8,7 @@ GlobalSearchTheory = spec
   op InitialState : D -> State
 
   (*  Satisfies(z,s) means that z is "in" the space denoted by s *)
-  op Satisfies : R * State -> Boolean
+  op Satisfies : R * State -> Bool
 
   (*  All feasible solutions are "in" the initial space ... *)
 
@@ -36,7 +36,7 @@ GlobalSearchTheory = spec
   necessary condition on existence of a feasible solution in the
   current subspace. *)
 
-   op Phi : State -> Boolean
+   op Phi : State -> Bool
    axiom characterization_of_necessary_pruning_test_phi is
      fa(x:D,z:R,s:State)(Satisfies(z,s) && O(x,z) => Phi(s))
 

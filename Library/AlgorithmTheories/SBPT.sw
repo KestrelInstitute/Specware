@@ -30,16 +30,16 @@ iteration of the current partial solution, so a SSP spec seems appropriate.
 
 SSP = spec
  type State
- op pre  : State -> Boolean
- op post : State -> State -> Boolean
+ op pre  : State -> Bool
+ op post : State -> State -> Bool
  op p (st:State | pre st): {st':State | post st st'}
 end-spec
 
 Mealy = spec
  type State
  type In
- op pre  : State -> Boolean
- op post : State -> In -> State -> Boolean
+ op pre  : State -> Bool
+ op post : State -> In -> State -> Bool
  op p (st:State | pre st)(i:In): {st':State | post st i st'}
 end-spec
 
@@ -47,8 +47,8 @@ Moore = spec
  type State
  type In
  type Out
- op pre  : State -> Boolean
- op post : State -> In -> Out -> State -> Boolean
+ op pre  : State -> Bool
+ op post : State -> In -> Out -> State -> Bool
  op p (st:State | pre st)(i:In): {(o,st'):Out*State | post st i o st'}
 end-spec
 

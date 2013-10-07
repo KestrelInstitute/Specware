@@ -1,14 +1,14 @@
 DeMorgan = spec
 
-  op bnot (x:Boolean) : Boolean = if x then false else true
-  op bor (x:Boolean,y:Boolean) : Boolean = if x then true else y
-  op band (x:Boolean,y:Boolean) : Boolean = if x then y else false
+  op bnot (x:Bool) : Bool = if x then false else true
+  op bor (x:Bool,y:Bool) : Bool = if x then true else y
+  op band (x:Bool,y:Bool) : Bool = if x then y else false
 
   theorem demorgan1 is
-    fa (x:Boolean, y:Boolean) bnot (band (x,y)) = bor (bnot x, bnot y)
+    fa (x:Bool, y:Bool) bnot (band (x,y)) = bor (bnot x, bnot y)
 
   theorem demorgan2 is
-    fa (x:Boolean, y:Boolean) bnot (bor (x,y)) = band (bnot x, bnot y)
+    fa (x:Bool, y:Bool) bnot (bor (x,y)) = band (bnot x, bnot y)
 
 %%% The proofs:
 

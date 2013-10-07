@@ -253,13 +253,13 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
       let _ = writeLine (failure_msg) in
       true
 
-op checkSpecCore(spc : Spec, str : String) : Boolean =
+op checkSpecCore(spc : Spec, str : String) : Bool =
   let _ = writeLine ("Checking spec: " ^ str ^ ".") in
   specOkay? "Spec is okay." "ERROR: Ill-formed spec." spc
 
 %% Evaluate the given unit and print it to a file.
 %% Returns a success flag.
-op checkSpec (uid_str : String) : Boolean =
+op checkSpec (uid_str : String) : Bool =
 %let _ = writeLine ("uid_str:"^uid_str) in
 case evaluateUnitId uid_str of
   | None -> let _ = writeLine("Error in checkspec: Unknown UID " ^ uid_str) in false

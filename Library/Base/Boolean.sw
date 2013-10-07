@@ -39,7 +39,7 @@ theorem conditional_false is [a]
   fa(p:a,q:a) ((if false then p else q) = q)
 
 theorem conditional_noop is [a]
-  fa(p:Boolean,e:a) ((if p then e else e) = e)
+  fa(p:Bool,e:a) ((if p then e else e) = e)
 
 
 % Isabelle pragmas

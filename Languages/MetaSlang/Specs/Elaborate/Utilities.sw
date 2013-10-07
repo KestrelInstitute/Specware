@@ -460,7 +460,7 @@ Utilities qualifying spec
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
 
-  op unifyTypes : LocalEnv -> SubtypeMode -> MSType -> MSType -> Boolean
+  op unifyTypes : LocalEnv -> SubtypeMode -> MSType -> MSType -> Bool
  def unifyTypes env subtype_mode s1 s2 =
 
    (* Unify possibly recursive types s1 and s2.
@@ -748,7 +748,7 @@ Utilities qualifying spec
       result)
    | _ -> result 
 
-  op consistentTypes? : LocalEnv * MSType * MSType * SubtypeMode -> Boolean
+  op consistentTypes? : LocalEnv * MSType * MSType * SubtypeMode -> Bool
  def consistentTypes? (env, srt1, srt2, subtype_mode) =
    let free_mtvs = freeMetaTyVars (srt1) ++ freeMetaTyVars (srt2) in
    let val = (unifyTypes env subtype_mode srt1 srt2) in
