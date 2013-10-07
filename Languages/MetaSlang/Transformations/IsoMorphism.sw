@@ -420,11 +420,12 @@ op Or (left : SpecCalc.Env Bool) (right : SpecCalc.Env Bool) : SpecCalc.Env Bool
              % let _ = writeLine(if result then "is opq" else "not opq") in
              result)
         def cto?(tm, d_ty) =
-          % let _ = writeLine("cto?: "^printTerm tm) in
+          % let _ = writeLine("cto?: "^printTerm tm^": "^printType d_ty) in
           let u_ty = inferType(spc, tm) in
           opacityPreserved?(d_ty, u_ty)
             &&
           (case tm of
+           | Fun(Embed(_, false), Base(ty_qid, _, _), _) -> ty_qid nin? base_src_QIds
            | Apply (t1, t2, _) ->
              let fn_ty = inferType(spc, t1) in
              (case arrowOpt(spc, fn_ty) of
