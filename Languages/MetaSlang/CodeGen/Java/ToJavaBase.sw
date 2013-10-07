@@ -260,8 +260,8 @@ def tt = tt_v2
 op tt_v2: Id -> JavaType
 def tt_v2(id) =
   case id of
-    | "Boolean" -> (Basic (JBool), 0) % see tt_v3
     | "Bool"    -> (Basic (JBool), 0) % see tt_v3
+    | "Integer" -> (Basic (JInt), 0)
     | "Int"     -> (Basic (JInt), 0)
     | "Nat"     -> (Basic (JInt), 0)
     | "Char"    -> (Basic (Char), 0)
@@ -307,7 +307,7 @@ def tt_v3M srt =
 			}) id ptypes;
 	   return (tt_v2 id)
 	  }
-     | Boolean _  -> return (tt_v2 "Boolean")
+     | Boolean _  -> return (tt_v2 "Bool")
      | Arrow(srt0,srt1,_) -> 
        {
 	sid <- srtIdM srt;
@@ -378,7 +378,7 @@ def srtId_internalM(srt,addIds?) =
 	     else return id;
        return ([tt_v2 id],id)
       }
-    | Boolean _ -> return ([tt_v2 "Boolean"],"Boolean")
+    | Boolean _ -> return ([tt_v2 "Bool"],"Boolean")
     | Product([],_) -> return ([JVoid],"void")
     | Product(fields,_) ->
       {
