@@ -510,9 +510,7 @@ def mkThisExpr() =
 op mkBaseJavaBinOp: Id -> Java.BinOp
 def mkBaseJavaBinOp(id) =
   case id of
-    | "&&"  -> CdAnd  % was "&&" but I think that's buggy in Specware 4.0 (??)
-    | "or" -> CdOr
-    | "&" -> And
+    | "&&"  -> CdAnd  
     | "=" -> Eq
     | "==" -> Eq
     | "!=" -> NotEq
@@ -556,7 +554,6 @@ def javaBaseOp?(id) =
     | "divF" -> true
     | "modT" -> true
     | "rem" -> true
-    %%| "-" -> true
     | "~" -> true
     | _ -> false
 
@@ -601,7 +598,7 @@ def mkJavaIff(e1,e2) =
 
 op mkJavaEq: JavaExpr * JavaExpr * Id -> JavaExpr
 def mkJavaEq(e1, e2, t1) =
-  if (t1 = "Boolean" || t1 = "Integer" || t1 = "Nat" || t1 = "Char")
+  if (t1 = "Bool" || t1 = "Integer" || t1 = "Nat" || t1 = "Char")
     then CondExp (Bin (Eq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
@@ -609,7 +606,7 @@ def mkJavaEq(e1, e2, t1) =
 
 op mkJavaNotEq: JavaExpr * JavaExpr * Id -> JavaExpr
 def mkJavaNotEq(e1, e2, t1) =
-  if (t1 = "Boolean" || t1 = "Integer" || t1 = "Nat" || t1 = "Char")
+  if (t1 = "Bool" || t1 = "Integer" || t1 = "Nat" || t1 = "Char")
     then CondExp (Bin (NotEq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)

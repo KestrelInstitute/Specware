@@ -84,7 +84,7 @@ SpecCalc qualifying spec
 
   op PrimitiveTypeOp? (Qualified (q, id) : QualifiedId) : Bool =
     case q of
-      | "Boolean"    -> id in? ["Bool", "show", "toString"]
+      | "Bool"       -> id in? ["Bool", "show", "toString"]
       | "Integer"    -> id in? ["Int", "Int0", "+", "-", "*", "div", "rem", "<=", "<", "~", ">", ">=", "**", "isucc", "ipred", "toString"]
       | "IntegerAux" -> id in? ["-"]  % unary minus
       | "Nat"        -> id in? ["Nat", "show", "toString"]

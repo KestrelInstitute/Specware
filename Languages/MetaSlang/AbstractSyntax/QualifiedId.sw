@@ -35,21 +35,19 @@ MetaSlang qualifying spec
  op mainId (Qualified (_,main_id) : QualifiedId) : String = main_id
 
  %% These are used by translation, morphism code
- op unqualified_Boolean : QualifiedId = mkUnQualifiedId "Boolean"              % used by translate
- op Boolean_Boolean     : QualifiedId = mkQualifiedId ("Boolean", "Boolean")   % used by translate
+ op unqualified_Bool : QualifiedId = mkUnQualifiedId "Bool"           % used by translate
+ op Bool_Bool        : QualifiedId = mkQualifiedId ("Bool", "Bool")   % used by translate
 
  op syntactic_qid? (Qualified (q, id)) : Bool =                  % used by translate, morphism
-  if q = "Boolean" || q = UnQualified then                       % used by translate, morphism
+  if q = "Bool" || q = UnQualified then                       % used by translate, morphism
     (case id of
        | "~"   -> true
-       | "&&"  -> true
-       | "||"  -> true
+       | "&&"  -> true  % was "&"
+       | "||"  -> true  % was "or"
        | "=>"  -> true
        | "<=>" -> true
        | "="   -> true
        | "~="  -> true
-      %| "&"   -> true  % deprecated
-      %| "or"  -> true  % deprecated
        | _ -> false)
   else
     false

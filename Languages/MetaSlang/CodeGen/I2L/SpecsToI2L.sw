@@ -489,11 +489,11 @@ op type2itype (ms_tvs  : TyVars,
    % primitives
    % ----------------------------------------------------------------------
    
-   | Boolean _                                         -> I_Primitive I_Bool
-   | Base (Qualified ("Nat",       "Nat"),    [],   _) -> I_Primitive I_Nat
-   | Base (Qualified ("Integer",   "Int"),    [],   _) -> I_Primitive I_Int
-   | Base (Qualified ("Character", "Char"),   [],   _) -> I_Primitive I_Char
-   | Base (Qualified ("String",    "String"), [],   _) -> I_Primitive I_String
+   | Boolean _                                       -> I_Primitive I_Bool
+   | Base (Qualified ("Nat",     "Nat"),    [],   _) -> I_Primitive I_Nat
+   | Base (Qualified ("Integer", "Int"),    [],   _) -> I_Primitive I_Int
+   | Base (Qualified ("Char",    "Char"),   [],   _) -> I_Primitive I_Char
+   | Base (Qualified ("String",  "String"), [],   _) -> I_Primitive I_String
 
    | Base (Qualified (_,           "Ptr"),    [t1], _) -> 
      let target  = type2itype (ms_tvs, t1, ctxt)       in

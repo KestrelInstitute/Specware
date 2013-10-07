@@ -83,7 +83,7 @@ XML qualifying spec
 							       ""
 							       parms) ^ 
 					    ")"))
-      | Boolean       -> "Boolean"
+      | Boolean       -> "Bool"
       | TyVar         -> "type var"
       | MetaTyVar     -> "meta type var"
       | Bottom        -> "<bottom>"

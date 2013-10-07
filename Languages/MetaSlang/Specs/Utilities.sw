@@ -2632,7 +2632,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       loop 1
 
   op knownNonEmptyBaseTypes: QualifiedIds =
-    [Qualified("Boolean", "Bool"),   
+    [Qualified("Bool",    "Bool"),   
      Qualified("Integer", "Int"),   
      Qualified("Nat",     "Nat"), 
      Qualified("Char",    "Char"),
@@ -2983,7 +2983,7 @@ op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) -> Some(pat, condn)
     | _ -> None
 
- def evaluableQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Boolean"]
+ def evaluableQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Bool"]
 
 %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
 op MSInterpreter.interpreterBaseSpec: Spec

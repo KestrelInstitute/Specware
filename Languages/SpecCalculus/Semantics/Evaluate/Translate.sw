@@ -635,7 +635,7 @@ SpecCalc qualifying spec
 	                          [] 
 				  info.names;
 	       new_names <- return (reverse new_names);
-	       if unqualified_Boolean in? new_names || Boolean_Boolean in? new_names then
+	       if unqualified_Bool in? new_names || Bool_Bool in? new_names then
 		 return types
 	       else
 		 let new_info = info << {names = new_names} in

@@ -132,10 +132,10 @@ def getStringAttributesFromSpec spc =
    op basicOpName?      : QualifiedId -> Bool
 
   def basicQualifiers = [
-			 "Boolean",    % can appear in raw translation rules
+			 "Bool",       % can appear in raw translation rules
 			 "Char", 
 			 "Compare",
-			 "Function",  % TODO: add Relations ?
+			 "Function",   % TODO: add Relations ?
 			 "Integer", 
 			 "IntegerAux", % special hack for unary minus
 			 "List",

@@ -101,7 +101,7 @@ SpecCalc qualifying spec
 	    | Base (QId, srts, a) -> 
 	      let cod_srt =
 	          (case translateQId typeMap QId of
-		     | Qualified("Boolean", "Boolean") -> Boolean a
+		     | Qualified("Bool", "Bool") -> Boolean a
 		     | cod_qid -> Base (cod_qid, srts, a))
 	      in
 		cod_srt
@@ -112,7 +112,7 @@ SpecCalc qualifying spec
 	      let cod_qid as Qualified (q, id) = translateQId opMap dom_qid in
 	      let fun =
 	          (case q of
-		     | "Boolean" ->
+		     | "Bool" ->
 	               (case id of 
 			  | "~"   -> Not
 			  | "&&"  -> 

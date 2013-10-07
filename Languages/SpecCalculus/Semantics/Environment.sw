@@ -165,8 +165,7 @@ UnitId_Dependency.
     let base_type_names = 
         foldriAQualifierMap (fn (q, id, _, names) ->
 			     Cons (Qualified(q, id), names))
-	                    [mkQualifiedId("Boolean", "Boolean"),
-			     mkUnQualifiedId "Boolean"] 
+	                    [Bool_Bool, unqualified_Bool]
 			    base_spec.types
     in
     let base_op_names = 

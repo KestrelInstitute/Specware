@@ -6,7 +6,7 @@ op builtinJavaOp? (Qualified (q, id) : QualifiedId) : Bool =
  case q of
 
    %% Base specs:
-   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
+   | "Bool"       -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
    | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
                              "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
                              "isucc", "ipred", "positive?", "negative?", "zero", "one"]
@@ -30,7 +30,7 @@ op builtinJavaOp? (Qualified (q, id) : QualifiedId) : Bool =
 
 op builtinJavaType? (Qualified (q, id) : QualifiedId) : Bool =
   case q of
-    | "Boolean"    -> id in? ["Bool"]
+    | "Bool"       -> id in? ["Bool"]
     | "Integer"    -> id in? ["Int", "Int0"]
     | "Nat"        -> id in? ["Nat", "PosNat"]
     | "Char"       -> id in? ["Char"]

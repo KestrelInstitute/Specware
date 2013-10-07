@@ -1336,7 +1336,7 @@ AnnSpecPrinter qualifying spec
    % op isBuiltIn? : Import -> Bool
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
    % spec_ref = "String"  or spec_ref = "Nat"  or 
-   % spec_ref = "Boolean" or spec_ref = "Char" or
+   % spec_ref = "Bool"    or spec_ref = "Char" or
    % spec_ref = "Integer" or spec_ref = "List" or 
    % spec_ref = "General"
 

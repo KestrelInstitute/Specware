@@ -457,8 +457,8 @@ spec
 				  %% let _ = writeLine("unique class index for " ^ printQualifiedId default_apex_qid ^ " = " ^ anyToString n) in
 				  (default_apex_qid, aliases) % unique, no need to disambiguate
 				| nn   -> 
-				  if default_apex_qid = Boolean_Boolean || default_apex_qid = unqualified_Boolean then
-				    (Boolean_Boolean, [Boolean_Boolean])
+				  if default_apex_qid = Bool_Bool || default_apex_qid = unqualified_Bool then
+				    (Bool_Bool, [Bool_Bool])
 				  else
 				    %% let _ = writeLine("ambigous class indices for " ^ printQualifiedId default_apex_qid ^ " = " ^ anyToString nn) in
 				    let revised_apex_qid = reviseQId (vertex, qualifier, id, id_to_qualifiers) in
@@ -475,12 +475,12 @@ spec
 		         ([], PolyMap.emptyMap)
 		         class.original
 	       in 
-	       let boolean? = Boolean_Boolean in? aliases in
+	       let boolean? = Bool_Bool in? aliases in
 	       List.foldl (fn (vqid_to_apex_qid_and_aliases_map, vqid) ->
 			   update vqid_to_apex_qid_and_aliases_map 
 			          vqid 
 				  (if boolean? then
-				     (Boolean_Boolean, [Boolean_Boolean])
+				     (Bool_Bool, [Bool_Bool])
 				   else
 				     (eval local_map vqid, aliases)))
 		            vqid_to_apex_qid_and_aliases_map
