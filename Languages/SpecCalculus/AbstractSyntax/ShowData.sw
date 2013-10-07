@@ -42,7 +42,7 @@ import ShowUtils
 op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
 op ppGr1Concat (x:List WLPretty) : WLPretty = ppNest 1 (ppConcat x)
 op ppGr2Concat (x:List WLPretty) : WLPretty = ppNest 2 (ppConcat x)
-op ppNum (n:Integer) : WLPretty = ppString(show n)
+op ppNum (n:Int) : WLPretty = ppString(show n)
 op ppSpace : WLPretty = ppString " "
 op ppSpaceBreak : WLPretty = ppConcat[ppSpace, ppBreak]
 

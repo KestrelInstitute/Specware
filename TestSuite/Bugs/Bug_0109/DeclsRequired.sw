@@ -3,7 +3,7 @@ spec
  type YesNo  = | Yes | No
  type Affirm = | Yes | Sure | Ok
 
- op f : Integer
+ op f : Int
  op g : Nat
  op x : List Char
  op y : List String

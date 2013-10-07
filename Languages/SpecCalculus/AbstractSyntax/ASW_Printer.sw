@@ -39,7 +39,7 @@ ASWPrinter qualifying spec
  def ppGrConcat x = ppNest 0 (ppConcat x)
  def ppGr2Concat x = ppNest 2 (ppConcat x)
  def ppGbConcat x = ppNest 0 (ppConcat x)
- op  ppNum: Integer -> WLPretty
+ op  ppNum: Int -> WLPretty
  def ppNum n = ppString(show n)
 
 

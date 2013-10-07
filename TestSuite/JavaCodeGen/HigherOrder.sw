@@ -1,12 +1,12 @@
 spec
 
-  op ho : (Integer -> Integer) -> Integer
+  op ho : (Int -> Int) -> Int
   def ho f = f 2
 
-  op sqr : Integer -> Integer
+  op sqr : Int -> Int
   def sqr i = i * i
 
-  op hoUser : Integer -> Integer
+  op hoUser : Int -> Int
   def hoUser i =
     let i1 = ho(fn x -> x+1) in
     let i2 = ho sqr in

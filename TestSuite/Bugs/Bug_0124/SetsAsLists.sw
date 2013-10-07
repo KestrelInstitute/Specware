@@ -36,7 +36,7 @@ spec
                                               then union_aux(tl,l2)
                                               else consI(hd,union_aux(tl,l2))
 
-  op insert : Integer * SetAsList -> SetAsList
+  op insert : Int * SetAsList -> SetAsList
   def insert(i,s) = choose[SetAsList]
                       (fn l -> quotient[SetAsList]
                                  (if member(i,l) then l

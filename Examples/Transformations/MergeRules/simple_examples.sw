@@ -4,7 +4,7 @@ T0 = spec
   op o1 : host -> Bool
   op o2 : host -> Bool
   op o3 : host -> Bool
-  op o4 : host -> Integer
+  op o4 : host -> Int
 endspec
 
 

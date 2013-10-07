@@ -29,7 +29,7 @@ We call the successor function on integers "isucc" to distinguish it from the
 inverse of isucc "ipred", for symmetry. *)
 
 type Int
-type Integer = Int  % deprecated -- no longer used by Specware itself
+type Integer = Int  % TODO: deprecated -- no longer used by Specware itself
 
 op zero : Int
 
@@ -778,9 +778,9 @@ op max (i:Int, j:Int) : Int = if i > j then i else j
 
 % comparison:
 
-op compare (i:Int, j:Int) : Comparison = if i < j then Less
-                                    else if i > j then Greater
-                                    else (* i = j *)   Equal
+op Integer.compare (i:Int, j:Int) : Comparison = if i < j then Less
+                                             else if i > j then Greater
+                                             else (* i = j *)   Equal
 
 proof Isa Integer__isucc_subtype_constr
  apply(auto simp add: bij_def inj_on_def surj_def)

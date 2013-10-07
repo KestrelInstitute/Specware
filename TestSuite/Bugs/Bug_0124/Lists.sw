@@ -1,18 +1,18 @@
 spec
 
   type ListI = | nilI
-               | consI Integer * ListI
+               | consI Int * ListI
   % we add "I" (for "Integers") to distinguish from built-in lists
 
   op isempty : ListI -> Bool
   def isempty(l) = (l = nilI)
 
-  op length : ListI -> Integer
+  op length : ListI -> Int
   def length(l) = case l of
                      | nilI -> 0
                      | consI(hd,tl) -> 1 + length(tl)
 
-  op max : ListI -> Integer
+  op max : ListI -> Int
   def max(l) = case l of
                   | nilI -> 0
                   | consI(hd,tl) -> let m = max(tl) in
@@ -23,24 +23,24 @@ spec
                          | nilI -> l2
                          | consI(hd,tl) -> consI(hd,concat(tl,l2))
 
-  op member : Integer * ListI -> Bool
+  op member : Int * ListI -> Bool
   def member(i,l) = case l of
                        | nilI -> false
                        | consI(hd,tl) -> if i = hd then true
                                          else member(i,tl)
 
-  op delete : ListI * Integer -> ListI
+  op delete : ListI * Int -> ListI
   def delete(l,i) = case l of
                        | nilI -> nilI
                        | consI(hd,tl) -> if hd = i then delete(tl,i)
                                          else consI(hd,delete(tl,i))
 
-  op prefix : {(l,n) : ListI * Integer | 0 <= n && n <= length(l)} -> ListI
+  op prefix : {(l,n) : ListI * Int | 0 <= n && n <= length(l)} -> ListI
   def prefix(l,n) = if (n = 0) then nilI
                     else case l of
                             | consI(hd,tl) -> consI(hd,prefix(tl,n-1))
 
-  op sublist : {(l,pos1,pos2) : ListI * Integer * Integer |
+  op sublist : {(l,pos1,pos2) : ListI * Int * Int |
                 0 <= pos1 && pos1 < pos2 && pos2 <= length(l)} -> ListI
   def sublist(l,pos1,pos2) =
       if (pos1 = 0) then prefix(l,pos2)
@@ -56,7 +56,7 @@ spec
   % one is not obliged to use pattern matching: destructors can be
   % defined and used with tests to define ops, e.g. concatenation
 
-  op head : {l : ListI | ~(isempty(l))} -> Integer
+  op head : {l : ListI | ~(isempty(l))} -> Int
   def head(l) = case l of
                    | consI(hd,tl) -> hd
 

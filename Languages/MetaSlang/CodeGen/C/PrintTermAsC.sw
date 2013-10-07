@@ -1105,7 +1105,7 @@ type LocalVarInfo = List (Id * Id)
                            tm       : MSTerm
                            )
   : Pretty
-    * Boolean  %% flag for whether it is a compound statement
+    * Bool         %% flag for whether it is a compound statement
     * CGenStatus 
     * LocalVarInfo %% names and types of local variables (from Lets)
 = 

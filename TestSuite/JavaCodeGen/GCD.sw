@@ -1,6 +1,6 @@
 spec
 
-  op gcd : {(n1,n2) : Integer * Integer | n1 > 0 && n2 > 0} -> Integer
+  op gcd : {(n1,n2) : Int * Int | n1 > 0 && n2 > 0} -> Int
 
   def gcd(n1,n2) = if (n1 > n2) then gcd(n1-n2,n2)
               else if (n1 < n2) then gcd(n1,n2-n1)

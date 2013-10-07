@@ -12,7 +12,7 @@ ThreeValuesDef = spec
                                | Z1 -> Z2
                                | Z2 -> Z0) 
 
-  type foo = | A | B (Integer * Integer)
+  type foo = | A | B (Int * Int)
 
 %  axiom z0notz1 is ~(Z0 = Z1)
 %  axiom z0notz2 is ~(Z0 = Z2)

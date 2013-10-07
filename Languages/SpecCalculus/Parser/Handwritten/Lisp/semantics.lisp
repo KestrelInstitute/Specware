@@ -496,8 +496,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-type-ref (qualifiable-type-name l r)
-  (if (or (equal qualifiable-type-name '(:|Qualified| "<unqualified>" . "Boolean"))
-	  (equal qualifiable-type-name '(:|Qualified| "Boolean" . "Boolean")))      ; Deprecate "Boolean" as qualifier?
+  (if (or (equal qualifiable-type-name '(:|Qualified| "<unqualified>" . "Bool"))
+          (equal qualifiable-type-name '(:|Qualified| "Bool" . "Bool")))
       (cons :|Boolean| (make-pos l r))
     (let ((type-args nil))
       (cons :|Base|

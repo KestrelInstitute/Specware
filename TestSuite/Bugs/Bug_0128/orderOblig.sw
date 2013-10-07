@@ -1,11 +1,11 @@
 S = spec
 
-  op c : Integer
+  op c : Int
 
   op d : Nat
   def d = c   % not well-typed
 
-  op e : Integer
+  op e : Int
   def e = d
 
   conjecture E is e >= 0
