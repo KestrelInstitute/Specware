@@ -7,7 +7,7 @@ spec
   % component but different second components (this is essentially the usual
   % set-theoretic definition)
 
-  % clearly, there exist other ways to refine sets
+  % clearly, there exist other ways to refine maps
 
   % first, we import sets
 

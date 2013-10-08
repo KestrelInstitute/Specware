@@ -149,7 +149,21 @@ theorem Map_P_of_insert is [a]
 %% Proofs
 %%
 
-
+proof Isa BagsAsMaps__occurrences
+  apply(rule Map__map_equality)
+  apply(auto simp add: BagsAsMaps__occs_def)
+  apply(rule_tac x=x and P= "\<lambda> x . (case Map__apply b1 x of None \<Rightarrow> 0 | Some y \<Rightarrow> y) = (case Map__apply b2 x of None \<Rightarrow> 0 | Some y \<Rightarrow> y)" in allE, assumption)
+  apply(case_tac "Map__apply b1 x")
+  apply(case_tac "Map__apply b2 x")
+  apply(auto)
+  defer
+  apply(case_tac "Map__apply b2 x")
+  apply(auto)
+  apply(cut_tac key=x and m=b1 and preda="\<lambda>ignore. True" and predb= Nat__posNat_p in Map__use_Map_P)
+  apply(auto simp add: Map__map_domain)
+  apply(cut_tac key=x and m=b2 and preda="\<lambda>ignore. True" and predb= Nat__posNat_p in Map__use_Map_P)
+  apply(auto simp add: Map__map_domain)
+end-proof
 
 %% Translated version of the proof in Bags.sw:
 proof Isa bagin_of_insert
@@ -200,7 +214,9 @@ proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
 end-proof
 
 proof Isa bag_fold1
-  apply(simp add: BagsAsMaps__bag_fold_def BagsAsMaps__empty_bag_def)
+  apply(simp add: BagsAsMaps__bag_fold_def BagsAsMaps__empty_bag_def Map__foldable_p_def)
+  apply(rule  Map__map_foldi_empty)
+  apply(auto simp add: Map__foldable_p_def)
   sorry
 end-proof
 

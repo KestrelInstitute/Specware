@@ -105,6 +105,9 @@ Maps = Map qualifying spec
   axiom map_domain is
      [a,b] fa(m:Map(a,b), x:a)( (x in? domain(m)) = (ex(z:b)(apply m x = Some z)))
 
+  theorem domain_of_empty is [a, b]
+    domain (empty_map :  Map(a,b)) = empty_set
+
 %TODO define using a fold?
   op [a,b] range : Map(a,b) -> Set b
   axiom map_range is
@@ -145,9 +148,13 @@ Maps = Map qualifying spec
     fa(m: Map(key,a), x: key, y: a)
       domain(update m x y) = set_insert(x, domain m)
 
-  theorem remove_does_noting is [a,b]
+  theorem remove_does_nothing is [a,b]
     fa(m: Map(a,b), x: a)
       ~(x in? domain m) => (remove m x) = m
+
+  theorem domain_of_remove is [a, b]
+    fa(m:Map(a,b), key:a)
+      domain (remove m key) = set_delete(key, domain m)
 
 
 % who added this?
@@ -234,6 +241,11 @@ Maps = Map qualifying spec
   %%   (forall? p m && p(key,val)) => 
   %%   forall? p (update m key val)
 
+  theorem use_forall? is [a,b]
+    fa(p : a * b -> Bool, m : Map(a,b), key:a)
+      (key in? domain m) && (forall? p m) => p(key,case (apply m key) of | Some val -> val)
+
+
   % This is due to the subtype (PosNat) on the values stored in the map.
   % If this is not defined, a declaration is added to the Isabelle translation:
   % Check all pairs in the map to ensure that the preds apply to the keys and values.
@@ -250,6 +262,11 @@ Maps = Map qualifying spec
     fa(preda: a -> Bool, predb: b -> Bool, m : Map(a,b), key:a)
       Map_P(preda, predb) m =>
       Map_P(preda, predb) (remove m key)
+
+  theorem use_Map_P is [a,b]
+    fa(preda: a -> Bool, predb: b -> Bool, m : Map(a,b), key:a)
+      (key in? domain m) && (Map_P(preda,predb) m) => preda key && predb (case (apply m key) of | Some val -> val)
+
 
 
   %% FIXME Prove or drop this:
@@ -284,6 +301,35 @@ Maps = Map qualifying spec
 
 (******************************** The Proofs ********************************)
 
+proof Isa Map__use_Map_P
+  apply(simp add: Map__Map_P_def)
+  apply(cut_tac key=key and m=m and p="\<lambda> (key,val) . preda key \<and> predb val" in Map__use_forall_p)
+  apply(auto)
+end-proof
+
+proof Isa Map__use_forall_p
+  apply(rule_tac P="key in? Map__domain m \<and> Map__forall_p p m" in mp)
+  defer
+  apply(force)
+  apply(cut_tac p="\<lambda> (m:: ('a, 'b)Map__Map) .  key in? Map__domain m \<and> Map__forall_p p m \<longrightarrow> p (key, case Map__apply m key of Some val \<Rightarrow> val)" and m=m in Map__map_induction)
+  apply(auto simp add: Map__domain_of_empty Set__empty_set Map__domain_update Set__set_insertion Set__set_insert_new_def Map__update Map__forall_p_of_update)
+  apply(case_tac "x in? (Map__domain ma)", auto simp add: Map__remove_does_nothing)
+  apply(cut_tac p=p and m="(Map__remove ma x)" and key=key and val=" case Map__apply ma key of Some val \<Rightarrow> val" in Map__forall_p_of_update)
+  apply(cut_tac m="(Map__remove ma x)" and key=key in Map__update_of_apply_same)
+  apply(auto simp add: Map__domain_of_remove Set__set_deletion)
+  apply(metis Map__remove_of_update_both Map__update_of_apply_same) 
+end-proof
+
+proof Isa Map__domain_of_remove
+  apply(rule Set__membership)
+  apply(auto simp add: Map__remove Map__map_domain Set__set_deletion)
+end-proof
+
+proof Isa Map__domain_of_empty
+  apply(rule Set__membership)
+  apply(simp add:  Map__map_domain Set__empty_set Map__empty_map)
+end-proof
+
 proof Isa Map__Map_P_of_remove
   apply(simp add: Map__Map_P_def Map__forall_p_of_remove)
 end-proof
@@ -291,7 +337,7 @@ end-proof
 proof Isa Map__forall_p_of_remove
   apply(case_tac "key in? Map__domain m")
   defer
-  apply(force simp add: Map__remove_does_noting)
+  apply(force simp add: Map__remove_does_nothing)
   apply(cut_tac m="m" and p=p and key=key and val="(Map__TMApply(m,key))" in Map__forall_p_of_update)
   apply(auto simp add: Map__TMApply_becomes_apply Map__update_of_apply_same)
 end-proof
@@ -301,7 +347,7 @@ proof Isa Map__update_of_apply_same
   apply(auto simp add: Map__map_domain)
 end-proof
 
-proof Isa Map__remove_does_noting
+proof Isa Map__remove_does_nothing
   apply(rule Map__map_equality)
   apply(auto simp add: Map__remove Map__map_domain)
 end-proof

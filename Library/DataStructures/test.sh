@@ -55,6 +55,8 @@ run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsBagMaps#SetsA
 echo "  Removing existing Isabelle obligations:"
 clear-isabelle-dir.sh ${SPECWARE4}/Library/DataStructures/Isa
 
+echo "  Generating Isabelle obligations:"
+
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsSets#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsMaps#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsBagMaps#M
