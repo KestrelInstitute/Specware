@@ -1534,7 +1534,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
      let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
                         Unfold(mkQualifiedId("Function","id")),
                         Rewrite(mkQualifiedId("Option","mapOption")),
-                        mkMetaRule0 (Qualified("MSMetaRule", "simplifyUnfoldCase"))]
+                        mkMetaRule0 (Qualified("MSTermTransform", "simplifyUnfoldCase"))]
      in
      let main_script =
        Steps([% Trace true,% SimpStandard,
