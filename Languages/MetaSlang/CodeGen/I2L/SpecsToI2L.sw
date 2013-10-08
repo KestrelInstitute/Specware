@@ -147,29 +147,26 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
  in
  let i_opdefs =
      foldl (fn (defs, resolved) ->
-              case resolved.status of
-                | Interface _ ->
+              if (resolved.cohort in? [Interface, Implementation]) && 
+                 (resolved.status in? [Defined, Undefined]) % even though undefined, may have signature
+                then
                   let name = resolved.name in
                   (case findTheOp (ctxt.ms_spec, name) of
                      | Some info -> 
                        defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
                      | _ ->
                        defs)
-                | Implementation _ ->
-                  let name = resolved.name in
-                  (case findTheOp (ctxt.ms_spec, name) of
-                     | Some info -> 
-                       defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
-                     | _ ->
-                       defs)
-                | _ -> defs)
+              else 
+                let _ = writeLine("Ignoring " ^ anyToString resolved) in
+                defs)
            []
            slice.resolved_op_refs
  in
  let i_typedefs =
      foldl (fn (defs, resolved) ->
-              case resolved.status of
-                | Interface _ ->
+              if (resolved.cohort in? [Interface, Implementation]) && 
+                 (resolved.status in? [Defined])
+                then
                   let name = resolved.name in
                   (case findTheType (ctxt.ms_spec, name) of
                      | Some info ->
@@ -177,15 +174,9 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                           | Some typedef -> defs ++ [typedef]
                           | _ -> defs)
                      | _ -> defs)
-                | Implementation _ ->
-                  let name = resolved.name in
-                  (case findTheType (ctxt.ms_spec, name) of
-                     | Some info ->
-                       (case typeinfo2typedef (name, info, ctxt) of
-                          | Some typedef -> defs ++ [typedef]
-                          | _ -> defs)
-                     | _ -> defs)
-                | _ -> defs)
+              else 
+                let _ = writeLine("Ignoring " ^ anyToString resolved) in
+                defs)
            []
            slice.resolved_type_refs
  in

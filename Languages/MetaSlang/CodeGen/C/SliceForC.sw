@@ -63,34 +63,36 @@ op sliceForCGen (ms_spec    : Spec,
    def oracular_type_ref_status pending_type_ref =
      let name = pending_type_ref.name in
      if builtinCType? name then
-       Some (Translated Primitive)
+       Some Primitive
      else if name in? lm_data.native_types then
-       Some (Translated API)
+       Some API
      else if name in? lm_data.type_macros then
-       Some (Translated Macro)
+       Some Macro
      else
        None
 
    def oracular_op_ref_status pending_op_ref =
      let name = pending_op_ref.name in
      if builtinCOp? name then
-       Some (Translated Primitive)
+       Some Primitive
      else if name in? lm_data.native_ops then
-       Some (Translated API)
+       Some API
      else if name in? lm_data.op_macros then
-       Some (Translated Macro)
+       Some Macro
      else
        None
  in
  let pending_op_refs   = map (fn name ->
                                 {name            = name, 
+                                 cohort          = Interface,
                                  contextual_type = Any noPos, 
-                                 location        = ExecutionRoot})
+                                 location        = Root})
                              root_ops
  in
  let pending_type_refs = map (fn name -> 
                                 {name     = name, 
-                                 location = ExecutionRoot})
+                                 cohort   = Interface,
+                                 location = Root})
                              root_types
  in
  let slice = {ms_spec                  = ms_spec,

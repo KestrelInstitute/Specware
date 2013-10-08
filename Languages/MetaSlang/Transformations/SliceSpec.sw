@@ -36,48 +36,52 @@ op executable? (info : OpInfo) : Bool =
 %%%  ADT for op/type reachability
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
-type TranslationStatus = | Primitive | API | Handwritten | Macro
+type Cohort           = | Interface      % the desired interface or API
+                        | Implementation % used to implement the interface
+                        | Assertion      % used in assertions, could define runtime asserts
+                        | Context        % used in relevant context, could define monitors
+                        | Ignored        
 
-type DefStatus         = | Defined | Undefined | Missing
+type Status           = | Primitive 
+                        | API 
+                        | Handwritten 
+                        | Macro 
+                        | Defined 
+                        | Undefined 
+                        | Missing 
+                        | Misc String
 
-type Status            = | Interface      DefStatus   % the desired interface or API
-                         | Implementation DefStatus   % additional types and ops used to implement the interface
-                         | Assertion      DefStatus   % these establish assertions, could be used to define runtime assertions
-                         | Context        DefStatus   % these provide context, could be used to define monitors
-                         | Translated     TranslationStatus 
-                         | Misc           String
+type TheoremName      = PropertyName
 
-
-type TheoremName = PropertyName
-
-type Locations     = List Location
-type Location      = | ExecutionRoot
-                     | TypingRoot
-                     | LogicalRoot
-                     | ContextRoot
-                     | Op      {name : OpName,      pos: Position}
-                     | Type    {name : TypeName,    pos: Position}
-                     | Theorem {name : TheoremName, pos: Position}
-                     | Unknown
+type Locations        = List Location
+type Location         = | Root 
+                        | Op      {name : OpName,      pos: Position}
+                        | Type    {name : TypeName,    pos: Position}
+                        | Theorem {name : TheoremName, pos: Position}
+                        | Unknown
 
 type ResolvedOpRefs   = List ResolvedOpRef
 type ResolvedOpRef    = {name            : OpName,   
+                         cohort          : Cohort,
                          contextual_type : MSType, % how it is used (as opposed to how it is defined)
                          locations       : Locations,
                          status          : Status}
 
 type ResolvedTypeRefs = List ResolvedTypeRef
-type ResolvedTypeRef  = {name      : TypeName, 
-                         locations : Locations,
-                         status    : Status}
+type ResolvedTypeRef  = {name       : TypeName, 
+                         cohort     : Cohort,
+                         locations  : Locations,
+                         status     : Status}
 
 type PendingOpRefs    = List PendingOpRef
 type PendingOpRef     = {name            : OpName,   
+                         cohort          : Cohort,
                          contextual_type : MSType, % how it is used (as opposed to how it is defined)
                          location        : Location}
 
 type PendingTypeRefs  = List PendingTypeRef
 type PendingTypeRef   = {name     : TypeName, 
+                         cohort   : Cohort,
                          location : Location}
 
 op empty_resolved_op_refs   : ResolvedOpRefs   = []
@@ -95,7 +99,8 @@ type Slice = {ms_spec                  : Spec,
               oracular_type_ref_status : PendingTypeRef -> Option Status}
 
 type Groups = List Group
-type Group  = {status     : Status, 
+type Group  = {cohort     : Cohort,
+               status     : Status, 
                type_names : Ref TypeNames,
                op_names   : Ref OpNames}
 
@@ -103,32 +108,26 @@ op describeGroup (group : Group) : () =
  case (! group.type_names, ! group.op_names) of
    | ([], []) -> ()
    | (type_names, op_names) ->
-     let line  = case group.status of
-
-                   | Interface      Defined     -> "These defined interfaces can be translated to the target : "
-                   | Interface      Undefined   -> "WARNING: These interfaces are undefined : "
-                   | Interface      Missing     -> "WARNING: These interfaces are missing : "
-
-                   | Implementation Defined     -> "These defined implemenations can be translated to the target : "
-                   | Implementation Undefined   -> "WARNING: These implementations are undefined : "
-                   | Implementation Missing     -> "WARNING: These implementations are missing : "
-
-                   | Assertion      Defined     -> "These defined assertions might not be translated to the target : "
-                   | Assertion      Undefined   -> "WARNING: These assertions are undefined : "
-                   | Assertion      Missing     -> "WARNING: These assertions are missing : "
-
-                   | Context        Defined     -> "These provide implicit logical context, but won't be generated : "
-                   | Context        Undefined   -> "These provide implicit logical context, but can't be generated : "
-                   | Context        Missing     -> "WARNING: These provide implicit logical context, but are missing : "
-
-                   | Translated     Primitive   -> "These translate to primitive syntax : "
-                   | Translated     API         -> "These translate to an api interface : "
-                   | Translated     Handwritten -> "These translate to handwritten code : "
-                   | Translated     Macro       -> "These translate to macros : "
-
-                   | Misc           str         -> "NOTE: These have some miscellaneous property: " ^ str ^ " : "
+     let (needed?, cohort) = case group.cohort of
+                               | Interface      -> (true,  "These interface types and ops ")
+                               | Implementation -> (true,  "These implementing types and ops ")
+                               | Assertion      -> (false, "These types and ops in assertions ")
+                               | Context        -> (false, "These types and ops in the relevant context ")
+                               | Ignored        -> (false, "These ignored types and ops ")
      in
-     let _ = writeLine line                                                              in
+     let (warning, status) = case group.status of
+                               | Primitive   -> ("", "translate to primitive syntax: ")
+                               | API         -> ("", "translate to an API: ")
+                               | Handwritten -> ("", "translate to handwritten code: ")
+                               | Macro       -> ("", "translate to macros: ")
+                               | Defined     -> ("", "are defined: ")
+                               | Undefined   -> (if needed? then "WARNING: " else "", "are undefined: ")
+                               | Missing     -> (if needed? then "WARNING: " else "", "are missing: ")
+                               | Misc msg    -> ("", msg)
+     in
+     let heading = warning ^ cohort ^ status in
+
+     let _ = writeLine heading                                                           in
      let _ = writeLine ""                                                                in
      let _ = app (fn name -> writeLine ("  type " ^ show name)) type_names               in
      let _ = case (type_names, op_names) of | (_ :: _, _ :: _) -> writeLine "" | _ -> () in
@@ -146,54 +145,54 @@ op describeSlice (msg : String, slice : Slice) : () =
        str
 
    def partition_type_refs (groups, type_ref) =
-     case findLeftmost (fn group -> group.status = type_ref.status) groups of
+     case findLeftmost (fn group ->
+                          group.cohort = type_ref.cohort && 
+                          group.status = type_ref.status) 
+                       groups 
+       of
        | Some group -> 
          let _ = (group.type_names := (! group.type_names) ++ [type_ref.name]) in
          groups
          
        | _ -> 
          %% Misc options will be added to end
-         let group = {status     = type_ref.status, 
+         let group = {cohort     = type_ref.cohort,
+                      status     = type_ref.status, 
                       type_names = Ref [type_ref.name], 
                       op_names   = Ref []} in
          groups ++ [group]
 
    def partition_op_refs (groups, op_ref) =
-     case findLeftmost (fn group -> group.status = op_ref.status) groups of
+     case findLeftmost (fn group ->
+                          group.cohort = op_ref.cohort && 
+                          group.status = op_ref.status) 
+                       groups 
+       of
        | Some group -> 
          let _ = (group.op_names := (! group.op_names) ++ [op_ref.name]) in
          groups
          
        | _ -> 
          %% Misc options will be added to end
-         let group = {status     = op_ref.status, 
+         let group = {cohort     = op_ref.cohort,
+                      status     = op_ref.status, 
                       type_names = Ref [], 
                       op_names   = Ref [op_ref.name]} in
          groups ++ [group]
 
  in
- let status_options = [Interface      Defined,
-                       Interface      Undefined,
-                       Interface      Missing,
-                       Implementation Defined,
-                       Implementation Undefined,
-                       Implementation Missing,
-                       Assertion      Defined,
-                       Assertion      Undefined,
-                       Assertion      Missing,
-                       Context        Defined,
-                       Context        Undefined,
-                       Context        Missing,
-                       Translated     Primitive,
-                       Translated     API,
-                       Translated     Handwritten,
-                       Translated     Macro]
- in
- let groups = map (fn status -> 
-                     {status     = status, 
-                      type_names = Ref [], 
-                      op_names   = Ref []})
-                  status_options
+ let cohorts     = [Interface, Implementation, Assertion, Context, Ignored]          in
+ let status_list = [Primitive, API, Handwritten, Macro, Defined, Undefined, Missing] in
+ let groups      = foldl (fn (groups, cohort) -> 
+                            foldl (fn (groups, status) ->
+                                     groups <| {cohort     = cohort,
+                                                status     = status, 
+                                                type_names = Ref [], 
+                                                op_names   = Ref []})
+                                  groups
+                                  status_list)
+                         []
+                         cohorts
  in
  let groups = foldl partition_op_refs   groups slice.resolved_op_refs   in
  let groups = foldl partition_type_refs groups slice.resolved_type_refs in
@@ -226,6 +225,7 @@ op resolve_op_ref (slice   : Slice,
      resolved_op_refs
    | _ -> 
      let resolved_op_ref = {name            = pending.name, 
+                            cohort          = pending.cohort,
                             contextual_type = pending.contextual_type, 
                             locations       = [pending.location],
                             status          = status} 
@@ -243,6 +243,7 @@ op resolve_type_ref (slice    : Slice,
      resolved_type_refs
    | _ -> 
      let resolved_type_ref = {name      = pending.name, 
+                              cohort    = pending.cohort,
                               locations = [pending.location],
                               status    = status} 
      in
@@ -262,7 +263,7 @@ op types_in_slice (slice : Slice) : TypeNames =
 op extend_execution_slice_for_pending_op_ref (pending_op_refs : PendingOpRefs)
                                              (slice           : Slice, 
                                               pending_op_ref  : PendingOpRef)
-  : Slice =
+ : Slice =
  let 
    def status info = if executable? info then Defined else Undefined
  in
@@ -272,8 +273,9 @@ op extend_execution_slice_for_pending_op_ref (pending_op_refs : PendingOpRefs)
      slice << {resolved_op_refs = new_resolved_op_refs}
    | _ ->
      case findTheOp (slice.ms_spec, pending_op_ref.name) of
-       | Some info  ->
-         let status               = Implementation (status info) in
+       | Some info ->
+         let cohort               = Implementation in
+         let status               = status info    in
          let new_resolved_op_refs = resolve_op_ref (slice, pending_op_ref, status) in
          let new_pending_op_refs  = foldl (fn (pendings, pending) ->
                                              case findLeftmost (fn resolved -> 
@@ -289,13 +291,13 @@ op extend_execution_slice_for_pending_op_ref (pending_op_refs : PendingOpRefs)
                                                  else
                                                    pending |> pendings)
                                           []
-                                          (pendingOpRefsInTerm info.dfn)
+                                          (pendingOpRefsInTerm (info.dfn, cohort))
         in
         let new_pending_op_refs   = union (new_pending_op_refs, slice.pending_op_refs) in
         slice << {resolved_op_refs = new_resolved_op_refs,
                   pending_op_refs  = new_pending_op_refs}
        | _ ->
-         let new_resolved_op_refs = resolve_op_ref (slice, pending_op_ref, Implementation Missing) in
+         let new_resolved_op_refs = resolve_op_ref (slice, pending_op_ref, Missing) in
          slice << {resolved_op_refs = new_resolved_op_refs}
 
 op extend_execution_slice (s0 : Slice) : Slice =
@@ -305,11 +307,12 @@ op extend_execution_slice (s0 : Slice) : Slice =
        s1
        pending_op_refs
 
-op execution_closure (slice : Slice) : Slice =
+op implementation_closure (slice : Slice) : Slice =
  case slice.pending_op_refs of
-   | [] ->  slice
+   | [] ->  
+     typing_closure slice
    | _ ->
-     execution_closure (extend_execution_slice slice)
+     implementation_closure (extend_execution_slice slice)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 %%%  Chase referenced types to fixpoint
@@ -329,7 +332,8 @@ op extend_typing_slice_for_pending_type_ref (pending : PendingTypeRefs)
    | _ ->
      case findTheType (slice.ms_spec, pending_type_ref.name) of
        | Some info -> 
-         let status                 = Implementation (status info) in
+         let cohort                 = Implementation in
+         let status                 = status info    in
          let new_resolved_type_refs = resolve_type_ref (slice, pending_type_ref, status) in
          let new_pending_type_refs  = foldl (fn (pending_type_refs, pending) ->
                                                case findLeftmost (fn resolved -> 
@@ -345,13 +349,13 @@ op extend_typing_slice_for_pending_type_ref (pending : PendingTypeRefs)
                                                    else
                                                      pending |> pending_type_refs)
                                             []
-                                            (pendingTypeRefsInType info.dfn)
+                                            (pendingTypeRefsInType (info.dfn, cohort))
          in
          let new_pending_type_refs  = union (new_pending_type_refs, slice.pending_type_refs) in
          slice << {resolved_type_refs = new_resolved_type_refs,
                    pending_type_refs  = new_pending_type_refs}
        | _ ->
-         let new_resolved_type_refs = resolve_type_ref (slice, pending_type_ref, Implementation Missing) in
+         let new_resolved_type_refs = resolve_type_ref (slice, pending_type_ref, Missing) in
          slice << {resolved_type_refs = new_resolved_type_refs}
 
 op extend_typing_slice (s0 : Slice) : Slice =
@@ -361,45 +365,50 @@ op extend_typing_slice (s0 : Slice) : Slice =
        s1
        pending
 
-op pendingOpRefsInTerm (term : MSTerm) : PendingOpRefs =
+op pendingOpRefsInTerm (term : MSTerm, cohort : Cohort) : PendingOpRefs =
  %% TODO: get real locations
  map (fn name -> 
         {name            = name, 
+         cohort          = cohort,
          contextual_type = Any noPos, 
          location        = Unknown})
      (opsInTerm term)
 
-op pendingOpRefsInType (typ : MSType) : PendingOpRefs =
+op pendingOpRefsInType (typ : MSType, cohort : Cohort) : PendingOpRefs =
  %% TODO: get real locations
  map (fn name -> 
         {name            = name, 
+         cohort          = cohort,
          contextual_type = Any noPos, 
          location        = Unknown})
      (opsInType typ)
 
-op pendingTypeRefsInTerm (term : MSTerm) : PendingTypeRefs =
+op pendingTypeRefsInTerm (term : MSTerm, cohort : Cohort) : PendingTypeRefs =
  %% TODO: get real locations
  map (fn name -> 
         {name     = name, 
+         cohort          = cohort,
          location = Unknown})
      (typesInTerm term)
 
-op pendingTypeRefsInType (typ : MSType) : PendingTypeRefs =
+op pendingTypeRefsInType (typ : MSType, cohort : Cohort) : PendingTypeRefs =
  %% TODO: get real locations
  map (fn name -> 
         {name     = name, 
+         cohort          = cohort,
          location = Unknown})
      (typesInType typ)
 
 op typing_closure (s0 : Slice) : Slice =
- let root_ops      = ops_in_slice   s0 in
- let root_types    = types_in_slice s0 in
- let pending_type_refs = map (fn name -> {name = name, location = TypingRoot}) root_types in
+ let root_ops          = ops_in_slice   s0 in
+ let root_types        = types_in_slice s0 in
+ let pending_type_refs = map (fn name -> {name = name, cohort = Implementation, location = Root}) root_types in
  let pending_type_refs = 
      foldl (fn (pending_type_refs, op_name) ->
               case findTheOp (s0.ms_spec, op_name) of
                 | Some info ->
-                  union (pendingTypeRefsInTerm info.dfn, pending_type_refs)
+                  union (pendingTypeRefsInTerm (info.dfn, Implementation), 
+                         pending_type_refs)
                 | _ ->
                   pending_type_refs)
            pending_type_refs
@@ -434,7 +443,8 @@ op extend_logical_slice_for_pending_type_ref (pending_op_refs   : PendingOpRefs)
    | _ ->
      case findTheType (slice.ms_spec, pending_type_ref.name) of
        | Some info ->
-         let status                 = Assertion (status info) in
+         let cohort                 = Assertion   in
+         let status                 = status info in
          let new_resolved_type_refs = resolve_type_ref (slice, pending_type_ref, status) in
          let new_pending_op_refs    = foldl (fn (pendings, pending) ->
                                            case findLeftmost (fn resolved -> 
@@ -450,7 +460,7 @@ op extend_logical_slice_for_pending_type_ref (pending_op_refs   : PendingOpRefs)
                                                else
                                                 pending |> pendings)
                                         []
-                                        (pendingOpRefsInType info.dfn)
+                                        (pendingOpRefsInType (info.dfn, cohort))
          in
          let new_pending_type_refs  = foldl (fn (pendings, pending) ->
                                            case findLeftmost (fn resolved -> 
@@ -466,7 +476,7 @@ op extend_logical_slice_for_pending_type_ref (pending_op_refs   : PendingOpRefs)
                                                else
                                                  pending |> pendings)
                                         []
-                                        (pendingTypeRefsInType info.dfn)
+                                        (pendingTypeRefsInType (info.dfn, cohort))
          in
          let new_pending_op_refs    = union (new_pending_op_refs,   slice.pending_op_refs)   in
          let new_pending_type_refs  = union (new_pending_type_refs, slice.pending_type_refs) in
@@ -474,7 +484,7 @@ op extend_logical_slice_for_pending_type_ref (pending_op_refs   : PendingOpRefs)
                    pending_op_refs    = new_pending_op_refs,
                    pending_type_refs  = new_pending_type_refs}
        | _ ->
-         let new_resolved_type_refs = resolve_type_ref (slice, pending_type_ref, Assertion Missing) in
+         let new_resolved_type_refs = resolve_type_ref (slice, pending_type_ref, Missing) in
          slice << {resolved_type_refs = new_resolved_type_refs}
 
 op extend_logical_slice_for_pending_op_ref (pending_op_refs   : PendingOpRefs)
@@ -492,23 +502,24 @@ op extend_logical_slice_for_pending_op_ref (pending_op_refs   : PendingOpRefs)
    | _ ->
      case findTheOp (slice.ms_spec, pending_op_ref.name) of
        | Some info ->
-         let status                = Assertion (status info) in
+         let cohort                = Assertion   in
+         let status                = status info in
          let new_resolved_op_refs  = resolve_op_ref (slice, pending_op_ref, status) in
          let new_pending_op_refs   = foldl (fn (pendings, pending) ->
-                                              case findLeftmost (fn resolved -> 
-                                                                   resolved.name = pending.name)
-                                                                new_resolved_op_refs 
-                                                of
-                                                | Some _ -> 
-                                                  pendings
-                                                | _ -> 
-                                                  if pending in? pendings then
-                                                    % it's already in the queue to be processed
-                                                    pendings
-                                                  else
-                                                    pending |> pendings)
-                                           []
-                                           (pendingOpRefsInTerm info.dfn)
+                                             case findLeftmost (fn resolved -> 
+                                                                  resolved.name = pending.name)
+                                                               new_resolved_op_refs 
+                                               of
+                                               | Some _ -> 
+                                                 pendings
+                                               | _ -> 
+                                                 if pending in? pendings then
+                                                   % it's already in the queue to be processed
+                                                   pendings
+                                                 else
+                                                   pending |> pendings)
+                                          []
+                                          (pendingOpRefsInTerm (info.dfn, cohort))
          in
          let new_pending_type_refs = foldl (fn (pendings, pending) ->
                                               case findLeftmost (fn resolved -> 
@@ -524,7 +535,7 @@ op extend_logical_slice_for_pending_op_ref (pending_op_refs   : PendingOpRefs)
                                                   else
                                                     pending |> pendings)
                                            []
-                                           (pendingTypeRefsInTerm info.dfn)
+                                           (pendingTypeRefsInTerm (info.dfn, cohort))
          in
          let new_pending_op_refs   = union (new_pending_op_refs,   slice.pending_op_refs)   in
          let new_pending_type_refs = union (new_pending_type_refs, slice.pending_type_refs) in
@@ -532,7 +543,7 @@ op extend_logical_slice_for_pending_op_ref (pending_op_refs   : PendingOpRefs)
                    pending_op_refs   = new_pending_op_refs,
                    pending_type_refs = new_pending_type_refs}
        | _ ->
-         let new_resolved_op_refs = resolve_op_ref (slice, pending_op_ref, Assertion Missing) in
+         let new_resolved_op_refs = resolve_op_ref (slice, pending_op_ref, Missing) in
          slice << {resolved_op_refs = new_resolved_op_refs}
 
 op extend_logical_slice (s0 : Slice) : Slice =
@@ -551,18 +562,21 @@ op extend_logical_slice (s0 : Slice) : Slice =
  in
  s3
 
-op logical_closure (s0 : Slice) : Slice =
+op assertion_closure (s0 : Slice) : Slice =
+ let cohort        = Assertion         in
  let root_ops      = ops_in_slice   s0 in
  let root_types    = types_in_slice s0 in
  let pending_op_refs   = map (fn name ->
                                 {name            = name, 
+                                 cohort          = cohort,
                                  contextual_type = Any noPos, 
-                                 location        = LogicalRoot})  
+                                 location        = Root})  
                              root_ops
  in
  let pending_type_refs = map (fn name -> 
                                 {name     = name, 
-                                 location = LogicalRoot}) 
+                                 cohort   = cohort,
+                                 location = Root}) 
                              root_types
  in
  let s1 = s0 << {pending_op_refs   = pending_op_refs, 
@@ -579,11 +593,16 @@ op logical_closure (s0 : Slice) : Slice =
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
 
+op context_closure (slice : Slice) : Slice =
+ slice
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W
+
 op completeSlice (s0 : Slice) : Slice =
  %% s0 begins with pending ops and types
- let s1 = execution_closure s0 in
- let s2 = typing_closure    s1 in
- let s3 = logical_closure   s2 in
+ let s1 = implementation_closure s0 in
+ let s2 = assertion_closure      s1 in
+ let s3 = context_closure        s2 in
  s3
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%W

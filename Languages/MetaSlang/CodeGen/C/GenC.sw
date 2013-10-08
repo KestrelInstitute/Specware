@@ -313,6 +313,7 @@ op SpecTransform.newEmitCFiles (ms_spec      : Spec,
                                 opt_filename : Option String)
  : Spec =
  let slice = sliceForCGen (ms_spec, root_ops, root_types) in
+ let _ = describeSlice ("EMITTING", slice) in
  let _ = 
      case generateCSpecFromSlice (slice, app_name) of
        | Some c_spec ->
