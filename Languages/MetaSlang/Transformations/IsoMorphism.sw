@@ -666,6 +666,7 @@ op isoType (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (recursive
                     return r_ty
                   else
                     return (Base(osi_qid,params,a))
+                | Some((_,_,_,r_ty), _) | params = [] -> return r_ty
                 | _ ->
                     if recursive? && dependsOnIsoInfo?(qid,iso_info,spc,[]) then {
                       newQId <- makeFreshQId spc qid newOptQual;
