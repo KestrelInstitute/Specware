@@ -12,9 +12,9 @@ end-spec
 %   op SpecTransform.showSpec (spc : Spec) (msg : String) : Spec
 % ======================================================================
 
-% ERROR: in transform: Missing field: Str (at '}')
-TF_Bad_1 = transform A by {showSpec}
-TF_Bad_2 = A {showSpec}
+% Empty String Now OK
+TF_WasBad_1 = transform A by {showSpec}
+TF_WasBad_2 = A {showSpec}
 
 % string argument does not need string quotes if it is an identifier
 TF_Good_1 = transform A by {showSpec abc}

@@ -50,11 +50,11 @@
    :use-goal-file t)
 
   ("Spec Transform: showSpec (1 of 4)"
-   :sw "showSpec#TF_Bad_1"
+   :sw "showSpec#TF_WasBad_1"
    :use-goal-file t)
 
   ("Spec Transform: showSpec (2 of 4)"
-   :sw "showSpec#TF_Bad_2"
+   :sw "showSpec#TF_WasBad_2"
    :use-goal-file t)
 
   ("Spec Transform: showSpec (3 of 4)"
