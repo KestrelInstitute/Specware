@@ -162,10 +162,10 @@ axiom set_fold2 is [a,b]
      set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
 
 % TODO bad to have s as a type var and a non-type var here:
-% This doesn't seem to be used.
+% This is used for isomorphic type refinement.
 theorem inv_set_fold is [a,s,s']
  fa(g: s -> s', g': s' -> s, st': s', s: Set a, f: s * a -> s)
-  (bijective? g && bijective? g' && inverse g = g')
+  (bijective? g && bijective? g' && inverse g = g')  %% Do we need the second bijective? assumption?
  => g (set_fold (g' st') f s)
    = set_fold st'
        (fn (st',x) -> g(f(g' st',x)))
