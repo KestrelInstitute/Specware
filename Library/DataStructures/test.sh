@@ -31,7 +31,7 @@ run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/AllIsa
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsLists#SetsAsLists
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsLists#M
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsLists
-run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsListsRef
+run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsLists#M
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/BagsAsLists#BagsAsLists
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/BagsAsLists#M
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsSTHTables0#SetsAsSTHTables0
