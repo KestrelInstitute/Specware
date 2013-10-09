@@ -131,3 +131,7 @@ end-proof
 proof Isa Set__set_delete_new_def
   sorry
 end-proof
+
+proof Isa Set__size_def
+  sorry
+end-proof

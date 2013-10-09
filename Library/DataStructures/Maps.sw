@@ -219,6 +219,7 @@ Maps = Map qualifying spec
     fa(f : ((a * b * acc -> acc) | foldable?), accval : acc)
       foldi f accval empty_map = accval
 
+  %% TODO: Could we drop the remove here if we add an assumption that key is not in the domain of the map?  The remove may get in the way during proofs?
   axiom map_foldi_update is [a,b,acc]
     fa(f : ((a * b * acc -> acc) | foldable?), accval : acc, key : a, val : b, m : Map(a,b))
       foldi f accval (update m key val) = f(key, val, foldi f accval (remove m key))
@@ -544,13 +545,13 @@ Maps_extended = spec
 %%     fa(x:a, y: b, s: Set a, f: a -> b) 
 %%       y = TMApply(mapFrom(s,f), x) <=> x in? s && y = f x
 
-  %% Really needs a totality condition: x in s
   theorem mapFrom_TMApply is [a,b]
-    fa(x:a, y: b, s: Set a, f: a -> b)
+    fa(x:a, s: Set a, f: a -> b)
+      x in? s =>
       TMApply(mapFrom(s,f), x) = f x
 
   theorem mapFrom_if_shadow is [a,b]
-    fa(x:a, y: b, s: Set a, p: a -> Bool, f: a -> b, g: a -> b)
+    fa(x:a, s: Set a, p: a -> Bool, f: a -> b, g: a -> b)
       mapFrom(s,fn x:a -> if p x then f x else g x)
         = mapUpdateSet(mapFrom(s,g), filter p s, f)
 
@@ -702,7 +703,7 @@ Maps_extended = spec
 (******************************** The Proofs ********************************)
 
 proof isa mapFrom_Obligation_subtype
-  sorry
+  apply(rule Map__map_equality, simp add: Map__update)
 end-proof
 
 proof isa mapFrom_TMApply_Obligation_subtype
@@ -714,7 +715,7 @@ proof isa mapFrom_TMApply
 end-proof
 
 proof isa mapUpdateSet_Obligation_subtype
-  sorry
+  apply(rule Map__map_equality, simp add: Map__update)
 end-proof
 
 proof isa mapFrom_if_shadow

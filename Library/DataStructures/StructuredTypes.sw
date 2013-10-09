@@ -684,9 +684,7 @@ end-proof
 
 
 proof isa bag_fold_set_Obligation_subtype
-  apply(auto)
   apply (metis Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype) 
-  sorry
 end-proof
 
 proof isa B2S_Obligation_subtype

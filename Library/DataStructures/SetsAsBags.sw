@@ -22,6 +22,12 @@ spec
   % and for each element of the bag the boolean remains true if the element
   % occurs exactly once in the bag, and becomes false otherwise
 
+
+%% Just copied from Sets.sw:
+op [a,b] foldable? (f : b * a -> b) : Bool =
+  fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y)
+  %% && (fa(x,y)   f(f(x,y), y) = f(x,y))
+
 %TODO: refine this to something that fails faster (as soon as a repetition is found)?
 % TODO: Use a bag fold that folds over (element, number-of-occurrences) pairs?
   op [a] no_rep? (b : Bag a) : Bool =
@@ -91,9 +97,10 @@ spec
   % finally, set_fold amounts to bag_fold on the representing bag
 
   op [a,b] set_fold (c:b)
-                    (f : b * a -> b |
-                         (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
-                         (fa(x,y)   f(f(x,y), y) = f(x,y)))
+                    (f : ((b * a -> b) | foldable?)
+                         %% (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
+                         %% (fa(x,y)   f(f(x,y), y) = f(x,y))
+                         )
                     (s: Set a) : b = 
     bag_fold c f s
 
@@ -190,6 +197,11 @@ proof Isa set_delete_new_Obligation_subtype
   sorry
 end-proof
 
+proof Isa SetsAsBags__forall_p_Obligation_subtype
+  apply(auto simp add: SetsAsBags__foldable_p_def)
+end-proof
+
+
 end-spec
 
 
@@ -284,6 +296,10 @@ proof Isa Set__set_insert_new_def
 end-proof
 
 proof Isa Set__set_delete_new_def
+  sorry
+end-proof
+
+proof Isa Set__size_def
   sorry
 end-proof
 

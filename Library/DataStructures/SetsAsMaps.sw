@@ -4,7 +4,7 @@ SetsAsMaps =
 SetsAsMap qualifying
 spec
 
-  import Maps
+  import Maps  % Note that this brings in Sets!
 
   type Set a = Map(a, Bool)  %TODO enforce the constraint that all the Bools are true?
 
@@ -39,12 +39,18 @@ spec
           empty_set
           s2
 
+
+%% TODO: I don't even want to have this, but without it the morphism gives an error:
+op [a,b] foldable? (f : b * a -> b) : Bool = Set.foldable? f
+
+
   % set_fold amounts to map_fold on the representing map
   op [a,b] set_fold (c:b)
-                    (f : b * a -> b |
-                         (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
-                         (fa(x,y)   f(f(x,y), y) = f(x,y)) %TODO drop this, if we redo set fold to not require this?
-                         )
+                    (f : {f: (b * a -> b) |
+                    %% FIXME: I want to call foldable? here, but that leads to ambiguous parses in Isabelle:
+                         (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y))
+                         %% && (fa(x,y)   f(f(x,y), y) = f(x,y)) %TODO drop this, if we redo set fold to not require this?
+                         })
                     (s: Set a) : b = 
     foldi (fn (x, _, result) -> f (result, x))
           c 
@@ -57,7 +63,7 @@ spec
   %% containing everything, but these are finite sets). Probably this
   %% should require its argument to be a non-empty set of sets.
   op [a] //\\ (ss:Set (Set a)) : Set a =
-    set_fold empty_set (/\) ss
+    set_fold empty_set (SetsAsMap./\) ss
 
   op [a] \\// (ss:Set (Set a)) : Set a =
     set_fold empty_set (\/) ss
@@ -118,7 +124,7 @@ proof Isa SetsAsMap__e_fsl_bsl_Obligation_subtype
 end-proof
 
 proof Isa SetsAsMap__set_fold_Obligation_subtype
-  apply(auto simp add: Map__foldable_p_def)
+  apply(auto simp add: Map__foldable_p_def Set__foldable_p_def)
 end-proof
 
 proof Isa SetsAsMap__e_dsh_dsh_Obligation_subtype
@@ -222,3 +228,29 @@ end-proof
 proof Isa Set__set_delete_new_def
   apply( auto, rule ext, auto simp add: SetsAsMap__set_delete_new_def SetsAsMap__set_delete_def) 
 end-proof
+
+proof Isa Set__size_def_Obligation_subtype
+  apply(simp add: SetsAsMap__foldable_p_def Set__foldable_p_def )
+end-proof
+
+proof Isa Set__size_def
+  sorry
+end-proof
+
+proof Isa Set__set_fold1_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__set_fold2_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__set_fold2_Obligation_subtype0
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__foldable_p_def
+  apply(rule ext)
+  apply(simp add: SetsAsMap__foldable_p_def Set__foldable_p_def)
+end-proof
+

@@ -66,6 +66,7 @@ run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StacksAsCopro
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StacksAsLists#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsSTHTables#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsVectors#M
+run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/AllIsa
 #This replaces the separate calls to run-isabelle2013 below and is faster:
 run-isabelle2013 ${SPECWARE4}/Library/DataStructures/IsabelleWrapper.thy
 # run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSets_M.thy
