@@ -692,9 +692,12 @@ proof Isa Set__inv_set_fold_helper
   apply(cut_tac c=acc__v and f=f and x=x and s=s in Set__set_fold2)
   apply(simp add: Set__foldable_p_def)
   apply(assumption)
-  apply(smt Function__fxy_implies_inverse Product_Type.prod.cases Set__foldable_p_def Set__set_fold2)
+  apply(cut_tac c="(g acc__v)" and f="(\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" and x=x and s=s in Set__set_fold2)
+  apply(simp add: Set__foldable_p_def Function__f_inverse_apply Function__inverse_f_apply)
+  apply(assumption)
+  apply(metis Function__inverse_f_apply Product_Type.prod.cases)
 end-proof
-%% The proof when set_fold calls foldable? :
+%% The proof when set_fold calls foldable (but get rid of the call to SMT)? :
   %% apply(rule Set__induction)
   %% apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype)
   %% apply(case_tac "x in? s")
