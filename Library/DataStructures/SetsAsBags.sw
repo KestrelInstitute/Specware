@@ -87,6 +87,7 @@ op [a,b] foldable? (f : b * a -> b) : Bool =
   proof Isa -> SetsAsBags_union end-proof
 
 %%FIXME Just use bag intersection?
+%%FIXME The fixity of this is inconsistent with the fixity of Bag./\ (300 vs 25).
   op [a] /\ (s1 : Set a, s2 : Set a) infixl 300 : Set a = 
     bag_fold empty_set
              (fn(result,x) -> if x in? s1 then set_insert(x,result) else result)

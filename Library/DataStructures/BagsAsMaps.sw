@@ -47,6 +47,13 @@ spec
   op [a] \/ (b1:Bag a, b2:Bag a) infixl 24 : Bag a =
     foldi (fn (x,y,b) -> update b x (occs(x, b1) + y)) b1 b2
 
+  op [a] /\ (b1:Bag a, b2:Bag a) infixl 24 : Bag a =
+    foldi (fn (key:a, val:PosNat, acc:Bag a) ->
+            let ct = min(occs(key, b1),val) in  %% FIXME, if I name this count here instead of ct, I get an Isabelle error
+            if ct = 0 then (remove acc key) else (update acc key ct))
+          empty_map
+          b2
+
   % finally, bag_fold amounts to list_fold on a representing list
 
 %   def bag_fold c f b = choose[Bag] (fn l -> list_fold c f l) b
@@ -288,6 +295,18 @@ proof Isa BagsAsMaps__bag_insertion_commutativity
   apply(auto simp add: BagsAsMaps__occs_def Map__update)
 end-proof
 
+proof Isa BagsAsMaps__e_fsl_bsl_Obligation_subtype
+  apply(auto simp add: Map__foldable_p__stp_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update Map__remove)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update Map__remove)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update Map__remove)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update Map__remove)
+end-proof
+
 
 end-spec
 
@@ -310,5 +329,9 @@ proof Isa Bag__bag_difference
 end-proof
 
 proof Isa Bag__subbag_def
+  sorry
+end-proof
+
+proof Isa Bag__occs_bag_intersection
   sorry
 end-proof

@@ -79,23 +79,24 @@ theorem bagin_of_insert is [a]
       fa(A:Bag a,B:Bag a,C:Bag a)
         ( A \/ (B \/ C) = (A \/ B) \/ C )
 
-%TODO add this?
-%TODO add an axiom about occs and make bag_intersection a theorem?
-%% %%  no image yet i BagsAsLists.sw
-%%   op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
-%%   axiom bag_intersection is [a]
-%%       fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
+%% Bag intersection:
+  op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
 
+%%TODO: Or could define this using a fold:
+  axiom occs_bag_intersection is [a]
+    fa(b1 : Bag a, b2 : Bag a, x:a) occs(x,b1 /\ b2) = min(occs(x,b1), occs(x,b2))
+
+  theorem bagin?_of_bag_intersection is [a]
+    fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
+
+%TODO: Put these back:
 %%   theorem bag_intersection_right_zero is [a]
 %%       fa(c:Bag a)(c /\ empty_bag = empty_bag)
 %%   theorem bag_intersection_left_zero is [a]
 %%       fa(c:Bag a)(empty_bag /\ c = empty_bag)
 
-
-
  %TODO give a meaning to this (maybe in terms of fold?)
   op [a,b] bag_map: (a -> b) -> Bag a -> Bag b
-
 
   % this induction axiom constrains bags to be finite: any finite bag can be
   % obtained by suitable successive applications of bag_insert to empty_bag
@@ -418,5 +419,10 @@ end-proof
 proof Isa Bag__bagin_of_insert
   apply(simp add: Bag__bagin_p_def Bag__bag_insertion)
 end-proof
+
+proof Isa Bag__bagin_p_of_bag_intersection
+  apply(auto simp add: Bag__occs_bag_intersection Bag__bagin_p_def)
+end-proof
+
 
 end-spec
