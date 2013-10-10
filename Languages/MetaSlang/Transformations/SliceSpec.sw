@@ -249,17 +249,45 @@ op resolve_ref (slice   : Slice,
                 pending : PendingRef,
                 status  : Status)
  : ResolvedRefs =
+ let
+   def names_match? (Qualified (xq, xid), Qualified (yq, yid)) =
+     %% could have Nat32 and Nat.Nat32 -- sigh
+     xid = yid &&
+     (xq = yq || xq = UnQualified || yq = UnQualified)
+
+   def cohort_number cohort =
+     case cohort of
+       | Interface      -> 1
+       | Implementation -> 2
+       | Assertion      -> 3
+       | Context        -> 4
+
+   def earlier_cohort? (c1, c2) =
+     (cohort_number c1) < (cohort_number c2)
+ in
  let resolved_refs = slice.resolved_refs in
  case pending of
    | Op oref ->
-     (case findLeftmost (fn resolved -> 
-                           case resolved of 
-                             | Op resolved -> resolved.name = oref.name
-                             | _ -> false)
-                        resolved_refs 
+     (case splitAtLeftmost (fn resolved -> 
+                              case resolved of 
+                                | Op resolved -> names_match? (resolved.name, oref.name)
+                                | _ -> false)
+                           resolved_refs 
        of
-        | Some x -> 
-          resolved_refs  % don't update if name already has a value
+        | Some (x, Op old, y) -> 
+          if earlier_cohort? (oref.cohort, old.cohort) then
+            %% We need to replace the old resolution by one using the earlier new cohort.
+            let resolved_ref =
+                Op {name            = oref.name, 
+                    cohort          = oref.cohort,
+                    contextual_type = oref.contextual_type,
+                    locations       = [oref.location],
+                    status          = status} 
+            in
+            x ++ [resolved_ref] ++ y
+         else
+            %% Don't update if name already has a value for this or earlier cohort.
+           resolved_refs  
         | _ -> 
           let resolved_ref =
               Op {name            = oref.name, 
@@ -271,22 +299,33 @@ op resolve_ref (slice   : Slice,
           resolved_ref |> resolved_refs)
 
    | Type tref ->
-     case findLeftmost (fn resolved -> 
-                          case resolved of 
-                            | Type resolved -> resolved.name = tref.name
-                            | _ -> false)
-                       resolved_refs 
-      of
-       | Some x -> 
-         resolved_refs  % don't update if name already has a value
-       | _ -> 
-         let resolved_ref =
-             Type {name      = tref.name, 
-                   cohort    = tref.cohort,
-                   locations = [tref.location],
-                   status    = status} 
-         in
-         resolved_ref |> resolved_refs
+     (case splitAtLeftmost (fn resolved -> 
+                              case resolved of 
+                                | Type resolved -> names_match? (resolved.name, tref.name)
+                                | _ -> false)
+                           resolved_refs 
+       of
+        | Some (x, Type old, y) ->
+          if earlier_cohort? (tref.cohort, old.cohort) then
+            %% We need to replace the old resolution by one using the earlier new cohort.
+            let resolved_ref =
+                Type {name      = tref.name, 
+                      cohort    = tref.cohort,
+                      locations = [tref.location],
+                      status    = status} 
+            in
+            x ++ [resolved_ref] ++ y
+          else
+            %% Don't update if name already has a value for this or earlier cohort.
+            resolved_refs 
+        | _ -> 
+          let resolved_ref =
+              Type {name      = tref.name, 
+                    cohort    = tref.cohort,
+                    locations = [tref.location],
+                    status    = status} 
+          in
+          resolved_ref |> resolved_refs)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Chase referenced types and ops to fixpoint
@@ -336,6 +375,13 @@ op extend_cohort_for_ref (cohort       : Cohort)
                 pendings
               else
                 pending |> pendings)
+
+    %% 
+    def subtype_cohort cohort =
+      case cohort of
+        | Context -> Context
+        | _ -> Assertion
+
  in
  case slice.oracular_ref_status (pending_ref, slice) of
    | Some status ->
@@ -362,8 +408,16 @@ op extend_cohort_for_ref (cohort       : Cohort)
        | Type tref ->
          (case findTheType (slice.ms_spec, tref.name) of
             | Some info ->
-              let status            = type_status info                              in
-              let new_resolved_refs = resolve_ref (slice, pending_ref, status)      in
+              let (pending_ref, status) =
+                  case info.dfn of
+                    | Subtype (t1, pred, _) ->
+                      let cohort      = subtype_cohort tref.cohort       in
+                      let pending_ref = Type (tref << {cohort = cohort}) in
+                      (pending_ref, Defined)
+                    | _ ->
+                      (pending_ref, type_status info)
+              in
+              let new_resolved_refs = resolve_ref (slice, pending_ref, status) in
               let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
                                             [] 
                                             (pendingRefsInType (info.dfn, cohort)) 
@@ -393,15 +447,17 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort) : PendingRefs =
 op pendingRefsInType (typ : MSType, cohort : Cohort) : PendingRefs =
  %% TODO: get real locations
  let op_refs =
-     case cohort of
-       | Implementation -> []
-       | _ ->
-         map (fn name -> 
-                Op {name            = name, 
-                    cohort          = cohort,
-                    contextual_type = Any noPos, 
-                    location        = Unknown})
-             (opsInType typ)
+     let term_cohort =
+         case cohort of
+           | Implementation -> Assertion
+           | _ -> cohort
+     in
+     map (fn name -> 
+            Op {name            = name, 
+                cohort          = term_cohort,
+                contextual_type = Any noPos, 
+                location        = Unknown})
+         (opsInType typ)
  in
  let type_refs = 
      map (fn name -> 
