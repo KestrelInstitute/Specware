@@ -12,7 +12,7 @@ op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
    | "Nat"        -> id in? ["succ", "pred", "+", "*"]
    | "Char"       -> id in? []
    | "String"     -> id in? ["^"]
-   | "System"     -> id in? ["writeLine", "toScreen"]
+   | "System"     -> id in? ["writeLine", "toScreen", "setf"]
    | "Function"   -> id in? []
    | "List"       -> id in? []
    | "Handcoded"  -> true
@@ -21,9 +21,9 @@ op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
 op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
  case q of
    | "Bool"          -> id in? ["Bool"]
-   | "Integer"       -> id in? ["Int", "Int0", "Integer"]
-   | "Nat"           -> id in? ["Nat", "PosNat", "Nat8", "Nat16", "Nat32"]
+   | "Integer"       -> id in? ["Int8", "Int16", "Int32"] 
    | "Int"           -> id in? ["Int8", "Int16", "Int32"]
+   | "Nat"           -> id in? ["Nat8", "Nat16", "Nat32"]
    | "Char"          -> id in? ["Char"]
    | "String"        -> id in? ["String"]
    | "List"          -> id in? []
@@ -57,54 +57,31 @@ op sliceForCGen (ms_spec    : Spec,
                  root_ops   : QualifiedIds,
                  root_types : QualifiedIds)
  : Slice =
- let lms     = parseCTranslationPragmas ms_spec in
- let lm_data = make_LMData              lms     in
  let
-   def oracular_type_ref_status pending_type_ref =
-     let name = pending_type_ref.name in
-     if builtinCType? name then
-       Some Primitive
-     else if name in? lm_data.native_types then
-       Some API
-     else if name in? lm_data.type_macros then
-       Some Macro
-     else
-       None
-
-   def oracular_op_ref_status pending_op_ref =
-     let name = pending_op_ref.name in
-     if builtinCOp? name then
-       Some Primitive
-     else if name in? lm_data.native_ops then
-       Some API
-     else if name in? lm_data.op_macros then
-       Some Macro
-     else
-       None
+   def c_oracle (pending_ref, slice) =
+     case pending_ref of
+       | Op pending_op_ref ->
+         let name = pending_op_ref.name in
+         if builtinCOp? name then
+           Some Primitive
+         else if name in? slice.lm_data.native_ops then
+           Some API
+         else if name in? slice.lm_data.op_macros then
+           Some Macro
+         else
+           None
+       | Type pending_type_ref ->
+         let name = pending_type_ref.name in
+         if builtinCType? name then
+           Some Primitive
+         else if name in? slice.lm_data.native_types then
+           Some API
+         else if name in? slice.lm_data.type_macros then
+           Some Macro
+         else
+           None
  in
- let pending_op_refs   = map (fn name ->
-                                {name            = name, 
-                                 cohort          = Interface,
-                                 contextual_type = Any noPos, 
-                                 location        = Root})
-                             root_ops
- in
- let pending_type_refs = map (fn name -> 
-                                {name     = name, 
-                                 cohort   = Interface,
-                                 location = Root})
-                             root_types
- in
- let slice = {ms_spec                  = ms_spec,
-              lm_data                  = lm_data,
-              resolved_op_refs         = empty_resolved_op_refs,
-              resolved_type_refs       = empty_resolved_type_refs,
-              pending_op_refs          = pending_op_refs,
-              pending_type_refs        = pending_type_refs,
-              oracular_op_ref_status   = oracular_op_ref_status,
-              oracular_type_ref_status = oracular_type_ref_status}
- in
- completeSlice slice 
+ executionSlice (ms_spec, parseCTranslationPragmas, c_oracle, root_ops, root_types)
 
 op parseCTranslationPragmas (s : Spec) : LanguageMorphisms =
  foldlSpecElements (fn (lms, elt) ->

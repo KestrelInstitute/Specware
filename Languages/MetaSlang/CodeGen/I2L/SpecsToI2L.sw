@@ -125,6 +125,26 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
 
 %% Called from generateCSpecFromTransformedSpecIncrFilter in MetaSlang/CodeGen/C/SpecToCSpec.sw 
 op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
+ let
+
+  def print_q_id (q, id) =
+    if q = UnQualified then
+      id
+    else
+      q ^ "." ^ id
+
+  def show_status status =
+    case status of
+      | Primitive   -> "primitive"
+      | API         -> "API"
+      | Handwritten -> "handwritten"
+      | Macro       -> "macro"
+      | Defined     -> "defined"
+      | Undefined   -> "undefined"
+      | Missing     -> "missing"
+      | Misc msg    -> msg
+
+ in
  let expand_types? = false in          % todo: make this arg to transform
  let constructors  = []    in          % ??
  let ms_spec       = slice.ms_spec in
@@ -138,47 +158,58 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
              declaredStructs = lm_data.structure_types,
              expandTypes?    = expand_types?}
  in
- let
-  def print_q_id (q, id) =
-    if q = UnQualified then
-      id
-    else
-      q ^ "." ^ id
- in
  let i_opdefs =
-     foldl (fn (defs, resolved) ->
-              if (resolved.cohort in? [Interface, Implementation]) && 
-                 (resolved.status in? [Defined, Undefined]) % even though undefined, may have signature
-                then
-                  let name = resolved.name in
-                  (case findTheOp (ctxt.ms_spec, name) of
-                     | Some info -> 
-                       defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
-                     | _ ->
-                       defs)
-              else 
-                let _ = writeLine("Ignoring " ^ anyToString resolved) in
-                defs)
+     foldl (fn (defs, resolved_ref) ->
+              case resolved_ref of
+                | Op resolved_op_ref ->
+                  let name   = resolved_op_ref.name   in
+                  let cohort = resolved_op_ref.cohort in
+                  let status = resolved_op_ref.status in
+                  if (cohort in? [Interface, Implementation]) && 
+                     (status in? [Defined, Undefined]) % although undefined, may have signature
+                    then
+                      (case findTheOp (ctxt.ms_spec, name) of
+                         | Some info -> 
+                           defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
+                         | _ ->
+                           defs)
+                  else 
+                    let _ = if status in? [API, Macro, Primitive] then 
+                              ()
+                            else
+                              writeLine("Ignoring " ^ show_status status ^ " op " ^ show name)
+                    in
+                    defs
+                | _ -> defs)
            []
-           slice.resolved_op_refs
+           slice.resolved_refs
  in
  let i_typedefs =
-     foldl (fn (defs, resolved) ->
-              if (resolved.cohort in? [Interface, Implementation]) && 
-                 (resolved.status in? [Defined])
-                then
-                  let name = resolved.name in
-                  (case findTheType (ctxt.ms_spec, name) of
-                     | Some info ->
-                       (case typeinfo2typedef (name, info, ctxt) of
-                          | Some typedef -> defs ++ [typedef]
-                          | _ -> defs)
-                     | _ -> defs)
-              else 
-                let _ = writeLine("Ignoring " ^ anyToString resolved) in
-                defs)
+     foldl (fn (defs, resolved_ref) ->
+              case resolved_ref of
+                | Type resolved_type_ref ->
+                  let name   = resolved_type_ref.name   in
+                  let cohort = resolved_type_ref.cohort in
+                  let status = resolved_type_ref.status in
+                  if (cohort in? [Interface, Implementation]) && 
+                     (status in? [Defined])
+                    then
+                      (case findTheType (ctxt.ms_spec, name) of
+                         | Some info ->
+                           (case typeinfo2typedef (name, info, ctxt) of
+                              | Some typedef -> defs ++ [typedef]
+                              | _ -> defs)
+                         | _ -> defs)
+                  else 
+                    let _ = if status in? [API, Macro, Primitive] then 
+                              ()
+                            else
+                              writeLine("Ignoring " ^ show_status status ^ " type " ^ show name)
+                    in
+                    defs
+                | _ -> defs)
            []
-           slice.resolved_type_refs
+           slice.resolved_refs
  in
  let res : I_ImpUnit = 
      {
