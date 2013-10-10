@@ -214,7 +214,7 @@ op describeSlice (msg : String, slice : Slice) : () =
 
  in
  let cohorts     = [Interface, Implementation, Assertion, Context, Ignored]          in
- let status_list = [Primitive, API, Handwritten, Macro, Defined, Undefined, Missing] in
+ let status_list = [Defined, Handwritten, API, Macro, Primitive, Undefined, Missing] in
  let groups      = foldl (fn (groups, cohort) -> 
                             foldl (fn (groups, status) ->
                                      let group = {cohort     = cohort,
@@ -258,7 +258,8 @@ op resolve_ref (slice   : Slice,
                              | _ -> false)
                         resolved_refs 
        of
-        | Some _ -> resolved_refs  % don't update if name already has a value
+        | Some x -> 
+          resolved_refs  % don't update if name already has a value
         | _ -> 
           let resolved_ref =
               Op {name            = oref.name, 
@@ -276,7 +277,8 @@ op resolve_ref (slice   : Slice,
                             | _ -> false)
                        resolved_refs 
       of
-       | Some _ -> resolved_refs  % don't update if name already has a value
+       | Some x -> 
+         resolved_refs  % don't update if name already has a value
        | _ -> 
          let resolved_ref =
              Type {name      = tref.name, 
@@ -285,14 +287,6 @@ op resolve_ref (slice   : Slice,
                    status    = status} 
          in
          resolved_ref |> resolved_refs
-
-(*
-op ops_in_slice (slice : Slice) : OpNames =
- map (fn resolved -> resolved.name) slice.resolved_op_refs
-
-op types_in_slice (slice : Slice) : TypeNames =
- map (fn resolved -> resolved.name) slice.resolved_type_refs
-*)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Chase referenced types and ops to fixpoint
@@ -308,24 +302,24 @@ op extend_cohort_for_ref (cohort       : Cohort)
  let
    def matches_op_ref pending_op_ref (resolved_ref : ResolvedRef) =
      case resolved_ref of
-       | Op resolved_op_ref ->
-         resolved_op_ref.cohort = pending_op_ref.cohort &&
-         resolved_op_ref.name   = pending_op_ref.name
-       | _ -> false
+       | Op resolved_op_ref -> 
+         resolved_op_ref.name = pending_op_ref.name
+       | _ -> 
+         false
 
    def matches_type_ref (pending_type_ref : PendingTypeRef) (resolved : ResolvedRef) =
      case resolved of
        | Type resolved_type_ref ->
-         resolved_type_ref.cohort = pending_type_ref.cohort &&
-         resolved_type_ref.name   = pending_type_ref.name
-       | _ -> false
-
+         resolved_type_ref.name = pending_type_ref.name
+       | _ -> 
+         false
 
    def add_pending_ref resolved_refs (pendings, pending) =
      case pending of
        | Op (pending_op_ref : PendingOpRef) ->
          (case findLeftmost (matches_op_ref pending_op_ref) resolved_refs of
-            | Some _ -> pendings
+            | Some _ -> 
+              pendings
             | _ -> 
               if pending in? pendings then
                 % it's already in the queue to be processed
@@ -334,7 +328,8 @@ op extend_cohort_for_ref (cohort       : Cohort)
                 pending |> pendings)
        | Type (pending_type_ref : PendingTypeRef) ->
          (case findLeftmost (matches_type_ref pending_type_ref) resolved_refs of
-            | Some _ -> pendings
+            | Some _ -> 
+              pendings
             | _ -> 
               if pending in? pendings then
                 % it's already in the queue to be processed
