@@ -147,14 +147,39 @@
                                    (and
                                     ;; Two vectors (corresponding to tuple types)
                                     ;; are equal if all their elements are equal.
+                                    ;; Two vectors (corresponding to Maps)
+                                    ;; are equal if all their elements are equal,
+                                    ;; and, if one is longer, the extension not populated.
                                     (vectorp t2)
                                     (let ((dim1 (array-dimension t1 0))
                                           (dim2 (array-dimension t2 0)))
-                                      (and (eql dim1 dim2)
-                                           (do ((i 0 (+ i 1))
-                                                (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
-                                               ((or (= i dim1) (not v-equal)) v-equal)
-                                             (declare (fixnum i)))))))))
+                                      (if (eql dim1 dim2)
+                                          (do ((i 0 (+ i 1))
+                                               (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
+                                              ((or (= i dim1) (not v-equal)) v-equal)
+                                            (declare (fixnum i)))
+                                          ;; If they are not equal length
+                                          (let ((mindim (min dim1 dim2)))
+                                            (and
+                                             ;; in order for different length vectors to be equal,
+                                             ;; first, the common prefixes must be the same
+                                             (do ((i 0 (+ i 1))
+                                                  (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
+                                                 ((or (= i mindim) (not v-equal)) v-equal)
+                                               (declare (fixnum i)))
+                                             ;; second, the extension must consist solely of '(:|None|),
+                                             ;; which denotes *undefined*
+                                             (if (eql mindim dim1)
+                                                 ;; t2 is longer
+                                                 (do ((i dim1 (+ i 1))
+                                                      (v-equal t (eq (svref t2 i) '(:|None|))))
+                                                     ((or (= i dim2) (not v-equal)) v-equal)
+                                                   (declare (fixnum i)))
+                                                 ;; t1 is longer
+                                                 (do ((i dim2 (+ i 1))
+                                                      (v-equal t (eq (svref t1 i) '(:|None|))))
+                                                     ((or (= i dim1) (not v-equal)) v-equal)
+                                                   (declare (fixnum i))))))))))))
                  (t (equalp t1 t2))
                  ))
         ;(null      (null    t2))
