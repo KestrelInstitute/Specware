@@ -570,6 +570,9 @@ end-proof
       fa(m:Map(a,b), x:a, y:b) 
         M2S(update m x y) = set_insert(y, set_delete(TMApply(m,x), M2S m))
 
+  theorem set_insert_new_of_range is 
+      fa(lc,mp) range (update mp (size mp) lc) = set_insert_new(lc, range mp)
+
 
 (*------- CM2S: homomorphism from Characteristic-Map to Set ---------------
 
