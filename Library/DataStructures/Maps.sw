@@ -113,6 +113,13 @@ Maps = Map qualifying spec
   axiom map_range is
      [a,b] fa(m:Map(a,b), z:b)( z in? range(m) = (ex(x:a)(apply m x = Some z)))
 
+  %% Special case when key is not already in the map (otherwise, you
+  %% may have to delete from the range the value that key previously
+  %% mapped to, unless there is another key that also maps to that
+  %% value - ugh).
+  theorem range_of_update_special_case is [a,b]
+    fa(m:Map(a,b), key:a, val:b)
+      ~(key in? domain m) => range (update m key val) = set_insert(val, range m)
 
   theorem update_of_apply_same is [a,b]
     fa(m: Map(a,b), key : a)
@@ -515,6 +522,12 @@ end-proof
 
 proof Isa  Map__remove_of_update_same
   apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
+
+proof Isa Map__range_of_update_special_case
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_insertion Map__map_range Map__update)
+  apply(metis Map__map_domain)
 end-proof
 
 

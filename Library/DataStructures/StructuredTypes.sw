@@ -570,8 +570,21 @@ end-proof
       fa(m:Map(a,b), x:a, y:b) 
         M2S(update m x y) = set_insert(y, set_delete(TMApply(m,x), M2S m))
 
-  theorem set_insert_new_of_range is 
-      fa(lc,mp) range (update mp (size mp) lc) = set_insert_new(lc, range mp)
+  theorem range_of_update_lemma is [b]
+    fa(lc:b, mp:Map(Nat,b))
+      ~((size mp) in? (domain mp)) =>
+      (range (update mp (size mp) lc) = set_insert(lc, range mp))
+
+ %% Old, incorrect version of this theorem:
+ %% theorem set_insert_new_of_range is 
+ %%     fa(lc,mp) range (update mp (size mp) lc) = set_insert_new(lc, range mp)
+
+  theorem set_insert_new_of_range is [b]
+    fa(lc:b, mp:Map(Nat,b))
+      (~((size mp) in? (domain mp)) &&  %% This assumption is needed for the theorem to be true (without it, we may have to delete from the range whatever (size mp) used to map to).
+       ~(lc in? (range mp)))  %% This assumption is needed for the call to insert_new to type-check.
+      => 
+      (range (update mp (size mp) lc) = set_insert_new(lc, range mp))
 
 
 (*------- CM2S: homomorphism from Characteristic-Map to Set ---------------
@@ -1037,9 +1050,16 @@ proof isa Pair2S_delete
 
 end-proof
 
-
 proof Isa e_pls_pls_def
   by (induct l1, auto)
+end-proof
+
+proof Isa range_of_update_lemma
+  apply(simp add: Map__range_of_update_special_case)
+end-proof
+
+proof Isa set_insert_new_of_range
+  apply(simp add: range_of_update_lemma Set__set_insert_new_def)
 end-proof
 
 end-spec
