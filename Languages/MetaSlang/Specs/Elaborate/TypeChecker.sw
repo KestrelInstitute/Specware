@@ -1541,7 +1541,9 @@ op argMismatchMsg(ty1: MSType, ty2: MSType, spc: Spec): String =
       then show nc2^" arguments given when at most "^show nc1^" expected for "
     else ""
   else if nc2 > nc1
-    then "Non-curried function given "^show nc2^" curried arguments"
+    then if nc1 = 0
+          then "Non-function given "^show nc2^" curried arguments. "
+          else "Non-curried function given "^show nc2^" curried arguments. "
     else ""
 
 op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
