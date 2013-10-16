@@ -134,7 +134,7 @@ op mkInt   (i : Int) : MSTerm =
  if i >= 0 then
    mkNat i
  else 
-   mkApply (mkOp(mkQualifiedId("Integer", "-"), mkArrow(intType, natType)), mkNat(-i))
+   mkApply (mkOp(mkQualifiedId("IntegerAux", "-"), mkArrow(natType, intType)), mkNat(-i))
 
 op mkNat    (n : Nat)    : MSTerm = mkFun (Nat  n,   natType)
 op mkChar   (c : Char)   : MSTerm = mkFun (Char c,   charType)
