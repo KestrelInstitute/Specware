@@ -301,6 +301,7 @@ end-proof
   theorem L2S_vs_Pair2S is
     fa(lst:List Nat,pair:Nat*Nat)( (lst = uptoL(pair)) = (L2S(lst) = Pair2S(pair)) )
 
+  %% Why not eliminate the variable?  Just have the LHS be L2S(Nil).
   theorem L2S_Nil is [a]
      fa(al:List a) (al=Nil) =  (L2S(al) = (empty_set:Set a))
 
@@ -332,10 +333,9 @@ end-proof
   theorem L2S_diff is [a]
     fa(lst:List a,sub:List a) ( L2S (diff(lst,sub)) = (L2S lst -- L2S sub) )
 
- %TODO TMApply seems wrong here
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
-      ( ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
+      ( ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~((x in? domain(cm)) && TMApply(cm,x))) lst)) )
 
 %  theorem L2S_map is [a]
 %    fa(y:a,f:a->a,lst:List a) ( L2S (map f lst) = (set_map f (L2S lst)) )
@@ -391,9 +391,10 @@ end-proof
   theorem L2B_diff is [a]
     fa(lst:List a,sub:List a) ( L2B (diff(lst,sub)) = (L2B lst -- L2B sub) )
 
+  %% TODO: Doesn't seem right.  The RHS removes all occurrences of the element x, whereas the LHS only removes one.
   theorem L2B_bs_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
-      ( ((L2B lst) --- (CM2S cm)) = (L2B (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
+      ( ((L2B lst) --- (CM2S cm)) = (L2B (filter (fn(x:a)-> ~((x in? domain cm) && TMApply(cm,x))) lst)) )
 
 %  theorem L2B_bs_diff is [a]
 %    fa(lst:List a,S:Set a)
@@ -471,7 +472,7 @@ end-proof
 
   op [a,b] F2M(S:Set a)(f:{x:a|x in? S}->b): Map(a,b) =
     set_fold empty_map
-             (fn(amap:Map(a,b),domelt:a) -> (update amap domelt (f domelt)))
+             (fn(amap:Map(a,b),domelt:{x:a|x in? S}) -> (update amap domelt (f domelt)))
              S
 
   theorem M2F_empty_map is [a,b]
@@ -565,10 +566,10 @@ end-proof
   theorem M2S_empty_map is [a,b]
       M2S(empty_map:Map(a,b)) = empty_set
 
-% no, this isn't right
-  theorem M2S_update is [a,b]
-      fa(m:Map(a,b), x:a, y:b) 
-        M2S(update m x y) = set_insert(y, set_delete(TMApply(m,x), M2S m))
+%% % no, this isn't right
+%%   theorem M2S_update is [a,b]
+%%       fa(m:Map(a,b), x:a, y:b) 
+%%         M2S(update m x y) = set_insert(y, set_delete(TMApply(m,x), M2S m))
 
   theorem range_of_update_lemma is [b]
     fa(lc:b, mp:Map(Nat,b))
@@ -597,10 +598,13 @@ with characteristic maps there are several choices:
 *)
 
 
+%% TODO: Does this type check?  In particular, consider the calls to TMApply and set_insert_new in the fn.
 % the starting point (domain m) is already a set, so the set_insert op is unnecessary
   op [a] CM2S(m:Map(a,Bool)):Set a =  
     set_fold empty_set
-             (fn(sa:Set a,domelt:a) -> if TMApply(m,domelt) 
+             (fn(sa:Set a,domelt:a) -> if (domelt in? (domain m)  %% Makes this function type-check
+                                          && ~(domelt in? sa) %% Makes this function type-check
+                                          && TMApply(m,domelt))
                                        then set_insert_new(domelt, sa)
                                        else sa)
              (domain m)
@@ -625,17 +629,20 @@ with characteristic maps there are several choices:
       fa(m:Map(a,Bool), x:a, y:Bool) 
         CM2S(update m x y)
             = (if y 
-                 then set_insert_new(x, CM2S m)
+                 then set_insert(x, CM2S m) %% had set_insert_new here, but it didn't type check.
                else set_delete(x, CM2S m))
 
   theorem CM_iso_S is [a]
     fa(mp:Map(a,Bool),ns:Set a) (CM2S(mp)=ns) = (mp = S2CM ns)
+
   theorem CM2S_set_insert is [a]
-    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x true)  = set_insert_new(x, CM2S mp)
+    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x true)  = set_insert(x, CM2S mp) %% had set_insert_new here, but it didn't type check.
+
   theorem CM2S_set_delete is [a]
     fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
+
   theorem CM2S_member is [a]
-    fa(x:a,mp:Map(a,Bool)) TMApply(mp,x) = (x in? CM2S mp)
+    fa(x:a,mp:Map(a,Bool)) ((x in? domain mp) && TMApply(mp,x)) = (x in? CM2S mp)  %% first assumption is needed to make this type check
 
 
 (* ------- M2C: homomorphism from Map to Collection ---------------
@@ -788,15 +795,13 @@ proof isa L2S_diff
 end-proof
 
 proof isa CM2S_Obligation_subtype
-  sorry
-end-proof
-
-proof isa CM2S_Obligation_subtype0
-  sorry
-end-proof
-
-proof isa CM2S_Obligation_subtype1
-  sorry
+  apply(auto simp add: Set__set_insert_new_def)
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
+  apply(case_tac "z = y")
+  apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
+  apply(case_tac "z = y")
+  apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
 end-proof
 
 proof isa L2S_set_diff_Obligation_subtype
@@ -848,15 +853,12 @@ proof isa L2B_bs_diff
 end-proof
 
 proof isa F2M_Obligation_subtype
-  sorry
-end-proof
-
-proof isa F2M_Obligation_subtype0
-  sorry
+  apply(rule Map__map_equality)
+  apply(auto simp add: Map__update)
 end-proof
 
 proof isa M2F_empty_map
-  sorry
+  apply(simp add: M2F_def Map__map_apply_def Map__empty_map)
 end-proof
 
 proof isa M_iso_F
@@ -864,7 +866,7 @@ proof isa M_iso_F
 end-proof
 
 proof isa MM2F_empty_map
-  sorry
+  apply(simp add: MM2F_def Map__map_apply_def Map__empty_map Map__range_of_empty)
 end-proof
 
 proof isa MM2FB_empty_map
@@ -892,7 +894,8 @@ proof isa M2S_update
 end-proof
 
 proof isa S2CM_Obligation_subtype
-  sorry
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
 end-proof
 
 proof isa S2CM_CM2S
@@ -1060,6 +1063,10 @@ end-proof
 
 proof Isa set_insert_new_of_range
   apply(simp add: range_of_update_lemma Set__set_insert_new_def)
+end-proof
+
+proof Isa F2M_Obligation_subtype0
+  sorry
 end-proof
 
 end-spec

@@ -76,6 +76,12 @@ spec
     fa(c:b, f : {f : b * a -> b | fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)}, x : a , b : Bag a)
       bag_fold c f (bag_insert(x,b)) = f (bag_fold c f b, x)
 
+%% Just copied over from Bags.sw:
+op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
+  bag_fold true
+           (fn (acc, elem) -> acc && p(elem))
+           b
+
   %% Just copied over from Bags.sw:
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (\/) bs

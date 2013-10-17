@@ -21,6 +21,12 @@ spec
 
   op [a] empty_set : Set a = empty_map
 
+  %% Just copied from Sets.sw:
+  op [a] empty? (s : Set a) : Bool = (s = empty_set)
+
+  %% Just copied from Sets.sw:
+  op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
+
   op [a] set_insert (x:a, s: Set a) : Set a = update s x true
 
   %% Not useful for this representation
@@ -56,17 +62,13 @@ op [a,b] foldable? (f : b * a -> b) : Bool = Set.foldable? f
           c 
           s
 
-  %% TTODO This seems wrong.  This starts with the empty set and
-  %% intersects more sets into it.  The result will always be empty!
-  %% Also, it's not clear what this should return if called on the
-  %% empty set (in some sense, the intersection of no sets is the set
-  %% containing everything, but these are finite sets). Probably this
-  %% should require its argument to be a non-empty set of sets.
-  op [a] //\\ (ss:Set (Set a)) : Set a =
-    set_fold empty_set (SetsAsMap./\) ss
-
+  %% Just copied over from Sets.sw:
   op [a] \\// (ss:Set (Set a)) : Set a =
     set_fold empty_set (\/) ss
+
+  %% Just copied over from Sets.sw:
+  op [a] //\\ (ss:(Set (Set a) | nonempty?)) : Set a =
+    set_fold (\\// ss) (/\) ss
 
   op [a] set_delete (x:a, s:Set a) : Set a = remove s x
   op [a] set_delete_new (x:a, s:Set a) : Set a = remove s x
@@ -98,6 +100,9 @@ op [a,b] foldable? (f : b * a -> b) : Bool = Set.foldable? f
        else As subset Bs
 
   op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
+
+  %% Copied from Sets.sw;
+  op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
 
 proof Isa SetsAsMap__e_fsl_fsl_bsl_bsl_Obligation_subtype
   sorry

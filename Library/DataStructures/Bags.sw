@@ -140,7 +140,12 @@ theorem bag_fold_true is [a]
 theorem bag_fold_true_back is [a]
   fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
     bag_fold true (f) bag && (fa(elem:a) f(false, elem) = false) => (fa(elem : a) (elem bagin? bag) => f(true, elem))
-       
+
+%% Checks that predicate p holds on all elements in the bag.
+op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
+  bag_fold true
+           (fn (acc, elem) -> acc && p(elem))
+           b
 
 %TODO: Won't this definition always return the empty bag?
 %  op [a] //\\ (bs:Bag (Bag a)) : Bag a =
@@ -227,7 +232,7 @@ theorem bag_fold_true_back is [a]
       fa(c:Bag a)(empty_bag \/ c = c)
 
 
-%TTODO does not seem true.  Consider A={x}, B={x}, C={x}.  Note sure how to fix it.  We could prove the special case where nothing in C is in A (or nothing in C is in B).
+%TODO does not seem true.  Consider A={x}, B={x}, C={x}.  Note sure how to fix it.  We could prove the special case where nothing in C is in A (or nothing in C is in B).
 %TODO  Minor quibble: I am not sure about the name of this one.  It seems that this is really distributing the difference over the join, not vice versa.
   % theorem distribute_bag_join_over_diff is [a]
   %     fa(A:Bag a,B:Bag a,C:Bag a)

@@ -29,8 +29,8 @@ op [a] empty_set : Set a
 axiom empty_set is [a]
       fa(x: a) ~(x in? empty_set)
 
-%TODO add this back?
-%op [a] empty? (s : Set a) : Bool = (s = empty_set)
+op [a] empty? (s : Set a) : Bool = (s = empty_set)
+op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
 
 % the result of inserting an element into a set is characterized by
 % consisting of all the old elements plus the newly inserted element
@@ -224,17 +224,27 @@ theorem inv_set_fold is [a,s,s']
 
 op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 
-%% TTODO This seems wrong.  This starts with the empty set and
-%% intersects more sets into it.  The result will always be empty!
-%% Also, it's not clear what this should return if called on the
-%% empty set (in some sense, the intersection of no sets is the set
-%% containing everything, but these are finite sets). Probably this
-%% should require its argument to be a non-empty set of sets.
-op [a] //\\ (ss:Set (Set a)) : Set a =
- set_fold empty_set (/\) ss
+%%Define Set_P (lifts a predicate on elements to a predicate on sets).
+%% If we don't define this, the isabelle translator generates a declaration for it!  
 
+%% I tried to call 'p' here 'pred' but got an isabelle error:
+op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
+
+
+
+%% Union of many sets
 op [a] \\// (ss:Set (Set a)) : Set a =
  set_fold empty_set (\/) ss
+
+%% Intersection of many sets.
+%% It's not clear what this should return if called on the
+%% empty set (in some sense, the intersection of no sets is the set
+%% containing everything, but these are finite sets), so this
+%% requires its argument to be a non-empty set of sets.
+op [a] //\\ (ss:(Set (Set a) | nonempty?)) : Set a =
+  set_fold (\\// ss) (/\) ss  %% TODO: Somewhat gross to start with the union, but starting with the empty set here was wrong (result was always the empty set).
+  %% TODO or just convert the characteristic predicate to a set?:
+  %% TODO This caused problems in SetsAsMapssw: the(result : Set a) (fa(x:a) ((x in? result) = (fa(s: Set a) ((s in? ss) => (x in? s)))))
 
 op [a] -- infixl 25 : Set a * Set a -> Set a
 axiom set_difference is [a]
@@ -773,7 +783,6 @@ end-proof
 proof Isa Set__foldable_p_of_and [simp
   apply(auto simp add: Set__foldable_p_def)
 end-proof
-
 
 end-spec
 

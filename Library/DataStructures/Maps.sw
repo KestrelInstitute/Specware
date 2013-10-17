@@ -113,6 +113,9 @@ Maps = Map qualifying spec
   axiom map_range is
      [a,b] fa(m:Map(a,b), z:b)( z in? range(m) = (ex(x:a)(apply m x = Some z)))
 
+  theorem range_of_empty is [a, b]
+    range (empty_map :  Map(a,b)) = empty_set
+
   %% Special case when key is not already in the map (otherwise, you
   %% may have to delete from the range the value that key previously
   %% mapped to, unless there is another key that also maps to that
@@ -528,6 +531,11 @@ proof Isa Map__range_of_update_special_case
   apply(rule Set__membership)
   apply(auto simp add: Set__set_insertion Map__map_range Map__update)
   apply(metis Map__map_domain)
+end-proof
+
+proof Isa Map__range_of_empty
+  apply(rule Set__membership)
+  apply(simp add:  Map__map_range Set__empty_set Map__empty_map)
 end-proof
 
 
