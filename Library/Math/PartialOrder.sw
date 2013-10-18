@@ -7,7 +7,7 @@ PartialOrder = spec
     fa(a:A) a<=a
 
  axiom transitive_le is
-    fa(a:A,b:A,c:A)(a<=b && b<=c => c<=a)
+    fa(a:A,b:A,c:A)(a<=b && b<=c => a<=c)
 
  axiom antisymmetric_le is
     fa(a:A,b:A)(a<=b && b<=a => a=b)
