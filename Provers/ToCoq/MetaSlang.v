@@ -149,171 +149,67 @@ Definition dec_neq_b_pair (p : bool * bool) :=
  *** The Spec type
  ***)
 
-(* a signature associates strings with types *)
-Definition Signature :=
-  list (string * Type).
+(* A spec is essentially a dependent record where some of the elements
+   might not be defined. To model this concept in Coq, we define a
+   type of lists of optional elements whose types can depend on the
+   previous elements (some of which may be not be present). More
+   specifically, the Spec type has three parameters:
 
-Inductive InSig : Signature -> string -> Type -> Prop :=
-| InSig_Base sig str T : InSig (cons (str, T) sig) str T
-| InSig_Cons sig str T str' T' :
-    InSig sig str T -> ~(str = str') -> InSig (cons (str', T') sig) str T.
+   sig: the signature type of the spec, essentially a nested dependent
+   product;
 
-Definition SigString (sig : Signature) : Set :=
-  { str:string | exists T , InSig sig str T }.
+   rem_sig: the signature type of the remaining (or removed) elements
+   of the spec that have not been given, i.e., that are "None"; and
 
-Program Fixpoint sig_lookup (sig : Signature) {struct sig}
-: SigString sig -> Type :=
-  match sig return { str:string | exists T , InSig sig str T } -> Type with
-    | (str', T) :: sig' =>
-      fun str =>
-        if string_dec str str' then T else sig_lookup sig' str
-    | nil => fun str_pair => string
-  end.
-Obligation 1.
-inversion H1.
-elimtype False; apply H; symmetry; assumption.
-exists H0; assumption.
-Defined.
-
-Lemma sig_lookup_insig_h :
-  forall (sig : Signature) (str : string) T
-         (insig : InSig sig str T)
-         (ex_T' : exists T' , InSig sig str T'),
-    sig_lookup sig (exist _ str ex_T') = T.
-  intros sig str T insig; induction insig; intro ex_T'.
-  unfold sig_lookup.
-  destruct
-    (string_dec
-       (proj1_sig
-          (exist
-             (fun str0 : string =>
-              exists T0 : Type, InSig ((str, T) :: sig) str0 T0) str ex_T'))).
-  reflexivity.
-  elimtype False; apply n; reflexivity.
-  unfold sig_lookup.
-  destruct
-    (string_dec
-       (proj1_sig
-          (exist
-             (fun str0 : string =>
-              exists T0 : Type, InSig ((str', T') :: sig) str0 T0) str ex_T'))).
-  elimtype False; apply H; assumption.
-  apply IHinsig.
-Qed.
-
-Lemma sig_lookup_insig :
-  forall (sig : Signature) (str : SigString sig) T,
-    InSig sig (proj1_sig str) T -> sig_lookup sig str = T.
-  intros sig str; destruct str as [ str insig' ].
-  intros T insig.
-  apply sig_lookup_insig_h.
-  assumption.
-Qed.
-
-(* subset relation on signatures *)
-Definition SigSubset (sig1 sig2 : Signature) : Prop :=
-  forall str T, InSig sig1 str T -> InSig sig2 str T.
-
-(* an algebra gives an element of each type in a sig *)
-Definition Algebra (sig : Signature) :=
-  forall (str : SigString sig), sig_lookup sig str.
-
-(* a partial algebra is one where only some elements are defined *)
-Definition PartialAlgebra (sig : Signature) :=
-  forall (str : SigString sig), option (sig_lookup sig str).
-
-(* an otion type refines to another one iff either the first is None
-   or both are equal *)
-Inductive OptRefinesTo {A : Type} : option A -> option A -> Prop :=
-| OptRefinesTo_None opt2 : OptRefinesTo None opt2
-| OptRefinesTo_Some a1 a2 : a1 = a2 -> OptRefinesTo (Some a1) (Some a2).
-
-(* a partial algebra refines to another iff the elements refine pointwise *)
-Definition PAlgRefinesTo {sig : Signature} (pa1 pa2 : PartialAlgebra sig) : Prop :=
-  forall (str : SigString sig), OptRefinesTo (pa1 str) (pa2 str).
-
-(* extension of partial alg refinement to fully-defined algebras *)
-Definition PAlgRefinesToAlg {sig : Signature}
-           (pa : PartialAlgebra sig) (a : Algebra sig) : Prop :=
-  forall (str : SigString sig), OptRefinesTo (pa str) (Some (a str)).
-
-(* a signature where all elements have type Set *)
-Definition SetSignature := list string.
-
-Definition SetSig2Sig : SetSignature -> Signature :=
-  map (fun str => (str, Set)).
-Coercion SetSig2Sig : SetSignature >-> Signature.
-
-(* FIXME: use sig_lookup_insig *)
-(*
-Lemma set_sig_lookup_is_set
-: forall (sig : SetSignature) str, sig_lookup sig str = Set.
-  intro sig; induction sig; intro str;
-  destruct str as [ str ex_insig ]; destruct ex_insig as [ T insig ].
-  inversion insig.
-  case_eq (string_dec str a).
-  intros e_str e_string_dec.
-  unfold sig_lookup; unfold SetSig2Sig; unfold map. rewrite e_string_dec.
-
-  unfold sig_lookup; unfold SetSig2Sig; unfold map; fold sig_lookup.
-  case_eq (string_dec (proj1_sig str) a).
-  intros e_str e_string_dec. rewrite e_str.
-rewrite e_string_dec.
-
-  destruct str as [ str ex_insig ].
-  destruct (dec_str )
+   embed: a function witnessing the fact that rem_sig can be embedded
+   into sig, or, viewed differently, a function that contains all the
+   "Some" definitions in the Spec.
 *)
 
-Definition DepSignature (sig : Signature)
-  := list (string * (Algebra sig -> Type)).
+Inductive Spec : forall sig rem_sig (embed : rem_sig -> sig), Type :=
+| SpecNil : Spec unit unit id
+| SpecConsNone
+    sig rem_sig embed (spec : Spec sig rem_sig embed)
+    (str : string) (T : sig -> Type)
+  : Spec
+      { s:sig & T s }
+      { rem:rem_sig & T (embed rem) }
+      (fun rem => existT _ (embed (projT1 rem)) (projT2 rem))
+| SpecConsSome
+    sig rem_sig embed (spec : Spec sig rem_sig embed)
+    (str : string) (T : sig -> Type)
+    (elem : forall (rem : rem_sig), T (embed rem))
+  : Spec
+      { s:sig & T s }
+      rem_sig
+      (fun rem => existT _ (embed rem) (elem rem))
+.
 
-Definition DepSigAsSig {sig : Signature}
-: DepSignature sig -> Signature :=
-  map (fun p => (fst p, forall alg, snd p alg)).
 
-Coercion DepSigAsSig : DepSignature >-> Signature.
+(* Example: Coq representation of the spec
+   spec
+      type T
+      op f : T -> T
+      axiom f_is_id is fa (t:T) f t = t
+   end-spec
+ *)
 
-Definition Dep
+Definition spec1 :=
+  SpecConsNone
+    _ _ _
+    (SpecConsNone
+       _ _ _
+       (SpecConsNone
+          _ _ _
+          SpecNil
+          "T" (fun _ => Set))
+       "f" (fun rem => projT2 rem -> projT2 rem))
+    "f_is_id"
+    (fun rem =>
+       forallB t, dec_eq_b_pair ((projT2 rem) t, t)).
 
-(* finally, the definition of a Spec! *)
-Record Spec :=
-  {
-    spec_types_sig : SetSignature;
-    spec_types : PartialAlgebra spec_types_sig;
-    spec_ops_sig : DependentSig spec_types_sig;
-    spec_ops : PartialAlgebra spec_ops_sig
-  }.
-
-
-(*
-Record Spec :=
-  mk_Spec {
-      RT : Type;
-      holes : list Type;
-      partial_inst : multi_arrow holes RT
-    }.
-*)
 
 (***
- *** Examples
+ *** Morphisms
  ***)
 
-(*
-Module trivial_sig.
-
-  Record sig :=
-    mk_sig {
-        sig_t : Set
-      }.
-
-  Definition holes : list Type := cons Set nil.
-
-  Parameter t : Set.
-
-  Definition p_inst : multi_arrow holes sig := fun t => mk_sig {| sig_t := t |}.
-
-
-  Definition trivial_spec : Spec :=
-    mk_Spec {|
-        RT = 
-*)
