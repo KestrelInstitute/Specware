@@ -18,7 +18,7 @@ spec
   %% Added by Eric (just copied from Maps.sw):
   op [a,b,acc] foldable? (f : (a * b * acc -> acc)) : Bool =
     fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
-      key1 ~= key2 =>   %% Excludes the case of the same key twice with different values (can't happen).
+      ~(key1 = key2) =>   %% Excludes the case of the same key twice with different values (can't happen).
       f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
 
 

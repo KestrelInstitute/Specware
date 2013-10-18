@@ -136,7 +136,7 @@ theorem delete_of_empty is [a]
 
   theorem in_of_delete is [a]
     fa(c:Set a, x:a, y:a)
-      x in? set_delete(y,c) = (x ~= y && x in? c)    
+      x in? set_delete(y,c) = (~(x = y) && x in? c)    
 
 
   %% This was wrong.  It just said "(set_delete(y,set_insert(y,c)) = c)".  Only true if y is not in c.  -Eric
@@ -147,7 +147,7 @@ theorem delete_of_empty is [a]
 
   theorem set_delete_of_set_insert_diff is [a]
     fa(c:Set a, x:a, y:a)
-      x ~= y => set_delete(x,set_insert(y,c)) = set_insert(y,set_delete(x,c))
+      ~(x = y) => set_delete(x,set_insert(y,c)) = set_insert(y,set_delete(x,c))
 
 
 
@@ -432,7 +432,7 @@ theorem in?_size is [a]
 
 %   theorem distribute_set_diff_over_right_insert2 is [a]
 %       fa(c:Set a,d:Set a,y:a)
-%       d ~= empty_set =>                                    % beware the circular rewrite!
+%       ~(d = empty_set) =>                                    % beware the circular rewrite!
 %         (c -- set_insert(y,d) 
 %            = (c -- d) -- set_insert(y,empty_set)
 %         )

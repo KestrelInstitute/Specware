@@ -46,11 +46,11 @@ op [a] push (elt:a, stk:Stack a) : Stack a = listToStack (Cons(elt, stackToList 
 
 %% The pop operation on Stacks corresponds to tail on lists:
 
-op [a] pop (stk:Stack a | stk ~= empty_stack): Stack a = listToStack (tail (stackToList stk))
+op [a] pop (stk:Stack a | ~(stk = empty_stack)): Stack a = listToStack (tail (stackToList stk))
 
 %% The top operation on Stacks corresponds to head on lists:
 
-op [a] top (stk:Stack a | stk ~= empty_stack): a = head (stackToList stk)
+op [a] top (stk:Stack a | ~(stk = empty_stack)): a = head (stackToList stk)
 
 theorem push_not_empty is [a]
   fa(elt:a, stk: Stack a) (push(elt, stk) = empty_stack) = false

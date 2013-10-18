@@ -278,11 +278,11 @@ end-proof
 
 % I added the non-emptiness condition back in.
   theorem Stack2L_tail is [a]
-    fa(stk:Stack a) (stk ~= empty_stack) => (Stack2L(pop(stk)) = tail(Stack2L(stk)))
+    fa(stk:Stack a) ~(stk = empty_stack) => (Stack2L(pop(stk)) = tail(Stack2L(stk)))
 
 % I added the non-emptiness condition.
   theorem Stack2L_head is [a]
-    fa(stk:Stack a) (stk ~= empty_stack) => (top(stk) = head(Stack2L(stk)))
+    fa(stk:Stack a) ~(stk = empty_stack) => (top(stk) = head(Stack2L(stk)))
 
   theorem Stack2L_init is [a]
     fa(lst:List a,stk:Stack a) ((Stack2L(stk) = lst) = (stk = pushl(lst,empty_stack)))
@@ -321,7 +321,7 @@ end-proof
     fa(y:a,lst:List a) ( (y in? lst) = (y in? L2S lst) )
 
   theorem L2S_head is [a]
-    fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) in? L2S(lst) )
+    fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) in? L2S(lst) )
 
   % The List1 here is new (was List).
   theorem L2S_tail is [a]
@@ -376,7 +376,7 @@ end-proof
     fa(y:a,lst:List a) ( (y in? lst) = (y bagin? L2B lst) )
 
   theorem L2B_head is [a]
-    fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) bagin? L2B(lst) )
+    fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) bagin? L2B(lst) )
 
   % The List1 is new (was just List).
   % TODO: Is the "= true" here necessary (e.g., to make this an equality, so that it can be used as a rewrite rule)?  If so, do we need it other places too?
@@ -437,7 +437,7 @@ end-proof
     fa(y:a,lst:List a) ( (y in? lst) = (y in? L2C lst) )
 
   theorem L2C_head is [a]
-    fa(y:a,lst:List a) ( (lst ~= Nil) => head(lst) in? L2C(lst) )
+    fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) in? L2C(lst) )
   theorem L2C_tail is [a]
     fa(y:a,lst:List a) ( L2C(tail(lst)) subcoll (L2C lst) )
 

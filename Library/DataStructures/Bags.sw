@@ -276,7 +276,7 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
 
 %%   theorem distribute_bag_diff_over_right_insert2 is [a]
 %%       fa(c:Bag a,d:Bag a,y:a)
-%%       d ~= empty_bag =>                                    % beware the circular rewrite!
+%%       ~(d = empty_bag) =>                                    % beware the circular rewrite!
 %%         (c -- bag_insert(y,d) 
 %%            = (c -- d) -- bag_insert(y,empty_bag)
 %%         )
