@@ -1168,10 +1168,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
   op [a] constantTerm? (t: ATerm a): Bool =
     case t of
-      | Lambda _ -> true
-      | Fun _    -> true
-      | Record(fields,_) -> forall? (fn (_,stm) -> constantTerm? stm) fields
-      | _        -> false
+      | Lambda    _           -> true
+      | Fun       _           -> true
+      | Record    (fields, _) -> forall? (fn (_,stm) -> constantTerm? stm) fields
+      | TypedTerm (tm, _,  _) -> constantTerm? tm
+      | Pi        (_, tm,  _) -> constantTerm? tm
+      | And       (tm::_,  _) -> constantTerm? tm
+      | _                     -> false
 
   op [a] containsOpRef?(term: ATerm a): Bool =
     existsSubTerm (fn t -> case t of
