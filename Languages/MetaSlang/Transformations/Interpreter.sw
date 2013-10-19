@@ -58,30 +58,15 @@ spec
   op  eval: MSTerm * Spec -> MSIValue
   def eval(t,spc) = evalRec(t,emptySubst,spc,0,traceEval?)
 
-
-  op evalPreservingType (term : MSTerm, spc : Spec) : MSTerm =
-   let v = eval (term, spc) in
-   if fullyReduced? v then
-     let new_term = valueToTerm v in
-     let old_type = inferType (spc, term)     in
-     let new_type = inferType (spc, new_term) in
-     if equivType? spc (old_type, new_type) then
-       new_term
-     else
-       case new_term of
-         | Fun (x, _, pos) -> 
-           Fun (x, old_type, pos)
-         | _ -> 
-           TypedTerm (new_term, old_type, noPos)
-   else
-     valueToTerm v
-
   op evalFullyReducibleSubTerms(t: MSTerm,spc: Spec): MSTerm =
     mapSubTerms (fn st ->
-                 if ~(constantTerm? st) then
-                   evalPreservingType (st, spc)
-                 else 
-                   st)
+                 if ~(constantTerm? st)
+                   then
+                     let v = eval(st,spc) in
+                     if fullyReduced? v
+                       then valueToTerm v
+                       else st
+                   else st)
       t
 
   op partialEval(t: MSTerm,spc: Spec): MSTerm =
@@ -1035,14 +1020,17 @@ spec
  op assumeNoSideEffects?: Bool = true
 
  op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
-  if ~(constantTerm? term) && freeVarsRec term = []
+   if ~(constantTerm? term) && freeVarsRec term = []
      && (if assumeNoSideEffects? then ~(hasSideEffect? term)
-         else sideEffectFree term)
+           else sideEffectFree term)
      && ~(existsSubTerm dontReduceTerm? term)
-    then
-      evalPreservingType (term, spc)
-  else 
-    term
+     then
+       % let _ = writeLine("reduceTerm: "^printTerm term) in
+       let v = eval(term,spc) in
+       if fullyReduced? v
+         then valueToTerm v
+         else term
+     else term
 
  op reduceSubTerms(term: MSTerm, spc: Spec): MSTerm =
    mapTerm (fn t -> reduceTerm(t,spc), id, id) term
