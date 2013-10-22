@@ -1,0 +1,11 @@
+#!/bin/sh
+
+SPECWARE4=`dirname $0`/..
+LISP_EXECUTABLE=$SPECWARE4/Applications/Specware/bin/linux/Specware4.sbclexe
+
+if [ $LISP_EXECUTABLE ] && [ -e $LISP_EXECUTABLE ]; then
+  (/bin/echo '(SWShell::specware-shell nil)'; cat) | sbcl --core $LISP_EXECUTABLE
+else
+  echo "Could not find Specware core file; try setting SPECWARE4 or LISP_EXECUTABLE"
+  exit 1
+fi

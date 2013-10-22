@@ -7,6 +7,7 @@ spec
   import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
 
   import /Provers/ToIsabelle/IsaPrinter
+  import /Provers/ToCoq/CoqPrinter
   import /Languages/SpecCalculus/AbstractSyntax/ASW_Printer
 
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists

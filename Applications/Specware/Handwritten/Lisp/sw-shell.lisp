@@ -3,6 +3,7 @@
 (defpackage :Prover)
 (defpackage :Simplify)
 (defpackage :IsaTermPrinter)
+(defpackage :CoqTermPrinter)
 (defpackage :Refs)
 (defpackage :Haskell)
 (defpackage :SWShell)
@@ -37,6 +38,7 @@
     ("oblig"     . "[unit-term] Abbreviation for show obligations ...")
     ("gen-obligations" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
     ("gen-obligs" . "[unit-term] Generate Isabelle/HOL obligation theory for unit.")
+    ("gen-coq"   . "Generates Coq obligations for unit.")
     ("gen-acl2"   . "Generates ACL2 code for unit.")
     ("gen-haskell" . "[unit-term] Generate Haskell code for unit.")
     ("gen-h" . "[unit-term] Generate Haskell code theory for unit.")
@@ -387,6 +389,21 @@
               (unless (null uid)
                 (setq cl-user::*last-unit-Id-_loaded* uid)
                 (IsaTermPrinter::printUIDtoThyFile-2 uid t))))
+           (gen-coq
+            (let ((TypeObligations::generateTerminationConditions? nil)
+                  (TypeObligations::generateExhaustivityConditions? t)
+                  (Simplify::simplifyUsingSubtypes? t)
+                  (Prover::treatNatSpecially? nil)
+                  (Utilities::namedTypesRaised? t)
+                  (uid (if (not (null argstr))
+                           argstr
+                           (if (not (null cl-user::*last-unit-Id-_loaded*))
+                               cl-user::*last-unit-Id-_loaded*
+                               (progn (format t "No previous unit processed~%")
+                                      nil)))))
+              (unless (null uid)
+                (setq cl-user::*last-unit-Id-_loaded* uid)
+                (CoqTermPrinter::printUIDToCoqFile uid))))
            (gen-acl2 
             (let ((TypeObligations::generateTerminationConditions? nil)
                   (TypeObligations::generateExhaustivityConditions? t)
