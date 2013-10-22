@@ -309,7 +309,7 @@ MetaSlangRewriter qualifying spec
                              addDemodRules(assertRules(context,condn,"Restriction",Context,Either), rules))
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
-     | QuotientPat(p, _, _) -> addPatternRestriction(context, p, rules)
+     | QuotientPat(p, _, _, _) -> addPatternRestriction(context, p, rules)
      | TypedPat(p, _, _)    -> addPatternRestriction(context, p, rules)
      | _ -> rules
 

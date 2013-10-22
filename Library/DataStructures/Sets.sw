@@ -1,6 +1,5 @@
 % specification of (finite) sets
 
-%TODO get rid of all sorrys
 %TODO unify with other set libraries
 
 Set qualifying
@@ -30,10 +29,8 @@ op [a] empty_set : Set a
 axiom empty_set is [a]
       fa(x: a) ~(x in? empty_set)
 
-op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
-
-%TODO add this back?
-%op [a] empty? (s : Set a) : Bool = (s = empty_set)
+op [a] empty? (s : Set a) : Bool = (s = empty_set)
+op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
 
 % the result of inserting an element into a set is characterized by
 % consisting of all the old elements plus the newly inserted element
@@ -41,6 +38,14 @@ op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 op [a] set_insert : a * Set a -> Set a
 axiom set_insertion is [a]
       fa(s,x:a,y) y in? set_insert(x,s) <=> y = x || y in? s
+
+theorem set_insert_does_nothing is [a]
+  fa(x : a, s : Set a)
+    x in? s => set_insert(x,s) = s
+
+theorem set_insert_of_set_insert_same is [a]
+  fa(x : a, s : Set a)
+    set_insert(x,set_insert(x,s)) = set_insert(x,s)
 
 % precondition that the element is not in the set
 % Added a definition of this; it just calls the regular insert.  Now we can prove theorems about it. -Eric
@@ -117,6 +122,33 @@ theorem commutativity_of_intersection_two is [a]
 theorem set_intersection_idempotence_right is [a]
   fa(x : Set a, y : Set a) (x /\ y) /\ y = x /\ y
 
+op [a] set_delete : a * Set a -> Set a
+axiom set_deletion is [a]
+      fa(s,x: a,y) y in? set_delete(x,s) <=> ~(y = x) && y in? s
+
+theorem delete_of_empty is [a]
+  fa(x : a)
+    set_delete(x,empty_set) = empty_set
+
+  theorem set_delete_no_op is [a]
+      fa(c:Set a,y:a)
+        (~(y in? c) => set_delete(y,c) = c)
+
+  theorem in_of_delete is [a]
+    fa(c:Set a, x:a, y:a)
+      x in? set_delete(y,c) = (~(x = y) && x in? c)    
+
+
+  %% This was wrong.  It just said "(set_delete(y,set_insert(y,c)) = c)".  Only true if y is not in c.  -Eric
+  %% Or maybe it should be about insert_new?
+  theorem distribute_set_delete_over_set_insert is [a]
+      fa(c:Set a,y:a)
+        (set_delete(y,set_insert(y,c)) = set_delete(y,c))
+
+  theorem set_delete_of_set_insert_diff is [a]
+    fa(c:Set a, x:a, y:a)
+      ~(x = y) => set_delete(x,set_insert(y,c)) = set_insert(y,set_delete(x,c))
+
 
 
 %TODO note that Library/General/Set also applies to infinite set (there is also Library/General/FSet for finite sets)
@@ -140,50 +172,79 @@ axiom induction is [a]
 % set_insert(x,set_insert(x,empty_set)) and in set_insert(x,empty_set)
 % yields the same result f(x,f(x,c)) = f(x,c)
 %TODO do we really need the idempotence (could restrict axiom set_fold2 below to the case where x is not already in s, or remove x from s in the RHS of that axiom)?
+%  The idempotency condition prevents basic things that one wants to do using set fold (e.g., count the elements a set, because incrementing the count is not idempotent).
+%  I am attempting to remove the idempotency condition and reformulate the set_fold2 axiom accordingly...
 %TODO Library/General/Set only requires the commutativity property on the elements of the set being folded over.
 %     I guess that would require dependent type (or product type) and would conflict with currying here...
 
+
+%%FIXME: Actually using this led to ambiguous Isabelle parses in SetsAsMaps!
+op [a,b] foldable? (f : b * a -> b) : Bool =
+  fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y)
+  %% && (fa(x,y)   f(f(x,y), y) = f(x,y))
+
+%% May be helpful in some refinements
+theorem foldable?_of_and is
+  foldable?(fn (x:Bool,y:Bool) -> x && y)
+
 op [a,b] set_fold : b ->
-                      {f : b * a -> b |
-                       (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
-                       (fa(x,y)   f(f(x,y), y) = f(x,y))} ->
+% TODO: Put this back:((b * a -> b) | (foldable?)) ->
+                      {f : (b * a -> b) | (fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))} ->
                       Set a ->
                       b
-axiom set_fold1 is
-      fa(c,f) set_fold c f empty_set = c
-axiom set_fold2 is
-      fa(c,f,x,s) set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
 
-% TODO bad to have s as a type var and a non-type var here:
-% This doesn't seem to be used.
+axiom set_fold1 is [a,b]
+  fa(c:b, f : ((b * a -> b) | foldable?))
+    set_fold c f empty_set = c
+
+axiom set_fold2 is [a,b]
+  fa(c:b, f : ((b * a -> b) | foldable?), x:a, s:Set a)
+    ~(x in? s) =>  %%  New!  An alternative would be to drop this and delete x from s in the right hand side of the equality
+    set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
+%old:set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
+
+%% Push a bijection through a fold.  This changes the type of the accumulator of the fold.
+theorem inv_set_fold_helper is [a,s,s']
+ fa(g: s -> s', acc : s, ss: Set a, f : ((s * a -> s) | foldable?))
+  bijective? g =>
+    g (set_fold acc f ss) = 
+    set_fold (g acc)
+      (fn (st':s', x:a) -> g(f((inverse g) st',x)))
+      ss
+
+% This is used for isomorphic type refinement.
 theorem inv_set_fold is [a,s,s']
- fa(g: s -> s', g': s' -> s, st': s', s: Set a, f: s * a -> s)
-  (bijective? g && bijective? g' && inverse g = g')
- => g (set_fold (g' st') f s)
+ fa(g: s -> s', g': s' -> s, st': s', ss: Set a, f: ((s * a -> s) | foldable?))
+  (bijective? g && bijective? g'  %% TODO: Why do we need the second bijective? assumption?
+  && inverse g = g') 
+ => g (set_fold (g' st') f ss)
    = set_fold st'
        (fn (st',x) -> g(f(g' st',x)))
-       s
+       ss
 
-%% TTODO This seems wrong.  This starts with the empty set and
-%% intersects more sets into it.  The result will always be empty!
-%% Also, it's not clear what this should return if called on the
-%% empty set (in some sense, the intersection of no sets is the set
-%% containing everything, but these are finite sets). Probably this
-%% should require its argument to be a non-empty set of sets.
-op [a] //\\ (ss:Set (Set a)) : Set a =
- set_fold empty_set (/\) ss
+op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 
+%%Define Set_P (lifts a predicate on elements to a predicate on sets).
+%% If we don't define this, the isabelle translator generates a declaration for it!  
+
+%% I tried to call 'p' here 'pred' but got an isabelle error:
+op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
+
+
+
+%% Union of many sets
 op [a] \\// (ss:Set (Set a)) : Set a =
  set_fold empty_set (\/) ss
 
-%TODO remove this comment?
-% we could define several other operations on sets (e.g., deletion
-% of elements, filtering, homomorphic application of a function) but
-% the above operations are sufficient for this example
-
-op [a] set_delete : a * Set a -> Set a
-axiom set_deletion is [a]
-      fa(s,x: a,y) y in? set_delete(x,s) <=> ~(y = x) && y in? s
+%% Intersection of many sets.
+%% It's not clear what this should return if called on the
+%% empty set (in some sense, the intersection of no sets is the set
+%% containing everything, but these are finite sets), so this
+%% requires its argument to be a non-empty set of sets.
+op [a] //\\ (ss:(Set (Set a) | nonempty?)) : Set a =
+  set_fold (\\// ss) (/\) ss  %% TODO: Somewhat gross to start with the union, but starting with the empty set here was wrong (result was always the empty set).
+  %% TODO or just convert the characteristic predicate to a set?:
+  %% TODO This caused problems in SetsAsMapssw: the(result : Set a) (fa(x:a) ((x in? result) = (fa(s: Set a) ((s in? ss) => (x in? s)))))
 
 op [a] -- infixl 25 : Set a * Set a -> Set a
 axiom set_difference is [a]
@@ -207,9 +268,14 @@ theorem filter_neq is [a]
   fa(s: Set a, y: a)
     filter (fn x:a -> ~(y = x)) s = (if y in? s then set_delete(y, s) else s)
 
-%TODO add an axiom or definition about size
-op [a] size: Set a -> Nat
-  % fa(s: Set a) size s = set_fold 0 (fn (_, cnt) -> cnt + 1) s
+op [a] size (s : Set a) : Nat = set_fold 0 (fn (cnt, _) -> cnt + 1) s
+
+theorem size_of_empty is [a]
+  size(empty_set:(Set a)) = 0
+
+
+theorem size_of_insert is [a]
+  fa(s: Set a, x: a) size(set_insert(x,s)) = (if x in? s then size s else 1 + size s)
 
 theorem size_over_set_delete is [a]
   fa(s: Set a, x: a) size(set_delete(x,s)) = (if x in? s then size s - 1 else size s)
@@ -220,6 +286,13 @@ theorem size_over_set_delete is [a]
  axiom map_def is [a,b]
    fa(y: b, s: Set a, f: a -> b)
       y in? (map f s) <=> (ex(x:a) x in? s && y = f x)  %TODO parens would clarify
+
+theorem map_of_empty is [a,b]
+   fa(f: a -> b) map f empty_set = empty_set
+
+theorem map_of_insert is [a,b]
+   fa(f: a -> b, x:a, s:Set a) map f (set_insert(x,s)) = set_insert(f x, map f s)
+
 
 theorem size_map_injective is [a,b]
    fa(s: Set a, f: a -> b) injective? f => size(map f s) = size s
@@ -257,9 +330,6 @@ theorem in?_size is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_insert(y,d) \/ c = set_insert(y, d \/ c))
 
-  theorem set_delete_no_op is [a]
-      fa(c:Set a,y:a)
-        (~(y in? c) => set_delete(y,c) = c)
 
 
 % This was wrong (right hand side was just "set_delete(y,c)"). -Eric
@@ -273,14 +343,15 @@ theorem in?_size is [a]
   %     fa(c:Set a,d:Set a,y:a)
   %       (set_delete(y,c -- d) = set_delete(y,c) -- d)
 
-%commenting this out because I am commenting out delete_new
-  % theorem distribute_set_delete_new_over_union is [a]
-  %     fa(c:Set a,d:Set a,y:a)
-  %       (set_delete_new(y, c \/ d) = set_delete(y,c) \/ set_delete(y,d))
-
   theorem distribute_set_delete_over_union is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_delete(y, c \/ d) = set_delete(y,c) \/ set_delete(y,d))
+
+%% FIXME: Split into 2 rules, depending on whether y is in c or d?
+  %% theorem distribute_set_delete_new_over_union is [a]
+  %%   fa(c:Set a,d:Set a,y:a)
+  %%     (y in? c || y in? d) =>
+  %%     (set_delete_new(y, c \/ d) = set_delete(y,c) \/ set_delete(y,d))
 
   theorem distribute_union_over_right_delete is [a]
       fa(c:Set a,d:Set a,y:a)
@@ -298,20 +369,18 @@ theorem in?_size is [a]
       fa(c:Set a,d:Set a,y:a)
         (c -- set_insert(y,d) = set_delete(y, c -- d))
 
-%commenting out. is this needed?  there is no refinement for it in
-% SetsAsMaps#M, which causes an error, so I am commenting it out
-% here. -Eric, 10/11/12
-% Also, what does "delete new" mean?  Maybe this if for deleting 
-% an element when we know it is present in the set? - Eric, 10/18/12
-  % %% What does the "new" mean?
-  % op [a] set_delete_new (x:a,S:Set a): Set a
 
+% This is for deleting an element when we know it is present in the set.
+% TODO: Seems like a confusing name for that notion.  How about set_delete_present ?
+  op [a] set_delete_new (x:a, s:Set a | x in? s): Set a = set_delete(x,s)
+
+  %% TODO: Add a version without the (y in? c) premise that just calls set_delete, not set_delete_new
   theorem distribute_set_diff_over_right_insert_new is [a]
       fa(c:Set a,d:Set a,y:a)
         %% TODO The condition is new. It seems to be needed in order for 
         %% the call to set_insert_new to type-check:
-        ~(y in? d) =>
-        (c -- set_insert_new(y,d) = set_delete(y, c -- d)) %TODO was delete_new
+        (~(y in? d) && (y in? c)) =>
+        (c -- set_insert_new(y,d) = set_delete_new(y, c -- d))
 
 (* this is ok, but need a special form for GC derivation
 %  theorem distribute_set_diff_over_right_insert_new is [a]
@@ -346,12 +415,6 @@ theorem in?_size is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_insert(y,set_delete(y,c)) = set_insert(y, c))
 
-  %% This was wrong.  It just said "(set_delete(y,set_insert(y,c)) = c)".  Only true if y is not in c.  -Eric
-  %% Or maybe it should be about insert_new?
-  theorem distribute_set_delete_over_set_insert is [a]
-      fa(c:Set a,d:Set a,y:a)
-        (set_delete(y,set_insert(y,c)) = set_delete(y,c))
-
   theorem distribute_set_delete_union1 is [a]
       fa(A:Set a,B:Set a,y:a)
         (~(y in? A) => set_delete(y, A \/ B) =  A \/ set_delete(y, B))
@@ -369,7 +432,7 @@ theorem in?_size is [a]
 
 %   theorem distribute_set_diff_over_right_insert2 is [a]
 %       fa(c:Set a,d:Set a,y:a)
-%       d ~= empty_set =>                                    % beware the circular rewrite!
+%       ~(d = empty_set) =>                                    % beware the circular rewrite!
 %         (c -- set_insert(y,d) 
 %            = (c -- d) -- set_insert(y,empty_set)
 %         )
@@ -426,39 +489,24 @@ proof isa Set__distribute_set_diff_over_left_insert
 end-proof
 
 proof isa Set__inv_set_fold_Obligation_subtype
-  sorry
-end-proof
-
-proof isa Set__inv_set_fold_Obligation_subtype0
-  sorry
+  apply(auto simp add: Set__inv_set_fold_helper_Obligation_subtype)
 end-proof
 
 proof isa Set__inv_set_fold
-  sorry
+  apply(simp add: Set__inv_set_fold_helper)
+  apply(metis Function__f_inverse_apply)
 end-proof
 
 proof isa Set__e_fsl_fsl_bsl_bsl_Obligation_subtype
-  apply(auto simp add: Set__set_intersection_idempotence_right)
-  apply(cut_tac x=x and y=y and z=z in Set__commutativity_of_intersection_two)
-  apply(simp)
+(*  apply(auto simp add: Set__foldable_p_def) *)
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_intersection)
 end-proof
 
 proof isa Set__e_bsl_bsl_fsl_fsl_Obligation_subtype
-  apply(auto simp add: Set__set_union_idempotence_right)
-  apply(cut_tac x=x and y=y and z=z in Set__commutativity_of_union_two)
-  apply(simp)
-end-proof
-
-proof isa Set__size_over_set_delete
-  sorry
-end-proof
-
-proof isa Set__size_map_injective
-  sorry
-end-proof
-
-proof isa Set__in_p_size
-  sorry
+(*  apply(auto simp add: Set__foldable_p_def) *)
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_union)
 end-proof
 
 proof isa Set__distribute_set_diff_over_right_insert
@@ -515,6 +563,12 @@ proof isa Set__set_delete_no_op
   apply(auto)
 end-proof
 
+proof isa Set__in_of_delete
+  apply(rule Set__membership)
+  apply(simp add: Set__set_deletion)
+  apply(auto)
+end-proof
+
 proof isa Set__set_delete_over_set_diff
   apply(rule Set__membership)
   apply(simp add: Set__set_deletion Set__set_difference)
@@ -531,8 +585,8 @@ proof isa distribute_set_delete_over_union
   apply(auto)
 end-proof
 
-proof isa distribute_set_diff_over_right_insert_new
-  sorry
+proof isa distribute_set_delete_new_over_union
+  apply(simp add: Set__set_delete_new_def Set__distribute_set_delete_over_union)
 end-proof
 
 proof isa Set__associative_union
@@ -547,6 +601,12 @@ proof isa Set__distribute_set_insert_over_set_delete
 end-proof
 
 proof isa Set__distribute_set_delete_over_set_insert
+  apply(rule Set__membership)
+  apply(simp add: Set__set_deletion Set__set_insertion)
+  apply(auto)
+end-proof
+
+proof isa set_delete_of_set_insert_diff
   apply(rule Set__membership)
   apply(simp add: Set__set_deletion Set__set_insertion)
   apply(auto)
@@ -593,7 +653,7 @@ end-proof
 
 proof Isa Set__distribute_set_diff_over_right_insert_new
   apply(rule Set__membership)
-  apply(simp add: Set__set_difference Set__empty_set Set__set_insertion Set__set_deletion Set__set_insert_new_def)
+  apply(simp add: Set__set_difference Set__empty_set Set__set_insertion Set__set_deletion Set__set_insert_new_def Set__set_delete_new_def)
   apply(auto)
 end-proof
 
@@ -616,6 +676,113 @@ proof isa Set__set_insertion_equal_empty_alt
   apply(cut_tac x=x and s=s in Set__set_insertion_equal_empty, auto)
 end-proof
 
+proof isa Set__distribute_set_delete_new_over_union_Obligation_subtype
+  apply(simp add: Set__set_union)
+end-proof  
+
+proof isa Set__distribute_set_diff_over_right_insert_new_Obligation_subtype
+  apply(simp add: Set__set_difference)
+end-proof  
+
+proof isa Set__inv_set_fold_helper_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+  apply(metis Function__inverse_f_apply)
+end-proof
+
+proof Isa Set__set_insert_does_nothing
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_insertion)
+end-proof
+
+proof Isa Set__inv_set_fold_helper
+  apply(rule Set__induction)
+  apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype Set__foldable_p_def )
+  apply(case_tac "x in? s")
+  apply(simp add: Set__set_insert_does_nothing)
+  apply(cut_tac c=acc__v and f=f and x=x and s=s in Set__set_fold2)
+  apply(simp add: Set__foldable_p_def)
+  apply(assumption)
+  apply(cut_tac c="(g acc__v)" and f="(\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" and x=x and s=s in Set__set_fold2)
+  apply(simp add: Set__foldable_p_def Function__f_inverse_apply Function__inverse_f_apply)
+  apply(assumption)
+  apply(metis Function__inverse_f_apply Product_Type.prod.cases)
+end-proof
+%% The proof when set_fold calls foldable (but get rid of the call to SMT)? :
+  %% apply(rule Set__induction)
+  %% apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype)
+  %% apply(case_tac "x in? s")
+  %% apply(simp add: Set__set_insert_does_nothing)
+  %% apply(cut_tac c=acc__v and f=f and x=x and s=s in Set__set_fold2, assumption, assumption)
+  %% apply(smt Function__fxy_implies_inverse Product_Type.prod.cases Set__foldable_p_def Set__set_fold2)
+
+proof Isa Set__forall_p_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__size_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__delete_of_empty
+  apply(rule Set__membership)
+  apply(simp add: Set__set_deletion Set__empty_set)
+end-proof
+
+proof Isa Set__set_insert_of_set_insert_same
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_insertion)
+end-proof
+
+proof Isa Set__size_of_insert
+  apply(rule Set__induction)
+  apply(auto simp add: Set__size_def Set__set_fold1 Set__set_fold2 Set__foldable_p_def Set__empty_set Set__set_insertion Set__set_insert_of_set_insert_same)
+  apply (metis Set__set_insert_does_nothing Set__set_insertion_commutativity)
+end-proof
+
+proof Isa Set__in_of_delete
+  apply(auto simp add: Set__set_deletion)
+end-proof
+
+proof Isa Set__size_over_set_delete
+  apply(rule Set__induction)
+  apply(simp add: Set__delete_of_empty Set__empty_set)
+  apply(auto simp add: Set__set_delete_no_op Set__set_insertion Set__set_insert_does_nothing Set__size_of_insert Set__distribute_set_delete_over_set_insert)
+  apply(case_tac "x = xa")
+  apply(auto)
+  apply(auto simp add: Set__set_delete_of_set_insert_diff Set__size_of_insert Set__in_of_delete)
+end-proof
+
+proof Isa Set__size_of_empty
+  apply(auto simp add: Set__size_def Set__foldable_p_def Set__set_fold1)
+end-proof
+
+proof Isa Set__in_p_size
+  apply(rule_tac P="(x::'a) in? s" in mp)
+  defer
+  apply(assumption)
+  apply(rule Set__induction)
+  apply(auto simp add: Set__size_of_empty Set__size_of_insert Set__empty_set Set__set_insertion)
+end-proof
+
+proof Isa Set__map_of_empty
+  apply(rule Set__membership)
+  apply(simp add: Set__map_def Set__empty_set)
+end-proof
+
+proof Isa Set__map_of_insert
+  apply(rule Set__membership)
+  apply(auto simp add: Set__map_def Set__empty_set Set__set_insertion)
+end-proof
+
+proof Isa Set__size_map_injective
+  apply(rule Set__induction)
+  apply(auto simp add: Set__map_of_empty Set__map_of_insert Set__size_of_insert Set__size_of_empty Set__map_def)
+  apply(metis injD)
+end-proof
+
+proof Isa Set__foldable_p_of_and [simp
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
 
 end-spec
 

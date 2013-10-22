@@ -9,12 +9,19 @@ Prerequisites
 #############
 
 
-To build the manuals, you need python and the ``sphinx`` package
-installed. Assuming that you've installed a recent version of python
+To build the manuals, you need to have python and its
+"Sphinx Python Document Generator" package.
+Assuming that you've installed a recent version of python
 that includes the ``setuptools`` package (which it probably does), you
 can install ``sphinx`` with::
     
     sudo easy_install sphinx
+
+Do not use Macports or Homebrew to install this, because they will find the
+"Sphinx Open Source Search Server", a different tool.
+
+In addition, you need the ``pdflatex`` program.  Generally this is a symlink
+to ``pdftex``.  On the Mac, you can get this from http://www.tug.org/mactex/
 
 
 Building Documentation
@@ -58,4 +65,4 @@ described in :ref:`Writing Documentation with reStructuredText`, while
 documentation for editing the ``conf.py`` file is available on the
 `Sphinx website`_.
 
-.. _`Sphinx website`: http://sphinx.pocoo.org/contents.html
+.. _`Sphinx website`: http://sphinx-doc.org/contents.html

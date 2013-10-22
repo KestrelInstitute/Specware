@@ -1,0 +1,11 @@
+;;; Elaborating transform at $TESTDIR/showElements#TF_Good_1
+-Elements-----------
+##1 elems
+Import: A
+  Import: /Library/Base
+    Import: Base/String
+    Import: Base/Empty
+  Type:    T
+  Op:      f
+Op:      g
+--------------------

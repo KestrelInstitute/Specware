@@ -250,7 +250,7 @@ SpecCalc qualifying spec
 		     else
 		       return new_qid)
 	            new_names;
-	       return (if unqualified_Boolean in? new_names || Boolean_Boolean in? new_names then
+	       return (if unqualified_Bool in? new_names || Bool_Bool in? new_names then
 			  types
 		       else
 			 mergeTypeInfo spc types (info << {names = new_names}))

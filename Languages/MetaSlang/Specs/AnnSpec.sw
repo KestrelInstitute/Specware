@@ -729,6 +729,10 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  op [a] countOpInfos (pred? : AOpInfo a -> Bool) (ops : AOpMap a) : Nat =
    foldOpInfos (fn (x, result) -> result + (if pred? x then 1 else 0)) 0 ops
 
+ %% Count how many typeinfos satisfy the pred:
+ op [a] countTypeInfos (pred? : ATypeInfo a -> Bool) (types : ATypeMap a) : Nat =
+   foldTypeInfos (fn (x, result) -> result + (if pred? x then 1 else 0)) 0 types
+
 
  op  appTypeInfos : [b] (ATypeInfo b -> ()) -> ATypeMap b -> ()
  def appTypeInfos f types =
@@ -1019,7 +1023,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  def emptyATypeMap      = emptyAQualifierMap
  def emptyAOpMap        = emptyAQualifierMap
 
- def emptySpec =
+ op emptySpec : Spec =
    {
     types     = emptyATypeMap,
     ops       = emptyAOpMap,
@@ -1027,13 +1031,13 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
     qualifier = None
    }
 
- def initialSpecInCat =
-   {
-    types     = emptyATypeMap,
-    ops       = emptyAOpMap,
-    elements  = emptyAElements,
-    qualifier = None
-   }
+ op initialSpecInCat : Spec = emptySpec
+
+ op copySpec (spc : Spec) : Spec =
+  {types     = spc.types,
+   ops       = spc.ops,
+   elements  = spc.elements,
+   qualifier = spc.qualifier}
 
  def setTypes    (spc, new_types)    = spc << {types    = new_types}
  def setOps      (spc, new_ops)      = spc << {ops      = new_ops}

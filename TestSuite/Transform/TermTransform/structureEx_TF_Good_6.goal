@@ -1,0 +1,51 @@
+;;; Elaborating transform at $TESTDIR/structureEx#TF_Good_6
+-showSpec-----------
+##4 tf
+spec  
+import A
+refine def f (n: Int): {r: Int | r > 2 && r = n ** 2 ** 2}
+refine def f1 (n: Int): 
+    {r: Int | case g1 n
+               of Some (Some m) -> (r = m ** 2)
+                | _ -> false}
+refine def f1a (n: Int): 
+    {r: Int | 
+     case g1 n
+      of Some y -> (case y
+                     of Some m -> (r = m ** 2)
+                      | _ -> false)
+       | _ -> false}
+refine def f2 (n: Int): 
+    {r: Int | r > 2 && (case g2 n
+                         of Some (m, w) -> (r = m ** w)
+                          | _ -> false)}
+refine def f3 (n: Int): 
+    {r: Int | r > 3 && exists?(fn (x: Int) -> x ** 2 > 2) (g3 n)}
+refine def f4 (n: Int): {r: Int | r > 2 && (let (m, w) = g4 n in 
+                                            r = m ** w)}
+refine def f5 (n: Int): {r: Int | r > 2 && (ex(m: Int, w: Int) (m, w) in? g5 n 
+                                                            && r = m ** w)}
+refine def f6 (n: Int): 
+    {r: Int | 
+     r > 2 
+      && (let (m, ev__0) = g6 n in 
+          (case ev__0
+            of Some w -> (r = m ** w)
+             | _ -> false))}
+refine def f7 (n: Int): 
+    {r: Int | r > 2 && (ex(m: Int, w: Int) (m, Some w) in? g7 n 
+                                        && r = m ** w)}
+refine def f8 (n: Int): 
+    {r: Int | 
+     if let (m, ev__0) = g6 n in 
+        m > 2 && (case ev__0
+                   of Some w -> (r = m ** w)
+                    | _ -> false)
+      then g8 r 
+     else true}
+refine def f9 (n: Int): 
+    {r: Int | r > 2 && (ex(m: Int) Some(Some m) in? g9 n 
+                                && r = m ** 2)}
+end-spec
+
+--------------------

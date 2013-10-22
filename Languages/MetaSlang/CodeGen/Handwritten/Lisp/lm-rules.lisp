@@ -184,6 +184,8 @@
      ((:tuple "field")     "field")
      ((:tuple "op")        "op")
      ((:tuple "in")        "in")
+     ((:tuple "/")         "/")
+     ((:tuple "#%")        "%")
      ((:tuple (1 :Symbol)) (common-lisp::symbol-name (quote 1)))
      ))
 

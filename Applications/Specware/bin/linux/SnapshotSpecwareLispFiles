@@ -6,19 +6,20 @@ SCRIPT_DIR=`pwd`
 
 . "$SCRIPT_DIR"/Verify_Specware_Variables
 
-cd "$SPECWARE4"/Applications/Specware
+cd "$SPECWARE4"/Applications/Specware/lisp
 
-if [ -f lisp/Specware4.lisp ]; then
+if [ -f Specware4.lisp ]; then
 
   echo "About to create a new version of SpecwareLispFiles.tgz"
   echo ""
 
   /bin/rm -f SpecwareLispFiles.tgz 
-
-  tar -cvzf SpecwareLispFiles.tgz lisp/Specware4--*.lisp  lisp/Specware4.lisp
+  
+  tar -cvzf ../SpecwareLispFiles.tgz Specware4--*.lisp Specware4.lisp
 
   echo ""
 
+  cd ..
   ls -sltra lisp/Specware4--*.lisp  lisp/Specware4.lisp SpecwareLispFiles.tgz 
 
   echo ""

@@ -23,12 +23,12 @@ ASWPrinter qualifying spec
   % op MonadicStateInternal.readGlobalVar : fa (a) String -> Option a
   % op IO.writeStringToFile : String *  Filename -> ()
 
- type Context = {printTypes?: Boolean,
-		 printPositionInfo?: Boolean,
+ type Context = {printTypes?: Bool,
+		 printPositionInfo?: Bool,
 		 fileName: String,
 		 currentUID: UnitId,
 		 uidsSeen: List UnitId,	% Used to avoid infinite recursion because of circularity
-		 recursive?: Boolean}
+		 recursive?: Bool}
  %type SpecTerm = SpecCalc.SpecTerm
  %type Term = SCTerm
  type SpecElem = SpecElemTerm
@@ -39,7 +39,7 @@ ASWPrinter qualifying spec
  def ppGrConcat x = ppNest 0 (ppConcat x)
  def ppGr2Concat x = ppNest 2 (ppConcat x)
  def ppGbConcat x = ppNest 0 (ppConcat x)
- op  ppNum: Integer -> WLPretty
+ op  ppNum: Int -> WLPretty
  def ppNum n = ppString(show n)
 
 
@@ -151,11 +151,19 @@ ASWPrinter qualifying spec
 	ppConcat [ppString "colim ",
 		  ppSCTerm c term]
 
-      | Subst (specTerm,morphTerm) ->
+      | Subst (specTerm,morphTerm,pragmas) ->
 	ppConcat [ppSCTerm c specTerm,
 		  ppString " [",
 		  ppSCTerm c morphTerm,
-		  ppString "]"]
+		  ppString "]",
+                  ppBreak,
+                  ppString " proof [",
+                  ppSep (ppAppend (ppString ", ") ppBreak)
+                    (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
+                                                           ppLitString p2,
+                                                           ppLitString p3])
+                       pragmas),
+                  ppString "]"]
 
       | SpecMorph (dom, cod, elems, pragmas) ->
 	let 
@@ -333,7 +341,7 @@ ASWPrinter qualifying spec
  op  ppIdInfo : List QualifiedId -> WLPretty
  def ppIdInfo qids = ppSep (ppString ", ") (map ppQualifiedId qids)
    
- op  ppTypeInfo : Context -> Boolean -> List QualifiedId * MSType -> Position -> WLPretty
+ op  ppTypeInfo : Context -> Bool -> List QualifiedId * MSType -> Position -> WLPretty
  def ppTypeInfo c full? (aliases, dfn) pos =
    let (tvs, srt) = unpackType dfn in
    ppGr2Concat
@@ -365,7 +373,7 @@ ASWPrinter qualifying spec
      | [] -> ppNil
      | _  -> ppSep (ppString ", ") (map ppID tvs)
 
- op  ppOpInfo :  Context -> Boolean -> Boolean -> Aliases * Fixity * MSTerm -> Position -> WLPretty
+ op  ppOpInfo :  Context -> Bool -> Bool -> Aliases * Fixity * MSTerm -> Position -> WLPretty
  def ppOpInfo c decl? def? (aliases, fixity, dfn) pos =
    let (tvs, srt, term) = unpackTerm dfn in
    ppGr2Concat
@@ -499,7 +507,7 @@ ASWPrinter qualifying spec
     in
     run (catch prog handler)
 
-  op  printUIDtoFile: String * Boolean * Boolean -> String
+  op  printUIDtoFile: String * Bool * Bool -> String
   def printUIDtoFile (uid_str, printPositionInfo?, recursive?) =
     case evaluateUnitId uid_str of
       | Some val ->
@@ -587,14 +595,14 @@ ASWPrinter qualifying spec
       | Some global_context ->
         findDefiningTermForUnit(val,global_context)
     
-%  op  printUID : String * Boolean * Boolean -> ()
+%  op  printUID : String * Bool * Bool -> ()
 %  def printUID (uid, printPositionInfo?, recursive?) =
 %    toScreen
 %      (case evaluateUnitId uid of
 %	| Some val -> printValue (val,printPositionInfo?,recursive?)
 %	| _ -> "<Unknown UID>")
 
-  op  printValueTop : Value * UnitId * Boolean * Boolean -> String
+  op  printValueTop : Value * UnitId * Bool * Bool -> String
   def printValueTop (value,uid,printPositionInfo?,recursive?) =
     printValue {printTypes? = true,
 		printPositionInfo? = printPositionInfo?,
@@ -732,7 +740,7 @@ ASWPrinter qualifying spec
   op  ppSpecOrigin: Context -> SCTerm -> WLPretty
   def ppSpecOrigin c (def_tm,_) =
     case def_tm of
-      | Subst(spec_tm,morph_tm) ->
+      | Subst(spec_tm,morph_tm,pragmas) ->
         ppGr2Concat [ppString "substitution ",
 		     ppSCTermVal c spec_tm "name ",
 		     ppNewline,
@@ -764,7 +772,7 @@ ASWPrinter qualifying spec
          
       | _ -> ppString "elements"
 
-  op  morphismTerm?: Context -> SCTerm -> Boolean
+  op  morphismTerm?: Context -> SCTerm -> Bool
   def morphismTerm? c tm =
     case tm of
       | (SpecMorph _,_) -> true
@@ -774,7 +782,7 @@ ASWPrinter qualifying spec
 	  | _ -> false)
       | _ -> false
 
-  op  baseUnitId?: UnitId -> Boolean
+  op  baseUnitId?: UnitId -> Bool
   def baseUnitId? uid =
     let len = length uid.path in
     case subFromTo(uid.path,len-3,len-1) of
@@ -828,7 +836,7 @@ ASWPrinter qualifying spec
 %        Cons(Op qid1, normalizeSpecElements rst)
 %      | x::rst -> Cons(x,normalizeSpecElements rst)
 
-  op  ppSpecElement: Context -> Spec -> SpecElement -> Boolean -> WLPretty
+  op  ppSpecElement: Context -> Spec -> SpecElement -> Bool -> WLPretty
   def ppSpecElement c spc elem op_with_def? =
     case elem of
       | Import (im_sc_tm,im_sp,im_elements,pos) ->
@@ -1081,9 +1089,9 @@ ASWPrinter qualifying spec
      | StringPat    (_,     a) -> a
      | CharPat      (_,     a) -> a
      %| RelaxPat     (_,_,   a) -> a
-     | QuotientPat  (_,_,   a) -> a
+     | QuotientPat  (_,_,_, a) -> a
      | RestrictedPat(_,_,   a) -> a
-     | TypedPat    (_,_,   a) -> a
+     | TypedPat     (_,_,   a) -> a
 
   op  ppPattern : Context -> MSPattern -> WLPretty
   def ppPattern c pattern =
@@ -1144,7 +1152,7 @@ ASWPrinter qualifying spec
       | WildPat (srt,_) -> ppConcat[ppString "wild ",
 				    ppType c srt]
       | StringPat (str,_) -> ppString ("\"" ^ str ^ "\"")
-      | BoolPat (b,_) -> ppBoolean b
+      | BoolPat (b,_) -> ppBool b
       | CharPat (chr,_) -> ppConcat[ppString "#", ppString (show chr)]
       | NatPat (int,_) -> ppString (show int)      
 %      | RelaxPat (pat,term,_) ->   
@@ -1152,10 +1160,10 @@ ASWPrinter qualifying spec
 %		    ppPattern c pat,
 %		    ppString ", ",
 %		    ppTerm c term]
-      | QuotientPat (pat,typename,_) ->
+      | QuotientPat (pat,typename,tys,_) ->
         %% This requires update to interchange grammar
         ppGrConcat [ppString "quotient[",
-                    ppQualifiedId typename,
+                    ppType c (mkBase(typename, tys)),
                     ppString "] ",
 		    ppPattern c pat]
       | RestrictedPat (pat,term,_) -> 
@@ -1199,8 +1207,8 @@ ASWPrinter qualifying spec
       | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
 
 
-  op  ppBoolean : Boolean -> WLPretty
-  def ppBoolean b =
+  op  ppBool : Bool -> WLPretty
+  def ppBool b =
     case b of
       | true -> ppString "true"
       | false -> ppString "false"
@@ -1231,13 +1239,13 @@ ASWPrinter qualifying spec
       | Project id ->
           ppConcat [ppString "project ", ppID id]
       | RecordMerge -> ppString "merge"
-      | Embed (id,b) -> ppConcat [ppString "embed ", ppID id, ppString " ", ppBoolean b]
+      | Embed (id,b) -> ppConcat [ppString "embed ", ppID id, ppString " ", ppBool b]
       | Embedded id  -> ppConcat [ppString "embedded ", ppID id]
       | Select id -> ppConcat [ppString "select ", ppID id]
       | Nat n -> ppString (show n)
       | Char chr -> ppConcat[ppString "#", ppString (show chr)]
       | String str -> ppString ("\"" ^ str ^ "\"")
-      | Bool b -> ppBoolean b
+      | Bool b -> ppBool b
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
       | mystery -> fail ("No match in ppFun with: '" ^ (anyToString mystery) ^ "'")
@@ -1260,7 +1268,7 @@ ASWPrinter qualifying spec
 				     ]
       | mystery -> fail ("No match in ppFixity with: '" ^ (anyToString mystery) ^ "'")
 
-  op  isSimpleType? : MSType -> Boolean
+  op  isSimpleType? : MSType -> Bool
   def isSimpleType? srt =
     case srt of
       | Base _ -> true

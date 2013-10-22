@@ -178,10 +178,10 @@ RESULT:
 
 refine def array_sum(arr: C.Array(Int)): Int
   = '
-      ({x <- ` 0;
-        r <- ` 0;
-        while(x ~= C.length arr) ({x <- `(x + 1);
-                                   r <- `(r + arr @ (x-1));
+      ({x <- backtick 0;
+        r <- backtick 0;
+        while(x ~= C.length arr) ({x <- backtick(x + 1);
+                                   r <- backtick(r + arr @ (x-1));
                                    -});
         return r})
 end-spec

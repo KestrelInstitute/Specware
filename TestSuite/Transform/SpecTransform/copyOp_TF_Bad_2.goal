@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/copyOp#TF_Bad_2
+ERROR: in transform: Expected argument: OpName
+ found in $TESTDIR/copyOp.sw
+18.21-18.23

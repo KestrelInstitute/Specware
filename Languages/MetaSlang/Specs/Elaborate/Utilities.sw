@@ -58,11 +58,11 @@ Utilities qualifying spec
        | _ -> srt)
    | _ -> srt 
 
- %% sjw: unused?
- def unlinkMetaTyVar (mtv : MS.MetaTyVar) = 
+ op unlinkMetaTyVar (mtv : MS.MetaTyVar): MSType = 
    case ! mtv of
      | {link = Some (MetaTyVar (tw, _)), name, uniqueId} -> unlinkMetaTyVar tw
-     | _ -> mtv
+     | {link = Some (ty), name, uniqueId} -> ty
+     | _ -> MetaTyVar(mtv, noPos)
 
  %% create a copy of srt, but replace type vars by meta type vars
   op metafyType : MSType -> MetaTypeScheme
@@ -111,27 +111,17 @@ Utilities qualifying spec
      let mtvs = List.map (fn (_, mv) -> mv) tv_map in
      (Base(qid,mtvs,pos), srt)
 
- def initialEnv (spc, file) = 
-   let errs : List (String * Position) = [] in
-   let {types, ops, elements, qualifier} = spc in
-   let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
-   let spc = {%importInfo = importInfo,
-	      types      = types,
-	      ops        = ops,
-	      elements   = elements,
-	      qualifier  = qualifier
-	     } : Spec
-   in
-   let env = {importMap  = StringMap.empty, % importMap,
-              internal   = spc,
-              errors     = Ref errs,
-              vars       = StringMap.empty,
-              passNum    = 0,
-              constrs    = StringMap.empty,
-              file       = file
-             } : LocalEnv
-   in
-   env
+ op initialEnv (spc, file) : LocalEnv = 
+   % let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in  % TODO: is this needed?
+   % let spc = copySpec spc in                                                     % TODO: is this needed?
+   {importMap  = StringMap.empty, % importMap,
+    internal   = spc,
+    errors     = Ref [],
+    vars       = StringMap.empty,
+    passNum    = 0,
+    constrs    = StringMap.empty,
+    file       = file
+    } 
 
  def sameCPType? (s1 : MSType, s2 : MSType) : Bool =
    case (s1, s2) of
@@ -424,7 +414,7 @@ Utilities qualifying spec
       | None     -> mkTerms (wildFindUnQualified (env.internal.ops, id))
 
 
- def instantiateScheme (env, pos, types, srt) = 
+ op instantiateScheme (env: LocalEnv, pos: Position, types: MSTypes, srt: MSType): MSType = 
    let (tvs, sss) = unpackType srt in
    if ~(length types = length tvs) then
      (error (env, 
@@ -470,7 +460,7 @@ Utilities qualifying spec
 	  | notUnify    -> notUnify)
      | _ -> NotUnify (srt1, srt2)
 
-  op unifyTypes : LocalEnv -> SubtypeMode -> MSType -> MSType -> Boolean
+  op unifyTypes : LocalEnv -> SubtypeMode -> MSType -> MSType -> Bool
  def unifyTypes env subtype_mode s1 s2 =
 
    (* Unify possibly recursive types s1 and s2.
@@ -758,7 +748,7 @@ Utilities qualifying spec
       result)
    | _ -> result 
 
-  op consistentTypes? : LocalEnv * MSType * MSType * SubtypeMode -> Boolean
+  op consistentTypes? : LocalEnv * MSType * MSType * SubtypeMode -> Bool
  def consistentTypes? (env, srt1, srt2, subtype_mode) =
    let free_mtvs = freeMetaTyVars (srt1) ++ freeMetaTyVars (srt2) in
    let val = (unifyTypes env subtype_mode srt1 srt2) in

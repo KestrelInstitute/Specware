@@ -1,6 +1,5 @@
 Globalize qualifying spec
 {
- import /Languages/MetaSlang/Specs/Environment
  import /Languages/MetaSlang/Transformations/SliceSpec
  import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/CommonSubExpressions
@@ -333,7 +332,7 @@ Globalize qualifying spec
  op checkGlobalVar (spc: Spec, gvar as Qualified(q,id) : OpName, gtype : TypeName) : SpecCalc.Env OpName =
   let
     def verify opinfo =
-      let typ = termTypeEnv (spc, opinfo.dfn) in
+      let typ = inferType (spc, opinfo.dfn) in
       case typ of
         | Base (qid, [], _) | gtype = qid -> return gvar
         | _ ->
@@ -368,7 +367,7 @@ Globalize qualifying spec
  op findInitOp (spc : Spec, gtype: TypeName) : SpecCalc.Env QualifiedId =
   let candidates =
       foldriAQualifierMap (fn (q, id, info, candidates) ->
-                             let optype = termTypeEnv (spc, info.dfn) in
+                             let optype = inferType (spc, info.dfn) in
                              if valTypeMatches? (optype, gtype) && ~ (valTypeMatches? (optype, gtype)) then
                                (mkQualifiedId (q, id)) :: candidates 
                              else
@@ -398,7 +397,7 @@ Globalize qualifying spec
         | _ -> typ
           
     def verify opinfo =
-      let full_type = termTypeEnv (spc, opinfo.dfn) in
+      let full_type = inferType (spc, opinfo.dfn) in
       case full_type of
         
         | Base (qid, [], _) | gtype = qid -> return ginit        % op foo : State
@@ -496,6 +495,12 @@ Globalize qualifying spec
         | TypedTerm (tm, typ, _) -> 
           aux tm
 
+        | And (tm :: _, _) ->
+          aux tm
+
+        | Pi (_, tm, _) ->
+          aux tm
+
         | _ ->
           let _ = writeLine("--------------------") in
           let _ = writeLine("??? Globalize: global init fn " ^ show global_init_name ^ " is not defined using lambda rules:") in
@@ -586,7 +591,7 @@ Globalize qualifying spec
 
  op globalizeQuotientPat (context                                  : Context)
                          (vars_to_remove                           : MSVarNames) % vars of global type, remove on sight
-                         (pat as (QuotientPat (p1, typename, pos)) : MSPattern)
+                         (pat as (QuotientPat (p1, _, _, _)) : MSPattern)
   : Ids * GlobalizedPattern = 
   globalizePattern context vars_to_remove p1
 
@@ -778,10 +783,10 @@ Globalize qualifying spec
                    equalTerms? (set_indices,   get_indices)   
                   then
                     % let _ = writeLine ("MATCH!") in
-                    let dom_type = termType access_tm in
+                    let dom_type = inferType (context.spc, access_tm) in
                     let updates = 
                         map (fn (index, value) ->
-                               let new_type = Arrow (dom_type, termType value, noPos) in
+                               let new_type = Arrow (dom_type, inferType (context.spc, value), noPos) in
                                let field = Apply (Fun (Project index, new_type, noPos), access_tm, noPos) in
                                makeUpdate context field value)
                              new_value_pairs
@@ -896,10 +901,10 @@ Globalize qualifying spec
        IfThenElse (p, makeUpdate context lhs tm1, makeUpdate context lhs tm2, noPos)
 
      | Record (pairs, _) | forall? (fn (index,_) -> natConvertible index) pairs ->
-       (let dom_type = termType lhs in
+       (let dom_type = inferType (context.spc, lhs) in
         let updates = 
             map (fn (index, value) ->
-                   let new_type = Arrow (dom_type, termType value, noPos) in
+                   let new_type = Arrow (dom_type, inferType (context.spc, value), noPos) in
                    let new_lhs = Apply (Fun (Project index, new_type, noPos), lhs, noPos) in
                    makeUpdate context new_lhs value)
                 pairs
@@ -943,9 +948,9 @@ Globalize qualifying spec
     | Fun (Op (qid, _), typ, _) -> 
       (case findTheOp (context.spc, qid) of
          | Some opinfo -> firstOpDefInnerType opinfo
-         | _ -> termTypeEnv (context.spc, tm))
+         | _ -> inferType (context.spc, tm))
     | _ -> 
-      termTypeEnv (context.spc, tm)
+      inferType (context.spc, tm)
       
  op globalizeApply (context                     : Context)
                    (vars_to_remove              : MSVarNames)      % vars of global type, remove on sight
@@ -1025,14 +1030,14 @@ Globalize qualifying spec
                            %%    (local_var_to_be_globalized.xxx)
                            %%      =>
                            %%    (global_var.xxx)
-                           makeGlobalAccess context field_name (termTypeEnv (context.spc, tm))
+                           makeGlobalAccess context field_name (inferType (context.spc, tm))
                          | _ ->
                            case head_type of
                              | Arrow (_, Arrow _, _) ->
                                %% (f x y ...)  where x has global type, and domain of f is global type
                                %%   =>
                                %% (f y ...)
-                               let range_type = termTypeEnv (context.spc, tm) in
+                               let range_type = inferType (context.spc, tm) in
                                retype_fun (t1, range_type)
                              | _ ->
                                %% (f x) where x has global type, and domain of f is global type
@@ -1072,7 +1077,7 @@ Globalize qualifying spec
                      | Unchanged -> (changed?, old_tm)
                      | GlobalVar -> (true, old_tm) 
                in
-               let tt = termTypeEnv (context.spc, old_tm) in
+               let tt = inferType (context.spc, old_tm) in
                if globalType? context tt then
                  % evaluate term of global type before evaluating tuple, and don't include that result in tuple
                  (true, 
@@ -1135,7 +1140,8 @@ Globalize qualifying spec
                    case opt_new_pat of
                      | Unchanged       -> pat
                      | Changed new_pat -> new_pat
-                     | GlobalVarPat    -> wildPat (termType new_tm)
+                     | GlobalVarPat    -> 
+                       wildPat (inferType (context.spc, new_tm))
                in
                let new_bindings = bindings ++ [(new_pat, new_tm)] in
                case new_vars_to_remove of
@@ -1487,7 +1493,7 @@ Globalize qualifying spec
                     conflicts)
         then
           let new_vname = "deconflict_" ^ show n in
-          let new_vtype = termType tm in
+          let new_vtype = inferType (context.spc, tm) in
           let new_var   = (new_vname, new_vtype) in
           Some (VarPat (new_var, noPos),
                 Var    (new_var, noPos))
@@ -1622,16 +1628,24 @@ Globalize qualifying spec
        %| Transform  _ -> Unchanged % doesn't make sense to globalize this
        %| Any        _ -> Unchanged % can appear within typed term, for example
           
-        | Var ((id,_), _) -> if id in? vars_to_remove then
-                               GlobalVar
-                             else
-                               Unchanged
-        | _ -> Unchanged
+        | Var ((id,typ), _) -> 
+          if id in? vars_to_remove then
+            GlobalVar
+          else if equivType? context.spc (typ, context.global_type) then
+            GlobalVar
+          else
+            Unchanged
+
+        | _ -> 
+          Unchanged
   in
   case (opt_term, conflicts) of
-    | (Unchanged, []) -> Unchanged     
-    | (Unchanged, _)  -> Changed term  % consider changed if there are conflicts
-    | _               -> opt_term      % changed or global
+    | (Unchanged, []) -> 
+      Unchanged     
+    | (Unchanged, _)  -> 
+      Changed term  % consider changed if there are conflicts
+    | _ ->
+      opt_term      % changed or global
       
  %% ================================================================================
 

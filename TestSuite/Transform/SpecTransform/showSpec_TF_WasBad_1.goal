@@ -1,0 +1,11 @@
+;;; Elaborating transform at $TESTDIR/showSpec#TF_WasBad_1
+;;; Elaborating spec at $TESTDIR/showSpec#A
+-showSpec-----------
+##4 
+spec  
+ 
+type T
+op f: T -> T
+end-spec
+
+--------------------

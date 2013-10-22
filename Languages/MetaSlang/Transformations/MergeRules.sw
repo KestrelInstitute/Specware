@@ -13,8 +13,8 @@
 %% must be uniform. The state variables 's' and 's'' can vary between
 %% functions 'f1' and 'f2', but will be renamed uniformly in the
 %% resulting function 'f'. 'Pre' is a precondition of type 'StateType
-%% -> Boolean' which 's' can appear free in, and 'Post' is a
-%% postcondition of type 'StateType -> StateType -> Boolean' in which
+%% -> Bool' which 's' can appear free in, and 'Post' is a
+%% postcondition of type 'StateType -> StateType -> Bool' in which
 %% 's' and 's'' can both appear free.
 
 %% TODO: Describe the rule combination algorithm and correctness
@@ -109,7 +109,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     let _ = writeLine (printDNF (map (map classToTerm) noContra)) in
     
     let _ = writeLine "About to begin merge" in    
-    let (rterm,pred) = bt2 args noContra in
+    let (rterm,pred,prf) = bt2 args noContra in
     let _ = writeLine "Done with merge" in
     let _ = writeLine (printTerm rterm) in
     let calculatedPostcondition = mkSimpleExists vars' rterm in    
@@ -117,11 +117,19 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
-   let spc' = case findTheOp(spc, fname)  of
+    let (thms,_,_) = mkTraceThms 0 vars' prf in
+    let spc' = foldl (fn (acc,(n,thm,pf)) ->
+                        let thmName = "thm" ^ anyToString n in
+                        let thmSpc = addTheoremLast ((mkUnQualifiedId thmName,[],thm,noPos), acc) in
+                        let prfSpc = addPragma (("proof", " Isa " ^ thmName ^ "\n" ^ pf ^ "\n", "end-proof",noPos),thmSpc) in
+                        prfSpc) spc thms in
+    let spc' = case findTheOp(spc', fname)  of
                 | Some oi -> let TypedTerm(_,ty,_) = body in
                              let _ = writeLine "Refining quid"
-                             in addRefinedType(spc,oi,ty)
-                | None -> addOpDef(spc,fname,Nonfix,body) in
+                             in addRefinedType(spc',oi,ty)
+                | None -> let _ = writeLine ("Pre state variable is " ^ anyToString preStateVar)
+                          in addOpDef(spc',fname,Nonfix,body) in
+    
     return spc'
   }
 
@@ -156,9 +164,10 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule =
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
        % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
      | Some (tm, ty as (Arrow (dom, codom,_))) ->
-       % let _ = writeLine ("Arrow type is " ^ printType ty) in
-       % let _ = writeLine ("Domain is " ^ (printType dom)) in
-       % let _ = writeLine ("Codomain is " ^ (printType codom)) in
+       let _ = writeLine ("Arrow type is " ^ printType ty) in
+       let _ = writeLine ("Term  is " ^ printTerm tm) in       
+       let _ = writeLine ("Domain is " ^ (printType dom)) in
+       let _ = writeLine ("Codomain is " ^ (printType codom)) in
        { (preStateVar,preStateType,inputArgs,preCondition) <-
           getSubtypeComponents spc dom theorems
        ; (postStateVar,postStateType,outputVals,postCondition) <-
@@ -334,8 +343,125 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)
             | None -> return ([],[[tm]]) 
 
 
+type CDNFRep = List (List CClass)
+type TraceTree =
+  | Contra (CDNFRep * (List MSTerm)) % Contains list of assumptions.
+  | Tauto (CDNFRep * (List MSTerm)) % No need for assumptions
+  | TIf (MSTerm * CDNFRep * (List MSTerm) * MSTerm * TraceTree * TraceTree * DNFRep)  % input, assumptions, branch term, true child, false child, precondition
+  | TCase (MSTerm * CDNFRep * (List MSTerm) * MSTerm * List (MSPattern * TraceTree) * DNFRep)   % input, assumptions, scrutinee, alts, precondition
+  | TLocal (MSTerm * CDNFRep * (List MSTerm) * List Id * TraceTree * DNFRep) % input, assumptions, variable, def, child, precondition
+  | TFactoring  (MSTerm * CDNFRep * (List MSTerm) * List MSTerm *  TraceTree * DNFRep)
+  | Unknown
+
+op mkRefinement (i:Int)(vars:List MSVar)(assumps:List MSTerm)(pre:DNFRep)(res:MSTerm)(input:CDNFRep): MSTerm =
+   let inp = dnfToTerm (map (map classToTerm) input) in
+   let locals = filter (fn i -> inBy? equalVar? i vars) (freeVars inp) in
+   let quant = case locals of
+                 | [] -> inp 
+                 | _ -> Bind (Exists,locals,inp,noPos) in
+   let ref = 
+          mkImplies (mkAnd assumps,
+                  mkImplies(negateTerm (dnfToTerm pre),
+                            mkImplies(res,quant))) in
+   let _ = writeLine (printTerm ref) in
+   ref
+
+op if_trace_proof(t:MSTerm)(n1:Int)(n2:Int):String =
+   let br_term = printTerm t in
+   let tid1 = "thm" ^ anyToString n1 in
+   let tid2 = "thm"^ anyToString n2 in
+   "  apply (case_tac \"" ^ br_term ^ "\")\n" ^
+   "  apply (simp add:" ^ tid1 ^ ")\n" ^
+   "  apply (simp add:" ^ tid2 ^ ")\n"
 
 
+op cats(l:List String):String =
+  case l of
+    | [] -> ""
+    | x::xs -> x ^ cats xs 
+   
+op case_trace_proof(t:MSTerm)(ids:List Int):String =
+   let sterm = printTerm t in
+   let def mkBranch i = "  apply simp\n" in
+   "  apply (case_tac \"" ^ sterm ^ "\")\n" ^
+   cats (map mkBranch ids)
+
+   
+
+(* This is the more desirable, stepwise proof. Unfortunately, it is
+too brittle, as the apply rules require percise forms for the goal. *)
+op if_trace_proof'(t:MSTerm)(n1:Int)(n2:Int):String =
+   let br_term = printTerm t in
+   let tid1 = "thm" ^ anyToString n1 in
+   let tid2 = "thm"^ anyToString n2 in
+   "  apply (erule rev_mp)\n" ^
+   "  apply (case_tac \"" ^ br_term ^ "\")\n" ^
+   "  apply (subst if_P)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule impI)\n" ^
+   "  apply (rule disjI1)\n" ^ 
+   "  apply (rule conjI)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule " ^ tid1 ^ ", assumption, assumption)\n" ^
+   "  apply (subst if_not_P)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule impI)\n" ^
+   "  apply (rule disjI2)\n" ^
+   "  apply (rule conjI)\n" ^
+   "  apply assumption\n" ^
+   "  apply (rule " ^ tid2 ^ ", assumption, assumption)\n"
+
+op ex_trace_proof(vars:List String)(n1:Int):String =
+   let tid1 = "thm" ^ anyToString n1 in
+   let def exIntro var = "  apply (rule_tac x=" ^ var ^ " in exI)\n" in
+     "  apply (erule exE)\n" ^
+     (cats (map exIntro vars)) ^
+     "  apply (erule conjE)\n" ^ 
+     "  apply (frule " ^  tid1 ^ " )\n" ^ 
+     "  apply assumption\n" ^ 
+     "  apply auto"
+
+op foldTraceAlts(n:Int)(vars:List MSVar)(alts:List (MSPattern * TraceTree)):(List (Int*MSTerm*String) * List Int * Int) =
+  case alts of
+    | [] -> ([],[],n)
+    | ((pat,pt)::ps) -> let (thms,ix,n0) = mkTraceThms n vars pt in
+                        let (thmss,ixs,n1) = foldTraceAlts n0 vars ps in
+                        (thms ++ thmss, ix::ixs,n1)
+                      
+
+op mkTraceThms(n:Int)(vars:List MSVar)(t:TraceTree):(List(Int*MSTerm*String) * Int * Int) =
+   case t of
+     | Contra (input, assumptions) ->
+       let thm = mkRefinement n vars assumptions [assumptions] (mkFalse ()) input in
+       ([(n,thm, "  by auto")],n,n+1)
+     | Tauto (input, assumptions)  ->
+       let thm = mkRefinement n vars assumptions [] (mkTrue ()) input in
+       ([(n,thm,"  by auto")],n, n + 1)
+
+     | TIf (result, inputs, assumptions, split, tt, ft, pre) ->
+        let (thm0, i1, n0) = mkTraceThms n vars tt  in
+        let (thm1, i2, n1) = mkTraceThms n0 vars ft in
+        let thm = mkRefinement n vars assumptions pre result inputs in
+        let pf = if_trace_proof split i1 i2 in 
+        (thm0 ++ thm1 ++ [(n1,thm,pf)],n1,n1+1)
+        
+     | TCase (result,inputs,assumptions,scrutinee,alts,pre) ->
+         let (thms,ixs,n0) = foldTraceAlts n vars alts in
+         let thm = mkRefinement n0 vars assumptions pre result inputs in
+         (thms ++ [(n0,thm,case_trace_proof scrutinee ixs)],n0,n0+1)
+       
+     | TLocal (result, input,assumptions,definitions,child,pre)  ->
+       let (thm0,i0,n0) = mkTraceThms n vars child in
+       let thm = mkRefinement n0 vars assumptions pre result input  in
+       (thm0 ++ [(n0,thm,ex_trace_proof definitions i0)], n0, n0+1)
+       
+     | TFactoring (result, inputs, assumptions,factors,child,pre) ->
+       let (thm0,i0,n0) = mkTraceThms n vars child in
+       let thm = mkRefinement n0 vars assumptions pre result inputs in
+       (thm0 ++ [(n0,thm,"  by auto")],n0, n0+1)
+
+     | Unknown -> ([],n, n)
+        
 
 % Package up the arguments to bt and auxillary functions.
 % The spc, obs, and stateVar fields should be constant,
@@ -355,16 +481,16 @@ op addAssumptions(args:BTArgs)(a:List MSTerm):BTArgs =
 op setVars(args:BTArgs)(vs:List Id):BTArgs =
   args << { vars = vs }
   
-op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
+op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
    if empty? inputs
      % If the set of input clauses is empty, then we have a contradiction.
-     then (mkFalse (), [args.assumptions])
+     then (mkFalse (), [args.assumptions], Contra (inputs, args.assumptions))
      else
        if (exists? empty? inputs)
          then
          % 1. If any of the clauses lists are empty, then that corresponds
          %    to 'true'. What to do with that???
-          (mkTrue (), []) % Should there be some assumptions???
+          (mkTrue (), [], Tauto (inputs, args.assumptions))
        else
          % 2. If there are any global constraints on postState or
          % on return values.
@@ -376,8 +502,10 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                % let _ = map (fn x -> writeLine (printTerm x)) terms in
                let next =
                   map (fn clause -> List.filter (fn atom -> ~(inClause? atom gcs)) clause) inputs in
-               let (tm',pre) = bt2 args next in
-                 (mkAnd (terms ++ [tm']), pre) 
+               let (tm',pre,pf1) = bt2 args next in
+               let resTerm = mkAnd (terms ++ [tm']) in
+               let pf = TFactoring  (resTerm, inputs, args.assumptions,terms,pf1,pre) in
+               (resTerm, pre,pf) 
             else
               % let _ = writeLine "There are no global constraints" in
               % 3. If there are global definitions of local variables.
@@ -401,10 +529,15 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                   let tvars : List (Id * MSType) = (flatten (map defVars gds)) in
                   let dvars = map (fn v -> v.1) tvars in 
                   let newAssumptions = map classToTerm gds in
-                  let (t',p) =
+                  let (t',p,pf1) =
                      bt2 (setVars (addAssumptions args newAssumptions)
-                            (diff (args.vars, dvars))) defsToAtoms
-                  in (Bind (Exists, tvars, mkAnd (newAssumptions ++ [t']),noPos), p)
+                            (diff (args.vars, dvars))) defsToAtoms in
+
+                  let resTerm = Bind (Exists, tvars, mkAnd (newAssumptions ++ [t']),noPos) in
+                  % FIXME!!! Supply the defs, instead of []
+                  let defs = [] in 
+                  let pf = TLocal (resTerm, inputs,args.assumptions, dvars, pf1, p) in
+                  (resTerm, p, pf)
               else
                 % let _ = writeLine "There are no global definitions" in
                 % 4. Choose an Atom or Case to split on.
@@ -418,10 +551,13 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                       % The 'negative' clashing branch.
                       let neg : List (List CClass) =
                          simplifySplit (negateClass a) inputs in
-                      let (tb,tp) = bt2 (addAssumption args (classToTerm a)) pos in
-                      let (eb,ep) =
+                      let (tb,tp,pf1) = bt2 (addAssumption args (classToTerm a)) pos in
+                      let (eb,ep,pf2) =
                          bt2 (addAssumption args (classToTerm (negateClass a))) neg in
-                              (IfThenElse (classToTerm a, tb, eb, noPos), tp ++ ep)
+                      let resTerm = IfThenElse (classToTerm a, tb, eb, noPos) in
+                      let precondition = (tp ++ ep) in
+                      let pf = TIf (resTerm, inputs, args.assumptions, classToTerm a,pf1,pf2, precondition) in 
+                      (resTerm, precondition, pf)
 
                     | ((a as CCase (_,scrutinee,_,_,ty))::_) ->
                       % let _ = writeLine ("Splitting on a construction  " ^
@@ -431,20 +567,23 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                       let def mkAlt (pat,clauses) =
                                let Some patTerm = patternToTerm pat in
                                let eq = mkEquality (ty,scrutinee,patTerm) in
-                               let (tm',pres) = bt2 (setVars (addAssumption args eq)
+                               let (tm',pres,pfAlt) = bt2 (setVars (addAssumption args eq)
                                                        (removePatternVars args.vars (Some pat))) clauses in
-                               ((pat,tm'),pres)
+                               ((pat,tm'),pres,pfAlt)
                       in
                       let branches =
                             let alts = map mkAlt branchClauses
                             in case unhandled of
-                                | Some clauses -> let (tm',pres) = bt2 args clauses in
-                                                  let default = ((mkWildPat ty, tm'),pres) in 
+                                | Some clauses -> let (tm',pres,pf) = bt2 args clauses in
+                                                  let default = ((mkWildPat ty, tm'),pres,pf) in 
                                                   alts ++ [default]
                                  | _ -> alts
                       in
                       let pres : DNFRep = flatten (map (fn x -> x.2) branches) in
-                      (mkCaseExpr (scrutinee, (map (fn x -> x.1) branches)), pres)
+                      let pfAlts = map (fn x -> (x.1.1, x.3)) branches in
+                      let resTerm = mkCaseExpr (scrutinee, (map (fn x -> x.1) branches)) in
+                      let pf = TCase (resTerm, inputs, args.assumptions, scrutinee, pfAlts,  pres) in
+                      (resTerm, pres, pf)
                               
                     | _ ->
                       let _ = writeLine "Mergerules is stuck." in
@@ -454,7 +593,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep) =
                       let _ = writeLine (printDNF (map (map classToTerm) inputs)) in
                       % let _ = debugClauses inputs in
                       let _ = debugFailure args inputs in
-                      (mkVar ("<<<Failure Here>>>",boolType), [])
+                      (mkVar ("<<<Failure Here>>>",boolType), [], Unknown)
                       
   
 
@@ -544,7 +683,7 @@ op removePatternVars (vars:List Id)(pat:Option MSPattern):List Id =
 % Remove duplicate elements (inefficient, as is most stuff in this module ..)
 op nub (l:MSTerms):MSTerms = nubBy equalTerm? l
 
-op [a] nubBy (p:a * a -> Boolean)(l:List a):List a =
+op [a] nubBy (p:a * a -> Bool)(l:List a):List a =
   case l of 
     | [] -> []
     | (x::xs) | exists? (fn y -> p (x,y)) xs -> nubBy p xs
@@ -554,14 +693,14 @@ op [a,b,c] uncurry (f: (a -> b -> c))((x,y):(a*b)):c =
   f x y
   
 %% Set membership, over an arbitrary equivalence.
-op [a] inBy? (p:(a*a)->Boolean)(e:a)(l:List a):Boolean =
+op [a] inBy? (p:(a*a)->Bool)(e:a)(l:List a):Bool =
    case l of 
      | [] -> false
      | (x::xs) -> p (e, x) || inBy? p e xs
 
 
 % %%% Set membership, specialized to using the 'equalTerm?' relation.
-op inTerm? (c:MSTerm) (l:MSTerms):Boolean = inBy? equalTerm? c l
+op inTerm? (c:MSTerm) (l:MSTerms):Bool = inBy? equalTerm? c l
 
 
 op printIt ((vs,xs) : (ExVars * DNFRep)):() =
@@ -579,46 +718,46 @@ op guard(p:Bool)(msg:String):Env () =
 
 %%% Classification of clauses
 type CClass =
-  | CAtom (MSTerm * (List Id) * Boolean * MSType) % Term * Referenced existentials 
-  | CDef (List (Id * MSType) * MSTerm * List Id * Boolean * MSType) 
+  | CAtom (MSTerm * (List Id) * Bool * MSType) % Term * Referenced existentials 
+  | CDef (List (Id * MSType) * MSTerm * List Id * Bool * MSType) 
     % Defined variables * definition * referenced variables
-  | CConstrain (MSTerm * MSTerm * List Id * Boolean * MSType)
+  | CConstrain (MSTerm * MSTerm * List Id * Bool * MSType)
     % poststate/return value * definition * referenced variables
-  | CCase (MSPattern * MSTerm * List Id * Boolean * MSType)
+  | CCase (MSPattern * MSTerm * List Id * Bool * MSType)
 
 % Recognizers for the various classes.
-op isAtomClass(c:CClass):Boolean =
+op isAtomClass(c:CClass):Bool =
   case c of
     | CAtom _ -> true
     | _ -> false
 
 
-op isTrueAtom?(c:CClass):Boolean =
+op isTrueAtom?(c:CClass):Bool =
   case c of
     | CAtom (t,_,_,_) -> trueTerm? t
     | _ -> false
 
-op isFalseAtom?(c:CClass):Boolean =
+op isFalseAtom?(c:CClass):Bool =
   case c of
     | CAtom (t,_,_,_) -> falseTerm? t
     | _ -> false
 
-op isDefClass(c:CClass):Boolean =
+op isDefClass(c:CClass):Bool =
   case c of
     | CDef _ -> true
     | _ -> false
 
-op isConstrainClass(c:CClass):Boolean =
+op isConstrainClass(c:CClass):Bool =
   case c of
     | CConstrain _ -> true
     | _ -> false
 
-op isCaseClass(c:CClass):Boolean =
+op isCaseClass(c:CClass):Bool =
   case c of
     | CCase _ -> true
     | _ -> false
 
-op isSplit(args:BTArgs)(c:CClass):Boolean =
+op isSplit(args:BTArgs)(c:CClass):Bool =
   (isAtomClass c || isCaseClass c) && fullyDefined? args c
 
 op casePattern (c:CClass):MSPattern =
@@ -626,13 +765,13 @@ op casePattern (c:CClass):MSPattern =
     | CCase (pat,_,_,_,_) -> pat
 
 % Is a clause c in a list of clauses.
-op inClause?(c:CClass)(l:List CClass):Boolean =
+op inClause?(c:CClass)(l:List CClass):Bool =
   case l of
    | [] -> false
    | (x :: xs) -> equalClass? c x || inClause? c xs
 
 % Are two atomic terms equal.
-op equalClass?(c1:CClass)(c2:CClass):Boolean =
+op equalClass?(c1:CClass)(c2:CClass):Bool =
   case (c1,c2) of
     | (CAtom (t,_,b1,ty1), CAtom (u,_,b2,ty2)) ->
         equalTerm? (t,u) && (b1 = b2) && equalType? (ty1,ty2)
@@ -661,17 +800,17 @@ op classToTerm(c:CClass):MSTerm =
         n b (mkEquality (ty, u, t))
 
 % Get all of the atoms satisfying a criteria.
-op gatherAtoms(p:CClass -> Boolean)(cs:(List (List CClass))):List CClass =
+op gatherAtoms(p:CClass -> Bool)(cs:(List (List CClass))):List CClass =
   nubBy (uncurry equalClass?) (flatten (map (filter p) cs))
 
 % Remove all of the atoms satisfying a criteria
-op removeAtoms(p:CClass -> Boolean)(cs:(List (List CClass))):List (List CClass) =
+op removeAtoms(p:CClass -> Bool)(cs:(List (List CClass))):List (List CClass) =
    map (filter p) cs
 
         
 % An atom is a global definition for a set of clauses if it is a def
 % and it is fully defined and it occurs in each of the input clauses.
-op globalAtom(args:BTArgs)(cpred:(CClass -> Boolean))(clauses:List (List CClass)):(List CClass) =
+op globalAtom(args:BTArgs)(cpred:(CClass -> Bool))(clauses:List (List CClass)):(List CClass) =
    let atoms = gatherAtoms cpred clauses in
    let defined = filter (fullyDefined? args) atoms in
    let occurs = filter
@@ -747,7 +886,7 @@ op simplifyCaseSplit(args:BTArgs)(c:CClass)(l:List (List CClass)):List (MSPatter
             map (fn p -> (p,filter (fn clause -> ~ (clauseClash p clause)) l)) noDups in
        % For each pattern pa, return pat paired with the matching
        % clause, with the constraint on the scrutinee removed.
-       let def clauseMatch (p:MSPattern) (a:CClass) : Boolean =
+       let def clauseMatch (p:MSPattern) (a:CClass) : Bool =
           case a of
             | CCase (p', s',_,_,_) -> equalPattern? (p,p') || ~(atomPolarity a)
             | _ -> false
@@ -777,7 +916,7 @@ op atomDeps(c:CClass):List Id =
 
 
 % Get the variables an atom depends on.
-op atomPolarity(c:CClass):Boolean =
+op atomPolarity(c:CClass):Bool =
    case c of
      | CAtom (_,_,b,_) -> b
      | CDef (_,_,_,b,_) -> b
@@ -787,7 +926,7 @@ op atomPolarity(c:CClass):Boolean =
 
 % An atom is fully defined if none of its dependencies occur
 % in the list of args
-op fullyDefined?(args:BTArgs)(c:CClass):Boolean =
+op fullyDefined?(args:BTArgs)(c:CClass):Bool =
    forall? (fn v -> ~(v in? args.vars)) (atomDeps c)
 
 % The variables defined by a def
@@ -796,7 +935,7 @@ op defVars(c:CClass):List (Id * MSType) =
     | CDef(vars,_,_,_,_) -> vars
     | _ -> []
 
-op debugClassify? : Boolean = false % true      
+op debugClassify? : Bool = false % true      
 op traceClassify(s:String):() =
   if debugClassify? then writeLine s else ()
 
@@ -985,7 +1124,7 @@ op resolution (ps:MSTerms) (qs:MSTerms):Option MSTerms =
     else Some ( filter (fn x -> ~ (inTerm? x cs) ) (ps ++ qs))
 
 %% Resolve one disjunction of formulas, ps,  with each of the disjunctions in qs.
-op resolveOne (ps:MSTerms)(qs:List MSTerms) (changed?:Boolean):List MSTerms =
+op resolveOne (ps:MSTerms)(qs:List MSTerms) (changed?:Bool):List MSTerms =
   case qs of 
     | [] | changed? -> []
     | [] | ~ changed? -> [ps]
@@ -1068,12 +1207,12 @@ op betan_step (t:MSTerm):MSTerm =
        t
 
 
-op isBetaRedex (t:MSTerm):Boolean =
+op isBetaRedex (t:MSTerm):Bool =
   case t of
      | Apply(Lambda([(pat,_,body)],_),argument,pos) -> true
      | _ -> false
 
-op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Boolean =
+op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Bool =
   case tm of
       | Apply(Fun(Op(Qualified (_,qid),_),_,_), _, _)
           | qid in? (["<=", "<", ">="] : List Id) -> false

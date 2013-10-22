@@ -133,7 +133,7 @@ SpecCalc qualifying spec
     let sub_morphisms =
         foldlSpecElements (fn (result, el1) ->
                            case el1 of
-                             | Import ((Subst (spc_tm, sm_tm), _), spc, _, _)
+                             | Import ((Subst (spc_tm, sm_tm, pragmas), _), spc, _, _)
 %                                 | %% let _ = writeLine("foldl \n"^anyToString spc_tm^"\n"^printSpec spc) in
 %                                    ~(existsSpecElement? (fn el ->
 %                                                          case el of
@@ -198,7 +198,7 @@ SpecCalc qualifying spec
                          spec_replacements of
                     | Some(dom_spec, sm_tm, cod_spec, cod_spec_term) ->
                       % let _ = writeLine("sslss:\n"^anyToString(Subst (tm, sm_tm))) in
-                      Import ((Subst (tm, sm_tm), noPos),
+                      Import ((Subst (tm, sm_tm, []), noPos),
                               if top?
                                 then spc << {elements = revise_elements spc.elements false}
                               else spc, 

@@ -51,12 +51,7 @@ import /Languages/SpecCalculus/AbstractSyntax/UnitId
 %% Rebuild the hash tables?
 
 op SpecTransform.copySpec (spc : Spec) : Spec =
-  {types=spc.types,
-   ops=spc.ops,
-   elements=spc.elements,
-   qualifier=spc.qualifier}
-
-
+  AnnSpec.copySpec spc
 
 %% Extends the given spec by adding to it a new op.
 %% One must supply the new op's name, qualifier, fixity, and body.
@@ -92,11 +87,9 @@ op addNewOp(new_op_base_name : Id,
 
 %% Make a nonsense spec containing a single op that returns an error message.
 op errorSpec (message : String) : Spec =
-  let (spc:Spec) = {types=emptyAQualifierMap,
-                    ops=emptyAQualifierMap, 
-                    elements=[],
-                    qualifier=None} in
-  spc %addNewOp("ERROR", "ERROR", Nonfix, mkTypedTerm(mkString "msg", Base("String.String", [])), Base("String.String", []), spc)
+  let spc = emptySpec in
+  %addNewOp("ERROR", "ERROR", Nonfix, mkTypedTerm(mkString "msg", Base("String.String", [])), Base("String.String", []), spc)
+  spc
 
 
 %% Trivial transformation that makes a new spec that simply imports
@@ -117,15 +110,13 @@ op SpecTransform.makeImportingSpec (spc : Spec) : Spec =
        case findRelativeUIDforValue(Spec spc) of
          | None -> errorSpec "Cannot find unit ID for spec."
          | Some relUID ->
-           {types=spc.types,
-            ops=spc.ops,
-            %% Okay to just use spc.elements here because we know that no redundant imports need to be removed from spc.elements (because the new import is the first element of the new spec).
-            elements=[Import((UnitId(relUID),noPos),
-                             spc, 
-                             spc.elements, 
-                             noPos)
-                      ],  %%TODO, Why does import take both a spec and some spec elements (presumably the elements of that spec)? SW says that the separate elements have redundant imports removed.
-            qualifier=None}
+           spc << {%% Okay to just use spc.elements here because we know that no redundant imports need to be removed from spc.elements (because the new import is the first element of the new spec).
+                     elements = [Import ((UnitId(relUID),noPos),
+                                         spc, 
+                                         spc.elements, 
+                                         noPos)
+                                 ],  %%TODO, Why does import take both a spec and some spec elements (presumably the elements of that spec)? SW says that the separate elements have redundant imports removed.
+                     qualifier=None}
            
  
 

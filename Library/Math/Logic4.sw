@@ -18,7 +18,7 @@ to serve as interpretations of the symbols of Propositional Logic.
 spec
   type Logic4 = |Bot |False |True |Top
 
-  def Logic4Le (p:Logic4, q:Logic4): Boolean =
+  def Logic4Le (p:Logic4, q:Logic4): Bool =
     case p of
       | Bot -> true
       | False -> (case q of
@@ -104,14 +104,14 @@ spec
     if p=True && q=True then True
     else Bot
 
-  def logic4toBoolean(l4v: Logic4): Boolean =
+  def logic4toBoolean(l4v: Logic4): Bool =
     case l4v of
       | True -> true
       | False -> false
       | Bot -> false  % could make this polarity-sensitive
       | Top -> false  % could make this polarity-sensitive
 
-  def BooleantoLogic4(b: Boolean): Logic4 =
+  def BooleantoLogic4(b: Bool): Logic4 =
     case b of
       | true -> True
       | false -> False

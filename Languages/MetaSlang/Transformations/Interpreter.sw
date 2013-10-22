@@ -293,7 +293,7 @@ spec
         (if spName in? evalQualifiers
 	  then (case a
 		  of RecordVal(fields) ->
-		     (if (forall? (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Boolean"
+		     (if (forall? (fn (_,tm) -> valConstant?(tm)) fields) % or spName = "Bool"
 		       then attemptEvaln(spName,opName,fields,ft)
 		       else default())
 		    | _ -> (if evalConstant? a
@@ -500,7 +500,7 @@ spec
 	       else NoMatch
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
-        | QuotientPat(pat,_,_) ->
+        | QuotientPat(pat,_,_,_) ->
 	  (case N of
 	     | QuotientVal(_,v,_) -> patternMatch(pat,v,S,soft_conds?,spc,depth,trace?)
 	     | Unevaluated _ -> DontKnow
@@ -574,8 +574,8 @@ spec
       
 
   %% Evaluation of constant terms
-  %% we need to include "Boolean" for "compare", "toString", "show", "pp", etc.
-  def evalQualifiers = ["Nat","Integer","IntegerAux","String","Char","System","Boolean"]
+  %% we need to include "Bool" for "compare", "toString", "show", "pp", etc.
+  def evalQualifiers = ["Nat","Integer","IntegerAux","String","Char","System","Bool"]
   op  evalConstant?: MSIValue -> Bool
   def evalConstant?(v) =
     case v
@@ -791,7 +791,7 @@ spec
 		    then Char(s@i)
 		    else default()
 
-    % %% Boolean operations are non-strict
+    % %% Bool operations are non-strict
     %% %% Should it be non-strict in first argument as well as second?
     %% | "&&"   ->
     %%  (case fields of
@@ -958,7 +958,7 @@ spec
   op  valueToTerm: MSIValue -> MSTerm
   def valueToTerm v =
     case v of
-      | Int         n  -> mkNat n
+      | Int         n  -> mkInt n
       | Char        c  -> mkChar c
       | String      s  -> mkString s
       | Bool        b  -> mkBool b

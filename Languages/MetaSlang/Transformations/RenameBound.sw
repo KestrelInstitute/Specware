@@ -190,8 +190,8 @@ spec
 	 let idPats = zip (ids, pats) in
 	 RecordPat (idPats, a)
 
-       | QuotientPat (p,                 qid, a) ->
-	 QuotientPat (renamePattern c p, qid, a)
+       | QuotientPat (p,                 qid, tys, a) ->
+	 QuotientPat (renamePattern c p, qid, tys, a)
 
        | RestrictedPat (p, t, a) ->
 	 RestrictedPat (renamePattern c p, renameTerm c t, a)

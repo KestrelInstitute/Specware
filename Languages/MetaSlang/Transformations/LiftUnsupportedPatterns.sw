@@ -3,7 +3,7 @@ LiftUnsupportedPattern qualifying spec
 import /Languages/MetaSlang/Specs/Environment
 
 %% liftUnsupportedPatterns may introduce case statements,
-%% hence must preceeed pattern compilation
+%% hence must precede pattern compilation
 
 op SpecTransform.liftUnsupportedPatterns (spc : Spec) : Spec =
  setOps (spc, 

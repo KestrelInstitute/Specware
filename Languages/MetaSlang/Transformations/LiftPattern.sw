@@ -68,7 +68,6 @@ def baseTypeAlias? (spc, srt) =
  op builtinBaseTypeId?: Id -> Bool  
 def builtinBaseTypeId? id =
   %% TODO: is this a complete set?  See basicQualifiers
-  id = "Boolean" || % v3:p1 
   id = "Bool"    || % v3:p1 
   id = "Int"     || % v3:p1 
   id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this
@@ -77,7 +76,6 @@ def builtinBaseTypeId? id =
 
  op baseTypeId?: Spec * Id -> Bool
 def baseTypeId? (spc, id) =
-  id = "Boolean" || % v3:p1 
   id = "Bool"    || % v3:p1 
   id = "Int"     || % v3:p1 
   id = "Nat"     || % v3:p1 says NO  -- TODO: resolve this

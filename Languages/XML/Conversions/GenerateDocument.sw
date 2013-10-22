@@ -70,7 +70,7 @@ XML qualifying spec
     let
        def aux sd =
 	 case sd of
-	   | Boolean -> "Boolean"
+	   | Boolean -> "Bool"
 	   | Base (qid, args) ->
 	     (case args of
 		| []            -> (print_qid qid)
@@ -227,7 +227,7 @@ XML qualifying spec
                                       []
                                       items),
 		   trailer = Some (indentation_chardata (2 (* vspacing*), indent - 2))})
-	  | ("Boolean", "Boolean") ->
+	  | ("Bool", "Bool") ->
 	    let bool = Magic.magicCastToBool datum in
 	    indent_ustring (ustring (if bool then "true" else "false"))
 
@@ -267,7 +267,7 @@ XML qualifying spec
       | Product sd_fields ->
         (let raw_item_name = 
 	     case sd of
-	       | Boolean -> "Boolean"
+	       | Boolean -> "Bool"
 	       | Base ((q,id), []) -> ((if q = "<unqualified>" then "" else q ^ ".") ^ id)
 	       | _ -> "item"
 	 in
@@ -334,11 +334,7 @@ XML qualifying spec
 	    let n = Magic.magicCastToInt datum in
 	    indent_text_item (vspacing, indent, ustring (Integer.show n))
 
-	  | ("Boolean", "Boolean") ->
-	    let bool = Magic.magicCastToBool datum in
-	    indent_text_item (vspacing, indent, ustring (if bool then "true" else "false"))
-
-	  | ("Boolean", "Bool") ->
+	  | ("Bool", "Bool") ->
 	    let bool = Magic.magicCastToBool datum in
 	    indent_text_item (vspacing, indent, ustring (if bool then "true" else "false"))
 

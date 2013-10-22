@@ -1,6 +1,6 @@
 S = spec
 
-  type RR = {a : {b : Integer}}
+  type RR = {a : {b : Int}}
 
   op z : RR
 
@@ -12,7 +12,7 @@ endspec
 
 T = spec
 
-  type RR = {a : {b : Integer}}
+  type RR = {a : {b : Int}}
 
   op z : RR
 

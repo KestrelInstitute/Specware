@@ -587,10 +587,10 @@ SpecCalc qualifying spec
 	srt_changed?,
 	srt_op_names)
 
-     | QuotientPat (pat, qid, a) ->
+     | QuotientPat (pat, qid, tys, a) ->
        let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
        (if pat_changed? then
-	  QuotientPat (new_pat, qid, a)
+	  QuotientPat (new_pat, qid, tys, a)
 	else
 	  pattern,
 	pat_changed?,

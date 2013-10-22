@@ -7,10 +7,11 @@ import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Specs/Printer
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
-
+import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/I2L/I2L
+import /Languages/C/CUtils
 
-op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
+% op CUtils.cString (id : String) : String  % TODO: defined in CUtils.sw
 
 type S2I_Context = {
                     specName        : String,             % not (yet) used
@@ -18,72 +19,66 @@ type S2I_Context = {
                     constructors    : List   QualifiedId, % not used, constructors distinguished by name containing "__"
                     currentOpType   : Option QualifiedId,
                     ms_spec         : Spec,
-                    lms             : LanguageMorphisms,
-                    translations    : Translations,
-                    declaredStructs : List QualifiedId    % C pragma may say implementation of type is C struct
+                    lm_data         : LMData,
+                    declaredStructs : List   QualifiedId,
+                    expandTypes?    : Bool                % If false, retain some defined types (TODO: user-selective expansion?)
                     }
 
-op qid2TypeName (Qualified (q, id) : QualifiedId, 
-                 ctxt              : S2I_Context) 
- : I_TypeName = 
+op pragmaTypeTranslation (Qualified (q, id) : QualifiedId, 
+                          ctxt              : S2I_Context) 
+ : Option I_TypeName = 
  %% Possibly rename using pragma info for type map
  let match =
-     findLeftmost (fn translation -> 
-                     case translation of
-                       | Type trans ->
-                         (case trans.source of
-                            | [x, y] -> q = x && id = y
-                            | [y]    -> id = y
-                            | _ -> false)
-                       | _ ->
-                         false)
-                  ctxt.translations
+     findLeftmost (fn trans -> 
+                     case trans.source of
+                       | [x, y] -> q = x && id = y
+                       | [y]    -> id = y
+                       | _ -> false)
+                  ctxt.lm_data.type_translations
  in
  case match of
-   | Some (Type match) -> 
-     (case match.target of
-        | Name [x, y] -> (x,  y)
-        | Name [y]    -> ("", y)
-        | _ -> (q,  id))
-   | _ -> (q, id)
+   | Some trans -> 
+     (case trans.target of
+        | Name [x, y] -> Some (x,  y)
+        | Name [y]    -> Some ("", y)
+        | _ -> None) % Name -> Term
+   | _ -> None
 
-op qid2OpName (Qualified (q, id) : QualifiedId, 
-               ctxt              : S2I_Context) 
- : I_OpName = 
+op pragmaOpTranslation (Qualified (q, id) : QualifiedId, 
+                        ctxt              : S2I_Context) 
+ : Option I_OpName = 
  %% Possibly rename using pragma info for type map
  let match =
-     findLeftmost (fn translation -> 
-                     case translation of
-                       | Op trans ->
-                         (case trans.source of
-                            | [x, y] -> q = x && id = y
-                            | [y]    -> id = y
-                            | _ -> false)
-                       | _ ->
-                         false)
-                  ctxt.translations
+     findLeftmost (fn trans ->
+                     case trans.source of
+                       | [x, y] -> q = x && id = y
+                       | [y]    -> id = y
+                       | _ -> false)
+                  ctxt.lm_data.op_translations
  in
  case match of
-   | Some (Op match) -> 
-     (case match.target of
+   | Some trans -> 
+     (case trans.target of
         | Name [x, y] -> 
-          (case match.fixity of
-             | Some Prefix  -> (x,  "prefix_"  ^ y)
-             | Some Postfix -> (x,  "postfix_" ^ y)
-             | _ ->            (x,  y))
+          Some (case trans.fixity of
+                  | Some Prefix  -> (x,  "prefix_"  ^ y)
+                  | Some Postfix -> (x,  "postfix_" ^ y)
+                  | _ ->            (x,  y))
         | Name [y] -> 
-          (case match.fixity of
-             | Some Prefix  -> ("", "prefix_"  ^ y)
-             | Some Postfix -> ("", "postfix_" ^ y)
-             | _ ->            ("", y))
-        | _ ->  (q, id))
-   | _ -> (q, id)
+          Some (case trans.fixity of
+                  | Some Prefix  -> ("", "prefix_"  ^ y)
+                  | Some Postfix -> ("", "postfix_" ^ y)
+                  | _ ->            ("", y))
+        | _ -> 
+          % Name -> Term
+          None)
+   | _ -> 
+     None
 
-op qid2VarName (Qualified (q, id) : QualifiedId, 
-                ctxt              : S2I_Context) 
- : I_VarName = 
- %% Vars are not renamed
- (q, id)
+%% Simple conversions:
+op qid2OpName   (Qualified (q, id) : QualifiedId) : I_OpName   = (q, id)
+op qid2TypeName (Qualified (q, id) : QualifiedId) : I_TypeName = (q, id)
+op qid2VarName  (Qualified (q, id) : QualifiedId) : I_VarName  = (q, id)
 
 
 op unsetToplevel (ctxt : S2I_Context) : S2I_Context =
@@ -128,143 +123,93 @@ op useConstrCalls? (ctxt : S2I_Context) : Bool =
            
        | _ -> true
 
-op generateI2LCodeSpec (ms_spec      : Spec,
-                        constructors : List QualifiedId,
-                        lms          : LanguageMorphisms,
-                        natives      : Natives,
-                        translations : Translations)
- : I_ImpUnit =
- generateI2LCodeSpecFilter (ms_spec,
-                            constructors,
-                            fn _ -> true,    % desire all types
-                            fn _ -> true,    % desire all ops
-                            lms,
-                            natives,
-                            translations)
-
-op generateI2LCodeSpecFilter (ms_spec       : Spec,
-                              constructors  : List QualifiedId,
-                              desired_type? : QualifiedId -> Bool,
-                              desired_op?   : QualifiedId -> Bool,
-                              lms           : LanguageMorphisms,
-                              natives       : Natives,
-                              translations  : Translations)
- : I_ImpUnit =
- let declared_structs = 
-     foldl (fn (names, translation) ->
-              case translation of
-                | Type trans | trans.struct? -> 
-                  let qid = case trans.source of
-                              | [id]   -> mkUnQualifiedId id
-                              | [q,id] -> mkQualifiedId (q, id)
-                  in
-                  names ++ [qid]
-                | _ -> names)
-           []
-           translations
- in
- let ctxt = {specName        = "", 
-             isTopLevel?     = true, 
-             constructors    = constructors,
-             currentOpType   = None,
-             ms_spec         = ms_spec,
-             lms             = lms,
-             translations    = translations,
-             declaredStructs = declared_structs}
- in
+%% Called from generateCSpecFromTransformedSpecIncrFilter in MetaSlang/CodeGen/C/SpecToCSpec.sw 
+op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
  let
+
   def print_q_id (q, id) =
     if q = UnQualified then
       id
     else
       q ^ "." ^ id
+
+  def show_status status =
+    case status of
+      | Primitive   -> "primitive"
+      | API         -> "API"
+      | Handwritten -> "handwritten"
+      | Macro       -> "macro"
+      | Defined     -> "defined"
+      | Undefined   -> "undefined"
+      | Missing     -> "missing"
+      | Misc msg    -> msg
+
+ in
+ let expand_types? = false in          % todo: make this arg to transform
+ let constructors  = []    in          % ??
+ let ms_spec       = slice.ms_spec in
+ let lm_data       = slice.lm_data in
+ let ctxt = {specName        = "", 
+             isTopLevel?     = true, 
+             constructors    = constructors,
+             currentOpType   = None,
+             ms_spec         = ms_spec,
+             lm_data         = lm_data,
+             declaredStructs = lm_data.structure_types,
+             expandTypes?    = expand_types?}
  in
  let i_opdefs =
-     foldriAQualifierMap (fn (q, id, opinfo, i_opdefs) ->
-                            let qid = Qualified (q, id) in
-                            %% to be considered, op must be desired and not translate to native op
-                            if (exists? (fn translation ->
-                                           case translation of
-                                             | Op trans | trans.native? ->
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false
-                                             | Op trans ->
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Op defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false
-                                             | _ -> false)
-                                        translations)
-                              then
-                                i_opdefs
-                            else if nativeOp? ([q,id], natives) then
-                              let _ = writeLine ("Avoiding C generation for natively defined op: " ^ print_q_id (q, id)) in
-                              i_opdefs
-                            else if desired_op? qid then
-                              let i_opdef = opinfo2declOrDefn (qid, opinfo, None, ctxt) in
-                              i_opdefs ++ [i_opdef]
+     foldl (fn (defs, resolved_ref) ->
+              case resolved_ref of
+                | Op resolved_op_ref ->
+                  let name   = resolved_op_ref.name   in
+                  let cohort = resolved_op_ref.cohort in
+                  let status = resolved_op_ref.status in
+                  if (cohort in? [Interface, Implementation]) && 
+                     (status in? [Defined, Undefined]) % although undefined, may have signature
+                    then
+                      (case findTheOp (ctxt.ms_spec, name) of
+                         | Some info -> 
+                           defs ++ [opinfo2declOrDefn (name, info, None, ctxt)]
+                         | _ ->
+                           defs)
+                  else 
+                    let _ = if status in? [API, Macro, Primitive] then 
+                              ()
                             else
-                              let _ = writeLine ("Avoiding C generation for undesired op: " ^ print_q_id (q, id)) in
-                              i_opdefs)
-                         []
-                         ms_spec.ops
+                              writeLine("Ignoring " ^ show_status status ^ " op " ^ show name)
+                    in
+                    defs
+                | _ -> defs)
+           []
+           slice.resolved_refs
  in
  let i_typedefs =
-     foldlSpecElements (fn (i_typedefs, el) ->
-                          case el of
-                            | TypeDef (name as Qualified (q, id), _) ->
-                              if (exists? (fn translation ->
-                                             case translation of
-                                               | Type trans | trans.native? ->
-                                                 if trans.source = [q, id] then
-                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                                   true
-                                                 else if trans.source = [id] then
-                                                   let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                                   true
-                                                 else
-                                                   false
-                                             | Type trans ->
-                                               if trans.source = [q, id] then
-                                                 let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else if trans.source = [id] then
-                                                 let _ = writeLine ("Type defined as macro: " ^ print_q_id (q, id)) in
-                                                 true
-                                               else
-                                                 false
-                                               | _ -> false)
-                                          translations)
-                                then
-                                  i_typedefs
-                              else if nativeType? ([q,id], natives) then
-                                let _ = writeLine ("Avoiding C generation for natively defined type: " ^ print_q_id (q, id)) in
-                                i_typedefs
-                              else if desired_type? name then
-                                (case findTheType (ms_spec, name) of
-                                   | Some typeinfo ->
-                                     case typeinfo2typedef (name, typeinfo, ctxt) of
-                                       | Some i_typedef ->
-                                         i_typedefs ++ [i_typedef]
-                                       | _ ->
-                                         i_typedefs)
-                              else
-                                let _ = writeLine ("Avoiding C generation for undesired type: " ^ print_q_id (q, id)) in
-                                i_typedefs
-                            | _ ->
-                              i_typedefs)
-                       []
-                       ms_spec.elements
+     foldl (fn (defs, resolved_ref) ->
+              case resolved_ref of
+                | Type resolved_type_ref ->
+                  let name   = resolved_type_ref.name   in
+                  let cohort = resolved_type_ref.cohort in
+                  let status = resolved_type_ref.status in
+                  if (cohort in? [Interface, Implementation]) && 
+                     (status in? [Defined])
+                    then
+                      (case findTheType (ctxt.ms_spec, name) of
+                         | Some info ->
+                           (case typeinfo2typedef (name, info, ctxt) of
+                              | Some typedef -> defs ++ [typedef]
+                              | _ -> defs)
+                         | _ -> defs)
+                  else 
+                    let _ = if status in? [API, Macro, Primitive] then 
+                              ()
+                            else
+                              writeLine("Ignoring " ^ show_status status ^ " type " ^ show name)
+                    in
+                    defs
+                | _ -> defs)
+           []
+           slice.resolved_refs
  in
  let res : I_ImpUnit = 
      {
@@ -319,15 +264,65 @@ op typeinfo2typedef (qid     : QualifiedId,
  : Option I_TypeDefinition =
  if definedTypeInfo? ms_info then
    let (ms_tvs, ms_type) = unpackFirstTypeDef ms_info in
-   let i_typename = qid2TypeName (qid, ctxt) in
-   Some (i_typename, type2itype (ms_tvs, ms_type, ctxt))
+   case pragmaTypeTranslation (qid, ctxt) of
+     | Some i_typename ->   
+       %% Type should have been filtered by nativeType? 
+       % let _ = writeLine("Suppress definition for translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+       %% don't need definitions for types defined in target
+       None
+     | _ ->
+       let i_typename = qid2TypeName qid in
+       % let _ = writeLine("Emit definition for base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+       Some (i_typename, type2itype (ms_tvs, ms_type, ctxt))
  else
    None 
 
 type LeLt   = | LE  | LT
 type MinMax = | Min | Max
 
-op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
+op find_constant_nat_bound (ms_term : MSTerm) : Option Nat =
+ %% returns (Some n) if the type directly expresses the inclusive range [0, n], otherwise None
+ %% i.e. {x : Nat -> x <= n} where n is a Nat
+ case ms_term of
+   | Lambda ([(VarPat ((v0, _), _), Fun (Bool true, _, _),  body)], _)
+     ->
+     (case body of
+        | Apply (Fun (Op (Qualified (_, pred), _), _, _),
+                 Record ([(_, Var ((v1, _),  _)),
+                          (_, Fun (Nat n, _, _))],
+                         _),
+                 _)
+          ->
+          if v0 = v1 then 
+            (case pred of
+               | "<=" ->  Some n
+               | "<"  ->  Some (n - 1)
+               | _    ->  None)
+          else 
+            None
+            
+        | Apply (Fun (Op (Qualified (_, "fitsInNBits?-1-1"), _), _, _),
+                 Record ([(_, Fun (Nat n, _, _)),
+                          (_, Var ((v1, _), _))],
+                         _),
+                 _)
+          | v0 = v1 -> 
+            Some (2**n - 1)
+          
+        | Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
+                 Var ((v1, _), _),
+                 _) 
+          | v0 = v1 -> 
+            (case fits_in_pred of
+               | "fitsIn1Bits?"  -> Some (2**1  - 1)
+               | "fitsIn8Bits?"  -> Some (2**8  - 1)
+               | "fitsIn16Bits?" -> Some (2**16 - 1)
+               | "fitsIn32Bits?" -> Some (2**32 - 1)
+               | _ -> None)
+        | _ -> None)
+   | _ -> None
+
+op find_constant_int_bounds (ms_term : MSTerm) : Option (Int * Int) =
  %% returns Some (m, n) if the type directly expresses the inclusive range [m, n], otherwise None
  let 
    def eval_const tm =
@@ -387,52 +382,89 @@ op find_simple_constant_bounds (ms_term : MSTerm) : Option (Int * Int) =
          
  in
  case ms_term of
-   | Lambda ([(VarPat ((vid, _), _),
-               Fun (Bool true, _, _),
-               Apply  (Fun (And, _, _), 
-                       Record ([("1",tm1), ("2",tm2)], _), 
-                       _))],
-             _)
-     ->
-     (let r1 = find_bound tm1 vid in 
-      let r2 = find_bound tm2 vid in
-      %% Some (true.  m) indicates inclusive min restriction
-      %% Some (false. n) indicates inclusive max restriction
-      case (r1, r2) of
-        | (Some (Min, m), Some (Max, n)) -> Some (m, n)
-        | (Some (Max, n), Some (Min, m)) -> Some (m, n)
-        | _ -> None)
+   | Lambda ([(VarPat ((v0, _), _), Fun (Bool true, _, _), body)], _) ->
+     (case body of
+        | Apply (Fun (And, _, _), 
+                 Record ([("1",tm1), ("2",tm2)], _), 
+                 _)
+          ->
+          (let r1 = find_bound tm1 v0 in 
+           let r2 = find_bound tm2 v0 in
+           %% Some (true.  m) indicates inclusive min restriction
+           %% Some (false. n) indicates inclusive max restriction
+           case (r1, r2) of
+             | (Some (Min, m), Some (Max, n)) -> Some (m, n)
+             | (Some (Max, n), Some (Min, m)) -> Some (m, n)
+             | _ -> None)
      
-   | Lambda ([(VarPat ((X, _), _),
-               Fun (Bool true, _, _),
-               Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
-                      Record ([(_, Fun (Nat n, _, _)),
-                               (_, Var ((X0, _),  _))],
-                              _),
-                      _)
-               )],
-             _)
-     | X = X0 ->  
-       let m = 2 ** (n-1) in
-       Some (- m, m -1)
+        | Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
+                 Record ([(_, Fun (Nat n, _, _)),
+                          (_, Var ((v1, _),  _))],
+                         _),
+                 _)
+          | v0 = v1 ->  
+            let m = 2 ** (n-1) in
+            Some (- m, m -1)
           
-   | Lambda ([(VarPat ((X, _), _),
-               Fun (Bool true, _, _),
-               Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
-                      Var ((X0, _), _),
-                      _)
-               )],
-             _)
-     | X = X0 -> 
-       (case fits_in_pred of
-          | "intFitsIn1Bits?"  -> Some (-1,0)
-          | "intFitsIn8Bits?"  -> Some (- (2**7),2**7-1)
-          | "intFitsIn16Bits?" -> Some (- (2**15),2**15-1)
-          | "intFitsIn32Bits?" -> Some (- (2**31),2**31-1)
-          | _ -> None)
-     
+        | Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
+                 Var ((v1, _), _),
+                 _)
+          | v0 = v1 -> 
+            (case fits_in_pred of
+               | "intFitsIn1Bits?"  -> Some (-1,0)
+               | "intFitsIn8Bits?"  -> Some (- (2**7),2**7-1)
+               | "intFitsIn16Bits?" -> Some (- (2**15),2**15-1)
+               | "intFitsIn32Bits?" -> Some (- (2**31),2**31-1)
+               | _ -> None)
+        | _ -> None)
    | _ -> None
      
+op unfold_bounded_list_type (ms_tvs          : TyVars, 
+                             ms_element_type : MSType, 
+                             pred            : MSTerm,
+                             ctxt            : S2I_Context)
+ : Option I_Type =
+ let i_element_type = type2itype (ms_tvs, ms_element_type, unsetToplevel ctxt) in
+ case pred of
+   | Lambda ([(VarPat ((pred_var, _), _), Fun (Bool true, _, _), pred_body)], _) -> 
+     (case pred_body of
+        | Apply (Fun (cmp, _, _), Record ([arg1, arg2], _), _) ->
+          let
+            def check_length_term ((_,length_op), (_,constant_term)) =
+              case length_op of
+                | Apply (Fun (Op (Qualified (_, "length"), _), _, _),
+                         length_arg, 
+                         _)
+                  ->
+                  (case length_arg of
+                     | Var ((length_var, _), _) -> 
+                       if length_var = pred_var then 
+                         constant_term_Int_value (constant_term, ctxt)
+                       else 
+                         None
+                     | _ -> None)
+                | _ -> None
+          in
+          let opt_bound =
+              case cmp of
+                | Op (Qualified (_, compare_sym), _) ->
+                  (case compare_sym of
+                     % compute inclusive bound for length of list
+                     | ">"  -> (case check_length_term (arg2, arg1) of | Some n | n > 0 -> Some (n - 1) | _ -> None)
+                     | "<"  -> (case check_length_term (arg1, arg2) of | Some n | n > 0 -> Some (n - 1) | _ -> None)
+                     | "<=" -> (case check_length_term (arg1, arg2) of | Some n         -> Some n       | _ -> None)
+                     | ">=" -> (case check_length_term (arg2, arg1) of | Some n         -> Some n       | _ -> None)
+                     | _ -> None)
+                | Equals ->    (case check_length_term (arg1, arg2) of | Some n         -> Some n       | _ -> None)
+                | _ -> None
+          in
+          (case opt_bound of
+             | Some list_length ->
+               Some (I_BoundedList (i_element_type, list_length))
+             | _ -> None)
+        | _ -> None)
+   | _ -> None
+
 op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context) 
  : Bool =
  case t1 of
@@ -463,6 +495,17 @@ op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context)
    | _ ->
      false
 
+% utility for stepwise type expansion
+op expandTypeOnce (name : TypeName, ctxt : S2I_Context) 
+ : Option MSType =
+ case findTheType (ctxt.ms_spec, name) of
+   | Some info ->
+     % let _ = writeLine("Expanding " ^ show name ^ " to " ^ printType info.dfn) in
+     Some info.dfn
+   | _ ->
+     % let _ = writeLine("Not Expanding " ^ show name) in
+     None
+
 op type2itype (ms_tvs  : TyVars,
                ms_type : MSType,
                ctxt    : S2I_Context)
@@ -471,50 +514,10 @@ op type2itype (ms_tvs  : TyVars,
  let 
    def bounded_list_type? ms_element_type pred =
      %% a bit of overkill, but this is just stopgap code, so...
-     case unfold_bounded_list_type ms_element_type pred of
+     case unfold_bounded_list_type (ms_tvs, ms_element_type, pred, ctxt) of
        | Some _ -> true
        | _ -> false
          
-   def unfold_bounded_list_type ms_element_type pred =
-     let i_element_type = type2itype (ms_tvs, ms_element_type, unsetToplevel ctxt) in
-     case pred of
-       | Lambda ([(VarPat ((pred_var, _), _),
-                   Fun (Bool true, _, _),
-                   pred_body)],
-                 _)
-         -> 
-         (case pred_body of
-            | Apply (Fun (cmp, _, _),
-                     Record ([arg1, arg2], _),
-                     _) 
-              ->
-              let
-                def check_length_term ((_,length_op), (_,constant_term), min_const) =
-                  let _ = 
-                      case length_op of
-                        | Apply (Fun (Op (Qualified (_, "length"), _), _, _),
-                                 length_arg, 
-                                 _)
-                          ->
-                          (case length_arg of
-                             | Var ((length_var, _), _) -> if length_var = pred_var then Some () else None
-                             | _ -> None)
-                        | _ -> None
-                  in
-                  let const = constant_term_Int_value (constant_term, ctxt) in
-                  if const < min_const then None else Some const
-              in
-              (case cmp of
-                 | Op (Qualified (_, compare_sym), _) ->
-                   (case compare_sym of
-                      | ">"  -> (case check_length_term (arg2, arg1, 2) of | Some const -> Some (I_BoundedList (i_element_type, const - 1)) | _ -> None)
-                      | "<"  -> (case check_length_term (arg1, arg2, 2) of | Some const -> Some (I_BoundedList (i_element_type, const - 1)) | _ -> None)
-                      | "<=" -> (case check_length_term (arg1, arg2, 1) of | Some const -> Some (I_BoundedList (i_element_type, const))     | _ -> None)
-                      | ">=" -> (case check_length_term (arg2, arg1, 1) of | Some const -> Some (I_BoundedList (i_element_type, const))     | _ -> None)
-                      | _ -> None)
-                 | Eq ->         case check_length_term (arg1, arg2, 1) of | Some const -> Some (I_BoundedList (i_element_type, const))     | _ -> None)
-            | _ -> None)
-       | _ -> None
  in
  let ms_utype = unfoldToSpecials (ms_type, ctxt) in
  case ms_utype of
@@ -523,98 +526,34 @@ op type2itype (ms_tvs  : TyVars,
    % primitives
    % ----------------------------------------------------------------------
    
-   | Boolean _                                         -> I_Primitive I_Bool
-   | Base (Qualified ("Nat",       "Nat"),    [],   _) -> I_Primitive I_Nat
-   | Base (Qualified ("Integer",   "Int"),    [],   _) -> I_Primitive I_Int
-   | Base (Qualified ("Character", "Char"),   [],   _) -> I_Primitive I_Char
-   | Base (Qualified ("String",    "String"), [],   _) -> I_Primitive I_String
-  %| Base (Qualified ("Float",     "Float"),  [],   _) -> I_Primitive I_Float
-   
+   | Boolean _                                       -> I_Primitive I_Bool
+   | Base (Qualified ("Nat",     "Nat"),    [],   _) -> I_Primitive I_Nat
+   | Base (Qualified ("Integer", "Int"),    [],   _) -> I_Primitive I_Int
+   | Base (Qualified ("Char",    "Char"),   [],   _) -> I_Primitive I_Char
+   | Base (Qualified ("String",  "String"), [],   _) -> I_Primitive I_String
+
    | Base (Qualified (_,           "Ptr"),    [t1], _) -> 
      let target  = type2itype (ms_tvs, t1, ctxt)       in
      let struct? = typeImplementedAsStruct? (t1, ctxt) in
      I_Ref (target, struct?)
 
-   % ----------------------------------------------------------------------
-   
-  % reference type
-  %| Base (Qualified ("ESpecPrimitives", "Ref"), [ms_type], _) -> Ref (type2itype (ms_tvs, ms_type, ctxt))
-   
-  %| Base (Qualified (_, "List"), [ms_ptyp], _) ->
-  %    let i_ptype = type2itype (ms_vs, ms_ptyp, ctxt) in
-  %    List i_ptype
-   
-  %| Base (Qualified (_, "List"), [ms_ptyp], _) ->
-  %  System.fail ("sorry, this version of the code generator doesn't support lists.")
-  %         
-  %     System.fail ("if using List type, please add a term restricting "^
-  %     "the length of the list\n       "^
-  %     "(e.g. \"{l:List ("^printType ms_ptyp ^")| length l <= 32}\")")
-
-   % ----------------------------------------------------------------------
-   
-   | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _)
-     ->
-     (case pred of
-        %% {x : Nat -> x < n} where n is a Nat
-        | Lambda ([(VarPat ((X, _), _),
-                    Fun (Bool true, _, _),
-                    Apply (Fun (Op (Qualified (_, pred), _), _, _),
-                           Record ([(_, Var ((X0, _),  _)),
-                                    (_, Fun (Nat n, _, _))],
-                                   _),
-                           _)
-                    )],
-                  _)
-          ->
-          if X = X0 then 
-            (case pred of
-               | "<=" ->  I_BoundedNat (n + 1)
-               | "<"  ->  I_BoundedNat n
-               | _    ->  I_Primitive  I_Nat)
-          else 
-            I_Primitive I_Nat
-            
-        | Lambda ([(VarPat ((X, _), _),
-                    Fun (Bool true, _, _),
-                    Apply (Fun (Op (Qualified (_, "fitsInNBits?-1-1"), _), _, _),
-                           Record ([(_, Fun (Nat n, _, _)),
-                                    (_, Var ((X0, _), _))],
-                                   _),
-                           _)
-                    )],
-                  _)
-          | X = X0 -> 
-            I_BoundedNat (2**n)
-          
-          
-        | Lambda ([(VarPat ((X, _), _),
-                    Fun (Bool true, _, _),
-                    Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
-                           Var ((X0, _), _),
-                           _)
-                    )],
-                  _)
-          | X = X0 -> 
-            (case fits_in_pred of
-               | "fitsIn1Bits?"  -> I_BoundedNat (2**1)
-               | "fitsIn8Bits?"  -> I_BoundedNat (2**8)
-               | "fitsIn16Bits?" -> I_BoundedNat (2**16)
-               | "fitsIn32Bits?" -> I_BoundedNat (2**32)
-               | _ -> I_Primitive I_Nat)
-          
-        | _ ->
+   | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _) ->
+     (case find_constant_nat_bound pred of
+        | Some n ->               % Inclusive bound
+          I_BoundedNat n          % closed interval [0, n]
+        | _ -> 
+          let _ = writeLine ("FindConstantNatBound failed for " ^ printTerm pred) in
           I_Primitive I_Nat)
      
    | Subtype (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
-     (case find_simple_constant_bounds pred of
-        | Some (m, n) -> % Inclusive bounds.
+     (case find_constant_int_bounds pred of
+        | Some (m, n) ->          % Inclusive bounds.
           if m = 0 then
-            I_BoundedNat n
+            I_BoundedNat n        % closed interval [0, n]
           else
-            I_BoundedInt (m-1, n+1) % I_BoundedInt takes an open interval.
+            I_BoundedInt (m, n)   % closed interval [m, n]
         | _ ->
-          let _ = writeLine "FindSimpleConstantBounds failed" in
+          let _ = writeLine ("FindConstantIntBounds failed for " ^ printTerm pred) in
           I_Primitive I_Int)
      
    % ----------------------------------------------------------------------
@@ -627,7 +566,7 @@ op type2itype (ms_tvs  : TyVars,
    | Subtype (Base (Qualified ("List", "List"), [ms_element_type], _), pred, _) 
      | bounded_list_type? ms_element_type pred ->
        % given the restriction above, the following must succeed
-       let Some i_type = unfold_bounded_list_type ms_element_type pred in
+       let Some i_type = unfold_bounded_list_type (ms_tvs, ms_element_type, pred, ctxt) in
        i_type
           
    % ----------------------------------------------------------------------
@@ -694,8 +633,16 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
   
    | Base (qid, _, _) -> 
-     let i_typename = qid2TypeName (qid, ctxt) in
-     I_Base i_typename
+     (case pragmaTypeTranslation (qid, ctxt) of
+        | Some i_typename ->
+          % let _ = writeLine("Translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+          I_Base i_typename
+        | _ ->
+          %% TODO: this will change to possibly expand type, 
+          %%        paying attention to reachability via ops in executable slice
+          let i_typename = qid2TypeName qid in
+          % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+          I_Base i_typename)
      
    | Subtype (ms_type, ms_term, _) -> % ignore the term...
      type2itype (ms_tvs, ms_type, ctxt)
@@ -707,19 +654,14 @@ op type2itype (ms_tvs  : TyVars,
      fail ("sorry, code generation doesn't support the use of this type:\n       "
              ^ printType ms_type)
 
-op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Int =
- let 
-   def err () = 
-     let _ = print ms_term in
-     fail ("cannot evaluate the constant value of term " ^ printTerm ms_term)
- in
+op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Option Int =
  case ms_term of
-   | Fun (Nat n, _, _) -> n
+   | Fun (Nat n, _, _) -> Some n
    | Fun (Op (qid, _), _, _) -> 
      (case getOpDefinition (qid, ctxt) of
         | Some tm -> constant_term_Int_value (tm, ctxt)
-        | _ -> err ())
-   | _ -> err ()
+        | _ -> None)
+   | _ -> None
      
      
 (*
@@ -926,8 +868,8 @@ op opinfo2declOrDefn (qid         : QualifiedId,
  in
  let Qualified (q, lid) = qid in
  let qid0     = Qualified (q, "__" ^ lid ^ "__")                 in
- let id       = qid2OpName (qid, ctxt)                           in
- let id0      = qid2OpName (qid0, ctxt)                          in
+ let id       = qid2OpName qid                                   in
+ let id0      = qid2OpName qid0                                  in
  let ms_type  = unfoldToArrow (ctxt.ms_spec, ms_type)            in
  let i_type   = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
  let ctxt     = setCurrentOpType (qid, ctxt)                     in
@@ -1045,8 +987,12 @@ op term2expression_fun (ms_fun  : MSFun,
        case ms_type of
          
          | Base (qid, _, _) ->
-           let i_fname = qid2OpName (qid, ctxt) in
-           I_ConstrCall (i_fname, i_selector, [])
+           (case pragmaOpTranslation (qid, ctxt) of
+              | Some i_fname ->
+                I_ConstrCall (i_fname, i_selector, [])
+              | _ ->
+                let i_fname = qid2OpName qid in
+                I_ConstrCall (i_fname, i_selector, []))
            
          | Boolean _ -> 
            I_ConstrCall (("Boolean", "Boolean"), i_selector, [])
@@ -1061,7 +1007,13 @@ op term2expression_fun (ms_fun  : MSFun,
  if arrowType? (ms_type, ctxt) then
    case ms_fun of
      | Op    (qid, _)     -> 
-       I_VarRef (qid2OpName (qid, ctxt))
+       (case pragmaOpTranslation (qid, ctxt) of
+          | Some i_opname ->
+            I_VarRef i_opname
+          | _ ->
+            let i_opname = qid2OpName qid in
+            I_VarRef i_opname)
+
      | Embed (id,  false) -> 
        let Arrow (_, ms_rng, _) = ms_type in
        term2expression_apply_fun (ms_fun,
@@ -1082,9 +1034,13 @@ op term2expression_fun (ms_fun  : MSFun,
      | Bool   b -> I_Bool b
        
      | Op (qid, _) -> 
-       let i_fname = qid2OpName (qid, ctxt) in
-       %if isOutputOp varname then VarDeref varname else 
-       I_Var i_fname
+       (case pragmaOpTranslation (qid, ctxt) of
+          | Some i_fname ->
+            I_Var i_fname
+          | _ ->
+            let i_fname = qid2OpName qid in
+            %if isOutputOp varname then VarDeref varname else 
+            I_Var i_fname)
        
      | Embed (id,arg?) -> 
        make_embedder (ms_type, id, arg?)
@@ -1130,7 +1086,7 @@ op term2expression_apply (ms_t1   : MSTerm,
               
             | Var ((id, _), _) ->
               let i_exprs   = getExprs4Args (ms_args, ctxt)  in
-              let i_varname = qid2VarName (mkUnQualifiedId id, ctxt) in % don't rename vars with pragma info
+              let i_varname = ("", id)                       in % don't rename vars with pragma info
 
               % infer the type of the original lhs to get the real type of the map
               % taking all the projections into account
@@ -1176,7 +1132,10 @@ op term2expression_apply_fun (ms_fun      : MSFun,
  case ms_fun of
    | Op (qid, _) ->
      let i_exprs     = getExprs4Args (ms_args, ctxt)                    in
-     let i_fname     = qid2OpName (qid, ctxt)                           in
+     let i_fname     = case pragmaOpTranslation (qid, ctxt) of
+                         | Some i_fname -> i_fname
+                         | _ -> qid2OpName qid
+     in
      % infer the type of the original lhs to get the real type of the map
      % taking all the projections into account
      let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs)            in
@@ -1201,7 +1160,10 @@ op term2expression_apply_fun (ms_fun      : MSFun,
          case ms_type of
            
            | Base (qid, _, _) ->
-             let i_fname = qid2OpName (qid, ctxt) in
+             let i_fname = case pragmaOpTranslation (qid, ctxt) of
+                             | Some i_fname -> i_fname
+                             | _ -> qid2OpName qid
+             in
              let i_exprs = case ms_t2 of
                              | Record (ms_fields, b) ->
                                if numbered? ms_fields then
@@ -1356,7 +1318,10 @@ op equalsExpression (ms_t1 : MSTerm, ms_t2 : MSTerm, ctxt : S2I_Context)
        
        | Base (qid, _, _) ->
          let eqid as Qualified (eq, eid) = getEqOpQid qid in
-         let i_eq_fname = qid2OpName (eqid, ctxt) in
+         let i_eq_fname = case pragmaOpTranslation (eqid, ctxt) of
+                            | Some i_eq_fname -> i_eq_fname
+                            | _ -> qid2OpName eqid
+         in
          (case AnnSpec.findTheOp (ctxt.ms_spec, eqid) of
             | Some _ ->
               I_FunCall (i_eq_fname, [], [t2e ms_t1, t2e ms_t2])
@@ -1451,23 +1416,6 @@ op getBuiltinExpr (ms_term : MSTerm,
    | (Fun (Op (Qualified ("String",     "<"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrLess             (t2e t1, t2e t2)))
    | (Fun (Op (Qualified ("String",     ">"),             _), _, _),  [t1,t2]) -> Some (I_Builtin (I_StrGreater          (t2e t1, t2e t2)))
 
-  % var refs:
-  %      | (Fun (Op (Qualified ("ESpecPrimitives", "ref"), _), _, _), [t1])
-  %        -> let def qid2varname qid =
-  %                 case qid of
-  %                   | Qualified (spcname, name) -> (spcname,name)
-  %                  %| Local name -> (spc.name,name)
-  %           in
-  %           (case t1 of
-  %              | Fun (Op (qid, _), _, _)
-  %                -> %if member (qid,ctxt.vars) then Some (VarRef (qid2varname qid))
-  %                   %else 
-  %                       fail ("\"ref\" can only be used for vars, but \""^
-  %                             (qidstr qid)^"\" is not declared as a var.")
-  %              | _ -> fail ("\"ref\" can only be used for vars, not for:\n"^
-  %                           printTerm t1)
-  %           )
-  
    | _ -> None
 
 op isVariable (_ : S2I_Context, _ : QualifiedId) : Bool = 

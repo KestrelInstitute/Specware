@@ -35,10 +35,10 @@ SpecUnion qualifying spec
 
  op  auxSpecUnion : Specs -> Spec
  def auxSpecUnion specs =
-   let new_spec = {types     = typesUnion specs,
-		   ops       = opsUnion   specs,
-		   elements  = eltsUnion  specs,
-		   qualifier = None}
+   let new_spec = emptySpec << {types     = typesUnion specs,
+                                ops       = opsUnion   specs,
+                                elements  = eltsUnion  specs,
+                                qualifier = None}
    in
    let new_spec = removeDuplicateImports new_spec in
    let new_spec = removeVarOpCaptures    new_spec in

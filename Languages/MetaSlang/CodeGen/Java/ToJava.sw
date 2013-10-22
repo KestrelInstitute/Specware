@@ -11,6 +11,7 @@ import ToJavaSpecial
 import /Languages/Java/JavaPrint
 
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/Java/SliceForJava
 
 import Monad
 
@@ -1047,7 +1048,7 @@ op SpecTransform.transformSpecForJavaCodeGen (spc : Spec) : Spec =
  %% (18) remove newly introduced but unused ops (mainly eq ops) 
  %% ==========================================================================================
 
- let spc = SpecTransform.sliceSpecForC                             spc top_ops top_types in 
+ let spc = SpecTransform.sliceSpecForJava                          spc top_ops top_types in 
  let _   = showSpecIfVerbose "sliceSpecForC[2]"                    spc in 
   
  %% ==========================================================================================

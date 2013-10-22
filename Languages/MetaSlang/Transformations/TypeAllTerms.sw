@@ -6,7 +6,7 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
  let unfolded_type = stripSubtypes (spc, unfoldBase (spc, expected_type)) in
  let
    def typeApply (t1, t2) = 
-     let t1_type          = termType t1               in
+     let t1_type          = inferType (spc, t1)                            in
      let unfolded_t1_type = stripSubtypes (spc, unfoldBase (spc, t1_type)) in
      case unfolded_t1_type of
        | Arrow (dom, rng, _) ->
@@ -14,17 +14,17 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
          let new_t2 = fullyType (t2, dom, spc)     in
          Apply (new_t1, new_t2, noPos)
        | _ ->
-         let t2_type          = termType t2               in
+         let t2_type          = inferType  (spc, t2)      in
          let unfolded_t2_type = unfoldBase (spc, t2_type) in
          let _ = writeLine ("") in
-         let _ = writeLine ("Internal confusion: Type for applied term is not an Arrow")       in
-         let _ = writeLine (" Application : " ^ printTerm term)             in
-         let _ = writeLine (anyToString term) in
-         let _ = writeLine ("          t1 : " ^ printTerm t1)               in
-         let _ = writeLine ("  Type of t1 : " ^ printType t1_type)          in
+         let _ = writeLine ("Internal confusion: Type for applied term is not an Arrow") in
+         let _ = writeLine (" Application : " ^ printTerm term)           in
+         let _ = writeLine (anyToString term)                             in
+         let _ = writeLine ("          t1 : " ^ printTerm t1)             in
+         let _ = writeLine ("  Type of t1 : " ^ printType t1_type)        in
          let _ = writeLine ("          => " ^ printType unfolded_t1_type) in
-         let _ = writeLine ("          t2 : " ^ printTerm t2)               in
-         let _ = writeLine ("  Type of t2 : " ^ printType t2_type)          in
+         let _ = writeLine ("          t2 : " ^ printTerm t2)             in
+         let _ = writeLine ("  Type of t2 : " ^ printType t2_type)        in
          let _ = writeLine ("          => " ^ printType unfolded_t2_type) in
          let _ = writeLine ("") in
          term

@@ -1,6 +1,4 @@
-(* Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl *)
-
-SpecToLisp qualifying spec
+LispGen qualifying spec
 
  import /Languages/MetaSlang/Transformations/PatternMatch
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
@@ -13,6 +11,7 @@ SpecToLisp qualifying spec
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+ import /Languages/MetaSlang/CodeGen/Lisp/SliceForLisp
 
  op generateCaseSensitiveLisp?: Bool = true
  

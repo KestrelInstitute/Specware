@@ -221,7 +221,7 @@ IsaTermPrinter qualifying spec
 
   op uidStringPairForTerm(c: Context, sc_tm: SCTerm): Option((String * String * String) * UnitId) =
     case sc_tm of
-      | (Subst(spc_tm, morph_tm), pos) ->
+      | (Subst(spc_tm, morph_tm, _), pos) ->
         (case uidStringPairForTerm(c, spc_tm) of
            | None -> None
            | Some((thynm, sw_file, thy_file), uid) ->
@@ -1639,6 +1639,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 
  op  findPragmaNamed1: SpecElements * String -> Option Pragma
  def findPragmaNamed1(elts, nm) =
+   %% Finds last pragma named
    % let _ = writeLine("findPragmaNamed1: "^nm) in
    let result =
          case elts of
@@ -1646,15 +1647,17 @@ removeSubTypes can introduce subtype conditions that require addCoercions
           | el::rst ->
             (case el of
                | Pragma(p_bod as ("proof", prag_str, "end-proof", _)) ->
-                 (let line1 = case search("\n", prag_str) of
-                                | None -> prag_str
-                                | Some n -> subFromTo(prag_str, 0, n)
-                  in
-                  case removeEmpty(splitStringAt(line1, " ")) of
-                    | pragma_kind::thm_nm::r
-                      | (pragma_kind = "Isa" || pragma_kind = "isa") && thm_nm = nm ->
-                      Some p_bod
-                    | _ -> findPragmaNamed1(rst, nm))
+                 (case findPragmaNamed1(rst, nm) of
+                    | None ->
+                      (let line1 = case search("\n", prag_str) of
+                                    | None -> prag_str
+                                    | Some n -> subFromTo(prag_str, 0, n)
+                       in
+                       case removeEmpty(splitStringAt(line1, " ")) of
+                         | pragma_kind::thm_nm::r | (pragma_kind = "Isa" || pragma_kind = "isa") && thm_nm = nm ->
+                           Some p_bod
+                         | _ -> None)
+                    | rec_result -> rec_result)
                | _ -> findPragmaNamed1(rst, nm))
    in
    % let _ = writeLine("returned: "^anyToString result) in
@@ -2272,7 +2275,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          let _ = (cnt := !cnt + 1) in
          let v = "zzz_"^show (!cnt) in
          Some(Var((v,ty), a))
-       | QuotientPat(pat,cond,_)  -> None %% Not implemented
+       | QuotientPat(pat,cond,_,_)  -> None %% Not implemented
        | RestrictedPat(pat,cond,_)  ->
          patToTerm(pat,ext, c)		% cond ??
        | AliasPat(p1,p2,_) -> 
@@ -3332,7 +3335,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | BoolPat (b,_) -> ppBool b
      | CharPat (chr,_) -> prString (Char.show chr)
      | NatPat (int,_) -> prString (Nat.show int)      
-     | QuotientPat (pat,qid,_) -> 
+     | QuotientPat (pat,qid,_,_) -> 
        prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
                   ppPattern c pat wildstr false,
                   prString ")"]

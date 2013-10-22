@@ -1,0 +1,7 @@
+WARNING: At line  16:30  Syntactic error with "{"
+WARNING: At line  20:32  Syntactic error with "["
+WARNING: At line  21:32  Syntactic error with "("
+WARNING: At line  25:39  Syntactic error with ","
+WARNING: At line  29:30  Syntactic error with "f"
+;;;      6 resulting toplevel forms
+ERROR: Syntax error in file $TESTDIR/syntax.sw

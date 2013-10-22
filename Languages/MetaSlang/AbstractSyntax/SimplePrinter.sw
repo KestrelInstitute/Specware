@@ -323,10 +323,10 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ])
       | WildPat (srt,_) -> ppString "_"
       | StringPat (str,_) -> ppString ("\"" ^ str ^ "\"")
-      | BoolPat (b,_) -> ppBoolean b
+      | BoolPat (b,_) -> ppBool b
       | CharPat (chr,_) -> ppString (Char.show chr)
       | NatPat (int,_) -> ppString (Nat.show int)      
-      | QuotientPat (pat,qid,_) -> 
+      | QuotientPat (pat,qid,_,_) -> 
           ppGrConcat [ppString ("(quotient[" ^ show qid ^ "] "),
                       ppAPattern pat,
                       ppString ")"]
@@ -366,8 +366,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | mystery -> fail ("No match in ppAPattern with: '" ^ (anyToString mystery) ^ "'")
 
 
-  op ppBoolean : Bool -> WLPretty
-  def ppBoolean b =
+  op ppBool : Bool -> WLPretty
+  def ppBool b =
     case b of
       | true -> ppString "true"
       | false -> ppString "false"
@@ -410,7 +410,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             % ppString "(embed ",
             ppString id
             % ppString " "
-            % ppBoolean b,
+            % ppBool b,
             % ppString ")"
           % ]
       | Embedded id ->
@@ -426,7 +426,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Nat n -> ppString (Nat.show n)
       | Char chr -> ppString (Char.show chr)
       | String str -> ppString ("\"" ^ str ^ "\"")
-      | Bool b -> ppBoolean b
+      | Bool b -> ppBool b
       | OneName (id,fxty) -> ppString id
       | TwoNames (id1,id2,fxty) -> ppQualifiedId (Qualified (id1,id2))
       | mystery -> fail ("No match in ppAFun with: '" ^ (anyToString mystery) ^ "'")
@@ -559,7 +559,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
              ppSep (ppString ",") (map ppAType srts),
              ppString ")"
            ]
-      | Boolean _ -> ppString "Boolean"  
+      | Boolean _ -> ppString "Bool"  
       | TyVar (tyVar,_) -> ppString tyVar
       | MetaTyVar (tyVar,_) -> 
          let ({link, uniqueId, name}) = ! tyVar in

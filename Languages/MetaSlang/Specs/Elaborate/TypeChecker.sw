@@ -81,12 +81,6 @@ def elaboratePosSpec (given_spec0, filename) =
   %% 
   let given_spec = resolveTypeNames given_spec0 in
   let initial_env  = initialEnv (given_spec, filename) in
-  let {types     = given_types, 
-       ops       = given_ops, 
-       elements  = given_elts,
-       qualifier = qualifier} 
-      = given_spec
-  in
   let 
     def elaborate_local_op_types (ops, env) =
       let _ = if debug? then writeLine "**elaborate_local_op_types" else () in
@@ -193,10 +187,10 @@ def elaboratePosSpec (given_spec0, filename) =
 
 
   %% Elaborate types of ops
-  let elaborated_ops_0 = elaborate_local_op_types (given_ops,env_with_constrs) in
+  let elaborated_ops_0 = elaborate_local_op_types (given_spec.ops,env_with_constrs) in
 
   %% Elaborate types
-  let elaborated_types = elaborate_local_types (given_types, env_with_constrs) in
+  let elaborated_types = elaborate_local_types (given_spec.types, env_with_constrs) in
   let env_with_elaborated_types = setEnvTypes (env_with_constrs, elaborated_types) in
 
   %% Elaborate types of ops pass 2 so that subtypes are resolved before instantiation
@@ -214,7 +208,7 @@ def elaboratePosSpec (given_spec0, filename) =
   let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, second_pass_env, true)  in
   let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, second_pass_env, false) in
   %% Elaborate properties
-  let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_types, false) in
+  let elaborated_elts = elaborate_local_props (given_spec.elements, env_with_elaborated_types, false) in
 
   %% ======================================================================
   %%                           PASS TWO  
@@ -242,6 +236,18 @@ case findAQualifierMap (ops, "Foo", "increasingNats1?") of
   | None -> ()
   | Some info -> writeLine("increasingNats1?:\n"^printTermWithTypes info.dfn)
 *)
+
+op elaboratePosTerm(tm: MSTerm, spc: Spec, vars: MSVars): MSTerm * List (String * Position) =
+  let _ = initializeMetaTyVarCounter () in
+  let env  = addConstrsEnv(initialEnv (spc, "string"), spc) in
+  let env = foldr (fn ((id, ty), env) -> addVariable(env, id, ty)) env vars in
+  let ty = freshMetaTyVar("top_tm_ty", termAnn tm) in
+  let tm = elaborateTerm(env, tm, ty, []) in
+  let env = finalPass env in
+  let tm = elaborateTerm(env, tm, ty, []) in
+  case checkErrors env of
+    | [] -> (convertPTerm spc tm, [])
+    | msgs -> (tm, msgs)
 
 % ========================================================================
 %% ---- called inside TYPES : PASS 0  -----
@@ -1535,7 +1541,9 @@ op argMismatchMsg(ty1: MSType, ty2: MSType, spc: Spec): String =
       then show nc2^" arguments given when at most "^show nc1^" expected for "
     else ""
   else if nc2 > nc1
-    then "Non-curried function given "^show nc2^" curried arguments"
+    then if nc1 = 0
+          then "Non-function given "^show nc2^" curried arguments. "
+          else "Non-curried function given "^show nc2^" curried arguments. "
     else ""
 
 op elaborateTypeForPat (env: LocalEnv, pat: MSPattern, givenType: MSType, expectedType: MSType): MSType =
@@ -1891,29 +1899,35 @@ def elaboratePatternRec (env, p, type1, seenVars) =
       in
         (RecordPat (reverse r, pos), env, seenVars)
 
-    | QuotientPat (pat, qid, pos) ->
-      let v = freshMetaTyVar ("QuotientPat", pos) in
-      let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
+    | QuotientPat (pat, qid, param_tys, pos) ->
       (case findTheType (env.internal, qid) of
          | Some info ->
            (case unpackFirstTypeDef info of
               | (tvs, Quotient (base_body, equiv, _)) ->
-                %% In general, base_body and equiv will have free references to the tvs
-                %% TODO: More checking needed here?
-                (QuotientPat (pat, qid, pos), env, seenVars)
+                let (qp_ty, base_body) =
+                    if param_tys ~= [] || tvs = []
+                      then (Base(qid, param_tys, pos),
+                            instantiateScheme(env, pos, param_tys, Pi(tvs, base_body, pos)))
+                      else metafyBaseType(qid, Pi(tvs, base_body, pos), pos)
+                in
+                let _ = elaborateTypeForPat(env, p, qp_ty, type1) in
+                let (pat, env, seenVars)
+                   = elaboratePatternRec (env, pat, base_body, seenVars) in
+                let Base(_, nparam_tys, _) = qp_ty in
+                (QuotientPat (pat, qid, nparam_tys, pos), env, seenVars)
               | _ ->
                 let ss = show qid in
                 (error (env, 
                         "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " refers to a type that is not a quotient",
                         pos);
-                 (QuotientPat (pat, qid, pos), env, seenVars)))
+                 (QuotientPat (pat, qid, param_tys, pos), env, seenVars)))
 
          | _ ->
            let ss = show qid in
            (error (env, 
                    "In pattern quotient[" ^ ss ^ "], " ^ ss ^ " does not refer to a type",
                    pos);
-            (QuotientPat (pat, qid, pos), env, seenVars)))
+            (QuotientPat (pat, qid, param_tys, pos), env, seenVars)))
 
     | RestrictedPat (pat, term, pos) ->
       let (pat, env, seenVars) = elaboratePatternRec (env, pat, type1, seenVars) in

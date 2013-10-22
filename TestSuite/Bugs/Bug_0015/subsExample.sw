@@ -6,11 +6,11 @@ A = spec
 endspec
 
 B = spec
-  def reset : Integer = 0  % default type would be Nat
-  def tick c = c+1         % default type is Integer -> Integer
+  def reset : Int = 0  % default type would be Nat
+  def tick c = c+1         % default type is Int -> Int
 endspec
 
-M = morphism A -> B {Counter +-> Integer}
+M = morphism A -> B {Counter +-> Int}
 
 AA = spec
   import A

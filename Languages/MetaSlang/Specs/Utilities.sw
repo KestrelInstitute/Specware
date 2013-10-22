@@ -49,7 +49,7 @@ Utilities qualifying spec
         | CharPat(c, _) -> Some(mkChar c)
         | VarPat((v,ty), a) -> Some(Var((v,ty), a))
         | WildPat(ty,_) -> None
-        | QuotientPat(pat,cond,_)  -> None %% Not implemented
+        | QuotientPat(pat,cond,_,_)  -> None %% Not implemented
         | RestrictedPat(pat,cond,_)  ->
 	  patternToTerm pat		% cond ??
 %	| AliasPat(VarPat(v, _),p,_) -> 
@@ -88,7 +88,7 @@ Utilities qualifying spec
               let gen_var = ("zz__" ^ show(!wild_num), ty) in
               (wild_num := !wild_num + 1;
                (mkVar gen_var, [], [gen_var]))
-            | QuotientPat(qpat, qid, _)  -> 
+            | QuotientPat(qpat, qid, _, _)  -> 
               let (t, conds, vs) = patToTPV qpat in
               % let _ = writeLine("pttpec: "^printPattern pat^": "^printType(patternType pat)^"\n"^printTermWithTypes t) in
               % let _ = writeLine(printType(termType(mkQuotient(t, qid, termType t)))) in
@@ -166,7 +166,7 @@ Utilities qualifying spec
      | EmbedPat(_,Some p,_,_) -> isPatBound(v,p)
      | VarPat(w,_)            -> v = w
      | RecordPat(fields,_)    -> exists? (fn (_,p) -> isPatBound(v,p)) fields
-     | QuotientPat(p,_,_)     -> isPatBound(v,p)
+     | QuotientPat(p,_,_,_)     -> isPatBound(v,p)
      | RestrictedPat(p,_,_)   -> isPatBound(v,p)
      | _ -> false
 
@@ -285,9 +285,9 @@ Utilities qualifying spec
 	let (p1,sub,freeNames) = repPattern(p1,sub,freeNames) in
 	let (p2,sub,freeNames) = repPattern(p2,sub,freeNames) in
 	(AliasPat(p1,p2,a),sub,freeNames)
-      | QuotientPat(pat,trm,a) -> 
+      | QuotientPat(pat,trm,tys,a) -> 
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
-	(QuotientPat(pat,trm,a),sub,freeNames)
+	(QuotientPat(pat,trm,tys,a),sub,freeNames)
       | RestrictedPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
 	(RestrictedPat(pat,trm,a),sub,freeNames)
@@ -422,7 +422,7 @@ Utilities qualifying spec
       | BoolPat _              -> []
       | CharPat _              -> []
       | NatPat  _              -> []
-      | QuotientPat(p,_,_)     -> patVars p
+      | QuotientPat(p,_,_,_)     -> patVars p
       | RestrictedPat(p,_,_)   -> patVars p
       | TypedPat(p,_,_)        -> patVars p
 
@@ -650,9 +650,9 @@ Utilities qualifying spec
 	let (p1,sub,freeNames) = substPattern(p1,sub,freeNames) in
 	let (p2,sub,freeNames) = substPattern(p2,sub,freeNames) in
 	(AliasPat(p1,p2,a),sub,freeNames)
-      | QuotientPat(pat,trm,a) -> 
+      | QuotientPat(pat,trm,tys,a) -> 
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in
-	(QuotientPat(pat,trm,a),sub,freeNames)
+	(QuotientPat(pat,trm,tys,a),sub,freeNames)
       | RestrictedPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = substPattern(pat,sub,freeNames) in 
 	(RestrictedPat(pat,substitute2(trm,sub,freeNames),a),sub,freeNames)
@@ -678,9 +678,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	let p1 = substPat(p1,sub) in
 	let p2 = substPat(p2,sub) in
 	AliasPat(p1,p2,a)
-      | QuotientPat(pat,trm,a) -> 
+      | QuotientPat(pat,trm,tys,a) -> 
 	let pat = substPat(pat,sub) in
-	QuotientPat(pat,trm,a)
+	QuotientPat(pat,trm,tys,a)
       | RestrictedPat(pat,trm,a) -> 
 	let pat = substPat(pat,sub) in 
 	RestrictedPat(pat,trm,a)        % trm ??
@@ -879,8 +879,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | WildPat(ty,a) -> 
 	WildPat(letRecToLetTermType(ty),
 		a)
-      | QuotientPat (p,                        qid, a) -> 
-	QuotientPat (letRecToLetTermPattern p, qid, a)
+      | QuotientPat (p,                        qid, tys, a) -> 
+	QuotientPat (letRecToLetTermPattern p, qid, tys, a)
       | RestrictedPat(p,t,a) -> 
 	RestrictedPat(letRecToLetTermPattern(p),
 		      letRecToLetTermTerm(t),
@@ -932,7 +932,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 		 foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
 	       | EmbedPat(_,None,_,_) -> vs
 	       | EmbedPat(_,Some p,_,_) -> loopP(p,vs)
-	       | QuotientPat(p,_,_) -> loopP(p,vs)
+	       | QuotientPat(p,_,_,_) -> loopP(p,vs)
 	       | AliasPat(p1,p2,_) -> loopP(p1,loopP(p2,vs))
 	       | RestrictedPat(p,_,_) -> loopP(p,vs)
                | TypedPat(p,_,_) -> loopP(p,vs)
@@ -1168,10 +1168,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
   op [a] constantTerm? (t: ATerm a): Bool =
     case t of
-      | Lambda _ -> true
-      | Fun _    -> true
-      | Record(fields,_) -> forall? (fn (_,stm) -> constantTerm? stm) fields
-      | _        -> false
+      | Lambda    _           -> true
+      | Fun       _           -> true
+      | Record    (fields, _) -> forall? (fn (_,stm) -> constantTerm? stm) fields
+      | TypedTerm (tm, _,  _) -> constantTerm? tm
+      | Pi        (_, tm,  _) -> constantTerm? tm
+      | And       (tm::_,  _) -> constantTerm? tm
+      | _                     -> false
 
   op [a] containsOpRef?(term: ATerm a): Bool =
     existsSubTerm (fn t -> case t of
@@ -1823,7 +1826,11 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
                                                                 (case findTheType (sp, qid) of
                                                                    | None -> writeLine(show qid^" not defined ")
                                                                    | Some info -> writeLine(show qid^" defined"^"\n"^printType info.dfn))
-                                                              | _ -> writeLine("Not Base")
+                                                              | _ -> 
+                                                                let _ = writeLine("Infering type for " ^ printTerm tm) in
+                                                                let _ = writeLine("Applied term is " ^ printTerm t1) in
+                                                                let _ = writeLine("Type of applied term is not an application: " ^ printType t1_ty) in
+                                                                ()
                                                     in
 						    System.fail ("inferType: Could not extract type for "
                                                                    ^ printTerm tm
@@ -1928,6 +1935,17 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                   | Some info ->
                     if definedTypeInfo? info then
                       let (tvs, ty) = unpackFirstTypeDef info in
+                      let n_tvs = length tvs in
+                      let n_tys = length tys in
+                      let (tvs, tys) =
+                          if n_tvs = n_tys then (tvs, tys)
+                          else
+                           let min_len = min(n_tvs, n_tys) in
+                           (warn("Mismatch in type: "^show n_tvs^" ~= "^show n_tys^"\n"^printType info.dfn^"\n"
+                                   ^printType ty1);
+                            (subFromTo(tvs, 0, min_len),
+                             subFromTo(tys, 0, min_len)))
+                      in
                       let sty = substType (zip (tvs, tys), ty) in
                       possiblySubtypeOf?(sty, ty2, spc)
                     else
@@ -2617,7 +2635,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       loop 1
 
   op knownNonEmptyBaseTypes: QualifiedIds =
-    [Qualified("Boolean", "Bool"),   
+    [Qualified("Bool",    "Bool"),   
      Qualified("Integer", "Int"),   
      Qualified("Nat",     "Nat"), 
      Qualified("Char",    "Char"),
@@ -2968,7 +2986,7 @@ op getPostCondn(ty: MSType, spc: Spec): Option(MSPattern * MSTerm) =
     | Subtype(result_ty, Lambda([(pat, _, condn)], _), _) -> Some(pat, condn)
     | _ -> None
 
- def evaluableQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Boolean"]
+ def evaluableQualifiers = ["Nat", "Integer", "IntegerAux", "String", "Char", "System", "Bool"]
 
 %% Initialized by initializeInterpreterBaseAux in toplevel.lisp
 op MSInterpreter.interpreterBaseSpec: Spec

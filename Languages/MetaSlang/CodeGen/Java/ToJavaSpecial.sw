@@ -454,7 +454,7 @@ spec
   def builtinJavaBaseTypeQualifier? q =
     %% TODO: is this a complete set?  See basicQualifiers
     %% v3:p1 
-    q in? ["Boolean", 
+    q in? ["Bool", 
            "Integer", 
            "Nat",     % v3:p1 says NO  -- TODO: resolve this
            "String",  % v3:p1 says NO  -- TODO: resolve this

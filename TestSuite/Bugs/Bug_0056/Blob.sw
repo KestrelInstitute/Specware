@@ -7,6 +7,6 @@ endspec
 
 Trg = spec endspec
 
-Src2Trg = morphism Src -> Trg {Flip +-> Bool, flop +-> Boolean.~}
+Src2Trg = morphism Src -> Trg {Flip +-> Bool, flop +-> ~}
 
 S2Tob = obligations Src2Trg

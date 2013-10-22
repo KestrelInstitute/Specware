@@ -1026,12 +1026,12 @@ end-proof
 
 op toMinLittleEndian (x:Nat, base:Nat | base >= 2) : List1 Nat =
   minimizer (length, fn digits: List Nat ->
-                       (fa(d:Nat) d in? digits => d < base) &&
+                       (fa(d:Nat) d in? digits => d < base) &&   %TODO Is this conjunct needed?
                        littleEndian? (digits, base, x))
 
 op toMinBigEndian (x:Nat, base:Nat | base >= 2) : List1 Nat =
   minimizer (length, fn digits: List Nat ->
-                       (fa(d:Nat) d in? digits => d < base) &&
+                       (fa(d:Nat) d in? digits => d < base) &&   %TODO Is this conjunct needed?
                        bigEndian? (digits, base, x))
 
 proof Isa toMinLittleEndian_Obligation_subtype
@@ -1143,7 +1143,7 @@ proof Isa Thy_Morphism Power Parity
  Integer.minIn     -> LeastS
  Nat.minIn         -> LeastS
  Integer.maxIn     -> GreatestS
- Integer.minimizer -> LeastMS    curried
+ Integer.minimizer -> LeastMS    curried  % TODO: I think things like this may be incorrect because they lose subtype information.
  Integer.maximizer -> GreatestMS curried
 end-proof
 

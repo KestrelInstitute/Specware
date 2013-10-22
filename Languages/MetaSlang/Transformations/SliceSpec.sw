@@ -1,516 +1,539 @@
 SliceSpec qualifying spec 
 
-import ../Specs/AnalyzeRecursion
-
-type QualifierSet = AQualifierMap Bool
-
-op emptySet: QualifierSet = emptyAQualifierMap
-
-op in? (Qualified(q,id): QualifiedId, s: QualifierSet) infixl 20 : Bool =
- some?(findAQualifierMap(s, q, id) )
-
-op nin?  (Qualified(q,id): QualifiedId, s: QualifierSet) infixl 20 : Bool =
- none?(findAQualifierMap(s, q, id) )
-
-op <| (s: QualifierSet, Qualified(x, y): QualifiedId) infixl 25 : QualifierSet =
- insertAQualifierMap(s, x, y, true)
-
-op addList(s: QualifierSet, l: QualifiedIds): QualifierSet =
- foldl (<|) s l
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Old version that is deprecated
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op codeGenElement?(el: SpecElement): Bool =
- case el of
-   | Pragma("#translate", _, "#end", _) -> true
-   | Pragma _ -> false
-   | _ -> true
+import OldSlice  % Deprecated
 
-op scrubSpec (spc : Spec, op_set : QualifierSet, type_set : QualifierSet) : Spec =
- let new_types =
-     mapiPartialAQualifierMap (fn (q, id, v) ->
-                                  if Qualified (q, id) in? type_set then
-                                    Some v
-                                  else 
-                                    None)
-                               spc.types
- in
- let new_ops =
-     mapiPartialAQualifierMap (fn (q, id, v) ->
-                                 if Qualified (q, id) in? op_set then
-                                   Some v
-                                 else 
-                                   None)
-                              spc.ops
- in
- let
-   def filterElements (elements : SpecElements) : SpecElements =
-     let
-       def keep? el =
-         case el of
-           | Type     (qid,              _) -> qid in? type_set
-           | TypeDef  (qid,              _) -> qid in? type_set
-           | Op       (qid, _,           _) -> qid in? op_set && numRefinedDefs spc qid = 1
-           | OpDef    (qid, refine_num,_,_) -> qid in? op_set && numRefinedDefs spc qid = refine_num + 1
-           | Property (_, _, _, formula, _) ->
-             forall? (fn qid -> qid in? op_set) (opsInTerm formula)
-             && 
-             forall? (fn qid -> qid in? type_set) (typesInTerm formula)
-             % | Import   (_, _, elts,       _) -> exists? (fn el -> element_filter el) elts
-           | Import _ -> true
-           | _ -> codeGenElement? el
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% New Slicing Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+import /Languages/MetaSlang/Specs/Environment
+import /Languages/MetaSlang/CodeGen/LanguageMorphism
+import /Library/Legacy/DataStructures/MergeSort   % to sort names when printing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Misc support
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op [a] union (xs : List a, ys : List a) : List a =
+ foldl (fn (new, x) -> 
+          if x in? ys then
+            new
+          else
+            x |> new)
+       ys
+       xs
+
+op executable? (info : OpInfo) : Bool =
+ let (decls, defs)  = opInfoDeclsAndDefs info in
+ case defs of
+   | dfn :: _ -> ~ (nonExecutableTerm1? dfn)
+   | _ -> false
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  ADT for op/type reachability
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+type Cohorts          = List Cohort
+type Cohort           = | Interface      % the desired interface or API
+                        | Implementation % used to implement the interface
+                        | Assertion      % used in assertions, could define runtime asserts
+                        | Context        % used in relevant context, could define monitors
+                        | Ignored        
+
+type Status           = | Primitive 
+                        | API 
+                        | Handwritten 
+                        | Macro 
+                        | Defined 
+                        | Undefined 
+                        | Missing 
+                        | Misc String
+
+type TheoremName      = PropertyName
+
+type Locations        = List Location
+type Location         = | Root 
+                        | Op      {name : OpName,      pos: Position}
+                        | Type    {name : TypeName,    pos: Position}
+                        | Theorem {name : TheoremName, pos: Position}
+                        | Unknown
+
+type ResolvedRefs     = List ResolvedRef
+type ResolvedRef      = | Op   ResolvedOpRef
+                        | Type ResolvedTypeRef
+
+type ResolvedOpRef    = {name            : OpName,   
+                         cohort          : Cohort,
+                         contextual_type : MSType, % how it is used (as opposed to how it is defined)
+                         locations       : Locations,
+                         status          : Status}
+
+type ResolvedTypeRef  = {name       : TypeName, 
+                         cohort     : Cohort,
+                         locations  : Locations,
+                         status     : Status}
+
+op empty_resolved_refs   : ResolvedRefs   = []
+
+type PendingRefs      = List PendingRef
+type PendingRef       = | Op   PendingOpRef
+                        | Type PendingTypeRef
+
+type PendingOpRef     = {name            : OpName,   
+                         cohort          : Cohort,
+                         contextual_type : MSType, % how it is used (as opposed to how it is defined)
+                         location        : Location}
+
+type PendingTypeRef   = {name     : TypeName, 
+                         cohort   : Cohort,
+                         location : Location}
+
+
+op pending.showName (pending : PendingRef) : String =
+ case pending of
+   | Op   oref -> show oref.name
+   | Type tref -> show tref.name
+
+type Slice = {ms_spec             : Spec, 
+              lm_data             : LMData,
+              oracular_ref_status : PendingRef * Slice -> Option Status,
+              % code is simpler if pending and resolved refs are tracked separately
+              % (as opposed to having a Pending/Resolved status)
+              pending_refs        : PendingRefs,
+              resolved_refs       : ResolvedRefs}
+
+type RefNames = List RefName
+type RefName  = | Op   OpName
+                | Type TypeName
+
+type Groups = List Group
+type Group  = {cohort : Cohort,
+               status : Status, 
+               names  : Ref RefNames}
+
+op describeGroup (group : Group) : () =
+ case (! group.names) of
+   | [] -> ()
+   | names ->
+     let (needed?, cohort) = case group.cohort of
+                               | Interface      -> (true,  "These interface types and/or ops ")
+                               | Implementation -> (true,  "These implementing types and/or ops ")
+                               | Assertion      -> (false, "These types and/or ops in assertions ")
+                               | Context        -> (false, "These types and/or ops in the relevant context ")
+                               | Ignored        -> (false, "These ignored types and/or ops ")
      in
-     mapPartial (fn elt ->
-                   if keep? elt then
-                     Some (case elt of
-                             | Import (s_tm, i_sp, elts,                a) ->
-                               Import (s_tm, i_sp, filterElements elts, a)
-                             | _ ->  elt)
-                   else
-                     None)
-                elements
+     let (warning, status) = case group.status of
+                               | Primitive   -> ("", "translate to primitive syntax: ")
+                               | API         -> ("", "translate to an API: ")
+                               | Handwritten -> ("", "translate to handwritten code: ")
+                               | Macro       -> ("", "translate to macros: ")
+                               | Defined     -> ("", "are defined: ")
+                               | Undefined   -> (if needed? then "WARNING: " else "", "are undefined: ")
+                               | Missing     -> (if needed? then "WARNING: " else "", "are missing: ")
+                               | Misc msg    -> ("", msg)
+     in
+     let type_names = foldl (fn (tnames, name) ->
+                               case name of
+                                 | Type tname -> (show tname) |> tnames
+                                 | _ -> tnames)
+                            []
+                            names             
+     in
+     let op_names   = foldl (fn (onames, name) ->
+                               case name of
+                                 | Op oname -> (show oname) |> onames
+                                 | _ -> onames)
+                            []
+                            names             
+     in
+     let type_names = sortGT (String.>) type_names in
+     let op_names   = sortGT (String.>) op_names   in
+     let _ = writeLine (warning ^ cohort ^ status) in
+     let _ = case type_names of 
+               | [] -> ()
+               | _ ->
+                 let _ = writeLine "" in
+                 app (fn tname -> writeLine ("  type " ^ tname)) type_names 
+     in
+     let _ = case op_names of 
+               | [] -> ()
+               | _ ->
+                 let _ = writeLine "" in
+                 app (fn oname -> writeLine ("  op " ^ oname)) op_names 
+     in
+     let _ = writeLine "" in
+
+     ()
+
+op describeSlice (msg : String, slice : Slice) : () =
+ let
+   def pad (str, n) =
+     let m = length str in
+     if m < n then
+       str ^ implode (repeat #\s (n - m))
+     else
+       str
+
+   def partition_refs (groups : Groups, ref  : ResolvedRef) =
+     case findLeftmost (fn (group : Group) ->
+                          case ref of
+                            | Op (oref : ResolvedOpRef) ->
+                              group.cohort = oref.cohort && 
+                              group.status = oref.status
+
+                            | Type tref ->
+                              group.cohort = tref.cohort && 
+                              group.status = tref.status)
+
+                       groups 
+       of
+       | Some group -> 
+         let _  = (group.names := 
+                     (! group.names) ++ 
+                     [case ref of 
+                        | Op   oref -> Op   oref.name
+                        | Type tref -> Type tref.name])
+         in
+         groups
+         
+       | _ -> 
+         %% Misc options will be added to end
+         let (cohort, status, name) =
+             case ref of 
+               | Op   oref -> (oref.cohort, oref.status, Op   oref.name)
+               | Type tref -> (tref.cohort, tref.status, Type tref.name)
+         in
+         let group : Group = {cohort = cohort,
+                      status = status,
+                      names  = Ref [name]}
+         in
+         groups ++ [group]
+
  in
- let new_elements = filterElements spc.elements in
- spc << {
-         types    = new_types,
-         ops      = new_ops, 
-         elements = new_elements
-         }
+ let cohorts     = [Interface, Implementation, Assertion, Context, Ignored]          in
+ let status_list = [Defined, Handwritten, API, Macro, Primitive, Undefined, Missing] in
+ let groups      = foldl (fn (groups, cohort) -> 
+                            foldl (fn (groups, status) ->
+                                     let group = {cohort     = cohort,
+                                                  status     = status, 
+                                                  names = Ref []}
+                                     in
+                                     groups <| group)
+                                  groups
+                                  status_list)
+                         []
+                         cohorts
+ in
+ let groups = foldl partition_refs groups slice.resolved_refs in
+
+ let _ = writeLine ("") in
+ let _ = writeLine ("Slice: " ^ msg) in
+ let _ = writeLine ("") in
+
+ let _ = case slice.pending_refs of
+           | [] -> ()
+           | pendings ->
+             let _ = writeLine "--------------------" in
+             let _ = app (fn pending -> writeLine ("pending type: " ^ showName pending)) pendings in
+             let _ = writeLine "--------------------" in
+             ()
+ in
+
+ let _ = app describeGroup groups in
+ ()
+ 
+op resolve_ref (slice   : Slice, 
+                pending : PendingRef,
+                status  : Status)
+ : ResolvedRefs =
+ let
+   def names_match? (Qualified (xq, xid), Qualified (yq, yid)) =
+     %% could have Nat32 and Nat.Nat32 -- sigh
+     xid = yid &&
+     (xq = yq || xq = UnQualified || yq = UnQualified)
+
+   def cohort_number cohort =
+     case cohort of
+       | Interface      -> 1
+       | Implementation -> 2
+       | Assertion      -> 3
+       | Context        -> 4
+
+   def earlier_cohort? (c1, c2) =
+     (cohort_number c1) < (cohort_number c2)
+ in
+ let resolved_refs = slice.resolved_refs in
+ case pending of
+   | Op oref ->
+     (case splitAtLeftmost (fn resolved -> 
+                              case resolved of 
+                                | Op resolved -> names_match? (resolved.name, oref.name)
+                                | _ -> false)
+                           resolved_refs 
+       of
+        | Some (x, Op old, y) -> 
+          if earlier_cohort? (oref.cohort, old.cohort) then
+            %% We need to replace the old resolution by one using the earlier new cohort.
+            let resolved_ref =
+                Op {name            = oref.name, 
+                    cohort          = oref.cohort,
+                    contextual_type = oref.contextual_type,
+                    locations       = [oref.location],
+                    status          = status} 
+            in
+            x ++ [resolved_ref] ++ y
+         else
+            %% Don't update if name already has a value for this or earlier cohort.
+           resolved_refs  
+        | _ -> 
+          let resolved_ref =
+              Op {name            = oref.name, 
+                  cohort          = oref.cohort,
+                  contextual_type = oref.contextual_type, 
+                  locations       = [oref.location],
+                  status          = status} 
+          in
+          resolved_ref |> resolved_refs)
+
+   | Type tref ->
+     (case splitAtLeftmost (fn resolved -> 
+                              case resolved of 
+                                | Type resolved -> names_match? (resolved.name, tref.name)
+                                | _ -> false)
+                           resolved_refs 
+       of
+        | Some (x, Type old, y) ->
+          if earlier_cohort? (tref.cohort, old.cohort) then
+            %% We need to replace the old resolution by one using the earlier new cohort.
+            let resolved_ref =
+                Type {name      = tref.name, 
+                      cohort    = tref.cohort,
+                      locations = [tref.location],
+                      status    = status} 
+            in
+            x ++ [resolved_ref] ++ y
+          else
+            %% Don't update if name already has a value for this or earlier cohort.
+            resolved_refs 
+        | _ -> 
+          let resolved_ref =
+              Type {name      = tref.name, 
+                    cohort    = tref.cohort,
+                    locations = [tref.location],
+                    status    = status} 
+          in
+          resolved_ref |> resolved_refs)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Chase referenced types and ops to fixpoint
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op extend_cohort_for_ref (cohort       : Cohort)
+                         (pending_refs : PendingRefs)
+                         (op_status    : OpInfo   -> Status)
+                         (type_status  : TypeInfo -> Status)
+                         (slice        : Slice, 
+                          pending_ref  : PendingRef)
+ : Slice =
+ let
+   def matches_op_ref pending_op_ref (resolved_ref : ResolvedRef) =
+     case resolved_ref of
+       | Op resolved_op_ref -> 
+         resolved_op_ref.name = pending_op_ref.name
+       | _ -> 
+         false
+
+   def matches_type_ref (pending_type_ref : PendingTypeRef) (resolved : ResolvedRef) =
+     case resolved of
+       | Type resolved_type_ref ->
+         resolved_type_ref.name = pending_type_ref.name
+       | _ -> 
+         false
+
+   def add_pending_ref resolved_refs (pendings, pending) =
+     case pending of
+       | Op (pending_op_ref : PendingOpRef) ->
+         (case findLeftmost (matches_op_ref pending_op_ref) resolved_refs of
+            | Some _ -> 
+              pendings
+            | _ -> 
+              if pending in? pendings then
+                % it's already in the queue to be processed
+                pendings
+              else
+                pending |> pendings)
+       | Type (pending_type_ref : PendingTypeRef) ->
+         (case findLeftmost (matches_type_ref pending_type_ref) resolved_refs of
+            | Some _ -> 
+              pendings
+            | _ -> 
+              if pending in? pendings then
+                % it's already in the queue to be processed
+                pendings
+              else
+                pending |> pendings)
+
+    %% 
+    def subtype_cohort cohort =
+      case cohort of
+        | Context -> Context
+        | _ -> Assertion
+
+ in
+ case slice.oracular_ref_status (pending_ref, slice) of
+   | Some status ->
+     let new_resolved_refs = resolve_ref (slice, pending_ref, status) in
+     slice << {resolved_refs = new_resolved_refs}
+   | _ ->
+     case pending_ref of
+       | Op oref ->
+         (case findTheOp (slice.ms_spec, oref.name) of
+            | Some info ->
+              let status            = op_status info                               in
+              let new_resolved_refs = resolve_ref (slice, pending_ref, status)     in
+              let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
+                                            [] 
+                                            (pendingRefsInTerm (info.dfn, cohort)) 
+              in
+              let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
+              slice << {resolved_refs = new_resolved_refs,
+                        pending_refs  = new_pending_refs}
+            | _ ->
+              let new_resolved_refs = resolve_ref (slice, pending_ref, Missing) in
+              slice << {resolved_refs = new_resolved_refs})
+
+       | Type tref ->
+         (case findTheType (slice.ms_spec, tref.name) of
+            | Some info ->
+              let (pending_ref, status) =
+                  case info.dfn of
+                    | Subtype (t1, pred, _) ->
+                      let cohort      = subtype_cohort tref.cohort       in
+                      let pending_ref = Type (tref << {cohort = cohort}) in
+                      (pending_ref, Defined)
+                    | _ ->
+                      (pending_ref, type_status info)
+              in
+              let new_resolved_refs = resolve_ref (slice, pending_ref, status) in
+              let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
+                                            [] 
+                                            (pendingRefsInType (info.dfn, cohort)) 
+              in
+              let new_pending_refs   = union (new_pending_refs, slice.pending_refs) in
+              slice << {resolved_refs = new_resolved_refs,
+                        pending_refs  = new_pending_refs}
+            | _ ->
+              let new_resolved_refs = resolve_ref (slice, pending_ref, Missing) in
+              slice << {resolved_refs = new_resolved_refs})
+
+op pendingRefsInTerm (term : MSTerm, cohort : Cohort) : PendingRefs =
+ %% TODO: get real locations
+ (map (fn name -> 
+         Op {name            = name, 
+             cohort          = cohort,
+             contextual_type = Any noPos, 
+             location        = Unknown})
+      (opsInTerm term))
+ ++
+ (map (fn name -> 
+         Type {name     = name, 
+               cohort   = cohort,
+               location = Unknown})
+      (typesInTerm term))
+
+op pendingRefsInType (typ : MSType, cohort : Cohort) : PendingRefs =
+ %% TODO: get real locations
+ let op_refs =
+     let term_cohort =
+         case cohort of
+           | Implementation -> Assertion
+           | _ -> cohort
+     in
+     map (fn name -> 
+            Op {name            = name, 
+                cohort          = term_cohort,
+                contextual_type = Any noPos, 
+                location        = Unknown})
+         (opsInType typ)
+ in
+ let type_refs = 
+     map (fn name -> 
+            Type {name     = name, 
+                  cohort          = cohort,
+                  location = Unknown})
+         (typesInType typ)
+ in
+ op_refs ++ type_refs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Haskell generation calls this directly...
-op sliceSpecInfoForCode (spc        : Spec,
-                         root_ops   : QualifiedIds, 
-                         root_types : QualifiedIds) 
- : QualifierSet * QualifierSet =
- let chase_terms_in_types? = false in
- let chase_theorems?       = false in
+op extend_cohort (cohort : Cohort) (s0 : Slice) : Slice =
+ let pending_refs = s0.pending_refs           in
+ let s1           = s0 << {pending_refs = []} in
  let 
-   def cut_op?   (qid : QualifiedId) : Bool = false
-   def cut_type? (qid : QualifiedId) : Bool = false
+   def op_status   info = if executable? info     then Defined   else Undefined
+   def type_status info = if anyType?    info.dfn then Undefined else Defined
  in
- sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?, false)
-
-op [a] foldJustTerms (f : a -> MSTerm -> a) (acc: a) (term : MSTerm) (firstDefsOnly? : Bool) : a =
- %% foldTerm recurs into term within types and patterns: subtypes, quotients, etc.
- let foldOfChildren = 
-      case term of
-        | Let        (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm firstDefsOnly?) acc decls) bdy firstDefsOnly?
-        | LetRec     (decls, bdy, _) -> foldJustTerms f (foldl (fn (acc, (_,tm)) -> foldJustTerms f acc tm firstDefsOnly?) acc decls) bdy firstDefsOnly?
-        | Record     (row,        _) -> foldl (fn (acc, (id,tm)) -> foldJustTerms f acc tm firstDefsOnly?) acc row
-        | IfThenElse (t1, t2, t3, _) -> foldJustTerms f (foldJustTerms f (foldJustTerms f acc t1 firstDefsOnly?) t2 firstDefsOnly?) t3 firstDefsOnly?
-        | Lambda     (match,      _) -> foldl (fn (acc,(_,cond,tm)) -> foldJustTerms f (foldJustTerms f acc cond firstDefsOnly?) tm firstDefsOnly?) acc match
-        | Bind       (_, _, tm,   _) -> foldJustTerms f acc tm firstDefsOnly?
-        | The        (_, tm,      _) -> foldJustTerms f acc tm firstDefsOnly?
-        | Apply      (t1, t2,     _) -> foldJustTerms f (foldJustTerms f acc t1 firstDefsOnly?) t2 firstDefsOnly?
-        | Seq        (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm firstDefsOnly?) acc tms
-        | ApplyN     (tms,        _) -> foldl (fn (acc, tm) -> foldJustTerms f acc tm firstDefsOnly?) acc tms
-        | TypedTerm  (tm, _,      _) -> foldJustTerms f acc tm firstDefsOnly?
-        | Pi         (_, tm,      _) -> foldJustTerms f acc tm firstDefsOnly?
-        | And        (tms,        _) -> (if firstDefsOnly? then
-                                           foldJustTerms f acc (head tms) firstDefsOnly?
-                                         else
-                                           foldl (fn (acc, tm) -> foldJustTerms f acc tm firstDefsOnly?) acc tms
-                                           )
-        | _ -> acc
- in
- f foldOfChildren term
- 
-op sliceSpecInfo (spc                   : Spec, 
-                  root_ops              : QualifiedIds, 
-                  root_types            : QualifiedIds, 
-                  cut_op?               : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                  cut_type?             : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                  chase_terms_in_types? : Bool, 
-                  chase_theorems?       : Bool,
-                  firstDefsOnly?        : Bool  %%governs handling of And terms
-                  )
- : QualifierSet * QualifierSet =
- let 
-   def eq_op_qid (Qualified (q, id)) = Qualified (q, "eq_" ^ id)
-      
-   def findQuotientOpsIn typ =
-     foldType (fn result -> fn _ -> result,
-               fn result -> fn typ -> 
-                 case typ of
-                   | Quotient (_, Fun (Op (qid, _), _, _), _) -> result ++ [qid]
-                   | _ -> result,
-               fn result -> fn _ -> result)
-              []
-              typ
-
-   def newOpsInTerm (tm : MSTerm, newopids : QualifiedIds, op_set : QualifierSet, firstDefsOnly? : Bool) : QualifiedIds =
-     if chase_terms_in_types? then
-       %% FIXME pass firstDefsOnly? to foldTerm?
-       foldTerm (fn opids -> fn tm ->
-                   case tm of
-                     | Fun (Op (qid,_), funtype, _) ->
-                       % let _ = writeLine("new_ops_in_term: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                       if cut_op? qid then
-                         opids
-                       else if qid nin? opids  && qid nin? op_set then
-                         qid :: opids
-                            else
-                              opids
-                     | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
-                       let eq_qid = eq_op_qid type_qid in
-                       % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
-                       if cut_op? eq_qid then
-                         opids
-                       else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
-                         eq_qid :: opids
-                       else
-                         opids
-                     | _ -> opids,
-                 fn result -> fn _ -> result,
-                 fn result -> fn _ -> result)
-                newopids 
-                tm
-     else
-       foldJustTerms (fn opids -> fn tm ->
-                        case tm of
-                          | Fun (Op (qid,_), funtype, _) ->
-                            % let _ = writeLine("new_ops_in_term: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                            if cut_op? qid then
-                              opids
-                            else if qid nin? opids  && qid nin? op_set then
-                              qid :: opids
-                            else
-                              opids
-                          | Fun  (Quotient typename, typ, _) -> 
-                            (case findTheType (spc, typename) of
-                               | Some typeinfo -> 
-                                 %% quotient functions may be needed at runtime...
-                                 let quotients = findQuotientOpsIn typeinfo.dfn in
-                                 % let _ = writeLine("For type " ^ show typename ^ " : " ^ anyToString typeinfo) in
-                                 % let _ = writeLine("Quotients = " ^ anyToString quotients) in
-                                 quotients ++ opids
-                               | _ ->
-                                 % let _ = writeLine("For type " ^ show typename ^ " : no typeinfo") in
-                                 opids)
-                          | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
-                            let eq_qid = eq_op_qid type_qid in
-                            % let _ = writeLine("new_ops_in_term: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
-                            if cut_op? eq_qid then
-                              opids
-                            else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
-                              eq_qid :: opids
-                            else
-                              opids
-                          | _ -> opids)
-                     newopids 
-                     tm
-                     firstDefsOnly?
-
-   def newOpsInType (ty : MSType, newopids : QualifiedIds, op_set : QualifierSet) : QualifiedIds =
-     if chase_terms_in_types? then
-       foldType (fn opids -> fn tm ->
-                   case tm of
-                     | Fun (Op (qid,_), funtype, _) ->
-                       % let _ = writeLine("new_ops_in_type: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                       if cut_op? qid then
-                         opids
-                       else if qid nin? opids && qid nin? op_set then
-                         qid :: opids
-                       else
-                         opids
-                     | Fun (Equals, Arrow (Product ([("1", Base (type_qid, _, _)), _], _), _, _), _) ->
-                       let eq_qid = eq_op_qid type_qid in
-                       % let _ = writeLine("new_ops_in_type: " ^ show eq_qid ^ " : " ^ show (cut_op? eq_qid)) in
-                       if cut_op? eq_qid then
-                         opids
-                       else if eq_qid nin? opids  && eq_qid nin? op_set then % avoid millions of duplicate entries
-                         eq_qid :: opids
-                            else
-                              opids
-                     | _ -> opids,
-                 fn result -> fn _ -> result,
-                 fn result -> fn _ -> result)
-                newopids 
-                ty
-     else
-       newopids
-
-   def newTypesInTerm (tm : MSTerm, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
-     foldTerm (fn result -> fn _ -> result,
-               fn result -> fn t ->
-                 case t of
-                   | Base (qid,_,_) ->
-                     % let _ = writeLine("new_types_in_term: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
-                     if cut_type? qid then
-                       result
-                     else if qid nin? result && qid nin? type_set then
-                       qid :: result
-                     else
-                       result
-                   | _ -> result,
-               fn result -> fn _ -> result)
-              newtypeids 
-              tm
-      
-   def newTypesInType (ty : MSType, newtypeids : QualifiedIds, type_set : QualifierSet) : QualifiedIds =
-     foldType (fn result -> fn _ -> result,
-               fn result -> fn t ->
-                 case t of
-                   | Base (qid,_,_) ->
-                     % let _ = writeLine("new_types_in_type: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
-                     if cut_type? qid then
-                       result
-                     else if qid nin? result && qid nin? type_set then
-                       qid :: result
-                     else
-                       result
-                   | _ -> result,
-               fn result -> fn _ -> result)
-              newtypeids 
-              ty
-      
-   def iterateDeps (new_ops, new_types, op_set, type_set, n, firstDefsOnly?) =
-     % let _ = writeLine ("================================================================================") in
-     % let _ = writeLine ("Round " ^ show n) in
-     if new_ops = [] && new_types = [] then 
-       % let _ = writeLine ("Done") in
-       % let _ = writeLine ("================================================================================") in
-       (op_set, type_set)
-     else
-       % let _ = writeLine ("New ops:  " ^ anyToString new_ops) in
-       % let _ = writeLine ("New type: " ^ anyToString new_types) in
-       let op_set   = addList (op_set,   new_ops)   in
-       let type_set = addList (type_set, new_types) in
-       let new_ops_in_ops = 
-           foldl (fn (newopids, qid) ->
-                    % let _ = writeLine("new_ops_in_ops: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                    if cut_op? qid then
-                      newopids
-                    else
-                      case findTheOp (spc, qid) of
-                        | Some opinfo -> 
-                          % let _ = writeLine("Scanning ops in op: " ^ show (primaryOpName opinfo)) in
-                          % let _ = writeLine("               dfn: " ^ printTerm opinfo.dfn) in
-                          newOpsInTerm (opinfo.dfn, newopids, op_set, firstDefsOnly?)
-                        | None -> newopids)
-                 [] 
-                 new_ops
-       in
-       let new_ops_in_ops_or_types = 
-           if chase_terms_in_types? then 
-             foldl (fn (newopids, qid) ->
-                      % let _ = writeLine("new_ops_in_types: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
-                      if cut_type? qid then
-                        newopids
-                      else
-                        case findTheType (spc, qid) of
-                          | Some typeinfo -> 
-                            % let _ = writeLine("Scanning ops in type: " ^ show (primaryTypeName typeinfo)) in
-                            newOpsInType(typeinfo.dfn, newopids, op_set)
-                          | None -> newopids)
-                   new_ops_in_ops
-                   new_types
-           else
-             new_ops_in_ops
-       in
-       let new_types_in_ops = 
-           foldl (fn (newtypeids, qid) ->
-                    % let _ = writeLine("new_types_in_ops: " ^ show qid ^ " : " ^ show (cut_op? qid)) in
-                    if cut_op? qid then
-                      newtypeids
-                    else
-                      case findTheOp (spc, qid) of
-                        | Some opinfo -> 
-                          % let _ = writeLine("Scanning types in op: " ^ show (primaryOpName opinfo)) in
-                          newTypesInTerm (opinfo.dfn, newtypeids, type_set)
-                        | None -> newtypeids)
-                 [] 
-                 new_ops
-       in
-       let new_types_in_ops_or_types = 
-           foldl (fn (newtypeids, qid) ->
-                    % let _ = writeLine("new_types_in_types: " ^ show qid ^ " : " ^ show (cut_type? qid)) in
-                    if cut_type? qid then
-                      newtypeids
-                    else
-                      case findTheType (spc, qid) of
-                        | Some typeinfo -> 
-                          % let _ = writeLine("Scanning types in type: " ^ show (primaryTypeName typeinfo)) in
-                          newTypesInType (typeinfo.dfn, newtypeids, type_set)
-                        | None -> newtypeids)
-                 new_types_in_ops
-                 new_types
-       in
-       iterateDeps (new_ops_in_ops_or_types, new_types_in_ops_or_types, op_set, type_set, n + 1, firstDefsOnly?)
- in
- let (op_set, type_set) = iterateDeps (root_ops, root_types, emptySet, emptySet, 0, firstDefsOnly?) in
- (op_set, type_set)
+ foldl (extend_cohort_for_ref cohort pending_refs op_status type_status)
+       s1
+       pending_refs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op sliceSpec (spc                   : Spec, 
-              root_ops              : QualifiedIds,        % include these and things they recursively mention
-              root_types            : QualifiedIds,        % include these and things they recursively mention
-              cut_op?               : QualifiedId -> Bool, % stop recursion at these, and do not include them
-              cut_type?             : QualifiedId -> Bool, % stop recursion at these, and do not include them
-              chase_terms_in_types? : Bool,                % recur through subtype predicates and quotient relations
-              chase_theorems?       : Bool)                % recur through axioms and theorems that mention included types and ops
- : Spec =
- let (op_set, type_set) = sliceSpecInfo (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?, false) in
- let sliced_spc         = scrubSpec     (spc, op_set,   type_set)                                                                      in
- sliced_spc
- 
-op sliceSpecForCode (spc        : Spec, 
-                     root_ops   : QualifiedIds,        % include these and things they recursively mention
-                     root_types : QualifiedIds,        % include these and things they recursively mention
-                     cut_op?    : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                     cut_type?  : QualifiedId -> Bool) % stop recursion at these, and do not include them
- : Spec =
- let chase_terms_in_types? = false in  % do not recur through subtype predicates and quotient relations
- let chase_theorems?       = false in  % do not recur through axioms and theorems that mention included types and ops
- sliceSpec (spc, root_ops, root_types, cut_op?, cut_type?, chase_terms_in_types?, chase_theorems?)
- 
-op sliceSpecForCodeM (spc        : Spec, 
-                      root_ops   : QualifiedIds,        % include these and things they recursively mention
-                      root_types : QualifiedIds,        % include these and things they recursively mention
-                      cut_op?    : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                      cut_type?  : QualifiedId -> Bool, % stop recursion at these, and do not include them
-                      tracing?   : Bool)
- : Env (Spec * Bool) =
- return (sliceSpecForCode (spc, root_ops, root_types, cut_op?, cut_type?), tracing?)
+op cohort_closure (cohort : Cohort) (slice : Slice) : Slice =
+ let
+   def aux slice =
+     case slice.pending_refs of
+       | [] ->  
+         slice
+       | _ ->
+         aux (extend_cohort cohort slice)
+ in
+ aux slice
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% If these predicates are true, don't include the indicated op or type when 
-%% slicing, and don't recur through their definitions.
+
+op implementation_closure (slice : Slice) : Slice = cohort_closure Implementation slice
+op assertion_closure      (slice : Slice) : Slice = cohort_closure Assertion      slice
+op context_closure        (slice : Slice) : Slice = slice
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% ========
-%%  Lisp
-%% ========
+op executionSlice (ms_spec    : Spec,
+                   get_lms    : Spec -> LanguageMorphisms,
+                   oracle     : PendingRef * Slice -> Option Status,
+                   root_ops   : OpNames, 
+                   root_types : TypeNames) 
+ : Slice =
+ let lms          = get_lms     ms_spec in
+ let lm_data      = make_LMData lms     in
+ let pending_refs = (map (fn name ->
+                            Op {name            = name, 
+                                cohort          = Interface,
+                                contextual_type = Any noPos, 
+                                location        = Root})
+                         root_ops)
+                    ++
+                    (map (fn name -> 
+                            Type {name     = name, 
+                                  cohort   = Interface,
+                                  location = Root})
+                         root_types)
+ in
+ let s0 = {ms_spec             = ms_spec,
+           lm_data             = lm_data,
+           oracular_ref_status = oracle,
+           pending_refs        = pending_refs,
+           resolved_refs       = empty_resolved_refs}
+ in
+ let s1 = implementation_closure s0 in
+ let s2 = assertion_closure      s1 in
+ let s3 = context_closure        s2 in
+ s3
 
-op builtInLispOp?   (qid : QualifiedId) : Bool = 
- printPackageId(qid, "") in? SpecToLisp.SuppressGeneratedDefuns
-
-op builtInLispType? (qid : QualifiedId) : Bool = 
- false
-
-op SpecTransform.sliceSpecForLisp (spc             : Spec)
-                                  (root_ops        : QualifiedIds)
-                                  (root_types      : QualifiedIds)
- : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtInLispOp?, builtInLispType?)
-
-%% ========
-%%  Haskell
-%% ========
-
-op haskellElement?(el: SpecElement): Bool =
- case el of
-   | Pragma("#translate", prag_str, "#end", _) | haskellPragma? prag_str -> true
-   | Pragma _ -> false
-   | _ -> true
-
-op haskellPragma?(s: String): Bool =
- let s = stripOuterSpaces s in
- let len = length s in
- len > 2 && (let pr_type = subFromTo(s, 0, 7) in
-             pr_type = "Haskell" || 
-             pr_type = "haskell")
-
-%% ========
-%%  C
-%% ========
-
-op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
- case q of
-
-   %% Base specs:
-   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-   | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
-                             "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
-                             "isucc", "ipred", "positive?", "negative?", "zero", "one"]
-   | "IntegerAux" -> id in? ["-"]  % unary minus
-   | "Nat"        -> id in? ["show", "toString", "natToString", "stringToNat"]
-   | "Char"       -> id in? ["show", "toString", "chr", "ord", "compare",
-                             "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
-                             "toUpperCase", "toLowerCase"]
-   | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode",
-                             "concat", "subFromTo", "substring", "@", "sub"]
-   | "System"     -> id in? ["writeLine", "toScreen"]
-
-   %% Non-constructive:
-   | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
-   | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
-
-   %% Explicitly handcoded:
-   | "Handcoded"  -> true
-
-   | _ -> false
-
-op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
- case q of
-   | "Boolean"    -> id in? ["Bool"]
-   | "Integer"    -> id in? ["Int", "Int0"]
-   | "Nat"        -> id in? ["Nat"]
-   | "Char"       -> id in? ["Char"]
-   | "String"     -> id in? ["String"]
-   | _ -> false
-      
-op SpecTransform.sliceSpecForC (spc             : Spec)
-                               (root_ops        : QualifiedIds)
-                               (root_types      : QualifiedIds)
- : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtinCOp?, builtinCType?)
-
-%% ========
-%%  Java
-%% ========
-
-op builtinJavaOp? (Qualified (q, id) : QualifiedId) : Bool =
- case q of
-
-   %% Base specs:
-   | "Boolean"    -> id in? ["show", "toString", "true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-   | "Integer"    -> id in? ["show", "toString", "intToString", "stringToInt", 
-                             "+", "-", "*", "div", "mod", "<=", "<", "~", ">", ">=", "**", 
-                             "isucc", "ipred", "positive?", "negative?", "zero", "one"]
-   | "IntegerAux" -> id in? ["-"]  % unary minus
-   | "Nat"        -> id in? ["show", "toString", "natToString", "stringToNat"]
-   | "Char"       -> id in? ["show", "toString", "chr", "ord", "compare",
-                             "isUpperCase", "isLowerCase", "isAlpha", "isNum", "isAlphaNum", "isAscii", 
-                             "toUpperCase", "toLowerCase"]
-   | "String"     -> id in? ["compare", "append", "++", "^", "<", "newline", "length", "implode",
-                             "concat", "subFromTo", "substring", "@", "sub"]
-   | "System"     -> id in? ["writeLine", "toScreen"]
-
-   %% Non-constructive
-   | "Function"   -> id in? ["inverse", "surjective?", "injective?", "bijective?"]  % "Bijection" removed but transparent
-   | "List"       -> id in? ["lengthOfListFunction", "definedOnInitialSegmentOfLength", "list", "list_1", "ListFunction"]
-
-   %% Explicitly handcoded
-   | "Handcoded"  -> true
-
-   | _ -> false
-
-op builtinJavaType? (Qualified (q, id) : QualifiedId) : Bool =
-  case q of
-    | "Boolean"    -> id in? ["Bool"]
-    | "Integer"    -> id in? ["Int", "Int0"]
-    | "Nat"        -> id in? ["Nat", "PosNat"]
-    | "Char"       -> id in? ["Char"]
-    | "String"     -> id in? ["String"]
-    | _ -> false
-
-op SpecTransform.sliceSpecForJava (spc             : Spec)
-                                  (root_ops        : QualifiedIds)
-                                  (root_types      : QualifiedIds)
- : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtinJavaOp?, builtinJavaType?)
-
-%% ==========
-%%  Generic
-%% ==========
-
-op builtInOp? (qid : QualifiedId) : Bool =
- builtInLispOp? qid ||   
- builtinCOp?    qid ||
- builtinJavaOp? qid 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end-spec

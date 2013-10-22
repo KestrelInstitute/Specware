@@ -459,7 +459,7 @@ PatternMatch qualifying spec
     | ((CharPat       _)                  ::_, _, _) -> Con
 
     | ((AliasPat      (p1,  p2,        _))::_, _, _) -> Alias      (p1,  p2)
-    | ((QuotientPat   (pat, qid,       _))::_, _, _) -> Quotient   (pat, qid)
+    | ((QuotientPat   (pat, qid, _,    _))::_, _, _) -> Quotient   (pat, qid)
     | ((RestrictedPat (pat, bool_expr, _))::_, _, _) -> Restricted (pat, bool_expr)
     | _ -> (printPMRule pmrule; fail "Unrecognized ruleType!")
 
@@ -873,7 +873,7 @@ PatternMatch qualifying spec
       let v       = ("v", typ)                                   in
       let f       = mkLambda (VarPat (v, noPos), Var (v, noPos)) in
       let t1      = mkApply  (mkChooseFun (q, typ, typ, f), tm)  in
-      let pmrules = map (fn ((QuotientPat (pat, pred, _)) :: pats, cond, body) ->
+      let pmrules = map (fn ((QuotientPat (pat, pred, _, _)) :: pats, cond, body) ->
                            (pat :: pats, cond, body))
                         pmrules 
       in
@@ -965,8 +965,8 @@ PatternMatch qualifying spec
     | CharPat   (c, a) -> CharPat   (c, a)
     | NatPat    (n, a) -> NatPat    (n, a)
       
-    | QuotientPat  (                     p, qid, a) ->
-      QuotientPat  (eliminatePattern ctx p, qid, a)
+    | QuotientPat  (                     p, qid, tys, a) ->
+      QuotientPat  (eliminatePattern ctx p, qid, tys, a)
       
     | RestrictedPat (                     p,                   tm, a) ->
       RestrictedPat (eliminatePattern ctx p, eliminateTerm ctx tm, a)

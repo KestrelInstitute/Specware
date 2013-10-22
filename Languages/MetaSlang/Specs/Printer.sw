@@ -915,7 +915,7 @@ AnnSpecPrinter qualifying spec
                                 ppPattern context ([0]++ path, true, false) pat1), 
 			    (0, string  " as "), 
 			    (0, ppPattern context ([1]++ path, true, false) pat2)]))
-     | QuotientPat (pat, qid, _) -> 
+     | QuotientPat (pat, qid, _, _) -> 
        enclose (enclose?, pp,
 		blockFill (0, 
 			   [(0, string ("quotient[" ^ show qid ^ "] ")),
@@ -1336,7 +1336,7 @@ AnnSpecPrinter qualifying spec
    % op isBuiltIn? : Import -> Bool
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
    % spec_ref = "String"  or spec_ref = "Nat"  or 
-   % spec_ref = "Boolean" or spec_ref = "Char" or
+   % spec_ref = "Bool"    or spec_ref = "Char" or
    % spec_ref = "Integer" or spec_ref = "List" or 
    % spec_ref = "General"
 
@@ -1893,6 +1893,7 @@ AnnSpecPrinter qualifying spec
     | Str(str, _) -> pp.fromString ("\""^str^"\"")
     | Qual(q, id, _) -> pp.ppOpId(Qualified(q, id))
     | SCTerm(sct, _) -> string (showSCTerm sct)
+    | QuotedTerm(tm, _) -> prettysNone[string "`", string(printTerm tm), string "`"]
     | Item(nm, tre1, _) -> prettysNone[pp.ppOp nm, string " ", ppTransformExpr pp tre1]
     | Repeat(tres, _) -> prettysNone[string "repeat",  ppList (ppTransformExpr pp) ("{", ", ", "}") tres]
     | Tuple(tres, _) -> ppList (ppTransformExpr pp) ("(", ", ", ")") tres

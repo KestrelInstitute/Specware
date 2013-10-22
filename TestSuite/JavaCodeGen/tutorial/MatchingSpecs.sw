@@ -12,17 +12,17 @@ Lists = spec
   type LList = | nnil | ccons X * LList
   % we double the initial letters to avoid conflict with built-in lists
 
-  op len : LList -> Integer
+  op len : LList -> Int
   def len(l) = case l of
                   | nnil -> 0
                   | ccons(hd,tl) -> 1 + len(tl)
 
-  op nthelem : {(l,n) : LList * Integer | 0 <= n && n < len(l)} -> X
+  op nthelem : {(l,n) : LList * Int | 0 <= n && n < len(l)} -> X
   def nthelem(l,n) = case l of
                         | ccons(hd,tl) -> if n = 0 then hd
                                           else nthelem(tl,n-1)
 
-  op nthtail : {(l,n) : LList * Integer | 0 <= n && n < len(l)} -> LList
+  op nthtail : {(l,n) : LList * Int | 0 <= n && n < len(l)} -> LList
   def nthtail(l,n) = case l of
                         | ccons(hd,tl) -> if n = 0 then tl
                                           else nthtail(tl,n-1)
@@ -89,7 +89,7 @@ WordMatching = spec
   import Messages
   import SymbolMatching
 
-  op word_matches_at? : Word * Message * Integer -> Bool
+  op word_matches_at? : Word * Message * Int -> Bool
   axiom word_matching is
         fa(wrd,msg,pos)
           word_matches_at?(wrd,msg,pos) <=>
@@ -106,7 +106,7 @@ Matches = spec
 
   import Words
 
-  type Match = {word : Word, position : Integer}
+  type Match = {word : Word, position : Int}
 
 endspec
 

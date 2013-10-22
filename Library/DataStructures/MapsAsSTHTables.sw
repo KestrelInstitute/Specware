@@ -15,6 +15,13 @@ spec
   op MapSTHashtable.STH_foldi : [Dom,Cod,a] (Dom * Cod * a -> a) * a * Map (Dom,Cod) -> a
   op MapSTHashtable.STH_size : [key,a] Map(key,a) -> Nat
 
+  %% Added by Eric (just copied from Maps.sw):
+  op [a,b,acc] foldable? (f : (a * b * acc -> acc)) : Bool =
+    fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
+      ~(key1 = key2) =>   %% Excludes the case of the same key twice with different values (can't happen).
+      f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
+
+
   % This was added by Jim to the version of this file in the CRASH
   % library.  I am copying it here as well. -Eric, 11/15/12
   axiom sth_update is [key,a]
@@ -42,8 +49,14 @@ spec
     set_fold true (fn (val,x) -> val && some?(MapSTHashtable.STH_apply(m,x))) s
   op [a,b] TMApply(m:Map(a,b),x:a | x in? domain(m)): b = MapSTHashtable.STH_eval(m,x)
 
-   op foldi : [Dom,Cod,a] (Dom * Cod * a -> a) -> a -> Map (Dom,Cod) -> a =
+   op foldi : [Dom,Cod,a] ((Dom * Cod * a -> a) | foldable?) -> a -> Map (Dom,Cod) -> a =
      fn f -> fn e -> fn m -> MapSTHashtable.STH_foldi(f,e,m)
+
+  % Just copied from Maps.sw:
+  op [a,b] forall? (p : a * b -> Bool) (m: Map (a,b)) : Bool =
+    foldi (fn (key,val,acc) -> acc && p(key,val))
+          true
+          m
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
@@ -58,8 +71,17 @@ spec
   op [a,b] size(m: Map(a,b)): Nat = MapSTHashtable.STH_size m
 
 
-%% TODO This is unprovable (think about the use of set_insert_new above).
+  %% Just copied from Maps.sw:
+  op [a,b] Map_P (preda: a -> Bool, predb: b -> Bool) (m : Map(a,b)) : Bool =
+    forall? (fn (key, val) -> preda key && predb val)
+            m
+
 proof Isa MapsAsSTHTables__domain_Obligation_subtype
+  sorry
+end-proof
+
+%% TODO This is unprovable (think about the use of set_insert_new above).
+proof Isa MapsAsSTHTables__domain_Obligation_subtype0
   sorry
 end-proof
 
@@ -71,12 +93,29 @@ proof Isa isoMap_Obligation_subtype
   sorry
 end-proof
 
+proof Isa isoMap_Obligation_subtype0
+  sorry
+end-proof
+
 proof Isa MapsAsSTHTables__mapFrom_Obligation_subtype
   sorry
 end-proof
 
 proof Isa MapsAsSTHTables__mapUpdateSet_Obligation_subtype
   sorry
+end-proof
+
+proof Isa MapsAsSTHTables__range_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa MapsAsSTHTables__Map_P_Obligation_subtype
+  apply(auto simp add: MapsAsSTHTables__foldable_p_def)
+end-proof
+
+%% translated from the proof in Maps.sw:
+proof Isa MapsAsSTHTables__forall_p_Obligation_subtype
+  apply(auto simp add: MapsAsSTHTables__foldable_p_def)
 end-proof
 
 
@@ -98,7 +137,7 @@ proof Isa Map__update
   sorry
 end-proof
 
-proof Isa Map__def_of_singletonMap
+proof Isa Map__singletonMap_def
   sorry
 end-proof
 
@@ -119,18 +158,6 @@ proof Isa Map__map_domainToList
 end-proof
 
 proof Isa Map__map_rangeToList
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality_Obligation_subtype0
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality
   sorry
 end-proof
 
@@ -161,3 +188,16 @@ end-proof
 proof Isa Map__size_def
   sorry
 end-proof
+
+proof Isa Map__remove
+  sorry
+end-proof
+
+proof Isa Map__map_foldi_empty
+  sorry
+end-proof
+
+proof Isa Map__map_foldi_update
+  sorry
+end-proof
+

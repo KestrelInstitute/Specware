@@ -75,7 +75,9 @@ spec
        | AliasPat (p1, p2, a) -> foldPattern tsp_folds (foldPattern tsp_folds acc p1) p2
        | EmbedPat (id, Some pat, srt, a) -> foldType tsp_folds (foldPattern tsp_folds acc pat) srt
        | EmbedPat (id, None, srt, a) -> foldType tsp_folds acc srt
-       | QuotientPat (pat, _, a) -> foldPattern tsp_folds acc pat
+       | QuotientPat (pat, _, srts, a) ->
+         let acc = foldl (fn (acc, srt) -> foldType tsp_folds acc srt) acc srts in
+         foldPattern tsp_folds acc pat
        | RestrictedPat (pat, trm, a) -> foldPattern tsp_folds (foldTerm tsp_folds acc trm) pat
        | VarPat ((v, srt), a) -> foldType tsp_folds acc srt
        | WildPat (srt, a) -> foldType tsp_folds acc srt

@@ -496,8 +496,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-type-ref (qualifiable-type-name l r)
-  (if (or (equal qualifiable-type-name '(:|Qualified| "<unqualified>" . "Boolean"))
-	  (equal qualifiable-type-name '(:|Qualified| "Boolean" . "Boolean")))      ; Deprecate "Boolean" as qualifier?
+  (if (or (equal qualifiable-type-name '(:|Qualified| "<unqualified>" . "Bool"))
+          (equal qualifiable-type-name '(:|Qualified| "Bool" . "Bool")))
       (cons :|Boolean| (make-pos l r))
     (let ((type-args nil))
       (cons :|Base|
@@ -934,7 +934,10 @@ If we want the precedence to be optional:
 
 (defun make-aliased-pattern    (pat1 pat2        l r) (cons :|AliasPat|      (vector pat1 pat2                                          (make-pos l r))))
 (defun make-embed-pattern      (id pattern       l r) (cons :|EmbedPat|      (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
-(defun make-quotient-pattern   (type-qid pattern l r) (cons :|QuotientPat|   (vector pattern type-qid                                   (make-pos l r))))
+(defun make-quotient-pattern   (type-qid pattern l r)
+  (cons :|QuotientPat|   (vector pattern type-qid
+                                 '()                     ; Type checker ignores this
+                                  (make-pos l r))))
 (defun make-restricted-pattern (pattern term     l r) (cons :|RestrictedPat| (vector pattern term                                       (make-pos l r))))
 (defun make-variable-pattern   (id               l r) (cons :|VarPat|        (cons   (cons id (freshMetaTypeVar l r))                   (make-pos l r))))
 (defun make-wildcard-pattern   (                 l r) (cons :|WildPat|       (cons   (freshMetaTypeVar l r)                             (make-pos l r))))
@@ -1118,8 +1121,8 @@ If we want the precedence to be optional:
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 
-(defun make-sc-substitute (spec-term morph-term l r)
-  (SpecCalc::mkSubst-3 spec-term morph-term (make-pos l r)))
+(defun make-sc-substitute (spec-term morph-term pragmas l r)
+  (SpecCalc::mkSubst-4 spec-term morph-term pragmas (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-OP-REFINE
@@ -1151,6 +1154,9 @@ If we want the precedence to be optional:
 
 (defun make-transform-qual (q name l r)
   (SpecCalc::mkTransformQual-3 q name (make-pos l r)))
+
+(defun make-transform-quoted-term (tm l r)
+  (SpecCalc::mkTransformQuotedTerm-2 tm (make-pos l r)))
 
 (defun make-transform-item (oper transform l r)
   (SpecCalc::mkTransformItem-3 oper transform (make-pos l r)))

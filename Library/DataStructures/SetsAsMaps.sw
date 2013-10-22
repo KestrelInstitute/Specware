@@ -4,7 +4,7 @@ SetsAsMaps =
 SetsAsMap qualifying
 spec
 
-  import Maps
+  import Maps  % Note that this brings in Sets!
 
   type Set a = Map(a, Bool)  %TODO enforce the constraint that all the Bools are true?
 
@@ -20,6 +20,12 @@ spec
       && foldi (fn (x, _, val) -> val && x in? s2) true s1
 
   op [a] empty_set : Set a = empty_map
+
+  %% Just copied from Sets.sw:
+  op [a] empty? (s : Set a) : Bool = (s = empty_set)
+
+  %% Just copied from Sets.sw:
+  op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
 
   op [a] set_insert (x:a, s: Set a) : Set a = update s x true
 
@@ -39,30 +45,33 @@ spec
           empty_set
           s2
 
+
+%% TODO: I don't even want to have this, but without it the morphism gives an error:
+op [a,b] foldable? (f : b * a -> b) : Bool = Set.foldable? f
+
+
   % set_fold amounts to map_fold on the representing map
   op [a,b] set_fold (c:b)
-                    (f : b * a -> b |
-                         (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
-                         (fa(x,y)   f(f(x,y), y) = f(x,y)) %TODO drop this, if we redo set fold to not require this?
-                         )
+                    (f : {f: (b * a -> b) |
+                    %% FIXME: I want to call foldable? here, but that leads to ambiguous parses in Isabelle:
+                         (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y))
+                         %% && (fa(x,y)   f(f(x,y), y) = f(x,y)) %TODO drop this, if we redo set fold to not require this?
+                         })
                     (s: Set a) : b = 
     foldi (fn (x, _, result) -> f (result, x))
           c 
           s
 
-  %% TTODO This seems wrong.  This starts with the empty set and
-  %% intersects more sets into it.  The result will always be empty!
-  %% Also, it's not clear what this should return if called on the
-  %% empty set (in some sense, the intersection of no sets is the set
-  %% containing everything, but these are finite sets). Probably this
-  %% should require its argument to be a non-empty set of sets.
-  op [a] //\\ (ss:Set (Set a)) : Set a =
-    set_fold empty_set (/\) ss
-
+  %% Just copied over from Sets.sw:
   op [a] \\// (ss:Set (Set a)) : Set a =
     set_fold empty_set (\/) ss
 
+  %% Just copied over from Sets.sw:
+  op [a] //\\ (ss:(Set (Set a) | nonempty?)) : Set a =
+    set_fold (\\// ss) (/\) ss
+
   op [a] set_delete (x:a, s:Set a) : Set a = remove s x
+  op [a] set_delete_new (x:a, s:Set a) : Set a = remove s x
 
   op [a] -- (s1: Set a, s2: Set a) infixl 25 : Set a =
     foldi (fn (x, _, result) -> remove result x)
@@ -92,6 +101,9 @@ spec
 
   op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 
+  %% Copied from Sets.sw;
+  op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
+
 proof Isa SetsAsMap__e_fsl_fsl_bsl_bsl_Obligation_subtype
   sorry
 end-proof
@@ -99,6 +111,46 @@ end-proof
 proof Isa SetsAsMap__e_bsl_bsl_fsl_fsl_Obligation_subtype
   sorry
 end-proof
+
+proof Isa SetsAsMap__subset_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def)
+end-proof
+
+proof Isa SetsAsMap__e_bsl_fsl_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa SetsAsMap__e_fsl_bsl_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa SetsAsMap__set_fold_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def Set__foldable_p_def)
+end-proof
+
+proof Isa SetsAsMap__e_dsh_dsh_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__remove)
+end-proof
+
+proof Isa SetsAsMap__filter_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa SetsAsMap__map_Obligation_subtype
+  apply(auto simp add: Map__foldable_p_def SetsAsMap__set_insert_def)
+  apply(rule Map__map_equality)
+  apply(simp add: Map__update)
+end-proof
+
+
 
 end-spec
 
@@ -177,3 +229,33 @@ end-proof
 proof Isa set_insert_new_def
   sorry
 end-proof
+
+proof Isa Set__set_delete_new_def
+  apply( auto, rule ext, auto simp add: SetsAsMap__set_delete_new_def SetsAsMap__set_delete_def) 
+end-proof
+
+proof Isa Set__size_def_Obligation_subtype
+  apply(simp add: SetsAsMap__foldable_p_def Set__foldable_p_def )
+end-proof
+
+proof Isa Set__size_def
+  sorry
+end-proof
+
+proof Isa Set__set_fold1_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__set_fold2_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__set_fold2_Obligation_subtype0
+  apply(auto simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa Set__foldable_p_def
+  apply(rule ext)
+  apply(simp add: SetsAsMap__foldable_p_def Set__foldable_p_def)
+end-proof
+

@@ -52,17 +52,3 @@ Data = spec
       results
     
 endspec
-
-JavaInfo = spec
-  def package = "Match"
-  def moduleClassName = "MatchMod"
-  def public = ["main"]
-endspec
-
-(* To generate, compile and run Java version
-* gen-java MatchingTest#Data MatchingTest#JavaInfo
-
-In bash shell
-: javac -source 1.4 Match/*.java
-: java Match/Primitive
-*)

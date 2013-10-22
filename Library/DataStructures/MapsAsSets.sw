@@ -7,7 +7,7 @@ spec
   % component but different second components (this is essentially the usual
   % set-theoretic definition)
 
-  % clearly, there exist other ways to refine sets
+  % clearly, there exist other ways to refine maps
 
   % first, we import sets
 
@@ -114,10 +114,27 @@ spec
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
      set_fold m (fn (m, x) -> update m x (f x)) s
 
+  %% Added by Eric (just copied from Maps.sw):
+  op [a,b,acc] foldable? (f : (a * b * acc -> acc)) : Bool =
+    fa(key1:a, val1:b, key2:a, val2:b, accval:acc)
+      ~(key1 = key2) =>   %% Excludes the case of the same key twice with different values (can't happen).
+      f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
+
   op [Dom,Cod,a] foldi (f : (Dom * Cod * a -> a)) (acc:a) (m : Map (Dom,Cod)) : a =
     set_fold acc
              (fn (acc,(x,y)) -> f(x,y,acc))
              m 
+
+  % Just copied from Maps.sw:
+  op [a,b] Map_P (preda: a -> Bool, predb: b -> Bool) (m : Map(a,b)) : Bool =
+    forall? (fn (key, val) -> preda key && predb val)
+            m
+
+  % Just copied from Maps.sw:
+  op [a,b] forall? (p : a * b -> Bool) (m: Map (a,b)) : Bool =
+    foldi (fn (key,val,acc) -> acc && p(key,val))
+          true
+          m
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
@@ -253,18 +270,6 @@ proof Isa Map__map_rangeToList
   sorry
 end-proof
 
-proof Isa Map__totalmap_equality_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality_Obligation_subtype0
-  sorry
-end-proof
-
-proof Isa Map__totalmap_equality
-  sorry
-end-proof
-
 proof Isa isoMap_def_Obligation_the
   sorry
 end-proof
@@ -286,6 +291,23 @@ proof Isa Map__map_apply_def
 end-proof
 
 proof Isa Map__size_def
+  sorry
+end-proof
+
+proof Isa Map__remove
+  sorry
+end-proof
+
+%% may need to first fix set_fold:
+proof Isa Map__map_foldi_empty
+  apply(auto simp add: Map__foldi_def Map__empty_map_def)
+  apply(rule Set__set_fold1)
+  apply(auto simp add:  Map__foldable_p_def)
+  apply(cut_tac c=accval and f = " (\<lambda>(acc0, x, y). f (x, y, acc0))" in Set__set_fold1)
+  sorry
+end-proof
+
+proof Isa Map__map_foldi_update
   sorry
 end-proof
 

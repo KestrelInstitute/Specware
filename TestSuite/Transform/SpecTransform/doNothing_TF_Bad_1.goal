@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/doNothing#TF_Bad_1
+ERROR: Unknown unit A0
+ referenced from $TESTDIR/doNothing.sw
+16.21-16.22

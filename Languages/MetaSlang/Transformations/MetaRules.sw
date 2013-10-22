@@ -244,12 +244,15 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
       def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst)
             : Option (MSTerm * List(MSTerm * MSTerm * MSTerm)) =
         % let _ = writeLine("transEx:\n"^printTerm(mkBind(Exists, vs, mkConj cjs))) in
+
+        %% (ex(x) p && q x) = (p && ex(x) q x)
         let lift_cjs = filter (fn cj -> ~(hasRefTo?(cj, vs))) cjs in
         if lift_cjs ~= [] && vs ~= []
           then let rem_cjs = filter (fn cj -> ~(termIn?(cj, lift_cjs))) cjs in
                let (rec_ex_tm, case_trs) = transEx1(vs, rem_cjs, a, tsb) in
                Some(mkSimpConj(lift_cjs ++ [rec_ex_tm]), case_trs)
         else
+        %% (ex(x) p && q x) = (p && ex(x) q x)
         case findLeftmost (fn cj -> some?(bindEquality(cj, vs, true))) cjs of
           | Some cj ->
             % let _ = writeLine("Chose cj: "^printTerm cj) in
@@ -265,6 +268,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
                       case_trs)
                | None -> None)
          | None ->
+        %% (ex(x,y) Some x = c && q x y) = (case c of Some x -> ex(y) q x y | _ -> false)
         case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
           | Some cj -> 
             (case caseEquality(cj,vs) of
@@ -285,6 +289,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
                       case_trs)
                | None -> None)
          | None ->
+        %% (ex(x) p x && (ex(y) q x y)) = (ex(x,y) p x && q x y)
         case findLeftmost existsTerm? cjs of
           | Some(cj as Bind(Exists, s_vs, _, _)) ->
             let free_vs = foldl (fn (fvs, (t1, t2)) -> removeDuplicateVars(freeVars t1 ++ freeVars t2 ++ fvs)) [] tsb in
@@ -293,6 +298,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
             let cjs = flatten (map (fn cji -> if cj = cji then getConjuncts bod else [cji]) cjs) in
             transEx(vs ++ s_vs, cjs, a, tsb)
           | None -> 
+        %% (ex(x) p x && (if q then r x else s x)) = (if q then ex(x) p x && r x else ex(x) p x && s x)
         case findLeftmost (fn cj ->
                            case cj of
                              | IfThenElse(p, _, _, _) -> ~(hasRefTo?(p, vs))
@@ -314,9 +320,10 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
           | None ->
         if length vs = 1 then None
         else
+        %% (ex(x,y) p x && q x y) = (ex(x) p x && ex(y) q x y)
         case findLeftmost (fn cj -> length(filter (fn v -> inVars?(v, vs)) (freeVars cj)) = 1) cjs of
           | Some cj ->
-            let [b_v] =  filter (fn v -> inVars?(v, vs)) (freeVars cj) in
+            let [b_v] = filter (fn v -> inVars?(v, vs)) (freeVars cj) in
             let new_vs = deleteVar(b_v, vs) in
             let (tr_tm, case_trs) = transEx1(new_vs, delete cj cjs, a, tsb) in
             Some(mkBind(Exists, [b_v], Utilities.mkAnd(cj, tr_tm)), case_trs)
@@ -422,8 +429,8 @@ op simpIf1 (spc: Spec) (tm: MSTerm): MSTerm =
     | None -> tm
     | Some simp_tm -> simp_tm
 
-op MSTermTransform.testTr (spc: Spec) (tm: MSTerm) (rls: RuleSpecs): Option MSTerm =
-  (writeLine ("applying "^showRls rls^" to\n"^printTerm tm);
+op MSTermTransform.testTr (spc: Spec) (tm1: MSTerm) (tm2: MSTerm) (rls: RuleSpecs): Option MSTerm =
+  (writeLine ("applying "^showRls rls^" to\n"^printTerm tm1^"\nwith argument\n"^printTerm tm2);
    None)
 
 end-spec

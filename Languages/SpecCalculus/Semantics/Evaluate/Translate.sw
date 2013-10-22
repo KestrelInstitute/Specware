@@ -635,7 +635,7 @@ SpecCalc qualifying spec
 	                          [] 
 				  info.names;
 	       new_names <- return (reverse new_names);
-	       if unqualified_Boolean in? new_names || Boolean_Boolean in? new_names then
+	       if unqualified_Bool in? new_names || Bool_Bool in? new_names then
 		 return types
 	       else
 		 let new_info = info << {names = new_names} in
@@ -679,10 +679,10 @@ SpecCalc qualifying spec
      new_types    <- translateTypeInfos s.types;
      new_ops      <- translateOpInfos   s.ops;
      new_elements <- return (translateSpecElements translators opt_renaming s.elements currentUID?);
-     new_spec     <- return (markQualifiedStatus{types     = new_types,
-                                                 ops       = new_ops,
-                                                 elements  = new_elements,
-                                                 qualifier = None});	
+     tmp_spec     <- return (emptySpec << {types    = new_types,
+                                           ops      = new_ops,
+                                           elements = new_elements});
+     new_spec     <- return (markQualifiedStatus tmp_spec);
 
      %% Next we worry about traditional captures in which a (global) op Y,
      %% used under a binding of var X, is renamed to X.   Internally, this 

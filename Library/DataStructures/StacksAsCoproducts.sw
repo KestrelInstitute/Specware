@@ -23,12 +23,12 @@ op [a] push (elt:a, stk:Stack a) : Stack a = Push(elt, stk)
 
 %% No case needed for Empty_stack because the type forbids it:
 
-op [a] pop (stk:Stack a | stk ~= empty_stack): Stack a =
+op [a] pop (stk:Stack a | ~(stk = empty_stack)): Stack a =
   case stk of | Push (_,stk) -> stk
 
 %% No case needed for Empty_stack because the type forbids it:
 
-op [a] top (stk:Stack a | stk ~= empty_stack): a =
+op [a] top (stk:Stack a | ~(stk = empty_stack)): a =
   case stk of | Push (elt,_) -> elt
 
 %% Unlike in Stacks, this one has a definition:

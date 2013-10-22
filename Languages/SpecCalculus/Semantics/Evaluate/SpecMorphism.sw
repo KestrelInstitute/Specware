@@ -108,13 +108,13 @@ coherence conditions of the morphism elements.
 	    }
           | _ -> 
 	    case (qid, definedType? dom_dfn) of
-	      %% qualified names such as   Qualified ("Boolean", "Boolean")  % TODO: Deprecate "Boolean" as qualifier?
+	      %% qualified names such as   Qualified ("Bool", "Bool") 
 	      %% may appear in codomain of mapping, but actually refer to built-in type
-	      | (Qualified ("<unqualified>", "Boolean"), false) -> return Boolean_Boolean  % TODO: Deprecate "Boolean" as qualifier?
-	      | (Qualified ("Boolean",       "Boolean"), false) -> return qid              % TODO: Deprecate "Boolean" as qualifier?
-	      | (Qualified ("<unqualified>", "Boolean"), _) -> 
-	        raise (MorphError (position, "Cannot map defined type " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean"))
-	      | (Qualified (q,               "Boolean"), _) -> 
+	      | (Qualified ("<unqualified>", "Bool"), false) -> return Bool_Bool
+	      | (Qualified ("Bool",          "Bool"), false) -> return qid      
+	      | (Qualified ("<unqualified>", "Bool"), _) -> 
+	        raise (MorphError (position, "Cannot map defined type " ^ (explicitPrintQualifiedId dom_qid) ^ " to Bool"))
+	      | (Qualified (q,               "Bool"), _) -> 
 	        raise (MorphError (position, "Cannot map defined type " ^ (explicitPrintQualifiedId dom_qid) ^ " to " ^ q ^ ".Bool"))
 	      | _ ->
 	        raise (MorphError (position, "Unrecognized target type " ^ (explicitPrintQualifiedId qid)))
@@ -488,7 +488,7 @@ Should we check to see if qid is in cod_map??
 	  case srt of
 	    | Base (dom_qid, srts, a) -> 
 	      (case findName typeMap dom_qid  of
-		 | Qualified("Boolean", "Boolean") -> Boolean a
+		 | Qualified("Bool", "Bool") -> Boolean a
 		 | cod_qid -> Base (cod_qid, srts, a))
 	    | _ -> srt
 	def translateTerm (trm) =
@@ -497,7 +497,7 @@ Should we check to see if qid is in cod_map??
 	      let cod_qid as Qualified (q, id) = findName opMap dom_qid in
 	      let fun =
 	          (case q of
-		     | "Boolean" ->
+		     | "Bool" ->
 	               (case id of 
 			  | "~"   -> Not
 			  | "&&"  -> 

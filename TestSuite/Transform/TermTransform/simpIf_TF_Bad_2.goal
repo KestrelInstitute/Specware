@@ -1,0 +1,2 @@
+;;; Elaborating transform at $TESTDIR/simpIf#TF_Bad_2
+In transform, At referenced unknown op: f1

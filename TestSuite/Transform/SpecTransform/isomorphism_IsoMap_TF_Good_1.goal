@@ -1,0 +1,39 @@
+;;; Elaborating transform at $TESTDIR/isomorphism_IsoMap#TF_Good_1
+;;; Elaborating spec at $TESTDIR/isomorphism_IsoMap#A
+;;; Elaborating spec at $SPECWARE/Library/DataStructures/Extensions
+;;; Elaborating spec at $SPECWARE/Library/DataStructures/Maps#Maps
+;;; Elaborating spec at $SPECWARE/Library/DataStructures/Sets
+iso type: Option.Option(Port) -> Nat_+
+base_src_QIds: ((:|Qualified| "<unqualified>" . "iso-dom-ty0"))
+Domain QId's:
+iso-dom-ty0
+R
+adding definitions
+make derived ops
+make derived op definitions
+mdod: makeR' not opaque
+1 non opaque ops to transform.
+rewriting ... 
+{simplify (unfold Function.o, unfold Function.id, rewrite Option.mapOption, 
+           simplifyUnfoldCase , lr generated.inverse_iso_is_osi, 
+           lr generated.inverse_osi_is_iso, lr generated.iso__osi, lr generated.osi__iso, 
+           lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+           lr generated.iso__osi, lr generated.osi__iso, lr *.isoMap_over_update, 
+           lr *.isoMap_over_empty_map, rewrite Map.isoMap, rewrite isoMap, 
+           rewrite Option.isoOption, rewrite List.isoList); 
+ simplify (unfold Function.o, unfold Function.id, rewrite Option.mapOption, 
+           simplifyUnfoldCase , lr generated.inverse_iso_is_osi, 
+           lr generated.inverse_osi_is_iso, lr generated.iso__osi, lr generated.osi__iso, 
+           lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+           lr generated.iso__osi, lr generated.osi__iso, rewrite Map.isoMap, 
+           rewrite isoMap, rewrite Option.isoOption, rewrite List.isoList, unfold isoR, 
+           unfold osi1, unfold osiR, lr *.isoMap_over_update, lr *.isoMap_over_empty_map, 
+           rewrite makeR); 
+ simplify (unfold Function.o, unfold Function.id, rewrite Option.mapOption, 
+           simplifyUnfoldCase , lr generated.inverse_iso_is_osi, 
+           lr generated.inverse_osi_is_iso, lr generated.iso__osi, lr generated.osi__iso, 
+           lr generated.inverse_iso_is_osi, lr generated.inverse_osi_is_iso, 
+           lr generated.iso__osi, lr generated.osi__iso, unfold makeR, unfold osi1, 
+           unfold osiR, unfold iso1, unfold isoR, lr *.isoMap_over_update, 
+           lr *.isoMap_over_empty_map); 
+ SimpStandard}

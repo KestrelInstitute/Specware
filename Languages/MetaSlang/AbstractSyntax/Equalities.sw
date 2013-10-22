@@ -165,7 +165,6 @@ MetaSlang qualifying spec
                | (Subtype   (x1, t1,  _),
                   Subtype   (x2, t2,  _)) -> equalType? (x1, x2) && equalTerm? (t1, t2)
 
-               % These cases are useful until we remove "Boolean" as an alternative for "Bool"
                | (Boolean _, Base(Qualified("Bool", "Bool"), [], _)) -> true
                | (Base(Qualified("Bool", "Bool"), [], _), Boolean _) -> true
 
@@ -275,8 +274,8 @@ MetaSlang qualifying spec
       | (CharPat      (x1,          _),
          CharPat      (x2,          _)) -> x1 = x2
 
-      | (QuotientPat  (x1, qid1,    _),
-         QuotientPat  (x2, qid2,    _)) -> equalPattern? (x1, x2) && qid1 = qid2
+      | (QuotientPat  (x1, qid1, _, _),
+         QuotientPat  (x2, qid2, _, _)) -> equalPattern? (x1, x2) && qid1 = qid2
 
       | (RestrictedPat(x1, t1,      _),
          RestrictedPat(x2, t2,      _)) -> equalPattern? (x1, x2) && equalTerm? (t1, t2)
@@ -519,8 +518,8 @@ MetaSlang qualifying spec
      | (CharPat      (x1,          _),
         CharPat      (x2,          _)) -> x1 = x2
 
-     | (QuotientPat  (x1, qid1,    _),
-        QuotientPat  (x2, qid2,    _)) -> equalPatternStruct? (x1, x2) && qid1 = qid2
+     | (QuotientPat  (x1, qid1, _, _),
+        QuotientPat  (x2, qid2, _, _)) -> equalPatternStruct? (x1, x2) && qid1 = qid2
 
      | (RestrictedPat(x1, t1,      _),
         RestrictedPat(x2, t2,      _)) -> equalPatternStruct? (x1, x2) && equalTermStruct? (t1, t2)

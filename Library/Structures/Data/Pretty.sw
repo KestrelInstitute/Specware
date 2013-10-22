@@ -44,8 +44,8 @@ WadlerLindig qualifying spec
   op Integer.pp : Int -> Doc
   def Integer.pp n = pp (Integer.show n)
 
-  op Boolean.pp : Bool -> Doc
-  def Boolean.pp n = pp (Bool.show n)
+  op Bool.pp : Bool -> Doc
+  def Bool.pp n = pp (Bool.show n)
 
   op Char.pp : Char -> Doc
   def Char.pp n = pp (Char.show n)

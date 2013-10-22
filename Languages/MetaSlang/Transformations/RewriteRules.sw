@@ -276,7 +276,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	  let num = ! context.counter in
           let w = HigherOrderMatching.freshVar(context,srt)     in
           Some(w,Cons((num,srt),vars),S)
-        | QuotientPat(pat,cond,_)  -> None %% Not implemented
+        | QuotientPat(pat,cond,_,_)  -> None %% Not implemented
         | RestrictedPat(pat,cond,_)  -> patternToTerm(context,pat,vars,S) %% Not implemented
 	| AliasPat(VarPat(v, _),p,_) -> 
 	  (case patternToTerm(context,p,vars,S) 

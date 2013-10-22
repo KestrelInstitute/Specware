@@ -137,7 +137,7 @@ spec
 
   axiom distribute_coll_diff_over_right_insert2 is [a]
       fa(c:Collection a,d:Collection a,y:a)
-      d ~= empty_coll =>                                    % beware the circular rewrite!
+      ~(d = empty_coll) =>                                    % beware the circular rewrite!
         (c -- coll_insert(y,d) 
            = (c -- d) -- coll_insert(y,empty_coll)
         )

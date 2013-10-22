@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/showElements#TF_Bad_5
+ERROR: in transform: Too many arguments to transform
+ found in $TESTDIR/showElements.sw
+33.40-33.41

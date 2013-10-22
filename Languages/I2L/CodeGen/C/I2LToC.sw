@@ -4,6 +4,7 @@
 
 I2LToC qualifying spec 
 
+import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
 import /Languages/I2L/I2L
 import /Languages/I2L/CodeGen/C/CGenOptions
@@ -14,68 +15,72 @@ import /Languages/C/CUtils
 
 import /Library/Legacy/DataStructures/ListPair
 
+type CurrentContext = | TypeDef String 
+                      | OpDecl  String 
+                      | FunDecl String 
+                      | FunDefn String 
+                      | VarDecl String 
+                      | MapDecl String 
+                      | Unknown
+
+op printCurrentContext (cc : CurrentContext) : String =
+ case cc of
+   | TypeDef s -> "Type Definition " ^ s 
+   | OpDecl  s -> "Op Declaration  " ^ s 
+   | FunDecl s -> "Function Declaration " ^ s 
+   | FunDefn s -> "Function Definition  " ^ s 
+   | VarDecl s -> "Variable Declaration " ^ s 
+   | MapDecl s -> "Map Declaration " ^ s 
+   | _ -> "<unknown>"
+
+op setCurrentContext (ctxt : I2C_Context, new : CurrentContext) : I2C_Context =
+ let old = ctxt.currentContext in
+ % let _ = writeLine ("Changing from " ^ printCurrentContext old ^ " to " ^ printCurrentContext new) in
+ ctxt << {currentContext = new}
+ 
 type I2C_Context = {
+                    slice            : Slice,
+                    voidToUIntType   : C_Type,    % varies with different versions of C
                     xcspc            : C_Spec,    % for incremental code generation, xcspc holds existing cspec being extended
-                    currentFunName   : Option String,
-                    currentFunParams : C_VarDecls,
-                    lms              : LanguageMorphisms,
-                    translations     : Translations
+                    currentContext   : CurrentContext,
+                    currentFunParams : C_VarDecls
                     }
-
-op default_I2C_Context : I2C_Context =
- {
-  xcspc            = emptyCSpec "",
-  currentFunName   = None,
-  currentFunParams = [],
-  lms              = [],
-  translations     = []
-  }
-
-op setCurrentFunName (ctxt : I2C_Context, id : String) : I2C_Context =
- ctxt << {currentFunName = Some id}
 
 op setCurrentFunParams (ctxt : I2C_Context, params : C_VarDecls) : I2C_Context =
  ctxt << {currentFunParams = params}                        
 
-op generateC4ImpUnit (impunit      : I_ImpUnit, 
-                      xcspc        : C_Spec, 
-                      lms          : LanguageMorphisms,
-                      translations : Translations)
- : C_Spec =
- generateC4ImpUnitHack (impunit, xcspc, lms, translations)
-
-op generateC4ImpUnitHack (impunit      : I_ImpUnit, 
-                          xcspc        : C_Spec, 
-                          lms          : LanguageMorphisms,
-                          translations : Translations)
- : C_Spec =
+op generateC4ImpUnit (impunit : I_ImpUnit, slice : Slice) : C_Spec =
  %let _ = writeLine(";;   phase 2: generating C...") in
- let includes      = extractImports   lms          in
- let include_strs  = map printImport  includes     in
- let verbatims     = extractVerbatims lms          in
- let defines       = foldl (fn (defines, translation) ->
-                              case translation of
-                                | Type trans -> 
-                                  (case trans.target of 
-                                     | Name _ -> defines
-                                     | term -> 
-                                       defines ++ [(printName trans.source,
-                                                    printTerm term)])
-                                | Op   trans -> 
-                                  (case trans.target of 
-                                     | Name _ -> defines
-                                     | term -> 
-                                       defines ++ [(printName trans.source,
-                                                    printTerm term)])
-                                | _ -> defines)
-                            []
-                            translations
+ let xcspc    = emptyCSpec "" in
+ let lm_data  = slice.lm_data in
+ let includes      = extractImports   lm_data.lms in
+ let include_strs  = map printImport  includes    in
+ let verbatims     = extractVerbatims lm_data.lms in
+ let type_defines  = foldl (fn (defines, trans) ->
+                              case trans.target of 
+                                | Name _ -> defines
+                                | term -> 
+                                  defines ++ [(printName trans.source,
+                                               printTerm term)])
+                           []
+                           lm_data.type_translations
  in
- let ctxt = {xcspc            = xcspc,
-             currentFunName   = None,
-             currentFunParams = [],
-             lms              = lms,
-             translations     = translations}
+ let op_defines    = foldl (fn (defines, trans) ->
+                              case trans.target of 
+                                | Name _ -> defines
+                                | term -> 
+                                  defines ++ [(printName trans.source,
+                                               printTerm term)])
+                           []
+                           lm_data.op_translations
+ in
+ let defines = type_defines ++ op_defines in
+
+ let ctxt = {slice            = slice,
+             xcspc            = xcspc,
+             voidToUIntType   = C_Int32,  % TODO: see above
+             currentContext   = Unknown,
+             currentFunParams = []}
  in
 
  let cspc = emptyCSpec impunit.name in
@@ -134,6 +139,7 @@ op c4TypeDefinition (ctxt         : I2C_Context,
                      (tname, typ) : I_TypeDefinition) 
  : C_Spec =
  let tname = qname2id tname in
+ let ctxt  = setCurrentContext (ctxt, TypeDef tname) in
  if tname in? ["Option_Option", "List_List"] then
    cspc
  else
@@ -153,8 +159,9 @@ op c4OpDecl_internal (ctxt                         : I2C_Context,
                       decl as (opname,typ,optexpr) : I_Declaration, 
                       optinitstr                   : Option String) 
  : C_Spec =
- let vname        = qname2id opname       in
- let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
+ let vname        = qname2id opname                        in
+ let ctxt         = setCurrentContext (ctxt, OpDecl vname) in
+ let (cspc,ctype) = c4Type(ctxt,cspc,typ)                  in
  case optexpr of
    | Some expr -> 
      let emptyblock         = ([],[]) in
@@ -168,12 +175,12 @@ op c4OpDecl_internal (ctxt                         : I2C_Context,
        %	 ^vname^"\".")
    | _ -> 
      case optinitstr of
-       | None         -> addVar     (cspc, voidToUInt (vname, ctype))
+       | None         -> addVar     (cspc, voidToUInt (ctxt, (vname, ctype)))
        | Some initstr -> addVarDefn (cspc, (vname, ctype, C_Var (initstr, C_Void))) % ok,ok, ... 
          
-op voidToUInt ((vname, ctype) : C_VarDecl) : C_VarDecl =
+op voidToUInt (ctxt: I2C_Context, (vname, ctype) : C_VarDecl) : C_VarDecl =
  %% TODO: precise type (C_UInt16, C_UInt32, C_UInt64) depends on target machine
- (vname, if ctype = C_Void then C_UInt32 else ctype)
+ (vname, if ctype = C_Void then ctxt.voidToUIntType else ctype)
 
 (*
  * for each non-constant variable definition X an function get_X() and a
@@ -217,10 +224,11 @@ op c4FunDecl_internal (ctxt  : I2C_Context,
                        cspc  : C_Spec, 
                        fdecl : I_FunDeclaration) 
  : C_Spec * String * C_Types * C_Type =
- let fname          = qname2id fdecl.name                    in
- let paramtypes     = map (fn (_, t) -> t) fdecl.params      in
- let (cspc, ctypes) = c4Types (ctxt, cspc, paramtypes)       in
- let (cspc, rtype)  = c4Type  (ctxt, cspc, fdecl.returntype) in
+ let fname          = qname2id fdecl.name                     in
+ let ctxt           = setCurrentContext (ctxt, FunDecl fname) in
+ let paramtypes     = map (fn (_, t) -> t) fdecl.params       in
+ let (cspc, ctypes) = c4Types (ctxt, cspc, paramtypes)        in
+ let (cspc, rtype)  = c4Type  (ctxt, cspc, fdecl.returntype)  in
  (cspc, fname, ctypes, rtype)
 
 op convertExprToStmt (rtype : C_Type) (e : C_Exp) : C_Stmt =
@@ -233,12 +241,12 @@ op c4FunDefn (ctxt  : I2C_Context,
               cspc  : C_Spec, 
               fdefn : I_FunDefinition) 
  : C_Spec =
- let fdecl                        = fdefn.decl                             in
- let (cspc, fname, ctypes, rtype) = c4FunDecl_internal (ctxt, cspc, fdecl) in
- let ctxt                         = setCurrentFunName  (ctxt, fname)       in
- let body                         = fdefn.body                             in
- let parnames                     = map (fn (n, _) -> n) fdecl.params      in
- let vardecls                     = zip (parnames, ctypes)                 in
+ let fdecl                        = fdefn.decl                              in
+ let (cspc, fname, ctypes, rtype) = c4FunDecl_internal (ctxt, cspc, fdecl)  in
+ let ctxt                         = setCurrentContext (ctxt, FunDefn fname) in
+ let body                         = fdefn.body                              in
+ let parnames                     = map (fn (n, _) -> n) fdecl.params       in
+ let vardecls                     = zip (parnames, ctypes)                  in
  case body of
    
    | I_Stads stadsbody -> 
@@ -307,12 +315,13 @@ op c4VarDecl (ctxt  : I2C_Context,
          let fname           = foldr (fn (id, s) -> if s = "" then id else s ^ "_" ^ id) "" ids in
          let (cspc, vardecl) = addMapForMapDecl (ctxt, cspc, fname, types, rtype)               in
          % todo: add a initializer for the field!
-         (addVar (cspc, voidToUInt vardecl), "&" ^ fname, true)
+         (addVar (cspc, voidToUInt (ctxt, vardecl)), "&" ^ fname, true)
          
        | _ -> (cspc, "0", false)
  in
  let (vname, vtype, e)                = vdecl                                          in
  let vid                              = qname2id vname                                 in
+ let ctxt                             = setCurrentContext (ctxt, VarDecl vid)          in
  let (cspc, initstr, initstrIsUseful) = structCheck (cspc, vtype, [vid])               in
  let optinitstr                       = if initstrIsUseful then Some initstr else None in
  c4OpDecl_internal (ctxt, cspc, vdecl, optinitstr)
@@ -324,9 +333,10 @@ op c4MapDecl (ctxt  : I2C_Context,
               mdecl : I_FunDeclaration) 
  : C_Spec =
  let fid             = qname2id mdecl.name                                              in
+ let ctxt            = setCurrentContext (ctxt, MapDecl fid)                            in
  let paramtypes      = map (fn (_, t)->t) mdecl.params                                  in
  let (cspc, vardecl) = addMapForMapDecl (ctxt, cspc, fid, paramtypes, mdecl.returntype) in
- addVar (cspc, voidToUInt vardecl)
+ addVar (cspc, voidToUInt (ctxt, vardecl))
  
 %% addMapForMapDecl is responsible for creating the arrays and access functions for n-ary vars. 
 %% The inputs are the name of the var, the argument types and the return t_ype.
@@ -388,6 +398,15 @@ op coproductSelectorStringLength : C_Exp = C_Const (C_Macro "COPRDCTSELSIZE")
 %%                                                                     %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+op maybe_warn (ctxt : I2C_Context, msg : String) : () =
+ %% we don't need to worry about typing problems that would complicate
+ %% the calculation of a type (e.g. predicates used within a subtype), 
+ %% since we never do that at runtime
+ let cc = ctxt.currentContext in
+ case cc of
+   | TypeDef _ -> ()
+   | _ -> writeLine ("I2LToC Warning: " ^ msg ^ " in " ^ printCurrentContext cc)
+
 op c4Type (ctxt : I2C_Context, 
            cspc : C_Spec, 
            typ  : I_Type) 
@@ -412,13 +431,15 @@ op c4Type (ctxt : I2C_Context,
    | _ ->
      case typ of
        
-       | I_Primitive p -> (cspc, c4PrimitiveType p)
+       | I_Primitive p -> 
+         (cspc, c4PrimitiveType (ctxt, p))
 
        | I_Base tname  -> 
          let x = (qname2id tname) in
          (cspc, C_Base x)
 
-       | I_Struct [] -> (cspc, C_Void)
+       | I_Struct [] -> 
+         (cspc, C_Void)
          
        | I_Struct fields -> 
          let (cspc, sfields)    = structUnionFields (cspc, fields)                           in
@@ -459,37 +480,37 @@ op c4Type (ctxt : I2C_Context,
          
        | I_Void -> (cspc, C_Void)
          
-       | I_BoundedNat n -> 
+       | I_BoundedNat n -> % inclusive bound
          let c_type =
-             if n <= 2**8  then C_UInt8  else
-             if n <= 2**16 then C_UInt16 else
-             if n <= 2**32 then C_UInt32 else
-             if n <= 2**64 then C_UInt64 else
-               let _ = writeLine ("I2LToC Warning: Nat maximum exceeds 2**64: " ^ anyToString n ^ ", using C_UInt64") in
-               C_UInt64
+             if n < 2**8  then C_UInt8  else
+             if n < 2**16 then C_UInt16 else
+             if n < 2**32 then C_UInt32 else
+             if n < 2**64 then C_UInt64 else
+             let _ = maybe_warn (ctxt, "Nat maximum exceeds 2**64 - 1: " ^ anyToString n ^ ", using C_UIntInf") in
+             C_UIntInf
          in
          (cspc, c_type)
          
-       | I_BoundedInt (m, n) -> 
+       | I_BoundedInt (m, n) -> % inclusive bounds
          let c_type =
-             if           -1 <= m && n <= 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
-             if           -1 <= m && n <= 2**16 then C_UInt16 else 
-             if           -1 <= m && n <= 2**32 then C_UInt32 else
-             if           -1 <= m && n <= 2**64 then C_UInt64 else
-             if -(2**7)  - 1 <= m && n <= 2**7  then C_Int8   else
-             if -(2**15) - 1 <= m && n <= 2**15 then C_Int16  else
-             if -(2**31) - 1 <= m && n <= 2**31 then C_Int32  else
-             if -(2**63) - 1 <= m && n <= 2**63 then C_Int64  else
-             let _ = writeLine ("I2LToC Warning: Int range exceeds [-2**63, 2**63): [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_Int32") in
-             C_Int64
+             if        0 <= m && n < 2**8  then C_UInt8  else % (-1, 2**8) = [0, 2**8 - 1]
+             if        0 <= m && n < 2**16 then C_UInt16 else 
+             if        0 <= m && n < 2**32 then C_UInt32 else
+             if        0 <= m && n < 2**64 then C_UInt64 else
+             if -(2** 7) <= m && n < 2**7  then C_Int8   else
+             if -(2**15) <= m && n < 2**15 then C_Int16  else
+             if -(2**31) <= m && n < 2**31 then C_Int32  else
+             if -(2**63) <= m && n < 2**63 then C_Int64  else
+             let _ = maybe_warn (ctxt, "Int range exceeds [-2**63, 2**63 -1]: [" ^ anyToString m ^ ", " ^ anyToString n ^ "], using C_IntInf") in
+             C_IntInf
          in
          (cspc, c_type)
          
-       | I_BoundedList (ltype, n) -> 
+       | I_BoundedList (ltype, list_length) -> 
          let (cspc, ctype)      = c4Type (ctxt, cspc, ltype)                                 in
          let deflen             = length cspc.defines                                        in
          let constName          = genName (cspc, "MAX", deflen)                              in
-         let cspc               = addDefine (cspc, (constName, show n))                      in
+         let cspc               = addDefine (cspc, (constName, show list_length))            in
          let arraytype          = C_ArrayWithSize ([C_Const (C_Macro constName)], ctype)     in
          let structname         = genName (cspc, "BoundList", length (getStructDefns cspc))  in
          let sfields            = [("length", C_Int32), ("data", arraytype)]                 in
@@ -511,11 +532,11 @@ op c4Types (ctxt  : I2C_Context,
        (cspc, []) 
        types
 
-op c4PrimitiveType (prim : I_Primitive) : C_Type =
+op c4PrimitiveType (ctxt : I2C_Context, prim : I_Primitive) : C_Type =
  case prim of
-   | I_Bool   -> C_Int8
-   | I_Nat    -> let _ = writeLine ("I2LToC Warning: unbounded Nat, using C_UInt64") in C_UInt64
-   | I_Int    -> let _ = writeLine ("I2LToC Warning: unbounded Int, using C_Int64")  in C_Int64
+   | I_Bool   -> C_Int32
+   | I_Nat    -> let _ = maybe_warn (ctxt, "unbounded Nat, using C_UIntInf") in C_UIntInf
+   | I_Int    -> let _ = maybe_warn (ctxt, "unbounded Int, using C_IntInf")  in C_IntInf
    | I_Char   -> C_Char
    | I_String -> C_String
    | I_Float  -> C_Float
@@ -526,8 +547,8 @@ op c4TypeSpecial (cspc : C_Spec, typ : I_Type)
  : Option (C_Spec * C_Type) =
  if bitStringSpecial? then
    case typ of
-        | I_Base (_, "BitString") -> Some (cspc, C_UInt32)
-        | _ -> None
+     | I_Base (_, "BitString") -> Some (cspc, C_UInt32)
+     | _ -> None
  else
    None
 
@@ -662,7 +683,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
  in
  case expr of
    | I_Str   s -> (cspc, block, C_Const (C_Str   s))
-   | I_Int   n -> (cspc, block, C_Const (C_Int   (true, n)))
+   | I_Int   n -> (cspc, block, C_Const (C_Int   (true, n))) % TODO: Should we ignore type here?
    | I_Char  c -> (cspc, block, C_Const (C_Char  c))
    | I_Float f -> (cspc, block, C_Const (C_Float f))
    | I_Bool  b -> (cspc, block, if b then ctrue else cfalse)
@@ -810,10 +831,7 @@ op c4Expression2 (ctxt                    : I2C_Context,
      let varPrefix      = getVarPrefix ("_Vd_", xtype)              in
      let xname          = freshVarName (varPrefix, ctxt, block)     in
      let xdecl          = (xname, xtype, None)                      in
-     let funname4errmsg = case ctxt.currentFunName of 
-                            | Some id -> " (\"function '"^id^"'\")" 
-                            | _ -> " (\"unknown function\")"         
-     in
+     let funname4errmsg = printCurrentContext ctxt.currentContext   in
      let errorCaseExpr  = C_Comma (C_Var ("NONEXHAUSTIVEMATCH_ERROR"^funname4errmsg, C_Int32), 
                                    C_Var (xname, xtype)) 
      in
@@ -1186,8 +1204,8 @@ op map_binary_name (s : String) : Option C_BinaryOp =
    | "||"  -> Some C_LogOr        
    | "=="  -> Some C_Eq           
    | "!="  -> Some C_NotEq        
-   | "< "  -> Some C_Lt           
-   | "> "  -> Some C_Gt           
+   | "<"   -> Some C_Lt           
+   | ">"   -> Some C_Gt           
    | "<="  -> Some C_Le           
    | ">="  -> Some C_Ge           
    | _ -> None
@@ -1212,10 +1230,14 @@ op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr
    None
  else 
    case typed_expr.expr of
-     | I_Var     (_, "Zero")                        -> Some (cspc, block, C_Const (C_Int (true, 0)))
-     | I_Var     (_, "One")                         -> Some (cspc, block, C_Const (C_Int (true, 1)))
+     | I_Var (_, "Zero") -> Some (cspc, block, C_Const (C_Int (true, 0)))
+     | I_Var (_, "One")  -> Some (cspc, block, C_Const (C_Int (true, 1)))
 
-     | I_FunCall (("System", "setf"), [], [e1, e2]) -> c42e (fn (c1, c2) -> C_Binary (C_Set, c1, c2)) e1 e2
+     | I_FunCall (("System", "setf"), [], [e1, e2]) -> 
+       c42e (fn (c1, c2) -> 
+               C_Binary (C_Set, c1, c2))
+            e1
+            e2
        
      | I_FunCall ((_, name),  [], [e1]) ->
        (case map_unary_name (name, Prefix) of % todo: allow PostFix
@@ -1242,12 +1264,12 @@ op c4SpecialExpr (ctxt : I2C_Context, cspc : C_Spec, block : C_Block, typed_expr
 op constExpr? (cspc : C_Spec, expr : C_Exp) : Bool =
  case expr of
    | C_Const  _                  -> true
-   | C_Unary  (_, e1)            -> constExpr? (cspc, e1)
-   | C_Binary (_, e1, e2)        -> (constExpr? (cspc, e1)) && (constExpr? (cspc, e2))
    | C_Var    ("TRUE",  C_Int32) -> true
    | C_Var    ("FALSE", C_Int32) -> true
    | C_Field  []                 -> true
-   | C_Field  (e::es)            -> (constExpr? (cspc, e)) && (constExpr? (cspc, C_Field es))
+   | C_Field  (e1 :: es)         -> (constExpr? (cspc, e1)) && (constExpr? (cspc, C_Field es))
+   | C_Unary  (_, e1)            ->  constExpr? (cspc, e1)
+   | C_Binary (_, e1, e2)        -> (constExpr? (cspc, e1)) && (constExpr? (cspc, e2))
      
      % this isn't true in C:
      % | C_Var (vname, vdecl) ->
@@ -1272,11 +1294,7 @@ op c4StadCode (ctxt       : I2C_Context,
                stadcode   : I_StadCode) 
  : C_Spec * C_Block * C_Stmts =
  % decls are empty, so the following 2 lines have no effect:
- let declscspc = generateC4ImpUnit (stadcode.decls, 
-                                    ctxt.xcspc, 
-                                    ctxt.lms, 
-                                    ctxt.translations)
- in
+ let declscspc = generateC4ImpUnit (stadcode.decls, ctxt.slice) in
  let cspc      = mergeCSpecs [cspc, declscspc] in
  let (cspc, block, stepstmts) =
  foldl (fn ((cspc, block, stmts), stp) ->

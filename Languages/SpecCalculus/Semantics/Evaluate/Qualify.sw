@@ -45,6 +45,7 @@ SpecCalc qualifying spec
     %% Moreover, by definition only unqualified names are candidates for 
     %% qualification, so we need only check the ids of the "local" ops
     %% (as opposed to checking against the full name).
+    %let _ = writeLine("qs: "^anyToString(findAQualifierMap (spc.types, UnQualified, "Complex"))) in
 
     let
 
@@ -145,26 +146,26 @@ SpecCalc qualifying spec
           in
             return spc
         | _ ->
-          let {types, ops, elements, qualifier} = 
-              mapSpecUnqualified (qualify_term, qualify_type, qualify_pattern) spc
-          in 
-            {
-             check_for_type_collisions ();
-             check_for_op_collisions   ();
-             newTypes    <- qualify_types types;
-             newOps      <- qualify_ops   ops;
-             newElements <- qualifySpecElements new_q immune_ids elements;
-             new_spec    <- return {types     = newTypes,
-                                    ops       = newOps,
-                                    elements  = newElements,
-                                    qualifier = Some new_q};
-            %% Qualification cannot introduce a var op capture!
-            %% new_spec    <- return (removeVarOpCaptures new_spec);
-            %% new_spec    <- return (compressDefs        new_spec);
-             new_spec    <- complainIfAmbiguous new_spec pos;
-             raise_any_pending_exceptions;
-             return new_spec
-             }
+          let spc = mapSpecUnqualified (qualify_term, qualify_type, qualify_pattern) spc in
+          {
+           check_for_type_collisions ();
+           check_for_op_collisions   ();
+           newTypes    <- qualify_types spc.types;
+           newOps      <- qualify_ops   spc.ops;
+           newElements <- qualifySpecElements new_q immune_ids spc.elements; 
+           new_spec    <- return (spc << {types     = newTypes,
+                                          ops       = newOps,
+                                          elements  = newElements,
+                                          qualifier = Some new_q});
+
+           %% Qualification cannot introduce a var op capture!
+           %% new_spec    <- return (removeVarOpCaptures new_spec);
+           %% new_spec    <- return (compressDefs        new_spec);
+
+           new_spec    <- complainIfAmbiguous new_spec pos;
+           raise_any_pending_exceptions;
+           return new_spec
+           }
       
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -183,8 +184,8 @@ SpecCalc qualifying spec
         if qualifiedSpec? sp then 
 	  return el
 	else
-          {q_sp <- qualifySpec sp new_q immune_ids a;
-           % print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
+          {%print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
+           q_sp <- qualifySpec sp new_q immune_ids a;
            q_elts <- qualifySpecElements new_q immune_ids els;
            return(Import ((Qualify (sp_tm, new_q), noPos),
                           q_sp, q_elts, a))}

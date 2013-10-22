@@ -95,8 +95,8 @@ axioms, etc.
    {(term, impSpec)
       <- if ~(qualifiedSpec? impSpec) && qualifiedSpec?(spc)
            then let Some qual = spc.qualifier in
-                {impSpec <- qualifySpec impSpec qual [] position;
-                 % print("Implicit "^qual^" qualifying "^showSCTerm term^"\n");
+                {% print("Implicit "^qual^" qualifying "^showSCTerm term^"\n");
+                 impSpec <- qualifySpec impSpec qual [] position;
                  return ((Qualify (term, qual), noPos), impSpec)}
          else return (term, impSpec);
     mergeImport term impSpec spc position}
@@ -175,7 +175,7 @@ such time as the current one can made monadic.
                       | None -> return spc
                       | Some refine_steps ->
                         let (_, _, prev_tm) = nthRefinement(trps, refine_num - 1) in
-                        {steps <- mapM makeScript refine_steps;
+                        {steps <- mapM (makeScript spc) refine_steps;
                          % print("aor: "^scriptToString(Steps steps)^scriptToString(Steps steps1)^"\n");
                          (tr_term, _, hist) <- interpretTerm(spc, Steps steps, prev_tm, ty, qid, false, []);
                          new_dfn <- return (maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, tr_term))));

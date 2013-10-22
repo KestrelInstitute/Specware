@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
+;; -*- Mode: LISP; Package: Specware; Base: 10; Syntax: Common-Lisp -*-
 
 (defpackage :SpecCalc (:use :COMMON-LISP-USER))
 (defpackage :SCParser (:use :COMMON-LISP-USER))
@@ -1050,7 +1050,8 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :QUALIFIABLE-OP-NAMES-PARENS ()
   (:anyof 
    ((:tuple (1 :QUALIFIABLE-OP-NAME)) (list 1))
-   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) ")") 2)))
+   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) ")") 2)
+   ((:tuple "[" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) "]") 2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   APPLICATION
@@ -1652,8 +1653,8 @@ If we want the precedence to be optional:
 ;;;  SC-SUBSTITUTE
 ;;; ========================================================================
 (define-sw-parser-rule :SC-SUBSTITUTE ()
-  (:tuple (1 :SC-TERM) "[" (2 :SC-TERM) "]")
-  (make-sc-substitute 1 2 ':left-lcb ':right-lcb))
+  (:tuple (1 :SC-TERM) "[" (2 :SC-TERM) "]" (3 (:repeat* :SM-PRAGMA)))
+  (make-sc-substitute 1 2 3 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-OP-REFINE
@@ -1683,6 +1684,13 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-TERM ()
   (:anyof
+   (1 :NON-APPLY-TRANSFORM-TERM)
+   (1 :TRANSFORM-APPLY)
+   )
+  1)
+
+(define-sw-parser-rule :NON-APPLY-TRANSFORM-TERM ()
+  (:anyof
    (1 :TRANSFORM-NUMBER)
    (1 :TRANSFORM-STRING)
    (1 :TRANSFORM-TRUE)
@@ -1690,7 +1698,7 @@ If we want the precedence to be optional:
    (1 :TRANSFORM-NAME)
    (1 :TRANSFORM-UID)
    (1 :TRANSFORM-QUALIFIED-NAME)
-   (1 :TRANSFORM-APPLY)
+   (1 :TRANSFORM-QUOTED-TERM)
 
    (1 :TRANSFORM-TUPLE)
    (1 :TRANSFORM-LIST)
@@ -1718,6 +1726,9 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TRANSFORM-QUALIFIED-NAME ()
   (:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :TRANSFORM-QUOTED-TERM ()
+  (:tuple "`" (1 :EXPRESSION) "`")         (make-transform-quoted-term 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-APPLY ()
   (:tuple (1 :NAME) (2 :TRANSFORM-TERM))   (make-transform-item      1 2 ':left-lcb ':right-lcb))
@@ -1766,7 +1777,7 @@ If we want the precedence to be optional:
   (make-transform-repeat 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-PROC ()
-  (:tuple (1 :SYMBOL) (2 (:repeat* :TRANSFORM-TERM)))
+  (:tuple (1 :SYMBOL) (2 (:repeat* :NON-APPLY-TRANSFORM-TERM)))
     (make-transform-command (common-lisp::symbol-name (quote 1)) 2 ':left-lcb ':right-lcb))
 
 ;; (define-sw-parser-rule :TRANSFORM-EXPR-ARG ()

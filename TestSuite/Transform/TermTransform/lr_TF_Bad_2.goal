@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/lr#TF_Bad_2
+ERROR: in transform: Id expected.
+ found in $TESTDIR/lr.sw
+25.38-25.46

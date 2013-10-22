@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/move#TF_Bad_3
+ERROR: in transform: Unrecognized move command: b
+ found in $TESTDIR/move.sw
+33.42-33.47

@@ -99,6 +99,11 @@ case tre of
   | Command(command_name, transformexprs, _) -> ppConcat [ppString command_name,
                                                           ppATransformExprs transformexprs]
 
+ op ppPragmas (pragmas: List SM_Pragma): Doc = 
+   ppIndent (ppSep ppNewline 
+             (map (fn ((prefix, body, postfix), _(* position *)) ->
+                     ppString (prefix ^ body ^ postfix))
+                pragmas))
 
 
  %% From Specware, called only for printing import SC terms !!
@@ -175,12 +180,13 @@ case tre of
 	ppConcat [ppString "colim ",
 		  ppSCTerm term]
 
-      | Subst (specTerm,morphTerm) ->
+      | Subst (specTerm,morphTerm,pragmas) ->
 	ppNestG 2 (ppConcat [ppSCTerm specTerm,
-                            ppBreak,
-                            ppString " [",
-                            ppSCTerm morphTerm,
-                            ppString "]"])
+                             ppBreak,
+                             ppString " [",
+                             ppSCTerm morphTerm,
+                             ppString "]",
+                             ppPragmas pragmas])
 
       | SpecMorph (dom, cod, elems, pragmas) ->
 	let 
@@ -202,22 +208,16 @@ case tre of
 		ppConcat [ppQualifier left_qid,
 			  ppString " +-> ",
 			    ppQualifier right_qid]
-	  def ppSpecMorphPragmas pragmas = 
-	    ppIndent (ppSep ppNewline 
-		      (List.map (fn ((prefix, body, postfix), _(* position *)) ->
-				 ppString (prefix ^ body ^ postfix))
-		                pragmas))
-
 	in
          ppNestG 1 (ppConcat [ppString "morphism ",
-                             ppSCTerm dom,
-                             ppString " -> ",
-                             ppSCTerm cod,
-                             ppBreak,
-                             ppNestG 0 (ppConcat[ppString " {",
-                                                ppNestG 0 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppSpecMorphRule elems)),
-                                                ppString "}"]),
-                             ppSpecMorphPragmas pragmas])
+                              ppSCTerm dom,
+                              ppString " -> ",
+                              ppSCTerm cod,
+                              ppBreak,
+                              ppNestG 0 (ppConcat[ppString " {",
+                                                  ppNestG 0 (ppSep (ppConcat[ppString ", ", ppNewline]) (map ppSpecMorphRule elems)),
+                                                  ppString "}"]),
+                              ppPragmas pragmas])
 
       | Hide (nameExprs, term) ->
         let 

@@ -42,7 +42,7 @@ import ShowUtils
 op ppGrConcat (x:List WLPretty) : WLPretty = ppNest 0 (ppConcat x) % ppGroup (ppConcat x)
 op ppGr1Concat (x:List WLPretty) : WLPretty = ppNest 1 (ppConcat x)
 op ppGr2Concat (x:List WLPretty) : WLPretty = ppNest 2 (ppConcat x)
-op ppNum (n:Integer) : WLPretty = ppString(show n)
+op ppNum (n:Int) : WLPretty = ppString(show n)
 op ppSpace : WLPretty = ppString " "
 op ppSpaceBreak : WLPretty = ppConcat[ppSpace, ppBreak]
 
@@ -186,11 +186,18 @@ op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
     | Colimit term ->
       ppConcat [ppString "colim ",
                 ppSCTerm c term]
-    | Subst (specTerm,morphTerm) ->
+    | Subst (specTerm, morphTerm, pragmas) ->
       ppConcat [ppSCTerm c specTerm,
                 ppString " [",
                 ppSCTerm c morphTerm,
-                ppString "]"]
+                ppString "]",
+                ppBreak,
+                ppString " proof [",
+                ppSep (ppAppend (ppString ", ") ppBreak)
+                  (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
+                                                         ppLitString p2,
+                                                         ppLitString p3])
+                     pragmas)]
     | SpecMorph (dom, cod, elems, pragmas) ->
       let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 
@@ -1170,7 +1177,7 @@ op [a] patAnn1 (pat: APattern a) : a =
     | StringPat    (_,     a) -> a
     | CharPat      (_,     a) -> a
       %| RelaxPat     (_,_,   a) -> a
-    | QuotientPat  (_,_,   a) -> a
+    | QuotientPat  (_,_,_, a) -> a
     | RestrictedPat(_,_,   a) -> a
     | TypedPat    (_,_,   a) -> a
 
@@ -1248,12 +1255,16 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
       %		    ppPattern c pat,
       %		    ppString ", ",
       %		    ppTerm c term]
-    | QuotientPat (pat,typename,_) ->
+    | QuotientPat (pat,typename,tys,_) ->
       %% This requires update to interchange grammar
-      ppGrConcat [ppString "quotient[",
+      ppGrConcat [ppString "(QuotientPat ",
+                  ppPattern c pat,
+                  ppString " ",
                   ppQualifiedId typename,
-                  ppString "] ",
-                  ppPattern c pat]
+                  ppString " (",
+                  ppSep (ppString " ") (map (ppType c) tys),
+                  ppString "))"
+                  ]
     | RestrictedPat (pat,term,_) -> 
 %        (case pat of
 %	   | RecordPat (fields,_) ->
@@ -1464,8 +1475,7 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
     | Base (qid,tys,_) ->
       ppGrConcat [ppString "(BaseType ",
                   ppQualifiedId qid,
-                  %% what are these types?  They appear to be type vars for polymorphic types...
-                  %% But why don't we use a Pi type for that?
+                  %% what are these types?  They are the instantiations of the polymorphic type vars of the type whose name is qid.
                   ppString " (",
                   ppSep (ppString " ") (map (ppType c) tys),
                   ppString "))"

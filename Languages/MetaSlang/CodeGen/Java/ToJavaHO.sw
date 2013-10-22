@@ -116,7 +116,7 @@ spec
 	 standaloneM(mkReturnStmt(rexp),(["int","int"],"int"),(["Integer","Integer"],"Integer"),k,l)
      else
      if (id = "&&" || id = "||") &&
-        (spcname = "Boolean")
+        (spcname = "Bool")
        then
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
 	 standaloneM(mkReturnStmt(rexp),(["boolean","boolean"],"boolean"),(["Boolean","Boolean"],"Boolean"),k,l)
@@ -137,7 +137,7 @@ spec
 	 let rexp = mkUnExp("-",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["int"],"int"),(["Integer"],"Integer"),k,l)
      else	 
-     if (id = "~") && (spcname = "Boolean")
+     if (id = "~") && (spcname = "Bool")
        then
 	 let rexp = mkUnExp("~",[mkVarJavaExpr("arg1")]) in
 	 standaloneM(mkReturnStmt(rexp),(["boolean"],"boolean"),(["Boolean"],"Boolean"),k,l)

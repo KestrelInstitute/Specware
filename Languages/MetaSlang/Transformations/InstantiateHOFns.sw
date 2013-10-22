@@ -638,9 +638,11 @@ op dontUnfoldQualifiers: Ids = ["String"]
      let remaining_params     = map (fn p -> instantiateTyVarsInPattern(p, tv_subst))
                                     remaining_params
      in
-     let (remaining_params, remaining_args) = 
-         adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body, spc)
-     in
+     %% sjw: This is unnecessary as makeLetBinds no longer does substitutions
+     %%      which is where capture could occur
+     % let (remaining_params, remaining_args) = 
+     %     adjustBindingsToAvoidCapture (remaining_params, remaining_args, args, def_body, spc)
+     % in
      let new_body = simplifyTerm def_body in
      % let _ = if trace? then writeLine("new_body: "^printTerm new_body) else () in
      let (new_let_binds, new_subst) = makeLetBinds (remaining_params, remaining_args) in
@@ -657,7 +659,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
      %% Alternatively, it might just add the corrseponding let bindings.
 
      let new_tm               = simplifyTerm(mkApply(new_fn, new_args))                                            in
-     % let _ = if trace? then writeLine("new_tm: "^printTerm new_tm) else () in
+     % let _ = writeLine("new_tm: "^printTerm new_tm) in
      let trans_new_tm         = unfoldInTerm (outer_qid, new_tm, unfold_map, simplifyTerm, spc) in
      % let _ = if trace? then writeLine("orig_tm: "^printTerm orig_tm) else () in
 
@@ -866,6 +868,9 @@ op dontUnfoldQualifiers: Ids = ["String"]
      in
      let revised_params = (map (fn v -> VarPat v) temp_vars) ++ remaining_params               in
      let revised_args   = remaining_args                     ++ map (fn v -> Var v) temp_vars in
+     let _ = writeLine("revised_params:\n"^anyToString revised_params^"\n"
+                       ^"revised_params:\n"^anyToString revised_args^"\n")
+     in
      (revised_params, revised_args)
    else	
      (remaining_params, remaining_args)
@@ -887,11 +892,11 @@ op dontUnfoldQualifiers: Ids = ["String"]
  %% ================================================================================
 
  op simplifyUnfoldCase (spc: Spec) (tm: MSTerm): MSTerm =
-   case MetaRule.simplifyUnfoldCase spc tm of
+   case MSTermTransform.simplifyUnfoldCase spc tm of
      | Some s_tm -> s_tm
      | None -> tm
 
- op MetaRule.simplifyUnfoldCase (spc: Spec) (tm: MSTerm): Option MSTerm =
+ op MSTermTransform.simplifyUnfoldCase (spc: Spec) (tm: MSTerm): Option MSTerm =
    case tm of
      | Apply (Lambda (rules, _), arg, _) | length rules > 1 ->
        %% Unfold if function constructs term that matches one case
@@ -920,7 +925,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
           | simp_uf_arg ->
             patternMatchRulesToLet (rules, simp_uf_arg, spc))
      | Let (binds, bod, pos) ->
-       (case MetaRule.simplifyUnfoldCase spc bod of
+       (case MSTermTransform.simplifyUnfoldCase spc bod of
          | None -> None
          | Some s_bod ->
            Some(simplifyOne spc (Let (binds, s_bod, pos))))

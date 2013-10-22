@@ -1,0 +1,70 @@
+;;; Elaborating transform at $TESTDIR/structureEx#TF_Good_2
+;;; Elaborating spec at $TESTDIR/structureEx#A
+-showSpec-----------
+##4 tf
+spec  
+ 
+theorem ex_List_in? is [a] 
+  fa(l: List(a), p: a -> Bool) (ex(x: a) (x in? l && p x)) = exists? p l
+op g1 (n: Int): Option.Option(Option.Option(Int))
+op f1 (n: Int): {r: Int | ex(m: Int) Some(Some m) = g1 n && r = m ** 2}
+op f1a (n: Int)
+    : {r: Int | ex(m: Int, y: Option.Option(Int)) Some y = g1 n && Some m = y 
+                                                                && r = m ** 2}
+op f (n: Int): {r: Int | ex(m: Int) m = n ** 2 && r = m ** 2 
+                                               && r > 2}
+op g2 (n: Int): Option.Option(Int * Int)
+op f2 (n: Int): {r: Int | ex(m: Int, w: Int) Some(m, w) = g2 n && r = m ** w 
+                                                               && r > 2}
+op g3 (n: Int): List(Int)
+op f3 (n: Int): {r: Int | ex(m: Int, z: Int) m in? g3 n && z = m ** 2 
+                                                        && z > 2 
+                                                        && r > 3}
+op g4 (n: Int): Int * Int
+op f4 (n: Int): {r: Int | ex(m: Int, w: Int) (m, w) = g4 n && r = m ** w 
+                                                           && r > 2}
+op g5 (n: Int): List(Int * Int)
+op f5 (n: Int): {r: Int | ex(m: Int, w: Int) (m, w) in? g5 n && r = m ** w 
+                                                             && r > 2}
+op g6 (n: Int): Int * Option.Option(Int)
+op f6 (n: Int): {r: Int | ex(m: Int, w: Int) (m, Some w) = g6 n && r = m ** w 
+                                                                && r > 2}
+op g7 (n: Int): List(Int * Option.Option(Int))
+op f7 (n: Int): {r: Int | ex(m: Int, w: Int) (m, Some w) in? g7 n && r = m ** w 
+                                                                  && r > 2}
+op g8 (n: Int): Bool
+op f8 (n: Int)
+    : {r: Int | 
+       if ex(m: Int, w: Int) (m, Some w) = g6 n && r = m ** w 
+                                                && m > 2 then g8 r else true}
+op g9 (n: Int): List(Option.Option(Option.Option(Int)))
+op f9 (n: Int): {r: Int | ex(m: Int) Some(Some m) in? g9 n && r = m ** 2 
+                                                           && r > 2}
+refine def f (n: Int): {r: Int | r > 2 && r = n ** 2 ** 2}
+refine def f1 (n: Int): 
+    {r: Int | case g1 n
+               of Some (Some m) -> (r = m ** 2)
+                | _ -> false}
+refine def f2 (n: Int): 
+    {r: Int | r > 2 && (case g2 n
+                         of Some (m, w) -> (r = m ** w)
+                          | _ -> false)}
+refine def f3 (n: Int): {r: Int | r > 3 && (ex(m: Int) m in? g3 n 
+                                                    && m ** 2 > 2)}
+refine def f4 (n: Int): {r: Int | r > 2 && (let (m, w) = g4 n in 
+                                            r = m ** w)}
+refine def f5 (n: Int): {r: Int | r > 2 && (ex(m: Int, w: Int) (m, w) in? g5 n 
+                                                            && r = m ** w)}
+refine def f6 (n: Int): 
+    {r: Int | 
+     r > 2 
+      && (let (m, ev__0) = g6 n in 
+          (case ev__0
+            of Some w -> (r = m ** w)
+             | _ -> false))}
+refine def f7 (n: Int): 
+    {r: Int | r > 2 && (ex(m: Int, w: Int) (m, Some w) in? g7 n 
+                                        && r = m ** w)}
+end-spec
+
+--------------------

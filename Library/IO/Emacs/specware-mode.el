@@ -393,7 +393,9 @@ Full documentation will be available after autoloading the function."
 		"theorem"
 		"type")))
 
-(defvar sw:basic-unit-intro-regexp "^\\(\\sw+\\)\\s-*=\\s-*")
+(defvar sw:whitespace "\\(\n\\|\\s-\\)")
+
+(defvar sw:basic-unit-intro-regexp "^\\(\\sw+\\)\\(\n\\|\\s-\\)*=\\s-*")
 
 (defvar sw:definition-intro-sexp
   (concat "\\s-*\\(" sw:definition-introducing-words "\\)\\>"))
@@ -1203,11 +1205,14 @@ If anyone has a good algorithm for this..."
 (defun sw:re-search-backward (regexpr)
   (let ((case-fold-search nil) (found t))
     (if (re-search-backward regexpr nil t)
-        (save-match-data
+        (progn
           (condition-case ()
               (while (sw:inside-comment-or-string-p)
                 (re-search-backward regexpr))
             (error (setq found nil)))
+          (when found
+            (re-search-forward regexpr nil t)
+            (re-search-backward regexpr nil t))
           found)
       nil)))
 
@@ -1590,24 +1595,50 @@ STRING should be given if the last search was by `string-match' on STRING."
   (unless (sw:re-search-backward sw:basic-unit-intro-regexp)
     (goto-char (point-min))
     (sw:re-search-forward "^\\sw")      ; Find any non-comment word
-  (beginning-of-line))
     (beginning-of-line))
+  (beginning-of-line))
 
 (defun sw:end-of-unit ()
   (interactive "")
   (forward-char 1)
-  (unless (sw:re-search-forward sw:basic-unit-intro-regexp)
-    (goto-char (point-max)))
-  (beginning-of-line)
+  (if (and (sw:re-search-forward "\\s-")
+           (sw:re-search-forward sw:basic-unit-intro-regexp))
+      (progn (sw:re-search-backward sw:basic-unit-intro-regexp)
+             (beginning-of-line)
   (forward-char -1)
-  (sw:re-search-backward "\\sw")	; Find any non-comment word
+  (sw:re-search-backward "\\s-")	; Find any non-comment word
   (beginning-of-line)
   (forward-line 1))
+    (goto-char (point-max))))
+
+(defvar sw:element-intro-regexp "^op ")
+
+(defun sw:beginning-of-element ()
+  (interactive "")
+  (unless (sw:re-search-backward sw:element-intro-regexp)
+    (goto-char (point-min))
+    (sw:re-search-forward "^\\sw")      ; Find any non-comment word
+    (beginning-of-line))
+  (beginning-of-line))
+
+(defun sw:end-of-element ()
+  (interactive "")
+  (forward-char 1)
+  (if (and (sw:re-search-forward "\\s-")
+           (sw:re-search-forward sw:element-intro-regexp))
+      (progn (sw:re-search-backward sw:element-intro-regexp)
+             (beginning-of-line)
+  (forward-char -1)
+  (sw:re-search-backward "\\S-")	; Find any non-comment whitespace elt
+  (beginning-of-line)
+  (forward-line 1))
+    (goto-char (point-max))))
+
 
 (defun sw:next-unit ()
   (interactive "")
   (forward-char 1)
-  (unless (sw:re-search-forward sw:basic-unit-intro-regexp)
+  (unless (sw:re-search-forward sw:element-intro-regexp)
     (goto-char (point-max)))
   (beginning-of-line))
 

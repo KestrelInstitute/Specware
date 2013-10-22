@@ -71,10 +71,10 @@ spec
 %  def occs(x, quotient[Bag] l) = count(x,l)
 
   %%TODO Use something from the lists library?  Or add this to it.
-  op [a] count(x:a, l:List a) : Nat =
+  op [a] List.count(x:a, l:List a) : Nat =
     case l of 
     | []         -> 0
-    | Cons(y,l1) -> if y = x then 1 + count(x,l1) else count(x,l1)
+    | Cons(y,l1) -> if y = x then 1 + List.count(x,l1) else List.count(x,l1)
 
   % to check bag containment, we pick up two lists from the two equivalence
   % classes, and we apply contained? to them (defined after subbag):
@@ -118,8 +118,29 @@ spec
 
   % union of bags amounts to concatenation of representing lists
 
+%%FIXME the fixity changes along the morphism below?
   op [a] bag_union((quotient[Bag.Bag] l1) : Bag a, (quotient[Bag.Bag] l2) : Bag a) infixl 300 : Bag a =
       quotient[Bag] (l1 ++ l2)
+
+  op [a] intersect_lists_aux (l1 : List a, l2 : List a, acc : List a) : List a =
+    case l1 of
+    | [] -> acc
+    | hd::tl -> if (hd in? acc) then  %% we've already added to acc all copies of this element
+                  intersect_lists_aux(tl, l2, acc)
+                else
+                  let count = min(count(hd,l1),count(hd,l2)) in
+                  let acc = (repeat hd count) ++ acc in
+                    intersect_lists_aux(tl, l2, acc)
+
+  %% "intersect" the two lists
+  %% Doesn't really preserve the order
+  %% TODO: A nicer way to do this?
+  op [a] intersect_lists (l1 : List a, l2 : List a) : List a =
+    intersect_lists_aux(l1, l2, [])
+
+%%FIXME the fixity changes along the morphism below?
+  op [a] bag_intersection((quotient[Bag.Bag] l1) : Bag a, (quotient[Bag.Bag] l2) : Bag a) infixl 300 : Bag a =
+    quotient[Bag] (intersect_lists(l1,l2))
 
 %  def bag_union(b1,b2) =
 %      quotient[Bag]
@@ -134,6 +155,12 @@ spec
     (foldl f c l)
 
 %   def bag_fold c f b = choose[Bag] (fn l -> list_fold c f l) b
+
+%% Just copied over from Bags.sw:
+op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
+  bag_fold true
+           (fn (acc, elem) -> acc && p(elem))
+           b
 
 
   % clearly, some of the definitions above can be made more efficient,
@@ -189,6 +216,7 @@ end-spec
 
 %Same as BagsAsListsRef, which has been deleted (actually, that one also had "Bag +-> Bag" -- why?).
 M = morphism Bags -> BagsAsLists {\/  +-> bag_union,
+                                  /\  +-> bag_intersection,
                                   --  +-> bag_difference}
 
 % proof obligations:

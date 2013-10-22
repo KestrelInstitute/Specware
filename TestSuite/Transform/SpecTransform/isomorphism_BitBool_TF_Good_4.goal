@@ -1,0 +1,25 @@
+;;; Elaborating transform at $TESTDIR/isomorphism_BitBool#TF_Good_4
+iso type: B.Bit -> Bool
+base_src_QIds: ((:|Qualified| "B" . "Bit"))
+Domain QId's:
+B.Bit
+adding definitions
+make derived ops
+make derived op definitions
+mdod: newB.not not opaque
+1 non opaque ops to transform.
+rewriting ... 
+{simplify (unfold Function.o, unfold Function.id, rewrite Option.mapOption, 
+           simplifyUnfoldCase , lr generated.inverse_iso_is_osi, 
+           lr generated.inverse_osi_is_iso, lr generated.iso__osi, lr generated.osi__iso, 
+           rewrite Option.isoOption, rewrite List.isoList); 
+ simplify (unfold Function.o, unfold Function.id, rewrite Option.mapOption, 
+           simplifyUnfoldCase , lr generated.inverse_iso_is_osi, 
+           lr generated.inverse_osi_is_iso, lr generated.iso__osi, lr generated.osi__iso, 
+           rewrite Option.isoOption, rewrite List.isoList, unfold B.fromBool, 
+           rewrite B.not); 
+ simplify (unfold Function.o, unfold Function.id, rewrite Option.mapOption, 
+           simplifyUnfoldCase , lr generated.inverse_iso_is_osi, 
+           lr generated.inverse_osi_is_iso, lr generated.iso__osi, lr generated.osi__iso, 
+           unfold B.not, unfold B.fromBool, unfold B.toBool); 
+ SimpStandard}

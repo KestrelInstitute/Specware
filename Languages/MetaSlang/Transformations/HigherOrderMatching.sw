@@ -755,6 +755,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 %%
 %% Infer type with type dereferencing
 %%
+ %% Why is there a second version of this here?
  op inferType: Spec * SubstC * MSTerm -> MSType
  def inferType(spc,subst,N) = 
      case N
@@ -782,8 +783,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
         | Seq([],a) -> Product([],a)
         | Seq([M],_) -> inferType(spc,subst,M)
         | Seq(M::Ms,a) -> inferType(spc,subst,Seq(Ms,a))
+        | And     (t1::_,                _) -> inferType (spc, t1)
 	| Any a -> Any a
-        | _ -> System.fail "inferType: non-exhaustive match"
+        | TypedTerm  (_, ty, _) -> ty
+        | mystery -> System.fail ("HO inferType: Non-exhaustive match for " ^ anyToString mystery)
 
 
 (* {\tt matchPairs} should also handle "IfThenElse", "Let", "LetRec", "Seq", 
@@ -940,7 +943,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 % Possibly generalize the matching to include matching on (t1,t2), assuming t1 can
 % contain meta variables.
 % 
-         | (QuotientPat(p1,t1,_),QuotientPat(p2,t2,_)) -> 
+         | (QuotientPat(p1,t1,_,_),QuotientPat(p2,t2,_,_)) -> 
            if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
          | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
            if equalTerm?(t1,t2) then matchPatterns(context,pairs,S1,S2) else None

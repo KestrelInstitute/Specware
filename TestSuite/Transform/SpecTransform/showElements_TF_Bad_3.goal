@@ -1,0 +1,4 @@
+;;; Elaborating transform at $TESTDIR/showElements#TF_Bad_3
+ERROR: in transform: Expected argument: Bool
+ found in $TESTDIR/showElements.sw
+25.45-25.45

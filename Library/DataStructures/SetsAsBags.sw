@@ -22,8 +22,15 @@ spec
   % and for each element of the bag the boolean remains true if the element
   % occurs exactly once in the bag, and becomes false otherwise
 
+
+%% Just copied from Sets.sw:
+op [a,b] foldable? (f : b * a -> b) : Bool =
+  fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y)
+  %% && (fa(x,y)   f(f(x,y), y) = f(x,y))
+
 %TODO: refine this to something that fails faster (as soon as a repetition is found)?
-% TODO: Use a bag fold that folds over (element, number-of-occurrences) pairs?
+% TODO: Use a bag fold that folds over (element, number-of-occurrences) pairs?  Or use a forall?
+
   op [a] no_rep? (b : Bag a) : Bool =
     bag_fold true
              (fn (no_rep_found, x) -> if no_rep_found = false then 
@@ -51,8 +58,11 @@ spec
 
   op [a] empty_set : Set a = empty_bag
 
-%TODO add this back?
-%  op [a] empty? (x : Set a) : Bool = (x = empty_set)
+  %% Just copied from Sets.sw:
+  op [a] empty? (s : Set a) : Bool = (s = empty_set)
+
+  %% Just copied from Sets.sw:
+  op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
 
   % to insert an element into a repetition-free bag representing a set,
   % we have to first check whether the element occurs in the bag: if yes,
@@ -61,15 +71,14 @@ spec
   op [a] set_insert (x : a, s : Set a) : Set a =
     if x in? s then s else bag_insert(x,s)
 
-%% TODO: add precondition that the element is not in the set?
+  op [a] set_insert_new (x:a,s:Set a | ~(x in? s)) : Set a = bag_insert(x,s)
 
-  op [a] set_insert_new (x:a,s:Set a) : Set a = bag_insert(x,s)
 
   % to take the union of two sets, again we need to ensure that the resulting
   % bag is repetition-free; we use a bag_fold, starting with the first bag,
   % to go through the second bag and insert its elements into the first if
   % they are not present in the first already (using set_insert just defined)
-
+%% TODO: Where is the obligation that this gives a bag with no reps?
   op [a] \/ (s1 : Set a, s2 : Set a) infixl 300 : Set a =
     bag_fold s1
              (fn(result,x) -> set_insert(x,result))
@@ -81,6 +90,9 @@ spec
   %% we call one of them.):
   proof Isa -> SetsAsBags_union end-proof
 
+%%FIXME Just use bag intersection?
+%%FIXME The fixity of this is inconsistent with the fixity of Bag./\ (300 vs 25).
+%% TODO: Where is the obligation that this gives a bag with no reps?
   op [a] /\ (s1 : Set a, s2 : Set a) infixl 300 : Set a = 
     bag_fold empty_set
              (fn(result,x) -> if x in? s1 then set_insert(x,result) else result)
@@ -91,30 +103,25 @@ spec
   % finally, set_fold amounts to bag_fold on the representing bag
 
   op [a,b] set_fold (c:b)
-                    (f : b * a -> b |
-                         (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
-                         (fa(x,y)   f(f(x,y), y) = f(x,y)))
+                    (f : ((b * a -> b) | foldable?)
+                         %% (fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) &&
+                         %% (fa(x,y)   f(f(x,y), y) = f(x,y))
+                         )
                     (s: Set a) : b = 
     bag_fold c f s
 
-  %% TTODO This seems wrong.  This starts with the empty set and
-  %% intersects more sets into it.  The result will always be empty!
-  %% Also, it's not clear what this should return if called on the
-  %% empty set (in some sense, the intersection of no sets is the set
-  %% containing everything, but these are finite sets). Probably this
-  %% should require its argument to be a non-empty set of sets.
-  op [a] //\\ (ss:Set (Set a)) : Set a =
-    set_fold empty_set (/\) ss
-
+  %% Just copied over from Sets.sw:
   op [a] \\// (ss:Set (Set a)) : Set a =
     set_fold empty_set (\/) ss
+
+  op [a] //\\ (ss:(Set (Set a) | nonempty?)) : Set a =
+    set_fold (\\// ss) (/\) ss
 
   %% Or could just call bag_delete?
   op[a] set_delete(x : a, s : Set a) : Set a = 
     if x in? s then bag_delete(x,s) else s
 
-%Commenting out, since set_delete_new is commented out in Sets.sw (see the comment there).
-  % op [a] set_delete_new(x:a,s:Set a) : Set a = bag_delete(x,s)
+  op [a] set_delete_new(x:a, s:Set a) : Set a = bag_delete(x,s)
 
   op [a] -- (s1 : Set a, s2 : Set a) infixl 25 : Set a = (s1 Bag.-- s2)
   %% TODO Try to remove this (see comment above for \/):
@@ -131,27 +138,40 @@ spec
 
   op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 
+  %% Copied from Sets.sw;
+  op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
+
 (******************************** The Proofs ********************************)
 
-proof Isa empty_set_Obligation_subtype
-  sorry
+proof Isa SetsAsBags__empty_set_Obligation_subtype
+  apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold1)
 end-proof
 
 proof Isa set_insert_Obligation_subtype
-  sorry
+   apply(simp add: SetsAsBags__no_rep_p_def Bag__bag_fold2 Bag__bag_insertion)
+   apply(auto simp add: SetsAsBags__in_p_def Bag__bagin_p_def)
+   apply(rule Bag__bag_fold_true)
+   apply(auto)
+   apply(cut_tac f=" (\<lambda>(no_rep_found, x). if \<not> no_rep_found then False else Bag__occs (x, s) = 1)" in  Bag__bag_fold_true_back)
+   apply(auto)
 end-proof
 
 proof Isa set_insert_new_Obligation_subtype
-  sorry
+  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption)
 end-proof
 
 proof Isa e_bsl_fsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences)
+  apply(simp add: SetsAsBags__set_insert_def Bag__bag_insertion)
+  apply(auto simp add: Bag__bagin_of_insert SetsAsBags__in_p_def)
 end-proof
 
 proof Isa e_fsl_bsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences, auto simp add: SetsAsBags__set_insert_def Bag__bag_insertion SetsAsBags__in_p_def Bag__bagin_of_insert)
+  apply(cases "z=y", auto)
+  apply(simp add: Bag__bag_insertion_commutativity)
 end-proof
+
 
 proof Isa e_fsl_fsl_bsl_bsl_Obligation_subtype
   sorry
@@ -174,6 +194,18 @@ proof Isa filter_Obligation_subtype
 end-proof
 
 proof Isa map_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa set_delete_new_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa SetsAsBags__forall_p_Obligation_subtype
+  apply(auto simp add: SetsAsBags__foldable_p_def)
+end-proof
+
+proof Isa SetsAsBags__e_fsl_fsl_bsl_bsl_Obligation_subtype0
   sorry
 end-proof
 
@@ -270,4 +302,10 @@ proof Isa Set__set_insert_new_def
   sorry
 end-proof
 
+proof Isa Set__set_delete_new_def
+  sorry
+end-proof
 
+proof Isa Set__size_def
+  sorry
+end-proof

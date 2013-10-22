@@ -1,4 +1,4 @@
 S = spec endspec
 
-M = translate S  by {Integer +-> MyInt}
+M = translate S  by {Int +-> MyInt}
 

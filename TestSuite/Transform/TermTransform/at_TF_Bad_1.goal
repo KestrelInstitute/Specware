@@ -1,0 +1,3 @@
+;;; Elaborating transform at $TESTDIR/at#TF_Bad_1
+;;; Elaborating spec at $TESTDIR/at#A
+In transform, At referenced unknown op: f

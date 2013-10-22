@@ -19,6 +19,8 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
  import /Languages/MetaSlang/Transformations/CurryUtils
  import /Languages/MetaSlang/Transformations/RenameBound
 
+ import /Languages/MetaSlang/CodeGen/Haskell/SliceForHaskell
+
  op useQualifiedNames?: Bool = false
  op simplify?: Bool = false
 
@@ -278,7 +280,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
        : Option((String * String * String * String) * UnitId) =
     % let _ = writeLine("Evaluating sc_tm:\n"^anyToString sc_tm) in
     case sc_tm of
-      | (Subst(spc_tm, morph_tm), pos) ->
+      | (Subst(spc_tm, morph_tm, pragmas), pos) ->
         (case uidStringPairForTerm(currentUID, spc_tm, slicing?, top_uid) of
            | None -> (writeLine("subst sc_tm not evaluated:\n"^anyToString spc_tm);
                       None)
@@ -1698,10 +1700,10 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          %% Not valid Specware but seems to work for our purposes here except we need to check this doesn't end up
          %% on rhs of a definition
        | WildPat(ty, a) -> Some(Var(("_", ty), a))   
-       | QuotientPat(qpat, qid, pos)  ->
+       | QuotientPat(qpat, qid, tys, pos)  ->
          (case patToTerm(qpat, ext, c) of
             | None -> None
-            | Some tm -> Some(mkQuotient(tm, qid, natType)))    % !!! Nattype is wrong but no one cares(?)
+            | Some tm -> Some(mkQuotient(tm, qid, mkBase(qid, tys))))
        | RestrictedPat(pat, cond, _)  ->
          patToTerm(pat, ext, c)		% cond ??
        | AliasPat(p1, p2, _) -> 
@@ -2543,7 +2545,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | BoolPat (b, _) -> ppBool b
      | CharPat (chr, _) -> prString ("'"^(cShow chr)^"'")
      | NatPat (int, _) -> prString (Nat.show int)      
-     | QuotientPat (pat, qid, _) -> 
+     | QuotientPat (pat, qid, _, _) -> 
        prBreak 0 [prConcat [prString "Make", ppTyQualifiedId c qid, prSpace],
                   ppPattern c pat]
      | RestrictedPat (pat, term, _) -> 

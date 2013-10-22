@@ -25,7 +25,7 @@ spec
 
   % I made the axiom def_of_Bagin into a definition. -Eric
 
-  op [a] bagin? (x:a, s : Bag a) infixl 100 : Bool = ~(occs(x,s) = 0)
+  op [a] bagin? (x:a, b : Bag a) infixl 100 : Bool = ~(occs(x,b) = 0)
 
   % a subbag is characterized by same or fewer occurrences of each element
   % I made the axiom subbag into this definition. -Eric
@@ -48,6 +48,9 @@ spec
         fa(b,x: a,y) occs(y,bag_insert(x,b)) = (if y = x
                                              then occs(y,b) + 1
                                              else occs(y,b))
+
+theorem bagin_of_insert is [a]
+    fa(x: a, y :a, b : Bag a) (x bagin? bag_insert(y, b)) = (x = y || x bagin? b)
 
   % bag_insert is "commutative" in the sense that inserting x and then y
   % is the same as inserting y and then x; in fact, the elements of a bag
@@ -76,23 +79,24 @@ spec
       fa(A:Bag a,B:Bag a,C:Bag a)
         ( A \/ (B \/ C) = (A \/ B) \/ C )
 
-%TODO add this?
-%TODO add an axiom about occs and make bag_intersection a theorem?
-%% %%  no image yet i BagsAsLists.sw
-%%   op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
-%%   axiom bag_intersection is [a]
-%%       fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
+%% Bag intersection:
+  op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
 
+%%TODO: Or could define this using a fold:
+  axiom occs_bag_intersection is [a]
+    fa(b1 : Bag a, b2 : Bag a, x:a) occs(x,b1 /\ b2) = min(occs(x,b1), occs(x,b2))
+
+  theorem bagin?_of_bag_intersection is [a]
+    fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
+
+%TODO: Put these back:
 %%   theorem bag_intersection_right_zero is [a]
 %%       fa(c:Bag a)(c /\ empty_bag = empty_bag)
 %%   theorem bag_intersection_left_zero is [a]
 %%       fa(c:Bag a)(empty_bag /\ c = empty_bag)
 
-
-
  %TODO give a meaning to this (maybe in terms of fold?)
   op [a,b] bag_map: (a -> b) -> Bag a -> Bag b
-
 
   % this induction axiom constrains bags to be finite: any finite bag can be
   % obtained by suitable successive applications of bag_insert to empty_bag
@@ -116,10 +120,32 @@ spec
                          fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)} ->
                         Bag a ->
                         b
-  axiom bag_fold1 is
-        fa(c,f) bag_fold c f empty_bag = c
-  axiom bag_fold2 is
-        fa(c,f,x,b) bag_fold c f (bag_insert(x,b)) = f (bag_fold c f b, x)
+
+  axiom bag_fold1 is [a,b]
+    fa(c:b, f : {f : b * a -> b | fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)})
+      bag_fold c f empty_bag = c
+
+  axiom bag_fold2 is [a,b]
+    fa(c:b, f : {f : b * a -> b | fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)}, x : a , b : Bag a)
+      bag_fold c f (bag_insert(x,b)) = f (bag_fold c f b, x)
+
+% FIXME combine these two into an equality rule?:
+
+%% TODO: Or specialize fold to forall?
+theorem bag_fold_true is [a]
+  fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
+    (fa(elem : a) (elem bagin? bag) => f(true, elem)) =>
+       bag_fold true (f) bag
+
+theorem bag_fold_true_back is [a]
+  fa(bag : Bag a, f : {f : Bool * a -> Bool | (fa(x:Bool,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))})
+    bag_fold true (f) bag && (fa(elem:a) f(false, elem) = false) => (fa(elem : a) (elem bagin? bag) => f(true, elem))
+
+%% Checks that predicate p holds on all elements in the bag.
+op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
+  bag_fold true
+           (fn (acc, elem) -> acc && p(elem))
+           b
 
 %TODO: Won't this definition always return the empty bag?
 %  op [a] //\\ (bs:Bag (Bag a)) : Bag a =
@@ -206,7 +232,7 @@ spec
       fa(c:Bag a)(empty_bag \/ c = c)
 
 
-%TTODO does not seem true.  Consider A={x}, B={x}, C={x}.  Note sure how to fix it.  We could prove the special case where nothing in C is in A (or nothing in C is in B).
+%TODO does not seem true.  Consider A={x}, B={x}, C={x}.  Note sure how to fix it.  We could prove the special case where nothing in C is in A (or nothing in C is in B).
 %TODO  Minor quibble: I am not sure about the name of this one.  It seems that this is really distributing the difference over the join, not vice versa.
   % theorem distribute_bag_join_over_diff is [a]
   %     fa(A:Bag a,B:Bag a,C:Bag a)
@@ -250,7 +276,7 @@ spec
 
 %%   theorem distribute_bag_diff_over_right_insert2 is [a]
 %%       fa(c:Bag a,d:Bag a,y:a)
-%%       d ~= empty_bag =>                                    % beware the circular rewrite!
+%%       ~(d = empty_bag) =>                                    % beware the circular rewrite!
 %%         (c -- bag_insert(y,d) 
 %%            = (c -- d) -- bag_insert(y,empty_bag)
 %%         )
@@ -298,7 +324,8 @@ proof isa Bag__bag_insertion_commutativity
 end-proof
 
 proof isa Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype
-  sorry
+  apply(rule Bag__occurrences)
+  apply(simp add: Bag__occs_bag_union)
 end-proof
 
 proof Isa Bag__in_bag_union
@@ -332,7 +359,7 @@ end-proof
 
 proof Isa Bag__distribute_bag_diff_over_right_insert
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Integer__natMinus_def)
+  apply(simp add: Bag__bag_insertion Bag__bag_deletion Bag__bag_difference Integer__natMinus_def)
 end-proof
 
 proof Isa Bag__bag_union_right_unit
@@ -369,7 +396,37 @@ end-proof
 
 proof Isa Bag__distribute_bag_diff_over_left_delete
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__bag_difference Bag__bag_deletion Integer__natMinus_def)
+  apply(simp add: Bag__bag_difference Bag__bag_deletion Integer__natMinus_def)
+end-proof
+
+
+proof Isa Bag__bag_fold_true
+  apply(rule_tac P="\<forall>elem::'a. elem bagin? bag \<longrightarrow> f(True, elem)" in mp)
+  defer
+  apply(simp)
+  apply(rule Bag__induction)
+  apply(auto simp add: Bag__bag_fold1 Bag__bag_fold2)
+  apply (metis Bag__bagin_of_insert)
+  apply (metis (full_types) Bag__bag_insertion Bag__bagin_p_def comm_semiring_1_class.normalizing_semiring_rules(24) gr_implies_not0 less_add_one)
+end-proof
+
+proof Isa Bag__bag_fold_true_back
+  apply(rule_tac P=" Bag__bag_fold True f bag \<and> elem bagin? bag" in mp)
+  defer
+  apply(simp)
+  apply(rule Bag__induction)
+  apply(auto simp add: Bag__bag_fold1 Bag__bag_fold2)
+  apply (metis Bag__bagin_p_def Bag__empty_bag)
+  apply(metis (full_types))
+ apply (metis (full_types) Bag__bag_insertion Bag__bagin_p_def) 
+end-proof
+
+proof Isa Bag__bagin_of_insert
+  apply(simp add: Bag__bagin_p_def Bag__bag_insertion)
+end-proof
+
+proof Isa Bag__bagin_p_of_bag_intersection
+  apply(auto simp add: Bag__occs_bag_intersection Bag__bagin_p_def)
 end-proof
 
 

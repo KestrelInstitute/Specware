@@ -373,8 +373,6 @@ proof Isa update_preserves_finite1 [simp]
          auto simp add: Diff_Int_distrib)
 end-proof
 
-proof Isa update_preserves_finite1 [simp] end-proof
-
 proof Isa fromAssocList_Obligation_subtype 
   by (simp add: member_def dom_if)
 end-proof
