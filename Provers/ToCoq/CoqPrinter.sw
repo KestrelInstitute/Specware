@@ -638,7 +638,7 @@ def ppPat pat =
     | NatPat (n, _) -> retString (intToString n)
     | StringPat (str, _) -> retString ("\"" ^ str ^ "\"%string")
     | CharPat (c, _) -> retString ("\"" ^ implode [c] ^ "\"%char")
-    | QuotientPat (_, _, _) ->
+    | QuotientPat (_, _, _, _) ->
          unhandledPat "QuotientPat" pat
     | RestrictedPat (_, _, _) ->
          unhandledPat "RestrictedPat" pat
