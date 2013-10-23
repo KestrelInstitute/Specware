@@ -1,7 +1,9 @@
 Script qualifying
 spec
   import Simplify, Rewriter, Interpreter, CommonSubExpressions, AddParameter, MetaRules, AddSubtypeChecks,
-         RedundantErrorCorrecting, SliceSpec, MetaTransform
+         RedundantErrorCorrecting, MetaTransform
+  import OldSlice  % TODO: deprecated
+ %import SliceSpec % use this instead
   import /Library/PrettyPrinter/WadlerLindig
   import /Languages/SpecCalculus/Semantics/Monad
   import /Languages/SpecCalculus/AbstractSyntax/SCTerm

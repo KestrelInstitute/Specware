@@ -1,6 +1,7 @@
 JavaGen qualifying spec
 
-import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/Transformations/OldSlice   % TODO: deprecated
+%import /Languages/MetaSlang/Transformations/SliceSpec  % use this instead
 
 op builtinJavaOp? (Qualified (q, id) : QualifiedId) : Bool =
  case q of

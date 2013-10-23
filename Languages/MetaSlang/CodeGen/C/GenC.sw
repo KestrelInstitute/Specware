@@ -259,8 +259,8 @@ op SpecTransform.transformSpecTowardsC (ms_spec : Spec) : Spec =
  %% (19) slice unused types and ops 
  %% ==========================================================================================
 
- let ms_spec = SpecTransform.sliceSpecForC   ms_spec top_ops top_types in
- let _   = showSpecIfVerbose "sliceSpecForC" ms_spec                   in
+ let ms_spec = SpecTransform.sliceSpecForC   ms_spec "" top_ops top_types in
+ let _   = showSpecIfVerbose "sliceSpecForC" ms_spec                      in
 
  ms_spec
 

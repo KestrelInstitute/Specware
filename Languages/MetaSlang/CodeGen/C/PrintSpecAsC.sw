@@ -3,7 +3,8 @@ PrintAsC qualifying spec
  import PrintAsCUtils
  import PrintTypeAsC
  import PrintTermAsC
- import /Languages/MetaSlang/Transformations/SliceSpec %include less?
+ import /Languages/MetaSlang/Transformations/OldSlice  % TOOD: deprecated
+%import /Languages/MetaSlang/Transformations/SliceSpec % replace with this
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

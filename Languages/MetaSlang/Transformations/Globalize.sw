@@ -1,7 +1,8 @@
 Globalize qualifying spec
 {
  import /Languages/MetaSlang/Transformations/Setf
- import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/Transformations/OldSlice   % TODO: deprecated
+%import /Languages/MetaSlang/Transformations/SliceSpec  % replace with this
  import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/CommonSubExpressions
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  

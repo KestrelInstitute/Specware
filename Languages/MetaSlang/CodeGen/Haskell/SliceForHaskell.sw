@@ -1,6 +1,7 @@
 HaskellGen qualifying spec
 
-import /Languages/MetaSlang/Transformations/SliceSpec
+ import /Languages/MetaSlang/Transformations/OldSlice  % TODO: deprecated
+%import /Languages/MetaSlang/Transformations/SliceSpec % replace with this
 
 op haskellElement? (el: SpecElement) : Bool =
  case el of

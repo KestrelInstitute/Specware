@@ -30,14 +30,15 @@ op builtinCType? (Qualified (q, id) : QualifiedId) : Bool =
    | "<unqualified>" -> id in? ["Ptr"]
    | _ -> false
       
-%% TODO: Begin to deprecate this
-op SpecTransform.sliceSpecForC (spc        : Spec)
+%% TODO: for now, transform is just for debugging
+op SpecTransform.sliceSpecForC (ms_spec    : Spec)
+                               (msg        : String)
                                (root_ops   : QualifiedIds)
                                (root_types : QualifiedIds)
  : Spec =
- sliceSpecForCode (spc, root_ops, root_types, builtinCOp?, builtinCType?)
+ SpecTransform.newSliceSpecForC ms_spec msg root_ops root_types
 
-%% TODO: for now, transform is just for debugging
+%% TODO: deprecate this for name above
 op SpecTransform.newSliceSpecForC (ms_spec    : Spec)
                                   (msg        : String)
                                   (root_ops   : QualifiedIds)

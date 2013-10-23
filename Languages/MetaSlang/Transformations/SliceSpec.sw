@@ -1,12 +1,6 @@
 SliceSpec qualifying spec 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Old version that is deprecated
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-import OldSlice  % Deprecated
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% New Slicing Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,8 +56,9 @@ type Location         = | Root
                         | Unknown
 
 type ResolvedRefs     = List ResolvedRef
-type ResolvedRef      = | Op   ResolvedOpRef
-                        | Type ResolvedTypeRef
+type ResolvedRef      = | Op      ResolvedOpRef
+                        | Type    ResolvedTypeRef
+                        | Theorem SpecElement      % e.g., setf axioms
 
 type ResolvedOpRef    = {name            : OpName,   
                          cohort          : Cohort,
