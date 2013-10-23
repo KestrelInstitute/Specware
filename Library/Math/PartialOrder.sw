@@ -19,6 +19,6 @@ MonotoneFn = spec
 
  op monotone: (A->A) -> Bool
  axiom def_of_monotone is
-   fa(a1:A,a2:A,f:A->A)(a1<=a2 => f(a1)<=f(a2))
+   fa(f:A->A) ((monotone f) = (fa(a1:A,a2:A) (a1<=a2 => f(a1)<=f(a2))))
 
 end-spec
