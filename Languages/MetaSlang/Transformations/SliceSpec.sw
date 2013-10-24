@@ -431,7 +431,7 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort) : PendingRefs =
              cohort          = cohort,
              contextual_type = Any noPos, 
              location        = Unknown})
-      (opsInTerm term))
+      (opsInSubTerms term)) % opsInTerm would look at subtype predicates and include too much
  ++
  (map (fn name -> 
          Type {name     = name, 
