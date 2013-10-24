@@ -669,8 +669,9 @@ Globalize qualifying spec
                                   context.global_var
                                 | _ -> old_value
               in
-              let expanded_value = expandBindings (new_value, context.let_bindings) in
-              makeUpdate context.spc context.setf_entries global_var_op expanded_value)
+              %% Do not call expandBindings here.
+              %% That could reintroduce terms with side effects that we purposely let-bound to serialize them.
+              makeUpdate context.spc context.setf_entries global_var_op new_value)
           fields
   in
   Seq (assignments, noPos)
@@ -1701,8 +1702,6 @@ Globalize qualifying spec
                                                  tracing?         = tracing?}
                                   in
                                   replaceLocalsWithGlobalRefs context;
-
-   % showIntermediateSpec ("globalized", globalized_spec);
 
    % Add the main global var after calling replaceLocalsWithGlobalRefs, 
    % since that would prune it away before any references were introduced.
