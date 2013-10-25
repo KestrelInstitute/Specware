@@ -783,9 +783,9 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-list-display (expressions l r)
-  (StandardSpec::mkList-3 expressions
-			  (make-pos l r)
-			  (freshPolyMetaTypeVar l r)))
+  (StandardSpec::mkListN-3 expressions
+                           (make-pos l r)
+                           (freshPolyMetaTypeVar l r)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  STRUCTOR
