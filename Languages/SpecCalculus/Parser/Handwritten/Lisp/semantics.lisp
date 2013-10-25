@@ -782,6 +782,33 @@ If we want the precedence to be optional:
 ;;;  LIST-DISPLAY
 ;;; ------------------------------------------------------------------------
 
+;;; Temporarily put this here to enable bootstrap
+(defun StandardSpec::mkListN-3 (terms pos element_type) 
+  (let ((list_type (cons :|Base| (vector (cons :|Qualified| (cons "List" "List")) (list element_type) pos)))) 
+    (labels 
+      ((mkCons (x xs) 
+        (cons 
+         :|ApplyN| 
+         (cons 
+          (list 
+           (cons 
+            :|Fun| 
+            (vector 
+             (cons :|Embed| (cons "Cons" t)) 
+             (cons 
+              :|Arrow| 
+              (vector 
+               (cons :|Product| (cons (list (cons "1" element_type) (cons "2" list_type)) pos)) 
+               (cons :|Base| (vector (cons :|Qualified| (cons "List" "List1")) (list element_type) pos)) 
+               pos)) 
+             pos)) 
+           (cons :|Record| (cons (list (cons "1" x) (cons "2" xs)) pos))) 
+          pos)))) 
+      (List-Spec::foldr-1-1-1 
+       #'(lambda (apV) (mkCons (car apV) (cdr apV))) 
+       (cons :|Fun| (vector (cons :|Embed| (cons "Nil" nil)) list_type pos)) 
+       terms))))
+
 (defun make-list-display (expressions l r)
   (StandardSpec::mkListN-3 expressions
                            (make-pos l r)
