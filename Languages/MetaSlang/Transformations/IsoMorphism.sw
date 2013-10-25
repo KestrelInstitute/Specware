@@ -1571,24 +1571,14 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                             ),
                 % AbstractCommonExpressions
 
-              if rec_osi_unfolds = [] && rec_iso_unfolds = []
-                then mkSimplify (gen_unfolds
+              mkSimplify (gen_unfolds
                                    ++ iso_osi_rewrites
                                    ++ unfold_old
                                    ++ iso_rewrites
                                    ++ osi_rewrites
                                    ++ osi_unfolds
                                    ++ iso_unfolds
-                                   ++ extra_rules)
-                  else Repeat [Simplify1(rec_osi_unfolds ++ rec_iso_unfolds),
-                               mkSimplify (gen_unfolds
-                                             ++ iso_osi_rewrites
-                                             ++ unfold_old
-                                             ++ iso_rewrites
-                                             ++ osi_rewrites
-                                             ++ osi_unfolds
-                                             ++ iso_unfolds
-                                             ++ extra_rules)],
+                                   ++ extra_rules),
               SimpStandard
                 % AbstractCommonExpressions
               ])
