@@ -4,8 +4,6 @@ import ../AbstractSyntax/PathTerm, ../Transformations/MetaTransform
 
 op SpecCalc.ppSCTerm : SCTerm -> Doc
 
-type PathTerm = APathTerm Position
-
 type Location =
   | Def QualifiedId
 
@@ -25,6 +23,7 @@ type Script =
   | RenameVars (List(Id * Id))
   | PartialEval
   | AbstractCommonExpressions
+  | TermTransform(String * TypedFun * AnnTypeValue)
   | SpecMetaTransform(String * TypedFun * AnnTypeValue)
   | SpecTransformInMonad(String * TypedFun * AnnTypeValue)
   | SpecTransform(QualifiedId * RuleSpecs)
@@ -87,7 +86,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
     | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
     | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
-    | MetaRule   (Qualified(q, id), _, atv) | q = msTermTransformQualifier ->
+    | MetaRule   (Qualified(q, id), _, atv) | q = msRuleQualifier ->
       ppConcat[ppString id, ppString " ", ppAbbrAnnTypeValue atv]
     | MetaRule   (qid, _, _) -> ppConcat[ppString "apply ", ppQid qid]
     | RLeibniz    qid -> ppConcat[ppString "revleibniz ", ppQid qid]
@@ -162,6 +161,7 @@ op ppScript(scr: Script): WLPretty =
                                     ppString "]"]
     | PartialEval -> ppString "eval"
     | AbstractCommonExpressions -> ppString "AbstractCommonExprs"
+    | TermTransform(transfn, _, atv) -> ppConcat[ppString transfn, ppString " ", ppAbbrAnnTypeValue atv]
     | SpecMetaTransform(transfn, _, atv) -> ppConcat[ppString transfn, ppString " ", ppAbbrAnnTypeValue atv]
     | SpecTransformInMonad(transfn, _, atv) -> ppConcat[ppString transfn, ppString " ", ppAbbrAnnTypeValue atv]
     | SpecTransform(qid as Qualified(q,id), rls) ->

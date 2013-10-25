@@ -5,6 +5,8 @@ import ../Specs/Utilities
 type Path = List Nat
 type APathTerm a = ATerm a * Path
 
+type PathTerm = APathTerm Position.Position
+
  op [a] topTerm(ptm: APathTerm a): ATerm a = ptm.1
 
  op [a] infixFn?(f: AFun a): Bool =
@@ -279,5 +281,7 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
     case compare(tm1, tm2, []) of
       | None -> (tm1, [])
       | Some path -> (tm1, path)
+
+ op dummyPathTerm: PathTerm = toPathTerm dummyMSTerm
 
 end-spec

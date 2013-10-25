@@ -1787,7 +1787,7 @@ If we want the precedence to be optional:
 ;;     (make-transform-tuple 1 ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :TRANSFORM-RECORD-PAIR ()
-  (:tuple (1 :NAME) ":" (2 :TRANSFORM-TERM))
+  (:tuple (1 :NAME) "=" (2 :TRANSFORM-TERM))
   (cons 1 2))
 
 ;;; ========================================================================

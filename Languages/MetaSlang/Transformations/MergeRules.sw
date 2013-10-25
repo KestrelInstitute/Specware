@@ -1168,7 +1168,7 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
    let hist = [] in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
-   let (pterm',hist') = replaceSubTermH(rewrite(pterm, ctx, qid, rules, 1), pterm, hist) in
+   let (pterm',hist') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, hist) in
    let tm' = fromPathTerm pterm' in
    if equalTerm?(tm, tm')
      then None

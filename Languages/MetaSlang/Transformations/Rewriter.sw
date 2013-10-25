@@ -9,10 +9,7 @@ MetaSlangRewriter qualifying spec
 
  type TermPredicate = MSTerm * MSTerm -> Bool
 
- op traceRewriting : Nat = 0
- op traceShowsLocalChanges?: Bool = true
-
- def mkVar = HigherOrderMatching.mkVar     
+  def mkVar = HigherOrderMatching.mkVar     
 
 %%
 %% Application of set of rewrite rules
@@ -106,11 +103,6 @@ MetaSlangRewriter qualifying spec
      then optimizeSuccessList new_results
      else new_results
 
-
- 
- op useStandardSimplify?: Bool = true
- op debugApplyRewrites?:  Bool = false
-
  op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Bool)
                       (boundVars: MSVars, term: MSTerm, demod: Demod RewriteRule)
                       : LazyList(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule))  = 
@@ -122,7 +114,7 @@ MetaSlangRewriter qualifying spec
    let rules = orderRules(Demod.getRules(demod,term)) in
    (mapFlat 
       (fn rule ->
-          let _ = if debugApplyRewrites? then
+          let _ = if context.debugApplyRewrites? then
                    (%writeLine("boundVars: "^anyToString boundVars);
                     printRule rule;
                     if some? rule.trans_fn
@@ -134,13 +126,13 @@ MetaSlangRewriter qualifying spec
             | Some f ->
               (case extractMSTerm(apply(f, replaceSpecTermArgs(metaRuleATV rule.rule_spec, spc, term))) of
                | Some new_term ->
-                 (if debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
+                 (if context.debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
                     else ();
                   unit(new_term, (subst, rule, boundVars, demod)))
                | None -> Nil)
             | None ->
           let substs = applyRewrite(context,rule,subst,term) in
-          let _ = if debugApplyRewrites? then
+          let _ = if context.debugApplyRewrites? then
                     if substs = [] then writeLine("Match failed.\n")
                       else (writeLine("Match succeeded."); app printSubst substs)
                   else ()
@@ -159,7 +151,7 @@ MetaSlangRewriter qualifying spec
                               else Some(result,(s,rule,boundVars,demod)))
                   substs))) 
       rules)
-   @@ (fn () -> if standardSimplify? && useStandardSimplify?
+   @@ (fn () -> if standardSimplify? && context.useStandardSimplify?
                   then standardSimplify spc (term,subst,boundVars,demod)
                   else Nil)
 
@@ -709,10 +701,10 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
  op traceTerm : Context * MSTerm * MSTerm * SubstC -> ()
  def traceTerm(context, term, prev_term, (* subst *)_) = 
-     if traceRewriting > 1 then 
+     if context.traceRewriting > 1 then 
      % if context.trace then 
 	 (let indent = 3 + ! context.traceIndent in
-          if traceShowsLocalChanges? && ~(equalTerm?(term, prev_term))
+          if context.traceShowsLocalChanges? && ~(equalTerm?(term, prev_term))
             then (let changed_ptm = changedPathTerm(term, prev_term) in
                   let prev_sub_tm = fromPathTerm(prev_term, changed_ptm.2) in
                   let prev_tm_str = printTermIndent(indent, prev_sub_tm) in
@@ -729,7 +721,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
  op traceRule(context:Context,rule:RewriteRule): () = 
      % if context.trace then
-     if traceRewriting > 0 then 
+     if context.traceRewriting > 0 then 
 	let depth = show(! context.traceDepth) in
 	(toScreen (PrettyPrint.blanks (! context.traceIndent));
 	 writeLine("=  { "^depth^": "^ rule.name^" }"))
@@ -767,8 +759,6 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
      in
      loop term
 
- op backwardChainMaxDepth: Nat = 10
-
  type History = List (RewriteRule * MSTerm * SubstC)
 
  op historyRepetition: History -> Bool
@@ -777,26 +767,25 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
       | _ -> false
 
  op rewriteRecursive : 
-    Context * MSVars * RewriteRules * MSTerm * Nat -> LazyList (History)
+    Context * MSVars * RewriteRules * MSTerm -> LazyList (History)
 
  op rewriteRecursivePre : 
-    Context * MSVars * Demod RewriteRule * MSTerm * Nat -> LazyList (History)
+    Context * MSVars * Demod RewriteRule * MSTerm -> LazyList (History)
 
+ op minTraceDepth: Nat = 10
 
 %%
 %% Apply unconditional rewrite rules using inner-most strategy.
 %% Apply conditional rewrite rules using outer-most strategy.
 %%
 
- def rewriteRecursive(context,boundVars,rules,term,maxDepth) = 
+ def rewriteRecursive(context,boundVars,rules,term) = 
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
-     let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty)
-     in rewriteRecursivePre(context,boundVars,rules,term,maxDepth)
+   let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
+   rewriteRecursivePre(context,boundVars,rules,term)
 
- op conditionResultLimit: Nat = 4
-
- def rewriteRecursivePre(context, boundVars, rules0, term, maxDepth) = 
+ def rewriteRecursivePre(context, boundVars, rules0, term) = 
    let	
       def rewritesToTrue(rules, term, boundVars, subst, history, backChain): Option SubstC =
           if trueTerm? term then Some subst
@@ -827,12 +816,12 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
           then (%writeLine("Found recursive subgoal: "^printTerm prev_term);
                 None)
         else
-	if backChain < backwardChainMaxDepth && completeMatch(rule.lhs, subst) then 
+	if backChain < context.backwardChainMaxDepth && completeMatch(rule.lhs, subst) then 
             let cond = foldr Utilities.mkAnd trueTerm conds in
             let cond = dereferenceAll subst cond in % redundant?
             let subst = removeLocalFlexVars(subst, []) in
             let traceIndent = ! context.traceIndent in
-	    let res = if traceRewriting > 0 then
+	    let res = if context.traceRewriting > 0 then
                         (context.traceIndent := traceIndent + 3;
                          toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
                          writeLine (show(! context.traceDepth)^" : "^rule.name);
@@ -843,7 +832,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                         (context.traceDepth := 0;
                          rewritesToTrue(rules, cond, boundVars, subst, history, backChain))
             in
-	    if traceRewriting > 0 then
+	    if context.traceRewriting > 0 then
 	      (context.traceIndent := traceIndent;
 	       writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
                %(case res of Some s -> printSubst s | _ -> ());
@@ -855,15 +844,20 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
       def rewriteRec(rules0, subst, term0, prev_term, boundVars, history, backChain) =
 	let _ = traceTerm(context, term0, prev_term, subst) in
 	let traceDepth = ! context.traceDepth + 1 in
-        if traceDepth > (if backChain = 0 then maxDepth else max(maxDepth, backwardChainMaxDepth))
+        if traceDepth > (if backChain = 0 then context.maxDepth else max(context.maxDepth, context.backwardChainMaxDepth))
           then unit history
+        else
+        let ts = termSize term0 in
+        if traceDepth > minTraceDepth && termSize term0 > context.termSizeLimit
+          then (warn("Rewriting terminated because term size of "^show ts^" exceeded limit of "^show context.termSizeLimit);
+                unit history)
         else
 	let def rewrite(strategy, rules) =
 %                 let _ = writeLine("Rules:") in
 %                 let _ = app printRule (listRules rules) in
 		rewriteTerm 
 		  ({strategy = strategy,
-		    rewriter = applyDemodRewrites(context, subst, maxDepth > 1 || backChain > 0),
+		    rewriter = applyDemodRewrites(context, subst, context.maxDepth > 1 || backChain > 0),
 		    context = context},
 		   boundVars, term0, rules)     
 	in

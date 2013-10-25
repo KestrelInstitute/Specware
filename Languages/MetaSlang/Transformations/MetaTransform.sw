@@ -1,6 +1,6 @@
 MetaTransform qualifying
 spec
-import CurryUtils
+import CurryUtils, ../AbstractSyntax/PathTerm
 
 type MetaTransform.TypedFun =
    | TFn (AnnTypeValue -> TypedFun)
@@ -8,12 +8,14 @@ type MetaTransform.TypedFun =
 
 type MTypeInfo = | Spec
                  | Term
+                 | PathTerm
                  | Arrows (List MTypeInfo * MTypeInfo)
                  | Str
                  | Num
                  | Bool
                  | OpName
                  | Rule
+                 | TransformHistory
                  | Opt MTypeInfo
                  | List MTypeInfo
                  | Tuple(List MTypeInfo)
@@ -33,9 +35,26 @@ op existsMTypeInfo? (p: MTypeInfo -> Bool) (mti: MTypeInfo): Bool =
 
 op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
   case mty of
+    | Spec -> Some(SpecV emptySpec)
+    | Term -> Some(TermV(Any noPos))
+    | PathTerm -> Some(PathTermV(toPathTerm(Any noPos)))
     | Bool -> Some(BoolV false)
     | Opt _ -> Some(OptV None)
     | List _ -> Some(ListV [])
+    | Num -> Some(NumV 0)
+    | Str -> Some(StrV "")
+    | Rec prs ->
+      let new_prs = mapPartial (fn (id, val) -> mapOption (fn new_val -> (id, new_val))
+                                                  (defaultAnnTypeValue val))
+                      prs in
+      if length new_prs = length prs
+        then Some(RecV new_prs)
+        else None
+    | Tuple flds ->
+      let fld_vals = mapPartial defaultAnnTypeValue flds in
+      if length fld_vals = length flds
+        then Some(TupleV fld_vals)
+        else None
     | _ -> None
 
 %% The next two give up on MonadV
@@ -81,6 +100,16 @@ op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
                        | _ -> atvi)
      atv
 
+op replaceATVArgs(atv: AnnTypeValue, spc: Spec, path_tm: PathTerm, op_qid: QualifiedId): AnnTypeValue =
+   mapAnnTypeValue (fn atvi ->
+                     case atvi of
+                       | SpecV _ -> SpecV spc
+                       | TermV(Any _) -> TermV(fromPathTerm path_tm)
+                       | PathTermV _ -> PathTermV path_tm
+                       | OpNameV qid | qid = dummyQualifiedId -> OpNameV op_qid
+                       | _ -> atvi)
+     atv
+
  op extractMSTerm(tf: TypedFun): Option MSTerm =
    let def findTerm atv =
          case atv of
@@ -99,7 +128,9 @@ op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
 op annTypeValueType: MSType = mkBase(Qualified("MetaTransform", "AnnTypeValue"), [])
 op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
 op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
-op msTermType: MSType = mkBase(Qualified("MetaSlang", "MSTerm"), [])
+op msTermType: MSType = mkBase(Qualified("MS", "MSTerm"), [])
+op pathTermType: MSType = mkBase(Qualified("PathTerm", "PathTerm"), [])
+op transformHistoryType: MSType = mkBase(Qualified("AnnSpec", "TransformHistory"), [])
 op optionMsTermType: MSType = mkBase(Qualified("Option", "Option"), [msTermType])
 op qualifiedIdType: MSType = mkBase(Qualified("MetaSlang", "QualifiedId"), [])
 op ruleSpecType: MSType = mkBase(Qualified("AnnSpec", "RuleSpec"), [])
@@ -117,15 +148,42 @@ op monadBindTerm: MSTerm = mkOp(Qualified("SpecCalc", "monadBind"),
                                         mkArrow(annTypeValueType, monadAnnTypeValueType)))
 op mapOptionTerm: MSTerm =  mkOp(Qualified("Option", "mapOption"), mkArrow(annTypeValueType, optionAnnTypeValueType))
 
+op mtiToMSType(mti: MTypeInfo): MSType =
+  case mti of
+    | Spec -> specType
+    | Term -> msTermType
+    | PathTerm -> pathTermType
+    | Arrows (dom_mtis, r_mti) ->
+      foldr (fn (mtii, ty) -> mkArrow(mtiToMSType mtii, ty)) (mtiToMSType r_mti) dom_mtis
+    | Str -> stringType
+    | Num -> intType
+    | Bool -> boolType
+    | OpName -> qualifiedIdType
+    | Rule -> ruleSpecType   % ?
+    | TransformHistory -> transformHistoryType
+    | Opt o_mti -> mkBase(Qualified("Option", "Option"), [mtiToMSType o_mti])
+    | List l_mti -> mkBase(Qualified("List", "List"), [mtiToMSType l_mti])
+    | Tuple mtis -> mkProduct(map mtiToMSType mtis)
+    | Rec mtiprs -> mkRecordType(map (fn (id, mtii) -> (id, mtiToMSType mtii)) mtiprs)
+    | Monad m_mti -> mkBase(Qualified("SpecCalc", "Env"), [mtiToMSType m_mti])
+
 op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
   case ty_i of
     | Spec -> mkEmbed1("SpecV", mkArrow(specType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
+    | TransformHistory -> mkEmbed1("TransformHistoryV", mkArrow(transformHistoryType, annTypeValueType))
     | Opt _ -> mkEmbed1("OptV", mkArrow(optionAnnTypeValueType, annTypeValueType))
     | Monad _ -> mkEmbed1("MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
 %    | Monad Spec -> mkEmbed1("MonadV", mkArrow(specType, annTypeValueType))
+    %% Tuple[Term, TransformHistory]: fn (tm, th) -> TupleV [TermV tm, TransformHistory th]
+    | Tuple tis ->
+      let tp_vs = tabulate(length tis, fn i -> ("x"^show i, mtiToMSType(tis@i))) in
+      mkLambda(mkVarsPat tp_vs,
+               mkApply(mkEmbed1("TupleV", mkArrow(mkListType(annTypeValueType), annTypeValueType)),
+                       mkList(map (fn (tii, v) -> mkApply(mkAnnTypeValueFun tii, mkVar v)) (zip(tis, tp_vs)),
+                              noPos, annTypeValueType)))
 %    | Monad Term ->  mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
-    | _ -> fail ("Can only return Specs or MSTerms")
+    | _ -> fail ("Can only return Specs or MSTerms, not "^show ty_i)
 
 op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
   case ty_i of
@@ -185,27 +243,36 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
        case atv of
          | SpecV _ -> None
          | TermV _ -> None
+         | PathTermV _ -> None
          | ArrowsV atvs -> Some(ppSep (ppString " ") (mapPartial ppOpt atvs))
          | StrV str -> Some(ppString str)
          | NumV n -> Some(ppString(show n))
          | BoolV b -> Some(ppString(show b))
-         | OpNameV qid -> Some(ppString(show qid))
+         | OpNameV qid ->
+           if qid = dummyQualifiedId then None else Some(ppString(show qid))
          | RuleV rs -> Some(ppRuleSpec rs)
-         | OptV None -> None
          | OptV (Some atv1) -> ppOpt atv1
-         | ListV [] -> None
          | ListV atvs -> Some(ppConcat[ppString "[", ppSep (ppString ", ") (map ppSome atvs), ppString "]"])
          | TupleV atvs -> Some(ppConcat[ppString "(", ppSep (ppString ", ") (map ppSome atvs), ppString ")"])
-         | RecV id_atv_prs  -> Some(ppConcat[ppString "{",
-                                             ppSep (ppString ", ")
-                                               (mapPartial (fn (id, atvi) ->
-                                                              case ppOpt atvi of
-                                                                | None -> None
-                                                                | Some doci -> 
-                                                                  Some(ppConcat[ppString id, ppString ": ", doci]))
-                                                  id_atv_prs),
-                                             ppString "}"])
+         | RecV id_atv_prs  ->
+           let flds = mapPartial (fn (id, atvi) ->
+                                    case ppIfNotDefault atvi of
+                                      | None -> None
+                                      | Some doci -> 
+                                        Some(ppConcat[ppString id, ppString " = ", doci]))
+                        id_atv_prs
+           in
+           if flds = [] then None
+             else Some(ppConcat[ppString "{", ppSep (ppString ", ") flds, ppString "}"])
          | MonadV atv1 -> None
+     def ppIfNotDefault(atv: AnnTypeValue): Option Doc =
+       case atv of
+         | BoolV false -> None
+         | NumV 0 -> None
+         | StrV "" -> None
+         | OptV None -> None
+         | ListV [] -> None
+         | _ -> ppOpt atv
      def ppSome(atv: AnnTypeValue): Doc =
        case ppOpt atv of
          | Some d -> d
@@ -222,12 +289,14 @@ op MTypeInfo.show(ty_info: MTypeInfo): String =
   case ty_info of
     | Spec -> "Spec"
     | Term -> "Term"
+    | PathTerm -> "PathTerm"
     | Arrows(doms, ran) -> "("^(foldr (fn (d, result) -> show d^" -> "^result) (show ran^")") doms)^")"
     | Str  -> "Str"
     | Num  -> "Num"
     | Bool -> "Bool"
     | OpName -> "OpName"
     | Rule -> "Rule"
+    | TransformHistory -> "TransformHistory"
     | Opt i -> "Opt "^show i
     | List l -> "List "^show l
     | Tuple (l) -> "Tuple"^show l
@@ -246,6 +315,7 @@ op transformResultType?(ti: MTypeInfo): Bool =
     | Term -> true
     | Opt Term -> true
     | Monad Spec -> true
+    | Tuple tis -> exists? transformResultType? tis
     | Arrows(tis, ran) -> transformResultType? ran
     | _ -> false
 
@@ -260,9 +330,11 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("Integer", "Int"), [], _)   -> Some Num
         | Base(Qualified("String", "String"), [], _) -> Some Str
         | Base(Qualified("MetaSlang", "QualifiedId"), [], _) -> Some OpName
-        | Base(Qualified("MetaSlang", "MSTerm"), [], _) -> Some Term
+        %| Base(Qualified("MetaSlang", "MSTerm"), [], _) -> Some Term
         | Base(Qualified("MS", "MSTerm"), [], _) -> Some Term
+        | Base(Qualified("PathTerm", "PathTerm"), [], _) -> Some PathTerm
         | Base(Qualified("AnnSpec", "RuleSpec"), [], _) -> Some Rule
+        | Base(Qualified("AnnSpec", "TransformHistory"), [], _) -> Some TransformHistory
         | Base(Qualified("SpecCalc", "Env"), [m_ty], _) ->  mapOption (fn el_info -> Monad el_info) (argInfoFromType(m_ty, spc))
         | Base(Qualified("List", "List"), [el_ty], _) -> mapOption (fn el_info -> List el_info) (argInfoFromType(el_ty, spc))
         | Base(Qualified("Option", "Option"), [op_ty], _) -> mapOption (fn op_info -> Opt op_info) (argInfoFromType(op_ty, spc))
@@ -311,6 +383,7 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
   case tyi of
     | Spec -> mkOp(Qualified("MetaTransform", "extractSpec"), mkArrow(annTypeValueType, specType))
     | Term -> mkOp(Qualified("MetaTransform", "extractTerm"), mkArrow(annTypeValueType, msTermType))
+    | PathTerm -> mkOp(Qualified("MetaTransform", "extractPathTerm"), mkArrow(annTypeValueType, msTermType))
     % | Arrow(doms, ran) ->
     | Str  -> mkOp(Qualified("MetaTransform", "extractStr"), mkArrow(annTypeValueType, stringType))
     | Num  -> mkOp(Qualified("MetaTransform", "extractNum"), mkArrow(annTypeValueType, intType))
@@ -376,7 +449,8 @@ op annFunTerm(Arrows(dom_tyis, ran_tyi): MTypeInfo, qid: QualifiedId, op_ty: MST
 
 op specTransformQualifier: String = "SpecTransform"
 op msTermTransformQualifier: String = "MSTermTransform"
-op transformQualifiers: Ids = [specTransformQualifier, msTermTransformQualifier]
+op msRuleQualifier: String = "MSRule"
+op transformQualifiers: Ids = [specTransformQualifier, msTermTransformQualifier, msRuleQualifier]
 
 op addTransformInfo(q: Id, nm: Id, ty_info: MTypeInfo, tr_fn: TypedFun): TransformInfoMap =
   insertAQualifierMap(transformInfoMap, q, nm, (ty_info, tr_fn))
@@ -389,6 +463,9 @@ op lookupSpecTransformInfo(nm: Id): Option TransformInfo =
 
 op lookupMSTermTransformInfo(nm: Id): Option TransformInfo =
   lookupTransformInfo(msTermTransformQualifier, nm)
+
+op lookupMSRuleInfo(nm: Id): Option TransformInfo =
+  lookupTransformInfo(msRuleQualifier, nm)
 
 op generateAddTransformUpdates(spc: Spec): List(QualifiedId * (MTypeInfo * MSTerm)) =
   foldriAQualifierMap

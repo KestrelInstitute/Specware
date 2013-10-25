@@ -892,11 +892,11 @@ op dontUnfoldQualifiers: Ids = ["String"]
  %% ================================================================================
 
  op simplifyUnfoldCase (spc: Spec) (tm: MSTerm): MSTerm =
-   case MSTermTransform.simplifyUnfoldCase spc tm of
+   case MSRule.simplifyUnfoldCase spc tm of
      | Some s_tm -> s_tm
      | None -> tm
 
- op MSTermTransform.simplifyUnfoldCase (spc: Spec) (tm: MSTerm): Option MSTerm =
+ op MSRule.simplifyUnfoldCase (spc: Spec) (tm: MSTerm): Option MSTerm =
    case tm of
      | Apply (Lambda (rules, _), arg, _) | length rules > 1 ->
        %% Unfold if function constructs term that matches one case
@@ -925,7 +925,7 @@ op dontUnfoldQualifiers: Ids = ["String"]
           | simp_uf_arg ->
             patternMatchRulesToLet (rules, simp_uf_arg, spc))
      | Let (binds, bod, pos) ->
-       (case MSTermTransform.simplifyUnfoldCase spc bod of
+       (case MSRule.simplifyUnfoldCase spc bod of
          | None -> None
          | Some s_bod ->
            Some(simplifyOne spc (Let (binds, s_bod, pos))))

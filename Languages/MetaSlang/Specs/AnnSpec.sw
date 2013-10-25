@@ -111,6 +111,7 @@ AnnSpec qualifying spec
    | RLeibniz    QualifiedId
    | Weaken      QualifiedId
    | MetaRule    (QualifiedId * TypedFun * AnnTypeValue)
+   | TermTransform (Id * TypedFun * AnnTypeValue)
    | SimpStandard
    | RenameVars  (List(Id * Id))
    | AbstractCommonExpressions
@@ -136,6 +137,7 @@ AnnSpec qualifying spec
      | RLeibniz    qid -> "revleibniz " ^ show qid
      | Weaken      qid -> "weaken " ^ show qid
      | MetaRule   (qid, _, _) -> "meta-rule " ^ show qid
+     | TermTransform (id, _, _) -> "transform " ^ id
      | RenameVars binds -> "rename [" ^ (foldr (fn ((id1, id2), r) -> "("^id1^", "^id2^")"^(if r = "" then r else ", "^r)) "" binds)
                                  ^ "]"
      | SimpStandard -> "simplify"

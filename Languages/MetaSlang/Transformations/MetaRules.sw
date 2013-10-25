@@ -362,12 +362,12 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
 op structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
   structureCondEx(spc, tm, falseTerm)
 
-op MSTermTransform.structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.structureEx (spc: Spec) (tm: MSTerm): Option MSTerm =
   structureCondEx(spc, tm, falseTerm)
 
 op useRestrictedPat?: Bool = false
 
-op MSTermTransform.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | IfThenElse(t1, t2, t3, _) | embed? Fun t1 ->
       (case t1 of

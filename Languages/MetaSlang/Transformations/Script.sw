@@ -319,7 +319,7 @@ spec
   op rewriteDebug?: Bool = false
 
   op rewriteDepth: Nat = 6
-  op rewrite(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule, maxDepth: Nat)
+  op rewritePT(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
        : MSTerm * TransformHistory =
     (context.traceDepth := 0;
      let term = fromPathTerm path_term in
@@ -335,7 +335,7 @@ spec
      let rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, hist: TransformHistory): MSTerm * TransformHistory =
            %let _ = writeLine("doTerm "^show count) in
-           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, maxDepth) in
+           let lazy = rewriteRecursive (context, freeVars trm, rules, trm) in
            case lazy of
              | Nil -> (trm, hist)
              | Cons([], tl) -> (trm, hist)
@@ -470,11 +470,51 @@ spec
     in
     mapTerm (renameVar, id, renameVarPat) tm
 
+  type RewriteOptions = {trace                  : Nat,         % Trace level 0, 1, 2, 3
+                         traceShowsLocalChanges?: Option Bool, % Whether trace just show term that is transformed
+                         simplify?              : Option Bool, % Whether standard simplifications are done
+                         debug?                 : Bool,        % Debug matching of rules
+                         depth                  : Nat,         % # of rewrites allowed
+                         backwardChainDepth     : Nat,         % # of backward chaining of rule conditions
+                         conditionResultLimit   : Nat,         % Limit on # of different rewrites of condition
+                         termSizeLimit          : Nat,         % Limit on size of transformed term
+                         expansionFactor        : Nat          % Limit on expansion in term size*)
+                                                               % (ignored unless termSizeLimit = 0)
+                         }
+
+  op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
+    (options: RewriteOptions): MSTerm * TransformHistory =
+    let context = makeContext spc in
+    let context = context <<
+                    {traceRewriting          = if options.trace = 0
+                                                 then traceRewriting
+                                                 else options.trace,
+                     traceShowsLocalChanges? = case options.traceShowsLocalChanges? of
+                                                 | Some b -> b
+                                                 | None -> context.traceShowsLocalChanges?,
+                     useStandardSimplify?    = case options.simplify? of
+                                                 | Some b -> b
+                                                 | None -> context.useStandardSimplify?,
+                     debugApplyRewrites?     = options.debug?,
+                     maxDepth                = if options.depth = 0 then context.maxDepth else options.depth,
+                     backwardChainMaxDepth   = if options.backwardChainDepth = 0
+                                                 then context.backwardChainMaxDepth else options.backwardChainDepth,
+                     conditionResultLimit    = if options.conditionResultLimit = 0
+                                                 then context.conditionResultLimit else options.conditionResultLimit,
+                     termSizeLimit           = if options.termSizeLimit > 0 then options.termSizeLimit
+                                               else if options.expansionFactor > 0
+                                                 then options.expansionFactor * termSize (fromPathTerm path_term)
+                                                 else context.termSizeLimit}
+    in
+    % let _ = printContextOptions context in
+    let rules = makeRules (context, spc, rules) in
+    rewritePT(path_term, context, qid, rules)    
+
   op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, hist: TransformHistory)
        : PathTerm * TransformHistory =
     let context = makeContext spc in
     let rules = makeRules (context, spc, rules) in
-    replaceSubTermH(rewrite(path_term, context, qid, rules, maxRewrites), path_term, hist)
+    replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, hist)
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
   op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
@@ -484,7 +524,7 @@ spec
     case script of
       | Steps steps ->
           foldM (fn (path_term, tracing?, hist) -> fn s ->
-               interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, hist))
+                   interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, hist))
             (path_term, tracing?, hist) steps
       | Repeat steps ->
           {(new_path_term, tracing?, hist) <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, hist);
@@ -503,7 +543,7 @@ spec
           return (path_term, on_or_off, hist)
         }
       | _ -> {
-          when tracing?
+          when (tracing? || embed? TermTransform script)
             (print ("--" ^ scriptToString script ^ "\n"));
           (path_term, hist) <-
              return
@@ -512,6 +552,12 @@ spec
                                    | Some new_path_term -> new_path_term
                                    | None -> path_term,
                                  hist)
+                | TermTransform(tr_name, tr_fn, arg) ->
+                  let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid) in
+                  let result = apply(tr_fn, arg_with_spc) in
+                  (case extractMSTerm result of
+                     | Some new_term -> replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), hist)
+                     | None -> (path_term, hist))
                 | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, hist)
                 | RenameVars binds -> replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, hist)
                 | PartialEval ->
@@ -521,10 +567,10 @@ spec
                                    path_term, AbstractCommonExpressions, hist)
                 | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term, hist)
                 | Simplify1(rules) ->
-                  let context = makeContext spc in
+                  let context = makeContext spc <<  {maxDepth = 1} in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  replaceSubTermH(rewrite(path_term, context, qid, rules, 1), path_term, hist)
+                  replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, hist)
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of

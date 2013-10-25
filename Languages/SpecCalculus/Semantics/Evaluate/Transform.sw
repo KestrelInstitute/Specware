@@ -123,23 +123,27 @@ spec
       | Item("rewrite",opid,_) -> {qid <- extractQId opid;
                                    return (Rewrite qid)}
       | Name(cmd_name, pos) | transformInfoCommand? cmd_name ->
-        (case lookupMSTermTransformInfo cmd_name of
+        (case lookupMSRuleInfo cmd_name of
            | Some(ty_info, tr_fn) ->
              (case ty_info of
                 | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
-                  {atvs <- transformExprsToAnnTypeValues([], mtis, pos, spc, false, true);
+                  {atvs <- transformExprsToAnnTypeValues([], mtis, pos, spc, {ignored_formal? = false,
+                                                                              implicit_term?  = true,
+                                                                              implicit_qid?   = false});
                    % print("atvs_1:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
-                   return(MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                   return(MetaRule(Qualified(msRuleQualifier, cmd_name),
                                    tr_fn, ArrowsV atvs))}
                 | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
            | None -> raise (TransformError (pos, cmd_name^" not a term transformer.")))
       | Item(cmd_name, Tuple(args, _), pos) | transformInfoCommand? cmd_name ->
-        (case lookupMSTermTransformInfo cmd_name of
+        (case lookupMSRuleInfo cmd_name of
            | Some(ty_info, tr_fn) ->
              (case ty_info of
                 | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
-                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, false, true);
-                   return(MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
+                                                                                implicit_term?  = true,
+                                                                                implicit_qid?   = false});
+                   return(MetaRule(Qualified(msRuleQualifier, cmd_name),
                                    tr_fn, ArrowsV atvs))}
                 | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
            | None -> raise (TransformError (pos, cmd_name^" not a term transformer.")))
@@ -266,7 +270,7 @@ spec
   op checkForNonAttributes(val_prs: List(String * TransformExpr), fld_names: List String, pos: Position): SpecCalc.Env () =
     case findLeftmost(fn (nm, _) -> nm nin? fld_names) val_prs of
       | None -> return()
-      | Some(nm,_) -> raise (TransformError (pos, "Unexpected field: "^nm))
+      | Some(nm,_) -> raise (TransformError (pos, "Unexpected field name: "^nm^"\nNot one of\n"^show ", " fld_names))
 
   op findField(fld_name: String, val_prs: List(String * TransformExpr), pos: Position): SpecCalc.Env TransformExpr =
     case findLeftmost (fn (nm, _) -> fld_name = nm) val_prs of
@@ -354,15 +358,6 @@ spec
   op reservedWords: List String =
     ["true", "false"] ++ commands
 
-  op convertMTItoDefaultATV(mti: MTypeInfo): Option AnnTypeValue =
-    case mti of
-      | Spec -> Some(SpecV emptySpec)
-      | Term -> Some(TermV(Any noPos))
-      | Bool -> Some(BoolV false)
-      | Opt _ -> Some(OptV None)
-      | List _ -> Some(ListV [])
-      | _ -> None
-
   op freePatternVars(tm: MSTerm): MSVars =
     foldSubTerms (fn (stm, fvs) ->
                   case stm of
@@ -395,15 +390,15 @@ spec
       | (Item("apply", thm, _),   Rule) -> return(mapOption (fn qid -> RuleV(MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)))
                                              (transformExprToQualifiedId thm))
       | (Name(cmd_name, _),       Rule) | transformInfoCommand? cmd_name ->
-         (case lookupMSTermTransformInfo cmd_name of
+         (case lookupMSRuleInfo cmd_name of
            | Some(ty_info, tr_fn) ->
              (case ty_info of
                 | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
-                  let atvs = mapPartial convertMTItoDefaultATV mtis in
+                  let atvs = mapPartial defaultAnnTypeValue mtis in
                   if length atvs = length mtis
                     then
                       % let _ = writeLine("atvs_1:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs) in
-                      return(Some(RuleV(MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                      return(Some(RuleV(MetaRule(Qualified(msRuleQualifier, cmd_name),
                                           tr_fn, ArrowsV atvs))))
                   else return(None)
                 | _ -> return(None))
@@ -439,7 +434,9 @@ spec
 
   %% ignored_formal? is true if we have ignored a parameter in ty_infos: used for choosing error message
   op transformExprsToAnnTypeValues(tes: TransformExprs, ty_infos: List MTypeInfo, pos: Position, spc: Spec,
-                                   ignored_formal?: Bool, implicit_term?: Bool)
+                                   status: {ignored_formal?: Bool,
+                                            implicit_term?: Bool,
+                                            implicit_qid?: Bool})
        : Env(List AnnTypeValue) =
     let len_tes = length tes in
     let len_ty_infos = length ty_infos in
@@ -453,104 +450,110 @@ spec
     in
     % let _ = writeLine("tetatv:\n"^anyToString tes^"\n"^show ty_infos) in
     case (tes, ty_infos) of
-      | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
-                                  return(SpecV emptySpec :: r_atvs)}   % emptySpec is a place holder
-      | (_, Term :: ty_i_rst) | implicit_term? ->
-        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, ignored_formal?, false);
-         return(TermV(Any noPos) :: r_atvs)}  % Any noPos is a place holder
+      | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+                                  return(SpecV dummySpec :: r_atvs)}   % emptySpec is a place holder
+      | (_, Term :: ty_i_rst) | status.implicit_term? ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_term? = false});
+         return(TermV dummyMSTerm :: r_atvs)}  % Any noPos is a place holder
+      | (_, PathTerm :: ty_i_rst) ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_term? = false});
+         return(PathTermV dummyPathTerm :: r_atvs)}
+      | (_, OpName :: ty_i_rst) | status.implicit_qid? ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_qid? = false});
+         return(OpNameV(dummyQualifiedId) :: r_atvs)}  % Any noPos is a place holder
       | (_, (Tuple tp_mtis) :: ty_i_rst) | exists? (embed? Spec) tp_mtis ->
         (let expl_mtis = filter (fn mti -> ~(embed? Spec mti)) tp_mtis in
          case expl_mtis of
-           | [mti1] -> {atv1 :: r_atvs <- transformExprsToAnnTypeValues(tes, mti1 :: ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | [mti1] -> {atv1 :: r_atvs <- transformExprsToAnnTypeValues(tes, mti1 :: ty_i_rst, pos, spc, status);
                         return((TupleV(map (fn mti -> case mti of
                                                         | Spec -> SpecV emptySpec
                                                         | _ -> atv1)
                                          tp_mtis))
                                  :: r_atvs)}
-           | _ -> {(TupleV atvs) :: r_atvs <- transformExprsToAnnTypeValues(tes, Tuple expl_mtis :: ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | _ -> {(TupleV atvs) :: r_atvs <- transformExprsToAnnTypeValues(tes, Tuple expl_mtis :: ty_i_rst, pos, spc, status);
                    Some spec_pos  <- return(leftmostPositionSuchThat (tp_mtis, embed? Spec));
                    return((TupleV(subFromTo(atvs, 0, spec_pos)
                                   ++ [SpecV emptySpec]
                                   ++ subFromTo(atvs, spec_pos, length atvs)))
                             :: r_atvs)})
 
-      | ([],          (Opt _)    ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+      | ([],          (Opt _)    ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                                  return((OptV None)::r_atvs)}
       | ((Options([te1], pos))::te_rst, (Opt ty_i1)::ty_i_rst) ->
         {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
          case o_atv of
-           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | None -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                       return((OptV None)::r_atvs)}
-           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                            return(OptV(Some atv1)::r_atvs)}}
       | ((Options(tes as (_ :: _ :: _), pos))::te_rst, (Opt ty_i1)::ty_i_rst) | allowLooseSyntax? ->
-        transformExprsToAnnTypeValues((Tuple(tes, pos)) :: te_rst, ty_i1::ty_i_rst, pos, spc, ignored_formal?, implicit_term?)
+        transformExprsToAnnTypeValues((Tuple(tes, pos)) :: te_rst, ty_i1::ty_i_rst, pos, spc, status)
       | (te1::te_rst, (Opt ty_i1)::ty_i_rst) ->
         {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
          case o_atv of
            | None -> if no_optionals?
-                      then raise(TransformError(pos, if ignored_formal?
+                      then raise(TransformError(pos, if status.ignored_formal?
                                                       then "Unexpected argument type"
                                                       else "Expected argument: "^show ty_i1))
-                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, true, implicit_term?);
+                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {ignored_formal? = true});
                             return((OptV None)::r_atvs)}
-           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                            return(OptV(Some atv1)::r_atvs)}}
 
-      | ([],          (List _)   ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+      | ([],          (List _)   ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                                  return((ListV [])::r_atvs)}
       | ((te1 as Tuple(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) | allowLooseSyntax? ->
         % let _ = writeLine("tetatv Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
         {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, ty_i1, spc)) l_tes;
          let atvs = mapPartial id o_atvs in
          if length atvs = length l_tes
-           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                  return(ListV atvs::r_atvs)}
            else
            {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
             case o_atv of
              | None -> if no_optionals?
-                         then raise(TransformError(pos, if ignored_formal?
+                         then raise(TransformError(pos, if status.ignored_formal?
                                                           then "Unexpected argument type"
                                                         else "Expected argument: "^show(List ty_i1)))
-                       else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, true, implicit_term?);
+                       else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {ignored_formal? = true});
                              return((ListV [])::r_atvs)}
-             | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+             | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                              return(ListV [atv1]::r_atvs)}}}
       | ((te1 as Options(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) ->
         % let _ = writeLine("tetatv Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
         {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, ty_i1, spc)) l_tes;
          let atvs = mapPartial id o_atvs in
          if length atvs = length l_tes
-           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                  return(ListV atvs::r_atvs)}
            else
            {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
             case o_atv of
              | None -> if no_optionals?
-                         then raise(TransformError(pos, if ignored_formal?
+                         then raise(TransformError(pos, if status.ignored_formal?
                                                           then "Unexpected argument type"
                                                         else "Expected argument: "^show(List ty_i1)))
-                       else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, true, implicit_term?);
+                       else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {ignored_formal? = true});
                              return((ListV [])::r_atvs)}
-             | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+             | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                              return(ListV [atv1]::r_atvs)}}}
       | (te1::te_rst, (List ty_i1)::ty_i_rst) ->     % Not sure if want to allow this case -- could confuse with ambiguity
         {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
          case o_atv of
            | None -> if no_optionals?
-                      then raise(TransformError(pos, if ignored_formal?
+                      then raise(TransformError(pos, if status.ignored_formal?
                                                        then "Unexpected argument type"
                                                      else "Expected argument: "^show (List ty_i1)))
-                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, true, implicit_term?);
+                      else {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {ignored_formal? = true});
                             return((ListV [])::r_atvs)}
-           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                            return(ListV[atv1]::r_atvs)}}
 
       | ((Tuple(l_tes, pos))::te_rst, (Tuple ty_is)::ty_i_rst) ->
-        {atvs <- transformExprsToAnnTypeValues(l_tes, ty_is, pos, spc, ignored_formal?, implicit_term?);
+        {atvs <- transformExprsToAnnTypeValues(l_tes, ty_is, pos, spc, status);
          if length atvs = length l_tes
-          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                 return((TupleV atvs)::r_atvs)}
           else raise(TransformError(pos, "Expected argument: "^show (Tuple ty_is)))}
  
@@ -563,7 +566,7 @@ spec
                          {o_atv <- transformExprToAnnTypeValue(te, mtyi, spc);
                           case o_atv  of
                             | None -> return(None)
-                            | Some atv -> return(Some(tag, atv))}
+                            | Some atv -> let _ = writeLine("atv for "^tag^": "^show atv) in return(Some(tag, atv))}
                        | None ->
                          case defaultAnnTypeValue mtyi of
                            | Some atv -> return(Some(tag, atv))
@@ -571,25 +574,32 @@ spec
                fld_tyis;
          tagged_atvs <- return(mapPartial id tagged_o_atvs);
          if length fld_tyis = length tagged_atvs
-           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
-                 return(RecV tagged_atvs::r_atvs)}
-           else raise (TransformError (pos, "Missing or illegal field(s)"))}
+           then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
+                 return(RecV tagged_atvs :: r_atvs)}
+           else
+             let _ = writeLine("fld_tyis: "^anyToString fld_tyis^"\ntagged_atvs: "^anyToString tagged_atvs) in
+             let missing_fields = mapPartial (fn (nm, _) ->
+                                                if exists? (fn (nmi, _) -> nm = nmi) tagged_atvs
+                                                  then None else Some nm)
+                                    fld_tyis
+             in
+             raise (TransformError (pos, "Missing or illegal field(s): "^anyToString missing_fields))}
       | ([], []) -> return []
       | ([], ty_i1::ty_i_rst) ->
         (case defaultAnnTypeValue ty_i1 of
            | None -> raise (TransformError (endPosition pos, "Missing field: "^show ty_i1))
-           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues([], ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues([], ty_i_rst, pos, spc, status);
                            return(atv1::r_atvs)})
       | (te1::_, []) -> raise(TransformError(pos, "Unexpected Transform Expr"))
       | (te1::te_rst, ty_i1::ty_i_rst) ->
         {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
          case o_atv of
            | None -> if no_optionals?
-                      then raise(TransformError(pos, if ignored_formal?
+                      then raise(TransformError(pos, if status.ignored_formal?
                                                        then "Unexpected argument type"
                                                      else "Expected argument: "^show ty_i1))
-                      else transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, true, implicit_term?)
-           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, ignored_formal?, implicit_term?);
+                      else transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {ignored_formal? = true})
+           | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                            return(atv1::r_atvs)}}
 
   op makeScript (spc: Spec) (trans_step: TransformExpr): SpecCalc.Env Script =
@@ -600,11 +610,15 @@ spec
            | Some(ty_info, tr_fn) ->
              (case ty_info of
                 | Arrows(mtis, Spec) -> 
-                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, false, false);
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
+                                                                                implicit_term?  = false,
+                                                                                implicit_qid?   = false});
                    % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
                    return(SpecMetaTransform(cmd_name, tr_fn, ArrowsV atvs))}
                 | Arrows(mtis, Monad Spec) -> 
-                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, false, false);
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
+                                                                                implicit_term? = false,
+                                                                                implicit_qid? = false});
                    % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
                    return(SpecTransformInMonad(cmd_name, tr_fn, ArrowsV atvs))}
                 | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
@@ -613,9 +627,22 @@ spec
            | Some(ty_info, tr_fn) ->
              (case ty_info of
                 | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
-                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, false, true);
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
+                                                                                implicit_term?  = true,
+                                                                                implicit_qid? = true});
                    % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
-                   return(Simplify1([MetaRule(Qualified(msTermTransformQualifier, cmd_name),
+                   return(TermTransform(cmd_name, tr_fn, ArrowsV atvs))}
+                | _ -> raise (TransformError (pos, cmd_name^" not a Spec returning function")))
+           | None ->
+         case lookupMSRuleInfo cmd_name of
+           | Some(ty_info, tr_fn) ->
+             (case ty_info of
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
+                  {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
+                                                                                implicit_term?  = true,
+                                                                                implicit_qid?  = false});
+                   % print("atvs:\n"^foldr (fn (atv, result) -> show atv^"\n"^result) "" atvs);
+                   return(Simplify1([MetaRule(Qualified(msRuleQualifier, cmd_name),
                                               tr_fn, ArrowsV atvs)]))}
                 | _ -> raise (TransformError (pos, cmd_name^" not a MSTerm returning function")))
            %% Shouldn't happen

@@ -1491,6 +1491,13 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                        else Some(Unfold osi_qid))
                          iso_info
      in
+     let rec_osi_unfolds = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
+                                     if osi_qid in? recursive_ops
+                                       && definedOp?(spc, osi_qid)
+                                       then Some(Unfold osi_qid)
+                                       else None)
+                             iso_info
+     in
      let osi_rewrites = mapPartial (fn (_,(Fun(Op(osi_qid,_),_,_),_,_,_)) ->
                                      if osi_qid in? recursive_ops
                                          && definedByCases?(osi_qid, spc)
@@ -1510,6 +1517,11 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                                    then Unfold iso_qid
                                                    else Rewrite iso_qid))
                          iso_info
+     in
+     let rec_iso_unfolds = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
+                                         if iso_qid in? recursive_ops then Some(Unfold iso_qid)
+                                         else None)
+                             iso_info
      in
      let iso_rewrites = mapPartial (fn ((Fun(Op(iso_qid,_),_,_),_,_,_),_) ->
                                      if iso_qid in? recursive_ops
@@ -1534,7 +1546,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
      let gen_unfolds = [Unfold(mkQualifiedId("Function","o")),
                         Unfold(mkQualifiedId("Function","id")),
                         Rewrite(mkQualifiedId("Option","mapOption")),
-                        mkMetaRule0 (Qualified("MSTermTransform", "simplifyUnfoldCase"))]
+                        mkMetaRule0 (Qualified("MSRule", "simplifyUnfoldCase"))]
      in
      let main_script =
        Steps([% Trace true,% SimpStandard,
@@ -1545,7 +1557,8 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                             % ++ osi_unfolds
                             ++ complex_iso_fn_unfolds
                             %++ rewrite_old
-                            ),            
+                            ),
+              
               mkSimplify (gen_unfolds
                             ++ iso_osi_rewrites
                             ++ complex_iso_fn_unfolds
@@ -1558,14 +1571,24 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                             ),
                 % AbstractCommonExpressions
 
-              mkSimplify (gen_unfolds
-                             ++ iso_osi_rewrites
-                             ++ unfold_old
-                             ++ iso_rewrites
-                             ++ osi_rewrites
-                             ++ osi_unfolds
-                             ++ iso_unfolds
-                             ++ extra_rules),
+              if rec_osi_unfolds = [] && rec_iso_unfolds = []
+                then mkSimplify (gen_unfolds
+                                   ++ iso_osi_rewrites
+                                   ++ unfold_old
+                                   ++ iso_rewrites
+                                   ++ osi_rewrites
+                                   ++ osi_unfolds
+                                   ++ iso_unfolds
+                                   ++ extra_rules)
+                  else Repeat [Simplify1(rec_osi_unfolds ++ rec_iso_unfolds),
+                               mkSimplify (gen_unfolds
+                                             ++ iso_osi_rewrites
+                                             ++ unfold_old
+                                             ++ iso_rewrites
+                                             ++ osi_rewrites
+                                             ++ osi_unfolds
+                                             ++ iso_unfolds
+                                             ++ extra_rules)],
               SimpStandard
                 % AbstractCommonExpressions
               ])

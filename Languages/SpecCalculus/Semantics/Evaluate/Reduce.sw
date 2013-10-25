@@ -1,9 +1,9 @@
-\section{Term reduction}
+(*    Term reduction
 
 Given a spec and a meta-slang term, we construct rewrite rules from the spec
 and apply them to the given term.
+*)
 
-\begin{spec}
 SpecCalc qualifying spec
   import Signature
   import Spec
@@ -13,7 +13,7 @@ SpecCalc qualifying spec
   import /Languages/MetaSlang/Specs/Elaborate/Utilities % for freshMetaTyVar
 
 
-  def SpecCalc.reduce ms_term sc_term pos = {
+  def reduce ms_term sc_term pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating reduction at " ^ (uidToString unitId) ^ "\n");
     result as (spcValue, timeStamp, depUnitIds) <- evaluateTermInfo sc_term;
@@ -36,7 +36,7 @@ SpecCalc qualifying spec
           reducedTerm <-
             let
               def reduceTerm count trm =
-                let lazy = rewriteRecursive (ctxt,[],rules,trm,100) in
+                let lazy = rewriteRecursive (ctxt,[],rules,trm) in
                 case lazy of
                   | Nil -> trm
                   | Cons ([], _) -> trm
@@ -53,4 +53,3 @@ SpecCalc qualifying spec
       | _ -> raise (TypeCheck (pos, "reduction context is not a spec"))
     }
 endspec
-\end{spec}

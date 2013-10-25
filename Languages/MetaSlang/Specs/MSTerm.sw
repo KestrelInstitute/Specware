@@ -356,6 +356,8 @@ op mkTuplePat   (pats : MSPatterns) : MSPattern =
    | _ -> 
      RecordPat (tagTuple pats, noPos)
 
+op mkVarsPat(vs: MSVars): MSPattern = mkTuplePat(map mkVarPat vs)
+
 op mkWildPat       (typ : MSType) : MSPattern = WildPat   (typ, noPos)
 op mkBoolPat       (b   : Bool)   : MSPattern = BoolPat   (b,   noPos)
 op mkNatPat        (n   : Nat)    : MSPattern = NatPat    (n,   noPos)

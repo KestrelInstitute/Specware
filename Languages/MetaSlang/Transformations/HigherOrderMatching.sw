@@ -28,18 +28,20 @@ HigherOrderMatching qualifying spec
         traceDepth  : Ref Nat,
 	traceIndent : Ref Nat,
 	boundVars   : MSVars,
-        counter     : Ref Nat
+        counter     : Ref Nat,
+        %% Data to control Rewriter
+        traceRewriting          : Nat,
+        traceShowsLocalChanges? : Bool,
+        useStandardSimplify?    : Bool,
+        debugApplyRewrites?     : Bool,
+        maxDepth                : Nat,
+        backwardChainMaxDepth   : Nat,
+        conditionResultLimit    : Nat,
+        termSizeLimit           : Nat
       }
 
   op withSpec infixl 17 : Context * Spec -> Context
-  def withSpec (ctxt,spc) = { 
-        spc = spc,
-        trace = ctxt.trace,
-        traceDepth = ctxt.traceDepth,
-        traceIndent = ctxt.traceIndent,
-        boundVars = ctxt.boundVars,
-        counter = ctxt.counter
-      }
+  def withSpec (ctxt,spc) = ctxt << {spc = spc}
 
 %% . spc        : Spec
 %% . trace      : print trace?
@@ -1336,25 +1338,46 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
   def deNormalizeTerm  = 
       mapTerm(doDeNormalizeTerm,fn s -> s,fn p -> p)
 
+%% Rewriter ccontrol defaults
+ op MetaSlangRewriter.traceRewriting : Nat = 0
+ op MetaSlangRewriter.traceShowsLocalChanges?: Bool = true
+ op MetaSlangRewriter.useStandardSimplify?: Bool = true
+ op MetaSlangRewriter.debugApplyRewrites?:  Bool = false
+ op MetaSlangRewriter.maxDepth: Nat = 100
+ op MetaSlangRewriter.backwardChainMaxDepth: Nat = 10
+ op MetaSlangRewriter.conditionResultLimit: Nat = 4
+ op MetaSlangRewriter.termSizeLimit: Nat = 1000
 
- op makeContext : Spec -> Context
-
- def makeContext spc = 
-     {
-	spc        = spc,
+ op makeContext (spc: Spec): Context = 
+     {  spc        = spc,
 	trace      = true,
 	traceDepth = Ref 0,
 	traceIndent = Ref 0,
         boundVars  = [],
-	counter    = Ref 1
-     }
+	counter    = Ref 1,
+        traceRewriting          = traceRewriting,
+        traceShowsLocalChanges? = traceShowsLocalChanges?,
+        useStandardSimplify?    = useStandardSimplify?,
+        debugApplyRewrites?     = debugApplyRewrites?,
+        maxDepth                = maxDepth,
+        backwardChainMaxDepth   = backwardChainMaxDepth,
+        conditionResultLimit    = conditionResultLimit,
+        termSizeLimit           = termSizeLimit     % Should be computed
+      }
  
+ op printContextOptions(context: Context): () =
+   (writeLine("\nContext:");
+    writeLine("traceRewriting: "^show context.traceRewriting);
+    writeLine("traceShowsLocalChanges?: "^show context.traceShowsLocalChanges?);
+    writeLine("useStandardSimplify?: "^show context.useStandardSimplify?);
+    writeLine("debugApplyRewrites?: "^show context.debugApplyRewrites?);
+    writeLine("maxDepth: "^show context.maxDepth);
+    writeLine("backwardChainMaxDepth: "^show context.backwardChainMaxDepth);
+    writeLine("conditionResultLimit: "^show context.conditionResultLimit);
+    writeLine("termSizeLimit: "^show context.termSizeLimit))
+
  op setBound : Context * MSVars -> Context
- def setBound({spc,trace,traceDepth,traceIndent,boundVars,counter},bv) = 
-     {spc = spc,trace = trace,
-      traceDepth = traceDepth,
-      traceIndent = traceIndent,
-      boundVars = bv,counter = counter}
+ def setBound(ctxt,bv) = ctxt << {boundVars = bv}
 
 
   op [a] printSubst: StringMap(AType a) * NatMap.Map(ATerm a) * List (ATerm a) -> ()
