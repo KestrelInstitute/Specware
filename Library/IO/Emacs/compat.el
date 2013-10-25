@@ -414,7 +414,7 @@
 
   (defvar *specware-buffer-name* "*Specware Shell*")
   
-  (setq slime-find-buffer-package-function 'slime-lisp-package)
+  ;(setq slime-find-buffer-package-function 'slime-lisp-package)
   (setq slime-enable-evaluate-in-emacs t)
 
   ;(push 'specware-mode slime-modes)
