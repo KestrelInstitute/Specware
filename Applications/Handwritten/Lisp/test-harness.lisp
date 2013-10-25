@@ -100,7 +100,7 @@ be the option to run each (test ...) form in a fresh image.
   ;; Then recursively test the sub-directories
   (loop for dir in dirs
     do (let* ((dirpath (if (stringp dir)
-			   (Specware::sw-parse-namestring (Specware::ensure-final-slash dir))
+			   (Specware::sw-parse-namestring (cl-user::subst-home (Specware::ensure-final-slash dir)))
 			 dir)))
 	 ;; sort the directory items to make runs more predictable
 	 (loop for dir-item in (sorted-directory dirpath)
@@ -113,7 +113,7 @@ be the option to run each (test ...) form in a fresh image.
   (setq Specware::Specware4 (Specware::getenv "SPECWARE4"))
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (Specware::sw-parse-namestring (Specware::ensure-final-slash dir))
+			    (Specware::sw-parse-namestring (cl-user::subst-home (Specware::ensure-final-slash dir)))
 			  dir))
 	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
 					  dirpath)))
