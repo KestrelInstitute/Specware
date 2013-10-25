@@ -276,6 +276,8 @@ accepted in lieu of prompting."
   ;(define-key map "\C-?"     'backward-delete-char-untabify)
   (define-key map "\C-\M-a"  'sw:beginning-of-unit)
   (define-key map "\C-\M-e"  'sw:end-of-unit)
+  (define-key map [(control super a)]  'sw:beginning-of-element)
+  (define-key map [(control super e)]  'sw:end-of-element)
   (define-key map "\C-\M-n"  'sw:next-unit)
   (define-key map "\C-c%"    'extract-sexp)
   (define-key map "\C-c;"    'comment-region)
@@ -1611,7 +1613,7 @@ STRING should be given if the last search was by `string-match' on STRING."
   (forward-line 1))
     (goto-char (point-max))))
 
-(defvar sw:element-intro-regexp "^op ")
+(defvar sw:element-intro-regexp "^\\s-*\\(op\\|def\\|type\\|axiom\\|theorem\\|proof\\|#translate\\) ")
 
 (defun sw:beginning-of-element ()
   (interactive "")
