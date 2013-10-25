@@ -3,7 +3,7 @@
 
 (defvar lisp-emacs-interface-type 'slime)
 
-(defconst *specware* (getenv "SPECWARE4"))
+(defconst *specware* (or (getenv "SPECWARE4") (concat (getenv "HOME") "/Specware")))
 (defconst *specware-home-directory* *specware*)
 
 (defvar cygwin? 
