@@ -1,8 +1,7 @@
 Globalize qualifying spec
 {
  import /Languages/MetaSlang/Transformations/Setf
- import /Languages/MetaSlang/Transformations/OldSlice   % TODO: deprecated
-%import /Languages/MetaSlang/Transformations/SliceSpec  % replace with this
+ import /Languages/MetaSlang/Transformations/SliceSpec
  import /Languages/MetaSlang/Transformations/RecordMerge
  import /Languages/MetaSlang/Transformations/CommonSubExpressions
  import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
@@ -1436,6 +1435,18 @@ Globalize qualifying spec
         in
         old_info
 
+ op genericSlice (ms_spec    : Spec,
+                  root_ops   : QualifiedIds,
+                  root_types : QualifiedIds)
+  : Slice =
+  let
+    def ignore_language_morphisms spc = []
+
+    def vacuous_oracle (ref, slice) = None
+
+  in
+  executionSlice (ms_spec, ignore_language_morphisms, vacuous_oracle, root_ops, root_types)
+
  op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) =
   (*
    * At this point, we know:
@@ -1453,72 +1464,74 @@ Globalize qualifying spec
   in
 
   % first slice gets ops to be globalized
-  let (ops_in_first_slice, _) =
-      sliceSpecInfo (spc, 
-                     root_ops, root_types,  % start searching from these, and include them
-                     baseOp?, baseType?,    % stop searching at these, and do not include them
-                     false,                 % chase_terms_in_types?
-                     false,                 % chase_theorems?
-                     false)                 % firstDefsOnly?  
+  let first_slice = genericSlice (spc, root_ops, root_types) in
+  let ops_in_first_slice = 
+      foldl (fn (names, ref) ->
+               case ref of
+                 | Op oref -> oref.name |> names
+                 | _ -> names)
+            []
+            first_slice.resolved_refs
   in
+
   % globalizing those ops may introduce new references to global vars
   % (and might remove some references to other ops in the process)
   let globalized_spec_ops =
-      foldriAQualifierMap (fn (q, id, x, pending_ops) ->
-                             let qid = Qualified (q, id) in
-                               case findTheOp (spc, qid) of
-                                 | Some info -> 
-                                   let new_info = 
-                                       if context.global_init_name = qid then % don't revise init op
-                                         info
-                                       else
-                                         globalizeOpInfo (context, info) 
-                                   in
-                                   insertAQualifierMap (pending_ops, q, id, new_info)
-                                 | _ -> 
-                                   let _ = writeLine("??? Globalize could not find op " ^ q ^ "." ^ id) in
-                                   pending_ops)
-                          spc.ops
-                          ops_in_first_slice
+      foldl (fn (new_ops, name  as Qualified(q,id)) ->
+               case findTheOp (spc, name) of
+                 | Some info -> 
+                   let new_info = 
+                       if context.global_init_name = name then % don't revise init op
+                         info
+                       else
+                         globalizeOpInfo (context, info) 
+                   in
+                   insertAQualifierMap (new_ops, q, id, new_info)
+                 | _ -> 
+                   let _ = writeLine("??? Globalize could not find op " ^ show name) in
+                   new_ops)
+            spc.ops
+            ops_in_first_slice
   in
   let spec_with_globalized_ops_added = spc << {ops = globalized_spec_ops} in
 
   % redo slice, this time chasing through any new references introduced just above
   % (also ignoring any old references removed just above)
-  let (ops_in_slice, types_in_slice) =
-      sliceSpecInfo (spec_with_globalized_ops_added,
-                     root_ops, root_types,  % start searching from these, and include them
-                     baseOp?, baseType?,    % stop searching at these, and do not include them
-                     false,                 % chase_terms_in_types?
-                     false,                 % chase_theorems?
-                     false)                 % firstDefsOnly?  
-  in
+  let second_slice = genericSlice (spec_with_globalized_ops_added, root_ops, root_types) in
 
-  % new ops and types are the base plus things reached in second slice
   let new_ops =
       let base_ops = mapiPartialAQualifierMap (fn (q, id, info) ->
                                                  if baseOp? (Qualified(q, id)) then
                                                    Some info
                                                  else
                                                    None)
-                                              spc.ops
+                                              spec_with_globalized_ops_added.ops
       in
-      foldriAQualifierMap (fn (q, id, x, pending_ops) ->
-                             let qid = Qualified (q, id) in
-                               case findTheOp (spc, qid) of
-                                 | Some info -> 
-                                   let new_info =
-                                       if context.global_init_name = qid then % don't revise init op
-                                         info
-                                       else
-                                         globalizeOpInfo (context, info) 
-                                   in
-                                   insertAQualifierMap (pending_ops, q, id, new_info)
-                                 | _ -> 
-                                   let _ = writeLine("Internal confusion: Globalize could not find op " ^ q ^ "." ^ id) in
-                                   pending_ops)
-                          base_ops
-                          ops_in_slice
+      let ops_in_second_slice =
+          foldl (fn (names, ref) ->
+                   case ref of
+                     | Op oref -> oref.name |> names
+                     | _ -> names)
+                []
+                second_slice.resolved_refs
+      in
+
+      % new ops are the base ops plus ops reached in second slice
+      foldl (fn (new_ops, name as Qualified (q, id)) ->
+               case findTheOp (spec_with_globalized_ops_added, name) of
+                 | Some info -> 
+                   let new_info =
+                       if context.global_init_name = name then % don't revise init op
+                         info
+                       else
+                         globalizeOpInfo (context, info) 
+                   in
+                   insertAQualifierMap (new_ops, q, id, new_info)
+                 | _ -> 
+                   let _ = writeLine("Internal confusion: Globalize could not find op " ^ show name) in
+                   new_ops)
+            base_ops
+            ops_in_second_slice
   in
   let new_types =
       let base_types = mapiPartialAQualifierMap (fn (q, id, info) ->
@@ -1526,21 +1539,31 @@ Globalize qualifying spec
                                                      Some info
                                                    else
                                                      None)
-                                                spc.types
+                                                spec_with_globalized_ops_added.types
       in
-      foldriAQualifierMap (fn (q, id, x, pending_types) ->
-                             case findTheType (spc, Qualified (q, id)) of
-                               | Some info -> 
-                                 insertAQualifierMap (pending_types, q, id, info)
-                               | _ -> 
-                                 let _ = writeLine("Internal confusion: Globalize could not find type " ^ q ^ "." ^ id) in
-                                 pending_types)
-                          base_types
-                          types_in_slice
+      let types_in_second_slice =
+          foldl (fn (names, ref) ->
+                   case ref of
+                     | Type tref -> tref.name |> names
+                     | _ -> names)
+                []
+                second_slice.resolved_refs
+      in
+
+      % new types are the base types plus types reached in second slice
+      foldl (fn (new_types, name as Qualified (q, id)) ->
+               case findTheType (spec_with_globalized_ops_added, Qualified (q, id)) of
+                 | Some info -> 
+                   insertAQualifierMap (new_types, q, id, info)
+                 | _ -> 
+                   let _ = writeLine("Internal confusion: Globalize could not find type " ^ show name) in
+                   new_types)
+            base_types
+            types_in_second_slice
   in
   let 
     def globalize_elements elements =
-      % relative to new ops and types above...
+      % uses new_ops and new_types defined above...
       foldl (fn (new_elts, elt) ->
                case elt of
                  | Import (sc_term, imported_spec, imported_elts, pos) ->
@@ -1569,7 +1592,7 @@ Globalize qualifying spec
              []
              elements
   in
-  let new_elements = globalize_elements spc.elements in
+  let new_elements = globalize_elements spec_with_globalized_ops_added.elements in
   let new_spec = spc << {ops      = new_ops, 
                          types    = new_types,
                          elements = new_elements} 
@@ -1627,6 +1650,7 @@ Globalize qualifying spec
                                | _ -> checkGlobalInitOp (spc, ginit, global_type_name))
                           | _ -> findInitOp (spc, global_type_name));
 
+  %root_ops         <- return (root_ops ++ [global_init_name]);
    global_var_map   <- return (case findTheType (spc, global_type_name) of
                                  | Some info -> 
                                    (case info.dfn of
@@ -1657,6 +1681,7 @@ Globalize qualifying spec
                              spec_with_gset
                              global_var_map;
                              
+   % return (let slice = genericSlice (spec_with_gvars, root_ops, []) in describeSlice ("Added GVars", slice));
    % showIntermediateSpec ("with gvars", spec_with_gvars);
 
    spec_with_ginit  <- return (case (global_init_name : QualifiedId) of
@@ -1684,6 +1709,8 @@ Globalize qualifying spec
                                        let _ = writeLine ("??? Op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
                                        spec_with_gvars);
 
+
+   % return (let slice = genericSlice (spec_with_ginit, root_ops, []) in describeSlice ("Added ginit", slice));
    % showIntermediateSpec ("with ginit", spec_with_ginit);
 
    % hack to fix problem where 'global_var << {..}' was becoming just '{...}'
@@ -1703,17 +1730,22 @@ Globalize qualifying spec
                                   in
                                   replaceLocalsWithGlobalRefs context;
 
+   spec_with_setf_theorms <- return globalized_spec;
+
+%  spec_with_setf_theorms <- return (let setf_theorems = map (fn entry -> entry.thm) setf_entries in
+%                                     globalized_spec << {elements = globalized_spec.elements ++ setf_theorems});
+
    % Add the main global var after calling replaceLocalsWithGlobalRefs, 
    % since that would prune it away before any references were introduced.
-   spec_with_gvar   <- (case findTheOp (globalized_spec, global_var_name) of
-                          | Some _ -> return globalized_spec
+   spec_with_gvar   <- (case findTheOp (spec_with_setf_theorms, global_var_name) of
+                          | Some _ -> return spec_with_setf_theorms
                           | _ -> 
                             let refine? = false                               in
                             let gtype   = Base (global_type_name, [],  noPos) in
                             let dfn     = TypedTerm (Any noPos, gtype, noPos) in
-                            addOp [global_var_name] Nonfix refine? dfn globalized_spec noPos);
+                            addOp [global_var_name] Nonfix refine? dfn spec_with_setf_theorms noPos);
 
-
+   % return (let slice = genericSlice (spec_with_gvar, root_ops ++ [global_var_name], []) in describeSlice ("Globalized spec with gvar", slice));
    % showIntermediateSpec ("with gvar", spec_with_gvar);
 
    return (spec_with_gvar, tracing?)
