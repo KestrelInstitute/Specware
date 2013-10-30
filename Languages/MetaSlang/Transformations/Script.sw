@@ -335,7 +335,7 @@ spec
      let rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, hist: TransformHistory): MSTerm * TransformHistory =
            %let _ = writeLine("doTerm "^show count) in
-           let lazy = rewriteRecursive (context, freeVars trm, rules, trm) in
+           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, pathTermPath path_term) in
            case lazy of
              | Nil -> (trm, hist)
              | Cons([], tl) -> (trm, hist)
@@ -543,7 +543,7 @@ spec
           return (path_term, on_or_off, hist)
         }
       | _ -> {
-          when (tracing? || embed? TermTransform script)
+          when tracing?
             (print ("--" ^ scriptToString script ^ "\n"));
           (path_term, hist) <-
              return

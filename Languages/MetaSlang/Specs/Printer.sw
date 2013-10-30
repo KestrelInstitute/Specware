@@ -41,8 +41,6 @@ AnnSpecPrinter qualifying spec
 
  %% ========================================================================
 
- type Path = List Nat
-
  type ParentType = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subtype 
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat

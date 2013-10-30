@@ -2,12 +2,12 @@ PathTerm qualifying
 spec
 import ../Specs/Utilities
 
-type Path = List Nat
 type APathTerm a = ATerm a * Path
 
 type PathTerm = APathTerm Position.Position
 
  op [a] topTerm(ptm: APathTerm a): ATerm a = ptm.1
+ op [a] pathTermPath(ptm: APathTerm a): Path = ptm.2
 
  op [a] infixFn?(f: AFun a): Bool =
     case f of

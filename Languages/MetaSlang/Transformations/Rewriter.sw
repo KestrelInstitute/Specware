@@ -9,7 +9,7 @@ MetaSlangRewriter qualifying spec
 
  type TermPredicate = MSTerm * MSTerm -> Bool
 
-  def mkVar = HigherOrderMatching.mkVar     
+ def mkVar = HigherOrderMatching.mkVar     
 
 %%
 %% Application of set of rewrite rules
@@ -104,7 +104,7 @@ MetaSlangRewriter qualifying spec
      else new_results
 
  op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Bool)
-                      (boundVars: MSVars, term: MSTerm, demod: Demod RewriteRule)
+                      (boundVars: MSVars, term: MSTerm, path: Path, demod: Demod RewriteRule)
                       : LazyList(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule))  = 
 %     let _ = writeLine("Rewriting:\n"^printTerm term) in
 %     let _ = writeLine("with rules:") in
@@ -343,20 +343,22 @@ MetaSlangRewriter qualifying spec
                 binds,
               M1, b)
 
- op maybePushIfBack(tr_if: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
-   case tr_if of
-     | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
-       let qn = termToList q in
-       let rn = termToList r in
-       if equalTerm?(f, f1)
-          && equalTerm?(f, f2)
-          && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)
-                                        && equalTerm?(Ns@j, rn@j)))
-               (tabulate(length Ns, id))
-         then mkAppl(f, replaceNth(i, Ns, IfThenElse(p, qn@i, rn@i, pos)))
-         else tr_if
-     | _ -> tr_if
+%% Needs to explicate implicit transformation
+op maybePushIfBack(tr_if: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
+  case tr_if of
+    | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
+      let qn = termToList q in
+      let rn = termToList r in
+      if equalTerm?(f, f1)
+         && equalTerm?(f, f2)
+         && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)
+                                       && equalTerm?(Ns@j, rn@j)))
+              (tabulate(length Ns, id))
+        then mkAppl(f, replaceNth(i, Ns, IfThenElse(p, qn@i, rn@i, pos)))
+        else tr_if
+    | _ -> tr_if
 
+%% Needs to explicate implicit transformation
 op maybePushLetBack(tr_let: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
    case tr_let of
      | Let(bds, Apply(f1, q, a), pos) ->
@@ -368,6 +370,7 @@ op maybePushLetBack(tr_let: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
          else tr_let
      | _ -> tr_let
 
+%% Needs to explicate implicit transformation
 op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
    case tr_case of
      | Apply(Lambda(binds,b3), case_tm, b2) ->
@@ -487,24 +490,24 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 
 *)
 
- type Rewriter a = MSVars * MSTerm * Demod RewriteRule -> LazyList (MSTerm * a) 
+ type Rewriter a = MSVars * MSTerm * Path * Demod RewriteRule -> LazyList (MSTerm * a) 
  %type Matcher  a = MSVars * Term * Term -> LazyList a
  type Strategy   = | Innermost | Outermost
  type RewriteInfo a = {strategy: Strategy, rewriter: Rewriter a, context: Context}
 
- op rewriteTerm    : [a] RewriteInfo a * MSVars * MSTerm * Demod RewriteRule
+ op rewriteTerm    : [a] RewriteInfo a * MSVars * MSTerm * Path * Demod RewriteRule
                            -> LazyList (MSTerm * a)
- op rewriteSubTerm : [a] RewriteInfo a * MSVars * MSTerm * Demod RewriteRule
+ op rewriteSubTerm : [a] RewriteInfo a * MSVars * MSTerm * Path * Demod RewriteRule
                            -> LazyList (MSTerm * a)
 
  op [a] rewritePattern (solvers: RewriteInfo a, boundVars: MSVars,
-                        pat: MSPattern, rules: Demod RewriteRule, ign?: Bool)
+                        pat: MSPattern, path: Path, rules: Demod RewriteRule, ign?: Bool)
           : LazyList(MSPattern * a) =
    case pat of
      | RestrictedPat(p,t,b) | ign? ->
        LazyList.map 
          (fn (t,a) -> (RestrictedPat(p,t,b),a)) 
-         (rewriteTerm(solvers,boundVars ++ patternVars p,t,rules))
+         (rewriteTerm(solvers,boundVars ++ patternVars p,t,path,rules))
      | _ -> Nil
  
  op pushTerm?(tm: MSTerm): Bool =
@@ -513,7 +516,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
      | Let _ -> true
      | _ -> caseExpr? tm
 
- def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) =
+ def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,path,rules) =
    case term of
      | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
        let Ns = termToList N in
@@ -524,7 +527,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                                    mkAppl(M,replaceNth(i, Ns, q)),
                                    mkAppl(M,replaceNth(i, Ns, r)), b)
              in
-             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
+             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
              LazyList.map (fn (tr_tm, a) -> (maybePushIfBack(tr_tm, M, Ns, i), a))
                tr_tms)
           | _ ->
@@ -532,7 +535,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
           | Some (i,let_tm) | pushFunctionsIn? && pushable? M ->
             (let Let(bds,lt_body,a2) = let_tm in
              let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
-             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
+             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
              LazyList.map (fn (tr_tm, a) -> (maybePushLetBack(tr_tm, M, Ns, i), a))
                tr_tms)
           | _ ->
@@ -544,21 +547,21 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                                        binds, b3),
                               case_tm, b2)
              in
-             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,rules) in
+             let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
              LazyList.map (fn (tr_tm, a) -> (maybePushCaseBack(tr_tm, M, Ns, i), a))
                tr_tms))
      | _ ->
    case strategy
      of Innermost -> 
-        rewriteSubTerm(solvers,boundVars,term,rules) 
+        rewriteSubTerm(solvers,boundVars,term,path,rules) 
         @@
-        (fn () -> rewriter (boundVars,term,rules))
+        (fn () -> rewriter (boundVars,term,path,rules))
       | Outermost -> 
-        rewriter (boundVars,term,rules) 
+        rewriter (boundVars,term,path,rules) 
         @@
-        (fn () -> rewriteSubTerm(solvers,boundVars,term,rules))
+        (fn () -> rewriteSubTerm(solvers,boundVars,term,path,rules))
 
- def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
+ def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,path,rules) = 
    case term of
      | Apply(M,N,b) ->
        let Ns = termToList N in
@@ -566,10 +569,10 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
           | Lambda(lrules,b1) ->
             %% Separate case so we can use the context of the pattern matching
             LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
-              (rewriteTerm(solvers,boundVars,N,rules))
+              (rewriteTerm(solvers,boundVars,N,0::path,rules))
             @@ (fn () ->
                   mapEach(fn (first,(pat,cond,M),rest) -> 
-                      rewritePattern(solvers,boundVars,pat,rules,false)
+                      rewritePattern(solvers,boundVars,pat,path,rules,false)
                       >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
                     lrules
             @@ (fn () ->
@@ -588,7 +591,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                              let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
                              (M, addDemodRules(assertRules(context, equal_term, "case", Context, Either), rules), [])
                      in
-                     rewriteTerm(solvers,(boundVars ++ patternVars pat), M, rules)
+                     rewriteTerm(solvers,(boundVars ++ patternVars pat), M, 1::path, rules)
                      >>= (fn (M,a) ->
                             let M = invertSubst(M,sbst) in
                             unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
@@ -597,10 +600,10 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
               | (case Ns of [_,Lambda([_], _)] -> true | _ -> false) ->
             let [set_term, f as Lambda([(p,c,bod)],b1)] = Ns in 
             LazyList.map (fn (set_term,a) -> (mkAppl(M,[set_term,f]),a)) 
-              (rewriteTerm(solvers,boundVars,set_term,rules))
+              (rewriteTerm(solvers,boundVars,set_term,0::1::path,rules))
             @@ (fn () -> 
                   LazyList.map (fn (bod,a) -> (mkAppl(M,[set_term, Lambda([(p,c,bod)],b1)]), a))
-                  (rewriteTerm(solvers,boundVars ++ patternVars p,bod,
+                  (rewriteTerm(solvers,boundVars ++ patternVars p,bod,0::1::1::path,
                                let Some v_tm = patternToTerm p in
                                let memb_assert = mkAppl(mkInfixOp(mkUnQualifiedId("in?"),
                                                                   Infix(Left,100),
@@ -614,20 +617,20 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                                              rules))))
           | _ ->
         LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
-          (rewriteTerm(solvers,boundVars,N,rules))
+          (rewriteTerm(solvers,boundVars,N,1::path,rules))
         @@ (fn () -> 
               LazyList.map (fn (M,a) -> (Apply(M,N,b),a)) 
-                (rewriteTerm(solvers,boundVars,M,rules))))
+                (rewriteTerm(solvers,boundVars,M,0::path,rules))))
      | Record(fields,b) -> 
        mapEach 
         (fn (first,(label,M),rest) -> 
-            rewriteTerm(solvers,boundVars,M,rules) >>= 
+            rewriteTerm(solvers,boundVars,M,(length first)::path,rules) >>= 
             (fn (M,a) -> unit(Record(first ++ [(label,M)] ++ rest,b),a)))
         fields
      | Lambda(lrules,b) ->
        let last_rule = last lrules in
        mapEach(fn (first,rule as (pat,cond,M),rest) -> 
-                 rewritePattern(solvers,boundVars,pat,rules, rule = last_rule)
+                 rewritePattern(solvers,boundVars,pat,path, rules, rule = last_rule)
                  >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
          lrules               % A condition on the last case should be guaranteed by the type
        @@ (fn () ->
@@ -635,65 +638,65 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
              (fn (first,(pat,cond,M),rest) -> 
                 let patvars = patternVars pat in
                 let rules = addPatternRestriction(context,pat,rules) in
-                rewriteTerm(solvers, boundVars ++ patternVars pat, M, rules)
+                rewriteTerm(solvers, boundVars ++ patternVars pat, M, (length first)::path, rules)
                 >>= (fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
              lrules)
      | Let(binds,M,b) ->
         mapEach (fn (first,(pat,N),rest) ->
-                   rewriteTerm(solvers,boundVars,N,rules) >>=
+                   rewriteTerm(solvers,boundVars,N,(length first)::path,rules) >>=
                    (fn (N,a) -> unit(Let(first ++ [(pat,N)] ++ rest,M,b),a)))
           binds
         @@ (fn () ->
              let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
              let p_M = unFoldSimpleLet(binds,M) in
              LazyList.map (fn (r_M,a) -> (reFoldLetVars(binds,r_M,b),a))
-               (rewriteTerm(solvers,boundVars ++ let_vars,p_M,rules)) )
+               (rewriteTerm(solvers,boundVars ++ let_vars,p_M,(length binds)::path,rules)) )
      | LetRec(binds,M,b) ->
        let letrec_vars = map(fn (v, _) -> v) binds in
        let boundVars = boundVars ++ letrec_vars in
        mapEach (fn (first,(v,N),rest) ->
-                  rewriteTerm(solvers,boundVars,N,rules) >>=
+                  rewriteTerm(solvers,boundVars,N,(length first)::path,rules) >>=
                   (fn (N,a) -> unit(LetRec(first ++ [(v,N)] ++ rest,M,b),a)))
          binds
        @@ (fn () ->
              LazyList.map (fn (M,a) -> (LetRec(binds,M,b),a)) 
-               (rewriteTerm(solvers,boundVars,M,rules)))
+               (rewriteTerm(solvers,boundVars,M,(length binds)::path,rules)))
 
 %           let let_vars = map(fn (v, _) -> v) bind in
 %           LazyList.map (fn (M,a) -> (Bind(qf,vars,M,b),a))
 %		(rewriteTerm(solvers,boundVars ++ let_vars,M,rules))
      | Bind(qf,vars,M,b) -> 
        LazyList.map (fn (M,a) -> (Bind(qf,vars,M,b),a))
-            (rewriteTerm(solvers,boundVars ++ vars,M,rules))
+            (rewriteTerm(solvers,boundVars ++ vars,M,0::path,rules))
      | The (var,M,b) -> 
        LazyList.map (fn (M,a) -> (The(var,M,b),a))
-            (rewriteTerm(solvers,boundVars ++ [var],M,rules))
+            (rewriteTerm(solvers,boundVars ++ [var],M,0::path,rules))
      | IfThenElse(M,N,P,b) -> 
        LazyList.map 
             (fn (M,a) -> (IfThenElse(M,N,P,b),a)) 
-            (rewriteTerm(solvers,boundVars,M,rules)) @@
+            (rewriteTerm(solvers,boundVars,M,0::path,rules)) @@
        (fn () -> 
        LazyList.map 
             (fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
-            (rewriteTerm(solvers,boundVars,N,
+            (rewriteTerm(solvers,boundVars,N, 1::path,
                          addDemodRules(assertRules(context,M,"if then", Context, Either), rules)))) @@
        (fn () -> 
        LazyList.map 
             (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
-            (rewriteTerm(solvers,boundVars,P,
+            (rewriteTerm(solvers,boundVars,P, 2::path,
                          addDemodRules(assertRules(context,negate M,"if else", Context, Either), rules))))
      | Seq(tms, b) ->
        mapEach 
          (fn (first,M,rest) -> 
-            rewriteTerm(solvers,boundVars,M,rules) >>= 
+            rewriteTerm(solvers,boundVars,M,(length first)::path,rules) >>= 
             (fn (M,a) -> unit(Seq(first ++ [M] ++ rest,b),a)))
          tms
      | TypedTerm(M,s,b) ->
        LazyList.map (fn (M,a) -> (TypedTerm(M,s,b),a))
-            (rewriteTerm(solvers,boundVars,M,rules))
+            (rewriteTerm(solvers,boundVars,M,0::path,rules))
      | Pi(tvs,M,b) ->
        LazyList.map (fn (M,a) -> (Pi(tvs,M,b),a))
-            (rewriteTerm(solvers,boundVars,M,rules))
+            (rewriteTerm(solvers,boundVars,M,0::path,rules))
    %  | And(tms,b) ->
      | _ -> Nil
 
@@ -767,10 +770,10 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
       | _ -> false
 
  op rewriteRecursive : 
-    Context * MSVars * RewriteRules * MSTerm -> LazyList (History)
+    Context * MSVars * RewriteRules * MSTerm * Path -> LazyList (History)
 
  op rewriteRecursivePre : 
-    Context * MSVars * Demod RewriteRule * MSTerm -> LazyList (History)
+    Context * MSVars * Demod RewriteRule * MSTerm * Path -> LazyList (History)
 
  op minTraceDepth: Nat = 10
 
@@ -779,18 +782,18 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 %% Apply conditional rewrite rules using outer-most strategy.
 %%
 
- def rewriteRecursive(context,boundVars,rules,term) = 
+ def rewriteRecursive(context,boundVars,rules,term,path) = 
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
    let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
-   rewriteRecursivePre(context,boundVars,rules,term)
+   rewriteRecursivePre(context,boundVars,rules,term,path)
 
- def rewriteRecursivePre(context, boundVars, rules0, term) = 
+ def rewriteRecursivePre(context, boundVars, rules0, term, path) = 
    let	
       def rewritesToTrue(rules, term, boundVars, subst, history, backChain): Option SubstC =
           if trueTerm? term then Some subst
           else
-	  let results = rewriteRec(rules, subst, term, term, freeVars term, history, backChain+1) in
+	  let results = rewriteRec(rules, subst, term, [], term, freeVars term, history, backChain+1) in
           case LazyList.find_n (fn (rl, t, c_subst)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
                  results
@@ -841,7 +844,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 	       res
 	else None
 
-      def rewriteRec(rules0, subst, term0, prev_term, boundVars, history, backChain) =
+      def rewriteRec(rules0, subst, term0, path, prev_term, boundVars, history, backChain) =
 	let _ = traceTerm(context, term0, prev_term, subst) in
 	let traceDepth = ! context.traceDepth + 1 in
         if traceDepth > (if backChain = 0 then context.maxDepth else max(context.maxDepth, context.backwardChainMaxDepth))
@@ -859,7 +862,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 		  ({strategy = strategy,
 		    rewriter = applyDemodRewrites(context, subst, context.maxDepth > 1 || backChain > 0),
 		    context = context},
-		   boundVars, term0, rules)     
+		   boundVars, term0, path, rules)     
 	in
 	if historyRepetition(history)
 	    then unit (tail history)
@@ -892,7 +895,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                   let history = Cons((rule, term, subst), history) in
                   let subst = removeLocalFlexVars(subst, new_flexvarnums) in
 		  let rec_results
-                     = rewriteRec(rules0, subst, term, term0, boundVars, history, backChain)
+                     = rewriteRec(rules0, subst, term, path, term0, boundVars, history, backChain)
                    in
                    if rec_results = Nil
                      then unit history
@@ -901,15 +904,15 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                      ))
    in
       %let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules0, emptySubstitution, term, term, boundVars, [], 0)
+      rewriteRec(rules0, emptySubstitution, term, path, term, boundVars, [], 0)
 
  op rewriteOnce : 
-    Context * MSVars * RewriteRules * MSTerm -> MSTerms
+    Context * MSVars * RewriteRules * MSTerm * Path -> MSTerms
 
 %%
 %% Apply unconditional rewrite rules using outer-most strategy
 %%
- def rewriteOnce(context, boundVars, rules, term) = 
+ def rewriteOnce(context, boundVars, rules, term, path) = 
      let unconditional = Demod.addRules(List.map (fn rl -> (rl.lhs, rl)) 
 						rules.unconditional, Demod.empty) in
      (* unused...
@@ -924,7 +927,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
 		 ({strategy = Innermost,
 		   rewriter = applyDemodRewrites(context, emptySubstitution, false),
 		   context = context},
-		  boundVars, term, unconditional)
+		  boundVars, term, path, unconditional)
      in
      let rews = LazyList.toList rews in
      map (fn (newTerm, (subst, rule, boundVars, rules)) -> 

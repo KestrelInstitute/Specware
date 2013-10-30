@@ -102,6 +102,8 @@ AnnSpec qualifying spec
  type MetaTransform.TypedFun      % Defined in /Languages/MetaSlang/Transformations/MetaTransform
  type MetaTransform.AnnTypeValue  % Defined in /Languages/MetaSlang/Specs/Utilities
 
+ type PathTerm.Path = List Nat
+
  type RuleSpec =
    | Unfold      QualifiedId
    | Fold        QualifiedId

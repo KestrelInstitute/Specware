@@ -31,7 +31,7 @@ spec {
 We define a type for paths though they aren't used yet.
 
 \begin{spec}
-  type Path = {
+  type SkPath = {
     first : Vertex.Elem,
     path : List Edge.Elem,
     last : Vertex.Elem
