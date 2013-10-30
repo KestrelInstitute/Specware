@@ -51,7 +51,7 @@ op showSpec (spc : Spec) (msg : String) : () =
 op showSpecFlat (spc : Spec) (msg : String) : () =
  let _ = writeLine "-showSpecFlat-------" in
  let _ = writeLine ("##5 " ^ msg)         in  % "##5" is just a convenient pattern to search for
- let _ = writeLine (printSpec spc)        in
+ let _ = writeLine (printSpecFlat spc)        in
  let _ = writeLine "--------------------" in
  ()
 
