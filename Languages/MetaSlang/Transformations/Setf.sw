@@ -28,7 +28,8 @@ Setf qualifying spec
                    accesser            : MSTerm, 
                    updater             : MSTerm, 
                    update_template     : MSTerm,
-                   setf_template       : MSTerm}
+                   setf_template       : MSTerm,
+                   element             : SpecElement}
 
  type SetfEntries = List SetfEntry
 
@@ -210,80 +211,85 @@ Setf qualifying spec
         []
         args
                                
- op extractSetfEntry (fm : MSTerm) : Option SetfEntry =
-  case fm of
-    | Pi   (_, fm,    _) -> extractSetfEntry fm
-    | And  (fm :: _,  _) -> extractSetfEntry fm
-    | Bind (_, _, fm, _) -> extractSetfEntry fm
+op extractSetfEntry (element as Property (_, _, _, fm, _) : SpecElement) : Option SetfEntry =
+ let 
+   def aux fm =
+     case fm of
+       | Pi   (_, fm,    _) -> aux fm
+       | And  (fm :: _,  _) -> aux fm
+       | Bind (_, _, fm, _) -> aux fm
 
-    | Apply (Fun (Equals, _, _), Record ([(_, lhs), (_, IfThenElse (pred, then_tm, else_tm, _))], _), _) ->
-      % let _ = writeLine ("--------------------") in
-      % let _ = writeLine ("extractSetfEntry: have Apply") in
-      (case varsCompared pred of
-         | Some vpairs ->
-           % let _ = writeLine ("extractSetfEntry: have Compared") in
-           (case opAndArgs lhs of
-              | Some (accesser_name, accesser, get_args) -> 
-                % let _ = writeLine ("extractSetfEntry: have opAndArgs for lhs") in
-                (case flattenArgs get_args of
-                   | update_template :: _ :: _ ->
-                     % let _ = writeLine ("extractSetfEntry: have flattened") in
-                     (case opAndArgs update_template of
-                        | Some (updater_name, updater, set_args) ->
-                          % let _ = writeLine ("extractSetfEntry: have opAndArgs for update") in
-                          if semanticsOfGetSet? (get_args, set_args, vpairs, then_tm, else_tm) then
-                            % let _ = writeLine ("extractSetfEntry: have semantics") in
-                            case makeSetfTemplate (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
-                              | Some setf_template ->
-                                % let _ = writeLine ("extractSetfEntry: accesser_name   = " ^ anyToString accesser_name   ) in
-                                % let _ = writeLine ("extractSetfEntry: updater_name    = " ^ anyToString updater_name    ) in
-                                % let _ = writeLine ("extractSetfEntry: accesser        = " ^ printTerm accesser        ) in
-                                % let _ = writeLine ("extractSetfEntry: updater         = " ^ printTerm updater         ) in
-                                % let _ = writeLine ("extractSetfEntry: update_template = " ^ printTerm update_template ) in
-                                % let _ = writeLine ("extractSetfEntry: setf_template   = " ^ printTerm setf_template   ) in
-                                % let _ = writeLine ("--------------------") in
-                                let 
-                                  def arg_counts args =
-                                    map (fn arg ->
-                                           case arg of
-                                             | Record (fields, _) -> length fields
-                                             | _ -> 1)
-                                        args
-                                in
-                                Some {accesser_name       = accesser_name, 
-                                      updater_name        = updater_name, 
-                                      accesser_arg_counts = arg_counts get_args,
-                                      updater_arg_counts  = arg_counts set_args,
-                                      accesser            = accesser,
-                                      updater             = updater,
-                                      update_template     = update_template,
-                                      setf_template       = setf_template}
-                              | _ -> 
-                                None
-                          else
-                            None
-                        | _ -> None)
-                   | _ -> None)
-              | _ -> None)
-         | _ -> None)
-    | _ -> None
+       | Apply (Fun (Equals, _, _), Record ([(_, lhs), (_, IfThenElse (pred, then_tm, else_tm, _))], _), _) ->
+         % let _ = writeLine ("--------------------") in
+         % let _ = writeLine ("extractSetfEntry: have Apply") in
+         (case varsCompared pred of
+            | Some vpairs ->
+              % let _ = writeLine ("extractSetfEntry: have Compared") in
+              (case opAndArgs lhs of
+                 | Some (accesser_name, accesser, get_args) -> 
+                   % let _ = writeLine ("extractSetfEntry: have opAndArgs for lhs") in
+                   (case flattenArgs get_args of
+                      | update_template :: _ :: _ ->
+                        % let _ = writeLine ("extractSetfEntry: have flattened") in
+                        (case opAndArgs update_template of
+                           | Some (updater_name, updater, set_args) ->
+                             % let _ = writeLine ("extractSetfEntry: have opAndArgs for update") in
+                             if semanticsOfGetSet? (get_args, set_args, vpairs, then_tm, else_tm) then
+                               % let _ = writeLine ("extractSetfEntry: have semantics") in
+                               case makeSetfTemplate (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
+                                 | Some setf_template ->
+                                   % let _ = writeLine ("extractSetfEntry: accesser_name   = " ^ anyToString accesser_name   ) in
+                                   % let _ = writeLine ("extractSetfEntry: updater_name    = " ^ anyToString updater_name    ) in
+                                   % let _ = writeLine ("extractSetfEntry: accesser        = " ^ printTerm accesser        ) in
+                                   % let _ = writeLine ("extractSetfEntry: updater         = " ^ printTerm updater         ) in
+                                   % let _ = writeLine ("extractSetfEntry: update_template = " ^ printTerm update_template ) in
+                                   % let _ = writeLine ("extractSetfEntry: setf_template   = " ^ printTerm setf_template   ) in
+                                   % let _ = writeLine ("--------------------") in
+                                   let 
+                                     def arg_counts args =
+                                       map (fn arg ->
+                                              case arg of
+                                                | Record (fields, _) -> length fields
+                                                | _ -> 1)
+                                           args
+                                   in
+                                   Some {accesser_name       = accesser_name, 
+                                         updater_name        = updater_name, 
+                                         accesser_arg_counts = arg_counts get_args,
+                                         updater_arg_counts  = arg_counts set_args,
+                                         accesser            = accesser,
+                                         updater             = updater,
+                                         update_template     = update_template,
+                                         setf_template       = setf_template,
+                                         element             = element}
+                                 | _ -> 
+                                   None
+                             else
+                               None
+                           | _ -> None)
+                      | _ -> None)
+                 | _ -> None)
+            | _ -> None)
+       | _ -> None
+ in
+ aux fm
 
- op findSetfEntries (spc  : Spec) : SetfEntries =
-  foldrSpecElements (fn (elt, access_updates) ->
+op findSetfEntries (spc  : Spec) : SetfEntries =
+ foldrSpecElements (fn (elt, entries) ->
                        case elt of
                          |  Property (typ, name, _, fm, _) | typ = Axiom || typ = Theorem -> 
                             % let _ = writeLine ("find gs: " ^ anyToString typ ^ " -- " ^ anyToString name) in
-                            (case extractSetfEntry fm of
-                               | Some access_update -> access_update :: access_updates
-                               | _ -> access_updates)
+                            (case extractSetfEntry elt of
+                               | Some entry -> entries <| entry
+                               | _ -> entries)
                          | _ ->
-                           access_updates)
-                    []
-                    spc.elements
+                           entries)
+                   []
+                   spc.elements
 
- op convertUpdateToAccess (update : MSTerm) : MSTerm
+op convertUpdateToAccess (update : MSTerm) : MSTerm
 
- op reviseProjectionUpdates (lhs : MSTerm, rhs : MSTerm) : MSTerm =
+op reviseProjectionUpdates (lhs : MSTerm, rhs : MSTerm) : MSTerm =
   % let _ = writeLine("  Maybe projection update: " ^ printTerm lhs ^ " = " ^ printTerm rhs) in
   let 
     def makeProjectionUpdate (x, field_id, v) =
