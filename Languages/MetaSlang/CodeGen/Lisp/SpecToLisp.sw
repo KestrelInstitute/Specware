@@ -1276,8 +1276,7 @@ op addList(S: StringSet, l: List String): StringSet =
             mkLApply(mkLOp "MetaTransform::addTransformInfo-4", [mkLString q, mkLString nm, q_ty_info, fn_ltm])))
      tr_infos
 
- op lisp (slice : Slice): LispSpec =
-  let spc = slice.ms_spec in
+ op lisp(spc: Spec): LispSpec =
   %let _ = printSpecToTerminal spc in
    let _ = initializeSpecId () in
    let packages = map mkLPackageId (qualifiers spc.ops) in
@@ -1400,7 +1399,7 @@ op addList(S: StringSet, l: List String): StringSet =
                  uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
              setf_entries
      in
-     % let _ = writeLine ("==to lisp==") in
+     % let _ = writeLine ("====") in
      % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
      % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
      % let _ = writeLine ("====") in
@@ -1453,7 +1452,21 @@ op addList(S: StringSet, l: List String): StringSet =
   else 
     spc 
 
-op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) : Slice =
+ %% ==========================================================================================
+ %%  (3) if slicing, remove ops and types that won't contribue to final lisp code
+ %% ==========================================================================================
+
+ op maybeSliceSpecForLisp (slice?     : Bool) 
+                          (spc        : Spec) 
+                          (root_ops   : QualifiedIds)
+                          (root_types : QualifiedIds)
+  : Spec =
+  if slice? then 
+    SpecTransform.sliceSpecForLisp spc root_ops root_types
+  else 
+    spc 
+
+op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) : Spec =
 
  let _ = showIfVerbose ["---------------------------------------------",
                         "transforming spec for Lisp code generation...",
@@ -1605,14 +1618,21 @@ op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec)
  %% (17) add equality ops for sums, products, etc. -- TODO: adds far too many (but removeUnusedOps removes them)
  %% ==========================================================================================
 
- let slice = sliceForLispGen spc top_ops top_types in
- slice
+ %% ==========================================================================================
+ %% (18) slice unused types and ops 
+ %% ==========================================================================================
 
+ %% slice? is true for gen-lisp-top, false for gen-lisp and lgen-lisp
+
+ let spc = maybeSliceSpecForLisp slice?                            spc top_ops top_types in
+ let _   = maybeShowSpecIfVerbose slice? "maybeSliceSpecForLisp"   spc in
+
+ spc
 
 op toLispSpec (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) 
   : LispSpec =
-  let slice     = transformSpecForLispGen substBaseSpecs? slice? spc in
-  let lisp_spec = lisp slice in
+  let spc       = transformSpecForLispGen substBaseSpecs? slice? spc in
+  let lisp_spec = lisp spc in
   lisp_spec               
 
  op toLispFile (spc             : Spec, 
