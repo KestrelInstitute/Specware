@@ -7,6 +7,8 @@ SliceSpec qualifying spec
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
 import /Library/Legacy/DataStructures/MergeSort   % to sort names when printing
+import /Languages/MetaSlang/Transformations/Setf
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Misc support
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -55,10 +57,30 @@ type Location         = | Root
                         | Theorem {name : TheoremName, pos: Position}
                         | Unknown
 
+op showLocation (location : Location) : String = 
+ let
+   def printLCB (line,column,byte) = show line ^ "." ^ show column 
+
+   def showPos pos =
+     case pos of 
+       | Internal "no position"       -> ""
+       | Internal x                   -> " " ^ x
+       | String   (s,    left, right) -> " [in some string at : " ^ (printLCB left) ^ "-" ^ (printLCB right) ^ "]"
+       | File     (file, left, right) -> " [see " ^ file ^ " : " ^ (printLCB left) ^ "-" ^ (printLCB right) ^ "]"
+
+       | _ -> " at " ^ print pos
+ in
+ case location of
+   | Root      -> "a root"
+   | Op      x -> "in   op "    ^ pad (show x.name, 20) ^ (showPos x.pos)
+   | Type    x -> "in type "    ^ pad (show x.name, 20) ^ (showPos x.pos)
+   | Theorem x -> "in theorem " ^ pad (show x.name, 20) ^ (showPos x.pos)
+   | Unknown   -> "at unknown location"
+
 type ResolvedRefs     = List ResolvedRef
 type ResolvedRef      = | Op      ResolvedOpRef
                         | Type    ResolvedTypeRef
-                        | Theorem SpecElement      % e.g., setf axioms
+                        | Theorem ResolvedTheorem % e.g. setf axioms
 
 type ResolvedOpRef    = {name            : OpName,   
                          cohort          : Cohort,
@@ -71,11 +93,17 @@ type ResolvedTypeRef  = {name       : TypeName,
                          locations  : Locations,
                          status     : Status}
 
+type ResolvedTheorem  = {name       : TheoremName, 
+                         cohort     : Cohort,
+                         element    : SpecElement,
+                         status     : Status}
+
 op empty_resolved_refs   : ResolvedRefs   = []
 
 type PendingRefs      = List PendingRef
-type PendingRef       = | Op   PendingOpRef
-                        | Type PendingTypeRef
+type PendingRef       = | Op      PendingOpRef
+                        | Type    PendingTypeRef
+                        | Theorem PendingTheorem
 
 type PendingOpRef     = {name            : OpName,   
                          cohort          : Cohort,
@@ -86,11 +114,16 @@ type PendingTypeRef   = {name     : TypeName,
                          cohort   : Cohort,
                          location : Location}
 
+type PendingTheorem  = {name    : TheoremName, 
+                        cohort  : Cohort,
+                        element : SpecElement,
+                        status  : Status}
 
 op pending.showName (pending : PendingRef) : String =
  case pending of
-   | Op   oref -> show oref.name
-   | Type tref -> show tref.name
+   | Op      oref -> show oref.name
+   | Type    tref -> show tref.name
+   | Theorem tref -> show tref.name
 
 type Slice = {ms_spec             : Spec, 
               lm_data             : LMData,
@@ -100,64 +133,132 @@ type Slice = {ms_spec             : Spec,
               pending_refs        : PendingRefs,
               resolved_refs       : ResolvedRefs}
 
-type RefNames = List RefName
-type RefName  = | Op   OpName
-                | Type TypeName
-
 type Groups = List Group
 type Group  = {cohort : Cohort,
                status : Status, 
-               names  : Ref RefNames}
+               refs   : Ref ResolvedRefs}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op opsInSlice (slice : Slice) : OpNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Op oref -> oref.name |> names
+            | _ -> names)
+       []
+       slice.resolved_refs
+
+op typesInSlice (slice : Slice) : TypeNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Type tref -> tref.name |> names
+            | _ -> names)
+       []
+       slice.resolved_refs
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op pad (s : String, n : Nat)  : String =
+  let len = length s in
+  if len < n then
+    let spaces = implode (repeat #\s n) in
+    s ^ subFromTo (spaces, 0, n - len)
+  else
+    s
+
+op showPendingRef (ref : PendingRef) (warning? : Bool) : String =
+ let
+   def show_theorem_name tref =
+     let Property (kind, name, _, _, _) = tref.element in
+     let kind_str =
+         case kind of
+           | Axiom      -> "axiom "
+           | Theorem    -> "theorem "
+           | Conjecture -> "conjecture "
+           | _          -> "unrecognized "
+         in
+         kind_str ^ show tref.name
+ in
+ case ref of
+   | Op      oref -> " op "   ^ show oref.name
+   | Type    tref -> " type " ^ show tref.name
+   | Theorem tref -> show_theorem_name tref
+
+op showResolvedRef (ref : ResolvedRef) (warning? : Bool) : String =
+ let
+   def show_theorem_name tref =
+     let Property (kind, name, _, _, _) = tref.element in
+     let kind_str =
+         case kind of
+           | Axiom      -> "axiom "
+           | Theorem    -> "theorem "
+           | Conjecture -> "conjecture "
+           | _          -> "unrecognized "
+         in
+         kind_str ^ show tref.name
+ in
+ if warning? then
+   case ref of
+     | Op   oref -> " op "   ^ pad (show oref.name, 32) ^ "\t" ^ (showLocation (head oref.locations)) ^ " " ^ 
+                    (foldl (fn (s, loc) -> s ^ "\n\t\t\t\t\t" ^ showLocation loc) "" (tail oref.locations))
+
+     | Type tref -> " type " ^ pad (show tref.name, 32) ^ "\t" ^ (showLocation (head tref.locations)) ^ " " ^ 
+                    (foldl (fn (s, loc) -> s ^ "\n\t\t\t\t\t" ^ showLocation loc) "" (tail tref.locations))
+     | Theorem tref -> show_theorem_name tref
+ else
+   case ref of
+     | Op      oref -> " op "   ^ show oref.name
+     | Type    tref -> " type " ^ show tref.name
+     | Theorem tref -> show_theorem_name tref
 
 op describeGroup (group : Group) : () =
- case (! group.names) of
+ case (! group.refs) of
    | [] -> ()
-   | names ->
-     let (needed?, cohort) = case group.cohort of
-                               | Interface      -> (true,  "These interface types and/or ops ")
-                               | Implementation -> (true,  "These implementing types and/or ops ")
-                               | Assertion      -> (false, "These types and/or ops in assertions ")
-                               | Context        -> (false, "These types and/or ops in the relevant context ")
-                               | Ignored        -> (false, "These ignored types and/or ops ")
+   | refs ->
+     let (needed?, cohort_msg)  = case group.cohort of
+                                    | Interface      -> (true,  "These interface types and/or ops ")
+                                    | Implementation -> (true,  "These implementing types and/or ops ")
+                                    | Assertion      -> (false, "These types and/or ops in assertions ")
+                                    | Context        -> (false, "These types and/or ops in the relevant context ")
+                                    | Ignored        -> (false, "These ignored types and/or ops ")
      in
-     let (warning, status) = case group.status of
-                               | Primitive   -> ("", "translate to primitive syntax: ")
-                               | API         -> ("", "translate to an API: ")
-                               | Handwritten -> ("", "translate to handwritten code: ")
-                               | Macro       -> ("", "translate to macros: ")
-                               | Defined     -> ("", "are defined: ")
-                               | Undefined   -> (if needed? then "WARNING: " else "", "are undefined: ")
-                               | Missing     -> (if needed? then "WARNING: " else "", "are missing: ")
-                               | Misc msg    -> ("", msg)
+     let (warning?, status_msg) = case group.status of
+                                    | Primitive   -> (false, "translate to primitive syntax: ")
+                                    | API         -> (false, "translate to an API: ")
+                                    | Handwritten -> (false, "translate to handwritten code: ")
+                                    | Macro       -> (false, "translate to macros: ")
+                                    | Defined     -> (false, "are defined: ")
+                                    | Undefined   -> (true,  "are undefined: ")
+                                    | Missing     -> (true,  "are missing: ")
+                                    | Misc msg    -> (false, msg)
      in
-     let type_names = foldl (fn (tnames, name) ->
-                               case name of
-                                 | Type tname -> (show tname) |> tnames
-                                 | _ -> tnames)
+     let tref_lines = foldl (fn (lines, ref) ->
+                               case ref of
+                                 | Type tref -> (showResolvedRef ref warning?) |> lines
+                                 | _ -> lines)
                             []
-                            names             
+                            refs
      in
-     let op_names   = foldl (fn (onames, name) ->
-                               case name of
-                                 | Op oname -> (show oname) |> onames
-                                 | _ -> onames)
+     let oref_lines = foldl (fn (lines, ref) ->
+                               case ref of
+                                 | Op oref -> (showResolvedRef ref warning?) |> lines
+                                 | _ -> lines)
                             []
-                            names             
+                            refs
      in
-     let type_names = sortGT (String.>) type_names in
-     let op_names   = sortGT (String.>) op_names   in
-     let _ = writeLine (warning ^ cohort ^ status) in
-     let _ = case type_names of 
+     let tref_lines = sortGT (String.>) tref_lines in
+     let oref_lines = sortGT (String.>) oref_lines in
+     let _ = writeLine ((if warning? then "WARNING: " else "") ^ cohort_msg ^ status_msg) in
+     let _ = case tref_lines of 
+               | [] -> ()
+               | _ ->
+                 app writeLine tref_lines
+     in
+     let _ = case oref_lines of 
                | [] -> ()
                | _ ->
                  let _ = writeLine "" in
-                 app (fn tname -> writeLine ("  type " ^ tname)) type_names 
-     in
-     let _ = case op_names of 
-               | [] -> ()
-               | _ ->
-                 let _ = writeLine "" in
-                 app (fn oname -> writeLine ("  op " ^ oname)) op_names 
+                 app writeLine oref_lines
      in
      let _ = writeLine "" in
 
@@ -172,7 +273,7 @@ op describeSlice (msg : String, slice : Slice) : () =
      else
        str
 
-   def partition_refs (groups : Groups, ref  : ResolvedRef) =
+   def partition_refs (groups : Groups, ref : ResolvedRef) : Groups =
      case findLeftmost (fn (group : Group) ->
                           case ref of
                             | Op (oref : ResolvedOpRef) ->
@@ -181,29 +282,27 @@ op describeSlice (msg : String, slice : Slice) : () =
 
                             | Type tref ->
                               group.cohort = tref.cohort && 
-                              group.status = tref.status)
+                              group.status = tref.status
 
+                            | _ ->
+                              false)
                        groups 
        of
        | Some group -> 
-         let _  = (group.names := 
-                     (! group.names) ++ 
-                     [case ref of 
-                        | Op   oref -> Op   oref.name
-                        | Type tref -> Type tref.name])
-         in
+         let _  = (group.refs := (! group.refs) ++ [ref]) in
          groups
          
        | _ -> 
          %% Misc options will be added to end
-         let (cohort, status, name) =
+         let (cohort, status) =
              case ref of 
-               | Op   oref -> (oref.cohort, oref.status, Op   oref.name)
-               | Type tref -> (tref.cohort, tref.status, Type tref.name)
+               | Op      oref -> (oref.cohort, oref.status)
+               | Type    tref -> (tref.cohort, tref.status)
+               | Theorem aref -> (aref.cohort, aref.status)
          in
          let group : Group = {cohort = cohort,
-                      status = status,
-                      names  = Ref [name]}
+                              status = status,
+                              refs   = Ref [ref]}
          in
          groups ++ [group]
 
@@ -212,9 +311,9 @@ op describeSlice (msg : String, slice : Slice) : () =
  let status_list = [Defined, Handwritten, API, Macro, Primitive, Undefined, Missing] in
  let groups      = foldl (fn (groups, cohort) -> 
                             foldl (fn (groups, status) ->
-                                     let group = {cohort     = cohort,
-                                                  status     = status, 
-                                                  names = Ref []}
+                                     let group = {cohort = cohort,
+                                                  status = status, 
+                                                  refs   = Ref []}
                                      in
                                      groups <| group)
                                   groups
@@ -237,9 +336,14 @@ op describeSlice (msg : String, slice : Slice) : () =
              ()
  in
 
- let _ = app describeGroup groups in
+ let _ = case slice.resolved_refs of
+           | [] -> writeLine("No types or ops in slice.")
+           | _ -> app describeGroup groups 
+ in
  ()
- 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op resolve_ref (slice   : Slice, 
                 pending : PendingRef,
                 status  : Status)
@@ -261,28 +365,44 @@ op resolve_ref (slice   : Slice,
      (cohort_number c1) < (cohort_number c2)
  in
  let resolved_refs = slice.resolved_refs in
+ let s = foldl (fn (s, ref) -> s ^ " " ^ 
+                  (show (length (case ref of
+                                   | Op   oref -> oref.locations
+                                   | Type tref -> tref.locations
+                                   | _ -> []))))
+               ""
+               resolved_refs
+ in
  case pending of
    | Op oref ->
      (case splitAtLeftmost (fn resolved -> 
                               case resolved of 
-                                | Op resolved -> names_match? (resolved.name, oref.name)
+                                | Op resolved -> 
+                                  resolved.name = oref.name && 
+                                  equalType? (resolved.contextual_type, oref.contextual_type) &&
+                                  resolved.status = status
                                 | _ -> false)
                            resolved_refs 
        of
         | Some (x, Op old, y) -> 
-          if earlier_cohort? (oref.cohort, old.cohort) then
-            %% We need to replace the old resolution by one using the earlier new cohort.
+          if oref.location in? old.locations then
+            resolved_refs
+          else
+            let cohort = 
+                if earlier_cohort? (oref.cohort, old.cohort) then
+                  oref.cohort
+                else
+                  old.cohort
+            in
             let resolved_ref =
                 Op {name            = oref.name, 
-                    cohort          = oref.cohort,
+                    cohort          = cohort,
                     contextual_type = oref.contextual_type,
-                    locations       = [oref.location],
+                    locations       = old.locations <| oref.location,
                     status          = status} 
             in
             x ++ [resolved_ref] ++ y
-         else
-            %% Don't update if name already has a value for this or earlier cohort.
-           resolved_refs  
+
         | _ -> 
           let resolved_ref =
               Op {name            = oref.name, 
@@ -296,23 +416,29 @@ op resolve_ref (slice   : Slice,
    | Type tref ->
      (case splitAtLeftmost (fn resolved -> 
                               case resolved of 
-                                | Type resolved -> names_match? (resolved.name, tref.name)
+                                | Type resolved -> 
+                                  resolved.name = tref.name &&
+                                  resolved.status = status
                                 | _ -> false)
                            resolved_refs 
        of
         | Some (x, Type old, y) ->
-          if earlier_cohort? (tref.cohort, old.cohort) then
-            %% We need to replace the old resolution by one using the earlier new cohort.
+          if tref.location in? old.locations then
+            resolved_refs
+          else
+            let cohort = 
+                if earlier_cohort? (tref.cohort, old.cohort) then
+                  tref.cohort
+                else
+                  old.cohort
+            in
             let resolved_ref =
                 Type {name      = tref.name, 
-                      cohort    = tref.cohort,
-                      locations = [tref.location],
+                      cohort    = cohort,
+                      locations = old.locations <| tref.location,
                       status    = status} 
             in
             x ++ [resolved_ref] ++ y
-          else
-            %% Don't update if name already has a value for this or earlier cohort.
-            resolved_refs 
         | _ -> 
           let resolved_ref =
               Type {name      = tref.name, 
@@ -321,6 +447,14 @@ op resolve_ref (slice   : Slice,
                     status    = status} 
           in
           resolved_ref |> resolved_refs)
+
+   | Theorem (tref : PendingTheorem) ->
+     let resolved_ref = Theorem {name    = tref.name,
+                                 cohort  = tref.cohort,
+                                 element = tref.element,
+                                 status  = status} 
+     in
+     resolved_ref |> resolved_refs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Chase referenced types and ops to fixpoint
@@ -333,43 +467,65 @@ op extend_cohort_for_ref (cohort       : Cohort)
                          (slice        : Slice, 
                           pending_ref  : PendingRef)
  : Slice =
+ %% let _ = writeLine(anyToString cohort ^ " Extending for ref: " ^ showPendingRef pending_ref false) in
  let
-   def matches_op_ref pending_op_ref (resolved_ref : ResolvedRef) =
+   def matches_resolved_op_ref? pending_op_ref resolved_ref =
      case resolved_ref of
        | Op resolved_op_ref -> 
          resolved_op_ref.name = pending_op_ref.name
        | _ -> 
          false
 
-   def matches_type_ref (pending_type_ref : PendingTypeRef) (resolved : ResolvedRef) =
-     case resolved of
+   def matches_resolved_type_ref? pending_type_ref resolved_ref =
+     case resolved_ref of
        | Type resolved_type_ref ->
-         resolved_type_ref.name = pending_type_ref.name
+         let match? = (resolved_type_ref.name = pending_type_ref.name) in
+         % let _ = writeLine("matching: " ^ anyToString pending_type_ref.name ^ " = " ^ anyToString resolved_type_ref.name ^ " => " ^ show match?) in
+         match?
        | _ -> 
          false
 
-   def add_pending_ref resolved_refs (pendings, pending) =
-     case pending of
+   def matches_pending_op_ref? (pending_op_ref : PendingOpRef) (pending_ref : PendingRef) =
+     case pending_ref of
+       | Op (old_pending_op_ref : PendingOpRef) -> 
+         old_pending_op_ref.name = pending_op_ref.name
+       | _ -> 
+         false
+
+   def matches_pending_type_ref? (pending_type_ref : PendingTypeRef) (pending_ref : PendingRef) =
+     case pending_ref of
+       | Type (old_pending_type_ref : PendingTypeRef) ->
+         old_pending_type_ref.name = pending_type_ref.name
+       | _ -> 
+         false
+
+   def add_pending_ref resolved_refs (pending_refs, pending_ref) =
+     case pending_ref of
        | Op (pending_op_ref : PendingOpRef) ->
-         (case findLeftmost (matches_op_ref pending_op_ref) resolved_refs of
+         (case findLeftmost (matches_resolved_op_ref? pending_op_ref) resolved_refs of
             | Some _ -> 
-              pendings
+              pending_refs
             | _ -> 
-              if pending in? pendings then
-                % it's already in the queue to be processed
-                pendings
+              if exists? (fn pending_ref -> 
+                            matches_pending_op_ref? pending_op_ref pending_ref) 
+                         pending_refs 
+                then
+                  % it's already in the queue to be processed
+                  pending_refs
               else
-                pending |> pendings)
+                pending_ref |> pending_refs)
        | Type (pending_type_ref : PendingTypeRef) ->
-         (case findLeftmost (matches_type_ref pending_type_ref) resolved_refs of
+         (case findLeftmost (matches_resolved_type_ref? pending_type_ref) resolved_refs of
             | Some _ -> 
-              pendings
+              pending_refs
             | _ -> 
-              if pending in? pendings then
-                % it's already in the queue to be processed
-                pendings
+              if exists? (fn pending_ref -> 
+                            matches_pending_type_ref? pending_type_ref pending_ref) 
+                         pending_refs 
+                then
+                  pending_refs
               else
-                pending |> pendings)
+                pending_ref |> pending_refs)
 
     %% 
     def subtype_cohort cohort =
@@ -389,9 +545,10 @@ op extend_cohort_for_ref (cohort       : Cohort)
             | Some info ->
               let status            = op_status info                               in
               let new_resolved_refs = resolve_ref (slice, pending_ref, status)     in
+              let op_name           = primaryOpName info                           in
               let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
                                             [] 
-                                            (pendingRefsInTerm (info.dfn, cohort)) 
+                                            (pendingRefsInTerm (info.dfn, cohort, op_name))
               in
               let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
               slice << {resolved_refs = new_resolved_refs,
@@ -413,9 +570,10 @@ op extend_cohort_for_ref (cohort       : Cohort)
                       (pending_ref, type_status info)
               in
               let new_resolved_refs = resolve_ref (slice, pending_ref, status) in
+              let type_name         = primaryTypeName info                     in
               let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
                                             [] 
-                                            (pendingRefsInType (info.dfn, cohort)) 
+                                            (pendingRefsInType (info.dfn, cohort, type_name))
               in
               let new_pending_refs   = union (new_pending_refs, slice.pending_refs) in
               slice << {resolved_refs = new_resolved_refs,
@@ -423,45 +581,68 @@ op extend_cohort_for_ref (cohort       : Cohort)
             | _ ->
               let new_resolved_refs = resolve_ref (slice, pending_ref, Missing) in
               slice << {resolved_refs = new_resolved_refs})
+       | Theorem tref ->
+         let (Property (_, theorem_name, _, formula, _)) = tref.element in
+         let new_resolved_refs = resolve_ref (slice, pending_ref, Defined) in
+         let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
+                                       [] 
+                                       (pendingRefsInTerm (formula, cohort, theorem_name))
+         in
+         let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
+         slice << {resolved_refs = new_resolved_refs,
+                   pending_refs  = new_pending_refs}
 
-op pendingRefsInTerm (term : MSTerm, cohort : Cohort) : PendingRefs =
- %% TODO: get real locations
- (map (fn name -> 
-         Op {name            = name, 
-             cohort          = cohort,
-             contextual_type = Any noPos, 
-             location        = Unknown})
-      (opsInSubTerms term)) % opsInTerm would look at subtype predicates and include too much
- ++
- (map (fn name -> 
-         Type {name     = name, 
-               cohort   = cohort,
-               location = Unknown})
-      (typesInTerm term))
+op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) : PendingRefs =
+ foldTerm (fn refs -> fn tm ->
+             case tm of
+               | Fun (Op (qid,_),_,pos) ->
+                 let ref = 
+                     Op {name            = qid,
+                         cohort          = cohort,
+                         contextual_type = Any noPos, 
+                         location        = Op {name = parent_op_name, pos = pos}}
+                 in
+                 ref |> refs
+               | _ -> refs,
+           fn refs -> fn typ ->
+             case typ of
+               | Base (qid, _, pos) ->
+                 let ref = 
+                     Type {name            = qid,
+                           cohort          = cohort,
+                           location        = Op {name = parent_op_name, pos = pos}}
+                 in
+                 ref |> refs
+               | _ -> refs,
+           fn refs -> fn _ -> refs)
+         [] 
+         term
 
-op pendingRefsInType (typ : MSType, cohort : Cohort) : PendingRefs =
- %% TODO: get real locations
- let op_refs =
-     let term_cohort =
-         case cohort of
-           | Implementation -> Assertion
-           | _ -> cohort
-     in
-     map (fn name -> 
-            Op {name            = name, 
-                cohort          = term_cohort,
-                contextual_type = Any noPos, 
-                location        = Unknown})
-         (opsInType typ)
- in
- let type_refs = 
-     map (fn name -> 
-            Type {name     = name, 
-                  cohort          = cohort,
-                  location = Unknown})
-         (typesInType typ)
- in
- op_refs ++ type_refs
+op pendingRefsInType (typ : MSType, cohort : Cohort, parent_type_name : TypeName) : PendingRefs =
+ foldType (fn refs -> fn tm ->
+             case tm of
+               | Fun (Op (qid,_),_,pos) ->
+                 let ref = 
+                     Op {name            = qid,
+                         cohort          = cohort,
+                         contextual_type = Any noPos, 
+                         location        = Type {name = parent_type_name, pos = pos}}
+                 in
+                 ref |> refs
+               | _ -> refs,
+           fn refs -> fn typ ->
+             case typ of
+               | Base (qid, _, pos) ->
+                 let ref = 
+                     Type {name      = qid,
+                           cohort    = cohort,
+                           location  = Type {name = parent_type_name, pos = pos}}
+                 in
+                 ref |> refs
+               | _ -> refs,
+           fn refs -> fn _ -> refs)
+         [] 
+         typ
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -487,7 +668,61 @@ op cohort_closure (cohort : Cohort) (slice : Slice) : Slice =
        | _ ->
          aux (extend_cohort cohort slice)
  in
- aux slice
+ let slice = aux slice                         in
+ let slice = add_linking_theorems cohort slice in
+ case slice.pending_refs of
+   | [] -> slice
+   | _ -> cohort_closure cohort slice
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op term_mentions? (term : MSTerm) (names : OpNames) : Bool =
+ foldTerm (fn mentions?-> fn tm ->
+             case tm of
+               | Fun (Op (name,_),_,pos) | name in? names -> true
+               | _ -> mentions?,
+           fn mentions? -> fn _ -> mentions?,
+           fn mentions? -> fn _ -> mentions?)
+         false
+         term
+
+op getLinkingTheorems (spc : Spec) : SpecElements =
+ %% could be others, e.g. axioms for property maintenance
+ let entries = findSetfEntries spc in
+ map (fn entry -> entry.element) entries
+
+op add_linking_theorems (cohort : Cohort) (slice : Slice) : Slice =
+ let resolved_elements = foldl (fn (elements, resolved_ref) ->
+                                  case resolved_ref of
+                                    | Theorem tref -> elements <| tref.element
+                                    | _ -> elements)
+                               []
+                               slice.resolved_refs
+ in
+ let ops_in_slice      = opsInSlice         slice         in
+ let linking_theorems  = getLinkingTheorems slice.ms_spec in
+ let pending_theorem_refs =
+     foldl (fn (pending_refs, element) ->
+              case element of
+                | Property (_, name, _, formula, _) ->
+                  if term_mentions? formula ops_in_slice then
+                    if element in? resolved_elements then
+                      pending_refs
+                    else
+                      let pending_ref = Theorem {name    = name,
+                                                 cohort  = cohort,
+                                                 element = element,
+                                                 status  = Defined}
+                      in
+                      pending_refs <| pending_ref
+                  else
+                    pending_refs
+                | _ ->
+                    pending_refs)
+            []
+            linking_theorems
+ in
+ slice << {pending_refs = slice.pending_refs ++ pending_theorem_refs}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
