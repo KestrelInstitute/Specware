@@ -77,14 +77,12 @@ NormTypes qualifying spec
                                           | Property (pt, nm, tvs, term, a) ->
                                             % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
                                             Property (pt, nm, tvs, mapTerm map_fns term, a)
-                                          | OpDef(qid,n,hist,a) ->
-                                            let new_hist = map (fn (tm, rlspc) ->
-                                                                  %let _ = writeLine("hist: "^printTerm tm^"\n"^printTerm(mapTerm map_fns tm)) in
-                                                                  (mapTerm map_fns tm,
-                                                                   rlspc))
-                                                             hist
-                                            in
-                                            OpDef(qid,n,new_hist,a)
+                                          | OpDef(qid,n,opt_info,a) ->
+                                            let new_opt_info =
+                                            (case opt_info of
+                                               | None -> None
+                                               | Some info -> Some (mapTransformInfo (mapTerm map_fns) info)) in
+                                            OpDef(qid,n,new_opt_info,a)
                                           | _ -> el)
                         spc.elements}
     in

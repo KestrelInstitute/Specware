@@ -201,7 +201,7 @@ op addTypeConstructorsInternal (spc : Spec, snark? : Bool) : Spec =
      foldl (fn ((ops, reversed_elements), op_info) ->
               let op_name as Qualified (op_q, op_id) = primaryOpName op_info in
               let ops               = insertAQualifierMap (ops, op_q, op_id, op_info) in
-              let element           = OpDef (op_name, 0, [], noPos)                   in
+              let element           = OpDef (op_name, 0, None, noPos)                   in
               let reversed_elements = element :: reversed_elements                    in
               (ops, reversed_elements))
            (spc.ops, reverse spc.elements)

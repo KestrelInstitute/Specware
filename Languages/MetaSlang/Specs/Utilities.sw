@@ -3059,7 +3059,8 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
     | BoolV Bool
     | OpNameV QualifiedId
     | RuleV RuleSpec
-    | TransformHistoryV TransformHistory
+    | ProofV RefinementProof
+    | TransformInfoV TransformInfo
     | OptV (Option AnnTypeValue)
     | ListV (List AnnTypeValue)
     | TupleV (List AnnTypeValue)

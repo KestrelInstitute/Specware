@@ -315,8 +315,8 @@ SpecCalc qualifying spec
 
    sp <- return (setOps (old_spec, new_ops));
    let new_elt = case old_infos of
-                   | old_info::_ | refine? -> OpDef (primaryName, length (opDefInnerTerms old_info), [], pos)
-                   | _::_ | addOnly?       -> OpDef (primaryName, 0,                                 [], pos)
+                   | old_info::_ | refine? -> OpDef (primaryName, length (opDefInnerTerms old_info), None, pos)
+                   | _::_ | addOnly?       -> OpDef (primaryName, 0,                                 None, pos)
                    | _                     -> Op    (primaryName, definedTerm? new_dfn, pos)
    in
    let sp = if exists? (fn old_elt -> equalSpecElement? (new_elt, old_elt)) sp.elements then 

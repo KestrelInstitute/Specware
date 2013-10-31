@@ -882,11 +882,11 @@ op ppSpecElementsAux (c:Context) (elems:SpecElements) : List WLPretty =
       Cons(ppSpecElement c el,
            ppSpecElementsAux c rst)
       
-op ppTransformHistory (c:Context) (hist:TransformHistory) : WLPretty =
+op ppTransformInfo (c:Context) ((rspecs,_):TransformInfo) : WLPretty =
   ppSep ppSpaceBreak (map (fn (tm:MSTerm, rulespec:RuleSpec) -> ppGr2Concat[ppString "(",
                                                                             ppTerm c tm,
                                                                             ppString " ...rulespec (if any )elided...)"])
-                        hist)
+                        rspecs)
 
 op ElidePragmas? : Bool = true
   
@@ -915,13 +915,15 @@ op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
                if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
                ppString ")"]
       %% Note that most of the information for the op is not here but rather in the Spec's op map.
-    | OpDef (qid,refine_num,hist,pos) ->    % !!!
+    | OpDef (qid,refine_num,opt_info,pos) ->    % !!!
       ppConcat[ppString "(OpDef ",
                ppQualifiedId qid,
                ppString " ",
                ppString (show refine_num),
                ppString " (",
-               ppTransformHistory c hist,
+               (case opt_info of
+                  | None -> ppString "None"
+                  | Some info -> ppTransformInfo c info),
                ppString "))"]
     | Type (qid,pos) ->
       ppConcat[ppString "(TypeDecl ",

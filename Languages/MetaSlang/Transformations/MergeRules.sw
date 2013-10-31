@@ -1165,10 +1165,10 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
                                           % the op that the rewritten
                                           % term will ultimately
                                           % appear in.
-   let hist = [] in
+   let info = nullTransformInfo in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
-   let (pterm',hist') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, hist) in
+   let (pterm',info') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, info) in
    let tm' = fromPathTerm pterm' in
    if equalTerm?(tm, tm')
      then None

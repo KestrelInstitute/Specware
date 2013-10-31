@@ -82,7 +82,7 @@ RemoveCurrying qualifying spec
                    %% let new_ops = removeAQualifierMap (new_ops, q, id) in
 		   let new_qid = Qualified (q, new_id) in
 		   (Cons (Op (new_qid, false, pos), % false means def is not printed as part of decl
-                          Cons (OpDef (new_qid, 0, [], noPos),
+                          Cons (OpDef (new_qid, 0, None, noPos),
                                 r_elts)),
                     new_ops)
 		 | None -> (Cons(old_el,r_elts),r_ops))

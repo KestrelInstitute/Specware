@@ -93,6 +93,7 @@ spec
     in
     {name     = show qid,
      rule_spec = rl_spec,
+     opt_proof = None,
      freeVars = [],
      tyVars = [],
      condition = None,
@@ -320,7 +321,7 @@ spec
 
   op rewriteDepth: Nat = 6
   op rewritePT(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
-       : MSTerm * TransformHistory =
+       : MSTerm * AnnSpec.TransformInfo =
     (context.traceDepth := 0;
      let term = fromPathTerm path_term in
      let _ = if rewriteDebug? then
@@ -333,21 +334,26 @@ spec
      let rules = contextRulesFromPath(path_term, qid, context) ++ rules in
      let rules = subtypeRules(term, context) ++ rules in
      let rules = splitConditionalRules rules in
-     let def doTerm (count: Nat, trm: MSTerm, hist: TransformHistory): MSTerm * TransformHistory =
+     let def doTerm (count: Nat, trm: MSTerm, info: AnnSpec.TransformInfo): MSTerm * AnnSpec.TransformInfo =
            %let _ = writeLine("doTerm "^show count) in
            let lazy = rewriteRecursive (context, freeVars trm, rules, trm, pathTermPath path_term) in
            case lazy of
-             | Nil -> (trm, hist)
-             | Cons([], tl) -> (trm, hist)
+             | Nil -> (trm, info)
+             | Cons([], tl) -> (trm, info)
              | Cons(transforms as ((rule, trm, subst)::_), tl) ->
+               let new_info =
+               (foldl (fn (cur_info, (rule, trm, _)) ->
+                         composeTransformInfos (cur_info, trm, ([(trm, rule.rule_spec)], rule.opt_proof)))
+                  info (reverse transforms))
+               in
                if count > 0 then 
-                 doTerm (count - 1, trm, hist ++ map (fn (rule, trm, _) -> (trm, rule.rule_spec)) (reverse transforms))
+                 doTerm (count - 1, trm, new_info)
                else
-                 (trm, hist ++ map (fn (rule, trm, _) -> (trm, rule.rule_spec)) (reverse transforms))
+                 (trm, new_info)
      in
      let result = % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
                   % else
-                  doTerm(rewriteDepth, term, [])
+                  doTerm(rewriteDepth, term, nullTransformInfo)
      in
      let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result.1) else () in
      result)
@@ -483,7 +489,7 @@ spec
                          }
 
   op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
-    (options: RewriteOptions): MSTerm * TransformHistory =
+    (options: RewriteOptions): MSTerm * AnnSpec.TransformInfo =
     let context = makeContext spc in
     let context = context <<
                     {traceRewriting          = if options.trace = 0
@@ -510,67 +516,67 @@ spec
     let rules = makeRules (context, spc, rules) in
     rewritePT(path_term, context, qid, rules)    
 
-  op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, hist: TransformHistory)
-       : PathTerm * TransformHistory =
+  op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, info: AnnSpec.TransformInfo)
+       : PathTerm * AnnSpec.TransformInfo =
     let context = makeContext spc in
     let rules = makeRules (context, spc, rules) in
-    replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, hist)
+    replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info)
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
   op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
-                       allowFail?: Bool, hist: TransformHistory)
-     : SpecCalc.Env (PathTerm * Bool * TransformHistory) =
+                       allowFail?: Bool, info: AnnSpec.TransformInfo)
+     : SpecCalc.Env (PathTerm * Bool * AnnSpec.TransformInfo) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm(fromPathTerm path_term)) in
     case script of
       | Steps steps ->
-          foldM (fn (path_term, tracing?, hist) -> fn s ->
-                   interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, hist))
-            (path_term, tracing?, hist) steps
+          foldM (fn (path_term, tracing?, info) -> fn s ->
+                   interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, info))
+            (path_term, tracing?, info) steps
       | Repeat steps ->
-          {(new_path_term, tracing?, hist) <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, hist);
+          {(new_path_term, tracing?, info) <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, info);
            if equalTerm?(topTerm new_path_term, topTerm path_term)
-             then return (new_path_term, tracing?, hist)
-             else interpretPathTerm(spc, Repeat steps, new_path_term, qid, tracing?, allowFail?, hist)}
+             then return (new_path_term, tracing?, info)
+             else interpretPathTerm(spc, Repeat steps, new_path_term, qid, tracing?, allowFail?, info)}
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");
-          return (path_term, tracing?, hist)
+          return (path_term, tracing?, info)
         }
       | Trace on_or_off -> {
           when (on_or_off && ~tracing?)
             (print ("-- Tracing on\n" ^ printTerm(fromPathTerm path_term) ^ "\n"));
           when (~on_or_off && tracing?)
             (print "-- Tracing off\n");
-          return (path_term, on_or_off, hist)
+          return (path_term, on_or_off, info)
         }
       | _ -> {
           when tracing?
             (print ("--" ^ scriptToString script ^ "\n"));
-          (path_term, hist) <-
+          (path_term, info) <-
              return
               (case script of
                 | Move mvmts -> (case makeMoves(path_term, mvmts, allowFail?) of
                                    | Some new_path_term -> new_path_term
                                    | None -> path_term,
-                                 hist)
+                                 info)
                 | TermTransform(tr_name, tr_fn, arg) ->
                   let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid) in
                   let result = apply(tr_fn, arg_with_spc) in
                   (case extractMSTerm result of
-                     | Some new_term -> replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), hist)
-                     | None -> (path_term, hist))
-                | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, hist)
-                | RenameVars binds -> replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, hist)
+                     | Some new_term -> replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), info)
+                     | None -> (path_term, info))
+                | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, info)
+                | RenameVars binds -> replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, info)
                 | PartialEval ->
-                  replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, hist)
+                  replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, info)
                 | AbstractCommonExpressions ->
                   replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                   path_term, AbstractCommonExpressions, hist)
-                | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term, hist)
+                                   path_term, AbstractCommonExpressions, info)
+                | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term, info)
                 | Simplify1(rules) ->
                   let context = makeContext spc <<  {maxDepth = 1} in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, hist)
+                  replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info)
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
@@ -578,34 +584,35 @@ spec
                      ((TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                                  ty, a),
                       [0]),
-                      hist)             % Need to update hist
+                      info)             % Need to update info
                    | tm -> ((addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
                              []),
-                            hist)));    % Need to update hist
+                            info)));    % Need to update info
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
-          return (path_term, tracing?, hist)
+          return (path_term, tracing?, info)
         }
 
-  op liftHistory(hist: TransformHistory, ptm: PathTerm): TransformHistory =
-    map (fn (tm, rsp) -> (topTerm(replaceSubTerm(tm, ptm)), rsp)) hist
+  op liftInfo(info: AnnSpec.TransformInfo, ptm: PathTerm): AnnSpec.TransformInfo =
+    mapTransformInfo (fn tm -> topTerm(replaceSubTerm(tm, ptm))) info
 
-  op replaceSubTermH((new_tm: MSTerm, new_hist: TransformHistory), old_ptm: PathTerm, hist: TransformHistory): PathTerm * TransformHistory =
+  op replaceSubTermH((new_tm: MSTerm, new_info: AnnSpec.TransformInfo), old_ptm: PathTerm, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
-    let lifted_hist = liftHistory(new_hist, old_ptm) in
-    (new_path_tm, hist ++ lifted_hist)
+    let lifted_info = liftInfo(new_info, old_ptm) in
+    (new_path_tm, composeTransformInfos (info, topTerm (old_ptm), lifted_info))
 
-  op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, hist: TransformHistory): PathTerm * TransformHistory =
+  op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
-    (new_path_tm, hist ++ [(new_tm, rl_spec)])
+    (new_path_tm,
+     composeTransformInfos (info, topTerm(old_ptm), ([(new_tm, rl_spec)], None)))
 
-  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool, hist: TransformHistory)
-    : SpecCalc.Env (MSTerm * Bool * TransformHistory) =
+  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool, info: AnnSpec.TransformInfo)
+    : SpecCalc.Env (MSTerm * Bool * AnnSpec.TransformInfo) =
     {typed_path_term <- return(typedPathTerm(def_term, top_ty));
      when tracing? 
        (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
-     ((new_typed_term, _), tracing?, hist) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false, hist);
-     return(new_typed_term, tracing?, hist)}
+     ((new_typed_term, _), tracing?, info) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false, info);
+     return(new_typed_term, tracing?, info)}
 
   % In the spec `spc`, execute the transformation script `script` on
   % the term `def_term`, which has the type `top_ty`, and is named
@@ -615,7 +622,7 @@ spec
   %   ultimately appear in.
   % - if you don't know the type, then you can use `inferType` to get it.
   op interpretTerm0(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
-    run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?, []);
+    run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?, nullTransformInfo);
         return (tm, trace?)}
 
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
@@ -679,13 +686,13 @@ spec
                                 (print ("-- { at "^show qid^" }\n"));
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
-                              (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, ty, qid, tracing?, []);
+                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?, nullTransformInfo);
                               if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
                                 then let _ = writeLine(show qid^" not modified.") in
                                      return (spc, tracing?)
                               else {
-                              % _ <- return(printTransformHistory hist);
-                              new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, hist));
+                              % _ <- return(printTransformInfoory info);
+                              new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, Some info));
                               return (new_spc, tracing?)
                               }})
                           (spc, tracing?) opinfos)
@@ -703,7 +710,7 @@ spec
                      foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  
                              {when tracing? 
                                 (print ((printTerm tm) ^ "\n")); 
-                              (new_tm, tracing?, hist) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?, []);
+                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?, nullTransformInfo);
                               new_tm <- return(removeTypeWrapper new_tm);
                               new_spc <-
                                 if equalTerm?(tm, new_tm) then return spc

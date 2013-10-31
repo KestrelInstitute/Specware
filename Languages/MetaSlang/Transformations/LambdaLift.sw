@@ -934,20 +934,20 @@ def patternVars (pat:MSPattern): MSVars =
 	 | {name = id, ident, pattern, domain, range, freeVars, body, closure}::m_opers -> 
            let names  = [Qualified (q, id)] in	 
 	   let info   = abstractName (mkEnv (q, id), names, id, freeVars, pattern, domain, range, body, extra_conds) in
-	   let result = addNewOpAux (info, result, true, 0, [], noPos) in
+	   let result = addNewOpAux (info, result, true, 0, None, noPos) in
 	   insertOpers (m_opers, q, result, extra_conds)
 
-     def doOp (q, id, opinfo, result, decl?, refine_num, hist, a) = 
+     def doOp (q, id, opinfo, result, decl?, refine_num, info, a) = 
        % let _ = writeLine ("lambdaLift \""^id^"\"...") in
        if ~ (definedOpInfo? opinfo) then
          let opinfo = opinfo << {names = [Qualified (q, id)]} in
-         addNewOpAux (opinfo, result, decl?, refine_num, hist, a)
+         addNewOpAux (opinfo, result, decl?, refine_num, info, a)
        else
          let trps            = unpackTypedTerms (opinfo.dfn) in
          let (tvs, ty, term) = nthRefinement(trps, refine_num) in
          if anyTerm? term then
            let opinfo = opinfo << {names = [Qualified (q, id)]} in
-           addNewOpAux (opinfo, result, decl?, refine_num, hist, a)
+           addNewOpAux (opinfo, result, decl?, refine_num, info, a)
          else
          let new_id          = if refine_num = 0 then id else id ^ "__" ^ show refine_num in
          let env             = mkEnv (q, new_id)                                          in
@@ -958,7 +958,7 @@ def patternVars (pat:MSPattern): MSVars =
 	     let term                = Lambda ([(pat, cond, body)], a)                             in
 	     let new_dfn             = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, term))) in
              let new_opinfo            = opinfo << {names = [Qualified (q, id)], dfn   = new_dfn}      in
-	     let result              = addNewOpAux (new_opinfo, result, decl?, refine_num, hist, a)  in
+	     let result              = addNewOpAux (new_opinfo, result, decl?, refine_num, info, a)  in
              let (_, extra_conds, _) = patternToTermPlusExConds pat                                in % restrictions
              insertOpers (reverse opers, q, result, extra_conds)
 
@@ -967,7 +967,7 @@ def patternVars (pat:MSPattern): MSVars =
 	     let (opers, term) = lambdaLiftTerm (env, term)                                   in
 	     let new_dfn       = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, term))) in
              let new_opinfo    = opinfo << {names = [Qualified (q, id)], dfn   = new_dfn}     in
-	     let result        = addNewOpAux (new_opinfo, result, decl?, refine_num, hist, a) in
+	     let result        = addNewOpAux (new_opinfo, result, decl?, refine_num, info, a) in
              insertOpers (reverse opers, q, result, [])
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla, pos), (r_elts, r_ops)) =
@@ -993,15 +993,15 @@ def patternVars (pat:MSPattern): MSVars =
 
                   | Op (Qualified(q,id), true, a) -> % true means decl includes def
                     (case findAQualifierMap(r_ops,q,id) of
-                       | Some opinfo -> doOp (q, id, opinfo, result, true, 0, [], a)
+                       | Some opinfo -> doOp (q, id, opinfo, result, true, 0, None, a)
                        | _ ->
                          let _ = writeLine ("LambdaLift saw Op element not in qmap : " ^ q ^ "." ^ id) in
                          let new_elts = el :: r_elts in
                          (new_elts, r_ops))
 
-                  | OpDef (Qualified(q,id), refine_num, hist, a) ->
+                  | OpDef (Qualified(q,id), refine_num, opt_info, a) ->
                     (case findAQualifierMap (r_ops, q, id) of
-                       | Some opinfo -> doOp (q, id, opinfo, result, false, refine_num, hist, a)
+                       | Some opinfo -> doOp (q, id, opinfo, result, false, refine_num, opt_info, a)
                        | _ ->
                          let _ = writeLine ("LambdaLift saw OpDef element not in qmap : " ^ 
                                               q ^ "." ^ id ^ 
@@ -1038,14 +1038,14 @@ def patternVars (pat:MSPattern): MSVars =
                   ops  : OpMap), 
                  decl?      : Bool, 
                  refine_num : Nat, 
-                 hist       : TransformHistory, 
+                 xform_info       : Option TransformInfo, 
                  pos        : Position) 
   : SpecElements * OpMap =
   let name as Qualified (q, id) = primaryOpName info in
   let new_elt = if decl? then 
                   Op (name, true, pos) 
                 else 
-                  OpDef (name, refine_num, hist, pos)
+                  OpDef (name, refine_num, xform_info, pos)
   in
   let new_elts = new_elt :: elts in
   let new_ops  = insertAQualifierMap (ops, q, id, info) in

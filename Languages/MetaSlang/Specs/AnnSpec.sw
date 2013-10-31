@@ -59,7 +59,12 @@ AnnSpec qualifying spec
    | Type     QualifiedId * b
    | TypeDef  QualifiedId * b
    | Op       QualifiedId * Bool * b  % if the Bool is true, def was supplied as part of decl
-   | OpDef    QualifiedId * Nat  * TransformHistory * b  % Nat is number of redefinitions
+   % An OpDef gives one of the definitions of an op: multiple
+   % definitions come from uses of "refine def"; the Nat gives the
+   % ordering of the refined definitions, while the TransformInfo
+   % gives information about what transformation created the refine
+   % def (None = user wrote the refine def)
+   | OpDef    QualifiedId * Nat  * Option TransformInfo * b
    | Property (AProperty b)
    | Comment  String * b
    | Pragma   String * String * String * b
@@ -104,30 +109,97 @@ AnnSpec qualifying spec
 
  type PathTerm.Path = List Nat
 
+ % A RuleSpec records what transformation was used to refine an op
  type RuleSpec =
-   | Unfold      QualifiedId
-   | Fold        QualifiedId
-   | Rewrite     QualifiedId
-   | LeftToRight QualifiedId
-   | RightToLeft QualifiedId
-   | RLeibniz    QualifiedId
-   | Weaken      QualifiedId
-   | MetaRule    (QualifiedId * TypedFun * AnnTypeValue)
-   | TermTransform (Id * TypedFun * AnnTypeValue)
-   | SimpStandard
-   | RenameVars  (List(Id * Id))
-   | AbstractCommonExpressions
-   | Eval
-   | Context
-   | AllDefs
+   | Unfold      QualifiedId % replace a name with its def
+   | Fold        QualifiedId % replace a def with a name
+   | Rewrite     QualifiedId % like unfold one step of a pattern-matching fun
+   | LeftToRight QualifiedId % apply an equality theorem
+   | RightToLeft QualifiedId % apply an the inverse of an equality theorem
+   | RLeibniz    QualifiedId % post-condition strengthening, replacing f x = f y by x = y
+   | Weaken      QualifiedId % strengthen with an implication: use x -> y to replace y with x
+   | MetaRule    (QualifiedId * TypedFun * AnnTypeValue) % user-supplied transform
+   | TermTransform (Id * TypedFun * AnnTypeValue) % user-supplied transform (overlaps MetaRule?)
+   | SimpStandard % Isabelle's simplifier
+   | RenameVars  (List(Id * Id)) % change bound variables in a term
+   | AbstractCommonExpressions % replace repeated subexpressions with a let-binding
+   | Eval % partial evaluation
+   | Context % using context info in rewriting a term; e.g., p -> true in q of "if p then q else r"
+   | AllDefs % ??? not used
 
  type RuleSpecs = List RuleSpec
 
- type TransformHistory = List(MSTerm * RuleSpec)
+
+ % FIXME: add meta-information to get result term from source term;
+ % e.g. in *Theorem constructors
+
+ % proof that a term equals another
+ type EqProof =
+   | EqProofSubterm (Path * EqProof)  % proof that a sub-term is equal
+   | EqProofSym EqProof % prove x = y from y = x
+   | EqProofTrans (EqProof * MSTerm * EqProof) % prove x = z from x = y and y = z
+   | EqProofTheorem QualifiedId % use an equality proof in the spec
+
+ % a proof that one post-condition implies another
+ type ImplProof =
+  | ImplTrans (ImplProof * MSTerm * ImplProof) % prove x -> z from x -> y & y -> z
+  | ImplTheorem QualifiedId % use an implication proof in the spec
+
+ % a proof that a term satisfies a given predicate
+ type PredicateProof =
+   | PredicateTheorem QualifiedId
+
+ % a proof of the correctness of a "refine def"
+ type RefinementProof =
+  | RefineEq EqProof  % refine by an equality step
+  | RefineStrengthen ImplProof % strengthen a post-condition
+  | RefineDefOp PredicateProof % define an op with a post-condition
+
+% a TransformHistory is a record of each individual rule used to
+% transform a term, along with the terms that were the intermediate
+% steps
+type TransformHistory = List (MSTerm * RuleSpec)
+
+ % a TransformInfo contains a history of what transformations were
+ % used to refine a definition, along with an optional proof that the
+ % refinement is correct
+ type TransformInfo = TransformHistory * Option RefinementProof
+
+ op nullTransformInfo : TransformInfo = ([], None)
+
+ % compose two refinement proofs; the term given is the intermediate
+ % term in the refinement, i.e., the first proof refines to the term
+ % while the second refines from it; note that it is an error to
+ % compose two different sorts of proofs
+ op composeRefinementProofs : (RefinementProof * MSTerm * RefinementProof) -> RefinementProof
+ def composeRefinementProofs triple =
+   case triple of
+     | (RefineEq eq_pf1, tm, RefineEq eq_pf2) ->
+       RefineEq (EqProofTrans (eq_pf1, tm, eq_pf2))
+     | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
+       RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
+     | _ -> fail ("composeRefinementProofs called with non-composable proofs!")
+
+ % compose TransformInfos for two steps of transformation
+ op composeTransformInfos : (TransformInfo * MSTerm * TransformInfo) -> TransformInfo
+ def composeTransformInfos triple =
+   case triple of
+     | (([], None), tm, info2) -> info2
+     | (info1, tm, ([], None)) -> info1
+     | ((rs1, Some pf1), tm, (rs2, Some pf2)) ->
+       (rs1 ++ rs2, Some (composeRefinementProofs (pf1, tm, pf2)))
+     | ((rs1, None), tm, (rs2, None)) ->
+       (rs1 ++ rs2, None)
+     | ((rs1, _), tm, (rs2, _)) ->
+       (warn ("composeTransformInfos called with only one proof given");
+        (rs1 ++ rs2, None))
 
  op metaRuleATV(rl: RuleSpec): AnnTypeValue =
    let MetaRule(_, _, atv) = rl in
    atv
+
+ op showRefinementProof (pf : RefinementProof) : String =
+   "FIXME: showRefinementProof is not yet implemented!"
 
  op showRuleSpec(rs: RuleSpec): String =
    case rs of
@@ -429,14 +501,14 @@ op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   info << {dfn = new_dfn}
 
 op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MSTerm): Spec =
-  addRefinedDefH(spc, info, new_dfn, [])
+  addRefinedDefH(spc, info, new_dfn, None)
 
-op addRefinedDefH(spc: Spec, info: OpInfo, new_dfn: MSTerm, hist: TransformHistory): Spec =
+op addRefinedDefH(spc: Spec, info: OpInfo, new_dfn: MSTerm, xform_info: Option TransformInfo): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
   % let _ = writeLine(show(numTerms new_opinfo.dfn)) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), hist, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), xform_info, noPos)]}
 
 op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
@@ -451,13 +523,13 @@ op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType): OpInfo =
   info << {dfn = new_full_dfn}
 
 op addRefinedType(spc: Spec, info: OpInfo, new_ty: MSType): Spec =
-  addRefinedTypeH(spc, info, new_ty, [])
+  addRefinedTypeH(spc, info, new_ty, None)
 
-op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, hist: TransformHistory): Spec =
+op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, xform_info: Option TransformInfo): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), hist, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), xform_info, noPos)]}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -769,6 +841,47 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
             Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
 	  | _ -> el)
        elements
+
+ op mapTransformInfoOpt : (MSTerm -> MSTerm) -> Option TransformInfo -> Option TransformInfo
+ def mapTransformInfoOpt f opt_info =
+   case opt_info of
+     | None -> None
+     | Some info -> Some (mapTransformInfo f info)
+
+ op mapTransformInfo : (MSTerm -> MSTerm) -> TransformInfo -> TransformInfo
+ def mapTransformInfo f (info as (hist, opt_proof)) =
+   let new_hist = map (fn (tm, rspec) -> (f tm, rspec)) hist in
+   case opt_proof of
+     | None -> (new_hist, None)
+     | Some pf -> (new_hist, Some (mapRefinementProof f pf))
+
+ op mapRefinementProof : (MSTerm -> MSTerm) -> RefinementProof -> RefinementProof
+ def mapRefinementProof f pf =
+   case pf of
+     | RefineEq eq_pf -> RefineEq (mapEqProof f eq_pf)
+     | RefineStrengthen impl_proof -> RefineStrengthen (mapImplProof f impl_proof)
+     | RefineDefOp pred_proof -> RefineDefOp (mapPredicateProof f pred_proof)
+
+ op mapEqProof : (MSTerm -> MSTerm) -> EqProof -> EqProof
+ def mapEqProof f pf =
+   case pf of
+     | EqProofSubterm (path, sub_pf) -> EqProofSubterm (path, mapEqProof f sub_pf)
+     | EqProofSym pf -> EqProofSym (mapEqProof f pf)
+     | EqProofTrans (pf1, tm, pf2) ->
+       EqProofTrans (mapEqProof f pf1, f tm, mapEqProof f pf2)
+     | EqProofTheorem qid -> EqProofTheorem qid
+
+ op mapImplProof : (MSTerm -> MSTerm) -> ImplProof -> ImplProof
+ def mapImplProof f pf =
+   case pf of
+     | ImplTrans (pf1, tm, pf2) ->
+       ImplTrans (mapImplProof f pf1, f tm, mapImplProof f pf2)
+     | ImplTheorem qid -> ImplTheorem qid
+
+ op mapPredicateProof : (MSTerm -> MSTerm) -> PredicateProof -> PredicateProof
+ def mapPredicateProof f pf =
+   case pf of
+     | PredicateTheorem qid -> PredicateTheorem qid
 
  op  mapSpecElements: (SpecElement -> SpecElement) -> SpecElements -> SpecElements
  def mapSpecElements f elements =

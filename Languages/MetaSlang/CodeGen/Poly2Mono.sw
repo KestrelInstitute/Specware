@@ -615,7 +615,7 @@ Poly2Mono qualifying spec
       else 
         let opinfo :: r_ops = new_ops                   in
         let qid             = primaryOpName opinfo      in
-        let new_elt1        = OpDef (qid, 0, [], noPos) in
+        let new_elt1        = OpDef (qid, 0, None, noPos) in
         let new_elt2        = Op    (qid, false, noPos) in
         % false means don't print def as part of decl
         new_elt1 :: new_elt2 :: newOps r_ops

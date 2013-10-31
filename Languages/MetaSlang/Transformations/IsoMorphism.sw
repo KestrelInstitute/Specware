@@ -987,7 +987,7 @@ op addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (i
                    }
                 | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom (Some dom) newOptQual;
             newdfn <- return (maybePiTerm(tvs, TypedTerm (newtm, srt, termAnn opinfo.dfn)));
-            spc <- return(if old? then appendElement(spc, OpDef(qid, 0, [], noPos)) else spc);
+            spc <- return(if old? then appendElement(spc, OpDef(qid, 0, None, noPos)) else spc);
             return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
             }
          | _ -> escape ("addIsoDefForIso: findTheOp failed qid=" ^ printQualifiedId qid ^ "\n"))
@@ -1464,7 +1464,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                       let spc = setOpInfo(spc,qid,opinfo) in
                       if qid = qid_pr
                         then   % Transformed
-                        let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, [], noPos)) in
+                        let spc = appendElement(spc, OpDef(qid, numTerms opinfo.dfn, None, noPos)) in
                         spc
                       else
                       let spc = appendElement(spc,Op(qid_pr,true,noPos)) in
@@ -1617,13 +1617,13 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                        interpretTerm(spc, if qid in? transformQIds
                                            then main_script
                                            else opaqueSimplifyScript,
-                                     dfn, ty, qid, false, [])
+                                     dfn, ty, qid, false, nullTransformInfo)
                      }
                      else
-                       return (dfn, false, [])
+                       return (dfn, false, nullTransformInfo)
                    }
                    else
-                     return (dfn, false, []);
+                     return (dfn, false, nullTransformInfo);
                  if equalTerm?(dfn, simp_dfn) then
                    return opinfo
                  else {

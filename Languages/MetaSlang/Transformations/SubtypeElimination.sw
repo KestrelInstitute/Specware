@@ -1151,8 +1151,8 @@ def mapSpecHist tsp spc =
 	  | Property (pt, nm, tvs, term, a) ->
             % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
             Property (pt, nm, tvs, mapTerm tsp term, a)
-          | OpDef(qid, refine_num, hist, a) ->
-            OpDef(qid, refine_num, map (fn (tm, rl) -> (mapTerm tsp tm, rl)) hist, a)
+          | OpDef(qid, refine_num, xform_info, a) ->
+            OpDef(qid, refine_num, mapTransformInfoOpt (mapTerm tsp) xform_info, a)
 	  | Import   (s_tm, i_sp, elts, a)  ->
             Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
 	  | _ -> el)

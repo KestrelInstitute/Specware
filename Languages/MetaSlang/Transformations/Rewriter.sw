@@ -173,6 +173,7 @@ MetaSlangRewriter qualifying spec
      { 
 	name     = "Eval",
         rule_spec = Eval,
+        opt_proof = None,
 	freeVars = [],
 	tyVars = [],
 	condition = None,

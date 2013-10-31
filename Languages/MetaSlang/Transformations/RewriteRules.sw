@@ -31,6 +31,7 @@ RewriteRules qualifying spec
    { 
 	name      : String,
         rule_spec : RuleSpec,
+        opt_proof : Option RefinementProof,
 	lhs       : MSTerm,
 	rhs       : MSTerm, 
 	tyVars    : List String,
@@ -54,6 +55,16 @@ RewriteRules qualifying spec
       hist
     %; app (fn (t1, t2) -> writeLine(printTerm t1^" --> "^printTerm t2)) changed_terms
      ))
+
+ op printTransformInfoOpt(opt_info: Option TransformInfo): () =
+   case opt_info of
+     | None -> ()
+     | Some (hist, None) ->
+       printTransformHistory hist
+     | Some (hist, Some pf) ->
+       (printTransformHistory hist;
+        writeLine("Transformation proof:");
+        writeLine(showRefinementProof pf))
 
 %%
 %% Replace this by discrimination tree based rewrite rule application.
@@ -116,13 +127,14 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      in
 	(freshTerm, freshType, varMap, tyVMap)
 
- op freshRule(context: Context, rule as {name,rule_spec,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
+ op freshRule(context: Context, rule as {name,rule_spec,opt_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule =
      % let _ = (writeLine("freshRule: "); printRule rule) in
      let (freshTerm,freshType,varMap,tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
      {  name = name,
         rule_spec = rule_spec,
+        opt_proof = None,
 	lhs  = freshTerm lhs,
 	rhs  = freshTerm rhs,
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
@@ -142,6 +154,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      let rule = 
          {name      = id,
           rule_spec = rule_spec,
+          opt_proof = None,
 	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
 	  rhs       = term,
 	  condition = None,
@@ -362,12 +375,12 @@ is rewritten to
       existsSubTerm (fn term -> lhs = term) rhs
 
   op  redirectRule : RewriteRule -> Option RewriteRule
-  def redirectRule (rule as {name,lhs,rhs,rule_spec,tyVars,freeVars,condition,trans_fn}) = 
+  def redirectRule (rule as {name,lhs,rhs,rule_spec,opt_proof,tyVars,freeVars,condition,trans_fn}) = 
       if diverging(lhs,rhs)
 	 then 
 	 if diverging(rhs,lhs)
 	     then None
-	 else Some {name = name, rule_spec = reverseRuleSpec rule_spec, lhs = rhs, rhs = lhs,
+	 else Some {name = name, rule_spec = reverseRuleSpec rule_spec, opt_proof = None, lhs = rhs, rhs = lhs,
                     tyVars = tyVars, freeVars = freeVars, condition = condition, trans_fn = trans_fn}
       else Some rule
 
@@ -471,6 +484,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
          let s_rhs = substitute(rhs,subst) in
          let main_rule = freshRule(context,
                                    {name      = desc,   condition = condition, rule_spec = rsp,
+                                    opt_proof = None,
                                     lhs       = s_lhs,  rhs       = s_rhs,
                                     tyVars    = [],     freeVars  = freeVars, trans_fn = None})
          in
@@ -478,12 +492,14 @@ op simpleRwTerm?(t: MSTerm): Bool =
            | IfThenElse(p, q, r, _) | expandIfThenElse? ->
              (if lr? || ~(hasUnboundVars?(q, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn p, rule_spec = rsp,
+                                          opt_proof = None,
                                           lhs       = if lr? then s_lhs else substitute(q,subst),
                                           rhs       = if lr? then substitute(q,subst) else s_rhs,
                                           tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
                 else [])
              ++ (if lr? || ~(hasUnboundVars?(r, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn(negate p), rule_spec = rsp,
+                                          opt_proof = None,
                                           lhs       = if lr? then s_lhs else substitute(r,subst),
                                           rhs       = if lr? then substitute(r,subst) else s_rhs,
                                           tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
@@ -501,6 +517,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 	else
         [freshRule(context,
 		   {name      = desc,   condition = condition, rule_spec = rsp,
+                    opt_proof = None,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, true, dirn) ->
@@ -517,6 +534,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
        else
          [freshRule(context,
                     {name      = desc,   condition = condition, rule_spec = rsp,
+                     opt_proof = None,
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
@@ -548,7 +566,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 %   	          tyVars    = tyVars, freeVars  = freeVars}))
 % 	| None -> None
 
- op printRule({name,tyVars,freeVars,condition,lhs,rhs,rule_spec,trans_fn}:RewriteRule): () = 
+ op printRule({name,tyVars,freeVars,condition,lhs,rhs,rule_spec,opt_proof,trans_fn}:RewriteRule): () = 
      ( writeLine ("Rewrite rule ------- "^name^" -------");
        if some? trans_fn then ()
        else
