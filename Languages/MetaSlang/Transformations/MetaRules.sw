@@ -268,7 +268,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option MSTerm =
                       case_trs)
                | None -> None)
          | None ->
-        %% (ex(x,y) Some x = c && q x y) = (case c of Some x -> ex(y) q x y | _ -> false)
+        %% (ex(x,y) <C=constructor> x = e && q x y) = (case e of C x -> ex(y) q x y | _ -> false)
         case findLeftmost (fn cj -> some?(caseEquality (cj, vs))) cjs of
           | Some cj -> 
             (case caseEquality(cj,vs) of

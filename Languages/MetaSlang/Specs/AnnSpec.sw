@@ -130,20 +130,30 @@ AnnSpec qualifying spec
  type RuleSpecs = List RuleSpec
 
 
- % FIXME: add meta-information to get result term from source term;
- % e.g. in *Theorem constructors
+ % for the MergeRulesProof constructor, below
+ type MergeRules.TraceTree
 
  % proof that a term equals another
  type EqProof =
    | EqProofSubterm (Path * EqProof)  % proof that a sub-term is equal
    | EqProofSym EqProof % prove x = y from y = x
    | EqProofTrans (EqProof * MSTerm * EqProof) % prove x = z from x = y and y = z
-   | EqProofTheorem QualifiedId % use an equality proof in the spec
+   | EqProofTheorem (QualifiedId * List MSTerm)
+     % use an equality theorem in the spec; should have the form
+     % "forall x1,x2,...,xn, M = N"; the MSTerms are substituted for x1...xn
+   | EqProofUnfoldDef QualifiedId % prove x = the defined value of x
+   | EqProofTactic String % an automated, named proof tactic
 
  % a proof that one post-condition implies another
  type ImplProof =
   | ImplTrans (ImplProof * MSTerm * ImplProof) % prove x -> z from x -> y & y -> z
-  | ImplTheorem QualifiedId % use an implication proof in the spec
+  | ImplTheorem (QualifiedId * List MSTerm)
+    % use an implication theorem in the spec; theorem should have the
+    % form "forall x1,...,xn, M -> N", and the MSTerms are substituted
+    % for the xi's
+  | ImplEq EqProof % prove x -> y from x = y
+  | ImplProofTactic String % an automated, named proof tactic
+  | MergeRulesProof TraceTree % a provably correct mergeRules refinement
 
  % a proof that a term satisfies a given predicate
  type PredicateProof =
