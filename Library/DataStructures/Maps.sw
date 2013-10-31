@@ -48,12 +48,6 @@ Maps = Map qualifying spec
         fa(m,x,y,z) apply (update m x y) z =
                     (if z = x then Some y else apply m z)
 
-% This is useful when refining to the single-threaded MapsAsVectors
-  op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
-     set_fold (empty_map)
-              (fn(newm:Map(a,b),x:a)-> update newm x (TMApply(m,x)))
-              (domain m)
-
   op [a,b] remove (m : Map (a,b)) (key : a) : Map (a,b)
   axiom remove is [a,b]
     fa(m: Map(a,b), key1 : a, key2 : a)
@@ -201,6 +195,12 @@ Maps = Map qualifying spec
     fa(m: Map(a,b), x: a, y: b, z: a)
     z in? domain m =>
     (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
+
+% This is useful when refining to the single-threaded MapsAsVectors
+  op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
+     set_fold (empty_map)
+              (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
+              (domain m)
 
 %TODO these next theorems don't have much to do with the Map data structure:
 
@@ -543,6 +543,24 @@ proof Isa Map__range_of_empty
   apply(simp add:  Map__map_range Set__empty_set Map__empty_map)
 end-proof
 
+proof Isa Map__copyMap_Obligation_subtype
+  apply(rule Map__map_equality)
+  apply(simp add: Map__TMApply_over_update Map__update)
+end-proof
+
+proof Isa Map__copyMap_Obligation_subtype0
+  oops
+end-proof
+
+proof Isa Map__copyMap_Obligation_subtype0
+  apply(simp add: Set__Set_P_def Set__forall_p_def)
+  apply(rule Set__induction)
+  apply(auto simp add: Set__set_fold1)
+  apply(case_tac "x in? s")
+  apply(simp add: Set__set_insert_does_nothing)
+  apply(simp add: Set__set_fold2)
+  sorry
+end-proof
 
 end-spec
 
