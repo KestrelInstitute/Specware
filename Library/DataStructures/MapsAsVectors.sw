@@ -63,6 +63,11 @@ spec
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
      set_fold m (fn  (m, x) -> update m x (f x)) s
 
+  op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
+     set_fold (empty_map)
+              (fn(newm:Map(a,b),x:a)-> update newm x (TMApply(m,x)))
+              (domain m)
+
   %% Added by Eric:
   op remove : [a,b] Map (a,b) -> a -> Map (a,b) = fn x -> fn y -> MapVec.V_remove(x,y)
 
