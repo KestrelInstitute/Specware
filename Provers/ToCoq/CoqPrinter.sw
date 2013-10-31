@@ -84,6 +84,7 @@ def concatenate (sep : Char) (strs : List String) : String =
     | [str] -> str
     | str :: strs' -> str ^ (implode [sep]) ^ concatenate sep strs'
 
+
 (* add an element in between every existing element of a list *)
 op [a] intersperse (x : a) (l : List a) : List a =
   case l of
@@ -237,6 +238,8 @@ def termIsDefined? (t : MSTerm) : Bool =
   case t of
     | Any _ -> false
     | TypedTerm (t', _, _) -> termIsDefined? t'
+    | Lambda (matches, _) ->
+      forall? (fn (_, _, body) -> termIsDefined? body) matches
     | _ -> true
 
 
@@ -249,11 +252,15 @@ def termIsDefined? (t : MSTerm) : Bool =
 
 type Context =
   {
-   freshNatCounter : Nat
+   freshNatCounter : Nat, % for making fresh names
+   topPrettys : List Pretty % out-of-band extras printed at top-level
    }
 
 def mkContext () =
-  { freshNatCounter = 0 }
+  {
+   freshNatCounter = 0,
+   topPrettys = []
+   }
 
 type Monad a = Context -> Either (String, Context * a)
 
@@ -282,7 +289,7 @@ def putCtx ctx = fn _ -> Right (ctx, ())
 op freshNat : Monad Nat
 def freshNat =
   { ctx <- getCtx;
-    () <- putCtx { freshNatCounter = ctx.freshNatCounter + 1 };
+    () <- putCtx (ctx<<{ freshNatCounter = ctx.freshNatCounter + 1 });
     return ctx.freshNatCounter }
 
 op ppFreshVar : Monad Pretty
@@ -290,12 +297,21 @@ def ppFreshVar =
   { var_nat <- freshNat;
     return (string ("__fresh_" ^ intToString var_nat)) }
 
+op appendTopPretty (p : Pretty) : Monad () =
+  fn ctx -> Right (ctx << { topPrettys = ctx.topPrettys ++ [p] }, ())
+
+op prependTopPretty (p : Pretty) : Monad () =
+  fn ctx -> Right (ctx << { topPrettys = p :: ctx.topPrettys }, ())
+
+
 (* Run operation for our monad: use a computation to write a Pretty to
    a file, returning an error string on error *)
 op writingToFile : String * Context * Monad Pretty -> Option String
 def writingToFile (filename, ctx, m) =
   case m ctx of
-    | Right (_, pp) -> (toFile (filename, format (formatWidth, pp)) ; None)
+    | Right (ctx, pp) ->
+      let combined_pp = prLines 0 (ctx.topPrettys ++ [pp]) in
+      (toFile (filename, format (formatWidth, combined_pp)) ; None)
     | Left str -> Some str
 
 
@@ -497,6 +513,14 @@ op ppCoqModule : (String * List Pretty) -> Pretty
 def ppCoqModule (mod_name, pps) =
   prLines 0
     ([string ("Module " ^ mod_name ^ ".\n")]
+     ++ (intersperse (string "") pps)
+     ++ [string ("End " ^ mod_name ^ ".\n")])
+
+(* pretty-print a Coq module type *)
+op ppCoqModuleType : (String * List Pretty) -> Pretty
+def ppCoqModuleType (mod_name, pps) =
+  prLines 0
+    ([string ("Module Type " ^ mod_name ^ ".\n")]
      ++ (intersperse (string "") pps)
      ++ [string ("End " ^ mod_name ^ ".\n")])
 
@@ -822,6 +846,24 @@ def ppTypeDef (q,id, tp) =
            return (ppCoqPgmDef (qidToCoqName (q, id), string "Set", tp_pp)) }
 
 (***
+ *** importing a spec
+ ***)
+
+(* This does two things:
+
+   1. Load the required Coq file using a Coq "Require"; and
+
+   2. If the current spec adds definitions 
+
+*)
+
+op importSpec (cur_spec : Spec) (ruid : RelativeUID) : Monad (Option Pretty) =
+     {
+      appendTopPretty (string ("Require " ^ relUIDToCoqNameString ruid));
+      return (Some (string ("Include " ^ relUIDToCoqNameString ruid ^ ".Spec.")))
+      }  
+
+(***
  *** pretty-printer for specs
  ***)
 
@@ -893,10 +935,7 @@ def ppSpecElem s elem =
        | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))
   in
   case elem of
-   | Import ((UnitId ruid, _), _, _, _) ->
-     return
-     (Some
-        (string ("Require Import " ^ relUIDToCoqNameString ruid ^ ".")))
+   | Import ((UnitId ruid, _), _, _, _) -> importSpec s ruid
    | Type (Qualified qid, _) -> ppTypeSpecElem qid
    | TypeDef (Qualified qid, _) -> ppTypeSpecElem qid
    | Op (Qualified qid, _, _) -> ppOpSpecElem qid
@@ -920,60 +959,6 @@ def ppSpecElem s elem =
           (string ("(* pragma: (" ^ str1 ^ "," ^ str2 ^ "," ^ str3 ^ ") *)")))
 
 
-(* return a tuple of a pretty-printed (name, type, value) for a spec
-   element as an element of a Coq record. The "value" here for
-   types, ops, and axioms is just the name of the variable in the
-   current module (introduced by Definition or Parameter)
-   corresponding to the particular element; for imports, it is
-   the "__pinst" value for the module being imported *)
-op ppSpecElemInRecord
-  : Spec -> SpecElement -> Monad (Option (String * Pretty * Pretty))
-def ppSpecElemInRecord s elem =
-  let def opHelper (q, id) =
-    (case findAQualifierMap (s.ops, q, id) of
-       | Some op_info ->
-         { tp_pp <- ppType (termType op_info.dfn);
-           return (Some ("__" ^ qidToCoqName (q, id), tp_pp, ppQid (q, id))) }
-       | None -> err ("ppSpecElem: could not find op " ^ id ^ " in spec!"))  in
-  case elem of
-   | Import ((UnitId ruid, _), _, _, _) ->
-     (* for an import,  *)
-     let modName = relUIDToCoqModuleName ruid in
-     let metaModStr = coqModNameToString (coqModNameAddMeta modName) in
-     let modField = last modName in
-     (* README: we are using the last element of the module name as
-        the name of the field in the __pinst record. Hopefully this
-        will not cause name clashes. If it does, maybe we can allow
-        user control with pragmas? *)
-     return
-     (Some
-        (modField,
-         string (metaModStr ^ "." ^ tp_elem_name),
-         string (metaModStr ^ "." ^ pinst_elem_name)))
-   | Type (Qualified qid, _) ->
-     return (Some ("__" ^ qidToCoqName qid, string "Set", ppQid qid))
-   | TypeDef (Qualified qid, _) ->
-     return (Some ("__" ^ qidToCoqName qid, string "Set", ppQid qid))
-   | Op (Qualified qid, _, _) -> opHelper qid
-   | OpDef (Qualified qid, _, _, _) -> opHelper qid
-   | Property (Axiom, Qualified qid, tyvars, tm, _) ->
-     (* FIXME: search for a proof *)
-     { tm_pp <- ppTerm tm;
-       return
-        (Some
-           ("__" ^ qidToCoqName qid,
-            ppForall (ppTyVarBindings tyvars) tm_pp,
-            ppQid qid)) }
-   | Property prop -> (* FIXME *) return None
-   | Comment (str, _) -> return None
-   | Pragma (str1, str2, str3, _) ->
-     (* FIXME *)
-     return None
-
-
-(* FIXME HERE: use "Variable" instead of "Parameter"; add Sections
-   inside our modules *)
-
 (* top-level entry point for pretty-printing specs *)
 op ppSpec : CoqModName -> Spec -> Monad Pretty
 def ppSpec coq_mod s =
@@ -995,34 +980,9 @@ def ppSpec coq_mod s =
    (* next, pretty-print the spec elements *)
    spec_elems_pp <- filterMapM (ppSpecElem s) spec_elems;
 
-   (* pretty-print spec elems to Coq record elems *)
-   spec_record_elems_pp <- filterMapM (ppSpecElemInRecord s) spec_elems;
-
    (* Now, build the Coq module! *)
-   return
-   (
-    prLines 0
-    (intersperse (string "")
-       (spec_elems_pp
-          ++
-          (* build the "Meta" module *)
-          [ppCoqModule
-             (meta_mod_name,
-              [
-               (* build the "__type" component *)
-               ppCoqRecordDef
-               (tp_elem_name, "mk" ^ tp_elem_name,
-                map (fn (nm, tp_pp, _) -> (nm, tp_pp)) spec_record_elems_pp)
-               ,
-
-               (* build the "__pinst" component *)
-               ppCoqDefNoT
-                 (pinst_elem_name,
-                  ppCoqRecordElem
-                    (map (fn (nm, _, val_pp) -> (nm, val_pp)) spec_record_elems_pp))
-               ])]
-          ))
-    )}
+   return (ppCoqModuleType ("Spec", spec_elems_pp))
+  }
 
 
 (***
