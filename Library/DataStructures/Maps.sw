@@ -589,11 +589,13 @@ Maps_extended = spec
    fa(dom: Set a, g: a -> b) 
      domain(mapFrom(dom, g)) = dom
 
+(* these should be in a specialized extension
   op [a,b,c] update_map_prepend(m:Map(a*b,c),lst:Set a,bval:b, f:a*b->c):Map(a*b,c) =
      set_fold m (fn (m1, aval) -> update m1 (aval,bval) (f(aval,bval))) lst
 
   op [a,b,c] map2DFrom(lst1: Set a, lst2: Set b, f: a*b -> c): Map(a*b,c) =
     set_fold empty_map (fn (m, bval) -> update_map_prepend(m,lst1,bval,f)) lst2
+*)
   
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
      set_fold m (fn (m, x) -> update m x (f x)) s
