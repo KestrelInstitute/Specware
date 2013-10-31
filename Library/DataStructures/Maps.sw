@@ -549,17 +549,7 @@ proof Isa Map__copyMap_Obligation_subtype
 end-proof
 
 proof Isa Map__copyMap_Obligation_subtype0
-  oops
-end-proof
-
-proof Isa Map__copyMap_Obligation_subtype0
-  apply(simp add: Set__Set_P_def Set__forall_p_def)
-  apply(rule Set__induction)
-  apply(auto simp add: Set__set_fold1)
-  apply(case_tac "x in? s")
-  apply(simp add: Set__set_insert_does_nothing)
-  apply(simp add: Set__set_fold2)
-  sorry
+  apply(auto simp add: Set__Set_P_def Set__forall_p_in_self)
 end-proof
 
 end-spec

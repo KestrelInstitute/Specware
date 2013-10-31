@@ -43,6 +43,7 @@ spec
     fn x -> fn y -> MapBTV.BTV_update(MapBTV.BTV_empty_map,x,y)
 
   %% Inefficient but best we can do with abstract sets
+  %% FIXME: Doesn't type-check:
   op [a,b] domain(m: Map(a,b)): Set a =
     BTV_foldi (fn (x,_,s) -> set_insert_new(x,s), empty_set, m)
 
@@ -85,6 +86,11 @@ spec
           true
           m
 
+  %% Just copied from Maps.sw:
+  op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
+     set_fold (empty_map)
+              (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
+              (domain m)
 
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map

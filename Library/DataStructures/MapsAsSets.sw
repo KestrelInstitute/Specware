@@ -33,6 +33,11 @@ spec
              (fn (result, (x1,y1)) -> if x = x1 then Some y1 else result)
              m
 
+  %% Will be needed for the morphism and now possibly needed for a proof below:
+  theorem map_equality is [a,b]
+    fa(m1:Map(a,b), m2:Map(a,b)) (fa(x) apply m1 x = apply m2 x) => m1 = m2
+
+
   op [a,b] map_apply (m : Map(a,b)) (b_default : b) (x : a) : b =
     set_fold b_default
              (fn (result, (x1,y1)) -> if x = x1 then y1 else result)
@@ -58,6 +63,10 @@ spec
                  else
                    set_insert((x1,y1),result_map))
                m
+
+  theorem update is
+    fa(m,x,y,z) apply (update m x y) z =
+                    (if z = x then Some y else apply m z)
 
   % Remove the binding for key (if any).
   op [a,b] remove (m:Map(a,b)) (x:a) : Map(a,b) = 
@@ -139,6 +148,12 @@ spec
   op [a,b,c,d] isoMap: Bijection(a,c) -> Bijection(b,d) -> Bijection(Map(a, b), Map(c, d)) =
     fn iso_a -> fn iso_b -> foldi (fn (x, y, new_m) -> update new_m (iso_a x) (iso_b y)) empty_map
 
+  % Just copied from Maps.sw:
+  op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
+     set_fold (empty_map)
+              (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
+              (domain m)
+
 %TODO The Isabelle obligations don't seem to include the crucial information from the type Map.
 proof Isa Map__apply_Obligation_subtype
   sorry
@@ -166,6 +181,10 @@ proof Isa Map__update_Obligation_subtype1
 end-proof
 
 proof Isa Map__update_Obligation_subtype2
+  sorry
+end-proof
+
+proof Isa Map__update
   sorry
 end-proof
 
@@ -209,6 +228,23 @@ proof Isa isoMap_Obligation_subtype
   sorry
 end-proof
 
+proof Isa Map__map_equality
+  sorry
+end-proof
+
+proof Isa Map__copyMap_Obligation_subtype
+  apply(rule Map__map_equality)
+  apply(simp add: Map__TMApply_over_update Map__update)
+end-proof
+
+proof Isa Map__copyMap_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Map__copyMap_Obligation_subtype0
+  sorry
+end-proof
+
 end-spec
 
 
@@ -234,15 +270,8 @@ proof Isa Map__total_p_def
   apply(cut_tac Map__map_domain, auto)
 end-proof
 
-proof Isa Map__map_equality
-  sorry
-end-proof
 
 proof Isa Map__empty_map
-  sorry
-end-proof
-
-proof Isa Map__update
   sorry
 end-proof
 

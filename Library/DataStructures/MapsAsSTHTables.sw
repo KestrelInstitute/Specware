@@ -76,6 +76,12 @@ spec
     forall? (fn (key, val) -> preda key && predb val)
             m
 
+  %% Just copied from Maps.sw:
+  op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
+     set_fold (empty_map)
+              (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
+              (domain m)
+
 proof Isa MapsAsSTHTables__domain_Obligation_subtype
   sorry
 end-proof
@@ -118,6 +124,14 @@ proof Isa MapsAsSTHTables__forall_p_Obligation_subtype
   apply(auto simp add: MapsAsSTHTables__foldable_p_def)
 end-proof
 
+
+proof Isa MapsAsSTHTables__copyMap_Obligation_subtype
+  oops
+end-proof
+
+proof Isa MapsAsSTHTables__copyMap_Obligation_subtype0
+  apply(auto simp add: Set__Set_P_def Set__forall_p_in_self)
+end-proof
 
 
 end-spec

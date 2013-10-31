@@ -63,9 +63,10 @@ spec
   op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
      set_fold m (fn  (m, x) -> update m x (f x)) s
 
+  %% Just copied from Maps.sw
   op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
      set_fold (empty_map)
-              (fn(newm:Map(a,b),x:a)-> update newm x (TMApply(m,x)))
+              (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
               (domain m)
 
   %% Added by Eric:
@@ -131,6 +132,13 @@ proof Isa MapsAsVectors__forall_p_Obligation_subtype
   apply(auto simp add: MapsAsVectors__foldable_p_def)
 end-proof
 
+proof Isa MapsAsVectors__copyMap_Obligation_subtype
+  oops
+end-proof
+
+proof Isa MapsAsVectors__copyMap_Obligation_subtype0
+  oops
+end-proof
 
 end-spec
 
