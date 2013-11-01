@@ -551,8 +551,8 @@ IsaTermPrinter qualifying spec
 
                      %% Make refinement obligation proof
                      let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
-                     let _ = writeLine("arp: "^thm_name^" "^show(embed? Property (head elts))) in
-                     let _ = writeLine(printTerm dfn^"\n"^printTerm prev_dfn) in 
+                     % let _ = writeLine("arp: "^thm_name^" "^show(embed? Property (head elts))) in
+                     % let _ = writeLine(printTerm dfn^"\n"^printTerm prev_dfn) in 
                      if anyTerm? dfn
                         then
                           if anyTerm? prev_dfn
@@ -561,11 +561,11 @@ IsaTermPrinter qualifying spec
                               let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
-                               let _ = writeLine("oblig: "^printTerm oblig) in
-                               let _ = writeLine("Generating proof for "^thm_name) in
+                              % let _ = writeLine("oblig: "^printTerm oblig) in
+                              % let _ = writeLine("Generating proof for "^thm_name) in
                               let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
-                               let _ = writeLine("Proof string:\n"^prf_str) in
+                              % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
                             else el::elts   % Not sure if this is meaningful
                         else
@@ -577,7 +577,7 @@ IsaTermPrinter qualifying spec
                                                        prev_dfn, spc) in
                               let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
-                               let _ = writeLine("Proof string:\n"^prf_str) in
+                              % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
 
                    | _ -> el::elts)
@@ -644,18 +644,25 @@ IsaTermPrinter qualifying spec
          tabulate(len, fn k -> let (tm, local_vars) = tm_lvs@i in
                                if i = k
                                 then schematize(tm, r_path, j+len, local_vars)
-                                else makeApplyTerm(mkVar("?z_"^show(j+k), anyType), local_vars))
+                                else
+                                  makeApplyTerm(mkVar("?z_"^show(j+k), pat_var_type(tm, local_vars)), local_vars))
+       def pat_var_type(tm: MSTerm, local_vars: MSVars): MSType =
+         let tm_ty = case maybeTermType tm of
+                       | None -> anyType
+                       | Some ty -> ty
+         in
+         foldr (fn ((_,v_ty), ty) -> mkArrow(v_ty, ty)) tm_ty local_vars
        def schematize(tm, path, j, local_vars) =
          case path of
-           | [] -> makeApplyTerm(mkVar arg_cong_v, local_vars)
+           | [] -> makeApplyTerm(mkVar(arg_cong_v.1, pat_var_type(tm, local_vars)), local_vars)
            | i :: r_path ->
-          let _ = writeLine("schemaFrom: "^anyToString path^"\n"^printVars local_vars^"\n"^printTerm tm) in
+         % let _ = writeLine("schemaFrom: "^anyToString path^"\n"^printVars local_vars^"\n"^printTerm tm) in
          case tm of
           | Apply(ft as Fun(f, _, _), Record([("1", x), ("2", y)], a1), a2) | infixFn? f ->
             let [x, y] = pick(i, [(x, local_vars), (y, local_vars)], r_path, j) in
             Apply(ft, Record([("1", x), ("2", y)], a1), a2)
           | Apply _ | i = 0 && r_path = [] ->    % Avoid functional variable as leads to non-det match
-            mkVar arg_cong_v
+            makeApplyTerm(mkVar(arg_cong_v.1, pat_var_type(tm, local_vars)), local_vars)
           | Apply(x, y, a) ->
             if embed? Lambda x
               then let [y, x] = pick(i, [(y, local_vars), (x, local_vars)], r_path, j) in
@@ -719,7 +726,7 @@ IsaTermPrinter qualifying spec
 
  op ruleProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Int): String =
    let (_, path) = changedPathTerm(before, after) in
-   let _ = writeLine("changed term:\n"^printTerm(fromPathTerm(before, path))) in
+   % let _ = writeLine("changed term:\n"^printTerm(fromPathTerm(before, path))) in
    let rule_str = ruleToIsaRule c rl_spc in
    spaces indent^"by ("
      ^(if path = [] then ""
