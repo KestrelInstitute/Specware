@@ -17,8 +17,10 @@ spec
   % "functional requirement" (i.e., no element is mapped to different
   % elements)
 
-  type Map(a,b) = {s : Set(a * b) |
-                   fa(x,y1,y2) (x,y1) in? s && (x,y2) in? s => y1 = y2}
+  op [a,b] no_duplicate_keys? (s : Set(a * b)) : Bool =
+    fa(x:a, y1:b, y2:b) (x,y1) in? s && (x,y2) in? s => y1 = y2
+
+  type Map(a,b) = (Set(a * b) | no_duplicate_keys?)
 
   % we (re-)define the operations on maps to operate on the
   % sets just defined and to be constructive
@@ -27,7 +29,7 @@ spec
   % and looking for a pair whose first component is the given argument:
   % if one is found, the second component is returned (wrapped with
   % Some); if not, None is returned
-
+  %% TODO: I guess this doesn't type check (because the fn isn't foldable over all sets, only over m); we need to change set_fold to require foldability only over the given set.
   op [a,b] apply (m: Map(a,b)) (x:a) : Option b = 
     set_fold None
              (fn (result, (x1,y1)) -> if x = x1 then Some y1 else result)
@@ -37,7 +39,7 @@ spec
   theorem map_equality is [a,b]
     fa(m1:Map(a,b), m2:Map(a,b)) (fa(x) apply m1 x = apply m2 x) => m1 = m2
 
-
+  %% TODO: I guess this doesn't type check (because the fn isn't foldable over all sets, only over m); we need to change set_fold to require foldability only over the given set.
   op [a,b] map_apply (m : Map(a,b)) (b_default : b) (x : a) : b =
     set_fold b_default
              (fn (result, (x1,y1)) -> if x = x1 then y1 else result)
@@ -154,34 +156,32 @@ spec
               (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
               (domain m)
 
-%TODO The Isabelle obligations don't seem to include the crucial information from the type Map.
 proof Isa Map__apply_Obligation_subtype
-  sorry
+  oops
 end-proof
 
-%TODO The Isabelle obligations don't seem to include the crucial information from the type Map.
 proof Isa Map__map_apply_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__empty_map_Obligation_subtype
-  apply(simp add: Map__Map__subtype_pred_def  Set__empty_set)
+  apply(simp add: Map__no_duplicate_keys_p_def  Set__empty_set)
 end-proof
 
 proof Isa Map__update_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__update_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof Isa Map__update_Obligation_subtype1
-  sorry
+  oops
 end-proof
 
 proof Isa Map__update_Obligation_subtype2
-  sorry
+  oops
 end-proof
 
 proof Isa Map__update
@@ -189,43 +189,43 @@ proof Isa Map__update
 end-proof
 
 proof Isa Map__remove_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__remove_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof Isa Map__domain_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__range_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__domainToList_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__rangeToList_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__mapFrom_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__mapUpdateSet_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__foldi_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa isoMap_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__map_equality
@@ -238,11 +238,11 @@ proof Isa Map__copyMap_Obligation_subtype
 end-proof
 
 proof Isa Map__copyMap_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof Isa Map__copyMap_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 end-spec

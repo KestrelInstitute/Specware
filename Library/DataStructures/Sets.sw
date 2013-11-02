@@ -230,6 +230,12 @@ op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
 %% I tried to call 'p' here 'pred' but got an isabelle error:
 op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
 
+theorem foldable?_of_union is [a]
+  foldable?(fn (x:Set a,y:Set a) -> x \/ y)
+
+theorem foldable?_of_intersection is [a]
+  foldable?(fn (x:Set a,y:Set a) -> x /\ y)
+
 
 
 %% Union of many sets
@@ -799,6 +805,16 @@ end-proof
 proof Isa Set__forall_p_in_self
   apply(simp add: Set__forall_p_def Set__map_of_in_self Set__set_fold1 Set__set_fold2 Set__foldable_p_def)
   apply(metis Set__foldable_p_of_and Set__set_fold1 Set__set_fold2 Set__set_insert_does_nothing prod_caseI)
+end-proof
+
+proof Isa Set__foldable_p_of_union [simp]
+  apply(auto simp add: Set__foldable_p_def)
+  apply(metis Set__commutativity_of_union_two)
+end-proof
+
+proof Isa Set__foldable_p_of_intersection [simp]
+  apply(auto simp add: Set__foldable_p_def)
+  apply(metis Set__commutativity_of_intersection_two)
 end-proof
 
 end-spec
