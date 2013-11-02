@@ -305,6 +305,9 @@ theorem map_of_in_self is [a]
 theorem forall?_in_self is [a]
   fa(s : Set a) forall? (fn (x:a) -> x in? s) s
 
+theorem Set_P_in_self is [a]
+  fa(s : Set a) Set_P (fn (x:a) -> x in? s) s
+
 
 theorem size_map_injective is [a,b]
    fa(s: Set a, f: a -> b) injective? f => size(map f s) = size s
@@ -802,9 +805,13 @@ proof Isa Set__map_of_in_self
   apply(metis Set__empty_set Set__membership)
 end-proof
 
-proof Isa Set__forall_p_in_self
+proof Isa Set__forall_p_in_self [simp]
   apply(simp add: Set__forall_p_def Set__map_of_in_self Set__set_fold1 Set__set_fold2 Set__foldable_p_def)
   apply(metis Set__foldable_p_of_and Set__set_fold1 Set__set_fold2 Set__set_insert_does_nothing prod_caseI)
+end-proof
+
+proof Isa Set__Set_P_in_self [simp]
+  apply(simp add: Set__Set_P_def)
 end-proof
 
 proof Isa Set__foldable_p_of_union [simp]

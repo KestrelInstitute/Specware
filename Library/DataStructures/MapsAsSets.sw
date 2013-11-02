@@ -241,9 +241,6 @@ proof Isa Map__copyMap_Obligation_subtype
   oops
 end-proof
 
-proof Isa Map__copyMap_Obligation_subtype0
-  oops
-end-proof
 
 end-spec
 
