@@ -112,6 +112,16 @@ op opInfoBad? (s : Spec) (info : AOpInfo StandardAnnotation) : Bool =
   else
     false
 
+%% Better version of existsSubTerm (this one handles terms that occur inside of types, etc.).  TODO: Move this to AnnTerm.sw?
+op [b] existsSubTerm3 (pred?:ATerm b -> Bool) (term:ATerm b): Bool =
+  let (result_term, result) =
+    (mapAccumTerm ((fn (accum) -> fn (term) -> if pred? term then (term, true) else (term, accum)),
+                   (fn (accum) -> fn (ty) -> (ty, accum)),
+                   (fn (accum) -> fn (pat) -> (pat, accum)))
+                  false
+                  term) in
+  result
+
 op opsOkay?(s : Spec) : Bool =
   %% For every op info in the hash table, verify that every op-reference 
   %% has a corresponding entry.  This now checks several more things.
@@ -127,7 +137,7 @@ op opsOkay?(s : Spec) : Bool =
         | _ -> false
   in
   let ops_with_bad_definitions = countOpInfos (opInfoBad? s) s.ops in  %FIXME: make something like mapaccumterm that doesn't return the term
-  let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> existsSubTerm (bad_ref? (primaryOpName info)) info.dfn) s.ops in
+  let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> existsSubTerm3 (bad_ref? (primaryOpName info)) info.dfn) s.ops in
   let ops_with_free_vars = countOpInfos (fn (info) -> case (freeVars info.dfn) of
                                                          | [] -> false
                                                          | vars -> let _ = writeLine ("ERROR: Op " ^ show (primaryOpName info) ^ " has the following free vars in its body: " ^ (anyToString vars) ^ ".") in
