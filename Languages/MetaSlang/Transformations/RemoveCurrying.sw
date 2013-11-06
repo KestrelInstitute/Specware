@@ -284,7 +284,7 @@ op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
    | Seq (                     terms, a) -> 
      Seq (map uncurry_term_rec terms, a)
 
- % | Bind (b, vars, M, _)  -> 
+   | Bind (binder, vars, term, a)  -> Bind(binder, vars, uncurry_term(term, spc), a)
 
    | _ -> term
 
