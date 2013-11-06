@@ -95,7 +95,7 @@ def elaboratePosSpec (given_spec0, filename) =
                                                    ^": "^printType ty^"\n -->\n"^printType ty1)
                         else () in
                 let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty1, tm))) in
-                % let _ = writeLine(printTermWithTypes tm^"\n") in
+                 let _ = if debug? then writeLine(printTermWithTypes new_dfn^"\n") else () in
                 insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})                                       
               | _ -> ops
       in
@@ -180,7 +180,7 @@ def elaboratePosSpec (given_spec0, filename) =
 
   in
   %% ======================================================================
-  %%                           PASS ONE  
+  %%                           Pass One  
   %% ======================================================================
   %% Add constructors to environment
   let env_with_constrs = addConstrsEnv (initial_env, given_spec) in
@@ -211,12 +211,13 @@ def elaboratePosSpec (given_spec0, filename) =
   let elaborated_elts = elaborate_local_props (given_spec.elements, env_with_elaborated_types, false) in
 
   %% ======================================================================
-  %%                           PASS TWO  
+  %%                           Final Pass  
   %% ======================================================================
 
   %% sjw: 7/17/01 Added a second pass so that order is not so important
   let final_pass_env = finalPass env_with_elaborated_types in
 
+  % let elaborated_ops = elaborate_local_op_types (elaborated_ops, final_pass_env) in
   let final_types = elaborate_local_types (elaborated_types, final_pass_env) in
   let final_ops   = reelaborate_local_ops (elaborated_ops,   final_pass_env) in
   let final_elts  = elaborate_local_props (elaborated_elts,  final_pass_env, true) in
@@ -536,6 +537,7 @@ op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos
 
 op checkOp (info: OpInfo, decl?: Bool, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
  % let _ = if info.names = [Qualified(UnQualified, "test")] then writeLine("checkOp 0:\n"^printTermWithTypes (info.dfn)) else () in
+ let _ = if debug? then writeLine("checkOp "^show (finalPass? env)^" "^show(head info.names)) else () in
  let trps = unpackTypedTerms (info.dfn) in
  let (tvs, ty0, def_tm) = nthRefinement(trps, refine_num) in
  let ty = if decl?
@@ -559,6 +561,7 @@ op checkOp (info: OpInfo, decl?: Bool, def?: Bool, refine_num: Nat, env: LocalEn
         tvs)
  in
  let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (new_tvs, ty, elaborated_def_tm))) in
+ let _ = if debug? then writeLine("resulting term\n"^printTermWithTypes new_dfn^"\n") else () in
  % let _ = if info.names = [Qualified(UnQualified, "test")]  then writeLine("checkOp test\n"^printTermWithTypes def_tm^"\n"^printTermWithTypes elaborated_def_tm) else () in
  info << {dfn = new_dfn}
 
@@ -677,7 +680,8 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
                | _ ->
              case findVarOrOps (env, id, pos) ++ findConstrsWithName (env, trm, id, ty, pos) of
                | terms as _::_ ->
-                 %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes 
+                 %% selectTermWithConsistentType calls consistentTypeOp?, which calls unifyTypes
+                 % let _ = if id = "foldable?" then (writeLine("foldable?:"); app (fn tm -> writeLine(printTerm tm)) terms) else () in
                  (case selectTermWithConsistentType (env, id, pos, terms, term_type) of
                     | None -> trm
                     | Some term ->
@@ -699,12 +703,12 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
                  resolveNameFromType (env, trm, id, ty, pos))
 
           | Fun (TwoNames (id1, id2, fixity), ty, pos) -> 
-            (let _ = elaborateCheckTypeForOpRef (env, trm, ty, term_type) in
+            (let ty = elaborateCheckTypeForOpRef (env, trm, ty, term_type) in
              %% Either Qualified (id1, id2) or field selection
              case findTheOp2 (env, id1, id2) of
                | Some info -> 
                  if finalPass? env && groundType? ty && fixity = info.fixity
-                   then trm
+                   then Fun (TwoNames (id1, id2, fixity), ty, pos)
                  else
                  %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
                  let Qualified (q, id) = primaryOpName info in
@@ -1322,7 +1326,8 @@ op selectTermWithConsistentType (env: LocalEnv, id: Id, pos: Position, terms: MS
               | tm::rtms ->
                 (case tm of
                    | Fun (OneName  (     _,_), _, _) -> Some tm
-                   | Fun (TwoNames (id1, _,_), _, _) ->
+                   | Fun (TwoNames (id1, id2,_), _, _) ->
+                     % let _ = if id2 = "foldable?" then writeLine("findUnqualified: "^id1^" "^show (defaultQualifier?(id1, env))) else () in
                      if defaultQualifier?(id1, env) then
                        Some tm
                      else
