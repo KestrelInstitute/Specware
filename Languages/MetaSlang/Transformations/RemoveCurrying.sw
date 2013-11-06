@@ -36,7 +36,8 @@ op remove_curried_refs (spc : Spec) : Spec =
                      %% TODO: Handle multiple defs??
                      let (old_tvs, old_typ, old_tm) = unpackFirstOpDef old_info in
                      let new_tm  = uncurry_term (old_tm, spc) in
-                     let new_dfn = maybePiTerm (old_tvs, TypedTerm (new_tm, old_typ, noPos))
+                     let (_, new_typ) = uncurry_type(old_typ, spc) in
+                     let new_dfn = maybePiTerm (old_tvs, TypedTerm (new_tm, new_typ, noPos))
                      in
                      old_info << {dfn = new_dfn}
                    else
