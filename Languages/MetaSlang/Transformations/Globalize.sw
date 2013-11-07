@@ -1425,8 +1425,10 @@ Globalize qualifying spec
 
       | Unchanged -> 
         let _ = if context.tracing? then
-                  let _ = writeLine("Globalize: no change to " ^ show qid) 
-                  in writeLine (printTerm old_dfn)                  
+                  let _ = writeLine("Globalize: no change to " ^ show qid) in
+                  let _ = writeLine (printTerm old_dfn)                    in
+                  let _ = writeLine ""                                     in
+                  ()
                 else
                   ()
         in
