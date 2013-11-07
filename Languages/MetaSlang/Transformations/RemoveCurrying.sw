@@ -297,6 +297,32 @@ op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
 
    | _ -> term
 
+
+%% Todo: Better way to do this?
+ % Open up the definition of a named type (wrapped in a call of Base),
+ % unless it is a co-product (which can cause loops for users of this routine).  Does not recurse.
+ op unfoldBaseNoCoProduct (sp : Spec, ty : MSType) : MSType =
+  case ty of
+    | Base (qid, tys, a) ->
+      (case findTheType (sp, qid) of
+	 | None -> ty %TODO Should this be an error?
+	 | Some info ->
+	   if definedTypeInfo? info then
+	     (let (tvs, ty_def) = unpackFirstTypeDef info in
+               if length tvs ~= length tys
+                 then (% writeLine("Type arg# mismatch: "^printType ty);
+                       %% This can arise because of inadequacy of patternType on QuotientPat
+                       ty_def)
+               else if coproduct? ty_def then  %% Don't do it for coproducts
+                 ty
+               else 
+                let _ = writeLine("unfolding: "^printType(ty)) in
+                substType (zip (tvs, tys), ty_def))
+	     else %Should this be an error?
+	       ty)
+    | _ -> ty  %TODO: signal an error
+
+
 %% Returns transformed type and whether any change was made
 %% Don't look inside type definitions except to follow arrows
 %% (otherwise infinitely recursive)
@@ -366,6 +392,11 @@ op uncurry_type (typ : MSType, spc : Spec) : Bool * MSType =
      let new_rel              = uncurry_term (old_rel, spc)     in
      let new_type             = Quotient (new_base, new_rel, a) in
      (changed?, new_type)
+
+  %% unfolding recursively-defined co-products like List led to loops:
+   | Base(qid, args, ann) -> let new_typ = unfoldBaseNoCoProduct(spc,typ) in 
+                            % This equalType? test prevents loops when unfolding did nothing (if that possible?  maybe for BaseType Bool?)
+                            (if equalType?(typ,new_typ) then (false, typ) else uncurry_type(new_typ,spc))
 
    | _ -> 
      (false, typ)
