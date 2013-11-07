@@ -314,12 +314,32 @@ op find_constant_nat_bound (ms_term : MSTerm) : Option Nat =
                  _) 
           | v0 = v1 -> 
             (case fits_in_pred of
-               | "fitsIn1Bits?"  -> Some (2**1  - 1)
-               | "fitsIn8Bits?"  -> Some (2**8  - 1)
-               | "fitsIn16Bits?" -> Some (2**16 - 1)
-               | "fitsIn32Bits?" -> Some (2**32 - 1)
+               | "fitsIn1Bits?"   -> Some (2**1   - 1)
+               | "fitsIn8Bits?"   -> Some (2**8   - 1)
+               | "fitsIn16Bits?"  -> Some (2**16  - 1)
+               | "fitsIn32Bits?"  -> Some (2**32  - 1)
+               | "fitsIn64Bits?"  -> Some (2**64  - 1)
+               | "fitsIn128Bits?" -> Some (2**128 - 1)
                | _ -> None)
         | _ -> None)
+
+            
+   | Apply (Fun (Op (Qualified (_, "fitsInNBits?"), _), _, _),
+            Fun (Nat n, _, _),
+            _)
+     ->
+     Some (2**n - 1)
+
+   | Fun (Op (Qualified (_, fits_in_pred), _), _, _) ->
+     (case fits_in_pred of
+        | "fitsIn1Bits?"   -> Some (2**1   - 1)
+        | "fitsIn8Bits?"   -> Some (2**8   - 1)
+        | "fitsIn16Bits?"  -> Some (2**16  - 1)
+        | "fitsIn32Bits?"  -> Some (2**32  - 1)
+        | "fitsIn64Bits?"  -> Some (2**64  - 1)
+        | "fitsIn128Bits?" -> Some (2**128 - 1)
+        | _ -> None)
+
    | _ -> None
 
 op find_constant_int_bounds (ms_term : MSTerm) : Option (Int * Int) =
@@ -411,12 +431,32 @@ op find_constant_int_bounds (ms_term : MSTerm) : Option (Int * Int) =
                  _)
           | v0 = v1 -> 
             (case fits_in_pred of
-               | "intFitsIn1Bits?"  -> Some (-1,0)
-               | "intFitsIn8Bits?"  -> Some (- (2**7),2**7-1)
-               | "intFitsIn16Bits?" -> Some (- (2**15),2**15-1)
-               | "intFitsIn32Bits?" -> Some (- (2**31),2**31-1)
+               | "intFitsIn1Bits?"   -> Some (-(2**0),   2**0-1)
+               | "intFitsIn8Bits?"   -> Some (-(2**7),   2**7-1)
+               | "intFitsIn16Bits?"  -> Some (-(2**15),  2**15-1)
+               | "intFitsIn32Bits?"  -> Some (-(2**31),  2**31-1)
+               | "intFitsIn64Bits?"  -> Some (-(2**63),  2**63-1)
+               | "intFitsIn128Bits?" -> Some (-(2**127), 2**127-1)
                | _ -> None)
         | _ -> None)
+
+   | Apply (Fun (Op (Qualified (_, "intFitsInNBits?"), _), _, _),
+            Fun (Nat n, _, _),
+            _)
+     ->
+     let m = 2 ** (n-1) in
+     Some (- m, m -1)
+
+   | Fun (Op (Qualified (_, fits_in_pred), _), _, _) ->
+     (case fits_in_pred of
+        | "intFitsIn1Bits?"   -> Some (-(2**0),   2**0-1)
+        | "intFitsIn8Bits?"   -> Some (-(2**7),   2**7-1)
+        | "intFitsIn16Bits?"  -> Some (-(2**15),  2**15-1)
+        | "intFitsIn32Bits?"  -> Some (-(2**31),  2**31-1)
+        | "intFitsIn64Bits?"  -> Some (-(2**63),  2**63-1)
+        | "intFitsIn128Bits?" -> Some (-(2**127), 2**127-1)
+        | _ -> None)
+
    | _ -> None
      
 op unfold_bounded_list_type (ms_tvs          : TyVars, 
@@ -517,7 +557,13 @@ op type2itype (ms_tvs  : TyVars,
      case unfold_bounded_list_type (ms_tvs, ms_element_type, pred, ctxt) of
        | Some _ -> true
        | _ -> false
-         
+
+   def subtype_of_int? typ =
+     case typ of
+       | Base (Qualified ("Integer", "Int"), _, _) -> true
+       | Subtype (typ, _, _)                       -> subtype_of_int? typ
+       | _ -> false
+
  in
  let ms_utype = unfoldToSpecials (ms_type, ctxt) in
  case ms_utype of
@@ -537,37 +583,36 @@ op type2itype (ms_tvs  : TyVars,
      let struct? = typeImplementedAsStruct? (t1, ctxt) in
      I_Ref (target, struct?)
 
-   | Subtype (Base (Qualified ("Nat", "Nat"), [], _), pred, _) ->
-     (case find_constant_nat_bound pred of
-        | Some n ->               % Inclusive bound
-          I_BoundedNat n          % closed interval [0, n]
-        | _ -> 
-          let _ = writeLine ("FindConstantNatBound failed for " ^ printTerm pred) in
-          I_Primitive I_Nat)
-     
-   | Subtype (Base (Qualified ("Integer", "Int"), [], _), pred, _) ->
-     (case find_constant_int_bounds pred of
-        | Some (m, n) ->          % Inclusive bounds.
-          if m = 0 then
-            I_BoundedNat n        % closed interval [0, n]
-          else
-            I_BoundedInt (m, n)   % closed interval [m, n]
-        | _ ->
-          let _ = writeLine ("FindConstantIntBounds failed for " ^ printTerm pred) in
-          I_Primitive I_Int)
-     
-   % ----------------------------------------------------------------------
-   % special form for list types, term must restrict length of list
-   % the form of the term must be {X:List T | length X < N}
-   % where N must be a constant term evaluating to a positive Nat
-   % length X <= N, N > length X , N >= length X, N = length X can also be used
-   % ----------------------------------------------------------------------
+   | Subtype (ms_type, ms_pred, _) ->
+     (if subtype_of_int? ms_type then
+       (case find_constant_nat_bound ms_pred of
+          | Some n ->               % Inclusive bound
+            I_BoundedNat n          % closed interval [0, n]
+          | _ -> 
+            (case find_constant_int_bounds ms_pred of
+               | Some (m, n) ->          % Inclusive bounds.
+                 if m = 0 then
+                   I_BoundedNat n        % closed interval [0, n]
+                 else
+                   I_BoundedInt (m, n)   % closed interval [m, n]
+               | _ ->
+                 let _ = writeLine ("FindConstantIntBounds failed for " ^ printTerm ms_pred) in
+                 I_Primitive I_Int))
+     else 
+        case ms_type of
+          % ----------------------------------------------------------------------
+          % special form for list types, term must restrict length of list
+          % the form of the term must be {X:List T | length X < N}
+          % where N must be a constant term evaluating to a positive Nat
+          % length X <= N, N > length X , N >= length X, N = length X can also be used
+          % ----------------------------------------------------------------------
   
-   | Subtype (Base (Qualified ("List", "List"), [ms_element_type], _), pred, _) 
-     | bounded_list_type? ms_element_type pred ->
-       % given the restriction above, the following must succeed
-       let Some i_type = unfold_bounded_list_type (ms_tvs, ms_element_type, pred, ctxt) in
-       i_type
+          | Base (Qualified ("List", "List"), [ms_element_type], _) | bounded_list_type? ms_element_type ms_pred ->
+            % given the restriction above, the following must succeed
+            let Some i_type = unfold_bounded_list_type (ms_tvs, ms_element_type, ms_pred, ctxt) in
+            i_type
+          | _ ->
+            type2itype (ms_tvs, ms_type, ctxt))
           
    % ----------------------------------------------------------------------
    % for arrow types make a distinction between products and argument lists:
@@ -643,9 +688,6 @@ op type2itype (ms_tvs  : TyVars,
           let i_typename = qid2TypeName qid in
           % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
           I_Base i_typename)
-     
-   | Subtype (ms_type, ms_term, _) -> % ignore the term...
-     type2itype (ms_tvs, ms_type, ctxt)
      
    | Quotient (ms_type, ms_term, _) -> % ignore the term...
      type2itype (ms_tvs, ms_type, ctxt)
