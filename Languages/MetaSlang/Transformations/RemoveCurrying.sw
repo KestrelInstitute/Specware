@@ -316,8 +316,8 @@ op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
                else if coproduct? ty_def then  %% Don't do it for coproducts
                  ty
                else 
-                let _ = writeLine("unfolding: "^printType(ty)) in
-                substType (zip (tvs, tys), ty_def))
+                 %let _ = writeLine("unfolding: "^printType(ty)) in
+                 substType (zip (tvs, tys), ty_def))
 	     else %Should this be an error?
 	       ty)
     | _ -> ty  %TODO: signal an error
