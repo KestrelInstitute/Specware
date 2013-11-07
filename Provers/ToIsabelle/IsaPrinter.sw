@@ -48,6 +48,12 @@ IsaTermPrinter qualifying spec
                  source_of_thy_morphism?: Bool,
                  typeNameInfo: List(QualifiedId * TyVars * MSType)}
 
+
+ def getNewVar (c : Context) : Nat =
+   let cnt = c.newVarCount in
+   let _ = (cnt := !cnt + 1) in
+   !cnt
+
  op  specialOpInfo: Context -> QualifiedId -> Option OpTransInfo
  def specialOpInfo c qid = apply(c.trans_table.op_map, qid)
 
@@ -545,6 +551,7 @@ IsaTermPrinter qualifying spec
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
                      let tsp = (relativizeQuantifiers spc, id, id) in
                      let hist = map (fn (tm, rl) -> (mapTerm tsp tm, rl)) hist in
+                     let pf = mapRefinementProofOpt (mapTerm tsp) pf in
                      let trps = unpackTypedTerms (mapTerm tsp opinfo.dfn) in
                      let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
                      let (_, prev_ty, prev_dfn) = nthRefinement(trps, refine_num - 1) in
@@ -563,7 +570,14 @@ IsaTermPrinter qualifying spec
                               else
                               % let _ = writeLine("oblig: "^printTerm oblig) in
                               % let _ = writeLine("Generating proof for "^thm_name) in
-                              let prf_str = generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist) in
+                              let prf_str =
+                                case pf of
+                                    % if we have an implication proof, convert it to Isabelle
+                                  | Some (RefineStrengthen impl_pf) ->
+                                    generateImplicationProof (c, lhs, rhs, condn, impl_pf) 
+                                    % otherwise, fall back on old method based on TransformHistory
+                                  | _ -> generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist)
+                              in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -575,7 +589,14 @@ IsaTermPrinter qualifying spec
                               let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def" in
                               let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
                                                        prev_dfn, spc) in
-                              let prf_str = generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc) in
+                              let prf_str =
+                                case pf of
+                                    % if we have an equality proof, convert it to Isabelle
+                                  | Some (RefineEq eq_pf) ->
+                                    generateEqualityProof (c, eq_tm, prev_dfn, eq_pf, spc)
+                                    % otherwise, fall back on old method based on TransformHistory
+                                  | _ -> generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc)
+                              in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -585,6 +606,10 @@ IsaTermPrinter qualifying spec
     in
     spc << {elements = newelements}
 
+
+%%%
+%%% generating Isabelle proofs from TransformHistories (old approach)
+%%%
 
   op fnQidOfTerm(tm: MSTerm): QualifiedId =
     case tm of
@@ -798,6 +823,209 @@ IsaTermPrinter qualifying spec
              ^ "  ultimately show ?thesis by auto\n")
     ^ "qed\n"
 
+
+%%%
+%%% Helper functions for building Isabelle proofs
+%%%
+
+ % An Isabelle proof is just a pretty-printed string, except that we
+ % also track the current Isabelle mode in the type, to keep users
+ % from using commands in the wrong mode
+ type IsaProof m = | IsaProof Pretty
+
+ % dummy types to represent the different Isabelle proof modes
+ % NOTE: each of these represents a *complete* proof in that mode,
+ % either ending with "qed" or "done" for ProveMode, or with "show"
+ % for StateMode
+ type ProveMode = | ProveMode
+ type StateMode = | StateMode
+
+ % dummy type for to represent a proof tactic, which is not really an
+ % Isabelle mode but we treat it as such
+ type ProofTacticMode = | ProofTacticMode
+
+ % print out a complete ProveMode proof
+ op isaProofToString (IsaProof pretty : IsaProof ProveMode) : String =
+   toString (format (0, pretty))
+
+ %% building tactics
+
+ % build a tactic using Isabelle's "rule" tactic, applied to a string
+ op ruleTactic (rule : String) : IsaProof ProofTacticMode =
+ IsaProof (string ("(rule " ^ rule ^ ")"))
+
+ % same as above, but use a Pretty to format the rule
+ op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
+ IsaProof (blockFill (0, [(0, string "(rule "), (3, rule), (0, string ")")]))
+
+ % use a non-rule tactic, just given as a string
+ op otherTactic (tactic : String) : IsaProof ProofTacticMode =
+ IsaProof (string (tactic^" "))
+
+ %% building ProveMode proofs
+
+ % apply a proof tactic, which is prepended to the rest of the proof
+ op applyTactic (tactic : IsaProof ProofTacticMode, pf : IsaProof ProveMode) : IsaProof ProveMode =
+   applyTactics ([tactic], pf)
+
+ % same as above, but with multiple tactics
+ op applyTactics (tactics : List (IsaProof ProofTacticMode),
+                  IsaProof pf : IsaProof ProveMode) : IsaProof ProveMode =
+ let lines = map (fn (IsaProof tactic) ->
+                    prConcat [string "apply ", tactic]) tactics in
+ IsaProof (prLines 0 (lines ++ [pf]))
+
+ % build an empty proof, i.e., just the keyword "done"
+ op emptyProof : IsaProof ProveMode = IsaProof (string "done ")
+
+ % build a proof using a single tactic using the keyword "by"
+ op singleTacticProof (IsaProof tactic : IsaProof ProofTacticMode) : IsaProof ProveMode =
+   IsaProof (prConcat [string "by ", tactic])
+
+ % generate a "proof -" / "qed" Isabelle proof block, given a body for
+ % that block; technically, the body is in "state" mode, and the proof
+ % block then works in "prove" mode
+ % NOTE: body must end with at least one whitespace
+ op forwardProofBlock (IsaProof body : IsaProof StateMode) : IsaProof ProveMode =
+   IsaProof (blockLinear (0, [(0, string "proof - "), (2, body), (0, string "qed ")]))
+
+ %% building StateMode (forward-reasoning) proofs
+
+ % Add an Isabelle assumption with a unique name, generated from a
+ % prefix (which should not end with a number) passed by the caller;
+ % the name gets passed to the remainder of the proof; the proposition
+ % being assumed should be a term that has already been pretty-printed
+ op addForwardAssumption (c : Context, prefix: String, prop: Pretty, rest: String -> IsaProof StateMode) : IsaProof StateMode =
+ let assum_name = prefix ^ show (getNewVar c) in
+ let rest_pretty = case rest assum_name of IsaProof p -> p in
+ IsaProof
+ (prLines 0
+    [blockFill
+       (0,
+        [(0, string "assume "),
+         (2, string (assum_name ^ ": ")),
+         (4, prConcat [string "\"", prop, string "\""])]),
+     rest_pretty])
+
+ % add a named, intermediate goal in a forward-reasoning proof, using
+ % a "have" in Isabelle; the proof is bound to a uniquely-generated
+ % name, which is passed to the rest of the proof
+ op addForwardStep (c: Context, prefix: String, prop: Pretty, pf: IsaProof ProveMode, rest: String -> IsaProof StateMode) : IsaProof StateMode =
+ let assum_name = prefix ^ show (getNewVar c) in
+ let pf_pretty = case pf of IsaProof p -> p in
+ let rest_pretty = case rest assum_name of IsaProof p -> p in
+ IsaProof
+ (prLines 0
+    [blockFill
+       (0,
+        [(0, string "have "),
+         (4, string (assum_name ^ ": ")),
+         (6, prConcat [string "\"", prop, string "\""]),
+         (2, pf_pretty)]),
+     rest_pretty])
+
+ % finish a forward-reasoning proof block by showing the final result
+ op showFinalResult (prop: Pretty, pf : IsaProof ProveMode) : IsaProof StateMode =
+ let pf_pretty = case pf of IsaProof p -> p in
+ IsaProof (blockFill (0,
+                      [(0, string "show "),
+                       (4, doubleQuote prop),
+                       (2, pf_pretty)]))
+
+ % chain a sequence of proof steps together into a combined proof of a
+ % transitive closure; e.g., "x = y" and "y = z" --> "x = z"
+ op showFinalChainedResult (final_prop: Pretty, steps : List (Pretty * IsaProof ProveMode)) : IsaProof StateMode =
+ let haves_pp =
+   map (fn (prop, IsaProof pf) ->
+     blockFill
+          (0,
+           [(0, string "have "),
+            (4, doubleQuote prop),
+            (2, pf)])) steps in
+   IsaProof
+   (prLines 0
+      (intersperse (string "also") haves_pp
+         ++
+         [string "finally",
+          blockFill
+            (0,
+             [(0, string "show "),
+              (4, doubleQuote final_prop),
+              (0, string ".")])]))
+
+ %% misc helper functions
+
+ % pretty-print an equality proposition / constraint
+ op ppEquality (c: Context, lhs: MSTerm, rhs: MSTerm) : Pretty =
+ ppTerm c Top (mkEquality(Any noPos,lhs,rhs))
+
+ % pretty-print an implication
+ op ppImplication (c: Context, lhs: MSTerm, rhs: MSTerm) : Pretty =
+ ppTerm c Top (mkImplies(lhs, rhs))
+
+ % add double quotes around a Pretty
+ op doubleQuote (p : Pretty) : Pretty = prConcat [string "\"", p, string "\""]
+
+
+%%%
+%%% Generation of Isabelle proofs from RefinementProofs
+%%%
+
+  % generate an Isabelle proof of equality "lhs = rhs"
+  op generateEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:EqProof, spc: Spec): String =
+  isaProofToString (forwardProofBlock (ppEqualityProof (c, lhs, rhs, pf, spc)))
+
+  op ppEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:AnnSpec.EqProof, spc: Spec): IsaProof StateMode =
+  case pf of
+   | EqProofSubterm (path, sub_pf) ->
+     let lhs_sub = fromPathTerm (lhs, path) in
+     let rhs_sub = fromPathTerm (rhs, path) in
+     let sub_eq_pp = ppEquality (c, lhs_sub, rhs_sub) in
+     addForwardStep
+     (c, "subeq", sub_eq_pp,
+      forwardProofBlock (ppEqualityProof (c, lhs_sub, rhs_sub, sub_pf, spc)),
+      (fn pf_name ->
+         showFinalResult (ppEquality (c, lhs, rhs),
+                          singleTacticProof
+                            (ruleTactic ("subst[OF "^ pf_name ^", OF refl]")))))
+   | EqProofSym sub_pf ->
+     let sub_eq_pp = ppEquality (c, rhs, lhs) in
+     addForwardStep
+     (c, "subeq", sub_eq_pp,
+      forwardProofBlock (ppEqualityProof (c, rhs, lhs, sub_pf, spc)),
+      (fn pf_name ->
+         showFinalResult (sub_eq_pp,
+                          singleTacticProof
+                            (ruleTactic (pf_name ^ "[symmetric]]")))))
+   | EqProofTrans (pf1, middle, pf2) ->
+     showFinalChainedResult
+     (ppEquality (c, lhs, rhs),
+      [(ppEquality (c, lhs, middle),
+        forwardProofBlock (ppEqualityProof (c, lhs, middle, pf1, spc))),
+       (ppEquality (c, middle, rhs),
+        forwardProofBlock (ppEqualityProof (c, middle, rhs, pf2, spc)))])
+   | EqProofTheorem (qid, []) ->
+     showFinalResult (ppEquality (c, lhs, rhs), singleTacticProof (ruleTacticPP (ppQualifiedId qid)))
+   | EqProofTheorem (qid, tms) ->
+     fail "FIXME: ppEqualityProof: have not yet implemented forall elimination!"
+     % use an equality theorem in the spec; should have the form
+     % "forall x1,x2,...,xn, M = N"; the MSTerms are substituted for x1...xn
+   | EqProofUnfoldDef qid ->
+     % FIXME: if qid is functional, use the extensionality rule
+     showFinalResult
+     (ppEquality (c, lhs, rhs),
+      singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"])))
+   | EqProofTactic tactic ->
+     showFinalResult (ppEquality (c, lhs, rhs), singleTacticProof (ruleTactic tactic))
+
+  % generate an Isabelle proof of an implication "lhs -> rhs"
+  op generateImplicationProof (c: Context, lhs: MSTerm, rhs: MSTerm, conds: MSTerm, pf:AnnSpec.ImplProof): String =
+  "FIXME"
+
+
+%%%
+%%% End of Generation of Isabelle proofs from RefinementProofs
+%%%
 
   op makeSubstFromRecPats(pats: List(Id * MSPattern), rec_tm: MSTerm, spc: Spec): List (MSPattern * MSTerm) =
     mapPartial (fn (fld, pat) -> if embed? WildPat pat then None

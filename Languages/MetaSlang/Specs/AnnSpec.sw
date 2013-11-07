@@ -865,6 +865,12 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      | None -> (new_hist, None)
      | Some pf -> (new_hist, Some (mapRefinementProof f pf))
 
+ op mapRefinementProofOpt: (MSTerm -> MSTerm) -> Option RefinementProof -> Option RefinementProof
+ def mapRefinementProofOpt f pf_opt =
+   case pf_opt of
+     | Some pf -> Some (mapRefinementProof f pf)
+     | None -> None
+
  op mapRefinementProof : (MSTerm -> MSTerm) -> RefinementProof -> RefinementProof
  def mapRefinementProof f pf =
    case pf of
