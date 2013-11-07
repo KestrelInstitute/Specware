@@ -5685,6 +5685,19 @@ proof Isa List__length_of_delete1__stp
   apply(simp)
   by (metis diff_add_cancel int_Suc int_int_eq add_commute)
 end-proof
+
+
+proof Isa List__intersperse_subtype_constr
+  apply(rule_tac P="P__a x \<and> list_all P__a l" in mp)
+  defer
+  apply(simp)
+  apply(induct l)
+  apply(simp)
+  apply(auto simp add: List__intersperse.simps List__List_P__def)
+  apply(case_tac l)
+  apply(simp add: List__intersperse.simps List__List_P__def)
+  apply(simp add: List__intersperse.simps List__List_P__def)
+end-proof
   
 
 end-spec
