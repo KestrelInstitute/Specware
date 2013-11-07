@@ -160,6 +160,11 @@ op curried_fn_and_args (term : MSTerm) : Option (MSTerm * MSTerms) =
  in
  aux (term, 0, [])
 
+op uncurry_pattern (pat : MSPattern, spc : Spec) : MSPattern =
+  case pat of
+    | RestrictedPat(pat, tm, ann) -> RestrictedPat(pat, uncurry_term(tm, spc), ann)
+    | _ -> pat  %%FIXME: Add more cases!
+
 op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
  let
    def uncurry_term_rec tm = 
@@ -226,6 +231,7 @@ op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
      %% Assume multiple rules have been transformed away and predicate is true
    | Lambda ([(pat, _, old_body)], _)  ->
      let body_type = termTypeEnv (spc, old_body) in
+     let pat = uncurry_pattern(pat, spc) in
      if arrow? (spc, body_type) then
        flatten_lambda ([pat], old_body, body_type, spc) 
      else
