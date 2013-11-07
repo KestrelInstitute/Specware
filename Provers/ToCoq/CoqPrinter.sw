@@ -85,13 +85,6 @@ def concatenate (sep : Char) (strs : List String) : String =
     | str :: strs' -> str ^ (implode [sep]) ^ concatenate sep strs'
 
 
-(* add an element in between every existing element of a list *)
-op [a] intersperse (x : a) (l : List a) : List a =
-  case l of
-    | [] -> []
-    | y::[] -> [y]
-    | y::l' -> y :: x :: intersperse x l'
-
 op [a,b] mapM (f : a -> Monad b) (l : List a) : Monad (List b) =
   case l of
     | [] -> return []

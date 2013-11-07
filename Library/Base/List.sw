@@ -772,6 +772,13 @@ theorem unflatten_length_result is [a]
   fa(l: List a, n:PosNat)
     n divides length l => forall? (fn s -> length s = n) (unflatten(l, n))
 
+% add an element in between every existing element of a list
+op [a] intersperse (x : a) (l : List a) : List a =
+  case l of
+    | [] -> []
+    | y::[] -> [y]
+    | y::l' -> y :: x :: intersperse x l'
+
 % list without repeated elements (i.e. "injective", if viewed as a mapping):
 
 op [a] noRepetitions? (l: List a) : Bool =
