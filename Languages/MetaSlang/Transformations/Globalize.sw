@@ -1094,13 +1094,23 @@ Globalize qualifying spec
                 case globalizeTerm context vars_to_remove substitutions tm false of
                   | Changed new_tm -> new_tm
                   | GlobalVar -> 
-                    let _ = writeLine("Warning: Using the master global var as a quotient predicate.") in
+                    let _ = writeLine("Warning: Using the master global var as a quotient relation.") in
                     context.global_var
                   | Unchanged -> tm
             in
             Quotient (new_typ, new_tm, pos)
 
-          | Subtype (typ, _, _) -> aux typ
+          | Subtype (typ, tm, pos) -> 
+            let new_typ = aux typ in
+            let new_tm = 
+                case globalizeTerm context vars_to_remove substitutions tm false of
+                  | Changed new_tm -> new_tm
+                  | GlobalVar -> 
+                    let _ = writeLine("Warning: Using the master global var as a subtype predicate.") in
+                    context.global_var
+                  | Unchanged -> tm
+            in
+            Subtype (new_typ, new_tm, pos)
 
           | Pi (tvs, typ, pos) -> Pi (tvs, aux typ, pos)
             
