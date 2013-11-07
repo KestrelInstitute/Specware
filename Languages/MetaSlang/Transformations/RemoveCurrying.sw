@@ -293,6 +293,8 @@ op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
 
    | Bind (binder, vars, term, a)  -> Bind(binder, vars, uncurry_term(term, spc), a)
 
+   | TypedTerm(tm,ty,ann) -> let (_,new_ty) = uncurry_type(ty,spc) in TypedTerm(uncurry_term(tm,spc),new_ty,ann)
+
    | _ -> term
 
 %% Returns transformed type and whether any change was made
