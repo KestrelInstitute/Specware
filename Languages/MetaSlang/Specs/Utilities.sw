@@ -2669,8 +2669,12 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | Base(qid,tvs,_) ->
         qid in? knownNonEmptyBaseTypes
           || tvs ~= []                  % Not completely safe
-          || (let Some info = findTheType(spc, qid) in
-              knownNonEmpty?(info.dfn, spc))
+          || (case findTheType(spc, qid) of
+                | Some info ->
+                  knownNonEmpty?(info.dfn, spc)
+                | _ ->
+                  let _ = writeLine("ERROR: knownNonEmpty? saw ref to undefined type: " ^ show qid) in
+                  false)
           || existsOpWithType?(ty, spc)
          %% Leave out for now as it messes up emptyTypesToSubtypes
          %% || existsTrueExistentialAxiomForType?(ty, spc)
