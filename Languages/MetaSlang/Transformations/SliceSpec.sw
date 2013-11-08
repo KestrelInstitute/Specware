@@ -742,8 +742,9 @@ op cohort_closure (cohort : Cohort) (slice : Slice) : Slice =
        | _ ->
          aux (extend_cohort cohort slice)
  in
- let slice = aux slice                         in
- let slice = add_linking_theorems cohort slice in
+ let slice = aux slice                           in
+ let slice = add_linking_theorems   cohort slice in
+ let slice = add_quotient_relations cohort slice in
  case slice.pending_refs of
    | [] -> slice
    | _ -> cohort_closure cohort slice
@@ -797,6 +798,50 @@ op add_linking_theorems (cohort : Cohort) (slice : Slice) : Slice =
             linking_theorems
  in
  slice << {pending_refs = slice.pending_refs ++ pending_theorem_refs}
+
+op add_quotient_relations (cohort : Cohort) (slice : Slice) : Slice =
+ let
+   def get_q_fns typ =
+     foldTypesInType (fn (refs, typ) -> 
+                        case typ of
+                          | Quotient (_, rel, _) ->
+                            (case rel of
+                               | Fun (Op (name, _), typ, _) ->
+                                 if exists? (fn ref -> 
+                                               case ref of
+                                                 | Op ref -> ref.name = name
+                                                 | _ -> false)
+                                            slice.resolved_refs
+                                   then
+                                     refs
+                                 else
+                                   let ref =
+                                       Op {name            = name,
+                                           cohort          = cohort,
+                                           contextual_type = typ,
+                                           location        = Unknown}
+                                   in
+                                   ref |> refs
+                               | _ -> refs)
+                          | _ -> refs)
+                     []
+                     typ 
+ in
+ let pending_q_refs = 
+     foldl (fn (names, resolved_ref) ->
+                      case resolved_ref of
+                        | Type tref -> 
+                          (case findTheType (slice.ms_spec, tref.name) of
+                             | Some info ->
+                               (get_q_fns info.dfn) ++ names
+                             | _ ->
+                               names)
+                        | _ ->
+                          names)
+                   []
+                   slice.resolved_refs
+ in
+ slice << {pending_refs = slice.pending_refs ++ pending_q_refs}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
