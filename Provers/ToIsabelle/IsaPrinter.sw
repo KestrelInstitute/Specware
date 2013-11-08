@@ -1039,10 +1039,10 @@ IsaTermPrinter qualifying spec
       singleTacticProof
         (ruleTacticPP
            %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           prLinear 2
-           [ppQualifiedId qid, string "[of ",
-            prLinear 0 (map (ppTerm c Top) args),
-            string "]"]
+           (prLinear 2
+              [ppQualifiedId qid, string "[of ",
+               prLinear 0 (map (ppTerm c Top) args),
+               string "]"])
            ))
    | EqProofUnfoldDef qid ->
      % FIXME: if qid is functional, use the extensionality rule
@@ -1101,10 +1101,10 @@ IsaTermPrinter qualifying spec
       singleTacticProof
         (ruleTacticPP
            %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           prLinear 2
-           [ppQualifiedId qid, string "[of ",
-            prLinear 0 (map (ppTerm c Top) args),
-            string "]"]
+           (prLinear 2
+              [ppQualifiedId qid, string "[of ",
+               prLinear 0 (map (ppTerm c Top) args),
+               string "]"])
            ))
   | ImplEq eq_pf ->
     (*
