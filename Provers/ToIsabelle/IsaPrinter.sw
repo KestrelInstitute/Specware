@@ -997,7 +997,7 @@ IsaTermPrinter qualifying spec
    | EqProofSubterm (path, sub_pf) ->
      (*
         have subeq:"lhs_sub = rhs_sub" (sub_pf)
-        show "lhs = rhs" by (rule subst[OF subeq, OF refl]) *)
+        show "lhs = rhs" by (rule arg_cong[OF subeq]) *)
      let lhs_sub = fromPathTerm (lhs, path) in
      let rhs_sub = fromPathTerm (rhs, path) in
      let sub_eq_pp = ppEquality (c, lhs_sub, rhs_sub) in
@@ -1007,7 +1007,7 @@ IsaTermPrinter qualifying spec
       (fn pf_name ->
          showFinalResult (ppEquality (c, lhs, rhs),
                           singleTacticProof
-                            (ruleTactic ("subst[OF "^ pf_name ^", OF refl]")))))
+                            (ruleTactic ("arg_cong[OF "^ pf_name ^"]")))))
    | EqProofSym sub_pf ->
      (* have subeq:"rhs = lhs" (sub_pf) show "lhs=rhs" by (rule subeq[symmetric]) *)
      let sub_eq_pp = ppEquality (c, rhs, lhs) in
@@ -1017,7 +1017,7 @@ IsaTermPrinter qualifying spec
       (fn pf_name ->
          showFinalResult (sub_eq_pp,
                           singleTacticProof
-                            (ruleTactic (pf_name ^ "[symmetric]]")))))
+                            (ruleTactic (pf_name ^ "[symmetric]")))))
    | EqProofTrans (pf1, middle, pf2) ->
      (*
         have "lhs=middle" (pf1)
@@ -1033,11 +1033,17 @@ IsaTermPrinter qualifying spec
        (ppEquality (c, middle, rhs),
         forwardProofBlock (ppEqualityProof (c, middle, rhs, pf2)))])
    | EqProofTheorem (qid, args) ->
-     (* show "lhs=rhs" by (rule allE[OF allE[OF ... [OF qid] ... ]]) *)
+     (* show "lhs=rhs" by (rule qid[of tm1 ... tmn]) *)
      showFinalResult
      (ppEquality (c, lhs, rhs),
       singleTacticProof
-        (ruleTacticPP (ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))))
+        (ruleTacticPP
+           %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
+           prLinear 2
+           [ppQualifiedId qid, string "[of ",
+            prLinear 0 (map (ppTerm c Top) args),
+            string "]"]
+           ))
    | EqProofUnfoldDef qid ->
      % FIXME: if qid is functional, use the extensionality rule
      (* show "f=rhs" by (rule f_def) *)
@@ -1093,7 +1099,13 @@ IsaTermPrinter qualifying spec
      showFinalResult
      (ppEquality (c, lhs, rhs),
       singleTacticProof
-        (ruleTacticPP (ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))))
+        (ruleTacticPP
+           %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
+           prLinear 2
+           [ppQualifiedId qid, string "[of ",
+            prLinear 0 (map (ppTerm c Top) args),
+            string "]"]
+           ))
   | ImplEq eq_pf ->
     (*
        have eq_pf: "A = B" (eq_pf)
