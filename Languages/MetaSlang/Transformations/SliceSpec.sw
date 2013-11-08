@@ -606,7 +606,7 @@ op extend_cohort_for_ref (cohort       : Cohort)
          slice << {resolved_refs = new_resolved_refs,
                    pending_refs  = new_pending_refs}
 
-op typerefs (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
+op refs_in_type (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
  let 
    def aux typ =
      case typ of
@@ -615,8 +615,9 @@ op typerefs (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
              Type {name     = qid,
                    cohort   = cohort,
                    location = case location of
-                                | Op   x -> Op   (x << {pos = pos})
-                                | Type x -> Type (x << {pos = pos})}
+                                | Op      x -> Op   (x << {pos = pos})
+                                | Type    x -> Type (x << {pos = pos})
+                                | Theorem x -> Theorem (x << {pos = pos})}
          in
          [ref]
        | Arrow     (t1, t2, _) -> aux t1 ++ aux t2
@@ -627,30 +628,36 @@ op typerefs (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
                                              | _ -> refs)
                                         [] 
                                         fields
-       | Subtype   (t1, _,  _) -> aux t1
-       | Quotient  (t1, _,  _) -> aux t1
-       | Pi        (_, t1,  _) -> aux t1
-       | And       (t1::_,  _) -> aux t1
+       | Subtype   (t1, _,    _) -> aux t1
+       | Quotient  (t1, rel,  _) -> aux t1 ++ refs_in_term (rel, cohort, location)
+       | Pi        (_, t1,    _) -> aux t1
+       | And       (t1::_,    _) -> aux t1
        | _ -> []
  in
  aux typ
 
+op refs_in_term (term : MSTerm, cohort : Cohort, location : Location) : PendingRefs =
+ foldSubTerms (fn (tm, refs) -> 
+                 case tm of
+                   | Fun (Op (qid,_),typ,pos) ->
+                     let ref = 
+                         Op {name            = qid,
+                             cohort          = cohort,
+                             contextual_type = Any noPos, 
+                             location        = case location of
+                                                 | Op      x -> Op      (x << {pos = pos})
+                                                 | Type    x -> Type    (x << {pos = pos})
+                                                 | Theorem x -> Theorem (x << {pos = pos})}
+                     in
+                     [ref] ++ (refs_in_type (typ, cohort, location)) ++ refs
+                   | _ -> refs)
+             []
+             term
+
 op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) : PendingRefs =
  if cohort = Implementation then
-   foldSubTerms (fn (tm, refs) -> 
-                   case tm of
-                     | Fun (Op (qid,_),typ,pos) ->
-                       let location = Op {name = parent_op_name, pos = pos} in
-                       let ref = 
-                           Op {name            = qid,
-                               cohort          = cohort,
-                               contextual_type = Any noPos, 
-                               location        = location}
-                       in
-                       [ref] ++ (typerefs (typ, cohort, location)) ++ refs
-                     | _ -> refs)
-                []
-                term
+   let location = Op {name = parent_op_name, pos = noPos} in
+   refs_in_term (term, cohort, location)
  else
    foldTerm (fn refs -> fn tm ->
                case tm of
@@ -680,7 +687,7 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) :
 op pendingRefsInType (typ : MSType, cohort : Cohort, parent_type_name : TypeName) : PendingRefs =
  let location = Type {name = parent_type_name, pos = noPos} in
  if cohort = Implementation then
-   typerefs (typ, cohort, location) 
+   refs_in_type (typ, cohort, location) 
  else
    foldType (fn refs -> fn tm ->
                case tm of
