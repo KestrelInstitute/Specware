@@ -62,10 +62,16 @@ proof Isa Int__intFitsInNBits_p_monotone
   apply(auto simp add: Int__intFitsInNBits_p_def)
   apply(cut_tac m="m - Suc 0" and n="n - Suc 0" in Integer__expt_monotone)
   apply(simp)
-  apply (smt power2_int)
+  apply(cut_tac x="- (2 ^ (n - Suc 0))" and y="- (2 ^ (m - Suc 0))" and z=x in order_trans)
+  apply(simp)
+  apply(simp)
+  apply(simp)
+  apply(cut_tac x=x and y="(2 ^ (m - Suc 0))" and z="(2 ^ (n - Suc 0))" in less_le_trans)
+  apply(simp)
   apply(cut_tac m="m - Suc 0" and n="n - Suc 0" in Integer__expt_monotone)
   apply(simp)
-  apply (smt power2_int)
+  apply(simp)
+  apply(simp)
 end-proof
 
 end-spec
