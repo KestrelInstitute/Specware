@@ -2673,7 +2673,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                 | Some info ->
                   knownNonEmpty?(info.dfn, spc)
                 | _ ->
-                  let _ = writeLine("ERROR: knownNonEmpty? saw ref to undefined type: " ^ show qid) in
+                  let _ = writeLine("Warning: knownNonEmpty? saw ref to undefined type: " ^ show qid) in
                   false)
           || existsOpWithType?(ty, spc)
          %% Leave out for now as it messes up emptyTypesToSubtypes
