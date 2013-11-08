@@ -15,6 +15,9 @@ spec
 
 op intFitsInNBits? (n:PosNat) (x:Int) : Bool = -(2**(n-1)) <= x && x < 2**(n-1)
 
+theorem intFitsInNBits?_monotone is
+  fa(m:PosNat, n:PosNat, x:Int) intFitsInNBits? m x && (m <= n) => intFitsInNBits? n x
+
 %% TODO Either get rid of these or add the rest of them...
 op  intFitsIn8Bits?  (x:Int) : Bool = intFitsInNBits?  8  x
 op  intFitsIn16Bits? (x:Int) : Bool = intFitsInNBits? 16  x
@@ -55,5 +58,14 @@ type Int32  = (Int | intFitsInNBits? 32)
 %% ... We can add Int33 through Int63 (and others) if necessary ...
 type Int64  = (Int | intFitsInNBits? 64)
 
+proof Isa Int__intFitsInNBits_p_monotone
+  apply(auto simp add: Int__intFitsInNBits_p_def)
+  apply(cut_tac m="m - Suc 0" and n="n - Suc 0" in Integer__expt_monotone)
+  apply(simp)
+  apply (smt power2_int)
+  apply(cut_tac m="m - Suc 0" and n="n - Suc 0" in Integer__expt_monotone)
+  apply(simp)
+  apply (smt power2_int)
+end-proof
 
 end-spec

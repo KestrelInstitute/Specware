@@ -1336,6 +1336,27 @@ end-proof
 % ------------------------------------------------------------------------------
 
 
+theorem expt_monotone_helper is
+  fa(n:Nat,k:Nat) (2:Nat) *** (n + k) >= 2 *** n
+
+theorem expt_monotone is
+  fa(m:Nat, n:Nat) (m <= n) => (2 *** m <= 2 *** n)
+
+proof isa expt_monotone_helper
+  apply(induct "k")
+  apply(simp_all (no_asm_simp))
+end-proof
+
+proof isa expt_monotone
+  apply(rule impE [of "m<= n" "2 ^ m \<le> (2::nat) ^ n"  "2 ^ m \<le> (2::nat) ^ n"]) (* turn \<Longrightarrow> into \<longrightarrow> so we can induct on the whole implication*)
+  defer 1
+  apply(simp, simp)
+  apply(thin_tac "m <= n")
+  apply(cut_tac n=m and k="n-m" in Integer__expt_monotone_helper)
+  apply(auto)
+end-proof
+
+
 % mapping to Isabelle:
 
 proof Isa Thy_Morphism Presburger

@@ -8,12 +8,6 @@ import /Library/General/FunctionExt
 import /Library/General/OptionExt
 import /Library/Base/List_Executable
 
-theorem expt_monotone_helper is
-  fa(n:Nat,k:Nat) (2:Nat) *** (n + k) >= 2 *** n
-
-theorem expt_monotone is
-  fa(m:Nat, n:Nat) (m <= n) => (2 *** m <= 2 *** n)
-
 %TODO generalize
 theorem toNat_bound_rule is
  fa(bs:Bits1) length bs <= 8 => toNat bs <= 255
@@ -1190,32 +1184,18 @@ proof isa TwosComplement__tcNumber__1__obligation_refine_def
   apply(cut_tac x=i and m="2 ^ len" and y = "i + 2 ^ len" in mod_known)
   apply(auto)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
-  apply(cut_tac m="len - Suc 0" and n = len in Library__expt_monotone, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in Integer__expt_monotone, force, force)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
-  apply(cut_tac m="len - Suc 0" and n = len in Library__expt_monotone, force, force)
+  apply(cut_tac m="len - Suc 0" and n = len in Integer__expt_monotone, force, force)
   apply(cut_tac a="- (2 ^ len)" and b = "- (2 ^ (len - Suc 0))" and c=i in le_trans, force, force)
-  apply(cut_tac m="len - Suc 0" and n = len in Library__expt_monotone, force, force)
-end-proof
-
-proof isa expt_monotone
-  apply(rule impE [of "m<= n" "2 ^ m \<le> (2::nat) ^ n"  "2 ^ m \<le> (2::nat) ^ n"]) (* turn \<Longrightarrow> into \<longrightarrow> so we can induct on the whole implication*)
-  defer 1
-  apply(simp, simp)
-  apply(thin_tac "m <= n")
-  apply(cut_tac n=m and k="n-m" in Library__expt_monotone_helper)
-  apply(auto)
-end-proof
-
-proof isa expt_monotone_helper
-  apply(induct "k")
-  apply(simp_all (no_asm_simp))
+  apply(cut_tac m="len - Suc 0" and n = len in Integer__expt_monotone, force, force)
 end-proof
 
 proof isa toNat_bound_rule
   apply(cut_tac Bits__toNat_bound [of "bs"])
   defer 1
   apply(simp)
-  apply(cut_tac m="length bs" and n="8" in Library__expt_monotone)
+  apply(cut_tac m="length bs" and n="8" in Integer__expt_monotone)
   apply(simp)
   apply(simp del: Bits__toNat_bound)
 end-proof
