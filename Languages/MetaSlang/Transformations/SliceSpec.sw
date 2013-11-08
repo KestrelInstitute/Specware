@@ -551,6 +551,20 @@ op extend_cohort_for_ref (cohort       : Cohort)
                                             (pendingRefsInTerm (info.dfn, cohort, op_name))
               in
               let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
+
+              % let _ = writeLine(" ") in
+              % let _ = writeLine("extending for " ^ show op_name) in
+              % let _ = writeLine ("dfn: " ^ printTerm info.dfn) in
+              % let _ = writeLine ("dfn: " ^ anyToString info.dfn) in
+              % let _ = app (fn pref ->
+              %                  case pref of
+              %                    | Op ref -> writeLine("adding op " ^ show ref.name)
+              %                    | Type ref -> writeLine("adding op " ^ show ref.name)
+              %                    | Theorem ref -> writeLine("adding op " ^ show ref.name))
+              %             new_pending_refs
+              % in
+              % let _ = writeLine(" ") in
+
               slice << {resolved_refs = new_resolved_refs,
                         pending_refs  = new_pending_refs}
             | _ ->
@@ -592,18 +606,48 @@ op extend_cohort_for_ref (cohort       : Cohort)
          slice << {resolved_refs = new_resolved_refs,
                    pending_refs  = new_pending_refs}
 
+op typerefs (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
+ let 
+   def aux typ =
+     case typ of
+       | Base (qid, _, pos) ->
+         let ref =
+             Type {name     = qid,
+                   cohort   = cohort,
+                   location = case location of
+                                | Op   x -> Op   (x << {pos = pos})
+                                | Type x -> Type (x << {pos = pos})}
+         in
+         [ref]
+       | Arrow     (t1, t2, _) -> aux t1 ++ aux t2
+       | Product   (fields, _) -> foldl (fn (refs, (_, typ)) -> refs ++ aux typ) [] fields
+       | CoProduct (fields, _) -> foldl (fn (refs, (_, opt_type)) -> 
+                                           case opt_type of
+                                             | Some typ -> refs ++ aux typ
+                                             | _ -> refs)
+                                        [] 
+                                        fields
+       | Subtype   (t1, _,  _) -> aux t1
+       | Quotient  (t1, _,  _) -> aux t1
+       | Pi        (_, t1,  _) -> aux t1
+       | And       (t1::_,  _) -> aux t1
+       | _ -> []
+ in
+ aux typ
+
 op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) : PendingRefs =
  if cohort = Implementation then
    foldSubTerms (fn (tm, refs) -> 
                    case tm of
-                     | Fun (Op (qid,_),_,pos) ->
+                     | Fun (Op (qid,_),typ,pos) ->
+                       let location = Op {name = parent_op_name, pos = pos} in
                        let ref = 
                            Op {name            = qid,
                                cohort          = cohort,
                                contextual_type = Any noPos, 
-                               location        = Op {name = parent_op_name, pos = pos}}
+                               location        = location}
                        in
-                       ref |> refs
+                       [ref] ++ (typerefs (typ, cohort, location)) ++ refs
                      | _ -> refs)
                 []
                 term
@@ -634,25 +678,9 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) :
             term
 
 op pendingRefsInType (typ : MSType, cohort : Cohort, parent_type_name : TypeName) : PendingRefs =
- let
-   def impl_refs typ =
-     case typ of
-       | Subtype  (typ, _, _) -> impl_refs typ
-       | Quotient (typ, _, _) -> impl_refs typ
-       | Arrow    (t1, t2, _) -> impl_refs t1 ++ impl_refs t2
-       | Product  (fields, _) -> foldl (fn (xx, (_, typ)) -> xx ++ impl_refs typ) [] fields 
-       | Base (qid, _, pos) ->
-         let ref = 
-             Type {name      = qid,
-                   cohort    = cohort,
-                   location  = Type {name = parent_type_name, pos = pos}}
-         in
-         [ref]
-       | _ ->[]
-
- in
+ let location = Type {name = parent_type_name, pos = noPos} in
  if cohort = Implementation then
-   impl_refs typ
+   typerefs (typ, cohort, location) 
  else
    foldType (fn refs -> fn tm ->
                case tm of
@@ -661,7 +689,7 @@ op pendingRefsInType (typ : MSType, cohort : Cohort, parent_type_name : TypeName
                        Op {name            = qid,
                            cohort          = cohort,
                            contextual_type = Any noPos, 
-                           location        = Type {name = parent_type_name, pos = pos}}
+                           location        = location}
                        in
                        ref |> refs
                  | _ -> refs,
@@ -672,7 +700,7 @@ op pendingRefsInType (typ : MSType, cohort : Cohort, parent_type_name : TypeName
                    let ref = 
                        Type {name      = qid,
                              cohort    = cohort,
-                             location  = Type {name = parent_type_name, pos = pos}}
+                             location  = location}
                    in
                    ref |> refs
                  | _ -> refs,
