@@ -20,7 +20,9 @@ op [a] in? (x:a, s:Set a) infixl 20 : Bool = s x
 op [a] nin? (x:a, s:Set a) infixl 20 : Bool = ~(x in? s)
 
 %% Used for coercion between Isabelle sets and predicates
-%op [a] collect (P: Predicate a): Set a = P
+%% Seems to be used for special (not yet working) syntax for sets, using braces.
+op [a] collect (P: Predicate a): Set a = P
+
 op [a] r_in? (s:Set a) (x:a): Bool = s x
 proof Isa -> setToPred end-proof
 
