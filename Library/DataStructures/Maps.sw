@@ -197,6 +197,7 @@ Maps = Map qualifying spec
     (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
 
 % This is useful when refining to the single-threaded MapsAsVectors
+% TODO: could this just be the identity function (later, in the refinements, it might have this definition in terms of set_fold)?
   op [a,b] copyMap(m:Map(a,b)):Map(a,b) =
      set_fold (empty_map)
               (fn(newm:Map(a,b),x: {x:a | x in? (domain m)})-> update newm x (TMApply(m,x)))
@@ -544,8 +545,9 @@ proof Isa Map__range_of_empty
 end-proof
 
 proof Isa Map__copyMap_Obligation_subtype
+  apply(auto simp add: Set__foldable_p__stp_def)
   apply(rule Map__map_equality)
-  apply(simp add: Map__TMApply_over_update Map__update)
+  apply(auto simp add: Map__TMApply_over_update Map__update)
 end-proof
 
 proof Isa Map__copyMap_Obligation_subtype0
@@ -739,6 +741,7 @@ Maps_extended = spec
 (******************************** The Proofs ********************************)
 
 proof isa mapFrom_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
   apply(rule Map__map_equality, simp add: Map__update)
 end-proof
 
@@ -751,6 +754,7 @@ proof isa mapFrom_TMApply
 end-proof
 
 proof isa mapUpdateSet_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
   apply(rule Map__map_equality, simp add: Map__update)
 end-proof
 

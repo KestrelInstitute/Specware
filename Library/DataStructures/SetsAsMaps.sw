@@ -39,12 +39,13 @@ spec
     foldi (fn (x,_,result) -> set_insert(x, result))
           s1
           s2
+  proof Isa -> set_union end-proof
 
   op [a] /\ (s1: Set a, s2: Set a) infixl 300 : Set a = 
     foldi (fn(x,_,result) -> if x in? s1 then set_insert(x,result) else result)
           empty_set
           s2
-
+  proof Isa -> set_intersection end-proof
 
 %% TODO: I don't even want to have this, but without it the morphism gives an error:
 op [a,b] foldable? (f : b * a -> b) : Bool = Set.foldable? f

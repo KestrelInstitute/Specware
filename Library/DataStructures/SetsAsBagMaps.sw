@@ -135,3 +135,7 @@ end-proof
 proof Isa Set__size_def
   sorry
 end-proof
+
+proof Isa size_def_Obligation_subtype
+  sorry
+end-proof

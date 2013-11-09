@@ -177,21 +177,18 @@ axiom induction is [a]
 %TODO Library/General/Set only requires the commutativity property on the elements of the set being folded over.
 %     I guess that would require dependent type (or product type) and would conflict with currying here...
 
-
-%%FIXME: Actually using this led to ambiguous Isabelle parses in SetsAsMaps!
 op [a,b] foldable? (f : b * a -> b) : Bool =
   fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y)
-  %% && (fa(x,y)   f(f(x,y), y) = f(x,y))
 
 %% May be helpful in some refinements
 theorem foldable?_of_and is
   foldable?(fn (x:Bool,y:Bool) -> x && y)
 
 op [a,b] set_fold : b ->
-% TODO: Put this back:((b * a -> b) | (foldable?)) ->
-                      {f : (b * a -> b) | (fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))} ->
-                      Set a ->
-                      b
+                    ((b * a -> b) | foldable?) ->
+                    %%  {f : (b * a -> b) | (fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y))} ->
+                    Set a ->
+                    b
 
 axiom set_fold1 is [a,b]
   fa(c:b, f : ((b * a -> b) | foldable?))
@@ -512,18 +509,6 @@ proof isa Set__inv_set_fold
   apply(metis Function__f_inverse_apply)
 end-proof
 
-proof isa Set__e_fsl_fsl_bsl_bsl_Obligation_subtype
-(*  apply(auto simp add: Set__foldable_p_def) *)
-  apply(rule Set__membership)
-  apply(auto simp add: Set__set_intersection)
-end-proof
-
-proof isa Set__e_bsl_bsl_fsl_fsl_Obligation_subtype
-(*  apply(auto simp add: Set__foldable_p_def) *)
-  apply(rule Set__membership)
-  apply(auto simp add: Set__set_union)
-end-proof
-
 proof isa Set__distribute_set_diff_over_right_insert
   apply(rule Set__membership)
   apply(simp add: Set__set_difference Set__empty_set Set__set_insertion  Set__empty_set Set__set_deletion)
@@ -711,24 +696,20 @@ end-proof
 
 proof Isa Set__inv_set_fold_helper
   apply(rule Set__induction)
-  apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype Set__foldable_p_def )
+  apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype)
+  apply(cut_tac c="(g acc__v)" and f=" (\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" in Set__set_fold1)
+  apply(simp add: Set__foldable_p_def)
+  apply (metis Function__fxy_implies_inverse)
   apply(case_tac "x in? s")
   apply(simp add: Set__set_insert_does_nothing)
-  apply(cut_tac c=acc__v and f=f and x=x and s=s in Set__set_fold2)
-  apply(simp add: Set__foldable_p_def)
-  apply(assumption)
-  apply(cut_tac c="(g acc__v)" and f="(\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" and x=x and s=s in Set__set_fold2)
-  apply(simp add: Set__foldable_p_def Function__f_inverse_apply Function__inverse_f_apply)
-  apply(assumption)
-  apply(metis Function__inverse_f_apply Product_Type.prod.cases)
+  apply(simp add: Set__set_fold2)
+  apply(cut_tac c="(g acc__v)" and f=" (\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" in Set__set_fold2)
+  defer
+  apply(simp)
+  apply(simp)
+  apply (metis Function__inverse_f_apply)
+  apply(simp add: Set__foldable_p_def Function__inverse_f_apply)
 end-proof
-%% The proof when set_fold calls foldable (but get rid of the call to SMT)? :
-  %% apply(rule Set__induction)
-  %% apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype)
-  %% apply(case_tac "x in? s")
-  %% apply(simp add: Set__set_insert_does_nothing)
-  %% apply(cut_tac c=acc__v and f=f and x=x and s=s in Set__set_fold2, assumption, assumption)
-  %% apply(smt Function__fxy_implies_inverse Product_Type.prod.cases Set__foldable_p_def Set__set_fold2)
 
 proof Isa Set__forall_p_Obligation_subtype
   apply(auto simp add: Set__foldable_p_def)
@@ -795,7 +776,7 @@ proof Isa Set__size_map_injective
   apply(metis injD)
 end-proof
 
-proof Isa Set__foldable_p_of_and [simp
+proof Isa Set__foldable_p_of_and [simp]
   apply(auto simp add: Set__foldable_p_def)
 end-proof
 

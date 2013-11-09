@@ -39,7 +39,11 @@ spec
   theorem map_equality is [a,b]
     fa(m1:Map(a,b), m2:Map(a,b)) (fa(x) apply m1 x = apply m2 x) => m1 = m2
 
-  %% TODO: I guess this doesn't type check (because the fn isn't foldable over all sets, only over m); we need to change set_fold to require foldability only over the given set.
+  theorem not_in?_when_apply_is_None is [a,b]
+    fa(m:Map(a,b),x:a,val:b)
+      ((apply m x) = None) => ~((x,val) in? m)
+
+  %% TODO: I guess this doesn't type check (because the fn isn't foldable over all sets, only over m); we could change set_fold to require foldability only over the given set (or change the fn?).
   op [a,b] map_apply (m : Map(a,b)) (b_default : b) (x : a) : b =
     set_fold b_default
              (fn (result, (x1,y1)) -> if x = x1 then y1 else result)
@@ -59,16 +63,22 @@ spec
       set_insert((x,y),m)
     else
       set_fold empty_map
-               (fn (result_map,(x1,y1)) ->
+               (fn (result_map: Map(a,b), ((x1,y1) : {(x1,y1) : a*b | ~(x1 in? (domain result_map))})) ->  %%%(result_map,(x1,y1)) ->
                  if x1 = x then
                    set_insert((x,y),result_map)
                  else
                    set_insert((x1,y1),result_map))
                m
 
+  %%Was an axiom in Maps.sw:
   theorem update is
     fa(m,x,y,z) apply (update m x y) z =
                     (if z = x then Some y else apply m z)
+
+  %%Copied from Maps.sw:
+  theorem update_of_update_both is [a,b]
+    fa(m: Map(a,b), keyone : a, keytwo : a, val1: b, val2 : b)
+      update (update m keyone val1) keytwo val2 = (if keyone = keytwo then (update m keytwo val2) else (update (update m keytwo val2) keyone val1))
 
   % Remove the binding for key (if any).
   op [a,b] remove (m:Map(a,b)) (x:a) : Map(a,b) = 
@@ -241,6 +251,17 @@ proof Isa Map__copyMap_Obligation_subtype
   oops
 end-proof
 
+proof Isa Map__not_in_p_when_apply_is_None
+  sorry
+end-proof
+
+proof Isa Map__update_Obligation_subtype3
+  sorry
+end-proof
+
+proof Isa Map__update_of_update_both
+  sorry
+end-proof
 
 end-spec
 
@@ -336,4 +357,3 @@ end-proof
 proof Isa Map__map_foldi_update
   sorry
 end-proof
-

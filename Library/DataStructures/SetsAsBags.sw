@@ -26,7 +26,6 @@ spec
 %% Just copied from Sets.sw:
 op [a,b] foldable? (f : b * a -> b) : Bool =
   fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y)
-  %% && (fa(x,y)   f(f(x,y), y) = f(x,y))
 
 %TODO: refine this to something that fails faster (as soon as a repetition is found)?
 % TODO: Use a bag fold that folds over (element, number-of-occurrences) pairs?  Or use a forall?
@@ -307,5 +306,9 @@ proof Isa Set__set_delete_new_def
 end-proof
 
 proof Isa Set__size_def
+  sorry
+end-proof
+
+proof Isa Set__size_def_Obligation_subtype
   sorry
 end-proof

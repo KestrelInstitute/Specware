@@ -707,7 +707,8 @@ end-proof
 
 
 proof isa bag_fold_set_Obligation_subtype
-  apply (metis Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype) 
+  apply(auto simp add: Set__foldable_p_def)
+  apply (metis Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype)
 end-proof
 
 proof isa B2S_Obligation_subtype
@@ -795,12 +796,9 @@ proof isa L2S_diff
 end-proof
 
 proof isa CM2S_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
   apply(auto simp add: Set__set_insert_new_def)
   apply(rule Set__membership)
-  apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
-  apply(case_tac "z = y")
-  apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
-  apply(case_tac "z = y")
   apply(auto simp add: Set__set_insertion Set__set_insert_new_def)
 end-proof
 
@@ -853,6 +851,7 @@ proof isa L2B_bs_diff
 end-proof
 
 proof isa F2M_Obligation_subtype
+    apply(auto simp add: Set__foldable_p__stp_def)
   apply(rule Map__map_equality)
   apply(auto simp add: Map__update)
 end-proof
@@ -894,6 +893,7 @@ proof isa M2S_update
 end-proof
 
 proof isa S2CM_Obligation_subtype
+  apply(auto simp add: Set__foldable_p_def)
   apply(rule Map__map_equality)
   apply(simp add: Map__update)
 end-proof
