@@ -77,10 +77,17 @@ spec
     %% Not certain about hasFlexHead?
     some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
 
+  op mkEqProofSym(o_ref_pr: Option RefinementProof): Option RefinementProof =
+    case o_ref_pr of
+      | Some(RefineEq prf) -> Some(RefineEq(EqProofSym prf))
+      | Some(RefineStrengthen(ImplEq prf)) -> Some(RefineStrengthen(ImplEq(EqProofSym prf)))
+      | _ -> None
+
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
     if trivialMatchTerm? rl.rhs
       then None
-      else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec})
+      else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec,
+                       opt_proof = mkEqProofSym rl.opt_proof})
 
   op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
   op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
@@ -120,9 +127,9 @@ spec
                                            mkApply(mkVar f, mkApply(qf, mkVar v2))),
                                 mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
-    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, LeftToRight)
+    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, LeftToRight, None)
 
-  op weakenRules (context: Context) ((pt,desc,tyVars,formula,a): Property): List RewriteRule =
+  op strengthenRules (context: Context) ((pt,qid,tyVars,formula,a): Property) : List RewriteRule =
     case formula of
       | Bind(Forall, vs,
              Apply(Fun (Implies, _, _),
@@ -130,27 +137,52 @@ spec
                            ("2", Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _))], _), _),
              _) ->
         let not_thm = mkBind(Forall, vs, mkImplies(p1, mkEquality(boolType, t2, t1))) in
-        axiomRules context (pt,desc,tyVars,not_thm,a) LeftToRight
+        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight (Some(mkImpleStrengthenProof qid))
       | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _), _) ->
         let not_thm = mkBind(Forall, vs, mkEquality(boolType, t2, t1)) in
-        axiomRules context (pt,desc,tyVars,not_thm,a) LeftToRight
+        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight (Some(mkImpleStrengthenProof qid))
+
+  op weakenRules (context: Context) ((pt,qid,tyVars,formula,a): Property): List RewriteRule =
+    case formula of
+      | Bind(Forall, vs,
+             Apply(Fun (Implies, _, _),
+                   Record([("1", p1),
+                           ("2", Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _))], _), _),
+             _) ->
+        let not_thm = mkBind(Forall, vs, mkImplies(p1, mkEquality(boolType, t1, t2))) in
+        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight None
+      | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _), _) ->
+        let not_thm = mkBind(Forall, vs, mkEquality(boolType, t1, t2)) in
+        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight None % Need more proof structure
 
   op definedByCases?(qid: QualifiedId, spc: Spec): Bool =
     length(makeRule(makeContext spc, spc, Rewrite qid)) > 1
+
+  op mkUnfoldProof(qid: QualifiedId): RefinementProof =
+    RefineEq(EqProofUnfoldDef qid)
+
+  op mkTheoremProof(qid: QualifiedId): RefinementProof =
+    RefineEq(EqProofTheorem(qid, []))
+
+  op mkRevTheoremProof(qid: QualifiedId): RefinementProof =
+    RefineEq(EqProofSym(EqProofTheorem(qid, [])))
+
+  op mkImpleStrengthenProof(qid: QualifiedId): RefinementProof =
+    RefineStrengthen(ImplTheorem(qid, []))
 
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q, nm)) ->
         warnIfNone(qid, "Op ",
                    flatten (map (fn info ->
-                                   flatten (map (fn (Qualified(q, nm)) ->
-                                                   defRule(context, q, nm, rule, info, true))
+                                   flatten (map (fn (qid as Qualified(q, nm)) ->
+                                                   defRule(context, q, nm, rule, info, true, Some(mkUnfoldProof qid)))
                                               info.names))
                               (findMatchingOpsEx(spc, qid))))
       | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
         let rls = flatten (map (fn info ->
                                    flatten (map (fn (Qualified(q, nm)) ->
-                                                   defRule(context, q, nm, rule, info, false))
+                                                   defRule(context, q, nm, rule, info, false, Some(mkUnfoldProof qid)))
                                               info.names))
                               (findMatchingOpsEx(spc, qid)))
         in
@@ -162,14 +194,22 @@ spec
         warnIfNone(qid, "Rule-shaped theorem ",
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
-                              then (axiomRules context p LeftToRight) ++ r
+                              then (axiomRules context p LeftToRight (Some(mkTheoremProof qid))) ++ r
                             else r)
                      [] (allProperties spc))
       | RightToLeft(qid) ->
         warnIfNone(qid, "Rule-shaped theorem ",
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
-                              then (axiomRules context p RightToLeft) ++ r
+                              then (axiomRules context p RightToLeft (Some(mkRevTheoremProof qid)))
+                                ++ r
+                            else r)
+                     [] (allProperties spc))
+      | Strengthen qid ->
+        warnIfNone(qid, "Implication theorem ",
+                   foldr (fn (p, r) ->
+                            if claimNameMatch(qid, p.2)
+                              then (strengthenRules context p) ++ r
                             else r)
                      [] (allProperties spc))
       | Weaken   qid ->
@@ -184,7 +224,7 @@ spec
       | AllDefs ->
         foldriAQualifierMap
           (fn (q, id, opinfo, val) ->
-             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false)) ++ val)
+             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false, Some(mkUnfoldProof(Qualified(q,id))))) ++ val)
           [] spc.ops
 
   op addSubtypeRules?: Bool = true
@@ -208,7 +248,7 @@ spec
               let v = ("x", ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
               % let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
-              assertRules(context, fml, "Subtype1", Context, Either))
+              assertRules(context, fml, "Subtype1", Context, Either, None))
         subtypes)
 
   op mkApplyTermFromLambdas (hd: MSTerm, f: MSTerm): MSTerm =
@@ -232,7 +272,7 @@ spec
   op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _ = writeLine("Context Rule: "^ruleName cj) in
-             assertRules(context, cj, ruleName cj, Context, Either) ++ rules)
+             assertRules(context, cj, ruleName cj, Context, Either, None) ++ rules)
       [] tms
 
   op varProjections (ty: MSType, spc: Spec): Option (MS.MSTerm * List (MS.MSVar * Option Id)) =
@@ -281,9 +321,9 @@ spec
           let rls =
               case tm of
                 | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRules(context, p, "if then", Context, Either)
+                  assertRules(context, p, "if then", Context, Either, None)
                 | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRules(context,negate p,"if else", Context, Either)
+                  assertRules(context,negate p,"if else", Context, Either, None)
                 | Apply(Fun(And,_,_), _,_) | i = 1 ->
                   let def getSisterConjuncts(pred, path) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
@@ -340,7 +380,7 @@ spec
            case lazy of
              | Nil -> (trm, info)
              | Cons([], tl) -> (trm, info)
-             | Cons(transforms as ((rule, trm, subst)::_), tl) ->
+             | Cons(transforms as ((rule, trm, subst)::_), _) ->
                let new_info =
                (foldl (fn (cur_info, (rule, trm, _)) ->
                          composeTransformInfos (cur_info, trm, ([(trm, rule.rule_spec)], rule.opt_proof)))

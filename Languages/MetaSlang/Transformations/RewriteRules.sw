@@ -148,13 +148,14 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
 %%% Extract rewrite rules from function definition.
 
- op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec, info : OpInfo, includeAll?: Bool): List RewriteRule = 
+ op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec, info : OpInfo, includeAll?: Bool,
+             o_prf: Option RefinementProof): List RewriteRule = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstTerm info.dfn in
      let rule = 
          {name      = id,
           rule_spec = rule_spec,
-          opt_proof = None,
+          opt_proof = o_prf,
 	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
 	  rhs       = term,
 	  condition = None,
@@ -303,10 +304,10 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
  op specRules (context: Context) (spc: Spec): RewriteRules = 
      let spc      = normalizeSpec spc in
-     let axmRules = flatten (map (fn p -> axiomRules context p Either) (allProperties spc)) in
+     let axmRules = flatten (map (fn p -> axiomRules context p Either None) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
-		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false)) ++ val)
+		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false,None)) ++ val)
 		      [] spc.ops
      in
      let rules = axmRules ++ opRules in
@@ -448,15 +449,17 @@ op simpleRwTerm?(t: MSTerm): Bool =
                            ~(hasUnboundVars?(e2, e1, condition))
                   else simpleRwTerm? e1 && ~(varTerm? e2) && ~(hasUnboundVars?(e1, e2, condition))
 
- op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction): List RewriteRule =
+ op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option RefinementProof)
+      : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   assertRulesRec(context, term, desc, rsp, dirn, [], [], None)
+   assertRulesRec(context, term, desc, rsp, dirn, o_prf, [], [], None)
 
  op assertRulesRec (context   : Context, 
                     term      : MSTerm, 
                     desc      : String, 
                     rsp       : RuleSpec, 
-                    dirn      : Direction, 
+                    dirn      : Direction,
+                    o_prf: Option RefinementProof,
                     freeVars  : List (Nat * MSType), 
                     subst     : MSVarSubst, 
                     condition : Option MSTerm)
@@ -484,7 +487,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
          let s_rhs = substitute(rhs,subst) in
          let main_rule = freshRule(context,
                                    {name      = desc,   condition = condition, rule_spec = rsp,
-                                    opt_proof = None,
+                                    opt_proof = o_prf,
                                     lhs       = s_lhs,  rhs       = s_rhs,
                                     tyVars    = [],     freeVars  = freeVars, trans_fn = None})
          in
@@ -492,14 +495,14 @@ op simpleRwTerm?(t: MSTerm): Bool =
            | IfThenElse(p, q, r, _) | expandIfThenElse? ->
              (if lr? || ~(hasUnboundVars?(q, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn p, rule_spec = rsp,
-                                          opt_proof = None,
+                                          opt_proof = o_prf,
                                           lhs       = if lr? then s_lhs else substitute(q,subst),
                                           rhs       = if lr? then substitute(q,subst) else s_rhs,
                                           tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
                 else [])
              ++ (if lr? || ~(hasUnboundVars?(r, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn(negate p), rule_spec = rsp,
-                                          opt_proof = None,
+                                          opt_proof = o_prf,
                                           lhs       = if lr? then s_lhs else substitute(r,subst),
                                           rhs       = if lr? then substitute(r,subst) else s_rhs,
                                           tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
@@ -525,26 +528,27 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, false, dirn) ->
        equalityRules(e1, e2, false)
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRulesRec(context,e1,desc^"-1",rsp,dirn,freeVars,subst,condition)
-         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,freeVars,subst,condition)
+       assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,freeVars,subst,condition)
+         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,o_prf,freeVars,subst,condition)
      | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,freeVars,subst,condition)
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,o_prf,freeVars,subst,condition)
      | _ ->
        if trueTerm? fml then []
        else
          [freshRule(context,
                     {name      = desc,   condition = condition, rule_spec = rsp,
-                     opt_proof = None,
+                     opt_proof = o_prf,
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
- op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction): List RewriteRule = 
+ op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option RefinementProof)
+      : List RewriteRule = 
 %      case pt
 %        of Conjecture -> []
 %  	| _ ->
    assertRules(context, formula, printQualifiedId desc,
                case dirn of RightToLeft -> RightToLeft desc | _ -> LeftToRight desc,
-               dirn)
+               dirn, o_prf)
 
 %  op axiomRule (context: Context) ((pt,desc,tyVars,formula,a): Property): Option RewriteRule = 
 % %      case pt
@@ -635,7 +639,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 		  (case axiomRules context
 		         (Axiom,
 			  mkUnQualifiedId("Context-condition: "^printTerm c),tvs,c,noPos)
-                         Either
+                         Either None
 		     of new_rules as (_::_) -> new_rules ++ rules
 		      | [] ->
 		   let rules
@@ -643,7 +647,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 				(Axiom:PropertyType,
 				 mkUnQualifiedId("Context-condition: " ^printTerm c),
 				 tvs, mkEquality(boolType,c,trueTerm),noPos)
-                                Either)
+                                Either None)
 			    ++ rules
 		   in 
 		   case c of
@@ -653,7 +657,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 			   mkUnQualifiedId("Context-condition: " ^printTerm nc
 			   ^" = false"),
 			   tvs, mkEquality(boolType,nc,falseTerm),noPos)
-                          Either)
+                          Either None)
 			++ rules
 		     | _ -> rules)
 		| _ -> rules

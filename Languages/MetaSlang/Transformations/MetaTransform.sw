@@ -15,6 +15,7 @@ type MTypeInfo = | Spec
                  | Bool
                  | OpName
                  | Rule
+                 | RefinementProof
                  | TransformHistory
                  | Opt MTypeInfo
                  | List MTypeInfo
@@ -125,11 +126,28 @@ op replaceATVArgs(atv: AnnTypeValue, spc: Spec, path_tm: PathTerm, op_qid: Quali
      | TVal atv -> findTerm atv
      | _ -> None
 
+op extractProof(tf: TypedFun): Option RefinementProof =
+   let def findTerm atv =
+         case atv of
+           | ProofV prf -> Some prf
+           | OptV(Some o_atv) -> findTerm o_atv
+           | TupleV(atvs) ->
+             (case mapPartial findTerm atvs of
+                | tm :: _ -> Some tm
+                | _ -> None)
+           | _ -> None
+   in
+   case tf of
+     | TVal atv -> findTerm atv
+     | _ -> None
+
+
 op annTypeValueType: MSType = mkBase(Qualified("MetaTransform", "AnnTypeValue"), [])
 op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
 op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
 op msTermType: MSType = mkBase(Qualified("MS", "MSTerm"), [])
 op pathTermType: MSType = mkBase(Qualified("PathTerm", "PathTerm"), [])
+op refinementProofType: MSType = mkBase(Qualified("AnnSpec", "RefinementProof"), [])
 op transformHistoryType: MSType = mkBase(Qualified("AnnSpec", "TransformHistory"), [])
 op optionMsTermType: MSType = mkBase(Qualified("Option", "Option"), [msTermType])
 op qualifiedIdType: MSType = mkBase(Qualified("MetaSlang", "QualifiedId"), [])
@@ -160,6 +178,7 @@ op mtiToMSType(mti: MTypeInfo): MSType =
     | Bool -> boolType
     | OpName -> qualifiedIdType
     | Rule -> ruleSpecType   % ?
+    | RefinementProof -> refinementProofType
     | TransformHistory -> transformHistoryType
     | Opt o_mti -> mkBase(Qualified("Option", "Option"), [mtiToMSType o_mti])
     | List l_mti -> mkBase(Qualified("List", "List"), [mtiToMSType l_mti])
@@ -171,25 +190,37 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
   case ty_i of
     | Spec -> mkEmbed1("SpecV", mkArrow(specType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
+    | RefinementProof -> mkEmbed1("ProofV", mkArrow(refinementProofType, annTypeValueType))
     | TransformHistory -> mkEmbed1("TransformHistoryV", mkArrow(transformHistoryType, annTypeValueType))
-    | Opt _ -> mkEmbed1("OptV", mkArrow(optionAnnTypeValueType, annTypeValueType))
+    | Opt o_ty ->
+      let arg_ty = mtiToMSType o_ty in
+      let arg_v = ("o_result", arg_ty) in
+      mkLambda(mkVarPat arg_v,
+               mkApply(optVTerm,
+                       mkApply(mkApply(mkOp(Qualified("Option", "mapOption"),
+                                            mkArrow(mkArrow(arg_ty, annTypeValueType),
+                                                    mkArrow(mtiToMSType ty_i, optionAnnTypeValueType))),
+                                       mkAnnTypeValueFun o_ty),
+                               mkVar arg_v)))
     | Monad _ -> mkEmbed1("MonadV", mkArrow(monadAnnTypeValueType, annTypeValueType))
 %    | Monad Spec -> mkEmbed1("MonadV", mkArrow(specType, annTypeValueType))
-    %% Tuple[Term, TransformHistory]: fn (tm, th) -> TupleV [TermV tm, TransformHistory th]
     | Tuple tis ->
       let tp_vs = tabulate(length tis, fn i -> ("x"^show i, mtiToMSType(tis@i))) in
-      mkLambda(mkVarsPat tp_vs,
-               mkApply(mkEmbed1("TupleV", mkArrow(mkListType(annTypeValueType), annTypeValueType)),
-                       mkList(map (fn (tii, v) -> mkApply(mkAnnTypeValueFun tii, mkVar v)) (zip(tis, tp_vs)),
-                              noPos, annTypeValueType)))
+      let tv = ("tp_result", mkProduct(map (fn _ -> annTypeValueType) tis)) in
+      mkLambda(mkVarPat tv,
+               mkLet([(mkVarsPat tp_vs, mkVar tv)],
+                     mkApply(mkEmbed1("TupleV", mkArrow(mkListType(annTypeValueType), annTypeValueType)),
+                             mkList(map (fn (tii, v) -> mkApply(mkAnnTypeValueFun tii, mkVar v)) (zip(tis, tp_vs)),
+                                    noPos, annTypeValueType))))
 %    | Monad Term ->  mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
-    | _ -> fail ("Can only return Specs or MSTerms, not "^show ty_i)
+    | _ -> fail ("Can only return Specs, MSTerms and RefinementProofs not "^show ty_i)
 
 op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
   case ty_i of
     | Spec -> ("spc__0", specType)
     | Term -> ("tm__0", msTermType)
-    | _ -> fail ("Can only return Specs or MSTerms")
+    | RefinementProof -> ("prf__0", refinementProofType)
+    | _ -> fail ("Can only return Specs, MSTerms or Proofs")
 
 
 op apply(f as TFn tf: TypedFun, arg: AnnTypeValue): TypedFun =
@@ -226,6 +257,7 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
     | BoolV b -> ppString(show b)
     | OpNameV qid -> ppString(show qid)
     | RuleV rs -> ppRuleSpec rs
+    | ProofV prf -> ppString(showRefinementProof prf)
     | OptV None -> ppString "None"
     | OptV (Some atv1) -> ppConcat[ppString "Some ", ppAnnTypeValue atv1]
     | ListV atvs -> ppConcat[ppString "[", ppSep (ppString ", ") (map ppAnnTypeValue atvs), ppString "]"]
@@ -251,6 +283,7 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
          | OpNameV qid ->
            if qid = dummyQualifiedId then None else Some(ppString(show qid))
          | RuleV rs -> Some(ppRuleSpec rs)
+         | ProofV prf -> None
          | OptV (Some atv1) -> ppOpt atv1
          | ListV atvs -> Some(ppConcat[ppString "[", ppSep (ppString ", ") (map ppSome atvs), ppString "]"])
          | TupleV atvs -> Some(ppConcat[ppString "(", ppSep (ppString ", ") (map ppSome atvs), ppString ")"])
@@ -296,6 +329,7 @@ op MTypeInfo.show(ty_info: MTypeInfo): String =
     | Bool -> "Bool"
     | OpName -> "OpName"
     | Rule -> "Rule"
+    | RefinementProof -> "RefinementProof"
     | TransformHistory -> "TransformHistory"
     | Opt i -> "Opt "^show i
     | List l -> "List "^show l
@@ -313,7 +347,8 @@ op transformResultType?(ti: MTypeInfo): Bool =
   case ti of
     | Spec -> true
     | Term -> true
-    | Opt Term -> true
+    | Opt sti -> transformResultType? sti
+    | RefinementProof -> true
     | Monad Spec -> true
     | Tuple tis -> exists? transformResultType? tis
     | Arrows(tis, ran) -> transformResultType? ran
@@ -334,6 +369,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("MS", "MSTerm"), [], _) -> Some Term
         | Base(Qualified("PathTerm", "PathTerm"), [], _) -> Some PathTerm
         | Base(Qualified("AnnSpec", "RuleSpec"), [], _) -> Some Rule
+        | Base(Qualified("AnnSpec", "RefinementProof"), [], _) -> Some RefinementProof
         | Base(Qualified("AnnSpec", "TransformHistory"), [], _) -> Some TransformHistory
         | Base(Qualified("SpecCalc", "Env"), [m_ty], _) ->  mapOption (fn el_info -> Monad el_info) (argInfoFromType(m_ty, spc))
         | Base(Qualified("List", "List"), [el_ty], _) -> mapOption (fn el_info -> List el_info) (argInfoFromType(el_ty, spc))
@@ -390,6 +426,7 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
     | Bool -> mkOp(Qualified("MetaTransform", "extractBool"), mkArrow(annTypeValueType, boolType))
     | OpName -> mkOp(Qualified("MetaTransform", "extractOpName"), mkArrow(annTypeValueType, qualifiedIdType))
     | Rule -> mkOp(Qualified("MetaTransform", "extractRule"), mkArrow(annTypeValueType, ruleSpecType))
+    | RefinementProof -> mkOp(Qualified("MetaTransform", "extractRefinementProof"), mkArrow(annTypeValueType, refinementProofType))
     | Opt i ->
       let el_tm = mkExtractFn i in
       let el_tm_ty as Arrow(_, el_ran_ty, _) = termType el_tm in
@@ -435,10 +472,10 @@ op annFunTerm(Arrows(dom_tyis, ran_tyi): MTypeInfo, qid: QualifiedId, op_ty: MST
                    let return_lam = mkLambda(mkVarPat val_v, return_tm) in
                    let bind_tm = mkAppl(monadBindTerm, [main_comp, return_lam]) in
                    mkApply(monadVTerm, bind_tm)
-                 | Opt o_ty ->
-                   let val_fn = mkAnnTypeValueFun o_ty in
-                   let map_option_tm = mkCurriedApply(mapOptionTerm, [val_fn, main_comp]) in
-                   mkApply(mkAnnTypeValueFun(ran_tyi), map_option_tm)
+                 % | Opt o_ty ->
+                 %   let val_fn = mkAnnTypeValueFun o_ty in
+                 %   let map_option_tm = mkCurriedApply(mapOptionTerm, [val_fn, main_comp]) in
+                 %   mkApply(mkAnnTypeValueFun(ran_tyi), map_option_tm)
                  | _ ->  mkApply(mkAnnTypeValueFun(ran_tyi), main_comp)
   in
   let body = mkApply(TValTerm, val_tm) in

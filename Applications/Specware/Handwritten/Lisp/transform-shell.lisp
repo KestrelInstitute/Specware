@@ -20,6 +20,7 @@
                                    ("rewrite" . "[op] does single rewrite using definition of op as a rewrite rule")
 				   ("lr" . "[thm] Applies theorem as a rewrite in left-to-right direction")
 				   ("rl" . "[thm] Applies theorem as a rewrite in right-to-left direction")
+				   ("strengthen" . "[thm] Applies implication theorem as a strengthening rewrite")
 				   ("weaken" . "[thm] Applies implication theorem as a weakening rewrite")
                                    ("apply" . "[meta-rule] Applies meta-rule: dropLet, caseMerge, caseToIf, unfoldLet")
 				   ("simp-standard" . "Applies standard simplifier")
@@ -456,6 +457,7 @@
                ((right-to-left rl) (apply-command argstr 'Script::mkRightToLeft 'theorem))
                (revleibniz         (apply-command argstr 'Script::mkRLeibniz 'op))
                (rev-leibniz        (apply-command argstr 'Script::mkRLeibniz 'op)) ; For backward compatibility
+               (strengthen         (apply-command argstr 'Script::mkStrengthen 'theorem))
                (weaken             (apply-command argstr 'Script::mkWeaken 'theorem))
                ((simp-standard ss) (interpret-command (Script::mkSimpStandard-0)))
                ((abstract-cse cse acse) (interpret-command (Script::mkAbstractCommonExpressions-0)))

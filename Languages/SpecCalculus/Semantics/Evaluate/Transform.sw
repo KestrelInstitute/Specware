@@ -114,6 +114,8 @@ spec
                              return (LeftToRight qid)}
       | Item("rl",thm,_) -> {qid <- extractQId thm;
                              return (RightToLeft qid)}
+      | Item("strengthen",thm,_) -> {qid <- extractQId thm;
+                                     return (Strengthen qid)}
       | Item("weaken",thm,_) -> {qid <- extractQId thm;
                                  return (Weaken qid)}
       | Item("fold",opid,_) -> {qid <- extractQId opid;
@@ -183,7 +185,7 @@ spec
   op commands: List String =
     ["simplify", "Simplify", "simplify1", "Simplify1", "simpStandard", "SimpStandard", "eval", "repeat",
      "partial-eval", "AbstractCommonExprs", "AbstractCommonSubExprs", "print", "move", "rename", "trace",
-     "lr", "rl", "weaken", "fold", "unfold", "rewrite", "apply"]
+     "lr", "rl", "strengthen", "weaken", "fold", "unfold", "rewrite", "apply"]
 
   op makeScript1 (spc: Spec) (trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
@@ -212,8 +214,10 @@ spec
                                    return (Simplify1([LeftToRight qid]))}
       | Command("rl", [thm],_) -> {qid <- extractQId thm;
                                    return (Simplify1([RightToLeft qid]))}
+      | Command("strengthen", [thm],_) -> {qid <- extractQId thm;
+                                           return (Simplify1([Strengthen qid]))}
       | Command("weaken", [thm],_) -> {qid <- extractQId thm;
-                                 return (Simplify1([Weaken qid]))}
+                                       return (Simplify1([Weaken qid]))}
       | Command("fold", [opid],_) -> {qid <- extractQId opid;
                                       return (Simplify1([Fold qid]))}
       | Command("unfold", [opid],_) -> {qid <- extractQId opid;
@@ -383,7 +387,8 @@ spec
       | (_, OpName) -> return(mapOption OpNameV (transformExprToQualifiedId te))
       | (Item("lr", thm, _),      Rule) -> return(mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm))
       | (Item("rl", thm, _),      Rule) -> return(mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm))
-      | (Item("weaken", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Weaken qid))      (transformExprToQualifiedId thm))
+      | (Item("strengthen", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Strengthen qid)) (transformExprToQualifiedId thm))
+      | (Item("weaken", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Weaken qid)) (transformExprToQualifiedId thm))
       | (Item("fold", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Fold qid))        (transformExprToQualifiedId thm))
       | (Item("unfold", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Unfold qid))      (transformExprToQualifiedId thm))
       | (Item("rewrite", thm, _), Rule) -> return(mapOption (fn qid -> RuleV(Rewrite qid))     (transformExprToQualifiedId thm))

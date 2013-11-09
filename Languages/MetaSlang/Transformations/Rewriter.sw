@@ -103,6 +103,14 @@ MetaSlangRewriter qualifying spec
      then optimizeSuccessList new_results
      else new_results
 
+ op addPathToProof(rule: RewriteRule, o_prf: Option RefinementProof, path: Path): RewriteRule =
+   case o_prf of
+     | Some(RefineEq prf) -> 
+       rule << {opt_proof = Some(RefineEq(mkEqProofSubterm(path, prf)))}
+     | Some(RefineStrengthen(ImplEq prf)) ->
+       rule << {opt_proof = Some(RefineStrengthen(ImplEq(mkEqProofSubterm(path, prf))))}
+     | _ -> rule
+   
  op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Bool)
                       (boundVars: MSVars, term: MSTerm, path: Path, demod: Demod RewriteRule)
                       : LazyList(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule))  = 
@@ -124,12 +132,14 @@ MetaSlangRewriter qualifying spec
           in
           case rule.trans_fn of
             | Some f ->
-              (case extractMSTerm(apply(f, replaceSpecTermArgs(metaRuleATV rule.rule_spec, spc, term))) of
-               | Some new_term ->
-                 (if context.debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
-                    else ();
-                  unit(new_term, (subst, rule, boundVars, demod)))
-               | None -> Nil)
+              (let result = apply(f, replaceSpecTermArgs(metaRuleATV rule.rule_spec, spc, term)) in
+               case extractMSTerm result of
+                 | Some new_term ->
+                   (if context.debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
+                     else ();
+                    let rule = addPathToProof(rule, extractProof result, path) in
+                    unit(new_term, (subst, rule, boundVars, demod)))
+                 | None -> Nil)
             | None ->
           let substs = applyRewrite(context,rule,subst,term) in
           let _ = if context.debugApplyRewrites? then
@@ -146,6 +156,7 @@ MetaSlangRewriter qualifying spec
                               %% This is also necessary for foldSubPatterns
                               let result = dereferenceAll s rhs in
                               let result = renameBound result in
+                              let rule = addPathToProof(rule, rule.opt_proof, path) in
                               if equalTerm?(term, result)
                                 then None
                               else Some(result,(s,rule,boundVars,demod)))
@@ -293,13 +304,13 @@ MetaSlangRewriter qualifying spec
                in
                let condn = simplifiedApply(pred, mkVar v, context.spc) in
                let condn = reduceSubTerms (condn,context.spc) in
-               addDemodRules(assertRules(context, condn, "Subtype", Context, Either), rules))
+               addDemodRules(assertRules(context, condn, "Subtype", Context, Either, None), rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
        foldl (fn (rules, (_,p)) -> addPatternRestriction(context, p, rules)) rules fields
      | RestrictedPat(p,condn,_) ->
        addPatternRestriction(context, p,
-                             addDemodRules(assertRules(context,condn,"Restriction",Context,Either), rules))
+                             addDemodRules(assertRules(context,condn,"Restriction",Context,Either,None), rules))
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
      | QuotientPat(p, _, _, _) -> addPatternRestriction(context, p, rules)
@@ -590,7 +601,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                              (substitute (M, sbst), rules, sbst)
                            | _ ->
                              let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                             (M, addDemodRules(assertRules(context, equal_term, "case", Context, Either), rules), [])
+                             (M, addDemodRules(assertRules(context, equal_term, "case", Context, Either, None), rules), [])
                      in
                      rewriteTerm(solvers,(boundVars ++ patternVars pat), M, 1::path, rules)
                      >>= (fn (M,a) ->
@@ -614,7 +625,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                                                         [v_tm,set_term])
                                in
                                addDemodRules(assertRules(context, memb_assert,
-                                                         "mapFrom function", Context, Either),
+                                                         "mapFrom function", Context, Either, None),
                                              rules))))
           | _ ->
         LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
@@ -680,12 +691,12 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
        LazyList.map 
             (fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,N, 1::path,
-                         addDemodRules(assertRules(context,M,"if then", Context, Either), rules)))) @@
+                         addDemodRules(assertRules(context,M,"if then", Context, Either, None), rules)))) @@
        (fn () -> 
        LazyList.map 
             (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,P, 2::path,
-                         addDemodRules(assertRules(context,negate M,"if else", Context, Either), rules))))
+                         addDemodRules(assertRules(context,negate M,"if else", Context, Either, None), rules))))
      | Seq(tms, b) ->
        mapEach 
          (fn (first,M,rest) -> 

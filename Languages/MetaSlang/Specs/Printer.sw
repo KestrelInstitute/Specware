@@ -1900,5 +1900,6 @@ AnnSpecPrinter qualifying spec
     % | At(qids, tres, _) -> 
     | Command(tre1, tres, _) -> prettysNone[string tre1, string " ",
                                             ppList (ppTransformExpr pp) ("", " ", "") tres]
+    | _ -> pp.fromString (anyToString tre)
 
 endspec

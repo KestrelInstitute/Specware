@@ -3079,6 +3079,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  op MetaTransform.extractBool(BoolV x: AnnTypeValue): Bool = x
  op MetaTransform.extractOpName(OpNameV x: AnnTypeValue): QualifiedId = x
  op MetaTransform.extractRule(RuleV x: AnnTypeValue): RuleSpec = x
+ op MetaTransform.extractRefinementProof(ProofV x: AnnTypeValue): RefinementProof = x
  op [a] MetaTransform.extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
  op [a] MetaTransform.extractList(extr_val: AnnTypeValue -> a) (ListV x: AnnTypeValue): List a = map extr_val x
  %op [a] extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x

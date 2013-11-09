@@ -90,6 +90,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
       ppConcat[ppString id, ppString " ", ppAbbrAnnTypeValue atv]
     | MetaRule   (qid, _, _) -> ppConcat[ppString "apply ", ppQid qid]
     | RLeibniz    qid -> ppConcat[ppString "revleibniz ", ppQid qid]
+    | Strengthen  qid -> ppConcat[ppString "strengthen ", ppQid qid]
     | Weaken      qid -> ppConcat[ppString "weaken ", ppQid qid]
     | _ -> ppString (showRuleSpec rl)
 
@@ -291,6 +292,7 @@ op mkMetaRule0 (qid: QualifiedId): RuleSpec =
   MetaRule(qid, dummyTypedFun, simpleMetaRuleAnnTypeValue) % 2nd arg is a placeholder
 
 op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
+op mkStrengthen(qid: QualifiedId): RuleSpec = Strengthen qid
 op mkWeaken(qid: QualifiedId): RuleSpec = Weaken qid
 op mkAllDefs(qid: QualifiedId): RuleSpec = AllDefs
 
@@ -310,6 +312,7 @@ op ruleConstructor(id: String): QualifiedId -> RuleSpec =
    | "right-to-left" -> mkRightToLeft
    | "apply" -> mkMetaRule0
    | "revleibniz" -> mkRLeibniz
+   | "strengthen" -> mkStrengthen
    | "weaken" -> mkWeaken
    | "alldefs" -> mkAllDefs
    | _ -> fail("Unknown rule constructor: "^id)

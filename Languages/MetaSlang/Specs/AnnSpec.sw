@@ -117,7 +117,8 @@ AnnSpec qualifying spec
    | LeftToRight QualifiedId % apply an equality theorem
    | RightToLeft QualifiedId % apply an the inverse of an equality theorem
    | RLeibniz    QualifiedId % post-condition strengthening, replacing f x = f y by x = y
-   | Weaken      QualifiedId % strengthen with an implication: use x -> y to replace y with x
+   | Strengthen  QualifiedId % strengthen with an implication: use x -> y to replace y with x
+   | Weaken      QualifiedId % weaken with an implication: use x -> y to replace x with y
    | MetaRule    (QualifiedId * TypedFun * AnnTypeValue) % user-supplied transform
    | TermTransform (Id * TypedFun * AnnTypeValue) % user-supplied transform (overlaps MetaRule?)
    | SimpStandard % Isabelle's simplifier
@@ -164,6 +165,10 @@ AnnSpec qualifying spec
   | RefineEq EqProof  % refine by an equality step
   | RefineStrengthen ImplProof % strengthen a post-condition
   | RefineDefOp PredicateProof % define an op with a post-condition
+
+ op mkEqProofSubterm(path: Path, prf: EqProof): EqProof =
+   if path = [] then prf
+     else EqProofSubterm(path, prf)
 
 % a TransformHistory is a record of each individual rule used to
 % transform a term, along with the terms that were the intermediate
@@ -219,6 +224,7 @@ type TransformHistory = List (MSTerm * RuleSpec)
      | LeftToRight qid -> "lr " ^ show qid
      | RightToLeft qid -> "rl " ^ show qid
      | RLeibniz    qid -> "revleibniz " ^ show qid
+     | Strengthen  qid -> "strengthen " ^ show qid
      | Weaken      qid -> "weaken " ^ show qid
      | MetaRule   (qid, _, _) -> "meta-rule " ^ show qid
      | TermTransform (id, _, _) -> "transform " ^ id
@@ -885,14 +891,14 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
      | EqProofSym pf -> EqProofSym (mapEqProof f pf)
      | EqProofTrans (pf1, tm, pf2) ->
        EqProofTrans (mapEqProof f pf1, f tm, mapEqProof f pf2)
-     | EqProofTheorem qid -> EqProofTheorem qid
+     | _ -> pf
 
  op mapImplProof : (MSTerm -> MSTerm) -> ImplProof -> ImplProof
  def mapImplProof f pf =
    case pf of
      | ImplTrans (pf1, tm, pf2) ->
        ImplTrans (mapImplProof f pf1, f tm, mapImplProof f pf2)
-     | ImplTheorem qid -> ImplTheorem qid
+     | _ -> pf
 
  op mapPredicateProof : (MSTerm -> MSTerm) -> PredicateProof -> PredicateProof
  def mapPredicateProof f pf =
