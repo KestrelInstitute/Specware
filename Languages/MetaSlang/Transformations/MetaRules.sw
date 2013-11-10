@@ -417,8 +417,8 @@ op findCommonTerms(tms1: MSTerms, tms2: MSTerms): MSTerms * MSTerms * MSTerms =
       (t1 :: common_tms, rtms1, rtms2)
     | _ -> ([], tms1, tms2)           % Conservative: only gets common prefix
 
-op structureEx (spc: Spec) (tm: MSTerm): Option(MSTerm * Option RefinementProof) =
-  structureCondEx(spc, tm, falseTerm)
+op structureEx (spc: Spec) (tm: MSTerm): Option(MSTerm) =
+  mapOption (project 1) (structureCondEx(spc, tm, falseTerm))
 
 op MSRule.structureEx (spc: Spec) (tm: MSTerm): Option(MSTerm * Option RefinementProof) =
   structureCondEx(spc, tm, falseTerm)
