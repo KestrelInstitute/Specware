@@ -1815,52 +1815,49 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
- op inferType (sp: Spec, term : MSTerm) : MSType = 
-  case term of
-    | Apply      (t1, t2,           _) -> (let t1_type = inferType (sp, t1) in
-                                            case rangeOpt (sp, t1_type) of
-                                              | Some rng -> rng
-                                              | _ ->
-                                                let _ = case t1_type of
-                                                          | Base (name, tys, a) ->
-                                                            writeLine (show name ^
-                                                                         (case findTheType (sp, name) of
-                                                                            | Some info -> " defined\n" ^ printType info.dfn
-                                                                            | _ -> " not defined "))
-                                                          | _ -> 
-                                                            let _ = writeLine("Infering type for " ^ printTerm term) in
-                                                            let _ = writeLine("Applied term:  " ^ printTerm t1) in
-                                                            let _ = writeLine("Argument term: " ^ printTerm t2) in
-                                                            let _ = writeLine("Type of applied term is not an application: " ^ printType t1_type) in
-                                                            ()
-                                                in
-                                                System.fail ("inferType: Could not extract type for\n"
-                                                               ^ printTerm term
-                                                               ^ "\nfn type\n: " ^ printType (unfoldBase (sp, t1_type))
-                                                               ^ "\n" ^ printTermWithTypes t1))
-    | Record     (fields,           _) -> Product (map (fn (id, t) -> 
-                                                          (id, inferType (sp, t)))
-                                                       fields,
-                                                   noPos)
-    | Bind       _                     -> boolType
-    | The        ((_,ty), _,        _) -> ty
-    | Let        (_, term,          _) -> inferType (sp, term)
-    | LetRec     (_, term,          _) -> inferType (sp, term)
-    | Var        ((_, ty),          _) -> ty
-    | Fun        (_, ty,            _) -> ty
-    | Lambda     ((pat,_,body)::_,  _) -> mkArrow (patternType pat, inferType (sp, body))
-    | Lambda     ([],               _) -> System.fail "inferType: Ill formed lambda abstraction"
-    | IfThenElse (_, t2, t3,        _) -> inferType (sp, t2)
-    | Seq        ([],               _) -> Product ([], noPos)
-    | Seq        (terms,            _) -> inferType (sp, last terms)
-    | TypedTerm  (_, ty,            _) -> ty
-    | Transform  _                     -> System.fail "inferType: Can't take type of a Transform term"
-    | Pi         (_, t,             _) -> inferType (sp, t)
-    | And        (t1::_,            _) -> inferType (sp, t1)
-    | Any        _                     -> Any noPos
-    | _ ->
-      let _ = writeLine ("Infer type saw mystery term: " ^ anyToString term) in
-      System.fail ("inferType: Non-exhaustive match")
+ op inferType (sp: Spec, tm : MSTerm) : MSType = 
+  case tm
+    of Apply      (t1, t2,               _) -> (let t1_ty = inferType(sp,t1) in
+                                                case rangeOpt(sp, t1_ty) of
+                                                  | Some rng -> rng
+						  | None ->
+                                                    let _ = case t1_ty of
+                                                              | Base (qid, tys, a) ->
+                                                                (case findTheType (sp, qid) of
+                                                                   | None -> writeLine(show qid^" not defined ")
+                                                                   | Some info -> writeLine(show qid^" defined"^"\n"^printType info.dfn))
+                                                              | _ -> 
+                                                                let _ = writeLine("Infering type for " ^ printTerm tm) in
+                                                                let _ = writeLine("Applied term is " ^ printTerm t1) in
+                                                                let _ = writeLine("Type of applied term is not an application: " ^ printType t1_ty) in
+                                                                ()
+                                                    in
+						    System.fail ("inferType: Could not extract type for "
+                                                                   ^ printTerm tm
+                                                                   ^ "\nfn type: " ^ printType (unfoldBase(sp,t1_ty))
+                                                                   ^ "\n" ^ printTermWithTypes t1))
+     | Bind       _                         -> boolType
+     | Record     (fields,               a) -> Product(map (fn (id, t) -> 
+							    (id, inferType (sp, t)))
+						         fields,
+                                                       a)
+     | Let        (_, term,              _) -> inferType (sp, term)
+     | LetRec     (_, term,              _) -> inferType (sp, term)
+     | Var        ((_,ty),              _) -> ty
+     | Fun        (_, ty,               _) -> ty
+     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternType pat,
+                                                       inferType (sp, body))
+     | Lambda     ([],                   _) -> System.fail "inferType: Ill formed lambda abstraction"
+     | The        ((_,ty), _,           _) -> ty
+     | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
+     | Seq        ([],                   _) -> Product ([], noPos)
+     | Seq        ([M],                  _) -> inferType (sp, M)
+     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
+     | TypedTerm  (_, ty,               _) -> ty
+     | Any a                                -> Any a
+     | And        (t1::_,                _) -> inferType (sp, t1)
+     | Pi         (_, t,                 _) -> inferType (sp, t)
+     | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
  op subtype?(sp: Spec, ty: MSType): Bool =
    case ty of
