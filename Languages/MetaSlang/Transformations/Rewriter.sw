@@ -529,6 +529,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
      | _ -> caseExpr? tm
 
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,path,rules) =
+   % let _ = writeLine("rt: "^anyToString path^"\n"^printTerm term) in
    case term of
      | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
        let Ns = termToList N in
@@ -628,11 +629,12 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                                                          "mapFrom function", Context, Either, None),
                                              rules))))
           | _ ->
+        let infix? = case M of Fun(f, _, _) -> infixFn? f | _ -> false in
         LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
-          (rewriteTerm(solvers,boundVars,N,1::path,rules))
+          (rewriteTerm(solvers,boundVars,N,if infix? then path else 1::path,rules))
         @@ (fn () -> 
               LazyList.map (fn (M,a) -> (Apply(M,N,b),a)) 
-                (rewriteTerm(solvers,boundVars,M,0::path,rules))))
+                (rewriteTerm(solvers,boundVars,M,if infix? then path else 0::path,rules))))
      | Record(fields,b) -> 
        mapEach 
         (fn (first,(label,M),rest) -> 
