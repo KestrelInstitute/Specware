@@ -549,7 +549,8 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
           | Some body_ty -> Some(Arrow(dom, body_ty, a)))
      | Lambda     ([],_) -> None
      | IfThenElse (_,t2,t3, _) -> maybeTermType t2
-     | Seq        (tms as _::_, a) -> maybeTermType(last tms)
+     | Seq        ([],      a) -> Some (Product ([], a))
+     | Seq        (tms,     _) -> maybeTermType(last tms)
      | TypedTerm  (_,   s,  _) -> Some s
      | Pi         (tvs, t,  a) ->
        (case maybeTermType t of
