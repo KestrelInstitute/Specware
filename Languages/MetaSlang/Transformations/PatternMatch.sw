@@ -1311,6 +1311,13 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
                     info << {dfn = new_dfn})
                  spc.ops
   in
+  let mkfail_q    = "TranslationBuiltIn"  in
+  let mkfail_id   = "mkFail"              in
+  let mkfail_name = mkQualifiedId (mkfail_q, mkfail_id) in
+  let new_ops = 
+      let info = {names = [mkfail_name], fixity = Nonfix, dfn = Any noPos, fullyQualified? = true} in
+      insertAQualifierMap (new_ops, mkfail_q, mkfail_id, info)
+  in
   let new_elements =
       map (fn el ->
              case el of
@@ -1319,6 +1326,8 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
                | _ -> el) 
           spc.elements
   in
+  let mkfail_op_decl = Op (mkfail_name, false, noPos)  in
+  let new_elements   = mkfail_op_decl |> new_elements in
   spc << {types    = new_types,
           ops      = new_ops, 
           elements = new_elements}
