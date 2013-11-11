@@ -939,6 +939,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  def mapPredicateProof f pf =
    case pf of
      | PredicateTheorem qid -> PredicateTheorem qid
+     | PredicateTactic tactic -> PredicateTactic tactic
 
  op  mapSpecElements: (SpecElement -> SpecElement) -> SpecElements -> SpecElements
  def mapSpecElements f elements =
