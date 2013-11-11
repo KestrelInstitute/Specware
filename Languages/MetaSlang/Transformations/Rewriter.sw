@@ -516,7 +516,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                         pat: MSPattern, path: Path, rules: Demod RewriteRule, ign?: Bool)
           : LazyList(MSPattern * a) =
    case pat of
-     | RestrictedPat(p,t,b) | ign? ->
+     | RestrictedPat(p,t,b) | ~ign? ->
        LazyList.map 
          (fn (t,a) -> (RestrictedPat(p,t,b),a)) 
          (rewriteTerm(solvers,boundVars ++ patternVars p,t,path,rules))
