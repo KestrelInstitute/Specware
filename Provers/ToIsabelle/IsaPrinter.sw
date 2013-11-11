@@ -574,7 +574,9 @@ IsaTermPrinter qualifying spec
                                 case pf of
                                     % if we have an implication proof, convert it to Isabelle
                                   | Some (RefineStrengthen impl_pf) ->
-                                    generateImplicationProof (c, condn, rhs, impl_pf) 
+                                    generateImplicationProof (c, condn, rhs, impl_pf)
+                                  | Some (RefineEq eq_pf) ->
+                                    generateImplicationProof (c, condn, rhs, ImplEq eq_pf)
                                     % otherwise, fall back on old method based on TransformHistory
                                   | _ -> generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist)
                               in
@@ -652,6 +654,7 @@ IsaTermPrinter qualifying spec
      | RightToLeft qid -> "rule "^qidToIsaString qid^"[symmetric]"
      | _ -> "auto"
      % | RLeibniz    qid -> 
+     % | Strengthen  qid -> "strengthen " ^ show qid
      % | Weaken      qid -> "weaken " ^ show qid
      % | SimpStandard -> "simplify"
      % | AbstractCommonExpressions -> "abstractCommonExpressions"
