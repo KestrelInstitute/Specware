@@ -159,12 +159,18 @@ AnnSpec qualifying spec
  % a proof that a term satisfies a given predicate
  type PredicateProof =
    | PredicateTheorem QualifiedId
+   | PredicateTactic String
 
  % a proof of the correctness of a "refine def"
  type RefinementProof =
   | RefineEq EqProof  % refine by an equality step
   | RefineStrengthen ImplProof % strengthen a post-condition
   | RefineDefOp PredicateProof % define an op with a post-condition
+
+ % default fallback proofs
+ def defaultEqProof = EqProofTactic "auto"
+ def defaultImplProof = ImplProofTactic "auto"
+ def defaultPRedicateProof = PredicateTactic "auto"
 
  op mkEqProofSubterm(path: Path, prf: EqProof): EqProof =
    if path = [] then prf
@@ -237,6 +243,7 @@ type TransformHistory = List (MSTerm * RuleSpec)
  op showPredicateProof (pf: PredicateProof) : String =
  case pf of
    | PredicateTheorem qid -> "PredicateTheorem (" ^ show qid ^ ")"
+   | PredicateTactic tactic -> "PredicateTactic (" ^ tactic ^ ")"
 
  op showRefinementProof (pf : RefinementProof) : String =
    case pf of
