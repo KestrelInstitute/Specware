@@ -213,8 +213,36 @@ type TransformHistory = List (MSTerm * RuleSpec)
    let MetaRule(_, _, atv) = rl in
    atv
 
+ op showEqProof (pf: EqProof) : String =
+ case pf of
+   | EqProofSubterm (path, pf) ->
+     "EqProofSubterm ([" ^ flatten (intersperse "," (map show path)) ^ "], " ^ showEqProof pf ^ ")"
+   | EqProofSym pf -> "EqProofSym (" ^ showEqProof pf ^ ")"
+   | EqProofTrans (pf1, middle, pf2) ->
+     "EqTrans (" ^ showEqProof pf1 ^ ", " ^ showEqProof pf2 ^ ")"
+   | EqProofTheorem (qid, args) ->
+     "EqProofTheorem " ^ show qid
+   | EqProofUnfoldDef qid -> "EqProofUnfoldDef (" ^ show qid ^ ")"
+   | EqProofTactic tactic -> "EqProofTactic (" ^ tactic ^ ")"
+
+ op showImplProof (pf: ImplProof) : String =
+ case pf of
+   | ImplTrans (pf1, middle, pf2) ->
+     "ImplTrans (" ^ showImplProof pf1 ^ ", " ^ showImplProof pf2 ^ ")"
+   | ImplTheorem (qid, args) -> "ImplTheorem (" ^ show qid ^ ")"
+   | ImplEq pf -> "ImplEq (" ^ showEqProof pf ^ ")"
+   | ImplProofTactic tactic -> "ImplProofTactic (" ^ tactic ^ ")"
+   | MergeRulesProof tree -> "MergeRulesProof (*** TraceTree ***)"
+
+ op showPredicateProof (pf: PredicateProof) : String =
+ case pf of
+   | PredicateTheorem qid -> "PredicateTheorem (" ^ show qid ^ ")"
+
  op showRefinementProof (pf : RefinementProof) : String =
-   "FIXME: showRefinementProof is not yet implemented!"
+   case pf of
+     | RefineEq eq_pf -> "RefineEq (" ^ showEqProof eq_pf ^ ")"
+     | RefineStrengthen pf -> "RefineStrengthen (" ^ showImplProof pf ^ ")"
+     | RefineDefOp pf -> "RefineDefOp (" ^ showPredicateProof pf ^ ")"
 
  op showRuleSpec(rs: RuleSpec): String =
    case rs of
