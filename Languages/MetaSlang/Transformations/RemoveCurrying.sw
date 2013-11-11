@@ -64,7 +64,7 @@ op mkTypedApply (f : MSTerm, arg : MSTerm, spc : Spec) : MSTerm =
                  | Var _ -> f
                  | TypedTerm _ -> f
                  | _ -> 
-                   let f_type  = termTypeEnv (spc, f) in
+                   let f_type  = inferType (spc, f) in
                    TypedTerm (f, f_type, noPos) 
  in
  mkApply (typed_f, arg)
@@ -197,7 +197,7 @@ op uncurry_term (term : MSTerm, spc : Spec, toplevel_dfn? : Bool) : MSTerm =
      uncurry_term (tm, spc, false)
 
    def uncurry_apply (f, args) =
-     let f_type      = termTypeEnv   (spc, f)      in
+     let f_type      = inferType     (spc, f)      in
      let curry_level = curryShapeNum (spc, f_type) in
      let new_f =
          if curry_level > 1 && curry_level = length args then
@@ -250,7 +250,7 @@ op uncurry_term (term : MSTerm, spc : Spec, toplevel_dfn? : Bool) : MSTerm =
      %% Assume multiple rules have been transformed away and predicate is true
    | Lambda ([(pat, _, old_body)], _)  ->
      if toplevel_dfn? then
-       let body_type = termTypeEnv (spc, old_body) in
+       let body_type = inferType (spc, old_body) in
        let pat = uncurry_pattern(pat, spc) in
        if arrow? (spc, body_type) then
          flatten_lambda ([pat], old_body, body_type, spc) 
@@ -443,7 +443,7 @@ op flatten_lambda (outer_pats : MSPatterns,
    | Lambda ([(pat, _, body)], _) ->
      flatten_lambda (outer_pats ++ [pat], 
                      body, 
-                     termTypeEnv (spc, body), 
+                     inferType (spc, body), 
                      spc)
 
    | _ ->

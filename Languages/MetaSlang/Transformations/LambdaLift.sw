@@ -331,7 +331,7 @@ def patternVars (pat:MSPattern): MSVars =
           | _ -> ArityNormalize.mkArityTuple (getSpecEnv env, 
                                               mkTuple (map mkVar freeVars))
     in
-    let ftype = termTypeEnv (getSpecEnv env, farg) in
+    let ftype = inferType (getSpecEnv env, farg) in
     let oper  = mkOp (qualname, mkArrow (mkProduct [ftype, dom], rng)) in
     mkApply (makeClosureOp (), 
              mkTuple[oper, farg])
@@ -516,7 +516,7 @@ def patternVars (pat:MSPattern): MSVars =
 
 	 let liftInfo = makeLiftInfo (env, ident, name, pat, body,
                                       patternType pat,
-                                      termTypeEnv (getSpecEnv env, body),
+                                      inferType (getSpecEnv env, body),
                                       vars)
          in
 

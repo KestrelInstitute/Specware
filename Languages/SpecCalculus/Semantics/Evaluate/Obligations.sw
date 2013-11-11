@@ -83,7 +83,7 @@ SpecCalc qualifying spec
     ob_spc
 
   op defToConjecture (spc: Spec, opName: QualifiedId, q: Qualifier, id: Id, term: MSTerm): SpecElements =
-    let srt = termTypeEnv(spc,term) in
+    let srt = inferType (spc, term) in
     let initialFmla = head (unLambdaDef(spc, srt, opName, term)) in
     let liftedFmlas = removePatternTop(spc, initialFmla) in
     %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in

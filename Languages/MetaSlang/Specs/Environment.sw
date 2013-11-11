@@ -377,43 +377,6 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
     | _       -> srt
 
  %- --------------------------------------------------------------------------------
- (**
-   determine the type of a term including unfolding of base types.
-  *)
-
- op termTypeEnv : Spec * MSTerm -> MSType
- def termTypeEnv(sp,term) = 
-  let res =
-   case term 
-     of Apply      (t1, t2,               _) -> 
-        (case stripSubtypes(sp,termTypeEnv (sp, t1)) of
-           | Arrow (dom, rng, _)            -> rng
-	   | _ -> System.fail ("Cannot extract type of application "^ printTerm term))
-      | Bind       _                         -> boolType
-      | Record     (fields,               _) -> Product(map (fn (id, t)-> 
-                                                             (id, termTypeEnv (sp, t)))
-                                                            fields,
-                                                        noPos)
-      | Let        (_, t,                 _) -> termTypeEnv   (sp, t)
-      | LetRec     (_, t,                 _) -> termTypeEnv   (sp, t)
-      | Var        ((_, srt),             _) -> unfoldToArrow (sp, srt)
-      | Fun        (fun, srt,             _) -> unfoldToArrow (sp, srt)
-      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternType pat,
-                                                         termTypeEnv (sp, body))
-      | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
-      | The        ((_,srt),_,            _) -> unfoldToArrow (sp, srt)
-      | IfThenElse (_, t2, t3,            _) -> termTypeEnv   (sp, t2)
-      | Seq        (tms,                  _) -> if tms = []
-                                                then mkProduct []
-                                                else termTypeEnv(sp, last tms)
-      | TypedTerm  (_, s,                 _) -> s
-      | Pi         (_, t,                 _) -> termTypeEnv   (sp, t)
-      | And        (t :: _,               _) -> termTypeEnv   (sp, t)
-      | mystery                              ->
-	System.fail ("In termTypeEnv, unrecognized term: " ^ printTerm mystery)
-  in
-  %let _ = writeLine("termTypeEnv: "^printTerm(term)^"="^printType(res)) in
-  res
 
  op maybeTermTypeEnv : Spec * MSTerm -> Option MSType
  def maybeTermTypeEnv(sp,term) = 

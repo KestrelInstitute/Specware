@@ -51,7 +51,7 @@ spec
         def match_case_dispatch (t,spc) =
           case t of
             | Apply(Lambda _,case_tm, File(file_nm,(line,col,byte),_)) ->
-              matchType?(termTypeEnv(spc,case_tm),spc)
+              matchType? (inferType (spc, case_tm), spc)
             | _ -> false
     in
     findMatchesFromTopSpecs(match_case_dispatch, uidStr, optGlobalContext)
@@ -83,7 +83,7 @@ spec
           case t of
             | Let _ -> false
             | IfThenElse _ -> false
-            | _ -> matchType?(termTypeEnv(spc,t),spc)
+            | _ -> matchType? (inferType (spc, t), spc)
     in
     findMatchesFromTopSpecs(match_term_type?, uidStr, optGlobalContext)
 
