@@ -875,7 +875,8 @@ Globalize qualifying spec
                      | Unchanged       -> pat
                      | Changed new_pat -> new_pat
                      | GlobalVarPat    -> 
-                       wildPat (inferType (context.spc, new_tm))
+                       %% this should be nullType, but inferType should have worked and not entered the debugger
+                       wildPat nullType % (inferType (context.spc, new_tm))
                in
                let new_bindings = bindings ++ [(new_pat, new_tm)] in
                case new_vars_to_remove of
