@@ -175,7 +175,7 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
         | _ ->
           false)
  in
- case maybeTermTypeEnv (spc, new) of
+ case maybeInferType (spc, new) of
    | Some inferred_type ->
      if matches? (inferred_type, expected_type) then
        new
@@ -187,10 +187,11 @@ op fullyType (term : MSTerm, expected_type : MSType, spc : Spec) : MSTerm =
        % let _ = writeLine ("") in
        TypedTerm (new, expected_type, noPos)
    | _ ->
-     % let _ = writeLine ("") in
-     % let _ = writeLine ("Could not infer type for " ^ printTerm new) in
-     % let _ = writeLine ("new type = " ^ printType expected_type) in
-     % let _ = writeLine ("") in
+     %% This should not be possible once the type checker has run
+     let _ = writeLine ("") in
+     let _ = writeLine ("Could not infer type for " ^ printTerm new) in
+     let _ = writeLine ("using expected type instead: " ^ printType expected_type) in
+     let _ = writeLine ("") in
      TypedTerm (new, expected_type, noPos)
 
 %% ================================================================================

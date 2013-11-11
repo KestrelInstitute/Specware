@@ -1099,7 +1099,7 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
                   else
                     let alpha = if notFinalPass? env
                                  then freshMetaTyVar("ApplyN_Fun", pos)
-                                 else case maybeTermTypeEnv(env.internal, t2) of
+                                 else case maybeInferType (env.internal, t2) of
                                         | Some ty -> ty
                                         | None -> freshMetaTyVar("ApplyN_Fun", pos)
                     in

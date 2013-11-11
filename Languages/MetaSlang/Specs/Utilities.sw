@@ -1815,7 +1815,71 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
- op inferType (sp: Spec, term : MSTerm) : MSType = 
+ %- --------------------------------------------------------------------------------
+
+op maybeInferType (sp : Spec, term : MSTerm) : Option MSType =
+ case term of
+   | Apply      (t1, t2,            _) -> (case maybeInferType(sp, t1) of
+                                             | Some typ ->
+                                               (case arrowOpt (sp, typ) of
+                                                  | Some (_, rng) -> Some rng
+                                                  | _ -> None)
+                                             | _ -> None)
+   | ApplyN     ([t1,t2],          _)  -> (case maybeInferType(sp, t1) of
+                                             | Some typ ->
+                                               (case arrowOpt (sp, typ) of
+                                                  | Some (_, rng) ->
+                                                    % let _ = writeLine("tt2*: "^printTerm term^"\n"^anyToString t1) in
+                                                    (case rng of
+                                                       | MetaTyVar(tv,_) -> 
+                                                         let {name=_,uniqueId=_,link} = ! tv in
+                                                         (case link of
+                                                            | None -> 
+                                                              (case maybeInferType (sp, t2) of
+                                                                 | Some typ2 ->
+                                                                   (case (t1, productOpt(sp, typ2)) of
+                                                                      | (Fun(Project id, _, _), Some fields) ->
+                                                                        (case findLeftmost (fn (id2, _) -> id = id2) fields of
+                                                                           | Some(_, f_ty) -> Some f_ty
+                                                                           | None -> Some rng)
+                                                                      | _ -> Some rng)
+                                                                 | _ -> Some rng)
+                                                            | _ -> Some rng)
+                                                       | _ -> Some rng)
+                                                  | _ -> None)
+                                             | _ -> 
+                                               %% how did this never happen in 10 years????
+                                               None)
+   | Bind       _                      -> Some boolType
+   | Record     (fields,            _) -> (case foldr (fn ((id, t), result) ->
+                                                         case result of
+                                                           | None -> None
+                                                           | Some fld_prs ->
+                                                             case maybeInferType(sp, t) of
+                                                               | None -> None
+                                                               | Some ty -> Some((id, ty) :: fld_prs))
+                                             (Some []) fields of
+                                                               | None -> None
+                                                               | Some fld_prs -> Some(mkRecordType fld_prs))
+   | Let        (_, t,              _) -> maybeInferType(sp, t)
+   | LetRec     (_, t,              _) -> maybeInferType(sp, t)
+   | Var        ((_, srt),          _) -> Some srt
+   | Fun        (fun, srt,          _) -> Some srt
+   | Lambda     ((pat,_,body) :: _, _) ->  (case maybeInferType(sp, body) of
+                                              | None -> None
+                                              | Some body_ty -> Some(mkArrow (patternType pat, body_ty)))
+   | Lambda     ([],                _) -> None
+   | The        ((_,srt),_,         _) -> Some srt
+   | IfThenElse (_, t2, t3,         _) -> maybeInferType(sp, t2)
+   | Seq        (tms,               _) -> if tms = []
+                                            then Some(mkProduct [])
+                                          else maybeInferType(sp, last tms)
+   | TypedTerm  (_, s,              _) -> Some s
+   | Pi         (_, t,              _) -> maybeInferType   (sp, t)
+   | And        (t :: _,            _) -> maybeInferType   (sp, t)
+   | _                                 -> None
+     
+op inferType (sp: Spec, term : MSTerm) : MSType = 
   case term of
     | Apply      (t1, t2,           _) -> (let t1_type = inferType (sp, t1) in
                                             case rangeOpt (sp, t1_type) of
