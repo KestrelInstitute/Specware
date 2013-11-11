@@ -132,10 +132,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      % let _ = (writeLine("freshRule: "); printRule rule) in
      let (freshTerm,freshType,varMap,tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
-     {  name = name,
-        rule_spec = rule_spec,
-        opt_proof = None,
-	lhs  = freshTerm lhs,
+     rule << 
+     {	lhs  = freshTerm lhs,
 	rhs  = freshTerm rhs,
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
 	freeVars = NatMap.listItems varMap,
@@ -459,7 +457,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     desc      : String, 
                     rsp       : RuleSpec, 
                     dirn      : Direction,
-                    o_prf: Option RefinementProof,
+                    o_prf     : Option RefinementProof,
                     freeVars  : List (Nat * MSType), 
                     subst     : MSVarSubst, 
                     condition : Option MSTerm)
@@ -583,7 +581,10 @@ op simpleRwTerm?(t: MSTerm): Bool =
            of Some c -> (writeLine(printTerm c)) 
             | None -> ());
         writeLine ("Rewrite : "^printTerm lhs^ " ---> "^
-                     printTerm rhs))
+                     printTerm rhs));
+       case opt_proof of
+         | Some prf -> writeLine(anyToPrettyString prf)
+         | None -> ()
      )	
 
   def renameBound(term) = 
