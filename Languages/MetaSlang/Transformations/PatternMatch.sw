@@ -82,13 +82,17 @@ PatternMatch qualifying spec
     | Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"), _), _, _) -> true
     | _ -> false
 
+ op mkFail_q    : Qualifier = "TranslationBuiltIn"  
+ op mkFail_id   : Id        = "mkFail"              
+ op mkFail_name : OpName    = Qualified (mkFail_q, mkFail_id) 
+
  op mkFail (ctx : Context, typ : MSType, _ : MSTerm) : MSTerm =
   %% Generate the continuation catch all case given a set of pattern matching rules.
   let index = ! ctx.error_index + 1 in
   (ctx.error_index := index;
    let typ1 = mkArrow (typ, typ) in
    let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
-   mkApply (mkOp (Qualified ("TranslationBuiltIn", "mkFail"), typ1),
+   mkApply (mkOp (mkFail_name, typ1),
             mkString msg))
 
  op isFail? (trm : MSTerm) : Bool = 
@@ -1311,13 +1315,21 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
                     info << {dfn = new_dfn})
                  spc.ops
   in
-  let mkfail_q    = "TranslationBuiltIn"  in
-  let mkfail_id   = "mkFail"              in
-  let mkfail_name = mkQualifiedId (mkfail_q, mkfail_id) in
-  let new_ops = 
-      let info = {names = [mkfail_name], fixity = Nonfix, dfn = Any noPos, fullyQualified? = true} in
-      insertAQualifierMap (new_ops, mkfail_q, mkfail_id, info)
+  let mkfail_info = 
+      let string_ref = Base (mkQualifiedId ("String", "String"), [], noPos) in
+      let tv         = "a"                                                  in
+      let dfn        = Pi ([tv], 
+                           TypedTerm (Any noPos, 
+                                      Arrow (string_ref, TyVar (tv, noPos), noPos),
+                                      noPos),
+                           noPos) 
+      in
+      {names           = [mkFail_name], 
+       fixity          = Nonfix,
+       dfn             = dfn,
+       fullyQualified? = true} 
   in
+  let new_ops = insertAQualifierMap (new_ops, mkFail_q, mkFail_id, mkfail_info) in
   let new_elements =
       map (fn el ->
              case el of
@@ -1326,7 +1338,7 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
                | _ -> el) 
           spc.elements
   in
-  let mkfail_op_decl = Op (mkfail_name, false, noPos)  in
+  let mkfail_op_decl = Op (mkFail_name, false, noPos)  in
   let new_elements   = mkfail_op_decl |> new_elements in
   spc << {types    = new_types,
           ops      = new_ops, 
