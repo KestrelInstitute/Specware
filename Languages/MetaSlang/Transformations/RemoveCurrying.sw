@@ -519,8 +519,19 @@ op remove_curried_refs (spc : Spec) : Spec =
                        old_info)
                   spc.types
  in
+ let new_elements = 
+     mapSpecElements (fn elt ->
+                        case elt of
+                          | Property (kind, name, tvs, old_fm, _) ->
+                            let new_fm = uncurry_term (old_fm, spc, false) in
+                            Property (kind, name, tvs, new_fm, rcPos) 
+                          | _ ->
+                            elt)
+                     spc.elements
+ in
  spc << {ops      = new_ops,
-         types    = new_types}
+         types    = new_types,
+         elements = new_elements}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
