@@ -96,7 +96,8 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
             stateVar=postStateVar,
             assumptions=[],
             outputs= List.map (fn i -> i.1) outputs,
-            vars=(List.map (fn i -> i.1) vars') } in
+            vars=vars' % (List.map (fn i -> i.1) vars')
+            } in
 
     % Look at each clause, and each atomic expression in that clause, and
     % classify its syntactic form.
@@ -366,12 +367,12 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)
 
 type CDNFRep = List (List CClass)
 type TraceTree =
-  | Contra (CDNFRep * (List MSTerm) * List Id) % inputs, assumptions, vars
-  | Tauto (CDNFRep * (List MSTerm) * List Id) % inputs, assumptions, vars
-  | TIf (MSTerm * CDNFRep * (List MSTerm) * MSTerm * TraceTree * TraceTree * DNFRep * List Id)  % input, assumptions, branch term, true child, false child, precondition, vars
-  | TCase (MSTerm * CDNFRep * (List MSTerm) * MSTerm * List (MSPattern * TraceTree) * DNFRep * List Id)   % result, input, assumptions, scrutinee, alts, precondition
-  | TLocal (MSTerm * CDNFRep * (List MSTerm) * List MSVar * TraceTree * DNFRep * List Id) % input, assumptions, variables,  child, precondition
-  | TFactoring  (MSTerm * CDNFRep * (List MSTerm) * List MSTerm *  TraceTree * DNFRep * List Id) % result, input, assumptions, factors, child, pre
+  | Contra (CDNFRep * (List MSTerm) * List (Id * MSType)) % inputs, assumptions, vars
+  | Tauto (CDNFRep * (List MSTerm) * List (Id * MSType)) % inputs, assumptions, vars
+  | TIf (MSTerm * CDNFRep * (List MSTerm) * MSTerm * TraceTree * TraceTree * DNFRep * List (Id * MSType))  % input, assumptions, branch term, true child, false child, precondition, vars
+  | TCase (MSTerm * CDNFRep * (List MSTerm) * MSTerm * List (MSPattern * TraceTree) * DNFRep * List (Id * MSType))   % result, input, assumptions, scrutinee, alts, precondition
+  | TLocal (MSTerm * CDNFRep * List MSTerm * List (List (Id*MSType) * MSTerm) * TraceTree * DNFRep * List (Id * MSType)) % input, assumptions, variables,  child, precondition
+  | TFactoring  (MSTerm * CDNFRep * (List MSTerm) * List MSTerm *  TraceTree * DNFRep * List (Id * MSType)) % result, input, assumptions, factors, child, pre
   | Unknown
 
 
@@ -413,7 +414,7 @@ op traceResult(t:TraceTree):MSTerm =
     | TLocal (res,inps,assumps,defvars,sub,fail,vars) -> res
     | TFactoring (res,inps,assumps,fators,sub,fail,vars) -> res
 
-op traceVars(t:TraceTree):List Id =
+op traceVars(t:TraceTree):List (Id * MSType) =
   case t of
     | Contra (inps, assumps, vars) -> vars
     | Tauto (inps, assumps, vars) -> vars
@@ -434,19 +435,19 @@ op traceType(t:TraceTree):String =
       
       
       
-op mkRefinement (i:Int)(qvars:List MSVar)(vars:List Id)(assumps:List MSTerm)(pre:DNFRep)(res:MSTerm)(input:CDNFRep): MSTerm =
-   let inp = dnfToTerm (map (map classToTerm) input) in
-   let locals = filter (fn (i:MSVar) -> i.1 in? vars) (freeVars inp) in
-   let quant = case locals of
-                 | [] -> inp 
-                 | _ -> Bind (Exists,locals,inp,noPos) in
-   let ref =
-    Bind (Forall, qvars,
-          mkImplies (mkAnd assumps,
-                  mkImplies(negateTerm (dnfToTerm pre),
-                            mkImplies(res,quant))), noPos) in
-   let _ = writeLine (printTerm ref) in
-   ref
+% op mkRefinement (i:Int)(qvars:List MSVar)(vars:List (Id * MSType))(assumps:List MSTerm)(pre:DNFRep)(res:MSTerm)(input:CDNFRep): MSTerm =
+%    let inp = dnfToTerm (map (map classToTerm) input) in
+%    let locals = filter (fn (i:MSVar) -> i.1 in? vars) (freeVars inp) in
+%    let quant = case locals of
+%                  | [] -> inp 
+%                  | _ -> Bind (Exists,locals,inp,noPos) in
+%    let ref =
+%     Bind (Forall, qvars,
+%           mkImplies (mkAnd assumps,
+%                   mkImplies(negateTerm (dnfToTerm pre),
+%                             mkImplies(res,quant))), noPos) in
+%    let _ = writeLine (printTerm ref) in
+%    ref
 
 
 % op mkRefinementThm (qvars:List (Id * MSType))(t:TraceTree):MSTerm =
@@ -459,8 +460,7 @@ op equant(isabelleTerm:MSTerm -> String)(tr:TraceTree):String =
   if empty? (traceVars tr)
       then isabelleTerm (cdnfToTerm (traceInputs tr))
       else
-        %% FIXME: Have to actually carry around the variables...
-        let typedVars = map (fn x -> (x,intType)) (traceVars tr) in
+        let typedVars = traceVars tr in
         isabelleTerm (Bind (Exists,typedVars, (cdnfToTerm (traceInputs tr)),noPos)) 
   
 
@@ -471,17 +471,11 @@ op mkIsarProof(isabelleTerm:MSTerm-> String)(nm : Option String)(t:TraceTree)(ui
           | [] -> mkTrue ()
           | _ -> cdnfToTerm inps in
   let thmName = case nm of | None -> "ok" | Some n -> n in
-  let def equant tr = if empty? (traceVars tr)
-                 then isabelleTerm (cdnfToTerm (traceInputs tr))
-                 else
-                   %% FIXME: Have to actually carry around the variables...
-                   let typedVars = map (fn x -> (x,intType)) (traceVars tr) in
-                   isabelleTerm (Bind (Exists,typedVars, (cdnfToTerm (traceInputs tr)),noPos)) in
   
 uindent ^ "have " ^ thmName ^ ": \"" ^ (isabelleTerm (mkAnd (traceAssumptions t))) ^
          " ==> ~(" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ ")" ^
          " ==> " ^ (isabelleTerm (traceResult t)) ^
-         " ==> " ^ equant t ^ "\"\n" ^
+         " ==> " ^ equant isabelleTerm t ^ "\"\n" ^
 uindent ^ "proof - " ^ (traceType t) ^ "\n" ^
 (let indent = uindent ^ "  " in         
 indent ^ "assume assumptions : \"" ^ (isabelleTerm (mkAnd (traceAssumptions t))) ^ "\"\n" ^
@@ -602,9 +596,8 @@ uindent ^ "qed\n"
 
 
    | TLocal (res,inps,assumps,defvars,sub,fail,vars) ->
-
-let var = "j" in
-let defn = "j = o4 h" in
+% FIXME: Generalize this to N variables and definitions.
+let (var,defn) = case defvars of [([(v,_)], defn)] -> (v,defn) in
 let inner = case res of
              | Bind(Exists, vs, bod, _) -> bod
              | _ -> res
@@ -614,11 +607,11 @@ indent ^ "from result obtain " ^ var ^ " where inner: \"" ^ isabelleTerm inner ^
 
 mkIsarProof isabelleTerm (Some "ok_local") sub indent ^
 
-indent ^ "from inner have defn : \"" ^ defn ^ "\" by simp\n" ^
+indent ^ "from inner have defn : \"" ^ var ^ " = " ^ isabelleTerm defn ^ "\" by simp\n" ^
 indent ^ "from assumptions defn have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by simp\n" ^
 indent ^ "from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by simp\n" ^
 indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by simp\n" ^
-indent ^ "have sub_done : \"" ^ equant sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
+indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
 indent ^ "from sub_done defn show ?thesis by auto\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
 uindent ^ "qed\n"
@@ -638,7 +631,7 @@ uindent ^ "qed\n"
 
 op MergeRules.printMergeRulesProof(isabelleTerm:MSTerm -> String)(t:TraceTree):String =
    let indent =  "  " in
-indent ^ "proof -\n" ^
+% indent ^ "proof -\n" ^
 mkIsarProof isabelleTerm None t (indent ^ "  ") ^
 indent ^ "(* Final Refinement Step XXXX *)\n" ^
 
@@ -674,16 +667,24 @@ type BTArgs = { spc:Spec,
                 outputs : List Id,
                 stateVar:Id,
                 assumptions:List MSTerm,
-                vars:List Id
+                vars:List (Id * MSType)
                }
 op addAssumption(args:BTArgs)(a:MSTerm):BTArgs =
   args << { assumptions = a::(args.assumptions) }
 op addAssumptions(args:BTArgs)(a:List MSTerm):BTArgs =
   args << { assumptions = a ++ (args.assumptions) }
 
-op setVars(args:BTArgs)(vs:List Id):BTArgs =
+op setVars(args:BTArgs)(vs:List (Id * MSType)):BTArgs =
   args << { vars = vs }
-  
+
+
+op varsNames(args:BTArgs):List Id =
+   map (fn v -> v.1) args.vars
+
+op diffVars(l1:List (Id*MSType))(l2:List(Id*MSType)):List(Id*MSType) =
+   let ids = map (fn (v:Id*MSType) -> v.1) l2 in
+    filter (fn (v1:Id*MSType) -> ~(v1.1 in? ids)) l1
+    
 op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
    if empty? inputs
      % If the set of input clauses is empty, then we have a contradiction.
@@ -730,16 +731,18 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                     map (fn c -> List.filter (fn a -> ~(inClause? a gds)) c) inputs in
                   let defsToAtoms = defineLocals gds next in                    
                   let tvars : List (Id * MSType) = (flatten (map defVars gds)) in
-                  let dvars = map (fn v -> v.1) tvars in 
+                  % let dvars = map (fn v -> v.1) tvars in 
                   let newAssumptions = map classToTerm gds in
                   let (t',p,pf1) =
+                     % bt2 (setVars (addAssumptions args newAssumptions)
+                     %        (diff (args.vars, tvars))) defsToAtoms in
                      bt2 (setVars (addAssumptions args newAssumptions)
-                            (diff (args.vars, dvars))) defsToAtoms in
+                            (diffVars args.vars tvars)) defsToAtoms in
 
                   let resTerm = Bind (Exists, tvars, mkAnd (newAssumptions ++ [t']),noPos) in
                   % FIXME!!! Supply the defs, instead of []
-                  let defs = [] in 
-                  let pf = TLocal (resTerm, inputs,args.assumptions, tvars, pf1, p, args.vars) in
+                  let defs = map (fn | CDef (vs,defn,_,_,_) -> (vs,defn)) gds in 
+                  let pf = TLocal (resTerm, inputs,args.assumptions, defs, pf1, p, args.vars) in
                   (resTerm, p, pf)
               else
                 % let _ = writeLine "There are no global definitions" in
@@ -869,13 +872,14 @@ op isArrowType?(ty:MSType):Option (MSType * MSType) =
 %%%%%%%%%%%%%%%%%%%%%%
 
 
-op removePatternVars (vars:List Id)(pat:Option MSPattern):List Id =
+op removePatternVars (vars:List (Id * MSType))(pat:Option MSPattern):List (Id * MSType) =
   case pat of
     | None -> vars
     | Some thePat -> 
        case patternToTerm thePat of
          | None -> vars
-         | Some t -> diff (vars, (varNames (freeVars t)))
+         | Some t -> let fvs = varNames (freeVars t)
+                     in filter (fn (v,t) -> ~(v in? fvs)) vars
 
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -1133,7 +1137,7 @@ op atomPolarity(c:CClass):Bool =
 % An atom is fully defined if none of its dependencies occur
 % in the list of args
 op fullyDefined?(args:BTArgs)(c:CClass):Bool =
-   forall? (fn v -> ~(v in? args.vars)) (atomDeps c)
+   forall? (fn v -> ~(v in? (map (fn x -> x.1) args.vars))) (atomDeps c)
 
 % The variables defined by a def
 op defVars(c:CClass):List (Id * MSType) =
@@ -1154,7 +1158,7 @@ op classify(args:BTArgs)(t:MSTerm):CClass =
 
 op classifyAux(args:BTArgs)(t:MSTerm):CClass =
 
-  let def theVars tm = map (fn x -> x.1) (filter (fn (i,_) -> i in? args.vars) (freeVars tm)) in
+  let def theVars tm = map (fn x -> x.1) (filter (fn (i,_) -> i in? (map (fn v -> v.1) args.vars)) (freeVars tm)) in
   let def getTy (tm:MSTerm):MSType = inferType (args.spc,tm) in
   case t of
     % ~(expr)
@@ -1201,23 +1205,23 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? args.vars) pvars -> CDef (patternVars l,r,theVars r,true, getTy r)
+      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars l,r,theVars r,true, getTy r)
         
     % v = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? args.vars -> CDef ([(v,ty)],r,theVars r,true,getTy r)
+      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],r,theVars r,true,getTy r)
 
 
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? args.vars) pvars -> CDef (patternVars r,l,theVars l,true, getTy r)
+      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars r,l,theVars l,true, getTy r)
         
     % expr = v
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? args.vars -> CDef ([(v,ty)],l,theVars l,true, getTy l)
+      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],l,theVars l,true, getTy l)
 
         
     | Apply (Fun (Equals,_,eqPos), 
@@ -1270,7 +1274,7 @@ op defineLocals(defs:List CClass)(clauses:List (List CClass)):(List (List CClass
 op debugFailure(args:BTArgs)(clauses:List (List CClass)):() =
   let def debugClass c =
            let _ = writeLine ("Literal:\n\t " ^ (printClass c)) in
-           let undef : List Id = filter (fn d -> d in? args.vars) (atomDeps c) in
+           let undef : List Id = filter (fn d -> d in? (map (fn v -> v.1) args.vars)) (atomDeps c) in
            let _ = if ~(empty? undef)
                       then let _ = writeLine "Depends on undefined vars: " in
                            let _ = map (fn i -> writeLine ("\t" ^ i)) undef in
