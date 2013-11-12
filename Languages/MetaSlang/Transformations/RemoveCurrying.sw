@@ -455,30 +455,33 @@ op add_uncurried_ops (spc : Spec) : Spec =
                       | old_dfn :: _ ->
                         (let (old_tvs, old_type, old_term) = unpackFirstTerm old_dfn in
                          case uncurried_op_info (spc, old_name, old_type) of
-                           
                            | Some (new_name as Qualified (new_q, new_id), curry_level, new_dom, new_rng) ->
-                             let new_arg_types = 
-                                 case new_dom of
-                                   | Product (fields, _) ->
-                                     map (fn (_, typ) -> typ) fields
+                             let new_dfn_type = Arrow (new_dom, new_rng, rcPos) in
+                             let new_dfn_body =
+                                 case old_term of
+                                   | Any _ -> 
+                                     Any rcPos
                                    | _ -> 
-                                     [new_dom]
+                                     let 
+                                       def get_arg_types dom_type =
+                                         case productOpt (spc, dom_type) of
+                                           | Some fields ->  map (fn (_, typ) -> typ) fields
+                                           | _ -> 
+                                             let _ = writeLine("Warning: RemoveCurrying saw unusual dom type: " ^ printType dom_type) in
+                                             let _ = writeLine("         arrow type was: "                      ^ printType old_type) in
+                                             [dom_type]
+                                     in
+                                     let new_arg_types   = get_arg_types new_dom                 in
+                                     let new_vars        = mk_new_vars (new_arg_types, [], spc)  in
+                                     let new_pvars       = map mkVarPat new_vars                 in
+                                     let new_tvars       = map mkVar    new_vars                 in
+                                     let new_pat         = mkTuplePat   new_pvars                in
+                                     let new_f           = TypedTerm (old_term, old_type, rcPos) in
+                                     let new_lambda_body = mkNewApply (new_f, new_tvars)         in
+                                     let new_lambda_rule = (new_pat, trueTerm, new_lambda_body)  in
+                                     Lambda ([new_lambda_rule], rcPos)
                              in
-                             let new_vars      = mk_new_vars (new_arg_types, [], spc) in
-                             let new_pvars     = map mkVarPat new_vars                in
-                             let new_tvars     = map mkVar    new_vars                in
-                             let new_pat       = mkTuplePat   new_pvars               in
-
-                             let new_body      = case old_term of
-                                                   | Any _ -> old_term
-                                                   | _ ->
-                                                     mkNewApply (TypedTerm (old_term, old_type, rcPos), 
-                                                                 new_tvars)
-                             in
-                             let new_rule      = (new_pat, trueTerm, new_body)        in
-                             let new_lambda    = Lambda ([new_rule], rcPos)           in
-                             let (_, new_type) = uncurry_type (old_type, spc, true)   in 
-                             let new_dfn       = maybePiTerm (old_tvs, TypedTerm (new_lambda, new_type, rcPos)) in
+                             let new_dfn = maybePiTerm (old_tvs, TypedTerm (new_dfn_body, new_dfn_type, rcPos)) in
                              insertAQualifierMap (ops, new_q, new_id,
                                                   info << {names = [new_name],
                                                            dfn   = new_dfn})
