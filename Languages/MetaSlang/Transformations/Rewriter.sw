@@ -644,7 +644,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
      | Lambda(lrules,b) ->
        let last_rule = last lrules in
        mapEach(fn (first,rule as (pat,cond,M),rest) -> 
-                 rewritePattern(solvers,boundVars,pat,path, rules, rule = last_rule)
+                 rewritePattern(solvers,boundVars,pat,path, rules, length lrules > 1 && rule = last_rule)
                  >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
          lrules               % A condition on the last case should be guaranteed by the type
        @@ (fn () ->
