@@ -81,6 +81,8 @@ op sliceForCGen (ms_spec    : Spec,
            Some Macro
          else
            None
+       | Theorem pending_tref ->
+         None
  in
  executionSlice (ms_spec, parseCTranslationPragmas, c_oracle, root_ops, root_types)
 
