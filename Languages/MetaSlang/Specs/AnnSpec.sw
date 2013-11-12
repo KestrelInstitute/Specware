@@ -110,6 +110,10 @@ AnnSpec qualifying spec
  type PathTerm.Path = List Nat
 
  % A RuleSpec records what transformation was used to refine an op
+ % We introduce uninterpreted types for the various "proof representations" for transforms.
+ type MergeRules.TraceTree
+ op MergeRules.printMergeRulesProof(pr:MSTerm -> String)(t:TraceTree):String
+ 
  type RuleSpec =
    | Unfold      QualifiedId % replace a name with its def
    | Fold        QualifiedId % replace a def with a name
@@ -127,12 +131,10 @@ AnnSpec qualifying spec
    | Eval % partial evaluation
    | Context % using context info in rewriting a term; e.g., p -> true in q of "if p then q else r"
    | AllDefs % ??? not used
+   | MergeRulesTransform TraceTree % A mergerules proof
 
  type RuleSpecs = List RuleSpec
 
-
- % for the MergeRulesProof constructor, below
- type MergeRules.TraceTree
 
  % proof that a term equals another
  type EqProof =
@@ -933,7 +935,10 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
    case pf of
      | ImplTrans (pf1, tm, pf2) ->
        ImplTrans (mapImplProof f pf1, f tm, mapImplProof f pf2)
-     | _ -> pf
+     | ImplTheorem qid -> ImplTheorem qid
+     | ImplEq pf -> ImplEq (mapEqProof f pf)
+     | ImplProofTactic nm -> ImplProofTactic nm
+     | MergeRulesProof tt -> MergeRulesProof tt
 
  op mapPredicateProof : (MSTerm -> MSTerm) -> PredicateProof -> PredicateProof
  def mapPredicateProof f pf =

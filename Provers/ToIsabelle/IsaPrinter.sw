@@ -780,6 +780,8 @@ IsaTermPrinter qualifying spec
                                                      else fromPathTerm((hist@(i-1)).1, f_path),
                                                   tr_tm, rl_spc, indent + 16)))
 
+  % This is invoked with the 'refine def' changes the *body* of
+  % the op, but not if it defines a previously uninterpreted op.
   op generateProofForRefineObligation(c: Context, eq_tm: MSTerm, init_dfn: MSTerm, hist: TransformHistory, spc: Spec): String =
     let (lhs, rhs) = equalityArgs eq_tm in
     let path = pathWithinDef lhs in
@@ -795,8 +797,19 @@ IsaTermPrinter qualifying spec
     ^ "  finally show ?thesis by assumption\n"
     ^ "qed\n"
 
+  % This is invoked when the 'refine def' simply changes the *type* of
+  % the op, and does not change (or define) the definition of the op.
   op generateProofForRefinedPostConditionObligation
        (c: Context, new_pcond: MSTerm, prev_pcond: MSTerm, conds: MSTerm, hist: TransformHistory): String =
+
+    % We handle transform-specific transforms special.
+    case hist of
+      | [(tr_tm, MergeRulesTransform t)] ->
+        let _ = writeLine "Generating MergeRules Proof" in
+        printMergeRulesProof
+                             (fn tm -> ppTermStrIndent c Top tm 7) t
+      | _  -> 
+       
     % let _ = writeLine("gpc: \n"^printTerm new_pcond^"\n  =>\n"^printTerm prev_pcond^"\n"^anyToPrettyString hist) in
     %if true then "" else
     %let path = pathWithinDef lhs in
@@ -3524,6 +3537,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
    toString(format(110, ppTerm c parentTerm term))
 
+ % ppTermStrIndent
+ %  c: Isabelle Translation Context
+ %  parentTerm: Information about the parent, used soley for parentheization
+ %  term: the term to print
+ %  indent: minimal starting column if term does not print on one line.
  op ppTermStrIndent(c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Int): String =
    let indentPP = PrettyPrint.blanks indent in
    let termPP   = ppTerm c parentTerm term in
