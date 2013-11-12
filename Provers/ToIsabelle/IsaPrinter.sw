@@ -1152,7 +1152,8 @@ IsaTermPrinter qualifying spec
     (* by tactic *)
      showFinalResult (ppImplication (c, lhs, rhs), singleTacticProof (ruleTactic tactic))
   | MergeRulesProof tree ->
-    fail "ppImplicationProof: need to add support for MergeRules!"
+        IsaProof (string (printMergeRulesProof (fn tm -> ppTermStrIndent c Top tm 7) tree))
+    % fail "ppImplicationProof: need to add support for MergeRules!"
 
 
 %%%

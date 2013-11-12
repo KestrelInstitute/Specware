@@ -117,7 +117,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
 
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
-    let _ = writeLine ("Calculated Precondition: " ^ printTerm preAsConj) in
+    let _ = writeLine ("Calculated Failure Condition: " ^ printTerm preAsConj) in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
     let refinedType =
           mkCombType( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
@@ -128,7 +128,9 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                              let _ = writeLine "Refining quid" in
                              let th = Some ([(Any noPos : MSTerm, MergeRulesTransform prf)],
                                             Some (RefineStrengthen (MergeRulesProof prf))) in
-                             addRefinedTypeH(spc,oi,refinedType,th)
+                             % Same thing, but don't save the mergerules proof in the tracehistory.
+                             let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof prf))) in
+                             addRefinedTypeH(spc,oi,refinedType,th2)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
                   addOpDef(spc,fname,Nonfix,body)
