@@ -545,7 +545,7 @@ IsaTermPrinter qualifying spec
     let newelements =
         foldr (fn (el, elts) ->
                  case el of
-                   | OpDef(qid as Qualified(q,id1), refine_num, Some (hist, pf), _) | refine_num > 0 && hist ~= [] ->
+                   | OpDef(qid as Qualified(q,id1), refine_num, Some (hist, pf), _) | refine_num > 0 && (hist ~= [] || pf ~= None) ->
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
