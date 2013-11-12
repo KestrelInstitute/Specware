@@ -25,317 +25,16 @@ RemoveCurrying qualifying spec
 import CurryUtils
 import /Languages/SpecCalculus/AbstractSyntax/CheckSpec
 
-op SpecTransform.removeCurrying (spc : Spec) : Spec =
- let spc = add_uncurried_ops   spc in
- let spc = remove_curried_refs spc in
- spc
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op remove_curried_refs (spc : Spec) : Spec =
- let new_ops = 
-     mapOpInfos (fn old_info ->
-                   if definedOpInfo? old_info then
-                     %% TODO: Handle multiple defs??
-                     let (old_tvs, old_typ, old_tm) = unpackFirstOpDef old_info in
-                     let new_tm       = uncurry_term (old_tm,  spc, false) in
-                     let (_, new_typ) = uncurry_type (old_typ, spc, false) in
-                     let new_dfn = maybePiTerm (old_tvs, TypedTerm (new_tm, new_typ, noPos)) in
-                     old_info << {dfn = new_dfn}
-                   else
-                     old_info)
-                spc.ops
- in
- let new_types = 
-     mapTypeInfos (fn old_info ->
-                     if definedTypeInfo? old_info then
-                       %% TODO: Handle multiple defs??
-                       let (old_tvs, old_typ) = unpackFirstTypeDef old_info in
-                       let new_typ = (uncurry_type (old_typ, spc, false)).2 in
-                       let new_dfn = maybePiType (old_tvs, new_typ) in
-                       old_info << {dfn = new_dfn}
-                     else
-                       old_info)
-                  spc.types
- in
- setOps (setTypes (spc, new_types), new_ops)
-
-op mkTypedApply (f : MSTerm, arg : MSTerm, spc : Spec) : MSTerm =
- let typed_f = case f of
-                 | Fun _ -> f
-                 | Var _ -> f
-                 | TypedTerm _ -> f
-                 | _ -> 
-                   let f_type  = inferType (spc, f) in
-                   TypedTerm (f, f_type, noPos) 
- in
- mkApply (typed_f, arg)
-
-op add_uncurried_ops (spc : Spec) : Spec =
- let
-   def mkNewApply (f, args) = 
-     case args of
-       | [] -> f
-       | arg :: args ->
-         mkNewApply (mkTypedApply (f, arg, spc), args)
-
-   def curried_name name =
-     let Some info = findTheOp (spc, name) in
-     let Qualified(q,id) = name in
-     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-     case (old_defs ++ old_decls) of
-       | old_dfn :: _ ->
-         (let (old_tvs, old_type, old_tm) = unpackFirstTerm old_dfn in
-          case new_uncurried_op (spc, id, old_type) of
-            | Some (new_id, curry_level, new_type) -> Some (mkQualifiedId (q, new_id))
-            | _ -> None)
-       | _ ->
-         None
-
-   def add_uncurry_elements elts =
-     foldl (fn (old_elts, old_elt) ->
-              case old_elt of
-
-                | Import (s_tm, imported_spec, sub_elts, _) ->
-                  let new_elts = add_uncurry_elements sub_elts in
-                  let new_elt  = Import (s_tm, imported_spec, new_elts, noPos) in
-                  let new_elts = old_elts <| new_elt in
-                  new_elts
-
-                | Op (name, def?, _) ->  % true means decl includes def
-                  (case curried_name name of
-                     | Some new_name ->
-                       let new_elt = Op (new_name, def?, noPos) in
-                       old_elts <| old_elt <| new_elt
-                     | _ ->
-                       old_elts <| old_elt)
-
-                | OpDef (name, x, y, a) ->
-                  (case curried_name name of
-                     | Some new_name ->
-                       let new_elt = OpDef (new_name, x, y, noPos) in
-                       old_elts <| old_elt <| new_elt
-                     | _ ->
-                       old_elts <| old_elt)
-                | _ -> 
-                  old_elts <| old_elt)
-           []
-           elts
- in
- let new_ops = 
-     foldOpInfos (fn (info, ops) ->
-                    let Qualified(q,id) = primaryOpName info in
-                    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-                    case old_defs ++ old_decls of
-                      | old_dfn :: _ ->
-                        (let (old_tvs, old_type, old_tm) = unpackFirstTerm old_dfn in
-                         case new_uncurried_op (spc, id, old_type) of
-                           
-                           | Some (new_id, curry_level, new_type) ->
-                             let new_name = Qualified (q, new_id) in
-                             let new_arg_types = 
-                                 case new_type of
-                                   | Arrow (Product (fields, _), _, _) -> 
-                                     map (fn (_, typ) -> typ) fields
-                                   | _ -> 
-                                     [new_type]
-                             in
-                             let new_vars      = mk_new_vars (new_arg_types, [], spc) in
-                             let new_pvars     = map mkVarPat new_vars                in
-                             let new_tvars     = map mkVar    new_vars                in
-                             let new_pat       = mkTuplePat   new_pvars               in
-
-                             let new_body      = case old_tm of
-                                                   | Any _ -> old_tm
-                                                   | _ ->
-                                                     mkNewApply (TypedTerm (old_tm, old_type, noPos), 
-                                                                 new_tvars)
-                             in
-                             let new_rule      = (new_pat, trueTerm, new_body)        in
-                             let new_lambda    = Lambda ([new_rule], noPos)           in
-                             let (_, new_type) = uncurry_type (old_type, spc, true)   in 
-                             let new_dfn       = maybePiTerm (old_tvs, TypedTerm (new_lambda, new_type, noPos)) in
-                             insertAQualifierMap (ops, q, new_id,
-                                                  info << {names = [new_name],
-                                                           dfn   = new_dfn})
-                          | _ -> ops)
-                      | _ -> ops)
-                 spc.ops
-                 spc.ops
- in
- let new_elts = add_uncurry_elements spc.elements in
- spc << {ops        = new_ops, 
-         elements   = new_elts}
-
-op new_uncurried_op (spc      : Spec, 
-                     old_id   : Id, 
-                     old_type : MSType) 
- : Option (Id * Nat * MSType) =
- let (curried?, new_type) = uncurry_type (old_type, spc, true) in
- if ~curried? then
-   None
- else
-   let curry_level = curryShapeNum (spc, old_type)     in
-   let new_name    = uncurryId (old_id, curry_level) in
-   Some (new_name, curry_level, new_type)
-
-%op  unCurryDef: MSTerm * Nat -> MSTerm
-%def unCurryDef (tm, curryshape) =
-
-op curried_fun_and_args (term : MSTerm) : Option (MSTerm * MSTerms) =
- let
-   def aux (tm, i,  args) = 
-     case tm of
-       | Fun   _           -> Some (tm, args)
-       | Apply (t1, t2, _) -> aux (t1, i + 1, t2::args)
-       | _ -> None
- in
- aux (term, 0, [])
-
-op uncurry_pattern (pat : MSPattern, spc : Spec) : MSPattern =
-  case pat of
-    | RestrictedPat(pat, tm, ann) -> RestrictedPat(pat, uncurry_term(tm, spc, false), ann)
-    | _ -> pat  %%FIXME: Add more cases!
-
-op uncurry_term (term : MSTerm, spc : Spec, toplevel_dfn? : Bool) : MSTerm =
- %% if toplevel_dfn? is true we wish to flatten nested lambdas, otherwise not
- let
-   def uncurry_term_rec tm = 
-     uncurry_term (tm, spc, false)
-
-   def uncurry_apply (f, args) =
-     let f_type      = inferType     (spc, f)      in
-     let curry_level = curryShapeNum (spc, f_type) in
-     let new_f =
-         if curry_level > 1 && curry_level = length args then
-           convert_fun (f, curry_level, spc) 
-         else
-           f
-     in
-     let new_arg = mkTuple (map uncurry_term_rec args) in
-     mkTypedApply (new_f, new_arg, spc)
-         
- in
- case term of
-
-   | Apply (t1, t2, a) ->
-     (case curried_fun_and_args term  of
-        | Some (f, args) -> 
-          uncurry_apply (f, args)
-        | _ ->
-          let new_t1 = uncurry_term_rec t1 in
-          let new_t2 = uncurry_term_rec t2 in
-          let new_tm = Apply (new_t1, new_t2, noPos) in
-          new_tm)
-
-   | Record (old_row, a) ->
-     let new_row = map (fn (id, tm) -> 
-                          (id, uncurry_term_rec tm)) 
-                       old_row 
-     in
-     if new_row = old_row then 
-       term
-     else 
-       Record (new_row, a)
-
-   | Var ((id, old_type), a) ->
-     let (curried?, new_type) = uncurry_type (old_type, spc, false) in
-     if ~ curried? then
-       term
-     else 
-       Var ((id, new_type), a)
-
-   | Fun (Op (Qualified (old_q, old_id), fixity), old_type, a) ->
-     (case new_uncurried_op (spc, old_id, old_type) of
-
-        | Some (new_id, curry_level, new_type) -> 
-          let new_name = Qualified (old_q, new_id) in
-          Fun (Op (new_name, fixity), new_type, a) 
-
-        | _ -> term)
-
-     %% Assume multiple rules have been transformed away and predicate is true
-   | Lambda ([(pat, _, old_body)], _)  ->
-     if toplevel_dfn? then
-       let body_type = inferType (spc, old_body) in
-       let pat = uncurry_pattern(pat, spc) in
-       if arrow? (spc, body_type) then
-         flatten_lambda ([pat], old_body, body_type, spc) 
-       else
-         let new_body = uncurry_term_rec old_body in
-         if new_body = old_body then
-           term
-         else 
-           mkLambda (pat, new_body)
-     else
-       let new_body = uncurry_term_rec old_body in
-       if new_body = old_body then
-         term
-       else 
-         mkLambda (pat, new_body)
-
-   | Lambda (old_rules, a) ->
-     let new_rules = map (fn (old_pat, old_cond, old_body) -> 
-                            let new_cond = uncurry_term_rec old_cond in
-                            let new_body = uncurry_term_rec old_body in
-                            (old_pat, new_cond, new_body))
-                         old_rules
-     in 
-     Lambda (new_rules, a)
-
-   | Let (old_decls, old_body, a)  ->
-     let new_decls = map (fn (pat, tm) -> 
-                            (pat, uncurry_term_rec tm))
-                         old_decls
-     in
-     let new_body = uncurry_term_rec old_body in
-     if new_body = old_body && new_decls = old_decls then
-       term
-     else
-       Let (new_decls, new_body, a)
-
-   | LetRec (old_decls, old_body, a) ->
-     let new_decls = map (fn (pat, tm) -> 
-                            (pat, uncurry_term_rec tm))
-                         old_decls
-     in
-     let new_body = uncurry_term_rec old_body in
-     if new_body = old_body && new_decls = old_decls then
-       term
-     else 
-       LetRec (new_decls, new_body, a)
-
-   | The (var, old_tm, a) ->
-     let new_tm = uncurry_term_rec old_tm in
-     if new_tm = old_tm then
-       term
-     else
-       The (var, new_tm, a)
-
-   | IfThenElse (t1, t2, t3, a) ->
-     let new_t1 = uncurry_term_rec t1 in
-     let new_t2 = uncurry_term_rec t2 in
-     let new_t3 = uncurry_term_rec t3 in
-     if new_t1 = t1 && new_t2 = t2 && new_t3 = t3 then 
-       term
-     else 
-       IfThenElse (new_t1, new_t2, new_t3, a)
-
-   | Seq (                     terms, a) -> 
-     Seq (map uncurry_term_rec terms, a)
-
-   | Bind (binder, vars, term, a)  -> Bind(binder, vars, uncurry_term(term, spc, false), a)
-
-   | TypedTerm(tm,ty,ann) -> 
-     let (_,new_ty) = uncurry_type(ty,spc, false) in 
-     TypedTerm(uncurry_term(tm,spc,false),new_ty,ann)
-
-   | _ -> term
+op rcPos : Position = Internal "removeCurrying"
 
 %% Todo: Better way to do this?
  % Open up the definition of a named type (wrapped in a call of Base),
  % unless it is a co-product (which can cause loops for users of this routine).  Does not recurse.
 op unfoldBaseNoCoProduct (sp : Spec, ty : MSType) : MSType =
   case ty of
-    | Base (qid, tys, a) ->
+    | Base (qid, tys, _) ->
       (case findTheType (sp, qid) of
 	 | None -> ty %TODO Should this be an error?
 	 | Some info ->
@@ -383,10 +82,10 @@ op uncurry_type (typ : MSType, spc : Spec, toplevel_dfn? : Bool) : Bool * MSType
  in
  case typ of
 
-   | Subtype (old_parent, old_pred, a) ->
+   | Subtype (old_parent, old_pred, _) ->
      let (changed?, new_parent) = uncurry_rec old_parent            in
-     let new_pred               = uncurry_term (old_pred, spc, false)      in
-     let new_type               = Subtype (new_parent, new_pred, a) in
+     let new_pred               = uncurry_term (old_pred, spc, false)   in
+     let new_type               = Subtype (new_parent, new_pred, rcPos) in
      (changed?, new_type)
 
    | Arrow (dom, rng, _) ->
@@ -395,7 +94,7 @@ op uncurry_type (typ : MSType, spc : Spec, toplevel_dfn? : Bool) : Bool * MSType
      else
        (false, typ)
 
-   | Product (old_fields, a) ->
+   | Product (old_fields, _) ->
      let (changed?, new_fields) = 
          foldrPred (fn (id, old_type) ->
                       let (changed?, new_type) = uncurry_rec old_type in
@@ -403,10 +102,10 @@ op uncurry_type (typ : MSType, spc : Spec, toplevel_dfn? : Bool) : Bool * MSType
                    false 
                    old_fields
      in 
-     let new_type = Product (new_fields, a) in
+     let new_type = Product (new_fields, rcPos) in
      (changed?, new_type)
 
-   | CoProduct (old_fields, a) ->
+   | CoProduct (old_fields, _) ->
      let (changed?, new_fields) =
          foldrPred (fn (id, opt_type) ->
                       case opt_type of
@@ -418,12 +117,12 @@ op uncurry_type (typ : MSType, spc : Spec, toplevel_dfn? : Bool) : Bool * MSType
                    false 
                    old_fields
      in 
-     (changed?, CoProduct (new_fields, a))
+     (changed?, CoProduct (new_fields, rcPos))
 
-   | Quotient (old_base, old_rel, a) ->
+   | Quotient (old_base, old_rel, _) ->
      let (changed?, new_base) = uncurry_rec old_base            in
      let new_rel              = uncurry_term (old_rel, spc, false)     in
-     let new_type             = Quotient (new_base, new_rel, a) in
+     let new_type             = Quotient (new_base, new_rel, rcPos) in
      (changed?, new_type)
 
    | Base(qid, args, ann) -> 
@@ -438,39 +137,62 @@ op uncurry_type (typ : MSType, spc : Spec, toplevel_dfn? : Bool) : Bool * MSType
    | _ -> 
      (false, typ)
 
-op flatten_lambda (outer_pats : MSPatterns, 
-                   body       : MSTerm, 
-                   body_type  : MSType, 
-                   spc        : Spec) 
+op uncurried_op_info (spc      : Spec, 
+                     old_id   : Id, 
+                     old_type : MSType) 
+ : Option (Id * Nat * MSType) =
+ let (curried?, new_type) = uncurry_type (old_type, spc, true) in
+ if ~curried? then
+   None
+ else
+   let curry_level = curryShapeNum (spc, old_type)     in
+   let new_name    = uncurryId (old_id, curry_level) in
+   Some (new_name, curry_level, new_type)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op uncurry_pattern (pat : MSPattern, spc : Spec) : MSPattern =
+  case pat of
+    | RestrictedPat(pat, tm, _) -> 
+      RestrictedPat (pat, uncurry_term (tm, spc, false), rcPos)
+    | _ -> pat  %%FIXME: Add more cases!
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op convert_fun (term        : MSTerm, 
+                curry_level : Nat, 
+                spc         : Spec) 
  : MSTerm =
- case body of
+ case term of
 
-   | Lambda ([(pat, _, body)], _) ->
-     flatten_lambda (outer_pats ++ [pat], 
-                     body, 
-                     inferType (spc, body), 
-                     spc)
+   | Fun (Op (Qualified (old_q, old_id), _), typ, _) ->
+     let new_id   = uncurryId (old_id, curry_level) in
+     let new_name = Qualified (old_q, new_id)         in
+     let new_type = (uncurry_type (typ, spc, false)).2       in
+     mkOp (new_name, new_type)
 
-   | _ ->
-     case arrowOpt (spc, body_type) of
+   | _ -> term
 
-       | Some (dom, _) ->
-         %% !!? If dom is a product should we flatten it? No, for the moment.
-         let new_vars = mk_new_vars ([dom], 
-                                     map (fn (id, _)-> id) (freeVars body), 
-                                     spc)
-         in
-         let new_pvars = map mkVarPat new_vars                in
-         let new_tvars = map mkVar    new_vars                in
-         let new_pat   = mkTuplePat (outer_pats ++ new_pvars) in
-         let new_body  = mkTypedApply (body, mkTuple new_tvars, spc) in
-         let new_body  = uncurry_term (new_body, spc, true)         in
-         mkLambda (new_pat, new_body) 
+op curried_fun_and_args (term : MSTerm) : Option (MSTerm * MSTerms) =
+ let
+   def aux (tm, i,  args) = 
+     case tm of
+       | Fun   _           -> Some (tm, args)
+       | Apply (t1, t2, _) -> aux (t1, i + 1, t2::args)
+       | _ -> None
+ in
+ aux (term, 0, [])
 
-       | _ -> 
-         let new_pat  = mkTuplePat outer_pats    in
-         let new_body = uncurry_term (body, spc, false) in
-         mkLambda (new_pat, new_body)
+op mkTypedApply (f : MSTerm, arg : MSTerm, spc : Spec) : MSTerm =
+ let typed_f = case f of
+                 | Fun _ -> f
+                 | Var _ -> f
+                 | TypedTerm _ -> f
+                 | _ -> 
+                   let f_type  = inferType (spc, f) in
+                   TypedTerm (f, f_type, rcPos) 
+ in
+ mkApply (typed_f, arg)
 
 op var_name_pool : List String = ["x", "y", "z", "w", "l", "m", "n", "o", "p", "q", "r", "s"]
 
@@ -498,18 +220,309 @@ op mk_new_vars (types    : MSTypes,
  in 
  find_unused_name (types, used_ids, var_name_pool)
 
-op convert_fun (term        : MSTerm, 
-                curry_level : Nat, 
-                spc         : Spec) 
+op flatten_lambda (outer_pats : MSPatterns, 
+                   body       : MSTerm, 
+                   body_type  : MSType, 
+                   spc        : Spec) 
  : MSTerm =
+ case body of
+
+   | Lambda ([(pat, _, body)], _) ->
+     flatten_lambda (outer_pats ++ [pat], 
+                     body, 
+                     inferType (spc, body), 
+                     spc)
+
+   | _ ->
+     case arrowOpt (spc, body_type) of
+
+       | Some (dom, _) ->
+         %% !!? If dom is a product should we flatten it? No, for the moment.
+         let new_vars = mk_new_vars ([dom], 
+                                     map (fn (id, _)-> id) (freeVars body), 
+                                     spc)
+         in
+         let new_pvars = map mkVarPat new_vars                       in
+         let new_tvars = map mkVar    new_vars                       in
+         let new_pat   = mkTuplePat (outer_pats ++ new_pvars)        in
+         let new_body  = mkTypedApply (body, mkTuple new_tvars, spc) in
+         let new_body  = uncurry_term (new_body, spc, true)          in
+         mkLambda (new_pat, new_body) 
+
+       | _ -> 
+         let new_pat  = mkTuplePat outer_pats    in
+         let new_body = uncurry_term (body, spc, false) in
+         mkLambda (new_pat, new_body)
+
+op uncurry_term (term : MSTerm, spc : Spec, toplevel_dfn? : Bool) : MSTerm =
+ %% if toplevel_dfn? is true we wish to flatten nested lambdas, otherwise not
+ let
+   def uncurry_term_rec tm = 
+     uncurry_term (tm, spc, false)
+
+   def uncurry_apply (f, args) =
+     let f_type      = inferType     (spc, f)      in
+     let curry_level = curryShapeNum (spc, f_type) in
+     let new_f =
+         if curry_level > 1 && curry_level = length args then
+           convert_fun (f, curry_level, spc) 
+         else
+           f
+     in
+     let new_arg = mkTuple (map uncurry_term_rec args) in
+     mkTypedApply (new_f, new_arg, spc)
+         
+ in
  case term of
 
-   | Fun (Op (Qualified (old_q, old_id), _), typ, _) ->
-     let new_id   = uncurryId (old_id, curry_level) in
-     let new_name = Qualified (old_q, new_id)         in
-     let new_type = (uncurry_type (typ, spc, false)).2       in
-     mkOp (new_name, new_type)
+   | Apply (t1, t2, _) ->
+     (case curried_fun_and_args term  of
+        | Some (f, args) -> 
+          uncurry_apply (f, args)
+        | _ ->
+          let new_t1 = uncurry_term_rec t1 in
+          let new_t2 = uncurry_term_rec t2 in
+          let new_tm = Apply (new_t1, new_t2, rcPos) in
+          new_tm)
+
+   | Record (old_row, _) ->
+     let new_row = map (fn (id, tm) -> 
+                          (id, uncurry_term_rec tm)) 
+                       old_row 
+     in
+     if new_row = old_row then 
+       term
+     else 
+       Record (new_row, rcPos)
+
+   | Var ((id, old_type), _) ->
+     let (curried?, new_type) = uncurry_type (old_type, spc, false) in
+     if ~ curried? then
+       term
+     else 
+       Var ((id, new_type), rcPos)
+
+   | Fun (Op (Qualified (old_q, old_id), fixity), old_type, _) ->
+     (case uncurried_op_info (spc, old_id, old_type) of
+
+        | Some (new_id, curry_level, new_type) -> 
+          let new_name = Qualified (old_q, new_id) in
+          Fun (Op (new_name, fixity), new_type, rcPos) 
+
+        | _ -> term)
+
+     %% Assume multiple rules have been transformed away and predicate is true
+   | Lambda ([(pat, _, old_body)], _)  ->
+     if toplevel_dfn? then
+       let body_type = inferType (spc, old_body) in
+       let pat = uncurry_pattern(pat, spc) in
+       if arrow? (spc, body_type) then
+         flatten_lambda ([pat], old_body, body_type, spc) 
+       else
+         let new_body = uncurry_term_rec old_body in
+         if new_body = old_body then
+           term
+         else 
+           mkLambda (pat, new_body)
+     else
+       let new_body = uncurry_term_rec old_body in
+       if new_body = old_body then
+         term
+       else 
+         mkLambda (pat, new_body)
+
+   | Lambda (old_rules, _) ->
+     let new_rules = map (fn (old_pat, old_cond, old_body) -> 
+                            let new_cond = uncurry_term_rec old_cond in
+                            let new_body = uncurry_term_rec old_body in
+                            (old_pat, new_cond, new_body))
+                         old_rules
+     in 
+     Lambda (new_rules, rcPos)
+
+   | Let (old_decls, old_body, _)  ->
+     let new_decls = map (fn (pat, tm) -> 
+                            (pat, uncurry_term_rec tm))
+                         old_decls
+     in
+     let new_body = uncurry_term_rec old_body in
+     if new_body = old_body && new_decls = old_decls then
+       term
+     else
+       Let (new_decls, new_body, rcPos)
+
+   | LetRec (old_decls, old_body, _) ->
+     let new_decls = map (fn (pat, tm) -> 
+                            (pat, uncurry_term_rec tm))
+                         old_decls
+     in
+     let new_body = uncurry_term_rec old_body in
+     if new_body = old_body && new_decls = old_decls then
+       term
+     else 
+       LetRec (new_decls, new_body, rcPos)
+
+   | The (var, old_tm, _) ->
+     let new_tm = uncurry_term_rec old_tm in
+     if new_tm = old_tm then
+       term
+     else
+       The (var, new_tm, rcPos)
+
+   | IfThenElse (t1, t2, t3, _) ->
+     let new_t1 = uncurry_term_rec t1 in
+     let new_t2 = uncurry_term_rec t2 in
+     let new_t3 = uncurry_term_rec t3 in
+     if new_t1 = t1 && new_t2 = t2 && new_t3 = t3 then 
+       term
+     else 
+       IfThenElse (new_t1, new_t2, new_t3, rcPos)
+
+   | Seq (                     terms, _) -> 
+     Seq (map uncurry_term_rec terms, rcPos)
+
+   | Bind (binder, vars, term, _) -> 
+     Bind (binder, vars, uncurry_term (term, spc, false), rcPos)
+
+   | TypedTerm (tm, ty, _) -> 
+     let (_, new_ty) = uncurry_type (ty, spc, false) in 
+     TypedTerm (uncurry_term (tm, spc, false), new_ty, rcPos)
 
    | _ -> term
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op add_uncurried_ops (spc : Spec) : Spec =
+ let
+   def mkNewApply (f, args) = 
+     case args of
+       | [] -> f
+       | arg :: args ->
+         mkNewApply (mkTypedApply (f, arg, spc), args)
+
+   def uncurried_name name =
+     let Some info = findTheOp (spc, name) in
+     let Qualified(q,id) = name in
+     let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+     case (old_defs ++ old_decls) of
+       | old_dfn :: _ ->
+         (let (old_tvs, old_type, old_tm) = unpackFirstTerm old_dfn in
+          case uncurried_op_info (spc, id, old_type) of
+            | Some (new_id, curry_level, new_type) -> Some (mkQualifiedId (q, new_id))
+            | _ -> None)
+       | _ ->
+         None
+
+   def add_uncurry_elements elts =
+     foldl (fn (old_elts, old_elt) ->
+              case old_elt of
+
+                | Import (s_tm, imported_spec, sub_elts, _) ->
+                  let new_elts = add_uncurry_elements sub_elts in
+                  let new_elt  = Import (s_tm, imported_spec, new_elts, rcPos) in
+                  let new_elts = old_elts <| new_elt in
+                  new_elts
+
+                | Op (name, def?, _) ->  % true means decl includes def
+                  (case uncurried_name name of
+                     | Some new_name ->
+                       let new_elt = Op (new_name, def?, rcPos) in
+                       old_elts <| old_elt <| new_elt
+                     | _ ->
+                       old_elts <| old_elt)
+
+                | OpDef (name, x, y, _) ->
+                  (case uncurried_name name of
+                     | Some new_name ->
+                       let new_elt = OpDef (new_name, x, y, rcPos) in
+                       old_elts <| old_elt <| new_elt
+                     | _ ->
+                       old_elts <| old_elt)
+                | _ -> 
+                  old_elts <| old_elt)
+           []
+           elts
+ in
+ let new_ops =
+     foldOpInfos (fn (info, ops) ->
+                    let Qualified(q,id) = primaryOpName info in
+                    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+                    case old_defs ++ old_decls of
+                      | old_dfn :: _ ->
+                        (let (old_tvs, old_type, old_tm) = unpackFirstTerm old_dfn in
+                         case uncurried_op_info (spc, id, old_type) of
+                           
+                           | Some (new_id, curry_level, new_type) ->
+                             let new_name = Qualified (q, new_id) in
+                             let new_arg_types = 
+                                 case new_type of
+                                   | Arrow (Product (fields, _), _, _) -> 
+                                     map (fn (_, typ) -> typ) fields
+                                   | _ -> 
+                                     [new_type]
+                             in
+                             let new_vars      = mk_new_vars (new_arg_types, [], spc) in
+                             let new_pvars     = map mkVarPat new_vars                in
+                             let new_tvars     = map mkVar    new_vars                in
+                             let new_pat       = mkTuplePat   new_pvars               in
+
+                             let new_body      = case old_tm of
+                                                   | Any _ -> old_tm
+                                                   | _ ->
+                                                     mkNewApply (TypedTerm (old_tm, old_type, rcPos), 
+                                                                 new_tvars)
+                             in
+                             let new_rule      = (new_pat, trueTerm, new_body)        in
+                             let new_lambda    = Lambda ([new_rule], rcPos)           in
+                             let (_, new_type) = uncurry_type (old_type, spc, true)   in 
+                             let new_dfn       = maybePiTerm (old_tvs, TypedTerm (new_lambda, new_type, rcPos)) in
+                             insertAQualifierMap (ops, q, new_id,
+                                                  info << {names = [new_name],
+                                                           dfn   = new_dfn})
+                          | _ -> ops)
+                      | _ -> ops)
+                 spc.ops
+                 spc.ops
+ in
+ let new_elts = add_uncurry_elements spc.elements in
+ spc << {ops        = new_ops, 
+         elements   = new_elts}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op remove_curried_refs (spc : Spec) : Spec =
+ let new_ops = 
+     mapOpInfos (fn old_info ->
+                   if definedOpInfo? old_info then
+                     %% TODO: Handle multiple defs??
+                     let (old_tvs, old_typ, old_tm) = unpackFirstOpDef old_info in
+                     let new_tm       = uncurry_term (old_tm,  spc, false) in
+                     let (_, new_typ) = uncurry_type (old_typ, spc, false) in
+                     let new_dfn = maybePiTerm (old_tvs, TypedTerm (new_tm, new_typ, rcPos)) in
+                     old_info << {dfn = new_dfn}
+                   else
+                     old_info)
+                spc.ops
+ in
+ let new_types = 
+     mapTypeInfos (fn old_info ->
+                     if definedTypeInfo? old_info then
+                       %% TODO: Handle multiple defs??
+                       let (old_tvs, old_typ) = unpackFirstTypeDef old_info in
+                       let new_typ = (uncurry_type (old_typ, spc, false)).2 in
+                       let new_dfn = maybePiType (old_tvs, new_typ) in
+                       old_info << {dfn = new_dfn}
+                     else
+                       old_info)
+                  spc.types
+ in
+ setOps (setTypes (spc, new_types), new_ops)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op SpecTransform.removeCurrying (spc : Spec) : Spec =
+ let spc = add_uncurried_ops   spc in
+ let spc = remove_curried_refs spc in
+ spc
 
 end-spec
