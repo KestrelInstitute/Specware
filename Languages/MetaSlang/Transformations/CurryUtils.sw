@@ -120,9 +120,14 @@ CurryUtils qualifying spec
       of 0 -> ""
        | _ -> s^duplicateString(n - 1,s)
 
-  def unCurryName(name,n) =
-    if n <= 1 then name
-      else name^duplicateString(n,"-1")
+op uncurryId (id : Id, n : Nat) : Id =
+ if n <= 1 then 
+   id
+ else 
+   id ^ duplicateString (n, "-1")
+
+op uncurryName (Qualified (old_q, old_id) : OpName, level : Nat) : OpName =
+ mkQualifiedId (old_q, uncurryId (old_id, level))
 
 endspec
 

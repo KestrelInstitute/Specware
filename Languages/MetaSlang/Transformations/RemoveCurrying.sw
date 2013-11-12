@@ -174,7 +174,7 @@ op new_uncurried_op (spc      : Spec,
    None
  else
    let curry_level = curryShapeNum (spc, old_type)     in
-   let new_name    = unCurryName (old_id, curry_level) in
+   let new_name    = uncurryId (old_id, curry_level) in
    Some (new_name, curry_level, new_type)
 
 %op  unCurryDef: MSTerm * Nat -> MSTerm
@@ -505,7 +505,7 @@ op convert_fun (term        : MSTerm,
  case term of
 
    | Fun (Op (Qualified (old_q, old_id), _), typ, _) ->
-     let new_id   = unCurryName (old_id, curry_level) in
+     let new_id   = uncurryId (old_id, curry_level) in
      let new_name = Qualified (old_q, new_id)         in
      let new_type = (uncurry_type (typ, spc, false)).2       in
      mkOp (new_name, new_type)
