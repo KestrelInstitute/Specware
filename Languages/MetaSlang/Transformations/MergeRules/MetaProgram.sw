@@ -495,10 +495,10 @@ indent ^ "       (* Theorem for subterm *)\n" ^
 (mkIsarProof isabelleTerm (Some "okTrue") tt (indent ^ "    ")) ^ 
 
 indent ^ "     (* Assumptions for subterm *)\n" ^
-indent ^ "     from pred assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions tt))) ^ "\" by simp\n" ^
+indent ^ "     from pred assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions tt))) ^ "\" by auto\n" ^
 
 indent ^ "     (* Failures for subterm *)\n" ^
-indent ^ "     from pred fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure tt))) ^ "\" by simp\n" ^
+indent ^ "     from pred fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure tt))) ^ "\" by auto\n" ^
 
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
 indent ^ "     have result' : \"" ^ isabelleTerm (traceResult tt) ^ "\"\n" ^
@@ -507,10 +507,10 @@ indent ^ "       apply (fact pred)\n" ^
 indent ^ "       apply (fact result)\n" ^
 indent ^ "     done\n" ^
    
+indent ^ "     have rtrue : \"" ^ equant isabelleTerm tt ^ "\" by (fact okTrue[OF assumptions', OF fails', OF result' ])\n" ^
+% indent ^ "     from okTrue result' assumptions' fails' have rtrue : \"" ^ (isabelleTerm (cdnfToTerm (traceInputs tt))) ^ "\" by simp\n" ^
 
-indent ^ "     from okTrue result' assumptions' fails' have rtrue : \"" ^ (isabelleTerm (cdnfToTerm (traceInputs tt))) ^ "\" by simp\n" ^
-indent ^ "     from pred assumptions rtrue show ?thesis by simp\n" ^
-
+indent ^ "     from pred assumptions rtrue show ?thesis by auto\n" ^
 indent ^ "   next\n" ^
 
 indent ^ "     (* False Case *)        \n" ^
@@ -518,21 +518,21 @@ indent ^ "     (* False Case *)        \n" ^
    
 indent ^ "     assume npred: \"~" ^ (isabelleTerm split) ^ "\"\n" ^
 indent ^ "     (* Theorem for subterm *)\n"^
-(mkIsarProof isabelleTerm (Some "ok2") ff (indent ^ "     ")) ^ 
+(mkIsarProof isabelleTerm (Some "okFalse") ff (indent ^ "     ")) ^ 
         
 indent ^ "     (* Assumptions for subterm *)\n" ^
-indent ^ "     from npred assumptions have nassumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions ff)))  ^ "\" by simp\n" ^
+indent ^ "     from npred assumptions have nassumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions ff)))  ^ "\" by auto\n" ^
 indent ^ "     (* Failures for subterm *)\n" ^
-indent ^ "     from npred fails have nfails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure ff))) ^ ")\" by simp\n" ^
+indent ^ "     from npred fails have nfails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure ff))) ^ ")\" by auto\n" ^
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
 indent ^ "     have nresult' : \"" ^ isabelleTerm (traceResult ff) ^ "\"\n" ^   
 indent ^ "       apply (rule iffD1[OF if_not_P])\n" ^
 indent ^ "       apply (fact npred)\n" ^
 indent ^ "       apply (fact result)\n" ^
 indent ^ "     done\n" ^
-   
-indent ^ "     from nresult' nassumptions' nfails' ok2 have rfalse : \"" ^ isabelleTerm (cdnfToTerm (traceInputs ff)) ^ "\" by simp\n" ^
-indent ^ "     from npred assumptions rfalse show ?thesis by simp\n" ^
+indent ^ "     have rfalse : \"" ^ equant isabelleTerm ff ^ "\" by (fact okFalse[OF nassumptions', OF nfails', OF nresult' ])\n" ^
+% indent ^ "     from nresult' nassumptions' nfails' okFalse have rfalse : \"" ^ isabelleTerm (cdnfToTerm (traceInputs ff)) ^ "\" by simp\n" ^
+indent ^ "     from npred assumptions rfalse show ?thesis by auto\n" ^
 indent ^ "qed (* End proof by cases *)\n" ^
 uindent ^ "qed\n"    
     | TCase (result,inputs,assumptions,scrutinee,alts,pre,vars) ->
@@ -557,13 +557,13 @@ indent ^ "      case " ^ parenPat pterm ^ "\n" ^
 indent ^ "\n" ^
 mkIsarProof isabelleTerm None pf (indent ^ "      ") ^
 indent ^ "      from " ^ cons ^ " assumptions have assumptions' : \"" ^
-                isabelleTerm (mkAnd (traceAssumptions pf)) ^ "\" by simp\n" ^
-indent ^ "      from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure pf))) ^ "\" by simp\n" ^
+                isabelleTerm (mkAnd (traceAssumptions pf)) ^ "\" by auto\n" ^
+indent ^ "      from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure pf))) ^ "\" by auto\n" ^
 indent ^ "      from " ^ cons ^ " result have result' :  \"" ^
-                isabelleTerm (traceResult pf) ^ "\" by simp\n" ^
-
-indent ^ "      from ok assumptions' fails' result' have \"" ^ isabelleTerm (inputTerm (traceInputs pf)) ^ "\" by simp\n" ^
-indent ^ "      from " ^ cons ^ " assumptions result' have comb:\"" ^ isabelleTerm (inputTerm inputs) ^ "\" by simp\n" ^
+                isabelleTerm (traceResult pf) ^ "\" by auto\n" ^
+indent ^ "      have \"" ^ isabelleTerm (inputTerm (traceInputs pf)) ^ "\" by (fact ok[OF assumptions',OF fails',OF result'] )\n" ^
+% indent ^ "      from ok assumptions' fails' result' have \"" ^ isabelleTerm (inputTerm (traceInputs pf)) ^ "\" by simp\n" ^
+indent ^ "      from " ^ cons ^ " assumptions result' have comb:\"" ^ isabelleTerm (inputTerm inputs) ^ "\" by auto\n" ^
 indent ^ "      from comb show ?thesis  by (rule exI)"
 
       in
@@ -586,13 +586,16 @@ indent ^ "qed\n"
     | TFactoring (res,inps,assumps,factors,sub,fail,vars) ->
 
 mkIsarProof isabelleTerm None sub indent ^
-indent ^ "from result have factors: \"" ^ isabelleTerm (mkAnd factors) ^ "\" by simp \n" ^   
+indent ^ "from result have factors: \"" ^ isabelleTerm (mkAnd factors) ^ "\" by auto \n" ^   
 indent ^ "(* Assumptions for subterm *)\n" ^
-indent ^ "from factors assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions sub))) ^ "\" by simp\n" ^
+indent ^ "from factors assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions sub))) ^ "\" by auto\n" ^
 indent ^ "(* Failures for subterm *)\n" ^
-indent ^ "from factors fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by simp\n" ^
-indent ^ "from ok assumptions' fails'  have rfactor: \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^
-indent ^  "from factors assumptions rfactor show ?thesis by simp\n" ^
+indent ^ "from factors fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by auto\n" ^
+indent ^ "from result factors  have result': \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^   
+%%% FACT APPLICATION HERE
+indent ^ "have rfactor: \"" ^ (equant isabelleTerm sub) ^ "\" by (fact ok[OF assumptions', OF fails', OF result'])\n"  ^   
+%indent ^ "from ok assumptions' fails'  have rfactor: \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^
+indent ^  "from factors assumptions rfactor show ?thesis by auto\n" ^
 % indent ^ "show ?thesis sorry\n" ^   
 uindent ^ "qed\n"
 
@@ -608,14 +611,15 @@ uindent ^ "qed\n"
      let defn_conj = mkAnd (map (fn (vars, defn) ->
                                    mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
  (* Do this first, to fix the existentially quantified variable *)
+% FIXME: The following step sometimes fails, but will succedd when the proof is replaced with '(rule conjE)'. WTF?
 indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"" ^ isabelleTerm inner ^ "\" by auto\n" ^
 
 mkIsarProof isabelleTerm (Some "ok_local") sub indent ^
 
-indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by simp\n" ^
-indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by simp\n" ^
-indent ^ "from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by simp\n" ^
-indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by simp\n" ^
+indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" ^
+indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
+indent ^ "from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by auto\n" ^
+indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by auto\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
 indent ^ "from sub_done defns show ?thesis by auto\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
