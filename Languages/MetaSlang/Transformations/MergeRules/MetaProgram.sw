@@ -130,7 +130,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                                             Some (RefineStrengthen (MergeRulesProof prf))) in
                              % Same thing, but don't save the mergerules proof in the tracehistory.
                              let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof prf))) in
-                             addRefinedTypeH(spc,oi,refinedType,th2)
+                             addRefinedTypeH(spc,oi,refinedType,th)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
                   addOpDef(spc,fname,Nonfix,body)
@@ -642,9 +642,8 @@ indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
 indent ^ "have precondition : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ "\" by simp\n" ^
 indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
-indent ^ "from unfolded have ?thesis by simp\n" ^
-% indent ^ "*)\n" ^
-indent ^ "qed\n"
+indent ^ "from unfolded have ?thesis by simp\n"
+% indent ^ "*)\n"
 
 
 
