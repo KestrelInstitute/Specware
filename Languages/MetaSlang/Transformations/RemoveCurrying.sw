@@ -142,8 +142,13 @@ op add_uncurried_ops (spc : Spec) : Spec =
                              let new_pvars     = map mkVarPat new_vars                in
                              let new_tvars     = map mkVar    new_vars                in
                              let new_pat       = mkTuplePat   new_pvars               in
-                             let old_tm        = TypedTerm (old_tm, old_type, noPos)  in
-                             let new_body      = mkNewApply (old_tm, new_tvars)       in
+
+                             let new_body      = case old_tm of
+                                                   | Any _ -> old_tm
+                                                   | _ ->
+                                                     mkNewApply (TypedTerm (old_tm, old_type, noPos), 
+                                                                 new_tvars)
+                             in
                              let new_rule      = (new_pat, trueTerm, new_body)        in
                              let new_lambda    = Lambda ([new_rule], noPos)           in
                              let (_, new_type) = uncurry_type (old_type, spc, true)   in 
