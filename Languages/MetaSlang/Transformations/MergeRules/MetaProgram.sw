@@ -598,23 +598,26 @@ uindent ^ "qed\n"
 
 
    | TLocal (res,inps,assumps,defvars,sub,fail,vars) ->
-% FIXME: Generalize this to N variables and definitions.
-let (var,defn) = case defvars of [([(v,_)], defn)] -> (v,defn) in
-let inner = case res of
-             | Bind(Exists, vs, bod, _) -> bod
-             | _ -> res
-in
-(* Do this first, to fix the existentially quantified variable *)
-indent ^ "from result obtain " ^ var ^ " where inner: \"" ^ isabelleTerm inner ^ "\" by (rule exE)\n" ^
+     % defvars: List (List (Var * Type) * MSTerm) associating lists of variables with their defs
+     let evars = map (fn (x,_)->x) (flatten (map (fn (x,_)->x) defvars)) in % get all the bound vars
+     let edefs = map (fn (_,y)->y) defvars in % get all the definitions for the vars
+     let inner = case res of
+                   | Bind(Exists, vs, bod, _) -> bod
+                   | _ -> res
+     in
+     let defn_conj = mkAnd (map (fn (vars, defn) ->
+                                   mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
+ (* Do this first, to fix the existentially quantified variable *)
+indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"" ^ isabelleTerm inner ^ "\" by auto\n" ^
 
 mkIsarProof isabelleTerm (Some "ok_local") sub indent ^
 
-indent ^ "from inner have defn : \"" ^ var ^ " = " ^ isabelleTerm defn ^ "\" by simp\n" ^
-indent ^ "from assumptions defn have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by simp\n" ^
+indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by simp\n" ^
+indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by simp\n" ^
 indent ^ "from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by simp\n" ^
 indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by simp\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
-indent ^ "from sub_done defn show ?thesis by auto\n" ^ 
+indent ^ "from sub_done defns show ?thesis by auto\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
 uindent ^ "qed\n"
 
@@ -633,6 +636,7 @@ uindent ^ "qed\n"
 
 op MergeRules.printMergeRulesProof(isabelleTerm:MSTerm -> String)(t:TraceTree):String =
    let indent =  "  " in
+   let fun_defs = flatten (intersperse " " []) in
 % indent ^ "proof -\n" ^
 mkIsarProof isabelleTerm None t (indent ^ "  ") ^
 indent ^ "(* Final Refinement Step XXXX *)\n" ^
@@ -642,7 +646,7 @@ indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
 indent ^ "have precondition : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ "\" by simp\n" ^
 indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
-indent ^ "from unfolded have ?thesis by simp\n"
+indent ^ "from unfolded show ?thesis by (auto simp add: id_def " ^ fun_defs ^ ")\n"
 % indent ^ "*)\n"
 
 
@@ -708,7 +712,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                let next =
                   map (fn clause -> List.filter (fn atom -> ~(inClause? atom gcs)) clause) inputs in
                let (tm',pre,pf1) = bt2 (addAssumptions args terms) next in
-               let resTerm = mkAnd (terms ++ [tm']) in
+               let resTerm = mkAndMaybe (terms, tm', pf1) in
                let pf = TFactoring  (resTerm, inputs, args.assumptions,terms,pf1,pre, args.vars) in
                (resTerm, pre,pf) 
             else
@@ -740,7 +744,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                      bt2 (setVars (addAssumptions args newAssumptions)
                             (diffVars args.vars tvars)) defsToAtoms in
 
-                  let resTerm = Bind (Exists, tvars, mkAnd (newAssumptions ++ [t']),noPos) in
+                  let resTerm = Bind (Exists, tvars, mkAndMaybe (newAssumptions, t', pf1),noPos) in
                   % FIXME!!! Supply the defs, instead of []
                   let defs = map (fn | CDef (vs,defn,_,_,_) -> (vs,defn)) gds in 
                   let pf = TLocal (resTerm, inputs,args.assumptions, defs, pf1, p, args.vars) in
@@ -1460,6 +1464,13 @@ op mkAnd(t:MSTerms):MSTerm =
      | [] -> mkTrue ()
      | [p] -> p
      | _ -> ands t
+
+% make an and if the trace tree is not Tauto
+op mkAndMaybe(ts:MSTerms, t:MSTerm, tree:TraceTree):MSTerm =
+  case tree of
+    | Tauto _ -> mkAnd ts
+    | _ -> mkAnd (ts ++ [t])
+
 
 op mkOr(t:MSTerms):MSTerm =
    case t of
