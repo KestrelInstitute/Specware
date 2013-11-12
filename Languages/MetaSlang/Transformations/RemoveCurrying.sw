@@ -306,6 +306,7 @@ op uncurry_term (term : MSTerm, spc : Spec) : MSTerm =
           
       | Var ((id, old_type), _) ->
         let (curried?, new_type) = uncurry_var_type (old_type, spc) in
+        %% TODO: ??
         if curried? then
           Var ((id, new_type), rcPos)
         else 
@@ -463,8 +464,13 @@ op add_uncurried_ops (spc : Spec) : Spec =
                                              let _ = writeLine("         arrow type was: "                      ^ printType old_type) in
                                              [dom_type]
                                      in
-                                     let new_arg_types   = get_arg_types new_dom                 in
-                                     let new_vars        = mk_new_vars (new_arg_types, [], spc)  in
+                                     let new_arg_types   = get_arg_types new_dom in
+                                     let new_vars        = case extract_vars old_term of
+                                                             | Some vars | (length vars = length new_arg_types) -> 
+                                                               vars 
+                                                             | _ -> 
+                                                               mk_new_vars (new_arg_types, [], spc)
+                                     in
                                      let new_pvars       = map mkVarPat new_vars                 in
                                      let new_tvars       = map mkVar    new_vars                 in
                                      let new_pat         = mkTuplePat   new_pvars                in
@@ -477,7 +483,8 @@ op add_uncurried_ops (spc : Spec) : Spec =
                              insertAQualifierMap (ops, new_q, new_id,
                                                   info << {names = [new_name],
                                                            dfn   = new_dfn})
-                          | _ -> ops)
+                          | _ -> 
+                            ops)
                       | _ -> ops)
                  spc.ops
                  spc.ops
@@ -485,6 +492,17 @@ op add_uncurried_ops (spc : Spec) : Spec =
  let new_elts = add_uncurry_elements spc.elements in
  spc << {ops        = new_ops, 
          elements   = new_elts}
+
+op extract_vars (old_term : MSTerm) : Option MSVars =
+ case old_term of
+   | Lambda ([(pat, _, body)], _) ->
+     (case pat of
+        | VarPat (v, _) -> 
+          (case extract_vars body of
+             | Some vars -> Some (v :: vars)
+             | _ -> None)
+        | _ -> None)
+   | _ -> Some []
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
