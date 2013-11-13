@@ -501,12 +501,7 @@ indent ^ "     (* Failures for subterm *)\n" ^
 indent ^ "     from pred fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure tt))) ^ "\" by auto\n" ^
 
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
-indent ^ "     have result' : \"" ^ isabelleTerm (traceResult tt) ^ "\"\n" ^
-indent ^ "       apply (rule iffD1[OF if_P])\n" ^
-indent ^ "       apply (fact pred)\n" ^
-indent ^ "       apply (fact result)\n" ^
-indent ^ "     done\n" ^
-   
+indent ^ "     have result' : \"" ^ isabelleTerm (traceResult tt) ^ "\" by (rule iffD1[OF if_P, OF pred, OF result])\n" ^
 indent ^ "     have rtrue : \"" ^ equant isabelleTerm tt ^ "\" by (fact okTrue[OF assumptions', OF fails', OF result' ])\n" ^
 % indent ^ "     from okTrue result' assumptions' fails' have rtrue : \"" ^ (isabelleTerm (cdnfToTerm (traceInputs tt))) ^ "\" by simp\n" ^
 
@@ -525,11 +520,7 @@ indent ^ "     from npred assumptions have nassumptions' : \"" ^ (isabelleTerm (
 indent ^ "     (* Failures for subterm *)\n" ^
 indent ^ "     from npred fails have nfails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure ff))) ^ ")\" by auto\n" ^
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
-indent ^ "     have nresult' : \"" ^ isabelleTerm (traceResult ff) ^ "\"\n" ^   
-indent ^ "       apply (rule iffD1[OF if_not_P])\n" ^
-indent ^ "       apply (fact npred)\n" ^
-indent ^ "       apply (fact result)\n" ^
-indent ^ "     done\n" ^
+indent ^ "     have nresult' : \"" ^ isabelleTerm (traceResult ff) ^ "\" by  (rule iffD1[OF if_not_P, OF npred, OF result])\n" ^
 indent ^ "     have rfalse : \"" ^ equant isabelleTerm ff ^ "\" by (fact okFalse[OF nassumptions', OF nfails', OF nresult' ])\n" ^
 % indent ^ "     from nresult' nassumptions' nfails' okFalse have rfalse : \"" ^ isabelleTerm (cdnfToTerm (traceInputs ff)) ^ "\" by simp\n" ^
 indent ^ "     from npred assumptions rfalse show ?thesis by auto\n" ^
