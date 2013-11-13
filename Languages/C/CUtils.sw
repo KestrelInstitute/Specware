@@ -299,7 +299,7 @@ CUtils qualifying spec
  op cString (id : String) : String = 
   let id = map cChar id in
   if isCKeyword id then 
-    cString ("slang_" ^ id)
+    id %% cString ("slang_" ^ id)
   else 
     substGlyphInIdent id
 
