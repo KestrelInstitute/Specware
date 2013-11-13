@@ -357,7 +357,7 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)
         normalizeCondition spc theorems noUnfolds undepth (substitute (body, [(var,definition)]))
 
     | _ | undepth > 0 && isUnfoldable? tm spc noUnfolds  ->
-            % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
+            let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
             let tm' = betan_step (unfoldTerm (tm,spc)) in
             % let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
             % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
