@@ -483,7 +483,7 @@ uindent ^ "have " ^ thmName ^ ": \"" ^ (isabelleTerm (mkAnd (traceAssumptions t)
 uindent ^ "proof - " ^ (traceType t) ^ "\n" ^
 (let indent = uindent ^ "  " in         
 indent ^ "assume assumptions : \"" ^ (isabelleTerm (mkAnd (traceAssumptions t))) ^ "\"\n" ^
-indent ^ "assume fails : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^"\"\n" ^
+indent ^ "assume fails : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^")\"\n" ^
 indent ^ "assume result : \"" ^ (isabelleTerm (traceResult t)) ^ "\"\n" ^
 
 (case t of
@@ -500,7 +500,7 @@ indent ^ "     (* Assumptions for subterm *)\n" ^
 indent ^ "     from pred assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions tt))) ^ "\" by auto\n" ^
 
 indent ^ "     (* Failures for subterm *)\n" ^
-indent ^ "     from pred fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure tt))) ^ "\" by auto\n" ^
+indent ^ "     from pred fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure tt))) ^ ")\" by auto\n" ^
 
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
 indent ^ "     have result' : \"" ^ isabelleTerm (traceResult tt) ^ "\" by (rule iffD1[OF if_P, OF pred, OF result])\n" ^
@@ -513,7 +513,7 @@ indent ^ "   next\n" ^
 indent ^ "     (* False Case *)        \n" ^
 
    
-indent ^ "     assume npred: \"~" ^ (isabelleTerm split) ^ "\"\n" ^
+indent ^ "     assume npred: \"~(" ^ (isabelleTerm split) ^ ")\"\n" ^
 indent ^ "     (* Theorem for subterm *)\n"^
 (mkIsarProof spc isabelleTerm (Some "okFalse") ff (indent ^ "     ")) ^ 
         
@@ -551,7 +551,7 @@ indent ^ "\n" ^
 mkIsarProof spc isabelleTerm None pf (indent ^ "      ") ^
 indent ^ "      from " ^ cons ^ " assumptions have assumptions' : \"" ^
                 isabelleTerm (mkAnd (traceAssumptions pf)) ^ "\" by auto\n" ^
-indent ^ "      from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure pf))) ^ "\" by auto\n" ^
+indent ^ "      from fails have fails' : \"~( " ^ (isabelleTerm (dnfToTerm (traceFailure pf))) ^ ")\" by auto\n" ^
 indent ^ "      from " ^ cons ^ " result have result' :  \"" ^
                 isabelleTerm (traceResult pf) ^ "\" by auto\n" ^
 indent ^ "      have \"" ^ isabelleTerm (inputTerm (traceInputs pf)) ^ "\" by (fact ok[OF assumptions',OF fails',OF result'] )\n" ^
@@ -570,7 +570,7 @@ uindent ^ "   qed\n"
     | Contra (input, assumptions,vars) ->
 
 indent ^ "assume assumptions : \"" ^ isabelleTerm (mkAnd (traceAssumptions t)) ^ "\"\n" ^
-indent ^ "assume fails : \"~" ^ isabelleTerm (dnfToTerm (traceFailure t)) ^ "\"\n" ^
+indent ^ "assume fails : \"~(" ^ isabelleTerm (dnfToTerm (traceFailure t)) ^ ")\"\n" ^
 indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^   
 indent ^ "show ?thesis by contradiction\n " ^
 indent ^ "qed\n"
@@ -583,7 +583,7 @@ indent ^ "from result have factors: \"" ^ isabelleTerm (mkAnd factors) ^ "\" by 
 indent ^ "(* Assumptions for subterm *)\n" ^
 indent ^ "from factors assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions sub))) ^ "\" by auto\n" ^
 indent ^ "(* Failures for subterm *)\n" ^
-indent ^ "from factors fails have fails' : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by auto\n" ^
+indent ^ "from factors fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
 indent ^ "from result factors  have result': \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^   
 %%% FACT APPLICATION HERE
 indent ^ "have rfactor: \"" ^ (equant isabelleTerm sub) ^ "\" by (fact ok[OF assumptions', OF fails', OF result'])\n"  ^   
@@ -612,7 +612,7 @@ mkIsarProof spc isabelleTerm (Some "ok_local") sub indent ^
 
 indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" ^
 indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
-indent ^ "from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ "\" by auto\n" ^
+indent ^ "from fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
 indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by auto\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
 indent ^ "from sub_done defns show ?thesis by auto\n" ^ 
@@ -642,7 +642,7 @@ indent ^ "(* Final Refinement Step XXXX *)\n" ^
 % indent ^ "(*\n" ^
 indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
-indent ^ "have precondition : \"~" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ "\" by simp\n" ^
+indent ^ "have precondition : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ ")\" by simp\n" ^
 indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
 indent ^ "from unfolded show ?thesis by (auto simp add: id_def " ^ fun_defs ^ ")\n"
 % indent ^ "*)\n"
