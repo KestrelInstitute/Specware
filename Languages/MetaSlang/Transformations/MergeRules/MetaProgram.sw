@@ -667,7 +667,27 @@ op unlinesPunctuateEnd(p:String,e:String,l:List String):String =
     | [x] ->  x ^ "\n" ^ e
     | x::xs -> x ^ "\n" ^ p ^ "\n" ^ unlinesPunctuateEnd(p,e,xs)
       
+type Assumption =
+  | DefAssumption MSTerm
+  | BranchAssumption MSTerm
 
+op branchAssumption(a:Assumption):Bool =
+  case a of
+    | BranchAssumption _ -> true
+    | _ -> false
+
+op branchAssumptions(assumps:List Assumption):List Assumption =
+  filter branchAssumption assumps
+
+op unAssumption(a:Assumption):MSTerm =
+  case a of
+    | BranchAssumption t -> t
+    | DefAssumption t -> t
+
+op noAssumptions(assumps:List Assumption):List MSTerm =
+  map unAssumption assumps
+
+      
 % Package up the arguments to bt and auxillary functions.
 % The spc, obs, and stateVar fields should be constant,
 % but assumptions and vars will vary.
@@ -675,12 +695,12 @@ type BTArgs = { spc:Spec,
                 obs:List Id,
                 outputs : List Id,
                 stateVar:Id,
-                assumptions:List MSTerm,
+                assumptions:List Assumption,
                 vars:List (Id * MSType)
                }
-op addAssumption(args:BTArgs)(a:MSTerm):BTArgs =
+op addAssumption(args:BTArgs)(a:Assumption):BTArgs =
   args << { assumptions = a::(args.assumptions) }
-op addAssumptions(args:BTArgs)(a:List MSTerm):BTArgs =
+op addAssumptions(args:BTArgs)(a:List Assumption):BTArgs =
   args << { assumptions = a ++ (args.assumptions) }
 
 op setVars(args:BTArgs)(vs:List (Id * MSType)):BTArgs =
@@ -693,17 +713,31 @@ op varsNames(args:BTArgs):List Id =
 op diffVars(l1:List (Id*MSType))(l2:List(Id*MSType)):List(Id*MSType) =
    let ids = map (fn (v:Id*MSType) -> v.1) l2 in
     filter (fn (v1:Id*MSType) -> ~(v1.1 in? ids)) l1
-    
+
+op liveVars(vs:List(Id*MSType))(t:MSTerm):List(Id*MSType) =
+   let live = map (fn v -> v.1) (freeVars t) 
+   in filter (fn (v,ty) -> v in? live) vs
+
+
 op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
+      let (res,fail,pf) = bt2' args inputs in
+      let _ = writeLine "Call bt2 with" in
+      let _ = writeLine ("assumptions:" ^ printTerm (mkAnd (noAssumptions args.assumptions))) in
+      let _ = writeLine ("inputs: " ^ (printTerm (cdnfToTerm inputs))) in
+      let _ = writeLine ("result: " ^ (printTerm res)) in
+      let _ = writeLine ("failure: " ^ (printTerm (dnfToTerm fail))) in
+      (res,fail,pf)
+
+op bt2'(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
    if empty? inputs
      % If the set of input clauses is empty, then we have a contradiction.
-     then (mkFalse (), [args.assumptions], Contra (inputs, args.assumptions,args.vars))
+     then (mkFalse (),  [noAssumptions (branchAssumptions args.assumptions)], Contra (inputs, noAssumptions args.assumptions,args.vars))
      else
        if (exists? empty? inputs)
          then
          % 1. If any of the clauses lists are empty, then that corresponds
          %    to 'true'. What to do with that???
-          (mkTrue (), [], Tauto (inputs, args.assumptions,args.vars))
+          (mkTrue (), [], Tauto (inputs, noAssumptions args.assumptions,[]))
        else
          % 2. If there are any global constraints on postState or
          % on return values.
@@ -715,9 +749,9 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                % let _ = map (fn x -> writeLine (printTerm x)) terms in
                let next =
                   map (fn clause -> List.filter (fn atom -> ~(inClause? atom gcs)) clause) inputs in
-               let (tm',pre,pf1) = bt2 (addAssumptions args terms) next in
+               let (tm',pre,pf1) = bt2 (addAssumptions args (map DefAssumption terms)) next in
                let resTerm = mkAndMaybe (terms, tm', pf1) in
-               let pf = TFactoring  (resTerm, inputs, args.assumptions,terms,pf1,pre, args.vars) in
+               let pf = TFactoring  (resTerm, inputs, noAssumptions args.assumptions,terms,pf1,pre, args.vars) in
                (resTerm, pre,pf) 
             else
               % let _ = writeLine "There are no global constraints" in
@@ -741,17 +775,18 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                   let defsToAtoms = defineLocals gds next in                    
                   let tvars : List (Id * MSType) = (flatten (map defVars gds)) in
                   % let dvars = map (fn v -> v.1) tvars in 
-                  let newAssumptions = map classToTerm gds in
+                  let newAssumptions =  (map classToTerm gds) in
                   let (t',p,pf1) =
                      % bt2 (setVars (addAssumptions args newAssumptions)
                      %        (diff (args.vars, tvars))) defsToAtoms in
-                     bt2 (setVars (addAssumptions args newAssumptions)
+                     bt2 (setVars (addAssumptions args
+                                     (map DefAssumption newAssumptions))
                             (diffVars args.vars tvars)) defsToAtoms in
 
                   let resTerm = Bind (Exists, tvars, mkAndMaybe (newAssumptions, t', pf1),noPos) in
                   % FIXME!!! Supply the defs, instead of []
                   let defs = map (fn | CDef (vs,defn,_,_,_) -> (vs,defn)) gds in 
-                  let pf = TLocal (resTerm, inputs,args.assumptions, defs, pf1, p, args.vars) in
+                  let pf = TLocal (resTerm, inputs,noAssumptions args.assumptions, defs, pf1, p, args.vars) in
                   (resTerm, p, pf)
               else
                 % let _ = writeLine "There are no global definitions" in
@@ -766,12 +801,12 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                       % The 'negative' clashing branch.
                       let neg : List (List CClass) =
                          simplifySplit (negateClass a) inputs in
-                      let (tb,tp,pf1) = bt2 (addAssumption args (classToTerm a)) pos in
+                      let (tb,tp,pf1) = bt2 (addAssumption args (BranchAssumption (classToTerm a))) pos in
                       let (eb,ep,pf2) =
-                         bt2 (addAssumption args (classToTerm (negateClass a))) neg in
+                         bt2 (addAssumption args (BranchAssumption (classToTerm (negateClass a)))) neg in
                       let resTerm = IfThenElse (classToTerm a, tb, eb, noPos) in
                       let precondition = (tp ++ ep) in
-                      let pf = TIf (resTerm, inputs, args.assumptions, classToTerm a,pf1,pf2, precondition,args.vars) in 
+                      let pf = TIf (resTerm, inputs, noAssumptions args.assumptions, classToTerm a,pf1,pf2, precondition,args.vars) in 
                       (resTerm, precondition, pf)
 
                     | ((a as CCase (_,scrutinee,_,_,ty))::_) ->
@@ -782,7 +817,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                       let def mkAlt (pat,clauses) =
                                let Some patTerm = patternToTerm pat in
                                let eq = mkEquality (ty,scrutinee,patTerm) in
-                               let (tm',pres,pfAlt) = bt2 (setVars (addAssumption args eq)
+                               let (tm',pres,pfAlt) = bt2 (setVars (addAssumption args (DefAssumption eq))
                                                        (removePatternVars args.vars (Some pat))) clauses in
                                ((pat,tm'),pres,pfAlt)
                       in
@@ -797,13 +832,13 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                       let pres : DNFRep = flatten (map (fn x -> x.2) branches) in
                       let pfAlts = map (fn x -> (x.1.1, x.3)) branches in
                       let resTerm = mkCaseExpr (scrutinee, (map (fn x -> x.1) branches)) in
-                      let pf = TCase (resTerm, inputs, args.assumptions, scrutinee, pfAlts,  pres, args.vars) in
+                      let pf = TCase (resTerm, inputs, noAssumptions args.assumptions, scrutinee, pfAlts,  pres, args.vars) in
                       (resTerm, pres, pf)
                               
                     | _ ->
                       let _ = writeLine "Mergerules is stuck." in
                       let _ = writeLine "Under assumptions:" in
-                      let _ = writeLine (printTerm (mkAnd args.assumptions)) in
+                      let _ = writeLine (printTerm (mkAnd (noAssumptions args.assumptions))) in
                       let _ = writeLine "Merging clauses" in
                       let _ = writeLine (printDNF (map (map classToTerm) inputs)) in
                       % let _ = debugClauses inputs in
