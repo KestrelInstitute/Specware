@@ -116,8 +116,8 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     let calculatedPostcondition = mkSimpleExists vars' rterm in    
 
     %% Use this representation, rather than DNF, since it's easier to read.
-    let preAsConj = ands (map (fn conj -> mkNot (Bind (Exists,vars',ands conj,noPos))) pred) in
-    let _ = writeLine ("Calculated Failure Condition: " ^ printTerm preAsConj) in
+    let preAsConj = ands (map (fn conj -> mkNot (mkMinimalExists vars' (ands conj))) pred) in
+    let _ = writeLine ("Calculated Precondition: " ^ printTerm preAsConj) in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
     let refinedType =
           mkCombType( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
@@ -1443,6 +1443,13 @@ op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Bool =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Term construction and manipulation utlities
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op mkMinimalExists(vs:List (Id * MSType))(body:MSTerm):MSTerm =
+  let fvars = map (fn (v:(Id * MSType)) -> v.1) (freeVars body) in
+  let live = filter (fn (v:(Id * MSType)) -> v.1 in? fvars) vs in
+  case live of
+    | [] -> body
+    | _ -> Bind(Exists, live,body, noPos)
 
 %% Conjunction of DNF forms.
 op andDNF (p1:DNFRep) (p2:DNFRep):DNFRep =
