@@ -112,7 +112,7 @@ AnnSpec qualifying spec
  % A RuleSpec records what transformation was used to refine an op
  % We introduce uninterpreted types for the various "proof representations" for transforms.
  type MergeRules.TraceTree
- op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(t:TraceTree):String
+ op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(t:TraceTree)(q:List QualifiedId):String
  
  type RuleSpec =
    | Unfold      QualifiedId % replace a name with its def
@@ -131,7 +131,7 @@ AnnSpec qualifying spec
    | Eval % partial evaluation
    | Context % using context info in rewriting a term; e.g., p -> true in q of "if p then q else r"
    | AllDefs % ??? not used
-   | MergeRulesTransform TraceTree % A mergerules proof
+   | MergeRulesTransform (TraceTree * List QualifiedId) % A mergerules proof
 
  type RuleSpecs = List RuleSpec
 
@@ -156,7 +156,7 @@ AnnSpec qualifying spec
     % for the xi's
   | ImplEq EqProof % prove x -> y from x = y
   | ImplProofTactic String % an automated, named proof tactic
-  | MergeRulesProof TraceTree % a provably correct mergeRules refinement
+  | MergeRulesProof (TraceTree * List QualifiedId) % a provably correct mergeRules refinement
 
  % a proof that a term satisfies a given predicate
  type PredicateProof =

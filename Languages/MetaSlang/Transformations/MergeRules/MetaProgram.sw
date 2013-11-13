@@ -82,8 +82,12 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
   let (fname::qids) = args in
   let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
   { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems)) qids
-  ; ps <- combineRuleSpecs spc ruleSpecs theorems noUnfolds unfoldDepth
-  ; let stateType = rs1.st_stateType in
+  ; ups <- combineRuleSpecs spc ruleSpecs theorems noUnfolds unfoldDepth
+  ; let ps = map (fn (a,b,_) -> (a,b)) ups in
+    let unfolds = flatten (map (fn (_,_,c) -> c) ups) in
+    let _ = writeLine "Unfold terms" in
+    let _ = map (writeLine o printQualifiedId) unfolds in
+    let stateType = rs1.st_stateType in
     let preStateVar = rs1.st_prestate in
     let postStateVar = rs1.st_poststate in
     let inputs = rs1.st_inputs in
@@ -126,10 +130,10 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     let spc' = case findTheOp(spc, fname)  of
                 | Some oi -> let TypedTerm(_,ty,_) = body in
                              let _ = writeLine "Refining quid" in
-                             let th = Some ([(Any noPos : MSTerm, MergeRulesTransform prf)],
-                                            Some (RefineStrengthen (MergeRulesProof prf))) in
+                             let th = Some ([(Any noPos : MSTerm, MergeRulesTransform (prf, unfolds))],
+                                            Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
                              % Same thing, but don't save the mergerules proof in the tracehistory.
-                             let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof prf))) in
+                             let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
                              addRefinedTypeH(spc,oi,refinedType,th)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
@@ -297,7 +301,7 @@ op getRecPatternElements(pat:MSPattern):Option (Id*MSType*List (Id*MSType)) =
 %% variables.
 %% FIXME: Currently, there's no variable renaming going on...
 op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites)
-    (noUnfolds:List QualifiedId)(unfoldDepth:Int):Env (List (ExVars * DNFRep)) =
+    (noUnfolds:List QualifiedId)(unfoldDepth:Int):Env (List (ExVars * DNFRep * List QualifiedId)) =
 % op combineRuleSpecs(spc:Spec)(rules:List (MSType*Id*Option MSTerm*Id*Option MSTerm))(theorems:Rewrites):Env (List (ExVars * DNFRep)) =
   let types = map (fn r -> r.st_stateType) rules  in
   let preconditions = map (fn r -> case r.st_precondition of Some t -> t | None -> (mkTrue ())) rules in
@@ -306,7 +310,7 @@ op combineRuleSpecs(spc:Spec)(rules:List STRule)(theorems:Rewrites)
      mapM (normalizeCondition spc theorems noUnfolds unfoldDepth) preconditions 
   ; posts <-
      mapM (normalizeCondition spc theorems noUnfolds unfoldDepth) postconditions
-  ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2)) pres posts in 
+  ; let rels = zipWith (fn x -> fn y -> (nubBy equalVar?  (x.1 ++ y.1), andDNF x.2 y.2, x.3 ++ y.3)) pres posts in 
     % let _ = (writeLine (anyToString (List.length (List.flatten (List.map (fn i -> i.2) posts))) ^ " total postconditions.")) in
     % let _ = map printIt ps in
     % let _ = writeLine "Preconditions" in
@@ -320,51 +324,55 @@ type ExVars = List (AVar Position)
 type DNFRep = (List MSTerms)
 %% Remove existential quantifers, flatten to DNF.
 op normalizeCondition(spc:Spec)(theorems:Rewrites)
-   (noUnfolds:List QualifiedId)(undepth:Int)(tm:MSTerm):Env(ExVars *  DNFRep) = 
+   (noUnfolds:List QualifiedId)(undepth:Int)(tm:MSTerm):Env(ExVars *  DNFRep * List QualifiedId) = 
   % let _ = writeLine ("Normalizing " ^ printTerm tm) in
   case tm of
     | Bind (Exists,vars,body,_) -> 
-      { (vs',dnf) <- normalizeCondition spc theorems noUnfolds undepth  body 
-      ; return (vs' ++ vars,dnf)
+      { (vs',dnf,us) <- normalizeCondition spc theorems noUnfolds undepth  body 
+      ; return (vs' ++ vars,dnf,us)
       }
    | (Apply (Fun (f as And,_,_), Record (args,_),_)) -> 
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { (v1,r1) <- normalizeCondition spc theorems noUnfolds undepth a1
-       ; (v2,r2) <- normalizeCondition spc theorems noUnfolds undepth a2 
-       ; return (v1 ++ v2, (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1)))
+       { (v1,r1,us1) <- normalizeCondition spc theorems noUnfolds undepth a1
+       ; (v2,r2,us2) <- normalizeCondition spc theorems noUnfolds undepth a2 
+       ; return (v1 ++ v2, (flatten (map  (fn l -> map (fn r -> l ++ r) r2) r1)), us1 ++ us2)
        }
     | (Apply (Fun (f as Or,_,_), Record (args,_),_)) ->
        % let _ = writeLine ("Splitting in " ^ printTerm tm) in
        let Some a1 = getField (args,"1") in
        let Some a2 = getField (args,"2") in
-       { (v1,dnf1) <- normalizeCondition spc theorems noUnfolds undepth a1;
-         (v2,dnf2) <- normalizeCondition spc theorems noUnfolds undepth a2;
-         return (v1 ++ v2, dnf1 ++ dnf2)
+       { (v1,dnf1,us1) <- normalizeCondition spc theorems noUnfolds undepth a1;
+         (v2,dnf2,us2) <- normalizeCondition spc theorems noUnfolds undepth a2;
+         return (v1 ++ v2, dnf1 ++ dnf2,us1 ++ us2)
        }
    | IfThenElse (p,t,e,_) -> 
-     { (vp,rp) <- normalizeCondition spc theorems noUnfolds undepth p;
-       (vt,rt) <- normalizeCondition spc theorems noUnfolds undepth t;
-       (ve,re) <- normalizeCondition spc theorems noUnfolds undepth e;
+     { (vp,rp,us1) <- normalizeCondition spc theorems noUnfolds undepth p;
+       (vt,rt,us2) <- normalizeCondition spc theorems noUnfolds undepth t;
+       (ve,re,us3) <- normalizeCondition spc theorems noUnfolds undepth e;
        let ut = andDNF rp rt in
        let ue = andDNF (negateDNF rp) re in
-       return (vp ++ vt ++ ve, ut ++ ue)
+       return (vp ++ vt ++ ve, ut ++ ue, us1 ++ us2 ++ us3)
       }
    | Apply(Fun(NotEquals,ty,a1),args,a2) ->
-        return ([],[[mkNot (Apply(Fun(Equals,ty,a1),args,a2))]])
+        return ([],[[mkNot (Apply(Fun(Equals,ty,a1),args,a2))]],[])
 
     | (Let ([(VarPat (var,varLoc), definition)],body,_)) ->
         normalizeCondition spc theorems noUnfolds undepth (substitute (body, [(var,definition)]))
 
     | _ | undepth > 0 && isUnfoldable? tm spc noUnfolds  ->
-            let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
+            % let _ = writeLine ("Simplifying \n" ^ printTerm tm) in
             let tm' = betan_step (unfoldTerm (tm,spc)) in
             % let tm' = simplifyOne spc (unfoldTerm (tm,spc)) in
             % let _ = writeLine ("Simplified to \n"^ printTerm tm') in
-            normalizeCondition spc theorems noUnfolds (undepth - 1)  tm'
+            { (vs,ts,us) <- normalizeCondition spc theorems noUnfolds (undepth - 1) tm';
+             return (vs,ts,unfoldFunction tm::us)
+             }
+            % normalizeCondition spc theorems noUnfolds (undepth - 1) tm'
+
     | _ -> case rewriteTerm spc theorems tm of
             | Some tm' -> normalizeCondition spc theorems noUnfolds undepth tm'
-            | None -> return ([],[[tm]]) 
+            | None -> return ([],[[tm]],[]) 
 
 
 type CDNFRep = List (List CClass)
@@ -395,6 +403,7 @@ op traceAssumptions(t:TraceTree):List MSTerm =
     | TCase (res,inps,assumps,scrutinee,alts,fail,vars) -> assumps
     | TLocal (res,inps,assumps,defvars,sub,fail,vars) -> assumps
     | TFactoring (res,inps,assumps,fators,sub,fail,vars) -> assumps
+    | Unknown -> []
 
 
 op traceFailure(t:TraceTree):DNFRep =
@@ -635,9 +644,10 @@ uindent ^ "qed\n"
 ))
 
 
-op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree):String =
+op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId):String =
    let indent =  "  " in
    let fun_defs = flatten (intersperse " " []) in
+   let unfold_ids = flatten (intersperse " " (map (fn q -> mainId q ^ "_def") unfolds)) in
 % indent ^ "proof -\n" ^
 mkIsarProof spc isabelleTerm None t (indent ^ "  ") ^
 indent ^ "(* Final Refinement Step XXXX *)\n" ^
@@ -648,7 +658,7 @@ indent ^ "have noassumptions : True by simp\n" ^
 indent ^ "have precondition : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ ")\" by simp\n" ^
 indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
 indent ^ "show ?thesis\n" ^
-indent ^ "  apply (unfold id_def)\n" ^
+indent ^ "  apply (unfold " ^ unfold_ids ^ " )\n" ^
 indent ^ "  apply (simp only:split_conv)\n" ^
 indent ^ "  apply (cut_tac unfolded)\n" ^
 indent ^ "  apply auto\n" ^
@@ -1474,7 +1484,11 @@ op isUnfoldable? (tm:MSTerm)(spc:Spec)(noUnfolds:List QualifiedId):Bool =
       | Apply(Fun(Op(qid,_),_,_), _, _)
           | qid in? noUnfolds -> false
       | _ -> unfoldable?(tm,spc)
-          
+
+op unfoldFunction(tm:MSTerm):QualifiedId =
+  case tm of
+      | Apply(Fun(Op(qid,_),_,_), _, _) -> qid
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Term construction and manipulation utlities
