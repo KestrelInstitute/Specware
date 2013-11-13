@@ -462,9 +462,11 @@ op equant(isabelleTerm:MSTerm -> String)(tr:TraceTree):String =
   if empty? (traceVars tr)
       then isabelleTerm (cdnfToTerm (traceInputs tr))
       else
-        let typedVars = traceVars tr in
-        isabelleTerm (Bind (Exists,typedVars, (cdnfToTerm (traceInputs tr)),noPos)) 
-  
+        let body = cdnfToTerm (traceInputs tr) in
+        let typedVars = liveVars (traceVars tr) body in
+        if empty? typedVars
+          then isabelleTerm body
+          else isabelleTerm (Bind (Exists,typedVars, body,noPos)) 
 
    
 op mkIsarProof(isabelleTerm:MSTerm-> String)(nm : Option String)(t:TraceTree)(uindent:String):String =
