@@ -388,7 +388,22 @@
                                       nil)))))
               (unless (null uid)
                 (setq cl-user::*last-unit-Id-_loaded* uid)
-                (IsaTermPrinter::printUIDtoThyFile-2 uid t))))
+                (IsaTermPrinter::printUIDtoThyFile-3 uid t t)))) ; do simplify
+           ((gen-obligations-no-simp gen-oblig-no-simp gen-obligs-no-simp)
+            (let ((TypeObligations::generateTerminationConditions? nil)
+                  (TypeObligations::generateExhaustivityConditions? t)
+                  (Simplify::simplifyUsingSubtypes? t)
+                  (Prover::treatNatSpecially? nil)
+                  (Utilities::namedTypesRaised? t)
+                  (uid (if (not (null argstr))
+                           argstr
+                           (if (not (null cl-user::*last-unit-Id-_loaded*))
+                               cl-user::*last-unit-Id-_loaded*
+                               (progn (format t "No previous unit processed~%")
+                                      nil)))))
+              (unless (null uid)
+                (setq cl-user::*last-unit-Id-_loaded* uid)
+                (IsaTermPrinter::printUIDtoThyFile-3 uid t nil))))  ; don't simplify
            (gen-coq
             (let ((TypeObligations::generateTerminationConditions? nil)
                   (TypeObligations::generateExhaustivityConditions? t)

@@ -24,7 +24,7 @@ IsaTermPrinter qualifying spec
 
  op addObligations?: Bool = true
  op lambdaLift?: Bool     = true
- op simplify?: Bool       = true
+%% op simplify?: Bool       = false  %% now passed in and threaded through
  op usePosInfoForDefAnalysis?: Bool = true
  op printQuantifiersWithType?: Bool = true
  op autoProof: String = "by auto"
@@ -46,7 +46,8 @@ IsaTermPrinter qualifying spec
                  defaultProof: String,
                  newVarCount: Ref Nat,
                  source_of_thy_morphism?: Bool,
-                 typeNameInfo: List(QualifiedId * TyVars * MSType)}
+                 typeNameInfo: List(QualifiedId * TyVars * MSType),
+                 simplify? : Bool}
 
 
  def getNewVar (c : Context) : Nat =
@@ -100,8 +101,8 @@ IsaTermPrinter qualifying spec
 	else mainPath
 
 
-  op  printUIDtoThyFile: String * Bool -> String
-  def printUIDtoThyFile (uid_str, recursive?) =
+  op  printUIDtoThyFile: String * Bool * Bool -> String
+  def printUIDtoThyFile (uid_str, recursive?, simplify?) =
     case Specware.evaluateUnitId uid_str of
       | Some val ->
         (case uidNamesForValue val of
@@ -109,7 +110,7 @@ IsaTermPrinter qualifying spec
 	   | Some (thy_nm, uidstr, uid) ->
 	     let fil_nm = uidstr ^ ".thy" in
 	     let _ = ensureDirectoriesExist fil_nm in
-	     let _ = toFile(fil_nm, showValue(val, recursive?, Some uid, Some thy_nm)) in
+	     let _ = toFile(fil_nm, showValue(val, recursive?, Some uid, Some thy_nm, simplify?)) in
 	     fil_nm)
       | _ -> "Error: Unknown UID " ^ uid_str
 
@@ -160,7 +161,7 @@ IsaTermPrinter qualifying spec
     let _ = if fileOlder?(sw_fil_nm, thy_fil_nm)
               then ()
             else toFile(thy_fil_nm,
-                        showValue(val, c.recursive?, Some uid, Some (full_thy_nm)))
+                        showValue(val, c.recursive?, Some uid, Some (full_thy_nm), c.simplify?))
     in thy_nm
 
   op  uidNamesForValue: Value -> Option (String * String * UnitId)
@@ -311,15 +312,16 @@ IsaTermPrinter qualifying spec
       | None -> None
       | Some global_context ->
         findUnitIdForUnit(val, global_context)
-  
-  op  printUID : String * Bool -> ()
-  def printUID (uid, recursive?) =
+
+  %% Seems to be dead code?:  
+  op  printUID : String * Bool * Bool -> ()
+  def printUID (uid, recursive?, simplify?) =
     case evaluateUnitId uid of
-      | Some val -> toTerminal(showValue (val, recursive?, findUnitIdForUnitInCache val, None))
+      | Some val -> toTerminal(showValue (val, recursive?, findUnitIdForUnitInCache val, None, simplify?))
       | _ -> toScreen "<Unknown UID>"
 
-  op  showValue : Value * Bool * Option UnitId * Option String -> Text
-  def showValue (value, recursive?, uid, opt_nm) =
+  op  showValue : Value * Bool * Option UnitId * Option String * Bool -> Text
+  def showValue (value, recursive?, uid, opt_nm, simplify?) =
     let (thy_nm, val_uid) = case uidStringPairForValue value of
                              | Some ((thy_nm, _, hash_nm), uid) ->
                                (if thy_nm = hash_nm then thy_nm else thy_nm ^ hash_nm, Some uid)
@@ -341,7 +343,8 @@ IsaTermPrinter qualifying spec
                                defaultProof = autoProof,
                                newVarCount = Ref 0,
                                source_of_thy_morphism? = false,
-                               typeNameInfo = []}
+                               typeNameInfo = [],
+                               simplify? = simplify?}
 			value
     in
     format(110, main_pp_val)
@@ -1281,7 +1284,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	       else spc
     in
     let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in
-    let spc = if simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))
+    let spc = if c.simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec spc
                 else spc
     in
@@ -1326,7 +1329,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     %% Second round of simplification could be avoided with smarter construction
     let spc = expandRecordPatterns spc in
     let spc = normalizeNewTypes(spc, true) in
-    let spc = if simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))
+    let spc = if c.simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))
                 then simplifyTopSpec(simplifyTopSpec spc) % double simplify temporary?
                 else spc
     in
@@ -1475,7 +1478,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
          c.anon_thy_count := !c.anon_thy_count + 1;
          if c.recursive?
            then toFile(thy_fil_nm,
-                       showValue(Spec spc, c.recursive?, c.currentUID, Some thy_nm))
+                       showValue(Spec spc, c.recursive?, c.currentUID, Some thy_nm, c.simplify?))
            else ();
          prString thy_nm)
       | Some ((thy_nm, sw_fil_nm, thy_fil_nm), val, uid) ->
@@ -1485,7 +1488,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
              if fileOlder?(sw_fil_nm, thy_fil_nm) %|| spc = getBaseSpec()
                then ()
              else toFile(thy_fil_nm,
-                         showValue(val, c.recursive?, Some uid, Some thy_nm))
+                         showValue(val, c.recursive?, Some uid, Some thy_nm, c.simplify?))
            else ();
 	 prString (importName c thy_nm thy_fil_nm))
 
