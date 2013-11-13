@@ -818,7 +818,7 @@ IsaTermPrinter qualifying spec
         in
         let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
         in
-        printMergeRulesProof (getSpec c) simpleIsabelleTerm t
+        printMergeRulesProof (getSpec c) isabelleTerm t
 
       | _  -> 
        
@@ -1173,7 +1173,7 @@ IsaTermPrinter qualifying spec
         in
         let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
         in
-        IsaProof (string (printMergeRulesProof (getSpec c) simpleIsabelleTerm tree))
+        IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm tree))
     % fail "ppImplicationProof: need to add support for MergeRules!"
 
 

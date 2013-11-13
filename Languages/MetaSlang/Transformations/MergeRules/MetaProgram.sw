@@ -505,7 +505,6 @@ indent ^ "     from pred fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (t
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
 indent ^ "     have result' : \"" ^ isabelleTerm (traceResult tt) ^ "\" by (rule iffD1[OF if_P, OF pred, OF result])\n" ^
 indent ^ "     have rtrue : \"" ^ equant isabelleTerm tt ^ "\" by (fact okTrue[OF assumptions', OF fails', OF result' ])\n" ^
-% indent ^ "     from okTrue result' assumptions' fails' have rtrue : \"" ^ (isabelleTerm (cdnfToTerm (traceInputs tt))) ^ "\" by simp\n" ^
 
 indent ^ "     from pred assumptions rtrue show ?thesis by auto\n" ^
 indent ^ "   next\n" ^
@@ -585,7 +584,6 @@ indent ^ "from factors assumptions have assumptions' : \"" ^ (isabelleTerm (mkAn
 indent ^ "(* Failures for subterm *)\n" ^
 indent ^ "from factors fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
 indent ^ "from result factors  have result': \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^   
-%%% FACT APPLICATION HERE
 indent ^ "have rfactor: \"" ^ (equant isabelleTerm sub) ^ "\" by (fact ok[OF assumptions', OF fails', OF result'])\n"  ^   
 %indent ^ "from ok assumptions' fails'  have rfactor: \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^
 indent ^  "from factors assumptions rfactor show ?thesis by auto\n" ^
@@ -597,6 +595,9 @@ uindent ^ "qed\n"
      % defvars: List (List (Var * Type) * MSTerm) associating lists of variables with their defs
      let evars = map (fn (x,_)->x) (flatten (map (fn (x,_)->x) defvars)) in % get all the bound vars
      let edefs = map (fn (_,y)->y) defvars in % get all the definitions for the vars
+     let stpreds : MSTerm  = 
+        mkAnd (List.map (fn (v,ty) -> typePredTerm(ty,mkVar(v,ty),spc))
+                   (flatten (map (fn (x,_) ->x) defvars))) in
      let inner = case res of
                    | Bind(Exists, vs, bod, _) -> bod
                    | _ -> res
@@ -605,17 +606,19 @@ uindent ^ "qed\n"
                                    mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
  (* Do this first, to fix the existentially quantified variable *)
 % FIXME: The following step sometimes fails, but will succedd when the proof is replaced with '(rule conjE)'. WTF?
-indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"" ^ isabelleTerm inner ^ "\" by auto\n" ^
+indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"
+" ^ isabelleTerm inner ^ "\" and esubs: \"" ^ isabelleTerm stpreds ^ "\" by auto\n" ^
 
 % indent ^ "(* SUBTYPES " ^ isabelleTerm stpreds ^ "*)\n" ^
 mkIsarProof spc isabelleTerm (Some "ok_local") sub indent ^
 
+% indent ^ "from inner have esubs: \"" ^ isabelleTerm stpreds ^ "\"\n" ^
 indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" ^
 indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
 indent ^ "from fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
 indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by auto\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
-indent ^ "from sub_done defns show ?thesis by auto\n" ^ 
+indent ^ "from sub_done defns esubs show ?thesis by auto\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
 uindent ^ "qed\n"
 
