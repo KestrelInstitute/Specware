@@ -616,7 +616,7 @@ mkIsarProof spc isabelleTerm (Some "ok_local") sub indent ^
 indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" ^
 indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
 indent ^ "from fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
-indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by auto\n" ^
+indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by (rule conjE)\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
 indent ^ "from sub_done defns esubs show ?thesis by auto\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
@@ -647,8 +647,12 @@ indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
 indent ^ "have precondition : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure t))) ^ ")\" by simp\n" ^
 indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
-indent ^ "from unfolded show ?thesis by (auto simp add: id_def " ^ fun_defs ^ ")\n"
-% indent ^ "*)\n"
+indent ^ "show ?thesis\n" ^
+indent ^ "  apply (unfold id_def)\n" ^
+indent ^ "  apply (simp only:split_conv)\n" ^
+indent ^ "  apply (cut_tac unfolded)\n" ^
+indent ^ "  apply auto\n" ^
+indent ^ "done"
 
 
 

@@ -813,7 +813,7 @@ IsaTermPrinter qualifying spec
               let out = (ppTermStrIndent c Top tm 7) in        
               let tm' = mapTerm (relativizeQuantifiers (getSpec c),id,id) tm in
               let out' = (ppTermStrIndent c Top tm' 7) in
-              let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
+              % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
               out'
         in
         let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
@@ -1168,7 +1168,7 @@ IsaTermPrinter qualifying spec
               let out = (ppTermStrIndent c Top tm 7) in        
               let tm' = mapTerm (relativizeQuantifiers (getSpec c),id,id) tm in
               let out' = (ppTermStrIndent c Top tm' 7) in
-              let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
+              % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
               out'
         in
         let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
