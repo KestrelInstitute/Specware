@@ -213,6 +213,10 @@ type TransformHistory = List (MSTerm * RuleSpec)
        (rs1 ++ rs2, Some (composeRefinementProofs (pf1, tm, pf2)))
      | ((rs1, None), tm, (rs2, None)) ->
        (rs1 ++ rs2, None)
+     | ((rs1, Some pf1), tm, ([], None)) ->
+       (rs1, Some pf1)
+     | (([], None), tm, (rs2, Some pf2)) ->
+       (rs2, Some pf2)
      | ((rs1, _), tm, (rs2, _)) ->
        (warn ("composeTransformInfos called with only one proof given");
         (rs1 ++ rs2, None))
@@ -227,7 +231,8 @@ type TransformHistory = List (MSTerm * RuleSpec)
      "EqProofSubterm ([" ^ flatten (intersperse "," (map show path)) ^ "], " ^ showEqProof pf ^ ")"
    | EqProofSym pf -> "EqProofSym (" ^ showEqProof pf ^ ")"
    | EqProofTrans (pf1, middle, pf2) ->
-     "EqTrans (" ^ showEqProof pf1 ^ ", " ^ showEqProof pf2 ^ ")"
+     "EqTrans (" ^ showEqProof pf1 ^ ",\n  " ^printTerm middle^"\n  "
+       ^ showEqProof pf2 ^ ")"
    | EqProofTheorem (qid, args) ->
      "EqProofTheorem " ^ show qid
    | EqProofUnfoldDef qid -> "EqProofUnfoldDef (" ^ show qid ^ ")"
@@ -236,7 +241,8 @@ type TransformHistory = List (MSTerm * RuleSpec)
  op showImplProof (pf: ImplProof) : String =
  case pf of
    | ImplTrans (pf1, middle, pf2) ->
-     "ImplTrans (" ^ showImplProof pf1 ^ ", " ^ showImplProof pf2 ^ ")"
+     "ImplTrans (" ^ showImplProof pf1 ^ ",\n  " ^printTerm middle^"\n  "
+       ^ showImplProof pf2 ^ ")"
    | ImplTheorem (qid, args) -> "ImplTheorem (" ^ show qid ^ ")"
    | ImplEq pf -> "ImplEq (" ^ showEqProof pf ^ ")"
    | ImplProofTactic tactic -> "ImplProofTactic (" ^ tactic ^ ")"
