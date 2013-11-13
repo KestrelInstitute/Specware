@@ -606,7 +606,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      else fail("Less than "^show (i+1)^" refined terms in\n"^printTerm tm)
 *)
 
- % Given a term, extract a list of three tuples, each element of which represents
+ % Given a term, extract a list of three-tuples, each element of which represents
  %  1. A list of the quantified type variables.
  %  2. The type of the term.
  %  3. The body of the term.
@@ -642,7 +642,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
      | TypedTerm (stm, ty, _)  -> unpackTm(stm, ty)
 
-     | _                       -> [([], termType tm, tm)]
+     | _                       -> [([], termType tm, tm)]  %% TODO: Print an error here?  The call to termType can crash, since it doesn't have access to the spec.
 
  op [a] unpackBasicTerm(tm: ATerm a): TyVars * AType a * ATerm a =
    case tm of
@@ -752,7 +752,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
                  let (ys',acc'') = mapAccum f acc'  ys
                  in (y' :: ys', acc'')
 
- 
+ %% "TSP" stands for "term, sort, pattern"  (Now "sort" has been changed to "type".)
  type TSP_MapAccums (accum,b) = (accum -> ATerm    b -> (ATerm    b * accum)) *
                                 (accum -> AType    b -> (AType    b * accum)) *
                                 (accum -> APattern b -> (APattern b * accum))

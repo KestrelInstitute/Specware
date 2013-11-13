@@ -1715,7 +1715,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
   case ty of
     | Base (qid, tys, a) ->
       (case findTheType (sp, qid) of
-	 | None -> ty %Should this be an error?
+	 | None -> ty %TODO Should this be an error?
 	 | Some info ->
 	   if definedTypeInfo? info then
 	     let (tvs, ty_def) = unpackFirstTypeDef info in
