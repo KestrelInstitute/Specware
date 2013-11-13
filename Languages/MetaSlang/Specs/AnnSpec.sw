@@ -112,7 +112,7 @@ AnnSpec qualifying spec
  % A RuleSpec records what transformation was used to refine an op
  % We introduce uninterpreted types for the various "proof representations" for transforms.
  type MergeRules.TraceTree
- op MergeRules.printMergeRulesProof(pr:MSTerm -> String)(t:TraceTree):String
+ op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(t:TraceTree):String
  
  type RuleSpec =
    | Unfold      QualifiedId % replace a name with its def

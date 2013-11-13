@@ -469,7 +469,7 @@ op equant(isabelleTerm:MSTerm -> String)(tr:TraceTree):String =
           else isabelleTerm (Bind (Exists,typedVars, body,noPos)) 
 
    
-op mkIsarProof(isabelleTerm:MSTerm-> String)(nm : Option String)(t:TraceTree)(uindent:String):String =
+op mkIsarProof(spc:Spec)(isabelleTerm:MSTerm-> String)(nm : Option String)(t:TraceTree)(uindent:String):String =
   let def inputTerm inps =
         case inps of
           | [] -> mkTrue ()
@@ -494,7 +494,7 @@ indent ^ "   assume pred: \"" ^ (isabelleTerm split) ^ "\"\n" ^
 indent ^ "     (* True Case *)\n" ^
         
 indent ^ "       (* Theorem for subterm *)\n" ^
-(mkIsarProof isabelleTerm (Some "okTrue") tt (indent ^ "    ")) ^ 
+(mkIsarProof spc isabelleTerm (Some "okTrue") tt (indent ^ "    ")) ^ 
 
 indent ^ "     (* Assumptions for subterm *)\n" ^
 indent ^ "     from pred assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions tt))) ^ "\" by auto\n" ^
@@ -515,7 +515,7 @@ indent ^ "     (* False Case *)        \n" ^
    
 indent ^ "     assume npred: \"~" ^ (isabelleTerm split) ^ "\"\n" ^
 indent ^ "     (* Theorem for subterm *)\n"^
-(mkIsarProof isabelleTerm (Some "okFalse") ff (indent ^ "     ")) ^ 
+(mkIsarProof spc isabelleTerm (Some "okFalse") ff (indent ^ "     ")) ^ 
         
 indent ^ "     (* Assumptions for subterm *)\n" ^
 indent ^ "     from npred assumptions have nassumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions ff)))  ^ "\" by auto\n" ^
@@ -548,7 +548,7 @@ uindent ^ "qed\n"
          in
 indent ^ "      case " ^ parenPat pterm ^ "\n" ^
 indent ^ "\n" ^
-mkIsarProof isabelleTerm None pf (indent ^ "      ") ^
+mkIsarProof spc isabelleTerm None pf (indent ^ "      ") ^
 indent ^ "      from " ^ cons ^ " assumptions have assumptions' : \"" ^
                 isabelleTerm (mkAnd (traceAssumptions pf)) ^ "\" by auto\n" ^
 indent ^ "      from fails have fails' : \"~ " ^ (isabelleTerm (dnfToTerm (traceFailure pf))) ^ "\" by auto\n" ^
@@ -578,7 +578,7 @@ indent ^ "qed\n"
       
     | TFactoring (res,inps,assumps,factors,sub,fail,vars) ->
 
-mkIsarProof isabelleTerm None sub indent ^
+mkIsarProof spc isabelleTerm None sub indent ^
 indent ^ "from result have factors: \"" ^ isabelleTerm (mkAnd factors) ^ "\" by auto \n" ^   
 indent ^ "(* Assumptions for subterm *)\n" ^
 indent ^ "from factors assumptions have assumptions' : \"" ^ (isabelleTerm (mkAnd (traceAssumptions sub))) ^ "\" by auto\n" ^
@@ -607,7 +607,8 @@ uindent ^ "qed\n"
 % FIXME: The following step sometimes fails, but will succedd when the proof is replaced with '(rule conjE)'. WTF?
 indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"" ^ isabelleTerm inner ^ "\" by auto\n" ^
 
-mkIsarProof isabelleTerm (Some "ok_local") sub indent ^
+% indent ^ "(* SUBTYPES " ^ isabelleTerm stpreds ^ "*)\n" ^
+mkIsarProof spc isabelleTerm (Some "ok_local") sub indent ^
 
 indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" ^
 indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
@@ -631,11 +632,11 @@ uindent ^ "qed\n"
 ))
 
 
-op MergeRules.printMergeRulesProof(isabelleTerm:MSTerm -> String)(t:TraceTree):String =
+op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree):String =
    let indent =  "  " in
    let fun_defs = flatten (intersperse " " []) in
 % indent ^ "proof -\n" ^
-mkIsarProof isabelleTerm None t (indent ^ "  ") ^
+mkIsarProof spc isabelleTerm None t (indent ^ "  ") ^
 indent ^ "(* Final Refinement Step XXXX *)\n" ^
 
 % indent ^ "(*\n" ^

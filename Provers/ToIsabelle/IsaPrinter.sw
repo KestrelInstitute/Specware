@@ -809,8 +809,17 @@ IsaTermPrinter qualifying spec
     case hist of
       | [(tr_tm, MergeRulesTransform t)] ->
         let _ = writeLine "Generating MergeRules Proof" in
-        printMergeRulesProof
-                             (fn tm -> ppTermStrIndent c Top tm 7) t
+        let def isabelleTerm tm =
+              let out = (ppTermStrIndent c Top tm 7) in        
+              let tm' = mapTerm (relativizeQuantifiers (getSpec c),id,id) tm in
+              let out' = (ppTermStrIndent c Top tm' 7) in
+              let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
+              out'
+        in
+        let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
+        in
+        printMergeRulesProof (getSpec c) simpleIsabelleTerm t
+
       | _  -> 
        
     % let _ = writeLine("gpc: \n"^printTerm new_pcond^"\n  =>\n"^printTerm prev_pcond^"\n"^anyToPrettyString hist) in
@@ -1155,7 +1164,16 @@ IsaTermPrinter qualifying spec
     (* by tactic *)
      showFinalResult (ppImplication (c, lhs, rhs), singleTacticProof (ruleTactic tactic))
   | MergeRulesProof tree ->
-        IsaProof (string (printMergeRulesProof (fn tm -> ppTermStrIndent c Top tm 7) tree))
+        let def isabelleTerm tm =
+              let out = (ppTermStrIndent c Top tm 7) in        
+              let tm' = mapTerm (relativizeQuantifiers (getSpec c),id,id) tm in
+              let out' = (ppTermStrIndent c Top tm' 7) in
+              let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
+              out'
+        in
+        let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
+        in
+        IsaProof (string (printMergeRulesProof (getSpec c) simpleIsabelleTerm tree))
     % fail "ppImplicationProof: need to add support for MergeRules!"
 
 
