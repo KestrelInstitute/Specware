@@ -51,7 +51,11 @@ type Nat32  = (Nat | fitsInNBits? 32 )
 type Nat64  = (Nat | fitsInNBits? 64 )
 
 % TODO: Define these:
+op BVAND8  (x : Nat8 , y : Nat8 ) infixl 25 : Nat8
+op BVAND16 (x : Nat16, y : Nat16) infixl 25 : Nat16
 op BVAND32 (x : Nat32, y : Nat32) infixl 25 : Nat32
+op BVOR8  (x : Nat8 , y : Nat8 ) infixl 24 : Nat8
+op BVOR16 (x : Nat16, y : Nat16) infixl 24 : Nat16
 op BVOR32 (x : Nat32, y : Nat32) infixl 24 : Nat32
 
 end-spec
