@@ -80,7 +80,7 @@ will run tests in dir1, dir2, ...
 The emacs command
 M-x sw:run-test-harness
 will run (specware-test::run-test-directories "dir")
-for the the default directory of the current buffer.
+for the default directory of the current buffer.
 
 (specware-test::run-test-directories-rec "dir" "dir2" ...)
 will run tests in dir1, dir2, ... and all their subdirectories that contain a
@@ -94,7 +94,7 @@ for the the default directory of the current buffer.
 Reporting
 
 Running the test suite will tell you all the tests that failed and
-what happenned versus what was expected.
+what happened versus what was expected.
 
 By default all successful tests are reported. To avoid seeing these do
 (setq SPECWARE-TEST::*verbose?* nil)
