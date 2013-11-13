@@ -42,7 +42,10 @@ type PathTerm = APathTerm Position.Position
       | _ -> []
 
   op [a] ithSubTerm(term: ATerm a, i: Nat): ATerm a =
-    (immediateSubTerms term) @ i
+    let tms = immediateSubTerms term in
+    if i < length tms
+      then tms @ i
+      else fail("Can't take subterm "^show i^" of term\n"^printTerm term)
 
   op [a] ithSubTerm?(term: ATerm a, i: Nat): Option(ATerm a) =
     let tms = immediateSubTerms term in
