@@ -198,7 +198,7 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :Term
-    (:anyof :Name_Term :Number_Term :Apply_Term :Vector_Term :Typed_Term))
+    (:anyof :Name_Term :Number_Term :Apply_Term :Vector_Term :Typed_Term :List_Term))
 
 ;;; --------
 
