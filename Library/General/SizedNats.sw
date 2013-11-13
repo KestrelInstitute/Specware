@@ -9,6 +9,23 @@ spec
 
 op fitsInNBits? (n:PosNat) (x:Nat) : Bool = x < 2***n
 
+theorem fitsInNBits?_monotone is
+  fa(m:PosNat, n:PosNat, x:Nat) fitsInNBits? m x && (m <= n) => fitsInNBits? n x
+
+%% This version does not have the n>0 assumption.  TODO: Eventually get rid of this and just use the version just below.
+proof Isa -verbatim
+  theorem fitsInNBits_p_inhabited_no_assumption[simp]: 
+  "\<exists>x. Nat__fitsInNBits_p n x"
+  proof -
+    have zero :"Nat__fitsInNBits_p n 0" by (simp add:Nat__fitsInNBits_p_def)
+    show ?thesis by (cut_tac zero, rule exI)
+  qed
+end-proof
+
+%% This version does have the n>0 assumption.
+theorem fitsInNBits?_inhabited is
+  fa(n:PosNat) ex(x:Nat) fitsInNBits? n x
+
 %% TODO Either get rid of these or add the rest of them...
 op fitsIn1Bits?  (x:Nat) : Bool = fitsInNBits? 1  x
 op fitsIn8Bits?  (x:Nat) : Bool = fitsInNBits? 8  x
@@ -58,5 +75,23 @@ op BVAND32 (x : Nat32, y : Nat32) infixl 25 : Nat32
 op BVOR8  (x : Nat8 , y : Nat8 ) infixl 24 : Nat8
 op BVOR16 (x : Nat16, y : Nat16) infixl 24 : Nat16
 op BVOR32 (x : Nat32, y : Nat32) infixl 24 : Nat32
+
+proof Isa fitsInNBits_p_inhabited is [simp]
+  apply(simp add: Nat__fitsInNBits_p_def)
+  apply(cut_tac x=0 in exI)
+  apply(auto)
+end-proof
+
+proof Isa Nat__fitsInNBits_p_monotone
+  apply(auto simp add: Nat__fitsInNBits_p_def)
+  apply(cut_tac m="m" and n="n" in Integer__expt_monotone)
+  apply(simp)
+  apply(cut_tac x=x and y="(2 ^ m)" and z="(2 ^ n)" in less_le_trans)
+  apply(simp)
+  apply(cut_tac m="m" and n="n" in Integer__expt_monotone)
+  apply(simp)
+  apply(simp)
+  apply(simp)
+end-proof
 
 end-spec

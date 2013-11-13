@@ -20,17 +20,17 @@ theorem intFitsInNBits?_monotone is
 
 %% This version does not have the n>0 assumption.  TODO: Eventually get rid of this and just use the version just below.
 proof Isa -verbatim
-theorem fits_inhabited[simp]: 
-"\<exists>x. Int__intFitsInNBits_p n x"
-proof -
-have zero :"Int__intFitsInNBits_p n 0" by (simp add:Int__intFitsInNBits_p_def)
-show ?thesis by (cut_tac zero, rule exI)
-qed
+  theorem intFitsInNBits_p_inhabited_no_assumption[simp]: 
+  "\<exists>x. Int__intFitsInNBits_p n x"
+  proof -
+    have zero :"Int__intFitsInNBits_p n 0" by (simp add:Int__intFitsInNBits_p_def)
+    show ?thesis by (cut_tac zero, rule exI)
+  qed
 end-proof
 
 %% This version does have the n>0 assumption.
-theorem fits_inhabited_2 is
-  fa(n:PosNat) ex(x:Nat) intFitsInNBits? n x
+theorem intFitsInNBits?_inhabited is
+  fa(n:PosNat) ex(x:Int) intFitsInNBits? n x
 
 
 %% TODO Either get rid of these or add the rest of them...
@@ -89,7 +89,7 @@ proof Isa Int__intFitsInNBits_p_monotone
   apply(simp)
 end-proof
 
-proof Isa fits_inhabited_2 is [simp]
+proof Isa Int__intFitsInNBits_p_inhabited is [simp]
   apply(simp add: Int__intFitsInNBits_p_def)
   apply(cut_tac x=0 in exI)
   apply(auto)
