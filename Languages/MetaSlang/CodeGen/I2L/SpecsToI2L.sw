@@ -856,8 +856,6 @@ op opinfo2declOrDefn (qid         : QualifiedId,
                       optParNames : Option (List String),
                       ctxt        : S2I_Context)
  : opInfoResult =
- let Qualified (q, id) = qid in
- let (ms_tvs, ms_type, _) = unpackFirstOpDef ms_info in
  let 
 
    def qid2str (Qualified (q, id)) =
@@ -908,11 +906,21 @@ op opinfo2declOrDefn (qid         : QualifiedId,
        | _            -> i_types
          
  in
+ let (ms_tvs, ms_type, _) = unpackFirstOpDef ms_info in
+
  let Qualified (q, lid) = qid in
  let qid0     = Qualified (q, "__" ^ lid ^ "__")                 in
  let id       = qid2OpName qid                                   in
  let id0      = qid2OpName qid0                                  in
  let ms_type  = unfoldToArrow (ctxt.ms_spec, ms_type)            in
+ if lid in? ["assign", "id"] then 
+   let _ = writeLine("") in
+   let _ = writeLine("Warning in I2L: " ^ show qid) in
+   let _ = writeLine("defined as: " ^ printTerm ms_info.dfn) in
+   let _ = writeLine("given type Nat and vacuous C definition.") in
+   let _ = writeLine("") in
+   OpDecl (id, I_Primitive I_Nat, None)
+ else
  let i_type   = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
  let ctxt     = setCurrentOpType (qid, ctxt)                     in
  case i_type of 
