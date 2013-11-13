@@ -18,6 +18,21 @@ op intFitsInNBits? (n:PosNat) (x:Int) : Bool = -(2**(n-1)) <= x && x < 2**(n-1)
 theorem intFitsInNBits?_monotone is
   fa(m:PosNat, n:PosNat, x:Int) intFitsInNBits? m x && (m <= n) => intFitsInNBits? n x
 
+%% This version does not have the n>0 assumption.  TODO: Eventually get rid of this and just use the version just below.
+proof Isa -verbatim
+theorem fits_inhabited[simp]: 
+"\<exists>x. Int__intFitsInNBits_p n x"
+proof -
+have zero :"Int__intFitsInNBits_p n 0" by (simp add:Int__intFitsInNBits_p_def)
+show ?thesis by (cut_tac zero, rule exI)
+qed
+end-proof
+
+%% This version does have the n>0 assumption.
+theorem fits_inhabited_2 is
+  fa(n:PosNat) ex(x:Nat) intFitsInNBits? n x
+
+
 %% TODO Either get rid of these or add the rest of them...
 op  intFitsIn8Bits?  (x:Int) : Bool = intFitsInNBits?  8  x
 op  intFitsIn16Bits? (x:Int) : Bool = intFitsInNBits? 16  x
@@ -72,6 +87,12 @@ proof Isa Int__intFitsInNBits_p_monotone
   apply(simp)
   apply(simp)
   apply(simp)
+end-proof
+
+proof Isa fits_inhabited_2 is [simp]
+  apply(simp add: Int__intFitsInNBits_p_def)
+  apply(cut_tac x=0 in exI)
+  apply(auto)
 end-proof
 
 end-spec
