@@ -610,7 +610,8 @@ op refs_in_type (typ : MSType, cohort : Cohort, location : Location) : PendingRe
  let 
    def aux typ =
      case typ of
-       | Base (qid, _, pos) ->
+
+       | Base (qid, args, pos) ->
          let ref =
              Type {name     = qid,
                    cohort   = cohort,
@@ -619,15 +620,19 @@ op refs_in_type (typ : MSType, cohort : Cohort, location : Location) : PendingRe
                                 | Type    x -> Type (x << {pos = pos})
                                 | Theorem x -> Theorem (x << {pos = pos})}
          in
-         [ref]
+         foldl (fn (refs, arg) -> refs ++ aux arg) [ref] args
+
        | Arrow     (t1, t2, _) -> aux t1 ++ aux t2
+
        | Product   (fields, _) -> foldl (fn (refs, (_, typ)) -> refs ++ aux typ) [] fields
+
        | CoProduct (fields, _) -> foldl (fn (refs, (_, opt_type)) -> 
                                            case opt_type of
                                              | Some typ -> refs ++ aux typ
                                              | _ -> refs)
                                         [] 
                                         fields
+
        | Subtype   (t1, _,    _) -> aux t1
        | Quotient  (t1, rel,  _) -> aux t1 ++ refs_in_term (rel, cohort, location)
        | Pi        (_, t1,    _) -> aux t1
