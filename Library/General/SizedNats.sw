@@ -13,6 +13,7 @@ op fitsInNBits? (n:PosNat) (x:Nat) : Bool = x < 2***n
 op fitsIn1Bits?  (x:Nat) : Bool = fitsInNBits? 1  x
 op fitsIn8Bits?  (x:Nat) : Bool = fitsInNBits? 8  x
 op fitsIn16Bits? (x:Nat) : Bool = fitsInNBits? 16 x
+op fitsIn31Bits? (x:Nat) : Bool = fitsInNBits? 31 x
 op fitsIn32Bits? (x:Nat) : Bool = fitsInNBits? 32 x
 
 type Nat1   = (Nat | fitsInNBits? 1 )
