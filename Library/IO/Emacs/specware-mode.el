@@ -2393,9 +2393,10 @@ uniquely and concretely describes their application.")
 (defvar display-warning-suppressed-classes ())
 
 ;;; Isabelle Interface
-(defun sw:convert-spec-to-isa-thy (non-recursive?)
+(defun sw:convert-spec-to-isa-thy (arg)
   "Converts Spec to Isabelle/HOL theory.
-With an argument, it doesn't convert imports."
+With an argument of 1 it doesn't convert imports.
+With any other argument it doesn't simplify terms."
   (interactive "P")
   (save-buffer)
   (let* ((filename (sw:containing-specware-unit-id t))
@@ -2406,9 +2407,10 @@ With an argument, it doesn't convert imports."
                             (Simplify::simplifyUsingSubtypes? t)
                             (Prover::treatNatSpecially? nil)
                             (Utilities::namedTypesRaised? t))
-                        (IsaTermPrinter::printUIDtoThyFile-2 %S %s))"
+                        (IsaTermPrinter::printUIDtoThyFile-3 %S %s %s))"
 		     filename
-		     (if non-recursive? "nil" "t"))))
+		     (if (eq arg 1) "t" "nil")
+                     (if (and arg (not (eq arg 1))) "t" "nil"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes)))
@@ -2434,7 +2436,7 @@ With an argument, it doesn't convert imports."
                             (Prover::treatNatSpecially? nil)
                             (Utilities::namedTypesRaised? t))
                         (IsaTermPrinter::deleteThyFilesForUID %S)
-                        (IsaTermPrinter::printUIDtoThyFile-2 %S t))"
+                        (IsaTermPrinter::printUIDtoThyFile-3 %S t nil))"
 		     filename filename)))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
