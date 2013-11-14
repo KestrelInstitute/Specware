@@ -1667,7 +1667,7 @@ def mergeFields(env,row1,row2,pos) =
             | Equal   -> (elaborateType(env,
                                         Product([e1], pos),
                                         Product([e2], pos));
-                          loop (r1, r2, merged ++ [e2]))
+                          loop (r1, r2, merged ++ [e1]))   % Was e2 but e1 is better to preserve subtype info
   in 
     loop(row1,row2,[])
 
