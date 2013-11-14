@@ -134,7 +134,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                                             Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
                              % Same thing, but don't save the mergerules proof in the tracehistory.
                              let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
-                             addRefinedTypeH(spc,oi,refinedType,th)
+                             addRefinedTypeH(spc,oi,refinedType,th2)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
                   addOpDef(spc,fname,Nonfix,body)
