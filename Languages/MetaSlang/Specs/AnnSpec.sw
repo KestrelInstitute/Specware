@@ -174,6 +174,12 @@ AnnSpec qualifying spec
  def defaultImplProof = ImplProofTactic "auto"
  def defaultPRedicateProof = PredicateTactic "auto"
 
+ op defaultRefinementProofLike(prf: RefinementProof): RefinementProof =
+   case prf of
+     | RefineEq _ -> RefineEq defaultEqProof
+     | RefineStrengthen _ -> RefineStrengthen defaultImplProof
+     | RefineDefOp _ -> RefineDefOp defaultPRedicateProof
+
  op mkEqProofSubterm(path: Path, prf: EqProof): EqProof =
    if path = [] then prf
      else EqProofSubterm(path, prf)
@@ -201,6 +207,10 @@ type TransformHistory = List (MSTerm * RuleSpec)
        RefineEq (EqProofTrans (eq_pf1, tm, eq_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
        RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
+     | (RefineStrengthen impl_pf1, tm, RefineEq eq_pf2) ->
+       RefineStrengthen (ImplTrans (impl_pf1, tm, ImplEq  eq_pf2))
+     | (RefineEq eq_pf1, tm, RefineStrengthen impl_pf2) ->
+       RefineStrengthen (ImplTrans (ImplEq eq_pf1, tm, impl_pf2))
      | _ -> fail ("composeRefinementProofs called with non-composable proofs!")
 
  % compose TransformInfos for two steps of transformation
@@ -217,9 +227,15 @@ type TransformHistory = List (MSTerm * RuleSpec)
        (rs1, Some pf1)
      | (([], None), tm, (rs2, Some pf2)) ->
        (rs2, Some pf2)
-     | ((rs1, _), tm, (rs2, _)) ->
+     | ((rs1, opf1), tm, (rs2, opf2)) ->
        (warn ("composeTransformInfos called with only one proof given");
-        (rs1 ++ rs2, None))
+        (rs1 ++ rs2,
+         case (opf1, opf2) of
+           | (Some pf1, _) ->      % opf2 must be None
+             Some (composeRefinementProofs (pf1, tm, defaultRefinementProofLike pf1))
+           | (_, Some pf2) ->      % opf1 must be None
+             Some (composeRefinementProofs (defaultRefinementProofLike pf2, tm, pf2))
+           | _ -> Some(RefineEq defaultEqProof)))    % ?
 
  op metaRuleATV(rl: RuleSpec): AnnTypeValue =
    let MetaRule(_, _, atv) = rl in
