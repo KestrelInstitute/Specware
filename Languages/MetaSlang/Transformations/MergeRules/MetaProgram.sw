@@ -580,7 +580,7 @@ uindent ^ "   qed\n"
 indent ^ "assume assumptions : \"" ^ isabelleTerm (mkAnd (traceAssumptions t)) ^ "\"\n" ^
 indent ^ "assume fails : \"~(" ^ isabelleTerm (dnfToTerm (traceFailure t)) ^ ")\"\n" ^
 indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^   
-indent ^ "from assumptions fails result show ?thesis by contradiction\n " ^
+indent ^ "from assumptions fails result show ?thesis by auto\n " ^
 indent ^ "qed\n"
 
       
