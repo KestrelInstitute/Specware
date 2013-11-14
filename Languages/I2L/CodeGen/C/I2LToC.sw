@@ -16,8 +16,8 @@ import /Languages/C/CUtils
 import /Library/Legacy/DataStructures/ListPair
 
 type CurrentContext = | TypeDef String 
-                      | OpDecl  String 
-                      | FunDecl String 
+                      | OpDecl  String % ops with non-arrow types
+                      | FunDecl String % ops with arrow types
                       | FunDefn String 
                       | VarDecl String 
                       | MapDecl String 
@@ -152,6 +152,7 @@ op c4OpDecl (ctxt : I2C_Context,
              cspc : C_Spec, 
              decl : I_Declaration) 
  : C_Spec =
+ %% decl for an op with a non-arrow type
  c4OpDecl_internal (ctxt, cspc, decl, None)
 
 op c4OpDecl_internal (ctxt                         : I2C_Context, 
@@ -217,6 +218,7 @@ op c4FunDecl (ctxt  : I2C_Context,
               cspc  : C_Spec, 
               fdecl : I_FunDeclaration) 
  : C_Spec =
+ %% decl for an op with an arrow type
  let (cspc, fname, ctypes, rtype) = c4FunDecl_internal (ctxt, cspc, fdecl) in
  addFn (cspc, (fname, ctypes, rtype))
 

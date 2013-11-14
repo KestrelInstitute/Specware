@@ -28,9 +28,10 @@ op printCSpec (c_spec       : C_Spec,
   let (h_spec, c_spec) = splitCSpec c_spec  in  
 
   let id_dfn           = ("Patched_PrismId", C_String, C_Const (C_Str basename)) in
+
   let h_spec           = addHeader    (h_spec, app_name)   in
   let h_spec           = addTrailer   (h_spec, app_name)   in
-  let h_spec           = addConstDefn (h_spec, id_dfn)     in  
+ %let h_spec           = addConstDefn (h_spec, id_dfn)     in  
 
   let c_spec           = addHeader    (c_spec, app_name)   in
   let c_spec           = addTrailer   (c_spec, app_name)   in

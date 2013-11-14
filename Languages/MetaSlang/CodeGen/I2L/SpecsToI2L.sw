@@ -218,11 +218,13 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
       decls    = {
                   typedefs = i_typedefs,
                   
+                  %% ops with non-arrow types:
                   opdecls  = foldl (fn | (l3, OpDecl d) -> l3++[d] 
                                        | (l4, _)        -> l4)
                                    []
                                    i_opdefs,
                   
+                  %% ops with arrow types:
                   funDecls = foldl (fn | (l5, FunDecl d)                    -> l5++[d]
                                        | (l6, FunDefn {decl = d, body = _}) -> l6++[d]
                                        | (l7, _)                            -> l7)
