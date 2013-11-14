@@ -375,8 +375,8 @@ spec
      let rules = subtypeRules(term, context) ++ rules in
      let rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, info: AnnSpec.TransformInfo): MSTerm * AnnSpec.TransformInfo =
-           %let _ = writeLine("doTerm "^show count) in
-           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, pathTermPath path_term) in
+           % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
+           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, butLast(pathTermPath path_term)) in
            case lazy of
              | Nil -> (trm, info)
              | Cons([], tl) -> (trm, info)
@@ -638,8 +638,8 @@ spec
 
   op replaceSubTermH((new_tm: MSTerm, new_info: AnnSpec.TransformInfo), old_ptm: PathTerm, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
-    let lifted_info = liftInfo(new_info, old_ptm) in
-    (new_path_tm, composeTransformInfos (info, topTerm (old_ptm), lifted_info))
+    %let lifted_info = liftInfo(new_info, old_ptm) in
+    (new_path_tm, composeTransformInfos (info, topTerm (old_ptm), new_info))
 
   op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
