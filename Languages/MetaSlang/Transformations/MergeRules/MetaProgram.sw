@@ -477,7 +477,8 @@ op equant(isabelleTerm:MSTerm -> String)(tr:TraceTree):String =
           then isabelleTerm body
           else isabelleTerm (Bind (Exists,typedVars, body,noPos)) 
 
-   
+op IsaTermPrinter.ppIdStr : String -> String
+
 op mkIsarProof(spc:Spec)(isabelleTerm:MSTerm-> String)(nm : Option String)(t:TraceTree)(uindent:String):String =
   let def inputTerm inps =
         case inps of
@@ -615,7 +616,7 @@ uindent ^ "qed\n"
                                    mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
  (* Do this first, to fix the existentially quantified variable *)
 % FIXME: The following step sometimes fails, but will succedd when the proof is replaced with '(rule conjE)'. WTF?
-indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"
+indent ^ "from result obtain " ^ flatten (intersperse " " (map IsaTermPrinter.ppIdStr evars)) ^ " where inner: \"
 " ^ isabelleTerm inner ^ "\" and esubs: \"" ^ isabelleTerm stpreds ^ "\" by (auto)\n" ^
 
 % indent ^ "(* SUBTYPES " ^ isabelleTerm stpreds ^ "*)\n" ^
