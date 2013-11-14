@@ -616,7 +616,7 @@ uindent ^ "qed\n"
  (* Do this first, to fix the existentially quantified variable *)
 % FIXME: The following step sometimes fails, but will succedd when the proof is replaced with '(rule conjE)'. WTF?
 indent ^ "from result obtain " ^ flatten (intersperse " " evars) ^ " where inner: \"
-" ^ isabelleTerm inner ^ "\" and esubs: \"" ^ isabelleTerm stpreds ^ "\" by auto\n" ^
+" ^ isabelleTerm inner ^ "\" and esubs: \"" ^ isabelleTerm stpreds ^ "\" by (auto)\n" ^
 
 % indent ^ "(* SUBTYPES " ^ isabelleTerm stpreds ^ "*)\n" ^
 mkIsarProof spc isabelleTerm (Some "ok_local") sub indent ^
@@ -627,7 +627,7 @@ indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (t
 indent ^ "from fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
 indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by (auto simp only:)\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
-indent ^ "from sub_done defns esubs show ?thesis by auto\n" ^ 
+indent ^ "from sub_done defns esubs show ?thesis by blast\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
 uindent ^ "qed\n"
 
