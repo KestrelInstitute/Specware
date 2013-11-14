@@ -233,7 +233,7 @@ op c4FunDecl_internal (ctxt  : I2C_Context,
  let (cspc, rtype)  = c4Type  (ctxt, cspc, fdecl.returntype)  in
  (cspc, fname, ctypes, rtype)
 
-op convertExprToStmt (rtype : C_Type) (e : C_Exp) : C_Stmt =
+op convertExprToReturnStmt (rtype : C_Type) (e : C_Exp) : C_Stmt =
  if rtype = C_Void then
    C_Block ([], [C_Exp e, C_ReturnVoid])
  else
@@ -269,9 +269,8 @@ op c4FunDefn (ctxt  : I2C_Context,
    | I_Exp expr ->
      let ctxt                                   = setCurrentFunParams (ctxt, vardecls)         in
      let (cspc, block as (decls, stmts), cexpr) = c4RhsExpression (ctxt, cspc, ([], []), expr) in
-     let (stmts1, cexpr1)                       = commaExprToStmts (ctxt, cexpr)               in
-     let stmts2                                 = conditionalExprToStmts (ctxt, cexpr1, convertExprToStmt rtype) in
-     let block                                  = (decls, stmts++stmts1++stmts2)               in
+     let stmts2                                 = conditionalExprToStmts (ctxt, cexpr, rtype)  in
+     let block                                  = (decls, stmts ++ stmts2)                     in
      let block                                  = findBlockForDecls block                      in
      let stmt                                   = C_Block block                                in
      let stmt                                   = moveFailAwayFromEnd stmt                     in
@@ -1523,16 +1522,15 @@ op mergeBlockIntoExpr (cspc                    : C_Spec,
 
 % --------------------------------------------------------------------------------
 
-op commaExprToStmts (_ : I2C_Context, exp : C_Exp) : C_Stmts * C_Exp =
+op flattenCommaExprs (_ : I2C_Context, exp : C_Exp) : C_Exps =
  let
-   def commaExprToStmts0 (stmts, exp) =
+   def aux exp =
      case exp of
        
        | C_Binary (C_Set, e0, C_Comma (e1, e2)) ->
-         let (stmts, e1) = commaExprToStmts0 (stmts, e1) in
-         let stmts       = stmts ++ [C_Exp e1]           in
-         let (stmts, e2) = commaExprToStmts0 (stmts, e2) in
-         commaExprToStmts0 (stmts, C_Binary (C_Set, e0, e2))
+         let e1s                    = aux e1           in
+         let e2_last :: rev_e2_tail = reverse (aux e2) in
+         e1s ++ (reverse rev_e2_tail) ++ [C_Binary (C_Set, e0, e2_last)]
          
          % | C_Comma (C_Binary (C_Set, e0, e1), e2) ->
          %   let (stmts, e1) = commaExprToStmts0 (stmts, e1) in
@@ -1540,41 +1538,78 @@ op commaExprToStmts (_ : I2C_Context, exp : C_Exp) : C_Stmts * C_Exp =
          %   commaExprToStmts0 (stmts, e2)
 
        | C_Comma (e1, e2) ->
-         let (stmts, e1) = commaExprToStmts0 (stmts, e1) in
-         let stmts      = stmts ++ [(C_Exp e1) : C_Stmt]   in
-         commaExprToStmts0 (stmts, e2)
+         (aux e1) ++ (aux e2)
 
-       | _ -> (stmts, exp)
+       | _ -> 
+         [exp]
  in
- commaExprToStmts0 ([], exp)
+ aux exp
 
 % --------------------------------------------------------------------------------
 
 op conditionalExprToStmts (ctxt   : I2C_Context,
                            exp    : C_Exp,
-                           e2sFun : C_Exp -> C_Stmt) 
+                           rtype  : C_Type)
  : C_Stmts =
- let (stmts, exp) = commaExprToStmts (ctxt, exp) in
- stmts ++ (case exp of
+ let
+   def aux exp return? =
+     let exprs                 = flattenCommaExprs (ctxt, exp) in
+     let last_expr :: rev_head = reverse exprs                 in
+     let head_exprs            = reverse rev_head              in
+     let head_stmts = 
+         foldl (fn (stmts, exp) ->
+                          case exp of
+                            | C_IfExp (condExp, thenExp, elseExp) ->
+                              let thenStmts = aux thenExp false in
+                              let elseStmts = aux elseExp false in
+                              (case elseStmts of
+                                 | [] ->
+                                   let ifStmt = C_IfThen (condExp, 
+                                                          C_Block ([], thenStmts)) 
+                                   in
+                                   let new = ifStmt::elseStmts in
+                                   stmts ++ new
+                                 | _ ->
+                                   let ifStmt = C_If (condExp, 
+                                                      C_Block ([], thenStmts), 
+                                                      C_Block ([], elseStmts)) 
+                                   in
+                                   let new = [ifStmt] in
+                                   stmts ++ new)
+                            | _ ->
+                              let new = [C_Exp exp] in
+                              stmts ++ new)
+                       []
+                       head_exprs
+     in
+     let last_stmts =
+         case last_expr of
              
-             | C_IfExp (condExp, thenExp, elseExp) ->
-               let return? = 
-                   case e2sFun exp of
-                     | C_Return _ -> true
-                     | _ -> false
-               in
-               let thenStmts = conditionalExprToStmts (ctxt, thenExp, e2sFun) in
-               let elseStmts = conditionalExprToStmts (ctxt, elseExp, e2sFun) in
-               if return? then
-                 let ifStmt = C_IfThen (condExp, C_Block ([], thenStmts)) in
-                 (ifStmt::elseStmts)
-               else
-                 let ifStmt = C_If (condExp, C_Block ([], thenStmts), C_Block ([], elseStmts)) in
-                 [ifStmt]
-                 
-             | _ ->
-               let finalStmt = e2sFun exp in
-               [finalStmt])
+           | C_IfExp (condExp, thenExp, elseExp) ->
+             let thenStmts = aux thenExp return? in
+             let elseStmts = aux elseExp return? in
+             if return? then
+               let ifStmt = C_IfThen (condExp, C_Block ([], thenStmts)) in
+               (ifStmt::elseStmts)
+             else
+               let ifStmt = C_If (condExp, C_Block ([], thenStmts), C_Block ([], elseStmts)) in
+               [ifStmt]
+               
+           | _ -> 
+             let last_stmt = 
+                 if return? then
+                   convertExprToReturnStmt rtype last_expr
+                 else
+                   C_Exp last_expr
+             in
+             [last_stmt]
+     in
+     let stmts = head_stmts ++ last_stmts in
+     case last stmts of
+       | C_Exp (C_Var _) -> butLast stmts
+       | _ -> stmts
+ in
+ aux exp true 
 
 % --------------------------------------------------------------------------------
 
