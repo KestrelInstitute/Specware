@@ -31,8 +31,8 @@ CUtils qualifying spec
  op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
  op addVar                  (cspc : C_Spec, X : C_VarDecl)              : C_Spec = cspc << {vars                 = cspc.vars                 ++ [X]}
  op setStructUnionTypeDefns (cspc : C_Spec, X : C_StructUnionTypeDefns) : C_Spec = cspc << {structUnionTypeDefns = X}
- op addStructDefn           (cspc : C_Spec, X : C_StructDefn)           : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [C_Struct X]}
- op addUnionDefn            (cspc : C_Spec, X : C_UnionDefn)            : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [C_Union  X]}
+ op addStructDefn           (cspc : C_Spec, X : C_StructDefn)           : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Struct X]}
+ op addUnionDefn            (cspc : C_Spec, X : C_UnionDefn)            : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Union  X]}
  op addAxiom                (cspc : C_Spec, X : C_Exp)                  : C_Spec = cspc << {axioms               = cspc.axioms               ++ [X]}
  op addVarDefn              (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {varDefns             = cspc.varDefns             ++ [X]}
 
@@ -64,10 +64,10 @@ CUtils qualifying spec
   cspc << {fns = other_fns}
  
  op addTypeDefn (cspc : C_Spec, X as (tname,_) : C_TypeDefn) : C_Spec =
-  let other_typedefs = filter (fn (C_TypeDefn (tname0,_)) -> tname0 ~= tname | _ -> true) 
+  let other_typedefs = filter (fn (Type (tname0,_)) -> tname0 ~= tname | _ -> true) 
                               cspc.structUnionTypeDefns 
   in
-  cspc << {structUnionTypeDefns = other_typedefs ++ [C_TypeDefn X]}
+  cspc << {structUnionTypeDefns = other_typedefs ++ [Type X]}
 
  op addFnDefnAux (cspc : C_Spec, fndefn as (fname,params,rtype,body) : C_FnDefn, overwrite? : Bool)
   : C_Spec =
@@ -86,7 +86,7 @@ CUtils qualifying spec
  op getStructDefns (cspc : C_Spec) : C_StructDefns =
   foldl (fn (structs, su) ->
            case su of
-             | C_Struct X -> structs ++ [X]
+             | Struct X -> structs ++ [X]
              | _ -> structs)
         [] 
         cspc.structUnionTypeDefns
@@ -94,7 +94,7 @@ CUtils qualifying spec
  op getUnionDefns (cspc : C_Spec) : C_UnionDefns =
   foldl (fn (unions, su) ->
            case su of
-             | C_Union X -> unions ++ [X]
+             | Union X -> unions ++ [X]
              | _ -> unions)
         []
         cspc.structUnionTypeDefns
@@ -102,7 +102,7 @@ CUtils qualifying spec
  op getTypeDefns (cspc : C_Spec) : C_TypeDefns =
   foldl (fn (typedefns, su) ->
            case su of
-             | C_TypeDefn X -> typedefns ++ [X]
+             | Type X -> typedefns ++ [X]
              | _ -> typedefns)
         []
         cspc.structUnionTypeDefns
@@ -119,8 +119,8 @@ CUtils qualifying spec
                     tdef as (tname,typ) : C_TypeDefn) 
   : C_Spec * C_Type =
   case findTypeDefnInCSpecs ([cspc,xcspc], typ) of
-    | Some s -> (cspc,                   C_Base s)
-    | None   -> (addTypeDefn(cspc,tdef), C_Base tname)
+    | Some s -> (cspc,                   C_Base (s,     Type))
+    | None   -> (addTypeDefn(cspc,tdef), C_Base (tname, Type))
 
  % --------------------------------------------------------------------------------
 
@@ -137,14 +137,14 @@ CUtils qualifying spec
       case findLeftmost (fn (sname0,sfields0) -> sfields = sfields0) (structs ++ xstructs) of
     
         | Some (sname,_) -> 
-          (cspc, C_Struct sname)
+          (cspc, C_Base (sname, Struct))
           
         | None -> 
           let cspc = addStructDefn (cspc, (sname,sfields)) in
-          (cspc, C_Struct sname)
+          (cspc, C_Base (sname, Struct))
   in
   let typ = case findTypeDefnInCSpecs ([cspc,xcspc], struct) of
-              | Some s -> C_Base s
+              | Some s -> C_Base (s, Type)
               | None -> struct
   in
   (cspc,typ)
@@ -158,11 +158,11 @@ CUtils qualifying spec
   case findLeftmost (fn (sname0,sfields0) -> sfields = sfields0) (unions ++ xunions) of
 
     | Some (sname,_) -> 
-      (cspc, C_Union sname)
+      (cspc, C_Base (sname, Union))
       
     | _ ->
       let cspc = addUnionDefn (cspc, (sname,sfields)) in
-      (cspc, C_Union sname)
+      (cspc, C_Base (sname, Union))
 
  % --------------------------------------------------------------------------------
 
@@ -228,8 +228,8 @@ CUtils qualifying spec
            constDefns           = concatnewEq (cspc1. constDefns, cspc2.constDefns),
            vars                 = concatnew (fn ((var1,_),      (var2,_))       -> var1=var2)     (cspc1.vars,    cspc2.vars),
            fns                  = concatnew (fn ((fname1,_,_),  (fname2,_,_))   -> fname1=fname2) (cspc1.fns,     cspc2.fns),
-           structUnionTypeDefns = foldr (fn | (x as C_TypeDefn(tname,_),res) -> 
-                                           (filter (fn (C_TypeDefn (tname0,_)) -> tname0 ~= tname | _ -> true) res) ++ [x]
+           structUnionTypeDefns = foldr (fn | (x as Type (tname,_),res) -> 
+                                           (filter (fn (Type (tname0,_)) -> tname0 ~= tname | _ -> true) res) ++ [x]
                                          | (x,res) -> 
                                            res ++ [x])
                                         cspc2.structUnionTypeDefns
@@ -574,9 +574,10 @@ CUtils qualifying spec
  op mapStructUnionTypeDefn (fe : C_Exp -> C_Exp, ft : C_Type -> C_Type) (sut : C_StructUnionTypeDefn) 
   : C_StructUnionTypeDefn =
   case sut of
-    | C_Struct   s -> C_Struct   (mapStructDefn (fe, ft) s)
-    | C_Union    u -> C_Union    (mapUnionDefn  (fe, ft) u)
-    | C_TypeDefn t -> C_TypeDefn (mapTypeDefn   (fe, ft) t)
+    | Struct x -> Struct (mapStructDefn (fe, ft) x)
+    | Union  x -> Union  (mapUnionDefn  (fe, ft) x)
+    | Type   x -> Type   (mapTypeDefn   (fe, ft) x)
+    | Enum   x -> Enum x
 
  % --------------------------------------------------------------------------------
 
@@ -587,8 +588,8 @@ CUtils qualifying spec
   let suts = foldl (fn (suts, sut) ->
                       case sut of
 
-                        | C_TypeDefn (tname, C_VoidPtr) ->
-                          (case findLeftmost (fn |C_TypeDefn (tname1,_) -> (tname1=tname) | _ -> false) suts of
+                        | Type (tname, C_VoidPtr) ->
+                          (case findLeftmost (fn | Type (tname1,_) -> (tname1=tname) | _ -> false) suts of
                              | Some _ -> suts
                              | _ -> suts ++ [sut])
 
@@ -608,7 +609,7 @@ CUtils qualifying spec
     def findTypeDefn0 typedefns =
       case typedefns of
 
-        | (C_TypeDefn (s,type0)) :: typedefns ->
+        | (Type (s,type0)) :: typedefns ->
           if type0 = typ then 
             Some s
           else 
@@ -632,9 +633,10 @@ CUtils qualifying spec
 
  op findStructUnionTypeDefn (cspc : C_Spec, typ : C_Type) : Option C_StructUnionTypeDefn =
   case typ of
-    | C_Base   n -> findLeftmost (fn |(C_TypeDefn (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-    | C_Struct n -> findLeftmost (fn |(C_Struct   (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-    | C_Union  n -> findLeftmost (fn |(C_Union    (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
+    | C_Base  (n, Type)   -> findLeftmost (fn x -> case x of | (Type   (n0, _)) -> n0 = n | _ -> false) cspc.structUnionTypeDefns
+    | C_Base  (n, Struct) -> findLeftmost (fn x -> case x of | (Struct (n0, _)) -> n0 = n | _ -> false) cspc.structUnionTypeDefns
+    | C_Base  (n, Union)  -> findLeftmost (fn x -> case x of | (Union  (n0, _)) -> n0 = n | _ -> false) cspc.structUnionTypeDefns
+    | C_Base  (n, Enum)   -> findLeftmost (fn x -> case x of | (Enum   (n0, _)) -> n0 = n | _ -> false) cspc.structUnionTypeDefns
     | _ -> None
 
  op structUnionTypeDefnGT (cspc : C_Spec) (sut1 : C_StructUnionTypeDefn, sut2 : C_StructUnionTypeDefn) : Bool =
@@ -649,17 +651,19 @@ CUtils qualifying spec
   
  op structUnionTypeDefnToType (sut : C_StructUnionTypeDefn) : C_Type =
   case sut of
-    | C_TypeDefn (n,_) -> C_Base   n
-    | C_Struct   (s,_) -> C_Struct s
-    | C_Union    (u,_) -> C_Union  u
+    | Type   (s,_) -> C_Base (s, Type)
+    | Struct (s,_) -> C_Base (s, Struct)
+    | Union  (s,_) -> C_Base (s, Union)
+    | Enum   (s,_) -> C_Base (s, Enum)
 
  op structUnionTypeDefnDepends (cspc : C_Spec, sutdef : C_StructUnionTypeDefn) : C_Types =
   case sutdef of
    %| C_TypeDefn (n, C_Ptr(_))     -> typeDepends (cspc, C_Base   n, [])
-    | C_TypeDefn (n, C_Fn(tys,ty)) -> typeDepends (cspc, C_Base   n, tys++[ty])
-    | C_TypeDefn (n, t)            -> typeDepends (cspc, C_Base   n, [t])
-    | C_Struct   (s, fields)       -> typeDepends (cspc, C_Struct s, map (fn (_,t) -> t) fields)
-    | C_Union    (u, fields)       -> typeDepends (cspc, C_Union  u, map (fn (_,t) -> t) fields)
+    | Type   (n, C_Fn(tys,ty)) -> typeDepends (cspc, C_Base (n, Type),   tys++[ty])
+    | Type   (n, t)            -> typeDepends (cspc, C_Base (n, Type),   [t])
+    | Struct (s, fields)       -> typeDepends (cspc, C_Base (s, Struct), map (fn (_,t) -> t) fields)
+    | Union  (u, fields)       -> typeDepends (cspc, C_Base (u, Union),  map (fn (_,t) -> t) fields)
+    | Enum   (u, fields)       -> typeDepends (cspc, C_Base (u, Enum),   [])
       
  op getSubTypes (t : C_Type) : C_Types =
   case t of
@@ -678,16 +682,16 @@ CUtils qualifying spec
       else
         case findStructUnionTypeDefn (cspc, t) of
 
-          | Some (C_TypeDefn (n, t1)) -> 
-            typeDepends0 (t1, C_Base n :: deps)
+          | Some (Type (n, t1)) -> 
+            typeDepends0 (t1, C_Base (n, Type) :: deps)
             
-          | Some (C_Struct (s, fields)) ->
-            let deps  = C_Struct s :: deps in
+          | Some (Struct (s, fields)) ->
+            let deps  = (C_Base (s, Struct)) :: deps in
             let types = map (fn (_, t) -> t) fields in
             foldl (fn (deps, t) -> typeDepends0 (t, deps)) deps types
             
-          | Some (C_Union (u, fields)) ->
-            let deps  = C_Union u :: deps in
+          | Some (Union (u, fields)) ->
+            let deps  = (C_Base (u, Union)) :: deps in
             let types = map (fn (_, t) -> t) fields in
             foldl (fn (deps, t) -> typeDepends0 (t, deps)) deps types
             
@@ -709,18 +713,18 @@ CUtils qualifying spec
       else
         case sut of
           
-          | C_TypeDefn _ -> cspc
+          | Type _ -> cspc
             
-          | C_Struct (id,fields) ->
+          | Struct (id,fields) ->
             (case findLeftmost (fn sut ->
                                   case sut of
-                                    | C_Struct (id0,fields0) ->
+                                    | Struct (id0,fields0) ->
                                       (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
                                     | _ -> false) 
                                suts 
                of
-               | Some (C_Struct (id0,_)) ->
-                 let suts = filter (fn | C_Struct(id1,_) -> (id1 ~= id0)
+               | Some (Struct (id0,_)) ->
+                 let suts = filter (fn | Struct(id1,_) -> (id1 ~= id0)
                                        | _ -> true) 
                                    suts
                  in
@@ -730,7 +734,7 @@ CUtils qualifying spec
                  let cspc = mapCSpec (fn e -> e,
                                       fn t ->
                                         case t of
-                                          | C_Struct id1 -> if id1=id0 then C_Struct id else t
+                                          | C_Base (id1, Struct) -> if id1=id0 then C_Base (id, Struct) else t
                                           | _ -> t)
                                      cspc
                  in
@@ -740,16 +744,16 @@ CUtils qualifying spec
                  %let _ = writeLine("struct \""^id^"\": no identical structs found.") in
                  cspc)
 
-          | C_Union (id, fields) ->
+          | Union (id, fields) ->
             (case findLeftmost (fn sut ->
                                   case sut of
-                                    | C_Union (id0,fields0) ->
+                                    | Union (id0,fields0) ->
                                       (id0 ~= id) && (equalVarDecls cspc (fields0,fields))
                                     | _ -> false) 
                                suts
                of
-               | Some (C_Union (id0,_)) ->
-                 let suts = filter (fn  | C_Union(id1,_) -> id1 ~= id0
+               | Some (Union (id0,_)) ->
+                 let suts = filter (fn  | Union(id1,_) -> id1 ~= id0
                                         | _ -> true) 
                                    suts
                  in
@@ -759,7 +763,7 @@ CUtils qualifying spec
                  let cspc = mapCSpec (fn e -> e,
                                       fn t ->
                                         case t of
-                                          | C_Union id1 -> if id1=id0 then C_Union id else t
+                                          | C_Base (id1, Union) -> if id1=id0 then C_Base (id, Union) else t
                                           | _ -> t)
                                      cspc
                  in
@@ -783,14 +787,14 @@ CUtils qualifying spec
  op unfoldType (cspc : C_Spec, typ : C_Type) : C_Type =
   mapType (fn t ->
              case t of
-               | C_Base tid -> 
+               | C_Base (tid, Type) -> 
                  (case findLeftmost (fn sut ->
                                        case sut of
-                                         | C_TypeDefn (tid0, _) -> tid = tid0
+                                         | Type (tid0, _) -> tid = tid0
                                          | _ -> false) 
                                     cspc.structUnionTypeDefns 
                     of
-                    | Some (C_TypeDefn (_, tx)) -> tx
+                    | Some (Type (_, tx)) -> tx
                     | None -> t)
                | _ -> t)
           typ
@@ -1074,9 +1078,12 @@ CUtils qualifying spec
 
  op deleteUnusedTypes (cspc : C_Spec) : C_Spec =
   let usedtypes = usedCTypes cspc in
-  let suts = filter (fn (C_TypeDefn (n,_)) -> C_Base   n in? usedtypes
-                      | (C_Struct   (n,_)) -> C_Struct n in? usedtypes
-		      | (C_Union    (n,_)) -> C_Union  n in? usedtypes)
+  let suts = filter (fn dfn ->
+                       case dfn of
+                         | Type   (n,_) -> C_Base (n, Type)   in? usedtypes
+                         | Struct (n,_) -> C_Base (n, Struct) in? usedtypes
+                         | Union  (n,_) -> C_Base (n, Union)  in? usedtypes
+                         | Enum   (n,_) -> C_Base (n, Enum)   in? usedtypes)
                     cspc.structUnionTypeDefns
   in
   setStructUnionTypeDefns (cspc, suts)
@@ -1127,9 +1134,10 @@ CUtils qualifying spec
   let
     def usedTypes4SUT t =
       case findStructUnionTypeDefn (cspc, t) of
-        | Some (C_TypeDefn (_,t))      -> [t]
-        | Some (C_Union    (_,vdecls)) -> flatten (map usedCTypesVarDecl vdecls)
-        | Some (C_Struct   (_,vdecls)) -> flatten (map usedCTypesVarDecl vdecls)
+        | Some (Type   (_,t))      -> [t]
+        | Some (Union  (_,vdecls)) -> flatten (map usedCTypesVarDecl vdecls)
+        | Some (Struct (_,vdecls)) -> flatten (map usedCTypesVarDecl vdecls)
+        | Some (Enum   (_,vdecls)) -> []
         | _ -> []
   in
   let newtypes =
@@ -1137,8 +1145,6 @@ CUtils qualifying spec
         | C_Ptr           t            -> [t]
         | C_Array         t            -> [t]
         | C_Base          _            -> usedTypes4SUT t
-        | C_Struct        _            -> usedTypes4SUT t
-        | C_Union         _            -> usedTypes4SUT t
         | C_ArrayWithSize (_,t)        -> [t]
 	| C_Fn            (types, typ) -> typ::types
 	| _ -> []

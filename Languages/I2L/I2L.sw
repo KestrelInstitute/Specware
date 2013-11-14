@@ -37,6 +37,8 @@ I2L qualifying spec
 
   type I_Primitive = | I_Bool | I_Char | I_String | I_Nat | I_Int | I_Float
 
+  type I_NameSpace = | Type | Struct | Enum | Union
+
   type I_Type = | I_Primitive   I_Primitive
                 | I_BoundedNat  Nat               % Nats within inclusive bound  (e.g. 'unsigned short')
                 | I_BoundedInt  Int * Int         % Ints within inclusive bounds (e.g. 'signed short')
@@ -45,9 +47,9 @@ I2L qualifying spec
                 | I_Tuple       I_Types
                 | I_BoundedList I_Type * Nat      % list with maximum length
                 | I_List        I_Type
-                | I_Base        I_TypeName        % reference to an itype definition
+                | I_Base        I_TypeName * I_NameSpace
                 | I_FunOrMap    I_Types * I_Type
-                | I_Ref         I_Type  * Bool    % true means pointer at structure (different name space)
+                | I_Ref         I_Type            % ptr type
                 | I_Void
                 | I_Any
   type I_Types = List I_Type
@@ -322,7 +324,7 @@ I2L qualifying spec
      def typeDepends0 (iu, t, deps) =
        case t of
 
-         | I_Base (tname as (_, id1)) -> 
+         | I_Base (tname as (_, id1), _) -> 
            let _ =
                if t0name = tname then
                  fail ("sorry, this version of the code generator doesn't support recursive types: \"" ^ id1 ^ "\"")
@@ -341,7 +343,7 @@ I2L qualifying spec
          | I_Tuple  types  -> foldl (fn (deps, t)      -> typeDepends0 (iu, t, deps)) deps types
 
          | I_BoundedList (t, _)  -> typeDepends0 (iu, t, deps)
-         | I_Ref         (t, _)  -> typeDepends0 (iu, t, deps)
+         | I_Ref         t       -> typeDepends0 (iu, t, deps)
 
          | I_FunOrMap (types, t) -> foldl (fn (deps, t) -> typeDepends0 (iu, t, deps))
                                           (typeDepends0 (iu, t, deps))

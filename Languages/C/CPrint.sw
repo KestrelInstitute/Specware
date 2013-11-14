@@ -44,10 +44,11 @@ CPrint qualifying spec
     | C_UTF16         -> fail("ppType C_UTF16 not yet implemented")
     | C_UTF32         -> fail("ppType C_UTF32 not yet implemented")
       
-    | C_Base   t      -> ppBaseType  (cId t                           , p) % TODO ??
-    | C_Struct s      -> prettysNone [string "struct ", string (cId s), p] % TODO: ??
-    | C_Union  u      -> prettysNone [string "union " , string (cId u), p] % TODO: ??
-      
+    | C_Base   (t, ns) -> (case ns of
+                            | Type   -> ppBaseType  (cId t                           , p)
+                            | Struct -> prettysNone [string "struct ", string (cId t), p]
+                            | Union  -> prettysNone [string "union " , string (cId t), p]
+                            | Enum   -> prettysNone [string "enum " ,  string (cId t), p])
     | C_Ptr           t           -> ppType (t, prettysNone [string "*", p, string ""])
     | C_Array         t           -> ppType (t, prettysNone [string "(", p, string "[])"])
     | C_ArrayWithSize (bounds, t) -> ppType (t, prettysNone [p, string "[", ppExps bounds, string "]"])
@@ -316,16 +317,17 @@ CPrint qualifying spec
 
  op ppStructUnionTypeDefn (structOrUnion) : Pretty =
   case structOrUnion of
-    | C_TypeDefn x -> ppTypeDefn   x
-    | C_Struct   x -> ppStructDefn x
-    | C_Union    x -> ppUnionDefn  x
+    | Type   x -> ppTypeDefn   x
+    | Struct x -> ppStructDefn x
+    | Union  x -> ppUnionDefn  x
+    | Enum   x -> ppEnumDefn   x
 
  op ppTypeDefn (s : String, t : C_Type) : Pretty =
   let pp = blockAll (0, [(0, prettysNone [string "typedef ", ppVarDecl (s, t)]),
                          (0, emptyPretty ())])
   in
   case t of
-    | C_Base "Any" ->
+    | C_Base ("Any", _) ->
       blockAll (0, [(0,strings [ "#ifndef "^s^"_is_externally_defined"]),
                     (0,pp),
                     (0,string "#endif")])
@@ -343,6 +345,13 @@ CPrint qualifying spec
                 (0, string "};"),
                 (0, emptyPretty ())])
 
+ op ppEnumDefn (s : String, tags : Strings) : Pretty =
+  blockAll (0, [(0, strings ["enum ", cId s, " {"]),
+                (2, strings tags),
+                (0, string "};"),
+                (0, emptyPretty ())])
+
+
  op ppVar (asHeader:Bool) (s : String, t : C_Type) : Pretty =
   %    if generateCodeForMotes then
   %      if asHeader then
@@ -356,13 +365,12 @@ CPrint qualifying spec
                   
 
  op ppFn (s : String, ts : C_Types, t : C_Type) : Pretty =
-  % writeLine ("Pretty printing "^s);
-  % app (fn t -> writeLine(anyToString t)) ts;
-  % writeLine(anyToString t);
-  % writeLine "";
-  blockAll (0, [(0, prettysNone [(*string "extern ",*)
-                                   ppType (t, prettysFill [strings [" ", cId s, " "], ppPlainTypes ts]),
-                                   string ";"]),
+  let args = case ts of
+               | [] -> string "(void)"
+               | _ -> ppPlainTypes ts
+  in
+  blockAll (0, [(0, prettysNone [ppType (t, prettysFill [strings [" ", cId s, " "], args]),
+                                 string ";"]),
                 (0, emptyPretty ())])
   
  op ppExps               (es : C_Exps) : Pretty = prettysLinearDelim ("(", ", ", ")") (map ppExp es)
@@ -405,15 +413,16 @@ CPrint qualifying spec
                 (0, emptyPretty ())])
 
  op ppFnDefn (asHeader:Bool) (s : String, vds : C_VarDecls, t : C_Type, b : C_Stmt) : Pretty =
+  let args = case vds of 
+               | [] -> string "(void)"
+               | _ ->  ppArgs vds
+  in
+  let decl = ppType (t, prettysFill [strings [" ", cId s, " "], args]) in
   if asHeader then
-    blockAll (0, [(0, prettysNone
-                     [ppType (t, prettysFill [strings [" ", cId s, " "], ppArgs vds]),
-                      string ";"]),
+    blockAll (0, [(0, prettysNone [decl, string ";"]),
                   (0, emptyPretty ())])
   else
-    blockAll (0, [(0, prettysNone
-                     [ppType (t, prettysFill [strings [" ", cId s, " "], ppArgs vds]),
-                      string " {"]),
+    blockAll (0, [(0, prettysNone [decl, string " {"]),
                   (2, ppInBlock b),
                   (0, string "}"),
                   (0, emptyPretty ())])
@@ -563,10 +572,8 @@ CPrint qualifying spec
      | C_UTF16                 -> []
      | C_UTF32                 -> []
        
-     | C_Base          name    -> [name]
+     | C_Base          (name, _) -> [name]
      | C_Ptr           t       -> namesInType t
-     | C_Struct        _       -> [] % TODO
-     | C_Union         _       -> [] % TODO
      | C_Array         t       -> namesInType t
      | C_ArrayWithSize (_,t)   -> namesInType t
      | C_Fn            (ts, t) -> (namesInType t) ++ (namesInTypes ts)
@@ -630,7 +637,7 @@ CPrint qualifying spec
      id = "volatile"  ||
      id = "while" 
     then 
-      "_" ^ id 
+      id    % "_" ^ id  % TODO -- think about this
   else 
     id
 

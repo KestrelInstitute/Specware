@@ -507,8 +507,7 @@ op unfold_bounded_list_type (ms_tvs          : TyVars,
         | _ -> None)
    | _ -> None
 
-op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context) 
- : Bool =
+op namespaceForType (t1 : MSType, ctxt : S2I_Context) : I_NameSpace =
  case t1 of
 
    | Base (qid, [], _) ->
@@ -530,12 +529,14 @@ op typeImplementedAsStruct? (t1 : MSType, ctxt : S2I_Context)
                else
                  ()
        in
-       true
+       Struct
+     else if implicit_struct? then
+       Struct
      else
-       implicit_struct? 
+       Type
 
    | _ ->
-     false
+     Type
 
 % utility for stepwise type expansion
 op expandTypeOnce (name : TypeName, ctxt : S2I_Context) 
@@ -581,9 +582,8 @@ op type2itype (ms_tvs  : TyVars,
    | Base (Qualified ("String",  "String"), [],   _) -> I_Primitive I_String
 
    | Base (Qualified (_,           "Ptr"),    [t1], _) -> 
-     let target  = type2itype (ms_tvs, t1, ctxt)       in
-     let struct? = typeImplementedAsStruct? (t1, ctxt) in
-     I_Ref (target, struct?)
+     let target  = type2itype (ms_tvs, t1, ctxt) in
+     I_Ref target
 
    | Subtype (ms_type, ms_pred, _) ->
      (if subtype_of_int? ms_type then
@@ -680,16 +680,20 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
   
    | Base (qid, _, _) -> 
-     (case pragmaTypeTranslation (qid, ctxt) of
-        | Some i_typename ->
-          % let _ = writeLine("Translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
-          I_Base i_typename
-        | _ ->
-          %% TODO: this will change to possibly expand type, 
-          %%        paying attention to reachability via ops in executable slice
-          let i_typename = qid2TypeName qid in
-          % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
-          I_Base i_typename)
+     let i_typename =
+         case pragmaTypeTranslation (qid, ctxt) of
+           | Some i_typename ->
+             % let _ = writeLine("Translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+             i_typename
+           | _ ->
+             %% TODO: this will change to possibly expand type, 
+             %%        paying attention to reachability via ops in executable slice
+             let i_typename = qid2TypeName qid in
+             % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
+             i_typename
+     in
+     let namespace = namespaceForType (ms_utype, ctxt) in
+     I_Base (i_typename, namespace)
      
    | Quotient (ms_type, ms_term, _) -> % ignore the term...
      type2itype (ms_tvs, ms_type, ctxt)

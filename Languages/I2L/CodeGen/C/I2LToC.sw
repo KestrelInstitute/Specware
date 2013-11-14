@@ -435,9 +435,15 @@ op c4Type (ctxt : I2C_Context,
        | I_Primitive p -> 
          (cspc, c4PrimitiveType (ctxt, p))
 
-       | I_Base tname  -> 
-         let x = (qname2id tname) in
-         (cspc, C_Base x)
+       | I_Base (tname, ispace) ->
+         let cname = qname2id tname in
+         let cspace = case ispace of 
+                        | Type   -> Type
+                        | Struct -> Struct
+                        | Union  -> Union
+                        | Enum   -> Enum
+         in
+         (cspc, C_Base (cname, cspace))
 
        | I_Struct [] -> 
          (cspc, C_Void)
@@ -461,14 +467,9 @@ op c4Type (ctxt : I2C_Context,
          let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields)) in
          (cspc, structtype)
          
-       | I_Ref (rtype, struct?) ->
+       | I_Ref rtype ->
          let (cspc, ctype) = c4Type (ctxt, cspc, rtype) in
-         let target = 
-             case ctype of
-               | C_Base x | struct? -> C_Struct x
-               | _ -> ctype
-         in
-         (cspc, C_Ptr target)
+         (cspc, C_Ptr ctype)
          
        | I_FunOrMap (types, rtype) ->
          let (cspc, ctypes) = c4Types (ctxt, cspc, types)                                       in
@@ -477,7 +478,7 @@ op c4Type (ctxt : I2C_Context,
          let (cspc, ctype)  = addNewTypeDefn (cspc, ctxt. xcspc, (tname, C_Fn (ctypes, ctype))) in
          (cspc, ctype)
          
-       | I_Any -> (cspc, C_Base "Any")
+       | I_Any -> (cspc, C_Base ("Any", Type))
          
        | I_Void -> (cspc, C_Void)
          
@@ -548,7 +549,7 @@ op c4TypeSpecial (cspc : C_Spec, typ : I_Type)
  : Option (C_Spec * C_Type) =
  if bitStringSpecial? then
    case typ of
-     | I_Base (_, "BitString") -> Some (cspc, C_UInt32)
+     | I_Base ((_, "BitString"), _) -> Some (cspc, C_UInt32)
      | _ -> None
  else
    None
@@ -1716,8 +1717,8 @@ op getMallocApply (cspc : C_Spec, t : C_Type) : Option C_Exp =
 % variable prefix is used.
 op getVarPrefix (gen : String, typ : C_Type) : String =
  case typ of
-   | C_Base s           -> "_" ^ (map toLowerCase s) ^ "_"
-   | C_Ptr (C_Struct s) -> "_" ^ (map toLowerCase s) ^ "_"
+   | C_Base (s, _)               -> "_" ^ (map toLowerCase s) ^ "_"
+   | C_Ptr  (C_Base (s, Struct)) -> "_" ^ (map toLowerCase s) ^ "_"
    | _ -> gen
      
 op freshVarName (prefix              : String,

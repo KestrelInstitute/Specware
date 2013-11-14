@@ -25,23 +25,30 @@ C qualifying spec
      fnDefns              : C_FnDefns
     }
 
-  type C_StructUnionTypeDefn = | C_Struct   C_StructDefn
-                               | C_Union    C_UnionDefn
-                               | C_TypeDefn C_TypeDefn
-
   type C_StructUnionTypeDefns = List C_StructUnionTypeDefn
 
   type C_Define     = String * String
   type C_VarDecl    = String * C_Type
   type C_VarDecl1   = String * C_Type * Option C_Exp
   type C_FnDecl     = String * C_Types * C_Type
+
   type C_TypeDefn   = String * C_Type
   type C_StructDefn = String * C_VarDecls
   type C_UnionDefn  = String * C_VarDecls
+  type C_EnumDefn   = String * Strings
+
+  type C_StructUnionTypeDefn = | Type    C_TypeDefn
+                               | Struct  C_StructDefn
+                               | Union   C_UnionDefn
+                               | Enum    C_EnumDefn
+
+
   type C_VarDefn    = String * C_Type * C_Exp
   type C_FnDefn     = String * C_VarDecls * C_Type * C_Stmt
 
   type C_Block      = C_VarDecls1 * C_Stmts
+
+  type C_NameSpace  = | Type | Struct | Enum | Union
 
   type C_Type =
     | C_Void
@@ -74,9 +81,7 @@ C qualifying spec
     | C_UTF16                  % unicode - TODO: obscure rules
     | C_UTF32                  % unicode - TODO: obscure rules
 
-    | C_Base           String  % TODO: String ?
-    | C_Struct         String  % TODO: String ?
-    | C_Union          String  % TODO: String ?
+    | C_Base           String  * C_NameSpace
 
     | C_Ptr            C_Type             % '*void', '*int*,   etc.
     | C_Array          C_Type             % 'int[]', 'char[]', etc.
