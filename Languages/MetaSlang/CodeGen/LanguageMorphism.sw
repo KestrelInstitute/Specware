@@ -35,9 +35,6 @@ op make_LanguageMorphism (source   : Language,
   target   = target,
   sections = sections}
 
-type NativeLocations = List NativeLocation
-type NativeLocation  = {name : Name, location : Option Location}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Language
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,9 +225,9 @@ op markNativeTranslations (translations : Translations,
      translations
 
 type Translations = List Translation
-type Translation  = | Type  TypeTranslation
-                    | Field FieldTranslation
-                    | Op    OpTranslation
+type Translation  = | Type   TypeTranslation
+                    | Field  FieldTranslation
+                    | Op     OpTranslation
 
 op printTranslation (lm_translation : Translation) : String =
   case lm_translation of
@@ -327,6 +324,7 @@ op printTypedTerm (tterm : TypedTerm) : String =
 
 type Location = | Pathname Pathname
                 | Primitive
+                | Verbatim
 
 op make_Pathname_Location (pathname : Pathname)
  : Location =
@@ -336,10 +334,15 @@ op make_Primitive_Location ()
  : Location =
  Primitive
 
+op make_Verbatim_Location ()
+ : Location =
+ Verbatim
+
 op printLocation (location : Location) : String =
  case location of
    | Pathname pathname -> "in " ^ printPathname pathname
    | Primitive         -> "primitive"
+   | Verbatim          -> "verbatim"
 
 op printOptionalLocation (x : Option Location) : String =
  case x of
@@ -434,7 +437,8 @@ type OpTranslation  = {source     : Name,
                        fixity     : Option LM_Fixity,
                        precedence : Option Nat,
                        location   : Option Location,
-                       native?    : Bool}
+                       native?    : Bool,
+                       macro?     : Bool}
 
 type LM_Fixity = | Left | Right | Infix | Prefix | Postfix
 
@@ -452,7 +456,8 @@ op make_Op_Translation (source     : Name,
                         fixity     : Option LM_Fixity,
                         precedence : Option Nat,
                         reversed?  : Bool,
-                        location   : Option Location)
+                        location   : Option Location,
+                        kind       : String)
  : Translation =
  let native? = 
      case location of
@@ -470,7 +475,8 @@ op make_Op_Translation (source     : Name,
      precedence = precedence,
      reversed?  = reversed?,
      location   = location,
-     native?    = native?}
+     native?    = native?,
+     macro?     = (kind = "macro")}
 
 %%% --------
 
@@ -525,27 +531,56 @@ op extractNatives (lms : LanguageMorphisms) : Natives =
        []
        lms
 
+type NativeTypeLocations = List NativeTypeLocation
+type NativeTypeLocation  = {name     : Name,
+                            location : Option Location,
+                            struct?  : Bool}
+
+type NativeOpLocations = List NativeOpLocation
+type NativeOpLocation  = {name     : Name,
+                          location : Option Location,
+                          macro?   : Bool}
+
 type Natives = List Native  
-type Native  = | Type NativeLocation
-               | Op   NativeLocation
+type Native  = | Type   NativeTypeLocation
+               | Op     NativeOpLocation
 
 op make_Type_Native (name     : Name,
                      location : Option Location)
  : Native = 
- Type {name = name, location = location}
+ Type {name     = name, 
+       location = location, 
+       struct?  = false}
 
-op make_Op_Native   (name     : Name, 
-                     location : Option Location) 
+op make_Struct_Native (name     : Name,
+                       location : Option Location)
  : Native = 
- Op {name = name, location = location}
+ Type {name     = name, 
+       location = location, 
+       struct?  = true}
+
+op make_Op_Native (name     : Name, 
+                   location : Option Location) 
+ : Native = 
+ Op {name     = name, 
+     location = location, 
+     macro?   = false}
+
+op make_Macro_Native (name     : Name, 
+                      location : Option Location) 
+ : Native = 
+ Op {name     = name, 
+     location = location, 
+     macro?  = true}
 
 op printNative (lm_native : Native) : String =
- case lm_native of
-   | Type {name, location} -> 
-     "Native type " ^ printName name ^ printOptionalLocation location
+ "Native " ^
+ (case lm_native of
+    | Type {name, location, struct?} -> 
+      (if struct? then "struct " else  "type ") ^ printName name ^ printOptionalLocation location
 
-   | Op   {name, location} -> 
-     "Native op " ^ printName name ^ printOptionalLocation location
+    | Op {name, location, macro?} -> 
+      (if macro? then "macro " else "op") ^ printName name ^ printOptionalLocation location)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Generated
@@ -561,8 +596,8 @@ type LMData = {lms                   : LanguageMorphisms,
                op_translations       : OpTranslations,
                type_translations     : TypeTranslations,
                field_translations    : FieldTranslations,
-               native_op_locations   : NativeLocations,   % explict via native and implicit via translate
-               native_type_locations : NativeLocations,   % explict via native and implicit via translate
+               native_op_locations   : NativeOpLocations,   % explict via native and implicit via translate
+               native_type_locations : NativeTypeLocations, % explict via native and implicit via translate
                native_ops            : OpNames,
                native_types          : TypeNames,
                op_macros             : OpNames,
@@ -585,7 +620,7 @@ op nativeType? (name : Name, lm_data : LMData) : Bool =
             
 op collectNativeOpLocations (natives      : Natives, 
                              translations : OpTranslations) 
- : NativeLocations =
+ : NativeOpLocations =
  %% explicitly native ops --
  %%   those in "native" section
  let native_ops = foldl (fn (nlocs, native : Native) ->
@@ -598,13 +633,15 @@ op collectNativeOpLocations (natives      : Natives,
  %% plus all implicitly native ops -- 
  %%  those translated to a target op defined at some target location
  %%  (excluding ad hoc macros, for example)
- let native_ops = foldl (fn (nlocs : NativeLocations, trans : OpTranslation) ->
+ let native_ops = foldl (fn (nlocs, trans) ->
                            let name = trans.source in
                            if exists? (fn nloc -> name = nloc.name) nlocs then
                              nlocs
                            else
                              case trans.location of
-                               | Some loc -> nlocs ++ [{name = name, location = Some loc}]
+                               | Some loc -> nlocs ++ [{name     = name, 
+                                                        location = Some loc, 
+                                                        macro?   = trans.macro?}]
                                | _ -> nlocs)
                         native_ops
                         translations
@@ -613,7 +650,7 @@ op collectNativeOpLocations (natives      : Natives,
 
 op collectNativeTypeLocations (natives      : Natives, 
                                translations : TypeTranslations) 
- : NativeLocations =
+ : NativeTypeLocations =
  %% explicitly native types -- 
  %%   those in "native" section
  let native_types = foldl (fn (nlocs, native : Native) ->
@@ -626,13 +663,15 @@ op collectNativeTypeLocations (natives      : Natives,
  %% plus all implicitly native types -- 
  %%  those translated to a target type defined at some target location
  %%  (excluding ad hoc macros, for example)
- let native_types = foldl (fn (nlocs : NativeLocations, trans : TypeTranslation) ->
+ let native_types = foldl (fn (nlocs, trans) ->
                              let name = trans.source in
                              if exists? (fn nloc -> name = nloc.name) nlocs then
                                nlocs
                              else
                                case trans.location of
-                                 | Some loc -> nlocs ++ [{name = name, location = Some loc}]
+                                 | Some loc -> nlocs ++ [{name     = name,
+                                                          location = Some loc, 
+                                                          struct?  = trans.struct?}]
                                  | _ -> nlocs)
                           native_types
                           translations
@@ -647,8 +686,11 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
        | [q,id] -> mkQualifiedId (q, id)
        | _ -> fail ("illegal name in pragma: " ^ anyToString name)
 
-   def QidForLocation loc =
-     nameToQid loc.name
+   def QidForNativeType n_type =
+     nameToQid n_type.name
+
+   def QidForNativeOp n_op =
+     nameToQid n_op.name
  in
  let translations       = extractTranslations lms in
  let natives            = extractNatives      lms in
@@ -680,8 +722,8 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
 
  let native_op_locations   = collectNativeOpLocations   (natives, op_translations)   in
  let native_type_locations = collectNativeTypeLocations (natives, type_translations) in
- let native_ops            = map QidForLocation         native_op_locations          in
- let native_types          = map QidForLocation         native_type_locations        in
+ let native_ops            = map QidForNativeOp         native_op_locations          in
+ let native_types          = map QidForNativeType       native_type_locations        in
 
  let op_macros       = foldl (fn (macro_names, otrans) ->
                                 case otrans.target of
@@ -699,6 +741,18 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
                              []
                              type_translations
  in
+ let native_structure_types = foldl (fn (struct_names, ntloc) ->
+                                       if ntloc.struct? then
+                                         let qid = case ntloc.name of
+                                                     | [id]   -> mkUnQualifiedId id
+                                                     | [q,id] -> mkQualifiedId (q, id)
+                                         in
+                                         struct_names ++ [qid]
+                                       else 
+                                         struct_names)
+                                   []
+                                   native_type_locations
+ in
  let structure_types = foldl (fn (struct_names, ttrans) ->
                                  if ttrans.struct? then
                                    let qid = case ttrans.source of
@@ -708,7 +762,7 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
                                    struct_names ++ [qid]
                                  else 
                                    struct_names)
-                              []
+                              native_structure_types
                               type_translations
  in
 

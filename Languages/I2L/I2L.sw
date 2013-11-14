@@ -32,7 +32,7 @@ I2L qualifying spec
   type I_OpName   = String * String
   type I_VarName  = String * String    % var reference consists of a unit name and an identifier name
 
-  type I_TypeDefinition = I_TypeName * I_Type
+  type I_TypeDefinition = I_TypeName * I_Type * Bool % native?
   type I_TypeDefinitions = List I_TypeDefinition
 
   type I_Primitive = | I_Bool | I_Char | I_String | I_Nat | I_Int | I_Float
@@ -47,7 +47,7 @@ I2L qualifying spec
                 | I_Tuple       I_Types
                 | I_BoundedList I_Type * Nat      % list with maximum length
                 | I_List        I_Type
-                | I_Base        I_TypeName * I_NameSpace
+                | I_Base        I_TypeName * I_NameSpace 
                 | I_FunOrMap    I_Types * I_Type
                 | I_Ref         I_Type            % ptr type
                 | I_Void
@@ -304,8 +304,8 @@ I2L qualifying spec
    qtype (typeDefnMustFollow iu) typedefns 
 
   op typeDefnMustFollow (iu : I_ImpUnit) 
-                        (td1 as (tname1 as (_,id1),_) : I_TypeDefinition,
-                         td2 as (tname2 as (_,id2),_) : I_TypeDefinition)
+                        (td1 as (tname1 as (_,id1),_,_) : I_TypeDefinition,
+                         td2 as (tname2 as (_,id2),_,_) : I_TypeDefinition)
    : Bool =
    let deps1 = typeDefinitionDepends (iu, td1) in
    let deps2 = typeDefinitionDepends (iu, td2) in
@@ -315,7 +315,7 @@ I2L qualifying spec
    %in
    res
 
-  op typeDefinitionDepends (iu : I_ImpUnit, typedef as (tname,typ) : I_TypeDefinition)
+  op typeDefinitionDepends (iu : I_ImpUnit, typedef as (tname,typ,_) : I_TypeDefinition)
    : List I_TypeName =
    typeDepends(iu,tname,typ)
 
@@ -353,8 +353,8 @@ I2L qualifying spec
     typeDepends0 (iu, t0, [])
 
   op findTypeDefn (iu : I_ImpUnit, tname : I_TypeName) : Option I_Type =
-   case findLeftmost (fn (tname0, _) -> tname0 = tname) iu.decls.typedefs of
-     | Some (_,t) -> Some t
+   case findLeftmost (fn (tname0, _,_) -> tname0 = tname) iu.decls.typedefs of
+     | Some (_,t,_) -> Some t
      | _ -> None
   
 

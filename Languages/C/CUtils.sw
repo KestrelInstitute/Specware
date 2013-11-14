@@ -63,7 +63,7 @@ CUtils qualifying spec
   let other_fns = filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns in
   cspc << {fns = other_fns}
  
- op addTypeDefn (cspc : C_Spec, X as (tname,_) : C_TypeDefn) : C_Spec =
+ op addTypeDefn (cspc : C_Spec, X as (tname,tdef) : C_TypeDefn) : C_Spec =
   let other_typedefs = filter (fn (Type (tname0,_)) -> tname0 ~= tname | _ -> true) 
                               cspc.structUnionTypeDefns 
   in
@@ -144,7 +144,7 @@ CUtils qualifying spec
           (cspc, C_Base (sname, Struct))
   in
   let typ = case findTypeDefnInCSpecs ([cspc,xcspc], struct) of
-              | Some s -> C_Base (s, Type)
+              | Some s -> C_Base (s, Struct)
               | None -> struct
   in
   (cspc,typ)
@@ -659,8 +659,11 @@ CUtils qualifying spec
  op structUnionTypeDefnDepends (cspc : C_Spec, sutdef : C_StructUnionTypeDefn) : C_Types =
   case sutdef of
    %| C_TypeDefn (n, C_Ptr(_))     -> typeDepends (cspc, C_Base   n, [])
-    | Type   (n, C_Fn(tys,ty)) -> typeDepends (cspc, C_Base (n, Type),   tys++[ty])
-    | Type   (n, t)            -> typeDepends (cspc, C_Base (n, Type),   [t])
+    | Type   (n, C_Fn(tys,ty)) -> 
+      typeDepends (cspc, C_Base (n, Type),   tys++[ty])
+    | Type   (n, t)            -> 
+      typeDepends (cspc, C_Base (n, Type),   [t])
+
     | Struct (s, fields)       -> typeDepends (cspc, C_Base (s, Struct), map (fn (_,t) -> t) fields)
     | Union  (u, fields)       -> typeDepends (cspc, C_Base (u, Union),  map (fn (_,t) -> t) fields)
     | Enum   (u, fields)       -> typeDepends (cspc, C_Base (u, Enum),   [])

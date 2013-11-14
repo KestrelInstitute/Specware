@@ -197,7 +197,8 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                       (case findTheType (ctxt.ms_spec, name) of
                          | Some info ->
                            (case typeinfo2typedef (name, info, ctxt) of
-                              | Some typedef -> defs ++ [typedef]
+                              | Some typedef -> 
+                                defs ++ [typedef]
                               | _ -> defs)
                          | _ -> defs)
                   else 
@@ -274,8 +275,8 @@ op typeinfo2typedef (qid     : QualifiedId,
        None
      | _ ->
        let i_typename = qid2TypeName qid in
-       % let _ = writeLine("Emit definition for base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
-       Some (i_typename, type2itype (ms_tvs, ms_type, ctxt))
+       let (itype, native?) = type2itype (ms_tvs, ms_type, ctxt) in
+       Some (i_typename, itype, native?)
  else
    None 
 
@@ -314,6 +315,7 @@ op find_constant_nat_bound (ms_term : MSTerm) : Option Nat =
         | Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
                  Var ((v1, _), _),
                  _) 
+
           | v0 = v1 -> 
             (case fits_in_pred of
                | "fitsIn1Bits?"   -> Some (2**1   - 1)
@@ -466,7 +468,7 @@ op unfold_bounded_list_type (ms_tvs          : TyVars,
                              pred            : MSTerm,
                              ctxt            : S2I_Context)
  : Option I_Type =
- let i_element_type = type2itype (ms_tvs, ms_element_type, unsetToplevel ctxt) in
+ let (i_element_type, _) = type2itype (ms_tvs, ms_element_type, unsetToplevel ctxt) in
  case pred of
    | Lambda ([(VarPat ((pred_var, _), _), Fun (Bool true, _, _), pred_body)], _) -> 
      (case pred_body of
@@ -507,36 +509,43 @@ op unfold_bounded_list_type (ms_tvs          : TyVars,
         | _ -> None)
    | _ -> None
 
-op namespaceForType (t1 : MSType, ctxt : S2I_Context) : I_NameSpace =
+op namespaceForType (t1 : MSType, ctxt : S2I_Context) : I_NameSpace * Bool =
  case t1 of
 
    | Base (qid, [], _) ->
-     let (implicit_struct?, implicit_non_struct?) =
+     let (product_or_coproduct?, defined?) =
          case findTheType (ctxt.ms_spec, qid) of
            | Some info ->
              (case info.dfn of
-                | Product   _ -> (true,  false)
-                | CoProduct _ -> (true,  false)
+                | Product   _ -> (true,  true)
+                | CoProduct _ -> (true,  true)
                 | Any       _ -> (false, false)
                 | _ ->           (false, true))
-           | _ ->
-             (false, false)
+           | _ -> (false, false)
      in
-     let explicit_struct? = qid in? ctxt.declaredStructs in 
-     if explicit_struct? then
-       let _ = if implicit_non_struct? then
-                 writeLine ("Type " ^ show qid ^ " translated as struct, but not Product or CoProduct")
-               else
-                 ()
-       in
-       Struct
-     else if implicit_struct? then
-       Struct
-     else
-       Type
+     let translated_to_struct? = qid in? ctxt.declaredStructs in 
 
+     % For harmony with standard practice in the C community, put the names
+     % of product and coproduct types into the structure namespace.
+
+     if translated_to_struct? then
+       if product_or_coproduct? then
+         (Struct, true)
+       else if defined? then
+         let _ = writeLine ("Type " ^ show qid ^ " is defined as something other than a product or coproduct, but is translated to a struct") in
+         (Struct, true)
+       else
+         %  we don't have a definition, but have said it should be a struct 
+         (Struct, true)
+     else if product_or_coproduct? then
+       (Struct, false)
+     else
+       %% lacking evidence that it is a struct, assume it is not
+       (Type, false)
    | _ ->
-     Type
+     %% should never happen
+     let _ = writeLine ("Warning: We are looking for the C namespace of a complex type: " ^ printType t1 ^ " ?") in
+     (Type, false)
 
 % utility for stepwise type expansion
 op expandTypeOnce (name : TypeName, ctxt : S2I_Context) 
@@ -552,7 +561,7 @@ op expandTypeOnce (name : TypeName, ctxt : S2I_Context)
 op type2itype (ms_tvs  : TyVars,
                ms_type : MSType,
                ctxt    : S2I_Context)
- : I_Type =
+ : I_Type * Bool =
  
  let 
    def bounded_list_type? ms_element_type pred =
@@ -575,21 +584,21 @@ op type2itype (ms_tvs  : TyVars,
    % primitives
    % ----------------------------------------------------------------------
    
-   | Boolean _                                       -> I_Primitive I_Bool
-   | Base (Qualified ("Nat",     "Nat"),    [],   _) -> I_Primitive I_Nat
-   | Base (Qualified ("Integer", "Int"),    [],   _) -> I_Primitive I_Int
-   | Base (Qualified ("Char",    "Char"),   [],   _) -> I_Primitive I_Char
-   | Base (Qualified ("String",  "String"), [],   _) -> I_Primitive I_String
+   | Boolean _                                       -> (I_Primitive I_Bool,   false)
+   | Base (Qualified ("Nat",     "Nat"),    [],   _) -> (I_Primitive I_Nat,    false)
+   | Base (Qualified ("Integer", "Int"),    [],   _) -> (I_Primitive I_Int,    false)
+   | Base (Qualified ("Char",    "Char"),   [],   _) -> (I_Primitive I_Char,   true)
+   | Base (Qualified ("String",  "String"), [],   _) -> (I_Primitive I_String, true)
 
    | Base (Qualified (_,           "Ptr"),    [t1], _) -> 
-     let target  = type2itype (ms_tvs, t1, ctxt) in
-     I_Ref target
+     let (target, native?) = type2itype (ms_tvs, t1, ctxt) in
+     (I_Ref target, false)
 
    | Subtype (ms_type, ms_pred, _) ->
      (if subtype_of_int? ms_type then
        (case find_constant_nat_bound ms_pred of
-          | Some n ->               % Inclusive bound
-            I_BoundedNat n          % closed interval [0, n]
+          | Some n ->                    % Inclusive bound
+            I_BoundedNat n               % closed interval [0, n]
           | _ -> 
             (case find_constant_int_bounds ms_pred of
                | Some (m, n) ->          % Inclusive bounds.
@@ -599,7 +608,8 @@ op type2itype (ms_tvs  : TyVars,
                    I_BoundedInt (m, n)   % closed interval [m, n]
                | _ ->
                  let _ = writeLine ("FindConstantIntBounds failed for " ^ printTerm ms_pred) in
-                 I_Primitive I_Int))
+                 I_Primitive I_Int),
+        false)
      else 
         case ms_type of
           % ----------------------------------------------------------------------
@@ -612,7 +622,7 @@ op type2itype (ms_tvs  : TyVars,
           | Base (Qualified ("List", "List"), [ms_element_type], _) | bounded_list_type? ms_element_type ms_pred ->
             % given the restriction above, the following must succeed
             let Some i_type = unfold_bounded_list_type (ms_tvs, ms_element_type, ms_pred, ctxt) in
-            i_type
+            (i_type, false)
           | _ ->
             type2itype (ms_tvs, ms_type, ctxt))
           
@@ -628,19 +638,22 @@ op type2itype (ms_tvs  : TyVars,
         | Product (ms_fields, _) ->
           let i_types = map (fn (_, ms_type) -> 
                               let ms_type = unfoldToSpecials (ms_type, ctxt) in
-                              type2itype (ms_tvs, ms_type, unsetToplevel ctxt)) 
+                              let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                              i_type)
                             ms_fields
           in
-          let i_typ = type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt) in
-          I_FunOrMap (i_types, i_typ)
+          let (i_typ, native?) = type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt) in
+          (I_FunOrMap (i_types, i_typ), native?)
         | _ -> 
+          let (itype, native?) = type2itype (ms_tvs, ms_typ1, unsetToplevel ctxt) in
           let dom_i_type =
-              case type2itype (ms_tvs, ms_typ1, unsetToplevel ctxt) of
+              case itype of
                 | I_Tuple i_types -> i_types
-                | i_typ -> [i_typ]
+                | i_typ           -> [i_typ]
           in
-          I_FunOrMap (dom_i_type, 
-                      type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt)))
+          let (rng_i_type, native?) = type2itype (ms_tvs, ms_typ2, unsetToplevel ctxt) in
+          (I_FunOrMap (dom_i_type, rng_i_type), false))
+                       
      
    % ----------------------------------------------------------------------
 
@@ -648,27 +661,31 @@ op type2itype (ms_tvs  : TyVars,
      if numbered? ms_fields then
        let i_types = 
            map (fn (_, ms_type) -> 
-                  type2itype (ms_tvs, ms_type, unsetToplevel ctxt)) 
+                  let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                  i_type)
                ms_fields 
        in
-       if i_types = [] then I_Void else I_Tuple i_types
+       if i_types = [] then (I_Void, true) else (I_Tuple i_types, false)
      else
        let i_structfields = 
            map (fn (id, ms_type) -> 
-                  (id, type2itype (ms_tvs, ms_type, unsetToplevel ctxt)))
+                  let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                  (id, i_type))
                ms_fields
        in
-       if i_structfields = [] then I_Void else I_Struct i_structfields
+       if i_structfields = [] then (I_Void, true) else (I_Struct i_structfields, false)
          
    % ----------------------------------------------------------------------
 
    | CoProduct (ms_fields, _) ->
      let i_unionfields = 
          map (fn | (id, None)         -> (id, I_Void)
-                 | (id, Some ms_type) -> (id, type2itype (ms_tvs, ms_type, unsetToplevel ctxt)))
+                 | (id, Some ms_type) -> 
+                   let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                   (id, i_type))
              ms_fields
      in
-     I_Union i_unionfields
+     (I_Union i_unionfields, false)
      
    % ----------------------------------------------------------------------
      
@@ -683,17 +700,15 @@ op type2itype (ms_tvs  : TyVars,
      let i_typename =
          case pragmaTypeTranslation (qid, ctxt) of
            | Some i_typename ->
-             % let _ = writeLine("Translated base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
              i_typename
            | _ ->
              %% TODO: this will change to possibly expand type, 
              %%        paying attention to reachability via ops in executable slice
              let i_typename = qid2TypeName qid in
-             % let _ = writeLine("Using base type: " ^ anyToString qid ^ " => " ^ anyToString i_typename) in
              i_typename
      in
-     let namespace = namespaceForType (ms_utype, ctxt) in
-     I_Base (i_typename, namespace)
+     let (namespace, native?) = namespaceForType (ms_utype, ctxt) in
+     (I_Base (i_typename, namespace), native?)
      
    | Quotient (ms_type, ms_term, _) -> % ignore the term...
      type2itype (ms_tvs, ms_type, ctxt)
@@ -927,8 +942,8 @@ op opinfo2declOrDefn (qid         : QualifiedId,
    let _ = writeLine("") in
    OpDecl (id, I_Primitive I_Nat, None)
  else
- let i_type   = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
- let ctxt     = setCurrentOpType (qid, ctxt)                     in
+ let (i_type,_) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+ let ctxt       = setCurrentOpType (qid, ctxt)                     in
  case i_type of 
    | I_FunOrMap (i_types, i_rtype) ->
      if definedOpInfo? ms_info then
@@ -968,10 +983,10 @@ op opinfo2declOrDefn (qid         : QualifiedId,
 % --------------------------------------------------------------------------------
 
 op term2expression (ms_term : MSTerm, ctxt : S2I_Context) : I_TypedExpr =
- let ms_type  = inferType (ctxt.ms_spec, ms_term) in
- let ms_type  = unfoldBaseKeepPrimitives (ms_type,          ctxt) in
- let i_expr   = term2expression_internal (ms_term, ms_type, ctxt) in
- let i_type   = type2itype ([], ms_type, unsetToplevel ctxt)      in
+ let ms_type     = inferType (ctxt.ms_spec, ms_term) in
+ let ms_type     = unfoldBaseKeepPrimitives (ms_type,          ctxt) in
+ let i_expr      = term2expression_internal (ms_term, ms_type, ctxt) in
+ let (i_type, _) = type2itype ([], ms_type, unsetToplevel ctxt)      in
  %% TODO: cast? used to be set to true for failWith forms.
  let cast? = false in
  {expr = i_expr, typ = i_type, cast? = cast?}
@@ -1196,7 +1211,7 @@ op term2expression_apply_fun (ms_fun      : MSFun,
      % taking all the projections into account
      let ms_lhs_type = inferType (ctxt.ms_spec, ms_orig_lhs)            in
      let ms_lhs_type = unfoldToSpecials (ms_lhs_type, ctxt)             in
-     let i_lhs_type  = type2itype ([], ms_lhs_type, unsetToplevel ctxt) in
+     let (i_lhs_type, _)  = type2itype ([], ms_lhs_type, unsetToplevel ctxt) in
      %if isOutputOp varname then MapAccessDeref (varname, i_lhs_type, projections, exprs) else 
      if isVariable (ctxt, qid) then
        I_MapAccess (i_fname, i_lhs_type, projections, i_exprs)
@@ -1308,7 +1323,7 @@ op term2expression_let (ms_pat : MSPattern,
      I_Comma [i_def_exp, i_exp]
      
    | VarPat ((id, ms_type), _) ->
-     let i_type = type2itype ([], ms_type, unsetToplevel ctxt) in
+     let (i_type, _) = type2itype ([], ms_type, unsetToplevel ctxt) in
      I_Let (id, i_type, i_def_exp, i_exp)
      
    | _ -> 
@@ -1566,8 +1581,8 @@ op simpleCoProductCase (ms_term : MSTerm, ctxt : S2I_Context) : Option I_Expr =
                 | WildPat _              -> I_ConstrCase (None, [], i_exp)
                 | NatPat  (n, _)         -> I_NatCase    (n,        i_exp)
                 | CharPat (c, _)         -> I_CharCase   (c,        i_exp)
-                | VarPat  ((id, typ), _) -> let ityp = type2itype ([], typ, unsetToplevel ctxt) in
-                  I_VarCase (id, ityp, i_exp)
+                | VarPat  ((id, typ), _) -> let (ityp,_) = type2itype ([], typ, unsetToplevel ctxt) in
+                                            I_VarCase (id, ityp, i_exp)
                 | RestrictedPat (ms_pat, _, _) -> getUnionCase (ms_pat, ms_cond, ms_tm) % cond will be ignored, is just a filler 
                 | _ -> 
                   fail (mkInOpStr ctxt ^ "unsupported feature: pattern not supported, use embed or wildcard pattern instead:\n"

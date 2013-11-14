@@ -183,6 +183,7 @@
      ((:tuple "type")      "type")
      ((:tuple "field")     "field")
      ((:tuple "op")        "op")
+     ((:tuple "macro")     "macro")
      ((:tuple "in")        "in")
      ((:tuple "/")         "/")
      ((:tuple "#%")        "%")
@@ -256,7 +257,7 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :Location
-    (:anyof :PathnameLocation :PrimitiveLocation))
+    (:anyof :PathnameLocation :PrimitiveLocation :VerbatimLocation))
 
 (define-lm-parser-rule :PathnameLocation
     (:tuple "in" (1 :Pathname))
@@ -265,6 +266,10 @@
 (define-lm-parser-rule :PrimitiveLocation
     (:tuple "primitive")
   (LM::make_Primitive_Location-0))
+
+(define-lm-parser-rule :VerbatimLocation
+    (:tuple (:optional "in") "verbatim" (:optional "section") (:optional "above"))
+  (LM::make_Verbatim_Location-0))
 
 ;;; ========================================================================
 ;;;  TypeTranslation
@@ -299,7 +304,7 @@
 ;;; ========================================================================
 
 (define-lm-parser-rule :OpTranslation 
-    (:tuple "op" 
+    (:tuple (8 (:AnyOf "op" "macro"))
             (1 :Name)
             :Arrow 
             (2 :Term)
@@ -308,12 +313,13 @@
             (:optional (5 :Precedence))
             (:optional (6 :Reversed))
             (:optional (7 :Location)))
-  (LM::make_Op_Translation-7 1 2 
+  (LM::make_Op_Translation-8 1 2 
                              (make-option 3) 
                              (make-option 4)
                              (make-option 5)
                              (make-bool   6)
-                             (make-option 7)))
+                             (make-option 7)
+                             8))
 
 (define-lm-parser-rule :ReCurry
     (:tuple (1 (:anyof "curried" "uncurried")))
@@ -342,15 +348,23 @@
     (:repeat* :Native))
 
 (define-lm-parser-rule :Native 
-    (:anyof :NativeType :NativeOp))
+    (:anyof :NativeType :NativeStruct :NativeOp :NativeMacro))
 
 (define-lm-parser-rule :NativeType 
     (:tuple "type" (1 :Name) (:optional (2 :Location)))
   (LM::make_Type_Native-2 1 (make-option 2)))
 
+(define-lm-parser-rule :NativeStruct
+    (:tuple "struct" (1 :Name) (:optional (2 :Location)))
+  (LM::make_Struct_Native-2 1 (make-option 2)))
+
 (define-lm-parser-rule :NativeOp 
     (:tuple "op" (1 :Name) (:optional (2 :Location)))
   (LM::make_Op_Native-2 1 (make-option 2)))
+
+(define-lm-parser-rule :NativeMacro
+    (:tuple "macro" (1 :Name) (:optional (2 :Location)))
+  (LM::make_Macro_Native-2 1 (make-option 2)))
 
 ;;; ========================================================================
 ;;;  Generated

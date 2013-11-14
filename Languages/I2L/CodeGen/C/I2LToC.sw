@@ -134,18 +134,40 @@ op addBuiltIn (_ : I2C_Context, cspc : C_Spec) : C_Spec =
 
 % --------------------------------------------------------------------------------
 
-op c4TypeDefinition (ctxt         : I2C_Context, 
-                     cspc         : C_Spec, 
-                     (tname, typ) : I_TypeDefinition) 
+op c4TypeDefinition (ctxt                  : I2C_Context, 
+                     cspc                  : C_Spec, 
+                     (tname, typ, native?) : I_TypeDefinition) 
  : C_Spec =
+ if native? then
+   let _ = writeLine("ignoring type def for native type: " ^ anyToString  tname) in
+   cspc
+ else
+ let
+   def structUnionFields (cspc, fields) =
+     case fields of
+       | [] -> (cspc, [])
+       | (fname, itype) :: fields -> 
+         let (cspc, ctype)   = c4Type (ctxt, cspc, itype)                 in
+         let ctype           = if ctype = C_Void then C_UInt32 else ctype in % no void fields allowed
+         let (cspc, sfields) = structUnionFields (cspc, fields)           in
+         (cspc, (cString fname, ctype) :: sfields)
+ in
  let tname = qname2id tname in
  let ctxt  = setCurrentContext (ctxt, TypeDef tname) in
  if tname in? ["Option_Option", "List_List"] then
    cspc
  else
-   let (cspc,ctype) = c4Type (ctxt, cspc, typ) in
-   let typedef      = (tname, ctype)           in
-   addTypeDefn (cspc, typedef) 
+   case typ of
+     | I_Struct fields -> 
+       let (cspc, sfields) = structUnionFields (cspc, fields)                           in
+       %% defining var in struct namespace as a struct 
+       addStructDefn (cspc, (tname, sfields))
+
+     | _ ->
+       let (cspc,ctype) = c4Type (ctxt, cspc, typ) in
+       let typedef      = (tname, ctype)           in
+       %% defining var in type namesapce as whatever
+       addTypeDefn (cspc, typedef) 
 
 
 op c4OpDecl (ctxt : I2C_Context, 
@@ -190,7 +212,7 @@ op voidToUInt (ctxt: I2C_Context, (vname, ctype) : C_VarDecl) : C_VarDecl =
 
 op c4NonConstVarDef (ctxt                    : I2C_Context, 
                      vname                   : Id, 
-                     ctype                   : C_Type, 
+                     ctype as C_Base (name,space)   : C_Type, 
                      cspc                    : C_Spec, 
                      block as (decls, stmts) : C_Block, 
                      cexpr                   : C_Exp) 
@@ -198,6 +220,7 @@ op c4NonConstVarDef (ctxt                    : I2C_Context,
  let initfname  = "get_" ^ vname                                           in
  let valuevname = vname ^ "_value"                                         in
  let cspc       = addDefine  (cspc, (vname, initfname ^ "()"))             in
+ let ctype      = C_Ptr (C_Base (name, Struct)) in
  let null_value = C_Cast (ctype, C_Const (C_Int (true, 0)))                in  % cast null to actual desired type
  let cspc       = addVarDefn (cspc, (valuevname, ctype, null_value))       in
  let condexp    = C_Binary   (C_Eq,  C_Var(valuevname, ctype), null_value) in
@@ -351,6 +374,10 @@ op addMapForMapDecl (ctxt       : I2C_Context,
                      paramtypes : I_Types, 
                      returntype : I_Type)
  : C_Spec * C_VarDecl =
+ let _ = writeLine ("==============================") in
+ let _ = writeLine ("addMapForMapDecl:") in
+ let _ = app (fn x -> writeLine (anyToString x)) paramtypes in
+ let _ = writeLine ("==============================") in
  let id                  = getMapName fid in
  let (cspc, paramctypes) = c4Types (ctxt, cspc, paramtypes) in
  case getBoundedNatList paramtypes of
@@ -451,8 +478,7 @@ op c4Type (ctxt : I2C_Context,
        | I_Struct fields -> 
          let (cspc, sfields)    = structUnionFields (cspc, fields)                           in
          let structname         = genName (cspc, "Product", length (getStructDefns cspc))    in
-         let (cspc, structtype) = addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields)) in
-         (cspc, structtype)
+         addNewStructDefn (cspc, ctxt.xcspc, (structname, sfields))
          
        | I_Tuple types ->
          let fields = addFieldNamesToTupleTypes types in
