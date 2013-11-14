@@ -1583,7 +1583,7 @@ op varId(t:MSTerm):Id =
      | (Var ((i,_),_)) -> i
       
 
-
+op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm = tm 
 
 %% mkSimpleExists: Close the given term under the list of binders.
 %% Push the quantification as deep as possible into the subterms.
@@ -1593,7 +1593,7 @@ op varId(t:MSTerm):Id =
 %%    tm, a term
 %% Returns:
 %%   a new expression, closed w.r.t vars.
-op mkSimpleExists (vars : MSVars) (tm : MSTerm) : MSTerm =
+op mkSimpleExists' (vars : MSVars) (tm : MSTerm) : MSTerm =
    if empty? vars
      then tm
      else
