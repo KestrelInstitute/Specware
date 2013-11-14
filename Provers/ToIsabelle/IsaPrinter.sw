@@ -1340,6 +1340,12 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
+    % GK: There is a problem using relativizeQuantifiers as is
+    % implemented. The following is a hack that *appears* to fix that
+    % problem, at the risk of breaking other things. Thus, it is
+    % commented out.
+    % let cx = c << {spec? = Some spc } in
+    % let spc = addRefinementProofs cx spc in
     let spc = addRefinementProofs c spc in
     % let _ = writeLine("9:\n"^printSpec spc) in
     let spc = removeSubTypes spc coercions stp_tbl in
