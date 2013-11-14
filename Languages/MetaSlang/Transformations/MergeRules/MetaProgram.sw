@@ -645,6 +645,7 @@ uindent ^ "qed\n"
 
 
 op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId):String =
+   let _ = writeLine "Generating MergeRulesProof (In MetaProgram)" in
    let indent =  "  " in
    let fun_defs = flatten (intersperse " " []) in
    let unfold_ids = flatten (intersperse " " (map (fn q -> mainId q ^ "_def") unfolds)) in

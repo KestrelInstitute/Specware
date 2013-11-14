@@ -565,7 +565,11 @@ SpecNorm qualifying spec
             foldr (fn ((vn,ty), (bndVars,res)) ->
                      % let _ = writeLine("relQ: "^printType ty^" ---> "^printType ty) in
                      let pred_tm = typePredTerm(ty, mkVar(vn,ty), spc) in
+                     % let _ = writeLine("----------------------------") in
+                     % let _ = writeLine("rq0: "^ vn ^ ":" ^ printType ty) in
+                     % let _ = writeLine("rq0: "^ (anyToString ty)) in                     
                      % let _ = writeLine("rq0: "^printTerm pred_tm) in
+                     % let _ = writeLine("----------------------------") in
                      let pred_tm = mapTerm (relativizeQuantifiers spc,id,id) pred_tm in
                      ((vn,ty)::bndVars, Utilities.mkAnd(pred_tm, res)))
               ([],mkTrue()) bndVars
