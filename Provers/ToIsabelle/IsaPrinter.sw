@@ -579,7 +579,8 @@ IsaTermPrinter qualifying spec
                                   | Some (RefineStrengthen impl_pf) ->
                                     generateImplicationProof (c, condn, rhs, impl_pf)
                                   | Some (RefineEq eq_pf) ->
-                                    generateImplicationProof (c, condn, rhs, ImplEq eq_pf)
+                                    % let _ = writeLine(showEqProof eq_pf) in
+                                    generateImplicationProof (c, condn, rhs, ImplEq(EqProofSym eq_pf))
                                     % otherwise, fall back on old method based on TransformHistory
                                   | _ -> generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist)
                               in
@@ -878,9 +879,9 @@ IsaTermPrinter qualifying spec
 
  %% building tactics
 
- % build a tactic using Isabelle's "rule" tactic, applied to a string
- op ruleTactic (rule : String) : IsaProof ProofTacticMode =
- IsaProof (string ("(rule " ^ rule ^ ")"))
+ % build a tactic 
+ op ruleTactic (tactic : String) : IsaProof ProofTacticMode =
+ IsaProof (string tactic)
 
  % same as above, but use a Pretty to format the rule
  op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
@@ -1067,7 +1068,7 @@ IsaTermPrinter qualifying spec
       singleTacticProof
         (ruleTacticPP
            %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           (prLinear 2
+           (prBreak 2
               [ppQualifiedId qid, string "[of ",
                prLinear 0 (map (ppTerm c Top) args),
                string "]"])
@@ -1129,7 +1130,7 @@ IsaTermPrinter qualifying spec
       singleTacticProof
         (ruleTacticPP
            %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           (prLinear 2
+           (prBreak 2
               [ppQualifiedId qid, string "[of ",
                prLinear 0 (map (ppTerm c Top) args),
                string "]"])
@@ -3415,7 +3416,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | _ ->
         let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
               enclose?(encl?,
-                       prLinearCat (if same? then -2 else 2)    % -2 is mainly for conjunction
+                       prBreakCat (if same? then -2 else 2)    % -2 is mainly for conjunction
                          [[ppTerm c f1 t1, prSpace],
                           [oper, prSpace, ppTerm c f2 t2]])
         in
@@ -3430,11 +3431,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              if ~curried?
                then enclose?(parentTerm ~= Top,
                              prConcat[pr_op,
-                                      enclose?(true, prLinearCat 0 [[ppTerm c Top t1, prString ", "],
+                                      enclose?(true, prBreakCat 0 [[ppTerm c Top t1, prString ", "],
                                                                     [ppTerm c Top t2]])])
              else
              enclose?(parentTerm ~= Top,
-                      prLinearCat 2 [[pr_op,prSpace],
+                      prBreakCat 2 [[pr_op,prSpace],
                                      [ppTermEncloseComplex? c Nonfix t1, prSpace,
                                       ppTermEncloseComplex? c Nonfix t2]])
            | (Nonfix, (Some pr_op, Infix (a, p), _, _)) ->
@@ -3502,9 +3503,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                             ppTerm c Top term]]
        in
        enclose?(infix? parentTerm,
-                prLinear 0 [prLinear 0
+                prBreak 0 [prBreak 0
                               [prConcat[prString "let ",
-                                        prLinear 0 (addSeparator (prString "; ")
+                                        prBreak 0 (addSeparator (prString "; ")
                                                       (map ppDecl decls)),
                                         prSpace],
                                prString "in "],
@@ -3519,9 +3520,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                         ppTerm c Top term]
        in
        enclose?(infix? parentTerm,
-                prLinear 0 [prLinear 0
+                prBreak 0 [prBreak 0
                               [prString "let",
-                               prConcat[prLinear 0 (map ppDecl decls), prSpace],
+                               prConcat[prBreak 0 (map ppDecl decls), prSpace],
                                prString "in "],
                             ppTerm c (if infix? parentTerm then Top else parentTerm) term])
      | Var (v,_) -> ppVarWithoutType v
