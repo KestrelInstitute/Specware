@@ -577,6 +577,7 @@ IsaTermPrinter qualifying spec
                                 case pf of
                                     % if we have an implication proof, convert it to Isabelle
                                   | Some (RefineStrengthen impl_pf) ->
+                                    % let _ = writeLine(showImplProof impl_pf) in
                                     generateImplicationProof (c, condn, rhs, impl_pf)
                                   | Some (RefineEq eq_pf) ->
                                     % let _ = writeLine(showEqProof eq_pf) in
@@ -875,7 +876,7 @@ IsaTermPrinter qualifying spec
 
  % print out a complete ProveMode proof
  op isaProofToString (IsaProof pretty : IsaProof ProveMode) : String =
-   toString (format (0, pretty))
+   toString (format (100, pretty))
 
  %% building tactics
 
@@ -956,10 +957,7 @@ IsaTermPrinter qualifying spec
  % finish a forward-reasoning proof block by showing the final result
  op showFinalResult (prop: Pretty, pf : IsaProof ProveMode) : IsaProof StateMode =
  let pf_pretty = case pf of IsaProof p -> p in
- IsaProof (blockFill (0,
-                      [(0, string "show "),
-                       (4, doubleQuote prop),
-                       (2, pf_pretty)]))
+ IsaProof (prLinear 2 [prConcat [string "show ", doubleQuote prop], pf_pretty])
 
  % chain a sequence of proof steps together into a combined proof of a
  % transitive closure; e.g., "x = y" and "y = z" --> "x = z"
@@ -1068,7 +1066,7 @@ IsaTermPrinter qualifying spec
       singleTacticProof
         (ruleTacticPP
            %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           (prBreak 2
+           (prLinear 2
               [ppQualifiedId qid, string "[of ",
                prLinear 0 (map (ppTerm c Top) args),
                string "]"])
@@ -1130,7 +1128,7 @@ IsaTermPrinter qualifying spec
       singleTacticProof
         (ruleTacticPP
            %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           (prBreak 2
+           (prLinear 2
               [ppQualifiedId qid, string "[of ",
                prLinear 0 (map (ppTerm c Top) args),
                string "]"])
@@ -3423,7 +3421,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | _ ->
         let def prInfix (f1, f2, encl?, same?, t1, oper, t2) =
               enclose?(encl?,
-                       prBreakCat (if same? then -2 else 2)    % -2 is mainly for conjunction
+                       prLinearCat (if same? then -2 else 2)    % -2 is mainly for conjunction
                          [[ppTerm c f1 t1, prSpace],
                           [oper, prSpace, ppTerm c f2 t2]])
         in
@@ -3438,11 +3436,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
              if ~curried?
                then enclose?(parentTerm ~= Top,
                              prConcat[pr_op,
-                                      enclose?(true, prBreakCat 0 [[ppTerm c Top t1, prString ", "],
+                                      enclose?(true, prLinearCat 0 [[ppTerm c Top t1, prString ", "],
                                                                     [ppTerm c Top t2]])])
              else
              enclose?(parentTerm ~= Top,
-                      prBreakCat 2 [[pr_op,prSpace],
+                      prLinearCat 2 [[pr_op,prSpace],
                                      [ppTermEncloseComplex? c Nonfix t1, prSpace,
                                       ppTermEncloseComplex? c Nonfix t2]])
            | (Nonfix, (Some pr_op, Infix (a, p), _, _)) ->
@@ -3510,9 +3508,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                             ppTerm c Top term]]
        in
        enclose?(infix? parentTerm,
-                prBreak 0 [prBreak 0
+                prLinear 0 [prLinear 0
                               [prConcat[prString "let ",
-                                        prBreak 0 (addSeparator (prString "; ")
+                                        prLinear 0 (addSeparator (prString "; ")
                                                       (map ppDecl decls)),
                                         prSpace],
                                prString "in "],
@@ -3527,9 +3525,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                         ppTerm c Top term]
        in
        enclose?(infix? parentTerm,
-                prBreak 0 [prBreak 0
+                prLinear 0 [prLinear 0
                               [prString "let",
-                               prConcat[prBreak 0 (map ppDecl decls), prSpace],
+                               prConcat[prLinear 0 (map ppDecl decls), prSpace],
                                prString "in "],
                             ppTerm c (if infix? parentTerm then Top else parentTerm) term])
      | Var (v,_) -> ppVarWithoutType v
