@@ -273,12 +273,12 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
           | (Some prf1, Some prf2) -> Some(EqProofTrans(mkEqProofSubterm(path1, prf1),
                                                         int_sub_tm,
                                                         mkEqProofSubterm(path2, prf2)))
-      def extendCaseProof(o_prf: Option EqProof, new_tm: MSTerm, path: Path): Option EqProof =
-        %% Place holder until we work out something more specific
+      def extendCaseProof(case_tm: MSTerm, o_prf: Option EqProof, new_tm: MSTerm, path: Path): Option EqProof =
+        let case_proof = EqProofTactic("(cases \""^printTerm case_tm^"\", auto)") in
         case o_prf of
-          | None -> Some caseProof
+          | None -> Some case_proof
           | Some prf ->
-            Some(EqProofTrans(caseProof, new_tm, mkEqProofSubterm(path, prf)))
+            Some(EqProofTrans(case_proof, new_tm, mkEqProofSubterm(path, prf)))
           
       def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst)
             : Option (MSTerm * Option EqProof) =
@@ -292,7 +292,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
                let new_tm = mkConj(lift_cjs ++ [new_ex]) in
                let (rec_ex_tm, o_prf) = transEx1(vs, rem_cjs, a, tsb, new_ex) in
                Some(mkConj(lift_cjs ++ [rec_ex_tm]),
-                    extendSimpProof(o_prf, new_tm, pathToLastConjunct(length lift_cjs), "lift_indep"))
+                    extendSimpProof(o_prf, new_tm, pathToLastConjunct(length lift_cjs), "auto"))
         else
         %% (ex(x,y) x = a && q x y) = (let x = a in ex(y) q x y)
         case findLeftmost (fn cj -> some?(bindEquality(cj, vs, true))) cjs of
@@ -312,7 +312,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
                  let (new_bod, o_prf) = transEx1(new_vs, new_cjs, a, tsb, new_ex) in
                  Some(if trivial_bind? then new_bod
                         else MS.mkLet([(v_pat, s_tm)], new_bod),
-                      extendSimpProof(o_prf, new_tm, if trivial_bind? then [] else [1], "use_let"))
+                      extendSimpProof(o_prf, new_tm, if trivial_bind? then [] else [1], "auto"))
                | None -> None)
          | None ->
         %% (ex(x,y) <C=constructor> x = e && q x y) = (case e of C x -> ex(y) q x y | _ -> false)
@@ -332,7 +332,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
                  let (rec_ex_tm, o_prf) = transEx1(new_vs, new_cjs, a, tsb, new_ex) in
                  Some(mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty), rec_ex_tm),
                                         (mkWildPat constr_ty, else_tm)]),
-                      extendCaseProof(o_prf, new_tm, [0, 1]))
+                      extendCaseProof(s_tm, o_prf, new_tm, [0, 1]))
                | None -> None)
          | None ->
         %% (ex(x) p x && (ex(y) q x y)) = (ex(x,y) p x && q x y)
@@ -344,7 +344,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
             let new_cjs = flatten (map (fn cji -> if cj = cji then getConjuncts bod else [cji]) cjs) in
             let new_ex =  mkSimpBind(Exists, vs ++ s_vs, mkConj new_cjs) in
             let (rec_ex_tm, o_prf) = transEx1(vs ++ s_vs, new_cjs, a, tsb, new_ex) in
-            Some(rec_ex_tm, extendSimpProof(o_prf, new_ex, [], "embedded_ex"))
+            Some(rec_ex_tm, extendSimpProof(o_prf, new_ex, [], "auto"))
           | None -> 
         %% (ex(x) p x && (if q then r x else s x)) = (if q then ex(x) p x && r x else ex(x) p x && s x)
         case findLeftmost (fn cj ->
@@ -370,7 +370,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
                  Some(IfThenElse(p, nq_tm, nr_tm, pos),
                       extendSimpProof(combineParallelProofs
                                         (q_o_pr, [1], r_o_pr, [2], IfThenElse(p, nq_tm, new_ex_r, pos)),
-                                      new_tm, [], "embed_if_then_else")))
+                                      new_tm, [], "auto")))
           | None ->
         if length vs = 1 then None
         else
@@ -383,7 +383,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
             let new_ex = mkSimpBind(Exists, new_vs, mkConj new_cjs) in
             let (tr_tm, o_prf) = transEx1(new_vs, new_cjs, a, tsb, new_ex) in
             Some(mkBind(Exists, [b_v], Utilities.mkAnd(cj, tr_tm)),
-                 extendSimpProof(o_prf, mkBind(Exists, [b_v], Utilities.mkAnd(cj, new_ex)), [1, 0], "split_ex"))
+                 extendSimpProof(o_prf, mkBind(Exists, [b_v], Utilities.mkAnd(cj, new_ex)), [1, 0], "auto"))
           | None -> None
       def transEx1(vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst, new_ex: MSTerm): MSTerm * Option EqProof =
         case transEx(vs, cjs, a, tsb) of
