@@ -730,7 +730,7 @@ op liveVars(vs:List(Id*MSType))(t:MSTerm):List(Id*MSType) =
    in filter (fn (v,ty) -> v in? live) vs
 
 
-op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
+op bt2'(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
       let (res,fail,pf) = bt2' args inputs in
       let _ = writeLine "Call bt2 with" in
       let _ = writeLine ("assumptions:" ^ printTerm (mkAnd (noAssumptions args.assumptions))) in
@@ -739,7 +739,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
       let _ = writeLine ("failure: " ^ (printTerm (dnfToTerm fail))) in
       (res,fail,pf)
 
-op bt2'(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
+op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
    if empty? inputs
      % If the set of input clauses is empty, then we have a contradiction.
      then (mkFalse (),  [noAssumptions (branchAssumptions args.assumptions)], Contra (inputs, noAssumptions args.assumptions,args.vars))
