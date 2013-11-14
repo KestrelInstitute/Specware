@@ -625,7 +625,7 @@ mkIsarProof spc isabelleTerm (Some "ok_local") sub indent ^
 indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" ^
 indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
 indent ^ "from fails have fails' : \"~(" ^ (isabelleTerm (dnfToTerm (traceFailure sub))) ^ ")\" by auto\n" ^
-indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by (rule conjE)\n" ^
+indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by (auto simp only:)\n" ^
 indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
 indent ^ "from sub_done defns esubs show ?thesis by auto\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
