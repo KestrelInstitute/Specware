@@ -403,8 +403,9 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
               % let _ = writeLine("makeDef: "^printTerm state_res) in
               if result_tuple_info = []
                 then state_res
-                else mkCanonRecord(if stored_qids = [] then opt_rec_prs
-                                     else (state_id, state_res) :: opt_rec_prs))
+                else mkCanonRecord(if stored_qids = [] || exists? (fn (idi, _) -> idi = state_id) opt_rec_prs
+                                     then opt_rec_prs
+                                   else (state_id, state_res) :: opt_rec_prs))
            | _ ->
          if inh_cjs ~= []
            then makeDef(mkConj(inh_cjs ++ [tm]), [], seenQIds)
@@ -418,7 +419,10 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                        if inc_rec_prs = [] then src_tm
                        else mkRecordMerge(src_tm, mkCanonRecord(inc_rec_prs))
                      | (None, _) -> mkCanonRecord(state_rec_prs))
-                | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of equality in "^show op_qid^"\n"
+                | ([], opt_rec_prs) ->
+                  mkCanonRecord(opt_rec_prs)
+                | result -> (% writeLine(anyToPrettyString result);
+                             warn("makeDefForUpdatingCoType: Unexpected kind of equality in "^show op_qid^"\n"
                                ^printTerm tm);
                         mkVar("Unrecognized_term", state_ty)))
            | _ -> (warn("makeDefForUpdatingCoType: Unexpected kind of term in "^show op_qid^"\n"
