@@ -206,9 +206,9 @@ type TransformHistory = List (MSTerm * RuleSpec)
      | (RefineEq eq_pf1, tm, RefineEq eq_pf2) ->
        RefineEq (EqProofTrans (eq_pf1, tm, eq_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
-       RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
+       RefineStrengthen (ImplTrans (impl_pf2, tm, impl_pf1))
      | (RefineStrengthen impl_pf1, tm, RefineEq eq_pf2) ->
-       RefineStrengthen (ImplTrans (impl_pf1, tm, ImplEq  eq_pf2))
+       RefineStrengthen (ImplTrans (ImplEq  eq_pf2, tm, impl_pf1))
      | (RefineEq eq_pf1, tm, RefineStrengthen impl_pf2) ->
        RefineStrengthen (ImplTrans (ImplEq eq_pf1, tm, impl_pf2))
      | _ -> fail ("composeRefinementProofs called with non-composable proofs!")
