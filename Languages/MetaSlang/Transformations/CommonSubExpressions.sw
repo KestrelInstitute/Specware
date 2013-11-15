@@ -231,6 +231,8 @@ there is a final clean-up phase to get rid of introduced variables that are only
     case tm of
       | Lambda _ -> true
       | Apply(Fun(Project _, _, _), _, _) -> true
+      | Record(fld_vals as (("1", _) :: _), _) ->
+        forall? (fn (_, tm) -> embed? Var tm) fld_vals
       | _ -> false
 
   op abstractCommonSubExpressions(t: MSTerm, spc: Spec): MSTerm =
