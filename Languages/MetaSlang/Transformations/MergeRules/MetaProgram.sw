@@ -1262,23 +1262,23 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars l,r,theVars r,true, getTy r)
+      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars l,r,theVars r,true, getTy l)
         
     % v = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],r,theVars r,true,getTy r)
+      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],r,theVars r,true,getTy l)
 
 
     % (v1,...,vn) = expr
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars r,l,theVars l,true, getTy r)
+      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars r,l,theVars l,true, getTy l)
         
     % expr = v
     | Apply (Fun (Equals,_,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],l,theVars l,true, getTy l)
+      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],l,theVars l,true, getTy r)
 
         
     | Apply (Fun (Equals,_,eqPos), 
