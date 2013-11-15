@@ -880,13 +880,15 @@ IsaTermPrinter qualifying spec
 
  %% building tactics
 
- % build a tactic 
- op ruleTactic (tactic : String) : IsaProof ProofTacticMode =
- IsaProof (string tactic)
-
+ % build a tactic using Isabelle's "rule" tactic, applied to a string
+ op ruleTactic (rule : String) : IsaProof ProofTacticMode =
+IsaProof (string ("(rule " ^ rule ^ ") "))
  % same as above, but use a Pretty to format the rule
  op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
- IsaProof (blockFill (0, [(0, string "(rule "), (3, rule), (0, string ")")]))
+ IsaProof (blockFill (0, [(0, string "(rule "), (3, rule), (0, string ") ")]))
+
+op rulesTactic (rules: List String): IsaProof ProofTacticMode =
+  IsaProof(string("("^flatten(intersperse ", " (map (fn s -> "rule "^s) rules))^")"))
 
  % use a non-rule tactic, just given as a string
  op otherTactic (tactic : String) : IsaProof ProofTacticMode =
@@ -995,7 +997,7 @@ IsaTermPrinter qualifying spec
  prBreak 0 [ppTerm c Top lhs, string " \\<Longrightarrow> ", ppTerm c Top rhs]
 
  % add double quotes around a Pretty
- op doubleQuote (p : Pretty) : Pretty = prConcat [string "\"", p, string "\""]
+ op doubleQuote (p : Pretty) : Pretty = prConcat [string "\"", p, string "\" "]
 
  % pretty-print N forall-eliminations
 % FIXME: put in the actual arg, as a double-check for Isabelle
@@ -1024,7 +1026,8 @@ IsaTermPrinter qualifying spec
    | EqProofSubterm (path, sub_pf) ->
      (*
         have subeq:"lhs_sub = rhs_sub" (sub_pf)
-        show "lhs = rhs" by (rule arg_cong[OF subeq]) *)
+        show ?thesis by (rule arg_cong[OF subeq]) *)
+     % let _ = writeLine("eqsubtm: "^anyToString path^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
      let lhs_sub = fromPathTerm (lhs, path) in
      let rhs_sub = fromPathTerm (rhs, path) in
      let sub_eq_pp = ppEquality (c, lhs_sub, rhs_sub) in
@@ -1032,17 +1035,17 @@ IsaTermPrinter qualifying spec
      (c, "subeq", sub_eq_pp,
       forwardProofBlock (ppEqualityProof (c, lhs_sub, rhs_sub, sub_pf)),
       (fn pf_name ->
-         showFinalResult (ppEquality (c, lhs, rhs),
+         showFinalResult (string "?thesis",
                           singleTacticProof
                             (ruleTactic ("arg_cong[OF "^ pf_name ^"]")))))
    | EqProofSym sub_pf ->
-     (* have subeq:"rhs = lhs" (sub_pf) show "lhs=rhs" by (rule subeq[symmetric]) *)
+     (* have subeq:"rhs = lhs" (sub_pf) show ?thesis by (rule subeq[symmetric]) *)
      let sub_eq_pp = ppEquality (c, rhs, lhs) in
      addForwardStep
      (c, "subeq", sub_eq_pp,
       forwardProofBlock (ppEqualityProof (c, rhs, lhs, sub_pf)),
       (fn pf_name ->
-         showFinalResult (sub_eq_pp,
+         showFinalResult (string "?thesis",
                           singleTacticProof
                             (ruleTactic (pf_name ^ "[symmetric]")))))
    | EqProofTrans (pf1, middle, pf2) ->
@@ -1051,7 +1054,7 @@ IsaTermPrinter qualifying spec
         also
         have "middle=rhs" (pf2)
         finally
-        show "lhs=rhs" .
+        show ?thesis .
         *)
      showFinalChainedResult
      (ppEquality (c, lhs, rhs),
@@ -1079,7 +1082,7 @@ IsaTermPrinter qualifying spec
       singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"])))
    | EqProofTactic tactic ->
      (* by tactic *)
-     showFinalResult (ppEquality (c, lhs, rhs), singleTacticProof (ruleTactic tactic))
+     showFinalResult (ppEquality (c, lhs, rhs), singleTacticProof (IsaProof (string tactic)))
 
   % generate an Isabelle proof of an implication "lhs -> rhs"
   op generateImplicationProof (c: Context, lhs: MSTerm, rhs: MSTerm, pf:AnnSpec.ImplProof): String =
@@ -1088,6 +1091,7 @@ IsaTermPrinter qualifying spec
   op ppImplicationProof (c: Context, lhs: MSTerm, rhs: MSTerm, pf:AnnSpec.ImplProof): IsaProof StateMode =
   case pf of
   | ImplTrans (pf1, middle, pf2) ->
+    % let _ = writeLine("ImplTqrans:\nlhs = "^printTerm lhs^"\nmiddle = "^printTerm middle^"\nrhs = "^printTerm rhs) in
     (*
        have impl_trans1: "A --> B" (pf1)
        have impl_trans2: "B --> C" (pf2)
@@ -1096,69 +1100,60 @@ IsaTermPrinter qualifying spec
            assume impl_lhs:A
            show C by (rule impE[OF impl_trans2,OF impE[OF impl_trans1,OF impl_lhs]])
          qed
-       show "A --> C" by (rule impI[OF impl_trans_big]) *)
+       show "A --> C" by (rule impI[OF impl_trans_big]) 
+
+       have impl_trans1: "A ==> B" (pf1)
+       have impl_trans2: "B ==> C" (pf2)
+       assume lhs: "A"
+       show ?thesis
+          (rule impl_trans2, rule impl_trans1, rule lhs)
+        
+*)
     addForwardStep
-    (c, "impl_trans1_", ppImplication (c, lhs, middle),
-     forwardProofBlock (ppImplicationProof (c, lhs, middle, pf1)),
-     (fn pf1_name ->
-        addForwardStep
-        (c, "impl_trans2_", ppImplication (c, middle, rhs),
-         forwardProofBlock (ppImplicationProof (c, middle, rhs, pf2)),
-         (fn pf2_name ->
+      (c, "impl_trans1_", ppBigImplication (c, lhs, middle),
+       forwardProofBlock (ppImplicationProof (c, lhs, middle, pf1)),
+       (fn pf1_name ->
           addForwardStep
-            (c, "impl_trans_big", ppBigImplication (c, lhs, rhs),
-             forwardProofBlock
-               (addForwardAssumption
-                  (c, "impl_lhs", ppTerm c Top lhs,
-                   fn lhs_name ->
-                   showFinalResult
-                     (ppTerm c Top rhs,
-                      singleTacticProof
-                        (ruleTactic
-                           ("impE[OF " ^pf2_name
-                              ^ ", OF impE[OF "^pf1_name^", OF "^lhs_name^"]]"))))),
-             (fn big_impl_name ->
-              showFinalResult
-                (ppImplication (c, lhs, rhs),
-                 singleTacticProof (ruleTactic ("impI[OF "^big_impl_name^"]")))))))))
-  | ImplTheorem (qid, args) ->
-     (* show "lhs --> rhs" by (rule allE[OF allE[OF ... [OF qid] ... ]]) *)
-     showFinalResult
-     (ppEquality (c, lhs, rhs),
-      singleTacticProof
-        (ruleTacticPP
-           %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-           (prLinear 2
-              [ppQualifiedId qid, string "[of ",
-               prLinear 0 (map (ppTerm c Top) args),
-               string "]"])
-           ))
+          (c, "impl_trans2_", ppBigImplication (c, middle, rhs),
+           forwardProofBlock (ppImplicationProof (c, middle, rhs, pf2)),
+           (fn pf2_name ->
+              (addForwardAssumption
+                 (c, "impl_lhs", ppTerm c Top lhs,
+                  fn lhs_name ->
+                    showFinalResult
+                      (string "?thesis",
+                       singleTacticProof (rulesTactic [pf2_name, pf1_name, lhs_name]))))))))
+ | ImplTheorem (qid, args) ->
+     (* show "lhs ==> rhs" by (rule allE[OF allE[OF ... [OF qid] ... ]]) 
+
+        assume lhs: "lhs"
+        show ?thesis by (rule qid[OF lhs])
+*)
+    addForwardAssumption
+      (c, "impl_lhs", ppTerm c Top lhs,
+       fn lhs_name ->
+         showFinalResult
+           (string "?thesis",
+            singleTacticProof (ruleTactic(show qid^"[OF "^lhs_name^"] "))))
   | ImplEq eq_pf ->
     (*
-       have eq_pf: "A = B" (eq_pf)
-       have eq_impl: "A ==> B"
-       proof -
-         assume lhs:A
-         show B by (rule subst[OF eq_pf, of "lambda z . z", OF lhs])
-       qed
-       show "A --> B" by (rule impI[OF eq_impl]) *)
+      have eq_pf: "A = B" (eq_pf)
+      assume lhs:A
+      show ?thesis by  (rule subst[OF eq_pf, of "lambda z . z", OF lhs])
+      qed
+*)
+    % let _ = writeLine("ImplEq:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
     addForwardStep
-    (c, "eq_pf", ppEquality (c, lhs, rhs),
-     forwardProofBlock (ppEqualityProof (c, lhs, rhs, eq_pf)),
-     (fn eq_pf_name ->
-      addForwardStep
-      (c, "eq_impl", ppBigImplication (c, lhs, rhs),
-       forwardProofBlock
-         (addForwardAssumption
-            (c, "lhs", ppTerm c Top lhs,
-             (fn lhs_name ->
-              showFinalResult
-                (ppTerm c Top rhs,
-                 singleTacticProof (ruleTactic ("subst[OF "^eq_pf_name^", of \"\\<lambda>z . z\", OF "^lhs_name^"]")))))),
-       (fn eq_impl_name ->
-        showFinalResult
-          (ppImplication (c, lhs, rhs),
-           singleTacticProof (ruleTactic ("impI[OF "^eq_impl_name^"]")))))))
+      (c, "eq_pf", ppEquality (c, lhs, rhs),
+       forwardProofBlock (ppEqualityProof (c, lhs, rhs, EqProofSym eq_pf)),
+       (fn eq_pf_name ->
+          (addForwardAssumption
+             (c, "lhs", ppTerm c Top lhs,
+              (fn lhs_name ->
+                 showFinalResult
+                   (string "?thesis",
+                    singleTacticProof (ruleTactic ("subst[OF "^eq_pf_name^", of \"\\<lambda>z . z\", OF "^lhs_name^"]"))))))))
+
   | ImplProofTactic tactic ->
     (* by tactic *)
      showFinalResult (ppImplication (c, lhs, rhs), singleTacticProof (ruleTactic tactic))
@@ -1324,9 +1319,9 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = writeLine("4:\n"^printSpec spc) in
-    % let _ = printSpecWithTypesToTerminal spc in
     let spc = exploitOverloading coercions false spc in
     % let _ = writeLine("5:\n"^printSpec spc) in
+    % let _ = printSpecWithTypesToTerminal spc in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
                                                 if generateObligsForSTPFuns? spc
