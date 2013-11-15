@@ -658,7 +658,7 @@ indent ^ "(* Final Refinement Step XXXX *)\n" ^
 % indent ^ "(*\n" ^
 indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
-indent ^ "have precondition : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure t)))) ^ "\" by simp\n" ^
+indent ^ "assume precondition : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure t)))) ^ "\"\n" ^
 indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
 indent ^ "show ?thesis\n" ^
 indent ^ "  apply (unfold " ^ unfold_ids ^ " )\n" ^
