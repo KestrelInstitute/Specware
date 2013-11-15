@@ -126,6 +126,11 @@ spec
                                 mkEquality(equal_ty, mkApply(mkVar f, mkApply(qf, mkVar v1)),
                                            mkApply(mkVar f, mkApply(qf, mkVar v2))),
                                 mkEquality(dom_ty, mkVar v1, mkVar v2)))
+    % let thm = mkBind(Forall, [f, v1, v2],
+    %                  mkEquality(boolType,
+    %                             mkEquality(ran_ty, mkApply(qf, mkVar v1),
+    %                                        mkApply(qf, mkVar v2)),
+    %                             mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
     assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, LeftToRight, None)
 
@@ -383,7 +388,7 @@ spec
              | Cons(transforms as ((rule, new_trm, subst)::_), _) ->
                let (new_info, _) =
                    (foldl (fn ((cur_info, prev_tm), (rule, trm, _)) ->
-                             (composeTransformInfos (cur_info, prev_tm, ([(trm, rule.rule_spec)], rule.opt_proof)),
+                             (composeTransformInfos (([(trm, rule.rule_spec)], rule.opt_proof), prev_tm, cur_info),
                               trm))
                       (info, trm) (reverse transforms))
                in
@@ -640,7 +645,7 @@ spec
   op replaceSubTermH((new_tm: MSTerm, new_info: AnnSpec.TransformInfo), old_ptm: PathTerm, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     %let lifted_info = liftInfo(new_info, old_ptm) in
-    (new_path_tm, composeTransformInfos (info, topTerm (old_ptm), new_info))
+    (new_path_tm, composeTransformInfos (new_info, nextToTopTerm (old_ptm), info))
 
   op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in

@@ -198,17 +198,17 @@ type TransformHistory = List (MSTerm * RuleSpec)
 
  % compose two refinement proofs; the term given is the intermediate
  % term in the refinement, i.e., the first proof refines to the term
- % while the second refines from it; note that it is an error to
- % compose two different sorts of proofs
+ % while the second refines from it; note that an EqProof can be composed
+ % with a Strengthen proof giving a Strengthen proof
  op composeRefinementProofs : (RefinementProof * MSTerm * RefinementProof) -> RefinementProof
  def composeRefinementProofs triple =
    case triple of
      | (RefineEq eq_pf1, tm, RefineEq eq_pf2) ->
-       RefineEq (EqProofTrans (eq_pf1, tm, eq_pf2))
+       RefineEq (EqProofTrans (eq_pf2, tm, eq_pf1))
      | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
-       RefineStrengthen (ImplTrans (impl_pf2, tm, impl_pf1))
+       RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineEq eq_pf2) ->
-       RefineStrengthen (ImplTrans (ImplEq  eq_pf2, tm, impl_pf1))
+       RefineStrengthen (ImplTrans (impl_pf1, tm, ImplEq  eq_pf2))
      | (RefineEq eq_pf1, tm, RefineStrengthen impl_pf2) ->
        RefineStrengthen (ImplTrans (ImplEq eq_pf1, tm, impl_pf2))
      | _ -> fail ("composeRefinementProofs called with non-composable proofs!")
