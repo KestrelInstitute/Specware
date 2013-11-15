@@ -380,14 +380,15 @@ spec
            case lazy of
              | Nil -> (trm, info)
              | Cons([], tl) -> (trm, info)
-             | Cons(transforms as ((rule, trm, subst)::_), _) ->
-               let new_info =
-               (foldl (fn (cur_info, (rule, trm, _)) ->
-                         composeTransformInfos (cur_info, trm, ([(trm, rule.rule_spec)], rule.opt_proof)))
-                  info (reverse transforms))
+             | Cons(transforms as ((rule, new_trm, subst)::_), _) ->
+               let (new_info, _) =
+                   (foldl (fn ((cur_info, prev_tm), (rule, trm, _)) ->
+                             (composeTransformInfos (cur_info, prev_tm, ([(trm, rule.rule_spec)], rule.opt_proof)),
+                              trm))
+                      (info, trm) (reverse transforms))
                in
                if count > 0 then 
-                 doTerm (count - 1, trm, new_info)
+                 doTerm (count - 1, new_trm, new_info)
                else
                  (trm, new_info)
      in
