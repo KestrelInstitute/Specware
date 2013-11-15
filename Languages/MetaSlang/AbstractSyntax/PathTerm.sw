@@ -61,6 +61,10 @@ type PathTerm = APathTerm Position.Position
             | (i, None) -> None)
        (Some top_term) path
 
+  op [a] nextToTopTerm((top_term, path): APathTerm a): ATerm a =
+    if empty? path then top_term
+      else ithSubTerm(top_term, last path)
+
   op [a] typedPathTerm(term: ATerm a, ty: AType a): APathTerm a =
     (TypedTerm(term, ty, termAnn term),
      [if anyTerm? term && some?(postCondn? ty) then 1 else 0])
