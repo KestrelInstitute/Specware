@@ -2070,7 +2070,11 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
        prConcat [prString "\"", ppQualifiedId qid, prString "\""]
      | _ ->  ppQualifiedId qid
 
- op mkFieldName(nm: String): String = ppIdStr nm ^ "__fld"
+ op mkFieldName(nm: String): String =
+   let fieldname = nm ^ "__fld" in 
+   let _ = writeLine ("WARNING: using default record field name, "^fieldname^", for "^nm^".") in
+   ppIdStr fieldname
+
  op mkNamedRecordFieldName (c: Context)(qid: QualifiedId, nm: String): String =
    (typeQualifiedIdStr c qid)^"__"^ppIdStr nm
 
@@ -3558,8 +3562,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
         | _ -> ty)
      | _ -> ty
 
- op  projectorFun: Context * String * MSType * Spec -> String
- def projectorFun (c, p, s, spc) =
+ def projectorFun (c:Context, p:String, s:MSType, spc:Spec) : String =
    let (prod_ty, arity) = case typeArity(spc, s) of
                             | None -> (s,1)
                             | Some pr -> pr
