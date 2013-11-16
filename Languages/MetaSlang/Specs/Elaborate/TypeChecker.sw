@@ -63,6 +63,8 @@ def type_bool   = boolType
 def type_char   = charType
 def type_string = stringType
 
+op allowDependentSubTypes?: Bool = true
+
 op debug?: Bool = false
 
 %% ========================================================================
@@ -423,7 +425,7 @@ op checkType1(env: LocalEnv, ty: MSType, o_tm: Option MSTerm, checkTerms?: Bool)
 
     | Arrow (t1, t2, pos) ->
       let nt1 = checkType1 (env, t1, None, checkTerms?) in
-      let (dep_env, n_o_tm) = augmentDepEnv(env, o_tm) in
+      let (dep_env, n_o_tm) = augmentDepEnv(env, o_tm, nt1) in
       let nt2 = checkType1 (dep_env, t2, n_o_tm, checkTerms?) in
       if t1 = nt1 && t2 = nt2 then 
         ty
@@ -565,17 +567,22 @@ op checkOp (info: OpInfo, decl?: Bool, def?: Bool, refine_num: Nat, env: LocalEn
  % let _ = if info.names = [Qualified(UnQualified, "test")]  then writeLine("checkOp test\n"^printTermWithTypes def_tm^"\n"^printTermWithTypes elaborated_def_tm) else () in
  info << {dfn = new_dfn}
 
-op allowDependentSubTypes?: Bool = true
-
-op augmentDepEnv(env: LocalEnv, o_tm: Option MSTerm): LocalEnv * Option MSTerm =
+op augmentDepEnv(env: LocalEnv, o_tm: Option MSTerm, dom_ty: MSType): LocalEnv * Option MSTerm =
   %% For handling dependent types in definition
   case o_tm of
     | Some(Lambda([(pat, _, bod)], pos)) ->
       let alpha = freshMetaTyVar ("Lambda_0", pos) in
       let (_, env) = elaboratePattern (env, pat, alpha) in
       (env, Some bod)
-    | Some(Pi(_, tm1, _)) -> augmentDepEnv(env, Some tm1)
-    | Some(And(tm1::_, _)) -> augmentDepEnv(env, Some tm1)
+    | Some(Pi(_, tm1, _)) -> augmentDepEnv(env, Some tm1, dom_ty)
+    | Some(And(tm1::_, _)) -> augmentDepEnv(env, Some tm1, dom_ty)
+    | Some(Any _) ->
+      (case dom_ty of
+         | Subtype(_, Lambda([(pat, _, _)], _), pos) ->
+           let alpha = freshMetaTyVar ("Lambda_0", pos) in
+           let (_, env) = elaboratePattern (env, pat, alpha) in
+           (env, None)
+         | _ -> (env, None))
     | _ -> (env, None)
 
 %%% Bound to false in swe in toplevel.lisp because not a problem with the interpreter
