@@ -135,7 +135,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                                             Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
                              % Same thing, but don't save the mergerules proof in the tracehistory.
                              let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
-                             addRefinedTypeH(spc,oi,refinedType,th2)
+                             addRefinedTypeH(spc,oi,refinedType,Some body,th2)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
                   addOpDef(spc,fname,Nonfix,body)
@@ -158,8 +158,8 @@ op mkCombTerm(dom:List (Id * MSType))(ran:List (Id * MSType))(pre:MSTerm)(post:M
     let ranPred = mkLambda (mkTuplePat (map mkVarPat ran), post) in
     let domType = mkSubtype (domType, domPred) in
     let ranType = mkSubtype (ranType, ranPred) in
-    let body = mkLambda (mkTuplePat (map mkVarPat dom),Any noPos) in
-    mkTypedTerm (body,mkArrow(domType, ranType))
+    let body = mkLambda (mkRestrictedPat (mkTuplePat (map mkVarPat dom), pre),Any noPos) in
+    body
 
 op mkCombType(dom:List (Id * MSType))(ran:List (Id * MSType))(pre:MSTerm)(post:MSTerm):MSType =
     let (domNames, domTypes) = unzip dom in

@@ -585,24 +585,28 @@ op addRefinedDefH(spc: Spec, info: OpInfo, new_dfn: MSTerm, xform_info: Option T
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
           elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), xform_info, noPos)]}
 
-op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType): OpInfo =
+op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType, new_tm: Option MSTerm): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
   let triples = unpackTypedTerms(info.dfn) in
+  let def termDef (old_tm:MSTerm) = case new_tm of | Some t -> t | None -> old_tm in
   let new_full_dfn = case triples of
                        | [] -> TypedTerm (Any (typeAnn new_ty), new_ty, typeAnn new_ty)
                        | (tvs, _, old_tm) ::_ ->
-                         maybePiAndTypedTerm (([], new_ty, old_tm) :: triples)
+                         let _ = writeLine ("Adding refined type " ^ printType new_ty) in
+                         maybePiAndTypedTerm (([], new_ty, termDef old_tm) :: triples)
   in
   % let _ = if show qid = "insertBlack"
   %          then writeLine("addRefinedType: "^show qid^"\n"^printTerm info.dfn^"\n"^printTerm new_full_dfn^"\n\n") else () in
   info << {dfn = new_full_dfn}
 
 op addRefinedType(spc: Spec, info: OpInfo, new_ty: MSType): Spec =
-  addRefinedTypeH(spc, info, new_ty, None)
+  addRefinedTypeH(spc, info, new_ty, None, None)
 
-op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, xform_info: Option TransformInfo): Spec =
+%% addRefinedTypeH takes a new term, which is strange. However, it is
+%% needed in the case where the precondition is changed. 
+op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, new_tm: Option MSTerm, xform_info: Option TransformInfo): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
-  let new_opinfo = addRefinedTypeToOpinfo(info, new_ty) in
+  let new_opinfo = addRefinedTypeToOpinfo(info, new_ty, new_tm) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
           elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), xform_info, noPos)]}
 
