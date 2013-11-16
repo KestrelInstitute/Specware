@@ -59,7 +59,7 @@ import C
           | C_Comma (l,r) ->
             let (ls,lv) = flattenExp l in
             let (rs,rv) = flattenExp r in
-            (ls ++ (rs ++ [C_Exp lv]), rv)
+            (ls ++ [C_Exp lv] ++ rs, rv)
           | _ -> ([],e)
             
             
