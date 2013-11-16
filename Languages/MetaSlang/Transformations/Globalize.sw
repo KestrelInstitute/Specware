@@ -56,6 +56,9 @@ Globalize qualifying spec
                           | Unchanged
                           | GlobalVarPat % for clarity (as opposed to Changed global_var_pat)
 
+ op global_q : Qualifier = "Global"
+ op gPos     : Position = Internal "Globalize"
+
  %% ================================================================================
 
  op expandBindings (tm : MSTerm, bindings : LetBindings) : MSTerm =
@@ -752,10 +755,13 @@ Globalize qualifying spec
                     | Unchanged -> t1
      in
      case opt_new_t2 of
+
        | GlobalVar ->
+         %% TODO: Changed new_t1
          %% was (f x ...)  where x had global type
          let head_type = applyHeadType (t1, context) in
          let head_type = unfoldToArrow (context.spc, head_type) in
+        %let head_type = nullify_global (context, vars_to_remove, substitutions, head_type) in
          Changed (case dom_type head_type of
                     | Some dtype | globalType? context dtype ->
                       (case t1 of
@@ -794,7 +800,7 @@ Globalize qualifying spec
 
            | _ ->
              Unchanged
-      
+
  %% ================================================================================
 
  op globalizeRecord (context              : Context)
@@ -1148,12 +1154,22 @@ Globalize qualifying spec
                  (term           : MSTerm) 
   : GlobalizedTerm =
   case term of
-    | Fun (tm, typ, _) -> 
-      let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in 
-      if typ = new_typ then
+
+    | Fun (old_ref, old_type, _) -> 
+      let new_type = nullify_global (context, vars_to_remove, substitutions, old_type) in 
+      if equalType? (new_type, old_type) then
         Unchanged
       else
-        Changed (Fun (tm, new_typ, noPos))
+        let new_ref = old_ref in
+        % TODO:
+        % let new_ref = case old_ref of 
+        %                | Op (Qualified (_,        id), _) -> 
+        %                  Op (Qualified (global_q, id), Nonfix) 
+        %                | _ -> 
+        %                  old_ref
+        % in
+        Changed (Fun (new_ref, new_type, gPos))
+
     | _ -> 
       Unchanged
 
@@ -1393,8 +1409,8 @@ Globalize qualifying spec
  op globalizeOpInfo (context    : Context,
                      old_info   : OpInfo)
   : OpInfo =
-  let qid as Qualified(q, id) = primaryOpName old_info in
-  if baseOp? qid then
+  let old_name as Qualified(q, id) = primaryOpName old_info in
+  if baseOp? old_name then
     old_info
   else
     let old_dfn = case old_info.dfn of 
@@ -1403,14 +1419,16 @@ Globalize qualifying spec
     in
     case globalizeTerm context [] [] old_dfn false of
       | Changed new_dfn -> 
-        let new_info = old_info << {dfn = new_dfn} in
+        let new_name = old_name in % TODO: Qualified (global_q, id) in
+        let new_info = old_info << {names = [new_name], dfn = new_dfn} in
         let _ = if context.tracing? then
-                  let _ = writeLine ""                                    in
-                  let _ = writeLine ("Globalize: changing " ^ show qid) in
-                  let _ = writeLine (printTerm old_dfn)                   in
-                  let _ = writeLine "  => "                               in
-                  let _ = writeLine (printTerm new_dfn)                   in
-                  let _ = writeLine ""                                    in
+                  let _ = writeLine ""                                                              in
+                  let _ = writeLine ("Globalize: changing " ^ show old_name)                        in
+                 %let _ = writeLine ("Globalize: adding " ^ show old_name ^ " => " ^ show new_name) in % TODO
+                  let _ = writeLine (printTerm old_dfn)                                             in
+                  let _ = writeLine "  => "                                                         in
+                  let _ = writeLine (printTerm new_dfn)                                             in
+                  let _ = writeLine ""                                                              in
                   ()
                 else
                   ()
@@ -1422,12 +1440,12 @@ Globalize qualifying spec
         let new_dfn  = context.global_var in
         let new_info = old_info << {dfn = new_dfn} in
         let _ = if context.tracing? then
-                  let _ = writeLine ""                                    in
-                  let _ = writeLine ("Globalize: changing " ^ show qid) in
-                  let _ = writeLine (printTerm old_dfn)                   in
-                  let _ = writeLine "  => "                               in
-                  let _ = writeLine (printTerm new_dfn)                   in
-                  let _ = writeLine ""                                    in
+                  let _ = writeLine ""                                       in
+                  let _ = writeLine ("Globalize: changing " ^ show old_name) in
+                  let _ = writeLine (printTerm old_dfn)                      in
+                  let _ = writeLine "  => "                                  in
+                  let _ = writeLine (printTerm new_dfn)                      in
+                  let _ = writeLine ""                                       in
                   ()
                 else
                   ()
@@ -1436,9 +1454,9 @@ Globalize qualifying spec
 
       | Unchanged -> 
         let _ = if context.tracing? then
-                  let _ = writeLine("Globalize: no change to " ^ show qid) in
-                  let _ = writeLine (printTerm old_dfn)                    in
-                  let _ = writeLine ""                                     in
+                  let _ = writeLine("Globalize: no change to " ^ show old_name) in
+                  let _ = writeLine (printTerm old_dfn)                         in
+                  let _ = writeLine ""                                          in
                   ()
                 else
                   ()
@@ -1489,7 +1507,7 @@ Globalize qualifying spec
                        else
                          globalizeOpInfo (context, info) 
                    in
-                   insertAQualifierMap (new_ops, q, id, new_info)
+                   insertAQualifierMap (new_ops, q, id, new_info) % TODO: global_q
                  | _ -> 
                    let _ = writeLine("??? Globalize could not find op " ^ show name) in
                    new_ops)
@@ -1500,8 +1518,8 @@ Globalize qualifying spec
 
   % redo slice, this time chasing through any new references introduced just above
   % (also ignoring any old references removed just above)
+ %let root_ops = map (fn Qualified(q, id) -> Qualified(global_q, id)) root_ops in % TODO
   let second_slice = genericSlice (spec_with_globalized_ops_added, root_ops, root_types) in
-
   let new_ops =
       let base_ops = mapiPartialAQualifierMap (fn (q, id, info) ->
                                                  if baseOp? (Qualified(q, id)) then
@@ -1611,7 +1629,7 @@ Globalize qualifying spec
                                  opt_ginit        : Option OpName,
                                  tracing?         : Bool)
   : SpecCalc.Env (Spec * Bool) =
-  let global_var_name = Qualified ("Global", global_var_id) in
+  let global_var_name = Qualified (global_q, global_var_id) in
 
   %% access_update pairs are used to create dsstructive updates into complex left-hand-sides
   let setf_entries = findSetfEntries spc in
@@ -1647,7 +1665,7 @@ Globalize qualifying spec
                                       | Product (pairs, _) ->
                                         map (fn (field_id, field_type) ->
                                                let Qualified (_, global_id) = global_type_name in
-                                               let global_var_id = Qualified ("Global", field_id) in
+                                               let global_var_id = Qualified (global_q, field_id) in
                                                let global_var = Fun (Op (global_var_id, Nonfix), field_type, noPos) in
                                                (field_id, global_var))
                                             pairs
