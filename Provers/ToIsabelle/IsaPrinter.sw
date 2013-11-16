@@ -811,9 +811,16 @@ IsaTermPrinter qualifying spec
     case hist of
       | [(tr_tm, MergeRulesTransform (tree,unfolds))] ->
         let _ = writeLine "Generating MergeRules Proof" in
+
         let def isabelleTerm tm =
+              let spc = getSpec c in
               let out = (ppTermStrIndent c Top tm 7) in        
-              let tm' = mapTerm (relativizeQuantifiers (getSpec c),id,id) tm in
+              let tm' = mapTerm (relativizeQuantifiers spc,id,id) tm in
+              % We have to normalize types, so that record types get
+              % printed correctly in Isabelle (substitute named type
+              % for a record for their anonymous representation).
+              let typeNameInfo = topLevelTypes spc in              
+              let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
               let out' = (ppTermStrIndent c Top tm' 7) in
               % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
               out'
@@ -1133,9 +1140,15 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
     (* by tactic *)
      showFinalResult (singleTacticProof (ruleTactic tactic))
   | MergeRulesProof (tree,unfolds) ->
+        let spc = getSpec c in
         let def isabelleTerm tm =
               let out = (ppTermStrIndent c Top tm 7) in        
-              let tm' = mapTerm (relativizeQuantifiers (getSpec c),id,id) tm in
+              let tm' = mapTerm (relativizeQuantifiers spc,id,id) tm in
+              % We have to normalize types, so that record types get
+              % printed correctly in Isabelle (substitute named type
+              % for a record for their anonymous representation).
+              let typeNameInfo = topLevelTypes spc in                            
+              let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
               let out' = (ppTermStrIndent c Top tm' 7) in
               % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
               out'
