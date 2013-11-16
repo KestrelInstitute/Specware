@@ -479,13 +479,28 @@ IsaTermPrinter qualifying spec
        (res_tm, pat_conds ++ conds)
      | _ -> (f_tm, [])
 
+ op extractCondsFromDomainTypeOrTerm(ty: MSType, tm: MSTerm, f_tm: MSTerm): MSTerm * MSTerms =
+   case ty of
+     | Arrow(dom, rng, _) ->
+       (case dom of
+          | Subtype(s_ty, Lambda([(pat, _, sub_ty_condn)], _), _) ->
+            let (pat_tm, pat_conds, ign_vs) = patternToTermPlusExConds pat in
+            let bod = case tm of
+                        | Lambda([(_, _, bod)], _) -> bod
+                        | _ -> Any(noPos)
+            in
+            let (res_tm, conds) = extractCondsFromDomainTypeOrTerm(rng, bod, mkApply(f_tm, pat_tm)) in
+            (res_tm, pat_conds ++ getConjuncts sub_ty_condn ++ conds)
+          | _ -> extractLambdaVars(tm, f_tm))
+     | _ -> (f_tm, [])
+
  op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
       : MSTerm * MSTerm * MSTerm * MSTerm =
    % let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
    case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
      | (Some(new_result_tm, new_post_condns), Some(old_result_tm, old_post_condns)) ->
        let f_tm = mkOp(qid, new_ty) in
-       let (val_tm, param_conds) = extractLambdaVars(new_dfn, f_tm) in
+       let (val_tm, param_conds) = extractCondsFromDomainTypeOrTerm(new_ty, new_dfn, f_tm) in
        let rhs = mkConj(old_post_condns) in
        let condn = mkConj(param_conds ++ new_post_condns) in
        (mkSimpImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
