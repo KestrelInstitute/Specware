@@ -1092,38 +1092,40 @@ If anyone has a good algorithm for this..."
 ;               (1+ (current-column)))))))))
 
 (defun sw:inside-comment-or-string-p ()
-  (let ((start (point)))
-    (if (or (save-excursion
-	      (condition-case ()
-		  (progn
-		    (search-backward "(*")
-		    (search-forward "*)")
-		    (forward-char -1)	; A "*)" is not inside the comment
-		    (> (point) start))
-		(error nil)))
-	    (save-excursion
-	      (condition-case ()
-		  (progn
-		    (search-backward "\end{spec}")
-		    (search-forward "\begin{spec}")
-		    (forward-char -1)	; A "*)" is not inside the comment
-		    (> (point) start))
-		(error nil))))
-        t
-      (let ((numb 0))
-        (save-excursion
-          (save-restriction
-            (narrow-to-region (progn (beginning-of-line) (point)) start)
-            (condition-case ()
-                (while t
-                  (search-forward "\"")
-                  (unless (and (not (eq (current-column) 1))
-			       (save-excursion (forward-char -2)
-					       (looking-at "\\\\")))
-		    (setq numb (1+ numb))))
-              (error (if (and (not (zerop numb))
-                              (not (zerop (% numb 2))))
-                         t nil)))))))))
+  (if (and (boundp 'font-lock-mode) font-lock-mode)
+      (in-comment-or-string-p)
+    (let ((start (point)))
+      (if (or (save-excursion
+                (condition-case ()
+                    (progn
+                      (search-backward "(*")
+                      (search-forward "*)")
+                      (forward-char -1)	; A "*)" is not inside the comment
+                      (> (point) start))
+                  (error nil)))
+              (save-excursion
+                (condition-case ()
+                    (progn
+                      (search-backward "\end{spec}")
+                      (search-forward "\begin{spec}")
+                      (forward-char -1)	; A "*)" is not inside the comment
+                      (> (point) start))
+                  (error nil))))
+          t
+        (let ((numb 0))
+          (save-excursion
+            (save-restriction
+              (narrow-to-region (progn (beginning-of-line) (point)) start)
+              (condition-case ()
+                  (while t
+                    (search-forward "\"")
+                    (unless (and (not (eq (current-column) 1))
+                                 (save-excursion (forward-char -2)
+                                                 (looking-at "\\\\")))
+                      (setq numb (1+ numb))))
+                (error (if (and (not (zerop numb))
+                                (not (zerop (% numb 2))))
+                           t nil))))))))))
  
 (defun sw:skip-block ()
   (let ((case-fold-search nil))
@@ -2396,7 +2398,7 @@ uniquely and concretely describes their application.")
 (defun sw:convert-spec-to-isa-thy (arg)
   "Converts Spec to Isabelle/HOL theory.
 With an argument of 1 it doesn't convert imports.
-With any other argument it doesn't simplify terms."
+With any other argument it simplifies terms."
   (interactive "P")
   (save-buffer)
   (let* ((filename (sw:containing-specware-unit-id t))
