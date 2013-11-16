@@ -250,7 +250,7 @@ op printEqProof(prf: EqProof, tm: MSTerm): String =
     | EqProofTactic str -> "by "^str
     | _ -> "by another method"
 
-op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Option RefinementProof) =
+op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): Option(MSTerm * Option RefinementProof) =
   let def transfm(tm: MSTerm): Option (MSTerm * Option EqProof) =
         case tm of
           | Bind(Exists, vs, bod, a) ->
@@ -398,7 +398,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm): Option(MSTerm * Op
   in
   case transfm ctm of
     | Some (n_tm, o_prf) ->
-      let n_tm1 = simplify spc n_tm in
+      let n_tm1 = if simplify? then simplify spc n_tm else n_tm in
       if equalTerm?(n_tm1, ctm) then None
       else
         % let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
@@ -418,10 +418,10 @@ op findCommonTerms(tms1: MSTerms, tms2: MSTerms): MSTerms * MSTerms * MSTerms =
     | _ -> ([], tms1, tms2)           % Conservative: only gets common prefix
 
 op structureEx (spc: Spec) (tm: MSTerm): Option(MSTerm) =
-  mapOption (project 1) (structureCondEx(spc, tm, falseTerm))
+  mapOption (project 1) (structureCondEx(spc, tm, falseTerm, false))
 
-op MSRule.structureEx (spc: Spec) (tm: MSTerm): Option(MSTerm * Option RefinementProof) =
-  structureCondEx(spc, tm, falseTerm)
+op MSRule.structureEx (spc: Spec) (tm: MSTerm) (simplify?: Bool): Option(MSTerm * Option RefinementProof) =
+  structureCondEx(spc, tm, falseTerm, simplify?)
 
 op useRestrictedPat?: Bool = false
 
@@ -437,7 +437,7 @@ op MSRule.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
     %% if p then q else r --> p && q || ~p && r
     %% if ex(x) p x then q else r  -->
     | IfThenElse(condn as Bind(Exists, _, _, _), t2, t3, a)  ->
-      (case structureEx spc condn of
+      (case structureEx spc condn false of
          | Some(n_condn as Let _, _) ->
            simpIf spc (IfThenElse(n_condn, t2, t3, a))
          | _ -> None)
