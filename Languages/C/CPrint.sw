@@ -175,8 +175,7 @@ CPrint qualifying spec
     | C_Var        (s, t)       -> string (cId s)
       
     | C_Apply      (e, es)      -> prettysFill [ppExp_internal (e, inOneLine), 
-                                                prettysNone [string " ", 
-                                                             ppExpsInOneline es]]
+                                                             ppExpsInOneline es]
       
     | C_Unary      (u, e)       -> prettysNone (if unaryPrefix? u then
                                                   [ppUnary u, 

@@ -1,11 +1,12 @@
 CGen qualifying spec
 
 import /Languages/C/CUtils
+import /Languages/C/CFlatten
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Split the C spec into .c and .h portions and print those two files.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+op flattenSpec?:Bool = false
 op printCSpec (c_spec       : C_Spec,
                app_name     : String,
                opt_filename : Option String)
@@ -36,7 +37,7 @@ op printCSpec (c_spec       : C_Spec,
   let c_spec           = addHeader    (c_spec, app_name)   in
   let c_spec           = addTrailer   (c_spec, app_name)   in
   let c_spec           = addInclude   (c_spec, h_filename) in
-
+  let c_spec = if flattenSpec? then flattenSpec c_spec else c_spec in
   let _ = printCSpecAsHeaderToFile (h_spec, h_filename) in
   let _ = printCSpecToFile         (c_spec, c_filename) in
   ()
