@@ -1,4 +1,4 @@
-String qualifying spec
+ spec
  import String
 
  refine def natConvertible (s:String) : Bool =
