@@ -888,6 +888,20 @@ op executionSlice (ms_spec    : Spec,
  let s3 = context_closure        s2 in
  s3
 
+op genericExecutionSlice (ms_spec    : Spec,
+                          root_ops   : QualifiedIds,
+                          root_types : QualifiedIds)
+ : Slice =
+ let
+   def ignore_language_morphisms spc = []
+   def vacuous_oracle (ref, slice) = None
+ in
+ executionSlice (ms_spec, 
+                 ignore_language_morphisms, 
+                 vacuous_oracle, 
+                 root_ops, 
+                 root_types)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end-spec

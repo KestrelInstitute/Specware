@@ -1463,18 +1463,6 @@ Globalize qualifying spec
         in
         old_info
 
- op genericSlice (ms_spec    : Spec,
-                  root_ops   : QualifiedIds,
-                  root_types : QualifiedIds)
-  : Slice =
-  let
-    def ignore_language_morphisms spc = []
-
-    def vacuous_oracle (ref, slice) = None
-
-  in
-  executionSlice (ms_spec, ignore_language_morphisms, vacuous_oracle, root_ops, root_types)
-
  op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) =
   (*
    * At this point, we know:
@@ -1492,8 +1480,8 @@ Globalize qualifying spec
   in
 
   % first slice gets ops to be globalized
-  let first_slice        = genericSlice (spc, root_ops, root_types) in
-  let ops_in_first_slice = opsInSlice   first_slice                 in
+  let first_slice        = genericExecutionSlice (spc, root_ops, root_types) in
+  let ops_in_first_slice = opsInSlice            first_slice                 in
 
   % globalizing those ops may introduce new references to global vars
   % (and might remove some references to other ops in the process)
@@ -1519,7 +1507,7 @@ Globalize qualifying spec
   % redo slice, this time chasing through any new references introduced just above
   % (also ignoring any old references removed just above)
  %let root_ops = map (fn Qualified(q, id) -> Qualified(global_q, id)) root_ops in % TODO
-  let second_slice = genericSlice (spec_with_globalized_ops_added, root_ops, root_types) in
+  let second_slice = genericExecutionSlice (spec_with_globalized_ops_added, root_ops, root_types) in
   let new_ops =
       let base_ops = mapiPartialAQualifierMap (fn (q, id, info) ->
                                                  if baseOp? (Qualified(q, id)) then
@@ -1689,7 +1677,7 @@ Globalize qualifying spec
                              spec_with_gset
                              global_var_map;
                              
-   % return (let slice = genericSlice (spec_with_gvars, root_ops, []) in describeSlice ("Added GVars", slice));
+   % return (let slice = genericExecutionSlice (spec_with_gvars, root_ops, []) in describeSlice ("Added GVars", slice));
    % showIntermediateSpec ("with gvars", spec_with_gvars);
 
    spec_with_ginit  <- return (case (global_init_name : QualifiedId) of
@@ -1718,7 +1706,7 @@ Globalize qualifying spec
                                        spec_with_gvars);
 
 
-   % return (let slice = genericSlice (spec_with_ginit, root_ops, []) in describeSlice ("Added ginit", slice));
+   % return (let slice = genericExecutionSlice (spec_with_ginit, root_ops, []) in describeSlice ("Added ginit", slice));
    % showIntermediateSpec ("with ginit", spec_with_ginit);
 
    % hack to fix problem where 'global_var << {..}' was becoming just '{...}'
@@ -1749,7 +1737,7 @@ Globalize qualifying spec
                           let dfn     = TypedTerm (Any noPos, gtype, noPos) in
                           addOp [global_var_name] Nonfix refine? dfn globalized_spec noPos);
 
-   % return (let slice = genericSlice (spec_with_gvar, root_ops ++ [global_var_name], []) in describeSlice ("Globalized spec with gvar", slice));
+   % return (let slice = genericExecutionSlice (spec_with_gvar, root_ops ++ [global_var_name], []) in describeSlice ("Globalized spec with gvar", slice));
    % showIntermediateSpec ("with gvar", spec_with_gvar);
 
    return (spec_with_gvar, tracing?)
