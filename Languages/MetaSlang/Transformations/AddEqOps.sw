@@ -10,10 +10,12 @@ import /Languages/MetaSlang/Specs/Environment
 op aePos : Position = Internal "AddEqOps"
 
 op SpecTransform.addEqOps (spc : Spec) : Spec =
- foldriAQualifierMap (fn (q, id, typeinfo, spc) ->
-                        addEqOpsFromType (spc, Qualified (q, id), typeinfo))
-                     spc 
-                     spc.types
+  foldTypeInfos (fn (info, spc) ->
+                   let name = primaryTypeName info               in
+                   let spc  = addEqOpsFromType (spc, name, info) in
+                   spc)
+                spc 
+                spc.types
 
 op addEqOpsFromType (spc       : Spec, 
                      type_name : QualifiedId, 
@@ -33,19 +35,29 @@ op addEqOpsFromType (spc       : Spec,
             Boolean aePos,
             aePos)
 
-   def add_eq_op (eq_name as Qualified (eq_q, eq_id), arg_type, body) =
+   def add_eq_op (spc, eq_name as Qualified (eq_q, eq_id), arg_type, body) =
+     let arg_type = case arg_type of
+                      | Base (name, args, _) ->
+                        let tvs = tabulate (length args,
+                                            fn i -> TyVar ("tv" ^ show i, aePos))
+                        in
+                        Base (name, tvs, aePos)
+                      | _ ->
+                        arg_type
+     in
      let eq_lambda = get_lambda_term (arg_type, body)      in
      let eq_type   = get_equality_type arg_type            in
      let eq_dfn    = TypedTerm (eq_lambda, eq_type, aePos) in
      case findTheOp (spc, eq_name) of
-       | Some info -> if equalTerm? (info.dfn, eq_dfn) then
-                        spc
-                      else
-                        let _ = writeLine("Warning: attempt to redefine " ^ show eq_name) in
-                        let _ = writeLine("from: " ^ printTerm info.dfn)                  in
-                        let _ = writeLine("  to: " ^ printTerm eq_dfn)                    in
-                        let _ = writeLine("No change made.")                              in
-                        spc
+       | Some info -> 
+         if equalTerm? (info.dfn, eq_dfn) then
+           spc
+         else
+           let _ = writeLine("Warning: attempt to redefine " ^ show eq_name) in
+           let _ = writeLine("from: " ^ printTerm info.dfn)                  in
+           let _ = writeLine("  to: " ^ printTerm eq_dfn)                    in
+           let _ = writeLine("No change made.")                              in
+           spc
        | _ ->
          let eq_info   = {names           = [eq_name],
                           fixity          = Nonfix,
@@ -104,7 +116,7 @@ op addEqOpsFromType (spc       : Spec,
        in
        let varx    = Var (("x", eq_arg_type), aePos) in
        let vary    = Var (("y", eq_arg_type), aePos) in
-       let eq_name = get_equality_name type_name        in
+       let eq_name = get_equality_name type_name     in
        % check for aliases first
        case typ of
          | Base (alias_type_name, _, _) ->
@@ -117,13 +129,18 @@ op addEqOpsFromType (spc       : Spec,
            let alias_eq_fun  = Fun    (Op (alias_eq_name, Nonfix), alias_eq_type, aePos) in
            let alias_eq_args = Record ([("1", varx), ("2", vary)],                aePos) in
            let eq_body       = Apply  (alias_eq_fun, alias_eq_args,               aePos) in
-           add_eq_op (eq_name, eq_arg_type, eq_body)
-           %% Boolean is same as default case
+
+           %% Add an equality op for the aliased type.
+           let spc           = add_eq_op (spc, alias_eq_name, typ, Any aePos)            in
+           %% Add an equality op for the original type, invoking the equality op above.
+           let spc           = add_eq_op (spc, eq_name, eq_arg_type, eq_body)            in
+           spc
+
          | _ ->
            case typ of
              | Product (fields, _) -> 
                let eq_body = get_eq_term_from_product_fields (fields, eq_arg_type, varx, vary) in
-               add_eq_op (eq_name, eq_arg_type, eq_body)
+               add_eq_op (spc, eq_name, eq_arg_type, eq_body)
              | CoProduct (fields, _) ->
                (let match =
                     foldr (fn ((field_id, opt_field_type), match) ->
@@ -176,7 +193,7 @@ op addEqOpsFromType (spc       : Spec,
                           fields
                 in
                 let eq_body = Apply (Lambda (match, aePos), varx, aePos) in
-                add_eq_op (eq_name, eq_arg_type, eq_body))
+                add_eq_op (spc, eq_name, eq_arg_type, eq_body))
              | _ -> spc
 
 op get_equality_name (Qualified (q, id) : QualifiedId) : QualifiedId =
