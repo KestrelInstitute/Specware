@@ -56,8 +56,9 @@ Globalize qualifying spec
                           | Unchanged
                           | GlobalVarPat % for clarity (as opposed to Changed global_var_pat)
 
- op global_q : Qualifier = "Global"
- op gPos     : Position = Internal "Globalize"
+ op stateful_q : Qualifier = "Stateful"
+ op global_q   : Qualifier = "Global"
+ op gPos       : Position = Internal "Globalize"
 
  %% ================================================================================
 
@@ -272,10 +273,10 @@ Globalize qualifying spec
       
  %% ================================================================================
 
- op nullTerm : MSTerm    = Record    ([], noPos)
- op nullType : MSType    = Product   ([], noPos)
- op nullPat  : MSPattern = RecordPat ([], noPos)
- op wildPat (typ : MSType) : MSPattern = WildPat (typ, noPos)
+ op nullTerm : MSTerm    = Record    ([], gPos)
+ op nullType : MSType    = Product   ([], gPos)
+ op nullPat  : MSPattern = RecordPat ([], gPos)
+ op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
 
  op showTypeName (info : TypeInfo) : String = printQualifiedId (primaryTypeName info)
  op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
@@ -286,7 +287,7 @@ Globalize qualifying spec
  op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool = 
   q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String"]
 
- op myTrue : MSTerm = Fun (Bool true, Boolean noPos, noPos)
+ op myTrue : MSTerm = Fun (Bool true, Boolean gPos, gPos)
 
  %% ================================================================================
  %% Verify that the suggested global type actually exists
@@ -442,25 +443,25 @@ Globalize qualifying spec
         | Lambda (rules, _) ->
           let new_rules = 
               map (fn (fn_pat, cond, fn_body) -> 
-                     let let_pat      = VarPat (("x", global_type), noPos) in
-                     let let_var      = Var    (("x", global_type), noPos) in
+                     let let_pat      = VarPat (("x", global_type), gPos) in
+                     let let_var      = Var    (("x", global_type), gPos) in
                      let let_bindings = [(let_pat, fn_body)] in
                      let updates      = map (fn (field_id, field_var as Fun (_, field_type, _)) ->
                                                makeSetf (field_var,
                                                          Apply (Fun (Project field_id, 
-                                                                     Arrow (global_type, field_type, noPos),
-                                                                     noPos),
+                                                                     Arrow (global_type, field_type, gPos),
+                                                                     gPos),
                                                                 let_var,
-                                                                noPos)))
+                                                                gPos)))
                                             global_var_map
                      in
-                     let new_let = Let (let_bindings, Seq(updates, noPos), noPos) in
-                     % let setf_args = Record ([("1", global_var), ("2", body)], noPos) in
-                     % let new_tm   = Apply  (setfRef, setf_args, noPos) in
+                     let new_let = Let (let_bindings, Seq(updates, gPos), gPos) in
+                     % let setf_args = Record ([("1", global_var), ("2", body)], gPos) in
+                     % let new_tm   = Apply  (setfRef, setf_args, gPos) in
                      (fn_pat, cond, new_let))
                   rules
           in
-          let new_dfn = Lambda (new_rules, noPos) in
+          let new_dfn = Lambda (new_rules, gPos) in
           let _ = if tracing? then
                     let _ = writeLine ""                          in
                     let _ = writeLine ("Globalize:  changing init fn " ^ show global_init_name) in
@@ -523,9 +524,9 @@ Globalize qualifying spec
    case (opt_new_p1, opt_new_p2) of
      | (GlobalVarPat, _)                -> GlobalVarPat
      | (_, GlobalVarPat)                -> GlobalVarPat
-     | (Changed new_p1, Changed new_p2) -> Changed (AliasPat (new_p1, new_p2, noPos))
-     | (Changed new_p1, Unchanged)      -> Changed (AliasPat (new_p1, p2,     noPos))
-     | (Unchanged,      Changed new_p2) -> Changed (AliasPat (p1,     new_p2, noPos))
+     | (Changed new_p1, Changed new_p2) -> Changed (AliasPat (new_p1, new_p2, gPos))
+     | (Changed new_p1, Unchanged)      -> Changed (AliasPat (new_p1, p2,     gPos))
+     | (Unchanged,      Changed new_p2) -> Changed (AliasPat (p1,     new_p2, gPos))
      | (Unchanged,      Unchanged)      -> Unchanged)
 
  op globalizeEmbedPat (context                                 : Context)
@@ -562,9 +563,9 @@ Globalize qualifying spec
                 | [(id, pat)] | natConvertible id -> pat
                 | _ -> 
                   if shortened? then
-                    RecordPat (renumber new_fields, noPos)
+                    RecordPat (renumber new_fields, gPos)
                   else
-                    RecordPat (new_fields, noPos))
+                    RecordPat (new_fields, gPos))
    else
      Unchanged)
 
@@ -648,7 +649,7 @@ Globalize qualifying spec
       case args of
         | [] -> tm
         | arg :: args -> 
-          let new_tm = Apply (tm, arg, noPos) in
+          let new_tm = Apply (tm, arg, gPos) in
           % let _ = writeLine ("substVarBindings : tm     = " ^ printTerm tm) in
           % let _ = writeLine ("substVarBindings : arg    = " ^ printTerm arg) in
           % let _ = writeLine ("substVarBindings : new_tm = " ^ printTerm new_tm) in
@@ -677,7 +678,7 @@ Globalize qualifying spec
               makeUpdate context.spc context.setf_entries global_var_op new_value)
           fields
   in
-  Seq (assignments, noPos)
+  Seq (assignments, gPos)
 
  op applyHeadType (tm : MSTerm, context : Context) : MSType =
   case tm of
@@ -738,7 +739,7 @@ Globalize qualifying spec
                           let (changed_t3?, new_t3) = globalize_merge_arg t3 false in
                           let (changed_t4?, new_t4) = globalize_merge_arg t4 true  in
                           if changed_t3? || changed_t4? then
-                            Changed (Record ([("1", new_t3), ("2", new_t4)], noPos))
+                            Changed (Record ([("1", new_t3), ("2", new_t4)], gPos))
                           else
                             Unchanged
                         | _ -> 
@@ -850,7 +851,7 @@ Globalize qualifying spec
                     pos)
     in
     Changed (case opt_prefix of
-               | Changed prefix -> Seq ([prefix, new_result], noPos)
+               | Changed prefix -> Seq ([prefix, new_result], gPos)
                | _ -> new_result)
   else 
     Unchanged
@@ -1067,9 +1068,9 @@ Globalize qualifying spec
             if globalType? context dom then
               case rng of
                 | Arrow _ -> rng
-                | _ -> Arrow (aux dom, rng, noPos)
+                | _ -> Arrow (aux dom, rng, gPos)
             else
-              Arrow (aux dom, rng, noPos)
+              Arrow (aux dom, rng, gPos)
 
           | Product (fields, pos) ->
             (let new_fields = foldl (fn (fields, (id, typ)) ->
@@ -1082,7 +1083,7 @@ Globalize qualifying spec
              in
              case new_fields of
                | [(id, typ)] | natConvertible id -> typ
-               | _ -> Product (renumber new_fields, noPos))
+               | _ -> Product (renumber new_fields, gPos))
           | CoProduct (fields, pos) -> 
             let new_fields = foldl (fn (fields, field as (id, opt_typ)) ->
                                       case opt_typ of
@@ -1093,7 +1094,7 @@ Globalize qualifying spec
                                    []
                                    fields
             in
-            CoProduct (new_fields, noPos)
+            CoProduct (new_fields, gPos)
 
           | Quotient (typ, tm, pos) -> 
             let new_typ = aux typ in
@@ -1215,7 +1216,7 @@ Globalize qualifying spec
                                 v2 = v1 && f2 = f1)
                              substitutions 
              of
-             | Some subst -> Var (subst.temp_var, noPos)
+             | Some subst -> Var (subst.temp_var, gPos)
              | _ -> subtm)
         | _ ->
           subtm
@@ -1252,8 +1253,8 @@ Globalize qualifying spec
           let new_vname = "deconflict_" ^ show n in
           let new_vtype = inferType (context.spc, tm) in
           let new_var   = (new_vname, new_vtype) in
-          Some (VarPat (new_var, noPos),
-                Var    (new_var, noPos))
+          Some (VarPat (new_var, gPos),
+                Var    (new_var, gPos))
       else
         None
   in
@@ -1274,7 +1275,7 @@ Globalize qualifying spec
       (case bindings of
          | [] -> term
          | _ ->
-           Let (bindings, Apply (x, y, noPos), noPos))
+           Let (bindings, Apply (x, y, gPos), gPos))
 
     | Record (fields, _) -> 
       let (n, bindings, fields) = 
@@ -1292,7 +1293,7 @@ Globalize qualifying spec
       (case bindings of
          | [] -> term
          | _ ->
-           Let (bindings, Record (fields, noPos), noPos))
+           Let (bindings, Record (fields, gPos), gPos))
 
     | Seq (tms, _) -> 
       % let _ = writeLine("Seq Term = " ^ printTerm term) in
@@ -1311,7 +1312,7 @@ Globalize qualifying spec
       (case bindings of
          | [] -> term
          | _ ->
-           Let (bindings, Seq (tms, noPos), noPos))
+           Let (bindings, Seq (tms, gPos), gPos))
       
      | _ -> 
        term
@@ -1326,15 +1327,15 @@ Globalize qualifying spec
     def add_bindings substs body =
       case substs of
         | {global_var_id, field_id, temp_var} :: substs ->
-          let pat             = VarPat (temp_var, noPos) in
+          let pat             = VarPat (temp_var, gPos) in
           let field_type      = globalFieldType context field_id in
-          let projection_type = Arrow (context.global_type, field_type, noPos) in
-          let tm              = Apply (Fun (Project field_id, projection_type, noPos),
-                                       Var ((global_var_id, context.global_type), noPos),
-                                       noPos)
+          let projection_type = Arrow (context.global_type, field_type, gPos) in
+          let tm              = Apply (Fun (Project field_id, projection_type, gPos),
+                                       Var ((global_var_id, context.global_type), gPos),
+                                       gPos)
           in
           let new_term        = 
-          Let ([(pat, tm)], body, noPos) in
+          Let ([(pat, tm)], body, gPos) in
           add_bindings substs new_term
         | _ ->
           body
@@ -1419,7 +1420,7 @@ Globalize qualifying spec
     in
     case globalizeTerm context [] [] old_dfn false of
       | Changed new_dfn -> 
-        let new_name = old_name in % TODO: Qualified (global_q, id) in
+        let new_name = old_name in % TODO: Qualified (stateful_q, id) in
         let new_info = old_info << {names = [new_name], dfn = new_dfn} in
         let _ = if context.tracing? then
                   let _ = writeLine ""                                                              in
@@ -1495,7 +1496,7 @@ Globalize qualifying spec
                        else
                          globalizeOpInfo (context, info) 
                    in
-                   insertAQualifierMap (new_ops, q, id, new_info) % TODO: global_q
+                   insertAQualifierMap (new_ops, q, id, new_info) % TODO: stateful_q
                  | _ -> 
                    let _ = writeLine("??? Globalize could not find op " ^ show name) in
                    new_ops)
@@ -1506,7 +1507,7 @@ Globalize qualifying spec
 
   % redo slice, this time chasing through any new references introduced just above
   % (also ignoring any old references removed just above)
- %let root_ops = map (fn Qualified(q, id) -> Qualified(global_q, id)) root_ops in % TODO
+ %let root_ops = map (fn Qualified(q, id) -> Qualified(statefull_q, id)) root_ops in % TODO
   let second_slice = genericExecutionSlice (spec_with_globalized_ops_added, root_ops, root_types) in
   let new_ops =
       let base_ops = mapiPartialAQualifierMap (fn (q, id, info) ->
@@ -1637,8 +1638,8 @@ Globalize qualifying spec
   {
    global_type_name <- checkGlobalType (spc, global_type_name);
    global_var_name  <- checkGlobalVar  (spc, global_var_name, global_type_name);
-   global_type      <- return (Base (global_type_name, [], noPos));
-   global_var       <- return (Fun (Op (global_var_name, Nonfix), global_type, noPos));
+   global_type      <- return (Base (global_type_name, [], gPos));
+   global_var       <- return (Fun (Op (global_var_name, Nonfix), global_type, gPos));
    global_init_name <- (case opt_ginit of
                           | Some ginit -> 
                             (case ginit of
@@ -1654,14 +1655,14 @@ Globalize qualifying spec
                                         map (fn (field_id, field_type) ->
                                                let Qualified (_, global_id) = global_type_name in
                                                let global_var_id = Qualified (global_q, field_id) in
-                                               let global_var = Fun (Op (global_var_id, Nonfix), field_type, noPos) in
+                                               let global_var = Fun (Op (global_var_id, Nonfix), field_type, gPos) in
                                                (field_id, global_var))
                                             pairs
                                       | _ -> empty)
                                  | _ -> []);
 
    % This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
-   spec_with_gset   <- addOp [setfQid] Nonfix false setfDef spc noPos;
+   spec_with_gset   <- addOp [setfQid] Nonfix false setfDef spc gPos;
 
    % print ("\nglobal_var_map: " ^ anyToString global_var_map ^ "\n");
    % showIntermediateSpec ("with gset", spec_with_gset);
@@ -1672,8 +1673,8 @@ Globalize qualifying spec
    spec_with_gvars  <- foldM (fn spc -> fn (_, global_field_var) ->
                                 let Fun (Op (global_field_var_name, _), gtype, _) = global_field_var in
                                 let refine? = false                                 in
-                                let dfn     = TypedTerm (Any noPos, gtype, noPos)   in
-                                addOp [global_field_var_name] Nonfix refine? dfn spc noPos)
+                                let dfn     = TypedTerm (Any gPos, gtype, gPos)   in
+                                addOp [global_field_var_name] Nonfix refine? dfn spc gPos)
                              spec_with_gset
                              global_var_map;
                              
@@ -1732,10 +1733,10 @@ Globalize qualifying spec
                         | Some _ -> 
                           return globalized_spec
                         | _ -> 
-                          let refine? = false                               in
-                          let gtype   = Base (global_type_name, [],  noPos) in
-                          let dfn     = TypedTerm (Any noPos, gtype, noPos) in
-                          addOp [global_var_name] Nonfix refine? dfn globalized_spec noPos);
+                          let refine? = false                             in
+                          let gtype   = Base (global_type_name, [], gPos) in
+                          let dfn     = TypedTerm (Any gPos, gtype, gPos) in
+                          addOp [global_var_name] Nonfix refine? dfn globalized_spec gPos);
 
    % return (let slice = genericExecutionSlice (spec_with_gvar, root_ops ++ [global_var_name], []) in describeSlice ("Globalized spec with gvar", slice));
    % showIntermediateSpec ("with gvar", spec_with_gvar);
