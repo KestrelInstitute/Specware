@@ -48,6 +48,7 @@ type Status           = | Primitive
                         | Missing 
                         | Misc String
 
+type TheoremNames     = List TheoremName
 type TheoremName      = PropertyName
 
 type Locations        = List Location
@@ -103,7 +104,7 @@ op empty_resolved_refs   : ResolvedRefs   = []
 type PendingRefs      = List PendingRef
 type PendingRef       = | Op      PendingOpRef
                         | Type    PendingTypeRef
-                        | Theorem PendingTheorem
+                        | Theorem PendingTheoremRef
 
 type PendingOpRef     = {name            : OpName,   
                          cohort          : Cohort,
@@ -114,10 +115,10 @@ type PendingTypeRef   = {name     : TypeName,
                          cohort   : Cohort,
                          location : Location}
 
-type PendingTheorem  = {name    : TheoremName, 
-                        cohort  : Cohort,
-                        element : SpecElement,
-                        status  : Status}
+type PendingTheoremRef  = {name    : TheoremName, 
+                           cohort  : Cohort,
+                           element : SpecElement,
+                           status  : Status}
 
 op pending.showName (pending : PendingRef) : String =
  case pending of
@@ -156,6 +157,14 @@ op typesInSlice (slice : Slice) : TypeNames =
        []
        slice.resolved_refs
 
+op theoremInSlice (slice : Slice) : TheoremNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Theorem tref -> tref.name |> names
+            | _ -> names)
+       []
+       slice.resolved_refs
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op pad (s : String, n : Nat)  : String =
@@ -190,10 +199,10 @@ op showResolvedRef (ref : ResolvedRef) (warning? : Bool) : String =
      let Property (kind, name, _, _, _) = tref.element in
      let kind_str =
          case kind of
-           | Axiom      -> "axiom "
-           | Theorem    -> "theorem "
-           | Conjecture -> "conjecture "
-           | _          -> "unrecognized "
+           | Axiom      -> " axiom "
+           | Theorem    -> " theorem "
+           | Conjecture -> " conjecture "
+           | _          -> " unrecognized "
          in
          kind_str ^ show tref.name
  in
@@ -246,9 +255,17 @@ op describeGroup (group : Group) : () =
                             []
                             refs
      in
-     let tref_lines = sortGT (String.>) tref_lines in
-     let oref_lines = sortGT (String.>) oref_lines in
-     let _ = writeLine ((if warning? then "WARNING: " else "") ^ cohort_msg ^ status_msg) in
+     let thref_lines = foldl (fn (lines, ref) ->
+                                case ref of
+                                  | Theorem tref -> (showResolvedRef ref warning?) |> lines
+                                  | _ -> lines)
+                             []
+                             refs
+     in
+     let tref_lines  = sortGT (String.>) tref_lines in
+     let oref_lines  = sortGT (String.>) oref_lines in
+     let thref_lines = sortGT (String.>) thref_lines in
+     let _ = writeLine ((if warning? then "WARNING: " else "") ^ cohort_msg ^ status_msg ^ "\n") in
      let _ = case tref_lines of 
                | [] -> ()
                | _ ->
@@ -259,6 +276,12 @@ op describeGroup (group : Group) : () =
                | _ ->
                  let _ = writeLine "" in
                  app writeLine oref_lines
+     in
+     let _ = case thref_lines of 
+               | [] -> ()
+               | _ ->
+                 let _ = writeLine "" in
+                 app writeLine thref_lines
      in
      let _ = writeLine "" in
 
@@ -281,6 +304,10 @@ op describeSlice (msg : String, slice : Slice) : () =
                               group.status = oref.status
 
                             | Type tref ->
+                              group.cohort = tref.cohort && 
+                              group.status = tref.status
+
+                            | Theorem tref ->
                               group.cohort = tref.cohort && 
                               group.status = tref.status
 
@@ -365,14 +392,17 @@ op resolve_ref (slice   : Slice,
      (cohort_number c1) < (cohort_number c2)
  in
  let resolved_refs = slice.resolved_refs in
+(*
  let s = foldl (fn (s, ref) -> s ^ " " ^ 
                   (show (length (case ref of
-                                   | Op   oref -> oref.locations
-                                   | Type tref -> tref.locations
+                                   | Op      oref -> oref.locations
+                                   | Type    tref -> tref.locations
+                                   | Theorem tref -> tref.locations
                                    | _ -> []))))
                ""
                resolved_refs
  in
+*)
  case pending of
    | Op oref ->
      (case splitAtLeftmost (fn resolved -> 
@@ -448,7 +478,7 @@ op resolve_ref (slice   : Slice,
           in
           resolved_ref |> resolved_refs)
 
-   | Theorem (tref : PendingTheorem) ->
+   | Theorem (tref : PendingTheoremRef) ->
      let resolved_ref = Theorem {name    = tref.name,
                                  cohort  = tref.cohort,
                                  element = tref.element,
@@ -485,6 +515,15 @@ op extend_cohort_for_ref (cohort       : Cohort)
        | _ -> 
          false
 
+   def matches_resolved_theorem_ref? pending_theorem_ref resolved_ref =
+     case resolved_ref of
+       | Theorem resolved_theorem_ref ->
+         let match? = (resolved_theorem_ref.name = pending_theorem_ref.name) in
+         % let _ = writeLine("matching: " ^ anyToString pending_type_ref.name ^ " = " ^ anyToString resolved_type_ref.name ^ " => " ^ show match?) in
+         match?
+       | _ -> 
+         false
+
    def matches_pending_op_ref? (pending_op_ref : PendingOpRef) (pending_ref : PendingRef) =
      case pending_ref of
        | Op (old_pending_op_ref : PendingOpRef) -> 
@@ -496,6 +535,13 @@ op extend_cohort_for_ref (cohort       : Cohort)
      case pending_ref of
        | Type (old_pending_type_ref : PendingTypeRef) ->
          old_pending_type_ref.name = pending_type_ref.name
+       | _ -> 
+         false
+
+   def matches_pending_theorem_ref? (pending_theorem_ref : PendingTheoremRef) (pending_ref : PendingRef) =
+     case pending_ref of
+       | Theorem (old_pending_theorem_ref : PendingTheoremRef) ->
+         old_pending_theorem_ref.name = pending_theorem_ref.name
        | _ -> 
          false
 
@@ -521,6 +567,18 @@ op extend_cohort_for_ref (cohort       : Cohort)
             | _ -> 
               if exists? (fn pending_ref -> 
                             matches_pending_type_ref? pending_type_ref pending_ref) 
+                         pending_refs 
+                then
+                  pending_refs
+              else
+                pending_ref |> pending_refs)
+       | Theorem (pending_theorem_ref : PendingTheoremRef) ->
+         (case findLeftmost (matches_resolved_theorem_ref? pending_theorem_ref) resolved_refs of
+            | Some _ -> 
+              pending_refs
+            | _ -> 
+              if exists? (fn pending_ref -> 
+                            matches_pending_theorem_ref? pending_theorem_ref pending_ref) 
                          pending_refs 
                 then
                   pending_refs
@@ -553,7 +611,7 @@ op extend_cohort_for_ref (cohort       : Cohort)
               let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
 
               % let _ = writeLine(" ") in
-              % let _ = writeLine("extending for " ^ show op_name) in
+              % let _ = writeLine("extending for " ^ show op_name ^ " in " ^ anyToString cohort) in
               % let _ = writeLine ("dfn: " ^ printTerm info.dfn) in
               % let _ = writeLine ("dfn: " ^ anyToString info.dfn) in
               % let _ = app (fn pref ->
@@ -850,9 +908,35 @@ op add_quotient_relations (cohort : Cohort) (slice : Slice) : Slice =
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op implementation_closure (slice : Slice) : Slice = cohort_closure Implementation slice
-op assertion_closure      (slice : Slice) : Slice = cohort_closure Assertion      slice
-op context_closure        (slice : Slice) : Slice = slice
+op implementation_closure (slice : Slice) : Slice = 
+ cohort_closure Implementation slice
+
+op assertion_closure      (slice : Slice) : Slice = 
+ let pending_refs = map (fn resolved_ref ->
+                           case resolved_ref of
+                             | Op oref -> 
+                               Op {name            = oref.name, 
+                                   cohort          = Assertion,
+                                   contextual_type = oref.contextual_type,
+                                   location        = head oref.locations}
+
+                             | Type tref ->
+                               Type {name     = tref.name,
+                                     cohort   = Assertion,
+                                     location = head tref.locations}
+
+                             | Theorem tref -> 
+                               Theorem {name    = tref.name,
+                                        cohort  = Assertion,
+                                        element = tref.element,
+                                        status  = tref.status})
+                        slice.resolved_refs
+ in
+ let slice = slice << {pending_refs = pending_refs} in
+ cohort_closure Assertion      slice
+
+op context_closure        (slice : Slice) : Slice = 
+ slice
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
