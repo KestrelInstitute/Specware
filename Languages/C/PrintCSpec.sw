@@ -6,7 +6,7 @@ import /Languages/C/CFlatten
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Split the C spec into .c and .h portions and print those two files.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-op flattenSpec?:Bool = false
+op flattenSpec?:Bool = true % no good reason to retain complicated comma expressions
 op printCSpec (c_spec       : C_Spec,
                app_name     : String,
                opt_filename : Option String)
