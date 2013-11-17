@@ -7,6 +7,8 @@ import /Languages/MetaSlang/Specs/Environment
  * add an equality op for each user type
  *)
 
+op aePos : Position = Internal "AddEqOps"
+
 op SpecTransform.addEqOps (spc : Spec) : Spec =
  foldriAQualifierMap (fn (q, id, typeinfo, spc) ->
                         addEqOpsFromType (spc, Qualified (q, id), typeinfo))
@@ -19,23 +21,22 @@ op addEqOpsFromType (spc       : Spec,
  : Spec =
  let
 
-   def getLambdaTerm (typ, body) =
-     let cond = mkTrue () in
-     let pat  = RecordPat ([("1", VarPat (("x", typ), noPos)), 
-                            ("2", VarPat (("y", typ), noPos))],
-                           noPos)
+   def get_lambda_term (typ, body) =
+     let pat  = RecordPat ([("1", VarPat (("x", typ), aePos)), 
+                            ("2", VarPat (("y", typ), aePos))],
+                           aePos)
      in
-     Lambda ([(pat, cond, body)], noPos)
+     Lambda ([(pat, trueTerm, body)], aePos)
 
-   def getEqOpType typ =
-     Arrow (Product ([("1", typ), ("2", typ)], noPos),
-            Boolean noPos,
-            noPos)
+   def get_equality_type typ =
+     Arrow (Product ([("1", typ), ("2", typ)], aePos),
+            Boolean aePos,
+            aePos)
 
-   def addEqOp (eq_name as Qualified (eq_q, eq_id), old_type, body) =
-     let eq_lambda = getLambdaTerm (old_type, body)        in
-     let eq_type   = getEqOpType old_type                  in
-     let eq_dfn    = TypedTerm (eq_lambda, eq_type, noPos) in
+   def add_eq_op (eq_name as Qualified (eq_q, eq_id), old_type, body) =
+     let eq_lambda = get_lambda_term (old_type, body)      in
+     let eq_type   = get_equality_type old_type            in
+     let eq_dfn    = TypedTerm (eq_lambda, eq_type, aePos) in
      let eq_info   = {names           = [eq_name],
                       fixity          = Nonfix,
                       dfn             = eq_dfn,
@@ -43,35 +44,34 @@ op addEqOpsFromType (spc       : Spec,
      in
      let ops = insertAQualifierMap (spc.ops, eq_q, eq_id, eq_info) in
      let spc = setOps (spc, ops)         in
-     let elt = Op (eq_name, true, noPos) in
+     let elt = Op (eq_name, true, aePos) in
      let spc = appendElement (spc, elt)  in
      spc
 
-   def getEqTermFromProductFields (fields, old_type, varx, vary) =
-     let mytrue   = mkTrue ()     in
-     let and_op   = mkAndOp noPos in
+   def get_eq_term_from_product_fields (fields, old_type, varx, vary) =
+     let and_op   = mkAndOp aePos in
      foldr (fn ((field_id, field_type), body) ->
-              let projtyp = Arrow (old_type, field_type, noPos) in
-              let eq_type = Arrow (Product ([("1", field_type), ("2", field_type)], noPos),
-                                   Boolean noPos, 
-                                   noPos) 
+              let projtyp = Arrow (old_type, field_type, aePos) in
+              let eq_type = Arrow (Product ([("1", field_type), ("2", field_type)], aePos),
+                                   Boolean aePos, 
+                                   aePos) 
               in
-              let projection    = Fun (Project (field_id), projtyp, noPos) in
-              let x_field       = Apply (projection, varx, noPos) in
-              let y_field       = Apply (projection, vary, noPos) in
-              let field_eq_test = Apply (Fun (Equals, eq_type, noPos),
+              let projection    = Fun (Project (field_id), projtyp, aePos) in
+              let x_field       = Apply (projection, varx, aePos) in
+              let y_field       = Apply (projection, vary, aePos) in
+              let field_eq_test = Apply (Fun (Equals, eq_type, aePos),
                                          Record ([("1", x_field), 
                                                   ("2", y_field)], 
-                                                 noPos), 
-                                         noPos)
+                                                 aePos), 
+                                         aePos)
               in
-              if body = mytrue then % first case
+              if equalTerm? (body, trueTerm) then % first case
                 field_eq_test
               else
                 Apply (and_op,
-                       Record ([("1", field_eq_test), ("2", body)], noPos), 
-                       noPos))
-           (mkTrue ()) 
+                       Record ([("1", field_eq_test), ("2", body)], aePos), 
+                       aePos))
+           trueTerm 
            fields
  in
  if ~ (definedTypeInfo? type_info) then
@@ -88,28 +88,32 @@ op addEqOpsFromType (spc       : Spec,
      | Base (Qualified ("String",    "String"),  [], _) -> spc
     %| Base (Qualified ("??",        "Float"),   [], _) -> spc
      | _ ->
-       let old_type = Base (type_name, 
-                            map (fn tv -> TyVar (tv, noPos)) tvs,
-                            noPos)
+       let eq_arg_type = Base (type_name, 
+                            map (fn tv -> TyVar (tv, aePos)) tvs,
+                            aePos)
        in
-       let varx    = Var (("x", old_type), noPos) in
-       let vary    = Var (("y", old_type), noPos) in
-       let eq_name = getEqOpQid type_name         in
+       let varx    = Var (("x", eq_arg_type), aePos) in
+       let vary    = Var (("y", eq_arg_type), aePos) in
+       let eq_name = get_equality_name type_name        in
        % check for aliases first
        case typ of
          | Base (alias_type_name, _, _) ->
            % define the equality op in terms of the aliased type
-           let aeqqid = getEqOpQid alias_type_name                             in
-           let fun    = Fun (Op (aeqqid, Nonfix), getEqOpType old_type, noPos) in
-           let args   = Record ([("1", varx), ("2", vary)], noPos)             in
-           let body   = Apply (fun, args, noPos)                               in
-           addEqOp (eq_name, old_type, body)
+           let alias_eq_name = get_equality_name alias_type_name                         in
+           let alias_eq_type = get_equality_type eq_arg_type                             in
+
+           %% Although the alias equality op is defined on the alias type,
+           %% the type of the Fun here uses the types of the original args.
+           let alias_eq_fun  = Fun    (Op (alias_eq_name, Nonfix), alias_eq_type, aePos) in
+           let alias_eq_args = Record ([("1", varx), ("2", vary)],                aePos) in
+           let eq_body       = Apply  (alias_eq_fun, alias_eq_args,               aePos) in
+           add_eq_op (eq_name, eq_arg_type, eq_body)
            %% Boolean is same as default case
          | _ ->
            case typ of
              | Product (fields, _) -> 
-               let body = getEqTermFromProductFields (fields, old_type, varx, vary) in
-               addEqOp (eq_name, old_type, body)
+               let eq_body = get_eq_term_from_product_fields (fields, eq_arg_type, varx, vary) in
+               add_eq_op (eq_name, eq_arg_type, eq_body)
              | CoProduct (fields, _) ->
                (let match =
                     foldr (fn ((field_id, opt_field_type), match) ->
@@ -117,51 +121,55 @@ op addEqOpsFromType (spc       : Spec,
                                                   case opt_field_type of 
                                                     | None -> None 
                                                     | Some field_type -> 
-                                                      Some (VarPat (("x0", field_type), noPos)), old_type, noPos) 
+                                                      Some (VarPat (("x0", field_type), aePos)), 
+                                                  eq_arg_type, 
+                                                  aePos) 
                              in
                              let ypat = EmbedPat (field_id, 
                                                   case opt_field_type of 
                                                     | None -> None 
                                                     | Some field_type -> 
-                                                      Some (VarPat (("y0", field_type), noPos)), old_type, noPos) 
+                                                      Some (VarPat (("y0", field_type), aePos)), 
+                                                  eq_arg_type, 
+                                                  aePos) 
                              in
                              let eq_field_type =
                                  let 
                                    def nonproduct_eq_test field_type =
-                                     let eq_type = getEqOpType field_type in
-                                     Apply (Fun (Equals, eq_type, noPos), 
-                                            Record ([("1", Var (("x0", field_type), noPos)), 
-                                                     ("2", Var (("y0", field_type), noPos))],
-                                                    noPos), 
-                                            noPos)
+                                     let eq_type = get_equality_type field_type in
+                                     Apply (Fun (Equals, eq_type, aePos), 
+                                            Record ([("1", Var (("x0", field_type), aePos)), 
+                                                     ("2", Var (("y0", field_type), aePos))],
+                                                    aePos), 
+                                            aePos)
                                  in
                                  case opt_field_type of
-                                   | None -> mkTrue ()
+                                   | None -> trueTerm
                                    | Some (field_type as Base _) -> nonproduct_eq_test field_type
                                    | Some field_type ->
                                      %% Was unfoldStripType which is unnecessary and dangerous because of recursive types
                                      let simplified_field_type = stripSubtypesAndBaseDefs spc field_type in
                                      case simplified_field_type of
                                        | Product (fields, _) -> 
-                                         getEqTermFromProductFields (fields, 
-                                                                     field_type, 
-                                                                     Var (("x0", field_type), noPos), 
-                                                                     Var (("y0", field_type), noPos))
+                                         get_eq_term_from_product_fields (fields, 
+                                                                          field_type, 
+                                                                          Var (("x0", field_type), aePos), 
+                                                                          Var (("y0", field_type), aePos))
                                        | _ -> nonproduct_eq_test field_type
                              in
-                             let rule_1    = (ypat,                      mkTrue (), eq_field_type) in
-                             let rule_2    = (WildPat (old_type, noPos), mkTrue (), mkFalse ())    in
+                             let rule_1    = (ypat,                         trueTerm, eq_field_type) in
+                             let rule_2    = (WildPat (eq_arg_type, aePos), trueTerm, falseTerm)     in
                              let ymatch    = [rule_1, rule_2] in
-                             let case_term = Apply (Lambda (ymatch, noPos), vary, noPos) in
-                             Cons ((xpat, mkTrue (), case_term), match))
+                             let case_term = Apply (Lambda (ymatch, aePos), vary, aePos) in
+                             Cons ((xpat, trueTerm, case_term), match))
                           []
                           fields
                 in
-                let body = Apply (Lambda (match, noPos), varx, noPos) in
-                addEqOp (eq_name, old_type, body))
+                let eq_body = Apply (Lambda (match, aePos), varx, aePos) in
+                add_eq_op (eq_name, eq_arg_type, eq_body))
              | _ -> spc
 
-op getEqOpQid (Qualified (q, id) : QualifiedId) : QualifiedId =
+op get_equality_name (Qualified (q, id) : QualifiedId) : QualifiedId =
  Qualified (q, "eq_" ^ id)
 
 
