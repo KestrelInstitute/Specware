@@ -33,25 +33,35 @@ op addEqOpsFromType (spc       : Spec,
             Boolean aePos,
             aePos)
 
-   def add_eq_op (eq_name as Qualified (eq_q, eq_id), old_type, body) =
-     let eq_lambda = get_lambda_term (old_type, body)      in
-     let eq_type   = get_equality_type old_type            in
+   def add_eq_op (eq_name as Qualified (eq_q, eq_id), arg_type, body) =
+     let eq_lambda = get_lambda_term (arg_type, body)      in
+     let eq_type   = get_equality_type arg_type            in
      let eq_dfn    = TypedTerm (eq_lambda, eq_type, aePos) in
-     let eq_info   = {names           = [eq_name],
-                      fixity          = Nonfix,
-                      dfn             = eq_dfn,
-                      fullyQualified? = false}
-     in
-     let ops = insertAQualifierMap (spc.ops, eq_q, eq_id, eq_info) in
-     let spc = setOps (spc, ops)         in
-     let elt = Op (eq_name, true, aePos) in
-     let spc = appendElement (spc, elt)  in
-     spc
+     case findTheOp (spc, eq_name) of
+       | Some info -> if equalTerm? (info.dfn, eq_dfn) then
+                        spc
+                      else
+                        let _ = writeLine("Warning: attempt to redefine " ^ show eq_name) in
+                        let _ = writeLine("from: " ^ printTerm info.dfn)                  in
+                        let _ = writeLine("  to: " ^ printTerm eq_dfn)                    in
+                        let _ = writeLine("No change made.")                              in
+                        spc
+       | _ ->
+         let eq_info   = {names           = [eq_name],
+                          fixity          = Nonfix,
+                          dfn             = eq_dfn,
+                          fullyQualified? = false}
+         in
+         let ops = insertAQualifierMap (spc.ops, eq_q, eq_id, eq_info) in
+         let elt = Op (eq_name, true, aePos)                           in
+         let spc = setOps        (spc, ops)                            in
+         let spc = appendElement (spc, elt)                            in
+         spc
 
-   def get_eq_term_from_product_fields (fields, old_type, varx, vary) =
+   def get_eq_term_from_product_fields (fields, product_type, varx, vary) =
      let and_op   = mkAndOp aePos in
      foldr (fn ((field_id, field_type), body) ->
-              let projtyp = Arrow (old_type, field_type, aePos) in
+              let projtyp = Arrow (product_type, field_type, aePos) in
               let eq_type = Arrow (Product ([("1", field_type), ("2", field_type)], aePos),
                                    Boolean aePos, 
                                    aePos) 
