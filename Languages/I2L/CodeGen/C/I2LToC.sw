@@ -272,6 +272,7 @@ op c4FunDefn (ctxt  : I2C_Context,
  let body                         = fdefn.body                              in
  let parnames                     = map (fn (n, _) -> n) fdecl.params       in
  let vardecls                     = zip (parnames, ctypes)                  in
+
  case body of
    
    | I_Stads stadsbody -> 
@@ -374,10 +375,6 @@ op addMapForMapDecl (ctxt       : I2C_Context,
                      paramtypes : I_Types, 
                      returntype : I_Type)
  : C_Spec * C_VarDecl =
- let _ = writeLine ("==============================") in
- let _ = writeLine ("addMapForMapDecl:") in
- let _ = app (fn x -> writeLine (anyToString x)) paramtypes in
- let _ = writeLine ("==============================") in
  let id                  = getMapName fid in
  let (cspc, paramctypes) = c4Types (ctxt, cspc, paramtypes) in
  case getBoundedNatList paramtypes of
@@ -549,7 +546,7 @@ op c4Type (ctxt : I2C_Context,
          (print typ;
           % (cspc, Int)
           fail ("sorry, no code generation implemented for that type."))
-            
+
 op c4Types (ctxt  : I2C_Context, 
             cspc  : C_Spec, 
             types : I_Types) 
