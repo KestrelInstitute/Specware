@@ -312,6 +312,14 @@ op find_constant_nat_bound (ms_term : MSTerm) : Option Nat =
           | v0 = v1 -> 
             Some (2**n - 1)
           
+        | Apply (Fun (Op (Qualified (_, "fitsInNBits?"), _), _, _), % we might have removed "-1" suffixes
+                 Record ([(_, Fun (Nat n, _, _)),
+                          (_, Var ((v1, _), _))],
+                         _),
+                 _)
+          | v0 = v1 -> 
+            Some (2**n - 1)
+
         | Apply (Fun (Op (Qualified (_, fits_in_pred), _), _, _),
                  Var ((v1, _), _),
                  _) 
@@ -422,6 +430,15 @@ op find_constant_int_bounds (ms_term : MSTerm) : Option (Int * Int) =
              | _ -> None)
      
         | Apply (Fun (Op (Qualified (_, "intFitsInNBits?-1-1"), _), _, _),
+                 Record ([(_, Fun (Nat n, _, _)),
+                          (_, Var ((v1, _),  _))],
+                         _),
+                 _)
+          | v0 = v1 ->  
+            let m = 2 ** (n-1) in
+            Some (- m, m -1)
+
+        | Apply (Fun (Op (Qualified (_, "intFitsInNBits?"), _), _, _),  % we might have removed "-1" suffixes
                  Record ([(_, Fun (Nat n, _, _)),
                           (_, Var ((v1, _),  _))],
                          _),
@@ -574,6 +591,10 @@ op type2itype (ms_tvs  : TyVars,
      case typ of
        | Base (Qualified ("Integer", "Int"), _, _) -> true
        | Subtype (typ, _, _)                       -> subtype_of_int? typ
+       | Base (name, _, _) -> 
+         (case findTheType (ctxt.ms_spec, name) of
+            | Some info -> subtype_of_int? info.dfn
+            | _ -> false)
        | _ -> false
 
  in
@@ -716,6 +737,7 @@ op type2itype (ms_tvs  : TyVars,
    | _ ->
      fail ("sorry, code generation doesn't support the use of this type:\n       "
              ^ printType ms_type)
+
 
 op constant_term_Int_value (ms_term : MSTerm, ctxt : S2I_Context) : Option Int =
  case ms_term of
