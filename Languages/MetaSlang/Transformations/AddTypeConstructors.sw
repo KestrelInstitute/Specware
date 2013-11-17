@@ -11,7 +11,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenUtilities
  *  op [a] List_nil ()                      : List a = embed nil
  *)
 
-op true_cond : MSTerm = mkTrue ()
+op atPos : Position = Internal "AddTypeConstructors"
 
 op getConstructorId (type_id : Id,  alt_id : Id, snark? : Bool) : Id =
  % the two _'s are important: that how the constructor op names are
@@ -43,20 +43,20 @@ op newCoProductOpInfos (spc          : Spec,
              case opt_alt_type of
                | Some alt_type -> 
                  %% e.g.  | B Nat
-                 let op_type          = Arrow (alt_type, type_ref, noPos)                  in
-                 let (op_pat, op_tm)  = getPatternAndTermFromType alt_type                 in
-                 let op_fn            = Fun (Embed (alt_id, true), op_type, noPos)         in
-                 let lambda_body      = Apply (op_fn, op_tm, noPos)                        in
-                 let op_lambda        = Lambda ([(op_pat, true_cond, lambda_body)], noPos) in
+                 let (op_pat, op_tm)  = getPatternAndTermFromType alt_type                in
+                 let op_type          = Arrow  (alt_type, type_ref,                atPos) in
+                 let op_fn            = Fun    (Embed (alt_id, true), op_type,     atPos) in
+                 let lambda_body      = Apply  (op_fn, op_tm,                      atPos) in
+                 let op_lambda        = Lambda ([(op_pat, trueTerm, lambda_body)], atPos) in
                  (op_lambda, op_type)
                | _  -> 
                  %% e.g.  | A
                  let op_type     = type_ref                                    in
-                 let op_constant = Fun (Embed (alt_id, false), op_type, noPos) in
+                 let op_constant = Fun (Embed (alt_id, false), op_type, atPos) in
                  (op_constant, op_type)
          in
 
-         let op_dfn  = maybePiTerm (tvs, TypedTerm (op_body, op_type, noPos)) in
+         let op_dfn  = maybePiTerm (tvs, TypedTerm (op_body, op_type, atPos)) in
          let op_info = {names           = [op_name], 
                         fixity          = Nonfix, 
                         dfn             = op_dfn,
@@ -64,7 +64,6 @@ op newCoProductOpInfos (spc          : Spec,
          in
          op_info)
      alternatives
-
  
 (*
  * addProductTypeConstructors adds a Constructor op for each product type.
@@ -82,10 +81,10 @@ op newProductConstructor (spc       : Spec,
  : OpInfo =
  %% TODO: FIX THIS NONSENSE
  let op_name as Qualified (op_q, op_id) = getRecordConstructorOpName type_name  in
- let op_type         = Arrow (type_dfn, type_ref, noPos)                        in
  let (op_pat, op_tm) = getPatternAndTermFromType type_dfn                       in
- let op_lambda       = Lambda ([(op_pat, true_cond, op_tm)], noPos)             in
- let op_dfn          = maybePiTerm (tvs, TypedTerm (op_lambda, op_type, noPos)) in
+ let op_type         = Arrow       (type_dfn, type_ref,                 atPos)  in
+ let op_lambda       = Lambda      ([(op_pat, trueTerm, op_tm)],        atPos)  in
+ let op_dfn          = maybePiTerm (tvs, TypedTerm (op_lambda, op_type, atPos)) in
  let op_info         = {names          = [op_name], 
                         fixity          = Nonfix, 
                         dfn             = op_dfn,
@@ -113,11 +112,11 @@ op newProductAccessors (spc       : Spec,
  List.map (fn (field_id, field_type) ->
         let op_name as Qualified (op_q, op_id) = getAccessorOpName (type_id, type_name, field_id) in
         let (op_pat, op_tm) = getPatternAndTermFromType type_ref                       in
-        let op_type         = Arrow (type_ref, field_type, noPos)                      in
-        let op_fn           = Fun    (Project (field_id), op_type,             noPos)  in
-        let op_body         = Apply  (op_fn, op_tm,                            noPos)  in
-        let op_lambda       = Lambda ([(op_pat, true_cond, op_body)],          noPos)  in
-        let op_dfn          = maybePiTerm (tvs, TypedTerm (op_lambda, op_type, noPos)) in
+        let op_type         = Arrow  (type_ref, field_type,                    atPos)  in
+        let op_fn           = Fun    (Project (field_id), op_type,             atPos)  in
+        let op_body         = Apply  (op_fn, op_tm,                            atPos)  in
+        let op_lambda       = Lambda ([(op_pat, trueTerm, op_body)],           atPos)  in
+        let op_dfn          = maybePiTerm (tvs, TypedTerm (op_lambda, op_type, atPos)) in
         let op_info         = {names           = [op_name], 
                                fixity          = Nonfix, 
                                dfn             = op_dfn,
@@ -161,18 +160,18 @@ op newOpInfosForType (spc       : Spec,
    []
  else
    let (tvs, type_dfn) = unpackFirstTypeDef type_info         in
-   let type_vars       = map (fn tv -> TyVar (tv, noPos)) tvs in
-   let type_ref        = Base (type_name, type_vars, noPos)   in
+   let type_vars       = map (fn tv -> TyVar (tv, atPos)) tvs in
+   let type_ref        = Base (type_name, type_vars, atPos)   in
    case type_dfn of
 
      | CoProduct (alternatives, _) -> 
        newCoProductOpInfos (spc,
-                                 type_name,
-                                 tvs,
-                                 type_dfn,
-                                 type_ref,
-                                 alternatives,
-                                 snark?)
+                            type_name,
+                            tvs,
+                            type_dfn,
+                            type_ref,
+                            alternatives,
+                            snark?)
 
      | Product (fields, _) -> 
        newProductOpInfos (spc,
@@ -201,7 +200,7 @@ op addTypeConstructorsInternal (spc : Spec, snark? : Bool) : Spec =
      foldl (fn ((ops, reversed_elements), op_info) ->
               let op_name as Qualified (op_q, op_id) = primaryOpName op_info in
               let ops               = insertAQualifierMap (ops, op_q, op_id, op_info) in
-              let element           = OpDef (op_name, 0, None, noPos)                   in
+              let element           = OpDef (op_name, 0, None, atPos)                 in
               let reversed_elements = element :: reversed_elements                    in
               (ops, reversed_elements))
            (spc.ops, reverse spc.elements)
