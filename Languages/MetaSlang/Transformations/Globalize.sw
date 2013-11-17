@@ -282,10 +282,10 @@ Globalize qualifying spec
  op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
 
  op baseOp? (qid as Qualified(q, id) : QualifiedId) : Bool = 
-  q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String"]
+  q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
 
  op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool = 
-  q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String"]
+  q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
 
  op myTrue : MSTerm = Fun (Bool true, Boolean gPos, gPos)
 
@@ -1517,6 +1517,7 @@ Globalize qualifying spec
                                                    None)
                                               spec_with_globalized_ops_added.ops
       in
+      %% base_ops should include the transitive closure of references from them
       let ops_in_second_slice = opsInSlice second_slice in
 
       % new ops are the base ops plus ops reached in second slice
@@ -1544,6 +1545,7 @@ Globalize qualifying spec
                                                      None)
                                                 spec_with_globalized_ops_added.types
       in
+      %% base_types should include the transitive closure of references from them
       let types_in_second_slice = typesInSlice second_slice in
 
       % new types are the base types plus types reached in second slice
