@@ -1100,9 +1100,9 @@ op ppTerm1 (c:Context) (term:MSTerm) : WLPretty =
                     ppString ")"
                     ]
       | Seq (terms,_) ->
-        ppGrConcat [ppString "seq [",
-                    ppSep (ppAppend (ppString ", ") ppBreak) (map (ppTerm c) terms),
-                    ppString "]"]
+        ppGrConcat [ppString "(seq ",
+                    ppSep (ppAppend (ppString " ") ppBreak) (map (ppTerm c) terms),
+                    ppString ")"]
       | Pi(tvs,term1,_) ->
 	% if tvs = [] then ppTerm c term1
 	%   else 
