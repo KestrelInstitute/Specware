@@ -29,11 +29,10 @@ op [a] comparePairwise? (compare : a * a -> Bool, x : List a) : Bool =
   | [hd] -> true
   | hd::tl -> ((compare(hd, head tl)) && (comparePairwise? (compare, tl)))
 
-
 op [a] badOpInfo? (opinfo : AOpInfo a, spc : Spec) : Bool =
   let name = primaryOpName opinfo in
   let dfn = opinfo.dfn in
-  let triples = unpackTypedTerms dfn in % each triple is (tyvar, ty, body)
+  let triples = unpackTypedTerms dfn in % each triple is (tyvars, ty, body)
   let tyvarss = map (fn x -> x.1) triples in
   let tyvars_bad? = if ~ (allEqualElements? tyvarss) then let _ = writeLine("ERROR: Inconsistent type vars for the defintions of op " ^ show name ^ ".") in true else false in
   let tys = map (fn x -> x.2) triples in
@@ -122,22 +121,25 @@ op [b] existsSubTerm3 (pred?:ATerm b -> Bool) (term:ATerm b): Bool =
                   term) in
   result
 
+op call_of_undefined_op? (nm : QualifiedId) (spc: Spec) (tm:MSTerm) : Bool =
+  case tm of
+        | Fun (Op (qid, _), _, _) ->
+          (case findTheOp (spc, qid) of
+             | Some _ -> false
+             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
+        | _ -> false
+
+op term_calls_undefined_op? (op_or_theorem_name : OpName) (spc: Spec) (tm:MSTerm) : Bool =
+  existsSubTerm3 (call_of_undefined_op? op_or_theorem_name spc) tm
+
 op opsOkay?(s : Spec) : Bool =
   %% For every op info in the hash table, verify that every op-reference 
   %% has a corresponding entry.  This now checks several more things.
   %% TODO: types, op-refs within types, etc.
-
-  let
-    def bad_ref? (nm : QualifiedId) (tm:MSTerm) =
-      case tm of
-        | Fun (Op (qid, _), _, _) ->
-          (case findTheOp (s, qid) of
-             | Some _ -> false
-             | _ -> let _ = writeLine ("ERROR: op " ^ (show nm) ^ " calls " ^ (show qid) ^ ", which does not exist in the hash table.") in true)
-        | _ -> false
-  in
   let ops_with_bad_definitions = countOpInfos (opInfoBad? s) s.ops in  %FIXME: make something like mapaccumterm that doesn't return the term
-  let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> existsSubTerm3 (bad_ref? (primaryOpName info)) info.dfn) s.ops in
+  %% TODO: fold this into opInfoBad?:
+  let ops_that_call_non_existing_ops = countOpInfos (fn (info) -> term_calls_undefined_op? (primaryOpName info) s info.dfn) s.ops in
+  %% TODO: fold this into opInfoBad?:
   let ops_with_free_vars = countOpInfos (fn (info) -> case (freeVars info.dfn) of
                                                          | [] -> false
                                                          | vars -> let _ = writeLine ("ERROR: Op " ^ show (primaryOpName info) ^ " has the following free vars in its body: " ^ (anyToString vars) ^ ".") in
@@ -147,7 +149,10 @@ op opsOkay?(s : Spec) : Bool =
   let other_bad_op_infos = countOpInfos (fn x -> badOpInfo?(x, s)) s.ops in
   (ops_that_call_non_existing_ops = 0 && ops_with_free_vars = 0 && ops_with_bad_definitions = 0)
                   
-
+op propertyOkay? (prop : Property, spc : Spec) : Bool =
+  let (kind, name, tyvars, term, ann) = prop in
+  ~(term_calls_undefined_op? name spc term)
+  %% TODO: add more tests
 
 op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
  %% case elaboratePosSpec(s, "") of  % TODO Stephen says this is not really the right thing to call.
@@ -232,7 +237,7 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
   let _ = writeLine "Done testing types." in
   %% For every Type, TypeDef, Op, or OpDef in spec elements,
   %% verify that it refers to an entry in the appropriate hash table.
-  let missing_hash_table_entries? =
+  let problems_in_spec_elements? =
       foldlSpecElements (fn (err, elt) ->
                            case elt of
                              | Type    (qid, _) ->
@@ -251,11 +256,12 @@ op specOkay? (success_msg : String) (failure_msg : String) (s : Spec) : Bool =
                                (case findTheOp (s, qid) of
                                   | Some _ -> err
                                   | _ -> let _ = writeLine("ERROR: Cannot find hash table entry for op:" ^ show qid) in true)
+                             | Property prop -> if propertyOkay?(prop, s) then err else true
                              | _ -> err)
-                       false
+                        false
                         s.elements
   in
-  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || bad_ops? || bad_types? || missing_hash_table_entries?) of
+  case (bad_or_missing_type_elements? || bad_or_missing_op_elements? || bad_ops? || bad_types? || problems_in_spec_elements?) of
     | false ->
       let _ = writeLine success_msg in
       false
