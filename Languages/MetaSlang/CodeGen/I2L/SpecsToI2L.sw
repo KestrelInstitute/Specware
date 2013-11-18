@@ -479,6 +479,31 @@ op find_constant_int_bounds (ms_term : MSTerm) : Option (Int * Int) =
         | _ -> None)
 
    | _ -> None
+
+
+%% Given a bunch of predicates on Ints, get the tightest bounds possible from them.
+%% I guess find_constant_int_bounds must return either an upper and a lower bound, or nothing...
+op find_constant_int_bounds_list (ms_terms : List MSTerm) : Option (Int * Int) =
+  case ms_terms of
+  | [] -> None
+  | hd::tl -> case find_constant_int_bounds(hd) of
+              | None -> find_constant_int_bounds_list tl
+              | Some(hd_low, hd_high) ->
+                case find_constant_int_bounds_list(tl) of
+                | None -> Some(hd_low, hd_high)
+                | Some(tl_low, tl_high) -> Some(max(hd_low, tl_low),min(hd_high, tl_high))
+
+%% Given a bunch of predicates on Nats (or Ints?), get the tightest bounds possible from them
+op find_constant_nat_bound_list (ms_terms : List MSTerm) : Option Nat =
+  case ms_terms of
+  | [] -> None
+  | hd::tl -> case find_constant_nat_bound(hd) of
+              | None -> find_constant_nat_bound_list tl
+              | Some hd_bound ->
+                case find_constant_nat_bound_list(tl) of
+                | None -> Some hd_bound
+                | Some tl_bound -> Some(min(hd_bound, tl_bound))  %% take the tightest bound we can
+
      
 op unfold_bounded_list_type (ms_tvs          : TyVars, 
                              ms_element_type : MSType, 
@@ -575,6 +600,20 @@ op expandTypeOnce (name : TypeName, ctxt : S2I_Context)
      % let _ = writeLine("Not Expanding " ^ show name) in
      None
 
+
+%% ty is a type that is a subtype of basety (but may be a subtype of a subtype, and we may need to look up types in the spec to get to basetype)
+%% This gets all of the subtype preds on the path all the way down to basety.
+op get_subtype_preds (ty:MSType, basety:QualifiedId, spc : Spec) : List MSTerm =
+  case ty of
+    | Base (basety2, _, _) | basety=basety2 -> []
+    | Subtype (ty, pred, _)                 -> pred::get_subtype_preds(ty, basety, spc)  %% add this pred to the list
+    | Base (name, _, _)                     -> 
+     %% look up the name in the spec, and recur:
+      (case findTheType (spc, name) of
+        | Some info -> get_subtype_preds(info.dfn, basety, spc)
+        | _ -> (let _ = writeLine("ERROR: In get_subtype_preds, cannot find type: "^show name) in []))
+    | _ -> []  %TODO: Could print an error here.
+
 op type2itype (ms_tvs  : TyVars,
                ms_type : MSType,
                ctxt    : S2I_Context)
@@ -597,6 +636,7 @@ op type2itype (ms_tvs  : TyVars,
             | _ -> false)
        | _ -> false
 
+
  in
  let ms_utype = unfoldToSpecials (ms_type, ctxt) in
  case ms_utype of
@@ -615,20 +655,23 @@ op type2itype (ms_tvs  : TyVars,
      let (target, native?) = type2itype (ms_tvs, t1, ctxt) in
      (I_Ref target, false)
 
-   | Subtype (ms_type, ms_pred, _) ->
+   | Subtype (ms_type, ms_pred, _) ->   %ms_pred is one subtype pred, but there may be others in ms_type itself!
      (if subtype_of_int? ms_type then
-       (case find_constant_nat_bound ms_pred of
+       %hoping that this works for Nats too, since Nat is a subtype of Int:
+       let other_subtype_preds = get_subtype_preds(ms_type, Qualified ("Integer", "Int"), ctxt.ms_spec) in
+       let all_subtype_preds = ms_pred::other_subtype_preds in
+       (case find_constant_nat_bound_list all_subtype_preds of
           | Some n ->                    % Inclusive bound
             I_BoundedNat n               % closed interval [0, n]
           | _ -> 
-            (case find_constant_int_bounds ms_pred of
+            (case find_constant_int_bounds_list all_subtype_preds of
                | Some (m, n) ->          % Inclusive bounds.
-                 if m = 0 then
+                 if m = 0 then  %% could allow positive m here?
                    I_BoundedNat n        % closed interval [0, n]
                  else
                    I_BoundedInt (m, n)   % closed interval [m, n]
                | _ ->
-                 let _ = writeLine ("FindConstantIntBounds failed for " ^ printTerm ms_pred) in
+                 let _ = writeLine ("FindConstantIntBounds failed for " ^ flatten (List.map (fn (x:MSTerm) -> (printTerm x ^ " ")) all_subtype_preds)) in
                  I_Primitive I_Int),
         false)
      else 
