@@ -53,7 +53,7 @@ Linearize qualifying spec
             (outer_bindings, tm, counter)
           else
             let new_vname    = "tmp_" ^ show counter              in
-            let vtype        = termTypeEnv (spc, tm)              in
+            let vtype        = inferType (spc, tm)                in
             let new_v        = (new_vname, vtype)                 in
             let new_pat      = VarPat (new_v, noPos)              in
             let new_var      = Var (new_v, noPos)                 in
