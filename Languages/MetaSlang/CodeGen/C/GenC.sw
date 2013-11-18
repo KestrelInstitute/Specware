@@ -320,7 +320,7 @@ op SpecTransform.newEmitCFiles (ms_spec      : Spec,
          printCSpec (c_spec, app_name, opt_filename) 
        | _ ->
          %% warning might be under control of various flags
-         writeLine ("Unable to emit C files for " ^ app_name)
+         writeLine ("ERROR: Unable to emit C files for " ^ app_name)
  in             
  ms_spec
 
