@@ -30,6 +30,7 @@ Linearize qualifying spec
         | Var _ -> true
         | Fun _ -> true
         | TypedTerm (tm, _, _) -> anormal_field_value? tm
+        | Apply (Fun (Project _, _, _), x, _) -> anormal_field_value? x 
         | _ -> false  % e.g., a record or apply
 
     def anormal_arg? tm =
@@ -40,6 +41,7 @@ Linearize qualifying spec
         | Fun    _ -> true
         | Record _ -> true % recursion ensures tm is already in ANormal form
         | TypedTerm (tm, _,  _) -> anormal_arg? tm
+        | Apply (Fun (Project _, _, _), _, _) -> true
         | _ -> false  % e.g., an apply
 
     def dissect keep? counter outer_bindings (tm : MSTerm) =
@@ -136,7 +138,7 @@ Linearize qualifying spec
  op SpecTransform.linearizeSpec (spc : Spec, tracing? : Bool) : Spec =
   let
     def aux (spc, id) =
-      case findTheOp (spc, mkQualifiedId ("new", id)) of
+      case findTheOp (spc, mkUnQualifiedId id) of
         | Some info ->
           (let _ = writeLine("### Found " ^ id) in
            let dfn     = firstOpDef info in
