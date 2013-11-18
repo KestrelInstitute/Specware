@@ -1013,7 +1013,7 @@ example, the following is not a lawful :token:`spec_translation`:
 
 .. code-block:: specware
 
-   translate spec type T by {T +-> A, T +-> B}
+   translate spec type T end-spec by {T +-> A, T +-> B}
    
 
 Restriction. A :token:`spec_translation` may not map two different
