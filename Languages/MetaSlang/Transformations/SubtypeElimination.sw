@@ -121,7 +121,7 @@ SpecNorm qualifying spec
         [mkApply(mkOp(Qualified(toIsaQual, "Fun_PD"), ho_ty), domPred)]
       | _ -> []
 
-  op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
+  op maybeTypePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): Option MSTerm =
     let ty = raiseSubtypeFn(ty0, spc) in
     let preds1 = case ty of
                  | Subtype(_, pred, _) ->
@@ -134,12 +134,16 @@ SpecNorm qualifying spec
     in
     let preds2 = domSubtypePred(ty, spc) in
     case preds1 ++ preds2 of
-      | [] -> trueTerm
+      | [] -> None
       | preds ->
     %let _ = writeLine("typePredTerm:\n"^printTerm tm^"\n: "^printType ty0^"\n^ "^printType ty) in
         let pred = composeConjPreds(preds, spc) in
     %let _ = writeLine("Pred: "^printTermWithTypes pred) in
-        simplifiedApply(pred, tm, spc)
+        Some (simplifiedApply(pred, tm, spc))
+
+  op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
+      option trueTerm (maybeTypePredTerm(ty0,tm,spc))
+  
 
   op maybeRelativize?(t: MSTerm, tb: PolyOpTable): Bool =
     if eagerRegularization? then true
