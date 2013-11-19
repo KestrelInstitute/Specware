@@ -5720,9 +5720,10 @@ proof Isa List__foldr1_Obligation_exhaustive
 end-proof
 
 proof Isa List__foldr1_subtype_constr
-   sorry
+  apply(induct "l")
+  apply(simp)
+  apply(case_tac l)
+  apply(auto simp add: List__foldr1.simps)
 end-proof
-
-   
 
 end-spec
