@@ -39,7 +39,8 @@ spec
        | Spec spc ->
          {
           steps <- mapM (makeScript spc) transfm_steps;
-          tr_spc1 <- interpret(spc, Steps(steps));
+          tr_spc0 <- return (addImport ((spec_tm, spc), setElements(spc, []), pos));
+          tr_spc1 <- interpret(tr_spc0, Steps(steps));
           tr_spc2 <- return(setElements(tr_spc1, tr_spc1.elements ++ map SMPragmaToElement pragmas));
 	  return (Spec (markQualifiedStatus tr_spc2), spec_timestamp, spec_dep_UIDs)
 	  }
