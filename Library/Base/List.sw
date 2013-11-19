@@ -570,6 +570,15 @@ op [a,b] foldr (f: a * b -> b) (base:b) (l: List a) : b =
   | hd::tl -> f (hd, foldr f base tl)
 #translate Haskell -> sw_foldr -strict #end
 
+
+% Foldr, but when the list is known to have at least one element.
+op [a] foldr1 (f: a * a -> a) (l: List a | ~ (empty? l) ) : a =
+  case l of
+  | [x] -> x
+  | hd::tl -> f (hd, foldr1 f tl)
+
+   
+
 % lists with the same length:
 
 op [a,b] equiLong (l1: List a, l2: List b) infixl 20 : Bool =
@@ -5698,6 +5707,22 @@ proof Isa List__intersperse_subtype_constr
   apply(simp add: List__intersperse.simps List__List_P__def)
   apply(simp add: List__intersperse.simps List__List_P__def)
 end-proof
-  
+
+
+proof Isa List__foldr1_Obligation_subtype
+  apply (case_tac tl__v)
+  apply auto
+end-proof
+
+proof Isa List__foldr1_Obligation_exhaustive 
+  apply (case_tac l)
+  apply auto
+end-proof
+
+proof Isa List__foldr1_subtype_constr
+   sorry
+end-proof
+
+   
 
 end-spec

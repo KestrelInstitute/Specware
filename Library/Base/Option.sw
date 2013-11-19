@@ -23,6 +23,13 @@ end-proof
 
 op [a] none? (x: Option a) : Bool = (x = None)
 
+op [a] extractOption(n:a)(o:Option a):a =
+   case o of
+     | None -> n
+     | Some x -> x
+
+       
+
 (* Given a comparison function over type a, type Option a can be linearly
 ordered and compared by considering the extra element None to be smaller than
 any element of a. *)
@@ -82,6 +89,11 @@ proof Isa isoOption_subtype_constr2
        Option__Option_P.simps(2) not_Some_eq option_map_None option_map_Some)
 end-proof
 
+proof Isa Option__extractOption_subtype_constr
+  apply (case_tac o__v)
+  apply auto
+end-proof
+
 
 % mapping to Isabelle:
 
@@ -104,5 +116,7 @@ end-proof
  Option.some? \_rightarrow isJust
  Option.none? \_rightarrow isNothing 
 #end
+
+
 
 endspec
