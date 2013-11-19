@@ -121,7 +121,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
 
     let _ = writeLine ("Calculated Unhandled Input Predicate: " ^ printTerm (dnfToTerm pred)) in
     %% Use this representation, rather than DNF, since it's easier to read.
-    let preAsConj = mkAnd (map (fn conj -> mkNot (mkMinimalExists vars' (ands conj))) pred) in
+    let preAsConj = mkNot (dnfToTerm pred) in % mkAnd (map (fn conj -> mkNot (mkMinimalExists vars' (ands conj))) pred) in
     let _ = writeLine ("Generated Precondition: " ^ printTerm preAsConj) in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
     let refinedType =
