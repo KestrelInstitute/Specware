@@ -87,96 +87,34 @@ Globalize qualifying spec
 
  %% ================================================================================
 
- op globalRefsInApply (context         : Context) 
-                      (global_vars     : MSVarNames)
-                      (Apply (x, y, _) : MSTerm) 
-  : GlobalRefs =
-  case (x, y) of
-
-    | (Fun (Project field_id, _, _), 
-       Var ((var_id, _), _))
-      | var_id in? global_vars ->
-        [(Access, var_id, field_id)]
-
-    | (Fun (RecordMerge, _, _),
-       Record ([(_, Var ((var_id, _), _)),
-                (_, Record (fields, _))],
-               _))
-      | var_id in? global_vars ->
-        foldl (fn (refs, (field_id, tm)) ->
-                 refs ++
-                 [(Update, var_id, field_id)] ++
-                 globalRefsIn context global_vars tm)
-              []
-              fields
-
-    | _ -> 
-      (globalRefsIn context global_vars x) ++ 
-      (globalRefsIn context global_vars y)
-
- op globalRefsInRecord (context            : Context) 
-                       (global_vars        : MSVarNames)
-                       (Record (fields, _) : MSTerm)
-  : GlobalRefs =
-  foldl (fn (refs, (_, tm)) -> 
-           refs ++ globalRefsIn context global_vars tm) 
-        [] 
-        fields
-
- op globalRefsInLet (context                 : Context) 
-                    (global_vars             : MSVarNames)
-                    (Let (bindings, body, _) : MSTerm)
-  : GlobalRefs =
-  foldl (fn (refs, (_, tm)) -> 
-           refs ++ globalRefsIn context global_vars tm)
-        (globalRefsIn context global_vars body)
-        bindings
-
- op globalRefsInLetRec (context                    : Context) 
-                       (global_vars                : MSVarNames)
-                       (LetRec (bindings, body, _) : MSTerm) 
-  : GlobalRefs =
-  foldl (fn (refs, (_, tm)) -> 
-           refs ++ globalRefsIn context global_vars tm)
-        (globalRefsIn context global_vars body)
-        bindings
-
- op globalRefsInLambda (context           : Context) 
-                       (global_vars       : MSVarNames)
-                       (Lambda (match, _) : MSTerm) 
-  : GlobalRefs =
-  foldl (fn (refs, (_, _, body)) ->
-           refs ++ globalRefsIn context global_vars body)
-        []
-        match
-
  op globalRefsIn (context     : Context) 
                  (global_vars : MSVarNames)
                  (term        : MSTerm) 
   : GlobalRefs =
-  case term of
-   | Apply  _ -> globalRefsInApply  context global_vars term
-   | Record _ -> globalRefsInRecord context global_vars term
-   | Let    _ -> globalRefsInLet    context global_vars term
-   | LetRec _ -> globalRefsInLetRec context global_vars term
-   | Lambda _ -> globalRefsInLambda context global_vars term
-   | Bind   _ -> [] % exists, etc.
+  foldSubTerms (fn (tm : MSTerm, refs : GlobalRefs) -> 
+                  case tm of
 
-   | IfThenElse (x, y, z, _) -> (globalRefsIn context global_vars x) ++ 
-                                (globalRefsIn context global_vars y) ++ 
-                                (globalRefsIn context global_vars z)
+                    | Apply (Fun (Project field_id, _, _), 
+                             Var ((var_id, _), _),
+                             _)
+                      | var_id in? global_vars ->
+                        (Access, var_id, field_id) |> refs
 
-   | Seq        (tms,     _) -> foldl (fn (refs, tm) -> 
-                                         refs ++ globalRefsIn context global_vars tm) 
-                                      [] 
-                                      tms
+                    | Apply (Fun (RecordMerge, _, _),
+                             Record ([(_, Var ((var_id, _), _)),
+                                      (_, Record (fields, _))],
+                                     _),
+                             _)
+                      | var_id in? global_vars ->
+                        foldl (fn (refs, (field_id, _)) ->
+                                 (Update, var_id, field_id) |> refs)
+                              refs
+                              fields
 
-   | The        (v, tm,   _) -> globalRefsIn context global_vars tm
-   | TypedTerm  (tm, _,   _) -> globalRefsIn context global_vars tm
-   | Pi         (_, tm,   _) -> globalRefsIn context global_vars tm
-   | And        (tm::_,   _) -> globalRefsIn context global_vars tm
+                    | _ -> refs)
 
-   | _ -> []
+               ([] : GlobalRefs)
+               term
  
  %% ================================================================================
 
