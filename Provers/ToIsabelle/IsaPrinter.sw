@@ -567,7 +567,7 @@ IsaTermPrinter qualifying spec
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
-                     let tsp = (relativizeQuantifiers spc, id, id) in
+                     let tsp = (relativizeQuantifiersSimpOption c.simplify? spc, id, id) in
                      let hist = map (fn (tm, rl) -> (mapTerm tsp tm, rl)) hist in
                      let pf = mapRefinementProofOpt (mapTerm tsp) pf in
                      let trps = unpackTypedTerms (mapTerm tsp opinfo.dfn) in
@@ -830,7 +830,7 @@ IsaTermPrinter qualifying spec
         let def isabelleTerm tm =
               let spc = getSpec c in
               let out = (ppTermStrIndent c Top tm 7) in        
-              let tm' = mapTerm (relativizeQuantifiers spc,id,id) tm in
+              let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
               % We have to normalize types, so that record types get
               % printed correctly in Isabelle (substitute named type
               % for a record for their anonymous representation).
@@ -1158,7 +1158,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
         let spc = getSpec c in
         let def isabelleTerm tm =
               let out = (ppTermStrIndent c Top tm 7) in        
-              let tm' = mapTerm (relativizeQuantifiers spc,id,id) tm in
+              let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
               % We have to normalize types, so that record types get
               % printed correctly in Isabelle (substitute named type
               % for a record for their anonymous representation).
@@ -1345,7 +1345,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = addRefinementProofs cx spc in
     % let spc = addRefinementProofs c spc in
     % let _ = writeLine("9:\n"^printSpec spc) in
-    let spc = removeSubTypes spc coercions stp_tbl in
+    let spc = removeSubTypes c.simplify? spc coercions stp_tbl in
     % let _ = writeLine("10:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
     let spc = exploitOverloading coercions true spc in

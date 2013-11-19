@@ -142,7 +142,7 @@ SpecNorm qualifying spec
         Some (simplifiedApply(pred, tm, spc))
 
   op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
-      option trueTerm (maybeTypePredTerm(ty0,tm,spc))
+      extractOption trueTerm (maybeTypePredTerm(ty0,tm,spc))
   
 
   op maybeRelativize?(t: MSTerm, tb: PolyOpTable): Bool =
@@ -562,34 +562,48 @@ SpecNorm qualifying spec
     % let _ = writeLine("raiseNamedTypes:\n"^printSpec spc) in
     spc
 
-  op relativizeQuantifiers(spc: Spec) (t: MSTerm): MSTerm =
+
+    
+  % This function pushes subtype constraints on quantified variables
+  % for formulae into the body of the formula, removing the subtype
+  % constraint on the variable's type.
+  op relativizeQuantifiersSimpOption(simplify?:Bool)(spc: Spec) (t: MSTerm): MSTerm =
     case t of
       | Bind(bndr,bndVars,bod,a) ->
-        let (bndVars,bndVarsPred) =
-            foldr (fn ((vn,ty), (bndVars,res)) ->
-                     % let _ = writeLine("relQ: "^printType ty^" ---> "^printType ty) in
-                     let pred_tm = typePredTerm(ty, mkVar(vn,ty), spc) in
-                     % let _ = writeLine("----------------------------") in
-                     % let _ = writeLine("rq0: "^ vn ^ ":" ^ printType ty) in
-                     % let _ = writeLine("rq0: "^ (anyToString ty)) in                     
-                     % let _ = writeLine("rq0: "^printTerm pred_tm) in
-                     % let _ = writeLine("----------------------------") in
-                     let pred_tm = mapTerm (relativizeQuantifiers spc,id,id) pred_tm in
-                     ((vn,ty)::bndVars, Utilities.mkAnd(pred_tm, res)))
-              ([],mkTrue()) bndVars
-        in
-        let new_bod = case bndr of
-                        | Forall -> Utilities.mkSimpImplies(bndVarsPred, bod)
-                        | Exists -> Utilities.mkAnd(bndVarsPred, bod)
-                        | Exists1 -> Utilities.mkAnd(bndVarsPred, bod)
-        in
-        Bind(bndr,bndVars,new_bod,a)
+        let preds = mapPartial (fn (vn,ty) -> maybeTypePredTerm(ty, mkVar(vn,ty), spc)) bndVars in
+        let preds = map (mapTerm (relativizeQuantifiersSimpOption simplify? spc,id,id)) preds in
+        (if empty? preds
+          then t
+          else
+            let bndVarsPred = List.foldr1 MS.mkAnd preds in
+            let new_bod = case bndr of
+                    | Forall ->
+                        if simplify?
+                          then Utilities.mkSimpImplies(bndVarsPred, bod)
+                        else MS.mkImplies(bndVarsPred,bod)
+                    | Exists -> 
+                        if simplify?
+                          then Utilities.mkAnd(bndVarsPred, bod)
+                        else MS.mkAnd(bndVarsPred,bod)
+                      
+                    | Exists1 -> 
+                        if simplify?
+                          then Utilities.mkAnd(bndVarsPred, bod)
+                        else MS.mkAnd(bndVarsPred,bod)
+                      
+               in  Bind(bndr,bndVars,new_bod,a))
+
+        
       | The(theVar as (vn,ty),bod,a) ->
         let theVarPred = typePredTerm(ty, mkVar(vn,ty), spc) in
         let new_bod = Utilities.mkAnd(theVarPred, bod) in
         The((vn,ty),new_bod,a)
       | _ -> t
 
+  op relativizeQuantifiers(spc: Spec) (t: MSTerm): MSTerm =
+       relativizeQuantifiersSimpOption true spc t
+
+        
   op refToHo_eqfns(f: MSFun, qids: List QualifiedId): Bool =
     case f of
       | Op(qid,_) -> qid in? qids
@@ -1067,8 +1081,10 @@ SpecNorm qualifying spec
       | _ -> [tm]
 
 
-  op  removeSubTypes: Spec -> TypeCoercionTable -> PolyOpTable -> Spec
-  def removeSubTypes spc coercions stp_tbl =
+  % Bool option determines whether the formulae created in subtype
+  % removal will be simplified.
+  op  removeSubTypes: Bool -> Spec -> TypeCoercionTable -> PolyOpTable -> Spec
+  def removeSubTypes simplify? spc coercions stp_tbl =
     %% Remove subtype definition for directly-implemented subtypes after saving defs
     let ho_eqfns = findHOEqualityFuns spc in
     %% Add subtype assertions from op declarations
@@ -1132,7 +1148,7 @@ SpecNorm qualifying spec
     let spc = regularizeFunctions spc in
     %let _ = writeLine(anyToString tbl) in
     %let _ = writeLine(printSpec spc) in
-    let spc = mapSpecHist (relativizeQuantifiers spc, id, id) spc in
+    let spc = mapSpecHist (relativizeQuantifiersSimpOption simplify?  spc, id, id) spc in
     %% Replace subtypes by supertypes
     let spc = mapSpecHist (id,fn s ->
                              case s of
@@ -1166,8 +1182,10 @@ def mapSpecHist tsp spc =
 	  | _ -> el)
        elements
 
-  op removeSubtypesInTerm (spc: Spec) (t: MSTerm): MSTerm =
-    let t = mapTerm(relativizeQuantifiers spc, id, id) t in
+  % Boolean flag simplify? determines if relativizeQuantifiers does
+  % formula simplification.
+  op removeSubtypesInTerm (simplify?:Bool) (spc: Spec) (t: MSTerm): MSTerm =
+    let t = mapTerm(relativizeQuantifiersSimpOption simplify? spc, id, id) t in
     mapTerm (id,fn s -> case s of
 		          | Subtype(supTy,_,_) -> supTy
                           | _ -> s,
