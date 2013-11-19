@@ -149,10 +149,36 @@ op opsInSlice (slice : Slice) : OpNames =
        []
        slice.resolved_refs
 
+op opsInImplementation (slice : Slice) : OpNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Op oref -> 
+              (case oref.cohort of
+                 | Interface      -> oref.name |> names
+                 | Implementation -> oref.name |> names
+                   % Assertion, Context,Ignored        
+                 | _ -> names)
+            | _ -> names)
+       []
+       slice.resolved_refs
+
 op typesInSlice (slice : Slice) : TypeNames =
  foldl (fn (names, ref) ->
           case ref of
             | Type tref -> tref.name |> names
+            | _ -> names)
+       []
+       slice.resolved_refs
+
+op typesInImplementation (slice : Slice) : TypeNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Type tref -> 
+              (case tref.cohort of
+                 | Interface      -> tref.name |> names
+                 | Implementation -> tref.name |> names
+                   % Assertion, Context,Ignored        
+                 | _ -> names)
             | _ -> names)
        []
        slice.resolved_refs
