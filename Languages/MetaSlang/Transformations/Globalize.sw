@@ -158,16 +158,25 @@ Globalize qualifying spec
                             (term        : MSTerm) 
   : ConflictingRefs =
 
-  % The numbers used here indicate branching or parallel contexts.
-  % Specware does not specify an evaluation order, so evaluation of anything in one 
-  % context could preceed or follow evaluation of anything else in another context.
-  % Thus to avoid indeterminate results, we must avoid an update to a global field 
-  % in one context and a reference (either update or access) in some other context.
+  % Specware does not specify an evaluation order for Apply and Record terms, so 
+  % evaluation of one immediate subterm of those could preceed or follow evaluation 
+  % of any other immediate subterm.
 
-  % This code is invoked by globalizeTerm, which is invoked on every term, including
-  % the subterms of this term.  Thus we only need to deconflict contexts created at 
-  % the top level of this term, as each subterm will be separately deconflicted when
-  % globalTerm is called on it.
+  % Thus to avoid indeterminate results, we must avoid an update to a stateful field 
+  % in one subterm and a reference (either update or access) to that same field in 
+  % another subterm.
+
+  % This routine has already been called recursively on every subterm, so they are 
+  % already sanitized to avoid conflicts -- we only need to deconflict any 
+  % access/update in one immediate subterm here will any access/update in another
+  % immediate  subterm.
+
+  % The numbers used here label alternative contexts.  Anything in one such context
+  % may preceed or follow anything in another context.  
+  %  Apply terms invoking RecordMerge have a context for each field in the 
+  %    updating record.  We augment each such context with a field update.
+  %  All other Apply terms have two contexts.
+  %  Record terms have a context for each field.
 
   let (_, all_refs) =
       case term of
@@ -197,13 +206,6 @@ Globalize qualifying spec
                 (0, [])
                 fields
 
-        | Seq (tms, _) -> 
-          foldl (fn ((n, all_refs), tm) -> 
-                   (n + 1, 
-                    all_refs ++ [(n, globalRefsIn context global_vars tm)]))
-                (0, [])
-                tms
-
         | _ -> 
           (0, [])
   in
@@ -224,8 +226,6 @@ Globalize qualifying spec
 
  op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool = 
   q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
-
- op myTrue : MSTerm = Fun (Bool true, Boolean gPos, gPos)
 
  %% ================================================================================
  %% Verify that the suggested global type actually exists
@@ -896,12 +896,12 @@ Globalize qualifying spec
       case opt_new_pat of
         | Unchanged ->
           (case opt_new_body of
-             | Changed new_body -> Changed (pat, myTrue, new_body)
-             | GlobalVar        -> Changed (pat, myTrue, new_body)
+             | Changed new_body -> Changed (pat, trueTerm, new_body)
+             | GlobalVar        -> Changed (pat, trueTerm, new_body)
              | Unchanged        -> Unchanged)
 
         | Changed new_pat ->
-          Changed (new_pat, myTrue, new_body)
+          Changed (new_pat, trueTerm, new_body)
 
         | GlobalVarPat ->
           (case new_body of
@@ -909,12 +909,12 @@ Globalize qualifying spec
                %% fn (x:Global) -> fn (new_pat) -> inner_body
                %%  =>
                %%                  fn (new_pat) -> inner_body
-               Changed (inner_pat, myTrue, inner_body)
+               Changed (inner_pat, trueTerm, inner_body)
              | _ ->
                %% fn (x:Global) -> body
                %%  =>
                %% fn () -> new_body
-               Changed (nullPat, myTrue, new_body))
+               Changed (nullPat, trueTerm, new_body))
 
   in
   let opt_new_rules = map globalizeRule rules in
