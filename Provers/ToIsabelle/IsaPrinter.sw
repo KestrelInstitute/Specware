@@ -1085,8 +1085,8 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
    | EqProofTheorem (qid, args) ->
      (* show "lhs=rhs" apply (rule ext, rule ext, ...) by (rule qid[of tm1 ... tmn]) *)
      showFinalResult
-       (applyTactic
-          (rulesTactic (repeat "ext" (length lhs.1)),
+       (applyTactics
+          (repeat (ruleTactic "ext") (length lhs.1),
            singleTacticProof
              (ruleTacticPP
                 %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
@@ -1098,15 +1098,15 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
      % FIXME: if qid is functional, use the extensionality rule
      (* show "f=rhs" by (rule f_def) *)
      showFinalResult
-       (applyTactic
-          (rulesTactic (repeat "ext" (length lhs.1)),
+       (applyTactics
+          (repeat (ruleTactic "ext") (length lhs.1),
            singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"]))))
    | EqProofTactic tactic ->
      (* by tactic *)
      % let _ = writeLine("eqTactic: "^tactic^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
      showFinalResult
-       (applyTactic
-          (rulesTactic (repeat "ext" (length lhs.1)),
+       (applyTactics
+          (repeat (ruleTactic "ext") (length lhs.1),
            singleTacticProof (IsaProof (string tactic))))
 
   % generate an Isabelle proof of an implication "lhs -> rhs"
