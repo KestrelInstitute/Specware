@@ -1083,23 +1083,31 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
          (ppLambdaEquality (c, ([], middle), rhs),
           forwardProofBlock (ppEqualityProof (c, ([], middle), rhs, pf2)))])
    | EqProofTheorem (qid, args) ->
-     (* show "lhs=rhs" by (rule qid[of tm1 ... tmn]) *)
+     (* show "lhs=rhs" apply (rule ext, rule ext, ...) by (rule qid[of tm1 ... tmn]) *)
      showFinalResult
-       (singleTacticProof
-          (ruleTacticPP
-             %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-             (prLinear 2
-                [ppQualifiedId qid, string "[of ",
-                 prLinear 0 (map (ppTerm c Top) args),
-                 string "]"])))
+       (applyTactic
+          (rulesTactic (repeat "ext" (length lhs.1)),
+           singleTacticProof
+             (ruleTacticPP
+                %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
+                (prLinear 2
+                   [ppQualifiedId qid, string "[of ",
+                    prLinear 0 (map (ppTerm c Top) args),
+                    string "]"]))))
    | EqProofUnfoldDef qid ->
      % FIXME: if qid is functional, use the extensionality rule
      (* show "f=rhs" by (rule f_def) *)
-     showFinalResult (singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"])))
+     showFinalResult
+       (applyTactic
+          (rulesTactic (repeat "ext" (length lhs.1)),
+           singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"]))))
    | EqProofTactic tactic ->
      (* by tactic *)
      % let _ = writeLine("eqTactic: "^tactic^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     showFinalResult (singleTacticProof (IsaProof (string tactic)))
+     showFinalResult
+       (applyTactic
+          (rulesTactic (repeat "ext" (length lhs.1)),
+           singleTacticProof (IsaProof (string tactic))))
 
   % generate an Isabelle proof of an implication "lhs -> rhs"
   op generateImplicationProof (c: Context, lhs: MSTerm, rhs: MSTerm, pf:AnnSpec.ImplProof): String =
