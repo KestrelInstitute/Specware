@@ -1,12 +1,8 @@
 Stateful qualifying spec {
 
-import /Languages/MetaSlang/Transformations/Setf
 import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/MetaSlang/Transformations/RecordMerge
-import /Languages/MetaSlang/Transformations/CommonSubExpressions
-import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
-import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
 type OpTypes         = AQualifierMap MSType
 type MSVarName       = Id
@@ -41,7 +37,6 @@ type LetBindings = List LetBinding
 type Context = {spc              : Spec,
                 root_ops         : OpNames,
                 stateful_types   : MSTypes,
-                setf_entries     : SetfEntries,
                 let_bindings     : LetBindings,
                 tracing?         : Bool}
 
@@ -354,35 +349,13 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
                                     stateful_type_names : TypeNames,
                                     tracing?            : Bool)
  : Spec =
-
- %% access_update pairs are used to create dsstructive updates into complex left-hand-sides
- let setf_entries = findSetfEntries spc in
-
- let _ =
-     if tracing? then
-       let _ = writeLine("===================") in
-       let _ = writeLine("Accesss -- Updates") in
-       let _ = map (fn setf_entry ->
-                      writeLine (printQualifiedId setf_entry.accesser_name
-                                   ^ " -- " ^
-                                   printQualifiedId setf_entry.updater_name))
-                   setf_entries
-       in
-       let _ = writeLine("===================") in
-       ()
-     else
-       ()
- in
+ let new_spec = SpecTransform.introduceRecordMerges spc in
  let new_spec =
      case get_stateful_types (spc, stateful_type_names) of
        | Some stateful_types ->
-         % This shouldn't be necessary, but is for now to avoid complaints from reviseStatefulRefs.
-         let spec_with_gset = run (addOp [setfQid] Nonfix false setfDef spc gPos) in
-
          let context = {spc            = spc,
                         root_ops       = root_op_names,
                         stateful_types = stateful_types,
-                        setf_entries   = setf_entries,
                         let_bindings   = [],
                         tracing?       = tracing?}
          in
