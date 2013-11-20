@@ -1218,28 +1218,32 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
 
   let def theVars tm = map (fn x -> x.1) (filter (fn (i,_) -> i in? (map (fn v -> v.1) args.vars)) (freeVars tm)) in
   let def getTy (tm:MSTerm):MSType = inferType (args.spc,tm) in
+  let def getEqTy (ty:MSType):MSType =
+             case ty of
+               | Arrow (Product(dom::doms,_),ran,_ ) -> dom.2
+  in
   case t of
     % ~(expr)
     | Apply(Fun(Not,_,_), arg, appPos) -> negateClass (classifyAux args arg)
     
     % s' = expr
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v = args.stateVar -> CConstrain (l,r,theVars r,true,getTy r)
+      | v = args.stateVar -> CConstrain (l,r,theVars r,true,getEqTy eqTy)
 
     % expr = s' 
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v = args.stateVar -> CConstrain (r,l,theVars l,true,getTy l)
+      | v = args.stateVar -> CConstrain (r,l,theVars l,true,getEqTy eqTy)
 
     % obs s' = expr        
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,
                        l as Apply (Fun (Op (Qualified (_,o),opFix),ftype,fPos),
                               (Var ((v,_),varPos)),
                               appPos)),
                        (_,r)], argPos), _)
-      | o in? args.obs && v = args.stateVar -> CConstrain (l,r,theVars r,true,getTy r)
+      | o in? args.obs && v = args.stateVar -> CConstrain (l,r,theVars r,true,getEqTy eqTy)
 
     % expr = obs s'
     | Apply (Fun (Equals,_,eqPos), 
@@ -1251,47 +1255,47 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
       | o in? args.obs && v = args.stateVar -> CConstrain (r,l,theVars l,true,getTy l)
 
     % result = expr
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? args.outputs -> CConstrain (l,r,theVars r,true, getTy r)
+      | v in? args.outputs -> CConstrain (l,r,theVars r,true, getEqTy eqTy)
 
     % expr = result
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? args.outputs -> CConstrain (r,l,theVars l,true, getTy l)
+      | v in? args.outputs -> CConstrain (r,l,theVars l,true, getEqTy eqTy)
 
     % (v1,...,vn) = expr
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars l,r,theVars r,true, getTy l,getTy r)
+      | let pvars = patternVars l in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars l,r,theVars r,true, getEqTy eqTy,getTy r)
         
     % v = expr
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l as Var ((v,ty),_)), (_,r)], argPos), appPos)
-      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],r,theVars r,true,getTy l,getTy r)
+      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],r,theVars r,true,getEqTy eqTy,getTy r)
 
 
     % expr = (v1,...,vn) 
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos)
-      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars r,l,theVars l,true, getTy r, getTy l)
+      | let pvars = patternVars r in ~(empty? pvars) && forall?  (fn v -> v.1 in? (map (fn v -> v.1) args.vars)) pvars -> CDef (patternVars r,l,theVars l,true, getEqTy eqTy, getTy l)
         
     % expr = v
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r as Var ((v,ty),_))], argPos), appPos)
-      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],l,theVars l,true, getTy r, getTy l)
+      | v in? (map (fn v -> v.1) args.vars) -> CDef ([(v,ty)],l,theVars l,true, getEqTy eqTy, getTy l)
 
         
-    | Apply (Fun (Equals,_,eqPos), 
+    | Apply (Fun (Equals,eqTy,eqPos), 
              Record ([(_,l), (_,r)], argPos), appPos) ->
         (case termToPattern r of
               | Some (pat as EmbedPat (con,vars,pty,_)) ->
      % expr = pat
-                  CCase (pat, l, theVars l,true, getTy l)
+                  CCase (pat, l, theVars l,true, getEqTy eqTy)
               | _ ->  (case termToPattern l of
                            | Some (pat as EmbedPat (con,vars,pty,_)) ->
      % pat = expr
-                             CCase (pat, r, theVars r,true, getTy l)
+                             CCase (pat, r, theVars r,true, getEqTy eqTy)
                            | _ -> CAtom (t,theVars t,true, boolType)))
 
    % otherwise
