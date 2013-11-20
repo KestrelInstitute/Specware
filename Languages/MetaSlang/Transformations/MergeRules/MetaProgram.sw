@@ -850,7 +850,7 @@ op bt2(args:BTArgs)(inputs:List (List CClass)):(MSTerm * DNFRep * TraceTree) =
                       (resTerm, pres, pf)
                               
                     | _ ->
-                      let _ = writeLine "Mergerules is stuck." in
+                      let _ = writeLine "ERROR: Mergerules is stuck." in
                       let _ = writeLine "Under assumptions:" in
                       let _ = writeLine (printTerm (mkAnd (noAssumptions args.assumptions))) in
                       let _ = writeLine "Merging clauses" in
