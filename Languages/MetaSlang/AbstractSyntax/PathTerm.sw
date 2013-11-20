@@ -41,10 +41,48 @@ type PathTerm = APathTerm Position.Position
       | And(l, _) -> l
       | _ -> []
 
+  type ABindingTerm a = List (AVar a) * ATerm a
+  type BindingTerm = ABindingTerm Position
+  type APathBindingTerm a = ABindingTerm a * Path
+  type PathBindingTerm = APathBindingTerm Position
+
+  op immediateSubTermsWithBindings(term: MSTerm): List (BindingTerm) =
+    case term of
+      | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
+        [([], x), ([], y)]
+      | Apply(x, y, _) ->
+        if embed? Lambda x then [([], y), ([], x)] else [([], x), ([], y)]
+      | Record(l, _) -> map (fn (_, t) -> ([], t)) l
+      | Bind(_, vars, body, _) -> [(vars, body)]
+      | The(x, body, _)  -> [([x], body)]
+      | Let (l, b, _) ->
+        let vars = flatten (map (fn (pat, _) ->
+                                   removeDuplicateVars (patternVars pat)) l) in
+        (map (fn (_, t) -> ([], t)) l) ++ [(vars, b)]
+      | LetRec (l, b, _) ->
+        let vars = map (fn (var, _) -> var) l in
+        (map (fn (_, t) -> (vars, t)) l) ++ [(vars, b)]
+      | Lambda (l, _) ->
+        map (fn (pat, _, t) -> (removeDuplicateVars (patternVars pat), t)) l
+      | IfThenElse(x, y, z, _) -> [([], x), ([], y), ([], z)]
+      | Seq(l, _) -> map (fn t -> ([], t)) l
+      | TypedTerm(x, ty, _) ->
+        (case postCondn? ty of
+           | None -> [([], x)]
+           | Some post -> [([], x), ([], post)])
+      | And(l, _) -> map (fn t -> ([], t)) l
+      | _ -> []
+
   op [a] ithSubTerm(term: ATerm a, i: Nat): ATerm a =
     let tms = immediateSubTerms term in
     if i < length tms
       then tms @ i
+      else fail("Can't take subterm "^show i^" of term\n"^printTerm term)
+
+  op ithSubTermWithBindings(term: MSTerm, i: Nat): BindingTerm =
+    let tms_bindings = immediateSubTermsWithBindings term in
+    if i < length tms_bindings
+      then tms_bindings @ i
       else fail("Can't take subterm "^show i^" of term\n"^printTerm term)
 
   op [a] ithSubTerm?(term: ATerm a, i: Nat): Option(ATerm a) =
@@ -55,6 +93,18 @@ type PathTerm = APathTerm Position.Position
   op [a] fromPathTerm((top_term, path): APathTerm a): ATerm a =
     foldr (fn (i, tm) -> ithSubTerm(tm, i))
        top_term path
+
+  op fromPathTermWithBindings((top_term, path): PathTerm): BindingTerm =
+    foldr (fn (i, (vars, tm)) ->
+             let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
+             (vars ++ new_vars, subterm))
+       ([], top_term) path
+
+  op fromPathBindingTerm((top_binding_term, path): PathBindingTerm): BindingTerm =
+    foldr (fn (i, (vars, tm)) ->
+             let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
+             (vars ++ new_vars, subterm))
+       top_binding_term path
 
   op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
     foldr (fn (i, Some tm) -> ithSubTerm?(tm, i)

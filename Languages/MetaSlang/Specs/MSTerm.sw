@@ -343,6 +343,13 @@ op negateTerm (term : MSTerm) : MSTerm =
      Apply (Fun (Equals,    typ, a1), args, a2)
    | _ -> mkNot term
 
+%% Misc Terms
+
+ % lambda-abstract a list of variables
+ op mkMultiLambda (vars : MSVars, body : MSTerm) : MSTerm =
+   foldl (fn (tm, var) -> mkLambda (VarPat (var, noPos), tm)) body vars
+
+
 %% Patterns ...
 
 op mkAliasPat   (p1   : MSPattern, p2 : MSPattern)                : MSPattern = AliasPat  (p1, p2,       noPos)
