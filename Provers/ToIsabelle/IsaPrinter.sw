@@ -3580,13 +3580,23 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    let str      = PrettyPrint.toString(format(120,termPP)) in
    subFromTo(str, indent, length str)
 
+ %% This function finds the canonical named representation for a
+ %% record type, if it exists. For example, if we have a chain of
+ %% types:
+
+ %% type T = { l1 : T1, l2 : T2 }
+ %% type S = T
+ %% type R = S
+
+ %% and the ty argument is 'R', then it will chase down the sequence
+ %% to get the type 'T'
  op unfoldToBaseNamedType(spc: Spec, ty: MSType): MSType =
    % let _ = writeLine("ufnp: "^printType ty) in
    case ty of
      | Base _ ->
        (case tryUnfoldBase spc ty of
         | Some (uf_ty as Base _) -> unfoldToBaseNamedType(spc, uf_ty)
-        | Some (Subtype(sup_ty, _, _)) -> unfoldToBaseNamedType(spc, sup_ty)
+        | Some (Subtype(sup_ty as Base _, _, _)) -> unfoldToBaseNamedType(spc, sup_ty)
         | _ -> ty)
      | _ -> ty
 
