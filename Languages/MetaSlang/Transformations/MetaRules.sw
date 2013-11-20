@@ -236,9 +236,6 @@ op pathToLastConjunct(n: Nat): Path =
   if n = 0 then []
     else 1::pathToLastConjunct(n-1)
   
-op simpProof: EqProof = EqProofTactic "simp"
-op caseProof: EqProof = EqProofTactic "cases"
-
 op printEqProof(prf: EqProof, tm: MSTerm): String =
   case prf of
     | EqProofSubterm(path, s_prf) ->
@@ -274,7 +271,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                                                         int_sub_tm,
                                                         mkEqProofSubterm(path2, prf2)))
       def extendCaseProof(case_tm: MSTerm, o_prf: Option EqProof, new_tm: MSTerm, path: Path): Option EqProof =
-        let case_proof = EqProofTactic("(cases \""^printTerm case_tm^"\", auto)") in
+        let case_proof = EqProofTactic("(case_tac \""^printTerm case_tm^"\", auto)") in
         case o_prf of
           | None -> Some case_proof
           | Some prf ->
