@@ -70,6 +70,13 @@ CurryUtils qualifying spec
   op mkCurriedLambda(lam_pats: MSPatterns, bod: MSTerm): MSTerm =
     foldr (fn (pat, bod) -> mkLambda(pat, bod)) bod lam_pats
 
+  op unpackCurriedLambda(tm: MSTerm): MSPatterns * MSTerm =
+    case tm of
+      | Lambda ([(pat,_,bod)],_) ->
+        let (r_pats, r_bod) = unpackCurriedLambda bod in
+        (pat::r_pats, r_bod)
+      | _ -> ([], tm)
+
   op  curriedParams: MSTerm -> MSPatterns * MSTerm
   def curriedParams defn =
     let def aux(t,vs) =

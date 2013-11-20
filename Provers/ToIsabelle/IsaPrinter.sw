@@ -586,8 +586,8 @@ IsaTermPrinter qualifying spec
                               let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
-                              % let _ = writeLine("oblig: "^printTerm oblig) in
-                              % let _ = writeLine("Generating proof for "^thm_name) in
+                               % let _ = writeLine("oblig: "^printTerm oblig) in
+                               % let _ = writeLine("Generating proof for "^thm_name) in
                               let prf_str =
                                 case pf of
                                     % if we have an implication proof, convert it to Isabelle
@@ -3550,13 +3550,15 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Fun (fun,ty,_) -> ppFun c parentTerm fun ty
 %      | Lambda ([(_, Fun (Bool true,  _, _), Fun (Bool true,  _, _))], _) ->
 %        prString "TRUE"                 % fnx. True
-     | Lambda ([(pattern,_,term)],_) ->
+     | Lambda ([(_,_,_)],_) ->
+       let (pats, bod) = unpackCurriedLambda term in
        enclose?(parentTerm ~= Top,
                 prBreakCat 2 [[lengthString(2, "\\<lambda> "),
                                let c = c << {printTypes? = true} in
-                                 ppPattern c pattern (Some "") true,
+                               prLinear 0 (addSeparator prSpace
+                                             (map (fn pat -> ppPattern c pat (Some "") true) pats)),
                                prString ". "],
-                              [ppTerm c Top term]])
+                              [ppTerm c Top bod]])
      | Lambda (match,_) ->
        let spc = getSpec c in
        let lam_ty = inferType(spc, term) in
