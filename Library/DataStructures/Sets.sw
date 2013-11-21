@@ -149,6 +149,11 @@ theorem delete_of_empty is [a]
     fa(c:Set a, x:a, y:a)
       ~(x = y) => set_delete(x,set_insert(y,c)) = set_insert(y,set_delete(x,c))
 
+  % Not a great name, since this doesn't really distribute anything.
+  theorem distribute_set_insert_over_set_delete is [a]
+      fa(c:Set a,d:Set a,y:a)
+        (set_insert(y,set_delete(y,c)) = set_insert(y, c))
+
 
 
 %TODO note that Library/General/Set also applies to infinite set (there is also Library/General/FSet for finite sets)
@@ -439,10 +444,6 @@ theorem in?_size is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_delete(y,c) -- d = set_delete(y, c -- d))
 
-  % Not a great name, since this doesn't really distribute anything.
-  theorem distribute_set_insert_over_set_delete is [a]
-      fa(c:Set a,d:Set a,y:a)
-        (set_insert(y,set_delete(y,c)) = set_insert(y, c))
 
   theorem distribute_set_delete_union1 is [a]
       fa(A:Set a,B:Set a,y:a)
@@ -840,11 +841,11 @@ proof Isa Set__set_fold2_alt
   apply(cut_tac c=c and f=f and x=x and s="Set__set_delete(x,s)" in Set__set_fold2)
   apply(simp)
   apply(simp add: Set__set_deletion)
-  apply (smt Set__in_of_delete Set__membership Set__set_insert_does_nothing Set__set_insertion Set__set_insertion_commutativity)
+  apply(simp add: Set__distribute_set_insert_over_set_delete Set__set_insert_does_nothing)
   apply(cut_tac c=c and f=f and x=x and s=s in Set__set_fold2)
   apply(simp)
   apply(simp add: Set__set_deletion)
-  apply(smt Set__in_of_delete Set__membership Set__set_insert_does_nothing Set__set_insertion Set__set_insertion_commutativity)
+  apply(simp add: Set__set_delete_no_op)
 end-proof
 
 end-spec
