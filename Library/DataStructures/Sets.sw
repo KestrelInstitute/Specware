@@ -156,10 +156,24 @@ theorem delete_of_empty is [a]
 % obtained by suitable successive applications of set_insert to empty_set
 
 axiom induction is [a]
-      fa (p : Set a -> Bool)
-         p empty_set &&   % TODO parens here?
-         (fa(x,s) p s => p(set_insert(x,s))) =>
-         (fa(s) p s)
+  fa (p : Set a -> Bool)
+    p empty_set &&
+      (fa(x,s) p s => p(set_insert(x,s))) =>
+    (fa(s) p s)
+
+%% This one only makes you prove that insert preserves p for elements not already in s.
+theorem induction2 is [a]
+  fa (p : Set a -> Bool)
+    p empty_set &&
+      (fa(x,s) (p s && ~(x in? s)) => p(set_insert(x,s))) =>
+    (fa(s) p s)
+
+%% Another variant
+theorem induction3 is [a]
+  fa (p : Set a -> Bool)
+    p empty_set &&
+      (fa(x,s) p(set_delete(x,s)) => p(set_insert(x,s))) =>
+    (fa(s) p s)
 
 % analogously to list_fold and bag_fold, we can define set_fold for sets;
 % the function f given as argument must satisfy the same commutativity
@@ -198,7 +212,10 @@ axiom set_fold2 is [a,b]
   fa(c:b, f : ((b * a -> b) | foldable?), x:a, s:Set a)
     ~(x in? s) =>  %%  New!  An alternative would be to drop this and delete x from s in the right hand side of the equality
     set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
-%old:set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
+
+theorem set_fold2_alt is [a,b]
+  fa(c:b, f : ((b * a -> b) | foldable?), x:a, s:Set a)
+    set_fold c f (set_insert(x,s)) = f (set_fold c f (set_delete(x,s)), x)
 
 %% Push a bijection through a fold.  This changes the type of the accumulator of the fold.
 theorem inv_set_fold_helper is [a,s,s']
@@ -803,6 +820,31 @@ end-proof
 proof Isa Set__foldable_p_of_intersection [simp]
   apply(auto simp add: Set__foldable_p_def)
   apply(metis Set__commutativity_of_intersection_two)
+end-proof
+
+proof Isa Set__induction2
+  apply(cut_tac p=p in Set__induction)
+  apply(auto)
+  apply(metis Set__set_insert_does_nothing)
+end-proof
+
+proof Isa Set__induction3
+  apply(cut_tac p=p in Set__induction)
+  apply(auto)
+  by (metis Set__set_delete_no_op Set__set_insert_does_nothing)
+end-proof
+
+proof Isa Set__set_fold2_alt
+  apply(case_tac "x in? s")
+  apply(simp add: Set__set_insert_does_nothing)
+  apply(cut_tac c=c and f=f and x=x and s="Set__set_delete(x,s)" in Set__set_fold2)
+  apply(simp)
+  apply(simp add: Set__set_deletion)
+  apply (smt Set__in_of_delete Set__membership Set__set_insert_does_nothing Set__set_insertion Set__set_insertion_commutativity)
+  apply(cut_tac c=c and f=f and x=x and s=s in Set__set_fold2)
+  apply(simp)
+  apply(simp add: Set__set_deletion)
+  apply(smt Set__in_of_delete Set__membership Set__set_insert_does_nothing Set__set_insertion Set__set_insertion_commutativity)
 end-proof
 
 end-spec
