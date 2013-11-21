@@ -38,8 +38,7 @@ type Context = {spc              : Spec,
                 let_bindings     : LetBindings,
                 tracing?         : Bool}
 
-op dcPos      : Position = Internal "Deconflict Updates"
-
+op dcPos : Position = Internal "DeconflictUpdates"
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,17 +108,13 @@ op stateful_refs_with_contexts (context : Context,
                         _),
                 _)
      | stateful_type? (context.spc, var_type, context.stateful_types) ->
-       let (_, refs_in_contexts : List RefsInContext) =
-           foldl (fn ((n, refs_in_contexts : List RefsInContext), (field_id, tm)) ->
-                    let ref = Update {var   = var_id,
-                                      field = field_id}
-                    in
-                    let sub_refs : StatefulRefs = stateful_refs_in (context, tm) in
-                    let refs     : StatefulRefs = ref |> sub_refs in
-                    let x = {context = n,
-                             refs    = refs}
-                    in
-                    (n + 1, x |> refs_in_contexts))
+       let (_, refs_in_contexts) =
+           foldl (fn ((n, refs_in_contexts), (field_id, tm)) ->
+                    let ref          = Update {var = var_id, field = field_id} in
+                    let refs         = stateful_refs_in (context, tm) in
+                    let refs         = ref |> refs in
+                    let refs_in_ctxt = {context = n, refs = refs} in
+                    (n + 1, refs_in_ctxt |> refs_in_contexts))
                  (0, [])
                  fields
        in
@@ -224,22 +219,15 @@ op deconflict_conflicting_refs (context   : Context,
             | _ ->
               let
                 def repTerm tm =
-                  % let _ = writeLine("t9: " ^ printTerm tm) in
                   case findLeftmost (fn (x, _) -> equalTerm? (x, tm)) substitutions of
                     | Some (_, y) -> Some y
                     | _ -> None
               in
               let new = replaceTerm (repTerm, fn t -> None, fn p -> None) term in
-              % let _ = writeLine("----------------------------------------") in
-              % let _ = app (fn (x,y) -> writeLine("Replace: " ^ printTerm x ^ " with " ^ printTerm y)) substitutions in
-              % let _ = writeLine(printTerm term) in
-              % let _ = writeLine(" => ") in
-              % let _ = writeLine(printTerm new) in
-              % let _ = writeLine("----------------------------------------") in
               let new = deconflict_term (context, new) in
               Some new)
 
-       | (ref1, ref2)  :: conflicts ->
+       | (ref1, ref2) :: conflicts ->
          case (ref1, ref2) of
 
            | (Update _, Access y) -> lift (y, conflicts)
@@ -262,7 +250,7 @@ op deconflict_conflicting_refs (context   : Context,
 
 op lift_conflict_bindings (term : MSTerm) : MSTerm =
  let
-   def aux (tm : MSTerm) : Option MSTerm =
+   def lift_let_binding tm =
      case tm of
        | Apply (t1 as Fun _, Let (bindings, body, _), _) ->
          %% A Fun will never be a variable that could be captured by bindings,
@@ -273,25 +261,25 @@ op lift_conflict_bindings (term : MSTerm) : MSTerm =
        | _ ->
          None
  in
- replaceTerm (aux, fn typ -> None, fn pat -> None) term
+ replaceTerm (lift_let_binding, fn typ -> None, fn pat -> None) term
 
 %% ================================================================================
 
 op deconflict_term (context : Context, term : MSTerm) : MSTerm =
- replaceTerm (fn tm ->
-                let conflicts = conflicting_refs_in (context, tm) in
-                let n = length conflicts in
-                deconflict_conflicting_refs (context, conflicts, tm),
-              fn t -> None,
-              fn p -> None)
-             term
+ let
+   def deconflict tm =
+    let conflicts = conflicting_refs_in (context, tm) in
+    let n         = length conflicts                  in
+    deconflict_conflicting_refs (context, conflicts, tm)
+ in
+ replaceTerm (deconflict, fn t -> None, fn p -> None) term
 
 op deconflict_updates (context : Context) : Spec =
 
  let spc                     = context.spc                                       in
  let first_slice             = genericExecutionSlice (spc, context.root_ops, []) in
- let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
-%let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
+%let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
+ let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
 
  let new_ops =
      foldl (fn (new_ops, name as Qualified (q, id)) ->
@@ -323,7 +311,7 @@ op deconflict_updates (context : Context) : Spec =
                         let _ = writeLine ("Deconflicting execution of " ^ show name) in
                         let _ = writeLine (printTerm old_dfn) in
                         let _ = writeLine (" => ") in
-                      % let _ = writeLine (printTerm new_dfn) in
+                      % let _ = writeLine (printTerm new_dfn) in   % intermediate form
                       % let _ = writeLine (" => ") in
                         let _ = writeLine (printTerm nicer_dfn) in
                         let _ = writeLine ("") in
