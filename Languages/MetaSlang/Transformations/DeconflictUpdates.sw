@@ -1,8 +1,6 @@
-Stateful qualifying spec {
+DeconflictUpdates qualifying spec {
 
-import /Languages/MetaSlang/Transformations/SliceSpec
-import /Languages/MetaSlang/Transformations/RecordMerge
-import /Languages/MetaSlang/CodeGen/DebuggingSupport
+import /Languages/MetaSlang/Transformations/StatefulUtilities
 
 type OpTypes         = AQualifierMap MSType
 type MSVarName       = Id
@@ -40,16 +38,10 @@ type Context = {spc              : Spec,
                 let_bindings     : LetBindings,
                 tracing?         : Bool}
 
-op stateful_q : Qualifier = "Stateful"
-op gPos       : Position = Internal "Stateful"
+op dcPos      : Position = Internal "Deconflict Updates"
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-op stateful_type? (context : Context, typ : MSType) : Bool =
- exists? (fn stateful_type ->
-            possiblySubtypeOf? (typ, stateful_type, context.spc))
-         context.stateful_types
 
 op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
  foldSubTerms (fn (tm, refs) ->
@@ -58,7 +50,7 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                    | Apply (Fun (Project field_id, _, _),
                             Var ((var_id, var_type), _),
                             _)
-                     | stateful_type? (context, var_type) ->
+                     | stateful_type? (context.spc, var_type, context.stateful_types) ->
                        let ref = Access {var    = var_id,
                                          field  = field_id,
                                          tm     = tm}
@@ -70,7 +62,7 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                                      (_, Record (fields, _))],
                                     _),
                             _)
-                     | stateful_type? (context, var_type) ->
+                     | stateful_type? (context.spc, var_type, context.stateful_types) ->
                        foldl (fn (refs, (field_id, _)) ->
                                 let ref = Update {var   = var_id,
                                                   field = field_id}
@@ -116,7 +108,7 @@ op stateful_refs_with_contexts (context : Context,
                          (_, Record (fields, _))],
                         _),
                 _)
-     | stateful_type? (context, var_type) ->
+     | stateful_type? (context.spc, var_type, context.stateful_types) ->
        let (_, refs_in_contexts : List RefsInContext) =
            foldl (fn ((n, refs_in_contexts : List RefsInContext), (field_id, tm)) ->
                     let ref = Update {var   = var_id,
@@ -215,13 +207,13 @@ op deconflict_conflicting_refs (context   : Context,
          let new_vname    = "deconflict_" ^ show n                 in
          let vtype        = inferType (context.spc, access.tm)     in
          let new_v        = (new_vname, vtype)                     in
-         let new_vpat     = VarPat (new_v, gPos)                   in
-         let new_vtrm     = Var    (new_v, gPos)                   in
+         let new_vpat     = VarPat (new_v, dcPos)                  in
+         let new_vtrm     = Var    (new_v, dcPos)                  in
          let new_bindings = [(new_vpat, access.tm)]                in
          let new_substs   = (access.tm, new_vtrm) |> substitutions in
          case aux (n+1, conflicts, new_substs) of
            | Some new_body ->
-             Some (Let (new_bindings, new_body, gPos))
+             Some (Let (new_bindings, new_body, dcPos))
            | _ ->
              None
      in
@@ -275,7 +267,7 @@ op lift_conflict_bindings (term : MSTerm) : MSTerm =
        | Apply (t1 as Fun _, Let (bindings, body, _), _) ->
          %% A Fun will never be a variable that could be captured by bindings,
          %% so we can lift the binding above the application for readablity.
-         let new_tm = Let (bindings, Apply (t1, body, gPos), gPos) in
+         let new_tm = Let (bindings, Apply (t1, body, dcPos), dcPos) in
          Some new_tm
 
        | _ ->
@@ -295,11 +287,11 @@ op deconflict_term (context : Context, term : MSTerm) : MSTerm =
              term
 
 op deconflict_updates (context : Context) : Spec =
- % first slice gets ops to be globalized
+
  let spc                     = context.spc                                       in
  let first_slice             = genericExecutionSlice (spc, context.root_ops, []) in
-%let names_of_executable_ops = opsInImplementation   first_slice                 in
- let names_of_executable_ops = opsInSlice            first_slice                 in
+ let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
+%let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
 
  let new_ops =
      foldl (fn (new_ops, name as Qualified (q, id)) ->
@@ -365,19 +357,5 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
          spc
  in
  new_spec
-
-op get_stateful_types (spc : Spec, type_names : TypeNames) : Option MSTypes =
- foldl (fn (result, type_name) ->
-          case result of
-            | Some (result : MSTypes) ->
-              (case findTheType (spc, type_name) of
-                 | Some _ ->
-                   let typ = Base (type_name, [], gPos) in
-                   Some (typ |> result)
-                 | _ -> None)
-            | _ -> None)
-       (Some [])
-       type_names
-
 
 }
