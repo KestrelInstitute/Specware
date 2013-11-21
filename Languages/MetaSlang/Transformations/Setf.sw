@@ -11,15 +11,22 @@ op equalTerms? (tms1 : MSTerms, tms2 : MSTerms) : Bool =
    | _ ->
      false
 
-op setfQid  : QualifiedId = Qualified ("System", "setf")
-op setfType : MSType      = Arrow (Product ([("1", TyVar ("A", noPos)), 
-                                             ("2", TyVar ("A", noPos))], 
-                                            noPos), 
-                                   Product ([], noPos),
-                                   noPos)
+op setfQid : QualifiedId = Qualified ("System", "setf")
+op setfDef : MSTerm      = TypedTerm (Any noPos, 
+                                      makeSetfType (TyVar ("A", noPos)), 
+                                      noPos)
 
-op setfDef : MSTerm       = TypedTerm (Any noPos, setfType, noPos) 
-op setfRef : MSTerm       = Fun (Op (setfQid, Nonfix), setfType, noPos)
+op makeSetfType (arg_type : MSType) : MSType = 
+  Arrow (Product ([("1", arg_type),
+                   ("2", arg_type)],
+                  noPos), 
+         Product ([], noPos),
+         noPos)
+
+op makeSetfRef (arg_type : MSType) : MSTerm = 
+  Fun (Op (setfQid, Nonfix), 
+       makeSetfType arg_type, 
+       noPos)
 
 type SetfEntry = {accesser_name       : OpName, 
                   updater_name        : OpName, 
@@ -37,8 +44,10 @@ op makeSetf (lhs : MSTerm, rhs : MSTerm) : MSTerm =
  if equalTerm? (lhs, rhs) then
    Record ([], noPos) % no-op
  else
-   Apply (setfRef, Record ([("1", lhs), ("2", rhs)], noPos), noPos)
-
+   let arg_type = termType lhs in
+   Apply (makeSetfRef arg_type, 
+          Record ([("1", lhs), ("2", rhs)], noPos), 
+          noPos)
 
 op makeSetfTemplate (tm : MSTerm, vpairs : List (MSTerm * MSTerm), value : MSTerm) : Option MSTerm =
  let
@@ -102,7 +111,7 @@ op makeSetfTemplate (tm : MSTerm, vpairs : List (MSTerm * MSTerm), value : MSTer
  in
  case revise tm of
    | Some tm ->
-     Some (Apply (setfRef, Record ([("1", tm), ("2", value)], noPos), noPos))
+     Some (makeSetf (tm, value))
    | _ ->
      None
 
