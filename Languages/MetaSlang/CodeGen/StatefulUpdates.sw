@@ -13,25 +13,52 @@ op suPos : Position = Internal "StatefulUpdates"
 op make_stateful_RecordMerge (context : Context) (tm : MSTerm) : MSTerm =
  case tm of
    | Let ([(VarPat (var1 as (v1_id, v1_type), _),
-            Apply (Fun (RecordMerge, _, _),
-                   rm as
-                   Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
-                            (_, Record (fields, _))],
-                           _),
-                   _))],
+            rhs as 
+              Apply (Fun (RecordMerge, _, _),
+                     Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
+                              (_, Record (fields, _))],
+                             _),
+                     _))],
           body,
           _)
-      | equalType? (v1_type, v2_type) &&
-        stateful_type? (context.spc, v1_type, context.stateful_types) &&
-        ~ (existsSubTerm (fn tm -> equalTerm? (tm, vtrm2)) body)
+      | equalType? (v1_type, v2_type)
+        && stateful_type? (context.spc, v1_type, context.stateful_types)
+        && ~ (existsSubTerm (fn tm -> equalTerm? (tm, vtrm2)) body)
      ->
+    %let _ = writeLine("") in
+    %let _ = writeLine("revising-a RecordMerge:") in
+    %let _ = writeLine(printTerm tm) in
+    %let _ = writeLine(" => ") in
      let vtrm1    = Var (var1, suPos)                  in
      let new_body = substitute (body, [(var2, vtrm1)]) in
-     let updates  = case makeUpdate context.spc context.setf_entries vtrm2 rm of
+     let updates  = case makeUpdate context.spc context.setf_entries vtrm2 rhs of
                       | Seq (updates, _) -> updates
                       | update -> [update]
      in
-     Seq (updates <| new_body, suPos)
+     let new_tm   = Seq (updates <| new_body, suPos) in
+    %let _ = writeLine(printTerm new_tm) in
+    %let _ = writeLine("") in
+     new_tm
+
+  | Apply (Fun (RecordMerge, _, _),
+           Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
+                    (_, Record (fields, _))],
+                   _),
+           _)
+    | stateful_type? (context.spc, v2_type, context.stateful_types) 
+    ->
+   %let _ = writeLine("") in
+   %let _ = writeLine("revising-b RecordMerge:") in
+   %let _ = writeLine(printTerm tm) in
+   %let _ = writeLine(" => ") in
+    let updates = case makeUpdate context.spc context.setf_entries vtrm2 tm of
+                    | Seq (updates, _) -> updates
+                    | update -> [update]
+    in
+    let new_tm  = Seq (updates <| vtrm2, suPos) in
+   %let _ = writeLine(printTerm new_tm) in
+   %let _ = writeLine("") in
+    new_tm
 
   | _ -> tm
 
@@ -41,8 +68,8 @@ op make_stateful_term (context : Context, term : MSTerm) : MSTerm =
 op make_updates_stateful (context : Context) : Spec =
  let spc                     = context.spc                                       in
  let first_slice             = genericExecutionSlice (spc, context.root_ops, []) in
- let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
-%let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
+%let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
+ let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
 
  let new_ops =
      foldl (fn (new_ops, name as Qualified (q, id)) ->
@@ -52,7 +79,7 @@ op make_updates_stateful (context : Context) : Spec =
                   let new_dfn = make_stateful_term (context, old_dfn) in
                   let new_ops =
                       if equalTerm? (new_dfn, old_dfn) then
-                        let _ = writeLine ("no change for " ^ show name) in
+                       %let _ = writeLine ("no change for " ^ show name) in
                         new_ops
                       else
                         let _ = writeLine ("") in
@@ -109,5 +136,4 @@ op SpecTransform.makeUpdatesStateful (spc                 : Spec,
 
  in
  new_spec
-
 }
