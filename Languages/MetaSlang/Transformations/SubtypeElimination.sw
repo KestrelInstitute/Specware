@@ -593,7 +593,7 @@ SpecNorm qualifying spec
                                   | Some(e1, e2) | ~(embed? Var e2) ->
                                     let e2_ty = inferType(spc, e2) in
                                     let def implied_by_assigned_val(e1, e2_ty) =
-                                          let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
+                                          % let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
                                           case e1 of
                                             | Var((v_id, _), _) ->
                                               vn = v_id && possiblySubtypeOf?(e2_ty, v_ty, spc)
@@ -608,7 +608,7 @@ SpecNorm qualifying spec
                                   | None -> false)
                        binding_cjs
                      then
-                       let _ = writeLine("relativized predicate not needed:\n"^printTerm pred_tm) in
+                       % let _ = writeLine("relativized predicate not needed:\n"^printTerm pred_tm) in
                        None
                      else Some pred_tm)
       bndVars
