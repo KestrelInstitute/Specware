@@ -63,6 +63,9 @@ SpecNorm qualifying spec
                % let _ = writeLine("\nRelativizing ref to: "^printQualifiedId qid^": "^printType ty) in
                % let _ = writeLine("Matching with: "^printType ty1) in
                case typeMatch(ty1, ty, spc, false, true) of
+               % case (case typeMatch(ty1, ty, spc, false, true) of
+               %         | None -> typeMatch(ty1, ty, spc, true, true)
+               %         | ss -> ss) of
                  | None -> t
                  | Some tvsubst ->
                let tvsubst = filter (fn (tv,_) -> tv in? used_tvs) tvsubst in
@@ -562,15 +565,81 @@ SpecNorm qualifying spec
     % let _ = writeLine("raiseNamedTypes:\n"^printSpec spc) in
     spc
 
-
+  op bindingEquality?(v: MSVar, tm: MSTerm): Option(MSTerm * MSTerm) =
+    let def bindable?(e1: MSTerm): Bool =
+          case e1 of
+            | Var(vi, _) -> equalVar?(vi, v) 
+            | Record(prs, _) -> exists? (fn (_, s_tm) -> bindable? s_tm) prs
+            | _ -> false
+    in
+    case tm of
+      | Apply(Fun(Equals, _, _), Record([(_, e1), (_, e2)],  _), _) ->
+        if bindable? e1 then Some(e1, e2)
+        else if bindable? e2 then Some(e2, e1)
+        else None
+      | _ -> None
+ 
+  op getNonImpliedTypePredicates(bndVars: MSVars, binding_cjs: MSTerms, spc: Spec): MSTerms =
+    %% For bndVars with subtypes return the subtype predicate applied to the var except when
+    %% when the subtype is implied by a binding conjunct.
+    %% Could add more cases the implication
+    mapPartial (fn v as (vn,v_ty) ->
+                  case maybeTypePredTerm(v_ty, mkVar v, spc) of
+                    | None -> None
+                    | Some pred_tm ->
+                  % let _ = writeLine("Considering "^printTerm pred_tm) in
+                  if exists? (fn cj ->
+                                case bindingEquality? (v, cj) of
+                                  | Some(e1, e2) | ~(embed? Var e2) ->
+                                    let e2_ty = inferType(spc, e2) in
+                                    let def implied_by_assigned_val(e1, e2_ty) =
+                                          let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
+                                          case e1 of
+                                            | Var((v_id, _), _) ->
+                                              vn = v_id && possiblySubtypeOf?(e2_ty, v_ty, spc)
+                                            | Record(prs, _) ->
+                                              let given_tys = recordTypes(spc, e2_ty) in
+                                              length prs = length given_tys
+                                               && exists? (fn ((_, s_tm), s_e2_ty) -> implied_by_assigned_val(s_tm, s_e2_ty))
+                                                    (zip(prs, given_tys))
+                                            | _ -> false
+                                    in
+                                    implied_by_assigned_val(e1, e2_ty)
+                                  | None -> false)
+                       binding_cjs
+                     then
+                       let _ = writeLine("relativized predicate not needed:\n"^printTerm pred_tm) in
+                       None
+                     else Some pred_tm)
+      bndVars
     
+  op conjunctTerms(tm: MSTerm, kind: Binder): MSTerms =
+    case tm of
+      | Apply(Fun(And,_,_), Record([("1",lhs),("2",rhs)],_),_) ->
+        conjunctTerms(lhs, kind) ++ conjunctTerms(rhs, kind)
+      | Let(_, bod, _) -> conjunctTerms(bod, kind)
+      | Bind(kind1,_,bod,_) | kind1 = kind -> conjunctTerms(bod, kind)
+      | _ -> [tm]
+
+  op lhsTerms(tm: MSTerm): MSTerms =
+    let cjs = (forallComponents tm).2 in
+    flatten (map (fn cj -> conjunctTerms(cj, Exists)) cjs)
+
+  op getBindingConjuncts(tm: MSTerm): MSTerms =
+     case tm of
+       | Bind(Forall, _, bod, _) -> lhsTerms bod
+       | Bind(Exists, _, bod, _) -> conjunctTerms(bod, Exists)
+       | Bind(Exists1, _, bod, _) -> conjunctTerms(bod, Exists1)
+       | _ -> []
+
   % This function pushes subtype constraints on quantified variables
   % for formulae into the body of the formula, removing the subtype
   % constraint on the variable's type.
   op relativizeQuantifiersSimpOption(simplify?:Bool)(spc: Spec) (t: MSTerm): MSTerm =
     case t of
       | Bind(bndr,bndVars,bod,a) ->
-        let preds = mapPartial (fn (vn,ty) -> maybeTypePredTerm(ty, mkVar(vn,ty), spc)) bndVars in
+        let binding_cjs = getBindingConjuncts t in
+        let preds = getNonImpliedTypePredicates(bndVars, binding_cjs, spc) in
         let preds = map (mapTerm (relativizeQuantifiersSimpOption simplify? spc,id,id)) preds in
         (if empty? preds
           then t
@@ -591,9 +660,9 @@ SpecNorm qualifying spec
                           then Utilities.mkAnd(bndVarsPred, bod)
                         else MS.mkAnd(bndVarsPred,bod)
                       
-               in  Bind(bndr,bndVars,new_bod,a))
-
-        
+            in
+            % let _ = if equalTerm?(bod, new_bod) then () else writeLine("relquant:\n"^printTerm new_bod) in
+            Bind(bndr,bndVars,new_bod,a))
       | The(theVar as (vn,ty),bod,a) ->
         let theVarPred = typePredTerm(ty, mkVar(vn,ty), spc) in
         let new_bod = Utilities.mkAnd(theVarPred, bod) in
@@ -1231,7 +1300,9 @@ def mapSpecHist tsp spc =
     in
     aux(ty, 0)
 
-  %% For named type T a create HO predicate T_P that takes a subtype on a and produces subtype on T a
+  %% Create predicate lifter for each named type T a: a HO predicate T_P that takes a predicate on "a"
+  %% and produces a predicate on T a
+  %% The predicate lifter has type (a -> Bool) -> T a -> Bool
   op addSubtypePredicateLifters(spc: Spec): Spec =
     let def addPredDecl((qid as Qualified(q,id),a), el, n_elts, spc) =
           case AnnSpec.findTheType(spc, qid) of

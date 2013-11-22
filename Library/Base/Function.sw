@@ -319,7 +319,6 @@ proof -
  assume BIJ: "Function__bijective_p__stp (P__a, P__b) f"
  assume PF: "Fun_P(P__a, P__b) f"
  assume PX: "P__a (x::'a)"
- assume PY: "P__b (y::'b)"
  assume FXY: "f x = y"
  have INV_THE:
       "Function__inverse__stp P__a f y = (THE x. P__a x \<and> f x = y)"

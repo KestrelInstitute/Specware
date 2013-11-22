@@ -3016,7 +3016,7 @@ op combineSubTypes(old_ty: MSType, new_ty: MSType, old_tm: MSTerm, new_tm: MSTer
          case (old_ty, new_ty) of
            | (_, MetaTyVar _) -> old_ty
            | (Arrow(old_d, old_r, _), Arrow(new_d, new_r, a)) ->
-             Arrow(combineTypes(old_d, new_d), combineTypes(old_r, new_r), a)
+             Arrow(new_d, combineTypes(old_r, new_r), a)
            | (Subtype(old_sup, old_p, _), Subtype(new_sup, new_p, a)) ->
              Subtype(new_sup, combinePreds(old_p, new_p), a)
            | (Subtype _, _) -> old_ty
