@@ -605,7 +605,7 @@ SpecNorm qualifying spec
                                             | _ -> false
                                     in
                                     implied_by_assigned_val(e1, e2_ty)
-                                  | None -> false)
+                                  | _ -> false)
                        binding_cjs
                      then
                        % let _ = writeLine("relativized predicate not needed:\n"^printTerm pred_tm) in
