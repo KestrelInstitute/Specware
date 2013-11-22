@@ -3009,26 +3009,27 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 op combineSubTypes(old_ty: MSType, new_ty: MSType, old_tm: MSTerm, new_tm: MSTerm): MSType =
    let sbst = varSubstFromTerms(old_tm, new_tm) in
    let old_ty = mapType (fn t -> substitute(t, sbst), id, id) old_ty in
-   let def combineTypes(old_ty, new_ty) =
+   let def combineTypes(old_ty, new_ty, add_preds?) =
          if equalType?(old_ty, new_ty) then new_ty
          else
          % let _ = writeLine("combine:\n"^printType old_ty^"\n"^printType new_ty) in
          case (old_ty, new_ty) of
            | (_, MetaTyVar _) -> old_ty
            | (Arrow(old_d, old_r, _), Arrow(new_d, new_r, a)) ->
-             Arrow(new_d, combineTypes(old_r, new_r), a)
+              Arrow(combineTypes(old_d, new_d, false), combineTypes(old_r, new_r, add_preds?), a)
+             % Arrow(new_d, combineTypes(old_r, new_r), a)
            | (Subtype(old_sup, old_p, _), Subtype(new_sup, new_p, a)) ->
-             Subtype(new_sup, combinePreds(old_p, new_p), a)
+             Subtype(new_sup, combinePreds(old_p, new_p, add_preds?), a)
            | (Subtype _, _) -> old_ty
            | _ -> if existsInType? (embed? MetaTyVar) new_ty
                     then old_ty else new_ty
-       def combinePreds(old_p, new_p) =
+       def combinePreds(old_p, new_p, add_preds?) =
          case (old_p, new_p) of
            | (Lambda([(old_pat, _, old_ptm)], _), Lambda([(new_pat, c, new_ptm)], a)) ->
              (case matchPatterns(new_pat, old_pat) of
                | None -> new_p
                | Some sb ->
-              let comb_bool = combineBool(substitute(old_ptm, sb), new_ptm) in
+              let comb_bool = if add_preds? then combineBool(substitute(old_ptm, sb), new_ptm) else new_ptm in
               Lambda([(new_pat, c, comb_bool)], a))
            | (Lambda _, _) -> old_p
            | _ -> new_p
@@ -3038,7 +3039,7 @@ op combineSubTypes(old_ty: MSType, new_ty: MSType, old_tm: MSTerm, new_tm: MSTer
              IfThenElse(p, combineBool(q, new_b), combineBool(r, new_b), a)
            | _ -> mkSimpConj(getConjuncts old_b ++ getConjuncts new_b)
     in
-    combineTypes(old_ty, new_ty) 
+    combineTypes(old_ty, new_ty, true) 
 
 op substVarNames(old_tm: MSTerm, new_tm: MSTerm): MSTerm =
   let def subst(old_tm, new_tm, sbst) =
