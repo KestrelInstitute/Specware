@@ -259,6 +259,10 @@ proof Isa coprime_p__1__obligation_refine_def
   apply (case_tac n2, simp_all)+
 end-proof
 
+proof Isa primeFactorsOf__1__loop_Obligation_subtype0
+  by (auto simp add: List__head_subtype_constr prime_g_zero)
+end-proof
+
 proof Isa primeFactorsOf__1__loop_Obligation_subtype1
   apply (erule rev_mp, simp add: zdvd_int  [symmetric])
   apply (rule_tac t="0 < n" and s="0 < f * (n div f)" in subst,
