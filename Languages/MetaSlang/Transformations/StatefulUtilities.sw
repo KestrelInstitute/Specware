@@ -1,12 +1,21 @@
 Stateful qualifying spec {
 
-%% Shared between DeconflictUpdates and StatefulUpdates
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% These routines are used in the production of stateful code.
+%%
+%% We include this file under the Transformations directory because the 
+%% operations here are used (among other things) for actions that simply 
+%% transform a spec in preparation for the later production of a stateful 
+%% quasi-spec.
+%%
+%% In particular, deconflictUpdates needs to know which types are intended to 
+%% be stateful.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
-
 import /Languages/MetaSlang/Transformations/SliceSpec
-import /Languages/MetaSlang/Transformations/Setf
 import /Languages/MetaSlang/Transformations/RecordMerge
+import /Languages/MetaSlang/Transformations/Setf
 
 op stateful_q : Qualifier = "Stateful"
 op sPos       : Position  = Internal "StatefulUtilites"

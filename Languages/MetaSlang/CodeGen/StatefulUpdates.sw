@@ -1,6 +1,15 @@
 StatefulUpdates qualifying spec {
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% This converts a normal, functional, MetaSlang spec into a stateful quasi-spec that
+%% uses Setf for destructively updates. (See makeSetfUpdate in IntroduceSetfs.sw)
+%% 
+%% It thus belongs in the CodeGen directory, not Transformations.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 import /Languages/MetaSlang/Transformations/StatefulUtilities
+
+import /Languages/MetaSlang/CodeGen/IntroduceSetfs
 
 type Context = {spc              : Spec,
                 root_ops         : OpNames,
@@ -13,12 +22,12 @@ op suPos : Position = Internal "StatefulUpdates"
 op make_stateful_RecordMerge (context : Context) (tm : MSTerm) : MSTerm =
  case tm of
    | Let ([(VarPat (var1 as (v1_id, v1_type), _),
-            rhs as 
-              Apply (Fun (RecordMerge, _, _),
-                     Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
-                              (_, Record (fields, _))],
-                             _),
-                     _))],
+            rhs as
+            Apply (Fun (RecordMerge, _, _),
+                   Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
+                            (_, Record (fields, _))],
+                           _),
+                   _))],
           body,
           _)
       | equalType? (v1_type, v2_type)
@@ -31,7 +40,7 @@ op make_stateful_RecordMerge (context : Context) (tm : MSTerm) : MSTerm =
     %let _ = writeLine(" => ") in
      let vtrm1    = Var (var1, suPos)                  in
      let new_body = substitute (body, [(var2, vtrm1)]) in
-     let updates  = case makeUpdate context.spc context.setf_entries vtrm2 rhs of
+     let updates  = case makeSetfUpdate context.spc context.setf_entries vtrm2 rhs of
                       | Seq (updates, _) -> updates
                       | update -> [update]
      in
@@ -51,7 +60,7 @@ op make_stateful_RecordMerge (context : Context) (tm : MSTerm) : MSTerm =
    %let _ = writeLine("revising-b RecordMerge:") in
    %let _ = writeLine(printTerm tm) in
    %let _ = writeLine(" => ") in
-    let updates = case makeUpdate context.spc context.setf_entries vtrm2 tm of
+    let updates = case makeSetfUpdate context.spc context.setf_entries vtrm2 tm of
                     | Seq (updates, _) -> updates
                     | update -> [update]
     in
@@ -131,9 +140,6 @@ op SpecTransform.makeUpdatesStateful (spc                 : Spec,
 
        | _ ->
          spc
-
-
-
  in
  new_spec
 }

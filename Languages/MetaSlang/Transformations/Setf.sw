@@ -1,7 +1,19 @@
 Setf qualifying spec
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Setf is used for stateful code generation, 
+%% We include it under the Transformations directory because many of the prepatory 
+%% actions for using Setf can be done in specs that remain functional.
+%% These actions includes:
+%%  Finding the Access/Update axioms.                      (done here)
+%%  Deconflicting acessses and udpates in executable code. (see DeconflctUpdates.sw)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 import /Languages/MetaSlang/Specs/MSTerm
 import /Languages/MetaSlang/Specs/Utilities
+import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of Setf op
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op equalTerms? (tms1 : MSTerms, tms2 : MSTerms) : Bool =
  case (tms1, tms2) of
@@ -11,48 +23,57 @@ op equalTerms? (tms1 : MSTerms, tms2 : MSTerms) : Bool =
    | _ ->
      false
 
-op setfPos : Position    = Internal "Setf"
-op setfQid : QualifiedId = Qualified ("System", "setf")
-op setfDef : MSTerm      = TypedTerm (Any setfPos, 
-                                      makeSetfType (TyVar ("A", setfPos)), 
-                                      setfPos)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op makeSetfType (arg_type : MSType) : MSType = 
+op setfPos  : Position    = Internal "Setf"
+op setfName : QualifiedId = Qualified ("System", "setf")
+
+type SetfEntries = List SetfEntry
+type SetfEntry   = {accesser_name       : OpName, 
+                    updater_name        : OpName, 
+                    accesser_arg_counts : List Nat,  % used to create names such as foo-1-1 in code generation
+                    updater_arg_counts  : List Nat,
+                    accesser            : MSTerm, 
+                    updater             : MSTerm, 
+                    update_template     : MSTerm,
+                    setf_template       : MSTerm,
+                    element             : SpecElement}
+
+
+op make_setf_type (arg_type : MSType) : MSType = 
   Arrow (Product ([("1", arg_type),
                    ("2", arg_type)],
                   setfPos), 
          Product ([], setfPos),
          setfPos)
 
-op makeSetfRef (arg_type : MSType) : MSTerm = 
-  Fun (Op (setfQid, Nonfix), 
-       makeSetfType arg_type, 
+op make_setf_ref (arg_type : MSType) : MSTerm = 
+  Fun (Op (setfName, Nonfix), 
+       make_setf_type arg_type, 
        setfPos)
 
-type SetfEntry = {accesser_name       : OpName, 
-                  updater_name        : OpName, 
-                  accesser_arg_counts : List Nat,  % used to create names such as foo-1-1 in code generation
-                  updater_arg_counts  : List Nat,
-                  accesser            : MSTerm, 
-                  updater             : MSTerm, 
-                  update_template     : MSTerm,
-                  setf_template       : MSTerm,
-                  element             : SpecElement}
-
-type SetfEntries = List SetfEntry
+op setfDef : MSTerm = 
+ TypedTerm (Any setfPos, 
+            make_setf_type (TyVar ("A", setfPos)), 
+            setfPos)
 
 op makeSetf (lhs : MSTerm, rhs : MSTerm) : MSTerm =
  if equalTerm? (lhs, rhs) then
    Record ([], setfPos) % no-op
  else
    let arg_type = termType lhs in
-   Apply (makeSetfRef arg_type, 
+   Apply (make_setf_ref arg_type, 
           Record ([("1", lhs), ("2", rhs)], setfPos), 
           setfPos)
 
-op makeSetfTemplate (tm     : MSTerm, 
-                     vpairs : List (MSTerm * MSTerm), 
-                     value  : MSTerm) 
+op addSetfOp (spc : Spec) : Env Spec =
+ addOp [setfName] Nonfix false setfDef spc setfPos
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op make_setf_template (tm     : MSTerm, 
+                       vpairs : List (MSTerm * MSTerm), 
+                       value  : MSTerm) 
  : Option MSTerm =
  let
    def first_arg_of tm = 
@@ -119,7 +140,7 @@ op makeSetfTemplate (tm     : MSTerm,
    | _ ->
      None
 
-op varsCompared (tm : MSTerm) : Option (List (MSTerm * MSTerm)) =
+op vars_compared (tm : MSTerm) : Option (List (MSTerm * MSTerm)) =
  let
    def pair_up_vars_in_fields (lfields, rfields) =
      case (lfields, rfields) of
@@ -146,7 +167,7 @@ op varsCompared (tm : MSTerm) : Option (List (MSTerm * MSTerm)) =
    | Apply (Fun (Equals, _, _), Record ([(_, lhs), (_, rhs)], _), _) ->
      pair_up_vars_in_terms (lhs, rhs)
    | Apply (Fun (And, _, _), Record ([(_, t1), (_, t2)], _), _) ->
-     (case (varsCompared t1, varsCompared t2) of
+     (case (vars_compared t1, vars_compared t2) of
         | (Some x, Some y) -> Some (x ++ y)
         | _ -> None)
    | _ ->
@@ -164,11 +185,11 @@ op opAndArgs (tm : MSTerm) : Option (OpName * MSTerm * MSTerms) =
       
    | _ -> None
       
-op semanticsOfGetSet? (get_args  : MSTerms,
-                       set_args  : MSTerms,
-                       var_pairs : List (MSTerm * MSTerm),
-                       then_tm   : MSTerm,
-                       else_tm   : MSTerm)
+op semantics_of_get_set? (get_args  : MSTerms,
+                          set_args  : MSTerms,
+                          var_pairs : List (MSTerm * MSTerm),
+                          then_tm   : MSTerm,
+                          else_tm   : MSTerm)
  : Bool =
  let 
    def similar? (set_indices, get_indices) =
@@ -199,16 +220,17 @@ op semanticsOfGetSet? (get_args  : MSTerms,
       let get2_args = flattenArgs get2_args in
       (case get2_args of
          | accessed_container :: get2_indices ->
-           equalTerm? (updated_container, accessed_container) && equalTerms? (get_indices, get2_indices)
+           equalTerm? (updated_container, accessed_container) && 
+           equalTerms? (get_indices, get2_indices)
          | _ -> 
            false)
     | _ -> 
       false)
 
 %%%   get (set (m, i, x), j) = if i = j then x else get (m, j)
-%%%   get (set m i x, j)      = if i = j then x else get (m, j)
-%%%   get (set (m, i, x))  j = if i = j then x else get (m, j)
-%%%   get (set m i x) j      = if i = j then x else get (m, j)
+%%%   get (set  m  i  x,  j) = if i = j then x else get (m, j)
+%%%   get (set (m, i, x)) j  = if i = j then x else get (m, j)
+%%%   get (set  m  i  x)  j  = if i = j then x else get (m, j)
 
 op flattenArgs (args : MSTerms) : MSTerms =
  foldl (fn (args, arg) ->
@@ -219,7 +241,7 @@ op flattenArgs (args : MSTerms) : MSTerms =
        []
        args
                                
-op extractSetfEntry (element : SpecElement) : Option SetfEntry =
+op extract_setf_entry (element : SpecElement) : Option SetfEntry =
  let 
    def aux fm =
      case fm of
@@ -233,7 +255,7 @@ op extractSetfEntry (element : SpecElement) : Option SetfEntry =
                         _), 
                 _) 
          ->
-         (case varsCompared pred of
+         (case vars_compared pred of
             | Some vpairs ->
               (case opAndArgs lhs of
                  | Some (accesser_name, accesser, get_args) -> 
@@ -241,8 +263,8 @@ op extractSetfEntry (element : SpecElement) : Option SetfEntry =
                       | update_template :: _ :: _ ->
                         (case opAndArgs update_template of
                            | Some (updater_name, updater, set_args) ->
-                             if semanticsOfGetSet? (get_args, set_args, vpairs, then_tm, else_tm) then
-                               case makeSetfTemplate (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
+                             if semantics_of_get_set? (get_args, set_args, vpairs, then_tm, else_tm) then
+                               case make_setf_template (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
                                  | Some setf_template ->
                                    % let _ = writeLine ("extractSetfEntry: accesser_name   = " ^ anyToString accesser_name ) in
                                    % let _ = writeLine ("extractSetfEntry: updater_name    = " ^ anyToString updater_name  ) in
@@ -286,219 +308,12 @@ op findSetfEntries (spc  : Spec) : SetfEntries =
  foldrSpecElements (fn (elt, entries) ->
                       case elt of
                         |  Property (typ, name, _, fm, _) | typ in? [Axiom, Theorem, Conjecture] ->
-                           (case extractSetfEntry elt of
+                           (case extract_setf_entry elt of
                               | Some entry -> entries <| entry
                               | _ -> entries)
                         | _ ->
                           entries)
                    []
                    spc.elements
-
-op reviseProjectionUpdates (lhs : MSTerm, rhs : MSTerm) : MSTerm =
- let 
-   def makeProjectionUpdate (x, field_id, v) =
-     let proj_type = Arrow (termType x, termType v, setfPos) in
-     let new_lhs   = Apply (Fun (Project field_id, proj_type, setfPos), lhs, setfPos) in
-     makeSetf (new_lhs, v)
- in
- case rhs of
-   | Apply (Fun (RecordMerge, _, _), 
-            Record ([("1", access_tm),
-                     ("2", value as Record (new_value_pairs, _))],
-                    _),
-            _)
-     | equalTerm? (lhs, access_tm)
-     ->
-     (case new_value_pairs of
-        | [(x, v)] -> 
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %% setf (foo, foo << {x = v})
-          %%  =>
-          %% setf (foo.x, v)
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          makeProjectionUpdate (access_tm, x, v)
-        | _ -> 
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          %% setf (foo, foo << {x = v, y = w})
-          %%  =>
-          %% seq (setf (foo.x, v), setf(foo.y, w))
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          Seq (map (fn (x, v) -> 
-                      makeProjectionUpdate (access_tm, x, v)) 
-                 new_value_pairs, 
-               setfPos))
-   | _ ->
-     makeSetf (lhs, rhs)
-
-op reviseUpdate (ms_spec      : Spec, 
-                 setf_entries : SetfEntries, 
-                 lhs          : MSTerm, 
-                 rhs          : MSTerm)
-  : MSTerm =
- % first check to see if this update matches some setter/getter pair
- let
-   def updateAndArgs tm =
-     case opAndArgs tm of
-       | Some (opname, update, args) ->
-         (case flattenArgs args of
-            | container :: indices_and_value ->
-              (case reverse indices_and_value of
-                 | [_] -> None
-                 | new_value :: rev_indices -> 
-                   Some (opname, update, container, reverse rev_indices, new_value)
-                 | _ -> None)
-            | _ -> None)
-       | _ -> None
-         
-   def accessAndArgs tm =
-     case opAndArgs tm of
-       | Some (opname, access, args) ->
-         (case flattenArgs args of
-            | container :: indices ->
-              Some (opname, access, container, indices)
-            | _ -> None)
-       | _ -> None
- in
- case updateAndArgs rhs of
-   | Some (update_op_name, update, set_container, set_indices, new_value) ->
-     (case new_value of
-        | Apply (Fun (RecordMerge, _, _), 
-                 Record ([("1", access_tm),
-                          ("2", value as Record (new_value_pairs, _))],
-                         _),
-                 _)
-          ->
-          (case accessAndArgs access_tm of
-             | Some (access_op_name, access, get_container, get_indices) ->
-               % let _ = writeLine ("update        = " ^ anyToString update) in
-               % let _ = writeLine ("access        = " ^ anyToString access) in
-               % let _ = writeLine ("lhs           = " ^ printTerm lhs)           in
-               % let _ = writeLine ("get_container = " ^ printTerm get_container) in
-               % let _ = writeLine ("set_container = " ^ printTerm set_container) in
-               % let _ = writeLine ("set_indices   ="  ^ printTerms set_indices)  in
-               % let _ = writeLine ("get_indices   ="  ^ printTerms get_indices)  in
-               if equalTerm?  (lhs,           set_container) && 
-                  equalTerm?  (set_container, get_container) && 
-                  equalTerms? (set_indices,   get_indices)   
-                 then
-                   let dom_type = inferType (ms_spec, access_tm) in
-                   let updates = 
-                       map (fn (index, value) ->
-                              let new_type = Arrow (dom_type, inferType (ms_spec, value), setfPos) in
-                              let field = Apply (Fun (Project index, new_type, setfPos), access_tm, setfPos) in
-                              makeUpdate ms_spec setf_entries field value)
-                           new_value_pairs
-                   in
-                   % let _ = writeLine ("updates = " ^ printTerms updates) in
-                   (case updates of
-                      | [update] -> update
-                      | _ -> Seq (updates, setfPos))
-               else
-                 makeSetf (lhs, rhs)
-             | _ -> 
-               makeSetf (lhs, rhs))
-        | _ -> 
-          case findLeftmost (fn (entry : SetfEntry) -> update_op_name = entry.updater_name) setf_entries of
-            | Some setf_pair ->
-              (case makeVarBindings (setf_pair.update_template, rhs) of
-                 | Some bindings ->
-                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                   %% setf (container, update(container,index,v))
-                   %%  =>
-                   %% setf (access(container, index), v)
-                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                   reviseTemplate (setf_pair.setf_template, bindings)
-                 | _ ->
-                   % let _ = writeLine ("reviseUpdate: no match") in
-                   makeSetf (lhs, rhs))
-            | _ ->
-              makeSetf (lhs, rhs))
-   | _ -> 
-     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     %% setf (foo, foo << {foo,x = v})
-     %%  =>
-     %% setf (foo.x, v)
-     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     reviseProjectionUpdates (lhs, rhs)
-     
-op makeUpdate (ms_spec      : Spec)
-              (setf_entries : SetfEntries)
-              (lhs          : MSTerm)
-              (rhs          : MSTerm)
- : MSTerm =
- case rhs of
-   | IfThenElse (p, tm1, tm2, _) ->
-     IfThenElse (p, 
-                 makeUpdate ms_spec setf_entries lhs tm1, 
-                 makeUpdate ms_spec setf_entries lhs tm2, 
-                 setfPos)
-     
-   | Record (pairs, _) | forall? (fn (index,_) -> natConvertible index) pairs ->
-     (let dom_type = inferType (ms_spec, lhs) in
-      let updates = 
-          map (fn (index, value) ->
-                 let rng_type = inferType (ms_spec, value)               in
-                 let new_type = Arrow (dom_type, rng_type,      setfPos) in
-                 let new_proj = Fun   (Project index, new_type, setfPos) in
-                 let new_lhs  = Apply (new_proj, lhs,           setfPos) in
-                 makeUpdate ms_spec setf_entries new_lhs value)
-              pairs
-      in
-      case updates of
-        | [update] -> update
-        | _ -> Seq (updates, setfPos))
-     
-   | _ ->
-     reviseUpdate (ms_spec, setf_entries, lhs, rhs)
- 
-op makeVarBindings (template : MSTerm,
-                    tm       : MSTerm) 
- : Option (List (MSTerm * MSTerm)) =
- let
-   def match (xfields, yfields) =
-     case (xfields, yfields) of
-       | ([], []) -> Some []
-       | ((_, x) :: xfields, (_, y) :: yfields) ->
-         (case match (xfields, yfields) of
-            | Some pairs -> Some ((x, y) :: pairs)
-            | _  -> None)
-       | _ -> None
- in
- case template of
-   | Var _ -> Some [(template, tm)]
-   | Apply (f, x, _) ->
-     (case tm of
-        | Apply (g, y, _) ->
-          (case (makeVarBindings (f, g), makeVarBindings (x, y)) of
-             | (Some aa, Some bb) -> Some (aa ++ bb)
-             | _ -> None)
-        | _ ->
-          None)
-   | Record (xfields, _) ->
-     (case tm of
-        | Record (yfields, _) ->
-          match (xfields, yfields)
-        | _ ->
-          None)
-   | _ ->
-     if equalTerm? (template, tm) then
-       Some []
-     else
-       None
-       
-op reviseTemplate (template : MSTerm, 
-                   bindings : List (MSTerm * MSTerm))
-  : MSTerm =
- let 
-   def subst tm =
-     case findLeftmost (fn (x, y) -> equalTerm? (x, tm)) bindings of
-       | Some (_, y) -> y
-       | _ ->
-         case tm of
-           | Apply  (x, y,   _) -> Apply  (subst x, subst y, setfPos)
-           | Record (fields, _) -> Record (map (fn (x, y) -> (x, subst y)) fields, noPos)
-           | _ -> tm
- in
- subst template
 
 end-spec

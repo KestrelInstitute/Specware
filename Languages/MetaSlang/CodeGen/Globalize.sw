@@ -1,17 +1,47 @@
 Globalize qualifying spec {
 
-import /Languages/MetaSlang/Transformations/Setf
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Globalize changes updates to be stateful, hence belongs in the CodeGen directory.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/CommonSubExpressions
 import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
+import /Languages/MetaSlang/CodeGen/IntroduceSetfs
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
-type OpTypes         = AQualifierMap MSType
-type MSVarName       = Id
-type MSVarNames      = List MSVarName
-type MSFieldName     = Id
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+type OpTypes     = AQualifierMap MSType
+type MSVarName   = Id
+type MSVarNames  = List MSVarName
+type MSFieldName = Id
+
+type LetBinding  = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
+type LetBindings = List LetBinding
+
+op nullTerm : MSTerm    = Record    ([], gPos)
+op nullType : MSType    = Product   ([], gPos)
+op nullPat  : MSPattern = RecordPat ([], gPos)
+
+op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
+
+op showTypeName (info : TypeInfo) : String = printQualifiedId (primaryTypeName info)
+op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
+
+op baseOp? (qid as Qualified(q, id) : QualifiedId) : Bool = 
+ q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
+
+op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool = 
+ q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op stateful_q : Qualifier = "Stateful"
+op global_q   : Qualifier = "Global"
+op gPos       : Position = Internal "Globalize"
 
 type RefMode         = | Access | Update
 type GlobalRef       = RefMode *  MSVarName * MSFieldName
@@ -25,10 +55,6 @@ type MSSubstitution  = {global_var_id : MSVarName,
                         temp_var      : MSVar}
 
 type MSSubstitutions = List MSSubstitution
-
-type LetBinding = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
-
-type LetBindings = List LetBinding
 
 type Context = {spc              : Spec, 
                 root_ops         : OpNames,
@@ -55,10 +81,6 @@ type GlobalizedTerm =    | Changed MSTerm
 type GlobalizedPattern = | Changed MSPattern
                          | Unchanged
                          | GlobalVarPat % for clarity (as opposed to Changed global_var_pat)
-
-op stateful_q : Qualifier = "Stateful"
-op global_q   : Qualifier = "Global"
-op gPos       : Position = Internal "Globalize"
 
 %% ================================================================================
 
@@ -211,22 +233,6 @@ op conflictingGlobalRefsIn (context     : Context)
  in
  conflictingGlobalRefs all_refs 
      
-%% ================================================================================
-
-op nullTerm : MSTerm    = Record    ([], gPos)
-op nullType : MSType    = Product   ([], gPos)
-op nullPat  : MSPattern = RecordPat ([], gPos)
-op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
-
-op showTypeName (info : TypeInfo) : String = printQualifiedId (primaryTypeName info)
-op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
-
-op baseOp? (qid as Qualified(q, id) : QualifiedId) : Bool = 
- q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
-
-op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool = 
- q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
-
 %% ================================================================================
 %% Verify that the suggested global type actually exists
 %% ================================================================================
@@ -613,7 +619,7 @@ op makeGlobalFieldUpdates (context           : Context)
              in
              %% Do not call expandBindings here.
              %% That could reintroduce terms with side effects that we purposely let-bound to serialize them.
-             makeUpdate context.spc context.setf_entries global_var_op new_value)
+             makeSetfUpdate context.spc context.setf_entries global_var_op new_value)
          fields
  in
  Seq (assignments, gPos)
@@ -1393,9 +1399,9 @@ op globalizeOpInfo (context    : Context,
 
      | Unchanged -> 
        let _ = if context.tracing? then
-                 let _ = writeLine("Globalize: no change to " ^ show old_name) in
-                 let _ = writeLine (printTerm old_dfn)                         in
-                 let _ = writeLine ""                                          in
+                 %let _ = writeLine("Globalize: no change to " ^ show old_name) in
+                 %let _ = writeLine (printTerm old_dfn)                         in
+                 %let _ = writeLine ""                                          in
                  ()
                else
                  ()
@@ -1602,10 +1608,7 @@ op globalizeSingleThreadedType (spc              : Spec,
                                 | _ -> []);
 
   % This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
-  spec_with_gset   <- addOp [setfQid] Nonfix false setfDef spc gPos;
-
-  % print ("\nglobal_var_map: " ^ anyToString global_var_map ^ "\n");
-  % showIntermediateSpec ("with gset", spec_with_gset);
+  spec_with_setf   <- addSetfOp spc;
 
   % Add global vars for the fields before running replaceLocalsWithGlobalRefs,
   % to avoid complaints about unknown ops.
@@ -1615,7 +1618,7 @@ op globalizeSingleThreadedType (spc              : Spec,
                                let refine? = false                                 in
                                let dfn     = TypedTerm (Any gPos, gtype, gPos)   in
                                addOp [global_field_var_name] Nonfix refine? dfn spc gPos)
-                            spec_with_gset
+                            spec_with_setf
                             global_var_map;
                             
   % return (let slice = genericExecutionSlice (spec_with_gvars, root_ops, []) in describeSlice ("Added GVars", slice));
