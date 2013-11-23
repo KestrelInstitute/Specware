@@ -13,10 +13,7 @@ spec
 %TODO move to the bool library?
 % This can be used to prove an equality of booleans by proving the forward and backward implications.
 % In Isabelle: apply(rule bool_iff)
-theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
-
- %%TODO won't type-check.  Seems like a hack.
-  %op abort(n:Nat): Nat = n div 0
+ theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 
   % Returns the set containing the natural numbers in the interval [i,j).
   % TODO: Define in the inefficient but nice way with no accumulator?
@@ -258,7 +255,8 @@ end-proof
 %      | push(elt,stk') -> Cons(elt,Stack2L(stk'))
 
   theorem Stack2L_mtStack is [a]
-     fa(al:Stack a) (al=empty_stack) =  (Stack2L(al) = (Nil:List a))
+     (Stack2L(empty_stack) = (Nil:List a))
+     % fa(al:Stack a) (al=empty_stack) =  (Stack2L(al) = (Nil:List a))
 
   theorem Stack2L_Cons is [a]
     fa(y:a,stk:Stack a) ( Stack2L(push(y,stk)) = Cons(y,Stack2L(stk)))
@@ -301,9 +299,8 @@ end-proof
   theorem L2S_vs_Pair2S is
     fa(lst:List Nat,pair:Nat*Nat)( (lst = uptoL(pair)) = (L2S(lst) = Pair2S(pair)) )
 
-  %% Why not eliminate the variable?  Just have the LHS be L2S(Nil).
   theorem L2S_Nil is [a]
-     fa(al:List a) (al=Nil) =  (L2S(al) = (empty_set:Set a))
+     (L2S(Nil) = (empty_set:Set a))
 
   theorem L2S_Cons is [a]
     fa(y:a,lst:List a) ( L2S(Cons(y,lst)) = set_insert(y, L2S lst) )

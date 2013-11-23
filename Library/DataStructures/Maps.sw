@@ -778,9 +778,9 @@ proof isa update_map_prepend_Obligation_subtype
   sorry
 end-proof
 
-proof isa map2DFrom_Obligation_subtype
-  sorry
-end-proof
+% proof isa map2DFrom_Obligation_subtype
+%   sorry
+% end-proof
 
 proof isa map_compose_Obligation_subtype
   sorry
