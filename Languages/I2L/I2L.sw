@@ -10,7 +10,7 @@ I2L qualifying spec
 {
   import /Library/Legacy/Utilities/System
 
-  op [X] CUtils.qtype (gt : X*X->Bool) (l : List X) : List X  % TODO: defined in CUtils.sw
+  op [X] CUtils.quickSort (gt : X*X->Bool) (l : List X) : List X  % TODO: defined in CUtils.sw
 
   type I_ImpUnit = {
                     name     : String,
@@ -301,7 +301,7 @@ I2L qualifying spec
   % --------------------------------------------------------------------------------
 
   op typeTypeDefinitions (iu : I_ImpUnit) (typedefns : I_TypeDefinitions) : I_TypeDefinitions =
-   qtype (typeDefnMustFollow iu) typedefns 
+   quickSort (typeDefnMustFollow iu) typedefns 
 
   op typeDefnMustFollow (iu : I_ImpUnit) 
                         (td1 as (tname1 as (_,id1),_,_) : I_TypeDefinition,
