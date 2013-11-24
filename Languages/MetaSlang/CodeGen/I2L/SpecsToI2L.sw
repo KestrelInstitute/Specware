@@ -212,7 +212,7 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
            []
            slice.resolved_refs
  in
- let res : I_ImpUnit = 
+ let i_imp_unit =
      {
       name     = "",    %s pc.name:String,
       includes = [],
@@ -249,7 +249,8 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                  }
       }
  in
- res
+ let i_imp_unit = impUnitSortTypeDefinitions i_imp_unit in
+ i_imp_unit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                    %
