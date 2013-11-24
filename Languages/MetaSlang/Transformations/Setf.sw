@@ -66,8 +66,13 @@ op makeSetf (lhs : MSTerm, rhs : MSTerm) : MSTerm =
           Record ([("1", lhs), ("2", rhs)], setfPos), 
           setfPos)
 
-op addSetfOp (spc : Spec) : Env Spec =
- addOp [setfName] Nonfix false setfDef spc setfPos
+op addSetfOpM (spc : Spec) : Env Spec =
+ case findTheOp (spc, setfName) of
+   | Some _ -> return spc
+   | _ -> addOp [setfName] Nonfix false setfDef spc setfPos
+
+op addSetfOp (spc : Spec) : Spec =
+ run (addSetfOpM spc)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

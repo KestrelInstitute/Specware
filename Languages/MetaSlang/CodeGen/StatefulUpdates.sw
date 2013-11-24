@@ -141,5 +141,6 @@ op SpecTransform.makeUpdatesStateful (spc                 : Spec,
        | _ ->
          spc
  in
+ let new_spec = addSetfOp new_spec in
  new_spec
 }

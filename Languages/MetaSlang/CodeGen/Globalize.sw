@@ -33,6 +33,8 @@ op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   i
 
 op baseOp? (qid as Qualified(q, id) : QualifiedId) : Bool = 
  q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
+ || 
+ id in? ["explodedStringToNat", "explodedStringToNat__explodedStringToNat_foldl--local-0"]
 
 op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool = 
  q in? ["Bool", "Char", "Compare", "Function", "Integer", "IntegerAux", "List", "List1", "Nat", "Option", "String", "TranslationBuiltIn"]
@@ -1608,7 +1610,7 @@ op globalizeSingleThreadedType (spc              : Spec,
                                 | _ -> []);
 
   % This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
-  spec_with_setf   <- addSetfOp spc;
+  spec_with_setf   <- addSetfOpM spc;
 
   % Add global vars for the fields before running replaceLocalsWithGlobalRefs,
   % to avoid complaints about unknown ops.
