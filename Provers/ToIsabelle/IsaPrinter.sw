@@ -1030,7 +1030,6 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
       [(0, string "allE[OF "),
        (2, ppForallElims (args', body)),
        (0, string "]")])
-   
 
 
 %%%
@@ -1039,32 +1038,41 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 
   % generate an Isabelle proof of equality "lhs = rhs"
   op generateEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:EqProof): String =
-  isaProofToString (forwardProofBlock (ppEqualityProof (c, ([], lhs), ([], rhs), pf)))
+  isaProofToString (forwardProofBlock (ppEqualityProof (c, [], lhs, rhs, pf)))
 
   % pretty-print an Isabelle proof of the equality
   % "(lambda lhs_vars . lhs) = (lambda rhs_vars . rhs)"
-  op ppEqualityProof(c: Context, lhs: BindingTerm, rhs: BindingTerm, pf: EqProof): IsaProof StateMode =
+  op ppEqualityProof(c: Context, boundVars: MSVars, lhs: MSTerm, rhs: MSTerm, pf: EqProof): IsaProof StateMode =
   case pf of
    | EqProofSubterm (path, sub_pf) ->
      (*
         have subeq:"lhs_sub = rhs_sub" (sub_pf)
         show ?thesis by (rule arg_cong[OF subeq]) *)
      % let _ = writeLine("eqSubterm: "^anyToString path^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     let lhs_sub = fromPathBindingTerm (lhs, path) in
-     let rhs_sub = fromPathBindingTerm (rhs, path) in
-     let sub_eq_pp = ppLambdaEquality (c, lhs_sub, rhs_sub) in
+     let (lhs_vars, lhs_sub) = fromPathTermWithBindings (lhs, path) in
+     let (rhs_vars, rhs_sub) = fromPathTermWithBindings (rhs, path) in
+     let _ =
+       if ~(lhs_vars = rhs_vars) then
+         fail "ERROR: ppEqualityProof: cannot (currently) handle different lists of bound vars in subterms; apply a substitution to the RHS to fix this in the code"
+       else ()
+     in
+     let allBoundVars = boundVars ++ lhs_vars in
+     let sub_eq_pp =
+       ppLambdaEquality (c, (allBoundVars, lhs_sub), (allBoundVars, rhs_sub))
+     in
      addForwardStep
      (c, "subeq", sub_eq_pp,
-      forwardProofBlock (ppEqualityProof (c, lhs_sub, rhs_sub, sub_pf)),
+      forwardProofBlock
+        (ppEqualityProof (c, allBoundVars, lhs_sub, rhs_sub, sub_pf)),
       (fn pf_name ->
          showFinalResult (singleTacticProof (ruleTactic ("arg_cong[OF "^ pf_name ^"]")))))
    | EqProofSym sub_pf ->
      (* have subeq:"rhs = lhs" (sub_pf) show ?thesis by (rule subeq[symmetric]) *)
      % let _ = writeLine("eqSym:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     let sub_eq_pp = ppLambdaEquality (c, rhs, lhs) in
+     let sub_eq_pp = ppLambdaEquality (c, (boundVars, rhs), (boundVars, lhs)) in
      addForwardStep
      (c, "subeq", sub_eq_pp,
-      forwardProofBlock (ppEqualityProof (c, rhs, lhs, sub_pf)),
+      forwardProofBlock (ppEqualityProof (c, boundVars, rhs, lhs, sub_pf)),
       (fn pf_name ->
          showFinalResult (singleTacticProof (ruleTactic (pf_name ^ "[symmetric]")))))
    | EqProofTrans (pf1, middle, pf2) ->
@@ -1077,16 +1085,16 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
         *)
      % let _ = writeLine("eqTrans: \nlhs = "^printTerm lhs^"\nmiddle = "^printTerm middle^"\nrhs = "^printTerm rhs) in
      showFinalChainedResult
-       (ppLambdaEquality (c, lhs, rhs),
-        [(ppLambdaEquality (c, lhs, ([], middle)),
-          forwardProofBlock (ppEqualityProof (c, lhs, ([], middle), pf1))),
-         (ppLambdaEquality (c, ([], middle), rhs),
-          forwardProofBlock (ppEqualityProof (c, ([], middle), rhs, pf2)))])
+       (ppLambdaEquality (c, (boundVars, lhs), (boundVars, rhs)),
+        [(ppLambdaEquality (c, (boundVars, lhs), (boundVars, middle)),
+          forwardProofBlock (ppEqualityProof (c, boundVars, lhs, middle, pf1))),
+         (ppLambdaEquality (c, (boundVars, middle), (boundVars, rhs)),
+          forwardProofBlock (ppEqualityProof (c, boundVars, middle, rhs, pf2)))])
    | EqProofTheorem (qid, args) ->
      (* show "lhs=rhs" apply (rule ext, rule ext, ...) by (rule qid[of tm1 ... tmn]) *)
      showFinalResult
        (applyTactics
-          (repeat (ruleTactic "ext") (length lhs.1),
+          (repeat (ruleTactic "ext") (length boundVars),
            singleTacticProof
              (ruleTacticPP
                 %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
@@ -1099,14 +1107,14 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
      (* show "f=rhs" by (rule f_def) *)
      showFinalResult
        (applyTactics
-          (repeat (ruleTactic "ext") (length lhs.1),
+          (repeat (ruleTactic "ext") (length boundVars),
            singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"]))))
    | EqProofTactic tactic ->
      (* by tactic *)
      % let _ = writeLine("eqTactic: "^tactic^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
      showFinalResult
        (applyTactics
-          (repeat (ruleTactic "ext") (length lhs.1),
+          (repeat (ruleTactic "ext") (length boundVars),
            singleTacticProof (IsaProof (string tactic))))
 
   % generate an Isabelle proof of an implication "lhs -> rhs"
@@ -1155,7 +1163,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
     % let _ = writeLine("ImplEq:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
     addForwardStep
       (c, "eq_pf", ppEquality (c, rhs, lhs),
-       forwardProofBlock (ppEqualityProof (c, ([], rhs), ([], lhs), eq_pf)),
+       forwardProofBlock (ppEqualityProof (c, [], rhs, lhs, eq_pf)),
        (fn eq_pf_name ->
           (addForwardAssumption
              (c, "lhs", ppTerm c Top lhs,
