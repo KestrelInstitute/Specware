@@ -11,6 +11,7 @@ LispGen qualifying spec
  import /Languages/MetaSlang/CodeGen/StatefulUpdates
  import /Languages/MetaSlang/CodeGen/IntroduceSetfs
  import /Languages/MetaSlang/CodeGen/Globalize
+ import /Languages/MetaSlang/Transformations/LiftSequences
 
  import /Languages/Lisp/Lisp
  import /Library/Structures/Data/Maps/SimpleAsSTHarray
