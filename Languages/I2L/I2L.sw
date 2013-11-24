@@ -300,7 +300,7 @@ I2L qualifying spec
 
   % --------------------------------------------------------------------------------
 
-  op typeTypeDefinitions (iu : I_ImpUnit) (typedefns : I_TypeDefinitions) : I_TypeDefinitions =
+  op sortTypeDefinitions (iu : I_ImpUnit) (typedefns : I_TypeDefinitions) : I_TypeDefinitions =
    quickSort (typeDefnMustFollow iu) typedefns 
 
   op typeDefnMustFollow (iu : I_ImpUnit) 
@@ -358,8 +358,8 @@ I2L qualifying spec
      | _ -> None
   
 
-  op impUnitTypeTypeDefinitions (iu : I_ImpUnit) : I_ImpUnit =
-   let decls = iu.decls << {typedefs = typeTypeDefinitions iu iu.decls.typedefs} in
+  op impUnitSortTypeDefinitions (iu : I_ImpUnit) : I_ImpUnit =
+   let decls = iu.decls << {typedefs = sortTypeDefinitions iu iu.decls.typedefs} in
    iu << {decls = decls} 
 
   % --------------------------------------------------------------------------------
