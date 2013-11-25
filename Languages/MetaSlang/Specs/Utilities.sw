@@ -2867,7 +2867,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
         | (_, TypedPat(x2, _, _)) -> matchPatterns(p1, x2)
         | _ -> None
 
-  op topLevelOps(spc: Spec): QualifiedIds =
+  op topLevelOpNames(spc: Spec): QualifiedIds =
     mapPartial (fn el ->
                   case el of
                     | Op(qid, _, _) -> Some qid
@@ -2875,7 +2875,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                     | _ -> None)
      spc.elements
 
-  op topLevelTypes(spc: Spec): QualifiedIds =
+  op topLevelTypeNames(spc: Spec): QualifiedIds =
     mapPartial (fn el ->
                   case el of
                     | Type(qid, _) -> Some qid

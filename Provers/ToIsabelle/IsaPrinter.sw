@@ -834,7 +834,7 @@ IsaTermPrinter qualifying spec
               % We have to normalize types, so that record types get
               % printed correctly in Isabelle (substitute named type
               % for a record for their anonymous representation).
-              let typeNameInfo = topLevelTypes spc in              
+              let typeNameInfo = topLevelTypeNameInfo spc in              
               let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
               let out' = (ppTermStrIndent c Top tm' 7) in
               % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
@@ -1183,7 +1183,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
               % We have to normalize types, so that record types get
               % printed correctly in Isabelle (substitute named type
               % for a record for their anonymous representation).
-              let typeNameInfo = topLevelTypes spc in                            
+              let typeNameInfo = topLevelTypeNameInfo spc in                            
               let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
               let out' = (ppTermStrIndent c Top tm' 7) in
               % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
@@ -1334,7 +1334,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = printSpecWithTypesToTerminal spc in
     %% ? let spc = addRefineObligations c spc in
     let spc = normalizeNewTypes(spc, false) in
-    let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
+    let c = c << {typeNameInfo = topLevelTypeNameInfo spc, spec? = Some spc} in
     let spc = addRefineObligations c spc in
     % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
@@ -1378,7 +1378,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                 else spc
     in
     let spc = addTypeDefs spc opaque_type_map in
-    let c = c << {typeNameInfo = topLevelTypes spc, spec? = Some spc} in
+    let c = c << {typeNameInfo = topLevelTypeNameInfo spc, spec? = Some spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
     prLinesCat 0 ([[prString "theory ", prString (thyName c.thy_name)],
                    [prString "imports ", ppImports c spc.elements],

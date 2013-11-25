@@ -13,8 +13,8 @@ SubstBaseSpecs qualifying spec
  
  op topLevelOpsAndTypesExcludingBaseSubsts (spc : Spec) : QualifiedIds * QualifiedIds =
   let (base_subst_ops, base_subst_types) = substBaseSpecOpsAndTypes () in
-  let ops   = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelOps   spc) in
-  let types = filter (fn qid -> ~ (qid in? base_subst_ops)) (topLevelTypes spc) in
+  let ops   = filter (fn name -> ~ (name in? base_subst_ops)) (topLevelOpNames   spc) in
+  let types = filter (fn name -> ~ (name in? base_subst_ops)) (topLevelTypeNames spc) in
   (ops, types)
   
  op substBaseSpecOpsAndTypes () : QualifiedIds * QualifiedIds =

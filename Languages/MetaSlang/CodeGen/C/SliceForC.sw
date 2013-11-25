@@ -49,8 +49,8 @@ op SpecTransform.newSliceSpecForC (ms_spec    : Spec)
  ms_spec
  
 op defaultSliceForCGen (ms_spec : Spec) : Slice =
- let root_ops   = topLevelOps   ms_spec in
- let root_types = topLevelTypes ms_spec in
+ let root_ops   = topLevelOpNames   ms_spec in
+ let root_types = topLevelTypeNames ms_spec in
  sliceForCGen (ms_spec, root_ops, root_types)
  
 %% TODO: This will be used by other transforms

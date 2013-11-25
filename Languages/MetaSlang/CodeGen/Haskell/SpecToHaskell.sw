@@ -516,7 +516,9 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
     % let _ = writeLine("0a:\n"^printSpecFlat( spc)^"\n") in
     let c = if c.slicing? && c.top_spec? then
               %% don't recur into subtype predicates, don't chase through theorems
-              let (needed_ops, needed_types) = sliceSpecInfoForCode (spc, topLevelOps spc, topLevelTypes spc) in
+              let (needed_ops, needed_types) = 
+                  sliceSpecInfoForCode (spc, topLevelOpNames spc, topLevelTypeNames spc)
+              in
               c << {needed_ops   = needed_ops,
                     needed_types = needed_types}
             else 
@@ -561,7 +563,7 @@ import /Languages/MetaSlang/CodeGen/CodeGenTransforms
                 then simplifyTopSpec(simplifyTopSpec spc) % double simplify temporary?
                 else spc
     in
-    let c = c << {typeNameInfo = topLevelTypes spc,
+    let c = c << {typeNameInfo = topLevelTypeNameInfo spc,
                   spec? = Some spc}
     in
     % let _ = writeLine("n:\n"^printSpec spc) in
