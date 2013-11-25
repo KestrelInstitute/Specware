@@ -8,6 +8,8 @@ NormTypes qualifying spec
 
 import /Languages/MetaSlang/Specs/Utilities
 
+type TypeNameInfo = List (QualifiedId * TyVars * MSType)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op [a] replaceable_type? (typ : AType a) : Bool =
@@ -22,7 +24,7 @@ op [a] replaceable_type? (typ : AType a) : Bool =
 %% topLevelTypeNameInfo is called by the Haskell and Isabelle ppSpec routines
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op topLevelTypeNameInfo (spc : Spec) : List (QualifiedId * TyVars * MSType) =
+op topLevelTypeNameInfo (spc : Spec) : TypeNameInfo =
  foldriAQualifierMap
    (fn (q, id, info, result) ->
       if primaryTypeName? (q, id, info) then
@@ -46,7 +48,7 @@ op topLevelTypeNameInfo (spc : Spec) : List (QualifiedId * TyVars * MSType) =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op normalizeType (spc               : Spec, 
-                  typename_info     : List (QualifiedId * TyVars * MSType), 
+                  typename_info     : TypeNameInfo,
                   check_top?        : Bool,
                   ignore_subtypes?  : Bool, 
                   only_replaceable? : Bool)
