@@ -12,13 +12,13 @@ op lift_seq (tm : MSTerm) : MSTerm =
      let final_tm :: rev_seq_prefix = reverse tms in
      let new_apply = Apply (final_tm, t2, lsPos)  in
      Seq (reverse (new_apply |> rev_seq_prefix), lsPos)
-     
+
    | Apply (t1, t2 as Seq (tms, _), _) ->
      %% tms have been processsed, but could be seq's
      let final_tm :: rev_seq_prefix = reverse tms in
      let new_apply = Apply (t1, final_tm, lsPos)  in
      Seq (reverse (new_apply |> rev_seq_prefix), lsPos) 
-     
+
    | Record (fields, _) ->
      let (ok?, opt_outer_seq, new_fields) =
      foldl (fn ((ok?, opt_outer_seq, new_fields), (id, tm)) ->
@@ -51,6 +51,19 @@ op lift_seq (tm : MSTerm) : MSTerm =
        let _ = writeLine (printTerm tm) in
        tm
        
+   | Seq (tms, _) ->
+     let new_tms =
+         foldl (fn (tms, tm) ->
+                  %% We should only need one level of recursive flattening here
+                  %% because tm will already have been processed by lift_seq.
+                  case tm of
+                    | Seq (sub_tms, _) -> tms ++ sub_tms
+                    | _ -> tms <| tm)
+               []
+               tms
+     in
+     Seq (new_tms, lsPos)
+
    | _ ->
      tm
 
