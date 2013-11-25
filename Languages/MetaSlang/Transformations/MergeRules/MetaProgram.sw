@@ -604,20 +604,20 @@ uindent ^ "qed\n"
 
    | TLocal (res,inps,assumps,defvars,sub,fail,vars) ->
      % defvars: List (List (Var * Type) * MSTerm) associating lists of variables with their defs
-     let evars = map (fn (x,_)->x) (flatten (map (fn (x,_)->x) defvars)) in % get all the bound vars
+     let evars = flatten (map (fn (x,_)->x) defvars) in % get all the bound vars
      let edefs = map (fn (_,y)->y) defvars in % get all the definitions for the vars
-     let stpreds : MSTerm  = 
-        mkAnd (List.map (fn (v,ty) -> typePredTerm(ty,mkVar(v,ty),spc))
-                   (flatten (map (fn (x,_) ->x) defvars))) in
+     % Definition terms
+     let defns = (map (fn (vars, defn) ->
+                         mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
+     let defn_conj = mkAnd defns in
+     let stpreds = mkAnd (getNonImpliedTypePredicates(evars,defns, spc)) in
      let inner = case res of
                    | Bind(Exists, vs, bod, _) -> bod
                    | _ -> res
      in
-     let defn_conj = mkAnd (map (fn (vars, defn) ->
-                                   mkEquality (termType defn, mkTuple (map mkVar vars), defn)) defvars) in
  (* Do this first, to fix the existentially quantified variable *)
 % FIXME: The following step sometimes fails, but will succedd when the proof is replaced with '(rule conjE)'. WTF?
-indent ^ "from result obtain " ^ flatten (intersperse " " (map IsaTermPrinter.ppIdStr evars)) ^ " where inner: \"
+indent ^ "from result obtain " ^ flatten (intersperse " " (map (fn x -> IsaTermPrinter.ppIdStr (x.1)) evars)) ^ " where inner: \"
 " ^ isabelleTerm inner ^ "\" and esubs: \"" ^ isabelleTerm stpreds ^ "\" by (auto)\n" ^
 
 % indent ^ "(* SUBTYPES " ^ isabelleTerm stpreds ^ "*)\n" ^
