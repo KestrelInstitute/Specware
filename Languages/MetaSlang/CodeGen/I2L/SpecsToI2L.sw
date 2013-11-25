@@ -8,6 +8,7 @@ import /Languages/MetaSlang/Specs/Printer
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
 import /Languages/MetaSlang/Transformations/SliceSpec
+import /Languages/MetaSlang/Transformations/NormalizeTypes
 import /Languages/I2L/I2L
 import /Languages/C/CUtils
 
@@ -21,7 +22,8 @@ type S2I_Context = {
                     ms_spec         : Spec,
                     lm_data         : LMData,
                     declaredStructs : List   QualifiedId,
-                    expandTypes?    : Bool                % If false, retain some defined types (TODO: user-selective expansion?)
+                    expandTypes?    : Bool,               % If false, retain some defined types (TODO: user-selective expansion?)
+                    typename_info   : TypeNameInfo
                     }
 
 op pragmaTypeTranslation (Qualified (q, id) : QualifiedId, 
@@ -156,7 +158,8 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
              ms_spec         = ms_spec,
              lm_data         = lm_data,
              declaredStructs = lm_data.structure_types,
-             expandTypes?    = expand_types?}
+             expandTypes?    = expand_types?,
+             typename_info   = topLevelTypeNameInfo ms_spec}
  in
  let i_opdefs =
      foldl (fn (defs, resolved_ref) ->
@@ -644,7 +647,17 @@ op type2itype (ms_tvs  : TyVars,
 
  in
  let ms_utype = unfoldToSpecials (ms_type, ctxt) in
- case ms_utype of
+ let ms_ntype  = normalizeType (ctxt.ms_spec, ctxt.typename_info, true, false, false) ms_utype in
+ % let _ = if ms_ntype = ms_type then
+ %          ()
+ %        else
+ %          let _ = writeLine("") in
+ %          let _ = writeLine("Original type : " ^ printType ms_type) in
+ %          let _ = writeLine("Normalized to : " ^ printType ms_ntype) in
+ %          let _ = writeLine("") in
+ %          ()
+ % in
+ case ms_ntype of
    
    % ----------------------------------------------------------------------
    % primitives
@@ -742,7 +755,10 @@ op type2itype (ms_tvs  : TyVars,
                   (id, i_type))
                ms_fields
        in
-       if i_structfields = [] then (I_Void, true) else (I_Struct i_structfields, false)
+       if i_structfields = [] then
+         (I_Void, true) 
+       else 
+         (I_Struct i_structfields, false)
          
    % ----------------------------------------------------------------------
 
@@ -776,7 +792,7 @@ op type2itype (ms_tvs  : TyVars,
              let i_typename = qid2TypeName qid in
              i_typename
      in
-     let (namespace, native?) = namespaceForType (ms_utype, ctxt) in
+     let (namespace, native?) = namespaceForType (ms_ntype, ctxt) in
      (I_Base (i_typename, namespace), native?)
      
    | Quotient (ms_type, ms_term, _) -> % ignore the term...
