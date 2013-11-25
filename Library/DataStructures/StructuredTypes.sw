@@ -752,12 +752,8 @@ proof isa L2S_vs_Pair2S
   sorry
 end-proof
 
-
 proof isa L2S_Nil
-  apply(rule bool_iff)
   apply(simp add: L2S_def)
-  apply(simp add: L2S_def)
-  sorry
 end-proof
 
 proof isa L2S_Cons
