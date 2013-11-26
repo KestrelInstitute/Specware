@@ -210,12 +210,12 @@ op voidToUInt (ctxt: I2C_Context, (vname, ctype) : C_VarDecl) : C_VarDecl =
  * boolean variable _X_initialized is generated 
  *)
 
-op c4NonConstVarDef (ctxt                    : I2C_Context, 
-                     vname                   : Id, 
-                     ctype as C_Base (name,space)   : C_Type, 
-                     cspc                    : C_Spec, 
-                     block as (decls, stmts) : C_Block, 
-                     cexpr                   : C_Exp) 
+op c4NonConstVarDef (ctxt                          : I2C_Context, 
+                     vname                         : Id, 
+                     ctype as C_Base (name, space) : C_Type, 
+                     cspc                          : C_Spec, 
+                     block as (decls, stmts)       : C_Block, 
+                     cexpr                         : C_Exp) 
  : C_Spec =
  let initfname  = "get_" ^ vname                                           in
  let valuevname = vname ^ "_value"                                         in
