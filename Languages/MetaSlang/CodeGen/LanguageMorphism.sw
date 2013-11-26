@@ -353,19 +353,21 @@ op printOptionalLocation (x : Option Location) : String =
 %% TypeTranslation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+type NameSpace = | Type | Structure | Enumeration | Union
+
 type TypeTranslations = List TypeTranslation
-type TypeTranslation  = {source   : Name, 
-                         target   : Term,
-                         location : Option Location,
-                         native?  : Bool,
-                         struct?  : Bool}  % if true, claims to be C structure
+type TypeTranslation  = {source    : Name, 
+                         target    : Term,
+                         location  : Option Location,
+                         native?   : Bool,
+                         namespace : NameSpace}
 
 %% TODO: more general scheme for properties, instead of ad-hoc struct? field for C
 
-op make_Type_Translation (source   : Name, 
-                          target   : Term,
-                          location : Option Location,
-                          struct?  : Bool)
+op make_Type_Translation (source    : Name, 
+                          target    : Term,
+                          location  : Option Location,
+                          namespace : Option String)
  : Translation =
  let native? = 
      case location of
@@ -376,17 +378,24 @@ op make_Type_Translation (source   : Name,
          % section to possibly revise this to true.
          false
  in
- Type {source   = source, 
-       target   = target, 
-       location = location,
-       native?  = native?,
-       struct?  = struct?}
+ let namespace =
+     case namespace of
+       | Some "struct" -> Structure
+       | Some "enum"   -> Enumeration
+       | Some "union"  -> Union
+       | _ -> Type
+ in
+ Type {source    = source, 
+       target    = target, 
+       location  = location,
+       native?   = native?,
+       namespace = namespace}
 
 op printTypeTranslation (trans : TypeTranslation) : String =
  "Translate type:  "     ^ 
  printName trans.source  ^ 
  " \t=> "                ^ 
- (if trans.struct? then "struct " else "") ^
+ (case trans.namespace of | Structure -> "struct " | Enumeration -> "enum" | _ -> "") ^
  printTerm trans.target  ^
  printOptionalLocation trans.location
 
@@ -532,9 +541,9 @@ op extractNatives (lms : LanguageMorphisms) : Natives =
        lms
 
 type NativeTypeLocations = List NativeTypeLocation
-type NativeTypeLocation  = {name     : Name,
-                            location : Option Location,
-                            struct?  : Bool}
+type NativeTypeLocation  = {name      : Name,
+                            location  : Option Location,
+                            namespace : NameSpace}
 
 type NativeOpLocations = List NativeOpLocation
 type NativeOpLocation  = {name     : Name,
@@ -548,16 +557,30 @@ type Native  = | Type   NativeTypeLocation
 op make_Type_Native (name     : Name,
                      location : Option Location)
  : Native = 
- Type {name     = name, 
-       location = location, 
-       struct?  = false}
+ Type {name      = name, 
+       location  = location, 
+       namespace = Type}
+
+op make_Enum_Native (name     : Name,
+                     location : Option Location)
+ : Native = 
+ Type {name      = name, 
+       location  = location, 
+       namespace = Enumeration}
 
 op make_Struct_Native (name     : Name,
                        location : Option Location)
  : Native = 
- Type {name     = name, 
-       location = location, 
-       struct?  = true}
+ Type {name      = name, 
+       location  = location, 
+       namespace = Structure}
+
+op make_Union_Native (name     : Name,
+                      location : Option Location)
+ : Native = 
+ Type {name      = name, 
+       location  = location, 
+       namespace = Union}
 
 op make_Op_Native (name     : Name, 
                    location : Option Location) 
@@ -576,8 +599,12 @@ op make_Macro_Native (name     : Name,
 op printNative (lm_native : Native) : String =
  "Native " ^
  (case lm_native of
-    | Type {name, location, struct?} -> 
-      (if struct? then "struct " else  "type ") ^ printName name ^ printOptionalLocation location
+    | Type {name, location, namespace} -> 
+      (case namespace of
+         | Structure   -> "struct "
+         | Enumeration -> "enum "
+         | Type        -> "type ")
+      ^ printName name ^ printOptionalLocation location
 
     | Op {name, location, macro?} -> 
       (if macro? then "macro " else "op") ^ printName name ^ printOptionalLocation location)
@@ -602,7 +629,9 @@ type LMData = {lms                   : LanguageMorphisms,
                native_types          : TypeNames,
                op_macros             : OpNames,
                type_macros           : TypeNames,
-               structure_types       : TypeNames}
+               structure_types       : TypeNames,
+               enumeration_types     : TypeNames,
+               union_types           : TypeNames}
 
 op nativeOp? (name : Name, lm_data : LMData) : Bool =
  let just_id = [last name] in
@@ -669,9 +698,9 @@ op collectNativeTypeLocations (natives      : Natives,
                                nlocs
                              else
                                case trans.location of
-                                 | Some loc -> nlocs ++ [{name     = name,
-                                                          location = Some loc, 
-                                                          struct?  = trans.struct?}]
+                                 | Some loc -> nlocs ++ [{name      = name,
+                                                          location  = Some loc, 
+                                                          namespace = trans.namespace}]
                                  | _ -> nlocs)
                           native_types
                           translations
@@ -742,27 +771,81 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
                              type_translations
  in
  let native_structure_types = foldl (fn (struct_names, ntloc) ->
-                                       if ntloc.struct? then
-                                         let qid = case ntloc.name of
-                                                     | [id]   -> mkUnQualifiedId id
-                                                     | [q,id] -> mkQualifiedId (q, id)
-                                         in
-                                         struct_names ++ [qid]
-                                       else 
-                                         struct_names)
+                                       case ntloc.namespace of
+                                         | Structure ->
+                                           let qid = case ntloc.name of
+                                                       | [id]   -> mkUnQualifiedId id
+                                                       | [q,id] -> mkQualifiedId (q, id)
+                                           in
+                                           struct_names ++ [qid]
+                                         | _ ->
+                                           struct_names)
                                    []
                                    native_type_locations
  in
  let structure_types = foldl (fn (struct_names, ttrans) ->
-                                 if ttrans.struct? then
-                                   let qid = case ttrans.source of
-                                               | [id]   -> mkUnQualifiedId id
-                                               | [q,id] -> mkQualifiedId (q, id)
-                                   in
-                                   struct_names ++ [qid]
-                                 else 
-                                   struct_names)
+                                case ttrans.namespace of
+                                  | Structure ->
+                                    let qid = case ttrans.source of
+                                                | [id]   -> mkUnQualifiedId id
+                                                | [q,id] -> mkQualifiedId (q, id)
+                                    in
+                                    struct_names ++ [qid]
+                                  | _ ->
+                                    struct_names)
                               native_structure_types
+                              type_translations
+ in
+ let native_enumeration_types = foldl (fn (struct_names, ntloc) ->
+                                       case ntloc.namespace of
+                                         | Enumeration ->
+                                           let qid = case ntloc.name of
+                                                       | [id]   -> mkUnQualifiedId id
+                                                       | [q,id] -> mkQualifiedId (q, id)
+                                           in
+                                           struct_names ++ [qid]
+                                         | _ ->
+                                           struct_names)
+                                   []
+                                   native_type_locations
+ in
+ let enumeration_types = foldl (fn (struct_names, ttrans) ->
+                                case ttrans.namespace of
+                                  | Enumeration ->
+                                    let qid = case ttrans.source of
+                                                | [id]   -> mkUnQualifiedId id
+                                                | [q,id] -> mkQualifiedId (q, id)
+                                    in
+                                    struct_names ++ [qid]
+                                  | _ ->
+                                    struct_names)
+                              native_enumeration_types
+                              type_translations
+ in
+ let native_union_types = foldl (fn (struct_names, ntloc) ->
+                                       case ntloc.namespace of
+                                         | Union ->
+                                           let qid = case ntloc.name of
+                                                       | [id]   -> mkUnQualifiedId id
+                                                       | [q,id] -> mkQualifiedId (q, id)
+                                           in
+                                           struct_names ++ [qid]
+                                         | _ ->
+                                           struct_names)
+                                   []
+                                   native_type_locations
+ in
+ let union_types = foldl (fn (struct_names, ttrans) ->
+                                case ttrans.namespace of
+                                  | Union ->
+                                    let qid = case ttrans.source of
+                                                | [id]   -> mkUnQualifiedId id
+                                                | [q,id] -> mkQualifiedId (q, id)
+                                    in
+                                    struct_names ++ [qid]
+                                  | _ ->
+                                    struct_names)
+                              native_union_types
                               type_translations
  in
 
@@ -776,7 +859,9 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
   native_types          = native_types,
   op_macros             = op_macros,
   type_macros           = type_macros,
-  structure_types       = structure_types}
+  structure_types       = structure_types,
+  enumeration_types     = enumeration_types,
+  union_types           = union_types}
 
 end-spec
 

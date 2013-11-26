@@ -17,11 +17,13 @@ import /Languages/C/CUtils
 type S2I_Context = {
                     specName        : String,             % not (yet) used
                     isTopLevel?     : Bool,               % not used
-                    constructors    : List   QualifiedId, % not used, constructors distinguished by name containing "__"
+                    constructors    : QualifiedIds,       % not used, constructors distinguished by name containing "__"
                     currentOpType   : Option QualifiedId,
                     ms_spec         : Spec,
                     lm_data         : LMData,
-                    declaredStructs : List   QualifiedId,
+                    declaredEnums   : QualifiedIds,
+                    declaredStructs : QualifiedIds,
+                    declaredUnions  : QualifiedIds,
                     expandTypes?    : Bool,               % If false, retain some defined types (TODO: user-selective expansion?)
                     typename_info   : TypeNameInfo
                     }
@@ -157,7 +159,9 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
              currentOpType   = None,
              ms_spec         = ms_spec,
              lm_data         = lm_data,
+             declaredEnums   = lm_data.enumeration_types,
              declaredStructs = lm_data.structure_types,
+             declaredUnions  = lm_data.union_types,
              expandTypes?    = expand_types?,
              typename_info   = topLevelTypeNameInfo ms_spec}
  in
@@ -563,32 +567,61 @@ op namespaceForType (t1 : MSType, ctxt : S2I_Context) : I_NameSpace * Bool =
  case t1 of
 
    | Base (qid, [], _) ->
-     let (product_or_coproduct?, defined?) =
+     let (product?, coproduct?, possible_enum?, defined?) =
          case findTheType (ctxt.ms_spec, qid) of
            | Some info ->
              (case info.dfn of
-                | Product   _ -> (true,  true)
-                | CoProduct _ -> (true,  true)
-                | Any       _ -> (false, false)
-                | _ ->           (false, true))
-           | _ -> (false, false)
+                | CoProduct (fields, _) -> (false,
+                                            true,  
+                                            forall? (fn (_, opt_arg) -> 
+                                                       case opt_arg of 
+                                                         | None -> true
+                                                         | _ -> false)
+                                                    fields,
+                                            true)
+                | Product   _      -> (true,  false, false, true)
+                | Any       _      -> (false, false, false, false)
+                | _ ->                (false, false, false, true))
+           | _ -> (false, false, false, false)
      in
+
+     let translated_to_enum?   = qid in? ctxt.declaredEnums   in
      let translated_to_struct? = qid in? ctxt.declaredStructs in 
+     let translated_to_union?  = qid in? ctxt.declaredUnions  in
 
      % For harmony with standard practice in the C community, put the names
      % of product and coproduct types into the structure namespace.
 
      if translated_to_struct? then
-       if product_or_coproduct? then
+       if product? then
          (Struct, true)
        else if defined? then
-         let _ = writeLine ("Type " ^ show qid ^ " is defined as something other than a product or coproduct, but is translated to a struct") in
+         let _ = writeLine ("Type " ^ show qid ^ " is translated to a struct, but is defined as something other than a product.") in
          (Struct, true)
        else
          %  we don't have a definition, but have said it should be a struct 
          (Struct, true)
-     else if product_or_coproduct? then
+
+     else if translated_to_enum? then
+       if possible_enum? then
+         (Enum, true)
+       else if coproduct? then
+         let _ = writeLine ("Type " ^ show qid ^ " is translated to an enum, but is a coproduct with an option that takes an argument.") in
+         (Enum, true)
+       else if defined? then
+         let _ = writeLine ("Type " ^ show qid ^ " is translated to an enum, but is defined as something other than a coproduct.") in
+         (Enum, true)
+       else
+         %  we don't have a definition, but have said it should be an enumeration
+         (Enum, true)
+
+     else if translated_to_enum? then
+       let _ = writeLine ("Type " ^ show qid ^ " is translated to a union -- not sure what that means") in
+       (Union, true)
+
+     else if product? then
        (Struct, false)
+
      else
        %% lacking evidence that it is a struct, assume it is not
        (Type, false)

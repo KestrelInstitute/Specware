@@ -170,7 +170,9 @@
 (define-lm-parser-rule :SimpleName ; corresponds to Symbol in LanguageMorphism.sw
     (:anyof
      ;; keywords in pragma parser are also legal ids
+     ((:tuple "enum")      "enum")
      ((:tuple "struct")    "struct")
+     ((:tuple "union")     "union")
      ((:tuple "curry")     "curry")
      ((:tuple "uncurry")   "uncurry")
      ((:tuple "left")      "left")
@@ -275,14 +277,17 @@
 ;;;  TypeTranslation
 ;;; ========================================================================
 
+(define-lm-parser-rule :NameSpace
+  (:anyof "enum" "struct" "union"))
+
 (define-lm-parser-rule :TypeTranslation 
     (:tuple "type"
             (1 :Name)
             :Arrow 
-            (:optional (4 "struct"))
+            (:optional (4 :NameSpace))
             (2 :Term) 
             (:optional (3 :Location)))
-  (LM::make_Type_Translation-4 1 2 (make-option 3) (make-bool 4)))
+  (LM::make_Type_Translation-4 1 2 (make-option 3) (make-option 4)))
 
 ;;; ========================================================================
 ;;;  FieldTranslation
@@ -348,15 +353,23 @@
     (:repeat* :Native))
 
 (define-lm-parser-rule :Native 
-    (:anyof :NativeType :NativeStruct :NativeOp :NativeMacro))
+    (:anyof :NativeType :NativeEnum :NativeStruct :NativeUnion :NativeOp :NativeMacro))
 
 (define-lm-parser-rule :NativeType 
     (:tuple "type" (1 :Name) (:optional (2 :Location)))
   (LM::make_Type_Native-2 1 (make-option 2)))
 
+(define-lm-parser-rule :NativeEnum
+    (:tuple "enum" (1 :Name) (:optional (2 :Location)))
+  (LM::make_Enum_Native-2 1 (make-option 2)))
+
 (define-lm-parser-rule :NativeStruct
     (:tuple "struct" (1 :Name) (:optional (2 :Location)))
   (LM::make_Struct_Native-2 1 (make-option 2)))
+
+(define-lm-parser-rule :NativeUnion
+    (:tuple "union" (1 :Name) (:optional (2 :Location)))
+  (LM::make_Union_Native-2 1 (make-option 2)))
 
 (define-lm-parser-rule :NativeOp 
     (:tuple "op" (1 :Name) (:optional (2 :Location)))
