@@ -187,7 +187,7 @@ Utilities qualifying spec
  def replace2(M,sub,freeNames) = 
    let
        def rep(M:MSTerm):MSTerm = 
-         case lookup(fn N -> N = M,sub)
+         case lookup (fn N -> equalTerm? (N, M), sub)
 	   of Some N -> N
 	    | None -> 
 	 case M
