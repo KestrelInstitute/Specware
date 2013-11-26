@@ -1075,7 +1075,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
       forwardProofBlock (ppEqualityProof (c, boundVars, rhs, lhs, sub_pf)),
       (fn pf_name ->
          showFinalResult (singleTacticProof (ruleTactic (pf_name ^ "[symmetric]")))))
-   | EqProofTrans (pf1, middle, pf2) ->
+   | EqProofTrans (pf_term_list, last_pf) ->
      (*
         have "lhs=middle" (pf1)
         also
@@ -1084,12 +1084,23 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
         show ?thesis .
         *)
      % let _ = writeLine("eqTrans: \nlhs = "^printTerm lhs^"\nmiddle = "^printTerm middle^"\nrhs = "^printTerm rhs) in
+     % let def trans_helper (lhs:Pretty) (pf:IsaProof ProveMode, rhs:MSTerm) : Pretty * IsaProof ProveMode =
+     let def ppTransStep firstp step_lhs pf step_rhs =
+       let prop =
+         if firstp then
+           ppLambdaEquality (c, (boundVars, step_lhs), (boundVars, step_rhs))
+         else
+           prBreak 2 [string "... =", ppTerm c Top (mkMultiLambda (boundVars, step_rhs))]
+       in
+       (prop, forwardProofBlock (ppEqualityProof (c, boundVars, step_lhs, step_rhs, pf)))
+     in
+     let def trans_helper firstp step_lhs pf_term_list =
+       case pf_term_list of
+         | [] -> [ppTransStep firstp step_lhs last_pf rhs]
+         | (pf, tm) :: rest -> ppTransStep firstp step_lhs pf tm :: trans_helper false tm rest
+     in
      showFinalChainedResult
-       (ppLambdaEquality (c, (boundVars, lhs), (boundVars, rhs)),
-        [(ppLambdaEquality (c, (boundVars, lhs), (boundVars, middle)),
-          forwardProofBlock (ppEqualityProof (c, boundVars, lhs, middle, pf1))),
-         (ppLambdaEquality (c, (boundVars, middle), (boundVars, rhs)),
-          forwardProofBlock (ppEqualityProof (c, boundVars, middle, rhs, pf2)))])
+       (ppLambdaEquality (c, (boundVars, lhs), (boundVars, rhs)), trans_helper true lhs pf_term_list)
    | EqProofTheorem (qid, args) ->
      (* show "lhs=rhs" apply (rule ext, rule ext, ...) by (rule qid[of tm1 ... tmn]) *)
      showFinalResult

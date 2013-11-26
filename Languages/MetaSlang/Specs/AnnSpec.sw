@@ -140,7 +140,9 @@ AnnSpec qualifying spec
  type EqProof =
    | EqProofSubterm (Path * EqProof)  % proof that a sub-term is equal
    | EqProofSym EqProof % prove x = y from y = x
-   | EqProofTrans (EqProof * MSTerm * EqProof) % prove x = z from x = y and y = z
+   | EqProofTrans (List (EqProof * MSTerm) * EqProof)
+     % prove x0 = xn from x0 = x1, x1 = x2, etc., where each (pf, t)
+     % pair in the list is an xi along with the proof that x(i-1) = xi
    | EqProofTheorem (QualifiedId * List MSTerm)
      % use an equality theorem in the spec; should have the form
      % "forall x1,x2,...,xn, M = N"; the MSTerms are substituted for x1...xn
@@ -203,8 +205,14 @@ type TransformHistory = List (MSTerm * RuleSpec)
  op composeRefinementProofs : (RefinementProof * MSTerm * RefinementProof) -> RefinementProof
  def composeRefinementProofs triple =
    case triple of
+     | (RefineEq (EqProofTrans (pfs1, last1)), tm, RefineEq (EqProofTrans (pfs2, last2))) ->
+       RefineEq (EqProofTrans (pfs1 ++ ((last1, tm) :: pfs2), last2))
+     | (RefineEq (EqProofTrans (pfs1, last1)), tm, RefineEq eq_pf2) ->
+       RefineEq (EqProofTrans (pfs1 ++ [(last1, tm)], eq_pf2))
+     | (RefineEq eq_pf1, tm, RefineEq (EqProofTrans (pfs2, last2))) ->
+       RefineEq (EqProofTrans ((eq_pf1, tm) :: pfs2, last2))
      | (RefineEq eq_pf1, tm, RefineEq eq_pf2) ->
-       RefineEq (EqProofTrans (eq_pf2, tm, eq_pf1))
+       RefineEq (EqProofTrans ([(eq_pf1, tm)], eq_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
        RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineEq eq_pf2) ->
@@ -246,9 +254,12 @@ type TransformHistory = List (MSTerm * RuleSpec)
    | EqProofSubterm (path, pf) ->
      "EqProofSubterm ([" ^ flatten (intersperse "," (map show path)) ^ "], " ^ showEqProof pf ^ ")"
    | EqProofSym pf -> "EqProofSym (" ^ showEqProof pf ^ ")"
-   | EqProofTrans (pf1, middle, pf2) ->
-     "EqTrans (" ^ showEqProof pf1 ^ ",\n  " ^printTerm middle^"\n  "
-       ^ showEqProof pf2 ^ ")"
+   | EqProofTrans (pf_term_list, last_pf) ->
+     "EqTrans ("
+     ^ (flatten
+          (intersperse ", "
+             (map (fn (pf,tm) -> "(" ^ showEqProof pf ^ "," ^ printTerm tm ^ ")") pf_term_list)))
+     ^ ", " ^ showEqProof last_pf ^ ")"
    | EqProofTheorem (qid, args) ->
      "EqProofTheorem " ^ show qid
    | EqProofUnfoldDef qid -> "EqProofUnfoldDef (" ^ show qid ^ ")"
@@ -952,8 +963,10 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
    case pf of
      | EqProofSubterm (path, sub_pf) -> EqProofSubterm (path, mapEqProof f sub_pf)
      | EqProofSym pf -> EqProofSym (mapEqProof f pf)
-     | EqProofTrans (pf1, tm, pf2) ->
-       EqProofTrans (mapEqProof f pf1, f tm, mapEqProof f pf2)
+     | EqProofTrans (pf_term_list, last_pf) ->
+       EqProofTrans
+       (map (fn (pf,tm) -> (mapEqProof f pf, f tm)) pf_term_list,
+        mapEqProof f last_pf)
      | _ -> pf
 
  op mapImplProof : (MSTerm -> MSTerm) -> ImplProof -> ImplProof
