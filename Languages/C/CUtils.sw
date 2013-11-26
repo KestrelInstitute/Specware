@@ -31,6 +31,7 @@ CUtils qualifying spec
  op addConstDefn            (cspc : C_Spec, X : C_VarDefn)              : C_Spec = cspc << {constDefns           = cspc.constDefns           ++ [X]}
  op addVar                  (cspc : C_Spec, X : C_VarDecl)              : C_Spec = cspc << {vars                 = cspc.vars                 ++ [X]}
  op setStructUnionTypeDefns (cspc : C_Spec, X : C_StructUnionTypeDefns) : C_Spec = cspc << {structUnionTypeDefns = X}
+ op addEnumDefn             (cspc : C_Spec, X : C_EnumDefn)             : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Enum   X]}
  op addStructDefn           (cspc : C_Spec, X : C_StructDefn)           : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Struct X]}
  op addUnionDefn            (cspc : C_Spec, X : C_UnionDefn)            : C_Spec = cspc << {structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Union  X]}
  op addAxiom                (cspc : C_Spec, X : C_Exp)                  : C_Spec = cspc << {axioms               = cspc.axioms               ++ [X]}

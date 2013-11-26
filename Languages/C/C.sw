@@ -113,7 +113,8 @@ C qualifying spec
     | C_Nop
 
 
-  type C_FieldName = String
+  type C_EnumName    = String
+  type C_FieldName   = String
   type C_VariantName = String
 
   type C_Exp =
@@ -124,6 +125,7 @@ C qualifying spec
     | C_Unary       C_UnaryOp * C_Exp            % -x
     | C_Binary      C_BinaryOp * C_Exp * C_Exp   % x+y
     | C_Cast        C_Type * C_Exp               % (int)x
+    | C_EnumRef     C_EnumName                   % foo
     | C_StructRef   C_Exp * C_FieldName          % x.field
     | C_UnionRef    C_Exp * C_VariantName        % x.variant
     | C_ArrayRef    C_Exp * C_Exp                % x[y]

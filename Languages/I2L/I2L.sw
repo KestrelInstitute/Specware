@@ -42,6 +42,7 @@ I2L qualifying spec
   type I_Type = | I_Primitive   I_Primitive
                 | I_BoundedNat  Nat               % Nats within inclusive bound  (e.g. 'unsigned short')
                 | I_BoundedInt  Int * Int         % Ints within inclusive bounds (e.g. 'signed short')
+                | I_Enum        I_EnumFields
                 | I_Struct      I_StructFields
                 | I_Union       I_UnionFields
                 | I_Tuple       I_Types
@@ -53,6 +54,9 @@ I2L qualifying spec
                 | I_Void
                 | I_Any
   type I_Types = List I_Type
+
+  type I_EnumField = String
+  type I_EnumFields = List I_EnumField
 
   type I_StructField = String * I_Type
   type I_StructFields = List I_StructField

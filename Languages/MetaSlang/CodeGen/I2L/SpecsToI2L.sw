@@ -658,7 +658,7 @@ op get_subtype_preds (ty:MSType, basety:QualifiedId, spc : Spec) : List MSTerm =
 op type2itype (ms_tvs  : TyVars,
                ms_type : MSType,
                ctxt    : S2I_Context)
- : I_Type * Bool =
+ : I_Type * Bool =  % Bool means native?
  
  let 
    def bounded_list_type? ms_element_type pred =
@@ -796,14 +796,29 @@ op type2itype (ms_tvs  : TyVars,
    % ----------------------------------------------------------------------
 
    | CoProduct (ms_fields, _) ->
-     let i_unionfields = 
-         map (fn | (id, None)         -> (id, I_Void)
-                 | (id, Some ms_type) -> 
-                   let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
-                   (id, i_type))
-             ms_fields
+     let opt_enum_ids = 
+         foldl (fn (opt_ids, (id, opt_arg)) ->
+                  case (opt_ids, opt_arg) of
+                    | (Some ids, None) -> Some (ids <| id)
+                    | _ -> None)
+               (Some [])
+               ms_fields
      in
-     (I_Union i_unionfields, false)
+     (case opt_enum_ids of
+        | Some ids ->
+          (I_Enum ids, false)
+        | _ ->
+          let i_unionfields = 
+              map (fn (id, opt_arg) ->
+                     (id, 
+                      case opt_arg of
+                        | None -> I_Void
+                        | Some ms_type -> 
+                          let (i_type, _) = type2itype (ms_tvs, ms_type, unsetToplevel ctxt) in
+                          i_type))
+                  ms_fields
+          in
+          (I_Union i_unionfields, false))
      
    % ----------------------------------------------------------------------
      

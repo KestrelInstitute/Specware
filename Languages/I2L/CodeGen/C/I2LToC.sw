@@ -158,10 +158,16 @@ op c4TypeDefinition (ctxt                  : I2C_Context,
    cspc
  else
    case typ of
+     | I_Enum options ->
+       addEnumDefn (cspc, (tname, options))
+
      | I_Struct fields -> 
        let (cspc, sfields) = structUnionFields (cspc, fields)                           in
        %% defining var in struct namespace as a struct 
        addStructDefn (cspc, (tname, sfields))
+
+     | I_Union fields -> 
+       fail ("I_Union not yet implemented")
 
      | _ ->
        let (cspc,ctype) = c4Type (ctxt, cspc, typ) in
@@ -653,12 +659,12 @@ op c4Expression1 (ctxt            : I2C_Context,
  let (cspc, block, cexpr) = mergeBlockIntoExpr (cspc, block, cexpr)                       in
  (cspc, block, cexpr)
 
-op c4Expression2 (ctxt                    : I2C_Context,
-                  cspc                    : C_Spec,
-                  block as (decls, stmts) : C_Block,
-                  exp as {expr, typ, cast?}      : I_TypedExpr,
-                  lhs?                    : Bool,
-                  forInitializer?         : Bool)
+op c4Expression2 (ctxt                      : I2C_Context,
+                  cspc                      : C_Spec,
+                  block as (decls, stmts)   : C_Block,
+                  exp as {expr, typ, cast?} : I_TypedExpr,
+                  lhs?                      : Bool,
+                  forInitializer?           : Bool)
  : C_Spec * C_Block * C_Exp = 
  case c4SpecialExpr (ctxt, cspc, block, exp) of
    | Some x -> x
@@ -802,32 +808,37 @@ op c4Expression2 (ctxt                    : I2C_Context,
      (cspc, block, constrCallExpr)
      
    | I_AssignUnion (selector, optexpr) ->
-     let (cspc, block as (decls, stmts), optcexpr) =
-     case optexpr of
-       | Some expr -> 
-         let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
-         (cspc, block, Some cexpr)
-       | None -> 
-         (cspc, block, None)
-     in
-     let (cspc, ctype) = c4Type (ctxt, cspc, typ)                          in
-     let varPrefix     = getVarPrefix ("_coproduct", ctype)                in
-     let xname         = freshVarName (varPrefix, ctxt, block)             in
-     let decl          = (xname, ctype)                                    in
-     let optinit       = getMallocApply (cspc, ctype)                      in
-     let decl1         = (xname, ctype, optinit)                           in
-     let selassign     = [getSelAssignStmt (ctxt, selector, xname, ctype)] in
-     let altassign     = case optcexpr of
-                           | None -> []
-                           | Some cexpr ->
-                             let sref  = mkCUnionRef (mkCStructRef (C_Var decl, "alt"), 
-                                                      selector.name) 
-                             in
-                             [C_Exp (getSetExpr (ctxt, sref, cexpr))]
-     in
-     let block = (decls ++ [decl1], stmts ++ selassign ++ altassign) in
-     let res   = C_Var decl in
-     (cspc, block, res)
+     (case typ of
+        | I_Enum _ -> 
+          let res = C_EnumRef selector.name in
+          (cspc, block, res)
+        | _ ->
+          let (cspc, block as (decls, stmts), optcexpr) =
+              case optexpr of
+                | Some expr -> 
+                  let (cspc, block, cexpr) = c4RhsExpression (ctxt, cspc, block, expr) in
+                  (cspc, block, Some cexpr)
+                | None -> 
+                  (cspc, block, None)
+          in
+          let (cspc, ctype) = c4Type (ctxt, cspc, typ)                          in
+          let varPrefix     = getVarPrefix ("_coproduct", ctype)                in
+          let xname         = freshVarName (varPrefix, ctxt, block)             in
+          let decl          = (xname, ctype)                                    in
+          let optinit       = getMallocApply (cspc, ctype)                      in
+          let decl1         = (xname, ctype, optinit)                           in
+          let selassign     = [getSelAssignStmt (ctxt, selector, xname, ctype)] in
+          let altassign     = case optcexpr of
+                                | None -> []
+                                | Some cexpr ->
+                                  let sref  = mkCUnionRef (mkCStructRef (C_Var decl, "alt"), 
+                                                           selector.name) 
+                                  in
+                                  [C_Exp (getSetExpr (ctxt, sref, cexpr))]
+          in
+          let block = (decls ++ [decl1], stmts ++ selassign ++ altassign) in
+          let res   = C_Var decl in
+          (cspc, block, res))
      
    | I_UnionCaseExpr (typed_expr, unioncases) ->
      let I_Union union_fields                      = typed_expr.typ                                  in
