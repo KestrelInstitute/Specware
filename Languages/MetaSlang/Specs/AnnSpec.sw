@@ -198,6 +198,18 @@ type TransformHistory = List (MSTerm * RuleSpec)
 
  op nullTransformInfo : TransformInfo = ([], None)
 
+op composeEqProofs (pf1: EqProof, middle: MSTerm, pf2: EqProof) : EqProof =
+  case (pf1, pf2) of
+    | (EqProofTrans (pfs1, last1), EqProofTrans (pfs2, last2)) ->
+      EqProofTrans (pfs1 ++ ((last1, middle) :: pfs2), last2)
+    | (EqProofTrans (pfs1, last1),  eq_pf2) ->
+       (EqProofTrans (pfs1 ++ [(last1, middle)], eq_pf2))
+    | ( eq_pf1, EqProofTrans (pfs2, last2)) ->
+       EqProofTrans ((eq_pf1, middle) :: pfs2, last2)
+    | (eq_pf1, eq_pf2) ->
+      EqProofTrans ([(eq_pf1, middle)], eq_pf2)
+
+
  % compose two refinement proofs; the term given is the intermediate
  % term in the refinement, i.e., the first proof refines to the term
  % while the second refines from it; note that an EqProof can be composed
@@ -205,14 +217,8 @@ type TransformHistory = List (MSTerm * RuleSpec)
  op composeRefinementProofs : (RefinementProof * MSTerm * RefinementProof) -> RefinementProof
  def composeRefinementProofs triple =
    case triple of
-     | (RefineEq (EqProofTrans (pfs1, last1)), tm, RefineEq (EqProofTrans (pfs2, last2))) ->
-       RefineEq (EqProofTrans (pfs1 ++ ((last1, tm) :: pfs2), last2))
-     | (RefineEq (EqProofTrans (pfs1, last1)), tm, RefineEq eq_pf2) ->
-       RefineEq (EqProofTrans (pfs1 ++ [(last1, tm)], eq_pf2))
-     | (RefineEq eq_pf1, tm, RefineEq (EqProofTrans (pfs2, last2))) ->
-       RefineEq (EqProofTrans ((eq_pf1, tm) :: pfs2, last2))
      | (RefineEq eq_pf1, tm, RefineEq eq_pf2) ->
-       RefineEq (EqProofTrans ([(eq_pf1, tm)], eq_pf2))
+       RefineEq (composeEqProofs (eq_pf1, tm, eq_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
        RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
      | (RefineStrengthen impl_pf1, tm, RefineEq eq_pf2) ->

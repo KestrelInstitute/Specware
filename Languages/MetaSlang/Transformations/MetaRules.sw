@@ -235,17 +235,22 @@ op pathToLastConjunct(n: Nat): Path =
   % n is number of conjuncts minus 1
   if n = 0 then []
     else 1::pathToLastConjunct(n-1)
-  
+
+(*  
 op printEqProof(prf: EqProof, tm: MSTerm): String =
   case prf of
     | EqProofSubterm(path, s_prf) ->
       let s_tm = fromPathTerm(tm, path) in
       "subterm: "^printTerm s_tm^"\n"^printEqProof(s_prf, s_tm)
-    | EqProofTrans(prf1, int_tm, prf2) ->
-      "prove "^printTerm int_tm^"\n"^printEqProof(prf1, tm)^"\n"
-        ^printEqProof(prf2, int_tm)
+    | EqProofTrans (pf_term_list, last_pf) ->
+      "prove ("
+      ^ (flatten
+           (intersperse ", "
+              (map (fn (pf,tm) -> "(" ^ showEqProof pf ^ "," ^ printTerm tm ^ ")") pf_term_list)))
+      ^ ", " ^ showEqProof last_pf ^ ")"
     | EqProofTactic str -> "by "^str
     | _ -> "by another method"
+*)
 
 op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): Option(MSTerm * Option RefinementProof) =
   let def transfm(tm: MSTerm): Option (MSTerm * Option EqProof) =
@@ -261,13 +266,13 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
         case o_prf of
           | None -> Some(EqProofTactic method)
           | Some prf ->
-            Some(EqProofTrans(EqProofTactic method, new_tm, mkEqProofSubterm(path, prf)))
+            Some(composeEqProofs (EqProofTactic method, new_tm, mkEqProofSubterm(path, prf)))
       def combineParallelProofs(o_prf1, path1, o_prf2, path2, int_sub_tm) =
         case (o_prf1, o_prf2) of
           | (None, None) -> None
           | (Some prf1, None) -> Some(mkEqProofSubterm(path1, prf1))
           | (None, Some prf2) -> Some(mkEqProofSubterm(path2, prf2))
-          | (Some prf1, Some prf2) -> Some(EqProofTrans(mkEqProofSubterm(path1, prf1),
+          | (Some prf1, Some prf2) -> Some(composeEqProofs(mkEqProofSubterm(path1, prf1),
                                                         int_sub_tm,
                                                         mkEqProofSubterm(path2, prf2)))
       def extendCaseProof(case_tm: MSTerm, o_prf: Option EqProof, new_tm: MSTerm, path: Path): Option EqProof =
@@ -275,7 +280,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
         case o_prf of
           | None -> Some case_proof
           | Some prf ->
-            Some(EqProofTrans(case_proof, new_tm, mkEqProofSubterm(path, prf)))
+            Some(composeEqProofs(case_proof, new_tm, mkEqProofSubterm(path, prf)))
           
       def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst)
             : Option (MSTerm * Option EqProof) =
