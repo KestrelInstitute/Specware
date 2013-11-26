@@ -15,15 +15,25 @@ EmptyTypes qualifying
 spec
   import ../Specs/Utilities
 
-  op knownNonEmptyType?(qid: QualifiedId, spc: Spec): Bool =
+  op specConstrainsTypeInhabited?(ty: MSType, spc: Spec): Bool =
+     existsOpWithType?(ty, spc)
+    || existsTrueExistentialAxiomForType?(ty, spc)
+
+  op knownNonEmptyTypeQID?(qid: QualifiedId, spc: Spec): Bool =
     qid in? knownNonEmptyBaseTypes
       || (case findTheType(spc, qid) of
             | None -> false
             | Some info ->
           let (tvs, dfn) = unpackFirstTypeDef info in
           ~(tvs = [] && embed? Any dfn)
-            || existsOpWithType?(mkBase(qid,[]), spc)
-            || existsTrueExistentialAxiomForType?(mkBase(qid,[]), spc))
+            || specConstrainsTypeInhabited?(mkBase(qid,[]), spc))
+
+  op knownNonEmptyType?(ty: MSType, spc: Spec): Bool =
+    case ty of
+      | Base(qid, arg_tys, _) ->
+        qid in? knownNonEmptyBaseTypes || arg_tys ~= []
+          || specConstrainsTypeInhabited?(ty, spc)
+      | _ -> specConstrainsTypeInhabited?(ty, spc)
 
   op emptyTypesToSubtypes(spc: Spec): Spec = 
     let def fixSpecElts(elts: List SpecElement, type_map: TypeMap, op_map: OpMap)
@@ -33,7 +43,7 @@ spec
             | elt::rest ->
           let (new_elts, new_type_map, new_op_map) = fixSpecElts(rest, type_map, op_map) in
           case elt of
-            | Type(qid as Qualified(q,id),a) | ~(knownNonEmptyType?(qid, spc)) ->
+            | Type(qid as Qualified(q,id),a) | ~(knownNonEmptyTypeQID?(qid, spc)) ->
               let new_type_name = id^"__NonEmpty" in
               let new_type_qid = Qualified(q, new_type_name) in
               let new_pred_name = id^"__Predicate" in

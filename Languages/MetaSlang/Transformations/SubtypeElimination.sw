@@ -1,5 +1,5 @@
 SpecNorm qualifying spec
-  import Pragma, DefToAxiom, Coercions
+  import Pragma, DefToAxiom, Coercions, EmptyTypesToSubtypes
 
   op eagerRegularization?: Bool = false
   op regularizeSets?: Bool = true
@@ -579,38 +579,50 @@ SpecNorm qualifying spec
         else None
       | _ -> None
  
+  op hasDefiningConjunctImplyingSubtype(v as (vn,v_ty): MSVar, binding_cjs: MSTerms, spc: Spec): Bool =
+   exists? (fn cj ->
+               case bindingEquality? (v, cj) of
+                 | Some(e1, e2) | ~(embed? Var e2) ->
+                   let e2_ty = inferType(spc, e2) in
+                   let def implied_by_assigned_val(e1, e2_ty) =
+                         % let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
+                         case e1 of
+                           | Var((v_id, _), _) ->
+                             vn = v_id && possiblySubtypeOf?(e2_ty, v_ty, spc)
+                           | Record(prs, _) ->
+                             let given_tys = recordTypes(spc, e2_ty) in
+                             length prs = length given_tys
+                             && exists? (fn ((_, s_tm), s_e2_ty) -> implied_by_assigned_val(s_tm, s_e2_ty))
+                             (zip(prs, given_tys))
+                     | _ -> false
+                   in
+                   implied_by_assigned_val(e1, e2_ty)
+                     | _ -> false)
+      binding_cjs
+
   op getNonImpliedTypePredicates(bndVars: MSVars, binding_cjs: MSTerms, spc: Spec): MSTerms =
     %% For bndVars with subtypes return the subtype predicate applied to the var except when
     %% when the subtype is implied by a binding conjunct.
     %% Could add more cases the implication
-    mapPartial (fn v as (vn,v_ty) ->
+    mapPartial (fn v as (_,v_ty) ->
                   case maybeTypePredTerm(v_ty, mkVar v, spc) of
                     | None -> None
                     | Some pred_tm ->
-                  % let _ = writeLine("Considering "^printTerm pred_tm) in
-                  if exists? (fn cj ->
-                                case bindingEquality? (v, cj) of
-                                  | Some(e1, e2) | ~(embed? Var e2) ->
-                                    let e2_ty = inferType(spc, e2) in
-                                    let def implied_by_assigned_val(e1, e2_ty) =
-                                          % let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
-                                          case e1 of
-                                            | Var((v_id, _), _) ->
-                                              vn = v_id && possiblySubtypeOf?(e2_ty, v_ty, spc)
-                                            | Record(prs, _) ->
-                                              let given_tys = recordTypes(spc, e2_ty) in
-                                              length prs = length given_tys
-                                               && exists? (fn ((_, s_tm), s_e2_ty) -> implied_by_assigned_val(s_tm, s_e2_ty))
-                                                    (zip(prs, given_tys))
-                                            | _ -> false
-                                    in
-                                    implied_by_assigned_val(e1, e2_ty)
-                                  | _ -> false)
-                       binding_cjs
+                      % let _ = writeLine("Considering "^printTerm pred_tm) in
+                      if hasDefiningConjunctImplyingSubtype(v, binding_cjs, spc)
+                        || (case binding_cjs of
+                              | [cj1 as Apply(Fun(Or,_,_), _, _)]->
+                                forall? (fn disj ->
+                                           (~(hasRefTo?(disj, [v])) && knownNonEmptyType?(v_ty, spc))
+                                           || hasDefiningConjunctImplyingSubtype(v, conjunctTerms(disj, Exists), spc))
+                                (getDisjuncts cj1)
+                              | _ -> false)
                      then
                        % let _ = writeLine("relativized predicate not needed:\n"^printTerm pred_tm) in
                        None
-                     else Some pred_tm)
+                     else
+                       % let _ = writeLine("relativized predicate needed!:\n"^printTerm pred_tm) in
+                       Some pred_tm)
       bndVars
     
   op conjunctTerms(tm: MSTerm, kind: Binder): MSTerms =
