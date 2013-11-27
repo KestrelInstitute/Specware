@@ -226,8 +226,13 @@ op c4NonConstVarDef (ctxt                          : I2C_Context,
  let initfname  = "get_" ^ vname                                           in
  let valuevname = vname ^ "_value"                                         in
  let cspc       = addDefine  (cspc, (vname, initfname ^ "()"))             in
- let ctype      = C_Ptr (C_Base (name, Struct)) in
- let null_value = C_Cast (ctype, C_Const (C_Int (true, 0)))                in  % cast null to actual desired type
+ let null_value = case cexpr of
+                    | C_Var (_, typ as C_Ptr _) -> 
+                      C_Var ("NULL", typ)
+                    | _ -> 
+                      C_Cast (ctype, C_Const (C_Int (true, 0)))
+ in  
+ % cast null to actual desired type
  let cspc       = addVarDefn (cspc, (valuevname, ctype, null_value))       in
  let condexp    = C_Binary   (C_Eq,  C_Var(valuevname, ctype), null_value) in
  let setexp     = C_Binary   (C_Set, C_Var(valuevname, ctype), cexpr)      in
@@ -1302,6 +1307,7 @@ op constExpr? (cspc : C_Spec, expr : C_Exp) : Bool =
    | C_Const  _                  -> true
    | C_Var    ("TRUE",  C_Int32) -> true
    | C_Var    ("FALSE", C_Int32) -> true
+   | C_Var    ("NULL",  C_Ptr _) -> true
    | C_Field  []                 -> true
    | C_Field  (e1 :: es)         -> (constExpr? (cspc, e1)) && (constExpr? (cspc, C_Field es))
    | C_Unary  (_, e1)            ->  constExpr? (cspc, e1)
