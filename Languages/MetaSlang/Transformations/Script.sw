@@ -17,7 +17,7 @@ spec
  def claimNameMatch(cn, pn) =
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
-   if cq = wildQualifier
+   if cq = wildQualifier || cq = "*"   % for backwards compatibility
      then pid = cid
    else cq = pq && cid = pid
 
@@ -62,12 +62,22 @@ spec
   % Returns:
   %   The singleton list containing the associated OpInfo, if it exists.
   %   An empty list if the name is not found in the spec.
-  op findMatchingOps (spc: Spec, Qualified (q, id): QualifiedId): List OpInfo =
-   if q = wildQualifier
-     then wildFindUnQualified (spc.ops, id)
-     else case findAQualifierMap (spc.ops, q, id) of
-            | Some info -> [info]
-            | None      -> []
+  op findMatchingOps (spc: Spec, Qualified (q0, id): QualifiedId): List OpInfo =
+   if q0 = wildQualifier || q0 = "*"      % "*" for backward compatibility
+     then
+       if id = wildQualifier
+         then foldOpInfos (fn (info, result) -> info::result) [] spc.ops
+         else wildFindUnQualified (spc.ops, id)
+     else
+       if id = wildQualifier
+         then foldOpInfos (fn (info, result) -> case primaryOpName info of
+                                                  | Qualified(qi, _) | qi = q0 ->
+                                                    info::result
+                                                  | _ -> result)
+                [] spc.ops
+         else case findAQualifierMap (spc.ops, q0, id) of
+                | Some info -> [info]
+                | None      -> []
 
   op findMatchingOpsEx (spc: Spec, qid: QualifiedId): List OpInfo =
     %% findMatchingOps(interpreterBaseSpec, qid) ++   % problematic
@@ -727,6 +737,7 @@ spec
                        return (spc, tracing?)
                      }
                    | opinfos ->
+                     let print_no_change?= length opinfos = 1 in
                      foldM  (fn (spc, tracing?) -> fn opinfo ->  {
                               when tracing? 
                                 (print ("-- { at "^show qid^" }\n"));
@@ -734,7 +745,9 @@ spec
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
                               (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?, nullTransformInfo);
                               if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
-                                then let _ = writeLine(show qid^" not modified.") in
+                                then let _ = if print_no_change?
+                                               then writeLine(show(primaryOpName opinfo)^" not modified.")
+                                             else () in
                                      return (spc, tracing?)
                               else {
                               % _ <- return(printTransformInfoory info);

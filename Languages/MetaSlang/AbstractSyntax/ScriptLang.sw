@@ -69,7 +69,7 @@ op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> S
 
 op ppSpace: WLPretty = ppString " "
 
-op wildQualifier: String = "*"
+op wildQualifier: String = "_"
 
 op ppQid(Qualified(q, nm): QualifiedId): WLPretty =
   if q = UnQualified then ppString nm

@@ -1047,11 +1047,24 @@ If we want the precedence to be optional:
 	    "}")
     2)))
 
+(define-sw-parser-rule :QUALIFIABLE-OP-NAME-OR-WILD ()
+  (:anyof :UNQUALIFIED-OP-NAME :QUALIFIED-OP-NAME-OR-WILD))
+
+(define-sw-parser-rule :QUALIFIED-OP-NAME-OR-WILD ()
+  (:anyof 
+   ((:tuple (1 :QUALIFIER) "." (2 :OP-NAME)) (MetaSlang::mkQualifiedId-2 1 2))
+   ((:tuple "_" "." (2 :OP-NAME))   (MetaSlang::mkQualifiedId-2 "_" 2))
+   ((:tuple (1 :QUALIFIER) "." "_") (MetaSlang::mkQualifiedId-2 1 "_"))
+   ((:tuple "_" "." "_")   (MetaSlang::mkQualifiedId-2 "_" "_"))
+   ((:tuple "_")           (MetaSlang::mkQualifiedId-2 "_" "_"))
+   ((:tuple "." "_")       (MetaSlang::mkUnQualifiedId "_"))
+   ))
+
 (define-sw-parser-rule :QUALIFIABLE-OP-NAMES-PARENS ()
   (:anyof 
-   ((:tuple (1 :QUALIFIABLE-OP-NAME)) (list 1))
-   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) ")") 2)
-   ((:tuple "[" (2 (:repeat+ :QUALIFIABLE-OP-NAME ",")) "]") 2)))
+   ((:tuple (1 :QUALIFIABLE-OP-NAME-OR-WILD)) (list 1))
+   ((:tuple "(" (2 (:repeat+ :QUALIFIABLE-OP-NAME-OR-WILD ",")) ")") 2)
+   ((:tuple "[" (2 (:repeat+ :QUALIFIABLE-OP-NAME-OR-WILD ",")) "]") 2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   APPLICATION
@@ -1725,7 +1738,11 @@ If we want the precedence to be optional:
   (:tuple "UID" (1 :SC-UNIT-ID))           (make-transform-scterm    1   ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-QUALIFIED-NAME ()
-  (:tuple (1 :NAME) "." (2 :NAME))         (make-transform-qual      1 2 ':left-lcb ':right-lcb))
+  (:anyof
+   ((:tuple (1 :NAME) "." (2 :NAME))       (make-transform-qual      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "_" "." (2 :NAME))             (make-transform-qual    "_" 2 ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME) "." "_")             (make-transform-qual    1 "_" ':left-lcb ':right-lcb))
+   ((:tuple "_" "." "_")                   (make-transform-qual  "_" "_" ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :TRANSFORM-QUOTED-TERM ()
   (:tuple "`" (1 :EXPRESSION) "`")         (make-transform-quoted-term 1 ':left-lcb ':right-lcb))
