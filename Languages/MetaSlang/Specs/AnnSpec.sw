@@ -881,8 +881,8 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  op [a,b] foldOpInfos (f : AOpInfo a * b -> b) (init:b) (ops : AOpMap a) : b =
    foldriAQualifierMap
-     (fn (q, id, info, result) ->
-      if primaryOpName? (q, id, info) then
+     (fn (qq, idd, info, result) ->
+      if primaryOpName? (qq, idd, info) then
 	f (info, result)
       else
 	result)
