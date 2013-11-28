@@ -236,7 +236,6 @@ op pathToLastConjunct(n: Nat): Path =
   if n = 0 then []
     else 1::pathToLastConjunct(n-1)
 
-(*  
 op printEqProof(prf: EqProof, tm: MSTerm): String =
   case prf of
     | EqProofSubterm(path, s_prf) ->
@@ -250,7 +249,6 @@ op printEqProof(prf: EqProof, tm: MSTerm): String =
       ^ ", " ^ showEqProof last_pf ^ ")"
     | EqProofTactic str -> "by "^str
     | _ -> "by another method"
-*)
 
 op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): Option(MSTerm * Option RefinementProof) =
   let def transfm(tm: MSTerm): Option (MSTerm * Option EqProof) =

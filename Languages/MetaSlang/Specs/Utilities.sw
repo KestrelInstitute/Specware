@@ -2719,7 +2719,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     foldriAQualifierMap
       (fn (q, id, info, result) ->
          result
-        || (equalType?(firstOpDefInnerType info, ty) ))
+        || (possiblySubtypeOf?(firstOpDefInnerType info, ty, spc) ))
       false spc.ops
 
   op existsTrueExistentialAxiomForType?(ty: MSType, spc: Spec): Bool =

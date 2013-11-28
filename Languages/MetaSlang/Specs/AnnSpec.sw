@@ -609,7 +609,7 @@ op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType, new_tm: Option MSTerm):
   let new_full_dfn = case triples of
                        | [] -> TypedTerm (Any (typeAnn new_ty), new_ty, typeAnn new_ty)
                        | (tvs, _, old_tm) ::_ ->
-                         let _ = writeLine ("Adding refined type " ^ printType new_ty) in
+                         % let _ = writeLine ("Adding refined type " ^ printType new_ty) in
                          maybePiAndTypedTerm (([], new_ty, termDef old_tm) :: triples)
   in
   % let _ = if show qid = "insertBlack"
