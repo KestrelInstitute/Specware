@@ -73,6 +73,8 @@ type Int32  = (Int | intFitsInNBits? 32)
 %% ... We can add Int33 through Int63 (and others) if necessary ...
 type Int64  = (Int | intFitsInNBits? 64)
 
+op +_32 (x:Int32, y:Int32 | intFitsInNBits? 32 (x + y)) infixl 25 : Int32 = x + y
+
 proof Isa Int__intFitsInNBits_p_monotone
   apply(auto simp add: Int__intFitsInNBits_p_def)
   apply(cut_tac m="m - Suc 0" and n="n - Suc 0" in Integer__expt_monotone)
