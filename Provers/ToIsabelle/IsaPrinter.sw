@@ -586,13 +586,13 @@ IsaTermPrinter qualifying spec
                               let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
-                               % let _ = writeLine("oblig: "^printTerm oblig) in
-                               % let _ = writeLine("Generating proof for "^thm_name) in
+                                % let _ = writeLine("oblig: "^printTerm oblig) in
+                                % let _ = writeLine("Generating proof for "^thm_name) in
                               let prf_str =
                                 case pf of
                                     % if we have an implication proof, convert it to Isabelle
                                   | Some (RefineStrengthen impl_pf) ->
-                                    % let _ = writeLine(showImplProof impl_pf) in
+                                     let _ = writeLine(showImplProof impl_pf) in
                                     generateImplicationProof (c, condn, rhs, impl_pf)
                                   | Some (RefineEq eq_pf) ->
                                     % let _ = writeLine(showEqProof eq_pf) in
@@ -1090,7 +1090,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
          if firstp then
            ppLambdaEquality (c, (boundVars, step_lhs), (boundVars, step_rhs))
          else
-           prBreak 2 [string "... =", ppTerm c Top (mkMultiLambda (boundVars, step_rhs))]
+           prBreak 2 [string "... =", ppTerm c equalityContext (mkMultiLambda (boundVars, step_rhs))]
        in
        (prop, forwardProofBlock (ppEqualityProof (c, boundVars, step_lhs, step_rhs, pf)))
      in
