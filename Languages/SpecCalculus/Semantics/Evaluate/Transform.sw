@@ -191,9 +191,6 @@ spec
   op makeScript1 (spc: Spec) (trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
     case trans of
-      | Repeat(transforms, _) ->
-        {transfms <- mapM (makeScript1 spc) transforms;
-         return (Repeat transfms)}
       | Command("simplify", [Tuple(rls, _)], _) ->
         {srls <- mapM (makeRuleRef spc) rls;
          return(Simplify(srls, maxRewrites))}
@@ -718,6 +715,9 @@ spec
       | Block(stmts, _) ->
         {commands <- mapM (makeScript spc) stmts;
          return (Steps commands)}
+      | Repeat(transforms, _) ->
+        {transfms <- mapM (makeScript spc) transforms;
+         return (Repeat transfms)}
 
       | At(qids, comm, _) ->
         {command <- makeScript spc comm;
