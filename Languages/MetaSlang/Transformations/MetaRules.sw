@@ -312,7 +312,8 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                  let (new_bod, o_prf) = transEx1(new_vs, new_cjs, a, tsb, new_ex) in
                  Some(if trivial_bind? then new_bod
                         else MS.mkLet([(v_pat, s_tm)], new_bod),
-                      extendSimpProof(o_prf, new_tm, if trivial_bind? then [] else [1], "auto"))
+                      extendSimpProof(o_prf, new_tm, if trivial_bind? then [] else [1],
+                                      "(auto simp add: Let_def prod.split_asm)"))
                | None -> None)
          | None ->
         %% (ex(x,y) <C=constructor> x = e && q x y) = (case e of C x -> ex(y) q x y | _ -> false)
