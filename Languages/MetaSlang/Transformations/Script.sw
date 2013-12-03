@@ -87,17 +87,11 @@ spec
     %% Not certain about hasFlexHead?
     some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
 
-  op mkEqProofSym(o_ref_pr: Option RefinementProof): Option RefinementProof =
-    case o_ref_pr of
-      | Some(RefineEq prf) -> Some(RefineEq(EqProofSym prf))
-      | Some(RefineStrengthen(ImplEq prf)) -> Some(RefineStrengthen(ImplEq(EqProofSym prf)))
-      | _ -> None
-
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
     if trivialMatchTerm? rl.rhs
       then None
       else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec,
-                       opt_proof = mkEqProofSym rl.opt_proof})
+                       opt_proof = mkRefineProofSym_opt rl.opt_proof})
 
   op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
   op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
@@ -180,7 +174,7 @@ spec
     RefineEq(EqProofTheorem(qid, []))
 
   op mkRevTheoremProof(qid: QualifiedId): RefinementProof =
-    RefineEq(EqProofSym(EqProofTheorem(qid, [])))
+    RefineEq(mkEqProofSym(EqProofTheorem(qid, [])))
 
   op mkImpleStrengthenProof(qid: QualifiedId): RefinementProof =
     RefineStrengthen(ImplTheorem(qid, []))

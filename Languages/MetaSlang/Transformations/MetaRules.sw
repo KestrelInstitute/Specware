@@ -236,20 +236,6 @@ op pathToLastConjunct(n: Nat): Path =
   if n = 0 then []
     else 1::pathToLastConjunct(n-1)
 
-op printEqProof(prf: EqProof, tm: MSTerm): String =
-  case prf of
-    | EqProofSubterm(path, s_prf) ->
-      let s_tm = fromPathTerm(tm, path) in
-      "subterm: "^printTerm s_tm^"\n"^printEqProof(s_prf, s_tm)
-    | EqProofTrans (pf_term_list, last_pf) ->
-      "prove ("
-      ^ (flatten
-           (intersperse ", "
-              (map (fn (pf,tm) -> "(" ^ showEqProof pf ^ "," ^ printTerm tm ^ ")") pf_term_list)))
-      ^ ", " ^ showEqProof last_pf ^ ")"
-    | EqProofTactic str -> "by "^str
-    | _ -> "by another method"
-
 op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): Option(MSTerm * Option RefinementProof) =
   let def transfm(tm: MSTerm): Option (MSTerm * Option EqProof) =
         case tm of
@@ -402,12 +388,12 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
       let n_tm1 = if simplify? then simplify spc n_tm else n_tm in
       if equalTerm?(n_tm1, ctm) then None
       else
-        % let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
-        %          case o_prf of
-        %            | None -> ()
-        %            | Some prf -> (writeLine(anyToPrettyString prf);
-        %                           writeLine(printEqProof(prf, ctm))))
-        % in
+        let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
+                 case o_prf of
+                   | None -> ()
+                   | Some prf -> (writeLine(anyToPrettyString prf);
+                                  writeLine(printEqProof(prf, ctm))))
+        in
         Some(n_tm1, mapOption RefineEq o_prf)
     | None -> None
 

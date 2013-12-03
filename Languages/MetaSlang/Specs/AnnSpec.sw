@@ -182,10 +182,6 @@ AnnSpec qualifying spec
      | RefineStrengthen _ -> RefineStrengthen defaultImplProof
      | RefineDefOp _ -> RefineDefOp defaultPRedicateProof
 
- op mkEqProofSubterm(path: Path, prf: EqProof): EqProof =
-   if path = [] then prf
-     else EqProofSubterm(path, prf)
-
 % a TransformHistory is a record of each individual rule used to
 % transform a term, along with the terms that were the intermediate
 % steps
@@ -198,7 +194,29 @@ type TransformHistory = List (MSTerm * RuleSpec)
 
  op nullTransformInfo : TransformInfo = ([], None)
 
-op composeEqProofs (pf1: EqProof, middle: MSTerm, pf2: EqProof) : EqProof =
+
+ % The following "smart constructors" for EqProofs implement a rewrite
+ % system that transforms equality proofs into, hopefully, leading to
+ % smaller proofs. The rewrite system is:
+ %
+ % Trans (Trans (pf1, ..., pfk), Trans (pf1', ..., pfn'))
+ %   --> Trans (pf1, ..., pfk, pf1', ..., pfn')
+ % Trans (Trans (pf1, ..., pfk), pf')  --> Trans (pf1, ..., pfk, pf')
+ % Trans (pf, Trans (pf1, ..., pfk))  --> Trans (pf, pf1, ..., pfk)
+ % Sym (Trans (pf1, ..., pfn)) --> Trans (Sym pf1, ..., Sym pfn)
+ % Sym (Sym pf) --> pf
+ % Sym (Subterm pf) --> Subterm (Sym pf)
+ % Subterm (path1, Subterm (path2, pf)) --> Subterm (path1 ++ path2, pf)
+ %
+ % This essentially pushes Sym components to the leaves of the proof,
+ % flattens Trans'es, and combines nested Subterm proofs. Note that
+ % the smart constructors always assume that their arguments were
+ % themselves built with smart constructors, i.e., that they already
+ % been rewritten.
+
+ % Compose two equality proofs of lhs = middle and middle = rhs into a
+ % proof of lhs = rhs; this function is like a "smart constructor" for EqProofTrans
+ op composeEqProofs (pf1: EqProof, middle: MSTerm, pf2: EqProof) : EqProof =
   case (pf1, pf2) of
     | (EqProofTrans (pfs1, last1), EqProofTrans (pfs2, last2)) ->
       EqProofTrans (pfs1 ++ ((last1, middle) :: pfs2), last2)
@@ -208,6 +226,44 @@ op composeEqProofs (pf1: EqProof, middle: MSTerm, pf2: EqProof) : EqProof =
        EqProofTrans ((eq_pf1, middle) :: pfs2, last2)
     | (eq_pf1, eq_pf2) ->
       EqProofTrans ([(eq_pf1, middle)], eq_pf2)
+
+  op mkEqProofSym (pf: EqProof) : EqProof =
+    case pf of
+      | EqProofSubterm(path, sub_pf) ->
+        EqProofSubterm(path, mkEqProofSym sub_pf)
+      | EqProofSym sub_pf -> sub_pf
+      | EqProofTrans (pf_tm_list, last_pf) ->
+        EqProofTrans
+        (map (fn (sub_pf, tm) -> (mkEqProofSym sub_pf, tm)) pf_tm_list,
+         mkEqProofSym last_pf)
+      | _ -> EqProofSym pf
+
+ % Turn a proof of sub_lhs = sub_rhs into lhs = rhs, where sub_lhs and
+ % sub_rhs are at path p in lhs and rhs, respectively; this is like a
+ % "smart constructor" for EqProofSubterm, which commutes transitive
+ % and symmetric steps outside of the subterm steps
+ op mkEqProofSubterm (p: Path, pf: EqProof) : EqProof =
+   if p = [] then pf else
+     case pf of
+       | EqProofSubterm (p2, sub_pf) -> EqProofSubterm (p ++ p2, sub_pf)
+       | _ -> EqProofSubterm (p, pf)
+
+  op [a] PathTerm.fromPathTerm : (ATerm a * Path) -> ATerm a
+
+% simple printer for equality proofs
+op printEqProof(prf: EqProof, tm: MSTerm): String =
+  case prf of
+    | EqProofSubterm(path, s_prf) ->
+      let s_tm = PathTerm.fromPathTerm(tm, path) in
+      "subterm: "^printTerm s_tm^"\n"^printEqProof(s_prf, s_tm)
+    | EqProofTrans (pf_term_list, last_pf) ->
+      "prove ("
+      ^ (flatten
+           (intersperse ", "
+              (map (fn (pf,tm) -> "(" ^ showEqProof pf ^ "," ^ printTerm tm ^ ")") pf_term_list)))
+      ^ ", " ^ showEqProof last_pf ^ ")"
+    | EqProofTactic str -> "by "^str
+    | _ -> "by another method"
 
 
  % compose two refinement proofs; the term given is the intermediate
@@ -226,6 +282,18 @@ op composeEqProofs (pf1: EqProof, middle: MSTerm, pf2: EqProof) : EqProof =
      | (RefineEq eq_pf1, tm, RefineStrengthen impl_pf2) ->
        RefineStrengthen (ImplTrans (ImplEq eq_pf1, tm, impl_pf2))
      | _ -> fail ("composeRefinementProofs called with non-composable proofs!")
+
+
+  % Attempt to build a proof by symmetry; only works for equality
+  % proofs (and implication proofs proved by equality): otherwise,
+  % None is returned
+  op mkRefineProofSym_opt(o_ref_pr: Option RefinementProof): Option RefinementProof =
+    case o_ref_pr of
+      | Some(RefineEq prf) -> Some(RefineEq(mkEqProofSym prf))
+      | Some(RefineStrengthen(ImplEq prf)) -> Some(RefineStrengthen(ImplEq(mkEqProofSym prf)))
+      | _ -> None
+
+
 
  % compose TransformInfos for two steps of transformation
  op composeTransformInfos : (TransformInfo * MSTerm * TransformInfo) -> TransformInfo

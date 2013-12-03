@@ -1038,7 +1038,8 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 
   % generate an Isabelle proof of equality "lhs = rhs"
   op generateEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:EqProof): String =
-  isaProofToString (forwardProofBlock (ppEqualityProof (c, [], lhs, rhs, pf)))
+    let _ = writeLine("generateEqualityProof: " ^ printEqProof(pf, lhs)) in
+    isaProofToString (forwardProofBlock (ppEqualityProof (c, [], lhs, rhs, pf)))
 
   % pretty-print an Isabelle proof of the equality
   % "(lambda lhs_vars . lhs) = (lambda rhs_vars . rhs)"
