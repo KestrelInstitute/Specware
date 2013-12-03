@@ -184,7 +184,7 @@ MetaSlangRewriter qualifying spec
      { 
 	name     = "Eval",
         rule_spec = Eval,
-        opt_proof = None,
+        opt_proof = Some(RefineEq(EqProofTactic "auto")),
 	freeVars = [],
 	tyVars = [],
 	condition = None,
@@ -217,7 +217,7 @@ MetaSlangRewriter qualifying spec
                            let new_term = reduceTerm (term, spc) in
                            if equalTermStruct?(new_term, term)
                              then (false, term)
-                           else % let _ = writeLine(printTerm term ^"\n-->\n"^printTerm new_term^"\n") in
+                           else
                              (true, new_term)
                        else (false, term)
    in
@@ -644,7 +644,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
      | Lambda(lrules,b) ->
        let last_rule = last lrules in
        mapEach(fn (first,rule as (pat,cond,M),rest) -> 
-                 rewritePattern(solvers,boundVars,pat,path, rules, length lrules > 1 && rule = last_rule)
+                 rewritePattern(solvers,boundVars,pat,path, rules, false)
                  >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
          lrules               % A condition on the last case should be guaranteed by the type
        @@ (fn () ->

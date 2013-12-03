@@ -307,7 +307,7 @@ MetaSlang qualifying spec
      | (PQuotient qid1, PQuotient qid2) -> qid1 = qid2
      | (PChoose   qid1, PChoose   qid2) -> qid1 = qid2
 
-     | (Op   (x1,f1), Op   (x2,f2)) -> x1 = x2 && (f1 = f2 || f1 = Unspecified || f2 = Unspecified)
+     | (Op  (x1,fx1), Op  (x2,fx2)) -> x1 = x2 && (fx1 = fx2 || fx1 = Unspecified || fx2 = Unspecified)
      | (Project   x1, Project   x2) -> x1 = x2
      | (RecordMerge,  RecordMerge ) -> true
      | (Embed     x1, Embed     x2) -> x1 = x2
@@ -461,7 +461,7 @@ MetaSlang qualifying spec
      | (PQuotient qid1,       PQuotient qid2)       -> qid1 = qid2
      | (PChoose   qid1,       PChoose   qid2)       -> qid1 = qid2
 
-     | (Op        x1,         Op        x2)         -> x1 = x2
+     | (Op (x1, fx1),         Op (x2, fx2))         -> x1 = x2 && (fx1 = fx2 || fx1 = Unspecified || fx2 = Unspecified)
      | (Project   x1,         Project   x2)         -> x1 = x2
      | (RecordMerge,          RecordMerge)          -> true
      | (Embed     x1,         Embed     x2)         -> x1 = x2

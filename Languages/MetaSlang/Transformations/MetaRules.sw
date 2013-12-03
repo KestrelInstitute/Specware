@@ -388,12 +388,12 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
       let n_tm1 = if simplify? then simplify spc n_tm else n_tm in
       if equalTerm?(n_tm1, ctm) then None
       else
-        let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
-                 case o_prf of
-                   | None -> ()
-                   | Some prf -> (writeLine(anyToPrettyString prf);
-                                  writeLine(printEqProof(prf, ctm))))
-        in
+        % let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
+        %          case o_prf of
+        %            | None -> ()
+        %            | Some prf -> (writeLine(anyToPrettyString prf);
+        %                           writeLine(printEqProof(prf, ctm))))
+        % in
         Some(n_tm1, mapOption RefineEq o_prf)
     | None -> None
 
