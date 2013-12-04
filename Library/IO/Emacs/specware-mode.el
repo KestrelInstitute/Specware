@@ -2411,8 +2411,8 @@ With any other argument it simplifies terms."
                             (Utilities::namedTypesRaised? t))
                         (IsaTermPrinter::printUIDtoThyFile-3 %S %s %s))"
 		     filename
-		     (if (eq arg 1) "t" "nil")
-                     (if (and arg (not (eq arg 1))) "t" "nil"))))
+		     (if (eq arg 1) "nil" "t")
+                     (if (and arg (not (eq arg 1))) "nil" "t"))))
 	 (revert-without-query (cons ".*.thy" revert-without-query))
 	 (display-warning-suppressed-classes (cons 'warning
 						   display-warning-suppressed-classes)))
