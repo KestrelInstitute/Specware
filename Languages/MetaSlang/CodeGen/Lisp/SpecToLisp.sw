@@ -1,284 +1,305 @@
 LispGen qualifying spec
 
- import /Languages/MetaSlang/Transformations/PatternMatch
- import /Languages/MetaSlang/Transformations/InstantiateHOFns
- import /Languages/MetaSlang/Transformations/LambdaLift
- import /Languages/MetaSlang/Transformations/RemoveCurrying
- import /Languages/MetaSlang/Transformations/MetaTransform
- import /Languages/MetaSlang/CodeGen/DebuggingSupport
+import /Languages/MetaSlang/Transformations/PatternMatch
+import /Languages/MetaSlang/Transformations/InstantiateHOFns
+import /Languages/MetaSlang/Transformations/LambdaLift
+import /Languages/MetaSlang/Transformations/RemoveCurrying
+import /Languages/MetaSlang/Transformations/MetaTransform
+import /Languages/MetaSlang/CodeGen/DebuggingSupport
 
- import /Languages/MetaSlang/Transformations/DeconflictUpdates
- import /Languages/MetaSlang/CodeGen/StatefulUpdates
- import /Languages/MetaSlang/CodeGen/IntroduceSetfs
- import /Languages/MetaSlang/CodeGen/Globalize
- import /Languages/MetaSlang/Transformations/LiftSequences
+import /Languages/MetaSlang/Transformations/DeconflictUpdates
+import /Languages/MetaSlang/CodeGen/StatefulUpdates
+import /Languages/MetaSlang/CodeGen/IntroduceSetfs
+import /Languages/MetaSlang/CodeGen/Globalize
+import /Languages/MetaSlang/Transformations/LiftSequences
 
- import /Languages/Lisp/Lisp
- import /Library/Structures/Data/Maps/SimpleAsSTHarray
+import /Languages/Lisp/Lisp
+import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
- import /Languages/MetaSlang/CodeGen/CodeGenTransforms
- import /Languages/MetaSlang/CodeGen/Lisp/SliceForLisp
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/Lisp/SliceForLisp
 
- op generateCaseSensitiveLisp?: Bool = true
+type FileName     = String
+type PackageName  = String
+type PackageNames = List PackageName
+
+op generateCaseSensitiveLisp? : Bool = true
  
- op lispPackages: Strings = ["LISP", "COMMON-LISP", 
-                             %% Added because of Xanalys packages, but prudent anyway
-                             "SYSTEM", "SI", "IO", "BOOTSTRAP",
-                             %% Added for cmulisp compatibility
-                             "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
+op lispPackages : PackageNames = 
+ ["LISP", "COMMON-LISP", 
+  %% Added because of Xanalys packages, but prudent anyway
+  "SYSTEM", "SI", "IO", "BOOTSTRAP",
+  %% Added for cmulisp compatibility
+  "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
 
- op lispStrings: StringSet =
-    foldl add emptyMap 
-      (["NIL", "T", "CONS", "NULL", "CAR", "CDR", "LIST", "LISP", 
-	"APPEND", "REVAPPEND", "REVERSE", "COMPILE", "REDUCE", 
-	"SUBSTITUTE", "COUNT", "ENCLOSE", "EVAL", "ERROR", "FIRST", "LAST", 
-	"SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", 
-	"SEVENTH", "EIGHTH", "NINTH", "TENTH", 
-	"UNION", "INTERSECTION", "SET", "SETQ", "SETF", "SOME", 
-	"ARRAY", "POP", "PUSH", "TOP", "REMOVE", "GET", 
-	"REPLACE", "PI", "DELETE", "IDENTITY", "REM", 
-	"NTH", "EQ", "EQL", "EQUAL", "ZEROP", "ODDP", "EVENP", 
-	"SEARCH", "COMPILE", "MERGE", "RETURN", 
-	"VECTOR", "SVREF", "FORALL", "EXISTS", "SETF", "LOOP", 
-	"OR", "AND", "NOT", "LENGTH", "MAP", "MEMBER", "TIME", 
-	"CHAR", "STRING", "SYMBOL", "NAT", "MAKE-STRING", 
-	"CONST", "IF", "APPLY", "QUOTE", "MIN", "GO", 
-	"PRINT", "READ", "WRITE", "LOAD", "..", 
-	"BLOCK", "FORMAT", "BREAK", "SUBST", "FIND", "CLASS", 
-	"+", "++", "**", "-", "*", ">", "<", "<=", ">= ", "\\=", 
-	"BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN"]
-       ++ lispPackages)
+op lispStrings : StringSet =
+ foldl add 
+       emptyMap 
+       (["NIL", "T", "CONS", "NULL", "CAR", "CDR", "LIST", "LISP", 
+         "APPEND", "REVAPPEND", "REVERSE", "COMPILE", "REDUCE", 
+         "SUBSTITUTE", "COUNT", "ENCLOSE", "EVAL", "ERROR", "FIRST", "LAST", 
+         "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", 
+         "SEVENTH", "EIGHTH", "NINTH", "TENTH", 
+         "UNION", "INTERSECTION", "SET", "SETQ", "SETF", "SOME", 
+         "ARRAY", "POP", "PUSH", "TOP", "REMOVE", "GET", 
+         "REPLACE", "PI", "DELETE", "IDENTITY", "REM", 
+         "NTH", "EQ", "EQL", "EQUAL", "ZEROP", "ODDP", "EVENP", 
+         "SEARCH", "COMPILE", "MERGE", "RETURN", 
+         "VECTOR", "SVREF", "FORALL", "EXISTS", "SETF", "LOOP", 
+         "OR", "AND", "NOT", "LENGTH", "MAP", "MEMBER", "TIME", 
+         "CHAR", "STRING", "SYMBOL", "NAT", "MAKE-STRING", 
+         "CONST", "IF", "APPLY", "QUOTE", "MIN", "GO", 
+         "PRINT", "READ", "WRITE", "LOAD", "..", 
+         "BLOCK", "FORMAT", "BREAK", "SUBST", "FIND", "CLASS", 
+         "+", "++", "**", "-", "*", ">", "<", "<=", ">= ", "\\=", 
+         "BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN"]
+          ++ lispPackages)
 
- op notReallyLispStrings: Strings =
-   ["C", "D", "I", "M", "N", "P", "S", "V", "X", "Y", "Z", "KEY", "NAME", "VALUE", "PATTERN"]
+op notReallyLispStrings : Strings =
+ ["C", "D", "I", "M", "N", "P", "S", "V", "X", "Y", "Z", "KEY", "NAME", "VALUE", "PATTERN"]
 
- op isLispString(id: Id): Bool = 
-   member (lispStrings, id) 
-   ||
-   %% The above is only necessary for packages. They should be done differently in next release.
-   (Lisp.uncell (Lisp.findSymbol(id, "CL"))
-    && 
-    id nin? notReallyLispStrings)
+op isLispString (id : Id) : Bool = 
+ member (lispStrings, id) 
+ ||
+ %% The above is only necessary for packages. They should be done differently in next release.
+ (Lisp.uncell (Lisp.findSymbol(id, "CL"))
+  && 
+  id nin? notReallyLispStrings)
 
- op lispPackage?(id: Id): Bool =
-   let pkg = Lisp.apply (Lisp.symbol ("CL", "FIND-PACKAGE"), [Lisp.string id]) in
-   Lisp.uncell pkg
-   && 
-    Lisp.uncell (Lisp.apply (Lisp.symbol ("CL", "PACKAGE-NAME"), [pkg])) 
-      in? lispPackages
+op lispPackage? (id : Id) : Bool =
+ let pkg = Lisp.apply (Lisp.symbol ("CL", "FIND-PACKAGE"), [Lisp.string id]) in
+ Lisp.uncell pkg
+ && 
+ Lisp.uncell (Lisp.apply (Lisp.symbol ("CL", "PACKAGE-NAME"), [pkg])) in? lispPackages
 
- op  ith : [a] Nat * String * List (String * a) -> Nat
- def ith (n, id, ids) = 
-   case ids of
-     | [] -> System.fail ("No such index " ^ id)
-     | (id2, _) :: ids -> 
-       if id = id2 then
-	 n 
-       else 
-	 ith (n + 1, id, ids)
+op [a] ith (n : Nat, id : String, ids : List (String * a)) : Nat =
+ case ids of
+   | [] -> System.fail ("No such index " ^ id)
+   | (id2, _) :: ids -> 
+     if id = id2 then
+       n 
+     else 
+       ith (n + 1, id, ids)
 
- op projectionIndex (sp: Spec, id: Id, ty: MSType): Nat = 
-   let (dom, _) = arrow (sp, ty) in
-   let row = product (sp, dom) in
-   ith (0, id, row)
+op projectionIndex (sp : Spec, id : Id, ty : MSType) : Nat = 
+ let (dom, _) = arrow   (sp, ty)  in
+ let row      = product (sp, dom) in
+ ith (0, id, row)
 
- op isSpecialProjection (sp: Spec, ty: MSType, id: Id) : Option String = 
-   case stripSubtypes (sp, ty) of
-     | Arrow (dom, _, _) -> 
-       (case stripSubtypes (sp, dom) of
-	  | Product ([(id1, _), (id2, _)], _) -> 
-	    Some (if id1 = id then "car" else "cdr")
-	  | Product ([(id1, _)], _) ->	% Unary record
-	    Some "functions::id"
-	  | _ -> None)
-     | _ -> None
+op isSpecialProjection (sp : Spec, ty : MSType, id : Id) : Option String = 
+ case stripSubtypes (sp, ty) of
+   | Arrow (dom, _, _) -> 
+     (case stripSubtypes (sp, dom) of
 
- op  isConsDataType : Spec * MSType -> Option (Id * Id)
- def isConsDataType (sp, ty) : Option (Id * Id) = 
-   let
-     def isTwoTuple (ty : MSType) = 
-       case stripSubtypes (sp, ty) of
-	 | Product ([_, _], _) -> true 
-	 | _ -> false
-   in
+        | Product ([(id1, _), (id2, _)], _) -> 
+          Some (if id1 = id then "car" else "cdr")
+
+        | Product ([(id1, _)], _) ->	% Unary record
+          Some "functions::id"
+
+        | _ -> None)
+
+   | _ -> None
+
+op isConsDataType (sp : Spec, ty : MSType) : Option (Id * Id) =
+ let
+   def isTwoTuple (ty : MSType) = 
      case stripSubtypes (sp, ty) of
-       | CoProduct ([("None", None), ("Some", Some _)], _) -> None 
-
-       % Options never get to be cons types.
-       % This is required to make boot strapping work
-       % as hash-quote-spec prints options without optimization.
-       
-       | CoProduct ([(i1, None  ), (i2, Some s)], _) -> if isTwoTuple s then Some (i1, i2) else None
-       | CoProduct ([(i2, Some s), (i1, None  )], _) -> if isTwoTuple s then Some (i1, i2) else None
-       | _ -> None
+       | Product ([_, _], _) -> true 
+       | _ -> false
+ in
+ case stripSubtypes (sp, ty) of
+   | CoProduct ([("None", None), ("Some", Some _)], _) -> None 
+     
+   % Options never get to be cons types.
+   % This is required to make boot strapping work
+   % as hash-quote-spec prints options without optimization.
+     
+   | CoProduct ([(i1, None  ), (i2, Some s)], _) -> if isTwoTuple s then Some (i1, i2) else None
+   | CoProduct ([(i2, Some s), (i1, None  )], _) -> if isTwoTuple s then Some (i1, i2) else None
+   | _ -> None
     
 
- op hasConsEmbed (sp: Spec, ty: MSType): Bool = 
-   case stripSubtypes (sp, ty) of
-     | Arrow (_, rng, _) -> 
-       (case isConsDataType (sp, rng) of
-	  | Some _ -> true
-	  | None   -> false)
-     | _ -> false
+op hasConsEmbed (sp : Spec, ty : MSType) : Bool = 
+ case stripSubtypes (sp, ty) of
+   | Arrow (_, rng, _) -> 
+     (case isConsDataType (sp, rng) of
+        | Some _ -> true
+        | _      -> false)
+   | _ -> false
 
- op isConsIdentifier (sp: Spec, id: Id, ty: MSType) : Option String = 
-   case isConsDataType (sp, ty) of
-     | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
-     | None -> None
+op isConsIdentifier (sp : Spec, id : Id, ty : MSType) : Option String = 
+ case isConsDataType (sp, ty) of
+   | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
+   | _  -> None
 
- op hasConsDomain (sp: Spec, id: Id, ty: MSType) : Option String = 
-   case stripSubtypes (sp, ty) of
-     | Arrow (dom, _, _) -> 
-       (case isConsDataType (sp, dom) of
-	  | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
-	  | None -> None)
-     | _ -> None
+op hasConsDomain (sp : Spec, id : Id, ty : MSType) : Option String = 
+ case stripSubtypes (sp, ty) of
+   | Arrow (dom, _, _) -> 
+     (case isConsDataType (sp, dom) of
+        | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
+        | _ -> None)
+   | _ -> None
 
- op listTerm(tm: MSTerm, sp: Spec): Option MSTerms =
-   case tm of
-     | Apply(Fun(Op(Qualified("TranslationBuiltIn", "mkTuple"), _), _, _),
-             Record([(_, x), (_, y)], _), _) ->
-       (case y of
-          | Fun(Embed (id, false), ty, _) | some?(isConsDataType(sp, ty)) ->
-            Some [x]
-          | Apply(Fun(Embed (id, true), ty, _), cdr_arg, _) | some?(isConsDataType(sp, range (sp, ty))) ->
-            (case listTerm(cdr_arg, sp) of
-               | Some r_list_args -> Some(x :: r_list_args)
-               | None -> None)
-          | _ -> None)       
-     | _ -> None
+op listTerm (tm : MSTerm, sp : Spec) : Option MSTerms =
+ case tm of
+   | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkTuple"), _), _, _),
+            Record ([(_, x), 
+                     (_, y)], 
+                    _), 
+            _) 
+     ->
+     (case y of
+
+        | Fun (Embed (id, false), ty, _) | some? (isConsDataType (sp, ty)) ->
+          Some [x]
+
+        | Apply (Fun (Embed (id, true), ty, _), cdr_arg, _) | some? (isConsDataType (sp, range (sp, ty))) ->
+          (case listTerm(cdr_arg, sp) of
+             | Some r_list_args -> Some(x :: r_list_args)
+             | _ -> None)
+
+        | _ -> None)       
+   | _ -> None
 
 
- op patternName (pattern : MSPattern): Id = 
-   case pattern of
-     | VarPat ((id, _), _) -> id
-     | RestrictedPat(p, _, _) -> patternName p
-     | _ -> 
-       System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
+op patternName (pattern : MSPattern) : Id = 
+ case pattern of
+   | VarPat        ((id, _), _) -> id
+   | RestrictedPat (p, _,    _) -> patternName p
+   | _ -> 
+     System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
 
- op patternNames (pattern : MSPattern): List1 Id = 
-   case pattern of
-     | VarPat    ((id, _), _) -> [id] 
-     | RecordPat (fields,  _) -> List.map (fn (_, p) -> patternName p) fields
-     %| RestrictedPat(p,_,_) -> patternNames p
-     | _ -> 
-       System.fail ("SpecToLisp.patternNames " ^ printPattern pattern)
+op patternNames (pattern : MSPattern) : List1 Id = 
+ case pattern of
+   | VarPat    ((id, _), _) -> [id] 
+   | RecordPat (fields,  _) -> List.map (fn (_, p) -> patternName p) fields
+  %| RestrictedPat(p,_,_) -> patternNames p
+   | _ -> 
+     System.fail ("SpecToLisp.patternNames " ^ printPattern pattern)
 
- % type StringSet = StringSet.Set
- type StringSet = STHMap.Map(String, Bool)
- op member(S: StringSet, x: String): Bool =
-   case apply(S, x) of
-     | Some b -> b
-     | None -> false
+% type StringSet = StringSet.Set
+type StringSet = STHMap.Map(String, Bool)
 
- op add( S: StringSet, x: String): StringSet =
-   update(S, x, true)
+op member (S : StringSet, x : String) : Bool =
+ case apply(S, x) of
+   | Some b -> b
+   | _  -> false
 
- %op delete( S: StringSet, x: String): StringSet =
-%   remove(S, x, false)
+op add (S : StringSet, x : String) : StringSet =
+ update(S, x, true)
 
-op addList(S: StringSet, l: List String): StringSet =
-  foldl add S l
+%% op delete (S: StringSet, x: String) : StringSet =
+%%  remove (S, x, false)
 
-%op difference(S1: StringSet, S2: StringSet): StringSet =
-%  foldi (fn (x, y, S) -> if y then remove(S, x) else S) S1 S2
+op addList (S : StringSet, l : List String) : StringSet =
+ foldl add S l
 
- %% Domain is qualification. First set is strings as given, second is upper case version
- op  userStringMap : Ref (STHMap.Map (String, (Ref StringSet) * (Ref StringSet)))
- def userStringMap = Ref (emptyMap)
- def initializeSpecId () =
-   (userStringMap := emptyMap)
+%% op difference (S1: StringSet, S2: StringSet) : StringSet =
+%%  foldi (fn (x, y, S) -> if y then remove (S, x) else S) S1 S2
+
+%% Domain is qualification. First set is strings as given, second is upper case version
+op userStringMap : Ref (STHMap.Map (String, (Ref StringSet) * (Ref StringSet))) =
+ Ref emptyMap
+
+op initializeSpecId () : () =
+ (userStringMap := emptyMap)
        
- op  lookupSpecId : String * String * String -> String
- def lookupSpecId (id, ID, pkg) =
-   case apply (! userStringMap, pkg) of
-     | Some (userStrings, userUpper) ->
-       if member (! userUpper, ID) then
-         if member (! userStrings, id) then
-	   id
-	 else 
-	   "|!" ^ id ^ "|"
-       else 
-         (userUpper   := add (! userUpper,   ID);
-          userStrings := add (! userStrings, id);
-          id)
-     | None -> 
-       (userStringMap := update (! userStringMap, pkg, 
-                                 (Ref (add (emptyMap, id)), 
-                                  Ref (add (emptyMap, ID))));
-	id)
+op lookupSpecId (id : String, ID : String, pkg : String) : String =
+ case apply (! userStringMap, pkg) of
 
- def specId (id, pkg) = 
-   let id =
-       if forall? (fn #|  -> false
-                    | #`  -> false
-                    | #'  -> false
-                    | #\\ -> false
-                    | _ -> true)
-           id
-         then id                        % Test is redundant, but translate is expensive even if identity
-         else translate (fn #|  -> "\\|" 
-                          | #`  -> "\\`"
-                          | #'  -> "\\'"
-		          | #\\ -> "\\\\" 
-			  | ch  -> Char.show ch)
+   | Some (userStrings, userUpper) ->
+     if member (! userUpper, ID) then
+       if member (! userStrings, id) then
+         id
+       else 
+         "|!" ^ id ^ "|"
+     else 
+       (userUpper   := add (! userUpper,   ID);
+        userStrings := add (! userStrings, id);
+        id)
+
+   | _ -> 
+     (userStringMap := update (! userStringMap, pkg, 
+                               (Ref (add (emptyMap, id)), 
+                                Ref (add (emptyMap, ID))));
+      id)
+
+op specId (id : String, pkg : String) : String = 
+ let id =
+     if forall? (fn #|  -> false
+                  | #`  -> false
+                  | #'  -> false
+                  | #\\ -> false
+                  | _   -> true)
                 id
-   in
-   let upper_ID = String.map toUpperCase id in
-   let ID = if generateCaseSensitiveLisp? then id else upper_ID in
-   if isLispString upper_ID || id@0 = #! then
-       "|!" ^ id ^ "|"
-     else if exists? (fn ch -> ch = #:) id then
-       "|"  ^ id ^ "|"
+       then 
+         id                        % Test is redundant, but translate is expensive even if identity
      else 
-       lookupSpecId (id, upper_ID, pkg)
+       translate (fn #|  -> "\\|" 
+                   | #`  -> "\\`"
+                   | #'  -> "\\'"
+                   | #\\ -> "\\\\" 
+                   | ch  -> Char.show ch)
+                 id
+ in
+ let upper_ID = String.map toUpperCase id                           in
+ let ID       = if generateCaseSensitiveLisp? then id else upper_ID in
+ if isLispString upper_ID || id@0 = #! then
+   "|!" ^ id ^ "|"
+ else if exists? (fn ch -> ch = #:) id then
+   "|"  ^ id ^ "|"
+ else 
+   lookupSpecId (id, upper_ID, pkg)
 
- def defaultSpecwarePackage = 
-   if generateCaseSensitiveLisp? then
-     "SW-User"
+op defaultSpecwarePackage : String = 
+ if generateCaseSensitiveLisp? then
+   "SW-User"
+ else 
+   "SW-USER"
+
+op mkLPackageId id : String = 
+ if id = UnQualified then 
+   defaultSpecwarePackage
+ else
+   let upper_id = String.map Char.toUpperCase id                      in
+   let id       = if generateCaseSensitiveLisp? then id else upper_id in
+   if isLispString upper_id || lispPackage? upper_id then
+     id ^ (if generateCaseSensitiveLisp? then "-Spec" else "-SPEC")
    else 
-     "SW-USER"
-
- def mkLPackageId id = 
-   if id = UnQualified then 
-     defaultSpecwarePackage
-   else
-     let upper_id = String.map Char.toUpperCase id in
-     let id = (if generateCaseSensitiveLisp? then id else upper_id) in
-     if isLispString upper_id || lispPackage? upper_id then
-         id ^ (if generateCaseSensitiveLisp? then "-Spec" else "-SPEC")
+     id
+      
+%op printPackageId : QualifiedId * String -> String % see Suppress.sw
+op SpecToLisp.printPackageId (name as Qualified (pack, id) : QualifiedId, 
+                              defPkgNm                     : String) 
+ : String = 
+ case (pack, id) of
+   | ("System", "time") -> "TIME"
+   | _ ->
+     let pkg = mkLPackageId pack in
+     if pkg = defPkgNm then
+       specId (id, "") % !!!
+     else
+       (pkg ^ "::" ^ specId (id, pkg))
+      
+op opArity (sp, idf, ty) : Option (MSType * Nat) =
+ case typeArity (sp, ty) of
+   | None -> None
+   | arity ->
+     if polymorphicDomainOp? (sp, idf) then
+       None
      else 
-	 id
-      
- %op printPackageId : QualifiedId * String -> String % see Suppress.sw
- def SpecToLisp.printPackageId (id, defPkgNm) = 
-   case id of
-     | Qualified ("System", "time") -> "TIME"
-     | Qualified (pack, id) ->
-       let pkg = mkLPackageId pack in
-       if pkg = defPkgNm then
-	 specId (id, "") % !!!
-       else
-	 (pkg ^ "::" ^ specId (id, pkg))
-      
- def opArity (sp, idf, ty) =
-   case typeArity (sp, ty) of
-     | None -> None
-     | arity ->
-       if polymorphicDomainOp? (sp, idf) then
-	 None
-       else 
-	 arity
+       arity
 
- def compareSymbols = (mkLOp "eq") : LispTerm
+op compareSymbols : LispTerm = mkLOp "eq"
 
- def mkLispTuple valTms =
-   case valTms of
-     | []     -> mkLBool false         % Nil
-     % Named tuples can be unary
-     | [x]    -> x
-     | [_, _] -> mkLApply (mkLOp "cons",   valTms)
-     | _      -> mkLApply (mkLOp "vector", valTms)
+op mkLispTuple (valTms : LispTerms) : LispTerm =
+ case valTms of
+   | []     -> mkLBool false         % Nil
+   % Named tuples can be unary
+   | [x]    -> x
+   | [_, _] -> mkLApply (mkLOp "cons",   valTms)
+   | _      -> mkLApply (mkLOp "vector", valTms)
      
  op  unaryName : String -> String
  def unaryName (nm : String) : String = nm  % ^ "-1"
@@ -385,6 +406,7 @@ op addList(S: StringSet, l: List String): StringSet =
 				 [mkLVar "!x", 
 				  mkLNat id]))
 	   )
+
      | (Not, ty, _ ) ->
        let oper = mkLOp "cl:not" in
        (case optArgs of
@@ -511,12 +533,12 @@ op addList(S: StringSet, l: List String): StringSet =
 	    (case optArgs of
 	       | None -> mkLLambda (["!x"], [], mkLVar "!x")
 	       | Some term -> 
-             case listTerm(term, sp) of
-               | Some list_args ->
-                 let l_list_args = map (fn t -> mkLTerm (sp, dpn, vars, t)) list_args in
-                 mkLApply(mkLOp "list", l_list_args)
-               | None -> mkLTerm (sp, dpn, vars, term))
-	  | None -> 
+                 case listTerm(term, sp) of
+                   | Some list_args ->
+                     let l_list_args = map (fn t -> mkLTerm (sp, dpn, vars, t)) list_args in
+                     mkLApply(mkLOp "list", l_list_args)
+                   | _ -> mkLTerm (sp, dpn, vars, term))
+	  | _ -> 
 	    let id = mkLIntern id in
 	    (case optArgs of
 	       | None -> mkLLambda (["!x"], [], 
@@ -528,7 +550,7 @@ op addList(S: StringSet, l: List String): StringSet =
      | (Embed (id, false), ty, _) -> 
        (case isConsDataType (sp, ty) of
 	  | Some _ -> mkLBool false
-	  | None   -> mkLApply (mkLOp "list", [mkLIntern id]))
+	  | _      -> mkLApply (mkLOp "list", [mkLIntern id]))
 
      | (Quotient qid, ty, pos) -> 
        % let _ = toScreen("\nQuotient qid     = " ^  anyToString qid     ^ "\n") in
@@ -551,6 +573,7 @@ op addList(S: StringSet, l: List String): StringSet =
                                               [equiv, mkLTerm (sp, dpn, vars, term)]))
                 | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
           | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
+
      | (Choose qid, ty, _) ->  
        (case findAllTypes (sp, qid) of
           | [info] ->
@@ -580,56 +603,55 @@ op addList(S: StringSet, l: List String): StringSet =
 
      | mystery -> System.fail ("In mkLTermOp, unexpected termOp: " ^ (anyToString mystery))
 
- op  typeOfOp : Spec * QualifiedId -> MSType
- def typeOfOp (sp, qid) =
-   case AnnSpec.findTheOp (sp, qid) of
-     | Some info -> 
-       firstOpDefInnerType info
-     | None -> System.fail("Undefined op: "^show qid)
+op typeOfOp (sp : Spec, name : QualifiedId) : MSType =
+ case AnnSpec.findTheOp (sp, name) of
+   | Some info -> 
+     firstOpDefInnerType info
+   | _ -> System.fail ("Undefined op: " ^ show name)
 
- op  fullCurriedApplication : AnnSpec.Spec * String * StringSet * MSTerm -> Option LispTerm
- def fullCurriedApplication (sp, dpn, vars, term) =
-   let 
+op fullCurriedApplication (sp : AnnSpec.Spec, dpn : String, vars : StringSet, term : MSTerm)
+ : Option LispTerm =
+ let 
 
-     def aux (term, i, args) =
-       case term of
+   def aux (term, i, args) =
+     case term of
 
-	 | Fun (Op (id, _), ty, _) ->
-           %% Note that we use typeOfOp(sp, id) instead of ty because may be polymorphic with instantiation to a fn type
-	   if i > 1 && i = curryShapeNum (sp, typeOfOp(sp, id)) 
-             then
+       | Fun (Op (id, _), ty, _) ->
+         %% Note that we use typeOfOp(sp, id) instead of ty because may be polymorphic with instantiation to a fn type
+         if i > 1 && i = curryShapeNum (sp, typeOfOp(sp, id)) 
+           then
 	     Some (mkLApply (mkLOp (unCurryName (id, i, dpn)), 
 			     List.map (fn t -> mkLTerm (sp, dpn, vars, t)) args))
-	   else 
-	     None
+         else 
+           None
 
-	 | Fun (Choose _, _, _) ->
-	   if i = 2 then
-	     case args of
-	       | [f, val] ->
-		 if identityFn? f then
-		   Some (mkLApply (mkLOp "Slang-Built-In::quotient-element", 
-				   [mkLTerm (sp, dpn, vars, val)]))
-		 else 
-		   Some (mkLApply (mkLOp "Slang-Built-In::choose-1-1", 
-				   [mkLTerm (sp, dpn, vars, f), 
-				    mkLTerm (sp, dpn, vars, val)]))
-	       | _ -> None % shouldn't happen
-	   else 
-	     None
+       | Fun (Choose _, _, _) ->
+         if i = 2 then
+           case args of
+             | [f, val] ->
+               if identityFn? f then
+                 Some (mkLApply (mkLOp "Slang-Built-In::quotient-element", 
+                                 [mkLTerm (sp, dpn, vars, val)]))
+               else 
+                 Some (mkLApply (mkLOp "Slang-Built-In::choose-1-1", 
+                                 [mkLTerm (sp, dpn, vars, f), 
+                                  mkLTerm (sp, dpn, vars, val)]))
+             | _ -> None % shouldn't happen
+         else 
+           None
 
-	 | Apply (t1, t2, _) -> aux (t1, i+1, t2::args)
+       | Apply (t1, t2, _) -> aux (t1, i+1, t2::args)
 
-	 | _ -> None
+       | _ -> None
 
-  in 
-    aux (term, 0, [])
+ in 
+ aux (term, 0, [])
 
 
- def mkLTermList (sp, dpn, vars, term : MSTerm) = 
-   case term of
-     | Record (fields, _) -> List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) fields
-     | _ -> [mkLTerm (sp, dpn, vars, term)]
+op mkLTermList (sp : Spec, dpn : String, vars : StringSet, term : MSTerm) : LispTerms = 
+ case term of
+   | Record (fields, _) -> List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) fields
+   | _ -> [mkLTerm (sp, dpn, vars, term)]
 
  %% Make a special op for the message format to ensure that terms built by mkLTerm 
  %% can be recognized by warn_about_non_constructive_defs
@@ -777,111 +799,114 @@ op addList(S: StringSet, l: List String): StringSet =
 				      []
 				      free_vars)]))
 
- def SpecToLisp.printTerm_OnOneLine term = 
-   let s = PrettyPrint.toString (format (8000, ppTerm (initialize (asciiPrinter, false))
-					 ([], Top) 
-					 term))
-   in
-   let 
+def SpecToLisp.printTerm_OnOneLine term = 
+ let s = PrettyPrint.toString (format (8000, 
+                                       ppTerm (initialize (asciiPrinter, false))
+  					      ([], Top) 
+                                              term))
+ in
+ let 
 
-     def whitespace? char = 
-       char = #\s || char = #\n || char = #\t
+   def whitespace? char = 
+     char = #\s || char = #\n || char = #\t
 
-     def compress (chars, have_whitespace?) =
-       %% avoid deep recursions...
-       let (chars, _) = 
-           foldl (fn ((chars, have_whitespace?), char) ->
-                    if whitespace? char then
-                      if have_whitespace? then
-                        (chars, have_whitespace?)
-                      else
-                        ([#\s] ++ chars, true)
+   def compress (chars, have_whitespace?) =
+     %% avoid deep recursions...
+     let (chars, _) = 
+         foldl (fn ((chars, have_whitespace?), char) ->
+                  if whitespace? char then
+                    if have_whitespace? then
+                      (chars, have_whitespace?)
                     else
-                      ([char] ++ chars, false))
-                 ([], true)
-                 chars
-       in
-         reverse chars
-   in
-     implode (compress (explode s, true))
+                      ([#\s] ++ chars, true)
+                  else
+                    ([char] ++ chars, false))
+               ([], true)
+               chars
+     in
+     reverse chars
+ in
+ implode (compress (explode s, true))
 
 	 
- %% Poor man's optimizer. 
- %%  Takes care of unnecessary redexes generated by compiler.
+%% Poor man's optimizer. 
+%%  Takes care of unnecessary redexes generated by compiler.
 
- %
- % Count occurrences up to at most 2
- %
- def countOccurrence2 (x, count, terms : List LispTerm) = 
-   case terms of
-     | [] -> count 
-     | Cons (term, terms) -> 
-       case term of
-	 | Apply (t1, terms1) -> 
-	   countOccurrence2 (x, count, Cons (t1, terms1 ++ terms))
-
-	 | Lambda (vars, _, body) -> 
-	   %% Was: 2 (* give up *) 
-	   %% Never do a real subsitution within a lambda body, but if there are no 
-	   %% occurences, return count of 0 to trigger vacuous
-	   %% subsitution that allows us to drop unused arg.
-	   if x in? vars || countOccurrence2 (x, 0, [body]) = 0 then
-	     countOccurrence2 (x, count, terms)		% Captured
-	   else 
-	     2 (* give up because may be called more than once *)
-
-	 | Letrec (vars, terms1, body) -> 
-	   %% Was: 2 (* give up *)
-	   %% Similar to Lambda case
-	   if x in? vars || countOccurrence2 (x, 0, [body]) = 0 then
-	     countOccurrence2 (x, count, body::terms1 ++ terms)
-	   else 
-	     2
-
-	 | Let (vars, terms1, body) -> 
-	   countOccurrence2 (x, count, body::terms1 ++ terms)
-
-	 | If     (t1, t2, t3) -> countOccurrence2 (x, count, [t1, t2, t3] ++ terms)
-	 | IfThen (t1, t2)     -> countOccurrence2 (x, count, [t1, t2]     ++ terms)
-	 | Seq    terms1       -> countOccurrence2 (x, count, terms1       ++ terms)
-
-	 | Var y -> 
-	   if x = y then 
-	     if count > 0 then 
-	       2 
-	     else
-	       countOccurrence2 (x, count + 1, terms)
-	   else countOccurrence2 (x, count, terms)
-
-	 | _ -> countOccurrence2 (x, count, terms)
+%
+% Count occurrences up to at most 2
+%
+op countOccurrence2 (x : String, count : Nat, terms : LispTerms) : Nat = 
+ case terms of
+   | [] -> count 
+   | term :: terms -> 
+     case term of
+       | Apply (t1, terms1) -> 
+         countOccurrence2 (x, count, Cons (t1, terms1 ++ terms))
+         
+       | Lambda (vars, _, body) -> 
+         %% Was: 2 (* give up *) 
+         %% Never do a real subsitution within a lambda body, but if there are no 
+         %% occurences, return count of 0 to trigger vacuous
+         %% subsitution that allows us to drop unused arg.
+         if x in? vars || countOccurrence2 (x, 0, [body]) = 0 then
+           countOccurrence2 (x, count, terms)		% Captured
+         else 
+           2 (* give up because may be called more than once *)
+           
+       | Letrec (vars, terms1, body) -> 
+         %% Was: 2 (* give up *)
+         %% Similar to Lambda case
+         if x in? vars || countOccurrence2 (x, 0, [body]) = 0 then
+           countOccurrence2 (x, count, body::terms1 ++ terms)
+         else 
+           2
+           
+       | Let (vars, terms1, body) -> 
+         countOccurrence2 (x, count, body::terms1 ++ terms)
+         
+       | If     (t1, t2, t3) -> countOccurrence2 (x, count, [t1, t2, t3] ++ terms)
+       | IfThen (t1, t2)     -> countOccurrence2 (x, count, [t1, t2]     ++ terms)
+       | Seq    terms1       -> countOccurrence2 (x, count, terms1       ++ terms)
+         
+       | Var y -> 
+         if x = y then 
+           if count > 0 then 
+             2 
+           else
+             countOccurrence2 (x, count + 1, terms)
+         else countOccurrence2 (x, count, terms)
+           
+       | _ -> countOccurrence2 (x, count, terms)
       
- def getNames (term : LispTerm) =
-   case term of
-     | Apply   (t1, terms)         -> foldr (fn (t, names) -> getNames t ++ names) (getNames t1) terms
-     | Lambda  (vars, _, t)        -> vars ++ (getNames t)
-     | Op      r                   -> [r]
-     | Var     r                   -> [r] 
-     | Const   _                   -> []
-     | If      (t1, t2, t3)        -> (getNames t1) ++ (getNames t2) ++ (getNames t3)
-     | IfThen  (t1, t2)            -> (getNames t1) ++ (getNames t2)
-     | Let     (vars, terms, body) -> vars ++ (flatten (List.map getNames terms)) ++ (getNames body)
-     | Letrec  (vars, terms, body) -> vars ++ (flatten (List.map getNames terms)) ++ (getNames body)
-     | Seq     terms               -> flatten (List.map getNames terms)
-     | _ -> System.fail "Unexpected term in getNames"
+op getNames (term : LispTerm) : Strings =
+ case term of
+   | Apply   (t1, terms)         -> foldr (fn (t, names) -> getNames t ++ names) (getNames t1) terms
+   | Lambda  (vars, _, t)        -> vars ++ (getNames t)
+   | Op      r                   -> [r]
+   | Var     r                   -> [r] 
+   | Const   _                   -> []
+   | If      (t1, t2, t3)        -> (getNames t1) ++ (getNames t2) ++ (getNames t3)
+   | IfThen  (t1, t2)            -> (getNames t1) ++ (getNames t2)
+   | Let     (vars, terms, body) -> vars ++ (flatten (List.map getNames terms)) ++ (getNames body)
+   | Letrec  (vars, terms, body) -> vars ++ (flatten (List.map getNames terms)) ++ (getNames body)
+   | Seq     terms               -> flatten (List.map getNames terms)
+   | _ -> System.fail "Unexpected term in getNames"
       
- op  rename  : String * (Strings *                   Strings * LispTerm) -> Strings *                   Strings * LispTerm
- op  rename2 : String * (Strings * List (LispTerm) * Strings * LispTerm) -> Strings * List (LispTerm) * Strings * LispTerm
+op rename (v : String, 
+           (vars  : Strings, 
+            names : Strings, 
+            body  : LispTerm)) 
+ : Strings * Strings * LispTerm =
+ if exists? (fn n -> n = v) names then
+   let n = newName (v, names) in
+   let body = substitute (v, mkLVar n) body in
+   (n :: vars, 
+    n :: names, 
+    body)
+ else 
+   (v :: vars, names, body)
 
- def rename (v, (vars, names, body)) = 
-   if exists? (fn n -> n = v) names then
-     let n = newName (v, names) in
-     let body = substitute (v, mkLVar n) body in
-     (n::vars, 
-      n::names, 
-      body)
-   else 
-     (v::vars, names, body)
-
+op  rename2 : String * (Strings * List (LispTerm) * Strings * LispTerm) -> Strings * List (LispTerm) * Strings * LispTerm
  def rename2 (v, (vars, terms, names, body)) = 
    if exists? (fn n -> n = v) names then
      let n = newName (v, names) in 
@@ -1267,9 +1292,9 @@ op addList(S: StringSet, l: List String): StringSet =
 	 None
      | _ -> None
 
- op indexTransforms?: Bool = true
+ op indexTransforms? : Bool = true
 
- op formsFromSpec(spc: Spec): LispTerms =
+ op formsFromSpec(spc: Spec) : LispTerms =
    if ~indexTransforms? || none?(findTheType(spc, Qualified("MetaTransform", "AnnTypeValue"))) then []
    else
    let tr_infos = generateAddTransformUpdates spc in
@@ -1282,144 +1307,153 @@ op addList(S: StringSet, l: List String): StringSet =
             mkLApply(mkLOp "MetaTransform::addTransformInfo-4", [mkLString q, mkLString nm, q_ty_info, fn_ltm])))
      tr_infos
 
- op lisp (slice : Slice): LispSpec =
-  let spc = slice.ms_spec in
-  % For now, we ignore everything about the slice execpt the spec itself.
-  %let _ = printSpecToTerminal spc in
-   let _ = initializeSpecId () in
-   let packages = map mkLPackageId (qualifiers spc.ops) in
-   let (defPkgName, extraPackages) = (defaultSpecwarePackage, packages) in
-   %% Make defaultSpecwarePackage be the standard package name rather than some random package
-   %        case packages
-   %          of x :: r -> (x, r)
-   %           | [] -> (defaultSpecwarePackage, [])
-   let
-     def mkLOpDef (q, id, info, defs) = 
-       foldl (fn (defs, dfn) -> 
-	      let (tvs, ty, term) = unpackFirstTerm dfn in
-              if anyTerm? term then defs     % Maybe should give a warning
+op lisp (slice : Slice) : LispSpec =
+
+ %% For now, we ignore everything about the slice execpt the spec itself.
+
+ %let _ = describeSlice ("lisp gen", slice) in
+ let spc = slice.ms_spec in
+ %let _ = printSpecToTerminal spc in
+ 
+ let _        = initializeSpecId ()                   in
+ let packages = map mkLPackageId (qualifiers spc.ops) in
+ 
+ %% Make defaultSpecwarePackage be the standard package name rather than some random package
+ 
+ let (defPkgName, extraPackages) = (defaultSpecwarePackage, packages) in
+ 
+ let
+   def mkLOpDef (q, id, info, defs) = 
+     let op_name = Qualified (q, id) in
+     foldl (fn (defs, dfn) -> 
+              let (tvs, ty, term) = unpackFirstTerm dfn in
+              if anyTerm? term then 
+                defs     % Maybe should give a warning
               else
-              % let _ = writeLine("lopdef: "^id^"\n"^printTerm term^"\n"^printTerm dfn) in
-	      let term = lispTerm (spc, defPkgName, term) in
-	      let qid = Qualified (q, id) in
-	      let uName = unaryName (printPackageId (qid, defPkgName)) in
-	      let new_defs =
-	          if functionType? (spc, ty) then
-		     (case (curryShapeNum (spc, ty), typeArity (spc, ty)) of
-			| (1, None) ->
-			  (case term of
-			     | Lambda (formals, _, _) -> [(uName, term)]
-			     | _ -> [(uName, mkLLambda (["!x"], [], 
-							mkLApply (term, [mkLVar "!x"])))])
-			| (1, Some (_, arity)) ->
-			  let nName = naryName (qid, arity, defPkgName) in
-			  (case term of
-			     | Lambda (formals, _, _) ->
-			       let n = length formals in
-			       [(nName, 
-				 if n = arity then 
-				   term
-				 else 
-				   defNaryByUnary (uName, arity)),                 % fn (x, y, z) -> f-1 (tuple (x, y, z))
-				(uName, 
-				 if n = arity then
-				   defUnaryByNary (nName, n)                       % fn x -> f (x.1, x.2, x.3)
-				 else 
-				   term)]
-			     | _ ->  
-			       %% Not sure that arity normalization hasn't precluded this case
-			       [(nName, defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
-				(uName, mkLLambda (["!x"], [], 
-						   mkLApply (term, [mkLVar "!x"])))])
-			| (curryN, None) ->
-			  let ucName = unCurryName (qid, curryN, defPkgName) in
-			  (case unCurryDef (term, curryN) of
-			     | Some uCDef ->                                       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
-			       [(uName, defCurryByUncurry (ucName, curryN)), 
-				(ucName, uCDef)]
-			     | _ ->
-			       [(uName, term), 
-				(ucName, 
-				 case renameDef? term of
-				   | Some equivFn ->                               % fn (x, y, z) -> equivFn-1-1-1 ( x, y, z)
-				   %% Questionable call to unCurryName
-				   defAliasFn (unCurryName (Qualified (defPkgName, equivFn), 
-							    curryN, 
-							    defPkgName), 
-					       curryN)
-				   | _ ->                                          % fn (x, y, z) -> f x y z
-				   defUncurryByUnary (uName, curryN))])
-			 
-			| (curryN, Some (_, arity)) ->
-			  let ucName = unCurryName (qid, curryN, defPkgName) in
-			  let nName = naryName (qid, arity, defPkgName) in
-			  (case unCurryDef (term, curryN) of
-			     | Some uCDef ->
-			       [(nName, defNaryByUnary    (uName,  arity)),        % fn (x, y, z) -> f-1 (tuple (x, y, z))
-				(uName, defCurryByUncurry (ucName, curryN)),       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
-				(ucName, uCDef)]
-			     | _ ->
-			       (case term : LispTerm of
-				  | Lambda (formals, _, _) ->
-				    let n = length formals in
-				    [(nName, 
-				      if n = arity then 
-					term
-				      else 
-					defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
-				     (uName, 
-				      if n = arity then
-					defUnaryByNary (nName, n)                  % fn x -> f (x.1, x.2, x.3)
-				      else 
-					term), 
-				     (ucName, defUncurryByUnary (uName, curryN))]  % fn (x, y, z) -> f-1 x y z
-				   | _ ->
-				    [(nName, defNaryByUnary (uName, arity)),       % fn (x, y, z) -> f-1 (tuple (x, y, z))
-				     (uName, mkLLambda (["!x"], [], 
-							mkLApply (term, [mkLVar "!x"]))), 
-				     (ucName, defUncurryByUnary (uName, curryN))])))
-		  else 
-		    [(uName, term)]
-	      in
-		new_defs ++ defs)
-             defs
-	     (case opInfoDefs info of
-                | main_def :: _ -> [main_def]
-                | _ -> 
-                  if q = "Global" then
-                    [Record([],noPos)]  % to get (defvar Global.xxx nil)
-                  else
-                    [])
-   in
-     let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
-     let _    = warn_about_non_constructive_defs defs   in
-     let 
-       def uncurried_name (Qualified (q, id), arg_counts) =
-         let new_id = foldl (fn (id, n) -> id ^ "-" ^ show n) id arg_counts in
-         printPackageId (Qualified (q, new_id), defPkgName)
-     in
-     %% TODO: The relevant axioms and theorems are get sliced away before this point,
-     %%       so setf_entries is empty.  (Sigh)
-     let setf_entries = findSetfEntries spc in
-     let getter_setters = 
-         map (fn entry ->
-                (uncurried_name (entry.accesser_name, entry.accesser_arg_counts),
-                 uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
-             setf_entries
-     in
-     % let _ = writeLine ("==to lisp==") in
-     % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
-     % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
-     % let _ = writeLine ("====") in
-     let forms = formsFromSpec spc in
-     {name           = defPkgName, 
-      extraPackages  = extraPackages, 
-      getter_setters = getter_setters,
-      ops            = List.map (fn (n, _) -> n) defs, 
-      axioms         = [], 
-      opDefns        = defs,
-      forms          = forms
-     } : LispSpec
+                % let _ = writeLine("lopdef: "^id^"\n"^printTerm term^"\n"^printTerm dfn) in
+                let term  = lispTerm  (spc, defPkgName, term)            in
+                let uName = unaryName (printPackageId (op_name, defPkgName)) in
+                let new_defs =
+                    if functionType? (spc, ty) then
+                      (case (curryShapeNum (spc, ty), typeArity (spc, ty)) of
+
+                         | (1, None) ->
+                           (case term of
+                              | Lambda (formals, _, _) -> 
+                                [(uName, term)]
+                              | _ -> 
+                                [(uName, mkLLambda (["!x"], [], 
+                                                    mkLApply (term, [mkLVar "!x"])))])
+
+                         | (1, Some (_, arity)) ->
+                           let nName = naryName (op_name, arity, defPkgName) in
+                           (case term of
+                              | Lambda (formals, _, _) ->
+                                let n = length formals in
+                                [(nName, if n = arity then 
+                                           term
+                                         else 
+                                           defNaryByUnary (uName, arity)),                 % fn (x, y, z) -> f-1 (tuple (x, y, z))
+                                 (uName, if n = arity then
+                                           defUnaryByNary (nName, n)                       % fn x -> f (x.1, x.2, x.3)
+                                         else 
+                                           term)]
+                              | _ ->  
+                                %% Not sure that arity normalization hasn't precluded this case
+                                [(nName, defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
+                                 (uName, mkLLambda (["!x"], [], 
+                                                    mkLApply (term, [mkLVar "!x"])))])
+
+                         | (curryN, None) ->
+                           let ucName = unCurryName (op_name, curryN, defPkgName) in
+                           (case unCurryDef (term, curryN) of
+                              | Some uCDef ->                                       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
+                                [(uName,  defCurryByUncurry (ucName, curryN)), 
+                                 (ucName, uCDef)]
+                              | _ ->
+                                [(uName,  term), 
+                                 (ucName, case renameDef? term of
+                                            | Some equivFn ->                               % fn (x, y, z) -> equivFn-1-1-1 ( x, y, z)
+                                              %% Questionable call to unCurryName
+                                              defAliasFn (unCurryName (Qualified (defPkgName, equivFn), 
+                                                                       curryN, 
+                                                                       defPkgName), 
+                                                          curryN)
+                                            | _ ->                                          % fn (x, y, z) -> f x y z
+                                              defUncurryByUnary (uName, curryN))])
+                           
+                         | (curryN, Some (_, arity)) ->
+                           let ucName = unCurryName (op_name, curryN, defPkgName) in
+                           let nName  = naryName    (op_name, arity,  defPkgName) in
+                           (case unCurryDef (term, curryN) of
+                              | Some uCDef ->
+                                [(nName,  defNaryByUnary    (uName,  arity)),        % fn (x, y, z) -> f-1 (tuple (x, y, z))
+                                 (uName,  defCurryByUncurry (ucName, curryN)),       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
+                                 (ucName, uCDef)]
+                              | _ ->
+                                (case term : LispTerm of
+                                   | Lambda (formals, _, _) ->
+                                     let n = length formals in
+                                     [(nName,  if n = arity then 
+                                                 term
+                                               else 
+                                                 defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
+                                      (uName,  if n = arity then
+                                                  defUnaryByNary (nName, n)                  % fn x -> f (x.1, x.2, x.3)
+                                                else 
+                                                  term), 
+                                       (ucName, defUncurryByUnary (uName, curryN))]  % fn (x, y, z) -> f-1 x y z
+                                    | _ ->
+                                      [(nName,  defNaryByUnary (uName, arity)),       % fn (x, y, z) -> f-1 (tuple (x, y, z))
+                                       (uName,  mkLLambda (["!x"], [], 
+                                                           mkLApply (term, [mkLVar "!x"]))), 
+                                       (ucName, defUncurryByUnary (uName, curryN))])))
+                     else 
+                       [(uName, term)]
+                 in
+                 new_defs ++ defs)
+            defs
+            (case opInfoDefs info of
+               | main_def :: _ -> [main_def]
+               | _ -> 
+                 if q = "Global" then
+                   [Record([],noPos)]  % to get (defvar Global.xxx nil)
+                 else
+                   [])
+ in
+ let defs = reverse(foldriAQualifierMap mkLOpDef [] spc.ops) in
+
+ let _ = warn_about_non_constructive_defs defs in
+
+ let 
+   def uncurried_name (Qualified (q, id), arg_counts) =
+     let new_id = foldl (fn (id, n) -> id ^ "-" ^ show n) id arg_counts in
+     printPackageId (Qualified (q, new_id), defPkgName)
+ in
+
+ %% TODO: The relevant axioms and theorems are get sliced away before this point,
+ %%       so setf_entries is empty.  (Sigh)
+
+ let setf_entries   = findSetfEntries spc in
+ let getter_setters = map (fn entry ->
+                             (uncurried_name (entry.accesser_name, entry.accesser_arg_counts),
+                              uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
+                          setf_entries
+ in
+ % let _ = writeLine ("==to lisp==") in
+ % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
+ % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
+ % let _ = writeLine ("====") in
+
+ let forms = formsFromSpec spc in
+ {name           = defPkgName, 
+  extraPackages  = extraPackages, 
+  getter_setters = getter_setters,
+  ops            = List.map (fn (n, _) -> n) defs, 
+  axioms         = [], 
+  opDefns        = defs,
+  forms          = forms
+  } 
       
  op  warn_about_non_constructive_defs : List(String * ListADT.LispTerm) -> ()
  def warn_about_non_constructive_defs defs =
@@ -1621,50 +1655,62 @@ op toLispSpec (substBaseSpecs? : Bool) (slice? : Bool) (ms_spec : Spec)
                                | ([], []) -> writeLine ("No toplevel ops or types in spec")
                                | _ -> ()
   in
-  let ms_spec              = transformSpecForLispGen                substBaseSpecs? slice? ms_spec in
-  let slice                = sliceForLispGen                        ms_spec top_ops top_types      in
- %let _                    = describeSlice ("toLispSpec", slice)                                   in
-  let lisp_spec            = lisp slice                                                            in
-  lisp_spec               
+  toLispSpecOps substBaseSpecs? slice? ms_spec top_ops top_types 
 
- op toLispFile (spc             : Spec, 
-                file            : String, 
-                preamble        : String, 
-                substBaseSpecs? : Bool, 
-                slice?          : Bool) 
-  : () =  
-  let lisp_spec = toLispSpec substBaseSpecs? slice? spc in
-  ppSpecToFile (lisp_spec, file, preamble)
+op toLispSpecOps (substBaseSpecs? : Bool)
+                 (slice?          : Bool)
+                 (ms_spec         : Spec) 
+                 (top_ops         : OpNames)
+                 (top_types       : TypeNames)
+ : LispSpec =
+ % let _ = case (top_ops, top_types) of
+ %          | ([],[]) -> writeLine ("No ops or types to generate code for")
+ %          | _ -> ()
+ % in
+ let slice?    = case top_ops of [] -> slice? | _ -> true               in
+ let ms_spec   = transformSpecForLispGen substBaseSpecs? slice? ms_spec in
+ let slice     = sliceForLispGen         ms_spec top_ops top_types      in
+ let lisp_spec = lisp slice in
+ lisp_spec               
 
- op toLispText (spc : Spec) : Text =
-  let lisp_spec = toLispSpec true false spc in
-  let pretty    = ppSpec lisp_spec          in
-  let text      = format (120, pretty)      in
-  text
+op toLispFile (spc             : Spec, 
+               file            : String, 
+               preamble        : String, 
+               substBaseSpecs? : Bool, 
+               slice?          : Bool) 
+ : () =  
+ let lisp_spec = toLispSpec substBaseSpecs? slice? spc in
+ ppSpecToFile (lisp_spec, file, preamble)
 
- %% Just generates code for the local defs
- def localDefsToLispFile (spc, file, preamble) =
-   %let localOps = spc.importInfo.localOps in
-   let spc = setOps (spc, 
-		     mapiAQualifierMap
-		       (fn (q, id, info) ->
-			if localOp? (Qualified(q, id), spc) then
-			  info
-			else 
-			  let pos = termAnn info.dfn in
-			  let (tvs, ty, _) = unpackFirstOpDef info in
-			  info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, ty, pos))})
-		       spc.ops)
-   in
-   let spc = setElements (spc,mapPartialSpecElements 
-                            (fn el ->
-                               case el of
-			         | Op    (_, true, _) -> Some el
-			         | OpDef _            -> Some el
-			         | _ -> None)
-                            spc.elements)
-   in 
-   toLispFile (spc, file, preamble, false, false)  % don't substitue base spec, don't slice
+op toLispText (spc : Spec) : Text =
+ let lisp_spec = toLispSpec true false spc in
+ let pretty    = ppSpec lisp_spec          in
+ let text      = format (120, pretty)      in
+ text
+
+%% Just generates code for the local defs
+op localDefsToLispFile (spc : Spec, file : String, preamble : String) : () =
+ %let localOps = spc.importInfo.localOps in
+ let spc = setOps (spc, 
+                   mapiAQualifierMap
+                     (fn (q, id, info) ->
+                        if localOp? (Qualified(q, id), spc) then
+                          info
+                        else 
+                          let pos = termAnn info.dfn in
+                          let (tvs, ty, _) = unpackFirstOpDef info in
+                          info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, ty, pos))})
+                     spc.ops)
+ in
+ let spc = setElements (spc,mapPartialSpecElements 
+                          (fn el ->
+                             case el of
+                               | Op    (_, true, _) -> Some el
+                               | OpDef _            -> Some el
+                               | _ -> None)
+                          spc.elements)
+ in 
+ toLispFile (spc, file, preamble, false, false)  % don't substitue base spec, don't slice
      
 
 (*
