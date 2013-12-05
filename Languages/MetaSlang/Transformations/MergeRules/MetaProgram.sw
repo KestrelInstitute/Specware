@@ -664,7 +664,7 @@ indent ^ "show ?thesis\n" ^
 indent ^ "  apply (unfold " ^ unfold_ids ^ " )\n" ^
 indent ^ "  apply (simp only:split_conv)\n" ^
 indent ^ "  apply (cut_tac unfolded)\n" ^
-indent ^ "  apply auto\n" ^
+indent ^ "  apply smt\n" ^
 indent ^ "done"
 
 
