@@ -596,7 +596,7 @@ IsaTermPrinter qualifying spec
                                     generateImplicationProof (c, condn, rhs, impl_pf)
                                   | Some (RefineEq eq_pf) ->
                                     % let _ = writeLine(showEqProof eq_pf) in
-                                    generateImplicationProof (c, condn, rhs, ImplEq(eq_pf))
+                                    generateImplicationProof (c, lhs, rhs, ImplEq(eq_pf))
                                     % otherwise, fall back on old method based on TransformHistory
                                   | _ -> generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist)
                               in
