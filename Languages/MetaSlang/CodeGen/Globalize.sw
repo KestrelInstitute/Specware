@@ -46,7 +46,6 @@ op nullPat    : MSPattern = RecordPat ([], gPos)
 
 op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
 
-
 type RefMode         = | Access | Update
 type GlobalRef       = RefMode *  MSVarName * MSFieldName
 type GlobalRefs      = List GlobalRef
@@ -483,8 +482,33 @@ op globalizeEmbedPat (context                               : Context)
                      (vars_to_remove                        : MSVarNames) % vars of global type, remove on sight
                      (pat as EmbedPat (id, opt_pat, typ, _) : MSPattern)
  : Ids * GlobalizedPattern = 
- % let _ = writeLine("??? globalize ignoring EmbedPat: " ^ anyToString pat) in
- ([], Unchanged)
+ case opt_pat of
+   | Some p1 ->
+     let (more_vars_to_remove, p2) = globalizePattern context [] p1 in                           
+     let new_vars_to_remove = vars_to_remove ++ more_vars_to_remove in
+     (case p2 of                            
+
+        | Changed p3 -> 
+          let substitutions = [] in
+          let new_type = nullify_global (context, vars_to_remove, substitutions, typ) in 
+          let new_pat  = EmbedPat (id, Some p3, new_type, gPos) in
+          % let _ = writeLine("") in
+          % let _ = writeLine("Old pattern: " ^ printPattern pat) in
+          % let _ = writeLine("with type  : " ^ printType typ) in
+          % let _ = writeLine("New pattern: " ^ printPattern new_pat) in
+          % let _ = writeLine("with type  : " ^ printType    new_type) in
+          % let _ = app (fn x -> writeLine("  var_to_remove : " ^ x)) new_vars_to_remove in
+          % let _ = writeLine("") in
+          (new_vars_to_remove, Changed new_pat)
+
+        | Unchanged    -> 
+          ([],  Unchanged)
+
+        | GlobalVarPat -> 
+          let new_pat = EmbedPat (id, None, typ, gPos) in % remove arg from pattern
+          (new_vars_to_remove, Changed new_pat))
+   | _ ->
+     ([], Unchanged)
 
 op globalizeRecordPat (context               : Context)
                       (vars_to_remove        : MSVarNames) % vars of global type, remove on sight
@@ -505,7 +529,7 @@ op globalizeRecordPat (context               : Context)
          in
          aux (new_vars_to_remove, new_fields, ptail, changed?, shortened?)
  in
- let (vars_to_remove, new_fields, changed?, shortened?) = aux ([], [], fields, false, false) in
+ let (vars_to_remove, new_fields, changed?, shortened?) = aux (vars_to_remove, [], fields, false, false) in
  %% can't reduce to a single global var pat, as that would be removed by aux
  (vars_to_remove,
   if changed? then
