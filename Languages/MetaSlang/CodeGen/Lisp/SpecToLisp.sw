@@ -22,9 +22,14 @@ import /Languages/MetaSlang/CodeGen/Lisp/SliceForLisp
 type FileName     = String
 type PackageName  = String
 type PackageNames = List PackageName
+type Arity        = Option (MSType * Nat)
+
+op slPos : Position = Internal "SpecToLisp"
 
 op generateCaseSensitiveLisp? : Bool = true
  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op lispPackages : PackageNames = 
  ["LISP", "COMMON-LISP", 
   %% Added because of Xanalys packages, but prudent anyway
@@ -33,7 +38,7 @@ op lispPackages : PackageNames =
   "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
 
 op lispStrings : StringSet =
- foldl add 
+ foldr add 
        emptyMap 
        (["NIL", "T", "CONS", "NULL", "CAR", "CDR", "LIST", "LISP", 
          "APPEND", "REVAPPEND", "REVERSE", "COMPILE", "REDUCE", 
@@ -58,35 +63,111 @@ op lispStrings : StringSet =
 op notReallyLispStrings : Strings =
  ["C", "D", "I", "M", "N", "P", "S", "V", "X", "Y", "Z", "KEY", "NAME", "VALUE", "PATTERN"]
 
-op isLispString (id : Id) : Bool = 
- member (lispStrings, id) 
+op lispString? (id : Id) : Bool = 
+ member? (id, lispStrings)
  ||
  %% The above is only necessary for packages. They should be done differently in next release.
- (Lisp.uncell (Lisp.findSymbol(id, "CL"))
+ (uncell (findSymbol (id, "CL"))
   && 
   id nin? notReallyLispStrings)
 
 op lispPackage? (id : Id) : Bool =
- let pkg = Lisp.apply (Lisp.symbol ("CL", "FIND-PACKAGE"), [Lisp.string id]) in
- Lisp.uncell pkg
+ let pkg = apply (symbol ("CL", "FIND-PACKAGE"), [string id]) in
+ uncell pkg
  && 
- Lisp.uncell (Lisp.apply (Lisp.symbol ("CL", "PACKAGE-NAME"), [pkg])) in? lispPackages
+ uncell (apply (symbol ("CL", "PACKAGE-NAME"), [pkg])) in? lispPackages
 
 op [a] ith (n : Nat, id : String, ids : List (String * a)) : Nat =
  case ids of
-   | [] -> System.fail ("No such index " ^ id)
+   | [] -> fail ("No such index " ^ id)
    | (id2, _) :: ids -> 
      if id = id2 then
        n 
      else 
        ith (n + 1, id, ids)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  StringSet maps var names to Bool
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+type StringSet = STHMap.Map (String, Bool)
+
+op member? (s : String, sset : StringSet) : Bool =
+ case apply (sset, s) of
+   | Some b -> b
+   | _  -> false
+
+op add (s : String, sset : StringSet) : StringSet =
+ update (sset, s, true)
+
+op addList (strings : Strings, sset : StringSet) : StringSet =
+ foldr add sset strings
+
+%% op difference (S1: StringSet, S2: StringSet) : StringSet =
+%%  foldi (fn (x, y, S) -> if y then remove (S, x) else S) S1 S2
+
+%% Domain is qualification. First set is strings as given, second is upper case version
+op userStringMap : Ref (STHMap.Map (String, (Ref StringSet) * (Ref StringSet))) =
+ Ref emptyMap
+
+op initializeSpecId () : () =
+ (userStringMap := emptyMap)
+       
+op lookupSpecId (id : String, ID : String, pkg : String) : String =
+ case apply (! userStringMap, pkg) of
+
+   | Some (userStrings, userUpper) ->
+     if member? (ID, ! userUpper) then
+       if member? (id, ! userStrings) then
+         id
+       else 
+         "|!" ^ id ^ "|"
+     else 
+       (userUpper   := add (ID, ! userUpper);
+        userStrings := add (id, ! userStrings);
+        id)
+
+   | _ -> 
+     (userStringMap := update (! userStringMap, pkg, 
+                               (Ref (add (id, emptyMap)), 
+                                Ref (add (ID, emptyMap))));
+      id)
+
+op specId (id : String, pkg : String) : String = 
+ let id =
+     if forall? (fn #|  -> false
+                  | #`  -> false
+                  | #'  -> false
+                  | #\\ -> false
+                  | _   -> true)
+                id
+       then 
+         id                        % Test is redundant, but translate is expensive even if identity
+     else 
+       translate (fn #|  -> "\\|" 
+                   | #`  -> "\\`"
+                   | #'  -> "\\'"
+                   | #\\ -> "\\\\" 
+                   | ch  -> show ch)
+                 id
+ in
+ let upper_ID = map toUpperCase id                                  in
+ let ID       = if generateCaseSensitiveLisp? then id else upper_ID in
+ if lispString? upper_ID || id@0 = #! then
+   "|!" ^ id ^ "|"
+ else if exists? (fn ch -> ch = #:) id then
+   "|"  ^ id ^ "|"
+ else 
+   lookupSpecId (id, upper_ID, pkg)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op projectionIndex (sp : Spec, id : Id, ty : MSType) : Nat = 
  let (dom, _) = arrow   (sp, ty)  in
  let row      = product (sp, dom) in
  ith (0, id, row)
 
-op isSpecialProjection (sp : Spec, ty : MSType, id : Id) : Option String = 
+op optSpecialProjection (sp : Spec, ty : MSType, id : Id) : Option String = 
  case stripSubtypes (sp, ty) of
    | Arrow (dom, _, _) -> 
      (case stripSubtypes (sp, dom) of
@@ -101,7 +182,7 @@ op isSpecialProjection (sp : Spec, ty : MSType, id : Id) : Option String =
 
    | _ -> None
 
-op isConsDataType (sp : Spec, ty : MSType) : Option (Id * Id) =
+op optConsDataType (sp : Spec, ty : MSType) : Option (Id * Id) =
  let
    def isTwoTuple (ty : MSType) = 
      case stripSubtypes (sp, ty) of
@@ -120,23 +201,23 @@ op isConsDataType (sp : Spec, ty : MSType) : Option (Id * Id) =
    | _ -> None
     
 
-op hasConsEmbed (sp : Spec, ty : MSType) : Bool = 
+op hasConsEmbed? (sp : Spec, ty : MSType) : Bool = 
  case stripSubtypes (sp, ty) of
    | Arrow (_, rng, _) -> 
-     (case isConsDataType (sp, rng) of
+     (case optConsDataType (sp, rng) of
         | Some _ -> true
         | _      -> false)
    | _ -> false
 
-op isConsIdentifier (sp : Spec, id : Id, ty : MSType) : Option String = 
- case isConsDataType (sp, ty) of
+op optConsIdentifier (sp : Spec, id : Id, ty : MSType) : Option String = 
+ case optConsDataType (sp, ty) of
    | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
    | _  -> None
 
-op hasConsDomain (sp : Spec, id : Id, ty : MSType) : Option String = 
+op optConsDomain (sp : Spec, id : Id, ty : MSType) : Option String = 
  case stripSubtypes (sp, ty) of
    | Arrow (dom, _, _) -> 
-     (case isConsDataType (sp, dom) of
+     (case optConsDataType (sp, dom) of
         | Some (i1, i2) -> Some (if id = i1 then "null" else "consp")
         | _ -> None)
    | _ -> None
@@ -151,10 +232,10 @@ op listTerm (tm : MSTerm, sp : Spec) : Option MSTerms =
      ->
      (case y of
 
-        | Fun (Embed (id, false), ty, _) | some? (isConsDataType (sp, ty)) ->
+        | Fun (Embed (id, false), ty, _) | some? (optConsDataType (sp, ty)) ->
           Some [x]
 
-        | Apply (Fun (Embed (id, true), ty, _), cdr_arg, _) | some? (isConsDataType (sp, range (sp, ty))) ->
+        | Apply (Fun (Embed (id, true), ty, _), cdr_arg, _) | some? (optConsDataType (sp, range (sp, ty))) ->
           (case listTerm(cdr_arg, sp) of
              | Some r_list_args -> Some(x :: r_list_args)
              | _ -> None)
@@ -168,89 +249,15 @@ op patternName (pattern : MSPattern) : Id =
    | VarPat        ((id, _), _) -> id
    | RestrictedPat (p, _,    _) -> patternName p
    | _ -> 
-     System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
+     fail ("SpecToLisp.patternName " ^ printPattern pattern)
 
 op patternNames (pattern : MSPattern) : List1 Id = 
  case pattern of
    | VarPat    ((id, _), _) -> [id] 
-   | RecordPat (fields,  _) -> List.map (fn (_, p) -> patternName p) fields
+   | RecordPat (fields,  _) -> map (fn (_, p) -> patternName p) fields
   %| RestrictedPat(p,_,_) -> patternNames p
    | _ -> 
-     System.fail ("SpecToLisp.patternNames " ^ printPattern pattern)
-
-% type StringSet = StringSet.Set
-type StringSet = STHMap.Map(String, Bool)
-
-op member (S : StringSet, x : String) : Bool =
- case apply(S, x) of
-   | Some b -> b
-   | _  -> false
-
-op add (S : StringSet, x : String) : StringSet =
- update(S, x, true)
-
-%% op delete (S: StringSet, x: String) : StringSet =
-%%  remove (S, x, false)
-
-op addList (S : StringSet, l : List String) : StringSet =
- foldl add S l
-
-%% op difference (S1: StringSet, S2: StringSet) : StringSet =
-%%  foldi (fn (x, y, S) -> if y then remove (S, x) else S) S1 S2
-
-%% Domain is qualification. First set is strings as given, second is upper case version
-op userStringMap : Ref (STHMap.Map (String, (Ref StringSet) * (Ref StringSet))) =
- Ref emptyMap
-
-op initializeSpecId () : () =
- (userStringMap := emptyMap)
-       
-op lookupSpecId (id : String, ID : String, pkg : String) : String =
- case apply (! userStringMap, pkg) of
-
-   | Some (userStrings, userUpper) ->
-     if member (! userUpper, ID) then
-       if member (! userStrings, id) then
-         id
-       else 
-         "|!" ^ id ^ "|"
-     else 
-       (userUpper   := add (! userUpper,   ID);
-        userStrings := add (! userStrings, id);
-        id)
-
-   | _ -> 
-     (userStringMap := update (! userStringMap, pkg, 
-                               (Ref (add (emptyMap, id)), 
-                                Ref (add (emptyMap, ID))));
-      id)
-
-op specId (id : String, pkg : String) : String = 
- let id =
-     if forall? (fn #|  -> false
-                  | #`  -> false
-                  | #'  -> false
-                  | #\\ -> false
-                  | _   -> true)
-                id
-       then 
-         id                        % Test is redundant, but translate is expensive even if identity
-     else 
-       translate (fn #|  -> "\\|" 
-                   | #`  -> "\\`"
-                   | #'  -> "\\'"
-                   | #\\ -> "\\\\" 
-                   | ch  -> Char.show ch)
-                 id
- in
- let upper_ID = String.map toUpperCase id                           in
- let ID       = if generateCaseSensitiveLisp? then id else upper_ID in
- if isLispString upper_ID || id@0 = #! then
-   "|!" ^ id ^ "|"
- else if exists? (fn ch -> ch = #:) id then
-   "|"  ^ id ^ "|"
- else 
-   lookupSpecId (id, upper_ID, pkg)
+     fail ("SpecToLisp.patternNames " ^ printPattern pattern)
 
 op defaultSpecwarePackage : String = 
  if generateCaseSensitiveLisp? then
@@ -258,35 +265,35 @@ op defaultSpecwarePackage : String =
  else 
    "SW-USER"
 
-op mkLPackageId id : String = 
+op mkLPackageId (id : String) : PackageName = 
  if id = UnQualified then 
    defaultSpecwarePackage
  else
-   let upper_id = String.map Char.toUpperCase id                      in
+   let upper_id = map Char.toUpperCase id                             in
    let id       = if generateCaseSensitiveLisp? then id else upper_id in
-   if isLispString upper_id || lispPackage? upper_id then
+   if lispString? upper_id || lispPackage? upper_id then
      id ^ (if generateCaseSensitiveLisp? then "-Spec" else "-SPEC")
    else 
      id
       
-%op printPackageId : QualifiedId * String -> String % see Suppress.sw
-op SpecToLisp.printPackageId (name as Qualified (pack, id) : QualifiedId, 
-                              defPkgNm                     : String) 
+% see Suppress.sw
+op printPackageId (name as Qualified (pack, id) : QualifiedId, 
+                   default_package_name         : String) 
  : String = 
  case (pack, id) of
    | ("System", "time") -> "TIME"
    | _ ->
      let pkg = mkLPackageId pack in
-     if pkg = defPkgNm then
+     if pkg = default_package_name then
        specId (id, "") % !!!
      else
        (pkg ^ "::" ^ specId (id, pkg))
       
-op opArity (sp, idf, ty) : Option (MSType * Nat) =
+op opArity (sp : Spec, op_name : OpName, ty : MSType) : Arity =
  case typeArity (sp, ty) of
    | None -> None
    | arity ->
-     if polymorphicDomainOp? (sp, idf) then
+     if polymorphicDomainOp? (sp, op_name) then
        None
      else 
        arity
@@ -301,315 +308,336 @@ op mkLispTuple (valTms : LispTerms) : LispTerm =
    | [_, _] -> mkLApply (mkLOp "cons",   valTms)
    | _      -> mkLApply (mkLOp "vector", valTms)
      
- op  unaryName : String -> String
- def unaryName (nm : String) : String = nm  % ^ "-1"
+op unaryName (name : String) : String = name  % ^ "-1"
 
- op  naryName : QualifiedId * Nat * String -> String
- def naryName (Qualified (q, id), n, dpn) =
-   printPackageId (Qualified (q, id ^ "-" ^ (Nat.show n)), 
-		   dpn)
+op naryName (Qualified (q, id)    : QualifiedId, 
+             arity                : Nat,
+             default_package_name : PackageName)
+ : String =
+ let new_id = id ^ "-" ^ show arity in
+ printPackageId (Qualified (q, new_id), default_package_name)
 
- def mkLUnaryFnRef (id : String, arity, vars) =
-   if member (vars, id) then 
-     mkLVar id
-   else 
-     case arity of
-       | Some _ -> mkLOp (unaryName id)
-       | _      -> mkLOp id
+op mkLUnaryFnRef (id     : String, 
+                  arity  : Arity,
+                  varset : StringSet) 
+ : LispTerm =
+ if member? (id, varset) then 
+   mkLVar id
+ else 
+   case arity of
+     | Some _ -> mkLOp (unaryName id)
+     | _      -> mkLOp id
 
- %op mkLApplyArity : String * Option Nat *
- def mkLApplyArity (id : QualifiedId, defPkgNm : String, arity, vars, args) =
-   let pid = printPackageId (id, defPkgNm) in
-   let rator = (if member (vars, pid) then 
-		  mkLVar pid
-		else 
-		  case arity of
-		    | Some _ ->
-		      if length args = 1 then
-			mkLOp (unaryName pid)
-		      else
-			mkLOp (naryName (id, length args, defPkgNm))
-		    | _ -> mkLOp pid)
-   in 
-     mkLApply (rator, args)
+op mkLApplyArity (id                   : QualifiedId, 
+                  default_package_name : PackageName, 
+                  arity                : Arity, 
+                  varset               : StringSet, 
+                  args                 : LispTerms) 
+ : LispTerm =
+ let pid = printPackageId (id, default_package_name) in
+ let rator = if member? (pid, varset) then 
+               mkLVar pid
+             else 
+               case arity of
+                 | Some _ ->
+                   let n = length args in
+                   if n = 1 then
+                     mkLOp (unaryName pid)
+                   else
+                     mkLOp (naryName (id, n, default_package_name))
+                 | _ -> mkLOp pid
+ in 
+ mkLApply (rator, args)
 
- %
- % Ad hoc optimization of the equality operation.
- %
- def mkLEqualityOp (sp, ty) = 
-   case stripSubtypes (sp, ty) of
-     | Arrow (dom, _, _) -> 
-       (case stripSubtypes (sp, dom) of
-	  | Product ([(_, s), _], _) -> 
-	    if natType? s then         % intType? s
-	      "="
-	    else
-	      (case stripSubtypes (sp, s) of
-		 | Boolean _                                    -> "eq"
-		 | Base (Qualified ("Nat",     "Nat"),    _, _) -> "="
-		 | Base (Qualified ("Integer", "Int"),    _, _) -> "="
-		 | Base (Qualified ("String",  "String"), _, _) -> "string="
-		 | Base (Qualified ("Char",    "Char"),   _, _) -> "eq"
-		 | _ -> "Slang-Built-In::slang-term-equals-2")
-	  | _ -> "Slang-Built-In::slang-term-equals-2")
-     | _ -> "Slang-Built-In::slang-term-equals-2"
+%
+% Ad hoc optimization of the equality operation.
+%
+op mkLEqualityOp (sp : Spec, ty : MSType) : String = 
+ case stripSubtypes (sp, ty) of
+   | Arrow (dom, _, _) -> 
+     (case stripSubtypes (sp, dom) of
+        | Product ([(_, s), _], _) -> 
+          if natType? s then         % intType? s
+            "="
+          else
+            (case stripSubtypes (sp, s) of
+               | Boolean _                                    -> "eq"
+               | Base (Qualified ("Nat",     "Nat"),    _, _) -> "="
+               | Base (Qualified ("Integer", "Int"),    _, _) -> "="
+               | Base (Qualified ("String",  "String"), _, _) -> "string="
+               | Base (Qualified ("Char",    "Char"),   _, _) -> "eq"
+               | _ -> "Slang-Built-In::slang-term-equals-2")
+        | _ -> "Slang-Built-In::slang-term-equals-2")
+   | _ -> "Slang-Built-In::slang-term-equals-2"
 
- %
- % Ad hoc optimization of the inequality operation.
- %
- def mkLInEqualityOp (sp, ty) = 
-   case stripSubtypes (sp, ty) of  
-     | Arrow (dom, _, _) -> 
-       (case stripSubtypes (sp, dom) of
-	  | Product ([(_, s), _], _) -> 
-	    if natType? s then     % intType?(s)
-	      "/="
-	    else
-	      (case stripSubtypes (sp, s) of
-		 | Boolean _                                    -> "Slang-Built-In:boolean-term-not-equals-2"
-		 | Base (Qualified ("Nat",     "Nat"),    _, _) -> "/="
-		 | Base (Qualified ("Integer", "Int"),    _, _) -> "/="
-		 | Base (Qualified ("String",  "String"), _, _) -> "Slang-Built-In:string-term-not-equals-2"  % careful! string/= won't work
-		 | Base (Qualified ("Char",    "Char"),   _, _) -> "char/="
-		 | _ -> "Slang-Built-In::slang-term-not-equals-2")
-	  | _ -> "Slang-Built-In::slang-term-not-equals-2")
-     | _ -> "Slang-Built-In::slang-term-not-equals-2"
+%
+% Ad hoc optimization of the inequality operation.
+%
+op mkLInEqualityOp (sp  : Spec, ty : MSType) : String = 
+ case stripSubtypes (sp, ty) of  
+   | Arrow (dom, _, _) -> 
+     (case stripSubtypes (sp, dom) of
+        | Product ([(_, s), _], _) -> 
+          if natType? s then     % intType?(s)
+            "/="
+          else
+            (case stripSubtypes (sp, s) of
+               | Boolean _                                    -> "Slang-Built-In:boolean-term-not-equals-2"
+               | Base (Qualified ("Nat",     "Nat"),    _, _) -> "/="
+               | Base (Qualified ("Integer", "Int"),    _, _) -> "/="
+               | Base (Qualified ("String",  "String"), _, _) -> "Slang-Built-In:string-term-not-equals-2"  % careful! string/= won't work
+               | Base (Qualified ("Char",    "Char"),   _, _) -> "char/="
+               | _ -> "Slang-Built-In::slang-term-not-equals-2")
+        | _ -> "Slang-Built-In::slang-term-not-equals-2")
+   | _ -> "Slang-Built-In::slang-term-not-equals-2"
 
- op  mkLTermOp : [a] Spec * String * StringSet * (MSFun * MSType * a) * Option (MSTerm) -> LispTerm
- def mkLTermOp (sp, dpn, vars, termOp, optArgs) =
-   case termOp of
-     | (Project id, ty, _) -> 
-       (case (isSpecialProjection (sp, ty, id), optArgs) of
-	  | (Some proj, None) -> 
-	    mkLLambda (["!x"], [], 
-		       mkLApply (mkLOp proj, 
-				 [mkLVar "!x"]))
+op [a] mkLTermOp (sp                   : Spec,
+                  default_package_name : PackageName,
+                  varset               : StringSet,
+                  term_op              : MSFun * MSType * a,
+                  optArgs              : Option MSTerm)
+ : LispTerm =
+ let
+   def mk_lisp_term varset tm =
+     mkLTerm (sp, default_package_name, varset, tm)
+ in
+ case term_op of
 
-	  | (Some proj, Some trm) ->
-	    let lTrm = mkLTerm (sp, dpn, vars, trm) in
-	    if proj = "functions::id" then
-	      lTrm
-	    else 
-	      mkLApply (mkLOp proj, 
-			[lTrm])
+   | (Project id, ty, _) -> 
+     (case (optSpecialProjection (sp, ty, id), optArgs) of
 
-	  | (None, Some trm) -> 
-	    let id = projectionIndex (sp, id, ty)  in
-	    mkLApply (mkLOp "svref", 
-		      [mkLTerm (sp, dpn, vars, trm), 
-		       mkLNat id])
+        | (Some proj, None) -> 
+          mkLLambda (["!x"], [], 
+                     mkLApply (mkLOp proj, 
+                               [mkLVar "!x"]))
 
-	  | (None, None) -> 
-	    let id = projectionIndex (sp, id, ty) in
-	    mkLLambda (["!x"], [], 
-		       mkLApply (mkLOp "svref", 
-				 [mkLVar "!x", 
-				  mkLNat id]))
-	   )
+        | (Some proj, Some trm) ->
+          let lTrm = mk_lisp_term varset trm in
+          if proj = "functions::id" then
+            lTrm
+          else 
+            mkLApply (mkLOp proj, 
+                      [lTrm])
 
-     | (Not, ty, _ ) ->
-       let oper = mkLOp "cl:not" in
-       (case optArgs of
-	 %| None -> oper  
-	  | Some arg -> mkLApply (oper, mkLTermList (sp, dpn, vars, arg)))
+        | (None, Some trm) -> 
+          let id = projectionIndex (sp, id, ty)  in
+          mkLApply (mkLOp "svref", 
+                    [mk_lisp_term varset trm, 
+                     mkLNat id])
 
-     | (And, ty, _ ) ->
-       % Note: And ("&&") is non-strict -- it might not evalute the second arg.
-       %       This means it is not commutative wrt termination.
-       let oper = mkLOp ("cl:and") in  % lisp AND is also non-strict
-       (case optArgs of
-         %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
-	  | Some arg -> mkLApply (oper, mkLTermList (sp, dpn, vars, arg)))
+        | (None, None) -> 
+          let id = projectionIndex (sp, id, ty) in
+          mkLLambda (["!x"], [], 
+                     mkLApply (mkLOp "svref", 
+                               [mkLVar "!x", 
+                                mkLNat id]))
+          )
 
-     | (Or, ty, _ ) ->
-       % Note: Or ("||") is non-strict -- it might not evalute the second arg
-       %       This means it is not commutative wrt termination.
-       let oper = mkLOp ("cl:or") in  % lisp OR is also non-strict
-       (case optArgs of
-         %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
-	  | Some arg -> mkLApply (oper, mkLTermList (sp, dpn, vars, arg)))
+   | (Not, ty, _ ) ->
+     let oper = mkLOp "cl:not" in
+     (case optArgs of
+        %| None -> oper  
+        | Some arg -> mkLApply (oper, mkLTermList (sp, default_package_name, varset, arg)))
+     
+   | (And, ty, _ ) ->
+     % Note: And ("&&") is non-strict -- it might not evalute the second arg.
+     %       This means it is not commutative wrt termination.
+     let oper = mkLOp ("cl:and") in  % lisp AND is also non-strict
+     (case optArgs of
+        %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
+        | Some arg -> mkLApply (oper, mkLTermList (sp, default_package_name, varset, arg)))
+     
+   | (Or, ty, _ ) ->
+     % Note: Or ("||") is non-strict -- it might not evalute the second arg
+     %       This means it is not commutative wrt termination.
+     let oper = mkLOp ("cl:or") in  % lisp OR is also non-strict
+     (case optArgs of
+        %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
+        | Some arg -> mkLApply (oper, mkLTermList (sp, default_package_name, varset, arg)))
+     
+   | (Implies, ty, _ ) ->
+     % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
+     %       This means it is not commutative (to the contrapositive) wrt termination.
+     (case optArgs of
+        | Some (Record ([(_, x), (_, y)], _)) ->
+          % "x => y" = "if x then y else true" = "or (~ x, y)"
+          mkLApply (mkLOp ("cl:or"),         
+                    [mkLApply (mkLOp "cl:not", 
+                               [mk_lisp_term varset x]), 
+                     mk_lisp_term varset y])
+        %| None -> mkLOp ("Slang-Built-In:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
+        )
 
-     | (Implies, ty, _ ) ->
-       % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
-       %       This means it is not commutative (to the contrapositive) wrt termination.
-       (case optArgs of
-         %| None -> mkLOp ("Slang-Built-In:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
-	  | Some (Record ([(_, x), (_, y)], _)) ->
-	    % "x => y" = "if x then y else true" = "or (~ x, y)"
-	    mkLApply (mkLOp ("cl:or"),         
-		      [mkLApply (mkLOp "cl:not", 
-				[mkLTerm (sp, dpn, vars, x)]), 
-		       mkLTerm (sp, dpn, vars, y)]))
+   | (Iff, ty, _ ) ->
+     % Note: Iff ("<=>") is strict, becasue the second arg must be evaluated, no matter what the value of the first arg is.
+     %       This means it is commmuative wrt termination.
+     (case optArgs of
+        %| None -> mkLOp ("cl:eq") % presumably boolean-valued args each evaluate to T or NIL, so this should be ok.
+        | Some (Record ([(_, x), (_, y)], _)) ->
+          % "x => y" = "if x then y else ~ y"
+          mkLIf (mk_lisp_term varset x, 
+                 mk_lisp_term varset y, 
+                 mkLApply (mkLOp "cl:not", 
+                           [mk_lisp_term varset y])))
 
-     | (Iff, ty, _ ) ->
-       % Note: Iff ("<=>") is strict, becasue the second arg must be evaluated, no matter what the value of the first arg is.
-       %       This means it is commmuative wrt termination.
-       (case optArgs of
-	 %| None -> mkLOp ("cl:eq") % presumably boolean-valued args each evaluate to T or NIL, so this should be ok.
-          | Some (Record ([(_, x), (_, y)], _)) ->
-	    % "x => y" = "if x then y else ~ y"
-	    mkLIf (mkLTerm (sp, dpn, vars, x), 
-		   mkLTerm (sp, dpn, vars, y), 		   
-		   mkLApply (mkLOp "cl:not", 
-			     [mkLTerm (sp, dpn, vars, y)])))
-
-     | (Equals, ty, _) ->
-       let oper = mkLOp (mkLEqualityOp (sp, ty)) in
-       (case optArgs of
-	 %| None -> oper
-	  | Some arg -> mkLApply (oper, 
-				  mkLTermList (sp, dpn, vars, arg)))
-
-     | (NotEquals, ty, _) ->
-       (case optArgs of
-	 %| None -> mkLOp (mkLInEqualityOp (sp, ty))
-          | Some arg -> 
-	    %% for efficiency, open-code the call to not
-	    %% let ineq_op = mkLOp (mkLInEqualityOp (sp, ty)) in
-            %% mkLApply (ineq_op, mkLTermList (sp, dpn, vars, arg)))
-	    let eq_oper = mkLOp (mkLEqualityOp (sp, ty)) in
-	    mkLApply (mkLOp "cl:not", 
-		     [mkLApply (eq_oper, 
-				mkLTermList (sp, dpn, vars, arg))]))
-
-     | (Select id, ty, _) -> 
-       (case (hasConsDomain (sp, id, ty), optArgs) of
-	  | (Some queryOp, None)      -> mkLLambda (["!x"], [], mkLVar "!x")
-
-	  | (Some queryOp, Some term) -> mkLTerm (sp, dpn, vars, term)
-
-	  | (None,         None)      -> mkLOp "cdr"
-
-	  | (None,         Some term) -> mkLApply (mkLOp "cdr", 
-						   [mkLTerm (sp, dpn, vars, term)]))
-
-     | (Embedded id, ty, _) -> 
-       let dom = domain (sp, ty) in
-       (case (isConsIdentifier (sp, id, dom), optArgs) of
-	  | (Some queryOp, None)      -> mkLLambda (["!x"], [], 
-						    mkLApply (mkLOp queryOp, 
-							      [mkLVar "!x"]))
-
-	  | (Some queryOp, Some term) -> mkLApply (mkLOp queryOp, 
-						   [mkLTerm (sp, dpn, vars, term)])
-
-	  | (None,         None)      -> mkLLambda (["!x"], 
-						    [], 
-						    mkLApply (compareSymbols, 
-							      [mkLApply (mkLOp "car", 
-									 [mkLVar "!x"]), 
-							       mkLIntern id]))
-	  | (None,         Some term) -> mkLApply (compareSymbols, 
-						   [mkLApply (mkLOp "car", 
-							      [mkLTerm (sp, dpn, vars, term)]), 
-						    mkLIntern id])
-	   )
-     | (Nat    n, ty, _) -> mkLInt    n
-     | (String s, ty, _) -> mkLString s
-     | (Bool   b, ty, _) -> mkLBool   b
-     | (Char   c, ty, _) -> mkLChar   c
-
-     | (Op (id, _), ty, _) ->
-       (case id of
-	  | Qualified ("TranslationBuiltIn", "mkFail") ->
-	    mkLApply(mkLOp "error",case optArgs of Some term -> mkLTermList(sp, dpn, vars, term))
-	  | _ ->
-	let arity = opArity (sp, id, ty) in
-	(case optArgs of
-	   | None ->
-	     let pid = printPackageId (id, dpn) in
-	     if functionType? (sp, ty) then
-	       mkLUnaryFnRef (pid, arity, vars)
-	     else 
-	       Const (Parameter pid)
-	   | Some term ->
-	     mkLApplyArity (id, dpn, arity, vars, 
-			    mkLTermList (sp, dpn, vars, term))))
-
-     | (Embed (id, true), ty, _) ->
-       let rng = range (sp, ty) in
-       (case isConsDataType (sp, rng) of
-	  | Some _ ->
-	    (case optArgs of
-	       | None -> mkLLambda (["!x"], [], mkLVar "!x")
-	       | Some term -> 
-                 case listTerm(term, sp) of
-                   | Some list_args ->
-                     let l_list_args = map (fn t -> mkLTerm (sp, dpn, vars, t)) list_args in
-                     mkLApply(mkLOp "list", l_list_args)
-                   | _ -> mkLTerm (sp, dpn, vars, term))
-	  | _ -> 
-	    let id = mkLIntern id in
-	    (case optArgs of
-	       | None -> mkLLambda (["!x"], [], 
-				   mkLApply (mkLOp "cons", 
+   | (Equals, ty, _) ->
+     let oper = mkLOp (mkLEqualityOp (sp, ty)) in
+     (case optArgs of
+        %| None -> oper
+        | Some arg -> mkLApply (oper, 
+                                mkLTermList (sp, default_package_name, varset, arg)))
+     
+   | (NotEquals, ty, _) ->
+     (case optArgs of
+        %| None -> mkLOp (mkLInEqualityOp (sp, ty))
+        | Some arg -> 
+          %% for efficiency, open-code the call to not
+          %% let ineq_op = mkLOp (mkLInEqualityOp (sp, ty)) in
+          %% mkLApply (ineq_op, mkLTermList (sp, default_package_name, varset, arg)))
+          let eq_oper = mkLOp (mkLEqualityOp (sp, ty)) in
+          mkLApply (mkLOp "cl:not", 
+                    [mkLApply (eq_oper, 
+                               mkLTermList (sp, default_package_name, varset, arg))]))
+     
+   | (Select id, ty, _) -> 
+     (case (optConsDomain (sp, id, ty), optArgs) of
+        | (Some queryOp, None)      -> mkLLambda (["!x"], [], mkLVar "!x")
+          
+        | (Some queryOp, Some term) -> mkLTerm (sp, default_package_name, varset, term)
+          
+        | (None,         None)      -> mkLOp "cdr"
+          
+        | (None,         Some term) -> mkLApply (mkLOp "cdr", 
+                                                 [mkLTerm (sp, default_package_name, varset, term)]))
+     
+   | (Embedded id, ty, _) -> 
+     let dom = domain (sp, ty) in
+     (case (optConsIdentifier (sp, id, dom), optArgs) of
+        | (Some queryOp, None)      -> mkLLambda (["!x"], [], 
+                                                  mkLApply (mkLOp queryOp, 
+                                                            [mkLVar "!x"]))
+          
+        | (Some queryOp, Some term) -> mkLApply (mkLOp queryOp, 
+                                                 [mkLTerm (sp, default_package_name, varset, term)])
+          
+        | (None,         None)      -> mkLLambda (["!x"], 
+                                                  [], 
+                                                  mkLApply (compareSymbols, 
+                                                            [mkLApply (mkLOp "car", 
+                                                                       [mkLVar "!x"]), 
+                                                             mkLIntern id]))
+        | (None,         Some term) -> mkLApply (compareSymbols, 
+                                                 [mkLApply (mkLOp "car", 
+                                                            [mkLTerm (sp, default_package_name, varset, term)]), 
+                                                  mkLIntern id])
+          )
+     
+   | (Nat    n, ty, _) -> mkLInt    n
+   | (String s, ty, _) -> mkLString s
+   | (Bool   b, ty, _) -> mkLBool   b
+   | (Char   c, ty, _) -> mkLChar   c
+     
+   | (Op (id, _), ty, _) ->
+     (case id of
+        | Qualified ("TranslationBuiltIn", "mkFail") ->
+          mkLApply(mkLOp "error",case optArgs of Some term -> mkLTermList(sp, default_package_name, varset, term))
+        | _ ->
+          let arity = opArity (sp, id, ty) in
+          (case optArgs of
+             | None ->
+               let pid = printPackageId (id, default_package_name) in
+               if functionType? (sp, ty) then
+                 mkLUnaryFnRef (pid, arity, varset)
+               else 
+                 Const (Parameter pid)
+             | Some term ->
+               mkLApplyArity (id, default_package_name, arity, varset, 
+                              mkLTermList (sp, default_package_name, varset, term))))
+     
+   | (Embed (id, true), ty, _) ->
+     let rng = range (sp, ty) in
+     (case optConsDataType (sp, rng) of
+        | Some _ ->
+          (case optArgs of
+             | None -> mkLLambda (["!x"], [], mkLVar "!x")
+             | Some term -> 
+               case listTerm(term, sp) of
+                 | Some list_args ->
+                   let l_list_args = map (fn t -> mkLTerm (sp, default_package_name, varset, t)) list_args in
+                   mkLApply(mkLOp "list", l_list_args)
+                 | _ -> mkLTerm (sp, default_package_name, varset, term))
+        | _ -> 
+          let id = mkLIntern id in
+          (case optArgs of
+             | None -> mkLLambda (["!x"], [], 
+                                  mkLApply (mkLOp "cons", 
 					    [id, mkLVar "!x"]))
-	       | Some term -> 
-	         mkLApply (mkLOp "cons", [id, mkLTerm (sp, dpn, vars, term)])))
+             | Some term -> 
+               mkLApply (mkLOp "cons", [id, mkLTerm (sp, default_package_name, varset, term)])))
+     
+   | (Embed (id, false), ty, _) -> 
+     (case optConsDataType (sp, ty) of
+        | Some _ -> mkLBool false
+        | _      -> mkLApply (mkLOp "list", [mkLIntern id]))
+     
+   | (Quotient qid, ty, _) -> 
+     (case findAllTypes (sp, qid) of
+        | [info] ->
+          (case unpackFirstTypeDef info of
+             | (tvs, Quotient (_, equiv, _)) ->
+               let equiv = mkLTerm (sp, default_package_name, varset, equiv) in
+               (case optArgs of
+                  | Some term -> 
+                    mkLApply (mkLOp "Slang-Built-In::quotient-1-1", 
+                              [equiv, mkLTerm (sp, default_package_name, varset, term)])
+                  | _ -> 
+                    mkLApply (mkLOp "Slang-Built-In::quotient", 
+                              [equiv]))
+             | x -> 
+               fail ("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
+        | x -> 
+          fail ("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
+     
+   | (Choose qid, ty, _) ->  
+     (case findAllTypes (sp, qid) of
+        | [info] ->
+          (case unpackFirstTypeDef info of
+             | (tvs, Quotient _) ->
+               %% Don't need the equivalence relation when doing a choose
+               (case optArgs of
+                  | None      -> mkLApply (mkLOp "Slang-Built-In::choose", 
+                                           [])
+                  | Some term -> mkLApply (mkLOp "Slang-Built-In::choose-1", 
+                                           [mkLTerm (sp, default_package_name, varset, term)]))
+             | x -> 
+               fail ("Internal confusion in mkLTermOp: expected choose " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
+        | x -> 
+          fail ("Internal confusion in mkLTermOp: expected choose " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
 
-     | (Embed (id, false), ty, _) -> 
-       (case isConsDataType (sp, ty) of
-	  | Some _ -> mkLBool false
-	  | _      -> mkLApply (mkLOp "list", [mkLIntern id]))
+   % Restrict and relax are implemented as identities
+      
+   | (Restrict, ty, _) -> 
+     (case optArgs of
+        | Some term -> mkLTerm (sp, default_package_name, varset, term)
+        | _ -> mkLLambda (["!x"], [], mkLVar "!x"))
+     
+   | (Relax, ty, _) -> 
+     (case optArgs of
+        | None -> mkLLambda (["!x"], [], mkLVar "!x")
+        | Some term -> mkLTerm (sp, default_package_name, varset, term))
 
-     | (Quotient qid, ty, pos) -> 
-       % let _ = toScreen("\nQuotient qid     = " ^  anyToString qid     ^ "\n") in
-       % let _ = toScreen("\nQuotient ty     = " ^  anyToString ty     ^ "\n") in
-       % let _ = toScreen("\nQuotient vars    = " ^  anyToString vars    ^ "\n") in
-       % let _ = toScreen("\nQuotient termOp  = " ^  anyToString termOp  ^ "\n") in
-       % let _ = toScreen("\nQuotient optArgs = " ^  anyToString optArgs ^ "\n") in
-       (case findAllTypes (sp, qid) of
-          | [info] ->
-            % let _ = toScreen("\nQuotient info    = " ^  anyToString info  ^ "\n") in
-            (case unpackFirstTypeDef info of
-                | (tvs, Quotient (_, equiv, _)) ->
-                  let equiv = mkLTerm (sp, dpn, vars, equiv) in
-                  % let _ = toScreen("\nQuotient tvs     = " ^  anyToString tvs   ^ "\n") in
-                  % let _ = toScreen("\nQuotient equiv   = " ^  anyToString equiv ^ "\n") in
-                  (case optArgs of
-                     | None      -> mkLApply (mkLOp "Slang-Built-In::quotient", 
-                                              [equiv])
-                     | Some term -> mkLApply (mkLOp "Slang-Built-In::quotient-1-1", 
-                                              [equiv, mkLTerm (sp, dpn, vars, term)]))
-                | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
-          | x -> fail("Internal confusion in mkLTermOp: expected quotient " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
-
-     | (Choose qid, ty, _) ->  
-       (case findAllTypes (sp, qid) of
-          | [info] ->
-            (case unpackFirstTypeDef info of
-                | (tvs, Quotient _) ->
-                  %% Don't need the equivalence relation when doing a choose
-                  (case optArgs of
-                     | None      -> mkLApply (mkLOp "Slang-Built-In::choose", 
-                                              [])
-                     | Some term -> mkLApply (mkLOp "Slang-Built-In::choose-1", 
-                                              [mkLTerm (sp, dpn, vars, term)]))
-                | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ show qid ^ " to name a quotient type, saw: " ^ anyToString x))
-          | x -> fail("Internal confusion in mkLTermOp: expected choose " ^ show qid ^ " to name one quotient type, but saw: " ^ anyToString x))
-     (*
-      *  Restrict and relax are implemented as identities
-      *)
-
-     | (Restrict, ty, _) -> 
-       (case optArgs of
-	  | None -> mkLLambda (["!x"], [], mkLVar "!x")
-	  | Some term -> mkLTerm (sp, dpn, vars, term))
-
-     | (Relax, ty, _) -> 
-       (case optArgs of
-	  | None -> mkLLambda (["!x"], [], mkLVar "!x")
-	  | Some term -> mkLTerm (sp, dpn, vars, term))
-
-     | mystery -> System.fail ("In mkLTermOp, unexpected termOp: " ^ (anyToString mystery))
+   | mystery -> fail ("In mkLTermOp, unexpected termOp: " ^ (anyToString mystery))
 
 op typeOfOp (sp : Spec, name : QualifiedId) : MSType =
- case AnnSpec.findTheOp (sp, name) of
+ case findTheOp (sp, name) of
    | Some info -> 
      firstOpDefInnerType info
-   | _ -> System.fail ("Undefined op: " ^ show name)
+   | _ -> fail ("Undefined op: " ^ show name)
 
-op fullCurriedApplication (sp : AnnSpec.Spec, dpn : String, vars : StringSet, term : MSTerm)
+op fullCurriedApplication (sp                   : Spec,
+                           default_package_name : String, 
+                           varset               : StringSet, 
+                           term                 : MSTerm)
  : Option LispTerm =
  let 
 
@@ -620,190 +648,217 @@ op fullCurriedApplication (sp : AnnSpec.Spec, dpn : String, vars : StringSet, te
          %% Note that we use typeOfOp(sp, id) instead of ty because may be polymorphic with instantiation to a fn type
          if i > 1 && i = curryShapeNum (sp, typeOfOp(sp, id)) 
            then
-	     Some (mkLApply (mkLOp (unCurryName (id, i, dpn)), 
-			     List.map (fn t -> mkLTerm (sp, dpn, vars, t)) args))
+             Some (mkLApply (mkLOp (unCurryName (id, i, default_package_name)), 
+                             map (fn t -> 
+                                    mkLTerm (sp, default_package_name, varset, t)) 
+                                 args))
          else 
            None
-
+           
        | Fun (Choose _, _, _) ->
          if i = 2 then
            case args of
              | [f, val] ->
                if identityFn? f then
                  Some (mkLApply (mkLOp "Slang-Built-In::quotient-element", 
-                                 [mkLTerm (sp, dpn, vars, val)]))
+                                 [mkLTerm (sp, default_package_name, varset, val)]))
                else 
                  Some (mkLApply (mkLOp "Slang-Built-In::choose-1-1", 
-                                 [mkLTerm (sp, dpn, vars, f), 
-                                  mkLTerm (sp, dpn, vars, val)]))
+                                 [mkLTerm (sp, default_package_name, varset, f), 
+                                  mkLTerm (sp, default_package_name, varset, val)]))
              | _ -> None % shouldn't happen
          else 
            None
-
+           
        | Apply (t1, t2, _) -> aux (t1, i+1, t2::args)
-
+               
        | _ -> None
 
  in 
  aux (term, 0, [])
 
 
-op mkLTermList (sp : Spec, dpn : String, vars : StringSet, term : MSTerm) : LispTerms = 
+op mkLTermList (sp                   : Spec, 
+                default_package_name : String, 
+                varset               : StringSet, 
+                term                 : MSTerm) 
+ : LispTerms = 
  case term of
-   | Record (fields, _) -> List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) fields
-   | _ -> [mkLTerm (sp, dpn, vars, term)]
+   | Record (fields, _) -> 
+     map (fn (_, tm) -> 
+            mkLTerm (sp, default_package_name, varset, tm)) 
+         fields
+   | _ -> 
+     [mkLTerm (sp, default_package_name, varset, term)]
 
- %% Make a special op for the message format to ensure that terms built by mkLTerm 
- %% can be recognized by warn_about_non_constructive_defs
- op  non_constructive_format_msg : LispTerm
- def non_constructive_format_msg = mkLString "Non-constructive Term: ~A~%       where ~{~A = ~S~^, ~}"
+%% Make a special op for the message format to ensure that terms built by mkLTerm 
+%% can be recognized by warn_about_non_constructive_defs
+op non_constructive_format_msg : LispTerm =
+  mkLString "Non-constructive Term: ~A~%       where ~{~A = ~S~^, ~}"
 
- def mkLTerm (sp, dpn, vars, term : MSTerm) = 
-   case fullCurriedApplication (sp, dpn, vars, term) of
-     | Some lTerm -> lTerm
-     | _ ->
-       case term of
+op mkLTerm (sp                   : Spec, 
+            default_package_name : PackageName, 
+            varset               : StringSet, 
+            term                 : MSTerm) 
+ : LispTerm = 
+ let
+   def mk_lisp_term varset tm =
+     mkLTerm (sp, default_package_name, varset, tm)
 
-	 | Fun termOp -> mkLTermOp (sp, dpn, vars, termOp, None)
+   def mk_lisp_terms varset tms =
+     map (mk_lisp_term varset) tms
 
-	 | Var ((id, ty), _) -> 
-	   let id = specId (id, "") in
-	   if member (vars, id) then
-	     Var id 
-	   else
-	     Op id
-
-	 | Let (decls, body, _) ->
-	   let (pats, terms) = unzip decls in
-	   let  names = List.map patternName pats  in
-	   let  names = List.map (fn id -> specId (id, "")) names in
-	   mkLLet (names, 
-		  List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms, 
-		  mkLTerm (sp, dpn, addList (vars, names), body))   
-
-	 | LetRec (decls, term, _) ->
-	   let
-             def unfold (decls, names, terms) = 
-	       case decls of
-		 | [] -> (names, terms)
-		 | (name, term) :: decls -> 
-		   unfold (decls,name::names, term::terms)
+ in
+ case fullCurriedApplication (sp, default_package_name, varset, term) of
+   | Some lTerm -> lTerm
+   | _ ->
+     case term of
+       
+       | Fun termOp -> mkLTermOp (sp, default_package_name, varset, termOp, None)
+         
+       | Var ((id, ty), _) -> 
+         let id = specId (id, "") in
+         if member? (id, varset) then
+           Var id 
+         else
+           Op id
+           
+       | Let (decls, body, _) ->
+         let (pats, terms) = unzip decls                          in
+         let names         = map patternName                pats  in
+         let names         = map (fn id -> specId (id, "")) names in
+         mkLLet (names, 
+                 mk_lisp_terms varset                    terms, 
+                 mk_lisp_term  (addList (names, varset)) body)
+         
+       | LetRec (decls, term, _) ->
+         let
+           def unfold (decls, names, terms) = 
+             case decls of
+               | [] -> (names, terms)
+               | (name, term) :: decls -> 
+                 unfold (decls,name::names, term::terms)
                     
-	   in
-	   let (names, terms) = unfold (decls, [], []) in
-	   let names = List.map (fn (id, _) -> specId (id, "")) names in
-           let vars  = foldl remove vars names in
-	   % let vars  = StringSet.difference (vars, StringSet.fromList names) in
+         in
+         let (names, terms) = unfold (decls, [], [])                    in
+         let names          = map (fn (id, _) -> specId (id, "")) names in
+         let varset         = foldl remove varset names                 in
+         % let varset = StringSet.difference (varset, StringSet.fromList names) in
+         
+         %% Letrec bound names are to be treated as op-refs and not var-refs 
+         
+         mkLLetRec (names, 
+                    mk_lisp_terms varset terms, 
+                    mk_lisp_term  varset term)
+         
+       | Apply (t1, Apply (Fun (Restrict, _, _), t2, _), a) ->
+         mk_lisp_term varset (Apply (t1, t2, a))
+         
+       | Apply (t1, Apply (Fun (Relax, _, _), t2, _), a) ->
+         mk_lisp_term varset (Apply (t1, t2, a))
+         
+       %% Forced tuples are translated to tuples by translating the argument to mkLTuple recursively
+       
+       | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkTuple"), _), _, _), 
+                term, 
+                _) 
+         -> 
+         mk_lisp_term varset term
 
-	   %% Letrec bound names are to be treated as op-refs and not var-refs 
+       %% Functions of arity different from 1 are wrapped in an apply when given only 1 argument
 
-	   mkLLetRec (names, 
-		     List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms, 
-		     mkLTerm (sp, dpn, vars, term))
-
-	 | Apply (t1, Apply (Fun (Restrict, _, _), t2, _), a) ->
-	   mkLTerm (sp, dpn, vars, Apply (t1, t2, a))
-
-	 | Apply (t1, Apply (Fun (Relax, _, _), t2, _), a) ->
-	   mkLTerm (sp, dpn, vars, Apply (t1, t2, a))
-
-	 %% Forced tuples are translated to tuples by translating the argument to mkLTuple recursively
-
-	 | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkTuple"), _), _, _), 
-		 term, _) 
-	   -> 
-	   mkLTerm (sp, dpn, vars, term)
-
-	 %% Functions of arity different from 1 are wrapped in an apply when given only 1 argument
-
-	 | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkApply"), _), _, _), 
-		  Record ([(_, t1), (_, t2)], _), _) 
-	   -> 
-	   mkLApply (mkLOp "apply", [mkLTerm (sp, dpn, vars, t1), mkLTerm (sp, dpn, vars, t2)])
-
-	 | Apply (term, term2 as Record (fields, _), _) ->
-	   (case term of
-	      | Fun termOp -> 
-	        mkLTermOp (sp, dpn, vars, termOp, Some term2)
-	      | _ -> 
-		let terms = List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) fields in
-		mkLApply (mkLTerm (sp, dpn, vars, term), terms))         
-
-	 | Apply (term1, term2, _) -> 
-	   (case term1 of
-
-	      | Fun termOp -> 
-	        mkLTermOp (sp, dpn, vars, termOp, Some term2)
-
-	      | Var ((id, ty), _) ->
-		let id = specId (id, "") in
-		if member (vars, id) then
-		  mkLApply (mkLTerm (sp, dpn, vars, term1), 
-			    [mkLTerm (sp, dpn, vars, term2)])
-		else 
-		  mkLApply (mkLOp id, 
-			    [mkLTerm (sp, dpn, vars, term2)])
-
-	      | _ -> 
-		mkLApply (mkLTerm (sp, dpn, vars, term1), 
-			  [mkLTerm (sp, dpn, vars, term2)]))
-
-	 | Record (row, _) ->
-	   mkLispTuple (List.map (fn (_, t) -> mkLTerm (sp, dpn, vars, t)) row)
-
-	 | IfThenElse (t1, t2, t3, _) -> 
-	   mkLIf (mkLTerm (sp, dpn, vars, t1), 
-		  mkLTerm (sp, dpn, vars, t2), 
-		  mkLTerm (sp, dpn, vars, t3))
-
-	 | Lambda ([(pat, cond, trm)], _) ->
-           let names = patternNames pat in 
-           let names = List.map (fn id -> specId (id, "")) names in
-	   mkLLambda (names, 
-		     [], 
-		     mkLTerm (sp, dpn, addList (vars, names), trm))
+       | Apply (Fun (Op (Qualified ("TranslationBuiltIn", "mkApply"), _), _, _), 
+                Record ([(_, t1), (_, t2)], _),
+                _) 
+         -> 
+         mkLApply (mkLOp "apply", 
+                   [mk_lisp_term varset t1, 
+                    mk_lisp_term varset t2])
+         
+       | Apply (term, term2 as Record (fields, _), _) ->
+         (case term of
+            | Fun termOp -> 
+              mkLTermOp (sp, default_package_name, varset, termOp, Some term2)
+            | _ -> 
+              let terms = map (fn (_, tm) -> mk_lisp_term varset tm) fields in
+              mkLApply (mk_lisp_term varset term, 
+                        terms))         
+         
+       | Apply (t1, t2, _) ->
+         (case t1 of
             
-	 | Seq (terms, _) ->
-           mkLSeq (List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms)
+            | Fun termOp -> 
+              mkLTermOp (sp, default_package_name, varset, termOp, Some t2)
+              
+            | Var ((id, ty), _) ->
+              let id = specId (id, "") in
+              if member? (id, varset) then
+                mkLApply (mk_lisp_term varset t1, 
+                          [mk_lisp_term varset t2])
+              else 
+                mkLApply (mkLOp id, 
+                          [mk_lisp_term varset t2])
+                
+            | _ -> 
+              mkLApply (mk_lisp_term varset t1,
+                        [mk_lisp_term varset t2]))
+         
+       | Record (fields, _) ->
+         mkLispTuple (map (fn (_, tm) -> mk_lisp_term varset tm) fields)
+         
+       | IfThenElse (t1, t2, t3, _) -> 
+         mkLIf (mk_lisp_term varset t1, 
+                mk_lisp_term varset t2,
+                mk_lisp_term varset t3)
+         
+       | Lambda ([(pat, cond, body)], _) ->
+         let names = patternNames pat                     in 
+         let names = map (fn id -> specId (id, "")) names in
+         mkLLambda (names, 
+                    [], 
+                    mk_lisp_term (addList (names, varset)) body)
+         
+       | Seq (terms, _) ->
+         mkLSeq (mk_lisp_terms varset terms)
+         
+       | _ -> 
+         let pos    = termAnn term             in
+         let tm_str = printTerm_OnOneLine term in
+         (%% System.warn ("Non-constructive term " ^ (printIfExternal pos) ^ ": " ^ tm_str);
+          %%
+          %% The overall effect of the code constructed here
+	  %% is to produce something like this at runtime:
+	  %%
+	  %%   In the following, n = 33, f = "testing"
+	  %%   Error: Non-constructive Term: fa(i : Nat) i < n => embed?(Some)(f i)
+	  %%
+	  %% A nice side effect is that the free varset in this term will appear as
+	  %% used lisp varset (the even positions in the name/value list), so the 
+	  %% lisp compiler will not spuriously warn about them being unused.
+	  %%
+	  let free_varset = map (fn (id,_) -> specId (id, "")) (freeVars term) in
+	  mkLApply (mkLOp "cl:error",
+                    [%% The following lisp format string says to successively 
+                     %% take two things from the argument list and then:
+                     %%  print the first (a string) using ~A (so no surrounding quotes),
+		     %%  print the second (a value) using ~S (so use quotes, etc.),
+		     non_constructive_format_msg,       % cf. warn_about_non_constructive_defs
+		     mkLString tm_str,
+		     %% The following will produce a form something like 
+		     %% (list "aa" aa "foo" foo" xyz "xyz")
+		     %% At lisp runtime, that creates a (heterogenous!) list with 
+		     %% the name of each var followed by the value it is bound to.
+		     mkLApply (mkLOp "list",
+                               foldl (fn (args, id) ->
+                                        args ++ [mkLString id, Var id])
+                                     []
+                                     free_varset)]))
 
-	 | _ -> 
-	   let pos = (termAnn term) in
-	   let tm_str = printTerm_OnOneLine term in
-	   (%% System.warn ("Non-constructive term " ^ (printIfExternal pos) ^ ": " ^ tm_str);
-	    %%
-	    %% The overall effect of the code constructed here
-	    %% is to produce something like this at runtime:
-	    %%
-	    %%   In the following, n = 33, f = "testing"
-	    %%   Error: Non-constructive Term: fa(i : Nat) i < n => embed?(Some)(f i)
-	    %%
-	    %% A nice side effect is that the free vars in this term will appear as
-	    %% used lisp vars (the even positions in the name/value list), so the 
-	    %% lisp compiler will not spuriously warn about them being unused.
-	    %%
-	    let free_vars = List.map (fn (id,_) -> specId (id, "")) (freeVars term) in
-	    mkLApply(mkLOp "cl:error",
-		     [%% The following lisp format string says to successively 
-		      %% take two things from the argument list and then:
-		      %%  print the first (a string) using ~A (so no surrounding quotes),
-		      %%  print the second (a value) using ~S (so use quotes, etc.),
-		      non_constructive_format_msg,       % cf. warn_about_non_constructive_defs
-		      mkLString tm_str,
-		      %% The following will produce a form something like 
-		      %% (list "aa" aa "foo" foo" xyz "xyz")
-		      %% At lisp runtime, that creates a (heterogenous!) list with 
-		      %% the name of each var followed by the value it is bound to.
-		      mkLApply (mkLOp "list",
-				foldl (fn (args, id) ->
-				       args ++ [mkLString id, Var id])
-				      []
-				      free_vars)]))
-
-def SpecToLisp.printTerm_OnOneLine term = 
- let s = PrettyPrint.toString (format (8000, 
-                                       ppTerm (initialize (asciiPrinter, false))
-  					      ([], Top) 
-                                              term))
+op printTerm_OnOneLine (term : MSTerm) : String = 
+ let s = toString (format (8000, 
+                           ppTerm (initialize (asciiPrinter, false))
+                                  ([], Top) 
+                                  term))
  in
  let 
 
@@ -887,244 +942,248 @@ op getNames (term : LispTerm) : Strings =
    | Const   _                   -> []
    | If      (t1, t2, t3)        -> (getNames t1) ++ (getNames t2) ++ (getNames t3)
    | IfThen  (t1, t2)            -> (getNames t1) ++ (getNames t2)
-   | Let     (vars, terms, body) -> vars ++ (flatten (List.map getNames terms)) ++ (getNames body)
-   | Letrec  (vars, terms, body) -> vars ++ (flatten (List.map getNames terms)) ++ (getNames body)
-   | Seq     terms               -> flatten (List.map getNames terms)
+   | Let     (vars, terms, body) -> vars ++ (flatten (map getNames terms)) ++ (getNames body)
+   | Letrec  (vars, terms, body) -> vars ++ (flatten (map getNames terms)) ++ (getNames body)
+   | Seq     terms               -> flatten (map getNames terms)
    | _ -> System.fail "Unexpected term in getNames"
       
-op rename (v : String, 
+op rename (old : String, 
            (vars  : Strings, 
             names : Strings, 
             body  : LispTerm)) 
  : Strings * Strings * LispTerm =
- if exists? (fn n -> n = v) names then
-   let n = newName (v, names) in
-   let body = substitute (v, mkLVar n) body in
-   (n :: vars, 
-    n :: names, 
+ if exists? (fn name -> name = old) names then
+   let new  = newName (old, names) in
+   let body = substitute (old, mkLVar new) body in
+   (new :: vars, 
+    new :: names, 
     body)
  else 
-   (v :: vars, names, body)
+   (old :: vars, names, body)
 
-op  rename2 : String * (Strings * List (LispTerm) * Strings * LispTerm) -> Strings * List (LispTerm) * Strings * LispTerm
- def rename2 (v, (vars, terms, names, body)) = 
-   if exists? (fn n -> n = v) names then
-     let n = newName (v, names) in 
-     let body  = substitute (v, (mkLVar n) : LispTerm) body  in 
-     let terms = List.map (substitute (v, mkLVar n)) terms  in
-     (n::vars, terms, n::names, body)
-   else 
-     (v::vars, terms,    names, body)
+op rename2 (old : String,
+            (vars  : Strings, 
+             terms : List (LispTerm), 
+             names : Strings, 
+             body  : LispTerm))
+ : Strings * List (LispTerm) * Strings * LispTerm =
+ if exists? (fn name -> name = old) names then
+   let new   = newName (old, names)                in 
+   let lvar  = mkLVar new                          in
+   let body  = substitute (old, lvar) body         in 
+   let terms = map (substitute (old, lvar)) terms  in
+   (new::vars, terms, new::names, body)
+ else 
+   (old::vars, terms,      names, body)
 
- op  substitute : (String * LispTerm) -> LispTerm -> LispTerm
- def substitute (x, arg) body = 
-   let 
-     def subst_in_decls decls =
-       case arg of
-	 | Var new_var ->
-           (List.map (fn decl ->
-		      case decl of
-			| Ignore ignored_vars -> 
-			  Ignore (List.map (fn ignored_var -> 
-					    if ignored_var = x then 
-					      new_var
-					    else 
-					      ignored_var)
-				           ignored_vars))
-	             decls)
-	 | _ -> decls
-   in
-     case body of
-
-       | Apply (term, terms) -> 
-         Apply (substitute (x, arg) term, 
-		List.map (substitute (x, arg)) terms)
-
-       | Lambda (vars, decls, body) -> 
-	 if exists? (fn v -> x = v) vars then
-	   mkLLambda (vars, decls, body) 
-	 else
-           let names = getNames arg in
-           let (vars, names, body) = foldr rename ([], names, body) vars
-           in
-	     mkLLambda (vars, 
-		       %% we might be renaming a var, in which case
-		       %% any decls referring to it must be updated
-		       subst_in_decls decls, 
-		       substitute (x, arg) body)
-           
-       | Var y -> if x = y then arg else mkLVar y
-
-       | Let (vars, terms, body) -> 
-	 if exists? (fn v -> x = v) vars then
-	   mkLLet (vars, 
-		   List.map (substitute (x, arg)) terms, 
-		   body)
-	 else 
-           let terms = List.map (substitute (x, arg)) terms in
-           let names = getNames (arg) in
-           let (vars, names, body) = foldr rename ([], names, body) vars
-           in
-	     mkLLet (vars, 
-		     terms, 
-		     substitute (x, arg) body)
-           
-       | Letrec (vars, terms, body) -> 
-	 if exists? (fn v -> x = v) vars then
-	   mkLLetRec (vars, terms, body)
-	 else 
-           let names = getNames (arg) in
-           let terms = List.map (substitute (x, arg)) terms in
-           let (vars, terms, names, body) = 
-	       foldr rename2 ([], terms, names, body) vars  
-           in
-	     mkLLetRec (vars, 
-			terms, 
-			substitute (x, arg) body)
-           
-       | If (t1, t2, t3) -> 
-	 mkLIf (substitute (x, arg) t1, 
-		substitute (x, arg) t2, 
-		substitute (x, arg) t3)
-
-       | IfThen (t1, t2) -> 
-	 IfThen (substitute (x, arg) t1, 
-		 substitute (x, arg) t2)
-
-       | Seq ts -> 
-	 mkLSeq (List.map (substitute (x, arg)) ts)
-
-       | _ -> body
+op substitute (x : String, arg : LispTerm) (body : LispTerm) : LispTerm =
+ let 
+   def subst_in_decls decls =
+     case arg of
+       | Var new_var ->
+         map (fn decl ->
+                case decl of
+                  | Ignore ignored_varset -> 
+                    Ignore (map (fn ignored_var -> 
+                                   if ignored_var = x then 
+                                     new_var
+                                   else 
+                                     ignored_var)
+                                ignored_varset))
+             decls
+       | _ -> decls
+ in
+ case body of
+   
+   | Apply (term, terms) -> 
+     Apply (substitute (x, arg) term, 
+            map (substitute (x, arg)) terms)
+     
+   | Lambda (vars, decls, body) -> 
+     if exists? (fn v -> x = v) vars then
+       mkLLambda (vars, decls, body) 
+     else
+       let names               = getNames arg                        in
+       let (vars, names, body) = foldr rename ([], names, body) vars in
+       mkLLambda (vars, 
+                  %% we might be renaming a var, in which case
+                  %% any decls referring to it must be updated
+                  subst_in_decls decls, 
+                  substitute (x, arg) body)
+       
+   | Var y -> if x = y then arg else mkLVar y
+     
+   | Let (vars, terms, body) -> 
+     if exists? (fn v -> x = v) vars then
+       mkLLet (vars, 
+               map (substitute (x, arg)) terms, 
+               body)
+     else 
+       let terms               = map (substitute (x, arg)) terms     in
+       let names               = getNames arg                        in
+       let (vars, names, body) = foldr rename ([], names, body) vars in
+       mkLLet (vars, 
+               terms, 
+               substitute (x, arg) body)
+       
+   | Letrec (vars, terms, body) -> 
+     if exists? (fn v -> x = v) vars then
+       mkLLetRec (vars, terms, body)
+     else 
+       let names = getNames arg                    in
+       let terms = map (substitute (x, arg)) terms in
+       let (vars, terms, names, body) = 
+           foldr rename2 
+                 ([], terms, names, body) 
+                 vars
+       in
+       mkLLetRec (vars, 
+                  terms, 
+                  substitute (x, arg) body)
+       
+   | If (t1, t2, t3) -> 
+     mkLIf (substitute (x, arg) t1, 
+            substitute (x, arg) t2, 
+            substitute (x, arg) t3)
+     
+   | IfThen (t1, t2) -> 
+     IfThen (substitute (x, arg) t1, 
+             substitute (x, arg) t2)
+     
+   | Seq ts -> 
+     mkLSeq (map (substitute (x, arg)) ts)
+     
+   | _ -> body
      
 
- def simpleTerm (term : LispTerm) = 
-   case term of
-     | Var   _ -> true
-     | Const (Parameter nm) -> ~(testSubseqEqual?("Global::", nm, 0, 0))
-     | Const _ -> true
-     | Op    _ -> true
-     | _ -> false
+op simpleTerm? (term : LispTerm) : Bool = 
+ case term of
+   | Var   _              -> true
+   | Const (Parameter nm) -> ~(testSubseqEqual?("Global::", nm, 0, 0))
+   | Const _              -> true
+   | Op    _              -> true
+   | _                    -> false
       
 
- def pure (term : LispTerm) = 
-   case term of
-     | Var    _ -> true
-     | Const (Parameter nm) -> ~(testSubseqEqual?("Global::", nm, 0, 0))
-     | Const  _ -> true
-     | Op     _ -> true
-     | Lambda _ -> true
-     | Apply (Op "cdr",    terms) -> forall? pure terms % Selector from data type constructors.
-     | Apply (Op "car",    terms) -> forall? pure terms % Selector from tuple.
-     | Apply (Op "svref",  terms) -> forall? pure terms % Projection from record
-     | Apply (Op "vector", terms) -> forall? pure terms % Tuple formation
-     | Apply (Op "cons",   terms) -> forall? pure terms % Tuple formation
-     | _ -> false
+op pure? (term : LispTerm) : Bool = 
+ case term of
+   | Var    _                   -> true
+   | Const (Parameter nm)       -> ~(testSubseqEqual?("Global::", nm, 0, 0))
+   | Const  _                   -> true
+   | Op     _                   -> true
+   | Lambda _                   -> true
+   | Apply (Op "cdr",    terms) -> forall? pure? terms % Selector from data type constructors.
+   | Apply (Op "car",    terms) -> forall? pure? terms % Selector from tuple.
+   | Apply (Op "svref",  terms) -> forall? pure? terms % Projection from record
+   | Apply (Op "vector", terms) -> forall? pure? terms % Tuple formation
+   | Apply (Op "cons",   terms) -> forall? pure? terms % Tuple formation
+   | _                          -> false
       
   
- def pV? var_name =
-   case explode var_name of
-     | #p :: #V :: digits -> forall? isNum digits % lexer gets upset if no space between "::#"
-     | #a :: #p :: #V :: digits -> forall? isNum digits
-     | _ -> false
+op pV? (var_name : String) : Bool =
+ case explode var_name of
+   |       #p :: #V :: digits -> forall? isNum digits % lexer gets upset if no space between "::#"
+   | #a :: #p :: #V :: digits -> forall? isNum digits
+   | _ -> false
 
- def reduceTerm (term : LispTerm) = 
-   case term of
+op reduceTerm (term : LispTerm) : LispTerm = 
+ case term of
 
-     | Apply (Lambda (xs, _, body), args) -> reduceTerm (Let (xs, args, body))
-
-     | Apply (term, terms) -> 
-       let term  = reduceTerm term   in
-       let terms = List.map reduceTerm terms in
-       %% DELETED 6/7/00 nsb to make choose and quotient compile correctly.
-       %% Where is this relevant?
-       %% let (* Ops need an argument *)
-       %%   def etaExpandOp (term : LispTerm) = 
-       %%    case term of
-       %%      | Op _ -> mkLLambda (["!x"], [], mkLApply (term, [mkLVar "!x"]))
-       %%      | _ -> term
-       %% in 
-       %  let terms = List.map etaExpandOp terms in
-       mkLApply (term, terms)
+   | Apply (Lambda (xs, _, body), args) -> reduceTerm (Let (xs, args, body))
+     
+   | Apply (term, terms) -> 
+     let term  = reduceTerm term      in
+     let terms = map reduceTerm terms in
+     %% DELETED 6/7/00 nsb to make choose and quotient compile correctly.
+     %% Where is this relevant?
+     %% let (* Ops need an argument *)
+     %%   def etaExpandOp (term : LispTerm) = 
+     %%    case term of
+     %%      | Op _ -> mkLLambda (["!x"], [], mkLApply (term, [mkLVar "!x"]))
+     %%      | _ -> term
+     %% in 
+     %  let terms = map etaExpandOp terms in
+     mkLApply (term, terms)
            
-     | Lambda (vars, decls, body) -> 
-       let reduced_body = reduceTerm body in
-       let unused_and_unignored_pv_vars = 
-           List.foldr (fn (var_name, unused_vars) ->
-		       if (%% internally generated?
-			   %% For user-defined vars, we do NOT want add an ignore decl, 
-			   %% as that would hide useful debugging information.
-			   (pV? var_name)
-			   &&
-			   %% unused?
-			   (countOccurrence2 (var_name, 0, [reduced_body]) = 0) 
-			   &&
-			   %% not already in an ignore declaration?
-			   %% (can happen if there are multiple passes through reduceTerm)
-			   ~(exists? (fn decl ->
-				     case decl of
-				       | Ignore ignored_names ->
-					 exists? (fn ignored_name -> var_name = ignored_name) 
-					        ignored_names
-				       | _ -> false)
-			            decls) 
-			   &&
-			   %% duplications among the vars probably shouldn't happen, 
-			   %% but it doesn't hurt to double-check
-			   var_name nin? unused_vars)
-		       then 
-			  var_name::unused_vars
-		       else 
-			 unused_vars)
-	              []      
-		      vars
-       in
-       let augmented_decls = 
-           (case unused_and_unignored_pv_vars of
-	      | [] -> decls
-	      | _  -> Ignore unused_and_unignored_pv_vars :: decls)
-       in
-	 mkLLambda (vars, augmented_decls, reduced_body)
+   | Lambda (vars, decls, body) -> 
+     let reduced_body = reduceTerm body in
+     let unused_and_unignored_pv_vars = 
+         foldr (fn (var_name, unused_vars) ->
+                  if (%% internally generated?
+                        %% For user-defined varset, we do NOT want add an ignore decl, 
+                        %% as that would hide useful debugging information.
+                        (pV? var_name)
+                        &&
+                        %% unused?
+                        (countOccurrence2 (var_name, 0, [reduced_body]) = 0) 
+                        &&
+                        %% not already in an ignore declaration?
+                        %% (can happen if there are multiple passes through reduceTerm)
+                        ~(exists? (fn decl ->
+                                     case decl of
+                                       | Ignore ignored_names ->
+                                         exists? (fn ignored_name -> var_name = ignored_name) 
+                                         ignored_names
+                                       | _ -> false)
+                            decls) 
+                        &&
+                        %% duplications among the varset probably shouldn't happen, 
+                        %% but it doesn't hurt to double-check
+                        var_name nin? unused_vars)
+                    then 
+                      var_name :: unused_vars
+                  else 
+                    unused_vars)
+               []      
+               vars
+     in
+     let augmented_decls = 
+         case unused_and_unignored_pv_vars of
+           | [] -> decls
+           | _  -> Ignore unused_and_unignored_pv_vars :: decls
+     in
+     mkLLambda (vars, augmented_decls, reduced_body)
 
+   %
+   % Optimized by deleting pure arguments that do not
+   % occur in the body at all.
+   %
+   | Let (xs, args, body) -> 
+     let body  = reduceTerm body     in
+     let args  = map reduceTerm args in
+     let xArgs = zip (xs, args)      in
      %
-     % Optimized by deleting pure arguments that do not
-     % occur in the body at all.
+     % Count along multiplicity of a variable in the let bound arguments.
+     % This prevents capture in sequential substitution.
+     % ?? Example please...
      %
-     | Let (xs, args, body) -> 
-       let body  = reduceTerm body          in
-       let args  = List.map reduceTerm args in
-       let xArgs = zip (xs, args)  in
-       %
-       % Count along multiplicity of a variable in the let bound arguments.
-       % This prevents capture in sequential substitution.
-       % ?? Example please...
-       %
-       let terms = body::args in
-       let xNumArgs = 
-           List.map (fn (x, arg) ->
-		     if simpleTerm arg then
-		       %% If arg is a constant, why do we not substitute if
-		       %%  there are 2 or more occurrences of the var among 
-		       %%  the args (ignoring the body)?
-		       %% Why not always substitute? (I.e. return count of 0 or 1)
-		       %% Is this related to the capture issue above?
-		       (x, countOccurrence2 (x, 0, args),  false, arg)
-
-		     else if pure arg then
-		       (x, countOccurrence2 (x, 0, terms), false, arg)
-
-		     else if countOccurrence2 (x, 0, terms) > 0 then
-		       %% arg has possible side effects, and var is used, 
-		       %% so leave it in place and don't substitute into body
-		       (x, 2, false, arg)
-
+     let terms = body::args in
+     let xNumArgs = 
+         map (fn (x, arg) ->
+                if simpleTerm? arg then
+                  %% If arg is a constant, why do we not substitute if
+                  %%  there are 2 or more occurrences of the var among 
+                  %%  the args (ignoring the body)?
+                  %% Why not always substitute? (I.e. return count of 0 or 1)
+                  %% Is this related to the capture issue above?
+                  (x, countOccurrence2 (x, 0, args),  false, arg)
+                  
+                else if pure? arg then
+                  (x, countOccurrence2 (x, 0, terms), false, arg)
+                  
+                else if countOccurrence2 (x, 0, terms) > 0 then
+                  %% arg has possible side effects, and var is used, 
+                  %% so leave it in place and don't substitute into body
+                  (x, 2, false, arg)
+                  
 		     else
 		       %% arg has possible side effects, 
 		       %% but var is never used, so convert to sequence
 		       (x, 2, true, arg)) 
-	            xArgs                              
-       in
-       let (xs, args, body)  = 
-           foldr (fn ((x, num, convert_to_seq?, arg), (xs, args, body)) -> 
+             xArgs                              
+     in
+     let (xs, args, body)  = 
+         foldr (fn ((x, num, convert_to_seq?, arg), (xs, args, body)) -> 
 		  %% If num = 0, then x and arg will vanish from result.
 		  %% This happens only if arg is pure or simpleTerm.
 		  if num < 2 then
@@ -1136,176 +1195,185 @@ op  rename2 : String * (Strings * List (LispTerm) * Strings * LispTerm) -> Strin
 		    (xs, 
 		     args, 
 		     mkLSeq [arg, body])
-	          else
-		    (x::xs, 
+                  else
+                    (x::xs, 
                      arg::args, 
-		     body)) 
-	         ([], [], body) 
-		 xNumArgs
-       in
-	 mkLLet (reverse xs, reverse args, body)
+                     body)) 
+               ([], [], body) 
+               xNumArgs
+     in
+     mkLLet (reverse xs, reverse args, body)
 
-     | Letrec (vars, terms, body) -> 
-       mkLLetRec (vars, List.map reduceTerm terms, reduceTerm body)
+   | Letrec (vars, terms, body) -> 
+     mkLLetRec (vars, map reduceTerm terms, reduceTerm body)
 
-     | If (t1, t2, t3) -> 
-       mkLIf (reduceTerm t1, reduceTerm t2, reduceTerm t3)
+   | If (t1, t2, t3) -> 
+     mkLIf (reduceTerm t1, reduceTerm t2, reduceTerm t3)
 
-     | IfThen (t1, t2) -> 
-       IfThen (reduceTerm t1, reduceTerm t2)
+   | IfThen (t1, t2) -> 
+     IfThen (reduceTerm t1, reduceTerm t2)
 
-     | Seq (terms) -> mkLSeq (List.map reduceTerm terms)
+   | Seq (terms) -> mkLSeq (map reduceTerm terms)
 
-     | l -> l
+   | l -> l
                           
- def lispTerm (sp, dpn, term) = 
-   reduceTerm (mkLTerm (sp, dpn, emptyMap, term))
+op lispTerm (sp                   : Spec,
+             default_package_name : PackageName,
+             term                 : MSTerm) 
+ : LispTerm = 
+ reduceTerm (mkLTerm (sp, default_package_name, emptyMap, term))
 
- def functionType? (sp, ty) = 
-   case unfoldBase (sp, ty) of
-     | Arrow _ -> true
-     | Subtype (s, _, _) -> functionType? (sp, s)
-     | _ -> false
+op functionType? (sp : Spec, ty : MSType) : Bool = 
+ case unfoldBase (sp, ty) of
+   | Arrow   _         -> true
+   | Subtype (s, _, _) -> functionType? (sp, s)
+   | _                 -> false
 
- def genNNames n = 
-   tabulate (n, fn i -> "x" ^ (Nat.show i))
+op genNNames (n : Nat) : Strings = 
+ tabulate (n, fn i -> "x" ^ show i)
 
- def nTupleDerefs (n, vr) = 
-   if n = 2 then 
-     [mkLApply (mkLOp "car", [vr]), 
-      mkLApply (mkLOp "cdr", [vr])]
-   else 
-     tabulate (n, fn i -> 
-	          mkLApply (mkLOp "svref", 
-			    [vr, mkLNat i]))
+op nTupleDerefs (n : Nat, vr : LispTerm) : LispTerms = 
+ if n = 2 then 
+   [mkLApply (mkLOp "car", [vr]), 
+    mkLApply (mkLOp "cdr", [vr])]
+ else 
+   tabulate (n, 
+             fn i -> 
+               mkLApply (mkLOp "svref", 
+                         [vr, mkLNat i]))
 
- def duplicateString (n, s) =
-   case n of
-     | 0 -> ""
-     | _ -> s ^ duplicateString (n - 1, s)
+op duplicateString (n : Nat, s : String) : String =
+ case n of
+   | 0 -> ""
+   | _ -> s ^ duplicateString (n - 1, s)
 
- op  unCurryName : QualifiedId * Nat * String -> String
- def unCurryName (Qualified (q, id), n, dpn) =
-   printPackageId (Qualified (q, id ^ duplicateString (n, "-1")), dpn)
+op unCurryName (Qualified (q, id) : QualifiedId,
+                n                 : Nat,
+                default_package_name : PackageName)
+ : String =
+ let new_id = id ^ duplicateString (n, "-1") in
+ printPackageId (Qualified (q, new_id),
+                 default_package_name)
 
- %% fn x -> fn (y1, y2) -> fn z -> bod --> fn (x, y, z) let (y1, y2) = y in bod
- def unCurryDef (term, n) =
-   let 
-     def auxUnCurryDef (term, i, params, let_binds) =
-       if i > n then 
-	 (Some (reduceTerm (mkLLambda (params, 
-				       [], 
-				       foldl (fn (bod, (vars, vals)) ->
-					      mkLLet (vars, vals, bod))
-				             term 
-					     let_binds)))) 
-       else
-	 case term of
-	   | Lambda (formals, _, body) ->
-	     (case formals of
-
-		| [_] -> 
-		  auxUnCurryDef (body, 
-				 i+1, 
-				 params ++ formals, 
-				 let_binds)
-		| _ -> 
-		  let newParam = "!x" ^ (Nat.show i) in
-		  auxUnCurryDef (body, 
-				 i+1, 
-				 params ++ [newParam], 
-				 [(formals, 
-				   nTupleDerefs (length formals, 
-						 mkLVar newParam))]
+%% fn x -> fn (y1, y2) -> fn z -> bod --> fn (x, y, z) let (y1, y2) = y in bod
+op unCurryDef (term : LispTerm, n : Nat) : Option LispTerm =
+ let 
+   def auxUnCurryDef (term, i, params, let_binds) =
+     if i > n then 
+       Some (reduceTerm (mkLLambda (params, 
+                                    [], 
+                                    foldl (fn (bod, (vars, vals)) ->
+                                             mkLLet (vars, vals, bod))
+                                          term 
+                                          let_binds)))
+     else
+       case term of
+         | Lambda (formals, _, body) ->
+           (case formals of
+              
+              | [_] -> 
+                auxUnCurryDef (body, 
+                               i+1, 
+                               params ++ formals, 
+                               let_binds)
+              | _ -> 
+                let newParam = "!x" ^ (Nat.show i) in
+                auxUnCurryDef (body, 
+                               i+1, 
+                               params ++ [newParam], 
+                               [(formals, 
+                                 nTupleDerefs (length formals, 
+                                               mkLVar newParam))]
 				 ++ 
 				 let_binds))
-
+           
 	   %% Lets are effectively pushed inwards
-	   | Let (vars, terms, body) ->
-	     auxUnCurryDef (body, 
-			    i, 
-			    params, 
-			    [(vars, terms)] ++ let_binds)
+         | Let (vars, terms, body) ->
+           auxUnCurryDef (body, 
+                          i, 
+                          params, 
+                          [(vars, terms)] ++ let_binds)
+           
+         | _ -> None        
+ in 
+ auxUnCurryDef (term, 1, [], [])
 
-	   | _ -> None        
-    in 
-      auxUnCurryDef (term, 1, [], [])
+% fn (x, y, z) -> f-1 (tuple (x, y, z))
+op defNaryByUnary (name : String, n : Nat) : LispTerm =
+ let vnames = genNNames n in
+ reduceTerm (mkLLambda (vnames, 
+                        [], 
+                        mkLApply (mkLOp (name), 
+                                  [mkLispTuple (map mkLVar vnames)])))
 
- % fn (x, y, z) -> f-1 (tuple (x, y, z))
- def defNaryByUnary (name, n) =
-   let vnames = genNNames n in
-   reduceTerm (mkLLambda (vnames, 
-			  [], 
-			  mkLApply (mkLOp (name), 
-				    [mkLispTuple (List.map mkLVar vnames)])))
+% fn (x, y, z) -> f-1 (tuple (x, y, z))
+op defAliasFn (name : String, n : Nat) : LispTerm =
+ let vnames = genNNames n in
+ reduceTerm (mkLLambda (vnames, 
+                        [], 
+                        mkLApply (mkLOp (name), 
+                                  map mkLVar vnames)))
 
- % fn (x, y, z) -> f-1 (tuple (x, y, z))
- def defAliasFn (name, n) =
-   let vnames = genNNames n in
-   reduceTerm (mkLLambda (vnames, 
-			  [], 
-			  mkLApply (mkLOp (name), 
-				    List.map mkLVar vnames)))
+% fn x -> f (x.1, x.2, x.3)
+op defUnaryByNary (name : String, n : Nat) : LispTerm =
+ reduceTerm (mkLLambda ([if n = 0 then "ignore" else "x"], 
+                        if n = 0 then [Ignore ["ignore"]] else [], 
+                        mkLApply (mkLOp name, 
+                                  nTupleDerefs (n, mkLVar "x"))))
 
- % fn x -> f (x.1, x.2, x.3)
- def defUnaryByNary (name, n) =
-   reduceTerm (mkLLambda ([if n = 0 then "ignore" else "x"], 
-			  if n = 0 then [Ignore ["ignore"]] else [], 
-			  mkLApply (mkLOp name, 
-				    nTupleDerefs (n, mkLVar "x"))))
+% fn x1 -> fn ... -> fn xn -> name (x1, ..., xn)
+op defCurryByUncurry (name : String, n : Nat) : LispTerm =
+ let 
+   def auxRec (i, args) =
+     if i > n then 
+       mkLApply (mkLOp name, args)
+     else 
+       let vn = "x" ^ (Nat.show i) in
+       reduceTerm (mkLLambda ([vn], 
+                              [], 
+                              auxRec (i+1, args ++ [mkLVar vn])))
+ in 
+ auxRec (1, [])
 
- % fn x1 -> fn ... -> fn xn -> name (x1, ..., xn)
- def defCurryByUncurry (name, n) =
-   let 
-     def auxRec (i, args) =
-       if i > n then 
-	 mkLApply (mkLOp name, args)
-       else 
-	 let vn = "x" ^ (Nat.show i) in
-	 reduceTerm (mkLLambda ([vn], 
-				[], 
-				auxRec (i+1, args ++ [mkLVar vn])))
-   in 
-     auxRec (1, [])
+% fn (x1, ..., xn) -> f x1 ... xn
+op defUncurryByUnary (name : String, n : Nat) : LispTerm =
+ let 
+   def auxRec (i, args, bod) =
+     if i > n then 
+       reduceTerm (mkLLambda (args, [], bod))
+     else 
+       let vn = "x" ^ (Nat.show i) in
+       auxRec (i + 1, 
+               args ++ [vn], 
+               mkLApply (bod, [mkLVar vn]))
+ in 
+ auxRec (1, [], mkLOp name)
 
- % fn (x1, ..., xn) -> f x1 ... xn
- def defUncurryByUnary (name, n) =
-   let 
-     def auxRec (i, args, bod) =
-       if i > n then 
-	 reduceTerm (mkLLambda (args, [], bod))
-       else 
-	 let vn = "x" ^ (Nat.show i) in
-	 auxRec (i + 1, 
-		 args ++ [vn], 
-		 mkLApply (bod, [mkLVar vn]))
-   in 
-     auxRec (1, [], mkLOp name)
+op renameDef? (term : LispTerm) : Option String =
+ case term of
+   | Lambda ([v], _, Apply (Op fnName, [Var vr])) ->
+     if v = vr then 
+       Some fnName 
+     else 
+       None
+   | _ -> None
 
- op  renameDef? : ListADT.LispTerm -> Option String
- def renameDef? term =
-   case term of
-     | Lambda ([v], _, Apply (Op fnName, [Var vr])) ->
-       if v = vr then 
-	 Some fnName 
-       else 
-	 None
-     | _ -> None
+op indexTransforms? : Bool = true
 
- op indexTransforms? : Bool = true
-
- op formsFromSpec(spc: Spec) : LispTerms =
-   if ~indexTransforms? || none?(findTheType(spc, Qualified("MetaTransform", "AnnTypeValue"))) then []
-   else
+op formsFromSpec(spc: Spec) : LispTerms =
+ if ~indexTransforms? || none?(findTheType(spc, Qualified("MetaTransform", "AnnTypeValue"))) then 
+   []
+ else
    let tr_infos = generateAddTransformUpdates spc in
    map (fn (Qualified(q, nm), (ty_info, fn_tm)) ->
         let q_ty_info = Const (Cell (cell ty_info))                         in
         let name      = mkQualifiedId ("MetaTransform", "addTransformInfo") in
         let fn_tm     = translateMatchInTerm spc name fn_tm                 in
         let fn_ltm    = lispTerm (spc, defaultSpecwarePackage, fn_tm)       in  
-        Set("MetaTransform::transformInfoMap",
-            mkLApply(mkLOp "MetaTransform::addTransformInfo-4", [mkLString q, mkLString nm, q_ty_info, fn_ltm])))
-     tr_infos
+        Set ("MetaTransform::transformInfoMap",
+             mkLApply(mkLOp "MetaTransform::addTransformInfo-4", 
+                      [mkLString q, mkLString nm, q_ty_info, fn_ltm])))
+       tr_infos
 
 op lisp (slice : Slice) : LispSpec =
 
@@ -1417,7 +1485,7 @@ op lisp (slice : Slice) : LispSpec =
                | main_def :: _ -> [main_def]
                | _ -> 
                  if q = "Global" then
-                   [Record([],noPos)]  % to get (defvar Global.xxx nil)
+                   [Record ([], slPos)]  % to get (defvar Global.xxx nil)
                  else
                    [])
  in
@@ -1449,50 +1517,50 @@ op lisp (slice : Slice) : LispSpec =
  {name           = defPkgName, 
   extraPackages  = extraPackages, 
   getter_setters = getter_setters,
-  ops            = List.map (fn (n, _) -> n) defs, 
+  ops            = map (fn (n, _) -> n) defs, 
   axioms         = [], 
   opDefns        = defs,
   forms          = forms
   } 
       
- op  warn_about_non_constructive_defs : List(String * ListADT.LispTerm) -> ()
- def warn_about_non_constructive_defs defs =
-   %% mkLTerm incorporates non_constructive_format_msg into certain calls to error
-   app (fn (uname, tm) ->
-	if calls_specific_error? tm non_constructive_format_msg
-            && uname nin? SuppressGeneratedDefuns
-          then System.warn ("Non-constructive def for " ^ uname)
+op warn_about_non_constructive_defs (defs : List(String * LispTerm)) : () = 
+ %% mkLTerm incorporates non_constructive_format_msg into certain calls to error
+ app (fn (uname, tm) ->
+	if calls_specific_error? tm non_constructive_format_msg 
+           && 
+           uname nin? SuppressGeneratedDefuns
+          then 
+            warn ("Non-constructive def for " ^ uname)
 	else
 	  ())
-       defs
+     defs
 
- op  calls_specific_error? : LispTerm -> LispTerm -> Bool
- def calls_specific_error? tm format_str =
-   let 
-      def aux tm =
-	case tm of
-	  | Apply  (Op "cl:error", msg :: _) -> msg = format_str
-	  | Apply  (tm, tms)       -> aux tm || exists? aux tms
-	  | Lambda (_,   _,   tm)  -> aux tm
-	  | If     (tm1, tm2, tm3) -> aux tm1 || aux tm2 || aux tm3
-	  | IfThen (tm1, tm2)      -> aux tm1 || aux tm2
-	  | Let    (_, tms, tm)    -> exists? aux tms || aux tm
-	  | Letrec (_, tms, tm)    -> exists? aux tms || aux tm
-	  | Seq    tms             -> exists? aux tms
-	  | _                      -> false
-   in
-     aux tm
+op calls_specific_error? (term : LispTerm) (format_str : LispTerm) : Bool =
+ let 
+   def aux tm =
+     case tm of
+       | Apply  (Op "cl:error", msg :: _) -> msg = format_str
+       | Apply  (tm, tms)                 -> aux tm || exists? aux tms
+       | Lambda (_,   _,   tm)            -> aux tm
+       | If     (t1, t2, t3)              -> aux t1 || aux t2 || aux t3
+       | IfThen (t1, t2)                  -> aux t1 || aux t2
+       | Let    (_, tms, tm)              -> exists? aux tms || aux tm
+       | Letrec (_, tms, tm)              -> exists? aux tms || aux tm
+       | Seq    tms                       -> exists? aux tms
+       | _                                -> false
+ in
+ aux term
 
  
- %% ==========================================================================================
- %%  (1) refine (possibly unused) ops using List_Executable.sw, String_Executable.sw, etc.
- %% ==========================================================================================
+%% ==========================================================================================
+%%  (1) refine (possibly unused) ops using List_Executable.sw, String_Executable.sw, etc.
+%% ==========================================================================================
 
- op maybeSubstBaseSpecs (substBaseSpecs? : Bool) (spc : Spec) : Spec =
-  if substBaseSpecs? then 
-    SpecTransform.substBaseSpecs spc
-  else 
-    spc 
+op maybeSubstBaseSpecs (substBaseSpecs? : Bool) (spc : Spec) : Spec =
+ if substBaseSpecs? then 
+   SpecTransform.substBaseSpecs spc
+ else 
+   spc 
 
 op transformSpecForLispGen (substBaseSpecs? : Bool) (slice? : Bool) (spc : Spec) : Spec =
 
@@ -1652,7 +1720,7 @@ op toLispSpec (substBaseSpecs? : Bool) (slice? : Bool) (ms_spec : Spec)
   : LispSpec =
   let (top_ops, top_types) = topLevelOpsAndTypesExcludingBaseSubsts ms_spec                        in 
   let _                    = case (top_ops, top_types) of
-                               | ([], []) -> writeLine ("No toplevel ops or types in spec")
+                               | ([], []) -> writeLine (";;; No toplevel ops or types in spec.")
                                | _ -> ()
   in
   toLispSpecOps substBaseSpecs? slice? ms_spec top_ops top_types 
@@ -1697,9 +1765,8 @@ op localDefsToLispFile (spc : Spec, file : String, preamble : String) : () =
                         if localOp? (Qualified(q, id), spc) then
                           info
                         else 
-                          let pos = termAnn info.dfn in
                           let (tvs, ty, _) = unpackFirstOpDef info in
-                          info << {dfn = maybePiTerm (tvs, TypedTerm (Any pos, ty, pos))})
+                          info << {dfn = maybePiTerm (tvs, TypedTerm (Any slPos, ty, slPos))})
                      spc.ops)
  in
  let spc = setElements (spc,mapPartialSpecElements 
