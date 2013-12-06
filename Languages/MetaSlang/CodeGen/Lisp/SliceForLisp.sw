@@ -1,4 +1,4 @@
-LispGen qualifying spec
+SpecToLisp qualifying spec
 
 % import /Languages/MetaSlang/Transformations/OldSlice  % TODO: deprecated
   import /Languages/MetaSlang/Transformations/SliceSpec % use this instead

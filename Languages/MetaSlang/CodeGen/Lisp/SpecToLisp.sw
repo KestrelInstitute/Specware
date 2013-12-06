@@ -1,4 +1,4 @@
-LispGen qualifying spec
+SpecToLisp qualifying spec
 
 import /Languages/MetaSlang/Transformations/PatternMatch
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
