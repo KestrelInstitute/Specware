@@ -12,6 +12,7 @@ import /Languages/MetaSlang/CodeGen/SubstBaseSpecs
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
 import /Languages/MetaSlang/CodeGen/IntroduceSetfs
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
+import /Library/DataStructures/MapsAsSTHTables
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,6 +68,7 @@ type Context = {spc              : Spec,
                 global_var       : MSTerm,                 % if global type is not a product
                 global_var_map   : List (String * MSTerm), % if global type has product fields
                 global_init_name : QualifiedId,
+                global_refs_map  : GlobalRefsFromOps,
                 setf_entries     : SetfEntries,
                 let_bindings     : LetBindings,
                 current_op       : OpName,
@@ -85,6 +87,7 @@ type GlobalizedTerm =    | Changed MSTerm
 type GlobalizedPattern = | Changed MSPattern
                          | Unchanged
                          | GlobalVarPat % for clarity (as opposed to Changed global_var_pat)
+
 
 %% ================================================================================
 
@@ -113,11 +116,126 @@ op expandBindings (tm : MSTerm, bindings : LetBindings) : MSTerm =
 
 %% ================================================================================
 
-op globalRefsIn (context     : Context) 
+type OpRefs = {pending  : OpNames,
+               resolved : OpNames}
+
+type AppliedOpRefs = AQualifierMap OpRefs
+
+op appliedOpRefs (spc : Spec) : AppliedOpRefs =
+ let
+
+   def find_refs term =
+     foldSubTerms (fn (tm, refs) ->
+                     case tm of
+                       | Apply (Fun (Op (name, _), _, _), _, _) | name nin? refs -> name |> refs
+                       | _ -> refs)
+                  []
+                  term
+
+   def find_entry (refs_map, Qualified (q, id)) =
+     let Some entry = findAQualifierMap (refs_map, q, id) in
+     entry
+
+   def insert_entry (refs_map, Qualified (q, id), entry) =
+     insertAQualifierMap (refs_map, q, id, entry)
+
+   def aux (unresolved_ops, refs_map) =
+     case unresolved_ops of
+       | [] -> refs_map
+       | _ -> 
+         let ops_and_map =
+             foldl (fn ((unresolved, refs_map), name) ->
+                      %% Update parent entry.  If this adds new pending refs, put on unresolved list.
+                      let parent = find_entry (refs_map, name) in
+                      let new_pending =
+                          foldl (fn (new_pending, ref_from_parent) ->
+                                   let child = find_entry (refs_map, ref_from_parent) in
+                                   foldl (fn (new_pending, ref_from_child) ->
+                                            if (ref_from_child in? new_pending     ||
+                                                ref_from_child in? parent.resolved || 
+                                                ref_from_child in? parent.pending) 
+                                              then
+                                                new_pending
+                                            else
+                                              ref_from_child |> new_pending)
+                                         new_pending
+                                         (child.pending ++ child.resolved))
+                                []
+                                parent.pending
+                      in
+                      let new_unresolved = case new_pending of
+                                             | [] -> unresolved
+                                             | _ -> name |> unresolved
+                      in
+
+                      let _ = writeLine("---") in
+                      let _ = app (fn x -> writeLine("new pending:  " ^ show x)) new_pending in
+                      let _ = app (fn x -> writeLine("old resolved: " ^ show x)) parent.resolved in
+                      let _ = app (fn x -> writeLine("old pending:  " ^ show x)) parent.pending in
+                      let _ = writeLine("---") in
+
+                      let new_entry = {pending  = new_pending,
+                                       resolved = parent.resolved ++ parent.pending}
+                      in
+                      let new_refs_map = insert_entry (refs_map, name, new_entry) in
+                      (new_unresolved, new_refs_map))
+                   ([], refs_map)
+                   unresolved_ops
+         in
+         aux ops_and_map
+
+ in
+ let initial_refs =
+     mapAQualifierMap (fn info ->
+                         {pending  = find_refs info.dfn,
+                          resolved = []})
+                      spc.ops
+ in
+ let initial_unresolved_ops =
+     foldriAQualifierMap (fn (q, id, refs, unresolved_ops) ->
+                            case refs.pending of
+                              | [] -> unresolved_ops
+                              | _ -> Qualified(q,id) |> unresolved_ops)
+                         []
+                         initial_refs
+ in
+ aux (initial_unresolved_ops, initial_refs)
+
+%% ================================================================================
+
+type GlobalRefsFromOps = AQualifierMap GlobalRefs
+op empty_grefs : GlobalRefsFromOps = emptyMap
+
+op globalRefsInOps (context     : Context) 
+                   (global_vars : MSVarNames)
+ : GlobalRefsFromOps =
+ let applied_op_refs = appliedOpRefs context.spc in
+ let global_refs     = mapAQualifierMap (fn info -> globalRefsIn context [] info.dfn) context.spc.ops in
+ let global_refs     = foldriAQualifierMap 
+                         (fn (parent_q, parent_id, op_refs, grefs) ->
+                            let Some parent_refs  = findAQualifierMap (grefs,           parent_q, parent_id) in
+                            let Some applied_refs = findAQualifierMap (applied_op_refs, parent_q, parent_id) in
+                            let parent_refs =
+                                foldl (fn (parent_grefs, Qualified (applied_q, applied_id)) ->
+                                         let Some child_refs = findAQualifierMap (grefs, applied_q, applied_id) in
+                                         parent_refs ++ child_refs)
+                                      parent_refs
+                                      applied_refs.resolved
+                            in
+                            insertAQualifierMap (grefs, parent_q, parent_id, parent_refs))
+                         empty_grefs
+                         global_refs
+ in
+ global_refs
+
+%% ================================================================================
+
+op globalRefsIn (context     : Context)
                 (global_vars : MSVarNames)
                 (term        : MSTerm) 
  : GlobalRefs =
- foldSubTerms (fn (tm : MSTerm, refs : GlobalRefs) -> 
+ let grefs = context.global_refs_map in
+ foldSubTerms (fn (tm, refs) ->
                  case tm of
 
                    | Apply (Fun (Project field_id, _, _), 
@@ -137,9 +255,14 @@ op globalRefsIn (context     : Context)
                              refs
                              fields
 
+                   | Apply (Fun (Op (Qualified(q,id),_), _, _), _, _) ->
+                     (case findAQualifierMap (grefs, q, id) of
+                        | Some child_grefs -> refs ++ child_grefs
+                        | _ -> refs)
+
                    | _ -> refs)
 
-              ([] : GlobalRefs)
+              []
               term
 
 %% ================================================================================
@@ -1695,6 +1818,7 @@ op globalizeSingleThreadedType (spc              : Spec,
                                                 global_var       = global_var,     % if global type does not have fields
                                                 global_init_name = global_init_name,
                                                 global_var_map   = global_var_map, % if global type has fields
+                                                global_refs_map  = empty_grefs,
                                                 setf_entries     = setf_entries,
                                                 let_bindings     = [],
                                                 current_op       = Qualified("<init>","<init>"),
