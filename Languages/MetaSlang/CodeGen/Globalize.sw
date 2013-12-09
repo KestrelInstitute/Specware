@@ -167,13 +167,6 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
                                              | [] -> unresolved
                                              | _ -> name |> unresolved
                       in
-
-                      let _ = writeLine("---") in
-                      let _ = app (fn x -> writeLine("new pending:  " ^ show x)) new_pending in
-                      let _ = app (fn x -> writeLine("old resolved: " ^ show x)) parent.resolved in
-                      let _ = app (fn x -> writeLine("old pending:  " ^ show x)) parent.pending in
-                      let _ = writeLine("---") in
-
                       let new_entry = {pending  = new_pending,
                                        resolved = parent.resolved ++ parent.pending}
                       in
@@ -206,13 +199,12 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
 type GlobalRefsFromOps = AQualifierMap GlobalRefs
 op empty_grefs : GlobalRefsFromOps = emptyMap
 
-op globalRefsInOps (context     : Context) 
-                   (global_vars : MSVarNames)
- : GlobalRefsFromOps =
+op globalRefsInOps (context : Context) : GlobalRefsFromOps =
  let applied_op_refs = appliedOpRefs context.spc in
  let global_refs     = mapAQualifierMap (fn info -> globalRefsIn context [] info.dfn) context.spc.ops in
  let global_refs     = foldriAQualifierMap 
                          (fn (parent_q, parent_id, op_refs, grefs) ->
+
                             let Some parent_refs  = findAQualifierMap (grefs,           parent_q, parent_id) in
                             let Some applied_refs = findAQualifierMap (applied_op_refs, parent_q, parent_id) in
                             let parent_refs =
@@ -223,7 +215,7 @@ op globalRefsInOps (context     : Context)
                                       applied_refs.resolved
                             in
                             insertAQualifierMap (grefs, parent_q, parent_id, parent_refs))
-                         empty_grefs
+                         global_refs
                          global_refs
  in
  global_refs
@@ -239,17 +231,17 @@ op globalRefsIn (context     : Context)
                  case tm of
 
                    | Apply (Fun (Project field_id, _, _), 
-                            Var ((var_id, _), _),
+                            Var ((var_id, var_type), _),
                             _)
-                     | var_id in? global_vars ->
+                     | var_id in? global_vars || globalType? context var_type ->
                        (Access, var_id, field_id) |> refs
 
                    | Apply (Fun (RecordMerge, _, _),
-                            Record ([(_, Var ((var_id, _), _)),
+                            Record ([(_, Var ((var_id, var_type), _)),
                                      (_, Record (fields, _))],
                                     _),
                             _)
-                     | var_id in? global_vars ->
+                     | var_id in? global_vars || globalType? context var_type ->
                        foldl (fn (refs, (field_id, _)) ->
                                 (Update, var_id, field_id) |> refs)
                              refs
@@ -1824,7 +1816,8 @@ op globalizeSingleThreadedType (spc              : Spec,
                                                 current_op       = Qualified("<init>","<init>"),
                                                 tracing?         = tracing?}
                                  in
-                                 replaceLocalsWithGlobalRefs context;
+                                 let grefs = globalRefsInOps context in
+                                 replaceLocalsWithGlobalRefs (context << {global_refs_map = grefs});
 
   % Add the main global var after calling replaceLocalsWithGlobalRefs, 
   % since that would prune it away before any references were introduced.
