@@ -12,7 +12,7 @@
 (eval-when (compile)
   (proclaim '(optimize (space 1) (speed 3) (debug 3) (safety 0))))
 
-(declaim (inline map-as-vector--update V_update-3 V_eval-2 defined? MapsAsVectors::update-1-1-1 MapsAsVectors::tmApply-2))
+;;(declaim (inline map-as-vector--update V_update-3 V_eval-2 defined? MapsAsVectors::update-1-1-1 MapsAsVectors::tmApply-2))
 
 (defvar *undefined* '(:|None|))
 (defun defined? (val) 

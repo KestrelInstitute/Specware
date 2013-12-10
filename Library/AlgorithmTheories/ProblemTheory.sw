@@ -1,5 +1,5 @@
 (*******************************************************************
-			   Problem Theories
+			   Problem Theories (uncurried)
 ********************************************************************)
 
 
@@ -15,27 +15,29 @@ DRO = spec
 
 DROfPartial = spec
  import DRO
- op f : D -> Option R
- axiom correctness_of_f is 
-   fa(x:D) case f(x) of
-            | Some z -> O(x, z)
-            | None   -> fa(y:R) ~(O(x,y))
+ op f(x:D): {oz:Option R | case oz of
+                            | Some z -> O(x, z) 
+                            | None   -> fa(y:R) ~(O(x,y))}
+ % op f : D -> Option R
+ % axiom correctness_of_f is 
+ %   fa(x:D) case f(x) of
+ %            | Some z -> O(x, z)
+ %            | None   -> fa(y:R) ~(O(x,y))
  end-spec
 
 DROfTotal = spec
  import DRO
- op pre: D->Bool
- op post: D*R->Bool
- op f (x:D|pre(x)) : {z:R | post(x,z)}
- axiom correctness_of_f is 
-   fa(x:D,z:R) ((pre(x) && z=f(x)) => O(x,z))
+ op f (x:D):{z:R | O(x,z)}
+ % op f : D -> R
+ % axiom correctness_of_f is 
+ %  fa(x:D,z:R) (z=f(x) => O(x, z))
  end-spec
 
 (* finding all feasible solutions *)
 
 DROf_All = spec
  import DRO
- import ../DataStructures/Sets
+ import /Library/DataStructures/Sets
   op f_all: D -> Set(R)
   axiom correctness_of_f_all is
      fa(x:D, y:R) (y in? f_all(x) <=> O(x, y))
@@ -84,3 +86,5 @@ Pi1PTf1_to_Pi1PTopt1 = morphism  Pi1PTf1 -> Pi1PTopt1
     O2 +-> O2,
     f +-> f
   }
+
+
