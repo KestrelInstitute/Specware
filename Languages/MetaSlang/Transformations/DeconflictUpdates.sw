@@ -1,4 +1,5 @@
-DeconflictUpdates qualifying spec {
+DeconflictUpdates qualifying spec
+{
 
 import /Languages/MetaSlang/Transformations/StatefulUtilities
 
@@ -7,16 +8,21 @@ type MSVarName       = Id
 type MSVarNames      = List MSVarName
 type MSFieldName     = Id
 
-type StatefulRef     = | Access {var   : MSVarName,
-                                 field : MSFieldName,
-                                 tm    : MSTerm}
-
-                       | Update {var   : MSVarName,
-                                 field : MSFieldName}
-
 type StatefulRefs    = List StatefulRef
+
+type RefMode         = | Access | Update
+type StatefulRef     = {mode  : RefMode,
+                        var   : MSVarName,
+                        field : MSFieldName,
+                        tm    : MSTerm}
+
+type StatefulRefsFromOps = AQualifierMap StatefulRefs
+
+op empty_srefs : StatefulRefsFromOps = emptyAQualifierMap
+
 type Conflict        = StatefulRef * StatefulRef
 type Conflicts       = List Conflict
+
 
 type RefsInContext   = {context : Nat, refs : StatefulRefs}
 
@@ -32,29 +38,143 @@ type LetBinding = MSPattern * MSTerm  % must match structure of Let in AnnTerm.s
 
 type LetBindings = List LetBinding
 
-type Context = {spc              : Spec,
-                root_ops         : OpNames,
-                stateful_types   : MSTypes,
-                let_bindings     : LetBindings,
-                tracing?         : Bool}
+type Context = {spc               : Spec,
+                root_ops          : OpNames,
+                stateful_types    : MSTypes,
+                stateful_refs_map : StatefulRefsFromOps,
+                let_bindings      : LetBindings,
+                tracing?          : Bool}
 
 op dcPos : Position = Internal "DeconflictUpdates"
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+op printStatefulRef ({mode, var, field, tm} : StatefulRef) : String = 
+  "[" ^ (case mode of | Access -> "Access" | Update -> "Update") ^ " = " ^ var ^ ", field = " ^ field ^ ", tm = " ^ printTerm tm ^ "]" 
+
+op printConflict (c : Conflict) : String = 
+  (printStatefulRef c.1) ^ (printStatefulRef c.2)
+
+%% ================================================================================
+
+type OpRefs = {pending  : OpNames,
+               resolved : OpNames}
+
+type AppliedOpRefs = AQualifierMap OpRefs
+
+op appliedOpRefs (spc : Spec) : AppliedOpRefs =
+ let
+
+   def find_refs term =
+     foldSubTerms (fn (tm, refs) ->
+                     case tm of
+                       | Apply (Fun (Op (name, _), _, _), _, _) | name nin? refs -> name |> refs
+                       | _ -> refs)
+                  []
+                  term
+
+   def find_entry (refs_map, Qualified (q, id)) =
+     let Some entry = findAQualifierMap (refs_map, q, id) in
+     entry
+
+   def insert_entry (refs_map, Qualified (q, id), entry) =
+     insertAQualifierMap (refs_map, q, id, entry)
+
+   def aux (unresolved_ops, refs_map) =
+     case unresolved_ops of
+       | [] -> refs_map
+       | _ -> 
+         let ops_and_map =
+             foldl (fn ((unresolved, refs_map), name) ->
+                      %% Update parent entry.  If this adds new pending refs, put on unresolved list.
+                      let parent = find_entry (refs_map, name) in
+                      let new_pending =
+                          foldl (fn (new_pending, ref_from_parent) ->
+                                   let child = find_entry (refs_map, ref_from_parent) in
+                                   foldl (fn (new_pending, ref_from_child) ->
+                                            if (ref_from_child in? new_pending     ||
+                                                ref_from_child in? parent.resolved || 
+                                                ref_from_child in? parent.pending) 
+                                              then
+                                                new_pending
+                                            else
+                                              ref_from_child |> new_pending)
+                                         new_pending
+                                         (child.pending ++ child.resolved))
+                                []
+                                parent.pending
+                      in
+                      let new_unresolved = case new_pending of
+                                             | [] -> unresolved
+                                             | _ -> name |> unresolved
+                      in
+                      let new_entry = {pending  = new_pending,
+                                       resolved = parent.resolved ++ parent.pending}
+                      in
+                      let new_refs_map = insert_entry (refs_map, name, new_entry) in
+                      (new_unresolved, new_refs_map))
+                   ([], refs_map)
+                   unresolved_ops
+         in
+         aux ops_and_map
+
+ in
+ let initial_refs =
+     mapAQualifierMap (fn info ->
+                         {pending  = find_refs info.dfn,
+                          resolved = []})
+                      spc.ops
+ in
+ let initial_unresolved_ops =
+     foldriAQualifierMap (fn (q, id, refs, unresolved_ops) ->
+                            case refs.pending of
+                              | [] -> unresolved_ops
+                              | _ -> Qualified(q,id) |> unresolved_ops)
+                         []
+                         initial_refs
+ in
+ aux (initial_unresolved_ops, initial_refs)
+
+%% ================================================================================
+
+op stateful_refs_in_ops (context : Context) : StatefulRefsFromOps =
+ let applied_op_refs = appliedOpRefs context.spc in
+ let stateful_refs   = mapAQualifierMap (fn info -> stateful_refs_in (context, info.dfn)) context.spc.ops in
+ let stateful_refs   = foldriAQualifierMap 
+                         (fn (parent_q, parent_id, op_refs, srefs) ->
+
+                            let Some parent_refs  = findAQualifierMap (srefs,           parent_q, parent_id) in
+                            let Some applied_refs = findAQualifierMap (applied_op_refs, parent_q, parent_id) in
+                            let parent_refs =
+                                foldl (fn (parent_srefs, Qualified (applied_q, applied_id)) ->
+                                         let Some child_refs = 
+                                             findAQualifierMap (srefs, applied_q, applied_id) 
+                                         in
+                                         parent_refs ++ child_refs)
+                                      parent_refs
+                                      applied_refs.resolved
+                            in
+                            insertAQualifierMap (srefs, parent_q, parent_id, parent_refs))
+                         stateful_refs
+                         stateful_refs
+ in
+ stateful_refs
+
+%% ================================================================================
 
 op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
- foldSubTerms (fn (tm, refs) ->
+ let refs_map = context.stateful_refs_map in
+ foldSubTerms (fn (tm, srefs) ->
                  case tm of
 
                    | Apply (Fun (Project field_id, _, _),
                             Var ((var_id, var_type), _),
                             _)
                      | stateful_type? (context.spc, var_type, context.stateful_types) ->
-                       let ref = Access {var    = var_id,
-                                         field  = field_id,
-                                         tm     = tm}
+                       let sref = {mode  = Access,
+                                   var    = var_id,
+                                   field  = field_id,
+                                   tm     = tm}
                        in
-                       ref |> refs
+                       sref |> srefs
 
                    | Apply (Fun (RecordMerge, _, _),
                             Record ([(_, Var ((var_id, var_type), _)),
@@ -62,15 +182,25 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                                     _),
                             _)
                      | stateful_type? (context.spc, var_type, context.stateful_types) ->
-                       foldl (fn (refs, (field_id, _)) ->
-                                let ref = Update {var   = var_id,
-                                                  field = field_id}
+                       foldl (fn (srefs, (field_id, _)) ->
+                                let sref = {mode  = Update,
+                                            var   = var_id,
+                                            field = field_id,
+                                            tm    = tm}
                                 in
-                                ref |> refs)
-                             refs
+                                sref |> srefs)
+                             srefs
                              fields
 
-                   | _ -> refs)
+                   | Apply (Fun (Op (Qualified(q,id),_), _, _), _, _) ->
+                     (case findAQualifierMap (refs_map, q, id) of
+                        | Some child_srefs -> 
+                          %% indicate that the current term has the noted accesses and updates
+                          let lifted_srefs = map (fn ref -> ref << {tm = tm}) child_srefs in
+                          srefs ++ lifted_srefs
+                        | _ -> srefs)
+
+                   | _ -> srefs)
 
               []
               term
@@ -110,10 +240,10 @@ op stateful_refs_with_contexts (context : Context,
      | stateful_type? (context.spc, var_type, context.stateful_types) ->
        let (_, refs_in_contexts) =
            foldl (fn ((n, refs_in_contexts), (field_id, tm)) ->
-                    let ref          = Update {var = var_id, field = field_id} in
-                    let refs         = stateful_refs_in (context, tm) in
-                    let refs         = ref |> refs in
-                    let refs_in_ctxt = {context = n, refs = refs} in
+                    let ref          = {mode = Update, var = var_id, field = field_id, tm = tm} in
+                    let refs         = stateful_refs_in (context, tm)                           in
+                    let refs         = ref |> refs                                              in
+                    let refs_in_ctxt = {context = n, refs = refs}                               in
                     (n + 1, refs_in_ctxt |> refs_in_contexts))
                  (0, [])
                  fields
@@ -141,8 +271,8 @@ op conflicting_stateful_refs (refs_in_contexts : List RefsInContext)
  foldl (fn (result, rinc_1) ->
           foldl (fn (result, ref1) ->
                    % for a conflict, at least one ref must be an update
-                   case ref1 of
-                     | Update x ->
+                   case ref1.mode of
+                     | Update ->
                        foldl (fn (result, rinc_2) ->
                               if rinc_1.context = rinc_2.context then
                                 % refs in the same context don't conflict
@@ -151,27 +281,15 @@ op conflicting_stateful_refs (refs_in_contexts : List RefsInContext)
                                 % refs in parallel contexts conflict,
                                 % whether access or update
                                 foldl (fn (result, ref2) ->
-                                         case ref2 of
-                                           | Update y ->
-                                             if x.var = y.var && x.field = y.field then
-                                               let conflict = (ref1, ref2) in
-                                               % ignore duplicate conflicts
-                                               if conflict in? result then
-                                                 result
-                                               else
-                                                 conflict |> result
-                                             else
-                                               result
-                                           | Access y ->
-                                             if x.var = y.var && x.field = y.field then
-                                               let conflict = (ref1, ref2) in
-                                               % ignore duplicate conflicts
-                                               if conflict in? result then
-                                                 result
-                                               else
-                                                 conflict |> result
-                                             else
-                                               result)
+                                         if ref1.var = ref2.var && ref1.field = ref2.field then
+                                           let conflict = (ref1, ref2) in
+                                           % ignore duplicate conflicts
+                                           if conflict in? result then
+                                             result
+                                           else
+                                             conflict |> result
+                                         else
+                                           result)
                                       result
                                       rinc_2.refs)
                            result
@@ -197,7 +315,7 @@ op deconflict_conflicting_refs (context   : Context,
  let
    def aux (n, conflicts, substitutions) =
      let
-       def lift (access, conflicts) =
+       def lift (access : StatefulRef, conflicts) =
          %% deconflict by binding access above point of execution ambiguity
          let new_vname    = "deconflict_" ^ show n                 in
          let vtype        = inferType (context.spc, access.tm)     in
@@ -224,27 +342,28 @@ op deconflict_conflicting_refs (context   : Context,
                     | _ -> None
               in
               let new = replaceTerm (repTerm, fn t -> None, fn p -> None) term in
-              let new = deconflict_term (context, new) in
+             %let new = deconflict_term (context, new) in
               Some new)
 
        | (ref1, ref2) :: conflicts ->
-         case (ref1, ref2) of
+         case (ref1.mode, ref2.mode) of
 
-           | (Update _, Access y) -> lift (y, conflicts)
-           | (Access x, Update _) -> lift (x, conflicts)
+           | (Update, Access) -> lift (ref2, conflicts) % lift the accessor above the term
+           | (Access, Update) -> lift (ref1, conflicts) % lift the accessor above the term 
 
-           | (Update x, Update _) ->
+           | (Update, Update) ->
              let _ = writeLine("ERROR: Deconflict cannot choose among alternate update orders for "
-                                 ^ x.var ^ "." ^ x.field)
+                                 ^ ref1.var ^ "." ^ ref1.field)
              in
              None
 
-           | (Access x, Access y) ->
+           | (Access, Access) ->
              let _ = writeLine("Warning: Deconflict is confused.  How can two accesses conflict? : "
-                                 ^ x.var ^ "." ^ x.field)
+                                 ^ ref1.var ^ "." ^ ref1.field)
              in
-             lift (x, conflicts)
+             lift (ref1, conflicts)
  in
+ % let _ = List.app (fn x -> writeLine("Conflict: " ^ printConflict x)) conflicts in
  aux (0, conflicts, [])
 
 
@@ -307,17 +426,25 @@ op deconflict_updates (context : Context) : Spec =
                         %% This has no logical effect, but improves readablity.
 
                         let nicer_dfn   = lift_conflict_bindings new_dfn in
-                        let _ = writeLine ("") in
-                        let _ = writeLine ("Deconflicting execution of " ^ show name) in
-                        let _ = writeLine (printTerm old_dfn) in
-                        let _ = writeLine (" => ") in
-                      % let _ = writeLine (printTerm new_dfn) in   % intermediate form
-                      % let _ = writeLine (" => ") in
-                        let _ = writeLine (printTerm nicer_dfn) in
-                        let _ = writeLine ("") in
+                        let _ = if context.tracing? then
+                                  let _ = writeLine ("") in
+                                  let _ = writeLine ("Deconflicting execution of " ^ show name) in
+                                  let _ = writeLine (printTerm old_dfn) in
+                                  let _ = writeLine (" => ") in
+                                  % let _ = writeLine (printTerm new_dfn) in   % intermediate form
+                                  % let _ = writeLine (" => ") in
+                                  let _ = writeLine (printTerm nicer_dfn) in
+                                  let _ = writeLine ("") in
+                                  ()
+                                else
+                                  ()
+                        in
                         let new_info = info << {dfn = nicer_dfn} in
                         insertAQualifierMap (new_ops, q, id, new_info)
                   in
+                  new_ops
+                | _ ->
+                  % let _ = writeLine("No op info for : " ^ show name) in
                   new_ops)
            spc.ops
            names_of_executable_ops
@@ -333,12 +460,15 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
  let new_spec =
      case get_stateful_types (spc, stateful_type_names) of
        | Some stateful_types ->
-         let context = {spc            = spc,
-                        root_ops       = root_op_names,
-                        stateful_types = stateful_types,
-                        let_bindings   = [],
-                        tracing?       = tracing?}
+         let context = {spc               = spc,
+                        root_ops          = root_op_names,
+                        stateful_types    = stateful_types,
+                        stateful_refs_map = empty_srefs,
+                        let_bindings      = [],
+                        tracing?          = tracing?}
          in
+         let srefs   = stateful_refs_in_ops context           in
+         let context = context << {stateful_refs_map = srefs} in
          deconflict_updates context
 
        | _ ->
