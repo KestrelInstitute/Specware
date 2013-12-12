@@ -1105,7 +1105,8 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
  % first slice gets ops to be globalized
  let first_slice        = genericExecutionSlice (spc, root_ops, root_types) in
- let ops_in_first_slice = opsInSlice            first_slice                 in
+ % process just those ops that might be invoked at runtime
+ let ops_in_first_slice = opsInImplementation   first_slice                 in 
 
  % globalizing those ops may introduce new references to global vars
  % (and might remove some references to other ops in the process)
@@ -1145,7 +1146,8 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
      %% base_ops should include the transitive closure of references from them
 
-     let ops_in_second_slice = opsInSlice second_slice in
+     %% process just those ops that might be invoked at runtime
+     let ops_in_second_slice = opsInImplementation second_slice in
 
      % new ops are the base ops plus ops reached in second slice
 
@@ -1175,8 +1177,8 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
      in
 
      %% base_types should include the transitive closure of references from them
-
-     let types_in_second_slice = typesInSlice second_slice in
+     %% Process just the types needed for ops that might be invoked at runtime.
+     let types_in_second_slice = typesInImplementation second_slice in
 
      % new types are the base types plus types reached in second slice
 
