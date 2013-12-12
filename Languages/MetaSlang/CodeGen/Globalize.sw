@@ -8,21 +8,16 @@ Globalize qualifying spec
 import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/MetaSlang/Transformations/RecordMerge
 import /Languages/MetaSlang/Transformations/CommonSubExpressions
+import /Languages/MetaSlang/Transformations/DeconflictUpdates
+
 import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
 import /Languages/MetaSlang/CodeGen/IntroduceSetfs
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
-import /Library/DataStructures/MapsAsSTHTables
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-type OpTypes     = AQualifierMap MSType
-type MSVarName   = Id
-type MSVarNames  = List MSVarName
 type MSFieldName = Id
-
-type LetBinding  = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
-type LetBindings = List LetBinding
 
 op showTypeName (info : TypeInfo) : String = printQualifiedId (primaryTypeName info)
 op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
@@ -37,7 +32,6 @@ op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool =
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op stateful_q : Qualifier = "Stateful"
 op global_q   : Qualifier = "Global"
 op gPos       : Position = Internal "Globalize"
 
@@ -47,18 +41,18 @@ op nullPat    : MSPattern = RecordPat ([], gPos)
 
 op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
 
-type RefMode         = | Access | Update
-type GlobalRef       = RefMode *  MSVarName * MSFieldName
-type GlobalRefs      = List GlobalRef
-type ConflictingRefs = List (MSVarName * MSFieldName) 
+type MSVarNames = List MSVarName
 
-%% GlobalRefs are used to create MSSubstitutions
+%% SingleThreadedRefs are used to create MSSubstitutions
 
 type MSSubstitution  = {global_var_id : MSVarName,
                         field_id      : MSFieldName,
                         temp_var      : MSVar}
 
 type MSSubstitutions = List MSSubstitution
+
+type LetBinding  = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
+type LetBindings = List LetBinding
 
 type Context = {spc              : Spec, 
                 root_ops         : OpNames,
@@ -68,7 +62,6 @@ type Context = {spc              : Spec,
                 global_var       : MSTerm,                 % if global type is not a product
                 global_var_map   : List (String * MSTerm), % if global type has product fields
                 global_init_name : QualifiedId,
-                global_refs_map  : GlobalRefsFromOps,
                 setf_entries     : SetfEntries,
                 let_bindings     : LetBindings,
                 current_op       : OpName,
@@ -194,164 +187,6 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
  in
  aux (initial_unresolved_ops, initial_refs)
 
-%% ================================================================================
-
-type GlobalRefsFromOps = AQualifierMap GlobalRefs
-op empty_grefs : GlobalRefsFromOps = emptyMap
-
-op globalRefsInOps (context : Context) : GlobalRefsFromOps =
- let applied_op_refs = appliedOpRefs context.spc in
- let global_refs     = mapAQualifierMap (fn info -> globalRefsIn context [] info.dfn) context.spc.ops in
- let global_refs     = foldriAQualifierMap 
-                         (fn (parent_q, parent_id, op_refs, grefs) ->
-
-                            let Some parent_refs  = findAQualifierMap (grefs,           parent_q, parent_id) in
-                            let Some applied_refs = findAQualifierMap (applied_op_refs, parent_q, parent_id) in
-                            let parent_refs =
-                                foldl (fn (parent_grefs, Qualified (applied_q, applied_id)) ->
-                                         let Some child_refs = findAQualifierMap (grefs, applied_q, applied_id) in
-                                         parent_refs ++ child_refs)
-                                      parent_refs
-                                      applied_refs.resolved
-                            in
-                            insertAQualifierMap (grefs, parent_q, parent_id, parent_refs))
-                         global_refs
-                         global_refs
- in
- global_refs
-
-%% ================================================================================
-
-op globalRefsIn (context     : Context)
-                (global_vars : MSVarNames)
-                (term        : MSTerm) 
- : GlobalRefs =
- let grefs = context.global_refs_map in
- foldSubTerms (fn (tm, refs) ->
-                 case tm of
-
-                   | Apply (Fun (Project field_id, _, _), 
-                            Var ((var_id, var_type), _),
-                            _)
-                     | var_id in? global_vars || globalType? context var_type ->
-                       (Access, var_id, field_id) |> refs
-
-                   | Apply (Fun (RecordMerge, _, _),
-                            Record ([(_, Var ((var_id, var_type), _)),
-                                     (_, Record (fields, _))],
-                                    _),
-                            _)
-                     | var_id in? global_vars || globalType? context var_type ->
-                       foldl (fn (refs, (field_id, _)) ->
-                                (Update, var_id, field_id) |> refs)
-                             refs
-                             fields
-
-                   | Apply (Fun (Op (Qualified(q,id),_), _, _), _, _) ->
-                     (case findAQualifierMap (grefs, q, id) of
-                        | Some child_grefs -> refs ++ child_grefs
-                        | _ -> refs)
-
-                   | _ -> refs)
-
-              []
-              term
-
-%% ================================================================================
-
-op conflictingGlobalRefs (global_refs : List (Nat * GlobalRefs)) : ConflictingRefs =
- foldl (fn (result, (n1, grefs1)) ->
-          foldl (fn (result, (mode1, var1, field1)) ->
-                   % for a conflict, at least one ref must be an update
-                   if mode1 = Update then 
-                     foldl (fn (result, (n2, grefs2)) ->
-                              if n1 = n2 then 
-                                % refs in the same context don't conflict
-                                result
-                              else
-                                % refs in parallel contexts conflict,
-                                % whether access or update 
-                                foldl (fn (result, (_, var2, field2)) ->
-                                         if var1 = var2 && field1 = field2 then 
-                                           let conflicting_ref = (var1, field1) in
-                                           % ignore duplicate conflicts
-                                           if conflicting_ref in? result then
-                                             result
-                                           else
-                                             result ++ [conflicting_ref]
-                                         else
-                                           result)
-                                      result
-                                      grefs2)
-                           result
-                           global_refs
-                   else
-                     result)
-                result
-                grefs1)
-       []
-       global_refs
-
-%% ================================================================================
-
-op conflictingGlobalRefsIn (context     : Context) 
-                           (global_vars : MSVarNames)
-                           (term        : MSTerm) 
- : ConflictingRefs =
-
- % Specware does not specify an evaluation order for Apply and Record terms, so 
- % evaluation of one immediate subterm of those could preceed or follow evaluation 
- % of any other immediate subterm.
-
- % Thus to avoid indeterminate results, we must avoid an update to a stateful field 
- % in one subterm and a reference (either update or access) to that same field in 
- % another subterm.
-
- % This routine has already been called recursively on every subterm, so they are 
- % already sanitized to avoid conflicts -- we only need to deconflict any 
- % access/update in one immediate subterm here will any access/update in another
- % immediate  subterm.
-
- % The numbers used here label alternative contexts.  Anything in one such context
- % may preceed or follow anything in another context.  
- %  Apply terms invoking RecordMerge have a context for each field in the 
- %    updating record.  We augment each such context with a field update.
- %  All other Apply terms have two contexts.
- %  Record terms have a context for each field.
-
- let (_, all_refs) =
-     case term of
-       | Apply (Fun (RecordMerge, _, _), 
-                Record ([(_, Var ((var_id, _), _)),
-                         (_, Record (fields, _))],
-                        _),
-                _)
-         | var_id in? global_vars ->
-           foldl (fn ((n, all_refs), (field_id, tm)) ->
-                    let updates = [(Update, var_id, field_id)] 
-                                  ++
-                                  globalRefsIn context global_vars tm
-                    in
-                    (n + 1, all_refs ++ [(n, updates)]))
-                 (0, [])
-                 fields
-         
-       | Apply (x, y, _) -> 
-         (2, [(0, globalRefsIn context global_vars x), 
-              (1, globalRefsIn context global_vars y)])
-
-       | Record (fields, _) -> 
-         foldl (fn ((n, all_refs), (_, tm)) ->
-                  (n + 1, 
-                   all_refs ++ [(n, globalRefsIn context global_vars tm)]))
-               (0, [])
-               fields
-
-       | _ -> 
-         (0, [])
- in
- conflictingGlobalRefs all_refs 
-     
 %% ================================================================================
 %% Verify that the suggested global type actually exists
 %% ================================================================================
@@ -605,7 +440,7 @@ op globalizeEmbedPat (context                               : Context)
 
         | Changed p3 -> 
           let substitutions = [] in
-          let new_type = nullify_global (context, vars_to_remove, substitutions, typ) in 
+          let new_type = globalizeType (context, vars_to_remove, substitutions, typ) in 
           let new_pat  = EmbedPat (id, Some p3, new_type, gPos) in
           % let _ = writeLine("") in
           % let _ = writeLine("Old pattern: " ^ printPattern pat) in
@@ -851,7 +686,7 @@ op globalizeApply (context                   : Context)
         %% was (f x ...)  where x had global type
         let head_type = applyHeadType (t1, context) in
         let head_type = unfoldToArrow (context.spc, head_type) in
-       %let head_type = nullify_global (context, vars_to_remove, substitutions, head_type) in
+       %let head_type = globalizeType (context, vars_to_remove, substitutions, head_type) in
         Changed (case dom_type head_type of
                    | Some dtype | globalType? context dtype ->
                      (case t1 of
@@ -1140,11 +975,12 @@ op globalizeSeq (context        : Context)
 
 %% ================================================================================
 
-op nullify_global (context        : Context,
-                   vars_to_remove : MSVarNames,      % vars of global type, remove on sight
-                   substitutions  : MSSubstitutions, % tm -> varname
-                   xtyp           : MSType)
+op globalizeType (context        : Context,
+                  vars_to_remove : MSVarNames,      % vars of global type, remove on sight
+                  substitutions  : MSSubstitutions, % tm -> varname
+                  xtyp           : MSType)
  : MSType =
+ %% remove mentions of the global type
  let
    def aux typ =
      if globalType? context typ then
@@ -1224,17 +1060,18 @@ op globalizeTypedTerm (context                : Context)
  : GlobalizedTerm = 
  case globalizeTerm context vars_to_remove substitutions tm false of
    | Changed new_tm ->
-     let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in 
+     let new_typ = globalizeType (context, vars_to_remove, substitutions, typ) in 
      Changed (TypedTerm (new_tm, new_typ, gPos))
 
    | GlobalVar -> GlobalVar
 
    | Unchanged ->
        case tm of
-         | Any  _ -> let new_typ = nullify_global (context, vars_to_remove, substitutions, typ) in
-                         if equalType?(new_typ, typ)
-                           then Unchanged
-                           else Changed (TypedTerm (tm, new_typ, gPos))
+         | Any  _ -> let new_typ = globalizeType (context, vars_to_remove, substitutions, typ) in
+                     if equalType?(new_typ, typ) then
+                       Unchanged
+                     else 
+                       Changed (TypedTerm (tm, new_typ, gPos))
                       
          | _ -> Unchanged
 
@@ -1246,7 +1083,7 @@ op globalizeFun (context        : Context)
  case term of
 
    | Fun (old_ref, old_type, _) -> 
-     let new_type = nullify_global (context, vars_to_remove, substitutions, old_type) in 
+     let new_type = globalizeType (context, vars_to_remove, substitutions, old_type) in 
      if equalType? (new_type, old_type) then
        Unchanged
      else
@@ -1319,93 +1156,6 @@ op globalFieldType (context : Context) (f1 : MSFieldName) : MSType =
  in
  field_type
 
-op deconflict (context     : Context, 
-               global_vars : MSVarNames, 
-               conflicts   : ConflictingRefs, 
-               term        : MSTerm) 
- : MSTerm =
- let
-   def aux (n, tm) =
-     let grefs = globalRefsIn context global_vars tm in
-     if (exists? (fn (var, field) -> 
-                    exists? (fn (mode, v, f) -> 
-                               mode = Access && v = var && f = field) 
-                            grefs)
-                 conflicts)
-        &&
-        ~ (exists? (fn (var, field) -> 
-                      exists? (fn (mode, v, f) -> 
-                                 mode = Update && v = var && f = field) 
-                              grefs)
-                   conflicts)
-       then
-         let new_vname = "deconflict_" ^ show n in
-         let new_vtype = inferType (context.spc, tm) in
-         let new_var   = (new_vname, new_vtype) in
-         Some (VarPat (new_var, gPos),
-               Var    (new_var, gPos))
-     else
-       None
- in
- case term of
-   | Apply (Fun (RecordMerge, _, _), _, _) ->
-     term
-
-   | Apply (x, y, _) -> 
-     let (xbindings, x) = case aux (0, x) of
-                            | Some (pat, var) -> ([(pat, x)], var)
-                            | _ ->               ([],         x)
-     in
-     let (ybindings, y) = case aux (1, y) of
-                            | Some (pat, var) -> ([(pat, y)], var)
-                            | _ ->               ([],         y)
-     in
-     let bindings = xbindings ++ ybindings in
-     (case bindings of
-        | [] -> term
-        | _ ->
-          Let (bindings, Apply (x, y, gPos), gPos))
-
-   | Record (fields, _) -> 
-     let (n, bindings, fields) = 
-         foldl (fn ((n, bindings, fields), field as (id, tm)) ->
-                  case aux (n, tm) of
-                    | Some (pat, var) ->
-                      (n+1,
-                       bindings ++ [(pat, tm)],
-                       fields   ++ [(id, var)])
-                    | _ ->
-                      (n, bindings, fields  ++ [field]))
-               (0, [], [])
-               fields
-     in
-     (case bindings of
-        | [] -> term
-        | _ ->
-          Let (bindings, Record (fields, gPos), gPos))
-
-   | Seq (tms, _) -> 
-     % let _ = writeLine("Seq Term = " ^ printTerm term) in
-     let (_, bindings, tms) =
-         foldl (fn ((n, bindings, tms), tm) -> 
-                  case aux (n, tm) of
-                    | Some (pat, var) ->
-                      (n + 1,
-                       bindings ++ [(pat, tm)],
-                       tms      ++ [var])
-                    | _ ->
-                      (n, bindings, tms ++ [tm]))
-               (0, [], [])
-               tms
-     in
-     (case bindings of
-        | [] -> term
-        | _ ->
-          Let (bindings, Seq (tms, gPos), gPos))
-     
-    | _ -> 
-      term
-
 op globalizeTerm (context        : Context)
                  (vars_to_remove : MSVarNames)  % vars of global type, remove on sight
                  (substitutions  : MSSubstitutions) % tm -> varname
@@ -1429,32 +1179,9 @@ op globalizeTerm (context        : Context)
        | _ ->
          body
  in
- let conflicts = conflictingGlobalRefsIn context vars_to_remove term in
- let (term, conflicts) = case conflicts of
-                           | [] -> (term, [])
-                           | _ ->
-                             %% introduce lets to linearize accesses before updates in parallel terms
-                             let term      = deconflict (context, vars_to_remove, conflicts, term) in
-                             % let _ = writeLine("Before: " ^ printTerm term) in
-                             % let _ = writeLine("        " ^ anyToString conflicts) in
-                             let term      = abstractCommonSubExpressions (term, context.spc)      in
-                             let conflicts = conflictingGlobalRefsIn context vars_to_remove term   in
-                             % let _ = writeLine("After: " ^ printTerm term) in
-                             % let _ = writeLine("       " ^ anyToString conflicts) in
-                             (term, conflicts)
- in
- let substitutions = map (fn (var_id, field_id) ->
-                            let temp_id   = "temp_" ^ var_id ^ "_" ^ field_id in
-                            let temp_type = globalFieldType context field_id in
-                            let temp_var  = (temp_id, temp_type) in
-                            {global_var_id = var_id, 
-                             field_id      = field_id, 
-                             temp_var      = temp_var})
-                         conflicts
- in
+ let substitutions = [] in
  let term         = reviseGlobalRefs substitutions term in
  let term         = add_bindings substitutions term     in
- let opt_term =
      case term of
        | Apply      _ -> globalizeApply      context vars_to_remove substitutions term
        | Record     _ -> globalizeRecord     context vars_to_remove substitutions term under_merge?
@@ -1485,14 +1212,6 @@ op globalizeTerm (context        : Context)
 
        | _ -> 
          Unchanged
- in
- case (opt_term, conflicts) of
-   | (Unchanged, []) -> 
-     Unchanged     
-   | (Unchanged, _)  -> 
-     Changed term  % consider changed if there are conflicts
-   | _ ->
-     opt_term      % changed or global
      
 %% ================================================================================
 
@@ -1810,14 +1529,12 @@ op globalizeSingleThreadedType (spc              : Spec,
                                                 global_var       = global_var,     % if global type does not have fields
                                                 global_init_name = global_init_name,
                                                 global_var_map   = global_var_map, % if global type has fields
-                                                global_refs_map  = empty_grefs,
                                                 setf_entries     = setf_entries,
                                                 let_bindings     = [],
                                                 current_op       = Qualified("<init>","<init>"),
                                                 tracing?         = tracing?}
                                  in
-                                 let grefs = globalRefsInOps context in
-                                 replaceLocalsWithGlobalRefs (context << {global_refs_map = grefs});
+                                 replaceLocalsWithGlobalRefs context;
 
   % Add the main global var after calling replaceLocalsWithGlobalRefs, 
   % since that would prune it away before any references were introduced.
@@ -1845,11 +1562,8 @@ op SpecTransform.globalize (spc              : Spec)
                             % nor does "trace on/off" affect it
                             tracing?         : Bool) 
  : Spec =
- % let _ = writeLine ("root_ops         = " ^ anyToString root_ops         ) in
- % let _ = writeLine ("global_type_name = " ^ anyToString global_type_name ) in
- % let _ = writeLine ("global_var_id    = " ^ anyToString global_var_id    ) in
- % let _ = writeLine ("opt_ginit        = " ^ anyToString opt_ginit        ) in
- % let _ = writeLine ("tracing?         = " ^ anyToString tracing?         ) in
+ %% TODO: maybe add a quick check to see if deconfliction has already been done?
+ let spc = SpecTransform.deconflictUpdates (spc, root_ops, [global_type_name], tracing?) in
  let (spc, tracing?) =
      run (globalizeSingleThreadedType (spc,
                                        root_ops,

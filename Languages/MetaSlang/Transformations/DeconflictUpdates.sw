@@ -5,16 +5,15 @@ import /Languages/MetaSlang/Transformations/StatefulUtilities
 
 type OpTypes         = AQualifierMap MSType
 type MSVarName       = Id
-type MSVarNames      = List MSVarName
 type MSFieldName     = Id
-
-type StatefulRefs    = List StatefulRef
 
 type RefMode         = | Access | Update
 type StatefulRef     = {mode  : RefMode,
                         var   : MSVarName,
                         field : MSFieldName,
                         tm    : MSTerm}
+type StatefulRefs    = List StatefulRef
+
 
 type StatefulRefsFromOps = AQualifierMap StatefulRefs
 
@@ -23,37 +22,31 @@ op empty_srefs : StatefulRefsFromOps = emptyAQualifierMap
 type Conflict        = StatefulRef * StatefulRef
 type Conflicts       = List Conflict
 
-
 type RefsInContext   = {context : Nat, refs : StatefulRefs}
-
-%% SingleThreadedRefs are used to create MSSubstitutions
-
-type MSSubstitution  = {global_var_id : MSVarName,
-                        field_id      : MSFieldName,
-                        temp_var      : MSVar}
-
-type MSSubstitutions = List MSSubstitution
-
-type LetBinding = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
-
-type LetBindings = List LetBinding
 
 type Context = {spc               : Spec,
                 root_ops          : OpNames,
                 stateful_types    : MSTypes,
                 stateful_refs_map : StatefulRefsFromOps,
-                let_bindings      : LetBindings,
                 tracing?          : Bool}
 
 op dcPos : Position = Internal "DeconflictUpdates"
 
 op printStatefulRef ({mode, var, field, tm} : StatefulRef) : String = 
-  "[" ^ (case mode of | Access -> "Access" | Update -> "Update") ^ " = " ^ var ^ ", field = " ^ field ^ ", tm = " ^ printTerm tm ^ "]" 
+  "[" ^ (case mode of | Access -> "Access" | Update -> "Update") 
+      ^ " = " ^ var 
+      ^ ", field = " 
+      ^ field ^ ", tm = " 
+      ^ printTerm tm 
+      ^ "]" 
 
 op printConflict (c : Conflict) : String = 
   (printStatefulRef c.1) ^ (printStatefulRef c.2)
 
 %% ================================================================================
+
+%% Precompute a table mapping op names to AppliedOpRefs so that stateful_refs_in 
+%% can quickly determine the accesses/updates performed by applied functions.
 
 type OpRefs = {pending  : OpNames,
                resolved : OpNames}
@@ -193,9 +186,16 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                              fields
 
                    | Apply (Fun (Op (Qualified(q,id),_), _, _), _, _) ->
+                     %% The exectuion of the applied op could make stateul accesses and udpates.
+                     %% Rather than compute those here each time, we use a precomputed map 
+                     %% produced by appliedOpRefs and stored in the context.
                      (case findAQualifierMap (refs_map, q, id) of
                         | Some child_srefs -> 
-                          %% indicate that the current term has the noted accesses and updates
+                          %% child_srefs refers to terms that are inside the definition of the op,
+                          %% hence not visible here.
+                          %% If a new let-bound "deconflict_" var is needed, it should bind to the
+                          %% term being seen here, not the invisible terms inside the invoked op.
+                          %% So we revise the references to mention the current term.
                           let lifted_srefs = map (fn ref -> ref << {tm = tm}) child_srefs in
                           srefs ++ lifted_srefs
                         | _ -> srefs)
@@ -464,7 +464,6 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
                         root_ops          = root_op_names,
                         stateful_types    = stateful_types,
                         stateful_refs_map = empty_srefs,
-                        let_bindings      = [],
                         tracing?          = tracing?}
          in
          let srefs   = stateful_refs_in_ops context           in
