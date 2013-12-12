@@ -1,6 +1,5 @@
 spec
 import SBFIW#SBFixpointIterationWorksetTheory
-import SBFIW#foo
 import SBFIW#SBFixpointIterationWorksetAlgorithm
 import ProblemTheory#DRO
 import ProblemTheory#DROfPartial
