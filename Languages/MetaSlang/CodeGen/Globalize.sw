@@ -1288,47 +1288,48 @@ op globalizeSingleThreadedType (spc              : Spec,
                                      | _ -> empty)
                                 | _ -> []);
 
+
   % This shouldn't be necessary, but is for now to avoid complaints from replaceLocalsWithGlobalRefs.
-  spec_with_setf   <- addSetfOpM spc;
+  spec_with_setf                   <- addSetfOpM spc;
 
   % Add global vars for the fields before running replaceLocalsWithGlobalRefs,
   % to avoid complaints about unknown ops.
 
-  spec_with_gvars  <- foldM (fn spc -> fn (_, global_field_var) ->
-                               let Fun (Op (global_field_var_name, _), gtype, _) = global_field_var in
-                               let refine? = false                                 in
-                               let dfn     = TypedTerm (Any gPos, gtype, gPos)   in
-                               addOp [global_field_var_name] Nonfix refine? dfn spc gPos)
-                            spec_with_setf
-                            global_var_map;
+  spec_with_gvars                  <- foldM (fn spc -> fn (_, global_field_var) ->
+                                               let Fun (Op (global_field_var_name, _), gtype, _) = global_field_var in
+                                               let refine? = false                                 in
+                                               let dfn     = TypedTerm (Any gPos, gtype, gPos)   in
+                                               addOp [global_field_var_name] Nonfix refine? dfn spc gPos)
+                                            spec_with_setf
+                                            global_var_map;
                             
   % return (let slice = genericExecutionSlice (spec_with_gvars, root_ops, []) in describeSlice ("Added GVars", slice));
   % showIntermediateSpec ("with gvars", spec_with_gvars);
 
-  spec_with_ginit  <- return (case (global_init_name : QualifiedId) of
-                                | Qualified (_, "None") -> 
-                                  %% Use "None" as hack to say there is no initializer, so don't look for one.
-                                  spec_with_gvars 
-                                | _ -> 
-                                  case findTheOp (spec_with_gvars, global_init_name) of
-                                    | Some info ->
-                                      (case globalizeInitOp (spec_with_gvars,
-                                                             global_type, 
-                                                             global_var, 
-                                                             global_var_map,
-                                                             global_init_name,
-                                                             tracing?)
-                                         of
-                                         | Some new_info ->
-                                           let Qualified (q,id) = global_init_name in
-                                           let new_ops  = insertAQualifierMap (spec_with_gvars.ops, q, id, new_info) in
-                                           spec_with_gvars << {ops = new_ops}
-                                         | _ ->
-                                           let _ = writeLine ("Warning: Globalize could not revise init op " ^ show global_init_name) in
-                                           spec_with_gvars)
-                                    | _ -> 
-                                      let _ = writeLine ("ERROR: In globalize, op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
-                                      spec_with_gvars);
+  spec_with_ginit                  <- return (case (global_init_name : QualifiedId) of
+                                                | Qualified (_, "None") -> 
+                                                  %% Use "None" as hack to say there is no initializer, so don't look for one.
+                                                  spec_with_gvars 
+                                                | _ -> 
+                                                  case findTheOp (spec_with_gvars, global_init_name) of
+                                                    | Some info ->
+                                                      (case globalizeInitOp (spec_with_gvars,
+                                                                             global_type, 
+                                                                             global_var, 
+                                                                             global_var_map,
+                                                                             global_init_name,
+                                                                             tracing?)
+                                                         of
+                                                         | Some new_info ->
+                                                           let Qualified (q,id) = global_init_name in
+                                                           let new_ops  = insertAQualifierMap (spec_with_gvars.ops, q, id, new_info) in
+                                                           spec_with_gvars << {ops = new_ops}
+                                                         | _ ->
+                                                           let _ = writeLine ("Warning: Globalize could not revise init op " ^ show global_init_name) in
+                                                           spec_with_gvars)
+                                                    | _ -> 
+                                                      let _ = writeLine ("ERROR: In globalize, op " ^ show global_init_name ^ " for producing initial global " ^ show global_type_name ^ " is undefined.") in
+                                                      spec_with_gvars);
 
 
   % return (let slice = genericExecutionSlice (spec_with_ginit, root_ops, []) in describeSlice ("Added ginit", slice));
@@ -1337,36 +1338,34 @@ op globalizeSingleThreadedType (spc              : Spec,
   % hack to fix problem where 'global_var << {..}' was becoming just '{...}'
   spec_with_restored_record_merges <- return (SpecTransform.introduceRecordMerges spec_with_ginit);
 
-  (globalized_spec, tracing?) <- let context = {spc              = spec_with_restored_record_merges,
-                                                root_ops         = root_ops,
-                                                global_var_name  = global_var_name,
-                                                global_type_name = global_type_name,
-                                                global_type      = global_type,
-                                                global_var       = global_var,     % if global type does not have fields
-                                                global_init_name = global_init_name,
-                                                global_var_map   = global_var_map, % if global type has fields
-                                                setf_entries     = setf_entries,
-                                                let_bindings     = [],
-                                                current_op       = Qualified("<init>","<init>"),
-                                                tracing?         = tracing?}
-                                 in
-                                 replaceLocalsWithGlobalRefs context;
+  spec_with_gvar                   <- (case findTheOp (spec_with_restored_record_merges, global_var_name) of
+                                         | Some _ -> 
+                                           return spec_with_restored_record_merges
+                                         | _ -> 
+                                           let refine? = false                             in
+                                           let gtype   = Base (global_type_name, [], gPos) in
+                                           let dfn     = TypedTerm (Any gPos, gtype, gPos) in
+                                           addOp [global_var_name] Nonfix refine? dfn spec_with_restored_record_merges gPos);
 
-  % Add the main global var after calling replaceLocalsWithGlobalRefs, 
-  % since that would prune it away before any references were introduced.
-  spec_with_gvar <- (case findTheOp (globalized_spec, global_var_name) of
-                       | Some _ -> 
-                         return globalized_spec
-                       | _ -> 
-                         let refine? = false                             in
-                         let gtype   = Base (global_type_name, [], gPos) in
-                         let dfn     = TypedTerm (Any gPos, gtype, gPos) in
-                         addOp [global_var_name] Nonfix refine? dfn globalized_spec gPos);
+  (globalized_spec, tracing?)      <- let context = {spc              = spec_with_gvar,
+                                                     root_ops         = root_ops,
+                                                     global_var_name  = global_var_name,
+                                                     global_type_name = global_type_name,
+                                                     global_type      = global_type,
+                                                     global_var       = global_var,     % if global type does not have fields
+                                                     global_init_name = global_init_name,
+                                                     global_var_map   = global_var_map, % if global type has fields
+                                                     setf_entries     = setf_entries,
+                                                     let_bindings     = [],
+                                                     current_op       = Qualified("<init>","<init>"),
+                                                     tracing?         = tracing?}
+                                      in
+                                      replaceLocalsWithGlobalRefs context;
+                                      
+  % return (let slice = genericExecutionSlice (globalize_spec, root_ops ++ [global_var_name], []) in describeSlice ("Globalized spec", slice));
+  % showIntermediateSpec ("globalized", globalized_spec);
 
-  % return (let slice = genericExecutionSlice (spec_with_gvar, root_ops ++ [global_var_name], []) in describeSlice ("Globalized spec with gvar", slice));
-  % showIntermediateSpec ("with gvar", spec_with_gvar);
-
-  return (spec_with_gvar, tracing?)
+  return (globalized_spec, tracing?)
   }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
