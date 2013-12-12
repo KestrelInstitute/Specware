@@ -28,6 +28,7 @@ type Context = {spc               : Spec,
                 root_ops          : OpNames,
                 stateful_types    : MSTypes,
                 stateful_refs_map : StatefulRefsFromOps,
+                current_op_name   : OpName,
                 tracing?          : Bool}
 
 op dcPos : Position = Internal "DeconflictUpdates"
@@ -112,7 +113,7 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
  in
  let initial_refs =
      mapAQualifierMap (fn info ->
-                         {pending  = find_refs info.dfn,
+                         {pending  = find_refs (firstOpDef info),
                           resolved = []})
                       spc.ops
  in
@@ -130,7 +131,7 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
 
 op stateful_refs_in_ops (context : Context) : StatefulRefsFromOps =
  let applied_op_refs = appliedOpRefs context.spc in
- let stateful_refs   = mapAQualifierMap (fn info -> stateful_refs_in (context, info.dfn)) context.spc.ops in
+ let stateful_refs   = mapAQualifierMap (fn info -> stateful_refs_in (context, firstOpDef info)) context.spc.ops in
  let stateful_refs   = foldriAQualifierMap 
                          (fn (parent_q, parent_id, op_refs, srefs) ->
 
@@ -352,9 +353,14 @@ op deconflict_conflicting_refs (context   : Context,
            | (Access, Update) -> lift (ref1, conflicts) % lift the accessor above the term 
 
            | (Update, Update) ->
-             let _ = writeLine("ERROR: Deconflict cannot choose among alternate update orders for "
-                                 ^ ref1.var ^ "." ^ ref1.field)
+             let op_name = context.current_op_name in
+             let _ = writeLine ("ERROR: Deconflict Cannot choose among alternate update orders for "
+                                  ^ ref1.var ^ "." ^ ref1.field ^ " in " ^ show op_name)
              in
+             let _ = writeLine(printTerm ref1.tm) in
+             let _ = writeLine(printTerm ref2.tm) in
+             let Some info = findTheOp (context.spc, op_name) in
+             let _ = writeLine (printTerm (firstOpDef info)) in
              None
 
            | (Access, Access) ->
@@ -396,16 +402,18 @@ op deconflict_term (context : Context, term : MSTerm) : MSTerm =
 op deconflict_updates (context : Context) : Spec =
 
  let spc                     = context.spc                                       in
- let first_slice             = genericExecutionSlice (spc, context.root_ops, []) in
-%let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
- let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
+ let slice                   = genericExecutionSlice (spc, context.root_ops, []) in
+ let names_of_executable_ops = opsInImplementation   slice                       in % just ops that will execute
+%let names_of_executable_ops = opsInSlice            slice                       in % useful for testing
+ %let _ = describeSlice ("deconflict", slice) in
 
  let new_ops =
      foldl (fn (new_ops, name as Qualified (q, id)) ->
               case findTheOp (spc, name) of
                 | Some info ->
-                  let old_dfn = info.dfn                           in
-                  let new_dfn = deconflict_term (context, old_dfn) in
+                  let context = context << {current_op_name = primaryOpName info} in
+                  let old_dfn = firstOpDef info                                   in
+                  let new_dfn = deconflict_term (context, old_dfn)                in
                   let new_ops =
                       if equalTerm? (new_dfn, old_dfn) then
                         new_ops
@@ -464,6 +472,7 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
                         root_ops          = root_op_names,
                         stateful_types    = stateful_types,
                         stateful_refs_map = empty_srefs,
+                        current_op_name   = Qualified("<>","<>"),
                         tracing?          = tracing?}
          in
          let srefs   = stateful_refs_in_ops context           in

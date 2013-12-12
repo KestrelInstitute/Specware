@@ -76,15 +76,16 @@ op make_stateful_term (context : Context, term : MSTerm) : MSTerm =
 
 op make_updates_stateful (context : Context) : Spec =
  let spc                     = context.spc                                       in
- let first_slice             = genericExecutionSlice (spc, context.root_ops, []) in
-%let names_of_executable_ops = opsInImplementation   first_slice                 in % just ops that will execute
- let names_of_executable_ops = opsInSlice            first_slice                 in % useful for testing
+ let slice                   = genericExecutionSlice (spc, context.root_ops, []) in
+ let names_of_executable_ops = opsInImplementation   slice                       in % just ops that will execute
+%let names_of_executable_ops = opsInSlice            slice                       in % useful for testing
+ %let _ = describeSlice ("stateful updates", slice) in
 
  let new_ops =
      foldl (fn (new_ops, name as Qualified (q, id)) ->
               case findTheOp (spc, name) of
                 | Some info ->
-                  let old_dfn = info.dfn                              in
+                  let old_dfn = firstOpDef info                       in
                   let new_dfn = make_stateful_term (context, old_dfn) in
                   let new_ops =
                       if equalTerm? (new_dfn, old_dfn) then
