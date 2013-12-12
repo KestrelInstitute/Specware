@@ -1,6 +1,5 @@
 Globalize qualifying spec
 {
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Globalize changes updates to be stateful, hence belongs in the CodeGen directory.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -18,6 +17,15 @@ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for ad
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 type MSFieldName = Id
+type MSVarNames  = List MSVarName
+type LetBinding  = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
+type LetBindings = List LetBinding
+
+op nullTerm   : MSTerm    = Record    ([], gPos)
+op nullType   : MSType    = Product   ([], gPos)
+op nullPat    : MSPattern = RecordPat ([], gPos)
+
+op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
 
 op showTypeName (info : TypeInfo) : String = printQualifiedId (primaryTypeName info)
 op showOpName   (info : OpInfo)   : String = printQualifiedId (primaryOpName   info)
@@ -35,14 +43,6 @@ op baseType? (qid as Qualified(q, id) : QualifiedId) : Bool =
 op global_q   : Qualifier = "Global"
 op gPos       : Position = Internal "Globalize"
 
-op nullTerm   : MSTerm    = Record    ([], gPos)
-op nullType   : MSType    = Product   ([], gPos)
-op nullPat    : MSPattern = RecordPat ([], gPos)
-
-op wildPat (typ : MSType) : MSPattern = WildPat (typ, gPos)
-
-type MSVarNames = List MSVarName
-
 %% SingleThreadedRefs are used to create MSSubstitutions
 
 type MSSubstitution  = {global_var_id : MSVarName,
@@ -50,9 +50,6 @@ type MSSubstitution  = {global_var_id : MSVarName,
                         temp_var      : MSVar}
 
 type MSSubstitutions = List MSSubstitution
-
-type LetBinding  = MSPattern * MSTerm  % must match structure of Let in AnnTerm.sw
-type LetBindings = List LetBinding
 
 type Context = {spc              : Spec, 
                 root_ops         : OpNames,
@@ -80,112 +77,6 @@ type GlobalizedTerm =    | Changed MSTerm
 type GlobalizedPattern = | Changed MSPattern
                          | Unchanged
                          | GlobalVarPat % for clarity (as opposed to Changed global_var_pat)
-
-
-%% ================================================================================
-
-op expandBindings (tm : MSTerm, bindings : LetBindings) : MSTerm =
- case bindings of
-   | [] -> tm
-   | _ ->
-     let
-       def expandTerm tm =
-         case tm of
-           | Var ((nm, _), _) -> 
-             (case (findLeftmost (fn (pattern, value) ->
-                                    case pattern of
-                                      | VarPat ((vname, _), _) -> vname = nm
-                                      | _ -> false)
-                                 bindings)
-               of
-                | Some (_, value) ->
-                  %% Recur to expand outer let bindings in body of substituted term
-                  expandBindings (value, tail bindings)
-                | _ -> tm)
-           | _ -> tm
-     in
-     let ttp = (expandTerm, fn t -> t, fn p -> p) in
-     mapTerm ttp tm
-
-%% ================================================================================
-
-type OpRefs = {pending  : OpNames,
-               resolved : OpNames}
-
-type AppliedOpRefs = AQualifierMap OpRefs
-
-op appliedOpRefs (spc : Spec) : AppliedOpRefs =
- let
-
-   def find_refs term =
-     foldSubTerms (fn (tm, refs) ->
-                     case tm of
-                       | Apply (Fun (Op (name, _), _, _), _, _) | name nin? refs -> name |> refs
-                       | _ -> refs)
-                  []
-                  term
-
-   def find_entry (refs_map, Qualified (q, id)) =
-     let Some entry = findAQualifierMap (refs_map, q, id) in
-     entry
-
-   def insert_entry (refs_map, Qualified (q, id), entry) =
-     insertAQualifierMap (refs_map, q, id, entry)
-
-   def aux (unresolved_ops, refs_map) =
-     case unresolved_ops of
-       | [] -> refs_map
-       | _ -> 
-         let ops_and_map =
-             foldl (fn ((unresolved, refs_map), name) ->
-                      %% Update parent entry.  If this adds new pending refs, put on unresolved list.
-                      let parent = find_entry (refs_map, name) in
-                      let new_pending =
-                          foldl (fn (new_pending, ref_from_parent) ->
-                                   let child = find_entry (refs_map, ref_from_parent) in
-                                   foldl (fn (new_pending, ref_from_child) ->
-                                            if (ref_from_child in? new_pending     ||
-                                                ref_from_child in? parent.resolved || 
-                                                ref_from_child in? parent.pending) 
-                                              then
-                                                new_pending
-                                            else
-                                              ref_from_child |> new_pending)
-                                         new_pending
-                                         (child.pending ++ child.resolved))
-                                []
-                                parent.pending
-                      in
-                      let new_unresolved = case new_pending of
-                                             | [] -> unresolved
-                                             | _ -> name |> unresolved
-                      in
-                      let new_entry = {pending  = new_pending,
-                                       resolved = parent.resolved ++ parent.pending}
-                      in
-                      let new_refs_map = insert_entry (refs_map, name, new_entry) in
-                      (new_unresolved, new_refs_map))
-                   ([], refs_map)
-                   unresolved_ops
-         in
-         aux ops_and_map
-
- in
- let initial_refs =
-     mapAQualifierMap (fn info ->
-                         {pending  = find_refs info.dfn,
-                          resolved = []})
-                      spc.ops
- in
- let initial_unresolved_ops =
-     foldriAQualifierMap (fn (q, id, refs, unresolved_ops) ->
-                            case refs.pending of
-                              | [] -> unresolved_ops
-                              | _ -> Qualified(q,id) |> unresolved_ops)
-                         []
-                         initial_refs
- in
- aux (initial_unresolved_ops, initial_refs)
 
 %% ================================================================================
 %% Verify that the suggested global type actually exists
@@ -393,9 +284,12 @@ op globalizeInitOp (spc              : Spec,
    | Some new_dfn -> Some (info << {dfn = new_dfn})
    | _ -> None
 
-%% ================================================================================
-%% Remove vars of given type from pattern
-%% ================================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TYPES:  Remove mentions of global type from type expressions.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op globalType? (context : Context) (typ : MSType) : Bool =
+ possiblySubtypeOf? (typ, context.global_type, context.spc)
 
 op [a] renumber (fields : List (Id * a)) : List (Id * a) =
  %% [("1", a), ("2", b), ("4", c), ("5", d)]
@@ -411,6 +305,88 @@ op [a] renumber (fields : List (Id * a)) : List (Id * a) =
    new_fields
  else
    fields
+
+op globalizeType (context        : Context,
+                  vars_to_remove : MSVarNames,      % vars of global type, remove on sight
+                  substitutions  : MSSubstitutions, % tm -> varname
+                  xtyp           : MSType)
+ : MSType =
+ %% remove mentions of the global type
+ let
+   def aux typ =
+     if globalType? context typ then
+       nullType
+     else
+       case typ of
+
+         | Arrow (dom, rng, _) -> 
+           let rng = aux rng in
+           if globalType? context dom then
+             case rng of
+               | Arrow _ -> rng
+               | _ -> Arrow (aux dom, rng, gPos)
+           else
+             Arrow (aux dom, rng, gPos)
+
+         | Product (fields, _) ->
+           (let new_fields = foldl (fn (fields, (id, typ)) ->
+                                      if globalType? context typ then
+                                        fields
+                                      else
+                                        fields ++ [(id, aux typ)])
+                                   []
+                                   fields
+            in
+            case new_fields of
+              | [(id, typ)] | natConvertible id -> typ
+              | _ -> Product (renumber new_fields, gPos))
+         | CoProduct (fields, _) -> 
+           let new_fields = foldl (fn (fields, field as (id, opt_typ)) ->
+                                     case opt_typ of
+                                       | Some typ ->
+                                         fields ++ [(id, Some (aux typ))]
+                                       | _ ->
+                                         fields ++ [field])
+                                  []
+                                  fields
+           in
+           CoProduct (new_fields, gPos)
+
+         | Quotient (typ, tm, _) -> 
+           let new_typ = aux typ in
+           let new_tm = 
+               case globalizeTerm context vars_to_remove substitutions tm false of
+                 | Changed new_tm -> new_tm
+                 | GlobalVar -> 
+                   let _ = writeLine("Warning: Using the master global var as a quotient relation.") in
+                   context.global_var
+                 | Unchanged -> tm
+           in
+           Quotient (new_typ, new_tm, gPos)
+
+         | Subtype (t1, tm, _) ->
+           let new_t1 = aux t1 in
+           let new_tm = 
+               case globalizeTerm context vars_to_remove substitutions tm false of
+                 | Changed new_tm -> new_tm
+                 | GlobalVar -> 
+                   let _ = writeLine("Warning: Using the master global var as a subtype predicate.") in
+                   context.global_var
+                 | Unchanged -> tm
+           in
+           Subtype (new_t1, new_tm, gPos)
+
+         | Pi (tvs, typ, _) -> Pi (tvs, aux typ, gPos)
+           
+         | And (tm :: _, _) -> aux tm
+           
+         | _ -> typ
+ in
+ aux xtyp
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% PATTERNS:  Remove vars with Global type
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op globalizeAliasPat (context                     : Context)
                      (vars_to_remove              : MSVarNames) % vars of global type, remove on sight
@@ -505,9 +481,6 @@ op globalizeRestrictedPat (context                            : Context)
  : Ids * GlobalizedPattern = 
  globalizePattern context vars_to_remove p1
 
-op globalType? (context : Context) (typ : MSType) : Bool =
- possiblySubtypeOf? (typ, context.global_type, context.spc)
-
 op globalizeVarPat (context                        : Context)
                    (vars_to_remove                 : MSVarNames) % vars of global type, remove on sight
                    (pat as (VarPat ((id, typ), _)) : MSPattern)
@@ -554,9 +527,9 @@ op globalizePattern (context        : Context)
    | _ -> ([], Unchanged)
 
 
-%% ================================================================================
-%% Given global type, find patterns and terms of that type and remove them
-%% ================================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TERMS:  Remove terms that have global type.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op makeGlobalAccess (context    : Context)
                     (field_name : Id)
@@ -597,7 +570,7 @@ op makeGlobalFieldUpdates (context           : Context)
                                  context.global_var
                                | _ -> old_value
              in
-             %% Do not call expandBindings here.
+             %% Do not expand bindings here.
              %% That could reintroduce terms with side effects that we purposely let-bound to serialize them.
              makeSetfUpdate context.spc context.setf_entries global_var_op new_value)
          fields
@@ -856,11 +829,11 @@ op globalizeLet (context                       : Context)
 %% ================================================================================
 
 op globalizeLetRec (context                    : Context)
-                   (vars_to_remove             : MSVarNames)  % vars of global type, remove on sight
+                   (vars_to_remove             : MSVarNames)      % vars of global type, remove on sight
                    (substitutions              : MSSubstitutions) % tm -> varname
                    (LetRec (bindings, body, _) : MSTerm)
  : GlobalizedTerm = 
- %% (old_bindings   : List (MSVar * MSTerm))  (old_body       : MSTerm) 
+ let _ = writeLine("ERROR: Globalize expected LetRec's in " ^ show context.current_op ^ " to have been lambda-lifted away.") in
  Unchanged
 
 op globalizeLambda (context                 : Context)
@@ -871,7 +844,7 @@ op globalizeLambda (context                 : Context)
  let 
    def globalizeRule (rule as (pat, cond, body)) =
      let (new_vars_to_remove, opt_new_pat) = globalizePattern context vars_to_remove pat in
-     let vars_to_remove = vars_to_remove ++ new_vars_to_remove in
+     let vars_to_remove                    = vars_to_remove ++ new_vars_to_remove        in
      let substitutions = [] in
      let opt_new_body = globalizeTerm context vars_to_remove substitutions body false in
      let new_body = case opt_new_body of
@@ -918,7 +891,7 @@ op globalizeLambda (context                 : Context)
 %% ================================================================================
 
 op globalizeIfThenElse (context                    : Context)
-                       (vars_to_remove             : MSVarNames)  % vars of global type, remove on sight
+                       (vars_to_remove             : MSVarNames)      % vars of global type, remove on sight
                        (substitutions              : MSSubstitutions) % tm -> varname
                        (IfThenElse (t1, t2, t3, _) : MSTerm)
  : GlobalizedTerm = 
@@ -972,86 +945,6 @@ op globalizeSeq (context        : Context)
               | _ -> Seq (new_tms, gPos))
  else
    Unchanged
-
-%% ================================================================================
-
-op globalizeType (context        : Context,
-                  vars_to_remove : MSVarNames,      % vars of global type, remove on sight
-                  substitutions  : MSSubstitutions, % tm -> varname
-                  xtyp           : MSType)
- : MSType =
- %% remove mentions of the global type
- let
-   def aux typ =
-     if globalType? context typ then
-       nullType
-     else
-       case typ of
-
-         | Arrow (dom, rng, _) -> 
-           let rng = aux rng in
-           if globalType? context dom then
-             case rng of
-               | Arrow _ -> rng
-               | _ -> Arrow (aux dom, rng, gPos)
-           else
-             Arrow (aux dom, rng, gPos)
-
-         | Product (fields, _) ->
-           (let new_fields = foldl (fn (fields, (id, typ)) ->
-                                      if globalType? context typ then
-                                        fields
-                                      else
-                                        fields ++ [(id, aux typ)])
-                                   []
-                                   fields
-            in
-            case new_fields of
-              | [(id, typ)] | natConvertible id -> typ
-              | _ -> Product (renumber new_fields, gPos))
-         | CoProduct (fields, _) -> 
-           let new_fields = foldl (fn (fields, field as (id, opt_typ)) ->
-                                     case opt_typ of
-                                       | Some typ ->
-                                         fields ++ [(id, Some (aux typ))]
-                                       | _ ->
-                                         fields ++ [field])
-                                  []
-                                  fields
-           in
-           CoProduct (new_fields, gPos)
-
-         | Quotient (typ, tm, _) -> 
-           let new_typ = aux typ in
-           let new_tm = 
-               case globalizeTerm context vars_to_remove substitutions tm false of
-                 | Changed new_tm -> new_tm
-                 | GlobalVar -> 
-                   let _ = writeLine("Warning: Using the master global var as a quotient relation.") in
-                   context.global_var
-                 | Unchanged -> tm
-           in
-           Quotient (new_typ, new_tm, gPos)
-
-         | Subtype (t1, tm, _) ->
-           let new_t1 = aux t1 in
-           let new_tm = 
-               case globalizeTerm context vars_to_remove substitutions tm false of
-                 | Changed new_tm -> new_tm
-                 | GlobalVar -> 
-                   let _ = writeLine("Warning: Using the master global var as a subtype predicate.") in
-                   context.global_var
-                 | Unchanged -> tm
-           in
-           Subtype (new_t1, new_tm, gPos)
-
-         | Pi (tvs, typ, _) -> Pi (tvs, aux typ, gPos)
-           
-         | And (tm :: _, _) -> aux tm
-           
-         | _ -> typ
- in
- aux xtyp
 
 op globalizeTypedTerm (context                : Context)
                       (vars_to_remove         : MSVarNames)      % vars of global type, remove on sight
@@ -1157,7 +1050,7 @@ op globalFieldType (context : Context) (f1 : MSFieldName) : MSType =
  field_type
 
 op globalizeTerm (context        : Context)
-                 (vars_to_remove : MSVarNames)  % vars of global type, remove on sight
+                 (vars_to_remove : MSVarNames)      % vars of global type, remove on sight
                  (substitutions  : MSSubstitutions) % tm -> varname
                  (term           : MSTerm) 
                  (under_merge?   : Bool) 
@@ -1213,7 +1106,7 @@ op globalizeTerm (context        : Context)
        | _ -> 
          Unchanged
      
-%% ================================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op globalizeOpInfo (context    : Context,
                     old_info   : OpInfo)
@@ -1273,6 +1166,8 @@ op globalizeOpInfo (context    : Context,
        in
        old_info
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) =
  (*
   * At this point, we know:
@@ -1295,6 +1190,7 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
  % globalizing those ops may introduce new references to global vars
  % (and might remove some references to other ops in the process)
+
  let globalized_spec_ops =
      foldl (fn (new_ops, name  as Qualified(q,id)) ->
               case findTheOp (spc, name) of
@@ -1316,6 +1212,7 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
  % redo slice, this time chasing through any new references introduced just above
  % (also ignoring any old references removed just above)
+
 %let root_ops = map (fn Qualified(q, id) -> Qualified(statefull_q, id)) root_ops in % TODO
  let second_slice = genericExecutionSlice (spec_with_globalized_ops_added, root_ops, root_types) in
  let new_ops =
@@ -1326,10 +1223,13 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
                                                   None)
                                              spec_with_globalized_ops_added.ops
      in
+
      %% base_ops should include the transitive closure of references from them
+
      let ops_in_second_slice = opsInSlice second_slice in
 
      % new ops are the base ops plus ops reached in second slice
+
      foldl (fn (new_ops, name as Qualified (q, id)) ->
               case findTheOp (spec_with_globalized_ops_added, name) of
                 | Some info -> 
@@ -1354,10 +1254,13 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
                                                     None)
                                                spec_with_globalized_ops_added.types
      in
+
      %% base_types should include the transitive closure of references from them
+
      let types_in_second_slice = typesInSlice second_slice in
 
      % new types are the base types plus types reached in second slice
+
      foldl (fn (new_types, name as Qualified (q, id)) ->
               case findTheType (spec_with_globalized_ops_added, Qualified (q, id)) of
                 | Some info -> 
@@ -1407,20 +1310,14 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
  in
  return (new_spec, context.tracing?)
 
-op printTerms (tms : MSTerms) : String =
- foldl (fn (s, tm) -> s ^ " " ^ printTerm tm) "" tms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op accessms (tm : MSTerm) : MSTerms =
- case tm of
-   | Record (fields, _) -> map (fn (_, tm) -> tm) fields
-   | _ -> [tm]
-
-op showIntermediateSpec (msg : String, spc : Spec) : SpecCalc.Env () =
- {
-  print ("\n===" ^ msg ^ " ===\n");
-  print (printSpecFlat spc);
-  print ("\n=======\n")
- }
+% op showIntermediateSpec (msg : String, spc : Spec) : SpecCalc.Env () =
+% {
+%  print ("\n===" ^ msg ^ " ===\n");
+%  print (printSpecFlat spc);
+%  print ("\n=======\n")
+% }
 
 op globalizeSingleThreadedType (spc              : Spec, 
                                 root_ops         : OpNames,
@@ -1553,6 +1450,8 @@ op globalizeSingleThreadedType (spc              : Spec,
   return (spec_with_gvar, tracing?)
   }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op SpecTransform.globalize (spc              : Spec)
                            (root_ops         : OpNames,
                             global_type_name : TypeName,
@@ -1575,7 +1474,6 @@ op SpecTransform.globalize (spc              : Spec)
  % for now, there is no way to pass tracing? along
  spc
 
-%% ================================================================================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 }
-
