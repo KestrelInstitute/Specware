@@ -1328,9 +1328,11 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     in
     let spc = addSubtypePredicateLifters spc in
     let spc = normalizeTopLevelLambdas spc in
-    let spc = if lambdaLift?
-               then lambdaLiftInternal(spc, false, false) % ignore imports, don't simulate closures
-	       else spc
+    let spc = if lambdaLift? then
+                % ignore imports, don't simulate closures, process all ops
+                lambdaLiftInternal(spc, false, false, []) 
+	       else 
+                 spc
     in
     let spc = if unfoldMonadBinds? then unfoldMonadBinds spc else spc in
     let spc = if c.simplify? && some?(AnnSpec.findTheType(spc, Qualified("Nat", "Nat")))

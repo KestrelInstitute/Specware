@@ -2,6 +2,7 @@ DeconflictUpdates qualifying spec
 {
 
 import /Languages/MetaSlang/Transformations/StatefulUtilities
+import /Languages/MetaSlang/Transformations/LambdaLift
 
 type OpTypes         = AQualifierMap MSType
 type MSVarName       = Id
@@ -389,6 +390,74 @@ op lift_conflict_bindings (term : MSTerm) : MSTerm =
  replaceTerm (lift_let_binding, fn typ -> None, fn pat -> None) term
 
 %% ================================================================================
+%% LetRec's with stateful acesses and/or updates create two technical difficulties:
+%%
+%%  1. The logic used by deconflict_updates would tend to move any accesses done 
+%%     within such a local function to the context outside it, which would cause
+%%     the exectution semantics to differ for local fns vs. lambda-lifted fns.
+%%
+%%  2. The possibility of stateful updates within a local function complicates the
+%%     determination of which stateful references might be made by an applied term. 
+%% 
+%% Since lambba-lifting shouldn't change the meaning of an op, and to simplify
+%% this code, we resolve both issues by lambda lifing any local definitions 
+%% that could evaluate stateful accesses and/or updates, either directly or via
+%% calls to other functions.
+%% ================================================================================
+
+op stateful_local_defs (context : Context, term : MSTerm) : List Id =
+ foldSubTerms (fn (tm, ids) ->
+                 case tm of
+                   | LetRec (bindings, _, _) ->
+                     foldl (fn (ids, ((var_name, _), body)) ->
+                              case stateful_refs_in (context, body) of
+                                | [] -> ids
+                                | _ -> var_name |> ids)
+                           ids
+                           bindings
+                   | _ -> 
+                     ids)
+              []
+              term
+
+op lift_stateful_letrecs (context : Context) : Context =
+ let spc                     = context.spc                                       in
+ let slice                   = genericExecutionSlice (spc, context.root_ops, []) in
+ let names_of_executable_ops = opsInImplementation   slice                       in % just ops that will execute
+ let ops_with_stateful_local_defs =
+     foldl (fn (names_with_ids, name) ->
+              case findTheOp (spc, name) of
+                | Some info ->
+                  (case stateful_local_defs (context, info.dfn) of
+                     | [] -> names_with_ids
+                     | local_fn_names -> (name, local_fn_names) |> names_with_ids)
+                | _ ->
+                  names_with_ids)
+           []
+           names_of_executable_ops
+ in
+ case ops_with_stateful_local_defs of
+
+   | [] -> 
+     context
+
+   | _ ->
+     let spc = lambdaLiftInternal (spc, true, false, ops_with_stateful_local_defs) in
+
+     %% Once we lambda-lift a local function with stateful updates, other local 
+     %% functions that invoke it also need to be lifted, but we can't determine 
+     %% that without first recomputing stateful_refs_in_ops.
+     %% (stateful_refs_in_ops provides visiblity into stateful refs within ops,
+     %%  but not to such references within local functions.)
+     %% So we recompute stateful_refs_in_ops and recur here until we reach the
+     %% fix-point where no more local defs are lifted.
+
+     let context = context << {spc = spc}                 in
+     let srefs   = stateful_refs_in_ops context           in
+     let context = context << {stateful_refs_map = srefs} in
+     lift_stateful_letrecs context
+
+%% ================================================================================
 
 op deconflict_term (context : Context, term : MSTerm) : MSTerm =
  let
@@ -477,6 +546,7 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
          in
          let srefs   = stateful_refs_in_ops context           in
          let context = context << {stateful_refs_map = srefs} in
+         let context = lift_stateful_letrecs context          in
          deconflict_updates context
 
        | _ ->

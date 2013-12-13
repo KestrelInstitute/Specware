@@ -914,10 +914,22 @@ def patternVars (pat:MSPattern): MSVars =
   ^ "]"
 
  op SpecTransform.lambdaLift (spc : Spec) (simulateClosures? : Bool) : Spec =
-  lambdaLiftInternal (spc, true, simulateClosures?)
+  lambdaLiftInternal (spc, true, simulateClosures?, [])
 
- op lambdaLiftInternal (spc : Spec, imports? : Bool, simulateClosures? : Bool) : Spec =
+ op lambdaLiftInternal (spc               : Spec, 
+                        imports?          : Bool, 
+                        simulateClosures? : Bool,
+                        just_these        : List (OpName * Ids))
+  : Spec =
   let counter = Ref 1 : Ref Nat in
+  %% The 'just_these' argument was added to allow deconflictUpdates to lambda-lift just 
+  %% those ops containing local defs with stateful accesses and/or updates, even when 
+  %% lambda-lifting would normally not be done (as for lisp generation).
+  let process_all_ops? =
+      case just_these of
+        | [] -> true
+        | _ -> false
+  in
   let 
     def mkEnv (qname, name) =
       {opName            = name, 
@@ -982,6 +994,9 @@ def patternVars (pat:MSPattern): MSVars =
        %% Could get extra_conds from context
        insertOpers (reverse opers, qname, result, [])
 
+     def process_op? name =
+       process_all_ops? || (exists? (fn (op_name, _) -> name = op_name) just_these)
+
      def liftElts (elts, result) =
        foldr (fn (el, result as (r_elts, r_ops)) ->
                 case el of
@@ -991,7 +1006,7 @@ def patternVars (pat:MSPattern): MSVars =
                     let new_elts = new_elt :: r_elts in
                     (new_elts, new_ops)
 
-                  | Op (Qualified(q,id), true, a) -> % true means decl includes def
+                  | Op (name as Qualified(q,id), true, a) | process_op? name -> % true means decl includes def
                     (case findAQualifierMap(r_ops,q,id) of
                        | Some opinfo -> doOp (q, id, opinfo, result, true, 0, None, a)
                        | _ ->
@@ -999,7 +1014,7 @@ def patternVars (pat:MSPattern): MSVars =
                          let new_elts = el :: r_elts in
                          (new_elts, r_ops))
 
-                  | OpDef (Qualified(q,id), refine_num, opt_info, a) ->
+                  | OpDef (name as Qualified(q,id), refine_num, opt_info, a) | process_op? name ->
                     (case findAQualifierMap (r_ops, q, id) of
                        | Some opinfo -> doOp (q, id, opinfo, result, false, refine_num, opt_info, a)
                        | _ ->
@@ -1010,7 +1025,7 @@ def patternVars (pat:MSPattern): MSVars =
                          let new_elts = el :: r_elts in
                          (new_elts, r_ops))
 
-                  | Property p -> doProp (p, result)
+                  | Property p | process_all_ops? -> doProp (p, result)
 
                   | _ -> 
                     let new_elts = el :: r_elts in

@@ -800,8 +800,23 @@ op globalizeLetRec (context                    : Context)
                    (vars_to_remove             : MSVarNames)      % vars of global type, remove on sight
                    (LetRec (bindings, body, _) : MSTerm)
  : GlobalizedTerm = 
- let _ = writeLine("ERROR: Globalize expected LetRec's in " ^ show context.current_op ^ " to have been lambda-lifted away.") in
- Unchanged
+ %% deconflictUpdates should have lambda-lifted any local definitions that
+ %% contain stateful refs, so we only need to processs the body here.
+ let opt_new_body = globalizeTerm context vars_to_remove body false in
+ case opt_new_body of
+
+   | Changed new_body -> 
+     Changed (LetRec (bindings, new_body, gPos))
+
+
+   | GlobalVar -> 
+     %% if the body is null, the local functions are pointless
+     %% Changed (LetRec (bindings, nullTerm, gPos))
+     Changed nullTerm
+
+   | Unchanged ->
+     Unchanged 
+
 
 op globalizeLambda (context                 : Context)
                    (vars_to_remove          : MSVarNames)      % vars of global type, remove on sight
