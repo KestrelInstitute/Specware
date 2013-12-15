@@ -173,10 +173,10 @@ def elaboratePosSpec (given_spec0, filename) =
              case el of
                | Op(Qualified(q,id), def?, _) ->
                  let Some info = findAQualifierMap(ops,q,id) in
-                 insertAQualifierMap(ops,q,id, checkOp(info, true, def?, 0, env))
+                 insertAQualifierMap(ops,q,id, checkOp(info, def?, 0, env))
                | OpDef(Qualified(q,id), refine_num, _, _) ->
                  let Some info = findAQualifierMap(ops,q,id) in
-                 insertAQualifierMap(ops,q,id, checkOp(info, false, true, refine_num, env))
+                 insertAQualifierMap(ops,q,id, checkOp(info, true, refine_num, env))
                | _ -> ops)
          ops given_spec.elements
 
@@ -537,14 +537,19 @@ op tryResolveNameFromType(env: LocalEnv, trm:MSTerm, id: String, ty: MSType, pos
     | Some id -> Some(Fun (Embed (id, false), checkType0 (env, ty), pos))
     | None -> mkEmbed1 (env, ty, trm, id, pos) 
 
-op checkOp (info: OpInfo, decl?: Bool, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
+op checkOp (info: OpInfo, def?: Bool, refine_num: Nat, env: LocalEnv): OpInfo =
  % let _ = if info.names = [Qualified(UnQualified, "test")] then writeLine("checkOp 0:\n"^printTermWithTypes (info.dfn)) else () in
  let _ = if debug? then writeLine("checkOp "^show (finalPass? env)^" "^show(head info.names)) else () in
  let trps = unpackTypedTerms (info.dfn) in
  let (tvs, ty0, def_tm) = nthRefinement(trps, refine_num) in
- let ty = if decl?
-            then checkType1 (env, ty0, if allowDependentSubTypes? then Some def_tm else None, true)
-           else ty0 in
+
+ % We need to always check the type.
+ % Consider the following elements:
+ %  op foo : Nat  
+ %  refine def foo : {x : Nat | x = undeclared_op}
+ % If fail to check the "refine def", we'll miss the reference to an undeclared op.
+ let ty = checkType1 (env, ty0, if allowDependentSubTypes? then Some def_tm else None, true) in
+
  let elaborated_def_tm = if def? && ~(anyTerm? def_tm)
                            then elaborateTerm_top (env, def_tm, ty)
                            else def_tm
