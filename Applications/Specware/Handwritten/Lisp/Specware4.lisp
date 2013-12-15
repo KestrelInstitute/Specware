@@ -294,7 +294,13 @@
   (map 'list #'(lambda (file)
 		 (when (equal file "Applications/Specware/lisp/Specware4.lisp")
                    ;(sb-sprof:start-profiling)
-                   (time (compile-and-load-lisp-file (in-specware-dir "Applications/Specware/lisp/Specware4.lisp")))
+                   (format t "~&;;; Possibly running lisp compiler on Specware--<n>.lisp files.~%")
+                   (format t "~&;;; If lisp compilation is needed it takes about 40 seconds...~%")
+                   (finish-output t)
+                   (time
+                    (progn
+                      (compile-and-load-lisp-file (in-specware-dir "Applications/Specware/lisp/Specware4.lisp"))
+                      (format t "Done compiling.")))
                    ;(with-open-file (f "sb-sprof.out" :direction :output)
                    ;  (sb-sprof:report :stream f))
 )
