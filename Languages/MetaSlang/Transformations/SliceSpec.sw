@@ -695,6 +695,12 @@ op extend_cohort_for_ref (cohort       : Cohort)
          slice << {resolved_refs = new_resolved_refs,
                    pending_refs  = new_pending_refs}
 
+op change_pos (location : Location) (pos : Position) : Location =
+ case location of
+   | Op      x -> Op      (x << {pos = pos})
+   | Type    x -> Type    (x << {pos = pos})
+   | Theorem x -> Theorem (x << {pos = pos})
+
 op refs_in_type (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
  let 
    def aux typ =
@@ -704,10 +710,7 @@ op refs_in_type (typ : MSType, cohort : Cohort, location : Location) : PendingRe
          let ref =
              Type {name     = qid,
                    cohort   = cohort,
-                   location = case location of
-                                | Op      x -> Op   (x << {pos = pos})
-                                | Type    x -> Type (x << {pos = pos})
-                                | Theorem x -> Theorem (x << {pos = pos})}
+                   location = change_pos location pos}
          in
          foldl (fn (refs, arg) -> refs ++ aux arg) [ref] args
 
@@ -738,10 +741,7 @@ op refs_in_term (term : MSTerm, cohort : Cohort, location : Location) : PendingR
                          Op {name            = qid,
                              cohort          = cohort,
                              contextual_type = Any noPos, 
-                             location        = case location of
-                                                 | Op      x -> Op      (x << {pos = pos})
-                                                 | Type    x -> Type    (x << {pos = pos})
-                                                 | Theorem x -> Theorem (x << {pos = pos})}
+                             location        = change_pos location pos}
                      in
                      [ref] ++ (refs_in_type (typ, cohort, location)) ++ refs
                    | _ -> refs)
@@ -752,13 +752,6 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort, location : Location) : Pen
  if cohort = Implementation then
    refs_in_term (term, cohort, location)
  else
-   let
-     def change_pos location pos =
-       case location of
-         | Op      x -> Op      (x << {pos = pos})
-         | Type    x -> Type    (x << {pos = pos})
-         | Theorem x -> Theorem (x << {pos = pos})
-   in
    foldTerm (fn refs -> fn tm ->
                case tm of
                  | Fun (Op (qid,_),_,pos) ->
