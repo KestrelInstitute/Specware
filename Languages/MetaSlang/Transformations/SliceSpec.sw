@@ -73,9 +73,9 @@ op showLocation (location : Location) : String =
  in
  case location of
    | Root      -> "a root"
-   | Op      x -> "in   op "    ^ pad (show x.name, 20) ^ (showPos x.pos)
-   | Type    x -> "in type "    ^ pad (show x.name, 20) ^ (showPos x.pos)
-   | Theorem x -> "in theorem " ^ pad (show x.name, 20) ^ (showPos x.pos)
+   | Op      x -> "in      op " ^ pad (show x.name, 25) ^ (showPos x.pos)
+   | Type    x -> "in    type " ^ pad (show x.name, 25) ^ (showPos x.pos)
+   | Theorem x -> "in theorem " ^ pad (show x.name, 25) ^ (showPos x.pos)
    | Unknown   -> "at unknown location"
 
 type ResolvedRefs     = List ResolvedRef
@@ -115,10 +115,14 @@ type PendingTypeRef   = {name     : TypeName,
                          cohort   : Cohort,
                          location : Location}
 
-type PendingTheoremRef  = {name    : TheoremName, 
-                           cohort  : Cohort,
-                           element : SpecElement,
-                           status  : Status}
+type PendingTheoremRef = {name    : TheoremName, 
+                          cohort  : Cohort,
+                          element : SpecElement,
+                          status  : Status}
+
+type ParentName       = | Op      String
+                        | Type    String
+                        | Theorem String
 
 op pending.showName (pending : PendingRef) : String =
  case pending of
@@ -629,10 +633,10 @@ op extend_cohort_for_ref (cohort       : Cohort)
             | Some info ->
               let status            = op_status info                               in
               let new_resolved_refs = resolve_ref (slice, pending_ref, status)     in
-              let op_name           = primaryOpName info                           in
+              let location          = Op {name = primaryOpName info, pos = noPos}  in
               let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
                                             [] 
-                                            (pendingRefsInTerm (info.dfn, cohort, op_name))
+                                            (pendingRefsInTerm (info.dfn, cohort, location))
               in
               let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
 
@@ -667,11 +671,11 @@ op extend_cohort_for_ref (cohort       : Cohort)
                     | _ ->
                       (pending_ref, type_status info)
               in
-              let new_resolved_refs = resolve_ref (slice, pending_ref, status) in
-              let type_name         = primaryTypeName info                     in
+              let new_resolved_refs = resolve_ref (slice, pending_ref, status)        in
+              let location          = Type {name = primaryTypeName info, pos = noPos} in
               let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
                                             [] 
-                                            (pendingRefsInType (info.dfn, cohort, type_name))
+                                            (pendingRefsInType (info.dfn, cohort, location))
               in
               let new_pending_refs   = union (new_pending_refs, slice.pending_refs) in
               slice << {resolved_refs = new_resolved_refs,
@@ -681,10 +685,11 @@ op extend_cohort_for_ref (cohort       : Cohort)
               slice << {resolved_refs = new_resolved_refs})
        | Theorem tref ->
          let (Property (_, theorem_name, _, formula, _)) = tref.element in
-         let new_resolved_refs = resolve_ref (slice, pending_ref, Defined) in
+         let new_resolved_refs = resolve_ref (slice, pending_ref, Defined)  in
+         let location          = Theorem {name = theorem_name, pos = noPos} in
          let new_pending_refs  = foldl (add_pending_ref new_resolved_refs)
                                        [] 
-                                       (pendingRefsInTerm (formula, cohort, theorem_name))
+                                       (pendingRefsInTerm (formula, cohort, location))
          in
          let new_pending_refs  = union (new_pending_refs, slice.pending_refs) in
          slice << {resolved_refs = new_resolved_refs,
@@ -743,11 +748,17 @@ op refs_in_term (term : MSTerm, cohort : Cohort, location : Location) : PendingR
              []
              term
 
-op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) : PendingRefs =
+op pendingRefsInTerm (term : MSTerm, cohort : Cohort, location : Location) : PendingRefs =
  if cohort = Implementation then
-   let location = Op {name = parent_op_name, pos = noPos} in
    refs_in_term (term, cohort, location)
  else
+   let
+     def change_pos location pos =
+       case location of
+         | Op      x -> Op      (x << {pos = pos})
+         | Type    x -> Type    (x << {pos = pos})
+         | Theorem x -> Theorem (x << {pos = pos})
+   in
    foldTerm (fn refs -> fn tm ->
                case tm of
                  | Fun (Op (qid,_),_,pos) ->
@@ -755,7 +766,7 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) :
                        Op {name            = qid,
                            cohort          = cohort,
                            contextual_type = Any noPos, 
-                           location        = Op {name = parent_op_name, pos = pos}}
+                           location        = change_pos location pos}
                    in
                    ref |> refs
                  | _ -> refs,
@@ -763,9 +774,9 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) :
                case typ of
                  | Base (qid, _, pos) ->
                    let ref = 
-                       Type {name            = qid,
-                             cohort          = cohort,
-                             location        = Op {name = parent_op_name, pos = pos}}
+                       Type {name     = qid,
+                             cohort   = cohort,
+                             location = change_pos location pos}
                    in
                    ref |> refs
                  | _ -> refs,
@@ -773,8 +784,7 @@ op pendingRefsInTerm (term : MSTerm, cohort : Cohort, parent_op_name : OpName) :
             [] 
             term
 
-op pendingRefsInType (typ : MSType, cohort : Cohort, parent_type_name : TypeName) : PendingRefs =
- let location = Type {name = parent_type_name, pos = noPos} in
+op pendingRefsInType (typ : MSType, cohort : Cohort, location : Location) : PendingRefs =
  if cohort = Implementation then
    refs_in_type (typ, cohort, location) 
  else
