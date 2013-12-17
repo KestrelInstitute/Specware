@@ -744,7 +744,21 @@ op refs_in_term (term : MSTerm, cohort : Cohort, location : Location) : PendingR
                              location        = change_pos location pos}
                      in
                      [ref] ++ (refs_in_type (typ, cohort, location)) ++ refs
-                   | _ -> refs)
+
+                   | _ -> 
+                     %% tm could bind variables (e.g., lambda, let, etc.),
+                     %% in which case we need to include the types of those variables
+                     let types_for_pattern_vars =
+                         case tm of
+                           | Lambda (rules,       _) -> map (fn (pat, _,   _) -> patternType pat) rules
+                           | Let    (bindings, _, _) -> map (fn (pat,      _) -> patternType pat) bindings
+                           | LetRec (bindings, _, _) -> map (fn ((_, typ), _) -> typ)             bindings
+                           | _ -> []
+                     in
+                     foldl (fn (refs, typ) ->
+                              refs ++ (refs_in_type (typ, cohort, location)))
+                           refs
+                           types_for_pattern_vars)
              []
              term
 
