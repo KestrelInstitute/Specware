@@ -769,27 +769,26 @@ SpecCalc qualifying spec
 		                  []
 				  rules
 		in
-                % let _ = writeLine("Translate import\n"^anyToString sp_tm^"\n"^anyToString rules) in
                 (case rules of
-                   | [] -> (sp_tm, spc, els)
+                   | [] -> 
+                     (sp_tm, spc, els)
                    | _ ->
-                     let renaming = (reverse rules, pos) in
+                     let renaming     = (reverse rules,               pos) in
                      let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
-                     % let _ = writeLine("trans_spc_tm:\n"^anyToString trans_spc_tm) in
-                     % let _ = writeLine("currentUID?:\n"^anyToString currentUID?) in
-                     case UIDfromPosition(sp_tm.2) of
-                       | None -> (trans_spc_tm, spc, els)
-                       | Some currentUID ->
-                     case evaluateTermWrtUnitId(trans_spc_tm, currentUID) of
-                       | Some(Spec trans_spc) ->
-                         % let _ = writeLine("trans_spc:\n"^anyToString trans_spc) in
-                         (trans_spc_tm, trans_spc, els)
-                       | None ->
-                         % let _ = writeLine("Failed to evaluate translate:\n"
-                         %                     ^showSCTerm trans_spc_tm) in
-                         % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
-                         (trans_spc_tm, spc, els))
-              | _ -> (sp_tm, spc, els)
+                     %% hack for Isabelle, but triggers exponential explosion...
+                     %% case UIDfromPosition(sp_tm.2) of
+                     %%   | None -> (trans_spc_tm, spc, els)
+                     %%   | Some currentUID ->
+                     %% case evaluateTermWrtUnitId(trans_spc_tm, currentUID) of
+                     %%   | Some(Spec trans_spc) ->
+                     %%     (trans_spc_tm, trans_spc, els)
+                     %%   | None ->
+                     %%     % let _ = writeLine("Failed to evaluate translate:\n"
+                     %%     %                     ^showSCTerm trans_spc_tm) in
+                     %%     % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
+                     (trans_spc_tm, spc, els))
+              | _ -> 
+                (sp_tm, spc, els)
 	in
         Import (new_tm, spc, els, a)
       | _ -> el
