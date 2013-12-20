@@ -249,6 +249,10 @@ MetaSlangRewriter qualifying spec
                               | _ -> false)
                   r_flds)
          -> unit (tm, (subst,ssRule "RecordId",boundVars,demod))
+     %% let p1 = (let p2 = e2 in e1) in e3 --> let p2 = e2 in let p1 = e2 in e3
+     | Let([(p1, Let(bds2, e1, a2))], e3, a1) ->
+       unit (Let(bds2, Let([(p1, e1)], e3, a1), a2),
+             (subst, ssRule "noramlizeEmbeddedLets", boundVars, demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
        unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",boundVars,demod))
      | Apply(Fun(Equals,s,_), Record([(_,M1),(l2,M2)],_),_) ->
