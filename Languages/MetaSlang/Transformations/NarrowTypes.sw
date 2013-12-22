@@ -105,14 +105,18 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
  % let _ = app (fn t1 -> writeLine(printTerm twice_n ^ " does not have type " ^ printType t1)) types_that_fail_on_twice_n in
  case types_that_fail_on_twice_n of
    | [] ->
-     let t1 = head minimal_types in
-     let _ = writeLine("Choosing arbirary new type: " ^ printTerm n ^ " : " ^ printType t1) in
+     let t1 :: t2 = minimal_types in
+     let _ = writeLine(";;; Choosing arbitrary new type: " ^ printTerm n ^ " : " ^ printType t1 ^
+                         ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2))
+     in
      t1
    | [t1] ->
-     let _ = writeLine("Choosing minimal type with narrowest range: " ^ printTerm n ^ " : " ^ printType t1) in
+     let _ = writeLine(";;; Choosing minimal type with narrowest range: " ^ printTerm n ^ " : " ^ printType t1) in
      t1
-   | t1 :: _ ->
-     let _ = writeLine("Choosing arbitrary type with narrow range: " ^ printTerm n ^ " : " ^ printType t1) in
+   | t1 :: t2 ->
+     let _ = writeLine(";;; Choosing arbitrary type with narrow range: " ^ printTerm n ^ " : " ^ printType t1 ^ 
+                         ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2)) 
+     in
      t1
      
 
@@ -128,19 +132,19 @@ op find_narrowest_nat_type (term               : MSTerm,
  % let _ = app (fn t1 -> writeLine(printTerm term ^ "  : " ^ printType t1)) minimal_types in
  % let _ = writeLine("---") in
  if exists? (fn t1 -> equalType? (t1, old_type)) minimal_types then 
-   let _ = writeLine("Keeping old type: " ^ printTerm term ^ " : " ^ printType old_type) in
+   let _ = writeLine(";;; Keeping old type: " ^ printTerm term ^ " : " ^ printType old_type) in
    % let _ = writeLine("====================") in
    old_type 
  else 
    case minimal_types of
      | [t1] -> 
-       % let _ = writeLine("Choosing unique new type: " ^ printTerm term ^ " : " ^ printType t1) in
+       % let _ = writeLine(";;; Choosing unique new type: " ^ printTerm term ^ " : " ^ printType t1) in
        % let _ = writeLine("====================") in
        t1
      | _::_ ->
        type_with_smallest_range (term, minimal_types, spc)
      | [] -> 
-       let _ = writeLine("Confusion: keeping old type: " ^ printTerm term ^ " : " ^ printType old_type) in
+       let _ = writeLine(";;; Confusion: keeping old type: " ^ printTerm term ^ " : " ^ printType old_type) in
        % let _ = writeLine("====================") in
        old_type
 
@@ -181,7 +185,7 @@ op SpecTransform.narrowTypes (spc : Spec) : Spec =
      foldTypeInfos (fn (info, numeric_types) -> 
                       case subtypeOf (info.dfn, int_type, spc) of
                         | Some _ -> 
-                          let _ = writeLine("Numeric type: " ^ show (primaryTypeName info)) in
+                          let _ = writeLine(";;; Numeric type: " ^ show (primaryTypeName info)) in
                           info |> numeric_types
                         | _ -> numeric_types)
                    []
