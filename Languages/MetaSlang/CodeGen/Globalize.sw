@@ -1120,6 +1120,8 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
  % first slice gets ops to be globalized
  let first_slice        = genericExecutionSlice (spc, root_ops, root_types) in
+
+ % let _ = describeSlice ("globalize first slice", first_slice) in
  % process just those ops that might be invoked at runtime
  let ops_in_first_slice = opsInImplementation   first_slice                 in 
 
@@ -1150,6 +1152,7 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
 %let root_ops = map (fn Qualified(q, id) -> Qualified(statefull_q, id)) root_ops in % TODO
  let second_slice = genericExecutionSlice (spec_with_globalized_ops_added, root_ops, root_types) in
+ % let _ = describeSlice ("globalize second slice", second_slice) in
  let new_ops =
      let base_ops = mapiPartialAQualifierMap (fn (q, id, info) ->
                                                 if baseOp? (Qualified(q, id)) then
@@ -1193,7 +1196,7 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
      %% base_types should include the transitive closure of references from them
      %% Process just the types needed for ops that might be invoked at runtime.
-     let types_in_second_slice = typesInImplementation second_slice in
+     let types_in_second_slice = typesInSlice second_slice in
 
      % new types are the base types plus types reached in second slice
 
