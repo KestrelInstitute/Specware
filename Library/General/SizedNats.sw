@@ -33,62 +33,48 @@ op fitsIn16Bits? (x:Nat) : Bool = fitsInNBits? 16 x
 op fitsIn31Bits? (x:Nat) : Bool = fitsInNBits? 31 x
 op fitsIn32Bits? (x:Nat) : Bool = fitsInNBits? 32 x
 
-type Nat1   = (Nat2   | fitsInNBits?   1)
-type Nat2   = (Nat3   | fitsInNBits?   2)
-type Nat3   = (Nat4   | fitsInNBits?   3)
-type Nat4   = (Nat5   | fitsInNBits?   4)
-type Nat5   = (Nat6   | fitsInNBits?   5)
-type Nat6   = (Nat7   | fitsInNBits?   6)
-type Nat7   = (Nat8   | fitsInNBits?   7)
-type Nat8   = (Nat9   | fitsInNBits?   8)
-type Nat9   = (Nat10  | fitsInNBits?   9)
-type Nat10  = (Nat11  | fitsInNBits?  10)
-type Nat11  = (Nat12  | fitsInNBits?  11)
-type Nat12  = (Nat13  | fitsInNBits?  12)
-type Nat13  = (Nat14  | fitsInNBits?  13)
-type Nat14  = (Nat15  | fitsInNBits?  14)
-type Nat15  = (Nat16  | fitsInNBits?  15)
-type Nat16  = (Nat17  | fitsInNBits?  16)
-type Nat17  = (Nat18  | fitsInNBits?  17)
-type Nat18  = (Nat19  | fitsInNBits?  18)
-type Nat19  = (Nat20  | fitsInNBits?  19)
-type Nat20  = (Nat21  | fitsInNBits?  20)
-type Nat21  = (Nat22  | fitsInNBits?  21)
-type Nat22  = (Nat23  | fitsInNBits?  22)
-type Nat23  = (Nat24  | fitsInNBits?  23)
-type Nat24  = (Nat25  | fitsInNBits?  24)
-type Nat25  = (Nat26  | fitsInNBits?  25)
-type Nat26  = (Nat27  | fitsInNBits?  26)
-type Nat27  = (Nat28  | fitsInNBits?  27)
-type Nat28  = (Nat29  | fitsInNBits?  28)
-type Nat29  = (Nat30  | fitsInNBits?  29)
-type Nat30  = (Nat31  | fitsInNBits?  30)
-
-%% to simplify proofs, include sizes one below and one above 32, 64, 128
-
-type Nat31  = (Nat32  | fitsInNBits?  31)
-type Nat32  = (Nat33  | fitsInNBits?  32)
-type Nat33  = (Nat63  | fitsInNBits?  33)
-
+type Nat1   = (Nat | fitsInNBits? 1 )
+type Nat2   = (Nat | fitsInNBits? 2 )
+type Nat3   = (Nat | fitsInNBits? 3 )
+type Nat4   = (Nat | fitsInNBits? 4 )
+type Nat5   = (Nat | fitsInNBits? 5 )
+type Nat6   = (Nat | fitsInNBits? 6 )
+type Nat7   = (Nat | fitsInNBits? 7 )
+type Nat8   = (Nat | fitsInNBits? 8 )
+type Nat9   = (Nat | fitsInNBits? 9 )
+type Nat10  = (Nat | fitsInNBits? 10 )
+type Nat11  = (Nat | fitsInNBits? 11 )
+type Nat12  = (Nat | fitsInNBits? 12 )
+type Nat13  = (Nat | fitsInNBits? 13 )
+type Nat14  = (Nat | fitsInNBits? 14 )
+type Nat15  = (Nat | fitsInNBits? 15 )
+type Nat16  = (Nat | fitsInNBits? 16 )
+type Nat17  = (Nat | fitsInNBits? 17 )
+type Nat18  = (Nat | fitsInNBits? 18 )
+type Nat19  = (Nat | fitsInNBits? 19 )
+type Nat20  = (Nat | fitsInNBits? 20 )
+type Nat21  = (Nat | fitsInNBits? 21 )
+type Nat22  = (Nat | fitsInNBits? 22 )
+type Nat23  = (Nat | fitsInNBits? 23 )
+type Nat24  = (Nat | fitsInNBits? 24 )
+type Nat25  = (Nat | fitsInNBits? 25 )
+type Nat26  = (Nat | fitsInNBits? 26 )
+type Nat27  = (Nat | fitsInNBits? 27 )
+type Nat28  = (Nat | fitsInNBits? 28 )
+type Nat29  = (Nat | fitsInNBits? 29 )
+type Nat30  = (Nat | fitsInNBits? 30 )
+type Nat31  = (Nat | fitsInNBits? 31 )
+type Nat32  = (Nat | fitsInNBits? 32 )
 %% ... We can add Nat33 through Nat63 (and others) if necessary ...
-
-type Nat63  = (Nat64  | fitsInNBits?  63)
-type Nat64  = (Nat65  | fitsInNBits?  64)
-type Nat65  = (Nat127 | fitsInNBits?  65)
-
-type Nat127 = (Nat128 | fitsInNBits? 127)
-type Nat128 = (Nat129 | fitsInNBits? 128)
-type Nat129 = (Nat    | fitsInNBits? 129)
+type Nat64  = (Nat | fitsInNBits? 64 )
 
 % TODO: Define these:
-
 op BVAND8  (x : Nat8 , y : Nat8 ) infixl 25 : Nat8
 op BVAND16 (x : Nat16, y : Nat16) infixl 25 : Nat16
 op BVAND32 (x : Nat32, y : Nat32) infixl 25 : Nat32
-
-op BVOR8   (x : Nat8 , y : Nat8 ) infixl 24 : Nat8
-op BVOR16  (x : Nat16, y : Nat16) infixl 24 : Nat16
-op BVOR32  (x : Nat32, y : Nat32) infixl 24 : Nat32
+op BVOR8  (x : Nat8 , y : Nat8 ) infixl 24 : Nat8
+op BVOR16 (x : Nat16, y : Nat16) infixl 24 : Nat16
+op BVOR32 (x : Nat32, y : Nat32) infixl 24 : Nat32
 
 proof Isa fitsInNBits_p_inhabited is [simp]
   apply(simp add: Nat__fitsInNBits_p_def)
