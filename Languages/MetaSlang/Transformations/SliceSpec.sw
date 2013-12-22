@@ -58,25 +58,32 @@ type Location         = | Root
                         | Theorem {name : TheoremName, pos: Position}
                         | Unknown
 
-op showLocation (location : Location) : String = 
+op showPos (pos : Position) : String = 
  let
    def printLCB (line,column,byte) = show line ^ "." ^ show column 
-
-   def showPos pos =
-     case pos of 
-       | Internal "no position"       -> ""
-       | Internal x                   -> " " ^ x
-       | String   (s,    left, right) -> " [in some string at : " ^ (printLCB left) ^ "-" ^ (printLCB right) ^ "]"
-       | File     (file, left, right) -> " [see " ^ file ^ " : " ^ (printLCB left) ^ "-" ^ (printLCB right) ^ "]"
-
-       | _ -> " at " ^ print pos
  in
+ case pos of 
+   | Internal "no position"       -> " at unknown location"
+   | Internal x                   -> " " ^ x
+   | String   (s,    left, right) -> " in some string : " ^ (printLCB left) ^ "-" ^ (printLCB right)
+   | File     (file, left, right) -> " from " ^ file ^ " at " ^ (printLCB left) ^ "-" ^ (printLCB right)
+   | _ -> " at " ^ print pos
+
+op showLocation (location : Location, pad_length : Nat) : String = 
+ case location of
+   | Root      -> "in  some root"
+   | Op      x -> "in  op "      ^ pad (show x.name, pad_length) ^ showPos x.pos 
+   | Type    x -> "in  type "    ^ pad (show x.name, pad_length) ^ showPos x.pos 
+   | Theorem x -> "in  theorem " ^ show x.name ^ showPos x.pos 
+   | Unknown   -> "at  unknown location"
+
+op terseShowLocation (location : Location) : String = 
  case location of
    | Root      -> "a root"
-   | Op      x -> "in      op " ^ pad (show x.name, 25) ^ (showPos x.pos)
-   | Type    x -> "in    type " ^ pad (show x.name, 25) ^ (showPos x.pos)
-   | Theorem x -> "in theorem " ^ pad (show x.name, 25) ^ (showPos x.pos)
-   | Unknown   -> "at unknown location"
+   | Op      x -> show x.name
+   | Type    x -> show x.name
+   | Theorem x -> show x.name
+   | Unknown   -> "unknown"
 
 type ResolvedRefs     = List ResolvedRef
 type ResolvedRef      = | Op      ResolvedOpRef
@@ -166,6 +173,15 @@ op opsInImplementation (slice : Slice) : OpNames =
        []
        slice.resolved_refs
 
+op opsInGroup (group : Group) : OpNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Op oref -> oref.name |> names
+            | _ -> names)
+       []
+       (! group.refs)
+
+
 op typesInSlice (slice : Slice) : TypeNames =
  foldl (fn (names, ref) ->
           case ref of
@@ -223,7 +239,65 @@ op showPendingRef (ref : PendingRef) (warning? : Bool) : String =
    | Type    tref -> " type " ^ show tref.name
    | Theorem tref -> show_theorem_name tref
 
-op showResolvedRef (ref : ResolvedRef) (warning? : Bool) : String =
+op showUsesOfType (tref : ResolvedTypeRef, slice : Slice, group : Group) : String =
+ let
+   def mentions? (typ, type_name) =
+     foldTypesInType (fn (yes?, t1) -> 
+                        yes? ||
+                        (case t1 of
+                           | Base (name, _, _) -> name = type_name
+                           | _ -> false))
+                     false
+                     typ
+ in
+ "\n" ^
+ foldl (fn (s, loc) ->
+          s ^ 
+          (case loc of
+             | Op x -> 
+               (case findTheOp (slice.ms_spec, x.name) of
+                  | Some info ->
+                    let (s1, _) =
+                        foldSubTerms (fn (tm, (s, positions_seen)) ->
+                                        case tm of
+                                          | Fun (Nat n, typ, pos) ->
+                                            if mentions? (typ, tref.name) && pos nin? positions_seen then
+                                              let new = "\n " ^ pad (show n, 16) ^ " : " ^ printType typ ^ showPos pos ^ 
+                                                        "\n     in " ^ terseShowLocation loc ^
+                                                        "\n" 
+                                              in
+                                              (s ^ new, pos |> positions_seen)
+                                            else
+                                              (s, positions_seen)
+                                      | Apply (t1 as Fun (x, typ, pos), _, _) ->
+                                        if mentions? (typ, tref.name) && pos nin? positions_seen then
+                                          let new = "\n   " ^ printTerm t1 ^ " : " ^ printType typ ^ 
+                                                    "\n     in  " ^ printTerm tm ^
+                                                    "\n     in " ^ terseShowLocation loc ^
+                                                    "\n    " ^ showPos pos ^ 
+                                                    "\n" 
+                                          in
+                                          (s ^ new, pos |> positions_seen)
+                                        else
+                                          (s, positions_seen)
+                                      | _ -> 
+                                        (s, positions_seen))
+                                 ("", [])
+                                 info.dfn
+                    in
+                    s1
+                  | _ -> "\nERROR: Internal confusion: type mentioned by missing op: " ^ show x.name ^ "\n")
+             | _ ->
+               "\n     " ^ showLocation (loc, 20)))
+       ""
+       tref.locations
+
+op showResolvedRef (ref        : ResolvedRef,
+                    warning?   : Bool,
+                    slice      : Slice,
+                    group      : Group,
+                    pad_length : Nat)
+ : String =
  let
    def show_theorem_name tref =
      let Property (kind, name, _, _, _) = tref.element in
@@ -238,11 +312,16 @@ op showResolvedRef (ref : ResolvedRef) (warning? : Bool) : String =
  in
  if warning? then
    case ref of
-     | Op   oref -> " op "   ^ pad (show oref.name, 32) ^ "\t" ^ (showLocation (head oref.locations)) ^ " " ^ 
-                    (foldl (fn (s, loc) -> s ^ "\n\t\t\t\t\t" ^ showLocation loc) "" (tail oref.locations))
+     | Op   oref -> 
+       " op "   ^   pad (show oref.name, pad_length) ^ " " ^ (showLocation (head oref.locations, pad_length)) ^
+       (foldl (fn (s, loc) -> 
+                 s ^ "\n    " ^ pad ("", pad_length) ^ " " ^ showLocation (loc, pad_length))
+              "" 
+              (tail oref.locations))
 
-     | Type tref -> " type " ^ pad (show tref.name, 32) ^ "\t" ^ (showLocation (head tref.locations)) ^ " " ^ 
-                    (foldl (fn (s, loc) -> s ^ "\n\t\t\t\t\t" ^ showLocation loc) "" (tail tref.locations))
+     | Type tref -> " type " ^ pad (show tref.name, pad_length) ^ "\t" ^ 
+                     showUsesOfType (tref, slice, group)
+
      | Theorem tref -> show_theorem_name tref
  else
    case ref of
@@ -250,45 +329,53 @@ op showResolvedRef (ref : ResolvedRef) (warning? : Bool) : String =
      | Type    tref -> " type " ^ show tref.name
      | Theorem tref -> show_theorem_name tref
 
-op describeGroup (group : Group) : () =
+op describeGroup (slice : Slice) (group : Group) : () =
  case (! group.refs) of
    | [] -> ()
    | refs ->
-     let (needed?, cohort_msg)  = case group.cohort of
-                                    | Interface      -> (true,  "These interface types and/or ops ")
-                                    | Implementation -> (true,  "These implementing types and/or ops ")
-                                    | Assertion      -> (false, "These types and/or ops in assertions ")
-                                    | Context        -> (false, "These types and/or ops in the relevant context ")
-                                    | Ignored        -> (false, "These ignored types and/or ops ")
+     let (needed?, cohort_msg)  = 
+         case group.cohort of
+           | Interface      -> (true,  "These interface types and/or ops ")
+           | Implementation -> (true,  "These implementing types and/or ops ")
+           | Assertion      -> (false, "These types and/or ops in assertions ")
+           | Context        -> (false, "These types and/or ops in the relevant context ")
+           | Ignored        -> (false, "These ignored types and/or ops ")
      in
-     let (warning?, status_msg) = case group.status of
-                                    | Primitive   -> (false, "translate to primitive syntax: ")
-                                    | API         -> (false, "translate to an API: ")
-                                    | Handwritten -> (false, "translate to handwritten code: ")
-                                    | Macro       -> (false, "translate to macros: ")
-                                    | Defined     -> (false, "are defined: ")
-                                    | Undefined   -> (true,  "are undefined: ")
-                                    | Missing     -> (true,  "are missing: ")
-                                    | Misc msg    -> (false, msg)
+     let (warning?, status_msg, pad_length) = 
+         case group.status of
+           | Primitive   -> (false, "translate to primitive syntax: ", 16)
+           | API         -> (false, "translate to an API: ",           16)
+           | Handwritten -> (false, "translate to handwritten code: ", 16)
+           | Macro       -> (false, "translate to macros: ",           16)
+           | Defined     -> (false, "are defined: ",                   16)
+           | Undefined   -> (true,  "are undefined: ",                 32) % tend to be longer names
+           | Missing     -> (true,  "are missing: ",                   32) % tend to be longer names
+           | Misc msg    -> (false, msg,                               32)
      in
      let tref_lines = foldl (fn (lines, ref) ->
                                case ref of
-                                 | Type tref -> (showResolvedRef ref warning?) |> lines
-                                 | _ -> lines)
+                                 | Type tref -> 
+                                   showResolvedRef (ref, warning?, slice, group, pad_length) |> lines
+                                 | _ -> 
+                                   lines)
                             []
                             refs
      in
      let oref_lines = foldl (fn (lines, ref) ->
                                case ref of
-                                 | Op oref -> (showResolvedRef ref warning?) |> lines
-                                 | _ -> lines)
+                                 | Op oref -> 
+                                   showResolvedRef (ref, warning?, slice, group, pad_length) |> lines
+                                 | _ -> 
+                                   lines)
                             []
                             refs
      in
      let thref_lines = foldl (fn (lines, ref) ->
                                 case ref of
-                                  | Theorem tref -> (showResolvedRef ref warning?) |> lines
-                                  | _ -> lines)
+                                  | Theorem tref -> 
+                                    showResolvedRef (ref, warning?, slice, group, pad_length) |> lines
+                                  | _ -> 
+                                    lines)
                              []
                              refs
      in
@@ -395,7 +482,7 @@ op describeSlice (msg : String, slice : Slice) : () =
 
  let _ = case slice.resolved_refs of
            | [] -> writeLine("No types or ops in slice.")
-           | _ -> app describeGroup groups 
+           | _ -> app (describeGroup slice) groups 
  in
  ()
 
