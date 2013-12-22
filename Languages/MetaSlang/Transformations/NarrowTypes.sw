@@ -28,26 +28,41 @@ op nPos (pos : Position) : Position =
  in
  Internal ("via narrowTypes " ^ s)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op int_type : MSType = Base (Qualified ("Integer", "Int"), [], noPos)
 op nat_type : MSType = Base (Qualified ("Integer", "Nat"), [], noPos)
 
-op plus_for_n (Fun (_, n_type, _) : MSTerm) : MSTerm = 
-  Fun (Op (Qualified ("Integer", "+"), Nonfix),
-       %% type is tailored for twice n
-       Arrow (Product ([("1", nat_type), ("2", n_type)], noPos),
-              n_type,
-              noPos),
-       noPos)
+op add (n as Fun (_, n_type, _) : MSTerm, m : Nat) : MSTerm = 
+ let m = Fun (Nat m, nat_type, noPos) in
+ let plus =
+     Fun (Op (Qualified ("Integer", "+"), Nonfix),
+          %% type is tailored for adding one
+          Arrow (Product ([("1", n_type), ("2", nat_type)], noPos),
+                 int_type,
+                 noPos),
+          noPos)
+ in
+ Apply (plus,
+        Record ([("1", n), ("2", m)], noPos), 
+        noPos) 
 
-op times_for_n (Fun (_, n_type, _) : MSTerm) : MSTerm = 
-  Fun (Op (Qualified ("Integer", "*"), Nonfix),
-       %% type is tailored for twice n
-       Arrow (Product ([("1", nat_type), ("2", n_type)], noPos),
-              n_type,
-              noPos),
-       noPos)
 
-op two : MSTerm = Fun (Nat 2, nat_type, noPos)
+op times (m : Nat, n as Fun (_, n_type, _) : MSTerm) : MSTerm = 
+ let m = Fun (Nat m, nat_type, noPos) in
+ let times =
+     Fun (Op (Qualified ("Integer", "*"), Nonfix),
+          %% type is tailored for multiplying by two
+          Arrow (Product ([("1", nat_type), ("2", n_type)], noPos),
+                 int_type,
+                 noPos),
+          noPos)
+  in
+  Apply (times, 
+         Record ([("1", m), ("2", n)], noPos), 
+         noPos)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op find_applicable_types (term       : MSTerm,
                           old_type   : MSType,
@@ -85,16 +100,8 @@ op find_minimal_types (types : MSTypes, spc : Spec) : MSTypes =
        []
        types
 
+
 op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : MSType =
- let n_plus_2 = Apply (plus_for_n n, 
-                       Record ([("1", two), ("2", n)], noPos), 
-                       noPos) 
- in
- let twice_n_plus_2 = Apply (times_for_n n, 
-                       Record ([("1", two), ("2", n_plus_2)], noPos), 
-                       noPos) 
- in
- % let _ = writeLine(printTerm twice_n ^ " : " ^ printType (termType twice_n)) in
  let
    def expanded (t1 : MSType) =
      case t1 of
@@ -104,17 +111,54 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
             | _ -> t1)
        | _ -> t1
 
-   def clearly_fails? t1 =
-     case t1 of
+   def tight? typ n =
+     %% return true if the type is defined as a subtype using a predicate 
+     %% that is true for n, but false for either n+1 or 2*n
+     % let _ = writeLine("") in
+     % let _ = writeLine("Testing type " ^ printType typ) in
+     case expanded typ of
        | Subtype (_, pred, _) -> 
-         let test  = Apply (pred, twice_n_plus_2, noPos) in
-         let value = eval  (test, spc)            in
-         (case value of
-            | Bool false -> true
-            | _ -> false)
-       | _ -> false
+         % let _ = writeLine("Predicate is " ^ printTerm pred) in
+         let test_a  = Apply (pred, n, noPos) in
+         let value_a = eval  (test_a, spc)    in
+         (case value_a of
+            | Bool true ->
+              % let _ = writeLine("True for " ^ printTerm n) in
+              let n_+_1   = add (n, 1)                 in
+              let test_b  = Apply (pred, n_+_1, noPos) in
+              let value_b = eval  (test_b, spc)        in
+              (case value_b of
+                 | Bool false -> 
+                   % let _ = writeLine("False for " ^ printTerm n_+_1) in
+                   true
+                 | _ ->
+                   let n_+_2   = add (n, 2)                  in
+                   let test_c  = Apply (pred, n_+_2,  noPos) in
+                   let value_c = eval  (test_c, spc)         in
+                   (case value_c of
+                      | Bool false -> 
+                        % let _ = writeLine("False for " ^ printTerm n_+_2) in
+                        true
+                      | _ ->
+                        let twice_n = times (2, n)                  in
+                        let test_d  = Apply (pred, twice_n,  noPos) in
+                        let value_d = eval  (test_d, spc)           in
+                        (case value_d of
+                           | Bool false -> 
+                             % let _ = writeLine("False for " ^ printTerm twice_n) in
+                             true
+                           | _ ->
+                             % let _ = writeLine("True for all three larger n's") in
+                             false)))
+            | _ -> 
+              % let _ = writeLine("false for " ^ printTerm n) in
+              false)
+       | _ -> 
+         % let _ = writeLine("Type is not a subtype") in
+         false
+     
  in
- %% TODO: This should be revised to compare the ranges of predicates used to 
+ %% TODO: This could be revised to compare the ranges of predicates used to 
  %%       define subtypes of Int.
  %%
  %%       E.g., we could define optional min, max values for such a predicate,
@@ -132,9 +176,9 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
  %%         else
  %%           None
  %%
- let types_that_fail_on_bigger_n =  %% these are the types we want to choose among
+ let tight_types =
      foldl (fn (types, t1) ->
-              if clearly_fails? (expanded t1) then
+              if tight? t1 n then
                 t1 |> types
               else
                 types)
@@ -142,18 +186,18 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
            minimal_types
  in
  % let _ = app (fn t1 -> writeLine(printTerm twice_n ^ " does not have type " ^ printType t1)) types_that_fail_on_twice_n in
- case types_that_fail_on_bigger_n of
+ case tight_types of
    | [] ->
      let t1 :: t2 = minimal_types in
-     let _ = writeLine(";;; Choosing arbitrary new type: " ^ printTerm n ^ " : " ^ printType t1 ^
+     let _ = writeLine(";;; Choosing arbitrary new type for " ^ printTerm n ^ " : " ^ printType t1 ^
                          ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2))
      in
      t1
    | [t1] ->
-     let _ = writeLine(";;; Choosing minimal type with narrowest range: " ^ printTerm n ^ " : " ^ printType t1) in
+     % let _ = writeLine(";;; Choosing minimal type with narrowest range for " ^ printTerm n ^ " : " ^ printType t1) in
      t1
    | t1 :: t2 ->
-     let _ = writeLine(";;; Choosing arbitrary type with narrow range: " ^ printTerm n ^ " : " ^ printType t1 ^ 
+     let _ = writeLine(";;; Choosing arbitrary type with narrow range for " ^ printTerm n ^ " : " ^ printType t1 ^ 
                          ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2)) 
      in
      t1
@@ -177,13 +221,13 @@ op find_narrowest_nat_type (term               : MSTerm,
  else 
    case minimal_types of
      | [t1] -> 
-       % let _ = writeLine(";;; Choosing unique new type: " ^ printTerm term ^ " : " ^ printType t1) in
+       % let _ = writeLine(";;; Choosing unique new type for " ^ printTerm term ^ " : " ^ printType t1) in
        % let _ = writeLine("====================") in
        t1
      | _::_ ->
        type_with_smallest_range (term, minimal_types, spc)
      | [] -> 
-       let _ = writeLine(";;; Confusion: keeping old type: " ^ printTerm term ^ " : " ^ printType old_type) in
+       let _ = writeLine(";;; Confusion: keeping old type for " ^ printTerm term ^ " : " ^ printType old_type) in
        % let _ = writeLine("====================") in
        old_type
 
