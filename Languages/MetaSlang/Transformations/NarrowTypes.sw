@@ -3,6 +3,15 @@ NarrowTypes qualifying spec
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
 import /Languages/MetaSlang/Transformations/Interpreter
 
+
+op SpecTransform.abcd (spc: Spec) (msg : String) : Spec =
+ let _ = writeLine("--------------------") in
+ let _ = writeLine("abcd: " ^ msg) in
+ let _ = writeLine("Nat.Nat32 = " ^ anyToString (findTheType (spc, Qualified("Nat", "Nat32")))) in
+ let _ = writeLine("Int.Int32 = " ^ anyToString (findTheType (spc, Qualified("Int", "Int32")))) in
+ let _ = writeLine("--------------------") in
+ spc
+
 type TypeInfos = List TypeInfo
 
 op nPos (pos : Position) : Position = 
@@ -21,6 +30,14 @@ op nPos (pos : Position) : Position =
 
 op int_type : MSType = Base (Qualified ("Integer", "Int"), [], noPos)
 op nat_type : MSType = Base (Qualified ("Integer", "Nat"), [], noPos)
+
+op plus_for_n (Fun (_, n_type, _) : MSTerm) : MSTerm = 
+  Fun (Op (Qualified ("Integer", "+"), Nonfix),
+       %% type is tailored for twice n
+       Arrow (Product ([("1", nat_type), ("2", n_type)], noPos),
+              n_type,
+              noPos),
+       noPos)
 
 op times_for_n (Fun (_, n_type, _) : MSTerm) : MSTerm = 
   Fun (Op (Qualified ("Integer", "*"), Nonfix),
@@ -69,9 +86,13 @@ op find_minimal_types (types : MSTypes, spc : Spec) : MSTypes =
        types
 
 op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : MSType =
- let twice_n = Apply (times_for_n n, 
-                      Record ([("1", two), ("2", n)], noPos), 
-                      noPos) 
+ let n_plus_2 = Apply (plus_for_n n, 
+                       Record ([("1", two), ("2", n)], noPos), 
+                       noPos) 
+ in
+ let twice_n_plus_2 = Apply (times_for_n n, 
+                       Record ([("1", two), ("2", n_plus_2)], noPos), 
+                       noPos) 
  in
  % let _ = writeLine(printTerm twice_n ^ " : " ^ printType (termType twice_n)) in
  let
@@ -86,14 +107,32 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
    def clearly_fails? t1 =
      case t1 of
        | Subtype (_, pred, _) -> 
-         let test  = Apply (pred, twice_n, noPos) in
+         let test  = Apply (pred, twice_n_plus_2, noPos) in
          let value = eval  (test, spc)            in
          (case value of
             | Bool false -> true
             | _ -> false)
        | _ -> false
  in
- let types_that_fail_on_twice_n =
+ %% TODO: This should be revised to compare the ranges of predicates used to 
+ %%       define subtypes of Int.
+ %%
+ %%       E.g., we could define optional min, max values for such a predicate,
+ %%       then use those to compute ranges for a type and find the narrowest ones.
+ %%
+ %%       op min (p : Int -> Bool) : Option Int = 
+ %%         if ex (i : Int) fa (j : Int) (p j => i <= j) then
+ %%           Some (the (i : Int) fa (j : Int) (p j => i <= j))
+ %%         else
+ %%           None
+ %%
+ %%       op max (p : Int -> Bool) : Option Int = 
+ %%         if ex (i : Int) fa (j : Int) (p j => j <= i) then
+ %%           Some (the (i : Int) fa (j : Int) (p j => j <= i))
+ %%         else
+ %%           None
+ %%
+ let types_that_fail_on_bigger_n =  %% these are the types we want to choose among
      foldl (fn (types, t1) ->
               if clearly_fails? (expanded t1) then
                 t1 |> types
@@ -103,7 +142,7 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
            minimal_types
  in
  % let _ = app (fn t1 -> writeLine(printTerm twice_n ^ " does not have type " ^ printType t1)) types_that_fail_on_twice_n in
- case types_that_fail_on_twice_n of
+ case types_that_fail_on_bigger_n of
    | [] ->
      let t1 :: t2 = minimal_types in
      let _ = writeLine(";;; Choosing arbitrary new type: " ^ printTerm n ^ " : " ^ printType t1 ^
