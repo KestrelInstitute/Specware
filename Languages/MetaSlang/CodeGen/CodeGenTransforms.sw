@@ -24,7 +24,8 @@ import /Languages/MetaSlang/CodeGen/EncapsulateProductArgs              % (13)  
 
 import /Languages/MetaSlang/Transformations/TypeAllTerms                %                   typeAllTerms [work in progress]
 import /Languages/MetaSlang/Transformations/ExpandTypeDefs              % (15)      C Java  expandTypeDefs
-import /Languages/MetaSlang/CodeGen/ReviseTypesForCodeGen               % (16)      C Java  reviseTypesForC, reviseTypesForJava
+import /Languages/MetaSlang/Transformations/NarrowTypes                 %           C Java  narrowTypes                         [Nat  => Nat16, etc.]
+import /Languages/MetaSlang/CodeGen/ReviseTypesForCodeGen               % (16)      C Java  reviseTypesForC, reviseTypesForJava [Nat7 => (Nat8 | fits_in_7_bits?), etc.]
 import /Languages/MetaSlang/Transformations/AddEqOps                    % (17)      C Java  addEqOps
 import /Languages/MetaSlang/Transformations/AddTypeConstructors         % (18)      C Java  addTypeConstructors
 
