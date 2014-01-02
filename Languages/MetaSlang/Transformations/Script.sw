@@ -494,7 +494,7 @@ spec
     case makeMove(path_term,  mv) of
       | Some new_path_term -> makeMoves(new_path_term, rem_mvs, allowFail?)
       | None -> (if allowFail? then ()
-                   else warn("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
+                   else error("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
                  None)
 
   op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
