@@ -617,6 +617,9 @@ with characteristic maps there are several choices:
   theorem S2CM_insert is [a]
       fa (S:Set a, n:a) (S2CM(set_insert(n,S)) = (update (S2CM S) n true))
 
+  theorem S2CM_empty_set is [a]
+    S2CM(empty_set : Set a) = empty_map
+
 (* this only works for case 1 above
   theorem CM2S_empty_map is [a]
       CM2S(empty_map:Map(a,Bool)) = empty_set
@@ -897,6 +900,12 @@ end-proof
 
 proof isa S2CM_insert
   sorry
+end-proof
+
+proof Isa S2CM_empty_set
+  apply(simp add: S2CM_def)
+  apply(rule Set__set_fold1)
+  apply(metis S2CM_Obligation_subtype)
 end-proof
 
 proof isa CM2S_update_Obligation_subtype
