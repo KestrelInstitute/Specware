@@ -222,6 +222,16 @@ theorem set_fold2_alt is [a,b]
   fa(c:b, f : ((b * a -> b) | foldable?), x:a, s:Set a)
     set_fold c f (set_insert(x,s)) = f (set_fold c f (set_delete(x,s)), x)
 
+%% If the function is idempotent, we can prove a nicer theorem about set_fold of set_insert:
+
+op [a,b] idempotent? (f : b * a -> b) : Bool =
+  fa(x:b,y:a) f(f(x,y),y) = f(x,y)
+
+theorem set_fold2_alt2 is [a,b]
+  fa(c:b, f : ((b * a -> b) | (foldable? &&& idempotent?)), x:a, s:Set a)
+    set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
+
+
 %% Push a bijection through a fold.  This changes the type of the accumulator of the fold.
 theorem inv_set_fold_helper is [a,s,s']
  fa(g: s -> s', acc : s, ss: Set a, f : ((s * a -> s) | foldable?))
@@ -846,6 +856,22 @@ proof Isa Set__set_fold2_alt
   apply(simp)
   apply(simp add: Set__set_deletion)
   apply(simp add: Set__set_delete_no_op)
+end-proof
+
+proof Isa Set__set_fold2_alt2
+  apply(case_tac "x in? s")
+  defer
+  apply(simp add: Set__set_fold2)
+  apply(simp add: Set__set_insert_does_nothing)
+  proof -
+    assume a1: "Set__foldable_p f"
+    assume a2: "Set__idempotent_p f"
+    assume "x in? s"
+    hence "Set__set_insert (x, s) = s"
+      using Set__set_insert_does_nothing by fastforce
+    thus "Set__set_fold c f s = f (Set__set_fold c f s, x)"
+      using a1 a2 by (metis Set__idempotent_p_def Set__set_fold2_alt)
+  qed
 end-proof
 
 end-spec
