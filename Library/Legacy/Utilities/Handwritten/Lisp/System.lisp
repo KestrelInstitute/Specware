@@ -21,10 +21,10 @@
   (format t "Error: ~a~%" s)
   (error s))
 
- ;;; op fail     : fa(a) String -> a
+ ;;; op fail     : [a] String -> a
 (defun fail (s) (break "ERROR: ~a" s))
 
-;;; op debug     : fa(a) String -> a
+;;; op debug     : [a] String -> a
 (defun |!debug| (s) (when specwareDebug? (break "~a" s)))
 
 (defvar *spec-print-mode*  :terse)
@@ -69,7 +69,7 @@
             (*print-length* (min *print-length* *spec-print-length*)))
        (format nil "~S" s)))))
 
-;;; op anyToString : fa(a) a -> String
+;;; op anyToString : [a] a -> String
 (defun anyToString (x) 
   (let ((common-lisp::*print-pretty* nil)) 
     (if (null *spec-print-mode*)
