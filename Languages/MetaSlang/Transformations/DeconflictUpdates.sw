@@ -2,7 +2,8 @@ DeconflictUpdates qualifying spec
 {
 
 import /Languages/MetaSlang/Transformations/StatefulUtilities
-import /Languages/MetaSlang/Transformations/LambdaLift
+import /Languages/MetaSlang/Transformations/LambdaLift        % for lambdaLiftInternal (to finesse some conflcis)
+import /Languages/MetaSlang/Transformations/NormalizeTypes    % for topLevelTypeNameInfo
 
 type OpTypes         = AQualifierMap MSType
 type MSVarName       = Id
@@ -14,7 +15,6 @@ type StatefulRef     = {mode  : RefMode,
                         field : MSFieldName,
                         tm    : MSTerm}
 type StatefulRefs    = List StatefulRef
-
 
 type StatefulRefsFromOps = AQualifierMap StatefulRefs
 
@@ -30,6 +30,7 @@ type Context = {spc               : Spec,
                 stateful_types    : MSTypes,
                 stateful_refs_map : StatefulRefsFromOps,
                 current_op_name   : OpName,
+                typename_info     : TypeNameInfo,
                 tracing?          : Bool}
 
 op dcPos : Position = Internal "DeconflictUpdates"
@@ -202,6 +203,22 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                           srefs ++ lifted_srefs
                         | _ -> srefs)
 
+                   | Record (fields, _) ->
+                     let t1 = inferType (context.spc, tm) in
+                     let t2 = normalizeType (context.spc, context.typename_info, true, true, true) t1 in
+                     if stateful_type? (context.spc, t2, context.stateful_types) then
+                       foldl (fn (srefs, (field_id, _)) ->
+                                let sref = {mode  = Update,
+                                            var   = "<anonymous record>",
+                                            field = field_id,
+                                            tm    = tm}
+                                in
+                                sref |> srefs)
+                             srefs
+                             fields
+                     else
+                       srefs
+
                    | _ -> srefs)
 
               []
@@ -257,18 +274,33 @@ op stateful_refs_with_contexts (context : Context,
       {context = 1, refs = stateful_refs_in (context, y)}]
 
    | Record (fields, _) ->
-     let (_, refs) =
+     let t1 = inferType (context.spc, term) in
+     let t2 = normalizeType (context.spc, context.typename_info, true, true, true) t1 in
+     let (_, update_refs) =
+         if stateful_type? (context.spc, t2, context.stateful_types) then
+           foldl (fn ((n, refs_in_contexts), (field_id, tm)) ->
+                    let ref          = {mode = Update, var = "<anonymous record>", field = field_id, tm = tm} in
+                    let refs         = stateful_refs_in (context, tm)                           in
+                    let refs         = ref |> refs                                              in
+                    let refs_in_ctxt = {context = n, refs = refs}                               in
+                    (n + 1, refs_in_ctxt |> refs_in_contexts))
+                 (0, [])
+                 fields
+         else
+           (0, [])
+     in
+     let (_, value_refs) =
          foldl (fn ((n, refs), (_, tm)) ->
                   (n + 1,
                    {context = n, refs = stateful_refs_in (context, tm)} |> refs))
                (0, [])
                fields
      in
-     refs
+     update_refs ++ value_refs
 
    | _ -> []
 
-op conflicting_stateful_refs (refs_in_contexts : List RefsInContext)
+op conflicting_stateful_refs (context : Context, refs_in_contexts : List RefsInContext)
  : Conflicts =
  foldl (fn (result, rinc_1) ->
           foldl (fn (result, ref1) ->
@@ -283,7 +315,16 @@ op conflicting_stateful_refs (refs_in_contexts : List RefsInContext)
                                 % refs in parallel contexts conflict,
                                 % whether access or update
                                 foldl (fn (result, ref2) ->
-                                         if ref1.var = ref2.var && ref1.field = ref2.field then
+                                         if (* ref1.var = ref2.var && *) ref1.field = ref2.field then
+                                           %% We could have references into records that will be used as the global value 
+                                           %% that are accessed via different variables or even anonymously.
+                                           %% let _ = 
+                                           %%     if ref1.var = ref2.var then
+                                           %%       ()
+                                           %%     else
+                                           %%       writeLine("In " ^ show context.current_op_name ^ ": conservatively assuming conflict for field " 
+                                           %%                   ^ ref1.field ^ " in " ^ ref1.var ^ " and in " ^ ref2.var)
+                                           %% in
                                            let conflict = (ref1, ref2) in
                                            % ignore duplicate conflicts
                                            if conflict in? result then
@@ -304,8 +345,8 @@ op conflicting_stateful_refs (refs_in_contexts : List RefsInContext)
        refs_in_contexts
 
 op conflicting_refs_in (context : Context, term : MSTerm) : Conflicts =
- let refs_with_context = stateful_refs_with_contexts (context, term)   in
- let refs              = conflicting_stateful_refs   refs_with_context in
+ let refs_with_context = stateful_refs_with_contexts (context, term)              in
+ let refs              = conflicting_stateful_refs   (context, refs_with_context) in
  refs
 
 %% ================================================================================
@@ -469,7 +510,6 @@ op deconflict_term (context : Context, term : MSTerm) : MSTerm =
  replaceTerm (deconflict, fn t -> None, fn p -> None) term
 
 op deconflict_updates (context : Context) : Spec =
-
  let spc                     = context.spc                                       in
  let slice                   = genericExecutionSlice (spc, context.root_ops, []) in
  let names_of_executable_ops = opsInImplementation   slice                       in % just ops that will execute
@@ -542,6 +582,7 @@ op SpecTransform.deconflictUpdates (spc                 : Spec,
                         stateful_types    = stateful_types,
                         stateful_refs_map = empty_srefs,
                         current_op_name   = Qualified("<>","<>"),
+                        typename_info     = topLevelTypeNameInfo spc,
                         tracing?          = tracing?}
          in
          let srefs   = stateful_refs_in_ops context           in
