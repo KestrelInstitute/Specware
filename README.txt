@@ -38,11 +38,11 @@ Emacs.
 You should not need to install Specware as 'root' if you install it in
 your home directory.
 
-Optional: For proof support, install Isabelle2013 (available from
+Optional: For proof support, install Isabelle2013-2 (available from
 http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  Older versions of
 Isabelle will not work.
 
-To learn about Specware, see the documentation in Specware/UserDoc/.
+To learn about Specware, see the documentation in UserDoc/.
 
 To see a list of available commands, type "help" at the Specware shell.
 
