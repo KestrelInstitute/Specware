@@ -1398,7 +1398,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                    [prString "imports ", ppImports c spc.elements],
                    [prString "begin"]]
                   ++
-                  (if specHasSorryProof? spc then [[], [prString "ML {* quick_and_dirty := true; *}"], []] else [])
+                  (if specHasSorryProof? spc then [[], [prString "ML {* Config.put quick_and_dirty true; *}" %% old command (prior to Isabelle2013-2): "ML {* quick_and_dirty := true; *}"
+                                                                 ], []] else [])
                   ++
 		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
 		  [ prString "end"]])
