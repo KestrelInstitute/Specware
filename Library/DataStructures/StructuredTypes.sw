@@ -899,7 +899,11 @@ proof isa S2CM_CM2S
 end-proof
 
 proof isa S2CM_insert
-  sorry
+  apply(simp add: S2CM_def)
+  apply(subst Set__set_fold2_alt2)
+  apply(simp add: S2CM_Obligation_subtype)
+  apply(simp add: Set__idempotent_p_def Map__update_of_update_both)
+  apply(simp)
 end-proof
 
 proof Isa S2CM_empty_set
