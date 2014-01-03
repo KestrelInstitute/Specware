@@ -224,9 +224,6 @@ theorem set_fold2_alt is [a,b]
 
 %% If the function is idempotent, we can prove a nicer theorem about set_fold of set_insert:
 
-op [a,b] idempotent? (f : b * a -> b) : Bool =
-  fa(x:b,y:a) f(f(x,y),y) = f(x,y)
-
 theorem set_fold2_alt2 is [a,b]
   fa(c:b, f : ((b * a -> b) | (foldable? &&& idempotent?)), x:a, s:Set a)
     set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
@@ -865,12 +862,12 @@ proof Isa Set__set_fold2_alt2
   apply(simp add: Set__set_insert_does_nothing)
   proof -
     assume a1: "Set__foldable_p f"
-    assume a2: "Set__idempotent_p f"
+    assume a2: "Function__idempotent_p f"
     assume "x in? s"
     hence "Set__set_insert (x, s) = s"
       using Set__set_insert_does_nothing by fastforce
     thus "Set__set_fold c f s = f (Set__set_fold c f s, x)"
-      using a1 a2 by (metis Set__idempotent_p_def Set__set_fold2_alt)
+      using a1 a2 by (metis Function__idempotent_p_def Set__set_fold2_alt)
   qed
 end-proof
 

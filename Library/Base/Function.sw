@@ -233,6 +233,11 @@ theorem bij_from_inverse is [a,b]
 theorem eta is [a,b]
   fa(f: a -> b) (fn x -> f x) = f
 
+op [a,b] idempotent? (f : b * a -> b) : Bool =
+  fa(x:b,y:a) f(f(x,y),y) = f(x,y)
+
+
+
 %%% Isabelle proofs
 proof Isa associativity
   apply(simp add: o_assoc)
