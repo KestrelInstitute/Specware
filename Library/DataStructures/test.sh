@@ -1,11 +1,12 @@
 #Check the number of arguments supplied:
-if [ $# -ne 1 ]
+if [ $# -ne 2 ]
 then
-    echo "test.sh: Error: Argument must be the Specware installation to test."
+    echo "test.sh: Error: Arguments must be the Specware installation to test and ISABELLE_2013_2_ROOT."
     exit 1
 fi
 
 SPECWARE4=$1
+ISABELLE_2013_2_ROOT=$2
 
 echo "  Testing Library/DataStructures:"
 
@@ -67,14 +68,14 @@ run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StacksAsLists
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsSTHTables#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsVectors#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/AllIsa
-#This replaces the separate calls to run-isabelle2013 below and is faster:
-run-isabelle2013 ${SPECWARE4}/Library/DataStructures/IsabelleWrapper.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSets_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/SetsAsMaps_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBagMaps_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBags_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/BagsAsMaps_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/StacksAsCoproducts_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/StacksAsLists_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSTHTables_M.thy
-# run-isabelle2013 ${SPECWARE4}/Library/DataStructures/Isa/MapsAsVectors_M.thy
+#This replaces the separate calls to run-isabelle2013-2.sh below and is faster:
+run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/IsabelleWrapper.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSets_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsMaps_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBagMaps_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBags_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/BagsAsMaps_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/StacksAsCoproducts_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/StacksAsLists_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSTHTables_M.thy ${ISABELLE_2013_2_ROOT}
+# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsVectors_M.thy ${ISABELLE_2013_2_ROOT}

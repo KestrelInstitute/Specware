@@ -313,16 +313,16 @@ lemma Euler_aux2: "2 * nat((p - 1) div 2) =  nat (2 * ((p - 1) div 2))"
 lemma Euler_aux3: "nat((p - 1) div 2) * 2 =  nat (((p - 1) div 2) * 2)"
   by (auto simp add: nat_mult_distrib)
 
-lemma Euler_aux4: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<twosuperior> mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
+lemma Euler_aux4: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<^sup>2 mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
   apply (simp add: dvd_eq_mod_eq_0 [symmetric] power2_eq_square zmod_eq_dvd_iff)
   apply (rule classical, erule notE, simp add: not_not)
   apply (cut_tac x=p and y="y * y - x" in dvd_minus_iff [symmetric], simp)
   apply (drule_tac  zdvd_zdiffD, simp add: dvd_mult, simp)
 done
 
-lemma Euler_aux5: "\<lbrakk>(2::int) < p; prime p; a\<twosuperior> mod p = 1 \<rbrakk>  
+lemma Euler_aux5: "\<lbrakk>(2::int) < p; prime p; a\<^sup>2 mod p = 1 \<rbrakk>  
                    \<Longrightarrow> a mod p = 1 mod p \<or> a mod p = -1 mod p"
-  apply (subgoal_tac "a\<twosuperior> mod p = 1 mod p", thin_tac "a\<twosuperior> mod p = 1")
+  apply (subgoal_tac "a\<^sup>2 mod p = 1 mod p", thin_tac "a\<^sup>2 mod p = 1")
   apply (simp only: zmod_eq_dvd_iff, simp_all)
   apply (rule_tac t="a - -1" and s="a+1" in subst, simp)
   apply (simp add: prime_dvd_mult_eq_int [symmetric] algebra_simps  power2_eq_square
@@ -335,10 +335,10 @@ lemma Euler_part1: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightar
    apply (simp add: zpower_pred_distrib mod_mult_left_eq)
 done
 
-lemma Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<twosuperior> mod p = 1"
+lemma Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<^sup>2 mod p = 1"
    apply (frule prime_odd_int, simp)
    apply (frule_tac a=a in fermat_theorem, simp_all add: dvd_eq_mod_eq_0)
-   apply (rule_tac s="a ^ (nat p - Suc 0)" and t = "(a ^ nat ((p - 1) div 2))\<twosuperior>" in subst)
+   apply (rule_tac s="a ^ (nat p - Suc 0)" and t = "(a ^ nat ((p - 1) div 2))\<^sup>2" in subst)
    apply (simp_all add: zpower_zpower Euler_aux3,
           simp add: algebra_simps two_times_even_div_two  nat_diff_distrib)
 done
@@ -392,10 +392,10 @@ lemma Integer__legendreSymbol_as_Legendre:
  apply (auto simp add: Legendre_def Integer__legendreSymbol_def QuadRes_def
                        zmod_int [symmetric] dvd_eq_mod_eq_0 [symmetric] )
  apply (drule_tac x=z in spec, erule notE)
- apply (rule_tac t="z\<twosuperior>" and s="int (nat (z\<twosuperior>))" in subst, 
+ apply (rule_tac t="z\<^sup>2" and s="int (nat (z\<^sup>2))" in subst, 
         simp, simp only: zmod_int [symmetric])
  apply (drule_tac x=y in spec, rotate_tac 1, erule contrapos_pp)
- apply (rule_tac t="y\<twosuperior>" and s="int (nat (y\<twosuperior>))" in subst, 
+ apply (rule_tac t="y\<^sup>2" and s="int (nat (y\<^sup>2))" in subst, 
         simp, simp only: zmod_int [symmetric])
 done
 

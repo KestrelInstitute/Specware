@@ -11,7 +11,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 spec
  
-proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" "~~/src/HOL/Library/Permutation" "~~/src/HOL/Library/Char_nat" Main
+proof Isa Thy_Morphism "~~/src/HOL/Number_Theory/Primes" "~~/src/HOL/Library/Permutation" Main
 end-proof
 
 proof Isa -verbatim
@@ -2427,50 +2427,50 @@ apply (induct_tac k rule: nat_induct, auto simp add: algebra_simps)
 done
 
 lemma mod_square_0:
-   "\<lbrakk>prime p; (x::nat) < p;  x\<twosuperior> mod p = 0\<rbrakk> \<Longrightarrow> x=0"
+   "\<lbrakk>prime p; (x::nat) < p;  x\<^sup>2 mod p = 0\<rbrakk> \<Longrightarrow> x=0"
 by (simp add: power2_eq_square  dvd_eq_mod_eq_0 [symmetric] prime_dvd_mult_nat,
     auto simp add: dvd_def)
   
 lemma mod_square_eq_aux:
-   "\<lbrakk>prime p; (x::nat) < p;  (y::nat) < p; y\<twosuperior> \<le> x\<twosuperior>; x\<twosuperior> mod p = y\<twosuperior> mod p\<rbrakk> \<Longrightarrow> x = p - y \<or> x = y"
+   "\<lbrakk>prime p; (x::nat) < p;  (y::nat) < p; y\<^sup>2 \<le> x\<^sup>2; x\<^sup>2 mod p = y\<^sup>2 mod p\<rbrakk> \<Longrightarrow> x = p - y \<or> x = y"
 apply (auto simp add:  mod_eq_dvd_iff, subst mod_add_inv [symmetric], assumption+)
 apply (frule power2_le_imp_le, simp)
-apply (subgoal_tac "p dvd (x+y)*(x-y)", thin_tac "p dvd x\<twosuperior> - y\<twosuperior>")
+apply (subgoal_tac "p dvd (x+y)*(x-y)", thin_tac "p dvd x\<^sup>2 - y\<^sup>2")
 apply (frule prime_dvd_mult_nat, simp, simp only: dvd_eq_mod_eq_0)
 apply (erule disjE, assumption, erule notE, erule mod_sub_eq, assumption+)
-apply (rule_tac t="(x+y)*(x-y)" and s="x\<twosuperior> - y\<twosuperior>" in subst)
+apply (rule_tac t="(x+y)*(x-y)" and s="x\<^sup>2 - y\<^sup>2" in subst)
 apply (simp_all add: power2_eq_square algebra_simps diff_mult_distrib2)
 done
 
 lemma mod_square_eq:
-   "\<lbrakk>prime p; (x::nat) < p;  (y::nat) < p;  x\<twosuperior> mod p = y\<twosuperior> mod p\<rbrakk> \<Longrightarrow> x = p - y \<or> x = y"
-apply (case_tac "y\<twosuperior> \<le> x\<twosuperior>")
+   "\<lbrakk>prime p; (x::nat) < p;  (y::nat) < p;  x\<^sup>2 mod p = y\<^sup>2 mod p\<rbrakk> \<Longrightarrow> x = p - y \<or> x = y"
+apply (case_tac "y\<^sup>2 \<le> x\<^sup>2")
 apply (erule mod_square_eq_aux, simp_all)
 apply (drule_tac x=y and y=x in mod_square_eq_aux, auto)
 done
 
 lemma mod_square_iff_aux:
-   "\<lbrakk>prime p; (x::nat) < p; x\<twosuperior> \<le> (p - x)\<twosuperior>\<rbrakk> \<Longrightarrow>  (p - x)\<twosuperior> mod p = x\<twosuperior> mod p"
+   "\<lbrakk>prime p; (x::nat) < p; x\<^sup>2 \<le> (p - x)\<^sup>2\<rbrakk> \<Longrightarrow>  (p - x)\<^sup>2 mod p = x\<^sup>2 mod p"
 apply (frule power2_le_imp_le, simp)
 apply (simp add: mod_eq_dvd_iff)
-apply (rule_tac t="(p - x)\<twosuperior> - x\<twosuperior>" and s="(p - x + x) * (p - x - x)" in subst, simp_all)
+apply (rule_tac t="(p - x)\<^sup>2 - x\<^sup>2" and s="(p - x + x) * (p - x - x)" in subst, simp_all)
 apply (simp add: power2_eq_square  diff_mult_distrib2, simp add: algebra_simps diff_mult_distrib2)
 done
 
 lemma mod_square_iff [simp]:
-   "\<lbrakk>prime p; (x::nat) < p\<rbrakk> \<Longrightarrow>  (p - x)\<twosuperior> mod p = x\<twosuperior> mod p"
-apply (case_tac "x\<twosuperior> \<le> (p - x)\<twosuperior>")
+   "\<lbrakk>prime p; (x::nat) < p\<rbrakk> \<Longrightarrow>  (p - x)\<^sup>2 mod p = x\<^sup>2 mod p"
+apply (case_tac "x\<^sup>2 \<le> (p - x)\<^sup>2")
 apply (erule mod_square_iff_aux, simp_all)
 apply (case_tac "x=0", auto)
 apply (drule_tac x="p-x" in mod_square_iff_aux, auto)
 done
 
 lemma mod_square_inv:
-  "\<lbrakk>prime p; (x::nat) < p; y < p; (x + y) mod p = 0\<rbrakk> \<Longrightarrow>  x\<twosuperior> mod p = y\<twosuperior> mod p"
+  "\<lbrakk>prime p; (x::nat) < p; y < p; (x + y) mod p = 0\<rbrakk> \<Longrightarrow>  x\<^sup>2 mod p = y\<^sup>2 mod p"
 by (case_tac "x=y", simp, simp add: mod_add_inv)
 
 lemma mod_square_inv_rev:
-  "\<lbrakk>prime p; (x::nat) < p; y < p; x\<twosuperior> mod p = y\<twosuperior> mod p; x \<noteq> y\<rbrakk> \<Longrightarrow>  (x + y) mod p = 0"
+  "\<lbrakk>prime p; (x::nat) < p; y < p; x\<^sup>2 mod p = y\<^sup>2 mod p; x \<noteq> y\<rbrakk> \<Longrightarrow>  (x + y) mod p = 0"
 by (drule_tac x=x and y=y in mod_square_eq, auto)
 
 
@@ -2520,7 +2520,7 @@ lemma mod_mult_pos [simp]:
 done
 
 lemma mod_square_pos [simp]:
-  "\<lbrakk>prime (p::nat); 0 < x; x < p\<rbrakk>  \<Longrightarrow> 0 < x\<twosuperior> mod p"
+  "\<lbrakk>prime (p::nat); 0 < x; x < p\<rbrakk>  \<Longrightarrow> 0 < x\<^sup>2 mod p"
 by (simp add: power2_eq_square)
 
 lemma mod_cube_pos [simp]:
