@@ -234,6 +234,11 @@ op stateful_refs_in (context : Context, group : Int, term  : MSTerm) : StatefulR
               []
               term
 
+op parallel_processing_with_futures? : Bool = false 
+%% if true, evaluation of (f <args>) could begin evaluating the body of f in parallel
+%% with the evaluation of the arguments, using futures within f for the pending 
+%% parameter values until they become avialable. 
+
 op stateful_refs_with_contexts (context : Context,
                                 term    : MSTerm)
  : List RefsInContext =
@@ -288,8 +293,26 @@ op stateful_refs_with_contexts (context : Context,
        refs_in_contexts
 
    | Apply (x, y, _) ->
-     [{context = 0, refs = stateful_refs_in (context, 0, x)},
-      {context = 1, refs = stateful_refs_in (context, 1, y)}]
+     let
+       def atomic? tm =
+         case tm of
+           | Fun       _           -> true
+           | Lambda    _           -> true
+           | TypedTerm (t1, _,  _) -> atomic? t1
+           | Pi        (_,  t1, _) -> atomic? t1
+           | _ -> false
+     in
+     if atomic? x && ~ parallel_processing_with_futures? then 
+       %% Unless the execution allows parallel processing with futures,
+       %% we know that y will be evaluated before control is passed to x,
+       %% so there is no ambiguity about order of evaluation.
+       []
+     else
+       %% We could be evaluting something like ((f x) (g y)), in which case
+       %% we don't know which of (f x) and (g y) will be executed first.
+       %% That raises the possibiity of conflicting updates.
+       [{context = 0, refs = stateful_refs_in (context, 0, x)},
+        {context = 1, refs = stateful_refs_in (context, 1, y)}]
 
    | Record (fields, _) ->
      let t1 = inferType (context.spc, term) in
