@@ -504,7 +504,6 @@ op deconflict_term (context : Context, term : MSTerm) : MSTerm =
  let
    def deconflict tm =
     let conflicts = conflicting_refs_in (context, tm) in
-    let n         = length conflicts                  in
     deconflict_conflicting_refs (context, conflicts, tm)
  in
  replaceTerm (deconflict, fn t -> None, fn p -> None) term
