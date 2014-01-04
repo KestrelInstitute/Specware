@@ -11,9 +11,12 @@ type MSFieldName     = Id
 
 type RefMode         = | Access | Update
 type StatefulRef     = {mode  : RefMode,
+                        group : Int,
                         var   : MSVarName,
                         field : MSFieldName,
-                        tm    : MSTerm}
+                        % for an Access, tm may be lifted to a new let-bound variable
+                        % for an Update, tm is used only for error messages about conflicts
+                        tm    : MSTerm}     
 type StatefulRefs    = List StatefulRef
 
 type StatefulRefsFromOps = AQualifierMap StatefulRefs
@@ -35,12 +38,12 @@ type Context = {spc               : Spec,
 
 op dcPos : Position = Internal "DeconflictUpdates"
 
-op printStatefulRef ({mode, var, field, tm} : StatefulRef) : String = 
-  "[" ^ (case mode of | Access -> "Access" | Update -> "Update") 
-      ^ " = " ^ var 
-      ^ ", field = " 
-      ^ field ^ ", tm = " 
-      ^ printTerm tm 
+op printStatefulRef (ref : StatefulRef) : String = 
+  "[" ^ (case ref.mode of | Access -> "Access" | Update -> "Update")
+      ^ ", group = " ^ show ref.group 
+      ^ ", var = "   ^ ref.var 
+      ^ ", field = " ^ ref.field 
+      ^ ", tm = "    ^ printTerm ref.tm 
       ^ "]" 
 
 op printConflict (c : Conflict) : String = 
@@ -133,7 +136,7 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
 
 op stateful_refs_in_ops (context : Context) : StatefulRefsFromOps =
  let applied_op_refs = appliedOpRefs context.spc in
- let stateful_refs   = mapAQualifierMap (fn info -> stateful_refs_in (context, firstOpDef info)) context.spc.ops in
+ let stateful_refs   = mapAQualifierMap (fn info -> stateful_refs_in (context, -2, firstOpDef info)) context.spc.ops in
  let stateful_refs   = foldriAQualifierMap 
                          (fn (parent_q, parent_id, op_refs, srefs) ->
 
@@ -156,7 +159,7 @@ op stateful_refs_in_ops (context : Context) : StatefulRefsFromOps =
 
 %% ================================================================================
 
-op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
+op stateful_refs_in (context : Context, group : Int, term  : MSTerm) : StatefulRefs =
  let refs_map = context.stateful_refs_map in
  foldSubTerms (fn (tm, srefs) ->
                  case tm of
@@ -166,9 +169,10 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                             _)
                      | stateful_type? (context.spc, var_type, context.stateful_types) ->
                        let sref = {mode  = Access,
-                                   var    = var_id,
-                                   field  = field_id,
-                                   tm     = tm}
+                                   group = group,
+                                   var   = var_id,
+                                   field = field_id,
+                                   tm    = tm}
                        in
                        sref |> srefs
 
@@ -180,6 +184,7 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                      | stateful_type? (context.spc, var_type, context.stateful_types) ->
                        foldl (fn (srefs, (field_id, _)) ->
                                 let sref = {mode  = Update,
+                                            group = group,
                                             var   = var_id,
                                             field = field_id,
                                             tm    = tm}
@@ -199,7 +204,11 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                           %% If a new let-bound "deconflict_" var is needed, it should bind to the
                           %% term being seen here, not the invisible terms inside the invoked op.
                           %% So we revise the references to mention the current term.
-                          let lifted_srefs = map (fn ref -> ref << {tm = tm}) child_srefs in
+                          let lifted_srefs = map (fn ref -> 
+                                                    ref << {group = group, 
+                                                            tm    = tm}) 
+                                                 child_srefs 
+                          in
                           srefs ++ lifted_srefs
                         | _ -> srefs)
 
@@ -209,6 +218,7 @@ op stateful_refs_in (context : Context, term  : MSTerm) : StatefulRefs =
                      if stateful_type? (context.spc, t2, context.stateful_types) then
                        foldl (fn (srefs, (field_id, _)) ->
                                 let sref = {mode  = Update,
+                                            group = group,
                                             var   = "<anonymous record>",
                                             field = field_id,
                                             tm    = tm}
@@ -257,12 +267,20 @@ op stateful_refs_with_contexts (context : Context,
                         _),
                 _)
      | stateful_type? (context.spc, var_type, context.stateful_types) ->
+       %% We are updating a stateful structure.
        let (_, refs_in_contexts) =
            foldl (fn ((n, refs_in_contexts), (field_id, tm)) ->
-                    let ref          = {mode = Update, var = var_id, field = field_id, tm = tm} in
-                    let refs         = stateful_refs_in (context, tm)                           in
-                    let refs         = ref |> refs                                              in
-                    let refs_in_ctxt = {context = n, refs = refs}                               in
+                    %% Include an update for this assignment into a stateful record.
+                    let ref          = {mode  = Update, 
+                                        group = n,
+                                        var   = var_id, 
+                                        field = field_id,
+                                        tm    = tm}
+                    in
+                    %% Also collect accesses and updates for the value term.
+                    let refs         = stateful_refs_in (context, n, tm) in
+                    let refs         = ref |> refs                       in
+                    let refs_in_ctxt = {context = n, refs = refs}        in
                     (n + 1, refs_in_ctxt |> refs_in_contexts))
                  (0, [])
                  fields
@@ -270,33 +288,42 @@ op stateful_refs_with_contexts (context : Context,
        refs_in_contexts
 
    | Apply (x, y, _) ->
-     [{context = 0, refs = stateful_refs_in (context, x)},
-      {context = 1, refs = stateful_refs_in (context, y)}]
+     [{context = 0, refs = stateful_refs_in (context, 0, x)},
+      {context = 1, refs = stateful_refs_in (context, 1, y)}]
 
    | Record (fields, _) ->
      let t1 = inferType (context.spc, term) in
      let t2 = normalizeType (context.spc, context.typename_info, true, true, true) t1 in
-     let (_, update_refs) =
+     let (_, refs_in_contexts) =
          if stateful_type? (context.spc, t2, context.stateful_types) then
+           %% We are building a stateful record from scratch.
+           %% (This is perhaps an issue only for the global state, but ...)
            foldl (fn ((n, refs_in_contexts), (field_id, tm)) ->
-                    let ref          = {mode = Update, var = "<anonymous record>", field = field_id, tm = tm} in
-                    let refs         = stateful_refs_in (context, tm)                           in
-                    let refs         = ref |> refs                                              in
-                    let refs_in_ctxt = {context = n, refs = refs}                               in
+                    %% Include an update for this assignment into a stateful record.
+                    let ref          = {mode  = Update, 
+                                        group = n,
+                                        var   = "<anonymous record>", 
+                                        field = field_id, 
+                                        tm    = tm} 
+                    in
+                    %% Also collect accesses and updates for the value term.
+                    let refs         = stateful_refs_in (context, n, tm) in
+                    let refs         = ref |> refs                       in
+                    let refs_in_ctxt = {context = n, refs = refs}        in
                     (n + 1, refs_in_ctxt |> refs_in_contexts))
                  (0, [])
                  fields
          else
-           (0, [])
+           foldl (fn ((n, refs_in_contexts), (_, tm)) ->
+                    %% Do not include an update for this assignment into a non-stateful record.
+                    %% Collect accesses and updates for the value term.
+                    let refs         = stateful_refs_in (context, n, tm) in
+                    let refs_in_ctxt = {context = n, refs = refs}        in
+                    (n + 1, refs_in_ctxt |> refs_in_contexts))
+                 (0, [])
+                 fields
      in
-     let (_, value_refs) =
-         foldl (fn ((n, refs), (_, tm)) ->
-                  (n + 1,
-                   {context = n, refs = stateful_refs_in (context, tm)} |> refs))
-               (0, [])
-               fields
-     in
-     update_refs ++ value_refs
+     refs_in_contexts
 
    | _ -> []
 
@@ -355,10 +382,15 @@ op deconflict_conflicting_refs (context   : Context,
                                 conflicts : Conflicts,
                                 term      : MSTerm)
  : Option MSTerm =
+ %% TODO: if X.f is in a conflict, we currently let bind X.f itself,
+ %%       but we need to let bind any terms that are sequential accesses 
+ %%       from X.f, e.g. 'aref (x.f.2.g, 2)'
+ %%       The simplest solution might be to add post-passes that let-bind
+ %%       any acccess from terms such as deconflict_<n>
  let
    def aux (n, conflicts, substitutions) =
      let
-       def lift (access : StatefulRef, conflicts) =
+       def lift (access, conflicts) =
          %% deconflict by binding access above point of execution ambiguity
          let new_vname    = "deconflict_" ^ show n                 in
          let vtype        = inferType (context.spc, access.tm)     in
@@ -385,7 +417,6 @@ op deconflict_conflicting_refs (context   : Context,
                     | _ -> None
               in
               let new = replaceTerm (repTerm, fn t -> None, fn p -> None) term in
-             %let new = deconflict_term (context, new) in
               Some new)
 
        | (ref1, ref2) :: conflicts ->
@@ -451,7 +482,7 @@ op stateful_local_defs (context : Context, term : MSTerm) : List Id =
                  case tm of
                    | LetRec (bindings, _, _) ->
                      foldl (fn (ids, ((var_name, _), body)) ->
-                              case stateful_refs_in (context, body) of
+                              case stateful_refs_in (context, -1, body) of
                                 | [] -> ids
                                 | _ -> var_name |> ids)
                            ids
@@ -501,6 +532,19 @@ op lift_stateful_letrecs (context : Context) : Context =
 %% ================================================================================
 
 op deconflict_term (context : Context, term : MSTerm) : MSTerm =
+
+ %% This will scan all subterms, and for each such subterm, stateful_refs_in will
+ %% fold a local function over many of its subterms.
+ %%
+ %% Worst case, every subterm could be visited once for each ancestral term above it.
+ %%
+ %% For a balanced parse tree with N nodes, the depth will be O(log N),
+ %%  giving O(N log N) total visits to individual nodes.
+ %% For a completely unbalanced tree of N nodes, the depth will be O(N),
+ %%  giving O(N ^ 2) total visits.
+ %%
+ %% That should be efficient enough for non-pathological cases.
+
  let
    def deconflict tm =
     let conflicts = conflicting_refs_in (context, tm) in
@@ -512,8 +556,8 @@ op deconflict_updates (context : Context) : Spec =
  let spc                     = context.spc                                       in
  let slice                   = genericExecutionSlice (spc, context.root_ops, []) in
  let names_of_executable_ops = opsInImplementation   slice                       in % just ops that will execute
-%let names_of_executable_ops = opsInSlice            slice                       in % useful for testing
- %let _ = describeSlice ("deconflict", slice) in
+
+%let _ = describeSlice ("deconflict", slice) in
 
  let new_ops =
      foldl (fn (new_ops, name as Qualified (q, id)) ->
