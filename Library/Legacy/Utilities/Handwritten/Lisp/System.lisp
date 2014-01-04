@@ -252,3 +252,8 @@
 	  ))
     (append (rest (pathname-directory resolved-pathname))
 	    (list (pathname-name resolved-pathname)))))
+
+;;; A note is like a warning but less severe:
+;;; op note  : [a] String -> a
+(defun note (s) (format *error-output* "~&NOTE: ~a~%" s))
+

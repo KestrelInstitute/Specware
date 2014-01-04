@@ -310,7 +310,7 @@ op printEqProof(prf: EqProof, tm: MSTerm): String =
      | (([], None), tm, (rs2, Some pf2)) ->
        (rs2, Some pf2)
      | ((rs1, opf1), tm, (rs2, opf2)) ->
-       (warn ("composeTransformInfos called with only one proof given");
+       (note ("composeTransformInfos called with only one proof given");
         (rs1 ++ rs2,
          case (opf1, opf2) of
            | (Some pf1, _) ->      % opf2 must be None
