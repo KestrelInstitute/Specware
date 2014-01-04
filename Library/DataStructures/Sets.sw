@@ -180,21 +180,29 @@ theorem induction3 is [a]
       (fa(x,s) p(set_delete(x,s)) => p(set_insert(x,s))) =>
     (fa(s) p s)
 
-% analogously to list_fold and bag_fold, we can define set_fold for sets;
+% Analogously to list fold and bag fold, we can define set_fold for sets;
 % the function f given as argument must satisfy the same commutativity
 % property as set_insert: this ensures that replacing set_insert with f
-% and empty_set with c in set_insert(x,set_insert(y,empty_set)) and in
-% set_insert(y,set_insert(x,empty_set)) yields the same result
-% f(x,f(y,c)) = f(y,f(x,c)); in addition, f must satisfy the same
-% idempotence property as set_insert: this ensures that replacing
+% and empty_set with c in:
+% set_insert(x,set_insert(y,empty_set)) and in:
+% set_insert(y,set_insert(x,empty_set))
+% yields the same result.  That is, f(x,f(y,c)) = f(y,f(x,c)).
+
+% In addition, f may or may not satisfy the same idempotence property as set_insert (namely, that replacing
 % set_insert with f and empty_set with c in
-% set_insert(x,set_insert(x,empty_set)) and in set_insert(x,empty_set)
-% yields the same result f(x,f(x,c)) = f(x,c)
-%TODO do we really need the idempotence (could restrict axiom set_fold2 below to the case where x is not already in s, or remove x from s in the RHS of that axiom)?
-%  The idempotency condition prevents basic things that one wants to do using set fold (e.g., count the elements a set, because incrementing the count is not idempotent).
-%  I am attempting to remove the idempotency condition and reformulate the set_fold2 axiom accordingly...
-%TODO Library/General/Set only requires the commutativity property on the elements of the set being folded over.
-%     I guess that would require dependent type (or product type) and would conflict with currying here...
+% set_insert(x,set_insert(x,empty_set)) and in 
+% set_insert(x,empty_set)
+% yields the same result  That is, f(x,f(x,c)) = f(x,c)).
+% This idempotency condition allows a nicer theorem about set_fold
+% (see set_fold2_idempotent below), but it prevents basic things that
+% one wants to do using set fold (e.g., count the elements a set,
+% because incrementing the count is not idempotent).  So we leave it
+% out of the main axiom about set_fold but prove the nice lemma
+% set_fold2_idempotent to be used in cases where idempotency does
+% hold.
+
+%TODO: Library/General/Set requires the commutativity property *only on the elements of the set being folded over*.
+%     I guess that would require a dependent type (or product type) and would conflict with currying here...
 
 op [a,b] foldable? (f : b * a -> b) : Bool =
   fa(x:b,y:a,z:a) f(f(x,y),z) = f(f(x,z),y)
@@ -215,7 +223,7 @@ axiom set_fold1 is [a,b]
 
 axiom set_fold2 is [a,b]
   fa(c:b, f : ((b * a -> b) | foldable?), x:a, s:Set a)
-    ~(x in? s) =>  %%  New!  An alternative would be to drop this and delete x from s in the right hand side of the equality
+    ~(x in? s) =>  %%  New!  See set_fold2_alt below for an alterative form.
     set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
 
 theorem set_fold2_alt is [a,b]
@@ -223,7 +231,7 @@ theorem set_fold2_alt is [a,b]
     set_fold c f (set_insert(x,s)) = f (set_fold c f (set_delete(x,s)), x)
 
 %% If the function is idempotent, we can prove a nicer theorem about set_fold of set_insert:
-
+%todo: rename this to set_fold2_idempotent
 theorem set_fold2_alt2 is [a,b]
   fa(c:b, f : ((b * a -> b) | (foldable? &&& idempotent?)), x:a, s:Set a)
     set_fold c f (set_insert(x,s)) = f (set_fold c f s, x)
