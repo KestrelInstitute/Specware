@@ -32,11 +32,6 @@ spec
 % we have a dynamical problem over a partially ordered state space
   import SBPT#SSP 
   op obs: State -> Set X  
-  import translate /Library/Math/PartialOrder#MonotoneFn 
-         by {A +-> State, <= +-> stle, monotone +-> monotoneState}
-  axiom def_of_stle is
-     fa(st1:State, st2:State) ( stle(st1,st2) = ((obs st1) subset (obs st2)) )
-
   type X   % the type of increments to workset
   op F : State -> Set X -> Set X
   axiom F_is_monotone is 
@@ -58,7 +53,8 @@ spec
  op startp (st:NP_State) :{st':State | p? st'}  
  op finishp (st:P_State) :{st':State | ~(p? st')}
 
- op WS(st:State): Set X = if p? st then (F st (obs st)) -- (obs st) else empty_set
+ op WS(st:State): Set X =  % if p? st then (F st (obs st)) -- (obs st) else empty_set
+    (F st (obs st)) -- (obs st)
 
 % initialState is obviated by startp
 % op initialState(st:P_State | p? st): {st':P_State | WS st' = F st empty_set}
@@ -102,8 +98,8 @@ morphism SBFIW#FixpointIterationWorksetAlgorithm -> problem domain
       post         +-> ,
       p            +-> ,
       State        +-> ,
-      stle         +-> ,
-     monotoneState +-> ,
+%      stle         +-> ,
+%     monotoneState +-> ,
       X            +-> ,
       obs          +-> ,
 %     initialState +-> ,
@@ -125,7 +121,7 @@ morphism SBFIW#FixpointIterationWorksetAlgorithm -> problem domain
          (Delta p q = {})  iff p <= q
    The increments are applied to a semilattice element p by
          (p <= increment p x)  where (x in? WS st)
-
+*)
 
 CSSFITSTheory = 
 spec
@@ -143,12 +139,7 @@ spec
              bot  +-> SLbot}
 %  def SLlt infixl 20 (p:SL)(q:SL): Bool = (p SLle q) && ~(p=q)
 
-   op currentElt: State -> SL                     % observe the current semilattice elt
-%  lift the partial order on the semilattice SL to the state space
-  import translate /Library/Math/PartialOrder#PartialOrder 
-         by {A +-> State, <= +-> stle}   % , monotone +-> monotoneState}
-  axiom def_of_stle is
-     fa(st1:State, st2:State) ( stle(st1,st2) = ((currentElt st1) SLle (currentElt st2)) )
+  op currentElt: State -> SL                     % observe the current semilattice elt
 
   op F : State -> SL -> SL
   axiom F_is_monotone is 
@@ -169,7 +160,7 @@ spec
         => % p SLlt (increment st p x) &&
        (currentElt (increment st x)) SLle SLjoin(currentElt st, F st (currentElt st)))
 
-  op nextState0(st :State)(x:X):State = (increment st x)
+%  op nextState0(st :State)(x:X):State = (increment st x)
 
 (*   functional version
   op increment : State -> SL -> X -> SL      % increment a semilattice element
@@ -201,15 +192,15 @@ spec
  op finishp (st:P_State) :{st':State | ~(p? st')}
 
  op WS(st:State): Set X = 
-     if p? st 
-       then Delta st (F st (currentElt st)) (currentElt st) 
-     else empty_set
+   if p? st 
+     then Delta st (F st (currentElt st)) (currentElt st) 
+   else empty_set
 
 % initialState is obviated by startp
 % op initialState(st:P_State | p? st): {st':P_State | WS st' = F st empty_set}
 
-  op nextState(st:P_State)(x:X):P_State
-     = nextState0 st x
+  % op nextState(st:P_State)(x:X):P_State
+  %    = (increment st x)
 
 % "nondeterministic" select from WS
   op selectWS (st:P_State):{(st',ox): P_State * Option(X) | 
@@ -231,11 +222,10 @@ spec
   op f_iterate (st: P_State): P_State =
     case selectWS st of
       | (st',None) -> st'      % convergence when WorkSet is empty
-      | (st',Some y) -> f_iterate(nextState st' y)   
+      | (st',Some y) -> f_iterate(increment st' y)   
 
   theorem correctness_of_p is
     fa (st:State,st':State)(pre st 
                               && st' = p st 
                               => post st st')
 end-spec
-*)

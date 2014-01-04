@@ -611,6 +611,9 @@ with characteristic maps there are several choices:
              (fn(amap:Map(a,Bool),domelt:a) -> (update amap domelt (true)))
              S
 
+  theorem S2CM_empty_set is [a]
+      (S2CM (empty_set:Set a)) = (empty_map:Map(a,Boolean))
+
   theorem S2CM_CM2S is [a]
       fa(cm:Map(a,Bool)) (S2CM (CM2S cm)) = cm 
 
@@ -642,7 +645,8 @@ with characteristic maps there are several choices:
     fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
 
   theorem CM2S_member is [a]
-    fa(x:a,mp:Map(a,Bool)) ((x in? domain mp) && TMApply(mp,x)) = (x in? CM2S mp)  %% first assumption is needed to make this type check
+    fa(x:a,mp:Map(a,Bool))    %% first assumption is needed to make this type check
+      ((x in? domain mp) && TMApply(mp,x)) = (x in? CM2S mp)  
 
 
 (* ------- M2C: homomorphism from Map to Collection ---------------
