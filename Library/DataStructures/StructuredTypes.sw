@@ -903,7 +903,7 @@ proof isa S2CM_insert
   apply(simp add: S2CM_def)
   apply(subst Set__set_fold2_alt2)
   apply(simp add: S2CM_Obligation_subtype)
-  apply(simp add: Set__idempotent_p_def Map__update_of_update_both)
+  apply(simp add: Function__idempotent_p_def Map__update_of_update_both)
   apply(simp)
 end-proof
 
