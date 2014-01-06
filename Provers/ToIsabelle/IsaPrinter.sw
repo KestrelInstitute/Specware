@@ -1368,6 +1368,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                 c.thy_name)
 	       else spc
     in
+    % let _ = writeLine("6:\n"^printSpec spc) in
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
@@ -1847,6 +1848,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
       | [] -> []
       | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
         Cons(Op(qid1, true, a), normalizeSpecElements rst)
+      | (Import((Translate _, _), _, r_elts, _)) :: rst ->    % Put translated specs in-line
+        normalizeSpecElements r_elts ++ normalizeSpecElements rst
       | x::rst -> x :: normalizeSpecElements rst
 
   op abstractionFn (qid: QualifiedId): QualifiedId =

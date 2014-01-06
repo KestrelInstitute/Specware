@@ -741,7 +741,6 @@ SpecCalc qualifying spec
       | Property (pt, nm, tvs, term, a) ->
         Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
       | Import (sp_tm, spc, els, a) ->  
-        let els = translateSpecElements translators opt_renaming els currentUID? in
 	let (new_tm, spc, els) =
             if spc = base
               then (sp_tm, spc, els)
@@ -769,8 +768,9 @@ SpecCalc qualifying spec
 		                  []
 				  rules
 		in
+                let new_els = translateSpecElements translators opt_renaming els currentUID? in
                 (case rules of
-                   | [] -> 
+                   | [] | new_els = els ->
                      (sp_tm, spc, els)
                    | _ ->
                      let renaming     = (reverse rules,               pos) in
@@ -786,7 +786,7 @@ SpecCalc qualifying spec
                      %%     % let _ = writeLine("Failed to evaluate translate:\n"
                      %%     %                     ^showSCTerm trans_spc_tm) in
                      %%     % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
-                     (trans_spc_tm, spc, els))
+                     (trans_spc_tm, spc, new_els))
               | _ -> 
                 (sp_tm, spc, els)
 	in
