@@ -14,9 +14,10 @@ type StatefulRef     = {mode  : RefMode,
                         group : Int,
                         var   : MSVarName,
                         field : MSFieldName,
-                        % for an Access, tm may be lifted to a new let-bound variable
+                        % for an Access, tm and term may be lifted to new let-bound variables
                         % for an Update, tm is used only for error messages about conflicts
-                        tm    : MSTerm}     
+                        tm    : MSTerm,    
+                        term  : MSTerm}
 type StatefulRefs    = List StatefulRef
 
 type StatefulRefsFromOps = AQualifierMap StatefulRefs
@@ -43,11 +44,12 @@ op printStatefulRef (ref : StatefulRef) : String =
       ^ ", group = " ^ show ref.group 
       ^ ", var = "   ^ ref.var 
       ^ ", field = " ^ ref.field 
-      ^ ", tm = "    ^ printTerm ref.tm 
+      ^ "\n tm = "    ^ printTerm ref.tm 
+      ^ "\n term = "  ^ printTerm ref.term 
       ^ "]" 
 
 op printConflict (c : Conflict) : String = 
-  (printStatefulRef c.1) ^ (printStatefulRef c.2)
+  (printStatefulRef c.1) ^ "\n" ^ (printStatefulRef c.2)
 
 %% ================================================================================
 
@@ -172,7 +174,8 @@ op stateful_refs_in (context : Context, group : Int, term  : MSTerm) : StatefulR
                                    group = group,
                                    var   = var_id,
                                    field = field_id,
-                                   tm    = tm}
+                                   tm    = tm,
+                                   term  = term}
                        in
                        sref |> srefs
 
@@ -187,7 +190,8 @@ op stateful_refs_in (context : Context, group : Int, term  : MSTerm) : StatefulR
                                             group = group,
                                             var   = var_id,
                                             field = field_id,
-                                            tm    = tm}
+                                            tm    = tm,
+                                            term  = term}
                                 in
                                 sref |> srefs)
                              srefs
@@ -206,7 +210,8 @@ op stateful_refs_in (context : Context, group : Int, term  : MSTerm) : StatefulR
                           %% So we revise the references to mention the current term.
                           let lifted_srefs = map (fn ref -> 
                                                     ref << {group = group, 
-                                                            tm    = tm}) 
+                                                            tm    = tm,
+                                                            term  = term}) 
                                                  child_srefs 
                           in
                           srefs ++ lifted_srefs
@@ -221,7 +226,8 @@ op stateful_refs_in (context : Context, group : Int, term  : MSTerm) : StatefulR
                                             group = group,
                                             var   = "<anonymous record>",
                                             field = field_id,
-                                            tm    = tm}
+                                            tm    = tm,
+                                            term  = term}
                                 in
                                 sref |> srefs)
                              srefs
@@ -280,7 +286,8 @@ op stateful_refs_with_contexts (context : Context,
                                         group = n,
                                         var   = var_id, 
                                         field = field_id,
-                                        tm    = tm}
+                                        tm    = tm,
+                                        term  = term}
                     in
                     %% Also collect accesses and updates for the value term.
                     let refs         = stateful_refs_in (context, n, tm) in
@@ -327,7 +334,8 @@ op stateful_refs_with_contexts (context : Context,
                                         group = n,
                                         var   = "<anonymous record>", 
                                         field = field_id, 
-                                        tm    = tm} 
+                                        tm    = tm,
+                                        term  = term} 
                     in
                     %% Also collect accesses and updates for the value term.
                     let refs         = stateful_refs_in (context, n, tm) in
@@ -405,28 +413,53 @@ op deconflict_conflicting_refs (context   : Context,
                                 conflicts : Conflicts,
                                 term      : MSTerm)
  : Option MSTerm =
- %% TODO: if X.f is in a conflict, we currently let bind X.f itself,
- %%       but we need to let bind any terms that are sequential accesses 
- %%       from X.f, e.g. 'aref (x.f.2.g, 2)'
- %%       The simplest solution might be to add post-passes that let-bind
- %%       any acccess from terms such as deconflict_<n>
+ % let _ = 
+ %     case conflicts of
+ %       | [] -> ()
+ %       | _ ->
+ %         let _ = writeLine("========================================") in
+ %         let _ = writeLine("Conflicts for") in
+ %         let _ = writeLine(printTerm term) in
+ %         let _ = app (fn x -> writeLine(printConflict x)) conflicts in
+ %         let _ = writeLine("========================================") in
+ %         ()
+ % in
  let
-   def aux (n, conflicts, substitutions) =
+   def aux (n, conflicts, substitutions, lifted_terms) =
      let
        def lift (access, conflicts) =
-         %% deconflict by binding access above point of execution ambiguity
-         let new_vname    = "deconflict_" ^ show n                 in
-         let vtype        = inferType (context.spc, access.tm)     in
-         let new_v        = (new_vname, vtype)                     in
-         let new_vpat     = VarPat (new_v, dcPos)                  in
-         let new_vtrm     = Var    (new_v, dcPos)                  in
-         let new_bindings = [(new_vpat, access.tm)]                in
-         let new_substs   = (access.tm, new_vtrm) |> substitutions in
-         case aux (n+1, conflicts, new_substs) of
-           | Some new_body ->
-             Some (Let (new_bindings, new_body, dcPos))
-           | _ ->
-             None
+
+         %% deconflict by binding any terms that access an updated value,
+         %% causing the accesses to be evaluated prior to such updates.
+
+         %% access.tm is some (perhaps deeply located) term that caused the conflict
+         %% access.term is the direct child of the term here which is ancestral to access.tm
+
+         %% Because the conflicting updates for access.tm could later be optimized into 
+         %% destructive udpdates of its internal structure, we need to evalaute access.term 
+         %% prior to those updates.  (Otherwise acceess.term would be evaluated incorrectly 
+         %% using the revised internal structure.)
+
+         let term_to_lift = access.term in
+
+         if term_to_lift in? lifted_terms then
+           %% An access term could conflict with multiple update terms if they are
+           %% on alternate branches of an if-expression.  In that case avoid adding 
+           %% a redundant let-binding.
+           aux (n, conflicts, substitutions, lifted_terms)
+         else
+           let new_vname    = "deconflict_" ^ show n                    in
+           let vtype        = inferType (context.spc, term_to_lift)     in
+           let new_v        = (new_vname, vtype)                        in
+           let new_vpat     = VarPat (new_v, dcPos)                     in
+           let new_vtrm     = Var    (new_v, dcPos)                     in
+           let new_bindings = [(new_vpat, term_to_lift)]                in
+           let new_substs   = (term_to_lift, new_vtrm) |> substitutions in
+           case aux (n+1, conflicts, new_substs, term_to_lift :: lifted_terms) of
+             | Some new_body ->
+               Some (Let (new_bindings, new_body, dcPos))
+             | _ ->
+               None
      in
      case conflicts of
        | [] ->
@@ -466,7 +499,7 @@ op deconflict_conflicting_refs (context   : Context,
              lift (ref1, conflicts)
  in
  % let _ = List.app (fn x -> writeLine("Conflict: " ^ printConflict x)) conflicts in
- aux (0, conflicts, [])
+ aux (0, conflicts, [], [])
 
 
 op lift_conflict_bindings (term : MSTerm) : MSTerm =
