@@ -15,7 +15,8 @@ Stateful qualifying spec {
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
 import /Languages/MetaSlang/Transformations/SliceSpec
 import /Languages/MetaSlang/Transformations/RecordMerge
-import /Languages/MetaSlang/Transformations/Setf
+
+import /Languages/MetaSlang/CodeGen/Stateful/Setf
 
 op stateful_q : Qualifier = "Stateful"
 op sPos       : Position  = Internal "StatefulUtilites"

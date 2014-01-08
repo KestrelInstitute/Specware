@@ -7,7 +7,7 @@ IntroduceSetfs qualifying spec {
 %% directory, not the Transformations directory.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-import /Languages/MetaSlang/Transformations/Setf
+import /Languages/MetaSlang/CodeGen/Stateful/Setf
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% If the right hand side of a setf term matches a known updater, use that 

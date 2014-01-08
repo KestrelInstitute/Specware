@@ -1,23 +1,25 @@
 SpecToLisp qualifying spec
 
+import /Languages/MetaSlang/CodeGen/DebuggingSupport
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+
 import /Languages/MetaSlang/Transformations/PatternMatch
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
 import /Languages/MetaSlang/Transformations/LambdaLift
 import /Languages/MetaSlang/Transformations/RemoveCurrying
 import /Languages/MetaSlang/Transformations/MetaTransform
-import /Languages/MetaSlang/CodeGen/DebuggingSupport
-
 import /Languages/MetaSlang/Transformations/DeconflictUpdates
-import /Languages/MetaSlang/CodeGen/StatefulUpdates
-import /Languages/MetaSlang/CodeGen/IntroduceSetfs
-import /Languages/MetaSlang/CodeGen/Globalize
 import /Languages/MetaSlang/Transformations/LiftSequences
 
-import /Languages/Lisp/Lisp
-import /Library/Structures/Data/Maps/SimpleAsSTHarray
+import /Languages/MetaSlang/CodeGen/Stateful/StatefulUpdates
+import /Languages/MetaSlang/CodeGen/Stateful/IntroduceSetfs
+import /Languages/MetaSlang/CodeGen/Stateful/Globalize
 
-import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/MetaSlang/CodeGen/Lisp/SliceForLisp
+
+import /Languages/Lisp/Lisp
+
+import /Library/Structures/Data/Maps/SimpleAsSTHarray
 
 type FileName     = String
 type PackageName  = String

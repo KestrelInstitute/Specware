@@ -1,9 +1,9 @@
 DeconflictUpdates qualifying spec
 {
-
-import /Languages/MetaSlang/Transformations/StatefulUtilities
 import /Languages/MetaSlang/Transformations/LambdaLift        % for lambdaLiftInternal (to finesse some conflcis)
 import /Languages/MetaSlang/Transformations/NormalizeTypes    % for topLevelTypeNameInfo
+
+import /Languages/MetaSlang/CodeGen/Stateful/StatefulUtilities 
 
 type OpTypes         = AQualifierMap MSType
 type MSVarName       = Id

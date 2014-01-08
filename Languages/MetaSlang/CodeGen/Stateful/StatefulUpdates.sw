@@ -7,9 +7,8 @@ StatefulUpdates qualifying spec {
 %% It thus belongs in the CodeGen directory, not Transformations.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-import /Languages/MetaSlang/Transformations/StatefulUtilities
-
-import /Languages/MetaSlang/CodeGen/IntroduceSetfs
+import /Languages/MetaSlang/CodeGen/Stateful/StatefulUtilities
+import /Languages/MetaSlang/CodeGen/Stateful/IntroduceSetfs
 
 type Context = {spc              : Spec,
                 root_ops         : OpNames,

@@ -11,7 +11,9 @@ import /Languages/MetaSlang/Transformations/DeconflictUpdates
 
 import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
-import /Languages/MetaSlang/CodeGen/IntroduceSetfs
+
+import /Languages/MetaSlang/CodeGen/Stateful/IntroduceSetfs
+
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % for addOp of global var
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

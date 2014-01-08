@@ -5,9 +5,12 @@ SliceSpec qualifying spec
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 import /Languages/MetaSlang/Specs/Environment
+
 import /Languages/MetaSlang/CodeGen/LanguageMorphism
+
+import /Languages/MetaSlang/CodeGen/Stateful/Setf
+
 import /Library/Legacy/DataStructures/MergeSort   % to sort names when printing
-import /Languages/MetaSlang/Transformations/Setf
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Misc support
