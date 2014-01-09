@@ -59,6 +59,12 @@ theorem set_insertion_commutativity is [a]
         fa(x: a,y,s) set_insert(x,set_insert(y,s)) =
                   set_insert(y,set_insert(x,s))
 
+% This is a corollary of set_insertion_commutativity that should be
+% safe for rewriting.  This can help prove that functions are
+% foldable so that they can be used in set_fold.
+theorem set_insertion_commutativity_lemma is [a]
+  fa(x: a,y,s) (set_insert(x,set_insert(y,s)) = set_insert(y,set_insert(x,s))) = true
+
 % in addition, set_insert is "idempotent" in the sense that inserting
 % x twice is the same as inserting it once; in fact, each element
 % occurs in a set at most once
@@ -877,6 +883,10 @@ proof Isa Set__set_fold2_alt2
     thus "Set__set_fold c f s = f (Set__set_fold c f s, x)"
       using a1 a2 by (metis Function__idempotent_p_def Set__set_fold2_alt)
   qed
+end-proof
+
+proof Isa Set__set_insertion_commutativity_lemma
+  apply(simp add: Set__set_insertion_commutativity)
 end-proof
 
 end-spec
