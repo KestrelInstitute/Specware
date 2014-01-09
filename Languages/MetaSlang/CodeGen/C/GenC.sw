@@ -22,12 +22,9 @@ import /Languages/C/PrintCSpec                        %  c spec =>  c files
 %%   Languages/SpecCalculus/Semantics/Specware.sw
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op SpecTransform.generateCFiles (ms_spec      : Spec, 
-                                 app_name     : String,
-                                 opt_filename : Option String)
- : Spec =
+op SpecTransform.generateCFiles (ms_spec : Spec, filename : String) : Spec =
  let new_ms_spec = transformSpecTowardsC ms_spec                    in
- let _           = emitCFiles (new_ms_spec, app_name, opt_filename) in
+ let _           = emitCFiles (new_ms_spec, filename) in
  ms_spec
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -301,28 +298,26 @@ op all_ops_and_types (ms_spec : Spec) : OpNames * TypeNames =
  in
  (op_names, type_names)
 
-op SpecTransform.emitCFiles (ms_spec      : Spec,
-                             app_name     : String,
-                             opt_filename : Option String)
+op SpecTransform.emitCFiles (ms_spec  : Spec,
+                             filename : String)
  : Spec =
  let (root_ops, root_types) = default_roots ms_spec in
- newEmitCFiles (ms_spec, app_name, root_ops, root_types, opt_filename)
+ newEmitCFiles (ms_spec, root_ops, root_types, filename)
 
-op SpecTransform.newEmitCFiles (ms_spec      : Spec,
-                                app_name     : String,
-                                root_ops     : OpNames,
-                                root_types   : TypeNames,
-                                opt_filename : Option String)
+op SpecTransform.newEmitCFiles (ms_spec    : Spec,
+                                root_ops   : OpNames,
+                                root_types : TypeNames,
+                                filename   : String)
  : Spec =
  let slice = sliceForCGen (ms_spec, root_ops, root_types) in
  let _ = describeSlice ("EMITTING", slice) in
  let _ = 
-     case generateCSpecFromSlice (slice, app_name) of
+     case generateCSpecFromSlice slice of
        | Some c_spec ->
-         printCSpec (c_spec, app_name, opt_filename) 
+         printCSpec (c_spec, filename) 
        | _ ->
          %% warning might be under control of various flags
-         writeLine ("ERROR: Unable to emit C files for " ^ app_name)
+         writeLine ("ERROR: Unable to emit C files for " ^ filename)
  in             
  ms_spec
 
@@ -331,10 +326,10 @@ op SpecTransform.newEmitCFiles (ms_spec      : Spec,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% For debugging purposes only.  No one calls this.
-op generateCSpec (ms_spec : Spec) (app_name : String) : Option C_Spec =
+op generateCSpec (ms_spec : Spec) : Option C_Spec =
  let ms_spec = SpecTransform.transformSpecTowardsC ms_spec in
  let slice   = defaultSliceForCGen                 ms_spec in
- generateCSpecFromSlice (slice, app_name)
+ generateCSpecFromSlice slice
 
 
 end-spec

@@ -29,7 +29,7 @@ SpecCalc qualifying spec
                  %| "c_old" -> 
                  %      let _ = specToC (subtractSpec spc baseSpec) in
                  %      return (cValue,timeStamp,depUIDs)
-		 | "c" -> evaluateCGen("Foo", (cValue,timeStamp,depUIDs),optFile)  % TODO: add name to shell command options
+		 | "c" -> evaluateCGen((cValue,timeStamp,depUIDs), sub_term, optFile)  % TODO: add name to shell command options
                  | "Java" ->
 		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | "java" ->

@@ -7,15 +7,8 @@ import /Languages/C/CFlatten
 %% Split the C spec into .c and .h portions and print those two files.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 op flattenSpec?:Bool = true % no good reason to retain complicated comma expressions
-op printCSpec (c_spec       : C_Spec,
-               app_name     : String,
-               opt_filename : Option String)
- : () =
- let filename =
-     case opt_filename of
-       | None          -> app_name
-       | Some filename -> filename
- in
+
+op printCSpec (c_spec : C_Spec, filename : String) : () =
  let len = length filename in
  let basename = if (len > 2) && (subFromTo (filename, len-2, len) = ".c") then
                   subFromTo (filename, 0, len-2)
@@ -30,12 +23,12 @@ op printCSpec (c_spec       : C_Spec,
 
   let id_dfn           = ("Patched_PrismId", C_String, C_Const (C_Str basename)) in
 
-  let h_spec           = addHeader    (h_spec, app_name)   in
-  let h_spec           = addTrailer   (h_spec, app_name)   in
+  let h_spec           = addHeader    (h_spec, basename)   in
+  let h_spec           = addTrailer   (h_spec, basename)   in
  %let h_spec           = addConstDefn (h_spec, id_dfn)     in  
 
-  let c_spec           = addHeader    (c_spec, app_name)   in
-  let c_spec           = addTrailer   (c_spec, app_name)   in
+  let c_spec           = addHeader    (c_spec, basename)   in
+  let c_spec           = addTrailer   (c_spec, basename)   in
   let c_spec           = addInclude   (c_spec, h_filename) in
   let c_spec = if flattenSpec? then flattenSpec c_spec else c_spec in
   let _ = printCSpecAsHeaderToFile (h_spec, h_filename) in

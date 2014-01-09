@@ -47,9 +47,7 @@ op renameTypes (ms_spec   : Spec,
 %% Generate a C_Spec from an already transformed MetaSlang spec.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op generateCSpecFromSlice (slice : Slice,
-                           app_name : String)
- : Option C_Spec =
+op generateCSpecFromSlice (slice : Slice) : Option C_Spec =
  let i2l_spec   = generateI2LCodeSpecFilter slice             in
  let new_c_spec = generateC4ImpUnit         (i2l_spec, slice) in
  Some new_c_spec

@@ -72,7 +72,7 @@ spec
   op runMakeFile?    : Bool = true  % make it easier to disable this
   op writeReadyFile? : Bool = true  % make it easier to disable this
 
-  op makeC (app_name    : String)
+  op makeC (name        : String)
            (spec_info   : ValueInfo)
            (spec_uid    : RelativeUID)
            (target_path : List String)
@@ -83,13 +83,13 @@ spec
     {
      print ("\n;;; Generating C " ^ version ^ "\n");
      c_dir <- return (target_path ++ ["Version_" ^ version, "C"]);
-     uid   <- return {path = c_dir ++ [app_name], hashSuffix = None};
+     uid   <- return {path = c_dir ++ [name], hashSuffix = None};
      filename <- return (uidToFullPath uid);
 
      print ("\n;;; Filename = " ^ filename ^ ".c\n");
      return (ensureDirectoriesExist filename);
 
-     evaluateCGen (app_name, spec_info, Some filename);
+     evaluateCGen (spec_info, (UnitId spec_uid, noPos), Some filename);
      if writeMakeFile? then 
              {
               device <- return (Specware.currentDeviceAsString ());
@@ -105,12 +105,12 @@ spec
                              "# ----------------------------------------------\n" ^
                              "\n\n" ^
                              "# the toplevel target extracted from the :make command line:\n" ^
-                             "all : " ^ app_name ^ "\n\n" ^
+                             "all : " ^ name ^ "\n\n" ^
                              "# include the predefined make rules and variable:\n" ^
                              "include " ^ sw_make_file ^ "\n" ^
                              "# dependencies and rule for main target:\n" ^
-                             app_name ^ ": " ^ app_name ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
-                             "	$(CC) -o " ^ app_name ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ app_name ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
+                             name ^ ": " ^ name ^ ".o $(HWSRC) $(USERFILES) $(GCLIB)\n" ^
+                             "	$(CC) -o " ^ name ^ " $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) " ^ name ^ ".o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)\n");
               return (writeStringToFile (s, makefile));
               if runMakeFile? then 
                 {
@@ -140,7 +140,7 @@ spec
                          | _ -> ""
        in
        let ready_file = c_dirname ^ "Ready" in
-       let line1 = "Wrote C code for " ^ app_name ^ ", version " ^ version in
+       let line1 = "Wrote C code for " ^ name ^ ", version " ^ version in
        let line2 = "Using choices : " ^ anyToString status.choices         in
        let text  = line1 ^ "\n" ^ line2                                    in
        let _ = writeStringToFile (text, ready_file) in
