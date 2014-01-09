@@ -1,7 +1,6 @@
 SpecToLisp qualifying spec
 
-% import /Languages/MetaSlang/Transformations/OldSlice  % TODO: deprecated
-  import /Languages/MetaSlang/Transformations/SliceSpec % use this instead
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
 
 op builtInLispOp?   (qid : QualifiedId) : Bool = 
  printPackageId(qid, "") in? SpecToLisp.SuppressGeneratedDefuns

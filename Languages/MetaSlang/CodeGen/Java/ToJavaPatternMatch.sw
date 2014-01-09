@@ -1,6 +1,6 @@
 JGen qualifying spec
 
-import ../../Transformations/PatternMatch
+import /Languages/MetaSlang/CodeGen/Generic/PatternMatch
 
 (* Utilities for translating the output of the pattern-match compiler to Java.
 A case statement gets translated to a TranslationBuiltIn.block which provides a scope for 

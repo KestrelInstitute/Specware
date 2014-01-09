@@ -1,6 +1,6 @@
 ConformOpDecls qualifying spec 
 
- import CodeGenUtilities
+ import /Languages/MetaSlang/CodeGen/CodeGenUtilities
 
  (*
   * conformOpDecls checks whether we have an opdef of the form

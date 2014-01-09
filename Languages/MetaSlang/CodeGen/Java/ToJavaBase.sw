@@ -1,22 +1,21 @@
 JGen qualifying spec
 
-import IJavaCodeGen
-import ToJavaPatternMatch
-
-import /Languages/MetaSlang/CodeGen/CodeGenTransforms
-import /Languages/MetaSlang/Transformations/HigherOrderMatching
-
-import /Languages/MetaSlang/Transformations/LiftPattern
-import /Languages/MetaSlang/CodeGen/UnfoldTypeAliases            
-import /Languages/MetaSlang/CodeGen/Poly2Mono
 import /Languages/MetaSlang/Transformations/DistinctVariable
+import /Languages/MetaSlang/Transformations/LiftPattern
+import /Languages/MetaSlang/Transformations/HigherOrderMatching
 
 import /Languages/MetaSlang/CodeGen/CodeGenUtilities % findMatchingUserType
 
-import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
-import /Languages/Java/JavaPrint % ppFormPars
+import /Languages/MetaSlang/CodeGen/Generic/UnfoldTypeAliases            
+import /Languages/MetaSlang/CodeGen/Generic/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/Generic/Poly2Mono
 
+import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+
+import /Languages/Java/JavaPrint % ppFormPars
 import IJavaCodeGen
+import IJavaCodeGen
+import ToJavaPatternMatch
 import Monad
 
 type ToExprType = JavaBlock * JavaExpr * Nat * Nat

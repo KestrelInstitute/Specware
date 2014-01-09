@@ -1,15 +1,16 @@
 SpecToLisp qualifying spec
 
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
-import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
-import /Languages/MetaSlang/Transformations/PatternMatch
-import /Languages/MetaSlang/Transformations/InstantiateHOFns
-import /Languages/MetaSlang/Transformations/LambdaLift
-import /Languages/MetaSlang/Transformations/RemoveCurrying
 import /Languages/MetaSlang/Transformations/MetaTransform
-import /Languages/MetaSlang/Transformations/DeconflictUpdates
-import /Languages/MetaSlang/Transformations/LiftSequences
+
+import /Languages/MetaSlang/CodeGen/Generic/CodeGenTransforms
+import /Languages/MetaSlang/CodeGen/Generic/PatternMatch
+import /Languages/MetaSlang/CodeGen/Generic/InstantiateHOFns
+import /Languages/MetaSlang/CodeGen/Generic/LambdaLift
+import /Languages/MetaSlang/CodeGen/Generic/RemoveCurrying
+import /Languages/MetaSlang/CodeGen/Generic/DeconflictUpdates
+import /Languages/MetaSlang/CodeGen/Generic/LiftSequences
 
 import /Languages/MetaSlang/CodeGen/Stateful/StatefulUpdates
 import /Languages/MetaSlang/CodeGen/Stateful/IntroduceSetfs

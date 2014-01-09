@@ -2,8 +2,10 @@ SpecCalc qualifying spec
   import UnitId
   import Prove
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
-  import /Languages/MetaSlang/Transformations/InstantiateHOFns
-  import /Languages/MetaSlang/Transformations/LambdaLift
+
+  import /Languages/MetaSlang/CodeGen/Generic/InstantiateHOFns
+  import /Languages/MetaSlang/CodeGen/Generic/LambdaLift
+
   import UnitId/Utilities                                    % for uidToString, if used...
 
  def SpecCalc.evaluateExpand (term) pos = {

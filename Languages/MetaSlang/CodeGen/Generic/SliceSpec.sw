@@ -6,7 +6,7 @@ SliceSpec qualifying spec
 
 import /Languages/MetaSlang/Specs/Environment
 
-import /Languages/MetaSlang/CodeGen/LanguageMorphism
+import /Languages/MetaSlang/CodeGen/Generic/LanguageMorphism
 
 import /Languages/MetaSlang/CodeGen/Stateful/Setf
 

@@ -1,11 +1,15 @@
 Prover qualifying spec
- import ../Specs/Environment
- import ../Specs/SubtractSpec
- import CurryUtils
- import ArityNormalize
- import Simplify
- import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
- import /Languages/SpecCalculus/Semantics/Evaluate/UnitId
+
+import ../Specs/Environment
+import ../Specs/SubtractSpec
+
+import /Languages/MetaSlang/Transformations/Simplify
+import /Languages/MetaSlang/Transformations/CurryUtils
+
+import /Languages/MetaSlang/CodeGen/Generic/ArityNormalize
+
+import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+import /Languages/SpecCalculus/Semantics/Evaluate/UnitId
 
 
   op proverNatType: () -> MSType

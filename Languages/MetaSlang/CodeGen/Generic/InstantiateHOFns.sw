@@ -1,8 +1,8 @@
 InstantiateHO qualifying
 spec
- import Simplify
- import CurryUtils
- import ../Specs/AnalyzeRecursion
+ import /Languages/MetaSlang/Transformations/Simplify
+ import /Languages/MetaSlang/Transformations/CurryUtils
+ import /Languages/MetaSlang/Specs/AnalyzeRecursion
  import /Languages/MetaSlang/Specs/MSTerm
 
 % op CodeGenTransforms.stripSubtypesAndBaseDefs (spc : Spec) (typ : MSType) : MSType  % in CodeGenTransforms

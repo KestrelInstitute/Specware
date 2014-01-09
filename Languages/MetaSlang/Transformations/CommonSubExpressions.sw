@@ -1,6 +1,7 @@
 CSE qualifying
 spec
-  import Simplify, CurryUtils
+ import /Languages/MetaSlang/Transformations/Simplify
+ import /Languages/MetaSlang/Transformations/CurryUtils
 
 (*
 Look for common terms bottom up. 

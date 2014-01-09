@@ -4,10 +4,12 @@
 
 I2LToC qualifying spec 
 
-import /Languages/MetaSlang/Transformations/SliceSpec
-import /Languages/MetaSlang/CodeGen/LanguageMorphism
+import /Languages/MetaSlang/CodeGen/Generic/LanguageMorphism
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
+
 import /Languages/I2L/I2L
 import /Languages/I2L/CodeGen/C/CGenOptions
+
 import /Languages/C/C
 import /Languages/C/CUtils
 

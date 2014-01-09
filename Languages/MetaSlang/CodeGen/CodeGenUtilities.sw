@@ -1,7 +1,9 @@
 CodeGenUtilities qualifying spec
+
 import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Specs/Environment
-import /Languages/MetaSlang/CodeGen/LanguageMorphism
+
+import /Languages/MetaSlang/CodeGen/Generic/LanguageMorphism
 
 % this is used to distinguish "real" product from "record-products"
  op productfieldsAreNumbered: [a] List (String * a) -> Bool

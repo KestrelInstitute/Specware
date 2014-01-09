@@ -22,7 +22,7 @@
 
 RemoveCurrying qualifying spec
 
-import CurryUtils
+import /Languages/MetaSlang/Transformations/CurryUtils
 import /Languages/SpecCalculus/AbstractSyntax/CheckSpec
 
 op rcPos : Position = Internal "removeCurrying"

@@ -1,5 +1,5 @@
 CurryUtils qualifying spec
-  import ../Specs/Environment
+  import /Languages/MetaSlang/Specs/Environment
 
   op  curriedType?: Spec * MSType -> Bool
   def curriedType?(sp,ty) = curryShapeNum(sp,ty) > 1

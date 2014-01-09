@@ -1,12 +1,15 @@
 TypeObligations qualifying
 spec 
  import /Languages/MetaSlang/Transformations/CurryUtils
- import /Languages/MetaSlang/Transformations/PatternMatch
  import /Languages/MetaSlang/Transformations/Simplify
- import /Languages/MetaSlang/Transformations/LambdaLift
  import /Languages/MetaSlang/Transformations/ProverPattern
- import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/Transformations/RenameBound
+
+ import /Languages/MetaSlang/CodeGen/Generic/InstantiateHOFns
+
+ import /Languages/MetaSlang/CodeGen/Generic/PatternMatch
+ import /Languages/MetaSlang/CodeGen/Generic/LambdaLift
+
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/MergeSpecs
 

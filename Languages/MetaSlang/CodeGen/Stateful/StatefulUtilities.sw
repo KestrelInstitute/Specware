@@ -13,8 +13,8 @@ Stateful qualifying spec {
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
-import /Languages/MetaSlang/Transformations/SliceSpec
-import /Languages/MetaSlang/Transformations/RecordMerge
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
+import /Languages/MetaSlang/CodeGen/Generic/RecordMerge
 
 import /Languages/MetaSlang/CodeGen/Stateful/Setf
 

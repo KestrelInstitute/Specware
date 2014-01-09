@@ -2,8 +2,8 @@ AddParameter qualifying
 spec
 import /Languages/MetaSlang/Specs/AnalyzeRecursion
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
-import EtaExpansion
-import ArityNormalize
+import /Languages/MetaSlang/CodeGen/Generic/EtaExpansion
+import /Languages/MetaSlang/CodeGen/Generic/ArityNormalize
 
 op addIsabelleProofs: Bool = true
 

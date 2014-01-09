@@ -1,5 +1,5 @@
 Transform qualifying spec
- import ../Specs/Environment
+ import /Languages/MetaSlang/Specs/Environment
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -6,9 +6,12 @@ import /Library/Legacy/DataStructures/ListPair
 import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Specs/Printer
 import /Languages/MetaSlang/Specs/Environment
-import /Languages/MetaSlang/CodeGen/LanguageMorphism
-import /Languages/MetaSlang/Transformations/SliceSpec
+
 import /Languages/MetaSlang/Transformations/NormalizeTypes
+
+import /Languages/MetaSlang/CodeGen/Generic/LanguageMorphism
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
+
 import /Languages/I2L/I2L
 import /Languages/C/CUtils
 

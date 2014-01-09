@@ -4,13 +4,14 @@ Globalize qualifying spec
 %% Globalize changes updates to be stateful, hence belongs in the CodeGen directory.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-import /Languages/MetaSlang/Transformations/SliceSpec
-import /Languages/MetaSlang/Transformations/RecordMerge
-import /Languages/MetaSlang/Transformations/CommonSubExpressions
-import /Languages/MetaSlang/Transformations/DeconflictUpdates
-
-import /Languages/MetaSlang/CodeGen/SubstBaseSpecs  
 import /Languages/MetaSlang/CodeGen/DebuggingSupport
+
+import /Languages/MetaSlang/Transformations/CommonSubExpressions
+
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
+import /Languages/MetaSlang/CodeGen/Generic/RecordMerge
+import /Languages/MetaSlang/CodeGen/Generic/DeconflictUpdates
+import /Languages/MetaSlang/CodeGen/Generic/SubstBaseSpecs  
 
 import /Languages/MetaSlang/CodeGen/Stateful/IntroduceSetfs
 

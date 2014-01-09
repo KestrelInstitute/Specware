@@ -3,7 +3,7 @@ PosSpecToSpec qualifying spec
 
  import  ../Environment
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
- import ../../Transformations/NormalizeTypes
+ import /Languages/MetaSlang/Transformations/NormalizeTypes
 
  op correctEqualityType (spc: Spec, eq_or_neq: MSFun, ty: MSType, eq_args: MSTerm, pos1: Position)
      : MSTerm =

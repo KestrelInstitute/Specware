@@ -14,9 +14,9 @@
  **)
 
 LambdaLift qualifying spec
- import ArityNormalize
+ import /Languages/MetaSlang/Transformations/Simplify
+ import /Languages/MetaSlang/CodeGen/Generic/ArityNormalize
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
- import Simplify
 
  type LiftInfo = {ident    : String,     % Name of original identifier for lambda lifted term.
 		  name     : String,     % Name of lambda-lifted function.

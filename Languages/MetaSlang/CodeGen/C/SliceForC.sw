@@ -2,7 +2,8 @@ CGen qualifying spec
 
 % import /Languages/MetaSlang/CodeGen/C/SpecToCSpec
 import /Languages/MetaSlang/Transformations/Pragma
-import /Languages/MetaSlang/Transformations/SliceSpec
+
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
 
 op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
  case q of

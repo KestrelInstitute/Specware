@@ -1,6 +1,6 @@
 Haskell qualifying spec
 
-import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+ import /Languages/MetaSlang/CodeGen/Generic/CodeGenTransforms
 
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature             % SCTerm
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % adjustElementOrder

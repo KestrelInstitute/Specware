@@ -1,7 +1,7 @@
 AddMissingromBase qualifying spec
 
 import /Languages/MetaSlang/Specs/StandardSpec
-import TypeOpInfos
+import /Languages/MetaSlang/CodeGen/Generic/TypeOpInfos
 
  (**
  * add the ops and type definitions that are defined in the bspc and used in the

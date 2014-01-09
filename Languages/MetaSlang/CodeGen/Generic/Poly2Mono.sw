@@ -2,7 +2,7 @@ Poly2Mono qualifying spec
 
  import /Languages/MetaSlang/Specs/StandardSpec
  import /Languages/MetaSlang/Specs/Environment
- import TypeOpInfos
+ import /Languages/MetaSlang/CodeGen/Generic/TypeOpInfos
  
  op InstantiateHO.typeMatch (t1 : MSType, t2 : MSType, spc : Spec) : TyVarSubst 
  op Java.typeId: MSType -> Id

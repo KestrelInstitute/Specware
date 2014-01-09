@@ -1,6 +1,7 @@
 MetaTransform qualifying
 spec
-import CurryUtils, ../AbstractSyntax/PathTerm
+import /Languages/MetaSlang/Transformations/CurryUtils
+import ../AbstractSyntax/PathTerm
 
 type MetaTransform.TypedFun =
    | TFn (AnnTypeValue -> TypedFun)

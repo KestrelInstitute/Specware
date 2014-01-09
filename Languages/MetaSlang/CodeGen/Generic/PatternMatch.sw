@@ -53,8 +53,8 @@
  *)
 
 PatternMatch qualifying spec
- import ArityNormalize
- import Simplify
+ import /Languages/MetaSlang/Transformations/Simplify
+ import /Languages/MetaSlang/CodeGen/Generic/ArityNormalize
 
  type PMRules = List PMRule                    % NOTE: not the same as MSRules (aka Match)
  type PMRule  = MSPatterns * MSTerm * MSTerm   % Note: not the same as MSRule, has list of patterns

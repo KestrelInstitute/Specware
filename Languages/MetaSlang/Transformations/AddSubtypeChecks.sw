@@ -1,6 +1,8 @@
 AddChecks qualifying
 spec
-import Simplify, SubtypeElimination, RuntimeSemanticError, CurryUtils
+import Simplify, SubtypeElimination, RuntimeSemanticError
+
+import /Languages/MetaSlang/Transformations/CurryUtils
 
 op addSubtypeChecksOnResult?: Bool = true
 op addSubtypeChecksOnArgs?: Bool = true

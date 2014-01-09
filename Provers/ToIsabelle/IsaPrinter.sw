@@ -1,26 +1,25 @@
 IsaTermPrinter qualifying spec
 
- %import /Languages/SpecCalculus/Semantics/Bootstrap
- import /Languages/MetaSlang/Transformations/TheoryMorphism
- import /Languages/MetaSlang/Transformations/NormalizeTypes
- %import /Languages/MetaSlang/Specs/Utilities
- %import /Library/PrettyPrinter/WadlerLindig
  import /Library/PrettyPrinter/BjornerEspinosa
  import /Library/Legacy/DataStructures/ListUtilities
+
  import /Languages/SpecCalculus/AbstractSyntax/Types                % including SCTerm
  import /Languages/SpecCalculus/Semantics/Value
- import /Languages/MetaSlang/Transformations/SubtypeElimination
- import /Languages/MetaSlang/Transformations/EmptyTypesToSubtypes
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+
+ import /Languages/MetaSlang/AbstractSyntax/PathTerm
  import /Languages/MetaSlang/Specs/TypeObligations
  import /Languages/MetaSlang/Specs/Environment
+
+ import /Languages/MetaSlang/Transformations/TheoryMorphism
+ import /Languages/MetaSlang/Transformations/NormalizeTypes
+ import /Languages/MetaSlang/Transformations/SubtypeElimination
+ import /Languages/MetaSlang/Transformations/EmptyTypesToSubtypes
  import /Languages/MetaSlang/Transformations/Coercions
- import /Languages/MetaSlang/Transformations/LambdaLift
-% import /Languages/MetaSlang/Transformations/InstantiateHOFns
- import /Languages/MetaSlang/AbstractSyntax/PathTerm
  import /Languages/MetaSlang/Transformations/RewriteRules
-% import /Languages/MetaSlang/Transformations/ArityNormalize
- import /Languages/MetaSlang/Transformations/NormalizeTopLevelLambdas
+
+ import /Languages/MetaSlang/CodeGen/Generic/LambdaLift
+ import /Languages/MetaSlang/CodeGen/Generic/NormalizeTopLevelLambdas
 
  op addObligations?: Bool = true
  op lambdaLift?: Bool     = true

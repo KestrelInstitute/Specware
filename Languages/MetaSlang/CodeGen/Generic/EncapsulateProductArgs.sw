@@ -1,6 +1,7 @@
 CodeGen qualifying spec
 
-import CodeGenUtilities
+import /Languages/MetaSlang/CodeGen/CodeGenUtilities
+
 
 (*
  * getExpandedProductDomain returns the expansion of the domain type of an op 
