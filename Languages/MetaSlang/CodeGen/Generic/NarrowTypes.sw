@@ -189,17 +189,17 @@ op type_with_smallest_range (n : MSTerm, minimal_types : MSTypes, spc : Spec) : 
  case tight_types of
    | [] ->
      let t1 :: t2 = minimal_types in
-     let _ = writeLine(";;; Choosing arbitrary new type for " ^ printTerm n ^ " : " ^ printType t1 ^
-                         ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2))
-     in
+     % let _ = writeLine(";;; Choosing arbitrary new type for " ^ printTerm n ^ " : " ^ printType t1 ^
+     %                    ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2))
+     % in
      t1
    | [t1] ->
      % let _ = writeLine(";;; Choosing minimal type with narrowest range for " ^ printTerm n ^ " : " ^ printType t1) in
      t1
    | t1 :: t2 ->
-     let _ = writeLine(";;; Choosing arbitrary type with narrow range for " ^ printTerm n ^ " : " ^ printType t1 ^ 
-                         ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2)) 
-     in
+     % let _ = writeLine(";;; Choosing arbitrary type with narrow range for " ^ printTerm n ^ " : " ^ printType t1 ^ 
+     %                    ", ignoring types: " ^ (foldl (fn (s, t3) -> s ^ " " ^ printType t3) "" t2)) 
+     % in
      t1
      
 
