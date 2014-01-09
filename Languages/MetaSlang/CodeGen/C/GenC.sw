@@ -111,10 +111,30 @@ op SpecTransform.newEmitCFiles (ms_spec    : Spec,
 %% Generate a C spec from a MetaSlang spec
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% For debugging purposes only.  No one calls this.
-op generateCSpec (ms_spec : Spec) : Option C_Spec =
- let ms_spec = SpecTransform.transformSpecTowardsC ms_spec in
- let slice   = defaultSliceForCGen                 ms_spec in
- generateCSpecFromSlice slice
+op SpecTransform.genC (original_ms_spec    : Spec,
+                       root_op_names       : OpNames, 
+                       root_op_names_b     : OpNames, 
+                       stateful_type_names : TypeNames,
+                       global_type_name    : TypeName,
+                       opt_global_var_id   : Option Id,
+                       opt_ginit           : Option OpName,
+                       filename            : String,
+                       tracing?            : Bool)
+ : Spec =
+ let ms_spec       = SpecTransform.transformSpecTowardsC original_ms_spec in
+ let stateful_spec = SpecTransform.makeExecutionStateful (ms_spec,
+                                                          root_op_names,
+                                                          stateful_type_names,
+                                                          global_type_name,
+                                                          opt_global_var_id,
+                                                          opt_ginit,
+                                                          tracing?)
+ in
+ let _             = SpecTransform.newEmitCFiles         (stateful_spec, 
+                                                          root_op_names_b, 
+                                                          [],
+                                                          filename) 
+ in
+ original_ms_spec
 
 end-spec

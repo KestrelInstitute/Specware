@@ -168,8 +168,8 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  %% ==========================================================================================
 
  let ms_spec = if options.lambda_lift? then
-                 let ms_spec = SpecTransform.lambdaLift  ms_spec true in 
-                 let _  = showSpecIfVerbose "lambdaLift" ms_spec      in
+                 let ms_spec = SpecTransform.lambdaLift  ms_spec false in % don't simulate closures
+                 let _  = showSpecIfVerbose "lambdaLift" ms_spec       in
                  ms_spec
                else
                  ms_spec
@@ -191,6 +191,7 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
                else
                  ms_spec
  in
+
  %% ==========================================================================================
  %%  (9) Convert Lets of Wild Patterns to Seq's
  %%      'let _ = t1 in t2'   =>  '(t1;t2)'
@@ -278,8 +279,8 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  %%      Retype terms such as (0 : Nat) to (0 : Nat1)
  %% ==========================================================================================
 
- let ms_spec = SpecTransform.narrowTypes  ms_spec in 
- let _  = showSpecIfVerbose "narrowTypes" ms_spec in
+% let ms_spec = SpecTransform.narrowTypes  ms_spec in 
+% let _  = showSpecIfVerbose "narrowTypes" ms_spec in
 
  %% ==========================================================================================
  %% (17) Lift Sequences
