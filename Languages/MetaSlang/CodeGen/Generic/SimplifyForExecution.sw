@@ -21,7 +21,6 @@ import /Languages/MetaSlang/CodeGen/Generic/AddTypeConstructors         % (15)  
 import /Languages/MetaSlang/CodeGen/Generic/NarrowTypes                 % (16) Lisp C Java  narrowTypes
 import /Languages/MetaSlang/CodeGen/Generic/LiftSequences               % (17)      C Java  liftSequences
 import /Languages/MetaSlang/CodeGen/Generic/RemoveGeneratedSuffixes     % (18) Lisp C Java  removeGeneratedSuffixes
-
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % (19) Lisp C Java  adjustElementOrder
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
