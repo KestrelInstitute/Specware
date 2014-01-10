@@ -10,7 +10,7 @@
 spec
   import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
 
-%TODO move to the bool library?
+%TODO move this to /Library/Base/Boolean.sw ?
 % This can be used to prove an equality of booleans by proving the forward and backward implications.
 % In Isabelle: apply(rule bool_iff)
  theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
