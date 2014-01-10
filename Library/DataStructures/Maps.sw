@@ -193,8 +193,19 @@ Maps = Map qualifying spec
 
   theorem TMApply_over_update is [a,b]
     fa(m: Map(a,b), x: a, y: b, z: a)
-    z in? domain m =>
+    z in? domain m => 
     (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
+
+%%This version has a weaker hypothesis than TMApply_over_update.  TODO: Transition to using just this version?
+  theorem TMApply_over_update2 is [a,b]
+    fa(m: Map(a,b), x: a, y: b, z: a)
+    ((z in? domain m) || (z = x)) =>
+    (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
+
+  %% Special case of TMApply_over_update for z=x (has no applicability conditions that must be proven).
+  theorem TMApply_of_update_same is [a,b]
+    fa(m: Map(a,b), x: a, y: b, z: a)
+      TMApply(update m x y, x) = y
 
 % This is useful when refining to the single-threaded MapsAsVectors
 % TODO: could this just be the identity function (later, in the refinements, it might have this definition in terms of set_fold)?
@@ -554,6 +565,29 @@ proof Isa Map__copyMap_Obligation_subtype0
   apply(auto simp add: Set__Set_P_def Set__forall_p_in_self)
 end-proof
 
+proof Isa Map__TMApply_of_update_same_Obligation_subtype
+  apply(simp add: Map__domain_update2 Set__set_insertion)
+end-proof
+
+proof Isa Map__TMApply_of_update_same
+  apply(subst Map__TMApply_becomes_apply)
+  apply(simp add: Map__domain_update2 Set__set_insertion)
+  apply(simp add: Map__update)
+end-proof
+
+proof Isa Map__TMApply_over_update2_Obligation_subtype
+  apply(auto simp add: Map__TMApply_becomes_apply Map__domain_update2 Set__set_insertion Map__update)
+end-proof
+
+proof Isa Map__TMApply_over_update2_Obligation_subtype0
+  apply(auto simp add: Map__TMApply_becomes_apply Map__domain_update2 Set__set_insertion Map__update)
+end-proof
+
+proof Isa Map__TMApply_over_update2
+  apply(auto simp add: Map__TMApply_becomes_apply Map__domain_update2 Set__set_insertion Map__update)
+end-proof
+
+
 end-spec
 
 
@@ -763,7 +797,7 @@ proof isa mapFrom_if_shadow
 end-proof
 
 proof isa mapFrom_identity_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa mapFrom_identity
@@ -783,27 +817,27 @@ end-proof
 % end-proof
 
 proof isa map_compose_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_compose_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa map_project1_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_project2_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project1_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project1_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project1
@@ -811,11 +845,11 @@ proof isa TMApply_map_project1
 end-proof
 
 proof isa TMApply_map_project2_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project2_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project2
@@ -827,7 +861,7 @@ proof isa update_map_project1_Obligation_subtype
 end-proof
 
 proof isa update_map_project1_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project1
@@ -839,7 +873,7 @@ proof isa update_map_project2_Obligation_subtype
 end-proof
 
 proof isa update_map_project2_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project2
@@ -847,7 +881,7 @@ proof isa update_map_project2
 end-proof
 
 proof isa combine_map_project1_map_project2_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa combine_map_project1_map_project2
@@ -855,7 +889,7 @@ proof isa combine_map_project1_map_project2
 end-proof
 
 proof isa combine_map_project1_map_project2_cond_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa combine_map_project1_map_project2_cond
@@ -863,7 +897,7 @@ proof isa combine_map_project1_map_project2_cond
 end-proof
 
 proof isa combine_map_project1_map_project2_simplify_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa combine_map_project1_map_project2_simplify
@@ -880,35 +914,35 @@ end-proof
 
 
 proof isa map_compose3_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_compose3_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa map_compose3_Obligation_subtype1
-  sorry
+  oops
 end-proof
 
 proof isa map_project31_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_project32_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_project33_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project31_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project31_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project31
@@ -916,11 +950,11 @@ proof isa TMApply_map_project31
 end-proof
 
 proof isa TMApply_map_project32_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project32_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project32
@@ -928,11 +962,11 @@ proof isa TMApply_map_project32
 end-proof
 
 proof isa TMApply_map_project33_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project33_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa TMApply_map_project33
@@ -944,11 +978,11 @@ proof isa update_map_project31_Obligation_subtype
 end-proof
 
 proof isa update_map_project31_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project31_Obligation_subtype1
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project31
@@ -960,7 +994,7 @@ proof isa update_map_project32_Obligation_subtype
 end-proof
 
 proof isa update_map_project32_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project32_Obligation_subtype1
@@ -976,11 +1010,11 @@ proof isa update_map_project33_Obligation_subtype
 end-proof
 
 proof isa update_map_project33_Obligation_subtype0
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project33_Obligation_subtype1
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project33
@@ -996,7 +1030,7 @@ proof isa combine_map_project3
 end-proof
 
 proof isa map_compose3_project31_simplify_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_compose3_project31_simplify
@@ -1004,7 +1038,7 @@ proof isa map_compose3_project31_simplify
 end-proof
 
 proof isa map_compose3_project32_simplify_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_compose3_project32_simplify
@@ -1012,7 +1046,7 @@ proof isa map_compose3_project32_simplify
 end-proof
 
 proof isa map_compose3_project33_simplify_Obligation_subtype
-  sorry
+  oops
 end-proof
 
 proof isa map_compose3_project33_simplify
