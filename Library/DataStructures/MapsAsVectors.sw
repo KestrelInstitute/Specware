@@ -1,5 +1,6 @@
-% TODO Does the code for the MapVec functions come from
+% TODO Does the code for the MapVec functions come from:
 % Specware/Library/Structures/Data/Maps/Handwritten/Lisp/MapAsVector.lisp?
+% TODO compare to /Library/Structures/Data/Maps/MapVec.sw
 
 %TODO Does this only work for maps where the domain is Nat?
 
