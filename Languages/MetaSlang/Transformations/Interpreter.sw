@@ -1006,7 +1006,7 @@ spec
       | Fun (Embed (id,b),srt,pos) -> Constant(id,srt)
       | _ -> Unevaluated term
 
- op dontReduceQualifiers: Ids = ["C", "New"]
+ op dontReduceQualifiers: Ids = ["C", "New", "System"]
  op dontReduceQIds: QualifiedIds = [mkUnQualifiedId "uintOfMathInt2"]
 
  op dontReduceTerm?(tm: MSTerm): Bool =
