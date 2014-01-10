@@ -140,17 +140,6 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
     else
       q ^ "." ^ id
 
-  def show_status status =
-    case status of
-      | Primitive   -> "primitive"
-      | API         -> "API"
-      | Handwritten -> "handwritten"
-      | Macro       -> "macro"
-      | Defined     -> "defined"
-      | Undefined   -> "undefined"
-      | Missing     -> "missing"
-      | Misc msg    -> msg
-
  in
  let expand_types? = false in          % todo: make this arg to transform
  let constructors  = []    in          % ??
@@ -187,7 +176,8 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                     let _ = if status in? [API, Macro, Primitive] then 
                               ()
                             else
-                              writeLine("Ignoring " ^ show_status status ^ " op " ^ show name)
+                              %% let _ = writeLine("SpecsToI2L: Ignoring " ^ showStatus status ^ " " ^ showCohort cohort ^ " op " ^ show name) in
+                              ()
                     in
                     defs
                 | _ -> defs)
@@ -215,7 +205,8 @@ op generateI2LCodeSpecFilter (slice : Slice) : I_ImpUnit =
                     let _ = if status in? [API, Macro, Primitive] then 
                               ()
                             else
-                              writeLine("Ignoring " ^ show_status status ^ " type " ^ show name)
+                              %% let _ = writeLine("SpecsToI2L: Ignoring " ^ showStatus status ^ " " ^ showCohort cohort ^ " type " ^ show name) in
+                              ()
                     in
                     defs
                 | _ -> defs)

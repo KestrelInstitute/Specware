@@ -1168,7 +1168,7 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
      %% base_ops should include the transitive closure of references from them
 
      %% process just those ops that might be invoked at runtime
-     let ops_in_second_slice = opsInImplementation second_slice in
+     let ops_in_second_slice = opsInImplementation second_slice ++ opsInAssertions second_slice in
 
      % new ops are the base ops plus ops reached in second slice
 
@@ -1199,7 +1199,7 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
 
      %% base_types should include the transitive closure of references from them
      %% Process just the types needed for ops that might be invoked at runtime.
-     let types_in_second_slice = typesInSlice second_slice in
+     let types_in_second_slice = typesInImplementation second_slice ++ typesInAssertions second_slice in
 
      % new types are the base types plus types reached in second slice
 
@@ -1226,22 +1226,32 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
                 | Type (Qualified(q,id), _) ->
                   (case findAQualifierMap (new_types, q, id) of
                      | Some _ -> new_elts ++ [elt]
-                     | _ -> new_elts)
+                     | _ -> 
+                       let _ = writeLine("Dropping element Type: " ^ q ^ "." ^ id) in
+                       new_elts)
                 | TypeDef (Qualified(q,id), _) ->
                   (case findAQualifierMap (new_types, q, id) of
                      | Some _ -> new_elts ++ [elt]
-                     | _ -> new_elts)
+                     | _ -> 
+                       let _ = writeLine("Dropping element TypeDef: " ^ q ^ "." ^ id) in
+                       new_elts)
                 | Op (Qualified(q,id), _, _) ->
                   (case findAQualifierMap (new_ops, q, id) of
                      | Some _ -> new_elts ++ [elt]
-                     | _ -> new_elts)
+                     | _ -> 
+                       let _ = writeLine("Dropping element Op: " ^ q ^ "." ^ id) in
+                       new_elts)
                 | OpDef (Qualified(q,id), _, _, _) ->
                   (case findAQualifierMap (new_ops, q, id) of
                      | Some _ -> new_elts ++ [elt]
-                     | _ -> new_elts)
+                     | _ -> 
+                       let _ = writeLine("Dropping element OpDef: " ^ q ^ "." ^ id) in
+                       new_elts)
                 | Pragma   _ -> new_elts ++ [elt]  % used by later code generators
                 | Property _ -> new_elts ++ [elt]  % used by later code generators
-                | _ -> new_elts)
+                | _ -> 
+                  let _ = writeLine("Dropping unknown element: " ^ anyToString elt) in
+                  new_elts)
             []
             elements
  in

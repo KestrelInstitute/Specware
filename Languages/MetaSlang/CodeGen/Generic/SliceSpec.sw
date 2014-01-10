@@ -42,6 +42,14 @@ type Cohort           = | Interface      % the desired interface or API
                         | Context        % used in relevant context, could define monitors
                         | Ignored        
 
+op showCohort (cohort : Cohort) : String =
+ case cohort of
+   | Interface      -> "Interface"
+   | Implementation -> "Implementation"
+   | Assertion      -> "Assertion"
+   | Context        -> "Context"
+   | Ignored        -> "Ignored"
+
 type Status           = | Primitive 
                         | API 
                         | Handwritten 
@@ -50,6 +58,17 @@ type Status           = | Primitive
                         | Undefined 
                         | Missing 
                         | Misc String
+
+op showStatus (status : Status) : String =
+ case status of
+   | Primitive   -> "primitive"
+   | API         -> "API"
+   | Handwritten -> "handwritten"
+   | Macro       -> "macro"
+   | Defined     -> "defined"
+   | Undefined   -> "undefined"
+   | Missing     -> "missing"
+   | Misc msg    -> msg
 
 type TheoremNames     = List TheoremName
 type TheoremName      = PropertyName
@@ -176,6 +195,18 @@ op opsInImplementation (slice : Slice) : OpNames =
        []
        slice.resolved_refs
 
+op opsInAssertions (slice : Slice) : OpNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Op oref -> 
+              (case oref.cohort of
+                 | Assertion      -> oref.name |> names
+                   % Interface, Implementation, Context,Ignored        
+                 | _ -> names)
+            | _ -> names)
+       []
+       slice.resolved_refs
+
 op opsInGroup (group : Group) : OpNames =
  foldl (fn (names, ref) ->
           case ref of
@@ -201,6 +232,18 @@ op typesInImplementation (slice : Slice) : TypeNames =
                  | Interface      -> tref.name |> names
                  | Implementation -> tref.name |> names
                    % Assertion, Context,Ignored        
+                 | _ -> names)
+            | _ -> names)
+       []
+       slice.resolved_refs
+
+op typesInAssertions (slice : Slice) : TypeNames =
+ foldl (fn (names, ref) ->
+          case ref of
+            | Type tref -> 
+              (case tref.cohort of
+                 | Assertion      -> tref.name |> names
+                   % Interface, Implementation, Context,Ignored        
                  | _ -> names)
             | _ -> names)
        []
