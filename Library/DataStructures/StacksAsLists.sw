@@ -1,7 +1,5 @@
 %% TODO This spec is incompatible with Stacks.sw (name clashes, e.g., for push), but Specware allows both to be imported!
-%% TODO Try this (maybe after we give a qualifier to Stacks):
-%% StacksAsLists = StacksAsLists qualifying spec
-StacksAsLists = spec
+StacksAsLists = StacksAsLists qualifying spec
 
 %% This spec is a simple refinement of stacks as lists.  Note that the
 %% Stacks spec constrains stacks to be isomorphic to lists.  Here we
@@ -88,33 +86,33 @@ proof isa stackToList_Obligation_subtype
 end-proof
 
 proof isa stackToList_equal_empty
-  apply(simp add: stackToList_def empty_stack_def)
+  apply(simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def)
 end-proof
 
 proof isa stackToList_injective
-  apply(simp add: stackToList_def)
+  apply(simp add: StacksAsLists__stackToList_def)
 end-proof
 
 proof isa stackToList_injective2
-  apply(simp add: stackToList_def)
+  apply(simp add: StacksAsLists__stackToList_def)
 end-proof
 
 proof isa stackToList_surjective
-  apply(simp add: stackToList_def)
+  apply(simp add: StacksAsLists__stackToList_def)
 end-proof
 
 proof isa stackToList_surjective2
-  apply(simp add: stackToList_def)
+  apply(simp add: StacksAsLists__stackToList_def)
 end-proof
 
 proof isa stackToList_bijective
-  apply(simp add: stackToList_def Fun.bij_def)
+  apply(simp add: StacksAsLists__stackToList_def Fun.bij_def)
 end-proof
 
 proof isa stackToList_listToStack
-  apply(simp add: listToStack_def)
+  apply(simp add: StacksAsLists__listToStack_def)
   apply(rule Function__f_inverse_apply)
-  by (rule stackToList_bijective)
+  by (rule StacksAsLists__stackToList_bijective)
 end-proof
 
 
@@ -124,6 +122,7 @@ end-spec
 
 %% TODO: Try this once Stacks gets a qualifier:
 %% M = morphism Stacks -> StacksAsLists {Stack +-> StacksAsLists.Stack}
+% Wow, Specware seems to notice the qualifier change here, so there is a renaming here despite the empty {} :
 M = morphism Stacks -> StacksAsLists {}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,58 +130,58 @@ M = morphism Stacks -> StacksAsLists {}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 proof isa pushl_def
-  by(simp add: pushl_def)
+  by(simp add: StacksAsLists__pushl_def)
 end-proof
 
 proof isa push_aux_def
   apply(rule ext)
-  apply(auto simp add: push_aux.simps)
+  apply(auto simp add: StacksAsLists__push_aux.simps)
   apply(case_tac "a")
   apply(simp)
   apply(simp)
 end-proof
 
 proof isa top_def_Obligation_subtype
-  apply(auto simp add: stackToList_def empty_stack_def)
+  apply(auto simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def)
 end-proof
 
 proof isa top_def
   apply(rule ext)  
   apply(case_tac stk)  
-  apply(auto simp add: empty_stack_def stackToList_def)
+  apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__stackToList_def)
 end-proof
 
 proof isa pop_def_Obligation_subtype
-  apply(auto simp add: stackToList_def empty_stack_def)
+  apply(auto simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def)
 end-proof
 
 proof isa pop_def
   apply(auto)
   apply(rule ext)
-  apply(auto simp add: empty_stack_def)
+  apply(auto simp add: StacksAsLists__empty_stack_def)
   apply(case_tac "x")
-  apply(auto simp add: listToStack_def)
-  apply(cut_tac f="\<lambda> x . stackToList x" and x="Stack" in Function__inverse_f_apply)
-  apply(auto simp add: stackToList_bijective)
-  apply(auto simp add: stackToList_def)
+  apply(auto simp add: StacksAsLists__listToStack_def)
+  apply(cut_tac f="\<lambda> x . StacksAsLists__stackToList x" and x="Stack" in Function__inverse_f_apply)
+  apply(auto simp add: StacksAsLists__stackToList_bijective)
+  apply(auto simp add: StacksAsLists__stackToList_def)
   by (metis inj_on_id2 inv_f_eq)
 end-proof
 
 proof isa push_def
   apply(rule ext)
   apply(case_tac "x", auto)
-  apply(rule stackToList_injective)
-  apply(auto simp add: push_def stackToList_listToStack stackToList_def listToStack_def)
+  apply(rule StacksAsLists__stackToList_injective)
+  apply(auto simp add: StacksAsLists__push_def StacksAsLists__stackToList_listToStack StacksAsLists__stackToList_def StacksAsLists__listToStack_def)
   by (metis inj_on_id2 inv_f_eq)
 end-proof
 
 proof isa empty_stack_def
-  apply(auto simp add: empty_stack_def listToStack_def stackToList_def)
+  apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__listToStack_def StacksAsLists__stackToList_def)
   by (metis inj_on_id2 inv_f_eq)
 end-proof
 
 %% TODO Why is this obligation not being generated?  Maybe because the definition of listToStack is identical in Stacks and StacksAsLists.
-%% proof isa listToStack_def
+%% proof isa StacksAsLists__listToStack_def
 %%   apply(rule ext)
-%%   apply(simp add: listToStack_def)
+%%   apply(simp add: StacksAsLists__listToStack_def)
 %% end-proof

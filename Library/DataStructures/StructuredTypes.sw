@@ -266,8 +266,8 @@ end-proof
 
 proof isa Stack2L_push_aux
   apply(induct "elts"  arbitrary: stk)
-  apply(simp only: append_Nil push_aux.simps rev.simps)
-  apply(simp only: push_aux.simps Stack2L_Cons)
+  apply(simp only: append_Nil Stack__push_aux.simps rev.simps)
+  apply(simp only: Stack__push_aux.simps Stack2L_Cons)
   apply(simp)
 end-proof
 
@@ -313,6 +313,7 @@ end-proof
     fa(y:a,lst:List a) ( L2S(delete1(y,lst)) = set_delete(y, L2S lst) )
   %TODO try something like: ... = if occs(y,lst) > 1 then (L2S lst) else set_delete(y, L2S lst)
   % TODO Do we have a function to count the number of occurrences of an element in a list?
+  % TODO: add a version with a hypothesis of (noRepetitions? lst) (but will it be provable in context?)
 
   theorem L2S_member is [a]
     fa(y:a,lst:List a) ( (y in? lst) = (y in? L2S lst) )
@@ -620,10 +621,9 @@ with characteristic maps there are several choices:
   theorem S2CM_insert is [a]
       fa (S:Set a, n:a) (S2CM(set_insert(n,S)) = (update (S2CM S) n true))
 
-(* this only works for case 1 above
   theorem CM2S_empty_map is [a]
       CM2S(empty_map:Map(a,Bool)) = empty_set
-*)
+
 
   theorem CM2S_update is [a]
       fa(m:Map(a,Bool), x:a, y:Bool) 
@@ -727,17 +727,17 @@ proof isa empty_bag_bs_diff
 end-proof
 
 proof isa Stack2L_Cons
-  apply(cut_tac stk="push(y, stk)" in Stack2L.simps)
-  apply(simp add: top_push pop_push push_not_empty del: Stack2L.simps)
+  apply(cut_tac stk="Stack__push(y, stk)" in Stack2L.simps)
+  apply(simp add: Stack__top_push Stack__pop_push Stack__push_not_empty del: Stack2L.simps)
 end-proof
 
 proof isa Stack2L_concat
   apply(induct "elts"  arbitrary: stk)
-  apply(simp only: append_Nil pushl_def)
+  apply(simp only: append_Nil Stack__pushl_def)
   apply(simp)
-  apply(simp only: pushl_def push_aux.simps)
+  apply(simp only: Stack__pushl_def Stack__push_aux.simps)
   apply(clarify)
-  apply(simp only: Stack2L_Cons rev.simps push_aux_append push_aux.simps)
+  apply(simp only: Stack2L_Cons rev.simps Stack__push_aux_append Stack__push_aux.simps)
   apply(simp)
 end-proof
 
@@ -765,11 +765,9 @@ proof isa L2S_Cons
   sorry
 end-proof
 
-
 proof isa L2S_delete1
   sorry
 end-proof
-
 
 proof isa L2S_member
   apply(simp add: L2S_def)
@@ -1074,6 +1072,13 @@ end-proof
 
 proof Isa F2M_Obligation_subtype0
   sorry
+end-proof
+
+proof Isa CM2S_empty_map
+  apply(simp add: CM2S_def Map__domain_of_empty)
+  apply(subst Set__set_fold1)
+  apply(simp add: Set__foldable_p_def Set__set_insert_new_def)
+  apply(auto simp add: Set__empty_set)
 end-proof
 
 end-spec

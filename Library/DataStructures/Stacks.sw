@@ -1,8 +1,7 @@
 %% A specification for (finite) stacks.  For refinements of this spec,
 %% see BasicStacks.sw and StacksAsLists.sw and StacksAsVectors.sw.
 
-%Stacks qualifying spec   %%TODO Add the qualifier back?
-spec
+Stack qualifying spec
 
 %% Old comment: currently we can't refine a sum type to a product
 %% (TODO what about isomorphic type refinement?), so these
@@ -109,38 +108,38 @@ proof isa push_aux_append
 end-proof
 
 proof isa pop_Obligation_subtype
-  apply(auto simp add: List__nonEmpty_p_def empty_stack_def)
-  by (metis Function__fxy_implies_inverse listToStack_def stackToList_subtype_constr) 
+  apply(auto simp add: List__nonEmpty_p_def Stack__empty_stack_def)
+  by (metis Function__fxy_implies_inverse Stack__listToStack_def Stack__stackToList_subtype_constr) 
 end-proof
 
 proof isa top_Obligation_subtype
-  by (rule pop_Obligation_subtype)
+  by (rule Stack__pop_Obligation_subtype)
 end-proof
 
 proof isa listToStack_equal_listToStack
-  by (metis Function__f_inverse_apply listToStack_def stackToList_subtype_constr)
+  by (metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
 end-proof
 
 proof isa push_not_empty
-  apply(simp add: push_def empty_stack_def listToStack_equal_listToStack)
+  apply(simp add: Stack__push_def Stack__empty_stack_def Stack__listToStack_equal_listToStack)
 end-proof
 
 proof isa top_push_Obligation_subtype
-  by (auto simp add: push_not_empty)
+  by (auto simp add: Stack__push_not_empty)
 end-proof
 
 proof isa top_push
-  apply(simp add: top_def push_def listToStack_def)
-  by (metis Function__f_inverse_apply hd.simps stackToList_subtype_constr)
+  apply(simp add: Stack__top_def Stack__push_def Stack__listToStack_def)
+  by (metis Function__f_inverse_apply hd.simps Stack__stackToList_subtype_constr)
 end-proof
 
 proof isa pop_push_Obligation_subtype
-  by (rule top_push_Obligation_subtype)
+  by (rule Stack__top_push_Obligation_subtype)
 end-proof
 
 proof isa pop_push
-  apply(simp add: push_def pop_def)
-  by (metis Function__f_inverse_apply Function__inverse_f_apply listToStack_def stackToList_subtype_constr tl.simps(2))
+  apply(simp add: Stack__push_def Stack__pop_def)
+  by (metis Function__f_inverse_apply Function__inverse_f_apply Stack__listToStack_def Stack__stackToList_subtype_constr tl.simps(2))
 end-proof
 
 end-spec
