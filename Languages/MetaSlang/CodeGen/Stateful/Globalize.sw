@@ -1227,30 +1227,30 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
                   (case findAQualifierMap (new_types, q, id) of
                      | Some _ -> new_elts ++ [elt]
                      | _ -> 
-                       let _ = writeLine("Dropping element Type: " ^ q ^ "." ^ id) in
+                       % let _ = writeLine("Dropping element Type: " ^ q ^ "." ^ id) in
                        new_elts)
                 | TypeDef (Qualified(q,id), _) ->
                   (case findAQualifierMap (new_types, q, id) of
                      | Some _ -> new_elts ++ [elt]
                      | _ -> 
-                       let _ = writeLine("Dropping element TypeDef: " ^ q ^ "." ^ id) in
+                       % let _ = writeLine("Dropping element TypeDef: " ^ q ^ "." ^ id) in
                        new_elts)
                 | Op (Qualified(q,id), _, _) ->
                   (case findAQualifierMap (new_ops, q, id) of
                      | Some _ -> new_elts ++ [elt]
                      | _ -> 
-                       let _ = writeLine("Dropping element Op: " ^ q ^ "." ^ id) in
+                       % let _ = writeLine("Dropping element Op: " ^ q ^ "." ^ id) in
                        new_elts)
                 | OpDef (Qualified(q,id), _, _, _) ->
                   (case findAQualifierMap (new_ops, q, id) of
                      | Some _ -> new_elts ++ [elt]
                      | _ -> 
-                       let _ = writeLine("Dropping element OpDef: " ^ q ^ "." ^ id) in
+                       % let _ = writeLine("Dropping element OpDef: " ^ q ^ "." ^ id) in
                        new_elts)
                 | Pragma   _ -> new_elts ++ [elt]  % used by later code generators
                 | Property _ -> new_elts ++ [elt]  % used by later code generators
                 | _ -> 
-                  let _ = writeLine("Dropping unknown element: " ^ anyToString elt) in
+                  % let _ = writeLine("Dropping unknown element: " ^ anyToString elt) in
                   new_elts)
             []
             elements
