@@ -18,7 +18,7 @@ echo "Building documentation (see ${LOG})."
 make &> ${LOG}
 popd > /dev/null
 
-#Check to ensure that the files got built:
+#Check to ensure that the files got built: TODO: Call ensure-file-exists.sh instead?
 
 ls -l ${THISSCRIPTDIR}/sources/xform-manual/_build/latex/SpecwareTransformationManual.pdf
 ls -l ${THISSCRIPTDIR}/sources/tutorial/_build/latex/SpecwareTutorial.pdf
