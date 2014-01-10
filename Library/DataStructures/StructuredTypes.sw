@@ -10,10 +10,6 @@
 spec
   import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
 
-%TODO move this to /Library/Base/Boolean.sw ?
-% This can be used to prove an equality of booleans by proving the forward and backward implications.
-% In Isabelle: apply(rule bool_iff)
- theorem bool_iff is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
 
   % Returns the set containing the natural numbers in the interval [i,j).
   % TODO: Define in the inefficient but nice way with no accumulator?
@@ -743,7 +739,7 @@ end-proof
 
 % proved half of it.  is the other direction true?
 proof isa Stack2L_init
-  apply(rule bool_iff)
+  apply(rule Bool__bool_equal_split)
   defer
   apply(rule impI)
   apply(simp only: Stack2L_concat)

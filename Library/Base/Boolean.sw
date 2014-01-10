@@ -37,6 +37,10 @@ theorem conditional_false is [a]
 theorem conditional_noop is [a]
   fa(p:Bool,e:a) ((if p then e else e) = e)
 
+% This can be used to prove an equality of booleans by proving the
+% forward and backward implications separately.
+theorem bool_equal_split is fa(a:Bool, b:Bool) ((a => b) && (b => a)) => (a = b)
+
 
 % Isabelle pragmas
 
