@@ -1,31 +1,43 @@
+Specware README file (updated January, 2014).
+
 Welcome to Specware!
 
-Specware runs on Linux, Mac OS X, and Windows.
+Specware runs on Linux, Mac OS X, and Windows.  (The Linux and Mac
+versions may be more robust.)
 
-It requires a machine with about 2800MB of memory or more (should not
-be an issue on physical machines; on virtual machines, be sure to
-provision the machine with enough memory).
+Specware requires a machine with about 2800MB of memory or more (if
+using a virtual machine, be sure to provision the machine with enough
+memory).
 
 Specware runs on top of SBCL (Steel Bank Common Lisp).  To build
 Specware, first install SBCL (available from http://www.sbcl.org/).
 Specware has been successfully built with SBCL 1.1.7, and later
 versions should also work.
 
-Specware also requires Gnu Emacs (we no longer support xemacs).  GNU
+Specware also requires GNU Emacs (we no longer support XEmacs).  GNU
 Emacs 23.1.1 on Linux is known to work, and later versions should also
 work.  (Note: Emacs may be already installed on your system.)
 
+Optional: For proof support, install the Isabelle/HOL theorem prover
+(available from http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  The
+required version of Isabelle is Isabelle2013-2.  Older versions of
+Isabelle (including Isabelle2013 without the "-2") will not work.
+
 To build Specware on Linux or MacOS:
 
-1.  Set your SPECWARE4 environment variable to point to your copy of
-the main Specware/ directory.
+1. Check out or untar/unzip Specware into a directory called Specware/.
 
-2.  Run the script Specware/Applications/Specware/bin/linux/bootstrap
+2. Set your SPECWARE4 environment variable to point to your Specware/
+directory.
 
-3a. On Linux, to start a new emacs with Specware running in it, execute:
+3.  Run the script Specware/Applications/Specware/bin/linux/bootstrap
+(despite the 'linux' in the name, this script should work on MacOS as
+well).
+
+4a. On Linux, to start a new emacs with Specware running in it, execute:
 Specware/Applications/Specware/bin/linux/Specware-gnu
 
-3b. On Mac OS X, to start a new emacs with Specware running in it, execute:
+4b. On Mac OS X, to start a new emacs with Specware running in it, execute:
 Specware/Applications/Specware/bin/linux/SpecwareMac
 
 TODO: Add instructions for building on Windows.
@@ -38,15 +50,9 @@ Emacs.
 You should not need to install Specware as 'root' if you install it in
 your home directory.
 
-Optional: For proof support, install Isabelle2013-2 (available from
-http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  Older versions of
-Isabelle will not work.
-
 To learn about Specware, see the documentation in UserDoc/.
 
 To see a list of available commands, type "help" at the Specware shell.
 
-
-
-
+Questions about Specware can be emailed to support@specware.org.
 
