@@ -9,7 +9,7 @@ import /Languages/MetaSlang/CodeGen/Generic/LiftSequences            % (6)      
 
 import /Languages/MetaSlang/CodeGen/Generic/RemoveGeneratedSuffixes  % (8) Lisp C Java  removeGeneratedSuffix
 
-import /Languages/SpecCalculus/AbstractSyntax/CheckSpec
+% import /Languages/SpecCalculus/AbstractSyntax/CheckSpec
 
 op SpecTransform.makeExecutionStateful (ms_spec             : Spec, 
                                         root_op_names       : OpNames, 
@@ -39,7 +39,7 @@ op SpecTransform.makeExecutionStateful (ms_spec             : Spec,
  let stateful_spec = SpecTransform.liftSequences            stateful_spec         in  % (6)                                                      % todo: why is this needed again here?
  let stateful_spec = SpecTransform.normalizeTypes          (stateful_spec, false) in  % (7) reintroduce names for otherwise anonymous structures % todo: why is this needed again here?
  let stateful_spec = SpecTransform.removeGeneratedSuffixes  stateful_spec         in  % (8) simplify names (e.g., "foo-1-1" => "foo")            % todo: why is this needed again here?
- let _ = checkSpecCore (stateful_spec, "testing") in
+ % let _ = checkSpecCore (stateful_spec, "testing") in
  stateful_spec
 
 end-spec
