@@ -1,5 +1,9 @@
 Integer qualifying spec
 
+% (Note that the generated proofs for this spec go into SW_Integer.thy
+% rather than Integer.thy, because Integer is already a theory in the
+% Isabelle libary.)
+
 import Compare, Function
 
 proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof

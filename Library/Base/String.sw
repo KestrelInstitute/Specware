@@ -1,4 +1,9 @@
 String qualifying spec
+
+% (Note that the generated proofs for this spec go into SW_String.thy
+% rather than String.thy, because String is already a theory in the
+% Isabelle libary.)
+
 import Character, List
 
 (* A string is a finite sequence of characters (of type Char). Thus, we define type

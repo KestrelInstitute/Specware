@@ -1,5 +1,9 @@
 Option qualifying spec
 
+% (Note that the generated proofs for this spec go into SW_Option.thy
+% rather than Option.thy, because Option is already a theory in the
+% Isabelle libary.)
+
 import Compare, Function
 
 proof Isa -subtype_constrs -free-theorems -stp-theorems end-proof
