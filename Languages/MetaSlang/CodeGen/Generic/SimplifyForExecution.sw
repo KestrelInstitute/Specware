@@ -10,7 +10,7 @@ import /Languages/MetaSlang/CodeGen/Generic/RemoveCurrying              %  (4)  
 import /Languages/MetaSlang/CodeGen/Generic/LiftUnsupportedPatterns     %  (5)      C Java  liftUnsupportedPatterns [expand type restrictions into cases]
 import /Languages/MetaSlang/CodeGen/Generic/PatternMatch                %  (6) Lisp C Java  translateMatch          (pattern match compiler)
 import /Languages/MetaSlang/CodeGen/Generic/LambdaLift                  %  (7)      C Java  lambdaLift, lambdaLiftWithImportsSimulatingClosures
-import /Languages/MetaSlang/CodeGen/Generic/RecordMerge                 %  (8) Lisp         expandRecordMerges
+% import /Languages/MetaSlang/CodeGen/Generic/RecordMerge               %  (8) Lisp         expandRecordMerges
 import /Languages/MetaSlang/CodeGen/Generic/LetWildPatToSeq             %  (9)      C Java  letWildPatToSeq
 import /Languages/MetaSlang/CodeGen/Generic/ArityNormalize              % (10) Lisp         arityNormalize
 import /Languages/MetaSlang/CodeGen/Generic/ConformOpDecls              % (11)      C Java  conformOpDecls
@@ -41,7 +41,6 @@ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements  % (19) L
 type TransformOptions = {remove_currying?           : Bool,  %  (4)
                          lift_unsupported_patterns? : Bool,  %  (5)
                          lambda_lift?               : Bool,  %  (7)
-                         expand_record_merges?      : Bool,  %  (8) 
                          let_wild_pat_to_seq?       : Bool,  %  (9) 
                          arity_normalize?           : Bool,  % (10) 
                          conform_op_decls?          : Bool,  % (11) 
@@ -54,7 +53,6 @@ op default_options : TransformOptions =
  {remove_currying?           = true,  %  (4)
   lift_unsupported_patterns? = true,  %  (5)
   lambda_lift?               = true,  %  (7)
-  expand_record_merges?      = true,  %  (8) 
   let_wild_pat_to_seq?       = true,  %  (9) 
   arity_normalize?           = true,  % (10) 
   conform_op_decls?          = true,  % (11) 
@@ -176,23 +174,6 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  in
 
  %% ==========================================================================================
- %%  (8) Expand Record Merges
- %%      Make record constructions explicit.
- %%      'foo << {y = y}'   =>  '{x = foo.x, y = y, z = foo.z}'
- %%
- %%     This might be reversed later by introduceRecordMerges if we choose to produce Setf 
- %%     forms to revise mutable structures, but for now we stay within normal MetaSlang.
- %% ==========================================================================================
-
- let ms_spec = if options.expand_record_merges? then
-                 let ms_spec = SpecTransform.expandRecordMerges   ms_spec in 
-                 let _   = showSpecIfVerbose "expandRecordMerges" ms_spec in
-                 ms_spec
-               else
-                 ms_spec
- in
-
- %% ==========================================================================================
  %%  (9) Convert Lets of Wild Patterns to Seq's
  %%      'let _ = t1 in t2'   =>  '(t1;t2)'
  %% ==========================================================================================
@@ -243,6 +224,7 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
 
  %% ==========================================================================================
  %% (13) Introduce Record Merges
+ %%      Needed for stateful updates and globalize to work -- fodder for setf.
  %% ==========================================================================================
 
  let ms_spec = SpecTransform.introduceRecordMerges   ms_spec in 
@@ -278,6 +260,7 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  %% (16) Narrow Types
  %%      Retype terms such as (0 : Nat) to (0 : Nat1)
  %% ==========================================================================================
+ %% TODO: This is horribly inefficient.
 
 % let ms_spec = SpecTransform.narrowTypes  ms_spec in 
 % let _  = showSpecIfVerbose "narrowTypes" ms_spec in
@@ -301,7 +284,7 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  %%      Simplify instroduced names such as "foo-1-1" to "foo" unless that causes conflicts.
  %% ==========================================================================================
 
- let ms_spec = SpecTransform.removeGeneratedSuffixes  ms_spec in 
+ let ms_spec = SpecTransform.removeGeneratedSuffixes ms_spec in
  let _  = showSpecIfVerbose "removeGeneratedSuffixes" ms_spec in
 
  %% ==========================================================================================

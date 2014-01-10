@@ -1,8 +1,13 @@
 Stateful qualifying spec
 
-import /Languages/MetaSlang/CodeGen/Generic/DeconflictUpdates  %  (B) Lisp C Java  deconflictUpdates
-import /Languages/MetaSlang/CodeGen/Stateful/StatefulUpdates   %  (C) Lisp C Java  makeUpdatesStateful
-import /Languages/MetaSlang/CodeGen/Stateful/Globalize         %  (D) Lisp C Java  globalize
+import /Languages/MetaSlang/CodeGen/Generic/DeconflictUpdates        % (1) Lisp C Java  deconflictUpdates
+import /Languages/MetaSlang/CodeGen/Stateful/StatefulUpdates         % (2) Lisp C Java  makeUpdatesStateful
+import /Languages/MetaSlang/CodeGen/Stateful/Globalize               % (3) Lisp C Java  globalize
+import /Languages/MetaSlang/CodeGen/Generic/RecordMerge              % (4) Lisp         expandRecordMerges
+
+import /Languages/MetaSlang/CodeGen/Generic/LiftSequences            % (6)      C Java  liftSequences
+
+import /Languages/MetaSlang/CodeGen/Generic/RemoveGeneratedSuffixes  % (8) Lisp C Java  removeGeneratedSuffix
 
 op SpecTransform.makeExecutionStateful (ms_spec             : Spec, 
                                         root_op_names       : OpNames, 
@@ -24,12 +29,15 @@ op SpecTransform.makeExecutionStateful (ms_spec             : Spec,
  in
  let _ = showSpecIfVerbose "Original" ms_spec in
 
- let ms_spec_2       = SpecTransform.deconflictUpdates   (ms_spec,         root_op_names, stateful_type_names,                        tracing?) in
- let stateful_spec_1 = SpecTransform.makeUpdatesStateful (ms_spec_2,       root_op_names, stateful_type_names,                        tracing?) in
- let stateful_spec_2 = SpecTransform.globalize           stateful_spec_1  (root_op_names, global_type_name, global_var_id, opt_ginit, tracing?) in
- let stateful_spec_3 = SpecTransform.simplifySpec        stateful_spec_2         in
- let stateful_spec_4 = SpecTransform.expandRecordMerges  stateful_spec_3         in  % non-stateful record merges may survive globalize 
- let stateful_spec_5 = SpecTransform.normalizeTypes     (stateful_spec_4, false) in
- stateful_spec_4
+ let ms_spec_2     = SpecTransform.deconflictUpdates       (ms_spec,        root_op_names, stateful_type_names,                        tracing?) in % (1)
+ let stateful_spec = SpecTransform.makeUpdatesStateful     (ms_spec_2,      root_op_names, stateful_type_names,                        tracing?) in % (2)
+ let stateful_spec = SpecTransform.globalize                stateful_spec  (root_op_names, global_type_name, global_var_id, opt_ginit, tracing?) in % (3)
+ let stateful_spec = SpecTransform.expandRecordMerges       stateful_spec         in  % (4) non-stateful record merges may survive globalize 
+ let stateful_spec = SpecTransform.simplifySpec             stateful_spec         in  % (5) perhaps not needed
+ let stateful_spec = SpecTransform.liftSequences            stateful_spec         in  % (6)                                                      % todo: why is this needed again here?
+ let stateful_spec = SpecTransform.normalizeTypes          (stateful_spec, false) in  % (7) reintroduce names for otherwise anonymous structures % todo: why is this needed again here?
+ let stateful_spec = SpecTransform.removeGeneratedSuffixes  stateful_spec         in  % (8) simplify names (e.g., "foo-1-1" => "foo")            % todo: why is this needed again here?
+
+ stateful_spec
 
 end-spec
