@@ -298,6 +298,9 @@ end-proof
   theorem L2S_Nil is [a]
      (L2S(Nil) = (empty_set:Set a))
 
+  theorem L2S_Equal_Nil is [a]
+     fa(al:List a) (al = Nil) = (L2S(al) = empty_set)
+
   theorem L2S_Cons is [a]
     fa(y:a,lst:List a) ( L2S(Cons(y,lst)) = set_insert(y, L2S lst) )
 
