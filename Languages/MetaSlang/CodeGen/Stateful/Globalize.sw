@@ -596,6 +596,7 @@ op globalizeApply (context                   : Context)
        | Unchanged -> (false, arg)
  in
  case (t1, t2) of
+
    | (Fun (RecordMerge, _, _),  Record ([(_, Var ((id, _), _)), (_, t4)], _)) | id in? vars_to_remove 
      ->
      %%  special case for global update:  
@@ -606,6 +607,7 @@ op globalizeApply (context                   : Context)
      %% new_t4 is now a record whose fields are a subset of those in the global type
      let new_tm = makeGlobalFieldUpdates context vars_to_remove t1 new_t4 in
      Changed new_tm
+
   | _ ->
     let opt_new_t1 = globalizeTerm context vars_to_remove t1 false in
     let opt_new_t2 = case (t1, t2) of
@@ -621,7 +623,6 @@ op globalizeApply (context                   : Context)
     in
     %% Vars to be removed will have been removed from inside t1 and t2, but if t1 or t2 itself 
     %% is global it will have been replaced with context.global_var
-
     let new_t1 = case opt_new_t1 of
                    | Changed new_t1 -> new_t1
                    | GlobalVar -> 
@@ -634,11 +635,10 @@ op globalizeApply (context                   : Context)
       | GlobalVar ->
         %% TODO: Changed new_t1
         %% was (f x ...)  where x had global type
-        let head_type = applyHeadType (t1, context) in
+        let head_type = applyHeadType (t1, context) in % we need original dom type, so don't use new_t1
         let head_type = unfoldToArrow (context.spc, head_type) in
-       %let head_type = globalizeType (context, vars_to_remove, head_type) in
         Changed (case dom_type head_type of
-                   | Some dtype | globalType? context dtype ->
+                   | Some dtype | globalType? context dtype -> % see note above about head_type
                      (case t1 of
                         | Fun (Project field_name, _, _) ->
                           %%  special case for global access:  
@@ -652,8 +652,7 @@ op globalizeApply (context                   : Context)
                               %% (f x y ...)  where x has global type, and domain of f is global type
                               %%   =>
                               %% (f y ...)
-                              let range_type = inferType (context.spc, tm) in
-                              retype_fun (t1, range_type)
+                              new_t1
                             | _ ->
                               %% (f x) where x has global type, and domain of f is global type
                               %%   =>
@@ -1168,7 +1167,8 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
      %% base_ops should include the transitive closure of references from them
 
      %% process just those ops that might be invoked at runtime
-     let ops_in_second_slice = opsInImplementation second_slice ++ opsInAssertions second_slice in
+     %% let ops_in_second_slice = opsInImplementation second_slice ++ opsInAssertions second_slice in
+     let ops_in_second_slice = opsInImplementation second_slice in
 
      % new ops are the base ops plus ops reached in second slice
 
@@ -1187,6 +1187,17 @@ op replaceLocalsWithGlobalRefs (context : Context) : SpecCalc.Env (Spec * Bool) 
                   new_ops)
            base_ops
            ops_in_second_slice
+ in
+ let new_ops =
+     foldl (fn (new_ops, name as Qualified (q, id)) ->
+              case findTheOp (spec_with_globalized_ops_added, name) of
+                | Some info -> 
+                  insertAQualifierMap (new_ops, q, id, info)
+                | _ -> 
+                  let _ = writeLine("ERROR: Internal confusion: Globalize could not find op " ^ show name) in
+                  new_ops)
+           new_ops
+           (opsInAssertions second_slice)
  in
  let new_types =
      let base_types = mapiPartialAQualifierMap (fn (q, id, info) ->
