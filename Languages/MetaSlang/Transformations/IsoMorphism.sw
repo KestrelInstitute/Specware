@@ -18,6 +18,17 @@ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
 import NormalizeTypes
 %  import /Languages/MetaSlang/Specs/AnalyzeRecursion
 
+op typeTerm (term : MSTerm, new_type : MSType, pos : Position) : MSTerm =
+ %% avoid silly terms such as   foo : A -> B : A -> B
+ case term of
+   | TypedTerm (t1, old_type, _) ->
+     if equalType? (new_type, old_type) then
+       term
+     else
+       TypedTerm (t1, new_type, pos)
+   | _ ->
+     TypedTerm (term, new_type, pos)
+
 op orderElements?: Bool = true
 op unfoldIsos?: Bool = true
 
@@ -777,12 +788,12 @@ op newPrimedTypes(init_spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo,
                  let iso_qid = Qualified(q,"iso"^id) in
                  let iso_ty  = mkBase(Qualified("Function", "Bijection"), [qid_ref, qid'_ref]) in
                  let iso_fn  = mkInfixOp(iso_qid, Unspecified, iso_ty) in
-                 let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, iso_ty, noPos))) in
+                 let spc = addOpDef(spc, iso_qid, Unspecified, maybePiTerm(tvs, typeTerm(Any noPos, iso_ty, noPos))) in
 
                  let osi_qid = Qualified(q,"osi"^id) in
                  let osi_ty  = mkBase(Qualified("Function", "Bijection"), [qid'_ref, qid_ref]) in
                  let osi_fn  = mkInfixOp(osi_qid, Unspecified, osi_ty) in
-                 let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, TypedTerm(Any noPos, osi_ty, noPos))) in
+                 let spc = addOpDef(spc, osi_qid, Unspecified, maybePiTerm(tvs, typeTerm(Any noPos, osi_ty, noPos))) in
                  return
                    (((iso_fn, tvs, qid_ref, qid'_ref), (osi_fn, tvs, qid'_ref, qid_ref)) :: new_iso_info,
                     spc)}})
@@ -871,9 +882,9 @@ op makeDerivedOpDefs(spc:           Spec,
        id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
        new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr newOptQual; 
        % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
-       return ((info << {dfn = maybePiTerm(tvs, TypedTerm(new_dfn, op_ty, noPos))},
+       return ((info << {dfn = maybePiTerm(tvs, typeTerm(new_dfn, op_ty, noPos))},
                 info << {names = [qid_pr],
-                         dfn = maybePiTerm(tvs, TypedTerm(dfn_pr, op_ty_pr, noPos))})
+                         dfn = maybePiTerm(tvs, typeTerm(dfn_pr, op_ty_pr, noPos))})
                  ::result,
                transformQIds)
     }}) ([], []) qidPrMap
@@ -986,7 +997,7 @@ op addIsoDefForIso (spc: Spec, iso_info: IsoInfoList, iso_fn_info: IsoFnInfo) (i
                                             mkVar xv)))
                    }
                 | _ -> isoTypeFn (spc, iso_info, iso_fn_info) uf_dom (Some dom) newOptQual;
-            newdfn <- return (maybePiTerm(tvs, TypedTerm (newtm, srt, termAnn opinfo.dfn)));
+            newdfn <- return (maybePiTerm(tvs, typeTerm (newtm, srt, termAnn opinfo.dfn)));
             spc <- return(if old? then appendElement(spc, OpDef(qid, 0, None, noPos)) else spc);
             return (setOpInfo(spc,qid,opinfo << {dfn = newdfn}))
             }
@@ -1291,7 +1302,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                            }
                          | Some subst -> return (instantiateTyVarsInTerm(defnTerm, subst));
                       ((spc,opsDone),defnTerm) <- doTerm (spc,opsDone) monoDefn ctxtType;
-                      newDefnTerm <- return (TypedTerm (defnTerm, ctxtType,noPos));
+                      newDefnTerm <- return (typeTerm (defnTerm, ctxtType,noPos));
                       spc <- return (addOpDef (spc, newQId, info.fixity, newDefnTerm));
                       print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
                       return ((spc,opsDone), Fun (Op(newQId, fxty), ctxtType, pos))
@@ -1383,7 +1394,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
             | TypedTerm (trm,typ,pos) -> {
                 (accum,trm) <- doTerm accum trm typ;
                 (accum,typ) <- doType accum typ;
-                return (accum,TypedTerm (trm,typ,pos))
+                return (accum,typeTerm (trm,typ,pos))
               }
             | Var ((id,typ),pos) -> {
                 when traceMono? (print ("doTerm: Var: id=" ^ id ^ "\n"));
@@ -1400,7 +1411,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
             % print ("doOp: " ^ qual ^ "." ^ id ^ ":" ^ printTerm opInfo.dfn ^ "\n");
             (typVars,typ,trm) <- return (unpackFirstTerm opInfo.dfn);  
             ((spc,opsDone),trm) <- doTerm (spc,opsDone) trm typ ;
-            dfn <- return (maybePiTerm(typVars, TypedTerm (trm, typ, noPos))); 
+            dfn <- return (maybePiTerm(typVars, typeTerm (trm, typ, noPos))); 
             ops <- return (insertAQualifierMap (spc.ops,qual,id,opInfo << {dfn = dfn}));
             return (spc << {ops = ops},opsDone)
           }
@@ -1629,7 +1640,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                  else {
                    when traceIsomorphismGenerator?
                      (printDef (spc, qid));
-                   new_dfn <- return (maybePiTerm(tvs, TypedTerm (simp_dfn, ty, noPos))); 
+                   new_dfn <- return (maybePiTerm(tvs, typeTerm (simp_dfn, ty, noPos))); 
                    when traceIsomorphismGenerator? {
                       print ("\n" ^ printQualifiedId qid ^ ":");
                       print (printTerm simp_dfn ^ "\n")
