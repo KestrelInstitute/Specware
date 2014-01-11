@@ -56,7 +56,7 @@ axioms, etc.
       %% Use the name starting_spec to avoid any possible confusion with the
       %% op initialSpecInCat, which refers to the initial spec in the category of specs.
       (TS, depUIDs, imports_info) <- foldM checkImports (0,[],[]) specElems;
-      imports_spc <- foldM doImport starting_spec imports_info;
+      imports_spc <- foldM doImport starting_spec (reverse imports_info);
       fullSpec <- foldM evaluateSpecElem imports_spc specElems;
       return (fullSpec,TS,depUIDs)
     }
