@@ -10,7 +10,7 @@ spec
   import Bags
   import Maps#Maps_extended
   import Stacks
-  import Base
+  import STBase
   import StructuredTypes
 
   import SetsAsBags#SetsAsBags

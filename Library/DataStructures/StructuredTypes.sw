@@ -8,7 +8,7 @@
 
 %RecTypes qualifying
 spec
-  import Stacks, Sets, Bags, Maps#Maps_extended, Base  % List (using /Library/Base/List)
+  import Stacks, Sets, Bags, Maps#Maps_extended, STBase  % List (using /Library/Base/List)
 
 
   % Returns the set containing the natural numbers in the interval [i,j).
@@ -1078,6 +1078,10 @@ proof Isa CM2S_empty_map
   apply(subst Set__set_fold1)
   apply(simp add: Set__foldable_p_def Set__set_insert_new_def)
   apply(auto simp add: Set__empty_set)
+end-proof
+
+proof Isa L2S_Equal_Nil
+  sorry
 end-proof
 
 end-spec
