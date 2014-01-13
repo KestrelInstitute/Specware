@@ -8,7 +8,7 @@ import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
 op builtinCOp? (Qualified (q, id) : QualifiedId) : Bool =
  case q of
    | "Bool"       -> id in? ["true", "false", "~", "&&", "||", "=>", "<=>", "~="]
-   | "Integer"    -> id in? ["zero", "isucc", "ipred", "one", "+", "-", "*", "<", ">", "<=", ">="]
+   | "Integer"    -> id in? ["zero", "isucc", "ipred", "one", "+", "-", "*", "<", ">", "<=", ">=", "natMinus"]
    | "IntegerAux" -> id in? ["-"]  % unary minus
    | "Nat"        -> id in? ["succ", "pred", "+", "*"]
    | "Char"       -> id in? []
