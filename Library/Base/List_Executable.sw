@@ -615,7 +615,7 @@ end-proof
 
 proof isa list__1_Obligation_subtype
   apply (cut_tac List__list_subtype_constr)
-  apply (auto simp  add: bij_on_def inj_on_def surj_on_def)
+  apply (auto simp  add: bij_on_def bij_ON_def inj_on_def surj_on_def)
   apply (drule_tac x=x in spec, auto, drule_tac x=y in spec,
          auto simp add:  List__list__1__loop_steps)
   apply (drule_tac x=y in spec, clarify, rule exI,
