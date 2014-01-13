@@ -1428,7 +1428,7 @@ end-proof
 proof Isa list_1_subtype_constr1
   apply(unfold List__list_1_def)
   apply(cut_tac List__list_subtype_constr, 
-        simp add: bij_on_def del: List__list.simps, safe)
+        simp add: bij_ON_def bij_on_def del: List__list.simps, safe)
   apply (simp only: Function__inverse__stp_def Fun_PR.simps)
   apply(rule_tac Q = "\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)" in the1I2)
   apply(auto simp del: List__list.simps)
@@ -2267,7 +2267,7 @@ proof Isa unzip__stp_Obligation_subtype
 end-proof
 
 proof Isa unzip_Obligation_subtype
-  by (auto simp add: bij_on_def inj_on_def surj_on_def zip_eq_conv,
+  by (auto simp add: bij_on_def bij_ON_def inj_on_def surj_on_def zip_eq_conv,
       rule_tac x="map fst y" in exI, rule_tac x="map snd y" in exI,
       auto simp add: zip_map_fst_snd)
 end-proof
@@ -2294,7 +2294,7 @@ proof Isa unzip_subtype_constr
                       (\<lambda>(x,y). zip x y) p = d__x) = (x,y)" by auto
  from List__unzip_Obligation_subtype
   have "surj_on (\<lambda>(x,y). zip x y) {(x,y). x equiLong y} UNIV"
-   by (auto simp: bij_on_def)
+   by (auto simp: bij_on_def bij_ON_def)
  hence "\<exists>p \<in> {(x,y). x equiLong y}.
              d__x = (\<lambda>(x,y). zip x y) p"
    by (auto simp: surj_on_def)
@@ -2329,7 +2329,7 @@ proof Isa unzip3__stp_Obligation_subtype
 end-proof
 
 proof Isa unzip3_Obligation_subtype
- apply (auto simp add: bij_on_def inj_on_def surj_on_def List__zip3_alt
+ apply (auto simp add: bij_on_def bij_ON_def inj_on_def surj_on_def List__zip3_alt
                        zip_eq_conv)
  apply (rule_tac x="map fst y" in exI,
         rule_tac x="map (fst o snd) y" in exI, auto,
@@ -2362,7 +2362,7 @@ proof Isa unzip3_subtype_constr
  from List__unzip3_Obligation_subtype
   have "surj_on List__zip3 {(x,y,z). x equiLong y \<and> y equiLong z}
                            UNIV"
-   by (auto simp: bij_on_def)
+   by (auto simp: bij_on_def bij_ON_def)
  hence "\<exists>l \<in> {(x,y,z). x equiLong y \<and> y equiLong z}.
              d__x = List__zip3 l"
    by (auto simp: surj_on_def)
@@ -2413,7 +2413,7 @@ proof Isa unzip3_subtype_constr1
  from List__unzip3_Obligation_subtype
   have "surj_on List__zip3 {(x,y,z). x equiLong y \<and> y equiLong z}
                            UNIV"
-   by (auto simp: bij_on_def)
+   by (auto simp: bij_on_def bij_ON_def)
  hence "\<exists>l \<in> {(x,y,z). x equiLong y \<and> y equiLong z}.
              d__x = List__zip3 l"
    by (auto simp: surj_on_def)
