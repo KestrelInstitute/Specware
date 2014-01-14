@@ -16,7 +16,7 @@ run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/Maps
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/Maps#Maps_extended
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/Bags
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/Stacks
-run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/Base
+run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/STBase
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StructuredTypes
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsBags#SetsAsBags
 run-proc.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsBags#M
