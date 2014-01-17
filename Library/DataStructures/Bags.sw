@@ -429,5 +429,4 @@ proof Isa Bag__bagin_p_of_bag_intersection
   apply(auto simp add: Bag__occs_bag_intersection Bag__bagin_p_def)
 end-proof
 
-
 end-spec
