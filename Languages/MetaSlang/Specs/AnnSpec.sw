@@ -1134,45 +1134,61 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                       | _ -> false))
      els
 
+ op rdPos : Position = Internal "Remvoe Duplicates"
+
  %% Just removes duplicate imports although could also remove other duplicate elements
  %% but this would be more expensive and maybe not that helpful
  %% Update: In fact, looking for all duplicates seems to take a lot of time.
  %%         It added 9(!) minutes to the normal 3 or 4 minutes for processing
  %%         all the specs in Specware itself.
  op removeDuplicateImports (spc : Spec) : Spec =
-   let def mapEls(els, imports) =
-         case els of
-	   | [] -> ([], imports)
-	   | el::r_els ->
-	     (case el of
-	       | Import (s_tm, i_sp, s_els, a) ->
-		 (case findLeftmost (fn (s, _) -> i_sp = s) imports of
-		    | Some (_, prior_s_els) ->
-                      %% Without this, truly duplicate elements were getting included incorrectly in tricky_els below (e.g., in Eric's test0086.sw):
-                      let (s_els, imports) = mapEls(s_els, imports) in  % TODO Do we want to use the imports returned here, or not?
-		      %% Even though i_sp is a duplicate, tricky_els might be non-empty.
- 		      %% Imported elements can be updated even when the imported spec
-		      %% itself is not.  (This happens with qualify, for example.)  %%TODO, Shouldn't qualify/translate be made to change the specs themselves, not just the imported elements?
-		      %% For efficiency, we only test for duplications of elements
-		      %% between two imports of the same spec.
-                      %% TODO, If tricky_els is not empty, should we consider this import to not be a duplicate?  Currently, we just "inline" the tricky_els below in place of the import.
-		      let tricky_els = diff (s_els, prior_s_els) in
-		      %% add the new els we've seen to the set of elts associated with i_sp
-		      let revised_import = (i_sp, prior_s_els ++ tricky_els) in
-		      let (reduced_els, imports) = mapEls (r_els, Cons(revised_import, imports)) in
-		      (tricky_els ++ reduced_els, imports)
-		    | _ ->
-		      let (reduced_s_els, imports) = mapEls (s_els, imports) in
-		      let (reduced_els,   imports) = mapEls (r_els, Cons((i_sp, s_els), imports)) in
-		      (Cons (Import (s_tm, i_sp, reduced_s_els, a),
-			     reduced_els),
-		       imports))
-	       | _ ->
-		 let (reduced_els, imports) = mapEls (r_els, imports) in
-		 (Cons (el, reduced_els), imports))
-   in
-   let (reduced_els, _) = mapEls (spc.elements, []) in
-   spc << {elements = reduced_els}
+  let 
+    def mapEls(els, imports) =
+      case els of
+        | [] -> ([], imports)
+        | el::r_els ->
+          (case el of
+             | Import (s_tm, i_sp, s_els, a) ->
+               (case findLeftmost (fn (s, _) -> i_sp = s) imports of
+                  | Some (_, prior_s_els) ->
+
+                    %% Without this, truly duplicate elements were getting included incorrectly in tricky_els below (e.g., in Eric's test0086.sw):
+
+                    let (s_els, imports) = mapEls(s_els, imports)                           in  
+
+                    %% TODO Do we want to use the imports returned here, or not?
+
+                    %% Even though i_sp is a duplicate, tricky_els might be non-empty.
+                    %% Imported elements can be updated even when the imported spec itself is not.
+                    %%  (This happens with qualify, for example.)  
+                    %%
+                    %% TODO:  Shouldn't qualify/translate be made to change the specs themselves, 
+                    %%        not just the imported elements?
+                    %%
+                    %% For efficiency, we only test for duplications of elements between two imports of the same spec.
+                    %%
+                    %% TODO:  If tricky_els is not empty, should we consider this import to not be a duplicate?  
+                    %%        Currently, we just "inline" the tricky_els below in place of the import.
+
+                    let tricky_els = diff (s_els, prior_s_els)                              in
+
+                    %% add the new els we've seen to the set of elts associated with i_sp
+
+                    let revised_import = (i_sp, prior_s_els ++ tricky_els)                  in
+                    let (reduced_els, imports) = mapEls (r_els, revised_import :: imports)  in
+                    (tricky_els ++ reduced_els, imports)
+                  | _ ->
+                    let (reduced_s_els, imports) = mapEls (s_els, imports)                  in
+                    let (reduced_els,   imports) = mapEls (r_els, (i_sp, s_els) :: imports) in
+                    let reduced_import           = Import (s_tm, i_sp, reduced_s_els, a)    in
+                    (reduced_import :: reduced_els,
+                     imports))
+             | _ ->
+               let (reduced_els, imports) = mapEls (r_els, imports) in
+               (el :: reduced_els, imports))
+  in
+  let (reduced_els, _) = mapEls (spc.elements, []) in
+  spc << {elements = reduced_els}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
@@ -1219,7 +1235,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  def typesAsList(spc) =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
-			Cons ((q, id, info), new_list))
+			(q, id, info) :: new_list)
                        []
 		       spc.types
 
@@ -1229,7 +1245,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 			%% so just consider the entry corresponding to the primary alias
 			let Qualified (primary_q, primary_id) = primaryTypeName info in
 			if q = primary_q && id = primary_id then
-			  Cons (info, new_list)
+			  info :: new_list
 			else
 			  new_list)
                        []
@@ -1237,7 +1253,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  def opsAsList(spc) =
    foldriAQualifierMap (fn (q, id, info, new_list) ->
-			Cons ((q, id, info), new_list))
+			(q, id, info) :: new_list)
                        []
 		       spc.ops
 
@@ -1247,7 +1263,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 			%% so just consider the entry corresponding to the primary alias
 			let Qualified (primary_q, primary_id) = primaryOpName info in
 			if q = primary_q && id = primary_id then
-			  Cons (info, new_list)
+			  info :: new_list
 			else
 			  new_list)
                        []
@@ -1337,7 +1353,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  def setElements (spc, new_elements) = spc << {elements = new_elements}
 
  def appendElement  (spc, new_element) = spc << {elements = spc.elements ++ [new_element]}
- def prependElement (spc, new_element) = spc << {elements = Cons (new_element, spc.elements)}
+ def prependElement (spc, new_element) = spc << {elements = new_element :: spc.elements}
 
  op [a] equalSpecElement?(el1: ASpecElement a, el2: ASpecElement a): Bool =
    case (el1, el2) of
