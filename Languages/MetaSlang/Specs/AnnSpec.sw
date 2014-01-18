@@ -1143,52 +1143,33 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  %%         all the specs in Specware itself.
  op removeDuplicateImports (spc : Spec) : Spec =
   let 
-    def mapEls(els, imports) =
-      case els of
-        | [] -> ([], imports)
-        | el::r_els ->
-          (case el of
-             | Import (s_tm, i_sp, s_els, a) ->
-               (case findLeftmost (fn (s, _) -> i_sp = s) imports of
-                  | Some (_, prior_s_els) ->
-
-                    %% Without this, truly duplicate elements were getting included incorrectly in tricky_els below (e.g., in Eric's test0086.sw):
-
-                    let (s_els, imports) = mapEls(s_els, imports)                           in  
-
-                    %% TODO Do we want to use the imports returned here, or not?
-
-                    %% Even though i_sp is a duplicate, tricky_els might be non-empty.
-                    %% Imported elements can be updated even when the imported spec itself is not.
-                    %%  (This happens with qualify, for example.)  
-                    %%
-                    %% TODO:  Shouldn't qualify/translate be made to change the specs themselves, 
-                    %%        not just the imported elements?
-                    %%
-                    %% For efficiency, we only test for duplications of elements between two imports of the same spec.
-                    %%
-                    %% TODO:  If tricky_els is not empty, should we consider this import to not be a duplicate?  
-                    %%        Currently, we just "inline" the tricky_els below in place of the import.
-
-                    let tricky_els = diff (s_els, prior_s_els)                              in
-
-                    %% add the new els we've seen to the set of elts associated with i_sp
-
-                    let revised_import = (i_sp, prior_s_els ++ tricky_els)                  in
-                    let (reduced_els, imports) = mapEls (r_els, revised_import :: imports)  in
-                    (tricky_els ++ reduced_els, imports)
-                  | _ ->
-                    let (reduced_s_els, imports) = mapEls (s_els, imports)                  in
-                    let (reduced_els,   imports) = mapEls (r_els, (i_sp, s_els) :: imports) in
-                    let reduced_import           = Import (s_tm, i_sp, reduced_s_els, a)    in
-                    (reduced_import :: reduced_els,
-                     imports))
-             | _ ->
-               let (reduced_els, imports) = mapEls (r_els, imports) in
-               (el :: reduced_els, imports))
+    def remove_duplicates (elements, seen) =
+      case elements of
+        | [] -> ([], seen)
+        | this_element :: tail ->
+          case this_element of
+            | Import (spec_tm, imported_original_spec, imported_elements, pos) ->
+              let this_entry = (imported_original_spec, imported_elements) in
+              if this_entry in? seen then
+                remove_duplicates (tail, seen)
+              else
+                let (revised_imported_elements, seen) = remove_duplicates (imported_elements, seen)         in
+                let revised_entry                     = (imported_original_spec, revised_imported_elements) in
+                if revised_entry in? seen then
+                  remove_duplicates (tail, seen)
+                else
+                  let revised_import       = Import (spec_tm, imported_original_spec, revised_imported_elements, pos) in
+                  let seen                 = revised_entry :: seen                                                    in
+                  let (revised_tail, seen) = remove_duplicates (tail, seen)                                           in
+                  (revised_import :: revised_tail,
+                   seen)
+            | _ ->
+              let (revised_elements, seen) = remove_duplicates (tail, seen) in
+              (this_element :: revised_elements, 
+               seen)
   in
-  let (reduced_els, _) = mapEls (spc.elements, []) in
-  spc << {elements = reduced_els}
+  let (revised_elements, _) = remove_duplicates (spc.elements, []) in
+  spc << {elements = revised_elements}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
@@ -1668,5 +1649,31 @@ op [a] showQ(el: ASpecElement a): String =
  op showStrings (strings : List String) : String = (flatten (intersperse(" ", strings)))
  op showQIDs (qids : List QualifiedId) : String = showStrings (map printQualifiedId qids)
 
-      
+ %% debugging utility
+ op SpecTransform.showImports (spc : Spec) (msg : String) (show_types? : Bool) (show_ops? : Bool) : Spec =
+  let
+    def spaces n =
+      implode (repeat #\s n)
+
+    def aux (n, elements) =
+      app (fn x ->
+             case x of
+               | Import (tm, _, elts, _) ->
+                 let _ = writeLine (spaces n ^ "Import  : " ^ showSCTerm tm) in
+                 aux (n + 1, elts)
+               | Type    (name, _)       -> if show_types? then writeLine (spaces n ^ "Type    : " ^ show name) else ()
+               | TypeDef (name, _)       -> if show_types? then writeLine (spaces n ^ "TypeDef : " ^ show name) else ()
+               | Op      (name, _, _)    -> if show_ops?   then writeLine (spaces n ^ "Op      : " ^ show name) else ()
+               | OpDef   (name, _, _, _) -> if show_ops?   then writeLine (spaces n ^ "OpDef   : " ^ show name) else ()
+               | _  -> ())
+          elements
+  in
+  let _ = writeLine "====================" in
+  let _ = writeLine msg in
+
+  let _ = aux (0, spc.elements) in
+
+  let _ = writeLine "====================" in
+  spc
+
 end-spec
