@@ -1,6 +1,9 @@
+Carrier = spec type A end-spec
+
 PartialOrder = spec
 
- type A
+ import Carrier
+
  op <= infixl 20 : A * A -> Bool
 
  axiom reflexive_le is
