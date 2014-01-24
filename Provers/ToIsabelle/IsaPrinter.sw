@@ -445,7 +445,7 @@ IsaTermPrinter qualifying spec
     case freeVars equality of
       | [] -> equality
       | fvs -> mkBind(Forall, fvs, equality)
-  
+
   op equalityArgs(eq_tm: MSTerm): MSTerm * MSTerm =
     case eq_tm of
       | Apply(Fun(Implies, _, _), Record([("1", lhs), ("2", rhs)], _), _) -> equalityArgs rhs
@@ -585,8 +585,8 @@ IsaTermPrinter qualifying spec
                               let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
-                                % let _ = writeLine("oblig: "^printTerm oblig) in
-                                % let _ = writeLine("Generating proof for "^thm_name) in
+                               % let _ = writeLine("oblig: "^printTerm oblig) in
+                               % let _ = writeLine("Generating proof for "^thm_name) in
                               let prf_str =
                                 case pf of
                                     % if we have an implication proof, convert it to Isabelle
@@ -610,11 +610,21 @@ IsaTermPrinter qualifying spec
                               let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def" in
                               let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
                                                        prev_dfn, spc) in
+                              let (lhs_tm, rhs_tm) = equalityArgs eq_tm in
+                               % let _ = writeLine("oblig: "^printTerm eq_tm) in
+                               % let _ = writeLine("prev_dfn: "^printTerm prev_dfn) in
+                               % let _ = writeLine("dfn: "^printTerm dfn) in
+                               % let _ = writeLine("Generating proof for "^thm_name) in
                               let prf_str =
                                 case pf of
                                     % if we have an equality proof, convert it to Isabelle
-                                  | Some (RefineEq eq_pf) ->
-                                    generateEqualityProof (c, eq_tm, prev_dfn, eq_pf)
+                                  | Some (RefineEq (EqProofSubterm(pth, eq_pf))) ->
+                                     let _ = writeLine(showEqProof eq_pf) in
+                                    let new_eq_pf = EqProofTrans([(EqProofUnfoldDef mainId, fromPathTerm(prev_dfn, pth)),
+                                                                  (eq_pf, fromPathTerm(dfn, pth))],
+                                                                 EqProofSym(EqProofUnfoldDef refId))
+                                    in
+                                    generateEqualityProof (c, lhs_tm, rhs_tm, new_eq_pf)
                                     % otherwise, fall back on old method based on TransformHistory
                                   | _ -> generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc)
                               in
@@ -902,11 +912,14 @@ IsaTermPrinter qualifying spec
  %% building tactics
 
  % build a tactic using Isabelle's "rule" tactic, applied to a string
- op ruleTactic (rule : String) : IsaProof ProofTacticMode =
-IsaProof (string ("(rule " ^ rule ^ ") "))
+op ruleTactic (rule : String) : IsaProof ProofTacticMode =
+  IsaProof (string ("(rule " ^ rule ^ ") "))
  % same as above, but use a Pretty to format the rule
- op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
+op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
  IsaProof (blockFill (0, [(0, string "(rule "), (3, rule), (0, string ") ")]))
+
+op unfoldTactic (rule : Pretty) : IsaProof ProofTacticMode =
+  IsaProof(prConcat [string "(unfold ", rule, prString ", rule HOL.refl)"])
 
 op rulesTactic (rules: List String): IsaProof ProofTacticMode =
   IsaProof(string("("^flatten(intersperse ", " (map (fn s -> "rule "^s) rules))^")"))
@@ -1079,7 +1092,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
      (*
         have "lhs=middle" (pf1)
         also
-        have "middle=rhs" (pf2)
+        have "...=rhs" (pf2)
         finally
         show ?thesis .
         *)
@@ -1090,7 +1103,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
          if firstp then
            ppLambdaEquality (c, (boundVars, step_lhs), (boundVars, step_rhs))
          else
-           prBreak 2 [string "... =", ppTerm c equalityContext (mkMultiLambda (boundVars, step_rhs))]
+           prBreak 2 [string "... = ", ppTerm c equalityContext (mkMultiLambda (boundVars, step_rhs))]
        in
        (prop, forwardProofBlock (ppEqualityProof (c, boundVars, step_lhs, step_rhs, pf)))
      in
@@ -1119,7 +1132,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
      showFinalResult
        (applyTactics
           (repeat (ruleTactic "ext") (length boundVars),
-           singleTacticProof (ruleTacticPP (prConcat [ppQualifiedId qid, string "_def"]))))
+           singleTacticProof (unfoldTactic (prConcat [ppQualifiedId qid, string "_def"]))))
    | EqProofTactic tactic ->
      (* by tactic *)
      % let _ = writeLine("eqTactic: "^tactic^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
@@ -1843,13 +1856,22 @@ removeSubTypes can introduce subtype conditions that require addCoercions
           
 
   op normalizeSpecElements (elts: SpecElements): SpecElements =
-    case elts of
-      | [] -> []
-      | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
-        Cons(Op(qid1, true, a), normalizeSpecElements rst)
-      | (Import((Translate _, _), _, r_elts, _)) :: rst ->    % Put translated specs in-line
-        normalizeSpecElements r_elts ++ normalizeSpecElements rst
-      | x::rst -> x :: normalizeSpecElements rst
+    let def normElts(elts, prev_elts) = 
+          case elts of
+            | [] -> prev_elts
+            | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
+              normElts(Op(qid1, true, a) :: rst, prev_elts)
+            | (Op (qid1, false, a)) :: rst | existsSpecElement?
+                                               (fn el1 -> case el1 of
+                                                            | Op(qid2, true, _) | qid1 = qid2 -> true
+                                                            | _ -> false)
+                                              prev_elts
+                -> normElts(rst, prev_elts)
+            | (Import((Translate _, _), _, r_elts, _)) :: rst ->    % Put translated specs in-line
+              normElts (rst, normElts(r_elts, prev_elts))
+            | x::rst -> normElts(rst, x :: prev_elts)
+    in
+    reverse(normElts(elts, []))
 
   op abstractionFn (qid: QualifiedId): QualifiedId =
     mkUnQualifiedId("Abs_"^qidToIsaString qid)
@@ -1964,20 +1986,29 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 	     prString "<Undefined Op>")
       | Type (qid,_) ->
 	(case AnnSpec.findTheType(spc, qid) of
-	   | Some {names, dfn} -> ppTypeInfo c false (names, dfn) opt_prag elems
+	   | Some {names, dfn} ->
+             if exists? (fn el ->
+                           case el of
+                             | TypeDef (qid1,_) -> qid1 = qid
+                             | _ -> false)
+                 elems
+               then prEmpty
+               else ppTypeInfo c false (names, dfn) opt_prag elems
 	   | _ -> 
 	     let _  = toScreen("\nInternal error: Missing type: "
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
       | TypeDef (qid, pos) ->
-        if existsSpecElement? (fn el ->
-                                 case el of
-                                   | Type (qid1,_) -> qid1 = qid
-                                     %| TypeDef (qid1, pos1) -> qid1 = qid && pos ~= pos1
-                                   | _ -> false)
+        if false && existsSpecElementBefore?
+             (fn el ->
+                case el of
+                  | Type (qid1,_) -> qid1 = qid
+                    %| TypeDef (qid1, pos1) -> qid1 = qid && pos ~= pos1
+                  | _ -> false)
+             elem
              elems
           then (warn("Redefinition of type "^printQualifiedId qid^" at "^printAll pos);
-                prString("<Illegal type redefinition of "^printQualifiedId qid^">"))
+                prString("(* Illegal type redefinition of "^printQualifiedId qid^" ignored! *)"))
         else 
 	(case AnnSpec.findTheType(spc, qid) of
 	   | Some {names, dfn} -> ppTypeInfo c true (names, dfn) opt_prag elems
