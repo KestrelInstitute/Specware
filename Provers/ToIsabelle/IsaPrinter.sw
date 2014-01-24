@@ -1999,17 +1999,17 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 				 ^ printQualifiedId qid ^ "\n") in
 	     prString "<Undefined Type>")
       | TypeDef (qid, pos) ->
-        if false && existsSpecElementBefore?
-             (fn el ->
-                case el of
-                  | Type (qid1,_) -> qid1 = qid
-                    %| TypeDef (qid1, pos1) -> qid1 = qid && pos ~= pos1
-                  | _ -> false)
-             elem
-             elems
-          then (warn("Redefinition of type "^printQualifiedId qid^" at "^printAll pos);
-                prString("(* Illegal type redefinition of "^printQualifiedId qid^" ignored! *)"))
-        else 
+        % if existsSpecElementBefore?
+        %      (fn el ->
+        %         case el of
+        %           | Type (qid1,_) -> qid1 = qid
+        %             %| TypeDef (qid1, pos1) -> qid1 = qid && pos ~= pos1
+        %           | _ -> false)
+        %      elem
+        %      elems
+        %   then (warn("Redefinition of type "^printQualifiedId qid^" at "^printAll pos);
+        %         prString("(* Illegal type redefinition of "^printQualifiedId qid^" ignored! *)"))
+        % else 
 	(case AnnSpec.findTheType(spc, qid) of
 	   | Some {names, dfn} -> ppTypeInfo c true (names, dfn) opt_prag elems
 	   | _ -> 
