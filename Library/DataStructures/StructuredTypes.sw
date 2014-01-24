@@ -8,7 +8,12 @@
 
 %RecTypes qualifying
 spec
-  import Stacks, Sets, Bags, Maps#Maps_extended, STBase  % List (using /Library/Base/List)
+  % List comes from base: /Library/Base/List
+  import Stacks              
+  import Sets                
+  import Bags                
+  import Maps#Maps_extended  
+  import STBase              
 
 
   % Returns the set containing the natural numbers in the interval [i,j).
