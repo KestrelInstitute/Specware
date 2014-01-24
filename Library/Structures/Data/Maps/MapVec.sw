@@ -6,7 +6,7 @@
 
 %% Note: The lisp code for these functions is in Handwritten/Lisp/MapAsVector.lisp.
 
-spec
+MapVec qualifying spec
 
   import Simple#Map  %% TODO This brings in Map as an unqualified type name.
 
