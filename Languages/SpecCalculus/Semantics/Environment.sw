@@ -118,6 +118,15 @@ UnitId_Dependency.
       } in
       run prog 
 
+  op maybeGetBaseSpec : () -> Option Spec 
+  def maybeGetBaseSpec() =
+    let prog = {
+       (optBaseUnitId,baseSpec) <- getBase;
+       return (case optBaseUnitId of
+                 | None -> None
+                 | Some _ -> Some baseSpec)
+      } in
+      run prog 
 
   op getBaseSpecUID : () -> RelativeUID
   def getBaseSpecUID() =
