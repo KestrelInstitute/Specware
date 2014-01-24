@@ -5,6 +5,10 @@ SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/Utilities
  
 
+op [a] compatibleTypes1?(ty1: AType a, ty2: AType a): Bool =
+  anyType? ty1 || anyType? ty2 || equalTypeSubtype?(ty1, ty2, false)
+
+
  op  mergeTypeInfo : Spec -> TypeMap -> TypeInfo -> TypeMap
  def mergeTypeInfo _(*spc*) types info =
    let 
@@ -52,6 +56,8 @@ SpecCalc qualifying spec
          types
 	 merged_info.names  % new and old
 
+op MSPS.debug?: Bool = false
+
  op mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
    let
      def aux (new_info, Qualified (q, id)) =
@@ -72,26 +78,26 @@ SpecCalc qualifying spec
 	     in
 	     let old_type_tms = unpackTypedTerms old_info.dfn in
 	     let new_type_tms = unpackTypedTerms new_info.dfn in
-	     let combined_type_tms =
-	         foldl (fn (combined_type_tms, (new_tvs, new_ty, new_dfn)) ->
-                        % let _ = writeLine("new: "^printTerm new_decl^"\nold: "^printTerm(head combined_decls)) in
-			if exists? (fn (old_tvs, old_ty, old_dfn) -> new_tvs = old_tvs
-                                                                    && compatibleTypes?(new_ty, old_ty)
-                                                                    && compatibleTerms?(new_dfn, old_dfn))
-                              combined_type_tms
-                          then map (fn oldtriple as (old_tvs, old_ty, old_dfn) ->
-                                      if new_tvs = old_tvs
-                                        && compatibleTypes?(new_ty, old_ty)
-                                        && compatibleTerms?(new_dfn, old_dfn)
-                                       then (old_tvs, chooseDefinedType(old_ty, new_ty),
-                                             chooseDefinedTerm(old_dfn, new_dfn))
-                                       else oldtriple)
-                                combined_type_tms
-			else combined_type_tms ++ [(new_tvs, new_ty, new_dfn)])
-		       []
-		       (if length old_type_tms > length new_type_tms
-                        then old_type_tms ++ new_type_tms
-                        else new_type_tms ++ old_type_tms)
+             let (pref_type_tms, non_pref_sub_type_tms) = if length old_type_tms > length new_type_tms
+                                                   then (old_type_tms, new_type_tms)
+                                                 else (new_type_tms, old_type_tms)
+             in
+             let sub_pref_type_tms = suffix(pref_type_tms, length non_pref_sub_type_tms) in
+             let _ = if exists? (fn ((new_tvs, new_ty, new_dfn), (old_tvs, old_ty, old_dfn)) ->
+                                 ~(new_tvs = old_tvs && compatibleTypes1?(new_ty, old_ty)
+                                   && compatibleTerms?(new_dfn, old_dfn)))
+                          (zip(sub_pref_type_tms, non_pref_sub_type_tms))
+                       then warn("mergeOpInfo conflict for "^q^"."^id^":\n"^printTerm new_info.dfn^"\n"^printTerm  old_info.dfn)
+                       else ()
+             in
+             let combined_type_tms =
+                 prefix(pref_type_tms, length pref_type_tms - length non_pref_sub_type_tms)
+                   ++ map (fn ((new_tvs, new_ty, new_dfn), (old_tvs, old_ty, old_dfn)) ->
+                             if new_tvs = old_tvs && compatibleTypes?(new_ty, old_ty)
+                                 && compatibleTerms?(new_dfn, old_dfn)
+                               then (new_tvs, chooseDefinedType(old_ty, new_ty), chooseDefinedTerm(old_dfn, new_dfn))
+                               else (new_tvs, new_ty, new_dfn))
+                       (zip(sub_pref_type_tms, non_pref_sub_type_tms))
 	     in
 	     let combined_dfn = maybePiAndTypedTerm combined_type_tms in
              let _ = if true then ()
@@ -200,34 +206,84 @@ op combineDecls(old_decl: MSTerm, new_decl: MSTerm, old_def: MSTerm, new_def: MS
 %% Update: In fact, looking for all duplicates seems to take a lot of time.
 %%         It added 9(!) minutes to the normal 3 or 4 minutes for processing
 %%         all the specs in Specware itself.
+
 op removeDuplicateImports (spc : Spec) : Spec =
+ let opt_base_spec = maybeGetBaseSpec () in
  let 
-   def remove_duplicates (elements, seen) =
+   def remove_duplicates (elements, seen, saw_base?) =
      case elements of
-       | [] -> ([], seen)
+
+       | [] -> 
+         ([], [], seen, saw_base?)
+
        | this_element :: tail ->
          case this_element of
+
            | Import (spec_tm, imported_original_spec, imported_elements, pos) ->
-             let this_entry = (imported_original_spec, imported_elements) in
-             if this_entry in? seen then
-               remove_duplicates (tail, seen)
-             else
-               let (revised_imported_elements, seen) = remove_duplicates (imported_elements, seen)         in
-               let revised_entry                     = (imported_original_spec, revised_imported_elements) in
-               if revised_entry in? seen then
-                 remove_duplicates (tail, seen)
+
+             let importing_base? = 
+                 case opt_base_spec of
+                   | Some base_spec -> imported_original_spec = base_spec 
+                   | _ -> false
+             in
+             if importing_base? then
+
+               %% Special processing for base spec, since we see it often.
+
+               if saw_base? then
+                 remove_duplicates (tail, seen, true)
                else
-                 let revised_import       = Import (spec_tm, imported_original_spec, revised_imported_elements, pos) in
-                 let seen                 = revised_entry :: seen                                                    in
-                 let (revised_tail, seen) = remove_duplicates (tail, seen)                                           in
-                 (revised_import :: revised_tail,
-                  seen)
+                 let (revised_elements_in_tail, non_imports_in_tail, seen, _) = remove_duplicates (tail, seen, true) in
+                 let revised_elements = this_element :: revised_elements_in_tail in
+                 let non_imports      = non_imports_in_tail                      in
+                 (revised_elements, 
+                  non_imports, 
+                  seen, 
+                  true)
+
+             else
+
+               %% If we're impotring something other than the base spec, process it and record it as seen.
+
+               %% Each seen entry contains the original spec and top-level non-import elements.
+               %% (We deliberately ignore imports within entries.)
+
+               let (revised_elements_in_import, non_imports_in_import, seen, saw_base?) = 
+                   remove_duplicates (imported_elements, seen, saw_base?) 
+               in
+               let this_entry = (imported_original_spec, non_imports_in_import) in
+               if this_entry in? seen then
+                 remove_duplicates (tail, seen, saw_base?)
+               else
+                 let revised_import = Import (spec_tm, 
+                                              imported_original_spec, 
+                                              revised_elements_in_import, 
+                                              pos) 
+                 in
+                 let seen = this_entry :: seen in
+                 let (revised_elements_in_tail, non_imports_in_tail, seen, saw_base?) = 
+                     remove_duplicates (tail, seen, saw_base?) 
+                 in
+                 let revised_elements = revised_import :: revised_elements_in_tail in
+                 let non_imports      = non_imports_in_tail                        in
+                 (revised_elements,
+                  non_imports,
+                  seen, 
+                  saw_base?)
+
            | _ ->
-             let (revised_elements, seen) = remove_duplicates (tail, seen) in
-             (this_element :: revised_elements, 
-              seen)
+             %% this_element is not an import: it is a type, op, axiom, pragma, etc.
+             let (revised_elements_in_tail, non_imports_in_tail, seen, saw_base?) = 
+                 remove_duplicates (tail, seen, saw_base?) 
+             in
+             let revised_elements = this_element :: revised_elements_in_tail in
+             let non_imports      = this_element :: non_imports_in_tail      in
+             (revised_elements, 
+              non_imports,
+              seen, 
+              saw_base?)
  in
- let (revised_elements, _) = remove_duplicates (spc.elements, []) in
+ let (revised_elements, _, _, _) = remove_duplicates (spc.elements, [], false) in
  spc << {elements = revised_elements}
 
 endspec
