@@ -8,19 +8,7 @@ MapsAsVectors =
 MapsAsVectors qualifying
 spec
   import Sets
-
-  type Map(a,b)
-
-  op MapVec.V_apply : [key,a] Map(key,a) * key -> Option a
-  op MapVec.V_empty_map : [key,a] Map (key,a)
-  op MapVec.V_update :  [key,a] Map (key,a) * key * a -> Map (key,a)
-  op MapVec.V_domainToList : [key,a] Map (key,a) -> List key
-  op MapVec.V_imageToList : [key,a] Map (key,a) -> List a                   % was rangeToList
-  %% TODO how to handle a key outside the domain?:
-  op MapVec.V_eval  : [key,a] Map(key,a) * key -> a
-  op MapVec.V_foldi : [key, a, b] (key * a * b -> b) * b * Map(key,a) -> b
-  %% Added by Eric:
-  op MapVec.V_remove      : [a,key] Map (key,a) * key -> Map (key,a)
+  import /Library/Structures/Data/Maps/MapVec
 
   % This was added by Jim to the version of this file in the CRASH
   % library.  I am copying it here as well. -Eric, 11/15/12
