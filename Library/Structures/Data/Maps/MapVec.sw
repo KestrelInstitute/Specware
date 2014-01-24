@@ -6,7 +6,12 @@
 
 %% Note: The lisp code for these functions is in Handwritten/Lisp/MapAsVector.lisp.
 
-MapVec qualifying spec
+% MapVec qualifying % this would cause problems for SimpleAsVector
+spec
+
+  %% SimpleAsVector imports this file with the qualifier VMap, and expects Map to be qualified as VMap.Map
+  %% Meanwhile SimpleAsSTHarray wants to import Simple and have Map be qualified as STHMap.Map
+  %% So for now we need to avoid using qualifiers here.
 
   import Simple#Map  %% TODO This brings in Map as an unqualified type name.
 
