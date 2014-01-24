@@ -1136,40 +1136,6 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 
  op rdPos : Position = Internal "Remvoe Duplicates"
 
- %% Just removes duplicate imports although could also remove other duplicate elements
- %% but this would be more expensive and maybe not that helpful
- %% Update: In fact, looking for all duplicates seems to take a lot of time.
- %%         It added 9(!) minutes to the normal 3 or 4 minutes for processing
- %%         all the specs in Specware itself.
- op removeDuplicateImports (spc : Spec) : Spec =
-  let 
-    def remove_duplicates (elements, seen) =
-      case elements of
-        | [] -> ([], seen)
-        | this_element :: tail ->
-          case this_element of
-            | Import (spec_tm, imported_original_spec, imported_elements, pos) ->
-              let this_entry = (imported_original_spec, imported_elements) in
-              if this_entry in? seen then
-                remove_duplicates (tail, seen)
-              else
-                let (revised_imported_elements, seen) = remove_duplicates (imported_elements, seen)         in
-                let revised_entry                     = (imported_original_spec, revised_imported_elements) in
-                if revised_entry in? seen then
-                  remove_duplicates (tail, seen)
-                else
-                  let revised_import       = Import (spec_tm, imported_original_spec, revised_imported_elements, pos) in
-                  let seen                 = revised_entry :: seen                                                    in
-                  let (revised_tail, seen) = remove_duplicates (tail, seen)                                           in
-                  (revised_import :: revised_tail,
-                   seen)
-            | _ ->
-              let (revised_elements, seen) = remove_duplicates (tail, seen) in
-              (this_element :: revised_elements, 
-               seen)
-  in
-  let (revised_elements, _) = remove_duplicates (spc.elements, []) in
-  spc << {elements = revised_elements}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
