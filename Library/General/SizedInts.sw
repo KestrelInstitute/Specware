@@ -75,6 +75,19 @@ type Int64  = (Int | intFitsInNBits? 64)
 
 op +_32 (x:Int32, y:Int32 | intFitsInNBits? 32 (x + y)) infixl 25 : Int32 = x + y
 
+
+theorem zero_fits is
+  fa(n:PosNat) intFitsInNBits? n 0
+
+theorem zero_fits_8 is
+  intFitsIn8Bits? 0
+
+theorem zero_fits_16 is
+  intFitsIn16Bits? 0
+
+theorem zero_fits_32 is
+  intFitsIn32Bits? 0
+
 proof Isa Int__intFitsInNBits_p_monotone
   apply(auto simp add: Int__intFitsInNBits_p_def)
   apply(cut_tac m="m - Suc 0" and n="n - Suc 0" in Integer__expt_monotone)
@@ -95,6 +108,22 @@ proof Isa Int__intFitsInNBits_p_inhabited is [simp]
   apply(simp add: Int__intFitsInNBits_p_def)
   apply(cut_tac x=0 in exI)
   apply(auto)
+end-proof
+
+proof Isa Int__zero_fits
+  apply(simp add: Int__intFitsInNBits_p_def)
+end-proof
+
+proof Isa Int__zero_fits_8
+  apply(simp add: Int__intFitsIn8Bits_p_def Int__zero_fits)
+end-proof
+
+proof Isa Int__zero_fits_16
+  apply(simp add: Int__intFitsIn16Bits_p_def Int__zero_fits)
+end-proof
+
+proof Isa Int__zero_fits_32
+  apply(simp add: Int__intFitsIn32Bits_p_def Int__zero_fits)
 end-proof
 
 end-spec

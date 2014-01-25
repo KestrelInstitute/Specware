@@ -76,6 +76,22 @@ op BVOR8  (x : Nat8 , y : Nat8 ) infixl 24 : Nat8
 op BVOR16 (x : Nat16, y : Nat16) infixl 24 : Nat16
 op BVOR32 (x : Nat32, y : Nat32) infixl 24 : Nat32
 
+theorem zero_fits is
+  fa(n:PosNat) fitsInNBits? n 0
+
+theorem zero_fits_8 is
+  fitsIn8Bits? 0
+
+theorem zero_fits_16 is
+  fitsIn16Bits? 0
+
+theorem zero_fits_31 is
+  fitsIn31Bits? 0
+
+theorem zero_fits_32 is
+  fitsIn32Bits? 0
+
+
 proof Isa fitsInNBits_p_inhabited is [simp]
   apply(simp add: Nat__fitsInNBits_p_def)
   apply(cut_tac x=0 in exI)
@@ -93,5 +109,27 @@ proof Isa Nat__fitsInNBits_p_monotone
   apply(simp)
   apply(simp)
 end-proof
+
+proof Isa Nat__zero_fits
+  apply(simp add: Nat__fitsInNBits_p_def)
+end-proof
+
+proof Isa Nat__zero_fits_8
+  apply(simp add: Nat__fitsIn8Bits_p_def Nat__zero_fits)
+end-proof
+
+proof Isa Nat__zero_fits_16
+  apply(simp add: Nat__fitsIn16Bits_p_def Nat__zero_fits)
+end-proof
+
+proof Isa Nat__zero_fits_31
+  apply(simp add: Nat__fitsIn31Bits_p_def Nat__zero_fits)
+end-proof
+
+proof Isa Nat__zero_fits_32
+  apply(simp add: Nat__fitsIn32Bits_p_def Nat__zero_fits)
+end-proof
+
+
 
 end-spec
