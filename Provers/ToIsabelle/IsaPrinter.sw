@@ -585,13 +585,13 @@ IsaTermPrinter qualifying spec
                               let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
-                               % let _ = writeLine("oblig: "^printTerm oblig) in
-                               % let _ = writeLine("Generating proof for "^thm_name) in
+                              % let _ = writeLine("oblig: "^printTerm oblig) in
+                              % let _ = writeLine("Generating proof for "^thm_name) in
                               let prf_str =
                                 case pf of
                                     % if we have an implication proof, convert it to Isabelle
                                   | Some (RefineStrengthen impl_pf) ->
-                                     let _ = writeLine(showImplProof impl_pf) in
+                                    % let _ = writeLine(showImplProof impl_pf) in
                                     generateImplicationProof (c, condn, rhs, impl_pf)
                                   | Some (RefineEq eq_pf) ->
                                     % let _ = writeLine(showEqProof eq_pf) in
@@ -619,7 +619,7 @@ IsaTermPrinter qualifying spec
                                 case pf of
                                     % if we have an equality proof, convert it to Isabelle
                                   | Some (RefineEq (EqProofSubterm(pth, eq_pf))) ->
-                                     let _ = writeLine(showEqProof eq_pf) in
+                                    % let _ = writeLine(showEqProof eq_pf) in
                                     let new_eq_pf = EqProofTrans([(EqProofUnfoldDef mainId, fromPathTerm(prev_dfn, pth)),
                                                                   (eq_pf, fromPathTerm(dfn, pth))],
                                                                  EqProofSym(EqProofUnfoldDef refId))
@@ -919,7 +919,7 @@ op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
  IsaProof (blockFill (0, [(0, string "(rule "), (3, rule), (0, string ") ")]))
 
 op unfoldTactic (rule : Pretty) : IsaProof ProofTacticMode =
-  IsaProof(prConcat [string "(unfold ", rule, prString ", rule HOL.refl)"])
+  IsaProof(prConcat [string "(unfold ", rule, prString ", simp)"])
 
 op rulesTactic (rules: List String): IsaProof ProofTacticMode =
   IsaProof(string("("^flatten(intersperse ", " (map (fn s -> "rule "^s) rules))^")"))
@@ -1050,7 +1050,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 
   % generate an Isabelle proof of equality "lhs = rhs"
   op generateEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:EqProof): String =
-    let _ = writeLine("generateEqualityProof: " ^ printEqProof(pf, lhs)) in
+    % let _ = writeLine("generateEqualityProof: " ^ printEqProof(pf, lhs)) in
     isaProofToString (forwardProofBlock (ppEqualityProof (c, [], lhs, rhs, pf)))
 
   % pretty-print an Isabelle proof of the equality
