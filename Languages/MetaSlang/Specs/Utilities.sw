@@ -1994,7 +1994,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 
    op possiblySubtypeOf?(ty1: MSType, ty2: MSType, spc: Spec): Bool =
      % let _ = writeLine(printType ty1^" <=? "^printType ty2) in
-     equalType?(ty1, ty2)
+     equivType? spc (ty1, ty2)
        || (case ty1 of
              | Base(qid1, tys, _) ->
                (case findTheType (spc, qid1) of

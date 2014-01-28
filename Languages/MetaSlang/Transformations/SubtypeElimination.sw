@@ -424,7 +424,8 @@ SpecNorm qualifying spec
                case tryUnfoldBase spc ty of
                  | Some exp_ty -> mergeRaisedBase(ty, raiseSubtypeFn(exp_ty, spc), spc)
                  | None -> raiseBase spc ty)
-            else raiseBase spc ty
+            else if args = [] then unfoldBase0 spc ty
+                  else raiseBase spc ty
           | Subtype(s_ty, p, a) ->
             (case raiseSubtypeFn(s_ty, spc) of
                | Subtype(sss_ty, pr, _) ->
@@ -512,11 +513,13 @@ SpecNorm qualifying spec
                       (case raiseSubtypeFn(ty, spc) of
                        | r_ty as Subtype(sup_ty, pred, a1) ->
                          % let _ = writeLine("rnt: "^printQualifiedId qid^"\n"^
-                         %                   printType ty^"\n-->\n"^printTerm pred) in
+                         %                   printType ty^"\n-->\n"
+                         %                     ^printType sup_ty^" | "^printTerm pred) in
                          let Qualified(q, ty_name) = qid in
                          let pred = termSubst(pred, sbst) in
                          if encapsulateSubtypePred?(pred, sup_ty)
-                           then let sup_ty = if equalType?(ty, r_ty) then sup_ty
+                           then let sup_ty = if equalType?(ty, r_ty) || embed? Base sup_ty
+                                               then sup_ty
                                              else case ty of
                                                     | Subtype(s_ty, _, _) -> s_ty
                                                     | _ -> ty
