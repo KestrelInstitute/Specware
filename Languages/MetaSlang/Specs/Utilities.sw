@@ -1730,10 +1730,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	     ty)
     | _ -> ty
 
-
   op unfoldBase0 (spc: Spec) (ty: MSType): MSType =
     let exp_ty = unfoldBaseOne(spc, ty) in
     if embed? CoProduct exp_ty || embed? Quotient exp_ty || equalType?(exp_ty, ty)
+         || recordType? exp_ty
       then ty
       else exp_ty
 
@@ -1814,6 +1814,13 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
   case stripSubtypes (sp, unfoldBase (sp,ty))
     of CoProduct (fields, _) -> Some fields
      | _ -> None
+
+ op recordType?(ty: MSType): Bool =
+  case ty of
+    | Product(("1",_)::_, _)  -> false
+    | Product _ -> true
+    | Subtype(sty, _, _) -> recordType? sty
+    | _ -> false
 
  %- --------------------------------------------------------------------------------
 
