@@ -833,7 +833,7 @@ IsaTermPrinter qualifying spec
 
     % We handle transform-specific transforms special.
     case hist of
-      | [(tr_tm, MergeRulesTransform (tree,unfolds))] ->
+      | [(tr_tm, MergeRulesTransform (tree,unfolds,smtArgs))] ->
         let _ = writeLine "Generating MergeRules Proof" in
 
         let def isabelleTerm tm =
@@ -851,7 +851,7 @@ IsaTermPrinter qualifying spec
         in
         let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
         in
-        printMergeRulesProof (getSpec c) isabelleTerm tree unfolds
+        printMergeRulesProof (getSpec c) isabelleTerm tree unfolds smtArgs
 
       | _  -> 
        
@@ -1199,7 +1199,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
   | ImplProofTactic tactic ->
     (* by tactic *)
      showFinalResult (singleTacticProof (ruleTactic tactic))
-  | MergeRulesProof (tree,unfolds) ->
+  | MergeRulesProof (tree,unfolds,smtArgs) ->
         let spc = getSpec c in
         let def isabelleTerm tm =
               let out = (ppTermStrIndent c Top tm 7) in        
@@ -1216,7 +1216,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
         let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
         in
         let _ = writeLine "Generating MergeRules Proof (ppImplicationProof" in
-        IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm tree unfolds))
+        IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm tree unfolds smtArgs))
     % fail "ppImplicationProof: need to add support for MergeRules!"
 
 

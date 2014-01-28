@@ -66,7 +66,7 @@ type STRule = { st_stateType : MSType,   % StateType
               }
 
 op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
-      (theorems:Rewrites)(noUnfolds:QualifiedIds)(unfoldDepth:Option Int):Env Spec =
+      (theorems:Rewrites)(noUnfolds:QualifiedIds)(unfoldDepth:Option Int)(smtArgs:QualifiedIds):Env Spec =
 %% This transformation takes a list of "rules", defined as specware ops, and
 %% combines them into a single op.
 %% Arguments:
@@ -131,10 +131,10 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     let spc' = case findTheOp(spc, fname)  of
                 | Some oi -> let TypedTerm(_,ty,_) = body in
                              let _ = writeLine "Refining quid" in
-                             let th = Some ([(Any noPos : MSTerm, MergeRulesTransform (prf, unfolds))],
-                                            Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
+                             let th = Some ([(Any noPos : MSTerm, MergeRulesTransform (prf, unfolds, smtArgs))],
+                                            Some (RefineStrengthen (MergeRulesProof (prf, unfolds,smtArgs)))) in
                              % Same thing, but don't save the mergerules proof in the tracehistory.
-                             let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof (prf, unfolds)))) in
+                             let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof (prf, unfolds,smtArgs)))) in
                              addRefinedTypeH(spc,oi,refinedType,Some body,th2)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
@@ -646,11 +646,15 @@ uindent ^ "qed\n"
 ))
 
 
-op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId):String =
+op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId)(smtArgs:List QualifiedId):String =
    let _ = writeLine "Generating MergeRulesProof (In MetaProgram)" in
    let indent =  "  " in
    let fun_defs = flatten (intersperse " " []) in
    let unfold_ids = flatten (intersperse " " (map (fn q -> mainId q ^ "_def") unfolds)) in
+   let smtcall = case smtArgs of
+                  | [] -> "smt"
+                  | _ -> "(smt " ^ flatten (intersperse " " (map (fn q -> mainId q) smtArgs)) ^ ")" in
+   
 % indent ^ "proof -\n" ^
 mkIsarProof spc isabelleTerm None t (indent ^ "  ") ^
 indent ^ "(* Final Refinement Step XXXX *)\n" ^
@@ -664,7 +668,7 @@ indent ^ "show ?thesis\n" ^
 indent ^ "  apply (unfold " ^ unfold_ids ^ " )\n" ^
 indent ^ "  apply (simp only:split_conv)\n" ^
 indent ^ "  apply (cut_tac unfolded)\n" ^
-indent ^ "  apply smt\n" ^
+indent ^ "  apply " ^ smtcall ^ "\n" ^
 indent ^ "done"
 
 
