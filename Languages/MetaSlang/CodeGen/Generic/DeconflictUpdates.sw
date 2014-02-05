@@ -89,18 +89,22 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
                       %% Update parent entry.  If this adds new pending refs, put on unresolved list.
                       let parent = find_entry (refs_map, name) in
                       let new_pending =
-                          foldl (fn (new_pending, ref_from_parent) ->
-                                   let child = find_entry (refs_map, ref_from_parent) in
-                                   foldl (fn (new_pending, ref_from_child) ->
-                                            if (ref_from_child in? new_pending     ||
-                                                ref_from_child in? parent.resolved || 
-                                                ref_from_child in? parent.pending) 
-                                              then
-                                                new_pending
-                                            else
-                                              ref_from_child |> new_pending)
-                                         new_pending
-                                         (child.pending ++ child.resolved))
+                          foldl (fn (new_pending, ref_from_parent as Qualified (q, id)) ->
+                                   case findAQualifierMap (refs_map, q, id) of
+                                     | Some child ->
+                                       foldl (fn (new_pending, ref_from_child) ->
+                                                if (ref_from_child in? new_pending     ||
+                                                    ref_from_child in? parent.resolved || 
+                                                    ref_from_child in? parent.pending) 
+                                                  then
+                                                    new_pending
+                                                else
+                                                  ref_from_child |> new_pending)
+                                             new_pending
+                                             (child.pending ++ child.resolved)
+                                     | _ ->
+                                       let _ = writeLine("Ignore: " ^ anyToString ref_from_parent) in
+                                       new_pending)
                                 []
                                 parent.pending
                       in
@@ -139,7 +143,10 @@ op appliedOpRefs (spc : Spec) : AppliedOpRefs =
 
 op stateful_refs_in_ops (context : Context) : StatefulRefsFromOps =
  let applied_op_refs = appliedOpRefs context.spc in
- let stateful_refs   = mapAQualifierMap (fn info -> stateful_refs_in (context, -2, firstOpDef info)) context.spc.ops in
+ let stateful_refs   = mapAQualifierMap (fn info -> 
+                                           stateful_refs_in (context, -2, firstOpDef info)) 
+                                        context.spc.ops 
+ in
  let stateful_refs   = foldriAQualifierMap 
                          (fn (parent_q, parent_id, op_refs, srefs) ->
 
