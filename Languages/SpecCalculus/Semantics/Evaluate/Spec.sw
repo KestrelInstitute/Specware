@@ -34,9 +34,11 @@ and then qualify the resulting spec if the spec was given a name.
     (pos_spec,TS,depUIDs) <-
       evaluateSpecElems
 	(markQualified % even the empty spec!
-	   (if anyImports? spec_elements
-              then emptySpec % some import will include baseSpec
-            else importOfSpec(optBaseUnitId,baseSpec))
+           %% Specs may (perhaps unwisely) import sub-specs of the base spec, so
+           %% don't assume the base is imported just because some import exists.
+           %% Instead, rely on removeDuplicateImports to eliminate redundant 
+           %% imports of the base (it includes an optimization for the base spec).
+	   (importOfSpec(optBaseUnitId,baseSpec)) 
            defaultQual)
 	spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
@@ -86,10 +88,6 @@ axioms, etc.
               val               
               (reverse terms) % just so result shows in same order as read
       | _ -> return val
-
-  op  anyImports?: SpecElemTerms -> Bool
-  def anyImports? specElems =
-    exists? (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
   op doImport(spc: Spec) (term: SCTerm, impSpec: Spec, position: Position): SpecCalc.Env Spec =
    {(term, impSpec)
