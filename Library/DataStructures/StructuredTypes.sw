@@ -15,6 +15,20 @@ spec
   import Maps#Maps_extended  
   import STBase              
 
+% a helpful lemma: Intuition: Consider a fold over a list to produce a
+% set.  Assume that the fold starts with the empty set and inserts
+% elements into the set.  If folding over some list gives the empty
+% set, the list must have been empty (otherwise something would have
+% been inserted into the set). This theorem generalizes that notion
+% (we have a predicate over the accumulator that is always violated by
+% the folded function (f), so if the predicate holds on the result of
+% the fold, f must never have been called -- thus the list must have
+% been empty).
+
+  theorem foldl_empty_lemma is [a,b]
+    fa(l: List a, mypred: b -> Bool, f : b * a -> b, initialacc : b)
+      (fa(acc : b, elem : a) ~(mypred(f(acc,elem)))) =>
+      mypred (foldl f initialacc l) => (l = [])
 
   % Returns the set containing the natural numbers in the interval [i,j).
   % TODO: Define in the inefficient but nice way with no accumulator?
@@ -1086,7 +1100,16 @@ proof Isa CM2S_empty_map
 end-proof
 
 proof Isa L2S_Equal_Nil
-  sorry
+  apply(auto simp add: L2S_Nil L2S_def)
+  apply(cut_tac f = "(\<lambda>(b, a). Set__set_insert (a, b))" and mypred=Set__empty_p and initialacc=Set__empty_set and l = al in foldl_empty_lemma)
+  apply(simp_all)
+end-proof
+
+proof Isa foldl_empty_lemma
+  apply(induct l)
+  apply(simp)
+  apply(auto)
+  apply (metis (lifting, no_types) List__e_bar_gt_subtype_constr foldl_Cons foldl_Nil foldl_append rev_exhaust)
 end-proof
 
 end-spec
