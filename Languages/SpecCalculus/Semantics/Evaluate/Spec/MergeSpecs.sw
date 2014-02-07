@@ -58,6 +58,20 @@ op [a] compatibleTypes1?(ty1: AType a, ty2: AType a): Bool =
 
 op MSPS.debug?: Bool = false
 
+op getFirstFilePosition(tm: MSTerm): Option Position =
+  foldSubTerms (fn (stm, result) ->
+                if some? result then result
+                  else let pos = termAnn stm in
+                       if embed? File pos
+                         then Some pos else None)
+    None tm
+
+op printOptPosition(o_p: Option Position): String =
+  case o_p of
+    | Some(File (filename, left, _)) ->
+      "Line "^show(left.1 - 1)^" of "^filename^"\n"
+    | _ -> ""
+
  op mergeOpInfo (spc: Spec) (ops: OpMap) (info: OpInfo): OpMap =
    let
      def aux (new_info, Qualified (q, id)) =
@@ -87,7 +101,12 @@ op MSPS.debug?: Bool = false
                                  ~(new_tvs = old_tvs && compatibleTypes1?(new_ty, old_ty)
                                    && compatibleTerms?(new_dfn, old_dfn)))
                           (zip(sub_pref_type_tms, non_pref_sub_type_tms))
-                       then warn("mergeOpInfo conflict for "^q^"."^id^":\n"^printTerm new_info.dfn^"\n"^printTerm  old_info.dfn)
+                       then
+                         let o_pos_new = getFirstFilePosition new_info.dfn in
+                         let o_pos_old = getFirstFilePosition  old_info.dfn in
+                         warn("mergeOpInfo conflict for "^q^"."^id^":\n"
+                                ^printTerm new_info.dfn^"\n"^printOptPosition o_pos_new
+                                ^printTerm old_info.dfn^"\n"^printOptPosition o_pos_old)
                        else ()
              in
              let combined_type_tms =
@@ -95,13 +114,15 @@ op MSPS.debug?: Bool = false
                    ++ map (fn ((new_tvs, new_ty, new_dfn), (old_tvs, old_ty, old_dfn)) ->
                              if new_tvs = old_tvs && compatibleTypes?(new_ty, old_ty)
                                  && compatibleTerms?(new_dfn, old_dfn)
-                               then (new_tvs, chooseDefinedType(old_ty, new_ty), chooseDefinedTerm(old_dfn, new_dfn))
+                               then (new_tvs, chooseDefinedType(old_ty, new_ty),
+                                     chooseDefinedTerm(old_dfn, new_dfn))
                                else (new_tvs, new_ty, new_dfn))
                        (zip(sub_pref_type_tms, non_pref_sub_type_tms))
 	     in
 	     let combined_dfn = maybePiAndTypedTerm combined_type_tms in
              let _ = if true then ()
-               else writeLine("merge old: "^id^"\n"^printTerm(old_info.dfn)^"\n with \n"^printTerm(new_info.dfn)
+               else writeLine("merge old: "^id^"\n"^printTerm(old_info.dfn)
+                              ^"\n with \n"^printTerm(new_info.dfn)
                               ^"\n to\n"^printTerm combined_dfn) in
 	     new_info << {names           = combined_names, 
 			  dfn             = combined_dfn,
@@ -252,7 +273,8 @@ op removeDuplicateImports (spc : Spec) : Spec =
                if saw_base? then
                  remove_duplicates (tail, seen, true)
                else
-                 let (revised_elements_in_tail, non_imports_in_tail, seen, _) = remove_duplicates (tail, seen, true) in
+                 let (revised_elements_in_tail, non_imports_in_tail, seen, _)
+                    = remove_duplicates (tail, seen, true)                       in
                  let revised_elements = this_element :: revised_elements_in_tail in
                  let non_imports      = non_imports_in_tail                      in
                  (revised_elements, 
