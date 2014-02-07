@@ -32,6 +32,9 @@ axiom empty_set is [a]
 op [a] empty? (s : Set a) : Bool = (s = empty_set)
 op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
 
+theorem empty?_of_empty_set is [a]
+  empty? (empty_set : Set a)
+
 % the result of inserting an element into a set is characterized by
 % consisting of all the old elements plus the newly inserted element
 
@@ -80,6 +83,9 @@ theorem set_insertion_equal_empty is [a]
 
 theorem set_insertion_equal_empty_alt is [a]
   fa(s: Set a, x:a) (empty_set = set_insert(x,s)) = false
+
+theorem empty_of_set_insert_false is [a]
+  fa(s: Set a, x:a) (empty? (set_insert(x,s)) = false)
 
 
 %  op [a] singletonSet(x:a):Set a = set_insert(x,empty_set)
@@ -887,6 +893,15 @@ end-proof
 
 proof Isa Set__set_insertion_commutativity_lemma
   apply(simp add: Set__set_insertion_commutativity)
+end-proof
+
+proof Isa Set__empty_of_set_insert_false [simp]
+  apply(cut_tac x=x and s=s in Set__set_insertion_equal_empty_alt)
+  apply(simp add: Set__empty_p_def)
+end-proof
+
+proof Isa Set__empty_p_of_empty_set [simp]
+  apply(simp add: Set__empty_p_def)
 end-proof
 
 end-spec
