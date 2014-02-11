@@ -732,7 +732,8 @@ proof Isa lcmOf_Obligation_subtype
    apply (simp add: Integer__hasMin_p_def Integer__isMinIn_def mem_lambda_int)
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
-            = Nat__posNat_p", simp, thin_tac "?a=?b")
+            = Nat__posNat_p")
+     apply(thin_tac "?a=?b")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
           thin_tac "?P", thin_tac "?P",  
@@ -763,7 +764,8 @@ proof Isa gcdOf_Obligation_subtype
    apply (simp add: Integer__hasMax_p_def Integer__isMaxIn_def mem_lambda_int)
    apply (subgoal_tac
           "(\<lambda>x\<Colon>nat. if 0 < x then Nat__posNat_p x else regular_val)
-            = Nat__posNat_p", simp, thin_tac "?a=?b")
+            = Nat__posNat_p")
+     apply(thin_tac "?a=?b")
    defer apply (simp_all add: fun_eq_iff mem_lambda_int)
    apply (drule Set__Finite_to_list, simp, simp, 
           thin_tac "?P", thin_tac "?P",
