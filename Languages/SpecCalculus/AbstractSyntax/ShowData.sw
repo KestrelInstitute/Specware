@@ -187,17 +187,21 @@ op ppSCTerm (c:Context) ((term, pos):SCTerm) : WLPretty =
       ppConcat [ppString "colim ",
                 ppSCTerm c term]
     | Subst (specTerm, morphTerm, pragmas) ->
-      ppConcat [ppSCTerm c specTerm,
-                ppString " [",
-                ppSCTerm c morphTerm,
-                ppString "]",
+      ppConcat [ppString "(Subst ",
+                ppSCTerm c specTerm,
+                ppString " ",
                 ppBreak,
-                ppString " proof [",
-                ppSep (ppAppend (ppString ", ") ppBreak)
+                ppSCTerm c morphTerm,
+                ppString " ",
+                ppBreak,
+                ppString "(",
+                ppSep (ppAppend (ppString " ") ppBreak)
                   (map (fn ((p1,p2,p3),pos) -> ppConcat [ppLitString p1,
                                                          ppLitString p2,
                                                          ppLitString p3])
-                     pragmas)]
+                     pragmas),
+                ppString ")",
+                ppString " endSubst)"]
     | SpecMorph (dom, cod, elems, pragmas) ->
       let 
 	  def ppSpecMorphRule (rule, _(* position *)) = 
@@ -1505,7 +1509,7 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
     | mystery -> fail ("No match in ppType with: '" ^ (anyToString mystery) ^ "'")
 
 op ppMorphism (c:Context) ({dom,cod,typeMap,opMap,pragmas,sm_tm}:Morphism) : WLPretty =
-  ppGrConcat [ppString "morphism ",
+  ppGrConcat [ppString "(Morphism ",
               ppString "(",
               ppString "...domain spec elided...",  %ppUIDorFull c (Spec dom) None "name ",
               ppString ")",
@@ -1529,7 +1533,7 @@ op ppMorphism (c:Context) ({dom,cod,typeMap,opMap,pragmas,sm_tm}:Morphism) : WLP
 		   pragmas),
               ppString "]",
               ppBreak,
-              ppString "end morphism"]
+              ppString "endMorphism)"]
   
 op ppIdMap (idMap:QualifiedIdMap) : WLPretty =
   ppNest 0
