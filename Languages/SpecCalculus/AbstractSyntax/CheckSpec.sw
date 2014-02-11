@@ -36,7 +36,8 @@ op [a] badOpInfo? (opinfo : AOpInfo a, spc : Spec) : Bool =
   let tyvarss = map (fn x -> x.1) triples in
   let tyvars_bad? = if ~ (allEqualElements? tyvarss) then let _ = writeLine("ERROR: Inconsistent type vars for the defintions of op " ^ show name ^ ".") in true else false in
   let tys = map (fn x -> x.2) triples in
-  let _ = if (~ (comparePairwise? (equalType?, tys))) then writeLine("NOTE: Inconsistent types for the multiple defintions of op " ^ show name ^ " (may be okay).") else () in
+  %% This messaage may just indicate that postcondition strengthening has been done, so it is merely a NOTE:
+  let _ = if (~ (comparePairwise? (equalType?, tys))) then writeLine("NOTE: Different types for the multiple definitions of op " ^ show name ^ " (may be okay).") else () in
 
  %% TODO: check that Any does not appear in any argument of And?
 
