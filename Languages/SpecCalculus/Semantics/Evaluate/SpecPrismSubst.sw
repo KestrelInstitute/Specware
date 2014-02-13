@@ -11,10 +11,11 @@ SpecCalc qualifying spec
   op applySpecPrismSubstitution (prsm          : SpecPrism)
                                 (original_spec : Spec) 
                                 (prism_tm      : SCTerm) 
+                                (spec_tm       : SCTerm) 
                                 (term_pos      : Position) 
    : SpecCalc.Env Spec =                          
    {
-    verify_subspec prsm.dom original_spec term_pos;
+    verify_subspec prsm.dom original_spec prism_tm spec_tm term_pos;
     auxApplySpecPrismSubstitution prsm original_spec prism_tm term_pos
     }
 

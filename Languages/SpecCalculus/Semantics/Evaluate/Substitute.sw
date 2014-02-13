@@ -24,7 +24,7 @@ SpecCalc qualifying spec
         let timeStamp = max (spec_timestamp, subst_timestamp)     in
         let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
         {
-         new_spec   <- applySpecMorphismSubstitution sm spc subst_tm term_pos;
+         new_spec   <- applySpecMorphismSubstitution sm spc subst_tm spec_tm term_pos;
          compressed <- complainIfAmbiguous new_spec term_pos;  %(compressDefs new_spec)   term_pos;
          new_spec <- return(setElements(compressed, compressed.elements ++ map SMPragmaToElement pragmas));
          return (Spec new_spec, timeStamp, dep_UIDs)
@@ -34,7 +34,7 @@ SpecCalc qualifying spec
         let timeStamp = max (spec_timestamp, subst_timestamp)     in
         let dep_UIDs  = listUnion (spec_dep_UIDs, subst_dep_UIDs) in 
         {
-         new_spec   <- applySpecPrismSubstitution prsm spc subst_tm term_pos;
+         new_spec   <- applySpecPrismSubstitution prsm spc subst_tm spec_tm term_pos;
          compressed <- complainIfAmbiguous new_spec term_pos;  %(compressDefs new_spec)   term_pos;
          new_spec <- return(setElements(compressed, compressed.elements ++ map SMPragmaToElement pragmas));
          return (Spec new_spec, timeStamp, dep_UIDs)
