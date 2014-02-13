@@ -707,12 +707,13 @@ termination
   apply (auto simp add: Nat__pred_def)
 end-proof
 
-%TODO completely bogus measure.  I don't think we can prove that this terminates. Maybe once stacks have semantics, we can.
 proof isa Stack2L ()
 by (pat_completeness, auto)
 termination
-  apply (relation "measure (\<lambda>(stk). 0)")
-  sorry
+  apply (relation "measure (\<lambda>(stk). length (Stack__stackToList stk))")
+  apply(auto)
+  apply(auto simp add: Stack__stackToList_of_pop Stack__empty_stack_p_def)
+  apply(metis One_nat_def Stack__empty_stack_p_def Stack__length_of_stackToList_non_zero le_refl nat_pred_less_iff_le neq0_conv)
 end-proof
 
 %TODO completely bogus measure.  I don't think we can prove that this terminates. Maybe once stacks have semantics, we can.
