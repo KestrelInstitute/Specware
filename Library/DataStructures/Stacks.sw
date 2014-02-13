@@ -79,6 +79,9 @@ theorem push_aux_append is [a]
 op [a] pushl (lst:List a, stk:Stack a): Stack a = 
   push_aux(reverse(lst),stk)
 
+theorem stackToList_of_pop is [a]
+  fa(stk: Stack a)
+    ~(empty_stack? stk) => (stackToList (pop stk) = tail (stackToList stk))
 
 
 %% TODO This is what I want to do for pushl but cannot, due to an Isabelle translator bug (JIRA issue SPEC-41):
@@ -141,5 +144,21 @@ proof isa pop_push
   apply(simp add: Stack__push_def Stack__pop_def)
   by (metis Function__f_inverse_apply Function__inverse_f_apply Stack__listToStack_def Stack__stackToList_subtype_constr tl.simps(2))
 end-proof
+
+proof Isa Stack__stackToList_of_pop_Obligation_subtype
+  apply(simp add: Stack__empty_stack_p_def)
+end-proof
+
+proof Isa Stack__stackToList_of_pop_Obligation_subtype0
+  apply(simp add: Stack__empty_stack_p_def)
+  apply(auto)
+  apply(metis List__nonEmpty_p_def Stack__top_Obligation_subtype)
+end-proof
+
+proof Isa Stack__stackToList_of_pop
+  apply(simp add: Stack__pop_def)
+  apply( metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
+end-proof
+
 
 end-spec
