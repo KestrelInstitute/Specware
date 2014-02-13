@@ -24,34 +24,36 @@ import Qualify
 
 op noElaboratingMessageFiles : List String = []
 
-op SpecCalc.evaluateSpec (spec_elements     : ExplicitSpecTerm) 
-                         (default_qualifier : Qualifier)
-                         (pos               : Position)
+op evaluateSpec (spec_elements     : ExplicitSpecTerm) 
+                (default_qualifier : Qualifier)
+                (pos               : Position)
  : Env ValueInfo = 
+ let
+   def print_progress_message () =
+     {
+      current_uid                     <- getCurrentUID;
+      current_spec_name               <- return (uidToString current_uid);
+      when (current_spec_name nin? noElaboratingMessageFiles) 
+        (print (";;; Elaborating spec at " ^ current_spec_name ^ "\n"))
+      }
+
+   def get_initial_spec () =
+     {
+      (opt_base_uid, base_spec)       <- getBase;
+      return (importOfSpec (opt_base_uid, base_spec))
+      }
+ in
  {
-  unit_id  <- getCurrentUID;
-  unit_str <- return (uidToString unit_id);
-  when (unit_str nin? noElaboratingMessageFiles)
-     (print (";;; Elaborating spec at " ^ unit_str ^ "\n"));
-  (opt_base_unit_id, base_spec) <- getBase;
-  (pos_spec, timestamp, dep_uids) <-
-    evaluateSpecElems
-         (markQualified % even the empty spec!
-            %% Specs may (perhaps unwisely) import sub-specs of the base spec, so
-            %% don't assume the base is imported just because some import exists.
-            %% Instead, rely on removeDuplicateImports to eliminate redundant 
-            %% imports of the base (it includes an optimization for the base spec).
-            (importOfSpec (opt_base_unit_id, base_spec)) 
-            default_qualifier)
-         spec_elements;
-  elaborated_spec <- elaborateSpecM      pos_spec;
-  elaborated_spec <- complainIfAmbiguous elaborated_spec pos;
-% compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) pos;
-% print(printSpec compressed_spec);
-  transformed_spec <- applyOpRefinements elaborated_spec;  % compressed_spec;
-  return (Spec (markQualifiedStatus (removeDuplicateImports transformed_spec)),
-          timestamp,
-          dep_uids)
+  print_progress_message ();
+
+  initial_spec                    <- get_initial_spec    ();
+  qualified_spec                  <- return (markQualified initial_spec default_qualifier);
+  (raw_spec, timestamp, dep_uids) <- evaluateSpecElems   qualified_spec   spec_elements;
+  elaborated_spec                 <- elaborateSpecM      raw_spec;
+  disambiguated_spec              <- complainIfAmbiguous elaborated_spec pos;
+  refined_spec                    <- applyOpRefinements  disambiguated_spec;
+  final_spec                      <- return (Spec (markQualifiedStatus (removeDuplicateImports refined_spec)));
+  return (final_spec, timestamp, dep_uids)
   }
 
 (*
@@ -115,7 +117,7 @@ op evaluateSpecElem (spc : Spec) ((elem, pos) : SpecElemTerm) : Env Spec =
    | Claim   (Axiom,      name, tyVars, term) -> return (addAxiom      ((addQualifier spc name, tyVars, term, pos), spc)) 
    | Claim   (Theorem,    name, tyVars, term) -> return (addTheorem    ((addQualifier spc name, tyVars, term, pos), spc))
    | Claim   (Conjecture, name, tyVars, term) -> return (addConjecture ((addQualifier spc name, tyVars, term, pos), spc))
-   | Claim   _                                -> SpecCalc.error "evaluateSpecElem: unsupported claim type"
+   | Claim   _                                -> error "evaluateSpecElem: unsupported claim type"
 
    | Pragma  (prefix, body, postfix)          -> return (addPragma     ((prefix, body, postfix, pos), spc))
    | Comment str                              -> return (addComment    (str, pos, spc))
