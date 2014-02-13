@@ -83,6 +83,10 @@ theorem stackToList_of_pop is [a]
   fa(stk: Stack a)
     ~(empty_stack? stk) => (stackToList (pop stk) = tail (stackToList stk))
 
+theorem length_of_stackToList_non_zero is [a]
+  fa(stk: Stack a)
+    ~(empty_stack? stk) => ~(length (stackToList stk) = 0)
+
 
 %% TODO This is what I want to do for pushl but cannot, due to an Isabelle translator bug (JIRA issue SPEC-41):
 %% %% Push the elements of lst onto stk (earlier elements of lst go shallower in the stack):
@@ -158,6 +162,10 @@ end-proof
 proof Isa Stack__stackToList_of_pop
   apply(simp add: Stack__pop_def)
   apply( metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
+end-proof
+
+proof Isa Stack__length_of_stackToList_non_zero
+  apply(metis List__nonEmpty_p_def Stack__stackToList_of_pop_Obligation_subtype0 length_0_conv)
 end-proof
 
 
