@@ -1,4 +1,5 @@
-spec
+Integer qualifying spec
+
 import Integer
 
 refine def divides (x:Int, y:Int) : Bool =
