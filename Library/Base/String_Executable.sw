@@ -1,33 +1,43 @@
- spec
- import String
+spec
 
- refine def natConvertible (s:String) : Bool =
-   let cs = explode s in
-   (exists? isNum cs) && (forall? isNum cs)
+import String
 
- refine def intConvertible (s:String) : Bool =
-   let cs = explode s in
-   (exists? isNum cs) &&
-   ((forall? isNum cs) || (head cs = #- && forall? isNum (tail cs)))
+refine def natConvertible (s : String) : Bool =
+ let cs = explode s in
+ (exists? isNum cs) && (forall? isNum cs)
 
- op explodedStringToNat(l: List Char | forall? isNum l): Nat =
-   foldl (fn (result, dig:(Char | isNum)) -> result * 10 + ord dig - 48) 0 l
+refine def intConvertible (s : String) : Bool =
+ let cs = explode s in
+ (exists? isNum cs) 
+ &&
+ ((forall? isNum cs) || (head cs = #- && forall? isNum (tail cs)))
 
- refine def stringToInt (s:String | intConvertible s) : Int =
-   let e_s = explode s in
-   let firstchar::r_s = e_s in
-   if firstchar = #- then - (explodedStringToNat r_s)
-                     else    explodedStringToNat e_s
+op explodedStringToNat (l : List Char | forall? isNum l) : Nat =
+ foldl (fn (result, dig : (Char | isNum)) -> 
+          result * 10 + ord dig - 48)
+       0
+       l
 
- refine def stringToNat (s:String | natConvertible s) : Nat =
-   explodedStringToNat(explode s)
+refine def stringToInt (s : String | intConvertible s) : Int =
+ let e_s = explode s in
+ let firstchar :: r_s = e_s in
+ if firstchar = #- then 
+   - (explodedStringToNat r_s)
+ else  
+   explodedStringToNat e_s
 
- refine def explode (s:String) : List Char =
-   tabulate (length s, fn i -> s@i)
+refine def stringToNat (s : String | natConvertible s) : Nat =
+ explodedStringToNat(explode s)
 
- def implode(char_list: List Char): String =
-   foldl (fn (s, c) -> s ^ show c) "" char_list      % Hopefully code generators will provide a more efficient version
+refine def explode (s : String) : List Char =
+ tabulate (length s, fn i -> s@i)
 
+def implode(char_list : List Char) : String =
+ %% Hopefully code generators will provide a more efficient version
+ foldl (fn (s, c) -> 
+          s ^ show c) 
+       "" 
+       char_list 
 
 proof isa Nat__natConvertible__1__obligation_refine_def
  (**  proof is extremely tedious  -- see attempt below
