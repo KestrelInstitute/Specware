@@ -29,24 +29,49 @@ op evaluateSpec (spec_elements     : ExplicitSpecTerm)
                 (pos               : Position)
  : Env ValueInfo = 
  let
-   def print_progress_message () =
+   def print_progress_message current_uid =
      {
-      current_uid                     <- getCurrentUID;
-      current_spec_name               <- return (uidToString current_uid);
+      current_spec_name <- return (uidToString current_uid);
       when (current_spec_name nin? noElaboratingMessageFiles) 
         (print (";;; Elaborating spec at " ^ current_spec_name ^ "\n"))
       }
 
-   def get_initial_spec () =
+   def import? (element, _) = 
+     case element of 
+       | Import _ -> true 
+       | _ -> false
+
+   def any_imports? (elements : SpecElemTerms) = 
+     exists? import? elements
+
+   def base_empty_spec? ({path, hashSuffix} : UnitId) = 
+     case reverse path of
+       | "Empty" :: "Base" :: "Library" :: _ -> hashSuffix = None % TODO: this should be more specific
+       | _ -> false
+
+   def get_initial_spec current_uid = 
      {
-      (opt_base_uid, base_spec)       <- getBase;
+      (opt_base_uid, base_spec) <- getBase;
+      %% TODO: remove:
       return (importOfSpec (opt_base_uid, base_spec))
+      %% TODO: add: [currently this induces some peculiar problems with InterpreterBase spec]
+      %% return (if any_imports? spec_elements then
+      %%           %% Usually at least one of the imports will import the base spec (but this is not required!).
+      %%           emptySpec     
+      %%         else if base_empty_spec? current_uid then
+      %%           %% The empty spec in the base library is the only spec allowed to have no implicit imports.
+      %%           emptySpec     
+      %%         else
+      %%           %% Other specs lacking explicit imports start by implicitly importing the base spec.
+      %%           importOfSpec (opt_base_uid, base_spec))
       }
  in
  {
-  print_progress_message ();
+  current_uid                     <- getCurrentUID;
 
-  initial_spec                    <- get_initial_spec    ();
+  print_progress_message current_uid;
+
+  initial_spec                    <- get_initial_spec    current_uid;
   qualified_spec                  <- return (markQualified initial_spec default_qualifier);
   (raw_spec, timestamp, dep_uids) <- evaluateSpecElems   qualified_spec   spec_elements;
   elaborated_spec                 <- elaborateSpecM      raw_spec;
