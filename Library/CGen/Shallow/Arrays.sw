@@ -98,7 +98,7 @@ end-proof
 op abs_add (arr: Array Int) (n:Nat, r: Int | n < length arr) : Int 
    =  r + arr @ n
 
-endspec
+end-spec
 
 % ------------------------------------------------------------------------------
 % A coarse refinement
@@ -120,7 +120,7 @@ theorem isucc_is_add_1 is    fa (x:Int) isucc x = x + 1
 
 theorem ipred_is_sub_1 is    fa (x:Int) ipred x = x - 1
 
-endspec
+end-spec
 
 % ------------------------------------------------------------------------------
 % And a transformation into the imperative form
@@ -158,7 +158,7 @@ Array2 = spec
 refine def array_sum (arr : Array Int) : Int  
   = frec_aux (0, 0,  fn (n,r) -> r + arr @ (n-1), ipred, length arr)
 
-endspec
+end-spec
 
 % ------------------------------------------------------------------------------
 % Transformation into the imperative form
