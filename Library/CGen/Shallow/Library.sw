@@ -4,6 +4,7 @@ Library qualifying spec
 %%TODO rephrase as specware lemmas when possible.
 
 import /Library/General/TwosComplementNumber
+import /Library/General/TwosComplementNumber_ExecOps  %% TODO: Without this, we get a mergeOpInfo warning for Specware/Library/AllIsa
 import /Library/General/FunctionExt
 import /Library/General/OptionExt
 import /Library/Base/List_Executable
