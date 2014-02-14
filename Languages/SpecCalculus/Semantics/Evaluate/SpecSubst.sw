@@ -43,7 +43,7 @@ op verify_subspec (dom_spc : Spec)
             | ([], [], []) -> ()
             | _ ->
               let _ = writeLine ("------------------------------------------") in 
-              let _ = writeLine ("Warning: for now, ignoring these problems:") in
+              let _ = writeLine ("ERROR: for now, ignoring these problems:") in
               let _ = writeLine (warnAboutMissingItems "" "" type_ids op_ids prop_ids sm_tm spec_tm) in
               let _ = writeLine ("------------------------------------------") in 
               ())
