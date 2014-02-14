@@ -2,11 +2,11 @@ String qualifying spec
 
 import String
 
-refine def natConvertible (s : String) : Bool =
+refine def Nat.natConvertible (s : String) : Bool =
  let cs = explode s in
  (exists? isNum cs) && (forall? isNum cs)
 
-refine def intConvertible (s : String) : Bool =
+refine def Integer.intConvertible (s : String) : Bool =
  let cs = explode s in
  (exists? isNum cs) 
  &&
@@ -18,7 +18,7 @@ op explodedStringToNat (l : List Char | forall? isNum l) : Nat =
        0
        l
 
-refine def stringToInt (s : String | intConvertible s) : Int =
+refine def Integer.stringToInt (s : String | intConvertible s) : Int =
  let e_s = explode s in
  let firstchar :: r_s = e_s in
  if firstchar = #- then 
@@ -26,13 +26,13 @@ refine def stringToInt (s : String | intConvertible s) : Int =
  else  
    explodedStringToNat e_s
 
-refine def stringToNat (s : String | natConvertible s) : Nat =
+refine def Nat.stringToNat (s : String | natConvertible s) : Nat =
  explodedStringToNat(explode s)
 
 refine def explode (s : String) : List Char =
  tabulate (length s, fn i -> s@i)
 
-def implode(char_list : List Char) : String =
+def implode (char_list : List Char) : String =
  %% Hopefully code generators will provide a more efficient version
  foldl (fn (s, c) -> 
           s ^ show c) 
