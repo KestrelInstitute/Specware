@@ -1316,10 +1316,11 @@ op ppPattern1 (c:Context) (pattern:MSPattern) : WLPretty =
                   ppTerm c term,
                   ppString ")"]
     | TypedPat (pat,srt,_) ->
-      ppGrConcat [ppString "sorted ",
+      ppGrConcat [ppString "(TypedPat ",
                   ppPattern c pat,
-                  ppString ": ",
-                  ppType c srt]
+                  ppString " ",
+                  ppType c srt,
+                  ppString ")"]
     | mystery -> fail ("No match in ppPattern with: '" ^ (anyToString mystery) ^ "'")
   
 op ppFun (fun:MSFun) : WLPretty =
@@ -1396,6 +1397,11 @@ op ppFixity (fix: Fixity) : WLPretty =
       %     | Bool _ -> true
       %     | _ -> false
 
+op ppOptionType (c: Context) (ty:Option MSType) : WLPretty =
+  case ty of
+  | None -> ppString "None"
+  | Some ty -> ppType c ty
+
 op ppType (c: Context) (ty:MSType) : WLPretty =
   if c.printPositionInfo?
     then case typeAnn ty of
@@ -1412,6 +1418,17 @@ op ppType (c: Context) (ty:MSType) : WLPretty =
 			       ppType1 c ty])
            | _ -> ppConcat [ppString "@ ", ppType1 c ty]
   else ppType1 c ty
+
+op ppMetaTyVar (c: Context) (x: AMetaTyVar StandardAnnotation) : WLPretty =
+  let Ref rc = x in
+      ppGrConcat [ppString "((link ",
+                  ppOptionType c rc.link,
+                  ppString ") (uniqueId ",
+                  ppString (show rc.uniqueId),
+                  ppString ") (name ",
+                  ppString rc.name,
+                  ppString "))"]
+  
     
 op ppType1 (c:Context) (ty:MSType) : WLPretty =
   case ty of
@@ -1498,6 +1515,9 @@ op ppType1 (c:Context) (ty:MSType) : WLPretty =
     | TyVar (tyVar,_) -> ppConcat [ppString "(TyVar ",
                                    ppID tyVar,
                                    ppString ")"]
+    | MetaTyVar (metaTyVar,_) -> ppConcat [ppString "(MetaTyVar ",
+                                           ppMetaTyVar c metaTyVar,
+                                           ppString ")"]
     | Pi(tvs,ty,_) ->
       % if tvs = [] then ppType c ty
       %   else 
