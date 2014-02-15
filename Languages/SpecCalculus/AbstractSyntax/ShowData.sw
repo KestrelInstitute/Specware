@@ -993,6 +993,14 @@ op ppTerm1 (c:Context) (term:MSTerm) : WLPretty =
                    ppSpaceBreak,
                    ppTerm c term2,
                    ppString ")"]
+    | ApplyN (terms, _)
+      ->
+      ppGr2Concat [ppString "(ApplyN ",
+                   ppBreak,
+                   ppSep (ppAppend (ppString " ") ppBreak) (map (ppTerm c) terms),
+                   ppSpaceBreak,
+                   ppString ")"]
+
     | Record (fields,_) ->      
 	% (case fields of
 	%   | [] -> ppString "(tuple)"
