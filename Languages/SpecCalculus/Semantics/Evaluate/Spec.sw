@@ -53,17 +53,17 @@ op evaluateSpec (spec_elements     : ExplicitSpecTerm)
      {
       (opt_base_uid, base_spec) <- getBase;
       %% TODO: remove:
-      %% return (importOfSpec (opt_base_uid, base_spec))
+      return (importOfSpec (opt_base_uid, base_spec))
       %% TODO: add: [currently this induces some peculiar problems with InterpreterBase spec]
-      return (if any_imports? spec_elements then
-                 %% Usually at least one of the imports will import the base spec (but this is not required!).
-                 emptySpec     
-               else if base_empty_spec? current_uid then
-                 %% The empty spec in the base library is the only spec allowed to have no implicit imports.
-                 emptySpec     
-               else
-                 %% Other specs lacking explicit imports start by implicitly importing the base spec.
-                 importOfSpec (opt_base_uid, base_spec))
+      %% return (if any_imports? spec_elements then
+      %%           %% Usually at least one of the imports will import the base spec (but this is not required!).
+      %%           emptySpec     
+      %%         else if base_empty_spec? current_uid then
+      %%           %% The empty spec in the base library is the only spec allowed to have no implicit imports.
+      %%           emptySpec     
+      %%         else
+      %%           %% Other specs lacking explicit imports start by implicitly importing the base spec.
+      %%           importOfSpec (opt_base_uid, base_spec))
       }
  in
  {
