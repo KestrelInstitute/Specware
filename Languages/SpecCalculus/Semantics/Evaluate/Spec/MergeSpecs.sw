@@ -198,24 +198,6 @@ op removeDuplicateImports (spc : Spec) : Spec =
  let opt_base_spec = maybeGetBaseSpec () in
  let 
 
-   def add_seen (spc, elements, seen) =
-     let (imports, non_imports) = 
-         foldl (fn ((imports, non_imports), elt) -> 
-                  case elt of
-                    | Import _ -> (elt :: imports, non_imports)
-                    | _ ->        (imports, elt :: non_imports))
-               ([], [])
-               spc.elements
-     in
-     let new = (spc, reverse non_imports) in
-     if new in? seen then
-       seen
-     else
-       foldl (fn (seen, Import (_, spc, elements, _)) ->
-                add_seen (spc, elements, seen))
-             (new :: seen)
-             imports
-
    def remove_duplicates (elements, seen, saw_base?) =
      case elements of
 
@@ -291,26 +273,7 @@ op removeDuplicateImports (spc : Spec) : Spec =
               seen, 
               saw_base?)
  in
-
- %% Assume that the base spec and every spec it imports has already been seen.
- let seen_by_base = 
-     case opt_base_spec of
-       | Some base_spec -> butLast (add_seen (base_spec, base_spec.elements, []))
-       | _ -> []
- in
- let seen = 
-     case findLeftmost (fn (import_of_base, _) -> spc = import_of_base) 
-                       seen_by_base
-       of
-         | Some _ -> 
-           %% If we're processing the base specs themselves, assume nothing is seen.
-           []
-         | _ -> 
-           %% For other specs, seen will refer to the specs imported by the base spec.
-           seen_by_base
- in
-
- let (revised_elements, _, _, _) = remove_duplicates (spc.elements, seen, false) in
+ let (revised_elements, _, _, _) = remove_duplicates (spc.elements, [], false) in
  spc << {elements = revised_elements}
 
 endspec
