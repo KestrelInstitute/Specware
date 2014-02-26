@@ -27,7 +27,7 @@ The names of some of these operators clash with Cats and Graphs.
 Functor qualifying spec {
   import /Library/Structures/Data/Pretty
   import Shape qualifying /Library/Structures/Data/Categories/Sketches
-  import Cat qualifying /Library/Structures/Math/Cat
+  import /Library/Structures/Math/Cat
   import EdgeMap qualifying (translate (translate /Library/Structures/Data/Maps/Finite by {
       KeyValue._ +-> EdgeCat._,
       Dom._ +-> Edge._,
