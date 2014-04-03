@@ -13,13 +13,13 @@
     (if Emacs::*use-emacs-interface?*
         (Emacs::eval-in-emacs (format nil "(display-license-and-accept ~s)" license-text-file))
         (progn
-          (format t "Opening ~a~%" license-text-file)
+          (format *query-io* "Opening ~a~%" license-text-file)
           (and (ignore-errors
                  (with-open-file (s (format nil "~a/~a" specware-dir *license-text-file*)
                                     :direction :input)
                    (loop for line = (read-line s  nil :done)
                          until (eq line :done)
-                         do (format t "~a~%" line)))
+                         do (format *query-io* "~a~%" line)))
                  t)
                (yes-or-no-p "Do you agree to this license?"))))))
 
@@ -50,7 +50,7 @@
               (license-accepted)
             (if Emacs::*use-emacs-interface?*
                 (setq *license-accepted?* nil) ; Asynchronous
-                (progn (format t "License not accepted. Exiting...")
+                (progn (format *query-io* "License not accepted. Exiting...")
                        (setq *license-accepted?* nil)
                        (Specware::exit))))))))
 
