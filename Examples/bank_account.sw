@@ -22,3 +22,17 @@ end-spec
 BA1 = transform BankAccount by {
                                 maintain (balance) [lr Bag.bag_fold2]
                                 }
+
+BA2 = spec
+  import BA1
+  import /Library/DataStructures/StructuredTypes
+
+  op transations_list : Account -> List Transaction
+
+  axiom transactions_def is
+    fa (a : Account) transactions a = L2B (transations_list a)
+end-spec
+
+BA3 = transform BA2 by {
+                        implement (transactions, transactions_def) [ rl L2B_Cons ]
+                        }
