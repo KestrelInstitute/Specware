@@ -24,7 +24,7 @@ end-proof
 
 %% Translated version of the proof in SetsAsBags.sw (slightly fixed up, since there are more assumptions to discharge):
 proof Isa set_insert_new_Obligation_subtype
-  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption, assumption, assumption)
+  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption+)
 end-proof
 
 %% Translated version of the proof in SetsAsBags.sw:

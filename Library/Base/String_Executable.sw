@@ -140,18 +140,18 @@ proof isa Nat__stringToNat__1__obligation_refine_def
   apply (simp add: Nat__stringToNat_def,
          rule the1I2, erule Nat__stringToNat_Obligation_the)
   apply (thin_tac ?P, simp add: Nat__stringToNat__1_def)
-  apply (subgoal_tac "\<forall>x. Nat__natToString x = s \<longrightarrow> x = explodedStringToNat s",
+  apply (subgoal_tac "\<forall>x. Nat__natToString x = s \<longrightarrow> x = String__explodedStringToNat s",
          simp, thin_tac ?P)
   apply (induct s  rule: rev_induct, auto)
   apply (drule sym, case_tac "xa < 10",
          simp_all add: Nat__natToString_small Nat__natToString_large)
   apply (thin_tac ?P, thin_tac ?P, drule Nat__digitToString_Obligation_exhaustive)
-  apply (erule disjE, simp add: explodedStringToNat_def nat_of_char_def)+
-  apply (simp add: add: explodedStringToNat_def nat_of_char_def)
+  apply (erule disjE, simp add: String__explodedStringToNat_def nat_of_char_def)+
+  apply (simp add: add: String__explodedStringToNat_def nat_of_char_def)
   apply (drule_tac x="xa div 10" in spec)
   apply (frule Nat__natToString_Obligation_subtype,
          frule_tac Nat__digitToString_singleton, clarsimp)
-  apply (simp add: explodedStringToNat_def, thin_tac "?a = ?b")
+  apply (simp add: String__explodedStringToNat_def, thin_tac "?a = ?b")
   apply (rule_tac t = "nat_of_char a" and s = "xa mod 10 + 48" in subst) 
   apply (drule sym, frule Nat__natToString_Obligation_subtype,
          drule Nat__digitToString_Obligation_exhaustive)
@@ -165,6 +165,10 @@ proof isa String__explode__1_Obligation_subtype
  (** TRANSLATION ISSUE: Obligation is false and should not have been generated 
      in the first place.  According to the definition of tabulate, the "s@i"
      in 'tabulate (length s, fn i -> s@i)" will only be applied of i < length s
+
+   sjw: This should be generated. The problem is that the type system cannot capture the
+    above property. The solution is to use a version of tabulate with a dependent type:
+    op [a] tabulate (l: Nat) (f: {i: Nat | i < l} -> a): List a
   **)
 sorry
 end-proof
@@ -174,9 +178,13 @@ proof isa String__explode__1__obligation_refine_def
       simp add: List__tabulate_alt )
 end-proof
 
-proof isa String__implode__1__obligation_refine_def
+proof Isa String__implode_Obligation_subtype
+  sorry
+end-proof
+
+proof isa String__implode__def
   by (induct char_list rule: rev_induct, 
-      auto simp add: String__implode__1_def Char__show_def)
+      auto simp add: Char__show_def)
 end-proof
 
 endspec

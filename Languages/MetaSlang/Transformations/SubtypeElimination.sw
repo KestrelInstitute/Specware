@@ -88,7 +88,7 @@ SpecNorm qualifying spec
                                used_tvs)
                       in
                       % let _ = app (fn pred -> writeLine(printTermWithTypes pred)) predArgs in
-                      % let predTypes = map (fn pred -> inferType(spc, pred)) predArgs in
+                      let predTypes = map (fn pred -> inferType(spc, pred)) predArgs in
                       let new_t = mkAppl(Fun(Op(r_qid, Nonfix),
                                              mkArrow(mkProduct predTypes, ty), a),
                                          predArgs)
@@ -195,10 +195,11 @@ SpecNorm qualifying spec
     % let _ = writeLine("tv_map: "^anyToString tv_map) in
     let st_tm = substTyVarsWithSubtypes(tv_map,tm) in
     let rel_tm = mapTerm (polyCallsTransformers(spc, tb, false, coercions)) st_tm in
+    % let _ = writeLine("rel_tm: "^printTerm rel_tm) in
     let rel_tm = regTerm(rel_tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
     % let _ = writeLine("rel_tm: "^printTerm rel_tm) in
     let fvs = freeVars rel_tm ++ subtypePredFreeVars(rel_tm, spc) in
-    % let _ = writeLine("fvs: "^anyToString(subtypePredFreeVars(rel_tm, spc))) in
+    % let _ = writeLine("fvs: "^anyToString(fvs)) in
     let opt_tv_map =
          if reduceStpFnArgs?
            then filter (fn (_,Var(v,_)) -> inVars?(v, fvs)) tv_map
@@ -386,6 +387,36 @@ SpecNorm qualifying spec
     %let _ = writeLine("returned: "^ printTermWithTypes result) in
     result
 
+  op tryUnfoldBase1 (spc: Spec) (ty: MSType): Option MSType =
+    let exp_ty = unfoldBaseOne(spc, ty) in
+    case exp_ty of
+      | CoProduct _ -> None
+      | Quotient _ -> None
+      | Product _ | recordType? exp_ty -> None
+      | Subtype(st, _, _) | none?(tryUnfoldBase1 spc st) -> None
+      | _ ->
+        if equalType?(exp_ty, ty) then None else Some exp_ty
+
+  op tryUnfoldBase2 (spc: Spec) (ty: MSType): Option MSType =
+    let exp_ty = unfoldBaseOne(spc, ty) in
+    case exp_ty of
+      | CoProduct _ -> None
+      | Quotient _ -> None
+      | Product _ | recordType? exp_ty -> None
+      %| Subtype(st, _, _) | none?(tryUnfoldBase1 spc st) -> None
+      | _ ->
+        if equalType?(exp_ty, ty) then None else Some exp_ty
+
+  op unfoldBase1 (spc: Spec) (ty: MSType): MSType =
+    let exp_ty = unfoldBaseOne(spc, ty) in
+    case exp_ty of
+      | CoProduct _ -> ty
+      | Quotient _ -> ty
+      | Product _ | recordType? exp_ty -> ty
+      | Subtype(st, _, _) | none?(tryUnfoldBase1 spc st) -> ty
+      | _ ->
+        if equalType?(exp_ty, ty) then ty else exp_ty
+
   op raiseSubtypeFn(ty: MSType, spc: Spec): MSType =
     %% Bring subtypes to the top-level
     %% Like raiseSubtype, but doesn't look inside Nat (because it should already have
@@ -411,7 +442,8 @@ SpecNorm qualifying spec
                    in
                    let (bare_args, arg_preds) = unzip arg_comps in
                    let bare_ty = Base(qid, bare_args, a) in
-                   let arg_preds_lst =  decomposeListConjPred arg_preds in
+                   % let _ = writeLine("pred_qid: "^pred_name^"\nbarety: "^printType bare_ty) in
+                   let arg_preds_lst = decomposeListConjPred arg_preds in
                    let preds = map (fn arg_preds ->
                                       mkAppl(mkOp(pred_qid, mkArrow(mkProduct(map (fn ty -> mkArrow(ty, boolType))
                                                                                 bare_args),
@@ -421,11 +453,13 @@ SpecNorm qualifying spec
                    in
                    mkSubtypePreds(bare_ty, preds, a, spc)
                  | None ->   % Need to unfold to get predicate lifter function
-               case tryUnfoldBase spc ty of
+               case tryUnfoldBase2 spc ty of
                  | Some exp_ty -> mergeRaisedBase(ty, raiseSubtypeFn(exp_ty, spc), spc)
                  | None -> raiseBase spc ty)
-            else if args = [] then unfoldBase0 spc ty
-                  else raiseBase spc ty
+            else if args = [] || raisePolyTypes? then raiseBase spc ty
+            else (case tryUnfoldBase2 spc ty of
+                    | None -> raiseBase spc ty
+                    | Some exp_ty -> raiseSubtypeFn(exp_ty, spc))
           | Subtype(s_ty, p, a) ->
             (case raiseSubtypeFn(s_ty, spc) of
                | Subtype(sss_ty, pr, _) ->
@@ -452,14 +486,14 @@ SpecNorm qualifying spec
                    Subtype(Product(bare_flds,a),
                            mkLambda(mkRecordPat arg_id_vars, pred), a)
               else ty
-          | CoProduct(constrs, a) ->
+          | CoProduct(constrs0, a) ->
             %% Lifting a CoProduct is dangerous in that it makes the CoProduct not be at the top level, 
             %% but at the point it is done it may be benign.
-            let constrs = map (fn (constr_id, opt_ty) -> (constr_id, mapOption (fn ty -> raiseSubtypeFn(ty, spc)) opt_ty)) constrs in
+            let constrs1 = map (fn (constr_id, opt_ty) -> (constr_id, mapOption (fn ty -> raiseSubtypeFn(ty, spc)) opt_ty)) constrs0 in
             if exists? (fn (_,opt_tyi) -> case opt_tyi of
                                             | Some(Subtype _) -> true
                                             | _ -> false)
-                 constrs
+                 constrs1
               then
                 let (bare_constrs, cases) =
                     foldl (fn ((bare_constrs, cases), (constr_id, opt_tyi)) ->
@@ -477,7 +511,7 @@ SpecNorm qualifying spec
                                               cases ++ [(EmbedPat(constr_id, Some(mkWildPat tyi), ty, a), trueTerm, trueTerm)])
                                | _ -> (bare_constrs ++ [(constr_id, opt_tyi)],
                                        cases ++ [(EmbedPat(constr_id, None, ty, a), trueTerm, trueTerm)]))
-                      ([],[]) constrs
+                      ([],[]) constrs1
                    in
                    let lifted_ty = Subtype(CoProduct(bare_constrs, a),
                                            Lambda(cases, a), a)
@@ -496,6 +530,8 @@ SpecNorm qualifying spec
  
   op encapsulateSubtypePred?(pred: MSTerm, sup_ty: MSType): Bool =
     termSize pred < Prover.unfoldSizeThreshold && ~(embed? CoProduct sup_ty)
+ 
+  op raisePolyTypes?: Bool = false
 
   op raiseNamedTypes(spc: Spec): Spec =
     let def raiseTypeDefs(elts: SpecElements, spc: Spec, sbst: TermSubst)
@@ -510,7 +546,11 @@ SpecNorm qualifying spec
                     | Some  {names, dfn} ->
                       let (tvs, ty) = unpackType dfn in
                       % let _ = writeLine(printQualifiedId qid) in
-                      (case raiseSubtypeFn(ty, spc) of
+                      let raised_ty? = if tvs ~= [] && ~raisePolyTypes?
+                                         then ty 
+                                       else raiseSubtypeFn(ty, spc)
+                      in
+                      (case raised_ty? of
                        | r_ty as Subtype(sup_ty, pred, a1) ->
                          % let _ = writeLine("rnt: "^printQualifiedId qid^"\n"^
                          %                   printType ty^"\n-->\n"
@@ -1113,7 +1153,8 @@ SpecNorm qualifying spec
     let fn_tm = mkInfixOp(opname, fx, ty) in
     % let fn_tm = regularizeIfPFun(fn_tm, ty, inferType(spc, defn), spc) in 
     let base_thm = termSubtypeCondn(spc, fn_tm, ty, Some defn, 0) in
-    if dontLiftSubtypeTheorem? || stpFun? id || tvs = [] || hasStpFun?(spc, opname) then base_thm
+    if dontLiftSubtypeTheorem? || stpFun? id || tvs = [] || hasStpFun?(spc, opname)
+      then base_thm
       else
       let result_ty = range_*(spc, ty, false) in
       let range_tvs = freeTyVars result_ty in
@@ -1126,7 +1167,7 @@ SpecNorm qualifying spec
         let defn_with_preds = substTyVarsWithSubtypes(tv_pred_map, defn) in
         % let _ = writeLine("defn_with_preds:\n"^printTerm defn_with_preds) in
         let fn_tm = mkInfixOp(opname, fx, ty_with_preds) in
-        % let fn_tm = regularizeIfPFun(fn_tm, ty_with_preds, inferType(spc, defn_with_preds), spc) in 
+        let fn_tm = regularizeIfPFun(fn_tm, ty_with_preds, inferType(spc, defn_with_preds), spc) in 
         let pred_thm = termSubtypeCondn(spc, fn_tm, ty_with_preds, Some defn_with_preds, 0) in
         % let _ = writeLine("constr thm:\n"^printTerm pred_thm) in
         let pred_thm = mapTerm (polyCallsTransformers(spc, stp_tbl, true, coercions)) pred_thm in
@@ -1199,7 +1240,7 @@ SpecNorm qualifying spec
                  let Some info = AnnSpec.findTheOp(spc,qid) in
                  let (tvs, ty, defn) = unpackFirstOpDef info in
                  % let _ = writeLine ("\nstc: "^id^": "^printType ty) in
-                 % let _ = writeLine(printType(raiseSubtypeFn(ty, spc))) in
+                 % let _ = writeLine(printType(raiseSubtypeFn(ty, spc))^"\n") in
                  let subTypeFmla = opSubtypeTheorem(spc, qid, info.fixity, tvs, ty,
                                                     defn, ho_eqfns, coercions,
                                                     stp_tbl, freeThms?)

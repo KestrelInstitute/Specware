@@ -156,7 +156,7 @@ proof Isa set_insert_Obligation_subtype
 end-proof
 
 proof Isa set_insert_new_Obligation_subtype
-  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption, assumption)
+  apply(rule SetsAsBags__set_insert_Obligation_subtype, assumption+)
 end-proof
 
 proof Isa e_bsl_fsl_Obligation_subtype

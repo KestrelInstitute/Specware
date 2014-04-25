@@ -159,7 +159,7 @@ spec
  op lifting?((_, _, _, _, _, _, _, lift?, _): Gamma): Bool = lift?
 
  def unfoldBase((_, _, spc, _, _, _, _, _, _), tau) = 
-     Utilities.unfoldBase(spc, tau)
+     unfoldBeforeCoProduct(spc, tau)
 
  op trivObligCountRef((_, _, _, _, _, _, _, _, triv_count_ref): Gamma): Ref Nat = triv_count_ref
 
@@ -602,7 +602,7 @@ spec
                                 case p of 
                                   | QuotientPat (VarPat pv, super_type_name, _, _) -> 
                                     %% If the spec has type-checked, there must be an info for the super_type.
-                                    let Some info = findTheType (gamma.3, super_type_name) in
+                                    let Some info = findTheType (getSpec gamma, super_type_name) in
                                     let Quotient (base_type, _, _) = info.dfn in
                                     Some (pv, base_type)
                                   | _ -> result)
@@ -636,7 +636,7 @@ spec
      returnPatternRec([], gamma, t, tau1, tau2)
 
  def returnPatternRec(pairs, gamma, M, tau, sigma) =
-     let spc = gamma.3 in
+     let spc = getSpec gamma in
      if equalType? (tau, sigma) ||     % equivType? spc
 	exists? (fn p -> p = (tau, sigma)) pairs
 	then (gamma, M)
@@ -831,7 +831,7 @@ spec
    %% than just in the Isabelle translator
    if lifting? gamma then
        % let _ = writeLine("Lift tau: "^printType ty1^"\nLift sigma: "^printType ty2) in
-       let spc = gamma.3 in
+       let spc = getSpec gamma in
        let (n_ty1, n_ty2) = raiseSubtypes(ty1, ty2, spc) in
        (if equalType?(n_ty1, ty1) then ty1
          else % let _ = writeLine("Lift tau: "^printType ty1^" --> "^printType n_ty1) in
@@ -853,8 +853,8 @@ spec
    (% writeLine(printTerm M^ ": "^ printType tau^"\n <= "^ printType sigma);
     if equalType?(tau, sigma) then tcc   % equivType? gamma.3 (tau, sigma) then tcc
     else
-    % let _ =  writeLine(printTerm M^ ": \n"^ printType tau^"\n <= \n"^ printType sigma) in
-    let (tau0, sigma0)   = if raise? then maybeRaiseSubtypes(tau, sigma, gamma) else (tau, sigma) in
+    let (tau0, sigma0) = if raise? then maybeRaiseSubtypes(tau, sigma, gamma) else (tau, sigma) in
+    % let _ =  writeLine(printTerm M^ ": \n"^ printType tau0^"\n <= \n"^ printType sigma0) in
     if lifting? gamma then
       let gamma =
           case tau0 of
@@ -874,7 +874,7 @@ spec
     subtypeRec([], tcc, gamma, M, tau0, sigma0))
 
  def subtypeRec(pairs, tcc, gamma, M, tau, sigma) =
-   let spc = gamma.3 in
+   let spc = getSpec gamma in
    if equivType? spc (tau, sigma) || 
       exists? (fn p -> p = (tau, sigma)) pairs
       then tcc
@@ -914,7 +914,7 @@ spec
      of (Arrow(tau1, tau2, _), Arrow(sigma1, sigma2, _)) ->
         if lifting? gamma then tcc
         else
-        let sigma1 = unfoldBase(gamma, sigma1) in
+        let sigma1 = unfoldBeforeCoProduct(spc, sigma1) in
         let (xVarTm, gamma1) = freshVars("X", sigma1, gamma) in
         let tcc    = subtypeRec(pairs, tcc, gamma1, xVarTm, sigma1, tau1) in
         let tcc    = case M of

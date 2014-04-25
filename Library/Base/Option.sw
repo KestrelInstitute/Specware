@@ -77,12 +77,12 @@ proof Isa isoOption_subtype_constr
           drule_tac x = "a" in spec, auto) 
 end-proof
 
-proof Isa Option__isoOption_subtype_constr1
+proof Isa Option__isoOption_subtype_constr2
   apply(simp add: Option__isoOption_def, auto)
   apply (rule_tac P="x = None" in case_split, auto)
 end-proof
 
-proof Isa isoOption_subtype_constr2
+proof Isa isoOption_subtype_constr1
  apply(simp add: bij_ON_def Option__isoOption_def, auto)
  (** first subgoal **)
  apply(simp add: inj_on_def Option.map_def, auto)

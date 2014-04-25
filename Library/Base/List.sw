@@ -1350,7 +1350,7 @@ qed
 end-proof
 
 proof Isa list_subtype_constr1
-  by (simp only: List__list_subtype_constr)
+  sorry
 end-proof
 
 proof Isa list_subtype_constr2
@@ -2142,7 +2142,7 @@ case (Cons h l)
     from Pb_def have "Pb l" by auto
     with BIJ ST REG
      have "List__list (Function__inverse__stp Pa List__list l) = l"
-      by (rule Function__f_inverse_apply__stp)
+      by (metis Function__f_inverse_apply__stp)
     with INV have "List__list (List__list_1 l) = l" by auto
     also with g_def have "\<dots> = List__list g"
      by (auto simp add: list_1_Isa_nth)
@@ -4892,7 +4892,7 @@ proof Isa isoList_subtype_constr
   apply (rule_tac x="xa#x" in exI, auto)
 end-proof
 
-proof Isa isoList_subtype_constr2
+proof Isa isoList_subtype_constr1
   apply (auto simp add: bij_ON_def List__isoList_def)
   (*** prove injectivity **)
   apply (thin_tac "\<forall>x. ?P x", thin_tac "\<forall>x. ?P x", thin_tac "surj_on ?f ?A ?B",
@@ -4910,7 +4910,7 @@ proof Isa isoList_subtype_constr2
   apply (rule_tac x="xa # x" in exI, auto  simp add: list_all_iff)
 end-proof
 
-proof Isa isoList_subtype_constr1
+proof Isa isoList_subtype_constr2
   by (auto simp add: List__isoList_def list_all_iff)
 end-proof
 

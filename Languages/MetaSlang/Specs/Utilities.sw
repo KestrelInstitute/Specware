@@ -2140,7 +2140,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
   op maybeComposeSubtypes(ty: MSType, pr1: MSTerm, spc: Spec, a: Position): MSType =
     % let _ = writeLine("mcs: "^printType ty^" | "^printTerm pr1) in
     case ty of
-      | Subtype(s_ty, pr2, _) -> composeSubtypes(s_ty, pr2, pr1, a, spc)
+      | Subtype(s_ty, pr2, _) -> composeSubtypes(s_ty, pr1, pr2, a, spc)
       | _ -> Subtype(ty, pr1, a)
 
   op unfoldOpRef(tm: MSTerm, spc: Spec): Option MSTerm =
@@ -2232,7 +2232,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
     % let _ = writeLine("mcs: "^printType ty^" | "^printTerm pr1) in
     let pr1 = termSubst(pr1, sbst) in
     case ty of
-      | Subtype(s_ty, pr2, _) -> composeSubtypes(s_ty, termSubst(pr2, sbst), pr1, a, spc)
+      | Subtype(s_ty, pr2, _) -> composeSubtypes(s_ty, pr1, termSubst(pr2, sbst), a, spc)
       | _ -> Subtype(ty, pr1, a)
 
   op raiseBase (spc: Spec) (ty: MSType): MSType =
@@ -2422,7 +2422,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
         (if subtypeOf?(ty2, qid1, spc)
           then case tryUnfoldBase spc ty2 of
                  | Some exp_ty2 ->
-                   let (rty1, rty2) = raiseSubtypes1(ty1, exp_ty2, uf1?, true, real_as1,
+                   let (rty1, rty2) = raiseSubtypes1(ty1, exp_ty2, uf1?, false, real_as1,
                                                      if uf2? then real_as2 else args2,
                                                      spc)
                    in
@@ -2430,7 +2430,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                  | None -> (ty1, ty2)   % Shouldn't happen
           else case tryUnfoldBase spc ty1 of
                  | Some exp_ty1 ->
-                   let (rty1, rty2) = raiseSubtypes1(exp_ty1, ty2, true, uf2?,
+                   let (rty1, rty2) = raiseSubtypes1(exp_ty1, ty2, false, uf2?,
                                                      if uf1? then real_as1 else args1,
                                                      real_as2, spc)
                    in

@@ -1173,8 +1173,8 @@ proof isa fromBigEndian_intro
   apply(simp add: Library__all_less_becomes, auto)
 end-proof
 
-proof isa TwosComplement__tcNumber__1__obligation_refine_def
-  apply(simp add: TwosComplement__tcNumber__1_def)
+proof isa TwosComplement__tcNumber__2__obligation_refine_def
+  apply(simp add: TwosComplement__tcNumber__2_def)
   apply(case_tac "i \<ge> 0")
   apply(simp add: TwosComplement_TC_toBits_pos2)
   apply(simp add: TwosComplement__rangeForLength_def TwosComplement__maxForLength_def nat_injective)
@@ -1213,7 +1213,7 @@ proof isa map_drop
   apply(simp add: List.drop_map)
 end-proof
 
-proof isa TwosComplement__tcNumber__1_Obligation_exhaustive
+proof isa TwosComplement__tcNumber__2_Obligation_exhaustive
 sorry
 end-proof
 
