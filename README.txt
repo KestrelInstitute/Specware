@@ -11,8 +11,7 @@ memory).
 
 Specware runs on top of SBCL (Steel Bank Common Lisp).  To build
 Specware, first install SBCL (available from http://www.sbcl.org/).
-Specware has been successfully built with SBCL 1.1.7, and later
-versions should also work.
+Specifically, we suggest using SBCL version 1.1.13.
 
 Specware also requires GNU Emacs (we no longer support XEmacs).  GNU
 Emacs 23.1.1 on Linux is known to work, and later versions should also
