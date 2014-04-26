@@ -7,7 +7,8 @@ BankAccount = spec
 
   op transactions : Account -> Bag Transaction
   op balance (a : Account) : Int =
-    bag_fold (0:Int) (fn (x, xact : Transaction) -> x + xact.amount) (transactions a)
+    % bag_fold (0:Int) (fn (x, xact : Transaction) -> x + xact.amount) (transactions a)
+    bag_sum (bag_map (fn t -> t.amount) (transactions a))
 
   op deposit (now : Nat) (amt : Nat) (a : Account)
   : {a' : Account | transactions a' = bag_insert ({time=now, amount = (amt:Int)}, (transactions a)) }
@@ -20,9 +21,12 @@ BankAccount = spec
 end-spec
 
 
-BA1 = transform BankAccount by {
-                                maintain (balance) [lr Bag.bag_fold2]
-                                }
+BA1 = transform BankAccount by
+{
+  % maintain (balance) [lr Bag.bag_fold2]
+  maintain (balance) [lr Bag.bag_sum_insert,
+                      lr Bag.bag_map_insert]
+}
 
 BA2 = spec
   import BA1
