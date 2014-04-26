@@ -162,6 +162,9 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
            (fn (acc, elem) -> acc && p(elem))
            b
 
+  op bag_sum (b : Bag Int) : Int =
+    bag_fold (0:Int) (fn (x,y) -> x+y) b
+
 
   % clearly, some of the definitions above can be made more efficient,
   % but in these examples we are emphasizing clarity

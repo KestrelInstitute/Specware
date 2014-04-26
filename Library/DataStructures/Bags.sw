@@ -98,6 +98,13 @@ theorem bagin_of_insert is [a]
  %TODO give a meaning to this (maybe in terms of fold?)
   op [a,b] bag_map: (a -> b) -> Bag a -> Bag b
 
+  axiom bag_map_empty is [a,b]
+    fa (f : a -> b) bag_map f empty_bag = empty_bag
+
+  axiom bag_map_insert is [a,b]
+    fa (f : a -> b, b : Bag a, x : a)
+      bag_map f (bag_insert(x,b)) = bag_insert (f x, bag_map f b)
+
   % this induction axiom constrains bags to be finite: any finite bag can be
   % obtained by suitable successive applications of bag_insert to empty_bag
 
@@ -146,6 +153,15 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
   bag_fold true
            (fn (acc, elem) -> acc && p(elem))
            b
+
+  op bag_sum (b : Bag Int) : Int =
+    bag_fold (0:Int) (fn (x,y) -> x+y) b
+
+  axiom bag_sum_empty is
+    bag_sum empty_bag = 0
+
+  axiom bag_sum_insert is
+    fa (i,b) bag_sum (bag_insert (i,b)) = i + bag_sum b
 
 %TODO: Won't this definition always return the empty bag?
 %  op [a] //\\ (bs:Bag (Bag a)) : Bag a =

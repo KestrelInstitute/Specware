@@ -82,6 +82,15 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
            (fn (acc, elem) -> acc && p(elem))
            b
 
+  op bag_sum (b : Bag Int) : Int =
+    bag_fold (0:Int) (fn (x,y) -> x+y) b
+
+  theorem bag_sum_empty is
+    bag_sum empty_bag = 0
+
+  theorem bag_sum_insert is
+    fa (i,b) bag_sum (bag_insert (i,b)) = i + bag_sum b
+
   %% Just copied over from Bags.sw:
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (\/) bs
@@ -112,6 +121,14 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
   %% The PosNat here seemed necessary:
   op [a,b] bag_map (f: a -> b) (bg: Bag a) : Bag b =
     foldi (fn (x,y:PosNat,b) -> update b (f x) (y + occs(f x, b))) empty_map bg
+
+  theorem bag_map_empty is [a,b]
+    fa (f : a -> b) bag_map f empty_bag = empty_bag
+
+  theorem bag_map_insert is [a,b]
+    fa (f : a -> b, b : Bag a, x : a)
+      bag_map f (bag_insert(x,b)) = bag_insert (f x, bag_map f b)
+
 
   op [a] bag_size (b: Bag a) : Nat =
     foldi (fn (x,y,sum) -> sum + y) 0 b
@@ -234,6 +251,22 @@ proof Isa bag_fold1
 end-proof
 
 proof Isa bag_fold2
+  sorry
+end-proof
+
+proof Isa bag_sum_empty
+  sorry
+end-proof
+
+proof Isa bag_sum_insert
+  sorry
+end-proof
+
+proof Isa bag_map_empty
+  sorry
+end-proof
+
+proof Isa bag_map_insert
   sorry
 end-proof
 
