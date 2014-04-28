@@ -85,12 +85,6 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
   op bag_sum (b : Bag Int) : Int =
     bag_fold (0:Int) (fn (x,y) -> x+y) b
 
-  theorem bag_sum_empty is
-    bag_sum empty_bag = 0
-
-  theorem bag_sum_insert is
-    fa (i,b) bag_sum (bag_insert (i,b)) = i + bag_sum b
-
   %% Just copied over from Bags.sw:
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (\/) bs
@@ -251,14 +245,6 @@ proof Isa bag_fold1
 end-proof
 
 proof Isa bag_fold2
-  sorry
-end-proof
-
-proof Isa bag_sum_empty
-  sorry
-end-proof
-
-proof Isa bag_sum_insert
   sorry
 end-proof
 

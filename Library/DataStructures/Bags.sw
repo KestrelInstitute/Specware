@@ -157,11 +157,19 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
   op bag_sum (b : Bag Int) : Int =
     bag_fold (0:Int) (fn (x,y) -> x+y) b
 
-  axiom bag_sum_empty is
+  theorem bag_sum_empty is
     bag_sum empty_bag = 0
 
-  axiom bag_sum_insert is
+  proof Isa bag_sum_empty
+    apply (auto simp add:Bag__bag_sum_def Bag__bag_fold1)
+  end-proof
+
+  theorem bag_sum_insert is
     fa (i,b) bag_sum (bag_insert (i,b)) = i + bag_sum b
+
+  proof Isa bag_sum_insert
+    apply (auto simp add:Bag__bag_sum_def Bag__bag_fold2)
+  end-proof
 
 %TODO: Won't this definition always return the empty bag?
 %  op [a] //\\ (bs:Bag (Bag a)) : Bag a =
