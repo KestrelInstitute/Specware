@@ -22,7 +22,7 @@ end-spec
 Club1 = transform Club by
 {
   maintain (club_size) [lr Set.size_of_insert,
-                        lr Set.size_over_set_delete]
+                        lr Set.size_of_delete]
 }
 
 Club2 = spec
