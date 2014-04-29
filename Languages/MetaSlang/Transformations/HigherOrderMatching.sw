@@ -1173,8 +1173,11 @@ closedTermV detects existence of free variables not included in the argument
               % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
               %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
               % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
-	    case (dereferenceType(subst,ty1), dereferenceType(subst,ty2))
-	      of (Boolean _, Boolean_) -> [Unify subst]
+            if equivType? spc (ty1, ty2)
+              then [Unify subst]
+            else
+	     case (ty1, ty2) of
+               % | (Boolean _, Boolean_) -> [Unify subst]
                | (CoProduct(r1,_),CoProduct(r2,_)) -> 
 		 unifyCP(subst,ty1,ty2,r1,r2,equals)
 	       | (Product(r1,_),Product(r2,_)) -> 
@@ -1217,26 +1220,54 @@ closedTermV detects existence of free variables not included in the argument
                                                   Cons((bty1,bty2),equals),optTerm)
                     | (None, Some s2)    -> unify(subst,bty1,s2,ty1_orig,
                                                   Cons((bty1,bty2),equals),optTerm))
-	       | (TyVar(v, _),TyVar(w, _)) -> 
-		 if v = w then [Unify subst] else [Unify (insert(v,ty2,subst))]
-	       | (TyVar(v, _),_) -> 
-		     if occursRec(subst,v,ty2) 
-			 then [NotUnify (ty1,ty2)]
-		     else [Unify(insert(v,ty2,subst))]
-	       | (_,TyVar(v, _)) -> 
-		     if occursRec(subst,v,ty1) 
-			 then [NotUnify (ty1,ty2)]
-		     else [Unify(insert(v,ty1,subst))]
+               | (TyVar(v1,_), TyVar(v2,_)) ->
+                 (case (StringMap.find(subst.1, v1), StringMap.find(subst.1,v2)) of
+                    | (Some d_ty1, Some d_ty2) ->
+                      (case subtypeMeet(d_ty1, d_ty2, spc, subst) of
+                         | Some m_ty ->
+                           let subst = if equalType?(d_ty1, m_ty) then subst else insert(v1,m_ty,subst) in
+                           let subst = if equalType?(d_ty2, m_ty) then subst else insert(v2,m_ty,subst) in
+                           [Unify subst]
+                         | None -> [NotUnify (d_ty1,d_ty2)])                      
+                    | (Some d_ty1, None) -> if occursRec(subst,v2,ty1) 
+                                              then [NotUnify (ty1,ty2)]
+                                            else [Unify(insert(v2,ty1,subst))]
+                    | (None, Some d_ty2) -> if occursRec(subst,v1,ty2) 
+                                              then [NotUnify (ty1,ty2)]
+                                            else [Unify(insert(v1,ty2,subst))]
+                    | (None, None) -> [Unify(insert(v1,ty2,subst))])
+               | (TyVar(v1,_), _) ->
+                 (case StringMap.find(subst.1, v1) of 
+                    | Some d_ty1 ->
+                      (case subtypeMeet(d_ty1, ty2, spc, subst) of
+                         | Some m_ty ->
+                           let subst = if equalType?(d_ty1, m_ty) then subst else insert(v1,m_ty,subst) in
+                           [Unify subst]
+                         | None -> [NotUnify (d_ty1,ty2)])
+                    | None -> if occursRec(subst,v1,ty2) 
+                                then [NotUnify (ty1,ty2)]
+                              else [Unify(insert(v1,ty2,subst))])
+	       | (_,TyVar(v2, _)) -> 
+		 (case StringMap.find(subst.1, v2) of 
+                    | Some d_ty2 ->
+                      (case subtypeMeet(d_ty2, ty1, spc, subst) of
+                         | Some m_ty ->
+                           let subst = if equalType?(d_ty2, m_ty) then subst else insert(v2,m_ty,subst) in
+                           [Unify subst]
+                         | None -> [NotUnify (ty1,d_ty2)])
+                    | None -> if occursRec(subst,v2,ty1) 
+                                then [NotUnify (ty1,ty2)]
+                              else [Unify(insert(v2,ty1,subst))])
 	       | (bty1 as Base _, bty2)
-                   | some?(tryUnfoldBase spc bty1) && ~(possiblySubtypeOf?(bty2, bty1, spc))-> 
+                   | some?(tryUnfoldBase spc bty1) && (equivType? spc (bty1, bty2) || ~(possiblyStrictSubtypeOf?(bty2, bty1, spc))) -> 
                  let Some s1 = tryUnfoldBase spc bty1 in
                  unify(subst,s1,bty2,ty1_orig,Cons((bty1,bty2),equals),optTerm)
 	       | (bty1, bty2 as Base _)
-                   | some?(tryUnfoldBase spc bty2) && ~(possiblySubtypeOf?(bty1, bty2, spc))->
+                   | some?(tryUnfoldBase spc bty2) && (equivType? spc (bty1, bty2) || ~(possiblyStrictSubtypeOf?(bty1, bty2, spc))) ->
 		 let Some s2 = tryUnfoldBase spc bty2 in
 		 unify(subst,bty1,s2,ty1_orig,Cons((bty1,bty2),equals),optTerm)
                %% Analysis could be smarter here so that order of subtypes is not so important
-               | (bty1 as Subtype(ty1 ,p1, _), ty2) | ~(possiblySubtypeOf?(ty2, bty1, spc)) ->
+               | (bty1 as Subtype(ty1 ,p1, _), ty2) | ~(possiblyStrictSubtypeOf?(ty2, bty1, spc)) ->
                  % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
                  (case optTerm of
                        | None -> [NotUnify(bty1,ty2)]
@@ -1256,7 +1287,8 @@ closedTermV detects existence of free variables not included in the argument
                       %% If we are matching a type variable then loosen match of variable
                       %% Could using ty2 cause overshoot?
                       [Unify(insert(v,ty2,subst))]
-                    | _ -> [])
+                    | _ -> (%writeLine("ty1_orig: "^printType ty1_orig);
+                            []))
 	       | (ty,Subtype(ty2,_,_)) -> unify(subst,ty,ty2,ty1_orig,equals,optTerm)
 	       | _ -> [NotUnify(ty1,ty2)]
       in
@@ -1278,6 +1310,115 @@ closedTermV detects existence of free variables not included in the argument
                     else (); 
                   Cons(subst,r)))
         [] results
+
+ op possiblyStrictSubtypeOf?(ty1: MSType, ty2: MSType, spc: Spec): Bool =
+   % let _ = writeLine(printType ty1^" <? "^printType ty2) in
+   case ty1 of
+     | Base(qid1, tys, _) ->
+       (case findTheType (spc, qid1) of
+          | None -> false
+          | Some info ->
+            if definedTypeInfo? info then
+              let (tvs, ty) = unpackFirstTypeDef info in
+              let n_tvs = length tvs in
+              let n_tys = length tys in
+              let (tvs, tys) =
+              if n_tvs = n_tys then (tvs, tys)
+              else
+                let min_len = min(n_tvs, n_tys) in
+                (warn("Mismatch in type: "^show n_tvs^" ~= "^show n_tys^"\n"^printType info.dfn^"\n"
+                        ^printType ty1);
+                 (subFromTo(tvs, 0, min_len),
+                  subFromTo(tys, 0, min_len)))
+              in
+              let sty = substType (zip (tvs, tys), ty) in
+              possiblyStrictSubtypeOf?(sty, ty2, spc)
+            else
+              false)
+     | Subtype(t1, _, _) -> equivType? spc (t1, ty2) || possiblyStrictSubtypeOf?(t1, ty2, spc)
+     | _ -> false
+
+ op subtypeMeet(ty1: MSType, ty2: MSType, spc: Spec, subst: SubstC): Option MSType =
+   % let _ = if  equivType? spc (ty1, ty2) then () else writeLine("subtypeMeet: "^printType ty1^"  ^^^  "^printType ty2) in
+   let def meet(ty1: MSType, ty2: MSType): Option MSType =
+         if equivType? spc (ty1, ty2) then Some(if embed? Base ty2 then ty2 else ty1)
+         else
+           case (ty1, ty2) of
+             | (Base(id1,ts1,a), Base(id2,ts2,_)) | id1 = id2 -> 
+               let ts = mapPartial meet (zip(ts1, ts2)) in
+               if length ts = length ts1
+                 then Some(Base(id1,ts,a))
+                 else None
+             | (Base _, _) | ~(possiblySubtypeOf?(ty2, ty1, spc)) ->
+               (case tryUnfoldBase spc ty1 of
+                  | None -> None
+                  | Some uf_ty1 ->
+                case meet(uf_ty1, ty2) of
+                  | None -> None
+                  | Some r_ty -> Some(if equivType? spc (ty1, r_ty) then ty1 else r_ty))
+             | (_, Base _) | ~(possiblySubtypeOf?(ty1, ty2, spc)) ->
+               (case tryUnfoldBase spc ty2 of
+                  | None -> None
+                  | Some uf_ty2 ->
+                case meet(ty1, uf_ty2) of
+                  | None -> None
+                  | Some r_ty -> Some(if equivType? spc (ty2, r_ty) then ty2 else r_ty))
+             | (CoProduct(r1,a), CoProduct(r2,_)) -> 
+               let r = mapPartial (fn ((id, ct1?), (_, ct2?)) ->
+                                   case (ct1?, ct2?) of
+                                     | (Some tyi1, Some tyi2) ->
+                                       (case meet(tyi1, tyi2) of
+                                          | Some rtyi -> Some(id, Some rtyi)
+                                          | None -> None)
+                                     | _ -> Some(id, None))
+                         (zip(r1, r2))
+               in
+               if length r = length r1
+                 then Some(CoProduct(r,a))
+                 else None
+             | (Product(r1,a),Product(r2,_)) -> 
+               let r = mapPartial (fn ((id, ti1), (_, ti2)) ->
+                                     case meet(ti1, ti2) of
+                                       | Some rtyi -> Some(id, rtyi)
+                                       | None -> None)
+                         (zip(r1, r2))
+               in
+               if length r = length r1
+                 then Some(Product(r,a))
+                 else None
+             | (Arrow(t1,s1,a),Arrow(t2,s2,_)) -> 
+               (case meet(s1, s2) of
+                  | None -> None
+                  | Some s ->
+                    if equivType? spc (t1, t2)    % contravariant?
+                      then Some(Arrow(t1,s1,a))
+                      else None)
+             | (Quotient(sty1,trm1,a), Quotient(sty2,trm2,_)) ->
+               if equalTerm?(trm1, trm2)
+                 then case meet(sty1, sty2) of
+                        | Some sty -> Some(Quotient(sty,trm1,a))
+                        | None -> None
+               else None
+             | (Subtype(sty1,p1,a), Subtype(sty2,p2,_))
+                 | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
+               (case meet(sty1, sty2) of
+                  | Some r_sty -> Some(Subtype(r_sty,p1,a))
+                  | None -> None)
+             | (Subtype(sty1,p1,_), _) | ~(possiblyStrictSubtypeOf?(ty2, sty1, spc)) ->
+               meet(sty1, ty2)
+             | (_, Subtype(sty2,p2,a)) | ~(possiblyStrictSubtypeOf?(ty1, sty2, spc)) ->
+               meet(ty1, sty2)
+             | _ ->  None
+   in
+   if equivTypeSubType? spc (ty1, ty2) true
+     then case meet(ty1, ty2) of
+            | Some r_ty ->
+              % let _ = writeLine("returned "^printType r_ty) in
+              Some r_ty
+            | None ->
+              % let _ = writeLine "failed" in
+              None 
+     else None
 
 (* Normalization
 To make the matching steps easier we normalize specifications
@@ -1380,23 +1521,23 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
  def setBound(ctxt,bv) = ctxt << {boundVars = bv}
 
 
-  op [a] printSubst: StringMap(AType a) * NatMap.Map(ATerm a) * List (ATerm a) -> ()
-  def printSubst(typeSubst,termSubst,condns) = 
-      (writeLine "---------- substitution ---------";
-	StringMap.appi 
-	(fn (s,ty) -> 
-	     writeLine(s^" |-> "^printType ty^" "))
-	typeSubst;
-       writeLine "";
-       NatMap.appi
-	(fn (i,trm) -> 
-	     writeLine(Nat.show i^" |-> "^ printTerm trm^" "))
-	termSubst;
-       writeLine "";
-       if condns = [] then ()
-         else (writeLine "Conditions:";
-               List.app (fn t -> writeLine(printTerm t)) condns);
-               writeLine "")
+ op [a] printSubst: StringMap(AType a) * NatMap.Map(ATerm a) * List (ATerm a) -> ()
+ def printSubst(typeSubst,termSubst,condns) = 
+     (writeLine "---------- substitution ---------";
+       StringMap.appi 
+       (fn (s,ty) -> 
+            writeLine(s^" |-> "^printType ty^" "))
+       typeSubst;
+      writeLine "";
+      NatMap.appi
+       (fn (i,trm) -> 
+            writeLine(Nat.show i^" |-> "^ printTerm trm^" "))
+       termSubst;
+      writeLine "";
+      if condns = [] then ()
+        else (writeLine "Conditions:";
+              List.app (fn t -> writeLine(printTerm t)) condns);
+              writeLine "")
 
 (* Freeze and thaw type variables in term
 In order to ensure that type variables in a term to be rewritten are not
