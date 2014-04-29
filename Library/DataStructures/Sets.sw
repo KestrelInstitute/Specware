@@ -329,7 +329,7 @@ theorem size_of_empty is [a]
 theorem size_of_insert is [a]
   fa(s: Set a, x: a) size(set_insert(x,s)) = (if x in? s then size s else 1 + size s)
 
-theorem size_over_set_delete is [a]
+theorem size_of_delete is [a]
   fa(s: Set a, x: a) size(set_delete(x,s)) = (if x in? s then size s - 1 else size s)
 
 %TODO define using fold?
@@ -784,7 +784,7 @@ proof Isa Set__in_of_delete
   apply(auto simp add: Set__set_deletion)
 end-proof
 
-proof Isa Set__size_over_set_delete
+proof Isa Set__size_of_delete
   apply(rule Set__induction)
   apply(simp add: Set__delete_of_empty Set__empty_set)
   apply(auto simp add: Set__set_delete_no_op Set__set_insertion Set__set_insert_does_nothing Set__size_of_insert Set__distribute_set_delete_over_set_insert)
