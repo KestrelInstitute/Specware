@@ -87,11 +87,85 @@ op solve (p:Problem) : Solution =
  if directly_solvable? p then solve_directly p
  else let (p1, p2) = decompose p in (compose (solve p1) (solve p2))
 
+proof Isa -hook Solution__Predicate_of_solve end-proof
+
 theorem solution_solve is
  fa(p:Problem) solution? p (solve p)
+
+%% start of proofs
 
 proof Isa solve_Obligation_subtype
   apply(auto simp add: not_directly_solvable_p_def)
 end-proof
+
+%% The parens here cause translation to Isabelle's 'function' construct, rather than 'fun':
+proof Isa solve ()
+  by (pat_completeness, auto)
+  termination
+  proof (relation "{ x . smaller_p x}")
+     show " wf {x . smaller_p x}" by (metis WellFounded)
+     next
+       fix p x xa y
+       assume a1: "Problem__Predicate p"
+       assume a2: "\<not> directly_solvable_p p"
+       assume a3: "x = decompose p"
+       assume a4: "(xa, y) = x"
+       from a1 and a2 and a3 and a4 show "(xa, p) \<in> {x. smaller_p x}" by (metis Decompose mem_Collect_eq solve_Obligation_subtype)
+     next     
+       fix p x xa y
+       assume a1: "Problem__Predicate p"
+       assume a2: "\<not> directly_solvable_p p"
+       assume a3: "x = decompose p"
+       assume a4: "(xa, y) = x"
+       from a1 and a2 and a3 and a4 show "(y, p) \<in> {x. smaller_p x}" by (metis Decompose mem_Collect_eq solve_Obligation_subtype)
+  qed
+end-proof
+
+proof Isa Solution__Predicate_of_solve
+theorem Solution__Predicate_of_solve: 
+  "\<lbrakk>Problem__Predicate p\<rbrakk> \<Longrightarrow> Solution__Predicate (solve p)"
+  apply(induct rule: solve.induct)
+  apply(cut_tac p=p in solve.simps(1))
+  apply(simp del: solve.simps)
+  apply(case_tac "directly_solvable_p p")
+  apply(simp del: solve.simps)
+  apply(rule solve_directly_subtype_constr)
+  apply(simp)
+  apply(simp)
+  apply(simp del: solve.simps)
+  apply(case_tac "decompose p")
+  apply(simp del: solve.simps)
+  apply(rule compose_subtype_constr)
+  apply (metis decompose_subtype_constr not_directly_solvable_p_def)
+  apply (metis decompose_subtype_constr1 not_directly_solvable_p_def)
+done
+end-proof
+
+proof Isa solution_solve
+  apply(induct rule: solve.induct)
+  apply(cut_tac p=p in solve.simps(1))
+  apply(simp del: solve.simps)
+  apply(case_tac "directly_solvable_p p")
+  apply(simp del: solve.simps)
+  apply(rule SolveDirectly)
+  apply(simp)
+  apply(simp)
+  apply(simp del: solve.simps)
+  apply(case_tac "decompose p")
+  apply(simp del: solve.simps)
+  apply(rule Compose)
+  apply(simp)
+  apply(rule Solution__Predicate_of_solve)
+  apply (metis decompose_subtype_constr not_directly_solvable_p_def)
+  apply(rule Solution__Predicate_of_solve)
+  apply (metis decompose_subtype_constr1 not_directly_solvable_p_def)
+  apply(simp)
+  apply(auto)[1]
+  apply (metis decompose_subtype_constr not_directly_solvable_p_def)
+  apply (metis decompose_subtype_constr1 not_directly_solvable_p_def)
+end-proof
+
+
+
 
 end-spec
