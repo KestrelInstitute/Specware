@@ -8,20 +8,28 @@ Company = spec
   axiom Company_ex is ex (c:Company) true
   axiom Employee_ex is ex (e:Employee) true
 
+  % "fields" of Company
+  op name (c : Company) : String
   op employees (c : Company) : Set Employee
+
+  % "methods" of Company
   op num_employees (c : Company) : Nat = size (employees c)
 
-  op add_employee (c : Company) (e : Employee | ~(e in? (employees c))) :
-    { c' : Company | employees c' = set_insert (e, employees c) }
+  op add_employee c (e : Employee | ~(e in? (employees c))) :
+    { c' : Company | employees c' = set_insert(e,employees c)
+                     && name c' = name c }
   op try_add_employee c e : Company =
     if e in? (employees c) then c else add_employee c e
 
-  op remove_employee (c : Company) (e : Employee | e in? (employees c)) :
-    { c' : Company | employees c' = set_delete (e, employees c) }
+  op remove_employee c (e : Employee | e in? (employees c)) :
+    { c' : Company | employees c' = set_delete(e,employees c)
+                     && name c' = name c }
   op try_remove_employee c e : Company =
     if e in? (employees c) then remove_employee c e else c
 end-spec
 
+
+%% transformation script
 
 Company1 = transform Company by
 {
@@ -43,10 +51,12 @@ Company2 = spec
   end-proof
 end-spec
 
-Company3 = transform Company2 by {
-                        implement (employees, employees_l2s) [ rl L2S_Cons, rl L2S_delete1 ]
-                        }
+Company3 = transform Company2 by
+{
+  implement (employees, employees_l2s) [ rl L2S_Cons, rl L2S_delete1 ]
+}
 
-Company4 = transform Company3 by {
-                        finalizeCoType(Company)
-                        }
+Company4 = transform Company3 by
+{
+  finalizeCoType(Company)
+}
