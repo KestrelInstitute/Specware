@@ -15,6 +15,14 @@
 ;; code under the false branch would be optimized away!
 (defvar SpecCalc::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
 
+;;; CEM: 2014-04-30  
+;;; This is safer than trying to make sure there is only one instance of '(:|None|).
+;;; For example, what mapvec::*undefined* does.
+(defun undefined? (val)
+  (and (listp val)
+       (null (cdr val))
+       (eq (car val) ':|None|)))
+
 (defparameter quotient-tag
   (list :|Quotient|))
 
@@ -167,17 +175,16 @@
                                                   (v-equal t (slang-term-equals-2 (svref t1 i)  (svref t2 i))))
                                                  ((or (= i mindim) (not v-equal)) v-equal)
                                                (declare (fixnum i)))
-                                             ;; second, the extension must consist solely of '(:|None|),
-                                             ;; which denotes *undefined*
+                                             ;; second, the extension must consist solely of undefined values
                                              (if (eql mindim dim1)
                                                  ;; t2 is longer
                                                  (do ((i dim1 (+ i 1))
-                                                      (v-equal t (eq (svref t2 i) '(:|None|))))
+                                                      (v-equal t (undefined? (svref t2 i))))
                                                      ((or (= i dim2) (not v-equal)) v-equal)
                                                    (declare (fixnum i)))
                                                  ;; t1 is longer
                                                  (do ((i dim2 (+ i 1))
-                                                      (v-equal t (eq (svref t1 i) '(:|None|))))
+                                                      (v-equal t (undefined? (svref t1 i))))
                                                      ((or (= i dim1) (not v-equal)) v-equal)
                                                    (declare (fixnum i))))))))))))
                  (t (equalp t1 t2))
@@ -314,6 +321,14 @@
 
 (defun Specware::swxhash (key) (swxhash key))
 
+;;; defined-length is the length of the vector if you discard the trailing undefined values.
+(defun defined-length (vec) 
+  (do ((i (- (length vec) 1) (- i 1)))
+      ((eql i -1) 0)
+    (declare (fixnum i))
+    (unless (undefined? (svref vec i))
+      (return (+ i 1)))))
+
 (defun array-swxhash (key depthoid)
   #+sbcl(declare (optimize speed))
   (declare (type array key))
@@ -323,12 +338,13 @@
     ;; that we must respect fill pointers.
     (vector
      (macrolet ((frob ()
-                  '(let ((result 572539))
+                  '(let ((result 572539)
+                         (defined-length (defined-length key)))
                      (declare (type fixnum result))
-                     (mixf result (length key))
+                     (mixf result defined-length)
                     (when (plusp depthoid)
                       (decf depthoid)
-                      (dotimes (i (length key))
+                      (dotimes (i defined-length)
                        (declare (type fixnum i))
                        (mixf result
                              (swxhash (aref key i) depthoid))))
