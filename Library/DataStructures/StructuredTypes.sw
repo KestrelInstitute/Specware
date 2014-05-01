@@ -784,6 +784,10 @@ proof isa L2S_Cons
   sorry
 end-proof
 
+proof isa L2S_delete
+  sorry
+end-proof
+
 proof isa L2S_delete1
   sorry
 end-proof
