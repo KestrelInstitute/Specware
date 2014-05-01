@@ -228,8 +228,8 @@ proof Isa Compose
   defer
   apply(rule sorted_of_mergeLists)
   apply(simp_all)
-  apply(cut_tac x=s1 and y=s2 in mergeLists_perm)
-  apply(rule permutationOf_transitive [of "mergeLists s1 s2" "s1 @ s2"])
+  apply(cut_tac x=sa and y=sb in mergeLists_perm)
+  apply(rule permutationOf_transitive [of "mergeLists sa sb" "sa @ sb"])
   apply(simp)
   apply(cut_tac p=p in splitList_perm)
   apply(simp)
