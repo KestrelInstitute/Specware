@@ -196,7 +196,7 @@ consts regular_val :: 'a
 axiomatization where arbitrary_bool [simp]:
   "(regular_val::bool) = False"
 
-(* Regularize f by changing it to map to regular_val any domain elements on which P gives false. *)
+(* Restrict the domain of f to P, returning the dummy value regular_value outside this domain *)
 fun RFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
 where
   "RFun P f = (\<lambda>x . if P x then f x else regular_val)"
