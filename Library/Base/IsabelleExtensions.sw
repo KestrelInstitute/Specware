@@ -196,6 +196,7 @@ consts regular_val :: 'a
 axiomatization where arbitrary_bool [simp]:
   "(regular_val::bool) = False"
 
+(* Regularize f by changing it to map to regular_val any domain elements on which P gives false. *)
 fun RFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
 where
   "RFun P f = (\<lambda>x . if P x then f x else regular_val)"
@@ -255,6 +256,7 @@ fun Fun_PD :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rig
 where
   "Fun_PD Pa f = (\<forall>x .\<not>(Pa x) \<longrightarrow> f x = regular_val)"
 
+(* Check whether the predicate Pb holds on all elements of the range of f. *)
 fun Fun_PR :: "('b \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> bool"
 where
   "Fun_PR Pb f = (\<forall>x. Pb(f x))"
