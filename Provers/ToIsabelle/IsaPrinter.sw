@@ -1415,7 +1415,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                                  ], []] else [])
                   ++
 		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
-		  [ prString "end"]])
+		  [prString "end"],
+                  []])
 
   op specHasSorryProof?(spc: Spec): Bool =
     exists? (fn elt ->
