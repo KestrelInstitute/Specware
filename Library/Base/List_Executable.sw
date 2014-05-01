@@ -418,24 +418,25 @@ refine def [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
   let n = length l in
   list (fn(i:Nat) -> if i < n then l @@ (positionOf(prm,i)) else None)
 
-%% TODO: Name should end in a question mark:
+%% delete exactly one (leftmost) occurrence of x in l,
+%% return None if x does not occur in l:
+op [a] deleteOne (x:a, l: List a) : Option (List a) =
+  case l of
+  | []     -> None
+  | hd::tl -> if hd = x then
+                 Some tl
+              else (case deleteOne (x, tl) of
+                    | Some l -> Some (Cons (hd, l))
+                    | None   -> None)
 
-refine def [a] permutationOf (l1: List a, l2: List a) : Bool =
+
+%% TODO: Name should end in a question mark:
 
 %% Could use the delete1 operator here, except that one doesn't return
 %% an Option.  This one combines the presence check and the deletion
 %% and so should be faster:
 
-  let def deleteOne (x:a, l: List a) : Option (List a) =
-      % delete exactly one (leftmost) occurrence of x in l,
-      % return None if x does not occur in l:
-      case l of
-      | []     -> None
-      | hd::tl -> if hd = x then Some tl
-                  else (case deleteOne (x, tl) of
-                       | Some l -> Some (Cons (hd, l))
-                       | None   -> None)
-  in
+refine def [a] permutationOf (l1: List a, l2: List a) : Bool =
   case l1 of
   | []     -> empty? l2
   | x::l1' -> (case deleteOne (x, l2) of
@@ -1223,7 +1224,7 @@ proof isa List__permute__1__obligation_refine_def
                    List__positionOf_length2 List__positionOf_val2)
 end-proof
 
-proof Isa List__permutationOf__1__deleteOne ()
+proof Isa List__deleteOne ()
 by (pat_completeness, auto)
 termination 
 by (lexicographic_order)
@@ -1235,11 +1236,11 @@ by (lexicographic_order)
 *******************************************************************)
 
 lemma List__deleteOne_refine1:
-  "x \<in> set l \<Longrightarrow> List__permutationOf__1__deleteOne (x, l) = Some (remove1 x l)"
+  "x \<in> set l \<Longrightarrow> List__deleteOne (x, l) = Some (remove1 x l)"
   by (induct l, auto)
 
 lemma List__deleteOne_refine2:
-  "x \<notin> set l \<Longrightarrow> List__permutationOf__1__deleteOne (x, l) = None"
+  "x \<notin> set l \<Longrightarrow> List__deleteOne (x, l) = None"
   by (induct l, auto)
 (****************************************************************************
 * The main proof also depends on the following lemma which is known to be
