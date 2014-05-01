@@ -9,6 +9,7 @@
 Params = spec
 
 import /Library/General/EndoRelation
+import /Library/General/Pred
 
 type Problem
 
@@ -22,15 +23,13 @@ op solution? (p:Problem) (s:Solution) : Bool
 
 op directly_solvable? (p:Problem) : Bool
 
-op not_directly_solvable? (p:Problem) : Bool = ~(directly_solvable? p)
-
 %% Solve a directly solvable problem:
 
 op solve_directly (p:(Problem | directly_solvable?)) : Solution
 
 %% Decompose a (not directly solvable) problem into two (smaller) problems:
 
-op decompose (p:(Problem | not_directly_solvable?)) : (Problem * Problem)
+op decompose (p:(Problem | ~~ directly_solvable?)) : (Problem * Problem)
 
 %% Test whether p1 is a smaller problem than p2:
 %% TODO: This one can't be curried because of how wellFounded? is defined?
@@ -50,7 +49,7 @@ axiom SolveDirectly is
 
 axiom Decompose is
  fa(p:Problem, p1:Problem, p2:Problem)
-   (not_directly_solvable? p) && decompose p = (p1, p2) =>
+   (~(directly_solvable? p)) && decompose p = (p1, p2) =>
      smaller?(p1, p) && smaller?(p2, p)
 
 %% The ordering over problems is well-founded:
@@ -62,14 +61,20 @@ axiom WellFounded is
 
 axiom Compose is
  fa(p:Problem,p1:Problem,p2:Problem,s1:Solution,s2:Solution)
-   ~ (directly_solvable? p) &&
+   ~(directly_solvable? p) &&
    decompose p = (p1, p2) &&
    (solution? p1 s1) &&
    (solution? p2 s2) =>
    (solution? p (compose s1 s2))
 
+
+proof Isa Decompose_Obligation_subtype
+  apply(auto simp add: Pred__e_tld_tld_def)
+end-proof
+
+
 proof Isa Compose_Obligation_subtype
-  apply(auto simp add: not_directly_solvable_p_def)
+  apply(auto simp add: Pred__e_tld_tld_def)
 end-proof
 
 end-spec
@@ -95,7 +100,7 @@ theorem solution_solve is
 %% start of proofs
 
 proof Isa solve_Obligation_subtype
-  apply(auto simp add: not_directly_solvable_p_def)
+  apply(auto simp add: Pred__e_tld_tld_def)
 end-proof
 
 %% The parens here cause translation to Isabelle's 'function' construct, rather than 'fun':
@@ -136,8 +141,8 @@ theorem Solution__Predicate_of_solve:
   apply(case_tac "decompose p")
   apply(simp del: solve.simps)
   apply(rule compose_subtype_constr)
-  apply (metis decompose_subtype_constr not_directly_solvable_p_def)
-  apply (metis decompose_subtype_constr1 not_directly_solvable_p_def)
+  apply (metis decompose_subtype_constr Pred__e_tld_tld_def)
+  apply (metis decompose_subtype_constr1 Pred__e_tld_tld_def)
 done
 end-proof
 
@@ -156,13 +161,13 @@ proof Isa solution_solve
   apply(rule Compose)
   apply(simp)
   apply(rule Solution__Predicate_of_solve)
-  apply (metis decompose_subtype_constr not_directly_solvable_p_def)
+  apply (metis decompose_subtype_constr Pred__e_tld_tld_def)
   apply(rule Solution__Predicate_of_solve)
-  apply (metis decompose_subtype_constr1 not_directly_solvable_p_def)
+  apply (metis decompose_subtype_constr1 Pred__e_tld_tld_def)
   apply(simp)
   apply(auto)[1]
-  apply (metis decompose_subtype_constr not_directly_solvable_p_def)
-  apply (metis decompose_subtype_constr1 not_directly_solvable_p_def)
+  apply (metis decompose_subtype_constr Pred__e_tld_tld_def)
+  apply (metis decompose_subtype_constr1 Pred__e_tld_tld_def)
 end-proof
 
 
