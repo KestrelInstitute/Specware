@@ -29,7 +29,7 @@ op solve_directly (p:(Problem | directly_solvable?)) : Solution
 
 %% Decompose a (not directly solvable) problem into two (smaller) problems:
 
-op decompose (p:(Problem | ~~ directly_solvable?)) : (Problem * Problem)
+op decompose (p:Problem | ~(directly_solvable? p)) : (Problem * Problem)
 
 %% Test whether p1 is a smaller problem than p2:
 %% TODO: This one can't be curried because of how wellFounded? is defined?
