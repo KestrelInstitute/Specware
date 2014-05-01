@@ -788,7 +788,11 @@ proof isa L2S_Cons
 end-proof
 
 proof isa L2S_delete
-  sorry
+  apply(induct lst)
+  apply(metis L2S_Nil List__delete_def List__filter__def Set__delete_of_empty)
+  apply(auto simp add: List__delete_def L2S_Cons)
+  apply (metis Set__set_delete_of_set_insert_diff)
+  apply(metis Set__distribute_set_delete_over_set_insert)
 end-proof
 
 proof isa L2S_delete1
