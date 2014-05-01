@@ -60,22 +60,12 @@ axiom WellFounded is
 %% Solution composition is correct:
 
 axiom Compose is
- fa(p:Problem,p1:Problem,p2:Problem,s1:Solution,s2:Solution)
+ fa(p:Problem,pa:Problem,pb:Problem,sa:Solution,sb:Solution)
    ~(directly_solvable? p) &&
-   decompose p = (p1, p2) &&
-   (solution? p1 s1) &&
-   (solution? p2 s2) =>
-   (solution? p (compose s1 s2))
-
-
-proof Isa Decompose_Obligation_subtype
-  apply(auto simp add: Pred__e_tld_tld_def)
-end-proof
-
-
-proof Isa Compose_Obligation_subtype
-  apply(auto simp add: Pred__e_tld_tld_def)
-end-proof
+   decompose p = (pa, pb) &&
+   (solution? pa sa) &&
+   (solution? pb sb) =>
+   (solution? p (compose sa sb))
 
 end-spec
 
@@ -100,12 +90,12 @@ theorem solution_solve is
 %% start of proofs
 
 proof Isa solve_Obligation_subtype
-  apply(auto simp add: Pred__e_tld_tld_def)
+  apply(auto)
 end-proof
 
 %% The parens here cause translation to Isabelle's 'function' construct, rather than 'fun':
 proof Isa solve ()
-  by (pat_completeness, auto)
+by (pat_completeness, auto)
   termination
   proof (relation "{ x . smaller_p x}")
      show " wf {x . smaller_p x}" by (metis WellFounded)
@@ -115,14 +105,16 @@ proof Isa solve ()
        assume a2: "\<not> directly_solvable_p p"
        assume a3: "x = decompose p"
        assume a4: "(xa, y) = x"
-       from a1 and a2 and a3 and a4 show "(xa, p) \<in> {x. smaller_p x}" by (metis Decompose mem_Collect_eq solve_Obligation_subtype)
+       from a1 and a2 and a3 and a4 show "(xa, p) \<in> {x. smaller_p x}" 
+         sledgehammer
+         by (metis Decompose mem_Collect_eq)
      next     
        fix p x xa y
        assume a1: "Problem__Predicate p"
        assume a2: "\<not> directly_solvable_p p"
        assume a3: "x = decompose p"
        assume a4: "(xa, y) = x"
-       from a1 and a2 and a3 and a4 show "(y, p) \<in> {x. smaller_p x}" by (metis Decompose mem_Collect_eq solve_Obligation_subtype)
+       from a1 and a2 and a3 and a4 show "(y, p) \<in> {x. smaller_p x}" by (metis Decompose mem_Collect_eq)
   qed
 end-proof
 
@@ -141,9 +133,9 @@ theorem Solution__Predicate_of_solve:
   apply(case_tac "decompose p")
   apply(simp del: solve.simps)
   apply(rule compose_subtype_constr)
-  apply (metis decompose_subtype_constr Pred__e_tld_tld_def)
-  apply (metis decompose_subtype_constr1 Pred__e_tld_tld_def)
-done
+  apply (metis bool_Compl_def decompose_subtype_constr)
+  apply (metis bool_Compl_def decompose_subtype_constr1)
+  done
 end-proof
 
 proof Isa solution_solve
@@ -161,13 +153,13 @@ proof Isa solution_solve
   apply(rule Compose)
   apply(simp)
   apply(rule Solution__Predicate_of_solve)
-  apply (metis decompose_subtype_constr Pred__e_tld_tld_def)
-  apply(rule Solution__Predicate_of_solve)
-  apply (metis decompose_subtype_constr1 Pred__e_tld_tld_def)
   apply(simp)
+  apply (metis decompose_subtype_constr)
+  apply (metis Solution__Predicate_of_solve bool_Compl_def decompose_subtype_constr1)
+  apply (metis decompose_subtype_constr)
   apply(auto)[1]
-  apply (metis decompose_subtype_constr Pred__e_tld_tld_def)
-  apply (metis decompose_subtype_constr1 Pred__e_tld_tld_def)
+  apply (metis bool_Compl_def decompose_subtype_constr)
+  apply (metis bool_Compl_def decompose_subtype_constr1)
 end-proof
 
 
