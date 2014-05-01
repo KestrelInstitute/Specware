@@ -28,7 +28,6 @@ Company = spec
     if e in? (employees c) then remove_employee c e else c
 end-spec
 
-
 %% transformation script
 
 Company1 = transform Company by
@@ -51,9 +50,26 @@ Company2 = spec
   end-proof
 end-spec
 
+%% an alternate version of Company2 that does not use Company1 (as the
+%% latter currently exposes a bug in gen-obligs)
+Company2a = spec
+  import Company
+  import /Library/DataStructures/StructuredTypes
+
+  op employees_list : Company -> List Employee
+  def employees a = L2S (employees_list a)
+
+  theorem employees_l2s is
+    fa (c) employees c = L2S (employees_list c)
+  proof Isa employees_l2s
+    by (simp add: employees_def)
+  end-proof
+end-spec
+
+
 Company3 = transform Company2 by
 {
-  implement (employees, employees_l2s) [ rl L2S_Cons, rl L2S_delete1 ]
+  implement (employees, employees_l2s) [ rl L2S_Cons, rl L2S_delete, rl L2S_member ]
 }
 
 Company4 = transform Company3 by

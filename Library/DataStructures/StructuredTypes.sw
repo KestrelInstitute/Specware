@@ -323,8 +323,8 @@ end-proof
   theorem L2S_Cons is [a]
     fa(y:a,lst:List a) ( L2S(Cons(y,lst)) = set_insert(y, L2S lst) )
 
-%  theorem L2S_delete is [a]
-%    fa(y:a,lst:List a) ( L2S(delete(y,lst)) = set_delete(y, L2S lst) )
+  theorem L2S_delete is [a]
+    fa(y:a,lst:List a) ( L2S(delete y lst) = set_delete(y, L2S lst) )
 
   % TODO: Doesn't seem right.  Consider when lst contains more than one y.
   theorem L2S_delete1 is [a]
