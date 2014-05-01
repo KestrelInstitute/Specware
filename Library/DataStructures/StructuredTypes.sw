@@ -279,13 +279,6 @@ end-proof
   theorem Stack2L_push_aux is [a]
     fa(elts:List a,stk:Stack a) ( Stack2L(push_aux(elts,stk)) = (reverse elts) ++ Stack2L(stk))
 
-proof isa Stack2L_push_aux
-  apply(induct "elts"  arbitrary: stk)
-  apply(simp only: append_Nil Stack__push_aux.simps rev.simps)
-  apply(simp only: Stack__push_aux.simps Stack2L_Cons)
-  apply(simp)
-end-proof
-
   theorem Stack2L_concat is [a]
     fa(elts:List a,stk:Stack a) ( Stack2L(pushl(elts,stk)) = elts ++ Stack2L(stk))
 
@@ -305,6 +298,11 @@ end-proof
 
 
 %------- L2S: homomorphism from List to Set -----------------------
+
+%% theorem folds_agree is [a,b]
+%%   fa (f: b * a -> b, base: b, l: List a)
+%%     foldable? f => ((foldl f base l) = (foldr (fn (x,y) -> f(y, x)) base l))
+
 
   op [a] L2S(lst:List a): Set a =
     (foldl (fn(c,a)-> set_insert(a,c))
@@ -724,8 +722,6 @@ termination
   sorry
 end-proof
 
-
-
 proof isa bag_fold_set_Obligation_subtype
   apply(auto simp add: Set__foldable_p_def)
   apply (metis Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype)
@@ -743,6 +739,13 @@ end-proof
 proof isa empty_bag_bs_diff
   apply(rule Bag__occurrences)
   apply(simp add:bag_set_difference Bag__empty_bag Integer__natMinus_def)
+end-proof
+
+proof isa Stack2L_push_aux
+  apply(induct "elts"  arbitrary: stk)
+  apply(simp only: append_Nil Stack__push_aux.simps rev.simps)
+  apply(simp only: Stack__push_aux.simps Stack2L_Cons)
+  apply(simp)
 end-proof
 
 proof isa Stack2L_Cons
@@ -966,7 +969,6 @@ proof isa CM2S_member
   sorry
 end-proof
 
-
 proof isa distribute_bs_diff_over_left_insert
   apply(auto simp add: Bag__bag_insertion)
   apply(rule Bag__occurrences)
@@ -980,7 +982,6 @@ proof isa distribute_bs_diff_over_left_insert
   apply(auto simp add: Bag__bag_insertion bag_set_difference)
 end-proof
 
-
 proof isa distribute_bs_diff_over_right_insert
   apply(auto)
   apply(rule Bag__occurrences)
@@ -993,7 +994,6 @@ proof isa distribute_bs_diff_over_left_delete
   apply(rule Bag__occurrences)
   apply(simp add: bag_set_difference Bag__bag_deletion)
 end-proof
-
 
 proof isa distribute_bs_diff_over_right_delete
   apply(rule Bag__occurrences)
@@ -1062,7 +1062,6 @@ proof isa length_of_uptoL
   apply(simp add: length_of_uptoL_loop uptoL_def del: uptoL_loop.simps)
 end-proof
 
-
 %TODO Finish proof.
 %  apply(cut_tac i="fst p" and j = "snd p" and ns=Set__empty_set in upto_loop_opener)
  % apply(simp)
@@ -1076,9 +1075,7 @@ proof isa Pair2S_delete
   defer
   apply(simp del: upto_loop.simps add: pair_lemma)
   apply(simp del: upto_loop.simps)
-  
   sorry
-
 end-proof
 
 proof Isa e_pls_pls_def
