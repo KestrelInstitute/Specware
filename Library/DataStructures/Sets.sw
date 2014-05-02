@@ -50,6 +50,11 @@ theorem set_insert_of_set_insert_same is [a]
   fa(x : a, s : Set a)
     set_insert(x,set_insert(x,s)) = set_insert(x,s)
 
+theorem subset_insert_same is [a]
+  fa(x : a, s : Set a)
+    s subset set_insert (x,s)
+
+
 % precondition that the element is not in the set
 % Added a definition of this; it just calls the regular insert.  Now we can prove theorems about it. -Eric
 op [a] set_insert_new  (x:a, S:Set a | ~(x in? S)): Set a = set_insert(x,S)
@@ -902,6 +907,10 @@ end-proof
 
 proof Isa Set__empty_p_of_empty_set [simp]
   apply(simp add: Set__empty_p_def)
+end-proof
+
+proof Isa Set__subset_insert_same
+  apply(metis Set__set_insertion Set__subset_def)
 end-proof
 
 end-spec
