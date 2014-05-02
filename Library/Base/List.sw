@@ -648,6 +648,9 @@ theorem length_of_delete1 is [a]
 op [a] diff (l1: List a, l2: List a) : List a =
   filter (fn x:a -> x nin? l2) l1
 
+theorem diff_of_empty is [a]
+  fa(lst:List a) diff([], lst) = []
+
 % longest common prefix/suffix of two lists:
 
 op [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
@@ -5733,6 +5736,14 @@ proof Isa List__foldr1_subtype_constr
   apply(simp)
   apply(case_tac l)
   apply(auto simp add: List__foldr1.simps)
+end-proof
+
+proof Isa List__diff_of_empty
+  apply(simp add: List__diff_def)
+end-proof
+
+proof Isa List__diff_of_empty__stp
+  apply(simp add: List__diff__stp_def)
 end-proof
 
 end-spec
