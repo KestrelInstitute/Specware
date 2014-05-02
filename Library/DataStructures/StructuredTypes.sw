@@ -15,6 +15,25 @@ spec
   import Maps#Maps_extended  
   import STBase              
 
+%% TODO: Move these to the List library (but will have to prove the __stp versions):
+
+theorem @@_of_empty is [a]
+ fa (i:Nat) ([]:List a) @@ i = None
+
+theorem in_of_empty is [a]
+ fa(lst:List a, x:a) x in? [] = false
+
+theorem diff_of_empty_2 is [a]
+ fa(lst:List a) diff(lst, []) = lst
+
+theorem diff_of_cons is [a]
+ fa(lst:List a, hd:a, tl: List a) diff(hd::tl, lst) = (if hd in? lst then diff(tl,lst) else hd::diff(tl,lst))
+
+ 
+
+
+
+
 % a helpful lemma: Intuition: Consider a fold over a list to produce a
 % set.  Assume that the fold starts with the empty set and inserts
 % elements into the set.  If folding over some list gives the empty
@@ -299,9 +318,15 @@ end-proof
 
 %------- L2S: homomorphism from List to Set -----------------------
 
-%% theorem folds_agree is [a,b]
-%%   fa (f: b * a -> b, base: b, l: List a)
-%%     foldable? f => ((foldl f base l) = (foldr (fn (x,y) -> f(y, x)) base l))
+ theorem foldl_pull_out is [a,b]
+   fa (f: b * a -> b, base: b, l: List a, elem: a)
+    %The foldable? here is for set folds but expresses the commutativity property we need:
+     foldable? f => ((foldl f (f(base,elem)) l) = f(foldl f base l, elem))
+
+ theorem folds_agree is [a,b]
+   fa (f: b * a -> b, base: b, l: List a)
+    %The foldable? here is for set folds but expresses the commutativity property we need:
+     foldable? f => ((foldl f base l) = (foldr (fn (x,y) -> f(y, x)) base l))
 
 
   op [a] L2S(lst:List a): Set a =
@@ -784,7 +809,11 @@ end-proof
 
 proof isa L2S_Cons
   apply(simp add: L2S_def)
-  sorry
+  apply(cut_tac f = "(\<lambda> (b, a) . Set__set_insert (a, b))" and base = Set__empty_set and elem = y and l = lst in  foldl_pull_out)
+  (* TODO: Prove separately that insert is foldable? *)
+  apply (metis (lifting, no_types) Set__foldable_p_def Set__set_insertion_commutativity_lemma split_conv)
+  apply(simp)
+  done
 end-proof
 
 proof isa L2S_delete
@@ -800,24 +829,35 @@ proof isa L2S_delete1
 end-proof
 
 proof isa L2S_member
-  apply(simp add: L2S_def)
-  sorry
+  apply(induct lst arbitrary: y)
+  apply(simp add: L2S_Nil Set__empty_set)
+  apply(simp add: L2S_Cons Set__set_insertion)
 end-proof
 
 proof isa L2S_head
-  sorry
+  apply (metis L2S_member hd_in_set)
 end-proof
 
 proof isa L2S_tail
-  sorry
+  apply(induct lst)
+  apply(simp)
+  apply(simp add: L2S_Cons )
+  apply(rule Set__subset_insert_same)
 end-proof
 
 proof isa L2S_concat
-  sorry
+  apply(induct lst1)
+  apply(simp add: L2S_Nil Set__union_left_unit)
+  apply(simp add: L2S_Cons)
+  apply(simp add: Set__distribute_union_over_left_insert)
 end-proof
 
 proof isa L2S_diff
-  sorry
+  apply(induct lst arbitrary: sub__v)
+  apply(simp add: List__diff_of_empty L2S_Nil Set__empty_set_set_diff)
+  apply(auto simp add: L2S_Cons diff_of_cons)
+  apply (metis L2S_Cons L2S_delete1 List__delete1.simps(2) Set__distribute_set_delete_over_set_insert)
+  apply (metis L2S_Cons L2S_delete1 List__delete1.simps(2) Set__distribute_set_delete_over_set_insert)
 end-proof
 
 proof isa CM2S_Obligation_subtype
@@ -836,11 +876,24 @@ proof isa L2S_set_diff
 end-proof
 
 proof isa L2B_Nil
-  sorry
+  apply(auto simp add: L2B_def)
+  apply(case_tac al)
+  apply(metis)
+  apply(simp)
+  apply(cut_tac f = "(\<lambda> (b, a) . Bag__bag_insert (a, b))" and base = Bag__empty_bag and elem = a and l = list in  foldl_pull_out)
+  apply (simp add: Set__foldable_p_def)
+  apply (metis Bag__bag_insertion_commutativity)
+  apply(simp)
+  (* TODO: Prove a rule that insert never equals empty bag. *)
+  apply(metis Bag__bag_insertion Bag__empty_bag Suc_eq_plus1 Zero_neq_Suc)
 end-proof
 
 proof isa L2B_Cons
-  sorry
+  apply(simp add: L2B_def)
+  apply(cut_tac f = "(\<lambda> (b, a) . Bag__bag_insert (a, b))" and base = Bag__empty_bag and elem = y and l = lst in  foldl_pull_out)
+  apply (simp add: Set__foldable_p_def)
+  apply (metis Bag__bag_insertion_commutativity)
+  apply(simp)
 end-proof
 
 proof isa L2B_delete1
@@ -1116,6 +1169,44 @@ proof Isa foldl_empty_lemma
   apply(simp)
   apply(auto)
   apply (metis (lifting, no_types) List__e_bar_gt_subtype_constr foldl_Cons foldl_Nil foldl_append rev_exhaust)
+end-proof
+
+proof Isa foldl_pull_out
+  apply(induct l arbitrary: elem base)
+  apply(simp)
+  apply(simp add: Set__foldable_p_def)
+end-proof
+
+proof Isa folds_agree
+  apply(induct l)
+  apply (metis List__foldl__def List__foldr__def)
+  apply(simp add: foldl_pull_out)
+  apply (metis foldl'_def foldl_pull_out)
+end-proof
+
+proof Isa diff_of_empty_2
+ apply(induct lst)
+ apply(simp add: List__diff_def)
+ apply(simp add: List__diff_def)
+end-proof
+
+proof Isa in_of_empty
+ apply(metis empty_iff empty_set)
+end-proof
+
+proof Isa e_at_at_of_empty
+proof -
+ have "\<not> i < length ([]\<Colon>'a list)"
+   by auto
+ thus "([]\<Colon>'a list) @@ i = None"
+   by (metis (full_types) List__e_at_at_def list_1_Isa_nth)
+qed
+end-proof
+
+proof Isa diff_of_cons
+  apply(induct lst arbitrary: hd__v tl__v)
+  apply(simp add: diff_of_empty_2)
+  apply(auto simp add: List__diff_def)
 end-proof
 
 end-spec
