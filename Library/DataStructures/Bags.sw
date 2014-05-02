@@ -191,6 +191,9 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
                                                   then natMinus(occs(x,b),1)  %TODO could say y here instead of x (they are equal if we are in this branch)
                                                 else occs(y,b))
 
+  theorem delete_of_empty is [a]
+      fa(x:a) bag_delete(x,empty_bag) = empty_bag
+
   %% TODO Use \ for difference ops like this?
   op [a] -- infixl 25 : Bag a * Bag a -> Bag a
   axiom bag_difference is [a]
@@ -271,8 +274,8 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
 
 %%   theorem bag_diff_right_unit is [a]
 %%       fa(c:Bag a)(c -- empty_bag = c)
-%%   theorem bag_diff_left_zero is [a]
-%%       fa(c:Bag a)(empty_bag -- c = empty_bag)
+   theorem bag_diff_left_zero is [a]
+       fa(c:Bag a)(empty_bag -- c = empty_bag)
 
 %% % this is too powerful... needs to be backtrackable versus a rewrite
 %% % See above.  This doesn't seem to be true.
@@ -451,6 +454,16 @@ end-proof
 
 proof Isa Bag__bagin_p_of_bag_intersection
   apply(auto simp add: Bag__occs_bag_intersection Bag__bagin_p_def)
+end-proof
+
+proof Isa Bag__delete_of_empty
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__bag_deletion Bag__empty_bag Integer__natMinus_def)
+end-proof
+
+proof Isa Bag__bag_diff_left_zero
+  apply(rule Bag__occurrences)
+  apply(auto simp add: Bag__empty_bag Bag__bag_difference Integer__natMinus_def)
 end-proof
 
 end-spec

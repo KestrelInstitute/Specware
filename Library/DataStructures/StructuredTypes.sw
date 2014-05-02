@@ -18,16 +18,19 @@ spec
 %% TODO: Move these to the List library (but will have to prove the __stp versions):
 
 theorem @@_of_empty is [a]
- fa (i:Nat) ([]:List a) @@ i = None
+  fa (i:Nat) ([]:List a) @@ i = None
 
 theorem in_of_empty is [a]
- fa(lst:List a, x:a) x in? [] = false
+  fa(lst:List a, x:a) x in? [] = false
 
 theorem diff_of_empty_2 is [a]
- fa(lst:List a) diff(lst, []) = lst
+  fa(lst:List a) diff(lst, []) = lst
 
 theorem diff_of_cons is [a]
- fa(lst:List a, hd:a, tl: List a) diff(hd::tl, lst) = (if hd in? lst then diff(tl,lst) else hd::diff(tl,lst))
+  fa(lst:List a, hd:a, tl: List a) diff(hd::tl, lst) = (if hd in? lst then diff(tl,lst) else hd::diff(tl,lst))
+
+theorem delete1_of_empty is [a]
+  fa(x:a) delete1(x,[]) = []
 
  
 
@@ -404,6 +407,9 @@ end-proof
 
   theorem L2B_Nil is [a]
      fa(al:List a) (al=Nil) =  (L2B(al) = (empty_bag:Bag a))
+
+  theorem L2B_Nil_alt is [a]
+     (L2B(Nil: List a) = (empty_bag:Bag a))
 
   theorem L2B_Cons is [a]
     fa(y:a,lst:List a) ( L2B(Cons(y,lst)) = bag_insert(y, L2B lst) )
@@ -897,23 +903,40 @@ proof isa L2B_Cons
 end-proof
 
 proof isa L2B_delete1
-  sorry
+  apply(induct lst arbitrary: y)
+  apply(simp add: delete1_of_empty Bag__delete_of_empty L2B_Nil_alt)
+  apply(auto simp add: L2B_Cons)
+  (* TODO: prove rule about delete of insert *)
+  apply(rule Bag__occurrences)
+  apply(simp add: Bag__bag_deletion Bag__bag_insertion Integer__natMinus_def )
+  apply(rule Bag__occurrences)
+  apply(simp add: Bag__bag_deletion Bag__bag_insertion Integer__natMinus_def )
 end-proof
 
 proof isa L2B_member
-  sorry
+  apply(induct lst)
+  (*TODO: prove rule about bagin of empty *)
+  apply(simp add: L2B_Nil_alt Bag__bagin_p_def Bag__empty_bag)
+  apply(auto simp add: L2B_Cons Bag__bagin_of_insert)
 end-proof
 
 proof isa L2B_head
-  sorry
+  apply(case_tac lst)
+  apply(auto simp add: L2B_Cons Bag__bagin_of_insert)
 end-proof
 
 proof isa L2B_tail
-  sorry
+  apply(case_tac lst)
+  apply(auto simp add: L2B_Cons Bag__bagin_of_insert)
+ (* TODO prove a lemma about subbag of insert *)
+  apply(simp add: Bag__subbag_def Bag__bag_insertion)
 end-proof
 
 proof isa L2B_concat
-  sorry
+  apply(induct lst1)
+  apply(simp add: L2B_Nil_alt Bag__bag_union_left_unit)
+  apply(simp add: L2B_Cons)
+  apply(metis Bag__distribute_bagunion_over_left_insert)
 end-proof
 
 proof isa L2B_diff
@@ -1208,5 +1231,11 @@ proof Isa diff_of_cons
   apply(simp add: diff_of_empty_2)
   apply(auto simp add: List__diff_def)
 end-proof
+
+proof Isa L2B_Nil_alt
+  apply(auto simp add: L2B_def)
+end-proof
+
+
 
 end-spec
