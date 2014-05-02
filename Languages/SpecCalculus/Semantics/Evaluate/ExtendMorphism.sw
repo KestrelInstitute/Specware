@@ -68,8 +68,8 @@ def extendMorphismWithAnswer(morph, domVars) =
   let codIds = answerVarsFromSnark() in
   let domIds = map (fn (id,_) -> id) domVars in
   let newOpMap = foldl (fn (map, domId, codId) -> (update map (mkUnQualifiedId(domId)) (mkUnQualifiedId(codId)))) opMap (domIds, codIds) in
-  let _ = if specwareDebug? then map (fn (id) -> System.print("domOp: " ^ id ^ "\n")) domIds else [""] in
-  let _ = if specwareDebug? then map (fn (id) -> System.print("codOp: " ^ id ^ "\n")) codIds else [""] in
+  let _ = if specwareDebug? then map (fn (id) -> System.print("domOp: " ^ id ^ "\n")) domIds else [()] in
+  let _ = if specwareDebug? then map (fn (id) -> System.print("codOp: " ^ id ^ "\n")) codIds else [()] in
   %%let _ = if specwareDebug? then printTermToTerminal(domIds) else () in
   %%let _ = if specwareDebug? then printMapToTerminal(newOpMap) else () in
     makeMorphism(dom, cod, srtMap, newOpMap, morph.pragmas, morph.sm_tm)
