@@ -335,6 +335,29 @@ op mkNotEquality (dom_type: MSType, t1 : MSTerm, t2 : MSTerm) : MSTerm =
  let typ = mkArrow (mkProduct [dom_type, dom_type], boolType) in
  mkApply(mkNotEquals typ, mkTuple [t1,t2])
 
+% Test if a term is an equality
+op matchEquality (t : MSTerm) : Option (MSType * MSTerm * MSTerm) =
+  case t of
+    | Apply(Fun(Equals, typ, _), Record([("1", lhs), ("2", rhs)], _), _) ->
+      Some (typ, lhs, rhs)
+    | _ -> None
+
+% Test if a term is an implication
+op matchImplication (t : MSTerm) : Option (MSTerm * MSTerm) =
+  case t of
+    | Apply(Fun(Implies, _, _), Record([("1", lhs), ("2", rhs)], _), _) ->
+      Some (lhs, rhs)
+    | _ -> None
+
+% Test if a term is a forall; "1" means match just the first variable
+op matchForall1 (t : MSTerm) : Option (Id * MSType * MSTerm) =
+  case t of
+    | Bind (Forall, [(var, typ)], body, pos) ->
+      Some (var, typ, body)
+    | Bind (Forall, (var, typ) :: vars, body, pos) ->
+      Some (var, typ, Bind (Forall, vars, body, pos))
+    | _ -> None
+
 op negateTerm (term : MSTerm) : MSTerm =
  %% Gets the negated version of term. 
  case term of
