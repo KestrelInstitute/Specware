@@ -2253,6 +2253,47 @@ op constructorTranslation(c_nm: String, c: Context): Option String =
                                else (if includes_prf_terminator?
                                        then []
                                      else [[prString "done",prEmpty]])))
+           | Quotient(superty,
+                      rel as Fun (Op (Qualified (rel_qual, rel_nm), _), _, _), _) ->
+             let x = ("x", superty) in
+             let y = ("y", superty) in
+             let tp_name_pretty = ppIdInfo aliases in
+             let equiv_thm =
+               qidToIsaString (mkQualifiedId(rel_qual, rel_nm^"_equiv"))
+             in
+             let op_pretty =
+               ppTerm c Top (mkMultiLambda ([x, y],
+                                            mkAppl (rel, [mkVar x, mkVar y])))
+             in
+             blockAll(0,
+                      [(0,
+                        prBreakCat 2
+                          [[prString "quotient_type ",
+                            ppTyVars tvs,
+                            tp_name_pretty,
+                            prString " = "],
+                           [prString "\"", ppType c Top true superty, prString "\""],
+                           [prString " / "],
+                           [prString "\"", op_pretty, prString "\""]]),
+                       (2, prString "apply (simp only: equivp_def fun_eq_iff)"),
+                       (2, prString "apply (rule allI[OF allI])"),
+                       (2, prString ("apply (rule " ^ equiv_thm ^ ")")),
+                       (2, prString "done"),
+                       (0,
+                        prBreak 2
+                          [prString "interpretation ",
+                           tp_name_pretty,
+                           prString ": ",
+                           prString "quotient ",
+                           (prConcat [prString "\"", op_pretty, prString "\" "]),
+                           (prConcat [prString "\"abs_", tp_name_pretty, prString "\""]),
+                           (prConcat [prString "\"rep_", tp_name_pretty, prString "\""])]),
+                       (2,
+                        prConcat
+                          [prString "by (simp add: quotient_def Quotient3_",
+                           tp_name_pretty, prString " ",
+                           tp_name_pretty, prString "_equivp)"])
+                ])
 	   | _ ->
 	     prBreakCat 2
 	       [[prString "type_synonym ",
@@ -3820,9 +3861,12 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | CharPat (chr,_) -> prString (Char.show chr)
      | NatPat (int,_) -> prString (Nat.show int)      
      | QuotientPat (pat,qid,_,_) -> 
-       prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
-                  ppPattern c pat wildstr false,
-                  prString ")"]
+       % NOTE: we choose to create junk Isabelle instead of failing to
+       % allow the rest of the Isabelle to be generated
+       prString ("(Quotient patterns not (currently) supported by the Isabelle translator)")
+       % prBreak 0 [prString ("(quotient[" ^ show qid ^ "] "),
+       %            ppPattern c pat wildstr false,
+       %            prString ")"]
      | RestrictedPat (pat,term,_) -> 
 %        (case pat of
 %	   | RecordPat (fields,_) ->
@@ -3904,10 +3948,10 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | Iff       -> prString "="
      | Equals    -> prString "="
      | NotEquals -> lengthString(1, "\\<noteq>")
-     | Quotient  _ -> prString "quotient"
-     | PQuotient _ -> prString "quotient"
-     | Choose    _ -> prString "choose"
-     | PChoose   _ -> prString "choose"
+     | Quotient  typeName -> prString ("abs_" ^ qidToIsaString typeName)
+     | PQuotient typeName -> prString ("abs_" ^ qidToIsaString typeName)
+     | Choose    typeName -> prString ("quotient.qchoose rep_" ^ qidToIsaString typeName)
+     | PChoose   typeName -> prString ("quotient.qchoose rep_" ^ qidToIsaString typeName)
      | Restrict -> prString "restrict"
      | Relax -> prString "relax"
      %| Op (qid,Nonfix) -> ppOpQualifiedId c qid

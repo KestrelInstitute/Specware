@@ -2204,6 +2204,14 @@ lemma quotE:      "\<exists>z. eq x z   \<and> rep (abs x) = z"  by (metis abs_i
 declare abs_inj [simp]  
         rep_inj [simp]  
         rep_inj2 [simp] 
+
+(*** implementing the Specware "choose" operator in Isabelle ***)
+definition qchoose :: "'b => ('a => 'c) => 'c"
+where "qchoose s f = f (rep s)"
+
+lemma qchoose_abs: "[|(\<And> x y. eq x y ==> f x = f y)|] ==> qchoose (abs z) f = f z"
+  by (simp only: qchoose_def abs_inv)
+
 end
 
 (***********************************************************************

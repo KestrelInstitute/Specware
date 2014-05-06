@@ -370,7 +370,7 @@ op negateTerm (term : MSTerm) : MSTerm =
 
  % lambda-abstract a list of variables
  op mkMultiLambda (vars : MSVars, body : MSTerm) : MSTerm =
-   foldl (fn (tm, var) -> mkLambda (VarPat (var, noPos), tm)) body vars
+   foldr (fn (var, tm) -> mkLambda (VarPat (var, noPos), tm)) body vars
 
 
 %% Patterns ...

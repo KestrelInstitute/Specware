@@ -7,45 +7,16 @@ BagsAsLists =
 Bag qualifying
 spec
 
-  % we refine bags by means of lists: a bag can be represented by
-  % a list containing all its elements, repeated as many times as their
+  % we refine bags by means of lists: a bag can be represented by a
+  % list containing all its elements, repeated as many times as their
   % occurrences in the bag; the order of the elements in the list does
-  % not matter
+  % not matter, so we quotient the list type by
+  % permutation-equivalence
+  type Bag a = (List a) / permutationOf
 
-  % clearly, there exist other ways to refine bags
-
-  % we use built-in lists
-
-  % a bag is defined as an equivalence class of lists (as a quotient type)
-
-  type Bag a = (List a) / perm?
-
-  %TODO perm should probably be moved into the list library.  Actually, Library/Base/List already has permutationOf...
-
-  % the equivalence relation perm? holds over two lists when they
-  % are one a permutation of the other, i.e., when they have the same
-  % elements, repeated the same number of times (of course, order may differ)
-
-  % a way to define perm?(l1,l2) is to first check that they have
-  % the same length (if not, one cannot be a permutation of the other), then
-  % go through the elements of l1 one by one in order, removing each of them
-  % from l2, and recursively checking whether the resulting lists are
-  % permutations of each other
-
-  % note the use of an auxiliary function delete_first, defined after
-  % perm?, which removes the first occurrence of an element
-  % from a list (returns the same list if the element does not occur)
-
-  % the definition of perm? is constructive (code can be generated)
-  % which is necessary because in generated code it is used to check
-  % equality of bags (by calling it on the representing lists)
-
-  op [a] perm?(l1: List a, l2: List a) : Bool =
-    case l1 of
-    | []          -> l2 = []
- %%TODO expensive to compare the lengths on each recursive call (but needed to cover the case when delete_first does nothing)?
-    | Cons(x,l11) -> length l1 = length l2 && perm?(l11,delete_first(x,l2))
-
+  proof Isa List__permutationOf_equiv
+    sorry
+  end-proof
 
   % we (re-)define the operations on bags to operate on the equivalence
   % classes of lists just defined and to be constructive
@@ -111,7 +82,7 @@ spec
   % element to a representing list
 
   %TODO Why is Bag.Bag required here (and elsewhere in this file) insead of just Bag?:
-  op [a] bag_insert(x:a, (quotient[Bag.Bag] l) : Bag a) : Bag a = quotient[Bag] (Cons(x,l))
+  op [a] bag_insert(x:a, b : Bag a) : Bag a = choose[Bag] (fn l -> quotient[Bag] (Cons(x,l))) b
 
 %  def bag_insert(x,b) =
 %      quotient[Bag] (choose[Bag] (fn l -> Cons(x,l)) b)
@@ -119,8 +90,8 @@ spec
   % union of bags amounts to concatenation of representing lists
 
 %%FIXME the fixity changes along the morphism below?
-  op [a] bag_union((quotient[Bag.Bag] l1) : Bag a, (quotient[Bag.Bag] l2) : Bag a) infixl 300 : Bag a =
-      quotient[Bag] (l1 ++ l2)
+  op [a] bag_union(b1 : Bag a, b2 : Bag a) infixl 300 : Bag a =
+    choose[Bag] (fn l1 -> choose[Bag] (fn l2 -> quotient[Bag] (l1 ++ l2)) b2) b1
 
   op [a] intersect_lists_aux (l1 : List a, l2 : List a, acc : List a) : List a =
     case l1 of
@@ -139,8 +110,10 @@ spec
     intersect_lists_aux(l1, l2, [])
 
 %%FIXME the fixity changes along the morphism below?
-  op [a] bag_intersection((quotient[Bag.Bag] l1) : Bag a, (quotient[Bag.Bag] l2) : Bag a) infixl 300 : Bag a =
-    quotient[Bag] (intersect_lists(l1,l2))
+  op [a] bag_intersection(b1 : Bag a, b2 : Bag a) infixl 300 : Bag a =
+    choose[Bag] (fn l1 ->
+                   choose[Bag] (fn l2 ->
+                                  quotient[Bag] (intersect_lists(l1,l2))) b2) b1
 
 %  def bag_union(b1,b2) =
 %      quotient[Bag]
@@ -148,13 +121,15 @@ spec
 
 
   % bag_fold amounts to list_fold on a representing list
-  op [a,b] bag_fold (c:b)
-                    (f: b * a -> b |
-                         fa(x,y,z) f(f(x,y),z) = f(f(x,z),y))
-                    ((quotient[Bag.Bag] l) : Bag a) : b = 
-    (foldl f c l)
+  % op [a,b] bag_fold (c:b)
+  %                   (f: b * a -> b |
+  %                        fa(x,y,z) f(f(x,y),z) = f(f(x,z),y))
+  %                   ((quotient[Bag.Bag] l) : Bag a) : b = 
+  %   (foldl f c l)
 
-%   def bag_fold c f b = choose[Bag] (fn l -> list_fold c f l) b
+  op [a,b] bag_fold (c:b) (f: b * a -> b |
+                             fa(x,y,z) f(f(x,y),z) = f(f(x,z),y)) (b:Bag a) : b =
+    choose[Bag] (fn l -> foldl f c l) b
 
 %% Just copied over from Bags.sw:
 op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
@@ -179,10 +154,9 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
     | Cons(y,l1) -> if x = y then l1 else Cons(y,delete_first(x,l1))
 
   %% Delete one occurrence of x from the bag.  If x does not occur in the bag, this makes no change.
-  op [a] bag_delete(x:a, (quotient[Bag.Bag] (l:List a)) : Bag a) : Bag a = quotient[Bag] (delete_first(x,l))
-
-%  def bag_delete(x,b) =
-%      quotient[Bag] (choose[Bag] (fn l -> delete_first(x,l)) b)
+  op [a] bag_delete(x:a, b : Bag a) : Bag a =
+    choose[Bag] (fn l -> quotient[Bag] (delete_first(x,l))) b
+  %op [a] bag_delete(x:a, (quotient[Bag.Bag] (l:List a)) : Bag a) : Bag a = quotient[Bag] (delete_first(x,l))
 
   %%TODO just use something from the List library?  Not quite the same as diff in Base/List...
   op [a] delete_list (l1:List a, l2:List a) : List a =
@@ -190,9 +164,13 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
     | []           -> l2
     | Cons(y,l1tl) -> delete_list(l1tl,delete_first(y,l2))
 
-  op [a] bag_difference ((quotient[Bag.Bag] (l1:List a)) : Bag a, (quotient[Bag.Bag] (l2:List a)) : Bag a) : Bag a 
-    = quotient[Bag](delete_list(l2,l1))
-%     = quotient[Bag] (choose[Bag] (fn l2 -> delete_list(l1,l2)) b)
+  op [a] bag_difference (b1 : Bag a, b2 : Bag a) : Bag a =
+    choose[Bag] (fn l1 ->
+                   choose[Bag] (fn l2 ->
+                                  quotient[Bag] (delete_list (l2,l1))) b2) b1
+
+  % op [a] bag_difference ((quotient[Bag.Bag] (l1:List a)) : Bag a, (quotient[Bag.Bag] (l2:List a)) : Bag a) : Bag a 
+  %   = quotient[Bag](delete_list(l2,l1))
 
   op [a] bag_filter (f: a -> Bool) (b: Bag a): Bag a =
     choose[Bag] (fn l -> quotient[Bag](filter f l)) b

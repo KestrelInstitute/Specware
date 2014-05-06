@@ -1003,19 +1003,28 @@ spec
    let x = ("x", elty) in
    let y = ("y", elty) in
    let z = ("z", elty) in
-   [%% fa(x, y, z) r(x, y) && r(y, z) => r(x, z)
-    mkConjecture(mkQualifiedId(qual, name^"_transitive"), tyVars,
-		 mkBind(Forall, [x, y, z],
-			mkSimpImplies(MS.mkAnd(mkAppl(r, [mkVar x, mkVar y]),
-                                               mkAppl(r, [mkVar y, mkVar z])),
-                                      mkAppl(r, [mkVar x, mkVar z])))),
-    %% fa(x, y) r(x, y) => r(y, x)
-    mkConjecture(mkQualifiedId(qual, name^"_symmetric"), tyVars,
-		 mkBind(Forall, [x, y], mkSimpImplies(mkAppl(r, [mkVar x, mkVar y]),
-                                                      mkAppl(r, [mkVar y, mkVar x])))),
-    %% fa(x) r(x, x)
-    mkConjecture(mkQualifiedId(qual, name^"_reflexive"), tyVars,
-		 mkBind(Forall, [x], mkAppl(r, [mkVar x, mkVar x])))]
+   % fa (x,y) r(x,y) = (fa(z) r(x,z) = r(y,z))
+   [mkConjecture (mkQualifiedId(qual, name^"_equiv"), tyVars,
+                  mkBind (Forall, [x,y],
+                          mkEquality (boolType,
+                                      mkAppl (r, [mkVar x, mkVar y]),
+                                      mkBind (Forall, [z],
+                                              mkEquality (boolType,
+                                                          mkAppl (r, [mkVar x, mkVar z]),
+                                                          mkAppl (r, [mkVar y, mkVar z]))))))]
+   % [%% fa(x, y, z) r(x, y) && r(y, z) => r(x, z)
+   %  mkConjecture(mkQualifiedId(qual, name^"_transitive"), tyVars,
+   %      	 mkBind(Forall, [x, y, z],
+   %      		mkSimpImplies(MS.mkAnd(mkAppl(r, [mkVar x, mkVar y]),
+   %                                             mkAppl(r, [mkVar y, mkVar z])),
+   %                                    mkAppl(r, [mkVar x, mkVar z])))),
+   %  %% fa(x, y) r(x, y) => r(y, x)
+   %  mkConjecture(mkQualifiedId(qual, name^"_symmetric"), tyVars,
+   %      	 mkBind(Forall, [x, y], mkSimpImplies(mkAppl(r, [mkVar x, mkVar y]),
+   %                                                    mkAppl(r, [mkVar y, mkVar x])))),
+   %  %% fa(x) r(x, x)
+   %  mkConjecture(mkQualifiedId(qual, name^"_reflexive"), tyVars,
+   %      	 mkBind(Forall, [x], mkAppl(r, [mkVar x, mkVar x])))]
 
  op  nameFromTerm: MSTerm -> String
  def nameFromTerm t =
