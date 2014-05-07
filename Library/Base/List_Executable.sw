@@ -443,6 +443,10 @@ refine def [a] permutationOf (l1: List a, l2: List a) : Bool =
               | Some l2' -> l1' permutationOf l2'
               | None     -> false)
 
+refine def [a] permutesTo? (l1: List a, l2: List a) : Bool =
+  case l1 of
+  | []     -> empty? l2
+  | x::l1' -> x in? l2 && permutesTo? (l1', delete1 (x, l2))
 
 
 % ------------------------------------------------------------------------------
@@ -1264,6 +1268,24 @@ proof isa List__permutationOf__1__obligation_refine_def
   apply (clarsimp, case_tac "a \<in> set l2")
   apply (simp add: List__deleteOne_refine1)
   apply (simp add: List__deleteOne_refine2)
+end-proof
+
+proof Isa List__permutesTo_p__1__obligation_refine_def
+  apply (induct l1 arbitrary: l2)
+  apply (simp_all add: List__permutesTo_p_def null_def)
+  proof -
+    fix a l1 l2
+    assume asmp:"\<And> l2 . ((l1 <~~> l2) = List__permutesTo_p__1 (l1, l2))"
+    show "(a # l1 <~~> l2) = (a \<in> set l2 \<and> List__permutesTo_p__1 (l1, remove1 a l2))"
+      apply (rule subst[OF asmp[of "remove1 a l2"]])
+      apply auto
+      apply (simp add: subst[OF perm_set_eq[of "a#l1"]])
+      apply (rule subst[of _ l1, OF remove_hd[of a]])
+      apply (rule perm_remove_perm)
+      apply simp
+      apply (simp_all add: trans[OF _ perm_sym[OF perm_remove], of _ a])
+    done
+  qed
 end-proof
 
 end-spec
