@@ -59,6 +59,11 @@ op [a,b] mapOption (f: a -> b) : Option a -> Option b = fn
 op [a,b] isoOption : Bijection(a,b) -> Bijection(Option a, Option b) =
   fn iso_elem -> mapOption iso_elem
 
+% Apply a map to another type, with a default element
+op [a,b] mapOptionDefault (f : a -> b) (df : b) (o : Option a) : b =
+  case o of
+    | None -> df
+    | Some a -> f a
 
 (* Isabelle pragmas *)
 proof Isa some? [simp] end-proof  % always expand definition in Isabelle proof
@@ -93,9 +98,30 @@ proof Isa isoOption_subtype_constr1
        Option__Option_P.simps(2) not_Some_eq option_map_None option_map_Some)
 end-proof
 
+proof Isa Option__mapOptionDefault_subtype_constr
+  apply (induct o__v)
+  by auto
+end-proof
+
 proof Isa Option__extractOption_subtype_constr
   apply (case_tac o__v)
   apply auto
+end-proof
+
+
+(*** Some helpful lemmas for proving things about options ***)
+
+proof Isa -verbatim
+lemma mapOption_preserves_P: "[| (\<forall> x. P x --> P (f x)); Option__Option_P P opt |] ==> Option__Option_P P (Option.map f opt) "
+  apply (induct opt)
+  by auto
+
+lemma mapOptionDefault_Pin_Pout:
+  "[| Pout dflt; (\<forall> x . Pin x --> Pout (f x)); Option__Option_P Pin opt |] ==>
+   Pout (Option__mapOptionDefault f dflt opt)"
+  apply (induct opt)
+  by auto
+
 end-proof
 
 
