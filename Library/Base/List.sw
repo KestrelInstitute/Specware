@@ -650,6 +650,14 @@ theorem delete1_head is [a]
 theorem length_of_delete1 is [a]
   fa(n:a, lst:List a) (n in? lst) => length(delete1(n,lst)) = (length(lst) - 1)
 
+% Curried version of the above; plays nicer with Isabelle
+op [a] delete1_curried (x:a) (lst:List a): List a =
+  case lst of
+    | Nil -> Nil
+    | hd::tl -> (if hd=x then tl else Cons(hd,delete1_curried x tl))
+
+theorem delete1_delete1_curried is [a]
+  fa(x:a, l) delete1(x,l) = delete1_curried x l
 
 
 % delete/remove from l1 (all occurrences of) all the elements that
@@ -805,6 +813,7 @@ proof Isa Thy_Morphism List "~~/src/HOL/Library/Permutation"
   List.in?            -> mem          Left  55
   List.prefix         -> take         curried  reversed
   List.removePrefix   -> drop         curried  reversed
+  List.delete1_curried -> remove1
   List.head           -> hd
   List.last           -> last
   List.tail           -> tl
@@ -5812,6 +5821,26 @@ proof Isa List__length_of_delete1__stp
   apply(simp)
   apply(simp)
   by (metis diff_add_cancel int_Suc int_int_eq add_commute)
+end-proof
+
+proof Isa delete1_curried_subtype_constr
+  apply(induct lst)
+  apply simp_all
+end-proof
+
+proof Isa delete1_delete1_curried
+  apply (induct l)
+  apply simp_all
+end-proof
+
+proof Isa List__delete1_delete1_curried__stp
+  apply (induct l)
+  apply simp_all
+end-proof
+
+proof Isa -verbatim
+  (*** Use delete1_delete1_curried as a simplification rule ***)
+  declare List__delete1_delete1_curried [simp]
 end-proof
 
 proof Isa List__intersperse_subtype_constr
