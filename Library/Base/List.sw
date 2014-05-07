@@ -617,6 +617,16 @@ op [a] findRightmostAndFollowing (p: a -> Bool) (l: List a)
   | None   -> None
   | Some i -> Some (l @ i, removePrefix (l, i))
 
+% find the index of the first element satisfying predicate
+op [a] indexOf (p : a -> Bool) (l : List a) : Option Nat =
+   case l of
+     | [] -> None
+     | x :: l' ->
+       if p x then Some 0 else
+         (case indexOf p l' of
+            | None -> None
+            | Some i -> Some (i+1))
+
 % delete/remove all occurrences of element from list:
 
 op [a] delete (x:a) (l: List a) : List a =
@@ -664,6 +674,83 @@ op [a] longestCommonPrefix (l1: List a, l2: List a) : List a =
 op [a] longestCommonSuffix (l1: List a, l2: List a) : List a =
   reverse (longestCommonPrefix (reverse l1, reverse l2))
 
+
+
+% This datatype captures the possible "moves" that can be performed
+% when permuting a list
+type PermuteMoves =
+   | permNil % [] permutesTo []
+   | permSwap % x::y::l permutesTo y::x::l
+   | permCons PermuteMoves % l1 permutesTo l2 ==> x::l1 permutesTo x::l2
+   | permTrans (PermuteMoves * PermuteMoves)
+     % l1 permutesTo l2 ==> l2 permutesTo l3 ==> l1 permutesTo l3
+
+% Return true iff the given moves permute l1 into l2
+op [a] permutesToWithMoves (m : PermuteMoves) (l1 : List a) (l2 : List a) : Bool =
+  case (m, l1, l2) of
+    | (permNil, [], []) -> true
+    | (permSwap, x1::y1::l1', x2::y2::l2') ->
+      y1::x1::l1' = x2::y2::l2'
+    | (permCons m', x1::l1', x2::l2') ->
+      x1 = x2 && permutesToWithMoves m' l1' l2'
+    | (permTrans (m1, m2), _, _) ->
+      ex (l') permutesToWithMoves m1 l1 l' && permutesToWithMoves m2 l' l2
+    | _ -> false
+
+%%%%%%%%%%%%%%%%%%%%
+% NOTE: this Isabelle verbatim block needs to be placed before the
+% definition of permutesTo?_curried
+proof Isa -verbatim
+lemma permutes_to_perm: "(List__permutesToWithMoves m l1 l2) ==> l1 <~~> l2"
+  apply (induct m l1 l2 rule: List__permutesToWithMoves.induct)
+  by auto
+
+lemma permutes_cons_ex:
+  "(\<exists> m . List__permutesToWithMoves m l1 l2) ==>
+   (\<exists> m . List__permutesToWithMoves m (x # l1) (x # l2))"
+  apply (auto simp add: exE[of "\<lambda> m . List__permutesToWithMoves m l1 l2"])
+  proof -
+    fix m
+    assume pf:"List__permutesToWithMoves m l1 l2"
+    show ?thesis by (simp add: pf exI[of _ "List__PermuteMoves__permCons m"])
+  qed
+
+lemma permutes_trans:
+  "List__permutesToWithMoves m1 l1 l2 ==>
+   List__permutesToWithMoves m2 l2 l3 ==>
+   \<exists> m . List__permutesToWithMoves m l1 l3"
+  by (simp add: exI[of _ "List__PermuteMoves__permTrans m1 m2"] exI[of _ l2])
+
+lemma perm_to_permutes: "l1 <~~> l2 ==> (\<exists>m . List__permutesToWithMoves m l1 l2)"
+  apply (induct l1 l2 rule: perm.induct)
+  apply (simp add: exI[of _ List__PermuteMoves__permNil])
+  apply (simp add: exI[of _ List__PermuteMoves__permSwap])
+  apply (auto simp add: permutes_cons_ex permutes_trans)
+  done
+end-proof
+% end of Isabelle verbatim block
+%%%%%%%%%%%%%%%%%%%%
+
+% A list permutesTo? another iff there is some sequence of moves to
+% transform the one to the other
+%
+% NOTE: This curried version plays nicer with Isabelle
+op [a] permutesTo?_curried (l1 : List a) (l2 : List a) : Bool =
+   ex (m) permutesToWithMoves m l1 l2
+
+% The non-curried version of the above
+op [a] permutesTo? (l1 : List a, l2 : List a) : Bool =
+   permutesTo?_curried l1 l2
+
+% permutesTo? is an equivalence relation
+theorem permutesTo?_equiv is [a]
+  fa (x:List a, y:List a)
+    permutesTo? (x,y) = (fa (z) permutesTo? (x,z) = permutesTo? (y,z))
+
+
+% TODO: remove the following old definition of permutations (up to
+% "end of old definition of permutations")
+
 % a permutation of a list of length N is represented by
 % a permutation of the list of natural numbers 0,...,N-1:
 
@@ -683,6 +770,8 @@ op [a] permute (l: List a, prm: Permutation | l equiLong prm) : List a =
 %% TODO: Name should end in a question mark.
 op [a] permutationOf (l1: List a, l2: List a) infixl 20 : Bool =
   ex(prm:Permutation) prm equiLong l1 && permute(l1,prm) = l2
+
+% (end of old definition of permutations)
 
 % given a comparison function over type a, type List a can be linearly
 % ordered and compared element-wise and regarding the empty list as smaller
@@ -706,7 +795,7 @@ op [a,b] isoList : Bijection(a,b) -> Bijection (List a, List b) =
 
 % mapping to Isabelle:
 
-proof Isa Thy_Morphism List
+proof Isa Thy_Morphism List "~~/src/HOL/Library/Permutation"
   type List.List      -> list
   List.List_P         -> list_all
   List.length         -> length
@@ -735,6 +824,7 @@ proof Isa Thy_Morphism List
   List.repeat         -> replicate             reversed
   List.flatten        -> concat
   List.noRepetitions? -> distinct
+  List.permutesTo?_curried -> perm
 end-proof
 
 #translate Haskell -header
@@ -4764,6 +4854,22 @@ proof -
    by (rule eq_the_sat)
  with len_def show ?thesis by auto
 qed
+end-proof
+
+proof Isa List__permutesTo_p_curried__def
+  by (auto simp add: permutes_to_perm perm_to_permutes)
+end-proof
+
+proof Isa List__permutesTo_p_equiv
+  proof -
+    have helper: "equivp perm"
+      apply (rule equivpI)
+      by (auto simp add: reflp_def symp_def transp_def perm_sym)
+
+    show ?thesis
+    apply (simp add: List__permutesTo_p_def equivp_def)
+    by (auto simp add: subst[OF equivp_def, of "\<lambda> x . x", OF helper])
+  qed
 end-proof
 
 proof Isa permute_subtype_constr 
