@@ -28,6 +28,15 @@ SpecCalc qualifying spec
  type QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
  type MorphismTypeMap = QualifiedIdMap
  type MorphismOpMap   = QualifiedIdMap
+ type MorphismOpFixityMap   = PolyMap.Map (QualifiedId, QualifiedId * Fixity)
+
+ op addOpFixity (cod_spc: Spec) (m: MorphismOpMap): MorphismOpFixityMap =
+   foldMap (fn newMap -> fn d -> fn c ->
+              case findTheOp(cod_spc, c) of
+                | Some opinfo -> update newMap d (c, opinfo.fixity)
+                | None -> newMap)       % shouldn't happen
+     emptyMap m
+
 
   type Morphisms = List Morphism
   type Morphism = {
