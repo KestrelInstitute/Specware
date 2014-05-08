@@ -39,11 +39,12 @@ SpecCalc qualifying spec
   op morphismObligations: Morphism * GlobalContext * Position -> Spec
   def morphismObligations ({dom, cod, typeMap, opMap, pragmas, sm_tm=_},globalContext,pos) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
+    let opFixityMap = addOpFixity cod opMap in
     let translated_dom_axioms =
         foldrSpecElements (fn (el,newprops) ->
 			   case el of
 			     | Property(Axiom, name, tyvars, fm, _) ->
-			       let new_fm = translateTerm (fm, typeMap, opMap) in
+			       let new_fm = translateTerm (fm, typeMap, opFixityMap) in
 			       if existsSpecElement?
 				    (fn el ->
 				     case el of
@@ -62,7 +63,7 @@ SpecCalc qualifying spec
 	    case opInfoDefs dom_info of
 	      | [] -> rdefs
 	      | dom_def1 :: _ ->
-                let trans_def1 = translateTerm(dom_def1, typeMap, opMap) in
+                let trans_def1 = translateTerm(dom_def1, typeMap, opFixityMap) in
                 let n_qid as Qualified(n_q, n_id) = translateQId opMap (Qualified(q, id)) in
 		case findAQualifierMap (cod.ops, n_q, n_id) of
 		  | Some cod_info | termIn?(trans_def1, opInfoDefs cod_info) -> rdefs
@@ -92,10 +93,15 @@ SpecCalc qualifying spec
   op translateQId(m: QualifiedIdMap) (qid: QualifiedId): QualifiedId =
     case evalPartial m qid of
       | Some nqid -> nqid
-      | _ -> qid
+      | None -> qid
 
-  op translateTerm: MSTerm * MorphismTypeMap * MorphismOpMap -> MSTerm
-  def translateTerm (tm, typeMap, opMap) =
+  op translateQIdFixity(m: MorphismOpFixityMap) (qid: QualifiedId) (old_fx: Fixity): QualifiedId * Fixity =
+    case evalPartial m qid of
+      | Some nqid_fx -> nqid_fx
+      | None -> (qid, old_fx)
+
+  op translateTerm: MSTerm * MorphismTypeMap * MorphismOpFixityMap -> MSTerm
+  def translateTerm (tm, typeMap, opFixityMap) =
     let def translateType srt =
 	  case srt of
 	    | Base (QId, srts, a) -> 
@@ -109,7 +115,7 @@ SpecCalc qualifying spec
 	def translateTerm trm =
 	  case trm of
 	    | Fun (Op (dom_qid, fixity), srt, a) -> 
-	      let cod_qid as Qualified (q, id) = translateQId opMap dom_qid in
+	      let (cod_qid as Qualified (q, id), fixity) = translateQIdFixity opFixityMap dom_qid fixity in
 	      let fun =
 	          (case q of
 		     | "Bool" ->

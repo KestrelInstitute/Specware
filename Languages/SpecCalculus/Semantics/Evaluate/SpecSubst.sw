@@ -279,11 +279,21 @@ op convertIdMap (m : QualifiedIdMap) : AQualifierMap (QualifiedId * Aliases) =
          emptyTranslator
          m
 
+op convertOpIdMap (m : QualifiedIdMap, spc: Spec): OpTranslator =
+ foldMap (fn translator -> fn (Qualified (dom_q, dom_id)) -> fn cod_qid ->
+            let fixity = case findTheOp(spc, cod_qid) of
+                           | Some opinfo -> opinfo.fixity
+                           | None -> Unspecified
+            in
+            insertAQualifierMap (translator, dom_q, dom_id, (cod_qid, [cod_qid], fixity)))
+         emptyOpTranslator
+         m
+
 op applySpecMorphism (sm : Morphism) (spc : Spec) : Env Spec =
  %% The opMap and typeMap in sm are PolyMap's  :  dom_qid -> cod_qid
  %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
  %%  so we first convert formats...
- let op_translator   = convertIdMap (opMap   sm) in
+ let op_translator   = convertOpIdMap (opMap sm, cod sm) in
  let prop_translator = op_translator             in  % TODO: fix evil hack
  let translators = {
                     ambigs = emptyTranslator,

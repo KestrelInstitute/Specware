@@ -22,14 +22,15 @@ SpecCalc qualifying spec
 
   type Translators = {ambigs : Translator,
 		      types  : Translator,
-		      ops    : Translator,
-		      props  : Translator,
+		      ops    : OpTranslator,
+		      props  : OpTranslator,
 		      others : Option OtherTranslators}
 
   type Translator = AQualifierMap (QualifiedId * Aliases) 
+  type OpTranslator = AQualifierMap (QualifiedId * Aliases * Fixity) 
 
-  op  emptyTranslator : Translator
-  def emptyTranslator = emptyAQualifierMap
+  op emptyTranslator : Translator = emptyAQualifierMap
+  op emptyOpTranslator : OpTranslator = emptyAQualifierMap
 
   type OtherTranslators
 
@@ -137,6 +138,10 @@ SpecCalc qualifying spec
     let types = dom_spec.types in
     let ops   = dom_spec.ops   in
     let 
+      def op_fixity(qid: QualifiedId): Fixity =
+        case findTheOp(dom_spec, qid) of
+          | Some opinfo -> opinfo.fixity
+          | None -> Unspecified
 
       def complain_if_type_collision (types, type_translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
 	let collisions =
@@ -177,11 +182,11 @@ SpecCalc qualifying spec
 		return ()
 	       }
 
-      def complain_if_op_collision (ops, op_translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
+      def complain_if_op_collision (ops, op_translator: OpTranslator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
 	let collisions =
 	    foldriAQualifierMap (fn (other_dom_q, other_dom_id, other_target, collisions) ->
 				 case other_target of
-				   | (other_new_qid, _) ->
+				   | (other_new_qid, _, _) ->
 				     if other_new_qid = this_new_qid then
 				       let other_dom_qid = Qualified (other_dom_q, other_dom_id) in
 				       let Some this_info = findAQualifierMap (ops, this_dom_q, this_dom_id) in
@@ -243,9 +248,9 @@ SpecCalc qualifying spec
 			     type_translator
 
 
-      def complain_if_op_collisions_with_priors (ops, op_translator) =
+      def complain_if_op_collisions_with_priors (ops, op_translator: OpTranslator) =
 	foldOverQualifierMap
-          (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
+          (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_,_), _) ->
               %% we're proposing to translate dom_q.dom_id into new_q.new_id
             case findAQualifierMap (ops, new_q, new_id) of
               | None -> 
@@ -273,7 +278,8 @@ SpecCalc qualifying spec
             op_translator
 
 
-      def insert (op_translator, type_translator) (renaming_rule, rule_pos) =
+      def insert (op_translator: OpTranslator, type_translator) ((renaming_rule, rule_pos): RenamingRule)
+            : SpecCalc.Env(OpTranslator * Translator) =
 
 	let 
           def add_type_rule op_translator type_translator (dom_qid as Qualified (dom_q, dom_id))
@@ -337,7 +343,7 @@ SpecCalc qualifying spec
 		  }
 		  
 	      
-	  def add_op_rule op_translator type_translator (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
+	  def add_op_rule (op_translator: OpTranslator) type_translator (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
 	    case dom_ops of
 	      | first_op :: other_ops ->
 	        (let primary_dom_qid as Qualified (primary_q, primary_id) = primaryOpName first_op in
@@ -357,13 +363,15 @@ SpecCalc qualifying spec
 		         {
 			  when allow_exceptions?
 			   (complain_if_op_collision (ops, op_translator, dom_q, dom_id, cod_qid, rule_pos));
-			  new_op_translator <- return (insertAQualifierMap (op_translator, dom_q, dom_id, (cod_qid, cod_aliases)));
-			  new_op_translator <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
-						  %% in rule X +-> Y, X refers to A.X
-						  %% so both X and A.X should translate to Y
-						  insertAQualifierMap (new_op_translator, primary_q, primary_id, (cod_qid, cod_aliases))
-						else 
-						  new_op_translator);
+                          fixity <- return(op_fixity dom_qid);
+			  new_op_translator <- return (insertAQualifierMap (op_translator, dom_q, dom_id, (cod_qid, cod_aliases, fixity)));
+			  new_op_translator <-
+                            return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+                                      %% in rule X +-> Y, X refers to A.X
+                                      %% so both X and A.X should translate to Y
+                                      insertAQualifierMap (new_op_translator, primary_q, primary_id, (cod_qid, cod_aliases, fixity))
+                                    else 
+                                      new_op_translator);
 			  return (new_op_translator, type_translator)
 			  }
 		       | _ -> 
@@ -424,7 +432,7 @@ SpecCalc qualifying spec
 		   else
 		     return type_translator
 
-                 def extend_op_translator (op_q, op_id, _ (* op_info *), op_translator) =
+                 def extend_op_translator (op_q, op_id, op_info, op_translator: OpTranslator) =
 		   if op_q = dom_q then
 		     %% This is a candidate to be translated...
 		     case findAQualifierMap (op_translator, op_q, op_id) of
@@ -454,7 +462,7 @@ SpecCalc qualifying spec
 						  cod_aliases);
 			  when allow_exceptions? 
 			   (complain_if_op_collision (ops, op_translator, op_q, op_id, new_cod_qid, rule_pos));
-			  return (insertAQualifierMap (op_translator, op_q, op_id, (new_cod_qid, [new_cod_qid])))
+			  return (insertAQualifierMap (op_translator, op_q, op_id, (new_cod_qid, [new_cod_qid], op_info.fixity)))
 			 }
 		       | _ -> 
 			 %% Candidate already has a rule (e.g. via some explicit mapping)...
@@ -560,7 +568,7 @@ SpecCalc qualifying spec
 			    }
     in
       {
-       (op_translator, type_translator) <- foldM insert (emptyTranslator, emptyTranslator) renaming_rules;
+       (op_translator: OpTranslator, type_translator) <- foldM insert (emptyOpTranslator, emptyTranslator) renaming_rules;
        when allow_exceptions?
         {complain_if_type_collisions_with_priors (types, type_translator);
 	 complain_if_op_collisions_with_priors   (ops, op_translator)};
@@ -616,6 +624,11 @@ SpecCalc qualifying spec
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
+      def translateOpQualifiedIdToAliases translator (qid as Qualified (q, id)) =
+        case findAQualifierMap (translator, q,id) of
+          | Some (_,new_aliases, _) -> new_aliases
+          | None -> [qid]
+  
       def translateTypeInfos old_types =
         let 
           def translateTypeInfo (q, id, info, types) =
@@ -659,7 +672,7 @@ SpecCalc qualifying spec
 					  else 
 					    return (Cons (new_qid, new_qids)))
 				         new_qids
-					 (translateQualifiedIdToAliases op_translator old_qid))
+					 (translateOpQualifiedIdToAliases op_translator old_qid))
 	                          [] 
 				  info.names;
 	       new_names <- return (reverse new_names);
@@ -702,13 +715,23 @@ SpecCalc qualifying spec
 
   op  translateQualifiedId : Translator -> QualifiedId -> QualifiedId
   op  translateTypeRef     : Translator -> MSType -> MSType
-  op  translateOpRef       : Translator -> MSTerm -> MSTerm
+  op  translateOpRef       : OpTranslator -> MSTerm -> MSTerm
   op  translatePattern     : MSPattern  -> MSPattern
 
   def translateQualifiedId translator (qid as Qualified (q, id)) =
     case findAQualifierMap (translator, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
+
+  op translateOpQualifiedId (translator: OpTranslator) (qid as Qualified (q, id): QualifiedId): QualifiedId =
+    case findAQualifierMap (translator, q,id) of
+      | Some (nQId,_,_) -> nQId
+      | None -> qid
+
+  op translateOpRefInfo (translator: OpTranslator) (qid as Qualified (q, id)) (fx: Fixity): QualifiedId * Fixity =
+    case findAQualifierMap (translator, q,id) of
+      | Some (nQId,_,nfx) -> (nQId, nfx)
+      | None -> (qid, fx)
 
   def translateTypeRef type_translator type_term =
     case type_term of
@@ -720,8 +743,8 @@ SpecCalc qualifying spec
   def translateOpRef op_translator op_term =
     case op_term of
       | Fun (Op (qid, fixity), srt, pos) ->
-	(let new_qid = translateQualifiedId op_translator qid in
-	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, pos))
+	(let (new_qid, new_fixity) = translateOpRefInfo op_translator qid fixity in
+	 if new_qid = qid then op_term else Fun (Op (new_qid, new_fixity), srt, pos))
       | _ -> op_term
 
   def translatePattern pat = pat
@@ -736,10 +759,10 @@ SpecCalc qualifying spec
     case el of
       | Type    (qid, a)       -> Type    (translateQualifiedId translators.types qid, a) 
       | TypeDef (qid, a)       -> TypeDef (translateQualifiedId translators.types qid, a)
-      | Op      (qid, def?, a) -> Op      (translateQualifiedId translators.ops   qid, def?, a)
-      | OpDef   (qid, refine?, hist, a) -> OpDef(translateQualifiedId translators.ops   qid, refine?, hist, a)
+      | Op      (qid, def?, a) -> Op      (translateOpQualifiedId translators.ops   qid, def?, a)
+      | OpDef   (qid, refine?, hist, a) -> OpDef(translateOpQualifiedId translators.ops   qid, refine?, hist, a)
       | Property (pt, nm, tvs, term, a) ->
-        Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
+        Property (pt, (translateOpQualifiedId translators.props nm), tvs, term, a)
       | Import (sp_tm, spc, els, a) ->  
 	let (new_tm, spc, els) =
             if spc = base
@@ -843,8 +866,8 @@ op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
   def ppTranslators translators =
     let docs = (ppTranslatorMap (ppString "")          translators.ambigs) ++ 
                (ppTranslatorMap (ppString "type ")     translators.types)  ++ 
-               (ppTranslatorMap (ppString "op ")       translators.ops)    ++
-               (ppTranslatorMap (ppString "property ") translators.props)  ++
+               (ppOpTranslatorMap (ppString "op ")     translators.ops)    ++
+               (ppOpTranslatorMap (ppString "property ") translators.props)  ++
 	       (case translators.others of
 		  | None -> []
 		  | Some other -> ppOtherTranslators other)
@@ -867,6 +890,21 @@ op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
 			   ++ docs)
                         []
 			translator
+
+  op ppOpTranslatorMap (type_or_op: Doc) (translator: OpTranslator): List Doc =
+    foldriAQualifierMap (fn (dom_q, dom_id, (cod_qid as Qualified(cod_q, cod_id), _, _), docs) ->
+			 if dom_q = cod_q && dom_id = cod_id then
+			   %% don't print identity rules ...
+			   docs
+			 else
+			   [ppConcat [type_or_op,
+				      ppQualifier (Qualified(dom_q, dom_id)),
+				      ppString " +-> ",
+				      ppQualifier cod_qid]]
+			   ++ docs)
+                        []
+			translator
+
 
   op ppOtherTranslators : OtherTranslators -> List Doc
 

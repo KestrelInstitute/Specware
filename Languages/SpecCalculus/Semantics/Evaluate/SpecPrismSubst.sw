@@ -192,7 +192,7 @@ SpecCalc qualifying spec
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
    let tmaps = map (fn sm ->
-		    let op_translator   = convertIdMap (opMap sm) in
+		    let op_translator   = convertOpIdMap (opMap sm, cod sm) in
 		    let prop_translator = op_translator           in  % TODO: fix evil hack
 		    {ambigs = emptyTranslator,
 		     types  = convertIdMap (typeMap sm),
@@ -215,6 +215,11 @@ SpecCalc qualifying spec
       def translateQualifiedIdToAliases translator (qid as Qualified (q, id)) =
         case findAQualifierMap (translator, q,id) of
           | Some (_,new_aliases) -> new_aliases
+          | None -> [qid]
+  
+      def translateOpQualifiedIdToAliases translator (qid as Qualified (q, id)) =
+        case findAQualifierMap (translator, q,id) of
+          | Some (_,new_aliases,_) -> new_aliases
           | None -> [qid]
   
       def translateTypeInfos old_types =
@@ -280,7 +285,7 @@ SpecCalc qualifying spec
 					  else 
 					    return (Cons (new_qid, new_qids)))
 				         new_qids
-					 (translateQualifiedIdToAliases op_translator qid))
+					 (translateOpQualifiedIdToAliases op_translator qid))
 	                          [] 
 				  info.names;
 	       new_names <- return (reverse new_names);
@@ -346,13 +351,13 @@ SpecCalc qualifying spec
        %% translate op ref and type associated with it uniformly
        case op_term of
 	 | Fun (Op (qid, fixity), srt, pos) ->
-	   (let new_qid = translateQualifiedId op_translator qid in
+	   (let (new_qid, new_fixity) = translateOpRefInfo op_translator qid fixity in
 	    let tsp = (prismTranslateOp tmaps, translateTypeRef type_translator, translatePattern) in
 	    let new_srt = mapType tsp srt in
-	    if new_qid = qid && equalType?(new_srt, srt) then 
+	    if new_qid = qid && equalType?(new_srt, srt) && fixity = new_fixity then 
 	      op_term 
 	    else 
-	      Fun (Op (new_qid, fixity), new_srt, pos))
+	      Fun (Op (new_qid, new_fixity), new_srt, pos))
 	 | Var ((id,srt),p) ->
 	   let new_srt = freshMetaTyVar ("prism", p) in
 	   % let _ = toScreen ("\nVar: " ^ (anyToString id) ^ " : " ^ (anyToString srt) ^ " => " ^ (anyToString new_srt) ^ "\n") in
