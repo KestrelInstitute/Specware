@@ -261,6 +261,58 @@ proof Isa Bag__bag_union_Obligation_subtype0
   by (simp_all add: List__permutesTo_p_def)
 end-proof
 
+proof Isa intersect_lists_perm_left
+  sorry
+end-proof
+
+proof Isa intersect_lists_perm_right
+  sorry
+end-proof
+
+proof Isa intersect_lists_perm
+  sorry
+end-proof
+
+proof Isa bag_intersection_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_intersection_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa bag_fold_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa e_bsl_bsl_fsl_fsl_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_delete_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_difference_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_difference_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa bag_filter_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_map_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa bag_size_Obligation_subtype
+  sorry
+end-proof
+
 
 end-spec
 
@@ -278,4 +330,68 @@ M = morphism Bags -> BagsAsLists {\/  +-> bag_union,
 % the axioms characterizing the operations in Bags are satisfied
 % by the definitions of those operations in BagsAsLists
 
+
+proof Isa Bag__occurrences
+  sorry
+end-proof
+
+proof Isa Bag__empty_bag
+  sorry
+end-proof
+
+proof Isa Bag__bag_insertion
+  sorry
+end-proof
+
+proof Isa Bag__occs_bag_union
+  sorry
+end-proof
+
+proof Isa Bag__occs_bag_intersection
+  sorry
+end-proof
+
+proof Isa Bag__bag_map_empty
+  sorry
+end-proof
+
+proof Isa Bag__bag_map_insert
+  sorry
+end-proof
+
+proof Isa Bag__induction
+  sorry
+end-proof
+
+proof Isa Bag__bag_fold1
+  sorry
+end-proof
+
+proof Isa Bag__bag_fold2
+  sorry
+end-proof
+
+proof Isa Bag__bag_deletion
+  sorry
+end-proof
+
+proof Isa Bag__bag_difference
+  sorry
+end-proof
+
+proof Isa Bag__e_bsl_bsl_fsl_fsl_def_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa Bag__e_bsl_bsl_fsl_fsl_def
+  sorry
+end-proof
+
+proof Isa Bag__subbag_def
+  sorry
+end-proof
+
+proof Isa Bag__bagin_p_def
+  sorry
+end-proof
 
