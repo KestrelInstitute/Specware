@@ -27,9 +27,9 @@ spec
   % (recursive) function count, defined after occs
 
   op [a] occs(x:a, b:Bag a) : Nat =
-    choose[Bag] (fn l -> count(x,l)) b
+    choose[Bag] (fn l -> occs(x,l)) b
 
-%  def occs(x, quotient[Bag] l) = count(x,l)
+%  def occs(x, quotient[Bag] l) = occs(x,l)
 
   %% Add to Library/Base/Lists
   %% Note that if an element appears multiple times in l1, it must appear at least that many times in l2.
@@ -74,8 +74,8 @@ spec
   %   | hd::tl -> if (hd in? acc) then  %% we've already added to acc all copies of this element
   %                 intersect_lists_aux(tl, l2, acc)
   %               else
-  %                 let count = min(count(hd,l1),count(hd,l2)) in
-  %                 let acc = (repeat hd count) ++ acc in
+  %                 let occs = min(occs(hd,l1),occs(hd,l2)) in
+  %                 let acc = (repeat hd occs) ++ acc in
   %                   intersect_lists_aux(tl, l2, acc)
 
   % %% "intersect" the two lists

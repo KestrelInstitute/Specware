@@ -628,10 +628,11 @@ op [a] indexOf (p : a -> Bool) (l : List a) : Option Nat =
             | Some i -> Some (i+1))
 
 % count the number of occurrences of an element in a list
-op [a] count(x:a, l:List a) : Nat =
+%TODO: Would like to call this "count" but there is a name clash in Diversity.
+op [a] occs(x:a, l:List a) : Nat =
   case l of 
     | []         -> 0
-    | Cons(y,l1) -> if y = x then 1 + List.count(x,l1) else List.count(x,l1)
+    | Cons(y,l1) -> if y = x then 1 + List.occs(x,l1) else List.occs(x,l1)
 
 % delete/remove all occurrences of element from list:
 
