@@ -6,31 +6,22 @@
 BagsAsLists =
 Bag qualifying
 spec
+  import /Library/Base/List
 
   % we refine bags by means of lists: a bag can be represented by a
   % list containing all its elements, repeated as many times as their
   % occurrences in the bag; the order of the elements in the list does
   % not matter, so we quotient the list type by
   % permutation-equivalence
-  type Bag a = (List a) / permutationOf
-
-  proof Isa List__permutationOf_equiv
-    sorry
-  end-proof
+  type Bag a = (List a) / permutesTo?
 
   % we (re-)define the operations on bags to operate on the equivalence
   % classes of lists just defined and to be constructive
 
 %%TODO: In this file, should we use the trick from the manual of using a let instead of a chooser?
   op [a] bagin?(x:a, b:Bag a) infixl 100 : Bool =
-    choose[Bag] (fn l -> nzcount(x,l)) b
+    choose[Bag] (fn l -> x in? l) b
 %  def bagin?(x, quotient[Bag] l) = nzcount(x,l)
-
- %TODO Is this just the in? operator from Lists?!
-  op [a] nzcount(x:a, l:List a) : Bool =
-    case l of 
-    | []         -> false
-    | Cons(y,l1) -> if y = x then true else nzcount(x,l1)
 
   % to count occurrences, we pick up a list from the equivalence class
   % and we go through it while counting; note the use of the auxiliary
@@ -41,36 +32,23 @@ spec
 
 %  def occs(x, quotient[Bag] l) = count(x,l)
 
-  %%TODO Use something from the lists library?  Or add this to it.
-  op [a] List.count(x:a, l:List a) : Nat =
-    case l of 
-    | []         -> 0
-    | Cons(y,l1) -> if y = x then 1 + List.count(x,l1) else List.count(x,l1)
+  %% Add to Library/Base/Lists
+  %% Note that if an element appears multiple times in l1, it must appear at least that many times in l2.
+  op [a] contained?(l1:List a, l2:List a) : Bool =
+    case l1 of
+    | [] -> true
+    | x::l1' -> x in? l2 && contained? (l1', delete1 (x, l2))
 
-  % to check bag containment, we pick up two lists from the two equivalence
-  % classes, and we apply contained? to them (defined after subbag):
-  % contained? iterates through the elements of the first list,
-  % removing each of them from the second list by means of
-  % delete_first (defined above); if the result of delete_first has the same
-  % length as its argument, that means the element is not in the list,
-  % so contained? returns false; contained? returns true if at the end of
-  % the recursion the first list ends up being empty
+  theorem contained?_perm_eq_left is [a]
+    fa(l1 : List a, l2, l3) permutesTo?(l1, l2) => contained?(l1,l3) = contained?(l2,l3)
+
+  theorem contained?_perm_eq_right is [a]
+    fa(l1 : List a, l2, l3) permutesTo?(l1, l2) => contained?(l3,l1) = contained?(l3,l2)
 
   op [a] subbag (b1:Bag a, b2:Bag a) infixl 200 : Bool =
       choose[Bag] (fn l1 -> choose[Bag] (fn l2 -> contained?(l1,l2)) b2) b1
 
 %  def subbag(quotient perm? l1, quotient perm? l2) = contained?(l1,l2)
-
-  %% Add to Library/Base/Lists
-  %% Note that if an element appears multiple times in l1, it must appear at least that many times in l2.
-  op [a] contained?(l1:List a, l2:List a) : Bool =
-    case l1 of
-    | []          -> true
-    | Cons(x,l11) -> let l22 = delete_first(x,l2) in
-      		     	       %% TODO: Use the deleteOne op from List_Executable over in Base/
-                                if length l22 = length l2 %inefficient?
-                                then false
-                                else contained?(l11,l22)
 
   % the empty bag is the equivalence class of the empty list
 
@@ -80,8 +58,6 @@ spec
 
   % insertion of an element into a bag amounts to prepending the
   % element to a representing list
-
-  %TODO Why is Bag.Bag required here (and elsewhere in this file) insead of just Bag?:
   op [a] bag_insert(x:a, b : Bag a) : Bag a = choose[Bag] (fn l -> quotient[Bag] (Cons(x,l))) b
 
 %  def bag_insert(x,b) =
@@ -93,21 +69,48 @@ spec
   op [a] bag_union(b1 : Bag a, b2 : Bag a) infixl 300 : Bag a =
     choose[Bag] (fn l1 -> choose[Bag] (fn l2 -> quotient[Bag] (l1 ++ l2)) b2) b1
 
-  op [a] intersect_lists_aux (l1 : List a, l2 : List a, acc : List a) : List a =
-    case l1 of
-    | [] -> acc
-    | hd::tl -> if (hd in? acc) then  %% we've already added to acc all copies of this element
-                  intersect_lists_aux(tl, l2, acc)
-                else
-                  let count = min(count(hd,l1),count(hd,l2)) in
-                  let acc = (repeat hd count) ++ acc in
-                    intersect_lists_aux(tl, l2, acc)
+  % op [a] intersect_lists_aux (l1 : List a, l2 : List a, acc : List a) : List a =
+  %   case l1 of
+  %   | [] -> acc
+  %   | hd::tl -> if (hd in? acc) then  %% we've already added to acc all copies of this element
+  %                 intersect_lists_aux(tl, l2, acc)
+  %               else
+  %                 let count = min(count(hd,l1),count(hd,l2)) in
+  %                 let acc = (repeat hd count) ++ acc in
+  %                   intersect_lists_aux(tl, l2, acc)
 
-  %% "intersect" the two lists
-  %% Doesn't really preserve the order
-  %% TODO: A nicer way to do this?
+  % %% "intersect" the two lists
+  % %% Doesn't really preserve the order
+  % %% TODO: A nicer way to do this?
+  % op [a] intersect_lists (l1 : List a, l2 : List a) : List a =
+  %   intersect_lists_aux(l1, l2, [])
+
   op [a] intersect_lists (l1 : List a, l2 : List a) : List a =
-    intersect_lists_aux(l1, l2, [])
+    case l1 of
+      | [] -> []
+      | x::l1' ->
+        if x in? l2 then
+          x :: (intersect_lists (l1', delete1 (x, l2)))
+        else
+          intersect_lists (l1', l2)
+
+
+  theorem intersect_lists_perm_left is [a]
+    fa(l1 : List a, l1', l2)
+      permutesTo?(l1, l1') => 
+      permutesTo? (intersect_lists(l1,l2), intersect_lists(l1',l2))
+
+  theorem intersect_lists_perm_right is [a]
+    fa(l1 : List a, l2, l2')
+      permutesTo?(l2, l2') =>
+      permutesTo? (intersect_lists(l1,l2), intersect_lists(l1,l2'))
+
+  theorem intersect_lists_perm is [a]
+    fa(l1 : List a, l1', l2, l2')
+      permutesTo?(l1, l1') => 
+      permutesTo?(l2, l2') =>
+      permutesTo? (intersect_lists(l1,l2), intersect_lists(l1',l2'))
+
 
 %%FIXME the fixity changes along the morphism below?
   op [a] bag_intersection(b1 : Bag a, b2 : Bag a) infixl 300 : Bag a =
@@ -147,22 +150,16 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
   op [a] \\// (bs:Bag (Bag a)) : Bag a =
     bag_fold empty_bag (bag_union) bs
 
-  % TODO Just use delete1 from the List library?
-  op [a] delete_first(x:a,l:List a) : List a =
-    case l of 
-    | []        -> []
-    | Cons(y,l1) -> if x = y then l1 else Cons(y,delete_first(x,l1))
-
   %% Delete one occurrence of x from the bag.  If x does not occur in the bag, this makes no change.
   op [a] bag_delete(x:a, b : Bag a) : Bag a =
-    choose[Bag] (fn l -> quotient[Bag] (delete_first(x,l))) b
+    choose[Bag] (fn l -> quotient[Bag] (delete1(x,l))) b
   %op [a] bag_delete(x:a, (quotient[Bag.Bag] (l:List a)) : Bag a) : Bag a = quotient[Bag] (delete_first(x,l))
 
   %%TODO just use something from the List library?  Not quite the same as diff in Base/List...
   op [a] delete_list (l1:List a, l2:List a) : List a =
     case l1 of 
     | []           -> l2
-    | Cons(y,l1tl) -> delete_list(l1tl,delete_first(y,l2))
+    | Cons(y,l1tl) -> delete_list(l1tl,delete1(y,l2))
 
   op [a] bag_difference (b1 : Bag a, b2 : Bag a) : Bag a =
     choose[Bag] (fn l1 ->
@@ -188,6 +185,84 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
        then Bs=empty_bag  %empty?(As)
        else As subbag Bs
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Proofs, yay!!!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+proof Isa List__permutesTo_p_equiv
+  by (rule List__permutesTo_p_equiv)
+end-proof
+
+proof Isa Bag__bagin_p_Obligation_subtype
+  by (simp_all add: List__permutesTo_p_def perm_set_eq)
+end-proof
+
+proof Isa Bag__occs_Obligation_subtype
+  apply (simp add: List__permutesTo_p_def)
+  apply (induct m n rule: perm.induct)
+  by auto
+end-proof
+
+proof Isa contained?_perm_eq_left
+  apply (simp add: List__permutesTo_p_def)
+  apply (induct l1 l2 arbitrary: l3 rule: perm.induct)
+  apply (simp_all add: remove1_commute)
+  proof -
+    fix y x l l3
+    show "(y \<in> set l3 \<and>
+        x \<in> set (remove1 y l3) \<and> Bag__contained_p (l, remove1 y (remove1 x l3))) =
+       (x \<in> set l3 \<and>
+        y \<in> set (remove1 x l3) \<and> Bag__contained_p (l, remove1 y (remove1 x l3)))"
+    apply (cases "x=y")
+    by auto
+  qed
+end-proof
+
+proof Isa contained?_perm_eq_right
+  apply (induct l3 arbitrary: l1 l2)
+  apply (simp_all add: List__permutesTo_p_def)
+  proof -
+    fix a::"'a"
+    fix l3::"'a list"
+    fix l1::"'a list"
+    fix l2::"'a list"
+    assume indH:
+      "(\<And> l1 l2.
+        l1 <~~> l2 ==> Bag__contained_p (l3, l1) = Bag__contained_p (l3, l2))"
+    assume perm12: "l1 <~~> l2"
+    show "(a \<in> set l1 \<and> Bag__contained_p (l3, remove1 a l1)) =
+          (a \<in> set l2 \<and> Bag__contained_p (l3, remove1 a l2))"
+      apply (rule subst[OF perm_set_eq[OF perm12]])
+      apply (rule subst[OF indH, of "remove1 a l1"])
+      apply (simp_all add: perm_remove_perm[OF perm12])
+    done
+  qed
+end-proof
+
+proof Isa Bag__subbag_Obligation_subtype
+  by (simp add: Bag__contained_p_perm_eq_left)
+end-proof
+
+proof Isa Bag__subbag_Obligation_subtype0
+  by (simp add: Bag__contained_p_perm_eq_right)
+end-proof
+
+proof Isa Bag__bag_insert_Obligation_subtype
+  by (simp_all add: List__permutesTo_p_def)
+end-proof
+
+proof Isa Bag__bag_union_Obligation_subtype
+  apply (rule subst[of "\<lambda> (l2::'a list). abs_Bag__Bag (m @ l2)" "\<lambda> (l2::'a list). abs_Bag__Bag (n @ l2)"])
+  by (simp_all add: List__permutesTo_p_def ext)
+end-proof
+
+proof Isa Bag__bag_union_Obligation_subtype0
+  by (simp_all add: List__permutesTo_p_def)
+end-proof
+
+
 end-spec
 
 
@@ -203,3 +278,5 @@ M = morphism Bags -> BagsAsLists {\/  +-> bag_union,
 % proof obligations:
 % the axioms characterizing the operations in Bags are satisfied
 % by the definitions of those operations in BagsAsLists
+
+

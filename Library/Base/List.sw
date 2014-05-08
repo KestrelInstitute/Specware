@@ -627,6 +627,12 @@ op [a] indexOf (p : a -> Bool) (l : List a) : Option Nat =
             | None -> None
             | Some i -> Some (i+1))
 
+% count the number of occurrences of an element in a list
+op [a] count(x:a, l:List a) : Nat =
+  case l of 
+    | []         -> 0
+    | Cons(y,l1) -> if y = x then 1 + List.count(x,l1) else List.count(x,l1)
+
 % delete/remove all occurrences of element from list:
 
 op [a] delete (x:a) (l: List a) : List a =
@@ -659,6 +665,8 @@ op [a] delete1_curried (x:a) (lst:List a): List a =
 theorem delete1_delete1_curried is [a]
   fa(x:a, l) delete1(x,l) = delete1_curried x l
 
+theorem in_l_not_in_delete1_eq is [a]
+  fa (x:a, y, l) x in? l => ~(x in? (delete1 (y, l))) => x = y
 
 % delete/remove from l1 (all occurrences of) all the elements that
 % occur in l2 (i.e. list difference):
