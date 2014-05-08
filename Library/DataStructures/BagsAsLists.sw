@@ -6,7 +6,6 @@
 BagsAsLists =
 Bag qualifying
 spec
-  import /Library/Base/List
 
   % we refine bags by means of lists: a bag can be represented by a
   % list containing all its elements, repeated as many times as their
