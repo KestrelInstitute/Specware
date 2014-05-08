@@ -7,6 +7,9 @@ spec
 
 import /Library/Base/List_Executable
 
+theorem in_l_not_in_delete1_eq is [a]
+  fa (x:a, y, l) x in? l => ~(x in? (delete1 (y, l))) => x = y
+
   %TODO: Does this already exist somewhere?
   theorem equiLong_self is [a]
     fa(lst : List a) lst equiLong lst
@@ -39,6 +42,10 @@ import /Library/Base/List_Executable
     fa(x: List a, y: List a, z: List a) x permutationOf y => (z ++ x permutationOf z ++ y)
 
   %% Proofs start here:
+
+proof Isa in_l_not_in_delete1_eq
+   apply(metis List__delete1_delete1_curried in_set_remove1)
+end-proof
 
   proof Isa permutationOf_append
     sorry

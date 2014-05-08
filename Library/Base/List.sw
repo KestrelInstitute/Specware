@@ -665,8 +665,6 @@ op [a] delete1_curried (x:a) (lst:List a): List a =
 theorem delete1_delete1_curried is [a]
   fa(x:a, l) delete1(x,l) = delete1_curried x l
 
-theorem in_l_not_in_delete1_eq is [a]
-  fa (x:a, y, l) x in? l => ~(x in? (delete1 (y, l))) => x = y
 
 % delete/remove from l1 (all occurrences of) all the elements that
 % occur in l2 (i.e. list difference):
@@ -5888,5 +5886,6 @@ end-proof
 proof Isa List__diff_of_empty__stp
   apply(simp add: List__diff__stp_def)
 end-proof
+
 
 end-spec
