@@ -95,7 +95,7 @@ theorem bagin_of_insert is [a]
 %%   theorem bag_intersection_left_zero is [a]
 %%       fa(c:Bag a)(empty_bag /\ c = empty_bag)
 
- %TODO give a meaning to this (maybe in terms of fold?)
+ %TODO define using fold ?
   op [a,b] bag_map: (a -> b) -> Bag a -> Bag b
 
   axiom bag_map_empty is [a,b]
