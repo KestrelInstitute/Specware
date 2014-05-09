@@ -61,6 +61,8 @@
 ;  ("\C-c\C-z" 'slime-nop)
 )
 
+(defvar *sw-slime-prompt* "*")
+
 ;;; Based on slime-init-command -- Allow for pre-loaded swank
 (defun slime-cond-init-command (port-filename _coding-system)
   "Return a string to initialize Lisp."
@@ -101,7 +103,7 @@ balanced."
               (< (point) slime-repl-input-start-mark))
          (slime-repl-grab-old-input end-of-input)
          (slime-repl-recenter-if-needed))
-        ((run-hook-with-args-until-success 'slime-repl-return-hooks))
+        ((run-hook-with-args-until-success 'slime-repl-return-hooks end-of-input))
         ((slime-input-complete-p slime-repl-input-start-mark (point-max))
          (sw-send-input t))
         (t 
@@ -127,7 +129,7 @@ balanced."
                        (< (point) slime-repl-input-start-mark))
                   (slime-repl-grab-old-input end-of-input)
                   (slime-repl-recenter-if-needed))
-                 ((run-hook-with-args-until-success 'slime-repl-return-hooks))
+                 ((run-hook-with-args-until-success 'slime-repl-return-hooks end-of-input))
                  ((slime-input-complete-p slime-repl-input-start-mark (point-max))
                   (slime-repl-send-input t))
                  (t 
@@ -274,7 +276,7 @@ If NEWLINE is true then add a newline at the end of the input."
     (slime-autodoc-mode 1))
   (setq default-directory (concat *specware* "/"))
   (run-hooks 'slime-repl-mode-hook)
-  (slime-run-mode-hooks 'specware-listener-mode-hook))
+  (run-mode-hooks 'specware-listener-mode-hook))
 
 ;;; Redefining slime functions and variables
 (defun* slime-start (&key (program inferior-lisp-program) program-args
@@ -315,7 +317,7 @@ DIRECTORY change to this directory before starting the process.
                                           directory buffer)))
         (slime-inferior-connect proc args)
         (let ((buf (process-buffer proc)))
-          (slime-pop-to-buffer buf (not (equal (buffer-name (current-buffer)) sw:common-lisp-buffer-name))))))))
+          (pop-to-buffer buf (not (equal (buffer-name (current-buffer)) sw:common-lisp-buffer-name))))))))
 
 (defun slime-allegro-windows (program program-args)
   (let ((slime-port 4005))
@@ -387,7 +389,6 @@ DIRECTORY change to this directory before starting the process.
 (defvar old-slime-repl-insert-prompt (symbol-function 'slime-repl-insert-prompt))
 
 (defvar *sw-after-prompt-forms* nil)
-(defvar *sw-slime-prompt* "*")
 
 (defvar sw:license-displayed-p nil)
 
@@ -405,12 +406,11 @@ to end."
             (unless (bolp) (insert-before-markers "\n"))
             (let ((prompt-start (point)))
               (slime-propertize-region
-                  '(face slime-repl-prompt-face read-only t intangible t
-                         slime-repl-prompt t
-                         ;; emacs stuff
-                         rear-nonsticky (slime-repl-prompt read-only face intangible)
-                         ;; xemacs stuff
-                         start-open t end-open t)
+                  '(face slime-repl-prompt-face
+                     read-only t slime-repl-prompt t
+                     rear-nonsticky t front-sticky (read-only)
+                     inhibit-line-move-field-capture t
+                     field output)
                 (insert-before-markers *sw-slime-prompt*))
               ;; sjw: By making the space not be read-only we get around a bug in delete-and-extract-region
               ;; whereby deleting a prior " in the file makes the insertion point read-only!
@@ -420,6 +420,7 @@ to end."
                 (when (equal sw:system-name "Specware")
                   (sw:eval-in-lisp-no-value "(when (fboundp 'Specware::check-license) (Specware::check-license))"))
                 (setq sw:license-displayed-p t))
+              (setq buffer-undo-list nil)
               prompt-start)))))))
 
 (defun slime-repl-insert-result (result)
@@ -445,15 +446,17 @@ to end."
     (save-excursion
       (goto-char slime-output-end)
       (slime-save-marker slime-output-start
-        (slime-propertize-region '(face slime-repl-output-face 
+        (slime-propertize-region '(face slime-repl-output-face
+                                        slime-repl-output t
                                         rear-nonsticky (face))
-          (insert-before-markers string)
-          (when sw:use-x-symbol
-	    (x-symbol-decode-region slime-output-start (point)))
-          (when (and (= (point) slime-repl-prompt-start-mark)
-                     (not (bolp)))
-            (insert-before-markers "\n")
-            (set-marker slime-output-end (1- (point)))))))
+          (let ((inhibit-read-only t))
+            (insert-before-markers string)
+            (when sw:use-x-symbol
+              (x-symbol-decode-region slime-output-start (point)))
+            (when (and (= (point) slime-repl-prompt-start-mark)
+                       (not (bolp)))
+              (insert-before-markers "\n")
+              (set-marker slime-output-end (1- (point))))))))
     (when slime-repl-popup-on-output
       (setq slime-repl-popup-on-output nil)
       (display-buffer (current-buffer)))

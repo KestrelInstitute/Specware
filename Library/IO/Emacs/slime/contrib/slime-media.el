@@ -1,3 +1,6 @@
+(eval-and-compile
+  (require 'slime))
+
 (define-slime-contrib slime-media
   "Display things other than text in SLIME buffers"
   (:authors "Christophe Rhodes <csr21@cantab.net>")
@@ -14,7 +17,8 @@
        (slime-media-insert-image image string))
      t)
     ((:popup-buffer bufname string mode)
-     (slime-with-popup-buffer (bufname :mode mode :connection t :package t)
+     (slime-with-popup-buffer (bufname :connection t :package t)
+       (when mode (funcall mode))
        (princ string)
        (goto-char (point-min)))
      t)

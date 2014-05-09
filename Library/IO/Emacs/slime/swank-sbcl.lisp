@@ -607,9 +607,6 @@ compiler state."
        (warning                   #'handle-notification-condition))
     (funcall function)))
 
-
-(defvar *trap-load-time-warnings* t)
-
 (defun compiler-policy (qualities)
   "Return compiler policy qualities present in the QUALITIES alist.
 QUALITIES is an alist with (quality . value)"
@@ -633,7 +630,7 @@ QUALITIES is an alist with (quality . value)"
        (unwind-protect (progn ,@body)
          (setf (compiler-policy) ,current-policy)))))
 
-(defimplementation swank-compile-file (input-file output-file 
+(defimplementation swank-compile-file (input-file output-file
                                        load-p external-format
                                        &key policy)
   (multiple-value-bind (output-file warnings-p failure-p)
@@ -645,7 +642,7 @@ QUALITIES is an alist with (quality . value)"
             (or failure-p
                 (when load-p
                   ;; Cache the latest source file for definition-finding.
-                  (source-cache-get input-file 
+                  (source-cache-get input-file
                                     (file-write-date input-file))
                   (not (load output-file)))))))
 
@@ -670,36 +667,38 @@ QUALITIES is an alist with (quality . value)"
   "Return a temporary file name to compile strings into."
   (tempnam nil nil))
 
+(defvar *trap-load-time-warnings* t)
+
 (defimplementation swank-compile-string (string &key buffer position filename
                                          policy)
   (let ((*buffer-name* buffer)
         (*buffer-offset* position)
         (*buffer-substring* string)
         (*buffer-tmpfile* (temp-file-name)))
-    (flet ((load-it (filename)
-             (when filename (load filename)))
-           (compile-it (cont)
-             (with-compilation-hooks ()
-               (with-compilation-unit
-                   (:source-plist (list :emacs-buffer buffer
-                                        :emacs-filename filename
-                                        :emacs-string string
-                                        :emacs-position position)
-                    :source-namestring filename
-                    :allow-other-keys t)
-                 (multiple-value-bind (output-file warningsp failurep)
-                     (compile-file *buffer-tmpfile* :external-format :utf-8)
-                   (declare (ignore warningsp))
-                   (unless failurep
-                     (funcall cont output-file)))))))
+    (labels ((load-it (filename)
+               (cond (*trap-load-time-warnings*
+                      (with-compilation-hooks () (load filename)))
+                     (t (load filename))))
+             (cf ()
+               (with-compiler-policy policy
+                 (with-compilation-unit
+                     (:source-plist (list :emacs-buffer buffer
+                                          :emacs-filename filename
+                                          :emacs-string string
+                                          :emacs-position position)
+                      :source-namestring filename
+                      :allow-other-keys t)
+                   (compile-file *buffer-tmpfile* :external-format :utf-8)))))
       (with-open-file (s *buffer-tmpfile* :direction :output :if-exists :error
                          :external-format :utf-8)
         (write-string string s))
       (unwind-protect
-           (with-compiler-policy policy
-            (if *trap-load-time-warnings*
-                (compile-it #'load-it)
-                (load-it (compile-it #'identity))))
+           (multiple-value-bind (output-file warningsp failurep)
+               (with-compilation-hooks () (cf))
+             (declare (ignore warningsp))
+             (when output-file
+               (load-it output-file))
+             (not failurep))
         (ignore-errors
           (delete-file *buffer-tmpfile*)
           (delete-file (compile-file-pathname *buffer-tmpfile*)))))))
@@ -777,7 +776,7 @@ QUALITIES is an alist with (quality . value)"
          (to-string (obj)
            (typecase obj
              ;; Packages are possibly named entities.
-             (package (princ-to-string obj)) 
+             (package (princ-to-string obj))
              ((or structure-object standard-object condition)
               (with-output-to-string (s)
                 (print-unreadable-object (obj s :type t :identity t))))
@@ -795,12 +794,12 @@ QUALITIES is an alist with (quality . value)"
            ;; conc-name can be a string such as ext:struct- and not
            ;; cause errors and not force interning ext::struct-
            (read-from-string
-            (concatenate 'string "sb-introspect:definition-source-" 
+            (concatenate 'string "sb-introspect:definition-source-"
                          (string slot)))))
     (let ((tmp (gensym "OO-")))
       ` (let ((,tmp ,obj))
           (symbol-macrolet
-              ,(loop for name in names collect 
+              ,(loop for name in names collect
                      (typecase name
                        (symbol `(,name (,(reader name) ,tmp)))
                        (cons `(,(first name) (,(reader (second name)) ,tmp)))
@@ -840,11 +839,11 @@ QUALITIES is an alist with (quality . value)"
                       (min end (+ start *source-snippet-size*))))))))))
 
 (defun definition-source-file-location (definition-source)
-  (with-definition-source (pathname form-path character-offset plist 
+  (with-definition-source (pathname form-path character-offset plist
                                     file-write-date) definition-source
     (let* ((namestring (namestring (translate-logical-pathname pathname)))
            (pos (if form-path
-                    (source-file-position namestring file-write-date 
+                    (source-file-position namestring file-write-date
                                           form-path)
                     character-offset))
            (snippet (source-hint-snippet namestring file-write-date pos)))
@@ -875,11 +874,11 @@ QUALITIES is an alist with (quality . value)"
       (:file
        (definition-source-file-location definition-source))
       (:file-without-position
-       (make-location `(:file ,(namestring 
+       (make-location `(:file ,(namestring
                                 (translate-logical-pathname pathname)))
                       '(:position 1)
                       (when (eql type :function)
-                        `(:snippet ,(format nil "(defun ~a " 
+                        `(:snippet ,(format nil "(defun ~a "
                                             (symbol-name name))))))
       (:invalid
        (error "DEFINITION-SOURCE of ~(~A~) ~A did not contain ~
@@ -946,12 +945,12 @@ Return NIL if the symbol is unbound."
      (describe (find-class symbol)))
     (:type
      (describe (sb-kernel:values-specifier-type symbol)))))
-  
+ 
 #+#.(swank-backend::sbcl-with-xref-p)
 (progn
   (defmacro defxref (name &optional fn-name)
     `(defimplementation ,name (what)
-       (sanitize-xrefs   
+       (sanitize-xrefs  
         (mapcar #'source-location-for-xref-data
                 (,(find-symbol (symbol-name (if fn-name
                                                 fn-name
@@ -1062,7 +1061,7 @@ Return a list of the form (NAME LOCATION)."
     (cons (cons (externalize-reference (car ref))
                 (externalize-reference (cdr ref))))
     ((or string number) ref)
-    (symbol 
+    (symbol
      (cond ((eq (symbol-package ref) (symbol-package :test))
             ref)
            (t (symbol-name ref))))))
@@ -1327,7 +1326,7 @@ stack."
                                 (list :name more-name
                                       :id more-id
                                       :value (multiple-value-list
-                                              (sb-c:%more-arg-values 
+                                              (sb-c:%more-arg-values
                                                more-context
                                                0 more-count)))))))
         locals))))
@@ -1339,11 +1338,11 @@ stack."
          (dvar (if (= var (length vars))
                    ;; If VAR is out of bounds, it must be the fake var
                    ;; we made up for &MORE.
-                   (let* ((context-var (find :more-context vars 
+                   (let* ((context-var (find :more-context vars
                                              :key #'debug-var-info))
-                          (more-context (debug-var-value context-var frame 
+                          (more-context (debug-var-value context-var frame
                                                          loc))
-                          (count-var (find :more-count vars 
+                          (count-var (find :more-count vars
                                            :key #'debug-var-info))
                           (more-count (debug-var-value count-var frame loc)))
                      (return-from frame-var-value
@@ -1394,7 +1393,7 @@ stack."
                   (values (sb-di:debug-fun-fun (sb-di:frame-debug-fun frame))
                           (sb-debug::frame-args-as-list frame)))
             (when (functionp fun)
-              (sb-debug:unwind-to-frame-and-call 
+              (sb-debug:unwind-to-frame-and-call
                frame
                (lambda ()
                  ;; Ensure TCO.
@@ -1411,23 +1410,23 @@ stack."
     (and (symbolp tag)
          (not (symbol-package tag))
          (string= tag :sb-debug-catch-tag)))
-  
+ 
   (defimplementation return-from-frame (index form)
     (let* ((frame (nth-frame index))
            (probe (assoc-if #'sb-debug-catch-tag-p
                             (sb-di::frame-catches frame))))
       (cond (probe (throw (car probe) (eval-in-frame form index)))
             (t (format nil "Cannot return from frame: ~S" frame)))))
-  
+ 
   (defimplementation restart-frame (index)
     (let ((frame (nth-frame index)))
       (return-from-frame index (sb-debug::frame-call-as-list frame)))))
 
 ;;;;; reference-conditions
 
-(defimplementation format-sldb-condition (condition)
+(defimplementation print-condition (condition stream)
   (let ((sb-int:*print-condition-references* nil))
-    (princ-to-string condition)))
+    (princ condition stream)))
 
 
 ;;;; Profiling
@@ -1599,7 +1598,7 @@ stack."
     (if (sb-thread:thread-alive-p thread)
         "Running"
         "Stopped"))
-  
+ 
   (defimplementation make-lock (&key name)
     (sb-thread:make-mutex :name name))
 
@@ -1673,7 +1672,7 @@ stack."
        (sb-thread:with-mutex (mutex)
          (let* ((q (mailbox.queue mbox))
                 (tail (member-if test q)))
-           (when tail 
+           (when tail
              (setf (mailbox.queue mbox) (nconc (ldiff q tail) (cdr tail)))
              (return (car tail))))
          (when (eq timeout t) (return (values nil t)))
@@ -1686,7 +1685,7 @@ stack."
       (declare (type symbol name))
       (sb-thread:with-mutex (mutex)
         (etypecase thread
-          (null 
+          (null
            (setf alist (delete name alist :key #'car)))
           (sb-thread:thread
            (let ((probe (assoc name alist)))
@@ -1695,7 +1694,7 @@ stack."
       nil)
 
     (defimplementation find-registered (name)
-      (sb-thread:with-mutex (mutex) 
+      (sb-thread:with-mutex (mutex)
         (cdr (assoc name alist)))))
 
   ;; Workaround for deadlocks between the world-lock and auto-flush-thread
@@ -1770,7 +1769,7 @@ stack."
 
 ;;; Weak datastructures
 
-(defimplementation make-weak-key-hash-table (&rest args)  
+(defimplementation make-weak-key-hash-table (&rest args) 
   #+#.(swank-backend::sbcl-with-weak-hash-tables)
   (apply #'make-hash-table :weakness :key args)
   #-#.(swank-backend::sbcl-with-weak-hash-tables)
@@ -1851,7 +1850,7 @@ stack."
   (sb-sys:make-fd-stream fd :input t :output t
                          :element-type 'character
                          :buffering :full
-                         :dual-channel-p t                         
+                         :dual-channel-p t                        
                          :external-format external-format))
 
 #-win32
@@ -1883,3 +1882,54 @@ stack."
                              (zerop (sb-posix:wexitstatus status))))))))))))
 
 (pushnew 'deinit-log-output sb-ext:*save-hooks*)
+
+
+;;;; wrap interface implementation
+
+(defun sbcl-version>= (&rest subversions)
+  #+#.(swank-backend:with-symbol 'assert-version->= 'sb-ext)
+  (values (ignore-errors (apply #'sb-ext:assert-version->= subversions) t))
+  #-#.(swank-backend:with-symbol 'assert-version->= 'sb-ext)
+  nil)
+
+(defimplementation wrap (spec indicator &key before after replace)
+  (when (wrapped-p spec indicator)
+    (warn "~a already wrapped with indicator ~a, unwrapping first"
+          spec indicator)
+    (sb-int:unencapsulate spec indicator))
+  (sb-int:encapsulate spec indicator
+                      #-#.(swank-backend:with-symbol 'arg-list 'sb-int)
+                      (lambda (function &rest args)
+                        (sbcl-wrap spec before after replace function args))
+                      #+#.(swank-backend:with-symbol 'arg-list 'sb-int)
+                      (if (sbcl-version>= 1 1 16)
+                          (lambda ()
+                            (sbcl-wrap spec before after replace
+                                       (symbol-value 'sb-int:basic-definition)
+                                       (symbol-value 'sb-int:arg-list)))
+                          `(sbcl-wrap ',spec ,before ,after ,replace
+                                      (symbol-value 'sb-int:basic-definition)
+                                      (symbol-value 'sb-int:arg-list)))))
+
+(defimplementation unwrap (spec indicator)
+  (sb-int:unencapsulate spec indicator))
+
+(defimplementation wrapped-p (spec indicator)
+  (sb-int:encapsulated-p spec indicator))
+
+(defun sbcl-wrap (spec before after replace function args)
+  (let (retlist completed)
+    (unwind-protect
+         (progn
+           (when before
+             (funcall before args))
+           (setq retlist (multiple-value-list (if replace
+                                                  (funcall replace
+                                                           args)
+                                                  (apply function args))))
+           (setq completed t)
+           (values-list retlist))
+      (when after
+        (funcall after (if completed retlist :exited-non-locally))))))
+
+(in-package :swank-backend)

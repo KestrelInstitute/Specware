@@ -1,3 +1,536 @@
+2014-03-27  João Távora  <joaotavora@gmail.com>
+
+	The previous technique for setting *, ** and friends just-in-time
+	didn't work, especially when the inspector was called from the
+	REPL buffer to inspect *. The problem this was fixing was fixed in
+	a different manner, by making slime-repl.el ensure that these
+	variables are set in the swank side.
+
+	* swank-repl.lisp (set-repl-variables): New slimefun.
+	(repl-eval): Call SET-REPL-VARIABLES *after* evaluating region.
+
+	* slime-repl.el (sldb-copy-down-to-repl): Call new
+	SWANK:SET-REPL-VARIABLES just after copying down to REPL.
+
+2014-03-09  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el (slime-trace-dialog--open-detail): Restore
+	`:mode' argument to `slime-with-popup-buffer'.
+
+	* slime-sprof.el (slime-sprof-report): idem
+
+	* slime-compiler-notes-tree.el (slime-list-compiler-notes): idem
+
+	* slime-clipboard.el (slime-clipboard-display-entries): idem
+
+2014-03-08  Luís Oliveira  <loliveira@common-lisp.net>
+
+	slime-autodoc: avoid adding a newline after things like
+	with-open-file when doing multiline display.
+
+	* swank-arglists.lisp (print-decoded-arglist): Don't
+	pprint-newline when adding a space after the operator.
+
+2014-03-07  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el (slime-trace-dialog--open-detail): Fix
+	"read-only" error when navigating to the trace details.
+	(slime-trace-dialog--insert-trace): Nudge non-parent trace entries
+	one "-" to the right to line up with others at the same level.
+
+	When toggling trace on a definition, automatically update the
+	trace dialog if it is open already. Idea by Luís Oliveira.
+
+	* slime-trace-dialog.el (slime-trace-dialog--get-buffer): split
+	into reusable functions.
+	(slime-trace-dialog--buffer-name): new function
+	(slime-trace-dialog--live-dialog): new function
+	(slime-trace-dialog--ensure-buffer): new function
+	(slime-trace-dialog--update-existing-dialog): new function for
+	added to `slime-trace-dialog-after-toggle-hook' by default.
+	(slime-trace-dialog): Use `slime-trace-dialog--ensure-buffer'.
+
+2014-03-03  Helmut Eller  <heller@common-lisp.net>
+
+	* slime-presentations.el: Require 'cl for case, return-from etc.
+
+2014-03-03  João Távora  <joaotavora@gmail.com>
+
+	* test/slime-indentation-tests.el: New file. Defines ERT
+	indentation tests from specs in `slime-cl-indent-test.txt'.
+
+	* slime-indentation.el (slime-cl-indet): `require' instead of
+	`load'.
+
+	* test/slime-cl-indent-test.txt: Moved to from previous file and
+	changed test names from numbers to symbols.
+
+	* slime-cl-indent.el: Moved tests to
+	test/slime-indentation-tests.el. In file comments, explain the
+	legacy cl-indent.el situation. Provide `slime-cl-indent'.
+
+2014-03-02  João Távora  <joaotavora@gmail.com>
+
+	The contrib's Makefile now works as the top-level Makefile,
+	byte-compiling files separately, uncovering errors when trying to
+	byte-compile files in isolation. Fixed almost all such problems in
+	contrib's el files and remove uses of the "xemacs compability
+	layer", in preparation of its removal.
+
+	For most files this amounted to moving some definitions around,
+	requiring the needed libs at the top, and prefixing cl-lib
+	functions with "cl". `cl' is required at compile-time only for
+	macros which aren't found in cl-lib.
+
+	All (minor) exceptions are listed below.o
+
+	* Makefile (%.elc): Do as in root-makefile and compile each el
+	file separately. This reveals more warnings.
+
+	* slime-typeout-frame.el (slime-typeout-autodoc-message): Don't
+	set inexistent `slime-autodoc-last-message' var.
+
+	* slime-compiler-notes-tree.el (slime-list-compiler-notes): Don't
+	pass :mode to `slime-with-popup-buffer'
+
+	* slime-clipboard.el (slime-clipboard-display-entries): Don't use
+	:mode arg to `slime-with-popup-buffer'.
+	(slime-clipboard-redisplay): Don't use `slime-save-coordinates' as
+	that's probably going away, use simpler approach.
+
+	* slime-indentation.el (slime-indentation): Correct description.
+
+	* slime-fontifying-fu.el (slime-beginning-of-tlf): Simplify,
+	conditional definition not needed.
+
+	* slime-enclosing-context.el (slime-enclosing-context): Explain
+	why contrib doesn't work.
+
+	* slime-cl-indent.el (require): Require needed libraries,
+	including `slime'.
+	(common-lisp-active-style): use proper defvar.
+	(common-lisp-current-package-function): Make it a variable, which
+	is how it's used.
+	(common-lisp-run-indentation-tests): Use `insert-file-contents'.
+	(slime-cl-indent): provide `slime-cl-indent' as well as `cl-indent'
+
+	* slime-autodoc.el (slime-autodoc-maybe-enable): move to solve
+	compilation warnings.
+	(slime-autodoc-mode): Replace `interactive-p' call with new
+	`interactive' arg.
+
+	* slime-asdf.el
+	(slime-open-system): Don't use `called-interactive-p'.
+
+	* slime-presentations.el (slime-presentation-on-stream-open): Use
+	`bridge-insert-function'.
+
+	* bridge.el (bridge-insert-function): new variable to solve
+	redefinition hack in slime-presentations.el
+	(bridge-insert): use it.
+
+
+2014-02-25  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el (slime): Remove redundant
+	`eval-and-compile'
+	(slime-trace-dialog-mode): Don't also activate
+	`slime-trace-dialog-minor-mode'.
+	(slime-trace-dialog--menubar): Define same menu for both minor and
+	major modes.
+
+2014-02-24  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el (slime-trace-dialog): simplify contrib
+	definition.
+	(slime-trace-dialog-mode): Also activate
+	`slime-trace-dialog-minor-mode'.
+	(slime-trace-dialog-minor-mode): New minor mode.
+	(slime-trace-dialog--menubar): New single top-level menu for
+	`slime-trace-dialog-minor-mode'.
+	(slime-trace-dialog-after-toggle-hook): New hook.
+	(slime-trace-dialog-toggle-trace): Run hooks.
+	(slime-trace-dialog-toggle-complex-trace): New interactive
+	function for calling from the menu.
+	(slime-trace-dialog--easy-menu): Delete it.
+	(my-menu): Delete it.
+
+2014-02-24  Marco Baringer  <mb@bese.it>
+
+	* slime-hyperdoc.el (slime-hyperdoc): Remove :slime-dependencies
+	on emacs libraries, these should be loaded via a simple require.
+
+	* slime-tramp.el (slime-tramp): idem for tramp.
+
+2014-02-23  João Távora  <joaotavora@gmail.com>
+
+	* Makefile (check-%): Remove redundant `slime-setup' call and call
+	`slime-contrib-all-dependencies'.
+
+	Closes #9: New output respects existing REPL results or presentations.
+
+	* slime-repl.el (slime-repl-emit-result): After emitting a result,
+ 	update `slime-output-end' marker.
+
+	* slime-presentations.el (slime-presentation-write-result): Idem,
+	but for presentation results.
+
+	* test/slime-repl-tests.el (mixed-output-and-results): New test.
+
+2014-02-23  Luís Oliveira  <loliveira@common-lisp.net>
+
+	Canonicalize 'nil to nil when displaying default optional and
+	keyword arguments via slime-autodoc. On SBCL this turns
+	  (error 'simple-condition
+	         &rest arguments
+	         &key (format-arguments 'nil) (format-control 'nil))
+	into
+	  (error 'simple-condition
+	         &rest arguments
+	         &key format-arguments format-control)
+	which should be more readable.
+
+	* swank-arglists.lisp (canonicalize-default-arg): New function for
+	canonicalizing optional and keyword arguments.
+	(make-optional-arg, make-keyword-arg): Use it.
+
+2014-02-21  João Távora  <joaotavora@gmail.com>
+
+	* test/slime-presentations-tests.el: New file.
+	* test/slime-parse-tests.el: New file.
+	* test/slime-mdot-fu-tests.el: New file.
+	* test/slime-fontifying-fu-tests.el: New file.
+	* test/slime-enclosing-context-tests.el: New file.
+	* test/slime-c-p-c-tests.el: New file.
+	* test/slime-autodoc-tests.el: New file.
+
+	* slime-repl.el: Split off tests. Don't use `eval-and-compile'
+	* slime-presentations.el: Idem.
+	* slime-parse.el: Idem.
+	* slime-mdot-fu.el: Idem.
+	* slime-fontifying-fu.el: Idem.
+	* slime-enclosing-context.el: Idem.
+	* slime-c-p-c.el: Idem.
+	* slime-autodoc.el: Idem.
+
+	* inferior-slime.el: cleanup whitespace.
+
+	* Makefile: Fix whitespace.
+	(check-%): Look for tests under /contrib/tests. Explicitly require
+	all needed test libs.
+
+2014-02-19  Helmut Eller  <heller@common-lisp.net>
+
+	* slime-repl.el: Load 'bytecomp before binding byte-compile-warnings.
+	* slime-scratch.el: eval-and-compile is redundant around require.
+	* inferior-slime.el: Whitespace cleanup.
+
+2014-02-19  Helmut Eller  <heller@common-lisp.net>
+
+	* inferior-slime.el: Require 'slime for macros at compile time.
+
+2014-02-18  Helmut Eller  <heller@common-lisp.net>
+
+	* Makefile: New file
+	(elpa-%, check-%): Moved to here from core.
+
+2014-02-10  João Távora  <joaotavora@gmail.com>
+
+	* slime-autodoc.el (define-autodoc-tests): Use
+	`define-slime-ert-test' to automatically set the correct test
+	tags.
+
+2014-02-07  João Távora  <joaotavora@gmail.com>
+
+	* slime-presentations.el: Don't set
+	`slime-inspector-insert-ispec-function' by default, it makes the
+	blue slots in the inspector go away which some users were used to.
+
+2014-02-06  João Távora  <joaotavora@gmail.com>
+
+	* slime-repl.el: Prefix all cl-functions with "cl-"
+
+2014-02-05  João Távora  <joaotavora@gmail.com>
+
+	* swank-repl.lisp (set-repl-variables): Deleted.
+	(*repl-set-variables-function*): Deleted, not needed for now.
+	(repl-eval): Set *, + and / variables saved from last call just
+	before the EVAL-REGION that might use them.
+
+	* slime-repl.el (slime-repl-eval-string): simplify change of
+	2014-01-30; don't remotely call SWANK:SET-REPL-VARIABLES on
+	acknowledgement.
+
+2014-02-03  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el (slime-trace-dialog-mode-map): Bind M-RET
+	to new `slime-trace-dialog-copy-down-to-repl'.
+	(slime-trace-dialog-copy-down-to-repl): New function, in-line with
+	slime-repl.el's functions.
+	(slime-trace-dialog--format-part): Two extra text properties to
+	find the trace part at point.
+
+	* swank-trace-dialog.lisp (find-trace-part): new exported
+	function.
+	(inspect-trace-part): rewrite in terms os FIND-TRACE-PART.
+
+2014-01-31  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el: Reworked. Now works with multiple
+	connections. Use `slime-trace-dialog-hide-details-mode' and
+	`slime-trace-dialog-autofollow-mode' instead of buttons. New
+	menu.
+
+2014-01-30  João Távora  <joaotavora@gmail.com>
+
+	* swank-repl.lisp (*last-repl-form*, *last-repl-values*): new
+	variables.
+	(*repl-set-variables-function*): new variable.
+	(set-repl-variables): new function, extracted from REPL-EVAL,
+	switches to *REPL-SET-VARIABLES-FUNCTION* if that is non-nil.
+	(repl-eval): don't set auto variables here, defer that for later.
+
+	* slime-repl.el (slime-repl-eval-string): slime-eval
+	SWANK:SET-REPL-VARIABLES when SWANK acknowledges with OK.
+
+	* slime-repl.el (slime-inspector-copy-down-to-repl): Use only
+	first return value of SWANK:INSPECTOR-NTH-PART.
+
+	* slime-presentations.el (slime-copy-presentation-to-repl):
+	Unbreak. Use same `slime-repl-send-string' strategy as
+	slime-repl.el.
+
+	* slime-repl.el (sldb-mode-map): Bind M-RET to
+	`sldb-copy-down-to-repl' in `sldb-mode-map'.
+	(sldb-copy-down-to-repl): New function, much like
+	`slime-inspector-copy-down-to-repl'
+
+2014-01-27  João Távora  <joaotavora@gmail.com>
+
+	* slime-repl.el (slime-repl-emit): Bind `inhibit-read-only' to t
+	when inserting output. Might clash with read-only parts left over
+	from previous REPL session. Reported by Paul Bowyer.
+	(slime-repl-history-pattern): Allow M-p in any part of the REPL
+	buffer. Reported by Attila Lendvai.
+	(slime-sync-package-and-default-directory): Use `buffer-live-p',
+	don't just check that `buffer' is non-nil. Fails when the slime
+	process buffer has already been killed but connection lives on.
+
+2014-01-23  João Távora  <joaotavora@gmail.com>
+
+	* slime-presentations.el (pretty-presentation-results): new tests,
+	should be more stable, except on allegro.
+
+	* slime-repl.el (slime-repl-emit): Propertize the output text with
+	a `slime-repl-output' boolean property.
+	(slime-repl-test-markers): More powerful macro for testing repl text.
+	(slime-check-buffer-contents): Simplified with
+	`slime-repl-test-markers'.
+	(repl-test): tests with no output don't expect these markers.
+	(repl-type-ahead): tests with no output don't expect these
+	markers.
+	(slime-repl-emit-result): Use `insert-before-markers-and-inherit', and
+	do it before saving `slime-output-end'.
+	(slime-repl-write-string): Fix failing tests by passing `eol' as t
+	to `slime-repl-emit-result'.
+	(slime-repl-test-markers): Friendlier test assertions.
+	(repl-test-2): Skip for now, unstable without slime-presentations.
+
+2014-01-22  João Távora  <joaotavora@gmail.com>
+
+	* slime-presentations.el (slime-menu-choices-for-presentation):
+	slightly friendlier pop-up menu title, could be friendlier maybe
+	if object type were displayed instead.
+
+	* swank-presentations.lisp (lookup-presented-object): No longer
+	reference *inspectee-parts* removed a long time ago.
+
+2014-01-19  João Távora  <joaotavora@gmail.com>
+
+	* slime-autodoc.el (cerror "Foo"): test no longer fails for sbcl.
+	(foo-inside-labels-2): test also fails on cmucl.
+
+	* swank-arglists.lisp (print-decoded-arglist): for already
+	provided args, print strings literally.
+	(print-arg): New keyword arg LITERAL-STRINGS
+
+2014-01-12  João Távora  <joaotavora@gmail.com>
+
+	* slime-parse.el (form-up-to-point.1): Skip for now, then analyse.
+
+	* slime-repl.el (move-around-and-be-nasty): Skip it. Causes other
+	tests to become unstable.
+	(interrupt-in-blocking-read): Skip for now, then analyse.
+
+2014-01-10  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el (slime-trace-dialog--open-specs): Use
+	cl-labels instead of cl-flet (safer on emacs 23).
+
+	* slime-repl.el (slime-repl-return): Pass `end-of-input' to hooks
+	run.
+
+	* slime-presentations.el (pick-up-presentation-at-point): New test
+	by Attila Lendvai.
+	(slime-presentation-start): Don't go beyond (point-min) when
+	looking for presentation. Adapted from patch by Attila Lendvai.
+	(slime-presentation-on-return-pressed): Use `end-of-input'.
+
+	* slime-presentations.el: cleanup compilation warnings.
+
+	* slime-repl.el (slime-repl-delete-from-input-history): Correctly
+	calculate merged history. Patch by Attila Lendvai.
+
+2014-01-09  Luís Oliveira  <loliveira@common-lisp.net>
+
+	Move "," binding back to slime-repl-mode-map and disable it when
+	in slime-repl-read-mode.
+
+	* slime-repl.el (slime-repl-read-mode-map): Don't bind ",".
+	(slime-repl-mode-map): Bind ",".
+
+2014-01-09  João Távora  <joaotavora@gmail.com>
+
+	* README: Renamed to README.md.
+	* README.md: New file. Don't mention setup technique.
+
+	* slime-repl.el (slime-repl-read-mode): Closes #17: ignore
+	slime completion `slime-repl-read-mode-map'.
+	(slime-repl-read-mode-map): Put keymap in its own var.
+
+2014-01-07  João Távora  <joaotavora@gmail.com>
+
+	* slime-trace-dialog.el
+	(slime-trace-dialog): Change advertised protocol, doesn't fetch
+	traces automatically, just specs and progress.
+	(slime-trace-dialog-fetch-specs): New interactive function.
+	(slime-trace-dialog-fetch-progress): New interactive function.
+	(slime-trace-dialog-fetch-status): Fetch local control, specs and
+	progress.
+	(slime-trace-dialog--clear-local-tree): Simplified.
+	(slime-trace-dialog--update-progress): "[refresh]" button degates
+	to `slime-trace-dialog-fetch-progress'.  "[clear]" button always
+	shows if there is something to clear. Simplified.
+	(slime-trace-dialog--on-new-results): Adapt to new
+	`slime-trace-dialog--update-progress'
+	(slime-trace-dialog--mode-map): Bind 'g' to
+	`slime-trace-dialog-fetch-status'.
+
+	* swank-trace-dialog.lisp (dialog-trace): Don't set RETLIST-OF to
+	a symbol here, backends are responsible for that.
+
+
+2014-01-06  João Távora  <joaotavora@gmail.com>
+
+	* slime-repl.el (slime-repl-insert-prompt): Reset
+	`buffer-undo-list' after inserting a new prompt.
+
+        * Changelog: Use utf-8 coding.
+
+2014-01-05  João Távora  <joaotavora@gmail.com>
+
+	* slime-presentations.el (slime-presentation-write-result): Remove
+	spurious debug line.
+
+2014-01-01  João Távora  <joaotavora@gmail.com>
+
+	* slime-presentations.el Remove trailing whitespace.
+	(slime-presentation-write-result): Fix REPL test `repl-type-ahead'
+	when this contrib is active.
+
+2013-12-31  João Távora  <joaotavora@gmail.com>
+
+	* *slime-*.el: require 'slime when loading and byte-compiling
+	(Closes #42).
+
+2013-12-30  João Távora  <joaotavora@gmail.com>
+
+	* slime-autodoc.el (slime-check-autodoc-at-point): not needed
+	anymore.
+	(define-autodoc-tests): new macro for defining autodoc-specific
+	tests.
+	(top-level): fix tests based on swank functions and add some
+	:fails-for specifications for sbcl
+
+	* slime-repl.el: Remove trailing whitespace.
+	(slime-repl-mode-map): Don't clobber C-a and home.
+	(slime-save-marker): Add edebug spec.
+	(slime-repl-insert-prompt): Use same text properties as
+	comint.el. `slime-repl-bol' is no longer needed. (Closes #43)
+	(slime-repl-bol): Remove it.
+	(slime-eval-last-expression-in-repl): Use `with-current-buffer'
+	instead of `save-excursion+set-buffer' combo
+	(slime-tests): Require it.
+	(with-canonicalized-slime-repl-buffer): Add edebug spec. Add
+	inline ident spec.
+	(repl-test): Conform (brittle) tests to latest "Evaluation aborted
+	on" output.
+	(repl-test-2): New test containing two tests that fail only
+	on allegro.
+	(repl-type-ahead): Also conform to latest "Evaluation aborted on"
+	output.
+	(move-around-and-be-nasty): New repl test.
+
+	* slime-enclosing-context.el: require 'slime-tests. Remove
+	trailing whitespace.
+	* slime-fontifying-fu.el: require 'slime-tests. Remove trailing
+	whitespace.
+	* slime-mdot-fu.el: require 'slime-tests. Remove trailing
+	whitespace.
+	* slime-parse.el: require 'slime-tests. Remove trailing
+	whitespace.
+
+2013-12-21 João Távora <joaotavora@gmail.com>
+
+	* slime-presentations.el (slime-M-.-presentation): As in previous
+	patch, must return nil on failure so as not to break the
+	`run-hooks-until-success' logic of `slime-edit-definition-hooks'.
+
+2013-12-21 João Távora <joaotavora@gmail.com>
+
+	* slime-fancy-inspector.el (slime-edit-inspector-part):
+	Since this lives in `slime-edit-definition-hooks', return
+	nil when not in an inspector buffer.
+
+2013-12-21  Samuel Freilich <sfreilich@google.com>
+
+	* slime-cl-indent-test.txt: New tests 91-95.
+	* slime-cl-indent.el
+	(lisp-loop-clauses-indentation)
+	(lisp-loop-indent-body-forms-relative-to-loop-start)
+	(lisp-loop-body-forms-indentation): New.
+	("basic"): Bind new variables.
+	(common-lisp-body-introducing-loop-macro-keyword): Handle DOING.
+	(common-lisp-accumlation-loop-macro-keyword): New.
+	(common-lisp-indent-indented-loop-macro-keyword): More subclauses.
+	(common-lisp-indent-loop-macro-1): Use new variables.
+
+2013-11-20  João Távora <joaotavora@gmail.com>
+
+	* swank-trace-dialog.lisp: New file, new :swank-trace-dialog
+	package, uses new wrapping interface in swank-backend.el to trace
+	fspecs. Report the trace tree to emacs.
+	* slime-trace-dialog.el: New file, collect and render a
+	interactive tree of traces collected from the Lisp
+	backend. Inspect trace arguments and return values.
+	* slime-fancy.el: Enable new contrib slime-trace-dialog. Call
+	slime-fancy trace init function.
+
+2013-05-11  Marco Baringer  <mb@bese.it>
+
+	* slime-repl.el (slime-repl-sexp-at-point): New function; similar
+	to slime-sexp-at-point but ignore repl prompt text.
+	(slime-repl-inspect): New function; similar to slime-inspect but
+	default value is computed via slime-repl-sexp-at-point and not
+	slime-sexp-at-point.
+	(slime-repl-mode-map): Bind slime-repl-inspect it C-c I
+
+2013-04-13  Stas Boukarev  <stassats@gmail.com>
+
+	* swank-asdf.lisp (asdf-component-output-files): Use the correct
+	variable in typecase.
+	Patch by Max Mikhanosha.
+
 2013-02-13  Helmut Eller  <heller@common-lisp.net>
 
 	* swank-kawa.scm (listener-loop): Use close-port instead of
@@ -2595,7 +3128,7 @@
 	(slime-parse-extended-operator/the): New.
 	(slime-extended-operator-name-parser-alist): Add entries for
 	CHECK-TYPE, TYPEP, and THE.
-	([tesŧ] enclosing-form-specs.1): Add tests for the new entries.
+	([test] enclosing-form-specs.1): Add tests for the new entries.
 
 	Adapted from patch by Stas Boukarev.
 
@@ -4064,3 +4597,7 @@
 
 	* swank-fuzzy.lisp: New file. Common Lisp code for fuzzy
 	completion.
+
+;; Local Variables:
+;; coding: utf-8
+;; End:

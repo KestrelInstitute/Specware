@@ -145,36 +145,15 @@ Return nil if nothing appropriate is available."
                                     :type (pathname-type cfp))
                      binary-dir)))
 
-(defun handle-swank-compile-error (condition source)
+(defun handle-swank-load-error (condition context pathname)
   (fresh-line *error-output*)
   (pprint-logical-block (*error-output* () :per-line-prefix ";; ")
     (format *error-output*
-            "~%Error while compiling ~A:~%  ~A~%Aborting.~%"
-            source condition))
-  (abort))
-
-(defun handle-swank-load-error (condition fasl)
-  (fresh-line *error-output*)
-  (pprint-logical-block (*error-output* () :per-line-prefix ";; ")
-    (format *error-output*
-            "~%Error while loading ~A:~%  ~A~%Aborting.~%"
-            fasl condition))
-  (when (and (equal (directory-namestring fasl)
-                    (directory-namestring *fasl-directory*))
-             (not (equal (pathname-type fasl) "lisp")))
-    (ignore-errors (delete-file fasl)))
-  (abort))
-
-(defun handle-swank-unknown-error (condition source fasl)
-  (fresh-line *error-output*)
-  (pprint-logical-block (*error-output* () :per-line-prefix ";; ")
-    (format *error-output*
-            "~%Unknown error while compiling ~A to ~A or loading +A:~%  ~A~%Aborting.~%"
-            source fasl fasl condition))
-  (when (and (equal (directory-namestring fasl)
-                    (directory-namestring *fasl-directory*))
-             (not (equal (pathname-type fasl) "lisp")))
-    (ignore-errors (delete-file fasl)))
+            "~%Error while ~A ~A:~%  ~A~%Aborting.~%"
+            context pathname condition))
+  (when (equal (directory-namestring pathname)
+               (directory-namestring *fasl-directory*))
+    (ignore-errors (delete-file pathname)))
   (abort))
 
 (defun compile-files (files fasl-dir load quiet)
@@ -206,9 +185,9 @@ If LOAD is true, load the fasl file."
           ;; Fail as early as possible
           (serious-condition (c)
             (ecase state
-              (:compile (handle-swank-compile-error c src))
-              (:load    (handle-swank-load-error    c dest))
-              (:unknown (handle-swank-unknown-error c src dest)))))))))
+              (:compile (handle-swank-load-error c "compiling" src))
+              (:load    (handle-swank-load-error c "loading" dest))
+              (:unknown (handle-swank-load-error c "???ing" src)))))))))
 
 #+(or cormanlisp)
 (defun compile-files (files fasl-dir load quiet)
@@ -243,13 +222,14 @@ If LOAD is true, load the fasl file."
   '(swank-util swank-repl
     swank-c-p-c swank-arglists swank-fuzzy
     swank-fancy-inspector
-    swank-presentations swank-presentation-streams
-    #+(or asdf sbcl ecl) swank-asdf
+    ; sjw : causes errors in sbcl versions after 1.1.13     
+    ; swank-presentations swank-presentation-streams
+    #+(or asdf2 asdf3 sbcl ecl) swank-asdf
     swank-package-fu
     swank-hyperdoc
     #+sbcl swank-sbcl-exts
     swank-mrepl
-    )
+    swank-trace-dialog)
   "List of names for contrib modules.")
 
 (defun append-dir (absolute name)

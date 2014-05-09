@@ -37,15 +37,23 @@
   (unless (member :asdf *features*)
     (error "Could not load ASDF.
 Please update your implementation or
-install ASDF2 and in your ~~/.swank.lisp specify:
+install a recent release of ASDF and in your ~~/.swank.lisp specify:
  (defparameter swank::*asdf-path* #p\"/path/containing/asdf/asdf.lisp\")")))
 
 ;;; If ASDF is too old, punt.
-;; Quicklisp has 2.014.6 for the longest time, now 2.26.
-;; CLISP ships with 2.11? Too bad, have them upgrade or
-;; install an upgrade yourself and configure *asdf-path*
+;; As of January 2014, Quicklisp has been providing 2.26 for a year
+;; (and previously had 2.014.6 for over a year), whereas
+;; all SLIME-supported implementations provide ASDF3 (i.e. 2.27 or later)
+;; except LispWorks (stuck with 2.019) and SCL (which hasn't been released
+;; in years and doesn't provide ASDF at all, but is fully supported by ASDF).
+;; If your implementation doesn't provide ASDF, or provides an old one,
+;; install an upgrade yourself and configure *asdf-path*.
 ;; It's just not worth the hassle supporting something
 ;; that doesn't even have COERCE-PATHNAME.
+;;
+;; NB: this version check is duplicated in swank-loader.lisp so that we don't
+;; try to load this contrib when ASDF is too old since that will abort the SLIME
+;; connection.
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (or #+asdf3 t #+asdf2
               (asdf:version-satisfies (asdf:asdf-version) "2.14.6"))
@@ -68,8 +76,7 @@ install ASDF2 and in your ~~/.swank.lisp specify:
 ;;; If you want ASDF utilities in user software, please use ASDF-UTILS.
 
 (defun asdf-at-least (version)
-  (or #+asdf2 (asdf:version-satisfies
-               (asdf:asdf-version) version)))
+  (asdf:version-satisfies (asdf:asdf-version) version))
 
 (defmacro asdefs (version &rest defs)
   (flet ((defun* (version name aname rest)
@@ -364,7 +371,7 @@ Record compiler notes signalled as `compiler-condition's."
   "Perform OPERATION-NAME on SYSTEM-NAME using ASDF.
 The KEYWORD-ARGS are passed on to the operation.
 Example:
-\(operate-on-system \"swank\" 'compile-op :force t)"
+\(operate-on-system \"cl-ppcre\" 'compile-op :force t)"
   (handler-case
       (with-compilation-hooks ()
         (apply #'asdf:operate (asdf-operation operation-name)
@@ -420,7 +427,7 @@ already knows."
 (defun asdf-component-output-files (component)
   (while-collecting (c)
     (labels ((f (x)
-               (typecase component
+               (typecase x
                  (asdf:source-file
                   (map () #'c
                        (asdf:output-files (make-instance 'asdf:compile-op) x)))

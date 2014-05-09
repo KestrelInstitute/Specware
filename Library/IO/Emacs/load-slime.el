@@ -41,6 +41,7 @@
 
 (push (concat *specware-emacs* "slime/")
       load-path)
+(require 'slime-autoloads)
 
 (push (concat *specware-emacs* "haskell-mode/")
       load-path)
@@ -66,7 +67,7 @@
       (byte-compile-file el-file))
     (load elc-file)))
 
-(custom-set-variables '(slime-repl-enable-presentations t)
+(custom-set-variables ;'(slime-repl-enable-presentations t)
                       '(indent-tabs-mode nil))
 
 ;;; prep for loading slime.el...
@@ -84,6 +85,9 @@
 (require 'edmacro) ; for read-kbd-macro (i.e., backqoute)
 (require 'regexp-opt) ; for regexp-opt
 
+(setq slime-contribs '(slime-repl slime-fuzzy ; slime-presentations
+                                  bridge))
+
 (require 'slime)
 ;; something about recursive (eval-when (comile) ...) causes error "reading from killed buffer"
 ;; so moved following out from under eval-when compile in slime -- 
@@ -98,7 +102,7 @@
   (slime-recompile-bytecode)
   (load-library "slime")))
 
-(slime-setup '(slime-repl slime-fuzzy slime-presentations))
+;(slime-setup '(slime-repl slime-fuzzy slime-presentations))
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
