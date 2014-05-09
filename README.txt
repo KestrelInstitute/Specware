@@ -1,6 +1,8 @@
-Specware README file (updated January, 2014).
+Specware README.txt file (updated January, 2014).
 
 Welcome to Specware!
+
+(NOTE: By using Specware, you agree to the license in SpecwareLicense.txt.)
 
 Specware runs on Linux, Mac OS X, and Windows.  (The Linux and Mac
 versions may be more robust.)
