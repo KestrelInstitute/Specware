@@ -82,7 +82,7 @@ theorem bagin_of_insert is [a]
 %% Bag intersection:
   op [a] /\ infixl 25 : Bag a * Bag a -> Bag a
 
-%%TODO: Or could define this using a fold:
+%%TODO: Or could define this using a fold or using 'the':
   axiom occs_bag_intersection is [a]
     fa(b1 : Bag a, b2 : Bag a, x:a) occs(x,b1 /\ b2) = min(occs(x,b1), occs(x,b2))
 
