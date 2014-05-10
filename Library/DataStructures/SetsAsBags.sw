@@ -77,7 +77,6 @@ op [a,b] foldable? (f : b * a -> b) : Bool =
   % bag is repetition-free; we use a bag_fold, starting with the first bag,
   % to go through the second bag and insert its elements into the first if
   % they are not present in the first already (using set_insert just defined)
-%% TODO: Where is the obligation that this gives a bag with no reps?
   op [a] \/ (s1 : Set a, s2 : Set a) infixl 300 : Set a =
     bag_fold s1
              (fn(result,x) -> set_insert(x,result))
@@ -91,7 +90,6 @@ op [a,b] foldable? (f : b * a -> b) : Bool =
 
 %%FIXME Just use bag intersection?
 %%FIXME The fixity of this is inconsistent with the fixity of Bag./\ (300 vs 25).
-%% TODO: Where is the obligation that this gives a bag with no reps?
   op [a] /\ (s1 : Set a, s2 : Set a) infixl 300 : Set a = 
     bag_fold empty_set
              (fn(result,x) -> if x in? s1 then set_insert(x,result) else result)
