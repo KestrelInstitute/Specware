@@ -93,11 +93,6 @@ Maps = Map qualifying spec
       =>
       (fa(m) p m)
 
- %TODO delete this comment?
-  % we could define several other operations on maps (e.g., "undefinition"
-  % of elements (TODO done above as remove), homomorphic application of a function) but the above
-  % operations are sufficient for this example
-
 % TODO could use a definedOn? helper predicate
 %TODO define using a fold?
   op [a,b] domain: Map(a,b) -> Set a
@@ -143,6 +138,9 @@ Maps = Map qualifying spec
   op [a,b] rangeToList: Map(a,b) -> List b
   axiom map_rangeToList is
      [a,b] fa(m:Map(a,b), z:b) (z in? range(m)) = (z in? rangeToList m)
+
+  theorem rangeToList_of_empty_map is [a,b]
+    rangeToList (empty_map:Map(a,b)) = []
 
 
  %TODO could also phrase in terms of insert and then prove that insert is either a no-op or insert_new
@@ -585,6 +583,10 @@ end-proof
 
 proof Isa Map__TMApply_over_update2
   apply(auto simp add: Map__TMApply_becomes_apply Map__domain_update2 Set__set_insertion Map__update)
+end-proof
+
+proof Isa Map__rangeToList_of_empty_map
+  apply (metis Map__map_rangeToList Map__range_of_empty Set__empty_set all_not_in_conv set_empty)
 end-proof
 
 
