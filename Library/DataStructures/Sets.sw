@@ -287,6 +287,9 @@ theorem foldable?_of_union is [a]
 theorem foldable?_of_intersection is [a]
   foldable?(fn (x:Set a,y:Set a) -> x /\ y)
 
+theorem foldable?_of_set_insert is [a]
+  foldable?(fn (s:Set a, elem : a) -> set_insert(elem,s))
+
 
 
 %% Union of many sets
@@ -911,6 +914,11 @@ end-proof
 
 proof Isa Set__subset_insert_same
   apply(metis Set__set_insertion Set__subset_def)
+end-proof
+
+proof Isa Set__foldable_p_of_set_insert
+  apply(auto simp add: Set__foldable_p_def)
+  apply(metis Set__set_insertion_commutativity_lemma)
 end-proof
 
 end-spec
