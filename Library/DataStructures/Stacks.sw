@@ -8,8 +8,6 @@ Stack qualifying spec
 %% constructors must become ops, and we must use destructors instead
 %% of inductive/cases defs.
 
-%% TODO can we prove that all stacks can be made from a finite number of applications of push, starting with the empty stack?
-
 type Stack a
 
 %% We give semantics to stacks by making them isomorphic to lists.
@@ -35,7 +33,7 @@ op [a] empty_stack : Stack a = listToStack []
 op [a] empty_stack? (s:Stack a) : Bool = (s = empty_stack)
 
 %% TODO Add op to test for non-emptiness (and a type for non-empty
-%% stacks, which we could use below)?  Also add an op for the lenght
+%% stacks, which we could use below)?  Also add an op for the length
 %% of a stack?  I guess such new ops would have to be given
 %% refinements in the morphisms..
 
@@ -87,6 +85,10 @@ theorem length_of_stackToList_non_zero is [a]
   fa(stk: Stack a)
     ~(empty_stack? stk) => ~(length (stackToList stk) = 0)
 
+theorem equal_stackToList_empty is [a]
+  fa(stk: Stack a)
+    (stackToList stk = []) = (stk = empty_stack)
+
 
 %% TODO This is what I want to do for pushl but cannot, due to an Isabelle translator bug (JIRA issue SPEC-41):
 %% %% Push the elements of lst onto stk (earlier elements of lst go shallower in the stack):
@@ -102,6 +104,22 @@ theorem length_of_stackToList_non_zero is [a]
 %%   refine def [a] pushl (lst:List a, stk:Stack a): Stack a = 
 %%     push_aux(reverse(lst),stk)
 
+
+theorem stack_cases is [a]
+  fa(stk:Stack a) (stk = empty_stack) || (ex(elem:a, stkb : Stack a) stk = push(elem,stkb))
+
+theorem stack_induction_helper is [a]
+  fa(p: Stack a -> Bool)
+    ((p empty_stack) && 
+     (fa(stk : Stack a, elem : a) (p stk => p (push(elem,stk))))) =>
+     (fa(lst : List a) p (listToStack lst))
+
+
+theorem stack_induction is [a]
+  fa(p: Stack a -> Bool)
+    ((p empty_stack) && 
+     (fa(stk : Stack a, elem : a) (p stk => p (push(elem,stk))))) =>
+     (fa(stk : Stack a) p stk)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,5 +186,35 @@ proof Isa Stack__length_of_stackToList_non_zero
   apply(metis List__nonEmpty_p_def Stack__stackToList_of_pop_Obligation_subtype0 length_0_conv)
 end-proof
 
+proof Isa Stack__stack_cases
+  apply(case_tac "Stack__stackToList stk")
+  apply (metis List__nonEmpty_p_def Stack__top_Obligation_subtype)
+  apply(simp add: Stack__push_def Stack__listToStack_def)
+  apply(metis Function__f_inverse_apply Function__inverse_f_apply Stack__stackToList_subtype_constr)
+end-proof
+
+proof Isa Stack__stack_induction_helper
+  apply(induct lst)
+  apply(simp add: Stack__empty_stack_def)
+  apply(auto simp add: Stack__push_def)
+  apply(metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
+end-proof
+
+proof Isa Stack__stack_induction
+  apply(cut_tac p=p and lst="Stack__stackToList stk" in Stack__stack_induction_helper)
+  apply(simp)
+  apply(simp)
+  apply(auto simp add: Stack__listToStack_def)
+  apply(metis Function__inverse_f_apply Stack__stackToList_subtype_constr)
+end-proof
+
+proof Isa Stack__equal_stackToList_empty
+  apply(rule Bool__bool_equal_split)
+  apply(auto)
+  apply(simp add: Stack__empty_stack_def)
+  apply (metis List__nonEmpty_p_def Stack__empty_stack_def Stack__top_Obligation_subtype)
+  apply(simp add: Stack__empty_stack_def)
+  apply (metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
+end-proof
 
 end-spec
