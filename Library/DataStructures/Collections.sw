@@ -105,6 +105,7 @@ spec
   axiom coll_diff_left_zero is [a]
       fa(c:Collection a)(empty_coll -- c = empty_coll)
 
+%TODO: Not true for Bags?:
 % this is too powerful... needs to be backtrackable versus a rewrite
   axiom distribute_coll_join_over_diff is [a]
       fa(A:Collection a,B:Collection a,C:Collection a)
@@ -114,6 +115,7 @@ spec
 %        ( (A -- C) = D  =>
 %           (A \/ B) -- C = D \/ (B -- C))
 
+%TODO: Not true for Bags?:
   axiom distribute_coll_diff_over_left_insert is [a]
       fa(c:Collection a,d:Collection a,y:a)
         (coll_insert(y,c) -- d 
