@@ -163,6 +163,7 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  %%      Move locally defined functions out to top level.
  %%      Should follow translateMatch,   which introduces local functions.
  %%      Should follow instantiateHOFns, which inlines local functions.
+ %%      TODO: Could do in two parts: fully parameterize, then lift.
  %% ==========================================================================================
 
  let ms_spec = if options.lambda_lift? then
@@ -187,7 +188,7 @@ op SpecTransform.simplifyForExecution (ms_spec : Spec, options : TransformOption
  in
 
  %% ==========================================================================================
- %% (10) arityNormalize
+ %% (10) arityNormalize (TODO This does nothing?)
  %% ==========================================================================================
 
  let ms_spec = if options.arity_normalize? then

@@ -31,6 +31,7 @@ op SpecTransform.makeExecutionStateful (ms_spec             : Spec,
  in
  let _ = showSpecIfVerbose "Original" ms_spec in
 
+ % This first one could be moved to CodeGen/Generic/SimplifyForExecution.sw (it remains in the "pure" Metaslang language):
  let ms_spec_2     = SpecTransform.deconflictUpdates       (ms_spec,        root_op_names, stateful_type_names,                        tracing?) in % (1)
  let stateful_spec = SpecTransform.makeUpdatesStateful     (ms_spec_2,      root_op_names, stateful_type_names,                        tracing?) in % (2)
  let stateful_spec = SpecTransform.globalize                stateful_spec  (root_op_names, global_type_name, global_var_id, opt_ginit, tracing?) in % (3)
