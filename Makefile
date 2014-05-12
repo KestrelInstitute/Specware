@@ -11,3 +11,4 @@ clean:
 
 realclean: clean
 	rm Applications/Specware/bin/linux/Specware4.sbclexe
+	rm Applications/Specware/bin/linux/Bootstrap.sbclimage
