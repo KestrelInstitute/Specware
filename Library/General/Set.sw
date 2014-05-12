@@ -7,7 +7,9 @@ In this spec we follow that customary approach, which is very clear and
 simple. All the types and ops in this spec are defined, i.e. this spec is a
 definitional extension; therefore, it is readily seen to be consistent. *)
 
-type Predicate a = a -> Bool
+import Pred
+
+%type Predicate a = a -> Bool
 type Set a = Predicate a
 
 %%% Generate stp versions of finite_insert and induction in case they are useful later
@@ -83,7 +85,7 @@ end-proof
 
 % complement, intersection, and union (lift `~', `&&', and `||' to sets):
 
-op [a] ~~ (s:Set a) : Set a = fn x:a -> x nin? s
+%% op [a] ~~ (s:Set a) : Set a = fn x:a -> x nin? s
 
 op [a] /\ (s1:Set a, s2:Set a) infixr 25 : Set a =
   fn x:a -> x in? s1 && x in? s2
@@ -778,7 +780,7 @@ proof Isa Thy_Morphism Set
   Set.>= -> \<subseteq> Left 50 reversed
   Set.> -> \<subset> Left 50 reversed
   Set.<| -> insert curried reversed
-  Set.~~ -> -
+%%  Set.~~ -> -
   Set./\ -> \<inter> Left 70
   Set.//\\ -> \<Inter>
   Set.\/ -> \<union> Left 65 
@@ -1013,11 +1015,12 @@ by (auto simp add: Set__Set_P__stp_def)
 lemma Set__infinite_nat_growth:
   "\<lbrakk>Set__infinite_p {i::nat. p i}\<rbrakk>  \<Longrightarrow> \<forall>j. \<exists>i>j. p i"
   apply (auto simp: Set__infinite_p_def fun_Compl_def bool_Compl_def
-                    setToPred_def
+                    setToPred_def 
                     finite_nat_set_iff_bounded Bex_def not_less)
-  apply (drule_tac x="Suc j" in spec, clarify, rule_tac x=n in exI, auto )
+  apply (drule_tac x="Suc j" in spec, clarify)
+  apply(rule_tac x=x in exI, auto )
 done
 end-proof
 
 
-endspec
+end-spec

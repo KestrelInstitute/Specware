@@ -39,7 +39,7 @@ proof Isa orderSubsumption__stp
   apply (auto simp: Order__linearOrder_p__stp_def Order__weakOrder_p__stp_def
                     Order__partialOrder_p__stp_def Order__preOrder_p__stp_def
                     setToPred_def)              
-  apply (simp add: EndoRelation__negativeTransitive_p__stp_def, clarify)
+  apply (simp add: EndoRelation__negativeTransitive_p__stp_def setToPred_def, clarify)
   apply (thin_tac "EndoRelation__antisymmetric_p__stp P__a x", 
          thin_tac "EndoRelation__reflexive_p__stp P__a x", 
          drule_tac x=y in spec, drule_tac x=z in spec, simp)
@@ -50,7 +50,7 @@ proof Isa orderSubsumption__stp
   apply (rule classical)
   apply (unfold EndoRelation__antisymmetric_p__stp_def,
          drule_tac x=z in spec, drule_tac x=y in spec, simp)
-  apply (unfold EndoRelation__negativeTransitive_p__stp_def,
+  apply (unfold EndoRelation__negativeTransitive_p__stp_def setToPred_def,
          drule_tac x=xa in spec, drule_tac x=z in spec, drule_tac x=y in spec,
          simp)
 end-proof
@@ -59,7 +59,7 @@ proof Isa orderSubsumption
   apply (auto simp: Order__linearOrder_p_def Order__weakOrder_p_def
                     Order__partialOrder_p_def Order__preOrder_p_def
                     setToPred_def)
-  apply (simp add: EndoRelation__negativeTransitive_p_def, clarify)
+  apply (simp add: EndoRelation__negativeTransitive_p_def setToPred_def, clarify)
   apply (thin_tac "antisym x", thin_tac "refl x", 
          drule_tac x=y in spec, drule_tac x=z in spec, simp)
   apply (erule notE, erule transD, simp_all)
@@ -67,7 +67,7 @@ proof Isa orderSubsumption
   apply (case_tac "xa=y", simp, case_tac "z=y", simp)
   apply (rule classical)
   apply (unfold antisym_def, drule_tac x=z in spec, drule_tac x=y in spec, simp)
-  apply (unfold EndoRelation__negativeTransitive_p_def,
+  apply (unfold EndoRelation__negativeTransitive_p_def setToPred_def,
          drule_tac x=xa in spec, drule_tac x=z in spec, drule_tac x=y in spec,
          simp)
 end-proof

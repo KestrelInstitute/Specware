@@ -27,7 +27,7 @@ type ReflexiveRelation a = (EndoRelation a | reflexive?)
 op [a] irreflexive? (r: EndoRelation a) : Bool = (fa(x) ~~r(x,x))
 
 proof Isa irreflexive_p__def
-  by (simp add: irrefl_def)
+  by (simp add: irrefl_def setToPred_def)
 end-proof
 
 type IrreflexiveRelation a = (EndoRelation a | irreflexive?)
