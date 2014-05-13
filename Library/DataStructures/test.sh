@@ -63,6 +63,7 @@ run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsSets#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsMaps#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsBagMaps#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/SetsAsBags#M
+run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/BagsAsLists#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/BagsAsMaps#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StacksAsCoproducts#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StacksAsLists#M
