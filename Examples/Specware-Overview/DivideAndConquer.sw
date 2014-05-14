@@ -106,7 +106,6 @@ by (pat_completeness, auto)
        assume a3: "x = decompose p"
        assume a4: "(xa, y) = x"
        from a1 and a2 and a3 and a4 show "(xa, p) \<in> {x. smaller_p x}" 
-         sledgehammer
          by (metis Decompose mem_Collect_eq)
      next     
        fix p x xa y
