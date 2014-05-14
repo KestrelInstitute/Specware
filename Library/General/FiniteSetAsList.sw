@@ -297,6 +297,16 @@ proof isa FSet__power_Obligation_subtype0
 sorry
 end-proof
 
+proof Isa power ()
+sorry
+termination sorry
+end-proof
+
+proof Isa power__stp ()
+sorry
+termination sorry
+end-proof
+
 proof isa FSet__power_Obligation_subtype1
 sorry
 end-proof
@@ -326,6 +336,10 @@ sorry
 end-proof
 
 proof isa FSet__filter_Obligation_subtype0
+sorry
+end-proof
+
+proof Isa List__permutationOf_equiv
 sorry
 end-proof
 
