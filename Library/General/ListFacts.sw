@@ -14,7 +14,6 @@ theorem in_l_not_in_delete1_eq is [a]
   theorem equiLong_self is [a]
     fa(lst : List a) lst equiLong lst
 
-%TODO: rename theorems too:
 theorem permutesTo?_reflexive is [a]
   fa(lst : List a) permutesTo?(lst,lst)
 
@@ -37,19 +36,28 @@ theorem permutesTo?_transitive is [a]
   fa(x : List a, y : List a, z : List a) (permutesTo?(x,y) && permutesTo?(y,z)) => permutesTo?(x,z)
 
 theorem permutesTo?_append is [a]
-  fa(x: List a, y: List a, z: List a) permutesTo?(x,y) => permutesTo?(x ++ z, y ++ z)
+  fa(x : List a, y : List a) permutesTo?(x++y,y++x)
 
-theorem permutesTo?_append_2 is [a]
+% TODO: rephrase these next two as equalities?
+theorem permutesTo?_append_cancel is [a]
   fa(x: List a, y: List a, z: List a) permutesTo?(x, y) => permutesTo?(z ++ x, z ++ y)
+
+theorem permutesTo?_append_cancel2 is [a]
+  fa(x: List a, y: List a, z: List a) permutesTo?(x,y) => permutesTo?(x ++ z, y ++ z)
 
 %% Proofs start here:
 
-proof Isa permutesTo?_append
-  sorry
+proof Isa permutesTo_p_append_cancel
+  apply(simp add: List__permutesTo_p__1__obligation_refine_def)
+  apply(induct z)
+  apply(simp)
+  apply(metis List__permutesTo_p__1__obligation_refine_def append_Cons permutesTo_p_cons_and_cons)
 end-proof
 
-proof Isa permutesTo?_append_2
-  sorry
+proof Isa permutesTo_p_append_cancel2
+  apply(cut_tac x=x and y=y and z=z in permutesTo_p_append_cancel)
+  apply(simp add: permutesTo_p_symmetric)
+  apply (metis List__permutesTo_p_equiv permutesTo_p_append) 
 end-proof
 
 proof Isa permutesTo?_reflexive
@@ -57,7 +65,7 @@ proof Isa permutesTo?_reflexive
 end-proof
 
 proof Isa permutesTo?_transitive
-  sorry
+  apply(metis List__permutesTo_p_equiv)
 end-proof
 
 proof Isa permutesTo?_cons_and_cons
@@ -85,6 +93,12 @@ end-proof
 
 proof Isa in_l_not_in_delete1_eq
    apply(metis List__delete1_delete1_curried in_set_remove1)
+end-proof
+
+proof Isa permutesTo_p_append
+  apply(induct x arbitrary: y)
+  apply(simp add: permutesTo_p_reflexive)
+  apply(metis List__permutesTo_p_equiv append_Cons permutesTo_p_append_cons)
 end-proof
 
 end-spec
