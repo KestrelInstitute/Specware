@@ -68,6 +68,7 @@ MergeSort0 = spec
   op smaller? (p1:NatList, p2:NatList) : Bool = length p1 < length p2
 
   %% The compose operation merges two sorted lists:
+  %% TODO: Add sortedness to the types?
 
   op mergeLists (lst1 : NatList) (lst2 : NatList) : NatList =
    case lst1 of
@@ -84,6 +85,22 @@ MergeSort0 = spec
 
   theorem splitList_perm is
     fa(p:NatList) ~(length p < 2) => permutesTo?(p, (splitList p).1 ++ (splitList p).2)
+
+ 
+theorem SolveDirectly is fa(p: NatList) directly_solvable? p => solution? p (solve_directly p)
+ 
+theorem Decompose is 
+  fa(p: NatList, p1: NatList, p2: NatList) 
+   ~(directly_solvable? p) && splitList p = (p1, p2) => smaller?(p1, p) && smaller?(p2, p)
+ 
+theorem WellFounded is EndoRelation.wellFounded? smaller?
+ 
+theorem Compose is 
+  fa(p: NatList, pa: NatList, pb: NatList, sa: NatList, sb: NatList) 
+   ~(directly_solvable? p) && splitList p = (pa, pb) 
+                           && solution? pa sa 
+                           && solution? pb sb => solution? p (mergeLists sa sb)
+ 
 
 
   proof Isa sorted_of_mergeLists
@@ -118,10 +135,6 @@ MergeSort0 = spec
     sorry
   end-proof
 
-end-spec
-
-M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, Problem +-> NatList, compose +-> mergeLists, decompose +-> splitList}
-
 proof Isa SolveDirectly
   apply(simp add: directly_solvable_p_def solution_p_def solve_directly_def permutesTo_p_reflexive)
   apply(case_tac "length p")
@@ -135,7 +148,7 @@ proof Isa SolveDirectly
 end-proof
 
 proof Isa Decompose_Obligation_subtype
-  apply(simp add: Pred__e_tld_tld_def)
+  apply(simp add: directly_solvable_p_def)
 end-proof
 
 proof Isa Decompose
@@ -149,7 +162,7 @@ proof Isa WellFounded
 end-proof
 
 proof Isa Compose_Obligation_subtype
-  apply(simp add: Pred__e_tld_tld_def)
+  apply(simp add: directly_solvable_p_def)
 end-proof
 
 proof Isa Compose
@@ -163,8 +176,21 @@ proof Isa Compose
   apply(cut_tac p=p in splitList_perm)
   apply(simp)
   apply(simp)
-  apply(metis permutesTo_p_append permutesTo_p_append_2 permutesTo_p_symmetric permutesTo_p_transitive)
+  apply(metis permutesTo_p_append_cancel permutesTo_p_append_cancel2 permutesTo_p_symmetric permutesTo_p_transitive)
 end-proof
+
+end-spec
+
+M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, Problem +-> NatList, compose +-> mergeLists, decompose +-> splitList}
 
 
 MergeSort = DivideAndConquer#Algorithm[M]
+
+proof Isa solve ()
+  by (pat_completeness, auto)
+  termination
+  apply(relation "{ x . smaller_p x}")
+  apply(metis WellFounded)
+  apply (metis Decompose mem_Collect_eq)
+  apply (metis Decompose mem_Collect_eq)
+end-proof
