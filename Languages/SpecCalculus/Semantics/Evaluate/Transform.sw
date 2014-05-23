@@ -369,6 +369,7 @@ spec
       [] tm
 
   op transformExprToAnnTypeValue(te: TransformExpr, ty_info: MTypeInfo, spc: Spec): Env(Option AnnTypeValue) =
+    % let _ = writeLine("tetatv:\n"^anyToString te^"\n"^show ty_info) in
     case (te, ty_info) of
       | (Str(s, _),  Str) | s nin? reservedWords -> return(Some(StrV s))
       | (Name(s, _), Str) | s nin? reservedWords -> return(Some(StrV s))
@@ -420,6 +421,16 @@ spec
          return (case o_flds of
                    | None -> None
                    | Some flds -> Some(TupleV flds))}
+      | (Options(flds, _), List el_ty_info) ->
+        {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, el_ty_info, spc)) flds;
+         atvs <- return(mapPartial id o_atvs);
+         if length atvs = length flds
+           then return(Some(ListV atvs))
+           else
+           {o_atv <- transformExprToAnnTypeValue(te, el_ty_info, spc);
+            case o_atv of
+              | None -> return(None)
+              | Some atv1 -> return(Some(ListV [atv1]))}}
       | (Tuple(flds, _), List el_ty_info) ->
         {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, el_ty_info, spc)) flds;
          atvs <- return(mapPartial id o_atvs);
@@ -451,7 +462,7 @@ spec
                 | [] -> pos
                 | te1 :: _ -> posOf te1
     in
-    % let _ = writeLine("tetatv:\n"^anyToString tes^"\n"^show ty_infos) in
+    % let _ = writeLine("tetatvs:\n"^anyToString tes^"\n"^show ty_infos) in
     case (tes, ty_infos) of
       | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                   return(SpecV dummySpec :: r_atvs)}   % emptySpec is a place holder
@@ -506,7 +517,7 @@ spec
       | ([],          (List _)   ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                                  return((ListV [])::r_atvs)}
       | ((te1 as Tuple(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) | allowLooseSyntax? ->
-        % let _ = writeLine("tetatv Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
+        % let _ = writeLine("tetatvs Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
         {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, ty_i1, spc)) l_tes;
          let atvs = mapPartial id o_atvs in
          if length atvs = length l_tes
@@ -524,7 +535,7 @@ spec
              | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                              return(ListV [atv1]::r_atvs)}}}
       | ((te1 as Options(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) ->
-        % let _ = writeLine("tetatv Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
+        % let _ = writeLine("tetatvs Options matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
         {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, ty_i1, spc)) l_tes;
          let atvs = mapPartial id o_atvs in
          if length atvs = length l_tes
