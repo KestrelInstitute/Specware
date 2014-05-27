@@ -85,6 +85,12 @@ type PathTerm = APathTerm Position.Position
       then tms_bindings @ i
       else fail("Can't take subterm "^show i^" of term\n"^printTerm term)
 
+  op ithSubTermWithBindings?(term: MSTerm, i: Nat): Option BindingTerm =
+    let tms_bindings = immediateSubTermsWithBindings term in
+    if i < length tms_bindings
+      then Some(tms_bindings @ i)
+      else None
+
   op [a] ithSubTerm?(term: ATerm a, i: Nat): Option(ATerm a) =
     let tms = immediateSubTerms term in
     if i < length tms then Some(tms @ i) else None
@@ -99,6 +105,33 @@ type PathTerm = APathTerm Position.Position
              let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
              (vars ++ new_vars, subterm))
        ([], top_term) path
+
+  op fromPathTermWithBindingsAdjust((top_term, path): PathTerm): BindingTerm =
+    let def aux(tm: MSTerm, path: Path, vars: MSVars): Option BindingTerm =
+          % let _ = writeLine("aux: "^anyToString path^"\n"^printTerm tm) in
+          let tm = case tm of
+                     | Apply(Fun(Op(Qualified("ToIsa-Internal", _), _), _, _), t1, _) -> t1
+                     | _ -> tm
+          in
+          case path of
+            | [] -> Some(vars, tm)
+            | i :: r_path -> 
+          case ithSubTermWithBindings?(tm, i) of
+            | Some(new_vars, subterm) ->
+              (case aux(subterm, r_path, vars ++ new_vars) of
+                | None -> 
+                  (case tm of
+                     | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
+                       let _ = writeLine "retry!" in
+                       aux(q, path, vars)
+                     | _ -> None)
+                | rec_result -> rec_result) 
+            | None -> None
+    in
+    case aux(top_term, reverse path, []) of
+      | Some bterm -> bterm
+      | None -> fail("Illegal path "^anyToString path^" for term "^printTerm top_term)
+                 
 
   op fromPathBindingTerm((top_binding_term, path): PathBindingTerm): BindingTerm =
     foldr (fn (i, (vars, tm)) ->
