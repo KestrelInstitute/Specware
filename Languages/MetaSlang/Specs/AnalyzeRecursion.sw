@@ -132,7 +132,7 @@ op transCallsAll(new_ops: QualifiedIds, new_types: QualifiedIds,
                 all_ops, all_types)
 
 op usedBy_*(ops: QualifiedIds, types: QualifiedIds, spc: Spec)
-   : QualifiedIds * QualifiedIds=
+   : QualifiedIds * QualifiedIds =
   transCallsAll(ops, types,
                 invertRefMap(opUsesOpsMap spc),
                 invertRefMap(opUsesTypesMap spc),
@@ -140,5 +140,13 @@ op usedBy_*(ops: QualifiedIds, types: QualifiedIds, spc: Spec)
                 invertRefMap(typeUsesTypesMap spc),
                 [], [])
 
+op used_*(ops: QualifiedIds, types: QualifiedIds, spc: Spec)
+   : QualifiedIds * QualifiedIds =
+  transCallsAll(ops, types,
+                opUsesOpsMap spc,
+                opUsesTypesMap spc,
+                typeUsesOpsMap spc,
+                typeUsesTypesMap spc,
+                [], [])
 
 endspec
