@@ -57,6 +57,14 @@ SpecCalc qualifying spec
     pragmas = pragmas,
     sm_tm   = sm_tm}
 
+ op emptyMorphism: Morphism =
+   {dom     = emptySpec,
+    cod     = emptySpec,
+    typeMap = emptyMap,
+    opMap   = emptyMap,
+    pragmas = [],
+    sm_tm   = None}
+
   % when omit printing the concrete domain and codomain specs.
   % When printing the maps, we print only where they differ
   % from the canonical injection (where they differ from

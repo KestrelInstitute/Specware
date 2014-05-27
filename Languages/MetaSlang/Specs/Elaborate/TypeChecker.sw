@@ -1236,12 +1236,14 @@ op elaborateTerm_head (env: LocalEnv, t1: MSTerm, ty0: MSType, trm: MSTerm, args
        Fun (NotEquals, ty1, pos))
 
     | Fun (RecordMerge, ty1, pos) ->
+      % let _ = writeLine("<< ty: "^printType ty1^"\n"^printType ty0) in
       (let a = freshMetaTyVar ("RecordMerge_a", pos) in
        let b = freshMetaTyVar ("RecordMerge_b", pos) in
        let c = freshMetaTyVar ("RecordMerge_c", pos) in
        let fresh_merge_type = Arrow(Product ([("1", a), ("2", b)], pos), c, pos) in
        (elaborateTypeForTerm(env, trm, ty1, fresh_merge_type);
-        elaborateTypeForTerm(env, trm, fresh_merge_type, ty0);
+        
+        %elaborateTypeForTerm(env, trm, fresh_merge_type, ty0);
         let def notEnoughInfo() =
               if notFinalPass? env then 
                 t1
@@ -1251,12 +1253,17 @@ op elaborateTerm_head (env: LocalEnv, t1: MSTerm, ty0: MSType, trm: MSTerm, args
         in
         case isArrow(env,ty1) of
           | Some (dom,rng) ->
+            let _ = case isArrow(env,ty0) of
+                      | Some (dom0,_) -> (elaborateTypeForTerm(env, trm, dom, dom0); ())
+                      | None -> ()
+            in
             (case isProduct (env,dom) of
                | Some [("1",s1),("2",s2)] ->
                  (case (isProduct(env,s1),isProduct(env,s2)) of
                     | (Some row1,Some row2) ->
                       let merged_type = Product(mergeFields(env,row1,row2,pos),pos) in
-                      (elaborateTypeForTerm(env,trm,rng,merged_type);
+                      (elaborateTypeForTerm(env, trm, rng, merged_type);
+                       elaborateTypeForTerm(env, trm, fresh_merge_type, ty0);
                        Fun(RecordMerge, ty1, pos))
                     | _ -> notEnoughInfo())
                | _ -> notEnoughInfo())

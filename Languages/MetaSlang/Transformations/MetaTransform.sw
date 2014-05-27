@@ -8,6 +8,7 @@ type MetaTransform.TypedFun =
    | TVal AnnTypeValue
 
 type MTypeInfo = | Spec
+                 | Morphism
                  | Term
                  | PathTerm
                  | Arrows (List MTypeInfo * MTypeInfo)
@@ -38,6 +39,7 @@ op existsMTypeInfo? (p: MTypeInfo -> Bool) (mti: MTypeInfo): Bool =
 op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
   case mty of
     | Spec -> Some(SpecV emptySpec)
+    | Morphism -> Some(MorphismV emptyMorphism)
     | Term -> Some(TermV(Any noPos))
     | PathTerm -> Some(PathTermV(toPathTerm(Any noPos)))
     | Bool -> Some(BoolV false)
@@ -146,6 +148,7 @@ op extractProof(tf: TypedFun): Option RefinementProof =
 op annTypeValueType: MSType = mkBase(Qualified("MetaTransform", "AnnTypeValue"), [])
 op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
 op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
+op morphismType: MSType = mkBase(Qualified("SpecCalc", "Morphism"), [])
 op msTermType: MSType = mkBase(Qualified("MS", "MSTerm"), [])
 op pathTermType: MSType = mkBase(Qualified("PathTerm", "PathTerm"), [])
 op refinementProofType: MSType = mkBase(Qualified("AnnSpec", "RefinementProof"), [])
@@ -170,6 +173,7 @@ op mapOptionTerm: MSTerm =  mkOp(Qualified("Option", "mapOption"), mkArrow(annTy
 op mtiToMSType(mti: MTypeInfo): MSType =
   case mti of
     | Spec -> specType
+    | Morphism -> morphismType
     | Term -> msTermType
     | PathTerm -> pathTermType
     | Arrows (dom_mtis, r_mti) ->
@@ -190,6 +194,7 @@ op mtiToMSType(mti: MTypeInfo): MSType =
 op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
   case ty_i of
     | Spec -> mkEmbed1("SpecV", mkArrow(specType, annTypeValueType))
+    | Morphism -> mkEmbed1("MorphismV", mkArrow(morphismType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
     | RefinementProof -> mkEmbed1("ProofV", mkArrow(refinementProofType, annTypeValueType))
     | TransformHistory -> mkEmbed1("TransformHistoryV", mkArrow(transformHistoryType, annTypeValueType))
@@ -219,9 +224,10 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
 op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
   case ty_i of
     | Spec -> ("spc__0", specType)
+    | Morphism -> ("morph__0", morphismType)
     | Term -> ("tm__0", msTermType)
     | RefinementProof -> ("prf__0", refinementProofType)
-    | _ -> fail ("Can only return Specs, MSTerms or Proofs")
+    | _ -> fail ("Can only return Specs, Morphisms, MSTerms or Proofs")
 
 
 op apply(f as TFn tf: TypedFun, arg: AnnTypeValue): TypedFun =
@@ -251,6 +257,7 @@ op Script.ppRuleSpec(rl: RuleSpec): WLPretty
 op ppAnnTypeValue(atv: AnnTypeValue): Doc =
   case atv of
     | SpecV _ -> ppString "spec"
+    | MorphismV _ -> ppString "morphism"
     | TermV _ -> ppString "term"
     | ArrowsV atvs -> ppSep (ppString " ") (map ppAnnTypeValue atvs)
     | StrV str -> ppString str
@@ -275,6 +282,7 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
   let def ppOpt(atv: AnnTypeValue): Option Doc =
        case atv of
          | SpecV _ -> None
+         | MorphismV _ -> None
          | TermV _ -> None
          | PathTermV _ -> None
          | ArrowsV atvs -> Some(ppSep (ppString " ") (mapPartial ppOpt atvs))
@@ -322,6 +330,7 @@ op AnnTypeValue.show(atv: AnnTypeValue): String =
 op MTypeInfo.show(ty_info: MTypeInfo): String =
   case ty_info of
     | Spec -> "Spec"
+    | Morphism -> "Morphism"
     | Term -> "Term"
     | PathTerm -> "PathTerm"
     | Arrows(doms, ran) -> "("^(foldr (fn (d, result) -> show d^" -> "^result) (show ran^")") doms)^")"
@@ -347,10 +356,12 @@ op MTypeInfos.show(ty_infos: List MTypeInfo): String =
 op transformResultType?(ti: MTypeInfo): Bool =
   case ti of
     | Spec -> true
+    | Morphism -> true
     | Term -> true
     | Opt sti -> transformResultType? sti
     | RefinementProof -> true
     | Monad Spec -> true
+    | Monad Morphism -> true
     | Tuple tis -> exists? transformResultType? tis
     | Arrows(tis, ran) -> transformResultType? ran
     | _ -> false
@@ -362,6 +373,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Boolean _ -> Some Bool
         | Base(Qualified("Bool", "Bool"), [], _)  -> Some Bool % otherwise fails below
         | Base(Qualified("AnnSpec", "Spec"), [], _)  -> Some Spec
+        | Base(Qualified("SpecCalc", "Morphism"), [], _)  -> Some Morphism
         | Base(Qualified("Integer", "Nat"), [], _)   -> Some Num
         | Base(Qualified("Integer", "Int"), [], _)   -> Some Num
         | Base(Qualified("String", "String"), [], _) -> Some Str
@@ -419,6 +431,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
 op mkExtractFn(tyi: MTypeInfo): MSTerm =
   case tyi of
     | Spec -> mkOp(Qualified("MetaTransform", "extractSpec"), mkArrow(annTypeValueType, specType))
+    | Morphism -> mkOp(Qualified("MetaTransform", "extractMorphism"), mkArrow(annTypeValueType, morphismType))
     | Term -> mkOp(Qualified("MetaTransform", "extractTerm"), mkArrow(annTypeValueType, msTermType))
     | PathTerm -> mkOp(Qualified("MetaTransform", "extractPathTerm"), mkArrow(annTypeValueType, msTermType))
     % | Arrow(doms, ran) ->

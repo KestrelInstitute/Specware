@@ -17,19 +17,21 @@ IsaTermPrinter qualifying spec
  import /Languages/MetaSlang/Transformations/EmptyTypesToSubtypes
  import /Languages/MetaSlang/Transformations/Coercions
  import /Languages/MetaSlang/Transformations/RewriteRules
+ import /Languages/MetaSlang/Transformations/ExplicateMorphism
 
  import /Languages/MetaSlang/CodeGen/Generic/LambdaLift
  import /Languages/MetaSlang/CodeGen/Generic/NormalizeTopLevelLambdas
 
- op addObligations?: Bool = true
- op lambdaLift?: Bool     = true
+op addObligations?: Bool = true
+op lambdaLift?: Bool     = true
 %% op simplify?: Bool       = false  %% now passed in and threaded through
- op usePosInfoForDefAnalysis?: Bool = true
- op printQuantifiersWithType?: Bool = true
- op autoProof: String = "by auto"
- op addExplicitTyping?: Bool = true
- op targetFunctionDefs?: Bool = true
- op unfoldMonadBinds?: Bool = true
+op usePosInfoForDefAnalysis?: Bool = true
+op printQuantifiersWithType?: Bool = true
+op autoProof: String = "by auto"
+op addExplicitTyping?: Bool = true
+op targetFunctionDefs?: Bool = true
+op unfoldMonadBinds?: Bool = true
+op isaDirectoryName: String = "Isa"
 
  type Pretty = PrettyPrint.Pretty
 
@@ -183,7 +185,7 @@ IsaTermPrinter qualifying spec
   op unitIdToIsaString(uid: UnitId): (String * String * String) =
     case uid.hashSuffix of
       | Some loc_nm | loc_nm ~= last uid.path -> (last uid.path, uidToIsaName uid, "_" ^ loc_nm)
-      | _ ->           (last uid.path, uidToIsaName uid, "")
+      | _ -> (last uid.path, uidToIsaName uid, "")
 
   op isaLibrarySpecNames: List String = ["list", "integer", "nat", "set", "map", "fun",
                                          "option", "string",
@@ -355,6 +357,8 @@ IsaTermPrinter qualifying spec
   op  ppValue : Context -> Value -> Pretty
   def ppValue c value =
     case value of
+      | Spec spc | needsMorphismExplication? spc ->
+        ppValue c (Morph (explicateMorphism spc))
       | Spec spc -> ppSpec c spc
       | Morph morph ->
         let Some glob_ctxt = MonadicStateInternal.readGlobalVar "GlobalContext" in
@@ -493,9 +497,9 @@ IsaTermPrinter qualifying spec
           | _ -> extractLambdaVars(tm, f_tm))
      | _ -> (f_tm, [])
 
- op mkObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
+ op mkRefineOpObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
       : MSTerm * MSTerm * MSTerm * MSTerm =
-   % let _ = writeLine("Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
+   % let _ = writeLine("Refine op Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
    case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
      | (Some(new_result_tm, new_post_condns), Some(old_result_tm, old_post_condns)) ->
        let f_tm = mkOp(qid, new_ty) in
@@ -505,20 +509,38 @@ IsaTermPrinter qualifying spec
        (mkSimpImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
      | _ -> (trueTerm, trueTerm, trueTerm, trueTerm)
 
+ op lambdaBody(tm: MSTerm): MSTerm =
+   case tm of
+     | Lambda([(_, _, bod)], _) -> lambdaBody bod
+     | _ -> tm
+
+ op mkDefObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
+      : MSTerm * MSTerm * MSTerm * MSTerm =
+   % let _ = writeLine("Def Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
+   case getResultExptAndPostCondn(prev_ty, spc) of
+     | Some(old_result_tm, old_post_condns) ->
+       let (val_tm, param_conds) = extractCondsFromDomainTypeOrTerm(new_ty, new_dfn, trueTerm) in % trueTerm is a dummy
+       let rhs = mkConj(old_post_condns) in
+       let new_body_tm = lambdaBody new_dfn in
+       let condn = mkConj(param_conds ++ [mkEquality(inferType(spc, old_result_tm), old_result_tm, new_body_tm)]) in
+       (mkSimpImplies(condn, rhs), condn, rhs, condn)
+     | _ -> (trueTerm, trueTerm, trueTerm, trueTerm)
+
   op addRefineObligations (c: Context) (spc: Spec): Spec =
     %% Add equality or implication obligations for refined ops
     let (newelements, ops) =
         foldr (fn (el, (elts, ops)) ->
                  case el of
-                   | OpDef(qid as Qualified(q,id), refine_num, _, _) | refine_num > 0 ->
+                   | OpDef(qid as Qualified(q,id), refine_num, _, _) ->
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
                      let trps = unpackTypedTerms (opinfo.dfn) in
                      let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
-                     % let _ = writeLine("addRefineObligations: "^show mainId^" "^show refine_num^": "^printType ty^"\n"^printTerm dfn
-                     %                     ^"\n"^printTerm opinfo.dfn^"\n") in
-                     let (_, prev_ty, prev_dfn) = nthRefinement(trps, refine_num - 1) in
+                      % let _ = writeLine("addRefineObligations: "^show mainId^" "^show refine_num^": "^printType ty^"\n"^printTerm dfn
+                      %                     ^"\n"^printTerm opinfo.dfn^"\n") in
+                     let (_, prev_ty, prev_dfn) = if refine_num = 0 then (tvs, ty, dfn)
+                                                   else nthRefinement(trps, refine_num - 1) in
                      let ops =
                          if anyTerm? dfn || anyTerm? prev_dfn then ops
                            else
@@ -533,10 +555,10 @@ IsaTermPrinter qualifying spec
                      let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def"^show refine_num in
                      if anyTerm? dfn
                        then
-                         if anyTerm? prev_dfn
+                         if anyTerm? prev_dfn %|| refine_num = 0
                            then    % Post-condition refinement
                              let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def"^show refine_num in
-                             let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                             let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                              % let _ = writeLine("oblig: "^printTerm oblig) in
                              case makeNonTrivTheorem(q, thm_name, oblig, spc) of
                                | None -> (el::elts, ops)
@@ -544,10 +566,16 @@ IsaTermPrinter qualifying spec
                                  (el::new_el::elts, ops)
                            else (el::elts, ops)   % Not sure if this is meaningful
                        else
-                         if anyTerm? prev_dfn
-                           then (el::elts, ops)    % !!! place holder
+                         if anyTerm? prev_dfn || refine_num = 0
+                           then let thm_name = nm^"__"^"obligation_def" in
+                                let (oblig, lhs, rhs, condn) = mkDefObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                                % let _ = writeLine("oblig: "^printTerm oblig) in
+                                case makeNonTrivTheorem(q, thm_name, oblig, spc) of
+                                  | None -> (el::elts, ops)
+                                  | Some new_el ->
+                                    (el::new_el::elts, ops)
                            else
-                             let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def" in
+                             let thm_name = nm^"__"^"obligation_refine_def" in
                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
                                                       prev_dfn, spc) in
                              let eq_oblig = mkConjecture(Qualified(q, thm_name), tvs, eq_tm) in
@@ -582,7 +610,7 @@ IsaTermPrinter qualifying spec
                           if anyTerm? prev_dfn
                             then    % Post-condition refinement
                               let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
-                              let (oblig, lhs, rhs, condn) = mkObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                              let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
                               % let _ = writeLine("oblig: "^printTerm oblig) in
@@ -594,7 +622,9 @@ IsaTermPrinter qualifying spec
                                     % let _ = writeLine(showImplProof impl_pf) in
                                     generateImplicationProof (c, condn, rhs, impl_pf)
                                   | Some (RefineEq eq_pf) ->
-                                    % let _ = writeLine(showEqProof eq_pf) in
+                                    % let _ = writeLine(showPP(eq_pf, true)) in
+                                    let eq_pf = optimizeEqProofSubterms eq_pf in
+                                    % let _ = writeLine("Optimized:\n"^showPP(eq_pf, true)) in
                                     generateImplicationProof (c, lhs, rhs, ImplEq(eq_pf))
                                     % otherwise, fall back on old method based on TransformHistory
                                   | _ -> generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist)
@@ -615,17 +645,22 @@ IsaTermPrinter qualifying spec
                                % let _ = writeLine("prev_dfn: "^printTerm prev_dfn) in
                                % let _ = writeLine("dfn: "^printTerm dfn) in
                                % let _ = writeLine("Generating proof for "^thm_name) in
+                               % let _ = writeLine(anyToPrettyString pf) in
                               let prf_str =
                                 case pf of
                                     % if we have an equality proof, convert it to Isabelle
-                                  | Some (RefineEq (EqProofSubterm(pth, eq_pf))) ->
-                                    % let _ = writeLine(showEqProof eq_pf) in
-                                    let new_eq_pf = EqProofTrans([(EqProofUnfoldDef mainId, fromPathTerm(prev_dfn, pth)),
-                                                                  (eq_pf, fromPathTerm(dfn, pth))],
-                                                                 EqProofSym(EqProofUnfoldDef refId))
-                                    in
-                                    generateEqualityProof (c, lhs_tm, rhs_tm, new_eq_pf)
-                                    % otherwise, fall back on old method based on TransformHistory
+                                  | Some (RefineEq eq_pf) ->
+                                    (case optimizeEqProofSubterms eq_pf of
+                                       | EqProofSubterm(pth, eq_spf) -> 
+                                         let new_eq_spf = EqProofTrans([(EqProofUnfoldDef mainId,
+                                                                         (fromPathTermWithBindingsAdjust(prev_dfn, pth)).2),
+                                                                        (eq_spf, (fromPathTermWithBindingsAdjust(dfn, pth)).2)],
+                                                                       EqProofSym(EqProofUnfoldDef refId))
+                                         in
+                                         % let _ = writeLine(showEqProof new_eq_spf) in
+                                         generateEqualityProof (c, lhs_tm, rhs_tm, new_eq_spf)
+                                         % otherwise, fall back on old method based on TransformHistory
+                                       | _ -> generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc))
                                   | _ -> generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc)
                               in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
@@ -1062,10 +1097,12 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
         have subeq:"lhs_sub = rhs_sub" (sub_pf)
         show ?thesis by (rule arg_cong[OF subeq]) *)
      % let _ = writeLine("eqSubterm: "^anyToString path^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     let (lhs_vars, lhs_sub) = fromPathTermWithBindings (lhs, path) in
-     let (rhs_vars, rhs_sub) = fromPathTermWithBindings (rhs, path) in
+     let (lhs_vars, lhs_sub) = fromPathTermWithBindingsAdjust (lhs, path) in
+     let (rhs_vars, rhs_sub) = fromPathTermWithBindingsAdjust (rhs, path) in
      let _ =
        if ~(lhs_vars = rhs_vars) then
+         let _ = writeLine("eqSubterm: "^anyToString path^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
+         let _ = writeLine("lhs_sub: "^printTerm lhs_sub^"\nrhs_sub: "^printTerm rhs_sub) in
          fail "ERROR: ppEqualityProof: cannot (currently) handle different lists of bound vars in subterms; apply a substitution to the RHS to fix this in the code"
        else ()
      in
@@ -1508,7 +1545,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                        "$SPECWARE4" :: rem_p
                   else abbreviatedPath p
     in
-    red_p ++ ["Isa"]
+    red_p ++ [isaDirectoryName]
 
   op tryRelativize(p: List String, rel_p: List String): List String =
     let def aux(pi, rel_pi) =
@@ -1538,16 +1575,18 @@ removeSubTypes can introduce subtype conditions that require addCoercions
          then "\""^nm^"\"" else nm)
 
   %% Should add "/Isa"
-  op convertToIsaDir(filnm: String): String = filnm
+  op convertToIsaDir(filnm: String): String =
+    let thy_dir_comps  = removeSuffix(splitStringAt(filnm, "/"), 1) ++ [isaDirectoryName] in
+    foldr (fn (compi, result) -> compi^"/"^result) "" thy_dir_comps
 
   op  ppImport: Context -> SCTerm -> Spec -> Pretty
   def ppImport c sc_tm spc =
     case uidStringPairForValueOrTerm(c, Spec spc, sc_tm) of
       | None ->
         let thy_ext = show(!c.anon_thy_count) in
-        let thy_nm = c.thy_name ^ thy_ext in
-        let thy_fil_nm = convertToIsaDir(uidToFullPath(getCurrentUID c)) ^ thy_ext ^ ".thy" in
-        (%writeLine("ppI0: "^thy_nm^" in "^thy_fil_nm);
+        let thy_nm = c.thy_name ^ "__" ^ thy_ext in
+        let thy_fil_nm = convertToIsaDir(uidToFullPath(getCurrentUID c)) ^ thy_nm ^ ".thy" in
+        (writeLine("ppI0: "^thy_nm^" in "^thy_fil_nm);
          c.anon_thy_count := !c.anon_thy_count + 1;
          if c.recursive?
            then toFile(thy_fil_nm,
@@ -4258,7 +4297,7 @@ def ppIdStr id =
                   | (id,#/) -> att(id, "_fsl")
                   | (id,#\\ ) -> att(id, "_bsl")
                   | (id,#-) -> att(id, "_dsh")
-                  | (id,#*) -> att(id, "_ast")
+                  | (id,#* ) -> att(id, "_ast")
                   | (id,#+) -> att(id, "_pls")
                   | (id,#|) -> att(id, "_bar")
                   | (id,#!) -> att(id, "_excl")
@@ -4370,6 +4409,61 @@ op unfoldMonadBinds(spc: Spec): Spec =
           | _ -> simplifyUnfoldCase spc tm
   in
   mapSpecLocalOps (unfold, id, id) spc
+
+op ppEqProof(prf: EqProof, showTerms?: Bool): Pretty =
+  case prf of
+   | EqProofSubterm (path, pf) ->
+     prBreak 2 [string "EqProofSubterm ",
+                prConcat[string "(",
+                         prBreak 0 [prConcat[string "[",
+                                             prPostSep 0 blockFill (prString ", ") (map (fn i -> string(show i)) path),
+                                             string "], "],
+                                    ppEqProof (pf, showTerms?)],
+                         string ")"]]
+   | EqProofSym pf -> prBreak 2 [string "EqProofSym ", prConcat[string "(", ppEqProof(pf, showTerms?), string ")"]]
+   | EqProofTrans (pf_term_list, last_pf) ->
+     prBreak 2 [string "EqTrans ",
+                prConcat[string "[",
+                         prLinear 0 [prConcat [prPostSep 0 blockFill (prString ", ")
+                                                 (map (fn (i_prf, i_tm) ->
+                                                       if showTerms?
+                                                         then prBreak 2 [ppEqProof(i_prf, showTerms?),
+                                                                         ppTerm (initialize (asciiPrinter, false)) ([], Top)
+                                                                           i_tm]
+                                                         else ppEqProof(i_prf, showTerms?))
+                                                    pf_term_list),
+                                               (string ", ")],
+                                     ppEqProof(last_pf, showTerms?)],
+                         string "]"]]
+    | EqProofTheorem (qid, args) -> string("EqProofTheorem " ^ show qid)
+    | EqProofUnfoldDef qid -> string("EqProofUnfoldDef (" ^ show qid ^ ")")
+    | EqProofTactic str -> prConcat[string "by ", string str]
+    | _ -> string "by another method"
+
+op ppImplProof (prf: ImplProof, showTerms?: Bool): Pretty =
+ case prf of
+   | ImplTrans (pf1, middle, pf2) ->
+     prBreak 2 [string "ImplTrans ",
+                prConcat[string "(",
+                         prPostSep 0 blockFill (prString ", ")
+                           ([ppImplProof(pf1, showTerms?)]
+                              ++ (if showTerms? then [ppTerm (initialize (asciiPrinter, false)) ([], Top)
+                                                        middle]
+                                  else [])
+                              ++ [ppImplProof(pf2, showTerms?)]),
+                         string ")"]]
+   | ImplTheorem (qid, args) -> string("ImplTheorem (" ^ show qid ^ ")")
+   | ImplEq pf -> prBreak 2 [string "ImplEq ",
+                             prConcat [string "(", ppEqProof(pf, showTerms?), string ")"]]
+   | ImplProofTactic tactic -> string("ImplProofTactic (" ^ tactic ^ ")")
+   | MergeRulesProof tree -> string("MergeRulesProof (*** TraceTree ***)")
+
+op EqProof.showPP(prf: EqProof, showTerms?: Bool): String =
+  toString(format(110, ppEqProof(prf, showTerms?)))
+
+op ImplProof.showPP(prf: ImplProof, showTerms?: Bool): String =
+  toString(format(110, ppImplProof(prf, showTerms?)))
+
 end-spec
 
 

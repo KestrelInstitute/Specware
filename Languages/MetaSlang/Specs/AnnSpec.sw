@@ -249,7 +249,44 @@ type TransformHistory = List (MSTerm * RuleSpec)
        | EqProofSubterm (p2, sub_pf) -> EqProofSubterm (p ++ p2, sub_pf)
        | _ -> EqProofSubterm (p, pf)
 
-  op [a] PathTerm.fromPathTerm : (ATerm a * Path) -> ATerm a
+op optimizeEqProofSubterms (pf: EqProof): EqProof =
+   mappEqProof
+     (fn pfi -> case pfi of
+                  | EqProofTrans(pf_term_list, EqProofSubterm(last_path, last_pf))
+                      | forall? (fn (pf_term_i, _) -> embed? EqProofSubterm pf_term_i) pf_term_list ->
+                    let common_path = foldl (fn (r_path, (EqProofSubterm(i_path, _), _)) ->
+                                               longestCommonSuffix(r_path, i_path))
+                                        last_path pf_term_list
+                    in
+                    if common_path = [] then pfi
+                    else
+                    let common_path_len = length common_path in
+                    EqProofSubterm(common_path,
+                                   EqProofTrans(map (fn (EqProofSubterm(i_path, pf_i), tm_i) ->
+                                                       (mkEqProofSubterm(removeSuffix(i_path, common_path_len), pf_i),
+                                                        fromPathTerm(tm_i, common_path)))
+                                                  pf_term_list,
+                                                mkEqProofSubterm(removeSuffix(last_path, common_path_len), last_pf)))
+                  | EqProofSubterm(path1, EqProofSubterm(path2, prf)) ->
+                    EqProofSubterm(path2 ++ path1, prf)
+                  | _ -> pfi)
+     pf
+
+ op mappEqProof : (EqProof -> EqProof) -> EqProof -> EqProof
+ def mappEqProof f pf =
+   let s_pf =
+       case pf of
+         | EqProofSubterm (path, sub_pf) -> EqProofSubterm (path, mappEqProof f sub_pf)
+         | EqProofSym pf -> EqProofSym (mappEqProof f pf)
+         | EqProofTrans (pf_term_list, last_pf) ->
+           EqProofTrans
+             (map (fn (pf,tm) -> (mappEqProof f pf, tm)) pf_term_list,
+              mappEqProof f last_pf)
+         | _ -> pf
+   in
+   f s_pf
+
+ op [a] PathTerm.fromPathTerm : (ATerm a * Path) -> ATerm a
 
 % simple printer for equality proofs
 op printEqProof(prf: EqProof, tm: MSTerm): String =
@@ -639,6 +676,21 @@ op [a] typeOfOp (spc: ASpec a) (qid: QualifiedId): TyVars * AType a =
   let Some info = findTheOp(spc, qid) in
   let (tvs, ty, _) = unpackFirstOpDef info in
   (tvs, ty)
+
+
+op addDef(spc: Spec, op_info: OpInfo, new_dfn: MSTerm): Spec =
+  let qid as Qualified(q, id) = primaryOpName op_info in
+  let (new_tvs, new_ty, new_tm) = unpackTerm new_dfn in
+  let (tvs, ty)
+     = case unpackTypedTerms op_info.dfn of
+         | (old_tvs, old_ty, _)::_ -> (old_tvs, old_ty)
+         | [] -> (new_tvs, new_ty)
+  in
+  let new_defn =  maybePiTerm(tvs, TypedTerm(new_tm, ty, termAnn new_tm)) in
+  let new_op_info = op_info << {dfn = new_dfn} in
+  spc << {ops = insertAQualifierMap (spc.ops, q, id, new_op_info),
+          elements = spc.elements ++ [OpDef (qid, 0, None, noPos)]}
+
 
 op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
   let old_triples = unpackTypedTerms info.dfn in
@@ -1125,8 +1177,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
          ini
 	 els
 
- op  existsSpecElement?: (SpecElement -> Bool) -> SpecElements -> Bool
- def existsSpecElement? p els =
+ op existsSpecElement? (p: SpecElement -> Bool) (els: SpecElements): Bool =
    exists? (fn el ->
               p el
                 || (case el of
@@ -1135,7 +1186,19 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                       | _ -> false))
      els
 
- op rdPos : Position = Internal "Remvoe Duplicates"
+ op existsSpecElementBefore? (p: SpecElement -> Bool) (limit_el: SpecElement) (els: SpecElements): Bool =
+   case els of
+     | []     -> false
+     | hd::tl ->
+       if hd = limit_el then false
+        else if p hd then true
+        else (case hd of
+                | Import (_, _, elts, _) ->
+                  existsSpecElementBefore? p limit_el elts
+                | _ -> false)
+           || existsSpecElementBefore? p limit_el tl
+
+ op rdPos : Position = Internal "Remove Duplicates"
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

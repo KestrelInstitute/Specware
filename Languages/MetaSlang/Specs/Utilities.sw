@@ -3130,6 +3130,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
 (* Support for /Languages/MetaSlang/Transformations/MetaTransform: These are needed for dumping info about transform fns *)
  type MetaTransform.AnnTypeValue =
     | SpecV Spec
+    | MorphismV Morphism
     | TermV MSTerm
     | PathTermV PathTerm
     | ArrowsV (List AnnTypeValue)
@@ -3147,6 +3148,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
     | MonadV (Env AnnTypeValue)
 
  op MetaTransform.extractSpec(SpecV x: AnnTypeValue): Spec = x
+ op MetaTransform.extractMorphism(MorphismV x: AnnTypeValue): Morphism = x
  op MetaTransform.extractTerm(TermV x: AnnTypeValue): MSTerm = x
  op MetaTransform.extractPathTerm(PathTermV x: AnnTypeValue): PathTerm = x
  op MetaTransform.extractStr(StrV x: AnnTypeValue): String = x
