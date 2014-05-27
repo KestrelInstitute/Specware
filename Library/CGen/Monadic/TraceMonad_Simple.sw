@@ -39,7 +39,7 @@ type CValue =
  ***)
 
 (* Returns true iff val has type typ *)
-op CHasType (val : CValue, typ : CType) : Bool =
+op CHasType (typ : CType) (val : CValue) : Bool =
   case (val, typ) of
     | (CValue_Void, CType_Void) -> true
     | (CValue_Bool _, CType_Bool) -> true
@@ -61,7 +61,7 @@ type CAction =
    | CAction_Read (CPtr * CValue) % non-atomic read
    | CAction_Write (CPtr * CValue) % non-atomic write
 
-type CPtrAndValue = { p : CPtr * CValue | CHasType (p.2, CPtr_type p.1) }
+type CPtrAndValue = { p : CPtr * CValue | CHasType (CPtr_type p.1) p.2 }
 
 op validActions_helper (acts : List CAction) (vals : List CPtrAndValue) : Bool =
   case acts of
@@ -69,11 +69,11 @@ op validActions_helper (acts : List CAction) (vals : List CPtrAndValue) : Bool =
     | act :: acts' ->
       (case act of
          | CAction_Read (ptr, v) ->
-           CHasType (v, CPtr_type ptr) &&
+           CHasType (CPtr_type ptr) v &&
            findLeftmost (fn (ptr', _) -> ptr' = ptr) vals = Some (ptr, v) &&
            validActions_helper acts' vals
          | CAction_Write (ptr, v) ->
-           CHasType (v, CPtr_type ptr) &&
+           CHasType (CPtr_type ptr) v &&
            validActions_helper acts' ((ptr, v)::vals))
 
 (* A trace is valid iff each read sees the most recent previous write *)
@@ -112,17 +112,17 @@ op [a,b] monadBind (m : CMonad a, f : a -> CMonad b) : CMonad b =
       | CRes_NonTerm -> CRes_NonTerm
 
 (* Pointer reads consume a read action for the pointer in question *)
-op readCPtr (ptr : CPtr) : CMonad { v : CValue | CHasType (v, CPtr_type ptr) } =
+op readCPtr (ptr : CPtr) : CMonad (CValue | CHasType (CPtr_type ptr)) =
   fn acts ->
     case acts of
       | [] -> CRes_NonTerm
       | (CAction_Read (ptr', v)) :: acts' ->
-        if ptr' = ptr && CHasType (v, CPtr_type ptr) then CRes_OK (acts', v)
+        if ptr' = ptr && CHasType (CPtr_type ptr) v then CRes_OK (acts', v)
         else CRes_BadActions
       | _ -> CRes_BadActions
 
 (* Pointer writes consume a write action for the pointer in question *)
-op writeCPtr (ptr : CPtr) (v : CValue | CHasType (v, CPtr_type ptr)) : CMonad () =
+op writeCPtr (ptr : CPtr) (v : CValue | CHasType (CPtr_type ptr) v) : CMonad () =
   fn acts ->
     case acts of
       | [] -> CRes_NonTerm

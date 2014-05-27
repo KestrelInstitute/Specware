@@ -7,8 +7,6 @@
 % README: scroll down to the "external interface" to see how to use
 % this library
 
-% NOTE: this is not used yet...
-
 Proof qualifying spec
   import Utilities
   import MSTerm
