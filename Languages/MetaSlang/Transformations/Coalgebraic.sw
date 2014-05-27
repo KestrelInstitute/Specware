@@ -582,7 +582,7 @@ op addDefForDestructor(spc: Spec, qid: QualifiedId): Spec =
         | Arrow(dom, rng, _) ->
           let v = ("st", dom) in
           let new_def = mkLambda(mkVarPat v, mkApply(mkProject(qualifiedIdToField qid, dom, rng), mkVar v)) in
-          addRefinedDef(spc, info, maybePiTerm(tvs, TypedTerm(new_def, ty, termAnn tm)))
+          addDef(spc, info, new_def)
         | _ -> spc
 
 op SpecTransform.doNothing(spc: Spec): Spec = spc
