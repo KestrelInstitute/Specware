@@ -416,8 +416,6 @@ Haskell qualifying spec
     in
     format(120, main_pp_val)
 
-
-  op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
   %% --------------------------------------------------------------------------------
 
   op  ppValue : Context -> Value -> Pretty
