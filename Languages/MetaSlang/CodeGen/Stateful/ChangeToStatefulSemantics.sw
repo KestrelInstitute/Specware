@@ -1,5 +1,7 @@
 Stateful qualifying spec
 
+import /Languages/MetaSlang/CodeGen/Stateful/AddMutex                % should preceed StatefulUpdates, Globalize
+
 import /Languages/MetaSlang/CodeGen/Generic/DeconflictUpdates        % (1) Lisp C Java  deconflictUpdates
 import /Languages/MetaSlang/CodeGen/Stateful/StatefulUpdates         % (2) Lisp C Java  makeUpdatesStateful
 import /Languages/MetaSlang/CodeGen/Stateful/Globalize               % (3) Lisp C Java  globalize
