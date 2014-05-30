@@ -12,6 +12,9 @@ Proof qualifying spec
   import ../AbstractSyntax/PathTerm
   import /Library/Structures/Data/Monad/ErrorMonad
 
+  % Forward reference to get subtype predicates
+  op SpecNorm.typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm
+
   % The internal form of proofs
   type ProofInternal =
     %% General proof constructs
@@ -20,10 +23,10 @@ Proof qualifying spec
     % and creates a proof of Q
     | Proof_Cut (MSTerm * MSTerm * ProofInternal * ProofInternal)
 
-    % Proof_ForallE (x,T,M,N,pf) is a proof of [N/x]M from a proof
-    % pf : fa(x:T)M and a proof tppf : N:T
+    % Proof_ForallE (x,T,M,N,pf1,pf2) is a proof of [N/x]M from a proof
+    % pf1 : fa(x:T)M and a proof pf2 : typePredTermNoSpec(T,M)
     | Proof_ForallE (Id * MSType * MSTerm * MSTerm
-                       * ProofInternal * TypingProofInternal)
+                       * ProofInternal * ProofInternal)
 
     % Proof_EqTrue(M,pf) is a proof of M given a proof pf :: M=true
     | Proof_EqTrue (MSTerm * ProofInternal)
@@ -111,9 +114,6 @@ Proof qualifying spec
   % The type of proofs that might have been built incorrectly
   type Proof = Monad ProofInternal
 
-  % The type of typing proofs that might have been built incorrectly
-  type TypingProof = Monad TypingProofInternal
-
   % Print out a representation of a proof
   op showProof (p : Proof) : String =
   case p of
@@ -143,26 +143,32 @@ Proof qualifying spec
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
   % builds a proof of [N/x]M.
-  op prove_forallElim (p : Proof, N : MSTerm, tp_pf : TypingProof) : Proof =
+  op prove_forallElim (p : Proof, N : MSTerm, tp_pf : Proof) : Proof =
     { p_int <- p;
       p_pred <- return (proofPredicate_Internal p_int);
       tp_int <- tp_pf;
-      (tp_M, tp_T) <- return (typingProofPredicate tp_int);
+      tp_pred <- return (proofPredicate_Internal tp_int);
       case matchForall1 p_pred of
-        | Some (x, T, M) | equalTerm? (M, tp_M) && equalType? (T, tp_T) ->
-          return (Proof_ForallE (x, T, M, N, p_int, tp_pf_int))
+        | Some (x, T, M) ->
+          let tp_pred_expected = typePredTermNoSpec(T,N) in
+          if equalTerm? (tp_pred, tp_pred_expected) then
+            return (Proof_ForallE (x, T, M, N, p_int, tp_int))
+          else
+            ErrorFail ("Bad typing proof in forall elimination: expected ("
+                         ^ printTerm tp_pred_expected ^ "), found ("
+                         ^ printTerm tp_pred ^ ")")
         | _ -> ErrorFail ("Forall elimination of (" ^ printTerm p_pred
                             ^ ") against term (" ^ printTerm N ^ ")") }
 
   % build a proof of M given a proof of M=true
   op prove_fromEqualTrue (M : MSTerm, pf : Proof) : Proof =
-    { p_int <- p;
+    { p_int <- pf;
       p_pred <- return (proofPredicate_Internal p_int);
-      case matchEquality pf_pred of
+      case matchEquality p_pred of
         | Some (_, M', N) | equalTerm? (M,M') && equalTerm? (N,mkTrue()) ->
           return (Proof_EqTrue (M, p_int))
         | _ -> ErrorFail ("Attempt to prove (" ^ printTerm M
-                            ^ ") from a proof of (" ^ printTerm pf_pred ^ ")") }
+                            ^ ") from a proof of (" ^ printTerm p_pred ^ ")") }
 
   % build a proof of true
   op prove_true : Proof =
