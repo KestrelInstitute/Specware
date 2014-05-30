@@ -3,7 +3,7 @@
 MetaSlangRewriter qualifying spec 
  import /Library/Legacy/DataStructures/LazyList
  import ../AbstractSyntax/PathTerm
- import DeModRewriteRules, Simplify, Interpreter, MetaTransform
+ import DeModRewriteRules, Simplify, Interpreter, MetaTransform, SubtypeElimination
  import ../Specs/Proof
  
  type Context = HigherOrderMatching.Context
@@ -177,12 +177,10 @@ MetaSlangRewriter qualifying spec
           fromList
             (optimizeSuccessList
                (mapPartial (fn s ->
-                              let rhs = renameBoundVars(rule.rhs,boundVars) in
                               %% Temporary fix to avoid identity transformations early
                               %% The dereferenceAll will be done later as well,
                               %% This is also necessary for foldSubPatterns
-                              let result = dereferenceAll s rhs in
-                              let result = renameBound result in
+                              let result = dereferenceAllWithVars s rhs boundVars in
                               if equalTerm?(term, result)
                                 then None
                               else Some(result,(s,rule,path,boundVars,demod)))
@@ -253,6 +251,7 @@ MetaSlangRewriter qualifying spec
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
        unit (eTerm, (subst,ssRule "Eval1",boundVars,demod))
+        % FIXME: need a new subst, for the free vars in the ssRule
      | None ->
    case term of
      %% case foo x of ... | foo y -> f y | ... --> f x
@@ -562,7 +561,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
          % The rewrite happened at the top of one of the branches or
          % of the whole expression, and so required f to be pushed
          | [] -> res
-         | [elem,branch] -> | elem = casefun_pathElem -> res
+         | [elem,branch] | elem = casefun_pathElem -> res
          | path as elem::_ | elem = casearg_pathElem ->
            % Rewrite happened in the scrutinee
            unpush_case None (path_to_unpushed_case ++ [casearg_pathElem])
@@ -952,6 +951,23 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
 	 writeLine("=  { "^depth^": "^ rule.name^" }"))
      else ()
 
+ op [a] traceRuleRec(context:Context,rule:RewriteRule,f:() -> a) : a =
+   let traceIndent = ! context.traceIndent in
+   if context.traceRewriting > 0 then
+     (context.traceIndent := traceIndent + 3;
+      toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
+      writeLine (show(! context.traceDepth)^" : "^rule.name);
+      %              printSubst subst;
+      let res = f () in
+      (context.traceIndent := traceIndent;
+       writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
+       %(case res of Some s -> printSubst s | _ -> ());
+       res)
+      )
+   else 
+     f ()
+
+
  (* Check condition of conditional rewrite rule *)
 
 %%
@@ -1022,84 +1038,56 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
    rewriteRecursivePre(context,boundVars,rules,term,path)
 
  def rewriteRecursivePre(context, boundVars, rules0, term, path) = 
-   let	
-      def rewritesToTrue(rules, term, boundVars, subst, history, backChain): Option (SubstC * Proof) =
-          if trueTerm? term then Some (subst, prove_true)
-          else
-	  let results = rewriteRec(rules, subst, term, [], term, freeVars term, history, backChain+1) in
-          case LazyList.find_n (fn (rl, t, c_subst, pf)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
+   let
+     def rewritesToTrue(rules, term, boundVars, history, backChain): Option (SubstC * Proof) =
+       if trueTerm? term then Some (emptySubstitution, prove_true)
+       else
+         let results = rewriteRec(rules, term, [], term, boundVars, history, backChain+1) in
+         case LazyList.find_n (fn (rl, t, c_subst, pf)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
-                 results
-                 conditionResultLimit
-	    of None -> None
-	     | Some (hist as ((rl, t, c_subst, _)::_)) ->
-               %% Substitutions, history and conditional rewrites need work
-	       if trueTerm? t then Some (c_subst, combineHistoryProofs hist) else None
+           results
+           conditionResultLimit
+         of
+           None -> None
+         | Some (hist as ((rl, t, c_subst, _)::_)) ->
+           %% Substitutions, history and conditional rewrites need work
+           if trueTerm? t then Some (c_subst, combineHistoryProofs hist) else None
 
-      def solveCondition(rules, rule, (typeSubst, termSubst, typeConds), prev_term, boundVars, history, backChain)
-          : Option (SubstC * Proof) = 
-        let subst = (typeSubst, termSubst, [])
-        in
-        let conds = case rule.condition of
-                      | None -> typeConds
-                      | Some cond -> Cons(cond, typeConds)
-        in
-	if conds = []
-          then
-	     (traceRule(context, rule);
-	      Some subst)
-        else if termIn?(prev_term, conds)   % Avoid subproblem same as original
-          then (%writeLine("Found recursive subgoal: "^printTerm prev_term);
-                None)
-        else
+     def solveCondition (cond, rules, boundVars, backChain) : Option (SubstC * Proof) = 
 	if backChain < context.backwardChainMaxDepth && completeMatch(rule.lhs, subst) then 
-            let cond = foldr Utilities.mkAnd trueTerm conds in
-            let cond = dereferenceAll subst cond in % redundant?
-            let subst = removeLocalFlexVars(subst, []) in
-            let traceIndent = ! context.traceIndent in
-	    let res = if context.traceRewriting > 0 then
-                        (context.traceIndent := traceIndent + 3;
-                         toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
-                         writeLine (show(! context.traceDepth)^" : "^rule.name);
-                         %              printSubst subst;
-                         context.traceDepth := 0;
-                         rewritesToTrue(rules, cond, boundVars, subst, history, backChain))
-                      else 
-                        (context.traceDepth := 0;
-                         rewritesToTrue(rules, cond, boundVars, subst, history, backChain))
-            in
-	    if context.traceRewriting > 0 then
-	      (context.traceIndent := traceIndent;
-	       writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
-               %(case res of Some s -> printSubst s | _ -> ());
-	       res)
-	    else
-	       res
+            let _ = context.traceDepth := 0 in % reset traceDepth for solving conditions
+            traceRuleRec (context, rule,
+                          fn () ->
+                            rewritesToTrue(rules, cond, boundVars, history, backChain))
 	else None
 
-      def rewriteRec(rules0, subst, term0, path, prev_term, boundVars, history, backChain) =
+      def rewriteRec(rules0, term0, path, prev_term, boundVars, history, backChain) =
 	let _ = traceTerm(context, term0, prev_term, subst) in
 	let traceDepth = ! context.traceDepth + 1 in
-        if traceDepth > (if backChain = 0 then context.maxDepth else max(context.maxDepth, context.backwardChainMaxDepth))
+        let maxTraceDepth = if backChain = 0
+                              then context.maxDepth
+                            else max(context.maxDepth,
+                                     context.backwardChainMaxDepth) in
+        if traceDepth > maxTraceDepth
           then unit history
         else
-        let ts = termSize term0 in
-        if traceDepth > minTraceDepth && termSize term0 > context.termSizeLimit
-          then (warn("Rewriting terminated because term size of "^show ts^" exceeded limit of "^show context.termSizeLimit);
+          let ts = termSize term0 in
+          if traceDepth > minTraceDepth && termSize term0 > context.termSizeLimit
+            then (warn("Rewriting terminated because term size of "^show ts^" exceeded limit of "^show context.termSizeLimit);
                 unit history)
-        else
-	let def rewrite(strategy, rules) =
-%                 let _ = writeLine("Rules:") in
-%                 let _ = app printRule (listRules rules) in
-		rewriteTerm 
-		  ({strategy = strategy,
-		    rewriter = applyDemodRewrites(context, subst, context.maxDepth > 1 || backChain > 0),
-		    context = context},
-		   boundVars, term0, path, rules)     
-	in
-	if historyRepetition(history)
-	    then unit (tail history)
-	else
+          else
+            let def rewrite(strategy, rules) =
+              % let _ = writeLine("Rules:") in
+              % let _ = app printRule (listRules rules) in
+              rewriteTerm 
+              ({strategy = strategy,
+                rewriter = applyDemodRewrites(context, subst, context.maxDepth > 1 || backChain > 0),
+                context = context},
+               boundVars, term0, path, rules)
+            in
+            if historyRepetition(history)
+              then unit (tail history)
+            else
 	% let rews = (rewrite(Innermost, unconditional) >>= 
 	let rews = (rewrite(Outermost, rules0) >>= 
 		    (fn (term, (subst, rule, path, boundVars, rules1)) ->  
@@ -1113,28 +1101,85 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
 % 				     unconditional = unconditional}))))
                     )
 	in
-	case rews
-	  of Nil -> unit history
-	   | _ ->
-	rews >>=
-	(fn (term, (subst, rule, path, boundVars, rules1)) -> 
-	    (context.traceDepth := traceDepth;
-             let (rule, term, new_flexvarnums) = renameConditionFlexVars(rule, term, subst) in
-	     case solveCondition(rules1, rule, subst, term0, boundVars, history, backChain+1)
-	       of Some subst -> 
-		 (context.traceDepth := traceDepth;
-		  let term = dereferenceAll subst term in
-		  let term = renameBound term in
-                  let history = Cons((rule, term, subst), history) in
-                  let subst = removeLocalFlexVars(subst, new_flexvarnums) in
-		  let rec_results
-                     = rewriteRec(rules0, subst, term, path, term0, boundVars, history, backChain)
-                   in
-                   if rec_results = Nil
-                     then unit history
-                     else rec_results)
-	       | None -> Nil
-                     ))
+	(rews >>=
+           (fn (term, (subst, rule, path, boundVars, rules1)) ->
+              % At this point, a rewrite has been successfully applied
+              % to term0, the input term. We now need to ensure that
+              % all of the preconditions of the rule which was applied
+              % hold; this is done by solveCondition, which itself
+              % recursively applies rewriting.
+              %
+              % The conditions which must be solved include the
+              % precondition of the rule itself, as well as any
+              % subtype conditions from higher-order matching
+              let (typeSubst, termSubst, typeConds) = subst in
+              let conds = case rule.condition of
+                            | None -> typeConds
+                            | Some cond -> Cons(cond, typeConds)
+              in
+              let opt_subst_pf =
+                if conds = [] then
+                  (traceRule(context, rule); Some (subst, prove_true))
+                else if termIn?(term0, conds) then
+                  % Avoid subproblem same as original
+                  (%writeLine("Found recursive subgoal: "^printTerm prev_term);
+                     None)
+                else
+                  % At this point, subst has only been applied to the
+                  % output term, term, so now we additionally apply it
+                  % to the condition we are about to try to solve
+                  let cond =
+                    dereferenceAllWithVars subst (mkConj conds) boundVars
+                  in
+
+                  % This condition could still have free flex
+                  % variables, e.g., for a rule like transitivity,
+                  % written as below, where we may have already
+                  % rewritten x<z to true but we don't yet know y:
+                  %
+                  % fa (x,y,z) x<y && y<z => x<z = true
+                  %
+                  % We need to freshen up the free flex variables of
+                  % cond before we try to rewrite it so that none of
+                  % them clash with free flex variables in our rules
+                  let fresh_subst = fresheningSubstFor (cond, rules1) in
+                  % README: don't need dereferenceAllWithVars here
+                  % because fresh_subst does not use bound variables
+                  let cond = dereferenceAll fresh_subst cond in
+                  case solveCondition (cond, rules1, boundVars, backChain+1) of
+                    | None -> None
+                    | Some (subst', pf) ->
+                      % subst' is a substitution that is to be applied
+                      % after fresh_subst, which itself is to be
+                      % applied after the original subst we got from
+                      % rewriting, so here we compose them all
+                      % together.
+                      (composeSubsts subst' (composeSubsts fresh_subst subst), pf)
+              in
+              case opt_subst_pf of
+                | None -> Nil
+                | Some (final_subst, cond_pf) ->
+                  % FIXME: check that final_subst covers all flex
+                  % variables in the rule and that it leaves no flex
+                  % variables in the output
+                  let term = dereferenceAll final_subst term in
+                  let pf =
+
+                  FIXME HERE: build proofs for all the free variables
+                  and forall-eliminate them into the proof; also build
+                  a proof for the optional condition, and
+                  implication-eliminate it into the proof; implies
+                  that the proof must be of a universally quantified
+                  formula over variables that match the freeVars of
+                  rule
+
+                  in
+                  let history = Cons ((rule, term, final_subst, pf),history) in
+                  % increment the trace depth before the recursive call
+                  let _ = context.traceDepth := traceDepth in
+                  rewriteRec(rules0, term, path, term0, boundVars, history, backChain)))
+        @@
+        (fn () -> unit history)
    in
       %let term = dereferenceAll emptySubstitution term in
       rewriteRec(rules0, emptySubstitution, term, path, term, boundVars, [], 0)
