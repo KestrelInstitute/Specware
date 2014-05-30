@@ -146,7 +146,11 @@ SpecNorm qualifying spec
 
   op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
       extractOption trueTerm (maybeTypePredTerm(ty0,tm,spc))
-  
+
+  % Getting subtype predicates without a spec: the only difference is
+  % that no definitions are unfolded
+  op typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm =
+    typePredTerm (ty0, tm, emptySpec)
 
   op maybeRelativize?(t: MSTerm, tb: PolyOpTable): Bool =
     if eagerRegularization? then true
