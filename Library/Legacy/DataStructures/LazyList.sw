@@ -16,6 +16,7 @@ spec
  op mapFlat       : [a,b] (a -> LazyList b) -> List a -> LazyList b
  op mapEach       : [a,b] (List a * a * List a -> LazyList b) -> List a -> LazyList b
  op map           : [a,b] (a -> b) -> LazyList a -> LazyList b
+ op mapPartial    : [a,b] (a -> Option b) -> LazyList a -> LazyList b
  op emptyList     : [a]   LazyList a
  op find          : [a] (a -> Bool) -> LazyList a -> Option a
  op find_n        : [a] (a -> Bool) -> LazyList a -> Nat -> Option a
@@ -47,6 +48,12 @@ spec
 
  def map f = fn Nil -> Nil 
               | Cons(a,la) -> Cons(f a,fn () -> map f (la ())) 
+   
+ def mapPartial f = fn Nil -> Nil 
+                     | Cons(a,la) ->
+                       case f a of
+                         | None -> mapPartial f (la ())
+                         | Some v -> Cons(v, fn () -> mapPartial f (la ()))
    
  def mapEach f ls = 
      let

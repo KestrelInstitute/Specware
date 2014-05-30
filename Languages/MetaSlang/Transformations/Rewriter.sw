@@ -352,7 +352,7 @@ MetaSlangRewriter qualifying spec
         %% Variable capture unlikely because of substitute in unFoldSimpleLet
         let M1 = mapTerm (reverseSubst v_subst, id, id) M in
         if equalTerm?(M, M1)
-          then let _ = writeLine("Unfold let: "^anyToString path) in
+          then % let _ = writeLine("Unfold let: "^anyToString path) in
                let result_info = augmentProofInResultInfo(result_info, path, unfoldLetProof, unfolded_tm) in
                (M, result_info)
         else
@@ -383,19 +383,23 @@ op augmentProofInResultInfo(result_info as (sb, rl, vs, rl_map): ResultInfo,
     | _ -> result_info
 
 %% Needs to explicate implicit transformation
-op maybePushIfBack(tr_if: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
-  case tr_if of
-    | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
-      let qn = termToList q in
-      let rn = termToList r in
-      if equalTerm?(f, f1)
-         && equalTerm?(f, f2)
-         && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)
-                                       && equalTerm?(Ns@j, rn@j)))
-              (tabulate(length Ns, id))
-        then mkAppl(f, replaceNth(i, Ns, IfThenElse(p, qn@i, rn@i, pos)))
-        else tr_if
-    | _ -> tr_if
+op maybePushIfBack(tr_if: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat, orig_tm: MSTerm, result_info: ResultInfo)
+     : Option(MSTerm * ResultInfo) =
+  let result =
+      case tr_if of
+        | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
+          let qn = termToList q in
+          let rn = termToList r in
+          if equalTerm?(f, f1)
+             && equalTerm?(f, f2)
+             && forall? (fn j -> i = j || (equalTerm?(Ns@j, qn@j)
+                                           && equalTerm?(Ns@j, rn@j)))
+                  (tabulate(length Ns, id))
+            then mkAppl(f, replaceNth(i, Ns, IfThenElse(p, qn@i, rn@i, pos)))
+            else tr_if
+        | _ -> tr_if
+  in
+  if equalTerm?(result, orig_tm) then None else Some(result, result_info)
 
 %% Needs to explicate implicit transformation
 op maybePushLetBack(tr_let: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
@@ -574,7 +578,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                                    mkAppl(M,replaceNth(i, Ns, r)), b)
              in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
-             LazyList.map (fn (tr_tm, a) -> (maybePushIfBack(tr_tm, M, Ns, i), a))
+             LazyList.mapPartial (fn (tr_tm, a) -> maybePushIfBack(tr_tm, M, Ns, i, term, a))
                tr_tms)
           | _ ->
         case findIndex (embed? Let) Ns  of
@@ -582,6 +586,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
             (let Let(bds,lt_body,a2) = let_tm in
              let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
+             %% Needs to work like maybePushIfBack with mapPartial
              LazyList.map (fn (tr_tm, a) -> (maybePushLetBack(tr_tm, M, Ns, i), a))
                tr_tms)
           | _ ->
@@ -594,6 +599,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
                               case_tm, b2)
              in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
+             %% Needs to work like maybePushIfBack with mapPartial
              LazyList.map (fn (tr_tm, a) -> (maybePushCaseBack(tr_tm, M, Ns, i), a))
                tr_tms))
      | _ ->
@@ -696,6 +702,7 @@ op maybePushCaseBack(tr_case: MSTerm, f: MSTerm, Ns: MSTerms, i: Nat): MSTerm =
         @@ (fn () ->
              let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
              let p_M = unFoldSimpleLet(binds,M) in
+             %% Needs to work like maybePushIfBack with mapPartial
              LazyList.map (fn (r_M,a) -> reFoldLetVars(binds,r_M,b,a,path,p_M))
                (rewriteTerm(solvers, boundVars ++ let_vars, p_M, (length binds)::path, rules)) )
      | LetRec(binds,M,b) ->

@@ -258,7 +258,7 @@ def Coalgebraic.implementOpsCoalgebraically
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
                let script = Steps[Trace true,
                                   At(map Def (reverse state_transform_qids),
-                                     Repeat [Move [Search r_o_id, ReverseSearchPred childOfConjOrIf],
+                                     Repeat [Move [Search r_o_id, ReverseSearchPred childOfConj],
                                              mkSimplify(RLeibniz homo_fn_qid
                                                          :: LeftToRight assert_qid
                                                          :: rules)])]
@@ -271,14 +271,13 @@ def Coalgebraic.implementOpsCoalgebraically
          | props -> raise(Fail("Ambiguous property named "^show assert_qid)))
     | _ -> raise(Fail("implement expects op and theorem QualifiedIds"))
 
-op childOfConjOrIf(tm: MSTerm, pt: PathTerm): Bool =
-  case parentTerm pt of
-    | None -> true
-    | Some pptm ->
+op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
+  if length(pathTermPath pt) < 2 then true
+  else
+  let Some pptm = parentTerm pt in
   case fromPathTerm pptm of
     | Apply(Fun(And, _, _),_,_) -> true
-    | IfThenElse _ -> head(pathTermPath pt) = 0
-    | Bind _ -> true
+    | Lambda _ -> true
     | _ -> false
 
 op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
