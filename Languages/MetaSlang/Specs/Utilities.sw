@@ -706,6 +706,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	    [] (fields,fields2) 
 
 
+ % Ensure that none of vs are used as bound variables in term
  op renameBoundVars(term: MSTerm, vs: MSVars): MSTerm =
    if vs = [] then term
    else

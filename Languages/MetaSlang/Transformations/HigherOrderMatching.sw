@@ -192,6 +192,10 @@ beta contraction.
 %% Wasteful, but simple beta-normalizer.
 %%
 
+ % README: this does term grafting, not substitution, meaning that it
+ % is possible to have variable capture; e.g., subst can map a flex
+ % variable (%Flex n) the the free variable x in (fn x -> (%Flex n)),
+ % yielding the identity function (fn x -> x)
  op dereferenceAll (subst: SubstC) (term: MSTerm): MSTerm =
 %   let freeNames = NatMap.foldri (fn (_,trm,vs) ->
 %                                    StringSet.union (StringSet.fromList
@@ -222,8 +226,12 @@ beta contraction.
        def derefAll term = dereferenceAll subst term
    in
    mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term
-		 		  
 
+ % Do a dereferenceAll in the context of a set of bound variables that
+ % we do not want to be accidentally captured; also does renameBound
+ % afterwards to ensure all bound variables in the result are distinct
+ op dereferenceAllWithVars (subst: SubstC) (term: MSTerm) (boundVars:MSVars): MSTerm =
+   renameBound (dereferenceAll subst (renameBoundVars (term, boundVars)))
 
  def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
@@ -1021,6 +1029,19 @@ skolemization transforms a proper matching problem into an inproper one.
 	   occurs n M || exists? (occursP n) decls
 	 | LetRec(decls,M,_) ->
 	   occurs n M || exists? (occursP n) decls
+
+(*
+Free Flex variables
+freeFlexVars returns a non-redundant list of the flex variables in a term
+*)
+
+  op freeFlexVars : MSTerm -> List Nat
+  def freeFleVars term =
+    foldSubTerms (fn (t,result)  ->
+                    case isFlexVar? t of
+                      | Some n | n nin? result -> n::result
+                      | _ -> result)
+    [] term
 
 (*
 Closed terms

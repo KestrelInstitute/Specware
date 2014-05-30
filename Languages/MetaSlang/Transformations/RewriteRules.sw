@@ -567,6 +567,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
          | None -> ()
      )	
 
+  % Freshen up the bound variables in a term so they are all distinct;
+  % note that this is different from Utilities.renameBoundVars
   def renameBound(term) = 
       let free = freeVars term in
       let free = map (fn (s,_) -> s) free in
