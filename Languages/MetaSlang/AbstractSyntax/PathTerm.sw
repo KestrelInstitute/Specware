@@ -177,7 +177,7 @@ type PathTerm = APathTerm Position.Position
     if i > 0 then Some(top_term, i-1 :: r_path)
       else moveToPrev(top_term, r_path)
 
-  op [a] searchNextSt(path_term: APathTerm a, pred: ATerm a -> Bool):  Option(APathTerm a) =
+  op [a] searchNextSt(path_term: APathTerm a, pred: ATerm a * APathTerm a -> Bool): Option(APathTerm a) =
     let def try_next(path_term as (top_term, path)) =
           case path of
             | [] -> None
@@ -188,7 +188,7 @@ type PathTerm = APathTerm Position.Position
         def check_then_first path_term =
           let term = fromPathTerm path_term in
           % let _ = writeLine("search: "^anyToString(reverse path_term.2)) in
-          if pred term
+          if pred (term, path_term)
             then Some path_term
           else try_first path_term
         def try_first (path_term as (top_term, path)) =
@@ -199,7 +199,7 @@ type PathTerm = APathTerm Position.Position
    in
    try_first path_term
 
- op [a] searchPrevSt(path_term: APathTerm a, pred: ATerm a -> Bool):  Option(APathTerm a) =
+ op [a] searchPrevSt(path_term: APathTerm a, pred: ATerm a * APathTerm a -> Bool):  Option(APathTerm a) =
    let def try_prev (top_term, path) =
          case path of
            | [] -> None
@@ -211,7 +211,7 @@ type PathTerm = APathTerm Position.Position
        def check_then_prev path_term =
          let term = fromPathTerm path_term in
          % let _ = writeLine("rsearch: "^anyToString(reverse path_term.2)) in
-         if pred term
+         if pred (term, path_term)
            then Some path_term
          else try_prev path_term
        def try_last (path_term as (top_term, path)) =

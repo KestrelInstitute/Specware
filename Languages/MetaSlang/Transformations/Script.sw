@@ -8,6 +8,7 @@ spec
   import /Languages/SpecCalculus/Semantics/Monad
   import /Languages/SpecCalculus/AbstractSyntax/SCTerm
   import /Languages/SpecCalculus/AbstractSyntax/Printer % ppSCTerm
+  import /Languages/SpecCalculus/AbstractSyntax/CheckSpec
 
 %  op [a] dummy: a
  type Context = RewriteRules.Context
@@ -380,12 +381,13 @@ spec
      in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
-     let rules = contextRulesFromPath(path_term, qid, context) ++ rules in
-     let rules = subtypeRules(term, context) ++ rules in
+     let rules =  rules ++ contextRulesFromPath(path_term, qid, context) in
+     let rules = rules ++ subtypeRules(term, context) in
      let rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, info: AnnSpec.TransformInfo): MSTerm * AnnSpec.TransformInfo =
            % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
-           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, butLast(pathTermPath path_term)) in
+           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, butLast(pathTermPath path_term))
+           in
            case lazy of
              | Nil -> (trm, info)
              | Cons([], tl) -> (trm, info)
@@ -437,22 +439,22 @@ spec
       | Bool x -> Some(show x)
       | _ -> None
 
-   op [a] searchPred(s: String): ATerm a -> Bool =
+   op searchPred(s: String): MSTerm * PathTerm -> Bool =
     case s of
-      | "if" -> embed? IfThenElse
-      | "let" -> (fn t -> embed? Let t || embed? LetRec t)
-      | "case" -> (fn t -> case t of
-                             | Apply(Lambda _, _, _) -> true
-                             | _ -> false)
-      | "fn" -> embed? Lambda
-      | "the" -> embed? The
-      | "fa" -> (fn t -> case t of
-                           | Bind(Forall, _, _, _) -> true
-                           | _ -> false)
-      | "ex" -> (fn t -> case t of
-                           | Bind(Exists, _, _, _) -> true
-                           | _ -> false)
-      | _ -> (fn t ->
+      | "if" -> (fn (t,_) -> embed? IfThenElse t)
+      | "let" -> (fn (t,_) -> embed? Let t || embed? LetRec t)
+      | "case" -> (fn (t,_) -> case t of
+                                     | Apply(Lambda _, _, _) -> true
+                                     | _ -> false)
+      | "fn" -> (fn (t,_) -> embed? Lambda t)
+      | "the" -> (fn (t,_) -> embed? The t)
+      | "fa" -> (fn (t,_) -> case t of
+                                   | Bind(Forall, _, _, _) -> true
+                                   | _ -> false)
+      | "ex" -> (fn (t,_) -> case t of
+                                   | Bind(Exists, _, _, _) -> true
+                                   | _ -> false)
+      | _ -> (fn (t,_) ->
                 case t of
                   | Apply(Fun(f, _, _), _, _) ->
                     (case funString f of
@@ -465,7 +467,11 @@ spec
                   | Var((v_name, _), _) -> v_name = s
                   | _ -> false)
 
-  op [a] makeMove(path_term as (top_term, path): APathTerm a, mv: Movement):  Option(APathTerm a) =
+  op searchPredsDisj(ss: List String): MSTerm * PathTerm -> Bool =
+    let preds = map searchPred ss in
+    fn (t, pt) -> exists? (fn p -> p (t, pt)) preds
+
+  op makeMove(path_term as (top_term, path): PathTerm, mv: Movement):  Option(PathTerm) =
     case mv of
       | First ->
         if immediateSubTerms(fromPathTerm path_term) = [] then None
@@ -482,6 +488,10 @@ spec
                                 | _ -> [])
       | Search s -> searchNextSt(path_term, searchPred s)
       | ReverseSearch s -> searchPrevSt(path_term, searchPred s)
+      | SearchL ss -> searchNextSt(path_term, searchPredsDisj ss)
+      | ReverseSearchL ss -> searchPrevSt(path_term, searchPredsDisj ss)
+      | SearchPred pred -> searchNextSt(path_term, pred)
+      | ReverseSearchPred pred -> searchPrevSt(path_term, pred)
       | Post -> (case top_term of
                  | TypedTerm _ -> Some(top_term, [1])
                  | _ -> None)
@@ -496,8 +506,7 @@ spec
       | None -> (if allowFail? then ()
                    else error("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
                  None)
-
-  op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
+ op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
     let fvs = freeVars tm in
     let bad_binds = filter (fn (old_n, _) -> exists? (fn (fv_n, _) -> fv_n = old_n)  fvs) binds in
     let good_binds = filter (fn pr -> pr nin? bad_binds) binds in
@@ -538,7 +547,7 @@ spec
                                                                % (ignored unless termSizeLimit = 0)
                          }
 
-  op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
+  op MSTermTransform.rewritet(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
     (options: RewriteOptions): MSTerm * AnnSpec.TransformInfo =
     let context = makeContext spc in
     let context = context <<
@@ -571,6 +580,8 @@ spec
     let context = makeContext spc in
     let rules = makeRules (context, spc, rules) in
     replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info)
+
+  op checkSpecWhenTracing?: Bool = false
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
   op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
@@ -653,8 +664,15 @@ spec
 
   op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
+    let changed_ptm = changedPathTerm(fromPathTerm old_ptm, new_tm) in
+    % let _ = writeLine("replaceSubTermH1:\n"^printTerm(fromPathTerm changed_ptm)
+    %                   ^"\n ---->\n"^printTerm(fromPathTerm(new_tm, pathTermPath changed_ptm)))
+    % in
     (new_path_tm,
-     composeTransformInfos (info, topTerm(old_ptm), ([(new_tm, rl_spec)], None)))
+     composeTransformInfos (info, fromPathTerm(old_ptm),
+                            ([(new_tm, rl_spec)],
+                             Some(RefineEq(mkEqProofSubterm(pathTermPath changed_ptm,
+                                                            EqProofTactic "auto"))))))
 
   op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool, info: AnnSpec.TransformInfo)
     : SpecCalc.Env (MSTerm * Bool * AnnSpec.TransformInfo) =
@@ -746,6 +764,12 @@ spec
                               else {
                               % _ <- return(printTransformInfoory info);
                               new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, Some info));
+                             
+                                (let _ = if (tracing? && checkSpecWhenTracing?)
+                                           then specOkay? "Spec OK" "ERROR: Ill-formed spec." new_spc
+                                         else true 
+                                 in
+                                 return ());
                               return (new_spc, tracing?)
                               }})
                           (spc, tracing?) opinfos)

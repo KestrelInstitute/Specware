@@ -8,7 +8,14 @@ type Location =
   | Def QualifiedId
 
 type Movement =
-  | First | Last | Next | Prev | Widen | All | Search String | ReverseSearch String | Post
+  | First | Last | Next | Prev | Widen | All
+  | Search String
+  | ReverseSearch String
+  | SearchL List String
+  | ReverseSearchL List String
+  | SearchPred (MSTerm * PathTerm -> Bool)
+  | ReverseSearchPred (MSTerm * PathTerm -> Bool)
+  | Post
 
 type Scripts = List Script
 type Script =
@@ -104,6 +111,10 @@ op moveString(m: Movement): String =
     | All -> "a"
     | Search s -> "s \"" ^ s ^ "\""
     | ReverseSearch s -> "r \"" ^ s ^ "\""
+    | SearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "s" ss
+    | ReverseSearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "r" ss
+    | SearchPred _ -> "searchPred"
+    | ReverseSearchPred _ -> "reverseSearchPred"
     | Post -> "post"
 
 op ppBool(b: Bool): WLPretty =

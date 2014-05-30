@@ -224,7 +224,7 @@ op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs): 
 def Coalgebraic.implementOpsCoalgebraically
   (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   case qids of
-    | [replace_op_qid, assert_qid] ->
+    | [replace_op_qid as Qualified(_, r_o_id), assert_qid] ->
       (case findPropertiesNamed(spc, assert_qid) of
          | [] -> raise(Fail("Can't find property named "^show assert_qid))
          | [(_, _, _, body, _)] ->
@@ -258,7 +258,8 @@ def Coalgebraic.implementOpsCoalgebraically
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
                let script = Steps[Trace true,
                                   At(map Def (reverse state_transform_qids),
-                                     Steps [mkSimplify(RLeibniz homo_fn_qid
+                                     Repeat [Move [Search r_o_id, ReverseSearchPred childOfConjOrIf],
+                                             mkSimplify(RLeibniz homo_fn_qid
                                                          :: LeftToRight assert_qid
                                                          :: rules)])]
                in
@@ -269,6 +270,16 @@ def Coalgebraic.implementOpsCoalgebraically
                })
          | props -> raise(Fail("Ambiguous property named "^show assert_qid)))
     | _ -> raise(Fail("implement expects op and theorem QualifiedIds"))
+
+op childOfConjOrIf(tm: MSTerm, pt: PathTerm): Bool =
+  case parentTerm pt of
+    | None -> true
+    | Some pptm ->
+  case fromPathTerm pptm of
+    | Apply(Fun(And, _, _),_,_) -> true
+    | IfThenElse _ -> head(pathTermPath pt) = 0
+    | Bind _ -> true
+    | _ -> false
 
 op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
   existsInType? (fn sty -> case sty of
