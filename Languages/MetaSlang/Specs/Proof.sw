@@ -8,11 +8,11 @@
 % this library
 
 Proof qualifying spec
-  import Utilities
   import MSTerm
   import ../AbstractSyntax/PathTerm
   import /Library/Structures/Data/Monad/ErrorMonad
 
+  % The internal form of proofs
   type ProofInternal =
     %% General proof constructs
 
@@ -21,13 +21,12 @@ Proof qualifying spec
     | Proof_Cut (MSTerm * MSTerm * ProofInternal * ProofInternal)
 
     % Proof_ForallE (x,T,M,N,pf) is a proof of [N/x]M from a proof
-    % pf : fa(x:T)M
-    %
-    % FIXME: should we require a proof that N satisfies T's subtype?
-    | Proof_ForallE (Id * MSType * MSTerm * MSTerm * ProofInternal)
+    % pf : fa(x:T)M and a proof tppf : N:T
+    | Proof_ForallE (Id * MSType * MSTerm * MSTerm
+                       * ProofInternal * TypingProofInternal)
 
-    % A trivial proof of "true"
-    | Proof_True
+    % Proof_EqTrue(M,pf) is a proof of M given a proof pf :: M=true
+    | Proof_EqTrue (MSTerm * ProofInternal)
 
     % Proof_Theorem(x,P) is a proof of P assuming that x is the
     % name of an axiom or theorem that proves P
@@ -71,8 +70,8 @@ Proof qualifying spec
   op proofPredicate_Internal (p : ProofInternal) : MSTerm =
     case p of
       | Proof_Cut (P, Q, pf1, pf2) -> Q
-      | Proof_ForallE (x,T,M,N,pf) -> substitute (M, [((x,T),N)])
-      | Proof_True -> mkTrue()
+      | Proof_ForallE (x,T,M,N,pf,tp_pf) -> substitute (M, [((x,T),N)])
+      | Proof_EqTrue (M, pf) -> M
       | Proof_Theorem (id, P) -> P
       | Proof_Tactic (tact, P) -> P
       | Proof_EqSubterm(M,N,T,p,pf) -> mkEquality (T,M,N)
@@ -95,6 +94,10 @@ Proof qualifying spec
            | _ -> fail "Malformed proof: in proofPredicate applied to Proof_ImplEq")
       | Proof_MergeRules(P,Q,tree,ids1,ids2) -> mkImplies (P, Q)
 
+  % Print out a representation of a proof
+  op showProof_Internal (p : ProofInternal) : String =
+    "(FIXME: write Proof.showProof_Internal!)"
+
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % External interface starts here!!
@@ -107,6 +110,15 @@ Proof qualifying spec
 
   % The type of proofs that might have been built incorrectly
   type Proof = Monad ProofInternal
+
+  % The type of typing proofs that might have been built incorrectly
+  type TypingProof = Monad TypingProofInternal
+
+  % Print out a representation of a proof
+  op showProof (p : Proof) : String =
+  case p of
+    | ErrorOk p_int -> showProof_Internal p_int
+    | ErrorFail str -> "(proof error: " ^ str ^ ")"
 
   % Return the predicate proved by a proof, or None if there is an
   % error in the proof
@@ -128,32 +140,49 @@ Proof qualifying spec
         | _ -> ErrorFail ("Implication elimination of (" ^ printTerm p1_pred
                             ^ ") against (" ^ printTerm p2_pred ^ ")") }
 
-  % prove_forallElim (pf, N) takes a proof pf1:fa(x:T)M and a term N
-  % of type T and builds a proof of [N/x]M. NOTE: we assume that N has
-  % type T.
-  op prove_forallElim (p : Proof, N : MSTerm) : Proof =
+  % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
+  % N of type T, and a proof tp_pf that N does indeed have type T, and
+  % builds a proof of [N/x]M.
+  op prove_forallElim (p : Proof, N : MSTerm, tp_pf : TypingProof) : Proof =
     { p_int <- p;
       p_pred <- return (proofPredicate_Internal p_int);
+      tp_int <- tp_pf;
+      (tp_M, tp_T) <- return (typingProofPredicate tp_int);
       case matchForall1 p_pred of
-        | Some (x, T, M) ->
-          return (Proof_ForallE (x, T, M, N, p_int))
+        | Some (x, T, M) | equalTerm? (M, tp_M) && equalType? (T, tp_T) ->
+          return (Proof_ForallE (x, T, M, N, p_int, tp_pf_int))
         | _ -> ErrorFail ("Forall elimination of (" ^ printTerm p_pred
                             ^ ") against term (" ^ printTerm N ^ ")") }
 
+  % build a proof of M given a proof of M=true
+  op prove_fromEqualTrue (M : MSTerm, pf : Proof) : Proof =
+    { p_int <- p;
+      p_pred <- return (proofPredicate_Internal p_int);
+      case matchEquality pf_pred of
+        | Some (_, M', N) | equalTerm? (M,M') && equalTerm? (N,mkTrue()) ->
+          return (Proof_EqTrue (M, p_int))
+        | _ -> ErrorFail ("Attempt to prove (" ^ printTerm M
+                            ^ ") from a proof of (" ^ printTerm pf_pred ^ ")") }
+
   % build a proof of true
-  op prove_true : Proof = return Proof_True
+  op prove_true : Proof =
+    prove_fromEqualTrue (mkTrue(), prove_equalRefl (mkTrue()))
 
   % build a proof by applying a theorem or axiom for predicate P
-  op prove_theorem (qid : QualifiedId, P : MSTerm) : Proof =
+  op prove_withTheorem (qid : QualifiedId, P : MSTerm) : Proof =
     return (Proof_Theorem (qid, P))
 
   % build a proof by applying a tactic
-  op prove_tactic (tactic : String, P : MSTerm) : Proof =
+  op prove_withTactic (tactic : String, P : MSTerm) : Proof =
     return (Proof_Tactic (tactic, P))
+
+  % build an equality proof with a tactic
+  op prove_equalWithTactic (tactic : String, M : MSTerm, N : MSTerm, T : MSType) : Proof =
+    return (Proof_Tactic (tactic, mkEquality (T,M,N)))
 
   % build a proof of qid=M, assuming qid has definition M and type T
   % in the current spec; NOTE: this assumption is not checked
-  op prove_unfoldEq (qid : QualifiedId, M : MSTerm, T : MSType) : Proof =
+  op prove_equalUnfold (qid : QualifiedId, M : MSTerm, T : MSType) : Proof =
     return (Proof_UnfoldDef (T, qid, M))
 
   % prove_equalSubTerm(M,N,T,p,pf) proves that M=N at type T using a
@@ -167,17 +196,21 @@ Proof qualifying spec
       let N_sub = if varsM = varsN then N_sub_orig else
                     substitute (N_sub_orig, zip (varsN, map mkVar varsM)) in
       case matchEquality pf_pred of
-        | Some (T, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
+        | Some (_, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
           return (Proof_EqSubterm(M,N,T,p,pf_int))
         | _ -> ErrorFail ("Attempt to prove equality of subterms (" ^
                             printTerm (fromPathTerm (M,p)) ^
                             ") and (" ^ printTerm (fromPathTerm (N,p)) ^
                             ") from a proof of: " ^ printTerm pf_pred) }
 
+  % build a proof of M=M
+  op prove_equalRefl (M : MSTerm) : Proof =
+    return (Proof_EqTrans (termType M, M, []))
+
   % build a proof of N=M from a proof of M=N
   %
   % FIXME: do proof simplification, pushing the symmetry into
-  % transitivity and subterms proofs
+  % transitivity and subterm proofs
   op prove_equalSym (pf : Proof) : Proof =
     { pf_int <- pf;
       let pf_pred = proofPredicate_Internal pf_int in

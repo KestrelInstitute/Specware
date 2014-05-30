@@ -141,16 +141,11 @@ op SpecTransform.normalizeNewTypes (spc : Spec, ignore_subtypes? : Bool) : Spec 
                              | Property (pt, nm, tvs,                 term, a) ->
                                Property (pt, nm, tvs, mapTerm map_fns term, a)
 
-                             | OpDef (name, n,     opt_info, a) ->
-                               let new_opt_info =
-                                   case opt_info of
-                                     | Some info -> 
-                                       Some (mapTransformInfo (mapTerm map_fns) info)
-                                     | _ -> 
-                                       None
-                               in
-                               OpDef (name, n, new_opt_info, a)
-
+                             | OpDef (name, n, pf, a) ->
+                               % README (emw4): the proof here used to
+                               % be "mapped", but there is no clear
+                               % way to do this for normalizeType...
+                               OpDef (name, n, pf, a)
                              | _ -> elt)
                         spc.elements
  in

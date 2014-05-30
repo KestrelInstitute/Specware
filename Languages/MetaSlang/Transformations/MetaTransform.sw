@@ -18,7 +18,6 @@ type MTypeInfo = | Spec
                  | OpName
                  | Rule
                  | RefinementProof
-                 | TransformHistory
                  | Opt MTypeInfo
                  | List MTypeInfo
                  | Tuple(List MTypeInfo)
@@ -129,7 +128,7 @@ op replaceATVArgs(atv: AnnTypeValue, spc: Spec, path_tm: PathTerm, op_qid: Quali
      | TVal atv -> findTerm atv
      | _ -> None
 
-op extractProof(tf: TypedFun): Option RefinementProof =
+op extractProof(tf: TypedFun): Option Proof =
    let def findTerm atv =
          case atv of
            | ProofV prf -> Some prf
@@ -151,8 +150,7 @@ op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
 op morphismType: MSType = mkBase(Qualified("SpecCalc", "Morphism"), [])
 op msTermType: MSType = mkBase(Qualified("MS", "MSTerm"), [])
 op pathTermType: MSType = mkBase(Qualified("PathTerm", "PathTerm"), [])
-op refinementProofType: MSType = mkBase(Qualified("AnnSpec", "RefinementProof"), [])
-op transformHistoryType: MSType = mkBase(Qualified("AnnSpec", "TransformHistory"), [])
+op refinementProofType: MSType = mkBase(Qualified("Proof", "Proof"), [])
 op optionMsTermType: MSType = mkBase(Qualified("Option", "Option"), [msTermType])
 op qualifiedIdType: MSType = mkBase(Qualified("MetaSlang", "QualifiedId"), [])
 op ruleSpecType: MSType = mkBase(Qualified("AnnSpec", "RuleSpec"), [])
@@ -184,7 +182,6 @@ op mtiToMSType(mti: MTypeInfo): MSType =
     | OpName -> qualifiedIdType
     | Rule -> ruleSpecType   % ?
     | RefinementProof -> refinementProofType
-    | TransformHistory -> transformHistoryType
     | Opt o_mti -> mkBase(Qualified("Option", "Option"), [mtiToMSType o_mti])
     | List l_mti -> mkBase(Qualified("List", "List"), [mtiToMSType l_mti])
     | Tuple mtis -> mkProduct(map mtiToMSType mtis)
@@ -197,7 +194,6 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
     | Morphism -> mkEmbed1("MorphismV", mkArrow(morphismType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
     | RefinementProof -> mkEmbed1("ProofV", mkArrow(refinementProofType, annTypeValueType))
-    | TransformHistory -> mkEmbed1("TransformHistoryV", mkArrow(transformHistoryType, annTypeValueType))
     | Opt o_ty ->
       let arg_ty = mtiToMSType o_ty in
       let arg_v = ("o_result", arg_ty) in
@@ -219,7 +215,7 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
                              mkList(map (fn (tii, v) -> mkApply(mkAnnTypeValueFun tii, mkVar v)) (zip(tis, tp_vs)),
                                     noPos, annTypeValueType))))
 %    | Monad Term ->  mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
-    | _ -> fail ("Can only return Specs, MSTerms and RefinementProofs not "^show ty_i)
+    | _ -> fail ("Can only return Specs, MSTerms and Proofs, not "^show ty_i)
 
 op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
   case ty_i of
@@ -253,6 +249,7 @@ op applyN(tf: TypedFun, args: List AnnTypeValue): TypedFun =
 
 
 op Script.ppRuleSpec(rl: RuleSpec): WLPretty
+op Proof.showProof : Proof.Proof -> String
 
 op ppAnnTypeValue(atv: AnnTypeValue): Doc =
   case atv of
@@ -265,7 +262,7 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
     | BoolV b -> ppString(show b)
     | OpNameV qid -> ppString(show qid)
     | RuleV rs -> ppRuleSpec rs
-    | ProofV prf -> ppString(showRefinementProof prf)
+    | ProofV prf -> ppString(showProof prf)
     | OptV None -> ppString "None"
     | OptV (Some atv1) -> ppConcat[ppString "Some ", ppAnnTypeValue atv1]
     | ListV atvs -> ppConcat[ppString "[", ppSep (ppString ", ") (map ppAnnTypeValue atvs), ppString "]"]
@@ -339,8 +336,7 @@ op MTypeInfo.show(ty_info: MTypeInfo): String =
     | Bool -> "Bool"
     | OpName -> "OpName"
     | Rule -> "Rule"
-    | RefinementProof -> "RefinementProof"
-    | TransformHistory -> "TransformHistory"
+    | RefinementProof -> "Proof"
     | Opt i -> "Opt "^show i
     | List l -> "List "^show l
     | Tuple (l) -> "Tuple"^show l
@@ -382,8 +378,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("MS", "MSTerm"), [], _) -> Some Term
         | Base(Qualified("PathTerm", "PathTerm"), [], _) -> Some PathTerm
         | Base(Qualified("AnnSpec", "RuleSpec"), [], _) -> Some Rule
-        | Base(Qualified("AnnSpec", "RefinementProof"), [], _) -> Some RefinementProof
-        | Base(Qualified("AnnSpec", "TransformHistory"), [], _) -> Some TransformHistory
+        | Base(Qualified("Proof", "Proof"), [], _) -> Some RefinementProof
         | Base(Qualified("SpecCalc", "Env"), [m_ty], _) ->  mapOption (fn el_info -> Monad el_info) (argInfoFromType(m_ty, spc))
         | Base(Qualified("List", "List"), [el_ty], _) -> mapOption (fn el_info -> List el_info) (argInfoFromType(el_ty, spc))
         | Base(Qualified("Option", "Option"), [op_ty], _) -> mapOption (fn op_info -> Opt op_info) (argInfoFromType(op_ty, spc))

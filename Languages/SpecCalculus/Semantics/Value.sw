@@ -23,7 +23,7 @@ SpecCalc qualifying spec
     | SpecInterp  SpecInterp      % tentative
     | Diag        SpecDiagram       
     | Colimit     SpecInitialCocone 
-    | Proof       Proof
+    | Proof       SCProof
     | InProcess	  Mutex		  % Used for catching circular definitions
     | UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
    %| DiagMorph

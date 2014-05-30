@@ -643,8 +643,8 @@ spec
           return (path_term, tracing?, info)
         }
 
-  op liftInfo(info: AnnSpec.TransformInfo, ptm: PathTerm): AnnSpec.TransformInfo =
-    mapTransformInfo (fn tm -> topTerm(replaceSubTerm(tm, ptm))) info
+  % op liftInfo(info: AnnSpec.TransformInfo, ptm: PathTerm): AnnSpec.TransformInfo =
+  %   mapTransformInfo (fn tm -> topTerm(replaceSubTerm(tm, ptm))) info
 
   op replaceSubTermH((new_tm: MSTerm, new_info: AnnSpec.TransformInfo), old_ptm: PathTerm, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in

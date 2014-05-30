@@ -31,7 +31,12 @@ RewriteRules qualifying spec
    { 
 	name      : String,
         rule_spec : RuleSpec,
-        opt_proof : Option RefinementProof,
+        opt_proof : Option Proof,
+        % README: opt_proof is always a proof of condition => lhs=rhs
+        % or just lhs=rhs if condition = None; universal
+        % quantification is handled with free term and type variables,
+        % so prove_forallElim should be used to remove any leading
+        % fa's in a proof before putting it into a RewriteRule
 	lhs       : MSTerm,
 	rhs       : MSTerm, 
 	tyVars    : List String,
@@ -40,31 +45,6 @@ RewriteRules qualifying spec
         trans_fn  : Option(TypedFun)
    } 
 
-
- op printTransformHistory(hist: TransformHistory): () =
-   if hist = [] then ()
-   else
-   (writeLine("Transformation History:");
-    % let changed_terms = tabulate(length hist - 1,
-    %                              fn i -> let (t1, t2) = ((hist@i).1, (hist@(i+1)).1) in
-    %                                      let (_, path) = changedPathTerm(t1, t2) in
-    %                                      (fromPathTerm(t1, path), fromPathTerm(t2, path)))
-    % in
-    (app (fn (tm, rs) -> (writeLine(showRuleSpec rs);
-                          writeLine(printTerm tm)))
-      hist
-    %; app (fn (t1, t2) -> writeLine(printTerm t1^" --> "^printTerm t2)) changed_terms
-     ))
-
- op printTransformInfoOpt(opt_info: Option TransformInfo): () =
-   case opt_info of
-     | None -> ()
-     | Some (hist, None) ->
-       printTransformHistory hist
-     | Some (hist, Some pf) ->
-       (printTransformHistory hist;
-        writeLine("Transformation proof:");
-        writeLine(showRefinementProof pf))
 
 %%
 %% Replace this by discrimination tree based rewrite rule application.
@@ -147,7 +127,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 %%% Extract rewrite rules from function definition.
 
  op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec, info : OpInfo, includeAll?: Bool,
-             o_prf: Option RefinementProof): List RewriteRule = 
+             o_prf: Option Proof): List RewriteRule = 
    if definedOpInfo? info then
      let (tvs, srt, term) = unpackFirstTerm info.dfn in
      let rule = 
@@ -447,7 +427,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                            ~(hasUnboundVars?(e2, e1, condition))
                   else simpleRwTerm? e1 && ~(varTerm? e2) && ~(hasUnboundVars?(e1, e2, condition))
 
- op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option RefinementProof)
+ op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof)
       : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
    assertRulesRec(context, term, desc, rsp, dirn, o_prf, [], [], None)
@@ -457,7 +437,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     desc      : String, 
                     rsp       : RuleSpec, 
                     dirn      : Direction,
-                    o_prf     : Option RefinementProof,
+                    o_prf     : Option Proof,
                     freeVars  : List (Nat * MSType), 
                     subst     : MSVarSubst, 
                     condition : Option MSTerm)
@@ -539,7 +519,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
- op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option RefinementProof)
+ op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option Proof)
       : List RewriteRule = 
 %      case pt
 %        of Conjecture -> []
