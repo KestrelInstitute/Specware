@@ -14,6 +14,7 @@ import /Languages/MetaSlang/Specs/AnnSpec
 import /Languages/MetaSlang/Transformations/Coalgebraic
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
 import /Library/Legacy/Utilities/System
+import /Languages/MetaSlang/CodeGen/Stateful/StatefulUtilities
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,6 +97,49 @@ op find_or_add_mutex_theorem (spc : Spec) : Spec =
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+type Context = {spc              : Spec,
+                stateful_types   : MSTypes}
+
+op find_stateful_RecordMerge (spc            : Spec, 
+                              stateful_types : MSTypes) 
+                             (tm             : MSTerm, 
+                              found?         : Bool) 
+ : Bool =
+ found? ||
+ (case tm of
+   | Let ([(VarPat (var1 as (v1_id, v1_type), _),
+            rhs as
+            Apply (Fun (RecordMerge, _, _),
+                   Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
+                            (_, Record (fields, _))],
+                           _),
+                   _))],
+          body,
+          _)
+     ->
+     equalType? (v1_type, v2_type)
+     && stateful_type? (spc, v1_type, stateful_types)
+     && ~ (existsSubTerm (fn tm -> equalTerm? (tm, vtrm2)) body)
+
+  | Apply (Fun (RecordMerge, _, _),
+           Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),
+                    (_, Record (fields, _))],
+                   _),
+           _)
+    ->
+    stateful_type? (spc, v2_type, stateful_types)
+
+  | _ -> 
+    false)
+
+op has_stateful_update? (spc            : Spec, 
+                         stateful_types : MSTypes,
+                         term           : MSTerm) 
+ : Bool =
+ foldSubTerms (find_stateful_RecordMerge (spc, stateful_types)) false term
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 op global_mutex_name : String = "GlobalLock"
 
 op make_mutex (name : String) : MSTerm =
@@ -133,8 +177,12 @@ op findOpsToLock (spc : Spec, stateful_type_names : TypeNames)
                         let (tvs, op_type, tm) = unpackFirstTerm opinfo.dfn in
                         case getStateVarAndPostCondn (op_type, stateful_type, spc) of
                           | Some (result_var, deref?, post_cond) ->
-                            let makeMutex_term = make_mutex global_mutex_name in
-                            add_op_and_lock (op_name, makeMutex_term, ops_and_locks)
+                            if has_stateful_update? (spc, [stateful_type], opinfo.dfn) then
+                              let makeMutex_term = make_mutex global_mutex_name in
+                              add_op_and_lock (op_name, makeMutex_term, ops_and_locks)
+                            else
+                              let _ = writeLine("No stateful update: " ^ show (primaryOpName opinfo)) in
+                              ops_and_locks
                           | _ ->
                             ops_and_locks)
                      ops_and_locks
@@ -148,7 +196,6 @@ op SpecTransform.addMutexes (spc                 : Spec,
                              stateful_type_names : TypeNames)
                              % mutexes_and_ops : List (String * OpNames)) 
  : Spec =
- let ops_to_lock = findOpsToLock (spc, stateful_type_names) in
  let
    def invert_map mutexes_and_ops =
      foldl (fn (ops_and_mutexes, (mutex, ops)) ->
@@ -198,7 +245,9 @@ op SpecTransform.addMutexes (spc                 : Spec,
          apply_each_mutex (mutex_list, body)
 
  in
- let spc      = find_or_add_mutex_theorem spc in
+ let spec_with_mutex_theorem          = find_or_add_mutex_theorem spc                                         in
+ let spec_with_record_merges_restored = SpecTransform.introduceRecordMerges spec_with_mutex_theorem           in
+ let ops_to_lock                      = findOpsToLock (spec_with_record_merges_restored, stateful_type_names) in
  let new_spec =
      foldl (fn (new_spec, (op_name, mutex_list)) ->
               case findTheOp (spc, op_name) of
@@ -209,7 +258,7 @@ op SpecTransform.addMutexes (spc                 : Spec,
                 | _ ->
                   let _ = writeLine("AddMutex could not find op " ^ printQualifiedId op_name) in
                   new_spec)
-           spc
+           spec_with_record_merges_restored
            ops_to_lock
  in
  new_spec
