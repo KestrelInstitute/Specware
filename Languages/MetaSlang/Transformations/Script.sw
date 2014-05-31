@@ -497,15 +497,16 @@ spec
                  | _ -> None)
           
 
-  op makeMoves(path_term: PathTerm, mvs: List Movement, allowFail?: Bool):  Option PathTerm =
+  op makeMoves(path_term: PathTerm, mvs: List Movement, allowFail?: Bool):  SpecCalc.Env(Option PathTerm) =
     case mvs of
-      | [] -> Some path_term
+      | [] -> return(Some path_term)
       | mv :: rem_mvs ->
     case makeMove(path_term,  mv) of
       | Some new_path_term -> makeMoves(new_path_term, rem_mvs, allowFail?)
-      | None -> (if allowFail? then ()
-                   else error("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs));
-                 None)
+      | None -> {when (~allowFail?)
+                    (raise(Fail ("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs))));
+                 return None}
+
  op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
     let fvs = freeVars tm in
     let bad_binds = filter (fn (old_n, _) -> exists? (fn (fv_n, _) -> fv_n = old_n)  fvs) binds in
@@ -613,42 +614,42 @@ spec
           when tracing?
             (print ("--" ^ scriptToString script ^ "\n"));
           (path_term, info) <-
-             return
               (case script of
-                | Move mvmts -> (case makeMoves(path_term, mvmts, allowFail?) of
-                                   | Some new_path_term -> new_path_term
-                                   | None -> path_term,
-                                 info)
+                | Move mvmts -> {o_new_path_term <- makeMoves(path_term, mvmts, allowFail?);
+                                 return (case o_new_path_term of
+                                           | Some new_path_term -> new_path_term
+                                           | None -> path_term,
+                                         info)}
                 | TermTransform(tr_name, tr_fn, arg) ->
                   let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid) in
                   let result = apply(tr_fn, arg_with_spc) in
                   (case extractMSTerm result of
-                     | Some new_term -> replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), info)
-                     | None -> (path_term, info))
-                | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, info)
-                | RenameVars binds -> replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, info)
+                     | Some new_term ->  return(replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), info))
+                     | None -> return(path_term, info))
+                | SimpStandard -> return(replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, info))
+                | RenameVars binds -> return(replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, info))
                 | PartialEval ->
-                  replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, info)
+                  return(replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, info))
                 | AbstractCommonExpressions ->
-                  replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                   path_term, AbstractCommonExpressions, info)
-                | Simplify(rules, n) -> rewriteWithRules(spc, rules, qid, path_term, info)
+                  return(replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
+                                          path_term, AbstractCommonExpressions, info))
+                | Simplify(rules, n) -> return(rewriteWithRules(spc, rules, qid, path_term, info))
                 | Simplify1(rules) ->
                   let context = makeContext spc <<  {maxDepth = 1} in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info)
+                  return(replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info))
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
                    | TypedTerm(tm, ty, a) ->
-                     ((TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
-                                 ty, a),
-                      [0]),
-                      info)             % Need to update info
-                   | tm -> ((addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
-                             []),
-                            info)));    % Need to update info
+                     return((TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
+                                       ty, a),
+                             [0]),
+                            info)             % Need to update info
+                   | tm -> return((addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
+                                   []),
+                                  info)));    % Need to update info
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
           return (path_term, tracing?, info)
