@@ -15,6 +15,8 @@ NatMap qualifying spec {
   op inDomain   : fa(a) NatMap.Map a * Nat -> Bool 
   op numItems   : fa(a) NatMap.Map a -> Nat
 
+  op unionWith : [a] (a * a -> a) -> NatMap.Map a * NatMap.Map a -> NatMap.Map a  
+
   op compose    : NatMap.Map Nat * NatMap.Map Nat -> NatMap.Map Nat
 
   def empty      = SplayMap.empty compare
@@ -28,4 +30,5 @@ NatMap qualifying spec {
   def inDomain   = SplayMap.inDomain
   def numItems   = SplayMap.numItems
   def compose    = SplayMap.compose
+  def unionWith  = SplayMap.unionWith
 }
