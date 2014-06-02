@@ -272,7 +272,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
       def extendSimpProof(tm: MSTerm, new_tm: MSTerm, newer_tm: MSTerm,
                           path: Path, prf: Proof, method: String): Proof =
         prove_equalTrans
-        (prove_equalWithTactic (method, tm, new_tm, termType tm),
+        (prove_equalWithTactic (StringTactic method, tm, new_tm, termType tm),
          prove_equalSubTerm (new_tm, newer_tm, termType new_tm, path, prf))
       % Combine a proof that tm1.path1=tm2.path1 with a proof that
       % tm2.path2 = tm3.path2 to prove that tm1=tm3

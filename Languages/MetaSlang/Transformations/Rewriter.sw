@@ -1078,8 +1078,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
      | (_, _, _, pf_last)::hist' ->
        prove_equalTrans (combineHistoryProofs (input_trm, hist'), pf_last)
 
- op rewriteRecursive : 
-    Context * MSVars * RewriteRules * MSTerm * Path -> LazyList (History)
+ op rewriteRecursive :
+    Context * MSVars * RewriteRules * MSTerm * Path ->
+    Option (MSTerm * Proof)
 
  op rewriteRecursivePre : 
     Context * MSVars * Demod RewriteRule * MSTerm * Path -> LazyList (History)
@@ -1095,7 +1096,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
    let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
-   rewriteRecursivePre(context,boundVars,rules,term,path)
+   case rewriteRecursivePre(context,boundVars,rules,term,path) of
+     | Nil -> None
+     | Cons ([], _) -> None
+     | Cons (history as (_,out_term,_,_)::_, _) ->
+       Some (out_term, combineHistoryProofs (term, history))
 
  def rewriteRecursivePre(context, boundVars, rules0, term, path) = 
    let
