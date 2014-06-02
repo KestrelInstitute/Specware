@@ -156,6 +156,9 @@ irrefutable patterns, where it is obvious how to perform
 beta contraction.
 *)
 
+ op dereferenceVar ((_,termSubst,_): SubstC, n:Nat) : Option MSTerm =
+   NatMap.find(termSubst,n)
+
  op dereferenceR : SubstC -> MSTerm -> MSTerm
  op dereference : SubstC -> MSTerm -> MSTerm
 
@@ -194,7 +197,7 @@ beta contraction.
 
  % README: this does term grafting, not substitution, meaning that it
  % is possible to have variable capture; e.g., subst can map a flex
- % variable (%Flex n) the the free variable x in (fn x -> (%Flex n)),
+ % variable (%Flex n) to the free variable x in (fn x -> (%Flex n)),
  % yielding the identity function (fn x -> x)
  op dereferenceAll (subst: SubstC) (term: MSTerm): MSTerm =
 %   let freeNames = NatMap.foldri (fn (_,trm,vs) ->
@@ -227,11 +230,14 @@ beta contraction.
    in
    mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term
 
- % Do a dereferenceAll in the context of a set of bound variables that
- % we do not want to be accidentally captured; also does renameBound
- % afterwards to ensure all bound variables in the result are distinct
- op dereferenceAllWithVars (subst: SubstC) (term: MSTerm) (boundVars:MSVars): MSTerm =
-   renameBound (dereferenceAll subst (renameBoundVars (term, boundVars)))
+ % Do a dereferenceAll as a substitution, that is, avoiding variable
+ % capture; e.g., if subst maps a flex variable (%Flex n) to the free
+ % variable x in (fn x -> (%Flex n)), the result is the constant
+ % function (fn y -> x) for some fresh variable y. The boundVars
+ % argument gives the variables that are considered free at the site
+ % of the substitution, i.e., the variables that can be free in subst.
+ op dereferenceAllAsSubst (subst: SubstC) (term: MSTerm) (boundVars:MSVars): MSTerm =
+   dereferenceAll subst (renameBoundVars (term, boundVars))
 
  def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
@@ -365,11 +371,64 @@ record type.
 Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 *)
 
+
+ %% Functions for manipulating SubstC's
+
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
+
+ % Add a mapping from n to M to a SubstC
+ op updateSubst((typeSubst,termSubst,condns):SubstC, n:Nat, M:MSTerm) : SubstC = 
+   case isFlexVar?(M) of
+     | Some m | n = m -> (typeSubst,termSubst,condns)
+     | _ -> (typeSubst,NatMap.insert(termSubst,n,M),condns)
+
+ % Turn a TyVarSubst into a SubstC
+ op substCFromTyVarSubst (s:TyVarSubst) : SubstC =
+   (StringMap.fromList s, NatMap.empty, [])
+
+ % Turn a SubstC into a TyVarSubst
+ op tyVarSubstFromSubstC ((typeSubst,_,_):SubstC) : TyVarSubst =
+   StringMap.toList typeSubst
+
+ % Build a SubstC that replaces flex vars with other flex vars
+ op mkFresheningSubstC (var_map:List (Nat * Nat * MSType)) : SubstC =
+   let termSubst =
+     foldl (fn (res,(n1,n2,T)) ->
+              NatMap.insert (res, n1, mkVar (n2,T))) NatMap.empty var_map
+   in
+   (StringMap.empty,termSubst,[])
+
+ % Compose s2 with s1, yielding a SubstC that has the same effect as
+ % if we applied s1 followed by s2. We assume both substitutions are
+ % idempotent, meaning that, for each substitution, the variables in
+ % its domain are all distinct from the free variables of the terms in
+ % its range, although the domain of s2 is allowed to include free
+ % variables in terms in the range of s1.
+ op composeSubstCs (s2 : SubstC) (s1 : SubstC) : SubstC =
+   let (typeSubst1, termSubst1, typeConds1) = s1 in
+   let (typeSubst2, termSubst2, typeConds2) = s2 in
+   (StringMap.unionWith
+      % Favor the results of s1, since it is applied first
+      (fn (tp2,tp1) -> tp1)
+      (typeSubst2,
+       % Apply s2 to all the outputs of s1
+       StringMap.map (fn tp -> dereferenceType (s2, tp)) typeSubst1)
+      ,
+    NatMap.unionWith
+      (fn (tm2, tm1) -> tm1)
+      (termSubst2, NatMap.map (fn tm -> dereferenceAll s2 tm) termSubst1)
+      ,
+    typeConds2++typeConds1)
+   
+
+
+ %% debugging flags
+
  op debugHOM: Ref Nat = Ref 0
  op evaluateConstantTerms?: Bool = false     % For now until utility is proven
  op allowTrivialMatches?: Bool = false       % Allow matches that don't use match terms
  op resultLimitHOM: Nat = 8
+
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,None,emptyStack))
@@ -756,11 +815,6 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 	 | ([],[],[]) -> Some stack
 	 | _ -> None
 
-
-  def updateSubst((typeSubst,termSubst,condns),n,M) = 
-      case isFlexVar?(M)
-	of Some m | n = m -> (typeSubst,termSubst,condns)
-	 | _ -> (typeSubst,NatMap.insert(termSubst,n,M),condns)
 
 %%
 %% Infer type with type dereferencing
