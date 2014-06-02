@@ -15,6 +15,13 @@ Proof qualifying spec
   % Forward reference to get subtype predicates
   op SpecNorm.typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm
 
+  % A proof tactic
+  type Tactic =
+    % The simplest tactic: a string, to be interpreted by the prover
+    | StringTactic String
+    % The "auto" tactic, possibly augmented by some additional proofs
+    | AutoTactic (List Proof)
+
   % The internal form of proofs
   type ProofInternal =
     %% General proof constructs
@@ -36,7 +43,7 @@ Proof qualifying spec
     | Proof_Theorem (QualifiedId * MSTerm)
 
     % ProofInternal by an external tactic, along with the predicate it proves
-    | Proof_Tactic (String * MSTerm)
+    | Proof_Tactic (Tactic * MSTerm)
 
     %% Equality proofs
 
@@ -97,6 +104,61 @@ Proof qualifying spec
            | _ -> fail "Malformed proof: in proofPredicate applied to Proof_ImplEq")
       | Proof_MergeRules(P,Q,tree,ids1,ids2) -> mkImplies (P, Q)
 
+  % Substitute for type variables in a proof
+  op substTypes_ProofInternal (s: TyVarSubst, p: ProofInternal): ProofInternal =
+    case p of
+      | Proof_Cut (P, Q, pf1, pf2) ->
+        Proof_Cut (instantiateTyVarsInTerm (P, s),
+                   instantiateTyVarsInTerm (Q, s),
+                   substTypes_ProofInternal (s, pf1),
+                   substTypes_ProofInternal (s, pf2))
+      | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
+        Proof_ForallE (x,
+                       instantiateTyVarsInType (T, s),
+                       instantiateTyVarsInTerm (M, s),
+                       instantiateTyVarsInTerm (N, s),
+                       substTypes_ProofInternal (s, pf),
+                       substTypes_ProofInternal (s, tp_pf))
+      | Proof_EqTrue (M, pf) ->
+        Proof_EqTrue (instantiateTyVarsInTerm (M, s),
+                      substTypes_ProofInternal (s, pf))
+      | Proof_Theorem (id, P) ->
+        Proof_Theorem (id, instantiateTyVarsInTerm (P, s))
+      | Proof_Tactic (tact, P) ->
+        Proof_Tactic (tact, instantiateTyVarsInTerm (P, s))
+      | Proof_EqSubterm(M,N,T,p,pf) ->
+        Proof_EqSubterm(instantiateTyVarsInTerm (M, s),
+                        instantiateTyVarsInTerm (N, s),
+                        instantiateTyVarsInType (T, s),
+                        p,
+                        substTypes_ProofInternal (s, pf))
+      | Proof_UnfoldDef (T, qid, M) ->
+        Proof_UnfoldDef (instantiateTyVarsInType (T, s), qid,
+                         instantiateTyVarsInTerm (M, s))
+      | Proof_EqSym(pf) ->
+        Proof_EqSym(substTypes_ProofInternal (s, pf))
+      | Proof_EqTrans (T, M1, pfs) ->
+        Proof_EqTrans (instantiateTyVarsInType (T, s),
+                       instantiateTyVarsInTerm (M1, s),
+                       map (fn (pf, N) ->
+                              (substTypes_ProofInternal (s, pf),
+                               instantiateTyVarsInTerm (N, s)))
+                         pfs)
+                         
+      | Proof_ImplTrans(P,pf1,Q,pf2,R) ->
+        Proof_ImplTrans(instantiateTyVarsInTerm (P, s),
+                        substTypes_ProofInternal (s, pf1),
+                        instantiateTyVarsInTerm (Q, s),
+                        substTypes_ProofInternal (s, pf2),
+                        instantiateTyVarsInTerm (R, s))
+      | Proof_ImplEq pf ->
+        Proof_ImplEq (substTypes_ProofInternal (s, pf))
+      | Proof_MergeRules(P,Q,tree,ids1,ids2) ->
+        let _ =
+          warn ("substTypes_ProofInternal: FIXME: substituting for type variables in a MergeRules proof not (yet) implemented")
+        in
+        p
+
   % Print out a representation of a proof
   op showProof_Internal (p : ProofInternal) : String =
     "(FIXME: write Proof.showProof_Internal!)"
@@ -127,7 +189,6 @@ Proof qualifying spec
       | ErrorOk p -> Some (proofPredicate_Internal p)
       | ErrorFail _ -> None
 
-
   % prove_implElim (pf1, pf2) takes a proof pf1:P=>Q and a proof pf2:P
   % and builds a proof of Q
   op prove_implElim (p1 : Proof, p2 : Proof) : Proof =
@@ -139,6 +200,13 @@ Proof qualifying spec
           return (Proof_Cut (P, Q, p1_int, p2_int))
         | _ -> ErrorFail ("Implication elimination of (" ^ printTerm p1_pred
                             ^ ") against (" ^ printTerm p2_pred ^ ")") }
+
+  % Substitute for free type variables in a proof. Note that
+  % substituting for term variables would be more complicated, as it
+  % would require proofs that the terms satisfy their type predicates.
+  op instantiateTyVarsInProof (subst : TyVarSubst, pf : Proof) : Proof =
+    { pf_int <- pf;
+      return (substTypes_ProofInternal (subst, pf_int)) }
 
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
@@ -160,6 +228,13 @@ Proof qualifying spec
         | _ -> ErrorFail ("Forall elimination of (" ^ printTerm p_pred
                             ^ ") against term (" ^ printTerm N ^ ")") }
 
+  % prove_forallElimMulti (pf, [(N1, pf1),...,(Nn,pfn)]) takes a proof
+  % pf1:fa(x1:T1,...,xn:Tn)M, and a list of terms N1,...,Nn and proofs
+  % pf1,...,pfn that each Ni has type Ti and builds a proof of
+  % [N1/x1,...,Nn/xn]M.
+  op prove_forallElimMulti (p : Proof, args : List (MSTerm * Proof)) : Proof =
+    foldl (fn (pf, (N,tp_pf)) -> prove_forallElim (pf, N, tp_pf)) p args
+
   % build a proof of M given a proof of M=true
   op prove_fromEqualTrue (M : MSTerm, pf : Proof) : Proof =
     { p_int <- pf;
@@ -179,11 +254,11 @@ Proof qualifying spec
     return (Proof_Theorem (qid, P))
 
   % build a proof by applying a tactic
-  op prove_withTactic (tactic : String, P : MSTerm) : Proof =
+  op prove_withTactic (tactic : Tactic, P : MSTerm) : Proof =
     return (Proof_Tactic (tactic, P))
 
   % build an equality proof with a tactic
-  op prove_equalWithTactic (tactic : String, M : MSTerm, N : MSTerm, T : MSType) : Proof =
+  op prove_equalWithTactic (tactic : Tactic, M : MSTerm, N : MSTerm, T : MSType) : Proof =
     return (Proof_Tactic (tactic, mkEquality (T,M,N)))
 
   % build a proof of qid=M, assuming qid has definition M and type T
