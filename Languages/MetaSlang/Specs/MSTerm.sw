@@ -26,6 +26,8 @@ type MSVars       = List MSVar
 type MSVar        = AVar            Position
 
 type MSVarSubst   = List (MSVar * MSTerm)
+% FIXME: rename this to MSTyVarSubst, for conssitency
+type TyVarSubst = List(TyVar * MSType)
 
 type MSMatch      = AMatch          Position
 type MSFun        = AFun            Position

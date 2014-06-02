@@ -494,6 +494,8 @@ Utilities qualifying spec
  % which is a reasonable assumption given how Specware types
  % are handled.
 
+ % FIXME: this isn't used, and can be replaced by instantiateTyVars,
+ % below, anyway
  def substituteType(ty,S) = 
    let freeNames = foldr (fn ((v,trm),vs) -> 
                             StringSet.union (StringSet.fromList
@@ -706,10 +708,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	    [] (fields,fields2) 
 
 
- % Ensure that none of vs are used as bound variables in term
+ % Ensure that none of vs are used as bound variables in term. Also
+ % removes any variable shadowing as a side effect.
  op renameBoundVars(term: MSTerm, vs: MSVars): MSTerm =
-   if vs = [] then term
-   else
    let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
@@ -2575,7 +2576,6 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | Subtype(sup_ty, pred, _) -> pred
       | _ -> mkLambda(mkWildPat ty, trueTerm)
 
-  type TyVarSubst = List(TyVar * MSType)
   op  instantiateTyVars: MSType * TyVarSubst -> MSType
   def instantiateTyVars(s,tyVarSubst) =
     case s of
