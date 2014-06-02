@@ -80,9 +80,9 @@ MetaSlangRewriter qualifying spec
             let rule1 = freshRule (context,rule) in
             let rules = rest ++ first ++ [rule1] in
             fromList
-	      (map (fn s -> (dereferenceAll s (renameBoundVars(rule.rhs,boundVars)),
+	      (map (fn s -> ((dereferenceAllAsSubst s rule.rhs boundVars),
                              (s,rule,boundVars,rules)))
-                 substs)) 
+                 substs))
        rules
 
  op orderRules(rls: List RewriteRule): List RewriteRule =
@@ -138,8 +138,9 @@ MetaSlangRewriter qualifying spec
      then optimizeSuccessList new_results
      else new_results
 
-
- op applyDemodRewrites(context: Context, subst: SubstC, standardSimplify?: Bool)
+ % Search for a rewrite rule that applies to term at path, returning a
+ % lazy list of possible results.
+ op applyDemodRewrites(context: Context, standardSimplify?: Bool)
                       (boundVars: MSVars, term: MSTerm, path: Path, demod: Demod RewriteRule)
                       : LazyList RRResult  = 
 %     let _ = writeLine("Rewriting:\n"^printTerm term) in
@@ -147,9 +148,15 @@ MetaSlangRewriter qualifying spec
 %     let _ = app printRule (listRules demod) in
    let context = setBound(context,boundVars)  in
    let spc     = context.spc                  in
+   % First, use the term indexing in Demod to look up a list of
+   % potential rules that could apply to term at path. (NOTE:
+   % orderRules is currently the identity.)
    let rules = orderRules(Demod.getRules(demod,term)) in
+   % Now iterate over all the possibilities, creating a LazyList of
+   % the results that actually apply.
    (mapFlat 
       (fn rule ->
+         % Print some debugging info
           let _ = if context.debugApplyRewrites? then
                    (%writeLine("boundVars: "^anyToString boundVars);
                     printRule rule;
@@ -158,6 +165,8 @@ MetaSlangRewriter qualifying spec
                     else writeLine("Matching "^printTerm rule.lhs^" against\n"^printTerm term))
                    else ()
           in
+          % For meta-rules, which are signified by a non-empty
+          % trans_fn, apply the trans_fn to get the result.
           case rule.trans_fn of
             | Some f ->
               (let result = apply(f, replaceSpecTermArgs(metaRuleATV rule.rule_spec, spc, term)) in
@@ -165,10 +174,26 @@ MetaSlangRewriter qualifying spec
                  | Some new_term ->
                    (if context.debugApplyRewrites? then writeLine("Metarule succeeded:\n"^printTerm new_term)
                      else ();
-                    unit(new_term, (subst, rule, path, boundVars, demod)))
+                    let fake_rule =
+                      % Build a new "fake" rule corresponding to the result
+                      % of the meta-rule
+                      {name      = rule.name,
+                       rule_spec = rule.rule_spec,
+                       opt_proof = extractProof result,
+                       lhs       = fromPathTerm (term, path),
+                       rhs       = new_term,
+                       condition = None,
+                       freeVars  = [],	
+                       tyVars    = [],
+                       trans_fn   = rule.trans_fn}
+                    in
+                    unit(new_term, (emptySubstitution, fake_rule, path, boundVars, demod)))
                  | None -> Nil)
             | None ->
-          let substs = applyRewrite(context,rule,subst,term) in
+          % Otherwise, call applyRewrite to try to apply the rule,
+          % returning the list of matches between the lhs and term
+          let substs = applyRewrite(context,rule,emptySubstitution,term) in
+          % More debugging
           let _ = if context.debugApplyRewrites? then
                     if substs = [] then writeLine("Match failed.\n")
                       else (writeLine("Match succeeded."); app printSubst substs)
@@ -177,17 +202,23 @@ MetaSlangRewriter qualifying spec
           fromList
             (optimizeSuccessList
                (mapPartial (fn s ->
+                              % For each match s with the lhs of rule,
+                              % substitute s into the rhs and return
+                              % the result, making sure we don't apply
+                              % an identity transformaion.
+                              %
+                              % FIXME: what do these comments mean?
                               %% Temporary fix to avoid identity transformations early
                               %% The dereferenceAll will be done later as well,
                               %% This is also necessary for foldSubPatterns
-                              let result = dereferenceAllWithVars s rhs boundVars in
+                              let result = dereferenceAllAsSubst s rule.rhs boundVars in
                               if equalTerm?(term, result)
                                 then None
                               else Some(result,(s,rule,path,boundVars,demod)))
                   substs))) 
       rules)
    @@ (fn () -> if standardSimplify? && context.useStandardSimplify?
-                  then standardSimplify spc (term,subst,boundVars,demod)
+                  then standardSimplify spc (term,path,boundVars,demod)
                   else Nil)
 
 (*
@@ -204,24 +235,22 @@ MetaSlangRewriter qualifying spec
      } 
 *)
 
- op evalRule : RewriteRule = 
-     { 
-	name     = "Eval",
-        rule_spec = Eval,
-        opt_proof = Some(RefineEq(EqProofTactic "auto")),
-	freeVars = [],
-	tyVars = [],
-	condition = None,
-	lhs   = mkVar(1,TyVar("''a",noPos)),
-	rhs   = mkVar(2,TyVar("''a",noPos)),
-        trans_fn = None
-     } 
+ op mkSimpRule (name:String, lhs:MSTerm, rhs:MSTerm) : RewriteRule =
+   {
+    name     = name,
+    rule_spec = Eval,
+    opt_proof =
+      Some (prove_equalWithTactic (AutoTactic [], lhs,rhs,termType lhs)),
+    freeVars = [],
+    tyVars = [],
+    condition = None,
+    lhs   = lhs,
+    rhs   = rhs,
+    trans_fn = None
+    }
 
- op ssRule(s: String): RewriteRule =
-   evalRule << {name = s}
-
- op evalRule?(rl: RewriteRule): Bool =
-   rl.tyVars = [] && rl.lhs = evalRule.lhs && rl.rhs = evalRule.rhs
+ def mkEvalRule (lhs,rhs) = mkSimpRule ("Eval",lhs,rhs)
+ op evalRule?(rl: RewriteRule): Bool = rl.rule_spec = Eval
 
  op baseSpecTerm?(term: MSTerm): Bool =
    ~(existsSubTerm (fn t -> case t of
@@ -233,32 +262,39 @@ MetaSlangRewriter qualifying spec
  op pushFunctionsIn?: Bool = true
  op evalGroundTerms?: Bool = true
 
- op standardSimplify (spc: Spec) (term: MSTerm, subst: SubstC, boundVars: MSVars, demod: Demod RewriteRule)
-    :  LazyList(MSTerm * (SubstC * RewriteRule * MSVars * Demod RewriteRule)) =
+ op standardSimplify (spc: Spec) (term: MSTerm, path:Path, boundVars: MSVars, demod: Demod RewriteRule)
+    :  LazyList(RRResult) =
    %let _ = (writeLine "ss:"; printSubst subst) in
-   let (simp?, term) = if evalGroundTerms?
-                         then
-                           let new_term = reduceTerm (term, spc) in
-                           if equalTermStruct?(new_term, term)
-                             then (false, term)
-                           else
-                             (true, new_term)
-                       else (false, term)
+   let (simp?, new_term) =
+     if evalGroundTerms?
+       then
+         let new_term = reduceTerm (term, spc) in
+         if equalTermStruct?(new_term, term)
+           then (false, term)
+         else
+           (true, new_term)
+     else (false, term)
    in
-   if simp? then unit(term, (subst,evalRule,boundVars,demod))
+   if simp? then
+     unit(new_term, (emptySubstitution,mkEvalRule(term,new_term),
+                     path,boundVars,demod))
    else
    case tryEvalOne spc term of
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
-       unit (eTerm, (subst,ssRule "Eval1",boundVars,demod))
-        % FIXME: need a new subst, for the free vars in the ssRule
+       unit (eTerm, (emptySubstitution,mkSimpRule ("Eval1", term, eTerm),
+                     path, boundVars, demod))
      | None ->
    case term of
      %% case foo x of ... | foo y -> f y | ... --> f x
      | Apply(Lambda(rules, _), N, a) ->
        (case patternMatchRules(rules,N)
           of None -> Nil
-           | Some (sub,M) -> unit (substitute(M,sub), (subst,ssRule "reduceCase",boundVars,demod)))
+           | Some (sub,M) ->
+             let out_term = substitute(M,sub) in
+             unit (out_term, (emptySubstitution,
+                              mkSimpRule ("reduceCase",term,out_term),
+                              path, boundVars, demod)))
      %% {id1 = x.id1, ..., idn = x.idn} --> x
      | Record((id1,Apply(Fun(Project id2,_,_), tm, _)) :: r_flds, _)
          | id1 = id2
@@ -273,20 +309,32 @@ MetaSlangRewriter qualifying spec
                                 i1 = i2 && equalTerm?(t, tm)
                               | _ -> false)
                   r_flds)
-         -> unit (tm, (subst,ssRule "RecordId",boundVars,demod))
+         -> unit (tm, (emptySubstitution,
+                       mkSimpRule ("RecordId", term,tm),
+                       path,boundVars,demod))
      %% let p1 = (let p2 = e2 in e1) in e3 --> let p2 = e2 in let p1 = e2 in e3
      | Let([(p1, Let(bds2, e1, a2))], e3, a1) ->
-       unit (Let(bds2, Let([(p1, e1)], e3, a1), a2),
-             (subst, ssRule "noramlizeEmbeddedLets", boundVars, demod))
+       let out_term = Let(bds2, Let([(p1, e1)], e3, a1), a2) in
+       unit (out_term,
+             (emptySubstitution,
+              mkSimpRule ("noramlizeEmbeddedLets", term, out_term),
+              path, boundVars, demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
-       unit (mkBool(id1 = id2), (subst,ssRule "reduceEmbed",boundVars,demod))
+       let out_term = mkBool(id1 = id2) in
+       unit (out_term, (emptySubstitution,mkSimpRule ("reduceEmbed", term, out_term),
+                        path,boundVars,demod))
      | Apply(Fun(Equals,s,_), Record([(_,M1),(l2,M2)],_),_) ->
        (if equalTerm?(M1,M2)
-          then unit(trueTerm, (subst,ssRule "Eval=",boundVars,demod))
+          then unit(trueTerm, (emptySubstitution,
+                               mkSimpRule ("Eval=", term, trueTerm),
+                               path,boundVars,demod))
         else
         case isFlexVar? M1 of
           | Some n | ~(hasFlexRef? M2)->
-            unit(trueTerm, (updateSubst(subst,n,M2), ssRule "Subst", boundVars, demod))
+            unit(trueTerm,
+                 (updateSubst(emptySubstitution,n,M2),
+                  mkSimpRule ("Subst", term, trueTerm),
+                  path, boundVars, demod))
           | _ -> Nil)
      | _ -> Nil
 %   if ~pushFunctionsIn? then Nil
@@ -371,7 +419,7 @@ MetaSlangRewriter qualifying spec
         %% Variable capture unlikely because of substitute in unFoldSimpleLet
         let M1 = mapTerm (reverseSubst v_subst, id, id) M in
         if equalTerm?(M, M1)
-          then M
+          then res
         else
           let fvs = freeVars M1 in
           let new_binds =
@@ -439,19 +487,19 @@ op maybePushIfBack(res as (tr_if, info): RRResult, f: MSTerm, Ns: MSTerms, i: Na
          | 1::elem::p_branch | elem = arg_pathElem && length Ns = 1 ->
            % Rewrite happened in the then-branch and there are no other
            % args to f
-           unpush_if false (Some 1) (path_to_unpushed_if++1::p_branch)
+           unpush_if false (Some 1) (path_to_unpushed_if++(1::p_branch))
          | 2::elem::p_branch | elem = arg_pathElem && length Ns = 1 ->
            % Rewrite happened in the else-branch and there are no other
            % args to f
-           unpush_if true (Some 1) (path_to_unpushed_if++2::p_branch)
+           unpush_if true (Some 1) (path_to_unpushed_if++(2::p_branch))
          | 1::elem::j::p_branch | elem = arg_pathElem && j=i ->
            % Rewrite happened in the then-branch of the original
            % if-expression
-           unpush_if false (Some (j+1)) (path_to_unpushed_if++1::p_branch)
+           unpush_if false (Some (j+1)) (path_to_unpushed_if++(1::p_branch))
          | 2::elem::j::p_branch | elem = arg_pathElem && j=i ->
            % Rewrite happened in the else-branch of the original
            % if-expression
-           unpush_if true (Some (j+1)) (path_to_unpushed_if++2::p_branch)
+           unpush_if true (Some (j+1)) (path_to_unpushed_if++(2::p_branch))
          | 1::elem::j::p_branch | elem = arg_pathElem && j~=i ->
            % Rewrite happened in the then-branch in one of the arguments in
            % Ns that was not the original if-expression
@@ -461,7 +509,7 @@ op maybePushIfBack(res as (tr_if, info): RRResult, f: MSTerm, Ns: MSTerms, i: Na
            % Ns that was not the original if-expression
            unpush_if false (Some (j+1)) [1,j]
          | path ->
-           warn ("maybePushIfBack: unexpected path " ^ show path); res)
+           warn ("maybePushIfBack: unexpected path " ^ anyToString path); res)
     | _ -> res
 
 % If a function was pushed inside a let-expression in its argument to
@@ -513,12 +561,12 @@ op maybePushLetBack(res as (tr_let, info): RRResult, f: MSTerm, Ns: MSTerms, i: 
            unpush_let (Some 0) (path_to_unpushed_let++p_arg)
          | b_num::elem::j::p_arg | elem = arg_pathElem && b_num = num_bindings && j = i ->
            % Rewrite happened in the original body of the let-expression
-           unpush_let (Some j+1) (path_to_unpushed_let++num_bindings::p_arg)
+           unpush_let (Some (j+1)) (path_to_unpushed_let++(num_bindings::p_arg))
          | b_num::elem::j::p_arg | elem = arg_pathElem && b_num = num_bindings && j = i ->
            % Rewrite happened in some other of the original args to f
-           unpush_let (Some j+1) [1,j]
+           unpush_let (Some (j+1)) [1,j]
          | path ->
-           warn ("maybePushLetBack: unexpected path " ^ show path); res)
+           warn ("maybePushLetBack: unexpected path " ^ anyToString path); res)
      | _ -> res
 
 % If a function was pushed inside a case-expression in its argument to
@@ -572,39 +620,48 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
          | elem = casefun_pathElem && elem_arg = arg_pathElem && length Ns = 1 ->
            % Rewrite happened in a branch of the original
            % case-expression, which was the only arg to f
-           unpush_case (Some branch) (path_to_unpushed_case ++ branch::p_arg)
+           unpush_case (Some branch) (path_to_unpushed_case ++ (branch::p_arg))
          | elem::branch::elem_arg::arg_num::p_arg
          | elem = casefun_pathElem && elem_arg = arg_pathElem && arg_num = i ->
            % Rewrite happened in a branch of original case-expression,
            % with multiple args to f
-           unpush_case (Some branch) (path_to_unpushed_case ++ branch::p_arg)
+           unpush_case (Some branch) (path_to_unpushed_case ++ (branch::p_arg))
          | elem::branch::elem_arg::arg_num::p_arg
          | elem = casefun_pathElem && elem_arg = arg_pathElem && arg_num ~= i ->
            % Rewrite happened in one of the non-case-expression
            % original args to f
            unpush_case (Some branch) (arg_pathElem::arg_num::p_arg)
          | path ->
-           warn ("maybePushCaseBack: unexpected path " ^ show path); res)
+           warn ("maybePushCaseBack: unexpected path " ^ anyToString path); res)
     | _ -> res
 
 
- op persistentFlexVarStartNum: Nat = 1000   % Greater than largest of variables in a rule
- op persistentFlexVar?(t: MSTerm): Bool =
-   case isFlexVar? t of
-     | Some n -> n >= persistentFlexVarStartNum
-     | None -> false
+ % The maximum number, exclusive, allowed for a flex variable in a
+ % rewrite rule
+ op maxRuleFlexVar : Nat = 1000
 
- op renumberFlexVars(term: MSTerm, flexNumIncrement: Nat): MSTerm =
-   mapTerm (fn t ->
-            case t of
-              | Apply(Fun(Op(Qualified (UnQualified,"%Flex"),x1),x2,x3),Fun(Nat n, x4,x5),x6)
-                  | n < persistentFlexVarStartNum ->
-                Apply(Fun(Op(Qualified (UnQualified,"%Flex"),x1),x2,x3),Fun(Nat (n + flexNumIncrement), x4,x5),
-                      x6)               
-              | _ -> t,
-            id, id)
-     term
+ % Return a SubstC that "freshens up" all the flex variables in term,
+ % so that they do not clash with any rules. We cheat by just adding
+ % maxRuleFlexVar to the numbers of all flex vars in term.
+ op fresheningSubstFor (term : MSTerm, rules : Demod RewriteRule) : SubstC =
+   mkFresheningSubstC
+     (foldSubTerms (fn (M,result) ->
+                      case isFlexVar? M of
+                        | Some n ->
+                          (case findLeftmost (fn (m,_,_) -> m=n) result of
+                             | Some (_, _, T) | equalType? (T, termType M) ->
+                               result
+                             | Some (_, _, T) ->
+                               (warn ("fresheningSubstFor: occurrences of flex var with different types!");
+                                result)
+                             | None ->
+                               (n,n+maxRuleFlexVar,termType M) :: result)
+                        | None -> result)
+        [] term)
 
+
+ (* FIXME HERE: remove the following *)
+ (*
  op removeLocalFlexVars(subst: SubstC, del_flexvarnums: List Nat): SubstC =
    let (typeSubst,termSubst,typeConds) = subst in
    let new_termsubst = NatMap.foldri (fn (i,v,result) ->
@@ -639,6 +696,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                                        then Some(n + flexNumIncrement)
                                        else None)
                     unBoundRefs)
+ *)
 
  (* Unnecessary as equality can be done as a built-in rule
      See spec builtInRewrites
@@ -689,16 +747,16 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
  type Rewriter = MSVars * MSTerm * Path * Demod RewriteRule -> LazyList RRResult 
  %type Matcher  a = MSVars * Term * Term -> LazyList a
  type Strategy   = | Innermost | Outermost
- type RewriteInfo a = {strategy: Strategy, rewriter: Rewriter a, context: Context}
+ type RewriteInfo = {strategy: Strategy, rewriter: Rewriter, context: Context}
 
  op rewriteTerm    : RewriteInfo * MSVars * MSTerm * Path * Demod RewriteRule
                            -> LazyList RRResult
  op rewriteSubTerm : RewriteInfo * MSVars * MSTerm * Path * Demod RewriteRule
                            -> LazyList RRResult
 
- op [a] rewritePattern (solvers: RewriteInfo a, boundVars: MSVars,
-                        pat: MSPattern, path: Path, rules: Demod RewriteRule, ign?: Bool)
-          : LazyList(MSPattern * a) =
+ op rewritePattern (solvers: RewriteInfo, boundVars: MSVars,
+                    pat: MSPattern, path: Path, rules: Demod RewriteRule, ign?: Bool)
+          : LazyList(MSPattern * RRResultInfo) =
    case pat of
      | RestrictedPat(p,t,b) | ~ign? ->
        LazyList.map 
@@ -923,8 +981,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
 
 (* Trace utilities *)
 
- op traceTerm : Context * MSTerm * MSTerm * SubstC -> ()
- def traceTerm(context, term, prev_term, (* subst *)_) = 
+ op traceTerm : Context * MSTerm * MSTerm -> ()
+ def traceTerm(context, term, prev_term) = 
      if context.traceRewriting > 1 then 
      % if context.trace then 
 	 (let indent = 3 + ! context.traceIndent in
@@ -1004,9 +1062,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
  % (the result of all the rewriting) is first
  type History = List (RewriteRule * MSTerm * SubstC * Proof)
 
+ op emptyHistory : History = []
+
  op historyRepetition: History -> Bool
  def historyRepetition = 
-     fn (_,term1,_)::(_,term2,_)::_ -> equalTerm?(term1,term2)
+     fn (_,term1,_,_)::(_,term2,_,_)::_ -> equalTerm?(term1,term2)
       | _ -> false
 
  % Transitively combine all the proofs in a history into one proof
@@ -1039,30 +1099,31 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
 
  def rewriteRecursivePre(context, boundVars, rules0, term, path) = 
    let
-     def rewritesToTrue(rules, term, boundVars, history, backChain): Option (SubstC * Proof) =
+     def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
        if trueTerm? term then Some (emptySubstitution, prove_true)
        else
-         let results = rewriteRec(rules, term, [], term, boundVars, history, backChain+1) in
+         let results = rewriteRec(rules, term, [], term, boundVars, emptyHistory, backChain+1) in
          case LazyList.find_n (fn (rl, t, c_subst, pf)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
                                | [] -> false)
            results
            conditionResultLimit
          of
            None -> None
-         | Some (hist as ((rl, t, c_subst, _)::_)) ->
-           %% Substitutions, history and conditional rewrites need work
-           if trueTerm? t then Some (c_subst, combineHistoryProofs hist) else None
+         | Some (hist as ((_, t, c_subst, _)::_)) ->
+           if trueTerm? t then
+             Some (c_subst,
+                   prove_fromEqualTrue (term,
+                                        combineHistoryProofs (term,hist)))
+           else None
 
      def solveCondition (cond, rules, boundVars, backChain) : Option (SubstC * Proof) = 
-	if backChain < context.backwardChainMaxDepth && completeMatch(rule.lhs, subst) then 
-            let _ = context.traceDepth := 0 in % reset traceDepth for solving conditions
-            traceRuleRec (context, rule,
-                          fn () ->
-                            rewritesToTrue(rules, cond, boundVars, history, backChain))
+	if backChain < context.backwardChainMaxDepth then 
+          let _ = context.traceDepth := 0 in % reset traceDepth for solving conditions
+          rewritesToTrue(rules, cond, boundVars, backChain)
 	else None
 
       def rewriteRec(rules0, term0, path, prev_term, boundVars, history, backChain) =
-	let _ = traceTerm(context, term0, prev_term, subst) in
+	let _ = traceTerm(context, term0, prev_term) in
 	let traceDepth = ! context.traceDepth + 1 in
         let maxTraceDepth = if backChain = 0
                               then context.maxDepth
@@ -1081,7 +1142,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
               % let _ = app printRule (listRules rules) in
               rewriteTerm 
               ({strategy = strategy,
-                rewriter = applyDemodRewrites(context, subst, context.maxDepth > 1 || backChain > 0),
+                rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),
                 context = context},
                boundVars, term0, path, rules)
             in
@@ -1110,9 +1171,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
               % recursively applies rewriting.
               %
               % The conditions which must be solved include the
-              % precondition of the rule itself, as well as any
-              % subtype conditions from higher-order matching
-              let (typeSubst, termSubst, typeConds) = subst in
+              % precondition of the rule itself, as well as any type
+              % unification conditions from higher-order matching,
+              % which include any subtype predicates on the free
+              % variables of the rules.
+              let (_, _, typeConds) = subst in
               let conds = case rule.condition of
                             | None -> typeConds
                             | Some cond -> Cons(cond, typeConds)
@@ -1127,12 +1190,15 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                 else
                   % At this point, subst has only been applied to the
                   % output term, term, so now we additionally apply it
-                  % to the condition we are about to try to solve
+                  % to the condition we are about to try to solve.
+                  % Note that boundVars are considered free in the
+                  % condition, which must be true at the point in the
+                  % input term where the rewrite occurred.
                   let cond =
-                    dereferenceAllWithVars subst (mkConj conds) boundVars
+                    dereferenceAllAsSubst subst (mkConj conds) boundVars
                   in
 
-                  % This condition could still have free flex
+                  % The condition could still have free flex
                   % variables, e.g., for a rule like transitivity,
                   % written as below, where we may have already
                   % rewritten x<z to true but we don't yet know y:
@@ -1143,10 +1209,17 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                   % cond before we try to rewrite it so that none of
                   % them clash with free flex variables in our rules
                   let fresh_subst = fresheningSubstFor (cond, rules1) in
-                  % README: don't need dereferenceAllWithVars here
-                  % because fresh_subst does not use bound variables
+                  % README: don't need dereferenceAllAsSubst here
+                  % because fresh_subst just replaces flex vars with
+                  % other flex vars, so substitution and grafting are
+                  % the same
                   let cond = dereferenceAll fresh_subst cond in
-                  case solveCondition (cond, rules1, boundVars, backChain+1) of
+                  case
+                    traceRuleRec (context, rule,
+                                  fn () ->
+                                    solveCondition (cond, rules1,
+                                                    boundVars, backChain+1))
+                    of
                     | None -> None
                     | Some (subst', pf) ->
                       % subst' is a substitution that is to be applied
@@ -1154,26 +1227,95 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                       % applied after the original subst we got from
                       % rewriting, so here we compose them all
                       % together.
-                      (composeSubsts subst' (composeSubsts fresh_subst subst), pf)
+                      Some (composeSubstCs subst'
+                              (composeSubstCs fresh_subst subst),
+                            pf)
               in
               case opt_subst_pf of
                 | None -> Nil
                 | Some (final_subst, cond_pf) ->
-                  % FIXME: check that final_subst covers all flex
-                  % variables in the rule and that it leaves no flex
-                  % variables in the output
+                  % Now we apply final_subst to the output term, term,
+                  % and build a proof that original input term = term.
+                  % Note that we don't use dereferenceAllAsSubst
+                  % because we want grafting, not substitution, i.e.,
+                  % we are rewriting subterms of term that might
+                  % contain variables bound in term.
                   let term = dereferenceAll final_subst term in
-                  let pf =
 
-                  FIXME HERE: build proofs for all the free variables
-                  and forall-eliminate them into the proof; also build
-                  a proof for the optional condition, and
-                  implication-eliminate it into the proof; implies
-                  that the proof must be of a universally quantified
-                  formula over variables that match the freeVars of
-                  rule
-
+                  % To build the proof that the input term, term0,
+                  % equals the output term, term, we first undo the
+                  % rewrite that was applied to get term, to get
+                  % term_without_rr. This is not necessarily equal to
+                  % term0, since rewriteTerm optionally performs some
+                  % commuting conversions that push function calls
+                  % inside of ifs, lets, and cases. We prove
+                  % term0=term_without_rr using an auto tactic and
+                  % then prove term_without_rr=term using the proof
+                  % given in the rule. The latter proof additionally
+                  % requires: type substitution, for any free type
+                  % variables; forall elimination, to substitute in
+                  % the values of any free term variables in the rule;
+                  % and implication elimination, to supply a proof of
+                  % the condition of the rule.
+                  %
+                  % Rather than trying to build all of these proofs
+                  % explicitly, all of the "helper" proofs are built
+                  % with an auto tactic augmented with the proof
+                  % cond_pf of the conjunction of conds above. This
+                  % includes the proof that term0=term_without_rr, as
+                  % this equality might depend on some of the type
+                  % conditions returned by higher-order matching.
+                  let term_without_rr =
+                    topTerm (replaceSubTerm
+                               (dereferenceAllAsSubst
+                                  final_subst rule.lhs boundVars,
+                                (term, path)))
                   in
+                  let pf1 =
+                    prove_equalWithTactic (AutoTactic [cond_pf], term0,
+                                           term_without_rr, termType term0)
+                  in
+                  let pf2 =
+                    case rule.opt_proof of
+                      | None ->
+                        % If there is no proof, use "auto", throwing
+                        % in cond_pf as well (why not?)
+                        prove_equalWithTactic (AutoTactic [cond_pf],
+                                               term_without_rr, term,
+                                               termType term)
+                      | Some rule_pf ->
+                        let rule_pf1 =
+                          instantiateTyVarsInProof
+                            (tyVarSubstFromSubstC final_subst, rule_pf)
+                        in
+                        let var_terms_pfs =
+                          map (fn (var_i, var_tp) ->
+                                 let var_term =
+                                   case dereferenceVar (subst, var_i) of
+                                     | Some var_term -> var_term
+                                     | None ->
+                                       % Something is wrong: a bound
+                                       % variable did not get matched
+                                       (warn ("rewriteRecursivePre: bound variable in rewrite rule not instantiated!");
+                                        mkVar (var_i, var_tp))
+                                 in
+                                 (var_term,
+                                  prove_withTactic
+                                    (AutoTactic [cond_pf],
+                                     typePredTermNoSpec (var_tp, var_term))))
+                          rule.freeVars
+                        in
+                        let rule_pf2 =
+                          prove_forallElimMulti (rule_pf1, var_terms_pfs)
+                        in
+                        case rule.condition of
+                          | Some cond ->
+                            prove_implElim (rule_pf2,
+                                            prove_withTactic
+                                              (AutoTactic [cond_pf], cond))
+                          | None -> rule_pf2
+                  in
+                  let pf = prove_equalTrans (pf1, pf2) in
                   let history = Cons ((rule, term, final_subst, pf),history) in
                   % increment the trace depth before the recursive call
                   let _ = context.traceDepth := traceDepth in
@@ -1182,7 +1324,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
         (fn () -> unit history)
    in
       %let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules0, emptySubstitution, term, path, term, boundVars, [], 0)
+      rewriteRec(rules0, term, path, term, boundVars, [], 0)
 
  op rewriteOnce : 
     Context * MSVars * RewriteRules * MSTerm * Path -> MSTerms
@@ -1203,12 +1345,12 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
      let term = dereferenceAll emptySubstitution term in
      let rews = rewriteTerm
 		 ({strategy = Innermost,
-		   rewriter = applyDemodRewrites(context, emptySubstitution, false),
+		   rewriter = applyDemodRewrites(context, false),
 		   context = context},
 		  boundVars, term, path, unconditional)
      in
      let rews = LazyList.toList rews in
-     map (fn (newTerm, (subst, rule, boundVars, rules)) -> 
+     map (fn (newTerm, (subst, rule, path, boundVars, rules)) -> 
             dereferenceAll subst newTerm)
        rews
 

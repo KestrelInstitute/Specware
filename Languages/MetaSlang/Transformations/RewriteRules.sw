@@ -32,11 +32,15 @@ RewriteRules qualifying spec
 	name      : String,
         rule_spec : RuleSpec,
         opt_proof : Option Proof,
-        % README: opt_proof is always a proof of condition => lhs=rhs
-        % or just lhs=rhs if condition = None; universal
-        % quantification is handled with free term and type variables,
-        % so prove_forallElim should be used to remove any leading
-        % fa's in a proof before putting it into a RewriteRule
+        % README: opt_proof is a proof of a predicate of the form
+        %
+        % fa (x1,...,xn) condition' => lhs' = rhs'
+        %
+        % for some MSVars x1,...,xn, where "condition' =>" is dropped
+        % when condition=None. The terms contiion', lhs', and rhs' are
+        % the result of substituting the variables x1,...,xn for the
+        % flex variables listed in freeVars in the condition, lhs, and
+        % rhs of the rule.
 	lhs       : MSTerm,
 	rhs       : MSTerm, 
 	tyVars    : List String,
@@ -567,8 +571,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
          | None -> ()
      )	
 
-  % Freshen up the bound variables in a term so they are all distinct;
-  % note that this is different from Utilities.renameBoundVars
+  % Freshen up the bound variables in a term so they are all distinct.
+  % FIXME: Is this the same as renameBoundVars (term, []) ?
   def renameBound(term) = 
       let free = freeVars term in
       let free = map (fn (s,_) -> s) free in
