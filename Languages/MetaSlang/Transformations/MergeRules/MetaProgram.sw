@@ -129,13 +129,19 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     let qvars = (preStateVar,stateType)::(postStateVar,stateType)::inputs ++ outputs in 
 
     let spc' = case findTheOp(spc, fname)  of
-                | Some oi -> let TypedTerm(_,ty,_) = body in
-                             let _ = writeLine "Refining quid" in
-                             let th = Some ([(Any noPos : MSTerm, MergeRulesTransform (prf, unfolds, smtArgs))],
-                                            Some (RefineStrengthen (MergeRulesProof (prf, unfolds,smtArgs)))) in
-                             % Same thing, but don't save the mergerules proof in the tracehistory.
-                             let th2 = Some ([],Some (RefineStrengthen (MergeRulesProof (prf, unfolds,smtArgs)))) in
-                             addRefinedTypeH(spc,oi,refinedType,Some body,th2)
+                | Some oi ->
+                  let TypedTerm(_,ty,_) = body in
+                  let _ = writeLine "Refining quid" in
+                  let pf =
+                    prove_implElim (prove_MergeRules (prf,unfolds,smtArgs),
+                                    % README: we assume there are no
+                                    % failure cases, so we cut the
+                                    % merge rules proof against
+                                    % "true"; otherwise, we wouldn't
+                                    % have a proper refinement
+                                    prove_true)
+                  in
+                  addRefinedTypeH(spc,oi,refinedType,Some body,Some pf)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
                   addOpDef(spc,fname,Nonfix,body)
@@ -468,15 +474,25 @@ op traceType(t:TraceTree):String =
 %                   mkImplies(negateTerm (dnfToTerm (traceFailure t)),
 %                             mkImplies(traceResult t,cdnfToTerm (traceInputs t)))), noPos)
 
-op equant(isabelleTerm:MSTerm -> String)(tr:TraceTree):String =
+op equant (tr:TraceTree):MSTerm =
   if empty? (traceVars tr)
-      then isabelleTerm (cdnfToTerm (traceInputs tr))
+      then cdnfToTerm (traceInputs tr)
       else
         let body = cdnfToTerm (traceInputs tr) in
         let typedVars = liveVars (traceVars tr) body in
         if empty? typedVars
-          then isabelleTerm body
-          else isabelleTerm (Bind (Exists,typedVars, body,noPos)) 
+          then body
+          else (Bind (Exists,typedVars, body,noPos)) 
+
+% op equant(isabelleTerm:MSTerm -> String)(tr:TraceTree):String =
+%   if empty? (traceVars tr)
+%       then isabelleTerm (cdnfToTerm (traceInputs tr))
+%       else
+%         let body = cdnfToTerm (traceInputs tr) in
+%         let typedVars = liveVars (traceVars tr) body in
+%         if empty? typedVars
+%           then isabelleTerm body
+%           else isabelleTerm (Bind (Exists,typedVars, body,noPos)) 
 
 op IsaTermPrinter.ppIdStr : String -> String
 
@@ -490,7 +506,7 @@ op mkIsarProof(spc:Spec)(isabelleTerm:MSTerm-> String)(nm : Option String)(t:Tra
 uindent ^ "have " ^ thmName ^ ": \"" ^ (isabelleTerm (mkAnd (traceAssumptions t))) ^
          " ==> (" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure t)))) ^ ")" ^
          " ==> " ^ (isabelleTerm (traceResult t)) ^
-         " ==> " ^ equant isabelleTerm t ^ "\"\n" ^
+         " ==> " ^ isabelleTerm (equant t) ^ "\"\n" ^
 uindent ^ "proof - " ^ (traceType t) ^ "\n" ^
 (let indent = uindent ^ "  " in         
 indent ^ "assume assumptions : \"" ^ (isabelleTerm (mkAnd (traceAssumptions t))) ^ "\"\n" ^
@@ -515,7 +531,7 @@ indent ^ "     from pred fails have fails' : \"" ^ (isabelleTerm (mkNot (dnfToTe
 
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
 indent ^ "     have result' : \"" ^ isabelleTerm (traceResult tt) ^ "\" by (rule iffD1[OF if_P, OF pred, OF result])\n" ^
-indent ^ "     have rtrue : \"" ^ equant isabelleTerm tt ^ "\" by (fact okTrue[OF assumptions', OF fails', OF result' ])\n" ^
+indent ^ "     have rtrue : \"" ^ isabelleTerm (equant tt) ^ "\" by (fact okTrue[OF assumptions', OF fails', OF result' ])\n" ^
 
 indent ^ "     from pred assumptions rtrue show ?thesis by auto\n" ^
 indent ^ "   next\n" ^
@@ -533,7 +549,7 @@ indent ^ "     (* Failures for subterm *)\n" ^
 indent ^ "     from npred fails have nfails' : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure ff)))) ^ "\" by auto\n" ^
 indent ^ "     (* simplification of resultTerm, given predicate *)\n" ^
 indent ^ "     have nresult' : \"" ^ isabelleTerm (traceResult ff) ^ "\" by  (rule iffD1[OF if_not_P, OF npred, OF result])\n" ^
-indent ^ "     have rfalse : \"" ^ equant isabelleTerm ff ^ "\" by (fact okFalse[OF nassumptions', OF nfails', OF nresult' ])\n" ^
+indent ^ "     have rfalse : \"" ^ isabelleTerm (equant ff) ^ "\" by (fact okFalse[OF nassumptions', OF nfails', OF nresult' ])\n" ^
 % indent ^ "     from nresult' nassumptions' nfails' okFalse have rfalse : \"" ^ isabelleTerm (cdnfToTerm (traceInputs ff)) ^ "\" by simp\n" ^
 indent ^ "     from npred assumptions rfalse show ?thesis by auto\n" ^
 indent ^ "qed (* End proof by cases *)\n" ^
@@ -595,7 +611,7 @@ indent ^ "from factors assumptions have assumptions' : \"" ^ (isabelleTerm (mkAn
 indent ^ "(* Failures for subterm *)\n" ^
 indent ^ "from factors fails have fails' : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure sub)))) ^ "\" by auto\n" ^
 indent ^ "from result factors  have result': \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^   
-indent ^ "have rfactor: \"" ^ (equant isabelleTerm sub) ^ "\" by (fact ok[OF assumptions', OF fails', OF result'])\n"  ^   
+indent ^ "have rfactor: \"" ^ (isabelleTerm (equant sub)) ^ "\" by (fact ok[OF assumptions', OF fails', OF result'])\n"  ^   
 %indent ^ "from ok assumptions' fails'  have rfactor: \"" ^ (isabelleTerm (traceResult sub)) ^ "\" by simp\n"  ^
 indent ^  "from factors assumptions rfactor show ?thesis by auto\n" ^
 % indent ^ "show ?thesis sorry\n" ^   
@@ -628,7 +644,7 @@ indent ^ "from inner have defns : \"" ^ isabelleTerm defn_conj ^ "\" by auto\n" 
 indent ^ "from assumptions defns have assumptions': \"" ^ isabelleTerm (mkAnd (traceAssumptions sub)) ^ "\" by auto\n" ^
 indent ^ "from fails have fails' : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure sub)))) ^ "\" by auto\n" ^
 indent ^ "from inner have result' : \"" ^ isabelleTerm (traceResult sub) ^ "\" by (auto simp only:)\n" ^
-indent ^ "have sub_done : \"" ^ equant isabelleTerm sub ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
+indent ^ "have sub_done : \"" ^ isabelleTerm (equant sub) ^ "\" by (fact ok_local[OF assumptions', OF fails', OF result'])\n" ^
 indent ^ "from sub_done defns esubs show ?thesis by blast\n" ^ 
 %   indent ^ "show ?thesis sorry\n" ^
 uindent ^ "qed\n"
@@ -645,6 +661,14 @@ indent ^ "show ?thesis sorry\n" ^
 uindent ^ "qed\n"
 ))
 
+
+% Return the predicate (as an MSTerm) that is "proved" by a TraceTree.
+% README: This assumes the TraceTree that is "top-level", i.e., that
+% it is not a sub-tree of some larger TraceTree. Non-top-level
+% TraceTrees can have traceAssumptions, which are not covered here.
+op MergeRules.mergeRulesPredicate (t:TraceTree) : MSTerm =
+  mkImplies (mkNot (dnfToTerm (traceFailure t)),
+             mkImplies (traceResult t, equant t))
 
 op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId)(smtArgs:List QualifiedId):String =
    let _ = writeLine "Generating MergeRulesProof (In MetaProgram)" in
@@ -663,7 +687,7 @@ indent ^ "(* Final Refinement Step XXXX *)\n" ^
 indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
 indent ^ "assume precondition : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure t)))) ^ "\"\n" ^
-indent ^ "have unfolded: \"" ^ equant isabelleTerm t ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
+indent ^ "have unfolded: \"" ^ isabelleTerm (equant t) ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
 indent ^ "show ?thesis\n" ^
 indent ^ "  apply (unfold " ^ unfold_ids ^ " )\n" ^
 indent ^ "  apply (simp only:split_conv)\n" ^
@@ -1441,10 +1465,10 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
                                           % the op that the rewritten
                                           % term will ultimately
                                           % appear in.
-   let info = nullTransformInfo in
+   let pf = prove_equalRefl tm in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
-   let (pterm',info') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, info) in
+   let (pterm',pf') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, pf) in
    let tm' = fromPathTerm pterm' in
    if equalTerm?(tm, tm')
      then None

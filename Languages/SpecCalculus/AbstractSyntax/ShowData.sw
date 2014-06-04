@@ -20,6 +20,7 @@ ShowData qualifying spec
 
 import Types
 import /Languages/MetaSlang/AbstractSyntax/AnnTerm
+import /Languages/MetaSlang/Specs/Proof
 import /Library/PrettyPrinter/WadlerLindig
 % import /Languages/MetaSlang/Specs/Printer
 import /Languages/SpecCalculus/Semantics/Value
@@ -885,12 +886,10 @@ op ppSpecElementsAux (c:Context) (elems:SpecElements) : List WLPretty =
     | el :: rst ->
       Cons(ppSpecElement c el,
            ppSpecElementsAux c rst)
-      
-op ppTransformInfo (c:Context) ((rspecs,_):TransformInfo) : WLPretty =
-  ppSep ppSpaceBreak (map (fn (tm:MSTerm, rulespec:RuleSpec) -> ppGr2Concat[ppString "(",
-                                                                            ppTerm c tm,
-                                                                            ppString " ...rulespec (if any )elided...)"])
-                        rspecs)
+
+% FIXME: use pretty-printing features to print proofs
+op ppProof (c:Context) (pf:Proof) : WLPretty =
+  ppString (showProof pf)
 
 op ElidePragmas? : Bool = true
   
@@ -919,15 +918,15 @@ op ppSpecElement (c:Context) (elem:SpecElement) : WLPretty  =
                if d? then ppString "defined-when-declared" else ppString "not-defined-when-declared",
                ppString ")"]
       %% Note that most of the information for the op is not here but rather in the Spec's op map.
-    | OpDef (qid,refine_num,opt_info,pos) ->    % !!!
+    | OpDef (qid,refine_num,opt_pf,pos) ->    % !!!
       ppConcat[ppString "(OpDef ",
                ppQualifiedId qid,
                ppString " ",
                ppString (show refine_num),
                ppString " (",
-               (case opt_info of
+               (case opt_pf of
                   | None -> ppString "None"
-                  | Some info -> ppTransformInfo c info),
+                  | Some pf -> ppProof c pf),
                ppString "))"]
     | Type (qid,pos) ->
       ppConcat[ppString "(TypeDecl ",
