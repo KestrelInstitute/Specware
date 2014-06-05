@@ -4,6 +4,7 @@
 Coercions qualifying
 spec 
   import /Languages/MetaSlang/Specs/Environment
+  import /Languages/MetaSlang/Specs/Proof
 
   op handleOverloading?: Bool = false
 
@@ -137,76 +138,9 @@ spec
     in
     (mkRecordPat pats, mkRecord tms)
 
-  op  addCoercions (coercions: TypeCoercionTable) (spc: Spec): Spec =
-    let def mapTermTop (opinfo, refine_num) =
-          let trps = unpackTypedTerms (opinfo.dfn) in
-          let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
-          % let _ = writeLine("addCoercions\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
-          let tm1 = if anyTerm? tm then tm else MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) tm in
-          let new_ty = MetaSlang.mapType(id, mapType, id) ty in
-          let result = if anyTerm? tm then tm else mapTerm(tm1, new_ty) in
-          if equalTerm?(result, tm) then opinfo.dfn
-            else maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, new_ty, result)))
-
-      def mapType ty =
-        case ty of
-          | Subtype(s_ty, pred, a) ->
-            Subtype(s_ty, mapTerm(pred, mkArrow(s_ty, boolType)), a)
-          | _ -> ty
-
-      def mapTerm(tm, ty) =
-	let rm_ty = inferType(spc, tm) in
-	let delayCoercion? =
-	    case tm of
-	      | Lambda _ ->
-                (case rangeOpt(spc, rm_ty) of   % Don't delay set
-                   | Some r_ty | equalType?(r_ty, boolType) -> false
-                   | _ -> false)
-	      | Let _ -> true
-              | Apply(Lambda _, _, _) -> true
-	      | LetRec _ -> true
-	      | IfThenElse _ -> true
-	      | Record _ -> true
-	      | _ -> false
-	in
-	let n_tm = mapSubTerms(tm, if delayCoercion? || embed? Lambda tm then ty else rm_ty) in
-	if delayCoercion? || (handleOverloading? && overloadedTerm? n_tm) then n_tm
-	else
-        % let _ = writeLine(printTerm tm^": "^printType rm_ty ^"\n--> " ^ printType ty^"\n") in
-	case needsCoercion?(ty, rm_ty, coercions, n_tm, spc) of
-          | Some(toSuper?, tb, lifters) ->
-            (case n_tm of
-              | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, ty, a)
-              | _ -> if toSuper? then coerceToSuper(n_tm, tb, lifters, ty)
-                     else coerceToSub(n_tm, tb, lifters, ty))
-          | None ->
-        if simpleTerm n_tm then         % Var or Op
-          case (arrowOpt(spc, ty), arrowOpt(spc, rm_ty)) of
-            | (Some(dom, rng), Some(rm_dom, rm_rng))
-                | ~(opaqueType?(ty, coercions, spc))
-                  && (some?(needsCoercion?(dom, rm_dom, coercions, n_tm, spc))
-                       || some?(needsCoercion?(rng, rm_rng, coercions, n_tm, spc))) ->
-              (case productOpt(spc, dom) of
-                | Some fields ->
-                  let (v_pat, v_tm) = patTermVarsForProduct fields in
-                  mkLambda(v_pat, mapTerm(mkApply(n_tm, v_tm), rng))
-                | None ->
-                  mkLambda(mkVarPat("xz", dom), mapTerm(mkApply(n_tm, mkVar("xz", dom)), rng)))
-            | _ ->
-          case (productOpt(spc, ty), productOpt(spc, rm_ty)) of
-            | (Some fields, Some rm_fields)
-                | exists? (fn ((_, p_ty), (_, rm_p_ty)) ->
-                            some?(needsCoercion?(p_ty, rm_p_ty, coercions, n_tm, spc)))
-                    (if length fields = length rm_fields
-                       then zip(fields, rm_fields)
-                       else let _ = writeLine("ac zip error: "^printTerm n_tm^": "^printType rm_ty^"\n"^printType ty) in
-                            []) ->
-              let (v_pat, v_tm) = patTermVarsForProduct rm_fields in
-              mkLet([(v_pat, n_tm)], v_tm)
-            %% !! Need more general cases as well
-            | _ -> n_tm
-        else n_tm
-
+  op addCoercionsToTerm_helper (coercions: TypeCoercionTable) (spc: Spec) (tm: MSTerm, ty: MSType) : MSTerm =
+    let
+      def mapTerm (tm,ty) = addCoercionsToTerm_helper coercions spc (tm,ty)
       def mapSubTerms(tm, ty) =
         % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printType ty) in
 	case tm of
@@ -280,10 +214,111 @@ spec
                    let coerced_term = mkApply(mkLiftedFun(coerce_fn, lifters, spc), tm) in
                    % let _ = writeLine("coerced: "^printTerm coerced_term) in
                    coerced_term
-      def coerceSubtypePreds(ty: MSType): MSType =
-        case ty of
-          | Subtype(ss, pred, a) -> Subtype(ss, mapTerm(pred, inferType(spc, pred)), a)
-          | _ -> ty
+    in
+    let rm_ty = inferType(spc, tm) in
+    let delayCoercion? =
+      case tm of
+        | Lambda _ ->
+          (case rangeOpt(spc, rm_ty) of   % Don't delay set
+             | Some r_ty | equalType?(r_ty, boolType) -> false
+             | _ -> false)
+        | Let _ -> true
+        | Apply(Lambda _, _, _) -> true
+        | LetRec _ -> true
+        | IfThenElse _ -> true
+        | Record _ -> true
+        | _ -> false
+    in
+    let n_tm = mapSubTerms(tm, if delayCoercion? || embed? Lambda tm then ty else rm_ty) in
+    if delayCoercion? || (handleOverloading? && overloadedTerm? n_tm) then n_tm
+    else
+      % let _ = writeLine(printTerm tm^": "^printType rm_ty ^"\n--> " ^ printType ty^"\n") in
+      case needsCoercion?(ty, rm_ty, coercions, n_tm, spc) of
+        | Some(toSuper?, tb, lifters) ->
+          (case n_tm of
+             | Fun(Nat i, _, a) | tb.subtype = Qualified("Nat", "Nat") -> Fun(Nat i, ty, a)
+             | _ -> if toSuper? then coerceToSuper(n_tm, tb, lifters, ty)
+                    else coerceToSub(n_tm, tb, lifters, ty))
+        | None ->
+          if simpleTerm n_tm then         % Var or Op
+            case (arrowOpt(spc, ty), arrowOpt(spc, rm_ty)) of
+              | (Some(dom, rng), Some(rm_dom, rm_rng))
+              | ~(opaqueType?(ty, coercions, spc))
+                && (some?(needsCoercion?(dom, rm_dom, coercions, n_tm, spc))
+                    || some?(needsCoercion?(rng, rm_rng, coercions, n_tm, spc))) ->
+                (case productOpt(spc, dom) of
+                   | Some fields ->
+                     let (v_pat, v_tm) = patTermVarsForProduct fields in
+                     mkLambda(v_pat, mapTerm(mkApply(n_tm, v_tm), rng))
+                   | None ->
+                     mkLambda(mkVarPat("xz", dom), mapTerm(mkApply(n_tm, mkVar("xz", dom)), rng)))
+              | _ ->
+                case (productOpt(spc, ty), productOpt(spc, rm_ty)) of
+                  | (Some fields, Some rm_fields)
+                  | exists? (fn ((_, p_ty), (_, rm_p_ty)) ->
+                               some?(needsCoercion?(p_ty, rm_p_ty, coercions, n_tm, spc)))
+                    (if length fields = length rm_fields
+                       then zip(fields, rm_fields)
+                     else let _ = writeLine("ac zip error: "^printTerm n_tm^": "^printType rm_ty^"\n"^printType ty) in
+                       []) ->
+                    let (v_pat, v_tm) = patTermVarsForProduct rm_fields in
+                    mkLet([(v_pat, n_tm)], v_tm)
+                  %% !! Need more general cases as well
+                  | _ -> n_tm
+          else n_tm
+
+  op addCoercionsToType_helper (coercions: TypeCoercionTable) (spc: Spec) (ty: MSType) : MSType =
+    case ty of
+      | Subtype(s_ty, pred, a) ->
+        Subtype(s_ty,
+                addCoercionsToTerm_helper coercions spc
+                  (pred, mkArrow(s_ty, boolType)),
+                a)
+      | _ -> ty
+
+  op addCoercionsToPattern_helper (coercions: TypeCoercionTable) (spc: Spec) (pat: MSPattern) : MSPattern =
+    case pat of
+      | RestrictedPat(pat, pred, a) ->
+        RestrictedPat(pat,
+                      addCoercionsToTerm_helper coercions spc
+                        (pred, inferType(spc, pred)),
+                      a)
+      | _ -> pat
+
+
+  % Add the given coercions to a term of a given type
+  op addCoercionsToTerm (coercions: TypeCoercionTable) (spc: Spec) (tm: MSTerm, ty: MSType) : MSTerm * MSType =
+    let def mapType ty =
+      addCoercionsToType_helper coercions spc ty
+    in
+    let def mapPattern pat =
+      addCoercionsToPattern_helper coercions spc pat
+    in
+    let tm1 = if anyTerm? tm then tm else MetaSlang.mapTerm(id, mapType, mapPattern) tm in
+    let new_ty = MetaSlang.mapType(id, mapType, id) ty in
+    if anyTerm? tm then (tm, ty) else
+      (addCoercionsToTerm_helper coercions spc (tm1, new_ty), new_ty)
+
+
+  % Add the given coercions to a type
+  op addCoercionsToType (coercions: TypeCoercionTable) (spc: Spec) (ty: MSType) : MSType =
+    mapType (id, addCoercionsToType_helper coercions spc, id) ty
+
+
+  % Add the given coercions to a Spec
+  op  addCoercions (coercions: TypeCoercionTable) (spc: Spec): Spec =
+    let def mapTermTop (opinfo, refine_num) =
+          let trps = unpackTypedTerms (opinfo.dfn) in
+          let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
+          % let _ = writeLine("addCoercions\nfull:\n"^printTerm info.dfn^"\nunpack:\n"^printTerm full_term^"\nref:\n"^printTerm tm) in
+          let (result, new_ty) = addCoercionsToTerm coercions spc (tm, ty) in
+          if equalTerm?(result, tm) then opinfo.dfn
+            else maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, new_ty, result)))
+
+      def mapType ty = addCoercionsToType_helper coercions spc ty
+      def mapTerm (tm,ty) = addCoercionsToTerm_helper coercions spc (tm,ty)
+      def mapTermNoType tm = mapTerm (tm, inferType (spc, tm))
+
       def coerceRestrictedPats pat =
         case pat of
           | RestrictedPat(pat, pred, a) ->
@@ -314,13 +349,22 @@ spec
                 elements = map (fn el ->
                                   case el of
                                     | Property(pt, nm, tvs, term, a) ->
-                                      let term = mapTerm(term, boolType) in
+                                      let term = mapTerm (term, boolType) in
                                       let term = MetaSlang.mapTerm(id, mapType, coerceRestrictedPats) term in
                                       Property(pt, nm, tvs, term, a)
+                                    | OpDef (qid, n, opt_proof, a) ->
+                                      OpDef (qid, n,
+                                             (case opt_proof of
+                                                | None -> None
+                                                | Some pf ->
+                                                  Some (mapProof "addCoercions"
+                                                          (mapTermNoType, mapType, coerceRestrictedPats) pf)
+                                              ),
+                                             a)
                                     | _ -> el)
                              spc.elements}
     in
-    let spc = mapSpec (id, coerceSubtypePreds, id) spc in
+    let spc = mapSpec (id, mapType, id) spc in
     % let _ = writeLine(printSpec spc) in
     spc
 
@@ -380,6 +424,8 @@ spec
     case tm of
       | Fun(Op(qid2, _), _, _) -> qid = qid2
       | _ -> false
+
+  % FIXME: update exploitOverloading to update any proofs in the spec as well
 
   op exploitOverloading  (coercions: TypeCoercionTable) (doMinus?: Bool) (spc: Spec): Spec =
     let def mapTermTop (opinfo, refine_num) =
