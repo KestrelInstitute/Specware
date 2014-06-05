@@ -393,6 +393,66 @@ type TraceTree =
   | Unknown
 
 
+% Apply a function to all the terms in a proof, as with mapTerm.
+% README: This will only work if the function does not somehow change
+% the underlying structure of the TraceTree; e.g., case expressions
+% referred to in the input TraceTree should still have the same basic
+% form in the output
+%
+% FIXME: add some sort of consistency check after the mapping
+op mapTraceTree (tsp: TSP_Maps_St) (t: TraceTree) : TraceTree =
+  case t of
+    | Contra (inps, assumps, vars) ->
+      Contra (mapCDNFRep tsp inps, map (mapTerm tsp) assumps,
+              mapVars tsp vars)
+    | Tauto (inps, assumps, vars) ->
+      Tauto (mapCDNFRep tsp inps, map (mapTerm tsp) assumps,
+             mapVars tsp vars)
+    | TIf (res,inps,assumps,split,lt,rt,fail,vars) ->
+      TIf (mapTerm tsp res, mapCDNFRep tsp inps,
+           map (mapTerm tsp) assumps, mapTerm tsp split,
+           mapTraceTree tsp lt, mapTraceTree tsp rt,
+           mapDNFRep tsp fail, mapVars tsp vars)
+    | TCase (res,inps,assumps,scrutinee,alts,fail,vars) ->
+      TCase (mapTerm tsp res, mapCDNFRep tsp inps,
+             map (mapTerm tsp) assumps, mapTerm tsp scrutinee,
+             map (fn (pat,tree) ->
+                    (mapPattern tsp pat, mapTraceTree tsp tree)) alts,
+             mapDNFRep tsp fail, mapVars tsp vars)
+    | TLocal (res,inps,assumps,defvars,sub,fail,vars) ->
+      TLocal (mapTerm tsp res, mapCDNFRep tsp inps,
+              map (mapTerm tsp) assumps,
+              map (fn (vars,body) ->
+                     (mapVars tsp vars, mapTerm tsp body)) defvars,
+              mapTraceTree tsp sub,
+              mapDNFRep tsp fail, mapVars tsp vars)
+    | TFactoring (res,inps,assumps,factors,sub,fail,vars) ->
+      TFactoring (mapTerm tsp res, mapCDNFRep tsp inps,
+                  map (mapTerm tsp) assumps,
+                  map (mapTerm tsp) factors, mapTraceTree tsp sub,
+                  mapDNFRep tsp fail, mapVars tsp vars)
+
+op mapDNFRep (tsp: TSP_Maps_St) (rep: DNFRep) : DNFRep =
+  map (map (mapTerm tsp)) rep
+
+op mapCDNFRep (tsp: TSP_Maps_St) (rep: CDNFRep) : CDNFRep =
+  map (map (mapCClass tsp)) rep
+
+op mapCClass (tsp: TSP_Maps_St) (cclass: CClass) : CClass =
+  case cclass of
+    | CAtom (t,ids,b,typ) ->
+      CAtom (mapTerm tsp t, ids, b, mapType tsp typ)
+    | CDef (vars,t,deps,b,ty1,ty2) ->
+      CDef (mapVars tsp vars, mapTerm tsp t, deps, b,
+            mapType tsp ty1, mapType tsp ty2)
+    | CConstrain (v,t,deps,b,ty) ->
+      CConstrain (mapTerm tsp v, mapTerm tsp t, deps, b,
+                  mapType tsp ty)
+    | CCase (pat,t,deps,b,ty) ->
+      CCase (mapPattern tsp pat, mapTerm tsp t, deps, b,
+             mapType tsp ty)
+
+
 op traceInputs(t:TraceTree):CDNFRep =
   case t of
     | Contra (inps, assumps, vars) -> inps

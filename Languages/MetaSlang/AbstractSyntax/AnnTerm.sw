@@ -1126,7 +1126,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
              Record (newRow, a)
 
          | Bind (bnd, vars, trm, a) ->
-           let newVars = map (fn (id, ty)-> (id, mapType tsp ty)) vars in
+           let newVars = mapVars tsp vars in
            let newTrm = mapRec trm in
            if newVars = vars && newTrm = trm then
              term
@@ -1227,6 +1227,12 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 
    in
      mapRec term
+
+ op [b] mapVar (tsp: TSP_Maps b) ((id, ty) : AVar b): AVar b =
+   (id, mapType tsp ty)
+
+ op [b] mapVars (tsp: TSP_Maps b) (vars : List (AVar b)): List (AVar b) =
+   map (mapVar tsp) vars
 
  op [b] mapSLst (tsp: TSP_Maps b) (tys: List(AType b)): List(AType b) =
    case tys of

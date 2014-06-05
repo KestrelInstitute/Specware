@@ -15,6 +15,9 @@ Proof qualifying spec
   % Forward reference to get subtype predicates
   op SpecNorm.typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm
 
+  % Forward reference to mapTraceTree
+  op MergeRules.mapTraceTree (tsp: TSP_Maps_St) (t: TraceTree) : TraceTree
+
   % A proof tactic
   type Tactic =
     % The simplest tactic: a string, to be interpreted by the prover
@@ -57,7 +60,7 @@ Proof qualifying spec
     % Proof_EqSym(pf) is a proof that N=M from pf : M=N
     | Proof_EqSym ProofInternal
 
-    % ProofInternal by transitivity of equality: proves x0 = x1 = ... = xn,
+    % Proof by transitivity of equality: proves x0 = x1 = ... = xn,
     % all at type T, where each (pf, t) pair in the list is an xi
     % along with the proof that x(i-1) = xi
     | Proof_EqTrans (MSType * MSTerm * List (ProofInternal * MSTerm))
@@ -159,6 +162,46 @@ Proof qualifying spec
         in
         p
 
+  % See mapProof, below
+  op mapProof_Internal (tsp: TSP_Maps_St) (pf: ProofInternal) : Proof =
+    case pf of
+      | Proof_Cut (P, Q, pf1, pf2) ->
+        prove_implElim (mapProof_Internal tsp pf1, mapProof_Internal tsp pf2)
+      | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
+        prove_forallElim (mapProof_Internal tsp pf, mapTerm tsp N,
+                          mapProof_Internal tsp tp_pf)
+      | Proof_EqTrue (M, pf) ->
+        prove_fromEqualTrue (mapTerm tsp M, mapProof_Internal tsp pf)
+      | Proof_Theorem (id, P) ->
+        prove_withTheorem (id, mapTerm tsp P)
+      | Proof_Tactic (tact, P) ->
+        prove_withTactic (mapTactic tsp tact, mapTerm tsp P)
+      | Proof_EqSubterm(M,N,T,p,pf) ->
+        prove_equalSubTerm (mapTerm tsp M, mapTerm tsp N, mapType tsp T, p,
+                            mapProof_Internal tsp pf)
+      | Proof_UnfoldDef (T, qid, M) ->
+        prove_equalUnfold (qid, mapTerm tsp M, mapType tsp T)
+      | Proof_EqSym (pf) ->
+        prove_equalSym (mapProof_Internal tsp pf)
+      | Proof_EqTrans (T, M1, pfs) ->
+        foldl (fn (prev_pf, (next_pf,_)) ->
+                 prove_equalTrans (prev_pf, mapProof_Internal tsp next_pf))
+          (prove_equalRefl (mapTerm tsp M1))
+          pfs
+      | Proof_ImplTrans(P,pf1,Q,pf2,R) ->
+        prove_implTrans (mapProof_Internal tsp pf1, mapProof_Internal tsp pf2)
+      | Proof_ImplEq pf ->
+        prove_implEq (mapProof_Internal tsp pf)
+      | Proof_MergeRules (tree,ids1,ids2) ->
+        prove_MergeRules (mapTraceTree tsp tree, ids1, ids2)
+
+  % See mapProof, below
+  op mapTactic (tsp: TSP_Maps_St) (tactic: Tactic) : Tactic =
+    case tactic of
+      | StringTactic _ -> tactic
+      | AutoTactic pfs ->
+        AutoTactic (map (mapProof "(recursive mapTactic)" tsp) pfs)
+
   % Print out a representation of a proof
   op showProof_Internal (p : ProofInternal) : String =
     "(FIXME: write Proof.showProof_Internal!)"
@@ -189,6 +232,28 @@ Proof qualifying spec
       | ErrorOk p -> Some (proofPredicate_Internal p)
       | ErrorFail _ -> None
 
+  % Substitute for free type variables in a proof. Note that
+  % substituting for term variables would be more complicated, as it
+  % would require proofs that the terms satisfy their type predicates.
+  op instantiateTyVarsInProof (subst : TyVarSubst, pf : Proof) : Proof =
+    { pf_int <- pf;
+      return (substTypes_ProofInternal (subst, pf_int)) }
+
+  % Apply a function to all the terms in a proof, as with mapTerm.
+  % README: This will only work if the function does not require a
+  % change to the structure of the proof; e.g., the function should
+  % not add or remove implications or quantifiers. Also, the function
+  % must not change the paths to subterms used in the proof.
+  op mapProof (descr: String) (tsp: TSP_Maps_St) (pf: Proof) : Proof =
+    case pf of
+      | ErrorOk pf_int ->
+        (case mapProof_Internal tsp pf_int of
+           | ErrorFail err ->
+             ErrorFail (descr ^ " failed: " ^ err)
+           | res -> res)
+      | _ -> pf
+
+
   % prove_implElim (pf1, pf2) takes a proof pf1:P=>Q and a proof pf2:P
   % and builds a proof of Q
   op prove_implElim (p1 : Proof, p2 : Proof) : Proof =
@@ -200,13 +265,6 @@ Proof qualifying spec
           return (Proof_Cut (P, Q, p1_int, p2_int))
         | _ -> ErrorFail ("Implication elimination of (" ^ printTerm p1_pred
                             ^ ") against (" ^ printTerm p2_pred ^ ")") }
-
-  % Substitute for free type variables in a proof. Note that
-  % substituting for term variables would be more complicated, as it
-  % would require proofs that the terms satisfy their type predicates.
-  op instantiateTyVarsInProof (subst : TyVarSubst, pf : Proof) : Proof =
-    { pf_int <- pf;
-      return (substTypes_ProofInternal (subst, pf_int)) }
 
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
