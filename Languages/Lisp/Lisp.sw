@@ -13,6 +13,11 @@ ListADT qualifying spec
   type LispSpec =
     { name	     : String,
       extraPackages  : Strings,
+     
+      %% these come from #translate pragmas...
+      includes             : Strings,
+      verbatims            : Strings,
+
       getter_setters : List (String * String),
       ops            : Strings,
       axioms         : LispTerms,
@@ -103,13 +108,15 @@ ListADT qualifying spec
   op emptySpec : LispSpec
 
   def emptySpec =
-    { name    = "BASESPECS",
+    { name           = "BASESPECS",
       extraPackages  = [],
+      includes       = [],
+      verbatims      = [],
       getter_setters = [],
-      ops     = [],
-      axioms  = [],
-      opDefns = [],
-      forms   = [] }
+      ops            = [],
+      axioms         = [],
+      opDefns        = [],
+      forms          = [] }
 
   op  ops: LispTerm * Set.Set String -> Set.Set String
   def ops(term:LispTerm,names) =

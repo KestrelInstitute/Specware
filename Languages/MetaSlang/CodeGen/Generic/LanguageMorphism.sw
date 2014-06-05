@@ -1,6 +1,7 @@
 LM qualifying spec
 
 import /Languages/SpecCalculus/AbstractSyntax/Types
+import /Languages/MetaSlang/Transformations/Pragma
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This spec describes a rather generic structure for mapping symbols from one
@@ -862,6 +863,33 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
   structure_types       = structure_types,
   enumeration_types     = enumeration_types,
   union_types           = union_types}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op parseTranslationPragmas (language : String) (s : Spec) : LanguageMorphisms =
+ %% language will be "C", "Lisp", etc.
+ foldlSpecElements (fn (lms, elt) ->
+                      case elt of
+                        | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, language) ->
+                          (case parseLanguageMorphism body of
+                             | Parsed lm -> 
+                               lms ++ [lm]
+                             | Error msg ->
+                               let _ = writeLine("Error parsing " ^ language ^ " translation pragma: " ^ msg) in
+                               lms
+                             | result ->
+                               let _ = writeLine "=======================================" in
+                               let _ = writeLine "Unecognized result from parsing pragma:" in
+                               let _ = writeLine body                                      in
+                               let _ = writeLine " => "                                    in
+                               let _ = writeLine (anyToString result)                      in
+                               let _ = writeLine "=======================================" in
+                               lms)
+                        | _ ->
+                          lms)
+                   []
+                   s.elements
 
 end-spec
 

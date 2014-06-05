@@ -88,27 +88,6 @@ op sliceForCGen (ms_spec    : Spec,
  executionSlice (ms_spec, parseCTranslationPragmas, c_oracle, root_ops, root_types)
 
 op parseCTranslationPragmas (s : Spec) : LanguageMorphisms =
- foldlSpecElements (fn (lms, elt) ->
-                      case elt of
-                        | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, "C") ->
-                          (case parseLanguageMorphism body of
-                             | Parsed lm -> 
-                               lms ++ [lm]
-                             | Error msg ->
-                               let _ = writeLine("Error parsing C translation pragma: " ^ msg) in
-                               lms
-                             | result ->
-                               let _ = writeLine "=======================================" in
-                               let _ = writeLine "Unecognized result from parsing pragma:" in
-                               let _ = writeLine body                                      in
-                               let _ = writeLine " => "                                    in
-                               let _ = writeLine (anyToString result)                      in
-                               let _ = writeLine "=======================================" in
-                               lms)
-                        | _ ->
-                          lms)
-                   []
-                   s.elements
-
+ parseTranslationPragmas "C" s 
 
 end-spec

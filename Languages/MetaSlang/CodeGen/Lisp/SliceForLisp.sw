@@ -50,6 +50,6 @@ op sliceForLispGen (ms_spec    : Spec)
  executionSlice (ms_spec, parseLispTranslationPragmas, lisp_oracle, root_ops, root_types)
 
 op parseLispTranslationPragmas (s : Spec) : LanguageMorphisms =
- []
+ parseTranslationPragmas "Lisp" s
 
 end-spec
