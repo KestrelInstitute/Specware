@@ -590,13 +590,11 @@ op isaDirectoryName: String = "Isa"
     let newelements =
         foldr (fn (el, elts) ->
                  case el of
-                   | OpDef(qid as Qualified(q,id1), refine_num, Some (hist, pf), _) | refine_num > 0 && (hist ~= [] || pf ~= None) ->
+                   | OpDef(qid as Qualified(q,id1), refine_num, Some pf, _) | refine_num > 0 ->
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
                      let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
                      let tsp = (relativizeQuantifiersSimpOption c.simplify? spc, id, id) in
-                     let hist = map (fn (tm, rl) -> (mapTerm tsp tm, rl)) hist in
-                     let pf = mapRefinementProofOpt (mapTerm tsp) pf in
                      let trps = unpackTypedTerms (mapTerm tsp opinfo.dfn) in
                      let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
                      let (_, prev_ty, prev_dfn) = nthRefinement(trps, refine_num - 1) in
@@ -615,20 +613,8 @@ op isaDirectoryName: String = "Isa"
                               else
                               % let _ = writeLine("oblig: "^printTerm oblig) in
                               % let _ = writeLine("Generating proof for "^thm_name) in
-                              let prf_str =
-                                case pf of
-                                    % if we have an implication proof, convert it to Isabelle
-                                  | Some (RefineStrengthen impl_pf) ->
-                                    % let _ = writeLine(showImplProof impl_pf) in
-                                    generateImplicationProof (c, condn, rhs, impl_pf)
-                                  | Some (RefineEq eq_pf) ->
-                                    % let _ = writeLine(showPP(eq_pf, true)) in
-                                    let eq_pf = optimizeEqProofSubterms eq_pf in
-                                    % let _ = writeLine("Optimized:\n"^showPP(eq_pf, true)) in
-                                    generateImplicationProof (c, lhs, rhs, ImplEq(eq_pf))
-                                    % otherwise, fall back on old method based on TransformHistory
-                                  | _ -> generateProofForRefinedPostConditionObligation(c, lhs, rhs, condn, hist)
-                              in
+                              % FIXME: double-check that pf is a proof of what we expect it to be!
+                              let prf_str = proofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -646,23 +632,8 @@ op isaDirectoryName: String = "Isa"
                                % let _ = writeLine("dfn: "^printTerm dfn) in
                                % let _ = writeLine("Generating proof for "^thm_name) in
                                % let _ = writeLine(anyToPrettyString pf) in
-                              let prf_str =
-                                case pf of
-                                    % if we have an equality proof, convert it to Isabelle
-                                  | Some (RefineEq eq_pf) ->
-                                    (case optimizeEqProofSubterms eq_pf of
-                                       | EqProofSubterm(pth, eq_spf) -> 
-                                         let new_eq_spf = EqProofTrans([(EqProofUnfoldDef mainId,
-                                                                         (fromPathTermWithBindingsAdjust(prev_dfn, pth)).2),
-                                                                        (eq_spf, (fromPathTermWithBindingsAdjust(dfn, pth)).2)],
-                                                                       EqProofSym(EqProofUnfoldDef refId))
-                                         in
-                                         % let _ = writeLine(showEqProof new_eq_spf) in
-                                         generateEqualityProof (c, lhs_tm, rhs_tm, new_eq_spf)
-                                         % otherwise, fall back on old method based on TransformHistory
-                                       | _ -> generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc))
-                                  | _ -> generateProofForRefineObligation(c, eq_tm, prev_dfn, hist, spc)
-                              in
+                              % FIXME: double-check that pf is a proof of what we expect it to be!
+                              let prf_str = proofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -1080,8 +1051,105 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 
 
 %%%
-%%% Generation of Isabelle proofs from RefinementProofs
+%%% Generation of Isabelle proofs from the Proof type
 %%%
+
+% Convert a ProofInternal to an IsaProof in StateMode
+op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
+  case pf of
+    | Proof_Cut (P,Q,pf1,pf2) ->
+      % have cut_pf1: "P ==> Q" (pf1)
+      % have cut_pf2: "P" (pf2)
+      % show ?thesis by (rule cut_pf1[OF cut_pf2])
+      addForwardStep
+      (c, "cut_pf1_", ppBigImplication (c, P, Q),
+       forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
+       (fn pf1_name ->
+          addForwardStep
+          (c, "cut_pf2_", ppTerm c Top P,
+           forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
+           (fn pf2_name ->
+              showFinalResult
+              (singleTacticProof
+                 (ruleTactic (cut_pf1 ^ "[OF "^ pf_name ^"]")))))))
+
+    | Proof_ForallE _ ->
+      % have forall_elim_pf_main: "\<forall> x1 ... xn . subtype_preds => M" (pf_main)
+      % have forall_elim_pf1: "T1(x1)" (pf1)
+      % ...
+      % show ?thesis by (simp add: forall_elim_pf_main[of N1 ...] forall_elim_pf1 ...)
+      %
+      % NOTE: the reason we do not simply use OF to do cut-elimination
+      % with the subtype_preds is that we do not know how many subtype
+      % predicates have been simplified by relativizeQuantifiers
+      FIXME HERE
+
+
+      addForwardStep
+      (c, "cut_pf1_", ppBigImplication (c, P, Q),
+       forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
+       (fn pf1_name ->
+          addForwardStep
+          (c, "cut_pf2_", ppTerm c Top P,
+           forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
+           (fn pf2_name ->
+              showFinalResult
+              (singleTacticProof
+                 (ruleTactic (cut_pf1 ^ "[OF "^ pf_name ^"]")))))))
+
+
+    % Proof_EqTrue(M,pf) is a proof of M given a proof pf :: M=true
+    | Proof_EqTrue (MSTerm * ProofInternal)
+
+    % Proof_Theorem(x,P) is a proof of P assuming that x is the
+    % name of an axiom or theorem that proves P
+    | Proof_Theorem (QualifiedId * MSTerm)
+
+    % ProofInternal by an external tactic, along with the predicate it proves
+    | Proof_Tactic (Tactic * MSTerm)
+
+    %% Equality proofs
+
+    % ProofInternal that a variable x equals its definition
+    | Proof_UnfoldDef (MSType * QualifiedId * MSTerm)
+
+    % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
+    % proof pf : M.p = N.p, where M.p is the subterm of M at path p
+    | Proof_EqSubterm (MSTerm * MSTerm * MSType * Path * ProofInternal)
+
+    % Proof_EqSym(pf) is a proof that N=M from pf : M=N
+    | Proof_EqSym ProofInternal
+
+    % ProofInternal by transitivity of equality: proves x0 = x1 = ... = xn,
+    % all at type T, where each (pf, t) pair in the list is an xi
+    % along with the proof that x(i-1) = xi
+    | Proof_EqTrans (MSType * MSTerm * List (ProofInternal * MSTerm))
+
+    %% Implication proofs
+
+    % Proof_ImplTrans(P,pf1,Q,pf2,R) is a proof of P => R from
+    % proofs pf1: P=>Q and pf2: Q=>R
+    | Proof_ImplTrans (MSTerm * ProofInternal * MSTerm * ProofInternal * MSTerm)
+
+    % Proof_ImplEq(pf) is a proof that P=>Q from pf: P=Q
+    | Proof_ImplEq ProofInternal
+
+    % Proof_MergeRules(P,Q,tree,ids1,ids2) is a proof that P=>Q
+    % generated by MergeRules
+    | Proof_MergeRules (TraceTree * List QualifiedId * List QualifiedId)
+
+
+% FIXME: add a flag to Context to choose StateMode or ProveMode: the
+% former is easier to debug, while the latter is more concise
+op proofToIsaProofString (c: Context, pf: Proof) : String =
+  case pf of
+    | ErrorOk pf_inf ->
+      isaProofToString (forwardProofBlock (proofIntToIsaProof_st (c, pf)))
+    | ErrorFail err_str ->
+      "by auto (* Error in building proof: " ^ err_str ^ " *)"
+
+
+% FIXME HERE: remove the below!
 
   % generate an Isabelle proof of equality "lhs = rhs"
   op generateEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:EqProof): String =
