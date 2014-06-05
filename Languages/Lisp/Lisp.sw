@@ -15,8 +15,8 @@ ListADT qualifying spec
       extraPackages  : Strings,
      
       %% these come from #translate pragmas...
-      includes             : Strings,
-      verbatims            : Strings,
+      includes       : Strings,
+      verbatims      : Strings,
 
       getter_setters : List (String * String),
       ops            : Strings,
@@ -341,17 +341,27 @@ ListADT qualifying spec
        fn stream ->
 	(streamWriter(stream,preamble);
 	 streamWriter(stream,";;; Lisp spec\n\n");
-	 app (fn pkgName -> streamWriter (stream,
-					  "(defpackage :" ^ pkgName ^ ")\n"))
-	  (sortGT (fn (x,y) -> y <= x) spc.extraPackages);
-	streamWriter(stream,"\n(defpackage :" ^ name ^ ")");
-	streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
 
-	streamWriter(stream,";;; Definitions\n\n");
+	 app (fn pkgName  -> streamWriter (stream,
+                                           "(defpackage :" ^ pkgName ^ ")\n"))
+  	     (sortGT (fn (x,y) -> y <= x) spc.extraPackages);
 
-        %% streamWriter(stream,"(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n");
-        app (fn (getter, setter) -> streamWriter (stream, "(defsetf " ^ getter ^ " " ^ setter ^ ")\n"))
-            spc.getter_setters;
+         streamWriter(stream,"\n(defpackage :" ^ name ^ ")");
+         streamWriter(stream,"\n(in-package :" ^ name ^ ")\n\n");
+
+         (case spc.verbatims of
+            | [] -> ()
+            | verbatims -> 
+              let _ = streamWriter (stream,";;; Verbatim from pragmas:\n")           in
+              let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims in
+              let _ = streamWriter (stream,"\n")                                     in
+              ());
+              
+         streamWriter(stream,";;; Definitions\n\n");
+
+         %% streamWriter(stream,"(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n");
+         app (fn (getter, setter) -> streamWriter (stream, "(defsetf " ^ getter ^ " " ^ setter ^ ")\n"))
+             spc.getter_setters;
 
         if length defs < maxDefsPerFile
           then app (fn ldef -> ppDefToStream(ldef,stream)) defs
