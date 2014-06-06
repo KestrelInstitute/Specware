@@ -36,7 +36,7 @@ SpecCalc qualifying spec
           reducedTerm <-
             let
               def reduceTerm count trm =
-                case rewriteRecursive (ctxt,[],rules,trm,[]) of
+                case rewriteRecursive (ctxt,[],rules,trm) of
                   | None -> trm
                   | Some (trm', _) ->
                       if (count > 0) then 

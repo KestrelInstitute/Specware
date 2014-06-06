@@ -1126,32 +1126,31 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
        prove_equalTrans (combineHistoryProofs (input_trm, hist'), pf_last)
 
  op rewriteRecursive :
-    Context * MSVars * RewriteRules * MSTerm * Path ->
+    Context * MSVars * RewriteRules * MSTerm ->
     Option (MSTerm * Proof)
 
  op rewriteRecursivePre : 
-    Context * MSVars * Demod RewriteRule * MSTerm * Path -> LazyList (History)
+    Context * MSVars * Demod RewriteRule * MSTerm -> LazyList (History)
 
  op minTraceDepth: Nat = 10
 
-%%
-%% Apply unconditional rewrite rules using inner-most strategy.
-%% Apply conditional rewrite rules using outer-most strategy.
-%%
 
- def rewriteRecursive(context,boundVars,rules,term,path) = 
-   let _ = writeLine ("rewriteRecursive called with path " ^ printPath path
-                        ^ " and term (" ^ printTerm term ^ ")") in
+ %%
+ %% The main entrypoint for rewriting
+ %%
+
+ % Rewrite the subterm of term at path
+ def rewriteRecursive(context,boundVars,rules,term) = 
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
    let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
-   case rewriteRecursivePre(context,boundVars,rules,term,path) of
+   case rewriteRecursivePre(context,boundVars,rules,term) of
      | Nil -> None
      | Cons ([], _) -> None
      | Cons (history as (_,out_term,_,_)::_, _) ->
        Some (out_term, combineHistoryProofs (term, history))
 
- def rewriteRecursivePre(context, boundVars, rules0, term, path) = 
+ def rewriteRecursivePre(context, boundVars, rules0, term) = 
    let
      def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
        if trueTerm? term then Some (emptySubstitution, prove_true)
@@ -1400,7 +1399,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
         (fn () -> unit history)
    in
       %let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules0, term, path, term, boundVars, [], 0)
+      rewriteRec(rules0, term, [], term, boundVars, [], 0)
 
  op rewriteOnce : 
     Context * MSVars * RewriteRules * MSTerm * Path -> MSTerms

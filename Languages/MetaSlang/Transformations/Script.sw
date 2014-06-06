@@ -385,7 +385,9 @@ spec
   op rewritePT(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
        : MSTerm * Proof =
     (context.traceDepth := 0;
+     let top_term = topTerm path_term in
      let term = fromPathTerm path_term in
+     let path = pathTermPath path_term in
      let _ = if rewriteDebug? then
                (writeLine("Rewriting:\n"^printTerm term);
                 app printRule rules)
@@ -396,20 +398,22 @@ spec
      let rules = contextRulesFromPath(path_term, qid, context) ++ rules in
      let rules = subtypeRules(term, context) ++ rules in
      let rules = splitConditionalRules rules in
-     let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
-           % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
-           case rewriteRecursive (context, freeVars trm, rules,
-                                  trm, butLast(pathTermPath path_term)) of
-             | None -> (trm, pf)
-             | Some (new_tm, new_pf) ->
-               (new_tm, prove_equalTrans (pf, new_pf))
-     in
-     let result = % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
-                  % else
-                  doTerm(rewriteDepth, term, prove_equalRefl term)
-     in
-     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result.1) else () in
-     result)
+     case rewriteRecursive (context, freeVars term, rules, term) of
+       | None -> (top_term, prove_equalRefl top_term)
+       | Some (new_subterm, subterm_pf) ->
+         if path = [] then
+           (new_subterm, subterm_pf)
+         else
+           let new_term = topTerm (replaceSubTerm (new_subterm, path_term)) in
+           let result =
+             (new_term,
+              prove_equalSubTerm (top_term, new_term, termType term,
+                                  path, subterm_pf))
+           in
+           let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result.1)
+                   else ()
+           in
+           result)
 
   op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
     foldr (fn (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
