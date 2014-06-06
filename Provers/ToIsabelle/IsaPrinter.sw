@@ -841,22 +841,7 @@ op isaDirectoryName: String = "Isa"
     case hist of
       | [(tr_tm, MergeRulesTransform (tree,unfolds,smtArgs))] ->
         let _ = writeLine "Generating MergeRules Proof" in
-
-        let def isabelleTerm tm =
-              let spc = getSpec c in
-              let out = (ppTermStrIndent c Top tm 7) in        
-              let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
-              % We have to normalize types, so that record types get
-              % printed correctly in Isabelle (substitute named type
-              % for a record for their anonymous representation).
-              let typeNameInfo = topLevelTypeNameInfo spc in              
-              let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
-              let out' = (ppTermStrIndent c Top tm' 7) in
-              % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
-              out'
-        in
-        let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
-        in
+        let def isabelleTerm tm = ppTermNonNormStrIndent c tm 7 in
         printMergeRulesProof (getSpec c) isabelleTerm tree unfolds smtArgs
 
       | _  -> 
@@ -933,6 +918,10 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
  % use a non-rule tactic, just given as a string
  op otherTactic (tactic : String) : IsaProof ProofTacticMode =
  IsaProof (string (tactic^" "))
+
+ % use a non-rule tactic
+ op otherTacticPP (tactic : Pretty) : IsaProof ProofTacticMode =
+ IsaProof tactic
 
  %% building ProveMode proofs
 
@@ -1031,8 +1020,12 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
  ppTerm c Top (mkImplies(lhs, rhs))
 
  % pretty-print an Isabelle fat arrow "==>" implication
- op ppBigImplication (c: Context, lhs: MSTerm, rhs: MSTerm) : Pretty =
- prBreak 0 [ppTerm c Top lhs, string " \\<Longrightarrow> ", ppTerm c Top rhs]
+ op ppBigImplication (c: Context, nonNorm: Bool, lhs: MSTerm, rhs: MSTerm) : Pretty =
+   let def ppTm tm =
+     if nonNorm then ppTermNonNorm c Top tm
+     else ppTerm c Top tm
+   in
+   prBreak 0 [ppTm lhs, string " \\<Longrightarrow> ", ppTm rhs]
 
  % add double quotes around a Pretty
  op doubleQuote (p : Pretty) : Pretty = prConcat [string "\"", p, string "\" "]
@@ -1062,11 +1055,11 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
       % have cut_pf2: "P" (pf2)
       % show ?thesis by (rule cut_pf1[OF cut_pf2])
       addForwardStep
-      (c, "cut_pf1_", ppBigImplication (c, P, Q),
+      (c, "cut_pf1_", ppBigImplication (c, true, P, Q),
        forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
        (fn pf1_name ->
           addForwardStep
-          (c, "cut_pf2_", ppTerm c Top P,
+          (c, "cut_pf2_", ppTermNonNorm c Top P,
            forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
            (fn pf2_name ->
               showFinalResult
@@ -1075,42 +1068,77 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
 
     | Proof_ForallE _ ->
       % have forall_elim_pf_main: "\<forall> x1 ... xn . subtype_preds => M" (pf_main)
-      % have forall_elim_pf1: "T1(x1)" (pf1)
+      % have forall_elim_pf1: "T1(N1)" (pf1)
       % ...
       % show ?thesis by (simp add: forall_elim_pf_main[of N1 ...] forall_elim_pf1 ...)
       %
       % NOTE: the reason we do not simply use OF to do cut-elimination
       % with the subtype_preds is that we do not know how many subtype
       % predicates have been simplified by relativizeQuantifiers
-      FIXME HERE
-
-
-      addForwardStep
-      (c, "cut_pf1_", ppBigImplication (c, P, Q),
-       forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
-       (fn pf1_name ->
-          addForwardStep
-          (c, "cut_pf2_", ppTerm c Top P,
-           forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
-           (fn pf2_name ->
+      let def helper (p: ProofInternal, i: Nat, args: MSTerms, pf_names: List String) : IsaProof StateMode =
+        case p of
+          | Proof_ForallE (x,T,_,N,body_pf,N_pf) ->
+            addForwardStep
+            (c, "forall_elim_pf" ^ show i ^ "_",
+             ppTermNonNorm c Top (typePredTermNoSpec (T, N)),
+             forwardProofBlock (proofIntToIsaProof_st (c, N_pf)),
+             (fn pf_name ->
+                helper (body_pf, i+1, N::args, pf_name::pf_names)))
+          | _ ->
+            addForwardStep
+            (c, "forall_elim_pf_main_",
+             ppTermNonNorm c Top (proofPredicate_Internal p),
+             forwardProofBlock (proofIntToIsaProof_st (c, p)),
+             (fn main_pf_name ->
               showFinalResult
               (singleTacticProof
-                 (ruleTactic (cut_pf1 ^ "[OF "^ pf_name ^"]")))))))
+                 (otherTacticPP
+                    (prBreak 2
+                     ([string "(simp add: ",
+                       (prSep (-4) blockFill (prString " ")
+                          ((prConcat
+                              ([string (main_pf_name ^ "[of")]
+                                 ++
+                                 (map (fn arg ->
+                                         prConcat [string " (",
+                                                   ppTermNonNorm c Top arg,
+                                                   string ")"]) (reverse args))
+                                 ++
+                                 [string "]"]))
+                             ::
+                             (map prString (reverse pf_names)))),
+                       string ")"]))))))
+      in
+      helper (pf, 1, [], [])
 
+    | Proof_EqTrue (P, pf_eq_true) ->
+      addForwardStep
+      (c, "eq_true_pf_",
+       ppTermNonNorm c Top (mkEquality (boolType, P, mkTrue())),
+       proofIntToIsaProof_st (c, pf_eq_true),
+       (fn pf_name ->
+        showFinalResult
+          (singleTacticProof (otherTactic ("(simp only: " ^ pf_name ^ ")")))))
 
-    % Proof_EqTrue(M,pf) is a proof of M given a proof pf :: M=true
-    | Proof_EqTrue (MSTerm * ProofInternal)
+    | Proof_Theorem (qid, P) ->
+      % README: we use auto here just in case the theorem statement is
+      % slightly different from what we expect...
+      showFinalResult
+      (singleTacticProof
+         (otherTactic ("(auto simp only: " ^ show qid ^ ")")))
 
-    % Proof_Theorem(x,P) is a proof of P assuming that x is the
-    % name of an axiom or theorem that proves P
-    | Proof_Theorem (QualifiedId * MSTerm)
+    | Proof_Tactic (AutoTactic pfs, P) ->
+      let def helper (pfs : List Proof, pf_names : List String) : IsaProof StateMode =
+        case pfs of
+          | [] ->
+            showFinalResult
+            (singleTacticProof
+               (otherTactic
+                  ("(auto simp add: " ^ flatten (intersperse " " pf_names) ^ ")")))
 
-    % ProofInternal by an external tactic, along with the predicate it proves
-    | Proof_Tactic (Tactic * MSTerm)
+    | Proof_Tactic (StringTactic str, P) ->
+      showFinalResult (singleTacticProof (otherTactic str))
 
-    %% Equality proofs
-
-    % ProofInternal that a variable x equals its definition
     | Proof_UnfoldDef (MSType * QualifiedId * MSTerm)
 
     % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
@@ -1306,20 +1334,7 @@ op proofToIsaProofString (c: Context, pf: Proof) : String =
      showFinalResult (singleTacticProof (ruleTactic tactic))
   | MergeRulesProof (tree,unfolds,smtArgs) ->
         let spc = getSpec c in
-        let def isabelleTerm tm =
-              let out = (ppTermStrIndent c Top tm 7) in        
-              let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
-              % We have to normalize types, so that record types get
-              % printed correctly in Isabelle (substitute named type
-              % for a record for their anonymous representation).
-              let typeNameInfo = topLevelTypeNameInfo spc in                            
-              let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
-              let out' = (ppTermStrIndent c Top tm' 7) in
-              % let _ = writeLine ("Relativize:\n" ^ out ^ "\nto\n" ^ out') in
-              out'
-        in
-        let def simpleIsabelleTerm tm = ppTermStrIndent c Top tm 7
-        in
+        let def isabelleTerm tm = ppTermNonNormStrIndent c tm 7 in
         let _ = writeLine "Generating MergeRules Proof (ppImplicationProof" in
         IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm tree unfolds smtArgs))
     % fail "ppImplicationProof: need to add support for MergeRules!"
@@ -1499,6 +1514,8 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let spc = addRefinementProofs c spc in
     % let _ = writeLine("9:\n"^printSpec spc) in
     let spc = removeSubTypes c.simplify? spc coercions stp_tbl in
+    % README: we do not currently remove subtypes in proofs
+    % FIXME: remove subtypes in proofs
     % let _ = writeLine("10:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
     let spc = exploitOverloading coercions true spc in
@@ -3785,8 +3802,18 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
        enclose?(true, prBreakCat 0 [[ppTerm c parentTerm tm, prString "::"], [ppType c Top true ty]])
      | mystery -> fail ("No match in ppTerm with: '" ^ (anyToString mystery) ^ "'")
 
+
+ op formatIsaPretty (pretty: Pretty) : String =
+   toString(format(110, pretty))
+
+ op formatIsaPrettyWithIndent (pretty: Pretty) (indent: Int) : String =
+   let indentPP = PrettyPrint.blanks indent in
+   let resPP    = PrettyPrint.prettysNone [PrettyPrint.string indentPP, pretty] in
+   let str      = PrettyPrint.toString(format(120,resPP)) in
+   subFromTo(str, indent, length str)
+
  op ppTermStr (c: Context) (parentTerm: ParentTerm) (term: MSTerm): String =
-   toString(format(110, ppTerm c parentTerm term))
+   formatIsaPretty (ppTerm c parentTerm term)
 
  % ppTermStrIndent
  %  c: Isabelle Translation Context
@@ -3794,11 +3821,26 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  %  term: the term to print
  %  indent: minimal starting column if term does not print on one line.
  op ppTermStrIndent(c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Int): String =
-   let indentPP = PrettyPrint.blanks indent in
-   let termPP   = ppTerm c parentTerm term in
-   let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indentPP, termPP] in
-   let str      = PrettyPrint.toString(format(120,termPP)) in
-   subFromTo(str, indent, length str)
+   formatIsaPrettyWithIndent (ppTerm c parentTerm term) indent
+
+
+ % Pretty-print a term that has not been normalized and that has not
+ % have subtypes removed; this is true of terms in proofs
+ op ppTermNonNorm (c: Context) (t: MSTerm) : Pretty =
+   let spc = getSpec c in
+   let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
+   let typeNameInfo = topLevelTypeNameInfo spc in              
+   let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
+   ppTerm c Top tm'
+
+ % Same as above, but output to a string
+ op ppTermNonNormStr (c: Context) (t: MSTerm) : String =
+   formatIsaPretty (ppTermNonNorm c t)
+
+ % Same as above, but output to a string
+ op ppTermNonNormStrIndent (c: Context) (t: MSTerm) (indent: Int) : String =
+   formatIsaPrettyWithIndent (ppTermNonNorm c t) indent
+
 
  %% This function finds the canonical named representation for a
  %% record type, if it exists. For example, if we have a chain of
