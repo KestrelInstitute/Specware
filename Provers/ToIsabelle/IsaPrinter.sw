@@ -968,6 +968,39 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
          (4, prConcat [string "\"", prop, string "\""])]),
      rest_pretty])
 
+ % Fix a MetaSlang variable as an Isabelle variable in a proof. The
+ % variable is given a unique name, which is passed to the remainder
+ % of the proof.
+ op fixForwardVariable (c: Context, (var_id, _): MSVar, rest: String -> IsaProof StateMode)
+ : IsaProof StateMode =
+   let var_name = var_id ^ show (getNewVar c) in
+   let rest_pretty = case rest var_name of IsaProof p -> p in
+   IsaProof
+   (prLines 0 [string ("fix " ^ var_name),
+               rest_pretty])
+
+ % Fix MetaSlang variables as Isabelle variables in a proof. The
+ % variables are given unique names, which are passed to the remainder
+ % of the proof.
+ op fixForwardVariables (c: Context, vars: MSVars, rest: List String -> IsaProof StateMode)
+ : IsaProof StateMode =
+   if vars = [] then rest [] else
+     let var_names = map (fn (var_id, _) -> var_id ^ show (getNewVar c)) vars in
+     let rest_pretty = case rest var_names of IsaProof p -> p in
+     IsaProof
+     (prLines 0 [string ("fix " ^ flatten (intersperse " " var_names)),
+                 rest_pretty])
+
+ % Like the above, but does not choose unique names
+ op fixForwardVariables_notfresh (c: Context, vars: MSVars, rest: IsaProof StateMode)
+ : IsaProof StateMode =
+   if vars = [] then rest [] else
+     let var_names = map (fn (var_id, _) -> var_id) vars in
+     let rest_pretty = case rest of IsaProof p -> p in
+     IsaProof
+     (prLines 0 [string ("fix " ^ flatten (intersperse " " var_names)),
+                 rest_pretty])
+
  % add a named, intermediate goal in a forward-reasoning proof, using
  % a "have" in Isabelle; the proof is bound to a uniquely-generated
  % name, which is passed to the rest of the proof
@@ -1048,7 +1081,8 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 %%%
 
 % Convert a ProofInternal to an IsaProof in StateMode
-op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
+op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
+  : IsaProof StateMode =
   case pf of
     | Proof_Cut (P,Q,pf1,pf2) ->
       % have cut_pf1: "P ==> Q" (pf1)
@@ -1075,7 +1109,8 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
       % NOTE: the reason we do not simply use OF to do cut-elimination
       % with the subtype_preds is that we do not know how many subtype
       % predicates have been simplified by relativizeQuantifiers
-      let def helper (p: ProofInternal, i: Nat, args: MSTerms, pf_names: List String) : IsaProof StateMode =
+      let def helper (p: ProofInternal, i: Nat, args: MSTerms, pf_names: List String)
+      : IsaProof StateMode =
         case p of
           | Proof_ForallE (x,T,_,N,body_pf,N_pf) ->
             addForwardStep
@@ -1090,24 +1125,24 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
              ppTermNonNorm c Top (proofPredicate_Internal p),
              forwardProofBlock (proofIntToIsaProof_st (c, p)),
              (fn main_pf_name ->
-              showFinalResult
-              (singleTacticProof
-                 (otherTacticPP
-                    (prBreak 2
-                     ([string "(simp add: ",
-                       (prSep (-4) blockFill (prString " ")
-                          ((prConcat
-                              ([string (main_pf_name ^ "[of")]
-                                 ++
-                                 (map (fn arg ->
-                                         prConcat [string " (",
-                                                   ppTermNonNorm c Top arg,
-                                                   string ")"]) (reverse args))
-                                 ++
-                                 [string "]"]))
-                             ::
-                             (map prString (reverse pf_names)))),
-                       string ")"]))))))
+                showFinalResult
+                (singleTacticProof
+                   (otherTacticPP
+                      (prBreak 2
+                         ([string "(simp add: ",
+                           (prSep (-4) blockFill (prString " ")
+                              ((prConcat
+                                  ([string (main_pf_name ^ "[of")]
+                                     ++
+                                     (map (fn arg ->
+                                             prConcat [string " (",
+                                                       ppTermNonNorm c Top arg,
+                                                       string ")"]) (reverse args))
+                                     ++
+                                     [string "]"]))
+                                 ::
+                                 (map prString (reverse pf_names)))),
+                           string ")"]))))))
       in
       helper (pf, 1, [], [])
 
@@ -1117,7 +1152,7 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
        ppTermNonNorm c Top (mkEquality (boolType, P, mkTrue())),
        proofIntToIsaProof_st (c, pf_eq_true),
        (fn pf_name ->
-        showFinalResult
+          showFinalResult
           (singleTacticProof (otherTactic ("(simp only: " ^ pf_name ^ ")")))))
 
     | Proof_Theorem (qid, P) ->
@@ -1125,7 +1160,7 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
       % slightly different from what we expect...
       showFinalResult
       (singleTacticProof
-         (otherTactic ("(auto simp only: " ^ show qid ^ ")")))
+         (otherTactic ("(auto simp only: " ^ ppQualifiedId qid ^ ")")))
 
     | Proof_Tactic (AutoTactic pfs, P) ->
       let def helper (pfs : List Proof, pf_names : List String) : IsaProof StateMode =
@@ -1135,35 +1170,47 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal) : IsaProof StateMode =
             (singleTacticProof
                (otherTactic
                   ("(auto simp add: " ^ flatten (intersperse " " pf_names) ^ ")")))
+          | pf::pfs' ->
+            addForwardStep
+            (c, "auto_tactic_pf_",
+             ppTermNonNorm c Top (proofPredicate_eInternal pf),
+             proofIntToIsaProof_st (c, pf),
+             (fn pf_name -> helper (pfs', pf_name::pf_names))))
+      in
+      helper (pfs, [])
 
     | Proof_Tactic (StringTactic str, P) ->
       showFinalResult (singleTacticProof (otherTactic str))
 
-    | Proof_UnfoldDef (MSType * QualifiedId * MSTerm)
+    | Proof_UnfoldDef (T, qid, M)
+     (* show "qid=M" by (unfold f_def, simp) *)
+     showFinalResult
+       (singleTacticProof
+          (unfoldTactic (prConcat [ppQualifiedId qid, string "_def"])))
 
-    % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
-    % proof pf : M.p = N.p, where M.p is the subterm of M at path p
-    | Proof_EqSubterm (MSTerm * MSTerm * MSType * Path * ProofInternal)
+      % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
+      % proof pf : M.p = N.p, where M.p is the subterm of M at path p
+    | Proof_EqSubterm (M,N,T,p,pf)
 
-    % Proof_EqSym(pf) is a proof that N=M from pf : M=N
+      % Proof_EqSym(pf) is a proof that N=M from pf : M=N
     | Proof_EqSym ProofInternal
 
-    % ProofInternal by transitivity of equality: proves x0 = x1 = ... = xn,
-    % all at type T, where each (pf, t) pair in the list is an xi
-    % along with the proof that x(i-1) = xi
+      % ProofInternal by transitivity of equality: proves x0 = x1 = ... = xn,
+      % all at type T, where each (pf, t) pair in the list is an xi
+      % along with the proof that x(i-1) = xi
     | Proof_EqTrans (MSType * MSTerm * List (ProofInternal * MSTerm))
 
-    %% Implication proofs
+      %% Implication proofs
 
-    % Proof_ImplTrans(P,pf1,Q,pf2,R) is a proof of P => R from
-    % proofs pf1: P=>Q and pf2: Q=>R
+      % Proof_ImplTrans(P,pf1,Q,pf2,R) is a proof of P => R from
+      % proofs pf1: P=>Q and pf2: Q=>R
     | Proof_ImplTrans (MSTerm * ProofInternal * MSTerm * ProofInternal * MSTerm)
 
-    % Proof_ImplEq(pf) is a proof that P=>Q from pf: P=Q
+      % Proof_ImplEq(pf) is a proof that P=>Q from pf: P=Q
     | Proof_ImplEq ProofInternal
 
-    % Proof_MergeRules(P,Q,tree,ids1,ids2) is a proof that P=>Q
-    % generated by MergeRules
+      % Proof_MergeRules(P,Q,tree,ids1,ids2) is a proof that P=>Q
+      % generated by MergeRules
     | Proof_MergeRules (TraceTree * List QualifiedId * List QualifiedId)
 
 
