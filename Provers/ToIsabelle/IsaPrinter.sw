@@ -614,7 +614,7 @@ op isaDirectoryName: String = "Isa"
                               % let _ = writeLine("oblig: "^printTerm oblig) in
                               % let _ = writeLine("Generating proof for "^thm_name) in
                               % FIXME: double-check that pf is a proof of what we expect it to be!
-                              let prf_str = proofToIsaProofString (c, pf) in
+                              let prf_str = "" in % proofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -633,7 +633,7 @@ op isaDirectoryName: String = "Isa"
                                % let _ = writeLine("Generating proof for "^thm_name) in
                                % let _ = writeLine(anyToPrettyString pf) in
                               % FIXME: double-check that pf is a proof of what we expect it to be!
-                              let prf_str = proofToIsaProofString (c, pf) in
+                              let prf_str = "" in % proofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -1055,16 +1055,25 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
  % pretty-print an Isabelle fat arrow "==>" implication
  op ppBigImplication (c: Context, nonNorm: Bool, lhs: MSTerm, rhs: MSTerm) : Pretty =
    let def ppTm tm =
-     if nonNorm then ppTermNonNorm c Top tm
+     if nonNorm then ppTermNonNorm c tm
      else ppTerm c Top tm
    in
    prBreak 0 [ppTm lhs, string " \\<Longrightarrow> ", ppTm rhs]
+
+ % pretty-print an Isabelle "big and" variable binding
+ op ppBigAnd (c: Context, vars: List Pretty, body: Pretty) : Pretty =
+   blockFill
+   (0,
+    [(0, string "\\<And> "),
+     (2, prConcat (intersperse (string " ") vars)),
+     (0, string "."),
+     (2, body)])
 
  % add double quotes around a Pretty
  op doubleQuote (p : Pretty) : Pretty = prConcat [string "\"", p, string "\" "]
 
  % pretty-print N forall-eliminations
-% FIXME: put in the actual arg, as a double-check for Isabelle
+ % FIXME: put in the actual arg, as a double-check for Isabelle
  op ppForallElims (args : List Pretty, body : Pretty) : Pretty =
  case args of
    | [] -> body
@@ -1081,8 +1090,8 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 %%%
 
 % Convert a ProofInternal to an IsaProof in StateMode
-op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
-  : IsaProof StateMode =
+op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
+: IsaProof StateMode =
   case pf of
     | Proof_Cut (P,Q,pf1,pf2) ->
       % have cut_pf1: "P ==> Q" (pf1)
@@ -1090,11 +1099,11 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
       % show ?thesis by (rule cut_pf1[OF cut_pf2])
       addForwardStep
       (c, "cut_pf1_", ppBigImplication (c, true, P, Q),
-       forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
+       forwardProofBlock (ppProofIntToIsaProof_st (c, pf1)),
        (fn pf1_name ->
           addForwardStep
-          (c, "cut_pf2_", ppTermNonNorm c Top P,
-           forwardProofBlock (proofIntToIsaProof_st (c, pf1)),
+          (c, "cut_pf2_", ppTermNonNorm c P,
+           forwardProofBlock (ppProofIntToIsaProof_st (c, pf1)),
            (fn pf2_name ->
               showFinalResult
               (singleTacticProof
@@ -1115,15 +1124,15 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
           | Proof_ForallE (x,T,_,N,body_pf,N_pf) ->
             addForwardStep
             (c, "forall_elim_pf" ^ show i ^ "_",
-             ppTermNonNorm c Top (typePredTermNoSpec (T, N)),
-             forwardProofBlock (proofIntToIsaProof_st (c, N_pf)),
+             ppTermNonNorm c (typePredTermNoSpec (T, N)),
+             forwardProofBlock (ppProofIntToIsaProof_st (c, N_pf)),
              (fn pf_name ->
                 helper (body_pf, i+1, N::args, pf_name::pf_names)))
           | _ ->
             addForwardStep
             (c, "forall_elim_pf_main_",
-             ppTermNonNorm c Top (proofPredicate_Internal p),
-             forwardProofBlock (proofIntToIsaProof_st (c, p)),
+             ppTermNonNorm c (getProofPredicate_Internal p),
+             forwardProofBlock (ppProofIntToIsaProof_st (c, p)),
              (fn main_pf_name ->
                 showFinalResult
                 (singleTacticProof
@@ -1136,7 +1145,7 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
                                      ++
                                      (map (fn arg ->
                                              prConcat [string " (",
-                                                       ppTermNonNorm c Top arg,
+                                                       ppTermNonNorm c arg,
                                                        string ")"]) (reverse args))
                                      ++
                                      [string "]"]))
@@ -1149,8 +1158,8 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
     | Proof_EqTrue (P, pf_eq_true) ->
       addForwardStep
       (c, "eq_true_pf_",
-       ppTermNonNorm c Top (mkEquality (boolType, P, mkTrue())),
-       proofIntToIsaProof_st (c, pf_eq_true),
+       ppTermNonNorm c (mkEquality (boolType, P, mkTrue())),
+       ppProofIntToIsaProof_st (c, pf_eq_true),
        (fn pf_name ->
           showFinalResult
           (singleTacticProof (otherTactic ("(simp only: " ^ pf_name ^ ")")))))
@@ -1173,9 +1182,9 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
           | pf::pfs' ->
             addForwardStep
             (c, "auto_tactic_pf_",
-             ppTermNonNorm c Top (proofPredicate_eInternal pf),
-             proofIntToIsaProof_st (c, pf),
-             (fn pf_name -> helper (pfs', pf_name::pf_names))))
+             ppTermNonNorm c (getProofPredicate_eInternal pf),
+             ppProofIntToIsaProof_st (c, pf),
+             (fn pf_name -> helper (pfs', pf_name::pf_names)))
       in
       helper (pfs, [])
 
@@ -1183,208 +1192,142 @@ op proofIntToIsaProof_st (c: Context, pf: ProofInternal)
       showFinalResult (singleTacticProof (otherTactic str))
 
     | Proof_UnfoldDef (T, qid, M)
-     (* show "qid=M" by (unfold f_def, simp) *)
-     showFinalResult
-       (singleTacticProof
-          (unfoldTactic (prConcat [ppQualifiedId qid, string "_def"])))
+      (* show "qid=M" by (unfold f_def, simp) *)
+      showFinalResult
+        (singleTacticProof
+           (unfoldTactic (prConcat [ppQualifiedId qid, string "_def"])))
 
-      % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
-      % proof pf : M.p = N.p, where M.p is the subterm of M at path p
-    | Proof_EqSubterm (M,N,T,p,pf)
+    | Proof_EqSubterm (M,N,T,path,sub_pf) ->
+      let (vars, M_sub) = fromPathTermWithBindingsAdjust (M, path) in
+      let (N_vars, N_sub_orig) = fromPathTermWithBindingsAdjust (N, path) in
+      let N_sub =
+      if N_vars = vars then N_sub_orig else
+        substitute2 (N_sub_orig,
+                     map (fn (N_var, M_var) -> (N_var, mkVar M_var))
+                       (zip (N_vars, vars)),
+                     StringSet.fromList
+                       (diff (freeVars N_sub_orig,
+                              N_vars)))
+      in
+      let sub_eq_pp =
+        ppBigAnd (c, map (fn (var, _) -> string var) vars,
+                  ppTermNonNorm c (mkEquality (termType M_sub, M_sub, N_sub)))
+      in
+      addForwardStep
+      (c, "subeq", sub_eq_pp,
+       forwardProofBlock
+         (fixForwardVariables_notfresh
+            (c, vars, ppProofIntToIsaProof_st (c, sub_pf))),
+       (fn pf_name ->
+          showFinalResult (singleTacticProof (ruleTactic ("arg_cong[OF "^ pf_name ^"]")))))
 
-      % Proof_EqSym(pf) is a proof that N=M from pf : M=N
-    | Proof_EqSym ProofInternal
-
-      % ProofInternal by transitivity of equality: proves x0 = x1 = ... = xn,
-      % all at type T, where each (pf, t) pair in the list is an xi
-      % along with the proof that x(i-1) = xi
-    | Proof_EqTrans (MSType * MSTerm * List (ProofInternal * MSTerm))
-
-      %% Implication proofs
-
-      % Proof_ImplTrans(P,pf1,Q,pf2,R) is a proof of P => R from
-      % proofs pf1: P=>Q and pf2: Q=>R
-    | Proof_ImplTrans (MSTerm * ProofInternal * MSTerm * ProofInternal * MSTerm)
-
-      % Proof_ImplEq(pf) is a proof that P=>Q from pf: P=Q
-    | Proof_ImplEq ProofInternal
-
-      % Proof_MergeRules(P,Q,tree,ids1,ids2) is a proof that P=>Q
-      % generated by MergeRules
-    | Proof_MergeRules (TraceTree * List QualifiedId * List QualifiedId)
-
-
-% FIXME: add a flag to Context to choose StateMode or ProveMode: the
-% former is easier to debug, while the latter is more concise
-op proofToIsaProofString (c: Context, pf: Proof) : String =
-  case pf of
-    | ErrorOk pf_inf ->
-      isaProofToString (forwardProofBlock (proofIntToIsaProof_st (c, pf)))
-    | ErrorFail err_str ->
-      "by auto (* Error in building proof: " ^ err_str ^ " *)"
-
-
-% FIXME HERE: remove the below!
-
-  % generate an Isabelle proof of equality "lhs = rhs"
-  op generateEqualityProof(c: Context, lhs: MSTerm, rhs: MSTerm, pf:EqProof): String =
-    % let _ = writeLine("generateEqualityProof: " ^ printEqProof(pf, lhs)) in
-    isaProofToString (forwardProofBlock (ppEqualityProof (c, [], lhs, rhs, pf)))
-
-  % pretty-print an Isabelle proof of the equality
-  % "(lambda lhs_vars . lhs) = (lambda rhs_vars . rhs)"
-  op ppEqualityProof(c: Context, boundVars: MSVars, lhs: MSTerm, rhs: MSTerm, pf: EqProof): IsaProof StateMode =
-  case pf of
-   | EqProofSubterm (path, sub_pf) ->
-     (*
-        have subeq:"lhs_sub = rhs_sub" (sub_pf)
-        show ?thesis by (rule arg_cong[OF subeq]) *)
-     % let _ = writeLine("eqSubterm: "^anyToString path^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     let (lhs_vars, lhs_sub) = fromPathTermWithBindingsAdjust (lhs, path) in
-     let (rhs_vars, rhs_sub) = fromPathTermWithBindingsAdjust (rhs, path) in
-     let _ =
-       if ~(lhs_vars = rhs_vars) then
-         let _ = writeLine("eqSubterm: "^anyToString path^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-         let _ = writeLine("lhs_sub: "^printTerm lhs_sub^"\nrhs_sub: "^printTerm rhs_sub) in
-         fail "ERROR: ppEqualityProof: cannot (currently) handle different lists of bound vars in subterms; apply a substitution to the RHS to fix this in the code"
-       else ()
-     in
-     let allBoundVars = boundVars ++ lhs_vars in
-     let sub_eq_pp =
-       ppLambdaEquality (c, (allBoundVars, lhs_sub), (allBoundVars, rhs_sub))
-     in
-     addForwardStep
-     (c, "subeq", sub_eq_pp,
-      forwardProofBlock
-        (ppEqualityProof (c, allBoundVars, lhs_sub, rhs_sub, sub_pf)),
-      (fn pf_name ->
-         showFinalResult (singleTacticProof (ruleTactic ("arg_cong[OF "^ pf_name ^"]")))))
-   | EqProofSym sub_pf ->
+    | Proof_EqSym sub_pf ->
      (* have subeq:"rhs = lhs" (sub_pf) show ?thesis by (rule subeq[symmetric]) *)
-     % let _ = writeLine("eqSym:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     let sub_eq_pp = ppLambdaEquality (c, (boundVars, rhs), (boundVars, lhs)) in
+     let sub_eq_pp = ppTermNonNorm c (getProofPredicate_Internal pf) in
      addForwardStep
      (c, "subeq", sub_eq_pp,
-      forwardProofBlock (ppEqualityProof (c, boundVars, rhs, lhs, sub_pf)),
+      forwardProofBlock (ppProofIntToIsaProof_st (c, sub_pf)),
       (fn pf_name ->
          showFinalResult (singleTacticProof (ruleTactic (pf_name ^ "[symmetric]")))))
-   | EqProofTrans (pf_term_list, last_pf) ->
+
+    | Proof_EqTrans (T, M0, pf_tm_list) ->
      (*
-        have "lhs=middle" (pf1)
+        have "M0=M1" (pf1)
         also
-        have "...=rhs" (pf2)
+        have "...=M2" (pf2)
+        ...
         finally
         show ?thesis .
         *)
      % let _ = writeLine("eqTrans: \nlhs = "^printTerm lhs^"\nmiddle = "^printTerm middle^"\nrhs = "^printTerm rhs) in
      % let def trans_helper (lhs:Pretty) (pf:IsaProof ProveMode, rhs:MSTerm) : Pretty * IsaProof ProveMode =
-     let def ppTransStep firstp step_lhs pf step_rhs =
+     let def ppTransStep firstp step_lhs step_pf step_rhs =
        let prop =
          if firstp then
-           ppLambdaEquality (c, (boundVars, step_lhs), (boundVars, step_rhs))
+           ppTermNonNorm c (mkEquality (T, step_lhs, step_rhs))
          else
-           prBreak 2 [string "... = ", ppTerm c equalityContext (mkMultiLambda (boundVars, step_rhs))]
+           prBreak 2 [string "... = ",
+                      ppTermNonNormCtx c equalityContext step_rhs]
        in
-       (prop, forwardProofBlock (ppEqualityProof (c, boundVars, step_lhs, step_rhs, pf)))
+       (prop, forwardProofBlock (ppProofIntToIsaProof_st (c, step_pf)))
      in
      let def trans_helper firstp step_lhs pf_term_list =
        case pf_term_list of
-         | [] -> [ppTransStep firstp step_lhs last_pf rhs]
+         | [] -> []
          | (pf, tm) :: rest -> ppTransStep firstp step_lhs pf tm :: trans_helper false tm rest
      in
-     showFinalChainedResult
-       (ppLambdaEquality (c, (boundVars, lhs), (boundVars, rhs)), trans_helper true lhs pf_term_list)
-   | EqProofTheorem (qid, args) ->
-     (* show "lhs=rhs" apply (rule ext, rule ext, ...) by (rule qid[of tm1 ... tmn]) *)
-     showFinalResult
-       (applyTactics
-          (repeat (ruleTactic "ext") (length boundVars),
-           singleTacticProof
-             (ruleTacticPP
-                %(ppForallElims (map (ppTerm c Top) args, ppQualifiedId qid))
-                (prLinear 2
-                   [ppQualifiedId qid, string "[of ",
-                    prLinear 0 (map (ppTerm c Top) args),
-                    string "]"]))))
-   | EqProofUnfoldDef qid ->
-     % FIXME: if qid is functional, use the extensionality rule
-     (* show "f=rhs" by (rule f_def) *)
-     showFinalResult
-       (applyTactics
-          (repeat (ruleTactic "ext") (length boundVars),
-           singleTacticProof (unfoldTactic (prConcat [ppQualifiedId qid, string "_def"]))))
-   | EqProofTactic tactic ->
-     (* by tactic *)
-     % let _ = writeLine("eqTactic: "^tactic^"\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-     showFinalResult
-       (applyTactics
-          (repeat (ruleTactic "ext") (length boundVars),
-           singleTacticProof (IsaProof (string tactic))))
+     if pf_term_list = [] then
+       % If pf_term_list is empty, this is a proof that M0 equals itself
+       showFinalResult (singleTacticProof (ruleTactic "refl"))
+     else
+       let M_last = (last pf_term_list).2 in
+       showFinalChainedResult
+       (ppTermNonNorm c (mkEquality (T, M0, M_last)),
+        trans_helper true lhs pf_term_list)
 
-  % generate an Isabelle proof of an implication "lhs -> rhs"
-  op generateImplicationProof (c: Context, lhs: MSTerm, rhs: MSTerm, pf:AnnSpec.ImplProof): String =
-  isaProofToString (forwardProofBlock (ppImplicationProof (c, lhs, rhs, pf)))
-
-  op ppImplicationProof (c: Context, lhs: MSTerm, rhs: MSTerm, pf:AnnSpec.ImplProof): IsaProof StateMode =
-  case pf of
-  | ImplTrans (pf1, middle, pf2) ->
-    % let _ = writeLine("ImplTrans:\nlhs = "^printTerm lhs^"\nmiddle = "^printTerm middle^"\nrhs = "^printTerm rhs) in
-    (* Do impl_trans2 first because we are doing backward reasoning
-       have impl_trans2: "B ==> C" (pf2)
-       have impl_trans1: "A ==> B" (pf1)
-       assume lhs: "A"
-       show ?thesis
-          by (rule impl_trans2, rule impl_trans1, rule lhs)
-     *)
-    addForwardStep
-      (c, "impl_trans2_", ppBigImplication (c, middle, rhs),
-       forwardProofBlock (ppImplicationProof (c, middle, rhs, pf2)),
+    | Proof_ImplTrans (P,pf1,Q,pf2,R) ->
+      % let _ = writeLine("ImplTrans:\nlhs = "^printTerm lhs^"\nmiddle = "^printTerm middle^"\nrhs = "^printTerm rhs) in
+      (* Do impl_trans2 first because we are doing backward reasoning (FIXME: what does this mean?)
+         have impl_trans2: "B ==> C" (pf2)
+         have impl_trans1: "A ==> B" (pf1)
+         assume impl_lhs: "A"
+         show ?thesis
+           by (rule impl_trans2, rule impl_trans1, rule lhs)
+      *)
+      addForwardStep
+      (c, "impl_trans2_", ppBigImplication (c, true, Q, R),
+       forwardProofBlock (ppProofIntToIsaProof_st (c, pf2)),
        (fn pf2_name ->
           addForwardStep
-            (c, "impl_trans1_", ppBigImplication (c, lhs, middle),
-             forwardProofBlock (ppImplicationProof (c, lhs, middle, pf1)),
-             (fn pf1_name ->
-                (addForwardAssumption
-                   (c, "impl_lhs", ppTerm c Top lhs,
-                    fn lhs_name ->
-                      showFinalResult (singleTacticProof (rulesTactic [pf2_name, pf1_name, lhs_name]))))))))
- | ImplTheorem (qid, args) ->
-     (* 
-       assume lhs: "lhs"
-       show ?thesis by (rule qid[OF lhs])
-      *)
-    addForwardAssumption
-      (c, "impl_lhs", ppTerm c Top lhs,
-       fn lhs_name ->
-         showFinalResult (singleTacticProof (ruleTactic(show qid^"[OF "^lhs_name^"] "))))
-  | ImplEq eq_pf ->
-    (*
-      have eq_pf: "A = B" (eq_pf)
-      assume lhs:A
-      show ?thesis by  (rule subst[OF eq_pf, of "lambda z . z", OF lhs])
-      qed
-     *)
-    % let _ = writeLine("ImplEq:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
-    addForwardStep
-      (c, "eq_pf", ppEquality (c, rhs, lhs),
-       forwardProofBlock (ppEqualityProof (c, [], rhs, lhs, eq_pf)),
-       (fn eq_pf_name ->
-          (addForwardAssumption
-             (c, "lhs", ppTerm c Top lhs,
-              (fn lhs_name ->
-                 showFinalResult
-                   (singleTacticProof
-                      (ruleTactic ("subst[OF "^eq_pf_name^"[symmetric], of \"\\<lambda>z . z\", OF "^lhs_name^"]"))))))))
+          (c, "impl_trans1_", ppBigImplication (c, true, P, Q),
+           forwardProofBlock (ppProofIntToIsaProof_st (c, pf1)),
+           (fn pf1_name ->
+              (addForwardAssumption
+                 (c, "impl_lhs", ppTermNonNorm c P,
+                  fn lhs_name ->
+                    showFinalResult (singleTacticProof (rulesTactic [pf2_name, pf1_name, lhs_name]))))))))
 
-  | ImplProofTactic tactic ->
-    (* by tactic *)
-     showFinalResult (singleTacticProof (ruleTactic tactic))
-  | MergeRulesProof (tree,unfolds,smtArgs) ->
-        let spc = getSpec c in
-        let def isabelleTerm tm = ppTermNonNormStrIndent c tm 7 in
-        let _ = writeLine "Generating MergeRules Proof (ppImplicationProof" in
-        IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm tree unfolds smtArgs))
-    % fail "ppImplicationProof: need to add support for MergeRules!"
+    | Proof_ImplEq sub_pf ->
+      (*
+        have eq_pf: "A = B" (eq_pf)
+        assume lhs:A
+        show ?thesis by  (rule subst[OF eq_pf, of "lambda z . z", OF lhs])
+        qed
+       *)
+      % let _ = writeLine("ImplEq:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
+      let eq_pred = getProofPredicate_Internal sub_pf in
+      let pred_lhs =
+        case matchEquality eq_pred with
+          | Some (T,M,N) -> M
+      in
+      addForwardStep
+        (c, "eq_pf", ppTermNonNorm c eq_pred,
+         forwardProofBlock (ppProofIntToIsaProof_st (c, sub_pf)),
+         (fn eq_pf_name ->
+            (addForwardAssumption
+               (c, "lhs", ppTermNonNorm c Top pred_lhs,
+                (fn lhs_name ->
+                   showFinalResult
+                     (singleTacticProof
+                        (ruleTactic ("subst[OF "^eq_pf_name^"[symmetric], of \"\\<lambda>z . z\", OF "^lhs_name^"]"))))))))
+
+    | Proof_MergeRules (tree,ids1,ids2) ->
+      let spc = getSpec c in
+      let def isabelleTerm tm = ppTermNonNormStrIndent c tm 7 in
+      let _ = writeLine "Generating MergeRules Proof (ppImplicationProof" in
+      IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm tree unfolds smtArgs))
+
+
+  % Pretty-print a Specware Proof to an Isabelle proof as a String
+  %
+  % FIXME: add a flag to Context to choose StateMode or ProveMode: the
+  % former is easier to debug, while the latter is more concise
+  op proofToIsaProofString (c: Context, pf: Proof) : String =
+    case pf of
+      | ErrorOk pf_inf ->
+        isaProofToString (forwardProofBlock (ppProofIntToIsaProof_st (c, pf)))
+      | ErrorFail err_str ->
+        "by auto (* Error in building proof: " ^ err_str ^ " *)"
 
 
 %%%
@@ -3870,15 +3813,18 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
  op ppTermStrIndent(c: Context) (parentTerm: ParentTerm) (term: MSTerm) (indent: Int): String =
    formatIsaPrettyWithIndent (ppTerm c parentTerm term) indent
 
-
  % Pretty-print a term that has not been normalized and that has not
  % have subtypes removed; this is true of terms in proofs
  op ppTermNonNorm (c: Context) (t: MSTerm) : Pretty =
+   ppTermNonNormCtx c Top t
+
+ % Same as above, but with a parentTerm
+ op ppTermNonNormCtx (c: Context) (parentTerm: ParentTerm) (t: MSTerm) : Pretty =
    let spc = getSpec c in
    let tm' = mapTerm (relativizeQuantifiersSimpOption c.simplify? spc,id,id) tm in
    let typeNameInfo = topLevelTypeNameInfo spc in              
    let tm' = mapTerm (id, normalizeType(spc, typeNameInfo, false, true, true), id) tm' in
-   ppTerm c Top tm'
+   ppTerm c parentTerm tm'
 
  % Same as above, but output to a string
  op ppTermNonNormStr (c: Context) (t: MSTerm) : String =
