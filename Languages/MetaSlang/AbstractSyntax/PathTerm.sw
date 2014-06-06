@@ -59,8 +59,25 @@ type PathTerm = APathTerm Position.Position
   op [a] validPathTerm ((term, path): APathTerm a) : Bool =
     validPathTermWithErr (term, path) = None
 
+  % Take the difference of one path minus another, that is, the path
+  % that would have to be prepended to path_short to get path_long.
+  % This is the same as splitting the left-hand path, path_long, into
+  % a prefix and a suffix, where the latter equals the right-hand
+  % path, path_short. Stated differently, if we took the subterm of
+  % some term at path_short, and then took the subterm of the result
+  % at the path given by pathDifference, we would get the subterm of
+  % term at path_long. Return None if the paths diverge from each
+  % other.
+  op pathDifference (path_long: Path, path_short: Path) : Option Path =
+    if length path_short > length path_long then None else
+      let path_long_suffix = suffix (path_long, length path_short) in
+      if path_long_suffix = path_short then
+        Some (prefix (path_long, length path_long - length path_short))
+      else
+        None
+
   op printPath (path : Path) : String =
-    flatten (intersperse "," (map show path))
+    "[" ^ flatten (intersperse "," (map show path)) ^ "]"
 
   type ABindingTerm a = List (AVar a) * ATerm a
   type BindingTerm = ABindingTerm Position
