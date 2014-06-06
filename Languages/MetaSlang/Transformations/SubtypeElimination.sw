@@ -1277,44 +1277,17 @@ SpecNorm qualifying spec
     let spc = regularizeFunctions spc in
     %let _ = writeLine(anyToString tbl) in
     %let _ = writeLine(printSpec spc) in
-    let spc = mapSpecHist (relativizeQuantifiersSimpOption simplify?  spc, id, id) spc in
+    let spc = mapSpec (relativizeQuantifiersSimpOption simplify?  spc, id, id) spc in
     %% Replace subtypes by supertypes
-    let spc = mapSpecHist (id,fn s ->
-                             case s of
-                               | Subtype(supTy,_,_) -> supTy
-                               | _ -> s,
-                           id)
+    let spc = mapSpec (id,fn s ->
+                         case s of
+                           | Subtype(supTy,_,_) -> supTy
+                           | _ -> s,
+                       id)
                 spc
     in
     % let _ = writeLine(printSpec spc) in
     spc
-
-op  mapSpecHist : TSP_Maps_St -> Spec -> Spec
-def mapSpecHist tsp spc =
-  spc << {
-          types        = mapSpecTypes      tsp spc.types,
-          ops          = mapSpecOps        tsp spc.ops,
-          elements     = mapSpecPropertiesHist tsp spc.elements
-         }
-
- op  mapSpecPropertiesHist : TSP_Maps StandardAnnotation -> SpecElements -> SpecElements
- def mapSpecPropertiesHist tsp elements =
-   map (fn el ->
-	case el of
-	  | Property (pt, nm, tvs, term, a) ->
-            % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
-            Property (pt, nm, tvs, mapTerm tsp term, a)
-          | OpDef(qid, refine_num, pf, a) ->
-            % README (emw4): proof should (hopefully!) not need to be
-            % altered here, because relativizeQuantifiers should be
-            % "transparent" to the proof language, i.e.,
-            % relativizeQuantifiers should be being called anyway when
-            % a proof is converted to Isabelle
-            OpDef(qid, refine_num, pf, a)
-	  | Import   (s_tm, i_sp, elts, a)  ->
-            Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
-	  | _ -> el)
-       elements
 
   % Boolean flag simplify? determines if relativizeQuantifiers does
   % formula simplification.
