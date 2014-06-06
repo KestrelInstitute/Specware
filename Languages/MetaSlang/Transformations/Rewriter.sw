@@ -33,21 +33,58 @@ MetaSlangRewriter qualifying spec
  % The result of rewriting, which is the output term plus RRResultInfo
  type RRResult = MSTerm * RRResultInfo
 
+ % Flag for debugging
+ op debugRRPaths : Bool = true
+
  % Get the path from a RRResultInfo
  op infoPath ((_, _, path, _, _): RRResultInfo) : Path = path
 
- % Apply a function to the path in a RRResultInfo
- op mapInfoPath (f: Path->Path, info: RRResultInfo) : RRResultInfo =
-   let (subst, rule, path, boundVars, rules) = info in
-   (subst, rule, f path, boundVars, rules)
+ % Return the difference between the path in a RRResultInfo and suffix
+ op infoPathDifference ((_, _, path, _, _): RRResultInfo,
+                        suffix: Path) : Option Path =
+   pathDifference (path, suffix)
 
- % Replace the path in a RRResultInfo
- op replaceInfoPath (p: Path, info: RRResultInfo) : RRResultInfo =
-   mapInfoPath ((fn _ -> p), info)
+ % Return the reversal of infoPathDifference; useful for matching on
+ % the "next steps" in a path
+ op infoPathDifferenceRev (info: RRResultInfo, suffix: Path) : Option Path =
+   case infoPathDifference (info, suffix) of
+     | None -> None
+     | Some p -> Some (reverse p)
 
- % Prepend a prefix to the path in a RRResultInfo
- op prependToInfoPath (prefix: Path, info: RRResultInfo) : RRResultInfo =
-   mapInfoPath ((fn path -> prefix++path), info)
+ % Apply a function to the difference of the path in a RRResultInfo
+ % and a suffix
+ op mapInfoPathDifference (f: Path->Path, info: RRResultInfo,
+                           suffix: Path, caller: String) : RRResultInfo =
+   case infoPathDifference (info, suffix) of
+     | None -> (warn (caller ^ ": unexpected path in rewrite result: "
+                        ^ printPath (infoPath info)
+                        ^ " with suffix path: "
+                        ^ printPath suffix); info)
+     | Some prefix ->
+       let (subst, rule, path, boundVars, rules) = info in
+       (subst, rule, (f prefix) ++ suffix, boundVars, rules)
+
+ % Replace the difference between the path in a RRResultInfo and a
+ % suffix
+ op replaceInfoPathDifference (p: Path, info: RRResultInfo,
+                               suffix: Path, caller: String) : RRResultInfo =
+   mapInfoPathDifference ((fn _ -> p), info, suffix, caller)
+
+ % Append p to the difference between the path in a RRResultInfo and a
+ % suffix
+ op appendToInfoPathDifference (p: Path, info: RRResultInfo,
+                                suffix: Path, caller: String) : RRResultInfo =
+   mapInfoPathDifference ((fn path ->
+                             let _ =
+                               if debugRRPaths then
+                                 writeLine
+                                 ("appendToInfoPathDifference: appending "
+                                    ^ printPath p ^ " to " ^ printPath path
+                                    ^ " in path " ^ printPath (infoPath info))
+                               else ()
+                             in
+                             path++p),
+                          info, suffix, caller)
 
 
 (*
@@ -410,11 +447,14 @@ MetaSlangRewriter qualifying spec
  % performing beta-reduction), and then performing rewriting. If the
  % rewrite did not require the let to be unfolded, then it is
  % re-folded by this function.
- op reFoldLetVars(binds: List(MSPattern * MSTerm), res as (M, info): RRResult, b: Position)
+ op reFoldLetVars(binds: List(MSPattern * MSTerm), let_path: Path,
+                  res as (M, info): RRResult, b: Position)
     : RRResult =
    let v_subst = substFromBinds binds in
    if binds = [] || v_subst = [] || ~useUnfoldLetStrategy?
-      then (Let(binds,M,b), prependToInfoPath([length binds], info))
+      then (Let(binds,M,b),
+            appendToInfoPathDifference([length binds], info, let_path,
+                                       "reFoldLetVars"))
       else
         %% Variable capture unlikely because of substitute in unFoldSimpleLet
         let M1 = mapTerm (reverseSubst v_subst, id, id) M in
@@ -427,15 +467,17 @@ MetaSlangRewriter qualifying spec
                       exists? (fn v -> inVars?(v,fvs)) (patVars p))
               binds
           in
-          (Let(new_binds, M1, b), prependToInfoPath([length new_binds], info))
+          (Let(new_binds, M1, b),
+           appendToInfoPathDifference([length new_binds], info, let_path, "reFoldLetVars"))
 
 % If a function was pushed inside an if-expression in its argument to
 % apply a rewrite, test whether that pushing was necessary for the
 % rewrite, and if not undo the pushing
-op maybePushIfBack(res as (tr_if, info): RRResult, f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
+op maybePushIfBack(res as (tr_if, info): RRResult, orig_path: Path,
+                   f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
   case tr_if of
     | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
-      let def unpush_if rr_in_else_branch f_Ns_num_opt new_path =
+      let def unpush_if rr_in_else_branch f_Ns_num_opt new_prefix_rev =
         let qn = termToList q in
         let rn = termToList r in
         let new_f = if rr_in_else_branch then f2 else f1 in
@@ -454,7 +496,8 @@ op maybePushIfBack(res as (tr_if, info): RRResult, f: MSTerm, Ns: MSTerms, i: Na
         %      (tabulate(1+length Ns, id)))
         % then
           (mkAppl(new_f, replaceNth(i, new_Ns, IfThenElse (p, qn@i, rn@i, pos))),
-           replaceInfoPath(new_path, info))
+           replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
+                                     "maybePushIfBack"))
         % else res
       in
       % README: fun_pathElem is the immediate subterm number of
@@ -466,59 +509,60 @@ op maybePushIfBack(res as (tr_if, info): RRResult, f: MSTerm, Ns: MSTerms, i: Na
       let path_to_unpushed_if =
         arg_pathElem :: (if length Ns = 1 then [] else [i])
       in
-      (case infoPath info of
+      (case infoPathDifferenceRev (info, orig_path) of
          % The rewrite happened at the top of the then- or else-branch,
          % or at the top of the whole expression, and so required f to be
          % pushed inside the if
-         | [] -> res
-         | [1] -> res
-         | [2] -> res
-         | path as 0::_ ->
+         | Some [] -> res
+         | Some [1] -> res
+         | Some [2] -> res
+         | Some (path as 0::_) ->
            % Rewrite happened in the condition of the if
            unpush_if false None (path_to_unpushed_if++path)
-         | 1::elem::p_f | elem = fun_pathElem ->
+         | Some (1::elem::p_f) | elem = fun_pathElem ->
            % Rewrite happened in the function part of the then-branch;
            % try to unpush with the new, rewritten function
            unpush_if false (Some 0) (fun_pathElem::p_f)
-         | 2::elem::p_f | elem = fun_pathElem ->
+         | Some (2::elem::p_f) | elem = fun_pathElem ->
            % Rewrite happened in the function part of the else-branch;
            % try to unpush with the new, rewritten function
            unpush_if true (Some 0) (fun_pathElem::p_f)
-         | 1::elem::p_branch | elem = arg_pathElem && length Ns = 1 ->
+         | Some (1::elem::p_branch) | elem = arg_pathElem && length Ns = 1 ->
            % Rewrite happened in the then-branch and there are no other
            % args to f
            unpush_if false (Some 1) (path_to_unpushed_if++(1::p_branch))
-         | 2::elem::p_branch | elem = arg_pathElem && length Ns = 1 ->
+         | Some (2::elem::p_branch) | elem = arg_pathElem && length Ns = 1 ->
            % Rewrite happened in the else-branch and there are no other
            % args to f
            unpush_if true (Some 1) (path_to_unpushed_if++(2::p_branch))
-         | 1::elem::j::p_branch | elem = arg_pathElem && j=i ->
+         | Some (1::elem::j::p_branch) | elem = arg_pathElem && j=i ->
            % Rewrite happened in the then-branch of the original
            % if-expression
            unpush_if false (Some (j+1)) (path_to_unpushed_if++(1::p_branch))
-         | 2::elem::j::p_branch | elem = arg_pathElem && j=i ->
+         | Some (2::elem::j::p_branch) | elem = arg_pathElem && j=i ->
            % Rewrite happened in the else-branch of the original
            % if-expression
            unpush_if true (Some (j+1)) (path_to_unpushed_if++(2::p_branch))
-         | 1::elem::j::p_branch | elem = arg_pathElem && j~=i ->
+         | Some (1::elem::j::p_branch) | elem = arg_pathElem && j~=i ->
            % Rewrite happened in the then-branch in one of the arguments in
            % Ns that was not the original if-expression
            unpush_if false (Some (j+1)) [1,j]
-         | 2::elem::j::p_branch | elem = arg_pathElem && j~=i ->
+         | Some (2::elem::j::p_branch) | elem = arg_pathElem && j~=i ->
            % Rewrite happened in the else-branch in one of the arguments in
            % Ns that was not the original if-expression
            unpush_if false (Some (j+1)) [1,j]
-         | path ->
-           warn ("maybePushIfBack: unexpected path " ^ anyToString path); res)
+         | _ ->
+           warn ("maybePushIfBack: unexpected path " ^ printPath (infoPath info)); res)
     | _ -> res
 
 % If a function was pushed inside a let-expression in its argument to
 % apply a rewrite, test whether that pushing was necessary for the
 % rewrite, and if not undo the pushing
-op maybePushLetBack(res as (tr_let, info): RRResult, f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
+op maybePushLetBack(res as (tr_let, info): RRResult, orig_path: Path,
+                    f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
   case tr_let of
     | Let(bds, Apply(new_f, q, a), pos) ->
-      let def unpush_let f_Ns_num_opt new_path =
+      let def unpush_let f_Ns_num_opt new_prefix_rev =
         let new_Ns = termToList q in
         % README: don't need to do these tests, because if there had
         % been some further pushing in the body wouldn't be an Apply!
@@ -532,7 +576,8 @@ op maybePushLetBack(res as (tr_let, info): RRResult, f: MSTerm, Ns: MSTerms, i: 
         %       (tabulate(1+length Ns, id)))
         % then
           (mkAppl(new_f, replaceNth(i, new_Ns, Let(bds, new_Ns@i, pos))),
-           replaceInfoPath(new_path, info))
+           replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
+                                     "maybePushLetBack"))
         % else res
       in
       let num_bindings = length bds in
@@ -545,37 +590,38 @@ op maybePushLetBack(res as (tr_let, info): RRResult, f: MSTerm, Ns: MSTerms, i: 
       let path_to_unpushed_let =
         arg_pathElem :: (if length Ns = 1 then [] else [i])
       in
-      (case infoPath info of
+      (case infoPathDifferenceRev (info, orig_path) of
          % The rewrite happened at the top of the let body or of the
          % whole expression, and so required f to be pushed into the let
-         | [] -> res
-         | [1] -> res
-         | path as b_num::_ | b_num < num_bindings ->
+         | Some [] -> res
+         | Some [1] -> res
+         | Some (path as b_num::_) | b_num < num_bindings ->
            % Rewrite happened in one of the bindings
            unpush_let None (path_to_unpushed_let++path)
-         | b_num::elem::p_f | elem = fun_pathElem && b_num = num_bindings ->
+         | Some (b_num::elem::p_f) | elem = fun_pathElem && b_num = num_bindings ->
            % Rewrite happened in the function
            unpush_let (Some 0) (elem::p_f)
-         | b_num::elem::p_arg | elem = arg_pathElem && b_num = num_bindings && length Ns = 1 ->
+         | Some (b_num::elem::p_arg) | elem = arg_pathElem && b_num = num_bindings && length Ns = 1 ->
            % Rewrite happened in the body of the only argument to f
            unpush_let (Some 0) (path_to_unpushed_let++p_arg)
-         | b_num::elem::j::p_arg | elem = arg_pathElem && b_num = num_bindings && j = i ->
+         | Some (b_num::elem::j::p_arg) | elem = arg_pathElem && b_num = num_bindings && j = i ->
            % Rewrite happened in the original body of the let-expression
            unpush_let (Some (j+1)) (path_to_unpushed_let++(num_bindings::p_arg))
-         | b_num::elem::j::p_arg | elem = arg_pathElem && b_num = num_bindings && j = i ->
+         | Some (b_num::elem::j::p_arg) | elem = arg_pathElem && b_num = num_bindings && j = i ->
            % Rewrite happened in some other of the original args to f
            unpush_let (Some (j+1)) [1,j]
-         | path ->
-           warn ("maybePushLetBack: unexpected path " ^ anyToString path); res)
+         | _ ->
+           warn ("maybePushLetBack: unexpected path " ^ printPath (infoPath info)); res)
      | _ -> res
 
 % If a function was pushed inside a case-expression in its argument to
 % apply a rewrite, test whether that pushing was necessary for the
 % rewrite, and if not undo the pushing
-op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
+op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
+                     f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
   case tr_case of
     | Apply(Lambda(branches,pos3), case_tm, pos2) ->
-      let def unpush_case branch_num_opt new_path =
+      let def unpush_case branch_num_opt new_prefix_rev =
         let (new_f, new_Ns) =
           case branch_num_opt of
             | Some n ->
@@ -591,7 +637,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                                                (p,c,qn@i))
                                           branches, pos3),
                                  case_tm, pos2))),
-         replaceInfoPath(new_path, info))
+         replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
+                                   "maybePushCaseBack"))
       in
       % README: fun_pathElem is the immediate subterm number of
       % Apply(f,Ns) that picks out f; the if-expression here handles
@@ -605,34 +652,34 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
       let path_to_unpushed_case =
         arg_pathElem :: (if length Ns = 1 then [] else [i])
       in
-      (case infoPath info of
+      (case infoPathDifferenceRev (info, orig_path) of
          % The rewrite happened at the top of one of the branches or
          % of the whole expression, and so required f to be pushed
-         | [] -> res
-         | [elem,branch] | elem = casefun_pathElem -> res
-         | path as elem::_ | elem = casearg_pathElem ->
+         | Some [] -> res
+         | Some [elem,branch] | elem = casefun_pathElem -> res
+         | Some (path as elem::_) | elem = casearg_pathElem ->
            % Rewrite happened in the scrutinee
            unpush_case None (path_to_unpushed_case ++ [casearg_pathElem])
-         | elem::branch::elem_f::p_f | elem = casefun_pathElem && elem_f = fun_pathElem ->
+         | Some (elem::branch::elem_f::p_f) | elem = casefun_pathElem && elem_f = fun_pathElem ->
            % Rewrite happened in the function in a branch
            unpush_case (Some branch) (elem_f::p_f)
-         | elem::branch::elem_arg::p_arg
+         | Some (elem::branch::elem_arg::p_arg)
          | elem = casefun_pathElem && elem_arg = arg_pathElem && length Ns = 1 ->
            % Rewrite happened in a branch of the original
            % case-expression, which was the only arg to f
            unpush_case (Some branch) (path_to_unpushed_case ++ (branch::p_arg))
-         | elem::branch::elem_arg::arg_num::p_arg
+         | Some (elem::branch::elem_arg::arg_num::p_arg)
          | elem = casefun_pathElem && elem_arg = arg_pathElem && arg_num = i ->
            % Rewrite happened in a branch of original case-expression,
            % with multiple args to f
            unpush_case (Some branch) (path_to_unpushed_case ++ (branch::p_arg))
-         | elem::branch::elem_arg::arg_num::p_arg
+         | Some (elem::branch::elem_arg::arg_num::p_arg)
          | elem = casefun_pathElem && elem_arg = arg_pathElem && arg_num ~= i ->
            % Rewrite happened in one of the non-case-expression
            % original args to f
            unpush_case (Some branch) (arg_pathElem::arg_num::p_arg)
-         | path ->
-           warn ("maybePushCaseBack: unexpected path " ^ anyToString path); res)
+         | _ ->
+           warn ("maybePushCaseBack: unexpected path " ^ printPath (infoPath info)); res)
     | _ -> res
 
 
@@ -793,7 +840,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
  % rewrites being applied, then the commuting conversion is then
  % undone.
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,path,rules) =
-   % let _ = writeLine("rt: "^anyToString path^"\n"^printTerm term) in
+   %let _ = writeLine("rewriteTerm with path "^printPath path^" and term ("^printTerm term^")") in
    case term of
      | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
        let Ns = termToList N in
@@ -806,7 +853,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                                    mkAppl(M,replaceNth(i, Ns, r)), b)
              in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
-             LazyList.map (fn res -> maybePushIfBack(res, M, Ns, i))
+             LazyList.map (fn res -> maybePushIfBack(res, path, M, Ns, i))
                tr_tms)
           | _ ->
         case findIndex (embed? Let) Ns  of
@@ -814,7 +861,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
             (let Let(bds,lt_body,a2) = let_tm in
              let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
-             LazyList.map (fn res -> maybePushLetBack(res, M, Ns, i))
+             LazyList.map (fn res -> maybePushLetBack(res, path, M, Ns, i))
                tr_tms)
           | _ ->
         case findIndex caseExpr? Ns  of
@@ -826,7 +873,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                               case_tm, b2)
              in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
-             LazyList.map (fn res -> maybePushCaseBack(res, M, Ns, i))
+             LazyList.map (fn res -> maybePushCaseBack(res, path, M, Ns, i))
                tr_tms))
      | _ ->
    case strategy
@@ -928,8 +975,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
         @@ (fn () ->
              let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
              let p_M = unFoldSimpleLet(binds,M) in
-             LazyList.map (fn res -> reFoldLetVars(binds,res,b))
-               (rewriteTerm(solvers,boundVars ++ let_vars,p_M,(length binds)::path,rules)) )
+             LazyList.map (fn res -> reFoldLetVars(binds,path,res,b))
+               (rewriteTerm(solvers,boundVars ++ let_vars,p_M,path,rules)) )
      | LetRec(binds,M,b) ->
        let letrec_vars = map(fn (v, _) -> v) binds in
        let boundVars = boundVars ++ letrec_vars in
@@ -1093,6 +1140,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
 %%
 
  def rewriteRecursive(context,boundVars,rules,term,path) = 
+   let _ = writeLine ("rewriteRecursive called with path " ^ printPath path
+                        ^ " and term (" ^ printTerm term ^ ")") in
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
    let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
@@ -1127,7 +1176,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
           rewritesToTrue(rules, cond, boundVars, backChain)
 	else None
 
-      def rewriteRec(rules0, term0, path, prev_term, boundVars, history, backChain) =
+      def rewriteRec(rules0, term0, path0, prev_term, boundVars, history, backChain) =
 	let _ = traceTerm(context, term0, prev_term) in
 	let traceDepth = ! context.traceDepth + 1 in
         let maxTraceDepth = if backChain = 0
@@ -1149,7 +1198,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
               ({strategy = strategy,
                 rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),
                 context = context},
-               boundVars, term0, path, rules)
+               boundVars, term0, path0, rules)
             in
             if historyRepetition(history)
               then unit (tail history)
@@ -1271,10 +1320,28 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                   % this equality might depend on some of the type
                   % conditions returned by higher-order matching.
                   let term_without_rr =
-                    topTerm (replaceSubTerm
-                               (dereferenceAllAsSubst
-                                  final_subst rule.lhs boundVars,
-                                (term, path)))
+                    case validPathTermWithErr (term, path) of
+                      | None ->
+                        topTerm (replaceSubTerm
+                                   (dereferenceAllAsSubst
+                                      final_subst rule.lhs boundVars,
+                                    (term, path)))
+                      | Some (valid_prefix, ok_tm, bad_step) ->
+                        (warn
+                           ("rewriteRec: invalid returned path "
+                              ^ printPath path
+                              ^ " in term (" ^ printTerm term
+                              ^ ") with orig term ("
+                              ^ printTerm term0
+                              ^ ") and rule LHS ("
+                              ^ printTerm (dereferenceAllAsSubst
+                                             final_subst rule.lhs boundVars)
+                              ^ "); prefix " ^ printPath valid_prefix
+                              ^ " yields subterm ("
+                              ^ printTerm ok_tm
+                              ^ ") which does not allow next step "
+                              ^ show bad_step);
+                         term0)
                   in
                   let pf1 =
                     prove_equalWithTactic (AutoTactic [cond_pf], term0,
@@ -1321,10 +1388,14 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, f: MSTerm, Ns: MSTerms, i
                           | None -> rule_pf2
                   in
                   let pf = prove_equalTrans (pf1, pf2) in
+                  let _ = writeLine ("rewriteRec succeeded: term ("
+                                       ^ printTerm term0
+                                       ^ ") rewritten to term ("
+                                       ^ printTerm term ^ ")") in
                   let history = Cons ((rule, term, final_subst, pf),history) in
                   % increment the trace depth before the recursive call
                   let _ = context.traceDepth := traceDepth in
-                  rewriteRec(rules0, term, path, term0, boundVars, history, backChain)))
+                  rewriteRec(rules0, term, path0, term0, boundVars, history, backChain)))
         @@
         (fn () -> unit history)
    in
