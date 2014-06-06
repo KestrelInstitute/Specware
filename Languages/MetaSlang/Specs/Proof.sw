@@ -107,6 +107,9 @@ Proof qualifying spec
            | _ -> fail "Malformed proof: in proofPredicate applied to Proof_ImplEq")
       | Proof_MergeRules(tree,ids1,ids2) -> MergeRules.mergeRulesPredicate tree
 
+  % FIXME: IsaPrinter cannot call functions that begin with "proof"...?
+  def getProofPredicate_Internal p = proofPredicate_Internal p
+
   % Substitute for type variables in a proof
   op substTypes_ProofInternal (s: TyVarSubst, p: ProofInternal): ProofInternal =
     case p of
