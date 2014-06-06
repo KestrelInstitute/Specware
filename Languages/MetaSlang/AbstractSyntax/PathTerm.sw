@@ -1,3 +1,12 @@
+
+% This spec formalizes the notion of a path to a subterm of a term.
+% Each term construct has an ordered list of immediate subterms, and a
+% path is then a sequence of Nats specifying which immediate subterm
+% to choose at each term.
+%
+% README: paths are backwards, meaning that the first "step" in a path
+% is actually the last subterm to be chosen in that path.
+
 PathTerm qualifying
 spec
 import ../Specs/Utilities
@@ -23,14 +32,32 @@ type PathTerm = APathTerm Position.Position
   op [a] immediateSubTerms(term: ATerm a): List (ATerm a) =
     map (fn (_,subTerm) -> subTerm) (immediateSubTermsWithBindings term)
 
+  % Return None if the path is in the term, otherwise return the
+  % largest valid suffix of path, the subterm at that suffix of path,
+  % and the first (from right to left, since paths are backwards)
+  % invalid element of path
+  op [a] validPathTermWithErr ((term, path): APathTerm a)
+  : Option (Path * ATerm a * Nat) =
+    let def helper p =
+      case p of
+        | [] -> (term, None)
+        | i::p' ->
+          case helper p' of
+            | (ret_tm, None) ->
+              if i < length (immediateSubTerms ret_tm) then
+                ((immediateSubTerms ret_tm)@i, None)
+              else
+                (ret_tm, Some (p', i))
+            | ret -> ret
+    in
+    case helper path of
+      | (ret_tm, Some (valid_prefix, bad_step)) ->
+        Some (valid_prefix, ret_tm, bad_step)
+      | _ -> None
+
   % Return true iff the path is in the term
   op [a] validPathTerm ((term, path): APathTerm a) : Bool =
-    case path of
-      | [] -> true
-      | i::path' ->
-        if i < length (immediateSubTerms term) then
-          validPathTerm ((immediateSubTerms term)@i, path')
-        else false
+    validPathTermWithErr (term, path) = None
 
   op printPath (path : Path) : String =
     flatten (intersperse "," (map show path))
