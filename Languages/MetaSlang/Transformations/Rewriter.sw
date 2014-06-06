@@ -180,7 +180,7 @@ MetaSlangRewriter qualifying spec
                       {name      = rule.name,
                        rule_spec = rule.rule_spec,
                        opt_proof = extractProof result,
-                       lhs       = fromPathTerm (term, path),
+                       lhs       = term,
                        rhs       = new_term,
                        condition = None,
                        freeVars  = [],	
