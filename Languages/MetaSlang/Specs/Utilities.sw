@@ -333,13 +333,13 @@ Utilities qualifying spec
  op disjointVarNames?(vs1: MSVars, vs2: MSVars): Bool =
    forall? (fn (vn1, _) -> forall? (fn (vn2, _) -> vn1 ~= vn2) vs2) vs1
 
- op removeDuplicateVars: MSVars -> MSVars
+ op [a] removeDuplicateVars: List (AVar a) -> List (AVar a)
  def removeDuplicateVars vars = 
    case vars of
      | [] -> []
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
- op insertVar (new_var: MSVar, vars: MSVars): MSVars = 
+ op [a] insertVar (new_var: AVar a, vars: List (AVar a)): List (AVar a) = 
    if (exists? (fn v -> v.1 = new_var.1) vars) then
      vars
    else
@@ -924,10 +924,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    {types = mapTypeInfos letRecToLetTermTypeInfo spc.types,
     ops   = mapOpInfos   letRecToLetTermOpInfo   spc.ops}
 
- op  patternVars  : MSPattern -> MSVars
- def patternVars(p) = 
+ op  [a] patternVars  : APattern a -> List (AVar a)
+ def [a] patternVars(p) = 
      let
-	def loopP(p:MSPattern,vs) = 
+	def loopP(p:APattern a,vs) = 
 	    case p
 	      of VarPat(v,_) -> Cons(v,vs)
 	       | RecordPat(fields,_) -> 

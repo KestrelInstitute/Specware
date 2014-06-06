@@ -21,32 +21,26 @@ type PathTerm = APathTerm Position.Position
       | _ -> false
 
   op [a] immediateSubTerms(term: ATerm a): List (ATerm a) =
-    case term of
-      | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
-        [x, y]
-      | Apply(x, y, _) ->
-        if embed? Lambda x then [y, x] else [x, y]
-      | Record(l, _) -> map (fn (_, t) -> t) l
-      | Bind(_, _, x, _) -> [x]
-      | The(_, x, _)  -> [x]
-      | Let (l, b, _) -> (map (fn (_, t) -> t) l) ++ [b]
-      | LetRec (l, b, _) -> (map (fn (_, t) -> t) l) ++ [b]
-      | Lambda (l, _) -> map (fn (_, _, t) -> t) l
-      | IfThenElse(x, y, z, _) -> [x, y, z]
-      | Seq(l, _) -> l
-      | TypedTerm(x, ty, _) ->
-        (case postCondn? ty of
-           | None -> [x]
-           | Some post -> [x,post])
-      | And(l, _) -> l
-      | _ -> []
+    map (fn (_,subTerm) -> subTerm) (immediateSubTermsWithBindings term)
+
+  % Return true iff the path is in the term
+  op [a] validPathTerm ((term, path): APathTerm a) : Bool =
+    case path of
+      | [] -> true
+      | i::path' ->
+        if i < length (immediateSubTerms term) then
+          validPathTerm ((immediateSubTerms term)@i, path')
+        else false
+
+  op printPath (path : Path) : String =
+    flatten (intersperse "," (map show path))
 
   type ABindingTerm a = List (AVar a) * ATerm a
   type BindingTerm = ABindingTerm Position
   type APathBindingTerm a = ABindingTerm a * Path
   type PathBindingTerm = APathBindingTerm Position
 
-  op immediateSubTermsWithBindings(term: MSTerm): List (BindingTerm) =
+  op [a] immediateSubTermsWithBindings(term: ATerm a): List (ABindingTerm a) =
     case term of
       | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
         [([], x), ([], y)]
