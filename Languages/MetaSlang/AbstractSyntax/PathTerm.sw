@@ -134,15 +134,24 @@ type PathTerm = APathTerm Position.Position
     if i < length tms then Some(tms @ i) else None
 
   op [a] toPathTerm(term: ATerm a): APathTerm a = (term, [])
+
+  % tail-recursive version
   op [a] fromPathTerm((top_term, path): APathTerm a): ATerm a =
-    foldr (fn (i, tm) -> ithSubTerm(tm, i))
-       top_term path
+    foldl ithSubTerm top_term (reverse path)
+  % op [a] fromPathTerm((top_term, path): APathTerm a): ATerm a =
+  %   foldr (fn (i, tm) -> ithSubTerm(tm, i))
+  %      top_term path
 
   op fromPathTermWithBindings((top_term, path): PathTerm): BindingTerm =
-    foldr (fn (i, (vars, tm)) ->
+    foldl (fn ((vars, tm), i) ->
              let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
              (vars ++ new_vars, subterm))
-       ([], top_term) path
+       ([], top_term) (reverse path)
+  % op fromPathTermWithBindings((top_term, path): PathTerm): BindingTerm =
+  %   foldr (fn (i, (vars, tm)) ->
+  %            let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
+  %            (vars ++ new_vars, subterm))
+  %      ([], top_term) path
 
   op fromPathTermWithBindingsAdjust((top_term, path): PathTerm): BindingTerm =
     let def aux(tm: MSTerm, path: Path, vars: MSVars): Option BindingTerm =
@@ -172,15 +181,25 @@ type PathTerm = APathTerm Position.Position
                  
 
   op fromPathBindingTerm((top_binding_term, path): PathBindingTerm): BindingTerm =
-    foldr (fn (i, (vars, tm)) ->
+    foldl (fn ((vars, tm), i) ->
              let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
              (vars ++ new_vars, subterm))
-       top_binding_term path
+       top_binding_term (reverse path)
+  % op fromPathBindingTerm((top_binding_term, path): PathBindingTerm): BindingTerm =
+  %   foldr (fn (i, (vars, tm)) ->
+  %            let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
+  %            (vars ++ new_vars, subterm))
+  %      top_binding_term path
 
+  % tail-recursive version of this function
   op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
-    foldr (fn (i, Some tm) -> ithSubTerm?(tm, i)
-            | (i, None) -> None)
-       (Some top_term) path
+    foldl (fn (Some tm, i) -> ithSubTerm?(tm, i)
+            | (None, i) -> None)
+       (Some top_term) (reverse path)
+  % op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
+  %   foldr (fn (i, Some tm) -> ithSubTerm?(tm, i)
+  %           | (i, None) -> None)
+  %      (Some top_term) path
 
   op [a] nextToTopTerm((top_term, path): APathTerm a): ATerm a =
     if empty? path then top_term
