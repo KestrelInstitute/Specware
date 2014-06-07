@@ -382,6 +382,10 @@ spec
   op rewriteDebug?: Bool = false
 
   op rewriteDepth: Nat = 6
+
+  % Rewrite the subterm of path_term at its particular path, returning
+  % the new_subterm and a proof that path_term equals
+  % replaceSubTerm(new_subterm, path_term)
   op rewritePT(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
        : MSTerm * Proof =
     (context.traceDepth := 0;
@@ -398,22 +402,27 @@ spec
      let rules = contextRulesFromPath(path_term, qid, context) ++ rules in
      let rules = subtypeRules(term, context) ++ rules in
      let rules = splitConditionalRules rules in
-     case rewriteRecursive (context, freeVars term, rules, term) of
-       | None -> (top_term, prove_equalRefl top_term)
-       | Some (new_subterm, subterm_pf) ->
-         if path = [] then
-           (new_subterm, subterm_pf)
-         else
-           let new_term = topTerm (replaceSubTerm (new_subterm, path_term)) in
-           let result =
-             (new_term,
-              prove_equalSubTerm (top_term, new_term, termType term,
-                                  path, subterm_pf))
-           in
-           let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result.1)
-                   else ()
-           in
-           result)
+     let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
+           % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
+           case rewriteRecursive (context, freeVars trm, rules, trm) of
+             | None -> (trm, pf)
+             | Some (new_trm, ret_pf) ->
+               let new_pf = prove_equalTrans (pf, ret_pf) in
+               if count > 0 then
+                 doTerm (count - 1, new_trm, new_pf)
+               else
+                 (trm, new_pf)
+     in
+     let (new_subterm, sub_pf) =
+       % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
+       % else
+       doTerm(rewriteDepth, term, prove_equalRefl term)
+     in
+     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm new_subterm) else () in
+     (new_subterm,
+      prove_equalSubTerm
+        (top_term, topTerm (replaceSubTerm (new_subterm, path_term)),
+         termType top_term, path, sub_pf)))
 
   op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
     foldr (fn (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
@@ -618,8 +627,11 @@ spec
                 | TermTransform(tr_name, tr_fn, arg) ->
                   let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid) in
                   let result = apply(tr_fn, arg_with_spc) in
-                  (case extractMSTerm result of
-                     | Some new_term -> replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), pf)
+                  (case (extractMSTerm result, extractProof result) of
+                     | (Some new_term, Some new_pf) ->
+                       replaceSubTermH((new_term, new_pf), path_term, pf)
+                     | (Some new_term, None) ->
+                       replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), pf)
                      | None -> (path_term, pf))
                 | SimpStandard -> replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, pf)
                 | RenameVars binds -> replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, pf)
@@ -653,11 +665,18 @@ spec
   % op liftInfo(info: AnnSpec.TransformInfo, ptm: PathTerm): AnnSpec.TransformInfo =
   %   mapTransformInfo (fn tm -> topTerm(replaceSubTerm(tm, ptm))) info
 
+  % Take an old_ptm and a proof that some even older term (not given
+  % here) equals topTerm(old_ptm), along with a new subterm new_tm for
+  % old_ptm along with a new_pf that topTerm(old_ptm) equals the
+  % result of replacing the old subterm with new_tm, and return the
+  % result of doing this replacement along with a proof that the even
+  % older term equals the new topTerm
   op replaceSubTermH((new_tm: MSTerm, new_pf: Proof), old_ptm: PathTerm, pf: Proof): PathTerm * Proof =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     %let lifted_info = liftInfo(new_info, old_ptm) in
     (new_path_tm, prove_equalTrans (pf, new_pf))
 
+  % Similar to the above, but without having a new_pf
   op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, pf: Proof): PathTerm * Proof =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     (new_path_tm,
