@@ -189,7 +189,7 @@ Proof qualifying spec
       | Proof_EqTrans (T, M1, pfs) ->
         foldl (fn (prev_pf, (next_pf,_)) ->
                  prove_equalTrans (prev_pf, mapProof_Internal tsp next_pf))
-          (prove_equalRefl (mapTerm tsp M1))
+          (prove_equalRefl (T, mapTerm tsp M1))
           pfs
       | Proof_ImplTrans(P,pf1,Q,pf2,R) ->
         prove_implTrans (mapProof_Internal tsp pf1, mapProof_Internal tsp pf2)
@@ -308,7 +308,7 @@ Proof qualifying spec
 
   % build a proof of true
   op prove_true : Proof =
-    prove_fromEqualTrue (mkTrue(), prove_equalRefl (mkTrue()))
+    prove_fromEqualTrue (mkTrue(), prove_equalRefl (boolType, mkTrue()))
 
   % build a proof by applying a theorem or axiom for predicate P
   op prove_withTheorem (qid : QualifiedId, P : MSTerm) : Proof =
@@ -346,8 +346,8 @@ Proof qualifying spec
                             ") from a proof of: " ^ printTerm pf_pred) }
 
   % build a proof of M=M
-  op prove_equalRefl (M : MSTerm) : Proof =
-    return (Proof_EqTrans (termType M, M, []))
+  op prove_equalRefl (T : MSType, M : MSTerm) : Proof =
+    return (Proof_EqTrans (T, M, []))
 
   % build a proof of N=M from a proof of M=N
   %

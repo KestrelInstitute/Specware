@@ -272,12 +272,12 @@ MetaSlangRewriter qualifying spec
      } 
 *)
 
- op mkSimpRule (name:String, lhs:MSTerm, rhs:MSTerm) : RewriteRule =
+ op mkSimpRule (name:String, ty: MSType, lhs:MSTerm, rhs:MSTerm) : RewriteRule =
    {
     name     = name,
     rule_spec = Eval,
     opt_proof =
-      Some (prove_equalWithTactic (AutoTactic [], lhs,rhs,termType lhs)),
+      Some (prove_equalWithTactic (AutoTactic [], lhs,rhs,ty)),
     freeVars = [],
     tyVars = [],
     condition = None,
@@ -286,7 +286,7 @@ MetaSlangRewriter qualifying spec
     trans_fn = None
     }
 
- def mkEvalRule (lhs,rhs) = mkSimpRule ("Eval",lhs,rhs)
+ def mkEvalRule (ty,lhs,rhs) = mkSimpRule ("Eval",ty,lhs,rhs)
  op evalRule?(rl: RewriteRule): Bool = rl.rule_spec = Eval
 
  op baseSpecTerm?(term: MSTerm): Bool =
@@ -313,13 +313,13 @@ MetaSlangRewriter qualifying spec
      else (false, term)
    in
    if simp? then
-     unit(new_term, (emptySubstitution,mkEvalRule(term,new_term),
+     unit(new_term, (emptySubstitution,mkEvalRule(inferType(spc, term),term,new_term),
                      path,boundVars,demod))
    else
    case tryEvalOne spc term of
      | Some eTerm ->
        % let _ = writeLine("EvalOne:\n"^printTerm term^"\nTo:\n"^printTerm eTerm) in
-       unit (eTerm, (emptySubstitution,mkSimpRule ("Eval1", term, eTerm),
+       unit (eTerm, (emptySubstitution,mkSimpRule ("Eval1", inferType (spc,term), term, eTerm),
                      path, boundVars, demod))
      | None ->
    case term of
@@ -330,7 +330,7 @@ MetaSlangRewriter qualifying spec
            | Some (sub,M) ->
              let out_term = substitute(M,sub) in
              unit (out_term, (emptySubstitution,
-                              mkSimpRule ("reduceCase",term,out_term),
+                              mkSimpRule ("reduceCase",inferType(spc, term),term,out_term),
                               path, boundVars, demod)))
      %% {id1 = x.id1, ..., idn = x.idn} --> x
      | Record((id1,Apply(Fun(Project id2,_,_), tm, _)) :: r_flds, _)
@@ -347,30 +347,30 @@ MetaSlangRewriter qualifying spec
                               | _ -> false)
                   r_flds)
          -> unit (tm, (emptySubstitution,
-                       mkSimpRule ("RecordId", term,tm),
+                       mkSimpRule ("RecordId",inferType(spc, term),term,tm),
                        path,boundVars,demod))
      %% let p1 = (let p2 = e2 in e1) in e3 --> let p2 = e2 in let p1 = e2 in e3
      | Let([(p1, Let(bds2, e1, a2))], e3, a1) ->
        let out_term = Let(bds2, Let([(p1, e1)], e3, a1), a2) in
        unit (out_term,
              (emptySubstitution,
-              mkSimpRule ("noramlizeEmbeddedLets", term, out_term),
+              mkSimpRule ("noramlizeEmbeddedLets", inferType(spc, term), term, out_term),
               path, boundVars, demod))
      | Apply(Fun(Embedded id1,_,_), Apply(Fun(Embed(id2,_),_,_),_,_),_) ->
        let out_term = mkBool(id1 = id2) in
-       unit (out_term, (emptySubstitution,mkSimpRule ("reduceEmbed", term, out_term),
+       unit (out_term, (emptySubstitution,mkSimpRule ("reduceEmbed", inferType(spc, term), term, out_term),
                         path,boundVars,demod))
      | Apply(Fun(Equals,s,_), Record([(_,M1),(l2,M2)],_),_) ->
        (if equalTerm?(M1,M2)
           then unit(trueTerm, (emptySubstitution,
-                               mkSimpRule ("Eval=", term, trueTerm),
+                               mkSimpRule ("Eval=", inferType(spc, term), term, trueTerm),
                                path,boundVars,demod))
         else
         case isFlexVar? M1 of
           | Some n | ~(hasFlexRef? M2)->
             unit(trueTerm,
                  (updateSubst(emptySubstitution,n,M2),
-                  mkSimpRule ("Subst", term, trueTerm),
+                  mkSimpRule ("Subst", inferType(spc, term), term, trueTerm),
                   path, boundVars, demod))
           | _ -> Nil)
      | _ -> Nil
@@ -1118,12 +1118,12 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 
  % Transitively combine all the proofs in a history into one proof
  % that input_trm = output_trm
- op combineHistoryProofs (input_trm : MSTerm, hist : History) : Proof =
+ op combineHistoryProofs (input_trm : MSTerm, T : MSType, hist : History) : Proof =
    case hist of
-     | [] -> prove_equalRefl input_trm
+     | [] -> prove_equalRefl (T, input_trm)
      | [(_, _, _, pf)] -> pf
      | (_, _, _, pf_last)::hist' ->
-       prove_equalTrans (combineHistoryProofs (input_trm, hist'), pf_last)
+       prove_equalTrans (combineHistoryProofs (input_trm, T, hist'), pf_last)
 
  op rewriteRecursive :
     Context * MSVars * RewriteRules * MSTerm ->
@@ -1148,7 +1148,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
      | Nil -> None
      | Cons ([], _) -> None
      | Cons (history as (_,out_term,_,_)::_, _) ->
-       Some (out_term, combineHistoryProofs (term, history))
+       Some (out_term, combineHistoryProofs (term, inferType (context.spc, term), history))
 
  def rewriteRecursivePre(context, boundVars, rules0, term) = 
    let
@@ -1166,7 +1166,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
            if trueTerm? t then
              Some (c_subst,
                    prove_fromEqualTrue (term,
-                                        combineHistoryProofs (term,hist)))
+                                        combineHistoryProofs
+                                          (term, inferType (context.spc,term), hist)))
            else None
 
      def solveCondition (cond, rules, boundVars, backChain) : Option (SubstC * Proof) = 
@@ -1344,7 +1345,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   in
                   let pf1 =
                     prove_equalWithTactic (AutoTactic [cond_pf], term0,
-                                           term_without_rr, termType term0)
+                                           term_without_rr,
+                                           inferType (context.spc, term0))
                   in
                   let pf2 =
                     case rule.opt_proof of
@@ -1353,7 +1355,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                         % in cond_pf as well (why not?)
                         prove_equalWithTactic (AutoTactic [cond_pf],
                                                term_without_rr, term,
-                                               termType term)
+                                               inferType (context.spc, term))
                       | Some rule_pf ->
                         let rule_pf1 =
                           instantiateTyVarsInProof

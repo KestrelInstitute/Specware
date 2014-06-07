@@ -261,7 +261,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
   let def transfm(tm: MSTerm): Option (MSTerm * Proof) =
         case tm of
           | Bind(Exists, vs, bod, a) ->
-            (if vs = [] then Some(bod, prove_equalRefl (bod))
+            (if vs = [] then Some(bod, prove_equalRefl (boolType, bod))
              else
              let (vs, cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
              % let _ = writeLine("flat:\n"^printTerm(mkConj cjs)) in
@@ -414,13 +414,13 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
           | Some pr -> pr
           | None ->
             % let _ = writeLine("Residual:\n"^printTerm(mkBind(Exists, vs, mkSimpConj cjs))) in
-            (new_ex, prove_equalRefl (new_ex))
+            (new_ex, prove_equalRefl (boolType, new_ex))
       def transExResult(result?, vs, cjs, a): MSTerm * Proof =
         case result? of
           | Some pr -> pr
           | None ->
             let ret_tm = mkSimpBind(Exists, vs, mkSimpConj cjs) in
-            (ret_tm, prove_equalRefl (ret_tm))
+            (ret_tm, prove_equalRefl (boolType, ret_tm))
   in
   case transfm ctm of
     | Some (n_tm, prf) ->

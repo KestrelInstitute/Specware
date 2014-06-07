@@ -385,8 +385,8 @@ spec
 
   % Rewrite the subterm of path_term at its particular path, returning
   % the new_subterm and a proof that path_term equals
-  % replaceSubTerm(new_subterm, path_term)
-  op rewritePT(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
+  % replaceSubTerm(new_subterm, path_term).
+  op rewritePT(spc: Spec, path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
        : MSTerm * Proof =
     (context.traceDepth := 0;
      let top_term = topTerm path_term in
@@ -416,13 +416,13 @@ spec
      let (new_subterm, sub_pf) =
        % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
        % else
-       doTerm(rewriteDepth, term, prove_equalRefl term)
+       doTerm(rewriteDepth, term, prove_equalRefl (inferType (spc,term), term))
      in
      let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm new_subterm) else () in
      (new_subterm,
       prove_equalSubTerm
         (top_term, topTerm (replaceSubTerm (new_subterm, path_term)),
-         termType top_term, path, sub_pf)))
+         inferType (spc,top_term), path, sub_pf)))
 
   op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
     foldr (fn (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
@@ -580,13 +580,13 @@ spec
     in
     % let _ = printContextOptions context in
     let rules = makeRules (context, spc, rules) in
-    rewritePT(path_term, context, qid, rules)    
+    rewritePT(spc, path_term, context, qid, rules)    
 
   op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, pf: Proof)
        : PathTerm * Proof =
     let context = makeContext spc in
     let rules = makeRules (context, spc, rules) in
-    replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, pf)
+    replaceSubTermH(rewritePT(spc, path_term, context, qid, rules), path_term, pf)
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
   op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
@@ -645,7 +645,7 @@ spec
                   let context = makeContext spc <<  {maxDepth = 1} in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, pf)
+                  replaceSubTermH(rewritePT(spc, path_term, context, qid, rules), path_term, pf)
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
@@ -688,8 +688,9 @@ spec
     {typed_path_term <- return(typedPathTerm(def_term, top_ty));
      when tracing? 
        (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
-     ((new_typed_term, _), tracing?, pf) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false,
-                                                              prove_equalRefl def_term);
+     ((new_typed_term, _), tracing?, pf)
+       <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false,
+                            prove_equalRefl (top_ty, def_term));
      return(new_typed_term, tracing?, pf)}
 
   % In the spec `spc`, execute the transformation script `script` on

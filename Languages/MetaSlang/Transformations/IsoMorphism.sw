@@ -1631,10 +1631,10 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                                      dfn, ty, qid, false)
                      }
                      else
-                       return (dfn, false, prove_equalRefl dfn)
+                       return (dfn, false, prove_equalRefl (ty, dfn))
                    }
                    else
-                     return (dfn, false, prove_equalRefl dfn);
+                     return (dfn, false, prove_equalRefl (ty, dfn));
                  if equalTerm?(dfn, simp_dfn) then
                    return opinfo
                  else {

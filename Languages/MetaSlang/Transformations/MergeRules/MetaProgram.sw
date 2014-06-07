@@ -1525,7 +1525,7 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
                                           % the op that the rewritten
                                           % term will ultimately
                                           % appear in.
-   let pf = prove_equalRefl tm in
+   let pf = prove_equalRefl (inferType (spc, tm), tm) in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
    let (pterm',pf') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, pf) in
