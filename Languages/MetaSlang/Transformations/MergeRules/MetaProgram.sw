@@ -134,13 +134,7 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                   let _ = writeLine "Refining quid" in
                   let pf =
                     prove_implElim (prove_MergeRules (prf,unfolds,smtArgs),
-                                    % README: we assume there are no
-                                    % failure cases, so we cut the
-                                    % merge rules proof against
-                                    % "~false"; otherwise, we wouldn't
-                                    % have a proper refinement
-                                    prove_withTactic (StringTactic "simpl",
-                                                      mkNot (mkFalse())))
+                                    prove_withTactic (AutoTactic [], preAsConj))
                   in
                   addRefinedTypeH(spc,oi,refinedType,Some body,Some pf)
                 | None ->
@@ -1526,7 +1520,7 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
                                           % the op that the rewritten
                                           % term will ultimately
                                           % appear in.
-   let pf = prove_equalRefl (inferType (spc, tm), tm) in
+   let pf = bogusProof in % prove_equalRefl (inferType (spc, tm), tm) in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
    let (pterm',pf') = replaceSubTermH(rewritePT(spc,pterm, ctx, qid, rules), pterm, pf) in

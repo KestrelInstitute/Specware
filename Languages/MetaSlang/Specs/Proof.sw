@@ -219,22 +219,24 @@ Proof qualifying spec
   % proof completely ignoring the possibility of errors: errors are
   % handled transparently in monadBind. (This should look familiar to
   % those familiar with the error monad...)
-  %
+
+  % The type of proofs that might have been built incorrectly
+  type Proof = Monad ProofInternal
+
   % Proof error-handling has two modes: silent and debug, controlled
   % by the flag proofSilentMode?, below. In silent mode, errors in
   % constructing proofs do not interrupt the program flow, and are
   % only reported when the proof is pretty-printed to Isabelle. In
   % debug mode, errors in proofs immediately become Lisp exceptions,
   % so that you can track down where the proof bug is.
-
-  op proofSilentMode? : Bool = true
-
+  op proofSilentMode? : Bool = false
   op proofError (err_str: String) : Proof =
     if proofSilentMode? then ErrorFail err_str else
       fail err_str
 
-  % The type of proofs that might have been built incorrectly
-  type Proof = Monad ProofInternal
+  % A bogus proof object, which will "percolate up", i.e., which will
+  % always produce bogus proofs when combined with other proofs
+  op bogusProof : Proof = ErrorFail "Bogus proof!"
 
   % Print out a representation of a proof
   op showProof (p : Proof) : String =
