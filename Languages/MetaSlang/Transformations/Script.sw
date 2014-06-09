@@ -384,7 +384,7 @@ spec
   op rewriteDepth: Nat = 6
 
   % Rewrite the subterm of path_term at its particular path, returning
-  % the new_subterm and a proof that path_term equals
+  % the new_subterm and a proof that topTerm(path_term) equals
   % replaceSubTerm(new_subterm, path_term).
   op rewritePT(spc: Spec, path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
        : MSTerm * Proof =
@@ -690,7 +690,7 @@ spec
        (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
      ((new_typed_term, _), tracing?, pf)
        <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false,
-                            prove_equalRefl (top_ty, def_term));
+                            prove_equalRefl (top_ty, topTerm typed_path_term));
      return(new_typed_term, tracing?, pf)}
 
   % In the spec `spc`, execute the transformation script `script` on
