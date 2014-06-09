@@ -1351,16 +1351,24 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   let pf2 =
                     case rule.opt_proof of
                       | None ->
-                        % If there is no proof, use "auto", throwing
-                        % in cond_pf as well (why not?)
+                        % If there is no proof, use "auto" to prove
+                        % the equality of the rewrite, throwing in
+                        % cond_pf as well (why not?)
                         prove_equalWithTactic (AutoTactic [cond_pf],
                                                term_without_rr, term,
                                                inferType (context.spc, term))
                       | Some rule_pf ->
+                        % If there is a proof for the rule, use it to
+                        % prove that term_without_rr=term.
+                        %
+                        % Step 1: Instantiate any type variables
                         let rule_pf1 =
                           instantiateTyVarsInProof
                             (tyVarSubstFromSubstC final_subst, rule_pf)
                         in
+
+                        % Step 2: Instantiate universally quantified
+                        % variables using forall elimination
                         let var_terms_pfs =
                           map (fn (var_i, var_tp) ->
                                  let var_term =
@@ -1381,12 +1389,24 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                         let rule_pf2 =
                           prove_forallElimMulti (rule_pf1, var_terms_pfs)
                         in
-                        case rule.condition of
-                          | Some cond ->
-                            prove_implElim (rule_pf2,
-                                            prove_withTactic
-                                              (AutoTactic [cond_pf], cond))
-                          | None -> rule_pf2
+
+                        % Step 3: Cut (i.e., perform implication
+                        % elimination) the proof against the proof of
+                        % the condition, if any
+                        let rule_pf3 =
+                          case rule.condition of
+                            | Some cond ->
+                              prove_implElim (rule_pf2,
+                                              prove_withTactic
+                                                (AutoTactic [cond_pf], cond))
+                            | None -> rule_pf2
+                        in
+
+                        % Step 4: Expand the resulting proof that
+                        % lhs=rhs from the subterms to the superterms
+                        prove_equalSubTerm (term_without_rr, term,
+                                            inferType (context.spc, term),
+                                            path, rule_pf3)
                   in
                   let pf = prove_equalTrans (pf1, pf2) in
                   let _ = writeLine ("rewriteRec succeeded: term ("
