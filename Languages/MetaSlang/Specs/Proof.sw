@@ -5,7 +5,7 @@
 % to prove the really difficult theorems.
 %
 % README: scroll down to the "external interface" to see how to use
-% this library
+% this library.
 
 Proof qualifying spec
   import MSTerm
@@ -216,8 +216,22 @@ Proof qualifying spec
   % The prove_* commands below should be the *only* way proofs are
   % built. The idea of the Proof type here is that you don't have to
   % check for errors at each point, but can instead just write your
-  % proof completely ignoring the possibility of errors. (This should
-  % look familiar to those familiar with the error monad...)
+  % proof completely ignoring the possibility of errors: errors are
+  % handled transparently in monadBind. (This should look familiar to
+  % those familiar with the error monad...)
+  %
+  % Proof error-handling has two modes: silent and debug, controlled
+  % by the flag proofSilentMode?, below. In silent mode, errors in
+  % constructing proofs do not interrupt the program flow, and are
+  % only reported when the proof is pretty-printed to Isabelle. In
+  % debug mode, errors in proofs immediately become Lisp exceptions,
+  % so that you can track down where the proof bug is.
+
+  op proofSilentMode? : Bool = true
+
+  op proofError (err_str: String) : Proof =
+    if proofSilentMode? then ErrorFail err_str else
+      fail err_str
 
   % The type of proofs that might have been built incorrectly
   type Proof = Monad ProofInternal
@@ -266,8 +280,8 @@ Proof qualifying spec
       case matchImplication p1_pred of
         | Some (P, Q) | equalTerm? (P, p2_pred) ->
           return (Proof_Cut (P, Q, p1_int, p2_int))
-        | _ -> ErrorFail ("Implication elimination of (" ^ printTerm p1_pred
-                            ^ ") against (" ^ printTerm p2_pred ^ ")") }
+        | _ -> proofError ("Implication elimination of (" ^ printTerm p1_pred
+                             ^ ") against (" ^ printTerm p2_pred ^ ")") }
 
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
@@ -283,11 +297,11 @@ Proof qualifying spec
           if equalTerm? (tp_pred, tp_pred_expected) then
             return (Proof_ForallE (x, T, M, N, p_int, tp_int))
           else
-            ErrorFail ("Bad typing proof in forall elimination: expected ("
-                         ^ printTerm tp_pred_expected ^ "), found ("
-                         ^ printTerm tp_pred ^ ")")
-        | _ -> ErrorFail ("Forall elimination of (" ^ printTerm p_pred
-                            ^ ") against term (" ^ printTerm N ^ ")") }
+            proofError ("Bad typing proof in forall elimination: expected ("
+                          ^ printTerm tp_pred_expected ^ "), found ("
+                          ^ printTerm tp_pred ^ ")")
+        | _ -> proofError ("Forall elimination of (" ^ printTerm p_pred
+                             ^ ") against term (" ^ printTerm N ^ ")") }
 
   % prove_forallElimMulti (pf, [(N1, pf1),...,(Nn,pfn)]) takes a proof
   % pf1:fa(x1:T1,...,xn:Tn)M, and a list of terms N1,...,Nn and proofs
@@ -303,8 +317,8 @@ Proof qualifying spec
       case matchEquality p_pred of
         | Some (_, M', N) | equalTerm? (M,M') && equalTerm? (N,mkTrue()) ->
           return (Proof_EqTrue (M, p_int))
-        | _ -> ErrorFail ("Attempt to prove (" ^ printTerm M
-                            ^ ") from a proof of (" ^ printTerm p_pred ^ ")") }
+        | _ -> proofError ("Attempt to prove (" ^ printTerm M
+                             ^ ") from a proof of (" ^ printTerm p_pred ^ ")") }
 
   % build a proof of true
   op prove_true : Proof =
@@ -340,10 +354,10 @@ Proof qualifying spec
       case matchEquality pf_pred of
         | Some (_, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
           return (Proof_EqSubterm(M,N,T,p,pf_int))
-        | _ -> ErrorFail ("Attempt to prove equality of subterms (" ^
-                            printTerm (fromPathTerm (M,p)) ^
-                            ") and (" ^ printTerm (fromPathTerm (N,p)) ^
-                            ") from a proof of: " ^ printTerm pf_pred) }
+        | _ -> proofError ("Attempt to prove equality of subterms (" ^
+                             printTerm (fromPathTerm (M,p)) ^
+                             ") and (" ^ printTerm (fromPathTerm (N,p)) ^
+                             ") from a proof of: " ^ printTerm pf_pred) }
 
   % build a proof of M=M
   op prove_equalRefl (T : MSType, M : MSTerm) : Proof =
@@ -358,8 +372,8 @@ Proof qualifying spec
       let pf_pred = proofPredicate_Internal pf_int in
       case matchEquality pf_pred of
         | Some (T, M, N) -> return (Proof_EqSym pf_int)
-        | _ -> ErrorFail ("Attempt to apply symmetry of equality to a non-equality proof: "
-                            ^ printTerm pf_pred) }
+        | _ -> proofError ("Attempt to apply symmetry of equality to a non-equality proof: "
+                             ^ printTerm pf_pred) }
 
   % prove M=P from a proof pf1 of M=N and a proof pf2 of N=P
   %
@@ -370,18 +384,25 @@ Proof qualifying spec
       pf1_pred <- return (proofPredicate_Internal pf1_int);
       pf2_pred <- return (proofPredicate_Internal pf2_int);
       case (matchEquality pf1_pred, matchEquality pf2_pred) of
-        | (Some (T1, M, N1), Some (T2, N2, P)) | equalTerm? (N1, N2) && equalType? (T1, T2) ->
-          (case (pf1_int, pf2_int) of
-             | (Proof_EqTrans (T, M1, pfs1), Proof_EqTrans (_, _, pfs2)) ->
-               return (Proof_EqTrans (T, M1, pfs1 ++ pfs2))
-             | (Proof_EqTrans (T, M1, pfs1), _) ->
-               return (Proof_EqTrans (T, M1, pfs1 ++ [(pf2_int, P)]))
-             | (_, Proof_EqTrans (T, _, pfs2)) ->
-               return (Proof_EqTrans (T, M, (pf1_int, N1)::pfs2))
-             | _ -> return (Proof_EqTrans (T1, M, [(pf1_int, N1),(pf2_int, P)])))
+        | (Some (T1, M, N1), Some (T2, N2, P)) | equalTerm? (N1, N2) ->
+          if equalType? (T1, T2) then
+            (case (pf1_int, pf2_int) of
+               | (Proof_EqTrans (T, M1, pfs1), Proof_EqTrans (_, _, pfs2)) ->
+                 return (Proof_EqTrans (T, M1, pfs1 ++ pfs2))
+               | (Proof_EqTrans (T, M1, pfs1), _) ->
+                 return (Proof_EqTrans (T, M1, pfs1 ++ [(pf2_int, P)]))
+               | (_, Proof_EqTrans (T, _, pfs2)) ->
+                 return (Proof_EqTrans (T, M, (pf1_int, N1)::pfs2))
+               | _ -> return (Proof_EqTrans (T1, M, [(pf1_int, N1),(pf2_int, P)])))
+          else
+          proofError ("Attempt to apply transitivity of equality at different types: proof of ("
+                        ^ printTerm pf1_pred ^ ") is at type ("
+                        ^ printType T1 ^ ") while proof of ("
+                        ^ printTerm pf2_pred ^ ") is at type ("
+                        ^ printType T2 ^ ")")
         | _ ->
-          ErrorFail ("Attempt to apply transitivity of equality to proofs of ("
-                            ^ printTerm pf1_pred ^ ") and (" ^ printTerm pf2_pred ^ ")")
+          proofError ("Attempt to apply transitivity of equality to proofs of ("
+                        ^ printTerm pf1_pred ^ ") and (" ^ printTerm pf2_pred ^ ")")
           }
 
   % prove P=>R from proof pf1 of P=>Q and pf2 of Q=>R
@@ -393,8 +414,8 @@ Proof qualifying spec
         | (Some (P, Q1), Some (Q2, R)) | equalTerm? (Q1, Q2) ->
           return (Proof_ImplTrans (P, pf1_int, Q1, pf2_int, R))
         | _ ->
-          ErrorFail ("Attempt to apply transitivity of implication to proofs of ("
-                            ^ printTerm pf1_pred ^ ") and (" ^ printTerm pf2_pred ^ ")")
+          proofError ("Attempt to apply transitivity of implication to proofs of ("
+                        ^ printTerm pf1_pred ^ ") and (" ^ printTerm pf2_pred ^ ")")
           }
 
   % prove P=>Q from a proof of P=Q
@@ -404,8 +425,8 @@ Proof qualifying spec
       case matchEquality pf_pred of
         | Some _ -> return (Proof_ImplEq pf_int)
         | _ ->
-          ErrorFail ("Attempt to prove implication by equality from a non-equality proof of " ^
-                     printTerm pf_pred) }
+          proofError ("Attempt to prove implication by equality from a non-equality proof of "
+                        ^ printTerm pf_pred) }
 
   % Build a proof using MergeRules; the actual predicate being proved
   % is MergeRules.mergeRulesPredicate tree
