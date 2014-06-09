@@ -137,9 +137,10 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                                     % README: we assume there are no
                                     % failure cases, so we cut the
                                     % merge rules proof against
-                                    % "true"; otherwise, we wouldn't
+                                    % "~false"; otherwise, we wouldn't
                                     % have a proper refinement
-                                    prove_true)
+                                    prove_withTactic (StringTactic "simpl",
+                                                      mkNot (mkFalse())))
                   in
                   addRefinedTypeH(spc,oi,refinedType,Some body,Some pf)
                 | None ->
@@ -1528,7 +1529,7 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
    let pf = prove_equalRefl (inferType (spc, tm), tm) in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
-   let (pterm',pf') = replaceSubTermH(rewritePT(pterm, ctx, qid, rules), pterm, pf) in
+   let (pterm',pf') = replaceSubTermH(rewritePT(spc,pterm, ctx, qid, rules), pterm, pf) in
    let tm' = fromPathTerm pterm' in
    if equalTerm?(tm, tm')
      then None
