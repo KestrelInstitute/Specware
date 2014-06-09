@@ -614,7 +614,7 @@ op isaDirectoryName: String = "Isa"
                               % let _ = writeLine("oblig: "^printTerm oblig) in
                               % let _ = writeLine("Generating proof for "^thm_name) in
                               % FIXME: double-check that pf is a proof of what we expect it to be!
-                              let prf_str = "" in % proofToIsaProofString (c, pf) in
+                              let prf_str = ppProofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -633,7 +633,7 @@ op isaDirectoryName: String = "Isa"
                                % let _ = writeLine("Generating proof for "^thm_name) in
                                % let _ = writeLine(anyToPrettyString pf) in
                               % FIXME: double-check that pf is a proof of what we expect it to be!
-                              let prf_str = "" in % proofToIsaProofString (c, pf) in
+                              let prf_str = ppProofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
