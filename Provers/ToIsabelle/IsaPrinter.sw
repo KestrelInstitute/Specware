@@ -1029,7 +1029,7 @@ op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
        (fn pf1_name ->
           addForwardStep
           (c, "cut_pf2_", ppTermNonNorm c P,
-           forwardProofBlock (ppProofIntToIsaProof_st (c, pf1)),
+           forwardProofBlock (ppProofIntToIsaProof_st (c, pf2)),
            (fn pf2_name ->
               showFinalResult
               (singleTacticProof
