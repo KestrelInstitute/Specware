@@ -988,12 +988,13 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 
  % pretty-print an Isabelle "big and" variable binding
  op ppBigAnd (c: Context, vars: List Pretty, body: Pretty) : Pretty =
-   blockFill
-   (0,
-    [(0, string "\\<And> "),
-     (2, prConcat (intersperse (string " ") vars)),
-     (0, string "."),
-     (2, body)])
+   if vars = [] then body else
+     blockFill
+     (0,
+      [(0, string "\\<And> "),
+       (2, prConcat (intersperse (string " ") vars)),
+       (0, string "."),
+       (2, body)])
 
  % add double quotes around a Pretty
  op doubleQuote (p : Pretty) : Pretty = prConcat [string "\"", p, string "\" "]
