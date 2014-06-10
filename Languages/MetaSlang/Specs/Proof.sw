@@ -430,9 +430,38 @@ Proof qualifying spec
           proofError ("Attempt to prove implication by equality from a non-equality proof of "
                         ^ printTerm pf_pred) }
 
+  % prove P=>P
+  op prove_implRefl (P: MSTerm) : Proof =
+    prove_implEq (prove_equalRefl (boolType, P))
+
   % Build a proof using MergeRules; the actual predicate being proved
   % is MergeRules.mergeRulesPredicate tree
   op prove_MergeRules (tree,ids1,ids2) : Proof =
     return (Proof_MergeRules (tree,ids1,ids2))
+
+
+  %%
+  %% Proofs of refinement, that either P=Q or that P=>Q, depending on
+  %% the context, where the "context" is given by a flag
+  %%
+
+  % prove_refinesEqualSubTerm(M,N,T,implProof?,p,pf) proves that
+  % either M=N at type T, if implProof?=false, or that N=>M, if
+  % implProof?=true, using a proof pf that the subterms of M and N at
+  % path p are equal. NOTE: we assume that M and N both have type T
+  op prove_refinesEqualSubTerm(M: MSTerm, N: MSTerm, T: MSType,
+                               implProof?: Bool, p: Path, pf: Proof) : Proof =
+    let eq_pf = prove_equalSubTerm (M, N, T, p, pf) in
+    if implProof? then prove_implEq (prove_equalSym eq_pf) else eq_pf
+
+  % Compose two refinement proofs pf1 : M=N and pf2 : N=P to a proof
+  % that M=P, if implProof?=false, or proofs pf1 : N=>M and pf2 : P=>N
+  % to a proof that P=>M, if implProof?=true.
+  op prove_refinesTrans (pf1: Proof, pf2: Proof, implProof?: Bool) : Proof =
+    if implProof? then
+      prove_implTrans (pf2, pf1)
+    else
+      prove_equalTrans (pf1, pf2)
+
 
 end-spec
