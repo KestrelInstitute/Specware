@@ -59,6 +59,13 @@ type PathTerm = APathTerm Position.Position
   op [a] validPathTerm ((term, path): APathTerm a) : Bool =
     validPathTermWithErr (term, path) = None
 
+  % Return true iff the first argument is an extension of the second,
+  % i.e., iff path_long always points to a subterm of path_short
+  op pathExtends? (path_long: Path, path_short: Path) : Bool =
+    if length path_long < length path_short then false else
+      let path_long_suffix = suffix (path_long, length path_short) in
+      path_long_suffix = path_short
+
   % Take the difference of one path minus another, that is, the path
   % that would have to be prepended to path_short to get path_long.
   % This is the same as splitting the left-hand path, path_long, into
@@ -69,12 +76,9 @@ type PathTerm = APathTerm Position.Position
   % term at path_long. Return None if the paths diverge from each
   % other.
   op pathDifference (path_long: Path, path_short: Path) : Option Path =
-    if length path_short > length path_long then None else
-      let path_long_suffix = suffix (path_long, length path_short) in
-      if path_long_suffix = path_short then
-        Some (prefix (path_long, length path_long - length path_short))
-      else
-        None
+    if pathExtends? (path_long, path_short) then
+      Some (prefix (path_long, length path_long - length path_short))
+    else None
 
   op printPath (path : Path) : String =
     "[" ^ flatten (intersperse "," (map show path)) ^ "]"

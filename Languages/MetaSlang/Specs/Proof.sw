@@ -359,7 +359,16 @@ Proof qualifying spec
                     substitute (N_sub_orig, zip (varsN, map mkVar varsM)) in
       case matchEquality pf_pred of
         | Some (_, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
-          return (Proof_EqSubterm(M,N,T,p,pf_int))
+          % Proof optimization: collapse nested subterm proofs
+          (case pf_int of
+             | Proof_EqSubterm(M',N',T',p',pf_int') ->
+               % README: inner path comes before outer path
+               return (Proof_EqSubterm (M,N,T,p'++p, pf_int'))
+             | _ | p = [] ->
+               % Also handle special case where p is the empty path
+               return pf_int
+             | _ ->
+               return (Proof_EqSubterm(M,N,T,p,pf_int)))
         | _ -> proofError ("Attempt to prove equality of subterms (" ^
                              printTerm (fromPathTerm (M,p)) ^
                              ") and (" ^ printTerm (fromPathTerm (N,p)) ^
@@ -393,6 +402,36 @@ Proof qualifying spec
         | (Some (T1, M, N1), Some (T2, N2, P)) | equalTerm? (N1, N2) ->
           if equalType? (T1, T2) then
             (case (pf1_int, pf2_int) of
+               | (Proof_EqSubterm(_,_,_,p1,sub_pf1),
+                  Proof_EqSubterm(_,_,_,p2,sub_pf2))
+               | pathExtends? (p1, p2) ->
+                 % If both proofs are at the same subterm, combine
+                 % them in the subterm
+                 let (Some p1') = pathDifference (p1, p2) in
+                 let (Some (Tsub, _, _)) =
+                   matchEquality (proofPredicate_Internal sub_pf2)
+                 in
+                 prove_equalSubTerm (M, P, T1, p2,
+                                     prove_equalTrans
+                                       (prove_equalSubTerm
+                                          (fromPathTerm(M, p2),
+                                           fromPathTerm(N1, p2),
+                                           Tsub, p1', return sub_pf1),
+                                        return sub_pf2))
+               | (Proof_EqSubterm(_,_,_,p1,sub_pf1),
+                  Proof_EqSubterm(_,_,_,p2,sub_pf2))
+               | pathExtends? (p2, p1) ->
+                 let (Some p2') = pathDifference (p2, p1) in
+                 let (Some (Tsub, _, _)) =
+                   matchEquality (proofPredicate_Internal sub_pf2)
+                 in
+                 prove_equalSubTerm (M, P, T1, p2,
+                                     prove_equalTrans
+                                       (return sub_pf1,
+                                        prove_equalSubTerm
+                                          (fromPathTerm(N2, p2),
+                                           fromPathTerm(P, p2),
+                                           Tsub, p2', return sub_pf2)))
                | (Proof_EqTrans (T, M1, pfs1), Proof_EqTrans (_, _, pfs2)) ->
                  return (Proof_EqTrans (T, M1, pfs1 ++ pfs2))
                | (Proof_EqTrans (T, M1, pfs1), _) ->
@@ -418,7 +457,14 @@ Proof qualifying spec
       pf2_pred <- return (proofPredicate_Internal pf2_int);
       case (matchImplication pf1_pred, matchImplication pf2_pred) of
         | (Some (P, Q1), Some (Q2, R)) | equalTerm? (Q1, Q2) ->
-          return (Proof_ImplTrans (P, pf1_int, Q1, pf2_int, R))
+          % Proof simplification: if both implications are proved
+          % using equality, then combine the equality proofs
+          (case (pf1_int, pf2_int) of
+             | (Proof_ImplEq pf1_int', Proof_ImplEq pf2_int') ->
+               prove_implEq (prove_equalTrans (return pf1_int',
+                                               return pf2_int'))
+             | _ ->
+               return (Proof_ImplTrans (P, pf1_int, Q1, pf2_int, R)))
         | _ ->
           proofError ("Attempt to apply transitivity of implication to proofs of ("
                         ^ printTerm pf1_pred ^ ") and (" ^ printTerm pf2_pred ^ ")")
@@ -445,8 +491,12 @@ Proof qualifying spec
 
 
   %%
-  %% Proofs of refinement, that either P=Q or that P=>Q, depending on
-  %% the context, where the "context" is given by a flag
+  %% Proofs that term1 refines to term2, either by showing term1=term2
+  %% or that term2=>term1, depending on the context, where the
+  %% "context" is given by a flag.
+  %%
+  %% NOTE: implication proofs for refinement are "backwards" to the
+  %% equality proofs. This can mess you up if you aren't careful.
   %%
 
   % prove_refinesEqualSubTerm(M,N,T,implProof?,p,pf) proves that
