@@ -1244,7 +1244,7 @@ op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
                      (singleTacticProof
                         (ruleTactic ("subst[OF "^eq_pf_name^"[symmetric], of \"\\<lambda>z . z\", OF "^lhs_name^"]"))))))))
 
-    | Proof_MergeRules (tree,unfolds,smtArgs) ->
+    | Proof_MergeRules (tree,post,unfolds,smtArgs) ->
       let spc = getSpec c in
       let def isabelleTerm tm = ppTermNonNormStrIndent c tm 7 in
       let _ = writeLine "Generating MergeRules Proof (ppImplicationProof" in
@@ -1258,6 +1258,9 @@ op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
   op ppProofToIsaProofString (c: Context, pf: Proof) : String =
     case pf of
       | ErrorOk pf_int ->
+        % let _ = writeLine ("printing proof of ("
+        %                      ^ printTerm (getProofPredicate_Internal pf_int)
+        %                      ^ ")") in
         isaProofToString (forwardProofBlock
                             (ppProofIntToIsaProof_st (c, pf_int)))
       | ErrorFail err_str ->

@@ -117,7 +117,7 @@ type Proof.Proof
  % We introduce uninterpreted types for the various "proof representations" for transforms.
  type MergeRules.TraceTree
  op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(t:TraceTree)(q:List QualifiedId)(smtArgs:List QualifiedId):String
- op MergeRules.mergeRulesPredicate (t:TraceTree) : MSTerm
+  op MergeRules.mergeRulesPredicate (t:TraceTree, orig_postCondn: MSTerm) : MSTerm
 
  type RuleSpec =
    | Unfold      QualifiedId % replace a name with its def

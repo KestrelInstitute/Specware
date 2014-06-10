@@ -130,12 +130,18 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
 
     let spc' = case findTheOp(spc, fname)  of
                 | Some oi ->
-                  let TypedTerm(_,ty,_) = body in
-                  let _ = writeLine "Refining quid" in
-                  let pf =
-                    prove_implElim (prove_MergeRules (prf,unfolds,smtArgs),
-                                    prove_withTactic (AutoTactic [], preAsConj))
+                  % let TypedTerm(_,ty,_) = body in
+                  % let _ = writeLine "Refining quid" in
+                  let orig_postCondn =
+                    case rs1.st_postcondition of
+                      | Some condn -> condn
+                      | None -> mkTrue ()
                   in
+                  let pf = prove_MergeRules (prf, orig_postCondn,
+                                             unfolds, smtArgs) in
+                  let (Some pf_pred) = getProofPredicate pf in
+                  let _ = writeLine ("MergeRules: building a proof of ("
+                                       ^ printTerm pf_pred ^ ")") in
                   addRefinedTypeH(spc,oi,refinedType,Some body,Some pf)
                 | None ->
                   let _ = writeLine (anyToString fname ^ " is not already defined.") in
@@ -721,9 +727,13 @@ uindent ^ "qed\n"
 % README: This assumes the TraceTree that is "top-level", i.e., that
 % it is not a sub-tree of some larger TraceTree. Non-top-level
 % TraceTrees can have traceAssumptions, which are not covered here.
-op MergeRules.mergeRulesPredicate (t:TraceTree) : MSTerm =
+% Also, a TraceTree does not actually contain the original
+% post-condition of the op before the refinement, as mergeRules
+% unfolds all of the variables first; thus we must include the
+% original post-condition here.
+op MergeRules.mergeRulesPredicate (t:TraceTree, orig_postCondn: MSTerm) : MSTerm =
   mkImplies (mkNot (dnfToTerm (traceFailure t)),
-             mkImplies (traceResult t, equant t))
+             mkImplies (traceResult t, orig_postCondn))
 
 op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId)(smtArgs:List QualifiedId):String =
    let _ = writeLine "Generating MergeRulesProof (In MetaProgram)" in
