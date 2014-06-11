@@ -1519,27 +1519,27 @@ op lisp (slice : Slice) : LispSpec =
  let _ = warn_about_non_constructive_defs defs in
 
  %% this section is identical to code in generateC4ImpUnit in I2LtoC.sw:
- let lm_data       = slice.lm_data                in
- let includes      = extractImports   lm_data.lms in
- let include_strs  = map printImport  includes    in
- let verbatims     = extractVerbatims lm_data.lms in
- let type_defines  = foldl (fn (defines, trans) ->
-                              case trans.target of 
-                                | Name _ -> defines
-                                | term -> 
-                                  defines ++ [(printName trans.source,
-                                               printTerm term)])
-                           []
-                           lm_data.type_translations
+ let lm_data        = slice.lm_data                in
+ let includes       = extractImports   lm_data.lms in
+ let include_strs   = map printImport  includes    in
+ let verbatims      = extractVerbatims lm_data.lms in
+ let type_defines   = foldl (fn (defines, trans) ->
+                               case trans.target of 
+                                 | Name _ -> defines
+                                 | term -> 
+                                   defines ++ [(printName trans.source,
+                                                printTerm term)])
+                            []
+                            lm_data.type_translations
  in
- let op_defines    = foldl (fn (defines, trans) ->
-                              case trans.target of 
-                                | Name _ -> defines
-                                | term -> 
-                                  defines ++ [(printName trans.source,
-                                               printTerm term)])
-                           []
-                           lm_data.op_translations
+ let op_defines     = foldl (fn (defines, trans) ->
+                               case trans.target of 
+                                 | Name _ -> defines
+                                 | term -> 
+                                   defines ++ [(printName trans.source,
+                                                        printTerm term)])
+                            []
+                            lm_data.op_translations
  in
  let defines        = type_defines ++ op_defines in
 

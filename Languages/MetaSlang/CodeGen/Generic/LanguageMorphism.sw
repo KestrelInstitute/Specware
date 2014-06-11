@@ -95,16 +95,31 @@ op make_Verbatim_Section  (pre : String, body : String, post : String)
  : Section = 
  Verbatim  body
 
-op extractVerbatims (lms : LanguageMorphisms) : List String =
- foldl (fn (all_strs, lm) ->
-          foldl (fn (all_strs, section) ->
-                   case section of
-                     | Verbatim str -> all_strs ++ [str]
-                     | _ -> all_strs)
-                all_strs
-                lm.sections)
-       []
+type Verbatims = {pre  : List String,
+                  post : List String}
+
+op extractVerbatims (lms : LanguageMorphisms) : Verbatims =
+ foldl (fn (verbatims, lm) ->
+          let (verbatims, _) =
+              foldl (fn ((verbatims, saw_generated?), section) ->
+                       case section of
+                         | Verbatim str -> let revised_verbatims = 
+                                               if saw_generated? then
+                                                 verbatims << {post = verbatims.post ++ [str]}
+                                               else
+                                                 verbatims << {pre  = verbatims.pre  ++ [str]}
+                                           in
+                                           (revised_verbatims, saw_generated?)
+                         | Generated    -> (verbatims, true)
+                         | _            -> (verbatims, saw_generated?))
+                    (verbatims, false)
+                    lm.sections
+          in
+          verbatims)
+       {pre  = [],
+        post = []}
        lms
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Imports

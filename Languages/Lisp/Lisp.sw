@@ -9,6 +9,7 @@ import /Library/Legacy/DataStructures/MergeSort
 import /Library/Structures/Data/Maps/SimpleAsSTHarray
 import /Library/Structures/Data/Sets/AsSTHarray
 import /Library/PrettyPrinter/BjornerEspinosa
+import /Languages/MetaSlang/CodeGen/Generic/SliceSpec
 import Suppress
 
 type LispSpec = {name	        : String,
@@ -16,7 +17,7 @@ type LispSpec = {name	        : String,
      
                  %% these come from #translate pragmas...
                  includes       : Strings,
-                 verbatims      : Strings,
+                 verbatims      : Verbatims,
 
                  getter_setters : List (String * String),
                  ops            : Strings,
@@ -105,7 +106,7 @@ op emptySpec : LispSpec =
  {name           = "BASESPECS",
   extraPackages  = [],
   includes       = [],
-  verbatims      = [],
+  verbatims      = {pre = [], post = []},
   getter_setters = [],
   ops            = [],
   axioms         = [],
@@ -330,10 +331,10 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
      in
      let _ = streamWriter (stream, "\n(defpackage :" ^ name ^ ")")     in
      let _ = streamWriter (stream, "\n(in-package :" ^ name ^ ")\n\n") in
-     let _ = case spc.verbatims of
+     let _ = case spc.verbatims.pre of
                | [] -> ()
                | verbatims -> 
-                 let _ = streamWriter (stream,";;; Verbatim from pragmas:\n")           in
+                 let _ = streamWriter (stream,";;; Pre-verbatims from pragmas:\n")           in
                  let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims in
                  streamWriter (stream,"\n")                                  
      in
@@ -343,51 +344,62 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
                     streamWriter (stream, "(defsetf " ^ getter ^ " " ^ setter ^ ")\n"))
                  spc.getter_setters
      in
-     if length defs < maxDefsPerFile then
-       app (fn ldef -> ppDefToStream(ldef,stream)) defs
-     else
-       let fileNameBase = subFromTo(file, 0, length file - 5) in   % Remove ".lisp"
-       let 
+     let _ = if length defs < maxDefsPerFile then
+               app (fn ldef -> ppDefToStream(ldef,stream)) defs
+             else
+               let fileNameBase = subFromTo(file, 0, length file - 5) in   % Remove ".lisp"
+               let 
 
-         def preamble postfix = "
+                 def preamble postfix = "
 (eval-when (:compile-toplevel)
   (compile-file (make-pathname :name (concatenate 'string (pathname-name *compile-file-pathname*) \"" ^ postfix ^ "\")
                                :defaults *compile-file-pathname*)))
 (load (make-pathname :name (concatenate 'string (pathname-name *load-pathname*) \"" ^ postfix ^ "\")
                      :defaults *load-pathname*))\n"
 
-         def writeSubFiles (rem_defs, i) =
-           if rem_defs = [] then 
-             ()
-           else
-             let postfix       = "--" ^ show i          in
-             let subfileBase   = fileNameBase ^ postfix in
-             let subfile       = subfileBase ^ ".lisp"  in
-             let num_remaining = length rem_defs        in
-             let _ = 
-                 IO.withOpenFileForWrite (subfile, 
-                                          fn substream ->
-                                            let _ = streamWriter (substream, "(in-package :" ^ name ^ ")\n\n") in
-                                            List.app (fn ldef -> ppDefToStream (ldef, substream))
-                                                     (subFromTo (rem_defs,
-                                                                 0, 
-                                                                 min (maxDefsPerFile, num_remaining))))
-             in
-             let _ = streamWriter (stream, preamble postfix) in
-             writeSubFiles (subFromTo (rem_defs, 
-                                       min (maxDefsPerFile, num_remaining), 
-                                       num_remaining),
-                            i + 1)
-       in 
-       let _ = writeSubFiles (defs, 1) in
-       app (fn fm -> 
-              let t = format (120, ppTerm fm) in
-              let _ = toStreamT (t,
-                                 fn (_, string) -> streamWriter (stream, string),
-                                 fn (n)         -> streamWriter (stream, newlineAndBlanks n))
-              in
-              streamWriter(stream,"\n"))
-           spc.forms
+                 def writeSubFiles (rem_defs, i) =
+                   if rem_defs = [] then 
+                     ()
+                   else
+                     let postfix       = "--" ^ show i          in
+                     let subfileBase   = fileNameBase ^ postfix in
+                     let subfile       = subfileBase ^ ".lisp"  in
+                     let num_remaining = length rem_defs        in
+                     let _ = 
+                         IO.withOpenFileForWrite (subfile, 
+                                                  fn substream ->
+                                                    let _ = streamWriter (substream, "(in-package :" ^ name ^ ")\n\n") in
+                                                    List.app (fn ldef -> ppDefToStream (ldef, substream))
+                                                             (subFromTo (rem_defs,
+                                                                         0, 
+                                                                         min (maxDefsPerFile, num_remaining))))
+                     in
+                     let _ = streamWriter (stream, preamble postfix) in
+                     writeSubFiles (subFromTo (rem_defs, 
+                                               min (maxDefsPerFile, num_remaining), 
+                                               num_remaining),
+                                    i + 1)
+               in 
+               let _ = writeSubFiles (defs, 1) in
+               let _ = app (fn fm -> 
+                              let t = format (120, ppTerm fm) in
+                              let _ = toStreamT (t,
+                                                 fn (_, string) -> streamWriter (stream, string),
+                                                 fn (n)         -> streamWriter (stream, newlineAndBlanks n))
+                              in
+                              streamWriter(stream,"\n"))
+                           spc.forms
+               in
+               ()
+     in
+     let _ = case spc.verbatims.post of
+               | [] -> ()
+               | verbatims -> 
+                 let _ = streamWriter (stream,";;; Post-verbatims from pragmas:\n")           in
+                 let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims in
+                 streamWriter (stream,"\n")
+     in
+     ()
  in
  IO.withOpenFileForWrite (file, writer)
 
