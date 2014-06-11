@@ -368,10 +368,19 @@ Proof qualifying spec
   % proof pf that the subterms of M and N at path p are equal. NOTE:
   % we assume that M and N both have type T
   op prove_equalSubTerm (M : MSTerm, N : MSTerm, T : MSType, p : Path, pf : Proof) : Proof =
+    let def fromPathTermWithBindingsErr (tm, path) : Monad (MSVars * MSTerm) =
+      case validPathTermWithErr (tm, path) of
+        | Some (bad_path, bad_subterm, i) ->
+          ErrorFail ("prove_equalSubTerm: cannot take subterm " ^ show i
+                       ^ " of subterm (" ^ printTerm bad_subterm
+                       ^ ") at path " ^ printPath bad_path ^ " in term ("
+                       ^ printTerm tm ^ ")")
+        | None -> return (fromPathTermWithBindings (tm, path))
+    in
     { pf_int <- pf;
       pf_pred <- return (proofPredicate_Internal pf_int);
-      let (varsM, M_sub) = fromPathTermWithBindings (M, p) in
-      let (varsN, N_sub_orig) = fromPathTermWithBindings (N, p) in
+      (varsM, M_sub) <- fromPathTermWithBindingsErr (M, p);
+      (varsN, N_sub_orig) <- fromPathTermWithBindingsErr (N, p);
       let N_sub = if varsM = varsN then N_sub_orig else
                     substitute (N_sub_orig, zip (varsN, map mkVar varsM)) in
       case matchEquality pf_pred of
@@ -515,34 +524,5 @@ Proof qualifying spec
   % is MergeRules.mergeRulesPredicate tree
   op prove_MergeRules (tree,post,unfolds,smtArgs) : Proof =
     return (Proof_MergeRules (tree,post,unfolds,smtArgs))
-
-
-  %%
-  %% Proofs that term1 refines to term2, either by showing term1=term2
-  %% or that term2=>term1, depending on the context, where the
-  %% "context" is given by a flag.
-  %%
-  %% NOTE: implication proofs for refinement are "backwards" to the
-  %% equality proofs. This can mess you up if you aren't careful.
-  %%
-
-  % prove_refinesEqualSubTerm(M,N,T,implProof?,p,pf) proves that
-  % either M=N at type T, if implProof?=false, or that N=>M, if
-  % implProof?=true, using a proof pf that the subterms of M and N at
-  % path p are equal. NOTE: we assume that M and N both have type T
-  op prove_refinesEqualSubTerm(M: MSTerm, N: MSTerm, T: MSType,
-                               implProof?: Bool, p: Path, pf: Proof) : Proof =
-    let eq_pf = prove_equalSubTerm (M, N, T, p, pf) in
-    if implProof? then prove_implEq (prove_equalSym eq_pf) else eq_pf
-
-  % Compose two refinement proofs pf1 : M=N and pf2 : N=P to a proof
-  % that M=P, if implProof?=false, or proofs pf1 : N=>M and pf2 : P=>N
-  % to a proof that P=>M, if implProof?=true.
-  op prove_refinesTrans (pf1: Proof, pf2: Proof, implProof?: Bool) : Proof =
-    if implProof? then
-      prove_implTrans (pf2, pf1)
-    else
-      prove_equalTrans (pf1, pf2)
-
 
 end-spec
