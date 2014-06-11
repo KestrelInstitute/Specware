@@ -41,7 +41,7 @@
 MergeRules qualifying
 spec
 
-import ../Script
+import ../Rewriter
 import ../Coalgebraic
 import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
 import /Languages/MetaSlang/AbstractSyntax/Equalities
@@ -1531,15 +1531,9 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
                                           % appear in.
    let pf = bogusProof in % prove_equalRefl (inferType (spc, tm), tm) in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
-   % let _ = writeLine (anyToString rules) in
-   let (pterm',pf') = replaceSubTermH(rewritePT(spc,pterm, ctx, qid, rules),
-                                      pterm, pf) in
-   let tm' = fromPathTerm pterm' in
-   if equalTerm?(tm, tm')
-     then None
-     else % let _ = writeLine ("Term before rewriting: " ^ printTerm tm) in
-          % let _ = writeLine ("Term after rewriting: " ^ printTerm tm') in
-          (Some tm')
+   case rewriteRecursive (ctx, [], splitConditionalRules rules, tm) of
+     | Some (ret_tm, _) -> Some ret_tm
+     | None -> None
 
 
 % Beta-Reduction
