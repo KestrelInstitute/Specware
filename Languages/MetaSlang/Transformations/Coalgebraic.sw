@@ -552,7 +552,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
    in
    let dfn = replaceBody(top_dfn, makeDef(post_condn, [], [])) in
    let unfold_tuple_fns = map Unfold stored_qids in
-   let (new_dfn_ptm, _) = rewriteWithRules(spc, unfold_tuple_fns, true, op_qid,
+   let (new_dfn_ptm, _) = rewriteWithRules(spc, unfold_tuple_fns, op_qid,
                                            toPathTerm dfn, bogusProof) in
    fromPathTerm new_dfn_ptm
 

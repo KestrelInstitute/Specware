@@ -1532,8 +1532,8 @@ op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
    let pf = bogusProof in % prove_equalRefl (inferType (spc, tm), tm) in
    let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
    % let _ = writeLine (anyToString rules) in
-   let (pterm',pf') = replaceSubTermH(rewritePT(spc,pterm, false, ctx, qid, rules),
-                                      pterm, false, pf) in
+   let (pterm',pf') = replaceSubTermH(rewritePT(spc,pterm, ctx, qid, rules),
+                                      pterm, pf) in
    let tm' = fromPathTerm pterm' in
    if equalTerm?(tm, tm')
      then None
