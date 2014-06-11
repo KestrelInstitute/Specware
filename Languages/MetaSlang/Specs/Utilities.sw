@@ -947,6 +947,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    if sb = [] then tm
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
 
+ % FIXME: duplicate of negateTerm in MSTerm
  op negate (term: MSTerm): MSTerm =
    case term of
      | Fun (Bool b,_,aa) -> mkBool (~ b)

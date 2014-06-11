@@ -1144,7 +1144,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
    let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
-   case rewriteRecursivePre(context,boundVars,rules,term) of
+   case rewriteRecursivePre(context<<{traceRewriting=1},boundVars,rules,term) of
      | Nil -> None
      | Cons ([], _) -> None
      | Cons (history as (_,out_term,_,_)::_, _) ->
@@ -1343,10 +1343,16 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                               ^ show bad_step);
                          term0)
                   in
+                  let auto_helpers =
+                    if trueProof? cond_pf then [] else [cond_pf]
+                  in
                   let pf1 =
-                    prove_equalWithTactic (AutoTactic [cond_pf], term0,
-                                           term_without_rr,
-                                           inferType (context.spc, term0))
+                    if equalTerm? (term0, term_without_rr) then
+                      prove_equalRefl (inferType (context.spc, term0), term0)
+                    else
+                      prove_equalWithTactic (AutoTactic auto_helpers, term0,
+                                             term_without_rr,
+                                             inferType (context.spc, term0))
                   in
                   let pf2 =
                     case rule.opt_proof of

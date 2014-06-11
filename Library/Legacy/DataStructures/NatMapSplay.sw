@@ -4,6 +4,7 @@ NatMap qualifying spec {
   type NatMap.Map a = SplayMap.Map (Nat, a)
 
   op empty      : fa(a) NatMap.Map a
+  op fromList   : [a] List (Nat * a) -> NatMap.Map a
   op insert     : fa(a) NatMap.Map a * Nat * a -> NatMap.Map a
   op find       : fa(a) NatMap.Map a * Nat -> Option a 
 
@@ -20,6 +21,7 @@ NatMap qualifying spec {
   op compose    : NatMap.Map Nat * NatMap.Map Nat -> NatMap.Map Nat
 
   def empty      = SplayMap.empty compare
+  def fromList   = SplayMap.fromList compare
   def insert     = SplayMap.insert
   def find       = SplayMap.find
   def map        = SplayMap.map

@@ -180,10 +180,7 @@ spec
                      (map (fn info ->
                              flatten
                                (map (fn (qid as Qualified(q, nm)) ->
-                                       defRule(context, q, nm, rule, info, true,
-                                               Some (prove_equalUnfold
-                                                       (qid, info.dfn,
-                                                        termType (info.dfn)))))
+                                       defRule(context, q, nm, rule, info, true))
                                   info.names))
                         (findMatchingOpsEx(spc, qid))))
       | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
@@ -192,10 +189,7 @@ spec
             (map (fn info ->
                     flatten
                       (map (fn (Qualified(q, nm)) ->
-                              defRule(context, q, nm, rule, info, false,
-                                      Some (prove_equalUnfold
-                                              (qid, info.dfn,
-                                               termType (info.dfn)))))
+                              defRule(context, q, nm, rule, info, false))
                          info.names))
                (findMatchingOpsEx(spc, qid)))
         in
@@ -243,10 +237,7 @@ spec
       | AllDefs ->
         foldriAQualifierMap
           (fn (q, id, opinfo, val) ->
-             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false,
-                       Some (prove_equalUnfold
-                               (Qualified(q,id), opinfo.dfn,
-                                termType (opinfo.dfn))))) ++ val)
+             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false)) ++ val)
           [] spc.ops
 
   op addSubtypeRules?: Bool = true

@@ -390,6 +390,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
  op tyVarSubstFromSubstC ((typeSubst,_,_):SubstC) : TyVarSubst =
    StringMap.toList typeSubst
 
+ % Build a SubstC from a list of pairs (flex_num, tm)
+ op buildTermSubstC (tm_map: List (Nat * MSTerm)) : SubstC =
+   (StringMap.empty, NatMap.fromList tm_map, [])
+
  % Build a SubstC that replaces flex vars with other flex vars
  op mkFresheningSubstC (var_map:List (Nat * Nat * MSType)) : SubstC =
    let termSubst =

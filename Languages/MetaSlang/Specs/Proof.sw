@@ -48,8 +48,11 @@ Proof qualifying spec
 
     %% Equality proofs
 
-    % ProofInternal that a variable x equals its definition
-    | Proof_UnfoldDef (MSType * QualifiedId * MSTerm)
+    % Proof_UnfoldDef (T, qid, simps?, vars, M, N) is a proof that
+    % fa(vars) M=N at type T by unfolding the definition of qid. The
+    % "simps?" flag states whether the Isabelle ".simps" attribute
+    % should be used; otherwise, the "_def" of qid is used.
+    | Proof_UnfoldDef (MSType * QualifiedId * Bool * MSVars * MSTerm * MSTerm)
 
     % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
     % proof pf : M.p = N.p, where M.p is the subterm of M at path p
@@ -86,7 +89,8 @@ Proof qualifying spec
       | Proof_Theorem (id, P) -> P
       | Proof_Tactic (tact, P) -> P
       | Proof_EqSubterm(M,N,T,p,pf) -> mkEquality (T,M,N)
-      | Proof_UnfoldDef (T, qid, M) -> mkEquality (T, mkOp (qid, T), M)
+      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+        mkBind (Forall, vars, mkEquality (T, M, N))
       | Proof_EqSym(pf) ->
         (case matchEquality (proofPredicate_Internal pf) of
            | Some (T,M,N) -> mkEquality (T,N,M)
@@ -137,9 +141,10 @@ Proof qualifying spec
                         instantiateTyVarsInType (T, s),
                         p,
                         substTypes_ProofInternal (s, pf))
-      | Proof_UnfoldDef (T, qid, M) ->
-        Proof_UnfoldDef (instantiateTyVarsInType (T, s), qid,
-                         instantiateTyVarsInTerm (M, s))
+      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+        Proof_UnfoldDef (instantiateTyVarsInType (T, s), qid, simps?, vars,
+                         instantiateTyVarsInTerm (M, s),
+                         instantiateTyVarsInTerm (N, s))
       | Proof_EqSym(pf) ->
         Proof_EqSym(substTypes_ProofInternal (s, pf))
       | Proof_EqTrans (T, M1, pfs) ->
@@ -181,8 +186,9 @@ Proof qualifying spec
       | Proof_EqSubterm(M,N,T,p,pf) ->
         prove_equalSubTerm (mapTerm tsp M, mapTerm tsp N, mapType tsp T, p,
                             mapProof_Internal tsp pf)
-      | Proof_UnfoldDef (T, qid, M) ->
-        prove_equalUnfold (qid, mapTerm tsp M, mapType tsp T)
+      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+        prove_equalUnfold (mapType tsp T, qid, simps?, vars,
+                           mapTerm tsp M, mapTerm tsp N)
       | Proof_EqSym (pf) ->
         prove_equalSym (mapProof_Internal tsp pf)
       | Proof_EqTrans (T, M1, pfs) ->
@@ -250,6 +256,12 @@ Proof qualifying spec
     case p of
       | ErrorOk p -> Some (proofPredicate_Internal p)
       | ErrorFail _ -> None
+
+  % Return true iff p is a proof of true
+  op trueProof? (p : Proof) : Bool =
+    case proofPredicate p of
+      | Some t -> trueTerm? t
+      | None -> false
 
   % FIXME: some specs cannot call ops whose names start with
   % "proof"...?
@@ -328,7 +340,8 @@ Proof qualifying spec
 
   % build a proof of true
   op prove_true : Proof =
-    prove_fromEqualTrue (mkTrue(), prove_equalRefl (boolType, mkTrue()))
+    % prove_fromEqualTrue (mkTrue(), prove_equalRefl (boolType, mkTrue()))
+    prove_withTactic (StringTactic "simp", mkTrue())
 
   % build a proof by applying a theorem or axiom for predicate P
   op prove_withTheorem (qid : QualifiedId, P : MSTerm) : Proof =
@@ -342,10 +355,14 @@ Proof qualifying spec
   op prove_equalWithTactic (tactic : Tactic, M : MSTerm, N : MSTerm, T : MSType) : Proof =
     return (Proof_Tactic (tactic, mkEquality (T,M,N)))
 
-  % build a proof of qid=M, assuming qid has definition M and type T
-  % in the current spec; NOTE: this assumption is not checked
-  op prove_equalUnfold (qid : QualifiedId, M : MSTerm, T : MSType) : Proof =
-    return (Proof_UnfoldDef (T, qid, M))
+  % build a proof (fa (vars) M=N) at type T by unfolding the
+  % definition of qid, where the simps? flag states whether to use the
+  % ".simps" Isabelle attribute (if true) or the "_def" theorem (if
+  % false) to do the unfolding (NOTE: the assumption that unfolding
+  % qid in M results in N is not checked)
+  op prove_equalUnfold (T : MSType, qid : QualifiedId, simps? : Bool,
+                        vars : MSVars, M : MSTerm, N : MSTerm) : Proof =
+    return (Proof_UnfoldDef (T, qid, simps?, vars, M, N))
 
   % prove_equalSubTerm(M,N,T,p,pf) proves that M=N at type T using a
   % proof pf that the subterms of M and N at path p are equal. NOTE:
@@ -359,11 +376,15 @@ Proof qualifying spec
                     substitute (N_sub_orig, zip (varsN, map mkVar varsM)) in
       case matchEquality pf_pred of
         | Some (_, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
-          % Proof optimization: collapse nested subterm proofs
+          % Proof optimization
           (case pf_int of
              | Proof_EqSubterm(M',N',T',p',pf_int') ->
+               % Collapse nested subterm proofs
                % README: inner path comes before outer path
-               return (Proof_EqSubterm (M,N,T,p'++p, pf_int'))
+               prove_equalSubTerm (M,N,T,p'++p, return pf_int')
+             | Proof_EqTrans (Tsub, Msub, []) ->
+               % Move reflexivity proofs to the outer level
+               prove_equalRefl (T, M)
              | _ | p = [] ->
                % Also handle special case where p is the empty path
                return pf_int
@@ -401,6 +422,12 @@ Proof qualifying spec
       case (matchEquality pf1_pred, matchEquality pf2_pred) of
         | (Some (T1, M, N1), Some (T2, N2, P)) | equalTerm? (N1, N2) ->
           if equalType? (T1, T2) then
+            let def mkProof_EqTrans (Tret, Mret, pfs_ret) =
+              case pfs_ret of
+                % Don't need to build a trans proof with one proof!
+                | [(pf_ret, _)] -> return pf_ret
+                | _ -> return (Proof_EqTrans (Tret, Mret, pfs_ret))
+            in
             (case (pf1_int, pf2_int) of
                | (Proof_EqSubterm(_,_,_,p1,sub_pf1),
                   Proof_EqSubterm(_,_,_,p2,sub_pf2))
@@ -425,20 +452,20 @@ Proof qualifying spec
                  let (Some (Tsub, _, _)) =
                    matchEquality (proofPredicate_Internal sub_pf2)
                  in
-                 prove_equalSubTerm (M, P, T1, p2,
+                 prove_equalSubTerm (M, P, T1, p1,
                                      prove_equalTrans
                                        (return sub_pf1,
                                         prove_equalSubTerm
-                                          (fromPathTerm(N2, p2),
-                                           fromPathTerm(P, p2),
+                                          (fromPathTerm(N2, p1),
+                                           fromPathTerm(P, p1),
                                            Tsub, p2', return sub_pf2)))
                | (Proof_EqTrans (T, M1, pfs1), Proof_EqTrans (_, _, pfs2)) ->
-                 return (Proof_EqTrans (T, M1, pfs1 ++ pfs2))
+                 mkProof_EqTrans (T, M1, pfs1 ++ pfs2)
                | (Proof_EqTrans (T, M1, pfs1), _) ->
-                 return (Proof_EqTrans (T, M1, pfs1 ++ [(pf2_int, P)]))
+                 mkProof_EqTrans (T, M1, pfs1 ++ [(pf2_int, P)])
                | (_, Proof_EqTrans (T, _, pfs2)) ->
-                 return (Proof_EqTrans (T, M, (pf1_int, N1)::pfs2))
-               | _ -> return (Proof_EqTrans (T1, M, [(pf1_int, N1),(pf2_int, P)])))
+                 mkProof_EqTrans (T, M, (pf1_int, N1)::pfs2)
+               | _ -> mkProof_EqTrans (T1, M, [(pf1_int, N1),(pf2_int, P)]))
           else
           proofError ("Attempt to apply transitivity of equality at different types: proof of ("
                         ^ printTerm pf1_pred ^ ") is at type ("

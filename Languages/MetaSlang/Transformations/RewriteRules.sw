@@ -15,6 +15,7 @@ skolemization.
 
 RewriteRules qualifying spec 
  import HigherOrderMatching
+ import ../Specs/Proof
  % import ../AbstractSyntax/PathTerm
 
  type Context = HigherOrderMatching.Context
@@ -130,22 +131,57 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
 %%% Extract rewrite rules from function definition.
 
- op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec, info : OpInfo, includeAll?: Bool,
-             o_prf: Option Proof): List RewriteRule = 
+ op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec,
+             info : OpInfo, includeAll?: Bool): List RewriteRule =
    if definedOpInfo? info then
+     let qid = Qualified (q, id) in
      let (tvs, srt, term) = unpackFirstTerm info.dfn in
      let rule = 
          {name      = id,
           rule_spec = rule_spec,
-          opt_proof = o_prf,
-	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
+          opt_proof = None,
+	  lhs       = Fun (Op (qid, info.fixity), srt, noPos),
 	  rhs       = term,
 	  condition = None,
-	  freeVars  = [],	
+	  freeVars  = [],
 	  tyVars    = tvs,
           trans_fn   = None}
      in
      let rules = deleteLambdaFromRule context includeAll? ([rule], if includeAll? then [rule] else []) in
+     % add unfolding proofs to each of these rules (which should
+     % presumably hold by unfolding qid). The simps? flag should be
+     % true iff the Isabelle "fun" / "function" mechanism is going to
+     % be used; to guess whether simps? should be false, we test
+     % whether deleteLambdaFromRule returns only a single rule whose
+     % left-hand side is an application to only variables.
+     let simps? =
+       case rules of
+         | [rule] ->
+           let (head, args) = unpackApplication (rule.lhs) in
+           ~(forall? (fn arg ->
+                        case arg of
+                          | Record (flds, _) ->
+                            forall? (fn (_,body) -> isVar? body) flds
+                          | _ -> isVar? arg) args)
+         | _ -> true
+     in
+     let rules =
+       map (fn rule ->
+              % Instantiate all the flex vars in the lhs and rhs with
+              % regular vars, in order to call prove_equalUnfold
+              let def mkVari (i, tp) = ("x"^show i, tp) in
+              let var_map =
+                map (fn (i, tp) -> (i, MS.mkVar (mkVari (i,tp)))) rule.freeVars
+              in
+              let subst = buildTermSubstC var_map in
+              let vars = map mkVari rule.freeVars in
+              let typ = inferType (context.spc, rule.lhs) in
+              rule << { opt_proof =
+                         Some (prove_equalUnfold
+                                 (typ, qid, simps?, vars,
+                                  dereferenceAll subst rule.lhs,
+                                  dereferenceAll subst rule.rhs)) }) rules
+     in       
      % let _ = app printRule rules in
      rules
    else
@@ -183,6 +219,9 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
        mkRecord (map (fn (id,fld) -> (id, replaceArg(old_tm, new_tm, fld))) flds)
      | _ -> apply_tm
 
+ % Convert rules of the form (fn x -> M1) = (fn x -> M2) to M1 =
+ % M2. The input pair of lists of rewrite rules are (rules that have
+ % yet to be processed, rules that have been processed already)
  op deleteLambdaFromRule (context: Context) (includeAll?: Bool)
      : List RewriteRule * List RewriteRule -> List RewriteRule = 
      fn ([], old) -> old
@@ -204,6 +243,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
               let new_rule = freshRule(context, rule) in
               deleteLambdaFromRule context includeAll? (rules, new_rule::old))
 
+ % Used by deleteLambdaFromRule...
  op deleteMatches(context: Context, matches: MSMatch, opt_case_tm: Option MSTerm,
                   rule: RewriteRule, rules: List RewriteRule,
                   old: List RewriteRule, includeAll?: Bool)
@@ -289,7 +329,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      let axmRules = flatten (map (fn p -> axiomRules context p Either None) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
-		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false,None)) ++ val)
+		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false)) ++ val)
 		      [] spc.ops
      in
      let rules = axmRules ++ opRules in

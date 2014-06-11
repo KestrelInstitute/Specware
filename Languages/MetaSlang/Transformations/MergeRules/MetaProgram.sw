@@ -1399,9 +1399,8 @@ op classifyAux(args:BTArgs)(t:MSTerm):CClass =
 % `xi` is a variable, then this will return the list of xs.
 op patternVars(l:MSTerm):List (Id * MSType) =
    let ts = termToList l in
-   let def isVar x = case x of | Var _ -> true | _ -> false in
    let def unVar x = case x of | Var (v,_) -> v  in
-   if (forall? isVar ts)
+   if (forall? isVar? ts)
      then map unVar ts
    else []
 

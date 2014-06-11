@@ -455,6 +455,9 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | And _ -> fail ("termTyVars: Trying to extract type vars from an And of terms.")
      | _ -> []
 
+ % FIXME: termType should never be used: it will fail if an applied
+ % function has a defined type (like Bijection) that cannot be
+ % understood in an application without looking at the type definition
  op [b] termType (term : ATerm b) : AType b =
    case term of
      | Apply      (t1,t2,   _) -> (case termType t1 of
@@ -699,6 +702,20 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
    % let _ = writeLine("fla:\n"^printTerm tm^"\n -->"^printTerm result) in
    result
+
+ % Return true iff tm is a variable
+ op [a] isVar? (tm: ATerm a) : Bool =
+   case tm of | Var _ -> true | _ -> false
+
+
+ % Return the (head, args) of a curried application head arg1 ... argn
+ op [a] unpackApplication (tm: ATerm a) : ATerm a * List (ATerm a) =
+   case tm of
+     | Apply (t1, t2, _) ->
+       let (head, args) = unpackApplication t1 in
+       (head, args ++ [t2])
+     | _ -> (tm, [])
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Pattern components

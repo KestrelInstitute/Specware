@@ -1125,11 +1125,12 @@ op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
     | Proof_Tactic (StringTactic str, P) ->
       showFinalResult (singleTacticProof (otherTactic str))
 
-    | Proof_UnfoldDef (T, qid, M) ->
-      (* show "qid=M" by (unfold f_def, simp) *)
+    | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+      (* show "M=N" by (unfold f_def, simp) *)
+      let def_suffix = if simps? then ".simps" else "_def" in
       showFinalResult
         (singleTacticProof
-           (unfoldTactic (prConcat [ppQualifiedId qid, string "_def"])))
+           (unfoldTactic (prConcat [ppQualifiedId qid, string def_suffix])))
 
     | Proof_EqSubterm (M,N,T,path,sub_pf) ->
       let (vars, M_sub) = fromPathTermWithBindingsAdjust (M, path) in
@@ -1163,6 +1164,10 @@ op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
       forwardProofBlock (ppProofIntToIsaProof_st (c, sub_pf)),
       (fn pf_name ->
          showFinalResult (singleTacticProof (ruleTactic (pf_name ^ "[symmetric]")))))
+
+    | Proof_EqTrans (T, M0, [(sub_pf, M1)]) ->
+      let _ = warn "ppProof: found a Proof_EqTrans with just one proof!" in
+      ppProofIntToIsaProof_st (c, sub_pf)
 
     | Proof_EqTrans (T, M0, pf_term_list) ->
      (*
