@@ -944,9 +944,9 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
  let IsaProof pf_pretty = pf in
  IsaProof (prLinear 2 [prConcat [string "show ?thesis "], pf_pretty])
 
- % chain a sequence of proof steps together into a combined proof of a
- % transitive closure; e.g., "x = y" and "y = z" --> "x = z"
- op showFinalChainedResult (final_prop: Pretty, steps : List (Pretty * IsaProof ProveMode)) : IsaProof StateMode =
+ % chain a sequence of equality proof steps together using transitive
+ % closure; e.g., "x = y" and "y = z" --> "x = z"
+ op showFinalChainedEqResult (final_prop: Pretty, steps : List (Pretty * IsaProof ProveMode)) : IsaProof StateMode =
  let haves_pp =
    map (fn (prop, IsaProof pf) ->
      blockFill
@@ -958,7 +958,8 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
    (prLines 0
       (intersperse (string "also") haves_pp
          ++
-         [string "finally",
+         [string "finally (HOL.trans)",
+          % Use "HOL" prefix because some libs define another "trans"
           blockFill
             (0,
              [(0, string "show "),
@@ -1200,7 +1201,7 @@ op ppProofIntToIsaProof_st (c: Context, pf: ProofInternal)
        showFinalResult (singleTacticProof (ruleTactic "refl"))
      else
        let (_, M_last) = last pf_term_list in
-       showFinalChainedResult
+       showFinalChainedEqResult
        (ppTermNonNorm c (mkEquality (T, M0, M_last)),
         trans_helper true M0 pf_term_list)
 
