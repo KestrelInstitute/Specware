@@ -26,14 +26,17 @@ op parseLanguageMorphism (s : String) : Parsed LanguageMorphism % defined in lm-
 type LanguageMorphisms = List LanguageMorphism
 type LanguageMorphism  = {source   : Language,
                           target   : Language,
+                          spc      : Option Spec,
                           sections : Sections}
 
+%% called from handwritten lisp code for parseLanguageMorphism (in lm-rules.lisp) :
 op make_LanguageMorphism (source   : Language, 
                           target   : Language, 
                           sections : Sections)
  : LanguageMorphism =
  {source   = source,
   target   = target,
+  spc      = None,
   sections = sections}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -874,6 +877,7 @@ op parseTranslationPragmas (language : String) (s : Spec) : LanguageMorphisms =
                         | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, language) ->
                           (case parseLanguageMorphism body of
                              | Parsed lm -> 
+                               let lm = lm << {spc = Some s} in
                                lms ++ [lm]
                              | Error msg ->
                                let _ = writeLine("Error parsing " ^ language ^ " translation pragma: " ^ msg) in
