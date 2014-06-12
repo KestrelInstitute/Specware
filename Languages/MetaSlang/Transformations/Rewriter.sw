@@ -217,6 +217,7 @@ MetaSlangRewriter qualifying spec
                       {name      = rule.name,
                        rule_spec = rule.rule_spec,
                        opt_proof = extractProof result,
+                       sym_proof = false,
                        lhs       = term,
                        rhs       = new_term,
                        condition = None,
@@ -278,6 +279,7 @@ MetaSlangRewriter qualifying spec
     rule_spec = Eval,
     opt_proof =
       Some (prove_equalWithTactic (AutoTactic [], lhs,rhs,ty)),
+    sym_proof = false,
     freeVars = [],
     tyVars = [],
     condition = None,
@@ -1408,11 +1410,18 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                             | None -> rule_pf2
                         in
 
-                        % Step 4: Expand the resulting proof that
+                        % Step 4: Apply symmetry to a proof of rhs=lhs
+                        % to get one of lhs=rhs if sym_proof is set
+                        let rule_pf4 =
+                          if rule.sym_proof then prove_equalSym rule_pf3
+                          else rule_pf3
+                        in
+
+                        % Step 5: Expand the resulting proof that
                         % lhs=rhs from the subterms to the superterms
                         prove_equalSubTerm (term_without_rr, term,
                                             inferType (context.spc, term),
-                                            path, rule_pf3)
+                                            path, rule_pf4)
                   in
                   let pf = prove_equalTrans (pf1, pf2) in
                   let _ = writeLine ("rewriteRec succeeded: term ("

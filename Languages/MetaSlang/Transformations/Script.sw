@@ -91,10 +91,7 @@ spec
     if trivialMatchTerm? rl.rhs
       then None
       else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec,
-                       opt_proof =
-                         (case rl.opt_proof of
-                            | None -> None
-                            | Some pf -> Some (prove_equalSym pf)) })
+                       sym_proof = ~(rl.sym_proof) })
 
   op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
   op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
@@ -108,6 +105,7 @@ spec
     {name     = show qid,
      rule_spec = rl_spec,
      opt_proof = None,
+     sym_proof = false,
      freeVars = [],
      tyVars = [],
      condition = None,
