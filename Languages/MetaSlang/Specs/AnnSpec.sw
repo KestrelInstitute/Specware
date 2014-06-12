@@ -116,7 +116,7 @@ type Proof.Proof
  % A RuleSpec records what transformation was used to refine an op
  % We introduce uninterpreted types for the various "proof representations" for transforms.
  type MergeRules.TraceTree
- op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(t:TraceTree)(q:List QualifiedId)(smtArgs:List QualifiedId):String
+ op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(boundVars:MSVars)(t:TraceTree)(q:List QualifiedId)(smtArgs:List QualifiedId):String
   op MergeRules.mergeRulesPredicate (t:TraceTree, orig_postCondn: MSTerm) : MSTerm
 
  type RuleSpec =

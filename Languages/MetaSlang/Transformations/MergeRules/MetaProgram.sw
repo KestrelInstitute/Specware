@@ -735,7 +735,10 @@ op MergeRules.mergeRulesPredicate (t:TraceTree, orig_postCondn: MSTerm) : MSTerm
   mkImplies (mkNot (dnfToTerm (traceFailure t)),
              mkImplies (traceResult t, orig_postCondn))
 
-op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)(t:TraceTree)(unfolds:List QualifiedId)(smtArgs:List QualifiedId):String =
+op MergeRules.printMergeRulesProof(spc:Spec)(isabelleTerm:MSTerm -> String)
+                                  (boundVars:MSVars)(t:TraceTree)
+                                  (unfolds:List QualifiedId)
+                                  (smtArgs:List QualifiedId):String =
    let _ = writeLine "Generating MergeRulesProof (In MetaProgram)" in
    let indent =  "  " in
    let fun_defs = flatten (intersperse " " []) in
@@ -753,7 +756,7 @@ indent ^ "assume result : \"" ^ isabelleTerm (traceResult t) ^ "\"\n" ^
 indent ^ "have noassumptions : True by simp\n" ^
 indent ^ "assume precondition : \"" ^ (isabelleTerm (mkNot (dnfToTerm (traceFailure t)))) ^ "\"\n" ^
 indent ^ "have unfolded: \"" ^ isabelleTerm (equant t) ^ "\" by (fact ok[OF noassumptions, OF precondition, OF result])\n" ^
-indent ^ "show ?thesis\n" ^
+indent ^ "show \"?thesis" ^ (flatten (intersperse " " (map (fn (id,_) -> id) boundVars))) ^ "\"\n" ^
 indent ^ "  apply (unfold " ^ unfold_ids ^ " )\n" ^
 indent ^ "  apply (simp only:split_conv)\n" ^
 indent ^ "  apply (cut_tac unfolded)\n" ^
