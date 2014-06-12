@@ -974,10 +974,11 @@ AnnSpecPrinter qualifying spec
 
  op printWidth: Nat = 105
 
+ def AnnSpecPrinter.printTermPP term =
+   ppTerm (initialize (asciiPrinter, false)) ([], Top) term
+
  def AnnSpecPrinter.printTerm term = 
-   PrettyPrint.toString (format (printWidth, ppTerm (initialize (asciiPrinter, false))
-				            ([], Top) 
-					    term))
+   PrettyPrint.toString (format (printWidth, printTermPP term))
 
  op [a]  printTermIndent(indent: Nat, term: ATerm a): String = 
      let indent   = PrettyPrint.blanks indent in
@@ -995,10 +996,11 @@ AnnSpecPrinter qualifying spec
 		                  ([], Top) 
 				  term))
  
+ def AnnSpecPrinter.printTypePP srt =
+   ppType (initialize (asciiPrinter, false)) ([], Top : ParentType) srt
+
  def AnnSpecPrinter.printType srt = 
-    PrettyPrint.toString (format (printWidth, ppType (initialize (asciiPrinter, false))
-				             ([], Top : ParentType) 
-					     srt))
+    PrettyPrint.toString (format (printWidth, printTypePP srt))
 
  op [a] printTypeWithTypes(srt: AType a): String =
    toString (format (printWidth, ppType (initialize (asciiPrinter, true))
