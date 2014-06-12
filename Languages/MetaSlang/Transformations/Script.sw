@@ -755,7 +755,7 @@ spec
     (new_path_tm,
      prove_refinesTrans
        (pf,
-        prove_refinesWithTactic(AutoTactic [], new_tm, old_ptm.1),
+        prove_refinesWithTactic(AutoTactic [], old_ptm.1, new_tm),
         new_path_tm))
 
   % Refine a term using a script. The script will be applied to the

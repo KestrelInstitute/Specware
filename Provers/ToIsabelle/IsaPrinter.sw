@@ -1198,10 +1198,10 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
              final_pf)))
 
     | Proof_EqSym sub_pf ->
-     (* have subeq:"rhs = lhs" (sub_pf) show ?thesis by (rule subeq[symmetric]) *)
-     let sub_eq_pp = ppTermNonNorm c (getProofPredicate_Internal pf) in
+     (* have symeq:"rhs = lhs" (sub_pf) show ?thesis by (rule subeq[symmetric]) *)
+     let sub_eq_pp = ppTermNonNorm c (getProofPredicate_Internal sub_pf) in
      addForwardStep
-     (c, "subeq", sub_eq_pp,
+     (c, "symeq", sub_eq_pp,
       forwardProofBlock (ppProofIntToIsaProof_st (c, boundVars, sub_pf)),
       (fn pf_name ->
          showFinalResult (boundVars,
@@ -1276,7 +1276,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
       (*
         have eq_pf: "A = B" (eq_pf)
         assume lhs:A
-        show ?thesis by  (rule subst[OF eq_pf[symmetric], of "lambda z . z", OF lhs])
+        show ?thesis by  (rule subst[OF eq_pf, of "lambda z . z", OF lhs])
         qed
        *)
       % let _ = writeLine("ImplEq:\nlhs = "^printTerm lhs^"\nrhs = "^printTerm rhs) in
@@ -1295,7 +1295,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
                    showFinalResult
                      (boundVars,
                       singleTacticProof
-                        (ruleTactic ("subst[OF "^eq_pf_name^"[symmetric], "
+                        (ruleTactic ("subst[OF "^eq_pf_name^", "
                                        ^"of \"\\<lambda>z . z\", "
                                        ^"OF "^lhs_name^"]"))))))))
 
