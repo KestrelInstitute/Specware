@@ -70,7 +70,7 @@ RewriteRules qualifying spec
 %%
 
 op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * MSType), name: Id)
-   : (MSTerm -> MSTerm) * (MSType -> MSType) * NatMap.Map(Nat * MSType) * StringMap.Map TyVar = 
+   : (MSTerm -> MSTerm) * (MSType -> MSType) * List(Nat * MSType) * StringMap.Map TyVar = 
      %% tyVMap = {| name -> a | name in tyVars ... |}
      let tyVMap = foldr (fn (name,tyVMap) -> 
                            let num = ! context.counter in
@@ -92,13 +92,11 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	     mapType((fn M -> M),doType,fn p -> p) srt
      in
      %% varMap = {| num -> (num1,srt) | (num,srt) in freeVars && num1 = ... |}
-     let varMap = 
-	 foldr (fn ((num,srt), varMap) -> 
-                  let num1 = ! context.counter in
-                  (context.counter := num1 + 1;
-                   NatMap.insert(varMap,num,(num1,freshType srt))))
-	   NatMap.empty freeVars	
-     in
+     let var_alist = map (fn (num,srt) ->
+                            let num1 = ! context.counter in
+                            (context.counter := num1 + 1;
+                             (num,(num1,freshType srt)))) freeVars in
+     let varMap = NatMap.fromList var_alist in
      let
 	 def doTerm(term: MSTerm): MSTerm = 
 	     case isFlexVar?(term)
@@ -110,18 +108,18 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doType, id) trm
      in
-	(freshTerm, freshType, varMap, tyVMap)
+	(freshTerm, freshType, List.map (fn (_,var) -> var) var_alist, tyVMap)
 
  op freshRule(context: Context, rule as {name,rule_spec,opt_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule =
      % let _ = (writeLine("freshRule: "); printRule rule) in
-     let (freshTerm,freshType,varMap,tyVMap) = 
+     let (freshTerm,freshType,freeVars',tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
      rule << 
      {	lhs  = freshTerm lhs,
 	rhs  = freshTerm rhs,
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
-	freeVars = NatMap.listItems varMap,
+	freeVars = freeVars',
 	tyVars = StringMap.listItems tyVMap,
         trans_fn = None
      }
@@ -407,10 +405,11 @@ is rewritten to
                     tyVars = tyVars, freeVars = freeVars, condition = condition, trans_fn = trans_fn}
       else Some rule
 
- %% If term is a qf binder then Introduce a number for each Var and return
- %% a list of the numbers paired with the type
- %% A substitution mapping old Var to new flex var with that number
- %% The body of the binder (handles nested binders of the same type)
+ %% If term is a qf binder then Introduce a number for each Var and return:
+ %% 1. a list of the numbers paired with the type
+ %% 2. the number of variables introduced
+ %% 3. A substitution mapping old Var to new flex var with that number
+ %% 4. The body of the binder (handles nested binders of the same type)
  op bound(qf: Binder, n: Nat, term: MSTerm, freeVars: List(Nat * MSType),
           S: MSVarSubst)
     : List (Nat * MSType) * Nat * MSVarSubst * MSTerm =
@@ -418,14 +417,14 @@ is rewritten to
      of Bind(binder,vars,body,_) -> 
         if qf = binder
            then 
-           let (freeVars,S,n) =
+           let (new_freeVars,S,n) =
                foldr (fn ((x,srt),(freeVars,S,n)) -> 
                         let y = mkVar(n,srt) in
                         (Cons((n,srt),freeVars),
                          Cons(((x,srt),y),S),n + 1))
-                 (freeVars,S,n) vars
+                 ([],S,n) vars
            in
-           bound(qf,n,body,freeVars,S)
+           bound(qf,n,body,freeVars++new_freeVars,S)
         else (freeVars,n,S,term)
       | _ -> (freeVars,n,S,term)
 
