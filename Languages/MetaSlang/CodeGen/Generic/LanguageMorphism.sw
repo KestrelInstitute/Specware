@@ -105,9 +105,15 @@ op extractVerbatims (lms : LanguageMorphisms) : Verbatims =
                        case section of
                          | Verbatim str -> let revised_verbatims = 
                                                if saw_generated? then
-                                                 verbatims << {post = verbatims.post ++ [str]}
+                                                 if str in? verbatims.post then
+                                                   verbatims
+                                                 else
+                                                   verbatims << {post = verbatims.post ++ [str]}
                                                else
-                                                 verbatims << {pre  = verbatims.pre  ++ [str]}
+                                                 if str in? verbatims.pre then
+                                                   verbatims
+                                                 else
+                                                   verbatims << {pre  = verbatims.pre  ++ [str]}
                                            in
                                            (revised_verbatims, saw_generated?)
                          | Generated    -> (verbatims, true)
