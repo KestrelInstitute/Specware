@@ -249,7 +249,7 @@ op applyN(tf: TypedFun, args: List AnnTypeValue): TypedFun =
 
 
 op Script.ppRuleSpec(rl: RuleSpec): WLPretty
-op Proof.showProof : Proof.Proof -> String
+op Proof.printProof : Proof.Proof -> String
 
 op ppAnnTypeValue(atv: AnnTypeValue): Doc =
   case atv of
@@ -262,7 +262,7 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
     | BoolV b -> ppString(show b)
     | OpNameV qid -> ppString(show qid)
     | RuleV rs -> ppRuleSpec rs
-    | ProofV prf -> ppString(showProof prf)
+    | ProofV prf -> ppString(printProof prf)
     | OptV None -> ppString "None"
     | OptV (Some atv1) -> ppConcat[ppString "Some ", ppAnnTypeValue atv1]
     | ListV atvs -> ppConcat[ppString "[", ppSep (ppString ", ") (map ppAnnTypeValue atvs), ppString "]"]

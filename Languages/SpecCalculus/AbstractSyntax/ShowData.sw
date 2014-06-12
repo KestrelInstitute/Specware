@@ -889,7 +889,7 @@ op ppSpecElementsAux (c:Context) (elems:SpecElements) : List WLPretty =
 
 % FIXME: use pretty-printing features to print proofs
 op ppProof (c:Context) (pf:Proof) : WLPretty =
-  ppString (showProof pf)
+  ppString (printProof pf)
 
 op ElidePragmas? : Bool = true
   
