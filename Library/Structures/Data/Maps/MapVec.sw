@@ -45,7 +45,7 @@ spec
 -import
 -verbatim
 ;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2007, 2014 by Kestrel Technology
+;;;               Copyright (C) 2014 by Kestrel Institute
 ;;;                          All Rights Reserved
 ;;;-------------------------------------------------------------------------
 ;;; Implements a Map with domain Nat as a vector.
