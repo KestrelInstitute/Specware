@@ -11,6 +11,8 @@ Proof qualifying spec
   import MSTerm
   import ../AbstractSyntax/PathTerm
   import /Library/Structures/Data/Monad/ErrorMonad
+  import /Library/PrettyPrinter/BjornerEspinosa
+  import /Languages/MetaSlang/Specs/Printer
 
   % Forward references
   op SpecNorm.typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm
@@ -109,6 +111,75 @@ Proof qualifying spec
            | _ -> fail "Malformed proof: in proofPredicate applied to Proof_ImplEq")
       | Proof_MergeRules(tree,post,unfolds,smtArgs) ->
         MergeRules.mergeRulesPredicate (tree, post)
+
+  % Pretty-print a Tactic
+  op printTacticPP (tact : Tactic) : Pretty =
+    case tact of
+      | StringTactic str -> string str
+      | AutoTactic pfs ->
+        prBreak 2 [string "auto[",
+                   prBreak 0 (addSeparator (string ", ")
+                                (map printProofPP pfs)),
+                   string "]"]
+
+  % Pretty-print a ProofInternal
+  op printProofPP_Internal (p : ProofInternal) : Pretty =
+    let def ppList (pps : List Pretty) : Pretty =
+      prBreak 2
+        [string "[", prBreak 0 (addSeparator (string ", ") pps), string "]"]
+    in
+    let def printForm ctor elems =
+      prBreak 2 [string (ctor ^ "("),
+                 prBreak 0 (addSeparator (string ", ") elems),
+                 string ")"]
+    in
+    let def ppQid qid = string (printQualifiedId qid) in
+    case p of
+      | Proof_Cut (P, Q, pf1, pf2) ->
+        printForm "Cut" [printTermPP P, printTermPP Q,
+                         printProofPP_Internal pf1,
+                         printProofPP_Internal pf2]
+      | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
+        printForm "ForallE" [string x, printTypePP T,
+                             printTermPP M, printTermPP N,
+                             printProofPP_Internal pf,
+                             printProofPP_Internal tp_pf]
+      | Proof_EqTrue (M, pf) ->
+        printForm "EqTrue" [printTermPP M,
+                            printProofPP_Internal pf]
+      | Proof_Theorem (id, P) ->
+        printForm "Theorem" [ppQid id, printTermPP P]
+      | Proof_Tactic (tact, P) ->
+        printForm "Tactic" [printTacticPP tact, printTermPP P]
+      | Proof_EqSubterm(M,N,T,p,pf) ->
+        printForm "EqSubterm" [printTermPP M, printTermPP N, printTypePP T,
+                               string (printPath p), printProofPP_Internal pf]
+      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+        printForm "UnfoldDef"
+        [printTypePP T, ppQid qid, string (show simps?),
+         ppList (map (fn (id,_) -> string id) vars),
+         printTermPP M, printTermPP N]
+      | Proof_EqSym(pf) -> printForm "Sym" [printProofPP_Internal pf]
+      | Proof_EqTrans (T, M1, pfs) ->
+        printForm "EqTrans"
+        [printTypePP T, printTermPP M1,
+         ppList (flatten
+                   (map (fn (pf,tm) -> [printProofPP_Internal pf,
+                                        printTermPP tm]) pfs))]
+      | Proof_ImplTrans(P,pf1,Q,pf2,R) ->
+        printForm "ImplTrans" [printTermPP P, printProofPP_Internal pf1,
+                               printTermPP Q, printProofPP_Internal pf2,
+                               printTermPP R]
+      | Proof_ImplEq pf ->
+        printForm "ImplEq" [printProofPP_Internal pf]
+      | Proof_MergeRules(tree,post,unfolds,smtArgs) ->
+        printForm "MergeRules" [string "(* TraceTree *)", printTermPP post,
+                                ppList (map ppQid unfolds),
+                                ppList (map ppQid smtArgs)]
+
+  % Pretty-print a ProofInternal
+  op printProof_Internal (p : ProofInternal) : String =
+    PrettyPrint.toString (format (80, printProofPP_Internal p))
 
   % FIXME: IsaPrinter cannot call functions that begin with "proof"...?
   def getProofPredicate_Internal p = proofPredicate_Internal p
@@ -211,10 +282,6 @@ Proof qualifying spec
       | AutoTactic pfs ->
         AutoTactic (map (mapProof "(recursive mapTactic)" tsp) pfs)
 
-  % Print out a representation of a proof
-  op showProof_Internal (p : ProofInternal) : String =
-    "(FIXME: write Proof.showProof_Internal!)"
-
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % External interface starts here!!
@@ -245,10 +312,17 @@ Proof qualifying spec
   op bogusProof : Proof = ErrorFail "Bogus proof!"
 
   % Print out a representation of a proof
-  op showProof (p : Proof) : String =
+  op printProofPP (p : Proof) : Pretty =
   case p of
-    | ErrorOk p_int -> showProof_Internal p_int
-    | ErrorFail str -> "(proof error: " ^ str ^ ")"
+    | ErrorOk p_int ->
+      prBreak 2 [string "Ok (",
+                 printProofPP_Internal p_int,
+                 string ")"]
+    | ErrorFail str -> string ("Error (" ^ str ^ ")")
+
+  % Print out a representation of a proof
+  op printProof (p : Proof) : String =
+    PrettyPrint.toString (format (80, printProofPP p))
 
   % Return the predicate proved by a proof, or None if there is an
   % error in the proof
@@ -312,12 +386,19 @@ Proof qualifying spec
       case matchForall1 p_pred of
         | Some (x, T, M) ->
           let tp_pred_expected = typePredTermNoSpec(T,N) in
-          if equalTerm? (tp_pred, tp_pred_expected) then
-            return (Proof_ForallE (x, T, M, N, p_int, tp_int))
-          else
-            proofError ("Bad typing proof in forall elimination: expected ("
-                          ^ printTerm tp_pred_expected ^ "), found ("
-                          ^ printTerm tp_pred ^ ")")
+          (case maybeTermType N of
+             % README: cannot check the type here (because we cannot
+             % look up defined type names)
+             %
+             % | Some N_T | ~ (equalTypeSubtype? (T, N_T, true)) ->
+             %   proofError ("Forall elimination at type (" ^ printType T
+             %                 ^ ") against term (" ^ printTerm N
+             %                 ^ ") with type (" ^ printType N_T ^ ")")
+             | _ | ~(equalTerm? (tp_pred, tp_pred_expected)) ->
+               proofError ("Bad typing proof in forall elimination: expected ("
+                             ^ printTerm tp_pred_expected ^ "), found ("
+                             ^ printTerm tp_pred ^ ")")
+             | _ -> return (Proof_ForallE (x, T, M, N, p_int, tp_int)))
         | _ -> proofError ("Forall elimination of (" ^ printTerm p_pred
                              ^ ") against term (" ^ printTerm N ^ ")") }
 
@@ -402,7 +483,8 @@ Proof qualifying spec
         | _ -> proofError ("Attempt to prove equality of subterms (" ^
                              printTerm (fromPathTerm (M,p)) ^
                              ") and (" ^ printTerm (fromPathTerm (N,p)) ^
-                             ") from a proof of: " ^ printTerm pf_pred) }
+                             ") from a proof of: " ^ printTerm pf_pred
+                             ^ " (proof:\n" ^ printProof_Internal pf_int ^ ")") }
 
   % build a proof of M=M
   op prove_equalRefl (T : MSType, M : MSTerm) : Proof =
