@@ -239,6 +239,23 @@ beta contraction.
  op dereferenceAllAsSubst (subst: SubstC) (term: MSTerm) (boundVars:MSVars): MSTerm =
    dereferenceAll subst (renameBoundVars (term, boundVars))
 
+ % Use the beta-normalizer above with ordinary substitutions
+ op HigherOrderMatching.substituteWithBeta (subst: MSVarSubst) (term: MSTerm) (boundVars:MSVars): MSTerm =
+   % We first build up two substitutions, one that maps all the vars
+   % in the domain of subst to fresh flex variables and one that maps
+   % those same flex variables to the result in subst
+   let next_flex_var = 1 + (foldl max 0 (freeFlexVars term)) in
+   let (subst_vars,flex_map,_) =
+     foldl (fn ((s_vars,s_res,n), (var as (_,var_tp),tm)) ->
+              ((var, mkVar (n,var_tp))::s_vars,
+               (n,tm)::s_res,
+               n+1))
+       ([],[],next_flex_var)
+       subst
+   in
+   let substC = buildTermSubstC flex_map in
+   dereferenceAllAsSubst substC (substitute (term, subst_vars)) boundVars
+
  def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
 % Get list of applications, assumes that the term is already dereferenced.
@@ -1094,7 +1111,7 @@ freeFlexVars returns a non-redundant list of the flex variables in a term
 *)
 
   op freeFlexVars : MSTerm -> List Nat
-  def freeFleVars term =
+  def freeFlexVars term =
     foldSubTerms (fn (t,result)  ->
                     case isFlexVar? t of
                       | Some n | n nin? result -> n::result

@@ -17,6 +17,7 @@ Proof qualifying spec
   % Forward references
   op SpecNorm.typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm
   op MergeRules.mapTraceTree (tsp: TSP_Maps_St) (t: TraceTree) : TraceTree
+  op HigherOrderMatching.substituteWithBeta (subst: MSVarSubst) (term: MSTerm) (boundVars:MSVars): MSTerm
 
   % A proof tactic
   type Tactic =
@@ -86,7 +87,8 @@ Proof qualifying spec
   op proofPredicate_Internal (p : ProofInternal) : MSTerm =
     case p of
       | Proof_Cut (P, Q, pf1, pf2) -> Q
-      | Proof_ForallE (x,T,M,N,pf,tp_pf) -> substitute (M, [((x,T),N)])
+      | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
+        substituteWithBeta [((x,T),N)] M (freeVars N)
       | Proof_EqTrue (M, pf) -> M
       | Proof_Theorem (id, P) -> P
       | Proof_Tactic (tact, P) -> P
