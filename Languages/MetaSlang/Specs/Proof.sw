@@ -416,7 +416,25 @@ Proof qualifying spec
     { pf_int <- pf;
       let pf_pred = proofPredicate_Internal pf_int in
       case matchEquality pf_pred of
-        | Some (T, M, N) -> return (Proof_EqSym pf_int)
+        | Some (T, M, N) ->
+          % Proof optimization: we try to move symmetry proofs
+          % downwards to the leaves of the proof
+          (case pf_int of
+             | Proof_EqSym pf_int' ->
+               % remove double-symmetry
+               return pf_int'
+             | Proof_EqSubterm (M',N',T',p,pf_int') ->
+               % propagate symmetry into subterm proofs
+               prove_equalSubTerm (N',M',T',p,prove_equalSym (return pf_int'))
+             | Proof_EqTrans (T',M1,pfs_terms) ->
+               % propagate symmetry into transitivity proofs as well,
+               % by applying symmetry to each sub-proof and composing
+               % them in reverse order with transitivity
+               foldl (fn (pf, (pf_int,_)) ->
+                        prove_equalTrans (prove_equalSym (return pf_int), pf))
+                 (prove_equalRefl (T', M1)) pfs_terms
+             | _ ->
+               return (Proof_EqSym pf_int))
         | _ -> proofError ("Attempt to apply symmetry of equality to a non-equality proof: "
                              ^ printTerm pf_pred) }
 
