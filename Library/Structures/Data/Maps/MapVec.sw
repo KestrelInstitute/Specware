@@ -45,18 +45,19 @@ spec
 -import
 -verbatim
 ;;;-------------------------------------------------------------------------
-;;;               Copyright (C) 2007 by Kestrel Technology
+;;;               Copyright (C) 2007, 2014 by Kestrel Technology
 ;;;                          All Rights Reserved
 ;;;-------------------------------------------------------------------------
 ;;; Implements a Map with domain Nat as a vector.
 ;;; Only works if access is single-threaded!
 
+;;; Let outer context control this...
+;;; (eval-when (:compile-toplevel :load-toplevel :execute)
+;;;    (proclaim '(optimize (space 1) (speed 3) (debug 3) (safety 0))))
+
 (defpackage :MapsAsVectors)
 (defpackage :MapVec)
 (in-package :MapVec)
-
-(eval-when (compile)
-  (proclaim '(optimize (space 1) (speed 3) (debug 3) (safety 0))))
 
 ;;(declaim (inline map-as-vector--update V_update-3 V_eval-2 defined? MapsAsVectors::update-1-1-1 MapsAsVectors::tmApply-2))
 
