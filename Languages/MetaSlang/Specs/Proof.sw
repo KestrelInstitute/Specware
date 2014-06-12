@@ -387,6 +387,9 @@ Proof qualifying spec
         | Some (_, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
           % Proof optimization
           (case pf_int of
+             | _ | p = [] ->
+               % Handle special case where p is the empty path
+               return pf_int
              | Proof_EqSubterm(M',N',T',p',pf_int') ->
                % Collapse nested subterm proofs
                % README: inner path comes before outer path
@@ -394,9 +397,6 @@ Proof qualifying spec
              | Proof_EqTrans (Tsub, Msub, []) ->
                % Move reflexivity proofs to the outer level
                prove_equalRefl (T, M)
-             | _ | p = [] ->
-               % Also handle special case where p is the empty path
-               return pf_int
              | _ ->
                return (Proof_EqSubterm(M,N,T,p,pf_int)))
         | _ -> proofError ("Attempt to prove equality of subterms (" ^
