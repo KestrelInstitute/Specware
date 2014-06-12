@@ -205,19 +205,21 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let* ((result (Script::interpretPathTerm-7 *transform-spec* command
+      (let* ((result_fn (Script::interpretPathTerm-7 *transform-spec* command
                                                   *transform-term*
                                                   *current-qid*
                                                   nil nil nil))
-             (result (funcall result nil))
-             (new-term (svref (cdar result) 0)))
-	(if (MetaSlang::equalTerm?-2 (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))
-	    (format t "No effect!")
-	    (progn 
-	      (push-state `(interpret-command ,command))
-	      (setq *transform-term* new-term)
-	      (push command *transform-commands*)
-	      (print-current-term nil)))
+             (result (funcall result_fn nil)))
+        (if (and (eq (caar result) ':|Exception|) (eq (cadar result) ':|Fail|))
+            (princ (cddar result))
+            (let ((new-term (svref (cdar result) 0)))
+              (if (MetaSlang::equalTerm?-2 (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))
+                  (format t "No effect!")
+                  (progn 
+                    (push-state `(interpret-command ,command))
+                    (setq *transform-term* new-term)
+                    (push command *transform-commands*)
+                    (print-current-term nil)))))
 	))
   (values))
 

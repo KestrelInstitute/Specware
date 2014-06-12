@@ -378,8 +378,8 @@ op normalizeCondition(spc:Spec)(theorems:Rewrites)
              }
             % normalizeCondition spc theorems noUnfolds (undepth - 1) tm'
 
-    | _ -> case rewriteTerm spc theorems tm of
-            | Some tm' -> normalizeCondition spc theorems noUnfolds undepth tm'
+    | _ -> case rewriteWithRules_opt (spc, theorems, tm) of
+            | Some (tm', _) -> normalizeCondition spc theorems noUnfolds undepth tm'
             | None -> return ([],[[tm]],[]) 
 
 
@@ -1521,22 +1521,6 @@ op negateDNF(r:DNFRep):DNFRep =
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Rewriting Utilities
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Given a spec, a list of rewrite rule specs, and a term, return Some
-% tm', where tm' is the first rewrite of tm, w.r.t the rules
-% 'theorems.'
-op rewriteTerm (spc:Spec)(theorems:Rewrites)(tm:MSTerm):Option MSTerm =
-   let pterm = toPathTerm tm in
-   let ctx = makeContext spc in
-   let qid = mkUnQualifiedId "What???" in % This should be the name of
-                                          % the op that the rewritten
-                                          % term will ultimately
-                                          % appear in.
-   let pf = bogusProof in % prove_equalRefl (inferType (spc, tm), tm) in
-   let rules = flatten (map (fn rs -> makeRule(ctx,spc,rs)) theorems) in
-   case rewriteRecursive (ctx, [], splitConditionalRules rules, tm) of
-     | Some (ret_tm, _) -> Some ret_tm
-     | None -> None
 
 
 % Beta-Reduction

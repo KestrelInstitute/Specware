@@ -64,12 +64,13 @@ op [a] returnMostPopular(l: List a): a =
       (warn("Multiple results of equal popularity. Returning first.");
        x)
 
-#translate lisp -morphism
- SemanticError.catchAndRestart -> SemanticError::catchAndRestart
- SemanticError.throwToRestart  -> SemanticError::throwToRestart
-#end
+#translate Lisp 
 
-#translate lisp -verbatim
+-verbatim
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Verbatim text from language morphism in RuntimeSemanticError.sw
+
 (define-condition semantic-error (error)
   ((text :initarg :text :reader text)))
 
@@ -89,6 +90,13 @@ op [a] returnMostPopular(l: List a): a =
                    (format t "Failed with restartCount ~a~%Trying next representation..." restartCount)
                    (incf restartCount))))
        result)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+-end
+
+-morphism
+ op SemanticError.catchAndRestart -> SemanticError::catchAndRestart
+ op SemanticError.throwToRestart  -> SemanticError::throwToRestart
+
 #end
 
 end-spec

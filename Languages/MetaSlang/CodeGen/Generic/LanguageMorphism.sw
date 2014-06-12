@@ -1,6 +1,7 @@
 LM qualifying spec
 
 import /Languages/SpecCalculus/AbstractSyntax/Types
+import /Languages/MetaSlang/Transformations/Pragma
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% This spec describes a rather generic structure for mapping symbols from one
@@ -25,14 +26,17 @@ op parseLanguageMorphism (s : String) : Parsed LanguageMorphism % defined in lm-
 type LanguageMorphisms = List LanguageMorphism
 type LanguageMorphism  = {source   : Language,
                           target   : Language,
+                          spc      : Option Spec,
                           sections : Sections}
 
+%% called from handwritten lisp code for parseLanguageMorphism (in lm-rules.lisp) :
 op make_LanguageMorphism (source   : Language, 
                           target   : Language, 
                           sections : Sections)
  : LanguageMorphism =
  {source   = source,
   target   = target,
+  spc      = None,
   sections = sections}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -91,16 +95,37 @@ op make_Verbatim_Section  (pre : String, body : String, post : String)
  : Section = 
  Verbatim  body
 
-op extractVerbatims (lms : LanguageMorphisms) : List String =
- foldl (fn (all_strs, lm) ->
-          foldl (fn (all_strs, section) ->
-                   case section of
-                     | Verbatim str -> all_strs ++ [str]
-                     | _ -> all_strs)
-                all_strs
-                lm.sections)
-       []
+type Verbatims = {pre  : List String,
+                  post : List String}
+
+op extractVerbatims (lms : LanguageMorphisms) : Verbatims =
+ foldl (fn (verbatims, lm) ->
+          let (verbatims, _) =
+              foldl (fn ((verbatims, saw_generated?), section) ->
+                       case section of
+                         | Verbatim str -> let revised_verbatims = 
+                                               if saw_generated? then
+                                                 if str in? verbatims.post then
+                                                   verbatims
+                                                 else
+                                                   verbatims << {post = verbatims.post ++ [str]}
+                                               else
+                                                 if str in? verbatims.pre then
+                                                   verbatims
+                                                 else
+                                                   verbatims << {pre  = verbatims.pre  ++ [str]}
+                                           in
+                                           (revised_verbatims, saw_generated?)
+                         | Generated    -> (verbatims, true)
+                         | _            -> (verbatims, saw_generated?))
+                    (verbatims, false)
+                    lm.sections
+          in
+          verbatims)
+       {pre  = [],
+        post = []}
        lms
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Imports
@@ -862,6 +887,34 @@ op make_LMData (lms : LanguageMorphisms) : LMData =
   structure_types       = structure_types,
   enumeration_types     = enumeration_types,
   union_types           = union_types}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op parseTranslationPragmas (language : String) (s : Spec) : LanguageMorphisms =
+ %% language will be "C", "Lisp", etc.
+ foldlSpecElements (fn (lms, elt) ->
+                      case elt of
+                        | Pragma (p as ("#translate", body, "#end", _)) | isPragmaKind (body, language) ->
+                          (case parseLanguageMorphism body of
+                             | Parsed lm -> 
+                               let lm = lm << {spc = Some s} in
+                               lms ++ [lm]
+                             | Error msg ->
+                               let _ = writeLine("Error parsing " ^ language ^ " translation pragma: " ^ msg) in
+                               lms
+                             | result ->
+                               let _ = writeLine "=======================================" in
+                               let _ = writeLine "Unecognized result from parsing pragma:" in
+                               let _ = writeLine body                                      in
+                               let _ = writeLine " => "                                    in
+                               let _ = writeLine (anyToString result)                      in
+                               let _ = writeLine "=======================================" in
+                               lms)
+                        | _ ->
+                          lms)
+                   []
+                   s.elements
 
 end-spec
 

@@ -224,7 +224,7 @@ op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs): 
 def Coalgebraic.implementOpsCoalgebraically
   (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
   case qids of
-    | [replace_op_qid, assert_qid] ->
+    | [replace_op_qid as Qualified(_, r_o_id), assert_qid] ->
       (case findPropertiesNamed(spc, assert_qid) of
          | [] -> raise(Fail("Can't find property named "^show assert_qid))
          | [(_, _, _, body, _)] ->
@@ -258,7 +258,8 @@ def Coalgebraic.implementOpsCoalgebraically
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
                let script = Steps[Trace true,
                                   At(map Def (reverse state_transform_qids),
-                                     Steps [mkSimplify(RLeibniz homo_fn_qid
+                                     Repeat [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                             mkSimplify(RLeibniz homo_fn_qid
                                                          :: LeftToRight assert_qid
                                                          :: rules)])]
                in
@@ -269,6 +270,15 @@ def Coalgebraic.implementOpsCoalgebraically
                })
          | props -> raise(Fail("Ambiguous property named "^show assert_qid)))
     | _ -> raise(Fail("implement expects op and theorem QualifiedIds"))
+
+op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
+  if length(pathTermPath pt) < 2 then true
+  else
+  let Some pptm = parentTerm pt in
+  case fromPathTerm pptm of
+    | Apply(Fun(And, _, _),_,_) -> true
+    | Lambda _ -> true
+    | _ -> false
 
 op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
   existsInType? (fn sty -> case sty of
@@ -552,9 +562,8 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
    in
    let dfn = replaceBody(top_dfn, makeDef(post_condn, [], [])) in
    let unfold_tuple_fns = map Unfold stored_qids in
-   let (new_dfn_ptm, _) = rewriteWithRules(spc, unfold_tuple_fns, op_qid,
-                                           toPathTerm dfn, bogusProof) in
-   fromPathTerm new_dfn_ptm
+   let (new_dfn_ptm, _) = rewriteWithRules(spc, unfold_tuple_fns, dfn) in
+   new_dfn_ptm
 
 op makeDefinitionsForUpdatingCoType
      (spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType)): Spec =

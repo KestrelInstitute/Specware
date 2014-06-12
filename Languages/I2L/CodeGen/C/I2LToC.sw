@@ -88,7 +88,7 @@ op generateC4ImpUnit (impunit : I_ImpUnit, slice : Slice) : C_Spec =
  let cspc = emptyCSpec impunit.name in
  let cspc = addBuiltIn (ctxt, cspc) in
  let cspc = foldl (fn (cspc, include)  -> addInclude       (cspc, include))       cspc include_strs           in
- let cspc = foldl (fn (cspc, verbatim) -> addVerbatim      (cspc, verbatim))      cspc verbatims              in
+ let cspc = foldl (fn (cspc, verbatim) -> addVerbatim      (cspc, verbatim))      cspc verbatims.pre          in
  let cspc = foldl (fn (cspc, define)   -> addDefine        (cspc, define))        cspc defines                in
  let cspc = foldl (fn (cspc, typedef)  -> c4TypeDefinition (ctxt, cspc, typedef)) cspc impunit.decls.typedefs in
  let cspc = foldl (fn (cspc, opdecl)   -> c4OpDecl         (ctxt, cspc, opdecl))  cspc impunit.decls.opdecls  in
@@ -96,6 +96,7 @@ op generateC4ImpUnit (impunit : I_ImpUnit, slice : Slice) : C_Spec =
  let cspc = foldl (fn (cspc, fundefn)  -> c4FunDefn        (ctxt, cspc, fundefn)) cspc impunit.decls.funDefns in
  let cspc = foldl (fn (cspc, vardecl)  -> c4VarDecl        (ctxt, cspc, vardecl)) cspc impunit.decls.varDecls in
  let cspc = foldl (fn (cspc, mapdecl)  -> c4MapDecl        (ctxt, cspc, mapdecl)) cspc impunit.decls.mapDecls in
+ let cspc = foldl (fn (cspc, verbatim) -> addVerbatim      (cspc, verbatim))      cspc verbatims.post         in
  let cspc = postProcessCSpec cspc   in
  cspc
  

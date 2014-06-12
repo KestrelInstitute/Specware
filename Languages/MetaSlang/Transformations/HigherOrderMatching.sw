@@ -29,6 +29,7 @@ HigherOrderMatching qualifying spec
 	traceIndent : Ref Nat,
 	boundVars   : MSVars,
         counter     : Ref Nat,
+        topTerm     : Option MSTerm,
         %% Data to control Rewriter
         traceRewriting          : Nat,
         traceShowsLocalChanges? : Bool,
@@ -1592,6 +1593,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
 	traceIndent = Ref 0,
         boundVars  = [],
 	counter    = Ref 1,
+        topTerm    = None,
         traceRewriting          = traceRewriting,
         traceShowsLocalChanges? = traceShowsLocalChanges?,
         useStandardSimplify?    = useStandardSimplify?,

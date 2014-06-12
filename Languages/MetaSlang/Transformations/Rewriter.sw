@@ -95,32 +95,30 @@ MetaSlangRewriter qualifying spec
 %	an equality using the matcher.
 *)
 
- op applyRewrites : 
-    Context * List RewriteRule * SubstC 
-       -> MSVars * MSTerm 
-	   -> LazyList (MSTerm * (SubstC * RewriteRule * MSVars * List RewriteRule))
+ type ResultInfo0 = SubstC * RewriteRule * MSVars * List RewriteRule
 
  op applyRewrite(context: Context, rule: RewriteRule, subst: SubstC, term: MSTerm): List SubstC = 
    let lhs = rule.lhs in
    filter (fn subst -> completeMatch(lhs,subst))
      (matchPairsTop(context,subst,stackFromList [(lhs,term,None)])) % !! Fix None
 
- % FIXME: applyRewrites appears to never be used...
- def applyRewrites(context,rules,subst) (boundVars,term) = 
-     let context = setBound(context,boundVars) in
-     mapEach 
-       (fn (first,rule,rest) -> 
-          let substs = applyRewrite(context,rule,subst,term) in
-          if empty? substs
-	    then emptyList
-          else
-            let rule1 = freshRule (context,rule) in
-            let rules = rest ++ first ++ [rule1] in
-            fromList
-	      (map (fn s -> ((dereferenceAllAsSubst s rule.rhs boundVars),
-                             (s,rule,boundVars,rules)))
-                 substs))
-       rules
+ % FIXME: this function appears to never be used...
+ op applyRewrites(context: Context, rules: List RewriteRule, subst: SubstC) (boundVars: MSVars, term: MSTerm)
+     : LazyList (MSTerm * ResultInfo0) = 
+   let context = setBound(context,boundVars) in
+   mapEach 
+     (fn (first,rule,rest) -> 
+        let substs = applyRewrite(context,rule,subst,term) in
+        if empty? substs
+          then emptyList
+        else
+          let rule1 = freshRule (context,rule) in
+          let rules = rest ++ first ++ [rule1] in
+          fromList
+            (map (fn s -> (dereferenceAllAsSubst s rule.rhs boundVars,
+                           (s,rule,boundVars,rules)))
+               substs)) 
+     rules
 
  op orderRules(rls: List RewriteRule): List RewriteRule =
    if true   % length rls < 2
@@ -843,6 +841,12 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  % undone.
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,path,rules) =
    %let _ = writeLine("rewriteTerm with path "^printPath path^" and term ("^printTerm term^")") in
+   % let _ = case context.topTerm of
+   %           | Some(top_tm) | ~(equalTerm?(term, fromPathTerm(top_tm, path)))
+   %                           && ~(embed? Record term) && ~(embed? Fun term) ->
+   %             writeLine("Path error: "^anyToString path^"\n"^printTerm term^"\n"^printTerm(fromPathTerm(top_tm, path)))
+   %           | _ -> ()
+   % in
    case term of
      | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
        let Ns = termToList N in
@@ -1131,6 +1135,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
     Context * MSVars * RewriteRules * MSTerm ->
     Option (MSTerm * Proof)
 
+ op rewriteWithRules_opt : Spec * RuleSpecs * MSTerm -> Option (MSTerm * Proof)
+ op rewriteWithRules : Spec * RuleSpecs * MSTerm -> MSTerm * Proof
+
  op rewriteRecursivePre : 
     Context * MSVars * Demod RewriteRule * MSTerm -> LazyList (History)
 
@@ -1140,6 +1147,21 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  %%
  %% The main entrypoint for rewriting
  %%
+
+ % Forward reference for rewriteWithRules
+ op Script.makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule
+
+ % A slightly higher-level version of the rewriter, that uses
+ % RuleSpecs and does not need a Context
+ def rewriteWithRules_opt(spc: Spec, rules: RuleSpecs, term: MSTerm) : Option (MSTerm * Proof) =
+   let context = makeContext spc in
+   let rules = makeRules (context, spc, rules) in
+   rewriteRecursive (context, [], splitConditionalRules rules, term)
+
+ def rewriteWithRules (spc: Spec, rules: RuleSpecs, term: MSTerm) =
+   case rewriteWithRules_opt (spc, rules, term) of
+     | Some res -> res
+     | None -> (term, prove_equalRefl (inferType (spc, term), term))
 
  % Rewrite the subterm of term at path
  def rewriteRecursive(context,boundVars,rules,term) = 
@@ -1196,6 +1218,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
             let def rewrite(strategy, rules) =
               % let _ = writeLine("Rules:") in
               % let _ = app printRule (listRules rules) in
+              let context = context << {topTerm = Some(term0)} in
               rewriteTerm 
               ({strategy = strategy,
                 rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),
@@ -1424,10 +1447,10 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                             path, rule_pf4)
                   in
                   let pf = prove_equalTrans (pf1, pf2) in
-                  let _ = writeLine ("rewriteRec succeeded: term ("
-                                       ^ printTerm term0
-                                       ^ ") rewritten to term ("
-                                       ^ printTerm term ^ ")") in
+                  % let _ = writeLine ("rewriteRec succeeded: term ("
+                  %                      ^ printTerm term0
+                  %                      ^ ") rewritten to term ("
+                  %                      ^ printTerm term ^ ")") in
                   let history = Cons ((rule, term, final_subst, pf),history) in
                   % increment the trace depth before the recursive call
                   let _ = context.traceDepth := traceDepth in

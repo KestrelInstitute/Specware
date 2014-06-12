@@ -1363,7 +1363,29 @@ op renameDef? (term : LispTerm) : Option String =
 
 op indexTransforms? : Bool = true
 
-op formsFromSpec(spc: Spec) : LispTerms =
+op extract_getter_setters (spc : Spec) : List (String * String) =
+ %% TODO: The relevant axioms and theorems are get sliced away before this point,
+ %%       so setf_entries is empty.  (Sigh)
+
+ let 
+   def uncurried_name (Qualified (q, id), arg_counts) =
+     let new_id = foldl (fn (id, n) -> id ^ "-" ^ show n) id arg_counts in
+     printPackageId (Qualified (q, new_id), defaultSpecwarePackage)
+ in
+
+ let setf_entries   = findSetfEntries spc in
+ let getter_setters = map (fn entry ->
+                             (uncurried_name (entry.accesser_name, entry.accesser_arg_counts),
+                              uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
+                          setf_entries
+ in
+ % let _ = writeLine ("==to lisp==") in
+ % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
+ % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
+ % let _ = writeLine ("====") in
+ getter_setters
+
+op extract_forms (spc: Spec) : LispTerms =
  if ~indexTransforms? || none?(findTheType(spc, Qualified("MetaTransform", "AnnTypeValue"))) then 
    []
  else
@@ -1496,29 +1518,39 @@ op lisp (slice : Slice) : LispSpec =
 
  let _ = warn_about_non_constructive_defs defs in
 
- let 
-   def uncurried_name (Qualified (q, id), arg_counts) =
-     let new_id = foldl (fn (id, n) -> id ^ "-" ^ show n) id arg_counts in
-     printPackageId (Qualified (q, new_id), defPkgName)
+ %% this section is identical to code in generateC4ImpUnit in I2LtoC.sw:
+ let lm_data        = slice.lm_data                in
+ let includes       = extractImports   lm_data.lms in
+ let include_strs   = map printImport  includes    in
+ let verbatims      = extractVerbatims lm_data.lms in
+ let type_defines   = foldl (fn (defines, trans) ->
+                               case trans.target of 
+                                 | Name _ -> defines
+                                 | term -> 
+                                   defines ++ [(printName trans.source,
+                                                printTerm term)])
+                            []
+                            lm_data.type_translations
  in
-
- %% TODO: The relevant axioms and theorems are get sliced away before this point,
- %%       so setf_entries is empty.  (Sigh)
-
- let setf_entries   = findSetfEntries spc in
- let getter_setters = map (fn entry ->
-                             (uncurried_name (entry.accesser_name, entry.accesser_arg_counts),
-                              uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
-                          setf_entries
+ let op_defines     = foldl (fn (defines, trans) ->
+                               case trans.target of 
+                                 | Name _ -> defines
+                                 | term -> 
+                                   defines ++ [(printName trans.source,
+                                                        printTerm term)])
+                            []
+                            lm_data.op_translations
  in
- % let _ = writeLine ("==to lisp==") in
- % let _ = writeLine ("setf_entries   = " ^ anyToString setf_entries) in
- % let _ = writeLine ("getter_setters = " ^ anyToString getter_setters) in
- % let _ = writeLine ("====") in
+ let defines        = type_defines ++ op_defines in
 
- let forms = formsFromSpec spc in
+ %% this section is unique to lisp generation:
+ let getter_setters = extract_getter_setters spc in
+ let forms          = extract_forms          spc in
+
  {name           = defPkgName, 
   extraPackages  = extraPackages, 
+  includes       = include_strs,
+  verbatims      = verbatims,
   getter_setters = getter_setters,
   ops            = map (fn (n, _) -> n) defs, 
   axioms         = [], 

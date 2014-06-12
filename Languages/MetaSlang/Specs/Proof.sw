@@ -34,8 +34,8 @@ Proof qualifying spec
     % and creates a proof of Q
     | Proof_Cut (MSTerm * MSTerm * ProofInternal * ProofInternal)
 
-    % Proof_ForallE (x,T,M,N,pf1,pf2) is a proof of [N/x]M from a proof
-    % pf1 : fa(x:T)M and a proof pf2 : typePredTermNoSpec(T,M)
+    % Proof_ForallE (x,T,M,N,pf1,pf2) is a proof of M=[N/x]P from a
+    % proof pf1 : fa(x:T)P and a proof pf2 : typePredTermNoSpec(T,N)
     | Proof_ForallE (Id * MSType * MSTerm * MSTerm
                        * ProofInternal * ProofInternal)
 
@@ -87,8 +87,7 @@ Proof qualifying spec
   op proofPredicate_Internal (p : ProofInternal) : MSTerm =
     case p of
       | Proof_Cut (P, Q, pf1, pf2) -> Q
-      | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
-        substituteWithBeta [((x,T),N)] M (freeVars N)
+      | Proof_ForallE (x,T,M,N,pf,tp_pf) -> M
       | Proof_EqTrue (M, pf) -> M
       | Proof_Theorem (id, P) -> P
       | Proof_Tactic (tact, P) -> P
@@ -304,7 +303,7 @@ Proof qualifying spec
   % only reported when the proof is pretty-printed to Isabelle. In
   % debug mode, errors in proofs immediately become Lisp exceptions,
   % so that you can track down where the proof bug is.
-  op proofSilentMode? : Bool = false
+  op proofSilentMode? : Bool = true
   op proofError (err_str: String) : Proof =
     if proofSilentMode? then ErrorFail err_str else
       fail err_str
@@ -374,8 +373,8 @@ Proof qualifying spec
       case matchImplication p1_pred of
         | Some (P, Q) | equalTerm? (P, p2_pred) ->
           return (Proof_Cut (P, Q, p1_int, p2_int))
-        | _ -> proofError ("Implication elimination of (" ^ printTerm p1_pred
-                             ^ ") against (" ^ printTerm p2_pred ^ ")") }
+        | _ -> proofError ("Implication elimination of predicate:\n  " ^ printTerm p1_pred
+                             ^ "\nagainst\n  " ^ printTerm p2_pred) }
 
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
@@ -386,7 +385,7 @@ Proof qualifying spec
       tp_int <- tp_pf;
       tp_pred <- return (proofPredicate_Internal tp_int);
       case matchForall1 p_pred of
-        | Some (x, T, M) ->
+        | Some (x, T, P) ->
           let tp_pred_expected = typePredTermNoSpec(T,N) in
           (case maybeTermType N of
              % README: cannot check the type here (because we cannot
@@ -397,12 +396,14 @@ Proof qualifying spec
              %                 ^ ") against term (" ^ printTerm N
              %                 ^ ") with type (" ^ printType N_T ^ ")")
              | _ | ~(equalTerm? (tp_pred, tp_pred_expected)) ->
-               proofError ("Bad typing proof in forall elimination: expected ("
-                             ^ printTerm tp_pred_expected ^ "), found ("
-                             ^ printTerm tp_pred ^ ")")
-             | _ -> return (Proof_ForallE (x, T, M, N, p_int, tp_int)))
-        | _ -> proofError ("Forall elimination of (" ^ printTerm p_pred
-                             ^ ") against term (" ^ printTerm N ^ ")") }
+               proofError ("Bad typing proof in forall elimination: expected:\n  "
+                             ^ printTerm tp_pred_expected ^ "\nfound\n  "
+                             ^ printTerm tp_pred)
+             | _ ->
+               let M = substituteWithBeta [((x,T),N)] P (freeVars N) in
+               return (Proof_ForallE (x, T, P, N, p_int, tp_int)))
+        | _ -> proofError ("Forall elimination of predicate\n  " ^ printTerm p_pred
+                             ^ "\nagainst term\n  " ^ printTerm N ^ ")") }
 
   % prove_forallElimMulti (pf, [(N1, pf1),...,(Nn,pfn)]) takes a proof
   % pf1:fa(x1:T1,...,xn:Tn)M, and a list of terms N1,...,Nn and proofs
@@ -418,8 +419,8 @@ Proof qualifying spec
       case matchEquality p_pred of
         | Some (_, M', N) | equalTerm? (M,M') && equalTerm? (N,mkTrue()) ->
           return (Proof_EqTrue (M, p_int))
-        | _ -> proofError ("Attempt to prove (" ^ printTerm M
-                             ^ ") from a proof of (" ^ printTerm p_pred ^ ")") }
+        | _ -> proofError ("Incorrect use of equalTrue rule: attempt to prove:\n  " ^ printTerm M
+                             ^ "\nfrom a proof of:\n  " ^ printTerm p_pred) }
 
   % build a proof of true
   op prove_true : Proof =
@@ -482,11 +483,11 @@ Proof qualifying spec
                prove_equalRefl (T, M)
              | _ ->
                return (Proof_EqSubterm(M,N,T,p,pf_int)))
-        | _ -> proofError ("Attempt to prove equality of subterms (" ^
-                             printTerm (fromPathTerm (M,p)) ^
-                             ") and (" ^ printTerm (fromPathTerm (N,p)) ^
-                             ") from a proof of: " ^ printTerm pf_pred
-                             ^ " (proof:\n" ^ printProof_Internal pf_int ^ ")") }
+        | _ -> proofError ("Attempt to prove equality of subterms\n  " ^
+                             printTermIndent (2, fromPathTerm (M,p)) ^
+                             "\nand\n  " ^ printTermIndent (2, fromPathTerm (N,p))
+                             ^ "\nfrom a proof of:\n  " ^ printTermIndent (2, pf_pred)
+                             ^ "\n(proof:\n" ^ printProof_Internal pf_int ^ ")") }
 
   % build a proof of M=M
   op prove_equalRefl (T : MSType, M : MSTerm) : Proof =
