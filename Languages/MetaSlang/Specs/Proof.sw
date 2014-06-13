@@ -393,13 +393,19 @@ Proof qualifying spec
                proofError ("Bad typing proof in forall elimination: expected:\n  "
                              ^ printTerm tp_pred_expected ^ "\nfound\n  "
                              ^ printTerm tp_pred)
-             | Proof_UnfoldDef (T', qid, simps?, var::vars, lhs, rhs) ->
+             | Proof_UnfoldDef (T_body, qid, simps?, var::vars, lhs, rhs) ->
                % Proof optimization: substitute for the first free
                % variable in an "unfold" proof
                return (Proof_UnfoldDef
-                         (T', qid, simps?, vars,
+                         (T_body, qid, simps?, vars,
                           substituteWithBeta [(var,N)] lhs (freeVars N),
                           substituteWithBeta [(var,N)] rhs (freeVars N)))
+             | Proof_Theorem (qid, _) ->
+               % Proof optimization: use the theorem qid to prove
+               % [N/x]P (the predicate "_" must equal P)
+               return (Proof_Theorem
+                         (qid,
+                          substituteWithBeta [((x,T),N)] P (freeVars N)))
              | _ ->
                let M = substituteWithBeta [((x,T),N)] P (freeVars N) in
                return (Proof_ForallE (x, T, M, N, p_int, tp_int)))
