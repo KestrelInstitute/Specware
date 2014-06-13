@@ -217,10 +217,11 @@ beta contraction.
    let def deref (term) = 
            case flexVarNum(term)
              of Some n -> 
-                (case NatMap.find(termSubst,n)
-                   of Some term -> 
-                      derefAll term %Memoization by using refs?
-                    | None -> term)
+                (case NatMap.find(termSubst,n) of
+                   | Some term | ~(flexVarNum term = Some n) -> 
+                     % the side condition is to avoid infinite loops
+                     derefAll term %Memoization by using refs?
+                   | _ -> term)
               | None -> 
                 (case term
                    of Apply (M as Lambda(rules,_),N,_) -> 
@@ -250,7 +251,10 @@ beta contraction.
    % We first build up two substitutions, one that maps all the vars
    % in the domain of subst to fresh flex variables and one that maps
    % those same flex variables to the result in subst
-   let next_flex_var = 1 + (foldl max 0 (freeFlexVars term)) in
+   let all_flex_vars =
+     freeFlexVars term ++ flatten (map (fn (_,tm) -> freeFlexVars tm) subst)
+   in
+   let next_flex_var = 1 + (foldl max 0 all_flex_vars) in
    let (subst_vars,flex_map,_) =
      foldl (fn ((s_vars,s_res,n), (var as (_,var_tp),tm)) ->
               ((var, mkVar (n,var_tp))::s_vars,
@@ -260,7 +264,8 @@ beta contraction.
        subst
    in
    let substC = buildTermSubstC flex_map in
-   dereferenceAllAsSubst substC (substitute (term, subst_vars)) boundVars
+   let res = dereferenceAllAsSubst substC (substitute (term, subst_vars)) boundVars in
+   res
 
  def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
