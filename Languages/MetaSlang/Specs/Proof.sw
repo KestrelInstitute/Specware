@@ -93,7 +93,8 @@ Proof qualifying spec
       | Proof_Tactic (tact, P) -> P
       | Proof_EqSubterm(M,N,T,p,pf) -> mkEquality (T,M,N)
       | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
-        mkBind (Forall, vars, mkEquality (T, M, N))
+        let body = mkEquality (T, M, N) in
+        if vars = [] then body else mkBind (Forall, vars, body)
       | Proof_EqSym(pf) ->
         (case matchEquality (proofPredicate_Internal pf) of
            | Some (T,M,N) -> mkEquality (T,N,M)
@@ -387,18 +388,18 @@ Proof qualifying spec
       case matchForall1 p_pred of
         | Some (x, T, P) ->
           let tp_pred_expected = typePredTermNoSpec(T,N) in
-          (case maybeTermType N of
-             % README: cannot check the type here (because we cannot
-             % look up defined type names)
-             %
-             % | Some N_T | ~ (equalTypeSubtype? (T, N_T, true)) ->
-             %   proofError ("Forall elimination at type (" ^ printType T
-             %                 ^ ") against term (" ^ printTerm N
-             %                 ^ ") with type (" ^ printType N_T ^ ")")
+          (case p_int of
              | _ | ~(equalTerm? (tp_pred, tp_pred_expected)) ->
                proofError ("Bad typing proof in forall elimination: expected:\n  "
                              ^ printTerm tp_pred_expected ^ "\nfound\n  "
                              ^ printTerm tp_pred)
+             | Proof_UnfoldDef (T', qid, simps?, var::vars, lhs, rhs) ->
+               % Proof optimization: substitute for the first free
+               % variable in an "unfold" proof
+               return (Proof_UnfoldDef
+                         (T', qid, simps?, vars,
+                          substituteWithBeta [(var,N)] lhs (freeVars N),
+                          substituteWithBeta [(var,N)] rhs (freeVars N)))
              | _ ->
                let M = substituteWithBeta [((x,T),N)] P (freeVars N) in
                return (Proof_ForallE (x, T, M, N, p_int, tp_int)))
