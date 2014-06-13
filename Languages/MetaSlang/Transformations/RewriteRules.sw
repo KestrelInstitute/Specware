@@ -167,10 +167,6 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
                     | _ -> isFlexVar? arg) args
      in
      let simps? = ~(forall? isVarRule rules) in
-     let _ = writeLine ("simps? = " ^ show simps? ^ " for id " ^ id ^ ": "
-                          ^ show (length rules)) in
-     let _ = map printRule rules in
-     let _ = writeLine ("end simps?") in
      let rules =
        map (fn rule ->
               % Instantiate all the flex vars in the lhs and rhs with
