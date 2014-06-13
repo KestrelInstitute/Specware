@@ -1098,9 +1098,9 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
                                   ([string (main_pf_name ^ "[of")]
                                      ++
                                      (map (fn arg ->
-                                             prConcat [string " (",
+                                             prConcat [string "\"",
                                                        ppTermNonNorm c arg,
-                                                       string ")"]) (reverse args))
+                                                       string "\""]) (reverse args))
                                      ++
                                      [string "]"]))
                                  ::
