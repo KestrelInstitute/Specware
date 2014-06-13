@@ -333,13 +333,13 @@ Utilities qualifying spec
  op disjointVarNames?(vs1: MSVars, vs2: MSVars): Bool =
    forall? (fn (vn1, _) -> forall? (fn (vn2, _) -> vn1 ~= vn2) vs2) vs1
 
- op removeDuplicateVars: MSVars -> MSVars
+ op [a] removeDuplicateVars: List (AVar a) -> List (AVar a)
  def removeDuplicateVars vars = 
    case vars of
      | [] -> []
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
- op insertVar (new_var: MSVar, vars: MSVars): MSVars = 
+ op [a] insertVar (new_var: AVar a, vars: List (AVar a)): List (AVar a) = 
    if (exists? (fn v -> v.1 = new_var.1) vars) then
      vars
    else
@@ -494,6 +494,8 @@ Utilities qualifying spec
  % which is a reasonable assumption given how Specware types
  % are handled.
 
+ % FIXME: this isn't used, and can be replaced by instantiateTyVars,
+ % below, anyway
  def substituteType(ty,S) = 
    let freeNames = foldr (fn ((v,trm),vs) -> 
                             StringSet.union (StringSet.fromList
@@ -706,9 +708,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	    [] (fields,fields2) 
 
 
+ % Ensure that none of vs are used as bound variables in term. Also
+ % removes any variable shadowing as a side effect.
  op renameBoundVars(term: MSTerm, vs: MSVars): MSTerm =
-   if vs = [] then term
-   else
    let freeNames = StringSet.fromList(varNames vs) in
    substitute2(term,[],freeNames)
 
@@ -922,10 +924,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    {types = mapTypeInfos letRecToLetTermTypeInfo spc.types,
     ops   = mapOpInfos   letRecToLetTermOpInfo   spc.ops}
 
- op  patternVars  : MSPattern -> MSVars
- def patternVars(p) = 
+ op  [a] patternVars  : APattern a -> List (AVar a)
+ def [a] patternVars(p) = 
      let
-	def loopP(p:MSPattern,vs) = 
+	def loopP(p:APattern a,vs) = 
 	    case p
 	      of VarPat(v,_) -> Cons(v,vs)
 	       | RecordPat(fields,_) -> 
@@ -945,6 +947,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    if sb = [] then tm
      else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
 
+ % FIXME: duplicate of negateTerm in MSTerm
  op negate (term: MSTerm): MSTerm =
    case term of
      | Fun (Bool b,_,aa) -> mkBool (~ b)
@@ -2574,7 +2577,6 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
       | Subtype(sup_ty, pred, _) -> pred
       | _ -> mkLambda(mkWildPat ty, trueTerm)
 
-  type TyVarSubst = List(TyVar * MSType)
   op  instantiateTyVars: MSType * TyVarSubst -> MSType
   def instantiateTyVars(s,tyVarSubst) =
     case s of
@@ -3139,8 +3141,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
     | BoolV Bool
     | OpNameV QualifiedId
     | RuleV RuleSpec
-    | ProofV RefinementProof
-    | TransformInfoV TransformInfo
+    | ProofV Proof
     | OptV (Option AnnTypeValue)
     | ListV (List AnnTypeValue)
     | TupleV (List AnnTypeValue)
@@ -3156,7 +3157,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  op MetaTransform.extractBool(BoolV x: AnnTypeValue): Bool = x
  op MetaTransform.extractOpName(OpNameV x: AnnTypeValue): QualifiedId = x
  op MetaTransform.extractRule(RuleV x: AnnTypeValue): RuleSpec = x
- op MetaTransform.extractRefinementProof(ProofV x: AnnTypeValue): RefinementProof = x
+ op MetaTransform.extractRefinementProof(ProofV x: AnnTypeValue): Proof = x
  op [a] MetaTransform.extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
  op [a] MetaTransform.extractList(extr_val: AnnTypeValue -> a) (ListV x: AnnTypeValue): List a = map extr_val x
  %op [a] extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x

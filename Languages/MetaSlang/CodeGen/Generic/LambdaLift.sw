@@ -1053,14 +1053,14 @@ def patternVars (pat:MSPattern): MSVars =
                   ops  : OpMap), 
                  decl?      : Bool, 
                  refine_num : Nat, 
-                 xform_info       : Option TransformInfo, 
+                 pf_opt       : Option Proof, 
                  pos        : Position) 
   : SpecElements * OpMap =
   let name as Qualified (q, id) = primaryOpName info in
   let new_elt = if decl? then 
                   Op (name, true, pos) 
                 else 
-                  OpDef (name, refine_num, xform_info, pos)
+                  OpDef (name, refine_num, pf_opt, pos)
   in
   let new_elts = new_elt :: elts in
   let new_ops  = insertAQualifierMap (ops, q, id, info) in

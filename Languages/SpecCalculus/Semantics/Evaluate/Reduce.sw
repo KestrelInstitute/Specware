@@ -36,15 +36,13 @@ SpecCalc qualifying spec
           reducedTerm <-
             let
               def reduceTerm count trm =
-                let lazy = rewriteRecursive (ctxt,[],rules,trm,[]) in
-                case lazy of
-                  | Nil -> trm
-                  | Cons ([], _) -> trm
-                  | Cons ((rule,trm,subst)::_, _) ->
+                case rewriteRecursive (ctxt,[],rules,trm) of
+                  | None -> trm
+                  | Some (trm', _) ->
                       if (count > 0) then 
-                        reduceTerm (count - 1) trm
+                        reduceTerm (count - 1) trm'
                       else
-                        trm
+                        trm'
             in
               return (reduceTerm 20 elabTerm);
           print (printTerm reducedTerm);        

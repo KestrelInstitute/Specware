@@ -6,6 +6,10 @@ AnnSpec qualifying spec
  import QualifierMapAsSTHTable2
  import /Languages/MetaSlang/AbstractSyntax/Equalities
 
+% NOTE: importing Proof creates a circular import
+% import Proof
+type Proof.Proof
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,7 +44,7 @@ AnnSpec qualifying spec
  type ATypeInfo b = {
 		     names : TypeNames, %When can there be more than one name?
 		     dfn   : AType b
-		    }
+ 		    }
 
  type AOpInfo   b = {
 		     names           : OpNames,
@@ -58,13 +62,13 @@ AnnSpec qualifying spec
    | Import   SCTerm * Spec * SpecElements * b
    | Type     QualifiedId * b
    | TypeDef  QualifiedId * b
-   | Op       QualifiedId * Bool * b  % if the Bool is true, def was supplied as part of decl
+     % For Op, the Bool flag means def was supplied as part of decl
+   | Op       QualifiedId * Bool * b
    % An OpDef gives one of the definitions of an op: multiple
    % definitions come from uses of "refine def"; the Nat gives the
-   % ordering of the refined definitions, while the TransformInfo
-   % gives information about what transformation created the refine
-   % def (None = user wrote the refine def)
-   | OpDef    QualifiedId * Nat  * Option TransformInfo * b
+   % ordering of the refined definitions, while the Proof ensures that
+   % the given def is a refinement of the previous one
+   | OpDef    QualifiedId * Nat  * Option Proof * b
    | Property (AProperty b)
    | Comment  String * b
    | Pragma   String * String * String * b
@@ -112,8 +116,9 @@ AnnSpec qualifying spec
  % A RuleSpec records what transformation was used to refine an op
  % We introduce uninterpreted types for the various "proof representations" for transforms.
  type MergeRules.TraceTree
- op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(t:TraceTree)(q:List QualifiedId)(smtArgs:List QualifiedId):String
- 
+ op MergeRules.printMergeRulesProof(spc:Spec)(pr:MSTerm -> String)(boundVars:MSVars)(t:TraceTree)(q:List QualifiedId)(smtArgs:List QualifiedId):String
+  op MergeRules.mergeRulesPredicate (t:TraceTree, orig_postCondn: MSTerm) : MSTerm
+
  type RuleSpec =
    | Unfold      QualifiedId % replace a name with its def
    | Fold        QualifiedId % replace a def with a name
@@ -136,66 +141,15 @@ AnnSpec qualifying spec
  type RuleSpecs = List RuleSpec
 
 
- % proof that a term equals another
- type EqProof =
-   | EqProofSubterm (Path * EqProof)  % proof that a sub-term is equal
-   | EqProofSym EqProof % prove x = y from y = x
-   | EqProofTrans (List (EqProof * MSTerm) * EqProof)
-     % prove x0 = xn from x0 = x1, x1 = x2, etc., where each (pf, t)
-     % pair in the list is an xi along with the proof that x(i-1) = xi
-   | EqProofTheorem (QualifiedId * List MSTerm)
-     % use an equality theorem in the spec; should have the form
-     % "forall x1,x2,...,xn, M = N"; the MSTerms are substituted for x1...xn
-   | EqProofUnfoldDef QualifiedId % prove x = the defined value of x
-   | EqProofTactic String % an automated, named proof tactic
-
- % a proof that one post-condition implies another
- type ImplProof =
-  | ImplTrans (ImplProof * MSTerm * ImplProof) % prove x -> z from x -> y & y -> z
-  | ImplTheorem (QualifiedId * List MSTerm)
-    % use an implication theorem in the spec; theorem should have the
-    % form "forall x1,...,xn, M -> N", and the MSTerms are substituted
-    % for the xi's
-  | ImplEq EqProof % prove x -> y from x = y
-  | ImplProofTactic String % an automated, named proof tactic
-  | MergeRulesProof (TraceTree * List QualifiedId * List QualifiedId) % a provably correct mergeRules refinement
-    % The trace tree, the list of unfolded top-level rules, and a list of necssary smt facts
-
- % a proof that a term satisfies a given predicate
- type PredicateProof =
-   | PredicateTheorem QualifiedId
-   | PredicateTactic String
-
- % a proof of the correctness of a "refine def"
- type RefinementProof =
-  | RefineEq EqProof  % refine by an equality step
-  | RefineStrengthen ImplProof % strengthen a post-condition
-  | RefineDefOp PredicateProof % define an op with a post-condition
-
- % default fallback proofs
- def defaultEqProof = EqProofTactic "auto"
- def defaultImplProof = ImplProofTactic "auto"
- def defaultPRedicateProof = PredicateTactic "auto"
-
- op defaultRefinementProofLike(prf: RefinementProof): RefinementProof =
-   case prf of
-     | RefineEq _ -> RefineEq defaultEqProof
-     | RefineStrengthen _ -> RefineStrengthen defaultImplProof
-     | RefineDefOp _ -> RefineDefOp defaultPRedicateProof
-
-% a TransformHistory is a record of each individual rule used to
-% transform a term, along with the terms that were the intermediate
-% steps
-type TransformHistory = List (MSTerm * RuleSpec)
-
- % a TransformInfo contains a history of what transformations were
- % used to refine a definition, along with an optional proof that the
- % refinement is correct
- type TransformInfo = TransformHistory * Option RefinementProof
-
- op nullTransformInfo : TransformInfo = ([], None)
+% FIXME emw4: remove this
+ % op defaultRefinementProofLike(prf: RefinementProof): RefinementProof =
+ %   case prf of
+ %     | RefineEq _ -> RefineEq defaultEqProof
+ %     | RefineStrengthen _ -> RefineStrengthen defaultImplProof
+ %     | RefineDefOp _ -> RefineDefOp defaultPRedicateProof
 
 
+% FIXME emw4: remove this
  % The following "smart constructors" for EqProofs implement a rewrite
  % system that transforms equality proofs into, hopefully, leading to
  % smaller proofs. The rewrite system is:
@@ -215,188 +169,51 @@ type TransformHistory = List (MSTerm * RuleSpec)
  % themselves built with smart constructors, i.e., that they already
  % been rewritten.
 
- % Compose two equality proofs of lhs = middle and middle = rhs into a
- % proof of lhs = rhs; this function is like a "smart constructor" for EqProofTrans
- op composeEqProofs (pf1: EqProof, middle: MSTerm, pf2: EqProof) : EqProof =
-  case (pf1, pf2) of
-    | (EqProofTrans (pfs1, last1), EqProofTrans (pfs2, last2)) ->
-      EqProofTrans (pfs1 ++ ((last1, middle) :: pfs2), last2)
-    | (EqProofTrans (pfs1, last1),  eq_pf2) ->
-       (EqProofTrans (pfs1 ++ [(last1, middle)], eq_pf2))
-    | ( eq_pf1, EqProofTrans (pfs2, last2)) ->
-       EqProofTrans ((eq_pf1, middle) :: pfs2, last2)
-    | (eq_pf1, eq_pf2) ->
-      EqProofTrans ([(eq_pf1, middle)], eq_pf2)
 
-  op mkEqProofSym (pf: EqProof) : EqProof =
-    case pf of
-      | EqProofSubterm(path, sub_pf) ->
-        EqProofSubterm(path, mkEqProofSym sub_pf)
-      | EqProofSym sub_pf -> sub_pf
-      | EqProofTrans (pf_tm_list, last_pf) ->
-        EqProofTrans
-        (map (fn (sub_pf, tm) -> (mkEqProofSym sub_pf, tm)) pf_tm_list,
-         mkEqProofSym last_pf)
-      | _ -> EqProofSym pf
+% FIXME emw4: remove the following two functions
 
- % Turn a proof of sub_lhs = sub_rhs into lhs = rhs, where sub_lhs and
- % sub_rhs are at path p in lhs and rhs, respectively; this is like a
- % "smart constructor" for EqProofSubterm, which commutes transitive
- % and symmetric steps outside of the subterm steps
- op mkEqProofSubterm (p: Path, pf: EqProof) : EqProof =
-   if p = [] then pf else
-     case pf of
-       | EqProofSubterm (p2, sub_pf) -> EqProofSubterm (p ++ p2, sub_pf)
-       | _ -> EqProofSubterm (p, pf)
+% op optimizeEqProofSubterms (pf: EqProof): EqProof =
+%    mappEqProof
+%      (fn pfi -> case pfi of
+%                   | EqProofTrans(pf_term_list, EqProofSubterm(last_path, last_pf))
+%                       | forall? (fn (pf_term_i, _) -> embed? EqProofSubterm pf_term_i) pf_term_list ->
+%                     let common_path = foldl (fn (r_path, (EqProofSubterm(i_path, _), _)) ->
+%                                                longestCommonSuffix(r_path, i_path))
+%                                         last_path pf_term_list
+%                     in
+%                     if common_path = [] then pfi
+%                     else
+%                     let common_path_len = length common_path in
+%                     EqProofSubterm(common_path,
+%                                    EqProofTrans(map (fn (EqProofSubterm(i_path, pf_i), tm_i) ->
+%                                                        (mkEqProofSubterm(removeSuffix(i_path, common_path_len), pf_i),
+%                                                         fromPathTerm(tm_i, common_path)))
+%                                                   pf_term_list,
+%                                                 mkEqProofSubterm(removeSuffix(last_path, common_path_len), last_pf)))
+%                   | EqProofSubterm(path1, EqProofSubterm(path2, prf)) ->
+%                     EqProofSubterm(path2 ++ path1, prf)
+%                   | _ -> pfi)
+%      pf
 
-op optimizeEqProofSubterms (pf: EqProof): EqProof =
-   mappEqProof
-     (fn pfi -> case pfi of
-                  | EqProofTrans(pf_term_list, EqProofSubterm(last_path, last_pf))
-                      | forall? (fn (pf_term_i, _) -> embed? EqProofSubterm pf_term_i) pf_term_list ->
-                    let common_path = foldl (fn (r_path, (EqProofSubterm(i_path, _), _)) ->
-                                               longestCommonSuffix(r_path, i_path))
-                                        last_path pf_term_list
-                    in
-                    if common_path = [] then pfi
-                    else
-                    let common_path_len = length common_path in
-                    EqProofSubterm(common_path,
-                                   EqProofTrans(map (fn (EqProofSubterm(i_path, pf_i), tm_i) ->
-                                                       (mkEqProofSubterm(removeSuffix(i_path, common_path_len), pf_i),
-                                                        fromPathTerm(tm_i, common_path)))
-                                                  pf_term_list,
-                                                mkEqProofSubterm(removeSuffix(last_path, common_path_len), last_pf)))
-                  | EqProofSubterm(path1, EqProofSubterm(path2, prf)) ->
-                    EqProofSubterm(path2 ++ path1, prf)
-                  | _ -> pfi)
-     pf
-
- op mappEqProof : (EqProof -> EqProof) -> EqProof -> EqProof
- def mappEqProof f pf =
-   let s_pf =
-       case pf of
-         | EqProofSubterm (path, sub_pf) -> EqProofSubterm (path, mappEqProof f sub_pf)
-         | EqProofSym pf -> EqProofSym (mappEqProof f pf)
-         | EqProofTrans (pf_term_list, last_pf) ->
-           EqProofTrans
-             (map (fn (pf,tm) -> (mappEqProof f pf, tm)) pf_term_list,
-              mappEqProof f last_pf)
-         | _ -> pf
-   in
-   f s_pf
-
- op [a] PathTerm.fromPathTerm : (ATerm a * Path) -> ATerm a
-
-% simple printer for equality proofs
-op printEqProof(prf: EqProof, tm: MSTerm): String =
-  case prf of
-    | EqProofSubterm(path, s_prf) ->
-      let s_tm = PathTerm.fromPathTerm(tm, path) in
-      "subterm: "^printTerm s_tm^"\n"^printEqProof(s_prf, s_tm)
-    | EqProofTrans (pf_term_list, last_pf) ->
-      "prove ("
-      ^ (flatten
-           (intersperse ", "
-              (map (fn (pf,tm) -> "(" ^ showEqProof pf ^ "," ^ printTerm tm ^ ")") pf_term_list)))
-      ^ ", " ^ showEqProof last_pf ^ ")"
-    | EqProofTactic str -> "by "^str
-    | _ -> "by another method"
+%  op mappEqProof : (EqProof -> EqProof) -> EqProof -> EqProof
+%  def mappEqProof f pf =
+%    let s_pf =
+%        case pf of
+%          | EqProofSubterm (path, sub_pf) -> EqProofSubterm (path, mappEqProof f sub_pf)
+%          | EqProofSym pf -> EqProofSym (mappEqProof f pf)
+%          | EqProofTrans (pf_term_list, last_pf) ->
+%            EqProofTrans
+%              (map (fn (pf,tm) -> (mappEqProof f pf, tm)) pf_term_list,
+%               mappEqProof f last_pf)
+%          | _ -> pf
+%    in
+%    f s_pf
 
 
- % compose two refinement proofs; the term given is the intermediate
- % term in the refinement, i.e., the first proof refines to the term
- % while the second refines from it; note that an EqProof can be composed
- % with a Strengthen proof giving a Strengthen proof
- op composeRefinementProofs : (RefinementProof * MSTerm * RefinementProof) -> RefinementProof
- def composeRefinementProofs triple =
-   case triple of
-     | (RefineEq eq_pf1, tm, RefineEq eq_pf2) ->
-       RefineEq (composeEqProofs (eq_pf1, tm, eq_pf2))
-     | (RefineStrengthen impl_pf1, tm, RefineStrengthen impl_pf2) ->
-       RefineStrengthen (ImplTrans (impl_pf1, tm, impl_pf2))
-     | (RefineStrengthen impl_pf1, tm, RefineEq eq_pf2) ->
-       RefineStrengthen (ImplTrans (impl_pf1, tm, ImplEq  eq_pf2))
-     | (RefineEq eq_pf1, tm, RefineStrengthen impl_pf2) ->
-       RefineStrengthen (ImplTrans (ImplEq eq_pf1, tm, impl_pf2))
-     | _ -> fail ("composeRefinementProofs called with non-composable proofs!")
-
-
-  % Attempt to build a proof by symmetry; only works for equality
-  % proofs (and implication proofs proved by equality): otherwise,
-  % None is returned
-  op mkRefineProofSym_opt(o_ref_pr: Option RefinementProof): Option RefinementProof =
-    case o_ref_pr of
-      | Some(RefineEq prf) -> Some(RefineEq(mkEqProofSym prf))
-      | Some(RefineStrengthen(ImplEq prf)) -> Some(RefineStrengthen(ImplEq(mkEqProofSym prf)))
-      | _ -> None
-
-
-
- % compose TransformInfos for two steps of transformation
- op composeTransformInfos : (TransformInfo * MSTerm * TransformInfo) -> TransformInfo
- def composeTransformInfos triple =
-   case triple of
-     | (([], None), tm, info2) -> info2
-     | (info1, tm, ([], None)) -> info1
-     | ((rs1, Some pf1), tm, (rs2, Some pf2)) ->
-       (rs1 ++ rs2, Some (composeRefinementProofs (pf1, tm, pf2)))
-     | ((rs1, None), tm, (rs2, None)) ->
-       (rs1 ++ rs2, None)
-     | ((rs1, Some pf1), tm, ([], None)) ->
-       (rs1, Some pf1)
-     | (([], None), tm, (rs2, Some pf2)) ->
-       (rs2, Some pf2)
-     | ((rs1, opf1), tm, (rs2, opf2)) ->
-       (note ("composeTransformInfos called with only one proof given");
-        (rs1 ++ rs2,
-         case (opf1, opf2) of
-           | (Some pf1, _) ->      % opf2 must be None
-             Some (composeRefinementProofs (pf1, tm, defaultRefinementProofLike pf1))
-           | (_, Some pf2) ->      % opf1 must be None
-             Some (composeRefinementProofs (defaultRefinementProofLike pf2, tm, pf2))
-           | _ -> Some(RefineEq defaultEqProof)))    % ?
 
  op metaRuleATV(rl: RuleSpec): AnnTypeValue =
    let MetaRule(_, _, atv) = rl in
    atv
-
- op showEqProof (pf: EqProof) : String =
- case pf of
-   | EqProofSubterm (path, pf) ->
-     "EqProofSubterm ([" ^ flatten (intersperse "," (map show path)) ^ "], " ^ showEqProof pf ^ ")"
-   | EqProofSym pf -> "EqProofSym (" ^ showEqProof pf ^ ")"
-   | EqProofTrans (pf_term_list, last_pf) ->
-     "EqTrans ("
-     ^ (flatten
-          (intersperse ", "
-             (map (fn (pf,tm) -> "(" ^ showEqProof pf ^ "," ^ printTerm tm ^ ")") pf_term_list)))
-     ^ ", " ^ showEqProof last_pf ^ ")"
-   | EqProofTheorem (qid, args) ->
-     "EqProofTheorem " ^ show qid
-   | EqProofUnfoldDef qid -> "EqProofUnfoldDef (" ^ show qid ^ ")"
-   | EqProofTactic tactic -> "EqProofTactic (" ^ tactic ^ ")"
-
- op showImplProof (pf: ImplProof) : String =
- case pf of
-   | ImplTrans (pf1, middle, pf2) ->
-     "ImplTrans (" ^ showImplProof pf1 ^ ",\n  " ^printTerm middle^"\n  "
-       ^ showImplProof pf2 ^ ")"
-   | ImplTheorem (qid, args) -> "ImplTheorem (" ^ show qid ^ ")"
-   | ImplEq pf -> "ImplEq (" ^ showEqProof pf ^ ")"
-   | ImplProofTactic tactic -> "ImplProofTactic (" ^ tactic ^ ")"
-   | MergeRulesProof tree -> "MergeRulesProof (*** TraceTree ***)"
-
- op showPredicateProof (pf: PredicateProof) : String =
- case pf of
-   | PredicateTheorem qid -> "PredicateTheorem (" ^ show qid ^ ")"
-   | PredicateTactic tactic -> "PredicateTactic (" ^ tactic ^ ")"
-
- op showRefinementProof (pf : RefinementProof) : String =
-   case pf of
-     | RefineEq eq_pf -> "RefineEq (" ^ showEqProof eq_pf ^ ")"
-     | RefineStrengthen pf -> "RefineStrengthen (" ^ showImplProof pf ^ ")"
-     | RefineDefOp pf -> "RefineDefOp (" ^ showPredicateProof pf ^ ")"
 
  op showRuleSpec(rs: RuleSpec): String =
    case rs of
@@ -716,12 +533,12 @@ op addRefinedDefToOpinfo (info: OpInfo, new_dfn: MSTerm): OpInfo =
 op addRefinedDef(spc: Spec, info: OpInfo, new_dfn: MSTerm): Spec =
   addRefinedDefH(spc, info, new_dfn, None)
 
-op addRefinedDefH(spc: Spec, info: OpInfo, new_dfn: MSTerm, xform_info: Option TransformInfo): Spec =
+op addRefinedDefH(spc: Spec, info: OpInfo, new_dfn: MSTerm, pf: Option Proof): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedDefToOpinfo(info, new_dfn) in
   % let _ = writeLine(show(numTerms new_opinfo.dfn)) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), xform_info, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), pf, noPos)]}
 
 op addRefinedTypeToOpinfo (info: OpInfo, new_ty: MSType, new_tm: Option MSTerm): OpInfo =
   let qid as Qualified(q, id) = primaryOpName info in
@@ -742,11 +559,11 @@ op addRefinedType(spc: Spec, info: OpInfo, new_ty: MSType): Spec =
 
 %% addRefinedTypeH takes a new term, which is strange. However, it is
 %% needed in the case where the precondition is changed. 
-op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, new_tm: Option MSTerm, xform_info: Option TransformInfo): Spec =
+op addRefinedTypeH(spc: Spec, info: OpInfo, new_ty: MSType, new_tm: Option MSTerm, pf: Option Proof): Spec =
   let qid as Qualified(q, id) = primaryOpName info in
   let new_opinfo = addRefinedTypeToOpinfo(info, new_ty, new_tm) in
   spc << {ops = insertAQualifierMap (spc.ops, q, id, new_opinfo),
-          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), xform_info, noPos)]}
+          elements = spc.elements ++ [OpDef (qid, max(0, numTerms new_opinfo.dfn - 1), pf, noPos)]}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1058,59 +875,6 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
             Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
 	  | _ -> el)
        elements
-
- op mapTransformInfoOpt : (MSTerm -> MSTerm) -> Option TransformInfo -> Option TransformInfo
- def mapTransformInfoOpt f opt_info =
-   case opt_info of
-     | None -> None
-     | Some info -> Some (mapTransformInfo f info)
-
- op mapTransformInfo : (MSTerm -> MSTerm) -> TransformInfo -> TransformInfo
- def mapTransformInfo f (info as (hist, opt_proof)) =
-   let new_hist = map (fn (tm, rspec) -> (f tm, rspec)) hist in
-   case opt_proof of
-     | None -> (new_hist, None)
-     | Some pf -> (new_hist, Some (mapRefinementProof f pf))
-
- op mapRefinementProofOpt: (MSTerm -> MSTerm) -> Option RefinementProof -> Option RefinementProof
- def mapRefinementProofOpt f pf_opt =
-   case pf_opt of
-     | Some pf -> Some (mapRefinementProof f pf)
-     | None -> None
-
- op mapRefinementProof : (MSTerm -> MSTerm) -> RefinementProof -> RefinementProof
- def mapRefinementProof f pf =
-   case pf of
-     | RefineEq eq_pf -> RefineEq (mapEqProof f eq_pf)
-     | RefineStrengthen impl_proof -> RefineStrengthen (mapImplProof f impl_proof)
-     | RefineDefOp pred_proof -> RefineDefOp (mapPredicateProof f pred_proof)
-
- op mapEqProof : (MSTerm -> MSTerm) -> EqProof -> EqProof
- def mapEqProof f pf =
-   case pf of
-     | EqProofSubterm (path, sub_pf) -> EqProofSubterm (path, mapEqProof f sub_pf)
-     | EqProofSym pf -> EqProofSym (mapEqProof f pf)
-     | EqProofTrans (pf_term_list, last_pf) ->
-       EqProofTrans
-       (map (fn (pf,tm) -> (mapEqProof f pf, f tm)) pf_term_list,
-        mapEqProof f last_pf)
-     | _ -> pf
-
- op mapImplProof : (MSTerm -> MSTerm) -> ImplProof -> ImplProof
- def mapImplProof f pf =
-   case pf of
-     | ImplTrans (pf1, tm, pf2) ->
-       ImplTrans (mapImplProof f pf1, f tm, mapImplProof f pf2)
-     | ImplTheorem qid -> ImplTheorem qid
-     | ImplEq pf -> ImplEq (mapEqProof f pf)
-     | ImplProofTactic nm -> ImplProofTactic nm
-     | MergeRulesProof tt -> MergeRulesProof tt
-
- op mapPredicateProof : (MSTerm -> MSTerm) -> PredicateProof -> PredicateProof
- def mapPredicateProof f pf =
-   case pf of
-     | PredicateTheorem qid -> PredicateTheorem qid
-     | PredicateTactic tactic -> PredicateTactic tactic
 
  op  mapSpecElements: (SpecElement -> SpecElement) -> SpecElements -> SpecElements
  def mapSpecElements f elements =

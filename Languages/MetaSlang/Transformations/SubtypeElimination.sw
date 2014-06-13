@@ -146,7 +146,11 @@ SpecNorm qualifying spec
 
   op typePredTerm(ty0: MSType, tm: MSTerm, spc: Spec): MSTerm =
       extractOption trueTerm (maybeTypePredTerm(ty0,tm,spc))
-  
+
+  % Getting subtype predicates without a spec: the only difference is
+  % that no definitions are unfolded
+  op typePredTermNoSpec(ty0: MSType, tm: MSTerm): MSTerm =
+    typePredTerm (ty0, tm, emptySpec)
 
   op maybeRelativize?(t: MSTerm, tb: PolyOpTable): Bool =
     if eagerRegularization? then true
@@ -1273,39 +1277,17 @@ SpecNorm qualifying spec
     let spc = regularizeFunctions spc in
     %let _ = writeLine(anyToString tbl) in
     %let _ = writeLine(printSpec spc) in
-    let spc = mapSpecHist (relativizeQuantifiersSimpOption simplify?  spc, id, id) spc in
+    let spc = mapSpec (relativizeQuantifiersSimpOption simplify?  spc, id, id) spc in
     %% Replace subtypes by supertypes
-    let spc = mapSpecHist (id,fn s ->
-                             case s of
-                               | Subtype(supTy,_,_) -> supTy
-                               | _ -> s,
-                           id)
+    let spc = mapSpec (id,fn s ->
+                         case s of
+                           | Subtype(supTy,_,_) -> supTy
+                           | _ -> s,
+                       id)
                 spc
     in
     % let _ = writeLine(printSpec spc) in
     spc
-
-op  mapSpecHist : TSP_Maps_St -> Spec -> Spec
-def mapSpecHist tsp spc =
-  spc << {
-          types        = mapSpecTypes      tsp spc.types,
-          ops          = mapSpecOps        tsp spc.ops,
-          elements     = mapSpecPropertiesHist tsp spc.elements
-         }
-
- op  mapSpecPropertiesHist : TSP_Maps StandardAnnotation -> SpecElements -> SpecElements
- def mapSpecPropertiesHist tsp elements =
-   map (fn el ->
-	case el of
-	  | Property (pt, nm, tvs, term, a) ->
-            % let _ = writeLine("msp: "^printQualifiedId(nm)^"\n"^printTerm term) in
-            Property (pt, nm, tvs, mapTerm tsp term, a)
-          | OpDef(qid, refine_num, xform_info, a) ->
-            OpDef(qid, refine_num, mapTransformInfoOpt (mapTerm tsp) xform_info, a)
-	  | Import   (s_tm, i_sp, elts, a)  ->
-            Import   (s_tm, i_sp, mapSpecProperties tsp elts, a)
-	  | _ -> el)
-       elements
 
   % Boolean flag simplify? determines if relativizeQuantifiers does
   % formula simplification.

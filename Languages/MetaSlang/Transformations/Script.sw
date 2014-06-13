@@ -86,13 +86,13 @@ spec
 
   op trivialMatchTerm?(tm: MSTerm): Bool =
     %% Not certain about hasFlexHead?
-    some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
+    isFlexVar? tm || some?(hasFlexHead? tm) || embed? Var tm
 
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
     if trivialMatchTerm? rl.rhs
       then None
       else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec,
-                       opt_proof = mkRefineProofSym_opt rl.opt_proof})
+                       sym_proof = ~(rl.sym_proof) })
 
   op specTransformFunction:  String * String -> (Spec * RuleSpecs) -> Spec   % defined in transform-shell.lisp
   op specQIdTransformFunction:  String * String -> Spec * QualifiedIds * RuleSpecs -> Env Spec      % defined in transform-shell.lisp
@@ -106,6 +106,7 @@ spec
     {name     = show qid,
      rule_spec = rl_spec,
      opt_proof = None,
+     sym_proof = false,
      freeVars = [],
      tyVars = [],
      condition = None,
@@ -147,10 +148,12 @@ spec
                            ("2", Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _))], _), _),
              _) ->
         let not_thm = mkBind(Forall, vs, mkImplies(p1, mkEquality(boolType, t2, t1))) in
-        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight (Some(mkImpleStrengthenProof qid))
+        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight
+          (Some (prove_withTheorem (qid, formula)))
       | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _), _) ->
         let not_thm = mkBind(Forall, vs, mkEquality(boolType, t2, t1)) in
-        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight (Some(mkImpleStrengthenProof qid))
+        axiomRules context (pt,qid,tyVars,not_thm,a) LeftToRight
+          (Some (prove_withTheorem (qid, formula)))
 
   op weakenRules (context: Context) ((pt,qid,tyVars,formula,a): Property): List RewriteRule =
     case formula of
@@ -168,33 +171,26 @@ spec
   op definedByCases?(qid: QualifiedId, spc: Spec): Bool =
     length(makeRule(makeContext spc, spc, Rewrite qid)) > 1
 
-  op mkUnfoldProof(qid: QualifiedId): RefinementProof =
-    RefineEq(EqProofUnfoldDef qid)
-
-  op mkTheoremProof(qid: QualifiedId): RefinementProof =
-    RefineEq(EqProofTheorem(qid, []))
-
-  op mkRevTheoremProof(qid: QualifiedId): RefinementProof =
-    RefineEq(mkEqProofSym(EqProofTheorem(qid, [])))
-
-  op mkImpleStrengthenProof(qid: QualifiedId): RefinementProof =
-    RefineStrengthen(ImplTheorem(qid, []))
-
   op makeRule (context: Context, spc: Spec, rule: RuleSpec): List RewriteRule =
     case rule of
       | Unfold(qid as Qualified(q, nm)) ->
         warnIfNone(qid, "Op ",
-                   flatten (map (fn info ->
-                                   flatten (map (fn (qid as Qualified(q, nm)) ->
-                                                   defRule(context, q, nm, rule, info, true, Some(mkUnfoldProof qid)))
-                                              info.names))
-                              (findMatchingOpsEx(spc, qid))))
+                   flatten
+                     (map (fn info ->
+                             flatten
+                               (map (fn (qid as Qualified(q, nm)) ->
+                                       defRule(context, q, nm, rule, info, true))
+                                  info.names))
+                        (findMatchingOpsEx(spc, qid))))
       | Rewrite(qid as Qualified(q, nm)) ->   % Like Unfold but only most specific rules
-        let rls = flatten (map (fn info ->
-                                   flatten (map (fn (Qualified(q, nm)) ->
-                                                   defRule(context, q, nm, rule, info, false, Some(mkUnfoldProof qid)))
-                                              info.names))
-                              (findMatchingOpsEx(spc, qid)))
+        let rls =
+          flatten
+            (map (fn info ->
+                    flatten
+                      (map (fn (Qualified(q, nm)) ->
+                              defRule(context, q, nm, rule, info, false))
+                         info.names))
+               (findMatchingOpsEx(spc, qid)))
         in
         warnIfNone(qid, "Op ", rls)
       | Fold(qid) ->
@@ -204,14 +200,20 @@ spec
         warnIfNone(qid, "Rule-shaped theorem ",
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
-                              then (axiomRules context p LeftToRight (Some(mkTheoremProof qid))) ++ r
+                              then (axiomRules context p LeftToRight
+                                      (Some (prove_withTheorem (qid, p.4)))) ++ r
                             else r)
                      [] (allProperties spc))
       | RightToLeft(qid) ->
         warnIfNone(qid, "Rule-shaped theorem ",
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
-                              then (axiomRules context p RightToLeft (Some(mkRevTheoremProof qid)))
+                              then (axiomRules context p RightToLeft
+                                      % FIXME: figure out how to
+                                      % reverse the direction of a
+                                      % universal, conditional
+                                      % equality proof for this None
+                                      None)
                                 ++ r
                             else r)
                      [] (allProperties spc))
@@ -234,7 +236,7 @@ spec
       | AllDefs ->
         foldriAQualifierMap
           (fn (q, id, opinfo, val) ->
-             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false, Some(mkUnfoldProof(Qualified(q,id))))) ++ val)
+             (defRule (context, q, id, Unfold(Qualified(q, id)), opinfo, false)) ++ val)
           [] spc.ops
 
   op addSubtypeRules?: Bool = true
@@ -368,12 +370,85 @@ spec
     collectRules (top_term, reverse path, [])
 
   op rewriteDebug?: Bool = false
-
   op rewriteDepth: Nat = 6
-  op rewritePT(path_term: PathTerm, context: Context, qid: QualifiedId, rules: List RewriteRule)
-       : MSTerm * AnnSpec.TransformInfo =
+
+  %%
+  %% The following rules, up to interpretTerm, operate on PathTerms,
+  %% trying to refine them, where the top of the PathTerm is always
+  %% the definition of an op; specifically, the top of the PathTerm
+  %% always has the form TypedTerm(body,ty,_). If body satisfies the
+  %% anyTerm? predicate, then these operations attempt to refine the
+  %% post-conditions in ty, otherwise the attempt to refine body.
+  %%
+  %% The proof obligations involved mirror this split: if body1
+  %% satisfies the anyTerm? predicate, then TypedTerm(body1,ty1,_)
+  %% refines to TypedTerm(body2,ty2,_) iff body2 is syntactically
+  %% equivalent to body1 and postCond?(ty2)=>postCond?(ty1);
+  %% otherwise, the refinement requires that a proof that body1=body2.
+  %%
+  %% NOTE: implication proofs for refinement are "backwards" to the
+  %% equality proofs. This can mess you up if you aren't careful.
+  %%
+
+  % prove_refinesEqualSubTerm(M,N,p,pf) proves that M can be refined
+  % to N (according to the rules outlined above for refining
+  % TypedTerms) from a proof that the subterm of M at p equals the
+  % subterm of N at p.
+  op prove_refinesEqualSubTerm(M: MSTerm, N: MSTerm, p: Path, pf: Proof) : Proof =
+    case M of
+      | TypedTerm(_,ty,_) | anyTerm? M ->
+        if last p ~= 1 then
+          fail ("prove_refinesEqualSubPathTerm: unexpected path "
+                  ^ printPath p
+                  ^ " not in a post-condition when refining term ("
+                  ^ printTerm M ^ ") to (" ^ printTerm N ^ ")")
+        else
+          prove_implEq (prove_equalSym
+                          (prove_equalSubTerm
+                             (fromPathTerm (M, [1]), fromPathTerm (N, [1]), ty,
+                              butLast p, pf)))
+      | TypedTerm(_,ty,_) ->
+        prove_equalSubTerm (M, N, ty, p, pf)
+
+  % Prove that M refines to itself
+  op prove_refinesRefl (path_term: PathTerm) : Proof =
+    let top_term = topTerm (path_term) in
+    if anyTerm? top_term then
+      prove_implRefl (fromPathTerm (top_term, [1]))
+    else
+      case top_term of
+        | TypedTerm(_,ty,_) -> prove_equalRefl (ty, top_term)
+
+  % Compose proofs that M refines to N and that N refines to P
+  op prove_refinesTrans (pf1: Proof, pf2: Proof, P: PathTerm) : Proof =
+    if anyTerm? (topTerm P) then
+      prove_implTrans (pf2, pf1)
+    else
+      prove_equalTrans (pf1, pf2)
+
+  % Prove M refines to N using a tactic
+  op prove_refinesWithTactic (tactic: Tactic, M: MSTerm, N: MSTerm) : Proof =
+    case M of
+      | _ | anyTerm? M ->
+        prove_withTactic (tactic,
+                          mkImplies (fromPathTerm (N, [1]),
+                                     fromPathTerm (M, [1])))
+      | TypedTerm (_,ty,_) ->
+        prove_equalWithTactic (tactic, M, N, ty)
+      | _ ->
+        ErrorFail ("prove_refinesWithTactic: lhs term not a TypedTerm: "
+                     ^ printTerm M)
+
+  % Rewrite the subterm of path_term at its path, returning the
+  % new_subterm and a proof that path_term refines to
+  % replaceSubTerm(new_subterm,path_term) according to the comment above
+  op rewritePT(spc: Spec, path_term: PathTerm,
+               context: Context, qid: QualifiedId, rules: List RewriteRule)
+       : MSTerm * Proof =
     (context.traceDepth := 0;
+     let top_term = topTerm path_term in
      let term = fromPathTerm path_term in
+     let path = pathTermPath path_term in
      let _ = if rewriteDebug? then
                (writeLine("Rewriting:\n"^printTerm term);
                 app printRule rules)
@@ -384,31 +459,27 @@ spec
      let rules =  rules ++ contextRulesFromPath(path_term, qid, context) in
      let rules = rules ++ subtypeRules(term, context) in
      let rules = splitConditionalRules rules in
-     let def doTerm (count: Nat, trm: MSTerm, info: AnnSpec.TransformInfo): MSTerm * AnnSpec.TransformInfo =
+     let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
            % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
-           let lazy = rewriteRecursive (context, freeVars trm, rules, trm, butLast(pathTermPath path_term))
-           in
-           case lazy of
-             | Nil -> (trm, info)
-             | Cons([], tl) -> (trm, info)
-             | Cons(transforms as ((rule, new_trm, subst)::_), _) ->
-               let (new_info, _) =
-                   (foldl (fn ((cur_info, prev_tm), (rule, trm, _)) ->
-                             (composeTransformInfos (cur_info, prev_tm, ([(trm, rule.rule_spec)], rule.opt_proof)),
-                              trm))
-                      (info, trm) (reverse transforms))
-               in
-               if count > 0 then 
-                 doTerm (count - 1, new_trm, new_info)
+           case rewriteRecursive (context, freeVars trm, rules, trm) of
+             | None -> (trm, pf)
+             | Some (new_trm, ret_pf) ->
+               let new_pf = prove_equalTrans (pf, ret_pf) in
+               if count > 0 then
+                 doTerm (count - 1, new_trm, new_pf)
                else
-                 (trm, new_info)
+                 (trm, new_pf)
      in
-     let result = % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
-                  % else
-                  doTerm(rewriteDepth, term, nullTransformInfo)
+     let (new_subterm, sub_pf) =
+       % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
+       % else
+       doTerm(rewriteDepth, term, prove_equalRefl (inferType (spc,term), term))
      in
-     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm result.1) else () in
-     result)
+     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm new_subterm) else () in
+     (new_subterm,
+      prove_refinesEqualSubTerm
+        (top_term, topTerm (replaceSubTerm (new_subterm, path_term)),
+         path, sub_pf)))
 
   op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
     foldr (fn (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
@@ -549,7 +620,7 @@ spec
                          }
 
   op MSTermTransform.rewritet(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
-    (options: RewriteOptions): MSTerm * AnnSpec.TransformInfo =
+    (options: RewriteOptions): MSTerm * Proof =
     let context = makeContext spc in
     let context = context <<
                     {traceRewriting          = if options.trace = 0
@@ -574,114 +645,158 @@ spec
     in
     % let _ = printContextOptions context in
     let rules = makeRules (context, spc, rules) in
-    rewritePT(path_term, context, qid, rules)    
-
-  op rewriteWithRules(spc: Spec, rules: RuleSpecs, qid: QualifiedId, path_term: PathTerm, info: AnnSpec.TransformInfo)
-       : PathTerm * AnnSpec.TransformInfo =
-    let context = makeContext spc in
-    let rules = makeRules (context, spc, rules) in
-    replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info)
+    rewritePT(spc, path_term, context, qid, rules)
 
   op checkSpecWhenTracing?: Bool = false
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
-  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm, qid: QualifiedId, tracing?: Bool,
-                       allowFail?: Bool, info: AnnSpec.TransformInfo)
-     : SpecCalc.Env (PathTerm * Bool * AnnSpec.TransformInfo) =
+  op interpretPathTerm(spc: Spec, script: Script, path_term: PathTerm,
+                       qid: QualifiedId, tracing?: Bool,
+                       allowFail?: Bool, pf: Proof)
+     : SpecCalc.Env (PathTerm * Bool * Proof) =
     % let _ = writeLine("it:\n"^scriptToString script^"\n"^printTerm(fromPathTerm path_term)) in
     case script of
       | Steps steps ->
-          foldM (fn (path_term, tracing?, info) -> fn s ->
-                   interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, info))
-            (path_term, tracing?, info) steps
+          foldM (fn (path_term, tracing?, pf) -> fn s ->
+                   interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, pf))
+            (path_term, tracing?, pf) steps
       | Repeat steps ->
-          {(new_path_term, tracing?, info) <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, info);
+          {(new_path_term, tracing?, pf)
+             <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, pf);
            if equalTerm?(topTerm new_path_term, topTerm path_term)
-             then return (new_path_term, tracing?, info)
-             else interpretPathTerm(spc, Repeat steps, new_path_term, qid, tracing?, allowFail?, info)}
+             then return (new_path_term, tracing?, pf)
+             else interpretPathTerm(spc, Repeat steps, new_path_term,
+                                    qid, tracing?, allowFail?, pf)}
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");
-          return (path_term, tracing?, info)
+          return (path_term, tracing?, pf)
         }
       | Trace on_or_off -> {
           when (on_or_off && ~tracing?)
             (print ("-- Tracing on\n" ^ printTerm(fromPathTerm path_term) ^ "\n"));
           when (~on_or_off && tracing?)
             (print "-- Tracing off\n");
-          return (path_term, on_or_off, info)
+          return (path_term, on_or_off, pf)
         }
       | _ -> {
           when tracing?
             (print ("--" ^ scriptToString script ^ "\n"));
-          (path_term, info) <-
+          (path_term, pf) <-
               (case script of
                 | Move mvmts -> {o_new_path_term <- makeMoves(path_term, mvmts, allowFail?);
                                  return (case o_new_path_term of
                                            | Some new_path_term -> new_path_term
                                            | None -> path_term,
-                                         info)}
+                                         pf)}
                 | TermTransform(tr_name, tr_fn, arg) ->
                   let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid) in
                   let result = apply(tr_fn, arg_with_spc) in
-                  (case extractMSTerm result of
-                     | Some new_term ->  return(replaceSubTermH1(new_term, path_term, TermTransform(tr_name, tr_fn, arg), info))
-                     | None -> return(path_term, info))
-                | SimpStandard -> return(replaceSubTermH1(simplify spc (fromPathTerm path_term), path_term, SimpStandard, info))
-                | RenameVars binds -> return(replaceSubTermH1(renameVars(fromPathTerm path_term, binds), path_term, RenameVars binds, info))
+                  (case (extractMSTerm result, extractProof result) of
+                     | (Some new_term, Some new_pf) ->
+                       return (replaceSubTermH((new_term, new_pf), path_term, pf))
+                     | (Some new_term, None) ->
+                       return (replaceSubTermH1(new_term, path_term,
+                                                TermTransform(tr_name, tr_fn, arg), pf))
+                     | None -> return (path_term, pf))
+                | SimpStandard ->
+                  return (replaceSubTermH1(simplify spc (fromPathTerm path_term),
+                                           path_term, SimpStandard, pf))
+                | RenameVars binds ->
+                  return (replaceSubTermH1(renameVars(fromPathTerm path_term, binds),
+                                           path_term, RenameVars binds, pf))
                 | PartialEval ->
-                  return(replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc), path_term, Eval, info))
+                  return (replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc),
+                                           path_term, Eval, pf))
                 | AbstractCommonExpressions ->
-                  return(replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                          path_term, AbstractCommonExpressions, info))
-                | Simplify(rules, n) -> return(rewriteWithRules(spc, rules, qid, path_term, info))
+                  return (replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
+                                           path_term, AbstractCommonExpressions, pf))
+                | Simplify(rules, n) ->
+                  let context = makeContext spc in
+                  let rules = makeRules (context, spc, rules) in
+                  return (replaceSubTermH(rewritePT(spc, path_term, context, qid, rules),
+                                          path_term, pf))
                 | Simplify1(rules) ->
-                  let context = makeContext spc <<  {maxDepth = 1} in
+                  let context = makeContext spc << {maxDepth = 1} in
                   let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
-                  return(replaceSubTermH(rewritePT(path_term, context, qid, rules), path_term, info))
+                  return (replaceSubTermH(rewritePT(spc, path_term, context, qid, rules),
+                                          path_term, pf))
                 | AddSemanticChecks(checkArgs?, checkResult?, checkRefine?, recovery_fns) ->
                   let spc = addSubtypePredicateLifters spc in   % Not best place for it
                   (case path_term.1 of
                    | TypedTerm(tm, ty, a) ->
-                     return((TypedTerm(addSemanticChecksForTerm(tm, ty, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
-                                       ty, a),
-                             [0]),
-                            info)             % Need to update info
-                   | tm -> return((addSemanticChecksForTerm(tm, boolType, qid, spc, checkArgs?, checkResult?, checkRefine?, recovery_fns),
-                                   []),
-                                  info)));    % Need to update info
+                     return ((TypedTerm(addSemanticChecksForTerm
+                                          (tm, ty, qid, spc, checkArgs?,
+                                           checkResult?, checkRefine?, recovery_fns),
+                                        ty, a),
+                              [0]),
+                             pf) % Need to update pf
+                   | tm ->
+                     return ((addSemanticChecksForTerm
+                                (tm, boolType, qid, spc, checkArgs?,
+                                 checkResult?, checkRefine?, recovery_fns),
+                              []),
+                             pf))); % Need to update pf
           when tracing? 
             (print (printTerm (fromPathTerm path_term) ^ "\n"));
-          return (path_term, tracing?, info)
+          return (path_term, tracing?, pf)
         }
 
-  op liftInfo(info: AnnSpec.TransformInfo, ptm: PathTerm): AnnSpec.TransformInfo =
-    mapTransformInfo (fn tm -> topTerm(replaceSubTerm(tm, ptm))) info
+  % op liftInfo(info: AnnSpec.TransformInfo, ptm: PathTerm): AnnSpec.TransformInfo =
+  %   mapTransformInfo (fn tm -> topTerm(replaceSubTerm(tm, ptm))) info
 
-  op replaceSubTermH((new_tm: MSTerm, new_info: AnnSpec.TransformInfo), old_ptm: PathTerm, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
+  % Take an old_ptm and a proof that some even older term (not given
+  % here) equals topTerm(old_ptm), along with a new subterm new_tm for
+  % old_ptm along with a new_pf that topTerm(old_ptm) equals the
+  % result of replacing the old subterm with new_tm, and return the
+  % result of doing this replacement along with a proof that the even
+  % older term equals the new topTerm
+  op replaceSubTermH((new_tm: MSTerm, new_pf: Proof),
+                     old_ptm: PathTerm, pf: Proof): PathTerm * Proof =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     %let lifted_info = liftInfo(new_info, old_ptm) in
-    (new_path_tm, composeTransformInfos (info, nextToTopTerm (old_ptm), new_info))
+    (new_path_tm, prove_refinesTrans (pf, new_pf, new_path_tm))
 
-  op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm, rl_spec: RuleSpec, info: AnnSpec.TransformInfo): PathTerm * AnnSpec.TransformInfo =
+  % Similar to the above, but without having a new_pf
+  op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm,
+                      rl_spec: RuleSpec, pf: Proof): PathTerm * Proof =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
-    let changed_ptm = changedPathTerm(fromPathTerm old_ptm, new_tm) in
+    % let changed_ptm = changedPathTerm(fromPathTerm old_ptm, new_tm) in
     % let _ = writeLine("replaceSubTermH1:\n"^printTerm(fromPathTerm changed_ptm)
     %                   ^"\n ---->\n"^printTerm(fromPathTerm(new_tm, pathTermPath changed_ptm)))
     % in
     (new_path_tm,
-     composeTransformInfos (info, fromPathTerm(old_ptm),
-                            ([(new_tm, rl_spec)],
-                             Some(RefineEq(mkEqProofSubterm(pathTermPath changed_ptm,
-                                                            EqProofTactic "auto"))))))
+     prove_refinesTrans
+       (pf,
+        prove_refinesWithTactic(AutoTactic [], old_ptm.1, new_tm),
+        new_path_tm))
 
-  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool, info: AnnSpec.TransformInfo)
-    : SpecCalc.Env (MSTerm * Bool * AnnSpec.TransformInfo) =
-    {typed_path_term <- return(typedPathTerm(def_term, top_ty));
-     when tracing? 
+  % Refine a term using a script. The script will be applied to the
+  % def_term unless it satisfies anyTerm?, in which case the script
+  % will be applied to any postconditions in top_ty. The result will
+  % be of the form (TypedTerm(tm',ty'),tracing?,pf), where either:
+  %
+  % 1. ty'=top_ty, tm' is the result of applying script to def_term,
+  %    and pf is a proof that
+  %    TypedTerm(def_term,top_ty)=TypedTerm(tm',ty'); OR
+  %
+  % 2. tm'=def_term, ty' is the result of applying script to any
+  %    postcondition in top_ty, and pf is a proof that the new
+  %    postcondition in ty' implies the old in top_ty.
+  op interpretTerm(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool)
+    : SpecCalc.Env (MSTerm * Bool * Proof) =
+    let typed_path_term = (TypedTerm(def_term, top_ty, termAnn def_term),
+                           [if anyTerm? def_term && some?(postCondn? top_ty)
+                              then 1 else 0])
+    in
+    {when tracing? 
        (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
-     ((new_typed_term, _), tracing?, info) <- interpretPathTerm(spc, script, typed_path_term, qid, tracing?, false, info);
+     ((new_typed_term, _), tracing?, info)
+       <- interpretPathTerm(spc, script, typed_path_term, qid,
+                            tracing?, false,
+                            prove_refinesRefl typed_path_term);
      return(new_typed_term, tracing?, info)}
+
 
   % In the spec `spc`, execute the transformation script `script` on
   % the term `def_term`, which has the type `top_ty`, and is named
@@ -691,7 +806,7 @@ spec
   %   ultimately appear in.
   % - if you don't know the type, then you can use `inferType` to get it.
   op interpretTerm0(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
-    run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?, nullTransformInfo);
+    run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?);
         return (tm, trace?)}
 
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
@@ -756,7 +871,7 @@ spec
                                 (print ("-- { at "^show qid^" }\n"));
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
-                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?, nullTransformInfo);
+                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
                               if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
                                 then let _ = if print_no_change?
                                                then writeLine(show(primaryOpName opinfo)^" not modified.")
@@ -788,7 +903,7 @@ spec
                      foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  
                              {when tracing? 
                                 (print ((printTerm tm) ^ "\n")); 
-                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?, nullTransformInfo);
+                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?);
                               new_tm <- return(removeTypeWrapper new_tm);
                               new_spc <-
                                 if equalTerm?(tm, new_tm) then return spc

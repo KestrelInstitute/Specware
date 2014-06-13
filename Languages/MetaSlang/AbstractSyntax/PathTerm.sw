@@ -1,3 +1,12 @@
+
+% This spec formalizes the notion of a path to a subterm of a term.
+% Each term construct has an ordered list of immediate subterms, and a
+% path is then a sequence of Nats specifying which immediate subterm
+% to choose at each term.
+%
+% README: paths are backwards, meaning that the first "step" in a path
+% is actually the last subterm to be chosen in that path.
+
 PathTerm qualifying
 spec
 import ../Specs/Utilities
@@ -21,32 +30,65 @@ type PathTerm = APathTerm Position.Position
       | _ -> false
 
   op [a] immediateSubTerms(term: ATerm a): List (ATerm a) =
-    case term of
-      | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
-        [x, y]
-      | Apply(x, y, _) ->
-        if embed? Lambda x then [y, x] else [x, y]
-      | Record(l, _) -> map (fn (_, t) -> t) l
-      | Bind(_, _, x, _) -> [x]
-      | The(_, x, _)  -> [x]
-      | Let (l, b, _) -> (map (fn (_, t) -> t) l) ++ [b]
-      | LetRec (l, b, _) -> (map (fn (_, t) -> t) l) ++ [b]
-      | Lambda (l, _) -> map (fn (_, _, t) -> t) l
-      | IfThenElse(x, y, z, _) -> [x, y, z]
-      | Seq(l, _) -> l
-      | TypedTerm(x, ty, _) ->
-        (case postCondn? ty of
-           | None -> [x]
-           | Some post -> [x,post])
-      | And(l, _) -> l
-      | _ -> []
+    map (fn (_,subTerm) -> subTerm) (immediateSubTermsWithBindings term)
+
+  % Return None if the path is in the term, otherwise return the
+  % largest valid suffix of path, the subterm at that suffix of path,
+  % and the first (from right to left, since paths are backwards)
+  % invalid element of path
+  op [a] validPathTermWithErr ((term, path): APathTerm a)
+  : Option (Path * ATerm a * Nat) =
+    let def helper p =
+      case p of
+        | [] -> (term, None)
+        | i::p' ->
+          case helper p' of
+            | (ret_tm, None) ->
+              if i < length (immediateSubTerms ret_tm) then
+                ((immediateSubTerms ret_tm)@i, None)
+              else
+                (ret_tm, Some (p', i))
+            | ret -> ret
+    in
+    case helper path of
+      | (ret_tm, Some (valid_prefix, bad_step)) ->
+        Some (valid_prefix, ret_tm, bad_step)
+      | _ -> None
+
+  % Return true iff the path is in the term
+  op [a] validPathTerm ((term, path): APathTerm a) : Bool =
+    validPathTermWithErr (term, path) = None
+
+  % Return true iff the first argument is an extension of the second,
+  % i.e., iff path_long always points to a subterm of path_short
+  op pathExtends? (path_long: Path, path_short: Path) : Bool =
+    if length path_long < length path_short then false else
+      let path_long_suffix = suffix (path_long, length path_short) in
+      path_long_suffix = path_short
+
+  % Take the difference of one path minus another, that is, the path
+  % that would have to be prepended to path_short to get path_long.
+  % This is the same as splitting the left-hand path, path_long, into
+  % a prefix and a suffix, where the latter equals the right-hand
+  % path, path_short. Stated differently, if we took the subterm of
+  % some term at path_short, and then took the subterm of the result
+  % at the path given by pathDifference, we would get the subterm of
+  % term at path_long. Return None if the paths diverge from each
+  % other.
+  op pathDifference (path_long: Path, path_short: Path) : Option Path =
+    if pathExtends? (path_long, path_short) then
+      Some (prefix (path_long, length path_long - length path_short))
+    else None
+
+  op printPath (path : Path) : String =
+    "[" ^ flatten (intersperse "," (map show path)) ^ "]"
 
   type ABindingTerm a = List (AVar a) * ATerm a
   type BindingTerm = ABindingTerm Position
   type APathBindingTerm a = ABindingTerm a * Path
   type PathBindingTerm = APathBindingTerm Position
 
-  op immediateSubTermsWithBindings(term: MSTerm): List (BindingTerm) =
+  op [a] immediateSubTermsWithBindings(term: ATerm a): List (ABindingTerm a) =
     case term of
       | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
         [([], x), ([], y)]
@@ -96,15 +138,24 @@ type PathTerm = APathTerm Position.Position
     if i < length tms then Some(tms @ i) else None
 
   op [a] toPathTerm(term: ATerm a): APathTerm a = (term, [])
+
+  % tail-recursive version
   op [a] fromPathTerm((top_term, path): APathTerm a): ATerm a =
-    foldr (fn (i, tm) -> ithSubTerm(tm, i))
-       top_term path
+    foldl ithSubTerm top_term (reverse path)
+  % op [a] fromPathTerm((top_term, path): APathTerm a): ATerm a =
+  %   foldr (fn (i, tm) -> ithSubTerm(tm, i))
+  %      top_term path
 
   op fromPathTermWithBindings((top_term, path): PathTerm): BindingTerm =
-    foldr (fn (i, (vars, tm)) ->
+    foldl (fn ((vars, tm), i) ->
              let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
              (vars ++ new_vars, subterm))
-       ([], top_term) path
+       ([], top_term) (reverse path)
+  % op fromPathTermWithBindings((top_term, path): PathTerm): BindingTerm =
+  %   foldr (fn (i, (vars, tm)) ->
+  %            let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
+  %            (vars ++ new_vars, subterm))
+  %      ([], top_term) path
 
   op fromPathTermWithBindingsAdjust((top_term, path): PathTerm): BindingTerm =
     let def aux(tm: MSTerm, path: Path, vars: MSVars): Option BindingTerm =
@@ -134,23 +185,29 @@ type PathTerm = APathTerm Position.Position
                  
 
   op fromPathBindingTerm((top_binding_term, path): PathBindingTerm): BindingTerm =
-    foldr (fn (i, (vars, tm)) ->
+    foldl (fn ((vars, tm), i) ->
              let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
              (vars ++ new_vars, subterm))
-       top_binding_term path
+       top_binding_term (reverse path)
+  % op fromPathBindingTerm((top_binding_term, path): PathBindingTerm): BindingTerm =
+  %   foldr (fn (i, (vars, tm)) ->
+  %            let (new_vars, subterm) = ithSubTermWithBindings(tm, i) in
+  %            (vars ++ new_vars, subterm))
+  %      top_binding_term path
 
+  % tail-recursive version of this function
   op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
-    foldr (fn (i, Some tm) -> ithSubTerm?(tm, i)
-            | (i, None) -> None)
-       (Some top_term) path
+    foldl (fn (Some tm, i) -> ithSubTerm?(tm, i)
+            | (None, i) -> None)
+       (Some top_term) (reverse path)
+  % op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
+  %   foldr (fn (i, Some tm) -> ithSubTerm?(tm, i)
+  %           | (i, None) -> None)
+  %      (Some top_term) path
 
   op [a] nextToTopTerm((top_term, path): APathTerm a): ATerm a =
     if empty? path then top_term
       else ithSubTerm(top_term, last path)
-
-  op [a] typedPathTerm(term: ATerm a, ty: AType a): APathTerm a =
-    (TypedTerm(term, ty, termAnn term),
-     [if anyTerm? term && some?(postCondn? ty) then 1 else 0])
 
   op [a] termFromTypedPathTerm(ptm: APathTerm a): ATerm a =
     case ptm.1 of

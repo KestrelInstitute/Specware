@@ -77,7 +77,7 @@ op evaluateSpec (spec_elements     : ExplicitSpecTerm)
   elaborated_spec                 <- elaborateSpecM      raw_spec;
   disambiguated_spec              <- complainIfAmbiguous elaborated_spec pos;
   refined_spec                    <- applyOpRefinements  disambiguated_spec;
-  final_value                     <- return (Spec (markQualifiedStatus (removeDuplicateImports refined_spec)));
+  final_value                     <- return (Spec (markQualifiedStatus (removeDuplicateImports refined_spec)) : Value);
   return (final_value, timestamp, dep_uids)
   }
 
@@ -208,7 +208,7 @@ op applyOpRefinements (spc : Spec) : Env Spec =
                         let (_, _, prev_tm) = nthRefinement (trps, refine_num - 1) in
                         {steps <- mapM (makeScript spc) refine_steps;
                          % print("aor: " ^ scriptToString (Steps steps) ^ scriptToString (Steps steps1) ^ "\n");
-                         (tr_term, _, info) <- interpretTerm (spc, Steps steps, prev_tm, ty, qid, false, nullTransformInfo);
+                         (tr_term, _, info) <- interpretTerm (spc, Steps steps, prev_tm, ty, qid, false);
                          new_dfn <- return (maybePiAndTypedTerm (replaceNthRefinement (trps, refine_num, (tvs, ty, tr_term))));
                          return (setOpInfo (spc, qid, opinfo << {dfn = new_dfn}))}
                       | _ -> return spc)

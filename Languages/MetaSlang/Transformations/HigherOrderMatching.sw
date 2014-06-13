@@ -79,12 +79,12 @@ The stack is accessed and modified using the operations
  def next({new,flex}) = 
      case new
        of (M,N,OT)::new ->
-	  (case isFlexVar?(M)
-	     of Some _ -> Some({new = new,flex = flex},M,N,OT)
-	      | None -> 
-	   case hasFlexHead?(M)
-	     of Some _ -> next {new = new,flex = Cons((M,N,OT),flex)} 
-	      | None -> Some({new = new,flex = flex},M,N,OT))
+	  (if isFlexVar?(M) then
+             Some({new = new,flex = flex},M,N,OT)
+           else
+             case hasFlexHead?(M)
+               of Some _ -> next {new = new,flex = Cons((M,N,OT),flex)} 
+                | None -> Some({new = new,flex = flex},M,N,OT))
 	| [] -> 
      case flex
        of (M,N,OT)::flex -> Some({new = new,flex = flex},M,N,OT)
@@ -128,14 +128,19 @@ The stack is accessed and modified using the operations
  op hasFlexRef?(t: MSTerm): Bool =
    existsSubTerm flexRef? t
 
- op isFlexVar? : MSTerm -> Option Nat
- def isFlexVar?(term) = 
+ op flexVarNum : MSTerm -> Option Nat
+ def flexVarNum(term) = 
      case term
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  Some n
 	| _ -> None
+
+ op isFlexVar? : MSTerm -> Bool
+ def isFlexVar? tm =
+   case flexVarNum tm of | None -> false | Some _ -> true
+
  op  hasFlexHead? : MSTerm -> Option Nat
- def hasFlexHead?(term) = isFlexVar?(head(headForm term))
+ def hasFlexHead?(term) = flexVarNum(head(headForm term))
 
 (*
 \subsection{Term normalization}
@@ -156,6 +161,9 @@ In our case we allow c to be anything but an abstraction of
 irrefutable patterns, where it is obvious how to perform 
 beta contraction.
 *)
+
+ op dereferenceVar ((_,termSubst,_): SubstC, n:Nat) : Option MSTerm =
+   NatMap.find(termSubst,n)
 
  op dereferenceR : SubstC -> MSTerm -> MSTerm
  op dereference : SubstC -> MSTerm -> MSTerm
@@ -193,6 +201,10 @@ beta contraction.
 %% Wasteful, but simple beta-normalizer.
 %%
 
+ % README: this does term grafting, not substitution, meaning that it
+ % is possible to have variable capture; e.g., subst can map a flex
+ % variable (%Flex n) to the free variable x in (fn x -> (%Flex n)),
+ % yielding the identity function (fn x -> x)
  op dereferenceAll (subst: SubstC) (term: MSTerm): MSTerm =
 %   let freeNames = NatMap.foldri (fn (_,trm,vs) ->
 %                                    StringSet.union (StringSet.fromList
@@ -203,7 +215,7 @@ beta contraction.
 %   let term = substitute2(term,[],freeNames) in % Purely for renaming to avoid name clashes
    let (typeSubst,termSubst,_) = subst in
    let def deref (term) = 
-           case isFlexVar?(term)
+           case flexVarNum(term)
              of Some n -> 
                 (case NatMap.find(termSubst,n)
                    of Some term -> 
@@ -223,14 +235,38 @@ beta contraction.
        def derefAll term = dereferenceAll subst term
    in
    mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term
-		 		  
 
+ % Do a dereferenceAll as a substitution, that is, avoiding variable
+ % capture; e.g., if subst maps a flex variable (%Flex n) to the free
+ % variable x in (fn x -> (%Flex n)), the result is the constant
+ % function (fn y -> x) for some fresh variable y. The boundVars
+ % argument gives the variables that are considered free at the site
+ % of the substitution, i.e., the variables that can be free in subst.
+ op dereferenceAllAsSubst (subst: SubstC) (term: MSTerm) (boundVars:MSVars): MSTerm =
+   dereferenceAll subst (renameBoundVars (term, boundVars))
+
+ % Use the beta-normalizer above with ordinary substitutions
+ op HigherOrderMatching.substituteWithBeta (subst: MSVarSubst) (term: MSTerm) (boundVars:MSVars): MSTerm =
+   % We first build up two substitutions, one that maps all the vars
+   % in the domain of subst to fresh flex variables and one that maps
+   % those same flex variables to the result in subst
+   let next_flex_var = 1 + (foldl max 0 (freeFlexVars term)) in
+   let (subst_vars,flex_map,_) =
+     foldl (fn ((s_vars,s_res,n), (var as (_,var_tp),tm)) ->
+              ((var, mkVar (n,var_tp))::s_vars,
+               (n,tm)::s_res,
+               n+1))
+       ([],[],next_flex_var)
+       subst
+   in
+   let substC = buildTermSubstC flex_map in
+   dereferenceAllAsSubst substC (substitute (term, subst_vars)) boundVars
 
  def bindPattern (pat,trm):MSTerm = Lambda([(pat,trueTerm,trm)],noPos)
 
 % Get list of applications, assumes that the term is already dereferenced.
  op headForm (term: MSTerm): MSTerms = 
-     case isFlexVar? term
+     case flexVarNum term
        of Some n -> [term]
         | None -> 
      case term
@@ -238,9 +274,7 @@ beta contraction.
         | _ -> [term]
 
  op headFormOTypes (term: MSTerm, ot: Option MSType): List (Option MSType) =
-   case isFlexVar? term
-       of Some n -> [None]
-        | None -> 
+   if isFlexVar? term then [None] else
      case term
        of Apply(M,N,_) ->
           (let (o_dom, o_ran) =
@@ -358,11 +392,68 @@ record type.
 Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 *)
 
+
+ %% Functions for manipulating SubstC's
+
  op emptySubstitution: SubstC = (StringMap.empty,NatMap.empty,[])
+
+ % Add a mapping from n to M to a SubstC
+ op updateSubst((typeSubst,termSubst,condns):SubstC, n:Nat, M:MSTerm) : SubstC = 
+   case flexVarNum(M) of
+     | Some m | n = m -> (typeSubst,termSubst,condns)
+     | _ -> (typeSubst,NatMap.insert(termSubst,n,M),condns)
+
+ % Turn a TyVarSubst into a SubstC
+ op substCFromTyVarSubst (s:TyVarSubst) : SubstC =
+   (StringMap.fromList s, NatMap.empty, [])
+
+ % Turn a SubstC into a TyVarSubst
+ op tyVarSubstFromSubstC ((typeSubst,_,_):SubstC) : TyVarSubst =
+   StringMap.toList typeSubst
+
+ % Build a SubstC from a list of pairs (flex_num, tm)
+ op buildTermSubstC (tm_map: List (Nat * MSTerm)) : SubstC =
+   (StringMap.empty, NatMap.fromList tm_map, [])
+
+ % Build a SubstC that replaces flex vars with other flex vars
+ op mkFresheningSubstC (var_map:List (Nat * Nat * MSType)) : SubstC =
+   let termSubst =
+     foldl (fn (res,(n1,n2,T)) ->
+              NatMap.insert (res, n1, mkVar (n2,T))) NatMap.empty var_map
+   in
+   (StringMap.empty,termSubst,[])
+
+ % Compose s2 with s1, yielding a SubstC that has the same effect as
+ % if we applied s1 followed by s2. We assume both substitutions are
+ % idempotent, meaning that, for each substitution, the variables in
+ % its domain are all distinct from the free variables of the terms in
+ % its range, although the domain of s2 is allowed to include free
+ % variables in terms in the range of s1.
+ op composeSubstCs (s2 : SubstC) (s1 : SubstC) : SubstC =
+   let (typeSubst1, termSubst1, typeConds1) = s1 in
+   let (typeSubst2, termSubst2, typeConds2) = s2 in
+   (StringMap.unionWith
+      % Favor the results of s1, since it is applied first
+      (fn (tp2,tp1) -> tp1)
+      (typeSubst2,
+       % Apply s2 to all the outputs of s1
+       StringMap.map (fn tp -> dereferenceType (s2, tp)) typeSubst1)
+      ,
+    NatMap.unionWith
+      (fn (tm2, tm1) -> tm1)
+      (termSubst2, NatMap.map (fn tm -> dereferenceAll s2 tm) termSubst1)
+      ,
+    typeConds2++typeConds1)
+   
+
+
+ %% debugging flags
+
  op debugHOM: Ref Nat = Ref 0
  op evaluateConstantTerms?: Bool = false     % For now until utility is proven
  op allowTrivialMatches?: Bool = false       % Allow matches that don't use match terms
  op resultLimitHOM: Nat = 8
+
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,None,emptyStack))
@@ -584,7 +675,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                    
                    %% Special case of imitation where other cases are equivalent
                    if closedTermV(N,context.boundVars)
-                     && ~(exists? (existsSubTerm (fn t -> some?(isFlexVar? t))) terms)
+                     && ~(exists? (existsSubTerm (fn t -> isFlexVar? t)) terms)
                      && noReferencesTo?(N,terms)
                     then 
                      let pats   = map (fn ty -> WildPat(ty,noPos)) termTypes in 
@@ -749,11 +840,6 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 	 | ([],[],[]) -> Some stack
 	 | _ -> None
 
-
-  def updateSubst((typeSubst,termSubst,condns),n,M) = 
-      case isFlexVar?(M)
-	of Some m | n = m -> (typeSubst,termSubst,condns)
-	 | _ -> (typeSubst,NatMap.insert(termSubst,n,M),condns)
 
 %%
 %% Infer type with type dereferencing
@@ -993,9 +1079,7 @@ skolemization transforms a proper matching problem into an inproper one.
 
   op occursProper : Nat -> MSTerm -> Bool
   def occursProper n M = 
-      case isFlexVar?(M)
-	of Some _ -> false
-	 | None -> occurs n M
+      if isFlexVar?(M) then false else occurs n M
 
   op occurs : Nat -> MSTerm -> Bool
   op occursP : [a] Nat -> a * MSTerm -> Bool
@@ -1005,7 +1089,7 @@ skolemization transforms a proper matching problem into an inproper one.
         of Var _ -> false
 	 | Fun _ -> false
 	 | Apply(M,N,_) -> 
-	   (case isFlexVar?(term)
+	   (case flexVarNum(term)
 	      of Some m -> n = m
 	       | None -> occurs n M || occurs n N)
 	 | Record(fields, _) -> 
@@ -1022,6 +1106,19 @@ skolemization transforms a proper matching problem into an inproper one.
 	   occurs n M || exists? (occursP n) decls
 	 | LetRec(decls,M,_) ->
 	   occurs n M || exists? (occursP n) decls
+
+(*
+Free Flex variables
+freeFlexVars returns a non-redundant list of the flex variables in a term
+*)
+
+  op freeFlexVars : MSTerm -> List Nat
+  def freeFlexVars term =
+    foldSubTerms (fn (t,result)  ->
+                    case flexVarNum t of
+                      | Some n | n nin? result -> n::result
+                      | _ -> result)
+    [] term
 
 (*
 Closed terms

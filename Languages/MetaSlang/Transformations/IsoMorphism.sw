@@ -1420,7 +1420,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
             types <- return (insertAQualifierMap (spc.types,qual,id,typeInfo << {dfn = dfn}));
             return (spc << {types = types},opsDone)
           }
-        def matchingQualifier (qual,_) = return (case newOptQual of
+        def matchingQualifier (qual,_) = Monad.return (case newOptQual of
                                                    | Some newQual -> qual = newQual
                                                    | None -> false)
       in {
@@ -1628,13 +1628,13 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                        interpretTerm(spc, if qid in? transformQIds
                                            then main_script
                                            else opaqueSimplifyScript,
-                                     dfn, ty, qid, false, nullTransformInfo)
+                                     dfn, ty, qid, false)
                      }
                      else
-                       return (dfn, false, nullTransformInfo)
+                       return (dfn, false, prove_equalRefl (ty, dfn))
                    }
                    else
-                     return (dfn, false, nullTransformInfo);
+                     return (dfn, false, prove_equalRefl (ty, dfn));
                  if equalTerm?(dfn, simp_dfn) then
                    return opinfo
                  else {

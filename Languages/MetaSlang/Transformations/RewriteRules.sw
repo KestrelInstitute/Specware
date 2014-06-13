@@ -15,6 +15,7 @@ skolemization.
 
 RewriteRules qualifying spec 
  import HigherOrderMatching
+ import ../Specs/Proof
  % import ../AbstractSyntax/PathTerm
 
  type Context = HigherOrderMatching.Context
@@ -31,7 +32,21 @@ RewriteRules qualifying spec
    { 
 	name      : String,
         rule_spec : RuleSpec,
-        opt_proof : Option RefinementProof,
+        opt_proof : Option Proof,
+        % README: opt_proof is a proof of a predicate of the form
+        %
+        % fa (x1,...,xn) condition' => lhs' = rhs'
+        %
+        % for some MSVars x1,...,xn, where "condition' =>" is dropped
+        % when condition=None. The terms contiion', lhs', and rhs' are
+        % the result of substituting the variables x1,...,xn for the
+        % flex variables listed in freeVars in the condition, lhs, and
+        % rhs of the rule.
+        sym_proof : Bool,
+        % If sym_proof = true, then the proof predicate is backwards,
+        % i.e., proves ... => rhs' = lhs'. Thus, when using the proof,
+        % prove_equalSym should be applied after type substitution,
+        % forall elimination, and cut
 	lhs       : MSTerm,
 	rhs       : MSTerm, 
 	tyVars    : List String,
@@ -40,31 +55,6 @@ RewriteRules qualifying spec
         trans_fn  : Option(TypedFun)
    } 
 
-
- op printTransformHistory(hist: TransformHistory): () =
-   if hist = [] then ()
-   else
-   (writeLine("Transformation History:");
-    % let changed_terms = tabulate(length hist - 1,
-    %                              fn i -> let (t1, t2) = ((hist@i).1, (hist@(i+1)).1) in
-    %                                      let (_, path) = changedPathTerm(t1, t2) in
-    %                                      (fromPathTerm(t1, path), fromPathTerm(t2, path)))
-    % in
-    (app (fn (tm, rs) -> (writeLine(showRuleSpec rs);
-                          writeLine(printTerm tm)))
-      hist
-    %; app (fn (t1, t2) -> writeLine(printTerm t1^" --> "^printTerm t2)) changed_terms
-     ))
-
- op printTransformInfoOpt(opt_info: Option TransformInfo): () =
-   case opt_info of
-     | None -> ()
-     | Some (hist, None) ->
-       printTransformHistory hist
-     | Some (hist, Some pf) ->
-       (printTransformHistory hist;
-        writeLine("Transformation proof:");
-        writeLine(showRefinementProof pf))
 
 %%
 %% Replace this by discrimination tree based rewrite rule application.
@@ -85,7 +75,7 @@ RewriteRules qualifying spec
 %%
 
 op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * MSType), name: Id)
-   : (MSTerm -> MSTerm) * (MSType -> MSType) * NatMap.Map(Nat * MSType) * StringMap.Map TyVar = 
+   : (MSTerm -> MSTerm) * (MSType -> MSType) * List(Nat * MSType) * StringMap.Map TyVar = 
      %% tyVMap = {| name -> a | name in tyVars ... |}
      let tyVMap = foldr (fn (name,tyVMap) -> 
                            let num = ! context.counter in
@@ -107,16 +97,14 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	     mapType((fn M -> M),doType,fn p -> p) srt
      in
      %% varMap = {| num -> (num1,srt) | (num,srt) in freeVars && num1 = ... |}
-     let varMap = 
-	 foldr (fn ((num,srt), varMap) -> 
-                  let num1 = ! context.counter in
-                  (context.counter := num1 + 1;
-                   NatMap.insert(varMap,num,(num1,freshType srt))))
-	   NatMap.empty freeVars	
-     in
+     let var_alist = map (fn (num,srt) ->
+                            let num1 = ! context.counter in
+                            (context.counter := num1 + 1;
+                             (num,(num1,freshType srt)))) freeVars in
+     let varMap = NatMap.fromList var_alist in
      let
 	 def doTerm(term: MSTerm): MSTerm = 
-	     case isFlexVar?(term)
+	     case flexVarNum(term)
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
 		     of Some x -> mkVar x
@@ -125,18 +113,18 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doType, id) trm
      in
-	(freshTerm, freshType, varMap, tyVMap)
+	(freshTerm, freshType, List.map (fn (_,var) -> var) var_alist, tyVMap)
 
- op freshRule(context: Context, rule as {name,rule_spec,opt_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
+ op freshRule(context: Context, rule as {name,rule_spec,opt_proof,sym_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule =
      % let _ = (writeLine("freshRule: "); printRule rule) in
-     let (freshTerm,freshType,varMap,tyVMap) = 
+     let (freshTerm,freshType,freeVars',tyVMap) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
      rule << 
      {	lhs  = freshTerm lhs,
 	rhs  = freshTerm rhs,
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
-	freeVars = NatMap.listItems varMap,
+	freeVars = freeVars',
 	tyVars = StringMap.listItems tyVMap,
         trans_fn = None
      }
@@ -146,22 +134,60 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 
 %%% Extract rewrite rules from function definition.
 
- op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec, info : OpInfo, includeAll?: Bool,
-             o_prf: Option RefinementProof): List RewriteRule = 
+ op defRule (context: Context, q: String, id: String, rule_spec: RuleSpec,
+             info : OpInfo, includeAll?: Bool): List RewriteRule =
    if definedOpInfo? info then
+     let qid = Qualified (q, id) in
      let (tvs, srt, term) = unpackFirstTerm info.dfn in
      let rule = 
          {name      = id,
           rule_spec = rule_spec,
-          opt_proof = o_prf,
-	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
+          opt_proof = None,
+          sym_proof = false,
+	  lhs       = Fun (Op (qid, info.fixity), srt, noPos),
 	  rhs       = term,
 	  condition = None,
-	  freeVars  = [],	
+	  freeVars  = [],
 	  tyVars    = tvs,
           trans_fn   = None}
      in
      let rules = deleteLambdaFromRule context includeAll? ([rule], if includeAll? then [rule] else []) in
+     % add unfolding proofs to each of these rules (which should
+     % presumably hold by unfolding qid). The simps? flag should be
+     % true iff the Isabelle "fun" / "function" mechanism is going to
+     % be used; to guess whether simps? should be false, we test
+     % whether deleteLambdaFromRule returns only a single rule whose
+     % left-hand side is an application to only variables.
+     let def isVarRule rule =
+       let (head, args) = unpackApplication (rule.lhs) in
+       forall? (fn arg ->
+                  case arg of
+                    | Record (flds, _) ->
+                      forall? (fn (_,body) -> isFlexVar? body) flds
+                    | _ -> isFlexVar? arg) args
+     in
+     let simps? = ~(forall? isVarRule rules) in
+     let _ = writeLine ("simps? = " ^ show simps? ^ " for id " ^ id ^ ": "
+                          ^ show (length rules)) in
+     let _ = map printRule rules in
+     let _ = writeLine ("end simps?") in
+     let rules =
+       map (fn rule ->
+              % Instantiate all the flex vars in the lhs and rhs with
+              % regular vars, in order to call prove_equalUnfold
+              let def mkVari (i, tp) = ("x"^show i, tp) in
+              let var_map =
+                map (fn (i, tp) -> (i, MS.mkVar (mkVari (i,tp)))) rule.freeVars
+              in
+              let subst = buildTermSubstC var_map in
+              let vars = map mkVari rule.freeVars in
+              let typ = inferType (context.spc, rule.lhs) in
+              rule << { opt_proof =
+                         Some (prove_equalUnfold
+                                 (typ, qid, simps?, vars,
+                                  dereferenceAll subst rule.lhs,
+                                  dereferenceAll subst rule.rhs)) }) rules
+     in       
      % let _ = app printRule rules in
      rules
    else
@@ -199,6 +225,9 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
        mkRecord (map (fn (id,fld) -> (id, replaceArg(old_tm, new_tm, fld))) flds)
      | _ -> apply_tm
 
+ % Convert rules of the form (fn x -> M1) = (fn x -> M2) to M1 =
+ % M2. The input pair of lists of rewrite rules are (rules that have
+ % yet to be processed, rules that have been processed already)
  op deleteLambdaFromRule (context: Context) (includeAll?: Bool)
      : List RewriteRule * List RewriteRule -> List RewriteRule = 
      fn ([], old) -> old
@@ -220,6 +249,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
               let new_rule = freshRule(context, rule) in
               deleteLambdaFromRule context includeAll? (rules, new_rule::old))
 
+ % Used by deleteLambdaFromRule...
  op deleteMatches(context: Context, matches: MSMatch, opt_case_tm: Option MSTerm,
                   rule: RewriteRule, rules: List RewriteRule,
                   old: List RewriteRule, includeAll?: Bool)
@@ -305,7 +335,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      let axmRules = flatten (map (fn p -> axiomRules context p Either None) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
-		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false,None)) ++ val)
+		        (defRule (context,q,id,Rewrite(Qualified(q,id)),opinfo,false)) ++ val)
 		      [] spc.ops
      in
      let rules = axmRules ++ opRules in
@@ -353,13 +383,11 @@ is rewritten to
 %%    
 
   def isFlexibleTerm(term:MSTerm) = 
-      case isFlexVar?(term)
-        of Some m -> true
-	 | None -> 
-      case term
-        of Apply(M,N,_) -> isFlexibleTerm(M)
-	 | Record(fields, _) -> forall? (fn (_,M) -> isFlexibleTerm M) fields
-	 | _ -> false
+      if isFlexVar?(term) then true else
+        (case term
+           of Apply(M,N,_) -> isFlexibleTerm(M)
+            | Record(fields, _) -> forall? (fn (_,M) -> isFlexibleTerm M) fields
+            | _ -> false)
 
   def deleteFlexTail(term:MSTerm) = 
       case term 
@@ -374,19 +402,23 @@ is rewritten to
       existsSubTerm (fn term -> lhs = term) rhs
 
   op  redirectRule : RewriteRule -> Option RewriteRule
-  def redirectRule (rule as {name,lhs,rhs,rule_spec,opt_proof,tyVars,freeVars,condition,trans_fn}) = 
+  def redirectRule (rule as {name,lhs,rhs,rule_spec,opt_proof,sym_proof,tyVars,freeVars,condition,trans_fn}) = 
       if diverging(lhs,rhs)
 	 then 
 	 if diverging(rhs,lhs)
 	     then None
-	 else Some {name = name, rule_spec = reverseRuleSpec rule_spec, opt_proof = None, lhs = rhs, rhs = lhs,
-                    tyVars = tyVars, freeVars = freeVars, condition = condition, trans_fn = trans_fn}
+	 else Some {name = name, rule_spec = reverseRuleSpec rule_spec,
+                    opt_proof = opt_proof, sym_proof = ~sym_proof,
+                    lhs = rhs, rhs = lhs,
+                    tyVars = tyVars, freeVars = freeVars,
+                    condition = condition, trans_fn = trans_fn}
       else Some rule
 
- %% If term is a qf binder then Introduce a number for each Var and return
- %% a list of the numbers paired with the type
- %% A substitution mapping old Var to new flex var with that number
- %% The body of the binder (handles nested binders of the same type)
+ %% If term is a qf binder then Introduce a number for each Var and return:
+ %% 1. a list of the numbers paired with the type
+ %% 2. the number of variables introduced
+ %% 3. A substitution mapping old Var to new flex var with that number
+ %% 4. The body of the binder (handles nested binders of the same type)
  op bound(qf: Binder, n: Nat, term: MSTerm, freeVars: List(Nat * MSType),
           S: MSVarSubst)
     : List (Nat * MSType) * Nat * MSVarSubst * MSTerm =
@@ -394,14 +426,14 @@ is rewritten to
      of Bind(binder,vars,body,_) -> 
         if qf = binder
            then 
-           let (freeVars,S,n) =
+           let (new_freeVars,S,n) =
                foldr (fn ((x,srt),(freeVars,S,n)) -> 
                         let y = mkVar(n,srt) in
                         (Cons((n,srt),freeVars),
                          Cons(((x,srt),y),S),n + 1))
-                 (freeVars,S,n) vars
+                 ([],S,n) vars
            in
-           bound(qf,n,body,freeVars,S)
+           bound(qf,n,body,freeVars++new_freeVars,S)
         else (freeVars,n,S,term)
       | _ -> (freeVars,n,S,term)
 
@@ -447,7 +479,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                            ~(hasUnboundVars?(e2, e1, condition))
                   else simpleRwTerm? e1 && ~(varTerm? e2) && ~(hasUnboundVars?(e1, e2, condition))
 
- op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option RefinementProof)
+ op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof)
       : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
    assertRulesRec(context, term, desc, rsp, dirn, o_prf, [], [], None)
@@ -457,7 +489,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     desc      : String, 
                     rsp       : RuleSpec, 
                     dirn      : Direction,
-                    o_prf     : Option RefinementProof,
+                    o_prf     : Option Proof,
                     freeVars  : List (Nat * MSType), 
                     subst     : MSVarSubst, 
                     condition : Option MSTerm)
@@ -485,7 +517,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
          let s_rhs = substitute(rhs,subst) in
          let main_rule = freshRule(context,
                                    {name      = desc,   condition = condition, rule_spec = rsp,
-                                    opt_proof = o_prf,
+                                    opt_proof = o_prf,  sym_proof = false,
                                     lhs       = s_lhs,  rhs       = s_rhs,
                                     tyVars    = [],     freeVars  = freeVars, trans_fn = None})
          in
@@ -493,14 +525,14 @@ op simpleRwTerm?(t: MSTerm): Bool =
            | IfThenElse(p, q, r, _) | expandIfThenElse? ->
              (if lr? || ~(hasUnboundVars?(q, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn p, rule_spec = rsp,
-                                          opt_proof = o_prf,
+                                          opt_proof = o_prf,  sym_proof = ~lr?,
                                           lhs       = if lr? then s_lhs else substitute(q,subst),
                                           rhs       = if lr? then substitute(q,subst) else s_rhs,
                                           tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
                 else [])
              ++ (if lr? || ~(hasUnboundVars?(r, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn(negate p), rule_spec = rsp,
-                                          opt_proof = o_prf,
+                                          opt_proof = o_prf,  sym_proof = ~lr?,
                                           lhs       = if lr? then s_lhs else substitute(r,subst),
                                           rhs       = if lr? then substitute(r,subst) else s_rhs,
                                           tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
@@ -518,7 +550,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 	else
         [freshRule(context,
 		   {name      = desc,   condition = condition, rule_spec = rsp,
-                    opt_proof = None,
+                    opt_proof = None,   sym_proof = false,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, true, dirn) ->
@@ -535,11 +567,11 @@ op simpleRwTerm?(t: MSTerm): Bool =
        else
          [freshRule(context,
                     {name      = desc,   condition = condition, rule_spec = rsp,
-                     opt_proof = o_prf,
+                     opt_proof = o_prf,  sym_proof = false,
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
                      tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
 
- op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option RefinementProof)
+ op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option Proof)
       : List RewriteRule = 
 %      case pt
 %        of Conjecture -> []
@@ -568,7 +600,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 %   	          tyVars    = tyVars, freeVars  = freeVars}))
 % 	| None -> None
 
- op printRule({name,tyVars,freeVars,condition,lhs,rhs,rule_spec,opt_proof,trans_fn}:RewriteRule): () = 
+ op printRule({name,tyVars,freeVars,condition,lhs,rhs,rule_spec,opt_proof,sym_proof,trans_fn}:RewriteRule): () = 
      ( writeLine ("Rewrite rule ------- "^name^" -------");
        if some? trans_fn then ()
        else
@@ -587,6 +619,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
          | None -> ()
      )	
 
+  % Freshen up the bound variables in a term so they are all distinct.
+  % FIXME: Is this the same as renameBoundVars (term, []) ?
   def renameBound(term) = 
       let free = freeVars term in
       let free = map (fn (s,_) -> s) free in

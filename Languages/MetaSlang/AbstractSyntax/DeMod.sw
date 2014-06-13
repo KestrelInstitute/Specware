@@ -1,4 +1,4 @@
-(* Demodulation *)
+(* Demodulation, aka, rewriting; specifically, this file implements sets of rewrite rules *)
 
 Demod qualifying
 spec

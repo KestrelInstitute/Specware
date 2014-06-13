@@ -26,6 +26,8 @@ type MSVars       = List MSVar
 type MSVar        = AVar            Position
 
 type MSVarSubst   = List (MSVar * MSTerm)
+% FIXME: rename this to MSTyVarSubst, for conssitency
+type TyVarSubst = List(TyVar * MSType)
 
 type MSMatch      = AMatch          Position
 type MSFun        = AFun            Position
@@ -339,7 +341,9 @@ op mkNotEquality (dom_type: MSType, t1 : MSTerm, t2 : MSTerm) : MSTerm =
 op matchEquality (t : MSTerm) : Option (MSType * MSTerm * MSTerm) =
   case t of
     | Apply(Fun(Equals, typ, _), Record([("1", lhs), ("2", rhs)], _), _) ->
-      Some (typ, lhs, rhs)
+      (case typ of
+         | Arrow (_, range, _) -> Some (range, lhs, rhs)
+         | _ -> fail ("Unexpected type for =: " ^ printType typ))
     | _ -> None
 
 % Test if a term is an implication
