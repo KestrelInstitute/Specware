@@ -366,7 +366,7 @@ MetaSlangRewriter qualifying spec
                                mkSimpRule ("Eval=", inferType(spc, term), term, trueTerm),
                                path,boundVars,demod))
         else
-        case isFlexVar? M1 of
+        case flexVarNum M1 of
           | Some n | ~(hasFlexRef? M2)->
             unit(trueTerm,
                  (updateSubst(emptySubstitution,n,M2),
@@ -693,7 +693,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  op fresheningSubstFor (term : MSTerm, rules : Demod RewriteRule) : SubstC =
    mkFresheningSubstC
      (foldSubTerms (fn (M,result) ->
-                      case isFlexVar? M of
+                      case flexVarNum M of
                         | Some n ->
                           (case findLeftmost (fn (m,_,_) -> m=n) result of
                              | Some (_, _, T) | equalType? (T, termType M) ->
@@ -1104,7 +1104,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                 | The(var,trm,_) -> loop trm
                 | Bind(bnd,vars,trm,_) -> loop trm
 	        | Apply(t1,t2,_) -> 
-	          (case isFlexVar?(term) 
+	          (case flexVarNum(term) 
 		     of Some n -> NatMap.inDomain(S,n) 
 		      | None -> loop t1 && loop t2)
 	        | Seq(terms,_) -> forall? loop terms

@@ -86,7 +86,7 @@ spec
 
   op trivialMatchTerm?(tm: MSTerm): Bool =
     %% Not certain about hasFlexHead?
-    some?(isFlexVar? tm) || some?(hasFlexHead? tm) || embed? Var tm
+    isFlexVar? tm || some?(hasFlexHead? tm) || embed? Var tm
 
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
     if trivialMatchTerm? rl.rhs

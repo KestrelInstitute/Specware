@@ -104,7 +104,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      let varMap = NatMap.fromList var_alist in
      let
 	 def doTerm(term: MSTerm): MSTerm = 
-	     case isFlexVar?(term)
+	     case flexVarNum(term)
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
 		     of Some x -> mkVar x
@@ -158,17 +158,19 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      % be used; to guess whether simps? should be false, we test
      % whether deleteLambdaFromRule returns only a single rule whose
      % left-hand side is an application to only variables.
-     let simps? =
-       case rules of
-         | [rule] ->
-           let (head, args) = unpackApplication (rule.lhs) in
-           ~(forall? (fn arg ->
-                        case arg of
-                          | Record (flds, _) ->
-                            forall? (fn (_,body) -> isVar? body) flds
-                          | _ -> isVar? arg) args)
-         | _ -> true
+     let def isVarRule rule =
+       let (head, args) = unpackApplication (rule.lhs) in
+       forall? (fn arg ->
+                  case arg of
+                    | Record (flds, _) ->
+                      forall? (fn (_,body) -> isFlexVar? body) flds
+                    | _ -> isFlexVar? arg) args
      in
+     let simps? = ~(forall? isVarRule rules) in
+     let _ = writeLine ("simps? = " ^ show simps? ^ " for id " ^ id ^ ": "
+                          ^ show (length rules)) in
+     let _ = map printRule rules in
+     let _ = writeLine ("end simps?") in
      let rules =
        map (fn rule ->
               % Instantiate all the flex vars in the lhs and rhs with
@@ -381,13 +383,11 @@ is rewritten to
 %%    
 
   def isFlexibleTerm(term:MSTerm) = 
-      case isFlexVar?(term)
-        of Some m -> true
-	 | None -> 
-      case term
-        of Apply(M,N,_) -> isFlexibleTerm(M)
-	 | Record(fields, _) -> forall? (fn (_,M) -> isFlexibleTerm M) fields
-	 | _ -> false
+      if isFlexVar?(term) then true else
+        (case term
+           of Apply(M,N,_) -> isFlexibleTerm(M)
+            | Record(fields, _) -> forall? (fn (_,M) -> isFlexibleTerm M) fields
+            | _ -> false)
 
   def deleteFlexTail(term:MSTerm) = 
       case term 

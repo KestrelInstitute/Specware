@@ -79,12 +79,12 @@ The stack is accessed and modified using the operations
  def next({new,flex}) = 
      case new
        of (M,N,OT)::new ->
-	  (case isFlexVar?(M)
-	     of Some _ -> Some({new = new,flex = flex},M,N,OT)
-	      | None -> 
-	   case hasFlexHead?(M)
-	     of Some _ -> next {new = new,flex = Cons((M,N,OT),flex)} 
-	      | None -> Some({new = new,flex = flex},M,N,OT))
+	  (if isFlexVar?(M) then
+             Some({new = new,flex = flex},M,N,OT)
+           else
+             case hasFlexHead?(M)
+               of Some _ -> next {new = new,flex = Cons((M,N,OT),flex)} 
+                | None -> Some({new = new,flex = flex},M,N,OT))
 	| [] -> 
      case flex
        of (M,N,OT)::flex -> Some({new = new,flex = flex},M,N,OT)
@@ -128,14 +128,19 @@ The stack is accessed and modified using the operations
  op hasFlexRef?(t: MSTerm): Bool =
    existsSubTerm flexRef? t
 
- op isFlexVar? : MSTerm -> Option Nat
- def isFlexVar?(term) = 
+ op flexVarNum : MSTerm -> Option Nat
+ def flexVarNum(term) = 
      case term
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  Some n
 	| _ -> None
+
+ op isFlexVar? : MSTerm -> Bool
+ def isFlexVar? tm =
+   case flexVarNum tm of | None -> false | Some _ -> true
+
  op  hasFlexHead? : MSTerm -> Option Nat
- def hasFlexHead?(term) = isFlexVar?(head(headForm term))
+ def hasFlexHead?(term) = flexVarNum(head(headForm term))
 
 (*
 \subsection{Term normalization}
@@ -210,7 +215,7 @@ beta contraction.
 %   let term = substitute2(term,[],freeNames) in % Purely for renaming to avoid name clashes
    let (typeSubst,termSubst,_) = subst in
    let def deref (term) = 
-           case isFlexVar?(term)
+           case flexVarNum(term)
              of Some n -> 
                 (case NatMap.find(termSubst,n)
                    of Some term -> 
@@ -261,7 +266,7 @@ beta contraction.
 
 % Get list of applications, assumes that the term is already dereferenced.
  op headForm (term: MSTerm): MSTerms = 
-     case isFlexVar? term
+     case flexVarNum term
        of Some n -> [term]
         | None -> 
      case term
@@ -269,9 +274,7 @@ beta contraction.
         | _ -> [term]
 
  op headFormOTypes (term: MSTerm, ot: Option MSType): List (Option MSType) =
-   case isFlexVar? term
-       of Some n -> [None]
-        | None -> 
+   if isFlexVar? term then [None] else
      case term
        of Apply(M,N,_) ->
           (let (o_dom, o_ran) =
@@ -396,7 +399,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 
  % Add a mapping from n to M to a SubstC
  op updateSubst((typeSubst,termSubst,condns):SubstC, n:Nat, M:MSTerm) : SubstC = 
-   case isFlexVar?(M) of
+   case flexVarNum(M) of
      | Some m | n = m -> (typeSubst,termSubst,condns)
      | _ -> (typeSubst,NatMap.insert(termSubst,n,M),condns)
 
@@ -672,7 +675,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                    
                    %% Special case of imitation where other cases are equivalent
                    if closedTermV(N,context.boundVars)
-                     && ~(exists? (existsSubTerm (fn t -> some?(isFlexVar? t))) terms)
+                     && ~(exists? (existsSubTerm (fn t -> isFlexVar? t)) terms)
                      && noReferencesTo?(N,terms)
                     then 
                      let pats   = map (fn ty -> WildPat(ty,noPos)) termTypes in 
@@ -1076,9 +1079,7 @@ skolemization transforms a proper matching problem into an inproper one.
 
   op occursProper : Nat -> MSTerm -> Bool
   def occursProper n M = 
-      case isFlexVar?(M)
-	of Some _ -> false
-	 | None -> occurs n M
+      if isFlexVar?(M) then false else occurs n M
 
   op occurs : Nat -> MSTerm -> Bool
   op occursP : [a] Nat -> a * MSTerm -> Bool
@@ -1088,7 +1089,7 @@ skolemization transforms a proper matching problem into an inproper one.
         of Var _ -> false
 	 | Fun _ -> false
 	 | Apply(M,N,_) -> 
-	   (case isFlexVar?(term)
+	   (case flexVarNum(term)
 	      of Some m -> n = m
 	       | None -> occurs n M || occurs n N)
 	 | Record(fields, _) -> 
@@ -1114,7 +1115,7 @@ freeFlexVars returns a non-redundant list of the flex variables in a term
   op freeFlexVars : MSTerm -> List Nat
   def freeFlexVars term =
     foldSubTerms (fn (t,result)  ->
-                    case isFlexVar? t of
+                    case flexVarNum t of
                       | Some n | n nin? result -> n::result
                       | _ -> result)
     [] term
