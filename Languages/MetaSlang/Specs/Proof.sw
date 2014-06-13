@@ -401,7 +401,7 @@ Proof qualifying spec
                              ^ printTerm tp_pred)
              | _ ->
                let M = substituteWithBeta [((x,T),N)] P (freeVars N) in
-               return (Proof_ForallE (x, T, P, N, p_int, tp_int)))
+               return (Proof_ForallE (x, T, M, N, p_int, tp_int)))
         | _ -> proofError ("Forall elimination of predicate\n  " ^ printTerm p_pred
                              ^ "\nagainst term\n  " ^ printTerm N ^ ")") }
 
