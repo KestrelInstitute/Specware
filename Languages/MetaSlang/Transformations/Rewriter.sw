@@ -1402,13 +1402,23 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                         % variables using forall elimination
                         let var_terms_pfs =
                           map (fn (var_i, var_tp) ->
+                                 % Go through each free variable of a
+                                 % rule, find what term it has been
+                                 % mapped to, and forall-eliminate the
+                                 % proof against that term
                                  let var_term =
                                    case dereferenceVar (subst, var_i) of
                                      | Some var_term -> var_term
                                      | None ->
-                                       % Something is wrong: a bound
-                                       % variable did not get matched
-                                       (warn ("rewriteRecursivePre: bound variable in rewrite rule not instantiated!");
+                                       % Sometimes a free variable
+                                       % does not get instantiated, so
+                                       % map it to itself; it looks
+                                       % like this mostly happens with
+                                       % theorems that are
+                                       % conjunctions of equalities,
+                                       % where some conjuncts have
+                                       % fewer variables
+                                       (%warn ("rewriteRecursivePre: bound variable in rewrite rule not instantiated!");
                                         mkVar (var_i, var_tp))
                                  in
                                  (var_term,
