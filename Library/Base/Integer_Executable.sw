@@ -6,8 +6,8 @@ refine def divides (x:Int, y:Int) : Bool =
   if x = 0 then y = 0  else y modF x = 0
 
 refine def divR (i:Int, j:Int0): Int =
-  if     2 * abs(i mod j) < abs j 
-     || (2 * abs(i mod j) = abs j && 2 divides (i divF j))
+  if     2 * abs(i modF j) < abs j 
+     || (2 * abs(i modF j) = abs j && 2 divides (i divF j))
     then i divF j
     else (i divF j) + 1
 

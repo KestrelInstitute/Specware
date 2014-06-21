@@ -415,6 +415,7 @@ spec
             IfThenElse(p, removeCoercions(x, f, product?, coercions), removeCoercions(y, f, product?, coercions), a)
           | Record(row, a) | product? ->
             Record(map (\_lambda(id, x) -> (id, removeCoercions(x, f, false, coercions))) row, a)
+          | Fun(Nat i, _, _) -> mkNat i
           | _ -> tm
      in
      % let _ = writeLine("= "^printTerm result) in
@@ -476,7 +477,7 @@ spec
         % let _ = toScreen("lc: "^ printTerm tm ^": "^ printType rm_ty ^" -> "^ printType target_ty ^"\n ") in
         case tm of
           | Apply(f as Fun(Op(qid as Qualified(qual, idn), fx), f_ty, _), x, a) ->
-            % let _ = writeLine("lift?: " ^ printTerm tm^"\n"^anyToString tm) in
+            % let _ = writeLine("lift?: " ^ printTerm tm) in
             (case findLeftmost (fn tb -> equalOpFn?(qid, tb.coerceToSuper))
                      coercions of
                | Some tb -> maybeCancelCoercions(tb.coerceToSub, x, tm, tb.subtype)
@@ -494,14 +495,17 @@ spec
                  (case x of
                     | Let(m, b, a1) -> Let(m, liftCoercion(Apply(f, b, a), rm_ty, target_ty), a1)
                     | _ ->
+                  let coerce_ty = inferType(spc, coerce_fn) in
+                  let src_ty = maybeSuperType(range(spc, coerce_ty)) in
+                  let repl_ty = maybeSuperType(domain(spc, coerce_ty)) in
                   let new_x = removeCoercions(x, coerce_fn, true, coercions) in
-                  let dom_ty = inferType(spc, new_x) in
-                  let ran_ty = getCoercedRange(f_ty, tb, coerce_fn) in
-                  let new_tm = Apply(mkInfixOp(Qualified(qual, idn), fx,
-                                               mkArrow(dom_ty, ran_ty)),
+                  let new_f_ty = replaceType(f_ty, src_ty, repl_ty, spc) in
+                  % let _ = writeLine("f_ty: "^printType f_ty^"\n"^"---> "^printType new_f_ty
+                  %                   ^"\n via "^printType src_ty^" --> "^printType repl_ty) in
+                  let new_tm = Apply(mkInfixOp(Qualified(qual, idn), fx, new_f_ty),
                                      new_x, a)
                   in
-                  % let _ = writeLine("\nrm_ty: "^printType rm_ty^"\ntarget: "^printType target_ty) in
+                  % let _ = writeLine("new_tm: "^printTerm new_tm^"\n: "^printType new_f_ty) in
                   (if possiblySubtypeOf?(rm_ty, tb.supertype, spc)
                     then % let _ = writeLine("Added: "^printTerm (Apply(coerce_fn, new_tm, a))) in
                          Apply(coerce_fn, new_tm, a)
@@ -519,13 +523,6 @@ spec
                           Apply(f, new_x, a))
                    | _ -> tm)
           | _ -> tm
-       def getCoercedRange(f_ty, tb, coerce_fn) =
-         let old_range = range(spc, f_ty) in
-         let coerce_fn_ty = inferType(spc, coerce_fn) in
-         % let _ = writeLine("gcr: "^printType f_ty^" "^printType coerce_fn_ty) in
-         if possiblySubtypeOf?(old_range, stripSubtypes(spc, range(spc, coerce_fn_ty)), spc)
-           then stripSubtypes(spc, domain(spc, coerce_fn_ty))
-           else old_range
        def mapSubTerms(tm, ty) =
         % let _ = writeLine("mst: "^printTerm tm^" -> " ^ printType ty) in
 	case tm of
@@ -696,4 +693,25 @@ spec
                         | _ -> tm,
              id, id)
       tm0
-endspec
+
+
+  op replaceType(ty: MSType, src_ty: MSType, repl_ty: MSType, spc: Spec): MSType =
+    mapType1 (fn ty ->
+               if equalType?(ty, src_ty) then repl_ty
+               else
+               case ty of
+                | Base(qid, ty_args, a) ->
+                  let uf_ty = unfoldBase(spc, ty) in
+                  if uf_ty = ty then ty
+                    else let new_ty = replaceType(uf_ty, src_ty, repl_ty, spc) in
+                         if new_ty = uf_ty then ty
+                         else new_ty
+                | _ -> ty)
+      ty
+ 
+ op maybeSuperType(ty: MSType): MSType =
+   case ty of
+     | Subtype(s_ty, _, _) -> s_ty
+     | _ -> ty
+
+end-spec

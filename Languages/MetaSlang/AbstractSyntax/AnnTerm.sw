@@ -1762,6 +1762,55 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    in
      mapAccumRec accum term
 
+
+op [a] mapType1 (f: AType a -> AType a) (ty: AType a): AType a =
+  let rec_ty =
+      case ty of
+        | Arrow (s1, s2, a) ->
+          let newS1 = mapType1 f s1 in
+          let newS2 = mapType1 f s2 in
+          if newS1 = s1 && newS2 = s2 then ty
+          else Arrow (newS1, newS2, a)
+        | Product (row, a) ->
+          let newRow = map (fn (id, sty) -> (id, mapType1 f sty)) row in
+          if newRow = row then ty
+          else Product (newRow, a)
+        | CoProduct (row, a) ->
+          let newRow = map (fn (id, o_sty) -> (id, mapOption (mapType1 f) o_sty)) row in
+          if newRow = row then ty
+          else CoProduct (newRow, a)
+        | Quotient (super_type, trm, a) ->
+          let newSty = mapType1 f super_type in
+          if newSty = super_type then ty
+          else Quotient (newSty, trm, a)
+        | Subtype (sub_type, trm, a) ->
+          let newSty = mapType1 f sub_type in
+          if newSty = sub_type then ty
+          else Subtype (newSty, trm, a)
+        | Base (qid, tys, a) ->
+          let newTys = map (mapType1 f) tys in
+          if newTys = tys then ty
+          else Base (qid, newTys, a)
+        | MetaTyVar (mtv, pos) ->
+          let {name,uniqueId,link} = ! mtv in
+          (case link of
+             | None -> ty
+             | Some sty ->
+               let newsty = mapType1 f sty in
+               if newsty = sty % || equalType?(newsty, sty)
+                 then ty
+               else
+                  MetaTyVar(Ref {name     = name,
+                                 uniqueId = uniqueId,
+                                 link     = Some newsty},
+                            pos))
+        | Pi  (tvs, ty, a) -> Pi (tvs, mapType1 f ty, a)  % TODO: what if map alters vars?
+        | And (tys,     a) -> maybeAndType (map (fn ty -> mapType1 f ty) tys, a)
+        | _ -> ty
+  in
+  f rec_ty
+
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive Term Search
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

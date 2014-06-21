@@ -155,6 +155,9 @@ proof Isa e_ast_ast__1_Obligation_subtype
   by (auto, arith)
 end-proof
 
+proof Isa e_ast_ast__1_Obligation_subtype0
+  by (auto, arith)
+end-proof
 
 proof Isa e_ast_ast__1__obligation_refine_def
   apply (subgoal_tac "base **__1 0 = 1", rule nat_induct,
