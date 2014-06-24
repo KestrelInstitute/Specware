@@ -429,6 +429,12 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
       | None -> (tm1, [])
       | Some path -> (tm1, path)
 
- op dummyPathTerm: PathTerm = toPathTerm dummyMSTerm
+op dummyPathTerm: PathTerm = toPathTerm dummyMSTerm
+
+%% Used in transform-shell.lisp
+op typedPathTerm(tm: MSTerm, ty: MSType) : PathTerm =
+  (TypedTerm(tm, ty, termAnn tm),
+  [if anyTerm? tm && some?(postCondn? ty)
+    then 1 else 0])
 
 end-spec

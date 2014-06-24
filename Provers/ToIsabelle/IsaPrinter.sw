@@ -353,6 +353,7 @@ op isaDirectoryName: String = "Isa"
 
   op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
   %% --------------------------------------------------------------------------------
+  op simplifyTrivialMorphismSpec?: Bool = false
 
   op  ppValue : Context -> Value -> Pretty
   def ppValue c value =
@@ -363,6 +364,10 @@ op isaDirectoryName: String = "Isa"
       | Morph morph ->
         let Some glob_ctxt = MonadicStateInternal.readGlobalVar "GlobalContext" in
         let oblig_spec = morphismObligations(morph, glob_ctxt, noPos) in
+        let oblig_spec = case oblig_spec.elements of
+                           | [Import(_, i_spc, _, _)] | simplifyTrivialMorphismSpec? -> i_spc
+                           | _ -> oblig_spec
+        in
         ppSpec c oblig_spec
       | _ -> prString "<Not a spec>"
  
@@ -1006,7 +1011,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
      (0,
       [(0, string "\\<And> "),
        (2, prConcat (intersperse (string " ") vars)),
-       (0, string "."),
+       (0, string ". "),
        (2, body)])
 
  % pretty-print a lambda abstraction
@@ -1482,6 +1487,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = writeLine("4:\n"^printSpec spc) in
+    % let _ = printSpecWithTypesToTerminal spc in
     let spc = exploitOverloading coercions false spc in
     % let _ = writeLine("5:\n"^printSpec spc) in
     % let _ = printSpecWithTypesToTerminal spc in
