@@ -1,6 +1,7 @@
 PP qualifying spec
 
 import CPrettyPrinter
+import /Library/Legacy/Utilities/System  %to get writeLine
 
 (* This spec contains various tests for the C pretty printer.
 
@@ -5057,5 +5058,11 @@ op total : Nat = length tests
 op failing : Option (String * Bool) =
   findLeftmost (fn t -> t.2 = false) tests
 
+%% This prints "ERROR:" if a test fails, to be caught by the testing framework.
+op run_test : () =
+  if passed then 
+    () 
+  else 
+    let Some(testname, _) = failing in let _ = writeLine ("ERROR: Test "^testname^" failed.") in ()
 
 endspec
