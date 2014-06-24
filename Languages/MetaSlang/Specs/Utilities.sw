@@ -290,7 +290,8 @@ Utilities qualifying spec
 	(QuotientPat(pat,trm,tys,a),sub,freeNames)
       | RestrictedPat(pat,trm,a) -> 
 	let (pat,sub,freeNames) = repPattern(pat,sub,freeNames) in
-	(RestrictedPat(pat,trm,a),sub,freeNames)
+        let new_trm = replace2(trm, sub, freeNames) in
+	(RestrictedPat(pat,new_trm,a),sub,freeNames)
       | _ -> (pat,sub,freeNames)
 
 
@@ -367,9 +368,11 @@ Utilities qualifying spec
 
      | Let (decls, M,  _) -> 
        let (pVars, tVars) =
-           foldl (fn ((pVars, tVars), (pat, trm)) -> 
-		  (insertVars (patVars     pat, pVars),
-		   insertVars (freeVarsRec trm, tVars)))
+           foldl (fn ((pVars, tVars), (pat, trm)) ->
+                  let pvs = patVars pat in
+                  let pbvs = deleteVars(pvs, freeVarsPat pat) in
+		  (insertVars (pvs, pVars),
+		   insertVars(pbvs, insertVars (freeVarsRec trm, tVars))))
 	         ([], []) 
 		 decls
        in
@@ -404,13 +407,13 @@ Utilities qualifying spec
    foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm, vars)) [] tms
 
  def freeVarsMatch (pat, cond, body) = 
-   let pvars = patVars     pat  in
-   let cvars = freeVarsRec cond in
-   let bvars = freeVarsRec body in
-   deleteVars (pvars, insertVars (cvars, bvars))
+   let pvars  = patVars     pat  in
+   let cvars  = freeVarsPat pat  in
+   let cvars1 = freeVarsRec cond in
+   let bvars  = freeVarsRec body in
+   deleteVars (pvars, insertVars(cvars1, insertVars (cvars, bvars)))
 
- op  patVars: MSPattern -> MSVars
- def patVars(pat:MSPattern) = 
+ op patVars(pat:MSPattern): MSVars = 
    case pat
      of AliasPat(p1,p2,_)      -> insertVars (patVars p1, patVars p2)
       | VarPat(v,_)            -> [v]
@@ -425,6 +428,22 @@ Utilities qualifying spec
       | QuotientPat(p,_,_,_)     -> patVars p
       | RestrictedPat(p,_,_)   -> patVars p
       | TypedPat(p,_,_)        -> patVars p
+
+ op freeVarsPat(pat:MSPattern): MSVars = 
+   case pat
+     of AliasPat(p1,p2,_)      -> insertVars (freeVarsPat p1, freeVarsPat p2)
+      | VarPat(v,_)            -> []
+      | EmbedPat(_,Some p,_,_) -> freeVarsPat p
+      | EmbedPat _             -> []
+      | RecordPat(fields,_)    -> foldl (fn (vars,(_,p)) -> insertVars (freeVarsPat p, vars)) [] fields
+      | WildPat _              -> []
+      | StringPat _            -> []
+      | BoolPat _              -> []
+      | CharPat _              -> []
+      | NatPat  _              -> []
+      | QuotientPat(p,_,_,_)   -> freeVarsPat p
+      | RestrictedPat(p,t,_)   -> insertVars(freeVarsRec t, freeVarsPat p)
+      | TypedPat(p,_,_)        -> freeVarsPat p
 
  op  getParams: MSPattern -> MSPatterns
  def getParams(pat:MSPattern) = 

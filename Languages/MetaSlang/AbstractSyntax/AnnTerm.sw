@@ -1490,7 +1490,7 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
 	     The (var, newTrm, a)
 		 
 	 | Let (decls, bdy, a) ->
-	   let newDecls = map (fn (pat, trm) -> (pat, mapRec trm)) decls in
+	   let newDecls = map (fn (pat, trm) -> (mapPat1 pat, mapRec trm)) decls in
 	   let newBdy = mapRec bdy in
 	   if newDecls = decls && newBdy = bdy then
 	     term
@@ -1810,6 +1810,37 @@ op [a] mapType1 (f: AType a -> AType a) (ty: AType a): AType a =
   in
   f rec_ty
 
+op[a] mapPattern1 (f: APattern a -> APattern a) (pattern: APattern a): APattern a =
+  let rec_pat =
+      case pattern of
+         | AliasPat (p1, p2, a) ->
+           let newP1 = mapPattern1 f p1 in
+           let newP2 = mapPattern1 f p2 in
+           if newP1 = p1 && newP2 = p2 then pattern
+           else AliasPat (newP1, newP2, a)
+         | EmbedPat (id, Some pat, ty, a) ->
+           let newPat = mapPattern1 f pat in
+           if newPat = pat then pattern
+           else EmbedPat (id, Some newPat, ty, a)
+         | RecordPat (fields, a) ->
+           let newFields = map (fn (id, p) -> (id, mapPattern1 f p)) fields in
+           if newFields = fields then pattern
+           else RecordPat (newFields, a)
+         | QuotientPat (pat, qid, tys, a) ->
+           let newPat = mapPattern1 f pat in
+           if newPat = pat then pattern
+           else QuotientPat (newPat, qid, tys, a)
+         | RestrictedPat (pat, trm, a) ->
+           let newPat = mapPattern1 f pat in
+           if newPat = pat then pattern
+           else RestrictedPat (newPat, trm, a)
+         | TypedPat (pat, ty, a) ->
+           let newPat = mapPattern1 f pat in
+           if newPat = pat then pattern
+           else TypedPat (newPat, ty, a)
+         | _ -> pattern
+  in
+  f rec_pat
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive Term Search
