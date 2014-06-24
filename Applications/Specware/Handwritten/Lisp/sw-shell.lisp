@@ -293,6 +293,31 @@
   (Specware::check-license)
   (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
 
+
+;; Process a seqeunce of Specware commends in batch mode.  Commands come in separated by newlines.
+(defun process-batch-commands ()
+  (progn 
+    (format t "Processing batch Specware commands:~%")
+    (let ((magic-eof-cookie (cons :eof nil)))
+      (loop while (not (equal magic-eof-cookie (peek-char t *standard-input* nil magic-eof-cookie)))
+         do
+           (let* ((line-string (read-line)))
+             (progn
+               (format t "Processing command: ~s~%" line-string)
+               (multiple-value-bind
+                     (command argstartposition)
+                   (read-from-string line-string)
+                 (let* ( ;;command may be a Specware shell command (like proc) or a Lisp form to be sumitted directly to Lisp
+                        ;;is this needed?
+                        (command (if (symbolp command) (intern (Specware::fixCase (symbol-name command)) (find-package :SWShell)) command))
+                        (*raw-command* command) ;why?
+                        (argstring (subseq line-string argstartposition)))
+                   (progn 
+                     ;(format t "Command: ~a~%" command)
+                     ;(format t "Arg String: ~s~%" argstring)
+                     (when (member command '(quit exit ok)) (return))                         
+                     (funcall *current-command-processor* command argstring))))))))))
+
 (defvar *sw-shell-pkg* (find-package :SWShell))
 
 (defvar *commands-in-process* 0)
