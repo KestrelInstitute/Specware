@@ -115,10 +115,52 @@ The stack is accessed and modified using the operations
       mkVar(num,ty)
      )
 
+ % Creates a fresh bound variable. NOTE: we know that the generated
+ % variable must be fresh because it is not a legal Specware variable
+ % name! To turn it back to a legal variable, call fixupBoundVars,
+ % below, at the top level (in order to avoid any accidental variable
+ % capture) of any term that might contain a variable returned by this
+ % function.
  def freshBoundVar (context:Context,ty) = 
      let num = ! context.counter in
      (context.counter := num + 1;
       ("x%"^show num,ty))
+
+ % Fix up any bound variables created by freshBoundVar, above. This
+ % should be called at the top level of a term, to avoid any
+ % accidental variable capture caused by changing an illegal Specware
+ % variable name back to a legal one.
+ def fixupBoundVars(term) = 
+   let free = freeVars term in
+   let free = map (fn (s,_) -> s) free in
+   let env0 = StringMap.empty in     
+   let env1 = foldr (fn (s,m) -> StringMap.insert(m,s,s)) env0 free in
+   let env  = Ref env1 : Ref (StringMap String) in
+   let vrs  = Ref (StringSet.fromList(StringMap.listDomain env1)) in
+   let
+     def doVar(x,srt) = 
+       if String.length(x) >= 2 && x@1 = #% then 
+         (case StringMap.find(! env,x) of
+            | Some y -> (y,srt)
+            | None ->
+              let y = StringUtilities.freshName("x",! vrs) in
+              (vrs := StringSet.add(! vrs,y);
+               env := StringMap.insert(! env,x,y);
+               (y,srt)))
+       else (x,srt)
+     def doTerm(term:MSTerm):MSTerm = 
+       case term of
+         | Var(v,a) -> Var(doVar v,a)
+         | Bind(qf,vars,body,a) -> Bind(qf,map doVar vars,body,a)
+         | The (var,body,a) -> The (doVar var,body,a)
+         | term -> term
+     def doPat(pat:MSPattern):MSPattern = 
+       case pat
+         of VarPat(v,a) -> VarPat(doVar v,a)
+          | _ -> pat
+   in
+   mapTerm(doTerm,fn s -> s,doPat) term
+
 
  op flexRef?(t: MSTerm): Bool =
    case t of
@@ -235,7 +277,7 @@ beta contraction.
                  | _ -> term)
        def derefAll term = dereferenceAll subst term
    in
-   mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term
+   fixupBoundVars (mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term)
 
  % Do a dereferenceAll as a substitution, that is, avoiding variable
  % capture; e.g., if subst maps a flex variable (%Flex n) to the free

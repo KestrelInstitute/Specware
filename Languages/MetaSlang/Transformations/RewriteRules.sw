@@ -615,42 +615,6 @@ op simpleRwTerm?(t: MSTerm): Bool =
          | None -> ()
      )	
 
-  % Freshen up the bound variables in a term so they are all distinct.
-  % FIXME: Is this the same as renameBoundVars (term, []) ?
-  def renameBound(term) = 
-      let free = freeVars term in
-      let free = map (fn (s,_) -> s) free in
-      let env0 = StringMap.empty in     
-      let env1 = foldr (fn (s,m) -> StringMap.insert(m,s,s)) env0 free in
-      let env  = Ref env1 : Ref (StringMap String) in
-      let vrs  = Ref (StringSet.fromList(StringMap.listDomain env1)) in
-      let 
-	  def doVar(x,srt) = 
-	      if String.length(x) >= 2 && 
-		 x@1 = #%
-		 then 
-	      (case StringMap.find(! env,x)
-		 of Some y -> (y,srt)
-		  | None -> 
-	       let y = StringUtilities.freshName("x",! vrs) in
-	       (vrs := StringSet.add(! vrs,y);
-		env := StringMap.insert(! env,x,y);
-		(y,srt)))
-	      else (x,srt)
-
-	  def doTerm(term:MSTerm):MSTerm = 
-	      case term of
-		 | Var(v,a) -> Var(doVar v,a)
-		 | Bind(qf,vars,body,a) -> Bind(qf,map doVar vars,body,a)
-		 | The (var,body,a) -> The (doVar var,body,a)
-		 | term -> term
-	   def doPat(pat:MSPattern):MSPattern = 
-	       case pat
-		 of VarPat(v,a) -> VarPat(doVar v,a)
-		  | _ -> pat
-      in
-      mapTerm(doTerm,fn s -> s,doPat) term
-
 
 %%
 %% Ignores name capture:
