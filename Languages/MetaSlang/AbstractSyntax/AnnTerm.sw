@@ -1866,8 +1866,10 @@ op[a] mapPattern1 (f: APattern a -> APattern a) (pattern: APattern a): APattern 
       | The         (_,M,      _) -> existsSubTerm2 descendIntoSubtypes? pred? M
 
       | Let         (decls, M, _) -> existsSubTerm2 descendIntoSubtypes? pred? M ||
-                                     exists? (fn (_,M) ->
-                                              existsSubTerm2 descendIntoSubtypes? pred? M) decls
+                                     exists? (fn (p,M) ->
+                                              (descendIntoSubtypes?
+                                                   && existsSubTermPat pred? p)
+                                              || existsSubTerm2 descendIntoSubtypes? pred? M) decls
 
       | LetRec      (decls, M, _) -> existsSubTerm2 descendIntoSubtypes? pred? M ||
 				     exists? (fn (_,M) ->

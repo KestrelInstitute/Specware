@@ -364,6 +364,10 @@ Utilities qualifying spec
 
      | Fun    _           -> []
 
+     %% This treats a singleton lambda specially because a singleton case should not be conditional
+     %% Maybe there should be a flag for this case
+     | Lambda ([(pat, cond, body)],   _) -> deleteVars(patVars pat, insertVars(freeVarsRec cond, freeVarsRec body))
+
      | Lambda (rules,  _) -> foldl (fn (vars, rl) -> insertVars (freeVarsMatch rl, vars)) [] rules
 
      | Let (decls, M,  _) -> 
@@ -382,7 +386,7 @@ Utilities qualifying spec
      | LetRec (decls, M, _) -> 
        let pVars = List.map (fn (v, _) -> v) decls in
        let tVars = freeVarsList decls in
-       let mVars = freeVarsRec  M in
+       let mVars = freeVarsRec M in
        deleteVars (pVars, insertVars (tVars, mVars))
 
      | Bind (_, vars, M, _) -> deleteVars (vars, freeVarsRec M)
