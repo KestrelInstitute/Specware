@@ -555,7 +555,7 @@
 ;;;    (probe-file (make-pathname :directory full-dir-list))))
 
 (defun swe (x)
-  (let* ((tmp-dir (format nil "~A~A-swe/" Specware::temporaryDirectory (user-name)))
+  (let* ((tmp-dir (format nil "~A~A_swe/" Specware::temporaryDirectory (user-name)))
 	 (tmp-name (format nil "swe_tmp_~D_~D"
 			   (incf *tmp-counter*) 
 			   (ymd-hms)))
