@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# This script is (Eric's attempt to make) a single, simple script to
+# run Specware in a shell.  It uses SBCL and should run on Linux and
+# maybe Mac (FIXME test on Mac).
+
+# This script sets SPECWARE4 for you, based on where this script
+# itself resides:
+
+THISSCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )" #Simpler commands can just give "." here, which seems bad.
+#echo "(THISSCRIPTDIR: [$THISSCRIPTDIR]."  # Should be something like /home/ewsmith/Specware/bin
+SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  This should be something like /home/ewsmith/Specware
+#echo "(Setting SPECWARE4 to [$SPECWARE4].)"
+
+# To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
+SBCL_SIZE="${SBCL_SIZE:=2000}"
+
+LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+
+# FIXME Think about how to set SWPATH (if at all):
+#echo "(In specware-shell, SWPATH is [$SWPATH].)"
+
+if [ -f $LISP_EXECUTABLE ]; then
+#  (/bin/echo '(SWShell::specware-shell nil)'; cat) | sbcl --core $LISP_EXECUTABLE
+  "$LISP_EXECUTABLE" --dynamic-space-size $SBCL_SIZE --eval "(SWShell::specware-shell-no-emacs)"
+else
+  echo "ERROR: Could not find Specware core file (expected to be $LISP_EXECUTABLE)."
+  exit 1
+fi
