@@ -289,34 +289,19 @@
 (defun cl-user::sw-shell ()
   (specware-shell nil))
 
+;;This is currently a top-level entry point (called from Eddy's bin/specware script and Applications/Specware/bin/linux/Specware4-shell-sbcl):
 (defun specware-shell (exiting-lisp?)
   (Specware::check-license)
   (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
 
+;;This is currently a top-level entry-point (called from bin/specware-shell).
+(defun specware-shell-no-emacs ()
+  (progn (setq Emacs::*use-emacs-interface?* nil) 
+         (format t "Welcome to Specware version ~a!~%" cl-user::*Specware-Version*)
+         (Specware::initializeSpecware-0)
+         (SWShell::specware-shell t)
+         (sb-unix:unix-exit 0)))
 
-;; Process a seqeunce of Specware commends in batch mode.  Commands come in separated by newlines.
-(defun process-batch-commands ()
-  (progn 
-    (format t "Processing batch Specware commands:~%")
-    (let ((magic-eof-cookie (cons :eof nil)))
-      (loop while (not (equal magic-eof-cookie (peek-char t *standard-input* nil magic-eof-cookie)))
-         do
-           (let* ((line-string (read-line)))
-             (progn
-               (format t "Processing command: ~s~%" line-string)
-               (multiple-value-bind
-                     (command argstartposition)
-                   (read-from-string line-string)
-                 (let* ( ;;command may be a Specware shell command (like proc) or a Lisp form to be sumitted directly to Lisp
-                        ;;is this needed?
-                        (command (if (symbolp command) (intern (Specware::fixCase (symbol-name command)) (find-package :SWShell)) command))
-                        (*raw-command* command) ;why?
-                        (argstring (subseq line-string argstartposition)))
-                   (progn 
-                     ;(format t "Command: ~a~%" command)
-                     ;(format t "Arg String: ~s~%" argstring)
-                     (when (member command '(quit exit ok)) (return))                         
-                     (funcall *current-command-processor* command argstring))))))))))
 
 (defvar *sw-shell-pkg* (find-package :SWShell))
 
@@ -576,3 +561,28 @@
         (t
          (format t "Unknown command `~S'. Type `help' to see available commands."
                  command))))
+
+;; This is currently a top-level entry point (called from Applications/Specware/bin/linux/specware-batch.sh):
+;; Process a sequence of Specware commends in batch mode.  Commands come in separated by newlines.
+(defun process-batch-commands ()
+  (progn 
+    (format t "Processing batch Specware commands:~%")
+    (let ((magic-eof-cookie (cons :eof nil)))
+      (loop while (not (equal magic-eof-cookie (peek-char t *standard-input* nil magic-eof-cookie)))
+         do
+           (let* ((line-string (read-line)))
+             (progn
+               (format t "Processing command: ~s~%" line-string)
+               (multiple-value-bind
+                     (command argstartposition)
+                   (read-from-string line-string)
+                 (let* ( ;;command may be a Specware shell command (like proc) or a Lisp form to be sumitted directly to Lisp
+                        ;;is this needed?
+                        (command (if (symbolp command) (intern (Specware::fixCase (symbol-name command)) (find-package :SWShell)) command))
+                        (*raw-command* command) ;why?
+                        (argstring (subseq line-string argstartposition)))
+                   (progn 
+                     ;(format t "Command: ~a~%" command)
+                     ;(format t "Arg String: ~s~%" argstring)
+                     (when (member command '(quit exit ok)) (return))                         
+                     (funcall *current-command-processor* command argstring))))))))))
