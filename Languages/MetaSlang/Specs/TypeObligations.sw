@@ -1044,6 +1044,7 @@ spec
      then m
      else addName (m, id, 0)
 
+ % Make a fresh Isabelle name for a refined op
  op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
    if refine_num = 0 then qid
      else Qualified(q,nm^"__"^show refine_num)

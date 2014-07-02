@@ -2694,6 +2694,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
 	   | None -> None)
       | _ -> Some pairs
 
+  % Build a term for the op qid at type ty
   op mkOpFromDef(qid: QualifiedId, ty: MSType, spc: Spec): MSTerm =
     case findTheOp(spc, qid) of
       | Some opinfo ->
