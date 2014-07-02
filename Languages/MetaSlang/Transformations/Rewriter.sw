@@ -173,8 +173,8 @@ MetaSlangRewriter qualifying spec
      then optimizeSuccessList new_results
      else new_results
 
- % Search for a rewrite rule that applies to term at path, returning a
- % lazy list of possible results.
+ % Search for a rewrite rule that applies to term, returning a lazy
+ % list of possible results.
  op applyDemodRewrites(context: Context, standardSimplify?: Bool)
                       (boundVars: MSVars, term: MSTerm, path: Path, demod: Demod RewriteRule)
                       : LazyList RRResult  = 
@@ -1155,6 +1155,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  % RuleSpecs and does not need a Context
  def rewriteWithRules_opt(spc: Spec, rules: RuleSpecs, term: MSTerm) : Option (MSTerm * Proof) =
    let context = makeContext spc in
+   let context = setTopTerm (context, term) in
    let rules = makeRules (context, spc, rules) in
    rewriteRecursive (context, [], splitConditionalRules rules, term)
 
@@ -1218,7 +1219,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
             let def rewrite(strategy, rules) =
               % let _ = writeLine("Rules:") in
               % let _ = app printRule (listRules rules) in
-              let context = context << {topTerm = Some(term0)} in
+              let context = setTopTerm (context, term0) in
               rewriteTerm 
               ({strategy = strategy,
                 rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),

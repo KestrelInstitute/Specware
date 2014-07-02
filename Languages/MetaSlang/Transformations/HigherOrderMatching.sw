@@ -30,6 +30,7 @@ HigherOrderMatching qualifying spec
 	boundVars   : MSVars,
         counter     : Ref Nat,
         topTerm     : Option MSTerm,
+        freshMSVarFun : MSType -> MSVar,
         %% Data to control Rewriter
         traceRewriting          : Nat,
         traceShowsLocalChanges? : Bool,
@@ -115,21 +116,27 @@ The stack is accessed and modified using the operations
       mkVar(num,ty)
      )
 
- % Creates a fresh bound variable. NOTE: we know that the generated
+ op freshBoundVar (context: Context, ty: MSType) : MSVar =
+   context.freshMSVarFun ty
+
+ % The default freshMSVarFun. NOTE: we know that the generated
  % variable must be fresh because it is not a legal Specware variable
  % name! To turn it back to a legal variable, call fixupBoundVars,
  % below, at the top level (in order to avoid any accidental variable
  % capture) of any term that might contain a variable returned by this
  % function.
- def freshBoundVar (context:Context,ty) = 
-     let num = ! context.counter in
-     (context.counter := num + 1;
+ op makeDefaultFreshMSVarFun () : MSType -> MSVar =
+   let var_counter = Ref 1 in
+   fn ty ->
+     let _ = fail "blah!" in
+     let num = ! var_counter in
+     (var_counter := num + 1;
       ("x%"^show num,ty))
 
- % Fix up any bound variables created by freshBoundVar, above. This
- % should be called at the top level of a term, to avoid any
- % accidental variable capture caused by changing an illegal Specware
- % variable name back to a legal one.
+ % Fix up any bound variables created by makeDefaultFreshVarFun,
+ % above. This should be called at the top level of a term, to avoid
+ % any accidental variable capture caused by changing an illegal
+ % Specware variable name back to a legal one.
  def fixupBoundVars(term) = 
    let free = freeVars term in
    let free = map (fn (s,_) -> s) free in
@@ -277,7 +284,7 @@ beta contraction.
                  | _ -> term)
        def derefAll term = dereferenceAll subst term
    in
-   fixupBoundVars (mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term)
+   mapTerm(deref,fn s -> dereferenceType(subst,s),fn p -> p) term
 
  % Do a dereferenceAll as a substitution, that is, avoiding variable
  % capture; e.g., if subst maps a flex variable (%Flex n) to the free
@@ -1642,6 +1649,7 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
         boundVars  = [],
 	counter    = Ref 1,
         topTerm    = None,
+        freshMSVarFun = makeDefaultFreshMSVarFun (),
         traceRewriting          = traceRewriting,
         traceShowsLocalChanges? = traceShowsLocalChanges?,
         useStandardSimplify?    = useStandardSimplify?,
@@ -1663,6 +1671,25 @@ before matching by deleting {\tt IfThenElse}, {\tt Let}, and
     writeLine("conditionResultLimit: "^show context.conditionResultLimit);
     writeLine("termSizeLimit: "^show context.termSizeLimit))
 
+ % Set the topTerm for matching; also sets the function for generating
+ % fresh names, to choose names not in topTerm
+ op setTopTerm (c: Context, t: MSTerm) : Context =
+   let var_set = Ref (StringSet.fromList (boundVarNamesIn t)) in
+   let var_index = Ref 1 in
+   let def varFun (ty : MSType) : MSVar =
+     let var_num = !var_index in
+     let _ = var_index := var_num + 1 in
+     let var_name = "x" ^ show var_num in
+     let cur_vars = !var_set in
+     if StringSet.member (cur_vars, var_name) then
+       varFun ty
+     else
+       let _ = var_set := StringSet.add (cur_vars, var_name) in
+       (var_name, ty)
+   in
+   c << {topTerm = Some t, freshMSVarFun = varFun}
+
+ % Set the boundVars for matching
  op setBound : Context * MSVars -> Context
  def setBound(ctxt,bv) = ctxt << {boundVars = bv}
 
