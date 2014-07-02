@@ -17,4 +17,9 @@
 # If this isn't set, things currently fail in a confusing way:
 export SWPATH="$SPECWARE4:/"
 
+#FIXME: Perhaps die if this is not set by the caller?
+# To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
+SBCL_SIZE="${SBCL_SIZE:=2000}"
+
+
 "$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe --dynamic-space-size $SBCL_SIZE --eval "(progn (setq Emacs::*use-emacs-interface?* nil) (Specware::initializeSpecware-0) (SWShell::process-batch-commands) (sb-unix:unix-exit 0))"
