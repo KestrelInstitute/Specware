@@ -27,7 +27,7 @@ MetaSlang qualifying spec
  %%%                Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% ATerm, AType, APattern, AFun, AVar, AMatch, and MetaTyVar
- %%%  are all mutually recursive types.
+ %%%  are all mutually recursive types.  FIXME: Are they really?
 
  %% Terms are tagged with auxiliary information such as
  %% location information and free variables for use in
@@ -35,7 +35,7 @@ MetaSlang qualifying spec
 
  type MetaSlang.ATerm b =
   | Apply        ATerm b * ATerm b                       * b
-  | ApplyN       List (ATerm b)                          * b % Before elaborateSpec
+  | ApplyN       List (ATerm b)                          * b % Before elaborateSpec  %Remove
   | Record       List (Id * ATerm b)                     * b
   | Bind         Binder * List (AVar b)      * ATerm b   * b
   | The          AVar b * ATerm b                        * b
@@ -43,17 +43,22 @@ MetaSlang qualifying spec
   | LetRec       List (AVar b     * ATerm b) * ATerm b   * b
   | Var          AVar b                                  * b
   | Fun          AFun b * AType b                        * b
-  | Lambda       AMatch b                                * b
+  % Add: |  Lit ALiteral b and add ALiteral
+  | Lambda       AMatch b                                * b  %Remove
+  % Add: | Lambda AVar b * ATerm b
+  % Add: | Case ATerm * AMatch
   | IfThenElse   ATerm b * ATerm b * ATerm b             * b
-  | Seq          List (ATerm b)                          * b
+  | Seq          List (ATerm b)                          * b  %drop? parser could turn this into let?
   | TypedTerm    ATerm b * AType b                       * b
-  | Transform    List(ATransformExpr b)                  * b  % For specifying refinement by script
+  | Transform    List(ATransformExpr b)                  * b  % For specifying refinement by script.  Move to Spec?
   | Pi           TyVars * ATerm b                        * b  % for now, used only at top level of defn's
+                                                              % Remove
   | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And 
                                                               % We might want to record a quotient of consistent terms plus a list of inconsistent pairs,
                                                               % but then the various mapping functions become much trickier.
+                                                              %Remove
   | Any                                                    b  % e.g. "op f : Nat -> Nat"  has defn:  TypedTerm (Any noPos, Arrow (Nat, Nat, p1), noPos)
- 
+                                                              %Remove
  type Binder =
   | Forall
   | Exists
@@ -61,6 +66,7 @@ MetaSlang qualifying spec
 
  type AVar b = Id * AType b
 
+  %% Maybe AMatch should be a single thing, and then we use List AMatch in Case above.
  type AMatch b = List (APattern b * ATerm b * ATerm b) % Match is a pattern, a guard, and a body.
 
  type MetaSlang.AType b =
@@ -74,27 +80,35 @@ MetaSlang qualifying spec
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
   | Pi           TyVars * AType b                    * b  % for now, used only at top level of defn's
+%% GK says:  | Pi List (AVar b * AType b)
   | And          List (AType b)                      * b  % for now, used only by colimit and friends -- meet (or join)
                                                           % We might want to record a quotient of consistent types plus a list of inconsistent pairs,
                                                           % but then the various mapping functions become much trickier.
+                                                          % Remove
   | Any                                                b  % e.g. "type S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
+                                                          % Remove
 
  type MetaSlang.APattern b =
   | AliasPat      APattern b * APattern b             * b
+%GK says:  | AliasPat      AVar b * APattern b             * b
   | VarPat        AVar b                              * b
   | EmbedPat      Id * Option (APattern b) * AType b  * b
   | RecordPat     List(Id * APattern b)               * b
   | WildPat       AType b                             * b
+  %% Add a LiteralPat for these (takes an ALiteral <-- also new):
   | BoolPat       Bool                                * b
   | NatPat        Nat                                 * b
   | StringPat     String                              * b
   | CharPat       Char                                * b
+  %% Broken for Isabelle:
   | QuotientPat   APattern b * TypeName * List(AType b) * b
+  %% Remove and include in AMatch:
   | RestrictedPat APattern b * ATerm b                * b
   | TypedPat      APattern b * AType b                * b  % Before elaborateSpec
 
  type AFun b =
 
+  % Move into Op:
   | Not
   | And
   | Or
@@ -105,8 +119,8 @@ MetaSlang qualifying spec
 
   | Quotient       TypeName
   | Choose         TypeName
-  | Restrict
-  | Relax
+  | Restrict  % deprecate and eliminate
+  | Relax     % deprecate and eliminate
 
   | PQuotient      TypeName % Before elaborateSpec
   | PChoose        TypeName % Before elaborateSpec
@@ -117,6 +131,7 @@ MetaSlang qualifying spec
   | Embed          Id * Bool  % represents a call of a co-product constructor (the bool indicates whether the constructor takes arguments)
   | Embedded       Id         % represents a call to embed?, takes a constructor
   | Select         Id         % specific case extraction -- generated only by pattern match compiler and type obligation generator (deprecate?)
+  %% Factor out literals as new ALiteral construct:
   | Nat            Nat
   | Char           Char
   | String         String
