@@ -25,6 +25,9 @@ Proof qualifying spec
     | StringTactic String
     % The "auto" tactic, possibly augmented by some additional proofs
     | AutoTactic (List Proof)
+    % An arbitrary tactic possibly augmented by additional proofs,
+    % where the "tactic" gets names for the proofs as arguments
+    | WithTactic (List Proof * (List String -> String))
 
   % The internal form of proofs
   type ProofInternal =

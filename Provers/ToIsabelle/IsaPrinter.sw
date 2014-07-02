@@ -438,6 +438,8 @@ op isaDirectoryName: String = "Isa"
         let vs = tabulate(length arg_tys, fn i -> mkVar(v_name^show i, arg_tys@i)) in
         (mkTuple vs, [], None)
 
+  % Assuming that t1 and t2 are both terms of type ty, build a term for the equality (t1 = t2); for function types, both
+  % sides are eta-expanded and the relevant preconditions are added as implications and universal quantifications.
   op mkFnEquality(ty: MSType, t1: MSTerm, t2: MSTerm, dfn: MSTerm, spc: Spec): MSTerm =
     let def mk_equality(o_dfn_tm, ty, t1, t2, preds, v_names) =
           % let _ = writeLine("mk_equality: "^printType ty^"\n"^printTerm t1^" = "^printTerm t2^"\n"^printTerm dfn) in
@@ -598,7 +600,8 @@ op isaDirectoryName: String = "Isa"
                    | OpDef(qid as Qualified(q,id1), refine_num, Some pf, _) | refine_num > 0 ->
                      let Some opinfo = findTheOp(spc, qid) in
                      let mainId = head opinfo.names in
-                     let refId as Qualified(q,nm)  = refinedQID refine_num mainId in
+                     let oldId = refinedQID (refine_num - 1) mainId in % The qid for the previous dfn
+                     let refId as Qualified(q,nm)  = refinedQID refine_num mainId in % qid for the new dfn
                      let tsp = (relativizeQuantifiersSimpOption c.simplify? spc, id, id) in
                      let trps = unpackTypedTerms (mapTerm tsp opinfo.dfn) in
                      let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
@@ -608,10 +611,14 @@ op isaDirectoryName: String = "Isa"
                      let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
                      % let _ = writeLine("arp: "^thm_name^" "^show(embed? Property (head elts))) in
                      % let _ = writeLine(printTerm dfn^"\n"^printTerm prev_dfn) in 
+
+                     % Test whether the new definition, dfn, and the previous definition, prev_dfn,
+                     % of an op are defined (i.e., whether they satisfy anyTerm?)
                      if anyTerm? dfn
                         then
                           if anyTerm? prev_dfn
-                            then    % Post-condition refinement
+                            then
+                              % If both satisfy anyTerm?, then we are doing post-condition strengthening
                               let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
                               let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
@@ -626,10 +633,13 @@ op isaDirectoryName: String = "Isa"
                             else el::elts   % Not sure if this is meaningful
                         else
                           if anyTerm? prev_dfn
-                            then el::elts    % !!! place holder
+                            % Previous definition is anyTerm? but current one is not, so we have defined an op; do not
+                            % need to do anything here, because the definition already has to satisfy its subtype
+                            then el::elts
                             else
+                              % Both definitions are given, so we are proving equality of the old and new definitions
                               let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def" in
-                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
+                              let eq_tm = mkFnEquality(ty, mkOpFromDef(oldId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
                                                        prev_dfn, spc) in
                               let (lhs_tm, rhs_tm) = equalityArgs eq_tm in
                                % let _ = writeLine("oblig: "^printTerm eq_tm) in
@@ -638,6 +648,10 @@ op isaDirectoryName: String = "Isa"
                                % let _ = writeLine("Generating proof for "^thm_name) in
                                % let _ = writeLine(anyToPrettyString pf) in
                               % FIXME: double-check that pf is a proof of what we expect it to be!
+
+                              % At this point, pf should be a proof that the bodies of the old and new definitions are
+                              % equal, but we need a proof that the old and new ops are equal, so we add unfolding to
+                              % the proof.
                               let prf_str = ppProofToIsaProofString (c, pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
@@ -946,6 +960,21 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
                                  pf_pretty],
                       rest_pretty])
 
+ % add multiple forward proof steps
+ op addForwardStepMulti (c: Context,
+                         pfs: List (String * Pretty * IsaProof ProveMode),
+                         rest: List String -> IsaProof StateMode) : IsaProof StateMode =
+   let def helper (pfs : List (String * Pretty * IsaProof ProveMode),
+                   pf_names : List String) : IsaProof StateMode =
+     case pfs of
+       | [] -> rest pf_names
+       | (prefix,prop,pf)::pfs' ->
+         addForwardStep
+         (c, prefix, prop, pf,
+          (fn pf_name -> helper (pfs', pf_name::pf_names)))
+   in
+   helper (pfs, [])
+
  % finish a forward-reasoning proof block by showing the final result
  op showFinalResult (boundVars : MSVars,
                      pf : IsaProof ProveMode) : IsaProof StateMode =
@@ -1134,31 +1163,36 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
             (prConcat
                [(string "(auto simp only: "), ppQualifiedId qid, string ")"])))
 
-    | Proof_Tactic (AutoTactic pfs, P) ->
-      let def helper (pfs : List Proof, pf_names : List String) : IsaProof StateMode =
-        case pfs of
-          | [] ->
-            showFinalResult
-            (boundVars,
-             singleTacticProof
-               (otherTactic
-                  ("(auto simp add: " ^ flatten (intersperse " " pf_names) ^ ")")))
-          | pf::pfs' ->
-            (case pf of
-               | ErrorFail _ ->
-                 % FIXME: add in the comments that this proof failed
-                 helper (pfs', pf_names)
-               | ErrorOk pf_int ->
-                 addForwardStep
-                 (c, "auto_tactic_pf_",
-                  ppTermNonNorm c (getProofPredicate_Internal pf_int),
-                  forwardProofBlock (ppProofIntToIsaProof_st (c, [], pf_int)),
-                  (fn pf_name -> helper (pfs', pf_name::pf_names))))
+    | Proof_Tactic (tactic, P) ->
+      let (sub_pfs, sub_pf_fun) =
+        case tactic of
+          | StringTactic str -> ([], fn _ -> str)
+          | AutoTactic pfs ->
+            (pfs, (fn pf_names ->
+                   "(auto simp add: "
+                     ^ flatten (intersperse " " pf_names) ^ ")"))
+          | WithTactic (pfs, pf_fun) -> (pfs, pf_fun)
       in
-      helper (pfs, [])
-
-    | Proof_Tactic (StringTactic str, P) ->
-      showFinalResult (boundVars, singleTacticProof (otherTactic str))
+      addForwardStepMulti (c,
+                           map (fn pf ->
+                                  case pf of
+                                    | ErrorFail err_str ->
+                                      % We put the error message in a comment
+                                      ("tactic_sub_pf",
+                                       string ("True (* sub-proof failed: "
+                                                 ^ err_str ^ " *)"),
+                                       singleTacticProof (otherTactic "simp"))
+                                    | ErrorOk pf_int ->
+                                      ("tactic_sub_pf",
+                                       ppTermNonNorm c
+                                         (getProofPredicate_Internal pf_int),
+                                       forwardProofBlock
+                                         (ppProofIntToIsaProof_st (c, [], pf_int)))
+                                ) sub_pfs,
+                           fn pf_names ->
+                             showFinalResult (boundVars,
+                                              singleTacticProof
+                                                (otherTactic (sub_pf_fun pf_names))))
 
     | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
       (* show "M=N" by (unfold f_def, simp) *)
@@ -1321,21 +1355,26 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
       IsaProof (string (printMergeRulesProof (getSpec c) isabelleTerm
                           boundVars tree unfolds smtArgs))
 
-
-  % Pretty-print a Specware Proof to an Isabelle proof as a String
-  %
-  % FIXME: add a flag to Context to choose StateMode or ProveMode: the
-  % former is easier to debug, while the latter is more concise
-  op ppProofToIsaProofString (c: Context, pf: Proof) : String =
+  % Pretty-print a Specware Proof to an Isabelle proof as a String,
+  % first applying a transform to the Isabelle proof
+  op ppProofToIsaProofStringWithXform (c: Context, pf: Proof,
+                                       f: IsaProof StateMode -> IsaProof StateMode) : String =
     case pf of
       | ErrorOk pf_int ->
         % let _ = writeLine ("printing proof of ("
         %                      ^ printTerm (getProofPredicate_Internal pf_int)
         %                      ^ ")") in
         isaProofToString (forwardProofBlock
-                            (ppProofIntToIsaProof_st (c, [], pf_int)))
+                            (f (ppProofIntToIsaProof_st (c, [], pf_int))))
       | ErrorFail err_str ->
         "by auto (* Error in building proof: " ^ err_str ^ " *)"
+
+  % Pretty-print a Specware Proof to an Isabelle proof as a String
+  %
+  % FIXME: add a flag to Context to choose StateMode or ProveMode: the
+  % former is easier to debug, while the latter is more concise
+  op ppProofToIsaProofString (c: Context, pf: Proof) : String =
+    ppProofToIsaProofStringWithXform (c, pf, id)
 
 
 %%%
