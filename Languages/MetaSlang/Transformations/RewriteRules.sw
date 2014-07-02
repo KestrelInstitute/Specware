@@ -153,20 +153,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      in
      let rules = deleteLambdaFromRule context includeAll? ([rule], if includeAll? then [rule] else []) in
      % add unfolding proofs to each of these rules (which should
-     % presumably hold by unfolding qid). The simps? flag should be
-     % true iff the Isabelle "fun" / "function" mechanism is going to
-     % be used; to guess whether simps? should be false, we test
-     % whether deleteLambdaFromRule returns only a single rule whose
-     % left-hand side is an application to only variables.
-     let def isVarRule rule =
-       let (head, args) = unpackApplication (rule.lhs) in
-       forall? (fn arg ->
-                  case arg of
-                    | Record (flds, _) ->
-                      forall? (fn (_,body) -> isFlexVar? body) flds
-                    | _ -> isFlexVar? arg) args
-     in
-     let simps? = ~(forall? isVarRule rules) in
+     % presumably hold by unfolding qid).
      let rules =
        map (fn rule ->
               % Instantiate all the flex vars in the lhs and rhs with
@@ -180,7 +167,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
               let typ = inferType (context.spc, rule.lhs) in
               rule << { opt_proof =
                          Some (prove_equalUnfold
-                                 (typ, qid, simps?, vars,
+                                 (typ, qid, vars,
                                   dereferenceAll subst rule.lhs,
                                   dereferenceAll subst rule.rhs)) }) rules
      in       

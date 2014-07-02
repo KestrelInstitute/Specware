@@ -647,12 +647,31 @@ op isaDirectoryName: String = "Isa"
                                % let _ = writeLine("dfn: "^printTerm dfn) in
                                % let _ = writeLine("Generating proof for "^thm_name) in
                                % let _ = writeLine(anyToPrettyString pf) in
-                              % FIXME: double-check that pf is a proof of what we expect it to be!
+                              % FIXME: double-check that pf is a proof of what we expect it to be...?
 
                               % At this point, pf should be a proof that the bodies of the old and new definitions are
                               % equal, but we need a proof that the old and new ops are equal, so we add unfolding to
-                              % the proof.
-                              let prf_str = ppProofToIsaProofString (c, pf) in
+                              % the proof
+                              let lhs_def_tactic =
+                                (qidToIsaString oldId)
+                                ^ (if qidUsesFunctionDef? (c, mainId, Some (refine_num - 1))
+                                     then ".simps" else "_def")
+                              in
+                              let rhs_def_tactic =
+                                (qidToIsaString refId)
+                                ^ (if qidUsesFunctionDef? (c, mainId, Some refine_num)
+                                     then ".simps" else "_def")
+                              in
+                              let unfold_pf = (fn [pf_name] ->
+                                                 "(unfold " ^ lhs_def_tactic
+                                                 ^ ", unfold " ^ rhs_def_tactic
+                                                 ^ ", rule arg_cong[OF " ^ pf_name ^ "])")
+                              in
+                              let full_pf =
+                                prove_equalWithTactic (WithTactic ([pf], unfold_pf),
+                                                       lhs_tm, rhs_tm, ty)
+                              in
+                              let prf_str = ppProofToIsaProofString (c, full_pf) in
                               let prf_el = Pragma("proof", " Isa "^thm_name^"\n"^prf_str, "end-proof", noPos) in
                               % let _ = writeLine("Proof string:\n"^prf_str) in
                               el::prf_el::elts
@@ -1194,8 +1213,9 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
                                               singleTacticProof
                                                 (otherTactic (sub_pf_fun pf_names))))
 
-    | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+    | Proof_UnfoldDef (T, qid, vars, M, N) ->
       (* show "M=N" by (unfold f_def, simp) *)
+      let simps? = qidUsesFunctionDef? (c, qid, None) in
       let def_suffix = if simps? then ".simps" else "_def" in
       showFinalResult
         (boundVars,
@@ -2732,6 +2752,98 @@ op ppFunctionDef (c: Context) (aliases: Aliases) (dfn: MSTerm) (ty: MSType) (opt
                                then []
                                else [[prString "done",prEmpty]])))
 
+
+% TODO: factor out all the code below that is duplicated from ppOpInfo
+% into a single place
+%
+% Return true iff the given op should be defined with the Isabelle
+% function mechanism, instead of using "consts". 
+op qidUsesFunctionDef? (c: Context, qid: QualifiedId,
+                        refine_num_opt: Option Nat) : Bool =
+  let spc = case c.spec? of
+              | Some spc -> spc
+              | None -> fail "qidUsesFunctionDef?: could not find spec!"
+  in
+  % Look up the op qid, and get some information about it
+  let (mainId, refine_num, fixity, dfn) =
+    case findTheOp(spc, qid) of
+      | Some {names, fixity, dfn, fullyQualified?=_} ->
+        (head names, length names, fixity, dfn)
+      | _ ->
+        fail ("qidUsesFunctionDef?: could not find op: " ^ printQualifiedId qid)
+  in
+  let refine_num =
+    case refine_num_opt of
+      | Some n -> n
+      | None ->
+        % If refine_num is not given, choose the last definition,
+        % which is the number of defs - 1 (or 0 if no defs)
+        let n = length (unpackTypedTerms dfn) in
+        if n > 0 then n-1 else n
+  in
+  % FIXME: there could be an Option Pragma for this op that we don't
+  % see here; i.e., the None might be wrong...
+  let opt_prag = findPragmaNamed(spc.elements, mainId, None) in
+  % Look up a special op
+  let (no_def?, mainId, fixity) =
+      case specialOpInfo c mainId of
+        | Some (isa_id, infix?, _, _, no_def?) ->
+          (no_def?, mkUnQualifiedId(isa_id),
+           case infix? of
+             | Some pr -> Infix pr
+             | None -> fixity)
+        | _ -> (refine_num > 0 && anyTerm?(unpackNthTerm(dfn, refine_num)).3,
+                mainId, convertFixity fixity)
+  in
+  if no_def? then
+    false
+  else
+    let (tvs, ty, body) = unpackNthTerm(dfn, refine_num) in
+    opUsesFunctionDef? (c, mainId, fixity, ty, body, opt_prag)
+
+
+% Return true iff the given op should be defined with the Isabelle
+% function mechanism, instead of using "consts". 
+op opUsesFunctionDef? (c: Context, mainId: QualifiedId, fixity: Fixity, ty: MSType,
+                       body: MSTerm, opt_prag: Option Pragma) : Bool =
+  targetFunctionDefs?
+  %% The following conditions are temporary!!
+  %% Don't want f(x,y) = ... to be a fun because this would be added as a rewrite
+  && (some?(findParenAnnotation opt_prag)
+      || % none?(findMeasureAnnotation opt_prag)
+         %&&
+         (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) body of
+            | [(lhs, rhs)] ->
+              %let _ = writeLine("defToFunCases: "^printTerm lhs^"\n = "^printTerm rhs) in
+              (case lhs of
+                 | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
+                 | Apply _ | exists? (fn arg ->
+                                        case arg of
+                                          | Apply(Fun(Embed _, _, _), _, _) -> true
+                                          | Fun(Embed _, _, _) -> true
+                                          | Fun(Nat _, _, _) -> true
+                                          | Fun(Char _, _, _) -> true
+                                          | Fun(String _, _, _) -> true
+                                          | Fun(Bool _, _, _) -> true
+                                          | _ -> false)
+                   (getArgs lhs) ->
+                   true
+                 | _ ->
+                   case fixity of
+                     | Infix _ ->
+                       (foldSubTerms (fn (tm, count) ->
+                                        case tm of
+                                          | Var _ -> count
+                                          | Apply _ -> count
+                                          | Record _ -> count
+                                          | _ -> %let _ = writeLine (printTerm tm) in
+                                            count + 1)
+                          0 lhs)
+                       > 1
+                     | _ -> containsRefToOp?(rhs, mainId) )
+            | _ -> true)
+         )
+
 op  ppOpInfo :  Context -> Bool -> Bool -> SpecElements -> Option Pragma
                   -> Aliases -> Fixity -> Nat -> MSTerm
                   -> Pretty
@@ -2758,44 +2870,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
                          else unpackTerm(dfn)
   in
   let aliases = [mainId] in
-  if decl? && def? && targetFunctionDefs?
-      %% The following conditions are temporary!!
-      %% Don't want f(x,y) = ... to be a fun because this would be added as a rewrite
-      && (some?(findParenAnnotation opt_prag)
-           || % none?(findMeasureAnnotation opt_prag)
-               %&&
-               (case defToFunCases c (mkFun (Op (mainId, fixity), ty)) term of
-                     | [(lhs, rhs)] ->
-                       %let _ = writeLine("defToFunCases: "^printTerm lhs^"\n = "^printTerm rhs) in
-                       (case lhs of
-                        | Apply(Apply _, _, _) -> containsRefToOp?(rhs, mainId) % recursive
-                        | Apply _ | exists? (fn arg ->
-                                               case arg of
-                                                 | Apply(Fun(Embed _, _, _), _, _) -> true
-                                                 | Fun(Embed _, _, _) -> true
-                                                 | Fun(Nat _, _, _) -> true
-                                                 | Fun(Char _, _, _) -> true
-                                                 | Fun(String _, _, _) -> true
-                                                 | Fun(Bool _, _, _) -> true
-                                                 | _ -> false)
-                                      (getArgs lhs) ->
-                          true
-                        | _ ->
-                        case fixity of
-                        | Infix _ ->
-                          (foldSubTerms (fn (tm, count) ->
-                                           case tm of
-                                             | Var _ -> count
-                                             | Apply _ -> count
-                                             | Record _ -> count
-                                             | _ -> %let _ = writeLine (printTerm tm) in
-                                                    count + 1)
-                             0 lhs)
-                           > 1
-                        | _ -> containsRefToOp?(rhs, mainId) )
-                     | _ -> true)
-              )
-
+  if opUsesFunctionDef? (c, mainId, fixity, ty, term, opt_prag)
     then
       ppFunctionDef c aliases term ty opt_prag fixity
   else

@@ -54,11 +54,9 @@ Proof qualifying spec
 
     %% Equality proofs
 
-    % Proof_UnfoldDef (T, qid, simps?, vars, M, N) is a proof that
-    % fa(vars) M=N at type T by unfolding the definition of qid. The
-    % "simps?" flag states whether the Isabelle ".simps" attribute
-    % should be used; otherwise, the "_def" of qid is used.
-    | Proof_UnfoldDef (MSType * QualifiedId * Bool * MSVars * MSTerm * MSTerm)
+    % Proof_UnfoldDef (T, qid, vars, M, N) is a proof that
+    % fa(vars) M=N at type T by unfolding the definition of qid.
+    | Proof_UnfoldDef (MSType * QualifiedId * MSVars * MSTerm * MSTerm)
 
     % Proof_EqSubterm(M,N,T,p,pf) is a proof that M = N : T from a
     % proof pf : M.p = N.p, where M.p is the subterm of M at path p
@@ -95,7 +93,7 @@ Proof qualifying spec
       | Proof_Theorem (id, P) -> P
       | Proof_Tactic (tact, P) -> P
       | Proof_EqSubterm(M,N,T,p,pf) -> mkEquality (T,M,N)
-      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+      | Proof_UnfoldDef (T, qid, vars, M, N) ->
         let body = mkEquality (T, M, N) in
         if vars = [] then body else mkBind (Forall, vars, body)
       | Proof_EqSym(pf) ->
@@ -159,9 +157,9 @@ Proof qualifying spec
       | Proof_EqSubterm(M,N,T,p,pf) ->
         printForm "EqSubterm" [printTermPP M, printTermPP N, printTypePP T,
                                string (printPath p), printProofPP_Internal pf]
-      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
+      | Proof_UnfoldDef (T, qid, vars, M, N) ->
         printForm "UnfoldDef"
-        [printTypePP T, ppQid qid, string (show simps?),
+        [printTypePP T, ppQid qid,
          ppList (map (fn (id,_) -> string id) vars),
          printTermPP M, printTermPP N]
       | Proof_EqSym(pf) -> printForm "Sym" [printProofPP_Internal pf]
@@ -217,8 +215,8 @@ Proof qualifying spec
                         instantiateTyVarsInType (T, s),
                         p,
                         substTypes_ProofInternal (s, pf))
-      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
-        Proof_UnfoldDef (instantiateTyVarsInType (T, s), qid, simps?, vars,
+      | Proof_UnfoldDef (T, qid, vars, M, N) ->
+        Proof_UnfoldDef (instantiateTyVarsInType (T, s), qid, vars,
                          instantiateTyVarsInTerm (M, s),
                          instantiateTyVarsInTerm (N, s))
       | Proof_EqSym(pf) ->
@@ -262,8 +260,8 @@ Proof qualifying spec
       | Proof_EqSubterm(M,N,T,p,pf) ->
         prove_equalSubTerm (mapTerm tsp M, mapTerm tsp N, mapType tsp T, p,
                             mapProof_Internal tsp pf)
-      | Proof_UnfoldDef (T, qid, simps?, vars, M, N) ->
-        prove_equalUnfold (mapType tsp T, qid, simps?, vars,
+      | Proof_UnfoldDef (T, qid, vars, M, N) ->
+        prove_equalUnfold (mapType tsp T, qid, vars,
                            mapTerm tsp M, mapTerm tsp N)
       | Proof_EqSym (pf) ->
         prove_equalSym (mapProof_Internal tsp pf)
@@ -396,11 +394,11 @@ Proof qualifying spec
                proofError ("Bad typing proof in forall elimination: expected:\n  "
                              ^ printTerm tp_pred_expected ^ "\nfound\n  "
                              ^ printTerm tp_pred)
-             | Proof_UnfoldDef (T_body, qid, simps?, var::vars, lhs, rhs) ->
+             | Proof_UnfoldDef (T_body, qid, var::vars, lhs, rhs) ->
                % Proof optimization: substitute for the first free
                % variable in an "unfold" proof
                return (Proof_UnfoldDef
-                         (T_body, qid, simps?, vars,
+                         (T_body, qid, vars,
                           substituteWithBeta [(var,N)] lhs (freeVars N),
                           substituteWithBeta [(var,N)] rhs (freeVars N)))
              | Proof_Theorem (qid, _) ->
@@ -450,13 +448,11 @@ Proof qualifying spec
     return (Proof_Tactic (tactic, mkEquality (T,M,N)))
 
   % build a proof (fa (vars) M=N) at type T by unfolding the
-  % definition of qid, where the simps? flag states whether to use the
-  % ".simps" Isabelle attribute (if true) or the "_def" theorem (if
-  % false) to do the unfolding (NOTE: the assumption that unfolding
-  % qid in M results in N is not checked)
-  op prove_equalUnfold (T : MSType, qid : QualifiedId, simps? : Bool,
+  % definition of qid (NOTE: the assumption that unfolding qid in M
+  % results in N is not checked)
+  op prove_equalUnfold (T : MSType, qid : QualifiedId,
                         vars : MSVars, M : MSTerm, N : MSTerm) : Proof =
-    return (Proof_UnfoldDef (T, qid, simps?, vars, M, N))
+    return (Proof_UnfoldDef (T, qid, vars, M, N))
 
   % prove_equalSubTerm(M,N,T,p,pf) proves that M=N at type T using a
   % proof pf that the subterms of M and N at path p are equal. NOTE:
