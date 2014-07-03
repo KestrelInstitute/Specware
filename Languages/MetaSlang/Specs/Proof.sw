@@ -547,6 +547,12 @@ Proof qualifying spec
                 | _ -> return (Proof_EqTrans (Tret, Mret, pfs_ret))
             in
             (case (pf1_int, pf2_int) of
+               | _ | equalTerm? (M, N1) ->
+                 % The first proof is really reflexivity, so drop it
+                 return pf2_int
+               | _ | equalTerm? (N2, P) ->
+                 % The second proof is really reflexivity, so drop it
+                 return pf1_int
                | (Proof_EqSubterm(_,_,_,p1,sub_pf1),
                   Proof_EqSubterm(_,_,_,p2,sub_pf2))
                | pathExtends? (p1, p2) ->
