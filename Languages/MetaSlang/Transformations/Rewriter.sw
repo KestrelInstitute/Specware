@@ -1408,19 +1408,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                  % mapped to, and forall-eliminate the
                                  % proof against that term
                                  let var_term =
-                                   case dereferenceVar (subst, var_i) of
-                                     | Some var_term -> var_term
-                                     | None ->
-                                       % Sometimes a free variable
-                                       % does not get instantiated, so
-                                       % map it to itself; it looks
-                                       % like this mostly happens with
-                                       % theorems that are
-                                       % conjunctions of equalities,
-                                       % where some conjuncts have
-                                       % fewer variables
-                                       (%warn ("rewriteRecursivePre: bound variable in rewrite rule not instantiated!");
-                                        mkVar (var_i, var_tp))
+                                   dereferenceAll subst (mkVar (var_i, var_tp))
                                  in
                                  (var_term,
                                   prove_withTactic
