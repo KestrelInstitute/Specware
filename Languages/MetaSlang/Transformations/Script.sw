@@ -396,28 +396,34 @@ spec
   % subterm of N at p.
   op prove_refinesEqualSubTerm(M: MSTerm, N: MSTerm, p: Path, pf: Proof) : Proof =
     case M of
-      | TypedTerm(_,ty,_) | anyTerm? M ->
-        if last p ~= 1 then
-          fail ("prove_refinesEqualSubPathTerm: unexpected path "
-                  ^ printPath p
-                  ^ " not in a post-condition when refining term ("
-                  ^ printTerm M ^ ") to (" ^ printTerm N ^ ")")
-        else
-          prove_implEq (prove_equalSym
-                          (prove_equalSubTerm
-                             (fromPathTerm (M, [1]), fromPathTerm (N, [1]), ty,
-                              butLast p, pf)))
+      | TypedTerm(_,ty,_) | anyTerm? M && last p = 1 ->
+        % if last p ~= 1 then
+        %   fail ("prove_refinesEqualSubPathTerm: unexpected path "
+        %           ^ printPath p
+        %           ^ " not in a post-condition when refining term ("
+        %           ^ printTerm M ^ ") to (" ^ printTerm N ^ ")")
+        % else
+        prove_implEq (prove_equalSym
+                        (prove_equalSubTerm
+                           (fromPathTerm (M, [1]), fromPathTerm (N, [1]), ty,
+                            butLast p, pf)))
+      | _ | anyTerm? M ->
+        % There is nothing to prove, so prove True
+        prove_true
       | TypedTerm(_,ty,_) ->
         prove_equalSubTerm (M, N, ty, p, pf)
 
   % Prove that M refines to itself
   op prove_refinesRefl (path_term: PathTerm) : Proof =
     let top_term = topTerm (path_term) in
-    if anyTerm? top_term then
-      prove_implRefl (fromPathTerm (top_term, [1]))
-    else
-      case top_term of
-        | TypedTerm(_,ty,_) -> prove_equalRefl (ty, top_term)
+    case top_term of
+      | TypedTerm(_,ty,_) | anyTerm? top_term && some? (postCondn? ty) ->
+        prove_implRefl (fromPathTerm (top_term, [1]))
+      | _ | anyTerm? top_term ->
+        % There is nothing to prove, so prove True
+        prove_true
+      | TypedTerm(_,ty,_) ->
+        prove_equalRefl (ty, top_term)
 
   % Compose proofs that M refines to N and that N refines to P
   op prove_refinesTrans (pf1: Proof, pf2: Proof, P: PathTerm) : Proof =
