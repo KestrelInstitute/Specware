@@ -91,7 +91,7 @@ PatternMatch qualifying spec
   let index = ! ctx.error_index + 1 in
   (ctx.error_index := index;
    let typ1 = mkArrow (typ, typ) in
-   let msg  = "Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
+   let msg  = "ERROR: Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
    mkApply (mkOp (mkFail_name, typ1),
             mkString msg))
 
