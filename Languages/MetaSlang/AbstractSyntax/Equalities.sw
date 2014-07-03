@@ -147,7 +147,7 @@ MetaSlang qualifying spec
            helper var_map (pts1, pts2)
 
          | (LetRec     (vts1, b1,    _),
-            LetRec     (vts2, b2,    _)) ->
+            LetRec     (vts2, b2,    _)) | length vts1 = length vts2 ->
            let var_map_ext = (map (fn x -> x.1) vts1, map (fn x -> x.1) vts2) in
            eqTerm?_add var_map_ext (b1, b2) &&
            equalList? (vts1, vts2,
@@ -364,7 +364,7 @@ MetaSlang qualifying spec
                     | _ -> VMXNone)]
 
       | (RecordPat   (xs1,         _),
-         RecordPat   (xs2,         _)) ->
+         RecordPat   (xs2,         _)) | length xs1 = length xs2 ->
         VMXComp (map (fn ((fld1,p1),(fld2,p2)) ->
                       VMXComp1 (VMXEqTest (fld1, fld2),
                                 equalPattern?_alpha (p1, p2)))
