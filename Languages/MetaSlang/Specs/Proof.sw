@@ -471,10 +471,14 @@ Proof qualifying spec
       pf_pred <- return (proofPredicate_Internal pf_int);
       (varsM, M_sub) <- fromPathTermWithBindingsErr (M, p);
       (varsN, N_sub_orig) <- fromPathTermWithBindingsErr (N, p);
-      let N_sub = if varsM = varsN then N_sub_orig else
-                    substitute (N_sub_orig, zip (varsN, map mkVar varsM)) in
+      let (vars_ok?, N_sub) =
+        if length varsM = length varsN then
+          if varsM = varsN then (true, N_sub_orig) else
+            (true, substitute (N_sub_orig, zip (varsN, map mkVar varsM)))
+        else (false, N_sub_orig)
+      in
       case matchEquality pf_pred of
-        | Some (_, M', N') | equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
+        | Some (_, M', N') | vars_ok? && equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
           % Proof optimization
           (case pf_int of
              | _ | p = [] ->
