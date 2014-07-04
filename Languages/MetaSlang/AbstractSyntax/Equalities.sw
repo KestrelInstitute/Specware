@@ -139,6 +139,7 @@ MetaSlang qualifying spec
              case (bnds1, bnds2) of
                | ([], []) -> equalTerm?_alpha var_map (b1, b2)
                | ((pat1, rhs1)::rest1, (pat2, rhs2)::rest2) ->
+                 equalTerm?_alpha var_map (rhs1, rhs2) &&
                  (case equalPattern?_alpha (pat1, pat2) var_map of
                     | None -> false
                     | Some var_map' -> helper var_map' (rest1, rest2))
