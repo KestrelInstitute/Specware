@@ -7,7 +7,6 @@ IsaTermPrinter qualifying spec
  import /Languages/SpecCalculus/Semantics/Value
  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
- import /Languages/MetaSlang/AbstractSyntax/PathTerm
  import /Languages/MetaSlang/Specs/TypeObligations
  import /Languages/MetaSlang/Specs/Environment
 
@@ -1534,21 +1533,19 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let c = c << {coercions = coercions,
                   overloadedConstructors = overloadedConstructors spc}
     in
-    % let _ = printSpecWithTypesToTerminal spc in
     %% ? let spc = addRefineObligations c spc in
     let spc = normalizeNewTypes(spc, false) in
     let c = c << {typeNameInfo = topLevelTypeNameInfo spc, spec? = Some spc} in
     let spc = addRefineObligations c spc in
     % let _ = writeLine("1:\n"^printSpec spc) in
     let spc = addCoercions coercions spc in
+    % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
-    % let _ = writeLine("2:\n"^printSpec spc) in
+    % let _ = printSpecWithTypesToTerminal spc in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
-    % let _ = writeLine("4:\n"^printSpec spc) in
     % let _ = printSpecWithTypesToTerminal spc in
     let spc = exploitOverloading coercions false spc in
-    % let _ = writeLine("5:\n"^printSpec spc) in
     % let _ = printSpecWithTypesToTerminal spc in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
@@ -1558,7 +1555,6 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                 c.thy_name)
 	       else spc
     in
-    % let _ = writeLine("6:\n"^printSpec spc) in
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
@@ -3668,7 +3664,8 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 %           ppTerm c parentTerm (mkAppl(Fun(Op (Qualified("Integer","<="),Infix(Left,20)),Any a,a),
 %                                       [mkNat 0, term2]))
         %% Set Collect(fn x -> p x) --> {x. p x}
-        | (Fun(Op(Qualified("Set","collect"), _), _, _), Lambda([(pattern, _, bod)], _)) ->
+        | (Fun(Op(Qualified(qual,id), _), _, _), Lambda([(pattern, _, bod)], _))
+            | (qual = "Set" || qual = toIsaQual) && (id = "collect" || id = "Collect") ->
           prBreakCat 2 [[prString "{",
                          let c = c << {printTypes? = true} in
                          ppPattern c pattern (Some "") false,
