@@ -8,6 +8,7 @@
 (defpackage :Specware)
 (defpackage :PathTerm)
 (defpackage :SpecTransform)
+(defpackage :Proof)
 (defpackage :SWShell)
 (in-package :SWShell)
 
@@ -208,7 +209,7 @@
       (let* ((result_fn (Script::interpretPathTerm-7 *transform-spec* command
                                                   *transform-term*
                                                   *current-qid*
-                                                  nil nil nil))
+                                                  nil nil Proof::bogusProof))
              (result (funcall result_fn nil)))
         (if (and (eq (caar result) ':|Exception|) (eq (cadar result) ':|Fail|))
             (princ (cddar result))

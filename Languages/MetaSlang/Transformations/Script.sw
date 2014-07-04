@@ -396,7 +396,7 @@ spec
   % subterm of N at p.
   op prove_refinesEqualSubTerm(M: MSTerm, N: MSTerm, p: Path, pf: Proof) : Proof =
     case M of
-      | TypedTerm(_,ty,_) | anyTerm? M && last p = 1 ->
+      | TypedTerm(_,ty,_) | anyTerm? M && p ~= [] && last p = 1 ->
         % if last p ~= 1 then
         %   fail ("prove_refinesEqualSubPathTerm: unexpected path "
         %           ^ printPath p
