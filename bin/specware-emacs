@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# This script is (Eric's attempt to make) a single, simple script to
+# run Specware in emacs.  It uses SBCL and should run on Linux and
+# maybe Mac (FIXME test on Mac).
+
+# This script sets SPECWARE4 for you, based on where this script
+# itself resides:
+
+THISSCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )" #Simpler commands can just give "." here, which seems bad.
+#echo "(THISSCRIPTDIR: [$THISSCRIPTDIR]."  # Should be something like /home/ewsmith/Specware/bin
+export SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  This should be something like /home/ewsmith/Specware
+#echo "(Setting SPECWARE4 to [$SPECWARE4].)"
+
+#Starts the user out in a convenient directory:
+cd $SPECWARE4
+
+# TODO: Does the emacs slime stuff use this var?
+# To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
+SBCL_SIZE="${SBCL_SIZE:=2000}"
+
+LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
+
+# FIXME Think about how to set SWPATH (if at all):
+#echo "(In specware-shell, SWPATH is [$SWPATH].)"
+
+if [ ! -f $LISP_EXECUTABLE ]; then
+  echo "ERROR: Could not find Specware core file (expected to be $LISP_EXECUTABLE)."
+  exit 1
+fi
+
+UNIXNAME=`uname`  # Must be Linux or Darwin
+#echo "Unix type detected: $UNIXNAME."
+
+if [ $UNIXNAME = "Linux" ] ; then
+
+    # Try to find Emacs.  To override, set the SPECWARE_EMACS environment variable before running this script.
+    if [ -z "$SPECWARE_EMACS" ]; then
+        SPECWARE_EMACS=`which emacs`
+        if [ -z "$SPECWARE_EMACS" ]; then
+	    SPECWARE_EMACS="/usr/bin/emacs"
+        fi
+    fi
+
+    #TODO: This seems needed, but why?:
+    export SPECWARE_INIT_FORM=NIL
+    
+    # Call emacs and run Specware in it:
+    $SPECWARE_EMACS -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4
+    
+elif [ $UNIXNAME = "Darwin" ] ; then
+
+    # Try to find Emacs.  To override, set the SPECWARE_EMACS environment variable before running this script.
+    if [ -z "$SPECWARE_EMACS" ]; then
+        if [ -d "/Applications/Emacs.app" ]; then
+            SPECWARE_EMACS="/Applications/Emacs.app"
+        elif [ -d "$HOME/Applications/Emacs.app" ]; then 
+            SPECWARE_EMACS="$HOME/Applications/Emacs.app"
+        else
+            echo "ERROR: Cannot find Emacs in /Applications/Emacs.app or ~/Applications/Emacs.app"
+            exit 1
+        fi
+    fi
+
+    #TODO: This seems needed, but why?:
+    export SPECWARE_INIT_FORM=NIL
+
+    #echo $SPECWARE_EMACS
+    # Call emacs and run Specware in it:
+    open "$SPECWARE_EMACS" --args -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4
+    
+else
+    echo "ERROR: Unsupported Unix type: $UNIXNAME.  Must be Linux or Darwin."
+    exit 1
+fi
+
+
+
+
+
+
+
