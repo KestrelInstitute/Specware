@@ -9,7 +9,7 @@
 
 THISSCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )" #Simpler commands can just give "." here, which seems bad.
 #echo "(THISSCRIPTDIR: [$THISSCRIPTDIR]."  # Should be something like /home/ewsmith/Specware/bin
-SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  This should be something like /home/ewsmith/Specware
+export SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  This should be something like /home/ewsmith/Specware
 #echo "(Setting SPECWARE4 to [$SPECWARE4].)"
 
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
