@@ -67,7 +67,7 @@ elif [ $UNIXNAME = "Darwin" ] ; then
 
     #echo $SPECWARE_EMACS
     # Call emacs and run Specware in it:
-    open "$SPECWARE_EMACS" --args -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4
+    open -n "$SPECWARE_EMACS" --args -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4
     
 else
     echo "ERROR: Unsupported Unix type: $UNIXNAME.  Must be Linux or Darwin."
