@@ -75,7 +75,7 @@ SpecCalc qualifying spec
    | SpecInterp   SpecInterpTerm      
    | SpecPrism    SpecPrismTerm       
    | DiagMorph    DiagramMorphismTerm 
-   | ExtendMorph  ExtendMorphismTerm  
+%%   | ExtendMorph  ExtendMorphismTerm  
    | Qualify      QualifyTerm          
    | Translate    TranslateTerm        
    | Let          LetTerm              
@@ -373,10 +373,10 @@ SpecCalc qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type ExtendMorphismTerm = SCTerm
+ %% type ExtendMorphismTerm = SCTerm
 
- op  mkExtendMorph (term : SCTerm, pos : Position) : SCTerm = 
-  (ExtendMorph term, pos)
+ %% op  mkExtendMorph (term : SCTerm, pos : Position) : SCTerm = 
+ %%  (ExtendMorph term, pos)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

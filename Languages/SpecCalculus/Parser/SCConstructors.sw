@@ -169,7 +169,7 @@ SCParser qualifying spec
 
  op mkExpand 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExpand      (sc_term,          mkRegion left right)
  op mkReduce 	     (ms_term : MSTerm,    sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkReduce      (ms_term, sc_term, mkRegion left right)
- op mkExtend 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExtendMorph (sc_term,          mkRegion left right)
+%% op mkExtend 	     (sc_term : SCTerm,                      left : LCB, right : LCB) : SCTerm = SpecCalc.mkExtendMorph (sc_term,          mkRegion left right)
  op mkHide 	     (names   : NameExprs, sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkHide        (names, sc_term,   mkRegion left right)
  op mkExport 	     (names   : NameExprs, sc_term : SCTerm, left : LCB, right : LCB) : SCTerm = SpecCalc.mkExport      (names, sc_term,   mkRegion left right)
 

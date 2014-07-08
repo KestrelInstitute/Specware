@@ -11,7 +11,7 @@ SpecCalc qualifying spec
  import SpecMorphism 
  import SpecInterp    % tenatitve
  import SpecPrism     % tenatitve
- import ExtendMorphism 
+%% import ExtendMorphism 
  import DiagMorphism 
  import Generate      
  import Translate      
@@ -45,7 +45,7 @@ SpecCalc qualifying spec
     | SpecMorph   fields   -> evaluateSpecMorph   fields    pos
     | SpecInterp  fields   -> evaluateSpecInterp  fields    pos % tenatitve
     | SpecPrism   fields   -> evaluateSpecPrism   fields    pos % tenatitve
-    | ExtendMorph term     -> evaluateExtendMorph term
+%%    | ExtendMorph term     -> evaluateExtendMorph term
     | Diag        elems    -> evaluateDiag        elems     pos
     | Colimit     sub_term -> evaluateColimit     sub_term  pos
     | Subst       args     -> evaluateSubstitute  args      pos

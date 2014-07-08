@@ -1305,6 +1305,6 @@ If we want the precedence to be optional:
 ;;;  SC-EXTEND
 ;;; ========================================================================
 
-(defun make-sc-extend (term l r)
-  (SpecCalc::mkExtendMorph-2 term (make-pos l r)))
+;; (defun make-sc-extend (term l r)
+;;   (SpecCalc::mkExtendMorph-2 term (make-pos l r)))
 

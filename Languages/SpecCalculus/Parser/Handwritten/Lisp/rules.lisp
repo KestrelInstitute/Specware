@@ -81,7 +81,7 @@
    ((:tuple "diagram")      "diagram")
    ((:tuple "expand")       "expand")
    ((:tuple "export")       "export")
-   ((:tuple "extendMorph")  "extendMorph")
+;;   ((:tuple "extendMorph")  "extendMorph")
    ((:tuple "hide")         "hide")
    ((:tuple "is")           "is")
    ((:tuple "options")      "options")
@@ -176,7 +176,7 @@
 	  :SC-REDUCE
 
 	  ;; ???
-	  :SC-EXTEND
+	  ;; :SC-EXTEND
 	  :SC-HIDE
 	  :SC-EXPORT
 	  ))
@@ -1906,9 +1906,9 @@ If we want the precedence to be optional:
 ;;;  SC-EXTEND
 ;;; ========================================================================
 
-(define-sw-parser-rule :SC-EXTEND ()
-  (:tuple "extendMorph" (1 :SC-TERM))
-  (make-sc-extend 1 ':left-lcb ':right-lcb))
+;; (define-sw-parser-rule :SC-EXTEND ()
+;;   (:tuple "extendMorph" (1 :SC-TERM))
+;;   (make-sc-extend 1 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-HIDE

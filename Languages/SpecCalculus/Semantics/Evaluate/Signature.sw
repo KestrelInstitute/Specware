@@ -18,7 +18,7 @@ SpecCalc qualifying spec
   op evaluateSpecMorph        : SpecMorphismTerm                                     -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecPrism        : SpecPrismTerm                                        -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateSpecInterp       : SpecInterpTerm                                       -> Position -> SpecCalc.Env ValueInfo  % tentative
-  op evaluateExtendMorph      : ExtendMorphismTerm                                               -> SpecCalc.Env ValueInfo
+%%  op evaluateExtendMorph      : ExtendMorphismTerm                                               -> SpecCalc.Env ValueInfo
   op evaluateLispCompile      : ValueInfo * SCTerm * Option String * Bool                        -> SpecCalc.Env ValueInfo
   op evaluateLispCompileLocal : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
   op evaluateJavaGen          : ValueInfo * SCTerm * Option String                               -> SpecCalc.Env ValueInfo
