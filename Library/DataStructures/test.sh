@@ -5,8 +5,8 @@ then
     exit 1
 fi
 
-export SPECWARE4=$1
-echo "Library/DataStructures/test.sh: SPECWARE4 is ${SPECWARE4}."
+export SPECWARE4=$1 #do we need the export?
+#echo "Library/DataStructures/test.sh: SPECWARE4 is ${SPECWARE4}."
 ISABELLE_2013_2_ROOT=$2
 
 echo "  Testing Library/DataStructures:"
