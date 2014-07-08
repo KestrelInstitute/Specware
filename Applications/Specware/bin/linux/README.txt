@@ -15,13 +15,14 @@ list all the callers of each script, if there is any caller script
 that we have to keep, the callee script must also be kept -- unless we
 can refactor or unify scripts somehow):
 
-Specware-gnu - Preferred way on Linux to run Specware within emacs (TODO: get rid of the -gnu in the name)
-Specware4-shell-sbcl - Preferred way on Linux to run Specware in a terminal - TODO: rename to not have 4 in the name, after deleting the above script.
+Specware-gnu - TODO: Deprecate this (just use bin/specware-emacs).
+Specware4-shell-sbcl - TODO: deprecate this.  Now use bin/specware-shell.
 
+TODO: Consider deprecating these:
 Isabelle_Specware - Preferred way to run Isabelle with Specware? (doesn't seem to work on Linux for Eric)
 Emacs_Specware - used by Isabelle_Specware script (unify with Specware-gnu? - no, not meant to be called directly)
 
-SpecwareMac - Preferred way to run Specware on the Mac (click and you are left with the Specware Emacs window in focus)
+SpecwareMac - TODO: Deprecate this (just use bin/specware-emacs).
 
 bootstrap - main script for building Specware on Mac and Linux (SW builds Specware from emacs, runs elisp code, see the Windows scripts - these scripts possibly allow other lisps, uses more non-hardwired variables, could mimic what Windows does, e.g., with Set_Environment_Vars.cmd)
 Bootstrap_Specware - called by bootstrap
