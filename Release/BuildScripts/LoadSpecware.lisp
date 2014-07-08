@@ -144,16 +144,16 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setf (readtable-case *readtable*) :upcase))
 
-(handler-bind ((warning #'ignore-warning))
-  (load (make-pathname
-         :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
-         :type     "lisp")))
+;; (handler-bind ((warning #'ignore-warning))
+;;   (load (make-pathname
+;;          :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
+;;          :type     "lisp")))
 
-(format t "Loading Snark.")
-(handler-bind ((warning #'ignore-warning))
-  (cl-user::make-or-load-snark-system))
-(format t "~%Finished loading Snark.")
-(finish-output t)
+;; (format t "Loading Snark.")
+;; (handler-bind ((warning #'ignore-warning))
+;;   (cl-user::make-or-load-snark-system))
+;; (format t "~%Finished loading Snark.")
+;; (finish-output t)
 
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -162,7 +162,7 @@
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
-(in-package :Specware)
+;(in-package :Specware)
 
 ;; The following uses make-system from load-utilities above.
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
