@@ -1,7 +1,7 @@
 % Synchronized with version 1.8 of  SW4/Languages/MetaSlang/TypeChecker/TypeCheckUtilities.sl 
 
 Utilities qualifying spec
- import SpecToPosSpec                                   % for PosSpec's, plus convertType[Info]ToPType[Info]
+ %import SpecToPosSpec                                   % for PosSpec's, plus convertType[Info]ToPType[Info]
  import ../Printer                                      % error messages
  import /Library/Legacy/DataStructures/MergeSort        % combining error messages
  import /Library/Legacy/DataStructures/ListPair         % misc utility
