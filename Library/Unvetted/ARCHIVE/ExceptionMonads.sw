@@ -47,17 +47,15 @@ ExceptionMonad qualifying spec
      ExceptionMonad(exc,()) * ExceptionMonad(exc,a) -> ExceptionMonad(exc,a)
   def >>> (m1,m2) = m1 >> (fn _ -> m2)
 
-  import /Library/General/FiniteSequence
-
   % apply monadic computation f to sequence s from left to right, returning
   % resulting sequence if no exceptions, otherwise stop at first exception:
 
-  op mapSeq : [exc,a,b] (a -> ExceptionMonad(exc,b)) -> FSeq a ->
-                        ExceptionMonad (exc, FSeq b)
+  op mapSeq : [exc,a,b] (a -> ExceptionMonad(exc,b)) -> List a ->
+                        ExceptionMonad (exc, List b)
   def mapSeq f s =
     if empty? s then RETURN empty
-    else f (first s) >> (fn x ->
-         mapSeq f (rtail s) >> (fn r ->
+    else f (head s) >> (fn x ->
+         mapSeq f (tail s) >> (fn r ->
          RETURN (x |> r)))
 
   % apply sequence of monadic computations ff to equally long sequence s
@@ -65,12 +63,12 @@ ExceptionMonad qualifying spec
   % otherwise stop at first exception:
 
   op mapSeqSeq : [exc,a,b]
-     {(ff,s) : FSeq (a -> ExceptionMonad(exc,b)) * FSeq a | ff equiLong s} ->
-     ExceptionMonad (exc, FSeq b)
+     {(ff,s) : List (a -> ExceptionMonad(exc,b)) * List a | ff equiLong s} ->
+     ExceptionMonad (exc, List b)
   def mapSeqSeq (ff,s) =
     if empty? s then RETURN empty
-    else (first ff) (first s) >> (fn x ->
-         mapSeqSeq (rtail ff, rtail s) >> (fn r ->
+    else (head ff) (head s) >> (fn x ->
+         mapSeqSeq (tail ff, tail s) >> (fn r ->
          RETURN (x |> r)))
 
 endspec

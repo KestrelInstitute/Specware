@@ -42,19 +42,22 @@ StateMachine qualifying spec
 
   op traces : [state,transition] StateMachine(state,transition) ->
               Map (DiscreteTrace transition, ContinuousTrace state)
-  def [state,transition] traces mach = fn (trTr, stTr) ->
-    % initial state at the beginning of time:
-    stTr zero = mach.init
-    &&
-    % if no transition between t (inclusive) and t1 (exclusive), no state change:
-    (fa (t:Time, t1:Time)
-       t < t1 && empty? (trTr before t1 notBefore t) =>
-       stTr t1 = stTr t)
-    &&
-    % if tr occurs at t and no other transition occurs before t1, change state:
-    (fa (t:Time, t1:Time, tr:transition)
-       t < t1 && (t,tr) in? trTr && empty? (trTr before t1 after t) =>
-       mach.old tr = stTr t && mach.new tr = stTr t1)
+  def [state,transition] traces mach = fn trTr -> Some
+    (the(stTr)
+      % initial state at the beginning of time:
+      stTr zero = mach.init
+      &&
+      % if no transition between t (inclusive) and t1 (exclusive),
+      % no state change:
+      (fa (t:Time, t1:Time)
+        t < t1 && empty? (trTr before t1 notBefore t) =>
+        stTr t1 = stTr t)
+      &&
+      % if tr occurs at t and no other transition occurs before t1,
+      % change state:
+      (fa (t:Time, t1:Time, tr:transition)
+        t < t1 && trTr t = Some tr && empty? (trTr before t1 after t) =>
+        mach.old tr = stTr t && mach.new tr = stTr t1))
 
   % return only transition traces of machine:
 

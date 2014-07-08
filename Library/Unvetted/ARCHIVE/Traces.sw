@@ -34,7 +34,7 @@ Trace qualifying spec
   types of discrete traces: one with a finite number of elements in every time
   interval, and one with a potentially infinite number. *)
 
-  import /Library/General/Maps
+  import /Library/General/Map
 
   type DiscreteTrace a =
     {tr : Map (Time, a) | fa(interval:Range) finite? (tr restrictDomain interval)}

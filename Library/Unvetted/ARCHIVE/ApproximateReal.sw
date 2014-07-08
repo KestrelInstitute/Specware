@@ -18,7 +18,7 @@ standard.
 *)
 
 ApproximateReal qualifying spec
-  import /Library/Unvetted/Rational
+  import /Library/Unvetted/ARCHIVE/Rational
 
   type Real
 
@@ -30,7 +30,7 @@ ApproximateReal qualifying spec
   op <  infixl 20 : Real * Real -> Bool
   op >= infixl 20 : Real * Real -> Bool
   op >  infixl 20 : Real * Real -> Bool
-  op Real_.-      : Real -> Real
+  op Real.-       : Real -> Real
   op abs          : Real -> NonNegativeReal
   op min          : Real * Real -> Real
   op max          : Real * Real -> Real
@@ -75,16 +75,16 @@ ApproximateReal qualifying spec
   def closestTo(x, r) = fa(x1 : Real)
                             abs(realToRat x - r) <= abs(realToRat x1 - r)
 
-  def + (x,y) = the (fn z -> z closestTo (realToRat x + realToRat y))
-  def - (x,y) = the (fn z -> z closestTo (realToRat x - realToRat y))
-  def * (x,y) = the (fn z -> z closestTo (realToRat x * realToRat y))
-  def / (x,y) = the (fn z -> z closestTo (realToRat x / realToRat y))
+  def + (x,y) = the(z) z closestTo (realToRat x + realToRat y)
+  def - (x,y) = the(z) z closestTo (realToRat x - realToRat y)
+  def * (x,y) = the(z) z closestTo (realToRat x * realToRat y)
+  def / (x,y) = the(z) z closestTo (realToRat x / realToRat y)
 
   def <  (x,y) = realToRat x < realToRat y
   def <= (x,y) = x < y || x = y
   def >= (x,y) = y >= x
 
-  def Real_.-x = zero-x
+  def Real.-x = zero-x
 
   def abs x = if nonNegative? x then x else -x
 

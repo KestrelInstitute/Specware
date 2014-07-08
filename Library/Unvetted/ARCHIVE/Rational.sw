@@ -132,7 +132,7 @@ RationalNumber qualifying spec
 
   % min/max:
 
-  import /Library/General/Sets
+  import /Library/General/Set
 
   op isMinIn infixl 20 : Rational * Set Rational -> Bool
   def isMinIn (r, sr) = r in? sr && (fa(r1) r1 in? sr => r <= r1)
@@ -170,8 +170,8 @@ RationalNumber qualifying spec
   op  toString : Rational -> String
   def toString r =
     let (num, den) = (numerator r, denominator r) in
-    if den = 1 then toString num
-    else (toString num)^"/"^(Nat.toString den)
+    if den = 1 then intToString num
+    else (intToString num)^"/"^(natToString den)
 
   % ranges ("C" = "closed", "O" = "open"):
 

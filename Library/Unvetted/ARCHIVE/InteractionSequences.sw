@@ -44,7 +44,7 @@ endspec
 body = InteractionSequence qualifying spec
 
   import param,  % includes parameters
-         /Library/General/FiniteSequence, Traces
+         Traces
 
   (* Given events and the partitioning predicate input?, we can define the
   complementary predicate output? as well as subtypes for input and output
@@ -132,7 +132,7 @@ body = InteractionSequence qualifying spec
 
   type InteractionSequence =
     {first : InputEvent,
-     rest  : {rest : NonEmptyFSeq (EventSeparation * Event) |
+     rest  : {rest : List1 (EventSeparation * Event) |
               % last event is output event:
               output? (last rest).2 &&
               % all separation constraints refer to existing previous events:
@@ -146,7 +146,7 @@ body = InteractionSequence qualifying spec
   come one after the other, in the order that they appear in the sequence. *)
 
   type EventSeq =
-    {teS : NonEmptyFSeq (Time * Event) |
+    {teS : List1 (Time * Event) |
      fa(i:Nat) i < length teS - 1 => (teS@i).1 < (teS@(i+1)).1}
 
   (* The following op returns the time of the last event in the sequence. *)
@@ -161,7 +161,7 @@ body = InteractionSequence qualifying spec
   op timeOfLastOutputEventOrFirstEvent : EventSeq -> Time
   def timeOfLastOutputEventOrFirstEvent evSeq =
     let outEvSeq = filter (fn te -> output? te.2) evSeq in
-    if empty? outEvSeq then (first evSeq).1
+    if empty? outEvSeq then (head evSeq).1
     else (last outEvSeq).1
 
   (* The following auxiliary predicate holds iff the instant t (at which some
@@ -217,7 +217,7 @@ body = InteractionSequence qualifying spec
      DiscreteTrace Event -> InputEvent -> Time -> Time -> Bool
   def onlyInputAtAfter? evTr ev t1 t =
     t1 > t &&
-    evTr suchThat input? after t notAfter t1 = single (t1, ev)
+    evTr suchThat input? after t notAfter t1 = single t1 ev
 
   (* The following predicate says that, in an event trace, the output event ev
   occurs at time t1 after t and that no other output event occurs between t
@@ -230,7 +230,7 @@ body = InteractionSequence qualifying spec
      DiscreteTrace Event -> OutputEvent -> Time -> Time -> Bool
   def onlyOutputAtAfter? evTr ev t1 t =
     t1 > t &&
-    evTr suchThat output? after t notAfter t1 = single (t1, ev)
+    evTr suchThat output? after t notAfter t1 = single t1 ev
 
   (* The following ops formalize the semantics of an interaction sequence. In
   order to understand them, let us start by explaining the semantics of some
@@ -544,7 +544,7 @@ body = InteractionSequence qualifying spec
 
   op eventTraceConstraintAux :
      {(previousEvents,nextEventsWithSeparations) :
-      EventSeq * FSeq (EventSeparation * Event) |
+      EventSeq * List (EventSeparation * Event) |
       fa(i:Nat) i < length nextEventsWithSeparations =>
         validEventSeparation? (length previousEvents + i)
                               (nextEventsWithSeparations @ i).1} ->
@@ -553,7 +553,7 @@ body = InteractionSequence qualifying spec
     % if no more events, we are done, return true (i.e. no constraint on evTr):
     if empty? nextEventsWithSeparations then true else
     % consider next event with its separation constraints:
-    let (evSep, ev) = first nextEventsWithSeparations in
+    let (evSep, ev) = head nextEventsWithSeparations in
     % construct subformula for input event:
     if input? ev then
       (fa(t:Time)  % universal quantification
@@ -562,7 +562,7 @@ body = InteractionSequence qualifying spec
            evTr ev t (timeOfLastEvent previousEvents)
          =>  % implication
          eventTraceConstraintAux  % recursively process following events
-           (previousEvents <| (t, ev), rtail nextEventsWithSeparations) evTr)
+           (previousEvents <| (t, ev), tail nextEventsWithSeparations) evTr)
     % construct subformula for output event:
     else (* output? ev *)
       (noInputsUntilOutput?
@@ -575,7 +575,7 @@ body = InteractionSequence qualifying spec
             evTr ev t (timeOfLastOutputEventOrFirstEvent previousEvents)
           &&  % conjunction
           eventTraceConstraintAux  % recursively process following events
-            (previousEvents <| (t, ev), rtail nextEventsWithSeparations) evTr))
+            (previousEvents <| (t, ev), tail nextEventsWithSeparations) evTr))
 
   op eventTraceConstraint :
      InteractionSequence -> (Time -> Bool) -> DiscreteTrace Event -> Bool
@@ -584,7 +584,7 @@ body = InteractionSequence qualifying spec
       % t satisfies the given condition:
       cond t &&
       % first input event occurs at t:
-      (t, intSeq.first) in? evTr =>  % implication
+      evTr t =Some intSeq.first =>  % implication
       % recursively process the events after the first:
       eventTraceConstraintAux (single (t, intSeq.first), intSeq.rest) evTr
 

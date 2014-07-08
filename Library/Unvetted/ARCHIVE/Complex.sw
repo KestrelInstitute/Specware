@@ -7,7 +7,9 @@
 
 Complex qualifying spec
 %  import Pretty
-  import Double
+  import /Library/Unvetted/Double
+
+  type Complex
 
   op String.toComplex  : String -> Complex
   op Integer.toComplex : Int    -> Complex
