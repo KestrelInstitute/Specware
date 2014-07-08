@@ -29,7 +29,7 @@ op printQuantifiersWithType?: Bool = true
 op autoProof: String = "by auto"
 op addExplicitTyping?: Bool = true
 op targetFunctionDefs?: Bool = true
-op unfoldMonadBinds?: Bool = true
+op unfoldMonadBinds?: Bool = false %% true  %% Seems to do too much (e.g., inlining leftmostPositionSuchThat in findLeftmostAndPreceding in Library/General/Stream.sw)
 op isaDirectoryName: String = "Isa"
 
  type Pretty = PrettyPrint.Pretty
