@@ -7,7 +7,7 @@ Guesses at the status of these files:
 
 main scripts under Scripts/unix/ :
 
- Generate_Lisp  -- process .sw files to create <application>.lisp
+ Generate_Lisp  -- process .sw files to create <application>.lisp (used in JCRE by JCRE/Scripts/unix/JCRE_Client_Generate_Lisp and JCRE/Scripts/unix/JCRE_Simulator_Generate_Lisp, also used in jflaws and autosmart)
  Compile_Lisp   -- compile the <application>.lisp file created above
  Build_Dev      -- load various application files and create lisp image for internal development
  Build_App      -- load various application files and create lisp runtime image (such that user needs no licenses except from Kestrel)
@@ -18,7 +18,7 @@ support scripts under Scripts/unix/ :
  Verify_Specware - unused for now
 
  Verify_Lisp    -- call one of following (Jim uses this)
- Verify_SBCL    -- find SBCL images, set up shell vars, etc. (Jim uses this)
+ Verify_SBCL    -- find SBCL images, set up shell vars, etc. (Jim uses this and so does Specware4-shell-sbcl [which will soon be deprecated])
  Verify_ACL     -- find ACL     images, set up shell vars, etc. TODO deprecate? (Used by PSL?)
  Verify_CMUCL   -- find CMUCL   images, set up shell vars, etc. TODO deprecate?
  Verify_OpenMCL -- find OpenMCL images, set up shell vars, etc. TODO deprecate?
