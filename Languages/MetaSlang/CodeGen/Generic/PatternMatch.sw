@@ -86,14 +86,17 @@ PatternMatch qualifying spec
  op mkFail_id   : Id        = "mkFail"              
  op mkFail_name : OpName    = Qualified (mkFail_q, mkFail_id) 
 
- op mkFail (ctx : Context, typ : MSType, _ : MSTerm) : MSTerm =
+ op mkFail (ctx : Context, typ : MSType, tm : MSTerm) : MSTerm =
   %% Generate the continuation catch all case given a set of pattern matching rules.
   let index = ! ctx.error_index + 1 in
   (ctx.error_index := index;
    let typ1 = mkArrow (typ, typ) in
-   let msg  = "ERROR: Nonexhaustive match failure [\#" ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name) in
+   % let _ = writeLine("mkfail called with\n"^printTerm tm) in
+   let msg  = "ERROR: Nonexhaustive match failure [\#"
+             ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name)
+             ^ "~%~s" in
    mkApply (mkOp (mkFail_name, typ1),
-            mkString msg))
+            mkTuple[mkString msg, tm]))
 
  op isFail? (trm : MSTerm) : Bool = 
   case trm of
@@ -1022,24 +1025,23 @@ PatternMatch qualifying spec
                       vs      : List (String * MSVar),
                       term    : MSTerm) 
   : MSRules * MSTerm = 
-  let 
+  let
+     def termFrom_vs(vs) =
+       case vs of
+         | [(_, v)] -> Var (v, noPos)
+         | _ -> Record (map (fn (index, v) -> (index, mkVar v)) vs, 
+                        noPos) 
      def loop (msrules, first_msrules) =
        case msrules of
 
          | [] -> 
-           (reverse first_msrules, mkFail (ctx, typ, term))
+           (reverse first_msrules, mkFail (ctx, typ, termFrom_vs vs))
 
          | [(WildPat _, Fun (Bool true, _, _), body)] ->
            (reverse first_msrules, body)
 
          | [(VarPat (v, _), Fun (Bool true, _, _), body)] ->
-           let term =
-               case vs of
-                 | [(_, v)] -> Var (v, noPos)
-                 | _ -> Record (map (fn (index, v) -> (index, mkVar v)) vs, 
-                                noPos) 
-           in
-           let body = mkLet ([(VarPat (v, noPos), term)], body) in
+           let body = mkLet ([(VarPat (v, noPos), termFrom_vs vs)], body) in
            (reverse first_msrules, body)
 
          | msrule :: msrules ->
@@ -1175,7 +1177,7 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
        let body = match (ctx,
                          map mkVar vs,
                          pmrules,
-                         mkFail (ctx, body_type, term),
+                         mkFail (ctx, body_type, trm),
                          mkBreak body_type) 
        in
        let pat = case indices_and_vs of 
