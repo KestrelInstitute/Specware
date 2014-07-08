@@ -137,20 +137,18 @@
    (declare (ignore condition))
    (muffle-warning))
 
-#||
-(let ((*readtable* (copy-readtable nil)))
-  (handler-bind ((warning #'ignore-warning))
-    (load (make-pathname
-           :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
-           :type     "lisp")))
+;; (let ((*readtable* (copy-readtable nil)))
+;;   (handler-bind ((warning #'ignore-warning))
+;;     (load (make-pathname
+;;            :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
+;;            :type     "lisp")))
 
-  (format t "Loading Snark.")
-  (handler-bind ((warning #'ignore-warning))
-    (cl-user::make-or-load-snark-system))
-  (format t "~%Finished loading Snark.")
-  (finish-output t)
-  )
-||#
+;;   (format t "Loading Snark.")
+;;   (handler-bind ((warning #'ignore-warning))
+;;     (cl-user::make-or-load-snark-system))
+;;   (format t "~%Finished loading Snark.")
+;;   (finish-output t)
+;;   )
 
 (declaim (optimize (speed 3) (debug #+sbcl 3 #-sbcl 2) (safety 1)))
 
