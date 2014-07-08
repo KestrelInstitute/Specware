@@ -14,8 +14,12 @@
 # EOF
 
 
-# If this isn't set, things currently fail in a confusing way:
-export SWPATH="$SPECWARE4:/"
+# If SWPATH isn't set, things currently fail in a confusing way:
+# To override this, set SWPATH before calling this script:
+if [ -z $SWPATH ] ; then
+    SWPATH="$SPECWARE4:/"
+fi
+export SWPATH
 
 #FIXME: Perhaps die if this is not set by the caller?
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
