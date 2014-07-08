@@ -10,7 +10,7 @@ ISABELLE_2013_2_ROOT=$2
 
 
 echo "Running a tiny test of the Transform shell."
-LOG=TinyTransformShellTest.swlog
+LOG=${SPECWARE4}/Examples/Misc/TinyTransformShellTest.swlog
 run-specware-batch.sh ${SPECWARE4} ${LOG} <<EOFMARKER
 transform TinyTransformShellTest
 at f
