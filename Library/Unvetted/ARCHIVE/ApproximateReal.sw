@@ -18,7 +18,7 @@ standard.
 *)
 
 ApproximateReal qualifying spec
-  import /Library/Unvetted/ARCHIVE/Rational
+  import Rational
 
   type Real
 
