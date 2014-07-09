@@ -1,28 +1,28 @@
 Unifier qualifying
 spec
- import /Languages/MetaSlang/Specs/StandardSpec
- type Subst = List (Var * MS.Term)
- type Vars = List Var
+ import /Languages/MetaSlang/Specs/Utilities
+ type Subst = List (MSVar * MSTerm)
+ type Vars = List MSVar
 
  op empty: Subst
  def empty = []
 
- op lookup: Subst * Var -> Option MS.Term
+ op lookup: Subst * MSVar -> Option MSTerm
  def lookup(sbst,v) =
    case sbst of
      | [] -> None
      | (vi,vali)::rsbst ->
        if vi = v then Some vali else lookup(rsbst,v)
 
- op addToSubst: Subst * Var * MS.Term -> Subst
+ op addToSubst: Subst * MSVar * MSTerm -> Subst
  def addToSubst(sb,v,t) = Cons((v,t),sb)
 
- op unify: MS.Term * MS.Term * Vars -> Option Subst
+ op unify: MSTerm * MSTerm * MSVars -> Option Subst
  def unify (t1, t2, vs) =
    unifyRec(t1, t2, empty, vs)
 
- op unifyList: [a] List a * List a * Subst * Vars
-                     * (a * a * Subst * Vars -> Option Subst)
+ op unifyList: [a] List a * List a * Subst * MSVars
+                     * (a * a * Subst * MSVars -> Option Subst)
                    -> Option Subst
  def unifyList(t1s, t2s, sb, vs, subFn) =
    if ~(length t1s = length t2s)
@@ -35,23 +35,23 @@ spec
 	  | None -> None
 	  | Some sb -> unifyList(rt1s,rt2s,sb,vs,subFn)
 
- op unifyRec: MS.Term * MS.Term * Subst * Vars -> Option Subst
+ op unifyRec: MSTerm * MSTerm * Subst * MSVars -> Option Subst
  def unifyRec(t1, t2, sb, vs) =
   case (t1, t2) of
      | (Var(v1,_), t2) ->
-       if member(v1,vs)
+       if inVars?(v1,vs)
 	 then (case lookup(sb,v1) of
 	        | Some t1n -> unifyRec(t1n, t2, sb, vs)
 	        | None -> Some(addToSubst(sb,v1,t2)))
        else (case t2 of
 	       | Var(v2,_) ->
-	         if member(v2,vs)
+	         if inVars?(v2,vs)
 		   then (case lookup(sb,v2) of
 	                   | Some t2n -> unifyRec(t1, t2n, sb, vs)
 			   | None -> Some(addToSubst(sb,v2,t1)))
 		  else if v1 = v2 then Some sb else None)
      | (t1, Var(v2,_)) ->
-       if member(v2,vs)
+       if inVars?(v2,vs)
 	 then case lookup(sb,v2) of
 	       | Some t2n -> unifyRec(t1, t2n, sb, vs)
 	       | None -> Some(addToSubst(sb,v2,t1))
