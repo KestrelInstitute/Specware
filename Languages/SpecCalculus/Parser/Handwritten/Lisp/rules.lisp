@@ -228,8 +228,15 @@
   (make-sc-relative-unit-id 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FRAGMENT-ID ()
+  (:anyof :FRAGMENT-ID-A :FRAGMENT-ID-B))
+
+(define-sw-parser-rule :FRAGMENT-ID-A ()
   (:tuple (1 :CHARACTER) (:optional (2 :NUMBER)) (:optional (3 :NAME)))
-  (make-fragment-id 1 2 3 ':left-lcb ':right-lcb))
+  (make-fragment-id 1 "" 2 3 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :FRAGMENT-ID-B ()
+  (:tuple (1 :CHARACTER) "_" (:optional (2 :NUMBER)) (:optional (3 :NAME)))
+  (make-fragment-id 1 "_" 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-UNIT-ID-PATH ()
   (:repeat+ :SC-UNIT-ID-ELEMENT "/"))

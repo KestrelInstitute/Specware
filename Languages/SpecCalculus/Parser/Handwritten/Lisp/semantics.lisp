@@ -212,10 +212,11 @@
 		sc-unit-id-path))))
     (SpecCalc::mkUnitId-2 uid (make-pos l r))))
 
-(defun make-fragment-id (char optional-number optional-symbol l r)
+(defun make-fragment-id (char possible-underbar optional-number optional-symbol l r)
   (declare (ignore l r))
   (let ((fragment-id 
-	 (format nil "~A~A~A"
+	 (format nil "~A~A~A~A"
+                 possible-underbar
 		 (if (member char '(#\space #\tab))
 		     "" 
 		   (format nil "~C" char))
