@@ -289,12 +289,12 @@
 (defun cl-user::sw-shell ()
   (specware-shell nil))
 
-;;This is currently a top-level entry point (called from Eddy's bin/specware script and Applications/Specware/bin/linux/Specware4-shell-sbcl):
+;;This is currently a top-level entry point (called from sw-init.el):
 (defun specware-shell (exiting-lisp?)
   (Specware::check-license)
   (aux-specware-shell exiting-lisp? #'process-sw-shell-command))
 
-;;This is currently a top-level entry-point (called from bin/specware-shell).
+;;This is currently a top-level entry point (called from bin/specware-shell).
 (defun specware-shell-no-emacs ()
   (progn (setq Emacs::*use-emacs-interface?* nil) 
          (format t "Welcome to Specware version ~a!~%" cl-user::*Specware-Version*)
@@ -564,6 +564,12 @@
 
 ;; This is currently a top-level entry point (called from Applications/Specware/bin/linux/specware-batch.sh):
 ;; Process a sequence of Specware commends in batch mode.  Commands come in separated by newlines.
+;; Maybe this function, in its current form, isn't really needed (you
+;; can just pipe a bunch of commands into Specware? but I may have
+;; seen that fail in some cases?). However, I'd like to augment this to
+;; catch and report errors better (and stop processing commands at the
+;; first error).
+
 (defun process-batch-commands ()
   (progn 
     (format t "Processing batch Specware commands:~%")
