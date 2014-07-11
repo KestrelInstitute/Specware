@@ -216,10 +216,10 @@
   (declare (ignore l r))
   (let ((fragment-id 
 	 (format nil "~A~A~A~A"
-                 possible-underbar
 		 (if (member char '(#\space #\tab))
 		     "" 
 		   (format nil "~C" char))
+                 possible-underbar
 		 (if (eq optional-number :unspecified)
 		     "" 
 		   (format nil "~D" optional-number))
