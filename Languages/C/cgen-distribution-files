@@ -146,10 +146,5 @@ Languages/MetaSlang/CodeGen/C/Clib/Makerules
 Languages/MetaSlang/CodeGen/C/Clib/SWC_Common.h
 Languages/MetaSlang/CodeGen/C/Clib/SWC_Memory.h
 Languages/MetaSlang/CodeGen/C/Clib/SWC_Memory.c
-Languages/MetaSlang/CodeGen/C/Examples/Makefile
-Languages/MetaSlang/CodeGen/C/Examples/QuickSortWithMain.sw
-Languages/MetaSlang/CodeGen/C/Examples/QuickSort.sw
-Languages/MetaSlang/CodeGen/C/Examples/main.c
-Languages/MetaSlang/CodeGen/C/Examples/BitString.sw
 Languages/MetaSlang/CodeGen/C/README.CCodeGen
 

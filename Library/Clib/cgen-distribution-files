@@ -1,6 +1,3 @@
-Examples/BitString.sw
-Examples/main.c
-Examples/Makefile
 gc6.6/acinclude.m4
 gc6.6/aclocal.m4
 gc6.6/add_gc_prefix.c

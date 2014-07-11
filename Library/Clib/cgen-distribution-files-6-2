@@ -146,10 +146,4 @@ Makerules
 SWC_Common.h
 SWC_Memory.h
 SWC_Memory.c
-Examples/Makefile
-Examples/QuickSortWithMain.sw
-Examples/QuickSort.sw
-Examples/main.c
-Examples/queens.sw
-Examples/BitString.sw
 README.CCodeGen
