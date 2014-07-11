@@ -73,10 +73,3 @@ else
     echo "ERROR: Unsupported Unix type: $UNIXNAME.  Must be Linux or Darwin."
     exit 1
 fi
-
-
-
-
-
-
-
