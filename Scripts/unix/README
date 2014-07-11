@@ -18,7 +18,7 @@ support scripts under Scripts/unix/ :
  Verify_Specware - unused for now
 
  Verify_Lisp    -- call one of following (Jim uses this)
- Verify_SBCL    -- find SBCL images, set up shell vars, etc. (Jim uses this and so does Specware4-shell-sbcl [which will soon be deprecated])
+ Verify_SBCL    -- find SBCL images, set up shell vars, etc. (Jim uses this)
  Verify_ACL     -- find ACL     images, set up shell vars, etc. TODO deprecate? (Used by PSL?)
  Verify_CMUCL   -- find CMUCL   images, set up shell vars, etc. TODO deprecate?
  Verify_OpenMCL -- find OpenMCL images, set up shell vars, etc. TODO deprecate?

@@ -16,7 +16,6 @@ that we have to keep, the callee script must also be kept -- unless we
 can refactor or unify scripts somehow):
 
 Specware-gnu - TODO: Deprecate this (just use bin/specware-emacs).
-Specware4-shell-sbcl - TODO: deprecate this.  Now use bin/specware-shell.
 
 TODO: Consider deprecating these:
 Isabelle_Specware - Preferred way to run Isabelle with Specware? (doesn't seem to work on Linux for Eric)
