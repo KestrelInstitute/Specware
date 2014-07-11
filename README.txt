@@ -35,11 +35,8 @@ directory.
 (despite the 'linux' in the name, this script should work on MacOS as
 well).
 
-4a. On Linux, to start a new emacs with Specware running in it, execute:
-Specware/Applications/Specware/bin/linux/Specware-gnu
-
-4b. On Mac OS X, to start a new emacs with Specware running in it, execute:
-Specware/Applications/Specware/bin/linux/SpecwareMac
+4. On Linux or Mac OS X, to start a new emacs with Specware running
+in it, execute: Specware/bin/specware-emacs
 
 TODO: Add instructions for building on Windows.
 
