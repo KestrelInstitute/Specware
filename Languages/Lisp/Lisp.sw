@@ -381,16 +381,16 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
                                     i + 1)
                in 
                let _ = writeSubFiles (defs, 1) in
-               let _ = app (fn fm -> 
-                              let t = format (120, ppTerm fm) in
-                              let _ = toStreamT (t,
-                                                 fn (_, string) -> streamWriter (stream, string),
-                                                 fn (n)         -> streamWriter (stream, newlineAndBlanks n))
-                              in
-                              streamWriter(stream,"\n"))
-                           spc.forms
-               in
                ()
+     in
+     let _ = app (fn fm ->
+                    let t = format (120, ppTerm fm) in
+                    let _ = toStreamT (t,
+                                       fn (_, string) -> streamWriter (stream, string),
+                                       fn (n)         -> streamWriter (stream, newlineAndBlanks n))
+                    in
+                    streamWriter(stream,"\n"))
+                 spc.forms
      in
      let _ = case spc.verbatims.post of
                | [] -> ()
