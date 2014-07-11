@@ -61,19 +61,61 @@ SCParser qualifying spec
  op mkPrint (term : SCTerm, left : LCB, right : LCB) : SCTerm = 
   SpecCalc.mkPrint (term, mkRegion left right)
 
+ op parseUnitId (str : String, left : LCB, right : LCB) : SCTerm =
+  %% We assume str is a sequence of non-whitespace chars.
+  %% If the first char is a slash, this is SpecPath_Relative, else UnitId_Relative.
+  %% The string is split at slashes, and then the final element is split at the first 
+  %% hash mark (if any).
+  %% Examples:
+  %% "a/b/c"        ==>  UnitId_Relative   {path = ["a", "b",   "c"], suffix = None}
+  %% "/a/b/c"       ==>  SpecPath_Relative {path = ["a", "b",   "c"], suffix = None}
+  %% "/a/b#c/x#y#z" ==>  SpecPath_Relative {path = ["a", "b#c", "x"], suffix = Some "y#z"}
+
+  let region = mkRegion left right in
+  let chars  = explode str         in
+  let (absolute?, chars) = 
+      case chars of
+        | #/ :: tail -> (true,  tail)
+        | _ ->          (false, chars)
+  in
+  let
+    def split_at_slashes chars =
+      case splitAtLeftmost (fn c -> c = #/) chars of
+        | Some (x, _, tail) -> x |> (split_at_slashes tail)
+        | _ -> [chars]
+  in
+  let lists_of_chars = split_at_slashes chars in
+  let all_but_last   = butLast lists_of_chars in 
+  let final          = last    lists_of_chars in 
+  let (final, suffix) =
+      case splitAtRightmost (fn c -> c = #\#) final of
+        | Some (x, _, y) -> (x,     Some (implode y))
+        | _              -> (final, None)
+  in
+  let path_and_suffix = {path       = map implode (all_but_last <| final),
+                         hashSuffix = suffix}  
+  in
+  let uid = 
+      if absolute? then
+        SpecPath_Relative path_and_suffix % relative to SPECPATH
+      else
+        UnitId_Relative   path_and_suffix % relative to current unit id
+  in
+  SpecCalc.mkUnitId (uid, mkRegion left right)
+             
  op mkAbsoluteUnitId (path               : List String, 
-                               parsed_fragment_id : ParserOptional String,
-                               left               : LCB, 
-                               right              : LCB) 
+                      parsed_fragment_id : ParserOptional String,
+                      left               : LCB, 
+                      right              : LCB) 
   : SCTerm = 
   let suffix : Option String = defaultToNone parsed_fragment_id in
   let uid = SpecPath_Relative {path = path, hashSuffix = suffix} in % relative to SPECPATH
   SpecCalc.mkUnitId (uid, mkRegion left right)
 
  op mkRelativeUnitId (path               : List String, 
-                                parsed_fragment_id : ParserOptional String,
-                                left               : LCB, 
-                                right              : LCB) 
+                      parsed_fragment_id : ParserOptional String,
+                      left               : LCB, 
+                      right              : LCB) 
   : SCTerm = 
   let suffix : Option String = defaultToNone parsed_fragment_id in
   let uid = UnitId_Relative {path = path, hashSuffix = suffix} in  % relative to current unit id
