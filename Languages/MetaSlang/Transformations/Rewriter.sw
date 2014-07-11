@@ -34,7 +34,7 @@ MetaSlangRewriter qualifying spec
  type RRResult = MSTerm * RRResultInfo
 
  % Flag for debugging
- op debugRRPaths : Bool = true
+ op debugRRPaths : Bool = false
 
  % Get the path from a RRResultInfo
  op infoPath ((_, _, path, _, _): RRResultInfo) : Path = path
@@ -1169,13 +1169,13 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 %      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 % 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
    let rules = addDemodRules(rules.unconditional ++ rules.conditional,Demod.empty) in
-   case rewriteRecursivePre(context<<{traceRewriting=1},boundVars,rules,term) of
+   case rewriteRecursivePre(context,boundVars,rules,term) of
      | Nil -> None
      | Cons ([], _) -> None
      | Cons (history as (_,out_term,_,_)::_, _) ->
        Some (out_term, combineHistoryProofs (term, inferType (context.spc, term), history))
 
- def rewriteRecursivePre(context, boundVars, rules0, term) = 
+ def rewriteRecursivePre(context, boundVars, rules0, term) =
    let
      def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
        if trueTerm? term then Some (emptySubstitution, prove_true)
