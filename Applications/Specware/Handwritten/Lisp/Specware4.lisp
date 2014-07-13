@@ -198,8 +198,8 @@
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
     "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
-    "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
-    "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
+    ;; "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
+    ;; "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
     "Provers/DP/Handwritten/Lisp/Rational.lisp"
     "Release/Generic/CheckLicense.lisp"          ; license checking code
     )
@@ -247,7 +247,7 @@
 
     ;; XML support -- this provides hooks for reading/writing ad hoc structures
     ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
-    "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
+    ;; "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
 
     ;; Preface.lisp defines misc things called by Specware4.lisp code, 
     ;; so that compiling Specware4.lisp won't genereate compiler warnings.
@@ -259,7 +259,7 @@
 
     ;; XML support -- this calls code generated in Specware4.lisp for various XML definitions
     ;; maybe interface would be a better name
-    "Languages/XML/Handwritten/Lisp/Support.lisp"
+    ;; "Languages/XML/Handwritten/Lisp/Support.lisp"
 
     ;; Toplevel commands 
     "Applications/Specware/Handwritten/Lisp/toplevel"
@@ -276,14 +276,14 @@
     "Applications/Handwritten/Lisp/test-harness"
 
     ;; XML-RPC
-    "Library/IO/XmlRpc/s-xml/package"
-    "Library/IO/XmlRpc/s-xml/xml"
-    "Library/IO/XmlRpc/s-xml-rpc/base64"
-    "Library/IO/XmlRpc/s-xml-rpc/package"
-    "Library/IO/XmlRpc/s-xml-rpc/sysdeps"
-    "Library/IO/XmlRpc/s-xml-rpc/xml-rpc"
-    "Library/IO/XmlRpc/s-xml-rpc/extensions"
-    "Library/IO/XmlRpc/load-xml-rpc"
+    ;; "Library/IO/XmlRpc/s-xml/package"
+    ;; "Library/IO/XmlRpc/s-xml/xml"
+    ;; "Library/IO/XmlRpc/s-xml-rpc/base64"
+    ;; "Library/IO/XmlRpc/s-xml-rpc/package"
+    ;; "Library/IO/XmlRpc/s-xml-rpc/sysdeps"
+    ;; "Library/IO/XmlRpc/s-xml-rpc/xml-rpc"
+    ;; "Library/IO/XmlRpc/s-xml-rpc/extensions"
+    ;; "Library/IO/XmlRpc/load-xml-rpc"
 
     )
   )

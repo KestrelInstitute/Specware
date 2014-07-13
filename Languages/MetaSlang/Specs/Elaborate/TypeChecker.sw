@@ -23,7 +23,6 @@ import Infix
 import Utilities
 import PosSpecToSpec
 import /Languages/MetaSlang/Transformations/CurryUtils
-import TypeToTerm    % XML hacks
 
 %% ========================================================================
 
@@ -1130,11 +1129,6 @@ op elaborateTerm(env:LocalEnv, trm:MSTerm, term_type:MSType, args:MSTerms):MSTer
             else if f1 = NotEquals then
               %let t1 = adjustEqualityType (env, s1, t1, t2) in
               ApplyN ([t1, t2], pos)
-            else if typeCognizantOperator? f1 then
-              addTypeAsLastTerm (env, 
-                                 trm,
-                                 ApplyN ([t1, t2], pos),
-                                 term_type)
             else
               ApplyN ([t1, t2], pos)
 
@@ -1281,47 +1275,6 @@ def makeEqualityType (ty, pos) =
   Arrow (Product ([("1", ty), ("2", ty)], noPos), 
          type_bool,
          pos)
-
-% ========================================================================
-
-%% express as table to simplify ad hoc additions via lisp code:
-def typeCognizantOperators : List (Id * Id) =
-  [ %% input
-
-    ("XML" ,          "readXMLFile"),
-    (UnQualified, "readXMLFile"),
-
-    ("XML" ,          "parseXML"),
-    (UnQualified, "parseXML"),
-
-    ("XML" ,          "parseUnicodeXML"),
-    (UnQualified, "parseUnicodeXML"),
-
-    ("XML",           "internalize_Document"), 
-    (UnQualified, "internalize_Document"), 
-
-    ("XML",           "internalize_Element"), 
-    (UnQualified, "internalize_Element"), 
-
-    %% output
-
-    ("XML" ,          "writeXMLFile"),
-    (UnQualified, "writeXMLFile"),
-
-    ("XML" ,          "printXML"),
-    (UnQualified, "printXML"),
-
-    ("XML" ,          "printUnicodeXML"),
-    (UnQualified, "printUnicodeXML")
-
-   ]
-
-def typeCognizantOperator? (f1 : MSFun) : Bool = 
-  case f1 of
-    | TwoNames (id1, id2, _) ->
-      (id1, id2) in? typeCognizantOperators
-    | _ -> false
-
 
 % ========================================================================
 op findSuperTypeDominatingTerm (env: LocalEnv) (tms: MSTerms): Option (MSTerm * MSType) =
