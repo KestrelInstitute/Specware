@@ -1299,6 +1299,7 @@ SpecNorm qualifying spec
              id)
       t
 
+  % Look up the qid_P op for qid used to lift subtype predicates to qid
   op hoSubtypePredicateForType(qid as Qualified(q,id): QualifiedId, tys: MSTypes, param_ty: MSType, spc: Spec)
      : Option MSTerm =
     let pred_qid = Qualified(q,id^"_P") in
@@ -1310,7 +1311,10 @@ SpecNorm qualifying spec
                                            mkArrow(param_ty, boolType))),
                     pred_args))
 
+  % Build a pattern for matching subterms of a datatype along with a
+  % term expressing the lifting predicate for the type of the subterm
   op typePattern(ty: MSType, spc: Spec): MSPattern * MSTerm =
+    % NOTE: i here is for making fresh variable names
     let def aux(ty, i: Nat) =
           case ty of
             | TyVar(tv,a) ->
@@ -1334,6 +1338,20 @@ SpecNorm qualifying spec
                                        ([], [], i*10) prs
               in
               (RecordPat(reverse pats, a), foldl Utilities.mkAnd trueTerm preds)
+            | Arrow(dom,rng,_) ->
+              let f_nm = "f"^show i in
+              let arg_var = ("arg"^show i, dom) in
+              (mkVarPat(f_nm , ty),
+               mkBind (Forall, [arg_var],
+                       mkCaseExpr (mkApply (mkVar (f_nm, ty),mkVar arg_var),
+                                   [aux (rng, i+1)])))
+            | Subtype(base_ty, pred, _) ->
+              % FIXME: this case seems to be eliminated before we ever
+              % get here...
+              let nm = "x"^show i in
+              (mkVarPat(nm , ty),
+               %mkImplies ()
+               mkCaseExpr (mkVar (nm, ty), [aux (base_ty, i+1)]))
             | _ -> (mkWildPat(ty), trueTerm)
     in
     aux(ty, 0)
