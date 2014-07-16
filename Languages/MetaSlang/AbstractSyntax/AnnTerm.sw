@@ -775,6 +775,19 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
      | RestrictedPat(p,_,_) -> deRestrict p
      | _ -> p
 
+ % Find all the RestrictedPat terms in a pattern
+ op [a] getAllPatternGuards (patt: APattern a) : List (ATerm a) =
+   let
+     def do_term gds trm = (trm, gds)
+     def do_type gds typ = (typ, gds)
+     def do_pat  gds pat =
+       (pat,
+        case pat of
+          | RestrictedPat (_, trm, _) -> trm::gds
+          | _ -> gds)
+   in
+   let (_, rev_gds) = mapAccumPattern (do_term, do_type, do_pat) [] patt in
+   reverse rev_gds
    
  % mapAccum is like map, but threads an accumulator through. 
  op [acc,a,b] mapAccum(f: acc -> a ->  (b*acc))(accum:acc)(xs: List a):(List b * acc) =
