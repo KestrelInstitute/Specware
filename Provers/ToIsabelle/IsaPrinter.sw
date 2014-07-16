@@ -4099,7 +4099,12 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                                        ppPattern c pat wildstr true)]]
      | RecordPat (fields,_) ->
        (case fields of
-         | [] -> prString "()"
+         | [] ->
+           prString "_"
+           % NOTE: the pattern "()" is not always valid in Isabelle,
+           % e.g., as \<lambda> (). M
+           %
+           % prString "()"
          | ("1",_)::_ ->
            let def ppField (idstr,pat) = ppPattern c pat (extendWild wildstr idstr) false in
            prConcat [prString "(",
