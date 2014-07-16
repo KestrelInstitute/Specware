@@ -702,6 +702,7 @@ op isaDirectoryName: String = "Isa"
     let def_str = isaDefString tm in
     "unfold "^def_str^", rule HOL.refl"
 
+  % FIXME / TODO: move to PathTerm
   op pathWithinDef(lhs: MSTerm): PathTerm.Path =
     case lhs of
       | Apply(f, _, _) -> 0 :: pathWithinDef f
@@ -736,6 +737,7 @@ op isaDirectoryName: String = "Isa"
 
  op anyType: MSType = Any noPos
 
+ % FIXME / TODO: move path-dependent pieces to functions in PathTerm
  op schemaFrom(tm: MSTerm, path: PathTerm.Path): MSTerm * Bool =
    let arg_cong_v = ("xxx", anyType) in
    let def pick(i: Nat, tm_lvs: List(MSTerm * MSVars), r_path: PathTerm.Path, j: Nat): MSTerms =
@@ -816,27 +818,6 @@ op isaDirectoryName: String = "Isa"
    replaceString(ppTermStrIndent c parentTerm term indent, "e_pz", "?z")
 
  op equalityContext: ParentTerm = Infix (Left, 50)
-
- op argCongTerm(c: Context, tm: MSTerm, path: PathTerm.Path, indent: Int): String =
-   let (schema_term, has_local_vars?) = schemaFrom(tm, path) in
-   let schema_str = ppTermStrFix c Top schema_term (indent + 14) in
-   "rule_tac f = \""^schema_str^"\" in arg_cong"
-      %% If there are local variables then terms are wrapped in lambdas: use rule ext to lift
-      ^(if has_local_vars? then ", (rule ext)+" else "")
-
- op ruleProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Int): String =
-   let (_, path) = changedPathTerm(before, after) in
-   % let _ = writeLine("changed term:\n"^printTerm(fromPathTerm(before, path))) in
-   let rule_str = ruleToIsaRule c rl_spc in
-   spaces indent^"by ("
-     ^(if path = [] then ""
-       else let arg_cong_str = argCongTerm(c, before, path, indent + 4) in
-            arg_cong_str^(if length arg_cong_str + length rule_str > 90 then ",\n"^(blanks(indent + 4)) else ", "))
-     ^rule_str^")\n"
-
- op transformedTermPlusProof(c: Context, before: MSTerm, after: MSTerm, rl_spc: RuleSpec, indent: Int): String =
-   ppTermStrIndent c equalityContext after indent^"\"\n"
-    ^ ruleProof(c, before, after, rl_spc, indent - 14)
 
 
 %%%
@@ -4637,63 +4618,6 @@ op unfoldMonadBinds(spc: Spec): Spec =
           | _ -> simplifyUnfoldCase spc tm
   in
   mapSpecLocalOps (unfold, id, id) spc
-
-% FIXME: add some printing support for the new proof language, modeled
-% on this old stuff
-%
-% op ppEqProof(prf: EqProof, showTerms?: Bool): Pretty =
-%   case prf of
-%    | EqProofSubterm (path, pf) ->
-%      prBreak 2 [string "EqProofSubterm ",
-%                 prConcat[string "(",
-%                          prBreak 0 [prConcat[string "[",
-%                                              prPostSep 0 blockFill (prString ", ") (map (fn i -> string(show i)) path),
-%                                              string "], "],
-%                                     ppEqProof (pf, showTerms?)],
-%                          string ")"]]
-%    | EqProofSym pf -> prBreak 2 [string "EqProofSym ", prConcat[string "(", ppEqProof(pf, showTerms?), string ")"]]
-%    | EqProofTrans (pf_term_list, last_pf) ->
-%      prBreak 2 [string "EqTrans ",
-%                 prConcat[string "[",
-%                          prLinear 0 [prConcat [prPostSep 0 blockFill (prString ", ")
-%                                                  (map (fn (i_prf, i_tm) ->
-%                                                        if showTerms?
-%                                                          then prBreak 2 [ppEqProof(i_prf, showTerms?),
-%                                                                          ppTerm (initialize (asciiPrinter, false)) ([], Top)
-%                                                                            i_tm]
-%                                                          else ppEqProof(i_prf, showTerms?))
-%                                                     pf_term_list),
-%                                                (string ", ")],
-%                                      ppEqProof(last_pf, showTerms?)],
-%                          string "]"]]
-%     | EqProofTheorem (qid, args) -> string("EqProofTheorem " ^ show qid)
-%     | EqProofUnfoldDef qid -> string("EqProofUnfoldDef (" ^ show qid ^ ")")
-%     | EqProofTactic str -> prConcat[string "by ", string str]
-%     | _ -> string "by another method"
-
-% op ppImplProof (prf: ImplProof, showTerms?: Bool): Pretty =
-%  case prf of
-%    | ImplTrans (pf1, middle, pf2) ->
-%      prBreak 2 [string "ImplTrans ",
-%                 prConcat[string "(",
-%                          prPostSep 0 blockFill (prString ", ")
-%                            ([ppImplProof(pf1, showTerms?)]
-%                               ++ (if showTerms? then [ppTerm (initialize (asciiPrinter, false)) ([], Top)
-%                                                         middle]
-%                                   else [])
-%                               ++ [ppImplProof(pf2, showTerms?)]),
-%                          string ")"]]
-%    | ImplTheorem (qid, args) -> string("ImplTheorem (" ^ show qid ^ ")")
-%    | ImplEq pf -> prBreak 2 [string "ImplEq ",
-%                              prConcat [string "(", ppEqProof(pf, showTerms?), string ")"]]
-%    | ImplProofTactic tactic -> string("ImplProofTactic (" ^ tactic ^ ")")
-%    | MergeRulesProof tree -> string("MergeRulesProof (*** TraceTree ***)")
-
-% op EqProof.showPP(prf: EqProof, showTerms?: Bool): String =
-%   toString(format(110, ppEqProof(prf, showTerms?)))
-
-% op ImplProof.showPP(prf: ImplProof, showTerms?: Bool): String =
-%   toString(format(110, ppImplProof(prf, showTerms?)))
 
 end-spec
 

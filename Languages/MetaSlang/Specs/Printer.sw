@@ -26,6 +26,9 @@
 %% assembled in the document ../doc/deforestation/main.ps.
 %% 
 
+% FIXME / TODO: I do not think the path information maintained here is
+% ever used by anything...
+
 AnnSpecPrinter qualifying spec 
  import /Languages/SpecCalculus/AbstractSyntax/SCTerm  % SCTerm
  import /Languages/MetaSlang/AbstractSyntax/PrinterSig % printTerm, printType, printPattern
@@ -234,6 +237,8 @@ AnnSpecPrinter qualifying spec
      | Fun(Embed("Cons", true), s, a) -> Fun(Embed("::", true), s, a)
      | _ -> tm
 
+ % FIXME / TODO: I think the paths into patterns here (e.g., [0, i])
+ % are wrong
  def printLambda (context, path, marker, match, enclose?, case?) = 
    let pp : ATermPrinter = context.pp in
    let 

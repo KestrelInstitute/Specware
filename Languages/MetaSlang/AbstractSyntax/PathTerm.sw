@@ -6,6 +6,16 @@
 %
 % README: paths are backwards, meaning that the first "step" in a path
 % is actually the last subterm to be chosen in that path.
+%
+% README: files that seem to depend explicitly on how paths into terms
+% are defined, i.e., the order of subterms in immediateSubterms
+% (relative to /Languages/MetaSlang unless stated otherwise):
+%
+% Specs/Printer.sw  -- seems to be wrong and also not used (see TODOs)
+% Transformations/MetaRules.sw  -- just in pathToLastConjunct
+% Transformations/Rewriter.sw
+% Transformations/Script.sw
+% /Provers/ToIsabelle/IsaPrinter.sw
 
 PathTerm qualifying
 spec
@@ -105,7 +115,11 @@ type PathTerm = APathTerm Position.Position
         let vars = map (fn (var, _) -> var) l in
         (map (fn (_, t) -> (vars, t)) l) ++ [(vars, b)]
       | Lambda (l, _) ->
-        map (fn (pat, _, t) -> (removeDuplicateVars (patternVars pat), t)) l
+        flatten (map (fn (pat, _, t) ->
+                        let patt_vars = removeDuplicateVars (patternVars pat) in
+                        (map (fn gd -> (patt_vars, gd)) (getAllPatternGuards pat))
+                        ++ [(patt_vars, t)])
+                   l)
       | IfThenElse(x, y, z, _) -> [([], x), ([], y), ([], z)]
       | Seq(l, _) -> map (fn t -> ([], t)) l
       | TypedTerm(x, ty, _) ->
@@ -157,6 +171,8 @@ type PathTerm = APathTerm Position.Position
   %            (vars ++ new_vars, subterm))
   %      ([], top_term) path
 
+  % A special version of the above for the Isabelle translator, which
+  % removes the op ToIsa-Internal as well as an And constructors
   op fromPathTermWithBindingsAdjust((top_term, path): PathTerm): BindingTerm =
     let def aux(tm: MSTerm, path: Path, vars: MSVars): Option BindingTerm =
           % let _ = writeLine("aux: "^anyToString path^"\n"^printTerm tm) in
