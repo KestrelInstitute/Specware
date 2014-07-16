@@ -115,11 +115,12 @@ type PathTerm = APathTerm Position.Position
         let vars = map (fn (var, _) -> var) l in
         (map (fn (_, t) -> (vars, t)) l) ++ [(vars, b)]
       | Lambda (l, _) ->
-        flatten (map (fn (pat, _, t) ->
-                        let patt_vars = removeDuplicateVars (patternVars pat) in
-                        (map (fn gd -> (patt_vars, gd)) (getAllPatternGuards pat))
-                        ++ [(patt_vars, t)])
-                   l)
+        map (fn (pat, _, t) -> (removeDuplicateVars (patternVars pat), t)) l
+        % flatten (map (fn (pat, _, t) ->
+        %                 let patt_vars = removeDuplicateVars (patternVars pat) in
+        %                 (map (fn gd -> (patt_vars, gd)) (getAllPatternGuards pat))
+        %                 ++ [(patt_vars, t)])
+        %            l)
       | IfThenElse(x, y, z, _) -> [([], x), ([], y), ([], z)]
       | Seq(l, _) -> map (fn t -> ([], t)) l
       | TypedTerm(x, ty, _) ->
