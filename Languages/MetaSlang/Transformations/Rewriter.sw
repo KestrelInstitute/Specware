@@ -649,35 +649,50 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
       % Similar to the above, but for Apply(Lambda(...),case_tm)
       let casefun_pathElem = 1 in
       let casearg_pathElem = 0 in
+      % The reverse of the path to the case expression (of the form
+      % Apply(Lambda(...)),scrut) after un-pushing it
       let path_to_unpushed_case =
         arg_pathElem :: (if length Ns = 1 then [] else [i])
       in
+      let def branch_num case_pos = lambdaPosBranchNumber (branches, case_pos) in
       (case infoPathDifferenceRev (info, orig_path) of
-         % The rewrite happened at the top of one of the branches or
-         % of the whole expression, and so required f to be pushed
+         % The rewrite happened at the top of one of the branches, the lambda
+         % itself, or of the whole expression, and so required f to be pushed
          | Some [] -> res
-         | Some [elem,branch] | elem = casefun_pathElem -> res
-         | Some (path as elem::_) | elem = casearg_pathElem ->
+         | Some [elem] | elem = casefun_pathElem -> res
+         | Some [elem,case_pos] | elem = casefun_pathElem && some? (branch_num case_pos) -> res
+
            % Rewrite happened in the scrutinee
-           unpush_case None (path_to_unpushed_case ++ [casearg_pathElem])
-         | Some (elem::branch::elem_f::p_f) | elem = casefun_pathElem && elem_f = fun_pathElem ->
+         | Some (path as elem::_) | elem = casearg_pathElem ->
+           unpush_case None (path_to_unpushed_case ++ path)
+
+           % Rewrite happened in a pattern guard; NOTE: if this match fails, the
+           % remaining cases can assume some? (lambdaPosBranchNumber case_pos)
+         | Some (path as elem::case_pos::_)
+         | elem = casefun_pathElem && branch_num case_pos = None ->
+           unpush_case None (path_to_unpushed_case ++ path)
+
            % Rewrite happened in the function in a branch
-           unpush_case (Some branch) (elem_f::p_f)
-         | Some (elem::branch::elem_arg::p_arg)
-         | elem = casefun_pathElem && elem_arg = arg_pathElem && length Ns = 1 ->
+         | Some (elem::case_pos::elem_f::p_f)
+         | elem = casefun_pathElem && elem_f = fun_pathElem ->
+           unpush_case (branch_num case_pos) (elem_f::p_f)
+
            % Rewrite happened in a branch of the original
            % case-expression, which was the only arg to f
-           unpush_case (Some branch) (path_to_unpushed_case ++ (branch::p_arg))
-         | Some (elem::branch::elem_arg::arg_num::p_arg)
+         | Some (elem::case_pos::elem_arg::p_arg)
+         | elem = casefun_pathElem && elem_arg = arg_pathElem && length Ns = 1 ->
+           unpush_case (branch_num case_pos) (path_to_unpushed_case ++ (case_pos::p_arg))
+
+           % Rewrite happened in a branch of original case-expression, with multiple args to f
+         | Some (elem::case_pos::elem_arg::arg_num::p_arg)
          | elem = casefun_pathElem && elem_arg = arg_pathElem && arg_num = i ->
-           % Rewrite happened in a branch of original case-expression,
-           % with multiple args to f
-           unpush_case (Some branch) (path_to_unpushed_case ++ (branch::p_arg))
-         | Some (elem::branch::elem_arg::arg_num::p_arg)
+           unpush_case (branch_num case_pos) (path_to_unpushed_case ++ (case_pos::p_arg))
+
+           % Rewrite happened in one of the non-case-expression original args to f
+         | Some (elem::case_pos::elem_arg::arg_num::p_arg)
          | elem = casefun_pathElem && elem_arg = arg_pathElem && arg_num ~= i ->
-           % Rewrite happened in one of the non-case-expression
-           % original args to f
-           unpush_case (Some branch) (arg_pathElem::arg_num::p_arg)
+           unpush_case (branch_num case_pos) (arg_pathElem::arg_num::p_arg)
+
          | _ ->
            warn ("maybePushCaseBack: unexpected path " ^ printPath (infoPath info)); res)
     | _ -> res
@@ -802,13 +817,15 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                            -> LazyList RRResult
 
  op rewritePattern (solvers: RewriteInfo, boundVars: MSVars,
-                    pat: MSPattern, path: Path, rules: Demod RewriteRule, ign?: Bool)
+                    pat: MSPattern, path: Path, rules: Demod RewriteRule,
+                    prevCases: MSMatch, ign?: Bool)
           : LazyList(MSPattern * RRResultInfo) =
    case pat of
      | RestrictedPat(p,t,b) | ~ign? ->
        LazyList.map 
          (fn (t,a) -> (RestrictedPat(p,t,b),a)) 
-         (rewriteTerm(solvers,boundVars ++ patternVars p,t,path,rules))
+         (rewriteTerm(solvers,boundVars ++ patternVars p,t,
+                      (countMatchSubTerms prevCases)::path,rules))
      | _ -> Nil
  
  % Whether a function can be pushed inside Let, If, of Case
@@ -897,35 +914,40 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
      | Apply(M,N,b) ->
        let Ns = termToList N in
        (case M of
+          % This means we are rewriting an application of a lambda to an argument
           | Lambda(lrules,b1) ->
-            %% Separate case so we can use the context of the pattern matching
+            % First case rewrites the argument, N
             LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
               (rewriteTerm(solvers,boundVars,N,0::path,rules))
+            % These cases rewrite the patterns
             @@ (fn () ->
-                  mapEach(fn (first,(pat,cond,M),rest) -> 
-                      rewritePattern(solvers,boundVars,pat,path,rules,false)
-                      >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
+                  mapEach(fn (first,(pat,cond,body),rest) -> 
+                      rewritePattern(solvers,boundVars,pat,path,rules,first,false)
+                      >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,body)] ++ rest,b1), N, b), a)))
                     lrules
+            % Rewrite each body with the additional assumption that the pattern
+            % match with the argument has succeeded in that body
             @@ (fn () ->
                 mapEach 
-                  (fn (first,(pat,cond,M),rest) ->
+                  (fn (first,(pat,cond,body),rest) ->
                      let rules = addPatternRestriction(context,pat,rules) in
-                     let (M, rules, sbst) =
+                     let (body, rules, sbst) =
                          case patternToTerm pat of
-                           | None -> (M, rules, [])
+                           | None -> (body, rules, [])
                            | Some pat_tm ->
                          case N of
                            | Var(nv,_) ->
                              let sbst = [(nv, pat_tm)] in
-                             (substitute (M, sbst), rules, sbst)
+                             (substitute (body, sbst), rules, sbst)
                            | _ ->
                              let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                             (M, addDemodRules(assertRules(context, equal_term, "case", Context, Either, None), rules), [])
+                             (body, addDemodRules(assertRules(context, equal_term, "case", Context, Either, None), rules), [])
                      in
-                     rewriteTerm(solvers,(boundVars ++ patternVars pat), M, 1::path, rules)
-                     >>= (fn (M,a) ->
-                            let M = invertSubst(M,sbst) in
-                            unit(Apply(Lambda (first ++ [(pat,cond,M)] ++ rest,b1), N, b), a)))
+                     rewriteTerm(solvers,(boundVars ++ patternVars pat), body,
+                                 (ithLambdaBodyPos(lrules,length first))::1::path, rules)
+                     >>= (fn (body',a) ->
+                            let M = invertSubst(body',sbst) in
+                            unit(Apply(Lambda (first ++ [(pat,cond,body')] ++ rest,b1), N, b), a)))
                   lrules))
           | Fun(Op(Qualified(_,"mapFrom"),_),_,_)
               | (case Ns of [_,Lambda([_], _)] -> true | _ -> false) ->
@@ -934,7 +956,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
               (rewriteTerm(solvers,boundVars,set_term,0::1::path,rules))
             @@ (fn () -> 
                   LazyList.map (fn (bod,a) -> (mkAppl(M,[set_term, Lambda([(p,c,bod)],b1)]), a))
-                  (rewriteTerm(solvers,boundVars ++ patternVars p,bod,0::1::1::path,
+                  (rewriteTerm(solvers,boundVars ++ patternVars p,bod,
+                               (ithLambdaBodyPos([(p,c,bod)],0))::1::1::path,
                                let Some v_tm = patternToTerm p in
                                let memb_assert = mkAppl(mkInfixOp(mkUnQualifiedId("in?"),
                                                                   Infix(Left,100),
@@ -961,23 +984,32 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
         fields
      | Lambda(lrules,b) ->
        let last_rule = last lrules in
-       mapEach(fn (first,rule as (pat,cond,M),rest) -> 
-                 rewritePattern(solvers,boundVars,pat,path, rules, false)
-                 >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
-         lrules               % A condition on the last case should be guaranteed by the type
+
+       % Rewrite each pattern
+       mapEach(fn (first,rule as (pat,cond,body),rest) -> 
+                 rewritePattern(solvers,boundVars,pat,path, rules, first, false)
+                 >>= (fn (pat,a) -> unit(Lambda (first ++ [(pat,cond,body)] ++ rest,b),a)))
+         lrules % A condition on the last case should be guaranteed by the type
+       
+       % Rewrite each body with the additional assumption that the pattern match
+       % with the argument has succeeded in that body
        @@ (fn () ->
            mapEach 
-             (fn (first,(pat,cond,M),rest) -> 
+             (fn (first,(pat,cond,body),rest) -> 
                 let patvars = patternVars pat in
                 let rules = addPatternRestriction(context,pat,rules) in
-                rewriteTerm(solvers, boundVars ++ patternVars pat, M, (length first)::path, rules)
-                >>= (fn (M,a) -> unit(Lambda (first ++ [(pat,cond,M)] ++ rest,b),a)))
+                rewriteTerm(solvers, boundVars ++ patternVars pat, body,
+                            (ithLambdaBodyPos(lrules, length first))::path, rules)
+                >>= (fn (body',a) -> unit(Lambda (first ++ [(pat,cond,body')] ++ rest,b),a)))
              lrules)
      | Let(binds,M,b) ->
+        % First try to rewrite the body of let-expressions; note that the path
+        % (length first)::path works because we assume no guards in the pattern
         mapEach (fn (first,(pat,N),rest) ->
                    rewriteTerm(solvers,boundVars,N,(length first)::path,rules) >>=
                    (fn (N,a) -> unit(Let(first ++ [(pat,N)] ++ rest,M,b),a)))
           binds
+        % Otherwise, try to fold the bindings and see if that enables a rewrite
         @@ (fn () ->
              let let_vars = flatten (map (fn (pat, _) -> patternVars pat) binds) in
              let p_M = unFoldSimpleLet(binds,M) in

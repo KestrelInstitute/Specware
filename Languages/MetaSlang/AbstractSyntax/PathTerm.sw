@@ -12,7 +12,7 @@
 % (relative to /Languages/MetaSlang unless stated otherwise):
 %
 % Specs/Printer.sw  -- seems to be wrong and also not used (see TODOs)
-% Transformations/MetaRules.sw  -- just in pathToLastConjunct
+% Transformations/MetaRules.sw  -- in pathToLastConjunct and structureCondEx
 % Transformations/Rewriter.sw
 % Transformations/Script.sw
 % /Provers/ToIsabelle/IsaPrinter.sw
@@ -98,6 +98,17 @@ type PathTerm = APathTerm Position.Position
   type APathBindingTerm a = ABindingTerm a * Path
   type PathBindingTerm = APathBindingTerm Position
 
+  % Get the immediate subterms of a Match
+  op [a] matchImmediateSubTermsWithBindings (match: AMatch a) : List (ABindingTerm a) =
+    flatten (map (fn (pat, _, t) ->
+                    let patt_vars = removeDuplicateVars (patternVars pat) in
+                    (map (fn gd -> (patt_vars, gd)) (getAllPatternGuards pat))
+                    ++ [(patt_vars, t)])
+               match)
+
+  % Get the immediate subterms of a term, along with the new bound
+  % variables for each of these subterms. This function is the sole
+  % definition for mapping paths in terms to subterms
   op [a] immediateSubTermsWithBindings(term: ATerm a): List (ABindingTerm a) =
     case term of
       | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
@@ -114,13 +125,7 @@ type PathTerm = APathTerm Position.Position
       | LetRec (l, b, _) ->
         let vars = map (fn (var, _) -> var) l in
         (map (fn (_, t) -> (vars, t)) l) ++ [(vars, b)]
-      | Lambda (l, _) ->
-        map (fn (pat, _, t) -> (removeDuplicateVars (patternVars pat), t)) l
-        % flatten (map (fn (pat, _, t) ->
-        %                 let patt_vars = removeDuplicateVars (patternVars pat) in
-        %                 (map (fn gd -> (patt_vars, gd)) (getAllPatternGuards pat))
-        %                 ++ [(patt_vars, t)])
-        %            l)
+      | Lambda (l, _) -> matchImmediateSubTermsWithBindings l
       | IfThenElse(x, y, z, _) -> [([], x), ([], y), ([], z)]
       | Seq(l, _) -> map (fn t -> ([], t)) l
       | TypedTerm(x, ty, _) ->
@@ -129,6 +134,35 @@ type PathTerm = APathTerm Position.Position
            | Some post -> [([], x), ([], post)])
       | And(l, _) -> map (fn t -> ([], t)) l
       | _ -> []
+
+  % Cound the number of immediateSubTerms of an AMatch
+  op [a] countMatchSubTerms (match: AMatch a) : Nat =
+    length (matchImmediateSubTermsWithBindings match)
+
+  % return the immediateSubTerm number for the body of the ith case,
+  % which is the last immediateSubTerm of the last body
+  op [a] ithLambdaBodyPos (match: AMatch a, i: Nat) : Nat =
+    countMatchSubTerms (prefix (match, i+1)) - 1
+
+  % return the immediateSubTerm number for the jth guard in the ith
+  % pattern in a match
+  op [a] lambdaGuardPos (match: AMatch a, i: Nat, j: Nat) : Nat =
+    countMatchSubTerms (prefix (match, i)) + j
+
+  % determine if an immediateSubTerm number points to the body of one of the
+  % branches of a case expression (instead of a pattern guard), and, if so,
+  % return which branch it is
+  op [a] lambdaPosBranchNumber (match: AMatch a, pos: Nat) : Option Nat =
+    let def aux (cases, i, cur_pos) =
+      case cases of
+        | [] -> fail ("lambdaPosBranchNumber: pos not valid for lambda")
+        | (pat,_,_)::cases' ->
+          let body_pos = cur_pos + length (getAllPatternGuards pat) in
+          if pos = body_pos then Some i
+          else if pos < body_pos then None else
+            aux (cases', i+1, body_pos+1)
+    in
+    aux (match, 0, 0)
 
   op [a] ithSubTerm(term: ATerm a, i: Nat): ATerm a =
     let tms = immediateSubTerms term in
