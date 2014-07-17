@@ -208,7 +208,11 @@ SpecCalc qualifying spec
            raise (SpecError (pos, "Attempt to refine " ^ printAliases new_names ^ " which is not defined."))
          else
            return (foldl (fn (new_ops, Qualified (q, id)) ->
-                            insertAQualifierMap (new_ops, q, id, new_info))
+                            insertAQualifierMap
+                              (new_ops, q, id,
+                               new_info << {fixity = if new_info.fixity = Unspecified
+                                                       then Nonfix
+                                                     else new_info.fixity}))
                          old_spec.ops
                          new_names)
   
