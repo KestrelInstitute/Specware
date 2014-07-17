@@ -441,7 +441,11 @@ op stripRangeSubtypes(sp: Spec, srt: MSType, dontUnfoldQIds: List QualifiedId): 
      (nameList,names)
 
 op addLocalVars (term : MSTerm, used_names : UsedNames) : UsedNames =
- let (_, used_names) =
+ let used_names =
+     foldSubTerms (fn (tm, used_names) ->
+                     foldl (fn (used_names, (id, _)) -> StringSet.add (used_names, id)) used_names (boundVars tm))
+       used_names term
+(*
      mapAccumTerm (fn used_names -> fn tm  -> (tm,  used_names),
                    fn used_names -> fn typ -> (typ, used_names),
                    fn used_names -> fn pat ->
@@ -453,6 +457,7 @@ op addLocalVars (term : MSTerm, used_names : UsedNames) : UsedNames =
                          used_names))
                   used_names
                   term
+*)
  in
  used_names
 
