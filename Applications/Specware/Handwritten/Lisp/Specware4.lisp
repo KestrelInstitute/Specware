@@ -142,7 +142,6 @@
 ;;     (load (make-pathname
 ;;            :defaults (in-specware-dir "Provers/Snark/Handwritten/Lisp/snark-system")
 ;;            :type     "lisp")))
-
 ;;   (format t "Loading Snark.")
 ;;   (handler-bind ((warning #'ignore-warning))
 ;;     (cl-user::make-or-load-snark-system))
@@ -371,7 +370,7 @@
 	 (defvar *sbcl-home* (Specware::getenv "SBCL_HOME")) ; see note above
 	 (push  #'(lambda () 
 		    (setq sb-debug:*debug-beginner-help-p* nil)
-	            (setf (sb-ext:bytes-consed-between-gcs) 50331648)
+	            ;(setf (sb-ext:bytes-consed-between-gcs) 50331648)
 		    (Specware::setenv "SBCL_HOME" *sbcl-home*) ; see note above
 		    )
 		sb-ext:*init-hooks*)
@@ -420,7 +419,7 @@
         (hooks (in-specware-dir "Library/IO/Emacs/slime/contrib/swank-listener-hooks.lisp")))
     (load loader :verbose t)
     (funcall (read-from-string "swank-loader:init") :setup nil :reload t :load-contribs t)
-    (load hooks :verbose t))
+    (compile-and-load-lisp-file hooks))
   )
 (setq *using-slime-interface?* nil)	; Gets set to t when initialized
 
