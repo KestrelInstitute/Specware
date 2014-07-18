@@ -5,6 +5,8 @@
 State qualifying spec 
  type Ref T = | Ref T
 
+ op [T] mkRef: T -> Ref T
+
  op := infixl 4 : [T] Ref T * T -> ()
  op ! : [T] Ref T -> T
 
