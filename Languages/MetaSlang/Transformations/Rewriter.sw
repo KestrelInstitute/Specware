@@ -619,26 +619,48 @@ op maybePushLetBack(res as (tr_let, info): RRResult, orig_path: Path,
 % rewrite, and if not undo the pushing
 op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                      f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
+  % let _ = writeLine ("maybePushCaseBack: tr_case = (" ^ printTerm tr_case
+  %                      ^ "), infoPath = " ^ printPath (infoPath info)
+  %                      ^ ", orig_path = " ^ printPath orig_path
+  %                      ^ ", f = (" ^ printTerm f ^ ")") in
   case tr_case of
     | Apply(Lambda(branches,pos3), case_tm, pos2) ->
       let def unpush_case branch_num_opt new_prefix_rev =
-        let (new_f, new_Ns) =
+        let new_f_Ns_opt =
           case branch_num_opt of
             | Some n ->
               (case branches@n of
-                 | (p, c, Apply (f1, q, pos1)) -> (f1, termToList q)
-                 | _ -> (f, Ns))
-            | _ -> (f, Ns)
+                 | (p, c, Apply (f1, q, pos1)) ->
+                   % The rewrite happened in a strict subterm of branch n (the strict
+                   % subterm part is determined with the path-matching magic below). If
+                   % the branch is still an application, it must be the (optionally
+                   % rewritten) function applied to the (optionally rewritten) args, so we
+                   % extract these back out of the nth branch
+                   Some (f1, termToList q)
+                 | _ ->
+                   % This case means that: a rewrite happened in branch n but branch n no
+                   % longer looks like an application; this can only happen if we pushed f
+                   % into some other if/let/case that we didn't unpush it back out of, so
+                   % we can't unpush it out of the current case either
+                   None)
+            | _ ->
+              % Rewriting happened somewhere other than a branch, so we keep f and Ns
+              Some (f, Ns)
         in
-        (mkAppl(new_f,
-                replaceNth(i, new_Ns,
-                           Apply(Lambda(map (fn (p,c,Apply(f1, q, a)) ->
-                                               let qn = termToList q in
-                                               (p,c,qn@i))
-                                          branches, pos3),
-                                 case_tm, pos2))),
-         replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
-                                   "maybePushCaseBack"))
+        case new_f_Ns_opt of
+          | None ->
+            % The previous case determined not to unpush, so just return res
+            res
+          | Some (new_f, new_Ns) ->
+            (mkAppl(new_f,
+                    replaceNth(i, new_Ns,
+                               Apply(Lambda(map (fn (p,c,Apply(f1, q, a)) ->
+                                                   let qn = termToList q in
+                                                   (p,c,qn@i))
+                                              branches, pos3),
+                                     case_tm, pos2))),
+             replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
+                                       "maybePushCaseBack"))
       in
       % README: fun_pathElem is the immediate subterm number of
       % Apply(f,Ns) that picks out f; the if-expression here handles
