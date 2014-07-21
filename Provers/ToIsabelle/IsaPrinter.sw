@@ -332,7 +332,7 @@ op isaDirectoryName: String = "Isa"
 			       thy_name = case opt_nm of
                                             | Some nm -> nm
                                             | None -> thy_nm,
-			       anon_thy_count = Ref 0,
+			       anon_thy_count = mkRef 0,
                                spec? = None,
                                currentUID = case uid of
                                               | None -> val_uid
@@ -341,7 +341,7 @@ op isaDirectoryName: String = "Isa"
                                coercions = [],
                                overloadedConstructors = [],
                                defaultProof = autoProof,
-                               newVarCount = Ref 0,
+                               newVarCount = mkRef 0,
                                source_of_thy_morphism? = false,
                                typeNameInfo = [],
                                simplify? = simplify?}
@@ -573,13 +573,16 @@ op isaDirectoryName: String = "Isa"
                            else (el::elts, ops)   % Not sure if this is meaningful
                        else
                          if anyTerm? prev_dfn || refine_num = 0
-                           then let thm_name = nm^"__"^"obligation_def" in
+                           then % The definition of an op already has to satisfy the subtype predicate (i.e. postcondition)
+                                % so this obligation would be redundant
+                             (* let thm_name = nm^"__"^"obligation_def" in
                                 let (oblig, lhs, rhs, condn) = mkDefObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
                                 % let _ = writeLine("oblig: "^printTerm oblig) in
                                 case makeNonTrivTheorem(q, thm_name, oblig, spc) of
                                   | None -> (el::elts, ops)
                                   | Some new_el ->
-                                    (el::new_el::elts, ops)
+                                    (el::new_el::elts, ops) *)
+                             (el::elts, ops)
                            else
                              let thm_name = nm^"__"^"obligation_refine_def" in
                              let eq_tm = mkFnEquality(ty, mkOpFromDef(mainId, ty, spc), mkInfixOp(refId, opinfo.fixity, ty),
@@ -1725,7 +1728,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
   op ppMutuallyRecursiveOpElts (c: Context) (op_qids: QualifiedIds) (els: SpecElements) (all_els: SpecElements)
        : Pretty =
     let spc = getSpec c in
-    let c = c << {newVarCount = Ref 0} in
+    let c = c << {newVarCount = mkRef 0} in
     let op_qid_infos = map (fn op_qid ->
                               let Some{names=_, fixity, dfn, fullyQualified?=_} = findTheOp(spc, op_qid) in
                               let (_, ty, term) = unpackNthTerm(dfn, 0) in
@@ -2689,7 +2692,7 @@ op  ppOpInfo :  Context -> Bool -> Bool -> SpecElements -> Option Pragma
                   -> Pretty
 def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   %% Doesn't handle multi aliases correctly
-  let c = c << {newVarCount = Ref 0} in
+  let c = c << {newVarCount = mkRef 0} in
   let mainId = head aliases in
   % let _ = writeLine("Processing "^printQualifiedId mainId) in
   let opt_prag = findPragmaNamed(elems, mainId, opt_prag) in
