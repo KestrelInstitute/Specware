@@ -15,7 +15,7 @@
 (defvar SpecCalc::specwareWizard? nil) ; see Specware4/Languages/SpecCalculus/Semantics/Monad.sw
 
 (defparameter quotient-tag
-  (list :|Quotient|))
+  (list :|-Quotient-|))
 
 (defun quotient (r)
   #'(lambda(x)  (vector quotient-tag r x)))
