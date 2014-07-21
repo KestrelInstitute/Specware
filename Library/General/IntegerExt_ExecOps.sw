@@ -450,14 +450,6 @@ proof isa toLittleEndian__1_Obligation_subtype0
                         Integer__toLittleEndian_length)
 end-proof
 
-proof isa toLittleEndian__1__obligation_refine_def_Obligation_subtype
-  by (erule Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
-proof isa toLittleEndian__1__obligation_refine_def_Obligation_subtype0
-  by (erule Integer__toBigEndian__1__obligation_refine_def_Obligation_subtype)
-end-proof
-
 proof Isa toLittleEndian__1__obligation_refine_def
   (** similar to BigEndian once I figure that out **)
   sorry   

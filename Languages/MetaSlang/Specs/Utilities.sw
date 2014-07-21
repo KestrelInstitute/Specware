@@ -60,7 +60,7 @@ Utilities qualifying spec
 	| AliasPat _ -> None %% Not supported
 
  op  patternToTermPlusExConds(pat: MSPattern): MSTerm * MSTerms * MSVars =
-   let wild_num = Ref 0 in
+   let wild_num = mkRef 0 in
    let def patToTPV pat =
          case pat
            of EmbedPat(con, None, ty, a) -> 
@@ -467,7 +467,7 @@ Utilities qualifying spec
       if desired_key?(key) then Some value else lookup(desired_key?, alist_tail)
 
  op tyVarsInTerm(tm: MSTerm): TyVars =
-   let vars = Ref [] in
+   let vars = mkRef [] in
    let def vr(ty) = 
          case ty of
 	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
@@ -483,7 +483,7 @@ Utilities qualifying spec
 
  op  freeTyVars: MSType -> TyVars
  def freeTyVars(ty) = 
-   let vars = Ref [] in
+   let vars = mkRef [] in
    let def vr(ty) = 
          case ty of
 	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
@@ -1045,8 +1045,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  def mkSimpImplies (t1, t2) =
    case t1 of
      | Fun(Bool true,_,_)  -> t2
-     | Fun(Bool false,_,_) -> mkTrue() % was mkFalse() !!
-     | _ -> 
+     | Fun(Bool false,_,_) -> trueTerm   % was mkFalse() !!
+     | _ ->
        case t2 of
         % We can't optimize (x => true) to true, as one might expect from logic.
         % The semantics for => dictates that we need to eval t1 (e.g., for side-effects) before looking at t2.  
@@ -1054,7 +1054,17 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	 | Fun(Bool false,_,_) -> negate t1
          | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
            mkSimpImplies(mkAnd(t1,p1), q1)
-	 | _ -> mkImplies (t1,t2)
+	 | _ ->
+           let lhs_cjs = getConjuncts t1 in
+           let sb = map (fn cji -> case cji of
+                                     | Apply(Fun(Not,_,_), neg_cji, _) -> (neg_cji, falseTerm)
+                                     | _ -> (cji, trueTerm))
+                      lhs_cjs
+           in
+           let new_t2 = termSubst(t2, sb) in
+           % let _ = if equalTerm?(new_t2, t2) then () else writeLine(printTerm t2^" -->\n"^printTerm new_t2) in
+           let new_t2 = if equalTerm?(t2, new_t2) then new_t2 else reduceTerm1 new_t2 in
+           mkImplies (t1, new_t2)
 
  op  mkSimpIff: MSTerm * MSTerm -> MSTerm
  def mkSimpIff (t1, t2) =
@@ -1694,6 +1704,77 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | Let([(pat, tm)], bod, _) | sideEffectFree tm && disjointVars?(patternVars pat, freeVars bod) ->
         Some bod
       | _ -> None
+
+ op tryEval1(term: MSTerm): Option MSTerm =
+    case term
+     of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
+        (if spName in? evalSpecNames
+	 then (case arg
+		 of Record(fields, _) ->
+		    (if forall? (fn (_,tm) -> evalConstant?(tm)) fields
+		      then attemptEvaln(spName,opName,fields)
+		      else None)
+		   | _ -> (if evalConstant?(arg)
+			    then attemptEval1(opName,arg)
+			    else None))
+	  else None)
+      | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
+          %% CAREFUL: if N1 and N2 are equivalent, we can simplify to true,
+          %%          but otherwise we cannot act, since they might be ops later equated to each other
+	if constantTerm?(N1) && constantTerm?(N2) then
+          (let eq? = equalTerm?(N1,N2) in
+             if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
+               then Some(mkBool eq?)
+             else None)
+        else None
+      | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
+	if evalConstant?(N1) && evalConstant?(N2) then
+          %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
+          %%          but otherwise we cannot act, since they might be ops later equated to each other
+          (let eq? = equalTerm? (N1,N2) in
+             if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
+               then Some(mkBool(~eq?))
+           else
+             None)
+        else None
+      | Apply(Fun(Not,  _,_),arg,_) -> 
+	(case arg of
+           | Fun (Bool b,_,aa) -> Some(mkBool (~ b))
+           | Apply (Fun(Not,_,_), p,_) -> Some p
+           | Apply(Fun(NotEquals,ty,a1),args,a2) ->
+             Some(Apply(Fun(Equals,ty,a1),args,a2))
+           | _ -> None)
+      | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
+        if boolVal? N1 || boolVal? N2 then Some (mkAnd(N1,N2)) else None
+      | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+        if boolVal? N1 || boolVal? N2 then Some (mkOr(N1,N2)) else None
+      | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
+        if boolVal? N1 || (boolVal? N2 && sideEffectFree N1) then Some (mkSimpImplies(N1,N2)) else None
+      | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+	if boolVal? N1 || boolVal? N2 then Some (mkSimpIff(N1,N2)) else None
+      | IfThenElse(p,q,r,_) ->
+        let simp_if = mkIfThenElse(p,q,r) in
+        if equalTerm?(term, simp_if) then None else Some simp_if
+        %% {id1 = v1, ..., idn = vn}.idi = vi
+      | Apply(Fun(Project i,_,_),Record(m,_),_) ->
+        (case getField(m,i) of
+           | Some fld -> Some fld
+           | None -> None)
+        %% (x << {i = v}).j  -->  x.j  (x << {i = v}).i  -->  v
+      | Apply(proj_fn as Fun(Project i,_,_), Apply(Fun(RecordMerge, _, _), Record([(_,r1), (_,Record(m,_))], _),_),_) ->
+        (case getField(m,i) of
+           | Some fld -> Some fld
+           | None -> tryEval1 (mkApply(proj_fn, r1)))
+      | Fun(Op(Qualified ("Integer", "zero"),_),_,a) -> Some(mkFun(Nat 0, intType))
+        %% let pat = e in bod --> bod  if variables in pat don't occur in bod
+      | Let([(pat, tm)], bod, _) | sideEffectFree tm && disjointVars?(patternVars pat, freeVars bod) ->
+        Some bod
+      | _ -> None
+
+ op reduceTerm1(term: MSTerm): MSTerm =
+   case tryEval1 term of
+     | Some red_tm -> red_tm
+     | None -> term
 
  op  disjointMatches: MSMatch -> Bool
  def disjointMatches = 
