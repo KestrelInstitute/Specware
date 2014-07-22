@@ -274,15 +274,18 @@
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"
 
-    ;; XML-RPC
-    ;; "Library/IO/XmlRpc/s-xml/package"
-    ;; "Library/IO/XmlRpc/s-xml/xml"
-    ;; "Library/IO/XmlRpc/s-xml-rpc/base64"
-    ;; "Library/IO/XmlRpc/s-xml-rpc/package"
-    ;; "Library/IO/XmlRpc/s-xml-rpc/sysdeps"
-    ;; "Library/IO/XmlRpc/s-xml-rpc/xml-rpc"
-    ;; "Library/IO/XmlRpc/s-xml-rpc/extensions"
-    ;; "Library/IO/XmlRpc/load-xml-rpc"
+;;; CEM 2014-07-22: This has code copyrighted by others.
+;;; Moving the actual XmlRpc directory to SpecwareArchive for now.
+;;; However, this particuar block of code was part of the Specware build.
+;;;    ;; XML-RPC
+;;;    "Library/IO/XmlRpc/s-xml/package"
+;;;    "Library/IO/XmlRpc/s-xml/xml"
+;;;    "Library/IO/XmlRpc/s-xml-rpc/base64"
+;;;    "Library/IO/XmlRpc/s-xml-rpc/package"
+;;;    "Library/IO/XmlRpc/s-xml-rpc/sysdeps"
+;;;    "Library/IO/XmlRpc/s-xml-rpc/xml-rpc"
+;;;    "Library/IO/XmlRpc/s-xml-rpc/extensions"
+;;;    "Library/IO/XmlRpc/load-xml-rpc"
 
     )
   )
