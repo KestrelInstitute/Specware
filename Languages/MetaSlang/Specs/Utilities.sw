@@ -19,6 +19,7 @@ Utilities qualifying spec
 
  op extractAssignment : MSTerm * MSTerm -> List (MSPattern * MSTerm)
 
+ % Try to turn a pattern into the most general term it matches against
  op patternToTerm : MSPattern -> Option MSTerm
 
  def patternToTerm(pat) = 
