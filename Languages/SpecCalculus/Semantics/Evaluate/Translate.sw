@@ -23,7 +23,7 @@ SpecCalc qualifying spec
   type Translators = {ambigs : Translator,
 		      types  : Translator,
 		      ops    : OpTranslator,
-		      props  : OpTranslator,
+		      props  : Translator,
 		      others : Option OtherTranslators}
 
   type Translator = AQualifierMap (QualifiedId * Aliases) 
@@ -31,6 +31,10 @@ SpecCalc qualifying spec
 
   op emptyTranslator : Translator = emptyAQualifierMap
   op emptyOpTranslator : OpTranslator = emptyAQualifierMap
+
+  op emptyTranslators : Translators =
+  { ambigs = emptyTranslator, types = emptyTranslator, ops = emptyOpTranslator,
+    props = emptyTranslator, others = None }
 
   type OtherTranslators
 
@@ -137,6 +141,7 @@ SpecCalc qualifying spec
     %% raising exceptions...
     let types = dom_spec.types in
     let ops   = dom_spec.ops   in
+    let props = allProperties dom_spec in
     let 
       def op_fixity(qid: QualifiedId): Fixity =
         case findTheOp(dom_spec, qid) of
@@ -221,6 +226,45 @@ SpecCalc qualifying spec
 		return ()
 	       }
 
+      def complain_if_prop_collision (props, prop_translator: Translator, this_dom_q, this_dom_id, this_new_qid, rule_pos) =
+	let collisions =
+	    foldriAQualifierMap (fn (other_dom_q, other_dom_id, other_target, collisions) ->
+				 case other_target of
+				   | (other_new_qid, _) ->
+				     if other_new_qid = this_new_qid then
+				       let other_dom_qid = Qualified (other_dom_q, other_dom_id) in
+				       let Some this_info = findAQualifierMap (props, this_dom_q, this_dom_id) in
+				       if other_dom_qid in? this_info.names then
+					 %% ok to map aliases to same new name
+					 collisions
+				       else
+					 %% not legal to map unrelated type names to the same new name
+					 collisions ++ [other_dom_qid]
+				     else
+				       collisions)
+	                        []
+				prop_translator
+	in
+	 case collisions of
+	   | [] -> return ()
+	   | _ ->
+	     let conflicting_names = 
+	         case collisions of
+		   | [name] -> " and prop " ^ (explicitPrintQualifiedId name)
+		   | first::rest ->
+		     " and props " ^ (explicitPrintQualifiedId first) ^
+		     (foldl (fn (str, qid) -> str ^ ", " ^ explicitPrintQualifiedId qid)
+		      ""
+		      rest)
+	     in
+	       {
+		raise_later (TranslationError ("Illegal to translate both op " ^  (explicitPrintQualifiedId (Qualified(this_dom_q,this_dom_id))) ^
+					       conflicting_names ^ 
+					       " into " ^ (explicitPrintQualifiedId this_new_qid),
+					       rule_pos));
+		return ()
+	       }
+
       def complain_if_type_collisions_with_priors (types, type_translator) =
 	foldOverQualifierMap (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
 			      %% we're proposing to translate dom_q.dom_id into new_q.new_id
@@ -277,12 +321,35 @@ SpecCalc qualifying spec
             ()
             op_translator
 
+      def complain_if_prop_collisions_with_priors (props, prop_translator: Translator) =
+	foldOverQualifierMap
+          (fn (dom_q, dom_id, (new_qid as Qualified(new_q,new_id),_), _) ->
+              %% we're proposing to translate dom_q.dom_id into new_q.new_id
+            case findLeftmost (fn prop -> propertyName prop = Qualified (new_q, new_id)) props of
+              | None -> 
+                %% new_q.new_id does not refer to a pre-existing prop, so we're ok
+                return ()
+              | Some prior_prop -> 
+                %% new_q.new_id refers to a pre-existing prop
+                case findAQualifierMap (prop_translator, new_q, new_id) of
+                  | Some _ -> 
+                    %% but we're translator new_q.new_id out of the way, so we're ok
+                    return ()
+                  | None ->
+                    %% new_q, new_id refers to a pre-existing op, and is not being renamed away
+                    raise_later (TranslationError ("Illegal to translate prop "
+                                                     ^ (explicitPrintQualifiedId (Qualified(dom_q,dom_id)))
+                                                     ^ " into pre-existing, untranslated "
+                                                     ^ (explicitPrintQualifiedId new_qid),
+                                                   position)))
+            ()
+            prop_translator
 
-      def insert (op_translator: OpTranslator, type_translator) ((renaming_rule, rule_pos): RenamingRule)
-            : SpecCalc.Env(OpTranslator * Translator) =
+
+      def insert translators ((renaming_rule, rule_pos): RenamingRule) : SpecCalc.Env Translators =
 
 	let 
-          def add_type_rule op_translator type_translator (dom_qid as Qualified (dom_q, dom_id))
+          def add_type_rule translators (dom_qid as Qualified (dom_q, dom_id))
                 dom_types cod_qid cod_aliases =
 	    case dom_types of
 	      | first_info :: other_infos ->
@@ -299,9 +366,10 @@ SpecCalc qualifying spec
 		    {raise_later (TranslationError ("Illegal to translate from base type : "
                                                       ^ (explicitPrintQualifiedId dom_qid),
 						    rule_pos));
-		     return (op_translator, type_translator)
+		     return translators
 		    }
 		  else
+                    let type_translator = translators.types in
 		    case findAQualifierMap (type_translator, dom_q, dom_id) of
 		      | None -> 
 		        {when allow_exceptions?
@@ -318,32 +386,32 @@ SpecCalc qualifying spec
                                           (new_type_translator, primary_q, primary_id, (cod_qid, cod_aliases))
                                       else 
                                         new_type_translator);
-			 return (op_translator, new_type_translator)
+			 return (translators << {types = new_type_translator})
 			 }
 		      | _  -> 
 			{raise_later (TranslationError ("Multiple rules for source type "
                                                           ^ (explicitPrintQualifiedId dom_qid),
 							rule_pos));
-			 return (op_translator, type_translator)
+			 return translators
 			}
 		else 
 		  {
 		   raise_later (TranslationError ("Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid), 
 						  rule_pos));
-		   return (op_translator, type_translator)
+		   return translators
 		  })
 	      | _ -> 
 		if allow_extra_rules? then
-		  return (op_translator, type_translator)
+		  return translators
 		else
 		  {
 		   raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
 						  rule_pos));
-		   return (op_translator, type_translator)
+		   return translators
 		  }
 		  
 	      
-	  def add_op_rule (op_translator: OpTranslator) type_translator (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
+	  def add_op_rule translators (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
 	    case dom_ops of
 	      | first_op :: other_ops ->
 	        (let primary_dom_qid as Qualified (primary_q, primary_id) = primaryOpName first_op in
@@ -353,9 +421,10 @@ SpecCalc qualifying spec
 		     {
 		      raise_later (TranslationError ("Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid),
 						     rule_pos));
-		      return (op_translator, type_translator)
+		      return translators
 		     }
 		   else
+                     let op_translator = translators.ops in
 		     case findAQualifierMap (op_translator, dom_q, dom_id) of
 		       
 		       | None -> 
@@ -372,7 +441,7 @@ SpecCalc qualifying spec
                                       insertAQualifierMap (new_op_translator, primary_q, primary_id, (cod_qid, cod_aliases, fixity))
                                     else 
                                       new_op_translator);
-			  return (new_op_translator, type_translator)
+			  return (translators << { ops = new_op_translator })
 			  }
 		       | _ -> 
 			 %% Already had a rule for dom_qid...
@@ -380,37 +449,38 @@ SpecCalc qualifying spec
 			  raise_later (TranslationError ("Multiple rules for source op "^
 							 (explicitPrintQualifiedId dom_qid),
 							 rule_pos));
-			  return (op_translator, type_translator)
+			  return translators
 			 }
 		 else 
 		   {
 		    raise_later (TranslationError ("Ambiguous source op " ^ (explicitPrintQualifiedId dom_qid),
 						   rule_pos));
-		    return (op_translator, type_translator)
+		    return translators
 		    })
 	      | _ -> 
 		if allow_extra_rules? then
-		  return (op_translator, type_translator)
+		  return translators
 		else
 		  {
 		   raise_later (TranslationError ("Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid),
 						  rule_pos));
-		   return (op_translator, type_translator)
+		   return translators
 		  }
 		  
-	  def add_wildcard_rules op_translator type_translator dom_q cod_q cod_aliases =
+	  def add_wildcard_rules translators dom_q cod_q cod_aliases =
 	    %% Special hack for aggregate translators: X._ +-> Y._
 	    %% Find all dom types/ops qualified by X, and requalify them with Y
 	    (if basicQualifier? dom_q then
 	       {
 		raise_later (TranslationError ("Illegal to translate from base : " ^ dom_q, 
 					       position));
-		return (op_translator, type_translator)
+		return translators
 		}
 	     else
 	       let
 
 		 def extend_type_translator (type_q, type_id, _ (* type_info *), type_translator) =
+                   
 		   if type_q = dom_q then
 		     %% This is a candidate to be translated...
 		     case findAQualifierMap (type_translator, type_q, type_id) of
@@ -475,12 +545,57 @@ SpecCalc qualifying spec
 						  
 		   else
 		     return op_translator 
+
+                 def extend_prop_translator (prop_translator: Translator) ((_, Qualified (prop_q, prop_id), _, _, _) : Property) =
+		   if prop_q = dom_q then
+		     %% This is a candidate to be translated...
+		     case findAQualifierMap (prop_translator, prop_q, prop_id) of
+		       | None -> 
+		         %% No rule yet for this candidate...
+		         let new_cod_qid = mkQualifiedId (cod_q, prop_id) in
+			 {
+			  new_cod_qid <- (if syntactic_qid? new_cod_qid then
+					    {
+					     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId new_cod_qid) ^ 
+									    "' is syntax, not an op, hence cannot be the target of a translation.",
+									    rule_pos));
+					     return new_cod_qid
+					     }
+					  else
+					    foldM (fn cod_qid -> fn alias ->
+						   if syntactic_qid? alias then 
+						     {
+						      raise_later (TranslationError ("Alias `" ^ (explicitPrintQualifiedId alias) ^ 
+										     "' is syntax, not an op, hence cannot be the target of a translation.",
+										     rule_pos));
+						      return cod_qid
+						      }
+						   else
+						     return cod_qid)
+					          new_cod_qid
+						  cod_aliases);
+			  when allow_exceptions? 
+			   (complain_if_prop_collision (ops, prop_translator, prop_q, prop_id, new_cod_qid, rule_pos));
+			  return (insertAQualifierMap (prop_translator, prop_q, prop_id, (new_cod_qid, [new_cod_qid])))
+			 }
+		       | _ -> 
+			 %% Candidate already has a rule (e.g. via some explicit mapping)...
+			 {
+			  raise_later (TranslationError ("Multiple (wild) rules for source prop "^
+							 (explicitPrintQualifiedId (mkQualifiedId (prop_q, prop_id))),
+							 rule_pos));
+			  return prop_translator
+			  }
+						  
+		   else
+		     return prop_translator 
 	       in 
 		 {
 		  %% Check each dom type and op to see if this abstract ambiguous rule applies...
-		  type_translator <- foldOverQualifierMap extend_type_translator type_translator types;
-		  op_translator   <- foldOverQualifierMap extend_op_translator   op_translator   ops;
-		  return (op_translator, type_translator)
+		  types' <- foldOverQualifierMap extend_type_translator translators.types types;
+		  ops'   <- foldOverQualifierMap extend_op_translator   translators.ops   ops;
+		  props'   <- foldM extend_prop_translator translators.props props;
+		  return (translators << { types = types', ops = ops', props = props'})
 		 })
 
     in
@@ -494,33 +609,33 @@ SpecCalc qualifying spec
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
-	     return (op_translator, type_translator)
+	     return translators
 	    }
 	  else 
 	    let dom_types = findAllTypes (dom_spec, dom_qid) in
-	    add_type_rule op_translator type_translator dom_qid dom_types cod_qid cod_aliases
+	    add_type_rule translators dom_qid dom_types cod_qid cod_aliases
 
 	| Op   ((dom_qid, dom_type), (cod_qid, cod_type), cod_aliases) ->  
 	  if syntactic_qid? dom_qid then 
 	    {
 	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated.",
 					    rule_pos));
-	     return (op_translator, type_translator)
+	     return translators
 	    }
 	  else if basicOpName? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
-	     return (op_translator, type_translator)
+	     return translators
 	    }
 	  else if dom_qid in? immune_op_names then
-	    return (op_translator, type_translator)
+	    return translators
 	  else 
 	    let dom_ops = findAllOps (dom_spec, dom_qid) in
-	    add_op_rule op_translator type_translator dom_qid dom_ops cod_qid cod_aliases
+	    add_op_rule translators dom_qid dom_ops cod_qid cod_aliases
 
 	| Ambiguous (Qualified(dom_q, "_"), Qualified(cod_q,"_"), cod_aliases) -> 
-	  add_wildcard_rules op_translator type_translator dom_q cod_q cod_aliases
+	  add_wildcard_rules translators dom_q cod_q cod_aliases
 
 	| Ambiguous (dom_qid, cod_qid, cod_aliases) -> 
 	  if syntactic_qid? dom_qid then 
@@ -528,14 +643,14 @@ SpecCalc qualifying spec
 	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid)
                                               ^ "' is syntax, not an op, hence cannot be translated.",
 					    rule_pos));
-	     return (op_translator, type_translator)
+	     return translators
 	     }
 	  else if basicQualifiedId? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base type or op: "
                                               ^ (explicitPrintQualifiedId dom_qid),
 					    rule_pos));
-	     return (op_translator, type_translator)
+	     return translators
 	     }
 	  else
 	    %% Find a type or an op, and proceed as above
@@ -557,28 +672,23 @@ SpecCalc qualifying spec
                      raise_later (TranslationError ("Unrecognized source type or op "
                                                       ^(explicitPrintQualifiedId dom_qid), 
                                                     rule_pos));
-                     return (op_translator, type_translator)
+                     return translators
                      }
-	      | (_,  []) -> add_type_rule op_translator type_translator dom_qid dom_types cod_qid cod_aliases
-	      | ([], _)  -> add_op_rule   op_translator type_translator dom_qid dom_ops   cod_qid cod_aliases
+	      | (_,  []) -> add_type_rule translators dom_qid dom_types cod_qid cod_aliases
+	      | ([], _)  -> add_op_rule   translators dom_qid dom_ops   cod_qid cod_aliases
 	      | (_,  _)  -> {
 			     raise_later (TranslationError ("Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid),
 							    rule_pos));
-			     return (op_translator, type_translator)
+			     return translators
 			    }
     in
       {
-       (op_translator: OpTranslator, type_translator) <- foldM insert (emptyOpTranslator, emptyTranslator) renaming_rules;
+       translators <- foldM insert emptyTranslators renaming_rules;
        when allow_exceptions?
-        {complain_if_type_collisions_with_priors (types, type_translator);
-	 complain_if_op_collisions_with_priors   (ops, op_translator)};
-       return {
-	       ambigs = emptyTranslator,
-	       types  = type_translator,
-	       ops    = op_translator, 
-	       props  = op_translator,   % TODO: make this distinct
-	       others = None
-	      }
+        {complain_if_type_collisions_with_priors (types, translators.types);
+	 complain_if_op_collisions_with_priors   (ops, translators.ops);
+	 complain_if_prop_collisions_with_priors   (props, translators.props)};
+       return translators
        }
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -762,7 +872,7 @@ SpecCalc qualifying spec
       | Op      (qid, def?, a) -> Op      (translateOpQualifiedId translators.ops   qid, def?, a)
       | OpDef   (qid, refine?, hist, a) -> OpDef(translateOpQualifiedId translators.ops   qid, refine?, hist, a)
       | Property (pt, nm, tvs, term, a) ->
-        Property (pt, (translateOpQualifiedId translators.props nm), tvs, term, a)
+        Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
       | Import (sp_tm, spc, els, a) ->  
 	let (new_tm, spc, els) =
             if spc = base
@@ -867,7 +977,7 @@ op  evaluateTermWrtUnitId(sc_tm: SCTerm, currentUID: UnitId): Option Value =
     let docs = (ppTranslatorMap (ppString "")          translators.ambigs) ++ 
                (ppTranslatorMap (ppString "type ")     translators.types)  ++ 
                (ppOpTranslatorMap (ppString "op ")     translators.ops)    ++
-               (ppOpTranslatorMap (ppString "property ") translators.props)  ++
+               (ppTranslatorMap (ppString "property ") translators.props)  ++
 	       (case translators.others of
 		  | None -> []
 		  | Some other -> ppOtherTranslators other)
