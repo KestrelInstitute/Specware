@@ -7,22 +7,15 @@
 
 spec
   import /Library/Structures/Data/Monad
-  import translate /Library/Structures/Data/Monad
-    by { Monad +-> InputMonad, return +-> inputReturn,
-        monadBind +-> inputMonadBind, monadSeq +-> inputMonadSeq,
-        left_unit +-> input_left_unit, right_unit +-> input_right_unit,
-        associativity +-> input_associativity,
-        non_binding_sequence +-> input_non_binding_sequence
-        }
-  %import translate /Library/Structures/Data/Monad by {Monad._ +-> InputMonad._}
+  import translate /Library/Structures/Data/Monad by {Monad._ +-> OutputMonad._}
 
-  op [a] monadLift : InputMonad.Monad a -> Monad.Monad a
+  op [a] monadLift : Monad.Monad a -> OutputMonad.Monad a
 
   axiom lift_return is [a]
-    fa (x:a) monadLift (InputMonad.return x) = return x
+    fa (x:a) monadLift (Monad.return x) = return x
   axiom lift_bind is [a,b]
-    fa (m:InputMonad.Monad a, f:a -> InputMonad.Monad b)
-      monadLift (InputMonad.monadBind (m,f)) =
+    fa (m:Monad.Monad a, f:a -> Monad.Monad b)
+      monadLift (Monad.monadBind (m,f)) =
       monadBind (monadLift m, fn x -> monadLift (f x))
 
 end-spec
