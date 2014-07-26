@@ -193,7 +193,7 @@ SpecCalc qualifying spec
    %%  so we first convert formats...
    let tmaps = map (fn sm ->
 		    let op_translator   = convertOpIdMap (opMap sm, cod sm) in
-		    let prop_translator = op_translator           in  % TODO: fix evil hack
+		    let prop_translator = opToPropTranslator op_translator in  % TODO: fix evil hack
 		    {ambigs = emptyTranslator,
 		     types  = convertIdMap (typeMap sm),
 		     ops    = op_translator,

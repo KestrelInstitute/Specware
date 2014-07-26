@@ -294,7 +294,7 @@ op applySpecMorphism (sm : Morphism) (spc : Spec) : Env Spec =
  %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
  %%  so we first convert formats...
  let op_translator   = convertOpIdMap (opMap sm, cod sm) in
- let prop_translator = op_translator             in  % TODO: fix evil hack
+ let prop_translator = opToPropTranslator op_translator in  % TODO: fix evil hack
  let translators = {
                     ambigs = emptyTranslator,
                     types  = convertIdMap (typeMap sm),

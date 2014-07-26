@@ -38,6 +38,9 @@ SpecCalc qualifying spec
 
   type OtherTranslators
 
+  op opToPropTranslator : OpTranslator -> Translator =
+    mapAQualifierMap (fn x -> (x.1,x.2))
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% Perhaps evaluating a translation should yield a morphism rather than just 
