@@ -110,26 +110,24 @@ proof Isa Nat__fitsInNBits_p_monotone
   apply(simp)
 end-proof
 
-proof Isa Nat__zero_fits
+proof Isa Nat__zero_fits [simp]
   apply(simp add: Nat__fitsInNBits_p_def)
 end-proof
 
 proof Isa Nat__zero_fits_8
-  apply(simp add: Nat__fitsIn8Bits_p_def Nat__zero_fits)
+  apply(simp add: Nat__fitsIn8Bits_p_def)
 end-proof
 
 proof Isa Nat__zero_fits_16
-  apply(simp add: Nat__fitsIn16Bits_p_def Nat__zero_fits)
+  apply(simp add: Nat__fitsIn16Bits_p_def)
 end-proof
 
 proof Isa Nat__zero_fits_31
-  apply(simp add: Nat__fitsIn31Bits_p_def Nat__zero_fits)
+  apply(simp add: Nat__fitsIn31Bits_p_def)
 end-proof
 
 proof Isa Nat__zero_fits_32
-  apply(simp add: Nat__fitsIn32Bits_p_def Nat__zero_fits)
+  apply(simp add: Nat__fitsIn32Bits_p_def)
 end-proof
-
-
 
 end-spec

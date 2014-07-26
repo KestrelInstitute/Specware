@@ -75,7 +75,6 @@ type Int64  = (Int | intFitsInNBits? 64)
 
 op +_32 (x:Int32, y:Int32 | intFitsInNBits? 32 (x + y)) infixl 25 : Int32 = x + y
 
-
 theorem zero_fits is
   fa(n:PosNat) intFitsInNBits? n 0
 
@@ -104,26 +103,33 @@ proof Isa Int__intFitsInNBits_p_monotone
   apply(simp)
 end-proof
 
-proof Isa Int__intFitsInNBits_p_inhabited is [simp]
+proof Isa Int__intFitsInNBits_p_inhabited [simp]
   apply(simp add: Int__intFitsInNBits_p_def)
   apply(cut_tac x=0 in exI)
   apply(auto)
 end-proof
 
-proof Isa Int__zero_fits
+proof Isa Int__zero_fits [simp]
   apply(simp add: Int__intFitsInNBits_p_def)
 end-proof
 
 proof Isa Int__zero_fits_8
-  apply(simp add: Int__intFitsIn8Bits_p_def Int__zero_fits)
+  apply(simp add: Int__intFitsIn8Bits_p_def)
 end-proof
 
 proof Isa Int__zero_fits_16
-  apply(simp add: Int__intFitsIn16Bits_p_def Int__zero_fits)
+  apply(simp add: Int__intFitsIn16Bits_p_def)
 end-proof
 
 proof Isa Int__zero_fits_32
-  apply(simp add: Int__intFitsIn32Bits_p_def Int__zero_fits)
+  apply(simp add: Int__intFitsIn32Bits_p_def)
+end-proof
+
+%% This is verbatim because -1 is not a literal in Specware
+proof Isa -verbatim
+theorem Int__neg_one_fits_32 [simp]: 
+  "Int__intFitsInNBits_p 32 -1"
+  by (simp add: Int__intFitsInNBits_p_def)
 end-proof
 
 end-spec
