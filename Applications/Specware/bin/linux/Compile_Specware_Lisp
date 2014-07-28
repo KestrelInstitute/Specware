@@ -130,13 +130,13 @@ ls -sltra ./Languages/XML/Handwritten/Lisp/*.lisp \
           ./Languages/XML/Handwritten/Lisp/*.$FASL_EXTENSION 
 echo " "
 
-ls -sltra ./Library/IO/XmlRpc/s-xml/*.lisp \
-          ./Library/IO/XmlRpc/s-xml/*.$FASL_EXTENSION 
-echo " "
+# ls -sltra ./Library/IO/XmlRpc/s-xml/*.lisp \
+#           ./Library/IO/XmlRpc/s-xml/*.$FASL_EXTENSION 
+# echo " "
 
-ls -sltra ./Library/IO/XmlRpc/s-xml-rpc/*.lisp \
-          ./Library/IO/XmlRpc/s-xml-rpc/*.$FASL_EXTENSION 
-echo " "
+# ls -sltra ./Library/IO/XmlRpc/s-xml-rpc/*.lisp \
+#           ./Library/IO/XmlRpc/s-xml-rpc/*.$FASL_EXTENSION 
+# echo " "
 
 ls -sltra ./Library/Legacy/DataStructures/Handwritten/Lisp/*.lisp \
           ./Library/Legacy/DataStructures/Handwritten/Lisp/*.$FASL_EXTENSION 
