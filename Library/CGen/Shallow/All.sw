@@ -2,7 +2,7 @@ spec
 
 % TODO: Maybe deprecate this file and just proc the individual files?
 
-import AllIsa
+import CGenShallowAllIsa
 import CTargetExamples#Example10
 import CTargetExamples#Example11
 % I guess some of these are incompatible:
