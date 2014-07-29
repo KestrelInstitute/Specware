@@ -882,6 +882,8 @@ SpecCalc qualifying spec
             else
 	    (case opt_renaming of
 	      | Some (rules, pos) ->
+                % let _ = writeLine ("translating import: evaluating "
+                %                      ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)) in
 	        let rules = foldl (fn (rules, rule) ->
 				   case rule of
 				     | (Type (dom_qid, _, _), _) ->
@@ -903,6 +905,8 @@ SpecCalc qualifying spec
 		                  []
 				  rules
 		in
+                % let _ = writeLine ("translating import of " ^ showSCTerm sp_tm ^ " to "
+                %                      ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)) in
                 { new_els <- translateSpecElements translators opt_renaming els currentUID?;
                 (if rules = [] || new_els = els then
                      return (Import (sp_tm, spc, els, a))
@@ -931,6 +935,8 @@ SpecCalc qualifying spec
      case findAQualifierMap (spc.types, q, id) of
        | Some info -> true
        | None      -> false
+   else if id = "_" then
+     q in? qualifiers spc.ops
    else
      let spec_srts = wildFindUnQualified (spc.types, id) in
      if spec_srts = [] then
@@ -944,6 +950,8 @@ SpecCalc qualifying spec
      case findAQualifierMap (spc.ops, q, id) of
        | Some info -> true
        | None      -> false
+   else if id = "_" then
+     q in? qualifiers spc.ops
    else
      let spec_ops = wildFindUnQualified (spc.ops, id) in
      if spec_ops = [] then

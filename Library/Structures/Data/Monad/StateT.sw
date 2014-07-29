@@ -99,10 +99,6 @@ StateM = StateT[Identity#Identity_M]
 
 % Example 2: two nested applications of the state monad, Monad2.Monad
 % which is defined in terms of Monad1.Monad
-StateDoubleM_1 = (translate StateT by {MonadTrans._ +-> Monad2._})[StateT_M]
-StateDoubleM_2 = translate StateDoubleM_1 by {MonadTrans._ +-> Monad1._}
-StateDoubleM_3 = StateDoubleM_2[Identity#Identity_M]
-
 StateDoubleM =
   (translate (translate StateT by {MonadTrans._ +-> Monad2._})[StateT_M]
      by { MonadTrans._ +-> Monad1._})[Identity#Identity_M]
