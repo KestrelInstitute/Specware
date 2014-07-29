@@ -5,11 +5,11 @@
  * InputMonad.
  *)
 
-spec
+MonadTrans qualifying spec
   import /Library/Structures/Data/Monad
-  import translate /Library/Structures/Data/Monad by {Monad._ +-> OutputMonad._}
+  import translate /Library/Structures/Data/Monad by {Monad._ +-> MonadTrans._}
 
-  op [a] monadLift : Monad.Monad a -> OutputMonad.Monad a
+  op [a] monadLift : Monad.Monad a -> MonadTrans.Monad a
 
   axiom lift_return is [a]
     fa (x:a) monadLift (Monad.return x) = return x
