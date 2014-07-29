@@ -1093,6 +1093,7 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
  op localProperty?    : [a] QualifiedId * ASpec a -> Bool
  op localProperties   : [a] ASpec a -> AProperties a
  op allProperties     : Spec -> Properties
+ op allPropertyNames  : Spec -> QualifiedIds
  op localTypes        : [a] ASpec a -> List QualifiedId
  op localOps          : [a] ASpec a -> List QualifiedId
  op hasLocalType?     : [a] ASpec a -> Bool
@@ -1262,6 +1263,13 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
 		       | _ -> result)
                      []
 		     spc.elements
+
+ def allPropertyNames spc =
+   removeDuplicates (mapPartial (fn el ->
+				 case el of
+				   | Property p -> Some (propertyName p)
+				   | _ -> None)
+		                spc.elements)
 
  op findPropertiesNamed(spc: Spec, qid: QualifiedId): List(Property) =
    foldrSpecElements (fn (el, result) ->

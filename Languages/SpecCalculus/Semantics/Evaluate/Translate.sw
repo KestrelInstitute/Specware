@@ -549,7 +549,7 @@ SpecCalc qualifying spec
 		   else
 		     return op_translator 
 
-                 def extend_prop_translator (prop_translator: Translator) ((_, Qualified (prop_q, prop_id), _, _, _) : Property) =
+                 def extend_prop_translator (prop_translator: Translator) (Qualified (prop_q, prop_id)) =
 		   if prop_q = dom_q then
 		     %% This is a candidate to be translated...
 		     case findAQualifierMap (prop_translator, prop_q, prop_id) of
@@ -593,11 +593,15 @@ SpecCalc qualifying spec
 		   else
 		     return prop_translator 
 	       in 
+               % let _ = writeLine ("props = "
+               %                      ^ flatten (intersperse ","
+               %                                   (map (fn p -> printQualifiedId (propertyName p))
+               %                                      props))) in
 		 {
 		  %% Check each dom type and op to see if this abstract ambiguous rule applies...
 		  types' <- foldOverQualifierMap extend_type_translator translators.types types;
 		  ops'   <- foldOverQualifierMap extend_op_translator   translators.ops   ops;
-		  props'   <- foldM extend_prop_translator translators.props props;
+		  props'   <- foldM extend_prop_translator translators.props (allPropertyNames dom_spec);
 		  return (translators << { types = types', ops = ops', props = props'})
 		 })
 
