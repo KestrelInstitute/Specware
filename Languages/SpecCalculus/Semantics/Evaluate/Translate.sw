@@ -804,7 +804,7 @@ SpecCalc qualifying spec
     {
      new_types    <- translateTypeInfos s.types;
      new_ops      <- translateOpInfos   s.ops;
-     new_elements <- return (translateSpecElements translators opt_renaming s.elements currentUID?);
+     new_elements <- translateSpecElements translators opt_renaming s.elements currentUID?;
      tmp_spec     <- return (emptySpec << {types    = new_types,
                                            ops      = new_ops,
                                            elements = new_elements});
@@ -862,26 +862,25 @@ SpecCalc qualifying spec
 
   def translatePattern pat = pat
 
-  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> SpecElements
+  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> SpecCalc.Env SpecElements
   def translateSpecElements translators opt_renaming elements currentUID? =
     let base = getBaseSpec() in
-    map (translateSpecElement translators opt_renaming currentUID? base) elements
+    mapM (translateSpecElement translators opt_renaming currentUID? base) elements
 
-  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> Spec -> SpecElement -> SpecElement
+  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> Spec -> SpecElement -> SpecCalc.Env SpecElement
   def translateSpecElement translators opt_renaming currentUID? base el =
     case el of
-      | Type    (qid, a)       -> Type    (translateQualifiedId translators.types qid, a) 
-      | TypeDef (qid, a)       -> TypeDef (translateQualifiedId translators.types qid, a)
-      | Op      (qid, def?, a) -> Op      (translateOpQualifiedId translators.ops   qid, def?, a)
-      | OpDef   (qid, refine?, hist, a) -> OpDef(translateOpQualifiedId translators.ops   qid, refine?, hist, a)
+      | Type    (qid, a)       -> return (Type    (translateQualifiedId translators.types qid, a))
+      | TypeDef (qid, a)       -> return (TypeDef (translateQualifiedId translators.types qid, a))
+      | Op      (qid, def?, a) -> return (Op      (translateOpQualifiedId translators.ops   qid, def?, a))
+      | OpDef   (qid, refine?, hist, a) -> return (OpDef(translateOpQualifiedId translators.ops   qid, refine?, hist, a))
       | Property (pt, nm, tvs, term, a) ->
-        Property (pt, (translateQualifiedId translators.props nm), tvs, term, a)
+        return (Property (pt, (translateQualifiedId translators.props nm), tvs, term, a))
       | Import (sp_tm, spc, els, a) ->  
-	let (new_tm, spc, els) =
             if spc = base
-              then (sp_tm, spc, els)
+              then return (Import (sp_tm, spc, els, a))
             else
-	    case opt_renaming of
+	    (case opt_renaming of
 	      | Some (rules, pos) ->
 	        let rules = foldl (fn (rules, rule) ->
 				   case rule of
@@ -904,11 +903,10 @@ SpecCalc qualifying spec
 		                  []
 				  rules
 		in
-                let new_els = translateSpecElements translators opt_renaming els currentUID? in
-                (case rules of
-                   | [] | new_els = els ->
-                     (sp_tm, spc, els)
-                   | _ ->
+                { new_els <- translateSpecElements translators opt_renaming els currentUID?;
+                (if rules = [] || new_els = els then
+                     return (Import (sp_tm, spc, els, a))
+                 else
                      let renaming     = (reverse rules,               pos) in
                      let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
                      %% hack for Isabelle, but triggers exponential explosion...
@@ -922,12 +920,11 @@ SpecCalc qualifying spec
                      %%     % let _ = writeLine("Failed to evaluate translate:\n"
                      %%     %                     ^showSCTerm trans_spc_tm) in
                      %%     % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
-                     (trans_spc_tm, spc, new_els))
+                     { new_spec <- translateSpec true spc renaming [] true currentUID?;
+                      return (Import (trans_spc_tm, new_spec, new_els, a)) }) }
               | _ -> 
-                (sp_tm, spc, els)
-	in
-        Import (new_tm, spc, els, a)
-      | _ -> el
+                return (Import (sp_tm, spc, els, a)))
+      | _ -> return el
 
  op someNonBaseType? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 
    if q = UnQualified then
