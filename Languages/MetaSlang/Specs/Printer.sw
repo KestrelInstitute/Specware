@@ -1450,7 +1450,7 @@ AnnSpecPrinter qualifying spec
                   ppOpDecl context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[1]: " ^ printQualifiedId qid ^ "\n") in
-		result)
+		(4, (0, string("op "^show qid)) :: ppResult))
 	 | OpDef (qid,refine_num,_,_) ->
            % let _ = writeLine("printing def "^show qid^" "^show refine_num) in
 	   (case findTheOp(spc,qid) of
@@ -1574,7 +1574,7 @@ AnnSpecPrinter qualifying spec
                   ppOpDecl context (~afterOp?) (opinfo,result)
 	      | _ -> 
 	        let _  = toScreen("\nInternal error: Missing op[4]: " ^ printQualifiedId qid ^ "\n") in
-		(4, [(0, string("op "^show qid))]))
+		(4, (0, string("op "^show qid)) :: ppResult))
 	 | OpDef (qid, refine_num, _, _) ->
 	   (case findTheOp(spc,qid) of
 	      | Some opinfo -> ppOpDef context refine_num (opinfo,result)
