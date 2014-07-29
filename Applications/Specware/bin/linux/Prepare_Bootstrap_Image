@@ -17,7 +17,7 @@ cd -P $SCRIPT_DIR
 SCRIPT_DIR=`pwd`
 
 . "$SCRIPT_DIR"/Verify_Specware_Variables
-. "$SPECWARE4"/Scripts/unix/Verify_$LISP_MODE
+. "$SPECWARE4"/Scripts/unix/Verify_$LISP_MODE # I guess this sets IMAGE_EXTENSION
 
 BOOTSTRAP_IMAGE="$BIN_DIR"/Bootstrap.$IMAGE_EXTENSION
 SPECWARE4_IMAGE="$BIN_DIR"/Specware4.$IMAGE_EXTENSION
