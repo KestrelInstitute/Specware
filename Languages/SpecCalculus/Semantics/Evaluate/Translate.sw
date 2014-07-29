@@ -931,34 +931,34 @@ SpecCalc qualifying spec
       | _ -> return el
 
  op someNonBaseType? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 
-   if q = UnQualified then
-     case findAQualifierMap (spc.types, q, id) of
-       | Some info -> true
-       | None      -> false
-   else if id = "_" then
-     q in? qualifiers spc.ops
-   else
+   if id = "_" then
+     q in? qualifiers spc.types
+   else if q = UnQualified then
      let spec_srts = wildFindUnQualified (spc.types, id) in
      if spec_srts = [] then
        false
      else
-      let base_srts = wildFindUnQualified (base.types, id) in
-      forall? (fn spec_srt -> ~ (spec_srt in? base_srts)) spec_srts
-
- op someNonBaseOp? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 
-   if q = UnQualified then
-     case findAQualifierMap (spc.ops, q, id) of
+       let base_srts = wildFindUnQualified (base.types, id) in
+       forall? (fn spec_srt -> ~ (spec_srt in? base_srts)) spec_srts
+   else
+     case findAQualifierMap (spc.types, q, id) of
        | Some info -> true
        | None      -> false
-   else if id = "_" then
+
+ op someNonBaseOp? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 
+   if id = "_" then
      q in? qualifiers spc.ops
-   else
+   else if q = UnQualified then
      let spec_ops = wildFindUnQualified (spc.ops, id) in
      if spec_ops = [] then
        false
      else
       let base_ops = wildFindUnQualified (base.ops, id) in
       forall? (fn spec_op-> ~ (spec_op in? base_ops)) spec_ops
+   else
+     case findAQualifierMap (spc.ops, q, id) of
+       | Some info -> true
+       | None      -> false
 
 % op  Specware.cleanEnv : SpecCalc.Env ()
 % op  Specware.runSpecCommand : [a] SpecCalc.Env a -> a
