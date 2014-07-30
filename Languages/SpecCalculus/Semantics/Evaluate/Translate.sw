@@ -43,10 +43,8 @@ SpecCalc qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type ImportArgs = SCTerm * Spec * SpecElements
-
   % Memoization tables for translating specs
-  type TranslateMemo = STHMap.Map (Spec, Spec) * STHMap.Map (ImportArgs, ImportArgs)
+  type TranslateMemo = STHMap.Map (Spec, Spec)
 
   % A monad for memoization: the state transformer applied to Env
   type MemoMonad a = TranslateMemo -> Env (TranslateMemo * a)
@@ -59,7 +57,7 @@ SpecCalc qualifying spec
 
   % Run a MemoMonad in the Env monad
   op [a] runMemoMonad (m : MemoMonad a) : Env a =
-    { (_, res) <- m (STHMap.emptyMap, STHMap.emptyMap);
+    { (_, res) <- m STHMap.emptyMap;
       return res }
 
   % Lift an Env computation to a MemoMonad computation
@@ -77,9 +75,9 @@ SpecCalc qualifying spec
   % for key, return it, otherwise call the function to generate the
   % value and return that value, storing it in the table first
   op memoizedM (key: Spec) (f: () -> MemoMonad Spec) : MemoMonad Spec =
-    fn (memos as (memo_s, memo_i)) ->
-    case STHMap.apply (memo_s, key) of
-      | Some val -> return (memos, val)
+    fn memo ->
+    case STHMap.apply (memo, key) of
+      | Some val -> return (memo, val)
       | None ->
         % let key_qids = allSpecNames key in
         % let equiv_spec_opt =
@@ -90,16 +88,16 @@ SpecCalc qualifying spec
         %              writeLine ("memoizedM found a similar spec: key = ("
         %                         ^ printSpec key ^ "), equiv = (" ^ printSpec equiv ^ ")")
         %            | _ -> ()) in
-        { ((memo_s', memo_i'), res) <- f () memos;
-          return ((STHMap.update (memo_s', key, res), memo_i'), res) }
+        { (memo', res) <- f () memo;
+          return (STHMap.update (memo', key, res), res) }
 
-  op memoizedM_i (key: ImportArgs) (f: () -> MemoMonad ImportArgs) : MemoMonad ImportArgs =
-    fn (memos as (memo_s, memo_i)) ->
-    case STHMap.apply (memo_i, key) of
-      | Some val -> return (memos, val)
-      | None ->
-        { ((memo_s', memo_i'), res) <- f () memos;
-          return ((memo_s', STHMap.update (memo_i', key, res)), res) }
+  % op memoizedM_i (key: ImportArgs) (f: () -> MemoMonad ImportArgs) : MemoMonad ImportArgs =
+  %   fn (memos as (memo_s, memo_i)) ->
+  %   case STHMap.apply (memo_i, key) of
+  %     | Some val -> return (memos, val)
+  %     | None ->
+  %       { ((memo_s', memo_i'), res) <- f () memos;
+  %         return ((memo_s', STHMap.update (memo_i', key, res)), res) }
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -891,6 +889,7 @@ SpecCalc qualifying spec
      %% name under its scope:
      new_spec     <- return (removeVarOpCaptures new_spec);
      % new_spec     <- return (compressDefs        new_spec);
+     new_spec     <- return (removeDuplicateImports new_spec);
      return new_spec
     }
 
@@ -946,67 +945,75 @@ SpecCalc qualifying spec
       | OpDef   (qid, refine?, hist, a) -> return (OpDef(translateOpQualifiedId translators.ops   qid, refine?, hist, a))
       | Property (pt, nm, tvs, term, a) ->
         return (Property (pt, (translateQualifiedId translators.props nm), tvs, term, a))
-      | Import (sp_tm, spc, els, a) ->  
-            if spc = base
-              then return (Import (sp_tm, spc, els, a))
-            else
-	    (case opt_renaming of
-	      | Some (renaming as (rules, pos)) ->
-                let _ = writeLine ("translating import: evaluating "
-                                     ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)
-                                     ^ "(") in
-                % filter the translation rules to only those that apply to spc
-	        let new_rules = foldl (fn (rules, rule) ->
-				   case rule of
-				     | (Type (dom_qid, _, _), _) ->
-				       (case findTheType (spc, dom_qid) of
-					  | Some _ -> [rule] ++ rules
-					  | _ -> rules)
-				     | (Op ((dom_qid, _), _, _), _) ->
-				       (case findTheOp (spc, dom_qid) of
-					  | Some _ -> rule :: rules
-					  | _ -> rules)
-                                     | (Ambiguous (dom_qid, _, _), _) ->
-                                          if someNonBaseType? (spc, dom_qid, base) || someNonBaseOp? (spc, dom_qid, base) then
-                                            [rule] ++ rules
-                                          else
-                                            rules
-				     | _ -> 
-                                       %% can we translate anything besides type or op?
-				       [rule] ++ rules)
-		                  []
-				  rules
-		in
-                % let _ = writeLine ("translating import of " ^ showSCTerm sp_tm ^ " to "
-                %                      ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)) in
-                { new_els <- translateSpecElements translators opt_renaming els currentUID?;
-                (if new_rules = [] || new_els = els then
-                     let _ = writeLine (") import of " ^ showSCTerm sp_tm ^ " not translated") in
-                     return (Import (sp_tm, spc, els, a))
-                 else
-                     let new_renaming = (reverse new_rules,               pos) in
-                     let trans_spc_tm = (Translate (sp_tm, new_renaming), pos) in
-                     %% hack for Isabelle, but triggers exponential explosion...
-                     %% case UIDfromPosition(sp_tm.2) of
-                     %%   | None -> (trans_spc_tm, spc, els)
-                     %%   | Some currentUID ->
-                     %% case evaluateTermWrtUnitId(trans_spc_tm, currentUID) of
-                     %%   | Some(Spec trans_spc) ->
-                     %%     (trans_spc_tm, trans_spc, els)
-                     %%   | None ->
-                     %%     % let _ = writeLine("Failed to evaluate translate:\n"
-                     %%     %                     ^showSCTerm trans_spc_tm) in
-                     %%     % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
+      | Import (sp_tm, spc, els, a) ->
+        (case opt_renaming of
+           | _ | spc = base || opt_renaming = None ->
+             % If we are translating the base spec, or we have no renaming, no need to do anything
+             return (Import (sp_tm, spc, els, a))
 
-                     % NOTE: we recursively translate spc with the non-filtered
-                     % rules, because we don't want to memoize multiple
-                     % translations of the same spec; but it should be the same
-                     { new_spec <- translateSpecM true spc renaming [] true currentUID?;
-                      let _ = writeLine (") translated import of " ^ showSCTerm sp_tm ^ " to "
-                                           ^ showSCTerm trans_spc_tm) in
-                      return (Import (trans_spc_tm, new_spec, new_els, a)) }) }
-              | _ -> 
-                return (Import (sp_tm, spc, els, a)))
+           | Some (renaming as (rules, pos)) ->
+             let _ = writeLine ("translating import: evaluating "
+                                  ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)
+                                  ^ "(") in
+
+             % filter the translation rules to only those that apply to spc
+             let new_rules =
+               foldl (fn (rules, rule) ->
+                        case rule of
+                          | (Type (dom_qid, _, _), _) ->
+                            (case findTheType (spc, dom_qid) of
+                               | Some _ -> [rule] ++ rules
+                               | _ -> rules)
+                          | (Op ((dom_qid, _), _, _), _) ->
+                            (case findTheOp (spc, dom_qid) of
+                               | Some _ -> rule :: rules
+                               | _ -> rules)
+                          | (Ambiguous (dom_qid, _, _), _) ->
+                            if someNonBaseType? (spc, dom_qid, base) || someNonBaseOp? (spc, dom_qid, base) then
+                              [rule] ++ rules
+                            else
+                              rules
+                          | _ -> 
+                            %% can we translate anything besides type or op?
+                            [rule] ++ rules)
+               []
+               rules
+             in
+
+             % If we have filtered out all the rules, then no need to recurse!
+             if new_rules = [] then
+               let _ = writeLine (") import of " ^ showSCTerm sp_tm ^ " not translated") in
+               return (Import (sp_tm, spc, els, a))
+             else
+               % Otherwise, we do need to recurse. First, build the new SCTerm:
+               let new_renaming = (reverse new_rules,               pos) in
+               let trans_spc_tm = (Translate (sp_tm, new_renaming), pos) in
+
+               %% hack for Isabelle, but triggers exponential explosion...
+               %% case UIDfromPosition(sp_tm.2) of
+               %%   | None -> (trans_spc_tm, spc, els)
+               %%   | Some currentUID ->
+               %% case evaluateTermWrtUnitId(trans_spc_tm, currentUID) of
+               %%   | Some(Spec trans_spc) ->
+               %%     (trans_spc_tm, trans_spc, els)
+               %%   | None ->
+               %%     % let _ = writeLine("Failed to evaluate translate:\n"
+               %%     %                     ^showSCTerm trans_spc_tm) in
+               %%     % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
+
+               {
+                % Next, recursively translate spc
+                new_spec <- translateSpecM true spc new_renaming [] true currentUID?;
+                let _ = writeLine (") translated import of " ^ showSCTerm sp_tm ^ " to "
+                                     ^ showSCTerm trans_spc_tm) in
+
+                % Finally, re-construct the elements. We don't just translate all the old
+                % elements, because we have already translated them in traslating spc!
+                % Instead, we just copy all the elements from new_spec, and use
+                % removeDuplicateImports at the top level in traslateSpecM
+                let new_els = new_spec.elements in
+
+                return (Import (trans_spc_tm, new_spec, new_els, a)) })
       | _ -> return el
 
  op someNonBaseType? (spc : Spec, Qualified (q, id) : QualifiedId, base : Spec) : Bool = 

@@ -162,6 +162,8 @@ SpecCalc qualifying spec
            %% new_spec    <- return (removeVarOpCaptures new_spec);
            %% new_spec    <- return (compressDefs        new_spec);
 
+           new_spec    <- return (removeDuplicateImports new_spec);
+
            new_spec    <- complainIfAmbiguous new_spec pos;
            raise_any_pending_exceptions;
            return new_spec
@@ -186,7 +188,14 @@ SpecCalc qualifying spec
 	else
           {%print("ImplicitQ "^new_q^" qualifying "^showSCTerm sp_tm^"\n");
            q_sp <- qualifySpec sp new_q immune_ids a;
-           q_elts <- qualifySpecElements new_q immune_ids els;
+
+           % NOTE: do *not* recurse directly on the elements here, since this
+           % causes an exponential explosion. Instead, extract all the elements
+           % of the newly-qualified spec; removeDuplicateImports is then called
+           % in qualifySpec to fix these up
+           let q_elts = q_sp.elements in
+           %q_elts <- qualifySpecElements new_q immune_ids els;
+
            return(Import ((Qualify (sp_tm, new_q), noPos),
                           q_sp, q_elts, a))}
       | Op   (qid,def?,a)            -> return(   Op(qualifyOpId new_q immune_ids qid, def?,a))
