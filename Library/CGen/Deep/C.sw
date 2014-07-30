@@ -4883,22 +4883,22 @@ proof Isa LLONG_MAX_Obligation_subtype
 end-proof 
 
 proof Isa min_SHRT_MIN [simp]
-  apply (simp add: C__SHRT_MIN_def, rule_tac j="2 ^ 15" in zle_trans, simp)
+  apply (simp add: C__SHRT_MIN_def, rule_tac y="2 ^ 15" in order_trans, simp)
   apply (simp only: power_increasing_iff)
   apply (cut_tac C__min_short_bits, arith)
 end-proof
 proof Isa min_INT_MIN [simp]
-  apply (simp add: C__INT_MIN_def, rule_tac j="2 ^ 15" in zle_trans, simp)
+  apply (simp add: C__INT_MIN_def, rule_tac y="2 ^ 15" in order_trans, simp)
   apply (simp only: power_increasing_iff)
   apply (cut_tac C__min_int_bits, arith)
 end-proof
 proof Isa min_LONG_MIN [simp]
-  apply (simp add: C__LONG_MIN_def, rule_tac j="2 ^ 31" in zle_trans, simp)
+  apply (simp add: C__LONG_MIN_def, rule_tac y="2 ^ 31" in order_trans, simp)
   apply (simp only: power_increasing_iff)
   apply (cut_tac C__min_long_bits, arith)
 end-proof
 proof Isa min_LLONG_MIN [simp] 
-  apply (simp add: C__LLONG_MIN_def, rule_tac j="2 ^ 63" in zle_trans, simp)
+  apply (simp add: C__LLONG_MIN_def, rule_tac y="2 ^ 63" in order_trans, simp)
   apply (simp only: power_increasing_iff)
   apply (cut_tac C__min_llong_bits, arith)
 end-proof
@@ -5116,11 +5116,11 @@ theorem C__LONG_INT_MIN [simp]:          "C__LONG_MIN \<le> C__INT_MIN"
 theorem C__LLONG_LONG_MIN [simp]:        "C__LLONG_MIN \<le> C__LONG_MIN"
   by (simp add: C__MinMax diff_le_mono)
 lemma C__LONG_SHRT_MIN [simp]:            "C__LONG_MIN \<le> C__SHRT_MIN"
-  by (rule_tac j=C__INT_MIN in zle_trans, simp_all)
+  by (rule_tac y=C__INT_MIN in order_trans, simp_all)
 lemma C__LLONG_SHRT_MIN [simp]:           "C__LLONG_MIN \<le> C__SHRT_MIN"
-  by (rule_tac j=C__LONG_MIN in zle_trans, simp_all)
+  by (rule_tac y=C__LONG_MIN in order_trans, simp_all)
 lemma C__LLONG_INT_MIN [simp]:            "C__LLONG_MIN \<le> C__INT_MIN"
-  by (rule_tac j=C__LONG_MIN in zle_trans, simp_all)
+  by (rule_tac y=C__LONG_MIN in order_trans, simp_all)
 
 (******************************************************************************)
 
@@ -5719,7 +5719,7 @@ lemma C__rangeOfIntegerType_extend_TC [simp]:
   apply (thin_tac ?P, thin_tac "?x = len")
   apply (auto simp add: less_le_trans power_increasing)
   apply (simp add: algebra_simps,
-         rule_tac j="2 ^ (len - 1)" in zle_trans, simp_all)
+         rule_tac y="2 ^ (len - 1)" in order_trans, simp_all)
   apply (rule_tac y="int i" in less_trans, 
          simp_all add: less_le_trans power_increasing)
 done 
@@ -5821,7 +5821,7 @@ lemma C__rangeOfIntegerType_subset_sshort_sint [simp]:
    \<subseteq> Rep_C__FiniteSetInt (C__rangeOfIntegerType C__Type__sint)"
   apply (simp add: C__rangeOfIntegerType_def C__FiniteSetInt_def,
          auto simp add: subset_iff mem_def C__MinMax)
-  apply (rule_tac j="- (2 ^ (C__short_bits - Suc 0))" in zle_trans,
+  apply (rule_tac y="- (2 ^ (C__short_bits - Suc 0))" in order_trans,
          simp_all add: power_increasing diff_le_mono)
   apply (erule less_le_trans, simp add: power_increasing diff_le_mono)
 done
@@ -5832,7 +5832,7 @@ lemma C__rangeOfIntegerType_subset_ushort_sint1:
    \<subseteq> Rep_C__FiniteSetInt (C__rangeOfIntegerType C__Type__sint)"
   apply (simp add: C__rangeOfIntegerType_def C__FiniteSetInt_def,
          auto simp add: subset_iff mem_def C__MinMax)
-  apply (rule_tac j="0" in zle_trans, simp_all)
+  apply (rule_tac y="0" in order_trans, simp_all)
   apply (erule less_le_trans, 
          simp add: power_increasing diff_le_mono C__Consts)
 done
@@ -7799,7 +7799,7 @@ lemma C__convertInteger_sign_ext_bound:
    apply (simp only: C__Range de_Morgan_conj not_less not_le)
    apply (clarsimp simp add: TwosComplement_tcN, rotate_tac 1)
    apply (drule_tac a="(2::int)" in power_strict_increasing, simp)
-   apply (rule_tac j="i+(2 ^ (len - Suc 0))" in zle_trans, auto)
+   apply (rule_tac y="i+(2 ^ (len - Suc 0))" in order_trans, auto)
 done
 
 lemma C__convertInteger_sign_ext_range:
@@ -7872,7 +7872,7 @@ lemma C__convertInteger_sign_ext_len_neg_aux0:
    apply (rule_tac len=len2 in Bits__toNat_hd_1, simp_all add: C__bitsOfIntV)
    apply (simp add: zle_int [symmetric] power2_nat)
    apply (cut_tac x=len2 in power_sub_1_eq_int, simp_all add: algebra_simps)
-   apply (erule zle_trans, simp)
+   apply (erule order_trans, simp)
    apply (clarsimp simp add: TwosComplement_tcN  power_sub_1_eq_int)
 done 
 
@@ -8032,12 +8032,12 @@ lemma C__convertInteger_truncate_range [simp]:
                   C__plainCharsAreUnsigned \<and> newty = C__Type__char",
          simp_all add: C__Range, simp_all add: TwosComplement_tcN)
    apply (thin_tac "?P \<or> ?Q", clarsimp, rule conjI)
-   apply (rule zle_trans, simp_all)
+   apply (rule order_trans, simp_all)
    apply (drule less_le_suc, 
           drule_tac a="(2::int)" in power_increasing, simp,
           erule less_le_trans, simp)
    apply (thin_tac "\<not> ?P \<and> ?Q", clarsimp, rule conjI)
-   apply (rule zle_trans, simp_all)
+   apply (rule order_trans, simp_all)
    apply (rule less_trans, simp_all, 
           cut_tac ty=newty in C__typeBits_pos, 
           simp (no_asm_simp) add: power_strict_increasing)
