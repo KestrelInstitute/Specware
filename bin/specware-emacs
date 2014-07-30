@@ -19,6 +19,7 @@ cd $SPECWARE4
 # To override SBCL_SIZE, preset SBCL_SIZE before invoking this script.
 SBCL_SIZE="${SBCL_SIZE:=2000}"
 
+# TODO: rename this var to SPECWARE_EXECUTABLE, or would that break things?
 LISP_EXECUTABLE="$SPECWARE4"/Applications/Specware/bin/linux/Specware4.sbclexe
 
 # FIXME Think about how to set SWPATH (if at all):
