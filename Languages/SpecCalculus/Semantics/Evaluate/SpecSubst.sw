@@ -304,7 +304,7 @@ op applySpecMorphism (sm : Morphism) (spc : Spec) : Env Spec =
                     }
  in
  %% Note that auxTranslateSpec is not expected to raise any errors.
- auxTranslateSpec spc translators None None
+ runMemoMonad (auxTranslateSpec spc translators None None)
     
 %% ======================================================================  
 %%  Error handling...

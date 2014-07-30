@@ -43,6 +43,67 @@ SpecCalc qualifying spec
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  type ImportArgs = SCTerm * Spec * SpecElements
+
+  % Memoization tables for translating specs
+  type TranslateMemo = STHMap.Map (Spec, Spec) * STHMap.Map (ImportArgs, ImportArgs)
+
+  % A monad for memoization: the state transformer applied to Env
+  type MemoMonad a = TranslateMemo -> Env (TranslateMemo * a)
+
+  op [a] Translate.return (x:a) : MemoMonad a = fn memo -> SpecCalc.return (memo, x)
+  op [a,b] Translate.monadBind (m:MemoMonad a, f:a -> MemoMonad b) : MemoMonad b =
+    fn memo ->
+      { (memo', a) <- m memo;
+        f a memo' }
+
+  % Run a MemoMonad in the Env monad
+  op [a] runMemoMonad (m : MemoMonad a) : Env a =
+    { (_, res) <- m (STHMap.emptyMap, STHMap.emptyMap);
+      return res }
+
+  % Lift an Env computation to a MemoMonad computation
+  op [a] memoLift (m : Env a) : MemoMonad a =
+    fn memo -> { res <- m; return (memo, res) }
+
+  % mapM lifted to MemoMonad
+  op [a,b] MemoMonad.mapM (f : a -> MemoMonad b) : List a -> MemoMonad (List b) =
+    foldl (fn (m, a) -> { tl <- m; hd <- f a; return (hd::tl) }) (return [])
+
+  op printQualifiedIds (qids : QualifiedIds) : String =
+    flatten (intersperse ", " (map printQualifiedId qids))
+
+  % Combinator for adding memoization: if there is a memoized value
+  % for key, return it, otherwise call the function to generate the
+  % value and return that value, storing it in the table first
+  op memoizedM (key: Spec) (f: () -> MemoMonad Spec) : MemoMonad Spec =
+    fn (memos as (memo_s, memo_i)) ->
+    case STHMap.apply (memo_s, key) of
+      | Some val -> return (memos, val)
+      | None ->
+        % let key_qids = allSpecNames key in
+        % let equiv_spec_opt =
+        %   findLeftmost (fn spc -> key_qids = allSpecNames spc) (domainToList memo)
+        % in
+        % let _ = (case equiv_spec_opt of
+        %            | Some equiv ->
+        %              writeLine ("memoizedM found a similar spec: key = ("
+        %                         ^ printSpec key ^ "), equiv = (" ^ printSpec equiv ^ ")")
+        %            | _ -> ()) in
+        { ((memo_s', memo_i'), res) <- f () memos;
+          return ((STHMap.update (memo_s', key, res), memo_i'), res) }
+
+  op memoizedM_i (key: ImportArgs) (f: () -> MemoMonad ImportArgs) : MemoMonad ImportArgs =
+    fn (memos as (memo_s, memo_i)) ->
+    case STHMap.apply (memo_i, key) of
+      | Some val -> return (memos, val)
+      | None ->
+        { ((memo_s', memo_i'), res) <- f () memos;
+          return ((memo_s', STHMap.update (memo_i', key, res)), res) }
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   %% Perhaps evaluating a translation should yield a morphism rather than just 
   %% a spec. Then perhaps we add dom and cod domain operations on morphisms.
   %% Perhaps the calculus is getting too complicated.
@@ -95,8 +156,12 @@ SpecCalc qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% translateSpec is used by Translate and Colimit
-  op  translateSpec : Bool -> Spec -> Renaming -> QualifiedIds -> Bool -> Option UnitId -> Env Spec
+  op  translateSpec : Bool -> Spec -> Renaming -> QualifiedIds -> Bool -> Option UnitId -> SpecCalc.Env Spec
   def translateSpec allow_exceptions? spc renaming immune_op_names allow_extra_rules? currentUID? = 
+    runMemoMonad (translateSpecM allow_exceptions? spc renaming immune_op_names allow_extra_rules? currentUID?)
+
+  op  translateSpecM : Bool -> Spec -> Renaming -> QualifiedIds -> Bool -> Option UnitId -> MemoMonad Spec
+  def translateSpecM allow_exceptions? spc renaming immune_op_names allow_extra_rules? currentUID? = 
     %%
     %% WARNING:  When allow_exceptions? is false, as when called from colimit,
     %% translateSpec (and the routines it calls) must not raise any errors,
@@ -106,11 +171,12 @@ SpecCalc qualifying spec
     %% The colimit code invokes the monad produced here through a special 
     %% call to run that is not prepared to handle exceptions.
     %%
+    memoizedM spc (fn () ->
     let pos = positionOf renaming in
     {
-     translators <- makeTranslators allow_exceptions? spc renaming immune_op_names allow_extra_rules?;
-     when allow_exceptions?
-      raise_any_pending_exceptions;
+     translators <- memoLift (makeTranslators allow_exceptions? spc renaming immune_op_names allow_extra_rules?);
+     memoLift (when allow_exceptions?
+                 raise_any_pending_exceptions);
      %% translators is now an explicit map for which each name in its 
      %% domain refers to a particular type or op in the domain spec.  
      %%
@@ -133,7 +199,7 @@ SpecCalc qualifying spec
      %% Note that auxTranslateSpec is not expected to raise any errors.
      spc <- auxTranslateSpec spc translators currentUID? (Some renaming);
      return spc
-    } 
+    })
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -728,7 +794,7 @@ SpecCalc qualifying spec
   %% In particular, if an operation such as translate wishes to signal errors in 
   %% some situations, those errors should be raised while Translators is being 
   %% created, not here.
-  op  auxTranslateSpec : Spec -> Translators -> Option UnitId -> Option Renaming -> SpecCalc.Env Spec
+  op  auxTranslateSpec : Spec -> Translators -> Option UnitId -> Option Renaming -> MemoMonad Spec
   def auxTranslateSpec spc translators currentUID? opt_renaming =
     let type_translator = translators.types in
     let   op_translator = translators.ops   in
@@ -806,8 +872,8 @@ SpecCalc qualifying spec
                     spc
     in
     {
-     new_types    <- translateTypeInfos s.types;
-     new_ops      <- translateOpInfos   s.ops;
+     new_types    <- memoLift (translateTypeInfos s.types);
+     new_ops      <- memoLift (translateOpInfos   s.ops);
      new_elements <- translateSpecElements translators opt_renaming s.elements currentUID?;
      tmp_spec     <- return (emptySpec << {types    = new_types,
                                            ops      = new_ops,
@@ -866,12 +932,12 @@ SpecCalc qualifying spec
 
   def translatePattern pat = pat
 
-  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> SpecCalc.Env SpecElements
+  op  translateSpecElements : Translators -> Option Renaming -> SpecElements -> Option UnitId -> MemoMonad SpecElements
   def translateSpecElements translators opt_renaming elements currentUID? =
     let base = getBaseSpec() in
     mapM (translateSpecElement translators opt_renaming currentUID? base) elements
 
-  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> Spec -> SpecElement -> SpecCalc.Env SpecElement
+  op  translateSpecElement : Translators -> Option Renaming -> Option UnitId -> Spec -> SpecElement -> MemoMonad SpecElement
   def translateSpecElement translators opt_renaming currentUID? base el =
     case el of
       | Type    (qid, a)       -> return (Type    (translateQualifiedId translators.types qid, a))
@@ -885,10 +951,12 @@ SpecCalc qualifying spec
               then return (Import (sp_tm, spc, els, a))
             else
 	    (case opt_renaming of
-	      | Some (rules, pos) ->
-                % let _ = writeLine ("translating import: evaluating "
-                %                      ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)) in
-	        let rules = foldl (fn (rules, rule) ->
+	      | Some (renaming as (rules, pos)) ->
+                let _ = writeLine ("translating import: evaluating "
+                                     ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)
+                                     ^ "(") in
+                % filter the translation rules to only those that apply to spc
+	        let new_rules = foldl (fn (rules, rule) ->
 				   case rule of
 				     | (Type (dom_qid, _, _), _) ->
 				       (case findTheType (spc, dom_qid) of
@@ -912,11 +980,12 @@ SpecCalc qualifying spec
                 % let _ = writeLine ("translating import of " ^ showSCTerm sp_tm ^ " to "
                 %                      ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)) in
                 { new_els <- translateSpecElements translators opt_renaming els currentUID?;
-                (if rules = [] || new_els = els then
+                (if new_rules = [] || new_els = els then
+                     let _ = writeLine (") import of " ^ showSCTerm sp_tm ^ " not translated") in
                      return (Import (sp_tm, spc, els, a))
                  else
-                     let renaming     = (reverse rules,               pos) in
-                     let trans_spc_tm = (Translate (sp_tm, renaming), pos) in
+                     let new_renaming = (reverse new_rules,               pos) in
+                     let trans_spc_tm = (Translate (sp_tm, new_renaming), pos) in
                      %% hack for Isabelle, but triggers exponential explosion...
                      %% case UIDfromPosition(sp_tm.2) of
                      %%   | None -> (trans_spc_tm, spc, els)
@@ -928,7 +997,13 @@ SpecCalc qualifying spec
                      %%     % let _ = writeLine("Failed to evaluate translate:\n"
                      %%     %                     ^showSCTerm trans_spc_tm) in
                      %%     % let _ = writeLine("wrt tUID:\n"^anyToString currentUID) in
-                     { new_spec <- translateSpec true spc renaming [] true currentUID?;
+
+                     % NOTE: we recursively translate spc with the non-filtered
+                     % rules, because we don't want to memoize multiple
+                     % translations of the same spec; but it should be the same
+                     { new_spec <- translateSpecM true spc renaming [] true currentUID?;
+                      let _ = writeLine (") translated import of " ^ showSCTerm sp_tm ^ " to "
+                                           ^ showSCTerm trans_spc_tm) in
                       return (Import (trans_spc_tm, new_spec, new_els, a)) }) }
               | _ -> 
                 return (Import (sp_tm, spc, els, a)))

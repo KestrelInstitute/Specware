@@ -1044,6 +1044,15 @@ op [a] mapSpecLocals (tsp: TSP_Maps a) (spc: ASpec a): ASpec a =
                        []
 		       spc.ops
 
+ % Create a list of all the op, type, and prop names in a spec
+ op allSpecNames (spc: Spec) : QualifiedIds =
+    map (fn (q, id, _) -> Qualified (q, id)) (typesAsList spc)
+    ++
+    map (fn (q, id, _) -> Qualified (q, id)) (opsAsList spc)
+    ++
+    (allPropertyNames spc)
+
+
  % --------------------------------------------------------------------------------
 
  op  emptyTypeNames : TypeNames
