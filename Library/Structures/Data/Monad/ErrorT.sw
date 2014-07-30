@@ -73,7 +73,11 @@ ErrorT = spec
   end-proof
 
   proof Isa MonadTrans.associativity
-    sorry
+    apply (auto simp add: MonadTrans__monadBind_def Monad__associativity[symmetric])
+    apply (rule arg_cong[of _ _ "\<lambda>f . Monad__monadBind (m, f)"])
+    apply (rule ext, case_tac x)
+    apply (auto simp add: Monad__left_unit)
+    done
   end-proof
 
   proof Isa MonadTrans.non_binding_sequence
