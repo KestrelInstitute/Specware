@@ -1,67 +1,66 @@
 
-ErrorT = spec
+ErrorT = MonadTrans qualifying spec
   import ../Monad
 
   % Something that could be a value of type a or could be an error
   type MaybeError a = | Ok a | Error String
 
   % The error transformer type
-  type MonadTrans.Monad a = Monad.Monad (MaybeError a)
+  type Monad a = Monad.Monad (MaybeError a)
 
   % All the ops for the error transformer
 
-  op [a] MonadTrans.return (x:a) : MonadTrans.Monad a =
+  op [a] return (x:a) : Monad a =
     Monad.return (Ok x)
 
-  op [a,b] MonadTrans.monadBind (m:MonadTrans.Monad a,
-                                  f:a -> MonadTrans.Monad b) : MonadTrans.Monad b =
+  op [a,b] monadBind (m:Monad a, f:a -> Monad b) : Monad b =
     Monad.monadBind (m, (fn x -> case x of
                                    | Ok a -> f a
                                    | Error str -> return (Error str)))
 
-  op [a,b] MonadTrans.monadSeq (m1:MonadTrans.Monad a, m2:MonadTrans.Monad b) : MonadTrans.Monad b =
-    MonadTrans.monadBind (m1, fn _ -> m2)
+  op [a,b] monadSeq (m1:Monad a, m2:Monad b) : Monad b =
+    monadBind (m1, fn _ -> m2)
 
   % The monad theorems
 
-  theorem MonadTrans.left_unit  is [a,b]
-    fa (f: a -> MonadTrans.Monad b, x: a)
-      MonadTrans.monadBind (MonadTrans.return x, f) = f x
+  theorem left_unit  is [a,b]
+    fa (f: a -> Monad b, x: a)
+      monadBind (return x, f) = f x
 
-  theorem MonadTrans.right_unit is [a]
-    fa (m: MonadTrans.Monad a) MonadTrans.monadBind (m, MonadTrans.return) = m
+  theorem right_unit is [a]
+    fa (m: Monad a) monadBind (m, return) = m
 
-  theorem MonadTrans.associativity is [a,b,c]
-    fa (m: MonadTrans.Monad a, f: a -> MonadTrans.Monad b, h: b -> MonadTrans.Monad c)
-      MonadTrans.monadBind (m, fn x -> MonadTrans.monadBind (f x, h))
-        = MonadTrans.monadBind (MonadTrans.monadBind (m, f), h)
+  theorem associativity is [a,b,c]
+    fa (m: Monad a, f: a -> Monad b, h: b -> Monad c)
+      monadBind (m, fn x -> monadBind (f x, h))
+        = monadBind (monadBind (m, f), h)
 
-  theorem MonadTrans.non_binding_sequence is [a]
-    fa (f : MonadTrans.Monad a, g: MonadTrans.Monad a)
-    MonadTrans.monadSeq (f, g) = MonadTrans.monadBind (f, fn _ -> g) 
+  theorem non_binding_sequence is [a]
+    fa (f : Monad a, g: Monad a)
+    monadSeq (f, g) = monadBind (f, fn _ -> g) 
 
 
   % The monadic lifting operator
 
-  op [a] MonadTrans.monadLift (m:Monad.Monad a) : MonadTrans.Monad a =
+  op [a] monadLift (m:Monad.Monad a) : Monad a =
     Monad.monadBind (m, (fn x -> Monad.return (Ok x)))
 
-  theorem MonadTrans.lift_return is [a]
-    fa (x:a) monadLift (Monad.return x) = MonadTrans.return x
+  theorem lift_return is [a]
+    fa (x:a) monadLift (Monad.return x) = return x
 
-  theorem MonadTrans.lift_bind is [a,b]
+  theorem lift_bind is [a,b]
     fa (m:Monad.Monad a, f:a -> Monad.Monad b)
       monadLift (Monad.monadBind (m,f)) =
-      MonadTrans.monadBind (monadLift m, fn x -> monadLift (f x))
+      monadBind (monadLift m, fn x -> monadLift (f x))
 
 
   % Proofs
 
-  proof Isa MonadTrans.left_unit
+  proof Isa left_unit
     by (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def Monad__left_unit)
   end-proof
 
-  proof Isa MonadTrans.right_unit
+  proof Isa right_unit
     apply (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def)
     apply (rule HOL.trans[OF _ Monad__right_unit])
     apply (rule arg_cong[of _ Monad__return])
@@ -72,7 +71,7 @@ ErrorT = spec
     done
   end-proof
 
-  proof Isa MonadTrans.associativity
+  proof Isa associativity
     apply (auto simp add: MonadTrans__monadBind_def Monad__associativity[symmetric])
     apply (rule arg_cong[of _ _ "\<lambda>f . Monad__monadBind (m, f)"])
     apply (rule ext, case_tac x)
@@ -80,7 +79,7 @@ ErrorT = spec
     done
   end-proof
 
-  proof Isa MonadTrans.non_binding_sequence
+  proof Isa non_binding_sequence
     by (simp add: MonadTrans__monadSeq_def)
   end-proof
 

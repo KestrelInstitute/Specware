@@ -1,78 +1,78 @@
 (* The State monad transformer *)
 
-StateT = spec
+StateT = MonadTrans qualifying spec
   %import translate ../Monad by { Monad._ +-> InputMonad._ }
   import ../Monad
 
   % The state type
-  type MonadTrans.St
-  axiom MonadTrans.St_nonempty is ex(st:St) true
+  type St
+  axiom St_nonempty is ex(st:St) true
 
 
   % A complete copy of the Monad spec, using the MonadTrans qualifier
   % and proving all the theorems
 
-  type MonadTrans.Monad a = St -> Monad.Monad (St * a)
+  type Monad a = St -> Monad.Monad (St * a)
 
-  op [a] MonadTrans.return (x:a) : MonadTrans.Monad a =
+  op [a] return (x:a) : Monad a =
     fn st -> Monad.return (st, x)
 
-  op [a,b] MonadTrans.monadBind (m:MonadTrans.Monad a,
-                                  f:a -> MonadTrans.Monad b) : MonadTrans.Monad b =
+  op [a,b] monadBind (m:Monad a,
+                                  f:a -> Monad b) : Monad b =
     fn st -> Monad.monadBind (m st, (fn (st', x) -> f x st'))
 
-  op [a,b] MonadTrans.monadSeq (m1:MonadTrans.Monad a, m2:MonadTrans.Monad b) : MonadTrans.Monad b =
-    MonadTrans.monadBind (m1, fn _ -> m2)
+  op [a,b] monadSeq (m1:Monad a, m2:Monad b) : Monad b =
+    monadBind (m1, fn _ -> m2)
 
-  theorem MonadTrans.left_unit  is [a,b]
-    fa (f: a -> MonadTrans.Monad b, x: a)
-      MonadTrans.monadBind (MonadTrans.return x, f) = f x
+  theorem left_unit  is [a,b]
+    fa (f: a -> Monad b, x: a)
+      monadBind (return x, f) = f x
 
-  theorem MonadTrans.right_unit is [a]
-    fa (m: MonadTrans.Monad a) MonadTrans.monadBind (m, MonadTrans.return) = m
+  theorem right_unit is [a]
+    fa (m: Monad a) monadBind (m, return) = m
 
-  theorem MonadTrans.associativity is [a,b,c]
-    fa (m: MonadTrans.Monad a, f: a -> MonadTrans.Monad b, h: b -> MonadTrans.Monad c)
-      MonadTrans.monadBind (m, fn x -> MonadTrans.monadBind (f x, h))
-        = MonadTrans.monadBind (MonadTrans.monadBind (m, f), h)
+  theorem associativity is [a,b,c]
+    fa (m: Monad a, f: a -> Monad b, h: b -> Monad c)
+      monadBind (m, fn x -> monadBind (f x, h))
+        = monadBind (monadBind (m, f), h)
 
-  theorem MonadTrans.non_binding_sequence is [a]
-    fa (f : MonadTrans.Monad a, g: MonadTrans.Monad a)
-    MonadTrans.monadSeq (f, g) = MonadTrans.monadBind (f, fn _ -> g) 
+  theorem non_binding_sequence is [a]
+    fa (f : Monad a, g: Monad a)
+    monadSeq (f, g) = monadBind (f, fn _ -> g) 
 
 
   % The monadic lifting operator for StateT
 
-  op [a] MonadTrans.monadLift (m:Monad.Monad a) : MonadTrans.Monad a =
+  op [a] monadLift (m:Monad.Monad a) : Monad a =
     fn st -> Monad.monadBind (m, (fn x -> Monad.return (st, x)))
 
-  theorem MonadTrans.lift_return is [a]
-    fa (x:a) monadLift (Monad.return x) = MonadTrans.return x
+  theorem lift_return is [a]
+    fa (x:a) monadLift (Monad.return x) = return x
 
-  theorem MonadTrans.lift_bind is [a,b]
+  theorem lift_bind is [a,b]
     fa (m:Monad.Monad a, f:a -> Monad.Monad b)
       monadLift (Monad.monadBind (m,f)) =
-      MonadTrans.monadBind (monadLift m, fn x -> monadLift (f x))
+      monadBind (monadLift m, fn x -> monadLift (f x))
 
 
   % Proofs
 
-  proof Isa MonadTrans.left_unit
+  proof Isa left_unit
     by (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def Monad__left_unit)
   end-proof
 
-  proof Isa MonadTrans.right_unit
+  proof Isa right_unit
     by (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def Monad__right_unit)
   end-proof
 
-  proof Isa MonadTrans.associativity
+  proof Isa associativity
     by (auto simp add: MonadTrans__monadBind_def Monad__associativity[symmetric]
            split_eta[symmetric, of "\<lambda> x . Monad__monadBind
                  (case x of (st_cqt, x) => f x st_cqt,
                   \<lambda>(st_cqt, x). h x st_cqt)"])
   end-proof
 
-  proof Isa MonadTrans.non_binding_sequence
+  proof Isa non_binding_sequence
     by (simp add: MonadTrans__monadSeq_def)
   end-proof
 
