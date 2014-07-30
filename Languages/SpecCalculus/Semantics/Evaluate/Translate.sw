@@ -952,9 +952,9 @@ SpecCalc qualifying spec
              return (Import (sp_tm, spc, els, a))
 
            | Some (renaming as (rules, pos)) ->
-             let _ = writeLine ("translating import: evaluating "
-                                  ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)
-                                  ^ "(") in
+             % let _ = writeLine ("translating import: evaluating "
+             %                      ^ showSCTerm (Translate (sp_tm, (reverse rules, pos)), pos)
+             %                      ^ "(") in
 
              % filter the translation rules to only those that apply to spc
              let new_rules =
@@ -982,7 +982,7 @@ SpecCalc qualifying spec
 
              % If we have filtered out all the rules, then no need to recurse!
              if new_rules = [] then
-               let _ = writeLine (") import of " ^ showSCTerm sp_tm ^ " not translated") in
+               % let _ = writeLine (") import of " ^ showSCTerm sp_tm ^ " not translated") in
                return (Import (sp_tm, spc, els, a))
              else
                % Otherwise, we do need to recurse. First, build the new SCTerm:
@@ -1004,8 +1004,8 @@ SpecCalc qualifying spec
                {
                 % Next, recursively translate spc
                 new_spec <- translateSpecM true spc new_renaming [] true currentUID?;
-                let _ = writeLine (") translated import of " ^ showSCTerm sp_tm ^ " to "
-                                     ^ showSCTerm trans_spc_tm) in
+                % let _ = writeLine (") translated import of " ^ showSCTerm sp_tm ^ " to "
+                %                      ^ showSCTerm trans_spc_tm) in
 
                 % Finally, re-construct the elements. We don't just translate all the old
                 % elements, because we have already translated them in traslating spc!
