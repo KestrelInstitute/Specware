@@ -105,7 +105,7 @@ AnnSpec qualifying spec
           | TypeDef (qid2, _) -> 
             (qid1 = qid2) &&
             (case (findTheType (s1, qid1), findTheType (s2, qid2)) of
-               | (Some info1, Some info2) -> 
+               | (Some info1, Some info2) ->
                  (case (info1.dfn, info2.dfn) of
                     | (Any _, _) -> true
                     | (_, Any _) -> false
@@ -126,12 +126,9 @@ AnnSpec qualifying spec
                  info1.fixity = info2.fixity 
                  && (equivType? s2 (termType info1.dfn, termType info2.dfn) ||
                      equivType? s1 (termType info1.dfn, termType info2.dfn))
-                 && (case (info1.dfn, info2.dfn) of
-                       | (Any _,                    _) -> true
-                       | (TypedTerm (Any _, _, _),  _) -> true
-                       | (_,  Any _                  ) -> false
-                       | (_,  TypedTerm (Any _, _, _)) -> false
-                       | (tm1, tm2) ->  equivTerm? s2 (tm1, tm2))
+                 && (if anyTerm? info1.dfn then true
+                     else if anyTerm? info2.dfn then false
+                     else equivTerm? s2 (info1.dfn, info2.dfn))
                | _ -> false)
           | _ -> false)
      | Property p1 ->
