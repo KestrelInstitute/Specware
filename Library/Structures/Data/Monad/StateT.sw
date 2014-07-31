@@ -1,6 +1,6 @@
 (* The State monad transformer *)
 
-StateT = MonadTrans qualifying spec
+StateT_spec = StateT qualifying spec
   %import translate ../Monad by { Monad._ +-> InputMonad._ }
   import ../Monad
 
@@ -9,7 +9,7 @@ StateT = MonadTrans qualifying spec
   axiom St_nonempty is ex(st:St) true
 
 
-  % A complete copy of the Monad spec, using the MonadTrans qualifier
+  % A complete copy of the Monad spec, using the StateT qualifier
   % and proving all the theorems
 
   type Monad a = St -> Monad.Monad (St * a)
@@ -57,30 +57,30 @@ StateT = MonadTrans qualifying spec
   % Proofs
 
   proof Isa left_unit
-    by (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def Monad__left_unit)
+    by (auto simp add: StateT__return_def StateT__monadBind_def Monad__left_unit)
   end-proof
 
   proof Isa right_unit
-    by (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def Monad__right_unit)
+    by (auto simp add: StateT__return_def StateT__monadBind_def Monad__right_unit)
   end-proof
 
   proof Isa associativity
-    by (auto simp add: MonadTrans__monadBind_def Monad__associativity[symmetric]
+    by (auto simp add: StateT__monadBind_def Monad__associativity[symmetric]
            split_eta[symmetric, of "\<lambda> x . Monad__monadBind
                  (case x of (st_cqt, x) => f x st_cqt,
                   \<lambda>(st_cqt, x). h x st_cqt)"])
   end-proof
 
   proof Isa non_binding_sequence
-    by (simp add: MonadTrans__monadSeq_def)
+    by (simp add: StateT__monadSeq_def)
   end-proof
 
   proof Isa lift_return
-    by (simp add: MonadTrans__return_def MonadTrans__monadLift_def Monad__left_unit)    
+    by (simp add: StateT__return_def StateT__monadLift_def Monad__left_unit)    
   end-proof
 
   proof Isa lift_bind
-    by (simp add: MonadTrans__monadBind_def MonadTrans__monadLift_def
+    by (simp add: StateT__monadBind_def StateT__monadLift_def
           Monad__associativity[symmetric] Monad__left_unit)
   end-proof
 
@@ -88,16 +88,14 @@ end-spec
 
 
 % The morphism showing that any StateT monad is a monad
-StateT_M = morphism ../Monad -> StateT { Monad._ +-> MonadTrans._ }
+StateT = morphism ../Monad -> StateT_spec { Monad._ +-> StateT._ }
 
 % The morphism showing that StateT is a monad transformer
-StateT_isa_Transformer = morphism MonadTrans -> StateT { }
+StateT_transformer = morphism StateT -> StateT_spec { }
 
 % Example 1: the state monad
-StateM = StateT[Identity#Identity_M]
+StateM = StateT_spec[IdentityM#Identity_monad]
 
-% Example 2: two nested applications of the state monad, Monad2.Monad
-% which is defined in terms of Monad1.Monad
+% Example 2: two nested applications of the state monad
 StateDoubleM =
-  (translate (translate StateT by {MonadTrans._ +-> Monad2._})[StateT_M]
-     by { MonadTrans._ +-> Monad1._})[Identity#Identity_M]
+  (translate StateT_spec by {StateT._ +-> StateT2._})[StateT][IdentityM#Identity_monad]

@@ -1,6 +1,6 @@
 (* The identity monad *)
 
-IdentityM = Monad qualifying spec
+IdentityM = IdentityM qualifying spec
   type Monad a = a
 
   op [a,b] monadBind (m: Monad a, f: a -> Monad b) : Monad b = f m
@@ -22,23 +22,23 @@ IdentityM = Monad qualifying spec
     monadSeq (f, g) = monadBind (f, fn _ -> g) 
 
   proof Isa left_unit
-    by (simp add: return_def monadBind_def)
+    by (simp add: IdentityM__return_def IdentityM__monadBind_def)
   end-proof
 
   proof Isa right_unit
-    by (simp add: return_def monadBind_def)
+    by (simp add: IdentityM__return_def IdentityM__monadBind_def)
   end-proof
 
   proof Isa associativity
-    by (simp add: monadBind_def)
+    by (simp add: IdentityM__monadBind_def)
   end-proof
 
   proof Isa non_binding_sequence
-    by (auto simp add: monadSeq_def monadBind_def)
+    by (auto simp add: IdentityM__monadSeq_def IdentityM__monadBind_def)
   end-proof
 
 end-spec
 
 
 % The morphism that instantiates a monad into the identity monad
-Identity_M = morphism ../Monad -> IdentityM { }
+Identity_monad = morphism ../Monad -> IdentityM { Monad._ +-> IdentityM._ }

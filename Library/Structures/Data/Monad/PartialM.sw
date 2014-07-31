@@ -1,6 +1,6 @@
 (* The partiality monad: for computations with full recursion *)
 
-PartialM = Monad qualifying spec
+PartialM = PartialM qualifying spec
 
   % A computation of type a in PartialM is, intuitively, an object of
   % type a that is defined by a fixed-point. All we can ask of such a
@@ -39,8 +39,8 @@ PartialM = Monad qualifying spec
 
   % Proofs
 
-  proof Isa Monad__monadBind_Obligation_subtype
-    apply (simp add: Monad__Monad__subtype_pred_def, rule allI, rule allI)
+  proof Isa PartialM__monadBind_Obligation_subtype
+    apply (simp add: PartialM__Monad__subtype_pred_def, rule allI, rule allI)
     apply (case_tac "m n1", auto)
     apply (subgoal_tac "m n2 = m n1 \<and> f a n2 = f a n1")
     apply auto[1]
@@ -61,30 +61,33 @@ PartialM = Monad qualifying spec
       qed
   end-proof
 
-  proof Isa Monad__return_Obligation_subtype
-    by (simp add: Monad__Monad__subtype_pred_def)
+  proof Isa PartialM__return_Obligation_subtype
+    by (simp add: PartialM__Monad__subtype_pred_def)
   end-proof
 
   proof Isa left_unit
-    by (auto simp add: Monad__return_def Monad__monadBind_def)
+    by (auto simp add: PartialM__return_def PartialM__monadBind_def)
   end-proof
 
   proof Isa right_unit
-    apply (rule ext, auto simp add: Monad__return_def Monad__monadBind_def)
-    apply (unfold Monad__return_def)
+    apply (rule ext, auto simp add: PartialM__return_def PartialM__monadBind_def)
+    apply (unfold PartialM__return_def)
     apply (case_tac "m x", auto)
     done
   end-proof
 
   proof Isa associativity
-    apply (auto simp add: Monad__return_def Monad__monadBind_def)
+    apply (auto simp add: PartialM__return_def PartialM__monadBind_def)
     apply (rule ext, case_tac "m n", auto)
     done
   end-proof
 
   proof Isa non_binding_sequence
-    by (simp add: Monad__monadSeq_def)
+    by (simp add: PartialM__monadSeq_def)
   end-proof
 
-
 end-spec
+
+
+% PartialM is a monad
+Partial_monad = morphism ../Monad -> PartialM { Monad._ +-> PartialM._ }

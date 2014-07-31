@@ -1,5 +1,5 @@
 
-ErrorT = MonadTrans qualifying spec
+ErrorT_spec = ErrorT qualifying spec
   import ../Monad
 
   % Something that could be a value of type a or could be an error
@@ -57,22 +57,22 @@ ErrorT = MonadTrans qualifying spec
   % Proofs
 
   proof Isa left_unit
-    by (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def Monad__left_unit)
+    by (auto simp add: ErrorT__return_def ErrorT__monadBind_def Monad__left_unit)
   end-proof
 
   proof Isa right_unit
-    apply (auto simp add: MonadTrans__return_def MonadTrans__monadBind_def)
+    apply (auto simp add: ErrorT__return_def ErrorT__monadBind_def)
     apply (rule HOL.trans[OF _ Monad__right_unit])
     apply (rule arg_cong[of _ Monad__return])
     apply (rule ext)
     apply (case_tac x)
-    apply (unfold MonadTrans__return_def)
+    apply (unfold ErrorT__return_def)
     apply auto
     done
   end-proof
 
   proof Isa associativity
-    apply (auto simp add: MonadTrans__monadBind_def Monad__associativity[symmetric])
+    apply (auto simp add: ErrorT__monadBind_def Monad__associativity[symmetric])
     apply (rule arg_cong[of _ _ "\<lambda>f . Monad__monadBind (m, f)"])
     apply (rule ext, case_tac x)
     apply (auto simp add: Monad__left_unit)
@@ -80,15 +80,15 @@ ErrorT = MonadTrans qualifying spec
   end-proof
 
   proof Isa non_binding_sequence
-    by (simp add: MonadTrans__monadSeq_def)
+    by (simp add: ErrorT__monadSeq_def)
   end-proof
 
   proof Isa lift_return
-    by (simp add: MonadTrans__return_def MonadTrans__monadLift_def Monad__left_unit)    
+    by (simp add: ErrorT__return_def ErrorT__monadLift_def Monad__left_unit)    
   end-proof
 
   proof Isa lift_bind
-    by (simp add: MonadTrans__monadBind_def MonadTrans__monadLift_def
+    by (simp add: ErrorT__monadBind_def ErrorT__monadLift_def
           Monad__associativity[symmetric] Monad__left_unit)
   end-proof
 
@@ -96,16 +96,13 @@ end-spec
 
 
 % The morphism showing that any ErrorT monad is a monad
-ErrorT_M = morphism ../Monad -> ErrorT { Monad._ +-> MonadTrans._ }
+ErrorT = morphism ../Monad -> ErrorT_spec { Monad._ +-> ErrorT._ }
 
 % The morphism showing that ErrorT is a monad transformer
-ErrorT_isa_Transformer = morphism MonadTrans -> ErrorT { }
+ErrorT_isa_transformer = morphism MonadTrans -> ErrorT_spec { }
 
 % Example 1: the error monad
-ErrorM = ErrorT[Identity#Identity_M]
+ErrorM = ErrorT_spec[IdentityM#Identity_monad]
 
 % Example 2: the state-error monad
-StateErrorM =
-  (translate
-     (translate StateT by {MonadTrans._ +-> Monad2._})[ErrorT_M]
-     by { MonadTrans._ +-> Monad1._})[Identity#Identity_M]
+StateErrorM = StateT#StateT_spec[ErrorT][IdentityM#Identity_monad]
