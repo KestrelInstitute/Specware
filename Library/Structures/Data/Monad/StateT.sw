@@ -17,8 +17,7 @@ StateT = MonadTrans qualifying spec
   op [a] return (x:a) : Monad a =
     fn st -> Monad.return (st, x)
 
-  op [a,b] monadBind (m:Monad a,
-                                  f:a -> Monad b) : Monad b =
+  op [a,b] monadBind (m:Monad a, f:a -> Monad b) : Monad b =
     fn st -> Monad.monadBind (m st, (fn (st', x) -> f x st'))
 
   op [a,b] monadSeq (m1:Monad a, m2:Monad b) : Monad b =
