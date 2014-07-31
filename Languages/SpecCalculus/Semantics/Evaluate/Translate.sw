@@ -65,8 +65,11 @@ SpecCalc qualifying spec
     fn memo -> { res <- m; return (memo, res) }
 
   % mapM lifted to MemoMonad
-  op [a,b] MemoMonad.mapM (f : a -> MemoMonad b) : List a -> MemoMonad (List b) =
-    foldl (fn (m, a) -> { tl <- m; hd <- f a; return (hd::tl) }) (return [])
+  op [a,b] MemoMonad.mapM (f : a -> MemoMonad b) (l: List a) : MemoMonad (List b) =
+    {rev_res <- foldl (fn (m, a) -> {hd <- f a;
+                                     tl <- m;
+                                     return (hd::tl) }) (return []) l;
+     return (reverse rev_res)}
 
   op printQualifiedIds (qids : QualifiedIds) : String =
     flatten (intersperse ", " (map printQualifiedId qids))
