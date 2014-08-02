@@ -866,6 +866,7 @@ sLisp Heap Image File: ")
 (defun specware-build-eval-emacs-str (str &rest args)
   (format "(format t \"~a\" %S)" (apply 'format str args)))
 
+;Westfold uses this and specware-build.
 (defun specware-boot (&optional in-current-dir? continuation?)
   (interactive "P")
   (let* ((*specware4-dir (sw::normalize-filename
@@ -890,6 +891,7 @@ sLisp Heap Image File: ")
                                      (specware-build-eval-emacs-str "(specware-build %s nil t)"
                                                                     in-current-dir?))))))
 
+;Westfold uses this and specware-boot.
 (defun specware-build (&optional in-current-dir? secondTime? continuation?)
   (interactive "P")
   (let* ((*specware4-dir (sw::normalize-filename
