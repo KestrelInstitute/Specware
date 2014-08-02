@@ -11,6 +11,10 @@
 # around this circularity for the first bootstrap, you can use the
 # tarball of the Specware Lisp files that is stored in the SVN repo.
 
+# TODO: If there is a tarball (of .lisp files) that is newer than the
+# Specware executable, this script could use that to bootstrap instead
+# of the executable.
+
 # So, the possible scenarios are:
 
 # 1. If the specware executable file exists, use it to recreate itself from the .sw files.
