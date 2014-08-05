@@ -2,7 +2,6 @@ FSet qualifying spec
 
   import Set
 
-  %% TODO The quotient here currently prevents Isabelle from processing the .thy file for this spec.  -Eric
   % sets as equivalence classes of lists without repeated elements:
   type FSet a = (InjList a) / permutationOf
 
