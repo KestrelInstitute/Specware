@@ -128,7 +128,7 @@ end-spec
 StateT = morphism ../Monad -> StateT_spec { Monad._ +-> StateT._ }
 
 % The morphism showing that StateT is a monad transformer
-StateT_transformer = morphism MonadTrans -> StateT_spec { }
+StateT_isa_transformer = morphism MonadTrans -> StateT_spec { MonadTrans._ +-> StateT._ }
 
 % StateT creates a monad satisfying MonadState
 StateT_MonadState = morphism MonadState -> StateT { Monad._ +-> StateT._ }
