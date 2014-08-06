@@ -3,6 +3,7 @@ SpecCalc qualifying spec
 import ../../Environment
 import /Languages/MetaSlang/Specs/Equivalences
 import /Languages/MetaSlang/Specs/Utilities
+import /Library/Structures/Data/Sets/AsSTHarray
  
 
 op [a] compatibleTypes1? (ty1: AType a, ty2: AType a) : Bool =
@@ -242,7 +243,7 @@ op removeDuplicateImports (spc : Spec) : Spec =
                    remove_duplicates (imported_elements, seen, saw_base?) 
                in
                let this_entry = (imported_original_spec, non_imports_in_import) in
-               if this_entry in? seen then
+               if Set.member? seen this_entry then
                  remove_duplicates (tail, seen, saw_base?)
                else
                  let revised_import = Import (spec_tm, 
@@ -250,7 +251,7 @@ op removeDuplicateImports (spc : Spec) : Spec =
                                               revised_elements_in_import, 
                                               pos) 
                  in
-                 let seen = this_entry :: seen in
+                 let seen = Set.insert seen this_entry in
                  let (revised_elements_in_tail, non_imports_in_tail, seen, saw_base?) = 
                      remove_duplicates (tail, seen, saw_base?) 
                  in
@@ -273,7 +274,7 @@ op removeDuplicateImports (spc : Spec) : Spec =
               seen, 
               saw_base?)
  in
- let (revised_elements, _, _, _) = remove_duplicates (spc.elements, [], false) in
+ let (revised_elements, _, _, _) = remove_duplicates (spc.elements, Set.empty, false) in
  spc << {elements = revised_elements}
 
-endspec
+end-spec
