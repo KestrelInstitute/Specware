@@ -113,15 +113,15 @@ proof Isa Int__zero_fits [simp]
   apply(simp add: Int__intFitsInNBits_p_def)
 end-proof
 
-proof Isa Int__zero_fits_8
+proof Isa Int__zero_fits_8  [simp]
   apply(simp add: Int__intFitsIn8Bits_p_def)
 end-proof
 
-proof Isa Int__zero_fits_16
+proof Isa Int__zero_fits_16 [simp]
   apply(simp add: Int__intFitsIn16Bits_p_def)
 end-proof
 
-proof Isa Int__zero_fits_32
+proof Isa Int__zero_fits_32 [simp]
   apply(simp add: Int__intFitsIn32Bits_p_def)
 end-proof
 

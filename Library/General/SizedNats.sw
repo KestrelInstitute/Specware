@@ -114,19 +114,19 @@ proof Isa Nat__zero_fits [simp]
   apply(simp add: Nat__fitsInNBits_p_def)
 end-proof
 
-proof Isa Nat__zero_fits_8
+proof Isa Nat__zero_fits_8 [simp]
   apply(simp add: Nat__fitsIn8Bits_p_def)
 end-proof
 
-proof Isa Nat__zero_fits_16
+proof Isa Nat__zero_fits_16 [simp]
   apply(simp add: Nat__fitsIn16Bits_p_def)
 end-proof
 
-proof Isa Nat__zero_fits_31
+proof Isa Nat__zero_fits_31 [simp]
   apply(simp add: Nat__fitsIn31Bits_p_def)
 end-proof
 
-proof Isa Nat__zero_fits_32
+proof Isa Nat__zero_fits_32 [simp]
   apply(simp add: Nat__fitsIn32Bits_p_def)
 end-proof
 
