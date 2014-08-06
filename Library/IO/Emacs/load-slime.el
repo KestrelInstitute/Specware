@@ -46,8 +46,8 @@
 (push (concat *specware-emacs* "haskell-mode/")
       load-path)
 
-(unless (fboundp 'haskell-mode)
-  (load (concat *specware-emacs* "haskell-mode/haskell-site-file")))
+;; (unless (fboundp 'haskell-mode)
+;;  (load (concat *specware-emacs* "haskell-mode/haskell-site-file")))
 
 ;; Need in XEmacs version 21.5 for x-symbol
 (when (and (featurep 'mule) (fboundp 'define-specifier-tag))
