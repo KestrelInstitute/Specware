@@ -1,16 +1,16 @@
-let
-  a = spec {
+
+  a = spec 
      type X
      op x : X
-    }
-  b = spec {
+    end-spec
+  b = spec 
      type Y
      op y : Y
-    }
-  c = spec {
+    end-spec
+  c = spec 
      type Z
      op z : Z
-    }
+    end-spec
   m = morphism a -> b {X +-> Y, x +-> y}
   n = morphism a -> c {X +-> Z, x +-> z}
   p = morphism b -> c {Y +-> Z, y +-> z}
@@ -18,5 +18,5 @@ let
       u : v -> w +-> m,
       x : v -> z +-> n
     }
-in
-  colimit d
+
+Test = colimit d

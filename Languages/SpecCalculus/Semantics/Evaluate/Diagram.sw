@@ -1,11 +1,18 @@
-\subsection{Evalution of a diagram term in the Spec Calculus}
+(* Evalution of a diagram term in the Spec Calculus *)
 
-\begin{spec}
 SpecCalc qualifying spec
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
   import UnitId/Utilities                                    % for uidToString, if used...
+
+  import                    /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
+  import Functor qualifying /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic/AsRecord
+  import Cat     qualifying /Library/Structures/Data/Categories/Diagrams/Polymorphic/AsRecord
+  import Sketch  qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic/AsRecord
+
+  import NatTrans qualifying /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
+
 \end{spec}
 
 When constructing the semantic representation of a diagram, what are
@@ -13,7 +20,7 @@ the coherence conditions that come up? Commutativity of sketches.
 Lots of proof obligations. Needs thought.
 
 \begin{spec}
-  def SpecCalc.evaluateDiag elems pos = {
+  def evaluateDiag elems pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating diagram-term at " ^ (uidToString unitId)^"\n");
     (dgm : SpecDiagram, timeStamp, depUIDs) <-
@@ -38,8 +45,8 @@ shape of diagrams. We use ppString, but really should be ppNodeId.
   def Vertex.ppElem = ppString
   def Edge.ppElem = ppString
 
-  op SpecCalc.vertexName : Vertex.Elem -> String
-  def SpecCalc.vertexName v = v  % used by colimit
+  op vertexName : Vertex.Elem -> String
+  def vertexName v = v  % used by colimit
 \end{spec}
 
 The conditions for a diagram expression to be valid include:
