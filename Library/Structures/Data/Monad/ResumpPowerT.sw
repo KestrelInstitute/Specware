@@ -5,10 +5,12 @@
 % the input monad, Monad.Monad, is declared but not defined. Instead,
 % the text of this spec must be manually copied into a spec where the
 % underlying Monad.Monad type has been defined, and then Isabelle will
-% be happy.
+% be happy. See the examples below.
 
 ResumpPowerT = ResumpPowerT qualifying spec
   import ../Monad
+
+  % FIXME: the sum type should be *inside* the Monad.Monad!
 
   % A computation here is either a final result, or a step that
   % produces a finite set of computations in the underlying monad,
@@ -27,6 +29,10 @@ ResumpPowerT = ResumpPowerT qualifying spec
                       Monad.monadBind (m', fn k ->
                                          Monad.return (monadBind (k, f)))) ms)
 
+  % FIXME: define effects!
+
+  op [a] monadLift (m:Monad.Monad a) : Monad a =
+    Pause [Monad.monadBind (m, fn a -> Monad.return (Done a))]
 end-spec
 
 
@@ -57,6 +63,9 @@ ResumpM = spec
   op [a,b] monadSeq (m1:Monad a, m2:Monad b) : Monad b =
     monadBind (m1, fn _ -> m2)
 
+  op [a] monadLift (m:Monad.Monad a) : Monad a =
+    Pause [Monad.monadBind (m, fn a -> Monad.return (Done a))]
+
 
   %%
   %% Theorems
@@ -77,6 +86,17 @@ ResumpM = spec
   theorem non_binding_sequence is [a]
     fa (f : Monad a, g: Monad a)
     monadSeq (f, g) = monadBind (f, fn _ -> g) 
+
+  theorem lift_return is [a]
+    fa (x:a) monadLift (Monad.return x) = return x
+
+  % FIXME: this does not hold!
+  (*
+  theorem lift_bind is [a,b]
+    fa (m:Monad.Monad a, f:a -> Monad.Monad b)
+      monadLift (Monad.monadBind (m,f)) =
+      monadBind (monadLift m, fn x -> monadLift (f x))
+  *)
 
 
   %%
