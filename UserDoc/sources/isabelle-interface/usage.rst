@@ -36,9 +36,9 @@ Proof Scripts in Specs
 
 An embedded |Isabelle| proof script in a |Specware| spec consists of
 an introductory line beginning with ``proof Isa``, the actual
-|Isabelle| script on subsequent lines terminated by the string ``end-
-proof``. For example, the simple proof script ``apply(auto)`` can be
-embedded as follows:
+|Isabelle| script on subsequent lines terminated by the string
+``end-proof``. For example, the simple proof script ``apply(auto)``
+can be embedded as follows:
 
 .. code-block:: specware
 
@@ -48,7 +48,7 @@ embedded as follows:
    
 
 If the last command before end-proof is not ``done``, ``sorry``,
-``qed`` or ``by``, the command ``done`` is inserted.
+``qed``, or ``by``, the command ``done`` is inserted.
 
 The proof script should occur immediately after the theorem or
 definition that it applies to. If the script applies to a proof
@@ -56,10 +56,10 @@ obligation that is not explicit in the spec, then the name of the
 obligation should appear after ``proof Isa``, on the same line.
 There are rare cases where an obligation is inserted between a
 definition and an immediately following proof script, which causes the
-proof script to be ignored. If this happen, then the name of the op
+proof script to be ignored. If this happens, then the name of the op
 should be explicitly given.
 
-If the user does not supply a proof script for a theorem then the
+If the user does not supply a proof script for a theorem, then the
 translator will supply the script ``by auto`` which may be all that is
 required to prove simple theorems.
 
@@ -166,13 +166,13 @@ theory we have:
    
 
 A type translation begins with the word ``type`` followed by the
-fully-qualified |Specware| name, ``->`` and the |Isabelle| name. If
+fully-qualified |Specware| name, ``->``, and the |Isabelle| name. If
 the |Specware| type is a sub-type, you can specify coercion functions
 to and from the super-type in parentheses separated by commas. Note
 that by default, sub-types are represented by their super-type, so you
 would only specify a translation if you wanted them to be different,
 in which case coercion functions are necessary. Following the
-coercions functions can appear a list of overloaded functions within
+coercion functions can appear a list of overloaded functions within
 square brackets. These are used to minimize coercions back and forth
 between the two types.
 

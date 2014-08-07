@@ -5,23 +5,24 @@ Concepts
 ========
 
 This document describes a |Specware| interface that allows the use of
-|IsabelleHOL| to discharge proof obligations that arise in developing
-|Specware| specifications. The interface is essentially just a
-Specware Shell command and an Emacs command that converts a |Specware|
-spec to an |Isabelle| theory, along with extensions in the |Specware|
-syntax to allow |Isabelle| proof scripts to be embedded in |Specware|
-specs, and to allow the user to specify translation of |Specware| ops
-and types to existing |Isabelle| constants and types. The translation
-translates |Specware| declarations, definitions, axioms and theorems
-to the corresponding |Isabelle| versions. The logics are similar so it
-is usually straightforward to compare the source and target of the
+the |IsabelleHOL| theorem prover to discharge proof obligations that
+arise in developing |Specware| specifications. The interface is
+essentially just a Specware Shell command and an Emacs command that
+converts a |Specware| spec to an |Isabelle| theory, along with
+extensions in the |Specware| syntax to allow |Isabelle| proof scripts
+to be embedded in |Specware| specs, and to allow the user to specify
+translation of |Specware| ops and types to existing |Isabelle|
+constants and types. The translation translates |Specware|
+declarations, definitions, axioms and theorems to the corresponding
+|Isabelle| versions. The logics are similar, so it is usually
+straightforward to compare the source and target of the
 translations. In addition, |Specware| has implicit type obligations,
 particularly sub-type obligations, that are explicated in the
 |Isabelle| target.
 
 We assume the user is familiar with |IsabelleHOL|. See the tutorial at
 http://isabelle.in.tum.de/documentation.html.
-The current version of the Isabelle translator works with Isabelle2009-1.
+The current version of the Isabelle translator works with Isabelle2013-2.
 An example Specware spec with Isabelle proofs is given in 
 ``Examples/IsabelleInterface/BoolEx.sw``. This spec corresponds to the
 Isabelle theory in section 2.2.4 of the |IsabelleHOL| tutorial.
@@ -73,6 +74,6 @@ This initial translator has a few limitations. It should translate all
 |Specware| specs but not all translated definitions and constructs
 will be accepted by |IsabelleHOL|. In particular, only case
 expressions that involve a single level of pattern-matching on
-constructors are accepted. An exception, is that nesting is allowed in
+constructors are accepted. An exception is that nesting is allowed in
 top-level case expressions that are converted into definition cases.
 

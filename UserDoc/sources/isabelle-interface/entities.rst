@@ -45,7 +45,7 @@
 
 .. |Isabelle| replace:: Isabelle
 
-.. |IsabelleHOL| replace:: Isabelle-HOL
+.. |IsabelleHOL| replace:: Isabelle/HOL
 
 
 

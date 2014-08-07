@@ -3,93 +3,93 @@ type boolex =
   | Const Bool
   | Var Nat
   | Neg boolex
-  | And (boolex \_times boolex)
+  | And (boolex * boolex)
 
 op bvalue:
-  boolex \_rightarrow (Nat \_rightarrow Bool) \_rightarrow Bool
+  boolex -> (Nat -> Bool) -> Bool
 def bvalue be env =
   case be of
-    | Const b  \_rightarrow b
-    | Var x    \_rightarrow env x
-    | Neg b    \_rightarrow \_not (bvalue b env)
-    | And(b,c) \_rightarrow bvalue b env
-                 \_and bvalue c env
+    | Const b  -> b
+    | Var x    -> env x
+    | Neg b    -> ~ (bvalue b env)
+    | And(b,c) -> bvalue b env
+                 && bvalue c env
 
-type ifex = | CIF Bool | VIF Nat | IF (ifex \_times ifex \_times ifex)
+type ifex = | CIF Bool | VIF Nat | IF (ifex * ifex * ifex)
 
-op valif : ifex \_rightarrow (Nat \_rightarrow Bool) \_rightarrow Bool
+op valif : ifex -> (Nat -> Bool) -> Bool
 def valif be env =
   case be of
-    | CIF b    \_rightarrow b
-    | VIF x    \_rightarrow env x
-    | IF(b,t,e) \_rightarrow if valif b env then valif t env
+    | CIF b    -> b
+    | VIF x    -> env x
+    | IF(b,t,e) -> if valif b env then valif t env
 		     else valif e env
 
-op bool2if : boolex \_rightarrow ifex
+op bool2if : boolex -> ifex
 def bool2if be =
   case be of
-    | Const b   \_rightarrow CIF b
-    | Var x     \_rightarrow VIF x
-    | Neg b     \_rightarrow IF (bool2if b, CIF false, CIF true)
-    | And (b,c) \_rightarrow IF (bool2if b, bool2if c, CIF false)
+    | Const b   -> CIF b
+    | Var x     -> VIF x
+    | Neg b     -> IF (bool2if b, CIF false, CIF true)
+    | And (b,c) -> IF (bool2if b, bool2if c, CIF false)
 
 theorem valif is
-  \_forall(b,env) valif (bool2if b) env = bvalue b env
+  fa(b,env) valif (bool2if b) env = bvalue b env
   proof Isa
     apply(induct_tac b)
     apply(auto)
   end-proof
 
 
-op normif : ifex \_rightarrow ifex \_rightarrow ifex \_rightarrow ifex
+op normif : ifex -> ifex -> ifex -> ifex
 def normif ie t e =
   case ie of
-    | CIF b  \_rightarrow IF (CIF b, t, e)
-    | VIF x  \_rightarrow IF (VIF x, t, e)
-    | IF( b, e1, e2) \_rightarrow normif b (normif e1 t e) (normif e2 t e)
+    | CIF b  -> IF (CIF b, t, e)
+    | VIF x  -> IF (VIF x, t, e)
+    | IF( b, e1, e2) -> normif b (normif e1 t e) (normif e2 t e)
 
-op norm : ifex \_rightarrow ifex
+op norm : ifex -> ifex
 def norm ie =
   case ie of
-    | CIF b    \_rightarrow (CIF b)
-    | VIF x    \_rightarrow (VIF x)
-    | IF(b, t, e) \_rightarrow normif b (norm t) (norm e)
+    | CIF b    -> (CIF b)
+    | VIF x    -> (VIF x)
+    | IF(b, t, e) -> normif b (norm t) (norm e)
 
 theorem Simplify_valif_normif is
-  \_forall(b,env,t,e) valif (normif b t e) env = valif (IF(b, t, e)) env
-  proof Isa [simp] \_forall t e.
+  fa(b,env,t,e) valif (normif b t e) env = valif (IF(b, t, e)) env
+  proof Isa [simp] fa t e.
     apply(induct_tac b)
     apply(auto)
   end-proof
 
 theorem  valif_main is
-  \_forall(b,env) valif (norm b) env = valif b env
+  fa(b,env) valif (norm b) env = valif b env
   proof Isa
     apply(induct_tac b)
     apply(auto)
   end-proof
 
-op normal: ifex \_rightarrow Bool
+op normal: ifex -> Bool
 def normal ie =
   case ie of
-    | CIF b    \_rightarrow true
-    | VIF x    \_rightarrow true
-    | IF(b, t, e) \_rightarrow (normal t \_and normal e
-		   \_and (case b
-			of CIF v \_rightarrow true
-			 | VIF v \_rightarrow true
-			 | IF(x, y, z) \_rightarrow false))
+    | CIF b    -> true
+    | VIF x    -> true
+    | IF(b, t, e) -> (normal t && normal e
+		   && (case b
+			of CIF v -> true
+			 | VIF v -> true
+			 | IF(x, y, z) -> false))
 
 
 theorem Simplify_normal_normif is 
-  \_forall (b, t, e) normal(normif b t e) = (normal t \_and normal e)
-  proof Isa [simp] \_forall t e.
+  fa (b, t, e) normal(normif b t e) = (normal t && normal e)
+  proof Isa [simp] fa t e.
     apply(induct_tac b)
     apply(auto)
   end-proof
 
 theorem normal_norm is
-  \_forall(b) normal (norm b)
+  fa(b) normal (norm b)
   proof Isa
     apply(induct_tac b)
     apply(auto)
