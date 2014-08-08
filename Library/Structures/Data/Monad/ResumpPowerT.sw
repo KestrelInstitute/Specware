@@ -40,8 +40,8 @@ end-spec
 %%% Example 1: the resumption monad
 %%%
 
-ResumpM = spec
-  import IdentityM#IdentityM
+ResumpPowerM = spec
+  import ResumpPowerT[IdentityM]
 
   % A computation here is either a final result, or a step that
   % produces a finite set of computations in the underlying monad,
@@ -63,8 +63,8 @@ ResumpM = spec
   op [a,b] monadSeq (m1:Monad a, m2:Monad b) : Monad b =
     monadBind (m1, fn _ -> m2)
 
-  op [a] monadLift (m:Monad.Monad a) : Monad a =
-    Pause [Monad.monadBind (m, fn a -> Monad.return (Done a))]
+  op [a] monadLift (m:IdentityM.Monad a) : Monad a =
+    Pause [IdentityM.monadBind (m, fn a -> IdentityM.return (Done a))]
 
 
   %%
@@ -88,7 +88,7 @@ ResumpM = spec
     monadSeq (f, g) = monadBind (f, fn _ -> g) 
 
   theorem lift_return is [a]
-    fa (x:a) monadLift (Monad.return x) = return x
+    fa (x:a) monadLift (IdentityM.return x) = return x
 
   % FIXME: this does not hold!
   (*

@@ -1,6 +1,6 @@
 (* The identity monad *)
 
-IdentityM = IdentityM qualifying spec
+IdentityM_spec = IdentityM qualifying spec
   type Monad a = a
 
   op [a,b] monadBind (m: Monad a, f: a -> Monad b) : Monad b = f m
@@ -59,4 +59,4 @@ end-spec
 
 
 % The morphism that instantiates a monad into the identity monad
-Identity_monad = morphism ../Monad -> IdentityM { Monad._ +-> IdentityM._ }
+IdentityM = morphism ../Monad -> IdentityM_spec { Monad._ +-> IdentityM._ }

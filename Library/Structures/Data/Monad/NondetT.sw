@@ -3,8 +3,8 @@
 %%
 
 % NOTE: this spec cannot be translated to Isabelle as-is, because
-% NondetT_spec.Monad is not strictly positive, just like the
-% resumption monad; see ResumpPowerT.sw.
+% NondetT_spec.Monad is not strictly positive unless we know
+% Monad.Monad is, just like the resumption monad; see ResumpPowerT.sw.
 
 NondetT_spec = NondetT qualifying spec
   import ../Monad
@@ -23,7 +23,7 @@ NondetT_spec = NondetT qualifying spec
      case res_a of
        | CNil -> Monad.return CNil
        | CCons (a, m') ->
-         monadAppend (f a, monadBind (m', f))}
+         monadPlus (f a, monadBind (m', f))}
 
   op [a,b] monadSeq (m1:Monad a, m2:Monad b) : Monad b =
     monadBind (m1, fn _ -> m2)
@@ -48,24 +48,24 @@ NondetT_spec = NondetT qualifying spec
   % Monadic effects: non-determinism, which is a monoid on monads (say
   % that 5 times fast!)
 
-  op [a] monadEmpty : Monad a =
+  op [a] monadZero : Monad a =
     return CNil
 
-  op [a] monadAppend (m1: Monad a, m2: Monad a) : Monad a =
+  op [a] monadPlus (m1: Monad a, m2: Monad a) : Monad a =
     {res1 <- m1;
      case res1 of
        | CNil -> m2
        | CCons (a, m1') ->
-         Monad.return (CCons (a, monadAppend (m1', m2)))}
+         Monad.return (CCons (a, monadPlus (m1', m2)))}
 
-  theorem append_empty_left is [a]
-    fa (m:Monad a) monadAppend (monadEmpty, m) = m
+  theorem plus_zero_left is [a]
+    fa (m:Monad a) monadPlus (monadZero, m) = m
 
-  theorem append_empty_right is [a]
-    fa (m:Monad a) monadAppend (m, monadEmpty) = m
+  theorem plus_zero_right is [a]
+    fa (m:Monad a) monadPlus (m, monadZero) = m
 
-  theorem append_assoc is [a]
-    fa (m1,m2,m3:Monad a) monadAppend (m1, monadAppend (m2, m3)) = monadAppend (monadAppend (m1, m2), m3)
+  theorem plus_assoc is [a]
+    fa (m1,m2,m3:Monad a) monadPlus (m1, monadPlus (m2, m3)) = monadPlus (monadPlus (m1, m2), m3)
 
 
   % The monadic lifting operator for NondetT

@@ -183,16 +183,16 @@ StateT_MonadError = morphism MonadError -> StateT_MonadError_spec { }
 %%
 
 % Example 1: the state monad
-StateM = StateT_spec[IdentityM#Identity_monad]
+StateM = StateT_spec[IdentityM]
 
 % Example 2: two nested applications of the state monad
 StateDoubleM =
-  (translate StateT_spec by {StateT._ +-> StateT2._})[StateT][IdentityM#Identity_monad]
+  (translate StateT_spec by {StateT._ +-> StateT2._})[StateT][IdentityM]
 
 % Example 3: the state-error monad: error is applied first, so
 % erroneous computations do not alter the state. The second import is
 % the lifting of the error morphisms from ErrorT.
 StateErrorM = spec
-  import StateT_spec[ErrorT][IdentityM#Identity_monad]
-  import StateT_MonadError[ErrorT#ErrorT_MonadError][IdentityM#Identity_monad]
+  import StateT_spec[ErrorT][IdentityM]
+  import StateT_MonadError[ErrorT#ErrorT_MonadError][IdentityM]
 end-spec

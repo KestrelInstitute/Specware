@@ -179,12 +179,12 @@ ErrorT_MonadState = morphism MonadState -> ErrorT_MonadState_spec { }
 %%
 
 % Example 1: the error monad
-ErrorM = ErrorT_spec[IdentityM#Identity_monad]
+ErrorM = ErrorT_spec[IdentityM]
 
 % Example 2: the error-state monad: error is applied outside of state,
 % so even erroneous computations can alter the state. The second
 % import is the lifting of the state morphisms from the StateT
 ErrorStateM = spec
-  import ErrorT_spec[StateT][IdentityM#Identity_monad]
-  import ErrorT_MonadState_spec[StateT#StateT_MonadState][IdentityM#Identity_monad]
+  import ErrorT_spec[StateT][IdentityM]
+  import ErrorT_MonadState_spec[StateT#StateT_MonadState][IdentityM]
 end-spec
