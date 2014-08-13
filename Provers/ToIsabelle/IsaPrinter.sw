@@ -47,7 +47,8 @@ op isaDirectoryName: String = "Isa"
                  newVarCount: Ref Nat,
                  source_of_thy_morphism?: Bool,
                  typeNameInfo: List(QualifiedId * TyVars * MSType),
-                 simplify? : Bool}
+                 simplify? : Bool,
+                 useLocales? : Bool}
 
 
  def getNewVar (c : Context) : Nat =
@@ -344,7 +345,8 @@ op isaDirectoryName: String = "Isa"
                                newVarCount = mkRef 0,
                                source_of_thy_morphism? = false,
                                typeNameInfo = [],
-                               simplify? = simplify?}
+                               simplify? = simplify?,
+                               useLocales? = true}
 			value
     in
     format(110, main_pp_val)
@@ -1244,7 +1246,133 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
 
 
 %%%
-%%% End of Generation of Isabelle proofs from RefinementProofs
+%%% Handling locales in printing specs
+%%%
+
+%% Datatypes for representing Isabelle locales
+
+% Represents an Isabelle locale expression, including:
+% * The (pretty-printed) locale expression itself
+% * The list of free names in the locale expression for the "for" clause
+type LocaleExpr = (Pretty * List String)
+
+% Represents an import of a spec (as a locale) into another spec (as a locale)
+type LocaleImport = {
+                     % The Isabelle filename containing the imported locale
+                     locale_import_filename : Pretty,
+
+                     % Each import in a locale gets assigned a unique
+                     % number N; the imported locale is then named iN
+                     locale_import_num : Nat,
+
+                     % The locale expression for the import
+                     locale_import_expr : LocaleExpr,
+
+                     % Lines of Isabelle code that this import
+                     % requires to be output before the import happens
+                     locale_import_pre_lines : List Pretty,
+
+                     % Lines of Isabelle code that must go into the
+                     % "op" locale for the spec doing this import
+                     locale_import_op_lines : List Pretty,
+
+                     % Lines of Isabelle code that must go into the
+                     % main locale for the spec doing this import
+                     locale_import_main_lines : List Pretty
+                     }
+
+
+% Represents a spec pretty-printed as a locale
+type SpecLocale = {
+                   % The name of this locale in Isabelle
+                   locale_name : String,
+
+                   % The locale imports
+                   locale_imports : List LocaleImport,
+
+                   % Lines of Isabelle code that go, respectively: at
+                   % the top of the file; in the definition and the
+                   % context of the "op" locale; and in definition and
+                   % the context of the main locale
+                   pre_locale_lines : List Pretty,
+                   op_locale_def_lines : List Pretty,
+                   op_locale_ctxt_lines : List Pretty,
+                   main_locale_def_lines : List Pretty,
+                   main_locale_ctxt_lines : List Pretty
+                   }
+
+
+% Emits pretty-printing info for the necessary imports in the current
+% theory and for the locale itself
+op emitSpecLocale (c: Context) (loc: SpecLocale) : Pretty * Pretty =
+  % combine all the import filenames
+  let thy_imports =
+    ppImportsFromExplicits c (map (fn i -> i.locale_import_filename)
+                                loc.locale_imports)
+  in
+
+  % the locale imports
+  let loc_imports =
+    prSep 2 blockLinear (string "+ ")
+    (map (fn imp ->
+            prConcat [string ("i" ^ show imp.locale_import_num ^ ": "),
+                      imp.locale_import_expr.1]) loc.locale_imports)
+  in
+
+  % helper function for combining prettys from imports given an accessor
+  % function f to extract prettys from a single import
+  let def combine_import_prettys prettys f =
+    flatten (intersperse [string ""] (prettys :: (map f loc.locale_imports)))
+  in
+
+  (thy_imports,
+   prLines 0
+     [
+      % emit the lines that come before either locale
+      prLines 0 (combine_import_prettys loc.pre_locale_lines
+                   (fn i -> i.locale_import_pre_lines)),
+      string "",
+
+      % emit the op locale
+      prLines 2 [prBreak 2 [string ("locale " ^ loc.locale_name ^ "__ops = "),
+                            loc_imports],
+                 string "+",
+                 prLines 0 loc.op_locale_def_lines],
+      string "",
+
+      % emit the lines that go in the context of the op locale
+      string ("context " ^ loc.locale_name ^ "__ops"),
+      string "begin",
+      prLines 2 (combine_import_prettys loc.op_locale_ctxt_lines
+                   (fn i -> i.locale_import_op_lines)),
+      string "end",
+      string "",
+
+      % emit the main locale
+      prLines 2 [string ("locale " ^ loc.locale_name ^ " = "
+                           ^ loc.locale_name ^ "__ops + "),
+                 prLines 0 loc.main_locale_def_lines],
+      string "",
+
+      % emit the lines that go in the context of the op locale
+      string ("context " ^ loc.locale_name),
+      string "begin",
+      prLines 2 (combine_import_prettys loc.main_locale_ctxt_lines
+                   (fn i -> i.locale_import_main_lines)),
+      string "end"
+      ])
+
+
+%% Translating specs to SpecLocales
+
+op ppSpecToLocale (c: Context) (spc: Spec) : SpecLocale
+
+op ppSpecWithLocales (c: Context) (spc: Spec) : Pretty * Pretty =
+  emitSpecLocale c (ppSpecToLocale c spc)
+
+
+%%%
+%%% Pretty-printing specs
 %%%
 
   op makeSubstFromRecPats(pats: List(Id * MSPattern), rec_tm: MSTerm, spc: Spec): List (MSPattern * MSTerm) =
@@ -1430,14 +1558,21 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let spc = addTypeDefs spc opaque_type_map in
     let c = c << {typeNameInfo = topLevelTypeNameInfo spc, spec? = Some spc} in
     % let _ = writeLine("n:\n"^printSpec spc) in
+    let (theory_imports, theory_body) =
+      if c.useLocales? then
+        ppSpecWithLocales c spc
+      else
+        (ppImports c spc.elements,
+         ppSpecElements c spc (filter elementFilter spc.elements))
+    in
     prLinesCat 0 ([[prString "theory ", prString (thyName c.thy_name)],
-                   [prString "imports ", ppImports c spc.elements],
+                   [prString "imports ", theory_imports],
                    [prString "begin"]]
                   ++
                   (if specHasSorryProof? spc then [[], [prString "ML {* Config.put quick_and_dirty true; *}" %% old command (prior to Isabelle2013-2): "ML {* quick_and_dirty := true; *}"
                                                                  ], []] else [])
                   ++
-		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
+		  [[theory_body],
 		  [prString "end"],
                   []])
 
@@ -1494,18 +1629,22 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 
   def baseSpecName = "Empty"
 
+  op ppImportsFromExplicits (c: Context) (explicit_imports: List Pretty) : Pretty =
+    let imports_from_thy_morphism = thyMorphismImports c in
+    case explicit_imports ++ imports_from_thy_morphism of
+      | [] -> prString baseSpecName
+      | imports -> prPostSep 0 blockFill prSpace imports
+
   op  ppImports: Context -> SpecElements -> Pretty
   def ppImports c elems =
-    let imports_from_thy_morphism = thyMorphismImports c in
     let explicit_imports =
         mapPartial (fn el ->
 		     case el of
 		       | Import(imp_sc_tm, im_sp, _, _) -> Some (ppImport c imp_sc_tm im_sp)
 		       | _ -> None)
            elems
-    in case explicit_imports ++ imports_from_thy_morphism of
-      | [] -> prString baseSpecName
-      | imports -> prPostSep 0 blockFill prSpace imports
+    in
+    ppImportsFromExplicits c explicit_imports
 
   op thyMorphismImports (c:Context): List Pretty =
     map prString c.trans_table.thy_imports
@@ -2717,9 +2856,15 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
     then
       ppFunctionDef c aliases term ty opt_prag fixity
   else
+  let decl_keyword =
+    if c.useLocales? then
+      if def? then "definition " else "fixes "
+    else
+      "consts "
+  in
   let decl_list = 
         if decl?
-          then [[prString "consts ",
+          then [[prString (decl_keyword ^ " "),
                 %ppTyVars tvs,
                 ppIdInfo aliases,
                 prString " :: \"",
@@ -2783,7 +2928,11 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            let (lhs,rhs) = if tuple? then addExplicitTyping2(c,op_tm,body)
                             else (lhs,rhs)
            in
-           prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
+           let def_keyword =
+             if c.useLocales? then "where "
+             else "defs "
+           in
+           prBreakCat 2 [[prString def_keyword, ppQualifiedId op_nm, prString "_def",
                           case findBracketAnnotation opt_prag of
                             | Some anot -> prConcat[prSpace,prString(specwareToIsaString anot)]
                             | None -> prEmpty,
@@ -3239,7 +3388,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
    in
    let (prf_pp,includes_prf_terminator?) = processOptPrag opt_prag in
    prLinesCat 2
-     ([[ppPropertyType propType,
+     ([[ppPropertyType c propType,
         prSpace,
         ppQualifiedId name,
         annotation,
@@ -3372,9 +3521,11 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | None -> None
 
 
- op  ppPropertyType : PropertyType -> Pretty
- def ppPropertyType propType =
+ op  ppPropertyType : Context -> PropertyType -> Pretty
+ def ppPropertyType c propType =
    case propType of
+     % printing an axiom in a locales = an "assumes" locale element
+     | Axiom | c.useLocales? -> prString "assumes"
      | Axiom -> prString "axiomatization where"
      | Theorem -> prString "theorem"
      | Conjecture -> prString "theorem"
