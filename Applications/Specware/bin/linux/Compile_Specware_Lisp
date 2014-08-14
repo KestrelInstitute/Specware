@@ -170,9 +170,9 @@ ls -sltra ./Library/Base/Handwritten/Lisp/*.lisp \
           ./Library/Base/Handwritten/Lisp/*.$FASL_EXTENSION 
 echo " "
 
-ls -sltra ./Library/IO/Emacs/ilisp/*.lisp \
-          ./Library/IO/Emacs/ilisp/*.$FASL_EXTENSION 
-echo " "
+# ls -sltra ./Library/IO/Emacs/ilisp/*.lisp \
+#           ./Library/IO/Emacs/ilisp/*.$FASL_EXTENSION 
+# echo " "
 
 ls -sltra ./Library/IO/Primitive/Handwritten/Lisp/*.lisp \
           ./Library/IO/Primitive/Handwritten/Lisp/*.$FASL_EXTENSION 
