@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# This script opens a new Emacs with Isabelle and Specware running in it.       
+
+THISSCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )" #Simpler commands can just give "." here, which seems bad.
+
+# Try to find Isabelle.  To override, set the ISABELLE environment
+# variable (to something like
+# /home/ewsmith/isabelle/Isabelle2013-2/bin/isabelle) before running
+# this script.  (Or put Isabelle's bin/ directory in your path.)
+if [ -z "$ISABELLE" ]; then
+    ISABELLE=`which isabelle`
+    if [ -z "$ISABELLE" ]; then
+        if [ -f "/Applications/Isabelle2013-2.app/Isabelle/bin" ]; then
+            ISABELLE="/Applications/Isabelle2013-2.app/Isabelle/bin/isabelle"
+        else
+            echo "ERROR: Cannot find Isabelle."
+            exit 1
+        fi
+    fi
+fi
+
+${ISABELLE} emacs -p ${THISSCRIPTDIR}/specware-emacs
