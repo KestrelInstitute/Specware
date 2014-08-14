@@ -7,6 +7,8 @@
 # This script sets SPECWARE4 for you, based on where this script
 # itself resides:
 
+ALLARGS=$*
+
 THISSCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )" #Simpler commands can just give "." here, which seems bad.
 #echo "(THISSCRIPTDIR: [$THISSCRIPTDIR]."  # Should be something like /home/ewsmith/Specware/bin
 export SPECWARE4=${THISSCRIPTDIR%/*} # Strip the last / and everything after.  This should be something like /home/ewsmith/Specware
@@ -47,7 +49,8 @@ if [ $UNIXNAME = "Linux" ] ; then
     export SPECWARE_INIT_FORM=NIL
     
     # Call emacs and run Specware in it:
-    $SPECWARE_EMACS -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4
+    # Pass through all args (e.g., indication to run Isabelle):
+    $SPECWARE_EMACS -l "$SPECWARE4"/Library/IO/Emacs/load-slime ${ALLARGS} -f run-specware4
     
 elif [ $UNIXNAME = "Darwin" ] ; then
 
@@ -68,7 +71,8 @@ elif [ $UNIXNAME = "Darwin" ] ; then
 
     #echo $SPECWARE_EMACS
     # Call emacs and run Specware in it:
-    open -n "$SPECWARE_EMACS" --args -l "$SPECWARE4"/Library/IO/Emacs/load-slime -f run-specware4
+    # Pass through all args (e.g., indication to run Isabelle):
+    open -n "$SPECWARE_EMACS" --args -l "$SPECWARE4"/Library/IO/Emacs/load-slime ${ALLARGS} -f run-specware4
     
 else
     echo "ERROR: Unsupported Unix type: $UNIXNAME.  Must be Linux or Darwin."
