@@ -3,6 +3,9 @@
 # This script is Eric's attempt at a vastly simplified script to
 # bootstrap specware.
 
+# TODO: Jim says he sometimes needs to bootstrap 3 times (could even be more?).
+# TODO: Hash the Lisp files (maybe ignoring comments) so you know if anything changed?
+
 # Bootstrapping Specware is (essentially) the process of creating a
 # Specware executable from the .sw files (and some handwritten Lisp
 # files).  Specware's gen-lisp command turns the .sw files into .lisp
