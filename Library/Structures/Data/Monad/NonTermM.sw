@@ -11,7 +11,12 @@ NonTermM = NonTermM qualifying spec
   %
   % Categorically, a computation is a functor from <= to Option a with
   % the ordering putting None before all Some elements.
-  type Monad a = { f : Nat -> Option a | monotonic? (<=, approx_option) f }
+
+  % FIXME: in order that we can have an ordering on the type a, we
+  % need to not have the monotonicity be part of the type... explain
+  % this better here
+  %type Monad a = { f : Nat -> Option a | monotonic? (<=, approx_option) f }
+  type Monad a = Nat -> Option a
 
   op [a] return (x:a) : Monad a = fn _ -> Some x
 
@@ -47,26 +52,28 @@ NonTermM = NonTermM qualifying spec
   %%
 
   % The approximation ordering
-  op [a] approx_monad : EndoRelation (Monad a) = approx_fun approx_option
-
-  theorem approx_monad_preorder is [a]
-    preOrder? (approx_monad : EndoRelation (Monad a))
+  op [a] approx_monad (r_a : PreOrder a) : PreOrder (Monad a) =
+    approx_fun (approx_option r_a)
 
   % The type of continuous, i.e., monotonic, fixed-point functions
-  type fpFun (a, b) = { f : (a -> Monad b) -> (a -> Monad b) |
-                         monotonic? (approx_fun approx_monad, approx_fun approx_monad) f }
+  %
+  % FIXME HERE: make sure the second condition is right...
+  type fpFun (a, b) = { (r_b, f) : (PartialOrder b) * ((a -> Monad b) -> (a -> Monad b)) |
+                         monotonic? (approx_fun (approx_monad r_b),
+                                     approx_fun (approx_monad r_b)) f &&
+                         (fa (g,a) monotonic? (<=, approx_option r_b) (f g a)) }
 
   % The monadic fixed-point combinator
-  op [a,b] mfix (f : fpFun (a, b)) : a -> Monad b =
+  op [a,b] mfix ((r_b,f) : fpFun (a, b)) : a -> Monad b =
     fn a -> fn n ->
       if n = 0 then None else
-        f (fn a' -> fn _ -> mfix f a' (n-1)) a n
+        f (fn a' -> fn _ -> mfix (r_b,f) a' (n-1)) a n
 
   % Theorem: mfix is a fixed-point up to approx, i.e., mfix f is an
   % approximation of f (mfix f), meaning the latter is a
   % possibly-more-defined version of the former
   theorem mfix_eq is [a,b]
-    fa (f : fpFun (a,b)) approx_fun approx_monad (mfix f, f (mfix f))
+    fa (f : fpFun (a,b)) approx_equiv (approx_fun (approx_monad f.1)) (mfix f, f.2 (mfix f))
 
 
   %%
@@ -110,4 +117,4 @@ end-spec
 NonTerm_monad = morphism ../Monad -> NonTermM { Monad._ +-> NonTermM._ }
 
 % NonTermM is a MonadNonTerm
-NonTerm_
+NonTerm_MonadNonTerm = morphism MonadNonTerm -> NonTermM { Monad._ +-> NonTermM._ }

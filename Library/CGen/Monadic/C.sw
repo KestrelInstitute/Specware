@@ -4,7 +4,6 @@ import /Library/General/TwosComplementNumber
 import /Library/General/FunctionExt
 import /Library/General/OptionExt
 import /Library/General/Stream
-import /Library/Structures/Data/Monad
 
 %section (* Introduction *)
 
@@ -2105,26 +2104,31 @@ return a special error result to indicate that the situation should not arise if
 all the compile-time checks are satisfied. We can then prove that no error ever
 arises when all the compile-time checks (formalized earlier) are satisfied.
 
-emw4: we defer the low-level semantic definitions of C computations to
+emw4: We defer the low-level semantic definitions of C computations to
 a monad, which is defined externally to this spec. This monad must of
 course satisfy the monad laws, as specified by the monad spec
-/Library/Structures/Data/Monad, but must additionally provide the
-following operations, that obey the laws axiomatized below.
-
-FIXME: axiomatize all the laws!
+/Library/Structures/Data/Monad, but must additionally provide features
+for error-reporting, for mutating some global state, and for
+representing non-terminating computations. These features are all
+specified in the following extensions of the monad spec.
 *)
 
-(* Raise an error *)
-op [a] raiseError : Monad a
+import /Library/Structures/Data/Monad/MonadError
+import /Library/Structures/Data/Monad/MonadState
+import /Library/Structures/Data/Monad/MonadNonTerm
+
+(* These specify a (potentially incomplete) list of possible sorts of
+erroneous outcomes, including runtime errors and non-standard behavior. *)
+op Err_error : Err
+op Err_nonstd : Err
 
 (* Conditionally raise an error *)
 op errorIf (condition:Bool) : Monad () =
-  if condition then raiseError else return ()
+  if condition then raiseErr (Err_error) else return ()
 
-(* Fixed-point iteration *)
-op [a] fixedPoint (f : Monad a -> Monad a) : Monad a
+(* This defines the state type as the type State defined below *)
+type St = State
 
-FIXME HERE: continue updating this file!
 
 %subsection (* Object designators *)
 
@@ -2438,6 +2442,12 @@ our subset also a symbol table of type definitions, a symbol table of structure
 types, and information about functions (consisting of return type, typed
 parameters, and body). These are used to execute declarations at run time, as
 formalized later. *)
+
+FIXME HERE:
+- Make FunctionsInfo a list (instead of a finite function)
+- Make FunctionsInfo (and, presumably, also TypedefTable and StructTable) part of
+  the per-file declaration state, and not part of the global state for running a program
+- figure out how to handle initializers for global variables (or maybe we don't!)
 
 type FunctionInfo =
   {return     : Type,
