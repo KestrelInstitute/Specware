@@ -962,6 +962,7 @@ SpecCalc qualifying spec
              % filter the translation rules to only those that apply to spc
              let new_rules =
                foldl (fn (rules, rule) ->
+                        % let _ = writeLine("rule: "^anyToString rule) in
                         case rule of
                           | (Type (dom_qid, _, _), _) ->
                             (case findTheType (spc, dom_qid) of
@@ -1043,7 +1044,7 @@ SpecCalc qualifying spec
        false
      else
       let base_ops = wildFindUnQualified (base.ops, id) in
-      forall? (fn spec_op-> ~ (spec_op in? base_ops)) spec_ops
+      exists? (fn spec_op-> ~ (spec_op in? base_ops)) spec_ops
    else
      case findAQualifierMap (spc.ops, q, id) of
        | Some info -> true
