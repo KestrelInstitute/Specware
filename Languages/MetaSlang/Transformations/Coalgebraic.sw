@@ -256,12 +256,21 @@ def Coalgebraic.implementOpsCoalgebraically
                        else qids
                in
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
+               let defined_qids = filter (definedOp? spc) state_transform_qids in
+               let post_condn_qids = filter (~~~(definedOp? spc)) state_transform_qids in
                let script = Steps[Trace true,
-                                  At(map Def (reverse state_transform_qids),
+                                  At(map Def (reverse post_condn_qids),
                                      Repeat [Move [Search r_o_id, ReverseSearchPred childOfConj],
                                              mkSimplify(RLeibniz homo_fn_qid
                                                          :: LeftToRight assert_qid
-                                                         :: rules)])]
+                                                         :: rules)]),
+                                  At(map Def (reverse defined_qids),
+                                     Steps[Move[SearchPred bodyOfFn?],
+                                           Repeat
+                                             [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                              mkSimplify(RLeibniz homo_fn_qid
+                                                           :: LeftToRight assert_qid
+                                                           :: rules)]])]
                in
                {print "rewriting ... \n";
                 print (scriptToString script^"\n");
@@ -271,6 +280,13 @@ def Coalgebraic.implementOpsCoalgebraically
          | props -> raise(Fail("Ambiguous property named "^show assert_qid)))
     | _ -> raise(Fail("implement expects op and theorem QualifiedIds"))
 
+op definedOp?(spc: Spec) (qid: QualifiedId): Bool =
+  case findTheOp(spc, qid) of
+    | Some info ->
+      let (_, _, def_tm) = unpackFirstTerm info.dfn in
+      ~(anyTerm? def_tm)
+    | None -> false
+
 op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
   if length(pathTermPath pt) < 2 then true
   else
@@ -279,6 +295,16 @@ op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
     | Apply(Fun(And, _, _),_,_) -> true
     | Lambda _ -> true
     | _ -> false
+
+op bodyOfFn?(tm: MSTerm, pt: PathTerm): Bool =
+  ~(embed? Lambda tm)
+    &&
+    (if length(pathTermPath pt) < 2 then false
+      else
+      let Some pptm = parentTerm pt in
+      case fromPathTerm pptm of
+        | Lambda _ -> true
+        | _ -> false)
 
 op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
   existsInType? (fn sty -> case sty of
