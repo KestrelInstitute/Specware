@@ -70,7 +70,9 @@ The source locations are stored in SOURCE-MAP."
 	(let ((char (code-char code)))
 	  (multiple-value-bind (fn term) (get-macro-character char tab)
 	    (when fn
-	      (set-macro-character char (make-source-recorder fn source-map) 
+	      (set-macro-character char (make-source-recorder
+                                         (if (symbolp fn) (symbol-function fn) fn)
+                                         source-map) 
 				   term tab)))))
       (install-special-sharpdot-reader tab)
       tab)))
