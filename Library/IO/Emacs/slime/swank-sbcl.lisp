@@ -1491,6 +1491,7 @@ stack."
                                   i (sb-kernel:%closure-index-ref o i)))))
 	  (t (call-next-method o)))))
 
+#|
 (defmethod emacs-inspect ((o sb-kernel:code-component))
           (append
            (label-value-line*
@@ -1517,6 +1518,7 @@ stack."
                           (ash 1 sb-vm:n-lowtag-bits))
                          (ash (sb-kernel:%code-code-size o) sb-vm:word-shift)
                          :stream s)))))))
+|#
 
 (defmethod emacs-inspect ((o sb-ext:weak-pointer))
           (label-value-line*
@@ -1726,7 +1728,7 @@ stack."
     #+sb-thread
     (dolist (thread (remove (current-thread) (all-threads)))
       (ignore-errors (sb-thread:terminate-thread thread)))
-    (sb-ext:quit)))
+    (sb-ext:exit)))
 
 
 
