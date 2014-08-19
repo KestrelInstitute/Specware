@@ -303,7 +303,7 @@ op bodyOfFn?(tm: MSTerm, pt: PathTerm): Bool =
       else
       let Some pptm = parentTerm pt in
       case fromPathTerm pptm of
-        | Lambda _ -> true
+        | Lambda ([(_,_,body)], _) -> body = tm
         | _ -> false)
 
 op hasTypeRefTo?(ty_qid: QualifiedId, ty: MSType): Bool =
