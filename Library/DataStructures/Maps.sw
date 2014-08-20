@@ -8,6 +8,8 @@
     to keep the size linear in the domain.
 *)
 
+%% TTODO: The 34 obligations below whose proofs are "oops" seem to be false.
+
 Maps = Map qualifying spec
   import Sets
   type Map(a,b)
