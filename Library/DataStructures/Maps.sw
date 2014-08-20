@@ -611,6 +611,14 @@ Maps_extended = spec
   op [a,b] mapFrom(s: Set a, f: a -> b): Map(a,b) =
     set_fold empty_map (fn (m, x) -> update m x (f x)) s
 
+% construct a map over the domain [0,..,n-1]
+  op [b] mapFromNR(n:Nat, f: Nat -> b): Map(Nat,b) =
+    mapFromNR_aux(0,n,f,empty_map)
+
+  op [b] mapFromNR_aux(i:Nat, n:Nat, f:Nat->b, m:Map(Nat,b)): Map(Nat,b) =
+    if i>=n then m
+    else mapFromNR_aux(i+1,n,f, (update m i (f i)))
+
 %% This causes a name clash with the Isabelle translation of the definition of mapFrom.
 %% %% not quite right
 %%   axiom mapFrom_def is [a,b]
@@ -742,23 +750,9 @@ Maps_extended = spec
                        (update (map_project33 m) a d))
         = (update m a ((TMApply(m,a)).1,(TMApply(m,a)).2,d)) )
 
-%  theorem combine_map_project3 is [A,B,C,D]
-%     fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
-%       (  ((map_project31 m) = m1 
-%             && (map_project32 m) = m2
-%             && (map_project33 m) = m3)
-%        = (m = map_compose3(m1,m2,m3))
-%       )
-
   theorem combine_map_project3 is [A,B,C,D]
      fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
        map_compose3((map_project31 m),(map_project32 m),(map_project33 m)) = m 
-
-%  theorem combine_map_project31_map_project32_cond is [A,B,C,D]
-%     fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
-%       (  ((map_project31 m) = m1) =>
-%          (((map_project32 m) = m2) = (m = map_compose(m1,m2)))
-%       )
 
   theorem map_compose3_project31_simplify is [A,B,C,D]
      fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
@@ -769,11 +763,14 @@ Maps_extended = spec
   theorem map_compose3_project33_simplify is [A,B,C,D]
      fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
        (m = map_compose3(m1,m2,m3)) => ((map_project33 m) = m3) = true
-
   theorem combine_of_map_projections3 is [A,B,C,D]
      fa(m:Map(A,B*C*D)) map_compose3((map_project31 m), (map_project32 m),(map_project33 m)) = m 
 
-
+  theorem map_compose3_compose is [a]
+     fa(n:Nat, f1:Nat->a,f2:Nat->a,f3:Nat->a)
+        map_compose3(mapFromNR(n,f1),mapFromNR(n,f1),mapFromNR(n,f1))
+        = mapFromNR(n, fn(i:Nat)-> (f1 i, f2 i, f3 i))
+                                         
 (******************************** The Proofs ********************************)
 
 proof isa mapFrom_Obligation_subtype

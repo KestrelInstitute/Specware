@@ -333,6 +333,7 @@ end-proof
   theorem pushl_of_Stack2L is [a]
     fa(stka:Stack a,stkb:Stack a) pushl(Stack2L stka, stkb) = L2Stack((Stack2L stka) ++ (Stack2L stkb))
 
+% this applies too generally, needs to be tightly controlled
   theorem Stack2L_init is [a]
     fa(lst:List a,stk:Stack a) ((Stack2L(stk) = lst) = (stk = pushl(lst,empty_stack)))
 
@@ -399,7 +400,14 @@ end-proof
 
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
-      ( ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~((x in? domain(cm)) && TMApply(cm,x))) lst)) )
+      ( ((L2S lst) subset (domain cm))
+      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
+
+
+  % theorem L2S_set_diff is [a,M]
+  %   fa(lst:List a,cm:Map(a,Bool))
+  %     ( ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~((x in? domain(cm)) && TMApply(cm,x))) lst)) )
+
 
 %  theorem L2S_map is [a]
 %    fa(y:a,f:a->a,lst:List a) ( L2S (map f lst) = (set_map f (L2S lst)) )
@@ -543,16 +551,21 @@ end-proof
   theorem M2F_empty_map is [a,b]
       fa(bdefault:b) (M2F(empty_map:Map(a,b),bdefault) = (fn(x:a)-> bdefault))
 
-% under construction (see OR5 in CM3 derivation)
-%  theorem M2F_update is [a,b]
-%      fa(m:Map(a,b),x:a,y:b,bdefault:b) 
-%        M2F((update m x y),bdefault) = (fn(x0:a)-> if x0=x
-%                                        then  y
-%                                        else (map_apply m bdefault x))
+(* typical application:
+  (fn (ndid: NodeId) -> if ndid = n then zeroPayload else M2F(payloadIM H, 0) ndid)
+ =  M2F(update (payloadIM H) n zeroPayload, 0)
+*)
+
+  theorem M2F_update is [a,b]
+      fa(m:Map(a,b),x:a,y:b,bdefault:b) 
+        M2F((update m x y),bdefault) = (fn(x0:a)-> if x0=x
+                                        then  y
+                                        else M2F(m,bdefault) x0)
 
   theorem M_iso_F is [a,b]
     fa(mp:Map(a,b),bdefault:b, S:Set a,n:b) 
-      (M2F(mp, bdefault) = (fn (x : {x:a | x in? S}) -> n)) = (mp = (F2M S (fn (x : {x:a | x in? S}) -> n)))
+      (M2F(mp, bdefault) = (fn (x : {x:a | x in? S}) -> n)) 
+    = (mp = (F2M S (fn (x : {x:a | x in? S}) -> n)))
 
 (* ------- MM2F: homomorphism from Map-of-Map to Function-to-Set --------------- *)
 
@@ -561,6 +574,8 @@ end-proof
 
   theorem MM2F_empty_map is [a,i,b]
       MM2F(empty_map:Map(a,Map(i,b))) = (fn(x:a)-> empty_set)
+
+
 
 %  theorem IM2F_update is [a,b]
 %      fa(m:Map(a,List b),x:a,y:List b) 
@@ -709,8 +724,9 @@ end-proof
     fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
 
   theorem CM2S_member is [a]
-    fa(x:a,mp:Map(a,Bool))    %% first assumption is needed to make this type check
-      ((x in? domain mp) && TMApply(mp,x)) = (x in? CM2S mp)  
+    fa(x:a,mp:Map(a,Bool))    
+      ((x in? domain mp)     %%  needed to make this type check
+       => (TMApply(mp,x)) = (x in? CM2S mp))
 
 
 %% (* ------- M2C: homomorphism from Map to Collection ---------------
