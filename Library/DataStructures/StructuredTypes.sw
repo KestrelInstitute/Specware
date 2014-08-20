@@ -1293,7 +1293,7 @@ proof Isa pushl_of_Stack2L
 end-proof
 
 proof Isa M2F_update
-  sorry
+  apply(auto simp add: M2F_def Map__update Map__map_apply_def)
 end-proof
 
 end-spec
