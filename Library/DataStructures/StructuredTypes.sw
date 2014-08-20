@@ -375,7 +375,7 @@ end-proof
   theorem L2S_delete is [a]
     fa(y:a,lst:List a) ( L2S(delete y lst) = set_delete(y, L2S lst) )
 
-  % TODO: Doesn't seem right.  Consider when lst contains more than one y.
+  % TTODO: Doesn't seem right.  Consider when lst contains more than one y.
   theorem L2S_delete1 is [a]
     fa(y:a,lst:List a) ( L2S(delete1(y,lst)) = set_delete(y, L2S lst) )
   %TODO try something like: ... = if occs(y,lst) > 1 then (L2S lst) else set_delete(y, L2S lst)
@@ -454,9 +454,8 @@ end-proof
     fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) bagin? L2B(lst) )
 
   % The List1 is new (was just List).
-  % TODO: Is the "= true" here necessary (e.g., to make this an equality, so that it can be used as a rewrite rule)?  If so, do we need it other places too?
   theorem L2B_tail is [a]
-    fa(y:a,lst:List1 a) ( (L2B(tail(lst)) subbag (L2B lst)) = true )
+    fa(y:a,lst:List1 a) (L2B(tail(lst)) subbag (L2B lst))
 
   theorem L2B_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2B (lst1 ++ lst2) = (L2B lst1 \/ L2B lst2) )
@@ -1293,5 +1292,8 @@ proof Isa pushl_of_Stack2L
   apply(simp add: Stack2L_concat Stack2L_of_L2Stack  del: Stack2L.simps)
 end-proof
 
+proof Isa M2F_update
+  sorry
+end-proof
 
 end-spec
