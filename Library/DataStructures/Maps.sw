@@ -618,6 +618,11 @@ Maps_extended = spec
   op [b] mapFromNR_aux(i:Nat, n:Nat, f:Nat->b, m:Map(Nat,b)): Map(Nat,b) =
     if i>=n then m
     else mapFromNR_aux(i+1,n,f, (update m i (f i)))
+proof isa mapFromNR_aux ()
+      sorry
+      termination
+      sorry
+end-proof
 
 %% This causes a name clash with the Isabelle translation of the definition of mapFrom.
 %% %% not quite right
@@ -1073,6 +1078,10 @@ end-proof
 proof isa TMApply_over_update_2
   apply(cut_tac Map__TMApply_over_update)
   apply(auto)
+end-proof
+
+proof isa map_compose3_compose
+  sorry
 end-proof
 
 %% End of proofs for Maps_extended
