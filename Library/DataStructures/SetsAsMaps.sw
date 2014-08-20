@@ -6,7 +6,7 @@ spec
 
   import Maps  % Note that this brings in Sets!
 
-  type Set a = Map(a, Bool)  %TODO enforce the constraint that all the Bools are true?
+  type Set a = Map(a, Bool)  %TODO enforce the constraint that all the Bools are true?  Or just use a Map to Unit?
 
 % This is imported via Set in Map theory
 %TODO The analogue of axiom membership is not provable without the constraint that all Bools are true.
