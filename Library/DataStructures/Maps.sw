@@ -1086,6 +1086,13 @@ proof isa map_compose3_compose
   sorry
 end-proof
 
+% Seems true, since the domain of mapFromNR(n,f) is the set containing
+% the naturals less than n.  We could express this as a helper lemma
+% if we move Pair2S from StructuredTypes into this spec:
+proof isa map_compose3_compose_Obligation_subtype
+  sorry
+end-proof
+
 %% End of proofs for Maps_extended
 
 end-spec
