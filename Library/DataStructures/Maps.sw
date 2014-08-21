@@ -773,9 +773,9 @@ end-proof
   theorem combine_of_map_projections3 is [A,B,C,D]
      fa(m:Map(A,B*C*D)) map_compose3((map_project31 m), (map_project32 m),(map_project33 m)) = m 
 
-  theorem map_compose3_compose is [a]
-     fa(n:Nat, f1:Nat->a,f2:Nat->a,f3:Nat->a)
-        map_compose3(mapFromNR(n,f1),mapFromNR(n,f1),mapFromNR(n,f1))
+  theorem map_compose3_compose is [a,b,c]
+     fa(n:Nat, f1:Nat->a,f2:Nat->b,f3:Nat->c)
+        map_compose3(mapFromNR(n,f1),mapFromNR(n,f2),mapFromNR(n,f3))
         = mapFromNR(n, fn(i:Nat)-> (f1 i, f2 i, f3 i))
                                          
 (******************************** The Proofs ********************************)
