@@ -4,10 +4,6 @@ proof Isa FSet__fromFSet_def
   sorry
 end-proof
 
-proof Isa List__toSet_def_Obligation_subtype 
-  sorry
-end-proof
-
 proof Isa List__toSet_def 
   sorry
 end-proof
