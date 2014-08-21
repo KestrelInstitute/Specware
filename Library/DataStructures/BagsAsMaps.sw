@@ -1,10 +1,11 @@
-% refinement of (finite) bags in terms of (finite) maps: A bag can be
+% Refinement of (finite) bags in terms of (finite) maps: A bag can be
 % represented by a map from elements to their occurrence count in the
-% bag.  I guess this representation is not unique: An element not
-% present in the bag could either be paired with a count of 0 in the
-% map, or have no pair in the map at all.  TODO, does that violate the
-% axiom 'occurrences' about Bags (that if two bags agree on the number
-% of occurences of all items, then they are equal)?
+% bag.  To ensure unique representation, we require the count of every
+% element in the map to be a PosNat, not just a Nat. (Otherwise, an
+% element not present in the bag could either be paired with a count
+% of 0 in the map, or have no pair in the map at all.  This would give
+% multiple representations of the same bag, which would violate the
+% axiom 'occurrences' for Bags.)
 
 BagsAsMaps =
 BagsAsMaps qualifying
@@ -30,7 +31,7 @@ spec
 
   %TODO without the Nat annotation on y, the Isabelle obligation is illegal.  (Now I've changed it to PosNat...)
   op [a] subbag (b1:Bag a, b2: Bag a) infixl 200 : Bool =
-    %% size b1 <= size b2 &&   % could add this back as an optimization (was wrong when map b1 could have had many keys bound to 0 and still represent a subbag of b2)
+    %% size b1 <= size b2 &&   % could add this back as an optimization
     foldi (fn (x,y:PosNat,r) -> r && y <= occs(x, b2)) true b1
   
   op [a] empty_bag : Bag a = empty_map
