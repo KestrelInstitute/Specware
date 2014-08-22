@@ -7,7 +7,6 @@
 ;;; that is used for distribution builds.
 
 ;(push :case-sensitive *features*)
-
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun set-readtable-invert ()
@@ -20,7 +19,6 @@
   #+case-sensitive
   (:nicknames :specware))
 (in-package :Specware)
-
 
 #+case-sensitive
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -80,7 +78,8 @@
 		(require :sb-introspect)
 		(require :sb-posix)
                 (require :sb-cltl2)
-		; (require :sb-sprof)
+                ;; :sb-sprof may need to be removed if running on windows
+		(require :sb-sprof)
                 (require :asdf)
                 (require :sb-grovel)
                 ))
@@ -104,9 +103,16 @@
 ;;    change-directory
 ;;    current-directory
 
-(let ((utils (make-pathname :defaults "../../../Handwritten/Lisp/load-utilities" :type "lisp")))
-  (load utils)
-  (compile-and-load-lisp-file utils))
+(let ((utils (make-pathname :defaults "../../../Handwritten/Lisp/load-utilities"
+                            :type "lisp"))
+      (utils_fasl (make-pathname :defaults "../../../Handwritten/Lisp/load-utilities"
+                                 :type sb-fasl:*fasl-file-type*)))
+  (if (probe-file utils_fasl)
+      (load utils_fasl)
+    (load utils))
+  (when (compile-file-if-needed utils)
+    (format t "Recompiling load-utilities\n")
+    (load utils_fasl)))
 
 (defparameter Specware4 (substitute #\/ #\\ (convert-pathname-from-cygwin (getenv "SPECWARE4"))))
 
@@ -174,20 +180,23 @@
 ;;; ---------------
 (defvar HandwrittenFiles
   '(
+    ;; Functions that are assumed by the MetaSlang to Lisp compiler
+    "Library/SpecwareRuntime"
+
     ; "Library/Base/Handwritten/Lisp/Boolean.lisp"
-    "Library/Base/Handwritten/Lisp/meta-slang-runtime.lisp"
-    "Library/Base/Handwritten/Lisp/Integer.lisp"
+  ;;  "Library/Base/Handwritten/Lisp/meta-slang-runtime.lisp"
+  ;;  "Library/Base/Handwritten/Lisp/Integer.lisp"
 ;    "Library/Base/Handwritten/Lisp/Nat.lisp"
-    "Library/Base/Handwritten/Lisp/Character.lisp"
-    "Library/Legacy/Utilities/Handwritten/Lisp/System.lisp"
-    "Library/Base/Handwritten/Lisp/String.lisp"
+  ;;  "Library/Base/Handwritten/Lisp/Character.lisp"
+  ;;  "Library/Legacy/Utilities/Handwritten/Lisp/System.lisp"
+  ;;  "Library/Base/Handwritten/Lisp/String.lisp"
     "Library/Unvetted/Handwritten/Lisp/Double.lisp"
     "Library/Unvetted/Handwritten/Lisp/Complex.lisp"
-    "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
-    "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
-    "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
-    "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
-    "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
+ ;;   "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
+ ;;   "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
+ ;;   "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
+ ;;   "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
+ ;;   "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsBTHarray.lisp"
@@ -195,8 +204,7 @@
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsVector.lisp"
     ;"Library/Structures/Data/Sets/Handwritten/Lisp/SetAsCachedHArray.lisp"
     "Library/Structures/Data/Sets/Handwritten/Lisp/SetAsSTHarray.lisp"
-    "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
-    "Library/Algorithms/Handwritten/Lisp/Thread.lisp"
+  ;;  "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
     ;; "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     ;; "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
     "Provers/DP/Handwritten/Lisp/Rational.lisp"
@@ -241,9 +249,6 @@
 
 (defvar SpecwareRuntime
   '(
-    ;; Functions that are assumed by the MetaSlang to Lisp compiler
-    "Library/SpecwareRuntime"
-
     ;; XML support -- this provides hooks for reading/writing ad hoc structures
     ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
     ;; "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
@@ -265,6 +270,7 @@
 
     ;; Debugging utilities
     "Applications/Specware/Handwritten/Lisp/debug"
+    "Applications/Specware/Handwritten/Lisp/pprint-terms"
 
     ;; Specware Shell
     "Applications/Specware/Handwritten/Lisp/transform-shell" ; creates    MetaSlangRewriter package
@@ -292,19 +298,16 @@
 
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
-		 (when (equal file "Applications/Specware/lisp/Specware4.lisp")
-                   ;(sb-sprof:start-profiling)
-                   (format t "~&;;; Possibly running lisp compiler on Specware--<n>.lisp files.~%")
-                   (format t "~&;;; If lisp compilation is needed it takes about 40 seconds...~%")
-                   (finish-output t)
-                   (time
-                    (progn
-                      (compile-and-load-lisp-file (in-specware-dir "Applications/Specware/lisp/Specware4.lisp"))
-                      (format t "Done compiling.")))
-                   ;(with-open-file (f "sb-sprof.out" :direction :output)
-                   ;  (sb-sprof:report :stream f))
-)
-                 (compile-and-load-lisp-file (in-specware-dir file)))
+		 (if (equal file "Applications/Specware/lisp/Specware4.lisp")
+                   (progn
+                     (format t "~&;;; Possibly running lisp compiler on Specware--<n>.lisp files.~%")
+                     (format t "~&;;; If lisp compilation is needed it takes about 40 seconds...~%")
+                     (finish-output t)
+                     (time
+                      (progn
+                        (compile-and-load-lisp-file (in-specware-dir file))
+                        (format t "Done compiling."))))
+                   (compile-and-load-lisp-file (in-specware-dir file))))
        SpecwareRuntime
        );)
 
