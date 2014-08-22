@@ -33,6 +33,12 @@ value as a position.
  which indexing should not be done. isSpecial identifies these
  function symbols; if there are no special symbols, hopefully
  partial evaluation will optimize this away. 
+
+sjw 8/22/2014
+The representation described in the paper allows for a number of uses of this data structure.
+We only use the "generalizations" feature. I have specialized it somewhat for this purpose in
+the course of fixing a bug. It could be further specialized, which would be useful for
+large rule sets.
 *)
 
 TermIndex qualifying
@@ -99,12 +105,15 @@ spec
 
  def indexTerm (index,term,id) = 
      let
-	 def genPathSymPairs(prefix,M) = 
+	 def genPathSymPairs(prefix,M) =
+             % let _ = writeLine("genp: "^anyToString prefix^"\n"^printTerm M) in
 	     let (M::Ms,isFlex?) = getApplys(M,[]) in
 		if isFlex?
 		   then [prefix ++ [-1]]
 		else
 		let indexT = getFunIndex M in
+                if Ms = [] then [prefix ++ [indexT]]
+                else
 		let Mss = subterms Ms in
                 let
 		    def getRec(i,ts) =
@@ -114,17 +123,17 @@ spec
 			     genPathSymPairs(prefix ++ [indexT,i],t) ++
 			     getRec(i + 1,ts)
 		in
-		    (prefix ++ [indexT] :: (if length Mss = 1
-                                            then genPathSymPairs(prefix ++ [indexT], head Mss)
-                                            else getRec(1,Mss)))
+		    (if length Mss = 1
+                      then genPathSymPairs(prefix ++ [indexT], head Mss)
+                      else getRec(1,Mss))
 		
 	    def addOne(index,path) = 
 		TermDiscNet.addForPath(index,path,id)
         in
         let pairs = genPathSymPairs([],term) in
-	(%String.writeLine(MetaSlangPrint.printTerm term);
+	(%writeLine("Term: "^printTerm term^"\nPairs: "^anyToString pairs);
 	 %List.app printPath pairs;
-	 List.foldl addOne index pairs)
+	 foldl addOne index pairs)
 
     def makePath(p,entry: Sym_entry) = 
 	case entry
@@ -176,7 +185,8 @@ spec
 
     def generalizations (index,term) = 
 	let
-	    def get(p,M) = 
+	    def get(p,M) =
+                % let _ = writeLine("get: "^anyToString p^"\n"^printTerm M) in
 		let (M::Ms,isFlex?) = getApplys(M,[]) in
 		if isFlex?
 		   then getTerms(index,p,Star)
