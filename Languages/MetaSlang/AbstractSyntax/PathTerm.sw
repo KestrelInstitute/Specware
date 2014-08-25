@@ -362,7 +362,7 @@ type PathTerm = APathTerm Position.Position
               LetRec  (tabulate(len, fn j -> let (v, x) = l@j in (v, if i = j then repl(x, r_path) else x)),
                        if i = len then repl(b, r_path) else b, a)
             | Lambda (l, a) ->
-              Lambda (tabulate(length l, fn j -> let (v, c, x) = l@j in (v, c, if i = j then repl(x, r_path) else x)), a)
+              Lambda (replLambdaMatch(l, i, 0, r_path), a)
             | IfThenElse(x, y, z, a) ->
               (case i of
                | 0 -> IfThenElse(repl(x, r_path), y, z, a)
@@ -382,6 +382,29 @@ type PathTerm = APathTerm Position.Position
             | And(l, a) ->
               And(tabulate(length l, fn j -> if i = j then repl(l@j, r_path) else l@j), a)
             | _ -> tm
+        def replLambdaMatch(match: AMatch a, i, j, r_path): AMatch a =
+          case match of
+            | [] -> []
+            | (p, c, t) :: r_match ->
+              let guard_tms = getAllPatternGuards p in
+              let (guard_tm_subst, j) = foldl(fn ((sbst, j), gt) ->
+                                                (if j = i then [(gt, repl(gt, r_path))]
+                                                   else sbst,
+                                                 j + 1))
+                                          ([], j) guard_tms
+              in
+              let new_pat =
+                  case guard_tm_subst of
+                    | [] -> p
+                    | [(old_tm, new_tm)] ->
+                      mapPattern1 (fn pi -> case pi of
+                                              | RestrictedPat(p, t, a) | t = old_tm ->
+                                                RestrictedPat(p, new_tm, a)
+                                              | _ -> pi)
+                        p
+              in
+              (new_pat, c, if i = j then repl(t, r_path) else t)
+                :: replLambdaMatch(r_match, i, j + 1, r_path)
     in
     (repl(top_term, reverse path), path)
 

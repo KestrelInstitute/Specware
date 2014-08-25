@@ -272,6 +272,7 @@ spec
     %       | Lambda([(VarPat(v,_), Fun(Bool true,_,_),
     %                  Apply(lam as Lambda([(_, Fun(Bool true,_,_), _)], _), Var(v1,_), _))], _) | equalVar?(v, v1) ->
     %         lam
+           | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> Utilities.mkAnd(N1,N2)
            %% Quantification simplification
            %% fa(x,y) x = a && p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
            | Bind(Forall,_,_,_) ->
