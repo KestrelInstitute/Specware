@@ -24,7 +24,7 @@
        (eq (car val) ':|None|)))
 
 (defparameter quotient-tag
-  (list :|Quotient|))
+  (list :|-Quotient-|))
 
 (defun quotient (r)
   #'(lambda(x)  (vector quotient-tag r x)))
