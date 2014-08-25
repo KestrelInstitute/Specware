@@ -352,6 +352,10 @@ spec
                           | _ -> []
                   in
                   getSisterConjuncts(tm, path)
+                | Lambda([(pat, _, _)], _) | i = 1 ->
+                  let guards = getAllPatternGuards pat in
+                  if guards = [] then []
+                  else assertRules(context, mkConj guards, "lambda guard", Context, Either, None)
                 | _ -> []
           in
           rls ++ collectRules(ithSubTerm(tm, i), r_path, sbst)
