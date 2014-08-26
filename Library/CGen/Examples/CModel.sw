@@ -87,6 +87,9 @@ type Type =
   | pointer Type
   | array Type * PosNat
 
+op integerType? (ty:Type): Bool % = ...
+  % same definition as C deep embedding
+
 (* Values are defined similarly to the C deep embedding. *)
 
 type Value =
@@ -123,17 +126,7 @@ op typeOfValue (val:Value): Type =
   | nullpointer ty -> ty
 
 op integerValue? (val:Value): Bool =
-  embed? uchar val ||
-  embed? schar val ||
-  embed? char val ||
-  embed? ushort val ||
-  embed? sshort val ||
-  embed? uint val ||
-  embed? sint val ||
-  embed? ulong val ||
-  embed? slong val ||
-  embed? ullong val ||
-  embed? sllong val
+  integerType? (typeOfValue val)
 
 op mathIntOfValue (val:Value | integerValue? val): Int % = ...
   % same definition as C deep embedding
