@@ -1007,7 +1007,12 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	| (Fun(Bool false,_,_),_) -> t2
 	| (_,Fun(Bool true,_,_)) -> t2
 	| (_,Fun(Bool false,_,_)) -> t1
-	| _ -> MS.mkOr(t1,t2)
+	| _ ->
+          if equalTerm?(t1, negateTerm t2)
+            then trueTerm
+          else if equalTerm?(t1, t2)
+            then t2
+          else MS.mkOr(t1,t2)
 
  op  mkAnd: MSTerm * MSTerm -> MSTerm 
  def mkAnd(t1,t2) =
@@ -1034,7 +1039,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
   case cjs
     of []     -> mkTrue()
      | [x]    -> x
-     | x::rcs -> mkOr (x, mkOrs rcs)
+     | x::rcs ->
+       if exists? (fn ti -> equalTerm?(x,ti)) rcs
+         then mkOrs rcs
+       else mkOr (x, mkOrs rcs)
 
  op mkSimpBind: Binder * MSVars * MSTerm -> MSTerm
  def mkSimpBind(b, vars, term) =
