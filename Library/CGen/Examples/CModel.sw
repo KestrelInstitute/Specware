@@ -200,6 +200,47 @@ op wfValue? (state:State) (val:Value): Bool =
 op wfState? (state:State): Bool =
   fa (val:Value) val in? range state => wfValue? state val
 
+(* We introduce a state-error monad for C, with error modeled by None.
+Op monadBind enables the use of monadic syntax in Specware. *)
+
+type C a = State -> Option (State * a)
+
+op [a,b] monadBind (comp1: C a, comp2: a -> C b): C b =
+  fn state:State ->
+    case comp1 state of
+    | Some (state', x) -> comp2 x state'
+    | None -> None
+
+(* Lift constants and functions to C monad. *)
+
+op [a] conC (x:a): C a =  % monad return
+  fn state:State -> Some (state, x)
+
+op [a,b] funC (f: a -> b): a -> C b =
+  fn x:a -> fn state:State -> Some (state, f x)
+
+(* Move state out of and into the C monad. *)
+
+op outC: C State =
+  fn state:State -> Some (state, state)
+
+op inC (state:State): C () =
+  fn state':State -> Some (state, ())
+
+(* Monadic versions of readObject and writeObject. *)
+
+op readObjectC (obj:ObjectDesignator): C Value =
+  fn state:State ->
+    case readObject state obj of
+    | Some val -> Some (state, val)
+    | None -> None
+
+op writeObjectC (obj:ObjectDesignator) (newVal:Value): C () =
+  fn state:State ->
+    case writeObject state obj newVal of
+    | Some state' -> Some (state', ())
+    | None -> None
+
 (* This model will be extended as needed. *)
 
 endspec
