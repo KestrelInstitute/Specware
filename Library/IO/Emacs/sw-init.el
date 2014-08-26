@@ -353,7 +353,8 @@ sLisp Heap Image File: ")
 ;		*sentinel-data*))
     (when sw-proc
       (set-process-sentinel sw-proc 'continue-emacs-computation)))
-  (simulate-input-expression (exit-form)))
+  (simulate-input-expression (exit-form))
+  )
 
 (defun exit-form ()
   (if (eq lisp-emacs-interface-type 'slime)
@@ -462,7 +463,7 @@ sLisp Heap Image File: ")
                                                      in-current-dir?
                                                      (not regenerating?))
                     "")))
-             (specware-build-command "(progn (cl:time (cl-user::boot)) %S %s (cl-user::finish-output t) (cl-user::quit))" 
+             (specware-build-command "(progn (cl:time (cl-user::boot)) %S %s (cl-user::finish-output t) (sb-ext:exit))" 
 				     print-progress-message
 				     callback-to-emacs))))))
 
@@ -523,7 +524,7 @@ sLisp Heap Image File: ")
                                               in-current-dir? 
                                               also-regenerate?)
              "")))
-      (specware-build-command "(progn (cl:load %S) %S %s (terpri) (cl-user::finish-output t) (cl-user::quit))" 
+      (specware-build-command "(progn (cl:load %S) %S %s (terpri) (cl-user::finish-output t) (sb-ext:exit))" 
                               specware4-loader 
 			      print-progress-message
                               callback-to-emacs))))
@@ -825,8 +826,8 @@ sLisp Heap Image File: ")
     (start-specware-build-buffer buffer-name))
 
   ;; kill any prior lisp accidentally running there...
-  (when (sbcl-running-in-build-buffer)
-    (specware-build-command "(cl-user::quit)"))
+  ;; (when (sbcl-running-in-build-buffer)
+  ;;   (specware-build-command "(sb-ext:exit)"))
   ;; connect to build directory
   (sit-for 1) ;; give shell time to start (sigh)
   (specware-build-cd-command dir)
@@ -887,7 +888,7 @@ sLisp Heap Image File: ")
         (specware-build in-current-dir? nil 'boot)
       (progn (specware-build-command "%S --dynamic-space-size %S" specware-executable *sbcl-size*) 
              (sit-for 0.5)
-             (specware-build-command "(progn (cl:time (cl-user::boot)) %s (cl-user::finish-output t) (cl-user::quit))"
+             (specware-build-command "(progn (cl:time (cl-user::boot)) %s (cl-user::finish-output t) (sb-ext:exit))"
                                      (specware-build-eval-emacs-str "(specware-build %s nil t)"
                                                                     in-current-dir?))))))
 
@@ -947,7 +948,7 @@ sLisp Heap Image File: ")
                                     specware-executable)))
       (if secondTime?
           (message "Failed to build Specware!")
-        (specware-build-command "(progn (cl:load %S) %s (cl-user::finish-output t) (cl-user::quit))"
+        (specware-build-command "(progn (cl:load %S) %s (cl-user::finish-output t) (sb-ext:exit))"
                                 specware4-loader
                                 (specware-build-eval-emacs-str "(specware-build %s t '%s)"
                                                                in-current-dir?
