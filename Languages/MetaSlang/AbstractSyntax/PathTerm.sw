@@ -478,11 +478,13 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
                                              else Some path),
                       path)
             | (Lambda (l1, _), Lambda (l2, _)) | length l1 = length l2  ->
-              chooseL (tabulate(length l1, fn i -> let ((p1, c1, e1), (p2, c2, e2)) = (l1@i, l2@i) in
-                                                   if equalPattern?(p1, p2) && equalTerm?(c1, c2)
-                                                     then compare(e1, e2, i :: path)
-                                                     else Some path),
-                       path)
+              let stm1_subterms = immediateSubTerms stm1 in
+              let stm2_subterms = immediateSubTerms stm2 in
+              if length stm1_subterms ~= length stm2_subterms then Some path
+                else chooseL(tabulate(length stm1_subterms,
+                                      fn i -> let (e1, e2) = (stm1_subterms@i, stm2_subterms@i) in
+                                              compare(e1, e2, i :: path)),
+                             path)
             | (IfThenElse(x1, y1, z1, _), IfThenElse(x2, y2, z2, _)) ->
               chooseL([compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), compare(z1, z2, 2 :: path)],
                       path)
