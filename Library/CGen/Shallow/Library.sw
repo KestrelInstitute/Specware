@@ -966,33 +966,74 @@ by (metis Compl_iff mem_Collect_eq setToPred_def)
 
 declare setToPred_negate_Collect [simp add]
 
+lemma toNat_int_bound:
+  "\<lbrakk>length bs = n; n \<ge> 8\<rbrakk> \<Longrightarrow> \<not> (2^n \<le> int (toNat bs))"
+  by (auto simp add: zle_int not_le)
+
 theorem toInt_suffix:
-  "\<lbrakk>length bs \<ge> n ; n > 0 ; TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; n=8 ; length bs  =16\<rbrakk> \<Longrightarrow> 
+  "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ;
+    n>0; length bs \<ge> n\<rbrakk> \<Longrightarrow> 
   TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
-   apply(simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix)
-  apply(auto) 
-  apply(cut_tac x="( take(length bs - 8) bs)" and y="(drop 8 bs)" in toNat_app)
-  apply(force)
-  apply(force)
-  apply(simp add: List.append_take_drop_id)
-  apply(simp add: must_be_high)
-  apply(simp add: top_bit_one)
-  apply(cut_tac bs=bs and n=8 in toNat_bound2)
-  apply(force, force, force, force)
-  apply(cut_tac x="toNat bs" and y="toNat bs - 256*255" and m=256 in mod_known_nat)
+  apply (case_tac "length bs = n", simp, drule le_neq_trans, simp)
+  apply (auto simp add: TwosComplement__toInt_def TC_lemmas 
+                        toNat_suffix  hd_suffix)
+  apply (cases "hd bs = B0", simp_all)
+  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
+            in toNat_app, auto, rotate_tac -1, thin_tac ?P)
+  apply (cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_1, auto)
+  defer (*** need something like must_be_high_generic ***)
+  apply (rotate_tac -1, erule rev_mp, simp)
+  apply (subst hd_conv_nth, simp, simp add: nth_drop)
+  (**** now the same argument again ****)
+sorry
+
+
+(*************************************************************************
+* Proof generalizes the two theorems below which may be removed later
+* I need generalizations of lemmas like "must_be_high" and "top_bit_one"
+*******************************************************************************
+* Here is a sketch
+
+theorem must_be_high_generic:
+  "\<lbrakk> (x::nat) < 2^k ; y < 2^n \<rbrakk> 
+   \<Longrightarrow> (2^k - 2^ (n - 1) \<le> x * 2^n + y) = (x=2^n - 1 \<and> y \<ge> 2^(n - 1))"
+  apply(arith)
+  .......
+
+theorem eighth_bit_one:
+  "\<lbrakk> length bs \<ge> 8\<rbrakk> \<Longrightarrow> ((128 \<le> toNat bs \<and>  toNat bs < 256) = (bs ! (length bs - 8) = B1))"
+  apply(simp add: toNat_split_top_8)
+  apply(auto)
+  apply(case_tac "bs ! 0 = B0")
   apply(simp_all)
-  apply(cut_tac bs=bs in Bits__toNat_bound)
-  apply(force)
+  apply(simp add: toNat_bound_false)
+done
+
+******************************************************************************
+..... more attempts below 
+
+******************************************************************************)
+
+theorem toInt_suffix8:
+  "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; n=8 ; length bs = 8\<rbrakk> \<Longrightarrow> 
+  TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
+  by(auto simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix)
+
+theorem toInt_suffix16:
+  "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; n=8 ; length bs = 16\<rbrakk> \<Longrightarrow> 
+  TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
+  apply(auto simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix)
+  apply(cut_tac x="( take(length bs - 8) bs)" and y="(drop 8 bs)" in toNat_app, auto)
+  apply(simp add: must_be_high top_bit_one)
+  apply(cut_tac bs=bs and n=8 in toNat_bound2, auto)
+  apply(cut_tac x="toNat bs" and y="toNat bs - 256*255" and m=256 in mod_known_nat, auto)
+  apply(cut_tac bs=bs in Bits__toNat_bound, auto)
   apply(simp add: move_constant_hack)
-  sorry
-(*  apply(rule mod_diff_drop_right_nat [symmetric])
-  apply(force, force)
-  done
-*)
+  apply(rule mod_diff_drop_right_nat [symmetric], auto)
+done
 
-  
 
-(*
+(*******************************************************************************
 theorem must_be_high_gen_fw:
   "\<lbrakk> (x::nat) < 2^(len - n) ; y < 2 ^ n ; n < len ; n > 0 ; x < 2^(len - n) - 1\<rbrakk> \<Longrightarrow> 
     x * 2 ^ n + y < 2^len - 2^(n - 1)"
@@ -1030,59 +1071,7 @@ theorem must_be_high_gen:
   apply(simp)
   apply(arith)
   done
-
-(* TODO consider n = length bs *)
-theorem toInt_suffix:
-  "\<lbrakk>length bs > n ; n > 0 ; TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; length bs  =16\<rbrakk> \<Longrightarrow> 
-  TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
-   apply(simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix )
-  apply(auto) 
-  apply(cut_tac x="( take (length bs - n) bs)" and y="(drop (length bs - n) bs)" in toNat_app)
-  apply(force)
-  apply(force)
-  apply(simp add: List.append_take_drop_id)
-
-
-
-  apply(simp add: must_be_high)
-  apply(simp add: top_bit_one)
-  apply(cut_tac bs=bs and n=8 in toNat_bound2)
-  apply(force, force, force, force)
-  apply(cut_tac x="toNat bs" and y="toNat bs - 256*255" and m=256 in mod_known_nat)
-  apply(simp_all)
-  apply(cut_tac bs=bs in Bits__toNat_bound)
-  apply(force)
-  apply(simp add: move_constant_hack)
-  apply(rule mod_diff_drop_right_nat [symmetric])
-  apply(force, force)
-  done
-*)
-
-
-
-
-(* theorem toInt_suffix: *)
-(*   "\<lbrakk>length bs \<ge> n ; n > 0 ; TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; n=8 ; length bs  =16\<rbrakk> \<Longrightarrow>  *)
-(*   TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs" *)
-(*    apply(simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix ) *)
-(*   apply(auto)  *)
-(*   apply(cut_tac x="( take(length bs - 8) bs)" and y="(drop 8 bs)" in toNat_app) *)
-(*   apply(force) *)
-(*   apply(force) *)
-(*   apply(simp add: List.append_take_drop_id) *)
-(*   apply(simp add: must_be_high) *)
-(*   apply(simp add: top_bit_one) *)
-(*   apply(cut_tac bs=bs and n=8 in toNat_bound2) *)
-(*   apply(force, force, force, force) *)
-(*   apply(cut_tac x="toNat bs" and y="toNat bs - 256*255" and m=256 in mod_known_nat) *)
-(*   apply(simp_all) *)
-(*   apply(cut_tac bs=bs in Bits__toNat_bound) *)
-(*   apply(force) *)
-(*   apply(simp add: move_constant_hack) *)
-(*   apply(rule mod_diff_drop_right_nat [symmetric]) *)
-(*   apply(force, force) *)
-(*   done *)
-
+******************************************************************************)
 
 
 theorem div_le_dividend_rule: 
@@ -1126,7 +1115,7 @@ end-proof
 
 
 
-(***************** Proofs start here ******************)
+(***************************** Proofs start here ******************************)
 
 proof isa fromBigEndian_becomes_Obligation_subtype
   by (auto simp add: Library__all_less_becomes)

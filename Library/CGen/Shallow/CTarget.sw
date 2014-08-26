@@ -183,6 +183,8 @@ theorem C__Uchar__subtype_pred_ucharOfMathInt [simp]:
 end-proof
 
 
+
+
 theorem ucharOfMathInt_mathIntOfUchar is
   fa(x:Uchar) ucharOfMathInt (mathIntOfUchar x) = x
 
@@ -1736,6 +1738,22 @@ theorem sllongOfSlong_bits is
 
 (* Converting from a signed or unsigned integer type to a signed or unsigned
 integer type of lower rank amounts to truncating the most significant bits. *)
+
+
+proof isa -verbatim
+(****************** we need these later **********)
+
+lemma charOfMathInt_suffix:
+  "\<lbrakk>length bs \<ge> 8; toNat bs \<le> 255\<rbrakk>
+    \<Longrightarrow> C__charOfMathInt (int (toNat bs) mod 256) = C__Char__char (List__suffix (bs, 8))"
+  apply (rule_tac t="256" and s="int 256" in subst, arith, 
+         simp only: zmod_int [symmetric], simp)
+  apply (subst C__mathIntOfChar_injective [symmetric],
+         rule C__Char__subtype_pred_charOfMathInt,
+         simp_all add: C__plainCharsAreSigned_def toNat_suffix)
+done
+(***********************************************************)
+end-proof
 
 theorem ucharOfUshort_bit is
   fa(bs:Bits) length bs = short_bits =>
@@ -4453,106 +4471,154 @@ end-proof
 
 proof isa C__scharOfSshort_bit
   apply(simp add: Conversions2 Conversions3)
-  apply(cut_tac bs=bs and n=8 in toInt_suffix)
-  apply(force)
-  apply(force)
-  apply(force)
-  apply(force)
-  apply(force)
-  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" in TwosComplement__tcNumber_toInt_reduce)
-  apply(auto)
+  apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
+  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+        in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__scharOfSint_bit
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
+  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+        in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__scharOfSlong_bit
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
+  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+        in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__scharOfSllong_bit
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(cut_tac bs=bs and n=8 in toInt_suffix, auto)
+  apply(cut_tac x="List__suffix (bs, 8\<Colon>nat)" 
+        in TwosComplement__tcNumber_toInt_reduce, auto)
 end-proof
 
 proof isa C__sshortOfUint_bit
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=16 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sshortOfUlong_bit
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=16 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sshortOfUllong_bit
-sorry
+  apply(simp add: Conversions2 Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=16 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sshortOfSint_bit
-sorry
+  apply(simp add: C__sshortOfSint_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=16 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sshortOfSlong_bit
-sorry
+  apply(simp add: C__sshortOfSlong_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=16 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sshortOfSllong_bit
-sorry
+  apply(simp add: C__sshortOfSllong_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=16 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sintOfUlong_bit
-sorry
+  apply(simp add: Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=32 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sintOfUllong_bit
-sorry
+  apply(simp add: Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=32 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)   
 end-proof
 
 proof isa C__sintOfSlong_bit
-sorry
+  apply(simp add: C__sintOfSlong_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=32 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__sintOfSllong_bit
-sorry
+  apply(simp add: C__sintOfSllong_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=32 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__slongOfUllong_bit
-sorry
+  apply(simp add: C__sintOfUllong_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=64 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__slongOfSllong_bit
-sorry
+  apply(simp add: C__slongOfSllong_def Conversions2  Conversions3)
+  apply(rule TwosComplement__tcNumber_inverse_fwd [symmetric], auto)
+  apply(cut_tac bs=bs and n=64 in toInt_suffix,
+        auto simp add: TwosComplement__toInt_def TC_lemmas)
 end-proof
 
 proof isa C__charOfUshort_bit
-sorry
+by (simp add: C__charOfUshort_def C__plainCharsAreSigned_def charOfMathInt_suffix)
 end-proof
 
 proof isa C__charOfUint_bit
-sorry
+by (simp add: C__charOfUint_def C__plainCharsAreSigned_def charOfMathInt_suffix)
 end-proof
 
 proof isa C__charOfUlong_bit
-sorry
+by (simp add: C__charOfUlong_def C__plainCharsAreSigned_def charOfMathInt_suffix)
 end-proof
 
 proof isa C__charOfUllong_bit
-sorry
+by (simp add: C__charOfUllong_def C__plainCharsAreSigned_def charOfMathInt_suffix)
 end-proof
 
 proof isa C__charOfSshort_bit
-sorry
+apply (auto simp add: C__charOfSshort_def C__plainCharsAreSigned_def 
+                 TwosComplement__toInt_def TC_lemmas charOfMathInt_suffix)
+  apply (drule toNat_int_bound, auto)
 end-proof
 
 proof isa C__charOfSint_bit
-sorry
+apply (auto simp add: C__charOfSint_def C__plainCharsAreSigned_def 
+                 TwosComplement__toInt_def TC_lemmas charOfMathInt_suffix)
+  apply (drule toNat_int_bound, auto)
 end-proof
 
 proof isa C__charOfSlong_bit
-sorry
+apply (auto simp add: C__charOfSlong_def C__plainCharsAreSigned_def 
+                 TwosComplement__toInt_def TC_lemmas charOfMathInt_suffix)
+  apply (drule toNat_int_bound, auto)
 end-proof
 
 proof isa C__charOfSllong_bit
-sorry
+apply (auto simp add: C__charOfSllong_def C__plainCharsAreSigned_def 
+                 TwosComplement__toInt_def TC_lemmas charOfMathInt_suffix)
+  apply (drule toNat_int_bound, auto)
 end-proof
 
 proof isa C__e_gt_gt_sint_sint_Obligation_subtype1
@@ -4865,159 +4931,111 @@ proof isa C__sintOfBool__lt_eq
 end-proof
 
 proof isa C__e_amp_sint_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Sint.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_amp_slong_Obligation_exhaustive
-  (* apply(simp)
-   apply(case_tac x_1)
-   apply(case_tac x_2)
-   apply(auto) *)
-sorry
+  by (cut_tac C__Slong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_amp_sllong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto) *)
-sorry
+  by (cut_tac C__Sllong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_amp_uint_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto) *)
-sorry
+  by (cut_tac C__Uint.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_amp_ulong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto) *)
-sorry
+  by (cut_tac C__Ulong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_amp_ullong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto) *)
-sorry
+  by (cut_tac C__Ullong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_crt_sint_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto) *)
-sorry
+  by (cut_tac C__Sint.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_crt_slong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Slong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_crt_sllong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Sllong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_crt_uint_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Uint.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_crt_ulong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Ulong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_crt_ullong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Ullong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_bar_sint_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Sint.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_bar_slong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Slong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_bar_sllong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Sllong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_bar_uint_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Uint.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_bar_ulong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Ulong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__e_bar_ullong_Obligation_exhaustive
-(*  apply(simp)
-  apply(case_tac x_1)
-  apply(case_tac x_2)
-  apply(auto)
-*)
-sorry
+  by (cut_tac C__Ullong.nchotomy, 
+      frule_tac x=x_1 in spec, drule_tac x=x_2 in spec, 
+      auto)
 end-proof
 
 proof isa C__mathIntOfUint_Obligation_subtype0
@@ -5111,75 +5129,75 @@ sorry
 end-proof
 
 proof isa C__e_lt_lt_sint_sint_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sint_slong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sint_sllong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sint_uint_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sint_ulong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sint_ullong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_slong_sint_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_slong_slong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_slong_sllong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_slong_uint_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_slong_ulong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_slong_ullong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sllong_sint_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sllong_slong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sllong_sllong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sllong_uint_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sllong_ulong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 proof isa C__e_lt_lt_sllong_ullong_Obligation_exhaustive
-sorry
+by auto
 end-proof
 
 
