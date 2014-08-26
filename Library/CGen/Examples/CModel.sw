@@ -71,11 +71,6 @@ type ObjectDesignator =
   | outside OutsideID
   | subscript ObjectDesignator * Nat
 
-(* A pointer consists of a type and an object designator.
-The type is convenient to carry as part of the pointer. *)
-
-type Pointer = Type * ObjectDesignator
-
 (* As in the C deep embedding,
 it is convenient to model values as carrying their own types.
 Thus the following (Specware) type of (C) types is introduced,
@@ -111,7 +106,7 @@ type Value =
   | slong Slong
   | ullong Ullong
   | sllong Sllong
-  | pointer Pointer
+  | pointer Type * ObjectDesignator
   | array Type * List1 Value
   | nullpointer Type
 
