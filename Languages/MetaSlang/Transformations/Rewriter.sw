@@ -474,86 +474,88 @@ MetaSlangRewriter qualifying spec
 % apply a rewrite, test whether that pushing was necessary for the
 % rewrite, and if not undo the pushing
 op maybePushIfBack(res as (tr_if, info): RRResult, orig_path: Path,
-                   f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
-  case tr_if of
-    | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
-      let def unpush_if rr_in_else_branch f_Ns_num_opt new_prefix_rev =
-        let qn = termToList q in
-        let rn = termToList r in
-        let new_f = if rr_in_else_branch then f2 else f1 in
-        let new_Ns = if rr_in_else_branch then rn else qn in
-        % README: don't need to do these tests, because if there had
-        % been some further pushing in the then- or else- branches
-        % they wouldn't be Applys!
-        %
-        % % test that only one term in f::Ns has changed; otherwise,
-        % % there might have been some further pushing done on f1(q) or
-        % % f2(r) that we need to keep
-        % if length new_Ns = length Ns &&
-        %   (forall?
-        %      (fn j -> Some j = f_ns_num_opt
-        %         || (f::Ns)@j = (new_f::new_Ns)@j)
-        %      (tabulate(1+length Ns, id)))
-        % then
-          (mkAppl(new_f, replaceNth(i, new_Ns, IfThenElse (p, qn@i, rn@i, pos))),
-           replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
-                                     "maybePushIfBack"))
-        % else res
-      in
-      % README: fun_pathElem is the immediate subterm number of
-      % Apply(f,Ns) that picks out f; the if-expression here handles
-      % the fact that, if f is a Lambda, the subterm number is 1,
-      % otherwise it is 0
-      let fun_pathElem = if embed? Lambda f then 1 else 0 in
-      let arg_pathElem = 1-fun_pathElem in
-      let path_to_unpushed_if =
-        arg_pathElem :: (if length Ns = 1 then [] else [i])
-      in
-      (case infoPathDifferenceRev (info, orig_path) of
-         % The rewrite happened at the top of the then- or else-branch,
-         % or at the top of the whole expression, and so required f to be
-         % pushed inside the if
-         | Some [] -> res
-         | Some [1] -> res
-         | Some [2] -> res
-         | Some (path as 0::_) ->
-           % Rewrite happened in the condition of the if
-           unpush_if false None (path_to_unpushed_if++path)
-         | Some (1::elem::p_f) | elem = fun_pathElem ->
-           % Rewrite happened in the function part of the then-branch;
-           % try to unpush with the new, rewritten function
-           unpush_if false (Some 0) (fun_pathElem::p_f)
-         | Some (2::elem::p_f) | elem = fun_pathElem ->
-           % Rewrite happened in the function part of the else-branch;
-           % try to unpush with the new, rewritten function
-           unpush_if true (Some 0) (fun_pathElem::p_f)
-         | Some (1::elem::p_branch) | elem = arg_pathElem && length Ns = 1 ->
-           % Rewrite happened in the then-branch and there are no other
-           % args to f
-           unpush_if false (Some 1) (path_to_unpushed_if++(1::p_branch))
-         | Some (2::elem::p_branch) | elem = arg_pathElem && length Ns = 1 ->
-           % Rewrite happened in the else-branch and there are no other
-           % args to f
-           unpush_if true (Some 1) (path_to_unpushed_if++(2::p_branch))
-         | Some (1::elem::j::p_branch) | elem = arg_pathElem && j=i ->
-           % Rewrite happened in the then-branch of the original
-           % if-expression
-           unpush_if false (Some (j+1)) (path_to_unpushed_if++(1::p_branch))
-         | Some (2::elem::j::p_branch) | elem = arg_pathElem && j=i ->
-           % Rewrite happened in the else-branch of the original
-           % if-expression
-           unpush_if true (Some (j+1)) (path_to_unpushed_if++(2::p_branch))
-         | Some (1::elem::j::p_branch) | elem = arg_pathElem && j~=i ->
-           % Rewrite happened in the then-branch in one of the arguments in
-           % Ns that was not the original if-expression
-           unpush_if false (Some (j+1)) [1,j]
-         | Some (2::elem::j::p_branch) | elem = arg_pathElem && j~=i ->
-           % Rewrite happened in the else-branch in one of the arguments in
-           % Ns that was not the original if-expression
-           unpush_if false (Some (j+1)) [1,j]
-         | _ ->
-           warn ("maybePushIfBack: unexpected path " ^ printPath (infoPath info)); res)
-    | _ -> res
+                   f: MSTerm, Ns: MSTerms, i: Nat): Option RRResult =
+  if equalTerm?(tr_if, mkAppl(f, Ns)) then None
+  else
+  Some(case tr_if of
+         | IfThenElse(p, Apply(f1, q, _), Apply(f2, r, _), pos) ->
+           let def unpush_if rr_in_else_branch f_Ns_num_opt new_prefix_rev =
+             let qn = termToList q in
+             let rn = termToList r in
+             let new_f = if rr_in_else_branch then f2 else f1 in
+             let new_Ns = if rr_in_else_branch then rn else qn in
+             % README: don't need to do these tests, because if there had
+             % been some further pushing in the then- or else- branches
+             % they wouldn't be Applys!
+             %
+             % % test that only one term in f::Ns has changed; otherwise,
+             % % there might have been some further pushing done on f1(q) or
+             % % f2(r) that we need to keep
+             % if length new_Ns = length Ns &&
+             %   (forall?
+             %      (fn j -> Some j = f_ns_num_opt
+             %         || (f::Ns)@j = (new_f::new_Ns)@j)
+             %      (tabulate(1+length Ns, id)))
+             % then
+               (mkAppl(new_f, replaceNth(i, new_Ns, IfThenElse (p, qn@i, rn@i, pos))),
+                replaceInfoPathDifference(reverse new_prefix_rev, info, orig_path,
+                                          "maybePushIfBack"))
+             % else res
+           in
+           % README: fun_pathElem is the immediate subterm number of
+           % Apply(f,Ns) that picks out f; the if-expression here handles
+           % the fact that, if f is a Lambda, the subterm number is 1,
+           % otherwise it is 0
+           let fun_pathElem = if embed? Lambda f then 1 else 0 in
+           let arg_pathElem = 1-fun_pathElem in
+           let path_to_unpushed_if =
+             arg_pathElem :: (if length Ns = 1 then [] else [i])
+           in
+           (case infoPathDifferenceRev (info, orig_path) of
+              % The rewrite happened at the top of the then- or else-branch,
+              % or at the top of the whole expression, and so required f to be
+              % pushed inside the if
+              | Some [] -> res
+              | Some [1] -> res
+              | Some [2] -> res
+              | Some (path as 0::_) ->
+                % Rewrite happened in the condition of the if
+                unpush_if false None (path_to_unpushed_if++path)
+              | Some (1::elem::p_f) | elem = fun_pathElem ->
+                % Rewrite happened in the function part of the then-branch;
+                % try to unpush with the new, rewritten function
+                unpush_if false (Some 0) (fun_pathElem::p_f)
+              | Some (2::elem::p_f) | elem = fun_pathElem ->
+                % Rewrite happened in the function part of the else-branch;
+                % try to unpush with the new, rewritten function
+                unpush_if true (Some 0) (fun_pathElem::p_f)
+              | Some (1::elem::p_branch) | elem = arg_pathElem && length Ns = 1 ->
+                % Rewrite happened in the then-branch and there are no other
+                % args to f
+                unpush_if false (Some 1) (path_to_unpushed_if++(1::p_branch))
+              | Some (2::elem::p_branch) | elem = arg_pathElem && length Ns = 1 ->
+                % Rewrite happened in the else-branch and there are no other
+                % args to f
+                unpush_if true (Some 1) (path_to_unpushed_if++(2::p_branch))
+              | Some (1::elem::j::p_branch) | elem = arg_pathElem && j=i ->
+                % Rewrite happened in the then-branch of the original
+                % if-expression
+                unpush_if false (Some (j+1)) (path_to_unpushed_if++(1::p_branch))
+              | Some (2::elem::j::p_branch) | elem = arg_pathElem && j=i ->
+                % Rewrite happened in the else-branch of the original
+                % if-expression
+                unpush_if true (Some (j+1)) (path_to_unpushed_if++(2::p_branch))
+              | Some (1::elem::j::p_branch) | elem = arg_pathElem && j~=i ->
+                % Rewrite happened in the then-branch in one of the arguments in
+                % Ns that was not the original if-expression
+                unpush_if false (Some (j+1)) [1,j]
+              | Some (2::elem::j::p_branch) | elem = arg_pathElem && j~=i ->
+                % Rewrite happened in the else-branch in one of the arguments in
+                % Ns that was not the original if-expression
+                unpush_if false (Some (j+1)) [1,j]
+              | _ ->
+                warn ("maybePushIfBack: unexpected path " ^ printPath (infoPath info)); res)
+         | _ -> res)
 
 % If a function was pushed inside a let-expression in its argument to
 % apply a rewrite, test whether that pushing was necessary for the
@@ -890,7 +892,6 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
      | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
        let Ns = termToList N in
        (case findIndex (embed? IfThenElse) Ns  of
-          % FIXME: pushFunctionsIn? && pushable? M is redundant...?
           | Some (i,if_tm) | pushFunctionsIn? && pushable? M ->
             (let IfThenElse(p,q,r,b1) = if_tm in
              let r_tm = IfThenElse(p,
@@ -898,7 +899,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                    mkAppl(M,replaceNth(i, Ns, r)), b)
              in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
-             LazyList.map (fn res -> maybePushIfBack(res, path, M, Ns, i))
+             LazyList.mapPartial (fn res -> maybePushIfBack(res, path, M, Ns, i))
                tr_tms)
           | _ ->
         case findIndex (embed? Let) Ns  of
