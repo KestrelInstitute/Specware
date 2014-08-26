@@ -20,6 +20,7 @@ spec
  op checkSpec : Spec * Bool * (String * String -> Bool) * String -> TypeCheckConditions
 
  op simplifyObligations?: Bool = true
+ op dontGenerateTrueObligs?: Bool = true
  op simplifyFalseObligations?: Bool = false
  op removeExcessAssumptions?: Bool = false
  %% These two should be false for Isabelle conversion
@@ -228,7 +229,11 @@ spec
                    in
                    let _ = if traceObligationSimplify? then writeLine("Simplifies to\n"^printTerm oblig3) else () in
                    if trueTerm? oblig4 then oblig4 else oblig3
-               else oblig
+               else 
+                 let simp_oblig = if dontGenerateTrueObligs? then simplify spc oblig else oblig in
+                 let _ = if traceObligationSimplify? then writeLine("Simplifies to\n"^printTerm simp_oblig) else () in
+                 if trueTerm? simp_oblig then simp_oblig
+                  else oblig
    in
    oblig1
 
