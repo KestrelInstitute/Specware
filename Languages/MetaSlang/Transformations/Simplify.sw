@@ -286,7 +286,7 @@ spec
                | Some fld -> fld
                | None -> term)
            | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
-             if  (trueTerm? t2 || equalTerm?(t1, t2)) && sideEffectFree t1
+             if  (trueTerm?(simplifyOne spc t2) || equalTerm?(t1, t2)) && sideEffectFree t1
                then mkTrue()
                else mkSimpImplies(t1,t2)
            %% x + n - n \_longrightarrow x  (Could generalize, but useful for IsaPrinter)
