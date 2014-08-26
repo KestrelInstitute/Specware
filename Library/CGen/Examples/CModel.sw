@@ -30,11 +30,6 @@ spec
 import /Library/General/OptionExt
 import /Library/General/Map
 
-(* Useful for the Option monad. *)
-
-op noneIf (condition:Bool): Option () =
-  if condition then Some () else None
-
 (* We define integer values similarly to the C deep and shallow embeddings,
 parameterized over the size of bytes, shorts, ints, longs, and long longs. *)
 
