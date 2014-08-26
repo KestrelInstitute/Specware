@@ -368,14 +368,23 @@ spec
                     | _ -> fvs)
       [] tm
 
+  op boolMTypeInfo?(ty_info: MTypeInfo): Bool =
+    case ty_info of
+      | Bool -> true
+      | _ -> false
+
   op transformExprToAnnTypeValue(te: TransformExpr, ty_info: MTypeInfo, spc: Spec): Env(Option AnnTypeValue) =
     % let _ = writeLine("tetatv:\n"^anyToString te^"\n"^show ty_info) in
     case (te, ty_info) of
       | (Str(s, _),  Str) | s nin? reservedWords -> return(Some(StrV s))
       | (Name(s, _), Str) | s nin? reservedWords -> return(Some(StrV s))
       | (Number(n,_), Num) -> return(Some(NumV n))
-      | (Name("true",_),  ty_info) -> return(if ty_info = Bool then Some(BoolV  true) else None)
-      | (Name("false",_), ty_info) -> return(if ty_info = Bool then Some(BoolV false) else None)
+      | (_, Opt ty_info1) -> {r_val <- transformExprToAnnTypeValue(te, ty_info1, spc);
+                              return(mapOption (fn av -> OptV(Some av)) r_val)}
+      | (Name("true",_),  ty_info) -> return(if boolMTypeInfo? ty_info
+                                               then Some(BoolV  true) else None)
+      | (Name("false",_), ty_info) -> return(if boolMTypeInfo? ty_info
+                                               then Some(BoolV false) else None)
       | (QuotedTerm(ptm, _), Term) ->
         (case elaboratePosTerm(ptm, spc, freePatternVars ptm) of
            | (tm, []) -> 
