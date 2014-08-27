@@ -104,16 +104,17 @@ spec
     if p=True && q=True then True
     else Bot
 
-  def logic4toBoolean(l4v: Logic4): Bool =
+  def logic4toBool(l4v: Logic4): Bool =
     case l4v of
       | True -> true
       | False -> false
       | Bot -> false  % could make this polarity-sensitive
       | Top -> false  % could make this polarity-sensitive
 
-  def BooleantoLogic4(b: Bool): Logic4 =
+  def BooltoLogic4(b: Bool): Logic4 =
     case b of
       | true -> True
       | false -> False
 
 end-spec
+
