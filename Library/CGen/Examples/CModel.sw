@@ -66,6 +66,21 @@ type ObjectDesignator =
   | outside OutsideID
   | subscript ObjectDesignator * Nat
 
+(* Pointers in our C model include object designators,
+which have well-defined semantics in [ISO] and which can be dereferenced.
+Pointer arithmetic may yield well-defined pointers that also include
+one past the last element of an array object
+or one past an object that is not an element of an array object [ISO 6.5.6/8].
+Such pointers cannot be dereferenced [ISO 6.5.6/8],
+but have well-defined arithmetic [ISO 6.5.6/8-9].
+Thus we define a pointer as
+either an object designator or something that points one past another object.
+This notion is not present in the C deep or shallow embeddings. *)
+
+type Pointer =
+  | object ObjectDesignator
+  | past1 ObjectDesignator
+
 (* As in the C deep embedding,
 it is convenient to model values as carrying their own types.
 Thus the following (Specware) type of (C) types is introduced,
@@ -90,7 +105,8 @@ type Type =
 op integerType? (ty:Type): Bool % = ...
   % same definition as C deep embedding
 
-(* Values are defined similarly to the C deep embedding. *)
+(* Values are defined similarly to the C deep embedding.
+Note that arrays are never empty [ISO 6.2.5/20]. *)
 
 type Value =
   | uchar Uchar
@@ -104,7 +120,7 @@ type Value =
   | slong Slong
   | ullong Ullong
   | sllong Sllong
-  | pointer Type * ObjectDesignator
+  | pointer Type * Pointer
   | array Type * List1 Value
   | nullpointer Type
 
@@ -178,9 +194,13 @@ op writeObject
     | _ -> None)
 
 (* A value is well-formed (in a state) iff:
-- every array is not empty;
 - every array element has the correct type;
-- every pointer designates an object in the state of the correct type. *)
+- every pointer that is an object designator
+  designates an object in the state of the correct type;
+- every one-past pointer has an object designator that
+  either designates a top-level non-array
+  or designates an array
+  (i.e. it does not designate an element of an array that is not an array). *)
 
 op wfValue? (state:State) (val:Value): Bool =
   case val of
@@ -189,9 +209,15 @@ op wfValue? (state:State) (val:Value): Bool =
       (let val = vals @ i in
        typeOfValue val = ty &&  % array element has correct type
        wfValue? state val))  % array element is recursively well-formed
-  | pointer (ty, obj) ->
+  | pointer (ty, object obj) ->
     (case readObject state obj of
     | Some val -> typeOfValue val = ty  % designates object of correct type
+    | None -> false)
+  | pointer (ty, past1 obj) ->
+    (case readObject state obj of
+    | Some val ->  % obj designates an object in the state
+      embed? outside obj ||  % top-level object (array or not)
+      embed? array val  % or array (top-level or element of an outer array
     | None -> false)
   | _ -> true  % null pointer and integer values always well-formed
 

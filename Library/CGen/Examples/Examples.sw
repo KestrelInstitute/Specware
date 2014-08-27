@@ -56,7 +56,7 @@ op readBufferLength (state:State) (len:Value): Option Nat =
   then let n = mathIntOfValue len in
        if n >= 0 then Some n else None
   else case len of
-       | pointer (_, obj) ->
+       | pointer (_, object obj) ->
          (case readObject state obj of
          | Some val ->
            if integerValue? val
@@ -76,7 +76,7 @@ from which a portion of the element values is extracted and returned. *)
 op readBufferFromArray
   (state:State) (ptr:Value) (len:Value): Option (List Value) =
   case (ptr, readBufferLength state len) of
-  | (pointer (ty, subscript (obj, i)), Some n) ->
+  | (pointer (ty, object (subscript (obj, i))), Some n) ->
     (case readObject state obj of
     | Some (array (ty', vals)) ->
       if ty' = ty && i + n <= length vals
@@ -95,7 +95,7 @@ The returned list of value has always length 1. *)
 op readBufferFromNonArray
   (state:State) (ptr:Value) (len:Value): Option (List Value) =
   case (ptr, readBufferLength state len) of
-  | (pointer (ty, outside id), Some n) ->
+  | (pointer (ty, object (outside id)), Some n) ->
     (case state id of
     | Some val ->
       if typeOfValue val = ty && n = 1
@@ -134,7 +134,7 @@ There must be enough room for the values in the buffer. *)
 op writeBufferToArray
   (state:State) (ptr:Value) (len:Value) (vals:List Value): Option State =
   case (ptr, readBufferLength state len) of
-  | (pointer (ty, subscript (obj, i)), Some n) ->
+  | (pointer (ty, object (subscript (obj, i))), Some n) ->
     (case readObject state obj of
     | Some (array (ty', oldVals)) ->
       if ty' = ty && i + n <= length oldVals && length vals <= n
@@ -155,7 +155,7 @@ are objects whose designators are outside IDs without subscripts. *)
 op writeBufferToNonArray
   (state:State) (ptr:Value) (len:Value) (vals:List Value): Option State =
   case (ptr, readBufferLength state len) of
-  | (pointer (ty, outside id), Some n) ->
+  | (pointer (ty, object (outside id)), Some n) ->
     (case state id of
     | Some oldVal ->
       if typeOfValue oldVal = ty && n = 1
@@ -198,7 +198,7 @@ or could be an object that is not an element of an array. *)
 op objectDesignatorsOfBufferInArray
   (state:State) (ptr:Value) (len:Value): FiniteSet ObjectDesignator =
   case (ptr, readBufferLength state len) of
-  | (pointer (ty, subscript (obj, i)), Some n) ->
+  | (pointer (ty, object (subscript (obj, i))), Some n) ->
     (case readObject state obj of
     | Some (array (ty', vals)) ->
       if ty' = ty && i + n <= length vals
@@ -211,7 +211,7 @@ op objectDesignatorsOfBufferInArray
 op objectDesignatorsOfBufferInNonArray
   (state:State) (ptr:Value) (len:Value): FiniteSet ObjectDesignator =
   case (ptr, readBufferLength state len) of
-  | (pointer (ty, outside id), Some n) ->
+  | (pointer (ty, object (outside id)), Some n) ->
     (case state id of
     | Some val ->
       if typeOfValue val = ty && n = 1
@@ -256,7 +256,7 @@ op copyByte
   : (State | wfState?) =
   % the new state is the result of
   % storing the 1st argument into the 2nd argument:
-  let pointer (_, obj) = dst in
+  let pointer (_, object obj) = dst in
   unwrap (writeObject state obj src)
 
 (* We would like to refine this specification to a C function of this form:
@@ -293,8 +293,8 @@ op swapBytes
      typeOfValue y = pointer uchar)
   : (State | wfState?) =
   % the new state is the result of swapping the two values:
-  let pointer (_, objx) = x in
-  let pointer (_, objy) = y in
+  let pointer (_, object objx) = x in
+  let pointer (_, object objy) = y in
   let Some valx = readObject state objx in
   let Some valy = readObject state objy in
   let Some state' = writeObject state objx valy in
@@ -340,7 +340,7 @@ op copyBytes
   : (State | wfState?) =
   let vals = unwrap (readBuffer state src srcL) in
   let n = unwrap (readBufferLength state dstL) in
-  let pointer (_, obj) = dstL in
+  let pointer (_, object obj) = dstL in
   if n < length vals  % not enough room in output buffer
   then unwrap (writeObject state obj (valueOfMathInt (0, uint)))
   else let Some state' = writeBuffer state dst dstL vals in
