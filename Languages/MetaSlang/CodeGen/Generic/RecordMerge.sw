@@ -6,7 +6,7 @@ Transform qualifying spec
  op SpecTransform.introduceRecordMerges (spc: Spec): Spec =
    mapSpec (makeRecordMerge spc, id, id) spc
 
- op makeTupleUpdate?: Bool = false
+ op makeTupleUpdate?: Bool = true
 
  op makeRecordMerge (spc: Spec) (tm: MSTerm): MSTerm =
    case tm of
