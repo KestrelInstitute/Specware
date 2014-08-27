@@ -17,6 +17,8 @@
   #+case-sensitive t
   #-case-sensitive nil)
 
+(defmacro System-Spec::setf-2 (lhs rhs) `(common-lisp:setf ,lhs ,rhs))
+
 (defun |!error| (s)
   (format t "Error: ~a~%" s)
   (error s))
