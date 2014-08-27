@@ -352,10 +352,15 @@ spec
                           | _ -> []
                   in
                   getSisterConjuncts(tm, path)
-                | Lambda([(pat, _, _)], _) | i = 1 ->
-                  let guards = getAllPatternGuards pat in
-                  if guards = [] then []
-                  else assertRules(context, mkConj guards, "lambda guard", Context, Either, None)
+                | Lambda(rules, _) ->
+                  let subterm_on_path = (immediateSubTerms tm)@i in
+                  foldl (fn (new_rules, (pat, _, tm_i)) ->
+                           if tm_i = subterm_on_path
+                             then let guards = getAllPatternGuards pat in
+                                  if guards = [] then []
+                                    else assertRules(context, mkConj guards, "lambda guard", Context, Either, None)
+                             else [])
+                     [] rules
                 | _ -> []
           in
           rls ++ collectRules(ithSubTerm(tm, i), r_path, sbst)
@@ -699,27 +704,31 @@ spec
                                            | None -> path_term,
                                          pf)}
                 | TermTransform(tr_name, tr_fn, arg) ->
-                  let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid) in
+                  let arg_with_spc = replaceATVArgs(arg, spc, path_term, qid, tracing?) in
                   let result = apply(tr_fn, arg_with_spc) in
                   (case (extractMSTerm result, extractProof result) of
                      | (Some new_term, Some new_pf) ->
                        return (replaceSubTermH((new_term, new_pf), path_term, pf))
                      | (Some new_term, None) ->
                        return (replaceSubTermH1(new_term, path_term,
-                                                TermTransform(tr_name, tr_fn, arg), pf))
+                                                TermTransform(tr_name, tr_fn, arg),
+                                                pf,
+                                                case extractTactic result of
+                                                  | Some tact -> tact
+                                                  | None -> autoTactic))
                      | None -> return (path_term, pf))
                 | SimpStandard ->
                   return (replaceSubTermH1(simplify spc (fromPathTerm path_term),
-                                           path_term, SimpStandard, pf))
+                                           path_term, SimpStandard, pf, autoTactic))
                 | RenameVars binds ->
                   return (replaceSubTermH1(renameVars(fromPathTerm path_term, binds),
-                                           path_term, RenameVars binds, pf))
+                                           path_term, RenameVars binds, pf, autoTactic))
                 | PartialEval ->
                   return (replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc),
-                                           path_term, Eval, pf))
+                                           path_term, Eval, pf, autoTactic))
                 | AbstractCommonExpressions ->
                   return (replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                           path_term, AbstractCommonExpressions, pf))
+                                           path_term, AbstractCommonExpressions, pf, StringTactic "metis"))
                 | Simplify(rules, n) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
@@ -763,13 +772,16 @@ spec
   % older term equals the new topTerm
   op replaceSubTermH((new_tm: MSTerm, new_pf: Proof),
                      old_ptm: PathTerm, pf: Proof): PathTerm * Proof =
+    % let _ = writeLine(printTerm new_tm^"\n from\n"^printTerm(fromPathTerm old_ptm)) in
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     %let lifted_info = liftInfo(new_info, old_ptm) in
     (new_path_tm, prove_refinesTrans (pf, new_pf, new_path_tm))
 
+  op autoTactic: Tactic = AutoTactic []
+
   % Similar to the above, but without having a new_pf
   op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm,
-                      rl_spec: RuleSpec, pf: Proof): PathTerm * Proof =
+                      rl_spec: RuleSpec, pf: Proof, tact: Tactic): PathTerm * Proof =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     % let changed_ptm = changedPathTerm(fromPathTerm old_ptm, new_tm) in
     % let _ = writeLine("replaceSubTermH1:\n"^printTerm(fromPathTerm changed_ptm)
@@ -778,7 +790,9 @@ spec
     (new_path_tm,
      prove_refinesTrans
        (pf,
-        prove_refinesWithTactic(AutoTactic [], old_ptm.1, new_tm),
+        prove_refinesEqualSubTerm
+          (topTerm old_ptm, topTerm new_path_tm, pathTermPath old_ptm,
+           prove_equalWithTactic(tact, fromPathTerm old_ptm, new_tm, termType new_tm)),
         new_path_tm))
 
   % Refine a term using a script. The script will be applied to the
@@ -882,7 +896,7 @@ spec
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
                               (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
-                              if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
+                              if new_tm = TypedTerm(tm, ty, noPos)
                                 then let _ = if print_no_change?
                                                then writeLine(show(primaryOpName opinfo)^" not modified.")
                                              else () in
@@ -916,7 +930,7 @@ spec
                               (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?);
                               new_tm <- return(removeTypeWrapper new_tm);
                               new_spc <-
-                                if equalTerm?(tm, new_tm) then return spc
+                                if tm = new_tm then return spc
                                   else
                                     return(setElements(spc, mapSpecElements
                                                               (fn el ->
@@ -933,14 +947,14 @@ spec
         result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
         return (result, tracing?)}
       | Maintain(qids, rls) -> {
-        result <- maintainOpsCoalgebraically(spc, qids, rls);
+        result <- maintainOpsCoalgebraically(spc, qids, rls, tracing?);
         return (result, tracing?)}
       | Implement(qids, rls) -> {
-        result <- implementOpsCoalgebraically(spc, qids, rls);
+        result <- implementOpsCoalgebraically(spc, qids, rls, tracing?);
         return (result, tracing?)}
       | SpecMetaTransform(tr_name, tr_fn, arg) ->
         let _ = if tracing? then writeLine(show script) else () in
-        let arg_with_spc = replaceSpecArg(arg, spc) in
+        let arg_with_spc = replaceSpecTraceArgs(arg, spc, tracing?) in
         let result = apply(tr_fn, arg_with_spc) in
         % let _ = writeLine(anyToString result) in
         let TVal(SpecV new_spc) = result in
@@ -948,7 +962,7 @@ spec
         return(new_spc, tracing?)
       | SpecTransformInMonad(tr_name, tr_fn, arg) ->
         let _ = if tracing? then writeLine(show script) else () in
-        let arg_with_spc = replaceSpecArg(arg, spc) in
+        let arg_with_spc = replaceSpecTraceArgs(arg, spc, tracing?) in
         {%result <- applyM(tr_fn, arg_with_spc);
          % let _ = writeLine(anyToString result) in
          TVal(MonadV m_spc) <- return(apply(tr_fn, arg_with_spc));

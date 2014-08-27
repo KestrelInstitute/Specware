@@ -1384,7 +1384,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | _ -> true
 
  op assumeNoSideEffects?: Bool = false
-      
+
+ op assumingNoSideEffects: [a] a -> a
+
  op  sideEffectFree: MSTerm -> Bool
  def sideEffectFree(term) =
    assumeNoSideEffects? ||
@@ -3242,6 +3244,8 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
   result
 
  type PathTerm.PathTerm     % Defined in /Languages/MetaSlang/AbstractSyntax/PathTerm.sw
+ type Proof.Tactic          % Defined in /Languages/MetaSlang/Specs/Proof
+ type TraceFlag = Bool
 
 (* Support for /Languages/MetaSlang/Transformations/MetaTransform: These are needed for dumping info about transform fns *)
  type MetaTransform.AnnTypeValue =
@@ -3253,9 +3257,11 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
     | StrV String
     | NumV Int
     | BoolV Bool
+    | TraceFlagV Bool
     | OpNameV QualifiedId
     | RuleV RuleSpec
     | ProofV Proof
+    | TacticV Tactic
     | OptV (Option AnnTypeValue)
     | ListV (List AnnTypeValue)
     | TupleV (List AnnTypeValue)
@@ -3269,9 +3275,11 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  op MetaTransform.extractStr(StrV x: AnnTypeValue): String = x
  op MetaTransform.extractNum(NumV x: AnnTypeValue): Int = x
  op MetaTransform.extractBool(BoolV x: AnnTypeValue): Bool = x
+ op MetaTransform.extractTraceFlag(TraceFlagV x: AnnTypeValue): TraceFlag = x
  op MetaTransform.extractOpName(OpNameV x: AnnTypeValue): QualifiedId = x
  op MetaTransform.extractRule(RuleV x: AnnTypeValue): RuleSpec = x
  op MetaTransform.extractRefinementProof(ProofV x: AnnTypeValue): Proof = x
+ op MetaTransform.extractProofTactic(TacticV x: AnnTypeValue): Tactic = x
  op [a] MetaTransform.extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
  op [a] MetaTransform.extractList(extr_val: AnnTypeValue -> a) (ListV x: AnnTypeValue): List a = map extr_val x
  %op [a] extractOpt(extr_val: AnnTypeValue -> a) (OptV x: AnnTypeValue): Option a = mapOption extr_val x
@@ -3279,4 +3287,19 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  op dummyQualifiedId: QualifiedId = Qualified("", "")
  op dummyMSTerm: MSTerm = Any noPos
  op dummySpec: Spec = emptySpec
+
+
+#translate lisp
+-verbatim
+(defmacro Utilities::assumingNoSideEffects (fm)
+  `(let ((Utilities::assumeNoSideEffects? t))
+     (declare (special Utilities::assumeNoSideEffects?))
+     ,fm))
+
+-end
+-morphism
+op Utilities.assumingNoSideEffects -> Utilities::assumingNoSideEffects
+
+#end
+
 end-spec

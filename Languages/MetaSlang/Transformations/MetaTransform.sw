@@ -15,9 +15,11 @@ type MTypeInfo = | Spec
                  | Str
                  | Num
                  | Bool
+                 | TraceFlag
                  | OpName
                  | Rule
                  | RefinementProof
+                 | ProofTactic
                  | Opt MTypeInfo
                  | List MTypeInfo
                  | Tuple(List MTypeInfo)
@@ -42,6 +44,7 @@ op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
     | Term -> Some(TermV(Any noPos))
     | PathTerm -> Some(PathTermV(toPathTerm(Any noPos)))
     | Bool -> Some(BoolV false)
+    | TraceFlag -> Some(TraceFlagV false)
     | Opt _ -> Some(OptV None)
     | List _ -> Some(ListV [])
     | Num -> Some(NumV 0)
@@ -81,19 +84,13 @@ op existsAnnTypeValue? (p: AnnTypeValue -> Bool) (atv: AnnTypeValue): Bool =
        | RecV tagged_atvs -> exists? (fn (_, atvi) -> existsAnnTypeValue? p atvi) tagged_atvs
        | _ -> false)
 
-op replaceSpecArg(atv: AnnTypeValue, spc: Spec): AnnTypeValue =
+op replaceSpecTraceArgs(atv: AnnTypeValue, spc: Spec, trace?: TraceFlag): AnnTypeValue =
   mapAnnTypeValue (fn atvi ->
                      case atvi of
                        | SpecV _ -> SpecV spc
+                       | TraceFlagV _ -> TraceFlagV trace?
                        | _ -> atvi)
     atv
-
-op replaceTermArg(atv: AnnTypeValue, tm: MSTerm): AnnTypeValue =
-   mapAnnTypeValue (fn atvi ->
-                     case atvi of
-                       | TermV(Any _) -> TermV tm
-                       | _ -> atvi)
-     atv
 
 op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
    mapAnnTypeValue (fn atvi ->
@@ -103,46 +100,45 @@ op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
                        | _ -> atvi)
      atv
 
-op replaceATVArgs(atv: AnnTypeValue, spc: Spec, path_tm: PathTerm, op_qid: QualifiedId): AnnTypeValue =
+op replaceATVArgs(atv: AnnTypeValue, spc: Spec, path_tm: PathTerm, op_qid: QualifiedId, trace?: TraceFlag): AnnTypeValue =
    mapAnnTypeValue (fn atvi ->
                      case atvi of
                        | SpecV _ -> SpecV spc
                        | TermV(Any _) -> TermV(fromPathTerm path_tm)
                        | PathTermV _ -> PathTermV path_tm
                        | OpNameV qid | qid = dummyQualifiedId -> OpNameV op_qid
+                       | TraceFlagV _ -> TraceFlagV trace?
                        | _ -> atvi)
      atv
 
- op extractMSTerm(tf: TypedFun): Option MSTerm =
-   let def findTerm atv =
-         case atv of
-           | TermV tm -> Some tm
-           | OptV(Some o_atv) -> findTerm o_atv
-           | TupleV(atvs) ->
-             (case mapPartial findTerm atvs of
-                | tm :: _ -> Some tm
-                | _ -> None)
-           | _ -> None
-   in
-   case tf of
-     | TVal atv -> findTerm atv
-     | _ -> None
+op [a] extractValue (chooser: AnnTypeValue -> Option a) (tf: TypedFun): Option a =
+  let def findTerm atv =
+        case atv of
+          | OptV(Some o_atv) -> findTerm o_atv
+          | TupleV(atvs) ->
+            (case mapPartial findTerm atvs of
+               | tm :: _ -> Some tm
+               | _ -> None)
+          | _ -> chooser atv
+  in
+  case tf of
+    | TVal atv -> findTerm atv
+    | _ -> None
+
+op extractMSTerm(tf: TypedFun): Option MSTerm =
+  extractValue (fn | TermV tm -> Some tm
+                   | _ -> None)
+    tf
 
 op extractProof(tf: TypedFun): Option Proof =
-   let def findTerm atv =
-         case atv of
-           | ProofV prf -> Some prf
-           | OptV(Some o_atv) -> findTerm o_atv
-           | TupleV(atvs) ->
-             (case mapPartial findTerm atvs of
-                | tm :: _ -> Some tm
-                | _ -> None)
-           | _ -> None
-   in
-   case tf of
-     | TVal atv -> findTerm atv
-     | _ -> None
+  extractValue (fn | ProofV prf -> Some prf
+                   | _ -> None)
+    tf
 
+op extractTactic(tf: TypedFun): Option Tactic =
+  extractValue (fn | TacticV tact -> Some tact
+                   | _ -> None)
+    tf
 
 op annTypeValueType: MSType = mkBase(Qualified("MetaTransform", "AnnTypeValue"), [])
 op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
@@ -151,9 +147,11 @@ op morphismType: MSType = mkBase(Qualified("SpecCalc", "Morphism"), [])
 op msTermType: MSType = mkBase(Qualified("MS", "MSTerm"), [])
 op pathTermType: MSType = mkBase(Qualified("PathTerm", "PathTerm"), [])
 op refinementProofType: MSType = mkBase(Qualified("Proof", "Proof"), [])
+op proofTacticType: MSType = mkBase(Qualified("Proof", "Tactic"), [])
 op optionMsTermType: MSType = mkBase(Qualified("Option", "Option"), [msTermType])
 op qualifiedIdType: MSType = mkBase(Qualified("MetaSlang", "QualifiedId"), [])
 op ruleSpecType: MSType = mkBase(Qualified("AnnSpec", "RuleSpec"), [])
+op traceFlagType: MSType = mkBase(Qualified("Utilities", "TraceFlag"), [])
 op monadAnnTypeValueType: MSType = mkBase(Qualified("SpecCalc", "Env"), [annTypeValueType])
 op optionAnnTypeValueType: MSType = mkBase(Qualified("Option", "Option"), [annTypeValueType])
 
@@ -179,9 +177,11 @@ op mtiToMSType(mti: MTypeInfo): MSType =
     | Str -> stringType
     | Num -> intType
     | Bool -> boolType
+    | TraceFlag -> traceFlagType
     | OpName -> qualifiedIdType
     | Rule -> ruleSpecType   % ?
     | RefinementProof -> refinementProofType
+    | ProofTactic -> proofTacticType
     | Opt o_mti -> mkBase(Qualified("Option", "Option"), [mtiToMSType o_mti])
     | List l_mti -> mkBase(Qualified("List", "List"), [mtiToMSType l_mti])
     | Tuple mtis -> mkProduct(map mtiToMSType mtis)
@@ -194,6 +194,7 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
     | Morphism -> mkEmbed1("MorphismV", mkArrow(morphismType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
     | RefinementProof -> mkEmbed1("ProofV", mkArrow(refinementProofType, annTypeValueType))
+    | ProofTactic -> mkEmbed1("TacticV", mkArrow(proofTacticType, annTypeValueType))
     | Opt o_ty ->
       let arg_ty = mtiToMSType o_ty in
       let arg_v = ("o_result", arg_ty) in
@@ -223,6 +224,7 @@ op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
     | Morphism -> ("morph__0", morphismType)
     | Term -> ("tm__0", msTermType)
     | RefinementProof -> ("prf__0", refinementProofType)
+    | ProofTactic -> ("tact__0", proofTacticType)
     | _ -> fail ("Can only return Specs, Morphisms, MSTerms or Proofs")
 
 
@@ -260,6 +262,7 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
     | StrV str -> ppString str
     | NumV n -> ppString(show n)
     | BoolV b -> ppString(show b)
+    | TraceFlagV b -> ppString(if b then "tracing" else "not tracing")
     | OpNameV qid -> ppString(show qid)
     | RuleV rs -> ppRuleSpec rs
     | ProofV prf -> ppString(printProof prf)
@@ -286,6 +289,7 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
          | StrV str -> Some(ppString str)
          | NumV n -> Some(ppString(show n))
          | BoolV b -> Some(ppString(show b))
+         | TraceFlagV b -> Some(ppString(show b))
          | OpNameV qid ->
            if qid = dummyQualifiedId then None else Some(ppString(show qid))
          | RuleV rs -> Some(ppRuleSpec rs)
@@ -307,6 +311,7 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
      def ppIfNotDefault(atv: AnnTypeValue): Option Doc =
        case atv of
          | BoolV false -> None
+         | TraceFlagV false -> None
          | NumV 0 -> None
          | StrV "" -> None
          | OptV None -> None
@@ -334,9 +339,11 @@ op MTypeInfo.show(ty_info: MTypeInfo): String =
     | Str  -> "Str"
     | Num  -> "Num"
     | Bool -> "Bool"
+    | TraceFlag -> "TraceFlag"
     | OpName -> "OpName"
     | Rule -> "Rule"
     | RefinementProof -> "Proof"
+    | ProofTactic -> "Tactic"
     | Opt i -> "Opt "^show i
     | List l -> "List "^show l
     | Tuple (l) -> "Tuple"^show l
@@ -356,6 +363,7 @@ op transformResultType?(ti: MTypeInfo): Bool =
     | Term -> true
     | Opt sti -> transformResultType? sti
     | RefinementProof -> true
+    | ProofTactic -> true
     | Monad Spec -> true
     | Monad Morphism -> true
     | Tuple tis -> exists? transformResultType? tis
@@ -368,6 +376,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
       case ty of
         | Boolean _ -> Some Bool
         | Base(Qualified("Bool", "Bool"), [], _)  -> Some Bool % otherwise fails below
+        | Base(Qualified("Utilities", "TraceFlag"), [], _)  -> Some TraceFlag
         | Base(Qualified("AnnSpec", "Spec"), [], _)  -> Some Spec
         | Base(Qualified("SpecCalc", "Morphism"), [], _)  -> Some Morphism
         | Base(Qualified("Integer", "Nat"), [], _)   -> Some Num
@@ -379,6 +388,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("PathTerm", "PathTerm"), [], _) -> Some PathTerm
         | Base(Qualified("AnnSpec", "RuleSpec"), [], _) -> Some Rule
         | Base(Qualified("Proof", "Proof"), [], _) -> Some RefinementProof
+        | Base(Qualified("Proof", "Tactic"), [], _) -> Some ProofTactic
         | Base(Qualified("SpecCalc", "Env"), [m_ty], _) ->  mapOption (fn el_info -> Monad el_info) (argInfoFromType(m_ty, spc))
         | Base(Qualified("List", "List"), [el_ty], _) -> mapOption (fn el_info -> List el_info) (argInfoFromType(el_ty, spc))
         | Base(Qualified("Option", "Option"), [op_ty], _) -> mapOption (fn op_info -> Opt op_info) (argInfoFromType(op_ty, spc))
@@ -433,9 +443,11 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
     | Str  -> mkOp(Qualified("MetaTransform", "extractStr"), mkArrow(annTypeValueType, stringType))
     | Num  -> mkOp(Qualified("MetaTransform", "extractNum"), mkArrow(annTypeValueType, intType))
     | Bool -> mkOp(Qualified("MetaTransform", "extractBool"), mkArrow(annTypeValueType, boolType))
+    | TraceFlag -> mkOp(Qualified("MetaTransform", "extractTraceFlag"), mkArrow(annTypeValueType, traceFlagType))
     | OpName -> mkOp(Qualified("MetaTransform", "extractOpName"), mkArrow(annTypeValueType, qualifiedIdType))
     | Rule -> mkOp(Qualified("MetaTransform", "extractRule"), mkArrow(annTypeValueType, ruleSpecType))
     | RefinementProof -> mkOp(Qualified("MetaTransform", "extractRefinementProof"), mkArrow(annTypeValueType, refinementProofType))
+    | ProofTactic -> mkOp(Qualified("MetaTransform", "extractProofTactic"), mkArrow(annTypeValueType, proofTacticType))
     | Opt i ->
       let el_tm = mkExtractFn i in
       let el_tm_ty as Arrow(_, el_ran_ty, _) = termType el_tm in

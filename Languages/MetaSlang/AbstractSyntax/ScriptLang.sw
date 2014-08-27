@@ -71,8 +71,8 @@ op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option 
 op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * RuleSpecs -> SpecCalc.Env Spec
 
 %% Defined in Coalgebraic.sw
-op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> SpecCalc.Env Spec
-op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs -> SpecCalc.Env Spec
+op Coalgebraic.maintainOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs * Bool -> SpecCalc.Env Spec
+op Coalgebraic.implementOpsCoalgebraically: Spec * QualifiedIds * RuleSpecs * Bool -> SpecCalc.Env Spec
 
 op ppSpace: WLPretty = ppString " "
 

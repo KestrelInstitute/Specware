@@ -455,6 +455,12 @@ spec
   %% Want to tighten syntax allowed eventually, but be permissive for now
   op allowLooseSyntax?: Bool = true
 
+  op explicitArg?(mt: MTypeInfo): Bool = 
+    case mt of
+      | Spec -> false
+      | TraceFlag -> false
+      | _ -> true                      % Term may or not be implicit
+
   %% ignored_formal? is true if we have ignored a parameter in ty_infos: used for choosing error message
   op transformExprsToAnnTypeValues(tes: TransformExprs, ty_infos: List MTypeInfo, pos: Position, spc: Spec,
                                    status: {ignored_formal?: Bool,
@@ -462,7 +468,7 @@ spec
                                             implicit_qid?: Bool})
        : Env(List AnnTypeValue) =
     let len_tes = length tes in
-    let len_ty_infos = length ty_infos in
+    let len_ty_infos = length(filter explicitArg? ty_infos) in
     if len_tes > len_ty_infos
       then raise(TransformError(pos, "Too many arguments to transform"))
     else
@@ -475,6 +481,8 @@ spec
     case (tes, ty_infos) of
       | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                   return(SpecV dummySpec :: r_atvs)}   % emptySpec is a place holder
+      | (_, TraceFlag :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+                                       return(TraceFlagV false :: r_atvs)}   % false is a place holder
       | (_, Term :: ty_i_rst) | status.implicit_term? ->
         {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_term? = false});
          return(TermV dummyMSTerm :: r_atvs)}  % Any noPos is a place holder
@@ -484,21 +492,26 @@ spec
       | (_, OpName :: ty_i_rst) | status.implicit_qid? ->
         {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_qid? = false});
          return(OpNameV(dummyQualifiedId) :: r_atvs)}  % Any noPos is a place holder
-      | (_, (Tuple tp_mtis) :: ty_i_rst) | exists? (embed? Spec) tp_mtis ->
-        (let expl_mtis = filter (fn mti -> ~(embed? Spec mti)) tp_mtis in
+      | (_, (Tuple tp_mtis) :: ty_i_rst) | exists? (~~~ explicitArg?)
+                                             tp_mtis ->
+        (let expl_mtis = filter explicitArg? tp_mtis in
          case expl_mtis of
            | [mti1] -> {atv1 :: r_atvs <- transformExprsToAnnTypeValues(tes, mti1 :: ty_i_rst, pos, spc, status);
                         return((TupleV(map (fn mti -> case mti of
                                                         | Spec -> SpecV emptySpec
+                                                        | TraceFlag -> TraceFlagV false
                                                         | _ -> atv1)
                                          tp_mtis))
                                  :: r_atvs)}
            | _ -> {(TupleV atvs) :: r_atvs <- transformExprsToAnnTypeValues(tes, Tuple expl_mtis :: ty_i_rst, pos, spc, status);
-                   Some spec_pos  <- return(leftmostPositionSuchThat (tp_mtis, embed? Spec));
-                   return((TupleV(subFromTo(atvs, 0, spec_pos)
-                                  ++ [SpecV emptySpec]
-                                  ++ subFromTo(atvs, spec_pos, length atvs)))
-                            :: r_atvs)})
+                   let (_, all_tp_atvs) = foldl (fn ((r_atvs, result), mti) ->
+                                                 case mti of
+                                                   | Spec -> (r_atvs, result ++ [SpecV emptySpec])
+                                                   | TraceFlag -> (r_atvs, result ++ [TraceFlagV false])
+                                                   | _ -> (tail r_atvs, result ++ [head r_atvs]))
+                                           (atvs, []) tp_mtis
+                   in
+                   return((TupleV(all_tp_atvs)) :: r_atvs)})
 
       | ([],          (Opt _)    ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
                                                  return((OptV None)::r_atvs)}

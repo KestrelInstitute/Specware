@@ -153,12 +153,23 @@ op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): M
                       bod1 r_cases2
           in
           mkCurriedLambda(lam_pats, bod)
-          
-op SpecTransform.maintain (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs): Env Spec =
-  maintainOpsCoalgebraically(spc, qids, rules)
+
+op SpecTransform.testST (spc: Spec)  (qids: QualifiedIds) (rules: RuleSpecs) (trace?: TraceFlag): Spec =
+  (writeLine("qids: "^anyToString qids^"\ntrace?: "^show trace?);
+   spc)
+
+op SpecTransform.testST1 (spc: Spec, qids: QualifiedIds, rules: RuleSpecs, trace?: TraceFlag): Spec =
+  (writeLine("qids: "^anyToString qids^"\ntrace?: "^show trace?);
+   spc)
+
+
+op SpecTransform.maintain (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (trace?: Bool): Env Spec =
+  maintainOpsCoalgebraically(spc, qids, rules, trace?)
+
+op traceMaintain?: Bool = false
 
 def Coalgebraic.maintainOpsCoalgebraically
-      (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+      (spc: Spec, qids: QualifiedIds, rules: List RuleSpec, trace?: Bool): Env Spec =
   let intro_qid as Qualified(intro_q, intro_id) = head qids in
   {info <- findTheOp spc intro_qid;
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
@@ -198,12 +209,14 @@ def Coalgebraic.maintainOpsCoalgebraically
            | _ -> result
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
-   let script = Steps[Trace true,
-                      At(map Def (reverse qids),
-                         Repeat [Move [Search intro_id, Next], % Go to postcondition just added and simplify
-                                 mkSimplify [],
-                                 Simplify1(rules),
-                                 mkSimplify(fold_rl :: rules)])]
+   let main_script = At(map Def (reverse qids),
+                        Repeat [Move [Search intro_id, Next], % Go to postcondition just added and simplify
+                                mkSimplify [],
+                                Simplify1(rules),
+                                mkSimplify(fold_rl :: rules)]) in
+   let script = if traceMaintain? || trace?
+                   then Steps[Trace true, main_script]
+                 else main_script
    in
    {print "rewriting ... \n";
     print (scriptToString script^"\n"); 
@@ -218,11 +231,13 @@ op findHomomorphismFn(tm: MSTerm): Option QualifiedId =
       Some qid
     | _ -> None
 
-op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs): Env Spec =
-  implementOpsCoalgebraically(spc, qids, rules)
+op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (trace?: Bool): Env Spec =
+  implementOpsCoalgebraically(spc, qids, rules, trace?)
+
+op traceImplement?: Bool = false
 
 def Coalgebraic.implementOpsCoalgebraically
-  (spc: Spec, qids: QualifiedIds, rules: List RuleSpec): Env Spec =
+  (spc: Spec, qids: QualifiedIds, rules: List RuleSpec, trace?: Bool): Env Spec =
   case qids of
     | [replace_op_qid as Qualified(_, r_o_id), assert_qid] ->
       (case findPropertiesNamed(spc, assert_qid) of
@@ -258,19 +273,21 @@ def Coalgebraic.implementOpsCoalgebraically
                let state_transform_qids = foldOpInfos findStateTransformOps [] spc.ops in
                let defined_qids = filter (definedOp? spc) state_transform_qids in
                let post_condn_qids = filter (~~~(definedOp? spc)) state_transform_qids in
-               let script = Steps[Trace true,
-                                  At(map Def (reverse post_condn_qids),
-                                     Repeat [Move [Search r_o_id, ReverseSearchPred childOfConj],
-                                             mkSimplify(RLeibniz homo_fn_qid
-                                                         :: LeftToRight assert_qid
-                                                         :: rules)]),
-                                  At(map Def (reverse defined_qids),
-                                     Steps[Move[SearchPred bodyOfFn?],
-                                           Repeat
-                                             [Move [Search r_o_id, ReverseSearchPred childOfConj],
-                                              mkSimplify(RLeibniz homo_fn_qid
-                                                           :: LeftToRight assert_qid
-                                                           :: rules)]])]
+               let script = Steps((if traceImplement? || trace?
+                                     then [Trace true]
+                                     else [])
+                                  ++ [At(map Def (reverse post_condn_qids),
+                                         Repeat [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                                 mkSimplify(RLeibniz homo_fn_qid
+                                                             :: LeftToRight assert_qid
+                                                             :: rules)]),
+                                      At(map Def (reverse defined_qids),
+                                         Steps[Move[SearchPred bodyOfFn?],
+                                               Repeat
+                                                 [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                                  mkSimplify(RLeibniz homo_fn_qid
+                                                               :: LeftToRight assert_qid
+                                                               :: rules)]])])
                in
                {print "rewriting ... \n";
                 print (scriptToString script^"\n");
