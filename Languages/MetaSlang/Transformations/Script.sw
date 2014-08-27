@@ -715,20 +715,21 @@ spec
                                                 pf,
                                                 case extractTactic result of
                                                   | Some tact -> tact
-                                                  | None -> autoTactic))
+                                                  | None -> autoTactic,
+                                                spc))
                      | None -> return (path_term, pf))
                 | SimpStandard ->
                   return (replaceSubTermH1(simplify spc (fromPathTerm path_term),
-                                           path_term, SimpStandard, pf, autoTactic))
+                                           path_term, SimpStandard, pf, autoTactic, spc))
                 | RenameVars binds ->
                   return (replaceSubTermH1(renameVars(fromPathTerm path_term, binds),
-                                           path_term, RenameVars binds, pf, autoTactic))
+                                           path_term, RenameVars binds, pf, autoTactic, spc))
                 | PartialEval ->
                   return (replaceSubTermH1(evalFullyReducibleSubTerms(fromPathTerm path_term, spc),
-                                           path_term, Eval, pf, autoTactic))
+                                           path_term, Eval, pf, autoTactic, spc))
                 | AbstractCommonExpressions ->
                   return (replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                           path_term, AbstractCommonExpressions, pf, StringTactic "metis"))
+                                           path_term, AbstractCommonExpressions, pf, StringTactic "metis", spc))
                 | Simplify(rules, n) ->
                   let context = makeContext spc in
                   let rules = makeRules (context, spc, rules) in
@@ -781,7 +782,7 @@ spec
 
   % Similar to the above, but without having a new_pf
   op replaceSubTermH1(new_tm: MSTerm, old_ptm: PathTerm,
-                      rl_spec: RuleSpec, pf: Proof, tact: Tactic): PathTerm * Proof =
+                      rl_spec: RuleSpec, pf: Proof, tact: Tactic, spc: Spec): PathTerm * Proof =
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     % let changed_ptm = changedPathTerm(fromPathTerm old_ptm, new_tm) in
     % let _ = writeLine("replaceSubTermH1:\n"^printTerm(fromPathTerm changed_ptm)
@@ -792,7 +793,7 @@ spec
        (pf,
         prove_refinesEqualSubTerm
           (topTerm old_ptm, topTerm new_path_tm, pathTermPath old_ptm,
-           prove_equalWithTactic(tact, fromPathTerm old_ptm, new_tm, termType new_tm)),
+           prove_equalWithTactic(tact, fromPathTerm old_ptm, new_tm, inferType(spc, new_tm))),
         new_path_tm))
 
   % Refine a term using a script. The script will be applied to the
