@@ -267,6 +267,38 @@ op writeObjectC (obj:ObjectDesignator) (newVal:Value): C () =
     | Some state' -> Some (state', ())
     | None -> None
 
-(* This model will be extended as needed. *)
+(* We define a shallow embedding of (some) C expressions [ISO 6.5].
+We consider side-effect-free expressions for now,
+modeling assignments as non-expressions (e.g. as statements).
+Thus, in our model an expression yields a value or an object designator
+[ISO 6.5/1]. *)
+
+(* An expression that yields a value (and not an object designator)
+is sometimes called 'rvalue'---see footnote 64 in [ISO 6.3.2.1/1].
+Thus, the semantics of an rvalue is a function from states to values
+(using Option to model errors).
+This is the definition of
+the type of semantic rvalues in the shallow embedding. *)
+
+type Rvalue = State -> Option Value
+
+(* An lvalue is an expression
+that (in our model) yields an object designator [ISO 6.3.2.1/1].
+An object designator provides
+the capability to read from and write to the object.
+Thus, the semantics of an lvalue can be defined as a pair of functions:
+- a "getter" that maps a state to the value of the designated object
+  (using Option to model errors);
+- a "setter" that maps a state and a value to a new state
+  where the value of the designated object has been updated
+  (using Option to model errors).
+This is the definition of
+the type of semantics lvalues in the shallow embedding. *)
+
+type Lvalue =
+  {get: State -> Option Value,
+   set: State -> Value -> Option State}
+
+% IN PROGRESS...
 
 endspec
