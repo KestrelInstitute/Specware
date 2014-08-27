@@ -320,7 +320,6 @@ op maxDefsPerFile: Int = 2500         % Not sure this really matters
 op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
  %% Rewritten to not use ppSpec which requires a lot of space for large specs
  let defs = typeDefs(spc.opDefns) in
- let name = spc.name              in
  let 
    def writer stream =
      let _ = streamWriter (stream, preamble)            in
@@ -329,15 +328,21 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
                     streamWriter (stream, "(defpackage :" ^ pkgName ^ ")\n"))
                  (sortGT (fn (x,y) -> y <= x) spc.extraPackages)
      in
-     let _ = streamWriter (stream, "\n(defpackage :" ^ name ^ ")")     in
-     let _ = streamWriter (stream, "\n(in-package :" ^ name ^ ")\n\n") in
+     let _ = streamWriter (stream, "\n(defpackage :" ^ spc.name ^ ")")     in
+     let _ = streamWriter (stream, "\n(in-package :" ^ spc.name ^ ")\n\n") in
      let _ = case spc.verbatims.pre of
                | [] -> ()
                | verbatims -> 
-                 let _ = streamWriter (stream,";;; Pre-verbatims from pragmas:\n")           in
-                 let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
+                 let _ = streamWriter (stream,";;; Pre-verbatims from pragmas:\n")                                              in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
+                 let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims                                         in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
+                 let _ = streamWriter (stream,";;; end of pre-verbatims\n")                                                     in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
                  streamWriter (stream,"\n")                                  
      in
+     let _ = streamWriter (stream, "\n(in-package :" ^ spc.name ^ ")\n\n") in
      let _ = streamWriter (stream, ";;; Definitions\n\n") in
     %let _ = streamWriter (stream, "(defmacro System-spec::setq-2 (x y) `(setq ,x ,y))\n\n") in
      let _ = app (fn (getter, setter) -> 
@@ -368,7 +373,7 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
                      let _ = 
                          IO.withOpenFileForWrite (subfile, 
                                                   fn substream ->
-                                                    let _ = streamWriter (substream, "(in-package :" ^ name ^ ")\n\n") in
+                                                    let _ = streamWriter (substream, "(in-package :" ^ spc.name ^ ")\n\n") in
                                                     List.app (fn ldef -> ppDefToStream (ldef, substream))
                                                              (subFromTo (rem_defs,
                                                                          0, 
@@ -395,10 +400,16 @@ op ppSpecToFile (spc : LispSpec, file : String, preamble : String) : () =
      let _ = case spc.verbatims.post of
                | [] -> ()
                | verbatims -> 
-                 let _ = streamWriter (stream,";;; Post-verbatims from pragmas:\n")           in
-                 let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
+                 let _ = streamWriter (stream,";;; Post-verbatims from pragmas:\n")                                             in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
+                 let _ = app (fn verbatim -> streamWriter (stream, verbatim)) verbatims                                         in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
+                 let _ = streamWriter (stream,";;; end of post-verbatims\n")                                                    in
+                 let _ = streamWriter (stream,";;; ------------------------------------------------------------------------\n") in
                  streamWriter (stream,"\n")
      in
+     let _ = streamWriter (stream, "\n;;; End-of-file\n") in
      ()
  in
  IO.withOpenFileForWrite (file, writer)
