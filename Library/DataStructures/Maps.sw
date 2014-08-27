@@ -600,7 +600,7 @@ end-spec
 
 % TODO What is the status of this spec?
 
-Maps_extended = spec
+Maps_extended = Map qualifying spec
   import Maps
 
   %% for some reason the version of this in Maps is not seen by Globalize. TODO: Is this still an issue?  If not, delete this:
@@ -613,12 +613,12 @@ Maps_extended = spec
   op [a,b] mapFrom(s: Set a, f: a -> b): Map(a,b) =
     set_fold empty_map (fn (m, x) -> update m x (f x)) s
 
-% construct a map over the domain [0,..,n-1]
+% construct a map over the domain [0,..,n]
   op [b] mapFromNR(n:Nat, f: Nat -> b): Map(Nat,b) =
     mapFromNR_aux(0,n,f,empty_map)
 
   op [b] mapFromNR_aux(i:Nat, n:Nat, f:Nat->b, m:Map(Nat,b)): Map(Nat,b) =
-    if i>=n then m
+    if i>n then m
     else mapFromNR_aux(i+1,n,f, (update m i (f i)))
 proof isa mapFromNR_aux ()
       sorry
@@ -777,6 +777,13 @@ end-proof
      fa(n:Nat, f1:Nat->a,f2:Nat->b,f3:Nat->c)
         map_compose3(mapFromNR(n,f1),mapFromNR(n,f2),mapFromNR(n,f3))
         = mapFromNR(n, fn(i:Nat)-> (f1 i, f2 i, f3 i))
+
+  theorem map_compose3_update is [B,C,D]
+     fa(m:Map(Nat,B*C*D),n:Nat,x:B,y:C,z:D)
+        map_compose3(update (map_project31 m) n x, 
+                     update (map_project32 m) n y, 
+                     update (map_project33 m) n z)
+        = (update m n (x,y,z))
                                          
 (******************************** The Proofs ********************************)
 
