@@ -24,18 +24,18 @@
 
 (defvar lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
 (setq expand-symlinks-rfs-exists t)
-(defvar *specware-lisp* (if (or (search "alisp" lisp-program)
-				(search "build" lisp-program) ; ??
+(defvar *specware-lisp* (if (or (cl-search "alisp" lisp-program)
+				(cl-search "build" lisp-program) ; ??
 				;; for now, we use allegro on windows...
 			        ;(featurep 'mswindows)
 			        ;(featurep 'windows-nt)
                                 )
 			    'allegro
-			  (if (search "dppccl" lisp-program)
+			  (if (cl-search "dppccl" lisp-program)
 			      'openmcl
-			    (if (search "sbcl" lisp-program)
+			    (if (cl-search "sbcl" lisp-program)
 				'sbcl
-				(if (search "gcl" lisp-program)
+				(if (cl-search "gcl" lisp-program)
 				    'gcl
 				  'sbcl)))))
 (defvar *lisp-executable-extension*
@@ -155,8 +155,8 @@
     (setq sw:common-lisp-buffer-name common-lisp-buffer-name)
     ;; cmulisp adds the *'s back
     (funcall *specware-lisp*
-	     (subseq common-lisp-buffer-name
-		     1 (- (length common-lisp-buffer-name) 1))
+	     (cl-subseq common-lisp-buffer-name
+                        1 (- (length common-lisp-buffer-name) 1))
 	     (if common-lisp-image-file
 		 (case *specware-lisp*
 		   ((cmulisp sbcl)
@@ -457,7 +457,7 @@
                           (insert ";")))
         (forward-sexp 1)
         (sw:re-search-forward ",")
-        (delete-backward-char 1)        ; delete , after at qids
+        (delete-char -1)        ; delete , after at qids
         (insert " ")
         ;; Convert body of at
         (skip-syntax-forward " >")      ; (char-syntax ?\n)

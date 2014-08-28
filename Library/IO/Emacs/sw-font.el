@@ -58,6 +58,7 @@
     (concat "\\(^\\|" symbol-sep "\\)\\("
 	    specware-definition-introducing-words
 	    "\\)"
+            "\\(?:\s-*\[[_?a-z0-9A-Z, ]*\]\\)?"
 	    "[^-_?a-z0-9A-Z,:\"}`\n]+") )
 
 ;; reserved symbols:

@@ -820,10 +820,10 @@ If anyone has a good algorithm for this..."
          ;; Continued string ? (Added 890113 lbn)
          ((looking-at "\\\\")
           (save-excursion
-            (if (save-excursion (previous-line 1)
+            (if (save-excursion (forward-line -1)
                                 (beginning-of-line)
                                 (looking-at "[\t ]*\\\\"))
-                (progn (previous-line 1) (current-indentation))
+                (progn (forward-line -1) (current-indentation))
             (if (re-search-backward "[^\\\\]\"" nil t)
                 (1+ (current-indentation))
               0))))
@@ -1317,7 +1317,7 @@ If anyone has a good algorithm for this..."
     (insert "\n") (indent-to (+ sw:indent-level indent))
     (insert "\n") (indent-to indent)
     (insert "in\n") (indent-to (+ sw:indent-level indent))
-    (previous-line 1) (end-of-line)))
+    (forward-line -1) (end-of-line)))
 
 (defun sw:running-specware-shell-p ()
   (and (inferior-lisp-running-p)
@@ -1392,14 +1392,14 @@ STRING should be given if the last search was by `string-match' on STRING."
     (replace-regexp-in-string regexp rep str)))
 
 (defun convert-pathname-to-cygwin (str)
-  (let ((found-index (position ?: str)))
+  (let ((found-index (cl-position ?: str)))
     (if (null found-index)
         str
-      (let* ((dev (subseq str 0 found-index))
-             (dir (subseq str (1+ found-index)))
+      (let* ((dev (cl-subseq str 0 found-index))
+             (dir (cl-subseq str (1+ found-index)))
              (dir (replace-in-string dir "\\\\" "/"))) 
-        (if (and (> (length dir) 8) (string= "/cygwin/" (subseq dir 0 8)))
-            (subseq dir 7)
+        (if (and (> (length dir) 8) (string= "/cygwin/" (cl-subseq dir 0 8)))
+            (cl-subseq dir 7)
           (concatenate 'string "/cygdrive/" (downcase dev) dir))))))
 
 (defun to-cygwin-name (pname)
@@ -1409,12 +1409,12 @@ STRING should be given if the last search was by `string-match' on STRING."
 
 (defun convert-pathname-from-cygwin (dir-str)
   (if (and (> (length dir-str) 10) (string= "/cygdrive/" (substring dir-str 0 10)))
-      (let* ((rem-dir (subseq dir-str 10))
-             (i (position ?/ rem-dir)))
+      (let* ((rem-dir (cl-subseq dir-str 10))
+             (i (cl-position ?/ rem-dir)))
         (if (null i)
             rem-dir
-            (concat (upcase (subseq rem-dir 0 i)) ":/" (subseq rem-dir (+ i 1)))))
-      (if (and (> (length dir-str) 6) (string= "/home/" (subseq dir-str 0 6)))
+            (concat (upcase (cl-subseq rem-dir 0 i)) ":/" (cl-subseq rem-dir (+ i 1)))))
+      (if (and (> (length dir-str) 6) (string= "/home/" (cl-subseq dir-str 0 6)))
           (concat "C:/cygwin" dir-str)dir-str)))
 
 (defun from-cygwin-name (pname)
@@ -1427,10 +1427,10 @@ STRING should be given if the last search was by `string-match' on STRING."
   (setq filename (replace-in-string filename "Program Files" "Progra~1"))
   (setq filename (from-cygwin-name filename))
   (when (and (> (length filename) 2)
-	     (equal (position ?: filename) 1)
+	     (equal (cl-position ?: filename) 1)
 	     (not (equal (elt filename 0) (upcase (elt filename 0)))))
-    (setq filename (concat (upcase (subseq filename 0 1))
-			   (subseq filename 1))))
+    (setq filename (concat (upcase (cl-subseq filename 0 1))
+			   (cl-subseq filename 1))))
   filename)
 
 (defun get-swpath ()
@@ -1443,7 +1443,7 @@ STRING should be given if the last search was by `string-match' on STRING."
       (setq rawpath specware4)
       (when (member rawpath '(nil NIL))		; SPECWARE4 not set -- be agnostic about case
 	(setq rawpath "")))
-    (while (setq pos (position delim rawpath))
+    (while (setq pos (cl-position delim rawpath))
       (push (substring rawpath 0 pos) result)
       (setq rawpath (substring rawpath (+ pos 1))))
     (push rawpath result)
@@ -1457,14 +1457,14 @@ STRING should be given if the last search was by `string-match' on STRING."
   ;; Assumes sw::normalize-filename has been called
   (let (head pos) 
     (if (eq (elt filename 1) ?:)
-	(progn (setq head (subseq filename 0 3))
-	       (setq filename (subseq filename 3)))
-      (progn (setq head (subseq filename 0 1))
-	     (setq filename (subseq filename 1))))
-    (while (and (position-if-not 'unitIdChar filename)
-		(setq pos (position ?/ filename)))
-      (setq head (concat head (subseq filename 0 (1+ pos))))
-      (setq filename (subseq filename (1+ pos))))
+	(progn (setq head (cl-subseq filename 0 3))
+	       (setq filename (cl-subseq filename 3)))
+      (progn (setq head (cl-subseq filename 0 1))
+	     (setq filename (cl-subseq filename 1))))
+    (while (and (cl-position-if-not 'unitIdChar filename)
+		(setq pos (cl-position ?/ filename)))
+      (setq head (concat head (cl-subseq filename 0 (1+ pos))))
+      (setq filename (cl-subseq filename (1+ pos))))
     (cons head (concat "/" filename))))
 
 (unless (fboundp 'char-to-int) (defalias 'char-to-int 'identity))
@@ -1480,26 +1480,27 @@ STRING should be given if the last search was by `string-match' on STRING."
 		 (<= num (char-to-int ?Z)))))))
 
 (defun name-relative-to-swpath (filename)
-  (let ((swpath (get-swpath)))
-    (loop for dir in swpath
-       do (let ((dir (sw::normalize-filename dir)))
-	    (if (string-equal dir
-			      (substring filename 0 (min (length dir)
-							 (length filename))))
-		(let ((rel-filename (substring filename (length dir))))
-		  (unless (position-if-not 'unitIdChar rel-filename)
-		    (return (if (eq (elt rel-filename 0) ?/)
-				rel-filename
-			      (concat "/" rel-filename)))))))
-       finally (let ((oldpath (sw:eval-in-lisp "(cl-user::get-swpath)"))
-		     (head-dir-uid (split-filename-for-path filename)))
-		 (lisp-or-specware-command
-		  ":swpath " "path "
-		  (if (member oldpath '(nil NIL)) "" oldpath)
-		  (if (or (eq window-system 'mswindows) (eq window-system 'w32) cygwin?) ";" ":")
-		  (car head-dir-uid))
-		 (sleep-for 0.1)	; Just to avoid confusing output
-		 (return (cdr head-dir-uid))))))
+  (save-excursion
+    (let ((swpath (get-swpath)))
+      (loop for dir in swpath
+            do (let ((dir (sw::normalize-filename dir)))
+                 (if (string-equal dir
+                                   (substring filename 0 (min (length dir)
+                                                              (length filename))))
+                     (let ((rel-filename (substring filename (length dir))))
+                       (unless (cl-position-if-not 'unitIdChar rel-filename)
+                         (return (if (eq (elt rel-filename 0) ?/)
+                                     rel-filename
+                                   (concat "/" rel-filename)))))))
+            finally (let ((oldpath (sw:eval-in-lisp "(cl-user::get-swpath)"))
+                          (head-dir-uid (split-filename-for-path filename)))
+                      (lisp-or-specware-command
+                       ":swpath " "path "
+                       (if (member oldpath '(nil NIL)) "" oldpath)
+                       (if (or (eq window-system 'mswindows) (eq window-system 'w32) cygwin?) ";" ":")
+                       (car head-dir-uid))
+                      (sleep-for 0.1) ; Just to avoid confusing output
+                      (return (cdr head-dir-uid)))))))
 
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "
@@ -1723,9 +1724,9 @@ STRING should be given if the last search was by `string-match' on STRING."
                                  ilisp-mode))
             (other-window 1))
         (switch-to-buffer buf))
-      (goto-char 0)
+      (goto-char (point-min))
       (if (numberp line-num)
-          (goto-line line-num)
+          (forward-line (1- line-num))
         (let ((qsym (regexp-quote sym)))
           (or (if sort?
                   (or (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
@@ -1735,19 +1736,20 @@ STRING should be given if the last search was by `string-match' on STRING."
                     (or (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+" qsym "\\b") nil t)
                         (re-search-forward (concat "\\b\\(axiom\\|theorem\\|conjecture\\)\\s-+\\w+\\." qsym "\\b") nil t))
                   (if (null current-prefix-arg)
-                      (or (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
+                      (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; op fie.foo
+                           (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward ; op [a] fie.foo
+                           (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
+                          (re-search-forward (concat "\\bdef\\s-+" qsym *end-of-def-regexp*) nil t)
                           (re-search-forward ; def fa(a) foo
                            (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym *end-of-def-regexp*) nil t)
                           (re-search-forward ; def [a] foo
                            (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
                           (re-search-forward ; def fie.foo
                            (concat "\\bdef\\s-\\w+\\." qsym *end-of-def-regexp*) nil t)
-                          (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
-                          (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
-                          (re-search-forward ; op fie.foo
-                           (concat "\\bop\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t)
-                          (re-search-forward ; op [a] fie.foo
-                           (concat "\\bop\\s-+\\[.+\\]\\s-+\\w+\\." qsym *end-of-def-regexp*) nil t))
+                          )
                     (or (re-search-forward (concat "\\bop\\s-+" qsym *end-of-def-regexp*) nil t)
                         (re-search-forward (concat "\\bop\\s-+\\[.+\\]\\s-+" qsym *end-of-def-regexp*) nil t)
                         (re-search-forward ; op fie.foo
@@ -1795,7 +1797,7 @@ STRING should be given if the last search was by `string-match' on STRING."
     qual))
 
 (defun find-qualifier-info (name)
-  (let ((colon-pos (position ?: name)))
+  (let ((colon-pos (cl-position ?: name)))
       (if colon-pos			; has a package
 	  (list sw::UnQualified
 		;; Don't currently used qualifier as the case is wrong
@@ -1804,14 +1806,14 @@ STRING should be given if the last search was by `string-match' on STRING."
 					 (eq ?: (elt name (+ colon-pos 1))))
 				    (+ colon-pos 2)
 				  (+ colon-pos 1))))
-	(let ((dot-pos (position ?. name)))
+	(let ((dot-pos (cl-position ?. name)))
 	  (if dot-pos			; has a package
 	      (list (substring name 0 dot-pos)
 		    (substring name (+ dot-pos 1)))
 	    (list sw::UnQualified name))))))
 
 (defun strip-hash-suffix (str)
-  (let ((pos (position ?# str)))
+  (let ((pos (cl-position ?# str)))
     (if pos (substring str 0 pos)
       str)))
 
@@ -2019,10 +2021,14 @@ STRING should be given if the last search was by `string-match' on STRING."
 			       ilisp-mode))
 	  (other-window 1))
       (switch-to-buffer buf))
-    (goto-line line)
+    (goto-char (point-min))
+    (forward-line (1- line))
     (beginning-of-line)
     (forward-chars-counting-x-symbols col)
-    (recenter 4)
+    (let ((saved_pt (point)))
+      (sw:beginning-of-element)
+      (recenter 0)
+      (goto-char saved_pt))
     (report-next-match-task-status)))
 
 (defvar *top-level-unit*
@@ -2191,12 +2197,12 @@ qualifier: }")
 
 (defun goto-file-position (file line col)
   (let ((full-file (expand-file-name file
-				     (save-excursion
-				       (set-buffer sw:common-lisp-buffer-name)
+				     (with-current-buffer sw:common-lisp-buffer-name
 				       default-directory))))
     (unless (equal (buffer-file-name) full-file)
       (find-file-other-window-0 full-file))
-    (goto-line line)
+    (goto-char (point-min))
+    (forward-line (1- line))
     (when (> col 0)
       (forward-chars-counting-x-symbols col))))
 
@@ -2212,7 +2218,7 @@ qualifier: }")
   (goto-char (point-max))
   (previous-input-line)
   (if (eq (current-column) 0)
-      (delete-backward-char 1))
+      (delete-char -1))
   (if (eq lisp-emacs-interface-type 'slime)
       (goto-char slime-repl-input-start-mark)
     (comint-bol nil))
@@ -2280,7 +2286,8 @@ qualifier: }")
 (defun about-specware-get-buffer (name)
   (cond ((get-buffer name)
 	 (switch-to-buffer name)
-	 (goto-line 2)
+         (goto-char (point-min))
+         (forward-line 1)
 	 name)
 	(t
 	 (switch-to-buffer name)
@@ -2330,7 +2337,7 @@ qualifier: }")
   (local-set-key "\177" 'scroll-down)
   (widget-setup)
   (goto-char (point-min))
-  (toggle-read-only 1)
+  (read-only-mode)
   (set-buffer-modified-p nil))
 
 (defun about-specware ()
@@ -2375,7 +2382,8 @@ model of their problem and iteratively refine this model until it
 uniquely and concretely describes their application.")
     (widget-insert "\n")
     (about-specware-finish-buffer)
-    (goto-line 2)))
+    (goto-char (point-min))
+    (forward-line 1)))
 
 ;;; Run test harness
 (defun sw:run-test-harness (non-rec)
