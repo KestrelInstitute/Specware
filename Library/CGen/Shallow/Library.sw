@@ -970,108 +970,88 @@ lemma toNat_int_bound:
   "\<lbrakk>length bs = n; n \<ge> 8\<rbrakk> \<Longrightarrow> \<not> (2^n \<le> int (toNat bs))"
   by (auto simp add: zle_int not_le)
 
+theorem must_be_high_generic:
+  "\<lbrakk> (x::nat) < 2^(k - n) ; y < 2^n; n < k; 0 < n\<rbrakk> 
+   \<Longrightarrow>   (- (2^(n - 1)) \<le> int (x * 2^n) + int y - 2^k)
+      = (x = 2^(k - n) - 1 \<and> y \<ge> 2^(n - 1))"
+  apply (simp add: algebra_simps, 
+         simp only: zpower_int convert_to_nat zadd_int int_int_eq 
+                    zless_int zle_int)
+  apply (rule iffI, rotate_tac -1, rule context_conjI, auto)
+  defer
+  (* Goal 2 *)
+  apply (rule classical, erule rev_mp,  simp add: not_le)
+  apply (rule_tac t="(2^(k - n) - Suc 0) * 2^n + 2^(n - Suc 0)" 
+              and s="2^k - 2^(n - Suc 0)"
+         in subst,
+         simp add: diff_mult_distrib power_add [symmetric],
+         simp add: power_sub_1_eq_nat )
+  apply (rotate_tac -1, drule_tac k="2^k - 2^(n - Suc 0)" in add_less_mono1, 
+         simp)
+  (* Goal 3 *)
+  apply (rule_tac t="(2^(k - n) - Suc 0) * 2^n + 2^(n - Suc 0)" 
+              and s="2^k - 2^(n - Suc 0)"
+         in subst,
+         simp add: diff_mult_distrib power_add [symmetric],
+         simp add: power_sub_1_eq_nat )
+  apply (rotate_tac -1, drule_tac k="2^k - 2^(n - Suc 0)" in add_le_mono1, 
+         simp)
+  (* Goal 1 *)
+  apply (rule classical, auto simp add: nat_neq_iff,  erule rev_mp, 
+         simp add: not_le less_eq_Suc_le, thin_tac ?P)
+  apply (simp only: add_Suc [symmetric])
+        (*** replace y by upper bound **)
+  apply (drule_tac c="x * 2^n + 2^(n - Suc 0)" in add_right_mono,
+         erule order_trans)
+        (*** replace x by upper bound **)
+  apply (rotate_tac -1, frule rev_mp, subst Suc_eq_plus1,
+         subst le_diff_conv2 [symmetric], auto, thin_tac ?P)
+  apply (rotate_tac -1, drule_tac c="2^n" in mult_right_mono, simp,
+         rotate_tac -1, drule_tac c="2^(n - Suc 0)" in add_right_mono,
+         rotate_tac -1, drule_tac c="2^n" in add_left_mono,
+         erule order_trans)
+        (*** now do the math ***)
+  apply (frule_tac Integer__expt_monotone, subst nat_add_commute)
+  apply (simp add: diff_mult_distrib power_add [symmetric] mult_2 [symmetric]
+                   nat_add_assoc [symmetric]  
+              )
+  apply (cut_tac x=n in power_sub_1_eq_nat, auto)
+done
+
+
 theorem toInt_suffix:
   "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ;
     n>0; length bs \<ge> n\<rbrakk> \<Longrightarrow> 
   TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
-  apply (case_tac "length bs = n", simp, drule le_neq_trans, simp)
-  apply (auto simp add: TwosComplement__toInt_def TC_lemmas 
+  apply(case_tac "length bs = n", simp, drule le_neq_trans, simp)
+  apply(auto simp add: TwosComplement__toInt_def TC_lemmas 
                         toNat_suffix  hd_suffix)
-  apply (cases "hd bs = B0", simp_all)
+  apply(cases "hd bs = B0", simp_all)
   apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
             in toNat_app, auto, rotate_tac -1, thin_tac ?P)
-  apply (cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_1, auto)
-  defer (*** need something like must_be_high_generic ***)
-  apply (rotate_tac -1, erule rev_mp, simp)
-  apply (subst hd_conv_nth, simp, simp add: nth_drop)
+  apply(cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_1, auto)
+  apply(cut_tac x="toNat(take (length bs - n) bs)" 
+            and y="toNat(drop (length bs - n) bs)" 
+            and n=n and k="length bs" in must_be_high_generic, auto)
+  apply(rotate_tac -1, erule rev_mp, simp,
+        subst hd_conv_nth, simp, simp add: nth_drop)
   (**** now the same argument again ****)
-sorry
-
-
-(*************************************************************************
-* Proof generalizes the two theorems below which may be removed later
-* I need generalizations of lemmas like "must_be_high" and "top_bit_one"
-*******************************************************************************
-* Here is a sketch
-
-theorem must_be_high_generic:
-  "\<lbrakk> (x::nat) < 2^k ; y < 2^n \<rbrakk> 
-   \<Longrightarrow> (2^k - 2^ (n - 1) \<le> x * 2^n + y) = (x=2^n - 1 \<and> y \<ge> 2^(n - 1))"
-  apply(arith)
-  .......
-
-theorem eighth_bit_one:
-  "\<lbrakk> length bs \<ge> 8\<rbrakk> \<Longrightarrow> ((128 \<le> toNat bs \<and>  toNat bs < 256) = (bs ! (length bs - 8) = B1))"
-  apply(simp add: toNat_split_top_8)
-  apply(auto)
-  apply(case_tac "bs ! 0 = B0")
-  apply(simp_all)
-  apply(simp add: toNat_bound_false)
+  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
+            in toNat_app, auto)
+  apply (cut_tac bs="drop (length bs -n) bs" and len=n in Bits__toNat_hd_0,
+         simp, simp, simp)
+  apply(rotate_tac -1, erule rev_mp, subst hd_conv_nth, simp, simp add: nth_drop)
+  (**** and again ****)
+  apply(cut_tac x="take (length bs - n) bs" and y="drop (length bs - n) bs" 
+            in toNat_app, auto)
+  apply(cut_tac x="toNat(take (length bs - n) bs)" 
+            and y="toNat(drop (length bs - n) bs)" 
+            and n=n and k="length bs" in must_be_high_generic, auto)
+  apply (simp add: algebra_simps,
+         simp only: zpower_int convert_to_nat zadd_int int_int_eq 
+                    zless_int zle_int)
+  apply (simp add: mult_Suc_right [symmetric] power_add [symmetric])
 done
-
-******************************************************************************
-..... more attempts below 
-
-******************************************************************************)
-
-theorem toInt_suffix8:
-  "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; n=8 ; length bs = 8\<rbrakk> \<Longrightarrow> 
-  TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
-  by(auto simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix)
-
-theorem toInt_suffix16:
-  "\<lbrakk>TwosComplement__toInt bs \<in> TwosComplement__rangeForLength n ; n=8 ; length bs = 16\<rbrakk> \<Longrightarrow> 
-  TwosComplement__toInt (List__suffix (bs, n)) = TwosComplement__toInt bs"
-  apply(auto simp add:TwosComplement__toInt_def TC_lemmas  toNat_suffix  hd_suffix)
-  apply(cut_tac x="( take(length bs - 8) bs)" and y="(drop 8 bs)" in toNat_app, auto)
-  apply(simp add: must_be_high top_bit_one)
-  apply(cut_tac bs=bs and n=8 in toNat_bound2, auto)
-  apply(cut_tac x="toNat bs" and y="toNat bs - 256*255" and m=256 in mod_known_nat, auto)
-  apply(cut_tac bs=bs in Bits__toNat_bound, auto)
-  apply(simp add: move_constant_hack)
-  apply(rule mod_diff_drop_right_nat [symmetric], auto)
-done
-
-
-(*******************************************************************************
-theorem must_be_high_gen_fw:
-  "\<lbrakk> (x::nat) < 2^(len - n) ; y < 2 ^ n ; n < len ; n > 0 ; x < 2^(len - n) - 1\<rbrakk> \<Longrightarrow> 
-    x * 2 ^ n + y < 2^len - 2^(n - 1)"
-  proof -    assume A1: "x < 2^(len - n) - 1"
-    assume A2: "n < len"
-    assume A4: "y < 2 ^ n"
-    have A3:  "x <= 2^(len - n) - 2" using A1 by auto
-    have " x * 2 ^ n <= (2^(len - n) - 2) * 2^n" apply(cut_tac m=x and n=" 2^(len - n) - 1" and k="2^n" in Nat.mult_less_cancel1, simp) using A3 apply(auto) done
-    then have " x * 2 ^ n <= (2^len - 2^n - 2^n)" using A2 apply(subst (asm) Nat.diff_mult_distrib)
-      apply(subst (asm) Power.monoid_mult_class.power_add [symmetric])
-      apply(simp)
-      done
-    then have " x * 2 ^ n + y <= (2^len - 2^n)" using A4 apply(cut_tac i="x * 2 ^ n" and j="(2^len - 2^n - 2^n)" and k=y and l="2^n" in Nat.add_le_mono)
-      apply(force, force)
-      apply(subst (asm) Library.minus_plus_hack_for_nats)
-      apply(force)
-    then show "x * 2 ^ n + y < 2^len - 2^(n - 1)"
-
-  done
-
-
-theorem must_be_high_gen:
-  "\<lbrakk> (x::nat) < 2^(len - n) ; y < 2 ^ n ; n < len ; n > 0 \<rbrakk> \<Longrightarrow> 
-    (2^len - 2^(n - 1) \<le> x * 2 ^ n + y)
-  = (x=2^(len - n) - 1 \<and> y \<ge> 2 ^ (n  - 1))"
-  apply(simp)
-  apply(arith)
-  done
-
-
-theorem must_be_high_gen:
-  "\<lbrakk> (x::nat) < 2^(len - n) ; y < 2 ^ n ; n=7 ; len =16 \<rbrakk> \<Longrightarrow> 
-    (2^len - 2^(n - 1) \<le> x * 2 ^ n + y)
-  = (x=2^(len - n) - 1 \<and> y \<ge> 2 ^ (n  - 1))"
-  apply(simp)
-  apply(arith)
-  done
-******************************************************************************)
 
 
 theorem div_le_dividend_rule: 

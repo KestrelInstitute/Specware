@@ -5080,54 +5080,6 @@ proof isa mathIntOfUllong_non_neg [simp]
   apply(case_tac x, simp)
 end-proof
 
-proof isa C__ucharOfMathInt_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__scharOfMathInt_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__sshortOfMathInt_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__sintOfMathInt_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__slongOfMathInt_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__sllongOfMathInt_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__scharOfMathInt__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__sshortOfMathInt__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__sintOfMathInt__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__slongOfMathInt__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__sllongOfMathInt__1_Obligation_exhaustive
-sorry
-end-proof
-
-proof isa C__ucharOfMathInt__1_Obligation_exhaustive
-sorry
-end-proof
-
 proof isa C__e_lt_lt_sint_sint_Obligation_exhaustive
 by auto
 end-proof
