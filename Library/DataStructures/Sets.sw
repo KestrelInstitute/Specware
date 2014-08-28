@@ -76,7 +76,7 @@ theorem set_insertion_commutativity_lemma is [a]
 % in addition, set_insert is "idempotent" in the sense that inserting
 % x twice is the same as inserting it once; in fact, each element
 % occurs in a set at most once
-
+%%TODO: we already have a version of this above
 theorem set_insertion_idempotence is [a]
         fa(x: a,s) set_insert(x,set_insert(x,s)) = set_insert(x,s)
 
