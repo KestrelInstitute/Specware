@@ -1011,7 +1011,7 @@ proof isa update_map_project32_Obligation_subtype0
 end-proof
 
 proof isa update_map_project32_Obligation_subtype1
-  sorry
+  oops
 end-proof
 
 proof isa update_map_project32
@@ -1101,5 +1101,18 @@ proof isa map_compose3_compose_Obligation_subtype
 end-proof
 
 %% End of proofs for Maps_extended
+
+proof Isa Map__map_compose3_update_Obligation_subtype
+  apply(auto simp add: Map__domain_update Map__map_project31_def Map__map_project32_def Map__map_project33_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__map_compose3_update
+  apply(auto simp add: Map__domain_update Map__map_project31_def Map__map_project32_def Map__map_project33_def Map__domain_of_mapFrom Map__map_compose3_def Map__TMApply_over_update)
+  apply(simp add:  Map__TMApply_over_update_2 Map__domain_of_mapFrom Map__domain_update Map__mapFrom_TMApply Map__totalmap_equality surjective_pairing)
+  apply(rule Map__totalmap_equality)
+  apply (auto simp add: Map__TMApply_of_update_same Map__TMApply_over_update_2 Map__domain_of_mapFrom Map__domain_update Map__domain_update2 Map__mapFrom_TMApply Map__totalmap_equality Set__set_insertion surjective_pairing)
+  apply(simp add: Set__set_insert_new_def)
+  apply (auto simp add: Map__TMApply_of_update_same Map__TMApply_over_update_2 Map__domain_of_mapFrom Map__domain_update Map__domain_update2 Map__mapFrom_TMApply Map__totalmap_equality Set__set_insertion surjective_pairing)
+end-proof
 
 end-spec
