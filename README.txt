@@ -35,12 +35,12 @@ Specware before running it.  To do so, follow these steps:
 
 1. Specware runs on top of SBCL (Steel Bank Common Lisp).  To build
 Specware, first install SBCL (available from http://www.sbcl.org/).
-Specifically, we suggest using SBCL version 1.1.13.
+Specware has been tested using SBCL version 1.2.2 on Linux.
 
 2. Set your SPECWARE4 environment variable to point to your Specware
 directory. TODO: Is this still needed?
 
-3.  Run the script bin/bootstrap.
+3.  Run the script ./bin/bootstrap.
 
 TODO: Add instructions for building on Windows, if we can make it
 work.
