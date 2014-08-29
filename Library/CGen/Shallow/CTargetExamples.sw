@@ -99,7 +99,10 @@ op f (x:Sshort) : Slong = slongOfSint (-_1_sint (sintOfSshort x))
 % long f(short x) { return (-x); }
 
 proof isa E8__f_Obligation_subtype
-  sorry
+  apply (drule C__sint_range, auto)
+  apply (subst C__sintOfSshort_def, subst C__mathIntOfSint_sintOfMathInt)
+  apply (erule C__sintOfSshort_Obligation_subtype)
+  apply (drule C__sshort_range, simp)
 end-proof
 
 endspec
@@ -114,6 +117,10 @@ op g (cal:CurveAndLine) : Sllong = (cal.curve @_sint (sintConstant 4 hex)).z
 % long long g(CurveAndLine cal) { return cal.curve[0x4].z; }
 
 proof Isa E9__g_Obligation_subtype0
+  apply (auto simp add: C__sintConstant_def)
+  (** can't prove the rest. Operation g is not well-typed.
+      We lack information about the number of components of cal which must be 
+      at least 4 **)
   sorry
 end-proof
 
