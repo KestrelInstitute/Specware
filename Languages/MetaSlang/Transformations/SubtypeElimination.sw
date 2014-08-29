@@ -957,7 +957,7 @@ SpecNorm qualifying spec
                                                         mkArrow(exp_ty, ty))),
                                            pred),
                                    tm))
-                    | (_, Apply(Apply(Fun(Op(Qualified(toIsaQual, rfun),_),_,_), prd, _),_,_)) | equalTerm?(prd, pred)->
+                    | (_, Apply(Apply(Fun(Op(Qualified(toIsaQual, rfun),_),_,_), prd, _),_,_)) | equalTermAlpha?(prd, pred)->
                       %% Don't regularize twice!
                       tm
                     | _ ->
@@ -1241,7 +1241,9 @@ SpecNorm qualifying spec
                   | None -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?))
                | (el as Op(qid as (Qualified(q,id)), def?, a)) :: r_elts
                    | (subtypeConstrThms? || ~def?) && ~(stpFun? id) ->
-                 let Some info = AnnSpec.findTheOp(spc,qid) in
+                 (case AnnSpec.findTheOp(spc,qid) of
+                   | None -> (writeLine("Missing op def: "^show qid^"\n"^anyToString el); [])
+                   | Some info ->
                  let (tvs, ty, defn) = unpackFirstOpDef info in
                  % let _ = writeLine ("\nstc: "^id^": "^printType ty) in
                  % let _ = writeLine(printType(raiseSubtypeFn(ty, spc))^"\n") in
@@ -1269,7 +1271,7 @@ SpecNorm qualifying spec
                     case r_elts of
                       | (p as Pragma _) :: rr_elts ->
                         makeSubtypeConstrThms(rr_elts, thms ++ [p, el] ++ new_elts, subtypeConstrThms?, freeThms?)
-                      | _ -> makeSubtypeConstrThms(r_elts, thms ++ (el :: new_elts), subtypeConstrThms?, freeThms?))
+                      | _ -> makeSubtypeConstrThms(r_elts, thms ++ (el :: new_elts), subtypeConstrThms?, freeThms?)))
                  | el :: r_elts -> makeSubtypeConstrThms(r_elts, el :: new_elts, subtypeConstrThms?, freeThms?)
     in
     let spc = spc << {elements = makeSubtypeConstrThms(spc.elements, [], false, false)} in

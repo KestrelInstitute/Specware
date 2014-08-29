@@ -1042,7 +1042,7 @@ op removePatternVars (vars:List (Id * MSType))(pat:Option MSPattern):List (Id * 
 
 
 % Remove duplicate elements (inefficient, as is most stuff in this module ..)
-op nub (l:MSTerms):MSTerms = nubBy equalTerm? l
+op nub (l:MSTerms):MSTerms = nubBy equalTermAlpha? l
 
 op [a] nubBy (p:a * a -> Bool)(l:List a):List a =
   case l of 
@@ -1061,7 +1061,7 @@ op [a] inBy? (p:(a*a)->Bool)(e:a)(l:List a):Bool =
 
 
 % %%% Set membership, specialized to using the 'equalTerm?' relation.
-op inTerm? (c:MSTerm) (l:MSTerms):Bool = inBy? equalTerm? c l
+op inTerm? (c:MSTerm) (l:MSTerms):Bool = inBy? equalTermAlpha? c l
 
 
 op printIt ((vs,xs) : (ExVars * DNFRep)):() =
@@ -1135,13 +1135,13 @@ op inClause?(c:CClass)(l:List CClass):Bool =
 op equalClass?(c1:CClass)(c2:CClass):Bool =
   case (c1,c2) of
     | (CAtom (t,_,b1,ty1), CAtom (u,_,b2,ty2)) ->
-        equalTerm? (t,u) && (b1 = b2) && equalType? (ty1,ty2)
+        equalTermAlpha? (t,u) && (b1 = b2) && equalType? (ty1,ty2)
     | (CDef (d1,t1,_,b1,ty11,ty12), CDef (d2,t2,_,b2,ty21,ty22)) ->
-        equalTerm? (t1,t2) && (b1 = b2) && equalType? (ty11,ty21)
+        equalTermAlpha? (t1,t2) && (b1 = b2) && equalType? (ty11,ty21)
     | (CConstrain (d1,t1,_,b1,ty1), CConstrain (d2,t2,_,b2,ty2)) ->
-        equalTerm? (t1,t2) && (b1 = b2) && equalType? (ty1,ty2)
+        equalTermAlpha? (t1,t2) && (b1 = b2) && equalType? (ty1,ty2)
     | (CCase (p1,t1,_,b1,ty1), CCase (p2,t2,_,b2,ty2)) ->
-        equalTerm? (t1,t2) && equalType? (ty1,ty2)
+        equalTermAlpha? (t1,t2) && equalType? (ty1,ty2)
     | _ -> false        
 
 

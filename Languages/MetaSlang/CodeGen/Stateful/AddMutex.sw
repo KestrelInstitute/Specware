@@ -119,7 +119,7 @@ op find_stateful_RecordMerge (spc            : Spec,
      ->
      equalType? (v1_type, v2_type)
      && stateful_type? (spc, v1_type, stateful_types)
-     && ~ (existsSubTerm (fn tm -> equalTerm? (tm, vtrm2)) body)
+     && ~ (existsSubTerm (fn tm -> equalTermAlpha? (tm, vtrm2)) body)
 
   | Apply (Fun (RecordMerge, _, _),
            Record ([(_, vtrm2 as Var (var2 as (v2_id, v2_type), _)),

@@ -995,7 +995,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      %| Fun(Bool true,_,_)  -> mkOr(negate t1,t2)
      | Fun(Bool false,_,_) -> mkAnd(t1,t2)
      | _ ->
-   if equalTerm?(t2, t3) && sideEffectFree t1 then t2
+   if equalTermAlpha?(t2, t3) && sideEffectFree t1 then t2
      else IfThenElse(t1,t2,t3,noPos)
 
  %% Utilities.mkOr, etc:
@@ -1008,9 +1008,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	| (_,Fun(Bool true,_,_)) -> t2
 	| (_,Fun(Bool false,_,_)) -> t1
 	| _ ->
-          if equalTerm?(t1, negateTerm t2)
+          if equalTermAlpha?(t1, negateTerm t2)
             then trueTerm
-          else if equalTerm?(t1, t2)
+          else if equalTermAlpha?(t1, t2)
             then t2
           else MS.mkOr(t1,t2)
 
@@ -1040,7 +1040,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     of []     -> mkTrue()
      | [x]    -> x
      | x::rcs ->
-       if exists? (fn ti -> equalTerm?(x,ti)) rcs
+       if exists? (fn ti -> equalTermAlpha?(x,ti)) rcs
          then mkOrs rcs
        else mkOr (x, mkOrs rcs)
 
@@ -1072,7 +1072,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
            in
            let new_t2 = termSubst(t2, sb) in
            % let _ = if equalTerm?(new_t2, t2) then () else writeLine(printTerm t2^" -->\n"^printTerm new_t2) in
-           let new_t2 = if equalTerm?(t2, new_t2) then new_t2 else reduceTerm1 new_t2 in
+           let new_t2 = if equalTermAlpha?(t2, new_t2) then new_t2 else reduceTerm1 new_t2 in
            mkImplies (t1, new_t2)
 
  op  mkSimpIff: MSTerm * MSTerm -> MSTerm
@@ -1091,7 +1091,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
     case tm of
       | Apply(f,arg,_) ->
         (case patternToTerm pat of
-           | Some pat_tm | equalTerm?(pat_tm, arg) -> f
+           | Some pat_tm | equalTermAlpha?(pat_tm, arg) -> f
            | _ -> mkLambda(pat, tm))
       | _ -> mkLambda(pat, tm)
 
@@ -1697,7 +1697,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	if boolVal? N1 || boolVal? N2 then Some (mkSimpIff(N1,N2)) else None
       | IfThenElse(p,q,r,_) ->
         let simp_if = mkIfThenElse(p,q,r) in
-        if equalTerm?(term, simp_if) then None else Some simp_if
+        if equalTermAlpha?(term, simp_if) then None else Some simp_if
         %% {id1 = v1, ..., idn = vn}.idi = vi
       | Apply(Fun(Project i,_,_),Record(m,_),_) ->
         (case getField(m,i) of
@@ -1733,7 +1733,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to true,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
 	if constantTerm?(N1) && constantTerm?(N2) then
-          (let eq? = equalTerm?(N1,N2) in
+          (let eq? = equalTermAlpha?(N1,N2) in
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool eq?)
              else None)
@@ -1742,7 +1742,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	if evalConstant?(N1) && evalConstant?(N2) then
           %% CAREFUL: if N1 and N2 are equivalent, we can simplify to false,
           %%          but otherwise we cannot act, since they might be ops later equated to each other
-          (let eq? = equalTerm? (N1,N2) in
+          (let eq? = equalTermAlpha? (N1,N2) in
              if eq? || (~(containsOpRef? N1) && ~(containsOpRef? N2))
                then Some(mkBool(~eq?))
            else
@@ -1765,7 +1765,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 	if boolVal? N1 || boolVal? N2 then Some (mkSimpIff(N1,N2)) else None
       | IfThenElse(p,q,r,_) ->
         let simp_if = mkIfThenElse(p,q,r) in
-        if equalTerm?(term, simp_if) then None else Some simp_if
+        if equalTermAlpha?(term, simp_if) then None else Some simp_if
         %% {id1 = v1, ..., idn = vn}.idi = vi
       | Apply(Fun(Project i,_,_),Record(m,_),_) ->
         (case getField(m,i) of
@@ -2114,7 +2114,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
  
    op subtypePred?(ty: MSType, p: MSTerm, spc: Spec): Bool =
      case subtypeComps(spc, ty) of
-       | Some(_, pt) -> equalTerm?(p, pt)
+       | Some(_, pt) -> equalTermAlpha?(p, pt)
        | None -> false
 
    op possiblySubtypeOf?(ty1: MSType, ty2: MSType, spc: Spec): Bool =
@@ -2741,11 +2741,11 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                                   | _ -> None)
                              else None)
               | (Quotient(ty,t1,_),Quotient(ty2,t2,_)) -> 
-                if equalTerm?(t1,t2) then % not equivTerm?
+                if equalTermAlpha?(t1,t2) then % not equivTerm?
                   match(ty,ty2,pairs)
                 else 
                   None
-              | (Subtype(ty,t1,_),Subtype(ty2,t2,_)) | equalTerm?(t1,t2) ->  % not equivTerm?
+              | (Subtype(ty,t1,_),Subtype(ty2,t2,_)) | equalTermAlpha?(t1,t2) ->  % not equivTerm?
                 match(ty,ty2,pairs)
               | (Subtype(ty,_,_), ty2) | ign_subtypes? ->
                 match(ty,ty2,pairs)

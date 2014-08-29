@@ -167,6 +167,25 @@ Specware qualifying spec
 	       } 
     in
       runSpecCommand (catch prog toplevelHandler)
+(*
+  op parseEvaluateString (expr_str : String) (spc : Spec) : Bool = 
+    let prog = {
+		cleanEnv;
+		currentUID <- pathToCanonicalUID ".";
+		setCurrentUID currentUID;
+		ptm <- parseTermFromString expr_str spc;
+                tm <- (case elaboratePosTerm(ptm, spc, freePatternVars ptm) of
+                         | (tm, []) -> 
+                           % let _ = writeLine("qtm: "^printTermWithTypes tm) in
+                           return tm
+                         | (_, msgs) ->
+                           raise (TypeCheckErrors msgs));
+                val <- return(reduceTerm(tm, spc));
+		return true
+	       } 
+    in
+      runSpecCommand (catch prog toplevelHandler)
+*)
 
   op fileNameHandler (unitId : RelativeUID) (except : Exception) : SpecCalc.Env () =
     case except of
@@ -407,7 +426,7 @@ Specware qualifying spec
      return None
     }
 
-  op stringErrorByte: Ref Int = Ref(-1)
+  op stringErrorByte: Ref Int = mkRef(-1)
 
   op  gotoErrorLocation : Exception -> ()
   def gotoErrorLocation except = 

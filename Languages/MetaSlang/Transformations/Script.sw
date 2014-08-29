@@ -89,6 +89,7 @@ spec
     isFlexVar? tm || some?(hasFlexHead? tm) || embed? Var tm
 
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
+    % let _ = writeLine("reverseRuleto\n"^printTerm rl.rhs^" --> "^printTerm rl.lhs) in
     if trivialMatchTerm? rl.rhs
       then None
       else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec,
@@ -897,7 +898,7 @@ spec
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
                               (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
-                              if new_tm = TypedTerm(tm, ty, noPos)
+                              if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
                                 then let _ = if print_no_change?
                                                then writeLine(show(primaryOpName opinfo)^" not modified.")
                                              else () in
@@ -931,7 +932,7 @@ spec
                               (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?);
                               new_tm <- return(removeTypeWrapper new_tm);
                               new_spc <-
-                                if tm = new_tm then return spc
+                                if equalTerm?(tm, new_tm) then return spc
                                   else
                                     return(setElements(spc, mapSpecElements
                                                               (fn el ->

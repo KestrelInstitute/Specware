@@ -50,7 +50,7 @@ op addEqOpsFromType (spc       : Spec,
      let eq_dfn    = TypedTerm (eq_lambda, eq_type, aePos) in
      case findTheOp (spc, eq_name) of
        | Some info -> 
-         if equalTerm? (info.dfn, eq_dfn) then
+         if equalTermAlpha? (info.dfn, eq_dfn) then
            spc
          else
            let _ = writeLine("Warning: attempt to redefine " ^ show eq_name) in
@@ -87,7 +87,7 @@ op addEqOpsFromType (spc       : Spec,
                                                  aePos), 
                                          aePos)
               in
-              if equalTerm? (body, trueTerm) then % first case
+              if equalTermAlpha? (body, trueTerm) then % first case
                 field_eq_test
               else
                 Apply (and_op,

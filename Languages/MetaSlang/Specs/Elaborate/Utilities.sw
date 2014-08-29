@@ -936,7 +936,7 @@ Utilities qualifying spec
        % let _ = writeLine("cst: "^printType rrty1^"\n"^printType rrty2) in
        case (rrty1, rrty2) of
          | (Subtype(sty1, p1, _), Subtype(sty2, p2, _)) ->
-           if equalTerm?(p1, p2) then ty1
+           if equalTermAlpha?(p1, p2) then ty1
              else cst(sty1, sty2, sty1, sty2)
          | (Subtype(sty1, p1, _), rty2) -> cst(sty1, rty2, sty1, ty2)
          | (rty1, Subtype(sty2, p2, _)) -> cst(rty1, sty2, ty1, sty2)
@@ -1001,7 +1001,7 @@ op leastGeneral(t1: MSType, t2: MSType): MSType =
                                    ([], unifieds) (zip(xs1, xs2))
             in
             (CoProduct(xs, a), unifieds)
-          | (Quotient(x1, t1, a), Quotient  (x2, t2, _)) | equalTerm? (t1, t2) ->
+          | (Quotient(x1, t1, a), Quotient  (x2, t2, _)) | equalTermAlpha? (t1, t2) ->
             let (x, unifieds) = generalize (x1, x2, unifieds) in
             (Quotient(x, t1, a), unifieds)
           | (Subtype(x1, Lambda([(VarPat((v1, v_ty1), a1), c, bod)], _), a), Subtype(x2, Lambda([(VarPat((v2, v_ty2), _), _, _)], _), _)) | v1 = v2 ->

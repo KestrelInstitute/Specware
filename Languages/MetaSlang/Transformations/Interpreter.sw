@@ -34,7 +34,7 @@ spec
           && forall? (fn ((id1,v1),(id2,v2)) -> id1 = id2 && equalValue?(v1, v2)) (zip(sb1,sb2))
       | (Constructor(id1,v1,_), Constructor(id2,v2,_)) -> id1 = id2 && equalValue?(v1,v2)
       | (Constant(id1,_), Constant(id2,_)) -> id1 = id2
-      | (Unevaluated(t1),Unevaluated(t2)) -> equalTerm?(t1,t2)
+      | (Unevaluated(t1),Unevaluated(t2)) -> equalTermAlpha?(t1,t2)
       %% Should have special cases for QuotientVal ChooseClosure Closure RecClosure
       | _ -> v1 = v2
 

@@ -159,7 +159,7 @@ op addSemanticChecks(spc: Spec, checkArgs?: Bool, checkResult?: Bool, checkRefin
                      % let _ = writeLine("astcs: "^show qid^": "^printType dom) in
                      let new_dfn = addSemanticChecksForTerm(dfn, ty, qid, spc, checkArgs?,
                                                             checkResult?, checkRefine?, recovery_fns) in
-                     if equalTerm?(new_dfn, dfn) then spc
+                     if equalTermAlpha?(new_dfn, dfn) then spc
                      else
                      % let new_full_dfn = maybePiTypedTerm(tvs, Some ty, new_dfn) in
                      % let _ = if qid = Qualified("Point", "+") then writeLine(printTerm new_dfn) else () in

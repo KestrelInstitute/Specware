@@ -373,7 +373,7 @@ Proof qualifying spec
       p1_pred <- return (proofPredicate_Internal p1_int);
       p2_pred <- return (proofPredicate_Internal p2_int);
       case matchImplication p1_pred of
-        | Some (P, Q) | equalTerm? (P, p2_pred) ->
+        | Some (P, Q) | equalTermAlpha? (P, p2_pred) ->
           return (Proof_Cut (P, Q, p1_int, p2_int))
         | _ -> proofError ("Implication elimination of predicate:\n  " ^ printTerm p1_pred
                              ^ "\nagainst\n  " ^ printTerm p2_pred) }
@@ -390,7 +390,7 @@ Proof qualifying spec
         | Some (x, T, P) ->
           let tp_pred_expected = typePredTermNoSpec(T,N) in
           (case p_int of
-             | _ | ~(equalTerm? (tp_pred, tp_pred_expected)) ->
+             | _ | ~(equalTermAlpha? (tp_pred, tp_pred_expected)) ->
                proofError ("Bad typing proof in forall elimination: expected:\n  "
                              ^ printTerm tp_pred_expected ^ "\nfound\n  "
                              ^ printTerm tp_pred)
@@ -425,7 +425,7 @@ Proof qualifying spec
     { p_int <- pf;
       p_pred <- return (proofPredicate_Internal p_int);
       case matchEquality p_pred of
-        | Some (_, M', N) | equalTerm? (M,M') && equalTerm? (N,mkTrue()) ->
+        | Some (_, M', N) | equalTermAlpha? (M,M') && equalTermAlpha? (N,mkTrue()) ->
           return (Proof_EqTrue (M, p_int))
         | _ -> proofError ("Incorrect use of equalTrue rule: attempt to prove:\n  " ^ printTerm M
                              ^ "\nfrom a proof of:\n  " ^ printTerm p_pred) }
@@ -478,7 +478,7 @@ Proof qualifying spec
         else (false, N_sub_orig)
       in
       case matchEquality pf_pred of
-        | Some (_, M', N') | vars_ok? && equalTerm? (M', M_sub) && equalTerm? (N', N_sub) ->
+        | Some (_, M', N') | vars_ok? && equalTermAlpha? (M', M_sub) && equalTermAlpha? (N', N_sub) ->
           % Proof optimization
           (case pf_int of
              | _ | p = [] ->
@@ -542,7 +542,7 @@ Proof qualifying spec
       pf1_pred <- return (proofPredicate_Internal pf1_int);
       pf2_pred <- return (proofPredicate_Internal pf2_int);
       case (matchEquality pf1_pred, matchEquality pf2_pred) of
-        | (Some (T1, M, N1), Some (T2, N2, P)) | equalTerm? (N1, N2) ->
+        | (Some (T1, M, N1), Some (T2, N2, P)) | equalTermAlpha? (N1, N2) ->
           if equalType? (T1, T2) then
             let def mkProof_EqTrans (Tret, Mret, pfs_ret) =
               case pfs_ret of
@@ -551,10 +551,10 @@ Proof qualifying spec
                 | _ -> return (Proof_EqTrans (Tret, Mret, pfs_ret))
             in
             (case (pf1_int, pf2_int) of
-               | _ | equalTerm? (M, N1) ->
+               | _ | equalTermAlpha? (M, N1) ->
                  % The first proof is really reflexivity, so drop it
                  return pf2_int
-               | _ | equalTerm? (N2, P) ->
+               | _ | equalTermAlpha? (N2, P) ->
                  % The second proof is really reflexivity, so drop it
                  return pf1_int
                | (Proof_EqSubterm(_,_,_,p1,sub_pf1),
@@ -611,7 +611,7 @@ Proof qualifying spec
       pf1_pred <- return (proofPredicate_Internal pf1_int);
       pf2_pred <- return (proofPredicate_Internal pf2_int);
       case (matchImplication pf1_pred, matchImplication pf2_pred) of
-        | (Some (P, Q1), Some (Q2, R)) | equalTerm? (Q1, Q2) ->
+        | (Some (P, Q1), Some (Q2, R)) | equalTermAlpha? (Q1, Q2) ->
           % Proof simplification: if both implications are proved
           % using equality, then combine the equality proofs
           (case (pf1_int, pf2_int) of

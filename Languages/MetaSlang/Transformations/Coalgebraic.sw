@@ -493,13 +493,13 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                | qid in? stored_qids && equalVar?(state_var, v) ->
              ((qualifiedIdToField qid, rhs) :: state_itms, result_itms)
            | Apply(Fun(Equals,_,_), Record([(_, lhs), (_, rhs)], _), _)
-               | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
-             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
+               | exists? (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs)) result_tuple_info ->
+             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs))
                                  result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
            | Apply(Fun(Equals,_,_), Record([(_, rhs), (_, lhs)], _), _)     % Reversed orientation of equality
-               | exists? (fn (_,r_tm) -> equalTerm?(r_tm, lhs)) result_tuple_info ->
-             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTerm?(r_tm, lhs))
+               | exists? (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs)) result_tuple_info ->
+             let Some(id, _) = findLeftmost (fn (_,r_tm) -> equalTermAlpha?(r_tm, lhs))
                                  result_tuple_info in
              (state_itms, (id, rhs) :: result_itms)
            | Apply(Fun(Equals,_,_), Record([(_, lhs as Record(flds as ("1", _) :: _, _)), (_, rhs)], _), _) ->
@@ -560,7 +560,7 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
                         | Apply(Fun(Op(qid,_),_,_), arg, _)
                             | qualifiedIdToField qid = id && (case opt_src_tm of
                                                                 | None -> true
-                                                                | Some(src_tm) -> equalTerm?(arg, src_tm))
+                                                                | Some(src_tm) -> equalTermAlpha?(arg, src_tm))
                             -> (Some arg, result_prs)
                         | _ -> (opt_src_tm, (id, tm) :: result_prs))
                (None, [])

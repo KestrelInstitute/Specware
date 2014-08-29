@@ -89,7 +89,7 @@ AnnSpec qualifying spec
    %% def myBreak n = n
 
  def equivTerm? spc (x, y) =
-   (equalTerm? (x, y))
+   (equalTermAlpha? (x, y))
    ||
    (let env = initialEnv (spc, "internal") in
     let all_diffs = diffTerm [] (x, y) in

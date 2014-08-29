@@ -188,7 +188,7 @@ spec
    case tm of
      | Bind(Forall, vs, Apply(Fun (Implies, _, _), Record([(_,lhs), (_,rhs)], _), _), a) ->
        let new_rhs = reduceTerm(rhs, spc) in
-       if equalTerm?(rhs, new_rhs) then tm
+       if equalTermAlpha?(rhs, new_rhs) then tm
          else Bind(Forall, vs, mkSimpImplies(lhs, new_rhs), a)
      | _ -> reduceTerm(tm, spc)
 
@@ -219,7 +219,7 @@ spec
                    else
                    let oblig1 = simplify spc (evaluateGroundRhs (oblig, spc)) in
                    let oblig2 = removeRedundantTypePredicates spc oblig1 in
-                   let oblig3 = if equalTerm?(oblig1, oblig2) then oblig2
+                   let oblig3 = if equalTermAlpha?(oblig1, oblig2) then oblig2
                                 else simplify spc (evaluateGroundRhs(oblig2, spc))
                    in
                    let oblig4 = %if simplifyObligUnfoldSubtypePredicates?
@@ -270,7 +270,7 @@ spec
          Some(mkQualifiedId(qual, StringUtilities.freshName(id^id_tag, claimNames)), tvs, cterm)
        %% In general simplify doesn't change e -> true because of strictness, but that should not be
        %% issue here
-       | Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _) | trueTerm? t2 || equalTerm?(t1, t2) ->
+       | Apply(Fun (Implies, _, _), Record([("1", t1), ("2", t2)], _), _) | trueTerm? t2 || equalTermAlpha?(t1, t2) ->
          None
        | claim ->
          let claim = if removeExcessAssumptions? then removeExcessAssumptions claim else claim in

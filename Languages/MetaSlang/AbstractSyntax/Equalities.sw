@@ -99,14 +99,16 @@ MetaSlang qualifying spec
  %% equalTerm? and friends
  %%
 
- def equalTerm? (t1, t2) = equalTerm?_alpha [] (t1, t2)
+ def equalTerm? (t1, t2) = equalTerm?_alpha [] (t1, t2) false
+ op [a] equalTermAlpha? (t1: ATerm a, t2: ATerm a): Bool = equalTerm?_alpha [] (t1, t2) true
 
  op [a,b] equalTerm?_alpha (var_map: List (String * String))
-                         (t1: ATerm a, t2: ATerm b) : Bool =
-   let def eqTerm? (t1', t2') = equalTerm?_alpha var_map (t1', t2') in
-   let def eqType? (t1', t2') = equalType?_alpha var_map (t1', t2') in
+                           (t1: ATerm a, t2: ATerm b)
+                           (alpha?: Bool): Bool =
+   let def eqTerm? (t1', t2') = equalTerm?_alpha var_map (t1', t2') alpha? in
+   let def eqType? (t1', t2') = equalType?_alpha var_map (t1', t2') alpha? in
    let def eqTerm?_add (vs1, vs2) (t1', t2') =
-     equalTerm?_alpha (var_map_add_vars (var_map, vs1, vs2)) (t1', t2')
+     equalTerm?_alpha (if alpha? then var_map_add_vars (var_map, vs1, vs2) else []) (t1', t2') alpha?
    in
    let result = 
        case (t1, t2) of
@@ -127,20 +129,20 @@ MetaSlang qualifying spec
          | (Bind       (b1, vs1, x1, _),
             Bind       (b2, vs2, x2, _)) ->
            b1 = b2 && length vs1 = length vs2 &&
-           eqTerm?_add (vs1, vs2) (x1, x2)
+           eqTerm?_add (if alpha? then (vs1, vs2) else ([], [])) (x1, x2)
 
          | (The       (v1, x1, _),
             The       (v2, x2, _)) ->
-           eqTerm?_add ([v1], [v2]) (x1, x2)
+           eqTerm?_add (if alpha? then ([v1], [v2]) else ([], [])) (x1, x2)
 
          | (Let        (pts1, b1,    _),
             Let        (pts2, b2,    _)) ->
            let def helper var_map (bnds1, bnds2) =
              case (bnds1, bnds2) of
-               | ([], []) -> equalTerm?_alpha var_map (b1, b2)
+               | ([], []) -> equalTerm?_alpha var_map (b1, b2) alpha?
                | ((pat1, rhs1)::rest1, (pat2, rhs2)::rest2) ->
-                 equalTerm?_alpha var_map (rhs1, rhs2) &&
-                 (case equalPattern?_alpha (pat1, pat2) var_map of
+                 equalTerm?_alpha var_map (rhs1, rhs2) alpha? &&
+                 (case equalPattern?_alpha (pat1, pat2) alpha? var_map of
                     | None -> false
                     | Some var_map' -> helper var_map' (rest1, rest2))
                | _ -> false
@@ -149,7 +151,7 @@ MetaSlang qualifying spec
 
          | (LetRec     (vts1, b1,    _),
             LetRec     (vts2, b2,    _)) | length vts1 = length vts2 ->
-           let var_map_ext = (map (fn x -> x.1) vts1, map (fn x -> x.1) vts2) in
+           let var_map_ext = if alpha? then (map (fn x -> x.1) vts1, map (fn x -> x.1) vts2) else ([], []) in
            eqTerm?_add var_map_ext (b1, b2) &&
            equalList? (vts1, vts2,
                        fn ((_, t1), (_, t2)) ->
@@ -168,10 +170,10 @@ MetaSlang qualifying spec
             Lambda     (xs2,         _)) ->
            equalList? (xs1, xs2,
                        fn ((p1, c1, b1), (p2, c2, b2)) ->
-                         case equalPattern?_alpha (p1, p2) var_map of
+                         case equalPattern?_alpha (p1, p2) alpha? var_map of
                            | Some var_map' ->
-                             equalTerm?_alpha var_map' (c1, c2) &&
-                             equalTerm?_alpha var_map' (b1, b2)
+                             equalTerm?_alpha var_map' (c1, c2) alpha? &&
+                             equalTerm?_alpha var_map' (b1, b2) alpha?
                            | None -> false)
 
          | (IfThenElse (c1, x1, y1,  _),
@@ -211,20 +213,22 @@ MetaSlang qualifying spec
                                                         ^printTermType t1^" ~=tt "^printTermType t2) else () in
    result
 
- def equalType? (s1, s2) = equalType?_alpha [] (s1, s2)
+ def equalType? (s1, s2) = equalType?_alpha [] (s1, s2) false
 
- op [a,b] equalType?_alpha (var_map: List (String * String)) (s1: AType a, s2: AType b) : Bool =
-   equalTypeSubtype?_alpha var_map (s1, s2, false)
+ op [a,b] equalType?_alpha (var_map: List (String * String)) (s1: AType a, s2: AType b) (alpha?: Bool): Bool =
+   equalTypeSubtype?_alpha var_map (s1, s2, false) true
  
 %% Given two types, return true if they are equal (modulo
 %% annotations). If `ignore_subtypes` is true, then this identifies
 %% types `{s | P }` and `{s' | Q }`, if `s` and `s'` are identified,
 %% effectively ignoring subtype constraints, as the name suggests.
  op [a, b] equalTypeSubtype?(s1: AType a, s2: AType b, ignore_subtypes?: Bool): Bool =
-   equalTypeSubtype?_alpha [] (s1, s2, ignore_subtypes?)
+   equalTypeSubtype?_alpha [] (s1, s2, ignore_subtypes?) false
 
- op [a, b] equalTypeSubtype?_alpha (var_map: List (String * String)) (s1: AType a, s2: AType b, ignore_subtypes?: Bool): Bool =
-   let def eqTerm? (t1, t2) = equalTerm?_alpha var_map (t1, t2) in
+ op [a, b] equalTypeSubtype?_alpha (var_map: List (String * String))
+                                   (s1: AType a, s2: AType b, ignore_subtypes?: Bool)
+                                   (alpha?: Bool): Bool =
+   let def eqTerm? (t1, t2) = equalTerm?_alpha var_map (t1, t2) alpha? in
    let def eqType?(s1, s2) =
          let result =
              case (s1,s2) of
@@ -330,7 +334,7 @@ MetaSlang qualifying spec
    in
    eqType?(s1, s2)
 
- def equalPattern? (p1, p2) = some? (equalPattern?_alpha (p1, p2) [])
+ def equalPattern? (p1, p2) = some? (equalPattern?_alpha (p1, p2) false []) 
 
  % Test equality of patterns up to alpha-equivalence. This is
  % implemented as a transform on VarMaps that extends the current
@@ -338,37 +342,38 @@ MetaSlang qualifying spec
  % The extended var_map' adds equivalence between any variable
  % patterns in the same position; i.e., comparing patterns "x" and "y"
  % will extend the var_map to map x to y.
- op [a,b] equalPattern?_alpha (p1: APattern a, p2: APattern b) : VarMapXform =
+ op [a,b] equalPattern?_alpha (p1: APattern a, p2: APattern b) (alpha?: Bool): VarMapXform =
    let def eqType? (t1: AType a, t2: AType b) : VarMapXform =
-     VMXIf (fn var_map -> equalType?_alpha var_map (t1, t2))
+     VMXIf (fn var_map -> equalType?_alpha var_map (t1, t2) alpha?)
    in
    let def eqTerm? (t1: ATerm a, t2: ATerm b) : VarMapXform =
-     VMXIf (fn var_map -> equalTerm?_alpha var_map (t1, t2))
+     VMXIf (fn var_map -> equalTerm?_alpha var_map (t1, t2) alpha?)
    in
    let result =
     case (p1, p2) of
 
       | (AliasPat    (x1, y1,      _),
          AliasPat    (x2, y2,      _)) ->
-        VMXComp1 (equalPattern?_alpha (x1, x2), equalPattern?_alpha (y1, y2))
+        VMXComp1 (equalPattern?_alpha (x1, x2) alpha?, equalPattern?_alpha (y1, y2) alpha?)
 
-      | (VarPat      (v1,          _),
-         VarPat      (v2,          _)) ->
-        VMXAdd (v1, v2)
+      | (VarPat      (v1 as (id1, ty1),          _),
+         VarPat      (v2 as (id2, ty2),          _)) ->
+        if alpha? then VMXAdd (v1, v2)
+          else if id1 = id1 && equalType?(ty1, ty2) then VMXId else VMXNone
 
       | (EmbedPat    (i1, op1, s1, _),
          EmbedPat    (i2, op2, s2, _)) ->
         VMXComp [VMXEqTest (i1, i2), eqType? (s1, s2),
                  (case (op1, op2) of
                     | (None, None) -> VMXId
-                    | (Some p1, Some p2) -> equalPattern?_alpha (p1, p2)
+                    | (Some p1, Some p2) -> equalPattern?_alpha (p1, p2) alpha?
                     | _ -> VMXNone)]
 
       | (RecordPat   (xs1,         _),
          RecordPat   (xs2,         _)) | length xs1 = length xs2 ->
         VMXComp (map (fn ((fld1,p1),(fld2,p2)) ->
                       VMXComp1 (VMXEqTest (fld1, fld2),
-                                equalPattern?_alpha (p1, p2)))
+                                equalPattern?_alpha (p1, p2) alpha?))
                    (zip (xs1, xs2)))
 
       | (WildPat      (s1,          _),
@@ -390,20 +395,56 @@ MetaSlang qualifying spec
       | (QuotientPat  (x1, qid1, _, _),
          QuotientPat  (x2, qid2, _, _)) ->
         VMXComp1 (VMXEqTest (qid1, qid2),
-                  equalPattern?_alpha (x1, x2))
+                  equalPattern?_alpha (x1, x2) alpha?)
 
       | (RestrictedPat(x1, t1,      _),
          RestrictedPat(x2, t2,      _)) ->
-        VMXComp1 (equalPattern?_alpha (x1, x2), eqTerm? (t1, t2))
+        VMXComp1 (equalPattern?_alpha (x1, x2) alpha?, eqTerm? (t1, t2))
 
       | (TypedPat     (x1, t1,      _),
          TypedPat     (x2, t2,      _)) ->
-        VMXComp1 (eqType? (t1, t2), equalPattern?_alpha (x1, x2))
+        VMXComp1 (eqType? (t1, t2), equalPattern?_alpha (x1, x2) alpha?)
 
       | _ -> VMXNone
     in
     %let _ = if traceEqualTerm? && ~ result then writeLine(printPattern p1^" ~=p "^printPattern p2) else () in
     result
+
+op [a,b] equalPattern?_alpha_curry (p1: APattern a) (p2: APattern b) (alpha?: Bool): VarMapXform =
+    fn var_map -> equalPattern?_alpha (p1, p2) alpha? var_map
+
+op [a,b] equalTerm?_alpha_curry (var_map: List (String * String))
+                          (t1: ATerm a)
+                          (t2: ATerm b)
+                          (alpha?: Bool): Bool =
+  equalTerm?_alpha var_map (t1, t2) alpha?
+
+(*
+refine def equalTerm?_alpha by {SimpStandard;
+                                repeat{fold MetaSlang.equalPattern?_alpha_curry};
+                                repeat{fold MetaSlang.equalTerm?_alpha_curry}}
+refine def equalPattern?_alpha by {simplify [unfold MetaSlang.VMXId, unfold MetaSlang.VMXNone, unfold MetaSlang.VMXAdd,
+                                             unfold MetaSlang.VMXEqTest, unfold MetaSlang.VMXIf, unfold MetaSlang.VMXComp1];
+                                   SimpStandard;
+                                   repeat{fold MetaSlang.equalPattern?_alpha_curry};
+                                   repeat{fold MetaSlang.equalTerm?_alpha_curry}}
+refine def equalPattern?_alpha_curry by {unfold MetaSlang.equalPattern?_alpha}
+refine def equalTerm?_alpha_curry by {unfold MetaSlang.equalTerm?_alpha}
+refine def equalTerm? by {unfold MetaSlang.equalTerm?_alpha}
+refine def equalTermAlpha? by {unfold MetaSlang.equalTerm?_alpha}
+
+ refine def equalTerm?_alpha by {SimpStandard;
+                                 repeat{fold MetaSlang.equalPattern?_alpha_curry}}
+
+ refine def equalTerm? by {unfold MetaSlang.equalTerm?_alpha;
+                           SimpStandard;
+                           repeat{fold MetaSlang.equalTerm?};
+                           SimpStandard}
+
+ refine def equalPattern?_alpha_curry by {unfold MetaSlang.equalPattern?_alpha;
+                                          SimpStandard;
+                                          simplify[fold MetaSlang.equalPattern?_alpha_curry]}
+*)
 
  def equalFun? (f1, f2) =
    case (f1, f2) of
@@ -444,7 +485,7 @@ MetaSlang qualifying spec
 
  op [a,b] equalVar?_alpha (var_map: VarMap) (v1: AVar a, v2: AVar b) : Bool =
    (var_map_translate_var (var_map, v1)).1 = v2.1 &&
-   equalType?_alpha var_map (v1.2, v2.2)
+   equalType?_alpha var_map (v1.2, v2.2) true
 
  op [a] equalVars?(vs1: List(AVar a), vs2: List(AVar a)): Bool =
    equalList?(vs1, vs2, equalVar?)
@@ -653,7 +694,7 @@ MetaSlang qualifying spec
 
   %% List Term set operations
   op [a] termIn?(t1: ATerm a, tms: List (ATerm a)): Bool =
-    exists? (fn t2 -> equalTerm?(t1,t2)) tms
+    exists? (fn t2 -> equalTermAlpha?(t1,t2)) tms
 
   op [a] termsDiff(tms1: List (ATerm a), tms2: List (ATerm a)): List (ATerm a) =
     filter(fn t1 -> ~(termIn?(t1, tms2))) tms1
@@ -704,7 +745,7 @@ op [a] chooseDefinedType(ty1: AType a, ty2: AType a): AType a =
   if anyType? ty1 then ty2 else ty1
 
 op [a] compatibleTerms?(tm1: ATerm a, tm2: ATerm a): Bool =
-  anyTerm? tm1 || anyTerm? tm2 || equalTerm?(tm1, tm2)
+  anyTerm? tm1 || anyTerm? tm2 || equalTermAlpha?(tm1, tm2)
  
 op [a] chooseDefinedTerm(tm1: ATerm a, tm2: ATerm a): ATerm a =
   if anyTerm? tm1 then tm2 else tm1

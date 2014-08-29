@@ -361,7 +361,7 @@ MetaSlangRewriter qualifying spec
        unit (out_term, (emptySubstitution,mkSimpRule ("reduceEmbed", inferType(spc, term), term, out_term),
                         path,boundVars,demod))
      | Apply(Fun(Equals,s,_), Record([(_,M1),(l2,M2)],_),_) ->
-       (if equalTerm?(M1,M2)
+       (if equalTermAlpha?(M1,M2)
           then unit(trueTerm, (emptySubstitution,
                                mkSimpRule ("Eval=", inferType(spc, term), term, trueTerm),
                                path,boundVars,demod))

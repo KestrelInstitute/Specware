@@ -631,7 +631,7 @@ op deconflict_updates (context : Context) : Spec =
                   let old_dfn = firstOpDef info                                   in
                   let new_dfn = deconflict_term (context, old_dfn)                in
                   let new_ops =
-                      if equalTerm? (new_dfn, old_dfn) then
+                      if equalTermAlpha? (new_dfn, old_dfn) then
                         new_ops
                       else
 

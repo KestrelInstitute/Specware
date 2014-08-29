@@ -438,7 +438,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
 
 op findCommonTerms(tms1: MSTerms, tms2: MSTerms): MSTerms * MSTerms * MSTerms =
   case (tms1, tms2) of
-    | (t1::r_tms1, t2::r_tms2) | equalTerm?(t1, t2) ->
+    | (t1::r_tms1, t2::r_tms2) | equalTermAlpha?(t1, t2) ->
       let (common_tms, rtms1, rtms2) = findCommonTerms(r_tms1, r_tms2) in
       (t1 :: common_tms, rtms1, rtms2)
     | _ -> ([], tms1, tms2)           % Conservative: only gets common prefix
@@ -458,7 +458,7 @@ op MSRule.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
          | Fun(Bool true, _,_) -> Some t2
          | Fun(Bool false,_,_) -> Some t1
          | _ -> None)
-    | IfThenElse(t1, t2, t3, _) | equalTerm?(t2, t3) ->
+    | IfThenElse(t1, t2, t3, _) | equalTermAlpha?(t2, t3) ->
       Some t2
     %% if p then q else r --> p && q || ~p && r
     %% if ex(x) p x then q else r  -->
@@ -490,7 +490,7 @@ op MSRule.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
     | IfThenElse(t1, t2, t3, a) ->
       let n_t2 = termSubst(t2, map (fn cj -> (cj,  trueTerm)) (getConjuncts t1)) in
       let n_t3 = termSubst(t3, map (fn cj -> (cj, falseTerm)) (getDisjuncts t1)) in
-      if ~(equalTerm?(t2, n_t2) && equalTerm?(t3, n_t3))
+      if ~(equalTermAlpha?(t2, n_t2) && equalTermAlpha?(t3, n_t3))
         then let new_tm = Utilities.mkIfThenElse(t1, n_t2, n_t3) in
              Some new_tm
       else
@@ -516,5 +516,42 @@ op simpIf1 (spc: Spec) (tm: MSTerm): MSTerm =
 op MSTermTransform.testTr (spc: Spec) (tm1: MSTerm) (tm2: MSTerm) (rls: RuleSpecs): Option MSTerm =
   (writeLine ("applying "^showRls rls^" to\n"^printTerm tm1^"\nwith argument\n"^printTerm tm2);
    None)
+
+op MSTermTransform.substConjEquality (tm: MSTerm) (cj_nm: Nat) (rl?: Bool)
+     : Option (MSTerm * Proof) =
+  let _ = writeLine("substConjEquality "^show cj_nm^" "^show rl?) in
+  case foldSubTerms (fn (s_tm, found_cjn) ->
+                     if some? found_cjn then found_cjn
+                       else case s_tm of
+                              | Apply(Fun(And,_,_), _, _) -> Some s_tm
+                              | _ -> None)
+         None
+         tm of
+   | None -> None
+   | Some cjn ->
+     let cjs = getConjuncts cjn in
+     if cj_nm >= length cjs
+       then let _ = warn("Conjunct number has to be less than number of conjuncts?\n"
+                           ^show cj_nm^" >= "^show(length cjs))
+            in None
+     else
+       (case cjs@cj_nm of
+          | Apply(Fun(Equals,_,_), Record([("1",lhs), ("2",rhs)],_),_) ->
+            let sbst = if rl? then [(rhs, lhs)] else [(lhs, rhs)] in
+            let new_cjs = tabulate(length cjs,
+                                   fn i -> if i = cj_nm then cjs@i
+                                           else termSubst(cjs@i, sbst))
+            in
+            if forall? equalTermAlpha? (zip(new_cjs, cjs))
+              then None
+            else
+              let new_cjn = mkConj new_cjs in
+              if equalTerm?(new_cjn, cjn) then None
+                else let new_tm = termSubst(tm, [(cjn, new_cjn)]) in
+                     Some(new_tm, bogusProof)
+          | tm -> let _ = warn("Conjunct number "^show cj_nm^" is not an equality:\n"
+                                                           ^printTerm tm)
+                  in None)
+          | _ -> None
 
 end-spec

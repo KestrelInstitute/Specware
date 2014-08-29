@@ -12,13 +12,13 @@ import Script
     let def applyExistingSpecializations(init_dfn, spc, rls, ty, qid) =
           let (tr_dfn, _) = interpretTerm0(spc, mkSimplify rls, init_dfn,
                                            ty, qid, traceSpecializeSpec?) in
-          if equalTerm?(tr_dfn, mkTypedTerm(init_dfn, ty))
+          if equalTermAlpha?(tr_dfn, mkTypedTerm(init_dfn, ty))
             then init_dfn
           else
             %% Do transform without specialization rules to make sure simplification depended on them
             let (tr_dfn0, _) = interpretTerm0(spc, mkSimplify user_rules, init_dfn,
                                               ty, qid, traceSpecializeSpec?) in
-            if equalTerm?(tr_dfn, tr_dfn0)
+            if equalTermAlpha?(tr_dfn, tr_dfn0)
               then init_dfn
             else tr_dfn
         def findNewSpecialization(tr_dfn, spc, rls, ty, qid, uf_qids, rw_qids) =
@@ -66,7 +66,7 @@ import Script
                            in
                            let (spc, rls, tr_dfn2, uf_qids, rw_qids)
                               = findNewSpecialization(tr_dfn, spc, rls, ty, qid, uf_qids, rw_qids) in
-                           if equalTerm?(tr_dfn2, init_dfn) || equalTerm?(tr_dfn2, mkTypedTerm(init_dfn, ty))
+                           if equalTermAlpha?(tr_dfn2, init_dfn) || equalTermAlpha?(tr_dfn2, mkTypedTerm(init_dfn, ty))
                              then result
                              else
                              % let _ = writeLine("Refining "^show qid^"\n"^printTerm init_dfn^"\nto\n"^printTerm tr_dfn2) in
