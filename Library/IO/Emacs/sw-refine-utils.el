@@ -9,12 +9,12 @@
 
 (defmacro eval-in-window (window &rest forms)
   "Switch to WINDOW, evaluate FORMS, return to original window."
-  (` (let ((OriginallySelectedWindow (selected-window)))
+  ` (let ((OriginallySelectedWindow (selected-window)))
        (unwind-protect
 	   (progn
 	     (select-window (, window))
 	     (,@ forms))
-	 (select-window OriginallySelectedWindow)))))
+	 (select-window OriginallySelectedWindow))))
 (put 'eval-in-window 'lisp-indent-hook 1)
 
 ;; From /specware/emacs/rea-x-mouse.el :
@@ -37,8 +37,7 @@
   "If there is a modified buffer visiting FILE, save it if user gives ok."
   (let ((buffer (get-file-buffer file)))
     (if buffer
-	(save-excursion
-	  (set-buffer buffer)
+	(with-current-buffer buffer
 	  (and
 	   (buffer-modified-p buffer)
 	   (y-or-n-p (format "Save file %s ? " buffer-file-name))
