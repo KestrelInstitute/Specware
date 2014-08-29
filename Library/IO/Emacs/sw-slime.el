@@ -280,6 +280,8 @@ If NEWLINE is true then add a newline at the end of the input."
   (run-hooks 'slime-repl-mode-hook)
   (run-mode-hooks 'specware-listener-mode-hook))
 
+(defvar sw:license-displayed-p nil)
+
 ;;; Redefining slime functions and variables
 (defun* slime-start (&key (program inferior-lisp-program) program-args
                           directory
@@ -391,8 +393,6 @@ DIRECTORY change to this directory before starting the process.
 (defvar old-slime-repl-insert-prompt (symbol-function 'slime-repl-insert-prompt))
 
 (defvar *sw-after-prompt-forms* nil)
-
-(defvar sw:license-displayed-p nil)
 
 (defun slime-repl-insert-prompt ()
   "Goto to point max, insert RESULT and the prompt.

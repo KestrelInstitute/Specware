@@ -12,7 +12,9 @@
 (defvar lisp-prev-l/c-dir/file)
 
 (defvar lisp-program (or (getenv "LISP_EXECUTABLE") (getenv "LISP") "/usr/local/bin/sbcl"))
-(setq expand-symlinks-rfs-exists t)
+
+(defvar expand-symlinks-rfs-exists t)
+
 (defvar *specware-lisp* (if (or (cl-search "alisp" lisp-program)
 				(cl-search "build" lisp-program) ; ??
 				;; for now, we use allegro on windows...
@@ -68,6 +70,7 @@
   "Size of --control-stack-size for sbcl") 
 
 (when (eq lisp-emacs-interface-type 'slime)
+  (defvar slime-*directory*)
   (setq slime-*directory*
 	(concat (getenv "SPECWARE4") "/Library/IO/Emacs/slime/"))
   (defvar slime-*use-fsf-compliant-keybindings* t) ; Use c-c as command prefix (not c-z)

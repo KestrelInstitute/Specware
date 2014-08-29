@@ -169,6 +169,8 @@ accepted in lieu of prompting."
   (unless (eq sw:use-x-symbol x-symbol-mode)
     (x-symbol-mode)))
 
+(defvar hs-minor-mode nil) ;; declared in hideshow.el, which is dynamically loaded
+
 (defun sw:hide-show-toggle ()
   (customize-set-variable 'sw:use-hide-show (not sw:use-hide-show))
   (unless (eq sw:use-hide-show hs-minor-mode)
@@ -245,6 +247,8 @@ accepted in lieu of prompting."
       ["About Specware" about-specware t]))
 
 ;;; BINDINGS: should be common to the source and process modes...
+
+(defvar specware-mode-menu)
 
 (defun install-sw-keybindings (map)
   ;; Text-formatting commands:
@@ -412,6 +416,11 @@ Full documentation will be available after autoloading the function."
 	  "\\|in"
 	  "\\|end-?spec"
 	  "\\)\\>"))
+
+(defvar hs-minor-mode-map)
+(defvar hs-allow-nesting)
+(defvar hs-marker-begin-regexp)
+(defvar hs-marker-end-regexp)
 
 (when sw:use-hide-show
   (defun add-to-list (list-var element &optional append)
@@ -632,6 +641,8 @@ Mode map
 		    (goto-char end))))
     (when (and (> start beg) (< start end))
       (font-lock-set-face start end font-lock-comment-face))))
+
+(defvar lazy-shot-step-size)
 
 (unless (and (boundp 'lazy-shot-step-size)
 	     lazy-shot-step-size
@@ -2283,6 +2294,7 @@ qualifier: }")
 ;; I don't use the about functions because they are different in different 
 ;; versions of xemacs
 (defvar about-left-margin 3)
+(defvar widget-button-face)
 
 (defun about-specware-get-buffer (name)
   (cond ((get-buffer name)
@@ -2505,6 +2517,9 @@ With an argument, it doesn't convert imports."
         (find-file-other-window-0 (to-cygwin-name thy-file))
         (when (fboundp 'proof-unregister-buffer-file-name)
           (proof-unregister-buffer-file-name t))))))
+
+(defvar haskell-ghci-program-args)
+(defvar haskell-program-name)
 
 (let ((path (format (if (or (eq window-system 'mswindows) (eq window-system 'w32))
                         "\"-i.;%s/Library/Haskell\"" "-i.:%s/Library/Haskell")
