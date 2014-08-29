@@ -32,6 +32,23 @@ theorem diff_of_cons is [a]
 theorem delete1_of_empty is [a]
   fa(x:a) delete1(x,[]) = []
 
+
+%% Move to Sets library:
+  theorem set_insert_does_nothing_rewrite is [a]
+    fa(x: a,s) (set_insert(x,s) = s) = in?(x,s)
+
+%% Move to Sets library:
+  theorem set_insert_does_nothing_rewrite_alt is [a]
+    fa(x: a,s) (s= set_insert(x,s)) = in?(x,s)
+
+%% Move to Sets library:
+  theorem set_delete_does_nothing_rewrite is [a]
+    fa(x: a,s) (set_delete(x,s) = s) = ~(in?(x,s))
+
+%% Move to Sets library:
+  theorem set_delete_does_nothing_rewrite_alt is [a]
+    fa(x: a,s) (s = set_delete(x,s)) = ~(in?(x,s))
+
  
 
 
@@ -61,11 +78,31 @@ theorem delete1_of_empty is [a]
   op upto_loop (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
       (if i>=j then ns else upto_loop(succ(i),j, set_insert(i,ns)))
 
+  proof Isa -hook hook1b end-proof
+
   theorem upto_loop_base_case is
     fa(ns:Set Nat, i:Nat, j:Nat) (i >= j) => (upto_loop(i,j,ns) = ns)
 
   theorem upto_loop_opener is
     fa(ns:Set Nat, i:Nat, j:Nat) (i < j) => (upto_loop(i,j,ns) = upto_loop(succ(i),j, set_insert(i,ns)))
+
+  proof Isa -hook hook2b end-proof
+
+  theorem upto_loop_move_accumulator is
+    fa(i:Nat, j:Nat, ns:Set Nat) upto_loop(i,j,ns) = upto_loop(i,j,empty_set) \/ ns
+
+  theorem upto_loop_opener2 is
+    fa(i:Nat, j:Nat, ns:Set Nat) (i < j) => upto_loop(i,j,ns) = set_insert(i,upto_loop(i+1,j,ns))
+
+  %% Easier to reason about, but may cause a stack overflow on large inputs:
+  op upto_loop2 (i:Nat,j:Nat,ns:Set Nat):Set Nat = 
+    if j<=i then ns else set_insert(i,upto_loop2(i+1,j,ns))
+
+  theorem upto_loop2_opener is
+    fa(ns:Set Nat, i:Nat, j:Nat) (i < j) => (upto_loop2(i,j,ns) = set_insert(i,upto_loop2(succ(i),j,ns)))
+
+  theorem upto_loop_rephrase is
+     fa(i:Nat, j:Nat, ns:Set Nat) upto_loop(i,j,ns) = upto_loop2(i,j,ns)
 
   theorem upto_loop_subset is
     fa(ns:Set Nat, i:Nat, j:Nat) ns subset upto_loop(i,j,ns)
@@ -83,6 +120,32 @@ theorem delete1_of_empty is [a]
 
   op uptoL_loop (i:Nat,j:Nat,ns:List Nat):List Nat = 
       (if j<=i then ns else uptoL_loop(i,pred(j),Cons(pred(j),ns)))
+
+  proof Isa -hook hook1 end-proof
+
+  theorem uptoL_loop_base_case is
+    fa(i:Nat, j:Nat, ns:List Nat) (i >= j) => (uptoL_loop(i,j,ns) = ns)
+
+  theorem uptoL_loop_opener is
+    fa(i:Nat, j:Nat, ns:List Nat) (i < j) => (uptoL_loop(i,j,ns) = uptoL_loop(i,pred(j),Cons(pred(j),ns)))
+
+  proof Isa -hook hook2 end-proof
+
+  theorem uptoL_loop_move_accumulator is
+    fa(i:Nat, j:Nat, ns:List Nat) uptoL_loop(i,j,ns) = uptoL_loop(i,j,[]) ++ ns
+
+  theorem uptoL_loop_opener2 is
+    fa(i:Nat, j:Nat, ns:List Nat) (i < j) => uptoL_loop(i,j,ns) = i::uptoL_loop(i+1,j,ns)
+
+  %% Easier to reason about
+  op uptoL_loop2 (i:Nat,j:Nat,ns:List Nat):List Nat = 
+    if j<=i then ns else i::uptoL_loop2(i+1,j,ns)
+
+  theorem uptoL_loop2_opener is
+    fa(ns:List Nat, i:Nat, j:Nat) (i < j) => (uptoL_loop2(i,j,ns) = i::uptoL_loop2(succ(i),j,ns))
+
+  theorem uptoL_loop_rephrase is
+     fa(i:Nat, j:Nat, ns:List Nat) uptoL_loop(i,j,ns) = uptoL_loop2(i,j,ns)
 
   % Returns the list containing the natural numbers in the interval [i,j), in order:
 
@@ -353,15 +416,10 @@ end-proof
     %The foldable? here is for set folds but expresses the commutativity property we need:
      foldable? f => ((foldl f base l) = (foldr (fn (x,y) -> f(y, x)) base l))
 
-
   op [a] L2S(lst:List a): Set a =
     (foldl (fn(c,a)-> set_insert(a,c))
           empty_set
           lst)
-
-  % TTODO: Does not seem true.  Consider lst=[1,1] and pair (1,2).
-  theorem L2S_vs_Pair2S is
-    fa(lst:List Nat,pair:Nat*Nat)( (lst = uptoL(pair)) = (L2S(lst) = Pair2S(pair)) )
 
   theorem L2S_Nil is [a]
      (L2S(Nil) = (empty_set:Set a))
@@ -372,18 +430,60 @@ end-proof
   theorem L2S_Cons is [a]
     fa(y:a,lst:List a) ( L2S(Cons(y,lst)) = set_insert(y, L2S lst) )
 
+  theorem L2S_uptoL_loop is
+    fa(i:Nat,j:Nat,ns:List Nat) L2S(uptoL_loop(i,j,ns)) = upto_loop(i,j,L2S ns)
+
+  theorem L2S_uptoL is
+    fa(pair:Nat*Nat) L2S(uptoL(pair)) = Pair2S(pair)
+
+  %% % Changing the orientation while I am at it:
+  %% % then if you know lst has no repeated elements, the removeDups goes away
+  %% % We can also prove that if lst is sorted, the perm?(lst,<some-sorted-lst>) turns into an =
+  %% % and we prove that uptoL returns a sorted result..
+  %% theorem L2S_vs_Pair2S_alt is
+  %%   fa(lst:List Nat,pair:Nat*Nat) (L2S lst = Pair2S pair) = perm?(removeDups lst, uptoL(pair))
+
+  % TTODO: Does not seem true.  Consider lst=[1,1] and pair (1,2).
+  % Even if we disallow duplicates, we still have to think about order.  Maybe we can't do better than perm...
+  % Then specialize to the case of sorted lists?
+  theorem L2S_vs_Pair2S is
+    fa(lst:List Nat,pair:Nat*Nat)( (lst = uptoL(pair)) = (L2S(lst) = Pair2S(pair)) )
+
   theorem L2S_delete is [a]
     fa(y:a,lst:List a) ( L2S(delete y lst) = set_delete(y, L2S lst) )
 
-  % TTODO: Doesn't seem right.  Consider when lst contains more than one y.
-  theorem L2S_delete1 is [a]
-    fa(y:a,lst:List a) ( L2S(delete1(y,lst)) = set_delete(y, L2S lst) )
-  %TODO try something like: ... = if occs(y,lst) > 1 then (L2S lst) else set_delete(y, L2S lst)
-  % TODO Do we have a function to count the number of occurrences of an element in a list?
-  % TODO: add a version with a hypothesis of (noRepetitions? lst) (but will it be provable in context?)
+   %% move to library:
+  theorem occs_cons is [a]
+     fa(lst : List a, elem:a, elem2:a) occs(elem,elem2::lst) = (if elem=elem2 then 1+occs(elem,lst) else occs(elem,lst))
+
+   %% move to library:
+  theorem occs_when_not_in is [a]
+     fa(lst : List a, elem:a) ~(elem in? lst) => occs(elem,lst) = 0
+
+   %% move to library:
+  theorem occs_pos is [a]
+     fa(lst : List a, elem:a) (occs(elem,lst) > 0) = (elem in? lst)
+
+   %% move to library:
+  theorem occs_equal_zero is [a]
+     fa(lst : List a, elem:a) (occs(elem,lst) = 0) = ~(elem in? lst)
+
+   %% move to library:
+  theorem occs_bound_when_noRepetitions? is [a]
+    fa(lst : List a, elem:a) noRepetitions? lst => ((occs(elem,lst) > 1) = false)
 
   theorem L2S_member is [a]
     fa(y:a,lst:List a) ( (y in? lst) = (y in? L2S lst) )
+
+  theorem L2S_delete1_safe is [a]
+    fa(y:a,lst:List a) L2S(delete1(y,lst)) = (if occs(y,lst) > 1 then (L2S lst) else set_delete(y, L2S lst))
+
+  theorem L2S_delete1_safe2 is [a]
+    fa(y:a,lst:List a) noRepetitions? lst => L2S(delete1(y,lst)) = set_delete(y, L2S lst)
+
+  %% TTODO: Doesn't seem right.  Consider when lst contains more than
+  %% one y.  Please transition to using one of the safe theorems just above.
+  theorem L2S_delete1 is [a] fa(y:a,lst:List a) ( L2S(delete1(y,lst)) = set_delete(y, L2S lst) )
 
   theorem L2S_head is [a]
     fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) in? L2S(lst) )
@@ -775,6 +875,20 @@ termination
   apply (auto simp add: Nat__pred_def)
 end-proof
 
+proof isa uptoL_loop2 ()
+by (pat_completeness, auto)
+termination
+  apply (relation "measure (\<lambda>(i,j,ns). j - i)")
+  apply (auto simp add: Nat__pred_def)
+end-proof
+
+proof isa upto_loop2 ()
+by (pat_completeness, auto)
+termination
+  apply (relation "measure (\<lambda>(i,j,ns). j - i)")
+  apply (auto simp add: Nat__pred_def)
+end-proof
+
 proof isa Stack2L ()
 by (pat_completeness, auto)
 termination
@@ -841,6 +955,14 @@ proof isa Stack2L_init
 end-proof
 
 proof isa L2S_vs_Pair2S
+  apply(auto simp add: L2S_uptoL)
+  apply(induct lst)
+  apply(simp add: L2S_Nil)
+  apply(simp add: L2S_uptoL[symmetric])
+  apply(cut_tac al="uptoL pair" in L2S_Equal_Nil)
+  apply(simp)
+  apply(simp add: L2S_uptoL[symmetric])
+ (* Incomplete because this theorem is not true! *)
   sorry
 end-proof
 
@@ -863,6 +985,22 @@ proof isa L2S_delete
   apply(auto simp add: List__delete_def L2S_Cons)
   apply (metis Set__set_delete_of_set_insert_diff)
   apply(metis Set__distribute_set_delete_over_set_insert)
+end-proof
+
+proof Isa L2S_delete1_safe
+  apply(auto)
+  apply(induct lst)
+  apply(simp)
+  apply(auto simp add: L2S_Cons set_insert_does_nothing_rewrite_alt occs_pos L2S_member[symmetric])[1]
+  apply(induct lst)
+  apply(simp add: L2S_Nil Set__delete_of_empty)
+  apply(auto)
+  apply(auto simp add: L2S_Cons Set__distribute_set_delete_over_set_insert set_delete_does_nothing_rewrite_alt occs_equal_zero L2S_member[symmetric])
+  by (metis Set__set_delete_of_set_insert_diff)
+end-proof
+
+proof Isa L2S_delete1_safe2
+  by (metis L2S_delete1_safe occs_bound_when_noRepetitions_p)
 end-proof
 
 proof isa L2S_delete1
@@ -1294,6 +1432,155 @@ end-proof
 
 proof Isa M2F_update
   apply(auto simp add: M2F_def Map__update Map__map_apply_def)
+end-proof
+
+proof Isa L2S_uptoL
+  apply(simp only: uptoL_def)
+  apply(case_tac "pair")
+  apply(auto simp only: Pair2S_def StructuredTypes.upto_def) 
+end-proof
+
+proof Isa L2S_uptoL_loop
+  apply(induct "(i,j,ns)" arbitrary: j ns rule: uptoL_loop.induct)
+  apply(case_tac "j \<le> i")
+  apply(auto simp del: uptoL_loop.simps upto_loop.simps)
+end-proof
+
+proof Isa hook1
+(* A Version of the theorem that doesn't have the illegal variable name a0.0 that Isabelle puts in." *)
+theorem uptoL_loop_induct_good:
+  "(\<And> i j ns. ( \<not> j \<le> i \<Longrightarrow> P (i, Nat__pred j, Nat__pred j # ns)) \<Longrightarrow> P(i,j,ns)) \<Longrightarrow> P x"
+  apply(metis StructuredTypes.uptoL_loop.induct)
+  done
+end-proof
+
+proof Isa hook1b
+(* A Version of the theorem that doesn't have the illegal variable name a0.0 that Isabelle puts in." *)
+theorem upto_loop_induct_good:
+  "(\<And> i j ns. ( \<not> j \<le> i \<Longrightarrow> P (Suc i, j, Set__set_insert (i,ns))) \<Longrightarrow> P(i,j,ns)) \<Longrightarrow> P x"
+  apply(metis StructuredTypes.upto_loop.induct)
+  done
+end-proof
+
+proof Isa hook2
+(* Version with the object-level quantifier, so I can induct properly. *)
+theorem uptoL_loop_move_accumulator_helper: 
+  "\<forall> ns . uptoL_loop(i, j, ns) = uptoL_loop(i, j, []) @ ns"
+  apply(cut_tac P="\<lambda> (i, j, ns) . \<forall> ns . uptoL_loop(i, j, ns) = uptoL_loop(i, j, []) @ ns" and x="(i,j,[])" in uptoL_loop_induct_good)
+  defer
+  apply (metis (lifting, mono_tags) splitD)
+  apply(auto simp  del: uptoL_loop.simps)
+  apply(case_tac " i < j")
+  defer
+  apply(simp add: uptoL_loop_base_case)
+  apply(auto simp  del: uptoL_loop.simps)
+   by (metis (hide_lams, no_types) Cons_eq_appendI append_assoc self_append_conv2 uptoL_loop_opener)
+end-proof
+
+proof Isa hook2b
+(* Version with the object-level quantifier, so I can induct properly. *)
+theorem upto_loop_move_accumulator_helper: 
+  "\<forall> ns . upto_loop(i, j, ns) = (upto_loop(i, j, Set__empty_set) \\/ ns)"
+  thm upto_loop_induct_good
+  apply(cut_tac P="\<lambda> (i, j, ns) . \<forall> ns . upto_loop(i, j, ns) = (upto_loop(i, j, Set__empty_set) \\/ ns)" and x="(i,j,Set__empty_set)" in upto_loop_induct_good)
+  defer
+  apply (metis (lifting, mono_tags) splitD)
+  apply(auto simp  del: upto_loop.simps)
+  apply(case_tac " i < j")
+  defer
+  apply(simp add: upto_loop_base_case Set__union_left_unit)
+  apply(auto simp  del: upto_loop.simps)
+by (metis Set__distribute_union_over_left_insert Set__distribute_union_over_right_insert upto_loop_opener)
+end-proof
+
+proof Isa upto_loop_move_accumulator
+  by (metis upto_loop_move_accumulator_helper)
+end-proof
+
+proof Isa uptoL_loop_move_accumulator
+  by (metis uptoL_loop_move_accumulator_helper)
+end-proof
+
+proof Isa uptoL_loop_opener2
+  apply(induct "(i,j,ns)" arbitrary: j ns rule: uptoL_loop.induct)
+  apply(simp del: uptoL_loop.simps)
+  apply(case_tac "i < Nat__pred j")
+  apply(simp del: uptoL_loop.simps)
+  apply(simp del: uptoL_loop.simps add: uptoL_loop_opener)
+  apply(cut_tac i="Suc i" and j=j and ns=ns in uptoL_loop_opener)
+  apply(auto simp add: Nat__pred_def)
+end-proof
+
+proof Isa uptoL_loop_rephrase
+  apply(induct "(i,j,ns)" arbitrary: j i rule: uptoL_loop2.induct)
+  by (metis le_less_linear uptoL_loop2.simps uptoL_loop_base_case uptoL_loop_opener2)
+end-proof
+
+proof Isa upto_loop_rephrase
+  apply(induct "(i,j,ns)" arbitrary: j i rule: upto_loop2.induct)
+by (metis not_less upto_loop2.simps upto_loop_base_case upto_loop_opener2)
+end-proof
+
+proof Isa upto_loop_opener2
+  apply(simp del: upto_loop.simps add: upto_loop_opener)
+  thm  upto_loop_move_accumulator
+  apply(cut_tac i="Suc i" and j=j and ns="Set__set_insert (i,ns)" in upto_loop_move_accumulator)
+  apply(cut_tac i="Suc i" and j=j and ns=ns in upto_loop_move_accumulator)
+by (metis Set__distribute_union_over_right_insert)
+end-proof
+
+proof Isa L2S_uptoL_loop
+  apply(simp only: upto_loop_rephrase uptoL_loop_rephrase)
+  apply(induct "(i,j,ns)" arbitrary: i j ns rule: uptoL_loop2.induct)
+  apply(auto simp add:   uptoL_loop2_opener upto_loop2_opener L2S_Cons  del: uptoL_loop2.simps upto_loop2.simps )
+end-proof
+
+proof Isa L2S_uptoL
+  apply(simp only: uptoL_def)
+  apply(case_tac "pair")
+  apply(auto simp only: Pair2S_def StructuredTypes.upto_def L2S_uptoL_loop L2S_Nil)
+end-proof
+
+proof Isa occs_when_not_in
+  apply(induct lst)
+  apply (metis List__occs.simps(1))
+  apply(auto simp add: occs_cons)
+end-proof
+
+proof Isa occs_bound_when_noRepetitions_p
+  apply(induct lst)
+  apply (metis List__occs.simps(1) not_one_less_zero)
+  apply(auto simp add: occs_when_not_in)
+end-proof
+
+proof Isa set_insert_does_nothing_rewrite
+  apply( auto)
+  apply (metis Set__set_insertion)
+  by (metis Set__set_insert_does_nothing)
+end-proof
+
+proof Isa set_insert_does_nothing_rewrite_alt
+  apply(metis set_insert_does_nothing_rewrite)
+end-proof
+
+proof Isa occs_pos
+  apply(induct lst)
+  apply (metis List__occs.simps(1) in_of_empty less_numeral_extra(3))
+  apply(simp add:occs_cons)
+end-proof
+
+proof Isa set_delete_does_nothing_rewrite
+  by (metis Set__set_delete_no_op Set__set_deletion)
+end-proof
+
+proof Isa set_delete_does_nothing_rewrite_alt
+  by (metis Set__set_delete_no_op Set__set_deletion)
+end-proof
+
+proof Isa occs_equal_zero
+  apply(induct lst)
+  apply (metis List__occs.simps(1) in_of_empty)
+  by (metis less_numeral_extra(3) occs_pos occs_when_not_in)
 end-proof
 
 end-spec
