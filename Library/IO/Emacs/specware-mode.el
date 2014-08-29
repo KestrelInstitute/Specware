@@ -233,7 +233,7 @@ accepted in lieu of prompting."
       ["Ignore current matches" sw:ignore-matches *pending-specware-search-results*]
       "-----"
       ["Switch to Previous File" sw:switch-to-lisp t]
-      ["Search for Previous Input" fi:re-search-backward-input t]
+      ["Search for Previous Input" isearch-backward-regexp t]
       ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
       ["Exit Specware" sw:exit-lisp (inferior-lisp-running-p)]
       "-----"
@@ -2141,8 +2141,9 @@ It is deleted when there is no secondary selection.")
   (when (equal *lisp-prompt-regexp* comint-prompt-regexp)
       (setq comint-prompt-regexp (concat "\\(" comint-prompt-regexp "\\|^\\* \\)")))
   (setq bridge-prompt-regexp comint-prompt-regexp)
-  (when (boundp 'fi::prompt-pattern)
-    (setq fi::prompt-pattern comint-prompt-regexp)))
+  ;; (when (boundp 'fi::prompt-pattern)
+  ;;    (setq fi::prompt-pattern comint-prompt-regexp))
+  )
 
 (defvar sw:check-unbalanced-parentheses-when-saving t
   "Check whether parens are balanced before saving a specware file."

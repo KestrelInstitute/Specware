@@ -166,18 +166,15 @@
               (gnu/linux "linux")
 	      (t (symbol-name system-type))))))
 
-(defvar fi:allegro-run-status-string)
 (defvar comint-status)
 
 (defun wait-for-prompt (&optional timeout)
   (unless (eq lisp-emacs-interface-type 'slime)
     (sit-for 0.1 t)
     (let ((proc (get-buffer-process *specware-buffer-name*)))
-      (while (not (if (eq lisp-emacs-interface-type 'franz)
-		      (equal fi:allegro-run-status-string "Idle")
-		    (if (eq lisp-emacs-interface-type 'slime)
-			(eq (process-status slime-buffer-connection) 'open)
-		      (equal comint-status " :ready"))))
+      (while (not (if (eq lisp-emacs-interface-type 'slime)
+                      (eq (process-status slime-buffer-connection) 'open)
+                    (equal comint-status " :ready")))
 	(accept-process-output proc (or timeout 1))))))
 
 (defun set-socket-init-for-specware ()
@@ -804,7 +801,7 @@ sLisp Heap Image File: ")
     (setq *specware-build-buffer* (current-buffer)))
 
   (set-buffer *specware-build-buffer-name*)
-  (add-hook 'comint-output-filter-functions 'run-specware-after-saving-lisp-image nil t)
+  ;; (add-hook 'comint-output-filter-functions 'run-specware-after-saving-lisp-image nil t)
   (install-bridge)
   (setq bridge-handlers '(("(" . emacs-eval-handler))))
 
