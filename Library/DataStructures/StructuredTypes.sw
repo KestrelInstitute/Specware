@@ -436,18 +436,8 @@ end-proof
   theorem L2S_uptoL is
     fa(pair:Nat*Nat) L2S(uptoL(pair)) = Pair2S(pair)
 
-  %% % Changing the orientation while I am at it:
-  %% % then if you know lst has no repeated elements, the removeDups goes away
-  %% % We can also prove that if lst is sorted, the perm?(lst,<some-sorted-lst>) turns into an =
-  %% % and we prove that uptoL returns a sorted result..
-  %% theorem L2S_vs_Pair2S_alt is
-  %%   fa(lst:List Nat,pair:Nat*Nat) (L2S lst = Pair2S pair) = perm?(removeDups lst, uptoL(pair))
-
-  % TTODO: Does not seem true.  Consider lst=[1,1] and pair (1,2).
-  % Even if we disallow duplicates, we still have to think about order.  Maybe we can't do better than perm...
-  % Then specialize to the case of sorted lists?
   theorem L2S_vs_Pair2S is
-    fa(lst:List Nat,pair:Nat*Nat)( (lst = uptoL(pair)) = (L2S(lst) = Pair2S(pair)) )
+    fa(lst:List Nat,pair:Nat*Nat) lst = uptoL pair => L2S lst = Pair2S pair
 
   theorem L2S_delete is [a]
     fa(y:a,lst:List a) ( L2S(delete y lst) = set_delete(y, L2S lst) )
@@ -955,15 +945,7 @@ proof isa Stack2L_init
 end-proof
 
 proof isa L2S_vs_Pair2S
-  apply(auto simp add: L2S_uptoL)
-  apply(induct lst)
-  apply(simp add: L2S_Nil)
-  apply(simp add: L2S_uptoL[symmetric])
-  apply(cut_tac al="uptoL pair" in L2S_Equal_Nil)
-  apply(simp)
-  apply(simp add: L2S_uptoL[symmetric])
- (* Incomplete because this theorem is not true! *)
-  sorry
+  apply(simp add: L2S_uptoL)
 end-proof
 
 proof isa L2S_Nil
