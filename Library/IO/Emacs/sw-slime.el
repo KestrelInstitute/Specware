@@ -7,6 +7,8 @@
 ;;; This shouldn't be necessary
 (defvar buffer-file-coding-system nil)
 
+(defvar sw:system-name "Specware")
+
 (setq specware-listener-mode-map (make-sparse-keymap))
 (set-keymap-parent specware-listener-mode-map slime-repl-mode-map)
 
@@ -223,7 +225,7 @@ If NEWLINE is true then add a newline at the end of the input."
   (let ((input (strip-extra-whitespace input)))
     (if (eq (elt input 0) ?\()
 	input
-      (let* ((ws (or (position ?\  input) (position ?\n  input)))
+      (let* ((ws (or (cl-position ?\  input) (cl-position ?\n  input)))
 	     (command (if ws (substring input 0 ws) input))
 	     (argstr  (if ws (substring input (1+ ws)) nil)))
 	(if (member command '("quit" "QUIT" "exit" "EXIT" ":quit" ":QUIT" ":exit" ":EXIT"))
@@ -472,8 +474,6 @@ to end."
       (t (:slant italic))))
   "Face for Lisp output in the SLIME REPL."
   :group 'slime-repl)
-
-(defvar sw:system-name "Specware")
 
 ;; Mod to use new slime-repl-update-banner hooks?
 (setq slime-repl-banner-function 'sw-slime-repl-insert-banner)
