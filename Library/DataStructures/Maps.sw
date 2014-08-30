@@ -8,8 +8,6 @@
     to keep the size linear in the domain.
 *)
 
-%% TTODO: The 34 obligations below whose proofs are "oops" seem to be false.
-
 Maps = Map qualifying spec
   import Sets
   type Map(a,b)
@@ -603,6 +601,19 @@ end-spec
 Maps_extended = Map qualifying spec
   import Maps
 
+ theorem foldable?_of_update is [a,b]
+   fa(v:b)
+     foldable?(fn (m:Map(a,b), x:a) -> update m x v)
+
+ %% Trying to match the form of something in Isabelle:
+ theorem foldable?_of_update_2 is [a,b]
+   fa(v:b)
+     foldable?(fn (z:(Map(a,b) * a)) -> case z of | (m,x) -> update m x v)
+
+ theorem foldable?_of_update_3 is [a,b]
+   fa(v: a -> b)
+     foldable?(fn (z:(Map(a,b) * a)) -> case z of | (m,x) -> update m x (v x))
+
   %% for some reason the version of this in Maps is not seen by Globalize. TODO: Is this still an issue?  If not, delete this:
   theorem TMApply_over_update_2 is [a,b]
     fa(m: Map(a,b), x: a, y: b, z: a)
@@ -610,21 +621,19 @@ Maps_extended = Map qualifying spec
     %% theorems with this form induce setf generation in Globalize
       (TMApply(update m x y, z) = (if x = z then y else TMApply(m, z)))
 
-  op [a,b] mapFrom(s: Set a, f: a -> b): Map(a,b) =
+  %% Now only requires f to be defined on elements of S:
+  op [a,b] mapFrom(s: Set a) (f: ({x:a | x in? s} -> b)): Map(a,b) =
     set_fold empty_map (fn (m, x) -> update m x (f x)) s
+
+  op [b] mapFromNR_aux(i:Nat, n:Nat, f:Nat->b, m:Map(Nat,b)): Map(Nat,b) =
+    if i>n then m
+    else mapFromNR_aux(i+1,n,f, (update m i (f i)))
 
 % construct a map over the domain [0,..,n]
   op [b] mapFromNR(n:Nat, f: Nat -> b): Map(Nat,b) =
     mapFromNR_aux(0,n,f,empty_map)
 
-  op [b] mapFromNR_aux(i:Nat, n:Nat, f:Nat->b, m:Map(Nat,b)): Map(Nat,b) =
-    if i>n then m
-    else mapFromNR_aux(i+1,n,f, (update m i (f i)))
-proof isa mapFromNR_aux ()
-      sorry
-      termination
-      sorry
-end-proof
+%%  theorem domain_of_mapFromNR
 
 %% This causes a name clash with the Isabelle translation of the definition of mapFrom.
 %% %% not quite right
@@ -632,23 +641,40 @@ end-proof
 %%     fa(x:a, y: b, s: Set a, f: a -> b) 
 %%       y = TMApply(mapFrom(s,f), x) <=> x in? s && y = f x
 
+  theorem domain_of_mapFrom is [a,b]
+   fa(dom: Set a, g: a -> b) 
+     domain(mapFrom dom g) = dom
+
+  proof Isa -hook hook2 end-proof
+
   theorem mapFrom_TMApply is [a,b]
     fa(x:a, s: Set a, f: a -> b)
       x in? s =>
-      TMApply(mapFrom(s,f), x) = f x
+      TMApply(mapFrom s f, x) = f x
+
+  op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
+     set_fold m (fn (m, x) -> update m x (f x)) s
+     
+  theorem domain_of_mapUpdateSet is [a,b]
+    fa(m: Map(a,b), s: Set a, f: a -> b)
+      domain (mapUpdateSet(m,s,f)) = s \/ domain m
+
+  proof Isa -hook hook1 end-proof
+
+  theorem TMApply_of_mapUpdateSet is [a,b]
+    fa(m: Map(a,b), s: Set a, f: a -> b, x:a)
+      ((x in? s) || x in? domain m) =>
+      TMApply(mapUpdateSet(m,s,f),x) = (if (x in? s) then f x else TMApply(m,x))
 
   theorem mapFrom_if_shadow is [a,b]
     fa(x:a, s: Set a, p: a -> Bool, f: a -> b, g: a -> b)
-      mapFrom(s,fn x:a -> if p x then f x else g x)
-        = mapUpdateSet(mapFrom(s,g), filter p s, f)
+      mapFrom s (fn x:a -> if p x then f x else g x)
+        = mapUpdateSet(mapFrom s g, filter p s, f)
 
   theorem mapFrom_identity is [a,b]
    fa(m: Map(a,b),dom: Set a) 
-     domain(m) = dom => mapFrom(dom, (fn x -> TMApply(m,x))) = m
+     domain(m) = dom => mapFrom dom (fn (x : {x:a | x in? domain m}) -> TMApply(m,x)) = m
 
-  theorem domain_of_mapFrom is [a,b]
-   fa(dom: Set a, g: a -> b) 
-     domain(mapFrom(dom, g)) = dom
 
 (* these should be in a specialized extension
   op [a,b,c] update_map_prepend(m:Map(a*b,c),lst:Set a,bval:b, f:a*b->c):Map(a*b,c) =
@@ -658,93 +684,152 @@ end-proof
     set_fold empty_map (fn (m, bval) -> update_map_prepend(m,lst1,bval,f)) lst2
 *)
   
-  op [a,b] mapUpdateSet(m: Map(a,b), s: Set a, f: a -> b): Map(a,b) =
-     set_fold m (fn (m, x) -> update m x (f x)) s
 
 (*--------  Special ops and axioms for isomorphism between Map(a,b)* Map(a,c) and Map(a,b*c) ---*)
 
   op [A,B,C] map_compose(m1:Map(A,B), m2:Map(A,C)| domain(m1)=domain(m2)): Map(A,B*C) =
-    mapFrom( domain(m1), (fn(domelt:A)-> (TMApply(m1,domelt),TMApply(m2,domelt))))
+    mapFrom (domain m1) (fn(domelt:A)-> (TMApply(m1,domelt),TMApply(m2,domelt)))
+ 
+  theorem domain_of_map_compose is [A,B,C]
+    fa(m1:Map(A,B), m2:Map(A,C)) domain m1 = domain m2 => domain(map_compose(m1,m2)) = domain m1
+
+  theorem TMApply_of_map_compose is [A,B,C]
+    fa(m1:Map(A,B), m2:Map(A,C), x:A)
+     (domain m1 = domain m2) && (x in? domain m1) => 
+     TMApply(map_compose(m1,m2),x) = (TMApply(m1,x),TMApply(m2,x))
 
   op [A,B,C] map_project1(m:Map(A,B*C)): Map(A,B) =
-    mapFrom( domain(m), fn(domelt:A)-> (TMApply(m,domelt)).1)
+    mapFrom (domain m) (fn(domelt:A) -> (TMApply(m,domelt)).1)
+
+  theorem domain_of_map_project1 is [A,B,C]
+    fa(m:Map(A,B*C)) domain (map_project1 m) = domain m
+
+  theorem TMApply_map_project1 is [A,B,C]
+     fa(m:Map(A,B*C),a:A) a in? domain m => (TMApply(map_project1 m,a) = (TMApply(m,a)).1)
+
+  theorem map_project1_of_map_compose is [A,B,C]
+    fa(m1:Map(A,B), m2:Map(A,C))
+     (domain m1 = domain m2) => 
+     map_project1(map_compose(m1,m2)) = m1
 
   op [A,B,C] map_project2(m:Map(A,B*C)): Map(A,C) =
-    mapFrom( (domain m), fn(domelt:A)-> (TMApply(m,domelt)).2)
+    mapFrom (domain m) (fn(domelt:A)-> (TMApply(m,domelt)).2)
 
-  % TODO May not type-check.
-  theorem TMApply_map_project1 is [A,B,C]
-     fa(m:Map(A,B*C),a:A)( TMApply(map_project1(m),a) = (TMApply(m,a)).1 )
+  theorem domain_of_map_project2 is [A,B,C]
+    fa(m:Map(A,B*C)) domain (map_project2 m) = domain m
 
-  % TODO May not type-check.
   theorem TMApply_map_project2 is [A,B,C]
-     fa(m:Map(A,B*C),a:A)( TMApply(map_project2(m),a) = (TMApply(m,a)).2 )
+     fa(m:Map(A,B*C),a:A) a in? domain m => (TMApply(map_project2 m,a) = (TMApply(m,a)).2)
+
+  theorem map_project2_of_map_compose is [A,B,C]
+    fa(m1:Map(A,B), m2:Map(A,C))
+     (domain m1 = domain m2) => 
+     map_project2(map_compose(m1,m2)) = m2
 
   theorem update_map_project1 is [A,B,C]
      fa(m:Map(A,B*C),a:A,b:B)
+       a in? domain m =>
        (  map_compose((update (map_project1 m) a b),
                       (map_project2 m))
         = (update m a (b,(TMApply(m,a)).2)) )
 
   theorem update_map_project2 is [A,B,C]
      fa(m:Map(A,B*C),a:A,c:C)
+       a in? domain m =>
        (  map_compose((map_project1 m),
                       (update (map_project2 m) a c))
         = (update m a ((TMApply(m,a)).1,c)) )
 
+  theorem combine_of_map_projections is [A,B,C]
+     fa(m:Map(A,B*C)) map_compose((map_project1 m), (map_project2 m)) = m 
+
   theorem combine_map_project1_map_project2 is [A,B,C]
      fa(m:Map(A,B*C),m1:Map(A,B),m2:Map(A,C))
-       (  ((map_project1 m) = m1 && (map_project2 m) = m2)
+       domain m1 = domain m2 =>
+       ((map_project1 m = m1) && (map_project2 m = m2))
         = (m = map_compose(m1,m2))
-       )
 
   theorem combine_map_project1_map_project2_cond is [A,B,C]
      fa(m:Map(A,B*C),m1:Map(A,B),m2:Map(A,C))
-       (  ((map_project1 m) = m1) =>
-          (((map_project2 m) = m2) = (m = map_compose(m1,m2)))
-       )
-
+       (map_project1 m = m1) && (domain m1 = domain m2) =>
+         ((map_project2 m) = m2) = (m = map_compose(m1,m2))
+       
   theorem combine_map_project1_map_project2_simplify is [A,B,C]
      fa(m:Map(A,B*C),m1:Map(A,B),m2:Map(A,C))
-       (m = map_compose(m1,m2)) => ((map_project1 m) = m1) = true
+       (domain m1 = domain m2) && (m = map_compose(m1,m2)) => 
+       (map_project1 m = m1) = true
 
-
-  theorem combine_of_map_projections is [A,B,C]
-     fa(m:Map(A,B*C)) map_compose((map_project1 m), (map_project2 m)) = m 
 
 %----------------- 3-tuple version -----------------------------------------
 
   op [A,B,C,D] map_compose3(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D)
                              | domain(m1)=domain(m2) && domain(m1)=domain(m3)): Map(A,B*C*D) =
-    mapFrom( domain(m1), (fn(domelt:A)-> (TMApply(m1,domelt),TMApply(m2,domelt),TMApply(m3,domelt))))
+    mapFrom (domain m1) (fn(domelt:A)-> (TMApply(m1,domelt),TMApply(m2,domelt),TMApply(m3,domelt)))
+
+  theorem domain_of_map_compose3 is [A,B,C,D]
+   fa (m1:Map(A,B), m2:Map(A,C), m3:Map(A,D))
+     (domain m1 = domain m2) && (domain m1 = domain m3) =>
+      domain(map_compose3(m1,m2,m3)) = domain m1
+
+  theorem TMApply_of_map_compose3 is [A,B,C,D]
+    fa(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D), x:A)
+     (domain m1 = domain m2) && (domain m1 = domain m3) && (x in? domain m1) => 
+     TMApply(map_compose3(m1,m2,m3),x) = (TMApply(m1,x),TMApply(m2,x),TMApply(m3,x))
 
   op [A,B,C,D] map_project31(m:Map(A,B*C*D)): Map(A,B) =
-    mapFrom( domain(m), fn(domelt:A)-> (TMApply(m,domelt)).1)
+    mapFrom (domain m) (fn(domelt:A)-> (TMApply(m,domelt)).1)
 
   op [A,B,C,D] map_project32(m:Map(A,B*C*D)): Map(A,C) =
-    mapFrom( (domain m), fn(domelt:A)-> (TMApply(m,domelt)).2)
+    mapFrom (domain m) (fn(domelt:A)-> (TMApply(m,domelt)).2)
 
   op [A,B,C,D] map_project33(m:Map(A,B*C*D)): Map(A,D) =
-    mapFrom( (domain m), fn(domelt:A)-> (TMApply(m,domelt)).3)
+    mapFrom (domain m) (fn(domelt:A)-> (TMApply(m,domelt)).3)
 
   theorem TMApply_map_project31 is [A,B,C,D]
-     fa(m:Map(A,B*C*D),a:A)( TMApply(map_project31(m),a) = (TMApply(m,a)).1 )
+     fa(m:Map(A,B*C*D),a:A) a in? domain m => (TMApply(map_project31(m),a) = (TMApply(m,a)).1)
 
   theorem TMApply_map_project32 is [A,B,C,D]
-     fa(m:Map(A,B*C*D),a:A)( TMApply(map_project32(m),a) = (TMApply(m,a)).2 )
+     fa(m:Map(A,B*C*D),a:A) a in? domain m => (TMApply(map_project32(m),a) = (TMApply(m,a)).2)
 
   theorem TMApply_map_project33 is [A,B,C,D]
-     fa(m:Map(A,B*C*D),a:A)( TMApply(map_project33(m),a) = (TMApply(m,a)).3 )
+     fa(m:Map(A,B*C*D),a:A) a in? domain m => (TMApply(map_project33(m),a) = (TMApply(m,a)).3)
+
+  theorem domain_of_map_project31 is [A,B,C,D]
+    fa(m:Map(A,B*C*D)) domain (map_project31 m) = domain m
+
+  theorem domain_of_map_project32 is [A,B,C,D]
+    fa(m:Map(A,B*C*D)) domain (map_project32 m) = domain m
+
+  theorem domain_of_map_project33 is [A,B,C,D]
+    fa(m:Map(A,B*C*D)) domain (map_project33 m) = domain m
+
+  theorem map_project31_of_map_compose3 is [A,B,C,D]
+    fa(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D))
+     (domain m1 = domain m2) && (domain m1 = domain m3) => 
+     map_project31(map_compose3(m1,m2,m3)) = m1
+
+  theorem map_project32_of_map_compose3 is [A,B,C,D]
+    fa(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D))
+     (domain m1 = domain m2) && (domain m1 = domain m3) => 
+     map_project32(map_compose3(m1,m2,m3)) = m2
+
+  theorem map_project33_of_map_compose3 is [A,B,C,D]
+    fa(m1:Map(A,B), m2:Map(A,C), m3:Map(A,D))
+     (domain m1 = domain m2) && (domain m1 = domain m3) => 
+     map_project33(map_compose3(m1,m2,m3)) = m3
+
 
 % this forms a triple unnecessarily - how to update a triple in the range of a map?
   theorem update_map_project31 is [A,B,C,D]
      fa(m:Map(A,B*C*D),a:A,b:B)
+       a in? domain m =>
        (  map_compose3((update (map_project31 m) a b),
                       (map_project32 m),(map_project33 m))
         = (update m a (b,(TMApply(m,a)).2,(TMApply(m,a)).3)) )
 
   theorem update_map_project32 is [A,B,C,D]
      fa(m:Map(A,B*C*D),a:A,c:C)
+       a in? domain m =>
        (  map_compose3((map_project31 m),
                        (update (map_project32 m) a c),
                        (map_project33 m))
@@ -752,6 +837,7 @@ end-proof
 
   theorem update_map_project33 is [A,B,C,D]
      fa(m:Map(A,B*C*D),a:A,d:D)
+       a in? domain m =>
        (  map_compose3((map_project31 m),
                        (map_project32 m),
                        (update (map_project33 m) a d))
@@ -763,12 +849,15 @@ end-proof
 
   theorem map_compose3_project31_simplify is [A,B,C,D]
      fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
+       domain m1 = domain m2 && domain m2 = domain m3 =>
        (m = map_compose3(m1,m2,m3)) => ((map_project31 m) = m1) = true
   theorem map_compose3_project32_simplify is [A,B,C,D]
      fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
+       domain m1 = domain m2 && domain m2 = domain m3 =>
        (m = map_compose3(m1,m2,m3)) => ((map_project32 m) = m2) = true
   theorem map_compose3_project33_simplify is [A,B,C,D]
      fa(m:Map(A,B*C*D),m1:Map(A,B),m2:Map(A,C),m3:Map(A,D))
+       domain m1 = domain m2 && domain m2 = domain m3 =>
        (m = map_compose3(m1,m2,m3)) => ((map_project33 m) = m3) = true
   theorem combine_of_map_projections3 is [A,B,C,D]
      fa(m:Map(A,B*C*D)) map_compose3((map_project31 m), (map_project32 m),(map_project33 m)) = m 
@@ -789,15 +878,97 @@ end-proof
 
 proof isa mapFrom_Obligation_subtype
   apply(auto simp add: Set__foldable_p_def)
-  apply(rule Map__map_equality, simp add: Map__update)
+  apply(simp only: Map__update_of_update_both Set__foldable_p__stp_def)
+  apply(simp)
+  apply (metis Map__update_of_update_both)
 end-proof
 
 proof isa mapFrom_TMApply_Obligation_subtype
-  sorry
+ apply(metis Map__domain_of_mapFrom)
+end-proof
+
+proof Isa hook1
+theorem Map__TMApply_of_mapUpdateSet_helper: 
+  "(x in? s \<or> x in? Map__domain m) \<longrightarrow>
+   Map__TMApply(Map__mapUpdateSet(m, s, f), x) 
+     = (if x in? s then f x else Map__TMApply(m, x))"
+  apply(cut_tac p="\<lambda> s . ( x in? s \<or> x in? Map__domain m \<longrightarrow> Map__TMApply (Map__mapUpdateSet (m, s, f), x) = (if x in? s then f x else Map__TMApply (m, x)))" in Set__induction)
+  apply(simp add: Set__empty_set Map__mapUpdateSet_def)
+  apply(auto simp add: Map__foldable_p_of_update_3 Set__set_fold1)[1]
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" in Set__set_fold1)
+  apply (metis Map__foldable_p_of_update_3)
+  apply(auto)[1]
+  apply(auto simp only:)[1]
+  apply(case_tac "xa in? s")
+  apply(simp add: Set__set_insert_does_nothing)[1]
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" and x=xa and s=s in Set__set_fold2)
+  apply (metis Map__foldable_p_of_update_3)
+  apply(simp)
+  apply(simp add: Set__set_insertion)
+  apply(auto simp add: Map__mapUpdateSet_def)
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" and x=xa and s=s in Set__set_fold2)  
+  apply (metis Map__foldable_p_of_update_3)
+  apply (metis Map__TMApply_over_update2)
+  apply (metis Map__TMApply_over_update2)
+  apply(case_tac "xa in? s")
+  apply(simp add: Set__set_insert_does_nothing)[1]
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" and x=xa and s=s in Set__set_fold2)  
+  apply (metis Map__foldable_p_of_update_3)
+  apply(simp)
+  apply(auto simp add: Map__TMApply_over_update)
+  apply(case_tac "x in? s")
+  apply(auto)
+  apply(cut_tac m=m and s=s and f=f in Map__domain_of_mapUpdateSet)
+  apply(simp add: Map__mapUpdateSet_def)
+  apply (metis (lifting, no_types) Map__TMApply_over_update_2 Set__commutativity_of_union Set__distribute_union_over_right_insert Set__set_insert_does_nothing Set__set_insertion)
+  apply (metis (lifting, no_types) Map__TMApply_of_update_same Set__set_insertion)
+  apply(case_tac "xa in? s")
+  apply(simp add: Set__set_insert_does_nothing)[1]
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" and x=xa and s=s in Set__set_fold2)  
+  apply (metis Map__foldable_p_of_update_3)
+  apply(simp)
+  apply(auto simp add: Map__TMApply_over_update)
+  apply(case_tac "x in? s")
+  apply(auto)
+  apply(cut_tac m=m and s=s and f=f in Map__domain_of_mapUpdateSet)
+  apply(simp add: Map__mapUpdateSet_def)
+  apply (metis (lifting, no_types) Map__TMApply_over_update_2 Set__commutativity_of_union Set__distribute_union_over_right_insert Set__set_insert_does_nothing Set__set_insertion)
+  apply (metis (lifting, no_types) Map__TMApply_of_update_same Set__set_insertion)
+    apply(case_tac "xa in? s")
+  apply(simp add: Set__set_insert_does_nothing)[1]
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" and x=xa and s=s in Set__set_fold2)  
+  apply (metis Map__foldable_p_of_update_3)
+  apply(simp)
+  apply(auto simp add: Map__TMApply_over_update)
+  apply(case_tac "x in? s")
+  apply (metis Set__set_insertion)
+  apply(auto)
+  apply(cut_tac m=m and s=s and f=f in Map__domain_of_mapUpdateSet)
+  apply(simp add: Map__mapUpdateSet_def)
+  apply (metis (lifting, no_types) Map__TMApply_over_update_2 Set__commutativity_of_union Set__distribute_union_over_right_insert Set__set_insert_does_nothing Set__set_insertion)
+done
+end-proof
+
+proof isa hook2
+theorem Map__mapFrom_TMApply_helper: 
+  "x in? s \<longrightarrow> Map__TMApply(Map__mapFrom s f, x) = f x"
+  apply(simp add: Map__mapFrom_def)
+  apply(rule Set__induction)
+  apply(metis Set__empty_set)
+  apply(auto)
+  apply(metis (mono_tags) Map__TMApply_of_update_same Map__foldable_p_of_update_3 Set__set_fold2 Set__set_insertion split_conv)
+  apply(case_tac "xa in? s")
+  apply(simp add: Set__set_insert_does_nothing)
+  apply(cut_tac c="Map__empty_map" and f="(\<lambda>a. case a of (m, x) \<Rightarrow> Map__update m x (f x))" and x=xa and s=s in Set__set_fold2)
+  apply(metis Map__foldable_p_of_update_3)
+  apply(simp)
+  apply(simp)
+  apply(metis Map__TMApply_of_update_same Map__TMApply_over_update2 Map__domain_of_mapFrom Map__mapFrom_def Set__set_insert_new_def Set__set_insertion internal_split_def prod.inject split_eta)
+done
 end-proof
 
 proof isa mapFrom_TMApply
-  sorry
+  apply(metis Map__mapFrom_TMApply_helper)
 end-proof
 
 proof isa mapUpdateSet_Obligation_subtype
@@ -806,272 +977,179 @@ proof isa mapUpdateSet_Obligation_subtype
 end-proof
 
 proof isa mapFrom_if_shadow
-  sorry
-end-proof
-
-proof isa mapFrom_identity_Obligation_subtype
-  oops
+  apply(rule Map__totalmap_equality)
+  apply(auto simp add: Map__domain_of_mapUpdateSet Map__domain_of_mapFrom)
+  apply(rule Set__membership)
+  apply(auto simp add: Set__filter_def  Set__set_union)
+  apply(auto simp add: Map__mapFrom_TMApply Map__TMApply_of_mapUpdateSet Map__domain_of_mapFrom Set__filter_def)
 end-proof
 
 proof isa mapFrom_identity
-  sorry
+  apply(rule Map__totalmap_equality)
+  apply(metis Map__domain_of_mapFrom)
+  apply(metis Map__domain_of_mapFrom Map__mapFrom_TMApply)
 end-proof
 
 proof isa domain_of_mapFrom
-  sorry
-end-proof
-
-proof isa update_map_prepend_Obligation_subtype
-  sorry
+  apply(simp add: Map__mapFrom_def)
+  apply(rule Set__induction)
+  apply (metis (no_types) Map__domain_of_empty Map__foldable_p_of_update_3 Set__set_fold1)
+  apply(auto)
+  apply(case_tac "x in? s")
+  apply(simp add: Set__set_insert_does_nothing)
+  apply(cut_tac c="Map__empty_map" and f="(\<lambda>a. case a of (m, x) \<Rightarrow> Map__update m x (g x))" and x=x and s=s in Set__set_fold2)
+  apply (metis (no_types) Map__domain_of_empty Map__foldable_p_of_update_3 Set__set_fold1)
+  apply(simp)
+  apply(simp add: Map__domain_update2)
 end-proof
 
 % proof isa map2DFrom_Obligation_subtype
 %   sorry
 % end-proof
 
-proof isa map_compose_Obligation_subtype
-  oops
-end-proof
-
-proof isa map_compose_Obligation_subtype0
-  oops
-end-proof
-
-proof isa map_project1_Obligation_subtype
-  oops
-end-proof
-
-proof isa map_project2_Obligation_subtype
-  oops
-end-proof
-
 proof isa TMApply_map_project1_Obligation_subtype
-  oops
-end-proof
-
-proof isa TMApply_map_project1_Obligation_subtype0
-  oops
+  apply (simp add: Map__domain_of_mapFrom Map__map_project1_def)
 end-proof
 
 proof isa TMApply_map_project1
-  sorry
+  apply(simp add: Map__map_project1_def Map__mapFrom_TMApply)
 end-proof
 
 proof isa TMApply_map_project2_Obligation_subtype
-  oops
-end-proof
-
-proof isa TMApply_map_project2_Obligation_subtype0
-  oops
+  apply (simp add: Map__domain_of_mapFrom Map__map_project2_def)
 end-proof
 
 proof isa TMApply_map_project2
-  sorry
+  apply(simp add: Map__map_project2_def Map__mapFrom_TMApply)
 end-proof
 
 proof isa update_map_project1_Obligation_subtype
-  sorry
-end-proof
-
-proof isa update_map_project1_Obligation_subtype0
-  oops
+  apply(metis Map__domain_of_mapFrom Map__domain_update Map__map_project1_def Map__map_project2_def)
 end-proof
 
 proof isa update_map_project1
-  sorry
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__domain_of_map_project2)
+  apply(auto simp add: Map__TMApply_of_map_compose Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__domain_of_map_project2 Map__TMApply_over_update_2 Map__TMApply_map_project2 Map__TMApply_map_project1)
 end-proof
 
 proof isa update_map_project2_Obligation_subtype
-  sorry
-end-proof
-
-proof isa update_map_project2_Obligation_subtype0
-  oops
+  apply(metis Map__domain_of_mapFrom Map__domain_update Map__map_project1_def Map__map_project2_def)
 end-proof
 
 proof isa update_map_project2
-  sorry
-end-proof
-
-proof isa combine_map_project1_map_project2_Obligation_subtype
-  oops
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__domain_of_map_project2)
+  apply(auto simp add: Map__TMApply_of_map_compose Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__domain_of_map_project2 Map__TMApply_over_update_2 Map__TMApply_map_project2 Map__TMApply_map_project1)
 end-proof
 
 proof isa combine_map_project1_map_project2
-  sorry
-end-proof
-
-proof isa combine_map_project1_map_project2_cond_Obligation_subtype
-  oops
+  apply(auto simp add: Map__domain_of_map_project1 Map__domain_of_map_project2 Map__combine_of_map_projections Map__map_project1_of_map_compose Map__map_project2_of_map_compose)
 end-proof
 
 proof isa combine_map_project1_map_project2_cond
-  sorry
-end-proof
-
-proof isa combine_map_project1_map_project2_simplify_Obligation_subtype
-  oops
+  apply(auto simp add: Map__domain_of_map_project1 Map__domain_of_map_project2 Map__combine_of_map_projections Map__map_project1_of_map_compose Map__map_project2_of_map_compose)
+  apply(metis Map__domain_of_map_project1 Map__map_project2_of_map_compose)
 end-proof
 
 proof isa combine_map_project1_map_project2_simplify
-  sorry
+  apply(auto simp add: Map__domain_of_map_project1 Map__domain_of_map_project2 Map__combine_of_map_projections Map__map_project1_of_map_compose Map__map_project2_of_map_compose)
 end-proof
 
 proof isa combine_of_map_projections_Obligation_subtype
-  sorry
+  apply (simp add: Map__domain_of_map_project1 Map__domain_of_map_project2)
 end-proof
 
 proof isa combine_of_map_projections
-  sorry
-end-proof
-
-
-proof isa map_compose3_Obligation_subtype
-  oops
-end-proof
-
-proof isa map_compose3_Obligation_subtype0
-  oops
-end-proof
-
-proof isa map_compose3_Obligation_subtype1
-  oops
-end-proof
-
-proof isa map_project31_Obligation_subtype
-  oops
-end-proof
-
-proof isa map_project32_Obligation_subtype
-  oops
-end-proof
-
-proof isa map_project33_Obligation_subtype
-  oops
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__domain_of_map_project2)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__domain_of_map_project2 Map__TMApply_of_map_compose Map__TMApply_map_project1 Map__TMApply_map_project2)
 end-proof
 
 proof isa TMApply_map_project31_Obligation_subtype
-  oops
-end-proof
-
-proof isa TMApply_map_project31_Obligation_subtype0
-  oops
+   apply (simp add: Map__domain_of_mapFrom Map__map_project31_def)
 end-proof
 
 proof isa TMApply_map_project31
-  sorry
+  apply(simp add: Map__map_project31_def Map__mapFrom_TMApply)
 end-proof
 
 proof isa TMApply_map_project32_Obligation_subtype
-  oops
-end-proof
-
-proof isa TMApply_map_project32_Obligation_subtype0
-  oops
+  apply (simp add: Map__domain_of_mapFrom Map__map_project32_def)
 end-proof
 
 proof isa TMApply_map_project32
-  sorry
+  apply(simp add: Map__map_project32_def Map__mapFrom_TMApply)
 end-proof
 
 proof isa TMApply_map_project33_Obligation_subtype
-  oops
-end-proof
-
-proof isa TMApply_map_project33_Obligation_subtype0
-  oops
+   apply (simp add: Map__domain_of_mapFrom Map__map_project33_def)
 end-proof
 
 proof isa TMApply_map_project33
-  sorry
+  apply(simp add: Map__map_project33_def Map__mapFrom_TMApply)
 end-proof
 
 proof isa update_map_project31_Obligation_subtype
-  sorry
-end-proof
-
-proof isa update_map_project31_Obligation_subtype0
-  oops
-end-proof
-
-proof isa update_map_project31_Obligation_subtype1
-  oops
+  apply(metis Map__domain_of_mapFrom Map__domain_update Map__map_project31_def Map__map_project32_def Map__map_project33_def)
 end-proof
 
 proof isa update_map_project31
-  sorry
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__TMApply_map_project31 Map__TMApply_map_project32 Map__TMApply_map_project33 Map__TMApply_of_map_compose3 Map__TMApply_over_update)
 end-proof
 
 proof isa update_map_project32_Obligation_subtype
-  sorry
-end-proof
-
-proof isa update_map_project32_Obligation_subtype0
-  oops
-end-proof
-
-proof isa update_map_project32_Obligation_subtype1
-  oops
+  apply(metis Map__domain_of_mapFrom Map__domain_update Map__map_project31_def Map__map_project32_def Map__map_project33_def)
 end-proof
 
 proof isa update_map_project32
-  sorry
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__TMApply_map_project31 Map__TMApply_map_project32 Map__TMApply_map_project33 Map__TMApply_of_map_compose3 Map__TMApply_over_update)
 end-proof
 
 proof isa update_map_project33_Obligation_subtype
-  sorry
-end-proof
-
-proof isa update_map_project33_Obligation_subtype0
-  oops
-end-proof
-
-proof isa update_map_project33_Obligation_subtype1
-  oops
+  apply(metis Map__domain_of_mapFrom Map__domain_update Map__map_project31_def Map__map_project32_def Map__map_project33_def)
 end-proof
 
 proof isa update_map_project33
-  sorry
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__TMApply_map_project31 Map__TMApply_map_project32 Map__TMApply_map_project33 Map__TMApply_of_map_compose3 Map__TMApply_over_update)
 end-proof
 
 proof isa combine_map_project3_Obligation_subtype
-  sorry
+  apply(simp add: Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
 end-proof
 
 proof isa combine_map_project3
-  sorry
-end-proof
-
-proof isa map_compose3_project31_simplify_Obligation_subtype
-  oops
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__TMApply_of_map_compose3 Map__TMApply_map_project31 Map__TMApply_map_project32 Map__TMApply_map_project33)
 end-proof
 
 proof isa map_compose3_project31_simplify
-  sorry
-end-proof
-
-proof isa map_compose3_project32_simplify_Obligation_subtype
-  oops
+  apply(auto simp add: Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__combine_map_project3 Map__map_project31_of_map_compose3 Map__map_project32_of_map_compose3 Map__map_project33_of_map_compose3)
 end-proof
 
 proof isa map_compose3_project32_simplify
-  sorry
-end-proof
-
-proof isa map_compose3_project33_simplify_Obligation_subtype
-  oops
+  apply(auto simp add: Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__combine_map_project3 Map__map_project31_of_map_compose3 Map__map_project32_of_map_compose3 Map__map_project33_of_map_compose3)
 end-proof
 
 proof isa map_compose3_project33_simplify
-  sorry
+  apply(auto simp add: Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__combine_map_project3 Map__map_project31_of_map_compose3 Map__map_project32_of_map_compose3 Map__map_project33_of_map_compose3)
 end-proof
 
 proof isa combine_of_map_projections3_Obligation_subtype
-  sorry
+  apply(auto simp add: Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
 end-proof
 
 proof isa combine_of_map_projections3
-  sorry
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__domain_of_map_project32 Map__domain_of_map_project33 Map__TMApply_of_map_compose3 Map__TMApply_map_project31 Map__TMApply_map_project32 Map__TMApply_map_project33)
 end-proof
 
 proof isa TMApply_over_update_2_Obligation_subtype
@@ -1113,6 +1191,126 @@ proof Isa Map__map_compose3_update
   apply (auto simp add: Map__TMApply_of_update_same Map__TMApply_over_update_2 Map__domain_of_mapFrom Map__domain_update Map__domain_update2 Map__mapFrom_TMApply Map__totalmap_equality Set__set_insertion surjective_pairing)
   apply(simp add: Set__set_insert_new_def)
   apply (auto simp add: Map__TMApply_of_update_same Map__TMApply_over_update_2 Map__domain_of_mapFrom Map__domain_update Map__domain_update2 Map__mapFrom_TMApply Map__totalmap_equality Set__set_insertion surjective_pairing)
+end-proof
+
+proof Isa Map__domain_of_map_compose
+  apply(simp add: Map__map_compose_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__TMApply_of_map_compose_Obligation_subtype
+  apply(simp add: Map__map_compose_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__TMApply_of_map_compose
+  apply(simp add: Map__map_compose_def Map__domain_of_mapFrom Map__mapFrom_TMApply)
+end-proof
+
+proof Isa Map__domain_of_map_project1
+  apply(simp add: Map__map_project1_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__domain_of_map_project2
+  apply(simp add: Map__map_project2_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__map_project1_of_map_compose
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project1 Map__TMApply_map_project1 Map__TMApply_of_map_compose)
+end-proof
+
+proof Isa Map__map_project2_of_map_compose
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project2)
+  apply(simp add: Map__domain_of_map_compose Map__domain_update Map__domain_of_map_project2 Map__TMApply_map_project2 Map__TMApply_of_map_compose)
+end-proof
+
+proof Isa Map__domain_of_map_compose3
+  apply(simp add: Map__map_compose3_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__domain_of_map_project31
+  apply(simp add: Map__map_project31_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__domain_of_map_project32
+  apply(simp add: Map__map_project32_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__domain_of_map_project33
+  apply(simp add: Map__map_project33_def Map__domain_of_mapFrom)
+end-proof
+
+proof Isa Map__TMApply_of_map_compose3_Obligation_subtype
+  apply(simp add: Map__map_compose3_def Map__domain_of_mapFrom Map__mapFrom_TMApply)
+end-proof
+
+proof Isa Map__TMApply_of_map_compose3
+  apply(simp add: Map__map_compose3_def Map__domain_of_mapFrom Map__mapFrom_TMApply)
+end-proof
+
+proof Isa Map__map_project31_of_map_compose3
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project31 Map__TMApply_map_project31 Map__TMApply_of_map_compose3)
+end-proof
+
+proof Isa Map__map_project32_of_map_compose3
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project32)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project32 Map__TMApply_map_project32 Map__TMApply_of_map_compose3)
+end-proof
+
+proof Isa Map__map_project33_of_map_compose3
+  apply(rule Map__totalmap_equality)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project33)
+  apply(simp add: Map__domain_of_map_compose3 Map__domain_update Map__domain_of_map_project33 Map__TMApply_map_project33 Map__TMApply_of_map_compose3)
+end-proof
+
+proof Isa Map__foldable_p_of_update
+  apply(simp add: Set__foldable_p_def)
+  apply (metis Map__update_of_update_both)
+end-proof
+
+proof Isa Map__foldable_p_of_update_2
+  apply(simp add: Set__foldable_p_def)
+  apply (metis Map__update_of_update_both)
+end-proof
+
+proof Isa Map__foldable_p_of_update_3
+  apply(simp add: Set__foldable_p_def)
+  apply (metis Map__update_of_update_both)
+end-proof
+
+proof Isa Map__domain_of_mapUpdateSet
+  apply(simp add: Map__mapUpdateSet_def)
+  apply(cut_tac p="\<lambda> s . Map__domain (Set__set_fold m (\<lambda>(m0,x). Map__update m0 x (f x)) s) = s \\/ Map__domain m" in Set__induction)
+  apply (metis (lifting, mono_tags) Map__mapUpdateSet_Obligation_subtype Set__set_fold1 Set__union_left_unit)
+  apply(auto)
+  apply(case_tac "x in? s")
+  apply(simp add: Set__set_insert_does_nothing)
+  apply(cut_tac c=m and f="(\<lambda>(m0,x). Map__update m0 x (f x))" and x=x and s=s in Set__set_fold2)
+  apply (metis Map__foldable_p_of_update_3)
+  apply(simp)
+  apply(simp)
+  apply(metis Map__domain_update2 Set__distribute_union_over_left_insert)
+end-proof
+
+proof Isa Map__TMApply_of_mapUpdateSet_Obligation_subtype
+  apply(simp add: Map__domain_of_mapUpdateSet Set__set_union)
+end-proof
+
+proof Isa Map__TMApply_of_mapUpdateSet_Obligation_subtype0
+  apply(simp add: Map__domain_of_mapUpdateSet Set__set_union)
+end-proof
+
+proof Isa Map__TMApply_of_mapUpdateSet
+  apply(metis Map__TMApply_of_mapUpdateSet_helper)
+end-proof
+
+proof isa mapFromNR_aux ()
+  apply (metis prod_cases4)
+  apply (metis Pair_inject)
 end-proof
 
 end-spec
