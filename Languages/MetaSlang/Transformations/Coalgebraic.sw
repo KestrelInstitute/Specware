@@ -154,22 +154,13 @@ op getDefFromTheorem(thm_qid: QualifiedId, intro_qid: QualifiedId, spc: Spec): M
           in
           mkCurriedLambda(lam_pats, bod)
 
-op SpecTransform.testST (spc: Spec)  (qids: QualifiedIds) (rules: RuleSpecs) (trace?: TraceFlag): Spec =
-  (writeLine("qids: "^anyToString qids^"\ntrace?: "^show trace?);
-   spc)
-
-op SpecTransform.testST1 (spc: Spec, qids: QualifiedIds, rules: RuleSpecs, trace?: TraceFlag): Spec =
-  (writeLine("qids: "^anyToString qids^"\ntrace?: "^show trace?);
-   spc)
-
-
-op SpecTransform.maintain (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (trace?: Bool): Env Spec =
+op SpecTransform.maintain (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (trace?: TraceFlag): Env Spec =
   maintainOpsCoalgebraically(spc, qids, rules, trace?)
 
 op traceMaintain?: Bool = false
 
 def Coalgebraic.maintainOpsCoalgebraically
-      (spc: Spec, qids: QualifiedIds, rules: List RuleSpec, trace?: Bool): Env Spec =
+      (spc: Spec, qids: QualifiedIds, rules: List RuleSpec, trace?: TraceFlag): Env Spec =
   let intro_qid as Qualified(intro_q, intro_id) = head qids in
   {info <- findTheOp spc intro_qid;
    let (tvs, intro_ty, intro_fn_def) = unpackFirstTerm info.dfn in
@@ -231,7 +222,7 @@ op findHomomorphismFn(tm: MSTerm): Option QualifiedId =
       Some qid
     | _ -> None
 
-op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (trace?: Bool): Env Spec =
+op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (trace?: TraceFlag): Env Spec =
   implementOpsCoalgebraically(spc, qids, rules, trace?)
 
 op traceImplement?: Bool = false
