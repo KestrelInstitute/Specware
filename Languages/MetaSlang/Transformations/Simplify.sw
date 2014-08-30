@@ -194,6 +194,11 @@ spec
         simplifyOne spc (elimTuple(zId,srt,fields,body))
       | _ -> term
 
+ op simpleLetRecBody?(tm: MSTerm): Bool =
+   case tm of
+     | Lambda([(_, _, bod)], _) ->  simpleLetRecBody? bod
+     | _ -> simpleTerm tm
+
  op  simplifyOne: Spec -> MSTerm -> MSTerm
  def simplifyOne spc term =
      let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
@@ -244,6 +249,15 @@ spec
              if simpleTerm? tm
                then Let(binds,simplifiedApply(body,tm,spc),a)
                else term
+           %% let def f(x,y,z) = g in h(f(a,b,c)) --> h g
+           | LetRec(binds, body, a) ->
+             let sbst = mapPartial (fn (v, f) -> if simpleLetRecBody? f then Some(v, f) else None) binds in
+             if sbst = [] then term
+               else let new_body = simplify spc (substitute(body, sbst)) in
+                    if length sbst = length binds then new_body
+                      else
+                      let new_binds = filter (fn (_, f) -> ~(simpleLetRecBody? f)) binds in
+                      LetRec(new_binds, new_body, a)
            %% (letrec x = y in f) z --> let x = y in f z
            | Apply(LetRec(binds,body,a),tm,_) ->
              if simpleTerm? tm
@@ -286,7 +300,7 @@ spec
                | Some fld -> fld
                | None -> term)
            | Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
-             if  (trueTerm?(simplifyOne spc t2) || equalTerm?(t1, t2)) && sideEffectFree t1
+             if  (trueTerm?(simplifyOne spc t2) || equalTermAlpha?(t1, t2)) && sideEffectFree t1
                then mkTrue()
                else mkSimpImplies(t1,t2)
            %% x + n - n \_longrightarrow x  (Could generalize, but useful for IsaPrinter)

@@ -613,6 +613,11 @@ op [a] maybePiAndTypedTerm (triples : List(TyVars * AType a * ATerm a)): ATerm a
    let ((tvs, ty, tm) :: _) = unpackTypedTerms t in
    (tvs, ty, tm)
 
+ op [a] unpackFirstRealTerm(t: ATerm a): TyVars * AType a * ATerm a =
+   %let (tvs, ty, tm) = unpackTerm t in
+   let Some(tvs, ty, tm) = List.findLeftmost (fn (_, _, tm) -> ~(embed? Transform tm)) (unpackTypedTerms t) in
+   (tvs, ty, tm)
+
  op [a] refinedTerm(tm: ATerm a, i: Nat): ATerm a =
    let tms = innerTerms tm in
    let len = length tms in

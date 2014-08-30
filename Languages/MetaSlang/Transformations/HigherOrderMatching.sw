@@ -119,6 +119,10 @@ The stack is accessed and modified using the operations
  op freshBoundVar (context: Context, ty: MSType) : MSVar =
    context.freshMSVarFun ty
 
+%% This is used to distinguish TyVars that are variables to be matched
+op freshTyVarName?(id: Id): Bool =
+  length id > 2 && id@0 = #'
+
  % The default freshMSVarFun. NOTE: we know that the generated
  % variable must be fresh because it is not a legal Specware variable
  % name! To turn it back to a legal variable, call fixupBoundVars,
@@ -1089,7 +1093,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
          | (QuotientPat(p1,t1,_,_),QuotientPat(p2,t2,_,_)) -> 
            if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
          | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
-           if equalTerm?(t1,t2) then matchPatterns(context,pairs,S1,S2) else None
+           if equalTermAlpha?(t1,t2) then matchPatterns(context,pairs,S1,S2) else None
          | _ -> 
             case matchIrefutablePattern(context,pat1,S1)
               of None -> None
@@ -1341,7 +1345,7 @@ closedTermV detects existence of free variables not included in the argument
                             | notUnify -> Cons(notUnify, r))
                    [] (unify(subst,t1,s1,t1,equals,None))
 	       | (Quotient(ty1,trm1,_),Quotient(ty2,trm2,_)) -> % Shouldn't happen anymore
-		 if equalTerm?(trm1, trm2)
+		 if equalTermAlpha?(trm1, trm2)
 		    then unify(subst,ty1,ty2,ty1,equals,None)
 		 else [NotUnify (ty1,ty2)]
 	       | (Subtype(ty1,p1,_),Subtype(ty2,p2,_))
@@ -1381,22 +1385,24 @@ closedTermV detects existence of free variables not included in the argument
                            let subst = if equalType?(d_ty2, m_ty) then subst else insert(v2,m_ty,subst) in
                            [Unify subst]
                          | None -> [NotUnify (d_ty1,d_ty2)])                      
-                    | (Some d_ty1, None) -> if occursRec(subst,v2,ty1) 
+                    | (Some d_ty1, None) -> if equivType? spc (d_ty1, ty2) then [Unify subst]
+                                            else if occursRec(subst,v2,ty1) || ~(freshTyVarName? v2)
                                               then [NotUnify (ty1,ty2)]
                                             else [Unify(insert(v2,ty1,subst))]
-                    | (None, Some d_ty2) -> if occursRec(subst,v1,ty2) 
+                    | (None, Some d_ty2) -> if equivType? spc (ty1, d_ty2) then [Unify subst]
+                                            else if occursRec(subst,v1,ty2) || ~(freshTyVarName? v1)
                                               then [NotUnify (ty1,ty2)]
                                             else [Unify(insert(v1,ty2,subst))]
                     | (None, None) -> [Unify(insert(v1,ty2,subst))])
                | (TyVar(v1,_), _) ->
                  (case StringMap.find(subst.1, v1) of 
-                    | Some d_ty1 ->
+                    | Some d_ty1 -> let _ = writeLine("fresh? "^v1^": "^show(freshTyVarName? v1)) in
                       (case subtypeMeet(d_ty1, ty2, spc, subst) of
                          | Some m_ty ->
                            let subst = if equalType?(d_ty1, m_ty) then subst else insert(v1,m_ty,subst) in
                            [Unify subst]
                          | None -> [NotUnify (d_ty1,ty2)])
-                    | None -> if occursRec(subst,v1,ty2) 
+                    | None -> if occursRec(subst,v1,ty2) || ~(freshTyVarName? v1)
                                 then [NotUnify (ty1,ty2)]
                               else [Unify(insert(v1,ty2,subst))])
 	       | (_,TyVar(v2, _)) -> 
@@ -1407,7 +1413,7 @@ closedTermV detects existence of free variables not included in the argument
                            let subst = if equalType?(d_ty2, m_ty) then subst else insert(v2,m_ty,subst) in
                            [Unify subst]
                          | None -> [NotUnify (ty1,d_ty2)])
-                    | None -> if occursRec(subst,v2,ty1) 
+                    | None -> if occursRec(subst,v2,ty1) || ~(freshTyVarName? v2)
                                 then [NotUnify (ty1,ty2)]
                               else [Unify(insert(v2,ty1,subst))])
 	       | (bty1 as Base _, bty2)
@@ -1546,7 +1552,7 @@ closedTermV detects existence of free variables not included in the argument
                       then Some(Arrow(t1,s1,a))
                       else None)
              | (Quotient(sty1,trm1,a), Quotient(sty2,trm2,_)) ->
-               if equalTerm?(trm1, trm2)
+               if equalTermAlpha?(trm1, trm2)
                  then case meet(sty1, sty2) of
                         | Some sty -> Some(Quotient(sty,trm1,a))
                         | None -> None

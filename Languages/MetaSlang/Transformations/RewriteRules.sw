@@ -138,7 +138,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
              info : OpInfo, includeAll?: Bool): List RewriteRule =
    if definedOpInfo? info then
      let qid = Qualified (q, id) in
-     let (tvs, srt, term) = unpackFirstTerm info.dfn in
+     let (tvs, srt, term) = unpackFirstRealTerm info.dfn in
      let rule = 
          {name      = id,
           rule_spec = rule_spec,
@@ -528,6 +528,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
            | Some c1 -> Some(Utilities.mkAnd(c1, p))
    in
    case fml of
+     % | Apply(Fun(Not, _,_), Apply(Fun(Not, _,_), p,_),_) ->
+     %   assertRulesRec(context,p,desc,rsp,dirn,o_prf,freeVars,subst,condition)
      | Apply(Fun(Not, _,_), p,_) ->
        if falseTerm? p then []
 	else
