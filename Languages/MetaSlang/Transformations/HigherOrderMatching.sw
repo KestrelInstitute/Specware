@@ -1396,7 +1396,7 @@ closedTermV detects existence of free variables not included in the argument
                     | (None, None) -> [Unify(insert(v1,ty2,subst))])
                | (TyVar(v1,_), _) ->
                  (case StringMap.find(subst.1, v1) of 
-                    | Some d_ty1 -> let _ = writeLine("fresh? "^v1^": "^show(freshTyVarName? v1)) in
+                    | Some d_ty1 ->
                       (case subtypeMeet(d_ty1, ty2, spc, subst) of
                          | Some m_ty ->
                            let subst = if equalType?(d_ty1, m_ty) then subst else insert(v1,m_ty,subst) in

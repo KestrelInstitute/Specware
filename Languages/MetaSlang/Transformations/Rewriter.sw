@@ -408,13 +408,15 @@ MetaSlangRewriter qualifying spec
                in
                let condn = simplifiedApply(pred, mkVar v, context.spc) in
                let condn = reduceSubTerms (condn,context.spc) in
-               addDemodRules(assertRules(context, condn, "Subtype", Context, Either, None), rules))
+               addDemodRules(assertRules(context, condn, "Subtype", Context, Either, None, freeTyVarsInTerm condn),
+                             rules))
             | _ -> rules)
      | RecordPat(fields, _ ) ->
        foldl (fn (rules, (_,p)) -> addPatternRestriction(context, p, rules)) rules fields
      | RestrictedPat(p,condn,_) ->
        addPatternRestriction(context, p,
-                             addDemodRules(assertRules(context,condn,"Restriction",Context,Either,None), rules))
+                             addDemodRules(assertRules(context,condn,"Restriction",Context,Either,None,freeTyVarsInTerm condn),
+                                           rules))
      | EmbedPat(_, Some p, _, _) -> addPatternRestriction(context, p, rules)
      | AliasPat(_, p, _)    -> addPatternRestriction(context, p, rules)
      | QuotientPat(p, _, _, _) -> addPatternRestriction(context, p, rules)
@@ -964,7 +966,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                              (substitute (body, sbst), rules, sbst)
                            | _ ->
                              let equal_term = mkEquality(inferType(context.spc, N), N, pat_tm) in
-                             (body, addDemodRules(assertRules(context, equal_term, "case", Context, Either, None), rules), [])
+                             (body, addDemodRules(assertRules(context, equal_term, "case", Context, Either, None,
+                                                              freeTyVarsInTerm equal_term),
+                                                  rules), [])
                      in
                      rewriteTerm(solvers,(boundVars ++ patternVars pat), body,
                                  (ithLambdaBodyPos(lrules,length first))::1::path, rules)
@@ -990,7 +994,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                                         [v_tm,set_term])
                                in
                                addDemodRules(assertRules(context, memb_assert,
-                                                         "mapFrom function", Context, Either, None),
+                                                         "mapFrom function", Context, Either, None, freeTyVarsInTerm memb_assert),
                                              rules))))
           | _ ->
         let infix? = case M of Fun(f, _, _) -> infixFn? f | _ -> false in
@@ -1066,12 +1070,14 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
        LazyList.map 
             (fn (N,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,N, 1::path,
-                         addDemodRules(assertRules(context,M,"if then", Context, Either, None), rules)))) @@
+                         addDemodRules(assertRules(context,M,"if then", Context, Either, None, freeTyVarsInTerm M),
+                                       rules)))) @@
        (fn () -> 
        LazyList.map 
             (fn (P,a) -> (IfThenElse(M,N,P,b),a)) 
             (rewriteTerm(solvers,boundVars,P, 2::path,
-                         addDemodRules(assertRules(context,negate M,"if else", Context, Either, None), rules))))
+                         addDemodRules(assertRules(context,negate M,"if else", Context, Either, None, freeTyVarsInTerm M),
+                                       rules))))
      | Seq(tms, b) ->
        mapEach 
          (fn (first,M,rest) -> 

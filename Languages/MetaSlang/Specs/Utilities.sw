@@ -482,8 +482,7 @@ Utilities qualifying spec
    ! vars
 
 
- op  freeTyVars: MSType -> TyVars
- def freeTyVars(ty) = 
+ op freeTyVars(ty: MSType): TyVars = 
    let vars = mkRef [] in
    let def vr(ty) = 
          case ty of
@@ -495,6 +494,20 @@ Utilities qualifying spec
 	   | _ -> ()
    in
    let _ = appType(fn _ -> (),vr,fn _ -> ()) ty in
+   ! vars
+
+op freeTyVarsInTerm(tm: MSTerm): TyVars = 
+   let vars = mkRef [] in
+   let def vr(ty) = 
+         case ty of
+	   | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
+	   | MetaTyVar(tv,pos) -> 
+	     (case unlinkType ty of
+	       | TyVar(tv,_) -> (vars := insert (tv,! vars); ())
+	       | _ -> ())
+	   | _ -> ()
+   in
+   let _ = appTerm(fn _ -> (),vr,fn _ -> ()) tm in
    ! vars
 
  op boundVars(t: MSTerm): MSVars =

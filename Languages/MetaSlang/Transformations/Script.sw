@@ -115,6 +115,8 @@ spec
      rhs   = HigherOrderMatching.mkVar(2,TyVar("''a",noPos)),  % dummy
      trans_fn = Some(t_fn)}
 
+  op dummyTyVar: TyVar = "zzz'"         % Illegal
+
   op makeRevLeibnizRule (context: Context) (spc: Spec) (qid: QualifiedId): List RewriteRule =
     %%  qid x = qid y --> x = y
     case findTheOp(spc, qid) of
@@ -126,7 +128,7 @@ spec
     let ran_ty = range(spc, ty) in
     let v1 = ("x", dom_ty) in
     let v2 = ("y", dom_ty) in
-    let equal_ty = mkTyVar "a" in
+    let equal_ty = mkTyVar dummyTyVar in
     let f = ("f", mkArrow(ran_ty, equal_ty)) in
     let thm = mkBind(Forall, [f, v1, v2],
                      mkEquality(boolType,
@@ -139,7 +141,7 @@ spec
     %                                        mkApply(qf, mkVar v2)),
     %                             mkEquality(dom_ty, mkVar v1, mkVar v2)))
     in
-    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, LeftToRight, None)
+    assertRules(context, thm, "Reverse Leibniz "^show qid, RLeibniz qid, LeftToRight, None, dummyTyVar :: tvs)
 
   op strengthenRules (context: Context) ((pt,qid,tyVars,formula,a): Property) : List RewriteRule =
     case formula of
@@ -261,7 +263,7 @@ spec
               let v = ("x", ty) in
               let fml = mkBind(Forall, [v], simplifiedApply(p, mkVar v, context.spc)) in
               % let _ = writeLine("subtypeRules: "^printTerm fml^"\n\n") in
-              assertRules(context, fml, "Subtype1", Context, Either, None))
+              assertRules(context, fml, "Subtype1", Context, Either, None, []))
         subtypes)
 
   op mkApplyTermFromLambdas (hd: MSTerm, f: MSTerm): MSTerm =
@@ -285,7 +287,7 @@ spec
   op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _ = writeLine("Context Rule: "^ruleName cj) in
-             assertRules(context, cj, ruleName cj, Context, Either, None) ++ rules)
+             assertRules(context, cj, ruleName cj, Context, Either, None, freeTyVarsInTerm cj) ++ rules)
       [] tms
 
   op varProjections (ty: MSType, spc: Spec): Option (MS.MSTerm * List (MS.MSVar * Option Id)) =
@@ -334,9 +336,9 @@ spec
           let rls =
               case tm of
                 | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRules(context, p, "if then", Context, Either, None)
+                  assertRules(context, p, "if then", Context, Either, None, freeTyVarsInTerm p)
                 | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRules(context,negate p,"if else", Context, Either, None)
+                  assertRules(context,negate p,"if else", Context, Either, None, freeTyVarsInTerm p)
                 | Apply(Fun(And,_,_), _,_) | i = 1 ->
                   let def getSisterConjuncts(pred, path) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
@@ -359,7 +361,9 @@ spec
                            if tm_i = subterm_on_path
                              then let guards = getAllPatternGuards pat in
                                   if guards = [] then []
-                                    else assertRules(context, mkConj guards, "lambda guard", Context, Either, None)
+                                    else let condn = mkConj guards in
+                                         assertRules(context, condn, "lambda guard", Context,
+                                                     Either, None, freeTyVarsInTerm condn)
                              else [])
                      [] rules
                 | _ -> []

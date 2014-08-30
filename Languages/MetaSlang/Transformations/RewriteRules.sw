@@ -462,17 +462,18 @@ op simpleRwTerm?(t: MSTerm): Bool =
                            ~(hasUnboundVars?(e2, e1, condition))
                   else simpleRwTerm? e1 && ~(varTerm? e2) && ~(hasUnboundVars?(e1, e2, condition))
 
- op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof)
+ op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof, tyvars: TyVars)
       : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   assertRulesRec(context, term, desc, rsp, dirn, o_prf, [], [], None)
+   assertRulesRec(context, term, desc, rsp, dirn, o_prf, tyvars, [], [], None)
 
- op assertRulesRec (context   : Context, 
+ op assertRulesRec (context   : Context,
                     term      : MSTerm, 
                     desc      : String, 
                     rsp       : RuleSpec, 
                     dirn      : Direction,
                     o_prf     : Option Proof,
+                    tyvars    : TyVars,
                     freeVars  : List (Nat * MSType), 
                     subst     : MSVarSubst, 
                     condition : Option MSTerm)
@@ -502,7 +503,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                                    {name      = desc,   condition = condition, rule_spec = rsp,
                                     opt_proof = o_prf,  sym_proof = false,
                                     lhs       = s_lhs,  rhs       = s_rhs,
-                                    tyVars    = [],     freeVars  = freeVars, trans_fn = None})
+                                    tyVars    = tyvars, freeVars  = freeVars, trans_fn = None})
          in
          case e2 of
            | IfThenElse(p, q, r, _) | expandIfThenElse? ->
@@ -511,14 +512,14 @@ op simpleRwTerm?(t: MSTerm): Bool =
                                           opt_proof = o_prf,  sym_proof = ~lr?,
                                           lhs       = if lr? then s_lhs else substitute(q,subst),
                                           rhs       = if lr? then substitute(q,subst) else s_rhs,
-                                          tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
+                                          tyVars    = tyvars, freeVars  = freeVars, trans_fn = None})]
                 else [])
              ++ (if lr? || ~(hasUnboundVars?(r, e1, condition))
                 then [freshRule(context, {name      = desc,   condition = addCondn(negate p), rule_spec = rsp,
                                           opt_proof = o_prf,  sym_proof = ~lr?,
                                           lhs       = if lr? then s_lhs else substitute(r,subst),
                                           rhs       = if lr? then substitute(r,subst) else s_rhs,
-                                          tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
+                                          tyVars    = tyvars, freeVars  = freeVars, trans_fn = None})]
                 else [])
              ++ [main_rule]
            | _ -> [main_rule]
@@ -529,7 +530,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
    in
    case fml of
      % | Apply(Fun(Not, _,_), Apply(Fun(Not, _,_), p,_),_) ->
-     %   assertRulesRec(context,p,desc,rsp,dirn,o_prf,freeVars,subst,condition)
+     %   assertRulesRec(context,p,desc,rsp,dirn,o_prf,tyvars,freeVars,subst,condition)
      | Apply(Fun(Not, _,_), p,_) ->
        if falseTerm? p then []
 	else
@@ -543,10 +544,10 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, false, dirn) ->
        equalityRules(e1, e2, false)
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,freeVars,subst,condition)
-         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,o_prf,freeVars,subst,condition)
+       assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,tyvars,freeVars,subst,condition)
+         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,o_prf,tyvars,freeVars,subst,condition)
      | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,o_prf,freeVars,subst,condition)
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,o_prf,tyvars,freeVars,subst,condition)
      | _ ->
        if trueTerm? fml then []
        else
@@ -554,7 +555,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     {name      = desc,   condition = condition, rule_spec = rsp,
                      opt_proof = o_prf,  sym_proof = false,
                      lhs       = substitute(fml,subst),    rhs       = trueTerm,
-                     tyVars    = [],     freeVars  = freeVars, trans_fn = None})]
+                     tyVars    = tyvars, freeVars  = freeVars, trans_fn = None})]
 
  op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option Proof)
       : List RewriteRule = 
@@ -563,7 +564,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
 %  	| _ ->
    assertRules(context, formula, printQualifiedId desc,
                case dirn of RightToLeft -> RightToLeft desc | _ -> LeftToRight desc,
-               dirn, o_prf)
+               dirn, o_prf, tyVars)
 
 %  op axiomRule (context: Context) ((pt,desc,tyVars,formula,a): Property): Option RewriteRule = 
 % %      case pt
