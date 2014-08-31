@@ -1,6 +1,7 @@
 
 BankAccount = spec
   import /Library/DataStructures/Sets
+  import /Library/DataStructures/StructuredTypes
 
   type Transaction = { Id : Nat, amount : Int }
   % op mk_trans (i:Nat) (amt:Int) : Transaction = { Id=i, amount=amt }
@@ -65,12 +66,12 @@ BA1 = transform BankAccount by
 
 BA2 = spec
   import BA1
-  import /Library/DataStructures/StructuredTypes
 
   op transactions_list : Account -> List Transaction
 
   axiom transactions_def is
-    fa (a : Account) transactions a = L2B (transactions_list a)
+    fa (a : Account) transactions a = L2S (transactions_list a)
+
 end-spec
 
 BA3 = transform BA2 by {
