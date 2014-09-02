@@ -1,6 +1,6 @@
 (* This file contains a model of C features in the logic of Specware.
 This model is used to specify requirements (in Specware) on C programs,
-for the puropse of deriving programs from specification via stepwise refinement.
+for the purpose of deriving programs from specification via stepwise refinement.
 This model only contains the features needed for the current developments.
 More features will be added as needed.
 
@@ -75,7 +75,7 @@ Such pointers cannot be dereferenced [ISO 6.5.6/8],
 but have well-defined arithmetic [ISO 6.5.6/8-9].
 Thus we define a pointer as
 either an object designator or something that points one past another object.
-This notion is not present in the C deep or shallow embeddings. *)
+This notion is not present in the C deep and shallow embeddings. *)
 
 type Pointer =
   | object ObjectDesignator
@@ -148,11 +148,11 @@ op mathIntOfValue (val:Value | integerValue? val): Int % = ...
   % same definition as C deep embedding
 
 op valueOfMathInt (i:Int, ty:Type): Value % = ...
-  % same definition as C deep embedding (needs subtype)
+  % same definition as C deep embedding---needs subtype
 
 (* For now we model the state as just consisting of outside storage.
 This is the state as seen from outside our target program.
-Internal state of the target program
+The internal state of the target program
 is not explicitly represented in the following type. *)
 
 type State = FiniteMap (OutsideID, Value)
@@ -270,34 +270,17 @@ op writeObjectC (obj:ObjectDesignator) (newVal:Value): C () =
 (* We define a shallow embedding of (some) C expressions [ISO 6.5].
 We consider side-effect-free expressions for now,
 modeling assignments as non-expressions (e.g. as statements).
-Thus, in our model an expression yields a value or an object designator
-[ISO 6.5/1]. *)
+Thus, in our model an expression yields as result
+either a value or an object designator [ISO 6.5/1].
+In the shallow embedding,
+a semantic expression is a function from states to expression results,
+with errors modeled by None. *)
 
-(* An expression that yields a value (and not an object designator)
-is sometimes called 'rvalue'---see footnote 64 in [ISO 6.3.2.1/1].
-Thus, the semantics of an rvalue is a function from states to values
-(using Option to model errors).
-This is the definition of
-the type of semantic rvalues in the shallow embedding. *)
+type ExpressionResult =
+  | object ObjectDesignator
+  | value Value
 
-type Rvalue = State -> Option Value
-
-(* An lvalue is an expression
-that (in our model) yields an object designator [ISO 6.3.2.1/1].
-An object designator provides
-the capability to read from and write to the object.
-Thus, the semantics of an lvalue can be defined as a pair of functions:
-- a "getter" that maps a state to the value of the designated object
-  (using Option to model errors);
-- a "setter" that maps a state and a value to a new state
-  where the value of the designated object has been updated
-  (using Option to model errors).
-This is the definition of
-the type of semantics lvalues in the shallow embedding. *)
-
-type Lvalue =
-  {get: State -> Option Value,
-   set: State -> Value -> Option State}
+type Expression = State -> Option ExpressionResult
 
 % IN PROGRESS...
 
