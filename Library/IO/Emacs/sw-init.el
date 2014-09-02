@@ -569,7 +569,7 @@ sLisp Heap Image File: ")
           (t
            (let ((print-progress-message
 		  (if regenerate? 
-		      '(format t "Call back to emacs to tell it to gnerate Specware again.~%")
+		      '(format t "Call back to emacs to tell it to generate Specware again.~%")
 		    ""))
 		 (callback-to-emacs
                   ;; If we are regenerating, have the lisp image tell emacs to invoke generate-compile-build-specware4 
@@ -786,6 +786,7 @@ sLisp Heap Image File: ")
     filename))
 
 (require 'bridge)
+(require 'comint)
 
 (defun start-specware-build-buffer (&optional name)
   (interactive)
@@ -801,7 +802,7 @@ sLisp Heap Image File: ")
     (setq *specware-build-buffer* (current-buffer)))
 
   (set-buffer *specware-build-buffer-name*)
-  ;; (add-hook 'comint-output-filter-functions 'run-specware-after-saving-lisp-image nil t)
+  (add-hook 'comint-output-filter-functions 'run-specware-after-saving-lisp-image nil t)
   (install-bridge)
   (setq bridge-handlers '(("(" . emacs-eval-handler))))
 
@@ -956,7 +957,7 @@ sLisp Heap Image File: ")
 
 (defun run-specware-after-saving-lisp-image (output)
   (when (string-match saving-lisp-image-regexp output)
-    (sit-for 1)
+    (sit-for 2)
     (run-specware4))
   output)
 
