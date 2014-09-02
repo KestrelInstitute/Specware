@@ -75,7 +75,7 @@ RewriteRules qualifying spec
 %%
 
 op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat * MSType), name: Id)
-   : (MSTerm -> MSTerm) * (MSType -> MSType) * List(Nat * MSType) * StringMap.Map TyVar = 
+   : (MSTerm -> MSTerm) * (MSType -> MSType) * List(Nat * MSType) * StringMap.Map TyVar * TSP_Maps_St = 
      %% tyVMap = {| name -> a | name in tyVars ... |}
      let tyVMap = foldr (fn (name,tyVMap) -> 
                            let num = ! context.counter in
@@ -113,12 +113,12 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doType, id) trm
      in
-	(freshTerm, freshType, List.map (fn (_,var) -> var) var_alist, tyVMap)
+	(freshTerm, freshType, List.map (fn (_,var) -> var) var_alist, tyVMap, (doTerm, doType, id))
 
  op freshRule(context: Context, rule as {name,rule_spec,opt_proof,sym_proof,lhs,rhs,condition,freeVars,tyVars,trans_fn}: RewriteRule)
      : RewriteRule =
      % let _ = (writeLine("freshRule: "); printRule rule) in
-     let (freshTerm,freshType,freeVars',tyVMap) = 
+     let (freshTerm,freshType,freeVars',tyVMap,tsp) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
      rule << 
      {	lhs  = freshTerm lhs,
@@ -126,7 +126,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
 	freeVars = freeVars',
 	tyVars = StringMap.listItems tyVMap,
-        trans_fn = None
+        trans_fn = None,
+        opt_proof = mapOption (mapProof "freshRule" tsp ) opt_proof
      }
 
 
