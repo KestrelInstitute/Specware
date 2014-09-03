@@ -282,6 +282,118 @@ type ExpressionResult =
 
 type Expression = State -> Option ExpressionResult
 
+(* For most operators, a non-array object designator yielded by a sub-expression
+is converted to the value stored in the designated object [ISO 6.3.2.1/2].
+The following op performs this conversion
+if the expression yields a non-array object designator,
+otherwise it leaves the expression result unchanged;
+so this op can be always safely applied
+to sub-expressions of operands that require this conversion. *)
+
+op convertLvalue (e:Expression): Expression =
+  fn state:State ->
+    case e state of
+    | Some (object obj) ->
+      (case readObject state obj of
+      | Some val ->
+        if embed? array val
+        then e state % no conversion for arrays
+        else Some (value val) % convert
+      | None -> None) % error, no object designated
+    | Some (value _) -> e state % no conversion if already a value
+    | Nonve -> None % propagate error
+
+(* For most operators, an array sub-expression
+is converted to a pointer to the first element of the array [ISO 6.3.2.1/3].
+The following op performs this conversion
+if the expression yields an object designator to an array,
+otherwise it leaves the expression result unchanged;
+so this op can be always safely applied
+to sub-expressions of operands that require this conversion.
+Note that, when constructing well-formed C expressions,
+the following op is never applied to an expression that yields an array value
+(vs. an array object designator);
+this claim should be proved formally. *)
+
+op convertArray (e:Expression): Expression =
+  fn state:State ->
+    case e state of
+    | Some (object obj) ->
+      (case readObject state obj of
+      | Some val ->
+        (case typeOfValue val of
+        | array (ty, _) ->
+          Some (value (pointer (ty, (object (subscript (obj, 0)))))) % convert
+        | _ -> e state) % no conversion for non-arrays
+      | None -> None) % error, no object is designated
+    | Some (value _) -> e state % this case should never occur
+    | None -> None % propagate error
+
+(* We define integer constants similarly to the C deep embedding.
+An integer constant denotes a valid integer value if it fits in an integer type,
+otherwise None is used to model an error. *)
+
+type IntegerConstant % = ...
+
+op valueOfIntegerConstant
+  (c:IntegerConstant): Option (Value | integerValue?) % = ...
+  % same definition as C deep embedding
+
+(* A constant expression [ISO 6.5.1/3] yields a value,
+which is independent from the state. *)
+
+op constant (c:IntegerConstant): Expression =
+  fn state:State ->
+    case valueOfIntegerConstant c of
+    | Some val -> Some (value val)
+    | None -> None
+
+(* Automatic [ISO 6.2.4/5] variables in the shallow embedding
+may be represented by
+(let-bound or monad-bound) Specware variables of type Value.
+The following op lifts a value to an expression,
+so it can be applied to any value,
+but it is meant to be applied to Specware variables of type Value,
+which motivates the name of the op.
+The expression does not depend on the state because, as remarked earlier,
+type State captures the state outside the target program,
+while automatic variables are inside the target program.
+The expression never yields an error
+because the variable is always in scope by construction.
+See [ISO 6.5.1/2]. *)
+
+op variable (var:Value): Expression =
+  fn state:State -> Some (value var)
+
+(* The address operator &
+must be applied to an expression that designates an object [ISO 6.5.3.2/1]
+(our model does not have function designators for now),
+and the object designator is turned into a pointer value [ISO 6.5.3.2/3].
+No lvalue or array conversions are applied to the sub-expression
+[ISO 6.3.2.1/2-3]. *)
+
+op amp(*ersand*) (e:Expression): Expression =
+  fn state:State ->
+    case e state of
+    | Some (object obj) ->
+      (case readObject state obj of
+      | Some val ->
+        let ty = typeOfValue val in
+        Some (value (pointer (ty, object obj)))
+      | None -> None)
+    | _ -> None
+
+(* The indirection operator *
+must be applied to a pointer value [ISO 6.5.3.2/2],
+which is turned into an object designator [ISO 6.5.3.2/4],
+provided that the pointer points to an object. *)
+
+op star (e:Expression): Expression =
+  fn state:State ->
+    case (convertArray (convertLvalue e)) state of
+    | Some (value (pointer (_, object obj))) -> Some (object obj)
+    | _ -> None
+
 % IN PROGRESS...
 
 endspec
