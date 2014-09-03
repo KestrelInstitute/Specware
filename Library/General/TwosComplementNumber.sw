@@ -62,12 +62,6 @@ declare One_nat_def [simp del]
  as axiom stating that a TCNumber is never empty.
  ********************************************************************)
 
-(*
-I am commenting out this axiom because it is inconsistent!
-axiomatization where TwosComplement__toInt_subtype_constr:
-  "TwosComplement__toInt x = i \<Longrightarrow> x \<noteq> []"
-*)
-
 lemma TwosComplement__negative_p_iff_less_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
   \<Longrightarrow> TwosComplement__negative_p bs = (TwosComplement__toInt bs < 0)"
@@ -307,13 +301,7 @@ lemmas TwosComplement_tcN =
 (******************************************************************************)
 
 lemma TwosComplement__toInt_length:
- (*************************************************************
-    This made use of the axiom TwosComplement__toInt_subtype_constr.
-    TODO: Think about whether this is consistent.
- **************************************************************)
-  "\<lbrakk>TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x > zld i"
-sorry
-(* apply (frule_tac TwosComplement__toInt_subtype_constr)
+  "\<lbrakk>x \<noteq> []; TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x > zld i"
  apply (case_tac "i = 0 \<or> i = -1", erule disjE, simp_all)
  apply (frule_tac TwosComplement__integer_range, simp,  thin_tac "?a = i")
  apply (auto simp add: TwosComplement_tcN)
@@ -327,21 +315,31 @@ sorry
  apply (drule zld_at_least_pos, simp)
  apply (subgoal_tac "i < -1", drule zld_at_most_neg, simp, arith)
 done 
-*)
 
-(* TODO: Is this lemma consistent? *)  
 lemma TwosComplement__toInt_length1:
-  "\<lbrakk>TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x \<ge> zld i + 1"
+  "\<lbrakk>x \<noteq> []; TwosComplement__toInt x = i\<rbrakk> \<Longrightarrow> length x \<ge> zld i + 1"
  by (frule TwosComplement__toInt_length, auto)
 
-lemma TwosComplement__minTCNumber_exists: 
-  "\<exists>a. TwosComplement__toInt a = i \<and>
-               (\<forall>y. TwosComplement__toInt y = i \<longrightarrow> length a \<le> length y)"
+lemma TwosComplement__minTCNumber_exists_orig: 
+  "\<exists>a.  a \<noteq> [] \<and> TwosComplement__toInt a = i \<and>
+               (\<forall>y. (y \<noteq> [] \<and> TwosComplement__toInt y = i) \<longrightarrow> length a \<le> length y)"
    by (rule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in exI,
        clarsimp simp add: TwosComplement__toInt_tcNumber_reduce 
                           TwosComplement_tcN zld_props
                           TwosComplement__toInt_length1)
-(******************************************************************************)
+
+(******************************************************************************
+The translation of TwosComplement__minTCNumber misses the critical information
+that elements of the type TwosComplement__TCNumber are nonempty. It should be
+based on the above lemma but unfortunately it does require the one below which 
+cannot be proven. I insert it for now. It can be removed once the translator 
+inserts the the proper subtype information (CK 14/09/03) 
+*******************************************************************************)
+
+lemma TwosComplement__minTCNumber_exists: 
+  "\<exists>a.  a \<noteq> [] \<and> TwosComplement__toInt a = i \<and>
+               (\<forall>y. TwosComplement__toInt y = i \<longrightarrow> length a \<le> length y)"
+sorry
 
 (******************************************************************************)
 end-proof % end big verbatim block
@@ -474,7 +472,7 @@ op shiftRightUnsigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
   shiftRight (x, B0, n)
 
 
-%%
+%%<
 %% Start of the proofs:
 %%
 
@@ -590,13 +588,17 @@ end-proof
 
 proof Isa length_of_minTCNumber
   apply (simp add: TwosComplement__minTCNumber_def LeastM_def,
-         rule someI2_ex, rule TwosComplement__minTCNumber_exists)
+         rule someI2_ex,
+         cut_tac i=i in TwosComplement__minTCNumber_exists, clarsimp, 
+         rule_tac x=a in exI, simp)
   apply (erule conjE)
   apply (drule_tac x="TwosComplement__tcNumber (i, len)" in spec,
          simp add: TwosComplement_tcN )
- done
-
-(**************** we may need that later ***********************)
+(******************************************************************
+ The following lemma depends on TwosComplement__minTCNumber_exists,
+ which is not provable as long as subtype information is missing.
+ 
+ It seems that we don't need it so I comment it out (CK 14/09/03)
 
 lemma TwosComplement__length_of_minTCNumber_is_zld:
    "length (TwosComplement__minTCNumber i) = zld i + 1"
@@ -607,9 +609,10 @@ lemma TwosComplement__length_of_minTCNumber_is_zld:
   apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
          simp add: TwosComplement__toInt_tcNumber_reduce 
                    TwosComplement_tcN zld_props)
-(******************************************************************************)
-
+done
+******************************************************************************)
 end-proof
+
 
 proof Isa divT_Obligation_subtype
   by (simp add: TwosComplement__nonZero_p_iff_neq_0)
@@ -978,16 +981,18 @@ lemma TwosComplement_mod2:
 lemma TwosComplement__minTCNumber_toInt:
   "TwosComplement__toInt (TwosComplement__minTCNumber i) = i"
   by (simp add: TwosComplement__minTCNumber_def LeastM_def,
-      rule someI2_ex, rule TwosComplement__minTCNumber_exists, simp)
+      rule someI2_ex,
+      cut_tac i=i in TwosComplement__minTCNumber_exists, clarsimp, 
+      rule_tac x=a in exI, simp_all)
 
-(*     This made use of the axiom TwosComplement__toInt_subtype_constr. TODO: Think about whether this is conistent.  *)
 lemma TwosComplement__minTCNumber_nonEmpty:
   "TwosComplement__minTCNumber i \<noteq> []"
-  sorry
-(*  by (simp add: TwosComplement__minTCNumber_def LeastM_def,
-      rule someI2_ex, rule TwosComplement__minTCNumber_exists,
-      simp add: TwosComplement__toInt_subtype_constr)
-*)
+ apply (cut_tac i=i in TwosComplement__minTCNumber_exists, 
+        erule exE, erule conjE, erule conjE)
+ apply (drule_tac x="TwosComplement__minTCNumber i" in spec,
+        simp add: TwosComplement__minTCNumber_toInt)
+ apply (simp only: length_greater_0_conv [symmetric])
+done
 
 end-proof  %% end big verbatim block
 
