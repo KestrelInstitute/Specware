@@ -96,7 +96,7 @@ op readBufferFromNonArray
   (state:State) (ptr:Value) (len:Value): Option (List Value) =
   case (ptr, readBufferLength state len) of
   | (pointer (ty, object (outside id)), Some n) ->
-    (case state id of
+    (case state.outside id of
     | Some val ->
       if typeOfValue val = ty && n = 1
       then Some [val]
@@ -156,12 +156,13 @@ op writeBufferToNonArray
   (state:State) (ptr:Value) (len:Value) (vals:List Value): Option State =
   case (ptr, readBufferLength state len) of
   | (pointer (ty, object (outside id)), Some n) ->
-    (case state id of
+    (case state.outside id of
     | Some oldVal ->
       if typeOfValue oldVal = ty && n = 1
       then case vals of
            | [] -> Some state  % no new values, no change
-           | [newVal] -> Some (update state id newVal)
+           | [newVal] ->
+             Some (state << {outside = update state.outside id newVal})
            | _ -> None  % not enough room for 2 or mote values
       else None
     | None -> None)
@@ -212,7 +213,7 @@ op objectDesignatorsOfBufferInNonArray
   (state:State) (ptr:Value) (len:Value): FiniteSet ObjectDesignator =
   case (ptr, readBufferLength state len) of
   | (pointer (ty, object (outside id)), Some n) ->
-    (case state id of
+    (case state.outside id of
     | Some val ->
       if typeOfValue val = ty && n = 1
       then single (outside id)

@@ -57,7 +57,7 @@ type Sllong % = ...
 
 (* We define object designators similarly to the C deep embedding, but:
 - For now we do not consider structures.
-- We only consider outside storage,
+- We only consider designators to objects in outside storage,
   i.e. objects from code that is outside the target program. *)
 
 type OutsideID = | outsideID Nat  % opaque IDs, isomorphic to natural numbers
@@ -105,6 +105,9 @@ type Type =
 op integerType? (ty:Type): Bool % = ...
   % same definition as C deep embedding
 
+op scalarType? (ty:Type): Bool % = ...
+  % same definition as C deep embedding
+
 (* Values are defined similarly to the C deep embedding.
 Note that arrays are never empty [ISO 6.2.5/20]. *)
 
@@ -144,28 +147,59 @@ op typeOfValue (val:Value): Type =
 op integerValue? (val:Value): Bool =
   integerType? (typeOfValue val)
 
-op mathIntOfValue (val:Value | integerValue? val): Int % = ...
+type IntegerValue = (Value | integerValue?)
+
+op mathIntOfValue (val:IntegerValue): Int % = ...
   % same definition as C deep embedding
 
 op valueOfMathInt (i:Int, ty:Type): Value % = ...
   % same definition as C deep embedding---needs subtype
 
-(* For now we model the state as just consisting of outside storage.
-This is the state as seen from outside our target program.
-The internal state of the target program
-is not explicitly represented in the following type. *)
+op int0: IntegerValue = valueOfMathInt (0, sint)
 
-type State = FiniteMap (OutsideID, Value)
+op int1: IntegerValue = valueOfMathInt (1, sint)
+
+op scalarValue? (val:Value): Bool =
+  scalarType? (typeOfValue val)
+
+type ScalarValue = (Value | scalarValue?)
+
+op zeroScalar? (val:ScalarValue): Bool % = ...
+  % similar definition as C deep embedding
+
+(* We model automatic storage [ISO 6.2.4/5] as
+a list of finite maps from identifiers to values.
+The list corresponds to the call stack,
+with the bottom at the left end the top at the rigth end.
+Each element of the list is the block of the corresponding function;
+for now we do not model nested blocks, so there is one block per function. *)
+
+type Identifier % = ...
+  % same definition as C deep embedding
+
+type AutomaticStorage = List (FiniteMap (Identifier, Value))
+
+(* We model outside storage (i.e. storage form code outside the target program)
+as a finite map from outside IDs to values. *)
+
+type OutsideStorage = FiniteMap (OutsideID, Value)
+
+(* For now we model the state as just consisting of
+automatic and outside storage. *)
+
+type State =
+ {automatic: AutomaticStorage,
+  outside: OutsideStorage}
 
 (* The following ops are defined similarly to the C deep embedding.
 Op readObject implicitly defines valid object designators,
 i.e. the ones that designate objects in the state.
-Constructor None models an error.
+Errors are modeled by None.
 Op writeObject requires the new value to have the same type as the old value. *)
 
 op readObject (state:State) (obj:ObjectDesignator): Option Value =
   case obj of
-  | outside id -> state id
+  | outside id -> state.outside id
   | subscript (obj0, i) ->
     (case readObject state obj0 of
     | Some (array (_, vals)) -> vals @@ i
@@ -178,10 +212,10 @@ op writeObject
   (state:State) (obj:ObjectDesignator) (newVal:Value): Option State =
   case obj of
   | outside id ->
-    (case state id of
+    (case state.outside id of
     | Some oldVal ->
       if typeOfValue newVal = typeOfValue oldVal
-      then Some (update state id newVal)
+      then Some (state << {outside = update state.outside id newVal})
       else None
     | None -> None)
   | subscript (obj0, i) ->
@@ -217,55 +251,193 @@ op wfValue? (state:State) (val:Value): Bool =
     (case readObject state obj of
     | Some val ->  % obj designates an object in the state
       embed? outside obj ||  % top-level object (array or not)
-      embed? array val  % or array (top-level or element of an outer array
+      embed? array val  % or array (top-level or element of an outer array)
     | None -> false)
   | _ -> true  % null pointer and integer values always well-formed
 
-(* A state is well-formed iff all its values are well-formed (in the state). *)
+(* A state is well-formed iff all its values are well-formed (in the state)
+and (for now) automatic storage includes no arrays. *)
 
 op wfState? (state:State): Bool =
-  fa (val:Value) val in? range state => wfValue? state val
+  % outside storage:
+  (fa (val:Value) val in? range state.outside => wfValue? state val) &&
+  % automatic storage:
+  (fa (i:Nat, val:Value)
+    i < length state.automatic && val in? range (state.automatic @ i) =>
+    wfValue? state val && ~ (embed? array val))
 
-(* We introduce a state-error monad for C, with error modeled by None.
-Op monadBind enables the use of monadic syntax in Specware. *)
+(* We define integer constants similarly to the C deep embedding.
+An integer constant denotes a valid integer value if it fits in an integer type,
+otherwise None is used to model an error. *)
 
-type C a = State -> Option (State * a)
+type IntegerConstant % = ...
 
-op [a,b] monadBind (comp1: C a, comp2: a -> C b): C b =
-  fn state:State ->
-    case comp1 state of
-    | Some (state', x) -> comp2 x state'
-    | None -> None
+op valueOfIntegerConstant (c:IntegerConstant): Option IntegerValue % = ...
+  % same definition as C deep embedding
 
-(* Lift constants and functions to C monad. *)
+(* We define the unary arithmetic operators + - ~ ! on values
+as in the deep and shallow embeddings,
+with None modeling
+an error due to the application of a value of the wrong type
+or results not prescribed by [ISO]. *)
 
-op [a] conC (x:a): C a =  % monad return
-  fn state:State -> Some (state, x)
+op PLUS_v (val:Value): Option Value % = ...
 
-op [a,b] funC (f: a -> b): a -> C b =
-  fn x:a -> fn state:State -> Some (state, f x)
+op MINUS_v (val:Value): Option Value % = ...
 
-(* Move state out of and into the C monad. *)
+op NOT_v (val:Value): Option Value % = ...
 
-op outC: C State =
-  fn state:State -> Some (state, state)
+op NEG_v (val:Value): Option Value % = ...
 
-op inC (state:State): C () =
-  fn state':State -> Some (state, ())
+(* We define
+the multiplicative operators * / % on values,
+the bitwise shift operators << >> on values,
+the relational operators < > <= >= on values,
+the equality operators == != on values,
+and the bitwise AND/OR operators & ^ | on values
+as in the deep and shallow embeddings. *)
 
-(* Monadic versions of readObject and writeObject. *)
+op MUL_v (val1:Value) (val2:Value): Option Value % = ...
 
-op readObjectC (obj:ObjectDesignator): C Value =
-  fn state:State ->
-    case readObject state obj of
-    | Some val -> Some (state, val)
-    | None -> None
+op DIV_v (val1:Value) (val2:Value): Option Value % = ...
 
-op writeObjectC (obj:ObjectDesignator) (newVal:Value): C () =
-  fn state:State ->
-    case writeObject state obj newVal of
-    | Some state' -> Some (state', ())
-    | None -> None
+op REM_v (val1:Value) (val2:Value): Option Value % = ...
+
+op SHL_v (val1:Value) (val2:Value): Option Value % = ...
+
+op SHR_v (val1:Value) (val2:Value): Option Value % = ...
+
+op LT_v (val1:Value) (val2:Value): Option Value % = ...
+
+op GT_v (val1:Value) (val2:Value): Option Value % = ...
+
+op LE_v (val1:Value) (val2:Value): Option Value % = ...
+
+op GE_v (val1:Value) (val2:Value): Option Value % = ...
+
+op EQ_v (val1:Value) (val2:Value): Option Value % = ...
+
+op NE_v (val1:Value) (val2:Value): Option Value % = ...
+
+op AND_v (val1:Value) (val2:Value): Option Value % = ...
+
+op XOR_v (val1:Value) (val2:Value): Option Value % = ...
+
+op IOR_v (val1:Value) (val2:Value): Option Value % = ...
+
+(* We define addition and subtraction on integer values
+as in the deep and shallow embeddings,
+with None modeling results not prescribed by [ISO]. *)
+
+op ADD_i (val1:IntegerValue) (val2:IntegerValue): Option IntegerValue % = ...
+
+op SUB_i (val1:IntegerValue) (val2:IntegerValue): Option IntegerValue % = ...
+
+(* Adding an integer value to a pointer value
+yields a well-defined result under certain conditions [ISO 6.5.6/8,7].
+The model of pointer arithmetic below
+is not present in the deep or shallow embeddings.
+We start with an op that adds a mathematical integer to a pointer.
+If ptr designates a top-level non-array object, i must be
+either 0 (in which case the pointer is unchanged)
+or 1 (in which case the pointer one past the object is returned).
+The case of ptr designating a top-level array object
+should not occur due to array conversion [ISO 6.3.2.1/3]
+(this claim should be proved formally);
+the following op treats a top-level array object
+the same as a top-level non-array object. *)
+
+op add_int_to_pointer
+  (state:State) (i:Int) (ptr:Pointer): Option Pointer =
+  case ptr of
+  % pointer designates object:
+  | object obj ->
+    (case obj of
+    % top-level object:
+    | outside id ->
+      if i = 0 then Some ptr % no change
+      else if i = 1 then Some (past1 obj) % go past object
+      else None
+    % element of array at index j:
+    | subscript (obj0, j) ->
+      % get array for length:
+      (case readObject state obj0 of
+      | Some (array (_, vals)) ->
+        let l = length vals in
+        % adding i to j stays within the array:
+        if 0 <= j + i && j + i < l
+        then Some (object (subscript (obj0, j + i)))
+        % adding i to j goes one past the array (in this case i > 0):
+        else if j + i = l
+        then Some (past1 obj0)
+        % adding i to j goes outside the array:
+        else None
+      | _ -> None))
+  % pointer is one-past some object:
+  | past1 obj ->
+    % get the object:
+    (case readObject state obj of
+    % if the object is an array, get its length:
+    | Some (array (_, vals)) ->
+      let l = length vals in
+      % no change if i = 0:
+      if i = 0 then Some ptr
+      % adding i to l goes inside the array (in this case i < 0):
+      else if 0 <= l + i && l + i < l
+      then Some (object (subscript (obj, l + i)))
+      % adding i to l stays outside the array:
+      else None
+    % if the object is not an array, treat as a one-element array:
+    | Some val ->
+      % no change if i = 0:
+      if i = 0 then Some ptr
+      % point to object if i = -1:
+      else if i = -1 then Some (object obj)
+      % every other i is not a valid pointer:
+      else None)
+
+(* Addition and subtraction on values.
+For now we only allow an integer to be subtracted from a pointer,
+but not subtraction between two pointers. *)
+
+op ADD_v (state:State) (val1:Value) (val2:Value): Option Value =
+  if integerValue? val1 then
+    if integerValue? val2 then
+      ADD_i val1 val2
+    else
+      case val2 of
+      | pointer (ty, ptr) ->
+        (case add_int_to_pointer state (mathIntOfValue val1) ptr of
+        | Some ptr' -> Some (pointer (ty, ptr'))
+        | None -> None)
+      | _ -> None
+  else % ~ (integerValue? val1)
+    case val1 of
+    | pointer (ty, ptr) ->
+      if integerValue? val2 then
+        case add_int_to_pointer state (mathIntOfValue val2) ptr of
+        | Some ptr' -> Some (pointer (ty, ptr'))
+        | None -> None
+      else
+        None
+    | _ -> None
+
+op SUB_v (state:State) (val1:Value) (val2:Value): Option Value =
+  if integerValue? val1 then
+    if integerValue? val2 then
+      SUB_i val1 val2
+    else
+      None
+  else % ~ (integerValue? val1)
+    case val1 of
+    | pointer (ty, ptr) ->
+      if integerValue? val2 then
+        case add_int_to_pointer state (- (mathIntOfValue val2)) ptr of
+        | Some ptr' -> Some (pointer (ty, ptr'))
+        | None -> None
+      else
+        None
+    | _ -> None
 
 (* We define a shallow embedding of (some) C expressions [ISO 6.5].
 We consider side-effect-free expressions for now,
@@ -329,16 +501,6 @@ op convertArray (e:Expression): Expression =
     | Some (value _) -> e state % this case should never occur
     | None -> None % propagate error
 
-(* We define integer constants similarly to the C deep embedding.
-An integer constant denotes a valid integer value if it fits in an integer type,
-otherwise None is used to model an error. *)
-
-type IntegerConstant % = ...
-
-op valueOfIntegerConstant
-  (c:IntegerConstant): Option (Value | integerValue?) % = ...
-  % same definition as C deep embedding
-
 (* A constant expression [ISO 6.5.1/3] yields a value,
 which is independent from the state. *)
 
@@ -348,21 +510,26 @@ op constant (c:IntegerConstant): Expression =
     | Some val -> Some (value val)
     | None -> None
 
-(* Automatic [ISO 6.2.4/5] variables in the shallow embedding
-may be represented by
-(let-bound or monad-bound) Specware variables of type Value.
-The following op lifts a value to an expression,
-so it can be applied to any value,
-but it is meant to be applied to Specware variables of type Value,
-which motivates the name of the op.
-The expression does not depend on the state because, as remarked earlier,
-type State captures the state outside the target program,
-while automatic variables are inside the target program.
-The expression never yields an error
-because the variable is always in scope by construction.
-See [ISO 6.5.1/2]. *)
+(* In our shallow embedding,
+automatic [ISO 6.2.4/5] variables may be represented
+as identifiers in the automatic storage component of the state,
+but also as Specware bound variables
+(e.g. op arguments, let-bound variables, monad-bound variables).
+Op svariable captures the first case ('s' for 'state');
+identifiers are looked up only in the top frame, if any.
+Op bvariable captures the second case ('b' for 'bound');
+it takes a value as argument
+because that is the Specware type of the bound variables. *)
 
-op variable (var:Value): Expression =
+op svariable (var:Identifier): Expression =
+  fn state:State ->
+    if state.automatic = []
+    then None % no automatic variables
+    else case last state.automatic var of
+         | Some val -> Some (value val)
+         | None -> None
+
+op bvariable (var:Value): Expression =
   fn state:State -> Some (value var)
 
 (* The address operator &
@@ -372,7 +539,7 @@ and the object designator is turned into a pointer value [ISO 6.5.3.2/3].
 No lvalue or array conversions are applied to the sub-expression
 [ISO 6.3.2.1/2-3]. *)
 
-op amp(*ersand*) (e:Expression): Expression =
+op AMP(*ersand*) (e:Expression): Expression =
   fn state:State ->
     case e state of
     | Some (object obj) ->
@@ -388,12 +555,207 @@ must be applied to a pointer value [ISO 6.5.3.2/2],
 which is turned into an object designator [ISO 6.5.3.2/4],
 provided that the pointer points to an object. *)
 
-op star (e:Expression): Expression =
+op STAR (e:Expression): Expression =
   fn state:State ->
     case (convertArray (convertLvalue e)) state of
     | Some (value (pointer (_, object obj))) -> Some (object obj)
     | _ -> None
 
-% IN PROGRESS...
+(* The unary arithmetic operators and the binary operators defined earlier
+are lifted from values to expressions.
+The priorities of the infix ..._e ops are chosen
+in the same order as in [ISO]. *)
+
+op liftUnary (OP: Value -> Option Value) (e:Expression): Expression =
+  fn state:State ->
+    case (convertArray (convertLvalue e)) state of
+    | Some (value val) ->
+      (case OP val of
+      | Some val' -> Some (value val')
+      | None -> None)
+    | _ -> None
+
+op PLUS (e:Expression): Expression =
+  liftUnary PLUS_v e
+
+op MINUS (e:Expression): Expression =
+  liftUnary MINUS_v e
+
+op NOT (e:Expression): Expression =
+  liftUnary NOT_v e
+
+op NEG (e:Expression): Expression =
+  liftUnary NEG_v e
+
+op liftBinary
+  (OP: Value -> Value -> Option Value) (e1:Expression) (e2:Expression)
+  : Expression =
+  fn state:State ->
+    case ((convertArray (convertLvalue e1)) state,
+          (convertArray (convertLvalue e2)) state) of
+    | (Some (value val1), Some (value val2)) ->
+      (case OP val1 val2 of
+      | Some val -> Some (value val)
+      | None -> None)
+    | _ -> None
+
+op MUL (e1:Expression, e2:Expression) infixl 50: Expression =
+  liftBinary MUL_v e1 e1
+
+op DIV (e1:Expression, e2:Expression) infixl 50: Expression =
+  liftBinary DIV_v e1 e1
+
+op REM (e1:Expression, e2:Expression) infixl 50: Expression =
+  liftBinary REM_v e1 e1
+
+op ADD (e1:Expression, e2:Expression) infixl 49: Expression =
+  % we cannot use liftBinary here because ADD_v depends on the state
+  fn state:State ->
+    case ((convertArray (convertLvalue e1)) state,
+          (convertArray (convertLvalue e2)) state) of
+    | (Some (value val1), Some (value val2)) ->
+      (case ADD_v state val1 val2 of
+      | Some val -> Some (value val)
+      | None -> None)
+    | _ -> None
+    
+op SUB (e1:Expression, e2:Expression) infixl 49: Expression =
+  % we cannot use liftBinary here because SUB_v depends on the state
+  fn state:State ->
+    case ((convertArray (convertLvalue e1)) state,
+          (convertArray (convertLvalue e2)) state) of
+    | (Some (value val1), Some (value val2)) ->
+      (case SUB_v state val1 val2 of
+      | Some val -> Some (value val)
+      | None -> None)
+    | _ -> None
+
+op SHL (e1:Expression, e2:Expression) infixl 48: Expression =
+  liftBinary SHL_v e1 e1
+
+op SHR (e1:Expression, e2:Expression) infixl 48: Expression =
+  liftBinary SHR_v e1 e1
+
+op LT (e1:Expression, e2:Expression) infixl 47: Expression =
+  liftBinary LT_v e1 e1
+
+op GT (e1:Expression, e2:Expression) infixl 47: Expression =
+  liftBinary GT_v e1 e1
+
+op LE (e1:Expression, e2:Expression) infixl 47: Expression =
+  liftBinary LE_v e1 e1
+
+op GE (e1:Expression, e2:Expression) infixl 47: Expression =
+  liftBinary GE_v e1 e1
+
+op EQ (e1:Expression, e2:Expression) infixl 46: Expression =
+  liftBinary EQ_v e1 e1
+
+op NE (e1:Expression, e2:Expression) infixl 46: Expression =
+  liftBinary NE_v e1 e1
+
+op AND (e1:Expression, e2:Expression) infixl 45: Expression =
+  liftBinary AND_v e1 e1
+
+op XOR (e1:Expression, e2:Expression) infixl 44: Expression =
+  liftBinary XOR_v e1 e1
+
+op IOR (e1:Expression, e2:Expression) infixl 43: Expression =
+  liftBinary IOR_v e1 e1
+
+(* Array subscripting is defined in terms of indirection of pointer addition
+[ISO 6.5.2.1]. *)
+
+op SBS (e1:Expression) (e2:Expression) infixl 51: Expression =
+  STAR (e1 ADD e2)
+
+(* The logical AND/OR operators && || [ISO 6.5.13, 6.5.14] are non-strict. *)
+
+op LAND (e1:Expression, e2:Expression) infixl 42: Expression =
+  fn state:State ->
+    case (convertArray (convertLvalue e1)) state of
+    | Some (value val1) ->
+      if scalarValue? val1 then
+        if zeroScalar? val1 then Some (value int0)
+        else case (convertArray (convertLvalue e2)) state of
+             | Some (value val2) ->
+               if scalarValue? val2 then
+                 if zeroScalar? val2 then Some (value int0)
+                 else Some (value int1)
+               else None
+             | _ -> None
+      else None
+    | _ -> None
+
+op LOR (e1:Expression, e2:Expression) infixl 42: Expression =
+  fn state:State ->
+    case (convertArray (convertLvalue e1)) state of
+    | Some (value val1) ->
+      if scalarValue? val1 then
+        if ~(zeroScalar? val1) then Some (value int1)
+        else case (convertArray (convertLvalue e2)) state of
+             | Some (value val2) ->
+               if scalarValue? val2 then
+                 if zeroScalar? val2 then Some (value int0)
+                 else Some (value int1)
+               else None
+             | _ -> None
+      else None
+    | _ -> None
+
+% TODO as statements:
+% - function call
+% - increment/decrement?
+% - simple assignment
+% - compound assignment?
+% - automatic variable declaration
+% - selection -- if
+% - iteration -- while do-while for
+% - jump -- return
+
+%%%%%%%%%% IN PROGRESS...
+
+%%%%%%%%%% RE-INTRODUCE AS NEEDED:
+
+% (* We introduce a state-error monad for C, with error modeled by None.
+% Op monadBind enables the use of monadic syntax in Specware. *)
+
+% type C a = State -> Option (State * a)
+
+% op [a,b] monadBind (comp1: C a, comp2: a -> C b): C b =
+%   fn state:State ->
+%     case comp1 state of
+%     | Some (state', x) -> comp2 x state'
+%     | None -> None
+
+% (* Lift constants and functions to C monad. *)
+
+% op [a] conC (x:a): C a =  % monad return
+%   fn state:State -> Some (state, x)
+
+% op [a,b] funC (f: a -> b): a -> C b =
+%   fn x:a -> fn state:State -> Some (state, f x)
+
+% (* Move state out of and into the C monad. *)
+
+% op outC: C State =
+%   fn state:State -> Some (state, state)
+
+% op inC (state:State): C () =
+%   fn state':State -> Some (state, ())
+
+% (* Monadic versions of readObject and writeObject. *)
+
+% op readObjectC (obj:ObjectDesignator): C Value =
+%   fn state:State ->
+%     case readObject state obj of
+%     | Some val -> Some (state, val)
+%     | None -> None
+
+% op writeObjectC (obj:ObjectDesignator) (newVal:Value): C () =
+%   fn state:State ->
+%     case writeObject state obj newVal of
+%     | Some state' -> Some (state', ())
+%     | None -> None
 
 endspec
