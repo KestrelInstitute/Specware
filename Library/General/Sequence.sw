@@ -1879,7 +1879,19 @@ end-proof
 % apply (case_tac sub__v, auto)
 %
 proof Isa leftmostPositionOfSubseqAndFollowing_Obligation_subtype0
- sorry
+  apply (cases sub__v, simp_all add: Seq__finite_p_def,
+         cases sup__v, simp_all add: Seq__e_lt_eq_length_def)
+  apply (erule rev_mp, simp add: Seq__positionsOfSubseq_def,
+         rule the1I2, auto simp add: Seq__positionsOfSubseq_Obligation_the)
+  apply (cases POSs, auto simp add: Seq__subseqAt_p_def Seq__empty_def)
+  (* case 1: Lists *)  
+  apply (drule_tac x="hd listb" in spec, auto)
+  apply (case_tac pre, auto)
+  apply (case_tac post, auto)
+  (* case 2: streams *)
+  apply (drule_tac x="fun 0" in spec, auto simp add: in_strm_p_def)
+  apply (case_tac pre, auto)
+  apply (case_tac post, auto)
 end-proof
 
 proof Isa rightmostPositionOfSubseqAndPreceding_Obligation_subtype
@@ -1897,7 +1909,14 @@ end-proof
 %         Seq__leftmostPositionOfSubseqAndFollowing_Obligation_subtype1)
 %  apply (simp, simp)
 proof Isa rightmostPositionOfSubseqAndPreceding_Obligation_subtype1
- sorry
+  apply (cases POSs, auto simp add: Seq__empty_def Seq__infinite_p_def)
+  apply (cases sup__v, auto simp add: Seq__e_lt_eq_length_def)
+  apply (erule rev_mp, simp add: Seq__positionsOfSubseq_def,
+         rule the1I2, auto simp add: Seq__positionsOfSubseq_Obligation_the)
+  apply (cases sub__v, auto simp add: Seq__subseqAt_p_def Seq__empty_def)
+  apply (drule_tac x="last list" in spec, auto)
+  apply (case_tac pre, auto)
+  apply (case_tac post, auto)
 end-proof
 
 
