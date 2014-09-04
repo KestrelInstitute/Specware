@@ -358,7 +358,6 @@ op globalizeType (context        : Context,
 
          | Subtype (t1, tm, _) ->
            let new_t1 = aux t1 in
-           let _ = writeLine("Ignoring subtype:\n"^printTerm tm) in
            let new_tm = tm   % sjw: I think a lot of things would need to be changed before it would be reasonable to globalize subtypes
                % case globalizeTerm context vars_to_remove tm false of
                %   | Changed new_tm -> new_tm
