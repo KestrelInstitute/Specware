@@ -36,19 +36,19 @@ theorem distribute_concat_over_if is [a]
   fa(lst1:List a, p:Bool, lst2a:List a, lst2b:List a) 
     lst1 ++ (if p then lst2a else lst2b) = (if p then lst1++lst2a else lst1++lst2b)
 
-%% Move to Sets library:
+%% TODO: Move to Sets library:
   theorem set_insert_does_nothing_rewrite is [a]
     fa(x: a,s) (set_insert(x,s) = s) = in?(x,s)
 
-%% Move to Sets library:
+%% TODO: Move to Sets library:
   theorem set_insert_does_nothing_rewrite_alt is [a]
     fa(x: a,s) (s= set_insert(x,s)) = in?(x,s)
 
-%% Move to Sets library:
+%% TODO: Move to Sets library:
   theorem set_delete_does_nothing_rewrite is [a]
     fa(x: a,s) (set_delete(x,s) = s) = ~(in?(x,s))
 
-%% Move to Sets library:
+%% TODO: Move to Sets library:
   theorem set_delete_does_nothing_rewrite_alt is [a]
     fa(x: a,s) (s = set_delete(x,s)) = ~(in?(x,s))
 
@@ -1044,11 +1044,7 @@ proof isa CM2S_Obligation_subtype
 end-proof
 
 proof isa L2S_set_diff_Obligation_subtype
-  sorry
-end-proof
-
-proof isa L2S_set_diff
-  sorry
+  apply(simp add: Set__Set_P_def Set__forall_rewrite Set__set_difference CM2S_member[symmetric] L2S_member)
 end-proof
 
 proof isa L2B_Nil
