@@ -36,10 +36,6 @@ theorem distribute_concat_over_if is [a]
   fa(lst1:List a, p:Bool, lst2a:List a, lst2b:List a) 
     lst1 ++ (if p then lst2a else lst2b) = (if p then lst1++lst2a else lst1++lst2b)
 
-theorem distribute_concat_over_cons is [a]
-  fa(lst1:List a, x:a, lst2:List a) 
-    lst1 ++ (x::lst2) = x::(lst1 ++ lst2)
-
 %% Move to Sets library:
   theorem set_insert_does_nothing_rewrite is [a]
     fa(x: a,s) (set_insert(x,s) = s) = in?(x,s)
@@ -1583,10 +1579,6 @@ proof Isa occs_equal_zero
   apply(induct lst)
   apply (metis List__occs.simps(1) in_of_empty)
   by (metis less_numeral_extra(3) occs_pos occs_when_not_in)
-end-proof
-
-proof Isa distribute_concat_over_cons
-  oops
 end-proof
 
 proof Isa L2S_set_diff
