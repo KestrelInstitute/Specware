@@ -666,7 +666,9 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
      let sub2 = ((id, ty), mkVar(id2, new_ty)) :: sub in
      ((id2, new_ty), sub2, StringSet.add(freeNames, id2))
    else
-     ((id, new_ty), sub, freeNames)
+     let sub2 = if equalType?(ty, new_ty) then sub
+                 else ((id, ty), mkVar(id, new_ty)) :: sub in
+     ((id, new_ty), sub2, freeNames)
 
  def deleteVarFromSub(v, sub, sub2) = 
    case sub
