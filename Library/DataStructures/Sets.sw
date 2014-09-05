@@ -273,12 +273,32 @@ theorem inv_set_fold is [a,s,s']
        (fn (st',x) -> g(f(g' st',x)))
        ss
 
+%TODO define using fold?
+ op [a,b] map: (a -> b) -> Set a -> Set b
+
+ axiom map_def is [a,b]
+   fa(y: b, s: Set a, f: a -> b)
+      y in? (map f s) <=> (ex(x:a) x in? s && y = f x)  %TODO parens would clarify
+
+theorem map_of_empty is [a,b]
+   fa(f: a -> b) map f empty_set = empty_set
+
+theorem map_of_insert is [a,b]
+   fa(f: a -> b, x:a, s:Set a) map f (set_insert(x,s)) = set_insert(f x, map f s)
+
+theorem map_of_in_self is [a]
+  fa(s : Set a) map (fn (x:a) -> x in? s) s = (if s = empty_set then empty_set else set_insert(true, empty_set))
+
 op [a] forall? (p: a -> Bool) (s: Set a) : Bool = set_fold true (&&) (map p s)
+
+theorem forall_rewrite is [a]
+  fa(p: a -> Bool, s : Set a) (forall? p s) <=> (fa(x:a) x in? s => p x)
 
 %%Define Set_P (lifts a predicate on elements to a predicate on sets).
 %% If we don't define this, the isabelle translator generates a declaration for it!  
 
 %% I tried to call 'p' here 'pred' but got an isabelle error:
+%% TODO: Drop this?  Just use forall?.
 op [a] Set_P (p: a -> Bool) (s : Set a) : Bool = forall? p s
 
 theorem foldable?_of_union is [a]
@@ -340,21 +360,9 @@ theorem size_of_insert is [a]
 theorem size_of_delete is [a]
   fa(s: Set a, x: a) size(set_delete(x,s)) = (if x in? s then size s - 1 else size s)
 
-%TODO define using fold?
- op [a,b] map: (a -> b) -> Set a -> Set b
 
- axiom map_def is [a,b]
-   fa(y: b, s: Set a, f: a -> b)
-      y in? (map f s) <=> (ex(x:a) x in? s && y = f x)  %TODO parens would clarify
-
-theorem map_of_empty is [a,b]
-   fa(f: a -> b) map f empty_set = empty_set
-
-theorem map_of_insert is [a,b]
-   fa(f: a -> b, x:a, s:Set a) map f (set_insert(x,s)) = set_insert(f x, map f s)
-
-theorem map_of_in_self is [a]
-  fa(s : Set a) map (fn (x:a) -> x in? s) s = (if s = empty_set then empty_set else set_insert(true, empty_set))
+theorem size_map_injective is [a,b]
+   fa(s: Set a, f: a -> b) injective? f => size(map f s) = size s
 
 theorem forall?_in_self is [a]
   fa(s : Set a) forall? (fn (x:a) -> x in? s) s
@@ -362,9 +370,6 @@ theorem forall?_in_self is [a]
 theorem Set_P_in_self is [a]
   fa(s : Set a) Set_P (fn (x:a) -> x in? s) s
 
-
-theorem size_map_injective is [a,b]
-   fa(s: Set a, f: a -> b) injective? f => size(map f s) = size s
 
 theorem in?_size is [a]
   fa(s: Set a, x: a) x in? s => size s >= 1
@@ -927,6 +932,20 @@ end-proof
 proof Isa Set__foldable_p_of_set_insert
   apply(auto simp add: Set__foldable_p_def)
   apply(metis Set__set_insertion_commutativity_lemma)
+end-proof
+
+proof Isa Set__forall_rewrite
+  apply(rule Set__induction)
+  apply(auto simp add: Set__empty_set)
+  apply(auto simp add: Set__forall_p_def Set__set_fold1 Set__map_of_empty)
+  apply(auto simp add: Set__forall_p_def Set__set_fold2 Set__set_fold2_alt Set__map_of_empty Set__map_of_insert)
+  apply (metis Set__set_insertion)
+  apply (metis (full_types) Set__forall_p_Obligation_subtype Set__map_of_insert Set__set_delete_no_op Set__set_fold2_alt Set__set_insert_does_nothing Set__set_insertion split_conv)
+  apply (metis Set__set_insertion)
+  apply(simp add: Set__set_insertion)
+  apply (metis Set__forall_p_Obligation_subtype Set__set_delete_no_op Set__set_fold2_alt Set__set_insert_does_nothing prod_caseI)
+  apply(simp add: Set__set_insertion)
+  apply(simp add: Set__set_insertion)
 end-proof
 
 end-spec
