@@ -32,6 +32,13 @@ theorem diff_of_cons is [a]
 theorem delete1_of_empty is [a]
   fa(x:a) delete1(x,[]) = []
 
+theorem distribute_concat_over_if is [a]
+  fa(lst1:List a, p:Bool, lst2a:List a, lst2b:List a) 
+    lst1 ++ (if p then lst2a else lst2b) = (if p then lst1++lst2a else lst1++lst2b)
+
+theorem distribute_concat_over_cons is [a]
+  fa(lst1:List a, x:a, lst2:List a) 
+    lst1 ++ (x::lst2) = x::(lst1 ++ lst2)
 
 %% Move to Sets library:
   theorem set_insert_does_nothing_rewrite is [a]
@@ -485,9 +492,20 @@ end-proof
   theorem L2S_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2S (lst1 ++ lst2) = (L2S lst1 \/ L2S lst2) )
 
+  theorem lift_L2S_over_if is [a]
+   fa(x:List a,y:List a,p:Bool)
+     ((if p then L2S x else L2S y) = L2S(if p then x else y))
+
   theorem L2S_diff is [a]
     fa(lst:List a,sub:List a) ( L2S (diff(lst,sub)) = (L2S lst -- L2S sub) )
 
+  theorem L2S_set_diff is [a,M]
+    fa(lst:List a,cm:Map(a,Bool))
+      ( ((L2S lst) subset (domain cm))
+      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
+
+%  op filter_rev (lst:List a)
+% reverse args to filter to get context properties for later simplification
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
       ( ((L2S lst) subset (domain cm))

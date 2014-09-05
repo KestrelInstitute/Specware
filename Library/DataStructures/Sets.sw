@@ -399,6 +399,14 @@ theorem in?_size is [a]
       fa(c:Set a,d:Set a,y:a)
         (set_insert(y,d) \/ c = set_insert(y, d \/ c))
 
+  theorem distribute_union_over_if is [a]
+     fa(set1:Set a, p:Bool, set2a:Set a, set2b:Set a) 
+        set1 \/ (if p then set2a else set2b) = (if p then set1\/set2a else set1\/set2b)
+
+  theorem distribute_if_over_setdiff is [a]
+     fa(set1:Set a, p:Bool, set2a:Set a, set2b:Set a,set3:Set a) 
+       (if p then set2a         else set2b) -- set3 
+     = (if p then set2a -- set3 else set2b -- set3)
 
 
 % This was wrong (right hand side was just "set_delete(y,c)"). -Eric
