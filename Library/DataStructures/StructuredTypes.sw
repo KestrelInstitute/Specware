@@ -410,6 +410,63 @@ end-proof
 %  theorem Stack2L_delete1 is [a]
 %    fa(elt:a,stk:Stack a) (Stack2L(stk) = delete1(elt, Stack2L(stk)))
 
+%% (*------- CM2S: homomorphism from Characteristic-Map to Set ---------------
+
+%% with characteristic maps there are several choices:
+%% 1. partial map, with default of false using 
+%%        m(x) = map_apply mp false x
+%% 2. total map, using TMApply; requires knowing the exact domain/universe
+%%        m(x) = TMApply mp x
+%% *)
+
+  op [a] CM2S(m:Map(a,Bool)):Set a =  
+    set_fold empty_set
+             (fn(sa:Set a,domelt:a) -> if (domelt in? (domain m)  %% Makes this function type-check
+                                          && ~(domelt in? sa) %% Makes this function type-check
+                                          && TMApply(m,domelt)) %TODO put this conjunct second
+                                       then set_insert_new(domelt, sa)
+                                       else sa)
+             (domain m)
+
+  op [a] S2CM(S:Set a):Map(a,Bool) =  
+    set_fold empty_map
+             (fn(amap:Map(a,Bool),domelt:a) -> (update amap domelt (true)))
+             S
+
+  theorem S2CM_empty_set is [a]
+      (S2CM (empty_set:Set a)) = (empty_map:Map(a,Boolean))
+
+  %TODO: Probably not true: cm may map some elems to false.
+  theorem S2CM_CM2S is [a]
+      fa(cm:Map(a,Bool)) (S2CM (CM2S cm)) = cm 
+
+  theorem S2CM_insert is [a]
+      fa (S:Set a, n:a) (S2CM(set_insert(n,S)) = (update (S2CM S) n true))
+
+  theorem CM2S_empty_map is [a]
+      CM2S(empty_map:Map(a,Bool)) = empty_set
+
+
+  theorem CM2S_update is [a]
+      fa(m:Map(a,Bool), x:a, y:Bool) 
+        CM2S(update m x y)
+            = (if y 
+                 then set_insert(x, CM2S m) %% had set_insert_new here, but it didn't type check.
+               else set_delete(x, CM2S m))
+
+  theorem CM_iso_S is [a]
+    fa(mp:Map(a,Bool),ns:Set a) (CM2S(mp)=ns) = (mp = S2CM ns)
+
+  theorem CM2S_set_insert is [a]
+    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x true)  = set_insert(x, CM2S mp) %% had set_insert_new here, but it didn't type check.
+
+  theorem CM2S_set_delete is [a]
+    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
+
+  theorem CM2S_member is [a]
+    fa(x:a,mp:Map(a,Bool))    
+      ((x in? domain mp)     %%  needed to make this type check
+       => (TMApply(mp,x)) = (x in? CM2S mp))
 
 %------- L2S: homomorphism from List to Set -----------------------
 
@@ -499,17 +556,19 @@ end-proof
   theorem L2S_diff is [a]
     fa(lst:List a,sub:List a) ( L2S (diff(lst,sub)) = (L2S lst -- L2S sub) )
 
-  theorem L2S_set_diff is [a,M]
-    fa(lst:List a,cm:Map(a,Bool))
-      ( ((L2S lst) subset (domain cm))
-      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
+  %% There were 2 copies of this theorem
+  %% theorem L2S_set_diff is [a,M]
+  %%   fa(lst:List a,cm:Map(a,Bool))
+  %%     ( ((L2S lst) subset (domain cm))
+  %%     => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
 
 %  op filter_rev (lst:List a)
 % reverse args to filter to get context properties for later simplification
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
       ( ((L2S lst) subset (domain cm))
-      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> ~(TMApply(cm,x))) lst)) )
+      %% added the ~(x in? domain cm) to make this type check:
+      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> (~(x in? domain cm) || ~(TMApply(cm,x)))) lst)) )
 
 
   % theorem L2S_set_diff is [a,M]
@@ -777,63 +836,6 @@ end-proof
       (range (update mp (size mp) lc) = set_insert_new(lc, range mp))
 
 
-%% (*------- CM2S: homomorphism from Characteristic-Map to Set ---------------
-
-%% with characteristic maps there are several choices:
-%% 1. partial map, with default of false using 
-%%        m(x) = map_apply mp false x
-%% 2. total map, using TMApply; requires knowing the exact domain/universe
-%%        m(x) = TMApply mp x
-%% *)
-
-  op [a] CM2S(m:Map(a,Bool)):Set a =  
-    set_fold empty_set
-             (fn(sa:Set a,domelt:a) -> if (domelt in? (domain m)  %% Makes this function type-check
-                                          && ~(domelt in? sa) %% Makes this function type-check
-                                          && TMApply(m,domelt)) %TODO put this conjunct second
-                                       then set_insert_new(domelt, sa)
-                                       else sa)
-             (domain m)
-
-  op [a] S2CM(S:Set a):Map(a,Bool) =  
-    set_fold empty_map
-             (fn(amap:Map(a,Bool),domelt:a) -> (update amap domelt (true)))
-             S
-
-  theorem S2CM_empty_set is [a]
-      (S2CM (empty_set:Set a)) = (empty_map:Map(a,Boolean))
-
-  %TODO: Probably not true: cm may map some elems to false.
-  theorem S2CM_CM2S is [a]
-      fa(cm:Map(a,Bool)) (S2CM (CM2S cm)) = cm 
-
-  theorem S2CM_insert is [a]
-      fa (S:Set a, n:a) (S2CM(set_insert(n,S)) = (update (S2CM S) n true))
-
-  theorem CM2S_empty_map is [a]
-      CM2S(empty_map:Map(a,Bool)) = empty_set
-
-
-  theorem CM2S_update is [a]
-      fa(m:Map(a,Bool), x:a, y:Bool) 
-        CM2S(update m x y)
-            = (if y 
-                 then set_insert(x, CM2S m) %% had set_insert_new here, but it didn't type check.
-               else set_delete(x, CM2S m))
-
-  theorem CM_iso_S is [a]
-    fa(mp:Map(a,Bool),ns:Set a) (CM2S(mp)=ns) = (mp = S2CM ns)
-
-  theorem CM2S_set_insert is [a]
-    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x true)  = set_insert(x, CM2S mp) %% had set_insert_new here, but it didn't type check.
-
-  theorem CM2S_set_delete is [a]
-    fa(x:a,mp:Map(a,Bool)) CM2S(update mp x false) = set_delete(x, CM2S mp)
-
-  theorem CM2S_member is [a]
-    fa(x:a,mp:Map(a,Bool))    
-      ((x in? domain mp)     %%  needed to make this type check
-       => (TMApply(mp,x)) = (x in? CM2S mp))
 
 
 %% (* ------- M2C: homomorphism from Map to Collection ---------------
@@ -1581,6 +1583,21 @@ proof Isa occs_equal_zero
   apply(induct lst)
   apply (metis List__occs.simps(1) in_of_empty)
   by (metis less_numeral_extra(3) occs_pos occs_when_not_in)
+end-proof
+
+proof Isa distribute_concat_over_cons
+  oops
+end-proof
+
+proof Isa L2S_set_diff
+  apply(auto)
+  apply(rule Set__membership)
+  apply(auto)
+  apply(simp add: L2S_member [symmetric] Set__set_difference , auto)
+  apply(simp add: CM2S_member [symmetric])
+  apply(simp add: L2S_member [symmetric] Set__set_difference CM2S_member [symmetric] , auto)
+  apply(metis L2S_member Set__subset_def)
+  apply(metis CM2S_member L2S_member Set__subset_def)
 end-proof
 
 end-spec
