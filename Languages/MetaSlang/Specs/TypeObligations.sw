@@ -1049,11 +1049,6 @@ spec
      then m
      else addName (m, id, 0)
 
- % Make a fresh Isabelle name for a refined op
- op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
-   if refine_num = 0 then qid
-     else Qualified(q,nm^"__"^show refine_num)
-
 % op dontGenerateObligations?(q: String, id: String): Bool =
 %   false %endsIn?(id, "__subtype_pred")
 
@@ -1141,21 +1136,36 @@ spec
                                      then map (fn tau -> stripRangeSubtypes(spc, tau, dontUnfoldTypes)) taus
                                    else taus
                         in
-                        let Qualified(q, id) = refinedQID refine_num qid in
-                        foldr (fn (tau, tcc) ->
-                                 let gamma = gamma0 tvs
-                                 %% Was unfoldStripType but that cause infinite recursion.
-                                 %% Is stripSubtypes sufficient (or necessary)?
-                                 (Some (stripSubtypes(spc, tau)))
-                                 (Some (qid, (curriedParams term).1))
-                                 (Qualified (q, id ^ "_Obligation"))
-                                 in
-                                 let tcc = if generateTerminationConditions?
-                                             then addUniqueExistenceCondition(tcc, gamma, term)
-                                           else tcc
-                                 in
-                                 (tcc, gamma) |- term ?? tau)
-                             (el::tccs, claimNames) taus)
+                        let ref_qid as Qualified(q, id) = refinedQID refine_num qid in
+                        let (new_tccs, claimNames) =
+                            foldr (fn (tau, tcc) ->
+                                     let gamma = gamma0 tvs
+                                     %% Was unfoldStripType but that cause infinite recursion.
+                                     %% Is stripSubtypes sufficient (or necessary)?
+                                     (Some (stripSubtypes(spc, tau)))
+                                     (Some (qid, (curriedParams term).1))
+                                     (Qualified (q, id ^ "_Obligation"))
+                                     in
+                                     let tcc = if generateTerminationConditions?
+                                                 then addUniqueExistenceCondition(tcc, gamma, term)
+                                               else tcc
+                                     in
+                                     (tcc, gamma) |- term ?? tau)
+                               tcc taus
+                        in
+                        if new_tccs = [] then (el::tccs, claimNames)
+                         else
+                         % let new_tccs = reverse new_tccs in
+                         let op_ref_new_tccs = filter (fn Property(_, _, _, fm, _) ->
+                                                         containsRefToOp?(fm, ref_qid))
+                                                 new_tccs
+                         in
+                         let indep_new_tccs = filter (fn p -> p nin? op_ref_new_tccs) new_tccs in
+                         let before_pragma? = (tccs ~= [] && embed? Pragma (head tccs)) in
+                         if before_pragma?
+                           then let prag::tccs = tccs  in
+                                (indep_new_tccs ++ [el, prag] ++ op_ref_new_tccs ++ tccs, claimNames)
+                           else (indep_new_tccs ++ [el]       ++ op_ref_new_tccs ++ tccs, claimNames))
                  | TypeDef (qid as Qualified(q, id), _) ->
                    (let tcc = (el::tccs, claimNames) in
                     case findTheType(spc, qid) of
