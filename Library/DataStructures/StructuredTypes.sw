@@ -29,6 +29,9 @@ theorem diff_of_empty_2 is [a]
 theorem diff_of_cons is [a]
   fa(lst:List a, hd:a, tl: List a) diff(hd::tl, lst) = (if hd in? lst then diff(tl,lst) else hd::diff(tl,lst))
 
+theorem in_of_diff is [a]
+  fa(l1:List a, l2:List a, x:a) (x in? diff(l1,l2)) = (x in? l1 && ~(x in? l2))
+
 theorem delete1_of_empty is [a]
   fa(x:a) delete1(x,[]) = []
 
@@ -1029,11 +1032,9 @@ proof isa L2S_concat
 end-proof
 
 proof isa L2S_diff
-  apply(induct lst arbitrary: sub__v)
-  apply(simp add: List__diff_of_empty L2S_Nil Set__empty_set_set_diff)
-  apply(auto simp add: L2S_Cons diff_of_cons)
-  apply (metis L2S_Cons L2S_delete1 List__delete1.simps(2) Set__distribute_set_delete_over_set_insert)
-  apply (metis L2S_Cons L2S_delete1 List__delete1.simps(2) Set__distribute_set_delete_over_set_insert)
+  apply(rule Set__membership)
+  apply(simp add: L2S_member [symmetric] Set__set_difference)
+  apply(auto simp add: in_of_diff)
 end-proof
 
 proof isa CM2S_Obligation_subtype
@@ -1591,6 +1592,12 @@ end-proof
 
 proof Isa L2S_set_diff_Obligation_subtype1
   apply(metis Ball_set_list_all)
+end-proof
+
+proof Isa in_of_diff
+  apply(induct l1)
+  apply (metis List__diff_of_empty in_of_empty)
+  apply(auto simp add: diff_of_cons)
 end-proof
 
 end-spec
