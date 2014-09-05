@@ -644,20 +644,29 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
    (%String.writeLine ("Returning "^MetaSlangPrint.printTerm M1);
     M1)
 
+ op substType2(ty: MSType, sub: MSVarSubst, freeNames: StringSet.Set): MSType =
+   mapType (id, fn tyi -> case tyi of
+                            | Subtype(s_tyi, pred, a) ->
+                              Subtype(s_tyi, substitute2(pred, sub, freeNames), a)
+                            | _ -> tyi,
+            id)
+     ty   
+
  def substBoundVars(vars, sub, freeNames) = 
    foldr (fn(v, (vars, sub, freeNames)) -> 
             let (v, sub, freeNames) = substBoundVar(v, sub, freeNames) in
             (v::vars, sub, freeNames))
      ([], sub, freeNames) vars
 	
- def substBoundVar((id, s), sub, freeNames) = 
-   let sub = deleteVarFromSub((id, s), sub, []) in
+ def substBoundVar((id, ty), sub, freeNames) =
+   let new_ty = substType2(ty, sub, freeNames) in
+   let sub = deleteVarFromSub((id, ty), sub, []) in
    if StringSet.member(freeNames, id) then
      let id2 = StringUtilities.freshName(id, freeNames) in
-     let sub2 = ((id, s), mkVar(id2, s)) :: sub in
-     ((id2, s), sub2, StringSet.add(freeNames, id2))
+     let sub2 = ((id, ty), mkVar(id2, new_ty)) :: sub in
+     ((id2, new_ty), sub2, StringSet.add(freeNames, id2))
    else
-     ((id, s), sub, freeNames)
+     ((id, new_ty), sub, freeNames)
 
  def deleteVarFromSub(v, sub, sub2) = 
    case sub
@@ -3301,6 +3310,10 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  op dummyMSTerm: MSTerm = Any noPos
  op dummySpec: Spec = emptySpec
 
+ % Make a fresh name for a refined op
+ op refinedQID (refine_num: Nat) (qid as Qualified(q, nm): QualifiedId): QualifiedId =
+   if refine_num = 0 then qid
+     else Qualified(q,nm^"__"^show refine_num)
 
 #translate lisp
 -verbatim

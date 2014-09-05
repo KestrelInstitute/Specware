@@ -94,7 +94,7 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 		%% Unabstracted type variables are treated as rigid
 		| _ -> srt
 	 def freshType srt = 
-	     mapType((fn M -> M),doType,fn p -> p) srt
+	     mapType(id,doType,id) srt
      in
      %% varMap = {| num -> (num1,srt) | (num,srt) in freeVars && num1 = ... |}
      let var_alist = map (fn (num,srt) ->
@@ -103,6 +103,14 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
                              (num,(num1,freshType srt)))) freeVars in
      let varMap = NatMap.fromList var_alist in
      let
+	 def doType(srt: MSType): MSType = 
+	     case srt
+	       of TyVar(v,a) -> 
+		  (case StringMap.find(tyVMap,v)
+		     of Some w -> TyVar(w,a)
+		      | None -> TyVar(v,a)) 
+		%% Unabstracted type variables are treated as rigid
+		| _ -> srt
 	 def doTerm(term: MSTerm): MSTerm = 
 	     case flexVarNum(term)
 	       of Some n -> 
@@ -112,6 +120,8 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
 		| None -> term
 	 def freshTerm trm = 
 	     mapTerm(doTerm, doType, id) trm
+	 def freshType srt = 
+	     mapType(doTerm,doType,id) srt
      in
 	(freshTerm, freshType, List.map (fn (_,var) -> var) var_alist, tyVMap, (doTerm, doType, id))
 
