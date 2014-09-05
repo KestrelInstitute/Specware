@@ -563,8 +563,7 @@ end-proof
   theorem L2S_set_diff is [a,M]
     fa(lst:List a,cm:Map(a,Bool))
       ( ((L2S lst) subset (domain cm))
-      %% added the ~(x in? domain cm) to make this type check:
-      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:a)-> (~(x in? domain cm) || ~(TMApply(cm,x)))) lst)) )
+      => ((L2S lst) -- (CM2S cm)) = (L2S (filter (fn(x:{x:a | x in? lst})->  ~(TMApply(cm,x))) lst)) )
 
 
   % theorem L2S_set_diff is [a,M]
@@ -1582,14 +1581,20 @@ proof Isa occs_equal_zero
 end-proof
 
 proof Isa L2S_set_diff
-  apply(auto)
   apply(rule Set__membership)
   apply(auto)
   apply(simp add: L2S_member [symmetric] Set__set_difference , auto)
-  apply(simp add: CM2S_member [symmetric])
-  apply(simp add: L2S_member [symmetric] Set__set_difference CM2S_member [symmetric] , auto)
+  apply (metis CM2S_member L2S_set_diff_Obligation_subtype0)
+  apply(simp add: L2S_member [symmetric] Set__set_difference CM2S_member [symmetric])
+  apply(metis CM2S_member L2S_set_diff_Obligation_subtype0)
+end-proof
+
+proof Isa L2S_set_diff_Obligation_subtype0
   apply(metis L2S_member Set__subset_def)
-  apply(metis CM2S_member L2S_member Set__subset_def)
+end-proof
+
+proof Isa L2S_set_diff_Obligation_subtype1
+  apply(metis Ball_set_list_all)
 end-proof
 
 end-spec
