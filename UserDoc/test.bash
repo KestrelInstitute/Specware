@@ -1,13 +1,6 @@
 #!/bin/bash
 
-#Check the number of arguments supplied:
-if [ $# -ne 1 ]
-then
-    echo "test: ERROR: Must be given exactly one argument (the directory in which this script resides)."
-    exit 18 # Just a made-up error code.
-fi
-
-THISSCRIPTDIR=$1     #old: `dirname $0`
+THISSCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )" #Simpler commands can just give "." here, which seems bad.
 
 #TODO Test other documentation formats besides PDF?
 
