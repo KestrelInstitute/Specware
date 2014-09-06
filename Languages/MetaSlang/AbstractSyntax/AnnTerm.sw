@@ -65,6 +65,7 @@ MetaSlang qualifying spec
   | Exists1
 
  type AVar b = Id * AType b
+ type AVars b = List (AVar b)
 
   %% Maybe AMatch should be a single thing, and then we use List AMatch in Case above.
  type AMatch b = List (APattern b * ATerm b * ATerm b) % Match is a pattern, a guard, and a body.

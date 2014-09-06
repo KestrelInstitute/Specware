@@ -467,7 +467,7 @@ spec
        : MSTerm * Proof =
     (context.traceDepth := 0;
      let top_term = topTerm path_term in
-     let term = fromPathTerm path_term in
+     let (bound_vars, term) = fromPathTermWithBindings path_term in
      let path = pathTermPath path_term in
      let _ = if rewriteDebug? then
                (writeLine("Rewriting:\n"^printTerm term);
@@ -481,7 +481,8 @@ spec
      let rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
            % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
-           case rewriteRecursive (context, freeVars trm, rules, trm) of
+           case rewriteRecursive (context, if bound_vars = [] then freeVars term else bound_vars,
+                                  rules, trm) of
              | None -> (trm, pf)
              | Some (new_trm, ret_pf) ->
                let new_pf = prove_equalTrans (pf, ret_pf) in
@@ -839,6 +840,10 @@ spec
     run{(tm, trace?, _) <- interpretTerm(spc, script, def_term, top_ty, qid, tracing?);
         return (tm, trace?)}
 
+  op interpretTerm1(spc: Spec, script: Script, def_term: MSTerm, top_ty: MSType, qid: QualifiedId, tracing?: Bool): MSTerm * Bool =
+    let (TypedTerm(tm, _, _), trace?) = interpretTerm0(spc, script, def_term, top_ty, qid, tracing?) in
+    (tm, trace?)
+
   op checkOp(spc: Spec, qid as Qualified(q, id): QualifiedId, id_str: String): SpecCalc.Env QualifiedId =
     case findTheOp(spc, qid) of
       | Some _ -> return qid
@@ -950,7 +955,7 @@ spec
                        (spc, tracing?) props)
             (spc, tracing?) locs }
       | IsoMorphism(iso_osi_prs, rls, opt_qual) -> {
-        result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls);
+        result <- makeIsoMorphism(spc, iso_osi_prs, opt_qual, rls, tracing?);
         return (result, tracing?)}
       | Maintain(qids, rls) -> {
         result <- maintainOpsCoalgebraically(spc, qids, rls, tracing?);

@@ -12,7 +12,7 @@ Utilities qualifying spec
  op varNames (vs: MSVars): List Id = map (fn (vn,_) -> vn) vs
 
  op substitute  : MSTerm * MSVarSubst -> MSTerm
- op freeVars    : MSTerm -> MSVars
+ op freeVars    : [a] ATerm a -> AVars a
 
  %% Translate a term encoding an assignment to a list of pairs.
  %% Redundant assignments of a variable to itself are eliminated.
@@ -335,27 +335,27 @@ Utilities qualifying spec
  op disjointVarNames?(vs1: MSVars, vs2: MSVars): Bool =
    forall? (fn (vn1, _) -> forall? (fn (vn2, _) -> vn1 ~= vn2) vs2) vs1
 
- op [a] removeDuplicateVars: List (AVar a) -> List (AVar a)
+ op [a] removeDuplicateVars: AVars a -> AVars a
  def removeDuplicateVars vars = 
    case vars of
      | [] -> []
      | var :: vars -> insertVar (var, removeDuplicateVars vars)
 
- op [a] insertVar (new_var: AVar a, vars: List (AVar a)): List (AVar a) = 
+ op [a] insertVar (new_var: AVar a, vars: AVars a): AVars a = 
    if (exists? (fn v -> v.1 = new_var.1) vars) then
      vars
    else
      Cons (new_var, vars)
 
- op deleteVar (var_to_remove: MSVar, vars: MSVars): MSVars = 
+ op [a] deleteVar (var_to_remove: AVar a, vars: AVars a): AVars a = 
    List.filter (fn v -> v.1 ~= var_to_remove.1) vars
 
- op insertVars (vars_to_add: MSVars, original_vars: MSVars): MSVars =
+ op [a] insertVars (vars_to_add: AVars a, original_vars: AVars a): AVars a =
    foldl (fn (vars, new_var)       -> insertVar(new_var,       vars)) original_vars vars_to_add
- op deleteVars (vars_to_remove: MSVars, original_vars: MSVars): MSVars =
+ op [a] deleteVars (vars_to_remove: AVars a, original_vars: AVars a): AVars a =
    foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
 
- op freeVarsRec (M : MSTerm): MSVars =   
+ op [a] freeVarsRec (M : ATerm a): AVars a =   
    case M of
      | Var    (v,      _) -> [v]
 
@@ -407,7 +407,7 @@ Utilities qualifying spec
      | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
      | _ -> []
 
- op  freeVarsList : [a] List(a * MSTerm) -> MSVars
+ op  freeVarsList : [a, b] List(a * ATerm b) -> AVars b
  def freeVarsList tms = 
    foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm, vars)) [] tms
 
@@ -418,7 +418,7 @@ Utilities qualifying spec
    let bvars  = freeVarsRec body in
    deleteVars (pvars, insertVars(cvars1, insertVars (cvars, bvars)))
 
- op patVars(pat:MSPattern): MSVars = 
+ op [a] patVars(pat: APattern a): AVars a = 
    case pat
      of AliasPat(p1,p2,_)      -> insertVars (patVars p1, patVars p2)
       | VarPat(v,_)            -> [v]
@@ -434,7 +434,7 @@ Utilities qualifying spec
       | RestrictedPat(p,_,_)   -> patVars p
       | TypedPat(p,_,_)        -> patVars p
 
- op freeVarsPat(pat:MSPattern): MSVars = 
+ op [a] freeVarsPat(pat:APattern a): AVars a = 
    case pat
      of AliasPat(p1,p2,_)      -> insertVars (freeVarsPat p1, freeVarsPat p2)
       | VarPat(v,_)            -> []
@@ -972,7 +972,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
    {types = mapTypeInfos letRecToLetTermTypeInfo spc.types,
     ops   = mapOpInfos   letRecToLetTermOpInfo   spc.ops}
 
- op  [a] patternVars  : APattern a -> List (AVar a)
+ op  [a] patternVars  : APattern a -> AVars a
  def [a] patternVars(p) = 
      let
 	def loopP(p:APattern a,vs) = 
