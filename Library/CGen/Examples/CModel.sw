@@ -867,7 +867,7 @@ op popFrame: Monad () =
 a C function with n >= 0 arguments
 as a Specware op of the form
 
-  op f (arg_1:Ty_1, ..., arg_n:Ty_n): Monad Ty
+  op f (arg_1:Ty_1) ... (arg_n:Ty_n): Monad Ty
 
 where:
 - each Ty_i is one of the Specware types
@@ -887,7 +887,7 @@ for each such f there is another op of the form
 
   op f' (args: List Value): Monad Ty =
     if length args = n && map typeOfValue args = [ty_1, ..., ty_n]
-    then f (args@0, ..., args@(n-1))
+    then f (args@0) ... (args@(n-1))
     else monadError
 
 where each ty_i:Type is the C type of the values in Ty_i.
@@ -1070,8 +1070,8 @@ op WHILE (test:Expression) (body:Statement ()): Statement () =
       None
 
 (* The do and for statements are defined in terms of the while statement.
-In the definitions of these two ops, we arrange the monadic syntax
-in a way that resembles C syntax. *)
+In the definition of the following two ops,
+we arrange the monadic syntax in a way that resembles C syntax. *)
 
 op DO (body:Statement ()) (test:Expression): Statement () = {
   body;
