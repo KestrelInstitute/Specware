@@ -131,7 +131,7 @@ type PathTerm = APathTerm Position.Position
       | TypedTerm(x, ty, _) ->
         (case postCondn? ty of
            | None -> [([], x)]
-           | Some post -> [([], x), (freeVars post, post)])
+           | Some post -> [([], x), ([], post)])
       | And(l, _) -> map (fn t -> ([], t)) l
       | _ -> []
 

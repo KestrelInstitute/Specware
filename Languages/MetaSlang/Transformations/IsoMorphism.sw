@@ -871,7 +871,7 @@ op makeDerivedOpDefs(spc:           Spec,
        else
          {print ("mdod: "^printQualifiedId qid_pr^" not opaque\n");
           when (nm = "nnnot") (print(printTermWithTypes dfn^"\n"))};
-       if qid = qid_pr
+         if qid = qid_pr
          then    % refine def instead of generating new one
          return ((addRefinedDefToOpinfo(info, dfn_pr),
                   info)
@@ -880,7 +880,8 @@ op makeDerivedOpDefs(spc:           Spec,
        else {
        qid_pr_ref <- return (mkInfixOp(qid_pr,info.fixity,op_ty_pr)); 
        id_def_pr <- return (makeTrivialDef(spc, dfn_pr, qid_pr_ref));
-       new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr newOptQual; 
+       new_dfn <- osiTerm (spc, iso_info, iso_fn_info) op_ty_pr id_def_pr newOptQual;
+       % let _ = writeLine("new def for "^show qid^":\n"^printTerm new_dfn) in
        % createPrimeDef(spc, id_def_pr, op_ty_pr, trg_ty, src_ty, osi_ref, iso_ref) in
        return ((info << {dfn = maybePiTerm(tvs, typeTerm(new_dfn, op_ty, noPos))},
                 info << {names = [qid_pr],
@@ -1012,7 +1013,7 @@ op simplifyUnPrimed?: Bool = false
 op opaqueSimplifyScript: Script = mkSteps[]  %mkSimplify[Rewrite idQId]
 
 op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
-                    newOptQual : Option String, extra_rules: List RuleSpec)
+                    newOptQual : Option String, extra_rules: List RuleSpec, trace?: TraceFlag)
     : SpecCalc.Env Spec =
   catch {
     %  Extend the list
@@ -1041,7 +1042,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
     (base_iso_info, typeNameInfo, spc, _)
         <- foldM (fn (base_iso_info, typeNameInfo, spc, i) ->
                     fn pr as ((iso,tvs,src_ty,trg_ty), (osi,inv_tvs,inv_src_ty,inv_trg_ty)) ->
-                    let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
+                    % let _ = writeLine("iso type: "^printType src_ty^" -> "^printType trg_ty) in
                     case src_ty of
                       | Base(qid', [], _) ->
                         return(pr :: base_iso_info, typeNameInfo, spc, i)
@@ -1304,7 +1305,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                       ((spc,opsDone),defnTerm) <- doTerm (spc,opsDone) monoDefn ctxtType;
                       newDefnTerm <- return (typeTerm (defnTerm, ctxtType,noPos));
                       spc <- return (addOpDef (spc, newQId, info.fixity, newDefnTerm));
-                      print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
+                      % print ("doTerm: adding defn " ^ printQualifiedId newQId ^ " : " ^ printTerm newDefnTerm ^ "\n");
                       return ((spc,opsDone), Fun (Op(newQId, fxty), ctxtType, pos))
                     }
                     else {
@@ -1560,8 +1561,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                         mkMetaRule0 (Qualified("MSRule", "simplifyUnfoldCase"))]
      in
      let main_script =
-       Steps([% Trace true,% SimpStandard,
-              mkSimplify (gen_unfolds
+       Steps([mkSimplify (gen_unfolds
                             ++ iso_osi_rewrites
                             ++ non_iso_extra_rules
                             % ++ iso_osi_rewrites
@@ -1623,13 +1623,27 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
                      if (simplifyUnPrimed? || (derivedQId?(qid, newOptQual, spc) && some?(findAQualifierMap(qidPr_Set, q, id)))
                            || findAQualifierMap(qidPrMap, q, id) = Some(Qualified(q, id)))
                        then {
-                       when traceIsomorphismGenerator? 
-                         (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
-                       interpretTerm(spc, if qid in? transformQIds
-                                           then main_script
-                                           else opaqueSimplifyScript,
-                                     dfn, ty, qid, false)
-                     }
+                         when traceIsomorphismGenerator? 
+                           (print ("Simplify? " ^ printQualifiedId qid ^ "\n"));
+                         % First transform the subtypes
+                         dfn1 <- return(mapTerm(fn t -> t,
+                                                fn ty -> case ty of
+                                                          | Subtype(tyi, p, a) ->
+                                                            let (p_n, _) = interpretTerm1
+                                                                             (spc, if qid in? transformQIds
+                                                                                     then main_script
+                                                                                   else opaqueSimplifyScript,
+                                                                              p, ty, qid, trace?)
+                                                            in if equalTerm?(p, p_n) then ty
+                                                               else Subtype(tyi, p_n, a)
+                                                          | _ -> ty,
+                                                fn p -> p)
+                                          dfn);
+                         interpretTerm(spc, if qid in? transformQIds
+                                              then main_script
+                                            else opaqueSimplifyScript,
+                                       dfn1, ty, qid, trace?)
+                         }
                      else
                        return (dfn, false, prove_equalRefl (ty, dfn))
                    }
@@ -1671,7 +1685,8 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
 
 op SpecTransform.isomorphism (spc: Spec) (newOptQual : Option String)
                              (iso_qid_prs: List(QualifiedId * QualifiedId))
-                             (extra_rules: List RuleSpec):  SpecCalc.Env Spec =
-  makeIsoMorphism(spc, iso_qid_prs, newOptQual, extra_rules)
+                             (extra_rules: List RuleSpec)
+                             (trace?: TraceFlag):  SpecCalc.Env Spec =
+  makeIsoMorphism(spc, iso_qid_prs, newOptQual, extra_rules, trace?)
 
 end-spec

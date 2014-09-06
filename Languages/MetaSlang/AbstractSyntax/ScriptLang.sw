@@ -67,7 +67,7 @@ op specCommand?(script: Script): Bool =
     | _ -> false
 
 %% Defined in Isomorphism.sw
-op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * RuleSpecs -> SpecCalc.Env Spec
+op Isomorphism.makeIsoMorphism: Spec * List(QualifiedId * QualifiedId) * Option String * RuleSpecs * TraceFlag -> SpecCalc.Env Spec
 op Iso.applyIso:  Spec * List (QualifiedId * QualifiedId) * Qualifier * RuleSpecs -> SpecCalc.Env Spec
 
 %% Defined in Coalgebraic.sw

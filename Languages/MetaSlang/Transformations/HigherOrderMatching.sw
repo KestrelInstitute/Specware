@@ -578,7 +578,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
              [] (unifyTypes2(context,subst,s,ty2,OT,Some N))
 	else []
       | (M, N as Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_), _,_)) | ~(hasFlexRef? M) ->
-        matchPairs(context,subst,insert(N,M,None,insert(N,M,None,stack)))
+        matchPairs(context,subst,insert(N,M,None,stack))
 %%
 %% Eta rules
 %%
