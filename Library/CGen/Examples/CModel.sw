@@ -29,6 +29,7 @@ spec
 
 import /Library/General/OptionExt
 import /Library/General/Map
+import /Library/General/EndoRelation
 
 (* We define integer values similarly to the C deep and shallow embeddings,
 parameterized over the size of bytes, shorts, ints, longs, and long longs. *)
@@ -73,11 +74,12 @@ one past the last element of an array object
 or one past an object that is not an element of an array object [ISO 6.5.6/8].
 Such pointers cannot be dereferenced [ISO 6.5.6/8],
 but have well-defined arithmetic [ISO 6.5.6/8-9].
-Thus we define a pointer as
+Thus we define a non-null pointer as
 either an object designator or something that points one past another object.
-This notion is not present in the C deep and shallow embeddings. *)
+The notion of pointer one past an object
+is not present in the C deep and shallow embeddings. *)
 
-type Pointer =
+type NNPointer =
   | object ObjectDesignator
   | past1 ObjectDesignator
 
@@ -108,6 +110,8 @@ op integerType? (ty:Type): Bool % = ...
 op scalarType? (ty:Type): Bool % = ...
   % same definition as C deep embedding
 
+type ScalarType = (Type | scalarType?)
+
 (* Values are defined similarly to the C deep embedding.
 Note that arrays are never empty [ISO 6.2.5/20]. *)
 
@@ -123,7 +127,7 @@ type Value =
   | slong Slong
   | ullong Ullong
   | sllong Sllong
-  | pointer Type * Pointer
+  | nnpointer Type * NNPointer
   | array Type * List1 Value
   | nullpointer Type
 
@@ -140,7 +144,7 @@ op typeOfValue (val:Value): Type =
   | slong _ -> slong
   | ullong _ -> ullong
   | sllong _ -> sllong
-  | pointer (ty, _) -> ty
+  | nnpointer (ty, _) -> ty
   | array (ty, vals) -> array (ty, length vals)
   | nullpointer ty -> ty
 
@@ -166,6 +170,40 @@ type ScalarValue = (Value | scalarValue?)
 
 op zeroScalar? (val:ScalarValue): Bool % = ...
   % similar definition as C deep embedding
+
+(* Subtypes of values corresponding to the scalar C types in our model.
+These are used as argument and return types of Specware ops
+that represent C functions.
+The predicate toType? defined below can be used
+to form further subtypes of pointers to specific types,
+e.g. (PointerValue | toType? uchar). *)
+
+type UcharValue = (Value | embed? uchar)
+
+type ScharValue = (Value | embed? schar)
+
+type CharValue = (Value | embed? char)
+
+type UshortValue = (Value | embed? ushort)
+
+type SshortValue = (Value | embed? sshort)
+
+type UintValue = (Value | embed? uint)
+
+type SintValue = (Value | embed? sint)
+
+type UlongValue = (Value | embed? ulong)
+
+type SlongValue = (Value | embed? slong)
+
+type UllongValue = (Value | embed? ullong)
+
+type SllongValue = (Value | embed? sllong)
+
+type PointerValue = {val:Value | embed? nnpointer val || embed? nullpointer val}
+
+op toType? (ty:Type) (val:PointerValue): Bool =
+  let pointer ty' = typeOfValue val in ty' = ty
 
 (* We model automatic storage [ISO 6.2.4/5] as
 a list of finite maps from identifiers to values.
@@ -243,11 +281,11 @@ op wfValue? (state:State) (val:Value): Bool =
       (let val = vals @ i in
        typeOfValue val = ty &&  % array element has correct type
        wfValue? state val))  % array element is recursively well-formed
-  | pointer (ty, object obj) ->
+  | nnpointer (ty, object obj) ->
     (case readObject state obj of
     | Some val -> typeOfValue val = ty  % designates object of correct type
     | None -> false)
-  | pointer (ty, past1 obj) ->
+  | nnpointer (ty, past1 obj) ->
     (case readObject state obj of
     | Some val ->  % obj designates an object in the state
       embed? outside obj ||  % top-level object (array or not)
@@ -255,7 +293,8 @@ op wfValue? (state:State) (val:Value): Bool =
     | None -> false)
   | _ -> true  % null pointer and integer values always well-formed
 
-(* A state is well-formed iff all its values are well-formed (in the state)
+(* A state is well-formed iff
+all its values are well-formed (in the state)
 and (for now) automatic storage includes no arrays. *)
 
 op wfState? (state:State): Bool =
@@ -274,6 +313,8 @@ type IntegerConstant % = ...
 
 op valueOfIntegerConstant (c:IntegerConstant): Option IntegerValue % = ...
   % same definition as C deep embedding
+
+op integerConstant1: IntegerConstant % = ...
 
 (* We define the unary arithmetic operators + - ~ ! on values
 as in the deep and shallow embeddings,
@@ -337,7 +378,7 @@ op SUB_i (val1:IntegerValue) (val2:IntegerValue): Option IntegerValue % = ...
 yields a well-defined result under certain conditions [ISO 6.5.6/8,7].
 The model of pointer arithmetic below
 is not present in the deep or shallow embeddings.
-We start with an op that adds a mathematical integer to a pointer.
+We start with an op that adds a mathematical integer to a non-null pointer.
 If ptr designates a top-level non-array object, i must be
 either 0 (in which case the pointer is unchanged)
 or 1 (in which case the pointer one past the object is returned).
@@ -348,7 +389,7 @@ the following op treats a top-level array object
 the same as a top-level non-array object. *)
 
 op add_int_to_pointer
-  (state:State) (i:Int) (ptr:Pointer): Option Pointer =
+  (state:State) (i:Int) (ptr:NNPointer): Option NNPointer =
   case ptr of
   % pointer designates object:
   | object obj ->
@@ -406,17 +447,17 @@ op ADD_v (state:State) (val1:Value) (val2:Value): Option Value =
       ADD_i val1 val2
     else
       case val2 of
-      | pointer (ty, ptr) ->
+      | nnpointer (ty, ptr) ->
         (case add_int_to_pointer state (mathIntOfValue val1) ptr of
-        | Some ptr' -> Some (pointer (ty, ptr'))
+        | Some ptr' -> Some (nnpointer (ty, ptr'))
         | None -> None)
       | _ -> None
   else % ~ (integerValue? val1)
     case val1 of
-    | pointer (ty, ptr) ->
+    | nnpointer (ty, ptr) ->
       if integerValue? val2 then
         case add_int_to_pointer state (mathIntOfValue val2) ptr of
-        | Some ptr' -> Some (pointer (ty, ptr'))
+        | Some ptr' -> Some (nnpointer (ty, ptr'))
         | None -> None
       else
         None
@@ -430,18 +471,18 @@ op SUB_v (state:State) (val1:Value) (val2:Value): Option Value =
       None
   else % ~ (integerValue? val1)
     case val1 of
-    | pointer (ty, ptr) ->
+    | nnpointer (ty, ptr) ->
       if integerValue? val2 then
         case add_int_to_pointer state (- (mathIntOfValue val2)) ptr of
-        | Some ptr' -> Some (pointer (ty, ptr'))
+        | Some ptr' -> Some (nnpointer (ty, ptr'))
         | None -> None
       else
         None
     | _ -> None
 
 (* We define a shallow embedding of (some) C expressions [ISO 6.5].
-We consider side-effect-free expressions for now,
-modeling assignments as non-expressions (e.g. as statements).
+We consider only side-effect-free expressions for now,
+modeling assignments as statements (see below).
 Thus, in our model an expression yields as result
 either a value or an object designator [ISO 6.5/1].
 In the shallow embedding,
@@ -495,7 +536,7 @@ op convertArray (e:Expression): Expression =
       | Some val ->
         (case typeOfValue val of
         | array (ty, _) ->
-          Some (value (pointer (ty, (object (subscript (obj, 0)))))) % convert
+          Some (value (nnpointer (ty, (object (subscript (obj, 0)))))) % convert
         | _ -> e state) % no conversion for non-arrays
       | None -> None) % error, no object is designated
     | Some (value _) -> e state % this case should never occur
@@ -511,26 +552,16 @@ op constant (c:IntegerConstant): Expression =
     | None -> None
 
 (* In our shallow embedding,
-automatic [ISO 6.2.4/5] variables may be represented
-as identifiers in the automatic storage component of the state,
-but also as Specware bound variables
-(e.g. op arguments, let-bound variables, monad-bound variables).
-Op svariable captures the first case ('s' for 'state');
-identifiers are looked up only in the top frame, if any.
-Op bvariable captures the second case ('b' for 'bound');
-it takes a value as argument
-because that is the Specware type of the bound variables. *)
+automatic [ISO 6.2.4/5] variables are represented
+as identifiers in the automatic storage component of the state. *)
 
-op svariable (var:Identifier): Expression =
+op variable (var:Identifier): Expression =
   fn state:State ->
     if state.automatic = []
     then None % no automatic variables
     else case last state.automatic var of
          | Some val -> Some (value val)
          | None -> None
-
-op bvariable (var:Value): Expression =
-  fn state:State -> Some (value var)
 
 (* The address operator &
 must be applied to an expression that designates an object [ISO 6.5.3.2/1]
@@ -546,19 +577,19 @@ op AMP(*ersand*) (e:Expression): Expression =
       (case readObject state obj of
       | Some val ->
         let ty = typeOfValue val in
-        Some (value (pointer (ty, object obj)))
+        Some (value (nnpointer (ty, object obj)))
       | None -> None)
     | _ -> None
 
 (* The indirection operator *
-must be applied to a pointer value [ISO 6.5.3.2/2],
+must be applied to a non-null pointer value [ISO 6.5.3.2/2],
 which is turned into an object designator [ISO 6.5.3.2/4],
 provided that the pointer points to an object. *)
 
 op STAR (e:Expression): Expression =
   fn state:State ->
-    case (convertArray (convertLvalue e)) state of
-    | Some (value (pointer (_, object obj))) -> Some (object obj)
+    case convertArray (convertLvalue e) state of
+    | Some (value (nnpointer (_, object obj))) -> Some (object obj)
     | _ -> None
 
 (* The unary arithmetic operators and the binary operators defined earlier
@@ -568,7 +599,7 @@ in the same order as in [ISO]. *)
 
 op liftUnary (OP: Value -> Option Value) (e:Expression): Expression =
   fn state:State ->
-    case (convertArray (convertLvalue e)) state of
+    case convertArray (convertLvalue e) state of
     | Some (value val) ->
       (case OP val of
       | Some val' -> Some (value val')
@@ -591,8 +622,8 @@ op liftBinary
   (OP: Value -> Value -> Option Value) (e1:Expression) (e2:Expression)
   : Expression =
   fn state:State ->
-    case ((convertArray (convertLvalue e1)) state,
-          (convertArray (convertLvalue e2)) state) of
+    case (convertArray (convertLvalue e1) state,
+          convertArray (convertLvalue e2) state) of
     | (Some (value val1), Some (value val2)) ->
       (case OP val1 val2 of
       | Some val -> Some (value val)
@@ -611,8 +642,8 @@ op REM (e1:Expression, e2:Expression) infixl 50: Expression =
 op ADD (e1:Expression, e2:Expression) infixl 49: Expression =
   % we cannot use liftBinary here because ADD_v depends on the state
   fn state:State ->
-    case ((convertArray (convertLvalue e1)) state,
-          (convertArray (convertLvalue e2)) state) of
+    case (convertArray (convertLvalue e1) state,
+          convertArray (convertLvalue e2) state) of
     | (Some (value val1), Some (value val2)) ->
       (case ADD_v state val1 val2 of
       | Some val -> Some (value val)
@@ -622,8 +653,8 @@ op ADD (e1:Expression, e2:Expression) infixl 49: Expression =
 op SUB (e1:Expression, e2:Expression) infixl 49: Expression =
   % we cannot use liftBinary here because SUB_v depends on the state
   fn state:State ->
-    case ((convertArray (convertLvalue e1)) state,
-          (convertArray (convertLvalue e2)) state) of
+    case (convertArray (convertLvalue e1) state,
+          convertArray (convertLvalue e2) state) of
     | (Some (value val1), Some (value val2)) ->
       (case SUB_v state val1 val2 of
       | Some val -> Some (value val)
@@ -673,11 +704,11 @@ op SBS (e1:Expression) (e2:Expression) infixl 51: Expression =
 
 op LAND (e1:Expression, e2:Expression) infixl 42: Expression =
   fn state:State ->
-    case (convertArray (convertLvalue e1)) state of
+    case convertArray (convertLvalue e1) state of
     | Some (value val1) ->
       if scalarValue? val1 then
         if zeroScalar? val1 then Some (value int0)
-        else case (convertArray (convertLvalue e2)) state of
+        else case convertArray (convertLvalue e2) state of
              | Some (value val2) ->
                if scalarValue? val2 then
                  if zeroScalar? val2 then Some (value int0)
@@ -687,13 +718,13 @@ op LAND (e1:Expression, e2:Expression) infixl 42: Expression =
       else None
     | _ -> None
 
-op LOR (e1:Expression, e2:Expression) infixl 42: Expression =
+op LOR (e1:Expression, e2:Expression) infixl 41: Expression =
   fn state:State ->
-    case (convertArray (convertLvalue e1)) state of
+    case convertArray (convertLvalue e1) state of
     | Some (value val1) ->
       if scalarValue? val1 then
         if ~(zeroScalar? val1) then Some (value int1)
-        else case (convertArray (convertLvalue e2)) state of
+        else case convertArray (convertLvalue e2) state of
              | Some (value val2) ->
                if scalarValue? val2 then
                  if zeroScalar? val2 then Some (value int0)
@@ -703,59 +734,361 @@ op LOR (e1:Expression, e2:Expression) infixl 42: Expression =
       else None
     | _ -> None
 
-% TODO as statements:
-% - function call
-% - increment/decrement?
-% - simple assignment
-% - compound assignment?
-% - automatic variable declaration
-% - selection -- if
-% - iteration -- while do-while for
-% - jump -- return
+(* We introduce a state-error monad, with error modeled by None.
+Op monadBind enables the use of monadic syntax in Specware. *)
 
-%%%%%%%%%% IN PROGRESS...
+type Monad a = State -> Option (State * a)
 
-%%%%%%%%%% RE-INTRODUCE AS NEEDED:
+op [a,b] monadBind (m: Monad a, f: a -> Monad b): Monad b =
+  fn state:State ->
+    case m state of
+    | Some (state', x) -> f x state'
+    | None -> None
 
-% (* We introduce a state-error monad for C, with error modeled by None.
-% Op monadBind enables the use of monadic syntax in Specware. *)
+op [a] monadReturn (x:a): Monad a =
+  fn state:State -> Some (state, x)
 
-% type C a = State -> Option (State * a)
+op [a] monadError: Monad a =
+  fn state:State -> None
 
-% op [a,b] monadBind (comp1: C a, comp2: a -> C b): C b =
-%   fn state:State ->
-%     case comp1 state of
-%     | Some (state', x) -> comp2 x state'
-%     | None -> None
+(* A statement [ISO 6.8] transforms the state and may generate an error.
+As in the deep embedding,
+to model the execution of a function call that returns a value,
+we regard a statement as also potentially returning a value.
+Thus, the type of semantic statements is defined as a synonym of Monad;
+this type is more general than needed,
+because the type parameter will be always instantiated
+to a subtype of Value, or to () for void. *)
 
-% (* Lift constants and functions to C monad. *)
+type Statement a = Monad a
 
-% op [a] conC (x:a): C a =  % monad return
-%   fn state:State -> Some (state, x)
+(* While assignment is an expression in C [ISO 6.5.16],
+in our model we consider it a statement
+because expressions in our model have no side effects.
+Since expressions have no side effects in our model,
+we can define compound assignments [ISO 6.5.16.2]
+in terms of simple assignments [ISO 6.5.16.1]. *)
 
-% op [a,b] funC (f: a -> b): a -> C b =
-%   fn x:a -> fn state:State -> Some (state, f x)
+op ASG (e1:Expression, e2:Expression) infixl 40: Statement () =
+  fn state:State ->
+    case (convertArray e1 state, convertArray (convertLvalue e2) state) of
+    | (Some (object obj), Some (value val)) ->
+      (case writeObject state obj val of
+      | Some state' -> Some (state', ())
+      | None -> None)
+    | _ -> None
 
-% (* Move state out of and into the C monad. *)
+op ASG_MUL (e1:Expression, e2:Expression) infixl 40: Statement () =
+  e1 ASG (e1 MUL e2)
 
-% op outC: C State =
-%   fn state:State -> Some (state, state)
+op ASG_DIV (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 DIV e2)
 
-% op inC (state:State): C () =
-%   fn state':State -> Some (state, ())
+op ASG_REM (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 REM e2)
 
-% (* Monadic versions of readObject and writeObject. *)
+op ASG_ADD (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 ADD e2)
 
-% op readObjectC (obj:ObjectDesignator): C Value =
-%   fn state:State ->
-%     case readObject state obj of
-%     | Some val -> Some (state, val)
-%     | None -> None
+op ASG_SUB (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 SUB e2)
 
-% op writeObjectC (obj:ObjectDesignator) (newVal:Value): C () =
-%   fn state:State ->
-%     case writeObject state obj newVal of
-%     | Some state' -> Some (state', ())
-%     | None -> None
+op ASG_SHL (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 SHL e2)
+
+op ASG_SHR (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 SHR e2)
+
+op ASG_AND (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 AND e2)
+
+op ASG_XOR (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 XOR e2)
+
+op ASG_IOR (e1:Expression, e2:Expression) infixl 40: Statement () =
+   e1 ASG (e1 IOR e2)
+
+(* Because expressions are pure in our model,
+increment and decrement [ISO 6.5.2.4, 6.5.3.1]
+are defined in terms of assignment.
+Given that increment and decrement are statements in our model,
+the distinction between prefix and postfix is immaterial. *)
+
+op INC (e:Expression): Statement () =
+  e ASG_ADD (constant integerConstant1)
+
+op DEC (e:Expression): Statement () =
+  e ASG_SUB (constant integerConstant1)
+
+(* We model automatic variable declarations [ISO 6.7] as statement,
+even though declarations are not statements [ISO 6.8.2].
+This modeling is justified by the fact that, semantically,
+an automatic variable declaration
+transforms the state and may generate an error.
+For now we only allow scalar types for automatic variables.
+The declaration specifies the type and name of the variable,
+and requires an initializing expression [ISO 6.7.9].
+The variable is added to the topmost frame,
+unless one with the same name already exists. *)
+
+op DECL (ty:Type) (id:Identifier) (e:Expression): Statement () =
+  fn state:State ->
+    if scalarType? ty &&
+       state.automatic ~= [] &&
+       id nin? domain (last state.automatic)
+    then case convertArray (convertLvalue e) state of
+         | Some (value val) ->
+           if typeOfValue val = ty
+           then let newFrame = update (last state.automatic) id val in
+                let newAuto = update (state.automatic,
+                                      length state.automatic - 1,
+                                      newFrame) in
+                let newState = state << {automatic = newAuto} in
+                Some (newState, ())
+           else None
+         | _ -> None
+    else None
+
+(* When a function is called,
+a new empty frame for automatic storage is pushed into the call stack.
+When the call completes,
+the topmost frame is popped. *)
+
+op pushFrame: Monad () =
+  fn state:State ->
+    Some (state << {automatic = state.automatic ++ [empty]}, ())
+
+op popFrame: Monad () =
+  fn state:State ->
+    if state.automatic = [] then None
+    else Some (state << {automatic = butLast state.automatic}, ())
+
+(* In our shallow embedding, we represent
+a C function with n >= 0 arguments
+as a Specware op of the form
+
+  op f (arg_1:Ty_1, ..., arg_n:Ty_n): Monad Ty
+
+where:
+- each Ty_i is one of the Specware types
+  UcharValue, ScharValue, CharValue,
+  UshortValue, SshortValue,
+  UintValue, SintValue,
+  UlongValue, SlongValue,
+  UllongValue, SllongValue,
+  and (PointerValue | totype? ty) for some C type ty:Type;
+- Ty is () if the C function returns void,
+  otherwise T is one of the types above admissible for the Ty_i's.
+The monad captures the fact that
+the function transforms the state, may yield an error, and may return a result.
+
+In order to handle all functions of this form uniformly,
+for each such f there is another op of the form
+
+  op f' (args: List Value): Monad Ty =
+    if length args = n && map typeOfValue args = [ty_1, ..., ty_n]
+    then f (args@0, ..., args@(n-1))
+    else monadError
+
+where each ty_i:Type is the C type of the values in Ty_i.
+In other words, f' wraps f to
+take a list of values,
+check that they match f's arguments in number and types,
+and returns f's result.
+Note that f' can be mechanically generated from f.
+
+In our shallow embedding, we represent
+calls to f by applying one of two ops to f':
+the first op (CALL) models the case in which
+the function is called for its side effects only,
+and the return value (if any) is discarded;
+the second op (ASGCALL) models the case in which
+the function's return value is assigned to an lvalue. *)
+
+type WrappedFunction a = List Value -> Monad a
+
+op eval_arguments (eargs: List Expression): Monad (List Value) =
+  fn state:State ->
+    case eargs of
+    | [] -> Some (state, [])
+    | earg::eargs ->
+      (case convertArray (convertLvalue earg) state of
+      | Some (value arg) ->
+        (case eval_arguments eargs state of
+        | Some (_, args) -> Some (state, arg::args)
+        | None -> None)
+      | _ -> None)
+
+op [a] CALL (f': WrappedFunction a) (eargs: List Expression): Statement () =
+ {args <- eval_arguments eargs;
+  pushFrame;
+  f' args;
+  popFrame}
+
+op ARGCALL
+  (lvalue:Expression) (f': WrappedFunction Value) (eargs: List Expression)
+  : Statement () =
+ {assignee <- (fn state:State ->
+                case convertArray lvalue state of
+                | Some result -> Some (state, result)
+                | None -> None);
+  case assignee of
+  | object obj ->
+    {args <- eval_arguments eargs;
+     pushFrame;
+     retVal <- f' args;
+     popFrame;
+     (fn state:State ->
+       case writeObject state obj retVal of
+       | Some state' -> Some (state', ())
+       | None -> None)}
+  | _ -> monadError}
+
+(* A return statement [ISO 6.8.6.4] with an expression
+lifts an expression to a statement that yields a value.
+This model does not terminate the execution of a function:
+when representing C functions in the shallow embedding,
+care must be taken to use op RETURN
+only as the last action of a Specware op that represents a C function.
+A better approach might be to incorporate return from function into the monad
+and propagate it in the same way as errors are propagated;
+this possibility may be investigated in the future.
+We do not model return statements without expressions;
+Specware ops that represent void C functions simply terminate execution. *)
+
+op RETURN (e:Expression): Statement Value =
+  fn state:State ->
+    case convertArray (convertLvalue e) state of
+    | Some (value val) -> Some (state, val)
+    | _ -> None
+
+(* We define the if statement [ISO 6.8.4.1], with and without else.
+The form with else (i.e. IFELSE) has a polymorphic type,
+enabling the use of IFELSE with
+both branches that return nothing and branches that return values.
+The form without else (e.g. IF) has a monomorphic type,
+because the implicit else branch returns nothing. *)
+
+op [a] IFELSE (test:Expression)
+              (truebranch:Statement a)
+              (falsebranch:Statement a)
+              : Statement a =
+  fn state:State ->
+    case convertArray (convertLvalue test) state of
+    | Some (value val) ->
+      if scalarValue? val
+      then if zeroScalar? val
+           then falsebranch state
+           else truebranch state
+      else None
+    | _ -> None
+
+op IF (test:Expression) (branch:Statement ()): Statement () =
+  IFELSE test branch (monadReturn ())
+
+(* A while statement is characterized by
+a test (i.e. controlling expression) and a body statement.
+The loop is to continue in a state iff
+the expression yields a non-zero scalar value in that state. *)
+
+op loopContinues? (test:Expression) (state:State): Bool =
+  case convertArray (convertLvalue test) state of
+  | Some (value val) -> scalarValue? val && zeroScalar? val
+  | _ -> false
+
+(* A loop invariant is a predicate over states that
+is preserved by the loop body
+under the assumption that the loop's test is true
+and under the assumption that the body does not yield an error. *)
+
+op loopInvariant?
+  (test:Expression) (body:Statement ()) (inv: State -> Bool): Bool =
+  fa (state:State)
+    loopContinues? test state &&
+    inv state =>
+    (case body state of
+    | Some (state', ()) -> inv state'
+    | None -> true)
+
+(* A loop terminates in a state iff
+execution of the loop starting from that state
+eventually leads to an error or to a state where the test is false.
+As customary, this can be formalized by saying that
+each loop iteration must "decrease" the state
+according to some well-founded relation over states.
+The following op says when a statement (the body of a loop)
+decreases a state according to a well-founded relation.
+If the statement generates an error,
+the following op returns true
+because errors cause termination. *)
+
+op decreasesState?
+  (s:Statement ()) (rel:WellFoundedRelation State) (state:State): Bool =
+  case s state of
+  | Some (state', ()) -> rel (state', state)
+  | None -> true
+
+(* If a well-founded relation exists
+such that decreaseState? holds
+for the body of a loop
+for all the states for which loopContinues? holds,
+the loop always terminates.
+However, this may be an excessively strong condition to show---
+we want to generate termination proofs for our generated C code.
+It suffices that the loop body decreases states
+that satisfy some loop invariant.
+A loop terminates in a state if
+there exist some well-founded relation and some loop invariant such that
+the invariant holds in the state
+(and thus holds at every successive iteration, by definition of invariant)
+and the body decreases each state
+that satisfies the invariant and that passes the test. *)
+
+op loopTerminates? (test:Expression) (body:Statement ()) (state:State): Bool =
+  ex (rel: WellFoundedRelation State, inv: State -> Bool)
+    inv state &&
+    loopInvariant? test body inv &&
+    (fa (state':State)
+      loopContinues? test state' && decreasesState? body rel state')
+
+(* For now we are only interested in generating terminating C functions,
+and in particular terminating loops.
+We model non-termination as an error. *)
+
+op WHILE (test:Expression) (body:Statement ()): Statement () =
+  fn state:State ->
+    if loopTerminates? test body state then
+      if loopContinues? test state then
+        % execute body and execute the while statement again:
+        case body state of
+        | Some (state', ()) -> WHILE test body state'
+        | None -> None
+      else
+        % exit loop:
+        Some (state, ())
+    else % loop does not terminate
+      None
+
+(* The do and for statements are defined in terms of the while statement.
+In the definitions of these two ops, we arrange the monadic syntax
+in a way that resembles C syntax. *)
+
+op DO (body:Statement ()) (test:Expression): Statement () = {
+  body;
+  WHILE (test)
+    body
+}
+
+op FOR (init:Statement ())
+       (test:Expression)
+       (update:Statement ())
+       (body: Statement ())
+       : Statement () = {
+  init;
+  WHILE (test) {
+    body;
+    update
+  }
+}
 
 endspec
