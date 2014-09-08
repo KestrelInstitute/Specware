@@ -75,7 +75,10 @@ theorem push_aux_append is [a]
 %% Push the elements of lst onto stk (earlier elements of lst go shallower in the stack):
 
 op [a] pushl (lst:List a, stk:Stack a): Stack a = 
-  push_aux(reverse(lst),stk)
+%  push_aux(reverse(lst),stk)
+      case lst of
+        | Nil -> stk
+        | x::lst1 -> push(x, pushl(lst1,stk))
 
 theorem stackToList_of_pop is [a]
   fa(stk: Stack a)

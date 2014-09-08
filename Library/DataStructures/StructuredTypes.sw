@@ -17,6 +17,12 @@ spec
 
 %% TODO: Move these to Library/General/ListFacts:
 
+theorem right_unit_of_concat is [a]
+  fa(lst:List a) (lst ++ [] = lst)
+
+theorem left_unit_of_concat is [a]
+  fa(lst:List a) [] ++ lst = lst
+
 theorem @@_of_empty is [a]
   fa (i:Nat) ([]:List a) @@ i = None
 
@@ -406,8 +412,6 @@ end-proof
   theorem Stack2L_init is [a]
     fa(lst:List a,stk:Stack a) ((Stack2L(stk) = lst) = (stk = pushl(lst,empty_stack)))
 
-%  theorem Stack2L_delete1 is [a]
-%    fa(elt:a,stk:Stack a) (Stack2L(stk) = delete1(elt, Stack2L(stk)))
 
 %% (*------- CM2S: homomorphism from Characteristic-Map to Set ---------------
 
@@ -533,6 +537,9 @@ end-proof
 
   theorem L2S_delete1_safe2 is [a]
     fa(y:a,lst:List a) noRepetitions? lst => L2S(delete1(y,lst)) = set_delete(y, L2S lst)
+
+  theorem L2S_delete is [a] 
+      fa(y:a,lst:List a) ( L2S(delete y lst) = set_delete(y, L2S lst) )
 
   theorem L2S_head is [a]
     fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) in? L2S(lst) )
