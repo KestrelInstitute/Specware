@@ -947,12 +947,10 @@ end-proof
 
 proof isa Stack2L_concat
   apply(induct "elts"  arbitrary: stk)
-  apply(simp only: append_Nil Stack__pushl_def)
-  apply(simp)
-  apply(simp only: Stack__pushl_def Stack__push_aux.simps)
-  apply(clarify)
-  apply(simp only: Stack2L_Cons rev.simps Stack__push_aux_append Stack__push_aux.simps)
-  apply(simp)
+  apply(simp only: append_Nil Stack__pushl_alt_def)
+  apply (metis Stack__pushl.simps(1) Stack__pushl_alt_def)
+  apply(simp only: Stack__pushl_alt_def Stack__push_aux.simps)
+  apply(metis Stack2L_push_aux rev_rev_ident)
 end-proof
 
 proof isa Stack2L_init
