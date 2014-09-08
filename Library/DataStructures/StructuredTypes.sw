@@ -538,9 +538,6 @@ end-proof
   theorem L2S_delete1_safe2 is [a]
     fa(y:a,lst:List a) noRepetitions? lst => L2S(delete1(y,lst)) = set_delete(y, L2S lst)
 
-  theorem L2S_delete is [a] 
-      fa(y:a,lst:List a) ( L2S(delete y lst) = set_delete(y, L2S lst) )
-
   theorem L2S_head is [a]
     fa(y:a,lst:List a) ( ~(lst = Nil) => head(lst) in? L2S(lst) )
 
