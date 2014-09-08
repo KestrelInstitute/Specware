@@ -80,6 +80,10 @@ op [a] pushl (lst:List a, stk:Stack a): Stack a =
         | Nil -> stk
         | x::lst1 -> push(x, pushl(lst1,stk))
 
+theorem pushl_alt_def is [a]
+  fa(lst: List a, stk: Stack a)
+  pushl (lst, stk) = push_aux(reverse(lst),stk)
+
 theorem stackToList_of_pop is [a]
   fa(stk: Stack a)
     ~(empty_stack? stk) => (stackToList (pop stk) = tail (stackToList stk))
@@ -218,6 +222,12 @@ proof Isa Stack__equal_stackToList_empty
   apply (metis List__nonEmpty_p_def Stack__empty_stack_def Stack__top_Obligation_subtype)
   apply(simp add: Stack__empty_stack_def)
   apply (metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
+end-proof
+
+proof Isa Stack__pushl_alt_def
+  apply(induct lst)
+  apply (metis Stack__push_aux.simps(1) Stack__pushl.simps(1) rev.simps(1))
+  apply (metis Stack__push_aux.simps(1) Stack__push_aux.simps(2) Stack__push_aux_append Stack__pushl.simps(2) rev.simps(2))
 end-proof
 
 end-spec
