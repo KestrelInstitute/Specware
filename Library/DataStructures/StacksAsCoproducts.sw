@@ -90,7 +90,10 @@ op [a] push_aux (lst:List a, stk:Stack a): Stack a =
 %% Identical to the version in Stacks:
 
 op [a] pushl (lst:List a, stk:Stack a): Stack a = 
-  push_aux(reverse(lst),stk)
+%  push_aux(reverse(lst),stk)
+      case lst of
+        | Nil -> stk
+        | x::lst1 -> push(x, pushl(lst1,stk))
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
