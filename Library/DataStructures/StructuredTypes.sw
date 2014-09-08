@@ -625,15 +625,15 @@ end-proof
   theorem L2B_concat is [a]
     fa(lst1:List a,lst2:List a) ( L2B (lst1 ++ lst2) = (L2B lst1 \/ L2B lst2) )
 
-  % TTODO Doesn't seem right.  Note that diff removes all occurrences, whereas -- does not.
-  % So consider lst=[1,1] and sub=[1]
-  theorem L2B_diff is [a]
-    fa(lst:List a,sub:List a) ( L2B (diff(lst,sub)) = (L2B lst -- L2B sub) )
+  %% %% Doesn't seem right.  Note that diff removes all occurrences, whereas -- does not.
+  %% % So consider lst=[1,1] and sub=[1]
+  %% theorem L2B_diff is [a]
+  %%   fa(lst:List a,sub:List a) ( L2B (diff(lst,sub)) = (L2B lst -- L2B sub) )
 
-  %% TTODO: Doesn't seem right.  The RHS removes all occurrences of the element x, whereas the LHS only removes one.
-  theorem L2B_bs_diff is [a,M]
-    fa(lst:List a,cm:Map(a,Bool))
-      ( ((L2B lst) --- (CM2S cm)) = (L2B (filter (fn(x:a)-> ~((x in? domain cm) && TMApply(cm,x))) lst)) )
+  %% %% Doesn't seem right.  The RHS removes all occurrences of the element x, whereas the LHS only removes one.
+  %% theorem L2B_bs_diff is [a,M]
+  %%   fa(lst:List a,cm:Map(a,Bool))
+  %%     ( ((L2B lst) --- (CM2S cm)) = (L2B (filter (fn(x:a)-> ~((x in? domain cm) && TMApply(cm,x))) lst)) )
 
 %  theorem L2B_bs_diff is [a]
 %    fa(lst:List a,S:Set a)
