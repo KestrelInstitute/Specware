@@ -72,7 +72,10 @@ op [a] push_aux (lst:List a, stk:Stack a): Stack a =
 %% Identical to the version in Stacks:
 %% TODO refine this to be a no-op?  or just run the conversion?  what should this be over in the stacks as co-products spec?
 op [a] pushl (lst:List a, stk:Stack a): Stack a = 
-  push_aux(reverse(lst),stk)
+  case lst of
+  | Nil -> stk
+  | x::lst1 -> push(x, pushl(lst1,stk))
+ %%old:  push_aux(reverse(lst),stk)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
