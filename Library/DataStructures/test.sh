@@ -1,13 +1,13 @@
 #Check the number of arguments supplied:
 if [ $# -ne 2 ]
 then
-    echo "test.sh: Error: Arguments must be the Specware installation to test and ISABELLE_2013_2_ROOT."
+    echo "test.sh: Error: Arguments must be the Specware installation to test and ISABELLE_2014_ROOT."
     exit 1
 fi
 
 export SPECWARE4=$1 #do we need the export?
 #echo "Library/DataStructures/test.sh: SPECWARE4 is ${SPECWARE4}."
-ISABELLE_2013_2_ROOT=$2
+ISABELLE_2014_ROOT=$2
 
 echo "  Testing Library/DataStructures:"
 
@@ -70,14 +70,15 @@ run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/StacksAsLists
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsSTHTables#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/MapsAsVectors#M
 run-gen-obligs.sh ${SPECWARE4} ${SPECWARE4}/Library/DataStructures/AllIsa
-#This replaces the separate calls to run-isabelle2013-2.sh below and is faster:
-run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/IsabelleWrapper.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSets_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsMaps_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBagMaps_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBags_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/BagsAsMaps_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/StacksAsCoproducts_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/StacksAsLists_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSTHTables_M.thy ${ISABELLE_2013_2_ROOT}
-# run-isabelle2013-2.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsVectors_M.thy ${ISABELLE_2013_2_ROOT}
+#This replaces the separate calls to run-isabelle2014.sh below and is faster:
+#TODO: remove ${SPECWARE4}/Library/DataStructures/IsabelleWrapper.thy
+run-isabelle2014-build.sh ${SPECWARE4}/Library/DataStructures/Isa ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSets_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsMaps_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBagMaps_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/SetsAsBags_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/BagsAsMaps_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/StacksAsCoproducts_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/StacksAsLists_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsSTHTables_M.thy ${ISABELLE_2014_ROOT}
+# run-isabelle2014.sh ${SPECWARE4}/Library/DataStructures/Isa/MapsAsVectors_M.thy ${ISABELLE_2014_ROOT}
