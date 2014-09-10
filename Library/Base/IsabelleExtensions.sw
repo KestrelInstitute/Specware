@@ -1767,18 +1767,32 @@ lemma list_last_conv:
  by (cut_tac xs=xs in append_butlast_last_id, auto,
      cut_tac xs=xs in last_conv_nth, auto)
 
-theorem listall_butlast:
+lemma listall_butlast:
  "\<lbrakk>list_all P l\<rbrakk> \<Longrightarrow> list_all P (butlast l)"
  by (auto simp add: list_all_iff, drule bspec, auto simp add: in_set_butlastD)
 
-theorem distinct_butlast:
+lemma distinct_butlast:
  "\<lbrakk>distinct l\<rbrakk> \<Longrightarrow> distinct (butlast l)"
  by (induct l, auto simp add: in_set_butlastD)
 
-theorem nth_butlast:
+lemma nth_butlast:
  "\<lbrakk>i < length l - 1\<rbrakk> \<Longrightarrow> butlast l ! i = l ! i"
  by (induct l rule: rev_induct, auto simp add: nth_append)
 
+lemma list_eq_if_butlast_last_eq:
+   "\<lbrakk>l1 \<noteq> []; l2 \<noteq> []; butlast l1 = butlast l2; last l1 = last l2\<rbrakk> \<Longrightarrow> 
+     l1 = l2"
+   by (induct l1 arbitrary: l2 rule: rev_induct, auto)
+
+lemma list_eq_iff_butlast_last_eq:
+   "\<lbrakk>l1 \<noteq> []; l2 \<noteq> []\<rbrakk> \<Longrightarrow> 
+    (l1 = l2) = (butlast l1 = butlast l2 \<and> last l1 = last l2)"
+   by (safe, simp add: list_eq_if_butlast_last_eq)
+ 
+lemma concat_length:
+  "\<lbrakk>map length l1 = map length l2\<rbrakk> \<Longrightarrow> length (concat l1) = length (concat l2)"
+  by (induct l1 arbitrary: l2, auto)
+  
 lemma lists_eq_iff_concat_and_lengths_eq:
   "\<lbrakk>concat l1 = concat l2; map length l1 = map length l2\<rbrakk> \<Longrightarrow> l1 = l2"
   by (induct l1 arbitrary: l2, auto)

@@ -49,6 +49,8 @@ op [a] length (s:FinSeq a) : Nat = length (list s)
 
 theorem length_fin_simp is [a]     fa (l: List a)  length (fin l) = length l
 
+proof Isa -hook Seq__eq_lemmas end-proof
+
 % true iff sequence has length n:
 
 op [a] ofLength? (n:Nat) (s: Seq a) : Bool =
@@ -722,7 +724,9 @@ op [a] segmentationFor (seg:Segmentation, s: Seq a) infixl 20 : Bool =
 
 op [a] unflatten
        (s: Seq a, seg:Segmentation | seg segmentationFor s) : SegSeq a =
-  the (ss: SegSeq a) seg segmentationFor ss && flatten ss = s
+  the (ss: SegSeq a) seg = segmentationOf ss && flatten ss = s
+
+%%------------> Changed from segmentationFor to segmentationOf <-- CK 14/09/08
 
 % specialization of previous op to sequences of uniform length n > 0:
 
@@ -1037,6 +1041,47 @@ op [a,b] isoSeq : Bijection(a,b) -> Bijection (Seq a, Seq b) =
 %       preceeding proofs 
 % ------------------------------------------------------------------------------
 
+
+
+proof Isa Seq__eq_lemmas 
+
+lemma Seq__length_to_list_length: "length \<circ> Seq__list = Seq__length"
+  by (rule ext, simp add: Seq__length_def)
+  
+lemma Seq__concat_lists_length:
+  "\<lbrakk>map Seq__length l = map Seq__length list\<rbrakk>
+    \<Longrightarrow> length (concat (map Seq__list l)) = length (concat (map Seq__list list))"
+  by (rule concat_length, simp add: Seq__length_to_list_length)
+
+lemma Seq__list_to_lists:
+  "\<lbrakk>list_all Seq__finite_p l1; list_all Seq__finite_p l2;
+    map Seq__list l1 = map Seq__list l2\<rbrakk>
+   \<Longrightarrow> l1 = l2"
+  apply (rotate_tac -1, erule rev_mp, subst list_eq_iff_nth_eq, clarify)
+  apply (subst list_eq_iff_nth_eq, auto simp add: list_all_length)
+  apply ((drule_tac x=i in spec)+, simp)
+  apply (auto simp add: Seq__finite_p_def split: Seq__Seq.split_asm)
+done
+
+lemma Seq__lists_eq_iff_concat_and_lengths_eq:
+  "\<lbrakk>list_all Seq__finite_p l; list_all Seq__finite_p list;
+    concat (map Seq__list l) = concat (map Seq__list list); 
+    map Seq__length l = map Seq__length list\<rbrakk>
+    \<Longrightarrow> l = list"
+  by (drule lists_eq_iff_concat_and_lengths_eq, 
+      simp add: Seq__length_to_list_length,
+      simp add: Seq__list_to_lists)      
+
+
+lemma Stream__prefix_length_to_fold:
+   "\<lbrakk>\<forall>i. Seq__finite_p (fun i); \<forall>n. Seq__nonEmpty_p (fun n) \<longrightarrow> n < m; k \<le> m\<rbrakk>
+    \<Longrightarrow>
+     foldl op + 0 (Stream__prefix (\<lambda>i. length (Seq__list (fun i)), k))
+    = length (concat (Stream__prefix (\<lambda>i. Seq__list (fun i), k)))"
+  by (induct k, auto simp add: Stream__prefix_base Suc_eq_plus1
+                               Stream__prefix_step)
+
+end-proof
 
 
 proof Isa seq_Obligation_subtype
@@ -1640,11 +1685,107 @@ proof Isa segmentationOf_Obligation_subtype2
 end-proof
 
 proof Isa unflatten_Obligation_the
- (** POSTPONE
-  *** use unflatten on Streams and Lists 
-  *** we need many more lemmas about segmentation
- ***)
- sorry
+  apply (simp add: Seq__segmentationFor_def, erule exE,
+         rule_tac a=ss in ex1I, auto,
+         thin_tac "s = Seq__flatten ss", 
+         thin_tac "seg = Seq__segmentationOf ss")
+  apply (case_tac ss, auto)
+  apply (case_tac x, auto)
+  apply (simp_all add: Seq__segmentationOf_def Seq__forall_p_def 
+                       list_all_length
+                split: split_if_asm,
+         simp_all add: Seq__segmentation_p_def Seq__SegSeq__subtype_pred_def)
+  (* Case 1: finite list *) 
+  apply (simp add: list_all_length Seq__lists_eq_iff_concat_and_lengths_eq)
+  (* Case 2 *)
+  apply (clarsimp)
+  apply (cut_tac  l="butlast lista" and list="butlast list" in 
+         Seq__lists_eq_iff_concat_and_lengths_eq,
+         simp_all add: list_all_length nth_butlast) 
+  (* 2a *)
+  apply (drule Seq__concat_lists_length)
+  apply (case_tac "last lista", simp_all)
+  apply (case_tac "last list", simp_all)
+  apply (case_tac "last list", simp_all)
+  apply (simp (no_asm_simp) add: list_eq_iff_nth_eq, clarify)
+  apply (simp add: Stream__e_pls_pls_def)
+  apply (drule_tac x=ib in fun_cong, simp)
+  (* 2b *)  
+  apply (rule list_eq_if_butlast_last_eq,
+         simp only: length_greater_0_iff,
+         simp only: length_greater_0_iff, simp)     
+  apply (case_tac "last lista", simp_all)
+  apply (case_tac "last list", simp_all) 
+  apply (case_tac "last list", simp_all) 
+  apply (rule ext, simp add:  Stream__e_pls_pls_def)
+  apply (drule_tac x="x + length (concat (map Seq__list (butlast list)))"
+                   in fun_cong, simp)
+  (* Case 3 *)
+  apply (case_tac x, simp_all split: split_if_asm)
+  apply (cut_tac l="Stream__flattenF (Stream__map Seq__list fun)" 
+             and lens = "\<lambda>i. Seq__length (fun i)"
+         in Stream__unflattenF_Obligation_the, simp)
+  apply (rule_tac s="{i. Seq__nonEmpty_p (fun i)}"
+              and t="{i. 0 < Seq__length (fun i)}"
+              in subst, simp_all,
+         rule Collect_cong, drule_tac x=i in spec,
+         case_tac "fun i", simp_all)
+  apply (simp (no_asm_simp) add: Stream__flattenF_def Stream__map_def
+                                 Stream__forall_p_def null_def
+                                 Stream__removePrefix_def
+                                 Seq__length_to_list_length [symmetric])
+  apply (rotate_tac -2, thin_tac ?P, thin_tac ?P, thin_tac ?P, 
+         rotate_tac 1, thin_tac ?P, thin_tac ?P)
+  defer (*** too many low level issues with foldl -- later ***)
+  apply (erule ex1E, simp add: Stream__map_def )
+  apply (frule_tac x="(\<lambda>i. Seq__list (fun i))" in spec,
+         drule_tac x="(\<lambda>i. Seq__list (funa i))" in spec)
+  apply (clarsimp, drule mp, 
+         simp add: Seq__length_to_list_length [symmetric],
+         drule mp, rotate_tac 2, erule rev_mp,
+         simp (no_asm_simp) add: Seq__length_to_list_length [symmetric],
+         rotate_tac -2, drule sym, simp)
+  apply (rule ext, drule_tac x=x in fun_cong,
+         drule_tac x=x in spec, drule_tac x=x in spec,
+         case_tac "fun x", simp_all, case_tac "funa x", simp_all )
+  (* Case 4 is as case 3 execpt for the fold issue *)
+  apply (case_tac x, auto split: split_if_asm)
+  apply (cut_tac s="Stream__flattenI (Stream__map Seq__list fun)" 
+             and lens = "\<lambda>i. Seq__length (fun i)"
+         in Stream__unflattenI_Obligation_the, simp)
+  apply (rule_tac s="{i. Seq__nonEmpty_p (fun i)}"
+              and t="{i. 0 < Seq__length (fun i)}"
+              in subst, simp_all add: Set__infinite_p_def,
+         rule Collect_cong, drule_tac x=i in spec,
+         case_tac "fun i", simp_all)
+  apply (erule ex1E, simp add: Stream__map_def )
+  apply (frule_tac x="(\<lambda>i. Seq__list (fun i))" in spec,
+         drule_tac x="(\<lambda>i. Seq__list (funa i))" in spec)
+  apply (clarsimp, drule mp, 
+         simp add: Seq__length_to_list_length [symmetric],
+         drule mp, rotate_tac 2, erule rev_mp,
+         simp (no_asm_simp) add: Seq__length_to_list_length [symmetric],
+         rotate_tac -2, drule sym, simp)
+  apply (rule ext, drule_tac x=x in fun_cong,
+         drule_tac x=x in spec, drule_tac x=x in spec,
+         case_tac "fun x", simp_all, case_tac "funa x", simp_all )
+  (*** move this up later ***)
+  apply (clarsimp simp add: finite_nat_set_iff_bounded)
+  apply (rule_tac s="LEAST lm0. \<forall>i. Seq__list (fun (i + lm0)) = []"
+              and t="nat (LEAST lme. 0 \<le> lme 
+                        \<and> (\<forall>i. Seq__list (fun (i + nat lme)) = []))"
+              in subst)
+  apply (rule_tac a=m in LeastI2_wellorder,
+         clarsimp simp add: Seq__nonEmpty_p_def Seq__empty_def,
+         drule_tac x="i+m" in spec, drule_tac x="i+m" in spec,
+         case_tac "fun (i+m)", simp_all)
+  apply (rule_tac x="int a" in LeastI2_order, auto)
+  apply (thin_tac ?P, thin_tac ?P, rotate_tac 1)
+  apply (drule_tac x="nat x" in spec, simp, drule_tac x="int a" in spec, simp)
+  apply (cut_tac P="\<lambda>k. \<forall>i. Seq__list (fun (i + k)) = []" and k=m in Least_le,
+         clarsimp simp add: Seq__nonEmpty_p_def Seq__empty_def,
+         drule_tac x="i+m" in spec, drule_tac x="i+m" in spec,
+         case_tac "fun (i+m)", simp_all add: Stream__prefix_length_to_fold)
 end-proof
 
 %% proof Isa unflattenU_Obligation_subtype
