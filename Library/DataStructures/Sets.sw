@@ -854,7 +854,7 @@ end-proof
 
 proof Isa Set__forall_p_in_self [simp]
   apply(simp add: Set__forall_p_def Set__map_of_in_self Set__set_fold1 Set__set_fold2 Set__foldable_p_def)
-  apply(metis Set__foldable_p_of_and Set__set_fold1 Set__set_fold2 Set__set_insert_does_nothing prod_caseI)
+  apply(metis Set__foldable_p_of_and Set__set_fold1 Set__set_fold2 Set__set_insert_does_nothing case_prodI)
 end-proof
 
 proof Isa Set__Set_P_in_self [simp]
@@ -943,7 +943,7 @@ proof Isa Set__forall_rewrite
   apply (metis (full_types) Set__forall_p_Obligation_subtype Set__map_of_insert Set__set_delete_no_op Set__set_fold2_alt Set__set_insert_does_nothing Set__set_insertion split_conv)
   apply (metis Set__set_insertion)
   apply(simp add: Set__set_insertion)
-  apply (metis Set__forall_p_Obligation_subtype Set__set_delete_no_op Set__set_fold2_alt Set__set_insert_does_nothing prod_caseI)
+  apply (metis Set__forall_p_Obligation_subtype Set__set_delete_no_op Set__set_fold2_alt Set__set_insert_does_nothing case_prodI)
   apply(simp add: Set__set_insertion)
   apply(simp add: Set__set_insertion)
 end-proof
