@@ -1251,22 +1251,14 @@ theorem ld_Obligation_the:
  apply (rule_tac a=ld in ex1I, simp)
  apply (drule_tac x=xa in spec, erule mp, clarsimp)
  apply (drule_tac x=y  in spec, drule mp, simp)
- apply (drule_tac x=ld  in spec, drule mp, simp_all)
+ apply (drule_tac x=ld  in spec, drule mp, simp)
+ apply (metis le_trans)
+ 
  (* case Suc x \<ge> base ^ ld *)
- apply (rule_tac a="Suc ld" in ex1I, safe, simp_all add: not_less)
- (***** tedious monotonicity ***)
- apply (drule_tac Suc_leI, drule_tac k=base and i="Suc x" in mult_le_mono2,
-        rule_tac y="base * Suc x" in less_le_trans,
-        cut_tac i=1 and j=base and k="Suc x" in mult_less_mono1, simp_all)
- apply (drule_tac x="base ^ld" and z="base ^y" and y="Suc x" in le_less_trans,
-        simp_all add: power_less_imp_less_exp)
- apply (rotate_tac -1, drule_tac x="Suc ld" in spec, drule mp, simp)
- apply (drule_tac Suc_leI, drule_tac k=base and i="Suc x" in mult_le_mono2,
-        rule_tac y="base * Suc x" in less_le_trans,
-        cut_tac i=1 and j=base and k="Suc x" in mult_less_mono1, simp_all)
- apply (drule_tac x="base ^ld" and z="base ^xa" and y="Suc x" in le_less_trans,
-        simp_all add: power_less_imp_less_exp)
-done
+ apply (rule_tac a="Suc ld" in ex1I, safe)
+ apply (metis One_nat_def Suc_lessI Suc_n_not_le_n leI less_le_trans numeral_2_eq_2 power_le_imp_le_exp)
+ apply (metis Suc_leI Suc_lessD le_neq_implies_less)
+ by (metis One_nat_def Suc_leI antisym lessI less_le_trans numeral_2_eq_2 order.not_eq_order_implies_strict power_strict_increasing_iff)
 
 consts ld :: "nat \<times> Nat__PosNat \<Rightarrow> nat"
 defs ld_def: "ld \<equiv> (\<lambda> ((x::nat), (base::Nat__PosNat)). Least (\<lambda>n. x< base ^ n))"
@@ -1296,11 +1288,7 @@ consts zld :: "int \<Rightarrow> nat"
 defs zld_def: "zld i \<equiv> if i \<ge> 0 then ld (nat i, 2) else ld (nat (-(i+1)), 2)"
 
 lemma ld_zero [simp]:   "\<lbrakk>2 \<le> base\<rbrakk> \<Longrightarrow> ld (0,base) = 0"
-  apply (simp add: ld_def, simp only: Least_def, rule the1_equality, auto)
-  apply (drule spec, drule spec, auto simp add: le_trans)
-done
-
-
+  by (simp add: ld_def)
 lemma zld_zero [simp]:   "zld 0 = 0"
   by (simp add: zld_def)
 lemma zld_neg1 [simp]:   "zld (-1) = 0"

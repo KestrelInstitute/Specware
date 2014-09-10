@@ -177,7 +177,7 @@ sorry
 end-proof
 
 proof isa FSet__in_p_Obligation_subtype
-sorry
+  by (simp add: FSet__fromFSet_Obligation_subtype)
 end-proof
 
 proof isa FSet__e_lt_eq_Obligation_subtype
@@ -185,7 +185,7 @@ sorry
 end-proof
 
 proof isa FSet__e_lt_eq_Obligation_subtype0
-sorry
+ by (auto simp add: list_all_iff FSet__fromFSet_Obligation_subtype)
 end-proof
 
 proof isa FSet__e_fsl_bsl_Obligation_subtype
@@ -197,7 +197,7 @@ sorry
 end-proof
 
 proof isa FSet__e_fsl_bsl_Obligation_subtype1
-sorry
+by auto
 end-proof
 
 proof isa FSet__e_bsl_fsl_Obligation_subtype
@@ -209,7 +209,7 @@ sorry
 end-proof
 
 proof isa FSet__e_bsl_fsl_Obligation_subtype1
-sorry
+by auto
 end-proof
 
 proof isa FSet__e_dsh_dsh_Obligation_subtype
@@ -221,15 +221,15 @@ sorry
 end-proof
 
 proof isa FSet__e_dsh_dsh_Obligation_subtype1
-sorry
+  by auto
 end-proof
 
 proof isa FSet__single_Obligation_subtype
-sorry
+  by auto
 end-proof
 
 proof isa FSet__single_p_Obligation_subtype
-sorry
+  sorry
 end-proof
 
 proof isa FSet__theMember_Obligation_subtype
@@ -245,10 +245,11 @@ sorry
 end-proof
 
 proof isa FSet__e_dsh_Obligation_subtype
-sorry
+ sorry
 end-proof
 
 proof isa FSet__e_dsh_Obligation_subtype0
+(** thm is not correct **)
 sorry
 end-proof
 
@@ -265,6 +266,7 @@ sorry
 end-proof
 
 proof isa FSet__mapPartial_Obligation_subtype0
+(** thm is not correct **)
 sorry
 end-proof
 
@@ -293,7 +295,7 @@ sorry
 end-proof
 
 proof isa FSet__power_Obligation_subtype0
-sorry
+  by (simp add: distinct_tl)
 end-proof
 
 proof Isa power ()
@@ -327,7 +329,7 @@ sorry
 end-proof
 
 proof isa FSet__exists1_p_Obligation_subtype
-sorry
+ by (simp add: FSet__exists_p_Obligation_subtype)
 end-proof
 
 proof isa FSet__filter_Obligation_subtype

@@ -193,8 +193,9 @@ declare null_rec [simp add]
  ******************************************************************************)
 
 consts regular_val :: 'a
-axiomatization where arbitrary_bool [simp]:
-  "(regular_val::bool) = False"
+axiomatization where arbitrary_bool [simp]: "(regular_val::bool) = False"
+axiomatization where arbitrary_false1:      "(x = regular_val) = False"
+axiomatization where arbitrary_false2:      "(regular_val = x) = False"
 
 (* Restrict the domain of f to P, returning the dummy value regular_value outside this domain *)
 fun RFun :: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> 'b) \<Rightarrow> 'a \<Rightarrow> 'b"
@@ -801,7 +802,7 @@ lemma div_exact_ge_neg:         "\<lbrakk>(j::int) < 0; j dvd i\<rbrakk> \<Longr
 lemma div_le_pos:         "\<lbrakk>0 < (j::int)\<rbrakk> \<Longrightarrow> (k \<le> i div j) = (j * k \<le> i)"
   apply (auto simp add: div_is_largest_pos algebra_simps)
   apply (drule_tac c=j in  mult_left_mono, simp)
-  apply (erule_tac  order_trans, simp add: zmult_div_cancel pos_mod_sign)
+  apply (erule_tac  order_trans, simp add: zmult_div_cancel)
 done
 
 lemma div_gt_pos:         "\<lbrakk>0 < (j::int)\<rbrakk> \<Longrightarrow> (k > i div j) = (j * k > i)"
@@ -893,8 +894,9 @@ lemma div_abs_unique:
    apply(cut_tac a="(b*(q - 1) + r+b)" and b=b and q="q - 1" and r="r+b" 
          in div_neg_unique, auto simp add: zdiv_zminus2_eq_if algebra_simps)
    apply (subgoal_tac "q = -1", auto)
-done		      		   
- 		
+   apply (metis add_less_same_cancel1 diff_0_right diff_minus_eq_add eq_iff_diff_eq_0 less_numeral_extra(3) minus_zero mult.commute mult_minus1_right)
+   by (metis less_irrefl minus_add_cancel monoid_add_class.add.right_neutral mult_minus1)
+
 lemma abs_mod:                   "\<lbrakk>j \<noteq> (0\<Colon>int)\<rbrakk> \<Longrightarrow> \<bar>i mod j\<bar> = \<bar>\<bar>i\<bar> - \<bar>(i div j) * j\<bar>\<bar>"
   by (cases "i \<le> 0", auto simp add: abs_mul mod_via_div neq_iff not_le div_signs algebra_simps)
       	
@@ -1691,14 +1693,14 @@ lemma exact_divR:              "\<lbrakk>(j::int) \<noteq> 0; j dvd i\<rbrakk> \
 lemma divR_zminus1:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> - i divR j = - (i divR j)"
 by (auto simp add: divR_def,
       simp_all add: abs_mod_zminus1  zdiv_zminus1_eq_if split: split_if_asm,
-      simp_all only: diff_def minus_add_distrib [symmetric] dvd_minus_iff,
+      simp_all only: diff_conv_add_uminus minus_add_distrib [symmetric] dvd_minus_iff,
       simp_all add : even_suc_imp_not_even) 
 
 
 lemma divR_zminus2:            "\<lbrakk>(j::int) \<noteq> 0\<rbrakk> \<Longrightarrow> i divR - j = - (i divR j)" 
 by (auto simp add: divR_def,
       simp_all add: abs_mod_zminus2  zdiv_zminus2_eq_if split: split_if_asm,
-      simp_all only: diff_def minus_add_distrib [symmetric] dvd_minus_iff,
+      simp_all only: diff_conv_add_uminus minus_add_distrib [symmetric] dvd_minus_iff,
       simp_all add : even_suc_imp_not_even) 
 
 
@@ -1777,11 +1779,14 @@ theorem nth_butlast:
  "\<lbrakk>i < length l - 1\<rbrakk> \<Longrightarrow> butlast l ! i = l ! i"
  by (induct l rule: rev_induct, auto simp add: nth_append)
 
+lemma lists_eq_iff_concat_and_lengths_eq:
+  "\<lbrakk>concat l1 = concat l2; map length l1 = map length l2\<rbrakk> \<Longrightarrow> l1 = l2"
+  by (induct l1 arbitrary: l2, auto)
 
 (******************************* Lists of numbers *******************)
 theorem foldl_mul_assoc:
   "foldl op * (a*b) (l::nat list) = a * (foldl op * b l)"
- by (induct l arbitrary: b, simp_all add: mult_assoc)
+ by (induct l arbitrary: b, simp_all add: mult.assoc)
 
 theorem foldl_mul_assoc1:
   "foldl op * a (l::nat list) = a * (foldl op * 1 l)"
@@ -1791,7 +1796,7 @@ theorem foldl_nat_mul_assoc:
   "\<lbrakk>0 \<le> a\<rbrakk> \<Longrightarrow> 
     \<forall>b. foldl (\<lambda>y x. y * nat x) (nat (a*b)) (l::int list) 
     = (nat a) * (foldl (\<lambda>y x. y * nat x) (nat b) l)"
- by (induct l, auto simp add: mult_assoc nat_mult_distrib,
+ by (induct l, auto simp add: mult.assoc nat_mult_distrib,
      drule_tac x="int (nat b * nat aa)" in spec, simp)
 
 theorem foldl_nat_mul_assoc1:
@@ -1882,7 +1887,7 @@ lemma prod_mn_less_k:
 subsection {* Prime list and product *}
 
 lemma prod_append: "prod (xs @ ys) = prod xs * prod ys"
-  by (induct xs, simp_all add: mult_assoc)
+  by (induct xs, simp_all add: mult.assoc)
 
 lemma prod_xy_prod:
   "prod (x # xs) = prod (y # ys) ==> x * prod xs = y * prod ys"
@@ -2221,7 +2226,7 @@ end
 
 theorem foldl_int_mul_assoc:
   "foldl op * (a*b) (l::int list) = a * (foldl op * b l)"
- by (induct l arbitrary: b, simp_all add: mult_assoc)
+ by (induct l arbitrary: b, simp_all add: mult.assoc)
 
 theorem foldl_int_mul_assoc1:
   "foldl op * a (l::int list) = a * (foldl op * 1 l)"
@@ -2381,13 +2386,13 @@ by (rule_tac x="a div b" in exI, drule sym, simp)
 lemma mod_eq_dvd_diff_int:
 "\<lbrakk>0 \<le> c; c < b\<rbrakk> \<Longrightarrow> (a mod b = (c::int)) = (b dvd (a - c))"
 apply (auto simp add: dvd_def algebra_simps mod_pos_pos_trivial)
-apply (subst add_commute, simp add: mod_eq_iff_int)
+apply (subst add.commute, simp add: mod_eq_iff_int)
 done
   
 lemma mod_eq_dvd_diff_nat:
 "\<lbrakk>c < b; c \<le> a\<rbrakk> \<Longrightarrow> (a mod b = (c::nat)) = (b dvd (a - c))"
 apply (simp add: dvd_def le_imp_diff_is_add, rule iffI)
-apply (drule mod_eq_iff_nat, auto simp add: mult_commute)
+apply (drule mod_eq_iff_nat, auto simp add: mult.commute)
 done  
 
 lemma mod_less_eq_dividend_int [simp]:  
@@ -2435,7 +2440,6 @@ lemma mod_eq_dvd_iff: "\<lbrakk>(y::nat) \<le> x\<rbrakk> \<Longrightarrow> (x m
 apply (auto simp add: dvd_def)
 apply (drule nat_mod_eq_lemma, auto)
 apply (rule_tac t=x and s="p * k + y" in subst, auto)
-apply (induct_tac k rule: nat_induct, auto simp add: algebra_simps)
 done
 
 lemma mod_square_0:
@@ -2479,7 +2483,7 @@ done
 
 lemma mod_square_inv:
   "\<lbrakk>prime p; (x::nat) < p; y < p; (x + y) mod p = 0\<rbrakk> \<Longrightarrow>  x\<^sup>2 mod p = y\<^sup>2 mod p"
-by (case_tac "x=y", simp, simp add: mod_add_inv)
+by (metis mod_add_inv mod_square_iff)
 
 lemma mod_square_inv_rev:
   "\<lbrakk>prime p; (x::nat) < p; y < p; x\<^sup>2 mod p = y\<^sup>2 mod p; x \<noteq> y\<rbrakk> \<Longrightarrow>  (x + y) mod p = 0"
@@ -2489,7 +2493,7 @@ by (drule_tac x=x and y=y in mod_square_eq, auto)
 lemma mod_add_sub_self [simp]:
   "\<lbrakk>prime (p::nat)\<rbrakk> \<Longrightarrow> (x + (p - x mod p)) mod p = 0"
  apply (rule_tac t="x +?z" and s="x div p * p + (x mod p) + ?z" in subst, simp)
- apply (simp only: nat_add_assoc mod_mult_self3)
+ apply (simp only: add.assoc mod_mult_self3)
  apply (frule prime_gt_0_nat, simp add: le_add_diff_inverse mod_le_divisor)
 done
 

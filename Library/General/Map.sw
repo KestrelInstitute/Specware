@@ -325,7 +325,7 @@ proof Isa inverse_Obligation_subtype
   apply (rotate_tac -2, thin_tac ?P, thin_tac ?P, erule notE)
   apply (subgoal_tac "the_elem {x \<in> dom y. y x = Some x1} = x
                     \<and> the_elem {x \<in> dom y. y x = Some x2} = xa",
-         clarsimp, thin_tac "?a = ?b", auto)
+         clarsimp,  thin_tac "m = ?b", thin_tac "?a = ?b", auto)
   apply (simp add: the_elem_def set_eq_iff, rule the_equality, auto)
   apply (drule spec, drule spec, erule mp, simp add: Map__domain__def)
   apply (rotate_tac -1, drule_tac x=x in spec, auto)

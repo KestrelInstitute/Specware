@@ -1691,9 +1691,10 @@ proof Isa positionsSuchThat_Obligation_the
   apply (fold Seq__noRepetitions_p_def, case_tac s)
   (*** Case 1: Lists ***)
   apply (cut_tac l=list and p=p in  List__positionsSuchThat_Obligation_the)
-  apply (erule ex1E, clarify, 
-         rule_tac a="Seq__Seq__fin POSs" in ex1I, simp_all)
-  apply (clarify, case_tac x, simp, clarsimp simp add: in_strm_p_def)
+  apply (erule ex1E, clarify, rule_tac a="Seq__Seq__fin POSs" in ex1I)
+  apply (thin_tac ?P, simp)
+  apply (clarify, case_tac x, drule_tac x=lista in spec, simp)
+  apply (thin_tac ?P, clarsimp simp add: in_strm_p_def)
   apply (drule  Stream__increasingNats_p_inf_growth)
   apply (rotate_tac -1, drule_tac x="length list" in spec, clarify)
   apply (rotate_tac -2, drule_tac x="fun i" in spec, simp)
@@ -1702,7 +1703,8 @@ proof Isa positionsSuchThat_Obligation_the
   apply (case_tac "Set__infinite_p {i. p (fun i)}")
   apply (frule Set__infinite_nat_growth)
   apply (clarsimp, drule Stream__positionsSuchThatI_Obligation_the)
-  apply (erule ex1E, clarify, rule_tac a="Seq__Seq__inf POSs" in ex1I, simp_all)
+  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__Seq__inf POSs" in ex1I)
+  apply (rotate_tac 1, thin_tac ?P, simp)
   apply (clarify, case_tac x, rotate_tac 1, thin_tac "?P", clarsimp)
   apply (case_tac "list=[]", simp)
   apply (rotate_tac -2, drule_tac x="last list" in spec, clarify)
@@ -1715,8 +1717,10 @@ proof Isa positionsSuchThat_Obligation_the
   apply (simp add: Set__infinite_p_def fun_Compl_def bool_Compl_def 
                    setToPred_def) 
   apply (frule Stream__positionsSuchThatF_Obligation_the)
-  apply (erule ex1E, clarify, rule_tac a="Seq__Seq__fin POSs" in ex1I, simp_all)
-  apply (clarify, case_tac x, simp, clarsimp simp add: in_strm_p_def)
+  apply (thin_tac ?P, erule ex1E, clarify, rule_tac a="Seq__Seq__fin POSs" in ex1I)
+  apply (rotate_tac 1, thin_tac ?P, simp)
+  apply (clarify, case_tac x, drule_tac x=list in spec, simp)
+  apply (rotate_tac 1, thin_tac ?P, clarsimp simp add: in_strm_p_def)
   apply (simp add: finite_nat_set_iff_bounded Ball_def , 
          clarify, thin_tac ?P)
   apply (drule  Stream__increasingNats_p_inf_growth)
@@ -1902,12 +1906,6 @@ proof Isa rightmostPositionOfSubseqAndPreceding_Obligation_subtype0
  by (auto simp add: Seq__e_lt_length_Obligation_subtype)
 end-proof
 
-%  I need a lot more intermediate lemmas before I can prove that
-%
-%  apply (simp add: Seq__infinite_not_finite, erule conjE)
-%  apply (drule_tac 
-%         Seq__leftmostPositionOfSubseqAndFollowing_Obligation_subtype1)
-%  apply (simp, simp)
 proof Isa rightmostPositionOfSubseqAndPreceding_Obligation_subtype1
   apply (cases POSs, auto simp add: Seq__empty_def Seq__infinite_p_def)
   apply (cases sup__v, auto simp add: Seq__e_lt_eq_length_def)
@@ -1986,13 +1984,14 @@ proof Isa longestCommonPrefix_Obligation_the
   (* Case 1: List / List *)
   apply (cut_tac ?l1.0=list and ?l2.0=lista in
          List__longestCommonPrefix_Obligation_the, erule ex1E, clarsimp)
-  apply (rule_tac a=len in ex1I, simp)
+  apply (rotate_tac 1, thin_tac ?P, thin_tac ?P, rule_tac a=len in ex1I)
+  apply (thin_tac ?P, simp)
   apply (drule_tac x=x in spec, erule mp, clarify, simp)
   (* Case 2: Stream / List *)
   apply (cut_tac ?l1.0=list and ?l2.0="Stream__prefix (fun, length list)" 
          in List__longestCommonPrefix_Obligation_the, erule ex1E, clarsimp)
-  apply (rule_tac a=len in ex1I, simp, thin_tac ?P)
-  apply (case_tac "length list = len", simp_all, drule le_neq_trans, simp)
+  apply (thin_tac ?P, thin_tac ?P, rule_tac a=len in ex1I, thin_tac ?P, simp)
+  apply (case_tac "length list = len", simp, drule le_neq_trans, simp)
   apply (simp add: Stream__prefix_elements list_eq_iff_nth_eq)
   apply (drule_tac x=x in spec, erule mp, clarify, simp)
   apply (case_tac "length list = x", simp_all, drule le_neq_trans, simp)
@@ -2012,8 +2011,8 @@ proof Isa longestCommonPrefix_Obligation_the
   (* Case 4: List / Stream <---- TODO *)
   apply (cut_tac ?l2.0=list and ?l1.0="Stream__prefix (fun, length list)" 
          in List__longestCommonPrefix_Obligation_the, erule ex1E, clarsimp)
-  apply (rule_tac a=len in ex1I, simp, thin_tac ?P)
-  apply (case_tac "length list = len", simp_all, drule le_neq_trans, simp)
+  apply (thin_tac ?P, thin_tac ?P, rule_tac a=len in ex1I, thin_tac ?P, simp)
+  apply (case_tac "length list = len", simp, drule le_neq_trans, simp)
   apply (simp add: Stream__prefix_elements list_eq_iff_nth_eq)
   apply (drule_tac x=x in spec, erule mp, clarify, simp)
   apply (case_tac "length list = x", simp_all, drule le_neq_trans, simp)
@@ -2040,7 +2039,7 @@ proof Isa permute_Obligation_the
  apply (rule_tac a="Seq__Seq__fin r" in ex1I, simp_all)
  apply (case_tac x, simp_all)
  apply (drule_tac s=funa in Stream__permute_Obligation_the)
- apply (erule ex1E, clarify)
+ apply (erule ex1E)
  apply (rule_tac a="Seq__Seq__inf s_cqt" in ex1I, simp_all)
  apply (case_tac x, simp_all)
 end-proof

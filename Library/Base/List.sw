@@ -44,6 +44,8 @@ theorem unique_initial_segment_length is [a]
 op [a] lengthOfListFunction (f: ListFunction a) : Nat = the(n:Nat)
   f definedOnInitialSegmentOfLength n
 
+proof Isa -hook hook_definedOnInitialSegmentOfLength end-proof
+
 % isomorphisms between lists and list functions:
 
 op list : [a] Bijection (ListFunction a, List a) =
@@ -52,11 +54,13 @@ op list : [a] Bijection (ListFunction a, List a) =
     | None   -> Nil
     | Some x ->  x :: (list (fn i:Nat -> f (i+1)))
 
-proof Isa -hook list_last_elem end-proof
+proof Isa -hook hook_list end-proof
 
 op list_1 : [a] Bijection (List a, ListFunction a) = inverse list
    % we would like to use "-1" for inverse but we use "_" because "-" is
    % disallowed
+
+proof Isa -hook hook_list_1 end-proof
 
 % create list [f(0),...,f(n-1)] (this op is less flexible that op list
 % because it requires f to return an element of type a for every natural
@@ -90,8 +94,6 @@ theorem length_tabulate is [a]
 op [a] ofLength? (n:Nat) (l:List a) : Bool = (length l = n)
 proof Isa [simp] end-proof
 
-proof Isa -hook list_1_Isa_nth end-proof
-
 % access element at index i (op @@ is a totalization of op @):
 
 op [a] @ (l: List a, i:Nat | i < length l) infixl 30 : a =
@@ -102,7 +104,7 @@ theorem element_of_tabulate is [a]
 
 op [a] @@ (l:List a, i:Nat) infixl 30 : Option a = list_1 l i
 
-proof Isa -hook hook1 end-proof
+proof Isa -hook hook_at end-proof
 
 (* Since elements are indexed starting at 0, we tend to avoid mentioning the
 "first", "second", etc. element of a list. The reason is that the English
@@ -912,341 +914,315 @@ theorem List__zip3_alt:
    List__zip3 (l1, l2, l3) 
      = (zip l1 (zip l2 l3))"
 apply (cut_tac ?l1.0=l1 and ?l2.0="zip l2 l3" in List__zip__def, 
-       auto simp add: List__zip3_def simp del:List__list.simps)
+       auto simp add: List__zip3_def)
 apply (rule_tac f="List__list" in arg_cong, rule ext, simp)
 done
 end-proof
 
 
-% This defines hook1:
-% ------------------------------------------------------------------------------
-% Here are a few useful properties about concepts specified in this theory
-% that we will need later. 
-% It would be good to couple each Specware theory T with a theory of insights 
-% called, e.g., "T-theorems.sw"  
-% ------------------------------------------------------------------------------
-proof Isa hook1
 
-(******************* definedOnInitialSegmentOfLength *****************)
+
+% ------------------------------------------------------------------------------
+% This defines the various hooks for lemmas about the ops defined above.
+% They formalize a few useful properties about concepts specified in this theory
+% that we will need later. They also help in proving obligations of subsequent 
+% ops so it's better to insert them via hooks early on 
+% ------------------------------------------------------------------------------
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% definedOnInitialSegmentOfLength
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+proof Isa hook_definedOnInitialSegmentOfLength
+(*******************************************************************************
+* Additional lemmas about definedOnInitialSegmentOfLength
+*******************************************************************************)
 
 lemma definedOnInitialSegmentOfLengthZero [simp]:
-   "(\_lambdai. None) definedOnInitialSegmentOfLength 0"
+   "(\<lambda>i. None) definedOnInitialSegmentOfLength 0"
  by (simp add: List__definedOnInitialSegmentOfLength_def)
 
 lemma definedOnInitialSegmentOfLengthEmpty [simp]:
-   "\_existsn. (\_lambdai. None) definedOnInitialSegmentOfLength n"
+   "\<exists>n. (\<lambda>i. None) definedOnInitialSegmentOfLength n"
  by (rule_tac x=0 in exI, simp)
 
+lemma definedOnInitialSegmentOfLengthZero_iff:
+   "(f definedOnInitialSegmentOfLength 0) = (f = (\<lambda>i. None))"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+
 lemma definedOnInitialSegmentOfLengthNone:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; n  \_le j \_rbrakk \_Longrightarrow f j = None"
+   "\<lbrakk>f definedOnInitialSegmentOfLength n; n  \<le> j \<rbrakk> \<Longrightarrow> f j = None"
  by (simp add: List__definedOnInitialSegmentOfLength_def)
   
 lemma definedOnInitialSegmentOfLengthSome:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; j < n  \_rbrakk \_Longrightarrow \_existsa. f j = Some a"
+   "\<lbrakk>f definedOnInitialSegmentOfLength n; j < n  \<rbrakk> \<Longrightarrow> \<exists>a. f j = Some a"
  by (simp add: List__definedOnInitialSegmentOfLength_def)
 
 lemma definedOnInitialSegmentOfLengthNoneUp:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; f i = None; i \_le j \_rbrakk \_Longrightarrow f j = None"
+   "\<lbrakk>f definedOnInitialSegmentOfLength n; f i = None; i \<le> j \<rbrakk> \<Longrightarrow> f j = None"
  by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
+     case_tac "i\<ge>n", auto simp add: not_le)
   
 lemma definedOnInitialSegmentOfLengthNoneUp2:
-   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f i = None; i \_le j \_rbrakk \_Longrightarrow f j = None"
+   "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n; f i = None; i \<le> j \<rbrakk> \<Longrightarrow> f j = None"
  by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
+     case_tac "i\<ge>n", auto simp add: not_le)
   
 lemma definedOnInitialSegmentOfLengthNoneZero:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; f 0 = None\_rbrakk \_Longrightarrow f j = None"
+   "\<lbrakk>f definedOnInitialSegmentOfLength n; f 0 = None\<rbrakk> \<Longrightarrow> f j = None"
  by (erule definedOnInitialSegmentOfLengthNoneUp, auto)
 
 lemma definedOnInitialSegmentOfLengthNoneZero2:
-   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f 0 = None\_rbrakk \_Longrightarrow f j = None"
+   "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n; f 0 = None\<rbrakk> \<Longrightarrow> f j = None"
  by (auto, erule definedOnInitialSegmentOfLengthNoneZero, auto)
 
 lemma definedOnInitialSegmentOfLengthSomeDown:
-   "\_lbrakkf definedOnInitialSegmentOfLength n; f j = Some a; i \_le j \_rbrakk \_Longrightarrow \_existsb. f i = Some b"
+   "\<lbrakk>f definedOnInitialSegmentOfLength n; f j = Some a; i \<le> j \<rbrakk> \<Longrightarrow> \<exists>b. f i = Some b"
  by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
+     case_tac "i\<ge>n", auto simp add: not_le)
   
 lemma definedOnInitialSegmentOfLengthSomeDown2:
-   "\_lbrakk\_existsn. f definedOnInitialSegmentOfLength n; f j = Some a; i \_le j \_rbrakk \_Longrightarrow \_existsb. f i = Some b"
+   "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n; f j = Some a; i \<le> j \<rbrakk> \<Longrightarrow> \<exists>b. f i = Some b"
  by (auto simp add: List__definedOnInitialSegmentOfLength_def,
-     case_tac "i\_gen", auto simp add: not_le)
+     case_tac "i\<ge>n", auto simp add: not_le)
    
 lemma definedOnInitialSegmentOfLengthSuc:
-  "\_lbrakkf definedOnInitialSegmentOfLength (Suc n);  f 0 = Some x\_rbrakk \_Longrightarrow 
-     (\_lambdai. f (Suc i)) definedOnInitialSegmentOfLength n"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  "\<lbrakk>f definedOnInitialSegmentOfLength (Suc n)\<rbrakk> \<Longrightarrow> 
+     (\<lambda>i. f (Suc i)) definedOnInitialSegmentOfLength n"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 
-(********************************   List__list *************)
+lemma definedOnInitialSegmentOfLength_lambda:
+   "(\<lambda>n. if n<len then Some (f n) else None)
+    definedOnInitialSegmentOfLength len"
+ by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+ 
+lemma lengthOfListFunction_is_SegmentLength:
+  "\<lbrakk>f definedOnInitialSegmentOfLength n\<rbrakk> \<Longrightarrow> List__lengthOfListFunction f = n"
+ by (simp add: List__lengthOfListFunction_def, rule the1_equality,
+     rule List__lengthOfListFunction_Obligation_the, auto) 
+  
+(*******************************************************************************
+* END definedOnInitialSegmentOfLength
+*******************************************************************************)
+end-proof
 
-(* declare List__list.simps [simp del] *)
+proof Isa unique_initial_segment_length
+by (subgoal_tac "n1 < n2 \<or> n1 = n2 \<or> n1 > n2", 
+      auto simp add: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+proof Isa lengthOfListFunction_Obligation_the
+by (auto simp add: List__unique_initial_segment_length)
+end-proof
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LIST
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+proof Isa hook_list
+(*******************************************************************************
+* Additional lemmas about List__list
+*******************************************************************************)
 
 lemma List__list_empty_simp [simp]: 
-   "List__list (\_lambdai. None) = []"
+   "List__list (\<lambda>i. None) = []"
  by (simp split: option.split)
 
 lemma List__list_empty_iff:
-   "\_lbrakk\_exists(n::nat). f definedOnInitialSegmentOfLength n\_rbrakk
-     \_Longrightarrow (List__list f = []) = (f = (\_lambdai. None))"
+   "\<lbrakk>\<exists>(n::nat). f definedOnInitialSegmentOfLength n\<rbrakk>
+     \<Longrightarrow> (List__list f = []) = (f = (\<lambda>i. None))"
  by (simp split: option.split, 
      auto simp add: List__definedOnInitialSegmentOfLength_def fun_eq_iff,
      drule_tac x=0 in spec, auto)
 
-theorem List__length_is_SegmentLength: 
-  "\_lbrakkf definedOnInitialSegmentOfLength n\_rbrakk \_Longrightarrow  length (List__list f) = n"
-  apply (rule_tac t=n and s="List__lengthOfListFunction f" in subst)
-  defer
-  apply (rule List__length_is_length_of_list_function [symmetric], auto)
-  apply (simp add: List__lengthOfListFunction_def, rule the1I2)
-  apply (rule List__lengthOfListFunction_Obligation_the, auto) 
-  apply (simp add: List__unique_initial_segment_length)
-done
+declare List__list.simps [simp del]
+
+lemma List__list_empty: 
+  "\<lbrakk>f definedOnInitialSegmentOfLength 0\<rbrakk> \<Longrightarrow>  List__list f = []"
+ by (simp add: definedOnInitialSegmentOfLengthZero_iff)
+
+lemma List__length_is_SegmentLength: 
+  "\<lbrakk>f definedOnInitialSegmentOfLength n\<rbrakk> \<Longrightarrow>  length (List__list f) = n"
+  apply (induct n arbitrary: f, simp add: definedOnInitialSegmentOfLengthZero_iff)
+  apply (frule_tac j=0 in definedOnInitialSegmentOfLengthSome, simp)
+  apply (frule_tac definedOnInitialSegmentOfLengthSuc)
+  apply (simp (no_asm_simp) add: fun_eq_iff List__list.simps, auto)
+done 
 
 lemma List__list_nth_aux:
-    "\_forallf. f definedOnInitialSegmentOfLength n \_longrightarrow  
-         (\_foralli<n. f i = Some a \_longrightarrow (List__list f) ! i = a)"
+    "\<forall>f. f definedOnInitialSegmentOfLength n \<longrightarrow>  
+         (\<forall>i<n. f i = Some a \<longrightarrow> (List__list f) ! i = a)"
   apply (induct n, safe)
-  apply (simp (no_asm_simp), auto simp del:  List__list.simps)
-  apply (split option.split, auto simp del:  List__list.simps)
+  apply (simp (no_asm_simp) add: List__list.simps, 
+         auto split: option.split)
   apply (simp add: definedOnInitialSegmentOfLengthNoneZero)
-  apply (case_tac "i=0", simp_all  del:  List__list.simps)
-  apply (drule_tac x="\_lambdai. f (Suc i)" in spec, drule mp, 
+  apply (case_tac "i=0", simp_all)
+  apply (drule_tac x="\<lambda>i. f (Suc i)" in spec, drule mp, 
          simp add: definedOnInitialSegmentOfLengthSuc)
   apply (drule_tac x="i - 1" in spec, auto)
 done
 
 lemma List__list_nth:
-    "\_lbrakkf definedOnInitialSegmentOfLength n; i < n; f i = Some a\_rbrakk \_Longrightarrow (List__list f) ! i = a"
-  by (simp add: List__list_nth_aux del:  List__list.simps)
+    "\<lbrakk>f definedOnInitialSegmentOfLength n; i < n; f i = Some a\<rbrakk> \<Longrightarrow> (List__list f) ! i = a"
+  by (simp add: List__list_nth_aux)
+
+lemma List__list_nth_the:
+    "\<lbrakk>f definedOnInitialSegmentOfLength n; i < n\<rbrakk> \<Longrightarrow> (List__list f) ! i = the (f i)"
+  by (rule List__list_nth, 
+      auto simp add: option.collapse definedOnInitialSegmentOfLengthSome)
 
 lemma List__list_members:
-    "\_lbrakkf definedOnInitialSegmentOfLength n; i < n; f i = Some a\_rbrakk \_Longrightarrow a mem (List__list f)"
- by (frule List__list_nth, 
-     auto simp del: List__list.simps simp add: nth_mem List__length_is_SegmentLength)
+    "\<lbrakk>f definedOnInitialSegmentOfLength n; i < n; f i = Some a\<rbrakk> \<Longrightarrow> a mem (List__list f)"
+ by (frule List__list_nth, auto simp add: nth_mem List__length_is_SegmentLength)
   
-theorem List__list_subtype_constr_refined: 
+(*******************************************************************************
+* Many arguments involve the application of List__list to a function 
+* of the kind  \<lambda>n. if n<len then Some (f n) else None)
+*******************************************************************************)
+
+declare List__list.simps [simp del]
+
+lemma List__list_length_if [simp]:
+   "length (List__list (\<lambda>n. if n<len then Some (f n) else None)) = len"
+by (rule  List__length_is_SegmentLength,
+    simp add: List__definedOnInitialSegmentOfLength_def)
+
+lemma List__list_nth_if: 
+   "\<lbrakk>i < len\<rbrakk> \<Longrightarrow>  List__list (\<lambda>n. if n<len then Some (f n) else None) ! i = (f i)"
+by (rule  List__list_nth, 
+    auto simp add: List__definedOnInitialSegmentOfLength_def)
+
+lemma List__list_if: 
+   "List__list  (\<lambda>i. if i < length l then Some (l!i) else None) = l"
+by (simp add: list_eq_iff_nth_eq List__list_nth_if)
+
+lemma List__list_map: 
+   "map g (List__list (\<lambda>n. if n<len then Some (f n) else None))
+    = (List__list (\<lambda>n. if n<len then Some (g (f n)) else None))"
+by (simp add: list_eq_iff_nth_eq  List__list_nth_if)
+
+lemma List__list_Suc:
+   "List__list (\<lambda>n. if n < (Suc len) then Some (f n) else None)
+    = (List__list (\<lambda>n. if n < len then Some (f n) else None) @ [f len])"
+by (simp add: list_eq_iff_nth_eq  List__list_nth_if nth_append,
+    simp add: less_Suc_eq_le)
+
+lemma list_last_elem:
+   "f definedOnInitialSegmentOfLength (Suc n) \<Longrightarrow>
+    List__list f =
+    List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
+  apply (cut_tac f = "\<lambda>i. if i < n then f i else None" and n=n 
+         in List__length_is_SegmentLength,
+         simp add: List__definedOnInitialSegmentOfLength_def)
+  apply (auto simp add: list_eq_iff_nth_eq
+                        List__length_is_SegmentLength
+                        List__list_nth_the)
+  apply (case_tac "i<n", auto simp add: nth_append not_less_less_Suc_eq)
+  apply (subst  List__list_nth_the, 
+         auto simp add: List__definedOnInitialSegmentOfLength_def)
+done
+
+(******************************************************************************
+* OLD Proof 
+*******************************************************************************
+proof -
+ fix f n
+ assume "f definedOnInitialSegmentOfLength (Suc n)"
+ thus "List__list f =
+       List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
+ proof (induct n arbitrary: f)
+ case 0
+  then obtain x where "f 0 = Some x"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  hence "the (f 0) = x" by auto
+  from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  def f' \<equiv> "\<lambda>i. f (i + 1)"
+  with 0 have f'_None: "f' = (\<lambda>i. None)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence f'_seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with f'_None have "List__list f' = []" by auto
+  with f'_def `f 0 = Some x` fseg
+   have "List__list f = [x]" by auto
+  def g \<equiv> "\<lambda>i. if i < 0 then f i else None"
+  hence gseg: "\<exists>m. g definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  from g_def have "g = (\<lambda>i. None)" by auto
+  with gseg have "List__list g = []" by auto
+  with `the (f 0) = x` have "List__list g @ [the (f 0)] = [x]" by auto
+  with g_def `List__list f = [x]` show ?case by auto
+ next
+ case (Suc n)
+  then obtain h where f0: "f 0 = Some h"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  def g \<equiv> "\<lambda>i. f (i + 1)"
+  from Suc have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with g_def f0 have Lf: "List__list f = h # List__list g" by auto
+  from Suc g_def have g_suc_n: "g definedOnInitialSegmentOfLength (Suc n)"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  then obtain x where "g n = Some x"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  hence "the (g n) = x" by auto
+  with g_def have "the (f (Suc n)) = x" by auto
+  def g' \<equiv> "\<lambda>i. if i < n then g i else None"
+  with Suc.hyps g_suc_n `the (g n) = x`
+   have Lg: "List__list g = List__list g' @ [x]" by auto
+  def f' \<equiv> "\<lambda>i. if i < Suc n then f i else None"
+  with g'_def g_def have g'_f': "g' = (\<lambda>i. f' (i + 1))" by auto
+  from f'_def f0 have f'0: "f' 0 = Some h" by auto
+  from f'_def Suc have f'seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
+   by (auto simp: List__definedOnInitialSegmentOfLength_def)
+  with f'0 g'_f' have "List__list f' = h # List__list g'" by auto
+  hence "List__list f' @ [x] = h # List__list g' @ [x]" by auto
+  with Lg have "List__list f' @ [x] = h # List__list g" by auto
+  with Lf have "List__list f = List__list f' @ [x]" by auto
+  with f'_def `the (f (Suc n)) = x` show ?case by auto
+ qed
+qed
+*******************************************************************************)
+
+lemma List__list_subtype_constr_refined: 
   "Function__bijective_p__stp
      (\_lambda (f::nat \_Rightarrow 'a option). 
        \_exists(n::nat). f definedOnInitialSegmentOfLength n \_and (\_forallx. Option__Option_P P (f x)), 
        list_all P) List__list"
- apply (cut_tac List__list_subtype_constr)
- apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def
-             simp del: List__list.simps)
- apply (thin_tac "?P", drule_tac x=y in spec, 
-        auto simp add: list_all_length List__length_is_SegmentLength
-             simp del: List__list.simps)
- apply (rule_tac x=x in exI, auto simp del: List__list.simps)
- apply (case_tac "xa \<le> xb",
-        auto simp add: definedOnInitialSegmentOfLengthNone not_le
-        simp del: List__list.simps)
- apply (drule_tac x=xb in spec, auto simp del: List__list.simps)
- apply (frule definedOnInitialSegmentOfLengthSome,
-        auto simp add: List__list_nth simp del: List__list.simps)
+ apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def 
+                       fun_eq_iff list_eq_iff_nth_eq list_all_length
+                       List__length_is_SegmentLength)
+ apply (thin_tac ?P, rotate_tac 1, thin_tac ?P, drule_tac x=xc in spec)
+ apply (case_tac "xc<xb", simp_all add: not_less)
+ apply (frule definedOnInitialSegmentOfLengthSome, auto, rotate_tac 1,
+        frule definedOnInitialSegmentOfLengthSome, auto simp add: List__list_nth)
+ apply (drule definedOnInitialSegmentOfLengthNone, auto)+
+ apply (rule_tac x = "\<lambda>i. if i < length y then Some (y ! i) else None" in exI)
+ apply (cut_tac f="\<lambda>i. (y ! i)" and len = "length y"
+        in definedOnInitialSegmentOfLength_lambda, auto simp add: List__list_nth)
 done
 
-(********************************   List__list_1_stp *************)
-
-lemma List__list_1_stp_nil:
- "List__list_1__stp P__a [] = (\_lambdai. None)"
- apply (simp add: List__list_1__stp_def)
- apply (cut_tac List__list_subtype_constr)
- apply (drule_tac x="(\_lambdai. if i < length [] then Some ([] ! i) else None)" and y="[]" 
-        in Function__fxy_implies_inverse__stp, auto) (* Map.empty = \_lambdai. None ***)
- apply (thin_tac "?a=?b", simp add: Function__inverse__stp_def del:  List__list.simps)
- apply (rule the1_equality, rule_tac a="\_lambdai. None" in ex1I, simp_all del:  List__list.simps)
- apply (erule conjE, simp add: List__list_empty_iff del: List__list.simps)
-done
-
-lemma list_1_stp_Isa_nth1:
- "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = Some (l!i)"
-  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
-  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
-  apply (simp add: List__list_1__stp_def, safe)
-  apply (frule List__length_is_SegmentLength, simp del: List__list.simps)
-  apply (frule_tac j=i in definedOnInitialSegmentOfLengthSome, auto simp del: List__list.simps)
-  apply (drule_tac x=i in spec, simp del: List__list.simps)
-  apply (drule_tac i=i and a=a in List__list_nth, auto)
-done 
-
-lemma list_1_stp_Isa_nth2:
- "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = None"
-  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
-  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
-  apply (simp add: List__list_1__stp_def, safe)
-  apply (frule List__length_is_SegmentLength, simp del: List__list.simps)
-  apply (simp add: definedOnInitialSegmentOfLengthNone)
-done
-
-lemma list_1_stp_Isa_nth:
- "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__list_1__stp P l = (\_lambdai. if i < length l then Some (l!i) else None)"
- by (simp add: fun_eq_iff list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
-
-(******************************** List__tabulate *************)
-
-theorem List__tabulate_nil:
-  "List__tabulate(0, f) = []"
-  by (cut_tac n=0 and f=f in  List__length_tabulate, simp)
-
-theorem List__tabulate_snoc:
-  "List__tabulate(Suc n, f) = List__tabulate(n, f) @ [f n]"
- by (auto simp add: list_eq_iff_nth_eq nth_append
-                    List__length_tabulate List__element_of_tabulate,
-     drule less_antisym, auto)
-
-theorem List__tabulate_cons:
-  "List__tabulate(Suc n, f) = f 0 # (List__tabulate(n, \_lambdai. f (Suc i)))"
- by (auto simp add: list_eq_iff_nth_eq List__length_tabulate List__element_of_tabulate,
-     case_tac i, auto simp add: List__element_of_tabulate)
-
-theorem List__tabulate_singleton:
-  "List__tabulate(Suc 0, f) = [f 0]"
- by (simp add: List__tabulate_nil List__tabulate_snoc)
-
-(************** List__at *****************************)
-
-theorem List__e_at_at__stp_nth1:
- "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = Some (l!i)"
- by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth1)
-
-theorem List__e_at_at__stp_nth2:
- "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = None"
- by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth2)
-
-theorem List__e_at_at__stp_nth:
- "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
- by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
-
-end-proof % end of hook1
-
-
-% This defines the list_1_Isa_nth proof hook:
-% Isabelle lemma that relates the Metaslang definition of op list_1 to the
-% Isabelle definition of the "nth" function (infix "!"):
-proof Isa list_1_Isa_nth
-lemma list_1_Isa_nth:
- "List__list_1 l = (\<lambda>i. if i < length l then Some (l!i) else None)"
-proof (induct l)
- case Nil
-  def domP \<equiv> "\<lambda>f :: nat \<Rightarrow> 'a option.
-                     \<exists>n. f definedOnInitialSegmentOfLength n"
-  def codP \<equiv> "\<lambda>ignore :: 'a list. True"
-  from List__list_subtype_constr
-  have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
-   by (auto simp add: domP_def codP_def)
-  have FPL: "Fun_P (domP, codP) List__list \<and> Fun_PD domP List__list"
-   by (auto simp add: domP_def codP_def)
-  have LI: "List__list_1 [] = Function__inverse__stp domP List__list []"
-   by (auto simp add: List__list_1_def domP_def)
-  def f \<equiv> "\<lambda>i. if i < length [] then Some (l!i) else None"
-  hence f_all_None: "f = (\<lambda>i. None)" by auto
-  hence f_init_seg: "\<exists>n. f definedOnInitialSegmentOfLength n"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  hence "domP f" by (auto simp add: domP_def)
-  have "codP []" by (auto simp add: codP_def)
-  from f_init_seg f_all_None have "List__list f = []" by auto
-  with BIJ FPL `domP f` `codP []`
-  have "f = Function__inverse__stp domP List__list []"
-   by (metis Function__fxy_implies_inverse__stp2)
-  with LI f_def show ?case by auto
- next
- case (Cons x l)
-  def domP \<equiv> "\<lambda>f :: nat \<Rightarrow> 'a option.
-                     \<exists>n. f definedOnInitialSegmentOfLength n"
-  def codP \<equiv> "\<lambda>ignore :: 'a list. True"
-  from List__list_subtype_constr
-  have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
-   by (auto simp add: domP_def codP_def)
-  have FPL: "Fun_P (domP, codP) List__list \<and> Fun_PD domP List__list"
-   by (auto simp add: domP_def codP_def)
-  have LI: "List__list_1 (x # l) =
-            Function__inverse__stp domP List__list (x # l)"
-   by (auto simp add: List__list_1_def domP_def)
-  def f \<equiv> "(\<lambda>i. if i < length l then Some (l!i) else None)
-           :: nat \<Rightarrow> 'a option"
-  hence f_init_seg: "f definedOnInitialSegmentOfLength (length l)"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  hence "domP f" by (auto simp add: domP_def)
-  have "codP l" by (auto simp add: codP_def)
-  from f_def Cons.hyps have IH: "List__list_1 l = f" by auto
-  hence IH': "List__list (List__list_1 l) = List__list f" by auto
-  from BIJ FPL `codP l`
-  have "List__list (Function__inverse__stp domP List__list l) = l"
-   by (auto simp only: Function__f_inverse_apply__stp)
-  hence "List__list (List__list_1 l) = l"
-   by (auto simp only: List__list_1_def domP_def)
-  with IH' have "List__list f = l" by auto
-  def f' \<equiv> "\<lambda>i. if i < length (x # l)
-                               then Some ((x # l) ! i) else None"
-  have f'_f: "f' = (\<lambda>i. if i = 0 then Some x else f (i - 1))"
-  proof
-   fix i
-   show "f' i = (if i = 0 then Some x else f (i - 1))"
-   proof (cases i)
-    case 0
-     thus ?thesis by (auto simp add: f'_def f_def)
-    next
-    case (Suc j)
-     thus ?thesis by (auto simp add: f'_def f_def)
-   qed
-  qed
-  from f'_def
-  have f'_init_seg: "f' definedOnInitialSegmentOfLength (Suc (length l))"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  hence "domP f'" by (auto simp add: domP_def)
-  have "codP (x # l)" by (auto simp add: codP_def)
-  from f'_f f'_init_seg
-  have "List__list f' = x # List__list f" by auto
-  with `List__list f = l` have "List__list f' = x # l" by auto
-  with BIJ FPL `domP f'` `codP (x # l)`
-  have "f' = Function__inverse__stp domP List__list (x # l)"
-   by (metis Function__fxy_implies_inverse__stp2)
-  with LI f'_def show ?case by auto
-qed
-end-proof
-
-proof Isa ex_List_in_p
-  by (metis Bex_set_list_ex)
-end-proof
-
-proof Isa ex_List_in_p__stp
-   by (auto simp add: List__in_p__stp_def List__e_at_at__stp_def list_1_stp_Isa_nth List__exists_p__def)
-end-proof
-
-proof Isa unique_initial_segment_length
-proof -
- fix f n1 n2
- assume F1: "f definedOnInitialSegmentOfLength n1"
- assume F2: "f definedOnInitialSegmentOfLength n2"
- from F1 have N1: "Option__none_p (f n1)"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
- from F2 have N2: "Option__none_p (f n2)"
-  by (auto simp add: List__definedOnInitialSegmentOfLength_def)
- have "n1 \<ge> n2"
-  proof (rule ccontr)
-   assume "\<not> n1 \<ge> n2"
-   with N1 F2 show False
-     by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                        linorder_not_le)
-  qed
- have "n2 \<ge> n1"
-  proof (rule ccontr)
-   assume "\<not> n2 \<ge> n1"
-   with N2 F1 show False
-     by (auto simp add: List__definedOnInitialSegmentOfLength_def
-                        linorder_not_le)
-  qed
- from `n1 \<ge> n2` `n2 \<ge> n1` show "n1 = n2" by auto
-qed
-end-proof
-
-proof Isa lengthOfListFunction_Obligation_the
- by (auto simp add: List__unique_initial_segment_length)
+(*******************************************************************************
+* END List__list
+*******************************************************************************)
 end-proof
 
 proof Isa list ()
 by (pat_completeness, auto)
 termination
+apply (relation "measure List__lengthOfListFunction", auto)
+apply (subgoal_tac "x > 0")
+apply (cut_tac f=f and n="x - 1" in definedOnInitialSegmentOfLengthSuc,
+       auto simp add: lengthOfListFunction_is_SegmentLength)
+apply (auto simp add: List__definedOnInitialSegmentOfLength_def)
+done
+end-proof
+
+(*******************************************************************************
+* Old proof
+********************************************************************************
 proof (relation "measure List__lengthOfListFunction")
  show "wf (measure List__lengthOfListFunction)" by auto
  next
@@ -1289,8 +1265,19 @@ proof (relation "measure List__lengthOfListFunction")
    by auto
  qed
 qed
+*******************************************************************************)
+
+
+proof Isa list_Obligation_subtype
+by (clarify, case_tac "n = 0", 
+      simp add: List__definedOnInitialSegmentOfLength_def,
+      rule_tac x="n - 1" in exI, 
+      simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
+(*******************************************************************************
+* Two old proofs
+********************************************************************************
 proof Isa list_Obligation_subtype
 proof -
  fix f x
@@ -1307,6 +1294,68 @@ proof -
 qed
 end-proof
 
+proof Isa list_Obligation_subtype
+proof -
+ def A \<equiv> "\<lambda> (f::nat \<Rightarrow> 'a option).
+            \<exists>(n::nat). f definedOnInitialSegmentOfLength n"
+ def B \<equiv> "\<lambda> ignore:: 'a list. True"
+ def body \<equiv> "\<lambda> (f::'a List__ListFunction). 
+               case f 0
+                of None \<Rightarrow> []
+                 | Some x \<Rightarrow> 
+                   Cons x (List__list (\<lambda> (i::nat). f (i + 1)))"
+ from List__list_subtype_constr
+  have "inj_on List__list A" and "surj_on List__list A B"
+   by (auto simp add: A_def B_def Function__bijective_p__stp_def)
+ have "inj_on body A"
+ proof (auto simp add: inj_on_def)
+  fix f1 f2
+  assume "f1 \<in> A" and "f2 \<in> A" and "body f1 = body f2"
+  from `f1 \<in> A` have "A f1" by (auto simp add: mem_def)
+  hence "body f1 = List__list f1" by (auto simp add: body_def A_def)
+  from `f2 \<in> A` have "A f2" by (auto simp add: mem_def)
+  hence "body f2 = List__list f2" by (auto simp add: body_def A_def)
+  with `body f1 = List__list f1` `body f1 = body f2`
+   have "List__list f1 = List__list f2" by auto
+  with `f1 \<in> A` `f2 \<in> A` `inj_on List__list A`
+   show "f1 = f2" by (auto simp add: inj_on_def)
+ qed
+ have "surj_on body A B"
+ proof (auto simp add: surj_on_def)
+  fix l
+  assume "l \<in> B"
+  with `surj_on List__list A B`
+   obtain f where "f \<in> A" and "l = List__list f"
+    by (auto simp add: surj_on_def)
+  hence "l = body f" by (auto simp add: mem_def body_def A_def)
+  with `f \<in> A` show "\<exists>f \<in> A. l = body f" by auto
+ qed
+ with `inj_on body A` show ?thesis
+  by (auto simp add: body_def A_def B_def Function__bijective_p__stp_def)
+qed
+end-proof
+*******************************************************************************)
+
+
+proof Isa list_subtype_constr
+ apply (auto simp add: bij_ON_def bij_on_def inj_on_def surj_on_def 
+                       fun_eq_iff list_eq_iff_nth_eq 
+                       List__length_is_SegmentLength)
+ apply (drule_tac x=xc in spec)
+ apply (case_tac "xc<xb", simp_all add: not_less)
+ apply (frule definedOnInitialSegmentOfLengthSome, auto, rotate_tac 1,
+        frule definedOnInitialSegmentOfLengthSome, auto simp add: List__list_nth)
+ apply (drule definedOnInitialSegmentOfLengthNone, auto)+
+ apply (rule_tac x = "\<lambda>i. if i < length y then Some (y ! i) else None" in exI)
+ apply (cut_tac f="\<lambda>i. (y ! i)" and len = "length y"
+        in definedOnInitialSegmentOfLength_lambda, auto simp add: List__list_nth)
+end-proof
+
+
+
+(*******************************************************************************
+* Old proof
+********************************************************************************
 proof Isa list_subtype_constr
 proof (auto simp add: Function__bijective_p__stp_def)
  show "inj_on List__list
@@ -1457,76 +1506,191 @@ proof (auto simp add: Function__bijective_p__stp_def)
   qed
 qed
 end-proof
+*******************************************************************************)
 
 proof Isa list_subtype_constr1
+  (*************************************************************************
+   * I believe the theorem is wrong - it contradicts list_subtype_constr
+   * CK 14/08/22
+  **************************************************************************)
   sorry
 end-proof
 
 proof Isa list_subtype_constr2
-  apply (auto simp del: List__list.simps)
-  apply (subgoal_tac "\_forallz. (\_foralli. Option__Option_P P__a (z i))
-                         \_longrightarrow z definedOnInitialSegmentOfLength xa
-                         \_longrightarrow list_all P__a (List__list z)",
-         simp del: List__list.simps)
-  apply (thin_tac "\_forallxa. Option__Option_P P__a (x xa)",
-         thin_tac "x definedOnInitialSegmentOfLength xa",  rule nat_induct)
-  (********* Base case *********)
-  apply (auto simp del: List__list.simps, simp, auto simp del: List__list.simps)
-  apply (rule_tac P="z 0 = None" in case_split, simp del: List__list.simps)
-  apply (simp only:  List__definedOnInitialSegmentOfLength_def,
-         auto simp del: List__list.simps)
-  (********** Step Case ********)
-  apply (simp (no_asm_simp))
-  apply (auto simp del: List__list.simps)
-  apply (rule_tac P="z 0 = None" in case_split, auto simp del: List__list.simps)
-  apply (drule_tac x=0 in spec, auto simp del: List__list.simps)
-  apply (drule_tac x="(\_lambdai. z (Suc i))" in spec, auto simp del: List__list.simps)
-  apply (erule notE)
-  apply (simp add: List__definedOnInitialSegmentOfLength_def)
+  apply (auto simp add: list_all_length List__length_is_SegmentLength,
+         frule definedOnInitialSegmentOfLengthSome, 
+         auto simp add: List__list_nth)
+  apply (drule_tac x=n in spec, auto)
 end-proof
 
-(*
-proof Isa list_Obligation_subtype
-proof -
- def A \<equiv> "\<lambda> (f::nat \<Rightarrow> 'a option).
-            \<exists>(n::nat). f definedOnInitialSegmentOfLength n"
- def B \<equiv> "\<lambda> ignore:: 'a list. True"
- def body \<equiv> "\<lambda> (f::'a List__ListFunction). 
-               case f 0
-                of None \<Rightarrow> []
-                 | Some x \<Rightarrow> 
-                   Cons x (List__list (\<lambda> (i::nat). f (i + 1)))"
- from List__list_subtype_constr
-  have "inj_on List__list A" and "surj_on List__list A B"
-   by (auto simp add: A_def B_def Function__bijective_p__stp_def)
- have "inj_on body A"
- proof (auto simp add: inj_on_def)
-  fix f1 f2
-  assume "f1 \<in> A" and "f2 \<in> A" and "body f1 = body f2"
-  from `f1 \<in> A` have "A f1" by (auto simp add: mem_def)
-  hence "body f1 = List__list f1" by (auto simp add: body_def A_def)
-  from `f2 \<in> A` have "A f2" by (auto simp add: mem_def)
-  hence "body f2 = List__list f2" by (auto simp add: body_def A_def)
-  with `body f1 = List__list f1` `body f1 = body f2`
-   have "List__list f1 = List__list f2" by auto
-  with `f1 \<in> A` `f2 \<in> A` `inj_on List__list A`
-   show "f1 = f2" by (auto simp add: inj_on_def)
- qed
- have "surj_on body A B"
- proof (auto simp add: surj_on_def)
-  fix l
-  assume "l \<in> B"
-  with `surj_on List__list A B`
-   obtain f where "f \<in> A" and "l = List__list f"
-    by (auto simp add: surj_on_def)
-  hence "l = body f" by (auto simp add: mem_def body_def A_def)
-  with `f \<in> A` show "\<exists>f \<in> A. l = body f" by auto
- qed
- with `inj_on body A` show ?thesis
-  by (auto simp add: body_def A_def B_def Function__bijective_p__stp_def)
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LIST_1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Isabelle lemma list_1_Isa_nth relates the Metaslang definition of op list_1 
+% to the Isabelle definition of the "nth" function (infix "!"):
+
+proof Isa hook_list_1
+(*******************************************************************************
+* Additional lemmas about List__list_1
+*******************************************************************************)
+
+lemma list_1_Isa_nth:
+ "List__list_1 l = (\<lambda>i. if i < length l then Some (l!i) else None)"
+  apply (simp add:  List__list_1_def Function__inverse__stp_def,
+         rule the_equality, auto simp add: List__list_if )
+  apply (rule_tac x="length l" in exI, 
+         simp add: definedOnInitialSegmentOfLength_lambda)
+  apply (auto simp add: List__length_is_SegmentLength fun_eq_iff 
+                        definedOnInitialSegmentOfLengthNone)
+  apply (frule definedOnInitialSegmentOfLengthSome, auto simp add: List__list_nth)
+done
+
+(*******************************************************************************
+* Old proof
+********************************************************************************
+proof (induct l)
+ case Nil
+  def domP \<equiv> "\<lambda>f :: nat \<Rightarrow> 'a option.
+                     \<exists>n. f definedOnInitialSegmentOfLength n"
+  def codP \<equiv> "\<lambda>ignore :: 'a list. True"
+  from List__list_subtype_constr
+  have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
+   by (auto simp add: domP_def codP_def)
+  have FPL: "Fun_P (domP, codP) List__list \<and> Fun_PD domP List__list"
+   by (auto simp add: domP_def codP_def)
+  have LI: "List__list_1 [] = Function__inverse__stp domP List__list []"
+   by (auto simp add: List__list_1_def domP_def)
+  def f \<equiv> "\<lambda>i. if i < length [] then Some (l!i) else None"
+  hence f_all_None: "f = (\<lambda>i. None)" by auto
+  hence f_init_seg: "\<exists>n. f definedOnInitialSegmentOfLength n"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  hence "domP f" by (auto simp add: domP_def)
+  have "codP []" by (auto simp add: codP_def)
+  from f_init_seg f_all_None have "List__list f = []" by auto
+  with BIJ FPL `domP f` `codP []`
+  have "f = Function__inverse__stp domP List__list []"
+   by (metis Function__fxy_implies_inverse__stp2)
+  with LI f_def show ?case by auto
+ next
+ case (Cons x l)
+  def domP \<equiv> "\<lambda>f :: nat \<Rightarrow> 'a option.
+                     \<exists>n. f definedOnInitialSegmentOfLength n"
+  def codP \<equiv> "\<lambda>ignore :: 'a list. True"
+  from List__list_subtype_constr
+  have BIJ: "Function__bijective_p__stp (domP, codP) List__list"
+   by (auto simp add: domP_def codP_def)
+  have FPL: "Fun_P (domP, codP) List__list \<and> Fun_PD domP List__list"
+   by (auto simp add: domP_def codP_def)
+  have LI: "List__list_1 (x # l) =
+            Function__inverse__stp domP List__list (x # l)"
+   by (auto simp add: List__list_1_def domP_def)
+  def f \<equiv> "(\<lambda>i. if i < length l then Some (l!i) else None)
+           :: nat \<Rightarrow> 'a option"
+  hence f_init_seg: "f definedOnInitialSegmentOfLength (length l)"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  hence "domP f" by (auto simp add: domP_def)
+  have "codP l" by (auto simp add: codP_def)
+  from f_def Cons.hyps have IH: "List__list_1 l = f" by auto
+  hence IH': "List__list (List__list_1 l) = List__list f" by auto
+  from BIJ FPL `codP l`
+  have "List__list (Function__inverse__stp domP List__list l) = l"
+   by (auto simp only: Function__f_inverse_apply__stp)
+  hence "List__list (List__list_1 l) = l"
+   by (auto simp only: List__list_1_def domP_def)
+  with IH' have "List__list f = l" by auto
+  def f' \<equiv> "\<lambda>i. if i < length (x # l)
+                               then Some ((x # l) ! i) else None"
+  have f'_f: "f' = (\<lambda>i. if i = 0 then Some x else f (i - 1))"
+  proof
+   fix i
+   show "f' i = (if i = 0 then Some x else f (i - 1))"
+   proof (cases i)
+    case 0
+     thus ?thesis by (auto simp add: f'_def f_def)
+    next
+    case (Suc j)
+     thus ?thesis by (auto simp add: f'_def f_def)
+   qed
+  qed
+  from f'_def
+  have f'_init_seg: "f' definedOnInitialSegmentOfLength (Suc (length l))"
+   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
+  hence "domP f'" by (auto simp add: domP_def)
+  have "codP (x # l)" by (auto simp add: codP_def)
+  from f'_f f'_init_seg
+  have "List__list f' = x # List__list f" by auto
+  with `List__list f = l` have "List__list f' = x # l" by auto
+  with BIJ FPL `domP f'` `codP (x # l)`
+  have "f' = Function__inverse__stp domP List__list (x # l)"
+   by (metis Function__fxy_implies_inverse__stp2)
+  with LI f'_def show ?case by auto
 qed
+********************************************************************************)
+
+lemma List__list_1_apply_List__list:
+ "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n\<rbrakk>
+   \<Longrightarrow> List__list_1 (List__list f) = f"
+  apply (cut_tac List__list_subtype_constr)
+  apply (simp add: List__list_1_def)
+  apply (rule Function__inverse_f_apply__stp, auto simp del: not_ex)
+  apply (subst List__list.simps, auto simp del: not_ex)
+done
+
+lemma List__list_apply_List__list_1:  "List__list (List__list_1 l) = l"
+  apply (cut_tac List__list_subtype_constr)
+  apply (simp add: List__list_1_def)
+  apply (rule_tac f=List__list in Function__f_inverse_apply__stp, 
+         auto simp del: not_ex)
+  apply (subst List__list.simps, auto simp del: not_ex)
+done
+
+(********************************   List__list_1__stp *************)
+
+lemma List__list_1_stp_nil:
+ "List__list_1__stp P__a [] = (\_lambdai. None)"
+ apply (simp add: List__list_1__stp_def)
+ apply (cut_tac List__list_subtype_constr)
+ apply (drule_tac x="(\_lambdai. if i < length [] then Some ([] ! i) else None)" and y="[]" 
+        in Function__fxy_implies_inverse__stp, auto simp add: List__list.simps)
+        (* Map.empty = \_lambdai. None ***)
+ apply (thin_tac "?a=?b", simp add: Function__inverse__stp_def )
+ apply (rule the1_equality, rule_tac a="\_lambdai. None" in ex1I, simp_all)
+ apply (erule conjE, simp add: List__list_empty_iff )
+done
+
+lemma list_1_stp_Isa_nth1:
+ "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = Some (l!i)"
+  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
+  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
+  apply (simp add: List__list_1__stp_def, safe)
+  apply (frule List__length_is_SegmentLength, simp )
+  apply (frule_tac j=i in definedOnInitialSegmentOfLengthSome, auto)
+  apply (drule_tac x=i in spec, simp )
+  apply (drule_tac i=i and a=a in List__list_nth, auto)
+done 
+
+lemma list_1_stp_Isa_nth2:
+ "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__list_1__stp P l i = None"
+  apply (cut_tac P=P in List__list_subtype_constr_refined, simp)
+  apply (drule_tac g="List__list_1__stp P" and y=l in Function__inverse__stp_eq_props)
+  apply (simp add: List__list_1__stp_def, safe)
+  apply (frule List__length_is_SegmentLength, simp )
+  apply (simp add: definedOnInitialSegmentOfLengthNone)
+done
+
+lemma list_1_stp_Isa_nth:
+ "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__list_1__stp P l = (\_lambdai. if i < length l then Some (l!i) else None)"
+ by (simp add: fun_eq_iff list_1_stp_Isa_nth1 list_1_stp_Isa_nth2)
+
+(*******************************************************************************
+* END List__list_1
+*******************************************************************************)
 end-proof
-*)
 
 proof Isa list_1_subtype_constr
   apply (cut_tac List__list_subtype_constr)
@@ -1534,30 +1698,45 @@ proof Isa list_1_subtype_constr
   apply (auto simp add: List__list_1_def)
 end-proof
 
-proof Isa list_1_subtype_constr1
-  apply(unfold List__list_1_def)
-  apply(cut_tac List__list_subtype_constr, 
-        simp add: bij_ON_def bij_on_def del: List__list.simps, safe)
+proof Isa list_1_subtype_constr1  
+  apply (unfold List__list_1_def)
+  apply (cut_tac List__list_subtype_constr, 
+         simp add: bij_ON_def bij_on_def , safe)
   apply (simp only: Function__inverse__stp_def Fun_PR.simps)
-  apply(rule_tac Q = "\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)" in the1I2)
-  apply(auto simp del: List__list.simps)
-  apply (simp add: surj_on_def Bex_def del: List__list.simps)
-  apply (drule_tac x=x in spec, auto simp del: List__list.simps)
-  apply (auto simp add: inj_on_def Ball_def simp del: List__list.simps)
+  apply (rule_tac Q = "\<lambda>f. Ex (op definedOnInitialSegmentOfLength f)" in the1I2, auto)
+  apply (simp add: surj_on_def Bex_def, drule_tac x=x in spec, auto)
+  apply (auto simp add: inj_on_def Ball_def)
 end-proof
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TABULATE / LENGTH / @ / @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 proof Isa tabulate_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
 end-proof
 
 proof Isa tabulate_subtype_constr
-  apply (auto simp add: List__tabulate_def simp del: List__list.simps)
-  apply (cut_tac P__a=P__a in List__list_subtype_constr2, simp del: List__list.simps)
+  apply (auto simp add: List__tabulate_def)
+  apply (cut_tac P__a=P__a in List__list_subtype_constr2, simp )
   apply (drule_tac x="\<lambda>i. if i < n then Some (f i) else None" in spec, 
-         auto simp del: List__list.simps)
+         auto)
   apply (rule_tac x=n in exI, 
-         simp add: List__definedOnInitialSegmentOfLength_def del: List__list.simps)+  
+         simp add: List__definedOnInitialSegmentOfLength_def )+  
 end-proof
+
+
+
+proof Isa length_is_length_of_list_function
+ by (auto simp add: List__lengthOfListFunction_def List__length_is_SegmentLength,
+     rule the_equality, auto simp add: List__unique_initial_segment_length)
+end-proof
+
+(*******************************************************************************
+* OLD proof
+********************************************************************************
 
 proof Isa length_is_length_of_list_function
   proof (induct n \<equiv> "List__lengthOfListFunction f" arbitrary: f)
@@ -1607,71 +1786,17 @@ case (Suc n) note prems = this
  with prems show ?case by (metis `List__list f = x # List__list (\<lambda>i. f (i + 1))`) 
 qed
 end-proof
+*******************************************************************************)
 
-% definition of the list_last_elem proof hook:
-proof Isa list_last_elem
-lemma list_last_elem:
-"\<And>f n. f definedOnInitialSegmentOfLength (Suc n) \<Longrightarrow>
-            List__list f =
-            List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
-proof -
- fix f n
- assume "f definedOnInitialSegmentOfLength (Suc n)"
- thus "List__list f =
-       List__list (\<lambda>i. if i < n then f i else None) @ [the (f n)]"
- proof (induct n arbitrary: f)
- case 0
-  then obtain x where "f 0 = Some x"
-   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
-  hence "the (f 0) = x" by auto
-  from 0 have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  def f' \<equiv> "\<lambda>i. f (i + 1)"
-  with 0 have f'_None: "f' = (\<lambda>i. None)"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence f'_seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with f'_None have "List__list f' = []" by auto
-  with f'_def `f 0 = Some x` fseg
-   have "List__list f = [x]" by auto
-  def g \<equiv> "\<lambda>i. if i < 0 then f i else None"
-  hence gseg: "\<exists>m. g definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  from g_def have "g = (\<lambda>i. None)" by auto
-  with gseg have "List__list g = []" by auto
-  with `the (f 0) = x` have "List__list g @ [the (f 0)] = [x]" by auto
-  with g_def `List__list f = [x]` show ?case by auto
- next
- case (Suc n)
-  then obtain h where f0: "f 0 = Some h"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  def g \<equiv> "\<lambda>i. f (i + 1)"
-  from Suc have fseg: "\<exists>m. f definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with g_def f0 have Lf: "List__list f = h # List__list g" by auto
-  from Suc g_def have g_suc_n: "g definedOnInitialSegmentOfLength (Suc n)"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  then obtain x where "g n = Some x"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  hence "the (g n) = x" by auto
-  with g_def have "the (f (Suc n)) = x" by auto
-  def g' \<equiv> "\<lambda>i. if i < n then g i else None"
-  with Suc.hyps g_suc_n `the (g n) = x`
-   have Lg: "List__list g = List__list g' @ [x]" by auto
-  def f' \<equiv> "\<lambda>i. if i < Suc n then f i else None"
-  with g'_def g_def have g'_f': "g' = (\<lambda>i. f' (i + 1))" by auto
-  from f'_def f0 have f'0: "f' 0 = Some h" by auto
-  from f'_def Suc have f'seg: "\<exists>m. f' definedOnInitialSegmentOfLength m"
-   by (auto simp: List__definedOnInitialSegmentOfLength_def)
-  with f'0 g'_f' have "List__list f' = h # List__list g'" by auto
-  hence "List__list f' @ [x] = h # List__list g' @ [x]" by auto
-  with Lg have "List__list f' @ [x] = h # List__list g" by auto
-  with Lf have "List__list f = List__list f' @ [x]" by auto
-  with f'_def `the (f (Suc n)) = x` show ?case by auto
- qed
-qed
+
+proof Isa length_tabulate
+ by (simp add: List__tabulate_def)
 end-proof
 
+
+(*******************************************************************************
+* OLD proof
+********************************************************************************
 proof Isa length_tabulate
 proof -
  def f \<equiv> "(\<lambda>j. if j < n then Some (f j) else None)
@@ -1690,10 +1815,23 @@ proof -
  with f_def show ?thesis by (auto simp add: List__tabulate_def)
 qed
 end-proof
+*******************************************************************************)
+
+
 
 proof Isa e_at__def
   by (auto simp add: list_1_Isa_nth)
 end-proof
+
+proof Isa element_of_tabulate
+  by (simp add: List__tabulate_def, rule_tac List__list_nth,
+      auto simp add: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+
+(*******************************************************************************
+* OLD proof
+********************************************************************************
 
 proof Isa element_of_tabulate
 proof (induct n arbitrary: f i)
@@ -1749,10 +1887,94 @@ case (Suc n)
  with tab_F show ?case by auto
 qed
 end-proof
+*******************************************************************************)
 
 proof Isa element_of_tabulate_Obligation_subtype
   by (auto simp add: List__length_tabulate)
 end-proof
+
+proof Isa hook_at
+
+(*******************************************************************************
+* Additional lemmas about tabulate
+*******************************************************************************)
+
+lemma List__tabulate_alt:
+   "List__tabulate (n, f) = map f [0..<n]" 
+by (rule nth_equalityI,
+    auto simp add: List__length_tabulate List__element_of_tabulate)
+
+lemma List__tabulate_nil:
+  "List__tabulate(0, f) = []"
+  by (cut_tac n=0 and f=f in  List__length_tabulate, simp)
+
+lemma List__tabulate_snoc:
+  "List__tabulate(Suc n, f) = List__tabulate(n, f) @ [f n]"
+ by (auto simp add: list_eq_iff_nth_eq nth_append
+                    List__length_tabulate List__element_of_tabulate,
+     drule less_antisym, auto)
+
+lemma List__tabulate_cons:
+  "List__tabulate(Suc n, f) = f 0 # (List__tabulate(n, \_lambdai. f (Suc i)))"
+ by (auto simp add: list_eq_iff_nth_eq List__length_tabulate List__element_of_tabulate,
+     case_tac i, auto simp add: List__element_of_tabulate)
+
+lemma List__tabulate_singleton:
+  "List__tabulate(Suc 0, f) = [f 0]"
+ by (simp add: List__tabulate_nil List__tabulate_snoc)
+
+(*******************************************************************************
+* END tabulate
+*******************************************************************************)
+
+
+(*******************************************************************************
+* Additional lemmas about length
+*******************************************************************************)
+
+
+
+(*******************************************************************************
+* END length
+*******************************************************************************)
+
+
+(*******************************************************************************
+* Additional lemmas about @/@@
+*******************************************************************************)
+
+lemma List__e_at_at__stp_nth1:
+ "\_lbrakklist_all P l; i < length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = Some (l!i)"
+ by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth1)
+
+lemma List__e_at_at__stp_nth2:
+ "\_lbrakklist_all P l; i \_ge length l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = None"
+ by (simp add: List__e_at_at__stp_def list_1_stp_Isa_nth2)
+
+lemma List__e_at_at__stp_nth:
+ "\_lbrakklist_all P l\_rbrakk \_Longrightarrow List__e_at_at__stp P (l, i) = (if i < length l then Some (l!i) else None)"
+ by (simp add: List__e_at_at__stp_nth1 List__e_at_at__stp_nth2)
+
+(*******************************************************************************
+* END @ / @@
+*******************************************************************************)
+
+end-proof 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+proof Isa ex_List_in_p
+  by (metis Bex_set_list_ex)
+end-proof
+
+proof Isa ex_List_in_p__stp
+   by (auto simp add: List__in_p__stp_def List__e_at_at__stp_def list_1_stp_Isa_nth List__exists_p__def)
+end-proof
+
+
 
 proof Isa empty_p__def
   by (simp add: null_def)
@@ -1875,38 +2097,19 @@ proof Isa subFromLong_Obligation_subtype
 end-proof
 
 proof Isa subFromLong_subtype_constr
-  apply (auto simp add: List__subFromLong_def list_all_length
-              simp del: List__list.simps)
-  apply (subgoal_tac "(\<lambda>j. if j < n then Some (l ! (i + j)) else None) 
-                       definedOnInitialSegmentOfLength n")
-  apply (subgoal_tac "length (List__list (\<lambda>j\<Colon>nat. if j < n 
-                                    then Some (l ! (i + j)) else None)) = n", 
-         simp del: List__list.simps)
-  apply (subgoal_tac "List__list (\<lambda>j\<Colon>nat. if j < n then Some (l ! (i + j)) else None)
-                      ! na = l ! (i +na)", 
-         simp del: List__list.simps)
-  apply (cut_tac i=na and x="l ! (i + na)" 
-             and l="List__list  (\<lambda>j\<Colon>nat. if j < n then Some (l ! (i + j)) else None)"
-         in List__e_at__def,
-         auto simp del:List__list.simps)
-  apply (simp add: List__list_1_def  del:List__list.simps)
-  apply (cut_tac List__list_subtype_constr) 
-  apply (drule_tac x ="\<lambda>j. if j < n then Some (l ! (i + j)) else None" 
-                   in Function__inverse_f_apply__stp, 
-         auto simp del:List__list.simps)
-  apply (simp only: not_ex [symmetric], simp del: not_ex)
-  apply (cut_tac f="(\<lambda>j. if j < n then Some (l ! (i + j)) else None)" 
-                in List__length_is_length_of_list_function [symmetric],
-         rule exI, auto simp add: List__lengthOfListFunction_def
-                        simp del: List__list.simps,
-         thin_tac "?a=?b")
-  apply (rule the1I2)
-  apply (rule List__lengthOfListFunction_Obligation_the, rule exI, 
-          auto  simp add: List__unique_initial_segment_length  
-                          List__definedOnInitialSegmentOfLength_def
-                simp del: List__list.simps) 
+  by (auto simp add: List__subFromLong_def list_all_length  List__list_nth_if)
 end-proof
 
+proof Isa length_subFromLong
+by (auto simp add: List__subFromLong_def )
+end-proof
+
+proof Isa subFromLong_whole
+by (auto simp add: List__subFromLong_def list_eq_iff_nth_eq List__list_nth_if)
+end-proof
+
+
+(******************************** OLD PROOFS **************************
 proof Isa length_subFromLong
 proof -
  def subl \<equiv> "List__subFromLong(l,i,n)"
@@ -1935,7 +2138,7 @@ case Nil
  def f \<equiv> "(\<lambda>j. if j < 0 then Some ([] ! j) else None)
                  :: nat \<Rightarrow> 'a option"
  hence UNFOLD: "List__subFromLong ([], 0, length []) = List__list f"
-  by (auto simp add: List__subFromLong_def del: List__list.simps)
+  by (auto simp add: List__subFromLong_def )
  with f_def have "f definedOnInitialSegmentOfLength 0"
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
  with f_def have "List__list f = []" by auto
@@ -1966,14 +2169,16 @@ case (Cons x l)
                   List__subFromLong (x#l, 0, Suc n)"
   by auto
  also from Fsimp have "\<dots> = List__list f"
-  by (auto simp add: List__subFromLong_def del: List__list.simps)
+  by (auto simp add: List__subFromLong_def )
  also from Lf_Lg have "\<dots> = x # List__list g" by auto
  also from Gsimp have "\<dots> = x # List__subFromLong (l, 0, n)"
-  by (auto simp add: List__subFromLong_def del: List__list.simps)
+  by (auto simp add: List__subFromLong_def )
  also from IndHyp have "\<dots> = x # l" by auto
  finally show ?case .
 qed
 end-proof
+******************************************************************************)
+
 
 proof Isa subFromTo_subtype_constr
   by (simp add: List__subFromTo_def  List__subFromLong_subtype_constr)
@@ -1999,6 +2204,11 @@ proof Isa removeSuffix_subtype_constr
    by (auto simp add: List__removeSuffix_def list_all_length)
 end-proof
 
+proof Isa prefix__def
+by (auto simp add: List__subFromLong_def list_eq_iff_nth_eq List__list_nth_if)
+end-proof
+
+(******************************** OLD PROOF **************************
 proof Isa prefix__def
 proof (induct n arbitrary: l)
 case 0
@@ -2029,6 +2239,8 @@ case (Suc n)
  with TAKE LXR show ?case by auto
 qed
 end-proof
+
+******************************************************************************)
 
 proof Isa removePrefix__def
 proof (induct n arbitrary: l)
@@ -2108,6 +2320,17 @@ proof Isa last_Obligation_subtype0
 end-proof
 
 proof Isa last__def
+apply (simp add: List__theElement_def last_conv_nth)
+apply (drule List__last_Obligation_subtype0, simp)
+apply (rule the1_equality [symmetric], simp add: List__theElement_Obligation_the)
+apply (simp add: list_eq_iff_nth_eq List__suffix_def List__subFromLong_def)
+apply (subgoal_tac "(\<lambda>j. if j = 0 then Some (l ! (length l - Suc 0 + j)) else None)
+                    definedOnInitialSegmentOfLength 1")
+apply (subst List__list_nth, auto, simp add: List__definedOnInitialSegmentOfLength_def)
+end-proof
+
+(*********************************************** OLD PROOF ****************
+proof Isa last__def
 proof -
  def x \<equiv> "last l"
  def bl \<equiv> "butlast l"
@@ -2146,6 +2369,7 @@ proof -
  with x_def show ?thesis by auto
 qed
 end-proof
+******************************************************************************)
 
 proof Isa tail_Obligation_subtype
   by (cases l, auto)
@@ -2211,6 +2435,15 @@ by (auto simp add: List__definedOnInitialSegmentOfLength_def
                    List__e_at_at_def list_1_Isa_nth)
 end-proof
 
+proof Isa update__def
+apply (subgoal_tac "(\<lambda> (j::nat). if j = i then Some x else l @@ j) 
+                    definedOnInitialSegmentOfLength (length l)")
+apply (rule sym, auto simp add: list_eq_iff_nth_eq List__length_is_SegmentLength)
+apply (rule List__list_nth, 
+       auto simp add: List__definedOnInitialSegmentOfLength_def 
+                      List__e_at_at_def list_1_Isa_nth)
+end-proof
+(*********************************************** OLD PROOF ****************
 proof Isa update__def
 proof (induct l arbitrary: i)
 case Nil
@@ -2294,6 +2527,7 @@ case (Cons h l)
  qed
 qed
 end-proof
+******************************************************************************)
 
 proof Isa forall_p__def
  by (simp add: list_all_length)
@@ -2330,6 +2564,11 @@ proof Isa zip_Obligation_subtype
 end-proof
 
 proof Isa zip__def
+by (rule sym, auto simp add: list_eq_iff_nth_eq  List__list_nth_if)
+end-proof
+
+(*********************************************** OLD PROOF ****************
+proof Isa zip__def
 proof (induct l2 arbitrary: l1)
 case Nil
  hence "length l1 = 0" by auto
@@ -2364,6 +2603,7 @@ case (Cons h2 l2')
  with f_def show ?case by auto
 qed
 end-proof
+******************************************************************************)
 
 proof Isa zip3_Obligation_subtype
   by (auto simp add: List__definedOnInitialSegmentOfLength_def)
@@ -2564,6 +2804,11 @@ proof Isa map3_subtype_constr
 end-proof
 
 proof Isa map__def
+by (rule sym, auto simp add: list_eq_iff_nth_eq  List__list_nth_if)
+end-proof
+
+(******************************************* OLD PROOF *******************
+proof Isa map__def
 proof (induct l)
 case Nil
  have MAP: "map f [] = []" by auto
@@ -2586,6 +2831,7 @@ case (Cons h t)
  with Cons.hyps MAP g'_def g_def show ?case by auto
 qed
 end-proof
+******************************************************************************)
 
 proof Isa removeNones_subtype_constr
   apply (subgoal_tac "\<forall>x\<in>set(List__removeNones l). Some x \<in> set l")  
@@ -2594,7 +2840,7 @@ proof Isa removeNones_subtype_constr
   apply (thin_tac "list_all ?P l")
   apply (subgoal_tac "Some x \<in> set (map Some (List__removeNones l))")   
   apply (subgoal_tac "map Some (List__removeNones l)
-                       = filter (option_case False (\<lambda>x. True)) l", auto)
+                       = filter (case_option False (\<lambda>x. True)) l", auto)
   apply (thin_tac "?a \<in> ?S", simp add: List__removeNones_def)
   apply (rule the1I2)
   apply (cut_tac List__removeNones_Obligation_the, auto)
@@ -2808,7 +3054,7 @@ case (Cons h t)
   by (auto simp: ext)
  with f_suc_n list_last_elem
   have "List__list f = List__list ft @ [the (f n)]"
-   by (auto simp del: List__list.simps)
+   by (auto)
  from f_def n_def have "f n = Some h" by auto
  hence "the (f n) = h" by auto
  with `List__list f = List__list ft @ [the (f n)]`
@@ -2826,6 +3072,11 @@ proof Isa repeat_subtype_constr
   by (simp add: list_all_length)
 end-proof
 
+proof Isa repeat__def
+by (rule sym, auto simp add: list_eq_iff_nth_eq  List__list_nth_if)
+end-proof
+
+(******************************** OLD PROOF ***************************
 proof Isa repeat__def
 proof (induct n)
 case 0
@@ -2848,6 +3099,7 @@ case (Suc n)
  with f_def show ?case by auto
 qed
 end-proof
+******************************************************************************)
 
 proof Isa repeat_length__stp
   by (induct n, auto)
@@ -4544,7 +4796,7 @@ proof Isa splitAtLeftmost_subtype_constr
   apply (simp add: List__splitAtLeftmost_def  split: option.split,
          auto simp add: List__splitAt_def list_all_length)
   apply (thin_tac "\<forall>x. \<not> P__a x \<longrightarrow> \<not> p x",
-         drule_tac x=a in spec, erule mp)
+         drule_tac x=x2 in spec, erule mp)
   apply (auto simp add: List__leftmostPositionSuchThat_def Let_def 
               split: split_if_asm)
   apply (simp add: null_def, drule hd_in_set)
@@ -4558,7 +4810,7 @@ proof Isa splitAtRightmost_subtype_constr
   apply (simp add: List__splitAtRightmost_def  split: option.split,
          auto simp add: List__splitAt_def list_all_length)
   apply (thin_tac "\<forall>x. \<not> P__a x \<longrightarrow> \<not> p x",
-         drule_tac x=a in spec, erule mp)
+         drule_tac x=x2 in spec, erule mp)
   apply (auto simp add: List__rightmostPositionSuchThat_def Let_def 
               split: split_if_asm)
   apply (simp add: null_def, drule last_in_set)
@@ -5062,28 +5314,6 @@ declare List__list.simps [simp del]
  separate file ListProps.sw
 ******************************************************************************) 
 
-lemma List__list_nth_if: 
-   "\<lbrakk>i < len\<rbrakk> \<Longrightarrow>  List__list (\<lambda>n. if n<len then Some (f n) else None) ! i = (f i)"
-by (rule  List__list_nth, 
-    auto simp add: List__definedOnInitialSegmentOfLength_def)
-
-lemma List__list_length_if [simp]:
-   "length (List__list (\<lambda>n. if n<len then Some (f n) else None)) = len"
-by (rule  List__length_is_SegmentLength,
-    simp add: List__definedOnInitialSegmentOfLength_def)
-
-lemma List__list_map: 
-   "map g (List__list (\<lambda>n. if n<len then Some (f n) else None))
-    = (List__list (\<lambda>n. if n<len then Some (g (f n)) else None))"
-by (simp add: list_eq_iff_nth_eq  List__list_nth_if)
-
-
-lemma List__list_Suc:
-   "List__list (\<lambda>n. if n < (Suc len) then Some (f n) else None)
-    = (List__list (\<lambda>n. if n < len then Some (f n) else None) @ [f len])"
-by (simp add: list_eq_iff_nth_eq  List__list_nth_if nth_append,
-    simp add: less_Suc_eq_le)
-
 lemma concat_nth:
   "\<lbrakk>0 < n; \<forall>j < length L. length (L!j) = n; i < n * length L\<rbrakk> 
     \<Longrightarrow> concat L ! i = L ! (i div n) ! (i mod n)"
@@ -5226,11 +5456,6 @@ lemma List__concat_unflatten:
   apply (subst concat_nth, auto)
 done
 
-
-lemma List__tabulate_alt:
-   "List__tabulate (n, f) = map f [0..<n]" 
-by (rule nth_equalityI,
-    auto simp add: List__length_tabulate List__element_of_tabulate)
 
 lemma List__in_p__stp_finite:
   "\<lbrakk>list_all P l\<rbrakk>
@@ -5557,8 +5782,7 @@ lemma List__positionsSuchThat_singleton:
   apply (erule ex1E, rule_tac x=i in exI)
   apply (simp (no_asm) add: List__positionsSuchThat_def)
   apply (rule the1I2, rule List__positionsSuchThat_Obligation_the)
-  apply (clarify, rule sorted_distinct_set_unique, auto)
-done
+  by (metis distinct.simps(2) distinct_length_2_or_more distinct_singleton nondec.cases)
 
 lemma List__positionOf_exists:
   "\<lbrakk>\<exists>!i. i < length l  \<and> l!i = x\<rbrakk>
@@ -5596,25 +5820,8 @@ lemma List__positionOf_val2:
 
 (************************************************************************)
 
-lemma List__list_1_apply_List__list:
- "\<lbrakk>\<exists>n. f definedOnInitialSegmentOfLength n\<rbrakk>
-   \<Longrightarrow> List__list_1 (List__list f) = f"
-  apply (cut_tac List__list_subtype_constr)
-  apply (simp add: List__list_1_def)
-  apply (rule Function__inverse_f_apply__stp, auto simp del: not_ex)
-  apply (subst List__list.simps, auto simp del: not_ex)
-done
 
-lemma List__list_apply_List__list_1:  "List__list (List__list_1 l) = l"
-  apply (cut_tac List__list_subtype_constr)
-  apply (simp add: List__list_1_def)
-  apply (rule_tac f=List__list in Function__f_inverse_apply__stp, 
-         auto simp del: not_ex)
-  apply (subst List__list.simps, auto simp del: not_ex)
-done
-
-
-theorem List__increasing_strict_mono: 
+lemma List__increasing_strict_mono: 
   "\<lbrakk>List__increasingNats_p l; i < j; j < length l\<rbrakk> \<Longrightarrow> l ! i < l ! j"
   apply (subgoal_tac "\<forall>i j. j\<noteq>0 \<longrightarrow> j < length l - i \<longrightarrow> l ! i < l ! (i + j)", auto)
   apply (drule_tac x=i in spec, drule_tac x="j-i" in spec, auto)
@@ -5624,7 +5831,7 @@ theorem List__increasing_strict_mono:
   apply (drule_tac x="ia+n" in spec, auto)
 done
 
-theorem List__increasing_strict_mono2: 
+lemma List__increasing_strict_mono2: 
   "\<lbrakk>List__increasingNats_p l; i \<le> j; j < length l\<rbrakk> \<Longrightarrow> l ! i \<le> l ! j"
   by (case_tac "i=j", auto simp add: nat_neq_iff,
       drule List__increasing_strict_mono, auto)
@@ -5827,7 +6034,7 @@ proof Isa List__length_of_delete1__stp
   apply(case_tac "i")
   apply(simp)
   apply(simp)
-  by (metis diff_add_cancel int_Suc int_int_eq add_commute)
+  by (metis diff_add_cancel int_Suc int_int_eq add.commute)
 end-proof
 
 proof Isa delete1_curried_subtype_constr

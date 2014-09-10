@@ -792,9 +792,12 @@ proof isa List__exists1_p__1__obligation_refine_def
          frule_tac x=0 in spec, clarsimp,
          rule_tac x=nat in exI, clarsimp,
          drule_tac x="Suc y" in spec, clarsimp)
-  apply (simp add: List__exists1_p_def List__exists_p__def Ex1_def, auto)
+  (* Simp/Auto tries too much, go back to safe mode for now *)
+  apply (simp add: List__exists1_p_def List__exists_p__def Ex1_def, safe)
   apply (rule_tac x=0 in exI, clarsimp, case_tac y, simp_all)
-  apply (rule_tac x="Suc x" in exI, clarsimp, case_tac y, simp_all)
+  apply (rule_tac x="Suc x" in exI, safe)
+  apply (metis nth_Cons_Suc)   
+  apply (case_tac y, metis nth_Cons_0, simp) 
 end-proof
 
 proof isa List__foralli_p__1__obligation_refine_def 
@@ -1023,7 +1026,7 @@ proof isa List__unflattenL__1__obligation_refine_def
   apply (cut_tac l=l in List__unflattenL_Obligation_the, simp,
          simp add:  List__unflattenL_def, rule the1I2, simp)
   apply (thin_tac "\<exists>!l. ?P l", clarsimp)
-  apply (induct lens arbitrary: x, simp_all, case_tac x, simp_all)
+  apply (induct lens arbitrary: x l, simp_all, case_tac x, simp_all)
   apply (frule_tac x=0 in spec, simp)  
   apply (subgoal_tac "\<forall>k. foldl op + (a + k) lens
                         = foldl op + k lens + a",

@@ -834,9 +834,9 @@ proof Isa positionsSuchThatF_Obligation_the
    apply (erule ex1E, clarify, rule_tac a=POSs in ex1I, safe)
    apply (rotate_tac -2, drule_tac x=i_1 in spec,
           clarsimp simp add: Stream__prefix_elements)
-   apply (drule_tac x=i_1 in spec, simp add: ,
-          drule_tac x=i_1 in spec,
-          clarsimp simp add: Stream__prefix_elements)
+   apply (drule_tac x=i_1 in spec, drule mp, simp)
+   apply (rotate_tac -2, drule_tac x=i_1 in spec, 
+          simp add: Stream__prefix_elements)
    apply (drule_tac x=x in spec, erule mp, clarsimp)
    apply (drule_tac x=i in spec, auto simp add: Stream__prefix_elements)
 end-proof
@@ -875,20 +875,15 @@ proof Isa positionOf_Obligation_subtype0
  apply (rule Stream__positionsSuchThatF_Obligation_the,
         erule Stream__positionOf_Obligation_subtype, simp)
  apply (auto simp add: Stream__noRepetitions_p_def in_strm_p_def)
- apply (subgoal_tac "\<forall>j. j mem x = (j = i)", 
-        thin_tac "\<forall>ia. ia mem x = (s ia = s i)",
+ apply (subgoal_tac "\<forall>j. j mem xa = (j = i)", 
+        thin_tac "\<forall>ia. ia mem xa = (s ia = s i)",
         thin_tac "distinct ?l", thin_tac "inj s")
- defer
- apply (simp add: inj_on_def, drule_tac x=i in spec, safe, 
-        thin_tac "\<forall>ia. ia mem x = (s ia = s i)",
-        thin_tac "distinct ?l", thin_tac "distinct ?l",
-        drule_tac x=j in spec, drule mp, simp, simp)
- apply (rule classical, simp add: neq_iff, auto)
- apply (simp add: List__increasingNats_p_def)
+ apply (auto simp add: inj_on_def)
+ apply (rule classical, simp add: neq_iff, auto simp add: List__increasingNats_p_def)
  apply (drule_tac x=0 in spec, auto) 
- apply (cut_tac x=0 and y=1 and z="length x" in less_trans, simp, simp)
+ apply (cut_tac x=0 and y=1 and z="length xa" in less_trans, simp, simp)
  apply (drule_tac  nth_mem, drule_tac  nth_mem)
- apply (frule_tac x= "x!0" in spec, drule_tac x= "x!1" in spec, simp)
+ apply (frule_tac x= "xa!0" in spec, drule_tac x= "xa!1" in spec, simp)
 end-proof
 
 proof Isa positionsOfSublistF_Obligation_the

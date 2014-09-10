@@ -391,7 +391,7 @@ lemma toInt_replicate:
   apply(cut_tac bs=bs and k=k in Bits__extendLeft_toNat_B1, force, force)
   apply(simp add: move_negated_addend move_negated_addend_2 move_negated_addend_3)
   apply(cut_tac m="toNat (replicate k B1 @ bs) + 2 ^ length bs" and n="toNat bs + 2 ^ (k + length bs)" in int_injective)
-by (metis length_sublists nat_add_commute of_nat_numeral of_nat_power zadd_int_back)
+by (metis length_sublists add.commute of_nat_numeral of_nat_power zadd_int_back)
 
 
 (*
@@ -1011,9 +1011,9 @@ theorem must_be_high_generic:
          rotate_tac -1, drule_tac c="2^n" in add_left_mono,
          erule order_trans)
         (*** now do the math ***)
-  apply (frule_tac Integer__expt_monotone, subst nat_add_commute)
+  apply (frule_tac Integer__expt_monotone, subst add.commute)
   apply (simp add: diff_mult_distrib power_add [symmetric] mult_2 [symmetric]
-                   nat_add_assoc [symmetric]  
+                   add.assoc [symmetric]  
               )
   apply (cut_tac x=n in power_sub_1_eq_nat, auto)
 done

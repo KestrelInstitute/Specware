@@ -31,7 +31,6 @@ op [a] extractOption(n:a)(o:Option a):a =
    case o of
      | None -> n
      | Some x -> x
-
        
 
 (* Given a comparison function over type a, type Option a can be linearly
@@ -75,27 +74,27 @@ end-proof
 
 proof Isa isoOption_subtype_constr
    apply(auto simp add: Option__isoOption_def bij_def
-                   inj_on_def surj_def Option.map_def 
-              split: option.split_asm  option.split)
+                   inj_on_def surj_def map_option_case 
+              split: option.split_asm option.split)
    apply (induct_tac y, 
           simp,
           drule_tac x = "a" in spec, auto) 
-end-proof
-
-proof Isa Option__isoOption_subtype_constr2
-  apply(simp add: Option__isoOption_def, auto)
-  apply (rule_tac P="x = None" in case_split, auto)
+   by (metis option.sel)
 end-proof
 
 proof Isa isoOption_subtype_constr1
  apply(simp add: bij_ON_def Option__isoOption_def, auto)
  (** first subgoal **)
- apply(simp add: inj_on_def Option.map_def, auto)
- apply (simp split: option.split_asm add: Option__Option_P.simps)
+ apply(simp add: inj_on_def map_option_case, auto)
+ apply (simp split: option.split_asm)
  (** second subgoal **)
- apply(simp add:surj_on_def Option.map_def, auto)
- apply(metis (full_types) Option.map_def Option__Option_P.simps(1) 
-       Option__Option_P.simps(2) not_Some_eq option_map_None option_map_Some)
+ apply(simp add:surj_on_def map_option_case, auto)
+ by (metis Option__Option_P.simps(1) Option__Option_P.simps(2) not_Some_eq option.simps(4) option.simps(5))
+end-proof
+
+proof Isa Option__isoOption_subtype_constr2
+  apply(simp add: Option__isoOption_def, auto)
+  apply (rule_tac P="x = None" in case_split, auto)
 end-proof
 
 proof Isa Option__mapOptionDefault_subtype_constr
@@ -112,7 +111,7 @@ end-proof
 (*** Some helpful lemmas for proving things about options ***)
 
 proof Isa -verbatim
-lemma mapOption_preserves_P: "[| (\<forall> x. P x --> P (f x)); Option__Option_P P opt |] ==> Option__Option_P P (Option.map f opt) "
+lemma mapOption_preserves_P: "[| (\<forall> x. P x --> P (f x)); Option__Option_P P opt |] ==> Option__Option_P P (map_option f opt)"
   apply (induct opt)
   by auto
 
@@ -129,7 +128,7 @@ end-proof
 
 proof Isa Thy_Morphism
  type Option.Option \_rightarrow option
- Option.mapOption \_rightarrow Option.map
+ Option.mapOption \_rightarrow map_option
 end-proof
 
 (* Haskell Pragmas *)

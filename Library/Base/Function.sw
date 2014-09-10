@@ -416,16 +416,12 @@ end-proof
 
 
 proof isa Function__bij_from_inverse
-  apply(simp only: Function__bijective_p__def)
-  apply(rule conjI)
-  apply(auto simp add: Function__injective_p__def Function__surjective_p__def)
-  by metis
+by (auto simp add: bij_def inj_on_def Function__surjective_p__def,
+      metis)
 end-proof
 
 proof isa Function__bij_from_inverse__stp
-  apply(simp only: Function__bijective_p__stp_def)
-  apply(auto simp add: inj_on_def surj_on_def)
-  apply(metis)
+by (auto simp add: bij_ON_def inj_on_def surj_on_def, metis+)
 end-proof
 
 endspec

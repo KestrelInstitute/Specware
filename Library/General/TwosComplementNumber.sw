@@ -62,6 +62,12 @@ declare One_nat_def [simp del]
  as axiom stating that a TCNumber is never empty.
  ********************************************************************)
 
+(*
+I am commenting out this axiom because it is inconsistent!
+axiomatization where TwosComplement__toInt_subtype_constr:
+  "TwosComplement__toInt x = i \<Longrightarrow> x \<noteq> []"
+*)
+
 lemma TwosComplement__negative_p_iff_less_0:
  "\<lbrakk>bs\<noteq>[]\<rbrakk>
   \<Longrightarrow> TwosComplement__negative_p bs = (TwosComplement__toInt bs < 0)"
@@ -472,7 +478,7 @@ op shiftRightUnsigned (x:TCNumber, n:Nat | n <= length x) : TCNumber =
   shiftRight (x, B0, n)
 
 
-%%<
+%%
 %% Start of the proofs:
 %%
 
@@ -612,7 +618,6 @@ lemma TwosComplement__length_of_minTCNumber_is_zld:
 done
 ******************************************************************************)
 end-proof
-
 
 proof Isa divT_Obligation_subtype
   by (simp add: TwosComplement__nonZero_p_iff_neq_0)
@@ -784,7 +789,7 @@ lemma TwosComplement_TC_toBits_pos:
          rule TwosComplement__tcNumber_Obligation_the, simp_all)
   apply (clarsimp simp add: TwosComplement_tcN)
   apply (cut_tac a=x in TwosComplement__toInt_nat, simp, simp)
-  apply (thin_tac "?tc = ?i", drule sym, simp)
+  apply (thin_tac "?tc = ?i", rotate_tac -1, drule sym, simp)
 done
   
 lemma TwosComplement_TC_toBits_pos2:
@@ -883,7 +888,7 @@ lemma TwosComplement__extendLeft_to_len_neg_aux:
           clarsimp, simp only: length_greater_0_iff Bits__inverse_bits_toNat,
           clarsimp simp add: add_Suc_right length_Suc_conv)
    apply (cut_tac bs="y#ys" in Bits__toNat_hd_1, simp_all)
-   apply (simp add: mult_2 add_assoc [symmetric],
+   apply (simp add: mult_2 add.assoc [symmetric],
           rule le_add_diff, rule_tac j="2 ^ (len + k)" in le_trans, simp_all)   
 done
 
@@ -976,6 +981,7 @@ lemma TwosComplement_mod2:
     toNat bs = nat (TwosComplement__toInt bits mod 2^len); length bs = len\<rbrakk>
    \<Longrightarrow> bs = List__suffix (bits, len)"
   by (frule_tac TwosComplement_mod [symmetric], simp_all, drule sym, simp)
+
 
 
 lemma TwosComplement__minTCNumber_toInt:

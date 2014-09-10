@@ -10,6 +10,13 @@ op prime? (n:Nat) : Bool =
   n > 1 && (fa(d:PosNat) d divides n => d = n || d = 1)
 
 proof Isa prime_p__def
+apply (simp add: prime_def zdvd_int [symmetric], safe)
+apply (drule_tac x=d in spec, simp)
+apply (case_tac m, auto)
+(*******************************************************************************
+ The following, more human-oriented proof doesn't work anymore.
+ I decided to give some guidance to auto instead (CK 14/08/15)
+********************************************************************************
 proof
  assume "prime n"
  hence "n > 1" and FA: "\<forall>m. m dvd n \<longrightarrow> m = 1 \<or> m = n"
@@ -82,6 +89,7 @@ next
   qed
  qed
 qed
+******************************************************************************)
 end-proof
 
 type PrimeNat = (Nat | prime?)
@@ -223,7 +231,9 @@ proof Isa primeFactorsOf_Obligation_the
   apply (rule_tac a="[]" in ex1I, simp add: List__sorted_p_def primel_def,
          simp add: primel_one_empty)
   apply (drule unique_prime_factorization, erule ex1E, rule_tac a=l in ex1I, safe)
-  apply (drule_tac x=x in spec, auto)
+  (* Apparently something has been added to the simplifier that doesn't go well
+     with the old proof. Use safe instead of auto and use symmetry explicitly *)
+  apply (drule_tac x=x in spec, safe, erule sym)
 end-proof
 
 % even and odd numbers:
@@ -231,7 +241,7 @@ end-proof
 op even? (n:Nat) : Bool = 2 divides n
 
 proof Isa even_p__def
-    by (simp add: Parity.nat_even_iff_2_dvd)
+  by (simp add: Parity.even_odd_class.even_iff_2_dvd)
 end-proof
 
 type EvenNat = (Nat | even?)
@@ -282,23 +292,33 @@ proof Isa -verbatim
 * Isabelle 2009-1 has moved everything about Legendre into the now 
 * inconsistent Old_Number_theory
 * Need to revive the complete theory
+*
+* Things have changed again in 2014 
+* we now need nat instead of int in all of Euler's theorems, which 
+* fits Specwares' version better anyway.
+* I added theorems for nat leaving the old ones 
+* in place just in case (CK 14-08-18)
 ****************************************************************)
 
 definition
-  QuadRes     :: "int => int => bool" where
+  QuadRes     :: "nat => nat => bool" where
   "QuadRes p a = (\<exists>y. (y ^ 2) mod p = (a mod p))"
 
 definition
-  Legendre    :: "int => int => int" where
+  Legendre    :: "nat => nat => int" where
   "Legendre a p = (if (a mod p = 0) then 0
                      else if (QuadRes p a) then 1
                      else -1)"
 
 (**** Lemma from NumberTheory/Residues ****)
 lemma fermat_theorem: 
-  "\<lbrakk>prime p; \<not>(p dvd a)\<rbrakk> \<Longrightarrow> a^(nat p - 1) mod p = 1"
+  "\<lbrakk>prime p; \<not>(p dvd a)\<rbrakk> \<Longrightarrow> a^(p - 1) mod p = 1"
 sorry
 
+
+(*******************************************************************************
+   OLD THEOREMS 
+********************************************************************************
 
 lemma zpower_pred_distrib: 
   "0 < p \<Longrightarrow> (a::int) ^ nat (p) = a * a ^ (nat (p) - 1)"
@@ -306,46 +326,40 @@ lemma zpower_pred_distrib:
   apply (simp only: power_add, simp_all)
 done
 
-lemma Euler_aux1: "\<lbrakk>(2::int) < p; odd p\<rbrakk>  \<Longrightarrow>  0 < (p - 1) div 2"  
+lemma Euler_aux1a: "\<lbrakk>(2::int) < p; odd p\<rbrakk>  \<Longrightarrow>  0 < (p - 1) div 2"  
   by simp
 
-lemma Euler_aux2: "2 * nat((p - 1) div 2) =  nat (2 * ((p - 1) div 2))"
+lemma Euler_aux2a: "2 * nat((p - 1) div 2) =  nat (2 * ((p - 1) div 2))"
   by (auto simp add: nat_mult_distrib)
 
-lemma Euler_aux3: "nat((p - 1) div 2) * 2 =  nat (((p - 1) div 2) * 2)"
+lemma Euler_aux3a: "nat((p - 1) div 2) * 2 =  nat (((p - 1) div 2) * 2)"
   by (auto simp add: nat_mult_distrib)
 
-lemma Euler_aux4: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<^sup>2 mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
+lemma Euler_aux4a: "\<lbrakk>(x::int) mod p \<noteq> 0; y\<^sup>2 mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
   apply (simp add: dvd_eq_mod_eq_0 [symmetric] power2_eq_square zmod_eq_dvd_iff)
   apply (rule classical, erule notE, simp add: not_not)
   apply (cut_tac x=p and y="y * y - x" in dvd_minus_iff [symmetric], simp)
   apply (drule_tac  zdvd_zdiffD, simp add: dvd_mult, simp)
 done
 
-lemma Euler_aux5: "\<lbrakk>(2::int) < p; prime p; a\<^sup>2 mod p = 1 \<rbrakk>  
+lemma Euler_aux5a: "\<lbrakk>(2::int) < p; prime p; a\<^sup>2 mod p = 1 \<rbrakk>  
                    \<Longrightarrow> a mod p = 1 mod p \<or> a mod p = -1 mod p"
   apply (subgoal_tac "a\<^sup>2 mod p = 1 mod p", thin_tac "a\<^sup>2 mod p = 1")
-  apply (simp only: zmod_eq_dvd_iff, simp_all)
+  apply (case_tac "a=0", simp)
+  apply (simp only: power2_eq_square zmod_int int_int_eq [symmetric] int_mult zmod_eq_dvd_iff)
   apply (rule_tac t="a - -1" and s="a+1" in subst, simp)
-  apply (simp add: prime_dvd_mult_eq_int [symmetric] algebra_simps  power2_eq_square
-              del: prime_dvd_mult_eq_int semiring_norm)
-  apply (simp add: mod_pos_pos_trivial)
+  apply (cut_tac x="int a" in Rings.ring_1_class.square_diff_one_factored,
+         simp add: zadd_int [symmetric] zdiff_int [symmetric] )
+  apply (erule disjE, simp_all add: algebra_simps)
 done
 
-lemma Euler_part1: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightarrow> a ^ nat ((p - 1) div 2) mod p = 0"
-   apply (frule Euler_aux1, rule prime_odd_int, simp_all)
+lemma Euler_part1a: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightarrow> a ^ nat ((p - 1) div 2) mod p = 0"
+   (* Things have changed - we now need nat instead of int *)
+   apply (frule Euler_aux1, rule prime_odd_nat, simp_all)
    apply (simp add: zpower_pred_distrib mod_mult_left_eq)
 done
 
-lemma Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<^sup>2 mod p = 1"
-   apply (frule prime_odd_int, simp)
-   apply (frule_tac a=a in fermat_theorem, simp_all add: dvd_eq_mod_eq_0)
-   apply (rule_tac s="a ^ (nat p - Suc 0)" and t = "(a ^ nat ((p - 1) div 2))\<^sup>2" in subst)
-   apply (simp_all add: zpower_zpower Euler_aux3,
-          simp add: algebra_simps two_times_even_div_two  nat_diff_distrib)
-done
-
-lemma Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<rbrakk>
+lemma Euler_part2a: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<rbrakk>
                     \<Longrightarrow> a ^ nat ((p - 1) div 2) mod p = 1"
    apply (rule_tac t="a ^ nat ((p - 1) div 2) mod p"
                and s="(a mod p) ^ nat ((p - 1) div 2) mod p" in subst,
@@ -357,10 +371,73 @@ lemma Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<r
                     two_times_even_div_two nat_diff_distrib)
 done
 
+********************************************************************************
+  The theorems above are very likely superfluous 
+*******************************************************************************)
+
+
+lemma mod_1_int [simp]:  "\<lbrakk>1 < (p::nat)\<rbrakk>  \<Longrightarrow> (1::int) mod p = 1"
+by (simp only: int_1 [symmetric] zmod_int [symmetric], simp)
+
+lemma power_pred_distrib: 
+  "0 < p \<Longrightarrow>  (a::nat) ^ p = a * a ^ (p - 1)"
+  apply (subgoal_tac "a ^ p = a ^ (1 + (p - 1))")
+  apply (simp only: power_add, simp_all)
+done
+
+
+
+lemma Euler_aux1: "\<lbrakk>(2::nat) < p; odd p\<rbrakk>  \<Longrightarrow>  0 < (p - 1) div 2"  
+  by simp
+
+lemma Euler_aux4: "\<lbrakk>(x::nat) mod p \<noteq> 0; y\<^sup>2 mod p = x mod p\<rbrakk>  \<Longrightarrow> ~(p dvd y)"
+  apply (rule classical, erule notE, simp add: not_not power2_eq_square)
+  apply (drule_tac b=y and c=y in dvd_mult, simp add: dvd_eq_mod_eq_0)
+done
+
+lemma Euler_aux5: "\<lbrakk>2 < p; prime p; a\<^sup>2 mod p = 1 \<rbrakk>  
+                   \<Longrightarrow> a mod p = 1 mod p \<or> a mod p = -1 mod p"
+  apply (subgoal_tac "a\<^sup>2 mod p = 1 mod p", thin_tac "a\<^sup>2 mod p = 1")
+  apply (case_tac "a=0", simp)
+  apply (simp only: power2_eq_square zmod_int int_int_eq [symmetric]
+                    int_mult zmod_eq_dvd_iff)
+  apply (rule_tac t="a - -1" and s="a+1" in subst, simp)
+  apply (cut_tac x="int a" in Rings.ring_1_class.square_diff_one_factored,
+         simp add: zadd_int [symmetric] zdiff_int [symmetric] )
+  apply (erule disjE, simp_all add: algebra_simps)
+done
+
+lemma Euler_part1: "\<lbrakk>2 < p; prime p; a mod p = 0\<rbrakk>  \<Longrightarrow> a ^ ((p - 1) div 2) mod p = 0"
+   apply (frule Euler_aux1, rule prime_odd_nat, simp_all)
+   apply (simp add: power_pred_distrib mod_mult_left_eq)
+done
+
+lemma Euler_part1b: "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0\<rbrakk>  \<Longrightarrow>  (a ^ nat ((p - 1) div 2))\<^sup>2 mod p = 1"
+   apply (frule prime_odd_nat, simp,
+          frule_tac a=a in fermat_theorem, 
+          simp_all add: dvd_eq_mod_eq_0 del: One_nat_def)
+   apply (rule_tac s="a ^ (p - 1)" and t = "(a ^ ((p - 1) div 2))\<^sup>2" in subst,
+          simp_all add: power_mult [symmetric] algebra_simps 
+                   del: One_nat_def)
+   apply (simp only: numeral_2_eq_2, subst even_nat_div_two_times_two, auto)
+done
+
+lemma Euler_part2: "\<lbrakk> 2 < p; prime p; a mod p \<noteq> 0; QuadRes p a\<rbrakk>
+                    \<Longrightarrow> a ^ ((p - 1) div 2) mod p = 1"
+   apply (frule prime_odd_nat, auto simp add: QuadRes_def simp del: One_nat_def)
+   apply (rule_tac t="a ^ ((p - 1) div 2) mod p"
+               and s="(a mod p) ^ ((p - 1) div 2) mod p" in subst,
+          simp (no_asm) add: power_mod)
+   apply (drule sym, simp add: power_mod power_mult [symmetric] del: One_nat_def)
+   apply (simp only: numeral_2_eq_2, subst even_nat_div_two_times_two, auto)
+   apply (frule_tac a=y in fermat_theorem)
+   apply (auto simp add: power2_eq_square Euler_aux4)
+done
+
 
 
 lemma QuadRes_criterion:
-  "\<lbrakk> 2 < p; prime p; a ^ nat ((p - 1) div 2) mod p = 1\<rbrakk> \<Longrightarrow> QuadRes p a"
+  "\<lbrakk> 2 < p; prime p; a ^ ((p - 1) div 2) mod p = 1\<rbrakk> \<Longrightarrow> QuadRes p a"
   (************************************************************************
   * On paper, the proof is fairly simple:
   *  Let b be a primitive element modulo p
@@ -377,63 +454,49 @@ sorry
 
 lemma Euler_part3: 
   "\<lbrakk>2 < p; prime p; a mod p \<noteq> 0; \<not>(QuadRes p a)\<rbrakk> 
-  \<Longrightarrow>  a^(nat ((p - 1) div 2)) mod p = -1 mod p"
+  \<Longrightarrow>  a^((p - 1) div 2) mod p = -1 mod p"
   apply (frule Euler_part1b, auto)
   apply (frule Euler_aux5, auto simp add: QuadRes_criterion mod_pos_pos_trivial)
 done
 
 lemma Euler_Criterion: 
   "\<lbrakk>2 < p; prime p \<rbrakk>
-   \<Longrightarrow> (Legendre a p) mod p = a^(nat (((p) - 1) div 2)) mod p"
-  by (auto simp add: Legendre_def Euler_part1 Euler_part2  Euler_part3 
-                     mod_pos_pos_trivial )
-
+   \<Longrightarrow> (Legendre a p) mod p = a^((p - 1) div 2) mod p"
+  apply (simp only: Legendre_def)
+  apply (cases "a mod p = 0", drule Euler_part1, simp_all del: One_nat_def)
+  apply (cases "QuadRes p a", drule Euler_part2, simp_all del: One_nat_def)
+  apply (simp only: zmod_int [symmetric] int_1 [symmetric] int_int_eq mod_1)
+  apply (drule Euler_part3, auto)
+done
 
 lemma Integer__legendreSymbol_as_Legendre:
-  "\<lbrakk>prime p\<rbrakk> \<Longrightarrow> Integer__legendreSymbol (a, p) = (Legendre (int a) (int p))"
+  "\<lbrakk>prime p\<rbrakk> \<Longrightarrow> Integer__legendreSymbol (a, p) = (Legendre a p)"
  apply (auto simp add: Legendre_def Integer__legendreSymbol_def QuadRes_def
-                       zmod_int [symmetric] dvd_eq_mod_eq_0 [symmetric] )
- apply (drule_tac x=z in spec, erule notE)
- apply (rule_tac t="z\<^sup>2" and s="int (nat (z\<^sup>2))" in subst, 
-        simp, simp only: zmod_int [symmetric])
- apply (drule_tac x=y in spec, rotate_tac 1, erule contrapos_pp)
- apply (rule_tac t="y\<^sup>2" and s="int (nat (y\<^sup>2))" in subst, 
-        simp, simp only: zmod_int [symmetric])
+                       dvd_eq_mod_eq_0 [symmetric])
+ apply (drule_tac x="zabs z" in spec, erule notE)
+ apply (rule_tac t="(zabs z)\<^sup>2" and s="nat (z\<^sup>2)" in subst, 
+        simp_all add: power2_eq_square nat_abs_mult_distrib [symmetric] abs_mult)
+ apply (drule_tac x="int y" in spec, simp add: int_mult [symmetric])
 done
+
 
 lemma Legendre_unique: 
   "\<lbrakk>0 < a; prime p; 2 < p;
-         (x = 0 \<or> x = 1 \<or> x = - 1) \<and> (\<exists>k. a ^ nat ((p - 1) div 2) - x = k * p)\<rbrakk>
+         (x = 0 \<or> x = 1 \<or> x = - 1) \<and> (\<exists>(k::int). a ^ ((p - 1) div 2) - x = k * p)\<rbrakk>
         \<Longrightarrow> Legendre a p = x"
-  apply (clarify, subgoal_tac "p dvd a ^ nat ((p - 1) div 2) - x")
-  defer apply (simp add: dvd_def)
-  apply (thin_tac "?a=?b", unfold Legendre_def, split split_if)   
-  (** Case 1: [a = 0] (mod p) **) 
-  apply (rule conjI, rule impI, frule_tac a="a" in Euler_part1, 
-         simp_all del: semiring_norm) 
-  apply (simp only: dvd_eq_mod_eq_0 [symmetric],
-         drule_tac z="a ^ nat ((p - 1) div 2)" in dvd_diff, simp, 
-         erule disjE, simp, erule disjE, simp_all  del: semiring_norm)
+  apply (clarify, subgoal_tac "a ^ ((p - 1) div 2) mod p = x mod int p")
+  defer apply (simp add: zmod_int zmod_eq_dvd_iff dvd_def int_power)
+  apply (thin_tac "?a=?b", unfold Legendre_def, rotate_tac 4, split split_if)    
+  (** Case 1: [a = 0] (mod p) **)
+  apply (rule conjI, rule impI, erule rev_mp, subst Euler_part1, simp+)
+  apply (erule disjE, simp, erule disjE, simp, simp add: zmod_minus1)
   (** Case 2: QuadRes p a **)
-  apply (rule conjI, clarify, frule_tac a="a" in Euler_part2, 
-         simp_all del: semiring_norm)
-  apply (drule_tac z="a ^ nat ((p - 1) div 2) - 1" in dvd_diff,
-         simp add: zmod_eq_dvd_iff  [symmetric] mod_pos_pos_trivial, 
-         erule disjE, simp_all, 
-         erule disjE, simp_all,
-         cut_tac m="2" and n="p" in zdvd_not_zless, simp_all)
+  apply (split split_if,rule conjI, clarify, erule rev_mp, subst Euler_part2, simp+)
+  apply (erule disjE, simp, erule disjE, simp, simp add: zmod_minus1)
   (** Case 3: all other inputs **)
-  apply (clarify, frule_tac a="a" in Euler_part3, simp_all del: semiring_norm)
-  apply (simp only: zmod_eq_dvd_iff semiring_norm(32) [symmetric],
-         drule_tac z="a ^ nat ((p - 1) div 2) + 1" in dvd_diff, 
-         simp, simp add:   diff_minus_eq_add [symmetric] )
-  apply (thin_tac "\<not>?P", thin_tac "\<not>?P", thin_tac "?p dvd ?q", 
-         thin_tac "prime p")
-  apply (erule disjE, simp_all, erule disjE, simp_all) 
-  apply (cut_tac x="p" and y="2" in dvd_minus_iff,
-         cut_tac m="2" and n="p" in zdvd_not_zless, simp_all)
+  apply (clarify, erule rev_mp, subst Euler_part3, simp+, simp add: zmod_minus1)
+  apply (erule disjE, simp, erule disjE, simp, simp)
 done 
-
 
 end-proof
 % ------------------------------------------------------------------------------
@@ -449,27 +512,19 @@ proof Isa
          simp_all del: semiring_norm)
   apply (simp add: Integer__legendreSymbol_as_Legendre del: semiring_norm)
   (** uniqueness proof as above ***)
-  apply (subgoal_tac "2 < int p \<and> prime (int p)", clarify, 
-         thin_tac "odd p", thin_tac "prime p")
-  apply (rule Legendre_unique, simp_all)  
-  apply (case_tac "p = 2", simp,
-         frule prime_ge_2_nat, simp, 
-         simp add: prime_int_def prime_nat_def)
+  apply (frule_tac prime_odd_gt_2, simp, thin_tac "odd p")
+  apply (simp add: Legendre_unique nat_div_distrib nat_diff_distrib)
 end-proof
 
 proof Isa legendreSymbol_alt_def_Obligation_the
-  apply (subgoal_tac "2 < int p \<and> prime (int p)", clarify, 
-         thin_tac "odd p", thin_tac "prime p") defer
-  apply (case_tac "p = 2", simp,
-         frule prime_ge_2_nat, simp, 
-         simp add: prime_int_def prime_nat_def)
-  apply (rule_tac a="Legendre (int a) (int p)" in ex1I, rule conjI)       
-  apply (simp add: Legendre_def  zmod_minus1 mod_pos_pos_trivial
-              split: split_if_asm)
-  apply (drule_tac a="int a" in Euler_Criterion, simp)
-  apply (simp add: zmod_eq_dvd_iff  dvd_def, clarify)
-  apply (rule_tac x="-k" in exI, simp add: algebra_simps)
-  apply (rule sym, rule Legendre_unique, simp_all)
+  apply (frule_tac prime_odd_gt_2, simp, thin_tac "odd p")
+  apply (simp add: nat_div_distrib nat_diff_distrib)
+  apply (rule_tac a="Legendre a p" in ex1I, rule conjI)      
+  apply (simp add: Legendre_def)
+  apply (drule_tac a="a" in Euler_Criterion, simp,
+         simp add: zmod_int int_power zmod_eq_dvd_iff dvd_def algebra_simps, 
+         clarify, rule_tac x="-k" in exI, simp)
+  apply (simp add: Legendre_unique [symmetric])
 end-proof
 
 proof Isa legendreSymbol_alt_def_Obligation_subtype
@@ -740,11 +795,11 @@ proof Isa lcmOf_Obligation_subtype
    apply (drule Set__Finite_to_list, simp, simp, 
           thin_tac "?P", thin_tac "?P",  
           simp add: list_all_iff Nat__posNat_p_def)
-   apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> n dvd k)", 
-          erule exE, erule exE)
-   apply (rotate_tac 1, drule_tac m="\<lambda>x. x" in ex_has_least_nat, auto)
+   apply (subgoal_tac "\<exists>k>0. (\<forall>n. 0 < n \<and> n \<in> numbers \<longrightarrow> n dvd k)",
+          thin_tac ?P, erule exE)
+   apply (drule_tac m="\<lambda>x. x" in ex_has_least_nat, auto)
    apply (rule_tac x="int x" in exI, auto simp add: zdvd_int)
-   apply (rotate_tac 4, drule_tac x="nat i1" in spec, auto)
+   apply (rotate_tac 2, drule_tac x="nat i1" in spec, auto)
    apply (rule_tac x="prod l" in exI, 
           auto simp add: prod_positive factors_dvd_prod zdvd_int [symmetric])
 end-proof
@@ -781,7 +836,7 @@ proof Isa gcdOf_Obligation_subtype
           simp add: not_less_eq [symmetric], 
           rule classical, simp add: nat_dvd_not_less)
    apply (rule_tac x="int x" in exI, auto simp add: zdvd_int)
-   apply (rotate_tac 4, drule_tac x="nat i1" in spec, auto)
+   apply (rotate_tac 5, drule_tac x="nat i1" in spec, auto)
 end-proof
 
 proof Isa gcdOf_Obligation_subtype0
@@ -1056,7 +1111,7 @@ proof Isa toMinLittleEndian_Obligation_subtype
    apply (simp add: length_greater_0_conv [symmetric] One_nat_def [symmetric]
                     less_eq_Suc_le length_1_hd_conv 
                del: length_greater_0_conv One_nat_def)
-   apply (cut_tac d="hd x" and x=0 and base=base in 
+   apply (cut_tac d="hd xa" and x=0 and base=base in 
           Integer__littleEndian_p_singleton1,
           simp_all)
    (** Otherwise x>0 and we use Integer__toLittleEndian with minimal length **)
