@@ -120,8 +120,6 @@ op moveString(m: Movement): String =
 op ppBool(b: Bool): WLPretty =
   ppString(if b then "true" else "false")
 
-op commaBreak: WLPretty = ppConcat [ppString ", ", ppBreak]
-
 op ppQIds(qids: QualifiedIds): WLPretty = ppConcat[ppString "(",
                                                    ppSep(ppString ", ") (map ppQid qids),
                                                    ppString ")"]
@@ -145,6 +143,10 @@ op ppScript(scr: Script): WLPretty =
     | Repeat steps ->
       ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
                ppString "}"]
+    | At([loc], scr) ->
+      ppIndent(ppConcat [ppString "at ", ppLoc loc,
+                         ppNewline,
+                         ppScript scr])
     | At(locs, scr) ->
       ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
                          ppNewline,
@@ -153,17 +155,17 @@ op ppScript(scr: Script): WLPretty =
       ppIndent(ppConcat [ppString "at-theorem (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
                          ppNewline,
                          ppScript scr])
-    | Move mvmts -> ppConcat [ppString "move (",
+    | Move mvmts -> ppConcat [ppString "move [",
                               ppSep (ppString ", ") (map (fn m -> ppString(moveString m)) mvmts),
-                              ppString ")"]
+                              ppString "]"]
     | Simplify(rules, n) ->
       if rules = [] then ppString "simplify"
         else
           ppConcat [ppString "simplify ",
-                    ppNest 1 (ppConcat [ppString "(", ppSep commaBreak (map ppRuleSpec rules), ppString ")"])]
+                    ppNest 1 (ppConcat [ppString "[", ppSep commaBreak (map ppRuleSpec rules), ppString "]"])]
     | Simplify1 [rl] -> ppRuleSpec rl
     | Simplify1 rules ->
-      ppConcat [ppString "simplify1 (", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString ")"]
+      ppConcat [ppString "simplify1 ", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString "]"]
     | SimpStandard -> ppString "SimpStandard"
     | RenameVars binds -> ppConcat [ppString "rename [",
                                     ppSep(ppString ", ")

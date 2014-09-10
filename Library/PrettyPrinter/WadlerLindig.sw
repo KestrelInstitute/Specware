@@ -156,6 +156,8 @@ WadlerLindig qualifying spec
   op ppNewline : Doc
   def ppNewline = DocNewline
 
+  op commaBreak: WLPretty = ppConcat [ppString ", ", ppBreak]
+
   op ppSep : Doc -> List Doc -> Doc
   def ppSep sep l = 
     case l of
