@@ -84,6 +84,24 @@ spec
     %% findMatchingOps(interpreterBaseSpec, qid) ++   % problematic
     findMatchingOps(spc, qid)
 
+  op findMatchingTypes (spc: Spec, Qualified (q0, id): QualifiedId): List TypeInfo =
+   if q0 = wildQualifier || q0 = "*"      % "*" for backward compatibility
+     then
+       if id = wildQualifier
+         then foldTypeInfos (fn (info, result) -> info::result) [] spc.types
+         else wildFindUnQualified (spc.types, id)
+     else
+       if id = wildQualifier
+         then foldTypeInfos (fn (info, result) -> case primaryTypeName info of
+                                                  | Qualified(qi, _) | qi = q0 ->
+                                                    info::result
+                                                  | _ -> result)
+                [] spc.types
+         else case findAQualifierMap (spc.types, q0, id) of
+                | Some info -> [info]
+                | None      -> []
+
+
   op trivialMatchTerm?(tm: MSTerm): Bool =
     %% Not certain about hasFlexHead?
     isFlexVar? tm || some?(hasFlexHead? tm) || embed? Var tm

@@ -1276,15 +1276,15 @@ AnnSpecPrinter qualifying spec
 
  op  ppTypeDeclType: [a] PrContext -> (ATypeInfo a * IndexLines) -> IndexLines
  def ppTypeDeclType context info_res =
-   ppTypeDecl context false info_res
+   ppTypeDecl context false true info_res
 
  op  ppTypeDeclDef: [a] PrContext -> (ATypeInfo a * IndexLines) -> IndexLines
  def ppTypeDeclDef context info_res =
-   ppTypeDecl context true info_res
+   ppTypeDecl context true true info_res
 
- op  ppTypeDecl: [a] PrContext -> Bool -> (ATypeInfo a * IndexLines) -> IndexLines
+ op  ppTypeDecl: [a] PrContext -> Bool -> Bool -> (ATypeInfo a * IndexLines) -> IndexLines
  %% If printDef? is false print "op ..." else print "def ..."
- def ppTypeDecl context printDef? (info, (index, lines)) =
+ def ppTypeDecl context printDef? newline? (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
    let 
      def ppTypeName (qid as Qualified (q, id)) =
@@ -1335,8 +1335,8 @@ AnnSpecPrinter qualifying spec
 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryTypeName info)) ^ " has " ^ (show m) ^ " declarations and " ^ (show n) ^ " definitions. *)"))])
    in
    let ppDecls = if printDef? then [] else map ppDecl decls in
-   let ppDefs  = if printDef? then map ppDef  defs else []  in
-   (index + 1, [(0, string " ")] ++ warnings ++ ppDecls ++ ppDefs ++ lines)
+   let ppDefs  = if printDef? then map ppDef defs else []  in
+   (index + 1, (if newline? then [(0, string " ")] else []) ++ warnings ++ ppDecls ++ ppDefs ++ lines)
 
    % op isBuiltIn? : Import -> Bool
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false

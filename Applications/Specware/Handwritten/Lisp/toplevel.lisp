@@ -252,25 +252,44 @@
 (top-level:alias ("sw" :case-sensitive :string) (&optional x)
   (sw x))
 
-(defun show (&optional x)
-  (setq x (norm-unitid-str x))
-  (flet ((show-int (x)
-	   (if x
-	       (Specware::evaluatePrint_fromLisp-2
-		(setq *last-unit-Id-_loaded* (string x))
-		(use-x-symbol?))
-	     (if *last-unit-Id-_loaded*
-		 (Specware::evaluatePrint_fromLisp-2 *last-unit-Id-_loaded*
-						     (use-x-symbol?))
-	       (format t "No previous unit evaluated~%")))
-	   (show-error-position Emacs::*goto-file-position-stored* 1)
-	   (maybe-restore-swpath)
-	   (values)))
-    (if *running-test-harness?*
-	(show-int x)
-      (let ((Emacs::*goto-file-position-store?* t)
-	    (Emacs::*goto-file-position-stored* nil))
-	(show-int x)))))
+(defun parse-qid (qid-str)
+  (let ((syms (String-Spec::splitStringAt-2 (String-Spec::removeWhiteSpace qid-str) ".")))
+    (if (null (cdr syms))
+        (MetaSlang::mkQualifiedId-2 Script::wildQualifier (first syms))
+        (MetaSlang::mkQualifiedId-2 (if (string= (first syms) "") MetaSlang::UnQualified
+                                        (first syms))
+                                    (second syms)))))
+
+(defun show (&optional argstr)
+  (let* ((args (toplevel-parse-args argstr))
+         (arg1_len (length (car args)))
+         (args (if (null args) (list nil)
+                   (if (and (eql (length args) 1)
+                            (position #\. (car args))
+                            (> arg1_len 1)
+                            (not (and (> arg1_len 3)
+                                      (string= (subseq (car args) (- arg1_len 3)) ".sw"))))
+                       (list nil (car args))
+                       args)))
+         (num-args (length args)))
+    (if (> num-args 2) (format t "Only 2 args allowed.")
+        (let* ((uid (if (or (null (car args)) (string= (car args) "."))
+                        *last-unit-Id-_loaded*
+                        (norm-unitid-str (car args))))
+               (qid? (if (not (null (second args)))
+                         (cons :|Some| (parse-qid (second args)))
+                         '(:|None|))))
+          (setq *last-unit-Id-_loaded* uid)
+          (flet ((show-int (uid)
+                   (Specware::evaluatePrint_fromLisp-2 uid qid?)
+                   (show-error-position Emacs::*goto-file-position-stored* 1)
+                   (maybe-restore-swpath)
+                   (values)))
+            (if *running-test-harness?*
+                (show-int uid)
+                (let ((Emacs::*goto-file-position-store?* t)
+                      (Emacs::*goto-file-position-stored* nil))
+                  (show-int uid))))))))
 
 #+allegro
 (top-level:alias ("show" :case-sensitive :string) (&optional x)

@@ -232,8 +232,7 @@ Specware qualifying spec
 
    %%% show and showx commands:
 
-  op  evaluatePrint_fromLisp : String * Bool -> Bool
-  def evaluatePrint_fromLisp (path,use_x_symbol?) = 
+  op evaluatePrint_fromLisp (path: String, name?: Option QualifiedId): Bool = 
     let prog = {
 		cleanEnv;
 		currentUID <- pathToCanonicalUID ".";
@@ -243,11 +242,65 @@ Specware qualifying spec
 		position   <- return (String (path, 
 					      startLineColumnByte, 
 					      endLineColumnByte path_body));
-		evaluatePrint ((UnitId unitId, position), use_x_symbol?);
+		(case name? of
+                   | None -> {evaluatePrint ((UnitId unitId, position), false); return ()}
+                   | Some qid -> {value <- evaluateTerm (UnitId unitId, position);
+                                  spc_value <- return(coerceToSpec value);
+                                  when (~(embed? Spec spc_value))
+                                    (SpecCalc.raise(Fail "not a spec."));
+                                  Spec spc <- return spc_value;
+                                  return(printOpTypeOrTheorem spc qid)});
 		return true
 	       } 
     in
       runSpecCommand (catch prog toplevelHandler) 
+
+ op writeLine?(str: String): () =
+   if str = "" then ()
+     else writeLine str
+
+ op printOpTypeOrTheorem (spc: Spec) (qid: QualifiedId): () =
+   (writeLine?(printOpInSpec spc qid);
+    writeLine?(printTypeInSpec spc qid);
+    printPropertiesMatching spc qid)
+
+ op printPropertiesMatching (spc: Spec) (qid: QualifiedId): () =
+   app (fn prop -> writeLine(printPropertyInSpec spc prop))
+     (findMatchingTheorems(spc, qid))
+
+
+ op printOpInSpec (spc: Spec) (qid: QualifiedId): String =
+   toString (format (AnnSpecPrinter.printWidth, ppOpInSpec spc qid))
+
+ op ppOpInSpec (spc: Spec) (qid: QualifiedId): PrettyPrint.Pretty =
+   case findMatchingOps(spc, qid) of
+     | [] -> string ""
+     | opinfos ->
+       let context = initialize (asciiPrinter, false) in
+       blockAll(0, map (fn opinfo ->
+                          let num_defs = length (unpackTypedTerms opinfo.dfn) in
+                          (0, blockAll(0, (ppOpDeclAux context (num_defs = 0, num_defs > 0, true, num_defs) false (opinfo, (0, []))).2)))
+                     opinfos)
+
+ op printTypeInSpec (spc: Spec) (qid: QualifiedId): String =
+   toString (format (AnnSpecPrinter.printWidth, ppTypeInSpec spc qid))
+
+ op ppTypeInSpec (spc: Spec) (qid: QualifiedId): PrettyPrint.Pretty =
+   case findMatchingTypes(spc, qid) of
+     | [] -> string ""
+     | typeinfos ->
+       let context = initialize (asciiPrinter, false) in
+       blockAll(0, map (fn typeinfo ->
+                          let defn? = definedType? typeinfo.dfn in
+                          (0, blockAll(0, (AnnSpecPrinter.ppTypeDecl context defn? false (typeinfo, (0, []))).2)))
+                     typeinfos)
+
+ op printPropertyInSpec (spc: Spec) (prop: Property): String =
+   toString (format (AnnSpecPrinter.printWidth, ppPropertyInSpec spc prop))
+
+ op ppPropertyInSpec (spc: Spec) (prop: Property): PrettyPrint.Pretty =
+   let context = initialize (asciiPrinter, false) in
+   (ppProperty context (0, prop)).2
 
   %% The following corresponds to the :show command.
 
