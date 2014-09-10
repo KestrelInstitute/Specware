@@ -207,14 +207,15 @@
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
       (let* ((result_fn (Script::interpretPathTerm-7 *transform-spec* command
-                                                  *transform-term*
-                                                  *current-qid*
-                                                  nil nil Proof::bogusProof))
+                                                     *transform-term*
+                                                     *current-qid*
+                                                     nil nil Proof::bogusProof))
              (result (funcall result_fn nil)))
         (if (and (eq (caar result) ':|Exception|) (eq (cadar result) ':|Fail|))
             (princ (cddar result))
             (let ((new-term (svref (cdar result) 0)))
-              (if (MetaSlang::equalTerm?-2 (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))
+              (if (Slang-Built-In::slang-term-equals-2 (PathTerm::fromPathTerm *transform-term*)
+                                                       (PathTerm::fromPathTerm new-term))
                   (format t "No effect!")
                   (progn 
                     (push-state `(interpret-command ,command))
@@ -478,17 +479,19 @@
                 (values))
                ((done)             (finish-transform-session))
 
-               (proc (when (and (cl-user::sw argstr)
-                                (equal *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*))
-                       (let ((val (cdr (Specware::evaluateUnitId cl-user::*last-unit-Id-_loaded*))))
-                         (if (or (null val) (not (eq (car val) ':|Spec|)))
-                             (format t "Not a spec!")
-                             (let ((spc (cdr val)))
-                               (setq *redos* nil) ; Don't want to redo commands backed out of
-                               (undo-command "all" t)
-                               (setq *transform-spec* spc)
-                               (format t "Restarting Transformation Shell.")
-                               (redo-command "all")))))
+               ((proc reproc)
+                (when (and (let ((cl-user::*force-reprocess-of-unit* (eq command 'reproc)))
+                             (cl-user::sw argstr))
+                           (equal *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*))
+                  (let ((val (cdr (Specware::evaluateUnitId cl-user::*last-unit-Id-_loaded*))))
+                    (if (or (null val) (not (eq (car val) ':|Spec|)))
+                        (format t "Not a spec!")
+                        (let ((spc (cdr val)))
+                          (setq *redos* nil) ; Don't want to redo commands backed out of
+                          (undo-command "all" t)
+                          (setq *transform-spec* spc)
+                          (format t "Restarting Transformation Shell.")
+                          (redo-command "all")))))
                      (values))
                (t (if (Script::specTransformFn?-2 MetaSlang::unQualified (symbol-name *raw-command*))
                       (apply-simple-spec-command (symbol-name *raw-command*) 'Script::mkSpecTransform 'fn)
