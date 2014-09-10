@@ -1100,18 +1100,6 @@ proof isa L2B_concat
   apply(metis Bag__distribute_bagunion_over_left_insert)
 end-proof
 
-proof isa L2B_diff
-  sorry
-end-proof
-
-proof isa L2B_bs_diff_Obligation_subtype
-  sorry
-end-proof
-
-proof isa L2B_bs_diff
-  sorry
-end-proof
-
 proof isa F2M_Obligation_subtype
     apply(auto simp add: Set__foldable_p__stp_def)
   apply(rule Map__map_equality)
