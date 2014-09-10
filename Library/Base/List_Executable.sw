@@ -843,12 +843,8 @@ proof isa List__zip3__1__obligation_refine_def
 end-proof
 
 proof isa List__unzip__1_Obligation_subtype
-  (** TRANSLATION ISSUE: This theorem uses List__unzip__1 and needs
-      to come AFTER its definition. The proof is then
   by (induct tl__v arbitrary: tl1 tl2, auto, 
       case_tac "List__unzip__1 tl__v", auto)
-  ********************************************************************)
-sorry
 end-proof
 
 proof isa List__unzip__1__obligation_refine_def 
@@ -856,12 +852,8 @@ proof isa List__unzip__1__obligation_refine_def
 end-proof
 
 proof isa List__unzip3__1_Obligation_subtype 
-  (** TRANSLATION ISSUE: This theorem uses List__unzip3__1 and needs
-      to come AFTER its definition. The  proof is then
   by (induct tl__v arbitrary: tl1 tl2 tl3, simp_all,
       case_tac "List__unzip3__1 tl__v", auto)
-  ********************************************************************)
-sorry
 end-proof
 
 proof isa List__unzip3__1__obligation_refine_def 
@@ -1152,7 +1144,9 @@ proof isa List__leftmostPositionOfSublistAndFollowing__1__obligation_refine_def
 sorry
 end-proof
 
-proof isa List__rightmostPositionOfSublistAndPreceding__1_Obligation_subtype 
+proof isa List__rightmostPositionOfSublistAndPreceding__1_Obligation_subtype
+ apply (induct supl, simp_all split: split_if_asm)
+ (** need a technique for induction on two arguments ***) 
 sorry
 end-proof
 
@@ -1257,6 +1251,19 @@ lemma List__deleteOne_refine2:
 
 lemma List__permutationOf_cons:
    "a # l1 permutationOf l2 = (a mem l2 \<and> l1 permutationOf (remove1 a l2))"
+  apply (auto simp add: List__permutationOf_def)
+  (** Induction step \<longrightarrow> a mem l2 **)
+  apply (simp (no_asm_simp) add: List__permute_def)
+  apply (rule the1I2)
+  apply (cut_tac l="a#l1" and prm=prm in List__permute_Obligation_the, simp_all)
+  apply (clarify, drule_tac x=0 in spec, simp, rule nth_mem) 
+  apply (frule_tac List__permutation_bounded2)
+  apply (drule_tac x=0 in bspec, simp_all)
+  apply (rule_tac l=prm in List__permutation_mem, simp_all)
+  (** Induction step \<longrightarrow> l1 permutationOf (remove1 a l2)) **)
+  (** need to remove location of a from prm **)
+  (** Induction step \<longleftarrow> a # l1 permutationOf l2 **)
+  (** need to insert location of a into prm ***)
 sorry
 
 end-proof
