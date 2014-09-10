@@ -1,0 +1,6 @@
+session "Specware_Library_Base" = "HOL" +
+  options [quick_and_dirty]
+  theories
+    DivideAndConquer_Algorithm MergeSort_M
+
+

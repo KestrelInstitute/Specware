@@ -1,0 +1,4 @@
+session "Specware_Library_Base" = "HOL" +
+  options [quick_and_dirty]
+  theories
+    REPLACETHIS

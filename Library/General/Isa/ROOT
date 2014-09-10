@@ -1,0 +1,7 @@
+session "Specware_Library_General" = "HOL" +
+  options [quick_and_dirty]
+  theories
+    FiniteMapAsFiniteSetMorphism FiniteSetAsListMorphism {* AllIsa is included in Specware/Library/LibraryAllIsa *}
+
+
+

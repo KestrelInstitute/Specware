@@ -1,0 +1,5 @@
+session "Specware_Library_CGen_Shallow" = "HOL" +
+  options [quick_and_dirty]
+  theories
+    CGenShallowAllIsa
+
