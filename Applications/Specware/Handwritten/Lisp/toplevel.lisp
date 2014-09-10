@@ -269,27 +269,24 @@
                             (> arg1_len 1)
                             (not (and (> arg1_len 3)
                                       (string= (subseq (car args) (- arg1_len 3)) ".sw"))))
-                       (list nil (car args))
+                       (cons nil args)
                        args)))
          (num-args (length args)))
-    (if (> num-args 2) (format t "Only 2 args allowed.")
-        (let* ((uid (if (or (null (car args)) (string= (car args) "."))
-                        *last-unit-Id-_loaded*
-                        (norm-unitid-str (car args))))
-               (qid? (if (not (null (second args)))
-                         (cons :|Some| (parse-qid (second args)))
-                         '(:|None|))))
-          (setq *last-unit-Id-_loaded* uid)
-          (flet ((show-int (uid)
-                   (Specware::evaluatePrint_fromLisp-2 uid qid?)
-                   (show-error-position Emacs::*goto-file-position-stored* 1)
-                   (maybe-restore-swpath)
-                   (values)))
-            (if *running-test-harness?*
-                (show-int uid)
-                (let ((Emacs::*goto-file-position-store?* t)
-                      (Emacs::*goto-file-position-stored* nil))
-                  (show-int uid))))))))
+    (let* ((uid (if (or (null (car args)) (string= (car args) "."))
+                    *last-unit-Id-_loaded*
+                    (norm-unitid-str (car args))))
+           (qids (map 'list #'parse-qid (cdr args))))
+      (setq *last-unit-Id-_loaded* uid)
+      (flet ((show-int (uid)
+               (Specware::evaluatePrint_fromLisp-2 uid qids)
+               (show-error-position Emacs::*goto-file-position-stored* 1)
+               (maybe-restore-swpath)
+               (values)))
+        (if *running-test-harness?*
+            (show-int uid)
+            (let ((Emacs::*goto-file-position-store?* t)
+                  (Emacs::*goto-file-position-stored* nil))
+              (show-int uid)))))))
 
 #+allegro
 (top-level:alias ("show" :case-sensitive :string) (&optional x)
@@ -1342,7 +1339,7 @@
 
 (defun Specware::exit ()
   #+allegro (exit)
-  #+sbcl    (exit)
+  #+sbcl    (sb-ext:exit)
   #-(or allegro sbcl) (quit))
 
 #+allegro

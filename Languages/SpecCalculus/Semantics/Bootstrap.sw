@@ -232,7 +232,7 @@ Specware qualifying spec
 
    %%% show and showx commands:
 
-  op evaluatePrint_fromLisp (path: String, name?: Option QualifiedId): Bool = 
+  op evaluatePrint_fromLisp (path: String, names: List QualifiedId): Bool = 
     let prog = {
 		cleanEnv;
 		currentUID <- pathToCanonicalUID ".";
@@ -242,14 +242,14 @@ Specware qualifying spec
 		position   <- return (String (path, 
 					      startLineColumnByte, 
 					      endLineColumnByte path_body));
-		(case name? of
-                   | None -> {evaluatePrint ((UnitId unitId, position), false); return ()}
-                   | Some qid -> {value <- evaluateTerm (UnitId unitId, position);
-                                  spc_value <- return(coerceToSpec value);
-                                  when (~(embed? Spec spc_value))
-                                    (SpecCalc.raise(Fail "not a spec."));
-                                  Spec spc <- return spc_value;
-                                  return(printOpTypeOrTheorem spc qid)});
+		(if names = []
+                  then {evaluatePrint ((UnitId unitId, position), false); return ()}
+                  else {value <- evaluateTerm (UnitId unitId, position);
+                        spc_value <- return(coerceToSpec value);
+                        when (~(embed? Spec spc_value))
+                          (SpecCalc.raise(Fail "not a spec."));
+                        Spec spc <- return spc_value;
+                        return(app (printOpTypeOrTheorem spc) names)});
 		return true
 	       } 
     in
