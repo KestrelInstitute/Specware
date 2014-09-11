@@ -239,13 +239,22 @@ proof Isa BagsAsMaps__e_bsl_bsl_fsl_fsl_Obligation_subtype
 end-proof
 
 proof Isa bag_fold1
-  apply(simp add: BagsAsMaps__bag_fold_def BagsAsMaps__empty_bag_def Map__foldable_p_def)
-  apply(rule  Map__map_foldi_empty)
-  apply(auto simp add: Map__foldable_p_def)
-  sorry
+  apply (simp add: BagsAsMaps__bag_fold_def BagsAsMaps__empty_bag_def
+                   foldl_conv_fold)
+  apply (rule  Map__map_foldi_empty, auto simp add: Map__foldable_p_def)
+  apply (induct_tac val1, auto, induct_tac val2, auto)
 end-proof
 
 proof Isa bag_fold2
+  apply (simp add: BagsAsMaps__bag_fold_def BagsAsMaps__bag_insert_def 
+         foldl_conv_fold)
+  apply (subst Map__map_foldi_update)
+  apply (auto simp add: Map__foldable_p_def,
+         induct_tac val1, auto, induct_tac val2, auto)
+  apply (simp add: BagsAsMaps__occs_def)
+  apply (case_tac "Map__apply b x", auto)
+  apply (simp add: Map__remove_does_nothing Map__map_domain)
+  (** later ***)
   sorry
 end-proof
 
@@ -271,6 +280,14 @@ proof Isa bag_insertion
 end-proof
 
 proof Isa induction
+  apply (simp add: BagsAsMaps__empty_bag_def BagsAsMaps__bag_insert_def)
+  apply (induct b rule: Map__map_induction, simp, clarify)
+  apply (rotate_tac -1, drule mp)
+  (* that's a little more tricky .... *)
+  defer
+  apply (drule_tac x=m in spec, simp)
+  apply (drule_tac x=x in spec, drule_tac x=m in spec, simp)
+  apply (auto simp add: Map__update BagsAsMaps__occs_def)
   sorry
 end-proof
 
