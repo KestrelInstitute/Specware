@@ -89,11 +89,11 @@ theorem bagin_of_insert is [a]
   theorem bagin?_of_bag_intersection is [a]
     fa(b1,b2,x: a) x bagin? (b1 /\ b2) <=> x bagin? b1 && x bagin? b2
 
-%TODO: Put these back:
-%%   theorem bag_intersection_right_zero is [a]
-%%       fa(c:Bag a)(c /\ empty_bag = empty_bag)
-%%   theorem bag_intersection_left_zero is [a]
-%%       fa(c:Bag a)(empty_bag /\ c = empty_bag)
+  theorem bag_intersection_right_zero is [a]
+    fa(c:Bag a)(c /\ empty_bag = empty_bag)
+
+  theorem bag_intersection_left_zero is [a]
+    fa(c:Bag a)(empty_bag /\ c = empty_bag)
 
  %TODO define using fold ?
   op [a,b] bag_map: (a -> b) -> Bag a -> Bag b
@@ -325,13 +325,13 @@ op [a] forall? (p: a -> Bool) (b: Bag a) : Bool =
 %%         (c \/ bag_delete(y,d)     % remove one occ of y
 %%            = bag_delete(y, c \/ d))
 
-%% %TODO seems not true (when y is in d but not in c)
+%% %seems not true (when y is in d but not in c):
 %%   theorem distribute_bag_join_over_delete_left is [a]
 %%       fa(c:Bag a,d:Bag a,y:a)
 %%         (bag_delete(y,c) \/ d     % remove one occ of y
 %%            = bag_delete(y, c \/ d))
 
-%% %TODO seems wrong
+%%  seems wrong:
 %%   theorem distribute_bag_delete_over_diff is [a]
 %%       fa(c:Bag a,d:Bag a,y:a)
 %%         (bag_delete(y,c) -- d     % remove one occ of y
