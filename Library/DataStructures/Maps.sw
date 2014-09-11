@@ -295,7 +295,7 @@ Maps = Map qualifying spec
 
 
 
-  %% FIXME Prove or drop this:
+  %% TODO: Prove or drop this:
   %% %% This one fits better with reasoning about fold
   %% theorem map_induction2 is [a,b]
   %%       fa (p : Map(a,b) -> Bool)
