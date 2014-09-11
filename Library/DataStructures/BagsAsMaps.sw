@@ -250,10 +250,19 @@ proof Isa bag_fold2
 end-proof
 
 proof Isa bag_map_empty
-  sorry
+  apply (simp add: BagsAsMaps__empty_bag_def BagsAsMaps__bag_map_def)
+  apply (subst Map__map_foldi_empty, simp_all)
+  apply (auto simp add: Map__foldable_p_def)
+  apply (rule Map__map_equality)
+  apply (auto simp add: Map__update BagsAsMaps__occs_def)
 end-proof
 
 proof Isa bag_map_insert
+  apply (simp add: BagsAsMaps__bag_insert_def BagsAsMaps__bag_map_def)
+  apply (subst Map__map_foldi_update, simp_all)
+  apply (auto simp add: Map__foldable_p_def,
+         rule Map__map_equality,
+         auto simp add: Map__update BagsAsMaps__occs_def)
   sorry
 end-proof
 
