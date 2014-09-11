@@ -437,7 +437,18 @@ proof Isa Map__isoMap_over_update
 end-proof
 
 proof Isa Map__isoMap_over_empty_map
-  sorry
+  apply (simp only: Map__isoMap_def)
+  apply (rule_tac Q = "\<lambda>f. f iso_a iso_b Map__empty_map = Map__empty_map"
+                  in the1I2,
+         rule Map__isoMap_Obligation_the)
+  apply (auto simp add: Option__isoOption_def)
+  apply (drule_tac x=Map__empty_map in spec,
+         rotate_tac -1, drule_tac x=iso_a in spec,
+         rotate_tac -1, drule_tac x=iso_b in spec)
+  apply (rule Map__map_equality, auto simp add: Map__empty_map)
+  apply (rotate_tac -1, drule_tac x="(inv iso_a) xa" in spec,
+         rotate_tac -1, drule_tac x=None in spec)
+  apply (auto simp add: Function__f_inverse_apply)
 end-proof
 
 proof Isa TMApply_becomes_apply
