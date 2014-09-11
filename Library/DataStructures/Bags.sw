@@ -401,12 +401,12 @@ end-proof
 
 proof Isa bag_intersection_right_zero
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__empty_bag Bag__bag_intersection)
+  apply(auto simp add: Bag__empty_bag Bag__occs_bag_intersection)
 end-proof
 
 proof Isa bag_intersection_left_zero
   apply(rule Bag__occurrences)
-  apply(auto simp add: Bag__empty_bag Bag__bag_intersection)
+  apply(auto simp add: Bag__empty_bag Bag__occs_bag_intersection)
 end-proof
 
 proof Isa Bag__e_bsl_bsl_fsl_fsl_Obligation_subtype
