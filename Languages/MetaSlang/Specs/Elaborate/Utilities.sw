@@ -737,7 +737,10 @@ Utilities qualifying spec
        %|| ~(subtypeOf? env old_ty (unlinkType new_ty))
      then result
    else
-   let gen_ty = commonSuperType(old_ty, unlinkType new_ty, env.internal) in
+   %% commonSuperType assumes types are well-formed, so we need to avoid calling it if checkTypes generates an error
+   let old_errs = !env.errors in
+   let _ = (unfoldType(env, old_ty); unfoldType(env, unlinkType new_ty)) in
+   let gen_ty = if old_errs = !env.errors then commonSuperType(old_ty, unlinkType new_ty, env.internal) else old_ty in
    let _ = if debugUnify? then writeLine("Common supertype of "^printType old_ty^" and "^printType new_ty^": "^printType gen_ty) else () in
    if equalType?(gen_ty, old_ty) then result
    else
