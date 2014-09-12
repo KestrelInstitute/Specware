@@ -879,7 +879,8 @@ SpecNorm qualifying spec
     let trps = unpackTypedTerms (opinfo.dfn) in
     let (tvs, ty, tm) = nthRefinement(trps, refine_num) in
     let def reg1 tm =
-         let qid = primaryOpName opinfo in
+         let qid = %refinedQID refine_num
+         (primaryOpName opinfo) in
          let recursive? = containsRefToOp?(tm, qid) in
          let result = regTerm(tm, ty, ~(arrow?(spc,ty)), ho_eqfns, spc) in
          let result = if recursive? && ~(simpleRecursion?(tm, qid))
@@ -1417,7 +1418,7 @@ SpecNorm qualifying spec
               let pred_name = id^"_P" in
               let pred_qid = Qualified(q, pred_name) in
               case AnnSpec.findTheOp(spc, pred_qid) of
-                 | Some info ->
+                 | Some info | anyTerm? info.dfn ->    % Construct definition if there isn't one
                    let (tvs, pred_ty, _) = unpackFirstOpDef info in
                    let param_ty = Base(ty_qid, map (fn tv -> TyVar(tv, a)) tvs, a) in
                    let dfn = case ty_def of
@@ -1451,7 +1452,7 @@ SpecNorm qualifying spec
                    let x_dfn = Pi(tvs, TypedTerm(dfn, pred_ty, a), a) in
                    let ops = insertAQualifierMap(spc.ops, q, pred_name, info << {dfn = x_dfn}) in
                    spc << {ops = ops}
-                 | None -> spc)
+                 | _ -> spc)
             | _ -> spc
     in
     let (new_elts, spc) = addPredDeclss (spc.elements, spc) in
