@@ -121,6 +121,11 @@ lemma mapOptionDefault_Pin_Pout:
   apply (induct opt)
   by auto
 
+(* Congruence rule, for function definitions using Option_P *)
+lemma Option_P_cong[fundef_cong]:
+  "[| opt1 = opt2 ; (\<And> x . opt2 = Some x ==> P1 x = P2 x)|] ==>
+    Option__Option_P P1 opt1 = Option__Option_P P2 opt2"
+  by (case_tac opt1, auto)
 end-proof
 
 
