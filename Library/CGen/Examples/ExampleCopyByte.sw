@@ -12,9 +12,13 @@ This is a very simple example, but we want to work out in detail
 how that C code can be derived from a higher-level requirements specification
 with proofs. *)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(* We start with a requirement specification. *)
+
 Spec = spec
 
-import CModel
+import CUtilities
 
 (* In order to have a clear relationship between
 the generated C function and its requirement specification,
@@ -97,9 +101,9 @@ ending with a predicate that characterizes a unique function, i.e.
 
   op spec?_end
     (copy: UcharValue -> (PointerValue | toType? uchar) -> Monad ()): Bool =
-    copy = fn src: UcharValue ->
-           fn dst: (PointerValue | toType? uchar) ->
-           <shallowly-embedded-function-body>
+    copy = (fn src: UcharValue ->
+            fn dst: (PointerValue | toType? uchar) ->
+            <shallowly-embedded-function-body>)
 
 using exclusively the shallowly embedded expressions and statements,
 from which program text can be readily extracted. *)
@@ -133,5 +137,114 @@ op copy: UcharValue -> (PointerValue | toType? uchar) -> Monad ()
 
 axiom spec?copy is
   spec? copy
+
+endspec
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(* We want to stepwise refine the requirement specification
+using transformations. *)
+
+Step0 = Spec
+
+Step1 = transform Step0 by {
+at spec?
+  {unfold post?; 
+   SimpStandard; 
+   SimpStandard}
+}
+(* RESULT:
+spec  
+import Step0
+refine def spec? (copy: UcharValue -> (PointerValue | toType? uchar) -> Monad(())): Bool
+  = fa(src: UcharValue, dst: (PointerValue | toType? uchar), state: State) 
+     pre? src dst state 
+      => (case copy src dst state
+           of Some (state', ()) -> 
+              let (nnpointer (_, object obj)) = dst in 
+              (writeObject state obj src = Some state')
+            | None -> false)
+end-spec
+*)
+
+% IN PROGRESS...
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(* Here we manually explore how an automated derivation could be performed. *)
+
+Explore = spec
+
+import Spec
+
+op refined_spec?
+  (copy: UcharValue -> (PointerValue | toType? uchar) -> Monad ()): Bool =
+( % original definition of spec?:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    pre? src dst state =>
+    (case copy src dst state of
+    | Some (state', ()) -> post? src dst state state'
+    | None -> false)
+; % unfold post?:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    pre? src dst state =>
+    (case copy src dst state of
+    | Some (state', ()) ->
+      (pre? src dst state =>
+       (let nnpointer (_, object obj) = dst in
+       writeObject state obj src = Some state'))
+    | None -> false)
+; % use pre? hypothesis:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    pre? src dst state =>
+    (case copy src dst state of
+    | Some (state', ()) ->
+      (let nnpointer (_, object obj) = dst in
+      writeObject state obj src = Some state')
+    | None -> false)
+; % use theorem writePointerObject rigth-to-left:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    pre? src dst state =>
+    (case copy src dst state of
+    | Some (state', ()) ->
+      (let nnpointer (_, object obj) = dst in
+      writePointer state (object obj) src = Some state')
+    | None -> false)
+; % use theorem writePointerValueNonNull right-to-left with ty = uchar:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    pre? src dst state =>
+    (case copy src dst state of
+    | Some (state', ()) ->
+      (let nnpointer (_, object obj) = dst in
+      writePointerValue state (nnpointer (uchar, object obj)) src = Some state')
+    | None -> false)
+; % unfold let (not in the usual way),
+  % using the hypothesis on dst that _ is actually uchar:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    pre? src dst state =>
+    (case copy src dst state of
+    | Some (state', ()) ->
+      writePointerValue state dst src = Some state'
+    | None -> false)
+) % IN PROGRESS...
+
+endspec
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+(* Our goal is to conclude the derivation
+with the following characterization of the copy function. *)
+
+Goal = spec
+
+import Spec
+
+op goal?
+  (copy: UcharValue -> (PointerValue | toType? uchar) -> Monad ()): Bool =
+  copy = (fn src: UcharValue ->
+          fn dst: (PointerValue | toType? uchar) ->
+          {INIT ["src", "dst"] [src, dst];
+           (STAR (variable "dst")) ASG (variable "src");
+           RETURNv})
 
 endspec

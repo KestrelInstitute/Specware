@@ -212,8 +212,8 @@ with the bottom at the left end the top at the rigth end.
 Each element of the list is the block of the corresponding function;
 for now we do not model nested blocks, so there is one block per function. *)
 
-type Identifier % = ...
-  % same definition as C deep embedding
+type Identifier = String % | ...
+  % same definition as C deep embedding (subtype of String)
 
 type AutomaticStorage = List (FiniteMap (Identifier, Value))
 
@@ -849,20 +849,6 @@ op DECL (ty:Type) (id:Identifier) (e:Expression): Statement () =
          | _ -> None
     else None
 
-(* When a function is called,
-a new empty frame for automatic storage is pushed into the call stack.
-When the call completes,
-the topmost frame is popped. *)
-
-op pushFrame: Monad () =
-  fn state:State ->
-    Some (state << {automatic = state.automatic ++ [empty]}, ())
-
-op popFrame: Monad () =
-  fn state:State ->
-    if state.automatic = [] then None
-    else Some (state << {automatic = butLast state.automatic}, ())
-
 (* In our shallow embedding, we represent
 a C function with n >= 0 arguments
 as a Specware op of the form
@@ -921,11 +907,10 @@ op eval_arguments (eargs: List Expression): Monad (List Value) =
 
 op [a] CALL (f': WrappedFunction a) (eargs: List Expression): Statement () =
  {args <- eval_arguments eargs;
-  pushFrame;
   f' args;
-  popFrame}
+  monadReturn ()} % discard any return value
 
-op ARGCALL
+op ASGCALL
   (lvalue:Expression) (f': WrappedFunction Value) (eargs: List Expression)
   : Statement () =
  {assignee <- (fn state:State ->
@@ -935,14 +920,31 @@ op ARGCALL
   case assignee of
   | object obj ->
     {args <- eval_arguments eargs;
-     pushFrame;
      retVal <- f' args;
-     popFrame;
      (fn state:State ->
        case writeObject state obj retVal of
        | Some state' -> Some (state', ())
        | None -> None)}
   | _ -> monadError}
+
+(* The argument values of a function must be incorporated into the state
+before they can be operated upon by expressions and statements.
+The following op does that:
+it takes a list of names for the function's formal parameters
+and a list of values for the function's actual arguments,
+and pushes a new frame with the arguments associated to the parameters.
+The name of this op is motivated by the fact that
+it "initializes" a function for execution.
+This op does not correspond to any C construct,
+but is needed as part of the shallow embedding. *)
+
+op INIT (params:List Identifier | noRepetitions? params)
+        (args:List Value)
+        : Monad () =
+  fn state:State ->
+    if length params ~= length args then None
+    else let newFrame = fromAssocList (zip (params, args)) in
+         Some (state << {automatic = state.automatic ++ [newFrame]}, ())
 
 (* A return statement [ISO 6.8.6.4] with an expression
 lifts an expression to a statement that yields a value.
@@ -959,8 +961,21 @@ Specware ops that represent void C functions simply terminate execution. *)
 op RETURN (e:Expression): Statement Value =
   fn state:State ->
     case convertArray (convertLvalue e) state of
-    | Some (value val) -> Some (state, val)
+    | Some (value val) -> % pop frame and return value
+      if state.automatic = [] then None
+      else Some (state << {automatic = butLast state.automatic}, val)
     | _ -> None
+
+(* In our model, a return statement without an expression
+pops the topmost frame of the stack.
+Every shallowly embedded C function returning void
+must use this op to properly pop the frame stack.
+This could be checked by the code generator. *)
+
+op RETURNv: Statement () =
+  fn state:State ->
+    if state.automatic = [] then None
+    else Some (state << {automatic = butLast state.automatic}, ())
 
 (* We define the if statement [ISO 6.8.4.1], with and without else.
 The form with else (i.e. IFELSE) has a polymorphic type,
