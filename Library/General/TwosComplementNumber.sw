@@ -600,23 +600,22 @@ proof Isa length_of_minTCNumber
   apply (erule conjE)
   apply (drule_tac x="TwosComplement__tcNumber (i, len)" in spec,
          simp add: TwosComplement_tcN )
+done
 (******************************************************************
- The following lemma depends on TwosComplement__minTCNumber_exists,
- which is not provable as long as subtype information is missing.
- 
- It seems that we don't need it so I comment it out (CK 14/09/03)
+ The following lemma depends on TwosComplement__minTCNumber_exists
+******************************************************************)
 
 lemma TwosComplement__length_of_minTCNumber_is_zld:
    "length (TwosComplement__minTCNumber i) = zld i + 1"
+  apply (cut_tac i=i in TwosComplement__minTCNumber_exists, clarsimp)
   apply (simp add: TwosComplement__minTCNumber_def LeastM_def,
-         rule someI2_ex, rule TwosComplement__minTCNumber_exists)
-  apply (erule conjE)
-  apply (frule TwosComplement__toInt_length1)
+         rule someI2_ex, 
+         rule_tac x=a in exI, simp)
+  apply (frule_tac i=i in  TwosComplement__toInt_length1, auto)
+  apply (drule_tac x=x in spec, simp)
   apply (drule_tac x="TwosComplement__tcNumber (i, zld i + 1)" in spec,
          simp add: TwosComplement__toInt_tcNumber_reduce 
                    TwosComplement_tcN zld_props)
-done
-******************************************************************************)
 end-proof
 
 proof Isa divT_Obligation_subtype
