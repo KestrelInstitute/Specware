@@ -131,7 +131,7 @@ type PathTerm = APathTerm Position.Position
       | TypedTerm(x, ty, _) ->
         (case postCondn? ty of
            | None -> [([], x)]
-           | Some post -> [([], x), ([], post)])
+           | Some (post, bvs) -> [([], x), (parameterBindings x ++ bvs, post)])
       | And(l, _) -> map (fn t -> ([], t)) l
       | _ -> []
 
@@ -376,7 +376,7 @@ type PathTerm = APathTerm Position.Position
                  | 1 ->
                case postCondn? t of
                  | None -> tm           % shouldn't happen
-                 | Some post_condn ->
+                 | Some (post_condn, _) ->
                    let new_post_condn = repl(post_condn, r_path) in
                    TypedTerm(x, replacePostCondn(t, new_post_condn), a))
             | And(l, a) ->
@@ -408,10 +408,10 @@ type PathTerm = APathTerm Position.Position
     in
     (repl(top_term, reverse path), path)
 
-  op [a] postCondn?(ty: AType a): Option (ATerm a) =
+  op [a] postCondn?(ty: AType a): Option (ATerm a * AVars a) =
     case ty of
       | Arrow(_, rng, _) -> postCondn? rng
-      | Subtype(_, Lambda([(_, _, pred)], _), _) -> Some pred 
+      | Subtype(_, Lambda([(pat, _, pred)], _), _) -> Some(pred, patVars pat)
       | _ -> None
 
  op [a] replacePostCondn(ty: AType a, new_post_condn: ATerm a): AType a =
@@ -492,7 +492,7 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
               chooseL(tabulate(length l1,  fn i -> compare(l1@i, l2@i, i :: path)), path)
             | (TypedTerm(x1, t1, _), TypedTerm(x2, t2, _)) ->
               (case (postCondn? t1, postCondn? t2) of
-                 | (Some pc1, Some pc2) ->
+                 | (Some (pc1, _), Some (pc2, _)) ->
                    choose2(compare(x1, x2, 0 :: path), compare(pc1, pc2, 1 :: path), path)
                  | _ ->
                    if equalType?(t1, t2) then compare(x1, x2, 0 :: path)
@@ -506,6 +506,19 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
       | Some path -> (tm1, path)
 
 op dummyPathTerm: PathTerm = toPathTerm dummyMSTerm
+
+op pathToLambdaBody(tm: MSTerm): Path =
+  case tm of
+    | Lambda([_], _) ->
+      let imm_sub_tms = immediateSubTerms tm in
+      pathToLambdaBody(last imm_sub_tms) ++ [length imm_sub_tms - 1]
+    | _ -> []
+
+op [a] parameterBindings(tm: ATerm a): AVars a =
+  case tm of
+    | Lambda([(pat, _, bod)], _) ->
+      patVars pat ++ parameterBindings bod
+    | _ -> []
 
 %% Used in transform-shell.lisp
 op typedPathTerm(tm: MSTerm, ty: MSType) : PathTerm =

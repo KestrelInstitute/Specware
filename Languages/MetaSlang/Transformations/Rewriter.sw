@@ -1210,14 +1210,14 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  %%
 
  % Forward reference for rewriteWithRules
- op Script.makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule
+ op Script.makeRules (context: Context, spc: Spec, rules: RuleSpecs, ctxt_rules: List RewriteRule): List RewriteRule
 
  % A slightly higher-level version of the rewriter, that uses
  % RuleSpecs and does not need a Context
  def rewriteWithRules_opt(spc: Spec, rules: RuleSpecs, term: MSTerm) : Option (MSTerm * Proof) =
    let context = makeContext spc in
    let context = setTopTerm (context, term) in
-   let rules = makeRules (context, spc, rules) in
+   let rules = makeRules (context, spc, rules, []) in
    rewriteRecursive (context, [], splitConditionalRules rules, term)
 
  def rewriteWithRules (spc: Spec, rules: RuleSpecs, term: MSTerm) =

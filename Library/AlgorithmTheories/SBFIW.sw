@@ -45,6 +45,10 @@ SBFixpointIterationWorksetAlgorithm =
 spec
   import SBFixpointIterationWorksetTheory
 
+proof Isa -defaultProof
+sorry
+end-proof
+
 % observer flag to reify the execution phase of p
  op p? : State -> Bool
  type P_State  = {S: State |   p? S}
@@ -53,8 +57,8 @@ spec
  op startp (st:NP_State) :{st':State | p? st'}  
  op finishp (st:P_State) :{st':State | ~(p? st')}
 
- op WS(st:State): Set X =  % if p? st then (F st (obs st)) -- (obs st) else empty_set
-    (F st (obs st)) -- (obs st)
+ op WS(st:State): Set X = if p? st then (F st (obs st)) -- (obs st) else empty_set
+    % (F st (obs st)) -- (obs st)
 
 % initialState is obviated by startp
 % op initialState(st:P_State | p? st): {st':P_State | WS st' = F st empty_set}
@@ -88,6 +92,13 @@ spec
     fa (st:State,st':State)(pre st 
                               && st' = p st 
                               => post st st')
+
+proof Isa f_iterate ()
+by auto
+(* f_iterate is non-terminating *)
+termination sorry
+end-proof
+
 end-spec
 
 

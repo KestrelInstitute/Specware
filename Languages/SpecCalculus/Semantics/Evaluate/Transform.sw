@@ -51,6 +51,7 @@ spec
     case itm of
       | Qual(q,n,_) -> return (Qualified(q,n))
       | Name(n,_)   -> return (mkUnQualifiedId(n))
+      | Str(n, _)   -> return (mkContextQId n)
       | _ -> raise (TransformError (posOf itm, "Id expected."))
 
   op extractQIds(itm: TransformExpr): SpecCalc.Env QualifiedIds =
@@ -115,6 +116,8 @@ spec
                              return (LeftToRight qid)}
       | Item("rl",thm,_) -> {qid <- extractQId thm;
                              return (RightToLeft qid)}
+      | Item("omit",thm,_) -> {qid <- extractQId thm;
+                               return (Omit qid)}
       | Item("strengthen",thm,_) -> {qid <- extractQId thm;
                                      return (Strengthen qid)}
       | Item("weaken",thm,_) -> {qid <- extractQId thm;
@@ -191,12 +194,15 @@ spec
   op makeScript1 (spc: Spec) (trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
     case trans of
-      | Command("simplify", [Tuple(rls, _)], _) ->
-        {srls <- mapM (makeRuleRef spc) rls;
-         return(Simplify(srls, maxRewrites))}
       | Command("simplify", [Options(rls, _)], _) ->
         {srls <- mapM (makeRuleRef spc) rls;
          return(Simplify(srls, maxRewrites))}
+      | Command("simplify", [Tuple(rls, _)], _) ->
+        {srls <- mapM (makeRuleRef spc) rls;
+         return(Simplify(srls, maxRewrites))}
+      | Command("simplify1", [Options(rls, _)],_) ->
+        {srls <- mapM (makeRuleRef spc) rls;
+         return(Simplify1 srls)}
       | Command("simplify1", [Tuple(rls, _)],_) ->
         {srls <- mapM (makeRuleRef spc) rls;
          return(Simplify1 srls)}
@@ -355,6 +361,7 @@ spec
     case te of
       | Name(n,_)   -> Some(mkUnQualifiedId n)
       | Qual(q,n,_) -> Some(Qualified(q,n))
+      | Str(n, _)   -> Some(mkContextQId n)
       | _ -> None
 
   op reservedWords: List String =
@@ -395,6 +402,7 @@ spec
       | (_, OpName) -> return(mapOption OpNameV (transformExprToQualifiedId te))
       | (Item("lr", thm, _),      Rule) -> return(mapOption (fn qid -> RuleV(LeftToRight qid)) (transformExprToQualifiedId thm))
       | (Item("rl", thm, _),      Rule) -> return(mapOption (fn qid -> RuleV(RightToLeft qid)) (transformExprToQualifiedId thm))
+      | (Item("omit", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Omit qid)) (transformExprToQualifiedId thm))
       | (Item("strengthen", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Strengthen qid)) (transformExprToQualifiedId thm))
       | (Item("weaken", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Weaken qid)) (transformExprToQualifiedId thm))
       | (Item("fold", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Fold qid))        (transformExprToQualifiedId thm))

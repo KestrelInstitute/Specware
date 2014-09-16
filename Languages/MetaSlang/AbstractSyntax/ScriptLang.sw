@@ -78,9 +78,30 @@ op ppSpace: WLPretty = ppString " "
 
 op wildQualifier: String = "_"
 
+op mkContextQId(nm: Id): QualifiedId = mkQualifiedId(contextRuleQualifier, nm)
+op contextQId?(Qualified(q,_): QualifiedId): Bool = q = contextRuleQualifier
+op contextQIdNamed?(nm: Id) (Qualified(q,id): QualifiedId): Bool =
+  q = contextRuleQualifier && nm = id
+
+op contextRuleSpecNamed?(n: Id) (rs: RuleSpec): Bool = 
+  case rs of
+    | LeftToRight qid -> contextQIdNamed? n qid
+    | RightToLeft qid -> contextQIdNamed? n qid
+    | Omit        qid -> contextQIdNamed? n qid
+    | _ -> false
+
+op contextRuleSpec?(rs: RuleSpec): Bool = 
+  case rs of
+    | LeftToRight qid -> contextQId? qid
+    | RightToLeft qid -> contextQId? qid
+    | Omit qid        -> contextQId? qid
+    | _ -> false
+
+
 op ppQid(Qualified(q, nm): QualifiedId): WLPretty =
   if q = UnQualified then ppString nm
-    else ppConcat[ppString q, ppString ".", ppString nm]
+    else if q = contextRuleQualifier then ppConcat[ppString "\"", ppString nm, ppString "\""]
+    else ppConcat[ppString(if q = "*" then "_" else q), ppString ".", ppString nm]
 
 op ppLoc(loc: Location): WLPretty =
   case loc of
@@ -93,6 +114,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
     | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
     | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
     | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
+    | Omit        qid -> ppConcat[ppString "omit ", ppQid qid]
     | MetaRule   (Qualified(q, id), _, atv) | q = msRuleQualifier ->
       ppConcat[ppString id, ppString " ", ppAbbrAnnTypeValue atv]
     | MetaRule   (qid, _, _) -> ppConcat[ppString "apply ", ppQid qid]
@@ -148,7 +170,7 @@ op ppScript(scr: Script): WLPretty =
                          ppNewline,
                          ppScript scr])
     | At(locs, scr) ->
-      ppIndent(ppConcat [ppString "at (", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString ") ",
+      ppIndent(ppConcat [ppString "at [", ppNest 0 (ppSep commaBreak (map ppLoc locs)), ppString "] ",
                          ppNewline,
                          ppScript scr])
     | AtTheorem(locs, scr) ->
@@ -165,7 +187,8 @@ op ppScript(scr: Script): WLPretty =
                     ppNest 1 (ppConcat [ppString "[", ppSep commaBreak (map ppRuleSpec rules), ppString "]"])]
     | Simplify1 [rl] -> ppRuleSpec rl
     | Simplify1 rules ->
-      ppConcat [ppString "simplify1 ", ppNest 0 (ppSep commaBreak (map ppRuleSpec rules)), ppString "]"]
+      ppConcat [ppString "simplify1 ",
+                    ppNest 1 (ppConcat [ppString "[", ppSep commaBreak (map ppRuleSpec rules), ppString "]"])]
     | SimpStandard -> ppString "SimpStandard"
     | RenameVars binds -> ppConcat [ppString "rename [",
                                     ppSep(ppString ", ")
@@ -290,6 +313,7 @@ op mkUnfold(qid: QualifiedId): RuleSpec = Unfold qid
 op mkRewrite(qid: QualifiedId): RuleSpec = Rewrite qid
 op mkLeftToRight(qid: QualifiedId): RuleSpec = LeftToRight qid
 op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
+op mkOmit(qid: QualifiedId): RuleSpec = Omit qid
 op simpleMetaRuleMTypeInfo: MTypeInfo = Arrows([Spec, Term], Opt Term)
 op simpleMetaRuleAnnTypeValue: AnnTypeValue = ArrowsV[TermV (Any noPos)]
 op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
@@ -323,6 +347,7 @@ op ruleConstructor(id: String): QualifiedId -> RuleSpec =
    | "rl" -> mkRightToLeft
    | "righttoleft" -> mkRightToLeft
    | "right-to-left" -> mkRightToLeft
+   | "omit" -> mkOmit
    | "apply" -> mkMetaRule0
    | "revleibniz" -> mkRLeibniz
    | "strengthen" -> mkStrengthen

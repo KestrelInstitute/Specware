@@ -107,8 +107,10 @@ spec
     isFlexVar? tm || some?(hasFlexHead? tm) || embed? Var tm
 
   op reverseRuleIfNonTrivial(rl: RewriteRule): Option RewriteRule =
-    % let _ = writeLine("reverseRuleto\n"^printTerm rl.rhs^" --> "^printTerm rl.lhs) in
-    if trivialMatchTerm? rl.rhs
+    % let _ = writeLine("reverseRule:\n"^printTerm rl.rhs^" --> "^printTerm rl.lhs) in
+    % let _ = printRule rl in
+    let rhs_flex_vars = freeFlexVars rl.rhs in
+    if trivialMatchTerm? rl.rhs || exists? (fn i -> i nin? rhs_flex_vars) (freeFlexVars rl.lhs)
       then None
       else Some(rl << {lhs = rl.rhs, rhs = rl.lhs, rule_spec = reverseRuleSpec rl.rule_spec,
                        sym_proof = ~(rl.sym_proof) })
@@ -238,6 +240,7 @@ spec
                                 ++ r
                             else r)
                      [] (allProperties spc))
+      | Omit qid -> []
       | Strengthen qid ->
         warnIfNone(qid, "Implication theorem ",
                    foldr (fn (p, r) ->
@@ -323,8 +326,20 @@ spec
          | _ -> None)
     | _ -> None
 
+   op assertRulesDirn (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, rule_specs: RuleSpecs,
+                   o_prf: Option Proof, tyvars: TyVars)
+      : List RewriteRule =
+     let dirn = case findLeftmost (contextRuleSpecNamed? desc) rule_specs of
+                  | Some rs ->
+                    (case contextRuleDirection rs of
+                       | Some n_dirn -> n_dirn
+                       | None -> dirn)
+                  | None -> dirn
+     in
+     assertRules(context, term, desc, rsp, dirn, o_prf, tyvars)
+
   op addContextRules?: Bool = true
-  op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context): List RewriteRule =
+  op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context, rule_specs: RuleSpecs): List RewriteRule =
     if ~addContextRules? then []
     else
     let def collectRules(tm, path, sbst) =
@@ -346,7 +361,17 @@ spec
                                            | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
                                     var_projs                                                 
                        in
-                       collectRules(pred, r_path, sbst)
+                       let new_rules = map (fn (v_tm as (_, ty), fn_tm) ->
+                                              let eq_tm = mkEquality(ty, mkVar v_tm, fn_tm) in
+                                              assertRulesDirn(context, eq_tm, "fn value", Context, RightToLeft,
+                                                              rule_specs, None, freeTyVarsInTerm eq_tm))
+                                         sbst
+                       in
+                       % let _ = writeLine("sbst:\n"^anyToString sbst) in
+                       % let _ = List.app printRule (flatten new_rules) in
+                       (flatten new_rules)
+                          ++ collectRules(fn_tm, reverse(pathToLambdaBody fn_tm), [])
+                          ++ collectRules(pred, r_path, sbst)
                      | _ -> []
                in
                param_rls ++ post_condn_rules)
@@ -354,9 +379,9 @@ spec
           let rls =
               case tm of
                 | IfThenElse(p, _, _, _) | i = 1 ->
-                  assertRules(context, p, "if then", Context, Either, None, freeTyVarsInTerm p)
+                  assertRulesDirn(context, p, "if then", Context, Either, rule_specs, None, freeTyVarsInTerm p)
                 | IfThenElse(p, _, _, _) | i = 2 ->
-                  assertRules(context,negate p,"if else", Context, Either, None, freeTyVarsInTerm p)
+                  assertRulesDirn(context,negate p,"if else", Context, Either, rule_specs, None, freeTyVarsInTerm p)
                 | Apply(Fun(And,_,_), _,_) | i = 1 ->
                   let def getSisterConjuncts(pred, path) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
@@ -380,8 +405,8 @@ spec
                              then let guards = getAllPatternGuards pat in
                                   if guards = [] then []
                                     else let condn = mkConj guards in
-                                         assertRules(context, condn, "lambda guard", Context,
-                                                     Either, None, freeTyVarsInTerm condn)
+                                         assertRulesDirn(context, condn, "lambda guard", Context,
+                                                         Either, rule_specs, None, freeTyVarsInTerm condn)
                              else [])
                      [] rules
                 | _ -> []
@@ -477,30 +502,41 @@ spec
         ErrorFail ("prove_refinesWithTactic: lhs term not a TypedTerm: "
                      ^ printTerm M)
 
+  op [a] splitByPred(p: a -> Bool) (l: List a): List a * List a =
+    foldr (fn (x, (lt, lf)) -> if p x then (x::lt, lf) else (lt, x::lf)) ([], []) l
+
   % Rewrite the subterm of path_term at its path, returning the
   % new_subterm and a proof that path_term refines to
   % replaceSubTerm(new_subterm,path_term) according to the comment above
   op rewritePT(spc: Spec, path_term: PathTerm,
-               context: Context, qid: QualifiedId, rules: List RewriteRule)
+               context: Context, qid: QualifiedId, rule_specs: RuleSpecs)
        : MSTerm * Proof =
     (context.traceDepth := 0;
      let top_term = topTerm path_term in
      let (bound_vars, term) = fromPathTermWithBindings path_term in
      let path = pathTermPath path_term in
-     let _ = if rewriteDebug? then
-               (writeLine("Rewriting:\n"^printTerm term);
-                app printRule rules)
-               else ()
-     in
      %let rules = map (etaExpand context) rules in   % Not sure if necessary
      %let rules = prioritizeRules rules in
-     let rules =  rules ++ contextRulesFromPath(path_term, qid, context) in
+     let ctxt_rules = contextRulesFromPath(path_term, qid, context, filter contextRuleSpec? rule_specs) in
+     let ctxt_rules = filter (fn rl -> ~(exists? (fn rl_spec -> embed? Omit rl_spec
+                                                              && contextRuleSpecNamed? rl.name rl_spec)
+                                           rule_specs))
+                        ctxt_rules in
+     let (expl_ctxt_rules, impl_ctxt_rules) =
+         splitByPred (fn rl -> exists? (fn rl_sp -> contextRuleSpecNamed? rl.name rl_sp) rule_specs) ctxt_rules in
+     let rules = makeRules (context, spc, rule_specs, expl_ctxt_rules) in
+     let rules = rules ++ impl_ctxt_rules in
      let rules = rules ++ subtypeRules(term, context) in
-     let rules = splitConditionalRules rules in
+     let _ = if rewriteDebug? then
+               (writeLine("Rewriting:\n"^printTerm term);
+                List.app printRule rules)
+               else ()
+     in
+     let org_rules = splitConditionalRules rules in
      let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
            % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
            case rewriteRecursive (context, if bound_vars = [] then freeVars term else bound_vars,
-                                  rules, trm) of
+                                  org_rules, trm) of
              | None -> (trm, pf)
              | Some (new_trm, ret_pf) ->
                let new_pf = prove_equalTrans (pf, ret_pf) in
@@ -510,7 +546,7 @@ spec
                  (trm, new_pf)
      in
      let (new_subterm, sub_pf) =
-       % if maxDepth = 1 then hd(rewriteOnce(context, [], rules, term))
+       % if maxDepth = 1 then hd(rewriteOnce(context, [], org_rules, term))
        % else
        doTerm(rewriteDepth, term, prove_equalRefl (inferType (spc,term), term))
      in
@@ -520,8 +556,17 @@ spec
         (top_term, topTerm (replaceSubTerm (new_subterm, path_term)),
          path, sub_pf)))
 
-  op makeRules (context: Context, spc: Spec, rules: RuleSpecs): List RewriteRule =
-    foldr (fn (rl, rules) -> makeRule(context, spc, rl) ++ rules) [] rules
+  op makeRules (context: Context, spc: Spec, rl_specs: RuleSpecs, ctxt_rules: List RewriteRule): List RewriteRule =
+    foldr (fn (rl_spec, rules) ->
+             if contextRuleSpec? rl_spec
+               then if embed? Omit rl_spec then rules
+                    else
+                    let c_rules = filter (fn rl -> contextRuleSpecNamed? rl.name rl_spec) ctxt_rules in
+                    if c_rules = []
+                      then (warn("No context rules for rule spec "^showRuleSpec rl_spec);
+                            rules)
+                    else c_rules ++ rules
+               else makeRule(context, spc, rl_spec) ++ rules) [] rl_specs
 
 
   op [a] funString(f: AFun a): Option String =
@@ -683,7 +728,6 @@ spec
                                                  else context.termSizeLimit}
     in
     % let _ = printContextOptions context in
-    let rules = makeRules (context, spc, rules) in
     rewritePT(spc, path_term, context, qid, rules)
 
   op checkSpecWhenTracing?: Bool = false
@@ -756,12 +800,10 @@ spec
                                            path_term, AbstractCommonExpressions, pf, StringTactic "metis", spc))
                 | Simplify(rules, n) ->
                   let context = makeContext spc in
-                  let rules = makeRules (context, spc, rules) in
                   return (replaceSubTermH(rewritePT(spc, path_term, context, qid, rules),
                                           path_term, pf))
                 | Simplify1(rules) ->
                   let context = makeContext spc << {maxDepth = 1} in
-                  let rules = makeRules (context, spc, rules) in
                   % let ctxt_rules
                   return (replaceSubTermH(rewritePT(spc, path_term, context, qid, rules),
                                           path_term, pf))

@@ -125,6 +125,7 @@ type Proof.Proof
    | Rewrite     QualifiedId % like unfold one step of a pattern-matching fun
    | LeftToRight QualifiedId % apply an equality theorem
    | RightToLeft QualifiedId % apply an the inverse of an equality theorem
+   | Omit        QualifiedId % omit an automatically included rule
    | RLeibniz    QualifiedId % post-condition strengthening, replacing f x = f y by x = y
    | Strengthen  QualifiedId % strengthen with an implication: use x -> y to replace y with x
    | Weaken      QualifiedId % weaken with an implication: use x -> y to replace x with y
@@ -209,6 +210,11 @@ type Proof.Proof
 %    in
 %    f s_pf
 
+ op contextRuleQualifier: Id = "-context-"
+ op showQid(Qualified(q, nm): QualifiedId): String =
+   if q = UnQualified then nm
+     else if q = contextRuleQualifier then "\""^nm^"\""
+     else q^"."^nm
 
 
  op metaRuleATV(rl: RuleSpec): AnnTypeValue =
@@ -217,11 +223,12 @@ type Proof.Proof
 
  op showRuleSpec(rs: RuleSpec): String =
    case rs of
-     | Unfold  qid -> "unfold " ^ show qid
-     | Fold    qid -> "fold " ^ show qid
-     | Rewrite qid -> "rewrite " ^ show qid
-     | LeftToRight qid -> "lr " ^ show qid
-     | RightToLeft qid -> "rl " ^ show qid
+     | Unfold  qid     -> "unfold " ^ show qid
+     | Fold    qid     -> "fold " ^ show qid
+     | Rewrite qid     -> "rewrite " ^ show qid
+     | LeftToRight qid -> "lr " ^ showQid qid
+     | RightToLeft qid -> "rl " ^ showQid qid
+     | Omit qid        -> "omit " ^ showQid qid
      | RLeibniz    qid -> "revleibniz " ^ show qid
      | Strengthen  qid -> "strengthen " ^ show qid
      | Weaken      qid -> "weaken " ^ show qid

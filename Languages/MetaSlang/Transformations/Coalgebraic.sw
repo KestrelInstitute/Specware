@@ -192,18 +192,20 @@ def Coalgebraic.maintainOpsCoalgebraically
              % let _ = writeLine("Result tm is "^printTerm result_tm) in
              let new_lhs = mkApply(intro_fn, mkVar result_var) in
              let intro_fn_rng = inferType(spc, new_lhs) in
-             let raw_rhs = simplifiedApply(intro_fn_def, result_tm, spc) in
+             %let raw_rhs = simplifiedApply(intro_fn_def, result_tm, spc) in
              % let _ = writeLine("\nBody to transform:\n"^printTerm raw_rhs) in
-             let new_intro_ty = addPostCondition(mkEquality(intro_fn_rng, new_lhs, raw_rhs), ty) in
+             let new_intro_ty = addPostCondition(mkEquality(intro_fn_rng, new_lhs, new_lhs), ty) in
              let spc = addRefinedType(spc, info, new_intro_ty) in
              (spc, qid :: qids)
            | _ -> result
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let main_script = At(map Def (reverse qids),
-                        Repeat [Move [Search intro_id, Next], % Go to postcondition just added and simplify
-                                mkSimplify [],
-                                Simplify1(rules),
+                        Repeat [Move [Search intro_id, Next], % Go to rhs of postcondition just added, unfold and simplify
+                                mkSimplify[LeftToRight(mkContextQId "fn value")],
+                                Simplify1([reverseRuleSpec fold_rl, Omit(mkContextQId "fn value")] ++ rules),
+                                mkSimplify [Omit(mkContextQId "fn value")],
+                                Simplify1(Omit(mkContextQId "fn value") :: rules),
                                 mkSimplify(fold_rl :: rules)]) in
    let script = if traceMaintain? || trace?
                    then Steps[Trace true, main_script]
