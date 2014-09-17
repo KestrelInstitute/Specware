@@ -595,17 +595,33 @@ end-proof
 
 %------- ndL2S: homomorphism from nodups-List to Set -----------------------
 
-  type ndList a = (List a | nodups)
+  %% TODO: Consider just using InjList as the name in this file too.
+  type ndList a = InjList a    %%(List a | nodups)
 
-  op [a] nodups(lst:List a):Bool =
-     case lst of
-       | Nil -> true
-       | x::xs -> ~(x in? xs) && nodups xs
+  %% Use noRepetitions? from Library/Base instead.
+  %% op [a] nodups(lst:List a):Bool =
+  %%    case lst of
+  %%      | Nil -> true
+  %%      | x::xs -> ~(x in? xs) && nodups xs
 
   op [a] ndL2S(lst:ndList a): Set a =
-    (foldl (fn(c,a)-> set_insert_new(a,c))
-          empty_set
-          lst)
+    case lst of
+    | [] -> empty_set
+    | hd::tl -> set_insert_new(hd,ndL2S tl)
+    %% (foldl (fn(c,a)-> set_insert_new(a,c))
+    %%       empty_set
+    %%       lst)
+
+
+proof Isa -verbatim
+(* trying to sneak in this lemma:*)
+  theorem ndL2S_Obligation_subtype0_helper: 
+    "(x in? ndL2S y) = (x mem y)"
+    apply(induct y)
+    apply (metis Set__empty_set in_of_empty ndL2S.simps(1))
+    apply(auto simp add: Set__set_insert_new_def Set__set_insertion)
+  done
+end-proof
 
   theorem ndL2S_Nil is [a]
      (ndL2S(Nil) = (empty_set:Set a))
@@ -1650,5 +1666,102 @@ proof Isa in_of_diff
   apply (metis List__diff_of_empty in_of_empty)
   apply(auto simp add: diff_of_cons)
 end-proof
+
+proof Isa ndL2S_Obligation_subtype0
+
+  apply(simp add: ndL2S_Obligation_subtype0_helper)
+end-proof
+
+
+proof Isa ndL2S_Equal_Nil
+  apply(auto)
+  by (metis Set__empty_set list.sel_set(1) ndL2S_Obligation_subtype0_helper)
+end-proof
+
+proof Isa ndL2S_Cons
+  apply(auto simp add: Set__set_insert_new_def Set__set_insertion)
+end-proof
+
+proof Isa ndL2S_member
+  apply(auto simp add: Set__set_insert_new_def Set__set_insertion ndL2S_Obligation_subtype0_helper)
+end-proof
+
+%% TODO: Not true:
+proof Isa ndL2S_uptoL_loop_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa ndL2S_uptoL_loop
+  sorry
+end-proof
+
+proof Isa ndL2S_uptoL_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa ndL2S_uptoL
+  sorry
+end-proof
+
+proof Isa ndL2S_vs_Pair2S
+  sorry
+end-proof
+
+proof Isa ndL2S_delete1_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa ndL2S_delete1_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa ndL2S_delete1
+  sorry
+end-proof
+
+proof Isa length_of_delete1_ndList
+  sorry
+end-proof
+
+proof Isa ndL2S_head_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa ndL2S_head
+  sorry
+end-proof
+
+proof Isa lift_ndL2S_over_if
+  sorry
+end-proof
+
+proof Isa ndL2S_diff_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa ndL2S_diff
+  sorry
+end-proof
+
+proof Isa ndL2S_set_diff_Obligation_subtype
+  sorry
+end-proof
+
+proof Isa ndL2S_set_diff_Obligation_subtype0
+  sorry
+end-proof
+
+proof Isa ndL2S_set_diff_Obligation_subtype1
+  sorry
+end-proof
+
+proof Isa ndL2S_set_diff_Obligation_subtype2
+  sorry
+end-proof
+
+proof Isa ndL2S_set_diff
+  sorry
+end-proof
+
 
 end-spec
