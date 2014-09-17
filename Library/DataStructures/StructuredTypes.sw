@@ -593,6 +593,75 @@ end-proof
 %%       ( L2S (map_apply m lunit lst) = set_insert(y, L2S lst) )
 %% *)
 
+%------- ndL2S: homomorphism from nodups-List to Set -----------------------
+
+  type ndList a = (List a | nodups)
+
+  op [a] nodups(lst:List a):Bool =
+     case lst of
+       | Nil -> true
+       | x::xs -> ~(x in? xs) && nodups xs
+
+  op [a] ndL2S(lst:ndList a): Set a =
+    (foldl (fn(c,a)-> set_insert_new(a,c))
+          empty_set
+          lst)
+
+  theorem ndL2S_Nil is [a]
+     (ndL2S(Nil) = (empty_set:Set a))
+
+  theorem ndL2S_Equal_Nil is [a]
+     fa(al:ndList a) (al = Nil) = (ndL2S(al) = empty_set)
+
+  theorem ndL2S_Cons is [a]
+    fa(y:a,lst:ndList a) ~(y in? lst) => ndL2S(Cons(y,lst)) = set_insert(y, ndL2S lst) 
+
+  theorem ndL2S_member is [a]
+    fa(y:a,lst:ndList a) ( (y in? lst) = (y in? ndL2S lst) )
+
+  theorem ndL2S_uptoL_loop is
+    fa(i:Nat,j:Nat,ns:ndList Nat) ndL2S(uptoL_loop(i,j,ns)) = upto_loop(i,j,ndL2S ns)
+
+  theorem ndL2S_uptoL is
+    fa(pair:Nat*Nat) ndL2S(uptoL(pair)) = Pair2S(pair)
+
+  theorem ndL2S_vs_Pair2S is
+    fa(lst:ndList Nat,pair:Nat*Nat) lst = uptoL pair => ndL2S lst = Pair2S pair
+
+  % theorem ndL2S_delete is [a]
+  %   fa(y:a,lst:ndList a) ( ndL2S(delete y lst) = set_delete(y, ndL2S lst) )
+
+  theorem ndL2S_delete1 is [a]
+    fa(y:a,lst:List a) ndL2S(delete1(y,lst)) =  set_delete(y, ndL2S lst)
+
+  theorem length_of_delete1_ndList is [a]
+    fa(n:a, lst:ndList a) (n in? lst) => length(delete1(n,lst)) = (length(lst) - 1)
+
+  theorem ndL2S_head is [a]
+    fa(y:a,lst:ndList a) ( ~(lst = Nil) => head(lst) in? ndL2S(lst) )
+
+  % The List1 here is new (was List).
+  % theorem ndL2S_tail is [a]
+  %   fa(y:a,lst:List1 a) ( ndL2S(tail(lst)) subset (ndL2S lst) )
+
+  % theorem ndL2S_concat is [a]
+  %   fa(lst1:ndList a,lst2:ndList a) ( ndL2S (lst1 ++ lst2) = (ndL2S lst1 \/ ndL2S lst2) )
+
+  theorem lift_ndL2S_over_if is [a]
+   fa(x:ndList a,y:ndList a,p:Bool)
+     ((if p then ndL2S x else ndL2S y) = ndL2S(if p then x else y))
+
+  theorem ndL2S_diff is [a]
+    fa(lst:ndList a,sub:ndList a) ( ndL2S (diff(lst,sub)) = (ndL2S lst -- ndL2S sub) )
+
+  theorem ndL2S_set_diff is [a,M]
+    fa(lst:ndList a,cm:Map(a,Bool))
+      ( ((ndL2S lst) subset (domain cm))
+      => ((ndL2S lst) -- (CM2S cm)) = (ndL2S (filter (fn(x:{x:a | x in? lst})->  ~(TMApply(cm,x))) lst)) )
+
+
+
+
 %------- L2B: homomorphism from List to Bag -----------------------
 
   op [a] L2B(lst:List a): Bag a =
