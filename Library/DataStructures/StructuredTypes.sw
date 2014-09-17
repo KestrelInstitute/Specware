@@ -635,11 +635,12 @@ end-proof
   theorem ndL2S_member is [a]
     fa(y:a,lst:ndList a) ( (y in? lst) = (y in? ndL2S lst) )
 
-  theorem ndL2S_uptoL_loop is
-    fa(i:Nat,j:Nat,ns:ndList Nat) ndL2S(uptoL_loop(i,j,ns)) = upto_loop(i,j,ndL2S ns)
+  %% Doesn't type-check?
+  %% theorem ndL2S_uptoL_loop is
+  %%   fa(i:Nat,j:Nat,ns:ndList Nat) ndL2S(uptoL_loop(i,j,ns)) = upto_loop(i,j,ndL2S ns)
 
-  theorem ndL2S_uptoL is
-    fa(pair:Nat*Nat) ndL2S(uptoL(pair)) = Pair2S(pair)
+  %% theorem ndL2S_uptoL is
+  %%   fa(pair:Nat*Nat) ndL2S(uptoL(pair)) = Pair2S(pair)
 
   theorem ndL2S_vs_Pair2S is
     fa(lst:ndList Nat,pair:Nat*Nat) lst = uptoL pair => ndL2S lst = Pair2S pair
@@ -648,7 +649,7 @@ end-proof
   %   fa(y:a,lst:ndList a) ( ndL2S(delete y lst) = set_delete(y, ndL2S lst) )
 
   theorem ndL2S_delete1 is [a]
-    fa(y:a,lst:List a) ndL2S(delete1(y,lst)) =  set_delete(y, ndL2S lst)
+    fa(y:a,lst:ndList a) ndL2S(delete1(y,lst)) =  set_delete(y, ndL2S lst)
 
   theorem length_of_delete1_ndList is [a]
     fa(n:a, lst:ndList a) (n in? lst) => length(delete1(n,lst)) = (length(lst) - 1)
@@ -1686,81 +1687,59 @@ proof Isa ndL2S_member
   apply(auto simp add: Set__set_insert_new_def Set__set_insertion ndL2S_Obligation_subtype0_helper)
 end-proof
 
-%% TODO: Not true:
-proof Isa ndL2S_uptoL_loop_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa ndL2S_uptoL_loop
-  sorry
-end-proof
-
-proof Isa ndL2S_uptoL_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa ndL2S_uptoL
-  sorry
-end-proof
-
 proof Isa ndL2S_vs_Pair2S
-  sorry
-end-proof
-
-proof Isa ndL2S_delete1_Obligation_subtype
-  sorry
-end-proof
-
-proof Isa ndL2S_delete1_Obligation_subtype0
-  sorry
+  apply(rule Set__membership)
+  apply(simp add: ndL2S_Obligation_subtype0_helper Pair2S_def)
+  apply(metis (mono_tags) L2S_member L2S_vs_Pair2S Pair2S_def old.prod.exhaust prod.case)
 end-proof
 
 proof Isa ndL2S_delete1
-  sorry
+  apply(auto)
+  apply(rule Set__membership)
+  apply(auto simp add: ndL2S_Obligation_subtype0_helper Set__in_of_delete)
 end-proof
 
 proof Isa length_of_delete1_ndList
-  sorry
-end-proof
-
-proof Isa ndL2S_head_Obligation_subtype
-  sorry
+  apply(auto)
+  apply (metis List__delete1_delete1_curried List__length_of_delete1)
 end-proof
 
 proof Isa ndL2S_head
-  sorry
-end-proof
-
-proof Isa lift_ndL2S_over_if
-  sorry
+  apply(metis hd_in_set ndL2S_member)
 end-proof
 
 proof Isa ndL2S_diff_Obligation_subtype
-  sorry
+  apply(induct lst)
+  apply (metis List__diff_of_empty)
+  apply(metis diff_of_cons distinct.simps(2) in_of_diff)
 end-proof
 
 proof Isa ndL2S_diff
-  sorry
+  apply(induct lst)
+  apply (metis List__diff_of_empty Set__empty_set_set_diff ndL2S_Nil)
+  apply(auto simp add: diff_of_cons)
+  apply (metis Set__distribute_set_diff_over_left_insert ndL2S.simps(2) ndL2S_Cons ndL2S_Obligation_subtype0_helper)
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_insert_new_def Set__set_insertion Set__set_difference ndL2S_Obligation_subtype0_helper)
 end-proof
 
 proof Isa ndL2S_set_diff_Obligation_subtype
-  sorry
+  apply(metis (erased, lifting) Set__Set_P_def Set__forall_rewrite Set__set_difference ndL2S_member)
 end-proof
 
 proof Isa ndL2S_set_diff_Obligation_subtype0
-  sorry
+  apply(metis Set__subset_def ndL2S_Obligation_subtype0_helper)
 end-proof
 
 proof Isa ndL2S_set_diff_Obligation_subtype1
-  sorry
-end-proof
-
-proof Isa ndL2S_set_diff_Obligation_subtype2
-  sorry
+  apply(metis list_all_iff)
 end-proof
 
 proof Isa ndL2S_set_diff
-  sorry
+  apply(rule Set__membership)
+  apply(auto simp add: Set__set_difference ndL2S_Obligation_subtype0_helper)
+  apply (metis CM2S_member ndL2S_set_diff_Obligation_subtype0)
+  apply (metis CM2S_member ndL2S_set_diff_Obligation_subtype0)
 end-proof
 
 
