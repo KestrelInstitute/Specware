@@ -209,6 +209,16 @@ op refined_spec?
     wfState? state &&
     pointsToObject? state dst =>
     copy src dst state = Some (unwrap (writePointed state dst src), ())
+; % rl writePointedM_writePointed:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    wfState? state &&
+    pointsToObject? state dst =>
+    copy src dst state = writePointedM dst src state
+; % lr writePointedE_valueExpr:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    wfState? state &&
+    pointsToObject? state dst =>
+    copy src dst state = writePointedE (valueExpr dst) (valueExpr src) state
 ) % IN PROGRESS...
 
 endspec

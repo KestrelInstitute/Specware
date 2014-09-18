@@ -40,4 +40,44 @@ theorem writePointedObject is
     typeOfValue pval = pointer (typeOfValue val) =>
     writePointed state pval val ~= None
 
+(* Monadic version of writePointed. *)
+
+op writePointedM (pval:PointerValue) (val:Value): Monad () =
+  fn state:State ->
+    case writePointed state pval val of
+    | Some state' -> Some (state', ())
+    | None -> None
+
+(* When the pointer points to an object,
+writePointedM can be reduced to writePointed as follows. *)
+
+theorem writePointedM_writePointed is
+  fa (state:State, pval:PointerValue, val:Value)
+    pointsToObject? state pval =>
+    writePointedM pval val state =
+      Some (unwrap (writePointed state pval val), ())
+
+(* Lift value to expression. *)
+
+op valueExpr (val:Value): Expression =
+  fn state:State -> Some (value val)
+
+(* Lift writePointedM to expressions. *)
+
+op writePointedE (pe:Expression) (e:Expression): Monad () =
+  fn state:State ->
+    case (convertArray (convertLvalue pe) state,
+          convertArray (convertLvalue e) state) of
+    | (Some (value pval), Some (value val)) ->
+      if pointerValue? pval
+      then writePointedM pval val state
+      else None
+    | _ -> None
+
+(* Specialization of writePointedE to value expressions. *)
+
+theorem writePointedE_valueExpr is
+  fa (pval:PointerValue, val:Value)
+    writePointedE (valueExpr pval) (valueExpr val) = writePointedM pval val
+
 endspec

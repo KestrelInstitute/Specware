@@ -198,7 +198,10 @@ type UllongValue = (Value | embed? ullong)
 
 type SllongValue = (Value | embed? sllong)
 
-type PointerValue = {val:Value | embed? nnpointer val || embed? nullpointer val}
+op pointerValue? (val:Value): Bool =
+  embed? nnpointer val || embed? nullpointer val
+
+type PointerValue = (Value | pointerValue?)
 
 op toType? (ty:Type) (val:PointerValue): Bool =
   let pointer ty' = typeOfValue val in ty' = ty
