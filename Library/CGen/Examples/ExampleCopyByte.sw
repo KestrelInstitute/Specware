@@ -20,8 +20,8 @@ Spec = spec
 
 import CUtilities
 
-(* In order to have a clear relationship between
-the generated C function and its requirement specification,
+(* In order to have a clear relationship
+between the generated C function and its requirement specification,
 we express the requirement specification on the C function
 as constraints on a shallow embedding of the C function,
 which is a Specware function with the signature described in spec CModel.
@@ -39,12 +39,12 @@ The C compiler enforces the pre-conditions
 expressed by the types of the arguments.
 Additional pre-conditions are be captured by the following predicate,
 defined on the same arguments of the function and on the state:
-- the dst pointer designates an unsigned char object in the state;
+- dst points to an unsigned char object in the state;
 - the state is well-formed.
 Note that a C function that receives a pointer argument
 can check to see if it is null or not,
 but cannot check if a non-null pointer points to an unsigned char object---
-the C function must trust the caller.
+the C function must trust the caller on this.
 For this example, we could use a weaker pre-condition
 that allows a null pointer (which the function would have to check for),
 but we keep the example simpler with this stronger pre-condition.
@@ -54,12 +54,7 @@ op pre? (src: UcharValue)
         (dst: (PointerValue | toType? uchar))
         (state: State): Bool =
   wfState? state &&
-  (case dst of
-  | nnpointer (uchar, object obj) ->
-    (case readObject state obj of
-    | Some val -> typeOfValue val = uchar
-    | None -> false)
-  | _ -> false)
+  pointsToObject? state dst
 
 (* The post-condition is that
 the state after executing the function
@@ -67,19 +62,13 @@ is like the state before executing the function,
 with the only difference that the object designated by dst
 contains the value src.
 This is captured by the following predicate,
-defined on the arguments of the function, the before-state, and the after-state.
-Since the post-condition is only relevant
-for arguments and states that satisfy the pre-condition,
-we guard the predicate with the pre-condition.
-In this way,
-we can assume the pre-condition in expressing the post-condition. *)
+defined on
+the arguments of the function, the before-state, and the after-state. *)
 
 op post? (src: UcharValue)
          (dst: (PointerValue | toType? uchar))
          (state: State) (state': State): Bool =
-  pre? src dst state =>
-  (let nnpointer (_, object obj) = dst in
-  writeObject state obj src = Some state')
+  writePointed state dst src = Some state'
 
 (* We can capture the requirements on our target C function
 as a predicate over Specware functions with the type of the target C function.
@@ -112,11 +101,11 @@ op spec?
   (copy: UcharValue -> (PointerValue | toType? uchar) -> Monad ()): Bool =
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
     pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) -> post? src dst state state'
-    | None -> false)
+    (ex (state':State)
+      copy src dst state = Some (state', ()) &&
+      post? src dst state state')
 
-(* Another form of specification that follows Specware's classical style
+(* Another form of specification, which follows Specware's classical style,
 is to declare an uninterpreted function
 along with an axiom that expresses requirements on the function.
 This specification can be refined
@@ -149,9 +138,7 @@ Step0 = Spec
 
 Step1 = transform Step0 by {
 at spec?
-  {unfold post?; 
-   SimpStandard; 
-   SimpStandard}
+  {unfold post?}
 }
 (* RESULT:
 spec  
@@ -159,11 +146,8 @@ import Step0
 refine def spec? (copy: UcharValue -> (PointerValue | toType? uchar) -> Monad(())): Bool
   = fa(src: UcharValue, dst: (PointerValue | toType? uchar), state: State) 
      pre? src dst state 
-      => (case copy src dst state
-           of Some (state', ()) -> 
-              let (nnpointer (_, object obj)) = dst in 
-              (writeObject state obj src = Some state')
-            | None -> false)
+      => (ex(state': State) 
+           copy src dst state = Some(state', ()) && writePointed state dst src = Some state')
 end-spec
 *)
 
@@ -182,50 +166,49 @@ op refined_spec?
 ( % original definition of spec?:
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
     pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) -> post? src dst state state'
-    | None -> false)
+    (ex (state':State)
+      copy src dst state = Some (state', ()) &&
+      post? src dst state state')
 ; % unfold post?:
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
     pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) ->
-      (pre? src dst state =>
-       (let nnpointer (_, object obj) = dst in
-       writeObject state obj src = Some state'))
-    | None -> false)
-; % use pre? hypothesis:
+    (ex (state':State)
+      copy src dst state = Some (state', ()) &&
+      writePointed state dst src = Some state')
+; % lr optionEqSome (not working in transformation shell):
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
     pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) ->
-      (let nnpointer (_, object obj) = dst in
-      writeObject state obj src = Some state')
-    | None -> false)
-; % use theorem writePointerObject rigth-to-left:
+    (ex (state':State)
+      copy src dst state = Some (state', ()) &&
+      writePointed state dst src ~= None &&
+      state' = unwrap (writePointed state dst src))
+; % commute && (OK in this case):
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
     pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) ->
-      (let nnpointer (_, object obj) = dst in
-      writePointer state (object obj) src = Some state')
-    | None -> false)
-; % use theorem writePointerValueNonNull right-to-left with ty = uchar:
+    (ex (state':State)
+      writePointed state dst src ~= None &&
+      state' = unwrap (writePointed state dst src) &&
+      copy src dst state = Some (state', ()))
+; % unfold pre?:
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
-    pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) ->
-      (let nnpointer (_, object obj) = dst in
-      writePointerValue state (nnpointer (uchar, object obj)) src = Some state')
-    | None -> false)
-; % unfold let (not in the usual way),
-  % using the hypothesis on dst that _ is actually uchar:
+    wfState? state &&
+    pointsToObject? state dst =>
+    (ex (state':State)
+      writePointed state dst src ~= None &&
+      state' = unwrap (writePointed state dst src) &&
+      copy src dst state = Some (state', ()))
+; % use theorem writePointedObject:
   fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
-    pre? src dst state =>
-    (case copy src dst state of
-    | Some (state', ()) ->
-      writePointerValue state dst src = Some state'
-    | None -> false)
+    wfState? state &&
+    pointsToObject? state dst =>
+    (ex (state':State)
+      state' = unwrap (writePointed state dst src) &&
+      copy src dst state = Some (state', ()))
+; % logic:
+  fa (src: UcharValue, dst: (PointerValue | toType? uchar), state: State)
+    wfState? state &&
+    pointsToObject? state dst =>
+    copy src dst state = Some (unwrap (writePointed state dst src), ())
 ) % IN PROGRESS...
 
 endspec

@@ -27,9 +27,7 @@ and we use '-' to indicate ranges of contiguous sub-references
 
 spec
 
-import /Library/General/OptionExt
-import /Library/General/Map
-import /Library/General/EndoRelation
+import LibExt
 
 (* We define integer values similarly to the C deep and shallow embeddings,
 parameterized over the size of bytes, shorts, ints, longs, and long longs. *)

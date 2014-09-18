@@ -8,28 +8,36 @@ spec
 
 import CModel
 
-(* Lift writeObject to (non-null) pointers. *)
+(* Read value from object pointed to by pointer value. *)
 
-op writePointer (state:State) (ptr:NNPointer) (newVal:Value): Option State =
-  case ptr of
-  | object obj -> writeObject state obj newVal
-  | past1 _ -> None
-
-theorem writePointerObject is
-  fa (state:State, obj:ObjectDesignator, newVal:Value)
-    writePointer state (object obj) newVal = writeObject state obj newVal
-
-(* Lift writePointer to pointer values. *)
-
-op writePointerValue
-   (state:State) (pval:PointerValue) (newVal:Value): Option State =
+op readPointed (state:State) (pval:PointerValue): Option Value =
   case pval of
-  | nnpointer (_, ptr) -> writePointer state ptr newVal
-  | nullpointer _ -> None
+  | nnpointer (ty, object obj) ->
+    (case readObject state obj of
+    | Some val -> if typeOfValue val = ty then Some val else None
+    | None -> None)
+  | _ -> None
 
-theorem writePointerValueNonNull is
-  fa (state:State, ty:Type, ptr:NNPointer, newVal:Value)
-    writePointerValue state (nnpointer (ty, ptr)) newVal =
-      writePointer state ptr newVal
+(* Check if pointer value points to object. *)
+
+op pointsToObject? (state:State) (pval:PointerValue): Bool =
+  readPointed state pval ~= None
+
+(* Write value to object pointed to by pointer value. *)
+
+op writePointed (state:State) (pval:PointerValue) (val:Value): Option State =
+  case pval of
+  | nnpointer (ty, object obj) ->
+    if ty = typeOfValue val then writeObject state obj val else None
+  | _ -> None
+
+(* Writing a value of the right type via a pointer value succeeds
+if the pointer points to an object. *)
+
+theorem writePointedObject is
+  fa (state:State, pval:PointerValue, val:Value)
+    pointsToObject? state pval &&
+    typeOfValue pval = pointer (typeOfValue val) =>
+    writePointed state pval val ~= None
 
 endspec
