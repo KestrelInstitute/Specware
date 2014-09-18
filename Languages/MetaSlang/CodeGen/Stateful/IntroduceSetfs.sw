@@ -24,78 +24,6 @@ op isPos : Position = Internal "IntroduceSetfs"
 type Binding  = MSTerm * MSTerm
 type Bindings = List Binding
 
-op revise_update_to_setf_of_access (lhs        : MSTerm, 
-                                    rhs        : MSTerm,
-                                    setf_entry : SetfEntry)
- : MSTerm =
- case match_setf_entry (setf_entry.update_template, rhs) of
-   | Some bindings ->
-     revise_template (setf_entry.setf_template, bindings)
-   | _ ->
-     makeSetf (lhs, rhs)
-
-op match_setf_entry (template : MSTerm, tm : MSTerm) : Option Bindings =
- let
-   def match (template_fields, term_fields) =
-     case (template_fields, term_fields) of
-
-       | ([], []) -> Some []
-
-       | ((_, template_field_tm) :: template_fields, 
-          (_, term_field_tm)     :: term_fields) 
-         ->
-         (case match (template_fields, term_fields) of
-            | Some bindings -> 
-              let binding = (template_field_tm, term_field_tm) in
-              Some (binding |> bindings)
-            | _  -> None)
-
-       | _ -> None
- in
- case template of
-   | Var _ -> Some [(template, tm)]
-
-   | Apply (template_f, template_arg, _) ->
-     (case tm of
-
-        | Apply (term_f, term_arg, _) ->
-          (case (match_setf_entry (template_f,   term_f), 
-                 match_setf_entry (template_arg, term_arg)) 
-             of
-             | (Some f_bindings, Some arg_bindings) -> 
-               Some (f_bindings ++ arg_bindings)
-
-             | _ -> None)
-
-        | _ ->
-          None)
-
-   | Record (template_fields, _) ->
-     (case tm of
-        | Record (term_fields, _) ->
-          match (template_fields, term_fields)
-        | _ ->
-          None)
-
-   | _ ->
-     if equalTerm? (template, tm) then
-       Some []
-     else
-       None
-       
-op revise_template (template : MSTerm, bindings : Bindings) : MSTerm =
- let 
-   def subst tm =
-     case findLeftmost (fn (x, y) -> equalTerm? (x, tm)) bindings of
-       | Some (_, y) -> y
-       | _ ->
-         case tm of
-           | Apply  (x, y,   _) -> Apply  (subst x, subst y, isPos)
-           | Record (fields, _) -> Record (map (fn (x, y) -> (x, subst y)) fields, isPos)
-           | _ -> tm
- in
- subst template
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 op makeSetfUpdate (ms_spec      : Spec)
@@ -207,7 +135,12 @@ op reviseUpdate (ms_spec      : Spec,
         | _ -> 
           case findLeftmost (fn setf_entry -> name_of_updater = setf_entry.updater_name) setf_entries  of
             | Some setf_pair ->
-              revise_update_to_setf_of_access (lhs, rhs, setf_pair) 
+              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+              %%  setf (foo, update (foo, indices, value))
+              %%  =>
+              %%  update (foo.indices,value)
+              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+              remove_setf_of_lhs_to_setf_pair_update_of_lhs (lhs, rhs, setf_pair) 
             | _ ->
               makeSetf (lhs, rhs))
    | _ -> 
@@ -216,11 +149,97 @@ op reviseUpdate (ms_spec      : Spec,
      %%  =>
      %% setf (foo.x, v)
      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     reviseProjectionUpdates (lhs, rhs)
+     remove_setf_of_lhs_to_projection_update_of_lhs (lhs, rhs)
      
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op reviseProjectionUpdates (lhs : MSTerm, rhs : MSTerm) : MSTerm =
+op remove_setf_of_lhs_to_setf_pair_update_of_lhs (lhs        : MSTerm, 
+                                                  rhs        : MSTerm,
+                                                  setf_entry : SetfEntry)
+ : MSTerm =
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%  setf (foo, update (foo, indices, value))
+ %%  =>
+ %%  update (foo.indices,value)
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ case match_setf_entry (setf_entry.update_template, rhs) of
+   | Some bindings ->
+     revise_template (setf_entry.setf_template, bindings)
+   | _ ->
+     makeSetf (lhs, rhs)
+
+op match_setf_entry (template : MSTerm, tm : MSTerm) : Option Bindings =
+ let
+   def match (template_fields, term_fields) =
+     case (template_fields, term_fields) of
+
+       | ([], []) -> Some []
+
+       | ((_, template_field_tm) :: template_fields, 
+          (_, term_field_tm)     :: term_fields) 
+         ->
+         (case match (template_fields, term_fields) of
+            | Some bindings -> 
+              let binding = (template_field_tm, term_field_tm) in
+              Some (binding |> bindings)
+            | _  -> None)
+
+       | _ -> None
+ in
+ case template of
+   | Var _ -> Some [(template, tm)]
+
+   | Apply (template_f, template_arg, _) ->
+     (case tm of
+
+        | Apply (term_f, term_arg, _) ->
+          (case (match_setf_entry (template_f,   term_f), 
+                 match_setf_entry (template_arg, term_arg)) 
+             of
+             | (Some f_bindings, Some arg_bindings) -> 
+               Some (f_bindings ++ arg_bindings)
+
+             | _ -> None)
+
+        | _ ->
+          None)
+
+   | Record (template_fields, _) ->
+     (case tm of
+        | Record (term_fields, _) ->
+          match (template_fields, term_fields)
+        | _ ->
+          None)
+
+   | _ ->
+     if equalTerm? (template, tm) then
+       Some []
+     else
+       None
+       
+op revise_template (template : MSTerm, bindings : Bindings) : MSTerm =
+ let 
+   def subst tm =
+     case findLeftmost (fn (x, y) -> equalTerm? (x, tm)) bindings of
+       | Some (_, y) -> y
+       | _ ->
+         case tm of
+           | Apply  (x, y,   _) -> Apply  (subst x, subst y, isPos)
+           | Record (fields, _) -> Record (map (fn (x, y) -> (x, subst y)) fields, isPos)
+           | _ -> tm
+ in
+ subst template
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+op remove_setf_of_lhs_to_projection_update_of_lhs (lhs : MSTerm, 
+                                                   rhs : MSTerm) 
+ : MSTerm =
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %% setf (foo, foo << {x = v})
+ %%  =>
+ %% setf (foo.x, v)
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  let 
    def makeProjectionUpdate (x, field_id, v) =
      let proj_type = Arrow (termType x, termType v, isPos) in
