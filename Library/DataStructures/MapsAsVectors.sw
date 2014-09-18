@@ -10,8 +10,14 @@ spec
   import Sets
   import /Library/Structures/Data/Maps/MapVec
 
-  % This was added by Jim to the version of this file in the CRASH
-  % library.  I am copying it here as well. -Eric, 11/15/12
+  %% This was added by Jim to the version of this file in the CRASH
+  %% library.  I am copying it here as well. -Eric, 11/15/12
+
+  %% this is used by Setf machinery to identify accessor/setter pairs,
+  %% facilitating rewrites such as:
+  %%   setf (lhs, V_update (lhs, indices, value))
+  %%    =>
+  %%   V_update (lhs, indices, value)
   axiom v_update is [key,a]
     fa(m:Map(key,a),x:key,y:a,z:key)
       V_apply (V_update (m, x, y), z) =
@@ -24,6 +30,16 @@ spec
 
   op [a,b] update : Map(a,b) -> a -> b -> Map(a,b) =
     fn m -> fn x -> fn y -> MapVec.V_update(m,x,y)
+
+  %% this is used by Setf machinery to identify accessor/setter pairs,
+  %% facilitating rewrites such as:
+  %%   setf (lhs, update lhs indices value)
+  %%    =>
+  %%   update lhs indices value
+  axiom update is [key,a]
+    fa (m:Map(key,a), x:key, y:a, z:key)
+      V_eval (update m x y, z) =
+      (if z = x then y else V_eval (m, z))
 
   op [a,b] singletonMap : a -> b -> Map(a,b) =
     fn x -> fn y -> MapVec.V_update(MapVec.V_empty_map,x,y)
