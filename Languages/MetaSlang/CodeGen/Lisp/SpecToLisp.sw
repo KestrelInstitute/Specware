@@ -1376,7 +1376,7 @@ op extract_getter_setters (spc : Spec) : List (String * String) =
  let setf_entries   = findSetfEntries spc in
  let getter_setters = map (fn entry ->
                              (uncurried_name (entry.accesser_name, entry.accesser_arg_counts),
-                              uncurried_name (entry.updater_name,  entry.accesser_arg_counts)))
+                              uncurried_name (entry.updater_name,  entry.updater_arg_counts)))
                           setf_entries
  in
  % let _ = writeLine ("==to lisp==") in
