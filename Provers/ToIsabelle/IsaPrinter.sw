@@ -352,7 +352,7 @@ op isaDirectoryName: String = "Isa"
 
   op SpecCalc.morphismObligations: Morphism * SpecCalc.GlobalContext * Position -> Spec
   %% --------------------------------------------------------------------------------
-  op simplifyTrivialMorphismSpec?: Bool = false
+  op simplifyTrivialMorphismSpec?: Bool = true
 
   op  ppValue : Context -> Value -> Pretty
   def ppValue c value =
@@ -470,7 +470,8 @@ op isaDirectoryName: String = "Isa"
 
   op makeNonTrivTheorem(q: Id, nm: Id, fml: MSTerm, spc: Spec): Option SpecElement =
     let s_fml = simplify spc fml in
-    if equalTerm?(fml, trueTerm) then None
+    % let _ = writeLine(nm^":\n"^printTerm fml^"\n -->\n"^printTerm s_fml) in
+    if trueTerm?(s_fml) then None
       else Some(makeTheorem(Qualified(q, nm), fml))
 
   op getResultExptAndPostCondn(ty: MSType, spc: Spec): Option(MSTerm * MSTerms) =
@@ -503,7 +504,8 @@ op isaDirectoryName: String = "Isa"
           | _ -> extractLambdaVars(tm, f_tm))
      | _ -> (f_tm, [])
 
- op mkRefineOpObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm, spc: Spec)
+ op mkRefineOpObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm,
+                        simplify?: Bool, spc: Spec)
       : MSTerm * MSTerm * MSTerm * MSTerm =
    % let _ = writeLine("Refine op Obligation for:\n"^printTerm (mkTypedTerm(new_dfn, new_ty))^"\n given\n"^printTerm(mkTypedTerm(prev_dfn, prev_ty))) in
    case (getResultExptAndPostCondn(new_ty, spc), getResultExptAndPostCondn(prev_ty, spc)) of
@@ -511,8 +513,13 @@ op isaDirectoryName: String = "Isa"
        let f_tm = mkOp(qid, new_ty) in
        let (val_tm, param_conds) = extractCondsFromDomainTypeOrTerm(new_ty, new_dfn, f_tm) in
        let rhs = mkConj(old_post_condns) in
-       let condn = mkConj(param_conds ++ new_post_condns) in
-       (mkSimpImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
+       %% Adds condition that post-condition value is the result of applying the fn
+       let val_condn = mkEquality(inferType(spc, val_tm), new_result_tm, val_tm) in
+       let condn = mkConj(param_conds ++ new_post_condns ++ [val_condn]) in
+       let simpl_oblig = mkSimpImplies(condn, rhs) in
+       if trueTerm? simpl_oblig
+         then (trueTerm, trueTerm, trueTerm, trueTerm)
+         else (if simplify? then simpl_oblig else mkImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
      | _ -> (trueTerm, trueTerm, trueTerm, trueTerm)
 
  op lambdaBody(tm: MSTerm): MSTerm =
@@ -564,7 +571,7 @@ op isaDirectoryName: String = "Isa"
                          if anyTerm? prev_dfn %|| refine_num = 0
                            then    % Post-condition refinement
                              let thm_name = (if anyTerm? dfn then id else nm)^"__"^"obligation_refine_def"^show refine_num in
-                             let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                             let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, c.simplify?, spc) in
                              % let _ = writeLine("oblig: "^printTerm oblig) in
                              case makeNonTrivTheorem(q, thm_name, oblig, spc) of
                                | None -> (el::elts, ops)
@@ -622,7 +629,7 @@ op isaDirectoryName: String = "Isa"
                             then
                               % If both satisfy anyTerm?, then we are doing post-condition strengthening
                               let thm_name = (if anyTerm? dfn then id1 else nm)^"__"^"obligation_refine_def"^show refine_num in
-                              let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, spc) in
+                              let (oblig, lhs, rhs, condn) = mkRefineOpObligTerm(qid, ty, dfn, prev_ty, prev_dfn, c.simplify?, spc) in
                               if equalTerm?(oblig, trueTerm) then el::elts
                               else
                               % let _ = writeLine("oblig: "^printTerm oblig) in
@@ -845,14 +852,16 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
                      pf : IsaProof ProveMode) : IsaProof StateMode =
  let IsaProof pf_pretty = pf in
  let thesis_pp =
-   prConcat (addSeparator prSpace
-               ([string "\"?thesis"]
-                  ++
-                  (map ppVarWithoutType boundVars)
-                  ++
-                  [string "\""]))
+   if boundVars = [] then string "\"?thesis\""
+      else
+      prConcat (addSeparator prSpace
+                  ([string "\"?thesis"]
+                     ++
+                     (map ppVarWithoutType boundVars)
+                     ++
+                     [string "\""]))
  in
- IsaProof (prLinear 2 [prConcat [string "show ", thesis_pp],
+ IsaProof (prLinear 2 [prConcat [string "show ", thesis_pp, prSpace],
                        pf_pretty])
 
  % chain a sequence of equality proof steps together using transitive
@@ -1034,8 +1043,10 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
           | StringTactic str -> ([], fn _ -> str)
           | AutoTactic pfs ->
             (pfs, (fn pf_names ->
-                   "(auto simp add: "
-                     ^ flatten (intersperse " " pf_names) ^ ")"))
+                   if pf_names = [] then "auto"
+                     else
+                     "(auto simp add: "
+                       ^ flatten (intersperse " " pf_names) ^ ")"))
           | WithTactic (pfs, pf_fun) -> (pfs, pf_fun)
       in
       addForwardStepMulti (c,
@@ -1344,10 +1355,12 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 *)
 
   op  ppSpec (c: Context) (spc: Spec): Pretty =
-    % let _ = writeLine("0:\n"^printSpec spc) in
-    let rel_elements = filter isaElement? spc.elements in
+   % let _ = writeLine("0:\n"^printSpec spc) in
+   assumingNoSideEffects
+   (let rel_elements = filter isaElement? spc.elements in
     let spc = spc << {elements = normalizeSpecElements(rel_elements)} in
     let spc = adjustElementOrder spc in
+    % let _ = writeLine("1:\n"^printSpec spc) in
     let source_of_thy_morphism? = exists? (fn el ->
                                             case el of
                                               | Pragma("proof", prag_str, "end-proof", pos)
@@ -1389,11 +1402,10 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % let _ = writeLine("2:\n"^printSpec spc) in
     let (spc, opaque_type_map) = removeDefsOfOpaqueTypes coercions spc in
     let spc = raiseNamedTypes spc in
-    % let _ = printSpecWithTypesToTerminal spc in
     let (spc, stp_tbl) = addSubtypePredicateParams spc coercions in
     % let _ = printSpecWithTypesToTerminal spc in
     let spc = exploitOverloading coercions false spc in
-    % let _ = printSpecWithTypesToTerminal spc in
+    % let _ = writeLine("3:\n"^printSpec spc) in
     let spc = if addObligations?
                then makeTypeCheckObligationSpec(spc, generateAllSubtypeConstrs? spc,
                                                 if generateObligsForSTPFuns? spc
@@ -1402,6 +1414,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                                 c.thy_name)
 	       else spc
     in
+    % let _ = writeLine("4:\n"^printSpec spc) in
     let spc = exploitOverloading coercions true spc in   % nat(int x - int y)  -->  x - y now we have obligation
     let spc = thyMorphismDefsToTheorems c spc in    % After makeTypeCheckObligationSpec to avoid redundancy
     let spc = emptyTypesToSubtypes spc in
@@ -1410,7 +1423,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     % 'addRefineObligations' and 'addRefinementProofs' is added to the
     % spec, and  is needed. So, we update the context with the spec after
     % those steps have been completed.
-    let cx = c << {spec? = Some spc } in
+    let cx = c << {spec? = Some spc} in
     let spc = addRefinementProofs cx spc in
     % let spc = addRefinementProofs c spc in
     % let _ = writeLine("9:\n"^printSpec spc) in
@@ -1439,7 +1452,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                   ++
 		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
 		  [prString "end"],
-                  []])
+                  []]))
 
   op specHasSorryProof?(spc: Spec): Bool =
     exists? (fn elt ->
@@ -1572,7 +1585,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
         let thy_ext = show(!c.anon_thy_count) in
         let thy_nm = c.thy_name ^ "__" ^ thy_ext in
         let thy_fil_nm = convertToIsaDir(uidToFullPath(getCurrentUID c)) ^ thy_nm ^ ".thy" in
-        (writeLine("ppI0: "^thy_nm^" in "^thy_fil_nm);
+        (%writeLine("ppI0: "^thy_nm^" in "^thy_fil_nm);
          c.anon_thy_count := !c.anon_thy_count + 1;
          if c.recursive?
            then toFile(thy_fil_nm,
@@ -1885,8 +1898,28 @@ removeSubTypes can introduce subtype conditions that require addCoercions
     let def normElts(elts, prev_elts) = 
           case elts of
             | [] -> prev_elts
+              %% Duplicated type decl can be ignored (probably result of spec import in-lining)
+            | (Type(qid1, _)) :: rst | existsSpecElement? (fn el1 -> case el1 of
+                                                                        | Type(qid2, _) | qid1 = qid2 -> true
+                                                                        | TypeDef(qid2, _) | qid1 = qid2 -> true
+                                                                        | _ -> false)
+                                          prev_elts 
+                -> normElts(rst, prev_elts)
+                                          
             | (Op (qid1, false, a)) :: (OpDef (qid2, 0, _, _)) :: rst | qid1 = qid2 ->
               normElts(Op(qid1, true, a) :: rst, prev_elts)
+            | (Op (qid1, false, a)) :: rst | existsSpecElement?
+                                               (fn el1 -> case el1 of
+                                                            | OpDef(qid2, 0, _, _) | qid1 = qid2 -> true
+                                                            | _ -> false)
+                                               rst
+                ->
+              let rst_less_OpDef = filter (fn el1 -> case el1 of
+                                                       | OpDef(qid2, 0, _, _) | qid1 = qid2 -> false
+                                                       | _ -> true)
+                                     elts
+              in
+              normElts(Op(qid1, true, a) :: rst_less_OpDef, prev_elts)
             | (Op (qid1, false, a)) :: rst | existsSpecElement?
                                                (fn el1 -> case el1 of
                                                             | Op(qid2, true, _) | qid1 = qid2 -> true
@@ -1894,7 +1927,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
                                               prev_elts
                 -> normElts(rst, prev_elts)
             | (Import((Translate _, _), _, r_elts, _)) :: rst ->    % Put translated specs in-line
-              normElts (rst, normElts(r_elts, prev_elts))
+              normElts (r_elts ++ rst, prev_elts)
             | x::rst -> normElts(rst, x :: prev_elts)
     in
     reverse(normElts(elts, []))
@@ -2671,19 +2704,7 @@ op opUsesFunctionDef? (c: Context, mainId: QualifiedId, fixity: Fixity, ty: MSTy
                                           | _ -> false)
                    (getArgs lhs) ->
                    true
-                 | _ ->
-                   case fixity of
-                     | Infix _ ->
-                       (foldSubTerms (fn (tm, count) ->
-                                        case tm of
-                                          | Var _ -> count
-                                          | Apply _ -> count
-                                          | Record _ -> count
-                                          | _ -> %let _ = writeLine (printTerm tm) in
-                                            count + 1)
-                          0 lhs)
-                       > 1
-                     | _ -> containsRefToOp?(rhs, mainId) )
+                 | _ -> containsRefToOp?(rhs, mainId) )
             | _ -> true)
          )
 
@@ -2719,7 +2740,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
   else
   let decl_list = 
         if decl?
-          then [[prString "consts ",
+          then [[prString(if def? then "definition " else "consts "),
                 %ppTyVars tvs,
                 ppIdInfo aliases,
                 prString " :: \"",
@@ -2741,7 +2762,7 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            else []
   in
   let infix? = case fixity of Infix _ -> true | _ -> false in
-  let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity]] else []
+  let def_list = if def? then [[ppDef c mainId ty opt_prag term fixity decl?]] else []
   in prLinesCat 0 (decl_list ++ def_list)
 
  op ensureNotCurried(lhs: MSTerm, rhs: MSTerm): MSTerm * MSTerm =
@@ -2750,8 +2771,8 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
        ensureNotCurried(h, mkLambda(mkVarPat v, rhs))
      | _ -> (lhs, rhs)
 
- op  ppDef: Context -> QualifiedId -> MSType -> Option Pragma -> MSTerm -> Fixity -> Pretty
- def ppDef c op_nm ty opt_prag body fixity =
+ def ppDef (c: Context) (op_nm: QualifiedId) (ty: MSType) (opt_prag: Option Pragma) (body: MSTerm)
+           (fixity: Fixity) (decl?: Bool): Pretty =
    let recursive? = containsRefToOp?(body, op_nm) in
    let op_tm = mkFun (Op (op_nm, fixity), ty) in
    let infix? = case fixity of Infix _ -> true | _ -> false in
@@ -2783,7 +2804,20 @@ def ppOpInfo c decl? def? elems opt_prag aliases fixity refine_num dfn =
            let (lhs,rhs) = if tuple? then addExplicitTyping2(c,op_tm,body)
                             else (lhs,rhs)
            in
-           prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
+           if decl?
+             then
+               prBreakCat 2 [[prString "where"]
+                               ++(case findBracketAnnotation opt_prag of
+                                    | Some anot -> [prConcat[prSpace,prString(specwareToIsaString anot), prString ": "]]
+                                    | None -> [prSpace]),
+                             [%prString "   ",
+                              prBreakCat 2 [[prString "\"",
+                                             ppTerm c (Infix(Left,20)) lhs],
+                                            [lengthString(3," \\<equiv> "),
+                                             ppTerm c (Infix(Right,20)) rhs,
+                                             prString "\""]]]]
+           else
+             prBreakCat 2 [[prString "defs ", ppQualifiedId op_nm, prString "_def",
                           case findBracketAnnotation opt_prag of
                             | Some anot -> prConcat[prSpace,prString(specwareToIsaString anot)]
                             | None -> prEmpty,
@@ -4363,6 +4397,8 @@ def ppIdStr id =
   let idarray = explode(id) in
   let def att(id, s) =
         (if id = "" then "e" else id) ^ s
+      def att0(id, s0, s) =
+        if id = "" then s0 else id ^ s
   in
   let id = foldl (fn(id,#?) -> att(id, "_p")
                   | (id,#=) -> att(id, "_eq")
@@ -4381,7 +4417,7 @@ def ppIdStr id =
                   | (id,#$) -> att(id, "_dolr")
                   | (id,#^) -> att(id, "_crt")
                   | (id,#&) -> att(id, "_amp")
-                  | (id,#') -> att(id, "_cqt")
+                  | (id,#') -> att0(id, "e_cqt","'")
                   | (id,#`) -> att(id, "_oqt")
                   | (id,#:) -> att(id, "_cl")
                   | (id,c) -> id ^ show c) "" idarray
@@ -4486,5 +4522,3 @@ op unfoldMonadBinds(spc: Spec): Spec =
   mapSpecLocalOps (unfold, id, id) spc
 
 end-spec
-
-

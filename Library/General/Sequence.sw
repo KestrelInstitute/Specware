@@ -1514,7 +1514,7 @@ proof Isa removeNones_Obligation_the
   apply (case_tac s, simp)
   (* Case 1: Lists *)
   apply (cut_tac l=list in List__removeNones_Obligation_the, clarify)
-  apply (rule_tac a="Seq__Seq__fin l_cqt" in ex1I, simp)
+  apply (rule_tac a="Seq__Seq__fin l'" in ex1I, simp)
   apply (case_tac x, simp, simp)
   apply (case_tac "finite {i. case fun i of None \<Rightarrow> False
                                                   | Some x \<Rightarrow> True}")
@@ -1534,7 +1534,7 @@ proof Isa removeNones_Obligation_the
                                              | Some x \<Rightarrow> True}"
               and t="{i. fun i \<noteq> None}" in subst,
          simp add: fun_eq_iff split: option.split, simp)
-  apply (clarify, rule_tac a="Seq__Seq__inf s_cqt" in ex1I, simp)
+  apply (clarify, rule_tac a="Seq__Seq__inf s'" in ex1I, simp)
   apply (case_tac x, simp, simp)
 end-proof
 
@@ -2181,7 +2181,7 @@ proof Isa permute_Obligation_the
  apply (case_tac x, simp_all)
  apply (drule_tac s=funa in Stream__permute_Obligation_the)
  apply (erule ex1E)
- apply (rule_tac a="Seq__Seq__inf s_cqt" in ex1I, simp_all)
+ apply (rule_tac a="Seq__Seq__inf s'" in ex1I, simp_all)
  apply (case_tac x, simp_all)
 end-proof
 
@@ -2191,8 +2191,8 @@ end-proof
 
 proof Isa permute_Obligation_subtype0
  apply (cases prm, cases s) prefer 3 apply (cases s, simp_all) 
- apply (cases s_cqt, simp_all)
- apply (cases s_cqt, simp_all)
+ apply (cases s', simp_all)
+ apply (cases s', simp_all)
  apply (simp add: Seq__permutation_p_def, clarify)
  apply (drule spec, auto)
 end-proof

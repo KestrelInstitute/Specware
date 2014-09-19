@@ -89,8 +89,8 @@ StateT_spec = StateT qualifying spec
   proof Isa associativity
     by (auto simp add: StateT__monadBind_def Monad__associativity[symmetric]
            split_eta[symmetric, of "\<lambda> x . Monad__monadBind
-                 (case x of (st_cqt, x) => f x st_cqt,
-                  \<lambda>(st_cqt, x). h x st_cqt)"])
+                 (case x of (st', x) => f x st',
+                  \<lambda>(st', x). h x st')"])
   end-proof
 
   proof Isa non_binding_sequence

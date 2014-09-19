@@ -7480,10 +7480,10 @@ theorem C__convertInteger_Obligation_the2:
     \<not> (x \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty)); 
     C__unsignedIntegerType_p ty 
       \<or> C__plainCharsAreUnsigned \<and> ty = C__Type__char\<rbrakk> \<Longrightarrow> 
-   \<exists>!(i_cqt::int). 
-     i_cqt \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty) 
+   \<exists>!(i'::int). 
+     i' \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType ty) 
        \<and> (\<exists>(k::int). 
-            i_cqt = x + k * (C__maxOfIntegerType ty + 1))"
+            i' = x + k * (C__maxOfIntegerType ty + 1))"
    apply (drule C__unsigned_cases2, cases ty, 
           simp_all add: 
                    C__rangeOfIntegerType_def 
@@ -7499,9 +7499,9 @@ lemma C__convertInteger_THE_simp:
      C__unsignedIntegerType_p newty \<or>
         C__plainCharsAreUnsigned \<and> newty = C__Type__char
     \<rbrakk>
-    \<Longrightarrow> (THE i_cqt.
-            i_cqt \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType newty) \<and>
-            (\<exists>k. i_cqt = a + k * (C__maxOfIntegerType newty + 1)))
+    \<Longrightarrow> (THE i'.
+            i' \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType newty) \<and>
+            (\<exists>k. i' = a + k * (C__maxOfIntegerType newty + 1)))
            = a mod (2 ^ (C__typeBits newty))"
    apply (rule the1_equality,
           rule C__convertInteger_Obligation_the2, simp_all)
@@ -7820,9 +7820,9 @@ lemma C__convertInteger_sign_ext_THE_aux:
     i \<notin> Rep_C__FiniteSetInt (C__rangeOfIntegerType newty);
     C__unsignedIntegerType_p newty \<or>
     C__plainCharsAreUnsigned \<and> newty = C__Type__char\<rbrakk>
-    \<Longrightarrow> (THE i_cqt.
-           i_cqt \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType newty) \<and>
-           (\<exists>k. i_cqt = i + k * (C__maxOfIntegerType newty + 1)))
+    \<Longrightarrow> (THE i'.
+           i' \<in> Rep_C__FiniteSetInt (C__rangeOfIntegerType newty) \<and>
+           (\<exists>k. i' = i + k * (C__maxOfIntegerType newty + 1)))
          = i + 2 ^ (C__typeBits newty)"
    apply (rule the1_equality,
           rule C__convertInteger_Obligation_the2, simp_all)

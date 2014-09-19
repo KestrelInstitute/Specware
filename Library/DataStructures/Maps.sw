@@ -829,8 +829,6 @@ Maps_extended = Map qualifying spec
      (domain m1 = domain m2) && (domain m1 = domain m3) => 
      map_project33(map_compose3(m1,m2,m3)) = m3
 
-
-% this forms a triple unnecessarily - how to update a triple in the range of a map?
   theorem update_map_project31 is [A,B,C,D]
      fa(m:Map(A,B*C*D),a:A,b:B)
        a in? domain m =>

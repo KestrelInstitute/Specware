@@ -763,13 +763,13 @@ end-proof
 proof Isa Set__inv_set_fold_helper
   apply(rule Set__induction)
   apply(auto simp add: Set__set_fold1 Set__inv_set_fold_helper_Obligation_subtype)
-  apply(cut_tac c="(g acc__v)" and f=" (\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" in Set__set_fold1)
+  apply(cut_tac c="(g acc__v)" and f=" (\<lambda>(st', x). g (f (inv g st', x)))" in Set__set_fold1)
   apply(simp add: Set__foldable_p_def)
   apply (metis Function__fxy_implies_inverse)
   apply(case_tac "x in? s")
   apply(simp add: Set__set_insert_does_nothing)
   apply(simp add: Set__set_fold2)
-  apply(cut_tac c="(g acc__v)" and f=" (\<lambda>(st_cqt, x). g (f (inv g st_cqt, x)))" in Set__set_fold2)
+  apply(cut_tac c="(g acc__v)" and f=" (\<lambda>(st', x). g (f (inv g st', x)))" in Set__set_fold2)
   defer
   apply(simp)
   apply(simp)
