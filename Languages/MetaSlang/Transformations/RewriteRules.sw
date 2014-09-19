@@ -462,7 +462,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | _ -> false
 
  op hasUnboundVars?(new_term: MSTerm, match_term: MSTerm, opt_condn: Option MSTerm, subst: MSVarSubst): Bool =
-   let boundVars = freeVars match_term in
+   let boundVars = freeVarsAll match_term in
    let boundVars =  case opt_condn of
                       | None -> boundVars
                       | Some condn -> freeVars condn ++ boundVars

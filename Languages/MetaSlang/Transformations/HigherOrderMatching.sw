@@ -618,7 +618,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
       | (M, N as Fun(f2,ty2,_)) | evaluateConstantTerms?
                                 && ~(hasFlexRef? M)
                                 && ~(constantTerm? M)
-                                && freeVarsRec M = [] ->
+                                && freeVarsRec M false = [] ->
         let v = eval(M,context.spc) in
         if fullyReduced? v
           then
@@ -1041,8 +1041,8 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
   def matchRules(context,subst,stack,rules1,rules2,v_subst) = 
       case (rules1,rules2)
         of ((pat1,cond1,body1)::rules1,(pat2,cond2,body2)::rules2) -> 
-	   (case matchPattern(context,pat1,pat2,[],[],[])
-	      of Some (S1,S2) -> 
+	   (case matchPattern(context,pat1,pat2,[],[],[],stack)
+	      of Some (S1,S2,stack) -> 
 		 let stack = insert(substitute(body1,S1),substitute(body2,S2),None,stack) in  % !! Fix None
 		 let stack = insert(substitute(cond1,S1),substitute(cond2,S2),None,stack) in  % !! Fix None
 		 matchRules(context,subst,stack,rules1,rules2,S2++v_subst)
@@ -1058,55 +1058,57 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
   aligning the same pattern matches. *)
 
   op matchPattern(context: Context, pat1: MSPattern, pat2: MSPattern, pairs: List(MSPattern * MSPattern),
-                  S1: MSVarSubst, S2: MSVarSubst)
-      : Option (MSVarSubst * MSVarSubst) = 
+                  S1: MSVarSubst, S2: MSVarSubst, stack: Stack)
+      : Option (MSVarSubst * MSVarSubst * Stack) = 
       case (pat1,pat2)
         of (VarPat((x,ty1), _),VarPat((y,ty2), _)) ->
            let z  = freshBoundVar(context,ty1) in
            let S1 = Cons(((x,ty1),mkVar(z)),S1) in
            let S2 = Cons(((y,ty2),mkVar(z)),S2) in
-           matchPatterns(context,pairs,S1,S2)
+           matchPatterns(context,pairs,S1,S2,stack)
          | (EmbedPat(c1,None,ty1,_),EmbedPat(c2,None,ty2,_)) -> 
            if c1 = c2
-               then matchPatterns(context,pairs,S1,S2)
+               then matchPatterns(context,pairs,S1,S2,stack)
            else None
          | (EmbedPat(c1,Some pat1,ty1,_),EmbedPat(c2,Some pat2,ty2,_)) -> 
            if c1 = c2
-               then matchPattern(context,pat1,pat2,pairs,S1,S2)
+               then matchPattern(context,pat1,pat2,pairs,S1,S2,stack)
            else None
          | (RecordPat(fields1, _),RecordPat(fields2, _)) -> 
            let pairs1 = ListPair.map (fn ((_,p1),(_,p2))-> (p1,p2)) (fields1,fields2) in
-           matchPatterns(context,pairs1 ++ pairs,S1,S2)
-         | (WildPat(ty1, _),WildPat(ty2, _)) -> Some(S1,S2)
+           matchPatterns(context,pairs1 ++ pairs,S1,S2,stack)
+         | (WildPat(ty1, _),WildPat(ty2, _)) -> Some(S1,S2,stack)
          | (StringPat(s1, _),StringPat(s2, _)) -> 
-           if s1 = s2 then matchPatterns(context,pairs,S1,S2) else None
+           if s1 = s2 then matchPatterns(context,pairs,S1,S2,stack) else None
          | (BoolPat(b1, _),BoolPat(b2, _)) -> 
-           if b1 = b2 then matchPatterns(context,pairs,S1,S2) else None
+           if b1 = b2 then matchPatterns(context,pairs,S1,S2,stack) else None
          | (CharPat(c1, _),CharPat(c2, _)) -> 
-           if c1 = c2 then matchPatterns(context,pairs,S1,S2) else None
+           if c1 = c2 then matchPatterns(context,pairs,S1,S2,stack) else None
          | (NatPat(i1, _),NatPat(i2, _)) -> 
-           if i1 = i2 then matchPatterns(context,pairs,S1,S2) else None
+           if i1 = i2 then matchPatterns(context,pairs,S1,S2,stack) else None
 %
 % Possibly generalize the matching to include matching on (t1,t2), assuming t1 can
 % contain meta variables.
 % 
          | (QuotientPat(p1,t1,_,_),QuotientPat(p2,t2,_,_)) -> 
-           if t1 = t2 then matchPatterns(context,pairs,S1,S2) else None
-         | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) -> 
-           if equalTermAlpha?(t1,t2) then matchPatterns(context,pairs,S1,S2) else None
+           if t1 = t2 then matchPattern(context,p1,p2,pairs,S1,S2,stack) else None
+         | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) ->
+           matchPattern(context,p1,p2,pairs,S1,S2,
+                        if equalTermAlpha?(t1,t2) then stack
+                          else insert(t1, t2, None, stack))
          | _ -> 
             case matchIrefutablePattern(context,pat1,S1)
               of None -> None
                | Some S1 -> 
             case matchIrefutablePattern(context,pat2,S2)
-              of Some S2 -> matchPatterns(context,pairs,S1,S2)
+              of Some S2 -> matchPatterns(context,pairs,S1,S2,stack)
                | None -> None
 
-  op matchPatterns(context: Context, pairs: List(MSPattern * MSPattern), S1: MSVarSubst, S2: MSVarSubst)
-     : Option (MSVarSubst * MSVarSubst) = 
+  op matchPatterns(context: Context, pairs: List(MSPattern * MSPattern), S1: MSVarSubst, S2: MSVarSubst, stack: Stack)
+     : Option (MSVarSubst * MSVarSubst * Stack) = 
      case pairs
-       of (p1,p2)::pairs -> matchPattern(context,p1,p2,pairs,S1,S2)
-        | [] -> Some (S1,S2)	   
+       of (p1,p2)::pairs -> matchPattern(context,p1,p2,pairs,S1,S2,stack)
+        | [] -> Some (S1,S2,stack)	   
   op matchIrefutablePattern(context: Context, pat: MSPattern, S: MSVarSubst)
      : Option MSVarSubst = 
      case pat

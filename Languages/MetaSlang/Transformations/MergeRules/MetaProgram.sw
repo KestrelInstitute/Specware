@@ -1733,7 +1733,7 @@ op mkSimpleExists' (vars : MSVars) (tm : MSTerm) : MSTerm =
         % Case expressions.
         | (Apply (Lambda (matches, lamPos),scrutinee,casePos)) ->
             let sVars = freeVars scrutinee in
-            let altVars = map freeVarsMatch matches in
+            let altVars = map (fn m -> freeVarsMatch m false) matches in
             % If a variable appears in the scrutinee or in every branch, then
             % we quantify over it outside the case.
             let outer =

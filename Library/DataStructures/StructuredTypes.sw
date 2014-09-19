@@ -813,9 +813,10 @@ end-proof
                                         else M2F(m,bdefault) x0)
 
   theorem M_iso_F is [a,b]
-    fa(mp:Map(a,b),bdefault:b, S:Set a,n:b) 
-      (M2F(mp, bdefault) = (fn (x : {x:a | x in? S}) -> n)) 
-    = (mp = (F2M S (fn (x : {x:a | x in? S}) -> n)))
+    fa(mp:Map(a,b),bdefault:b, S:Set a,n:a -> b) 
+      (M2F(mp, bdefault) = (fn x | x in? S -> n x)) 
+     = (             mp = (F2M S (fn x | x in? S -> n x)))
+
 
 (* ------- MM2F: homomorphism from Map-of-Map to Function-to-Set --------------- *)
 

@@ -9,6 +9,7 @@
 (defpackage :PathTerm)
 (defpackage :SpecTransform)
 (defpackage :Proof)
+(defpackage :State)
 (defpackage :SWShell)
 (in-package :SWShell)
 
@@ -32,6 +33,7 @@
 				   ("cse" . "Abstract Common Sub-Expressions")
                                    ("rename" . "[old-name new-name ...] Renames variable(s)")
 				   ("pc"   . "Print current expression")
+				   ("pcv"   . "Print current expression verbosely, with detailed typing")
 				   ("proc" . "[unit-term] Restart transformation on processed spec")
 				   ("p" . "[unit-term] Restart transformation on processed spec")
 				   ("trace-rewrites" . "Print trace for individual rewrites")
@@ -39,6 +41,7 @@
 				   ("untrace-rewrites" . "Turn off printing trace for individual rewrites")
 				   ("untrr" . "Turn off printing trace for individual rewrites")
 				   ("undo" . "[n] Undo n levels (1 with no argument)")
+                                   ("redo" . "[n] Redo n levels (1 with no argument) that were previously undone")
 				   ("done" . "Print script and return to normal shell")
 				   ))
 
@@ -178,7 +181,10 @@
 	(push prev-result *transform-commands*)))))
 
 (defun parse-qid (qid-str kind)
-  (let* ((syms (String-Spec::splitStringAt-2 (String-Spec::removeWhiteSpace qid-str) "."))
+  (let* ((str_len (length qid-str))
+         (syms (if (and (> str_len 2) (eql (elt qid-str 0) #\") (eql (elt qid-str (- str_len 1)) #\"))
+                   (list AnnSpec::contextRuleQualifier (subseq qid-str 1 (- str_len 1)))
+                 (String-Spec::splitStringAt-2 (String-Spec::removeWhiteSpace qid-str) ".")))
 	 (len (length syms)))
     (if (= len 1)
 	(let ((uq_qid (MetaSlang::mkUnQualifiedId (first syms))))
@@ -216,7 +222,7 @@
             (let ((new-term (svref (cdar result) 0)))
               (if (Slang-Built-In::slang-term-equals-2 (PathTerm::fromPathTerm *transform-term*)
                                                        (PathTerm::fromPathTerm new-term))
-                  (format t "No effect!")
+                  (format t "No effect!~%~a~%~a" (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))
                   (progn 
                     (push-state `(interpret-command ,command))
                     (setq *transform-term* new-term)
@@ -362,7 +368,7 @@
 
 (defun simplify-command (argstr)
   (let* ((words (and argstr
-		     (String-Spec::removeEmpty (String-Spec::splitStringAt-2 argstr " "))))
+		     (String-Spec::removeEmpty (cl-user::split-arg-string argstr))))
 	 (rules (loop for tl on words by #'cddr
 		      collect (if (null (cdr tl))
                                   nil
@@ -403,7 +409,7 @@
   (let* ((full_input (format nil "~a ~a" command-str argstr))
          (Emacs::*goto-file-position-store?* t)
 	 (Emacs::*goto-file-position-stored* nil)
-         (Specware::stringErrorByte (cons ':|Ref| -1))
+         (Specware::stringErrorByte (State::mkRef -1))
 	 (parser-type-check-output nil)
          (o_script '(:|None|))
          (parsed_input nil))
@@ -480,18 +486,19 @@
                ((done)             (finish-transform-session))
 
                ((proc reproc)
-                (when (and (let ((cl-user::*force-reprocess-of-unit* (eq command 'reproc)))
-                             (cl-user::sw argstr))
-                           (equal *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*))
-                  (let ((val (cdr (Specware::evaluateUnitId cl-user::*last-unit-Id-_loaded*))))
-                    (if (or (null val) (not (eq (car val) ':|Spec|)))
-                        (format t "Not a spec!")
+                (let ((argstr (if (null argstr) "" (cl-user::strip-extraneous argstr))))
+                  (when (and (let ((cl-user::*force-reprocess-of-unit* (eq command 'reproc)))
+                               (cl-user::sw (if (string= argstr "") *transform-specunit-Id* argstr)))
+                             (equal *transform-specunit-Id* cl-user::*last-unit-Id-_loaded*))
+                    (let ((val (cdr (Specware::evaluateUnitId cl-user::*last-unit-Id-_loaded*))))
+                      (if (or (null val) (not (eq (car val) ':|Spec|)))
+                          (format t "Not a spec!")
                         (let ((spc (cdr val)))
                           (setq *redos* nil) ; Don't want to redo commands backed out of
                           (undo-command "all" t)
                           (setq *transform-spec* spc)
                           (format t "Restarting Transformation Shell.")
-                          (redo-command "all")))))
+                          (redo-command "all"))))))
                      (values))
                (t (if (Script::specTransformFn?-2 MetaSlang::unQualified (symbol-name *raw-command*))
                       (apply-simple-spec-command (symbol-name *raw-command*) 'Script::mkSpecTransform 'fn)

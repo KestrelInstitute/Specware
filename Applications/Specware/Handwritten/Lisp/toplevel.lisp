@@ -260,8 +260,22 @@
                                         (first syms))
                                     (second syms)))))
 
+(defun split-arg-string (argstr)
+  (if (null argstr) argstr
+    (let ((strquote_pos (position  '#\" argstr)))
+      (if (null strquote_pos)
+          (String-Spec::splitStringAt-2 argstr " ")
+        (let ((end_strquote_pos (position  '#\" argstr :start (+ strquote_pos 1))))
+          (if (null end_strquote_pos)
+              (progn (warn "Unmatched string quote")
+                     '(nil))
+            (concatenate 'list
+                         (String-Spec::splitStringAt-2 (subseq argstr 0 strquote_pos) " ")
+                         (list (subseq argstr strquote_pos (+ end_strquote_pos 1)))
+                         (split-arg-string (subseq argstr (+ end_strquote_pos 1))))))))))
+
 (defun show (&optional argstr)
-  (let* ((args (toplevel-parse-args argstr))
+  (let* ((args (String-Spec::removeEmpty (split-arg-string argstr)))
          (arg1_len (length (car args)))
          (args (if (null args) (list nil)
                    (if (and (eql (length args) 1)

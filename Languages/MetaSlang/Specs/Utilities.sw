@@ -310,8 +310,14 @@ Utilities qualifying spec
 
  %----------------------
  def freeVars (M) = 
-   let vars = freeVarsRec(M) in
+   let vars = freeVarsRec M true in
    removeDuplicateVars vars
+
+ op freeVarsAll (M: MSTerm): MSVars =
+  %% Include conditions of simple lambdas. E.g. fn (x | p x) -> ...
+   let vars = freeVarsRec M false in
+   removeDuplicateVars vars
+
 
   op inVars?(v: MSVar, vs: MSVars): Bool =
     exists? (fn v1 -> equalVar?(v,v1)) vs
@@ -355,67 +361,68 @@ Utilities qualifying spec
  op [a] deleteVars (vars_to_remove: AVars a, original_vars: AVars a): AVars a =
    foldl (fn (vars, var_to_remove) -> deleteVar(var_to_remove, vars)) original_vars vars_to_remove
 
- op [a] freeVarsRec (M : ATerm a): AVars a =   
+ %% Call with islcs? is you want to ignore the conditions of simple lambdas. E.g. fn (x | p x) -> ...
+ op [a] freeVarsRec (M : ATerm a) (islcs?: Bool): AVars a =   
    case M of
      | Var    (v,      _) -> [v]
 
-     | Apply  (M1, M2, _) -> insertVars (freeVarsRec M1, freeVarsRec M2)
+     | Apply  (M1, M2, _) -> insertVars (freeVarsRec M1 islcs?, freeVarsRec M2 islcs?)
 
-     | Record (fields, _) -> freeVarsList fields
+     | Record (fields, _) -> freeVarsList fields islcs?
 
      | Fun    _           -> []
 
      %% This treats a singleton lambda specially because a singleton case should not be conditional
      %% Maybe there should be a flag for this case
-     | Lambda ([(pat, cond, body)],   _) -> deleteVars(patVars pat, insertVars(freeVarsRec cond, freeVarsRec body))
+     | Lambda ([(pat, cond, body)],   _) | islcs? -> deleteVars(patVars pat, insertVars(freeVarsRec cond islcs?, freeVarsRec body islcs?))
 
-     | Lambda (rules,  _) -> foldl (fn (vars, rl) -> insertVars (freeVarsMatch rl, vars)) [] rules
+     | Lambda (rules,  _) -> foldl (fn (vars, rl) -> insertVars (freeVarsMatch rl islcs?, vars)) [] rules
 
      | Let (decls, M,  _) -> 
        let (pVars, tVars) =
            foldl (fn ((pVars, tVars), (pat, trm)) ->
                   let pvs = patVars pat in
-                  let pbvs = deleteVars(pvs, freeVarsPat pat) in
+                  let pbvs = deleteVars(pvs, freeVarsPat pat islcs?) in
 		  (insertVars (pvs, pVars),
-		   insertVars(pbvs, insertVars (freeVarsRec trm, tVars))))
+		   insertVars(pbvs, insertVars (freeVarsRec trm islcs?, tVars))))
 	         ([], []) 
 		 decls
        in
-       let mVars = freeVarsRec M in
+       let mVars = freeVarsRec M islcs? in
        insertVars (tVars, deleteVars (pVars, mVars))
 
      | LetRec (decls, M, _) -> 
        let pVars = List.map (fn (v, _) -> v) decls in
-       let tVars = freeVarsList decls in
-       let mVars = freeVarsRec M in
+       let tVars = freeVarsList decls islcs? in
+       let mVars = freeVarsRec M islcs? in
        deleteVars (pVars, insertVars (tVars, mVars))
 
-     | Bind (_, vars, M, _) -> deleteVars (vars, freeVarsRec M)
-     | The  (var,     M, _) -> deleteVar  (var,  freeVarsRec M)
+     | Bind (_, vars, M, _) -> deleteVars (vars, freeVarsRec M islcs?)
+     | The  (var,     M, _) -> deleteVar  (var,  freeVarsRec M islcs?)
 
      | IfThenElse (t1, t2, t3, _) -> 
-       insertVars (freeVarsRec t1, insertVars (freeVarsRec t2, freeVarsRec t3))
+       insertVars (freeVarsRec t1 islcs?, insertVars (freeVarsRec t2 islcs?, freeVarsRec t3 islcs?))
 
-     | ApplyN(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
+     | ApplyN(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm islcs?, vars)) [] tms
 
-     | Seq (tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
+     | Seq (tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm islcs?, vars)) [] tms
 
-     | TypedTerm (tm, _, _) -> freeVarsRec tm
+     | TypedTerm (tm, _, _) -> freeVarsRec tm islcs?
 
-     | Pi (_, tm, _) -> freeVarsRec tm
+     | Pi (_, tm, _) -> freeVarsRec tm islcs?
      
-     | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm, vars)) [] tms
+     | And(tms, _) -> foldl (fn (vars,tm) -> insertVars (freeVarsRec tm islcs?, vars)) [] tms
      | _ -> []
 
- op  freeVarsList : [a, b] List(a * ATerm b) -> AVars b
- def freeVarsList tms = 
-   foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm, vars)) [] tms
+ op  freeVarsList : [a, b] List(a * ATerm b) -> Bool -> AVars b
+ def freeVarsList tms islcs? = 
+   foldl (fn (vars,(_,tm)) -> insertVars (freeVarsRec tm islcs?, vars)) [] tms
 
- def freeVarsMatch (pat, cond, body) = 
+ def freeVarsMatch (pat, cond, body) islcs? = 
    let pvars  = patVars     pat  in
-   let cvars  = freeVarsPat pat  in
-   let cvars1 = freeVarsRec cond in
-   let bvars  = freeVarsRec body in
+   let cvars  = freeVarsPat pat islcs?  in
+   let cvars1 = freeVarsRec cond islcs? in
+   let bvars  = freeVarsRec body islcs? in
    deleteVars (pvars, insertVars(cvars1, insertVars (cvars, bvars)))
 
  op [a] patVars(pat: APattern a): AVars a = 
@@ -434,21 +441,21 @@ Utilities qualifying spec
       | RestrictedPat(p,_,_)   -> patVars p
       | TypedPat(p,_,_)        -> patVars p
 
- op [a] freeVarsPat(pat:APattern a): AVars a = 
+ op [a] freeVarsPat(pat:APattern a) (islcs?: Bool): AVars a = 
    case pat
-     of AliasPat(p1,p2,_)      -> insertVars (freeVarsPat p1, freeVarsPat p2)
+     of AliasPat(p1,p2,_)      -> insertVars (freeVarsPat p1 islcs?, freeVarsPat p2 islcs?)
       | VarPat(v,_)            -> []
-      | EmbedPat(_,Some p,_,_) -> freeVarsPat p
+      | EmbedPat(_,Some p,_,_) -> freeVarsPat p islcs?
       | EmbedPat _             -> []
-      | RecordPat(fields,_)    -> foldl (fn (vars,(_,p)) -> insertVars (freeVarsPat p, vars)) [] fields
+      | RecordPat(fields,_)    -> foldl (fn (vars,(_,p)) -> insertVars (freeVarsPat p islcs?, vars)) [] fields
       | WildPat _              -> []
       | StringPat _            -> []
       | BoolPat _              -> []
       | CharPat _              -> []
       | NatPat  _              -> []
-      | QuotientPat(p,_,_,_)   -> freeVarsPat p
-      | RestrictedPat(p,t,_)   -> insertVars(freeVarsRec t, freeVarsPat p)
-      | TypedPat(p,_,_)        -> freeVarsPat p
+      | QuotientPat(p,_,_,_)   -> freeVarsPat p islcs?
+      | RestrictedPat(p,t,_)   -> insertVars(freeVarsRec t islcs?, freeVarsPat p islcs?)
+      | TypedPat(p,_,_)        -> freeVarsPat p islcs?
 
  op  getParams: MSPattern -> MSPatterns
  def getParams(pat:MSPattern) = 

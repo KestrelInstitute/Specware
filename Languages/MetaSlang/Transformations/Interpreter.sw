@@ -1020,7 +1020,7 @@ spec
  op assumeNoSideEffects?: Bool = true
 
  op reduceTerm(term: MSTerm, spc: Spec): MSTerm =
-   if ~(constantTerm? term) && freeVarsRec term = []
+   if ~(constantTerm? term) && freeVarsRec term true = []
      && (if assumeNoSideEffects? then ~(hasSideEffect? term)
            else sideEffectFree term)
      && ~(existsSubTerm dontReduceTerm? term)

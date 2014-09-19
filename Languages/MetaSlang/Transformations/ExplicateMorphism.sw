@@ -69,10 +69,10 @@ op getImportSpec(spc: Spec): Spec =
   case imports of
     | [Import(_, i_spc, _, _)] -> i_spc
     | (i_spc_el as Import(_, i_spc, _, _)) :: r_imports ->
-  let _ = writeLine("Merging imports of\n"^printSpec spc) in
+  % let _ = writeLine("Merging imports of\n"^printSpec spc) in
   let init_spc = setElements(i_spc, [i_spc_el]) in
   let spc = foldl mergeImportElt init_spc r_imports in
-  let _ = writeLine("merged imports:\n"^printSpec spc) in
+  % let _ = writeLine("merged imports:\n"^printSpec spc) in
   spc
 
 op bringToTopOfSpec(elts: SpecElements, needed_ops: QualifiedIds, needed_types: QualifiedIds): SpecElements =

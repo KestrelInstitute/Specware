@@ -379,10 +379,11 @@
            (make      (if (null argstr) (cl-user::make) (cl-user::make argstr)))
            (gen-java  (cl-user::swj    argstr) (values))
            ((obligations oblig obligs)
-            (cl-user::show   (concatenate 'string "obligations "
-                                          (if (null argstr)
-                                              cl-user::*last-unit-Id-_loaded*
-                                              (cl-user::norm-unitid-str argstr))))
+            (cl-user::show (concatenate 'string "\"obligations "
+                                        (if (null argstr)
+                                            cl-user::*last-unit-Id-_loaded*
+                                          (cl-user::norm-unitid-str argstr))
+                                        "\""))
             (values))
            ((gen-obligations gen-oblig gen-obligs)
             (let ((TypeObligations::generateTerminationConditions? nil)

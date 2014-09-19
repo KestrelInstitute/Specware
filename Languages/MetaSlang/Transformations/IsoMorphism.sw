@@ -1330,7 +1330,7 @@ op makeIsoMorphism (spc: Spec, iso_qid_prs: List(QualifiedId * QualifiedId),
             | Record (pairs, pos) -> {
                 types <- return (recordTypes(spc,ctxtType));
                 when (length types ~= length pairs)
-                  {print("zip3err: "^show(length types)^" ~= "^show(length pairs)^"\n"^printTerm trm^ " :\n"^ printType ctxtType);
+                  {print("\nzip3err: "^show(length types)^" ~= "^show(length pairs)^"\n"^printTerm trm^ " :\n"^ printType ctxtType^"\n");
 
                    _ <- mapM (fn (id, tyi) -> print (id^" ")) pairs;
                    print "\n"};
