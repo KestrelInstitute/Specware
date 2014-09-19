@@ -1042,7 +1042,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
       case (rules1,rules2)
         of ((pat1,cond1,body1)::rules1,(pat2,cond2,body2)::rules2) -> 
 	   (case matchPattern(context,pat1,pat2,[],[],[],stack)
-	      of Some (S1,S2,stack) -> 
+	      of Some (S1,S2,stack) ->
 		 let stack = insert(substitute(body1,S1),substitute(body2,S2),None,stack) in  % !! Fix None
 		 let stack = insert(substitute(cond1,S1),substitute(cond2,S2),None,stack) in  % !! Fix None
 		 matchRules(context,subst,stack,rules1,rules2,S2++v_subst)
@@ -1093,9 +1093,13 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
          | (QuotientPat(p1,t1,_,_),QuotientPat(p2,t2,_,_)) -> 
            if t1 = t2 then matchPattern(context,p1,p2,pairs,S1,S2,stack) else None
          | (RestrictedPat(p1,t1,_),RestrictedPat(p2,t2,_)) ->
-           matchPattern(context,p1,p2,pairs,S1,S2,
-                        if equalTermAlpha?(t1,t2) then stack
-                          else insert(t1, t2, None, stack))
+           (case matchPattern(context,p1,p2,pairs,S1,S2,stack) of
+              | None -> None
+              | Some(S1, S2, stack) -> 
+                let t1 = substitute(t1, S1) in
+                let t2 = substitute(t2, S2) in
+                Some(S1, S2, if equalTermAlpha?(t1,t2) then stack
+                             else insert(t1, t2, None, stack)))
          | _ -> 
             case matchIrefutablePattern(context,pat1,S1)
               of None -> None
