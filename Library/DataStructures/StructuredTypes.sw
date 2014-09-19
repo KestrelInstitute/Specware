@@ -1497,6 +1497,10 @@ proof Isa M2F_update
   apply(auto simp add: M2F_def Map__update Map__map_apply_def)
 end-proof
 
+proof Isa M_iso_F_Obligation_exhaustive
+  sorry
+end-proof
+
 proof Isa L2S_uptoL
   apply(simp only: uptoL_def)
   apply(case_tac "pair")
