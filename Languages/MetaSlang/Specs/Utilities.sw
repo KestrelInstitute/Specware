@@ -552,31 +552,14 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
 
  def substituteType2(ty,S,freeNames) = 
    let def subst(s:MSType):MSType = 
-	   case s
-	     of Base(id,tys,a) -> 
-	        Base(id,
-		     List.map subst tys,
-		     a)
-	      | Arrow(d,r,a) -> 
-		Arrow(subst d,
-		      subst r,
-		      a)
-	      | Product(fields,a) -> 
-		Product(List.map (fn (l,s) -> (l,subst s)) fields,
-			a)
-	      | CoProduct(fields,a) -> 
-		CoProduct(List.map (fn (l,s) -> (l,mapOption subst s)) fields,
-			  a)
-	      | Subtype(s,p,a) -> 
-		Subtype(subst s,
-			substitute2(p,S,freeNames),
-			a)
-	      | Quotient(s,p,a) -> 
-		Quotient(subst s,
-			 substitute2(p,S,freeNames),
-			 a)
-	      | TyVar(v,a) -> 
-		TyVar(v,a)
+	   case s of
+             | Base(id,tys,a) | tys ~= [] -> Base(id, map subst tys, a)
+             | Arrow(d,r,a) -> Arrow(subst d, subst r, a)
+             | Product(fields,a) -> Product(List.map (fn (l,s) -> (l,subst s)) fields, a)
+             | CoProduct(fields,a) -> CoProduct(List.map (fn (l,s) -> (l,mapOption subst s)) fields, a)
+             | Subtype(s,p,a) -> Subtype(subst s, substitute2(p,S,freeNames), a)
+             | Quotient(s,p,a) -> Quotient(subst s, substitute2(p,S,freeNames), a)
+             | _ -> s
    in
    subst(ty) 
 
@@ -600,7 +583,7 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
    let
        def subst(M:MSTerm):MSTerm = 
          case M
-	   of Var ((s,_),_) -> 
+	   of Var ((s,ty),a) -> 
 	      (% writeLine ("Looking up "^s);
 	       case lookup(fn (s2,_) -> s = s2,sub) 
 		 of None   -> (%String.writeLine "not found"; 
@@ -609,6 +592,7 @@ op freeTyVarsInTerm(tm: MSTerm): TyVars =
 			       N))
 	    | Apply(M1,M2,a)  -> Apply(subst M1,subst M2, a) 
 	    | Record(fields,a) -> Record(List.map (fn(f,M)-> (f,subst M)) fields, a)
+            | Fun(f as Op _, ty, a) -> Fun(f, substituteType2(ty, sub, freeNames), a)
 	    | Fun _         -> M 
 	    | Lambda(rules,a)  -> Lambda(List.map substRule rules, a)
 	    | Let(decls,M,a)  -> 
@@ -1032,30 +1016,26 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  %% Utilities.mkOr, etc:
 
  op  mkOr: MSTerm * MSTerm -> MSTerm 
- def mkOr(t1,t2) = 
-     case (t1,t2)
-       of (Fun(Bool true,_,_),_) -> t1
-	| (Fun(Bool false,_,_),_) -> t2
-	| (_,Fun(Bool true,_,_)) -> t2
-	| (_,Fun(Bool false,_,_)) -> t1
-	| _ ->
-          if equalTermAlpha?(t1, negateTerm t2)
-            then trueTerm
-          else if equalTermAlpha?(t1, t2)
-            then t2
-          else MS.mkOr(t1,t2)
+ def mkOr(t1,t2) =
+   if boolVal? t1
+     then (if boolVal t1 then trueTerm else reduceTerm1 t2)
+    else if boolVal? t2
+      then (if boolVal t2 && sideEffectFree t1 then trueTerm else reduceTerm1 t1)
+    else if equalTermAlpha?(t1, negateTerm t2) && sideEffectFree t1 && sideEffectFree t2 then trueTerm
+    else if equalTermAlpha?(t1, t2) then t2
+         else MS.mkOr(t1,t2)
 
  op  mkAnd: MSTerm * MSTerm -> MSTerm 
  def mkAnd(t1,t2) =
    let t1_cjs = getConjuncts t1 in
    let t2_cjs = getConjuncts t2 in
-   let t1_cjs = filter (fn cj -> ~(trueTerm? cj || termIn?(t1, t2_cjs))) t1_cjs in
-   let t2_cjs = filter (fn cj -> ~(trueTerm? cj)) t2_cjs in
+   let t1_cjs = filter (fn cj -> ~(trueValTerm? cj || termIn?(t1, t2_cjs))) t1_cjs in
+   let t2_cjs = filter (fn cj -> ~(trueValTerm? cj)) t2_cjs in
    let new_cjs = t1_cjs ++ t2_cjs in
-   if exists? falseTerm? new_cjs
+   if exists? falseValTerm? new_cjs
      then falseTerm
      else if new_cjs = [] then trueTerm
-     else foldr MS.mkAnd (last new_cjs) (butLast new_cjs)
+            else foldr MS.mkAnd (reduceTerm1 (last new_cjs)) (butLast new_cjs)
  
  op  mkSimpConj: MSTerms -> MSTerm
  def mkSimpConj(cjs) =
@@ -1083,28 +1063,27 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
  op  mkSimpImplies: MSTerm * MSTerm -> MSTerm
  def mkSimpImplies (t1, t2) =
-   case t1 of
-     | Fun(Bool true,_,_)  -> t2
-     | Fun(Bool false,_,_) -> trueTerm   % was mkFalse() !!
-     | _ ->
-       case t2 of
-        % We can't optimize (x => true) to true, as one might expect from logic.
-        % The semantics for => dictates that we need to eval t1 (e.g., for side-effects) before looking at t2.  
-         | Fun(Bool true,_,_) | sideEffectFree t1 -> mkTrue() 
-	 | Fun(Bool false,_,_) -> negate t1
-         | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
-           mkSimpImplies(mkAnd(t1,p1), q1)
-	 | _ ->
-           let lhs_cjs = getConjuncts t1 in
-           let sb = map (fn cji -> case cji of
-                                     | Apply(Fun(Not,_,_), neg_cji, _) -> (neg_cji, falseTerm)
-                                     | _ -> (cji, trueTerm))
-                      lhs_cjs
-           in
-           let new_t2 = termSubst(t2, sb) in
-           % let _ = if equalTerm?(new_t2, t2) then () else writeLine(printTerm t2^" -->\n"^printTerm new_t2) in
-           let new_t2 = if equalTermAlpha?(t2, new_t2) then new_t2 else reduceTerm1 new_t2 in
-           mkImplies (t1, new_t2)
+   if boolVal? t1
+     then (if boolVal t1 then reduceTerm1 t2 else trueTerm)
+   else if boolVal? t2
+     then (if boolVal t2
+             then (if sideEffectFree t1 then trueTerm else mkSeq[t2, trueTerm])
+             else negate t1)
+   else case t2 of
+          | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
+            mkSimpImplies(mkAnd(t1,p1), q1)
+          | _ ->
+            let lhs_cjs = getConjuncts t1 in
+            let sb = map (fn cji -> case cji of
+                                      | Apply(Fun(Not,_,_), neg_cji, _) -> (neg_cji, falseTerm)
+                                      | _ -> (cji, trueTerm))
+                       lhs_cjs
+            in
+            let new_t2 = termSubst(t2, sb) in
+            let new_t2 = if equalTermAlpha?(t2, new_t2) then new_t2 else reduceTerm1 new_t2 in
+            if equalTerm?(new_t2, t2)
+              then mkImplies (t1, new_t2)
+            else mkSimpImplies (t1, new_t2)
 
  op  mkSimpIff: MSTerm * MSTerm -> MSTerm
  def mkSimpIff (t1, t2) =
@@ -1357,13 +1336,31 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
  op  stringVals: List(Id * MSTerm) -> List String
  def stringVals = map (fn (_,t) -> stringVal t)
 
- op  boolVal?(t: MSTerm): Bool =
+ op boolVal?(t: MSTerm): Bool =
    case t of
      | Fun(Bool _,_,_) -> true
+     | Apply(Fun(Not, _, _), x, _) -> boolVal? x
+     | Apply(Fun(And, _, _), Record([("1",p),("2",q)],_), _) -> boolVal? p && boolVal? q
+     | Apply(Fun(Or, _, _), Record([("1",p),("2",q)],_), _) -> boolVal? p && boolVal? q
+     | Apply(Fun(Implies, _, _), Record([("1",p),("2",q)],_), _) -> boolVal? p && boolVal? q
+     | Apply(Fun(Iff, _, _), Record([("1",p),("2",q)],_), _) -> boolVal? p && boolVal? q
      | _ -> false
 
- op  boolVal: MSTerm -> Bool
- def boolVal = fn (Fun(Bool s,_,_)) -> s
+ op boolVal(t: MSTerm | boolVal? t): Bool =
+   case t of
+   | Fun(Bool val,_,_) -> val
+   | Apply(Fun(Not, _, _), x, _) -> ~(boolVal x)
+   | Apply(Fun(And, _, _), Record([("1",p),("2",q)],_), _) -> boolVal p && boolVal q
+   | Apply(Fun(Or, _, _), Record([("1",p),("2",q)],_), _)  -> boolVal p || boolVal q
+   | Apply(Fun(Implies, _, _), Record([("1",p),("2",q)],_), _) -> boolVal p => boolVal q
+   | Apply(Fun(Iff, _, _), Record([("1",p),("2",q)],_), _) -> boolVal p = boolVal q
+   %| _ -> false
+
+ op trueValTerm?(t: MSTerm): Bool =
+   boolVal? t && boolVal t
+ op falseValTerm?(t: MSTerm): Bool =
+   boolVal? t && ~(boolVal t)
+
  op  boolVals: List(Id * MSTerm) -> List Bool
  def boolVals = map (fn (_,t) -> boolVal t)
 
@@ -1431,6 +1428,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 		(sideEffectFree t1) 
 	      && (sideEffectFree t2) 
 	      && (sideEffectFree t3)
+        | Bind _ -> true
 	| _ -> false)
 
  op hasSideEffect?(term: MSTerm): Bool =
@@ -1680,6 +1678,10 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
 
  op  tryEvalOne: Spec -> MSTerm -> Option MSTerm
  def tryEvalOne spc term =
+   if boolVal? term
+     then if embed? Fun term then None  % Already ground
+           else Some(mkBool(boolVal term))
+   else
    case term
      of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
         (if spName in? evalSpecNames
@@ -2499,7 +2501,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
                           i+1)
               def mkNonTrivSubtype(n_flds, arg_fld_vars, pred) =
                 let prod = Product(n_flds, a) in
-                if trueTerm? pred then prod
+                if trueValTerm? pred then prod
                   else Subtype(prod, mkLambda(mkRecordPat arg_fld_vars, pred), a)
           in
           let ((n_flds1, arg_fld_vars1, pred1, _), (n_flds2, arg_fld_vars2, pred2, _)) =
