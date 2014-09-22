@@ -104,7 +104,7 @@ op explicateMorphism(spc: Spec | needsMorphismExplication? spc): Morphism =
                            new_spc_elements
   in
   let new_spc = setElements(spc, new_spc_elements) in
-   let _ = writeLine("Flattened spec:\n"^printSpec new_spc) in
+  % let _ = writeLine("Flattened spec:\n"^printSpec new_spc) in
   makeMorphism(import_spc, new_spc, emptyMap, emptyMap, [], None)  
 
 end-spec

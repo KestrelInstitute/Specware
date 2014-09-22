@@ -1447,7 +1447,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                         % If there is no proof, use "auto" to prove
                         % the equality of the rewrite, throwing in
                         % cond_pf as well (why not?)
-                        prove_equalWithTactic (AutoTactic [cond_pf],
+                        % let _ = printRule rule in
+                        prove_equalWithTactic (AutoTactic auto_helpers,
                                                term_without_rr, term,
                                                inferType (context.spc, term))
                       | Some rule_pf ->
