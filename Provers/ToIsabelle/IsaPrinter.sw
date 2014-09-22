@@ -515,8 +515,9 @@ op isaDirectoryName: String = "Isa"
        let rhs = mkConj(old_post_condns) in
        %% Adds condition that post-condition value is the result of applying the fn
        let val_condn = mkEquality(inferType(spc, val_tm), new_result_tm, val_tm) in
-       let condn = mkConj(param_conds ++ new_post_condns ++ [val_condn]) in
-       let simpl_oblig = mkSimpImplies(condn, rhs) in
+       let condn = mkConj(param_conds ++ [mkConj new_post_condns] ++ [val_condn]) in
+       let simpl_oblig = mkSimpImplies(simplify spc condn, simplify spc rhs) in
+       % let _ = writeLine("refined oblig:\n"^printTerm simpl_oblig) in
        if trueTerm? simpl_oblig
          then (trueTerm, trueTerm, trueTerm, trueTerm)
          else (if simplify? then simpl_oblig else mkImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
@@ -1038,6 +1039,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
                [(string "(auto simp only: "), ppQualifiedId qid, string ")"])))
 
     | Proof_Tactic (tactic, P) ->
+      % let _ = writeLine(printProof_Internal pf) in
       let (sub_pfs, sub_pf_fun) =
         case tactic of
           | StringTactic str -> ([], fn _ -> str)
@@ -1200,8 +1202,8 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
 
     | Proof_ImplEq sub_pf ->
       (*
-        have eq_pf: "A = B" (eq_pf)
         assume lhs:A
+        have eq_pf: "A = B" (eq_pf)
         show ?thesis by  (rule subst[OF eq_pf, of "lambda z . z", OF lhs])
         qed
        *)
@@ -1211,19 +1213,19 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
         case matchEquality eq_pred of
           | Some (T,M,N) -> M
       in
-      addForwardStep
-        (c, "eq_pf", ppTermNonNorm c eq_pred,
-         forwardProofBlock (ppProofIntToIsaProof_st (c, [], sub_pf)),
-         (fn eq_pf_name ->
-            (addForwardAssumption
-               (c, "lhs", ppTermNonNorm c pred_lhs,
-                (fn lhs_name ->
-                   showFinalResult
-                     (boundVars,
-                      singleTacticProof
-                        (ruleTactic ("subst[OF "^eq_pf_name^", "
-                                       ^"of \"\\<lambda>z . z\", "
-                                       ^"OF "^lhs_name^"]"))))))))
+      addForwardAssumption
+        (c, "lhs", ppTermNonNorm c pred_lhs,
+         fn lhs_name ->
+           addForwardStep
+             (c, "eq_pf", ppTermNonNorm c eq_pred,
+              forwardProofBlock (ppProofIntToIsaProof_st (c, [], sub_pf)),
+              fn eq_pf_name ->
+                showFinalResult
+                 (boundVars,
+                  singleTacticProof
+                    (ruleTactic ("subst[OF "^eq_pf_name^", "
+                                   ^"of \"\\<lambda>z . z\", "
+                                   ^"OF "^lhs_name^"]")))))
 
     | Proof_MergeRules (tree,post,unfolds,smtArgs) ->
       let spc = getSpec c in
@@ -3915,6 +3917,13 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                                lengthString(5, " \\<Longrightarrow> ")],
                       ppTerm c Top concl]
 
+ %% Like getConjuncts but only flattens one level
+ op [a] getConjuncts1(t: ATerm a): List (ATerm a) =
+   case t of
+     | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_)
+       -> p :: getConjuncts1 q
+     | _ -> [t]
+
  op  parsePropertyTerm: Context -> List String -> MSTerm -> MSTerms * MSTerm
  def parsePropertyTerm c explicit_universals term =
    case term of
@@ -3933,7 +3942,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
          else ([], Bind (Forall, expl_vars, bod, a))
      | Apply(Fun(Implies, _, _),
              Record([("1", lhs), ("2", rhs)], _),_) ->
-       let lhj_cjs = getConjuncts lhs in
+       let lhj_cjs = if c.simplify? then getConjuncts lhs else getConjuncts1 lhs in
        let (rec_cjs, bod) = parsePropertyTerm c explicit_universals rhs in
        (lhj_cjs ++ rec_cjs, bod)
      | _ -> ([], term)
