@@ -124,6 +124,11 @@ Proof qualifying spec
                    prBreak 0 (addSeparator (string ", ")
                                 (map printProofPP pfs)),
                    string "]"]
+      | WithTactic(pfs, _) ->
+        prBreak 2 [string "WithTactic(",
+                   prBreak 0 (addSeparator (string ", ")
+                                (map printProofPP pfs)),
+                   string ")"]
 
   % Pretty-print a ProofInternal
   op printProofPP_Internal (p : ProofInternal) : Pretty =
