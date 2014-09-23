@@ -21,7 +21,7 @@ Proof qualifying spec
 
   % A proof tactic
   type Tactic =
-    % The simplest tactic: a string, to be interpreted by the prover
+    % A string, to be interpreted by the prover
     | StringTactic String
     % The "auto" tactic, possibly augmented by some additional proofs
     | AutoTactic (List Proof)
@@ -36,6 +36,14 @@ Proof qualifying spec
     % Proof_Cut (P, Q, pf1, pf2) takes pf1 : P=>Q and pf2 : P
     % and creates a proof of Q
     | Proof_Cut (MSTerm * MSTerm * ProofInternal * ProofInternal)
+
+    % Proof_ImplIntro (P, Q, nm, pf) takes pf : Q, which can use the
+    % named assumption nm : P, and creates a proof of P=>Q
+    | Proof_ImplIntro (MSTerm * MSTerm * String * ProofInternal)
+
+    % Proof_Assump (nm, P) takes the name nm of an assumption of P and
+    % builds a proof of P
+    | Proof_Assump (String * MSTerm)
 
     % Proof_ForallE (x,T,M,N,pf1,pf2) is a proof of M=[N/x]P from a
     % proof pf1 : fa(x:T)P and a proof pf2 : typePredTermNoSpec(T,N)
@@ -88,6 +96,8 @@ Proof qualifying spec
   op proofPredicate_Internal (p : ProofInternal) : MSTerm =
     case p of
       | Proof_Cut (P, Q, pf1, pf2) -> Q
+      | Proof_ImplIntro (P, Q, nm, pf) -> mkImplies (P,Q)
+      | Proof_Assump (nm, P) -> P
       | Proof_ForallE (x,T,M,N,pf,tp_pf) -> M
       | Proof_EqTrue (M, pf) -> M
       | Proof_Theorem (id, P) -> P
@@ -147,6 +157,11 @@ Proof qualifying spec
         printForm "Cut" [printTermPP P, printTermPP Q,
                          printProofPP_Internal pf1,
                          printProofPP_Internal pf2]
+      | Proof_ImplIntro (P, Q, nm, pf) ->
+        printForm "ImplIntro" [printTermPP P, printTermPP Q,
+                               string nm, printProofPP_Internal pf]
+      | Proof_Assump (nm, P) ->
+        printForm "Assump" [string nm, printTermPP P]
       | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
         printForm "ForallE" [string x, printTypePP T,
                              printTermPP M, printTermPP N,
@@ -200,6 +215,13 @@ Proof qualifying spec
                    instantiateTyVarsInTerm (Q, s),
                    substTypes_ProofInternal (s, pf1),
                    substTypes_ProofInternal (s, pf2))
+      | Proof_ImplIntro (P, Q, nm, pf) ->
+        Proof_ImplIntro (instantiateTyVarsInTerm (P, s),
+                         instantiateTyVarsInTerm (Q, s),
+                         nm,
+                         substTypes_ProofInternal (s, pf))
+      | Proof_Assump (nm, P) ->
+        Proof_Assump (nm, instantiateTyVarsInTerm (P, s))
       | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
         Proof_ForallE (x,
                        instantiateTyVarsInType (T, s),
@@ -253,6 +275,10 @@ Proof qualifying spec
     case pf of
       | Proof_Cut (P, Q, pf1, pf2) ->
         prove_implElim (mapProof_Internal tsp pf1, mapProof_Internal tsp pf2)
+      | Proof_ImplIntro (P, Q, nm, pf) ->
+        prove_implIntro (nm, mapTerm tsp P, mapProof_Internal tsp pf)
+      | Proof_Assump (nm, P) ->
+        prove_assump (nm, mapTerm tsp P)
       | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
         prove_forallElim (mapProof_Internal tsp pf, mapTerm tsp N,
                           mapProof_Internal tsp tp_pf)
@@ -382,6 +408,19 @@ Proof qualifying spec
           return (Proof_Cut (P, Q, p1_int, p2_int))
         | _ -> proofError ("Implication elimination of predicate:\n  " ^ printTerm p1_pred
                              ^ "\nagainst\n  " ^ printTerm p2_pred) }
+
+  % prove_implIntro (nm, P, pf) takes an assumption name nm for P and
+  % a proof pf:Q that possibly uses nm and proves P=>Q
+  op prove_implIntro (nm : String, P : MSTerm, p : Proof) : Proof =
+    { p_int <- p;
+      Q <- return (proofPredicate_Internal p_int);
+      return (Proof_ImplIntro (P, Q, nm, p_int)) }
+
+  % prove_assump (nm, P) takes an assumption name nm for P and builds
+  % a proof of P. Note that this step is only valid if used inside the
+  % proof of prove_implIntro (nm, P, pf).
+  op prove_assump (nm : String, P : MSTerm) : Proof =
+    return (Proof_Assump (nm, P))
 
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
