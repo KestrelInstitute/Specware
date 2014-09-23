@@ -961,6 +961,9 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 %%% Generation of Isabelle proofs from the Proof type
 %%%
 
+% Keep global assumption names distinct from local assumption names
+op mkGlobalAssumpName (nm : String) : String = nm ^ "_"
+
 % Convert a ProofInternal to an IsaProof in StateMode. README: The
 % boundVars are actually the variables that have been fixed in the
 % currrent forward proof block, not the entire set of bound vars.
@@ -986,11 +989,11 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
 
     | Proof_ImplIntro (P,Q,nm,pf) ->
       addForwardAssumptionGlobal
-      (c, nm, ppTermNonNorm c P,
+      (c, mkGlobalAssumpName nm, ppTermNonNorm c P,
        ppProofIntToIsaProof_st (c, [], pf))
 
     | Proof_Assump (nm,P) ->
-      showFinalResult (boundVars, singleTacticProof (ruleTactic nm))
+      showFinalResult (boundVars, singleTacticProof (ruleTactic (mkGlobalAssumpName nm)))
 
     | Proof_ForallE _ ->
       % have forall_elim_pf_main: "\<forall> x1 ... xn . subtype_preds => M" (pf_main)
