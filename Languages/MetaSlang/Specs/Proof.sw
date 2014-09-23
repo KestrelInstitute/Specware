@@ -276,9 +276,17 @@ Proof qualifying spec
       | Proof_Cut (P, Q, pf1, pf2) ->
         prove_implElim (mapProof_Internal tsp pf1, mapProof_Internal tsp pf2)
       | Proof_ImplIntro (P, Q, nm, pf) ->
-        prove_implIntro (nm, mapTerm tsp P, mapProof_Internal tsp pf)
+        % FIXME: this should do proof substitution...
+        prove_implIntro (nm, mapTerm tsp P,
+                         (fn pf' ->
+                            case pf' of
+                              | ErrorOk (Proof_Assump (nm', _)) ->
+                                if nm' = nm then
+                                  mapProof_Internal tsp pf
+                                else
+                                  fail "Internal error: mapProof_Internal got an unexpected input proof for implIntro"))
       | Proof_Assump (nm, P) ->
-        prove_assump (nm, mapTerm tsp P)
+        return (Proof_Assump (nm, mapTerm tsp P))
       | Proof_ForallE (x,T,M,N,pf,tp_pf) ->
         prove_forallElim (mapProof_Internal tsp pf, mapTerm tsp N,
                           mapProof_Internal tsp tp_pf)
@@ -409,18 +417,15 @@ Proof qualifying spec
         | _ -> proofError ("Implication elimination of predicate:\n  " ^ printTerm p1_pred
                              ^ "\nagainst\n  " ^ printTerm p2_pred) }
 
-  % prove_implIntro (nm, P, pf) takes an assumption name nm for P and
-  % a proof pf:Q that possibly uses nm and proves P=>Q
-  op prove_implIntro (nm : String, P : MSTerm, p : Proof) : Proof =
-    { p_int <- p;
+  % prove_implIntro (nm, P, pf) takes an assumption name nm for P, as
+  % well as a function pf that builds a proof of Q from a proof of P,
+  % and creates a proof of P=>Q
+  %
+  % FIXME: should rename the assumption name via alpha-equivalence...
+  op prove_implIntro (nm : String, P : MSTerm, p : Proof -> Proof) : Proof =
+    { p_int <- p (return (Proof_Assump (nm, P)));
       Q <- return (proofPredicate_Internal p_int);
       return (Proof_ImplIntro (P, Q, nm, p_int)) }
-
-  % prove_assump (nm, P) takes an assumption name nm for P and builds
-  % a proof of P. Note that this step is only valid if used inside the
-  % proof of prove_implIntro (nm, P, pf).
-  op prove_assump (nm : String, P : MSTerm) : Proof =
-    return (Proof_Assump (nm, P))
 
   % prove_forallElim (pf, N, tp_pf) takes a proof pf1:fa(x:T)M, a term
   % N of type T, and a proof tp_pf that N does indeed have type T, and
