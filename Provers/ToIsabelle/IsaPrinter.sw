@@ -786,6 +786,19 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
          (4, prConcat [string "\"", prop, string "\""])]),
      rest_pretty])
 
+ % Liek addForwardAssumption, but the assumption has a non-unique,
+ % global name.
+ op addForwardAssumptionGlobal (c : Context, nm: String, prop: Pretty, rest: IsaProof StateMode) : IsaProof StateMode =
+ let rest_pretty = case rest of IsaProof p -> p in
+ IsaProof
+ (prLines 0
+    [blockFill
+       (0,
+        [(0, string "assume "),
+         (2, string (nm ^ ": ")),
+         (4, prConcat [string "\"", prop, string "\""])]),
+     rest_pretty])
+
  % Fix a MetaSlang variable as an Isabelle variable in a proof. The
  % variable is given a unique name, which is passed to the remainder
  % of the proof.
@@ -951,8 +964,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 % Convert a ProofInternal to an IsaProof in StateMode. README: The
 % boundVars are actually the variables that have been fixed in the
 % currrent forward proof block, not the entire set of bound vars.
-op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
-                            aMap: StringMap String, pf: ProofInternal)
+op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
 : IsaProof StateMode =
   case pf of
     | Proof_Cut (P,Q,pf1,pf2) ->
@@ -961,11 +973,11 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
       % show ?thesis by (rule cut_pf1[OF cut_pf2])
       addForwardStep
       (c, "cut_pf1_", ppBigImplication (c, true, P, Q),
-       forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, pf1)),
+       forwardProofBlock (ppProofIntToIsaProof_st (c, [], pf1)),
        (fn pf1_name ->
           addForwardStep
           (c, "cut_pf2_", ppTermNonNorm c P,
-           forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, pf2)),
+           forwardProofBlock (ppProofIntToIsaProof_st (c, [], pf2)),
            (fn pf2_name ->
               showFinalResult
               (boundVars,
@@ -973,20 +985,12 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
                  (ruleTactic (pf1_name ^ "[OF "^ pf2_name ^"]")))))))
 
     | Proof_ImplIntro (P,Q,nm,pf) ->
-      addForwardAssumption
+      addForwardAssumptionGlobal
       (c, nm, ppTermNonNorm c P,
-       fn actual_nm ->
-         ppProofIntToIsaProof_st
-         (c, [], StringMap.insert (aMap, nm, actual_nm), pf))
+       ppProofIntToIsaProof_st (c, [], pf))
 
     | Proof_Assump (nm,P) ->
-      showFinalResult
-      (boundVars,
-       singleTacticProof
-         (case StringMap.find (aMap, nm) of
-            | Some nm' -> ruleTactic nm'
-            | None ->
-              otherTactic ("auto (* proof error: name " ^ nm ^" unbound in proof *)")))
+      showFinalResult (boundVars, singleTacticProof (ruleTactic nm))
 
     | Proof_ForallE _ ->
       % have forall_elim_pf_main: "\<forall> x1 ... xn . subtype_preds => M" (pf_main)
@@ -1004,14 +1008,14 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
             addForwardStep
             (c, "forall_elim_pf" ^ show i ^ "_",
              ppTermNonNorm c (typePredTermNoSpec (T, N)),
-             forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, N_pf)),
+             forwardProofBlock (ppProofIntToIsaProof_st (c, [], N_pf)),
              (fn pf_name ->
                 helper (body_pf, i+1, N::args, pf_name::pf_names)))
           | _ ->
             addForwardStep
             (c, "forall_elim_pf_main_",
              ppTermNonNorm c (getProofPredicate_Internal p),
-             forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, p)),
+             forwardProofBlock (ppProofIntToIsaProof_st (c, [], p)),
              (fn main_pf_name ->
                 showFinalResult
                 (boundVars,
@@ -1039,7 +1043,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
       addForwardStep
       (c, "eq_true_pf_",
        ppTermNonNorm c (mkEquality (boolType, P, mkTrue())),
-       forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, pf_eq_true)),
+       forwardProofBlock (ppProofIntToIsaProof_st (c, [], pf_eq_true)),
        (fn pf_name ->
           showFinalResult
           (boundVars,
@@ -1082,7 +1086,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
                                        ppTermNonNorm c
                                          (getProofPredicate_Internal pf_int),
                                        forwardProofBlock
-                                         (ppProofIntToIsaProof_st (c, [], aMap, pf_int)))
+                                         (ppProofIntToIsaProof_st (c, [], pf_int)))
                                 ) sub_pfs,
                            fn pf_names ->
                              showFinalResult (boundVars,
@@ -1126,7 +1130,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
          % variable names; maybe need to maintain a variable
          % substitution in ppProofIntToIsaProf_st?
          (fixForwardVariables_notfresh
-            (c, vars, ppProofIntToIsaProof_st (c, vars, aMap, sub_pf))),
+            (c, vars, ppProofIntToIsaProof_st (c, vars, sub_pf))),
        (fn subeq_pf_name ->
           let def final_pf helper_name =
             showFinalResult
@@ -1147,7 +1151,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
      let sub_eq_pp = ppTermNonNorm c (getProofPredicate_Internal sub_pf) in
      addForwardStep
      (c, "symeq", sub_eq_pp,
-      forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, sub_pf)),
+      forwardProofBlock (ppProofIntToIsaProof_st (c, [], sub_pf)),
       (fn pf_name ->
          showFinalResult (boundVars,
                           singleTacticProof
@@ -1155,7 +1159,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
 
     | Proof_EqTrans (T, M0, [(sub_pf, M1)]) ->
       let _ = warn "ppProof: found a Proof_EqTrans with just one proof!" in
-      ppProofIntToIsaProof_st (c, [], aMap, sub_pf)
+      ppProofIntToIsaProof_st (c, [], sub_pf)
 
     | Proof_EqTrans (T, M0, pf_term_list) ->
      (*
@@ -1176,7 +1180,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
            prBreak 2 [string "... = ",
                       ppTermNonNormCtx c equalityContext step_rhs]
        in
-       (prop, forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, step_pf)))
+       (prop, forwardProofBlock (ppProofIntToIsaProof_st (c, [], step_pf)))
      in
      let def trans_helper firstp step_lhs pf_term_list =
        case pf_term_list of
@@ -1203,11 +1207,11 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
       *)
       addForwardStep
       (c, "impl_trans2_", ppBigImplication (c, true, Q, R),
-       forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, pf2)),
+       forwardProofBlock (ppProofIntToIsaProof_st (c, [], pf2)),
        (fn pf2_name ->
           addForwardStep
           (c, "impl_trans1_", ppBigImplication (c, true, P, Q),
-           forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, pf1)),
+           forwardProofBlock (ppProofIntToIsaProof_st (c, [], pf1)),
            (fn pf1_name ->
               (addForwardAssumption
                  (c, "impl_lhs", ppTermNonNorm c P,
@@ -1235,7 +1239,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
          fn lhs_name ->
            addForwardStep
              (c, "eq_pf", ppTermNonNorm c eq_pred,
-              forwardProofBlock (ppProofIntToIsaProof_st (c, [], aMap, sub_pf)),
+              forwardProofBlock (ppProofIntToIsaProof_st (c, [], sub_pf)),
               fn eq_pf_name ->
                 showFinalResult
                  (boundVars,
@@ -1261,7 +1265,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars,
         %                      ^ printTerm (getProofPredicate_Internal pf_int)
         %                      ^ ")") in
         isaProofToString (forwardProofBlock
-                            (f (ppProofIntToIsaProof_st (c, [], empty, pf_int))))
+                            (f (ppProofIntToIsaProof_st (c, [], pf_int))))
       | ErrorFail err_str ->
         "by auto (* Error in building proof: " ^ err_str ^ " *)"
 
