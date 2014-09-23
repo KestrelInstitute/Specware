@@ -300,9 +300,14 @@ op definedOp?(spc: Spec) (qid: QualifiedId): Bool =
 op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
   if length(pathTermPath pt) < 2 then true
   else
-  let Some pptm = parentTerm pt in
-  case fromPathTerm pptm of
-    | Apply(Fun(And, _, _),_,_) -> true
+  let Some par_ptm = parentTerm pt in
+  let par_tm = fromPathTerm par_ptm in
+  case par_tm of
+    | Apply(Fun(And, _, _),_,_) ->
+      (let Some gpar_ptm = parentTerm par_ptm in
+       case fromPathTerm gpar_ptm of
+         | IfThenElse(p, _, _, _) -> p ~= par_tm
+         | _ -> true)
     | Lambda _ -> true
     | _ -> false
 

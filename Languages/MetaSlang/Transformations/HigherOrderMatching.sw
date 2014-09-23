@@ -553,13 +553,11 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                printSubst subst)
             else ())
    in
-   case (dereference subst M,N)
-     of 
+   case (dereference subst M,N) of 
 %%
 %% Pi-Pi
 %%
-
-	(Lambda(rules1, _),Lambda(rules2, _)) -> 
+      | (Lambda(rules1, _),Lambda(rules2, _)) -> 
 	if length rules1 = length rules2
 	   then matchRules(context,subst,stack,rules1,rules2,[])
 	else []
@@ -642,6 +640,17 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                  matchPairs (context,subst,insert(b1,b2,OT,insert(e1,e2,Some ty2,stack)))
                    ++ r)
           [] (unifyTypes(context,subst,ty1,ty2,None))
+      %% Essentially general. Test to ensure special case is redundant
+      | (Let([(pat1, e1)], body1, _), Let([(pat2, e2)], body2, _)) ->
+        (case matchPattern(context,pat1,pat2,[],[],[],stack) of
+           | Some (S1,S2,stack) ->
+             let stack = insert(substitute(body1,S1),substitute(body2,S2),None,stack) in  % !! Fix None
+             let stack = insert(e1,e2,None,stack) in  % !! Fix None
+             let results = matchPairs(context,subst,stack) in
+             map (fn (m1,m2,condns) ->
+                    (m1,m2,map (fn t -> invertSubst(t,S2)) condns))
+               results
+           | None -> [])
       | (Bind(qf1,vars1,M,_),Bind(qf2,vars2,N,_)) -> 
 	if ~(qf1 = qf2) || ~(length vars1 = length vars2)
 	   then []
@@ -1059,7 +1068,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 
   op matchPattern(context: Context, pat1: MSPattern, pat2: MSPattern, pairs: List(MSPattern * MSPattern),
                   S1: MSVarSubst, S2: MSVarSubst, stack: Stack)
-      : Option (MSVarSubst * MSVarSubst * Stack) = 
+      : Option (MSVarSubst * MSVarSubst * Stack) =
       case (pat1,pat2)
         of (VarPat((x,ty1), _),VarPat((y,ty2), _)) ->
            let z  = freshBoundVar(context,ty1) in
@@ -1099,7 +1108,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
                 let t1 = substitute(t1, S1) in
                 let t2 = substitute(t2, S2) in
                 Some(S1, S2, if equalTermAlpha?(t1,t2) then stack
-                             else insert(t1, t2, None, stack)))
+                               else insert(t1, t2, None, stack)))
          | _ -> 
             case matchIrefutablePattern(context,pat1,S1)
               of None -> None
