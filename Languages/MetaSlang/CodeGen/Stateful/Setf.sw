@@ -36,7 +36,8 @@ type SetfEntry   = {accesser_name       : OpName,
                     accesser            : MSTerm, 
                     updater             : MSTerm, 
                     update_template     : MSTerm,
-                    setf_template       : MSTerm,
+                    setf_lhs_template   : MSTerm,
+                    setf_rhs_template   : MSTerm,
                     element             : SpecElement}
 
 
@@ -79,7 +80,7 @@ op addSetfOp (spc : Spec) : Spec =
 op make_setf_template (tm     : MSTerm, 
                        vpairs : List (MSTerm * MSTerm), 
                        value  : MSTerm) 
- : Option MSTerm =
+ : Option (MSTerm * MSTerm) =
  let
    def first_arg_of tm = 
      case tm of
@@ -141,7 +142,7 @@ op make_setf_template (tm     : MSTerm,
  in
  case revise tm of
    | Some tm ->
-     Some (makeSetf (tm, value))
+     Some (tm, value)
    | _ ->
      None
 
@@ -270,7 +271,7 @@ op extract_setf_entry (element : SpecElement) : Option SetfEntry =
                            | Some (updater_name, updater, set_args) ->
                              if semantics_of_get_set? (get_args, set_args, vpairs, then_tm, else_tm) then
                                case make_setf_template (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
-                                 | Some setf_template ->
+                                 | Some (setf_lhs_template, setf_rhs_template) ->
                                    % let _ = writeLine ("extractSetfEntry: accesser_name   = " ^ anyToString accesser_name ) in
                                    % let _ = writeLine ("extractSetfEntry: updater_name    = " ^ anyToString updater_name  ) in
                                    % let _ = writeLine ("extractSetfEntry: accesser        = " ^ printTerm accesser        ) in
@@ -293,7 +294,8 @@ op extract_setf_entry (element : SpecElement) : Option SetfEntry =
                                          accesser            = accesser,
                                          updater             = updater,
                                          update_template     = update_template,
-                                         setf_template       = setf_template,
+                                         setf_lhs_template   = setf_lhs_template,
+                                         setf_rhs_template   = setf_rhs_template,
                                          element             = element}
                                  | _ -> 
                                    None

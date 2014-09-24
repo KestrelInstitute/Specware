@@ -1,4 +1,5 @@
-IntroduceSetfs qualifying spec {
+IntroduceSetfs qualifying spec
+{
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% These routines are used in the production of stateful code.
@@ -95,7 +96,6 @@ op reviseUpdate (ms_spec      : Spec,
  in
  case extract_updater_and_args rhs of
    | Some (name_of_updater, updater, updated_container, update_indices, new_value) ->
-
      (case new_value of
         | Apply (Fun (RecordMerge, _, _), 
                  Record ([("1", access_tm),
@@ -140,12 +140,12 @@ op reviseUpdate (ms_spec      : Spec,
               %%  =>
               %%  update (foo.indices,value)
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              remove_setf_of_lhs_to_setf_pair_update_of_lhs (lhs, rhs, setf_pair) 
+              remove_setf_of_lhs_to_setf_pair_update_of_lhs (ms_spec, setf_entries, lhs, rhs, setf_pair) 
             | _ ->
               makeSetf (lhs, rhs))
    | _ -> 
      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     %% setf (foo, foo << {foo,x = v})
+     %% setf (foo, foo << {foo.x = v})
      %%  =>
      %% setf (foo.x, v)
      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -153,9 +153,11 @@ op reviseUpdate (ms_spec      : Spec,
      
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-op remove_setf_of_lhs_to_setf_pair_update_of_lhs (lhs        : MSTerm, 
-                                                  rhs        : MSTerm,
-                                                  setf_entry : SetfEntry)
+op remove_setf_of_lhs_to_setf_pair_update_of_lhs (ms_spec      : Spec, 
+                                                  setf_entries : SetfEntries, 
+                                                  lhs          : MSTerm, 
+                                                  rhs          : MSTerm,
+                                                  setf_entry   : SetfEntry)
  : MSTerm =
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%  setf (foo, update (foo, indices, value))
@@ -163,8 +165,12 @@ op remove_setf_of_lhs_to_setf_pair_update_of_lhs (lhs        : MSTerm,
  %%  update (foo.indices,value)
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  case match_setf_entry (setf_entry.update_template, rhs) of
+
    | Some bindings ->
-     revise_template (setf_entry.setf_template, bindings)
+     let new_lhs  = revise_template (setf_entry.setf_lhs_template, bindings) in
+     let new_rhs  = revise_template (setf_entry.setf_rhs_template, bindings) in
+     makeSetfUpdate ms_spec setf_entries new_lhs new_rhs 
+
    | _ ->
      makeSetf (lhs, rhs)
 
