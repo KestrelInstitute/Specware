@@ -515,7 +515,7 @@ op isaDirectoryName: String = "Isa"
        let rhs = mkConj(old_post_condns) in
        %% Adds condition that post-condition value is the result of applying the fn
        let val_condn = mkEquality(inferType(spc, val_tm), new_result_tm, val_tm) in
-       let condn = mkConj(param_conds ++ [mkConj new_post_condns] ++ [val_condn]) in
+       let condn = mkConj[mkConj(param_conds), mkConj new_post_condns, val_condn] in
        let simpl_oblig = mkSimpImplies(simplify spc condn, simplify spc rhs) in
        % let _ = writeLine("refined oblig:\n"^printTerm simpl_oblig) in
        if trueTerm? simpl_oblig

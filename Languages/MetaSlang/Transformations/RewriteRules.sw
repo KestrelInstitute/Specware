@@ -130,15 +130,14 @@ op freshRuleElements(context: Context, tyVars: List TyVar, freeVars: List (Nat *
      % let _ = (writeLine("freshRule: "); printRule rule) in
      let (freshTerm,freshType,freeVars',tyVMap,tsp) = 
 	 freshRuleElements(context,tyVars,freeVars,name) in
-     rule << 
-     {	lhs  = freshTerm lhs,
-	rhs  = freshTerm rhs,
-	condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
-	freeVars = freeVars',
-	tyVars = StringMap.listItems tyVMap,
-        trans_fn = None,
-        opt_proof = mapOption (mapProof "freshRule" tsp ) opt_proof
-     }
+     rule << {lhs  = freshTerm lhs,
+              rhs  = freshTerm rhs,
+              condition = (case condition of None -> None | Some c -> Some(freshTerm c)),
+              freeVars = freeVars',
+              tyVars = StringMap.listItems tyVMap,
+              trans_fn = None,
+              opt_proof = mapOption (mapProof "freshRule" tsp ) opt_proof
+              }
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -490,7 +489,15 @@ op simpleRwTerm?(t: MSTerm): Bool =
  op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof, tyvars: TyVars)
       : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   assertRulesRec(context, term, desc, rsp, dirn, o_prf, tyvars, [], [], None)
+   let o_prf = case o_prf of
+                 | None ->
+                   (case rsp of
+                      | Context ->
+                        None
+                      | _ -> None)
+                 | Some _ -> o_prf
+   in
+   assertRulesRec(context, term, desc, rsp, dirn, o_prf, tyvars, [], [], None, false)
 
  op assertRulesRec (context   : Context,
                     term      : MSTerm, 
@@ -501,7 +508,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     tyvars    : TyVars,
                     free_vs  : List (Nat * MSType), 
                     subst     : MSVarSubst, 
-                    condition : Option MSTerm)
+                    condition : Option MSTerm,
+                    subterm?  : Bool)   % If we are at a subterm of the original theorem
    : List RewriteRule =
    % let _ = writeLine("assertRules "^show dirn^": "^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
@@ -522,6 +530,8 @@ op simpleRwTerm?(t: MSTerm): Bool =
    in
    let def equalityRules(e1: MSTerm, e2: MSTerm, lr?: Bool): List RewriteRule =
          let (lhs, rhs) = if lr? then (e1, e2) else (e2, e1) in
+         let lhs_ty = inferType(context.spc, lhs) in
+         let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(lhs_ty, lhs, rhs))) o_prf else o_prf in
          let s_lhs = substitute(lhs,subst) in
          let s_rhs = substitute(rhs,subst) in
          let main_rule = freshRule(context,
@@ -569,17 +579,19 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, false, dirn, subst) ->
        equalityRules(e1, e2, false)
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
-       assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,tyvars,free_vs,subst,condition)
-         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,o_prf,tyvars,free_vs,subst,condition)
+       assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,tyvars,free_vs,subst,condition, true)
+         ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,o_prf,tyvars,free_vs,subst,condition, true)
      | Let([(VarPat(v,_),val)],body,pos) ->
-       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,o_prf,tyvars,free_vs,subst,condition)
+       assertRulesRec(context,substitute(body,[(v,val)]),desc,rsp,dirn,o_prf,tyvars,free_vs,subst,condition, subterm?)
      | _ ->
        if trueTerm? fml then []
        else
+         let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(boolType, fml, trueTerm))) o_prf else o_prf in
+         let lhs = substitute(fml,subst) in
          [freshRule(context,
                     {name      = desc,   condition = condition, rule_spec = rsp,
                      opt_proof = o_prf,  sym_proof = false,
-                     lhs       = substitute(fml,subst),    rhs       = trueTerm,
+                     lhs       = lhs,    rhs       = trueTerm,
                      tyVars    = tyvars, freeVars  = free_vs, trans_fn = None})]
 
  op axiomRules (context: Context) ((pt,desc,tyVars,formula,a): Property) (dirn: Direction) (o_prf: Option Proof)
@@ -626,7 +638,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
         writeLine ("Rewrite : "^printTerm lhs^ " ---> "^
                      printTerm rhs));
        case opt_proof of
-         | Some prf -> writeLine(anyToPrettyString prf)
+         | Some prf -> writeLine(printProof prf)
          | None -> ()
      )	
 

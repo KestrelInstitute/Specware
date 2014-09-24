@@ -79,7 +79,7 @@ spec
 
  op  removeUnnecessaryVariable: Spec -> MSTerm -> MSTerm
  def removeUnnecessaryVariable spc term =
-     let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
+     % let _ = if traceSimplify? then writeLine("ruv: "^printTerm term) else () in
      case term
        of Let([(VarPat (v,_),e)],body,_) ->
 	  let noSideEffects = sideEffectFree(e) || embed? Lambda e in
@@ -204,7 +204,7 @@ spec
      let _ = if traceSimplify? then writeLine("s1< "^printTerm term) else () in
      let result =
          case tryEvalOne spc term of
-           | Some cterm -> cterm
+           | Some cterm -> simplifyOne spc cterm
            | _ ->
          case term of
            | Let([], tm, _) -> tm

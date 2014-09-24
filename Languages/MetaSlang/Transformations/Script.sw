@@ -305,10 +305,10 @@ spec
     if length str <= ruleNameMaxLen then str
       else subFromTo(str, 0, ruleNameMaxLen)
 
-  op assertRulesFromPreds(context: Context, tms: MSTerms): List RewriteRule =
+  op assertRulesFromPreds(context: Context, o_prf: Option Proof, tms: MSTerms): List RewriteRule =
     foldr (fn (cj, rules) ->
              % let _ = writeLine("Context Rule: "^ruleName cj) in
-             assertRules(context, cj, ruleName cj, Context, Either, None, freeTyVarsInTerm cj) ++ rules)
+             assertRules(context, cj, ruleName cj, Context, Either, o_prf, freeTyVarsInTerm cj) ++ rules)
       [] tms
 
   op varProjections (ty: MSType, spc: Spec): Option (MS.MSTerm * List (MS.MSVar * Option Id)) =
@@ -338,6 +338,20 @@ spec
      in
      assertRules(context, term, desc, rsp, dirn, o_prf, tyvars)
 
+  op simpProofByAssumpt(asumpt_name: String, tm: MSTerm): Proof =
+    prove_withTactic(WithTactic([prove_assump(asumpt_name, tm)], fn ids -> "(simp add:"^foldl (fn (s, si) -> s^" "^si) "" ids^")"),
+                     tm)
+
+  op simpProofByMetis(asumpt_name: String, tm: MSTerm, sbst: MSVarSubst): Proof =
+    let extra_prfs = if equalTerm?(tm, substitute(tm, sbst)) then []
+                       else [prove_assump("fn_value",
+                                          mkConj(map (fn (v as (_, ty), fn_tm) -> mkEquality(ty, mkVar v, fn_tm)) sbst))]
+    in
+    prove_withTactic(WithTactic(prove_assump(asumpt_name, tm) :: extra_prfs,
+                                fn ids -> "(metis"^foldl (fn (s, si) -> s^" "^si) "" ids^")"),
+                     tm)
+
+
   op addContextRules?: Bool = true
   op contextRulesFromPath((top_term, path): PathTerm, qid: QualifiedId, context: Context, rule_specs: RuleSpecs): List RewriteRule =
     if ~addContextRules? then []
@@ -361,10 +375,12 @@ spec
                                            | Some id1 -> (v, mkApply(mkProject(id1, rng, v.2), result_tm)))
                                     var_projs                                                 
                        in
-                       let new_rules = map (fn (v_tm as (_, ty), fn_tm) ->
-                                              let eq_tm = mkEquality(ty, mkVar v_tm, fn_tm) in
+                       let new_rules = map (fn (v as (_, ty), fn_tm) ->
+                                              let eq_tm = mkEquality(ty, mkVar v, fn_tm) in
                                               assertRulesDirn(context, eq_tm, "fn value", Context, RightToLeft,
-                                                              rule_specs, None, freeTyVarsInTerm eq_tm))
+                                                              rule_specs,
+                                                              Some(simpProofByAssumpt("fn_value", eq_tm)),
+                                                              freeTyVarsInTerm eq_tm))
                                          sbst
                        in
                        % let _ = writeLine("sbst:\n"^anyToString sbst) in
@@ -383,21 +399,32 @@ spec
                 | IfThenElse(p, _, _, _) | i = 2 ->
                   assertRulesDirn(context,negate p,"if else", Context, Either, rule_specs, None, freeTyVarsInTerm p)
                 | Apply(Fun(And,_,_), _,_) | i = 1 ->
-                  let def getSisterConjuncts(pred, path) =
+                  let def getSisterConjuncts(pred, path, i) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
                         case pred of
                           | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
                             (case path of
                              | 1 :: r_path ->
                                let sister_cjs = getConjuncts p in
-                               assertRulesFromPreds(context,
-                                                    map (fn cj -> substitute(cj, sbst))
-                                                      sister_cjs)
-                                 ++ getSisterConjuncts(q, r_path)
+                               let (new_rules, i) =
+                                  List.foldl (fn ((rules, i), cj) ->
+                                           % let _ = writeLine("Context Rule: "^ruleName cj) in
+                                           let cj = substitute(cj, sbst) in
+                                           (assertRules(context, cj, ruleName cj, Context, Either,
+                                                        Some(prove_withTactic(StringTactic(if sbst = []
+                                                                                             then "(simp add: sister_conj_"^show i^")"
+                                                                                             else "(metis new_postcondition)"),
+                                                                              cj)),
+                                                        freeTyVarsInTerm cj)
+                                              ++ rules,
+                                            i + 1))
+                                     ([], i) sister_cjs
+                               in
+                               new_rules ++ getSisterConjuncts(q, r_path, i + length sister_cjs)
                              | _ -> [])
                           | _ -> []
                   in
-                  getSisterConjuncts(tm, path)
+                  getSisterConjuncts(tm, path, 0)
                 | Lambda(rules, _) ->
                   let subterm_on_path = (immediateSubTerms tm)@i in
                   foldl (fn (new_rules, (pat, _, tm_i)) ->
@@ -406,7 +433,9 @@ spec
                                   if guards = [] then []
                                     else let condn = mkConj guards in
                                          assertRulesDirn(context, condn, "lambda guard", Context,
-                                                         Either, rule_specs, None, freeTyVarsInTerm condn)
+                                                         Either, rule_specs,
+                                                         Some(simpProofByMetis("lambda_guard", condn, sbst)),
+                                                         freeTyVarsInTerm condn)
                              else [])
                      [] rules
                 | _ -> []
@@ -418,13 +447,43 @@ spec
              let dom_rls =
                  case dom of
                     | Subtype(_, Lambda([(_, _, pred)], _), _) ->
-                      assertRulesFromPreds(context, getConjuncts pred)
+                      assertRulesFromPreds(context, None, getConjuncts pred)
                     | _ -> []
              in
              dom_rls ++ parameterRules rng
            | _ -> []
     in
     collectRules (top_term, reverse path, [])
+
+  op lambdaGuards(tm: MSTerm): MSTerms =
+    case tm of
+      | Lambda([(p, _, bod)], _) ->
+        getAllPatternGuards p ++ lambdaGuards bod
+      | _ -> []
+
+  op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
+    case top_term of
+      | TypedTerm(fn_tm, ty, _) | last path = 1 ->
+        let guard = ("lambda_guard", mkConj(lambdaGuards fn_tm)) in
+        (case varProjections(ty, spc) of
+           | Some(pred, var_projs as _ :: _)->
+             let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
+             let rng = range_*(spc, ty, true) in
+             let fn_val_tms = List.map (fn (v as (_, v_ty), proj?) ->
+                                     case proj? of
+                                       | None -> mkEquality(v_ty, mkVar v, result_tm)
+                                       | Some id1 -> mkEquality(v_ty, mkVar v, mkApply(mkProject(id1, rng, v_ty), result_tm)))
+                                var_projs                                                 
+             in
+             [guard, ("fn_value", mkConj fn_val_tms), ("new_postcondition", pred)]
+           | _ -> [guard])
+      | _ -> []
+
+  op addContextToProof(prf: Proof, ptm: PathTerm, qid: QualifiedId, spc: Spec): Proof =
+    let named_assumps = namedAssumptions(ptm, qid, spc) in
+    foldr (fn ((nm, assump_tm), prf) ->
+             prove_implIntro(nm, assump_tm, prf))
+      prf named_assumps
 
   op rewriteDebug?: Bool = false
   op rewriteDepth: Nat = 6
@@ -882,11 +941,12 @@ spec
     in
     {when tracing? 
        (print ((printTerm(fromPathTerm typed_path_term)) ^ "\n")); 
-     ((new_typed_term, _), tracing?, info)
+     (new_path_term, tracing?, prf)
        <- interpretPathTerm(spc, script, typed_path_term, qid,
                             tracing?, false,
                             prove_refinesRefl typed_path_term);
-     return(new_typed_term, tracing?, info)}
+     prf_with_context <- return(addContextToProof(prf, new_path_term, qid, spc));
+     return(topTerm new_path_term, tracing?, prf_with_context)}
 
 
   % In the spec `spc`, execute the transformation script `script` on
@@ -966,15 +1026,15 @@ spec
                                 (print ("-- { at "^show qid^" }\n"));
                               (tvs, ty, tm) <- return (unpackFirstTerm opinfo.dfn);
                               % print("Transforming "^show qid^"\n"^printTerm opinfo.dfn);
-                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
+                              (new_tm, tracing?, prf) <- interpretTerm (spc, scr, tm, ty, qid, tracing?);
                               if equalTerm?(new_tm, TypedTerm(tm, ty, noPos))
                                 then let _ = if print_no_change?
                                                then writeLine(show(primaryOpName opinfo)^" not modified.")
                                              else () in
                                      return (spc, tracing?)
                               else {
-                              % _ <- return(printTransformInfoory info);
-                              new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, Some info));
+                              % _ <- return(printTransformInfoory prf);
+                              new_spc <- return(addRefinedDefH(spc, opinfo, new_tm, Some prf));
                              
                                 (let _ = if (tracing? && checkSpecWhenTracing?)
                                            then specOkay? "Spec OK" "ERROR: Ill-formed spec." new_spc
@@ -998,7 +1058,7 @@ spec
                      foldM  (fn (spc, tracing?) -> fn (kind, qid1, tvs, tm, pos) ->  
                              {when tracing? 
                                 (print ((printTerm tm) ^ "\n")); 
-                              (new_tm, tracing?, info) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?);
+                              (new_tm, tracing?, prf) <- interpretTerm (spc, scr, tm, boolType, qid1, tracing?);
                               new_tm <- return(removeTypeWrapper new_tm);
                               new_spc <-
                                 if equalTerm?(tm, new_tm) then return spc
