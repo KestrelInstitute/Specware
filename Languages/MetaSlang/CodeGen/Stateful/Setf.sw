@@ -272,13 +272,14 @@ op extract_setf_entry (element : SpecElement) : Option SetfEntry =
                              if semantics_of_get_set? (get_args, set_args, vpairs, then_tm, else_tm) then
                                case make_setf_template (lhs, vpairs, then_tm) of % then_tm is same as value assigned in updater
                                  | Some (setf_lhs_template, setf_rhs_template) ->
-                                   % let _ = writeLine ("extractSetfEntry: accesser_name   = " ^ anyToString accesser_name ) in
-                                   % let _ = writeLine ("extractSetfEntry: updater_name    = " ^ anyToString updater_name  ) in
-                                   % let _ = writeLine ("extractSetfEntry: accesser        = " ^ printTerm accesser        ) in
-                                   % let _ = writeLine ("extractSetfEntry: updater         = " ^ printTerm updater         ) in
-                                   % let _ = writeLine ("extractSetfEntry: update_template = " ^ printTerm update_template ) in
-                                   % let _ = writeLine ("extractSetfEntry: setf_template   = " ^ printTerm setf_template   ) in
-                                   % let _ = writeLine ("--------------------")                                              in
+                                   % let _ = writeLine ("extractSetfEntry: accesser_name     = " ^ anyToString accesser_name  ) in
+                                   % let _ = writeLine ("extractSetfEntry: updater_name      = " ^ anyToString updater_name   ) in
+                                   % let _ = writeLine ("extractSetfEntry: accesser          = " ^ printTerm accesser         ) in
+                                   % let _ = writeLine ("extractSetfEntry: updater           = " ^ printTerm updater          ) in
+                                   % let _ = writeLine ("extractSetfEntry: update_template   = " ^ printTerm update_template  ) in
+                                   % let _ = writeLine ("extractSetfEntry: setf_lhs_template = " ^ printTerm setf_lhs_template) in
+                                   % let _ = writeLine ("extractSetfEntry: setf_rhs_template = " ^ printTerm setf_rhs_template) in
+                                   % let _ = writeLine ("--------------------")                                                 in
                                    let 
                                      def arg_counts args =
                                        map (fn arg ->
