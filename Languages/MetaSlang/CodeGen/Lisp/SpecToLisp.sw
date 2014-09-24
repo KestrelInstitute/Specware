@@ -824,6 +824,9 @@ op mkLTerm (sp                   : Spec,
        | Seq (terms, _) ->
          mkLSeq (mk_lisp_terms varset terms)
          
+       | TypedTerm (tm, _, _) ->
+         mk_lisp_term varset tm 
+
        | _ -> 
          let pos    = termAnn term             in
          let tm_str = printTerm_OnOneLine term in
