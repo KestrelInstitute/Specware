@@ -531,8 +531,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
    let def equalityRules(e1: MSTerm, e2: MSTerm, lr?: Bool): List RewriteRule =
          let (lhs, rhs) = if lr? then (e1, e2) else (e2, e1) in
          let lhs_ty = inferType(context.spc, lhs) in
-         let _ = writeLine ("WARNING: extendProofAuto needs to be defined...") in 
-        %let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(lhs_ty, lhs, rhs))) o_prf else o_prf in
+         let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(lhs_ty, lhs, rhs))) o_prf else o_prf in
          let s_lhs = substitute(lhs,subst) in
          let s_rhs = substitute(rhs,subst) in
          let main_rule = freshRule(context,
@@ -587,8 +586,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
      | _ ->
        if trueTerm? fml then []
        else
-         let _ = writeLine ("WARNING: extendProofAuto needs to be defined...") in 
-        %let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(boolType, fml, trueTerm))) o_prf else o_prf in
+         let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(boolType, fml, trueTerm))) o_prf else o_prf in
          let lhs = substitute(fml,subst) in
          [freshRule(context,
                     {name      = desc,   condition = condition, rule_spec = rsp,
