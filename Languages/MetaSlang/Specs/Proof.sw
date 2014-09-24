@@ -315,6 +315,8 @@ Proof qualifying spec
       | StringTactic _ -> tactic
       | AutoTactic pfs ->
         AutoTactic (map (mapProof "(recursive mapTactic)" tsp) pfs)
+      | WithTactic(pfs, m) ->
+        WithTactic (map (mapProof "(recursive mapTactic)" tsp) pfs, m)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -487,7 +489,14 @@ Proof qualifying spec
   op prove_withTactic (tactic : Tactic, P : MSTerm) : Proof =
     return (Proof_Tactic (tactic, P))
 
-  % build an equality proof with a tactic
+    op extendProofAuto (tm: MSTerm) (pf: Proof): Proof =
+    case  pf of
+      | ErrorOk(Proof_Tactic _) -> pf
+      | ErrorOk(pf_int) ->
+        prove_withTactic (AutoTactic [pf], tm)
+      | _ -> pf
+
+% build an equality proof with a tactic
   op prove_equalWithTactic (tactic : Tactic, M : MSTerm, N : MSTerm, T : MSType) : Proof =
     return (Proof_Tactic (tactic, mkEquality (T,M,N)))
 
