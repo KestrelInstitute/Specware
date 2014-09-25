@@ -167,9 +167,11 @@ op remove_setf_of_lhs_to_setf_pair_update_of_lhs (ms_spec      : Spec,
  case match_setf_entry (setf_entry.update_template, rhs) of
 
    | Some bindings ->
-     let new_lhs  = revise_template (setf_entry.setf_lhs_template, bindings) in
-     let new_rhs  = revise_template (setf_entry.setf_rhs_template, bindings) in
-     makeSetfUpdate ms_spec setf_entries new_lhs new_rhs 
+     let new_lhs   = revise_template (setf_entry.setf_lhs_template, bindings) in
+     let new_rhs   = revise_template (setf_entry.setf_rhs_template, bindings) in
+     let typed_lhs = TypedTerm (new_lhs, termType new_rhs, noPos) in
+    %makeSetf (typed_lhs, new_rhs)                          %% older -- causes memory leak: setf (x, (a, b, c))
+     makeSetfUpdate ms_spec setf_entries typed_lhs new_rhs  %% newer -- avoids memory leak: setf (x.1, a); setf (x.2, b); setf (x.3, c)
 
    | _ ->
      makeSetf (lhs, rhs)
