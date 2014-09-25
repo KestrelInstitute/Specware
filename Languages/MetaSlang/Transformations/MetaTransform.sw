@@ -295,8 +295,8 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
          | RuleV rs -> Some(ppRuleSpec rs)
          | ProofV prf -> None
          | OptV (Some atv1) -> ppOpt atv1
-         | ListV atvs -> Some(ppConcat[ppString "[", ppSep (ppString ", ") (map ppSome atvs), ppString "]"])
-         | TupleV atvs -> Some(ppConcat[ppString "(", ppSep (ppString ", ") (map ppSome atvs), ppString ")"])
+         | ListV atvs -> Some(ppConcat[ppString "[", ppSep commaBreak (map ppSome atvs), ppString "]"])
+         | TupleV atvs -> Some(ppConcat[ppString "(", ppSep commaBreak (map ppSome atvs), ppString ")"])
          | RecV id_atv_prs  ->
            let flds = mapPartial (fn (id, atvi) ->
                                     case ppIfNotDefault atvi of
