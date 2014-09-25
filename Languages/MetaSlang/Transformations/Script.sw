@@ -224,7 +224,7 @@ spec
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
                               then (axiomRules context p LeftToRight
-                                      (Some (prove_withTheorem (qid, p.4)))) ++ r
+                                      (Some (prove_withTheorem (p.2, p.4)))) ++ r
                             else r)
                      [] (allProperties spc))
       | RightToLeft(qid) ->
@@ -342,14 +342,15 @@ spec
     prove_withTactic(WithTactic([prove_assump(asumpt_name, tm)], fn ids -> "(simp add:"^foldl (fn (s, si) -> s^" "^si) "" ids^")"),
                      tm)
 
-  op simpProofByMetis(asumpt_name: String, tm: MSTerm, sbst: MSVarSubst): Proof =
-    let extra_prfs = if equalTerm?(tm, substitute(tm, sbst)) then []
+  op simpProofByMetis(tm: MSTerm, assump_name: String, assump_tm: MSTerm, sbst: MSVarSubst): Proof =
+    let sub_tm = substitute(tm, sbst) in
+    let extra_prfs = if equalTerm?(tm, sub_tm) then []
                        else [prove_assump("fn_value",
                                           mkConj(map (fn (v as (_, ty), fn_tm) -> mkEquality(ty, mkVar v, fn_tm)) sbst))]
     in
-    prove_withTactic(WithTactic(prove_assump(asumpt_name, tm) :: extra_prfs,
+    prove_withTactic(WithTactic(prove_assump(assump_name, assump_tm) :: extra_prfs,
                                 fn ids -> "(metis"^foldl (fn (s, si) -> s^" "^si) "" ids^")"),
-                     tm)
+                     sub_tm)
 
 
   op addContextRules?: Bool = true
@@ -383,10 +384,24 @@ spec
                                                               freeTyVarsInTerm eq_tm))
                                          sbst
                        in
+                       let guards = lambdaGuards fn_tm in
+                       let guard = mkConj guards in
+                       let guard_rules =
+                           flatten(map (fn g ->
+                                          let g = if some?(matchEquality g) then g
+                                                   else mkEquality(boolType, g, trueTerm)
+                                          in
+                                          assertRulesDirn(context, g, "lambda guard", Context,
+                                                          Either, rule_specs,
+                                                          Some(simpProofByMetis(g, "lambda_guard", guard, [])),
+                                           freeTyVarsInTerm g))
+                                     guards)
+                       in
                        % let _ = writeLine("sbst:\n"^anyToString sbst) in
                        % let _ = List.app printRule (flatten new_rules) in
                        (flatten new_rules)
-                          ++ collectRules(fn_tm, reverse(pathToLambdaBody fn_tm), [])
+                          % ++ collectRules(fn_tm, reverse(pathToLambdaBody fn_tm), [])
+                          ++ guard_rules
                           ++ collectRules(pred, r_path, sbst)
                      | _ -> []
                in
@@ -407,15 +422,12 @@ spec
                              | 1 :: r_path ->
                                let sister_cjs = getConjuncts p in
                                let (new_rules, i) =
-                                  List.foldl (fn ((rules, i), cj) ->
+                                  foldl (fn ((rules, i), cj) ->
                                            % let _ = writeLine("Context Rule: "^ruleName cj) in
-                                           let cj = substitute(cj, sbst) in
-                                           (assertRules(context, cj, ruleName cj, Context, Either,
-                                                        Some(prove_withTactic(StringTactic(if sbst = []
-                                                                                             then "(simp add: sister_conj_"^show i^")"
-                                                                                             else "(metis new_postcondition)"),
-                                                                              cj)),
-                                                        freeTyVarsInTerm cj)
+                                           let sb_cj = substitute(cj, sbst) in
+                                           (assertRules(context, sb_cj, ruleName sb_cj, Context, Either,
+                                                        Some(simpProofByMetis(cj, "new_postcondition", tm, sbst)),
+                                                        freeTyVarsInTerm sb_cj)
                                               ++ rules,
                                             i + 1))
                                      ([], i) sister_cjs
@@ -434,7 +446,7 @@ spec
                                     else let condn = mkConj guards in
                                          assertRulesDirn(context, condn, "lambda guard", Context,
                                                          Either, rule_specs,
-                                                         Some(simpProofByMetis("lambda_guard", condn, sbst)),
+                                                         Some(simpProofByMetis(condn, "lambda_guard", condn, sbst)),
                                                          freeTyVarsInTerm condn)
                              else [])
                      [] rules
@@ -463,7 +475,7 @@ spec
 
   op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
     case top_term of
-      | TypedTerm(fn_tm, ty, _) | last path = 1 ->
+      | TypedTerm(fn_tm, ty, _) | path ~= [] && last path = 1 ->
         let guard = ("lambda_guard", mkConj(lambdaGuards fn_tm)) in
         (case varProjections(ty, spc) of
            | Some(pred, var_projs as _ :: _)->

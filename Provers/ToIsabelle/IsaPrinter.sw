@@ -727,8 +727,15 @@ op ruleTactic (rule : String) : IsaProof ProofTacticMode =
 op ruleTacticPP (rule : Pretty) : IsaProof ProofTacticMode =
  IsaProof (blockFill (0, [(0, string "(rule "), (3, rule), (0, string ") ")]))
 
-op unfoldTactic (rule : Pretty) : IsaProof ProofTacticMode =
-  IsaProof(prConcat [string "(unfold ", rule, prString ", simp)"])
+op unfoldTactic (op_nm: Pretty, rule_suffix: Pretty, refine_num: Nat) : IsaProof ProofTacticMode =
+  if refine_num = 0
+    then
+      IsaProof(prConcat [string "(unfold ", op_nm, rule_suffix, prString ", simp add: lambda_guard_)"])
+    else
+      let i_str = string("__"^show refine_num) in
+      IsaProof(prConcat [string "(unfold ", op_nm, i_str, string "__obligation_refine_def, ",
+                         string "unfold ", op_nm, i_str, rule_suffix,
+                         string ", metis lambda_guard_)"])
 
 op rulesTactic (rules: List String): IsaProof ProofTacticMode =
   IsaProof(string("("^flatten(intersperse ", " (map (fn s -> "rule "^s) rules))^")"))
@@ -1075,26 +1082,37 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
                        ^ flatten (intersperse " " pf_names) ^ ")"))
           | WithTactic (pfs, pf_fun) -> (pfs, pf_fun)
       in
-      addForwardStepMulti (c,
-                           map (fn pf ->
-                                  case pf of
-                                    | ErrorFail err_str ->
-                                      % We put the error message in a comment
-                                      ("tactic_sub_pf",
-                                       string ("True (* sub-proof failed: "
-                                                 ^ err_str ^ " *)"),
-                                       singleTacticProof (otherTactic "simp"))
-                                    | ErrorOk pf_int ->
-                                      ("tactic_sub_pf",
-                                       ppTermNonNorm c
-                                         (getProofPredicate_Internal pf_int),
-                                       forwardProofBlock
-                                         (ppProofIntToIsaProof_st (c, [], pf_int)))
-                                ) sub_pfs,
-                           fn pf_names ->
-                             showFinalResult (boundVars,
-                                              singleTacticProof
-                                                (otherTactic (sub_pf_fun pf_names))))
+      (if forall? (fn pf -> case pf of
+                              | ErrorOk(Proof_Assump _) -> true
+                              | _ -> false)
+            sub_pfs
+         then let assump_names = map (fn ErrorOk(Proof_Assump(nm, _)) ->
+                                        mkGlobalAssumpName nm)
+                                   sub_pfs in
+           showFinalResult (boundVars,
+                            singleTacticProof
+                              (otherTactic (sub_pf_fun assump_names)))
+         else
+           addForwardStepMulti (c,
+                                map (fn pf ->
+                                       case pf of
+                                         | ErrorFail err_str ->
+                                           % We put the error message in a comment
+                                           ("tactic_sub_pf",
+                                            string ("True (* sub-proof failed: "
+                                                      ^ err_str ^ " *)"),
+                                            singleTacticProof (otherTactic "simp"))
+                                         | ErrorOk pf_int ->
+                                           ("tactic_sub_pf",
+                                            ppTermNonNorm c
+                                              (getProofPredicate_Internal pf_int),
+                                            forwardProofBlock
+                                              (ppProofIntToIsaProof_st (c, [], pf_int)))
+                                           ) sub_pfs,
+                                fn pf_names ->
+                                  showFinalResult (boundVars,
+                                                   singleTacticProof
+                                                     (otherTactic (sub_pf_fun pf_names)))))
 
     | Proof_UnfoldDef (T, qid, vars, M, N) ->
       (* show "M=N" by (unfold f_def, simp) *)
@@ -1103,7 +1121,8 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
       showFinalResult
         (boundVars,
          singleTacticProof
-           (unfoldTactic (prConcat [ppQualifiedId qid, string def_suffix])))
+           (unfoldTactic (ppQualifiedId qid, string def_suffix,
+                          (numRefinedDefs (getSpec c) qid) - 1)))
 
     | Proof_EqSubterm (M,N,T,path,sub_pf) ->
       let (vars, M_sub) = fromPathTermWithBindingsAdjust (M, path) in
