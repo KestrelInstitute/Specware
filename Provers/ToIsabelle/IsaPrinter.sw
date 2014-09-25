@@ -1962,7 +1962,7 @@ removeSubTypes can introduce subtype conditions that require addCoercions
               let rst_less_OpDef = filter (fn el1 -> case el1 of
                                                        | OpDef(qid2, 0, _, _) | qid1 = qid2 -> false
                                                        | _ -> true)
-                                     elts
+                                     rst
               in
               normElts(Op(qid1, true, a) :: rst_less_OpDef, prev_elts)
             | (Op (qid1, false, a)) :: rst | existsSpecElement?
