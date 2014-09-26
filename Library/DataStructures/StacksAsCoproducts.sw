@@ -207,27 +207,27 @@ proof isa push_aux_def
   apply(simp)
 end-proof
 
-proof isa top_def_Obligation_subtype
+proof Isa top_def_Obligation_subtype
   apply(cases "stk")
-  apply(auto simp add: empty_stack_def)
+  apply(auto simp add: empty_stack_def empty_stack_p_def)
 end-proof
 
-proof isa top_def
+proof Isa top_def
   apply(auto)
   apply(rule ext)
-  apply(auto simp add: empty_stack_def)
+  apply(auto simp add: empty_stack_def empty_stack_p_def)
   apply(case_tac "x")
   apply(auto)
 end-proof
 
 proof isa pop_def_Obligation_subtype
-  apply(case_tac "stk", auto simp add: empty_stack_def)
+  apply(case_tac "stk", auto simp add: empty_stack_def empty_stack_p_def)
 end-proof
 
 proof isa pop_def
   apply(auto)
   apply(rule ext)
-  apply(auto simp add: empty_stack_def)
+  apply(auto simp add: empty_stack_def empty_stack_p_def)
   apply(case_tac "x")
   apply(auto simp add: listToStack_def)
   apply(cut_tac f="\<lambda> x . stackToList x" and x="Stack" in Function__inverse_f_apply)
@@ -256,4 +256,8 @@ end-proof
 proof isa listToStack_def
   apply(rule ext)
   apply(simp add: listToStack_def)
+end-proof
+
+proof Isa Stack__push_def_Obligation_subtype
+  apply(metis empty_stack_def empty_stack_p_def list.distinct(1) stackToList.simps(1) stackToList_listToStack)
 end-proof
