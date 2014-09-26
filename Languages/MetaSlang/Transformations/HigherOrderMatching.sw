@@ -1260,18 +1260,19 @@ closedTermV detects existence of free variables not included in the argument
     | NotUnify  MSType * MSType 
     | Unify     SubstC 
 
-  op  unifyL : [a] SubstC * MSType * MSType * List(a) * List(a) * List (MSType * MSType) * Option MSTerm *
-                  (SubstC * a * a * a * List(MSType * MSType) * Option MSTerm -> List Unification)
-                  ->  List Unification
-  def unifyL(subst,ty1,ty2,l1,l2,equals,optTerm,unify): List Unification = 
+  op [a] unifyL(subst: SubstC, ty1: MSType, ty2: MSType, l1: List a, l2: List a,
+                equals: List(MSType * MSType), optTerm: Option MSTerm,
+                unify_p: (SubstC * a * a * a * List(MSType * MSType)
+                      * Option MSTerm -> List Unification))
+    : List Unification = 
       case (l1,l2)
         of ([],[]) -> [Unify subst]
          | (e1::l1,e2::l2) -> 
 	   (foldr (fn (r1,r) ->
                      case r1 of
-                       | Unify subst -> unifyL(subst,ty1,ty2,l1,l2,equals,None,unify) ++ r
+                       | Unify subst -> unifyL(subst,ty1,ty2,l1,l2,equals,None,unify_p) ++ r
                        | notUnify -> Cons(notUnify, r) )
-              []  (unify(subst,e1,e2,e1,equals,optTerm)))
+              []  (unify_p(subst,e1,e2,e1,equals,optTerm)))
          | _ -> [NotUnify(ty1,ty2)]
 
   op  occursRec : SubstC * String * MSType -> Bool
@@ -1309,7 +1310,7 @@ closedTermV detects existence of free variables not included in the argument
     let main_unifiers = unifyTypes(context, subst, ty1, ty2, optTerm) in
     case OT of
       | Some ctxt_ty2 | conditionalMatch? main_unifiers && ~(equalType?(ty2, ctxt_ty2)) ->
-        % let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
+         let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
         unifyTypes(context, subst, ty1, ctxt_ty2, optTerm) ++ main_unifiers
       | _ -> main_unifiers
 
@@ -1341,9 +1342,9 @@ closedTermV detects existence of free variables not included in the argument
 			then unify(subst,s1,s2,s1,equals,None)
 		      else [NotUnify(ty1,ty2)])
 	def unify(subst,ty1:MSType,ty2:MSType,ty1_orig:MSType,equals,optTerm: Option MSTerm): List Unification =
-              % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
-              %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
-              % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
+            % let _ = writeLine("Matching "^printType ty1^" --> "^printType(dereferenceType(subst,ty1))^" with \n"
+            %                 ^printType ty2^" --> "^printType(dereferenceType(subst,ty2))) in
+            % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
             if equivType? spc (ty1, ty2)
               then [Unify subst]
             else
@@ -1364,7 +1365,11 @@ closedTermV detects existence of free variables not included in the argument
 		    then unify(subst,ty1,ty2,ty1,equals,None)
 		 else [NotUnify (ty1,ty2)]
 	       | (Subtype(ty1,p1,_),Subtype(ty2,p2,_))
-                   | equalTermStruct?(p1,p2) || equalTermStruct?(dereferenceAll subst p1, dereferenceAll subst p2) ->
+                   | equalTermStruct?(p1,p2)
+                      || (let dr_p1 = dereferenceAll subst p1 in
+                          let dr_p2 = dereferenceAll subst p2 in
+                          equalTermStruct?(dr_p1, dr_p2)
+                            || equalTermAlpha?(dr_p1, dr_p2)) ->
                  unify(subst,ty1,ty2,ty1_orig,equals,optTerm)
 	       | (bty1 as Base(id1,ts1,_), bty2 as Base(id2,ts2,_)) -> 
 		 if exists? (fn p -> p = (bty1,bty2)) equals
@@ -1754,5 +1759,5 @@ participating in unification we introduce freeze and thaw operations.
      in
      mapTerm(fn tm -> tm,doThaw,fn p -> p) term
 
-endspec
+end-spec
 

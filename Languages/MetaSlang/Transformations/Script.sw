@@ -405,7 +405,7 @@ spec
                           ++ collectRules(pred, r_path, sbst)
                      | _ -> []
                in
-               param_rls ++ post_condn_rules)
+               post_condn_rules ++ param_rls)
             | _ ->
           let rls =
               case tm of
@@ -470,7 +470,7 @@ spec
   op lambdaGuards(tm: MSTerm): MSTerms =
     case tm of
       | Lambda([(p, _, bod)], _) ->
-        getAllPatternGuards p ++ lambdaGuards bod
+        flatten (map getConjuncts (getAllPatternGuards p)) ++ lambdaGuards bod
       | _ -> []
 
   op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
