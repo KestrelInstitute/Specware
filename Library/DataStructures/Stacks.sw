@@ -34,6 +34,12 @@ op [a] empty_stack? (s:Stack a) : Bool = (s = empty_stack)
 
 type NE_Stack a = {s: Stack a | ~(empty_stack? s)}
 
+theorem empty_stack?_empty? is [a]
+  fa(l:List a) empty_stack?(listToStack l) = empty? l
+
+theorem empty?_empty_stack? is [a]
+  fa(s:Stack a) empty?(stackToList s) = empty_stack? s
+
 %% TODO Add op to test for non-emptiness (and a type for non-empty
 %% stacks, which we could use below)?  Also add an op for the length
 %% of a stack?  I guess such new ops would have to be given
@@ -134,81 +140,87 @@ theorem stack_induction is [a]
 %% Proofs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-proof isa push_aux_append
+proof Isa push_aux_append
   apply(induct "x" arbitrary: stk)
   apply(simp)
   apply(simp)
 end-proof
 
-proof isa pop_Obligation_subtype
-  apply(auto simp add: List__nonEmpty_p_def Stack__empty_stack_def)
-  by (metis Function__fxy_implies_inverse Stack__listToStack_def Stack__stackToList_subtype_constr) 
+proof Isa pop_Obligation_subtype
+  by (metis List__nonEmpty_p_def Stack__empty_p_empty_stack_p null_rec(2))
 end-proof
 
-proof isa top_Obligation_subtype
+proof Isa top_Obligation_subtype
   by (rule Stack__pop_Obligation_subtype)
 end-proof
 
-proof isa listToStack_equal_listToStack
+proof Isa listToStack_equal_listToStack
   by (metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
 end-proof
 
-proof isa push_not_empty
+proof Isa empty_stack?_empty?
+  by (simp add: List__empty_p__def Stack__empty_stack_def Stack__empty_stack_p_def Stack__listToStack_equal_listToStack)
+end-proof
+
+proof Isa empty?_empty_stack?
+  by (metis Function__inverse_f_apply Stack__empty_stack_p_empty_p Stack__listToStack_def Stack__stackToList_subtype_constr)
+end-proof
+
+proof Isa push_Obligation_subtype
+  by (simp add: Stack__empty_stack_p_empty_p)
+end-proof
+
+proof Isa push_not_empty
   apply(simp add: Stack__push_def Stack__empty_stack_def Stack__listToStack_equal_listToStack)
 end-proof
 
-proof isa top_push_Obligation_subtype
+proof Isa top_push_Obligation_subtype
   by (auto simp add: Stack__push_not_empty)
 end-proof
 
-proof isa top_push
+proof Isa top_push
   apply(simp add: Stack__top_def Stack__push_def Stack__listToStack_def)
-  by (metis Function__f_inverse_apply list.sel Stack__stackToList_subtype_constr)
+  by (metis Function__f_inverse_apply list.sel(1) Stack__stackToList_subtype_constr)
 end-proof
 
-proof isa pop_push_Obligation_subtype
+proof Isa pop_push_Obligation_subtype
   by (rule Stack__top_push_Obligation_subtype)
 end-proof
 
-proof isa pop_push
+proof Isa pop_push
   apply(simp add: Stack__push_def Stack__pop_def)
-  by (metis Function__f_inverse_apply Function__inverse_f_apply Stack__listToStack_def Stack__stackToList_subtype_constr list.sel)
+  by (metis Function__f_inverse_apply Function__inverse_f_apply Stack__listToStack_def Stack__stackToList_subtype_constr list.sel(3))
 end-proof
 
-proof Isa Stack__stackToList_of_pop_Obligation_subtype
-  apply(simp add: Stack__empty_stack_p_def)
+proof Isa stackToList_of_pop_Obligation_subtype
+  by (rule Stack__top_Obligation_subtype)
 end-proof
 
-proof Isa Stack__stackToList_of_pop_Obligation_subtype0
-  apply(simp add: Stack__empty_stack_p_def)
-  apply(auto)
-  apply(metis List__nonEmpty_p_def Stack__top_Obligation_subtype)
-end-proof
-
-proof Isa Stack__stackToList_of_pop
+proof Isa stackToList_of_pop
   apply(simp add: Stack__pop_def)
   apply( metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
 end-proof
 
-proof Isa Stack__length_of_stackToList_non_zero
-  apply(metis List__nonEmpty_p_def Stack__stackToList_of_pop_Obligation_subtype0 length_0_conv)
+proof Isa length_of_stackToList_non_zero
+  apply(metis List__nonEmpty_p_def Stack__stackToList_of_pop_Obligation_subtype length_0_conv)
 end-proof
 
-proof Isa Stack__stack_cases
+proof Isa stack_cases
   apply(case_tac "Stack__stackToList stk")
-  apply (metis List__nonEmpty_p_def Stack__top_Obligation_subtype)
+  apply (metis Stack__equal_stackToList_empty)
   apply(simp add: Stack__push_def Stack__listToStack_def)
-  apply(metis Function__f_inverse_apply Function__inverse_f_apply Stack__stackToList_subtype_constr)
+  by (metis Function__inverse_f_apply Stack__empty_p_empty_stack_p Stack__stackToList_of_pop 
+            Stack__stackToList_subtype_constr list.sel(3) null_rec(1))
 end-proof
 
-proof Isa Stack__stack_induction_helper
+proof Isa stack_induction_helper
   apply(induct lst)
   apply(simp add: Stack__empty_stack_def)
   apply(auto simp add: Stack__push_def)
   apply(metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
 end-proof
 
-proof Isa Stack__stack_induction
+proof Isa stack_induction
   apply(cut_tac p=p and lst="Stack__stackToList stk" in Stack__stack_induction_helper)
   apply(simp)
   apply(simp)
@@ -216,16 +228,11 @@ proof Isa Stack__stack_induction
   apply(metis Function__inverse_f_apply Stack__stackToList_subtype_constr)
 end-proof
 
-proof Isa Stack__equal_stackToList_empty
-  apply(rule Bool__bool_equal_split)
-  apply(auto)
-  apply(simp add: Stack__empty_stack_def)
-  apply (metis List__nonEmpty_p_def Stack__empty_stack_def Stack__top_Obligation_subtype)
-  apply(simp add: Stack__empty_stack_def)
-  apply (metis Function__f_inverse_apply Stack__listToStack_def Stack__stackToList_subtype_constr)
+proof Isa equal_stackToList_empty
+  by (simp add: Stack__empty_stack_p_def[symmetric] null_def[symmetric] Stack__empty_p_empty_stack_p)
 end-proof
 
-proof Isa Stack__pushl_alt_def
+proof Isa pushl_alt_def
   apply(induct lst)
   apply (metis Stack__push_aux.simps(1) Stack__pushl.simps(1) rev.simps(1))
   apply (metis Stack__push_aux.simps(1) Stack__push_aux.simps(2) Stack__push_aux_append Stack__pushl.simps(2) rev.simps(2))
