@@ -147,23 +147,23 @@ proof isa push_aux_def
 end-proof
 
 proof isa top_def_Obligation_subtype
-  apply(auto simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def)
+  apply(auto simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def StacksAsLists__empty_stack_p_def)
 end-proof
 
 proof isa top_def
   apply(rule ext)  
   apply(case_tac stk)  
-  apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__stackToList_def)
+  apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__stackToList_def StacksAsLists__empty_stack_p_def)
 end-proof
 
 proof isa pop_def_Obligation_subtype
-  apply(auto simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def)
+  apply(auto simp add: StacksAsLists__stackToList_def StacksAsLists__empty_stack_def StacksAsLists__empty_stack_p_def)
 end-proof
 
 proof isa pop_def
   apply(auto)
   apply(rule ext)
-  apply(auto simp add: StacksAsLists__empty_stack_def)
+  apply(auto simp add: StacksAsLists__empty_stack_def StacksAsLists__empty_stack_p_def)
   apply(case_tac "x")
   apply(auto simp add: StacksAsLists__listToStack_def)
   apply(cut_tac f="\<lambda> x . StacksAsLists__stackToList x" and x="Stack" in Function__inverse_f_apply)
@@ -190,3 +190,7 @@ end-proof
 %%   apply(rule ext)
 %%   apply(simp add: StacksAsLists__listToStack_def)
 %% end-proof
+
+proof Isa Stack__push_def_Obligation_subtype
+  apply(metis StacksAsLists__empty_stack_def StacksAsLists__empty_stack_p_def StacksAsLists__stackToList_def StacksAsLists__stackToList_listToStack list.distinct(2))
+end-proof
