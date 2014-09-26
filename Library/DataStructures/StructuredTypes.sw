@@ -362,7 +362,7 @@ end-proof
 %  type Stack a = | empty_stack | push (a*Stack a)
 
   op [a] Stack2L(stk:Stack a): List a =
-    if stk = empty_stack then Nil
+    if empty_stack? stk then Nil
     else Cons(top stk, Stack2L(pop stk))
 
 % constructor-based inductive def
@@ -385,11 +385,11 @@ end-proof
 
 % I added the non-emptiness condition back in.
   theorem Stack2L_tail is [a]
-    fa(stk:Stack a) ~(stk = empty_stack) => (Stack2L(pop(stk)) = tail(Stack2L(stk)))
+    fa(stk:NE_Stack a) Stack2L(pop(stk)) = tail(Stack2L(stk))
 
 % I added the non-emptiness condition.
   theorem Stack2L_head is [a]
-    fa(stk:Stack a) ~(stk = empty_stack) => (top(stk) = head(Stack2L(stk)))
+    fa(stk:NE_Stack a) top(stk) = head(Stack2L(stk))
 
   op [a] L2Stack(lst:List a): Stack a =
     case lst of
@@ -1027,9 +1027,13 @@ proof isa Stack2L_push_aux
   apply(simp)
 end-proof
 
+proof Isa Stack2L_mtStack
+  by (metis Stack2L.elims Stack__empty_stack_p_def)
+end-proof
+
 proof isa Stack2L_Cons
   apply(cut_tac stk="Stack__push(y, stk)" in Stack2L.simps)
-  apply(simp add: Stack__top_push Stack__pop_push Stack__push_not_empty del: Stack2L.simps)
+  apply(simp add: Stack__empty_stack_p_def Stack__pop_push Stack__push_not_empty Stack__top_push)
 end-proof
 
 proof isa Stack2L_concat
@@ -1474,13 +1478,13 @@ end-proof
 
 proof Isa Stack2L_of_L2Stack
   apply(induct lst)
-  apply(simp)
+  apply(simp add: Stack__empty_stack_p_def)
   apply(simp del: Stack2L.simps add: Stack2L_Cons)
 end-proof
 
 proof Isa L2Stack_of_Stack2L
   apply(induct rule: Stack__stack_induction)
-  apply(simp)
+  apply(metis L2Stack.simps(1) Stack2L_mtStack)
   apply(auto simp del: Stack2L.simps simp add: Stack2L_Cons)
 end-proof
 
