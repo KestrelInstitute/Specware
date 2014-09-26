@@ -32,6 +32,8 @@ op [a] empty_stack : Stack a = listToStack []
 
 op [a] empty_stack? (s:Stack a) : Bool = (s = empty_stack)
 
+type NE_Stack a = {s: Stack a | ~(empty_stack? s)}
+
 %% TODO Add op to test for non-emptiness (and a type for non-empty
 %% stacks, which we could use below)?  Also add an op for the length
 %% of a stack?  I guess such new ops would have to be given
@@ -39,15 +41,15 @@ op [a] empty_stack? (s:Stack a) : Bool = (s = empty_stack)
 
 %% The push operation on Stacks corresponds to Cons on lists:
 
-op [a] push (elt:a, stk:Stack a) : Stack a = listToStack (Cons(elt, stackToList stk))
+op [a] push (elt:a, stk:Stack a) : NE_Stack a = listToStack (Cons(elt, stackToList stk))
 
 %% The pop operation on Stacks corresponds to tail on lists:
 
-op [a] pop (stk:Stack a | ~(stk = empty_stack)): Stack a = listToStack (tail (stackToList stk))
+op [a] pop (stk:NE_Stack a): Stack a = listToStack (tail (stackToList stk))
 
 %% The top operation on Stacks corresponds to head on lists:
 
-op [a] top (stk:Stack a | ~(stk = empty_stack)): a = head (stackToList stk)
+op [a] top (stk:NE_Stack a): a = head (stackToList stk)
 
 theorem push_not_empty is [a]
   fa(elt:a, stk: Stack a) (push(elt, stk) = empty_stack) = false
@@ -85,17 +87,16 @@ theorem pushl_alt_def is [a]
   pushl (lst, stk) = push_aux(reverse(lst),stk)
 
 theorem stackToList_of_pop is [a]
-  fa(stk: Stack a)
-    ~(empty_stack? stk) => (stackToList (pop stk) = tail (stackToList stk))
+  fa(stk: NE_Stack a)
+     stackToList (pop stk) = tail (stackToList stk)
 
 theorem length_of_stackToList_non_zero is [a]
-  fa(stk: Stack a)
-    ~(empty_stack? stk) => ~(length (stackToList stk) = 0)
+  fa(stk: NE_Stack a)
+    ~(length (stackToList stk) = 0)
 
 theorem equal_stackToList_empty is [a]
   fa(stk: Stack a)
     (stackToList stk = []) = (stk = empty_stack)
-
 
 %% TODO This is what I want to do for pushl but cannot, due to an Isabelle translator bug (JIRA issue SPEC-41):
 %% %% Push the elements of lst onto stk (earlier elements of lst go shallower in the stack):

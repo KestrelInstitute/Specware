@@ -22,18 +22,20 @@ spec
   op [a] empty_stack? (stk:VStack a) : Bool = 
           (stk.2 = 0)
 
+ type NE_VStack a = {s: VStack a | ~(empty_stack? s)}
+
 (* Note: push destructively assigns a to the next free position in the vector
          and bumps up the index.  *)
-  op [a] push (elt:a, stk:VStack a): VStack a =
+  op [a] push (elt:a, stk:VStack a): NE_VStack a =
     (MapVec.V_update(stk.1, stk.2, elt), stk.2 + 1)
 
 (*  precondition: the stack is non-empty *)
-  op [a] top (stk:VStack a | ~(empty_stack? stk)): a =
+  op [a] top (stk:NE_VStack a): a =
      MapVec.V_eval(stk.1, (stk.2 - 1):Nat) %TODO, without the Nat here, Specware assumes Int, which seems wrong and leads to an Isabelle error
 
 (* Note: pop does not remove the element from the map.  It just adjusts the stack
    height so that the top element becomes invalid.  *)
-  op [a] pop (stk:VStack a | ~(empty_stack? stk)): VStack a = (stk.1, (stk.2) - 1)
+  op [a] pop (stk:NE_VStack a): VStack a = (stk.1, (stk.2) - 1)
 
   op [a] pushl (lst:List a, stk:VStack a): VStack a = 
      push_aux(lst,stk)       % first arg was reverse(lst)
@@ -61,4 +63,4 @@ end-spec
 
 
 %% This morphism was previously called "S"
-M = morphism Stacks -> StacksAsVectors {Stack +-> VStack}
+M = morphism Stacks -> StacksAsVectors {Stack +-> VStack, NE_Stack +-> NE_VStack}
