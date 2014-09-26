@@ -174,17 +174,9 @@ proof Isa push_not_empty
   apply(simp add: Stack__push_def Stack__empty_stack_def Stack__listToStack_equal_listToStack)
 end-proof
 
-proof Isa top_push_Obligation_subtype
-  by (auto simp add: Stack__push_not_empty)
-end-proof
-
 proof Isa top_push
   apply(simp add: Stack__top_def Stack__push_def Stack__listToStack_def)
   by (metis Function__f_inverse_apply list.sel(1) Stack__stackToList_subtype_constr)
-end-proof
-
-proof Isa pop_push_Obligation_subtype
-  by (rule Stack__top_push_Obligation_subtype)
 end-proof
 
 proof Isa pop_push
