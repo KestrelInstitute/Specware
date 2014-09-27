@@ -8,6 +8,16 @@ spec
 
 import CModel
 
+(* Writing a value via an object designator succeeds
+if the object designates an object of the same type as the value. *)
+
+theorem writeDesignatedObject is
+  fa (state:State, obj:ObjectDesignator, val:Value)
+    (ex (val0:Value)
+      readObject state obj = Some val0 &&
+      typeOfValue val0 = typeOfValue val) =>
+    writeObject state obj val ~= None
+
 (* Read value from object pointed to by pointer value. *)
 
 op readPointed (state:State) (pval:PointerValue): Option Value =
@@ -53,7 +63,8 @@ writePointedM can be reduced to writePointed as follows. *)
 
 theorem writePointedM_writePointed is
   fa (state:State, pval:PointerValue, val:Value)
-    pointsToObject? state pval =>
+    pointsToObject? state pval &&
+    typeOfValue pval = pointer (typeOfValue val) =>
     writePointedM pval val state =
       Some (unwrap (writePointed state pval val), ())
 
@@ -62,12 +73,19 @@ theorem writePointedM_writePointed is
 op valueExpr (val:Value): Expression =
   fn state:State -> Some (value val)
 
+theorem convertLA_valueExpr is
+  fa (val:Value)
+    convertLA (valueExpr val) = valueExpr val
+
+theorem convertA_valueExpr is
+  fa (val:Value)
+    convertA (valueExpr val) = valueExpr val
+
 (* Lift writePointedM to expressions. *)
 
 op writePointedE (pe:Expression) (e:Expression): Monad () =
   fn state:State ->
-    case (convertArray (convertLvalue pe) state,
-          convertArray (convertLvalue e) state) of
+    case (convertLA pe state, convertLA e state) of
     | (Some (value pval), Some (value val)) ->
       if pointerValue? pval
       then writePointedM pval val state

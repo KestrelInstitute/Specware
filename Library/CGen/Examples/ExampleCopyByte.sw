@@ -9,7 +9,7 @@ The derived C function should be
   }
 
 This is a very simple example, but we want to work out in detail
-how that C code can be derived from a higher-level requirements specification
+how that C code can be derived from a higher-level requirement specification
 with proofs. *)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -30,14 +30,14 @@ For this example, the Specware function has the signature
 
   copy (src: UcharValue) (dst: (PointerValue | toType? uchar)): Monad ()
 
-The only requirements that the shallow embedding permits us to express
+The only kind of requirements that the shallow embedding permits us to express
 concern the pre/post-condition behavior of the function
 (a deep embedding is needed to express additional kinds of constraints,
 as in pop-refinement).
 
 The C compiler enforces the pre-conditions
 expressed by the types of the arguments.
-Additional pre-conditions are be captured by the following predicate,
+Additional pre-conditions are captured by the following predicate,
 defined on the same arguments of the function and on the state:
 - dst points to an unsigned char object in the state;
 - the state is well-formed.
@@ -73,7 +73,7 @@ op post? (src: UcharValue)
 (* We can capture the requirements on our target C function
 as a predicate over Specware functions with the type of the target C function.
 The requirements are that
-if the function is run with arguments and in a state
+if the function is run in a state with arguments
 that satisfy the pre-condition,
 then the function must terminate without error
 and the new state must satisfy the post-condition

@@ -496,52 +496,43 @@ type ExpressionResult =
 
 type Expression = State -> Option ExpressionResult
 
-(* For most operators, a non-array object designator yielded by a sub-expression
-is converted to the value stored in the designated object [ISO 6.3.2.1/2].
-The following op performs this conversion
-if the expression yields a non-array object designator,
-otherwise it leaves the expression result unchanged;
-so this op can be always safely applied
-to sub-expressions of operands that require this conversion. *)
+(* Lvalue conversion [ISO 6.3.2.1/2] is applied to all operands
+except the operands of sizeof, unary &, ++, --,
+and the left operand of the . and assignment operators.
+Lvalue conversion applies to non-array expressions.
+The array conversion specified in [ISO 6.3.2.1/3]
+is applied to array expressions that are not operands of sizeof and unary &.
+Therefore:
+- operands of sizeof and unary & undergo no lvalue or array conversion;
+- the left operand of the . and assignment operators undergo array conversion;
+- all other operands undergo both lvalue and array conversion.
+The following op convertLA applies both lvalue and array conversion,
+while the following op convertA applies array convertion only. *)
 
-op convertLvalue (e:Expression): Expression =
+op convertLA (e:Expression): Expression =
   fn state:State ->
     case e state of
     | Some (object obj) ->
       (case readObject state obj of
-      | Some val ->
-        if embed? array val
-        then e state % no conversion for arrays
-        else Some (value val) % convert
-      | None -> None) % error, no object designated
-    | Some (value _) -> e state % no conversion if already a value
-    | Nonve -> None % propagate error
+      | Some (array (ty, _)) -> % array conversion:
+        Some (value (nnpointer (ty, (object (subscript (obj, 0))))))
+      | Some val -> % lvalue conversion:
+        Some (value val)
+      | None -> None)
+    | Some (value val) -> Some (value val)
+    | None -> None
 
-(* For most operators, an array sub-expression
-is converted to a pointer to the first element of the array [ISO 6.3.2.1/3].
-The following op performs this conversion
-if the expression yields an object designator to an array,
-otherwise it leaves the expression result unchanged;
-so this op can be always safely applied
-to sub-expressions of operands that require this conversion.
-Note that, when constructing well-formed C expressions,
-the following op is never applied to an expression that yields an array value
-(vs. an array object designator);
-this claim should be proved formally. *)
-
-op convertArray (e:Expression): Expression =
+op convertA (e:Expression): Expression =
   fn state:State ->
     case e state of
     | Some (object obj) ->
       (case readObject state obj of
-      | Some val ->
-        (case typeOfValue val of
-        | array (ty, _) ->
-          Some (value (nnpointer (ty, (object (subscript (obj, 0)))))) % convert
-        | _ -> e state) % no conversion for non-arrays
-      | None -> None) % error, no object is designated
-    | Some (value _) -> e state % this case should never occur
-    | None -> None % propagate error
+      | Some (array (ty, _)) -> % array conversion:
+        Some (value (nnpointer (ty, (object (subscript (obj, 0))))))
+      | Some _ -> Some (object obj) % no value conversion
+      | None -> None)
+    | Some (value val) -> Some (value val)
+    | None -> None
 
 (* A constant expression [ISO 6.5.1/3] yields a value,
 which is independent from the state. *)
@@ -589,7 +580,7 @@ provided that the pointer points to an object. *)
 
 op STAR (e:Expression): Expression =
   fn state:State ->
-    case convertArray (convertLvalue e) state of
+    case convertLA e state of
     | Some (value (nnpointer (_, object obj))) -> Some (object obj)
     | _ -> None
 
@@ -600,7 +591,7 @@ in the same order as in [ISO]. *)
 
 op liftUnary (OP: Value -> Option Value) (e:Expression): Expression =
   fn state:State ->
-    case convertArray (convertLvalue e) state of
+    case convertLA e state of
     | Some (value val) ->
       (case OP val of
       | Some val' -> Some (value val')
@@ -623,8 +614,7 @@ op liftBinary
   (OP: Value -> Value -> Option Value) (e1:Expression) (e2:Expression)
   : Expression =
   fn state:State ->
-    case (convertArray (convertLvalue e1) state,
-          convertArray (convertLvalue e2) state) of
+    case (convertLA e1 state, convertLA e2 state) of
     | (Some (value val1), Some (value val2)) ->
       (case OP val1 val2 of
       | Some val -> Some (value val)
@@ -643,8 +633,7 @@ op REM (e1:Expression, e2:Expression) infixl 50: Expression =
 op ADD (e1:Expression, e2:Expression) infixl 49: Expression =
   % we cannot use liftBinary here because ADD_v depends on the state
   fn state:State ->
-    case (convertArray (convertLvalue e1) state,
-          convertArray (convertLvalue e2) state) of
+    case (convertLA e1 state, convertLA e2 state) of
     | (Some (value val1), Some (value val2)) ->
       (case ADD_v state val1 val2 of
       | Some val -> Some (value val)
@@ -654,8 +643,7 @@ op ADD (e1:Expression, e2:Expression) infixl 49: Expression =
 op SUB (e1:Expression, e2:Expression) infixl 49: Expression =
   % we cannot use liftBinary here because SUB_v depends on the state
   fn state:State ->
-    case (convertArray (convertLvalue e1) state,
-          convertArray (convertLvalue e2) state) of
+    case (convertLA e1 state, convertLA e2 state) of
     | (Some (value val1), Some (value val2)) ->
       (case SUB_v state val1 val2 of
       | Some val -> Some (value val)
@@ -705,11 +693,11 @@ op SBS (e1:Expression) (e2:Expression) infixl 51: Expression =
 
 op LAND (e1:Expression, e2:Expression) infixl 42: Expression =
   fn state:State ->
-    case convertArray (convertLvalue e1) state of
+    case convertLA e1 state of
     | Some (value val1) ->
       if scalarValue? val1 then
         if zeroScalar? val1 then Some (value int0)
-        else case convertArray (convertLvalue e2) state of
+        else case convertLA e2 state of
              | Some (value val2) ->
                if scalarValue? val2 then
                  if zeroScalar? val2 then Some (value int0)
@@ -721,11 +709,11 @@ op LAND (e1:Expression, e2:Expression) infixl 42: Expression =
 
 op LOR (e1:Expression, e2:Expression) infixl 41: Expression =
   fn state:State ->
-    case convertArray (convertLvalue e1) state of
+    case convertLA e1 state of
     | Some (value val1) ->
       if scalarValue? val1 then
         if ~(zeroScalar? val1) then Some (value int1)
-        else case convertArray (convertLvalue e2) state of
+        else case convertLA e2 state of
              | Some (value val2) ->
                if scalarValue? val2 then
                  if zeroScalar? val2 then Some (value int0)
@@ -772,7 +760,7 @@ in terms of simple assignments [ISO 6.5.16.1]. *)
 
 op ASG (e1:Expression, e2:Expression) infixl 40: Statement () =
   fn state:State ->
-    case (convertArray e1 state, convertArray (convertLvalue e2) state) of
+    case (convertA e1 state, convertLA e2 state) of
     | (Some (object obj), Some (value val)) ->
       (case writeObject state obj val of
       | Some state' -> Some (state', ())
@@ -837,7 +825,7 @@ op DECL (ty:Type) (id:Identifier) (e:Expression): Statement () =
     if scalarType? ty &&
        state.automatic ~= [] &&
        id nin? domain (last state.automatic)
-    then case convertArray (convertLvalue e) state of
+    then case convertLA e state of
          | Some (value val) ->
            if typeOfValue val = ty
            then let newFrame = update (last state.automatic) id val in
@@ -899,7 +887,7 @@ op eval_arguments (eargs: List Expression): Monad (List Value) =
     case eargs of
     | [] -> Some (state, [])
     | earg::eargs ->
-      (case convertArray (convertLvalue earg) state of
+      (case convertLA earg state of
       | Some (value arg) ->
         (case eval_arguments eargs state of
         | Some (_, args) -> Some (state, arg::args)
@@ -915,7 +903,7 @@ op ASGCALL
   (lvalue:Expression) (f': WrappedFunction Value) (eargs: List Expression)
   : Statement () =
  {assignee <- (fn state:State ->
-                case convertArray lvalue state of
+                case convertA lvalue state of
                 | Some result -> Some (state, result)
                 | None -> None);
   case assignee of
@@ -961,7 +949,7 @@ Specware ops that represent void C functions simply terminate execution. *)
 
 op RETURN (e:Expression): Statement Value =
   fn state:State ->
-    case convertArray (convertLvalue e) state of
+    case convertLA e state of
     | Some (value val) -> % pop frame and return value
       if state.automatic = [] then None
       else Some (state << {automatic = butLast state.automatic}, val)
@@ -990,7 +978,7 @@ op [a] IFELSE (test:Expression)
               (falsebranch:Statement a)
               : Statement a =
   fn state:State ->
-    case convertArray (convertLvalue test) state of
+    case convertLA test state of
     | Some (value val) ->
       if scalarValue? val
       then if zeroScalar? val
@@ -1008,7 +996,7 @@ The loop is to continue in a state iff
 the expression yields a non-zero scalar value in that state. *)
 
 op loopContinues? (test:Expression) (state:State): Bool =
-  case convertArray (convertLvalue test) state of
+  case convertLA test state of
   | Some (value val) -> scalarValue? val && zeroScalar? val
   | _ -> false
 
