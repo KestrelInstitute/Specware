@@ -36,8 +36,9 @@
 				   ("pcv"   . "Print current expression verbosely, with detailed typing")
 				   ("proc" . "[unit-term] Restart transformation on processed spec")
 				   ("p" . "[unit-term] Restart transformation on processed spec")
+                                   ("context" . "Show facts contexts with their names")
 				   ("trace-rewrites" . "Print trace for individual rewrites")
-				   ("trr" . "Print trace for individual rewrites")
+				   ("trr" . "[t] Print trace for individual rewrites. With t gives information about match failure.")
 				   ("untrace-rewrites" . "Turn off printing trace for individual rewrites")
 				   ("untrr" . "Turn off printing trace for individual rewrites")
 				   ("undo" . "[n] Undo n levels (1 with no argument)")
@@ -212,23 +213,28 @@
 (defun interpret-command (command)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
-      (let* ((result_fn (Script::interpretPathTerm-7 *transform-spec* command
-                                                     *transform-term*
-                                                     *current-qid*
-                                                     nil nil Proof::bogusProof))
-             (result (funcall result_fn nil)))
-        (if (and (eq (caar result) ':|Exception|) (eq (cadar result) ':|Fail|))
-            (princ (cddar result))
-            (let ((new-term (svref (cdar result) 0)))
-              (if (Slang-Built-In::slang-term-equals-2 (PathTerm::fromPathTerm *transform-term*)
-                                                       (PathTerm::fromPathTerm new-term))
-                  (format t "No effect!~%~a~%~a" (PathTerm::fromPathTerm *transform-term*) (PathTerm::fromPathTerm new-term))
-                  (progn 
-                    (push-state `(interpret-command ,command))
-                    (setq *transform-term* new-term)
-                    (push command *transform-commands*)
-                    (print-current-term nil)))))
-	))
+      (progn
+        (when (and MetaSlangRewriter::debugApplyRewrites?
+                   (eq (State::|!!| HigherOrderMatching::debugHOM) 0)
+                   (member (car command) '(:|Simplify1| :|Simplify|)))
+          (HigherOrderMatching::showNextHOMatchFailure-0))
+        (let* ((result_fn (Script::interpretPathTerm-7 *transform-spec* command
+                                                       *transform-term*
+                                                       *current-qid*
+                                                       nil nil Proof::bogusProof))
+               (result (funcall result_fn nil)))
+          (if (and (eq (caar result) ':|Exception|) (eq (cadar result) ':|Fail|))
+              (princ (cddar result))
+              (let ((new-term (svref (cdar result) 0)))
+                (if (Slang-Built-In::slang-term-equals-2 (PathTerm::fromPathTerm *transform-term*)
+                                                         (PathTerm::fromPathTerm new-term))
+                    (format t "No effect!")
+                    (progn 
+                      (push-state `(interpret-command ,command))
+                      (setq *transform-term* new-term)
+                      (push command *transform-commands*)
+                      (print-current-term nil)))))
+          )))
   (values))
 
 (defun Script::specTransformFunction-2 (q id)
@@ -475,13 +481,22 @@
 
                (pc                 (print-current-term nil))
                (pcv                (print-current-term t))
+               (context            (if *current-qid*
+                                       (Script::printContextRules
+                                        (Script::namedContextTerms-3 *transform-term* *current-qid* *transform-spec*))
+                                     (format t "Need to do an \"at\" command")))
                ((undo back)        (undo-command (and argstr (String-Spec::removeWhiteSpace argstr)) nil))
                (redo               (redo-command (and argstr (String-Spec::removeWhiteSpace argstr))))
-               ((trace-rewrites trr) (setq MetaSlangRewriter::traceRewriting 2)
+               ((trace-rewrites trr)
+                (setq MetaSlangRewriter::traceRewriting 2)
                 (format t "Rewrite tracing turned on.")
+                (when (and (not (null argstr))
+                           (string= "t" (cl-user::strip-extraneous argstr)))
+                  (setq MetaSlangRewriter::debugApplyRewrites? t))
                 (values))
                ((untrace-rewrites untrr) (setq MetaSlangRewriter::traceRewriting 0)
                 (format t "Rewrite tracing turned off.")
+                (setq MetaSlangRewriter::debugApplyRewrites? nil)
                 (values))
                ((done)             (finish-transform-session))
 

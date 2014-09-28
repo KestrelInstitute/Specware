@@ -507,10 +507,13 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 
  %% debugging flags
 
- op debugHOM: Ref Nat = Ref 0
+ op debugHOM: Ref Int = Ref 0
  op evaluateConstantTerms?: Bool = false     % For now until utility is proven
  op allowTrivialMatches?: Bool = false       % Allow matches that don't use match terms
  op resultLimitHOM: Nat = 8
+
+ op showNextHOMatchFailure(): () =
+   debugHOM := -1
 
 
  def match context (M,N) = 
@@ -565,15 +568,15 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 %% Var 
 %% Check that N does not contain bound variables.
 %% sjw: 2/15/01 Moved before Eta
-      | (Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),Arrow(_,s : MSType,_),_),
-		Fun(Nat n,_,_),_),
+      | (M as Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),Arrow(_,s : MSType,_),_),
+                     Fun(Nat n,_,_),_),
 	 N) ->
 	if closedTermV(N,context.boundVars) && ~(occursProper n N)
 	   then 
 	   let ty2 = inferType(context.spc,subst,N) in
 	   foldr (fn (subst,r) ->
                     matchPairs(context,updateSubst(subst,n,N),stack) ++ r)
-             [] (unifyTypes2(context,subst,s,ty2,OT,Some N))
+             [] (unifyTypes2(context,subst,s,ty2,OT,Some N,M,N))
 	else []
       | (M, N as Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_), _,_)) | ~(hasFlexRef? M) ->
         matchPairs(context,subst,insert(N,M,None,stack))
@@ -589,7 +592,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
           [] (unifyTypes(context,subst,
 			 inferType(context.spc,subst,M),
 			 inferType(context.spc,subst,N),
-                         Some N))
+                         Some N,M,N))
       | (M,Lambda([(VarPat((_,ty), _),Fun(Bool true,_,_),_)], _)) -> 
 	foldr (fn (subst,r) ->
                  let x = freshBoundVar(context,ty) in
@@ -600,7 +603,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
           [] (unifyTypes(context,subst,
 			 inferType(context.spc,subst,M),
 			 inferType(context.spc,subst,N),
-                         Some N))
+                         Some N,M,N))
 %%
 %% Sigma-Sigma
 %%
@@ -609,10 +612,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 %%
 %% Constants
 %%
-      | (Fun(f1,ty1,_),Fun(f2,ty2,_)) ->
+      | (M as Fun(f1,ty1,_),Fun(f2,ty2,_)) ->
         if f1 = Equals && f2 = Equals || f1 = NotEquals && f2 = NotEquals
           then matchPairs(context, subst, stack)
-        else matchFuns(context,f1,ty1,f2,ty2,stack,subst,N)
+        else matchFuns(context,f1,ty1,f2,ty2,stack,subst,M,N)
       | (M, N as Fun(f2,ty2,_)) | evaluateConstantTerms?
                                 && ~(hasFlexRef? M)
                                 && ~(constantTerm? M)
@@ -627,10 +630,10 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
               then matchPairs(context,subst,stack)
             else []
         else []
-      | (Var((n1,ty1), _),Var((n2,ty2), _)) ->  
-	matchBase(context,n1,ty1,n2,ty2,stack,subst,N)
+      | (M as Var((n1,ty1), _),Var((n2,ty2), _)) ->  
+	matchBase(context,n1,ty1,n2,ty2,stack,subst,M,N)
       %% Special case of Let for now
-      | (Let([(VarPat((v1,ty1), _), e1)], b1, _), Let([(VarPat((v2,ty2), _), e2)], b2, _)) ->
+      | (M as Let([(VarPat((v1,ty1), _), e1)], b1, _), Let([(VarPat((v2,ty2), _), e2)], b2, _)) ->
         foldr (fn (subst, r) ->
                  let x = freshBoundVar(context,ty1) in
                  let S1 = [((v1,ty1), mkVar x)] in
@@ -639,9 +642,9 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                  let b2 = substitute(b2,S2) in
                  matchPairs (context,subst,insert(b1,b2,OT,insert(e1,e2,Some ty2,stack)))
                    ++ r)
-          [] (unifyTypes(context,subst,ty1,ty2,None))
+          [] (unifyTypes(context,subst,ty1,ty2,None,M,N))
       %% Essentially general. Test to ensure special case is redundant
-      | (Let([(pat1, e1)], body1, _), Let([(pat2, e2)], body2, _)) ->
+      | (M as Let([(pat1, e1)], body1, _), Let([(pat2, e2)], body2, _)) ->
         (case matchPattern(context,pat1,pat2,[],[],[],stack) of
            | Some (S1,S2,stack) ->
              let stack = insert(substitute(body1,S1),substitute(body2,S2),None,stack) in  % !! Fix None
@@ -651,7 +654,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                     (m1,m2,map (fn t -> invertSubst(t,S2)) condns))
                results
            | None -> [])
-      | (Bind(qf1,vars1,M,_),Bind(qf2,vars2,N,_)) -> 
+      | (M as Bind(qf1,vars1,M_bod,_),Bind(qf2,vars2,N_bod,_)) -> 
 	if ~(qf1 = qf2) || ~(length vars1 = length vars2)
 	   then []
 	else
@@ -661,7 +664,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 	      if ~ flag
 		 then (S1,S2,subst,flag)
 	      else
-	      case unifyTypes(context,subst,s1,s2,None)   % None ??
+	      case unifyTypes(context,subst,s1,s2,None,M,N)   % None ??
 		of subst :: _ ->                          % Need to generalize!!
 		   let x = freshBoundVar(context,s1) in
 		   let S1 = Cons(((v1,s1),mkVar(x)),S1) in
@@ -673,26 +676,26 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 	if ~flag
 	   then []
 	else
-	let M = substitute(M,S1) in
-	let N = substitute(N,S2) in
-	matchPairs (context,subst,insert(M,N,None,stack))
+	let M_bod = substitute(M_bod,S1) in
+	let N_bod = substitute(N_bod,S2) in
+	matchPairs (context,subst,insert(M_bod,N_bod,None,stack))
       | (IfThenElse(M1,M2,M3,_),IfThenElse(N1,N2,N3,_)) -> 
 	matchPairs(context,subst,insert(M1,N1,None,insert(M2,N2,OT,insert(M3,N3,OT,stack))))
       | (Seq(tms1, _), Seq(tms2, _)) | length tms1 = length tms2 ->
         matchPairs(context,subst, foldl (fn (stack, (M,N)) -> insert(M,N,None,stack)) stack (zip(tms1, tms2)))
-      | (The ((id1,ty1),M,_),The ((id2,ty2),N,_)) -> 
+      | (M as The ((id1,ty1),M_bod,_),The ((id2,ty2),N_bod,_)) -> 
         foldr (fn (subst,r) ->
                  let x = freshBoundVar(context,ty1) in
                  let S1 = [((id1,ty1),mkVar x)] in
                  let S2 = [((id2,ty2),mkVar x)] in
-                 let M = substitute(M,S1) in
-                 let N = substitute(N,S2) in
+                 let M_bod = substitute(M_bod,S1) in
+                 let N_bod = substitute(N_bod,S2) in
                  matchPairs (context,subst,insert(M,N,None,stack))
                   ++ r)
-          [] (unifyTypes(context,subst,ty1,ty2,Some(mkVar(id2,ty2))))
-      | (LetRec(dfns1, bod1, _), LetRec(dfns2, bod2, _)) ->
+          [] (unifyTypes(context,subst,ty1,ty2,Some(mkVar(id2,ty2)),M_bod,N_bod))
+      | (M as LetRec(dfns1, bod1, _), LetRec(dfns2, bod2, _)) ->
         if length dfns1 = length dfns2
-             && forall? (fn (((id1, ty1), _), ((id2, ty2), _)) -> id1 = id2 && unifyTypes(context,subst,ty1,ty2,None) ~= [])
+             && forall? (fn (((id1, ty1), _), ((id2, ty2), _)) -> id1 = id2 && unifyTypes(context,subst,ty1,ty2,None,M,N) ~= [])
                   (zip(dfns1, dfns2))
           then matchPairs(context, subst,
                           foldl (fn (stack, ((_,M),(_,N))) -> insert(M,N,None,stack))
@@ -847,7 +850,7 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                        rec_results
                       ++
 % 2. Projection.
-                       (let projs  = projections (context,subst,terms,vars,ty2) in
+                       (let projs  = projections (context,subst,terms,vars,ty2,M,N) in
                           (flatten
                              (map 
                                 (fn (subst,proj) -> 
@@ -881,22 +884,25 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                    | None -> []) ++ r)
           [] substs
      in
-     let _ = if !debugHOM > 0
+     let _ = if !debugHOM > 0 || !debugHOM = -1
                then if result = []
                   then (writeLine("MatchPairs failed!");
-                         case next stack0
-                           of None -> ()
-                            | Some(_,M,N,_) ->
-                              writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N)
-                             )
-                  else (writeLine("MatchPairs: "^show(length result)^" results.");
+                        if !debugHOM = -1 then debugHOM := 0 else ();
+                        case next stack0
+                          of None -> ()
+                           | Some(_,M,N,_) ->
+                             writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N))
+                  else
+                   (if !debugHOM = -1 then ()
+                     else
+                     (writeLine("MatchPairs: "^show(length result)^" results.");
                         if length result > 0 then
                           ((case next stack0 of
                               | Some(_,M,N,_) -> 
                                 writeLine (printTerm (dereference subst M) ^ " = = "^ printTerm N)
                               | None -> ()) ;
                            app printSubst result)
-                        else ())
+                        else ()))
               else ()
      in
      result
@@ -976,15 +982,16 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
 \]
 *)
 
-  op projections : Context * SubstC * MSTerms * MSVars * MSType -> List (SubstC * MSTerm)
+  op projections : Context * SubstC * MSTerms * MSVars * MSType * MSTerm * MSTerm
+                     -> List (SubstC * MSTerm)
 
   def projectTerm (fields,label,ty,N):MSTerm = 
       mkApply(mkFun(Project label,mkArrow(Product(fields,noPos),ty)),N)
 
-  def projections (context,subst,(* terms *)_,vars,ty) =
+  def projections (context,subst,(* terms *)_,vars,ty,M,N) =
       let
 	  def projectType(ty1,N) = 
-	      (case unifyTypes(context,subst,ty1,ty,None)  % None ??
+	      (case unifyTypes(context,subst,ty1,ty,None,M,N)  % None ??
 		 of [] -> []
 		  | subst :: _ -> [(subst,N)])    % Need to generalize!
 	      ++
@@ -1006,28 +1013,29 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
                          (subst,foldr (fn(v,M) -> bindPattern(mkVarPat(v),M)) M vars))
                     terms 
       in
-        let _ = if !debugHOM > 0 then
-           (writeLine("Projections");
-              app (fn (_,tm)  -> writeLine(printTerm tm)) terms)
+      let _ = if !debugHOM > 0 then
+                (writeLine("Projections");
+                 app (fn (_,tm)  -> writeLine(printTerm tm)) terms)
               else () in
-
       terms
 
 (* Recursive matching utilities
 
   Constants and bound variables are matched using {\tt matchBase}.
 *)
-  op matchBase : [a] Context * a * MSType * a * MSType * Stack * SubstC * MSTerm-> List SubstC
-  def matchBase (context,x,ty1,y,ty2,stack,subst,N) =
+  op matchBase : [a] Context * a * MSType * a * MSType * Stack * SubstC * MSTerm * MSTerm
+                       -> List SubstC
+  def matchBase (context,x,ty1,y,ty2,stack,subst,M,N) =
     % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printType ty1^"\n"^printType ty2) in
       if x = y
 	 then 
 	    foldr (fn (subst,r) -> matchPairs(context, subst,stack) ++ r)
-              [] (unifyTypes(context,subst,ty1,ty2,Some N))
+              [] (unifyTypes(context,subst,ty1,ty2,Some N,M,N))
       else []
 
-  op matchFuns : Context * MSFun * MSType * MSFun * MSType * Stack * SubstC * MSTerm -> List SubstC
-  def matchFuns (context,x,ty1,y,ty2,stack,subst,N) =
+  op matchFuns : Context * MSFun * MSType * MSFun * MSType * Stack * SubstC * MSTerm * MSTerm
+                   -> List SubstC
+  def matchFuns (context,x,ty1,y,ty2,stack,subst,M,N) =
       % let _ = writeLine("matchBase: "^anyToString x^" =?= "^ anyToString y^"\n"^printType ty1^"\n"^printType ty2) in
       if equalFun?(x, y)
 	 then
@@ -1036,7 +1044,7 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
             else
             % let _ = writeLine("matchFuns: "^anyToString x^"\n"^printType ty1^"\n ~= \n"^printType ty2) in
 	    foldr (fn (subst,r) -> matchPairs(context, subst, stack) ++ r)
-              [] (unifyTypes(context,subst,ty1,ty2,Some N))
+              [] (unifyTypes(context,subst,ty1,ty2,Some N,M,N))
       else []
 
 
@@ -1306,17 +1314,19 @@ closedTermV detects existence of free variables not included in the argument
       | [(_, _, conds)] -> conds ~= []
       | _ -> false
 
-  op unifyTypes2(context: Context, subst: SubstC, ty1: MSType, ty2: MSType, OT: Option MSType, optTerm: Option MSTerm): List SubstC = 
-    let main_unifiers = unifyTypes(context, subst, ty1, ty2, optTerm) in
+  op unifyTypes2(context: Context, subst: SubstC, ty1: MSType, ty2: MSType, OT: Option MSType,
+                 optTerm: Option MSTerm, M: MSTerm, N: MSTerm): List SubstC = 
+    let main_unifiers = unifyTypes(context, subst, ty1, ty2, optTerm, M, N) in
     case OT of
       | Some ctxt_ty2 | conditionalMatch? main_unifiers && ~(equalType?(ty2, ctxt_ty2)) ->
          let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
-        unifyTypes(context, subst, ty1, ctxt_ty2, optTerm) ++ main_unifiers
+        unifyTypes(context, subst, ty1, ctxt_ty2, optTerm, M, N) ++ main_unifiers
       | _ -> main_unifiers
 
 
   %% Not symmetric wrt subtypes
-  op unifyTypes(context: Context, subst: SubstC, ty1: MSType, ty2: MSType, optTerm: Option MSTerm): List SubstC = 
+  op unifyTypes(context: Context, subst: SubstC, ty1: MSType, ty2: MSType,
+                optTerm: Option MSTerm, M: MSTerm, N: MSTerm): List SubstC = 
       % let _ = case optTerm of None -> () | Some t -> writeLine("Term: "^printTerm t) in
       let spc = context.spc in
       let
@@ -1478,8 +1488,17 @@ closedTermV detects existence of free variables not included in the argument
       foldr (fn (r1,r) ->
              case r1 of
                | NotUnify (s1,s2) -> 
-                 (if !debugHOM > 0 then (writeLine (printType s1^" ~= "^printType s2);
-                                         printSubst subst)
+                 (if !debugHOM > 0 || !debugHOM = -1
+                    then
+                      let M_text = printTerm M in
+                      let N_text = printTerm N in
+                      (writeLine ("Type mismatch when matching term");
+                       if length M_text + length N_text > 80
+                         then writeLine("\n"^M_text^"\n against\n"^N_text)
+                         else writeLine(M_text^" against "^N_text);
+                       writeLine (printType s1^" ~= "^printType s2);
+                       printSubst subst;
+                       if !debugHOM = -1 then debugHOM := 0 else ())
                   else ();
                   r)
                | Unify subst ->

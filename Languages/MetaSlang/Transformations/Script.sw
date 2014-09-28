@@ -473,6 +473,20 @@ spec
         flatten (map getConjuncts (getAllPatternGuards p)) ++ lambdaGuards bod
       | _ -> []
 
+  op printContextRules(prs: List(String * MSTerm)): () =
+    app (fn (str, tm) ->
+         if trueTerm? tm then ()
+           else
+             writeLine
+               (let tm_str = printTerm tm in
+                if length tm_str > 60
+                  then "\""^str^"\":\n"^ tm_str
+                  else "\""^str^"\": "^ tm_str))
+     prs
+
+  op namedContextTerms(ptm: PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
+    namedAssumptions(ptm, qid, spc)
+
   op namedAssumptions((top_term, path): PathTerm, qid: QualifiedId, spc: Spec): List(String * MSTerm) =
     case top_term of
       | TypedTerm(fn_tm, ty, _) | path ~= [] && last path = 1 ->
