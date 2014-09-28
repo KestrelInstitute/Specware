@@ -489,12 +489,23 @@ Proof qualifying spec
   op prove_withTactic (tactic : Tactic, P : MSTerm) : Proof =
     return (Proof_Tactic (tactic, P))
 
-    op extendProofAuto (tm: MSTerm) (pf: Proof): Proof =
-    case  pf of
-      | ErrorOk(Proof_Tactic _) -> pf
-      | ErrorOk(pf_int) ->
-        prove_withTactic (AutoTactic [pf], tm)
-      | _ -> pf
+  op extendProofAuto (tm: MSTerm) (pf: Proof): Proof =
+  case  pf of
+    | ErrorOk(Proof_Tactic _) -> pf
+    | ErrorOk(pf_int) ->
+      prove_withTactic (AutoTactic [pf], tm)
+    | _ -> pf
+
+%% This is a temporary version. Really want something that will handle
+%% relationship between ~b and b = false
+ op replaceProofTerm (tm: MSTerm) (pf: Proof): Proof =
+   case pf of
+     | ErrorOk i_pf -> 
+       ErrorOk(case i_pf of
+                 | Proof_Assump(str, _) -> Proof_Assump(str, tm)
+                 | Proof_Tactic(tct, _) -> Proof_Tactic(tct, tm)
+                 | _ -> i_pf)
+     | _ -> pf
 
 % build an equality proof with a tactic
   op prove_equalWithTactic (tactic : Tactic, M : MSTerm, N : MSTerm, T : MSType) : Proof =
@@ -551,6 +562,16 @@ Proof qualifying spec
                              "\nand\n  " ^ printTermIndent (2, fromPathTerm (N,p))
                              ^ "\nfrom a proof of:\n  " ^ printTermIndent (2, pf_pred)
                              ^ "\n(proof:\n" ^ printProof_Internal pf_int ^ ")") }
+
+op matchCondEquality (t : MSTerm) : Option (MSType * MSTerm * MSTerm) =
+  case t of
+    | Apply(Fun(Equals, typ, _), Record([("1", lhs), ("2", rhs)], _), _) ->
+      (case typ of
+         | Arrow (_, range, _) -> Some (range, lhs, rhs)
+         | _ -> fail ("Unexpected type for =: " ^ printType typ))
+    | Apply(Fun(Implies, _, _), Record([("1", lhs), ("2", rhs)], _), _) ->
+      matchCondEquality rhs
+    | _ -> None
 
   % build a proof of M=M
   op prove_equalRefl (T : MSType, M : MSTerm) : Proof =

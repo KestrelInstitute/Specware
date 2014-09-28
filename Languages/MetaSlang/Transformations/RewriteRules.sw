@@ -489,14 +489,6 @@ op simpleRwTerm?(t: MSTerm): Bool =
  op assertRules (context: Context, term: MSTerm, desc: String, rsp: RuleSpec, dirn: Direction, o_prf: Option Proof, tyvars: TyVars)
       : List RewriteRule =
    %% lr? true means that there is an explicit lr orientation, otherwise we orient equality only if obvious
-   let o_prf = case o_prf of
-                 | None ->
-                   (case rsp of
-                      | Context ->
-                        None
-                      | _ -> None)
-                 | Some _ -> o_prf
-   in
    assertRulesRec(context, term, desc, rsp, dirn, o_prf, tyvars, [], [], None, false)
 
  op assertRulesRec (context   : Context,
@@ -511,7 +503,7 @@ op simpleRwTerm?(t: MSTerm): Bool =
                     condition : Option MSTerm,
                     subterm?  : Bool)   % If we are at a subterm of the original theorem
    : List RewriteRule =
-   % let _ = writeLine("assertRules "^show dirn^": "^printTerm term) in
+   % let _ = writeLine("assertRules "^anyToString dirn^": "^printTerm term) in
    let (fvs,n,S,formula) = bound(Forall,0,term,[],[]) in
    let free_vs = fvs ++ free_vs in
    let subst = S ++ subst in
@@ -528,7 +520,17 @@ op simpleRwTerm?(t: MSTerm): Bool =
                      | None -> condition
                      | Some c2 -> Some(Utilities.mkAnd (c1,c2))
    in
-   let def equalityRules(e1: MSTerm, e2: MSTerm, lr?: Bool): List RewriteRule =
+   let def equalityRules(e1: MSTerm, e2: MSTerm, lr?: Bool, o_prf: Option Proof): List RewriteRule =
+         case e1 of
+           | Apply(Fun(Not, _,_), p,_) ->
+             let n_e2 = negate e2 in
+             equalityRules0(p, n_e2, lr?,
+                            mapOption (replaceProofTerm (mkEquality(boolType, p, n_e2)))
+                              o_prf)
+               ++ equalityRules0(e1, e2, lr?, o_prf)
+           | _ -> equalityRules0(e1, e2, lr?, o_prf)
+             
+       def equalityRules0(e1: MSTerm, e2: MSTerm, lr?: Bool, o_prf: Option Proof): List RewriteRule =
          let (lhs, rhs) = if lr? then (e1, e2) else (e2, e1) in
          let lhs_ty = inferType(context.spc, lhs) in
          let o_prf = if subterm? then mapOption (extendProofAuto (mkEquality(lhs_ty, lhs, rhs))) o_prf else o_prf in
@@ -536,9 +538,10 @@ op simpleRwTerm?(t: MSTerm): Bool =
          let s_rhs = substitute(rhs,subst) in
          let main_rule = freshRule(context,
                                    {name      = desc,   condition = condition, rule_spec = rsp,
-                                    opt_proof = o_prf,  sym_proof = false,
+                                    opt_proof = o_prf,  sym_proof = ~lr?,
                                     lhs       = s_lhs,  rhs       = s_rhs,
-                                    tyVars    = tyvars, freeVars  = free_vs, trans_fn = None})
+                                    tyVars    = tyvars, freeVars  = free_vs,
+                                    trans_fn = None})
          in
          case e2 of
            | IfThenElse(p, q, r, _) | expandIfThenElse? ->
@@ -571,13 +574,18 @@ op simpleRwTerm?(t: MSTerm): Bool =
 	else
         [freshRule(context,
 		   {name      = desc,   condition = condition, rule_spec = rsp,
-                    opt_proof = None,   sym_proof = false,
+                    opt_proof = o_prf,   sym_proof = false,
+		    lhs       = substitute(fml,subst), rhs       = trueTerm,
+		    tyVars    = [],     freeVars  = free_vs, trans_fn = None}),
+         freshRule(context,
+		   {name      = desc,   condition = condition, rule_spec = rsp,
+                    opt_proof = o_prf,   sym_proof = false,
 		    lhs       = substitute(p,subst),      rhs       = falseTerm,
 		    tyVars    = [],     freeVars  = free_vs, trans_fn = None})]
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, true, dirn, subst) ->
-       equalityRules(e1, e2, true)
+       equalityRules(e1, e2, true, o_prf)
      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) | compatibleDirection?(e1, e2, condition, false, dirn, subst) ->
-       equalityRules(e1, e2, false)
+       equalityRules(e1, e2, false, o_prf)
      | Apply(Fun(And,_,_),Record([(_,e1),(_,e2)], _),_) ->
        assertRulesRec(context,e1,desc^"-1",rsp,dirn,o_prf,tyvars,free_vs,subst,condition, true)
          ++ assertRulesRec(context,e2,desc^"-2",rsp,dirn,o_prf,tyvars,free_vs,subst,condition, true)
