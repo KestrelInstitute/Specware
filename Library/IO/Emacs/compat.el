@@ -69,6 +69,11 @@
     (if (null given) 4 (read given))) ; Default is 2 (megabytes)
   "Size of --control-stack-size for sbcl") 
 
+(defun ensure-list (fm-str)
+  (if (equal (elt fm-str 0) (elt "(" 0))
+      fm-str
+    (format "(progn %s)" fm-str)))
+
 (when (eq lisp-emacs-interface-type 'slime)
   (defvar slime-*directory*)
   (setq slime-*directory*

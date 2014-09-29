@@ -1349,11 +1349,6 @@ If anyone has a good algorithm for this..."
 	      spec-comm lisp-comm)
 	   argstrs)))
 
-(defun ensure-list (fm-str)
-  (if (equal (elt fm-str 0) (elt "(" 0))
-      fm-str
-    (format "(progn %s)" fm-str)))
-
 (defun sw:process-current-file ()
   (interactive)
   (save-buffer)
