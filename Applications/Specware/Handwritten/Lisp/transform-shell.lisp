@@ -1,3 +1,4 @@
+
 (defpackage :Emacs)
 (defpackage :AnnSpec)
 (defpackage :AnnSpecPrinter)
@@ -496,7 +497,9 @@
                 (values))
                ((untrace-rewrites untrr) (setq MetaSlangRewriter::traceRewriting 0)
                 (format t "Rewrite tracing turned off.")
+                (setq MetaSlangRewriter::traceRewriting 0)
                 (setq MetaSlangRewriter::debugApplyRewrites? nil)
+                (HigherOrderMatching::turnOffHOMatchTracing-0)
                 (values))
                ((done)             (finish-transform-session))
 

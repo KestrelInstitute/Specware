@@ -95,7 +95,7 @@ Utilities qualifying spec
               % let _ = writeLine(printType(termType(mkQuotient(t, qid, termType t)))) in
               (mkQuotient(t, qid, termType t), conds, vs)
             | RestrictedPat(pat, cond, _)  ->
-              let (p, conds, vs) = patToTPV pat in (p, cond::conds, vs)
+              let (p, conds, vs) = patToTPV pat in (p, getConjuncts cond ++ conds, vs)
             | AliasPat(p1, p2, _) -> 
               let (t2, conds2, vs2) = patToTPV p2 in
               let (t1, conds1, vs1) = patToTPV p1 in

@@ -515,6 +515,9 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
  op showNextHOMatchFailure(): () =
    debugHOM := -1
 
+ op turnOffHOMatchTracing(): () =
+   debugHOM := 0
+
 
  def match context (M,N) = 
      matchPairs(context,emptySubstitution,insert(M,N,None,emptyStack))
@@ -526,13 +529,17 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
        (existsSubTerm
            (fn mi ->
               case mi of
-                | Fun(Op(qid_m,_),_,_) | qid_m ~= flexQId ->
-                  ~(existsSubTerm (fn ni ->
-                                     case ni of
-                                       | Fun(Op(qid_n,_),_,_) ->
-                                         qid_m = qid_n
-                                       | _ -> false)
-                      N)
+                | Fun(Op(qid_m,_),_,_)
+                   | qid_m ~= flexQId 
+                       && ~(existsSubTerm (fn ni ->
+                                             case ni of
+                                               | Fun(Op(qid_n,_),_,_) ->
+                                                 qid_m = qid_n
+                                               | _ -> false)
+                              N) ->
+                  (if !debugHOM = 0 then ()
+                   else writeLine("Pattern references "^show qid_m^" but target term does not!");
+                   true)
                 %% Could also look for if-then-else, let or other Funs
                 | _ -> false)
            M)
@@ -577,7 +584,12 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 	   foldr (fn (subst,r) ->
                     matchPairs(context,updateSubst(subst,n,N),stack) ++ r)
              [] (unifyTypes2(context,subst,s,ty2,OT,Some N,M,N))
-	else []
+	else
+          (if !debugHOM = 0 then ()
+           else writeLine(if ~(closedTermV(N,context.boundVars))
+                          then "Flex match failed because term contained a variable that could escape!"
+                          else "Occurs check failure!");
+           [])
       | (M, N as Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_), _,_)) | ~(hasFlexRef? M) ->
         matchPairs(context,subst,insert(N,M,None,stack))
 %%
@@ -891,7 +903,11 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
                         case next stack0
                           of None -> ()
                            | Some(_,M,N,_) ->
-                             writeLine (printTerm (dereference subst M) ^ " =~= "^ printTerm N))
+                             let M_text = printTerm (dereference subst M) in
+                             let N_text = printTerm N in
+                             if length M_text + length N_text > 60
+                               then writeLine (M_text ^ "\n =~=\n"^ N_text)
+                               else writeLine (M_text ^ "  =~=  "^ N_text))
                   else
                    (if !debugHOM = -1 then ()
                      else
@@ -1116,6 +1132,14 @@ N : \sigma_1 --> \sigma_2 \simeq  \tau
                 let t1 = substitute(t1, S1) in
                 let t2 = substitute(t2, S2) in
                 Some(S1, S2, if equalTermAlpha?(t1,t2) then stack
+                               else insert(t1, t2, None, stack)))
+         | (RestrictedPat(p1,t1,_), p2) ->
+           (case matchPattern(context,p1,p2,pairs,S1,S2,stack) of
+              | None -> None
+              | Some(S1, S2, stack) -> 
+                let t1 = substitute(t1, S1) in
+                let t2 = trueTerm in
+                Some(S1, S2, if equalTerm?(t1,t2) then stack
                                else insert(t1, t2, None, stack)))
          | _ -> 
             case matchIrefutablePattern(context,pat1,S1)
@@ -1379,7 +1403,8 @@ closedTermV detects existence of free variables not included in the argument
                       || (let dr_p1 = dereferenceAll subst p1 in
                           let dr_p2 = dereferenceAll subst p2 in
                           equalTermStruct?(dr_p1, dr_p2)
-                            || equalTermAlpha?(dr_p1, dr_p2)) ->
+                            % || equalTermAlpha?(dr_p1, dr_p2)
+                            || equivTerm? spc (dr_p1, dr_p2) ) ->
                  unify(subst,ty1,ty2,ty1_orig,equals,optTerm)
 	       | (bty1 as Base(id1,ts1,_), bty2 as Base(id2,ts2,_)) -> 
 		 if exists? (fn p -> p = (bty1,bty2)) equals
