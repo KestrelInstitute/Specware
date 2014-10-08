@@ -1343,7 +1343,7 @@ closedTermV detects existence of free variables not included in the argument
     let main_unifiers = unifyTypes(context, subst, ty1, ty2, optTerm, M, N) in
     case OT of
       | Some ctxt_ty2 | conditionalMatch? main_unifiers && ~(equalType?(ty2, ctxt_ty2)) ->
-         let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
+        % let _ = writeLine("Trying to match "^printType ctxt_ty2^" instead of "^printType ty2) in
         unifyTypes(context, subst, ty1, ctxt_ty2, optTerm, M, N) ++ main_unifiers
       | _ -> main_unifiers
 
