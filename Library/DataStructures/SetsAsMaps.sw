@@ -4,13 +4,13 @@ SetsAsMaps =
 SetsAsMap qualifying
 spec
 
-  import Maps  % Note that this brings in Sets!
+  import Maps#Maps_extended  % Note that this brings in Sets!
 
-  type Set a = Map(a, Bool)  %TODO enforce the constraint that all the Bools are true?  Or just use a Map to Unit?
+  type Set a = Map(a, ())
 
 % This is imported via Set in Map theory
 %TODO The analogue of axiom membership is not provable without the constraint that all Bools are true.
-  op [a] in? (x:a, s:Set a) infixl 20 : Bool = (apply s x = Some true)
+  op [a] in? (x:a, s:Set a) infixl 20 : Bool = embed? Some (apply s x)
 
   % set containment just amounts to map containment, because there are no
   % repeated elements
@@ -27,10 +27,10 @@ spec
   %% Just copied from Sets.sw:
   op [a] nonempty? (s : Set a) : Bool = ~(empty? s)
 
-  op [a] set_insert (x:a, s: Set a) : Set a = update s x true
+  op [a] set_insert (x:a, s: Set a) : Set a = update s x ()
 
   %% Not useful for this representation
-  op [a] set_insert_new(x:a, s: Set a) : Set a = update s x true
+  op [a] set_insert_new(x:a, s: Set a) : Set a = update s x ()
 
   % To take the union of two sets, we use a map fold, starting with
   % the first map, to go through the second map and insert its
@@ -188,7 +188,8 @@ proof Isa Set__induction
 end-proof
 
 proof Isa Set__set_fold1
-  sorry
+  by (simp add: SetsAsMap__set_fold_def Map__map_foldi_empty[OF Map__Set_Map_foldable_p]
+                SetsAsMap__empty_set_def)
 end-proof
 
 proof Isa Set__set_fold2

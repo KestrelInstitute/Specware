@@ -231,6 +231,10 @@ Maps = Map qualifying spec
       ~(key1 = key2) =>   %% Excludes the case of the same key twice with different values (can't happen).
       f(key1,val1,f(key2,val2,accval)) = f(key2,val2,f(key1,val1,accval))
 
+ theorem Set_Map_foldable? is [a,b,acc]
+  fa (f: acc * a -> acc) 
+    Set.foldable? f => Map.foldable?(fn(x, y: b, result) -> f (result, x))
+
  theorem foldable?_helper is [a,b]
    fa(p : a * b -> Bool)
      foldable? (fn (key:a, val:b, accval:Bool) -> accval && p(key,val))
@@ -384,6 +388,10 @@ end-proof
 
 proof Isa Map__update_of_update_both
   apply(rule Map__map_equality, simp add: Map__update Map__remove)
+end-proof
+
+proof Isa Set_Map_foldable_p
+  by (auto simp add: Map__foldable_p_def Set__foldable_p_def)
 end-proof
 
 proof Isa Map__foldable_p_helper [simp]
