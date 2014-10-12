@@ -263,9 +263,17 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
           | Bind(Exists, vs, bod, a) ->
             (if vs = [] then Some(bod, prove_equalRefl (boolType, bod))
              else
-             let (vs, cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
+             let (new_vs, new_cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
              % let _ = writeLine("flat:\n"^printTerm(mkConj cjs)) in
-             transEx(vs, cjs, a, []))
+             mapOption (fn(n_tm, prf) ->
+                        (n_tm,
+                         if length vs = length new_vs then prf
+                           else prove_equalTrans
+                                  (prove_equalWithTactic
+                                     (StringTactic "auto", tm, mkBind(Exists, new_vs, mkConj new_cjs),
+                                      termType tm),
+                                   prf)))
+               (transEx(new_vs, new_cjs, a, [])))
           | _ -> None
       % Take a proof that new_tm.path = newer_tm.path and a tactic for
       % proving tm = new_tm and prove that tm=newer_tm
@@ -302,8 +310,9 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                let new_tm = mkConj(lift_cjs ++ [new_ex]) in
                % let _ = writeLine("Lift Conj:\n"^printTerm new_tm) in
                let (rec_ex_tm, prf) = transEx1(vs, rem_cjs, a, tsb, new_ex) in
-               Some(mkConj(lift_cjs ++ [rec_ex_tm]),
-                    extendSimpProof(orig_tm, new_tm, rec_ex_tm,
+               let result_tm = mkConj(lift_cjs ++ [rec_ex_tm]) in
+               Some(result_tm,
+                    extendSimpProof(orig_tm, new_tm, result_tm,
                                     pathToLastConjunct(length lift_cjs), prf, "auto"))
         else
         %% (ex(x,y) x = a && q x y) = (let x = a in ex(y) q x y)
@@ -316,7 +325,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                  let Some v_pat = termToPattern v_tm in
                  let trivial_bind? = embed? Var s_tm in
                  let tsb = (if trivial_bind? then (v_tm, s_tm) else (s_tm, v_tm)) :: tsb in
-                 let new_cjs = termsSubst(delete cj cjs, tsb) in
+                 let new_cjs = delete cj cjs in % termsSubst(delete cj cjs, tsb) in
                  let new_ex = mkSimpBind(Exists, new_vs, mkConj new_cjs) in
                  let new_tm = if trivial_bind? then new_ex
                               else MS.mkLet([(v_pat, s_tm)], new_ex)
@@ -339,7 +348,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                  let new_vs = filter (fn v -> ~(inVars?(v, p_vs))) vs in
                  let constr_ty = range(spc, f_ty) in
                  let tsb =  (s_tm, v_tm) :: tsb in
-                 let new_cjs = termsSubst(delete cj cjs, tsb) in
+                 let new_cjs = delete cj cjs in % termsSubst(delete cj cjs, tsb) in
                  let new_ex = mkSimpBind(Exists, new_vs, mkConj new_cjs) in
                  let new_tm = mkCaseExpr(s_tm, [(mkEmbedPat(constr_id, Some(v_pat), constr_ty),
                                                  new_ex),
@@ -427,11 +436,8 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
       let n_tm1 = if simplify? then simplify spc n_tm else n_tm in
       if equalTerm?(n_tm1, ctm) then None
       else
-        % let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm^"\n  --->\n"^printTerm n_tm1);
-        %          case prf of
-        %            | None -> ()
-        %            | Some prf -> (writeLine(anyToPrettyString prf);
-        %                           writeLine(printEqProof(prf, ctm))))
+        % let _ = (writeLine("structureEx:\n"^printTerm ctm^"\n -->\n"^printTerm n_tm);
+        %          writeLine(printProof(prf)))
         % in
         Some(n_tm1, prf)
     | None -> None
@@ -519,7 +525,7 @@ op MSTermTransform.testTr (spc: Spec) (tm1: MSTerm) (tm2: MSTerm) (rls: RuleSpec
 
 op MSTermTransform.substConjEquality (tm: MSTerm) (cj_nm: Nat) (rl?: Bool)
      : Option (MSTerm * Proof) =
-  let _ = writeLine("substConjEquality "^show cj_nm^" "^show rl?) in
+  % let _ = writeLine("substConjEquality "^show cj_nm^" "^show rl?) in
   case foldSubTerms (fn (s_tm, found_cjn) ->
                      if some? found_cjn then found_cjn
                        else case s_tm of

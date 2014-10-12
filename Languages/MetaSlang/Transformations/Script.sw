@@ -495,7 +495,7 @@ spec
            | Some(pred, var_projs as _ :: _)->
              let result_tm = mkApplyTermFromLambdas(mkOp(qid, ty), fn_tm) in
              let rng = range_*(spc, ty, true) in
-             let fn_val_tms = List.map (fn (v as (_, v_ty), proj?) ->
+             let fn_val_tms = map (fn (v as (_, v_ty), proj?) ->
                                      case proj? of
                                        | None -> mkEquality(v_ty, mkVar v, result_tm)
                                        | Some id1 -> mkEquality(v_ty, mkVar v, mkApply(mkProject(id1, rng, v_ty), result_tm)))
@@ -596,50 +596,51 @@ spec
   op rewritePT(spc: Spec, path_term: PathTerm,
                context: Context, qid: QualifiedId, rule_specs: RuleSpecs)
        : MSTerm * Proof =
-    (context.traceDepth := 0;
-     let top_term = topTerm path_term in
-     let (bound_vars, term) = fromPathTermWithBindings path_term in
-     let path = pathTermPath path_term in
-     %let rules = map (etaExpand context) rules in   % Not sure if necessary
-     %let rules = prioritizeRules rules in
-     let ctxt_rules = contextRulesFromPath(path_term, qid, context, filter contextRuleSpec? rule_specs) in
-     let ctxt_rules = filter (fn rl -> ~(exists? (fn rl_spec -> embed? Omit rl_spec
-                                                              && contextRuleSpecNamed? rl.name rl_spec)
-                                           rule_specs))
-                        ctxt_rules in
-     let (expl_ctxt_rules, impl_ctxt_rules) =
-         splitByPred (fn rl -> exists? (fn rl_sp -> contextRuleSpecNamed? rl.name rl_sp) rule_specs) ctxt_rules in
-     let rules = makeRules (context, spc, rule_specs, expl_ctxt_rules) in
-     let rules = rules ++ impl_ctxt_rules in
-     let rules = rules ++ subtypeRules(term, context) in
-     let _ = if rewriteDebug? then
-               (writeLine("Rewriting:\n"^printTerm term);
-                List.app printRule rules)
-               else ()
-     in
-     let org_rules = splitConditionalRules rules in
-     let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
-           % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
-           case rewriteRecursive (context, if bound_vars = [] then freeVars term else bound_vars,
-                                  org_rules, trm) of
-             | None -> (trm, pf)
-             | Some (new_trm, ret_pf) ->
-               let new_pf = prove_equalTrans (pf, ret_pf) in
-               if count > 0 then
-                 doTerm (count - 1, new_trm, new_pf)
-               else
-                 (trm, new_pf)
-     in
-     let (new_subterm, sub_pf) =
-       % if maxDepth = 1 then hd(rewriteOnce(context, [], org_rules, term))
-       % else
-       doTerm(rewriteDepth, term, prove_equalRefl (inferType (spc,term), term))
-     in
-     let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm new_subterm) else () in
-     (new_subterm,
-      prove_refinesEqualSubTerm
-        (top_term, topTerm (replaceSubTerm (new_subterm, path_term)),
-         path, sub_pf)))
+    assumingNoSideEffects
+      (context.traceDepth := 0;
+       let top_term = topTerm path_term in
+       let (bound_vars, term) = fromPathTermWithBindings path_term in
+       let path = pathTermPath path_term in
+       %let rules = map (etaExpand context) rules in   % Not sure if necessary
+       %let rules = prioritizeRules rules in
+       let ctxt_rules = contextRulesFromPath(path_term, qid, context, filter contextRuleSpec? rule_specs) in
+       let ctxt_rules = filter (fn rl -> ~(exists? (fn rl_spec -> embed? Omit rl_spec
+                                                                && contextRuleSpecNamed? rl.name rl_spec)
+                                             rule_specs))
+                          ctxt_rules in
+       let (expl_ctxt_rules, impl_ctxt_rules) =
+           splitByPred (fn rl -> exists? (fn rl_sp -> contextRuleSpecNamed? rl.name rl_sp) rule_specs) ctxt_rules in
+       let rules = makeRules (context, spc, rule_specs, expl_ctxt_rules) in
+       let rules = rules ++ impl_ctxt_rules in
+       let rules = rules ++ subtypeRules(term, context) in
+       let _ = if rewriteDebug? then
+                 (writeLine("Rewriting:\n"^printTerm term);
+                  List.app printRule rules)
+                 else ()
+       in
+       let org_rules = splitConditionalRules rules in
+       let def doTerm (count: Nat, trm: MSTerm, pf: Proof): MSTerm * Proof =
+             % let _ = writeLine("doTerm "^anyToString(pathTermPath path_term)^"\n"^printTerm path_term.1) in
+             case rewriteRecursive (context, if bound_vars = [] then freeVars term else bound_vars,
+                                    org_rules, trm) of
+               | None -> (trm, pf)
+               | Some (new_trm, ret_pf) ->
+                 let new_pf = prove_equalTrans (pf, ret_pf) in
+                 if count > 0 then
+                   doTerm (count - 1, new_trm, new_pf)
+                 else
+                   (trm, new_pf)
+       in
+       let (new_subterm, sub_pf) =
+         % if maxDepth = 1 then hd(rewriteOnce(context, [], org_rules, term))
+         % else
+         doTerm(rewriteDepth, term, prove_equalRefl (inferType (spc,term), term))
+       in
+       let _ = if rewriteDebug? then writeLine("Result:\n"^printTerm new_subterm) else () in
+       (new_subterm,
+        prove_refinesEqualSubTerm
+          (top_term, topTerm (replaceSubTerm (new_subterm, path_term)),
+           path, sub_pf)))
 
   op makeRules (context: Context, spc: Spec, rl_specs: RuleSpecs, ctxt_rules: List RewriteRule): List RewriteRule =
     foldr (fn (rl_spec, rules) ->
@@ -872,7 +873,7 @@ spec
                                                 spc))
                      | None -> return (path_term, pf))
                 | SimpStandard ->
-                  return (replaceSubTermH1(simplify spc (fromPathTerm path_term),
+                  return (replaceSubTermH1(assumingNoSideEffects(simplify spc (fromPathTerm path_term)),
                                            path_term, SimpStandard, pf, autoTactic, spc))
                 | RenameVars binds ->
                   return (replaceSubTermH1(renameVars(fromPathTerm path_term, binds),
@@ -882,7 +883,7 @@ spec
                                            path_term, Eval, pf, autoTactic, spc))
                 | AbstractCommonExpressions ->
                   return (replaceSubTermH1(abstractCommonSubExpressions(fromPathTerm path_term, spc),
-                                           path_term, AbstractCommonExpressions, pf, StringTactic "metis", spc))
+                                           path_term, AbstractCommonExpressions, pf, StringTactic "smt2", spc))
                 | Simplify(rules, n) ->
                   let context = makeContext spc in
                   return (replaceSubTermH(rewritePT(spc, path_term, context, qid, rules),
@@ -924,7 +925,8 @@ spec
   % older term equals the new topTerm
   op replaceSubTermH((new_tm: MSTerm, new_pf: Proof),
                      old_ptm: PathTerm, pf: Proof): PathTerm * Proof =
-    % let _ = writeLine(printTerm new_tm^"\n from\n"^printTerm(fromPathTerm old_ptm)) in
+     % let _ = writeLine("replaceSubTermH:\n"^printTerm new_tm^"\n from\n"^printTerm(fromPathTerm old_ptm)) in
+     % let _ = writeLine(printProof new_pf^"\n") in
     let new_path_tm = replaceSubTerm(new_tm, old_ptm) in
     %let lifted_info = liftInfo(new_info, old_ptm) in
     (new_path_tm, prove_refinesTrans (pf, new_pf, new_path_tm))

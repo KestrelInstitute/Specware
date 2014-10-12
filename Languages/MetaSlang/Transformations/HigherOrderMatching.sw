@@ -569,7 +569,12 @@ Handle also \eta rules for \Pi, \Sigma, and the other type constructors.
 %%
       | (Lambda(rules1, _),Lambda(rules2, _)) -> 
 	if length rules1 = length rules2
-	   then matchRules(context,subst,stack,rules1,rules2,[])
+	   then
+             foldr (fn (subst,r) -> matchRules(context,subst,stack,rules1,rules2,[]) ++ r)
+               [] (unifyTypes(context,subst,
+                              inferType(context.spc,subst,M),
+                              inferType(context.spc,subst,N),
+                              Some N,M,N))
 	else []
 %%
 %% Var 
@@ -1480,7 +1485,7 @@ closedTermV detects existence of free variables not included in the argument
 		 let Some s2 = tryUnfoldBase spc bty2 in
 		 unify(subst,bty1,s2,ty1_orig,Cons((bty1,bty2),equals),optTerm)
                %% Analysis could be smarter here so that order of subtypes is not so important
-               | (bty1 as Subtype(ty1 ,p1, _), ty2) | ~(possiblyStrictSubtypeOf?(ty2, bty1, spc)) ->
+               | (bty1 as Subtype(ty1, p1, _), ty2) | ~(possiblyStrictSubtypeOf?(ty2, bty1, spc)) ->
                  % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
                  (case optTerm of
                        | None -> [NotUnify(bty1,ty2)]

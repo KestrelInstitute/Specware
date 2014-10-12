@@ -36,6 +36,15 @@ MetaSlangRewriter qualifying spec
  % Flag for debugging
  op debugRRPaths : Bool = false
 
+ op mapRRResultInfo (tr_fn: MSTerm -> MSTerm)
+                    (((typeSubst, termSubst, tms), rule, path, boundVars, rules): RRResultInfo): RRResultInfo =
+   let new_termSubst = NatMap.map tr_fn termSubst in
+   let new_rule = if none? rule.trans_fn then rule
+                   else rule << {lhs = tr_fn rule.lhs,
+                                 opt_proof = mapOption (mapProof "mapRRResultInfo" (tr_fn, id, id)) rule.opt_proof}
+   in
+   (((typeSubst, new_termSubst, tms), new_rule, path, boundVars, rules): RRResultInfo)
+
  % Get the path from a RRResultInfo
  op infoPath ((_, _, path, _, _): RRResultInfo) : Path = path
 
@@ -459,16 +468,19 @@ MetaSlangRewriter qualifying spec
                                        "reFoldLetVars"))
       else
         %% Variable capture unlikely because of substitute in unFoldSimpleLet
-        let M1 = mapTerm (reverseSubst v_subst, id, id) M in
+        let rev_subst = reverseSubst v_subst in
+        let M1 = mapTerm (rev_subst, id, id) M in
         if equalTerm?(M, M1)
           then res
         else
+          let info = mapRRResultInfo (mapTerm (rev_subst, id, id)) info in
           let fvs = freeVars M1 in
           let new_binds =
             filter (fn (p,_) ->
                       exists? (fn v -> inVars?(v,fvs)) (patVars p))
               binds
           in
+          % let _ = writeLine("reFoldLetVars:\n"^printTerm M^"  -->  \n"^printTerm(Let(new_binds, M1, b))) in
           (Let(new_binds, M1, b),
            appendToInfoPathDifference([length new_binds], info, let_path, "reFoldLetVars"))
 
@@ -1305,17 +1317,13 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 	in
 	(rews >>=
            (fn (term, (subst, rule, path, boundVars, rules1)) ->
-              % At this point, a rewrite has been successfully applied
-              % to term0, the input term. We now need to ensure that
-              % all of the preconditions of the rule which was applied
-              % hold; this is done by solveCondition, which itself
-              % recursively applies rewriting.
+              % At this point, a rewrite has been successfully applied to term0, the input term. We
+              % now need to ensure that all of the preconditions of the rule which was applied hold;
+              % this is done by solveCondition, which itself recursively applies rewriting.
               %
-              % The conditions which must be solved include the
-              % precondition of the rule itself, as well as any type
-              % unification conditions from higher-order matching,
-              % which include any subtype predicates on the free
-              % variables of the rules.
+              % The conditions which must be solved include the precondition of the rule itself, as
+              % well as any type unification conditions from higher-order matching, which include
+              % any subtype predicates on the free variables of the rules.
               let (_, _, typeConds) = subst in
               let conds = case rule.condition of
                             | None -> typeConds
@@ -1329,31 +1337,22 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   (%writeLine("Found recursive subgoal: "^printTerm prev_term);
                      None)
                 else
-                  % At this point, subst has only been applied to the
-                  % output term, term, so now we additionally apply it
-                  % to the condition we are about to try to solve.
-                  % Note that boundVars are considered free in the
-                  % condition, which must be true at the point in the
-                  % input term where the rewrite occurred.
-                  let cond =
-                    dereferenceAllAsSubst subst (mkConj conds) boundVars
-                  in
+                  % At this point, subst has only been applied to the output term, term, so now we
+                  % additionally apply it to the condition we are about to try to solve.  Note that
+                  % boundVars are considered free in the condition, which must be true at the point
+                  % in the input term where the rewrite occurred.
+                  let cond = dereferenceAllAsSubst subst (mkConj conds) boundVars in
 
-                  % The condition could still have free flex
-                  % variables, e.g., for a rule like transitivity,
-                  % written as below, where we may have already
-                  % rewritten x<z to true but we don't yet know y:
-                  %
+                  % The condition could still have free flex variables, e.g., for a rule like
+                  % transitivity, written as below, where we may have already rewritten x<z to true
+                  % but we don't yet know y:
                   % fa (x,y,z) x<y && y<z => x<z = true
                   %
-                  % We need to freshen up the free flex variables of
-                  % cond before we try to rewrite it so that none of
-                  % them clash with free flex variables in our rules
+                  % We need to freshen up the free flex variables of cond before we try to rewrite
+                  % it so that none of them clash with free flex variables in our rules
                   let fresh_subst = fresheningSubstFor (cond, rules1) in
-                  % README: don't need dereferenceAllAsSubst here
-                  % because fresh_subst just replaces flex vars with
-                  % other flex vars, so substitution and grafting are
-                  % the same
+                  % README: don't need dereferenceAllAsSubst here because fresh_subst just replaces
+                  % flex vars with other flex vars, so substitution and grafting are the same
                   let cond = dereferenceAll fresh_subst cond in
                   case
                     traceRuleRec (context, rule,
@@ -1363,11 +1362,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                     of
                     | None -> None
                     | Some (subst', pf) ->
-                      % subst' is a substitution that is to be applied
-                      % after fresh_subst, which itself is to be
-                      % applied after the original subst we got from
-                      % rewriting, so here we compose them all
-                      % together.
+                      % subst' is a substitution that is to be applied after fresh_subst, which
+                      % itself is to be applied after the original subst we got from rewriting, so
+                      % here we compose them all together.
                       Some (composeSubstCs subst'
                               (composeSubstCs fresh_subst subst),
                             pf)
@@ -1375,36 +1372,25 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
               case opt_subst_pf of
                 | None -> Nil
                 | Some (final_subst, cond_pf) ->
-                  % Now we apply final_subst to the output term, term,
-                  % and build a proof that original input term = term.
-                  % Note that we don't use dereferenceAllAsSubst
-                  % because we want grafting, not substitution, i.e.,
-                  % we are rewriting subterms of term that might
-                  % contain variables bound in term.
+                  % Now we apply final_subst to the output term, term, and build a proof that
+                  % original input term = term.  Note that we don't use dereferenceAllAsSubst
+                  % because we want grafting, not substitution, i.e., we are rewriting subterms of
+                  % term that might contain variables bound in term.
                   let term = dereferenceAll final_subst term in
 
-                  % To build the proof that the input term, term0,
-                  % equals the output term, term, we first undo the
-                  % rewrite that was applied to get term, to get
-                  % term_without_rr. This is not necessarily equal to
-                  % term0, since rewriteTerm optionally performs some
-                  % commuting conversions that push function calls
-                  % inside of ifs, lets, and cases. We prove
-                  % term0=term_without_rr using an auto tactic and
-                  % then prove term_without_rr=term using the proof
-                  % given in the rule. The latter proof additionally
-                  % requires: type substitution, for any free type
-                  % variables; forall elimination, to substitute in
-                  % the values of any free term variables in the rule;
-                  % and implication elimination, to supply a proof of
-                  % the condition of the rule.
-                  %
-                  % Rather than trying to build all of these proofs
-                  % explicitly, all of the "helper" proofs are built
-                  % with an auto tactic augmented with the proof
-                  % cond_pf of the conjunction of conds above. This
-                  % includes the proof that term0=term_without_rr, as
-                  % this equality might depend on some of the type
+                  % To build the proof that the input term, term0, equals the output term, term, we
+                  % first undo the rewrite that was applied to get term, to get
+                  % term_without_rr. This is not necessarily equal to term0, since rewriteTerm
+                  % optionally performs some commuting conversions that push function calls inside
+                  % of ifs, lets, and cases. We prove term0=term_without_rr using an auto tactic and
+                  % then prove term_without_rr=term using the proof given in the rule. The latter
+                  % proof additionally requires: type substitution, for any free type variables;
+                  % forall elimination, to substitute in the values of any free term variables in
+                  % the rule; and implication elimination, to supply a proof of the condition of the
+                  % rule.  Rather than trying to build all of these proofs explicitly, all of the
+                  % "helper" proofs are built with an auto tactic augmented with the proof cond_pf
+                  % of the conjunction of conds above. This includes the proof that
+                  % term0=term_without_rr, as this equality might depend on some of the type
                   % conditions returned by higher-order matching.
                   let term_without_rr =
                     case validPathTermWithErr (term, path) of
@@ -1444,16 +1430,16 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   let pf2 =
                     case rule.opt_proof of
                       | None ->
-                        % If there is no proof, use "auto" to prove
-                        % the equality of the rewrite, throwing in
-                        % cond_pf as well (why not?)
+                        % If there is no proof, use "auto" to prove the equality of the rewrite,
+                        % throwing in cond_pf as well (why not?)
                         % let _ = printRule rule in
-                        prove_equalWithTactic (AutoTactic auto_helpers,
+                        prove_equalWithTactic (WithTactic(auto_helpers,
+                                                          fn ids -> "(auto simp add: Let_def"^foldl (fn (s, si) -> s^" "^si) "" ids^")") ,
                                                term_without_rr, term,
                                                inferType (context.spc, term))
                       | Some rule_pf ->
-                        % If there is a proof for the rule, use it to
-                        % prove that term_without_rr=term.
+                        % If there is a proof for the rule, use it to prove that
+                        % term_without_rr=term.
                         %
                         % Step 1: Instantiate any type variables
                         let rule_pf1 =
@@ -1461,8 +1447,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                             (tyVarSubstFromSubstC final_subst, rule_pf)
                         in
 
-                        % Step 2: Instantiate universally quantified
-                        % variables using forall elimination
+                        % Step 2: Instantiate universally quantified variables using forall
+                        % elimination
                         let var_terms_pfs =
                           map (fn (var_i, var_tp) ->
                                  % Go through each free variable of a
@@ -1482,9 +1468,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                           prove_forallElimMulti (rule_pf1, var_terms_pfs)
                         in
 
-                        % Step 3: Cut (i.e., perform implication
-                        % elimination) the proof against the proof of
-                        % the condition, if any
+                        % Step 3: Cut (i.e., perform implication elimination) the proof against the
+                        % proof of the condition, if any
                         let rule_pf3 =
                           case rule.condition of
                             | Some cond ->

@@ -626,6 +626,15 @@ SpecNorm qualifying spec
         else None
       | _ -> None
  
+  %% possiblySubtypeOf? isn't sufficient because type definitions have been normalized
+  op possiblySubtypeOfPostNorm?(ty1: MSType, ty2: MSType, spc: Spec): Bool =
+    possiblySubtypeOf?(ty1, ty2, spc)
+      || (let env = initialEnv (spc, "internal") in
+          case (expandType(env, ty1), expandType(env, ty2)) of
+            | (Subtype(s_ty1, p1, _), Subtype(s_ty2, p2, _)) ->
+              equalTermAlpha?(p1, p2)
+            | _ -> false)
+
   op hasDefiningConjunctImplyingSubtype(v as (vn,v_ty): MSVar, binding_cjs: MSTerms, spc: Spec): Bool =
    exists? (fn cj ->
                case bindingEquality? (v, cj) of
@@ -635,7 +644,7 @@ SpecNorm qualifying spec
                          % let _ = writeLine(printTerm e1^" implied by(?) "^printType e2_ty) in
                          case e1 of
                            | Var((v_id, _), _) ->
-                             vn = v_id && possiblySubtypeOf?(e2_ty, v_ty, spc)
+                             vn = v_id && possiblySubtypeOfPostNorm?(e2_ty, v_ty, spc)
                            | Record(prs, _) ->
                              let given_tys = recordTypes(spc, e2_ty) in
                              length prs = length given_tys
@@ -1279,8 +1288,8 @@ SpecNorm qualifying spec
     %% Regularize functions that may be used in equality tests
     let spc = regularizeFunctions spc in
     %let _ = writeLine(anyToString tbl) in
-    %let _ = writeLine(printSpec spc) in
-    let spc = mapSpec (relativizeQuantifiersSimpOption simplify?  spc, id, id) spc in
+    % let _ = writeLine(printSpec spc) in
+    let spc = mapSpec (relativizeQuantifiersSimpOption simplify? spc, id, id) spc in
     %% Replace subtypes by supertypes
     let spc = mapSpec (id,fn s ->
                          case s of

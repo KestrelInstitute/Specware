@@ -504,6 +504,15 @@ op isaDirectoryName: String = "Isa"
           | _ -> extractLambdaVars(tm, f_tm))
      | _ -> (f_tm, [])
 
+ op mkResultTerms(val_ty: MSType, result_tm: MSTerm, val_tm: MSTerm, spc: Spec): MSTerms =
+   case result_tm of
+     | Record(fields, _) ->
+       flatten(map (fn (id_i, fld_val_tm) ->
+                      let fld_ty = inferType(spc, fld_val_tm) in
+                      mkResultTerms(fld_ty, fld_val_tm, mkApply(mkProject(id_i, val_ty, fld_ty), val_tm), spc))
+                 fields)
+     | _ -> [mkEquality(val_ty, result_tm, val_tm)]
+
  op mkRefineOpObligTerm(qid: QualifiedId, new_ty: MSType, new_dfn: MSTerm, prev_ty: MSType, prev_dfn: MSTerm,
                         simplify?: Bool, spc: Spec)
       : MSTerm * MSTerm * MSTerm * MSTerm =
@@ -514,11 +523,12 @@ op isaDirectoryName: String = "Isa"
        let (val_tm, param_conds) = extractCondsFromDomainTypeOrTerm(new_ty, new_dfn, f_tm) in
        let rhs = mkConj(old_post_condns) in
        %% Adds condition that post-condition value is the result of applying the fn
-       let val_condn = mkEquality(inferType(spc, val_tm), new_result_tm, val_tm) in
-       let condn = mkConj[mkConj(param_conds), mkConj new_post_condns, val_condn] in
+       let val_condns = mkResultTerms(inferType(spc, val_tm), new_result_tm, val_tm, spc) in
+       let condn = mkConj([mkConj param_conds, mkConj new_post_condns] ++ val_condns) in
+       % let _ = writeLine("oblig term:\n"^printTerm condn) in
        let simpl_oblig = mkSimpImplies(simplify spc condn, simplify spc rhs) in
        % let _ = writeLine("refined oblig:\n"^printTerm simpl_oblig) in
-       if trueTerm? simpl_oblig
+       if false  %trueTerm? simpl_oblig
          then (trueTerm, trueTerm, trueTerm, trueTerm)
          else (if simplify? then simpl_oblig else mkImplies(condn, rhs), mkConj new_post_condns, rhs, condn)
      | _ -> (trueTerm, trueTerm, trueTerm, trueTerm)
@@ -793,9 +803,9 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
          (4, prConcat [string "\"", prop, string "\""])]),
      rest_pretty])
 
- % Liek addForwardAssumption, but the assumption has a non-unique,
+ % Like addForwardAssumption, but the assumption has a non-unique,
  % global name.
- op addForwardAssumptionGlobal (c : Context, nm: String, prop: Pretty, rest: IsaProof StateMode) : IsaProof StateMode =
+ op addForwardAssumptionGlobal (c : Context, nm: String, props: Prettys, rest: IsaProof StateMode) : IsaProof StateMode =
  let rest_pretty = case rest of IsaProof p -> p in
  IsaProof
  (prLines 0
@@ -803,7 +813,7 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
        (0,
         [(0, string "assume "),
          (2, string (nm ^ ": ")),
-         (4, prConcat [string "\"", prop, string "\""])]),
+         (4, prLinear 0 (map (fn prop -> prConcat [string "\"", prop, string "\""]) props))]),
      rest_pretty])
 
  % Fix a MetaSlang variable as an Isabelle variable in a proof. The
@@ -971,6 +981,15 @@ op rulesTactic (rules: List String): IsaProof ProofTacticMode =
 % Keep global assumption names distinct from local assumption names
 op mkGlobalAssumpName (nm : String) : String = nm ^ "_"
 
+op spreadAssumpNames: List String = ["fn_value"]
+op ppTermOrConjsNonNorm (c: Context) (assump_name: String) (t: MSTerm) : Prettys =
+  let cjs = getConjuncts1 t in
+  let cjs = if length cjs <= 1 || assump_name in? spreadAssumpNames
+              then cjs
+              else [t]
+  in
+  map (ppTermNonNorm c) cjs
+
 % Convert a ProofInternal to an IsaProof in StateMode. README: The
 % boundVars are actually the variables that have been fixed in the
 % currrent forward proof block, not the entire set of bound vars.
@@ -996,7 +1015,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
 
     | Proof_ImplIntro (P,Q,nm,pf) ->
       addForwardAssumptionGlobal
-      (c, mkGlobalAssumpName nm, ppTermNonNorm c P,
+      (c, mkGlobalAssumpName nm, ppTermOrConjsNonNorm c nm P,
        ppProofIntToIsaProof_st (c, [], pf))
 
     | Proof_Assump (nm,P) ->
@@ -1067,7 +1086,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
        singleTacticProof
          (otherTacticPP
             (prConcat
-               [(string "(auto simp only: "), ppQualifiedId qid, string ")"])))
+               [(string "(rule "), ppQualifiedId qid, string ")"])))
 
     | Proof_Tactic (tactic, P) ->
       % let _ = writeLine(printProof_Internal pf) in
@@ -1138,7 +1157,7 @@ op ppProofIntToIsaProof_st (c: Context, boundVars: MSVars, pf: ProofInternal)
         else ()
       in
       let sub_eq_pp =
-        ppBigAnd (map ppVarWithoutType vars,
+        ppBigAnd (map (ppVarWithType c true) vars,
                   ppTermNonNorm c sub_eq_pred)
       in
       let sub_eq_lambda_pp =
@@ -1498,6 +1517,34 @@ removeSubTypes can introduce subtype conditions that require addCoercions
 		  [[ppSpecElements c spc (filter elementFilter spc.elements)],
 		  [prString "end"],
                   []]))
+
+ op obligationName?(Qualified(_, q_id): QualifiedId): Bool =
+   some?(search("_obligation", q_id)) || some?(search("_Obligation", q_id))
+
+ op simplifyTopSpec (spc: Spec): Spec =
+   let (new_elts, new_ops) =
+       foldr (fn (elt, (elts, ops)) ->
+                case elt of
+                  | Property(ty, qid, tvs, tm, a) | obligationName? qid ->   % Don't simplify user's theorems!
+                    (Cons(Property(ty, qid, tvs, simplify spc tm, a), elts), ops)
+                  | Op(qid as Qualified(q,id), true, _) ->
+                    let Some info = findTheOp(spc, qid) in
+                    (elt :: elts,
+                     insertAQualifierMap(ops, q, id, info << {dfn = simplify spc info.dfn}))
+                  | OpDef(qid as Qualified(q,id), refine_num, _, _) ->
+                    (case findTheOp(spc, qid) of
+                       | None -> fail("Can't find def of op "^printQualifiedId qid)
+                       | Some opinfo ->
+                     (elt :: elts,
+                      let trps = unpackTypedTerms (opinfo.dfn) in
+                      let (tvs, ty, dfn) = nthRefinement(trps, refine_num) in
+                      let simp_dfn = simplify spc dfn in
+                      let new_dfn = maybePiAndTypedTerm(replaceNthRefinement(trps, refine_num, (tvs, ty, simp_dfn))) in
+                      insertAQualifierMap(ops, q, id, opinfo << {dfn = new_dfn})))
+                  | _ -> (elt :: elts, ops))
+         ([], spc.ops) spc.elements
+   in
+   spc << {ops = new_ops, elements = new_elts}
 
   op specHasSorryProof?(spc: Spec): Bool =
     exists? (fn elt ->
@@ -3685,7 +3732,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                               let def ppField (x,y) =
                                      prConcat [prString (case recd_ty of
                                                            | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
-                                                           | _ -> mkFieldName x),
+                                                           | _ -> mkFieldName( x^"1")),
                                                prString " := ",
                                                ppTerm c Top y]
                               in
@@ -3751,7 +3798,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
             let def ppField (x,y) =
                   prConcat [prString (case recd_ty of
                                       | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,x)
-                                      | _ -> mkFieldName x),
+                                      | _ -> mkFieldName( x^"2")),
                             prString " = ",
                             ppTerm c Top y]
             in
@@ -3903,7 +3950,9 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
 
  def projectorFun (c:Context, p:String, s:MSType, spc:Spec) : String =
    let (prod_ty, arity) = case typeArity(spc, s) of
-                            | None -> (s,1)
+                            | None -> (case arrowOpt(spc, s) of
+                                         | Some(dom, _) -> (dom, 1)
+                                         | None -> (s, 1))
                             | Some pr -> pr
    in
    case p of
@@ -3919,7 +3968,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
      | _ ->
    case unfoldToBaseNamedType(spc, prod_ty) of
      | Base(qid, _, _) -> mkNamedRecordFieldName c (qid,p)
-     | _ -> mkFieldName p
+     | _ -> mkFieldName ( p^"3")
 
  op  ppBinder : Binder -> Pretty
  def ppBinder binder =
@@ -4045,7 +4094,7 @@ op patToTerm(pat: MSPattern, ext: String, c: Context): Option MSTerm =
                      prString ")"]
          | _ ->
            let def ppField (x,pat) =
-                 prConcat [prString (mkFieldName x),
+                 prConcat [prString (mkFieldName( x^"4")),
                            prString "=",
                            ppPattern c pat (extendWild wildstr x) true]
            in
@@ -4348,7 +4397,7 @@ op typeQualifiedIdStr (c: Context) (qid: QualifiedId): String =
                        (map ppField fields))
           | _ ->
             let def ppField (x,y) =
-            prLinearCat 2 [[prString (mkFieldName x),
+            prLinearCat 2 [[prString (mkFieldName( x^"5")),
                             prString " :: "],
                            [ppType c Top in_quotes? y]]
             in

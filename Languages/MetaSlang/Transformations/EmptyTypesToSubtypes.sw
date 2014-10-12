@@ -26,13 +26,13 @@ spec
             | Some info ->
           let (tvs, dfn) = unpackFirstTypeDef info in
           ~(tvs = [] && embed? Any dfn)
-            || specConstrainsTypeInhabited?(mkBase(qid,[]), spc))
+            || specConstrainsTypeInhabited?(mkBase(qid,[]), spc)
+            || knownNonEmptyType?(dfn, spc))
 
   op knownNonEmptyType?(ty: MSType, spc: Spec): Bool =
     case ty of
-      | Base(qid, arg_tys, _) ->
-        qid in? knownNonEmptyBaseTypes || arg_tys ~= []
-          || specConstrainsTypeInhabited?(ty, spc)
+      | Base(qid, arg_tys, _) -> knownNonEmptyTypeQID?(qid, spc)
+      | Product(id_prs, _) -> forall? (fn (_, tyi) -> knownNonEmptyType?(tyi, spc)) id_prs
       | _ -> specConstrainsTypeInhabited?(ty, spc)
 
   op emptyTypesToSubtypes(spc: Spec): Spec = 
