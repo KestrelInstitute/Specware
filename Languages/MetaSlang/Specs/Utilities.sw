@@ -1067,7 +1067,7 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      then (if boolVal t1 then reduceTerm1 t2 else trueTerm)
    else if boolVal? t2
      then (if boolVal t2
-             then (if sideEffectFree t1 then trueTerm else mkSeq[t2, trueTerm])
+             then (if sideEffectFree t1 then trueTerm else mkSeq[t1, trueTerm])
              else negate t1)
    else case t2 of
           | Apply(Fun (Implies, _, _), Record([(_,p1), (_,q1)], _), _) ->
@@ -1725,7 +1725,9 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
       | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
         if boolVal? N1 || boolVal? N2 then Some (mkOr(N1,N2)) else None
       | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) ->
-        if boolVal? N1 || (boolVal? N2 && sideEffectFree N1) then Some (mkSimpImplies(N1,N2)) else None
+        if boolVal? N1 || (boolVal? N2 && sideEffectFree N1) then Some (mkSimpImplies(N1,N2))
+        else if equalTermAlpha?(N1,N2) && sideEffectFree N1
+          then Some trueTerm else None
       | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
 	if boolVal? N1 || boolVal? N2 then Some (mkSimpIff(N1,N2)) else None
       | IfThenElse(p,q,r,_) ->
@@ -1747,6 +1749,8 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
         %% let pat = e in bod --> bod  if variables in pat don't occur in bod
       | Let([(pat, tm)], bod, _) | sideEffectFree tm && disjointVars?(patternVars pat, freeVars bod) ->
         Some bod
+      | Bind(_, vs, Fun (Bool false,_,_), _) -> Some falseTerm
+      | Bind(_, vs, Fun (Bool true,_,_), _) | forall? (fn (_,tyi) -> knownNonEmpty?(tyi, spc)) vs -> Some trueTerm
       | _ -> None
 
  op tryEval1(term: MSTerm): Option MSTerm =
@@ -1961,6 +1965,12 @@ op substPat(pat: MSPattern, sub: VarPatSubst): MSPattern =
      | RestrictedPat(p1, _, _) -> tuplePattern? p1
      | _ -> false
 
+ op [a] tupleFields1? (fields: List(Id * a)): Bool =
+   case fields of
+     | [] -> true
+     | ("1",_)::_ -> true
+     | _ -> false
+
  op coproductOpt (sp : Spec, ty : MSType): Option (List (Id * Option MSType)) = 
   case stripSubtypes (sp, unfoldBase (sp,ty))
     of CoProduct (fields, _) -> Some fields
@@ -2151,7 +2161,7 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
        | None -> false
 
    op possiblySubtypeOf?(ty1: MSType, ty2: MSType, spc: Spec): Bool =
-     % let _ = writeLine(printType ty1^" <=? "^printType ty2) in
+     % let _ = writeLine(printType ty1^" <=? "^printType ty2^"\n"^show(equivType? spc (ty1, ty2))) in
      equivType? spc (ty1, ty2)
        || (case ty1 of
              | Base(qid1, tys, _) ->

@@ -91,9 +91,12 @@ PatternMatch qualifying spec
   let index = ! ctx.error_index + 1 in
   (ctx.error_index := index;
    let typ1 = mkArrow (typ, typ) in
+   let line_num = begLineNum(termAnn tm) in
+   % let _ = if line_num = 0 then writeLine("no annotation: "^printTerm tm) else () in
    % let _ = writeLine("mkfail called with\n"^printTerm tm) in
    let msg  = "ERROR: Nonexhaustive match failure [\#"
-             ^ (show index) ^ "] in " ^ (printQualifiedId ctx.name)
+             ^ (show index) ^ (if line_num = 0 then "" else " line: "^show(line_num))
+             ^ "] in " ^ (printQualifiedId ctx.name)
              ^ "~%~s" in
    mkApply (mkOp (mkFail_name, typ1),
             mkTuple[mkString msg, tm]))
@@ -935,7 +938,7 @@ PatternMatch qualifying spec
 
     | (RecordPat (fields,_), term) -> 
       let v            = freshVar (ctx, inferType (ctx.spc, term)) in
-      let var          = mkVar v                                   in
+      let var          = mkAVar(v, termAnn term)                      in
       let new_bindings = map (fn (id, pat) -> 
                                 (pat, mkProjectTerm (ctx.spc, id, var))) 
                              fields 
@@ -1028,7 +1031,7 @@ PatternMatch qualifying spec
   let
      def termFrom_vs(vs) =
        case vs of
-         | [(_, v)] -> Var (v, noPos)
+         | [(_, v)] -> mkAVar (v, termAnn term)
          | _ -> Record (map (fn (index, v) -> (index, mkVar v)) vs, 
                         noPos) 
      def loop (msrules, first_msrules) =
@@ -1080,9 +1083,11 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
  case pattern of
    | VarPat _ -> true
    | RestrictedPat (p, _, _) -> simplePattern? p
-   | RecordPat (fields, _) ->forall? (fn (_, p) -> simplePattern? p) fields 
+   | RecordPat (fields, _) -> forall? (fn (_, p) -> simplePattern? p) fields 
    | _ -> false
  
+op mkAVar(v: MSVar, p: Position): MSTerm =
+  Var(v, p)
 
  op eliminateTerm (ctx : Context) (term : MSTerm) : MSTerm =
   case term of
@@ -1130,7 +1135,7 @@ op almostSimplePattern? (pattern : MSPattern) : Bool =
                                               body))
                                           msrules 
         in
-        let vars = map (fn (_, v) -> mkVar v) indices_and_vs                   in
+        let vars = map (fn (_, v) -> mkAVar(v, termAnn term)) indices_and_vs                   in
         let ctx  = storeLambda (term, ctx)                                     in
         let trm  = match (ctx, vars, pmrules, continuation, mkBreak body_type) in
         let trm  = abstract (indices_and_vs, trm, body_type)                   in

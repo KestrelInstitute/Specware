@@ -23,6 +23,13 @@ Position qualifying spec
  def internalPosition : Position = Internal "built-in"
  def noPos            : Position = Internal "no position"
 
+ op begLineNum(pos: Position): Nat =
+   % 0 means there is no info
+   case pos of
+     | File (_, (left, _, _), _) -> left
+     | String (_, (left, _, _), _) -> left
+     | _ -> 0
+
  % ------------------------------------------------------------------------
 
  op print : Position -> String
