@@ -2,7 +2,7 @@ Sorting = spec
 
   import /Library/General/ListFacts
 
-%% TODO: Generalize the Nat here?
+%% TODO: Generalize the Nat here?  pass in an ordering?
   op sorted? (lst : List Nat) : Bool =
     case lst of
       | [] -> true
@@ -116,6 +116,14 @@ theorem Compose is
     apply(auto)
     apply(case_tac "tl2")
     apply(auto)
+    apply(case_tac "tl1")
+    apply(auto)
+    apply(case_tac "tl1")
+    apply(auto)
+    apply(case_tac "tl2")
+    apply(auto)
+    apply(case_tac "tl2")
+    apply(auto)
   end-proof
 
   proof Isa mergeLists_perm
@@ -185,6 +193,10 @@ M = morphism DivideAndConquer#Params -> MergeSort0 {Solution +-> NatList, Proble
 
 
 MergeSort = DivideAndConquer#Algorithm[M]
+
+% %% override the hook from DivideAndConquer#Algorithm
+% %% TODO: prevent it from being carried over?
+% proof Isa Solution__Predicate_of_solve end-proof
 
 proof Isa solve ()
   by (pat_completeness, auto)
