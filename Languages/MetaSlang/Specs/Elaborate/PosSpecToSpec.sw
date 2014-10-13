@@ -60,11 +60,12 @@ PosSpecToSpec qualifying spec
    result
 
  op correctPolyTypes?: Bool = false
+ op correctEqualityTypes?: Bool = true
 
  op convertPTerm (spc: Spec) (term: MSTerm): MSTerm =
    % let _ = writeLine("cvt: "^printTerm term^"\n"^anyToString term) in
    case term of
-     | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctPolyTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
+     | ApplyN([Fun(eq_or_neq,ty,_),t2],pos) | correctEqualityTypes? && (eq_or_neq = Equals || eq_or_neq = NotEquals) ->
        correctEqualityType(spc, eq_or_neq, ty, t2, pos)
      | ApplyN([Apply(Fun(Op(Qualified("List","map"),fx),ty,a), m, _), l], _) | correctPolyTypes? ->
        correctMapType(m, l, ty, spc, fx, a)
