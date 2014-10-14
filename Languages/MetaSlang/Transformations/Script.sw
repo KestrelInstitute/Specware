@@ -232,12 +232,8 @@ spec
                    foldr (fn (p, r) ->
                             if claimNameMatch(qid, p.2)
                               then (axiomRules context p RightToLeft
-                                      % FIXME: figure out how to
-                                      % reverse the direction of a
-                                      % universal, conditional
-                                      % equality proof for this None
-                                      None)
-                                ++ r
+                                      (Some (prove_withTheorem (p.2, p.4))))
+                                  ++ r
                             else r)
                      [] (allProperties spc))
       | Omit qid -> []

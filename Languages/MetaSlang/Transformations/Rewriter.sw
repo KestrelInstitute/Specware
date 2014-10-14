@@ -1423,7 +1423,12 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                     if equalTerm? (term0, term_without_rr) then
                       prove_equalRefl (inferType (context.spc, term0), term0)
                     else
-                      prove_equalWithTactic (AutoTactic auto_helpers, term0,
+                      prove_equalWithTactic (WithTactic(auto_helpers,
+                                                        fn ids ->
+                                                          "(auto simp add: Let_def"
+                                                         ^foldl (fn (s, si) -> s^" "^si)
+                                                            "" ids^")"),
+                                             term0,
                                              term_without_rr,
                                              inferType (context.spc, term0))
                   in
@@ -1434,7 +1439,10 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                         % throwing in cond_pf as well (why not?)
                         % let _ = printRule rule in
                         prove_equalWithTactic (WithTactic(auto_helpers,
-                                                          fn ids -> "(auto simp add: Let_def"^foldl (fn (s, si) -> s^" "^si) "" ids^")") ,
+                                                          fn ids ->
+                                                            "(auto simp add:  Let_def"
+                                                            ^foldl (fn (s, si) -> s^" "^si)
+                                                            "" ids^")"),
                                                term_without_rr, term,
                                                inferType (context.spc, term))
                       | Some rule_pf ->
