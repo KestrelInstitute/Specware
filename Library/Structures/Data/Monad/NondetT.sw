@@ -90,8 +90,8 @@ NondetT = morphism ../Monad -> NondetT_spec { Monad._ +-> NondetT._ }
 % The morphism showing that NondetT is a monad transformer
 NondetT_isa_transformer = morphism MonadTrans -> NondetT_spec { MonadTrans._ +-> NondetT._ }
 
-% NondetT creates a monad satisfying MonadNondet
-NondetT_MonadNondet = morphism MonadNondet -> NondetT { Monad._ +-> NondetT._ }
+% NondetT creates a monad satisfying MonadPlus
+NondetT_MonadNondet = morphism MonadPlus -> NondetT { Monad._ +-> NondetT._ }
 
 
 %%
