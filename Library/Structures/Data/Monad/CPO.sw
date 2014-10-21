@@ -1,13 +1,11 @@
 % Complete pre-orders (technically, these are omega-complete
 % pre-orders), used for defining non-termination. This is a pre-order
-% (reflexive and transitive, we do not require asymmetry) such that,
-% for any ascending chain
+% (reflexive and transitive, we do not require asymmetry) such that
+% any ascending chain
 %
 % a1 <= a2 <= ...
 %
-% defined by a function f:nat -> a, there is some element sup f that
-% is greater than all f i. We also include the "pointed" condition in
-% our definition of CPOs, which requires a least element.
+% defined by a function f:nat -> a has a least upper bound sup f.
 
 spec
 
@@ -103,30 +101,109 @@ spec
   op [a] chain? (r : PreOrder a) (seq : Nat -> a) : Bool =
     fa (i) r (seq i, seq (i+1))
 
-  % A CPO is a PreOrder along with a supremum operator and a least element
-  op [a] cpo? (r : PreOrder a, bot : a, sup : (Nat -> a) -> a) : Bool =
-    (fa (seq,i) chain? r seq => r (seq i, sup seq)) &&
-    (fa (a) r (bot, a))
+  % The base type of a CPO (without the subtype condition)
+  type CPO_base a = { rel: PreOrder a, sup: (Nat -> a) -> a }
 
-  type CPO a = { cpo : (PreOrder a * a * ((Nat -> a) -> a)) | cpo? cpo }
+  % A CPO is a PreOrder along with a supremum operator, where the
+  % latter must return an upper bound that is least
+  op [a] cpo? (cpo: CPO_base a) : Bool =
+    (fa (seq,i) chain? cpo.rel seq => cpo.rel (seq i, cpo.sup seq)) &&
+    (fa (seq,a)
+       chain? cpo.rel seq => (fa (i) cpo.rel (seq i, a)) =>
+       cpo.rel (cpo.sup seq, a))
+
+  type CPO a = { cpo : CPO_base a | cpo? cpo }
+
+  % The base type of a PointedCPO (without the subtype condition)
+  type PointedCPO_base a = { cpo: CPO a, bot: a }
+
+  % Helper accessors for PointedCPOs
+  op [a] pcpo_rel (pcpo : PointedCPO_base a) : PreOrder a = pcpo.cpo.rel
+  op [a] pcpo_sup (pcpo : PointedCPO_base a) : (Nat -> a) -> a = pcpo.cpo.sup
+
+  % A pointed CPO is a CPO with a least element
+  op [a] pointedCpo? (pcpo : PointedCPO_base a) : Bool =
+    cpo? (pcpo.cpo) && (fa (a) (pcpo.cpo.rel) (pcpo.bot, a))
+
+  type PointedCPO a = { pcpo : PointedCPO_base a | pointedCpo? pcpo }
 
 
-  % FIXME HERE: define some CPOs!
+  %%
+  %% Examples of CPOs
+  %%
 
-  % lift a preorder to an Option type
-  op [a] cpo_option (r_a: PreOrder a) : PreOrder (Option a) =
-    fn (x,y) -> fa (a) x = Some a => (ex (a') r_a (a,a') && y = Some a')
+  % Equality is a trivial CPO, where the supremum of a chain is just
+  % the first element (since all element in the chain are equal)
+  op [a] cpo_eq : CPO a = { rel = (=), sup = (fn seq -> seq 0) }
 
-  % lift a preorder on the codomain type to a preorder on a function type
-  op [a,b] cpo_fun (r_b : PreOrder b) : PreOrder (a -> b) =
-    fn (f1,f2) -> fa (a) r_b (f1 a, f2 a)
+  % Similarly, any equivalence is a CPO
+  op [a] cpo_equ (e : Equivalence a) : CPO a = { rel = e, sup = (fn seq -> seq 0) }
+
+  % Lift a CPO on a to a PointedCPO on Option a, where None is the
+  % least element
+
+  op [a] pcpo_option_rel (r: CPO a) : EndoRelation (Option a) =
+    fn (x,y) ->
+      case (x,y) of
+        | (None, _) -> true
+        | (Some a, _) -> false
+        | (Some a1, Some a2) -> r.rel (a1, a2)
+  op [a] pcpo_option_sup (r: CPO a) (seq : Nat -> Option a) : Option a =
+    if (fa (i) seq i = None) then None else
+      let i0 = the (i) (seq i ~= None && (fa (j) j < i => seq j = None)) in
+      Some (r.sup (fn i ->
+                   case seq (i+i0) of
+                     | None -> the (a) (seq i0 = Some a)
+                     | Some a -> a))
+
+  op [a] pcpo_option (r: CPO a) : PointedCPO (Option a) =
+    { cpo = { rel = pcpo_option_rel r, sup = pcpo_option_sup r}, bot = None }
+
+
+  % lift a pointed CPO on the codomain type to a function type
+  op [a,b] pcpo_fun (r : PointedCPO b) : PointedCPO (a -> b) =
+    {cpo = {rel = (fn (f1,f2) -> fa (a) r.cpo.rel (f1 a, f2 a)),
+            sup = (fn seq -> fn a -> r.cpo.sup (fn i -> seq i a))},
+     bot = (fn a -> r.bot)}
 
   % the equivalence relation derived from an ordering
-  %op [a] cpo_equiv (r_a: PreOrder a) : Equivalence a =
-  %  fn (a1, a2) -> r_a (a1, a2) && r_a (a2, a1)
+  op [a] preorder_equiv (r_a: PreOrder a) : Equivalence a =
+    fn (a1, a2) -> r_a (a1, a2) && r_a (a2, a1)
 
-  % specify that f is monotonic w.r.t. input order r_a and output order r_b
+
+  %%
+  %% Building least fixed-points with PointedCPOs
+  %%
+
+  % f is monotonic w.r.t. a PreOrder iff it maps related inputs to related outputs
   op [a,b] monotonic? (r_a : PreOrder a, r_b : PreOrder b) (f : a -> b) : Bool =
     fa (a1, a2) r_a (a1, a2) => r_b (f a1, f a2)
+
+  % f is continuous iff it is monotonic and preserves suprema
+  op [a,b] continuous? (r_a : CPO a, r_b : CPO b) (f : a -> b) : Bool =
+    monotonic? (r_a.rel, r_b.rel) f &&
+    (fa (seq) f (r_a.sup seq) = r_b.sup (fn i -> f (seq i)))
+
+  % f is continuous w.r.t. pointed CPOs iff it also preserves bottom
+  op [a,b] pcontinuous? (r_a : PointedCPO a, r_b : PointedCPO b) (f : a -> b) : Bool =
+    continuous? (r_a.cpo, r_b.cpo) f && f r_a.bot = r_b.bot
+
+  % The least fixed-point of f, assuming it is pcontinuous, is the
+  % supremum of bot, f bot, f (f bot), etc.
+  op [a] multiApp (f : a -> a) (i : Nat) (x : a) : a =
+    if i = 0 then x else f (multiApp f (i-1) x)
+  op [a] leastFP (r: PointedCPO a, f : a -> a | pcontinuous? (r,r) f) : a =
+    r.cpo.sup (fn i -> multiApp f i r.bot)
+
+  % Theorem: leastFP is a fixed-point of f
+  theorem leastFP_fixed_point is [a]
+    fa (r,f) pcontinuous? (r,r) f =>
+      preorder_equiv r.cpo.rel (f (leastFP (r,f)), leastFP (r,f))
+
+  % Theorem: leastFP is the least fixed-point of f
+  theorem leastFP_least is [a]
+    fa (r,f,fp) pcontinuous? (r,r) f =>
+      preorder_equiv r.cpo.rel (f fp, fp) =>
+      r.cpo.rel (leastFP (r,f), fp)
 
 end-spec
