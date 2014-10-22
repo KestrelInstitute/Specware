@@ -592,7 +592,7 @@ spec
   op rewritePT(spc: Spec, path_term: PathTerm,
                context: Context, qid: QualifiedId, rule_specs: RuleSpecs)
        : MSTerm * Proof =
-    assumingNoSideEffects
+    %assumingNoSideEffects
       (context.traceDepth := 0;
        let top_term = topTerm path_term in
        let (bound_vars, term) = fromPathTermWithBindings path_term in

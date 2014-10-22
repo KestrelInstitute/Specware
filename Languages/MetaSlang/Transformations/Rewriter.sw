@@ -39,11 +39,10 @@ MetaSlangRewriter qualifying spec
  op mapRRResultInfo (tr_fn: MSTerm -> MSTerm)
                     (((typeSubst, termSubst, tms), rule, path, boundVars, rules): RRResultInfo): RRResultInfo =
    let new_termSubst = NatMap.map tr_fn termSubst in
-   let new_rule = if none? rule.trans_fn then rule
-                   else rule << {lhs = tr_fn rule.lhs,
-                                 opt_proof = mapOption (mapProof "mapRRResultInfo" (tr_fn, id, id)) rule.opt_proof}
+   let new_rule = rule << {lhs = tr_fn rule.lhs,
+                           opt_proof = mapOption (mapProof "mapRRResultInfo" (tr_fn, id, id)) rule.opt_proof}
    in
-   (((typeSubst, new_termSubst, tms), new_rule, path, boundVars, rules): RRResultInfo)
+   ((typeSubst, new_termSubst, tms), new_rule, path, boundVars, rules)
 
  % Get the path from a RRResultInfo
  op infoPath ((_, _, path, _, _): RRResultInfo) : Path = path
@@ -246,7 +245,7 @@ MetaSlangRewriter qualifying spec
           in
           fromList
             (optimizeSuccessList
-               (mapPartial (fn s ->
+               (mapPartial (fn s as (typeSubst, termSubst, condns) ->
                               % For each match s with the lhs of rule,
                               % substitute s into the rhs and return
                               % the result, making sure we don't apply
@@ -257,6 +256,13 @@ MetaSlangRewriter qualifying spec
                               %% The dereferenceAll will be done later as well,
                               %% This is also necessary for foldSubPatterns
                               let result = dereferenceAllAsSubst s rule.rhs boundVars in
+                              let s = case rule.condition of
+                                        | None -> s
+                                        | Some condn ->
+                                          (typeSubst, termSubst,
+                                           (dereferenceAllAsSubst s condn boundVars)
+                                             :: condns)
+                              in
                               if equalTerm?(term, result)
                                 then None
                               else Some(result,(s,rule,path,boundVars,demod)))
@@ -1324,11 +1330,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
               % The conditions which must be solved include the precondition of the rule itself, as
               % well as any type unification conditions from higher-order matching, which include
               % any subtype predicates on the free variables of the rules.
-              let (_, _, typeConds) = subst in
-              let conds = case rule.condition of
-                            | None -> typeConds
-                            | Some cond -> Cons(cond, typeConds)
-              in
+              let (_, _, conds) = subst in
+              % let conds = case rule.condition of
+              %               | None -> typeConds
+              %               | Some cond -> Cons(cond, typeConds)
+              % in
               let opt_subst_pf =
                 if conds = [] then
                   (traceRule(context, rule); Some (subst, prove_true))
