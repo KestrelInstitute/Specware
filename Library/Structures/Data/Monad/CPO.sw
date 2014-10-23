@@ -1,11 +1,9 @@
-% Complete pre-orders (technically, these are omega-complete
-% pre-orders), used for defining non-termination. This is a pre-order
-% (reflexive and transitive, we do not require asymmetry) such that
-% any ascending chain
-%
-% a1 <= a2 <= ...
-%
-% defined by a function f:nat -> a has a least upper bound sup f.
+% Complete partial orders, useful for defining non-termination. A CPO
+% is a partial order (reflexive, transitive, and antisymmetric) such
+% that any non-empty directed set S has a supremum, written sup S. A
+% directed set is a set such that every pair of elements in the set
+% has an upper bound (not necessarily least); i.e., all the elements
+% in the set are, in a sense, compatible.
 
 spec
 
@@ -50,6 +48,14 @@ spec
     by (simp add: sym_def)
   end-proof
 
+  % Anti-Symmetry
+  op [a] antisymmetric? (r: EndoRelation a) : Bool =
+    fa(x,y) r(x,y) && r(y,x) => x = y
+
+  proof Isa antisymmetric_p__def
+    by (auto simp add: antisym_def)
+  end-proof
+
   % Transitivity
   op [a] transitive? (r: EndoRelation a) : Bool =
     fa(x,y,z) r(x,y) && r(y,z) => r(x,z)
@@ -58,18 +64,24 @@ spec
     by (auto simp add: trans_def)
   end-proof
 
-  % A preOrder is a reflexive-transitive relation
+  % A pre-order is a reflexive-transitive relation
   op preOrder? : [a] EndoRelation a -> Bool =
     iSetInter (reflexive?, transitive?)
 
   type PreOrder a = { r : EndoRelation a | preOrder? r }
+
+  % A partial order is an antisymmetric pre-order
+  op partialOrder? : [a] EndoRelation a -> Bool =
+    iSetInter (preOrder?, antisymmetric?)
+
+  type PartialOrder a = { r : EndoRelation a | partialOrder? r }
 
   % An equivalence is a relfexive-symmetric-transitive relation
   op equivalence? : [a] EndoRelation a -> Bool =
     iSetInter (reflexive?, iSetInter (symmetric?, transitive?))
 
   proof Isa equivalence_p__def
-    by (auto simp add: setToPred_def equiv_def)
+    by (auto simp add: equiv_def)
   end-proof
 
   type Equivalence a = (EndoRelation a | equivalence?)
@@ -88,6 +100,7 @@ spec
     iSetInter               -> \<inter> Left 70
     reflexive?              -> refl
     symmetric?              -> sym
+    antisymmetric?          -> antisym
     transitive?             -> trans
     equivalence?            -> equivalence
   end-proof
@@ -97,35 +110,51 @@ spec
   %% We now define the CPOs
   %%
 
-  % A chain is an ascending sequence
-  op [a] chain? (r : PreOrder a) (seq : Nat -> a) : Bool =
-    fa (i) r (seq i, seq (i+1))
+  % non-emptiness of sets
+  op [a] nonempty? (S : ISet a) : Bool = ex (x) S x
 
-  % The base type of a CPO (without the subtype condition)
-  type CPO_base a = { rel: PreOrder a, sup: (Nat -> a) -> a }
+  % A directed set is a set such that all pairs of elements have an
+  % upper bound (not necessarily least)
+  op [a] directed? (r : PartialOrder a) (S : ISet a) : Bool =
+    fa (x,y) S x => S y => (ex (z) r (x,z) && r (y,z))
 
-  % A CPO is a PreOrder along with a supremum operator, where the
-  % latter must return an upper bound that is least
-  op [a] cpo? (cpo: CPO_base a) : Bool =
-    (fa (seq,i) chain? cpo.rel seq => cpo.rel (seq i, cpo.sup seq)) &&
-    (fa (seq,a)
-       chain? cpo.rel seq => (fa (i) cpo.rel (seq i, a)) =>
-       cpo.rel (cpo.sup seq, a))
+  % Upper bounds
+  op [a] upperBound? (r : PartialOrder a) (S : ISet a) (ub : a) : Bool =
+    fa (x) S x => r (x, ub)
 
-  type CPO a = { cpo : CPO_base a | cpo? cpo }
+  % A least upper bound is an upper bound that is least
+  op [a] leastUpperBound? (r : PartialOrder a) (S : ISet a) (lub : a) : Bool =
+    upperBound? r S lub &&
+    (fa (x) upperBound? r S x => r (lub, x))
 
-  % The base type of a PointedCPO (without the subtype condition)
-  type PointedCPO_base a = { cpo: CPO a, bot: a }
+  % Least upper bounds are unique
+  theorem leastUpperBound_unique is [a]
+    fa (r,S,lub1,lub2)
+      leastUpperBound? r S lub1 =>
+      leastUpperBound? r S lub2 =>
+      lub1 = lub2
 
-  % Helper accessors for PointedCPOs
-  op [a] pcpo_rel (pcpo : PointedCPO_base a) : PreOrder a = pcpo.cpo.rel
-  op [a] pcpo_sup (pcpo : PointedCPO_base a) : (Nat -> a) -> a = pcpo.cpo.sup
+  % A CPO is a PartialOrder along with a supremum operator for
+  % non-empty directed sets
+  op [a] cpo? (r: PartialOrder a) : Bool =
+    fa (S) nonempty? S => directed? r S =>
+      (ex (lub) leastUpperBound? r S lub)
 
-  % A pointed CPO is a CPO with a least element
-  op [a] pointedCpo? (pcpo : PointedCPO_base a) : Bool =
-    cpo? (pcpo.cpo) && (fa (a) (pcpo.cpo.rel) (pcpo.bot, a))
+  type CPO a = { r : PartialOrder a | cpo? r }
 
-  type PointedCPO a = { pcpo : PointedCPO_base a | pointedCpo? pcpo }
+  % A pointed CPO is a CPO where sup can also take empty sets, i.e., a
+  % CPO with a least element
+  op [a] pointedCpo? (r : PartialOrder a) : Bool =
+    fa (S) directed? r S =>
+      (ex (lub) leastUpperBound? r S lub)
+
+  type PointedCPO a = { r : PartialOrder a | pointedCpo? r }
+
+  % The supremum operator, for both pointed and non-pointed CPOs
+  op [a] supremum (r : PartialOrder a, S : ISet a |
+                     directed? r S &&
+                     ((cpo? r && nonempty? S) || pointedCpo? r)) : a =
+    the (lub) leastUpperBound? r S lub
 
 
   %%
@@ -134,76 +163,160 @@ spec
 
   % Equality is a trivial CPO, where the supremum of a chain is just
   % the first element (since all element in the chain are equal)
-  op [a] cpo_eq : CPO a = { rel = (=), sup = (fn seq -> seq 0) }
-
-  % Similarly, any equivalence is a CPO
-  op [a] cpo_equ (e : Equivalence a) : CPO a = { rel = e, sup = (fn seq -> seq 0) }
+  theorem eq_is_cpo is [a] cpo? ((=) : PartialOrder a)
 
   % Lift a CPO on a to a PointedCPO on Option a, where None is the
   % least element
-
-  op [a] pcpo_option_rel (r: CPO a) : EndoRelation (Option a) =
+  op [a] pcpo_option_fun (r: CPO a) : EndoRelation (Option a) =
     fn (x,y) ->
       case (x,y) of
         | (None, _) -> true
-        | (Some a, _) -> false
-        | (Some a1, Some a2) -> r.rel (a1, a2)
-  op [a] pcpo_option_sup (r: CPO a) (seq : Nat -> Option a) : Option a =
-    if (fa (i) seq i = None) then None else
-      let i0 = the (i) (seq i ~= None && (fa (j) j < i => seq j = None)) in
-      Some (r.sup (fn i ->
-                   case seq (i+i0) of
-                     | None -> the (a) (seq i0 = Some a)
-                     | Some a -> a))
-
-  op [a] pcpo_option (r: CPO a) : PointedCPO (Option a) =
-    { cpo = { rel = pcpo_option_rel r, sup = pcpo_option_sup r}, bot = None }
-
+        | (Some a, None) -> false
+        | (Some a1, Some a2) -> r (a1, a2)
+  op [a] pcpo_option (r: CPO a) : PointedCPO (Option a) = pcpo_option_fun r
 
   % lift a pointed CPO on the codomain type to a function type
   op [a,b] pcpo_fun (r : PointedCPO b) : PointedCPO (a -> b) =
-    {cpo = {rel = (fn (f1,f2) -> fa (a) r.cpo.rel (f1 a, f2 a)),
-            sup = (fn seq -> fn a -> r.cpo.sup (fn i -> seq i a))},
-     bot = (fn a -> r.bot)}
-
-  % the equivalence relation derived from an ordering
-  op [a] preorder_equiv (r_a: PreOrder a) : Equivalence a =
-    fn (a1, a2) -> r_a (a1, a2) && r_a (a2, a1)
+    fn (f1,f2) -> fa (a) r (f1 a, f2 a)
 
 
   %%
   %% Building least fixed-points with PointedCPOs
   %%
 
-  % f is monotonic w.r.t. a PreOrder iff it maps related inputs to related outputs
-  op [a,b] monotonic? (r_a : PreOrder a, r_b : PreOrder b) (f : a -> b) : Bool =
+  % f is monotonic w.r.t. a PartialOrder iff it maps related inputs to related outputs
+  op [a,b] monotonic? (r_a : PartialOrder a, r_b : PartialOrder b) (f : a -> b) : Bool =
     fa (a1, a2) r_a (a1, a2) => r_b (f a1, f a2)
 
   % f is continuous iff it is monotonic and preserves suprema
-  op [a,b] continuous? (r_a : CPO a, r_b : CPO b) (f : a -> b) : Bool =
-    monotonic? (r_a.rel, r_b.rel) f &&
-    (fa (seq) f (r_a.sup seq) = r_b.sup (fn i -> f (seq i)))
+  % op [a,b] continuous? (r_a : CPO a, r_b : CPO b) (f : a -> b) : Bool =
+  %   monotonic? (r_a.rel, r_b.rel) f &&
+  %   (fa (seq) f (r_a.sup seq) = r_b.sup (fn i -> f (seq i)))
 
-  % f is continuous w.r.t. pointed CPOs iff it also preserves bottom
-  op [a,b] pcontinuous? (r_a : PointedCPO a, r_b : PointedCPO b) (f : a -> b) : Bool =
-    continuous? (r_a.cpo, r_b.cpo) f && f r_a.bot = r_b.bot
+  % Fixed-points
+  op [a] fixedPoint? (f : a -> a) (x:a) : Bool = f x = x
 
-  % The least fixed-point of f, assuming it is pcontinuous, is the
-  % supremum of bot, f bot, f (f bot), etc.
-  op [a] multiApp (f : a -> a) (i : Nat) (x : a) : a =
-    if i = 0 then x else f (multiApp f (i-1) x)
-  op [a] leastFP (r: PointedCPO a, f : a -> a | pcontinuous? (r,r) f) : a =
-    r.cpo.sup (fn i -> multiApp f i r.bot)
+  % Least fixed-points
+  op [a] leastFixedPoint? (r : PartialOrder a, f : a -> a) (x:a) : Bool =
+    fixedPoint? f x && (fa (y) fixedPoint? f y => r (x, y))
 
-  % Theorem: leastFP is a fixed-point of f
-  theorem leastFP_fixed_point is [a]
-    fa (r,f) pcontinuous? (r,r) f =>
-      preorder_equiv r.cpo.rel (f (leastFP (r,f)), leastFP (r,f))
+  % Any monotonic function has a least fixed-point
+  op [a] leastFP (r: PointedCPO a, f : a -> a | monotonic? (r,r) f) : a =
+    the (lub) (leastFixedPoint? (r, f) lub)
 
-  % Theorem: leastFP is the least fixed-point of f
-  theorem leastFP_least is [a]
-    fa (r,f,fp) pcontinuous? (r,r) f =>
-      preorder_equiv r.cpo.rel (f fp, fp) =>
-      r.cpo.rel (leastFP (r,f), fp)
+
+  %%
+  %% Proofs
+  %%
+
+  proof Isa leastUpperBound_unique
+    proof -
+      assume po : "partialOrder_p r"
+      assume lub1_pf : "leastUpperBound_p r S lub1"
+      assume lub2_pf : "leastUpperBound_p r S lub2"
+      have asym : "antisym r"
+        by (insert po, simp add: partialOrder_p_def)
+      have ub1 : "upperBound_p r S lub1" by (insert lub1_pf, simp add: leastUpperBound_p_def)
+      have ub2 : "upperBound_p r S lub2" by (insert lub2_pf, simp add: leastUpperBound_p_def)
+      have r12 : "(lub1, lub2) \<in> r"
+        by (insert lub1_pf, insert ub2, simp add: leastUpperBound_p_def)
+      have r21 : "(lub2, lub1) \<in> r"
+        by (insert lub2_pf, insert ub1, simp add: leastUpperBound_p_def)
+      show "lub1 = lub2"
+        by (insert r12, insert r21, insert asym, rule antisymD, assumption+)
+    qed
+  end-proof
+
+  proof Isa supremum_Obligation_the
+    proof (rule ex_ex1I)
+      assume po : "partialOrder_p r"
+      assume dir : "directed_p r S"
+      assume disj : "cpo_p r \<and> nonempty_p S \<or> pointedCpo_p r"
+      show "\<exists> lub . leastUpperBound_p r S lub"
+        apply (insert disj, insert dir)
+        by (auto simp add: cpo_p_def pointedCpo_p_def)
+      fix lub y
+      assume lub_lub : "leastUpperBound_p r S lub"
+      assume lub_y : "leastUpperBound_p r S y"
+      show "lub = y"
+        by (insert po, insert lub_lub, insert lub_y, rule leastUpperBound_unique, auto)
+    qed
+  end-proof
+
+  proof Isa eq_is_cpo_Obligation_subtype
+    apply (auto simp add: partialOrder_p_def preOrder_p_def)
+    apply (simp add: refl_onI)
+    apply (rule transI, auto)
+    apply (rule antisymI, auto)
+    done
+  end-proof
+
+  proof Isa eq_is_cpo
+    apply (auto simp add: cpo_p_def nonempty_p_def, rule exI)
+    proof -
+      fix S x
+      assume Sx : "setToPred S x"
+      assume dir : "directed_p {(x, y). x = y} S"
+      have Selems : "!! y . setToPred S y ==> x = y"
+        by (insert dir, simp add: directed_p_def, erule allE, erule allE, erule mp, simp add: Sx)
+      have Seq : "S = { x }"
+        by (rule set_eqI, auto simp add: Sx Selems)
+      have ub : "upperBound_p {(x, y). x = y} S x"
+        by (auto simp add: upperBound_p_def Seq)
+      show "leastUpperBound_p {(x, y). x = y} S x"
+        by (auto simp add: leastUpperBound_p_def ub upperBound_p_def Seq)
+    qed
+  end-proof
+
+(*
+  proof Isa pcpo_option_Obligation_subtype
+    apply (simp add: pointedCpo_p_def, rule allI, rule impI, rule exI)
+    proof -
+      fix S
+      assume cpo : "cpo_p r"
+      assume po : "partialOrder_p r"
+      assume dir : "directed_p (pcpo_option_fun r) S"
+      have lub_emp : "leastUpperBound_p (pcpo_option_fun r) {} None"
+        by (simp add: leastUpperBound_p_def pcpo_option_fun_def upperBound_p_def)
+      have lub_none : "leastUpperBound_p (pcpo_option_fun r) {None} None"
+        by (simp add: leastUpperBound_p_def pcpo_option_fun_def upperBound_p_def)
+      have dir_some : "directed_p r {x . Some x \<in> S}"
+        apply (insert dir, auto simp add: directed_p_def)
+        apply (erule allE, erule allE, drule mp)
+        defer apply (erule exE, erule conjE)
+        apply (case_tac z, simp add: pcpo_option_fun_def) defer
+        apply (subgoal_tac "setToPred r (x, a) \<and> setToPred r (y, a)")
+        apply (rule exI, assumption)
+        apply (subgoal_tac "setToPred (pcpo_option_fun r) (Some x, z)")
+        apply (subgoal_tac "setToPred (pcpo_option_fun r) (Some y, z)")
+        apply (frule ssubst)
+        apply (auto simp add: pcpo_option_fun_def)
+
+        proof -
+          fix x y z
+          assume a1 : "setToPred S (Some x)"
+          assume a2 : "setToPred S (Some y)"
+          show "setToPred S (Some x) \<and> setToPred S (Some y)" by (simp add: a1 a2)
+          assume a3 : "setToPred (pcpo_option_fun r) (Some x, z)"
+          assume a4 : "setToPred (pcpo_option_fun r) (Some y, z)"
+          have zeq : "\<exists> a . z = Some a"
+            by (insert a3, case_tac z, auto simp add: pcpo_option_fun_def)
+          show "setToPred r (x, THE a . z = Some a) \<and> setToPred r (y, THE a . z = Some a)"
+        qed
+        apply (erule exE) apply (case_tac z, (auto simp add: pcpo_option_fun_def))
+      have lub_some : "nonempty_p {x . Some x \<in> S} ==>
+                       \<exists>x . leastUpperBound_p r {x . Some x \<in> S} x"
+        apply (insert cpo, insert dir,
+          auto simp add: cpo_p_def, erule allE, erule mp, auto simp add: directed_p_def)
+      have dj : "S = {} | S = {None} | nonempty_p {x . Some x \<in> S}"
+        by (auto simp add: nonempty_p_def, case_tac xa, auto, case_tac x, auto)
+
+      have cpo_opt : "cpo_p (pcpo_option_fun r)"
+        apply (auto simp add: cpo_p_def, rule exI)
+        proof -
+          fix T
+          assume nonemp : "nonempty_p T"
+  end-proof
+*)
 
 end-spec
