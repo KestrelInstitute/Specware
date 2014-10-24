@@ -268,7 +268,7 @@ spec
     qed
   end-proof
 
-(*
+  % FIXME HERE: finish this proof!
   proof Isa pcpo_option_Obligation_subtype
     apply (simp add: pointedCpo_p_def, rule allI, rule impI, rule exI)
     proof -
@@ -282,41 +282,35 @@ spec
         by (simp add: leastUpperBound_p_def pcpo_option_fun_def upperBound_p_def)
       have dir_some : "directed_p r {x . Some x \<in> S}"
         apply (insert dir, auto simp add: directed_p_def)
-        apply (erule allE, erule allE, drule mp)
-        defer apply (erule exE, erule conjE)
-        apply (case_tac z, simp add: pcpo_option_fun_def) defer
-        apply (subgoal_tac "setToPred r (x, a) \<and> setToPred r (y, a)")
-        apply (rule exI, assumption)
-        apply (subgoal_tac "setToPred (pcpo_option_fun r) (Some x, z)")
-        apply (subgoal_tac "setToPred (pcpo_option_fun r) (Some y, z)")
-        apply (frule ssubst)
-        apply (auto simp add: pcpo_option_fun_def)
-
+        apply (erule allE, erule allE)
         proof -
-          fix x y z
-          assume a1 : "setToPred S (Some x)"
-          assume a2 : "setToPred S (Some y)"
-          show "setToPred S (Some x) \<and> setToPred S (Some y)" by (simp add: a1 a2)
-          assume a3 : "setToPred (pcpo_option_fun r) (Some x, z)"
-          assume a4 : "setToPred (pcpo_option_fun r) (Some y, z)"
-          have zeq : "\<exists> a . z = Some a"
-            by (insert a3, case_tac z, auto simp add: pcpo_option_fun_def)
-          show "setToPred r (x, THE a . z = Some a) \<and> setToPred r (y, THE a . z = Some a)"
+          fix x y
+          assume Sx : "setToPred S (Some x)"
+          assume Sy : "setToPred S (Some y)"
+          assume impl : "setToPred S (Some x) \<and> setToPred S (Some y)
+                         --> (\<exists>z. setToPred (pcpo_option_fun r) (Some x, z)
+                                \<and> setToPred (pcpo_option_fun r) (Some y, z))"
+          have ex_z : "\<exists>z. setToPred (pcpo_option_fun r) (Some x, z)
+                            \<and> setToPred (pcpo_option_fun r) (Some y, z)"
+            by (insert impl, insert Sx, insert Sy, erule mp, simp)
+          obtain a where a_ok: "setToPred r (x,a) \<and> setToPred r (y,a)"
+            by (insert ex_z, erule exE, case_tac z, auto simp add: pcpo_option_fun_def)
+          show "\<exists> a . setToPred r (x,a) \<and> setToPred r (y,a)"
+            by (insert a_ok, rule exI, assumption)
         qed
-        apply (erule exE) apply (case_tac z, (auto simp add: pcpo_option_fun_def))
-      have lub_some : "nonempty_p {x . Some x \<in> S} ==>
+      have lub_r : "nonempty_p {x . Some x \<in> S} ==>
                        \<exists>x . leastUpperBound_p r {x . Some x \<in> S} x"
-        apply (insert cpo, insert dir,
-          auto simp add: cpo_p_def, erule allE, erule mp, auto simp add: directed_p_def)
+        by (insert cpo, insert dir_some, auto simp add: cpo_p_def)
+      have lub_r_eq : "!! lub . leastUpperBound_p r {x . Some x \<in> S} lub ==>
+                         leastUpperBound_p (pcpo_option_fun r) S (Some lub)"
+       apply (auto simp add: leastUpperBound_p_def upperBound_p_def pcpo_option_fun_def,
+         case_tac x, auto)
+       sorry
       have dj : "S = {} | S = {None} | nonempty_p {x . Some x \<in> S}"
         by (auto simp add: nonempty_p_def, case_tac xa, auto, case_tac x, auto)
-
-      have cpo_opt : "cpo_p (pcpo_option_fun r)"
-        apply (auto simp add: cpo_p_def, rule exI)
-        proof -
-          fix T
-          assume nonemp : "nonempty_p T"
+      obtain lub where islub : "leastUpperBound_p (pcpo_option_fun r) S lub"
+        by (insert dj, insert lub_r, insert lub_r_eq, insert lub_none, insert lub_emp, auto)
+      show "leastUpperBound_p (pcpo_option_fun r) S lub"
   end-proof
-*)
 
 end-spec
