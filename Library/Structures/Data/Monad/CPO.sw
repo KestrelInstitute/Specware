@@ -268,9 +268,8 @@ spec
     qed
   end-proof
 
-  % FIXME HERE: finish this proof!
   proof Isa pcpo_option_Obligation_subtype
-    apply (simp add: pointedCpo_p_def, rule allI, rule impI, rule exI)
+    apply (simp add: pointedCpo_p_def, rule allI, rule impI)
     proof -
       fix S
       assume cpo : "cpo_p r"
@@ -301,16 +300,51 @@ spec
       have lub_r : "nonempty_p {x . Some x \<in> S} ==>
                        \<exists>x . leastUpperBound_p r {x . Some x \<in> S} x"
         by (insert cpo, insert dir_some, auto simp add: cpo_p_def)
-      have lub_r_eq : "!! lub . leastUpperBound_p r {x . Some x \<in> S} lub ==>
+      have lub_r_eq : "!! lub . nonempty_p {x . Some x \<in> S } ==>
+                         leastUpperBound_p r {x . Some x \<in> S} lub ==>
                          leastUpperBound_p (pcpo_option_fun r) S (Some lub)"
-       apply (auto simp add: leastUpperBound_p_def upperBound_p_def pcpo_option_fun_def,
-         case_tac x, auto)
-       sorry
+       proof (auto simp add: leastUpperBound_p_def)
+         fix lub x
+         assume nonemp : "nonempty_p {x . Some x \<in> S}"
+         assume ub_lub : "upperBound_p r {x. setToPred S (Some x)} lub"
+         assume lub_lub : "\<forall>x. upperBound_p r {x. setToPred S (Some x)} x --> setToPred r (lub, x)"
+         show "upperBound_p (pcpo_option_fun r) S (Some lub)"
+           by (insert ub_lub, auto simp add: upperBound_p_def pcpo_option_fun_def, case_tac x, auto)
+         assume ub_x : "upperBound_p (pcpo_option_fun r) S x"
+         obtain a where some_a_in : "Some a \<in> S"
+           by (insert nonemp, auto simp add: nonempty_p_def)
+         have r_some_a_x : "setToPred (pcpo_option_fun r) (Some a, x)"
+           by (insert some_a_in, insert ub_x, auto simp add: upperBound_p_def)
+         obtain y where x_eq_some_y : "x = Some y"
+           by (insert r_some_a_x, case_tac x, auto simp add: pcpo_option_fun_def)
+         show "setToPred (pcpo_option_fun r) (Some lub, x)"
+           by (insert x_eq_some_y ub_x lub_lub, erule allE,
+               auto simp add: upperBound_p_def pcpo_option_fun_def)
+       qed
       have dj : "S = {} | S = {None} | nonempty_p {x . Some x \<in> S}"
         by (auto simp add: nonempty_p_def, case_tac xa, auto, case_tac x, auto)
       obtain lub where islub : "leastUpperBound_p (pcpo_option_fun r) S lub"
         by (insert dj, insert lub_r, insert lub_r_eq, insert lub_none, insert lub_emp, auto)
-      show "leastUpperBound_p (pcpo_option_fun r) S lub"
+      show "\<exists>lub . leastUpperBound_p (pcpo_option_fun r) S lub"
+        by (rule exI, rule islub)
+    qed
+  end-proof
+
+  proof Isa pcpo_option_Obligation_subtype0
+    proof (auto simp add: partialOrder_p_def preOrder_p_def)
+      assume r_refl : "refl r"
+      assume r_trans : "trans r"
+      assume r_antisym : "antisym r"
+      show "refl (pcpo_option_fun r)"
+        by (insert r_refl, rule refl_onI, auto simp add: pcpo_option_fun_def,
+            case_tac x, auto simp add: refl_onD)
+      show "trans (pcpo_option_fun r)"
+        by (insert r_trans, rule transI, auto simp add: pcpo_option_fun_def,
+            case_tac x, auto, case_tac y, auto, case_tac z, auto, rule transD, auto)
+      show "antisym (pcpo_option_fun r)"
+        by (insert r_antisym, rule antisymI, auto simp add: pcpo_option_fun_def,
+            case_tac x, auto, case_tac y, auto, case_tac y, auto, rule antisymD, auto)
+    qed
   end-proof
 
 end-spec
