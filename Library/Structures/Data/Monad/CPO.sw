@@ -347,4 +347,55 @@ spec
     qed
   end-proof
 
+  proof Isa pcpo_fun_Obligation_subtype
+    proof (simp add: pointedCpo_p_def, rule allI, rule impI)
+      fix S
+      assume lub_r : "\<forall>S. directed_p r S --> (\<exists>lub. leastUpperBound_p r S lub)"
+      assume po_r : "partialOrder_p r"
+      assume dir : "directed_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S"
+      def lub \<equiv> "\<lambda>a . The (leastUpperBound_p r { f a | f . setToPred S f })"
+      have ex_lub_a : "!!a . \<exists>lub_a . leastUpperBound_p r { f a | f . setToPred S f } lub_a"
+        proof (insert lub_r dir, erule allE, erule mp, auto simp add: directed_p_def)
+          fix a f fa
+          assume a1 : "\<forall> x y . setToPred S x \<and> setToPred S y -->
+                         (\<exists>z. (\<forall>a. setToPred r (x a, z a))
+                            \<and> (\<forall>a. setToPred r (y a, z a)))"
+          assume a2 : "setToPred S f"
+          assume a3 : "setToPred S fa"
+          obtain zf where zf_pf : "(\<forall>a. setToPred r (f a, zf a)) \<and> (\<forall>a. setToPred r (fa a, zf a))"
+            by (insert a1 a2 a3, erule allE[of _ f], erule allE[of _ fa], erule impE, auto)
+          show "\<exists>z. setToPred r (f a, z) \<and> setToPred r (fa a, z)"
+            by (insert zf_pf, auto)
+        qed
+      have lub_a : "\<forall>a . leastUpperBound_p r { f a | f . setToPred S f } (lub a)"
+        proof (rule allI)
+          fix a
+          obtain lub_a where lub_a_lub : "leastUpperBound_p r { f a | f . setToPred S f } lub_a"
+            by (insert ex_lub_a, auto)
+          show "leastUpperBound_p r {f a |f. setToPred S f} (lub a)"
+            by (insert lub_a_lub po_r, simp add: lub_def partialOrder_p_def,
+                rule theI, auto, rule antisymD, assumption,
+                auto simp add: leastUpperBound_p_def)
+        qed
+      have lub_lub : "leastUpperBound_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S lub"
+        by (insert lub_a, auto simp add: leastUpperBound_p_def upperBound_p_def, metis)
+      show "\<exists> lub . leastUpperBound_p {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)} S lub"
+        by (rule exI, rule lub_lub)
+    qed
+  end-proof
+
+  proof Isa pcpo_fun_Obligation_subtype0
+    proof (auto simp add: partialOrder_p_def preOrder_p_def)
+      assume r_refl : "refl r"
+      assume r_trans : "trans r"
+      assume r_antisym : "antisym r"
+      show "refl {(f1, f2). \<forall>a. setToPred r (f1 a, f2 a)}"
+        by (insert r_refl, rule refl_onI, auto simp add: refl_onD)
+      show "transP (\<lambda>f1 f2. \<forall>a. setToPred r (f1 a, f2 a))"
+        by (insert r_trans, rule transI, auto, (erule allE)+, rule transD)
+      show "antisymP (\<lambda>f1 f2. \<forall>a. setToPred r (f1 a, f2 a))"
+        by (insert r_antisym, rule antisymI, auto simp add: antisymD)
+    qed
+  end-proof
+
 end-spec
