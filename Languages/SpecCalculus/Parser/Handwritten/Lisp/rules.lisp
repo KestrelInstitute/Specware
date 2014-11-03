@@ -1404,7 +1404,9 @@ If we want the precedence to be optional:
   (:tuple "quotient" "[" (1 :QUALIFIABLE-TYPE-NAME) "]" (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2   ':left-lcb ':right-lcb) :documentation "Quotient pattern")
 
 (define-sw-parser-rule :RESTRICTED-PATTERN ()
-  (:tuple (1 :TIGHT-PATTERN) "|" (2 :EXPRESSION))                (make-restricted-pattern 1 2   ':left-lcb ':right-lcb) :documentation "Restricted pattern")
+  (:anyof
+   ((:tuple (1 :TIGHT-PATTERN) "|" (2 :EXPRESSION))              (make-restricted-pattern 1 2   ':left-lcb ':right-lcb))
+   ((:tuple "(" (1 :TIGHT-PATTERN) "|" (2 :EXPRESSION) ")")      (make-restricted-pattern 1 2   ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :VARIABLE-PATTERN ()
   (1 :LOCAL-VARIABLE)                                            (make-variable-pattern   1     ':left-lcb ':right-lcb) :documentation "Variable pattern")
