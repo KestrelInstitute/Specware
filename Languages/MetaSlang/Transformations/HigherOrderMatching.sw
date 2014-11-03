@@ -1359,7 +1359,7 @@ closedTermV detects existence of free variables not included in the argument
       % let _ = case optTerm of None -> () | Some t -> writeLine("Term: "^printTerm t) in
       let spc = context.spc in
       let
-	def insert(v,ty,(typeSubst,termSubst,condns)): SubstC = 
+	def insert_var_ty(v,ty,(typeSubst,termSubst,condns)): SubstC = 
 	    (StringMap.insert(typeSubst,v,ty),termSubst,condns)
         def addCondition(condn: MSTerm, subst as (typeSubst,termSubst,condns): SubstC): SubstC =
           if trueTerm? condn || termIn?(condn,condns) then subst
@@ -1411,6 +1411,10 @@ closedTermV detects existence of free variables not included in the argument
                             % || equalTermAlpha?(dr_p1, dr_p2)
                             || equivTerm? spc (dr_p1, dr_p2) ) ->
                  unify(subst,ty1,ty2,ty1_orig,equals,optTerm)
+	       | (Subtype(ty1,p1,_),Subtype(ty2,p2,_)) | hasFlexRef?(dereferenceAll subst p1) ->
+                 foldr (fn (subst,r) ->
+                          (map Unify (matchPairs(context,subst,insert(p1,p2,None,emptyStack)))) ++ r)
+                   [] (unifyTypes(context,subst,ty1,ty2,optTerm,M,N))
 	       | (bty1 as Base(id1,ts1,_), bty2 as Base(id2,ts2,_)) -> 
 		 if exists? (fn p -> p = (bty1,bty2)) equals
 		    then [Unify subst]
@@ -1441,41 +1445,41 @@ closedTermV detects existence of free variables not included in the argument
                     | (Some d_ty1, Some d_ty2) ->
                       (case subtypeMeet(d_ty1, d_ty2, spc, subst) of
                          | Some m_ty ->
-                           let subst = if equalType?(d_ty1, m_ty) then subst else insert(v1,m_ty,subst) in
-                           let subst = if equalType?(d_ty2, m_ty) then subst else insert(v2,m_ty,subst) in
+                           let subst = if equalType?(d_ty1, m_ty) then subst else insert_var_ty(v1,m_ty,subst) in
+                           let subst = if equalType?(d_ty2, m_ty) then subst else insert_var_ty(v2,m_ty,subst) in
                            [Unify subst]
                          | None -> [NotUnify (d_ty1,d_ty2)])                      
                     | (Some d_ty1, None) -> if equivType? spc (d_ty1, ty2) then [Unify subst]
                                             else if occursRec(subst,v2,ty1) || ~(freshTyVarName? v2)
                                               then [NotUnify (ty1,ty2)]
-                                            else [Unify(insert(v2,ty1,subst))]
+                                            else [Unify(insert_var_ty(v2,ty1,subst))]
                     | (None, Some d_ty2) -> if equivType? spc (ty1, d_ty2) then [Unify subst]
                                             else if occursRec(subst,v1,ty2) || ~(freshTyVarName? v1)
                                               then [NotUnify (ty1,ty2)]
-                                            else [Unify(insert(v1,ty2,subst))]
-                    | (None, None) -> [Unify(insert(v1,ty2,subst))])
+                                            else [Unify(insert_var_ty(v1,ty2,subst))]
+                    | (None, None) -> [Unify(insert_var_ty(v1,ty2,subst))])
                | (TyVar(v1,_), _) ->
                  (case StringMap.find(subst.1, v1) of 
                     | Some d_ty1 ->
                       (case subtypeMeet(d_ty1, ty2, spc, subst) of
                          | Some m_ty ->
-                           let subst = if equalType?(d_ty1, m_ty) then subst else insert(v1,m_ty,subst) in
+                           let subst = if equalType?(d_ty1, m_ty) then subst else insert_var_ty(v1,m_ty,subst) in
                            [Unify subst]
                          | None -> [NotUnify (d_ty1,ty2)])
                     | None -> if occursRec(subst,v1,ty2) || ~(freshTyVarName? v1)
                                 then [NotUnify (ty1,ty2)]
-                              else [Unify(insert(v1,ty2,subst))])
+                              else [Unify(insert_var_ty(v1,ty2,subst))])
 	       | (_,TyVar(v2, _)) -> 
 		 (case StringMap.find(subst.1, v2) of 
                     | Some d_ty2 ->
                       (case subtypeMeet(d_ty2, ty1, spc, subst) of
                          | Some m_ty ->
-                           let subst = if equalType?(d_ty2, m_ty) then subst else insert(v2,m_ty,subst) in
+                           let subst = if equalType?(d_ty2, m_ty) then subst else insert_var_ty(v2,m_ty,subst) in
                            [Unify subst]
                          | None -> [NotUnify (ty1,d_ty2)])
                     | None -> if occursRec(subst,v2,ty1) || ~(freshTyVarName? v2)
                                 then [NotUnify (ty1,ty2)]
-                              else [Unify(insert(v2,ty1,subst))])
+                              else [Unify(insert_var_ty(v2,ty1,subst))])
 	       | (bty1 as Base _, bty2)
                    | some?(tryUnfoldBase spc bty1) && (equivType? spc (bty1, bty2) || ~(possiblyStrictSubtypeOf?(bty2, bty1, spc))) -> 
                  let Some s1 = tryUnfoldBase spc bty1 in
@@ -1487,27 +1491,34 @@ closedTermV detects existence of free variables not included in the argument
                %% Analysis could be smarter here so that order of subtypes is not so important
                | (bty1 as Subtype(ty1, p1, _), ty2) | ~(possiblyStrictSubtypeOf?(ty2, bty1, spc)) ->
                  % let _ = writeLine(case optTerm of None -> "No term" | Some t -> "Term: "^printTerm t) in
-                 (case optTerm of
-                       | None -> [NotUnify(bty1,ty2)]
-                       | Some tm ->
-                         case unify(subst,ty1,ty2,ty1_orig,equals,optTerm) of
-                           | (Unify subst) :: _ ->    % Should generalize
-                             let p1 = dereferenceAll subst p1 in
-                             % let _ = writeLine("Pred: "^printTermWithTypes p1) in
-                             % let _ = printSubst subst in
-                             let condn = simplifiedApply(p1,tm,context.spc) in
-                             % let _ = writeLine("Condn: "^printTermWithTypes condn) in
-                             if falseTerm? condn then [NotUnify(ty1,ty2)]
-                             else [Unify(addCondition(condn, subst))]
-                           | result -> result)
+                 (case ty2 of
+                    | Subtype(ty2,p2,_) |  hasFlexRef?(dereferenceAll subst p1) ->
+                      foldr (fn (subst, sbsts) ->
+                              unify(subst,ty1,ty2,ty1_orig,equals,optTerm))
+                        [] (matchPairs(context,subst,insert(p1,p2,None,emptyStack)))                      
+                    | _ -> [])
+                 ++ (case optTerm of
+                     | None -> [NotUnify(bty1,ty2)]
+                     | Some tm ->
+                       case unify(subst,ty1,ty2,ty1_orig,equals,optTerm) of
+                         | (Unify subst) :: _ ->    % Should generalize
+                           let p1 = dereferenceAll subst p1 in
+                           % let _ = writeLine("Pred: "^printTermWithTypes p1) in
+                           % let _ = printSubst subst in
+                           let condn = simplifiedApply(p1,tm,context.spc) in
+                           % let _ = writeLine("Condn: "^printTermWithTypes condn) in
+                           if falseTerm? condn then [NotUnify(ty1,ty2)]
+                           else [Unify(addCondition(condn, subst))]
+                         | result -> result)
                  ++ (case ty1_orig of
                     | TyVar(v,_) | equalType?(stripSubtypes(spc,ty1), stripSubtypes(spc,ty2)) ->
                       %% If we are matching a type variable then loosen match of variable
                       %% Could using ty2 cause overshoot?
-                      [Unify(insert(v,ty2,subst))]
+                      [Unify(insert_var_ty(v,ty2,subst))]
                     | _ -> (%writeLine("ty1_orig: "^printType ty1_orig);
                             []))
-	       | (ty,Subtype(ty2,_,_)) -> unify(subst,ty,ty2,ty1_orig,equals,optTerm)
+	       | (ty,Subtype(ty2,p2,_)) ->
+                 unify(subst,ty,ty2,ty1_orig,equals,optTerm)
 	       | _ -> [NotUnify(ty1,ty2)]
       in
       let results = unifyL(subst,ty1,ty2,[ty1],[ty2],[],optTerm,unify) in
