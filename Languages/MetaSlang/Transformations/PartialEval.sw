@@ -99,23 +99,6 @@ import Script
   op SpecTransform.specializeSpec (spc: Spec, user_rules: RuleSpecs): Spec =
     specializeSpec0 constantConstructorArg spc user_rules
 
-  op constructorTerm? (spc: Spec) (tm: MSTerm): Bool =
-    some?(constructorTerm spc tm)
-
-  op constructorTerm (spc: Spec) (tm: MSTerm): Option(String * QualifiedIds) =
-    case tm of
-      | Fun(Embed (id, _), _, _) -> Some(id, [])
-      | Apply(Fun(Embed(id, _), _, _), _, _) -> Some(id, [])
-      | Fun(Op(qid, _), _, _) ->
-        (case findTheOp(spc, qid) of
-         | None -> None
-         | Some info ->
-         let (_, _, dfn) = unpackFirstTerm info.dfn in
-         case constructorTerm spc dfn of
-         | None -> None
-         | Some(id, qids) -> Some(id, qid :: qids))
-      | _ -> None
-
   op mkUniqueName(Qualified(q,id), str: String, spc: Spec): QualifiedId =
     let base_id = id^"__"^str in
     let def findUnused i =

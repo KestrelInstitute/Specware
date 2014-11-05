@@ -88,8 +88,8 @@ Utilities qualifying spec
                           pos);
 	 unlinked_type)
       else
-        (case findAllTypes (env.internal, qid) of
-          | info :: r ->
+        (case findTheType (env.internal, qid) of   % was findAllTypes which is just wrong
+          | Some info ->
 	    (if ~ (definedTypeInfo? info) then
 	       let tvs = firstTypeDefTyVars info in
 	       let l1 = length tvs in
@@ -134,13 +134,15 @@ Utilities qualifying spec
                        %% A base type can be defined in terms of other base types
                        %% So we unfold recursively here.
                        let dfn = maybeAndType (base_defs, typeAnn info.dfn) in
-                       expandTypeRec (env,
-                                      instantiate_type_scheme (env, pos, type_args, dfn),
-                                      %% Watch for self-references, even via aliases: 
-                                      foldl (fn (qids,qid) -> SplaySet.add (qids, qid))
-                                            qids
-                                            info.names))
-          | [] -> 
+                       instantiate_type_scheme (env, pos, type_args, dfn)
+                       % expandTypeRec (env,
+                       %                instantiate_type_scheme (env, pos, type_args, dfn),
+                       %                %% Watch for self-references, even via aliases: 
+                       %                foldl (fn (qids,qid) -> SplaySet.add (qids, qid))
+                       %                      qids
+                       %                      info.names)
+                       )
+          | None -> 
 	    (expansion_error (env, "Could not find type "^ printQualifiedId qid, pos);
 	     unlinked_type))
    %| Boolean is the same as default case

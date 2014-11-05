@@ -128,6 +128,8 @@ spec
                                   return (Unfold qid)}
       | Item("rewrite",opid,_) -> {qid <- extractQId opid;
                                    return (Rewrite qid)}
+      | Item("rewr",opid,_) -> {qid <- extractQId opid;
+                                   return (Rewrite qid)}
       | Name(cmd_name, pos) | transformInfoCommand? cmd_name ->
         (case lookupMSRuleInfo cmd_name of
            | Some(ty_info, tr_fn) ->
@@ -189,7 +191,7 @@ spec
   op commands: List String =
     ["simplify", "Simplify", "simplify1", "Simplify1", "simpStandard", "SimpStandard", "eval", "repeat",
      "partial-eval", "AbstractCommonExprs", "AbstractCommonSubExprs", "print", "move", "rename", "trace",
-     "lr", "rl", "strengthen", "weaken", "fold", "unfold", "rewrite", "apply"]
+     "lr", "rl", "strengthen", "weaken", "fold", "unfold", "apply", "rewr"]
 
   op makeScript1 (spc: Spec) (trans: TransformExpr): SpecCalc.Env Script =
     % let _ = writeLine("MS1: "^anyToString trans) in
@@ -228,6 +230,8 @@ spec
                                         return (Simplify1([Unfold qid]))}
       | Command("rewrite", [opid],_) -> {qid <- extractQId opid;
                                          return (Simplify1([Rewrite qid]))}
+      | Command("rewr", [opid],_) -> {qid <- extractQId opid;
+                                      return (Simplify1([Rewrite qid]))}
       | Command("revleibniz", [opid],_) -> {qid <- extractQId opid;
                                             return (Simplify1([RLeibniz qid]))}
       | Command("apply", [opid],_) -> {qid <- extractQId opid;
@@ -405,9 +409,10 @@ spec
       | (Item("omit", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Omit qid)) (transformExprToQualifiedId thm))
       | (Item("strengthen", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Strengthen qid)) (transformExprToQualifiedId thm))
       | (Item("weaken", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Weaken qid)) (transformExprToQualifiedId thm))
-      | (Item("fold", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Fold qid))        (transformExprToQualifiedId thm))
-      | (Item("unfold", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Unfold qid))      (transformExprToQualifiedId thm))
-      | (Item("rewrite", thm, _), Rule) -> return(mapOption (fn qid -> RuleV(Rewrite qid))     (transformExprToQualifiedId thm))
+      | (Item("fold", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Fold qid))   (transformExprToQualifiedId thm))
+      | (Item("unfold", thm, _),  Rule) -> return(mapOption (fn qid -> RuleV(Unfold qid)) (transformExprToQualifiedId thm))
+      | (Item("rewr", thm, _),    Rule) -> return(mapOption (fn qid -> RuleV(Rewrite qid))(transformExprToQualifiedId thm))
+      | (Item("rewrite", thm, _), Rule) -> return(mapOption (fn qid -> RuleV(Rewrite qid))(transformExprToQualifiedId thm))
       | (Item("apply", thm, _),   Rule) -> return(mapOption (fn qid -> RuleV(MetaRule(qid, TVal(BoolV false), simpleMetaRuleAnnTypeValue)))
                                              (transformExprToQualifiedId thm))
       | (Name(cmd_name, _),       Rule) | transformInfoCommand? cmd_name ->

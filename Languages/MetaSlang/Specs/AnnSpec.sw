@@ -225,7 +225,7 @@ type Proof.Proof
    case rs of
      | Unfold  qid     -> "unfold " ^ show qid
      | Fold    qid     -> "fold " ^ show qid
-     | Rewrite qid     -> "rewrite " ^ show qid
+     | Rewrite qid     -> "rewr " ^ show qid
      | LeftToRight qid -> "lr " ^ showQid qid
      | RightToLeft qid -> "rl " ^ showQid qid
      | Omit qid        -> "omit " ^ showQid qid

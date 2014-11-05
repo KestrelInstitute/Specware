@@ -392,7 +392,7 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("SpecCalc", "Env"), [m_ty], _) ->  mapOption (fn el_info -> Monad el_info) (argInfoFromType(m_ty, spc))
         | Base(Qualified("List", "List"), [el_ty], _) -> mapOption (fn el_info -> List el_info) (argInfoFromType(el_ty, spc))
         | Base(Qualified("Option", "Option"), [op_ty], _) -> mapOption (fn op_info -> Opt op_info) (argInfoFromType(op_ty, spc))
-        | Base _ -> let uf_ty = unfoldBase0 spc ty in
+        | Base _ -> let uf_ty = unfoldBaseOne(spc, ty) in
                     if equalType?(ty, uf_ty) then None % Bool.Bool = Boolean, so Bool.Bool would fail here
                       else argInfoFromType(uf_ty, spc)
         | Arrow(dom, rng, _) ->

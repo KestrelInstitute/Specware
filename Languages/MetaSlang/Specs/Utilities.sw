@@ -2934,6 +2934,24 @@ op subtypePred (ty: MSType, sup_ty: MSType, spc: Spec): Option MSTerm =
      | Apply(Fun(Op(Qualified("Nat", fitsInNBits?), _), _, _), Fun(Nat i, _, _), _) -> i ~= 0
      | _ -> false
 
+ op constructorTerm? (spc: Spec) (tm: MSTerm): Bool =
+   some?(constructorTerm spc tm)
+
+ op constructorTerm (spc: Spec) (tm: MSTerm): Option(String * QualifiedIds) =
+   case tm of
+     | Fun(Embed (id, _), _, _) -> Some(id, [])
+     | Apply(Fun(Embed(id, _), _, _), _, _) -> Some(id, [])
+     | Fun(Op(qid, _), _, _) ->
+       (case findTheOp(spc, qid) of
+        | None -> None
+        | Some info ->
+        let (_, _, dfn) = unpackFirstTerm info.dfn in
+        case constructorTerm spc dfn of
+        | None -> None
+        | Some(id, qids) -> Some(id, qid :: qids))
+     | _ -> None
+
+
  type MatchResult = | Match MSVarSubst | NoMatch | DontKnow
 
  op  patternMatch : MSPattern * MSTerm * MSVarSubst -> MatchResult 

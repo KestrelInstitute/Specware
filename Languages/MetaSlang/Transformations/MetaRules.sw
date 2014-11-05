@@ -23,7 +23,7 @@ Case 2:
 
 
 *)
-op dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
    case tm of
      | Let([(pat, b_tm)], m, a) ->
        (let pat_vs = patVars pat in
@@ -77,7 +77,7 @@ op matchPats(tm: MSTerm, pat: MSPattern): VarPatSubst =
 %% Note that the branch alternatives and the inner patterns can be in
 %% any order; this rule simply shows the various cases in the
 %% transform.
-op caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let merge_cases = foldr (fn ((pi, ci, ti), new_cases) ->
@@ -110,7 +110,7 @@ op constantCases(cases: MSMatch): Bool =
           pi)
        && constantCases rst
 
-op caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let arg1_ty = inferType (spc, arg1) in
@@ -128,13 +128,13 @@ op caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
         else None
     | _ -> None
 
-op unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
   case tm of
     | Let([(VarPat (v,_),e)],body,_) ->
       Some(substitute(body,[(v,e)]))
     | _ -> None
 
-op expandRecordMerge (spc: Spec) (t: MSTerm): Option MSTerm =
+op MSRule.expandRecordMerge (spc: Spec) (t: MSTerm): Option MSTerm =
    let nt = translateRecordMerge spc t in
    if equalTerm?(t, nt) then None else Some nt
 

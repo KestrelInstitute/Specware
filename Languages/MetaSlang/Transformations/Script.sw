@@ -776,6 +776,7 @@ spec
   type RewriteOptions = {trace                  : Nat,         % Trace level 0, 1, 2, 3
                          traceShowsLocalChanges?: Option Bool, % Whether trace just show term that is transformed
                          simplify?              : Option Bool, % Whether standard simplifications are done
+                         noSideEffects?         : Bool,        % Whether we can assume functions have no side-effects
                          debug?                 : Bool,        % Debug matching of rules
                          depth                  : Nat,         % # of rewrites allowed
                          backwardChainDepth     : Nat,         % # of backward chaining of rule conditions
@@ -785,7 +786,7 @@ spec
                                                                % (ignored unless termSizeLimit = 0)
                          }
 
-  op MSTermTransform.rewritet(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
+  op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
     (options: RewriteOptions): MSTerm * Proof =
     let context = makeContext spc in
     let context = context <<
@@ -810,7 +811,9 @@ spec
                                                  else context.termSizeLimit}
     in
     % let _ = printContextOptions context in
-    rewritePT(spc, path_term, context, qid, rules)
+    if options.noSideEffects?
+      then assumingNoSideEffects(rewritePT(spc, path_term, context, qid, rules))
+      else rewritePT(spc, path_term, context, qid, rules)
 
   op checkSpecWhenTracing?: Bool = false
 
@@ -869,7 +872,7 @@ spec
                                                 spc))
                      | None -> return (path_term, pf))
                 | SimpStandard ->
-                  return (replaceSubTermH1(assumingNoSideEffects(simplify spc (fromPathTerm path_term)),
+                  return (replaceSubTermH1(simplify spc (fromPathTerm path_term),
                                            path_term, SimpStandard, pf, autoTactic, spc))
                 | RenameVars binds ->
                   return (replaceSubTermH1(renameVars(fromPathTerm path_term, binds),

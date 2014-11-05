@@ -111,7 +111,7 @@ op ppRuleSpec(rl: RuleSpec): WLPretty =
   case rl of
     | Unfold  qid -> ppConcat   [ppString "unfold ", ppQid qid]
     | Fold    qid -> ppConcat   [ppString "fold ", ppQid qid]
-    | Rewrite qid -> ppConcat   [ppString "rewrite ", ppQid qid]
+    | Rewrite qid -> ppConcat   [ppString "rewr ", ppQid qid]
     | LeftToRight qid -> ppConcat[ppString "lr ", ppQid qid]
     | RightToLeft qid -> ppConcat[ppString "rl ", ppQid qid]
     | Omit        qid -> ppConcat[ppString "omit ", ppQid qid]
@@ -339,6 +339,7 @@ op ruleConstructor(id: String): QualifiedId -> RuleSpec =
    | "f" -> mkFold
    | "unfold" -> mkUnfold
    | "uf" -> mkUnfold
+   | "rewr" -> mkRewrite
    | "rewrite" -> mkRewrite
    | "rw" -> mkRewrite
    | "lr" -> mkLeftToRight
