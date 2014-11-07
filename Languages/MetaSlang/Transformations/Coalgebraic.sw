@@ -159,7 +159,7 @@ op SpecTransform.maintain (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (t
 
 op traceMaintain?: Bool = false
 
-def Coalgebraic.maintainOpsCoalgebraically
+def maintainOpsCoalgebraically
       (spc: Spec, qids: QualifiedIds, rules: List RuleSpec, trace?: TraceFlag): Env Spec =
   let intro_qid as Qualified(intro_q, intro_id) = head qids in
   {info <- findTheOp spc intro_qid;
@@ -229,7 +229,7 @@ op SpecTransform.implement (spc: Spec) (qids: QualifiedIds) (rules: RuleSpecs) (
 
 op traceImplement?: Bool = false
 
-def Coalgebraic.implementOpsCoalgebraically
+def implementOpsCoalgebraically
   (spc: Spec, qids: QualifiedIds, rules: List RuleSpec, trace?: Bool): Env Spec =
   case qids of
     | [replace_op_qid as Qualified(_, r_o_id), assert_qid] ->
@@ -656,7 +656,7 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List Rul
    new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
    return new_spc}
 
-op MSTermTransform.mergePostConditions (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSTermTransform.mergePostConditions (spc: Spec) (tm: TransTerm): Option MSTerm =
   % let _ = writeLine("mergePostConditions:\n"^printTerm tm) in
   case tm of
     | TypedTerm(orig_tm, orig_ty, a) ->

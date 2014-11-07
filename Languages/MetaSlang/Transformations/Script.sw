@@ -786,7 +786,7 @@ spec
                                                                % (ignored unless termSizeLimit = 0)
                          }
 
-  op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: QualifiedId) (rules: RuleSpecs)
+  op MSTermTransform.rewrite(spc: Spec) (path_term: PathTerm) (qid: TransOpName) (rules: RuleSpecs)
     (options: RewriteOptions): MSTerm * Proof =
     let context = makeContext spc in
     let context = context <<

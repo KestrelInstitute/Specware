@@ -3307,12 +3307,15 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  type PathTerm.PathTerm     % Defined in /Languages/MetaSlang/AbstractSyntax/PathTerm.sw
  type Proof.Tactic          % Defined in /Languages/MetaSlang/Specs/Proof
  type TraceFlag = Bool
+ type TransOpName = QualifiedId
+ type TransTerm = MSTerm
 
 (* Support for /Languages/MetaSlang/Transformations/MetaTransform: These are needed for dumping info about transform fns *)
  type MetaTransform.AnnTypeValue =
     | SpecV Spec
     | MorphismV Morphism
     | TermV MSTerm
+    | TransTermV TransTerm
     | PathTermV PathTerm
     | ArrowsV (List AnnTypeValue)
     | StrV String
@@ -3320,6 +3323,7 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
     | BoolV Bool
     | TraceFlagV Bool
     | OpNameV QualifiedId
+    | TransOpNameV QualifiedId
     | RuleV RuleSpec
     | ProofV Proof
     | TacticV Tactic
@@ -3332,12 +3336,14 @@ op nonExecutableTerm? (spc: Spec) (tm: MSTerm): Bool =
  op MetaTransform.extractSpec(SpecV x: AnnTypeValue): Spec = x
  op MetaTransform.extractMorphism(MorphismV x: AnnTypeValue): Morphism = x
  op MetaTransform.extractTerm(TermV x: AnnTypeValue): MSTerm = x
+ op MetaTransform.extractTransTerm(TransTermV x: AnnTypeValue): TransTerm = x
  op MetaTransform.extractPathTerm(PathTermV x: AnnTypeValue): PathTerm = x
  op MetaTransform.extractStr(StrV x: AnnTypeValue): String = x
  op MetaTransform.extractNum(NumV x: AnnTypeValue): Int = x
  op MetaTransform.extractBool(BoolV x: AnnTypeValue): Bool = x
  op MetaTransform.extractTraceFlag(TraceFlagV x: AnnTypeValue): TraceFlag = x
  op MetaTransform.extractOpName(OpNameV x: AnnTypeValue): QualifiedId = x
+ op MetaTransform.extractTransOpName(TransOpNameV x: AnnTypeValue): TransOpName = x
  op MetaTransform.extractRule(RuleV x: AnnTypeValue): RuleSpec = x
  op MetaTransform.extractRefinementProof(ProofV x: AnnTypeValue): Proof = x
  op MetaTransform.extractProofTactic(TacticV x: AnnTypeValue): Tactic = x

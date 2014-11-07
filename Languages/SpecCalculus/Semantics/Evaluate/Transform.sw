@@ -472,6 +472,9 @@ spec
     case mt of
       | Spec -> false
       | TraceFlag -> false
+      | TransTerm -> false
+      | TransOpName -> false
+      | PathTerm -> false
       | _ -> true                      % Term may or not be implicit
 
   %% ignored_formal? is true if we have ignored a parameter in ty_infos: used for choosing error message
@@ -492,42 +495,41 @@ spec
     in
     % let _ = writeLine("tetatvs:\n"^anyToString tes^"\n"^show ty_infos) in
     case (tes, ty_infos) of
-      | (_, Spec :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
-                                  return(SpecV dummySpec :: r_atvs)}   % emptySpec is a place holder
-      | (_, TraceFlag :: ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
-                                       return(TraceFlagV false :: r_atvs)}   % false is a place holder
-      | (_, Term :: ty_i_rst) | status.implicit_term? ->
-        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_term? = false});
-         return(TermV dummyMSTerm :: r_atvs)}  % Any noPos is a place holder
+      %% Implicit arg cases
+      | (_, Spec :: ty_i_rst) ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+         return(SpecV dummySpec :: r_atvs)}   % emptySpec is a place holder
+      | (_, TraceFlag :: ty_i_rst) ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+         return(TraceFlagV false :: r_atvs)}   % false is a place holder
+      | (_, TransTerm :: ty_i_rst) ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+         return(TransTermV dummyMSTerm :: r_atvs)}
       | (_, PathTerm :: ty_i_rst) ->
-        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_term? = false});
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
          return(PathTermV dummyPathTerm :: r_atvs)}
-      | (_, OpName :: ty_i_rst) | status.implicit_qid? ->
-        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status << {implicit_qid? = false});
-         return(OpNameV(dummyQualifiedId) :: r_atvs)}  % Any noPos is a place holder
-      | (_, (Tuple tp_mtis) :: ty_i_rst) | exists? (~~~ explicitArg?)
-                                             tp_mtis ->
-        (let expl_mtis = filter explicitArg? tp_mtis in
-         case expl_mtis of
-           | [mti1] -> {atv1 :: r_atvs <- transformExprsToAnnTypeValues(tes, mti1 :: ty_i_rst, pos, spc, status);
-                        return((TupleV(map (fn mti -> case mti of
-                                                        | Spec -> SpecV emptySpec
-                                                        | TraceFlag -> TraceFlagV false
-                                                        | _ -> atv1)
-                                         tp_mtis))
-                                 :: r_atvs)}
-           | _ -> {(TupleV atvs) :: r_atvs <- transformExprsToAnnTypeValues(tes, Tuple expl_mtis :: ty_i_rst, pos, spc, status);
-                   let (_, all_tp_atvs) = foldl (fn ((r_atvs, result), mti) ->
-                                                 case mti of
-                                                   | Spec -> (r_atvs, result ++ [SpecV emptySpec])
-                                                   | TraceFlag -> (r_atvs, result ++ [TraceFlagV false])
-                                                   | _ -> (tail r_atvs, result ++ [head r_atvs]))
-                                           (atvs, []) tp_mtis
-                   in
-                   return((TupleV(all_tp_atvs)) :: r_atvs)})
+      | (_, TransOpName :: ty_i_rst) ->
+        {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+         return(TransOpNameV(dummyQualifiedId) :: r_atvs)}
+      %% Tuple cases -- may include implicit args
+      | (_, (Tuple tp_mtis) :: ty_i_rst) | forall? (~~~ explicitArg?) tp_mtis ->
+        {atvs <- transformExprsToAnnTypeValues([], tp_mtis, pos, spc, status);
+         r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+         return((TupleV atvs)::r_atvs)}
+      | ((Tuple(l_tes, pos))::te_rst, (Tuple ty_is)::ty_i_rst) ->
+        {atvs <- transformExprsToAnnTypeValues(l_tes, ty_is, pos, spc, status);
+         % print(show(length atvs)^" =?= "^show(length ty_is)^"\n"^anyToString atvs^"\n");
+         if length atvs = length ty_is
+          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
+                return((TupleV atvs)::r_atvs)}
+          else raise(TransformError(pos, "Expected argument: "^show (Tuple ty_is)))}
+       | (te1::te_rst, (Tuple tp_mtis) :: ty_i_rst) ->
+         {atvs <- transformExprsToAnnTypeValues([te1], tp_mtis, pos, spc, status);
+          r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+          return((TupleV atvs)::r_atvs)}
 
-      | ([],          (Opt _)    ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
-                                                 return((OptV None)::r_atvs)}
+      | ([], (Opt _)::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+                                    return((OptV None)::r_atvs)}
       | ((Options([te1], pos))::te_rst, (Opt ty_i1)::ty_i_rst) ->
         {o_atv <- transformExprToAnnTypeValue(te1, ty_i1, spc);
          case o_atv of
@@ -549,8 +551,8 @@ spec
            | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                            return(OptV(Some atv1)::r_atvs)}}
 
-      | ([],          (List _)   ::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
-                                                 return((ListV [])::r_atvs)}
+      | ([], (List _)::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+                                     return((ListV [])::r_atvs)}
       | ((te1 as Tuple(l_tes, pos))::te_rst, (List ty_i1)::ty_i_rst) | allowLooseSyntax? ->
         % let _ = writeLine("tetatvs Tuple matching List\n"^anyToString l_tes^"\n"^show ty_i1) in
         {o_atvs <- mapM (fn tei -> transformExprToAnnTypeValue(tei, ty_i1, spc)) l_tes;
@@ -599,13 +601,6 @@ spec
            | Some atv1 -> {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
                            return(ListV[atv1]::r_atvs)}}
 
-      | ((Tuple(l_tes, pos))::te_rst, (Tuple ty_is)::ty_i_rst) ->
-        {atvs <- transformExprsToAnnTypeValues(l_tes, ty_is, pos, spc, status);
-         if length atvs = length l_tes
-          then {r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
-                return((TupleV atvs)::r_atvs)}
-          else raise(TransformError(pos, "Expected argument: "^show (Tuple ty_is)))}
- 
       | ((Record(rec_tes, pos))::te_rst, (Rec fld_tyis)::ty_i_rst) ->
         {checkForNonAttributes(rec_tes, map (project 1) fld_tyis, pos);
          tagged_o_atvs <-

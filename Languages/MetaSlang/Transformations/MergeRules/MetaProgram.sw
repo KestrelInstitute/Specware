@@ -65,7 +65,7 @@ type STRule = { st_stateType : MSType,   % StateType
                 st_outputs : List (Id*MSType) % [(o1,OT1),...,(on,OTn)]
               }
 
-op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
+op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)(trace?:TraceFlag)
       (theorems:Rewrites)(noUnfolds:QualifiedIds)(unfoldDepth:Option Int)(smtArgs:QualifiedIds):Env Spec =
 %% This transformation takes a list of "rules", defined as specware ops, and
 %% combines them into a single op.
@@ -78,15 +78,15 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
 % op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds):Env Spec =
   let unfoldDepth = case unfoldDepth of | Some i -> i | None -> 1 in
 
-  let _ = writeLine "MergeRules!" in
   let (fname::qids) = args in
-  let _ = List.map (fn o -> writeLine ("Input Rule: "^(show o))) qids in
-  { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems)) qids
+  let _ = writeLine("MergeRules "^show fname) in
+  let _ = if trace? then app (fn o -> writeLine ("Input Rule: "^(show o))) qids else () in
+  { ruleSpecs as (rs1::_) <- mapM (fn o -> getOpPreAndPost(spc,o,theorems,trace?)) qids
   ; ups <- combineRuleSpecs spc ruleSpecs theorems noUnfolds unfoldDepth
   ; let ps = map (fn (a,b,_) -> (a,b)) ups in
     let unfolds = flatten (map (fn (_,_,c) -> c) ups) in
-    let _ = writeLine "Unfold terms" in
-    let _ = map (writeLine o printQualifiedId) unfolds in
+    let _ = if trace? then writeLine "Unfold terms" else () in
+    let _ = if trace? then app (writeLine o printQualifiedId) unfolds else () in
     let stateType = rs1.st_stateType in
     let preStateVar = rs1.st_prestate in
     let postStateVar = rs1.st_poststate in
@@ -109,20 +109,20 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
     %% Remove any atomic expressions representing true.
     let noTauto : List (List CClass) = map (fn clause -> filter (fn a -> ~ (isTrueAtom? a)) clause) cclauses in
     let noContra = filter (fn clause -> ~ (exists? (fn a ->  (isFalseAtom? a)) clause)) noTauto in
-    let _ = writeLine (anyToString (List.length noContra) ^ " total postconditions.") in
+    let _ = if trace? then writeLine (anyToString (length noContra) ^ " total postconditions.") else () in
     % let _ = writeLine "Postconditions:" in
     % let _ = writeLine (printDNF (map (map classToTerm) noContra)) in
     
-    let _ = writeLine "About to begin merge" in    
+    let _ = if trace? then writeLine "About to begin merge" else () in    
     let (rterm,pred,prf) = bt2 args noContra in
-    let _ = writeLine "Done with merge" in
+    let _ = if trace? then writeLine "Done with merge" else ()in
     % let _ = writeLine (printTerm rterm) in
     let calculatedPostcondition = mkSimpleExists vars' rterm in    
 
-    let _ = writeLine ("Calculated Unhandled Input Predicate: " ^ printTerm (dnfToTerm pred)) in
+    let _ = if trace? then writeLine ("Calculated Unhandled Input Predicate: " ^ printTerm (dnfToTerm pred)) else () in
     %% Use this representation, rather than DNF, since it's easier to read.
     let preAsConj = mkNot (dnfToTerm pred) in % mkAnd (map (fn conj -> mkNot (mkMinimalExists vars' (ands conj))) pred) in
-    let _ = writeLine ("Generated Precondition: " ^ printTerm preAsConj) in
+    let _ = if trace? then writeLine ("Generated Precondition: " ^ printTerm preAsConj) else () in
     let body = mkCombTerm( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
     let refinedType =
           mkCombType( (preStateVar,stateType)::inputs) ((postStateVar,stateType)::outputs) preAsConj calculatedPostcondition in
@@ -140,11 +140,11 @@ op SpecTransform.mergeRules(spc:Spec)(args:QualifiedIds)
                   let pf = prove_MergeRules (prf, orig_postCondn,
                                              unfolds, smtArgs) in
                   let (Some pf_pred) = getProofPredicate pf in
-                  let _ = writeLine ("MergeRules: building a proof of ("
-                                       ^ printTerm pf_pred ^ ")") in
+                  let _ = if trace? then writeLine ("MergeRules: building a proof of ("
+                                                      ^ printTerm pf_pred ^ ")") else () in
                   addRefinedTypeH(spc,oi,refinedType,Some body,Some pf)
                 | None ->
-                  let _ = writeLine (anyToString fname ^ " is not already defined.") in
+                  let _ = if trace? then writeLine (anyToString fname ^ " is not already defined.") else () in
                   addOpDef(spc,fname,Nonfix,body)
     in
 
@@ -193,17 +193,17 @@ op mkCombType(dom:List (Id * MSType))(ran:List (Id * MSType))(pre:MSTerm)(post:M
 %%   qid: The op to extract.
 %% Returns:
 %%   An STRule representing the elements of the rule.
-op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule = 
+op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites, trace?: TraceFlag):Env STRule = 
    % let _ = writeLine ("Looking up op " ^ (show qid)) in
    let def printOthers(p:Id*MSType) = writeLine (p.1 ^ " " ^ printType p.2) in
    case getOpDef(spc,qid) of
      | None -> raise (Fail ("Could not get term pre and post conditions for op " ^ (show qid)))
        % The type should be of the form {x:StateType | Preconditions} -> {y:StateType | Postcondition}
      | Some (tm, ty as (Arrow (dom, codom,_))) ->
-       let _ = writeLine ("Arrow type is " ^ printType ty) in
-       let _ = writeLine ("Term  is " ^ printTerm tm) in       
-       let _ = writeLine ("Domain is " ^ (printType dom)) in
-       let _ = writeLine ("Codomain is " ^ (printType codom)) in
+       let _ = if trace? then writeLine ("Arrow type is " ^ printType ty) else () in
+       let _ = if trace? then writeLine ("Term  is " ^ printTerm tm) else () in       
+       let _ = if trace? then writeLine ("Domain is " ^ (printType dom)) else () in
+       let _ = if trace? then writeLine ("Codomain is " ^ (printType codom)) else () in
        { (preStateVar,preStateType,inputArgs,preCondition) <-
           getSubtypeComponents spc dom theorems
        ; (postStateVar,postStateType,outputVals,postCondition) <-
@@ -214,10 +214,11 @@ op getOpPreAndPost(spc:Spec, qid:QualifiedId, theorems:Rewrites):Env STRule =
          %   "In the definition of the coalgebraic function: " ^ (show qid) ^ "\n" ^
          %   "Type of prestate:                 " ^ printType preStateType ^ "\n" ^
          %   "Does not match type of poststate: " ^ printType postStateType)
-       ; let _ = writeLine "inputs" in
-         let _ = map printOthers inputArgs in
-         let _ = writeLine "outputs" in
-         let _ = map printOthers outputVals in return ()          
+       ; let _ = if trace? then writeLine "inputs" else () in
+         let _ = if trace? then app printOthers inputArgs else () in
+         let _ = if trace? then writeLine "outputs" else () in
+         let _ = if trace? then app printOthers outputVals else () in
+         return ()          
        ; return { st_stateType = preStateType,
                   st_prestate = preStateVar,
                   st_poststate = postStateVar,

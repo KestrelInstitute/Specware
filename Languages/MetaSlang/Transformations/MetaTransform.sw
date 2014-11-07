@@ -10,6 +10,7 @@ type MetaTransform.TypedFun =
 type MTypeInfo = | Spec
                  | Morphism
                  | Term
+                 | TransTerm
                  | PathTerm
                  | Arrows (List MTypeInfo * MTypeInfo)
                  | Str
@@ -17,6 +18,7 @@ type MTypeInfo = | Spec
                  | Bool
                  | TraceFlag
                  | OpName
+                 | TransOpName
                  | Rule
                  | RefinementProof
                  | ProofTactic
@@ -42,6 +44,7 @@ op defaultAnnTypeValue(mty: MTypeInfo): Option AnnTypeValue =
     | Spec -> Some(SpecV emptySpec)
     | Morphism -> Some(MorphismV emptyMorphism)
     | Term -> Some(TermV(Any noPos))
+    | TransTerm -> Some(TransTermV(Any noPos))
     | PathTerm -> Some(PathTermV(toPathTerm(Any noPos)))
     | Bool -> Some(BoolV false)
     | TraceFlag -> Some(TraceFlagV false)
@@ -96,7 +99,7 @@ op replaceSpecTermArgs(atv: AnnTypeValue, spc: Spec, tm: MSTerm): AnnTypeValue =
    mapAnnTypeValue (fn atvi ->
                      case atvi of
                        | SpecV _ -> SpecV spc
-                       | TermV(Any _) -> TermV tm
+                       | TransTermV _ -> TransTermV tm
                        | _ -> atvi)
      atv
 
@@ -104,9 +107,9 @@ op replaceATVArgs(atv: AnnTypeValue, spc: Spec, path_tm: PathTerm, op_qid: Quali
    mapAnnTypeValue (fn atvi ->
                      case atvi of
                        | SpecV _ -> SpecV spc
-                       | TermV(Any _) -> TermV(fromPathTerm path_tm)
+                       | TransTermV _ -> TransTermV(fromPathTerm path_tm)
                        | PathTermV _ -> PathTermV path_tm
-                       | OpNameV qid | qid = dummyQualifiedId -> OpNameV op_qid
+                       | TransOpNameV _ -> TransOpNameV op_qid
                        | TraceFlagV _ -> TraceFlagV trace?
                        | _ -> atvi)
      atv
@@ -127,6 +130,7 @@ op [a] extractValue (chooser: AnnTypeValue -> Option a) (tf: TypedFun): Option a
 
 op extractMSTerm(tf: TypedFun): Option MSTerm =
   extractValue (fn | TermV tm -> Some tm
+                   | TransTermV tm -> Some tm
                    | _ -> None)
     tf
 
@@ -145,13 +149,14 @@ op typedFunType: MSType = mkBase(Qualified("MetaTransform", "TypedFun"), [])
 op specType: MSType = mkBase(Qualified("AnnSpec", "Spec"), [])
 op morphismType: MSType = mkBase(Qualified("SpecCalc", "Morphism"), [])
 op msTermType: MSType = mkBase(Qualified("MS", "MSTerm"), [])
+op transTermType: MSType = mkBase(Qualified("Utilities", "TransTerm"), [])
 op pathTermType: MSType = mkBase(Qualified("PathTerm", "PathTerm"), [])
 op refinementProofType: MSType = mkBase(Qualified("Proof", "Proof"), [])
 op proofTacticType: MSType = mkBase(Qualified("Proof", "Tactic"), [])
-op optionMsTermType: MSType = mkBase(Qualified("Option", "Option"), [msTermType])
 op qualifiedIdType: MSType = mkBase(Qualified("MetaSlang", "QualifiedId"), [])
 op ruleSpecType: MSType = mkBase(Qualified("AnnSpec", "RuleSpec"), [])
 op traceFlagType: MSType = mkBase(Qualified("Utilities", "TraceFlag"), [])
+op transOpNameType: MSType = mkBase(Qualified("Utilities", "TransOpName"), [])
 op monadAnnTypeValueType: MSType = mkBase(Qualified("SpecCalc", "Env"), [annTypeValueType])
 op optionAnnTypeValueType: MSType = mkBase(Qualified("Option", "Option"), [annTypeValueType])
 
@@ -171,6 +176,7 @@ op mtiToMSType(mti: MTypeInfo): MSType =
     | Spec -> specType
     | Morphism -> morphismType
     | Term -> msTermType
+    | TransTerm -> transTermType
     | PathTerm -> pathTermType
     | Arrows (dom_mtis, r_mti) ->
       foldr (fn (mtii, ty) -> mkArrow(mtiToMSType mtii, ty)) (mtiToMSType r_mti) dom_mtis
@@ -178,7 +184,8 @@ op mtiToMSType(mti: MTypeInfo): MSType =
     | Num -> intType
     | Bool -> boolType
     | TraceFlag -> traceFlagType
-    | OpName -> qualifiedIdType
+    | OpName -> transOpNameType
+    | TransOpName -> qualifiedIdType
     | Rule -> ruleSpecType   % ?
     | RefinementProof -> refinementProofType
     | ProofTactic -> proofTacticType
@@ -193,6 +200,7 @@ op mkAnnTypeValueFun(ty_i: MTypeInfo): MSTerm =
     | Spec -> mkEmbed1("SpecV", mkArrow(specType, annTypeValueType))
     | Morphism -> mkEmbed1("MorphismV", mkArrow(morphismType, annTypeValueType))
     | Term -> mkEmbed1("TermV", mkArrow(msTermType, annTypeValueType))
+    | TransTerm -> mkEmbed1("TransTermV", mkArrow(transTermType, annTypeValueType))
     | RefinementProof -> mkEmbed1("ProofV", mkArrow(refinementProofType, annTypeValueType))
     | ProofTactic -> mkEmbed1("TacticV", mkArrow(proofTacticType, annTypeValueType))
     | Opt o_ty ->
@@ -223,6 +231,7 @@ op varForMTypeInfo(ty_i: MTypeInfo): MSVar =
     | Spec -> ("spc__0", specType)
     | Morphism -> ("morph__0", morphismType)
     | Term -> ("tm__0", msTermType)
+    | TransTerm -> ("tr_tm__0", msTermType)
     | RefinementProof -> ("prf__0", refinementProofType)
     | ProofTactic -> ("tact__0", proofTacticType)
     | _ -> fail ("Can only return Specs, Morphisms, MSTerms or Proofs")
@@ -258,12 +267,14 @@ op ppAnnTypeValue(atv: AnnTypeValue): Doc =
     | SpecV _ -> ppString "spec"
     | MorphismV _ -> ppString "morphism"
     | TermV _ -> ppString "term"
+    | TransTermV _ -> ppString "transTerm"
     | ArrowsV atvs -> ppSep (ppString " ") (map ppAnnTypeValue atvs)
     | StrV str -> ppString str
     | NumV n -> ppString(show n)
     | BoolV b -> ppString(show b)
     | TraceFlagV b -> ppString(if b then "tracing" else "not tracing")
     | OpNameV qid -> ppString(show qid)
+    | TransOpNameV qid -> ppString(show qid)
     | RuleV rs -> ppRuleSpec rs
     | ProofV prf -> ppString(printProof prf)
     | OptV None -> ppString "None"
@@ -284,19 +295,26 @@ op ppAbbrAnnTypeValue(atv: AnnTypeValue): Doc =
          | SpecV _ -> None
          | MorphismV _ -> None
          | TermV _ -> None
+         | TransTermV _ -> None
          | PathTermV _ -> None
          | ArrowsV atvs -> Some(ppSep (ppString " ") (mapPartial ppOpt atvs))
          | StrV str -> Some(ppString str)
          | NumV n -> Some(ppString(show n))
          | BoolV b -> Some(ppString(show b))
-         | TraceFlagV b -> Some(ppString(show b))
-         | OpNameV qid ->
-           if qid = dummyQualifiedId then None else Some(ppString(show qid))
+         | TraceFlagV b -> None
+         | OpNameV qid -> Some(ppString(show qid))
+         | TransOpNameV qid -> None
          | RuleV rs -> Some(ppRuleSpec rs)
          | ProofV prf -> None
+         | OptV None -> None
          | OptV (Some atv1) -> ppOpt atv1
-         | ListV atvs -> Some(ppConcat[ppString "[", ppSep commaBreak (map ppSome atvs), ppString "]"])
-         | TupleV atvs -> Some(ppConcat[ppString "(", ppSep commaBreak (map ppSome atvs), ppString ")"])
+         | ListV atvs -> Some(ppConcat[ppString "[", ppNest 0 (ppSep commaBreak (map ppSome atvs)), ppString "]"])
+         | TupleV atvs ->
+           (case mapPartial ppOpt atvs of
+              | [] -> None
+              | [fld1] -> Some fld1
+              | flds -> 
+                Some(ppConcat[ppString "(", ppNest 0 (ppSep commaBreak flds), ppString ")"]))
          | RecV id_atv_prs  ->
            let flds = mapPartial (fn (id, atvi) ->
                                     case ppIfNotDefault atvi of
@@ -334,6 +352,7 @@ op MTypeInfo.show(ty_info: MTypeInfo): String =
     | Spec -> "Spec"
     | Morphism -> "Morphism"
     | Term -> "Term"
+    | TransTerm -> "TransTerm"
     | PathTerm -> "PathTerm"
     | Arrows(doms, ran) -> "("^(foldr (fn (d, result) -> show d^" -> "^result) (show ran^")") doms)^")"
     | Str  -> "Str"
@@ -341,6 +360,7 @@ op MTypeInfo.show(ty_info: MTypeInfo): String =
     | Bool -> "Bool"
     | TraceFlag -> "TraceFlag"
     | OpName -> "OpName"
+    | TransOpName -> "TransOpName"
     | Rule -> "Rule"
     | RefinementProof -> "Proof"
     | ProofTactic -> "Tactic"
@@ -361,6 +381,7 @@ op transformResultType?(ti: MTypeInfo): Bool =
     | Spec -> true
     | Morphism -> true
     | Term -> true
+    | TransTerm -> true
     | Opt sti -> transformResultType? sti
     | RefinementProof -> true
     | ProofTactic -> true
@@ -383,8 +404,10 @@ op argInfoFromType(ty: MSType, spc: Spec): Option MTypeInfo =
         | Base(Qualified("Integer", "Int"), [], _)   -> Some Num
         | Base(Qualified("String", "String"), [], _) -> Some Str
         | Base(Qualified("MetaSlang", "QualifiedId"), [], _) -> Some OpName
+        | Base(Qualified("Utilities", "TransOpName"), [], _)  -> Some TransOpName
         %| Base(Qualified("MetaSlang", "MSTerm"), [], _) -> Some Term
         | Base(Qualified("MS", "MSTerm"), [], _) -> Some Term
+        | Base(Qualified("Utilities", "TransTerm"), [], _)  -> Some TransTerm
         | Base(Qualified("PathTerm", "PathTerm"), [], _) -> Some PathTerm
         | Base(Qualified("AnnSpec", "RuleSpec"), [], _) -> Some Rule
         | Base(Qualified("Proof", "Proof"), [], _) -> Some RefinementProof
@@ -438,6 +461,7 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
     | Spec -> mkOp(Qualified("MetaTransform", "extractSpec"), mkArrow(annTypeValueType, specType))
     | Morphism -> mkOp(Qualified("MetaTransform", "extractMorphism"), mkArrow(annTypeValueType, morphismType))
     | Term -> mkOp(Qualified("MetaTransform", "extractTerm"), mkArrow(annTypeValueType, msTermType))
+    | TransTerm -> mkOp(Qualified("MetaTransform", "extractTransTerm"), mkArrow(annTypeValueType, transTermType))
     | PathTerm -> mkOp(Qualified("MetaTransform", "extractPathTerm"), mkArrow(annTypeValueType, msTermType))
     % | Arrow(doms, ran) ->
     | Str  -> mkOp(Qualified("MetaTransform", "extractStr"), mkArrow(annTypeValueType, stringType))
@@ -445,6 +469,7 @@ op mkExtractFn(tyi: MTypeInfo): MSTerm =
     | Bool -> mkOp(Qualified("MetaTransform", "extractBool"), mkArrow(annTypeValueType, boolType))
     | TraceFlag -> mkOp(Qualified("MetaTransform", "extractTraceFlag"), mkArrow(annTypeValueType, traceFlagType))
     | OpName -> mkOp(Qualified("MetaTransform", "extractOpName"), mkArrow(annTypeValueType, qualifiedIdType))
+    | TransOpName -> mkOp(Qualified("MetaTransform", "extractTransOpName"), mkArrow(annTypeValueType, transOpNameType))
     | Rule -> mkOp(Qualified("MetaTransform", "extractRule"), mkArrow(annTypeValueType, ruleSpecType))
     | RefinementProof -> mkOp(Qualified("MetaTransform", "extractRefinementProof"), mkArrow(annTypeValueType, refinementProofType))
     | ProofTactic -> mkOp(Qualified("MetaTransform", "extractProofTactic"), mkArrow(annTypeValueType, proofTacticType))

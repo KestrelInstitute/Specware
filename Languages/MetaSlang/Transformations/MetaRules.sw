@@ -23,7 +23,7 @@ Case 2:
 
 
 *)
-op MSRule.dropLet (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.dropLet (spc: Spec) (tm: TransTerm): Option MSTerm =
    case tm of
      | Let([(pat, b_tm)], m, a) ->
        (let pat_vs = patVars pat in
@@ -77,7 +77,7 @@ op matchPats(tm: MSTerm, pat: MSPattern): VarPatSubst =
 %% Note that the branch alternatives and the inner patterns can be in
 %% any order; this rule simply shows the various cases in the
 %% transform.
-op MSRule.caseMerge (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.caseMerge (spc: Spec) (tm: TransTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let merge_cases = foldr (fn ((pi, ci, ti), new_cases) ->
@@ -110,7 +110,7 @@ op constantCases(cases: MSMatch): Bool =
           pi)
        && constantCases rst
 
-op MSRule.caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.caseToIf (spc: Spec) (tm: TransTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let arg1_ty = inferType (spc, arg1) in
@@ -128,15 +128,15 @@ op MSRule.caseToIf (spc: Spec) (tm: MSTerm): Option MSTerm =
         else None
     | _ -> None
 
-op MSRule.unfoldLet (spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.unfoldLet (spc: Spec) (tm: TransTerm): Option MSTerm =
   case tm of
     | Let([(VarPat (v,_),e)],body,_) ->
       Some(substitute(body,[(v,e)]))
     | _ -> None
 
-op MSRule.expandRecordMerge (spc: Spec) (t: MSTerm): Option MSTerm =
-   let nt = translateRecordMerge spc t in
-   if equalTerm?(t, nt) then None else Some nt
+op MSRule.expandRecordMerge (spc: Spec) (tm: TransTerm): Option MSTerm =
+   let ntm = translateRecordMerge spc tm in
+   if equalTerm?(tm, ntm) then None else Some ntm
 
 
 op caseEquality (t: MSTerm, vs: MSVars): Option(MSVars * Id * MSType * MSPattern * MSTerm * MSTerm) =
@@ -452,12 +452,12 @@ op findCommonTerms(tms1: MSTerms, tms2: MSTerms): MSTerms * MSTerms * MSTerms =
 op structureEx (spc: Spec) (tm: MSTerm): Option(MSTerm) =
   mapOption (project 1) (structureCondEx(spc, tm, falseTerm, false))
 
-op MSRule.structureEx (spc: Spec) (tm: MSTerm) (simplify?: Bool): Option(MSTerm * Proof) =
+op MSRule.structureEx (spc: Spec) (tm: TransTerm) (simplify?: Bool): Option(MSTerm * Proof) =
   structureCondEx(spc, tm, falseTerm, simplify?)
 
 op useRestrictedPat?: Bool = false
 
-op MSRule.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm =
+op MSRule.simpIf(spc: Spec) (tm: TransTerm): Option MSTerm =
   case tm of
     | IfThenElse(t1, t2, t3, _) | embed? Fun t1 ->
       (case t1 of
@@ -519,11 +519,11 @@ op simpIf1 (spc: Spec) (tm: MSTerm): MSTerm =
     | None -> tm
     | Some simp_tm -> simp_tm
 
-op MSTermTransform.testTr (spc: Spec) (tm1: MSTerm) (tm2: MSTerm) (rls: RuleSpecs): Option MSTerm =
+op MSTermTransform.testTr (spc: Spec) (tm1: TransTerm) (tm2: MSTerm) (rls: RuleSpecs): Option MSTerm =
   (writeLine ("applying "^showRls rls^" to\n"^printTerm tm1^"\nwith argument\n"^printTerm tm2);
    None)
 
-op MSTermTransform.substConjEquality (tm: MSTerm) (cj_nm: Nat) (rl?: Bool)
+op MSTermTransform.substConjEquality (tm: TransTerm) (cj_nm: Nat) (rl?: Bool)
      : Option (MSTerm * Proof) =
   % let _ = writeLine("substConjEquality "^show cj_nm^" "^show rl?) in
   case foldSubTerms (fn (s_tm, found_cjn) ->

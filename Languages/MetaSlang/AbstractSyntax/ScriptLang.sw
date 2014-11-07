@@ -315,13 +315,13 @@ op mkLeftToRight(qid: QualifiedId): RuleSpec = LeftToRight qid
 op mkRightToLeft(qid: QualifiedId): RuleSpec = RightToLeft qid
 op mkOmit(qid: QualifiedId): RuleSpec = Omit qid
 op simpleMetaRuleMTypeInfo: MTypeInfo = Arrows([Spec, Term], Opt Term)
-op simpleMetaRuleAnnTypeValue: AnnTypeValue = ArrowsV[TermV (Any noPos)]
+op simpleMetaRuleAnnTypeValue: AnnTypeValue = ArrowsV[TransTermV (Any noPos)]
 op metaRuleFunction: String * String -> Spec -> MSTerm -> Option MSTerm    % defined in transform-shell.lisp
 op mkMetaRule (spc: Spec) (qid: QualifiedId): RuleSpec =
   let Qualified(q, id) = qid in
   let transfn = metaRuleFunction(q, id) in
   % MetaRule(qid, simpleMetaRuleMTypeInfo, simpleMetaRuleAnnTypeValue)
-  MetaRule(qid, TFn(fn TermV tm -> TVal(OptV(mapOption TermV (transfn spc tm)))),
+  MetaRule(qid, TFn(fn TransTermV tm -> TVal(OptV(mapOption TransTermV (transfn spc tm)))),
            simpleMetaRuleAnnTypeValue)
 %% Place holder for functions specified using "apply command" syntax
 op dummyTypedFun: TypedFun = TVal(BoolV false)

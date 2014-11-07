@@ -14,7 +14,7 @@ end-spec
 
 % ======================================================================
 % term transform 'simpIf'
-%   op MSTermTransform.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm
+%   op MSRule.simpIf(spc: Spec) (tm: TransTerm): Option MSTerm
 % ======================================================================
 
 % WARNING: In transform, At referenced unknown op: f1
@@ -25,7 +25,7 @@ TF_Bad_2 = B {at f1 simpIf}
 TF_Good_1 = transform B by {at [f] {simpIf};
                             showSpec simpIf}
 
-TF_Good_2 = transform B by {at (f, g1) {simpIf}}
+TF_Good_2 = transform B by {at [f, g1] {simpIf}}
 
 TF_Good_3 = transform B by {at [f] simpIf}
 

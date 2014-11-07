@@ -48,7 +48,7 @@ end-spec
 
 % ======================================================================
 % term transform 'structureEx'
-%   op MSTermTransform.simpIf(spc: Spec) (tm: MSTerm): Option MSTerm
+%   op MSRule.simpIf(spc: Spec) (tm:TransTerm): Option MSTerm
 % ======================================================================
 
 TF_Good_1 = transform A1 by {at f1a structureEx;
