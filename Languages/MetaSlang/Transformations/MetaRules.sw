@@ -36,6 +36,10 @@ op MSRule.dropLet (spc: Spec) (tm: TransTerm): Option MSTerm =
         | _ -> None)
      | _ -> None
 
+
+%% For backwards compatibility (see Script::metaRuleFunction-2 in transform-shell.lisp)
+op dropLet (spc: Spec) (tm: TransTerm): Option MSTerm = MSRule.dropLet spc tm
+
 % tupleOfVars? determines whether a term is a tuple or record
 % construction, where each element is either:
 % 1. Exactly a variable appearing in the set 'vs'.
@@ -133,6 +137,9 @@ op MSRule.unfoldLet (spc: Spec) (tm: TransTerm): Option MSTerm =
     | Let([(VarPat (v,_),e)],body,_) ->
       Some(substitute(body,[(v,e)]))
     | _ -> None
+
+%% For backwards compatibility (see Script::metaRuleFunction-2 in transform-shell.lisp)
+op unfoldLet (spc: Spec) (tm: TransTerm): Option MSTerm = MSRule.unfoldLet spc tm
 
 op MSRule.expandRecordMerge (spc: Spec) (tm: TransTerm): Option MSTerm =
    let ntm = translateRecordMerge spc tm in

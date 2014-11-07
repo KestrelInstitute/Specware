@@ -485,6 +485,7 @@ spec
        : Env(List AnnTypeValue) =
     let len_tes = length tes in
     let len_ty_infos = length(filter explicitArg? ty_infos) in
+    % let _ = writeLine("tetatvs:\n"^anyToString tes^"\n"^show ty_infos) in
     if len_tes > len_ty_infos
       then raise(TransformError(pos, "Too many arguments to transform"))
     else
@@ -493,7 +494,6 @@ spec
                 | [] -> pos
                 | te1 :: _ -> posOf te1
     in
-    % let _ = writeLine("tetatvs:\n"^anyToString tes^"\n"^show ty_infos) in
     case (tes, ty_infos) of
       %% Implicit arg cases
       | (_, Spec :: ty_i_rst) ->
@@ -525,7 +525,7 @@ spec
           else raise(TransformError(pos, "Expected argument: "^show (Tuple ty_is)))}
        | (te1::te_rst, (Tuple tp_mtis) :: ty_i_rst) ->
          {atvs <- transformExprsToAnnTypeValues([te1], tp_mtis, pos, spc, status);
-          r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
+          r_atvs <- transformExprsToAnnTypeValues(te_rst, ty_i_rst, pos, spc, status);
           return((TupleV atvs)::r_atvs)}
 
       | ([], (Opt _)::ty_i_rst) -> {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
