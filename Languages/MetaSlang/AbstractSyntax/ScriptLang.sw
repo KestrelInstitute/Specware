@@ -321,12 +321,15 @@ op mkMetaRule (spc: Spec) (qid: QualifiedId): RuleSpec =
   let Qualified(q, id) = qid in
   let transfn = metaRuleFunction(q, id) in
   % MetaRule(qid, simpleMetaRuleMTypeInfo, simpleMetaRuleAnnTypeValue)
-  MetaRule(qid, TFn(fn TransTermV tm -> TVal(OptV(mapOption TransTermV (transfn spc tm)))),
+  MetaRule(qid, TFn(fn | TransTermV tm -> TVal(OptV(mapOption TransTermV (transfn spc tm)))),
            simpleMetaRuleAnnTypeValue)
 %% Place holder for functions specified using "apply command" syntax
 op dummyTypedFun: TypedFun = TVal(BoolV false)
 op mkMetaRule0 (qid: QualifiedId): RuleSpec =
   MetaRule(qid, dummyTypedFun, simpleMetaRuleAnnTypeValue) % 2nd arg is a placeholder
+op mkTermTransform (id: Id): Script =
+  let Some(ty_info, ty_fn) = lookupMSTermTransformInfo id in
+  TermTransform(id, ty_fn, ArrowsV[SpecV emptySpec, TransTermV(Any noPos)])
 
 op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
 op mkStrengthen(qid: QualifiedId): RuleSpec = Strengthen qid

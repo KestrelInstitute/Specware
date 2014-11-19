@@ -245,7 +245,7 @@ MetaSlangRewriter qualifying spec
           in
           fromList
             (optimizeSuccessList
-               (mapPartial (fn s as (typeSubst, termSubst, condns) ->
+               (mapPartial (fn (s as (typeSubst, termSubst, condns)) ->
                               % For each match s with the lhs of rule,
                               % substitute s into the rhs and return
                               % the result, making sure we don't apply
@@ -344,6 +344,7 @@ MetaSlangRewriter qualifying spec
           of None -> Nil
            | Some (sub,M) ->
              let out_term = substitute(M,sub) in
+             % let _ = writeLine("EvalOne pat:\n"^printTerm term^"\nTo:\n"^printTerm out_term) in
              unit (out_term, (emptySubstitution,
                               mkSimpRule ("reduceCase",inferType(spc, term),term,out_term),
                               path, boundVars, demod)))
@@ -641,10 +642,10 @@ op maybePushLetBack(res as (tr_let, info): RRResult, orig_path: Path,
 % rewrite, and if not undo the pushing
 op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                      f: MSTerm, Ns: MSTerms, i: Nat): RRResult =
-  % let _ = writeLine ("maybePushCaseBack: tr_case = (" ^ printTerm tr_case
-  %                      ^ "), infoPath = " ^ printPath (infoPath info)
-  %                      ^ ", orig_path = " ^ printPath orig_path
-  %                      ^ ", f = (" ^ printTerm f ^ ")") in
+   % let _ = writeLine ("maybePushCaseBack: tr_case = (" ^ printTerm tr_case
+   %                      ^ "), infoPath = " ^ printPath (infoPath info)
+   %                      ^ ", orig_path = " ^ printPath orig_path
+   %                      ^ ", f = (" ^ printTerm f ^ ")") in
   case tr_case of
     | Apply(Lambda(branches,pos3), case_tm, pos2) ->
       let def unpush_case branch_num_opt new_prefix_rev =
@@ -885,10 +886,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  % Whether an argument is a Let, If, or Case
  % FIXME: should be updated to ask if any term in
  % termToList N is an if, let, or case expression
- op pushTerm?(tm: MSTerm): Bool =
+ op pushTerm?(tm: MSTerm) (top?: Bool): Bool =
    case tm of
      | IfThenElse _ -> true
      | Let _ -> true
+     | Record(prs as ("1",_) :: _, _) | top? -> exists? (fn (_, tp_tm) -> pushTerm? tp_tm false) prs
      | _ -> caseExpr? tm
 
  % Outer wrapper for term rewriting, which handles two things: it sets
@@ -901,7 +903,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
  % rewrites being applied, then the commuting conversion is then
  % undone.
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,path,rules) =
-   %let _ = writeLine("rewriteTerm with path "^printPath path^" and term ("^printTerm term^")") in
+   % let _ = writeLine("rewriteTerm with path "^printPath path^" and term ("^printTerm term^")") in
    % let _ = case context.topTerm of
    %           | Some(top_tm) | ~(equalTerm?(term, fromPathTerm(top_tm, path)))
    %                           && ~(embed? Record term) && ~(embed? Fun term) ->
@@ -909,10 +911,10 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
    %           | _ -> ()
    % in
    case term of
-     | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N && pushable? M ->
+     | Apply(M,N,b) | pushFunctionsIn? && pushTerm? N true && pushable? M ->
        let Ns = termToList N in
        (case findIndex (embed? IfThenElse) Ns  of
-          | Some (i,if_tm) | pushFunctionsIn? && pushable? M ->
+          | Some (i,if_tm) ->
             (let IfThenElse(p,q,r,b1) = if_tm in
              let r_tm = IfThenElse(p,
                                    mkAppl(M,replaceNth(i, Ns, q)),
@@ -923,7 +925,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                tr_tms)
           | _ ->
         case findIndex (embed? Let) Ns  of
-          | Some (i,let_tm) | pushFunctionsIn? && pushable? M ->
+          | Some (i,let_tm) ->
             (let Let(bds,lt_body,a2) = let_tm in
              let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
@@ -931,16 +933,18 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                tr_tms)
           | _ ->
         case findIndex caseExpr? Ns  of
-          | Some (i,case_tm) | pushFunctionsIn? && pushable? M ->
+          | Some (i,case_tm) ->
             (let Apply(Lambda(binds,b3), case_tm, b2) = case_tm in
              let r_tm = Apply(Lambda(map (fn (p,c,bod) ->
                                             (p,c,mkAppl(M,replaceNth(i, Ns, bod))))
                                        binds, b3),
                               case_tm, b2)
              in
+             % let _ = writeLine("pushcase:\n"^printTerm r_tm) in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
              LazyList.map (fn res -> maybePushCaseBack(res, path, M, Ns, i))
-               tr_tms))
+               tr_tms)
+          | None -> (writeLine("pushFunctionsIn? failed:\n"^printTerm term); Nil) )
      | _ ->
    case strategy
      of Innermost -> 
@@ -1198,8 +1202,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 
  op historyRepetition: History -> Bool
  def historyRepetition = 
-     fn (_,term1,_,_)::(_,term2,_,_)::_ -> equalTerm?(term1,term2)
-      | _ -> false
+     fn | (_,term1,_,_)::(_,term2,_,_)::_ -> equalTerm?(term1,term2)
+        | _ -> false
 
  % Transitively combine all the proofs in a history into one proof
  % that input_trm = output_trm
@@ -1254,14 +1258,14 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
      | Cons (history as (_,out_term,_,_)::_, _) ->
        Some (out_term, combineHistoryProofs (term, inferType (context.spc, term), history))
 
- def rewriteRecursivePre(context, boundVars, rules0, term) =
+ def rewriteRecursivePre(context, boundVars0, rules0, term) =
    let
      def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
        if trueTerm? term then Some (emptySubstitution, prove_true)
        else
          let results = rewriteRec(rules, term, [], term, boundVars, emptyHistory, backChain+1) in
-         case LazyList.find_n (fn (rl, t, c_subst, pf)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
-                               | [] -> false)
+         case LazyList.find_n (fn | (rl, t, c_subst, pf)::_ -> trueTerm? t || falseTerm? t || evalRule? rl
+                                  | [] -> false)
            results
            conditionResultLimit
          of
@@ -1514,12 +1518,12 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   let history = Cons ((rule, term, final_subst, pf),history) in
                   % increment the trace depth before the recursive call
                   let _ = context.traceDepth := traceDepth in
-                  rewriteRec(rules0, term, path0, term0, boundVars, history, backChain)))
+                  rewriteRec(rules0, term, path0, term0, boundVars0, history, backChain)))
         @@
         (fn () -> unit history)
    in
       %let term = dereferenceAll emptySubstitution term in
-      rewriteRec(rules0, term, [], term, boundVars, [], 0)
+      rewriteRec(rules0, term, [], term, boundVars0, [], 0)
 
  op rewriteOnce : 
     Context * MSVars * RewriteRules * MSTerm * Path -> MSTerms

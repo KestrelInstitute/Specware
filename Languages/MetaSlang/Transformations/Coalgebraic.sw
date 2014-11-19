@@ -666,7 +666,7 @@ op MSTermTransform.mergePostConditions (spc: Spec) (tm: TransTerm): Option MSTer
          | Some(orig_pc_pat, orig_pc) ->
        let (params, bod) = curriedParamsBody orig_tm in
        case getFnArgs bod of
-         | Some(Fun(Op(qid, _), _, _), args) ->
+         | Some(Fun(Op(qid, _), _, _), args, _) ->
            (case findTheOp(spc, qid) of
              | None -> None
              | Some info ->

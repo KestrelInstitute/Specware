@@ -123,6 +123,10 @@ op mkCaseExpr (c_tm: MSTerm, cases: List (MSPattern * MSTerm)) : MSTerm =
 op mkCurriedApply (f : MSTerm, terms : MSTerms): MSTerm =
  foldl mkApply f terms
 
+op mkApplC(f : MSTerm, args : MSTerms, curried? : Bool) : MSTerm =
+  if curried? then mkCurriedApply(f, args)
+    else mkAppl(f, args)
+
 op mkSeq (tms: MSTerms) : MSTerm =
  case tms of
    | [tm] -> tm

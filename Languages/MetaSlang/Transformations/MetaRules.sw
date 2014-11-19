@@ -40,6 +40,63 @@ op MSRule.dropLet (spc: Spec) (tm: TransTerm): Option MSTerm =
 %% For backwards compatibility (see Script::metaRuleFunction-2 in transform-shell.lisp)
 op dropLet (spc: Spec) (tm: TransTerm): Option MSTerm = MSRule.dropLet spc tm
 
+op caseOrIfThenElse? (tm: MSTerm): Bool =
+  case tm of
+    | Apply(Lambda _, _, _) -> true
+    | IfThenElse _ -> true
+    | _ -> false
+
+% op MSRule.dropApply (spc: Spec) (tm: TransTerm): Option MSTerm =
+%   case tm of
+%     | Apply(M, N, _) ->
+%       (case getFnArgs tm of
+%          | Some(f, args, curried?) ->
+%            (case findIndex (embed? IfThenElse) args of
+%               | Some(i, IfThenElse(p,q,r,b1)) ->
+%                 Some(IfThenElse(p,
+%                                 mkApplC(M, replaceNth(i, args, q), curried?),
+%                                 mkApplC(M, replaceNth(i, args, r), curried?), b1))
+%               | None ->
+%             case findIndex caseExpr? args of
+%               | Some (i, Apply(Lambda(binds,b3), case_tm, b2)) ->
+%                 Some(Apply(Lambda(map (fn (p,c,bod) ->
+%                                          (p,c,mkApplC(M, replaceNth(i, args, bod), curried?)))
+%                                     binds, b3),
+%                            case_tm, b2))
+%               | None -> 
+%             case findIndex (embed? Let) args of
+%               | Some (i, Let(bds, lt_body, a2)) ->
+%                 Some(Let(bds, mkApplC(M, replaceNth(i, args, lt_body), curried?), a2))
+%               | None -> None)
+%          | None -> None)
+%     | _ -> None
+
+op MSTermTransform.dropApply (spc: Spec) (tm: TransTerm): Option MSTerm =
+  case tm of
+    | Apply(M, N, _) ->
+      (case getFnArgs tm of
+         | Some(f, args, curried?) ->
+           (case findIndex (embed? IfThenElse) args of
+              | Some(i, IfThenElse(p,q,r,b1)) ->
+                Some(IfThenElse(p,
+                                mkApplC(M, replaceNth(i, args, q), curried?),
+                                mkApplC(M, replaceNth(i, args, r), curried?), b1))
+              | None ->
+            case findIndex caseExpr? args of
+              | Some (i, Apply(Lambda(binds,b3), case_tm, b2)) ->
+                Some(Apply(Lambda(map (fn (p,c,bod) ->
+                                         (p,c,mkApplC(M, replaceNth(i, args, bod), curried?)))
+                                    binds, b3),
+                           case_tm, b2))
+              | None -> 
+            case findIndex (embed? Let) args of
+              | Some (i, Let(bds, lt_body, a2)) ->
+                Some(Let(bds, mkApplC(M, replaceNth(i, args, lt_body), curried?), a2))
+              | None -> None)
+         | None -> None)
+    | _ -> None
+
+
 % tupleOfVars? determines whether a term is a tuple or record
 % construction, where each element is either:
 % 1. Exactly a variable appearing in the set 'vs'.
@@ -102,27 +159,29 @@ op MSRule.caseMerge (spc: Spec) (tm: TransTerm): Option MSTerm =
         else Some(Apply(Lambda(merge_cases, a0), arg1, a1))
     | _ -> None
 
-op constantCases(cases: MSMatch): Bool =
+op constantCases?(cases: MSMatch): Bool =
   case cases of
     | [_] -> true
     | (pi, c, ti) :: rst ->
       ~(existsPattern? (fn p ->
-                      case p of
-                        | VarPat _ -> true
-                        | WildPat _ -> true
-                        | _ -> false)
+                          case p of
+                            | VarPat _ -> true
+                            | WildPat _ -> true
+                            | _ -> false)
           pi)
-       && constantCases rst
+      && constantCases? rst
+
 
 op MSRule.caseToIf (spc: Spec) (tm: TransTerm): Option MSTerm =
   case tm of
     | Apply(Lambda(cases, a0), arg1, a1) ->
       let arg1_ty = inferType (spc, arg1) in
-      if exhaustivePatterns?(map (project 1) cases, arg1_ty, spc) && constantCases cases
+      if exhaustivePatterns?(map (project 1) cases, arg1_ty, spc) && constantCases? cases
         then
           let def casesToNestedIf(cases) =
                 case cases of
-                  | [(_, _, tm)] -> tm
+                  | [(p, _, tm)] ->
+                    mkLet1(p, arg1, tm)
                   | (pi, c, ti) :: rst ->
                     let Some pti = patternToTerm pi in
                     MS.mkIfThenElse(Utilities.mkAnd(mkEquality(arg1_ty, arg1, pti), c),
