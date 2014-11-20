@@ -83,14 +83,20 @@ op MSTermTransform.dropApply (spc: Spec) (tm: TransTerm): Option MSTerm =
                                 mkApplC(M, replaceNth(i, args, r), curried?), b1))
               | None ->
             case findIndex caseExpr? args of
-              | Some (i, Apply(Lambda(binds,b3), case_tm, b2)) ->
+              | Some (i, case_tm) ->
+                let fvs = foldl (fn (fvs, s_tm) -> if s_tm = case_tm then fvs else insertVars(freeVars s_tm, fvs))
+                            [] args in
+                let Apply(Lambda(binds,b3), case_tm, b2) = renameBoundVars(case_tm, fvs) in
                 Some(Apply(Lambda(map (fn (p,c,bod) ->
                                          (p,c,mkApplC(M, replaceNth(i, args, bod), curried?)))
                                     binds, b3),
                            case_tm, b2))
               | None -> 
             case findIndex (embed? Let) args of
-              | Some (i, Let(bds, lt_body, a2)) ->
+              | Some (i, let_tm) ->
+                let fvs = foldl (fn (fvs, s_tm) -> if s_tm = let_tm then fvs else insertVars(freeVars s_tm, fvs))
+                            [] args in
+                let Let(bds, lt_body, a2) = renameBoundVars(let_tm, fvs) in
                 Some(Let(bds, mkApplC(M, replaceNth(i, args, lt_body), curried?), a2))
               | None -> None)
          | None -> None)

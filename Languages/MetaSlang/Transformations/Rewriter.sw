@@ -926,7 +926,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
           | _ ->
         case findIndex (embed? Let) Ns  of
           | Some (i,let_tm) ->
-            (let Let(bds,lt_body,a2) = let_tm in
+            (let fvs = foldl (fn (fvs, s_tm) -> if s_tm = let_tm then fvs else insertVars(freeVars s_tm, fvs))
+                            [] Ns in
+             let Let(bds, lt_body, a2) = renameBoundVars(let_tm, fvs) in
              let r_tm = Let(bds, mkAppl(M,replaceNth(i, Ns, lt_body)),a2) in
              let tr_tms = rewriteTerm(solvers,boundVars,r_tm,path,rules) in
              LazyList.map (fn res -> maybePushLetBack(res, path, M, Ns, i))
@@ -934,7 +936,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
           | _ ->
         case findIndex caseExpr? Ns  of
           | Some (i,case_tm) ->
-            (let Apply(Lambda(binds,b3), case_tm, b2) = case_tm in
+            (let fvs = foldl (fn (fvs, s_tm) -> if s_tm = case_tm then fvs else insertVars(freeVars s_tm, fvs))
+                            [] Ns in
+             let Apply(Lambda(binds,b3), case_tm, b2) = renameBoundVars(case_tm, fvs) in
              let r_tm = Apply(Lambda(map (fn (p,c,bod) ->
                                             (p,c,mkAppl(M,replaceNth(i, Ns, bod))))
                                        binds, b3),
