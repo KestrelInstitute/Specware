@@ -330,7 +330,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
             (if vs = [] then Some(bod, prove_equalRefl (boolType, bod))
              else
              let (new_vs, new_cjs) = flattenExistsTerms(vs, getConjuncts bod, spc) in
-             % let _ = writeLine("flat:\n"^printTerm(mkConj cjs)) in
+             % let _ = writeLine("flat:\n"^printTerm(mkConj new_cjs)) in
              mapOption (fn(n_tm, prf) ->
                         (n_tm,
                          if length vs = length new_vs then prf
@@ -362,6 +362,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                          "(case_tac \""^printTerm case_tm^"\", auto)")
       % Main workhorse function, rewriting an existential of the form
       % "ex(vs) cjs", maintaining a current substitution tsb
+      % (Currently we ignore tsb!)
       def transEx (vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst)
             : Option (MSTerm * Proof) =
         let orig_tm = mkSimpBind (Exists, vs, mkConj cjs) in
@@ -392,6 +393,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                  let trivial_bind? = embed? Var s_tm in
                  let tsb = (if trivial_bind? then (v_tm, s_tm) else (s_tm, v_tm)) :: tsb in
                  let new_cjs = delete cj cjs in % termsSubst(delete cj cjs, tsb) in
+                 let new_cjs = if trivial_bind? then termsSubst(cjs, [(v_tm, s_tm)]) else new_cjs in
                  let new_ex = mkSimpBind(Exists, new_vs, mkConj new_cjs) in
                  let new_tm = if trivial_bind? then new_ex
                               else MS.mkLet([(v_pat, s_tm)], new_ex)
