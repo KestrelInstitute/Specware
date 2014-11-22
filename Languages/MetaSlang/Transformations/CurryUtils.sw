@@ -62,13 +62,12 @@ CurryUtils qualifying spec
   op getFnArgs(t: MSTerm): Option (MSTerm * MSTerms * Bool) =
     let def aux(term, args) =
         case term of
-          | Fun(_, ty, _) ->
+          | Apply(t1, t2, _) -> aux(t1, t2::args)
+          | _ ->
             (case args of
                | [] -> None
                | [arg] -> Some(term, termToList arg, false)
                | _ -> Some(term, args, true))
-          | Apply(t1, t2, _) -> aux(t1, t2::args)
-          | _ -> None
     in aux(t, [])
 
   op mkCurriedLambda(lam_pats: MSPatterns, bod: MSTerm): MSTerm =
