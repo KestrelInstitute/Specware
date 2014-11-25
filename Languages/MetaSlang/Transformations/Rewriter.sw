@@ -1264,7 +1264,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
 
  def rewriteRecursivePre(context, boundVars0, rules0, term) =
    let
-     def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
+ def rewritesToTrue(rules, term, boundVars, backChain): Option (SubstC * Proof) =
+       % let _ = writeLine("boundVarsC: "^anyToString boundVars) in
        if trueTerm? term then Some (emptySubstitution, prove_true)
        else
          let results = rewriteRec(rules, term, [], term, boundVars, emptyHistory, backChain+1) in
@@ -1288,7 +1289,8 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
           rewritesToTrue(rules, cond, boundVars, backChain)
 	else None
 
-      def rewriteRec(rules0, term0, path0, prev_term, boundVars, history, backChain) =
+     def rewriteRec(rules0, term0, path0, prev_term, boundVars1, history, backChain) =
+        % let _ = writeLine("boundVars1: "^anyToString boundVars1) in
 	let _ = traceTerm(context, term0, prev_term) in
 	let traceDepth = ! context.traceDepth + 1 in
         let maxTraceDepth = if backChain = 0
@@ -1311,15 +1313,15 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
               ({strategy = strategy,
                 rewriter = applyDemodRewrites(context, context.maxDepth > 1 || backChain > 0),
                 context = context},
-               boundVars, term0, path0, rules)
+               boundVars1, term0, path0, rules)
             in
             if historyRepetition(history)
               then unit (tail history)
             else
 	% let rews = (rewrite(Innermost, unconditional) >>= 
 	let rews = (rewrite(Outermost, rules0) >>= 
-		    (fn (term, (subst, rule, path, boundVars, rules1)) ->  
-			unit (term, (subst, rule, path, boundVars, rules1))) 
+		    (fn (term, (subst, rule, path, boundVarsRl, rules1)) ->  
+			unit (term, (subst, rule, path, boundVarsRl, rules1))) 
 % 		    @@
 % 		    (fn () -> 
 % 		     rewrite(Outermost, conditional) >>= 
@@ -1330,7 +1332,9 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                     )
 	in
 	(rews >>=
-           (fn (term, (subst, rule, path, boundVars, rules1)) ->
+           (fn (term, (subst, rule, path, boundVarsRl, rules1)) ->
+              % let _ = writeLine("boundVarsRl: "^anyToString boundVarsRl) in
+
               % At this point, a rewrite has been successfully applied to term0, the input term. We
               % now need to ensure that all of the preconditions of the rule which was applied hold;
               % this is done by solveCondition, which itself recursively applies rewriting.
@@ -1355,7 +1359,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   % additionally apply it to the condition we are about to try to solve.  Note that
                   % boundVars are considered free in the condition, which must be true at the point
                   % in the input term where the rewrite occurred.
-                  let cond = dereferenceAllAsSubst subst (mkConj conds) boundVars in
+                  let cond = dereferenceAllAsSubst subst (mkConj conds) boundVarsRl in
 
                   % The condition could still have free flex variables, e.g., for a rule like
                   % transitivity, written as below, where we may have already rewritten x<z to true
@@ -1372,7 +1376,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                     traceRuleRec (context, rule,
                                   fn () ->
                                     solveCondition (cond, rules1,
-                                                    boundVars, backChain+1))
+                                                    boundVarsRl, backChain+1))
                     of
                     | None -> None
                     | Some (subst', pf) ->
@@ -1411,7 +1415,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                       | None ->
                         topTerm (replaceSubTerm
                                    (dereferenceAllAsSubst
-                                      final_subst rule.lhs boundVars,
+                                      final_subst rule.lhs boundVarsRl,
                                     (term, path)))
                       | Some (valid_prefix, ok_tm, bad_step) ->
                         (warn
@@ -1422,7 +1426,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                               ^ printTerm term0
                               ^ ") and rule LHS ("
                               ^ printTerm (dereferenceAllAsSubst
-                                             final_subst rule.lhs boundVars)
+                                             final_subst rule.lhs boundVarsRl)
                               ^ "); prefix " ^ printPath valid_prefix
                               ^ " yields subterm ("
                               ^ printTerm ok_tm
@@ -1522,7 +1526,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                   let history = Cons ((rule, term, final_subst, pf),history) in
                   % increment the trace depth before the recursive call
                   let _ = context.traceDepth := traceDepth in
-                  rewriteRec(rules0, term, path0, term0, boundVars0, history, backChain)))
+                  rewriteRec(rules0, term, path0, term0, boundVars1, history, backChain)))
         @@
         (fn () -> unit history)
    in
