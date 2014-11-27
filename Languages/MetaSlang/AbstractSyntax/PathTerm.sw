@@ -28,18 +28,7 @@ type PathTerm = APathTerm Position.Position
  op [a] topTerm(ptm: APathTerm a): ATerm a = ptm.1
  op [a] pathTermPath(ptm: APathTerm a): Path = ptm.2
 
- op [a] infixFn?(f: AFun a): Bool =
-    case f of
-      | Op(Qualified(_, s), Infix _) -> true
-      | And -> true
-      | Or -> true
-      | Implies -> true
-      | Iff -> true
-      | Equals -> true
-      | NotEquals -> true
-      | _ -> false
-
-  op [a] immediateSubTerms(term: ATerm a): List (ATerm a) =
+ op [a] immediateSubTerms(term: ATerm a): List (ATerm a) =
     map (fn (_,subTerm) -> subTerm) (immediateSubTermsWithBindings term)
 
   % Return None if the path is in the term, otherwise return the
@@ -248,8 +237,8 @@ type PathTerm = APathTerm Position.Position
 
   % tail-recursive version of this function
   op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
-    foldl (fn (Some tm, i) -> ithSubTerm?(tm, i)
-            | (None, i) -> None)
+    foldl (fn | (Some tm, i) -> ithSubTerm?(tm, i)
+              | (None, i) -> None)
        (Some top_term) (reverse path)
   % op [a] fromPathTerm?((top_term, path): APathTerm a): Option(ATerm a) =
   %   foldr (fn (i, Some tm) -> ithSubTerm?(tm, i)

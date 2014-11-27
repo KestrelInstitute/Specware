@@ -2610,6 +2610,21 @@ op [a] printTermType(t: ATerm a): String =
     | And _ -> "And"
     | Any _ -> "Any"
 
+op [a] infixFn?(f: AFun a): Bool =
+  case f of
+    | Op(Qualified(_, s), Infix _) -> true
+    | And -> true
+    | Or -> true
+    | Implies -> true
+    | Iff -> true
+    | Equals -> true
+    | NotEquals -> true
+    | _ -> false
+
+op [a] infixFnTm?(tm: ATerm a): Bool =
+  case tm of
+    | Fun(f, _, _) -> infixFn? f
+    | _ -> false
 
 end-spec
 
