@@ -23,7 +23,7 @@ type Script =
   | AtTheorem (List Location * Script)
   | Move (List Movement)
   | Steps Scripts
-  | Repeat Scripts
+  | Repeat(Nat * Scripts)
   | Simplify (RuleSpecs * Nat)
   | Simplify1 (RuleSpecs)
   | SimpStandard
@@ -135,8 +135,8 @@ op moveString(m: Movement): String =
     | ReverseSearch s -> "r \"" ^ s ^ "\""
     | SearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "s" ss
     | ReverseSearchL ss -> foldl (fn (str, si) -> str ^ " \"" ^ si ^ "\"") "r" ss
-    | SearchPred _ -> "searchPred"
-    | ReverseSearchPred _ -> "reverseSearchPred"
+    | SearchPred f -> "sp "^anyToString f
+    | ReverseSearchPred f -> "rp "^anyToString f
     | Post -> "post"
 
 op ppBool(b: Bool): WLPretty =
@@ -162,7 +162,7 @@ op ppScript(scr: Script): WLPretty =
   case scr of
     | Steps steps ->
       ppConcat[ppString "{", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)), ppString "}"]
-    | Repeat steps ->
+    | Repeat(cnt, steps) ->
       ppConcat[ppString "repeat {", ppNest 0 (ppSep (ppConcat[ppString "; ", ppNewline]) (map ppScript steps)),
                ppString "}"]
     | At([loc], scr) ->
@@ -295,7 +295,7 @@ op printScript(scr: Script): () =
 op mkAt(qid: QualifiedId, steps: Scripts): Script = At([Def qid], mkSteps steps)
 op mkAtTheorem(qid: QualifiedId, steps: Scripts): Script = AtTheorem([Def qid], mkSteps steps)
 op mkSteps(steps: Scripts): Script = if length steps = 1 then head steps else Steps steps
-op mkRepeat(steps: Scripts): Script = Repeat steps
+op mkRepeat(cnt: Nat, steps: Scripts): Script = Repeat(cnt, steps)
 op maxRewrites: Nat = 100
 op mkSimplify(steps: RuleSpecs): Script = Simplify(steps, maxRewrites)
 op mkSimplify1(rules: RuleSpecs): Script = Simplify1 rules

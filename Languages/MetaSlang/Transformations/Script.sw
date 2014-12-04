@@ -409,13 +409,13 @@ spec
                   assertRulesDirn(context, p, "if then", Context, Either, rule_specs, None, freeTyVarsInTerm p)
                 | IfThenElse(p, _, _, _) | i = 2 ->
                   assertRulesDirn(context,negate p,"if else", Context, Either, rule_specs, None, freeTyVarsInTerm p)
-                | Apply(Fun(And,_,_), _,_) | i = 1 ->
+                | Apply(Fun(And,_,_), _,_) | i = 1 && r_path ~= [] && head r_path = 1 ->
                   let def getSisterConjuncts(pred, path, i) =
                         % let _ = writeLine("gsc2: "^anyToString path^"\n"^printTerm pred) in
                         case pred of
                           | Apply(Fun(And,_,_), Record([("1",p),("2",q)],_),_) ->
                             (case path of
-                             | 1 :: r_path ->
+                             | 1 :: 1 :: r_path ->
                                let sister_cjs = getConjuncts p in
                                let (new_rules, i) =
                                   foldl (fn ((rules, i), cj) ->
@@ -667,7 +667,8 @@ spec
       | Relax -> Some "relax"
       | Project fld_nm -> Some fld_nm
       | RecordMerge -> Some "<<"
-      | Embed _ -> Some "embed"
+      | Embed("Cons", true) -> Some "::"
+      | Embed(id, _) -> Some id
       | Embedded _ -> Some "embedded"
       | Select _ -> Some "select"
       | Nat x -> Some(show x)
@@ -710,13 +711,8 @@ spec
 
   op makeMove(path_term as (top_term, path): PathTerm, mv: Movement):  Option(PathTerm) =
     case mv of
-      | First ->
-        if immediateSubTerms(fromPathTerm path_term) = [] then None
-          else Some(top_term, 0 :: path) 
-      | Last ->
-        let sub_tms = immediateSubTerms(fromPathTerm path_term) in
-        if sub_tms = [] then None
-          else Some(top_term, (length sub_tms - 1) :: path) 
+      | First -> moveToFirst path_term
+      | Last -> moveToLast path_term
       | Next -> moveToNext path_term
       | Prev -> moveToPrev path_term
       | Widen -> parentTerm path_term
@@ -741,7 +737,7 @@ spec
     case makeMove(path_term,  mv) of
       | Some new_path_term -> makeMoves(new_path_term, rem_mvs, allowFail?)
       | None -> {when (~allowFail?)
-                    (raise(Fail ("Move failed at: "^ (foldr (fn (m, res) -> moveString m ^ " " ^ res) "" mvs))));
+                    (raise(Fail ("Move failed at: "^ moveString mv)));
                  return None}
 
  op renameVars(tm: MSTerm, binds: List(Id * Id)): MSTerm =
@@ -815,6 +811,7 @@ spec
       then assumingNoSideEffects(rewritePT(spc, path_term, context, qid, rules))
       else rewritePT(spc, path_term, context, qid, rules)
 
+  op defaultRepeatCount: Nat = 50
   op checkSpecWhenTracing?: Bool = false
 
   %% term is the current focus and should  be a sub-term of the top-level term path_term
@@ -828,12 +825,16 @@ spec
           foldM (fn (path_term, tracing?, pf) -> fn s ->
                    interpretPathTerm (spc, s, path_term, qid, tracing?, allowFail?, pf))
             (path_term, tracing?, pf) steps
-      | Repeat steps ->
+      | Repeat(cnt, steps) ->
+        if cnt < 1 then return(path_term, tracing?, pf)
+        else
           {(new_path_term, tracing?, pf)
              <- interpretPathTerm(spc, Steps steps, path_term, qid, tracing?, true, pf);
+           % print("repeat:\n"^printTerm(topTerm path_term)
+           %       ^"\n"^printTerm(topTerm new_path_term)^"\n");
            if equalTerm?(topTerm new_path_term, topTerm path_term)
              then return (new_path_term, tracing?, pf)
-             else interpretPathTerm(spc, Repeat steps, new_path_term,
+             else interpretPathTerm(spc, Repeat(cnt - 1, steps), new_path_term,
                                     qid, tracing?, allowFail?, pf)}
       | Print -> {
           print (printTerm(fromPathTerm path_term) ^ "\n");

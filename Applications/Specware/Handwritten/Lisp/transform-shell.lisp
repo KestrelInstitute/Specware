@@ -206,6 +206,13 @@
 	    (MetaSlang::mkQualifiedId-2 (first syms) (second syms))
 	    nil))))
 
+(defun Script::searchPredFn (str)
+  (let ((f (intern (Specware::fixCase str)
+                   (Specware::fixCase Script::searchPredQualifier))))
+    (if (fboundp f) f
+        (progn (warn "~a not a SearchPred function" str)
+               #'(lambda (tm path_term) #'(lambda (tm) nil))))))
+
 (defun Script::metaRuleFunction-2 (q id)
   (let ((f (intern (Specware::fixCase id) (Specware::fixCase (if (eq q MetaSlang::unQualified) "MetaRule" q)))))
     (if (fboundp f) f
@@ -356,21 +363,36 @@
 (defparameter *move-alist* '(("f" :|First|) ("l" :|Last|) ("n" :|Next|) ("p" :|Prev|)
 			     ("w" :|Widen|) ("a" :|All|) ("t" :|All|)
 			     ("s" . :|Search|) ("r" . :|ReverseSearch|)
+                             ("sp" . :|SearchPred|)
+                             ("rp" . :|ReverseSearchPred|)
                              ("first" :|First|) ("last" :|Last|) ("next" :|Next|) ("prev" :|Prev|)
 			     ("widen" :|Widen|) ("all" :|All|) ("t" :|All|)
-			     ("search" . :|Search|) ("reverse-search" . :|ReverseSearch|)
+			     ("search" . :|Search|)
+                             ("reverse-search" . :|ReverseSearch|)
+                             ("search-pred" . :|SearchPred|)
+                             ("reverse-search-pred" . :|ReverseSearchPred|)
                              ("post" :|Post|)))
+
+(defparameter *move-param-transformers*
+  '((:|SearchPred| . Script::searchPredFn)
+    (:|ReverseSearchPred| . Script::searchPredFn)))
 
 (defun move-command (moves)
   (let ((move-comms (loop for move on moves
 			  for pr = (assoc (car move) *move-alist* :test 'equal)
 			 if (null pr)
 			 do (return (progn (warn "Illegal move command: ~a" (car move)) nil))
-			 else collect (if (listp (cdr pr))
-					  (cdr pr)
-					  (if (null (cdr move))
-					      (return (progn (warn "Missing search arg: ~a" (car move)) nil))
-					      (cons (cdr pr) (progn (pop move) (car move))))))))
+			 else collect
+                              (if (listp (cdr pr))
+                                  (cdr pr)
+                                (if (null (cdr move))
+                                    (return (progn (warn "Missing search arg: ~a" (car move)) nil))
+                                  (let* ((constr (cdr pr))
+                                         (arg-fn (or (cdr (assoc constr *move-param-transformers*))
+                                                     #'(lambda (x) x))))
+                                    (cons constr
+                                          (progn (pop move)
+                                                 (funcall arg-fn (car move))))))))))
     (when move-comms
       (interpret-command (Script::mkMove move-comms)))
     (values)))
@@ -471,8 +493,9 @@
                (at                 (at-command (parse-qid argstr 'op)))
                ((at-t at-theorem)  (at-theorem-command (parse-qid argstr 'theorem)))
                ((move m)           (move-command (String-Spec::split argstr)))
-               ((f l n p w a s r post
-                   first last next prev widen all search reverse-search)
+               ((f l n p w a s r sp rp post
+                   first last next prev widen all search reverse-search
+                   search-pred reverse-search-pred)
                 (move-command (cons (string-downcase (string command))
                                     (String-Spec::split argstr))))
                ((rename renamevars) (renamevars-command argstr))

@@ -100,10 +100,7 @@ type PathTerm = APathTerm Position.Position
   % definition for mapping paths in terms to subterms
   op [a] immediateSubTermsWithBindings(term: ATerm a): List (ABindingTerm a) =
     case term of
-      | Apply(Fun(f, _, _), Record([("1", x), ("2", y)], _), _) | infixFn? f ->
-        [([], x), ([], y)]
-      | Apply(x, y, _) ->
-        if embed? Lambda x then [([], y), ([], x)] else [([], x), ([], y)]
+      | Apply(x, y, _) -> [([], x), ([], y)]
       | Record(l, _) -> map (fn (_, t) -> ([], t)) l
       | Bind(_, vars, body, _) -> [(vars, body)]
       | The(x, body, _)  -> [([x], body)]
@@ -256,13 +253,49 @@ type PathTerm = APathTerm Position.Position
 
   op [a] parentTerm((top_term, path): APathTerm a): Option (APathTerm a) =
     case path of
-      | [] -> None
-      | _::par_path -> Some (top_term, par_path)
+      | _ :: par_path -> Some (top_term, par_path)
+      | _ -> None
+
+  op [a] grandParentTerm((top_term, path): APathTerm a): Option (APathTerm a) =
+    case path of
+      | _ :: _ :: gpar_path -> Some (top_term, gpar_path)
+      | _ -> None
+
+  op [a] moveToFirst((top_term, path): APathTerm a): Option (APathTerm a) =
+    if immediateSubTerms(fromPathTerm(top_term, path)) = [] then None
+    else
+      (case fromPathTerm(top_term, path) of
+         | Apply(Lambda _, _, _) ->   % case expr
+           Some(top_term, 1 :: path)
+         | Apply(f, Record _, _) | infixFnTm? f -> % infix application
+           Some(top_term, 0 :: 1 :: path)
+         | _ -> Some(top_term, 0 :: path)) 
+
+  op [a] moveToLast((top_term, path): APathTerm a): Option (APathTerm a) =
+    let sub_tms = immediateSubTerms(fromPathTerm(top_term, path)) in
+    if sub_tms = [] then None
+    else
+      (case fromPathTerm(top_term, path) of
+         | Apply(Lambda _, _, _) ->   % case expr
+           Some(top_term, 0 :: path)
+         | Apply(f, Record _, _) | infixFnTm? f -> % infix application
+           Some(top_term, 1 :: 1 :: path)
+         | _ -> Some(top_term, (length sub_tms - 1) :: path)) 
 
   op [a] moveToNext((top_term, path): APathTerm a): Option (APathTerm a) =
     case path of
       | [] -> None
       | i :: r_path ->
+    case fromPathTerm(top_term, r_path) of
+      | Apply(Lambda _, _, _) ->   % parent is a case expr
+        if i = 1 then Some(top_term, 0 :: r_path)
+          else  % i = 0
+            moveToNext(top_term, r_path) 
+      | Apply(f, Record _, _) | infixFnTm? f ->
+        if i = 0 then Some(top_term, 1 :: 1 :: r_path)
+          else % i = 1
+            moveToNext(top_term, r_path)
+      | _ -> 
     case fromPathTerm?(top_term, i+1 :: r_path) of
       | Some _ -> Some(top_term, i+1 :: r_path)
       | None -> moveToNext(top_term, r_path)
@@ -271,40 +304,63 @@ type PathTerm = APathTerm Position.Position
     case path of
       | [] -> None
       | i :: r_path ->
+    case fromPathTerm(top_term, r_path) of
+      | Apply(Lambda _, _, _) ->   % parent is a case expr
+        if i = 0 then Some(top_term, 1 :: r_path)
+          else  % i = 0
+            moveToPrev(top_term, r_path) 
+      | _ -> 
     if i > 0 then Some(top_term, i-1 :: r_path)
       else moveToPrev(top_term, r_path)
 
+  op [a] subTermIndicesSyntaxOrder(term: ATerm a): List Int =
+    case term of
+      | Apply(Lambda _, _, _) -> [1, 0]         % case expr
+      | Apply(f, _, _) | infixFnTm? f -> [1]    % infix
+      | tms -> tabulate(length(immediateSubTerms term), id)
+
+  op [a] immediateSubTermsSyntaxOrder(term: ATerm a): List (ATerm a) =
+    case immediateSubTerms term of
+      | [f as Lambda _, x] -> [x, f]    % case
+      | [f, x] | infixFnTm? f -> immediateSubTerms x    % infix
+      | tms -> tms
+
   op [a] searchNextSt(path_term: APathTerm a, pred: ATerm a * APathTerm a -> Bool): Option(APathTerm a) =
-    let def try_next(path_term as (top_term, path)) =
+    let def try_next(top_tm, path): Option(APathTerm a) =
           case path of
-            | [] -> None
-            | i :: r_path ->
-          case fromPathTerm?(top_term, i+1 :: r_path) of
-            | Some _ -> check_then_first(top_term, i+1 :: r_path)
-            | None -> try_next(top_term, r_path)
-        def check_then_first path_term =
+           | [] -> None
+           | i :: r_path ->
+         case subTermIndicesSyntaxOrder(fromPathTerm(top_tm, r_path)) of
+           | [] -> None             % Shouldn't happen
+           | inds -> 
+             if i = last inds then try_next(top_tm, r_path)
+               else let j = positionOf(inds, i) in
+                    check_then_first(top_tm, (inds@(j+1)) :: r_path)
+        def check_then_first(path_term: APathTerm a): Option(APathTerm a) =
           let term = fromPathTerm path_term in
           % let _ = writeLine("search: "^anyToString(reverse path_term.2)) in
           if pred (term, path_term)
             then Some path_term
           else try_first path_term
-        def try_first (path_term as (top_term, path)) =
+        def try_first (path_term as (top_term, path): APathTerm a): Option(APathTerm a) =
           let term = fromPathTerm path_term in
-          case immediateSubTerms term of
+          case subTermIndicesSyntaxOrder term of
             | [] -> try_next path_term
-            | new_term :: _ -> check_then_first(top_term, 0 :: path)
+            | i0 :: _ -> check_then_first(top_term, i0 :: path)
    in
    try_first path_term
 
  op [a] searchPrevSt(path_term: APathTerm a, pred: ATerm a * APathTerm a -> Bool):  Option(APathTerm a) =
-   let def try_prev (top_term, path) =
+   let def try_prev (top_tm, path) =
          case path of
            | [] -> None
            | i :: r_path ->
-             if i > 0 then
-               let new_path_term = (top_term, i-1 :: r_path) in
-               try_last new_path_term
-             else check_then_prev(top_term, r_path)
+         case subTermIndicesSyntaxOrder(fromPathTerm(top_tm, r_path)) of
+           | [] -> None             % Shouldn't happen
+           | inds -> 
+             if i = head inds then check_then_prev(top_tm, r_path)
+               else let j = positionOf(inds, i) in
+                    try_last(top_tm, (inds@(j-1)) :: r_path)
        def check_then_prev path_term =
          let term = fromPathTerm path_term in
          % let _ = writeLine("rsearch: "^anyToString(reverse path_term.2)) in
@@ -313,10 +369,10 @@ type PathTerm = APathTerm Position.Position
          else try_prev path_term
        def try_last (path_term as (top_term, path)) =
          let term = fromPathTerm path_term in
-         case immediateSubTerms term of
+         case subTermIndicesSyntaxOrder term of
            | [] -> check_then_prev path_term
-           | terms ->
-             try_last(top_term,  (length terms - 1) :: path)
+           | indices ->
+             try_last(top_term, last indices :: path)
    in
    try_prev path_term
 
@@ -327,17 +383,10 @@ type PathTerm = APathTerm Position.Position
             | [] -> new_tm
             | i :: r_path ->
           case tm of
-            | Apply(infix_fn as Fun(f, _, _), Record([("1", x), ("2", y)], a1), a2) | infixFn? f ->
-              (case i of
-               | 0 -> Apply(infix_fn, Record([("1", repl(x, r_path)), ("2", y)], a1), a2)
-               | 1 -> Apply(infix_fn, Record([("1", x), ("2", repl(y, r_path))], a1), a2))
             | Apply(x, y, a) ->
-              (let case? = embed? Lambda x in
-               if (case i of
-                     | 0 -> ~case?
-                     | 1 -> case?)
+               if i = 0 
                  then Apply(repl(x, r_path), y, a)
-                 else Apply(x, repl(y, r_path), a))
+                 else Apply(x, repl(y, r_path), a)
             | Record(l, a) ->
               Record(tabulate(length l, fn j -> let (id, t) = l@j in (id, if i = j then repl(t, r_path) else t)), a)
             | Bind(bdr, vs, x, a) -> Bind(bdr, vs, repl(x, r_path), a) 
@@ -436,12 +485,6 @@ op [a] getSisterConjuncts(path_term: APathTerm a): List(ATerm a) =
           if equalTerm?(stm1, stm2) then None
           else
           case (stm1, stm2) of
-            | (Apply(infix_fn1 as Fun(f, _, _), Record([("1", x1), ("2", y1)], _), _),
-               Apply(infix_fn2, Record([("1", x2), ("2", y2)], _), _))
-                | infixFn? f && equalTerm?(infix_fn1, infix_fn2) ->
-              choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
-            | (Apply(x1, y1, _), Apply(x2, y2, _)) | embed? Lambda x1 ->   % case expression
-              choose2(compare(x1, x2, 1 :: path), compare(y1, y2, 0 :: path), path)
             | (Apply(x1, y1, _), Apply(x2, y2, _)) ->
               choose2(compare(x1, x2, 0 :: path), compare(y1, y2, 1 :: path), path)
             | (Record(l1, _), Record(l2, _)) | sameFieldNames?(l1, l2) ->

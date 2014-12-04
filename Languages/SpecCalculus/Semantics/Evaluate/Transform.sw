@@ -21,7 +21,7 @@ spec
       | QuotedTerm(_,p)-> p
       | Item(_,_,p) -> p
       | Slice(_,_,_,_,p) -> p
-      | Repeat(_,p) -> p
+      | Repeat(_,_,p) -> p
       | Tuple(_,p) -> p
       | Record(_,p) -> p
       | Options(_,p) -> p
@@ -167,6 +167,9 @@ spec
      | Name(target_str, _) -> return target_str
      | _ -> raise (TransformError (posOf se, "Illegal search string"))
 
+ op Script.searchPredQualifier: String = "SearchPred"
+ op Script.searchPredFn: String -> (MSTerm * PathTerm -> Bool)
+
  op makeMove(mv_tm: TransformExpr): SpecCalc.Env Movement =
     % let _ = writeLine("move: "^anyToString mv_tm) in
     case mv_tm of
@@ -185,6 +188,8 @@ spec
          case search_type of
            | "s" -> return(Search target_str)
            | "r" -> return(ReverseSearch target_str)
+           | "sp" -> return(SearchPred(searchPredFn target_str))
+           | "rp" -> return(ReverseSearchPred(searchPredFn target_str))
            | _ -> raise (TransformError (pos, "Unrecognized move command: "^search_type))}
       | _ -> raise (TransformError (posOf mv_tm, "Unrecognized move command: "^show mv_tm))
 
@@ -756,9 +761,9 @@ spec
       | Block(stmts, _) ->
         {commands <- mapM (makeScript spc) stmts;
          return (Steps commands)}
-      | Repeat(transforms, _) ->
+      | Repeat(cnt, transforms, _) ->
         {transfms <- mapM (makeScript spc) transforms;
-         return (Repeat transfms)}
+         return (Repeat(cnt, transfms))}
 
       | At(qids, comm, _) ->
         {command <- makeScript spc comm;

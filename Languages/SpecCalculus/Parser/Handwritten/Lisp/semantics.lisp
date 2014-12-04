@@ -6,6 +6,7 @@
 (defpackage :SpecCalc)
 (defpackage :StandardSpec)
 (defpackage :MS)
+(defpackage :Script)
 (defpackage :Position)
 
 ;;; ========================================================================
@@ -1204,8 +1205,11 @@ If we want the precedence to be optional:
 (defun make-transform-at (qids transform l r)
   (SpecCalc::mkTransformAt-3 qids transform (make-pos l r)))
 
-(defun make-transform-repeat (transforms l r)
-  (SpecCalc::mkTransformRepeat-2 transforms (make-pos l r)))
+(defun make-transform-repeat (count transforms l r)
+  (SpecCalc::mkTransformRepeat-3 (if (equal count :unspecified)
+                                     Script::defaultRepeatCount
+                                   count)
+                                 transforms (make-pos l r)))
 
 (defun make-transform-command (name args l r)
   (SpecCalc::mkTransformCommand-3 name args (make-pos l r)))

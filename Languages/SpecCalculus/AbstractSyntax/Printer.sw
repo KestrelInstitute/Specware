@@ -79,9 +79,9 @@ case tre of
               ppString " ",
               ppATransformExpr transformexpr]
   | Slice        (opnames, typenames, f1, f2, _) -> ppString "(... slice term elided ...)"
-  | Repeat  (transformexprs, _) -> ppConcat [ppString "repeat {",
-                                             ppATransformExprs transformexprs,
-                                             ppString "}"]
+  | Repeat (cnt, transformexprs, _) -> ppConcat [ppString "repeat {",
+                                                 ppATransformExprs transformexprs,
+                                                 ppString "}"]
   | Tuple   (transformexprs, _) -> ppConcat [ppString "(",
                                              ppATransformExprs transformexprs,
                                              ppString ")"]

@@ -1799,8 +1799,8 @@ If we want the precedence to be optional:
   (make-transform-at 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-REPEAT ()
-  (:tuple "repeat" "{" (1 (:repeat+ :TRANSFORM-STMT ";")) "}")
-  (make-transform-repeat 1 ':left-lcb ':right-lcb))
+  (:tuple "repeat" (:optional (1 :NUMBER)) "{" (2 (:repeat+ :TRANSFORM-STMT ";")) "}")
+  (make-transform-repeat 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :TRANSFORM-PROC ()
   (:tuple (1 :SYMBOL) (2 (:repeat* :NON-APPLY-TRANSFORM-TERM)))

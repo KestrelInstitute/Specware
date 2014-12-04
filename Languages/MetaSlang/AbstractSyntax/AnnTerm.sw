@@ -171,7 +171,7 @@ MetaSlang qualifying spec
 
     | Slice     OpNames * TypeNames * (OpName -> Bool) * (TypeName -> Bool) * a  
 
-    | Repeat    List (ATransformExpr a)          * a
+    | Repeat    Nat * List (ATransformExpr a)    * a
     | Tuple     List (ATransformExpr a)          * a    % (..., ...)
     | Record    List (String * ATransformExpr a) * a    % {..., attr: val, ...}
     | Options   List (ATransformExpr a)          * a    % [..., ...]
@@ -188,7 +188,7 @@ MetaSlang qualifying spec
      | SCTerm(_, a) -> a
      | Item( _, _, a) -> a
      | Slice(_, _, _, _, a) -> a
-     | Repeat(_, a) -> a
+     | Repeat(_, _, a) -> a
      | Tuple(_, a) -> a
      | Record(_, a) -> a
      | Options(_, a) -> a

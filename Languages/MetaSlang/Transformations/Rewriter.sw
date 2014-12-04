@@ -524,11 +524,9 @@ op maybePushIfBack(res as (tr_if, info): RRResult, orig_path: Path,
              % else res
            in
            % README: fun_pathElem is the immediate subterm number of
-           % Apply(f,Ns) that picks out f; the if-expression here handles
-           % the fact that, if f is a Lambda, the subterm number is 1,
-           % otherwise it is 0
-           let fun_pathElem = if embed? Lambda f then 1 else 0 in
-           let arg_pathElem = 1-fun_pathElem in
+           % Apply(f,Ns) that picks out f
+           let fun_pathElem = 0 in
+           let arg_pathElem = 1 in
            let path_to_unpushed_if =
              arg_pathElem :: (if length Ns = 1 then [] else [i])
            in
@@ -605,11 +603,9 @@ op maybePushLetBack(res as (tr_let, info): RRResult, orig_path: Path,
       in
       let num_bindings = length bds in
       % README: fun_pathElem is the immediate subterm number of
-      % Apply(f,Ns) that picks out f; the if-expression here handles
-      % the fact that, if f is a Lambda, the subterm number is 1,
-      % otherwise it is 0
-      let fun_pathElem = if embed? Lambda f then 1 else 0 in
-      let arg_pathElem = 1-fun_pathElem in
+      % Apply(f,Ns) that picks out f
+      let fun_pathElem = 0 in
+      let arg_pathElem = 1 in
       let path_to_unpushed_let =
         arg_pathElem :: (if length Ns = 1 then [] else [i])
       in
@@ -686,14 +682,12 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                        "maybePushCaseBack"))
       in
       % README: fun_pathElem is the immediate subterm number of
-      % Apply(f,Ns) that picks out f; the if-expression here handles
-      % the fact that, if f is a Lambda, the subterm number is 1,
-      % otherwise it is 0
-      let fun_pathElem = if embed? Lambda f then 1 else 0 in
-      let arg_pathElem = 1-fun_pathElem in
+      % Apply(f,Ns) that picks out f
+      let fun_pathElem = 0 in
+      let arg_pathElem = 1 in
       % Similar to the above, but for Apply(Lambda(...),case_tm)
-      let casefun_pathElem = 1 in
-      let casearg_pathElem = 0 in
+      let casefun_pathElem = 0 in
+      let casearg_pathElem = 1 in
       % The reverse of the path to the case expression (of the form
       % Apply(Lambda(...)),scrut) after un-pushing it
       let path_to_unpushed_case =
@@ -969,11 +963,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
           | Lambda(lrules,b1) ->
             % First case rewrites the argument, N
             LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
-              (rewriteTerm(solvers,boundVars,N,0::path,rules))
+              (rewriteTerm(solvers,boundVars,N,1::path,rules))
             % These cases rewrite the patterns
             @@ (fn () ->
                   mapEach(fn (first,(pat,cond,body),rest) -> 
-                      rewritePattern(solvers,boundVars,pat,path,rules,first,false)
+                      rewritePattern(solvers,boundVars,pat,0::path,rules,first,false)
                       >>= (fn (pat,a) -> unit(Apply(Lambda (first ++ [(pat,cond,body)] ++ rest,b1), N, b), a)))
                     lrules
             % Rewrite each body with the additional assumption that the pattern
@@ -997,7 +991,7 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                                   rules), [])
                      in
                      rewriteTerm(solvers,(boundVars ++ patternVars pat), body,
-                                 (ithLambdaBodyPos(lrules,length first))::1::path, rules)
+                                 (ithLambdaBodyPos(lrules,length first))::0::path, rules)
                      >>= (fn (body',a) ->
                             let M = invertSubst(body',sbst) in
                             unit(Apply(Lambda (first ++ [(pat,cond,body')] ++ rest,b1), N, b), a)))
@@ -1023,12 +1017,11 @@ op maybePushCaseBack(res as (tr_case, info): RRResult, orig_path: Path,
                                                          "mapFrom function", Context, Either, None, freeTyVarsInTerm memb_assert),
                                              rules))))
           | _ ->
-        let infix? = case M of Fun(f, _, _) -> infixFn? f | _ -> false in
         LazyList.map (fn (N,a) -> (Apply(M,N,b),a)) 
-          (rewriteTerm(solvers,boundVars,N,if infix? then path else 1::path,rules))
+          (rewriteTerm(solvers, boundVars, N, 1::path, rules))
         @@ (fn () -> 
               LazyList.map (fn (M,a) -> (Apply(M,N,b),a)) 
-                (rewriteTerm(solvers,boundVars,M,if infix? then path else 0::path,rules))))
+                (rewriteTerm(solvers, boundVars, M, 0::path, rules))))
      | Record(fields,b) -> 
        mapEach 
         (fn (first,(label,M),rest) -> 

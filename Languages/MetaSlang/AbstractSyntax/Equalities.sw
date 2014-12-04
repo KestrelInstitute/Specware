@@ -511,7 +511,7 @@ refine def equalTermAlpha? by {unfold MetaSlang.equalTerm?_alpha}
      | (Qual(s1, t1, _), Qual(s2, t2, _)) -> s1 = s2 && t1 = t2
      % | (SCTerm (sct1,_), SCTerm (sct2)) -> sameSCTerm?(sct1, sct2)
      | (Item(s1, t1, _), Item(s2, t2, _)) -> s1 = s2 && equalTransform?(t1, t2)
-     | (Repeat(l1, _), Repeat(l2, _)) -> equalTransformList?(l1, l2)
+     | (Repeat(cnt1, l1, _), Repeat(cnt2, l2, _)) -> cnt1 = cnt2 && equalTransformList?(l1, l2)
      | (Tuple(l1, _), Tuple(l2, _)) -> equalTransformList?(l1, l2)
      | (Record(l1, _), Record(l2, _)) ->
        length l1 = length l1 && forall? (fn ((l1i,t1i),(l2i, t2i)) -> l1i = l2i && equalTransform?(t1i, t2i)) (zip(l1, l1))

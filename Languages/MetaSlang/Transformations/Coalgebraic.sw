@@ -201,12 +201,14 @@ def maintainOpsCoalgebraically
    in
    let (spc, qids) = foldOpInfos addToDef (spc, []) spc.ops in
    let main_script = At(map Def (reverse qids),
-                        Repeat [Move [Search intro_id, Next], % Go to rhs of postcondition just added, unfold and simplify
-                                mkSimplify[LeftToRight(mkContextQId "fn value")],
-                                Simplify1([reverseRuleSpec fold_rl, Omit(mkContextQId "fn value")] ++ rules),
-                                mkSimplify [Omit(mkContextQId "fn value")],
-                                Simplify1(Omit(mkContextQId "fn value") :: rules),
-                                mkSimplify(fold_rl :: rules)]) in
+                        Repeat(15, [ % Go to rhs of postcondition just added, unfold and simplify
+                                    Move [Search intro_id, Next],
+                                    mkSimplify[LeftToRight(mkContextQId "fn value")],
+                                    Simplify1([reverseRuleSpec fold_rl,
+                                               Omit(mkContextQId "fn value")] ++ rules),
+                                    mkSimplify [Omit(mkContextQId "fn value")],
+                                    Simplify1(Omit(mkContextQId "fn value") :: rules),
+                                    mkSimplify(fold_rl :: rules)])) in
    let script = if traceMaintain? || trace?
                    then Steps[Trace true, main_script]
                  else main_script
@@ -242,7 +244,7 @@ def implementOpsCoalgebraically
               {replace_op_info <- findTheOp spc replace_op_qid;
                let (tvs, replace_op_ty, _) = unpackFirstTerm replace_op_info.dfn in
                let _ = writeLine("Implement "^show replace_op_qid^": "^printType replace_op_ty) in
-               let _ = writeLine("With rewrite: "^printTerm body) in
+               % let _ = writeLine("With rewrite: "^printTerm body) in
                let def findStateTransformOps(info, qids) =
                      let (tvs, ty, tm) = unpackFirstTerm info.dfn in
                      case range_*(spc, ty, false) of
@@ -270,17 +272,19 @@ def implementOpsCoalgebraically
                                      then [Trace true]
                                      else [])
                                   ++ [At(map Def (reverse post_condn_qids),
-                                         Repeat [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                         Repeat(15,
+                                                [Move [Search r_o_id, ReverseSearchPred childOfConj],
                                                  mkSimplify(RLeibniz homo_fn_qid
                                                              :: LeftToRight assert_qid
-                                                             :: rules)]),
+                                                             :: rules)])),
                                       At(map Def (reverse defined_qids),
                                          Steps[Move[SearchPred bodyOfFn?],
                                                Repeat
-                                                 [Move [Search r_o_id, ReverseSearchPred childOfConj],
-                                                  mkSimplify(RLeibniz homo_fn_qid
-                                                               :: LeftToRight assert_qid
-                                                               :: rules)]])])
+                                                 (15,
+                                                  [Move [Search r_o_id, ReverseSearchPred childOfConj],
+                                                   mkSimplify(RLeibniz homo_fn_qid
+                                                                :: LeftToRight assert_qid
+                                                                :: rules)])])])
                in
                {print "rewriting ... \n";
                 print (scriptToString script^"\n");
@@ -297,11 +301,20 @@ op definedOp?(spc: Spec) (qid: QualifiedId): Bool =
       ~(anyTerm? def_tm)
     | None -> false
 
-op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
+op SearchPred.childOfConj(tm: MSTerm, pt: PathTerm): Bool =
   if length(pathTermPath pt) < 2 then true
   else
+  case tm of
+    | Fun _ -> false
+    | _ -> 
   let Some par_ptm = parentTerm pt in
   let par_tm = fromPathTerm par_ptm in
+  let par_tm = if embed? Record par_tm
+                then
+                  let Some gpar_ptm = parentTerm par_ptm in
+                  fromPathTerm gpar_ptm
+                else par_tm
+  in                
   case par_tm of
     | Apply(Fun(And, _, _),_,_) ->
       (let Some gpar_ptm = parentTerm par_ptm in
@@ -311,7 +324,7 @@ op childOfConj(tm: MSTerm, pt: PathTerm): Bool =
     | Lambda _ -> true
     | _ -> false
 
-op bodyOfFn?(tm: MSTerm, pt: PathTerm): Bool =
+op SearchPred.bodyOfFn?(tm: MSTerm, pt: PathTerm): Bool =
   ~(embed? Lambda tm)
     &&
     (if length(pathTermPath pt) < 2 then false

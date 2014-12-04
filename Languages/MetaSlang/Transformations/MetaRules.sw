@@ -310,7 +310,7 @@ op flattenExistsTerms (vs: MSVars, cjs: MSTerms, spc: Spec) : MSVars * MSTerms =
 op pathToLastConjunct(n: Nat): Path =
   % n is number of conjuncts minus 1
   if n = 0 then []
-    else 1::pathToLastConjunct(n-1)
+    else 1::1::pathToLastConjunct(n-1)
 
 % op printEqProof(prf: EqProof, tm: MSTerm): String =
 %   case prf of
@@ -434,7 +434,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
                                          [(mkEmbedPat(constr_id, Some(v_pat), constr_ty), rec_ex_tm),
                                           (mkWildPat constr_ty, else_tm)]) in
                  Some(ret_tm,
-                      extendCaseProof(orig_tm, new_tm, ret_tm, [0, 1], prf, s_tm))
+                      extendCaseProof(orig_tm, new_tm, ret_tm, [0, 0], prf, s_tm))
                | None -> None)
          | None ->
         %% (ex(x) p x && (ex(y) q x y)) = (ex(x,y) p x && q x y)
@@ -490,7 +490,7 @@ op structureCondEx (spc: Spec, ctm: MSTerm, else_tm: MSTerm, simplify?: Bool): O
             let (tr_tm, prf) = transEx1(new_vs, new_cjs, a, tsb, new_ex) in
             let ret_tm = mkBind(Exists, [b_v], Utilities.mkAnd(cj, tr_tm)) in
             Some(ret_tm,
-                 extendSimpProof(orig_tm, mkBind(Exists, [b_v], Utilities.mkAnd(cj, new_ex)), ret_tm, [1, 0], prf, "auto"))
+                 extendSimpProof(orig_tm, mkBind(Exists, [b_v], Utilities.mkAnd(cj, new_ex)), ret_tm, [1, 1, 0], prf, "auto"))
           | None -> None
       def transEx1(vs: MSVars, cjs: MSTerms, a: Position, tsb: TermSubst, new_ex: MSTerm): MSTerm * Proof =
         case transEx(vs, cjs, a, tsb) of
