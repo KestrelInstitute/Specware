@@ -355,13 +355,25 @@ op getConjoinedEqualities(spc: Spec) (t: MSTerm): MSTerms =
       getConjoinedEqualities spc uf_tm 
     | _ -> [t]
 
+op findTypeWithQId(qid: QualifiedId, ty: MSType): MSType =
+  case foldTypesInType (fn (r, tyi) ->
+                          case r of
+                            | Some _ -> r
+                            | None -> 
+                          case tyi of
+                            | Base(qidi, _, _) | qidi = qid -> Some tyi
+                            | _ -> None)
+        None ty of
+    | Some ty -> ty
+    | None -> mkBase(qid, [])
+
 op findStoredOps(spc: Spec, state_qid: QualifiedId): QualifiedIds =
-  let state_ty = mkBase(state_qid, []) in
   foldOpInfos
     (fn (info, stored_qids) ->
       let  (tvs, ty, tm) = unpackFirstTerm info.dfn in
       if ~(anyTerm? tm) then stored_qids
       else
+      let state_ty = findTypeWithQId(state_qid, ty) in
       case getStateVarAndPostCondn(ty, state_ty, spc) of
         | Some(state_var, deref?, post_condn) ->
           removeDuplicates
@@ -620,13 +632,15 @@ op makeDefForUpdatingCoType(top_dfn: MSTerm, post_condn: MSTerm, state_var: MSVa
    new_dfn_ptm
 
 op makeDefinitionsForUpdatingCoType
-     (spc: Spec, state_ty: MSType, stored_qids: QualifiedIds, field_pairs: List(Id * MSType)): Spec =
+     (spc: Spec, state_qid: QualifiedId, stored_qids: QualifiedIds,
+      field_pairs: List(Id * MSType)): Spec =
   foldOpInfos
     (fn (info, spc) ->
        let (tvs, ty, top_tm) = unpackFirstTerm info.dfn in
        if ~(anyTerm? top_tm) then spc
        else
-         (case getStateVarAndPostCondn(ty, state_ty, spc) of
+         (let state_ty = findTypeWithQId(state_qid, ty) in
+          case getStateVarAndPostCondn(ty, state_ty, spc) of
             | None -> spc
             | Some(state_var, deref?, post_condn) ->
               % let _ = writeLine(show(primaryOpName info)^":\n"^printTerm post_condn) in
@@ -656,7 +670,6 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List Rul
   case qids of
     | [] -> raise(Fail("No type to realize!"))
     | state_qid :: rest_qids ->
-  let state_ty = mkBase(state_qid, []) in
   case findTheType(spc, state_qid) of
     | None -> raise(Fail("type "^show state_qid^" not found!"))
     | Some type_info ->
@@ -664,9 +677,12 @@ op SpecTransform.finalizeCoType(spc: Spec) (qids: QualifiedIds) (rules: List Rul
    stored_qids <- return(reverse(findStoredOps(spc, state_qid)));
    print("stored_qids: "^anyToString (map show stored_qids)^"\n");
    field_pairs <- return(makeRecordFieldsFromQids(new_spc, stored_qids));
-   new_spc <- return(if stored_qids = [] then new_spc else addTypeDef(new_spc, state_qid, mkCanonRecordType(field_pairs)));
+   record_ty <- return(mkCanonRecordType(field_pairs));
+   new_spc <- return(if stored_qids = [] then new_spc
+                     else addTypeDef(new_spc, state_qid,
+                                     maybePiType(freeTyVars record_ty, record_ty)));
    new_spc <- return(foldl addDefForDestructor new_spc stored_qids);
-   new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_ty, stored_qids, field_pairs));
+   new_spc <- return(makeDefinitionsForUpdatingCoType(new_spc, state_qid, stored_qids, field_pairs));
    return new_spc}
 
 op MSTermTransform.mergePostConditions (spc: Spec) (tm: TransTerm): Option MSTerm =
