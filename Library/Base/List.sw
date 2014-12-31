@@ -486,7 +486,7 @@ op [a] intersperse (x : a) (l : List a) : List a =
     | y::[] -> [y]
     | y::l' -> y :: x :: intersperse x l'
 
-% list without repeated elements (i.e. "injective", if viewed as a mapping):
+% list without repeated/duplicate elements (i.e. "injective", if viewed as a mapping):
 
 op [a] noRepetitions? (l: List a) : Bool =
   fa (i:Nat, j:Nat) i < length l && j < length l && i ~= j => l@i ~= l@j
