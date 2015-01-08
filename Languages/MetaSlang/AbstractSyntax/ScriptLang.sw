@@ -329,7 +329,10 @@ op mkMetaRule0 (qid: QualifiedId): RuleSpec =
   MetaRule(qid, dummyTypedFun, simpleMetaRuleAnnTypeValue) % 2nd arg is a placeholder
 op mkTermTransform (id: Id): Script =
   let Some(ty_info, ty_fn) = lookupMSTermTransformInfo id in
-  TermTransform(id, ty_fn, ArrowsV[SpecV emptySpec, TransTermV(Any noPos)])
+  TermTransform(id, ty_fn, ArrowsV[SpecV dummySpec,
+                                   TransOpNameV dummyQualifiedId,
+                                   TransTermV dummyMSTerm,
+                                   TraceFlagV false])
 
 op mkRLeibniz(qid: QualifiedId): RuleSpec = RLeibniz qid
 op mkStrengthen(qid: QualifiedId): RuleSpec = Strengthen qid

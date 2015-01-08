@@ -19,14 +19,23 @@ spec
    let Qualified(cq, cid) = cn in
    let Qualified(pq, pid) = pn in
    if cq = wildQualifier || cq = "*"   % for backwards compatibility
-     then pid = cid
-   else cq = pq && cid = pid
+     then pid = cid || cid = wildQualifier
+   else cq = pq && (cid = pid || cid = wildQualifier)
+
+  op ruleSpecMatching?(pat_rl_spec: RuleSpec, m: RuleSpec): Bool =
+    case pat_rl_spec of
+      | Omit(omit_qid) ->
+        (case m of
+           | LeftToRight qid -> claimNameMatch(omit_qid, qid)
+           | RightToLeft qid -> claimNameMatch(omit_qid, qid)
+           | _ -> false)
+      | _ -> false
 
   op matchingTheorems? (spc: Spec, qid: QualifiedId): Bool =
     exists? (fn r -> claimNameMatch(qid, r.2))
       (allProperties spc)
 
- op findMatchingTheorems (spc: Spec, qid: QualifiedId): Properties =
+  op findMatchingTheorems (spc: Spec, qid: QualifiedId): Properties =
     filter (fn r -> claimNameMatch(qid, r.2))
       (allProperties spc)
 
@@ -609,6 +618,10 @@ spec
        let rules = makeRules (context, spc, rule_specs, expl_ctxt_rules) in
        let rules = rules ++ impl_ctxt_rules in
        let rules = rules ++ subtypeRules(term, context) in
+       let rules = filter (fn rl -> ~(exists? (fn rl_spec -> embed? Omit rl_spec
+                                                 && ruleSpecMatching?(rl_spec, rl.rule_spec))
+                                        rule_specs))
+                     rules in
        let _ = if rewriteDebug? then
                  (writeLine("Rewriting:\n"^printTerm term);
                   List.app printRule rules)

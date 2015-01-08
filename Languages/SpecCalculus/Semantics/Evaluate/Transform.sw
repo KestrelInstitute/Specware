@@ -6,6 +6,7 @@ spec
   % import Spec
   import /Languages/MetaSlang/Transformations/IsoMorphism
   import /Languages/MetaSlang/Transformations/Coalgebraic
+  import /Languages/MetaSlang/Transformations/InfoRules
   import /Languages/MetaSlang/Transformations/PartialEval
   import /Languages/MetaSlang/Transformations/MetaTransform
   import /Languages/MetaSlang/Transformations/Simple
@@ -503,7 +504,7 @@ spec
       %% Implicit arg cases
       | (_, Spec :: ty_i_rst) ->
         {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
-         return(SpecV dummySpec :: r_atvs)}   % emptySpec is a place holder
+         return(SpecV dummySpec :: r_atvs)}   % dummySpec is a place holder
       | (_, TraceFlag :: ty_i_rst) ->
         {r_atvs <- transformExprsToAnnTypeValues(tes, ty_i_rst, pos, spc, status);
          return(TraceFlagV false :: r_atvs)}   % false is a place holder
@@ -675,7 +676,7 @@ spec
          case lookupMSTermTransformInfo cmd_name of
            | Some(ty_info, tr_fn) ->
              (case ty_info of
-                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result -> 
+                | Arrows(mtis, result) | existsMTypeInfo? (embed? Term) result ->
                   {atvs <- transformExprsToAnnTypeValues(args, mtis, pos, spc, {ignored_formal? = false,
                                                                                 implicit_term?  = true,
                                                                                 implicit_qid? = true});

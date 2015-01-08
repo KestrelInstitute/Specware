@@ -219,7 +219,7 @@
         (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
                #'(lambda (spc) #'(lambda (tm) '(:|None|)))))))
 
-(defun interpret-command (command)
+(defun interpret-command (command &optional dont-print-no-effect)
   (if (null *transform-term*)
       (princ "No term chosen! (Use \"at\" command)")
       (progn
@@ -227,17 +227,18 @@
                    (eq (State::|!!| HigherOrderMatching::debugHOM) 0)
                    (member (car command) '(:|Simplify1| :|Simplify|)))
           (HigherOrderMatching::showNextHOMatchFailure-0))
-        (let* ((result_fn (Script::interpretPathTerm-7 *transform-spec* command
+        (let* ((result-fn (Script::interpretPathTerm-7 *transform-spec* command
                                                        *transform-term*
                                                        *current-qid*
                                                        nil nil Proof::bogusProof))
-               (result (funcall result_fn nil)))
+               (result (funcall result-fn nil)))
           (if (and (eq (caar result) ':|Exception|) (eq (cadar result) ':|Fail|))
               (princ (cddar result))
               (let ((new-term (svref (cdar result) 0)))
                 (if (Slang-Built-In::slang-term-equals-2 (PathTerm::fromPathTerm *transform-term*)
                                                          (PathTerm::fromPathTerm new-term))
-                    (format t "No effect!")
+                    (unless dont-print-no-effect
+                      (format t "No effect!"))
                     (progn 
                       (push-state `(interpret-command ,command))
                       (setq *transform-term* new-term)
@@ -254,8 +255,8 @@
         (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
                #'(lambda (x y) x)))))
 
-(defun Script::specTransformFunction-1-1 (qid_pr spc-rls)
-  (funcall (Script::specTransformFunction-2 (car qid_pr) (cdr qid_pr)) spc-rls))
+(defun Script::specTransformFunction-1-1 (qid-pr spc-rls)
+  (funcall (Script::specTransformFunction-2 (car qid-pr) (cdr qid-pr)) spc-rls))
 
 (defun Script::specQIdTransformFunction-name (q id)
   (let ((f (find-symbol (Specware::fixCase (concatenate 'string id "-1-1"))
@@ -265,9 +266,9 @@
         (progn (warn "~a not a function" (MetaSlang::printQualifierDotId-2 q id))
                #'(lambda (x) x)))))
 
-(defun Script::specQIdTransformFunction-1-1-1 (qid_pr spc_qid_rls yyy-1)
-  ; (format t "specQIdTransformFunction: ~a~%" qid_pr)
-  (funcall (Script::specQIdTransformFunction-name (car qid_pr) (cdr qid_pr)) spc_qid_rls yyy-1))
+(defun Script::specQIdTransformFunction-1-1-1 (qid-pr spc-qid-rls yyy-1)
+  ; (format t "specQIdTransformFunction: ~a~%" qid-pr)
+  (funcall (Script::specQIdTransformFunction-name (car qid-pr) (cdr qid-pr)) spc-qid-rls yyy-1))
 
 (defun Script::specQIdTransformFunction-2 (q id)
   #'(lambda (x2) #'(lambda (x3) (Script::specQIdTransformFunction-1-1-1 (cons q id) x2 x3))))
@@ -445,25 +446,25 @@
   (some #'(lambda (c) (member c *parse-characters*)) str))
 
 (defun parse-and-execute-transform-string (command-str argstr)
-  (let* ((full_input (format nil "~a ~a" command-str argstr))
+  (let* ((full-input (format nil "~a ~a" command-str argstr))
          (Emacs::*goto-file-position-store?* t)
 	 (Emacs::*goto-file-position-stored* nil)
          (Specware::stringErrorByte (State::mkRef -1))
 	 (parser-type-check-output nil)
-         (o_script '(:|None|))
-         (parsed_input nil))
+         (o-script '(:|None|))
+         (parsed-input nil))
     (setq parser-type-check-output
           (with-output-to-string (*standard-output*)
             (let ((*error-output* *standard-output*)
                   (SpecCalc::numberOfTypeErrorsToPrint 2))
-              (setq parsed_input (parser4::parseSpecwareString full_input
+              (setq parsed-input (parser4::parseSpecwareString full-input
                                                                :start-rule-name :TRANSFORM-STMT))
-              (when (Option::some? parsed_input)
-                (setq o_script (Specware::makeScript_fromLisp-2 (cdr parsed_input) *transform-spec*))))))
-    (if (Option::some? o_script)
-        (if (Script::specCommand? (cdr o_script))
-            (apply-spec-command (cdr o_script))
-            (interpret-command (cdr o_script)))
+              (when (Option::some? parsed-input)
+                (setq o-script (Specware::makeScript_fromLisp-2 (cdr parsed-input) *transform-spec*))))))
+    (if (Option::some? o-script)
+        (if (Script::specCommand? (cdr o-script))
+            (apply-spec-command (cdr o-script))
+            (interpret-command (cdr o-script)))
         (let ((error-byte (or (if (not (null Emacs::*goto-file-position-stored*))
                                   (third Emacs::*goto-file-position-stored*)
                                   (if (>= (cdr Specware::stringErrorByte) 0)
@@ -526,9 +527,9 @@
                ((trace-rewrites trr)
                 (setq MetaSlangRewriter::traceRewriting 2)
                 (format t "Rewrite tracing turned on.")
-                (when (and (not (null argstr))
-                           (string= "t" (cl-user::strip-extraneous argstr)))
-                  (setq MetaSlangRewriter::debugApplyRewrites? t))
+                (setq MetaSlangRewriter::debugApplyRewrites?
+                      (and (not (null argstr))
+                           (string= "t" (cl-user::strip-extraneous argstr))))
                 (values))
                ((untrace-rewrites untrr) (setq MetaSlangRewriter::traceRewriting 0)
                 (format t "Rewrite tracing turned off.")
@@ -558,7 +559,7 @@
                       (if (Script::metaRuleFn?-2 MetaSlang::unQualified (symbol-name *raw-command*))
                           (apply-command (symbol-name *raw-command*) 'Script::mkMetaRule0 'fn)
                         (if (Script::termTransformFn?-2 MetaSlang::unQualified (symbol-name *raw-command*))
-                            (interpret-command (Script::mkTermTransform (symbol-name *raw-command*)))
+                            (interpret-command (Script::mkTermTransform (symbol-name *raw-command*)) t)
                           (process-sw-shell-command command argstr))))))))
 	((and (constantp command) (null argstr))
 	 (values command))
