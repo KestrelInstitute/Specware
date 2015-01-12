@@ -1,4 +1,4 @@
-Specware README.txt file (updated August, 2014).
+Specware README.txt file (updated January, 2015).
 
 Welcome to Specware!
 
@@ -20,8 +20,8 @@ your system.)
 
 Optional: For proof support, install the Isabelle/HOL theorem prover
 (available from http://www.cl.cam.ac.uk/research/hvg/Isabelle/).  The
-required version of Isabelle is Isabelle2013-2.  Older versions of
-Isabelle (including Isabelle2013 without the "-2") will not work.
+required version of Isabelle is Isabelle2014.  Older versions of
+Isabelle will not work.
 
 If this is a pre-built (binary) copy of Specware, you can just run
 Specware by executing the script bin/specware-emacs.  This will start
